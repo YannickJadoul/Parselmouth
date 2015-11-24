@@ -1,0 +1,25 @@
+# Intermediate build products for Windows and Linux
+*.o
+*.a
+
+*.xcodeproj/
+
+# Intermediate build products for MacOSX
+DerivedData
+
+# OSX-specific files
+.DS_Store
+
+# editor temporaries
+*.kate-swp
+*.orig
+
+# Praat temporary files
+*kanweg*
+
+makefile.defs
+
+# Executables
+praat
+Praat
+Praat.exe

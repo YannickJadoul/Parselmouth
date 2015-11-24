@@ -1,0 +1,94 @@
+/* OTGrammar_ex_NPA.cpp
+ *
+ * Copyright (C) 1992-2011,2015 Paul Boersma
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or (at
+ * your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
+/*
+ * pb 2002/07/16 GPL
+ * pb 2007/07/23 constraint plasticity
+ * pb 2007/08/12 wchar
+ * pb 2011/03/29 C++
+ * pb 2011/07/12 C++
+ * pb 2015/06/03 char32
+ */
+
+#include "OTGrammar.h"
+
+autoOTGrammar OTGrammar_create_NPA_grammar () {
+	try {
+		OTGrammarCandidate candidate;
+		OTGrammarTableau tableau;
+		OTGrammarConstraint constraint;
+		autoOTGrammar me = Thing_new (OTGrammar);
+		my constraints = NUMvector <structOTGrammarConstraint> (1, my numberOfConstraints = 3);
+		constraint = & my constraints [1];
+			constraint -> name = Melder_dup (U"*G\\s{ESTURE}");
+			constraint -> ranking = 102.7;
+			constraint -> plasticity = 1.0;
+		constraint = & my constraints [2];
+			constraint -> name = Melder_dup (U"*R\\s{EPLACE} (n, m)");
+			constraint -> ranking = 100.0;
+			constraint -> plasticity = 1.0;
+		constraint = & my constraints [3];
+			constraint -> name = Melder_dup (U"*R\\s{EPLACE} (t, p)");
+			constraint -> ranking = 112.0;
+			constraint -> plasticity = 1.0;
+		my tableaus = NUMvector <structOTGrammarTableau> (1, my numberOfTableaus = 2);
+		tableau = & my tableaus [1];
+			tableau -> input = Melder_dup (U"an+pa");
+			tableau -> candidates = NUMvector <structOTGrammarCandidate> (1, tableau -> numberOfCandidates = 2);
+			candidate = & tableau -> candidates [1];
+				candidate -> output = Melder_dup (U"anpa");
+				candidate -> marks = NUMvector <int> (1, candidate -> numberOfConstraints = 3);
+				candidate -> marks [1] = 1;
+			candidate = & tableau -> candidates [2];
+				candidate -> output = Melder_dup (U"ampa");
+				candidate -> marks = NUMvector <int> (1, candidate -> numberOfConstraints = 3);
+				candidate -> marks [2] = 1;
+		tableau = & my tableaus [2];
+			tableau -> input = Melder_dup (U"at+ma");
+			tableau -> candidates = NUMvector <structOTGrammarCandidate> (1, tableau -> numberOfCandidates = 2);
+			candidate = & tableau -> candidates [1];
+				candidate -> output = Melder_dup (U"atma");
+				candidate -> marks = NUMvector <int> (1, candidate -> numberOfConstraints = 3);
+				candidate -> marks [1] = 1;
+			candidate = & tableau -> candidates [2];
+				candidate -> output = Melder_dup (U"apma");
+				candidate -> marks = NUMvector <int> (1, candidate -> numberOfConstraints = 3);
+				candidate -> marks [3] = 1;
+		OTGrammar_checkIndex (me.peek());
+		OTGrammar_newDisharmonies (me.peek(), 0.0);
+		return me;
+	} catch (MelderError) {
+		Melder_throw (U"Nasal place assimilation grammar not created.");
+	}
+}
+
+autoPairDistribution OTGrammar_create_NPA_distribution () {
+	try {
+		autoPairDistribution me = PairDistribution_create ();
+		PairDistribution_add (me.peek(), U"at+ma", U"atma", 100);
+		PairDistribution_add (me.peek(), U"at+ma", U"apma",   0);
+		PairDistribution_add (me.peek(), U"an+pa", U"anpa",  20);
+		PairDistribution_add (me.peek(), U"an+pa", U"ampa",  80);
+		return me;
+	} catch (MelderError) {
+		Melder_throw (U"Nasal place assimilation distribution not created.");
+	}
+}
+
+/* End of file OTGrammar_ex_NPA.cpp */
