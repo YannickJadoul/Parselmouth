@@ -1,0 +1,5 @@
+#define PRAAT_VERSION_STR 6.0.05
+#define PRAAT_VERSION_NUM 6005
+#define PRAAT_YEAR 2015
+#define PRAAT_MONTH November
+#define PRAAT_DAY 8
