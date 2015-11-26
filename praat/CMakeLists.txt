@@ -25,8 +25,9 @@ set(PRAAT_INCLUDE_DIRS kar
 
 set(PRAAT_DEFINITIONS ${GTK2_DEFINITIONS})
 
-set(PRAAT_C_FLAGS "-std=gnu99 -Werror=missing-prototypes -Werror=implicit -Wreturn-type -Wunused -Wunused-parameter -Wuninitialized -pthread")
-set(PRAAT_CXX_FLAGS "-std=c++11 -Werror=missing-prototypes -Werror=implicit -Wreturn-type -Wunused -Wunused-parameter -Wuninitialized -Wshadow -pthread")
+set(PRAAT_C_FLAGS "-std=gnu99 -pthread")
+set(PRAAT_CXX_FLAGS "-std=c++11 -pthread")
+
 
 # Trying to convert the flags from the Praat makefiles...
 if (APPLE)
@@ -54,6 +55,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PRAAT_CXX_FLAGS}")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
+
 add_subdirectory(artsynth)
 add_subdirectory(contrib/ola)
 add_subdirectory(dwsys)
@@ -76,10 +78,14 @@ add_subdirectory(sys)
 
 add_library(praat dummy.cpp)
 target_link_libraries(praat fon ola artsynth FFNet gram EEG LPC dwtools fon stat dwsys sys num kar espeak portaudio flac mp3 glpk gsl ${GTK2_LIBRARIES})
-install(TARGETS praat DESTINATION bin)
 
-target_include_directories(praat PUBLIC ${PRAAT_INCLUDE_DIRS})
 
+foreach(X ${PRAAT_INCLUDE_DIRS})
+	get_filename_component(X ${X} ABSOLUTE)
+	set(PRAAT_INCLUDE_DIRS_ABS ${PRAAT_INCLUDE_DIRS_ABS} ${X})
+endforeach()
+
+set(PRAAT_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PRAAT_INCLUDE_DIRS_ABS} PARENT_SCOPE)
 set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} PARENT_SCOPE)
 set(PRAAT_C_FLAGS ${PRAAT_C_FLAGS} PARENT_SCOPE)
 set(PRAAT_CXX_FLAGS ${PRAAT_CXX_FLAGS} PARENT_SCOPE)

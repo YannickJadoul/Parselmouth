@@ -595,7 +595,7 @@ void Melder_trace (const char *fileName, int lineNumber, const char *functionNam
 void Melder_trace (const char *fileName, int lineNumber, const char *functionName, Melder_16_TO_19_ARGS);
 #ifdef NDEBUG
 	#define Melder_assert(x)   ((void) 0)
-	#define trace(x)   ((void) 0)
+	#define trace(...)   ((void) 0)
 #else
 	#define Melder_assert(x)   ((x) ? (void) (0) : (Melder_assert_ (__FILE__, __LINE__, #x), abort ()))
 	#define trace(...)   (! Melder_isTracing ? (void) 0 : Melder_trace (__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__))
