@@ -459,7 +459,7 @@ const char32 * MelderFile_messageName (MelderFile file);   // Calls Melder_peekE
 
 /* The arguments to all messaging functions. */
 
-typedef class structThing *Thing;
+typedef struct structThing *Thing;
 char32 *Thing_messageName (Thing me);
 struct MelderArg {
 	const char32 *_arg;
@@ -1138,7 +1138,7 @@ void * Melder_monitor (double progress, Melder_16_TO_19_ARGS);
 		          Graphics_text (monitor.graphics(), ...);
 		      }
 */
-typedef class structGraphics *Graphics;
+typedef struct structGraphics *Graphics;
 class autoMelderMonitor {
 	Graphics d_graphics;
 public:

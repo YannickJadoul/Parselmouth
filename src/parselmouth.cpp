@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 
+#include "functor_signature.h"
 #include <boost/python.hpp>
 
 Sound readSound(const std::string &path)
@@ -25,13 +26,16 @@ Sound readSound(const std::string &path)
 	return Sound_to_MFCC(s, 12, 0.015, 0.005, 100.0, 0.0, 100.0);
 }*/
 
-BOOST_PYTHON_MODULE(praat_mfcc)
+BOOST_PYTHON_MODULE(parselmouth)
 {
 	Melder_batch = true;
 	
 	using namespace boost::python;
 
+	docstring_options docstringOptions(true, true, false);
+
 	class_<structSound, boost::noncopyable>("Sound", no_init)
+		.def("__init__", make_constructor(&readSound, default_call_policies(), arg("path"))) //  (arg("self"), arg("path"))
 		.def("read", &readSound, return_value_policy<manage_new_object>())
 		.staticmethod("read")
 		.def("info", &structSound::v_info)
