@@ -1,5 +1,5 @@
 find_package(PythonLibs)
-find_package(Boost COMPONENTS python)
+find_package(Boost 1.55 REQUIRED COMPONENTS python)
 
 include_directories(${PRAAT_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 

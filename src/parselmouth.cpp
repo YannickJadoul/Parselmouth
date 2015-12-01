@@ -16,8 +16,7 @@
 Sound readSound(const std::string &path)
 {
 	structMelderFile file = { nullptr };
-	std::u32string path_32(path.begin(), path.end());
-	Melder_relativePathToFile(path_32.c_str(), &file);
+	Melder_relativePathToFile(Melder_peek8to32(path.c_str()), &file);
 	return Sound_readFromSoundFile(&file).transfer();
 }
 
@@ -33,6 +32,14 @@ BOOST_PYTHON_MODULE(parselmouth)
 	using namespace boost::python;
 
 	docstring_options docstringOptions(true, true, false);
+
+	register_exception_translator<MelderError>(
+			[] (const MelderError &) {
+				std::string message(Melder_peek32to8(Melder_getError()));
+				message.erase(message.length() - 1);
+				Melder_clearError();
+				throw std::runtime_error(message);
+	        });
 
 	class_<structSound, boost::noncopyable>("Sound", no_init)
 		.def("__init__", make_constructor(&readSound, default_call_policies(), arg("path"))) //  (arg("self"), arg("path"))
