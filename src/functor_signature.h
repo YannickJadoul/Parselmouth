@@ -11,7 +11,7 @@ namespace boost {
 			struct functor_signature;
 
 			template <class Functor>
-			typename std::enable_if<std::is_member_function_pointer<decltype(&Functor::operator())>::value, typename functor_signature<Functor>::type>::type get_signature(Functor &, void* = 0)
+			typename std::enable_if<std::is_member_function_pointer<decltype(&Functor::operator())>::value, typename functor_signature<Functor>::type>::type get_signature(Functor, void* = 0)
 			{
 				return typename functor_signature<Functor>::type();
 			}
@@ -28,8 +28,10 @@ namespace boost {
 			struct functor_signature
 			{
 				typedef decltype(get_signature(&Functor::operator())) member_function_signature;
-				typedef typename mpl::advance<typename mpl::begin<member_function_signature>::type, mpl::int_<1>>::type instance_argument_iterator;
-				typedef typename mpl::erase<member_function_signature, instance_argument_iterator>::type type;
+				typedef typename mpl::front<member_function_signature>::type return_type;
+				typedef typename mpl::pop_front<member_function_signature>::type instance_and_arguments;
+				typedef typename mpl::pop_front<instance_and_arguments>::type only_arguments;
+				typedef typename mpl::push_front<only_arguments, return_type>::type type;
 			};
 		}
 	}

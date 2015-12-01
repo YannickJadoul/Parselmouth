@@ -11,6 +11,7 @@
 #include <string>
 
 #include "functor_signature.h"
+#include "AutoThingUtils.h"
 #include <boost/python.hpp>
 
 Sound readSound(const std::string &path)
@@ -19,11 +20,6 @@ Sound readSound(const std::string &path)
 	Melder_relativePathToFile(Melder_peek8to32(path.c_str()), &file);
 	return Sound_readFromSoundFile(&file).transfer();
 }
-
-/*MFCC toMFCC(Sound s)
-{
-	return Sound_to_MFCC(s, 12, 0.015, 0.005, 100.0, 0.0, 100.0);
-}*/
 
 BOOST_PYTHON_MODULE(parselmouth)
 {
@@ -46,9 +42,8 @@ BOOST_PYTHON_MODULE(parselmouth)
 		.def("read", &readSound, return_value_policy<manage_new_object>())
 		.staticmethod("read")
 		.def("info", &structSound::v_info)
-		//.def("to_mfcc", &toMFCC, return_value_policy<manage_new_object>())
-		//.def("to_mfcc_default", &Sound_to_MFCC, (arg("a") = 12, arg("b") = 0.015, arg("c") = 0.005, arg("d") = 100.0, arg("e") = 0.0, arg("f") = 100.0), return_value_policy<manage_new_object>())
-		//.def("upsample", &Sound_upsample, return_value_policy<manage_new_object>())
+		.def("to_mfcc", returnsAutoThing(&Sound_to_MFCC), return_value_policy<manage_new_object>(), (arg("self"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0))
+		.def("upsample", returnsAutoThing(&Sound_upsample), return_value_policy<manage_new_object>(), arg("self"))
 	;
 
 	class_<structMFCC, boost::noncopyable>("MFCC", no_init)
