@@ -1,29 +1,31 @@
+include(${CMAKE_SOURCE_DIR}/cmake/add_sources.cmake)
+
 find_package(GTK2 REQUIRED gtk)
 
-add_definitions(${GTK2_DEFINITIONS})
+set(PRAAT_SUBDIRECTORIES external/gsl
+                         external/glpk
+                         external/mp3
+                         external/flac
+                         external/portaudio
+                         external/espeak
+                         kar
+                         num
+                         sys
+                         dwsys
+                         stat
+                         fon
+                         dwtools
+                         LPC
+                         EEG
+                         gram
+                         FFNet
+                         artsynth
+                         contrib/ola)
 
-set(PRAAT_INCLUDE_DIRS kar
-                       num
-                       sys
-                       dwsys
-                       stat
-                       fon
-                       dwtools
-                       LPC
-                       EEG
-                       gram
-                       FFNet
-                       artsynth
-                       contrib/ola
-                       external/gsl
-                       external/glpk
-                       external/mp3
-                       external/flac
-                       external/portaudio
-                       external/espeak
+set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES}
                        ${GTK2_INCLUDE_DIRS})
 
-set(PRAAT_DEFINITIONS ${GTK2_DEFINITIONS})
+set(PRAAT_DEFINITIONS "-DFLAC__NOASM ${GTK2_DEFINITIONS}")
 
 set(PRAAT_C_FLAGS "-std=gnu99 -pthread")
 set(PRAAT_CXX_FLAGS "-std=c++11 -pthread")
@@ -56,28 +58,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PRAAT_CXX_FLAGS}")
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 
-add_subdirectory(artsynth)
-add_subdirectory(contrib/ola)
-add_subdirectory(dwsys)
-add_subdirectory(dwtools)
-add_subdirectory(external/espeak)
-add_subdirectory(external/flac)
-add_subdirectory(external/glpk)
-add_subdirectory(external/gsl)
-add_subdirectory(external/mp3)
-add_subdirectory(external/portaudio)
-add_subdirectory(EEG)
-add_subdirectory(FFNet)
-add_subdirectory(fon)
-add_subdirectory(gram)
-add_subdirectory(kar)
-add_subdirectory(LPC)
-add_subdirectory(num)
-add_subdirectory(stat)
-add_subdirectory(sys)
+foreach(SUBDIR ${PRAAT_SUBDIRECTORIES})
+  add_subdirectory(${SUBDIR})
+endforeach()
 
-add_library(praat dummy.cpp)
-target_link_libraries(praat fon ola artsynth FFNet gram EEG LPC dwtools fon stat dwsys sys num kar espeak portaudio flac mp3 glpk gsl ${GTK2_LIBRARIES})
+add_library(praat ${SRC})
+target_link_libraries(praat ${GTK2_LIBRARIES})
 
 
 foreach(X ${PRAAT_INCLUDE_DIRS})
