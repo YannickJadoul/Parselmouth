@@ -27,49 +27,55 @@ namespace detail {
 	};
 
 
-	template <typename TargetClass, typename Function>
+	template <typename Function, typename TargetClass = void>
 	struct FunctionSignature
 	{
 		typedef typename RemoveClass<decltype(&Function::operator())>::type type;
 	};
 
-	template <typename TargetClass, typename ReturnType, typename... ArgumentTypes>
-	struct FunctionSignature<TargetClass, ReturnType (*)(ArgumentTypes...)>
+	template <typename ReturnType, typename... ArgumentTypes, typename TargetClass>
+	struct FunctionSignature<ReturnType (*)(ArgumentTypes...), TargetClass>
 	{
 		typedef ReturnType type(ArgumentTypes...);
 	};
 
-	template <typename TargetClass, typename ReturnType, typename Class, typename... ArgumentTypes>
-	struct FunctionSignature<TargetClass, ReturnType (Class::*)(ArgumentTypes...)>
+	template <typename ReturnType, typename Class, typename... ArgumentTypes, typename TargetClass>
+	struct FunctionSignature<ReturnType (Class::*)(ArgumentTypes...), TargetClass>
 	{
 		typedef ReturnType type(typename std::conditional<std::is_base_of<Class, TargetClass>::value, TargetClass, Class>::type*, ArgumentTypes...);
 	};
 
-	template <typename TargetClass, typename ReturnType, typename Class, typename... ArgumentTypes>
-	struct FunctionSignature<TargetClass, ReturnType (Class::*)(ArgumentTypes...) const>
+	template <typename ReturnType, typename Class, typename... ArgumentTypes, typename TargetClass>
+	struct FunctionSignature<ReturnType (Class::*)(ArgumentTypes...) const, TargetClass>
 	{
 		typedef ReturnType type(const typename std::conditional<std::is_base_of<Class, TargetClass>::value, TargetClass, Class>::type*, ArgumentTypes...);
 	};
 
 
-	template <typename TargetClass, typename Function, typename SignatureType = typename FunctionSignature<TargetClass, Function>::type>
-	class AutoThingFunction;
+	template <typename Function, typename Signature>
+	class AutoThingFunctionImpl;
 
-	template <typename TargetClass, typename Function, typename ThingType, typename... ArgumentTypes>
-	class AutoThingFunction<TargetClass, Function, _Thing_auto<ThingType> (ArgumentTypes...)>
+	template <typename Function, typename ThingType, typename... ArgumentTypes>
+	class AutoThingFunctionImpl<Function, _Thing_auto<ThingType> (ArgumentTypes...)>
 	{
 	public:
-		AutoThingFunction(Function &&wrapped) : m_wrapped(wrapped) {}
-		AutoThingFunction(const Function &wrapped) : m_wrapped(wrapped) {}
+		AutoThingFunctionImpl(Function &&wrapped) : m_wrapped(wrapped) {}
+		AutoThingFunctionImpl(const Function &wrapped) : m_wrapped(wrapped) {}
 
 		ThingType *operator()(ArgumentTypes... arguments) { return m_wrapped(std::forward<ArgumentTypes>(arguments)...).transfer(); }
 
 	private:
 		Function m_wrapped;
 	};
+
+	template <typename TargetClass, typename Function>
+	using AutoThingFunction = AutoThingFunctionImpl<Function, typename FunctionSignature<Function, TargetClass>::type>;
 }
 
-template <typename TargetClass = std::nullptr_t, typename Function>
-inline detail::AutoThingFunction<TargetClass, Function> returnsAutoThing(Function &&function) { return detail::AutoThingFunction<TargetClass, Function>(std::forward<Function>(function)); }
+template <typename TargetClass = void, typename Function>
+inline detail::AutoThingFunction<TargetClass, Function> returnsAutoThing(Function &&function)
+{
+	return detail::AutoThingFunction<TargetClass, Function>(std::forward<Function>(function));
+}
 
 #endif // INC_AUTO_THING_UTILS_H

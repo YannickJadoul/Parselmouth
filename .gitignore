@@ -1,6 +1,7 @@
 build/
 bin/
 lib/
+installed/
 *~
 /.cproject
 /.project

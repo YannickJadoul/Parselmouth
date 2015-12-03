@@ -1,4 +1,4 @@
-include(${CMAKE_SOURCE_DIR}/cmake/add_sources.cmake)
+include(${PROJECT_SOURCE_DIR}/res/cmake/add_sources.cmake)
 
 find_package(GTK2 REQUIRED gtk)
 

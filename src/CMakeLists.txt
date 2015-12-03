@@ -1,4 +1,4 @@
-find_package(PythonLibs)
+find_package(PythonLibs 2.7 REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS python)
 
 include_directories(${PRAAT_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
@@ -11,5 +11,5 @@ set(SRC parselmouth.cpp)
 
 python_add_module(parselmouth ${SRC})
 target_link_libraries(parselmouth praat ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
-install(TARGETS parselmouth DESTINATION lib)
+install(TARGETS parselmouth DESTINATION ${CMAKE_INSTALL_PREFIX})
 
