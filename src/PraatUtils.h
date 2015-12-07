@@ -1,5 +1,5 @@
-#ifndef INC_AUTO_THING_UTILS_H
-#define INC_AUTO_THING_UTILS_H
+#ifndef INC_PRAAT_UTILS_H
+#define INC_PRAAT_UTILS_H
 
 #include "sys/Thing.h"
 #undef I
@@ -78,4 +78,17 @@ inline detail::AutoThingFunction<TargetClass, Function> returnsAutoThing(Functio
 	return detail::AutoThingFunction<TargetClass, Function>(std::forward<Function>(function));
 }
 
-#endif // INC_AUTO_THING_UTILS_H
+
+
+class MelderInfoInterceptor
+{
+public:
+	MelderInfoInterceptor() : m_string(), m_divertInfo(&m_string) {}
+	std::string get() { return std::string(Melder_peek32to8(m_string.string)); }
+
+private:
+	autoMelderString m_string;
+	autoMelderDivertInfo m_divertInfo;
+};
+
+#endif // INC_PRAAT_UTILS_H

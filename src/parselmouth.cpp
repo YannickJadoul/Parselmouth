@@ -1,20 +1,14 @@
-#undef NDEBUG
 #include "fon/Sound.h"
 #include "dwtools/Sound_to_MFCC.h"
 #include "sys/melder.h"
 #undef I
 #undef trace
-#define NDEBUG
-
-#include <locale>
-#include <memory>
-#include <string>
 
 #include "buffer_protocol.h"
 #include "functor_signature.h"
 #include <boost/python.hpp>
 
-#include "AutoThingUtils.h"
+#include "PraatUtils.h"
 
 Sound readSound(const std::string &path)
 {
@@ -41,16 +35,16 @@ BOOST_PYTHON_MODULE(parselmouth)
 
 	class_<structSound, boost::noncopyable>("Sound", no_init)
 		.def("__init__", make_constructor(&readSound, default_call_policies(), arg("path")))
-		.def("read_file", &readSound, return_value_policy<manage_new_object>())
-		.staticmethod("read_file")
-		.def("info", &structSound::v_info)
-		.def("to_mfcc", returnsAutoThing(&Sound_to_MFCC), return_value_policy<manage_new_object>(), (arg("self"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0))
+		.def("__str__", [] (structSound &s) { MelderInfoInterceptor info; s.v_info(); return info.get(); })
+		.def("read_file", &readSound, return_value_policy<manage_new_object>()).staticmethod("read_file")
 		.def("upsample", returnsAutoThing(&Sound_upsample), return_value_policy<manage_new_object>(), arg("self"))
+		.def("to_mfcc", returnsAutoThing(&Sound_to_MFCC), return_value_policy<manage_new_object>(), (arg("self"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0))
 	;
 
 	class_<structMFCC, boost::noncopyable>("MFCC", no_init)
 		.def("__init__", make_constructor(returnsAutoThing(&Sound_to_MFCC), default_call_policies(), (arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0)))
 		.def("info", &structMFCC::v_info)
+		.def("get_coefficients")
 	;
 }
 
