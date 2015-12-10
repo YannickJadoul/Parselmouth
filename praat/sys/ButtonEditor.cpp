@@ -128,7 +128,7 @@ static void drawAction (ButtonEditor me, Praat_Command cmd, long i) {
 }
 
 void structButtonEditor :: v_draw () {
-	Graphics_clearWs (g);
+	Graphics_clearWs (our graphics.get());
 	switch (show) {
 		case 1:
 			for (long i = 1, n = praat_getNumberOfMenuCommands (); i <= n; i ++) {
@@ -283,12 +283,12 @@ void structButtonEditor :: v_createHelpMenuItems (EditorMenu menu) {
 	EditorMenu_addCommand (menu, U"ButtonEditor help", '?', menu_cb_ButtonEditorHelp);
 }
 
-ButtonEditor ButtonEditor_create () {
+autoButtonEditor ButtonEditor_create () {
 	try {
 		autoButtonEditor me = Thing_new (ButtonEditor);
 		HyperPage_init (me.peek(), U"Buttons", nullptr);
 		which (me.peek(), 1);
-		return me.transfer();
+		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Buttons window not created.");
 	}

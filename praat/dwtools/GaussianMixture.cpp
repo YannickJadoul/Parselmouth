@@ -212,7 +212,7 @@ autoGaussianMixture GaussianMixture_create (long numberOfComponents, long dimens
 		my covariances = Ordered_create ();
 		for (long im = 1; im <= numberOfComponents; im++) {
 			autoCovariance cov = Covariance_create_reduceStorage (dimension, storage);
-			Ordered_addItemPos (my covariances.peek(), cov.transfer(), im);
+			Ordered_addItemAtPosition_move (my covariances.peek(), cov.move(), im);
 		}
 		for (long im = 1; im <= numberOfComponents; im++) {
 			my mixingProbabilities[im] = 1.0 / numberOfComponents;
@@ -805,8 +805,8 @@ void GaussianMixture_splitComponent (GaussianMixture me, long component) {
 		Covariance thee = (Covariance) my covariances -> item[component];
 		// Always new PCA because we cannot be sure of data unchanged.
 		SSCP_expandPCA (thee);
-		autoCovariance cov1 = Data_copy ( (Covariance) thee);
-		autoCovariance cov2 = Data_copy ( (Covariance) thee);
+		autoCovariance cov1 = Data_copy (thee);
+		autoCovariance cov2 = Data_copy (thee);
 		SSCP_unExpandPCA (cov1.peek()); SSCP_unExpandPCA (cov2.peek());
 
 		// Eventually cov1 replaces component, cov2 at end
@@ -847,7 +847,7 @@ void GaussianMixture_splitComponent (GaussianMixture me, long component) {
 		} catch (MelderError) {
 			Melder_throw (me, U" cannot add new component.");
 		}
-		my covariances -> item[component] = cov1.transfer();
+		my covariances -> item[component] = cov1.releaseToAmbiguousOwner();
 		my numberOfComponents++;
 		NUMvector_free<double> (my mixingProbabilities, 1);
 		my mixingProbabilities = mixingProbabilities.transfer();

@@ -76,7 +76,7 @@ oo_END_CLASS (TextTier)
 #define ooSTRUCT IntervalTier
 oo_DEFINE_CLASS (IntervalTier, Function)
 
-	oo_COLLECTION (SortedSetOfDouble, intervals, TextInterval, 0)
+	oo_AUTO_COLLECTION (SortedSetOfDouble, intervals, TextInterval, 0)
 
 	#if oo_DECLARING
 		long numberOfIntervals () // accessor
@@ -99,7 +99,7 @@ oo_END_CLASS (IntervalTier)
 #define ooSTRUCT TextGrid
 oo_DEFINE_CLASS (TextGrid, Function)
 
-	oo_OBJECT (Ordered, 0, tiers)   // TextTier and IntervalTier objects
+	oo_AUTO_OBJECT (Ordered, 0, tiers)   // TextTier and IntervalTier objects
 
 	#if oo_DECLARING
 		long numberOfTiers () // accessor

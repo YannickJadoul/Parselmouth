@@ -23,7 +23,7 @@
 
 Thing_define (DemoEditor, Editor) {
 	GuiDrawingArea drawingArea;
-	Graphics graphics;
+	autoGraphics graphics;
 	void *praatPicture;
 	bool clicked, keyPressed, shiftKeyPressed, commandKeyPressed, optionKeyPressed, extraControlKeyPressed;
 	long x, y;
@@ -49,7 +49,7 @@ Thing_define (DemoEditor, Editor) {
 };
 
 void DemoEditor_init (DemoEditor me);
-DemoEditor DemoEditor_create ();
+autoDemoEditor DemoEditor_create ();
 
 void Demo_open ();
 void Demo_close ();

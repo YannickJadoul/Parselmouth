@@ -71,7 +71,7 @@ Thing_implement (ExperimentMFC, Daata, 6);
 #include "Experiment_enums.h"
 
 static void readSound (ExperimentMFC me, const char32 *fileNameHead, const char32 *fileNameTail,
-	double medialSilenceDuration, char32 **name, Sound *sound)
+	double medialSilenceDuration, char32 **name, autoSound *sound)
 {
 	char32 fileNameBuffer [256], *fileNames = & fileNameBuffer [0];
 	Melder_sprint (fileNameBuffer,256, *name);
@@ -84,7 +84,7 @@ static void readSound (ExperimentMFC me, const char32 *fileNameHead, const char3
 	#if defined (_WIN32)
 		for (;;) { char32 *slash = str32chr (fileNames, U'/'); if (! slash) break; *slash = U'\\'; }
 	#endif
-	forget (*sound);
+	sound->reset();
 	char32 pathName [kMelder_MAXPATH+1];
 	/*
 	 * 'fileNames' can contain commas, which separate partial file names.
@@ -146,13 +146,10 @@ static void readSound (ExperimentMFC me, const char32 *fileNameHead, const char3
 		/*
 		 * Append the substimuli, perhaps with silent intervals.
 		 */
-		if (! *sound) {
-			*sound = substimulus.transfer();
+		if (*sound) {
+			*sound = Sounds_append (sound->get(), medialSilenceDuration, substimulus.peek());
 		} else {
-			autoSound newStimulus = Sounds_append (*sound, medialSilenceDuration, substimulus.peek());
-			Melder_assert (sound == & (*sound));
-			forget (*sound);
-			*sound = newStimulus.transfer();
+			*sound = substimulus.move();
 		}
 		/*
 		 * Cycle.
@@ -336,29 +333,31 @@ static void playSound (ExperimentMFC me, Sound sound, Sound carrierBefore, Sound
 }
 
 void ExperimentMFC_playStimulus (ExperimentMFC me, long istim) {
-	playSound (me, my stimulus [istim]. sound,
-		my stimulusCarrierBefore. sound, my stimulusCarrierAfter. sound, my stimulusInitialSilenceDuration, my stimulusFinalSilenceDuration);
+	playSound (me, my stimulus [istim]. sound.get(),
+		my stimulusCarrierBefore. sound.get(), my stimulusCarrierAfter. sound.get(),
+		my stimulusInitialSilenceDuration, my stimulusFinalSilenceDuration);
 }
 
 void ExperimentMFC_playResponse (ExperimentMFC me, long iresp) {
-	playSound (me, my response [iresp]. sound,
-		my responseCarrierBefore. sound, my responseCarrierAfter. sound, my responseInitialSilenceDuration, my responseFinalSilenceDuration);
+	playSound (me, my response [iresp]. sound.get(),
+		my responseCarrierBefore. sound.get(), my responseCarrierAfter. sound.get(),
+		my responseInitialSilenceDuration, my responseFinalSilenceDuration);
 }
 
 Thing_implement (ResultsMFC, Daata, 2);
 
-ResultsMFC ResultsMFC_create (long numberOfTrials) {
+autoResultsMFC ResultsMFC_create (long numberOfTrials) {
 	try {
 		autoResultsMFC me = Thing_new (ResultsMFC);
 		my numberOfTrials = numberOfTrials;
 		my result = NUMvector <structTrialMFC> (1, my numberOfTrials);
-		return me.transfer();
+		return me;
 	} catch (MelderError) {
 		Melder_throw (U"ResultsMFC not created.");
 	}
 }
 
-ResultsMFC ExperimentMFC_extractResults (ExperimentMFC me) {
+autoResultsMFC ExperimentMFC_extractResults (ExperimentMFC me) {
 	try {
 		if (my trial == 0 || my trial <= my numberOfTrials)
 			Melder_warning (U"The experiment was not finished. Only the first ", my trial - 1 + my pausing, U" responses are valid.");
@@ -372,13 +371,13 @@ ResultsMFC ExperimentMFC_extractResults (ExperimentMFC me) {
 			thy result [trial]. goodness = my goodnesses [trial];
 			thy result [trial]. reactionTime = my reactionTimes [trial];
 		}
-		return thee.transfer();
+		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": results not extracted.");
 	}
 }
 
-ResultsMFC ResultsMFC_removeUnsharedStimuli (ResultsMFC me, ResultsMFC thee) {
+autoResultsMFC ResultsMFC_removeUnsharedStimuli (ResultsMFC me, ResultsMFC thee) {
 	try {
 		autoResultsMFC him = ResultsMFC_create (thy numberOfTrials);
 		his numberOfTrials = 0;
@@ -398,13 +397,13 @@ ResultsMFC ResultsMFC_removeUnsharedStimuli (ResultsMFC me, ResultsMFC thee) {
 		}
 		if (his numberOfTrials == 0)
 			Melder_throw (U"No shared stimuli.");
-		return him.transfer();
+		return him;
 	} catch (MelderError) {
 		Melder_throw (me, U" & ", thee, U": unshared stimuli not removed.");
 	}
 }
 
-Table ResultsMFCs_to_Table (Collection me) {
+autoTable ResultsMFCs_to_Table (Collection me) {
 	try {
 		long irow = 0;
 		bool hasGoodnesses = false, hasReactionTimes = false;
@@ -442,33 +441,33 @@ Table ResultsMFCs_to_Table (Collection me) {
 				}
 			}
 		}
-		return thee.transfer();
+		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"ResultsMFC objects not collected to Table.");
 	}
 }
 
-Categories ResultsMFC_to_Categories_stimuli (ResultsMFC me) {
+autoCategories ResultsMFC_to_Categories_stimuli (ResultsMFC me) {
 	try {
 		autoCategories thee = Categories_create ();
 		for (long trial = 1; trial <= my numberOfTrials; trial ++) {
 			autoSimpleString category = SimpleString_create (my result [trial]. stimulus);
 			Collection_addItem_move (thee.peek(), category.move());
 		}
-		return thee.transfer();
+		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": stimuli not converted to Categories.");
 	}
 }
 
-Categories ResultsMFC_to_Categories_responses (ResultsMFC me) {
+autoCategories ResultsMFC_to_Categories_responses (ResultsMFC me) {
 	try {
 		autoCategories thee = Categories_create ();
 		for (long trial = 1; trial <= my numberOfTrials; trial ++) {
 			autoSimpleString category = SimpleString_create (my result [trial]. response);
 			Collection_addItem_move (thee.peek(), category.move());
 		}
-		return thee.transfer();
+		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": responses not converted to Categories.");
 	}

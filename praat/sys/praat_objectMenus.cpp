@@ -44,7 +44,7 @@ FORM (Rename, U"Rename object", U"Rename...") {
 	LABEL (U"rename object", U"New name:")
 	TEXTFIELD (U"newName", U"")
 	OK2
-{ int IOBJECT; WHERE (SELECTED) SET_STRING (U"newName", NAME) }
+int IOBJECT; WHERE (SELECTED) SET_STRING (U"newName", NAME)
 DO
 	char32 *string = GET_STRING (U"newName");
 	if (theCurrentPraatObjects -> totalSelection == 0)
@@ -108,7 +108,9 @@ DIRECT2 (Inspect) {
 		Melder_throw (U"Cannot inspect data from batch.");
 	} else {
 		WHERE (SELECTED) {
-			praat_installEditor (DataEditor_create (ID_AND_FULL_NAME, OBJECT), IOBJECT);
+			autoDataEditor editor = DataEditor_create (ID_AND_FULL_NAME, OBJECT);
+			praat_installEditor (editor.get(), IOBJECT);
+			editor.releaseToUser();
 		}
 	}
 END2 }
@@ -135,7 +137,7 @@ GuiMenu praat_objects_resolveMenu (const char32 *menu) {
 		#else
 			str32equ (menu, U"ApplicationHelp") ? helpMenu :
 		#endif
-		newMenu;   /* Default. */
+		newMenu;   // default
 }
 
 /********** Callbacks of the Praat menu. **********/
@@ -146,27 +148,29 @@ END2 }
 
 DIRECT2 (praat_newScript) {
 	autoScriptEditor editor = ScriptEditor_createFromText (nullptr, nullptr);
-	editor.transfer();   // the user becomes the owner
+	editor.releaseToUser();
 END2 }
 
 DIRECT2 (praat_openScript) {
 	autoScriptEditor editor = ScriptEditor_createFromText (nullptr, nullptr);
 	TextEditor_showOpen (editor.peek());
-	editor.transfer();   // the user becomes the owner
+	editor.releaseToUser();
 END2 }
 
-static ButtonEditor theButtonEditor;
+static ButtonEditor theReferenceToTheOnlyButtonEditor;
 
-static void cb_ButtonEditor_destruction (Editor /* editor */, void * /* closure */) {
-	theButtonEditor = nullptr;
+static void cb_ButtonEditor_destruction (Editor /* editor */) {
+	theReferenceToTheOnlyButtonEditor = nullptr;
 }
 
 DIRECT2 (praat_editButtons) {
-	if (theButtonEditor) {
-		Editor_raise (theButtonEditor);
+	if (theReferenceToTheOnlyButtonEditor) {
+		Editor_raise (theReferenceToTheOnlyButtonEditor);
 	} else {
-		theButtonEditor = ButtonEditor_create ();
-		Editor_setDestructionCallback (theButtonEditor, cb_ButtonEditor_destruction, nullptr);
+		autoButtonEditor editor = ButtonEditor_create ();
+		Editor_setDestructionCallback (editor.get(), cb_ButtonEditor_destruction);
+		theReferenceToTheOnlyButtonEditor = editor.get();
+		editor.releaseToUser();
 	}
 END2 }
 
@@ -261,7 +265,7 @@ DO
 	Melder_setOutputEncoding (GET_ENUM (kMelder_textOutputEncoding, U"Output encoding"));
 END2 }
 
-FORM (GraphicsCjkFontStyleSettings, U"CJK font style preferences", 0) {
+FORM (GraphicsCjkFontStyleSettings, U"CJK font style preferences", nullptr) {
 	OPTIONMENU_ENUM (U"CJK font style", kGraphics_cjkFontStyle, DEFAULT)
 	OK2
 SET_ENUM (U"CJK font style", kGraphics_cjkFontStyle, theGraphicsCjkFontStyle)
@@ -281,14 +285,8 @@ FORM (praat_calculator, U"Calculator", U"Calculator") {
 DO
 	struct Formula_Result result;
 	if (! interpreter) {
-		interpreter = Interpreter_create (nullptr, nullptr);
-		try {
-			Interpreter_anyExpression (interpreter, GET_STRING (U"expression"), & result);
-			forget (interpreter);
-		} catch (MelderError) {
-			forget (interpreter);
-			throw;
-		}
+		autoInterpreter tempInterpreter = Interpreter_create (nullptr, nullptr);
+		Interpreter_anyExpression (tempInterpreter.get(), GET_STRING (U"expression"), & result);
 	} else {
 		Interpreter_anyExpression (interpreter, GET_STRING (U"expression"), & result);
 	}
@@ -356,7 +354,7 @@ END2 }
 
 /********** Callbacks of the Technical menu. **********/
 
-FORM (praat_debug, U"Set debugging options", 0) {
+FORM (praat_debug, U"Set debugging options", nullptr) {
 	LABEL (U"", U"If you switch Tracing on, Praat will write lots of detailed ")
 	LABEL (U"", U"information about what goes on in Praat")
 	structMelderDir dir;
@@ -413,17 +411,23 @@ static void readFromFile (MelderFile file) {
 	if (Thing_isa (object.peek(), classManPages) && ! Melder_batch) {
 		ManPages pages = (ManPages) object.peek();
 		ManPage firstPage = static_cast<ManPage> (pages -> pages -> item [1]);
-		Manual_create (firstPage -> title, object.transfer(), true);
+		autoManual manual = Manual_create (firstPage -> title, object.releaseToAmbiguousOwner(), true);
 		if (pages -> executable)
 			Melder_warning (U"These manual pages contain links to executable scripts.\n"
 				"Only navigate these pages if you trust their author!");
+		manual.releaseToUser();
 		return;
 	}
 	if (Thing_isa (object.peek(), classScript) && ! Melder_batch) {
-		ScriptEditor_createFromScript (nullptr, (Script) object.peek());
+		autoScriptEditor editor = ScriptEditor_createFromScript_canBeNull (nullptr, (Script) object.peek());
+		if (! editor) {
+			(void) 0;   // the script was already open, and the user has been notified of that
+		} else {
+			editor.releaseToUser();
+		}
 		return;
 	}
-	praat_newWithFile (object.transfer(), file, MelderFile_name (file));
+	praat_newWithFile (object.move(), file, MelderFile_name (file));
 	praat_updateSelection ();
 }
 
@@ -433,7 +437,7 @@ END2 }
 
 /********** Callbacks of the Save menu. **********/
 
-FORM_WRITE2 (Data_writeToTextFile, U"Save Object(s) as one text file", 0, 0) {
+FORM_WRITE2 (Data_writeToTextFile, U"Save Object(s) as one text file", nullptr, nullptr) {
 	if (theCurrentPraatObjects -> totalSelection == 1) {
 		LOOP {
 			iam (Daata);
@@ -445,7 +449,7 @@ FORM_WRITE2 (Data_writeToTextFile, U"Save Object(s) as one text file", 0, 0) {
 	}
 END2 }
 
-FORM_WRITE2 (Data_writeToShortTextFile, U"Save Object(s) as one short text file", 0, 0) {
+FORM_WRITE2 (Data_writeToShortTextFile, U"Save Object(s) as one short text file", nullptr, nullptr) {
 	if (theCurrentPraatObjects -> totalSelection == 1) {
 		LOOP {
 			iam (Daata);
@@ -457,7 +461,7 @@ FORM_WRITE2 (Data_writeToShortTextFile, U"Save Object(s) as one short text file"
 	}
 END2 }
 
-FORM_WRITE2 (Data_writeToBinaryFile, U"Save Object(s) as one binary file", 0, 0) {
+FORM_WRITE2 (Data_writeToBinaryFile, U"Save Object(s) as one binary file", nullptr, nullptr) {
 	if (theCurrentPraatObjects -> totalSelection == 1) {
 		LOOP {
 			iam (Daata);
@@ -492,7 +496,8 @@ DIRECT2 (ManPages_view) {
 		if (my executable)
 			Melder_warning (U"These manual pages contain links to executable scripts.\n"
 				"Only navigate these pages if you trust their author!");
-		praat_installEditor (manual.transfer(), IOBJECT);
+		praat_installEditor (manual.get(), IOBJECT);
+		manual.releaseToUser();
 	}
 END2 }
 
@@ -505,8 +510,9 @@ FORM (SearchManual, U"Search manual", U"Manual") {
 DO
 	if (theCurrentPraatApplication -> batch)
 		Melder_throw (U"Cannot view a manual from batch.");
-	Manual manPage = Manual_create (U"Intro", theCurrentPraatApplication -> manPages, false);
-	Manual_search (manPage, GET_STRING (U"query"));
+	autoManual manual = Manual_create (U"Intro", theCurrentPraatApplication -> manPages, false);
+	Manual_search (manual.get(), GET_STRING (U"query"));
+	manual.releaseToUser();
 END2 }
 
 FORM (GoToManualPage, U"Go to manual page", nullptr) {
@@ -517,8 +523,9 @@ FORM (GoToManualPage, U"Go to manual page", nullptr) {
 DO
 	if (theCurrentPraatApplication -> batch)
 		Melder_throw (U"Cannot view a manual from batch.");
-	Manual manPage = Manual_create (U"Intro", theCurrentPraatApplication -> manPages, false);
-	HyperPage_goToPage_i (manPage, GET_INTEGER (U"Page"));
+	autoManual manual = Manual_create (U"Intro", theCurrentPraatApplication -> manPages, false);
+	HyperPage_goToPage_i (manual.get(), GET_INTEGER (U"Page"));
+	manual.releaseToUser();
 END2 }
 
 FORM (WriteManualToHtmlDirectory, U"Save all pages as HTML files", nullptr) {
@@ -545,8 +552,8 @@ void praat_show () {
 	praat_sensitivizeFixedButtonCommand (U"Info", theCurrentPraatObjects -> totalSelection == 1);
 	praat_sensitivizeFixedButtonCommand (U"Inspect", theCurrentPraatObjects -> totalSelection != 0);
 	praat_actions_show ();
-	if (theCurrentPraatApplication == & theForegroundPraatApplication && theButtonEditor)
-		Editor_dataChanged (theButtonEditor);
+	if (theCurrentPraatApplication == & theForegroundPraatApplication && theReferenceToTheOnlyButtonEditor)
+		Editor_dataChanged (theReferenceToTheOnlyButtonEditor);
 }
 
 /********** Menu descriptions. **********/

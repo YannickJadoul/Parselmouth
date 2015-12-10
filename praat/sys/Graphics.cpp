@@ -144,9 +144,9 @@ void Graphics_init (Graphics me, int resolution) {
 	my atSignIsLink = 0;
 }
 
-Graphics Graphics_create (int resolution) {
-	Graphics me = (Graphics) Thing_new (Graphics);
-	Graphics_init (me, resolution);
+autoGraphics Graphics_create (int resolution) {
+	autoGraphics me = Thing_new (Graphics);
+	Graphics_init (me.get(), resolution);
 	return me;
 }
 

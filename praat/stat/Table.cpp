@@ -114,11 +114,11 @@ double structTable :: v_getColIndex (const char32 *columnLabel) {
 	return Table_findColumnIndexFromColumnLabel (this, columnLabel);
 }
 
-static TableRow TableRow_create (long numberOfColumns) {
+static autoTableRow TableRow_create (long numberOfColumns) {
 	autoTableRow me = Thing_new (TableRow);
 	my numberOfColumns = numberOfColumns;
 	my cells = NUMvector <structTableCell> (1, numberOfColumns);
-	return me.transfer();
+	return me;
 }
 
 void Table_initWithoutColumnNames (Table me, long numberOfRows, long numberOfColumns) {
@@ -164,7 +164,7 @@ autoTable Table_createWithColumnNames (long numberOfRows, const char32 *columnNa
 void Table_appendRow (Table me) {
 	try {
 		autoTableRow row = TableRow_create (my numberOfColumns);
-		Collection_addItem_move (my rows, row.move());
+		Collection_addItem_move (my rows.get(), row.move());
 	} catch (MelderError) {
 		Melder_throw (me, U": row not appended.");
 	}
@@ -190,7 +190,7 @@ void Table_removeRow (Table me, long rowNumber) {
 		if (my rows -> size == 1)
 			Melder_throw (me, U": cannot remove my only row.");
 		Table_checkSpecifiedRowNumberWithinRange (me, rowNumber);
-		Collection_removeItem (my rows, rowNumber);
+		Collection_removeItem (my rows.get(), rowNumber);
 		for (long icol = 1; icol <= my numberOfColumns; icol ++)
 			my columnHeaders [icol]. numericized = false;
 	} catch (MelderError) {
@@ -242,7 +242,7 @@ void Table_insertRow (Table me, long rowNumber) {
 		/*
 		 * Safe change.
 		 */
-		Ordered_addItemPos (my rows, row.transfer(), rowNumber);
+		Ordered_addItemAtPosition_move (my rows.get(), row.move(), rowNumber);
 		/*
 		 * Changes without error.
 		 */
@@ -309,9 +309,7 @@ void Table_insertColumn (Table me, long columnNumber, const char32 *label /* cat
 		/*
 		 * Transfer larger structure with rows to me.
 		 */
-		forget (my rows);   // make room...
-		my rows = thy rows;   // ...fill in and dangle...
-		thy rows = nullptr;   // ...undangle
+		my rows = thy rows.move();
 		/*
 		 * Update my state.
 		 */
@@ -338,7 +336,7 @@ void Table_setColumnLabel (Table me, long columnNumber, const char32 *label /* c
 	}
 }
 
-long Table_findColumnIndexFromColumnLabel (Table me, const char32 *label) {
+long Table_findColumnIndexFromColumnLabel (Table me, const char32 *label) noexcept {
 	for (long icol = 1; icol <= my numberOfColumns; icol ++)
 		if (my columnHeaders [icol]. label && str32equ (my columnHeaders [icol]. label, label))
 			return icol;
@@ -352,7 +350,7 @@ long Table_getColumnIndexFromColumnLabel (Table me, const char32 *columnLabel) {
 	return columnNumber;
 }
 
-long * Table_getColumnIndicesFromColumnLabelString (Table me, const char32 *string, long *numberOfTokens) {
+long * Table_getColumnIndicesFromColumnLabelString (Table me, const char32 *string, long *ptr_numberOfTokens) {
 	autoMelderTokens tokens (string);
 	if (tokens.count() < 1)
 		Melder_throw (me, U": you specified an empty list of columns.");
@@ -360,11 +358,11 @@ long * Table_getColumnIndicesFromColumnLabelString (Table me, const char32 *stri
 	for (long icol = 1; icol <= tokens.count(); icol ++) {
 		columns [icol] = Table_getColumnIndexFromColumnLabel (me, tokens [icol]);
 	}
-	*numberOfTokens = tokens.count();
+	*ptr_numberOfTokens = tokens.count();
 	return columns.transfer();
 }
 
-long Table_searchColumn (Table me, long columnNumber, const char32 *value) {
+long Table_searchColumn (Table me, long columnNumber, const char32 *value) noexcept {
 	for (long irow = 1; irow <= my rows -> size; irow ++) {
 		TableRow row = static_cast <TableRow> (my rows -> item [irow]);
 		if (row -> cells [columnNumber]. string && str32equ (row -> cells [columnNumber]. string, value))
@@ -680,7 +678,7 @@ autoTable Table_extractRowsWhereColumn_number (Table me, long columnNumber, int 
 			TableRow row = static_cast <TableRow> (my rows -> item [irow]);
 			if (Melder_numberMatchesCriterion (row -> cells [columnNumber]. number, which_Melder_NUMBER, criterion)) {
 				autoTableRow newRow = Data_copy (row);
-				Collection_addItem_move (thy rows, newRow.move());
+				Collection_addItem_move (thy rows.get(), newRow.move());
 			}
 		}
 		if (thy rows -> size == 0) {
@@ -704,7 +702,7 @@ autoTable Table_extractRowsWhereColumn_string (Table me, long columnNumber, int 
 			TableRow row = static_cast <TableRow> (my rows -> item [irow]);
 			if (Melder_stringMatchesCriterion (row -> cells [columnNumber]. string, which_Melder_STRING, criterion)) {
 				autoTableRow newRow = Data_copy (row);
-				Collection_addItem_move (thy rows, newRow.move());
+				Collection_addItem_move (thy rows.get(), newRow.move());
 			}
 		}
 		if (thy rows -> size == 0) {
@@ -1164,7 +1162,7 @@ void Table_sortRows_string (Table me, const char32 *columns_string) {
 	}
 }
 
-void Table_randomizeRows (Table me) {
+void Table_randomizeRows (Table me) noexcept {
 	for (long irow = 1; irow <= my rows -> size; irow ++) {
 		long jrow = NUMrandomInteger (irow, my rows -> size);
 		TableRow tmp = static_cast <TableRow> (my rows -> item [irow]);
@@ -1173,7 +1171,7 @@ void Table_randomizeRows (Table me) {
 	}
 }
 
-void Table_reflectRows (Table me) {
+void Table_reflectRows (Table me) noexcept {
 	for (long irow = 1; irow <= my rows -> size / 2; irow ++) {
 		long jrow = my rows -> size + 1 - irow;
 		TableRow tmp = static_cast <TableRow> (my rows -> item [irow]);

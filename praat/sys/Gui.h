@@ -527,7 +527,7 @@ void GuiDrawingArea_setResizeCallback (GuiDrawingArea me, GuiDrawingArea_ResizeC
 
 /********** GuiFileSelect **********/
 
-SortedSetOfString GuiFileSelect_getInfileNames (GuiWindow parent, const char32 *title, bool allowMultipleFiles);
+autoSortedSetOfString GuiFileSelect_getInfileNames (GuiWindow parent, const char32 *title, bool allowMultipleFiles);
 char32 * GuiFileSelect_getOutfileName (GuiWindow parent, const char32 *title, const char32 *defaultName);
 char32 * GuiFileSelect_getDirectoryName (GuiWindow parent, const char32 *title);
 
@@ -626,8 +626,8 @@ void GuiList_setScrollCallback (GuiList me, GuiList_ScrollCallback callback, Thi
 Thing_declare (GuiMenuItem);
 
 Thing_define (GuiMenu, GuiThing) {
-	GuiMenuItem d_menuItem;
-	GuiButton d_cascadeButton;
+	autoGuiMenuItem d_menuItem;
+	autoGuiButton d_cascadeButton;
 	#if gtk
 		GtkMenuItem *d_gtkMenuTitle;
 	#elif cocoa
@@ -729,7 +729,7 @@ void GuiMenuItem_check (GuiMenuItem me, bool check);
 
 Thing_define (GuiOptionMenu, GuiControl) {
 	int d_value;
-	Ordered d_options;   // of SimpleString
+	autoOrdered d_options;   // of SimpleString
 	#if gtk
 		//GtkComboBox *d_gtkCascadeButton;
 	#elif cocoa

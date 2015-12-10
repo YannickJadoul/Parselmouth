@@ -102,12 +102,12 @@ static void Ordered_moveItems (Ordered me, long position[], long npos, long newp
 	}
 }
 
-static void OrderedOfString_replaceItemPos (Collection me, SimpleString item, long pos) {
+static void OrderedOfString_replaceItemPos (Collection me, autoSimpleString item, long pos) {
 	if (pos < 1 || pos > my size) {
 		return;
 	}
-	forget (((SimpleString *) my item) [pos]);
-	my item[pos] = item;
+	forget (my item [pos]);
+	my item[pos] = item.releaseToAmbiguousOwner();
 }
 
 /* Remove the item at position 'from' and insert it at position 'to'. */
@@ -143,7 +143,7 @@ static void notifyNumberOfSelected (CategoriesEditor me) {
 	if (posCount > 0) {
 		MelderString_append (&tmp, posCount, U" selection", (posCount > 1 ? U"s." : U"."));
 	}
-	GuiLabel_setText (my outOfView, tmp.string);
+	if (tmp.string) GuiLabel_setText (my outOfView, tmp.string);
 }
 
 static void updateUndoAndRedoMenuItems (CategoriesEditor me)
@@ -351,7 +351,7 @@ static int CategoriesEditorInsert_execute (CategoriesEditorInsert me) {
 	Categories categories = static_cast<Categories> (editor -> data);
 
 	autoSimpleString str = Data_copy ((SimpleString) my categories -> item[1]);
-	Ordered_addItemPos (categories, str.transfer(), my selection[1]);
+	Ordered_addItemAtPosition_move (categories, str.move(), my selection[1]);
 	update (editor, my selection[1], 0, my selection, 1);
 	return 1;
 }
@@ -389,8 +389,8 @@ static int CategoriesEditorRemove_execute (CategoriesEditorRemove me) {
 	Categories categories = static_cast<Categories> (editor -> data);
 
 	for (long i = my nSelected; i >= 1; i--) {
-		Ordered_addItemPos (my categories.peek(), (SimpleString) categories -> item[my selection[i]], 1);
-		categories -> item[my selection[i]] = nullptr;
+		autoSimpleString item = Data_copy ((SimpleString) categories -> item[my selection[i]]);
+		Ordered_addItemAtPosition_move (my categories.peek(), item.move(), 1);
 		Collection_removeItem (categories, my selection[i]);
 	}
 	update (editor, my selection[1], 0, nullptr, 0);
@@ -402,8 +402,8 @@ static int CategoriesEditorRemove_undo (CategoriesEditorRemove me) {
 	Categories categories = (Categories) editor -> data;
 
 	for (long i = 1; i <= my nSelected; i++) {
-		autoSimpleString item = Data_copy ( (SimpleString) my categories -> item[i]);
-		Ordered_addItemPos (categories, item.transfer(), my selection[i]);
+		autoSimpleString item = Data_copy ((SimpleString) my categories -> item[i]);
+		Ordered_addItemAtPosition_move (categories, item.move(), my selection[i]);
 	}
 	update (editor, my selection[1], 0, my selection, my nSelected);
 	return 1;
@@ -436,8 +436,8 @@ static int CategoriesEditorReplace_execute (CategoriesEditorReplace me) {
 
 	for (long i = my nSelected; i >= 1; i--) {
 		autoSimpleString str = Data_copy ((SimpleString) my categories -> item[1]);
-		Ordered_addItemPos (my categories.peek(), (SimpleString) categories -> item[my selection[i]], 2);
-		categories -> item[my selection[i]] = str.transfer();
+		Ordered_addItemAtPosition_move (my categories.peek(), (SimpleString) categories -> item[my selection[i]], 2);   // YUCK
+		categories -> item[my selection[i]] = str.releaseToAmbiguousOwner();
 	}
 	update (editor, my selection[1], my selection[my nSelected], my selection, my nSelected);
 	return 1;
@@ -449,7 +449,7 @@ static int CategoriesEditorReplace_undo (CategoriesEditorReplace me) {
 
 	for (long i = 1; i <= my nSelected; i++) {
 		autoSimpleString str = Data_copy ( (SimpleString) my categories -> item[i + 1]);
-		OrderedOfString_replaceItemPos (categories, str.transfer(), my selection[i]);
+		OrderedOfString_replaceItemPos (categories, str.move(), my selection[i]);
 	}
 	update (editor, my selection[1], my selection[my nSelected], my selection, my nSelected);
 	return 1;
@@ -574,7 +574,7 @@ static void gui_button_cb_remove (CategoriesEditor me, GuiButtonEvent /* event *
 			return;
 		}
 		if (my history) {
-			CommandHistory_insertItem (my history.peek(), command.transfer());
+			CommandHistory_insertItem_move (my history.peek(), command.move());
 		}
 		updateWidgets (me);
 	}
@@ -587,7 +587,7 @@ static void insert (CategoriesEditor me, int position) {
 		autoCategoriesEditorInsert command = CategoriesEditorInsert_create (me, str.move(), position);
 		Command_do (command.peek());
 		if (my history) {
-			CommandHistory_insertItem (my history.peek(), command.transfer());
+			CommandHistory_insertItem_move (my history.peek(), command.move());
 		}
 		updateWidgets (me);
 	}
@@ -613,7 +613,7 @@ static void gui_button_cb_replace (CategoriesEditor me, GuiButtonEvent /* event 
 			autoCategoriesEditorReplace command = CategoriesEditorReplace_create (me, str.move(), posList.peek(), posCount);
 			Command_do (command.peek());
 			if (my history) {
-				CommandHistory_insertItem (my history.peek(), command.transfer());
+				CommandHistory_insertItem_move (my history.peek(), command.move());
 			}
 			updateWidgets (me);
 		}
@@ -628,7 +628,7 @@ static void gui_button_cb_moveUp (CategoriesEditor me, GuiButtonEvent /* event *
 		autoCategoriesEditorMoveUp command = CategoriesEditorMoveUp_create (me, posList.peek(), posCount, posList[1] - 1);
 		Command_do (command.peek());
 		if (my history) {
-			CommandHistory_insertItem (my history.peek(), command.transfer());
+			CommandHistory_insertItem_move (my history.peek(), command.move());
 		}
 		updateWidgets (me);
 	}
@@ -642,7 +642,7 @@ static void gui_button_cb_moveDown (CategoriesEditor me, GuiButtonEvent /* event
 		autoCategoriesEditorMoveDown command = CategoriesEditorMoveDown_create (me, posList.peek(), posCount, posList[posCount] + 1);
 		Command_do (command.peek());
 		if (my history) {
-			CommandHistory_insertItem (my history.peek(), command.transfer());
+			CommandHistory_insertItem_move (my history.peek(), command.move());
 		}
 		updateWidgets (me);
 	}

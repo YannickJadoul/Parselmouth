@@ -21,7 +21,7 @@
 #include "praat_script.h"
 #include "GuiP.h"
 
-static Ordered theCommands;
+static autoOrdered theCommands;
 
 void praat_menuCommands_init () {
 	theCommands = Ordered_create ();
@@ -207,7 +207,7 @@ GuiMenuItem praat_addMenuCommand (const char32 *window, const char32 *menu, cons
 			Melder_assert (command -> button);
 		} else if (! callback) {
 			trace (U"insert the command as a submenu");
-			command -> button = GuiMenu_createInMenu (parentMenu, title, 0) -> d_menuItem;
+			command -> button = GuiMenu_createInMenu (parentMenu, title, 0) -> d_menuItem.get();
 			Melder_assert (command -> button);
 		} else {
 			trace (U"insert the command as a normal menu item");
@@ -217,7 +217,7 @@ GuiMenuItem praat_addMenuCommand (const char32 *window, const char32 *menu, cons
 		if (hidden) GuiThing_hide (command -> button);
 	}
 	Thing_cast (GuiMenuItem, button_as_GuiMenuItem, command -> button);
-	Ordered_addItemPos (theCommands, command.transfer(), position);
+	Ordered_addItemAtPosition_move (theCommands.get(), command.move(), position);
 	return button_as_GuiMenuItem;
 }
 
@@ -301,13 +301,13 @@ void praat_addMenuCommandScript (const char32 *window, const char32 *menu, const
 				if (title [0] == U'\0' || title [0] == U'-') {
 					command -> button = GuiMenu_addSeparator (parentMenu);
 				} else if (script [0] == '\0') {
-					command -> button = GuiMenu_createInMenu (parentMenu, title, 0) -> d_menuItem;
+					command -> button = GuiMenu_createInMenu (parentMenu, title, 0) -> d_menuItem.get();
 				} else {
 					command -> button = GuiMenu_addItem (parentMenu, title, 0, gui_cb_menu, command.get());
 				}
 			}
 		}
-		Ordered_addItemPos (theCommands, command.transfer(), position);
+		Ordered_addItemAtPosition_move (theCommands.get(), command.move(), position);
 
 		if (praatP.phase >= praat_HANDLING_EVENTS) praat_sortMenuCommands ();
 	} catch (MelderError) {
@@ -380,7 +380,7 @@ void praat_addFixedButtonCommand (GuiForm parent, const char32 *title, UiCallbac
 		GuiThing_show (button);
 	}
 	my executable = false;
-	Ordered_addItemPos (theCommands, me.transfer(), 0);
+	Ordered_addItemAtPosition_move (theCommands.get(), me.move(), 0);
 }
 
 void praat_sensitivizeFixedButtonCommand (const char32 *title, int sensitive) {

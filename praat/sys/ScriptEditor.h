@@ -26,7 +26,7 @@
 Thing_define (ScriptEditor, TextEditor) {
 	char32 *environmentName;
 	ClassInfo editorClass;
-	Interpreter interpreter;
+	autoInterpreter interpreter;
 	autoUiForm argsDialog;
 
 	void v_destroy ()
@@ -47,12 +47,12 @@ void ScriptEditor_init (ScriptEditor me,
 	Editor editor,
 	const char32 *initialText
 );
-ScriptEditor ScriptEditor_createFromText (
+autoScriptEditor ScriptEditor_createFromText (
 	Editor editor,   // the scripting environment; if null, the scripting environment consists of the global windows
 	const char32 *initialText   // may be null
 );
 
-ScriptEditor ScriptEditor_createFromScript (
+autoScriptEditor ScriptEditor_createFromScript_canBeNull (
 	Editor editor,
 	Script script
 );

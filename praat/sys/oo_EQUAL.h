@@ -95,14 +95,8 @@
 				if (! our x [i] [j]. equal (& thy x [i] [j])) return false; \
 	}
 
-#define oo_OBJECT(Class,version,x)  \
-	if (! our x != ! thy x || (our x && ! Data_equal (our x, thy x))) return false;
-
 #define oo_AUTO_OBJECT(Class,version,x)  \
 	if (! our x != ! thy x || (our x && ! Data_equal (our x.get(), thy x.get()))) return false;
-
-#define oo_COLLECTION(Class,x,ItemClass,version)  \
-	if (! our x != ! thy x || (our x && ! Data_equal (our x, thy x))) return false;
 
 #define oo_AUTO_COLLECTION(Class,x,ItemClass,version)  \
 	if (! our x != ! thy x || (our x && ! Data_equal (our x.get(), thy x.get()))) return false;

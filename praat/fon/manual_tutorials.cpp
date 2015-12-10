@@ -23,9 +23,19 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"What's new?", U"ppgb", 20151108)
+MAN_BEGIN (U"What's new?", U"ppgb", 20151205)
 INTRO (U"Latest changes in Praat.")
 /*LIST_ITEM (U"• Manual page about @@drawing a vowel triangle@.")*/
+NORMAL (U"##6.0.08# (5 December 2015)")
+LIST_ITEM (U"• Windows command line: the $$--a$ option can be used when redirecting the output to pipes and files.")
+LIST_ITEM (U"• Linux command line: the $$--run$ option not neededin the Terminal when directing output "
+	"(unless you redirect standard output, standard input %and standard error).")
+NORMAL (U"##6.0.07# (30 November 2015)")
+LIST_ITEM (U"• Mac 64-bit: repaired dragging selections (which got broken in the El Capitan fix in 6.0.06).")
+NORMAL (U"##6.0.06# (29 November 2015)")
+LIST_ITEM (U"• Mac 64-bit: correct early Info window updates and $$demoShow()$ in El Capitan.")
+LIST_ITEM (U"• Manual updates.")
+LIST_ITEM (U"• Corrected some small memory leaks.")
 NORMAL (U"##6.0.05# (8 November 2015)")
 LIST_ITEM (U"• A manual page that describes @@TextGrid file formats@.")
 LIST_ITEM (U"• Corrected a bug that prevented some KlattGrid tiers from being edited.")

@@ -171,8 +171,7 @@ static int makeQueriable (TimeSoundAnalysisEditor me, int allowCursor, double *t
 	return TimeSoundAnalysisEditor_PART_SELECTION;
 }
 
-static void menu_cb_logSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_logSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Log settings", U"Log files")
 		OPTIONMENU (U"Write log 1 to", 3)
 			OPTION (U"Log file only")
@@ -217,16 +216,14 @@ static void menu_cb_logSettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_deleteLogFile1 (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	structMelderFile file = { 0 };
+static void menu_cb_deleteLogFile1 (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	structMelderFile file { 0 };
 	Melder_pathToFile (my p_log1_fileName, & file);
 	MelderFile_delete (& file);
 }
 
-static void menu_cb_deleteLogFile2 (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	structMelderFile file = { 0 };
+static void menu_cb_deleteLogFile2 (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	structMelderFile file { 0 };
 	Melder_pathToFile (my p_log2_fileName, & file);
 	MelderFile_delete (& file);
 }
@@ -357,21 +354,18 @@ static void do_log (TimeSoundAnalysisEditor me, int which) {
 	}
 }
 
-static void menu_cb_log1 (EDITOR_ARGS) { EDITOR_IAM (TimeSoundAnalysisEditor); do_log (me, 1); }
-static void menu_cb_log2 (EDITOR_ARGS) { EDITOR_IAM (TimeSoundAnalysisEditor); do_log (me, 2); }
+static void menu_cb_log1 (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) { do_log (me, 1); }
+static void menu_cb_log2 (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) { do_log (me, 2); }
 
-static void menu_cb_logScript3 (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_logScript3 (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	DO_RunTheScriptFromAnyAddedEditorCommand (me, my p_logScript3);
 }
-static void menu_cb_logScript4 (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_logScript4 (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	DO_RunTheScriptFromAnyAddedEditorCommand (me, my p_logScript4);
 }
 
-static void menu_cb_showAnalyses (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	EDITOR_FORM (U"Show analyses", 0)
+static void menu_cb_showAnalyses (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Show analyses", nullptr)
 		BOOLEAN  (U"Show spectrogram",     my default_spectrogram_show ())
 		BOOLEAN  (U"Show pitch",           my default_pitch_show       ())
 		BOOLEAN  (U"Show intensity",       my default_intensity_show   ())
@@ -396,8 +390,7 @@ static void menu_cb_showAnalyses (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_timeStepSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_timeStepSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Time step settings", U"Time step settings...")
 		OPTIONMENU_ENUM (U"Time step strategy", kTimeSoundAnalysisEditor_timeStepStrategy, my default_timeStepStrategy ())
 		LABEL (U"", U"")
@@ -424,15 +417,13 @@ static void menu_cb_timeStepSettings (EDITOR_ARGS) {
 
 /***** SPECTROGRAM MENU *****/
 
-static void menu_cb_showSpectrogram (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_showSpectrogram (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	my pref_spectrogram_show () = my p_spectrogram_show = ! my p_spectrogram_show;
 	GuiMenuItem_check (my spectrogramToggle, my p_spectrogram_show);   // in case we're called from a script
 	FunctionEditor_redraw (me);
 }
 
-static void menu_cb_spectrogramSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_spectrogramSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Spectrogram settings", U"Intro 3.2. Configuring the spectrogram")
 		REAL     (U"left View range (Hz)",  my default_spectrogram_viewFrom     ())
 		POSITIVE (U"right View range (Hz)", my default_spectrogram_viewTo       ())
@@ -473,8 +464,7 @@ static void menu_cb_spectrogramSettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_advancedSpectrogramSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_advancedSpectrogramSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Advanced spectrogram settings", U"Advanced spectrogram settings...")
 		LABEL (U"", U"Time and frequency resolutions:")
 		NATURAL (U"Number of time steps",      my default_spectrogram_timeSteps          ())
@@ -510,13 +500,11 @@ static void menu_cb_advancedSpectrogramSettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_getFrequency (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_getFrequency (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	Melder_informationReal (my d_spectrogram_cursor, U"Hz");
 }
 
-static void menu_cb_getSpectralPowerAtCursorCross (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_getSpectralPowerAtCursorCross (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax;
 	int part = makeQueriable (me, true, & tmin, & tmax);
 	if (! my p_spectrogram_show)
@@ -532,8 +520,7 @@ static void menu_cb_getSpectralPowerAtCursorCross (EDITOR_ARGS) {
 	MelderInfo_close ();
 }
 
-static void menu_cb_moveFrequencyCursorTo (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_moveFrequencyCursorTo (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	if (! my p_spectrogram_show)
 		Melder_throw (U"No spectrogram is visible.\nFirst choose \"Show spectrogram\" from the Spectrum menu.");
 	EDITOR_FORM (U"Move frequency cursor to", 0)
@@ -561,8 +548,7 @@ static autoSound extractSound (TimeSoundAnalysisEditor me, double tmin, double t
 	return sound;
 }
 
-static void menu_cb_extractVisibleSpectrogram (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_extractVisibleSpectrogram (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	if (! my p_spectrogram_show)
 		Melder_throw (U"No spectrogram is visible.\nFirst choose \"Show spectrogram\" from the Spectrum menu.");
 	if (! my d_spectrogram) {
@@ -570,11 +556,10 @@ static void menu_cb_extractVisibleSpectrogram (EDITOR_ARGS) {
 		if (! my d_spectrogram) Melder_throw (theMessage_Cannot_compute_spectrogram);
 	}
 	autoSpectrogram publish = Data_copy (my d_spectrogram.get());
-	Editor_broadcastPublication (me, publish.transfer());
+	Editor_broadcastPublication (me, publish.move());
 }
 
-static void menu_cb_viewSpectralSlice (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_viewSpectralSlice (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double start = my d_startSelection == my d_endSelection ?
 		my p_spectrogram_windowShape == kSound_to_Spectrogram_windowShape_GAUSSIAN ? my d_startSelection - my p_spectrogram_windowLength :
 		my d_startSelection - my p_spectrogram_windowLength / 2 : my d_startSelection;
@@ -592,16 +577,15 @@ static void menu_cb_viewSpectralSlice (EDITOR_ARGS) {
 	autoSpectrum publish = Sound_to_Spectrum (sound.peek(), true);
 	Thing_setName (publish.peek(), Melder_cat (( my data == nullptr ? U"untitled" : ((Daata) my data) -> name ),
 		U"_", Melder_fixed (0.5 * (my d_startSelection + my d_endSelection), 3)));
-	Editor_broadcastPublication (me, publish.transfer());
+	Editor_broadcastPublication (me, publish.move());
 }
 
-static void menu_cb_paintVisibleSpectrogram (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	EDITOR_FORM (U"Paint visible spectrogram", 0)
+static void menu_cb_paintVisibleSpectrogram (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Paint visible spectrogram", nullptr)
 		my v_form_pictureWindow (cmd);
 		my v_form_pictureMargins (cmd);
 		my v_form_pictureSelection (cmd);
-		BOOLEAN (U"Garnish", 1);
+		BOOLEAN (U"Garnish", true);
 	EDITOR_OK
 		my v_ok_pictureWindow (cmd);
 		my v_ok_pictureMargins (cmd);
@@ -629,15 +613,13 @@ static void menu_cb_paintVisibleSpectrogram (EDITOR_ARGS) {
 
 /***** PITCH MENU *****/
 
-static void menu_cb_showPitch (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_showPitch (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	my pref_pitch_show () = my p_pitch_show = ! my p_pitch_show;
 	GuiMenuItem_check (my pitchToggle, my p_pitch_show);   // in case we're called from a script
 	FunctionEditor_redraw (me);
 }
 
-static void menu_cb_pitchSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_pitchSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Pitch settings", U"Intro 4.2. Configuring the pitch contour")
 		POSITIVE (U"left Pitch range (Hz)", my default_pitch_floor ())
 		POSITIVE (U"right Pitch range (Hz)", my default_pitch_ceiling ())
@@ -686,8 +668,7 @@ static void menu_cb_pitchSettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_advancedPitchSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_advancedPitchSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Advanced pitch settings", U"Advanced pitch settings...")
 		LABEL   (U"", U"Make view range different from analysis range:")
 		REAL    (U"left View range (units)",   my default_pitch_viewFrom                  ())
@@ -729,8 +710,7 @@ static void menu_cb_advancedPitchSettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_pitchListing (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_pitchListing (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax;
 	int part = makeQueriable (me, true, & tmin, & tmax);
 	if (! my p_pitch_show)
@@ -758,8 +738,7 @@ static void menu_cb_pitchListing (EDITOR_ARGS) {
 	MelderInfo_close ();
 }
 
-static void menu_cb_getPitch (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_getPitch (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax;
 	int part = makeQueriable (me, true, & tmin, & tmax);
 	if (! my p_pitch_show)
@@ -781,8 +760,7 @@ static void menu_cb_getPitch (EDITOR_ARGS) {
 	}
 }
 
-static void menu_cb_getMinimumPitch (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_getMinimumPitch (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax, f0;
 	int part = makeQueriable (me, false, & tmin, & tmax);
 	if (! my p_pitch_show)
@@ -797,8 +775,7 @@ static void menu_cb_getMinimumPitch (EDITOR_ARGS) {
 		U" (minimum pitch ", TimeSoundAnalysisEditor_partString_locative (part), U")");
 }
 
-static void menu_cb_getMaximumPitch (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_getMaximumPitch (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax, f0;
 	int part = makeQueriable (me, false, & tmin, & tmax);
 	if (! my p_pitch_show)
@@ -813,8 +790,7 @@ static void menu_cb_getMaximumPitch (EDITOR_ARGS) {
 		U" (maximum pitch ", TimeSoundAnalysisEditor_partString_locative (part), U")");
 }
 
-static void menu_cb_moveCursorToMinimumPitch (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_moveCursorToMinimumPitch (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	if (! my p_pitch_show)
 		Melder_throw (U"No pitch contour is visible.\nFirst choose \"Show pitch\" from the View menu.");
 	if (! my d_pitch) {
@@ -834,8 +810,7 @@ static void menu_cb_moveCursorToMinimumPitch (EDITOR_ARGS) {
 	}
 }
 
-static void menu_cb_moveCursorToMaximumPitch (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_moveCursorToMaximumPitch (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	if (! my p_pitch_show)
 		Melder_throw (U"No pitch contour is visible.\nFirst choose \"Show pitch\" from the View menu.");
 	if (! my d_pitch) {
@@ -855,8 +830,7 @@ static void menu_cb_moveCursorToMaximumPitch (EDITOR_ARGS) {
 	}
 }
 
-static void menu_cb_extractVisiblePitchContour (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_extractVisiblePitchContour (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	if (! my p_pitch_show)
 		Melder_throw (U"No pitch contour is visible.\nFirst choose \"Show pitch\" from the Pitch menu.");
 	if (! my d_pitch) {
@@ -864,18 +838,17 @@ static void menu_cb_extractVisiblePitchContour (EDITOR_ARGS) {
 		if (! my d_pitch) Melder_throw (theMessage_Cannot_compute_pitch);
 	}
 	autoPitch publish = Data_copy (my d_pitch.get());
-	Editor_broadcastPublication (me, publish.transfer());
+	Editor_broadcastPublication (me, publish.move());
 }
 
-static void menu_cb_drawVisiblePitchContour (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	EDITOR_FORM (U"Draw visible pitch contour", 0)
+static void menu_cb_drawVisiblePitchContour (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Draw visible pitch contour", nullptr)
 		my v_form_pictureWindow (cmd);
 		LABEL (U"", U"Pitch:")
-		BOOLEAN (U"Speckle", 0);
+		BOOLEAN (U"Speckle", false);
 		my v_form_pictureMargins (cmd);
 		my v_form_pictureSelection (cmd);
-		BOOLEAN (U"Garnish", 1);
+		BOOLEAN (U"Garnish", true);
 	EDITOR_OK
 		my v_ok_pictureWindow (cmd);
 		SET_INTEGER (U"Speckle", my p_pitch_picture_speckle);
@@ -910,15 +883,13 @@ static void menu_cb_drawVisiblePitchContour (EDITOR_ARGS) {
 
 /***** INTENSITY MENU *****/
 
-static void menu_cb_showIntensity (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_showIntensity (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	my pref_intensity_show () = my p_intensity_show = ! my p_intensity_show;
 	GuiMenuItem_check (my intensityToggle, my p_intensity_show);   // in case we're called from a script
 	FunctionEditor_redraw (me);
 }
 
-static void menu_cb_intensitySettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_intensitySettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Intensity settings", U"Intro 6.2. Configuring the intensity contour")
 		REAL (U"left View range (dB)",  my default_intensity_viewFrom ())
 		REAL (U"right View range (dB)", my default_intensity_viewTo   ())
@@ -946,8 +917,7 @@ static void menu_cb_intensitySettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_extractVisibleIntensityContour (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_extractVisibleIntensityContour (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	if (! my p_intensity_show)
 		Melder_throw (U"No intensity contour is visible.\nFirst choose \"Show intensity\" from the Intensity menu.");
 	if (! my d_intensity) {
@@ -955,12 +925,11 @@ static void menu_cb_extractVisibleIntensityContour (EDITOR_ARGS) {
 		if (! my d_intensity) Melder_throw (theMessage_Cannot_compute_intensity);
 	}
 	autoIntensity publish = Data_copy (my d_intensity.get());
-	Editor_broadcastPublication (me, publish.transfer());
+	Editor_broadcastPublication (me, publish.move());
 }
 
-static void menu_cb_drawVisibleIntensityContour (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	EDITOR_FORM (U"Draw visible intensity contour", 0)
+static void menu_cb_drawVisibleIntensityContour (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Draw visible intensity contour", nullptr)
 		my v_form_pictureWindow (cmd);
 		my v_form_pictureMargins (cmd);
 		my v_form_pictureSelection (cmd);
@@ -989,8 +958,7 @@ static void menu_cb_drawVisibleIntensityContour (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_intensityListing (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_intensityListing (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax;
 	int part = makeQueriable (me, true, & tmin, & tmax);
 	if (! my p_intensity_show)
@@ -1016,8 +984,7 @@ static void menu_cb_intensityListing (EDITOR_ARGS) {
 	MelderInfo_close ();
 }
 
-static void menu_cb_getIntensity (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_getIntensity (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax;
 	int part = makeQueriable (me, true, & tmin, & tmax);
 	if (! my p_intensity_show)
@@ -1035,8 +1002,7 @@ static void menu_cb_getIntensity (EDITOR_ARGS) {
 	}
 }
 
-static void menu_cb_getMinimumIntensity (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_getMinimumIntensity (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax;
 	int part = makeQueriable (me, false, & tmin, & tmax);
 	if (! my p_intensity_show)
@@ -1049,8 +1015,7 @@ static void menu_cb_getMinimumIntensity (EDITOR_ARGS) {
 	Melder_information (intensity, U" dB (minimum intensity ", TimeSoundAnalysisEditor_partString_locative (part), U")");
 }
 
-static void menu_cb_getMaximumIntensity (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_getMaximumIntensity (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax;
 	int part = makeQueriable (me, false, & tmin, & tmax);
 	if (! my p_intensity_show)
@@ -1065,15 +1030,13 @@ static void menu_cb_getMaximumIntensity (EDITOR_ARGS) {
 
 /***** FORMANT MENU *****/
 
-static void menu_cb_showFormants (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_showFormants (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	my pref_formant_show () = my p_formant_show = ! my p_formant_show;
 	GuiMenuItem_check (my formantToggle, my p_formant_show);   // in case we're called from a script
 	FunctionEditor_redraw (me);
 }
 
-static void menu_cb_formantSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_formantSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Formant settings", U"Intro 5.2. Configuring the formant contours")
 		POSITIVE (U"Maximum formant (Hz)", my default_formant_maximumFormant   ())
 		POSITIVE (U"Number of formants",   my default_formant_numberOfFormants ())
@@ -1109,8 +1072,7 @@ static void menu_cb_formantSettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_advancedFormantSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_advancedFormantSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Advanced formant settings", U"Advanced formant settings...")
 		RADIO_ENUM (U"Method", kTimeSoundAnalysisEditor_formant_analysisMethod, my default_formant_method ())
 		POSITIVE (U"Pre-emphasis from (Hz)", my default_formant_preemphasisFrom ())
@@ -1125,8 +1087,7 @@ static void menu_cb_advancedFormantSettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_extractVisibleFormantContour (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_extractVisibleFormantContour (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	if (! my p_formant_show)
 		Melder_throw (U"No formant contour is visible.\nFirst choose \"Show formants\" from the Formant menu.");
 	if (! my d_formant) {
@@ -1134,16 +1095,15 @@ static void menu_cb_extractVisibleFormantContour (EDITOR_ARGS) {
 		if (! my d_formant) Melder_throw (theMessage_Cannot_compute_formant);
 	}
 	autoFormant publish = Data_copy (my d_formant.peek());
-	Editor_broadcastPublication (me, publish.transfer());
+	Editor_broadcastPublication (me, publish.move());
 }
 
-static void menu_cb_drawVisibleFormantContour (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	EDITOR_FORM (U"Draw visible formant contour", 0)
+static void menu_cb_drawVisibleFormantContour (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Draw visible formant contour", nullptr)
 		my v_form_pictureWindow (cmd);
 		my v_form_pictureMargins (cmd);
 		my v_form_pictureSelection (cmd);
-		BOOLEAN (U"Garnish", 1);
+		BOOLEAN (U"Garnish", true);
 	EDITOR_OK
 		my v_ok_pictureWindow (cmd);
 		my v_ok_pictureMargins (cmd);
@@ -1169,8 +1129,7 @@ static void menu_cb_drawVisibleFormantContour (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_formantListing (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_formantListing (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	double tmin, tmax;
 	int part = makeQueriable (me, true, & tmin, & tmax);
 	if (! my p_formant_show)
@@ -1236,26 +1195,25 @@ static void do_getBandwidth (TimeSoundAnalysisEditor me, int iformant) {
 			U" Hz (B", iformant, U" in centre of ", TimeSoundAnalysisEditor_partString (part), U")");
 	}
 }
-static void menu_cb_getFirstFormant (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor); do_getFormant (me, 1); }
-static void menu_cb_getFirstBandwidth (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor); do_getBandwidth (me, 1); }
-static void menu_cb_getSecondFormant (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor); do_getFormant (me, 2); }
-static void menu_cb_getSecondBandwidth (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor); do_getBandwidth (me, 2); }
-static void menu_cb_getThirdFormant (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor); do_getFormant (me, 3); }
-static void menu_cb_getThirdBandwidth (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor); do_getBandwidth (me, 3); }
-static void menu_cb_getFourthFormant (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor); do_getFormant (me, 4); }
-static void menu_cb_getFourthBandwidth (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor); do_getBandwidth (me, 4); }
+static void menu_cb_getFirstFormant (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	do_getFormant (me, 1); }
+static void menu_cb_getFirstBandwidth (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	do_getBandwidth (me, 1); }
+static void menu_cb_getSecondFormant (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	do_getFormant (me, 2); }
+static void menu_cb_getSecondBandwidth (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	do_getBandwidth (me, 2); }
+static void menu_cb_getThirdFormant (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	do_getFormant (me, 3); }
+static void menu_cb_getThirdBandwidth (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	do_getBandwidth (me, 3); }
+static void menu_cb_getFourthFormant (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	do_getFormant (me, 4); }
+static void menu_cb_getFourthBandwidth (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
+	do_getBandwidth (me, 4); }
 
-static void menu_cb_getFormant (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	EDITOR_FORM (U"Get formant", 0)
+static void menu_cb_getFormant (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Get formant", nullptr)
 		NATURAL (U"Formant number", U"5")
 	EDITOR_OK
 	EDITOR_DO
@@ -1263,9 +1221,8 @@ static void menu_cb_getFormant (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_getBandwidth (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	EDITOR_FORM (U"Get bandwidth", 0)
+static void menu_cb_getBandwidth (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Get bandwidth", nullptr)
 		NATURAL (U"Formant number", U"5")
 	EDITOR_OK
 	EDITOR_DO
@@ -1275,15 +1232,13 @@ static void menu_cb_getBandwidth (EDITOR_ARGS) {
 
 /***** PULSE MENU *****/
 
-static void menu_cb_showPulses (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_showPulses (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	my pref_pulses_show () = my p_pulses_show = ! my p_pulses_show;
 	GuiMenuItem_check (my pulsesToggle, my p_pulses_show);   // in case we're called from a script
 	FunctionEditor_redraw (me);
 }
 
-static void menu_cb_advancedPulsesSettings (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_advancedPulsesSettings (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Advanced pulses settings", U"Advanced pulses settings...")
 		POSITIVE (U"Maximum period factor",    my default_pulses_maximumPeriodFactor    ())
 		POSITIVE (U"Maximum amplitude factor", my default_pulses_maximumAmplitudeFactor ())
@@ -1298,8 +1253,7 @@ static void menu_cb_advancedPulsesSettings (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_extractVisiblePulses (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_extractVisiblePulses (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	if (! my p_pulses_show)
 		Melder_throw (U"No pulses are visible.\nFirst choose \"Show pulses\" from the Pulses menu.");
 	if (! my d_pulses) {
@@ -1307,16 +1261,15 @@ static void menu_cb_extractVisiblePulses (EDITOR_ARGS) {
 		if (! my d_pulses) Melder_throw (theMessage_Cannot_compute_pulses);
 	}
 	autoPointProcess publish = Data_copy (my d_pulses.get());
-	Editor_broadcastPublication (me, publish.transfer());
+	Editor_broadcastPublication (me, publish.move());
 }
 
-static void menu_cb_drawVisiblePulses (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
-	EDITOR_FORM (U"Draw visible pulses", 0)
+static void menu_cb_drawVisiblePulses (TimeSoundAnalysisEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Draw visible pulses", nullptr)
 		my v_form_pictureWindow (cmd);
 		my v_form_pictureMargins (cmd);
 		my v_form_pictureSelection (cmd);
-		BOOLEAN (U"Garnish", 1);
+		BOOLEAN (U"Garnish", true);
 	EDITOR_OK
 		my v_ok_pictureWindow (cmd);
 		my v_ok_pictureMargins (cmd);
@@ -1341,8 +1294,7 @@ static void menu_cb_drawVisiblePulses (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_voiceReport (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_voiceReport (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	time_t today = time (nullptr);
 	double tmin, tmax;
 	int part = makeQueriable (me, false, & tmin, & tmax);
@@ -1364,8 +1316,7 @@ static void menu_cb_voiceReport (EDITOR_ARGS) {
 	MelderInfo_close ();
 }
 
-static void menu_cb_pulseListing (EDITOR_ARGS) {
-	EDITOR_IAM (TimeSoundAnalysisEditor);
+static void menu_cb_pulseListing (TimeSoundAnalysisEditor me, EDITOR_ARGS_DIRECT) {
 	long i, i1, i2;
 	double tmin, tmax;
 	makeQueriable (me, false, & tmin, & tmax);
@@ -1741,24 +1692,24 @@ static void TimeSoundAnalysisEditor_v_draw_analysis (TimeSoundAnalysisEditor me)
 	double pitchViewFrom_hidden = Function_isUnitLogarithmic (Thing_dummyObject (Pitch), Pitch_LEVEL_FREQUENCY, my p_pitch_unit) ? log10 (pitchViewFrom_overt) : pitchViewFrom_overt;
 	double pitchViewTo_hidden = Function_isUnitLogarithmic (Thing_dummyObject (Pitch), Pitch_LEVEL_FREQUENCY, my p_pitch_unit) ? log10 (pitchViewTo_overt) : pitchViewTo_overt;
 
-	Graphics_setWindow (my d_graphics, 0.0, 1.0, 0.0, 1.0);
-	Graphics_setColour (my d_graphics, Graphics_WHITE);
-	Graphics_fillRectangle (my d_graphics, 0.0, 1.0, 0.0, 1.0);
-	Graphics_setColour (my d_graphics, Graphics_BLACK);
-	Graphics_rectangle (my d_graphics, 0.0, 1.0, 0.0, 1.0);
+	Graphics_setWindow (my d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
+	Graphics_setColour (my d_graphics.get(), Graphics_WHITE);
+	Graphics_fillRectangle (my d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
+	Graphics_setColour (my d_graphics.get(), Graphics_BLACK);
+	Graphics_rectangle (my d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
 
 	if (my d_endWindow - my d_startWindow > my p_longestAnalysis) {
-		Graphics_setFont (my d_graphics, kGraphics_font_HELVETICA);
-		Graphics_setFontSize (my d_graphics, 10);
-		Graphics_setTextAlignment (my d_graphics, Graphics_CENTRE, Graphics_HALF);
-		Graphics_text (my d_graphics, 0.5, 0.67,   U"(To see the analyses, zoom in to at most ", Melder_half (my p_longestAnalysis), U" seconds,");
-		Graphics_text (my d_graphics, 0.5, 0.33, U"or raise the \"longest analysis\" setting with \"Show analyses\" in the View menu.)");
-		Graphics_setFontSize (my d_graphics, 12);
+		Graphics_setFont (my d_graphics.get(), kGraphics_font_HELVETICA);
+		Graphics_setFontSize (my d_graphics.get(), 10);
+		Graphics_setTextAlignment (my d_graphics.get(), Graphics_CENTRE, Graphics_HALF);
+		Graphics_text (my d_graphics.get(), 0.5, 0.67,   U"(To see the analyses, zoom in to at most ", Melder_half (my p_longestAnalysis), U" seconds,");
+		Graphics_text (my d_graphics.get(), 0.5, 0.33, U"or raise the \"longest analysis\" setting with \"Show analyses\" in the View menu.)");
+		Graphics_setFontSize (my d_graphics.get(), 12);
 		return;
 	}
 	TimeSoundAnalysisEditor_computeSpectrogram (me);
 	if (my p_spectrogram_show && my d_spectrogram) {
-		Spectrogram_paintInside (my d_spectrogram.get(), my d_graphics, my d_startWindow, my d_endWindow,
+		Spectrogram_paintInside (my d_spectrogram.get(), my d_graphics.get(), my d_startWindow, my d_endWindow,
 			my p_spectrogram_viewFrom, my p_spectrogram_viewTo, my p_spectrogram_maximum, my p_spectrogram_autoscaling,
 			my p_spectrogram_dynamicRange, my p_spectrogram_preemphasis, my p_spectrogram_dynamicCompression);
 	}
@@ -1773,56 +1724,56 @@ static void TimeSoundAnalysisEditor_v_draw_analysis (TimeSoundAnalysisEditor me)
 			defaultTimeStep;
 		int undersampled = timeStep > greatestNonUndersamplingTimeStep;
 		long numberOfVisiblePitchPoints = (long) ((my d_endWindow - my d_startWindow) / timeStep);
-		Graphics_setColour (my d_graphics, Graphics_CYAN);
-		Graphics_setLineWidth (my d_graphics, 3.0);
+		Graphics_setColour (my d_graphics.get(), Graphics_CYAN);
+		Graphics_setLineWidth (my d_graphics.get(), 3.0);
 		if ((my p_pitch_drawingMethod == kTimeSoundAnalysisEditor_pitch_drawingMethod_AUTOMATIC && (undersampled || numberOfVisiblePitchPoints < 101)) ||
 		    my p_pitch_drawingMethod == kTimeSoundAnalysisEditor_pitch_drawingMethod_SPECKLE)
 		{
-			Pitch_drawInside (my d_pitch.get(), my d_graphics, my d_startWindow, my d_endWindow, pitchViewFrom_overt, pitchViewTo_overt, 2, my p_pitch_unit);
+			Pitch_drawInside (my d_pitch.get(), my d_graphics.get(), my d_startWindow, my d_endWindow, pitchViewFrom_overt, pitchViewTo_overt, 2, my p_pitch_unit);
 		}
 		if ((my p_pitch_drawingMethod == kTimeSoundAnalysisEditor_pitch_drawingMethod_AUTOMATIC && ! undersampled) ||
 		    my p_pitch_drawingMethod == kTimeSoundAnalysisEditor_pitch_drawingMethod_CURVE)
 		{
-			Pitch_drawInside (my d_pitch.get(), my d_graphics, my d_startWindow, my d_endWindow, pitchViewFrom_overt, pitchViewTo_overt, false, my p_pitch_unit);
+			Pitch_drawInside (my d_pitch.get(), my d_graphics.get(), my d_startWindow, my d_endWindow, pitchViewFrom_overt, pitchViewTo_overt, false, my p_pitch_unit);
 		}
-		Graphics_setColour (my d_graphics, Graphics_BLUE);
-		Graphics_setLineWidth (my d_graphics, 1.0);
+		Graphics_setColour (my d_graphics.get(), Graphics_BLUE);
+		Graphics_setLineWidth (my d_graphics.get(), 1.0);
 		if ((my p_pitch_drawingMethod == kTimeSoundAnalysisEditor_pitch_drawingMethod_AUTOMATIC && (undersampled || numberOfVisiblePitchPoints < 101)) ||
 		    my p_pitch_drawingMethod == kTimeSoundAnalysisEditor_pitch_drawingMethod_SPECKLE)
 		{
-			Pitch_drawInside (my d_pitch.get(), my d_graphics, my d_startWindow, my d_endWindow, pitchViewFrom_overt, pitchViewTo_overt, 1, my p_pitch_unit);
+			Pitch_drawInside (my d_pitch.get(), my d_graphics.get(), my d_startWindow, my d_endWindow, pitchViewFrom_overt, pitchViewTo_overt, 1, my p_pitch_unit);
 		}
 		if ((my p_pitch_drawingMethod == kTimeSoundAnalysisEditor_pitch_drawingMethod_AUTOMATIC && ! undersampled) ||
 		    my p_pitch_drawingMethod == kTimeSoundAnalysisEditor_pitch_drawingMethod_CURVE)
 		{
-			Pitch_drawInside (my d_pitch.get(), my d_graphics, my d_startWindow, my d_endWindow, pitchViewFrom_overt, pitchViewTo_overt, false, my p_pitch_unit);
+			Pitch_drawInside (my d_pitch.get(), my d_graphics.get(), my d_startWindow, my d_endWindow, pitchViewFrom_overt, pitchViewTo_overt, false, my p_pitch_unit);
 		}
-		Graphics_setColour (my d_graphics, Graphics_BLACK);
+		Graphics_setColour (my d_graphics.get(), Graphics_BLACK);
 	}
 	TimeSoundAnalysisEditor_computeIntensity (me);
 	if (my p_intensity_show && my d_intensity) {
-		Graphics_setColour (my d_graphics, my p_spectrogram_show ? Graphics_YELLOW : Graphics_LIME);
-		Graphics_setLineWidth (my d_graphics, my p_spectrogram_show ? 1.0 : 3.0);
-		Intensity_drawInside (my d_intensity.get(), my d_graphics, my d_startWindow, my d_endWindow,
+		Graphics_setColour (my d_graphics.get(), my p_spectrogram_show ? Graphics_YELLOW : Graphics_LIME);
+		Graphics_setLineWidth (my d_graphics.get(), my p_spectrogram_show ? 1.0 : 3.0);
+		Intensity_drawInside (my d_intensity.get(), my d_graphics.get(), my d_startWindow, my d_endWindow,
 			my p_intensity_viewFrom, my p_intensity_viewTo);
-		Graphics_setLineWidth (my d_graphics, 1.0);
-		Graphics_setColour (my d_graphics, Graphics_BLACK);
+		Graphics_setLineWidth (my d_graphics.get(), 1.0);
+		Graphics_setColour (my d_graphics.get(), Graphics_BLACK);
 	}
 	TimeSoundAnalysisEditor_computeFormants (me);
 	if (my p_formant_show && my d_formant) {
-		Graphics_setColour (my d_graphics, Graphics_RED);
-		Graphics_setSpeckleSize (my d_graphics, my p_formant_dotSize);
-		Formant_drawSpeckles_inside (my d_formant.get(), my d_graphics, my d_startWindow, my d_endWindow,
+		Graphics_setColour (my d_graphics.get(), Graphics_RED);
+		Graphics_setSpeckleSize (my d_graphics.get(), my p_formant_dotSize);
+		Formant_drawSpeckles_inside (my d_formant.get(), my d_graphics.get(), my d_startWindow, my d_endWindow,
 			my p_spectrogram_viewFrom, my p_spectrogram_viewTo, my p_formant_dynamicRange);
-		Graphics_setColour (my d_graphics, Graphics_BLACK);
+		Graphics_setColour (my d_graphics.get(), Graphics_BLACK);
 	}
 	/*
 	 * Draw vertical scales.
 	 */
 	if (my p_pitch_show) {
 		double pitchCursor_overt = NUMundefined, pitchCursor_hidden = NUMundefined;
-		Graphics_setWindow (my d_graphics, my d_startWindow, my d_endWindow, pitchViewFrom_hidden, pitchViewTo_hidden);
-		Graphics_setColour (my d_graphics, Graphics_BLUE);
+		Graphics_setWindow (my d_graphics.get(), my d_startWindow, my d_endWindow, pitchViewFrom_hidden, pitchViewTo_hidden);
+		Graphics_setColour (my d_graphics.get(), Graphics_BLUE);
 		if (my d_pitch) {
 			if (my d_startSelection == my d_endSelection)
 				pitchCursor_hidden = Pitch_getValueAtTime (my d_pitch.get(), my d_startSelection, my p_pitch_unit, 1);
@@ -1830,31 +1781,31 @@ static void TimeSoundAnalysisEditor_v_draw_analysis (TimeSoundAnalysisEditor me)
 				pitchCursor_hidden = Pitch_getMean (my d_pitch.get(), my d_startSelection, my d_endSelection, my p_pitch_unit);
 			pitchCursor_overt = Function_convertToNonlogarithmic (my d_pitch.get(), pitchCursor_hidden, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
 			if (NUMdefined (pitchCursor_hidden)) {
-				Graphics_setTextAlignment (my d_graphics, Graphics_LEFT, Graphics_HALF);
-				Graphics_text (my d_graphics, my d_endWindow, pitchCursor_hidden,
+				Graphics_setTextAlignment (my d_graphics.get(), Graphics_LEFT, Graphics_HALF);
+				Graphics_text (my d_graphics.get(), my d_endWindow, pitchCursor_hidden,
 					Melder_float (Melder_half (pitchCursor_overt)), U" ",
 					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, my p_pitch_unit, Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL));
 			}
-			if (! NUMdefined (pitchCursor_hidden) || Graphics_dyWCtoMM (my d_graphics, pitchCursor_hidden - pitchViewFrom_hidden) > 5.0) {
-				Graphics_setTextAlignment (my d_graphics, Graphics_LEFT, Graphics_BOTTOM);
-				Graphics_text (my d_graphics, my d_endWindow, pitchViewFrom_hidden - Graphics_dyMMtoWC (my d_graphics, 0.5),
+			if (! NUMdefined (pitchCursor_hidden) || Graphics_dyWCtoMM (my d_graphics.get(), pitchCursor_hidden - pitchViewFrom_hidden) > 5.0) {
+				Graphics_setTextAlignment (my d_graphics.get(), Graphics_LEFT, Graphics_BOTTOM);
+				Graphics_text (my d_graphics.get(), my d_endWindow, pitchViewFrom_hidden - Graphics_dyMMtoWC (my d_graphics.get(), 0.5),
 					Melder_float (Melder_half (pitchViewFrom_overt)), U" ",
 					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, my p_pitch_unit, Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL));
 			}
-			if (! NUMdefined (pitchCursor_hidden) || Graphics_dyWCtoMM (my d_graphics, pitchViewTo_hidden - pitchCursor_hidden) > 5.0) {
-				Graphics_setTextAlignment (my d_graphics, Graphics_LEFT, Graphics_TOP);
-				Graphics_text (my d_graphics, my d_endWindow, pitchViewTo_hidden,
+			if (! NUMdefined (pitchCursor_hidden) || Graphics_dyWCtoMM (my d_graphics.get(), pitchViewTo_hidden - pitchCursor_hidden) > 5.0) {
+				Graphics_setTextAlignment (my d_graphics.get(), Graphics_LEFT, Graphics_TOP);
+				Graphics_text (my d_graphics.get(), my d_endWindow, pitchViewTo_hidden,
 					Melder_float (Melder_half (pitchViewTo_overt)), U" ",
 					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, my p_pitch_unit, Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL));
 			}
 		} else {
-			Graphics_setTextAlignment (my d_graphics, Graphics_CENTRE, Graphics_HALF);
-			Graphics_setFontSize (my d_graphics, 10);
-			Graphics_text (my d_graphics, 0.5 * (my d_startWindow + my d_endWindow), 0.5 * (pitchViewFrom_hidden + pitchViewTo_hidden),
+			Graphics_setTextAlignment (my d_graphics.get(), Graphics_CENTRE, Graphics_HALF);
+			Graphics_setFontSize (my d_graphics.get(), 10);
+			Graphics_text (my d_graphics.get(), 0.5 * (my d_startWindow + my d_endWindow), 0.5 * (pitchViewFrom_hidden + pitchViewTo_hidden),
 				U"(Cannot show pitch contour. Zoom out or change bottom of pitch range in pitch settings.)");
-			Graphics_setFontSize (my d_graphics, 12);
+			Graphics_setFontSize (my d_graphics.get(), 12);
 		}
-		Graphics_setColour (my d_graphics, Graphics_BLACK);
+		Graphics_setColour (my d_graphics.get(), Graphics_BLACK);
 	}
 	if (my p_intensity_show) {
 		double intensityCursor = NUMundefined;
@@ -1865,7 +1816,7 @@ static void TimeSoundAnalysisEditor_v_draw_analysis (TimeSoundAnalysisEditor me)
 		else if (! my p_spectrogram_show && ! my p_formant_show) textColour = Graphics_GREEN, alignment = Graphics_RIGHT, y = my d_startWindow;
 		else textColour = my p_spectrogram_show ? Graphics_LIME : Graphics_GREEN, alignment = Graphics_RIGHT, y = my d_endWindow;
 		if (my p_intensity_viewTo > my p_intensity_viewFrom) {
-			Graphics_setWindow (my d_graphics, my d_startWindow, my d_endWindow, my p_intensity_viewFrom, my p_intensity_viewTo);
+			Graphics_setWindow (my d_graphics.get(), my d_startWindow, my d_endWindow, my p_intensity_viewFrom, my p_intensity_viewTo);
 			if (my d_intensity) {
 				if (my d_startSelection == my d_endSelection) {
 					intensityCursor = Vector_getValueAtX (my d_intensity.get(), my d_startSelection, Vector_CHANNEL_1, Vector_VALUE_INTERPOLATION_LINEAR);
@@ -1873,57 +1824,57 @@ static void TimeSoundAnalysisEditor_v_draw_analysis (TimeSoundAnalysisEditor me)
 					intensityCursor = Intensity_getAverage (my d_intensity.get(), my d_startSelection, my d_endSelection, my p_intensity_averagingMethod);
 				}
 			}
-			Graphics_setColour (my d_graphics, textColour);
+			Graphics_setColour (my d_graphics.get(), textColour);
 			bool intensityCursorVisible = NUMdefined (intensityCursor) &&
 				intensityCursor > my p_intensity_viewFrom && intensityCursor < my p_intensity_viewTo;
 			if (intensityCursorVisible) {
 				static const char32 *methodString [] = { U" (.5)", U" (μE)", U" (μS)", U" (μ)" };
-				Graphics_setTextAlignment (my d_graphics, alignment, Graphics_HALF);
-				Graphics_text (my d_graphics, y, intensityCursor,
+				Graphics_setTextAlignment (my d_graphics.get(), alignment, Graphics_HALF);
+				Graphics_text (my d_graphics.get(), y, intensityCursor,
 					Melder_float (Melder_half (intensityCursor)), U" dB",
 					my d_startSelection == my d_endSelection ? U"" : methodString [my p_intensity_averagingMethod]);
 			}
-			if (! intensityCursorVisible || Graphics_dyWCtoMM (my d_graphics, intensityCursor - my p_intensity_viewFrom) > 5.0) {
-				Graphics_setTextAlignment (my d_graphics, alignment, Graphics_BOTTOM);
-				Graphics_text (my d_graphics, y, my p_intensity_viewFrom - Graphics_dyMMtoWC (my d_graphics, 0.5),
+			if (! intensityCursorVisible || Graphics_dyWCtoMM (my d_graphics.get(), intensityCursor - my p_intensity_viewFrom) > 5.0) {
+				Graphics_setTextAlignment (my d_graphics.get(), alignment, Graphics_BOTTOM);
+				Graphics_text (my d_graphics.get(), y, my p_intensity_viewFrom - Graphics_dyMMtoWC (my d_graphics.get(), 0.5),
 					Melder_float (Melder_half (my p_intensity_viewFrom)), U" dB");
 			}
-			if (! intensityCursorVisible || Graphics_dyWCtoMM (my d_graphics, my p_intensity_viewTo - intensityCursor) > 5.0) {
-				Graphics_setTextAlignment (my d_graphics, alignment, Graphics_TOP);
-				Graphics_text (my d_graphics, y, my p_intensity_viewTo,
+			if (! intensityCursorVisible || Graphics_dyWCtoMM (my d_graphics.get(), my p_intensity_viewTo - intensityCursor) > 5.0) {
+				Graphics_setTextAlignment (my d_graphics.get(), alignment, Graphics_TOP);
+				Graphics_text (my d_graphics.get(), y, my p_intensity_viewTo,
 					Melder_float (Melder_half (my p_intensity_viewTo)), U" dB");
 			}
-			Graphics_setColour (my d_graphics, Graphics_BLACK);
+			Graphics_setColour (my d_graphics.get(), Graphics_BLACK);
 		}
 	}
 	if (my p_spectrogram_show || my p_formant_show) {
 		bool frequencyCursorVisible = my d_spectrogram_cursor > my p_spectrogram_viewFrom && my d_spectrogram_cursor < my p_spectrogram_viewTo;
-		Graphics_setWindow (my d_graphics, my d_startWindow, my d_endWindow, my p_spectrogram_viewFrom, my p_spectrogram_viewTo);
+		Graphics_setWindow (my d_graphics.get(), my d_startWindow, my d_endWindow, my p_spectrogram_viewFrom, my p_spectrogram_viewTo);
 		/*
 		 * Range marks.
 		 */
-		Graphics_setLineType (my d_graphics, Graphics_DRAWN);
-		Graphics_setColour (my d_graphics, Graphics_BLACK);
-		if (! frequencyCursorVisible || Graphics_dyWCtoMM (my d_graphics, my d_spectrogram_cursor - my p_spectrogram_viewFrom) > 5.0) {
-			Graphics_setTextAlignment (my d_graphics, Graphics_RIGHT, Graphics_BOTTOM);
-			Graphics_text (my d_graphics, my d_startWindow, my p_spectrogram_viewFrom - Graphics_dyMMtoWC (my d_graphics, 0.5),
+		Graphics_setLineType (my d_graphics.get(), Graphics_DRAWN);
+		Graphics_setColour (my d_graphics.get(), Graphics_BLACK);
+		if (! frequencyCursorVisible || Graphics_dyWCtoMM (my d_graphics.get(), my d_spectrogram_cursor - my p_spectrogram_viewFrom) > 5.0) {
+			Graphics_setTextAlignment (my d_graphics.get(), Graphics_RIGHT, Graphics_BOTTOM);
+			Graphics_text (my d_graphics.get(), my d_startWindow, my p_spectrogram_viewFrom - Graphics_dyMMtoWC (my d_graphics.get(), 0.5),
 				Melder_float (Melder_half (my p_spectrogram_viewFrom)), U" Hz");
 		}
-		if (! frequencyCursorVisible || Graphics_dyWCtoMM (my d_graphics, my p_spectrogram_viewTo - my d_spectrogram_cursor) > 5.0) {
-			Graphics_setTextAlignment (my d_graphics, Graphics_RIGHT, Graphics_TOP);
-			Graphics_text (my d_graphics, my d_startWindow, my p_spectrogram_viewTo,
+		if (! frequencyCursorVisible || Graphics_dyWCtoMM (my d_graphics.get(), my p_spectrogram_viewTo - my d_spectrogram_cursor) > 5.0) {
+			Graphics_setTextAlignment (my d_graphics.get(), Graphics_RIGHT, Graphics_TOP);
+			Graphics_text (my d_graphics.get(), my d_startWindow, my p_spectrogram_viewTo,
 				Melder_float (Melder_half (my p_spectrogram_viewTo)), U" Hz");
 		}
 		/*
 		 * Cursor lines.
 		 */
-		Graphics_setLineType (my d_graphics, Graphics_DOTTED);
-		Graphics_setColour (my d_graphics, Graphics_RED);
+		Graphics_setLineType (my d_graphics.get(), Graphics_DOTTED);
+		Graphics_setColour (my d_graphics.get(), Graphics_RED);
 		if (frequencyCursorVisible) {
 			double x = my d_startWindow, y = my d_spectrogram_cursor;
-			Graphics_setTextAlignment (my d_graphics, Graphics_RIGHT, Graphics_HALF);
-			Graphics_text (my d_graphics, x, y,   Melder_float (Melder_half (y)), U" Hz");
-			Graphics_line (my d_graphics, x, y, my d_endWindow, y);
+			Graphics_setTextAlignment (my d_graphics.get(), Graphics_RIGHT, Graphics_HALF);
+			Graphics_text (my d_graphics.get(), x, y,   Melder_float (Melder_half (y)), U" Hz");
+			Graphics_line (my d_graphics.get(), x, y, my d_endWindow, y);
 		}
 		/*
 		if (our startSelection >= our startWindow && our startSelection <= our endWindow)
@@ -1933,9 +1884,9 @@ static void TimeSoundAnalysisEditor_v_draw_analysis (TimeSoundAnalysisEditor me)
 		/*
 		 * Cadre.
 		 */
-		Graphics_setLineType (my d_graphics, Graphics_DRAWN);
-		Graphics_setColour (my d_graphics, Graphics_BLACK);
-		Graphics_rectangle (my d_graphics, my d_startWindow, my d_endWindow, my p_spectrogram_viewFrom, my p_spectrogram_viewTo);
+		Graphics_setLineType (my d_graphics.get(), Graphics_DRAWN);
+		Graphics_setColour (my d_graphics.get(), Graphics_BLACK);
+		Graphics_rectangle (my d_graphics.get(), my d_startWindow, my d_endWindow, my p_spectrogram_viewFrom, my p_spectrogram_viewTo);
 	}
 }
 void structTimeSoundAnalysisEditor :: v_draw_analysis () {
@@ -1946,14 +1897,14 @@ void structTimeSoundAnalysisEditor :: v_draw_analysis_pulses () {
 	TimeSoundAnalysisEditor_computePulses (this);
 	if (our p_pulses_show && our d_endWindow - our d_startWindow <= our p_longestAnalysis && our d_pulses) {
 		PointProcess point = our d_pulses.get();
-		Graphics_setWindow (our d_graphics, our d_startWindow, our d_endWindow, -1.0, 1.0);
-		Graphics_setColour (our d_graphics, Graphics_BLUE);
+		Graphics_setWindow (our d_graphics.get(), our d_startWindow, our d_endWindow, -1.0, 1.0);
+		Graphics_setColour (our d_graphics.get(), Graphics_BLUE);
 		if (point -> nt < 2000) for (long i = 1; i <= point -> nt; i ++) {
 			double t = point -> t [i];
 			if (t >= our d_startWindow && t <= our d_endWindow)
-				Graphics_line (our d_graphics, t, -0.9, t, 0.9);
+				Graphics_line (our d_graphics.get(), t, -0.9, t, 0.9);
 		}
-		Graphics_setColour (our d_graphics, Graphics_BLACK);
+		Graphics_setColour (our d_graphics.get(), Graphics_BLACK);
 	}
 }
 

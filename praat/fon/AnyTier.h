@@ -45,11 +45,11 @@ long AnyTier_timeToHighIndex (AnyTier me, double time);
 long AnyTier_getWindowPoints (AnyTier me, double tmin, double tmax, long *imin, long *imax);
 long AnyTier_timeToNearestIndex (AnyTier me, double time);
 long AnyTier_hasPoint (AnyTier me, double t);
-void AnyTier_addPoint (AnyTier me, Daata point);
+void AnyTier_addPoint_move (AnyTier me, autoDaata point);
 void AnyTier_removePoint (AnyTier me, long i);
 void AnyTier_removePointNear (AnyTier me, double time);
 void AnyTier_removePointsBetween (AnyTier me, double tmin, double tmax);
-PointProcess AnyTier_downto_PointProcess (AnyTier me);
+autoPointProcess AnyTier_downto_PointProcess (AnyTier me);
 
 #endif
 /* End of file AnyTier.h */

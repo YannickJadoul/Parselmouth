@@ -304,7 +304,7 @@ void SpeechSynthesizer_playText (SpeechSynthesizer me, const char32 *text) {
 	Sound_playPart (thee.peek(), thy xmin, thy xmax, 0, 0);
 }
 
-static Sound buffer_to_Sound (int *wav, long numberOfSamples, double samplingFrequency)
+static autoSound buffer_to_Sound (int *wav, long numberOfSamples, double samplingFrequency)
 {
 	try {
 		double dx = 1.0 / samplingFrequency;
@@ -313,7 +313,7 @@ static Sound buffer_to_Sound (int *wav, long numberOfSamples, double samplingFre
 		for (long i = 1; i <= numberOfSamples; i++) {
 			thy z[1][i] = wav[i] / 32768.0;
 		}
-		return thee.transfer();
+		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"Sound not created from synthesizer data.");
 	}
@@ -335,7 +335,7 @@ static void IntervalTier_addBoundaryUnsorted (IntervalTier me, long iinterval, d
 	if (isNewleftLabel) TextInterval_setText (ti, newLabel);
 
 	autoTextInterval ti_new = TextInterval_create (time, my xmax, (! isNewleftLabel ? newLabel : U""));
-	Sorted_addItem_unsorted (my intervals, ti_new.transfer());
+	Sorted_addItem_unsorted_move (my intervals.get(), ti_new.move());
 }
 
 static void Table_setEventTypeString (Table me) {
@@ -460,9 +460,9 @@ static autoTextGrid Table_to_TextGrid (Table me, const char32 *text, double xmin
 				t1p = time;
 			}
 		}
-		Sorted_sort (itc -> intervals);
-		Sorted_sort (itw -> intervals);
-		Sorted_sort (itp -> intervals);
+		Sorted_sort (itc -> intervals.get());
+		Sorted_sort (itw -> intervals.get());
+		Sorted_sort (itp -> intervals.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"TextGrid not created from Table with events.");
@@ -516,7 +516,7 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, const char32 *text, 
 
 		espeak_SetSynthCallback (synthCallback);
 
-		my d_events = Table_createWithColumnNames (0, U"time type type-t t-pos length a-pos sample id uniq").transfer();
+		my d_events = Table_createWithColumnNames (0, U"time type type-t t-pos length a-pos sample id uniq");
 		
 		#ifdef _WIN32
                 wchar_t *textW = Melder_peek32toW (text);
@@ -548,7 +548,7 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, const char32 *text, 
 			Table_setEventTypeString (my d_events.peek());
 			*events = my d_events.move();
 		}
-		my d_events.reset(nullptr);
+		my d_events.reset();
 		return thee;
 	} catch (MelderError) {
 		espeak_Terminate ();

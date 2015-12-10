@@ -53,7 +53,7 @@ if you want to build Praat's 32-bit edition, or
     cp makefiles/makefile.defs.mingw64 ./makefile.defs
 
 if you want to build Praat's 64-bit edition. Then type `make` to build `Praat.exe`
-(use `make -j4` to speed this up, i.e. to use 4 processors in parallel).
+(use `make -j4` to speed this up, e.g. to use 4 processors in parallel).
 
 Cross-compiling for Windows: use the [MinGW](http://www.mingw.org) compiler, perhaps on a Mac or Linux computer.
 You can find toolchains for 32 and 64 bits
@@ -85,8 +85,6 @@ then you may have to switch the Type of some .cpp file from “C++ Source” to 
 Install `libgtk2.0-dev` (and its dependencies) and `libasound2-dev`. Then go to the sources directory and type
 
     cp makefiles/makefile.defs.linux.alsa ./makefile.defs
-    mv external/portaudio external/portaudio2014
-    mv external/portaudio2007 external/portaudio
 
 Then type `make` to build the program. You may have to `kill jackd` or `artsd` to get audio to function.
 If your Unix isn’t Linux, you may have to edit the library names in the makefile

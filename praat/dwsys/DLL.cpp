@@ -22,13 +22,12 @@
 Thing_implement (DLLNode, Daata, 0);
 
 void structDLLNode :: v_destroy () {
-	forget (data);
 	DLLNode_Parent :: v_destroy ();
 }
 
 void structDLLNode :: v_copy (Daata thee_Daata) {
 	DLLNode thee = static_cast <DLLNode> (thee_Daata);
-	thy data = Data_copy (our data);
+	thy data = Data_copy (our data.get());
 }
 
 Thing_implement (DLL, Thing, 0);
@@ -47,9 +46,9 @@ int structDLL :: s_compareHook (Daata /* node1 */, Daata /* node2 */) noexcept {
 	return 0;
 }
 
-autoDLLNode DLLNode_create (Daata data) {
+autoDLLNode DLLNode_create (autoDaata data) {
 	autoDLLNode me = Thing_new (DLLNode);
-	my data = data;
+	my data = data.move();
 	return me;
 }
 

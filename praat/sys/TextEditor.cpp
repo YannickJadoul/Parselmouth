@@ -32,13 +32,13 @@ Thing_implement (TextEditor, Editor, 0);
 #include "prefs_copyToInstance.h"
 #include "TextEditor_prefs.h"
 
-static Collection theOpenTextEditors;   // cannot be an autoCollection until Collection_undangleItem() isn't called in v_destroy()
+static autoCollection theReferencesToAllOpenTextEditors;
 
 /***** TextEditor methods *****/
 
 void structTextEditor :: v_destroy () {
-	if (theOpenTextEditors) {
-		Collection_undangleItem (theOpenTextEditors, this);
+	if (theReferencesToAllOpenTextEditors) {
+		Collection_undangleItem (theReferencesToAllOpenTextEditors.get(), this);
 	}
 	TextEditor_Parent :: v_destroy ();
 }
@@ -65,9 +65,9 @@ void structTextEditor :: v_nameChanged () {
 }
 
 static void openDocument (TextEditor me, MelderFile file) {
-	if (theOpenTextEditors) {
-		for (long ieditor = 1; ieditor <= theOpenTextEditors -> size; ieditor ++) {
-			TextEditor editor = (TextEditor) theOpenTextEditors -> item [ieditor];
+	if (theReferencesToAllOpenTextEditors) {
+		for (long ieditor = 1; ieditor <= theReferencesToAllOpenTextEditors -> size; ieditor ++) {
+			TextEditor editor = (TextEditor) theReferencesToAllOpenTextEditors -> item [ieditor];
 			if (editor != me && MelderFile_equal (file, & editor -> file)) {
 				Editor_raise (editor);
 				Melder_appendError (U"Text file ", file, U" is already open.");
@@ -574,14 +574,13 @@ static void setFontSize (TextEditor me, int fontSize) {
 	updateSizeMenu (me);
 }
 
-static void menu_cb_10 (EDITOR_ARGS) { EDITOR_IAM (TextEditor); setFontSize (me, 10); }
-static void menu_cb_12 (EDITOR_ARGS) { EDITOR_IAM (TextEditor); setFontSize (me, 12); }
-static void menu_cb_14 (EDITOR_ARGS) { EDITOR_IAM (TextEditor); setFontSize (me, 14); }
-static void menu_cb_18 (EDITOR_ARGS) { EDITOR_IAM (TextEditor); setFontSize (me, 18); }
-static void menu_cb_24 (EDITOR_ARGS) { EDITOR_IAM (TextEditor); setFontSize (me, 24); }
-static void menu_cb_fontSize (EDITOR_ARGS) {
-	EDITOR_IAM (TextEditor);
-	EDITOR_FORM (U"Text window: Font size", 0)
+static void menu_cb_10 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 10); }
+static void menu_cb_12 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 12); }
+static void menu_cb_14 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 14); }
+static void menu_cb_18 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 18); }
+static void menu_cb_24 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 24); }
+static void menu_cb_fontSize (TextEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Text window: Font size", nullptr)
 		NATURAL (U"Font size (points)", U"12")
 	EDITOR_OK
 		SET_INTEGER (U"Font size", (long) my p_fontSize);
@@ -657,11 +656,11 @@ void TextEditor_init (TextEditor me, const char32 *initialText) {
 		my dirty = false;   // was set to true in valueChanged callback
 		Thing_setName (me, U"");
 	}
-	if (! theOpenTextEditors) {
-		theOpenTextEditors = Collection_create (classTextEditor, 100);
+	if (! theReferencesToAllOpenTextEditors) {
+		theReferencesToAllOpenTextEditors = Collection_create (classTextEditor, 100);
 	}
-	if (theOpenTextEditors) {
-		Collection_addItem_ref (theOpenTextEditors, me);
+	if (theReferencesToAllOpenTextEditors) {
+		Collection_addItem_ref (theReferencesToAllOpenTextEditors.get(), me);
 	}
 }
 

@@ -39,9 +39,7 @@
 #undef oo_STRUCT_VECTOR_FROM
 #undef oo_STRUCT_MATRIX_FROM
 
-#undef oo_OBJECT
 #undef oo_AUTO_OBJECT
-#undef oo_COLLECTION
 #undef oo_AUTO_COLLECTION
 #undef oo_FILE
 #undef oo_DIR

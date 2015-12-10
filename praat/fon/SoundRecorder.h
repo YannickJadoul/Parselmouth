@@ -88,7 +88,7 @@ Thing_define (SoundRecorder, Editor) {
 	GuiText soundName;
 	GuiButton cancelButton, applyButton, okButton;
 	GuiMenuItem d_meterIntensityButton, d_meterCentreOfGravityVersusIntensityButton;
-	Graphics graphics;
+	autoGraphics graphics;
 	bool inputUsesPortAudio;
 	const PaDeviceInfo *deviceInfos [1+SoundRecorder_IDEVICE_MAX];
 	PaDeviceIndex deviceIndices [1+SoundRecorder_IDEVICE_MAX];
@@ -115,8 +115,6 @@ Thing_define (SoundRecorder, Editor) {
 	#endif
 
 	void v_destroy ()
-		override;
-	void v_goAway ()
 		override;
 	bool v_editable ()
 		override { return false; }

@@ -27,80 +27,67 @@ Thing_implement (PointEditor, TimeSoundEditor, 0);
 /********** DESTRUCTION **********/
 
 void structPointEditor :: v_destroy () {
-	forget (monoSound);
 	PointEditor_Parent :: v_destroy ();
 }
 
 /********** MENU COMMANDS **********/
 
-static void menu_cb_getJitter_local (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getJitter_local (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure jitter, make a selection first.");
 	Melder_informationReal (PointProcess_getJitter_local ((PointProcess) my data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3), nullptr);
 }
 
-static void menu_cb_getJitter_local_absolute (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getJitter_local_absolute (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure jitter, make a selection first.");
 	Melder_informationReal (PointProcess_getJitter_local_absolute ((PointProcess) my data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3), U"seconds");
 }
 
-static void menu_cb_getJitter_rap (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getJitter_rap (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure jitter, make a selection first.");
 	Melder_informationReal (PointProcess_getJitter_rap ((PointProcess) my data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3), nullptr);
 }
 
-static void menu_cb_getJitter_ppq5 (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getJitter_ppq5 (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure jitter, make a selection first.");
 	Melder_informationReal (PointProcess_getJitter_ppq5 ((PointProcess) my data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3), nullptr);
 }
 
-static void menu_cb_getJitter_ddp (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getJitter_ddp (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure jitter, make a selection first.");
 	Melder_informationReal (PointProcess_getJitter_ddp ((PointProcess) my data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3), nullptr);
 }
 
-static void menu_cb_getShimmer_local (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getShimmer_local (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure shimmer, make a selection first.");
 	Melder_informationReal (PointProcess_Sound_getShimmer_local ((PointProcess) my data, my d_sound.data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3, 1.6), nullptr);
 }
 
-static void menu_cb_getShimmer_local_dB (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getShimmer_local_dB (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure shimmer, make a selection first.");
 	Melder_informationReal (PointProcess_Sound_getShimmer_local_dB ((PointProcess) my data, my d_sound.data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3, 1.6), nullptr);
 }
 
-static void menu_cb_getShimmer_apq3 (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getShimmer_apq3 (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure shimmer, make a selection first.");
 	Melder_informationReal (PointProcess_Sound_getShimmer_apq3 ((PointProcess) my data, my d_sound.data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3, 1.6), nullptr);
 }
 
-static void menu_cb_getShimmer_apq5 (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getShimmer_apq5 (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure shimmer, make a selection first.");
 	Melder_informationReal (PointProcess_Sound_getShimmer_apq5 ((PointProcess) my data, my d_sound.data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3, 1.6), nullptr);
 }
 
-static void menu_cb_getShimmer_apq11 (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getShimmer_apq11 (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure shimmer, make a selection first.");
 	Melder_informationReal (PointProcess_Sound_getShimmer_apq11 ((PointProcess) my data, my d_sound.data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3, 1.6), nullptr);
 }
 
-static void menu_cb_getShimmer_dda (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_getShimmer_dda (PointEditor me, EDITOR_ARGS_DIRECT) {
 	if (my d_startSelection == my d_endSelection) Melder_throw (U"To measure shimmer, make a selection first.");
 	Melder_informationReal (PointProcess_Sound_getShimmer_dda ((PointProcess) my data, my d_sound.data, my d_startSelection, my d_endSelection, 1e-4, 0.02, 1.3, 1.6), nullptr);
 }
 
-static void menu_cb_removePoints (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_removePoints (PointEditor me, EDITOR_ARGS_DIRECT) {
 	Editor_save (me, U"Remove point(s)");
 	if (my d_startSelection == my d_endSelection)
 		PointProcess_removePointNear ((PointProcess) my data, my d_startSelection);
@@ -110,17 +97,15 @@ static void menu_cb_removePoints (EDITOR_ARGS) {
 	Editor_broadcastDataChanged (me);
 }
 
-static void menu_cb_addPointAtCursor (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
+static void menu_cb_addPointAtCursor (PointEditor me, EDITOR_ARGS_DIRECT) {
 	Editor_save (me, U"Add point");
 	PointProcess_addPoint ((PointProcess) my data, 0.5 * (my d_startSelection + my d_endSelection));
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
 
-static void menu_cb_addPointAt (EDITOR_ARGS) {
-	EDITOR_IAM (PointEditor);
-	EDITOR_FORM (U"Add point", 0)
+static void menu_cb_addPointAt (PointEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Add point", nullptr)
 		REAL (U"Position", U"0.0");
 	EDITOR_OK
 		SET_REAL (U"Position", 0.5 * (my d_startSelection + my d_endSelection));
@@ -132,7 +117,7 @@ static void menu_cb_addPointAt (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_PointEditorHelp (EDITOR_ARGS) { EDITOR_IAM (PointEditor); Melder_help (U"PointEditor"); }
+static void menu_cb_PointEditorHelp (PointEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"PointEditor"); }
 
 void structPointEditor :: v_createMenus () {
 	PointEditor_Parent :: v_createMenus ();
@@ -170,9 +155,9 @@ void structPointEditor :: v_createHelpMenuItems (EditorMenu menu) {
 void structPointEditor :: v_draw () {
 	PointProcess point = static_cast <PointProcess> (our data);
 	Sound sound = d_sound.data;
-	Graphics_setColour (d_graphics, Graphics_WHITE);
-	Graphics_setWindow (d_graphics, 0, 1, 0, 1);
-	Graphics_fillRectangle (d_graphics, 0, 1, 0, 1);
+	Graphics_setColour (d_graphics.get(), Graphics_WHITE);
+	Graphics_setWindow (d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
+	Graphics_fillRectangle (d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
 	double minimum = -1.0, maximum = +1.0;
 	if (sound && (p_sound_scalingStrategy == kTimeSoundEditor_scalingStrategy_BY_WINDOW || p_sound_scalingStrategy == kTimeSoundEditor_scalingStrategy_BY_WINDOW_AND_CHANNEL)) {
 		long first, last;
@@ -181,26 +166,26 @@ void structPointEditor :: v_draw () {
 			if (minimum == maximum) minimum -= 1.0, maximum += 1.0;
 		}
 	}
-	Graphics_setWindow (d_graphics, d_startWindow, d_endWindow, minimum, maximum);
-	Graphics_setColour (d_graphics, Graphics_BLACK);
+	Graphics_setWindow (d_graphics.get(), d_startWindow, d_endWindow, minimum, maximum);
+	Graphics_setColour (d_graphics.get(), Graphics_BLACK);
 	if (sound) {
 		long first, last;
 		if (Sampled_getWindowSamples (sound, d_startWindow, d_endWindow, & first, & last) > 1) {
-			Graphics_setLineType (d_graphics, Graphics_DOTTED);
-			Graphics_line (d_graphics, d_startWindow, 0.0, d_endWindow, 0.0);
-			Graphics_setLineType (d_graphics, Graphics_DRAWN);      
-			Graphics_function (d_graphics, sound -> z [1], first, last,
+			Graphics_setLineType (d_graphics.get(), Graphics_DOTTED);
+			Graphics_line (d_graphics.get(), d_startWindow, 0.0, d_endWindow, 0.0);
+			Graphics_setLineType (d_graphics.get(), Graphics_DRAWN);
+			Graphics_function (d_graphics.get(), sound -> z [1], first, last,
 				Sampled_indexToX (sound, first), Sampled_indexToX (sound, last));
 		}
 	}
-	Graphics_setColour (d_graphics, Graphics_BLUE);
-	Graphics_setWindow (d_graphics, d_startWindow, d_endWindow, -1.0, +1.0);
+	Graphics_setColour (d_graphics.get(), Graphics_BLUE);
+	Graphics_setWindow (d_graphics.get(), d_startWindow, d_endWindow, -1.0, +1.0);
 	for (long i = 1; i <= point -> nt; i ++) {
 		double t = point -> t [i];
 		if (t >= d_startWindow && t <= d_endWindow)
-			Graphics_line (d_graphics, t, -0.9, t, +0.9);
+			Graphics_line (d_graphics.get(), t, -0.9, t, +0.9);
 	}
-	Graphics_setColour (d_graphics, Graphics_BLACK);
+	Graphics_setColour (d_graphics.get(), Graphics_BLACK);
 	v_updateMenuItems_file ();
 }
 
@@ -216,9 +201,9 @@ autoPointEditor PointEditor_create (const char32 *title, PointProcess point, Sou
 	try {
 		autoPointEditor me = Thing_new (PointEditor);
 		if (sound) {
-			my monoSound = Sound_convertToMono (sound).transfer();
+			my monoSound = Sound_convertToMono (sound);
 		}
-		TimeSoundEditor_init (me.peek(), title, point, my monoSound, false);
+		TimeSoundEditor_init (me.peek(), title, point, my monoSound.get(), false);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"PointProcess window not created.");
