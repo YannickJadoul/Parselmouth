@@ -7,6 +7,7 @@
 #include "buffer_protocol.h"
 #include "functor_signature.h"
 #include <boost/python.hpp>
+#include <boost/python/stl_iterator.hpp>
 #include <boost/numpy.hpp>
 
 #include "PraatUtils.h"
@@ -35,6 +36,8 @@ boost::numpy::ndarray getCoefficients(MFCC cc)
 	return array;
 }
 
+#include <iostream>
+
 BOOST_PYTHON_MODULE(parselmouth)
 {
 	Melder_batch = true;
@@ -42,7 +45,7 @@ BOOST_PYTHON_MODULE(parselmouth)
 	using namespace boost::python;
 	using namespace boost::numpy;
 
-	boost::numpy::initialize();
+	boost::numpy::initialize(false);
 
 	docstring_options docstringOptions(true, true, false);
 
@@ -54,6 +57,22 @@ BOOST_PYTHON_MODULE(parselmouth)
 				throw std::runtime_error(message);
 	        });
 
+
+	enum_<kSound_windowShape>("WindowShape")
+		.value("rectangular", kSound_windowShape_RECTANGULAR)
+		.value("triangular", kSound_windowShape_TRIANGULAR)
+		.value("parabolic", kSound_windowShape_PARABOLIC)
+		.value("hanning", kSound_windowShape_HANNING)
+		.value("hamming", kSound_windowShape_HAMMING)
+		.value("gaussian1", kSound_windowShape_GAUSSIAN_1)
+		.value("gaussian2", kSound_windowShape_GAUSSIAN_2)
+		.value("gaussian3", kSound_windowShape_GAUSSIAN_3)
+		.value("gaussian4", kSound_windowShape_GAUSSIAN_4)
+		.value("gaussian5", kSound_windowShape_GAUSSIAN_5)
+		.value("kaiser1", kSound_windowShape_KAISER_1)
+		.value("kaiser2", kSound_windowShape_KAISER_2)
+		.export_values()
+	;
 
 	enum_<kSounds_convolve_scaling>("AmplitudeScaling")
 		.value("integral", kSounds_convolve_scaling_INTEGRAL)
@@ -81,8 +100,22 @@ BOOST_PYTHON_MODULE(parselmouth)
 
 		.def("read_file",
 				&readSound,
-				return_value_policy<manage_new_object>())
+				return_value_policy<manage_new_object>(),
+				arg("path"))
 				.staticmethod("read_file")
+
+		/*.def("create_pure_tone",
+				returnsAutoThing(&Sound_createAsPureTone),
+				return_value_policy<manage_new_object>(),
+				(arg("number_of channels") = 1, arg("start_time") = 0.0, arg("end_time") = 0.4, arg("sample_rate") = 44100.0, arg("frequency") = 440.0, arg("amplitude") = 0.2, arg("fade_in_duration") = 0.01, arg("fade_out_duration") = 0.01))
+				.staticmethod("create_pure_tone")
+
+		.def("create_tone_complex",
+				returnsAutoThing(&Sound_createFromToneComplex),
+				return_value_policy<manage_new_object>(),
+				(arg("start_time") = 0.0, arg("end_time") = 1.0, arg("sample_rate") = 44100.0, arg("frequency") = 440.0, arg("amplitude") = 0.2, arg("fade_in_duration") = 0.01, arg("fade_out_duration") = 0.01))
+				.staticmethod("create_tone_complex")*/
+				// double startingTime, double endTime,	double sampleRate, int phase, double frequencyStep,	double firstFrequency, double ceiling, long numberOfComponents
 
 		.def("to_mfcc",
 				returnsAutoThing(&Sound_to_MFCC),
@@ -179,7 +212,43 @@ BOOST_PYTHON_MODULE(parselmouth)
 
 		.def("set_zero",
 				&Sound_setZero,
-				(arg("self"), arg("tmin") = 0.0, arg("tmax") = 0.0, arg("roundTimesToNearestZeroCrossing") = true))
+				(arg("self"), arg("tmin") = 0.0, arg("tmax") = 0.0, arg("nearest_zero_crossing") = true))
+
+		.def("concatenate",
+				returnsAutoThing([] (const object &iterable, double overlap)
+					{
+						stl_input_iterator<Sound> iterator(iterable);
+						std::vector<Sound> sounds(iterator, stl_input_iterator<Sound>());
+						autoCollection collection = Collection_create(classSound, sounds.size());
+						for (const auto &sound : sounds)
+							Collection_addItem_ref(collection.peek(), sound);
+						return Sounds_concatenate_e(collection.peek(), overlap);
+					}),
+				return_value_policy<manage_new_object>(),
+				(arg("sounds"), arg("overlap") = 0.0))
+				.staticmethod("concatenate")
+
+		.def("multiply_by_window",
+				&Sound_multiplyByWindow,
+				(arg("self"), arg("window")))
+
+		.def("scale_intensity",
+				&Sound_scaleIntensity,
+				(arg("self"), arg("new_average_intensity")))
+
+		.def("override_sampling_frequency",
+				&Sound_overrideSamplingFrequency,
+				(arg("self"), arg("sample_rate")))
+
+		.def("extract_part",
+				returnsAutoThing(&Sound_extractPart),
+				return_value_policy<manage_new_object>(),
+				(arg("self"), arg("start_time"), arg("end_time"), arg("window") = kSound_windowShape_RECTANGULAR, arg("relative_width") = 1.0, arg("preserve_times") = false))
+
+		.def("extract_part_for_overlap",
+				returnsAutoThing(&Sound_extractPartForOverlap),
+				return_value_policy<manage_new_object>(),
+				(arg("self"), arg("start_time"), arg("end_time"), arg("overlap")))
 	;
 
 	class_<structMFCC, boost::noncopyable>("MFCC", no_init)
@@ -197,4 +266,3 @@ BOOST_PYTHON_MODULE(parselmouth)
 				arg("self"))
 	;
 }
-
