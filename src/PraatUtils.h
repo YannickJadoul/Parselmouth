@@ -62,7 +62,7 @@ namespace detail {
 		AutoThingFunctionImpl(Function &&wrapped) : m_wrapped(wrapped) {}
 		AutoThingFunctionImpl(const Function &wrapped) : m_wrapped(wrapped) {}
 
-		ThingType *operator()(ArgumentTypes... arguments) { return m_wrapped(std::forward<ArgumentTypes>(arguments)...).transfer(); }
+		ThingType *operator()(ArgumentTypes... arguments) { auto autoThing = m_wrapped(std::forward<ArgumentTypes>(arguments)...); auto thing = autoThing.get(); autoThing.releaseToUser(); return thing; }
 
 	private:
 		Function m_wrapped;

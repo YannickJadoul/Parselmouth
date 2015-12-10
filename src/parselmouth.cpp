@@ -12,11 +12,11 @@
 
 #include "PraatUtils.h"
 
-Sound readSound(const std::string &path)
+autoSound readSound(const std::string &path)
 {
 	structMelderFile file = { nullptr };
 	Melder_relativePathToFile(Melder_peek8to32(path.c_str()), &file);
-	return Sound_readFromSoundFile(&file).transfer();
+	return Sound_readFromSoundFile(&file);
 }
 
 boost::numpy::ndarray getCoefficients(MFCC cc)
@@ -90,7 +90,7 @@ BOOST_PYTHON_MODULE(parselmouth)
 
 	class_<structSound, boost::noncopyable> ("Sound", no_init)
 		.def("__init__",
-				make_constructor(&readSound,
+				make_constructor(returnsAutoThing(&readSound),
 						default_call_policies(),
 						arg("path")))
 
@@ -99,7 +99,7 @@ BOOST_PYTHON_MODULE(parselmouth)
 				arg("self"))
 
 		.def("read_file",
-				&readSound,
+				returnsAutoThing(&readSound),
 				return_value_policy<manage_new_object>(),
 				arg("path"))
 				.staticmethod("read_file")
