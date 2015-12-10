@@ -472,7 +472,7 @@ void FunctionTerms_drawBasisFunction (FunctionTerms me, Graphics g, long index, 
 	if (index < 1 || index > my numberOfCoefficients) {
 		return;
 	}
-	autoFunctionTerms thee = (FunctionTerms) Data_copy (me);
+	autoFunctionTerms thee = Data_copy (me);
 
 	for (long i = 1; i <= my numberOfCoefficients; i++) {
 		thy coefficients[i] = 0;
@@ -1268,7 +1268,7 @@ autoPolynomial ChebyshevSeries_to_Polynomial (ChebyshevSeries me) {
 
 		thy coefficients[1] = my coefficients[1] /* * p[1] */;
 		if (my numberOfCoefficients == 1) {
-			return thee.transfer();
+			return thee;
 		}
 
 		thy coefficients[2] = my coefficients[2];
@@ -1306,7 +1306,7 @@ autoPolynomial ChebyshevSeries_to_Polynomial (ChebyshevSeries me) {
 }
 
 
-void FunctionTerms_and_RealTier_fit (FunctionTerms me, RealTier thee, int *freeze, double tol, int ic, Covariance *c) {
+void FunctionTerms_and_RealTier_fit (FunctionTerms me, RealTier thee, int *freeze, double tol, int ic, autoCovariance *c) {
 	try {
 		long numberOfData = thy points -> size;
 		long numberOfParameters = my numberOfCoefficients;
@@ -1388,14 +1388,14 @@ void FunctionTerms_and_RealTier_fit (FunctionTerms me, RealTier thee, int *freez
 		if (ic) {
 			svdcvm (svd -> v, numberOfFreeParameters, numberOfParameters, freeze, svd -> d, ac -> data);
 		}
-		*c = ac.transfer();
+		*c = ac.move();
 	} catch (MelderError) {
 		Melder_throw (me, U" & ", thee, U": no fit.");
 	}
 }
 
 
-autoPolynomial RealTier_to_Polynomial (RealTier me, long degree, double tol, int ic, Covariance *cvm) {
+autoPolynomial RealTier_to_Polynomial (RealTier me, long degree, double tol, int ic, autoCovariance *cvm) {
 	try {
 		autoPolynomial thee = Polynomial_create (my xmin, my xmax, degree);
 		FunctionTerms_and_RealTier_fit (thee.peek(), me, 0, tol, ic, cvm);
@@ -1405,7 +1405,7 @@ autoPolynomial RealTier_to_Polynomial (RealTier me, long degree, double tol, int
 	}
 }
 
-autoLegendreSeries RealTier_to_LegendreSeries (RealTier me, long degree, double tol, int ic, Covariance *cvm) {
+autoLegendreSeries RealTier_to_LegendreSeries (RealTier me, long degree, double tol, int ic, autoCovariance *cvm) {
 	try {
 		autoLegendreSeries thee = LegendreSeries_create (my xmin, my xmax, degree);
 		FunctionTerms_and_RealTier_fit (thee.peek(), me, 0, tol, ic, cvm);
@@ -1415,7 +1415,7 @@ autoLegendreSeries RealTier_to_LegendreSeries (RealTier me, long degree, double 
 	}
 }
 
-autoChebyshevSeries RealTier_to_ChebyshevSeries (RealTier me, long degree, double tol, int ic, Covariance *cvm) {
+autoChebyshevSeries RealTier_to_ChebyshevSeries (RealTier me, long degree, double tol, int ic, autoCovariance *cvm) {
 	try {
 		autoChebyshevSeries thee = ChebyshevSeries_create (my xmin, my xmax, degree);
 		FunctionTerms_and_RealTier_fit (thee.peek(), me, 0, tol, ic, cvm);

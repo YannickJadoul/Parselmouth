@@ -3482,7 +3482,7 @@ static void _Table_postHocTukeyHSD (Table me, double sumOfSquaresWithin, double 
 				Table_setNumericValue (meansD.peek(), irow, icol, dif);
 			}
 		}
-		autoTable meansP = (Table) Data_copy (meansD.peek());
+		autoTable meansP = Data_copy (meansD.peek());
 		for (long irow = 1; irow <= numberOfMeans - 1; irow++) {
 			for (long icol = irow + 1; icol <= numberOfMeans; icol++) {
 				// Tukey-Kramer correction for unequal sample sizes
@@ -3660,7 +3660,7 @@ autoTable Table_getOneWayAnalysisOfVarianceF (Table me, long column, long factor
 	}
 }
 
-autoTable Table_getTwoWayAnalysisOfVarianceF (Table me, long column, long factorColumnA, long factorColumnB, Table *means, Table *levelSizes) {
+autoTable Table_getTwoWayAnalysisOfVarianceF (Table me, long column, long factorColumnA, long factorColumnB, autoTable *means, autoTable *levelSizes) {
 	try {
 		if (column < 1 || column > my numberOfColumns) {
 			Melder_throw (U"Invalid column number.");
@@ -3828,7 +3828,7 @@ autoTable Table_getTwoWayAnalysisOfVarianceF (Table me, long column, long factor
 		}
 
 		if (levelSizes) {
-			autoTable asizes = (Table) Data_copy (ameans.peek());
+			autoTable asizes = Data_copy (ameans.peek());
 			Table_setColumnLabel (asizes.peek(), numberOfLevelsB + 1 + 1, U"Total");
 			Table_setStringValue (asizes.peek(), numberOfLevelsA + 1, 1, U"Total");
 			for (long i = 1; i <= numberOfLevelsA + 1; i++) {
@@ -3836,7 +3836,7 @@ autoTable Table_getTwoWayAnalysisOfVarianceF (Table me, long column, long factor
 					Table_setNumericValue (asizes.peek(), i, j + 1, factorLevelSizes[i][j]);
 				}
 			}
-			*levelSizes = asizes.transfer();
+			*levelSizes = asizes.move();
 		}
 
 		autoTable anova = Table_createWithColumnNames (replications ? 5 : 4, U"Source SS Df MS F P");
@@ -3894,7 +3894,7 @@ autoTable Table_getTwoWayAnalysisOfVarianceF (Table me, long column, long factor
 			Table_setNumericValue (anova.peek(), row_AB, col_p, p_AB);
 		}
 		if (means) {
-			*means = ameans.transfer();
+			*means = ameans.move();
 		}
 		return anova;
 	} catch (MelderError) {
@@ -4510,7 +4510,7 @@ autoTable Table_extractRowsWhere (Table me, const char32 *formula, Interpreter i
 			if (result.result.numericResult != 0.0) {
 				TableRow row = static_cast <TableRow> (my rows -> item [irow]);
 				autoTableRow newRow = Data_copy (row);
-				Collection_addItem_move (thy rows, newRow.move());
+				Collection_addItem_move (thy rows.get(), newRow.move());
 			}
 		}
 		if (thy rows -> size == 0) {
@@ -4608,7 +4608,7 @@ static autoTable Table_and_SSCPs_extractMahalanobisWhere (Table me, SSCPs thee, 
 			if (Melder_numberMatchesCriterion (sqrt (dm2), which_Melder_NUMBER, numberOfSigmas)) {
 				TableRow row = static_cast <TableRow> (my rows -> item [irow]);
 				autoTableRow newRow = Data_copy (row);
-				Collection_addItem_move (his rows, newRow.move());
+				Collection_addItem_move (his rows.get(), newRow.move());
 			}
 		}
 		return him;

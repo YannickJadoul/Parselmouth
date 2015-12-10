@@ -128,7 +128,7 @@ void structGraphicsPostscript :: v_destroy () {
 	GraphicsPostscript_Parent :: v_destroy ();
 }
 
-Graphics Graphics_create_postscriptjob (MelderFile file, int resolution, enum kGraphicsPostscript_spots spots,
+autoGraphics Graphics_create_postscriptjob (MelderFile file, int resolution, enum kGraphicsPostscript_spots spots,
 	enum kGraphicsPostscript_paperSize paperSize, enum kGraphicsPostscript_orientation rotation, double magnification)
 {
 	autoGraphicsPostscript me = Thing_new (GraphicsPostscript);
@@ -174,7 +174,7 @@ Graphics Graphics_create_postscriptjob (MelderFile file, int resolution, enum kG
 	my d_printf (my d_file, "%%%%EndComments\n");
 	downloadPrologAndSetUp (me.peek());
 	initPage (me.peek());
-	return (Graphics) me.transfer();
+	return me.move();
 }
 
 #if defined (macintosh)
@@ -190,7 +190,7 @@ static int Eps_postScript_printf (void *stream, const char *format, ... ) {
 }
 #endif
 
-Graphics Graphics_create_epsfile (MelderFile file, int resolution, enum kGraphicsPostscript_spots spots,
+autoGraphics Graphics_create_epsfile (MelderFile file, int resolution, enum kGraphicsPostscript_spots spots,
 	double x1inches, double x2inches, double y1inches, double y2inches, bool includeFonts, bool useSilipaPS)
 {
 	autoGraphicsPostscript me = Thing_new (GraphicsPostscript);
@@ -240,16 +240,16 @@ Graphics Graphics_create_epsfile (MelderFile file, int resolution, enum kGraphic
 	my d_printf (my d_file, "%%%%EndComments\n");
 	downloadPrologAndSetUp (me.peek());
 	initPage (me.peek());
-	return (Graphics) me.transfer();
+	return me.move();
 }
 
 #ifndef UNIX
-Graphics Graphics_create_postscriptprinter () {
-	GraphicsPostscript me = Thing_new (GraphicsPostscript);
+autoGraphics Graphics_create_postscriptprinter () {
+	autoGraphicsPostscript me = Thing_new (GraphicsPostscript);
 	my postScript = true, my languageLevel = 2;
 	my job = false, my eps = false, my printer = true;
 	my d_printf = Printer_postScript_printf;
-	Graphics_init (me, thePrinter. resolution);   // virtual resolution
+	Graphics_init (me.get(), thePrinter. resolution);   // virtual resolution
 	my photocopyable = thePrinter. spots == kGraphicsPostscript_spots_PHOTOCOPYABLE;
 	if (my photocopyable) { my spotsDensity = 85; my spotsAngle = 35; }
 	else { my spotsDensity = 106; my spotsAngle = 46; }
@@ -262,10 +262,10 @@ Graphics Graphics_create_postscriptprinter () {
 	my d_x2DC = my d_x2DCmax = (my paperWidth - 0.5) * my resolution;
 	my d_y1DC = my d_y1DCmin = my resolution / 2;
 	my d_y2DC = my d_y2DCmax = (my paperHeight - 0.5) * my resolution;
-	Graphics_setWsWindow ((Graphics) me, 0, my paperWidth - 1.0, 13.0 - my paperHeight, 12.0);
-	downloadPrologAndSetUp (me);
-	initPage (me);
-	return (Graphics) me;
+	Graphics_setWsWindow (me.get(), 0, my paperWidth - 1.0, 13.0 - my paperHeight, 12.0);
+	downloadPrologAndSetUp (me.get());
+	initPage (me.get());
+	return me.move();
 }
 #endif
 

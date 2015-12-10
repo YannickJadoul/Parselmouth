@@ -55,8 +55,7 @@ static const char32 *month [] =
 	{ U"", U"January", U"February", U"March", U"April", U"May", U"June",
 	  U"July", U"August", U"September", U"October", U"November", U"December" };
 
-static void menu_cb_writeOneToHtmlFile (EDITOR_ARGS) {
-	EDITOR_IAM (Manual);
+static void menu_cb_writeOneToHtmlFile (Manual me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM_WRITE (U"Save as HTML file", nullptr)
 		ManPages manPages = (ManPages) my data;
 		autoMelderString buffer;
@@ -70,8 +69,7 @@ static void menu_cb_writeOneToHtmlFile (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_writeAllToHtmlDir (EDITOR_ARGS) {
-	EDITOR_IAM (Manual);
+static void menu_cb_writeAllToHtmlDir (Manual me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Save all pages as HTML files", nullptr)
 		LABEL (U"", U"Type a directory name:")
 		TEXTFIELD (U"directory", U"")
@@ -85,8 +83,7 @@ static void menu_cb_writeAllToHtmlDir (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_searchForPageList (EDITOR_ARGS) {
-	EDITOR_IAM (Manual);
+static void menu_cb_searchForPageList (Manual me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Search for page", nullptr)
 		ManPages manPages = (ManPages) my data;
 		long numberOfPages;
@@ -103,7 +100,7 @@ void structManual :: v_draw () {
 	ManPage page;
 	ManPage_Paragraph paragraph;
 	#if motif
-	Graphics_clearWs (g);
+	Graphics_clearWs (our graphics.get());
 	#endif
 	if (our path == SEARCH_PAGE) {
 		HyperPage_pageTitle (this, U"Best matches");
@@ -229,8 +226,7 @@ static void print (void *void_me, Graphics graphics) {
 	my printPagesStartingWith = nullptr;
 }
 
-static void menu_cb_printRange (EDITOR_ARGS) {
-	EDITOR_IAM (Manual);
+static void menu_cb_printRange (Manual me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Print range", 0)
 		SENTENCE (U"Left or inside header", U"")
 		SENTENCE (U"Middle header", U"")
@@ -439,7 +435,7 @@ void structManual :: v_createChildren () {
 	our searchText = GuiText_createShown (our d_windowForm, 274+69 + STRING_SPACING, 452 + STRING_SPACING - 2, y, y + Gui_TEXTFIELD_HEIGHT, 0);
 }
 
-static void menu_cb_help (EDITOR_ARGS) { EDITOR_IAM (Manual); HyperPage_goToPage (me, U"Manual"); }
+static void menu_cb_help (Manual me, EDITOR_ARGS_DIRECT) { HyperPage_goToPage (me, U"Manual"); }
 
 void structManual :: v_createMenus () {
 	Manual_Parent :: v_createMenus ();
@@ -505,12 +501,12 @@ void structManual :: v_goToPage_i (long pageNumber) {
 
 int structManual :: v_goToPage (const char32 *title) {
 	ManPages manPages = (ManPages) our data;
-	if (title [0] == '\\' && title [1] == 'F' && title [2] == 'I') {
+	if (title [0] == U'\\' && title [1] == U'F' && title [2] == U'I') {
 		structMelderFile file = { 0 };
 		MelderDir_relativePathToFile (& manPages -> rootDirectory, title + 3, & file);
 		Melder_recordFromFile (& file);
 		return -1;
-	} else if (title [0] == '\\' && title [1] == 'S' && title [2] == 'C') {
+	} else if (title [0] == U'\\' && title [1] == U'S' && title [2] == U'C') {
 		autoMelderSetDefaultDir dir (& manPages -> rootDirectory);
 		autoPraatBackground background;
 		try {
@@ -544,7 +540,7 @@ void Manual_init (Manual me, const char32 *title, Daata data, bool ownData) {
 	par = my paragraphs;
 	while ((par ++) -> type) my numberOfParagraphs ++;
 
-	if (((ManPage) manPages -> pages -> item [1]) -> title [0] == '-') {
+	if (((ManPage) manPages -> pages -> item [1]) -> title [0] == U'-') {
 		Melder_sprint (windowTitle,101, & ((ManPage) manPages -> pages -> item [1]) -> title [1]);
 		if (windowTitle [str32len (windowTitle) - 1] == U'-') windowTitle [str32len (windowTitle) - 1] = U'\0';
 	} else {
@@ -556,11 +552,11 @@ void Manual_init (Manual me, const char32 *title, Daata data, bool ownData) {
 	my history [0]. page = Melder_dup_f (title);   // BAD
 }
 
-Manual Manual_create (const char32 *title, Daata data, bool ownData) {
+autoManual Manual_create (const char32 *title, Daata data, bool ownData) {
 	try {
 		autoManual me = Thing_new (Manual);
 		Manual_init (me.peek(), title, data, ownData);
-		return me.transfer();
+		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Manual window not created.");
 	}

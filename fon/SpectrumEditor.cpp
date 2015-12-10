@@ -46,17 +46,17 @@ void structSpectrumEditor :: v_dataChanged () {
 void structSpectrumEditor :: v_draw () {
 	Spectrum spectrum = (Spectrum) our data;
 
-	Graphics_setWindow (our d_graphics, 0, 1, 0, 1);
-	Graphics_setColour (our d_graphics, Graphics_WHITE);
-	Graphics_fillRectangle (our d_graphics, 0, 1, 0, 1);
-	Graphics_setColour (our d_graphics, Graphics_BLACK);
-	Graphics_rectangle (our d_graphics, 0, 1, 0, 1);
-	Spectrum_drawInside (spectrum, our d_graphics, our d_startWindow, our d_endWindow, our minimum, our maximum);
+	Graphics_setWindow (our d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
+	Graphics_setColour (our d_graphics.get(), Graphics_WHITE);
+	Graphics_fillRectangle (our d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
+	Graphics_setColour (our d_graphics.get(), Graphics_BLACK);
+	Graphics_rectangle (our d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
+	Spectrum_drawInside (spectrum, our d_graphics.get(), our d_startWindow, our d_endWindow, our minimum, our maximum);
 	FunctionEditor_drawRangeMark (this, our maximum, Melder_fixed (maximum, 1), U" dB", Graphics_TOP);
 	FunctionEditor_drawRangeMark (this, our minimum, Melder_fixed (minimum, 1), U" dB", Graphics_BOTTOM);
 	if (our cursorHeight > our minimum && our cursorHeight < our maximum)
 		FunctionEditor_drawHorizontalHair (this, our cursorHeight, Melder_fixed (our cursorHeight, 1), U" dB");
-	Graphics_setColour (our d_graphics, Graphics_BLACK);
+	Graphics_setColour (our d_graphics.get(), Graphics_BLACK);
 
 	/* Update buttons. */
 
@@ -71,19 +71,19 @@ bool structSpectrumEditor :: v_click (double xWC, double yWC, bool shiftKeyPress
 	return our SpectrumEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);   // move cursor or drag selection
 }
 
-static Spectrum Spectrum_band (Spectrum me, double fmin, double fmax) {
+static autoSpectrum Spectrum_band (Spectrum me, double fmin, double fmax) {
 	autoSpectrum band = Data_copy (me);
 	double *re = band -> z [1], *im = band -> z [2];
 	long imin = Sampled_xToLowIndex (band.peek(), fmin), imax = Sampled_xToHighIndex (band.peek(), fmax);
 	for (long i = 1; i <= imin; i ++) re [i] = 0.0, im [i] = 0.0;
 	for (long i = imax; i <= band -> nx; i ++) re [i] = 0.0, im [i] = 0.0;
-	return band.transfer();
+	return band;
 }
 
-static Sound Spectrum_to_Sound_part (Spectrum me, double fmin, double fmax) {
+static autoSound Spectrum_to_Sound_part (Spectrum me, double fmin, double fmax) {
 	autoSpectrum band = Spectrum_band (me, fmin, fmax);
 	autoSound sound = Spectrum_to_Sound (band.peek());
-	return sound.transfer();
+	return sound;
 }
 
 void structSpectrumEditor :: v_play (double fmin, double fmax) {
@@ -91,20 +91,17 @@ void structSpectrumEditor :: v_play (double fmin, double fmax) {
 	Sound_play (sound.peek(), nullptr, nullptr);
 }
 
-static void menu_cb_publishBand (EDITOR_ARGS) {
-	EDITOR_IAM (SpectrumEditor);
+static void menu_cb_publishBand (SpectrumEditor me, EDITOR_ARGS_DIRECT) {
 	autoSpectrum publish = Spectrum_band ((Spectrum) my data, my d_startSelection, my d_endSelection);
-	Editor_broadcastPublication (me, publish.transfer());
+	Editor_broadcastPublication (me, publish.move());
 }
 
-static void menu_cb_publishSound (EDITOR_ARGS) {
-	EDITOR_IAM (SpectrumEditor);
+static void menu_cb_publishSound (SpectrumEditor me, EDITOR_ARGS_DIRECT) {
 	autoSound publish = Spectrum_to_Sound_part ((Spectrum) my data, my d_startSelection, my d_endSelection);
-	Editor_broadcastPublication (me, publish.transfer());
+	Editor_broadcastPublication (me, publish.move());
 }
 
-static void menu_cb_passBand (EDITOR_ARGS) {
-	EDITOR_IAM (SpectrumEditor);
+static void menu_cb_passBand (SpectrumEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Filter (pass Hann band)", U"Spectrum: Filter (pass Hann band)...");
 		REAL (U"Band smoothing (Hz)", my default_bandSmoothing ())
 	EDITOR_OK
@@ -119,9 +116,8 @@ static void menu_cb_passBand (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_stopBand (EDITOR_ARGS) {
-	EDITOR_IAM (SpectrumEditor);
-	EDITOR_FORM (U"Filter (stop Hann band)", 0)
+static void menu_cb_stopBand (SpectrumEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Filter (stop Hann band)", nullptr)
 		REAL (U"Band smoothing (Hz)", my default_bandSmoothing ())
 	EDITOR_OK
 		SET_REAL (U"Band smoothing", my p_bandSmoothing)
@@ -135,8 +131,7 @@ static void menu_cb_stopBand (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_moveCursorToPeak (EDITOR_ARGS) {
-	EDITOR_IAM (SpectrumEditor);
+static void menu_cb_moveCursorToPeak (SpectrumEditor me, EDITOR_ARGS_DIRECT) {
 	double frequencyOfMaximum, heightOfMaximum;
 	Spectrum_getNearestMaximum ((Spectrum) my data, 0.5 * (my d_startSelection + my d_endSelection), & frequencyOfMaximum, & heightOfMaximum);
 	my d_startSelection = my d_endSelection = frequencyOfMaximum;
@@ -144,9 +139,8 @@ static void menu_cb_moveCursorToPeak (EDITOR_ARGS) {
 	FunctionEditor_marksChanged (me, true);
 }
 
-static void menu_cb_setDynamicRange (EDITOR_ARGS) {
-	EDITOR_IAM (SpectrumEditor);
-	EDITOR_FORM (U"Set dynamic range", 0)
+static void menu_cb_setDynamicRange (SpectrumEditor me, EDITOR_ARGS_FORM) {
+	EDITOR_FORM (U"Set dynamic range", nullptr)
 		POSITIVE (U"Dynamic range (dB)", my default_dynamicRange ())
 	EDITOR_OK
 		SET_REAL (U"Dynamic range", my p_dynamicRange)
@@ -157,8 +151,8 @@ static void menu_cb_setDynamicRange (EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_help_SpectrumEditor (EDITOR_ARGS) { EDITOR_IAM (SpectrumEditor); Melder_help (U"SpectrumEditor"); }
-static void menu_cb_help_Spectrum (EDITOR_ARGS) { EDITOR_IAM (SpectrumEditor); Melder_help (U"Spectrum"); }
+static void menu_cb_help_SpectrumEditor (SpectrumEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"SpectrumEditor"); }
+static void menu_cb_help_Spectrum (SpectrumEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"Spectrum"); }
 
 void structSpectrumEditor :: v_createMenus () {
 	SpectrumEditor_Parent :: v_createMenus ();

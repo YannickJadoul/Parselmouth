@@ -124,7 +124,7 @@ double SSCP_getEllipseScalefactor (SSCP me, double scale, bool confidence) {
 	return scale;
 }
 
-static void getEllipseBoundingBoxCoordinates (SSCP me, double scale, int confidence, double *xmin, double *xmax, double *ymin, double *ymax) {
+static void getEllipseBoundingBoxCoordinates (SSCP me, double scale, bool confidence, double *xmin, double *xmax, double *ymin, double *ymax) {
 	double a, b, cs, sn, width, height;
 	double lscale = SSCP_getEllipseScalefactor (me, scale, confidence);
 
@@ -137,7 +137,7 @@ static void getEllipseBoundingBoxCoordinates (SSCP me, double scale, int confide
 	*ymax = *ymin + lscale * height;
 }
 
-void SSCPs_getEllipsesBoundingBoxCoordinates (SSCPs me, double scale, int confidence, double *xmin, double *xmax, double *ymin, double *ymax) {
+void SSCPs_getEllipsesBoundingBoxCoordinates (SSCPs me, double scale, bool confidence, double *xmin, double *xmax, double *ymin, double *ymax) {
 	*xmin = *ymin = 1e308;
 	*xmax = *ymax = - *xmin;
 
@@ -957,7 +957,7 @@ autoSSCPs SSCPs_create () {
 
 autoSSCP SSCPs_to_SSCP_pool (SSCPs me) {
 	try {
-		autoSSCP thee = Data_copy ( (SSCP) my item[1]);
+		autoSSCP thee = Data_copy ((SSCP) my item[1]);
 
 		for (long k = 2; k <= my size; k++) {
 			SSCP t = (SSCP) my item[k];
@@ -1035,7 +1035,7 @@ autoSSCPs SSCPs_toTwoDimensions (SSCPs me, double *v1, double *v2) {
 }
 
 
-void SSCPs_drawConcentrationEllipses (SSCPs me, Graphics g, double scale, int confidence, const char32 *label, long d1, long d2, double xmin, double xmax, double ymin, double ymax, int fontSize, int garnish) {
+void SSCPs_drawConcentrationEllipses (SSCPs me, Graphics g, double scale, bool confidence, const char32 *label, long d1, long d2, double xmin, double xmax, double ymin, double ymax, int fontSize, int garnish) {
 	SSCP t = (SSCP) my item[1];
 	long p = t -> numberOfColumns;
 
@@ -1860,13 +1860,13 @@ void SSCP_unExpandLowerCholesky (SSCP me) {
 
 void SSCP_expandPCA (SSCP me) {
 	if (my pca) {
-		my pca.reset(nullptr);
+		my pca.reset();
 	}
 	my pca = SSCP_to_PCA (me);
 }
 
 void SSCP_unExpandPCA (SSCP me) {
-	my pca.reset (nullptr);
+	my pca.reset();
 }
 
 

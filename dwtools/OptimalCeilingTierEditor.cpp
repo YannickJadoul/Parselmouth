@@ -22,7 +22,7 @@
 
 Thing_implement (OptimalCeilingTierEditor, RealTierEditor, 0);
 
-static void menu_cb_OptimalCeilingTierHelp (EDITOR_ARGS) { EDITOR_IAM (OptimalCeilingTierEditor); Melder_help (U"OptimalCeilingTier"); }
+static void menu_cb_OptimalCeilingTierHelp (OptimalCeilingTierEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"OptimalCeilingTier"); }
 
 void structOptimalCeilingTierEditor :: v_createHelpMenuItems (EditorMenu menu) {
 	OptimalCeilingTierEditor_Parent :: v_createHelpMenuItems (menu);
@@ -37,11 +37,11 @@ void structOptimalCeilingTierEditor :: v_play (double fromTime, double toTime) {
 	}
 }
 
-OptimalCeilingTierEditor OptimalCeilingTierEditor_create (const char32 *title, OptimalCeilingTier octier, Sound sound, bool ownSound) {
+autoOptimalCeilingTierEditor OptimalCeilingTierEditor_create (const char32 *title, OptimalCeilingTier octier, Sound sound, bool ownSound) {
 	try {
 		autoOptimalCeilingTierEditor me = Thing_new (OptimalCeilingTierEditor);
 		RealTierEditor_init (me.peek(), title, (RealTier) octier, sound, ownSound);
-		return me.transfer();
+		return me;
 	} catch (MelderError) {
 		Melder_throw (U"OptimalCeilingTier window not created.");
 	}

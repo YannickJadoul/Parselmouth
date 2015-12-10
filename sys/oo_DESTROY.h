@@ -85,13 +85,7 @@
 		NUMmatrix_free <struct##Type> (our x, row1, col1); \
 	}
 
-#define oo_OBJECT(Class,version,x)  \
-	forget (our x);
-
 #define oo_AUTO_OBJECT(Class,version,x)
-
-#define oo_COLLECTION(Class,x,ItemClass,version)  \
-	forget (our x);
 
 #define oo_AUTO_COLLECTION(Class,x,ItemClass,version)
 

@@ -79,10 +79,10 @@ Thing_define (Daata, Thing) {
 	virtual bool v_hasGetColIndex  () { return false; }   virtual double        v_getColIndex  (const char32 * /* colLabel */)    { return NUMundefined; }
 };
 
-template <class T> T* Data_copy (T* data) {
-	return static_cast <T*> (_Data_copy (data));
+template <class T> _Thing_auto<T> Data_copy (T* data) {
+	return _Data_copy (data).template static_cast_move <T> ();
 }
-Daata _Data_copy (Daata me);
+autoDaata _Data_copy (Daata me);
 /*
 	Message:
 		"return a deep copy of yourself."
@@ -322,6 +322,10 @@ Behaviour:
 
 extern structMelderDir Data_directoryBeingRead;
 
+int Data_publish (autoDaata me);
+
+void Data_setPublishProc (int (*publish) (autoDaata));
+
 /* The values of 'type' in struct descriptions. */
 
 #define bytewa  1
@@ -346,9 +350,8 @@ extern structMelderDir Data_directoryBeingRead;
 #define widgetwa  19
 #define objectwa  20
 #define autoobjectwa  21
-#define collectionwa  22
-#define autocollectionwa  23
-#define inheritwa  24
+#define autocollectionwa  22
+#define inheritwa  23
 
 /* Recursive routines for working with struct members. */
 

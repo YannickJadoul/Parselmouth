@@ -81,11 +81,6 @@ static void defaultFatal (const char32 *message) {
 	Melder_writeToConsole (U"\n", true);
 }
 
-static int defaultPublish (void *anything) {
-	(void) anything;
-	return 0;   // nothing published
-}
-
 static int defaultRecord (double duration) {
 	(void) duration;
 	return 0;   // nothing recorded
@@ -111,7 +106,6 @@ static struct {
 	void (*search) ();
 	void (*warning) (const char32 *message);
 	void (*fatal) (const char32 *message);
-	int (*publish) (void *anything);
 	int (*record) (double duration);
 	int (*recordFromFile) (MelderFile file);
 	void (*play) ();
@@ -121,7 +115,6 @@ static struct {
 	theMelder = {
 		defaultHelp, defaultSearch,
 		defaultWarning, defaultFatal,
-		defaultPublish,
 		defaultRecord, defaultRecordFromFile, defaultPlay, defaultPlayReverse, defaultPublishPlayed
 	};
 
@@ -398,7 +391,7 @@ static Graphics _Melder_monitor (double progress, const char32 *message) {
 		static GuiButton cancelButton = nullptr;
 		static GuiLabel label1 = nullptr, label2 = nullptr;
 		clock_t now = clock ();
-		static Graphics graphics = nullptr;
+		static autoGraphics graphics;
 		if (progress <= 0.0 || progress >= 1.0 ||
 			now - lastTime > CLOCKS_PER_SEC / 4)   // this time step must be much longer than the null-event waiting time
 		{
@@ -412,7 +405,7 @@ static Graphics _Melder_monitor (double progress, const char32 *message) {
 				Melder_throw (U"Interrupted!");
 			lastTime = now;
 			if (progress == 0.0)
-				return graphics;
+				return graphics.get();
 		}
 	}
 	return progress <= 0.0 ? nullptr /* no Graphics */ : (Graphics) -1 /* any non-null pointer */;
@@ -1187,10 +1180,6 @@ void MelderGui_create (void *parent) {
 	Melder_setWarningProc (gui_warning);
 }
 
-int Melder_publish (void *anything) {
-	return theMelder. publish (anything);
-}
-
 int Melder_record (double duration) {
 	return theMelder. record (duration);
 }
@@ -1224,9 +1213,6 @@ void Melder_setWarningProc (void (*warning) (const char32 *))
 
 void Melder_setFatalProc (void (*fatal) (const char32 *))
 	{ theMelder. fatal = fatal ? fatal : defaultFatal; }
-
-void Melder_setPublishProc (int (*publish) (void *))
-	{ theMelder. publish = publish ? publish : defaultPublish; }
 
 void Melder_setRecordProc (int (*record) (double))
 	{ theMelder. record = record ? record : defaultRecord; }

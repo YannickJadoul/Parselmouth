@@ -328,7 +328,7 @@ autoSSCP Discriminant_extractWithinGroupSSCP (Discriminant me, long index) {
 	try {
 		if (index < 1 || index > my numberOfGroups) Melder_throw
 			(U"Index must be in interval [1,", my numberOfGroups, U"].");
-		autoSSCP thee = Data_copy ( (SSCP) my groups -> item[index]);
+		autoSSCP thee = Data_copy ((SSCP) my groups -> item[index]);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": within group SSCP not created.");
@@ -358,7 +358,9 @@ void Discriminant_drawTerritorialMap (Discriminant me, Graphics g, int discrimin
 
 }
 
-void Discriminant_drawConcentrationEllipses (Discriminant me, Graphics g, double scale, int confidence, char32 *label, int discriminantDirections, long d1, long d2, double xmin, double xmax, double ymin, double ymax, int fontSize, int garnish) {
+void Discriminant_drawConcentrationEllipses (Discriminant me, Graphics g, double scale, bool confidence, char32 *label,
+	int discriminantDirections, long d1, long d2, double xmin, double xmax, double ymin, double ymax, int fontSize, int garnish)
+{
 	long numberOfFunctions = Discriminant_getNumberOfFunctions (me);
 
 	if (! discriminantDirections) {

@@ -188,9 +188,9 @@ long AnyTier_hasPoint (AnyTier me, double t) {
 	return 0;   // point not found
 }
 
-void AnyTier_addPoint (AnyTier me, Daata point) {
+void AnyTier_addPoint_move (AnyTier me, autoDaata point) {
 	try {
-		Collection_addItem (my points.get(), point);
+		Collection_addItem_move (my points.get(), point.move());
 	} catch (MelderError) {
 		Melder_throw (me, U": point not added.");
 	}
@@ -213,7 +213,7 @@ void AnyTier_removePointsBetween (AnyTier me, double tmin, double tmax) {
 		Collection_removeItem (my points.get(), i);
 }
 
-PointProcess AnyTier_downto_PointProcess (AnyTier me) {
+autoPointProcess AnyTier_downto_PointProcess (AnyTier me) {
 	try {
 		long numberOfPoints = my points -> size;
 		AnyPoint *points = (AnyPoint *) my points -> item;
@@ -222,7 +222,7 @@ PointProcess AnyTier_downto_PointProcess (AnyTier me) {
 		for (long i = 1; i <= numberOfPoints; i ++)
 			thy t [i] = points [i] -> number;
 		thy nt = numberOfPoints;
-		return thee.transfer();
+		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to PointProcess.");
 	}

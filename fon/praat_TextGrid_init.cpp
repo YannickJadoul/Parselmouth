@@ -830,24 +830,26 @@ DO
 		if (itier > my tiers -> size) itier = my tiers -> size;
 		autoAnyTier newTier = Data_copy ((AnyTier) my tiers -> item [itier]);
 		Thing_setName (newTier.peek(), name);
-		Ordered_addItemPos (my tiers, newTier.transfer(), position);
+		Ordered_addItemAtPosition_move (my tiers.get(), newTier.move(), position);
 		praat_dataChanged (me);
 	}
 END2 }
 
-static void cb_TextGridEditor_publication (Editor /* editor */, void * /* closure */, Daata publication) {
+static void cb_TextGridEditor_publication (Editor /* editor */, autoDaata publication) {
 	/*
 	 * Keep the gate for error handling.
 	 */
 	try {
-		praat_new (publication);
+		bool isaSpectralSlice = Thing_isa (publication.get(), classSpectrum) && str32equ (Thing_getName (publication.get()), U"slice");
+		praat_new (publication.move());
 		praat_updateSelection ();
-		if (Thing_isa (publication, classSpectrum) && str32equ (Thing_getName (publication), U"slice")) {
+		if (isaSpectralSlice) {
 			int IOBJECT;
 			LOOP {
 				iam (Spectrum);
 				autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
-				praat_installEditor (editor2.transfer(), IOBJECT);
+				praat_installEditor (editor2.get(), IOBJECT);
+				editor2.releaseToUser();
 			}
 		}
 	} catch (MelderError) {
@@ -863,8 +865,9 @@ DIRECT2 (TextGrid_edit) {
 	LOOP if (CLASS == classTextGrid) {
 		iam (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, sound, true, nullptr, nullptr);
-		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication, nullptr);
-		praat_installEditor (editor.transfer(), IOBJECT);
+		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication);
+		praat_installEditor (editor.get(), IOBJECT);
+		editor.releaseToUser();
 	}
 END2 }
 
@@ -880,8 +883,9 @@ DO
 	LOOP if (CLASS == classTextGrid) {
 		iam (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, sound, true, nullptr, Melder_peek32to8 (GET_STRING (U"Callback text")));
-		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication, nullptr);
-		praat_installEditor (editor.transfer(), IOBJECT);
+		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication);
+		praat_installEditor (editor.get(), IOBJECT);
+		editor.releaseToUser();
 	}
 END2 }
 
@@ -896,8 +900,9 @@ DIRECT2 (TextGrid_LongSound_edit) {
 	LOOP if (CLASS == classTextGrid) {
 		iam (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, longSound, false, nullptr, nullptr);
-		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication, nullptr);
-		praat_installEditor2 (editor.transfer(), IOBJECT, ilongSound);
+		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication);
+		praat_installEditor2 (editor.get(), IOBJECT, ilongSound);
+		editor.releaseToUser();
 	}
 END2 }
 
@@ -914,7 +919,8 @@ DIRECT2 (TextGrid_SpellingChecker_edit) {
 	LOOP if (CLASS == classTextGrid) {
 		iam (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, sound, true, spellingChecker, nullptr);
-		praat_installEditor2 (editor.transfer(), IOBJECT, ispellingChecker);
+		praat_installEditor2 (editor.get(), IOBJECT, ispellingChecker);
+		editor.releaseToUser();
 	}
 END2 }
 
@@ -931,7 +937,8 @@ DIRECT2 (TextGrid_LongSound_SpellingChecker_edit) {
 	LOOP if (CLASS == classTextGrid) {
 		iam (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, longSound, false, spellingChecker, nullptr);
-		praat_installEditor3 (editor.transfer(), IOBJECT, ilongSound, ispellingChecker);
+		praat_installEditor3 (editor.get(), IOBJECT, ilongSound, ispellingChecker);
+		editor.releaseToUser();
 	}
 END2 }
 
@@ -1213,7 +1220,7 @@ DO
 		autoIntervalTier tier = IntervalTier_create (my xmin, my xmax);
 		if (position > my tiers -> size) position = my tiers -> size + 1;
 		Thing_setName (tier.peek(), name);
-		Ordered_addItemPos (my tiers, tier.transfer(), position);
+		Ordered_addItemAtPosition_move (my tiers.get(), tier.move(), position);
 		praat_dataChanged (me);
 	}
 END2 }
@@ -1244,7 +1251,7 @@ DO
 		autoTextTier tier = TextTier_create (my xmin, my xmax);
 		if (position > my tiers -> size) position = my tiers -> size + 1;
 		Thing_setName (tier.peek(), name);
-		Ordered_addItemPos (my tiers, tier.transfer(), position);
+		Ordered_addItemAtPosition_move (my tiers.get(), tier.move(), position);
 		praat_dataChanged (me);
 	}
 END2 }
@@ -1505,7 +1512,7 @@ DO
 		if (my tiers -> size <= 1)
 			Melder_throw (U"Sorry, I refuse to remove the last tier.");
 		if (itier > my tiers -> size) itier = my tiers -> size;
-		Collection_removeItem (my tiers, itier);
+		Collection_removeItem (my tiers.get(), itier);
 		praat_dataChanged (me);
 	}
 END2 }

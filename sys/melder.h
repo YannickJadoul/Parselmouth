@@ -1153,8 +1153,6 @@ public:
 
 /********** RECORD AND PLAY ROUTINES **********/
 
-int Melder_publish (void *anything);
-
 int Melder_record (double duration);
 int Melder_recordFromFile (MelderFile file);
 void Melder_play ();
@@ -1201,7 +1199,6 @@ void Melder_setSearchProc (void (*search) ());
 void Melder_setWarningProc (void (*warningProc) (const char32 *message));
 void Melder_setErrorProc (void (*errorProc) (const char32 *message));
 void Melder_setFatalProc (void (*fatalProc) (const char32 *message));
-void Melder_setPublishProc (int (*publish) (void *));
 void Melder_setRecordProc (int (*record) (double));
 void Melder_setRecordFromFileProc (int (*recordFromFile) (MelderFile));
 void Melder_setPlayProc (void (*play) ());
@@ -1389,23 +1386,23 @@ public:
 };
 
 class autoMelderFile {
-	MelderFile file;
+	MelderFile _file;
 public:
-	autoMelderFile (MelderFile a_file) : file (a_file) {
+	autoMelderFile (MelderFile file) : _file (file) {
 	}
 	~autoMelderFile () {
-		if (file) MelderFile_close_nothrow (file);
+		if (_file) MelderFile_close_nothrow (_file);
 	}
 	void close () {
-		if (file && file -> filePointer) {
-			MelderFile tmp = file;
-			file = nullptr;
+		if (_file && _file -> filePointer) {
+			MelderFile tmp = _file;
+			_file = nullptr;
 			MelderFile_close (tmp);
 		}
 	}
 	MelderFile transfer () {
-		MelderFile tmp = file;
-		file = nullptr;
+		MelderFile tmp = _file;
+		_file = nullptr;
 		return tmp;
 	}
 };

@@ -66,7 +66,7 @@ Thing_define (Interpreter, Thing) {
 	#if USE_HASH
 	std::unordered_map <std::u32string, InterpreterVariable> *variablesMap;
 	#else
-	SortedSetOfString variables;
+	autoSortedSetOfString variables;
 	#endif
 	bool running, stopped;
 
@@ -74,8 +74,8 @@ Thing_define (Interpreter, Thing) {
 		override;
 };
 
-Interpreter Interpreter_create (char32 *environmentName, ClassInfo editorClass);
-Interpreter Interpreter_createFromEnvironment (Editor editor);
+autoInterpreter Interpreter_create (char32 *environmentName, ClassInfo editorClass);
+autoInterpreter Interpreter_createFromEnvironment (Editor editor);
 
 void Melder_includeIncludeFiles (char32 **text);
 long Interpreter_readParameters (Interpreter me, char32 *text);

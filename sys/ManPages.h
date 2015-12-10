@@ -23,7 +23,7 @@
 #include "Collection.h"
 
 Thing_define (ManPages, Daata) {
-	Ordered pages;
+	autoOrdered pages;
 	const char32 **titles;
 	bool ground, dynamic, executable;
 	structMelderDir rootDirectory;
@@ -34,7 +34,7 @@ Thing_define (ManPages, Daata) {
 		override;
 };
 
-ManPages ManPages_create ();
+autoManPages ManPages_create ();
 
 void ManPages_addPage (ManPages me, const char32 *title, const char32 *author, long date,
 	struct structManPage_Paragraph paragraphs []);

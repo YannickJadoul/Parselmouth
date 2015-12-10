@@ -20,7 +20,7 @@
 #define ooSTRUCT VocalTractPoint
 oo_DEFINE_CLASS (VocalTractPoint, AnyPoint)
 
-	oo_OBJECT (VocalTract, 0, d_vocalTract)
+	oo_AUTO_OBJECT (VocalTract, 0, d_vocalTract)
 
 oo_END_CLASS (VocalTractPoint)
 #undef ooSTRUCT
@@ -29,7 +29,7 @@ oo_END_CLASS (VocalTractPoint)
 #define ooSTRUCT VocalTractTier
 oo_DEFINE_CLASS (VocalTractTier, Function)
 
-	oo_COLLECTION (SortedSetOfDouble, d_vocalTracts, VocalTractPoint, 0)
+	oo_AUTO_COLLECTION (SortedSetOfDouble, d_vocalTracts, VocalTractPoint, 0)
 
 oo_END_CLASS (VocalTractTier)
 #undef ooSTRUCT

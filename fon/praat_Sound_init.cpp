@@ -172,7 +172,8 @@ DIRECT2 (LongSound_view) {
 	LOOP {
 		iam (LongSound);
 		autoSoundEditor editor = SoundEditor_create (ID_AND_FULL_NAME, me);
-		praat_installEditor (editor.transfer(), IOBJECT);
+		praat_installEditor (editor.get(), IOBJECT);
+		editor.releaseToUser();
 	}
 END2 }
 
@@ -579,9 +580,9 @@ FORM (Sound_createFromToneComplex, U"Create Sound from tone complex", U"Create S
 	RADIO (U"Phase", 2)
 		RADIOBUTTON (U"Sine")
 		RADIOBUTTON (U"Cosine")
-	POSITIVE (U"Frequency step (Hz)", U"100")
-	REAL (U"First frequency (Hz)", U"0 (= frequency step)")
-	REAL (U"Ceiling (Hz)", U"0 (= Nyquist)")
+	POSITIVE (U"Frequency step (Hz)", U"100.0")
+	REAL (U"First frequency (Hz)", U"0.0 (= frequency step)")
+	REAL (U"Ceiling (Hz)", U"0.0 (= Nyquist)")
 	INTEGER (U"Number of components", U"0 (= maximum)")
 	OK2
 DO
@@ -691,21 +692,21 @@ DO_ALTERNATIVE (old_Sound_draw)
 	}
 END2 }
 
-static void cb_SoundEditor_publication (Editor editor, void *closure, Daata publication) {
-	(void) editor;
-	(void) closure;
+static void cb_SoundEditor_publication (Editor /* me */, autoDaata publication) {
 	/*
 	 * Keep the gate for error handling.
 	 */
 	try {
-		praat_new (publication, U"");
+		bool isaSpectrum = Thing_isa (publication.get(), classSpectrum);
+		praat_new (publication.move(), U"");
 		praat_updateSelection ();
-		if (Thing_isa (publication, classSpectrum)) {
+		if (isaSpectrum) {
 			int IOBJECT;
 			LOOP {
 				iam (Spectrum);
 				autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
-				praat_installEditor (editor2.transfer(), IOBJECT);
+				praat_installEditor (editor2.get(), IOBJECT);
+				editor2.releaseToUser();
 			}
 		}
 	} catch (MelderError) {
@@ -717,8 +718,9 @@ DIRECT2 (Sound_edit) {
 	LOOP {
 		iam (Sound);
 		autoSoundEditor editor = SoundEditor_create (ID_AND_FULL_NAME, me);
-		Editor_setPublicationCallback (editor.peek(), cb_SoundEditor_publication, nullptr);
-		praat_installEditor (editor.transfer(), IOBJECT);
+		Editor_setPublicationCallback (editor.peek(), cb_SoundEditor_publication);
+		praat_installEditor (editor.get(), IOBJECT);
+		editor.releaseToUser();
 	}
 END2 }
 
@@ -1376,14 +1378,15 @@ FORM_READ2 (Sound_readFromRawAlawFile, U"Read Sound from raw Alaw file", nullptr
 	praat_new (me.move(), MelderFile_name (file));
 END2 }
 
-static autoSoundRecorder theSoundRecorder;   // only one at a time can exist
+static SoundRecorder theReferenceToTheOnlySoundRecorder;
 static int thePreviousNumberOfChannels;
-static void cb_SoundRecorder_pleaseReset (Editor /* editor */, void* /* closure */) {
-	theSoundRecorder. reset();
+
+static void cb_SoundRecorder_destruction (SoundRecorder /* me */) {
+	theReferenceToTheOnlySoundRecorder = nullptr;
 }
-static void cb_SoundRecorder_publication (Editor /* editor */, void* /* closure */, Daata publication) {
+static void cb_SoundRecorder_publication (Editor /* me */, autoDaata publication) {
 	try {
-		praat_new (publication);
+		praat_new (publication.move());
 	} catch (MelderError) {
 		Melder_flushError ();
 	}
@@ -1392,12 +1395,15 @@ static void cb_SoundRecorder_publication (Editor /* editor */, void* /* closure 
 static void do_Sound_record (int numberOfChannels) {
 	if (theCurrentPraatApplication -> batch)
 		Melder_throw (U"Cannot record a Sound from batch.");
-	if (theSoundRecorder && numberOfChannels == thePreviousNumberOfChannels) {
-		Editor_raise (theSoundRecorder.get());
+	if (theReferenceToTheOnlySoundRecorder && numberOfChannels == thePreviousNumberOfChannels) {
+		Editor_raise (theReferenceToTheOnlySoundRecorder);
 	} else {
-		theSoundRecorder = SoundRecorder_create (numberOfChannels);
-		Editor_setPleaseResetCallback (theSoundRecorder.get(), cb_SoundRecorder_pleaseReset, nullptr);
-		Editor_setPublicationCallback (theSoundRecorder.get(), cb_SoundRecorder_publication, nullptr);
+		forget (theReferenceToTheOnlySoundRecorder);
+		autoSoundRecorder recorder = SoundRecorder_create (numberOfChannels);
+		Editor_setDestructionCallback (recorder.get(), cb_SoundRecorder_destruction);
+		Editor_setPublicationCallback (recorder.get(), cb_SoundRecorder_publication);
+		theReferenceToTheOnlySoundRecorder = recorder.get();
+		recorder.releaseToUser();
 		thePreviousNumberOfChannels = numberOfChannels;
 	}
 }
@@ -1443,7 +1449,7 @@ DO
 END2 }
 
 FORM (Sound_resample, U"Sound: Resample", U"Sound: Resample...") {
-	POSITIVE (U"New sampling frequency (Hz)", U"10000")
+	POSITIVE (U"New sampling frequency (Hz)", U"10000.0")
 	NATURAL (U"Precision (samples)", U"50")
 	OK2
 DO
@@ -2260,32 +2266,31 @@ static autoDaata kayFileRecognizer (int nread, const char *header, MelderFile fi
 
 /***** override play and record buttons in manuals *****/
 
-static Sound melderSound, melderSoundFromFile, last;
+static autoSound melderSound, melderSoundFromFile;
+static Sound last;
 static int recordProc (double duration) {
-	if (last == melderSound) last = nullptr;
-	forget (melderSound);
+	if (last == melderSound.get()) last = nullptr;
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
-	melderSound = Sound_recordFixedTime (1, 1.0, 0.5, 44100, duration).transfer();
+	melderSound = Sound_recordFixedTime (1, 1.0, 0.5, 44100, duration);
 	if (! melderSound) return 0;
-	last = melderSound;
+	last = melderSound.get();
 	return 1;
 }
 static int recordFromFileProc (MelderFile file) {
-	if (last == melderSoundFromFile) last = nullptr;
-	forget (melderSoundFromFile);
+	if (last == melderSoundFromFile.get()) last = nullptr;
 	Melder_warningOff ();   // like "misssing samples"
-	melderSoundFromFile = Data_readFromFile (file). static_cast_move<structSound>(). transfer();
+	melderSoundFromFile = Data_readFromFile (file). static_cast_move<structSound>();
 	Melder_warningOn ();
 	if (! melderSoundFromFile) return 0;
-	if (! Thing_isa (melderSoundFromFile, classSound)) { forget (melderSoundFromFile); return 0; }
-	last = melderSoundFromFile;
-	Sound_play (melderSoundFromFile, nullptr, nullptr);
+	if (! Thing_isa (melderSoundFromFile.get(), classSound)) { melderSoundFromFile.reset(); return 0; }
+	last = melderSoundFromFile.get();
+	Sound_play (melderSoundFromFile.get(), nullptr, nullptr);
 	return 1;
 }
 static void playProc () {
 	if (melderSound) {
-		Sound_play (melderSound, nullptr, nullptr);
-		last = melderSound;
+		Sound_play (melderSound.get(), nullptr, nullptr);
+		last = melderSound.get();
 	}
 }
 static void playReverseProc () {
@@ -2293,7 +2298,8 @@ static void playReverseProc () {
 }
 static int publishPlayedProc () {
 	if (! last) return 0;
-	return Melder_publish (Data_copy (last));
+	autoSound sound = Data_copy (last);
+	return Data_publish (sound.move());
 }
 
 /***** buttons *****/

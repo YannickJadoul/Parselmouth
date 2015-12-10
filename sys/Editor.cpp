@@ -54,7 +54,6 @@ Thing_implement (EditorMenu, Thing, 0);
 
 void structEditorMenu :: v_destroy () {
 	Melder_free (our menuTitle);
-	forget (our commands);
 	EditorMenu_Parent :: v_destroy ();
 }
 
@@ -87,7 +86,7 @@ GuiMenuItem EditorMenu_addCommand (EditorMenu me, const char32 *itemTitle /* cat
 		GuiMenu_addItem (my menuWidget, itemTitle, flags, commonCallback, thee.peek());   // DANGLE BUG: me can be killed by Collection_addItem(), but EditorCommand::destroy doesn't remove the item
 	thy commandCallback = commandCallback;
 	GuiMenuItem result = thy itemWidget;
-	Collection_addItem_move (my commands, thee.move());
+	Collection_addItem_move (my commands.get(), thee.move());
 	return result;
 }
 
@@ -100,7 +99,7 @@ EditorMenu Editor_addMenu (Editor me, const char32 *menuTitle, long flags) {
 	thy menuWidget = GuiMenu_createInWindow (my d_windowForm, menuTitle, flags);
 	thy commands = Ordered_create ();
 	EditorMenu result = thee.peek();
-	Collection_addItem_move (my menus, thee.move());
+	Collection_addItem_move (my menus.get(), thee.move());
 	return result;
 }
 
@@ -121,12 +120,9 @@ GuiMenuItem Editor_addCommand (Editor me, const char32 *menuTitle, const char32 
 	}
 }
 
-static void Editor_scriptCallback (Editor me, EditorCommand cmd, UiForm sendingForm, int narg, Stackel args, const char32 *sendingString, Interpreter interpreter) {
-	(void) sendingForm;
-	(void) narg;
-	(void) args;
-	(void) sendingString;
-	(void) interpreter;
+static void Editor_scriptCallback (Editor me, EditorCommand cmd, UiForm /* sendingForm */,
+	int /* narg */, Stackel /* args */, const char32 * /* sendingString */, Interpreter /* interpreter */)
+{
 	DO_RunTheScriptFromAnyAddedEditorCommand (me, cmd -> script);
 }
 
@@ -152,7 +148,7 @@ GuiMenuItem Editor_addCommandScript (Editor me, const char32 *menuTitle, const c
 				cmd -> script = Melder_dup_f (Melder_fileToPath (& file));
 			}
 			GuiMenuItem result = cmd -> itemWidget;
-			Collection_addItem_move (menu -> commands, cmd.move());
+			Collection_addItem_move (menu -> commands.get(), cmd.move());
 			return result;
 		}
 	}
@@ -216,7 +212,6 @@ void structEditor :: v_destroy () {
 	 * The following command must be performed before the shell is destroyed.
 	 * Otherwise, we would be forgetting dangling command dialogs here.
 	 */
-	forget (our menus);
 	Editor_broadcastDestruction (this);
 	if (our d_windowForm) {
 		#if gtk
@@ -236,7 +231,6 @@ void structEditor :: v_destroy () {
 			}
 		#endif
 	}
-	forget (our previousData);
 	if (our d_ownData) forget (our data);
 	Melder_free (our callbackSocket);
 	Editor_Parent :: v_destroy ();
@@ -260,17 +254,15 @@ void structEditor :: v_nameChanged () {
 
 void structEditor :: v_saveData () {
 	if (! our data) return;
-	forget (our previousData);
 	our previousData = Data_copy (our data);
 }
 
 void structEditor :: v_restoreData () {
 	if (our data && our previousData)
-		Thing_swap (our data, our previousData);
+		Thing_swap (our data, our previousData.get());
 }
 
-static void menu_cb_sendBackToCallingProgram (EDITOR_ARGS) {
-	EDITOR_IAM (Editor);
+static void menu_cb_sendBackToCallingProgram (Editor me, EDITOR_ARGS_DIRECT) {
 	if (my data) {
 		extern structMelderDir praatDir;
 		structMelderFile file = { 0 };
@@ -281,13 +273,11 @@ static void menu_cb_sendBackToCallingProgram (EDITOR_ARGS) {
 	my v_goAway ();
 }
 
-static void menu_cb_close (EDITOR_ARGS) {
-	EDITOR_IAM (Editor);
+static void menu_cb_close (Editor me, EDITOR_ARGS_DIRECT) {
 	my v_goAway ();
 }
 
-static void menu_cb_undo (EDITOR_ARGS) {
-	EDITOR_IAM (Editor);
+static void menu_cb_undo (Editor me, EDITOR_ARGS_DIRECT) {
 	my v_restoreData ();
 	if (str32nequ (my undoText, U"Undo", 4)) my undoText [0] = U'R', my undoText [1] = U'e';
 	else if (str32nequ (my undoText, U"Redo", 4)) my undoText [0] = U'U', my undoText [1] = U'n';
@@ -310,24 +300,22 @@ static void menu_cb_undo (EDITOR_ARGS) {
 	Editor_broadcastDataChanged (me);
 }
 
-static void menu_cb_searchManual (EDITOR_ARGS) {
-	EDITOR_IAM (Editor);
+static void menu_cb_searchManual (Editor /* me */, EDITOR_ARGS_DIRECT) {
 	Melder_search ();
 }
 
-static void menu_cb_newScript (EDITOR_ARGS) {
-	EDITOR_IAM (Editor);
-	(void) ScriptEditor_createFromText (me, nullptr);
-}
-
-static void menu_cb_openScript (EDITOR_ARGS) {
-	EDITOR_IAM (Editor);
+static void menu_cb_newScript (Editor me, EDITOR_ARGS_DIRECT) {
 	autoScriptEditor scriptEditor = ScriptEditor_createFromText (me, nullptr);
-	TextEditor_showOpen (scriptEditor.transfer());
+	scriptEditor.releaseToUser();
 }
 
-void structEditor :: v_createMenuItems_file (EditorMenu menu) {
-	(void) menu;
+static void menu_cb_openScript (Editor me, EDITOR_ARGS_DIRECT) {
+	autoScriptEditor scriptEditor = ScriptEditor_createFromText (me, nullptr);
+	TextEditor_showOpen (scriptEditor.get());
+	scriptEditor.releaseToUser();
+}
+
+void structEditor :: v_createMenuItems_file (EditorMenu /* menu */) {
 }
 
 void structEditor :: v_createMenuItems_edit (EditorMenu menu) {
@@ -335,13 +323,11 @@ void structEditor :: v_createMenuItems_edit (EditorMenu menu) {
 		our undoButton = EditorMenu_addCommand (menu, U"Cannot undo", GuiMenu_INSENSITIVE + 'Z', menu_cb_undo);
 }
 
-static void menu_cb_settingsReport (EDITOR_ARGS) {
-	EDITOR_IAM (Editor);
+static void menu_cb_settingsReport (Editor me, EDITOR_ARGS_DIRECT) {
 	Thing_info (me);
 }
 
-static void menu_cb_info (EDITOR_ARGS) {
-	EDITOR_IAM (Editor);
+static void menu_cb_info (Editor me, EDITOR_ARGS_DIRECT) {
 	if (my data) Thing_info (my data);
 }
 
@@ -372,7 +358,7 @@ void structEditor :: v_createMenus () {
 
 void structEditor :: v_form_pictureWindow (EditorCommand cmd) {
 	LABEL (U"", U"Picture window:")
-	BOOLEAN (U"Erase first", 1);
+	BOOLEAN (U"Erase first", true);
 }
 void structEditor :: v_ok_pictureWindow (EditorCommand cmd) {
 	SET_INTEGER (U"Erase first", pref_picture_eraseFirst ());
