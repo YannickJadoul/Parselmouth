@@ -5,7 +5,9 @@
 #undef trace
 
 #include "buffer_protocol.h"
+#include "constructor.h"
 #include "functor_signature.h"
+
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
 #include <boost/numpy.hpp>
@@ -35,8 +37,6 @@ boost::numpy::ndarray getCoefficients(MFCC cc)
 
 	return array;
 }
-
-#include <iostream>
 
 BOOST_PYTHON_MODULE(parselmouth)
 {
@@ -90,9 +90,8 @@ BOOST_PYTHON_MODULE(parselmouth)
 
 	class_<structSound, boost::noncopyable> ("Sound", no_init)
 		.def("__init__",
-				make_constructor(returnsAutoThing(&readSound),
-						default_call_policies(),
-						arg("path")))
+				constructor(returnsAutoThing(&readSound)),
+				(arg("self"), arg("path")))
 
 		.def("__str__",
 				[] (Sound self) { MelderInfoInterceptor info; self->v_info(); return info.get(); },
@@ -253,9 +252,8 @@ BOOST_PYTHON_MODULE(parselmouth)
 
 	class_<structMFCC, boost::noncopyable>("MFCC", no_init)
 		.def("__init__",
-				make_constructor(returnsAutoThing(&Sound_to_MFCC),
-						default_call_policies(),
-						(arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0)))
+				constructor(returnsAutoThing(&Sound_to_MFCC)),
+				(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0))
 
 		.def("__str__",
 				[] (MFCC self) { MelderInfoInterceptor info; self->v_info(); return info.get(); },

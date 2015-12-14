@@ -161,7 +161,7 @@ private:
 template <typename T>
 void *def_buffer<T>::getBufferImpl = nullptr;
 
-} // python
-} // boost
+} // namespace python
+} // namespace boost
 
 #endif // INC_BUFFER_PROTOCOL_H
