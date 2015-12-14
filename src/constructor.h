@@ -17,7 +17,7 @@ template <typename Function, typename Signature>
 class ConstructorImpl;
 
 template <typename Function, typename ReturnType, typename... ArgumentTypes>
-class ConstructorImpl<Function, ReturnType *(ArgumentTypes...)>
+class ConstructorImpl<Function, ReturnType (ArgumentTypes...)>
 {
 public:
 	template <class T>
@@ -33,7 +33,7 @@ public:
 		MovingCopyable<T> &operator=(MovingCopyable<T> &&) = default;
 	};
 
-	typedef typename std::remove_cv<typename std::conditional<std::is_pointer<ReturnType>::value, std::remove_pointer<ReturnType>, ReturnType>::type>::type ConstructingType;
+	typedef typename std::remove_cv<typename boost::python::pointee<ReturnType>::type>::type ConstructingType;
 	typedef boost::python::detail::python_class<ConstructingType> UnconstructedObject;
 
 	ConstructorImpl(Function &&wrapped) : m_wrapped(wrapped) { UnconstructedObject::register_(); }
@@ -42,7 +42,7 @@ public:
 	void operator()(UnconstructedObject *self, ArgumentTypes... arguments)
 	{
 		auto constructed = m_wrapped(std::forward<ArgumentTypes>(arguments)...);
-		dispatch(self, std::move(constructed), std::is_pointer<ReturnType*>());
+		dispatch(self, std::move(constructed), std::is_pointer<ReturnType>());
 	}
 
 	private:
