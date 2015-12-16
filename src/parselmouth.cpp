@@ -38,6 +38,71 @@ boost::numpy::ndarray getCoefficients(MFCC cc)
 	return array;
 }
 
+
+template <class T>
+class MovingCopyable : public T
+{
+public:
+	template <typename... Args>	MovingCopyable<T>(Args&&... args) : T(std::forward<Args>(args)...) {}
+	MovingCopyable<T>(T &other) : T(std::move(other)) {}
+	MovingCopyable<T>(const T &other) = delete;
+	MovingCopyable<T>(MovingCopyable<T> &other) : T(std::move(other)) {}
+	MovingCopyable<T>(const MovingCopyable<T> &other) = delete;
+	MovingCopyable<T>(T &&other) : T(std::move(other)) {}
+	MovingCopyable<T>(MovingCopyable<T> &&) = default;
+	MovingCopyable<T> &operator=(T &other) { T::operator=(std::move(other)); return this; }
+	MovingCopyable<T> &operator=(const T &other) = delete;
+	MovingCopyable<T> &operator=(MovingCopyable<T> &other) { T::operator=(std::move(other)); return this; }
+	MovingCopyable<T> &operator=(const MovingCopyable<T> &other) = delete;
+	MovingCopyable<T> &operator=(T &&other) { T::operator=(std::move(other)); return this; }
+	MovingCopyable<T> &operator=(MovingCopyable<T> &&) = default;
+};
+
+template <typename T>
+using CopyableAutoThing = MovingCopyable<_Thing_auto<T>>;
+
+template <typename T>
+inline T *get_pointer(const _Thing_auto<T> &ptr)
+{
+	return ptr.peek();
+}
+
+namespace boost {
+namespace python {
+
+template <class T>
+struct pointee<_Thing_auto<T>>
+{
+	typedef T type;
+};
+
+template <class T>
+struct pointee<CopyableAutoThing<T>>
+{
+	typedef T type;
+};
+
+} // namespace python
+} // namespace boost
+
+template <typename T>
+struct auto_thing_converter : boost::python::to_python_converter<_Thing_auto<T>, auto_thing_converter<T>, true>
+{
+	typedef boost::python::objects::make_ptr_instance<T, boost::python::objects::pointer_holder<CopyableAutoThing<T>, T>> MakeInstance;
+
+    static PyObject *convert(const _Thing_auto<T> &x)
+    {
+    	// Sorry, we'll need to steal this _Thing_auto, just like an auto_ptr is stolen.
+    	// The only difference is that we cannot accept the _Thing_auto by value, because is respects move semantics and cannot be copied.
+    	// So, if this were an auto_ptr, the const_cast would happen before the call to this convert function that would take it by value.
+        return MakeInstance::execute(const_cast<_Thing_auto<T>&>(x));
+    }
+
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+    static PyTypeObject const *get_pytype() { return MakeInstance::get_pytype(); }
+#endif
+};
+
 BOOST_PYTHON_MODULE(parselmouth)
 {
 	Melder_batch = true;
@@ -88,7 +153,7 @@ BOOST_PYTHON_MODULE(parselmouth)
 		.export_values()
 	;
 
-	class_<structSound, boost::noncopyable> ("Sound", no_init)
+	class_<structSound, CopyableAutoThing<structSound>, boost::noncopyable> ("Sound", no_init)
 		.def("__init__",
 				constructor(returnsAutoThing(&readSound)),
 				(arg("self"), arg("path")))
@@ -98,8 +163,7 @@ BOOST_PYTHON_MODULE(parselmouth)
 				arg("self"))
 
 		.def("read_file",
-				returnsAutoThing(&readSound),
-				return_value_policy<manage_new_object>(),
+				&readSound,
 				arg("path"))
 				.staticmethod("read_file")
 
@@ -117,68 +181,55 @@ BOOST_PYTHON_MODULE(parselmouth)
 				// double startingTime, double endTime,	double sampleRate, int phase, double frequencyStep,	double firstFrequency, double ceiling, long numberOfComponents
 
 		.def("to_mfcc",
-				returnsAutoThing(&Sound_to_MFCC),
-				return_value_policy<manage_new_object>(),
+				&Sound_to_MFCC,
 				(arg("self"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0))
 
 		.def("to_mono",
-				returnsAutoThing(&Sound_convertToMono),
-				return_value_policy<manage_new_object>(),
+				&Sound_convertToMono,
 				arg("self"))
 
 		.def("to_stereo",
-				returnsAutoThing(&Sound_convertToStereo),
-				return_value_policy<manage_new_object>(),
+				&Sound_convertToStereo,
 				arg("self"))
 
 		.def("extract_channel",
-				returnsAutoThing(&Sound_extractChannel),
-				return_value_policy<manage_new_object>(),
+				&Sound_extractChannel,
 				(arg("self"), arg("channel")))
 
 		.def("extract_left_channel",
-				returnsAutoThing([] (Sound self) { return Sound_extractChannel(self, 1); }),
-				return_value_policy<manage_new_object>(),
+				[] (Sound self) { return Sound_extractChannel(self, 1); },
 				(arg("self")))
 
 		.def("extract_right_channel",
-				returnsAutoThing([] (Sound self) { return Sound_extractChannel(self, 2); }),
-				return_value_policy<manage_new_object>(),
+				[] (Sound self) { return Sound_extractChannel(self, 2); },
 				(arg("self")))
 
 		.def("upsample",
-				returnsAutoThing(&Sound_upsample),
-				return_value_policy<manage_new_object>(),
+				&Sound_upsample,
 				arg("self"))
 
 		.def("resample",
-				returnsAutoThing(&Sound_resample),
-				return_value_policy<manage_new_object>(),
+				&Sound_resample,
 				(arg("self"), arg("sample_frequency"), arg("precision") = 50))
 
 		.def("append",
-				returnsAutoThing(&Sounds_append),
-				return_value_policy<manage_new_object>(),
+				&Sounds_append,
 				(arg("self"), arg("silence"), arg("other")))
 
 		.def("__add__",
-				returnsAutoThing([] (Sound self, Sound other) { return Sounds_append(self, 0.0, other); }),
-				return_value_policy<manage_new_object>(),
+				[] (Sound self, Sound other) { return Sounds_append(self, 0.0, other); },
 				(arg("self"), arg("other")))
 
 		.def("convolve",
-				returnsAutoThing(&Sounds_convolve),
-				return_value_policy<manage_new_object>(),
+				&Sounds_convolve,
 				(arg("self"), arg("other"), arg("scaling") = kSounds_convolve_scaling_PEAK_099, arg("signal_outside_time_domain") = kSounds_convolve_signalOutsideTimeDomain_ZERO))
 
 		.def("cross_correlate",
-				returnsAutoThing(&Sounds_crossCorrelate),
-				return_value_policy<manage_new_object>(),
+				&Sounds_crossCorrelate,
 				(arg("self"), arg("other"), arg("scaling") = kSounds_convolve_scaling_PEAK_099, arg("signal_outside_time_domain") = kSounds_convolve_signalOutsideTimeDomain_ZERO))
 
 		.def("auto_correlate",
-				returnsAutoThing(&Sound_autoCorrelate),
-				return_value_policy<manage_new_object>(),
+				&Sound_autoCorrelate,
 				(arg("self"), arg("scaling") = kSounds_convolve_scaling_PEAK_099, arg("signal_outside_time_domain") = kSounds_convolve_signalOutsideTimeDomain_ZERO))
 
 		.def("get_root_mean_square",
@@ -214,7 +265,7 @@ BOOST_PYTHON_MODULE(parselmouth)
 				(arg("self"), arg("tmin") = 0.0, arg("tmax") = 0.0, arg("nearest_zero_crossing") = true))
 
 		.def("concatenate",
-				returnsAutoThing([] (const object &iterable, double overlap)
+				[] (const object &iterable, double overlap)
 					{
 						stl_input_iterator<Sound> iterator(iterable);
 						std::vector<Sound> sounds(iterator, stl_input_iterator<Sound>());
@@ -222,8 +273,7 @@ BOOST_PYTHON_MODULE(parselmouth)
 						for (const auto &sound : sounds)
 							Collection_addItem_ref(collection.peek(), sound);
 						return Sounds_concatenate_e(collection.peek(), overlap);
-					}),
-				return_value_policy<manage_new_object>(),
+					},
 				(arg("sounds"), arg("overlap") = 0.0))
 				.staticmethod("concatenate")
 
@@ -240,17 +290,16 @@ BOOST_PYTHON_MODULE(parselmouth)
 				(arg("self"), arg("sample_rate")))
 
 		.def("extract_part",
-				returnsAutoThing(&Sound_extractPart),
-				return_value_policy<manage_new_object>(),
+				&Sound_extractPart,
 				(arg("self"), arg("start_time"), arg("end_time"), arg("window") = kSound_windowShape_RECTANGULAR, arg("relative_width") = 1.0, arg("preserve_times") = false))
 
 		.def("extract_part_for_overlap",
-				returnsAutoThing(&Sound_extractPartForOverlap),
-				return_value_policy<manage_new_object>(),
+				&Sound_extractPartForOverlap,
 				(arg("self"), arg("start_time"), arg("end_time"), arg("overlap")))
 	;
+	auto_thing_converter<structSound>();
 
-	class_<structMFCC, boost::noncopyable>("MFCC", no_init)
+	class_<structMFCC, CopyableAutoThing<structMFCC>, boost::noncopyable>("MFCC", no_init)
 		.def("__init__",
 				constructor(returnsAutoThing(&Sound_to_MFCC)),
 				(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0))
@@ -263,4 +312,5 @@ BOOST_PYTHON_MODULE(parselmouth)
 				&getCoefficients,
 				arg("self"))
 	;
+	auto_thing_converter<structMFCC>();
 }

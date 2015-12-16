@@ -62,7 +62,7 @@ public:
 
 		void* memory = holder::allocate(self, offsetof(instance_t, storage), sizeof(holder));
 		try {
-			(new (memory) holder(x))->install(self);
+			(new (memory) holder(std::move(x)))->install(self);
 		}
 		catch(...) {
 			holder::deallocate(self, memory);
