@@ -1,9 +1,8 @@
-#ifndef INC_PRAAT_UTILS_H
-#define INC_PRAAT_UTILS_H
+#ifndef INC_MELDER_INFO_INTERCEPTOR_H
+#define INC_MELDER_INFO_INTERCEPTOR_H
 
-#include "sys/Thing.h"
-#undef I
-#undef trace
+#include "sys/melder.h"
+#include "UndefPraatMacros.h"
 
 class MelderInfoInterceptor
 {
@@ -16,4 +15,4 @@ private:
 	autoMelderDivertInfo m_divertInfo;
 };
 
-#endif // INC_PRAAT_UTILS_H
+#endif // INC_MELDER_INFO_INTERCEPTOR_H

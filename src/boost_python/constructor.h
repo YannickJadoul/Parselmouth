@@ -1,9 +1,9 @@
 #ifndef INC_CONSTRUCTOR_H
 #define INC_CONSTRUCTOR_H
 
-#include "CallableSignature.h"
-#include "IndexSequence.h"
-#include "MovingCopyable.h"
+#include "common/CallableSignature.h"
+#include "common/IndexSequence.h"
+#include "common/MovingCopyable.h"
 
 #include <boost/python/detail/python_type.hpp>
 
