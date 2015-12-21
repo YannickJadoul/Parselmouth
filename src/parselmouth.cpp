@@ -205,10 +205,10 @@ BOOST_PYTHON_MODULE(parselmouth)
 					{
 						stl_input_iterator<Sound> iterator(iterable);
 						std::vector<Sound> sounds(iterator, stl_input_iterator<Sound>());
-						autoCollection collection = Collection_create(classSound, sounds.size());
+						OrderedOf<structSound> soundList;
 						for (const auto &sound : sounds)
-							Collection_addItem_ref(collection.peek(), sound);
-						return Sounds_concatenate_e(collection.peek(), overlap);
+							soundList.addItem_ref(sound);
+						return Sounds_concatenate(soundList, overlap);
 					},
 				(arg("sounds"), arg("overlap") = 0.0))
 				.staticmethod("concatenate")
