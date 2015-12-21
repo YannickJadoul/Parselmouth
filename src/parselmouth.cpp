@@ -4,15 +4,18 @@
 #undef I
 #undef trace
 
+#include "functor_signature.h"
+
 #include "buffer_protocol.h"
 #include "constructor.h"
-#include "functor_signature.h"
+
+#include "MovingCopyable.h"
+#include "PraatUtils.h"
 
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
 #include <boost/numpy.hpp>
 
-#include "PraatUtils.h"
 
 autoSound readSound(const std::string &path)
 {
@@ -37,26 +40,6 @@ boost::numpy::ndarray getCoefficients(MFCC cc)
 
 	return array;
 }
-
-
-template <class T>
-class MovingCopyable : public T
-{
-public:
-	template <typename... Args>	MovingCopyable<T>(Args&&... args) : T(std::forward<Args>(args)...) {}
-	MovingCopyable<T>(T &other) : T(std::move(other)) {}
-	MovingCopyable<T>(const T &other) = delete;
-	MovingCopyable<T>(MovingCopyable<T> &other) : T(std::move(other)) {}
-	MovingCopyable<T>(const MovingCopyable<T> &other) = delete;
-	MovingCopyable<T>(T &&other) : T(std::move(other)) {}
-	MovingCopyable<T>(MovingCopyable<T> &&) = default;
-	MovingCopyable<T> &operator=(T &other) { T::operator=(std::move(other)); return this; }
-	MovingCopyable<T> &operator=(const T &other) = delete;
-	MovingCopyable<T> &operator=(MovingCopyable<T> &other) { T::operator=(std::move(other)); return this; }
-	MovingCopyable<T> &operator=(const MovingCopyable<T> &other) = delete;
-	MovingCopyable<T> &operator=(T &&other) { T::operator=(std::move(other)); return this; }
-	MovingCopyable<T> &operator=(MovingCopyable<T> &&) = default;
-};
 
 template <typename T>
 using CopyableAutoThing = MovingCopyable<_Thing_auto<T>>;
@@ -154,9 +137,8 @@ BOOST_PYTHON_MODULE(parselmouth)
 	;
 
 	class_<structSound, CopyableAutoThing<structSound>, boost::noncopyable> ("Sound", no_init)
-		.def("__init__",
-				constructor(returnsAutoThing(&readSound)),
-				(arg("self"), arg("path")))
+		.def(constructor(&readSound,
+				(arg("self"), arg("path"))))
 
 		.def("__str__",
 				[] (Sound self) { MelderInfoInterceptor info; self->v_info(); return info.get(); },
@@ -300,9 +282,8 @@ BOOST_PYTHON_MODULE(parselmouth)
 	auto_thing_converter<structSound>();
 
 	class_<structMFCC, CopyableAutoThing<structMFCC>, boost::noncopyable>("MFCC", no_init)
-		.def("__init__",
-				constructor(returnsAutoThing(&Sound_to_MFCC)),
-				(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0))
+		.def(constructor(&Sound_to_MFCC,
+				(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0)))
 
 		.def("__str__",
 				[] (MFCC self) { MelderInfoInterceptor info; self->v_info(); return info.get(); },

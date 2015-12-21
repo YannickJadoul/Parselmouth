@@ -1,88 +1,89 @@
 #ifndef INC_CONSTRUCTOR_H
 #define INC_CONSTRUCTOR_H
 
-#include "PraatUtils.h"
+#include "CallableSignature.h"
+#include "IndexSequence.h"
+#include "MovingCopyable.h"
 
 #include <boost/python/detail/python_type.hpp>
 
 namespace detail {
 
-template <typename T>
-inline T *get_pointer(const std::unique_ptr<T> &p)
-{
-	return p.get();
-}
-
-template <typename Function, typename Signature>
+template <typename Function, typename Signature, typename ConstructingClass, typename Holder>
 class ConstructorImpl;
 
-template <typename Function, typename ReturnType, typename... ArgumentTypes>
-class ConstructorImpl<Function, ReturnType (ArgumentTypes...)>
+template <typename Function, typename ReturnType, typename... ArgumentTypes, typename ConstructingClass, typename Holder>
+class ConstructorImpl<Function, ReturnType (ArgumentTypes...), ConstructingClass, Holder>
 {
 public:
-	template <class T>
-	class MovingCopyable : public T
-	{
-	public:
-		template <typename... Args>	MovingCopyable<T>(Args&&... args) : T(std::forward<Args>(args)...) {}
-		MovingCopyable<T>(MovingCopyable<T> &other) : T(std::move(other)) {}
-		MovingCopyable<T>(const MovingCopyable<T> &other) = delete;
-		MovingCopyable<T>(MovingCopyable<T> &&) = default;
-		MovingCopyable<T> &operator=(MovingCopyable<T> &other) { T::operator=(std::move(other)); return this; }
-		MovingCopyable<T> &operator=(const MovingCopyable<T> &other) = delete;
-		MovingCopyable<T> &operator=(MovingCopyable<T> &&) = default;
-	};
+	typedef boost::python::detail::python_class<ConstructingClass> UnconstructedObject;
 
 	typedef typename std::remove_cv<typename boost::python::pointee<ReturnType>::type>::type ConstructingType;
-	typedef boost::python::detail::python_class<ConstructingType> UnconstructedObject;
 
-	ConstructorImpl(Function &&wrapped) : m_wrapped(wrapped) { UnconstructedObject::register_(); }
-	ConstructorImpl(const Function &wrapped) : m_wrapped(wrapped) { UnconstructedObject::register_(); }
+	ConstructorImpl(Function &&wrapped) : m_wrapped(std::move(wrapped)) { UnconstructedObject::register_(); }
 
 	void operator()(UnconstructedObject *self, ArgumentTypes... arguments)
 	{
+		typedef boost::python::objects::instance<Holder> InstanceType;
+
 		auto constructed = m_wrapped(std::forward<ArgumentTypes>(arguments)...);
-		dispatch(self, std::move(constructed), std::is_pointer<ReturnType>());
-	}
-
-	private:
-	template <class U>
-	void dispatch(UnconstructedObject *self, U* x, std::true_type) const
-	{
-		MovingCopyable<std::unique_ptr<U>> owner(x);
-		dispatch(self, owner, std::false_type());
-	}
-
-	template <class Ptr>
-	void dispatch(UnconstructedObject *self, Ptr x, std::false_type) const
-	{
-		typedef typename boost::python::pointee<Ptr>::type value_type;
-		typedef boost::python::objects::pointer_holder<Ptr,value_type> holder;
-		typedef boost::python::objects::instance<holder> instance_t;
-
-		void* memory = holder::allocate(self, offsetof(instance_t, storage), sizeof(holder));
+		void* memory = Holder::allocate(self, offsetof(InstanceType, storage), sizeof(Holder));
 		try {
-			(new (memory) holder(std::move(x)))->install(self);
+			(new (memory) Holder(std::move(constructed)))->install(self);
 		}
 		catch(...) {
-			holder::deallocate(self, memory);
+			Holder::deallocate(self, memory);
 			throw;
 		}
 	}
 
-	private:
+private:
 	Function m_wrapped;
 };
 
-template <typename TargetClass, typename Function>
-using Constructor = ConstructorImpl<Function, typename FunctionSignature<Function, TargetClass>::type>;
-
 } // namespace detail
 
-template <typename TargetClass = void, typename Function>
-inline detail::Constructor<TargetClass, Function> constructor(Function &&function)
+
+template <typename Function, typename... Extra>
+class ConstructorVisitor : public boost::python::def_visitor<ConstructorVisitor<Function, Extra...>>
 {
-	return detail::Constructor<TargetClass, Function>(std::forward<Function>(function));
+public:
+	friend class boost::python::def_visitor_access;
+
+	ConstructorVisitor(Function &&wrapped, Extra&&... extra) : m_wrapped(std::move(wrapped)), m_extra(std::forward<Extra>(extra)...) {}
+
+    template <typename Class>
+    void visit(Class &c) const
+    {
+    	typedef typename CallableSignature<Function>::type Signature;
+    	typedef typename Class::wrapped_type WrappedType;
+    	typedef typename Class::metadata::holder Holder;
+
+    	def(c, "__init__", detail::ConstructorImpl<Function, Signature, WrappedType, Holder>(std::move(m_wrapped)));
+    }
+
+private:
+    template <typename Class, typename... Args>
+    void def(Class &c, Args&&... args) const
+    {
+    	def(IndexSequenceFor<Extra...>(), c, std::forward<Args>(args)...);
+    }
+
+    template <size_t... I, typename Class, typename... Args>
+    void def(IndexSequence<I...>, Class &c, Args&&... args) const
+    {
+    	c.def(std::forward<Args>(args)..., std::move(std::get<I>(m_extra))...);
+    }
+
+	mutable Function m_wrapped;
+	mutable std::tuple<typename std::remove_reference<Extra>::type...> m_extra;
+};
+
+template <typename Function, typename... Extra>
+inline ConstructorVisitor<Function, Extra...> constructor(Function &&function, Extra&&... args)
+{
+	return ConstructorVisitor<Function, Extra...>(std::forward<Function>(function), std::forward<Extra>(args)...);
 }
+
 
 #endif // INC_CONSTRUCTOR_H
