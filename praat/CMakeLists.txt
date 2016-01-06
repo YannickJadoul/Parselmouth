@@ -33,6 +33,7 @@ set(PRAAT_CXX_FLAGS "-std=c++11 -pthread")
 
 # Trying to convert the flags from the Praat makefiles...
 if (APPLE)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -x objective-c++")
 	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -DuseCarbon=0 -Dmacintosh")
 elseif (UNIX)
 	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -DUNIX")
@@ -65,6 +66,14 @@ endforeach()
 add_library(praat ${SRC})
 target_link_libraries(praat ${GTK2_LIBRARIES})
 
+if (APPLE)
+	find_library(COCOA_LIBRARY Cocoa)
+	find_library(AUDIO_TOOLBOX_LIBRARY AudioToolbox)
+	find_library(AUDIO_UNIT_LIBRARY AudioUnit)
+	find_library(CORE_AUDIO_LIBRARY CoreAudio)
+	mark_as_advanced(COCOA_LIBRARY AUDIO_TOOLBOX_LIBRARY AUDIO_UNIT_LIBRARY CORE_AUDIO_LIBRARY)
+	target_link_libraries(praat ${COCOA_LIBRARY} ${AUDIO_TOOLBOX_LIBRARY} ${AUDIO_UNIT_LIBRARY} ${CORE_AUDIO_LIBRARY})
+endif()
 
 foreach(X ${PRAAT_INCLUDE_DIRS})
 	get_filename_component(X ${X} ABSOLUTE)
