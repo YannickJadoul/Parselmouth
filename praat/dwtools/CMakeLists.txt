@@ -5,15 +5,15 @@ add_sources(Activation.cpp AffineTransform.cpp
             ClassificationTable.cpp Confusion.cpp
             ComplexSpectrogram.cpp Configuration.cpp ContingencyTable.cpp
             Configuration_AffineTransform.cpp
-            Configuration_and_Procrustes.cpp  DataModeler.cpp Distance.cpp
+            Configuration_and_Procrustes.cpp DataModeler.cpp Distance.cpp
             DTW.cpp DTW_and_TextGrid.cpp
-            Discriminant.cpp  Discriminant_Pattern_Categories.cpp
+            Discriminant.cpp Discriminant_Pattern_Categories.cpp
             EditDistanceTable.cpp EEG_extensions.cpp
             Eigen_and_Matrix.cpp Eigen_and_Procrustes.cpp
             Eigen_and_TableOfReal.cpp
             Eigen_and_SSCP.cpp Excitations.cpp
             FilterBank.cpp FormantGrid_extensions.cpp
-            GaussianMixture.cpp 
+            GaussianMixture.cpp
             HMM.cpp
             ICA.cpp Intensity_extensions.cpp
             LFCC.cpp LongSound_extensions.cpp

@@ -5,4 +5,5 @@ add_sources(Collection_extensions.cpp Command.cpp
             NUMmathlib.cpp NUMstring.cpp
             Permutation.cpp Permutation_and_Index.cpp
             regularExp.cpp SimpleVector.cpp Simple_extensions.cpp
-            SVD.cpp)
+            SVD.cpp
+            NUMmachar.cpp)
