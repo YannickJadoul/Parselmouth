@@ -1,6 +1,6 @@
 /* manual_dwtools.cpp
  *
- * Copyright (C) 1993-2014 David Weenink
+ * Copyright (C) 1993-2016 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -979,6 +979,20 @@ NORMAL (U"Since an object of type Covariance contains the mean values (the "
 	"tests on means and variances.")
 MAN_END
 
+MAN_BEGIN (U"Create simple Correlation...", U"djmw", 20151230)
+INTRO (U"Create a @@Correlation@ matrix with its centroid.")
+ENTRY (U"Settings")
+TAG (U"##Correlations")
+DEFINITION (U"define the correlations. Because a correlation matrix is a symmetric matrix, only the upper triangular "
+	"part of the matrix has to be input (row-wise). If your correlation matrix is "
+	"of dimension %d, your input needs %d(%d+1)/2 elements. The first %d input elements are the elements of the first "
+	"row of the correaltion matrix, the next %d-1 input elements are for the second row, then %d-2 for the third row, etc.")
+TAG (U"##Centroid")
+DEFINITION (U"defines the centroid. ")
+TAG (U"##Number of observations")
+DEFINITION (U"defines the number of observations.")
+MAN_END
+
 MAN_BEGIN (U"Create simple Covariance...", U"djmw", 20101125)
 INTRO (U"Create a @@Covariance@ matrix with its centroid.")
 ENTRY (U"Settings")
@@ -1055,7 +1069,7 @@ NORMAL (U"The total variance is the sum of the diagonal elements of the covarian
 FORMULA (U"\\Si__%i=%from..%to_ %%C__ii_% / \\Si__%i=1..%numberOfRows_ %%C__ii_%")
 MAN_END
 
-MAN_BEGIN (U"Covariance: Get significance of means difference...", U"djmw", 20151209)
+MAN_BEGIN (U"Covariance: Get significance of means difference...", U"djmw", 20160102)
 INTRO (U"Gets the level of significance for the %difference of two means "
 	"from the selected @Covariance object being different from a hypothesized "
 	"value.")
@@ -1065,7 +1079,7 @@ DEFINITION (U"the positions of the two elements of the means vector whose "
 	"difference is compared to the hypothesized difference.")
 TAG (U"##Value")
 DEFINITION (U"the hypothesized difference (%\\mu).")
-TAG (U"##Paired samples")
+TAG (U"##Paired")
 DEFINITION (U"determines whether we treat the two means as being dependent. ")
 TAG (U"##Equal variances")
 DEFINITION (U"determines whether the distribution of the difference of the means "
@@ -1098,13 +1112,13 @@ FORMULA (U"%p = 2 * studentQ (%t, %ndf)")
 NORMAL (U"A low probability %p means that the difference is significant.")
 MAN_END
 
-MAN_BEGIN (U"Covariance: Get significance of one variance...", U"djmw", 20040407)
+MAN_BEGIN (U"Covariance: Get significance of one variance...", U"djmw", 20160102)
 INTRO (U"Gets the probability for one variance from the selected "
 	"@Covariance object being different from a hypothesized variance.")
 ENTRY (U"Settings")
 TAG (U"##Index")
-DEFINITION (U"the position of the variance element.")
-TAG (U"##Hypothesized variance")
+DEFINITION (U"the position of the variance element %s^2.")
+TAG (U"##Value")
 DEFINITION (U"the hypothesized variance %\\si^2")
 ENTRY (U"Behaviour")
 NORMAL (U"The test statistic")
@@ -1527,7 +1541,7 @@ LIST_ITEM (U"\\bu Draw eigenvector...")
 LIST_ITEM (U"\\bu @@Discriminant: Draw sigma ellipses...|Draw sigma ellipses...@")
 MAN_END
 
-MAN_BEGIN (U"Discriminant analysis", U"djmw", 20150902)
+MAN_BEGIN (U"Discriminant analysis", U"djmw", 20151224)
 INTRO (U"This tutorial will show you how to perform discriminant analysis with P\\s{RAAT}")
 NORMAL (U"As an example, we will use the dataset from @@Pols et al. (1973)@ "
 	"with the frequencies and levels of the first three formants from the 12 "
@@ -1562,7 +1576,7 @@ NORMAL (U"To get an indication of what these data look like, we make a scatter "
 	"first standardized log-formant-frequency against the second standardized "
 	"log-formant-frequency. With the next script fragment you can reproduce the "
 	"following picture.")
-CODE (U"Viewport: 0, 5, 0, 5")
+CODE (U"Select outer viewport: 0, 5, 0, 5")
 CODE (U"selectObject: table")
 CODE (U"Draw scatter plot: 1, 2, 0, 0, -2.9, 2.9, -2.9, 2.9, 10, \"yes\", \"+\", \"yes\"")
 PICTURE (5, 5, drawPolsF1F2_log)
@@ -1586,10 +1600,10 @@ NORMAL (U"You select a TableOfReal and a Discriminant object together and choose
 PICTURE (5, 5, drawPolsDiscriminantConfiguration)
 NORMAL (U"The following script summarizes:")
 CODE (U"selectObject: table, discriminant")
-CODE (U"To Configuration: 0")
-CODE (U"Viewport: 0, 5, 0, 5")
+CODE (U"To Configuration: 2")
+CODE (U"Select outer viewport: 0, 5, 0, 5")
 CODE (U"Draw: 1, 2, -2.9, 2.9, -2.9, 2.9, 12, \"yes\", \"+\", \"yes\"")
-NORMAL (U"If you are only interested in this projection, there also is a short cut "
+NORMAL (U"If you are only interested in this projection, there also is a shortcut "
 	"without an intermediate Discriminant object:  "
 	"select the TableOfReal object and choose @@TableOfReal: To Configuration "
 	"(lda)...|To Configuration (lda)...@.")
@@ -1621,23 +1635,23 @@ NORMAL (U"In general you would separate your data into two independent sets, "
 	"Several possibilities for splitting a dataset into two sets exist. "
 	"We mention the @@jackknife@ (\"leave-one-out\") and the "
 	"@@bootstrap@ methods (\"resampling\").")
-ENTRY (U"5.1 Jacknife classification")
+ENTRY (U"5.1 Jackknife classification")
 NORMAL (U"The following script summarizes #jackknife classification of the dataset:")
 CODE (U"selectObject: table")
 CODE (U"numberOfRows = Get number of rows")
 CODE (U"for irow to numberOfRows")
-CODE (U"  selectObject: table")
-CODE (U"  rowi = Extract rows where: \"row = irow\"")
-CODE (U"  selectObject: table")
-CODE (U"  rest = Extract rows where: \"row <> irow\"")
-CODE (U"  discriminant = To Discriminant")
-CODE (U"  plusObject: rowi")
-CODE (U"  classification = To ClassificationTable: \"yes\", \"yes\"")
-CODE (U"    if irow = 1")
-CODE (U"    confusion = To Confusion: \"yes\"")
-CODE (U"  else")
-CODE (U"    plusObject: confusion")
-CODE (U"    Increase confusion count")
+	CODE1 (U"selectObject: table")
+	CODE1 (U"rowi = Extract rows where: \"row = irow\"")
+	CODE1 (U"selectObject: table")
+	CODE1 (U"rest = Extract rows where: \"row <> irow\"")
+	CODE1 (U"discriminant = To Discriminant")
+	CODE1 (U"plusObject: rowi")
+	CODE1 (U"classification = To ClassificationTable: \"yes\", \"yes\"")
+	CODE1 (U"if irow = 1")
+		CODE2 (U"confusion = To Confusion: \"yes\"")
+	CODE1 (U"else")
+CODE2 (U"    plusObject: confusion")
+CODE2 (U"    Increase confusion count")
 CODE (U"  endif")
 CODE (U"  removeObject: rowi, rest, discriminant, classification")
 CODE (U"endfor")

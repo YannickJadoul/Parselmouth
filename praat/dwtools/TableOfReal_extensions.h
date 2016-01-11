@@ -2,7 +2,7 @@
 #define _TableOfReal_extensions_h_
 /* TableOfReal_extensions.h
  *
- * Copyright (C) 1993-2012, 2014, 2015 David Weenink
+ * Copyright (C) 1993-2012, 2014-2016 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,11 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
-/*
- djmw 20020411 initial GPL
- djmw 20120914 Latest modification.
-*/
 
 #include "TableOfReal.h"
 #include "Collection.h"
@@ -47,7 +42,7 @@ autoTableOfReal TableOfReal_sortOnlyByRowLabels (TableOfReal me);
 
 long *TableOfReal_getSortedIndexFromRowLabels (TableOfReal me);
 
-autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, long *index, int reverse);
+autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, long index[], int reverse);
 // thy data[reverse ? i : index[i]][j] = my data[reverse ? index[i] : i]
 
 autoTableOfReal TableOfReal_createIrisDataset ();
@@ -68,7 +63,7 @@ const char32 *TableOfReal_getColumnLabelAtMaximumInRow (TableOfReal me, long row
 
 void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, const char32 *rows, long colb, long cole,
 	double ymin, double ymax, double xoffsetFraction, double interbarFraction,
-	double interbarsFraction, const char32 *greys, int garnish);
+	double interbarsFraction, const char32 *greys, bool garnish);
 
 void TableOfReal_drawScatterPlot (TableOfReal me, Graphics g, long icx, long icy, long rowb,
 	long rowe, double xmin, double xmax, double ymin, double ymax,
@@ -114,11 +109,9 @@ void TableOfReal_copyLabels (TableOfReal me, TableOfReal thee, int rowOrigin, in
 
 void TableOfReal_labelsFromCollectionItemNames (TableOfReal me, Collection thee, int row, int column);
 
-void TableOfReal_setSequentialColumnLabels (TableOfReal me, long from, long to,
-	const char32 *precursor, long number, long increment);
+void TableOfReal_setSequentialColumnLabels (TableOfReal me, long from, long to, const char32 *precursor, long number, long increment);
 
-void TableOfReal_setSequentialRowLabels (TableOfReal me, long from, long to,
-	const char32 *precursor, long number, long increment);
+void TableOfReal_setSequentialRowLabels (TableOfReal me, long from, long to, const char32 *precursor, long number, long increment);
 
 int TableOfReal_hasRowLabels (TableOfReal me);
 
@@ -197,25 +190,22 @@ autoTableOfReal TableOfReal_to_TableOfReal (TableOfReal me);
 autoTableOfReal TableOfReal_choleskyDecomposition (TableOfReal me, int upper, int inverse);
 
 autoTableOfReal TableOfReal_appendColumns (TableOfReal me, TableOfReal thee);
-autoTableOfReal TableOfReal_appendColumnsMany (Collection me);
 
 void TableOfReal_copyOneRowWithLabel (TableOfReal me, TableOfReal thee, long myrow, long thyrow);
 
-double TableOfReal_normalityTest_BHEP (TableOfReal me, double *beta, double *tnb, double *lnmu, double *lnvar);
+/* Henze & Wagner (1997), A new approach to the BHEP tests for multivariate normality, Journal of Multivariate Analysis 62, 1-23. */
+double TableOfReal_normalityTest_BHEP (TableOfReal me, double *beta /* input and output */, double *tnb, double *lnmu, double *lnvar);
 
 autoTableOfReal TableOfReal_and_TableOfReal_crossCorrelations (TableOfReal me, TableOfReal thee, int by_columns, int center, int normalize);
 
-/********************* class TablesOfReal ******************************/
 
-Thing_define (TablesOfReal, Ordered) {
-};
+#pragma mark - class TableOfRealList
 
-void TablesOfReal_init (TablesOfReal me);
+autoTableOfReal TableOfRealList_sum (TableOfRealList me);
 
-autoTablesOfReal TablesOfReal_create ();
+bool TableOfRealList_haveIdenticalDimensions (TableOfRealList me);
 
-autoTableOfReal TablesOfReal_sum (TablesOfReal me);
+autoTableOfReal TableOfRealList_appendColumnsMany (TableOfRealList me);
 
-int TablesOfReal_checkDimensions (TablesOfReal me);
 
 #endif /* _TableOfReal_extensions_h_ */

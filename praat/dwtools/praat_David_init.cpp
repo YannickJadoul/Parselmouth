@@ -1,6 +1,6 @@
 /* praat_David_init.cpp
  *
- * Copyright (C) 1993-2015 David Weenink
+ * Copyright (C) 1993-2015 David Weenink, 2015 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ void praat_EditDistanceTable_as_TableOfReal_init (ClassInfo klas);
 
 /********************** Activation *******************************************/
 
-FORM (Activation_formula, U"Activation: Formula", 0)
+FORM (Activation_formula, U"Activation: Formula", nullptr)
 	LABEL (U"label", U"for col := 1 to ncol do { self [row, col] := `formula' ; x := x + dx } y := y + dy }}")
 	TEXTFIELD (U"formula", U"self")
 	OK
@@ -181,7 +181,7 @@ FORM (BandFilterSpectrogram_drawFrequencyScale, U"", U"")
 	REAL (U"right Horizontal frequency range (Hz)", U"0.0")
 	REAL (U"left Vertical frequency range (mel)", U"0.0")
 	REAL (U"right Vertical frequency range (mel)", U"0.0")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
@@ -210,7 +210,7 @@ FORM (BarkFilter_drawSpectrum, U"BarkFilter: Draw spectrum (slice)", U"FilterBan
 	REAL (U"right Frequency range (Bark)", U"0.0")
 	REAL (U"left Amplitude range (dB)", U"0.0")
 	REAL (U"right Amplitude range (dB)", U"0.0")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
@@ -226,15 +226,15 @@ FORM (BarkFilter_drawSekeyHansonFilterFunctions, U"BarkFilter: Draw filter funct
 	INTEGER (U"left Filter range", U"0")
 	INTEGER (U"right Filter range", U"0")
 	RADIO (U"Frequency scale", 1)
-	RADIOBUTTON (U"Hertz")
-	RADIOBUTTON (U"Bark")
-	RADIOBUTTON (U"mel")
+		RADIOBUTTON (U"Hertz")
+		RADIOBUTTON (U"Bark")
+		RADIOBUTTON (U"mel")
 	REAL (U"left Frequency range", U"0.0")
 	REAL (U"right Frequency range", U"0.0")
-	BOOLEAN (U"Amplitude scale in dB", 1)
+	BOOLEAN (U"Amplitude scale in dB", true)
 	REAL (U"left Amplitude range", U"0.0")
 	REAL (U"right Amplitude range", U"0.0")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
@@ -252,20 +252,20 @@ FORM (BarkSpectrogram_drawSekeyHansonAuditoryFilters, U"BarkSpectrogram: Draw Se
 	INTEGER (U"left Filter range", U"0")
 	INTEGER (U"right Filter range", U"0")
 	RADIO (U"Frequency scale", 2)
-	RADIOBUTTON (U"Hertz")
-	RADIOBUTTON (U"Bark")
+		RADIOBUTTON (U"Hertz")
+		RADIOBUTTON (U"Bark")
 	REAL (U"left Frequency range", U"0.0")
 	REAL (U"right Frequency range", U"0.0")
 	BOOLEAN (U"Amplitude scale in dB", 1)
 	REAL (U"left Amplitude range", U"0.0")
 	REAL (U"right Amplitude range", U"0.0")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (BarkSpectrogram);
-		bool xIsHertz = GET_INTEGER (U"Frequency scale") == 1;
+		bool xIsHertz = ( GET_INTEGER (U"Frequency scale") == 1 );
 		BarkSpectrogram_drawSekeyHansonFilterFunctions (me, GRAPHICS, xIsHertz,
 			GET_INTEGER (U"left Filter range"), GET_INTEGER (U"right Filter range"),
 			GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
@@ -274,14 +274,14 @@ DO
 	}
 END
 
-FORM (BarkFilter_paint, U"FilterBank: Paint", 0)
+FORM (BarkFilter_paint, U"FilterBank: Paint", nullptr)
 	REAL (U"left Time range (s)", U"0.0")
 	REAL (U"right Time range (s)", U"0.0")
 	REAL (U"left Frequency range (bark)", U"0.0")
 	REAL (U"right Frequency range (bark)", U"0.0")
 	REAL (U"left Amplitude range", U"0.0")
 	REAL (U"right Amplitude range", U"0.0")
-	BOOLEAN (U"Garnish", 0)
+	BOOLEAN (U"Garnish", false)
 	OK
 DO
 	autoPraatPicture picture;
@@ -388,7 +388,7 @@ END
 DIRECT (Categories_selectUniqueItems)
 	LOOP {
 		iam (Categories);
-		autoCategories thee = Categories_selectUniqueItems (me, true);
+		autoCategories thee = Categories_selectUniqueItems (me);
 		praat_new (thee.move(), my name, U"_uniq");
 	}
 END
@@ -433,7 +433,7 @@ END
 
 /***************** CC ****************************************/
 
-FORM (CC_getNumberOfCoefficients, U"Get number of coefficients", 0)
+FORM (CC_getNumberOfCoefficients, U"Get number of coefficients", nullptr)
 	NATURAL (U"Frame number", U"1")
 	OK
 DO
@@ -451,7 +451,7 @@ FORM (CC_getValue, U"CC: Get value", U"CC: Get value...")
 DO
 	LOOP {
 		iam (CC); // ?? generic
-		Melder_informationReal (CC_getValue (me, GET_REAL (U"Time"), GET_INTEGER (U"Index")), 0);
+		Melder_informationReal (CC_getValue (me, GET_REAL (U"Time"), GET_INTEGER (U"Index")), nullptr);
 	}
 END
 
@@ -462,7 +462,7 @@ FORM (CC_getValueInFrame, U"CC: Get value in frame", U"CC: Get value in frame...
 DO
 	LOOP {
 		iam (CC); // ?? generic
-		Melder_informationReal (CC_getValueInFrame (me, GET_INTEGER (U"Frame number"), GET_INTEGER (U"Index")), 0);
+		Melder_informationReal (CC_getValueInFrame (me, GET_INTEGER (U"Frame number"), GET_INTEGER (U"Index")), nullptr);
 	}
 END
 
@@ -472,7 +472,7 @@ FORM (CC_getC0ValueInFrame, U"CC: Get c0 value in frame", U"CC: Get c0 value in 
 DO
 	LOOP {
 		iam (CC); // ?? generic
-		Melder_informationReal (CC_getC0ValueInFrame (me, GET_INTEGER (U"Frame number")), 0);
+		Melder_informationReal (CC_getC0ValueInFrame (me, GET_INTEGER (U"Frame number")), nullptr);
 	}
 END
 
@@ -483,7 +483,7 @@ FORM (CC_paint, U"CC: Paint", U"CC: Paint...")
 	INTEGER (U"To coefficient", U"0")
 	REAL (U"Minimum", U"0.0")
 	REAL (U"Maximum", U"0.0")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
@@ -500,7 +500,7 @@ FORM (CC_drawC0, U"CC: Draw c0", U"CC: Draw c0...")
 	REAL (U"right Time range (s)", U"0.0")
 	REAL (U"left Amplitude range", U"0.0")
 	REAL (U"right Amplitude range", U"0.0")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
@@ -548,11 +548,11 @@ END
 
 FORM (CCA_drawEigenvector, U"CCA: Draw eigenvector", U"Eigen: Draw eigenvector...")
 	OPTIONMENU (U"X or Y", 1)
-	OPTION (U"y")
-	OPTION (U"x")
+		OPTION (U"y")
+		OPTION (U"x")
 	INTEGER (U"Eigenvector number", U"1")
 	LABEL (U"", U"Multiply by eigenvalue?")
-	BOOLEAN (U"Component loadings", 0)
+	BOOLEAN (U"Component loadings", false)
 	LABEL (U"", U"Select part of the eigenvector:")
 	INTEGER (U"left Element range", U"0")
 	INTEGER (U"right Element range", U"0")
@@ -560,8 +560,8 @@ FORM (CCA_drawEigenvector, U"CCA: Draw eigenvector", U"Eigen: Draw eigenvector..
 	REAL (U"right Amplitude range", U"1.0")
 	POSITIVE (U"Mark size (mm)", U"1.0")
 	SENTENCE (U"Mark string (+xo.)", U"+")
-	BOOLEAN (U"Connect points", 1)
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Connect points", true)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
@@ -594,8 +594,8 @@ END
 
 FORM (CCA_getEigenvectorElement, U"CCA: Get eigenvector element", U"Eigen: Get eigenvector element...")
 	OPTIONMENU (U"X or Y", 1)
-	OPTION (U"y")
-	OPTION (U"x")
+		OPTION (U"y")
+		OPTION (U"x")
 	NATURAL (U"Eigenvector number", U"1")
 	NATURAL (U"Element number", U"1")
 	OK
@@ -613,10 +613,10 @@ FORM (CCA_getZeroCorrelationProbability, U"CCA: Get zero correlation probability
 DO
 	LOOP {
 		iam (CCA);
-		double p, chisq; long ndf;
-		CCA_getZeroCorrelationProbability (me, GET_INTEGER (U"Coefficient number"), &chisq, &ndf, &p);
+		double p, chisq, df;
+		CCA_getZeroCorrelationProbability (me, GET_INTEGER (U"Coefficient number"), & p, & chisq, & df);
 		Melder_information (p, U" (=probability for chisq = ", chisq,
-			U" and ndf = ", ndf, U")");
+			U" and ndf = ", df, U")");
 	}
 END
 
@@ -630,8 +630,8 @@ END
 FORM (CCA_and_Correlation_getVarianceFraction, U"CCA & Correlation: Get variance fraction", U"CCA & Correlation: Get variance fraction...")
 	LABEL (U"", U"Get the fraction of variance from the data in set...")
 	OPTIONMENU (U"X or Y", 1)
-	OPTION (U"y")
-	OPTION (U"x")
+		OPTION (U"y")
+		OPTION (U"x")
 	LABEL (U"", U"extracted by...")
 	NATURAL (U"left Canonical variate range", U"1")
 	NATURAL (U"right Canonical variate range", U"1")
@@ -650,8 +650,8 @@ END
 FORM (CCA_and_Correlation_getRedundancy_sl, U"CCA & Correlation: Get Stewart-Love redundancy", U"CCA & Correlation: Get redundancy (sl)...")
 	LABEL (U"", U"Get the redundancy of the data in set...")
 	OPTIONMENU (U"X or Y", 1)
-	OPTION (U"y")
-	OPTION (U"x")
+		OPTION (U"y")
+		OPTION (U"x")
 	LABEL (U"", U"extracted by...")
 	NATURAL (U"left Canonical variate range", U"1")
 	NATURAL (U"right Canonical variate range", U"1")
@@ -933,12 +933,12 @@ DO
 END
 
 FORM (Confusion_drawAsNumbers, U"", U"")
-	BOOLEAN (U"Draw marginals", 1)
+	BOOLEAN (U"Draw marginals", true)
 	RADIO (U"Format", 3)
-	RADIOBUTTON (U"decimal")
-	RADIOBUTTON (U"exponential")
-	RADIOBUTTON (U"free")
-	RADIOBUTTON (U"rational")
+		RADIOBUTTON (U"decimal")
+		RADIOBUTTON (U"exponential")
+		RADIOBUTTON (U"free")
+		RADIOBUTTON (U"rational")
 	NATURAL (U"Precision", U"5")
 	OK
 DO
@@ -975,7 +975,7 @@ FORM (Confusion_Matrix_draw, U"Confusion & Matrix: Draw confusions with arrows",
 	REAL (U"right Horizontal range", U"0.0")
 	REAL (U"left Vertical range", U"0.0")
 	REAL (U"right Vertical range", U"0.0")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	long categoryPosition = GET_INTEGER (U"Category position");
@@ -1025,6 +1025,18 @@ END
 
 /********************** Correlation *******************************************/
 
+FORM (Correlation_createSimple, U"Create simple Correlation", U"Create simple Correlation...")
+	WORD (U"Name", U"correlation")
+	SENTENCE (U"Correlations", U"1.0 0.5 1.0")
+	SENTENCE (U"Centroid", U"0.0 0.0")
+	NATURAL (U"Number of observations", U"100")
+	OK
+DO
+	autoCorrelation me = Correlation_createSimple (GET_STRING (U"Correlations"), GET_STRING (U"Centroid"),
+		GET_INTEGER (U"Number of observations"));
+	praat_new (me.move(), GET_STRING (U"Name"));
+END
+
 DIRECT (Correlation_help)
 	Melder_help (U"Correlation");
 END
@@ -1053,10 +1065,9 @@ DO
 	long nc = GET_INTEGER (U"Number of contraints");
 	LOOP {
 		iam (Correlation);
-		double chisq, p;
-		Correlation_testDiagonality_bartlett (me, nc, &chisq, &p);
-		Melder_information (p, U" (=probability, based on chisq = ",
-			chisq, U"and ndf = ", my numberOfRows * (my numberOfRows - 1) / 2, U")");
+		double chisq, p, df;
+		Correlation_testDiagonality_bartlett (me, nc, & chisq, & p, & df);
+		Melder_information (p, U" (=probability, based on chisq = ", chisq, U" and ndf = ", df, U")");
 	}
 END
 
@@ -1086,7 +1097,7 @@ DO
 	praat_new (me.move(), GET_STRING (U"Name"));
 END
 
-FORM (Covariance_getProbabilityAtPosition, U"Covariance: Get probability at position", 0)
+FORM (Covariance_getProbabilityAtPosition, U"Covariance: Get probability at position", nullptr)
 	SENTENCE (U"Position", U"10.0 20.0")
 	OK
 DO
@@ -1099,72 +1110,75 @@ DO
 END
 
 FORM (Covariance_getSignificanceOfOneMean, U"Covariance: Get significance of one mean", U"Covariance: Get significance of one mean...")
-	LABEL (U"", U"Get probability that the mean with")
+	LABEL (U"", U"Get probability that the estimated mean for")
 	NATURAL (U"Index", U"1")
-	LABEL (U"", U"differs from")
+	LABEL (U"", U"(or an estimated mean even further away)")
+	LABEL (U"", U"could arise if the true mean were")
 	REAL (U"Value", U"0.0")
-	LABEL (U"", U"(Null hypothesis: the observed difference is due to chance.)")
 	OK
 DO
 	LOOP {
 		iam (Covariance);
 		double p, t, ndf;
-		Covariance_getSignificanceOfOneMean (me, GET_INTEGER (U"Index"), GET_REAL (U"Value"), &p, &t, &ndf);
+		Covariance_getSignificanceOfOneMean (me, GET_INTEGER (U"Index"), GET_REAL (U"Value"), & p, & t, & ndf);
 		Melder_information (p, U" (=probability, based on t = ", t, U" and ndf = ", ndf);
 	}
 END
 
 FORM (Covariance_getSignificanceOfMeansDifference, U"Covariance: Get significance of means difference", U"Covariance: Get significance of means difference...")
-	LABEL (U"", U"Get probability that the difference between means")
+	LABEL (U"", U"Get probability that the estimated difference between the means for")
 	NATURAL (U"Index1", U"1")
 	NATURAL (U"Index2", U"2")
-	LABEL (U"", U"differs from")
+	LABEL (U"", U"could arise if the true mean were")
 	REAL (U"Value", U"0.0")
-	LABEL (U"", U"when the means are")
-	BOOLEAN (U"Paired", 1)
+	LABEL (U"", U"Assume the means are ")
+	BOOLEAN (U"Paired", true)
 	LABEL (U"", U"and have")
-	BOOLEAN (U"Equal variances", 1)
+	BOOLEAN (U"Equal variances", true)
 	OK
 DO
 	LOOP {
 		iam (Covariance);
 		double p, t, ndf;
 		Covariance_getSignificanceOfMeansDifference (me, GET_INTEGER (U"Index1"), GET_INTEGER (U"Index2"),
-			GET_REAL (U"Value"), GET_INTEGER (U"Paired"), GET_INTEGER (U"Equal variances"), &p, &t, &ndf);
+			GET_REAL (U"Value"), GET_INTEGER (U"Paired"), GET_INTEGER (U"Equal variances"), & p, & t, & ndf);
 		Melder_information (p, U" (=probability, based on t = ",
 			t, U"and ndf = ", ndf, U")");
 	}
 END
 
 FORM (Covariance_getSignificanceOfOneVariance, U"Covariance: Get significance of one variance", U"Covariance: Get significance of one variance...")
-	LABEL (U"", U"Get probability that the variance with")
+	LABEL (U"", U"Get the probability that the estimated variance for")
 	NATURAL (U"Index", U"1")
-	LABEL (U"", U"differs from")
+	LABEL (U"", U"(or an even larger estimated variance)")
+	LABEL (U"", U"could arise if the true variance were")
 	REAL (U"Value", U"0.0")
-	LABEL (U"", U"(Null hypothesis: the observed difference is due to chance.)")
 	OK
 DO
 	LOOP {
 		iam (Covariance);
 		double p, chisq; long ndf;
-		Covariance_getSignificanceOfOneVariance (me, GET_INTEGER (U"Index"), GET_REAL (U"Value"), &p, &chisq , &ndf);
-		Melder_information (p, U" (=probability, based on chisq = ", chisq, U"and ndf = ", ndf);
+		Covariance_getSignificanceOfOneVariance (me, GET_INTEGER (U"Index"), GET_REAL (U"Value"), & p, & chisq, & ndf);
+		Melder_information (p, U" (=probability, based on chisq = ", chisq, U" and ndf = ", ndf);
 	}
 END
 
-FORM (Covariance_getSignificanceOfVariancesRatio, U"Covariance: Get significance of variances ratio", U"Covariance: Get significance of variances ratio...")
+FORM (Covariance_getSignificanceOfVariancesRatio, U"Covariance: Get significance of variances ratio", nullptr)
+	LABEL (U"", U"Get the probability that the estimated variance ratio observed for")
 	NATURAL (U"Index1", U"1")
 	NATURAL (U"Index2", U"2")
-	REAL (U"Hypothesized ratio", U"1.0")
+	LABEL (U"", U"(or an estimated ratio even further away)")
+	LABEL (U"", U"could arise if the true ratio were")
+	REAL (U"Value", U"1.0")
 	OK
 DO
 	LOOP {
 		iam (Covariance);
-		double p, f; long ndf;
+		double p, f, df;
 		Covariance_getSignificanceOfVariancesRatio (me, GET_INTEGER (U"Index1"), GET_INTEGER (U"Index2"),
-			GET_REAL (U"Hypothesized ratio"), &p, &f , &ndf);
-		Melder_information (p, U" (=probability, based on F = ", f,
-		U"and ndf1 = ", ndf, U" and ndf2 = ", ndf);
+			GET_REAL (U"Value"), & p, & f , & df);
+		Melder_information (p, U" (=probability, based on F = ", f, U" and ndf1 = ", df, U" and ndf2 = ", df);
+
 	}
 END
 
@@ -1179,9 +1193,12 @@ DO
 	}
 END
 
-FORM (Covariances_reportMultivariateMeanDifference, U"Covariances: Report multivariate mean difference",
-      U"Covariances: Report multivariate mean difference...")
-	BOOLEAN (U"Covariances are equal", true)
+FORM (Covariances_reportMultivariateMeanDifference, U"Covariances: Report multivariate mean difference", U"Covariances: Report multivariate mean difference...")
+	LABEL (U"", U"Get probability that the estimated multivariate means difference could arise ")
+	LABEL (U"", U"if the actual means were equal.")
+	LABEL (U"", U"")
+	LABEL (U"", U"Assume for both means we have")
+	BOOLEAN (U"Equal covariances", true)
 	OK
 DO
 	Covariance c1 = nullptr, c2 = nullptr;
@@ -1191,9 +1208,9 @@ DO
 	}
 	Melder_assert (c1 && c2);
 	double prob, fisher, df1, df2, difference;
-	bool equalCovariances = GET_INTEGER (U"Covariances are equal");
+	bool equalCovariances = GET_INTEGER (U"Equal covariances");
 	MelderInfo_open ();
-	difference = Covariances_getMultivariateCentroidDifference (c1, c2, equalCovariances, &prob, &fisher, &df1, &df2);
+	difference = Covariances_getMultivariateCentroidDifference (c1, c2, equalCovariances, & prob, & fisher, & df1, & df2);
 	MelderInfo_writeLine (U"Under the assumption that the two covariances are", (equalCovariances ? U" " : U" not "), U"equal:");
 	MelderInfo_writeLine (U"Difference between multivariate means = ", difference);
 	MelderInfo_writeLine (U"Fisher's F = ", fisher);
@@ -1216,18 +1233,23 @@ DO
 END
 
 DIRECT (Covariances_reportEquality)
-	autoCollection set = praat_getSelectedObjects ();
+	autoCovarianceList covariances = CovarianceList_create ();
+	LOOP {
+		iam (Covariance);
+		covariances -> addItem_ref (me);
+	}
 	MelderInfo_open ();
 	double p, chisq, df;
-	Covariances_equality (set.peek(), 1, &p, &chisq, &df);
+	Covariances_equality (covariances.get(), 1, & p, & chisq, & df);
 	MelderInfo_writeLine (U"Difference between covariance matrices:");
 	MelderInfo_writeLine (U"Significance of difference (bartlett) = ", p);
-	MelderInfo_writeLine (U"Chi-squared = ", chisq);
-	MelderInfo_writeLine (U"Degrees of freedom = ", df);
-	Covariances_equality (set.peek(), 2, &p, &chisq, &df);
+	MelderInfo_writeLine (U"Chi-squared (bartlett) = ", chisq);
+	MelderInfo_writeLine (U"Degrees of freedom (bartlett) = ", df);
+	
+	Covariances_equality (covariances.get(), 2, &p, &chisq, &df);
 	MelderInfo_writeLine (U"Significance of difference (wald) = ", p);
-	MelderInfo_writeLine (U"Chi-squared = ", chisq);
-	MelderInfo_writeLine (U"Degrees of freedom = ", df);
+	MelderInfo_writeLine (U"Chi-squared (wald) = ", chisq);
+	MelderInfo_writeLine (U"Degrees of freedom (wald) = ", df);
 	MelderInfo_close ();
 END
 
@@ -1245,6 +1267,16 @@ DIRECT (Covariance_to_PCA)
 		autoPCA thee = SSCP_to_PCA (me);
 		praat_new (thee.move(), my name);
 	}
+END
+
+DIRECT (Covariances_pool)
+	autoCovarianceList covariances = CovarianceList_create ();
+	LOOP {
+		iam (Covariance);
+		covariances -> addItem_ref (me);
+	}
+	autoCovariance thee = CovarianceList_to_Covariance_pool (covariances.get());
+	praat_new (thee.move(), U"pool");
 END
 
 FORM (Covariance_and_TableOfReal_mahalanobis, U"Covariance & TableOfReal: To TableOfReal (mahalanobis)", U"Covariance & TableOfReal: To TableOfReal (mahalanobis)...")
@@ -1270,8 +1302,8 @@ DIRECT (Discriminant_setGroupLabels)
 END
 
 FORM (Discriminant_and_Pattern_to_Categories, U"Discriminant & Pattern: To Categories", U"Discriminant & Pattern: To Categories...")
-	BOOLEAN (U"Pool covariance matrices", 1)
-	BOOLEAN (U"Use apriori probabilities", 1)
+	BOOLEAN (U"Pool covariance matrices", true)
+	BOOLEAN (U"Use apriori probabilities", true)
 	OK
 DO
 	Discriminant me = FIRST (Discriminant);
@@ -1297,8 +1329,8 @@ DIRECT (hint_Discriminant_and_TableOfReal_to_ClassificationTable)
 END
 
 FORM (Discriminant_and_TableOfReal_to_ClassificationTable, U"Discriminant & TableOfReal: To ClassificationTable", U"Discriminant & TableOfReal: To ClassificationTable...")
-	BOOLEAN (U"Pool covariance matrices", 1)
-	BOOLEAN (U"Use apriori probabilities", 1)
+	BOOLEAN (U"Pool covariance matrices", true)
+	BOOLEAN (U"Use apriori probabilities", true)
 	OK
 DO
 	Discriminant me = FIRST (Discriminant);
@@ -1310,7 +1342,7 @@ END
 
 FORM (Discriminant_and_TableOfReal_mahalanobis, U"Discriminant & TableOfReal: To TableOfReal (mahalanobis)", U"Discriminant & TableOfReal: To TableOfReal (mahalanobis)...")
 	SENTENCE (U"Group label", U"")
-	BOOLEAN (U"Pool covariance matrices", 0)
+	BOOLEAN (U"Pool covariance matrices", false)
 	OK
 DO
 	Discriminant me = FIRST (Discriminant);
@@ -1355,17 +1387,17 @@ DO
 	REQUIRE (n >= 0, U"Number of dimensions must be greater than or equal to zero.")
 	LOOP {
 		iam (Discriminant);
-		double p, chisq; long ndf;
-		Discriminant_getPartialDiscriminationProbability (me, n, &p, &chisq, &ndf);
-		Melder_information (p, U" (=probability, based on chisq = ", chisq, U"and ndf = ", ndf, U")");
+		double p, chisq, df;
+		Discriminant_getPartialDiscriminationProbability (me, n, & p, & chisq, & df);
+		Melder_information (p, U" (=probability, based on chisq = ", chisq, U"and ndf = ", df, U")");
 	}
 END
 
 DIRECT (Discriminant_getHomegeneityOfCovariances_box)
 	LOOP {
 		iam (Discriminant);
-		double chisq, p; long ndf;
-		SSCPs_getHomegeneityOfCovariances_box (my groups.peek(), &p, &chisq, &ndf);
+		double chisq, p; double ndf;
+		SSCPList_getHomegeneityOfCovariances_box (my groups.peek(), &p, &chisq, &ndf);
 		Melder_information (p, U" (=probability, based on chisq = ",
 			chisq, U"and ndf = ", ndf, U")");
 	}
@@ -1375,13 +1407,19 @@ DIRECT (Discriminant_reportEqualityOfCovariances_wald)
 	MelderInfo_open ();
 	LOOP {
 		iam (Discriminant);
+		structCovarianceList list;
+		for (long i = 1; i <= my groups->size; i ++) {
+			SSCP sscp = my groups->at [i];
+			autoCovariance covariance = SSCP_to_Covariance (sscp, 1);   // FIXME numberOfConstraints shouldn't be 1, should it?
+			list. addItem_move (covariance.move());
+		}
 		double chisq, prob, df;
-		Covariances_equality (my groups.peek(), 2, &prob, &chisq, &df);
+		Covariances_equality (& list, 2, & prob, & chisq, & df);
 		MelderInfo_writeLine (U"Wald test for equality of covariance matrices:");
 		MelderInfo_writeLine (U"Chi squared: ", chisq);
 		MelderInfo_writeLine (U"Significance: ", prob);
 		MelderInfo_writeLine (U"Degrees of freedom: ", df);
-		MelderInfo_writeLine (U"Number of matrices: ", my groups -> size);
+		MelderInfo_writeLine (U"Number of matrices: ", list.size);
 	}
 	MelderInfo_close ();
 END
@@ -1389,7 +1427,7 @@ END
 FORM (Discriminant_getConcentrationEllipseArea, U"Discriminant: Get concentration ellipse area", U"Discriminant: Get concentration ellipse area...")
 	SENTENCE (U"Group label", U"")
 	POSITIVE (U"Number of sigmas", U"1.0")
-	BOOLEAN (U"Discriminant plane", 1)
+	BOOLEAN (U"Discriminant plane", true)
 	INTEGER (U"X-dimension", U"1")
 	INTEGER (U"Y-dimension", U"2")
 	OK
@@ -1398,16 +1436,20 @@ DO
 		iam (Discriminant);
 		long group = Discriminant_groupLabelToIndex (me, GET_STRING (U"Group label"));
 		REQUIRE (group > 0, U"Group label does not exist.")
-		Melder_information (Discriminant_getConcentrationEllipseArea (me, group,
-		GET_REAL (U"Number of sigmas"), 0, GET_INTEGER (U"Discriminant plane"),
-		GET_INTEGER (U"X-dimension"), GET_INTEGER (U"Y-dimension")));
+		Melder_information (Discriminant_getConcentrationEllipseArea (me,
+			group,
+			GET_REAL (U"Number of sigmas"),
+			false,   // confidence
+			GET_INTEGER (U"Discriminant plane"),
+			GET_INTEGER (U"X-dimension"),
+			GET_INTEGER (U"Y-dimension")));
 	}
 END
 
 FORM (Discriminant_getConfidenceEllipseArea, U"Discriminant: Get confidence ellipse area", U"Discriminant: Get confidence ellipse area...")
 	SENTENCE (U"Group label", U"")
 	POSITIVE (U"Confidence level (0-1)", U"0.95")
-	BOOLEAN (U"Discriminant plane", 1)
+	BOOLEAN (U"Discriminant plane", true)
 	INTEGER (U"X-dimension", U"1")
 	INTEGER (U"Y-dimension", U"2")
 	OK
@@ -1416,9 +1458,13 @@ DO
 		iam (Discriminant);
 		long group = Discriminant_groupLabelToIndex (me, GET_STRING (U"Group label"));
 		REQUIRE (group > 0, U"Group label does not exist.")
-		Melder_information (Discriminant_getConcentrationEllipseArea (me, group,
-		GET_REAL (U"Confidence level"), 1, GET_INTEGER (U"Discriminant plane"),
-		GET_INTEGER (U"X-dimension"), GET_INTEGER (U"Y-dimension")));
+		Melder_information (Discriminant_getConcentrationEllipseArea (me,
+			group,
+			GET_REAL (U"Confidence level"),
+			true,    //confidence
+			GET_INTEGER (U"Discriminant plane"),
+			GET_INTEGER (U"X-dimension"),
+			GET_INTEGER (U"Y-dimension")));
 	}
 END
 
@@ -1447,14 +1493,15 @@ FORM (Discriminant_invertEigenvector, U"Discriminant: Invert eigenvector", nullp
 DO
 	LOOP {
 		iam (Discriminant);
-		Eigen_invertEigenvector (me, GET_INTEGER (U"Index of eigenvector"));
+		Eigen_invertEigenvector (me,
+			GET_INTEGER (U"Index of eigenvector"));
 		praat_dataChanged (me);
 	}
 END
 
 FORM (Discriminant_drawSigmaEllipses, U"Discriminant: Draw sigma ellipses", U"Discriminant: Draw sigma ellipses...")
 	POSITIVE (U"Number of sigmas", U"1.0")
-	BOOLEAN (U"Discriminant plane", 1)
+	BOOLEAN (U"Discriminant plane", true)
 	INTEGER (U"X-dimension", U"1")
 	INTEGER (U"Y-dimension", U"2")
 	REAL (U"left Horizontal range", U"0.0")
@@ -1462,17 +1509,25 @@ FORM (Discriminant_drawSigmaEllipses, U"Discriminant: Draw sigma ellipses", U"Di
 	REAL (U"left Vertical range", U"0.0")
 	REAL (U"right Vertical range", U"0.0")
 	INTEGER (U"Label size", U"12")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Discriminant);
-		Discriminant_drawConcentrationEllipses (me, GRAPHICS, GET_REAL (U"Number of sigmas"), false, nullptr,
-			GET_INTEGER (U"Discriminant plane"), GET_INTEGER (U"X-dimension"), GET_INTEGER (U"Y-dimension"),
-			GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-			GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-			GET_INTEGER (U"Label size"), GET_INTEGER (U"Garnish"));
+		Discriminant_drawConcentrationEllipses (me, GRAPHICS,
+			GET_REAL (U"Number of sigmas"),
+			false,   // confidence
+			nullptr,   // label
+			GET_INTEGER (U"Discriminant plane"),
+			GET_INTEGER (U"X-dimension"),
+			GET_INTEGER (U"Y-dimension"),
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_INTEGER (U"Label size"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -1493,12 +1548,19 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Discriminant);
-		Discriminant_drawConcentrationEllipses (me, GRAPHICS, GET_REAL (U"Number of sigmas"), false,
-			GET_STRING (U"Label"), GET_INTEGER (U"Discriminant plane"),
-			GET_INTEGER (U"X-dimension"), GET_INTEGER (U"Y-dimension"),
-			GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-			GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-			GET_INTEGER (U"Label size"), GET_INTEGER (U"Garnish"));
+		Discriminant_drawConcentrationEllipses (me, GRAPHICS,
+			GET_REAL (U"Number of sigmas"),
+			false,   // confidence
+			GET_STRING (U"Label"),
+			GET_INTEGER (U"Discriminant plane"),
+			GET_INTEGER (U"X-dimension"),
+			GET_INTEGER (U"Y-dimension"),
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_INTEGER (U"Label size"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -1519,11 +1581,18 @@ DO
 	LOOP {
 		iam (Discriminant);
 		Discriminant_drawConcentrationEllipses (me, GRAPHICS,
-			GET_REAL (U"Confidence level"), true, nullptr, GET_INTEGER (U"Discriminant plane"),
-			GET_INTEGER (U"X-dimension"), GET_INTEGER (U"Y-dimension"),
-			GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-			GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-			GET_INTEGER (U"Label size"), GET_INTEGER (U"Garnish"));
+			GET_REAL (U"Confidence level"),
+			true,   // confidence
+			nullptr,   // label
+			GET_INTEGER (U"Discriminant plane"),
+			GET_INTEGER (U"X-dimension"),
+			GET_INTEGER (U"Y-dimension"),
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_INTEGER (U"Label size"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -1546,11 +1615,18 @@ DO
 	LOOP {
 		iam (Discriminant);
 		Discriminant_drawConcentrationEllipses (me, GRAPHICS,
-			GET_REAL (U"Confidence level"), true, GET_STRING (U"Label"), GET_INTEGER (U"Discriminant plane"),
-			GET_INTEGER (U"X-dimension"), GET_INTEGER (U"Y-dimension"),
-			GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-			GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-			GET_INTEGER (U"Label size"), GET_INTEGER (U"Garnish"));
+			GET_REAL (U"Confidence level"),
+			true,   // confidence
+			GET_STRING (U"Label"),
+			GET_INTEGER (U"Discriminant plane"),
+			GET_INTEGER (U"X-dimension"),
+			GET_INTEGER (U"Y-dimension"),
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_INTEGER (U"Label size"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -1749,8 +1825,12 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (DTW);
-		DTW_drawPath (me, GRAPHICS, GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-		GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"), GET_INTEGER (U"Garnish"));
+		DTW_drawPath (me, GRAPHICS,
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -1765,8 +1845,12 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (DTW);
-		DTW_drawDistancesAlongPath (me, GRAPHICS, GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-		GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"), GET_INTEGER (U"Garnish"));
+		DTW_drawDistancesAlongPath (me,
+			GRAPHICS, GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -1783,9 +1867,14 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (DTW);
-		DTW_paintDistances (me, GRAPHICS, GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-		GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-		GET_REAL (U"Minimum"), GET_REAL (U"Maximum"), GET_INTEGER (U"Garnish"));
+		DTW_paintDistances (me, GRAPHICS,
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_REAL (U"Minimum"),
+			GET_REAL (U"Maximum"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -1801,9 +1890,13 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (DTW);
-		DTW_drawWarpX (me, GRAPHICS, GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-		GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-		GET_REAL (U"Time"), GET_INTEGER (U"Garnish"));
+		DTW_drawWarpX (me, GRAPHICS,
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_REAL (U"Time"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -1964,18 +2057,18 @@ END
 
 FORM (DTW_getMaximumConsecutiveSteps, U"DTW: Get maximum consecutive steps", U"DTW: Get maximum consecutive steps...")
 	OPTIONMENU (U"Direction", 1)
-	OPTION (U"X")
-	OPTION (U"Y")
-	OPTION (U"Diagonaal")
+		OPTION (U"X")
+		OPTION (U"Y")
+		OPTION (U"Diagonaal")
 	OK
 DO
-	int direction[] = {DTW_START, DTW_X, DTW_Y, DTW_XANDY};
-	const char32 *string[] = {U"", U"x", U"y", U"diagonal"};
+	int direction [] = { DTW_START, DTW_X, DTW_Y, DTW_XANDY };
+	const char32 *string [] = { U"", U"x", U"y", U"diagonal" };
 	int d = GET_INTEGER (U"Direction");
 	LOOP {
 		iam (DTW);
-		Melder_information (DTW_getMaximumConsecutiveSteps (me, direction[d]),
-		U" (= maximum number of consecutive steps in ", string[d], U" direction)");
+		Melder_information (DTW_getMaximumConsecutiveSteps (me, direction [d]),
+			U" (= maximum number of consecutive steps in ", string [d], U" direction)");
 	}
 END
 
@@ -1986,7 +2079,7 @@ DIRECT (DTW_getWeightedDistance)
 	}
 END
 
-FORM (DTW_getDistanceValue, U"DTW: Get distance value", 0)
+FORM (DTW_getDistanceValue, U"DTW: Get distance value", nullptr)
 	REAL (U"Time at x (s)", U"0.1")
 	REAL (U"Time at y (s)", U"0.1")
 	OK
@@ -2051,7 +2144,7 @@ DO
 	}
 END
 
-FORM (DTW_setDistanceValue, U"DTW: Set distance value", 0)
+FORM (DTW_setDistanceValue, U"DTW: Set distance value", nullptr)
 	REAL (U"Time at x (s)", U"0.1")
 	REAL (U"Time at y (s)", U"0.1")
 	REAL (U"New value", U"0.0")
@@ -2078,42 +2171,42 @@ DO
 	}
 END
 
-FORM (DTW_findPath, U"DTW: Find path", 0)
+FORM (DTW_findPath, U"DTW: Find path", nullptr)
 	DTW_constraints_addCommonFields (dia);
 	OK
 DO
 	int begin, end, slope;
-	DTW_constraints_getCommonFields (dia, &begin, &end, &slope);
+	DTW_constraints_getCommonFields (dia, & begin, & end, & slope);
 	LOOP {
 		iam (DTW);
 		DTW_findPath (me, begin, end, slope);
 	}
 END
 
-FORM (DTW_findPath_bandAndSlope, U"DTW: find path (band & slope)", 0)
+FORM (DTW_findPath_bandAndSlope, U"DTW: find path (band & slope)", nullptr)
     REAL (U"Sakoe-Chiba band (s)", U"0.05")
     RADIO (U"Slope constraint", 1)
-    RADIOBUTTON (U"no restriction")
-    RADIOBUTTON (U"1/3 < slope < 3")
-    RADIOBUTTON (U"1/2 < slope < 2")
-    RADIOBUTTON (U"2/3 < slope < 3/2")
+		RADIOBUTTON (U"no restriction")
+		RADIOBUTTON (U"1/3 < slope < 3")
+		RADIOBUTTON (U"1/2 < slope < 2")
+		RADIOBUTTON (U"2/3 < slope < 3/2")
     OK
 DO
     double band = GET_REAL (U"Sakoe-Chiba band");
     int slope = GET_INTEGER (U"Slope constraint");
     LOOP {
         iam (DTW);
-        DTW_findPath_bandAndSlope (me, band, slope, 0);
+        DTW_findPath_bandAndSlope (me, band, slope, nullptr);
     }
 END
 
-FORM (DTW_to_Matrix_cummulativeDistances, U"DTW: To Matrix", 0)
+FORM (DTW_to_Matrix_cummulativeDistances, U"DTW: To Matrix", nullptr)
     REAL (U"Sakoe-Chiba band (s)", U"0.05")
     RADIO (U"Slope constraint", 1)
-    RADIOBUTTON (U"no restriction")
-    RADIOBUTTON (U"1/3 < slope < 3")
-    RADIOBUTTON (U"1/2 < slope < 2")
-    RADIOBUTTON (U"2/3 < slope < 3/2")
+		RADIOBUTTON (U"no restriction")
+		RADIOBUTTON (U"1/3 < slope < 3")
+		RADIOBUTTON (U"1/2 < slope < 2")
+		RADIOBUTTON (U"2/3 < slope < 3/2")
     OK
 DO
     double band = GET_REAL (U"Sakoe-Chiba band");
@@ -2128,10 +2221,10 @@ END
 FORM (DTW_to_Polygon, U"DTW: To Polygon...", 0)
     REAL (U"Sakoe-Chiba band (s)", U"0.1")
     RADIO (U"Slope constraint", 1)
-    RADIOBUTTON (U"no restriction")
-    RADIOBUTTON (U"1/3 < slope < 3")
-    RADIOBUTTON (U"1/2 < slope < 2")
-    RADIOBUTTON (U"2/3 < slope < 3/2")
+		RADIOBUTTON (U"no restriction")
+		RADIOBUTTON (U"1/3 < slope < 3")
+		RADIOBUTTON (U"1/2 < slope < 2")
+		RADIOBUTTON (U"2/3 < slope < 3/2")
     OK
 DO
     double band = GET_REAL (U"Sakoe-Chiba band");
@@ -2200,7 +2293,7 @@ DIRECT (EditDistanceTable_setEditCosts)
 	EditDistanceTable_setEditCosts (me, thee);
 END
 
-FORM (EditDistanceTable_setDefaultCosts, U"", 0)
+FORM (EditDistanceTable_setDefaultCosts, U"", nullptr)
 	REAL (U"Insertion costs", U"1.0")
 	REAL (U"Deletion costs", U"1.0")
 	REAL (U"Substitution costs", U"2.0")
@@ -2224,7 +2317,7 @@ DO
 	}
 END
 
-FORM (EditDistanceTable_draw, U"EditDistanceTable_draw", 0)
+FORM (EditDistanceTable_draw, U"EditDistanceTable_draw", nullptr)
 	RADIO (U"Format", 3)
 		RADIOBUTTON (U"decimal")
 		RADIOBUTTON (U"exponential")
@@ -2237,7 +2330,10 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (EditDistanceTable);
-		EditDistanceTable_draw (me, GRAPHICS, GET_INTEGER (U"Format"), GET_INTEGER (U"Precision"), GET_REAL (U"Rotate source labels by"));
+		EditDistanceTable_draw (me, GRAPHICS,
+			GET_INTEGER (U"Format"),
+			GET_INTEGER (U"Precision"),
+			GET_REAL (U"Rotate source labels by"));
 	}
 END
 
@@ -2253,116 +2349,131 @@ DIRECT (EditCostsTable_help)
 	Melder_help (U"EditCostsTable");
 END
 
-FORM (EditCostsTable_getTargetIndex, U"EditCostsTable: Get target index", 0)
+FORM (EditCostsTable_getTargetIndex, U"EditCostsTable: Get target index", nullptr)
 	SENTENCE (U"Target", U"")
 	OK
 DO
 	LOOP {
 		iam (EditCostsTable);
-		Melder_informationReal (EditCostsTable_getTargetIndex (me, GET_STRING (U"Target")), nullptr);
+		Melder_informationReal (EditCostsTable_getTargetIndex (me,
+			GET_STRING (U"Target")), nullptr);
 	}
 END
 
-FORM (EditCostsTable_getSourceIndex, U"EditCostsTable: Get source index", 0)
+FORM (EditCostsTable_getSourceIndex, U"EditCostsTable: Get source index", nullptr)
 	SENTENCE (U"Source", U"")
 	OK
 DO
 	LOOP {
 		iam (EditCostsTable);
-		Melder_informationReal (EditCostsTable_getSourceIndex (me, GET_STRING (U"Source")), nullptr);
+		Melder_informationReal (EditCostsTable_getSourceIndex (me,
+			GET_STRING (U"Source")), nullptr);
 	}
 END
 
-FORM (EditCostsTable_getInsertionCost, U"EditCostsTable: Get insertion cost", 0)
+FORM (EditCostsTable_getInsertionCost, U"EditCostsTable: Get insertion cost", nullptr)
 	SENTENCE (U"Target", U"")
 	OK
 DO
 	LOOP {
 		iam (EditCostsTable);
-		Melder_informationReal (EditCostsTable_getInsertionCost (me, GET_STRING (U"Target")), nullptr);
+		Melder_informationReal (EditCostsTable_getInsertionCost (me,
+			GET_STRING (U"Target")), nullptr);
 	}
 END
 
-FORM (EditCostsTable_getDeletionCost, U"EditCostsTable: Get deletion cost", 0)
+FORM (EditCostsTable_getDeletionCost, U"EditCostsTable: Get deletion cost", nullptr)
 	SENTENCE (U"Source", U"")
 	OK
 DO
 	LOOP {
 		iam (EditCostsTable);
-		Melder_informationReal (EditCostsTable_getDeletionCost (me, GET_STRING (U"Source")), nullptr);
+		Melder_informationReal (EditCostsTable_getDeletionCost (me,
+			GET_STRING (U"Source")), nullptr);
 	}
 END
 
-FORM (EditCostsTable_getSubstitutionCost, U"EditCostsTable: Get substitution cost", 0)
+FORM (EditCostsTable_getSubstitutionCost, U"EditCostsTable: Get substitution cost", nullptr)
 	SENTENCE (U"Target", U"")
 	SENTENCE (U"Source", U"")
 	OK
 DO
 	LOOP {
 		iam (EditCostsTable);
-		Melder_informationReal (EditCostsTable_getSubstitutionCost (me, GET_STRING (U"Target"), GET_STRING (U"Source")), nullptr);
+		Melder_informationReal (EditCostsTable_getSubstitutionCost (me,
+			GET_STRING (U"Target"),
+			GET_STRING (U"Source")), nullptr);
 	}
 END
 
-FORM (EditCostsTable_getOthersCost, U"EditCostsTable: Get cost (others)", 0)
+FORM (EditCostsTable_getOthersCost, U"EditCostsTable: Get cost (others)", nullptr)
 	RADIO (U"Others cost type", 1)
-	RADIOBUTTON (U"Insertion")
-	RADIOBUTTON (U"Deletion")
-	RADIOBUTTON (U"Equality")
-	RADIOBUTTON (U"Inequality")
+		RADIOBUTTON (U"Insertion")
+		RADIOBUTTON (U"Deletion")
+		RADIOBUTTON (U"Equality")
+		RADIOBUTTON (U"Inequality")
 	OK
 DO
 	LOOP {
 		iam (EditCostsTable);
-		Melder_informationReal (EditCostsTable_getOthersCost (me, GET_INTEGER (U"Others cost type")), nullptr);
+		Melder_informationReal (EditCostsTable_getOthersCost (me,
+			GET_INTEGER (U"Others cost type")), nullptr);
 	}
 END
 
-FORM (EditCostsTable_setTargetSymbol_index, U"EditCostsTable: Set target symbol (index)", 0)
+FORM (EditCostsTable_setTargetSymbol_index, U"EditCostsTable: Set target symbol (index)", nullptr)
 	NATURAL (U"Index", U"1")
 	SENTENCE (U"Target", U"a")
 	OK
 DO
 	LOOP {
 		iam (TableOfReal);
-		TableOfReal_setRowLabel (me, GET_INTEGER (U"Index"), GET_STRING (U"Target"));
+		TableOfReal_setRowLabel (me,
+			GET_INTEGER (U"Index"),
+			GET_STRING (U"Target"));
 	}
 END
 
-FORM (EditCostsTable_setSourceSymbol_index, U"EditCostsTable: Set source symbol (index)", 0)
+FORM (EditCostsTable_setSourceSymbol_index, U"EditCostsTable: Set source symbol (index)", nullptr)
 	NATURAL (U"Index", U"1")
 	SENTENCE (U"Source", U"a")
 	OK
 DO
 	LOOP {
 		iam (TableOfReal);
-		TableOfReal_setColumnLabel (me, GET_INTEGER (U"Index"), GET_STRING (U"Source"));
+		TableOfReal_setColumnLabel (me,
+			GET_INTEGER (U"Index"),
+			GET_STRING (U"Source"));
 	}
 END
 
-FORM (EditCostsTable_setInsertionCosts, U"EditCostsTable: Set insertion costs", 0)
+FORM (EditCostsTable_setInsertionCosts, U"EditCostsTable: Set insertion costs", nullptr)
 	SENTENCE (U"Targets", U"")
 	REAL (U"Cost", U"2.0")
 	OK
 DO
 	LOOP {
 		iam (EditCostsTable);
-		EditCostsTable_setInsertionCosts (me, GET_STRING (U"Targets"), GET_REAL (U"Cost"));
+		EditCostsTable_setInsertionCosts (me,
+			GET_STRING (U"Targets"),
+			GET_REAL (U"Cost"));
 	}
 END
 
-FORM (EditCostsTable_setDeletionCosts, U"EditCostsTable: Set deletion costs", 0)
+FORM (EditCostsTable_setDeletionCosts, U"EditCostsTable: Set deletion costs", nullptr)
 	SENTENCE (U"Sources", U"")
 	REAL (U"Cost", U"2.0")
 	OK
 DO
 	LOOP {
 		iam (EditCostsTable);
-		EditCostsTable_setDeletionCosts (me, GET_STRING (U"Sources"), GET_REAL (U"Cost"));
+		EditCostsTable_setDeletionCosts (me,
+			GET_STRING (U"Sources"),
+			GET_REAL (U"Cost"));
 	}
 END
 
-FORM (EditCostsTable_setSubstitutionCosts, U"EditCostsTable: Set substitution costs", 0)
+FORM (EditCostsTable_setSubstitutionCosts, U"EditCostsTable: Set substitution costs", nullptr)
 	SENTENCE (U"Targets", U"a i u")
 	SENTENCE (U"Sources", U"a i u")
 	REAL (U"Cost", U"2.0")
@@ -2370,11 +2481,14 @@ FORM (EditCostsTable_setSubstitutionCosts, U"EditCostsTable: Set substitution co
 DO
 	LOOP {
 		iam (EditCostsTable);
-		EditCostsTable_setSubstitutionCosts (me, GET_STRING (U"Targets"), GET_STRING (U"Sources"), GET_REAL (U"Cost"));
+		EditCostsTable_setSubstitutionCosts (me,
+			GET_STRING (U"Targets"),
+			GET_STRING (U"Sources"),
+			GET_REAL (U"Cost"));
 	}
 END
 
-FORM (EditCostsTable_setOthersCosts, U"EditCostsTable: Set costs (others)", 0)
+FORM (EditCostsTable_setOthersCosts, U"EditCostsTable: Set costs (others)", nullptr)
 	LABEL (U"", U"Others costs")
 	REAL (U"Insertion", U"1.0")
 	REAL (U"Deletion", U"1.0")
@@ -2385,15 +2499,19 @@ FORM (EditCostsTable_setOthersCosts, U"EditCostsTable: Set costs (others)", 0)
 DO
 	LOOP {
 		iam (EditCostsTable);
-		EditCostsTable_setOthersCosts (me, GET_REAL (U"Insertion"), GET_REAL (U"Deletion"), GET_REAL (U"Equality"), GET_REAL (U"Inequality"));
+		EditCostsTable_setOthersCosts (me,
+			GET_REAL (U"Insertion"),
+			GET_REAL (U"Deletion"),
+			GET_REAL (U"Equality"),
+			GET_REAL (U"Inequality"));
 	}
 END
 
 DIRECT (EditCostsTable_to_TableOfReal)
 	LOOP {
 		iam (EditCostsTable);
-		autoTableOfReal thee = EditCostsTable_to_TableOfReal (me);
-		praat_new (thee.move(), my name);
+		autoTableOfReal result = EditCostsTable_to_TableOfReal (me);
+		praat_new (result.move(), my name);
 	}
 END
 
@@ -2407,8 +2525,8 @@ DO
 	numberOfTargetSymbols = numberOfTargetSymbols < 0 ? 0 : numberOfTargetSymbols;
 	long numberOfSourceSymbols = GET_INTEGER (U"Number of source symbols");
 	numberOfSourceSymbols = numberOfSourceSymbols < 0 ? 0 : numberOfSourceSymbols;
-	autoEditCostsTable thee = EditCostsTable_create (numberOfTargetSymbols, numberOfSourceSymbols);
-	praat_new (thee.move(), GET_STRING (U"Name"));
+	autoEditCostsTable result = EditCostsTable_create (numberOfTargetSymbols, numberOfSourceSymbols);
+	praat_new (result.move(), GET_STRING (U"Name"));
 END
 
 /******************** Eigen ********************************************/
@@ -2424,45 +2542,57 @@ FORM (Eigen_drawEigenvalues, U"Eigen: Draw eigenvalues", U"Eigen: Draw eigenvalu
 	INTEGER (U"right Eigenvalue range", U"0")
 	REAL (U"left Amplitude range", U"0.0")
 	REAL (U"right Amplitude range", U"0.0")
-	BOOLEAN (U"Fraction of eigenvalues summed", 0)
-	BOOLEAN (U"Cumulative", 0)
+	BOOLEAN (U"Fraction of eigenvalues summed", false)
+	BOOLEAN (U"Cumulative", false)
 	POSITIVE (U"Mark size (mm)", U"1.0")
 	SENTENCE (U"Mark string (+xo.)", U"+")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Eigen);
-		Eigen_drawEigenvalues (me, GRAPHICS, GET_INTEGER (U"left Eigenvalue range"),
-		GET_INTEGER (U"right Eigenvalue range"), GET_REAL (U"left Amplitude range"),
-		GET_REAL (U"right Amplitude range"), GET_INTEGER (U"Fraction of eigenvalues summed"),
-		GET_INTEGER (U"Cumulative"), GET_REAL (U"Mark size"), GET_STRING (U"Mark string"),
-		GET_INTEGER (U"Garnish"));
+		Eigen_drawEigenvalues (me, GRAPHICS,
+			GET_INTEGER (U"left Eigenvalue range"),
+			GET_INTEGER (U"right Eigenvalue range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"),
+			GET_INTEGER (U"Fraction of eigenvalues summed"),
+			GET_INTEGER (U"Cumulative"),
+			GET_REAL (U"Mark size"),
+			GET_STRING (U"Mark string"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
 FORM (Eigen_drawEigenvector, U"Eigen: Draw eigenvector", U"Eigen: Draw eigenvector...")
 	INTEGER (U"Eigenvector number", U"1")
-	BOOLEAN (U"Component loadings", 0)
+	BOOLEAN (U"Component loadings", false)
 	INTEGER (U"left Element range", U"0")
 	INTEGER (U"right Element range", U"0")
 	REAL (U"left Amplitude range", U"-1.0")
 	REAL (U"right Amplitude range", U"1.0")
 	POSITIVE (U"Mark size (mm)", U"1.0")
 	SENTENCE (U"Mark string (+xo.)", U"+")
-	BOOLEAN (U"Connect points", 1)
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Connect points", true)
+	BOOLEAN (U"Garnish", true)
 	OK
 DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Eigen);
-		Eigen_drawEigenvector (me, GRAPHICS, GET_INTEGER (U"Eigenvector number"),
-		GET_INTEGER (U"left Element range"), GET_INTEGER (U"right Element range"),
-		GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"),
-		GET_INTEGER (U"Component loadings"), GET_REAL (U"Mark size"),
-		GET_STRING (U"Mark string"), GET_INTEGER (U"Connect points"), 0, GET_INTEGER (U"Garnish"));
+		Eigen_drawEigenvector (me, GRAPHICS,
+			GET_INTEGER (U"Eigenvector number"),
+			GET_INTEGER (U"left Element range"),
+			GET_INTEGER (U"right Element range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"),
+			GET_INTEGER (U"Component loadings"),
+			GET_REAL (U"Mark size"),
+			GET_STRING (U"Mark string"),
+			GET_INTEGER (U"Connect points"),
+			nullptr,   // rowLabels
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -2517,8 +2647,12 @@ DO
 END
 
 DIRECT (Eigens_alignEigenvectors)
-	autoCollection set = praat_getSelectedObjects ();
-	Eigens_alignEigenvectors (set.peek());
+	OrderedOf<structEigen> list;
+	LOOP {
+		iam (Eigen);
+		list. addItem_ref (me);
+	}
+	Eigens_alignEigenvectors (& list);
 END
 
 FORM (Eigen_and_Matrix_project, U"Eigen & Matrix: Project", U"Eigen & Matrix: Project...")
@@ -2554,7 +2688,7 @@ END
 DIRECT (Index_getNumberOfClasses)
 	LOOP {
 		iam (Index);
-		Melder_information (my classes -> size);
+		Melder_information (my classes->size);
 	}
 END
 
@@ -2565,11 +2699,11 @@ DO
 	long klas = GET_INTEGER (U"Class index");
 	LOOP {
 		iam (StringsIndex);
-		long numberOfClasses = my classes -> size;
+		long numberOfClasses = my classes->size;
 		if (klas > numberOfClasses) {
 			Melder_throw (U"Index must be less than or equal ", numberOfClasses, U".");
 		}
-		SimpleString ss = (SimpleString) my classes -> item[klas];
+		SimpleString ss = (SimpleString) my classes->at [klas];   // FIXME cast
 		Melder_information (ss -> string);
 	}
 END
@@ -2584,8 +2718,8 @@ DO
 		if (index > my numberOfElements) {
 			Melder_throw (U"Index must be less than or equal ", my numberOfElements, U".");
 		}
-		long klas = my classIndex[index];
-		SimpleString ss = (SimpleString) my classes -> item [klas];
+		long klas = my classIndex [index];
+		SimpleString ss = (SimpleString) my classes->at [klas];   // FIXME cast
 		Melder_information (ss -> string);
 	}
 END
@@ -2600,7 +2734,7 @@ DO
 		if (index > my numberOfElements) {
 			Melder_throw (U"Index must be less than or equal ", my numberOfElements, U".");
 		}
-		Melder_information (my classIndex[index]);
+		Melder_information (my classIndex [index]);
 	}
 END
 
@@ -2623,105 +2757,110 @@ FORM (Index_extractPart, U"Index: Extract part", U"Index: Extract part...")
 DO
 	LOOP {
 		iam (Index);
-		autoIndex thee = Index_extractPart (me, GET_INTEGER (U"left Range"), GET_INTEGER (U"right Range"));
+		autoIndex thee = Index_extractPart (me,
+			GET_INTEGER (U"left Range"),
+			GET_INTEGER (U"right Range"));
 		praat_new (thee.move(), Thing_getName (me), U"_part");
 	}
 END
 
 FORM (Index_to_Permutation, U"Index: To Permutation", U"Index: To Permutation...")
-	BOOLEAN (U"Permute within classes", 1)
+	BOOLEAN (U"Permute within classes", true)
 	OK
 DO
 	LOOP {
 		iam (Index);
-		autoPermutation thee = Index_to_Permutation_permuteRandomly (me, GET_INTEGER (U"Permute within classes"));
-		praat_new (thee.move(), my name);
+		autoPermutation result = Index_to_Permutation_permuteRandomly (me,
+			GET_INTEGER (U"Permute within classes"));
+		praat_new (result.move(), my name);
 	}
 END
 
 DIRECT (StringsIndex_to_Strings)
 	LOOP {
 		iam (StringsIndex);
-		autoStrings thee = StringsIndex_to_Strings (me);
-		praat_new (thee.move(), my name);
+		autoStrings result = StringsIndex_to_Strings (me);
+		praat_new (result.move(), my name);
 	}
 END
 
 /******************** Excitation ********************************************/
 
-DIRECT (Excitation_to_Excitations)
-	autoExcitations e = Excitations_create (100);
+DIRECT (Excitations_to_ExcitationList)
+	autoExcitationList result = ExcitationList_create ();
 	LOOP {
 		iam (Excitation);
-		autoExcitation thee = Data_copy (me);
-		Collection_addItem_move (e.peek(), thee.move());
+		autoExcitation copy = Data_copy (me);
+		result -> addItem_move (copy.move());
 	}
-	praat_new (e.move(), U"appended");
+	praat_new (result.move(), U"appended");
 END
 
 /******************** Excitations ********************************************/
 
-FORM (Excitations_formula, U"Excitations: Formula", 0)
-	LABEL (U"label", U"for all objects in Excitations do { for col := 1 to ncol do { self [col] := `formula' ; x := x + dx } }")
+FORM (ExcitationList_formula, U"ExcitationList: Formula", 0)
+	LABEL (U"label", U"for all objects in ExcitationList do { for col := 1 to ncol do { self [col] := `formula' ; x := x + dx } }")
 	TEXTFIELD (U"formula", U"self")
 	OK
 DO
 	LOOP {
-		iam (Excitations);
-		for (long j = 1; j <= my size; j++) {
-			Matrix_formula ( (Matrix) my item[j], GET_STRING (U"formula"), interpreter, 0);
+		iam (ExcitationList);
+		for (long j = 1; j <= my size; j ++) {
+			Matrix_formula (my at [j], GET_STRING (U"formula"), interpreter, nullptr);
 		}
 		praat_dataChanged (me);
 	}
 END
 
-DIRECT (Excitations_addItem)
-	Excitations e = FIRST (Excitations);
+DIRECT (ExcitationList_addItem)
+	ExcitationList list = FIRST (ExcitationList);
 	WHERE_DOWN (SELECTED && CLASS == classExcitation) {
 		iam (Excitation);
-		autoExcitation thee = Data_copy (me);
-		Collection_addItem_move (e, thee.move());
+		autoExcitation copy = Data_copy (me);
+		list -> addItem_move (copy.move());
 	}
 END
 
-FORM (Excitations_getItem, U"Excitations: Get item", 0)
+FORM (ExcitationList_getItem, U"ExcitationList: Get item", nullptr)
 	NATURAL (U"Item number", U"1")
 	OK
 DO
 	LOOP {
-		iam (Excitations);
-		autoExcitation thee = Excitations_getItem (me, GET_INTEGER (U"Item number"));
-		praat_new (thee.move(), my name, U"_item");
+		iam (ExcitationList);
+		autoExcitation result = ExcitationList_getItem (me,
+			GET_INTEGER (U"Item number"));
+		praat_new (result.move(), my name, U"_item");
 	}
 END
 
-DIRECT (Excitations_append)
-	Excitations e1 = nullptr, e2 = nullptr;
+DIRECT (ExcitationList_append)
+	ExcitationList e1 = nullptr, e2 = nullptr;
 	LOOP {
-		iam (Excitations);
+		iam (ExcitationList);
 		(e1 ? e2 : e1) = me;
 	}
 	Melder_assert (e1 && e2);
-	autoCollection result = Collections_merge (e1, e2);
+	autoExcitationList result = Data_copy (e1);
+	result -> merge (e2);
 	praat_new (result.move(), U"appended");
 END
 
-FORM (Excitations_to_Pattern, U"Excitations: To Pattern", 0)
+FORM (ExcitationList_to_Pattern, U"Excitations: To Pattern", nullptr)
 	NATURAL (U"Join", U"1")
 	OK
 DO
 	LOOP {
-		iam (Excitations);
-		autoPattern thee = Excitations_to_Pattern (me, GET_INTEGER (U"Join"));
-		praat_new (thee.move(), my name);
+		iam (ExcitationList);
+		autoPattern result = ExcitationList_to_Pattern (me, GET_INTEGER (U"Join"));
+		praat_new (result.move(), my name);
 	}
 END
 
-DIRECT (Excitations_to_TableOfReal)
+DIRECT (ExcitationList_to_TableOfReal)
 	LOOP {
-		iam (Excitations);
-		autoTableOfReal thee = Excitations_to_TableOfReal (me);
-		praat_new (thee.move(), my name);
+		iam (ExcitationList);
+		autoTableOfReal result = ExcitationList_to_TableOfReal (me);
+		praat_new (result.move(), my name);
 	}
 END
 
@@ -2729,12 +2868,12 @@ END
 /************************* FileInMemory ***********************************/
 
 
-FORM_READ2 (FileInMemory_create, U"Create file in memory", 0, true) {
+FORM_READ2 (FileInMemory_create, U"Create file in memory", nullptr, true) {
 	autoFileInMemory me = FileInMemory_create (file);
 	praat_new (me.move(), MelderFile_name (file));
 END2 }
 
-FORM (FileInMemory_setId, U"FileInMemory: Set id", 0)
+FORM (FileInMemory_setId, U"FileInMemory: Set id", nullptr)
 	SENTENCE (U"New id", U"New id")
 	OK
 DO
@@ -2745,7 +2884,7 @@ DO
 	}
 END
 
-FORM (FileInMemory_showAsCode, U"FileInMemory: Show as code", 0)
+FORM (FileInMemory_showAsCode, U"FileInMemory: Show as code", nullptr)
 	WORD (U"Name", U"example")
 	INTEGER (U"Number of bytes per line", U"20")
 	OK
@@ -2759,44 +2898,46 @@ DO
 	}
 END
 
-/************************* FilesInMemory ***********************************/
+/************************* FileInMemorySet ***********************************/
 
-FORM (FilesInMemory_createFromDirectoryContents, U"Create files in memory from directory contents", 0)
+FORM (FileInMemorySet_createFromDirectoryContents, U"Create files in memory from directory contents", nullptr)
 	SENTENCE (U"Name", U"list")
 	LABEL (U"", U"Directory:")
 	TEXTFIELD (U"Directory", U"/home/david/praat/src/espeak-work/espeak-1.46.13/espeak-data")
 	WORD (U"Only files that match pattern", U"*.txt")
 	OK
 DO
-	autoFilesInMemory me = FilesInMemory_createFromDirectoryContents (GET_STRING (U"Directory"), GET_STRING (U"Only files that match pattern"));
+	autoFileInMemorySet me = FileInMemorySet_createFromDirectoryContents (
+		GET_STRING (U"Directory"),
+		GET_STRING (U"Only files that match pattern"));
 	praat_new (me.move(), GET_STRING (U"Name"));
 END
 
-FORM (FilesInMemory_createCopyFromFilesInMemory, U"", 0)
+FORM (FileInMemorySet_createCopyFromFilesInMemory, U"", nullptr)
 	OPTIONMENU (U"Espeakdata", 5)
-	OPTION (U"phons")
-	OPTION (U"dicts")
-	OPTION (U"voices")
-	OPTION (U"variants")
-	OPTION (U"voices_names")
-	OPTION (U"variants_names")
+		OPTION (U"phons")
+		OPTION (U"dicts")
+		OPTION (U"voices")
+		OPTION (U"variants")
+		OPTION (U"voices_names")
+		OPTION (U"variants_names")
 	OK
 DO
 	long choice = GET_INTEGER (U"Espeakdata");
 	if (choice == 1) {
-		autoFilesInMemory f = Data_copy (espeakdata_phons.get());
+		autoFileInMemorySet f = Data_copy (espeakdata_phons.get());
 		praat_new (f.move(), U"espeakdata_phons");
 	}
 	else if (choice == 2) {
-		autoFilesInMemory f = Data_copy (espeakdata_dicts.get());
+		autoFileInMemorySet f = Data_copy (espeakdata_dicts.get());
 		praat_new (f.move(), U"espeakdata_dicts");
 	}
 	else if (choice == 3) {
-		autoFilesInMemory f = Data_copy (espeakdata_voices.get());
+		autoFileInMemorySet f = Data_copy (espeakdata_voices.get());
 		praat_new (f.move(), U"espeakdata_voices");
 	}
 	else if (choice == 4) {
-		autoFilesInMemory f = Data_copy (espeakdata_variants.get());
+		autoFileInMemorySet f = Data_copy (espeakdata_variants.get());
 		praat_new (f.move(), U"espeakdata_variants");
 	}
 	else if (choice == 5) {
@@ -2809,70 +2950,71 @@ DO
 	}
 END
 
-FORM (FilesInMemory_showAsCode, U"FilesInMemory: Show as code", 0)
+FORM (FileInMemorySet_showAsCode, U"FileInMemorySet: Show as code", nullptr)
 	WORD (U"Name", U"example")
 	INTEGER (U"Number of bytes per line", U"20")
 	OK
 DO
 	LOOP {
-		iam (FilesInMemory);
+		iam (FileInMemorySet);
 		MelderInfo_open ();
-		FilesInMemory_showAsCode (me, GET_STRING (U"Name"), GET_INTEGER (U"Number of bytes per line"));
+		FileInMemorySet_showAsCode (me, GET_STRING (U"Name"), GET_INTEGER (U"Number of bytes per line"));
 		MelderInfo_close ();
 	}
 END
 
-FORM (FilesInMemory_showOneFileAsCode, U"FilesInMemory: Show one file as code", 0)
+FORM (FileInMemorySet_showOneFileAsCode, U"FileInMemorySet: Show one file as code", nullptr)
 	NATURAL (U"Index", U"1")
 	WORD (U"Name", U"example")
 	INTEGER (U"Number of bytes per line", U"20")
 	OK
 DO
 	LOOP {
-		iam (FilesInMemory);
+		iam (FileInMemorySet);
 		MelderInfo_open ();
-		FilesInMemory_showOneFileAsCode (me, GET_INTEGER (U"Index"), GET_STRING (U"Name"), GET_INTEGER (U"Number of bytes per line"));
+		FileInMemorySet_showOneFileAsCode (me, GET_INTEGER (U"Index"), GET_STRING (U"Name"), GET_INTEGER (U"Number of bytes per line"));
 		MelderInfo_close ();
 	}
 END
 
-DIRECT (FileInMemory_to_FilesInMemory)
-	autoFilesInMemory thee = FilesInMemory_create ();
+DIRECT (FilesInMemory_to_FileInMemorySet)
+	autoFileInMemorySet thee = FileInMemorySet_create ();
 	LOOP {
 		iam (FileInMemory);
 		autoFileInMemory him = Data_copy (me);
-		Collection_addItem_move (thee.peek(), him.move());
+		thy addItem_move (him.move());
 	}
 	praat_new (thee.move(), U"files");
 END
 
-DIRECT (FilesInMemory_addItems)
-	FilesInMemory thee = FIRST (FilesInMemory);
+DIRECT (FileInMemorySet_addItems)
+	FileInMemorySet thee = FIRST (FileInMemorySet);
 	LOOP {
 		iam (Daata);
 		if (CLASS == classFileInMemory) {
 			autoFileInMemory him = Data_copy ((FileInMemory) me);
-			Collection_addItem_move (thee, him.move());
+			thy addItem_move (him.move());
 		}
 	}
 END
 
-DIRECT (FilesInMemory_merge)
-	FilesInMemory f1 = nullptr, f2 = nullptr;
+DIRECT (FileInMemorySets_merge)
+	FileInMemorySet f1 = nullptr, f2 = nullptr;
 	LOOP { 
-		iam (FilesInMemory); 
-		(f1 ? f2 : f1) = me; 
+		iam (FileInMemorySet);
+		(f1 ? f2 : f1) = me;
 	}
 	Melder_assert (f1 && f2);
-	autoFilesInMemory fim = Collections_merge (f1, f2).static_cast_move <structFilesInMemory> ();
-	praat_new (fim.move(), f1 -> name, U"_", f2 -> name);
+	autoFileInMemorySet result = Data_copy (f1);
+	result -> merge (f2);
+	praat_new (result.move(), f1 -> name, U"_", f2 -> name);
 END
 
-DIRECT (FilesInMemory_to_Strings_id)
+DIRECT (FileInMemorySet_to_Strings_id)
 	LOOP {
-		iam (FilesInMemory);
-		autoStrings thee = FilesInMemory_to_Strings_id (me);
-		praat_new (thee.move(), my name);
+		iam (FileInMemorySet);
+		autoStrings result = FileInMemorySet_to_Strings_id (me);
+		praat_new (result.move(), my name);
 	}
 END
 
@@ -2890,9 +3032,13 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Matrix);
-		Matrix_drawRows (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-		GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
-		GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"));
+		Matrix_drawRows (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"));
 	}
 END
 
@@ -2907,8 +3053,12 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Matrix);
-		Matrix_drawOneContour (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-		GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"), GET_REAL (U"Height"));
+		Matrix_drawOneContour (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"Height"));
 	}
 END
 
@@ -2924,9 +3074,13 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Matrix);
-		Matrix_drawContours (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-		GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
-		GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"));
+		Matrix_drawContours (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"));
 	}
 END
 
@@ -2949,10 +3103,14 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (FilterBank);
-		FilterBank_drawFrequencyScales (me, GRAPHICS, GET_INTEGER (U"Horizontal frequency scale"),
-		GET_REAL (U"left Horizontal frequency range"), GET_REAL (U"right Horizontal frequency range"),
-		GET_INTEGER (U"Vertical frequency scale"), GET_REAL (U"left Vertical frequency range"),
-		GET_REAL (U"right Vertical frequency range"), GET_INTEGER (U"Garnish"));
+		FilterBank_drawFrequencyScales (me, GRAPHICS,
+			GET_INTEGER (U"Horizontal frequency scale"),
+			GET_REAL (U"left Horizontal frequency range"),
+			GET_REAL (U"right Horizontal frequency range"),
+			GET_INTEGER (U"Vertical frequency scale"),
+			GET_REAL (U"left Vertical frequency range"),
+			GET_REAL (U"right Vertical frequency range"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -2969,9 +3127,14 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (MelSpectrogram);
-		BandFilterSpectrogram_paintImage (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-		GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
-		GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"), GET_INTEGER (U"Garnish"));
+		BandFilterSpectrogram_paintImage (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -2988,9 +3151,14 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (BarkSpectrogram);
-		BandFilterSpectrogram_paintImage (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-		GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
-		GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"), GET_INTEGER (U"Garnish"));
+		BandFilterSpectrogram_paintImage (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -3006,9 +3174,13 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Matrix);
-		Matrix_paintImage (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-		GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
-		GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"));
+		Matrix_paintImage (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"));
 	}
 END
 
@@ -3024,9 +3196,13 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Matrix);
-		Matrix_paintContours (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-		GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
-		GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"));
+		Matrix_paintContours (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"));
 	}
 END
 
@@ -3043,9 +3219,13 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Matrix);
-		Matrix_paintCells (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-		GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
-		GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"));
+		Matrix_paintCells (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"));
 	}
 END
 
@@ -3061,23 +3241,31 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (Matrix);
-		Matrix_paintSurface (me, GRAPHICS, GET_REAL (U"left Time range"), GET_REAL (U"right Time range"),
-			GET_REAL (U"left Frequency range"), GET_REAL (U"right Frequency range"),
-			GET_REAL (U"left Amplitude range"), GET_REAL (U"right Amplitude range"), 30, 45);
+		Matrix_paintSurface (me, GRAPHICS,
+			GET_REAL (U"left Time range"),
+			GET_REAL (U"right Time range"),
+			GET_REAL (U"left Frequency range"),
+			GET_REAL (U"right Frequency range"),
+			GET_REAL (U"left Amplitude range"),
+			GET_REAL (U"right Amplitude range"),
+			30,   // elevation in degrees
+			45);   // azimuth in degrees
 	}
 END
 
 FORM (FilterBank_getFrequencyInHertz, U"FilterBank: Get frequency in Hertz", U"FilterBank: Get frequency in Hertz...")
 	REAL (U"Frequency", U"10.0")
 	RADIO (U"Unit", 2)
-	RADIOBUTTON (U"Hertz")
-	RADIOBUTTON (U"Bark")
-	RADIOBUTTON (U"mel")
+		RADIOBUTTON (U"Hertz")
+		RADIOBUTTON (U"Bark")
+		RADIOBUTTON (U"mel")
 	OK
 DO
 	LOOP {
 		iam (FilterBank);
-		double f = FilterBank_getFrequencyInHertz (me, GET_REAL (U"Frequency"), GET_INTEGER (U"Unit"));
+		double f = FilterBank_getFrequencyInHertz (me,
+			GET_REAL (U"Frequency"),
+			GET_INTEGER (U"Unit"));
 		Melder_informationReal (f, U"Hertz");
 	}
 END
@@ -3085,14 +3273,16 @@ END
 FORM (FilterBank_getFrequencyInBark, U"FilterBank: Get frequency in Bark", U"FilterBank: Get frequency in Bark...")
 	REAL (U"Frequency", U"93.17")
 	RADIO (U"Unit", 1)
-	RADIOBUTTON (U"Hertz")
-	RADIOBUTTON (U"Bark")
-	RADIOBUTTON (U"mel")
+		RADIOBUTTON (U"Hertz")
+		RADIOBUTTON (U"Bark")
+		RADIOBUTTON (U"mel")
 	OK
 DO
 	LOOP {
 		iam (FilterBank);
-		double f = FilterBank_getFrequencyInBark (me, GET_REAL (U"Frequency"), GET_INTEGER (U"Unit"));
+		double f = FilterBank_getFrequencyInBark (me,
+			GET_REAL (U"Frequency"),
+			GET_INTEGER (U"Unit"));
 		Melder_informationReal (f, U"Bark");
 	}
 END
@@ -3100,14 +3290,16 @@ END
 FORM (FilterBank_getFrequencyInMel, U"FilterBank: Get frequency in mel", U"FilterBank: Get frequency in mel...")
 	REAL (U"Frequency", U"1000.0")
 	RADIO (U"Unit", 1)
-	RADIOBUTTON (U"Hertz")
-	RADIOBUTTON (U"Bark")
-	RADIOBUTTON (U"mel")
+		RADIOBUTTON (U"Hertz")
+		RADIOBUTTON (U"Bark")
+		RADIOBUTTON (U"mel")
 	OK
 DO
 	LOOP {
 		iam (FilterBank);
-		double f = FilterBank_getFrequencyInMel (me, GET_REAL (U"Frequency"), GET_INTEGER (U"Unit"));
+		double f = FilterBank_getFrequencyInMel (me,
+			GET_REAL (U"Frequency"),
+			GET_INTEGER (U"Unit"));
 		Melder_informationReal (f, U"mel");
 	}
 END
@@ -3118,7 +3310,8 @@ FORM (FilterBank_equalizeIntensities, U"FilterBank: Equalize intensities", nullp
 DO
 	LOOP {
 		iam (FilterBank);
-		FilterBank_equalizeIntensities (me, GET_REAL (U"Intensity"));
+		FilterBank_equalizeIntensities (me,
+			GET_REAL (U"Intensity"));
 		praat_dataChanged (me);
 	}
 END
@@ -3129,7 +3322,8 @@ FORM (BandFilterSpectrogram_equalizeIntensities, U"BandFilterSpectrogram: Equali
 DO
 	LOOP {
 		iam (BandFilterSpectrogram);
-		BandFilterSpectrogram_equalizeIntensities (me, GET_REAL (U"Intensity"));
+		BandFilterSpectrogram_equalizeIntensities (me,
+			GET_REAL (U"Intensity"));
 		praat_dataChanged (me);
 	}
 END
@@ -3148,7 +3342,8 @@ FORM (BandFilterSpectrogram_to_Matrix, U"BandFilterSpectrogram: To Matrix", null
 DO
 	LOOP {
 		iam (BandFilterSpectrogram);
-		autoMatrix thee = BandFilterSpectrogram_to_Matrix (me, GET_INTEGER (U"Convert to dB values"));
+		autoMatrix thee = BandFilterSpectrogram_to_Matrix (me,
+			GET_INTEGER (U"Convert to dB values"));
 		praat_new (thee.move(), my name);
 	}
 END
@@ -3159,9 +3354,13 @@ FORM (FilterBanks_crossCorrelate, U"FilterBanks: Cross-correlate", nullptr)
 	OK
 DO
 	FilterBank f1 = nullptr, f2 = nullptr;
-	LOOP { iam (FilterBank); (f1 ? f2 : f1) = me; }
+	LOOP {
+		iam (FilterBank);
+		(f1 ? f2 : f1) = me;
+	}
 	Melder_assert (f1 && f2);
-	autoSound result = FilterBanks_crossCorrelate (f1, f2, GET_ENUM (kSounds_convolve_scaling, U"Amplitude scaling"),
+	autoSound result = FilterBanks_crossCorrelate (f1, f2,
+		GET_ENUM (kSounds_convolve_scaling, U"Amplitude scaling"),
 		GET_ENUM (kSounds_convolve_signalOutsideTimeDomain, U"Signal outside time domain is..."));
 	praat_new (result.move(), f1 -> name, U"_", f2 -> name);
 END
@@ -3177,7 +3376,8 @@ DO
 		(f1 ? f2 : f1) = me;
 	}
 	Melder_assert (f1 && f2);
-	autoSound result = BandFilterSpectrograms_crossCorrelate (f1, f2, GET_ENUM (kSounds_convolve_scaling, U"Amplitude scaling"),
+	autoSound result = BandFilterSpectrograms_crossCorrelate (f1, f2,
+		GET_ENUM (kSounds_convolve_scaling, U"Amplitude scaling"),
 		GET_ENUM (kSounds_convolve_signalOutsideTimeDomain, U"Signal outside time domain is..."));
 	praat_new (result.move(), f1 -> name, U"_", f2 -> name);
 END
@@ -3190,7 +3390,8 @@ DO
 	FilterBank f1 = nullptr, f2 = nullptr;
 	LOOP { iam (FilterBank); (f1 ? f2 : f1) = me; }
 	Melder_assert (f1 && f2);
-	autoSound result = FilterBanks_convolve (f1, f2, GET_ENUM (kSounds_convolve_scaling, U"Amplitude scaling"),
+	autoSound result = FilterBanks_convolve (f1, f2,
+		GET_ENUM (kSounds_convolve_scaling, U"Amplitude scaling"),
 		GET_ENUM (kSounds_convolve_signalOutsideTimeDomain, U"Signal outside time domain is..."));
 	praat_new (result.move(), f1 -> name, U"_", f2 -> name);
 END
@@ -3206,7 +3407,8 @@ DO
 		(f1 ? f2 : f1) = me;
 	}
 	Melder_assert (f1 && f2);
-	autoSound result = BandFilterSpectrograms_convolve (f1, f2, GET_ENUM (kSounds_convolve_scaling, U"Amplitude scaling"),
+	autoSound result = BandFilterSpectrograms_convolve (f1, f2,
+		GET_ENUM (kSounds_convolve_scaling, U"Amplitude scaling"),
 		GET_ENUM (kSounds_convolve_signalOutsideTimeDomain, U"Signal outside time domain is..."));
 	praat_new (result.move(), f1 -> name, U"_", f2 -> name);
 END
@@ -3214,16 +3416,16 @@ END
 DIRECT (FilterBank_to_Intensity)
 	LOOP {
 		iam (FilterBank);
-		autoIntensity thee = FilterBank_to_Intensity (me);
-		praat_new (thee.move(), my name);
+		autoIntensity result = FilterBank_to_Intensity (me);
+		praat_new (result.move(), my name);
 	}
 END
 
 DIRECT (BandFilterSpectrogram_to_Intensity)
 	LOOP {
 		iam (BandFilterSpectrogram);
-		autoIntensity thee = BandFilterSpectrogram_to_Intensity (me);
-		praat_new (thee.move(), my name);
+		autoIntensity result = BandFilterSpectrogram_to_Intensity (me);
+		praat_new (result.move(), my name);
 	}
 END
 
@@ -3651,8 +3853,8 @@ static void print_means (Table me) {
 		Melder_padOrTruncate (15, my columnHeaders[1].label), U"\t",
 		Melder_padOrTruncate (15, my columnHeaders[2].label), U"\t",
 		Melder_padOrTruncate (15, my columnHeaders[3].label));
-	for (long irow = 1; irow <= my rows -> size; irow++) {
-		TableRow row = (TableRow) my rows -> item [irow];
+	for (long irow = 1; irow <= my rows.size; irow ++) {
+		TableRow row = my rows.at [irow];
 		MelderInfo_writeLine (
 			Melder_padOrTruncate (15, row -> cells[1].string), U"\t",
 			Melder_padOrTruncate (15, Melder_double (row -> cells[2].number)), U"\t",
@@ -3675,9 +3877,9 @@ END
 FORM (Table_reportOneWayAnova, U"Table: Report one-way anova",  U"Table: Report one-way anova...")
 	SENTENCE (U"Column with data", U"F0")
 	SENTENCE (U"Factor", U"Vowel")
-	BOOLEAN (U"Table with means", 0);
-	BOOLEAN (U"Table with differences between means", 0)
-	BOOLEAN (U"Table with Tukey's post-hoc HSD test", 0)
+	BOOLEAN (U"Table with means", false);
+	BOOLEAN (U"Table with differences between means", false)
+	BOOLEAN (U"Table with Tukey's post-hoc HSD test", false)
 	OK
 DO
 	char32 *factor = GET_STRING (U"Factor");
@@ -3752,13 +3954,13 @@ DO
 		iam (Table);
 		long factorColumn = Table_getColumnIndexFromColumnLabel (me, factor);
 		long dataColumn = Table_getColumnIndexFromColumnLabel (me, dataLabel);
-		double degreesOfFreedom, kruskalWallis, probability;
-		autoTable thee = Table_getOneWayKruskalWallis (me, dataColumn, factorColumn, &degreesOfFreedom, &kruskalWallis, &probability);
+		double df, kruskalWallis, prob;
+		autoTable thee = Table_getOneWayKruskalWallis (me, dataColumn, factorColumn, & prob, & kruskalWallis, & df);
 		MelderInfo_open ();
 		MelderInfo_writeLine (U"One-way Kruskal-Wallis of \"", dataLabel, U"\" by \"", factor, U"\".\n");
 		MelderInfo_writeLine (U"Chi squared: ", kruskalWallis);
-		MelderInfo_writeLine (U"Degrees of freedom: ", degreesOfFreedom);
-		MelderInfo_writeLine (U"Probability: ", probability);
+		MelderInfo_writeLine (U"Degrees of freedom: ", df);
+		MelderInfo_writeLine (U"Probability: ", prob);
 		MelderInfo_writeLine (U"\nMeans:\n");
 		print_means (thee.peek());
 		MelderInfo_close ();
@@ -3809,8 +4011,12 @@ END
 /********************* LongSound **************************************/
 
 FORM_READ2 (LongSounds_appendToExistingSoundFile, U"LongSound: Append to existing sound file", 0, false) {
-	autoCollection set = praat_getSelectedObjects ();
-	LongSounds_appendToExistingSoundFile (set.peek(), file);
+	OrderedOf<structSampled> list;
+	LOOP {
+		iam (Sampled);
+		list. addItem_ref (me);
+	}
+	LongSounds_appendToExistingSoundFile (& list, file);
 END2 }
 
 FORM_WRITE (LongSounds_writeToStereoAiffFile, U"LongSound: Save as AIFF file", 0, U"aiff")
@@ -4685,11 +4891,11 @@ FORM (PCA_getEqualityOfEigenvalues, U"PCA: Get equality of eigenvalues", U"PCA: 
 DO
 	LOOP {
 		iam (PCA);
-		long ndf; double p, chisq;
+		double p, chisq, df;
 		PCA_getEqualityOfEigenvalues (me, GET_INTEGER (U"left Eigenvalue range"),
-		GET_INTEGER (U"right Eigenvalue range"), GET_INTEGER (U"Conservative test"), &p, &chisq, &ndf);
+		GET_INTEGER (U"right Eigenvalue range"), GET_INTEGER (U"Conservative test"), & p, & chisq, & df);
 		Melder_information (p, U" (=probability, based on chisq = ",
-		chisq, U"and ndf = ", ndf);
+		chisq, U" and df = ", df);
 	}
 END
 
@@ -4965,9 +5171,15 @@ DIRECT (Permutation_invert)
 		praat_new (Permutation_invert (me), Thing_getName (me), U"_inv");
 	}
 END
+
 DIRECT (Permutations_multiply)
-	autoCollection set = praat_getSelectedObjects ();
-	praat_new (Permutations_multiply (set.peek()), U"mul_", set -> size);
+	OrderedOf<structPermutation> list;
+	LOOP {
+		iam (Permutation);
+		list. addItem_ref (me);
+	}
+	autoPermutation result = Permutations_multiply (& list);
+	praat_new (result.move(), U"mul_", list.size);
 END
 
 DIRECT (Permutations_next)
@@ -6781,13 +6993,12 @@ FORM (SSCP_testDiagonality_bartlett, U"SSCP: Get diagonality (bartlett)", U"SSCP
 	NATURAL (U"Number of contraints", U"1")
 	OK
 DO
-	double chisq, p;
+	double chisq, p, df;
 	long nc = GET_INTEGER (U"Number of contraints");
 	LOOP {
 		iam (SSCP);
-		SSCP_testDiagonality_bartlett (me, nc, &chisq, &p);
-		Melder_information (p, U" (=probability for chisq = ", chisq,
-			U" and ndf = ", my numberOfRows * (my numberOfRows - 1) / 2, U")");
+		SSCP_testDiagonality_bartlett (me, nc, & chisq, & p, & df);
+		Melder_information (p, U" (=probability for chisq = ", chisq, U" and ndf = ", df, U")");
 	}
 END
 
@@ -6838,8 +7049,12 @@ DO
 END
 
 DIRECT (Strings_append)
-	autoCollection set = praat_getSelectedObjects ();
-	autoStrings thee = Strings_append (set.get());
+	OrderedOf<structStrings> list;
+	LOOP {
+		iam (Strings);
+		list. addItem_ref (me);
+	}
+	autoStrings thee = Strings_append (& list);
 	praat_new (thee.move(), U"appended");
 END
 
@@ -7575,15 +7790,22 @@ DIRECT (TableOfReal_to_Permutation_sortRowlabels)
 END
 
 DIRECT (TableOfReal_appendColumns)
-	autoCollection set = praat_getSelectedObjects ();
-	praat_new (TableOfReal_appendColumnsMany (set.peek()), U"columns_appended");
+	autoTableOfRealList list = TableOfRealList_create ();
+	LOOP {
+		iam (TableOfReal);
+		list -> addItem_ref (me);
+	}
+	autoTableOfReal result = TableOfRealList_appendColumnsMany (list.get());
+	praat_new (result.move(), U"columns_appended");
 END
 
 FORM (TableOfReal_createFromPolsData_50males, U"Create TableOfReal (Pols 1973)", U"Create TableOfReal (Pols 1973)...")
 	BOOLEAN (U"Include formant levels", false)
 	OK
 DO
-	praat_new (TableOfReal_createFromPolsData_50males (GET_INTEGER (U"Include formant levels")), U"pols_50males");
+	autoTableOfReal result = TableOfReal_createFromPolsData_50males (
+		GET_INTEGER (U"Include formant levels"));
+	praat_new (result.move(), U"pols_50males");
 END
 
 DIRECT (Table_createFromEspositoData)
@@ -7603,9 +7825,9 @@ END
 
 FORM (TableOfReal_createFromWeeninkData, U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Weenink 1985)...")
 	RADIO (U"Speakers group", 1)
-	RADIOBUTTON (U"Men")
-	RADIOBUTTON (U"Women")
-	RADIOBUTTON (U"Children")
+		RADIOBUTTON (U"Men")
+		RADIOBUTTON (U"Women")
+		RADIOBUTTON (U"Children")
 	OK
 DO
 	int type = GET_INTEGER (U"Speakers group");
@@ -7634,12 +7856,18 @@ DO
 	LOOP {
 		iam (TableOfReal);
 		TableOfReal_drawScatterPlot (me, GRAPHICS,
-		GET_INTEGER (U"Horizontal axis column number"), GET_INTEGER (U"Vertical axis column number"),
-		GET_INTEGER (U"left Row number range"), GET_INTEGER (U"right Row number range"),
-		GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-		GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-		GET_INTEGER (U"Label size"), GET_INTEGER (U"Use row labels"),
-		GET_STRING (U"Label"), GET_INTEGER (U"Garnish"));
+			GET_INTEGER (U"Horizontal axis column number"),
+			GET_INTEGER (U"Vertical axis column number"),
+			GET_INTEGER (U"left Row number range"),
+			GET_INTEGER (U"right Row number range"),
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_INTEGER (U"Label size"),
+			GET_INTEGER (U"Use row labels"),
+			GET_STRING (U"Label"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -7652,8 +7880,10 @@ DO
 	autoPraatPicture picture;
 	LOOP {
 		iam (TableOfReal);
-		TableOfReal_drawScatterPlotMatrix (me, GRAPHICS, GET_INTEGER (U"From column"), GET_INTEGER (U"To column"),
-		GET_REAL (U"Fraction white"));
+		TableOfReal_drawScatterPlotMatrix (me, GRAPHICS,
+			GET_INTEGER (U"From column"),
+			GET_INTEGER (U"To column"),
+			GET_REAL (U"Fraction white"));
 	}
 END
 
@@ -7672,9 +7902,13 @@ DO
 	LOOP {
 		iam (TableOfReal);
 		TableOfReal_drawBiplot (me, GRAPHICS,
-		GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-		GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"), GET_REAL (U"Split factor"),
-		GET_INTEGER (U"Label size"), GET_INTEGER (U"Garnish"));
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_REAL (U"Split factor"),
+			GET_INTEGER (U"Label size"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -7701,12 +7935,17 @@ DO
 	LOOP {
 		iam (TableOfReal);
 		TableOfReal_drawVectors (me, GRAPHICS,
-		GET_INTEGER (U"left From columns"), GET_INTEGER (U"right From columns"),
-		GET_INTEGER (U"left To columns"), GET_INTEGER (U"right To columns"),
-		GET_REAL (U"left Horizontal range"), GET_REAL (U"right Horizontal range"),
-		GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-		GET_INTEGER (U"Vector type"), GET_INTEGER (U"Label size"),
-		GET_INTEGER (U"Garnish"));
+			GET_INTEGER (U"left From columns"),
+			GET_INTEGER (U"right From columns"),
+			GET_INTEGER (U"left To columns"),
+			GET_INTEGER (U"right To columns"),
+			GET_REAL (U"left Horizontal range"),
+			GET_REAL (U"right Horizontal range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_INTEGER (U"Vector type"),
+			GET_INTEGER (U"Label size"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -7729,11 +7968,15 @@ DO
 	LOOP {
 		iam (TableOfReal);
 		TableOfReal_drawRowsAsHistogram (me, GRAPHICS, GET_STRING (U"Row number"),
-		GET_INTEGER (U"left Column range"), GET_INTEGER (U"right Column range"),
-		GET_REAL (U"left Vertical range"), GET_REAL (U"right Vertical range"),
-		GET_REAL (U"Horizontal offset"), 0,
-		GET_REAL (U"Distance between bars"), GET_STRING (U"Grey value"),
-		GET_INTEGER (U"Garnish"));
+			GET_INTEGER (U"left Column range"),
+			GET_INTEGER (U"right Column range"),
+			GET_REAL (U"left Vertical range"),
+			GET_REAL (U"right Vertical range"),
+			GET_REAL (U"Horizontal offset"),
+			0,
+			GET_REAL (U"Distance between bars"),
+			GET_STRING (U"Grey value"),
+			GET_INTEGER (U"Garnish"));
 	}
 END
 
@@ -8386,13 +8629,15 @@ void praat_uvafon_David_init () {
 		classCategories, classCepstrum, classCCA,
 		classChebyshevSeries, classClassificationTable, classComplexSpectrogram, classConfusion,
 		classCorrelation, classCovariance, classDiscriminant, classDTW,
-		classEigen, classExcitations, classEditCostsTable, classEditDistanceTable,
-		classFileInMemory, classFilesInMemory, classFormantFilter,
+		classEigen, classExcitationList, classEditCostsTable, classEditDistanceTable,
+		classFileInMemory, classFileInMemorySet, classFormantFilter,
 		classIndex, classKlattTable,
 		classPermutation, classISpline, classLegendreSeries,
 		classMelFilter, classMelSpectrogram, classMSpline, classPattern, classPCA, classPolynomial, classRoots,
 		classSimpleString, classStringsIndex, classSpeechSynthesizer, classSPINET, classSSCP,
 		classSVD, nullptr);
+	Thing_recognizeClassByOtherName (classExcitationList, U"Excitations");
+	Thing_recognizeClassByOtherName (classFileInMemorySet, U"FilesInMemory");
 
 	VowelEditor_prefs ();
 
@@ -8425,6 +8670,7 @@ void praat_uvafon_David_init () {
 	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Van Nierop 1973)...", 1, DO_TableOfReal_createFromWeeninkData);
 	praat_addMenuCommand (U"Objects", U"New", U"Create simple Confusion...", U"Create TableOfReal (Weenink 1985)...", 1, DO_Confusion_createSimple);
 	praat_addMenuCommand (U"Objects", U"New", U"Create simple Covariance...", U"Create simple Confusion...", 1, DO_Covariance_createSimple);
+	praat_addMenuCommand (U"Objects", U"New", U"Create simple Correlation...", U"Create simple Covariance...", 1, DO_Correlation_createSimple);
 	praat_addMenuCommand (U"Objects", U"New", U"Create empty EditCostsTable...", U"Create simple Covariance...", 1, DO_EditCostsTable_createEmpty);
 
 	praat_addMenuCommand (U"Objects", U"New", U"Create KlattTable example", U"Create TableOfReal (Weenink 1985)...", praat_DEPTH_1 + praat_HIDDEN, DO_KlattTable_createExample);
@@ -8433,10 +8679,11 @@ void praat_uvafon_David_init () {
 
 	praat_addMenuCommand (U"Objects", U"New", U"Create simple Polygon...", nullptr, praat_HIDDEN, DO_Polygon_createSimple);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Polygon (random vertices)...", nullptr, praat_HIDDEN, DO_Polygon_createFromRandomVertices);
-	praat_addMenuCommand (U"Objects", U"New", U"FilesInMemory", nullptr, praat_HIDDEN, nullptr);
+	praat_addMenuCommand (U"Objects", U"New", U"FileInMemory", nullptr, praat_HIDDEN, nullptr);
 		praat_addMenuCommand (U"Objects", U"New", U"Create FileInMemory...", nullptr, praat_DEPTH_1 + praat_HIDDEN, DO_FileInMemory_create);
-		praat_addMenuCommand (U"Objects", U"New", U"Create copy from FilesInMemory...", nullptr, praat_DEPTH_1 + praat_HIDDEN, DO_FilesInMemory_createCopyFromFilesInMemory);
-		praat_addMenuCommand (U"Objects", U"New", U"Create FilesInMemory from directory contents...", nullptr, praat_DEPTH_1 + praat_HIDDEN, DO_FilesInMemory_createFromDirectoryContents);
+		praat_addMenuCommand (U"Objects", U"New", U"Create copy from FilesInMemory...", nullptr, praat_DEPTH_1 + praat_HIDDEN, DO_FileInMemorySet_createCopyFromFilesInMemory);
+		praat_addMenuCommand (U"Objects", U"New", U"Create copy from FileInMemorySet...", nullptr, praat_DEPTH_1 + praat_HIDDEN, DO_FileInMemorySet_createCopyFromFilesInMemory);
+		praat_addMenuCommand (U"Objects", U"New", U"Create FileInMemorySet from directory contents...", nullptr, praat_DEPTH_1 + praat_HIDDEN, DO_FileInMemorySet_createFromDirectoryContents);
 	praat_addMenuCommand (U"Objects", U"Open", U"Read Sound from raw 16-bit Little Endian file...", U"Read from special sound file", 1,
 	                      DO_Sound_readFromRawFileLE);
 	praat_addMenuCommand (U"Objects", U"Open", U"Read Sound from raw 16-bit Big Endian file...", U"Read Sound from raw 16-bit Little Endian file...", 1, DO_Sound_readFromRawFileBE);
@@ -8560,6 +8807,8 @@ void praat_uvafon_David_init () {
 
 	praat_addAction1 (classCovariance, 0, U"To Correlation", nullptr, 0, DO_Covariance_to_Correlation);
 	praat_addAction1 (classCovariance, 0, U"To PCA", nullptr, 0, DO_Covariance_to_PCA);
+	
+	praat_addAction1 (classCovariance, 0, U"Pool", nullptr, 0, DO_Covariances_pool);
 
 	praat_addAction2 (classCovariance, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis)...", nullptr, 0, DO_Covariance_and_TableOfReal_mahalanobis);
 
@@ -8736,40 +8985,41 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classStringsIndex, 1, U"To Strings", 0, 0, DO_StringsIndex_to_Strings);
 
 	praat_addAction1 (classExcitation, 0, U"Synthesize", U"To Formant...", 0, 0);
-	praat_addAction1 (classExcitation, 0, U"To Excitations", U"Synthesize", 0, DO_Excitation_to_Excitations);
+	praat_addAction1 (classExcitation, 0, U"To ExcitationList", U"Synthesize", 0, DO_Excitations_to_ExcitationList);
+	praat_addAction1 (classExcitation, 0, U"To Excitations", U"Synthesize", praat_HIDDEN, DO_Excitations_to_ExcitationList);
 
-	praat_addAction1 (classExcitations, 0, U"Modify", 0, 0, 0);
-	praat_addAction1 (classExcitations, 0, U"Formula...", 0, 0, DO_Excitations_formula);
-	praat_addAction1 (classExcitations, 0, U"Extract", 0, 0, 0);
-	praat_addAction1 (classExcitations, 0, U"Extract Excitation...", 0, 0, DO_Excitations_getItem);
-	praat_addAction1 (classExcitations, 0, U"Synthesize", 0, 0, 0);
-	praat_addAction1 (classExcitations, 2, U"Append", 0, 0, DO_Excitations_append);
-	praat_addAction1 (classExcitations, 0, U"Convert", 0, 0, 0);
-	praat_addAction1 (classExcitations, 0, U"To Pattern...", 0, 0, DO_Excitations_to_Pattern);
-	praat_addAction1 (classExcitations, 0, U"To TableOfReal", 0, 0, DO_Excitations_to_TableOfReal);
+	praat_addAction1 (classExcitationList, 0, U"Modify", 0, 0, 0);
+	praat_addAction1 (classExcitationList, 0, U"Formula...", 0, 0, DO_ExcitationList_formula);
+	praat_addAction1 (classExcitationList, 0, U"Extract", 0, 0, 0);
+	praat_addAction1 (classExcitationList, 0, U"Extract Excitation...", 0, 0, DO_ExcitationList_getItem);
+	praat_addAction1 (classExcitationList, 0, U"Synthesize", 0, 0, 0);
+	praat_addAction1 (classExcitationList, 2, U"Append", 0, 0, DO_ExcitationList_append);
+	praat_addAction1 (classExcitationList, 0, U"Convert", 0, 0, 0);
+	praat_addAction1 (classExcitationList, 0, U"To Pattern...", 0, 0, DO_ExcitationList_to_Pattern);
+	praat_addAction1 (classExcitationList, 0, U"To TableOfReal", 0, 0, DO_ExcitationList_to_TableOfReal);
 
-	praat_addAction2 (classExcitations, 1, classExcitation, 0, U"Add to Excitations", 0, 0, DO_Excitations_addItem);
+	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to ExcitationList", 0, 0, DO_ExcitationList_addItem);
+	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to Excitations", 0, praat_HIDDEN, DO_ExcitationList_addItem);
 
 	praat_addAction1 (classFileInMemory, 1, U"Show as code...", nullptr, 0, DO_FileInMemory_showAsCode);
 	praat_addAction1 (classFileInMemory, 1, U"Set id...", nullptr, 0, DO_FileInMemory_setId);
-	praat_addAction1 (classFileInMemory, 0, U"To FilesInMemory", nullptr, 0, DO_FileInMemory_to_FilesInMemory);
+	praat_addAction1 (classFileInMemory, 0, U"To FileInMemorySet", nullptr, 0, DO_FilesInMemory_to_FileInMemorySet);
+	praat_addAction1 (classFileInMemory, 0, U"To FilesInMemory", nullptr, praat_HIDDEN, DO_FilesInMemory_to_FileInMemorySet);
 
-	praat_addAction1 (classFilesInMemory, 1, U"Show as code...", nullptr, 0, DO_FilesInMemory_showAsCode);
-	praat_addAction1 (classFilesInMemory, 1, U"Show one file as code...", nullptr, 0, DO_FilesInMemory_showOneFileAsCode);
-	praat_addAction1 (classFilesInMemory, 2, U"Merge", nullptr, 0, DO_FilesInMemory_merge);
-	praat_addAction1 (classFilesInMemory, 0, U"To Strings (id)", nullptr, 0, DO_FilesInMemory_to_Strings_id);
+	praat_addAction1 (classFileInMemorySet, 1, U"Show as code...", nullptr, 0, DO_FileInMemorySet_showAsCode);
+	praat_addAction1 (classFileInMemorySet, 1, U"Show one file as code...", nullptr, 0, DO_FileInMemorySet_showOneFileAsCode);
+	praat_addAction1 (classFileInMemorySet, 2, U"Merge", nullptr, 0, DO_FileInMemorySets_merge);
+	praat_addAction1 (classFileInMemorySet, 0, U"To Strings (id)", nullptr, 0, DO_FileInMemorySet_to_Strings_id);
 
-	praat_addAction2 (classFilesInMemory, 1, classFileInMemory, 0, U"Add items to Collection", nullptr, 0, DO_FilesInMemory_addItems);
+	praat_addAction2 (classFileInMemorySet, 1, classFileInMemory, 0, U"Add items to Collection", nullptr, 0, DO_FileInMemorySet_addItems);
 
 	praat_addAction1 (classFormantFilter, 0, U"FormantFilter help", nullptr, 0, DO_FormantFilter_help);
 	praat_FilterBank_all_init (classFormantFilter);
 	praat_addAction1 (classFormantFilter, 0, U"Draw spectrum (slice)...", U"Draw filters...", praat_DEPTH_1 + praat_HIDDEN, DO_FormantFilter_drawSpectrum);
 	praat_addAction1 (classFormantFilter, 0, U"Draw filter functions...", U"Draw filters...",  praat_DEPTH_1 + praat_HIDDEN, DO_FormantFilter_drawFilterFunctions);
 	praat_addAction1 (classFormantFilter, 0, U"To Spectrogram", nullptr, 0, DO_FormantFilter_to_Spectrogram);
-	
-	
-	praat_addAction1 (classFormantGrid, 0, U"Draw...", U"Edit", praat_DEPTH_1 + praat_HIDDEN, DO_FormantGrid_draw);
 
+	praat_addAction1 (classFormantGrid, 0, U"Draw...", U"Edit", praat_DEPTH_1 + praat_HIDDEN, DO_FormantGrid_draw);
 
 	praat_addAction1 (classIntensity, 0, U"To TextGrid (silences)...", U"To IntensityTier (valleys)", 0, DO_Intensity_to_TextGrid_detectSilences);
 	praat_addAction1 (classIntensityTier, 0, U"To TextGrid (silences)...", nullptr, 0, DO_IntensityTier_to_TextGrid_detectSilences);
@@ -8818,7 +9068,6 @@ void praat_uvafon_David_init () {
 
 	praat_addAction2 (classMatrix, 1, classCategories, 1, U"To TableOfReal", 0, 0, DO_Matrix_Categories_to_TableOfReal);
 
-	
 	praat_addAction1 (classMelSpectrogram, 0, U"MelSpectrogram help", 0, 0, DO_MelSpectrogram_help);
 	praat_BandFilterSpectrogram_draw_init (classMelSpectrogram);
 	praat_addAction1 (classMelSpectrogram, 0, U"Paint image...", 0, 1, DO_MelSpectrogram_paintImage);
@@ -8841,7 +9090,6 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classMelFilter, 0, U"Paint...", U"Draw filter functions...", praat_DEPTH_1 + praat_HIDDEN, DO_MelFilter_paint); // deprecated 2014
 	praat_addAction1 (classMelFilter, 0, U"To MFCC...", 0, praat_HIDDEN, DO_MelFilter_to_MFCC); // deprecated 2014
 	praat_addAction1 (classMelFilter, 0, U"To MelSpectrogram", 0, 0, DO_MelFilter_to_MelSpectrogram);
-
 	
 	praat_addAction1 (classMFCC, 0, U"MFCC help", 0, 0, DO_MFCC_help);
 	praat_CC_init (classMFCC);
@@ -8864,7 +9112,6 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classPattern, 0, U"To Matrix", 0, 0, DO_Pattern_to_Matrix);
 
 	praat_addAction2 (classPattern, 1, classCategories, 1, U"To TableOfReal", 0, 0, DO_Matrix_Categories_to_TableOfReal);
-
 	praat_addAction2 (classPattern, 1, classCategories, 1, U"To Discriminant", 0, 0, DO_Pattern_and_Categories_to_Discriminant);
 
 	praat_addAction1 (classPCA, 0, U"PCA help", 0, 0, DO_PCA_help);
@@ -9104,7 +9351,6 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classTable, 0, U"Extract rows where (mahalanobis)...", U"Extract rows where...", praat_DEPTH_1| praat_HIDDEN, DO_Table_extractRowsMahalanobisWhere);
 	praat_addAction1 (classTable, 0, U"-- Extract columns ----", U"Extract rows where (mahalanobis)...", praat_DEPTH_1| praat_HIDDEN, 0);
 	praat_addAction1 (classTable, 0, U"Extract column ranges...", U"-- Extract columns ----", praat_DEPTH_1| praat_HIDDEN, DO_Table_extractColumnRanges);
-	
 
 	praat_addAction1 (classTable, 0, U"To KlattTable", 0, praat_HIDDEN, DO_Table_to_KlattTable);
 	praat_addAction1 (classTable, 1, U"Get median absolute deviation...", U"Get standard deviation...", 1, DO_Table_getMedianAbsoluteDeviation);
