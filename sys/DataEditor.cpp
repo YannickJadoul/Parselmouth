@@ -67,9 +67,9 @@ Thing_implement (DataSubEditor, Editor, 0);
 void structDataSubEditor :: v_destroy () {
 	for (int i = 1; i <= kDataSubEditor_MAXNUM_ROWS; i ++)
 		Melder_free (d_fieldData [i]. history);
-	if (our root && our root -> children)
-		for (int i = our root -> children.size(); i > 0; i --)
-			if (our root -> children [i] == this)
+	if (our root)
+		for (int i = our root -> children.size; i > 0; i --)
+			if (our root -> children.at [i] == this)
 				our root -> children.subtractItem_ref (i);
 	DataSubEditor_Parent :: v_destroy ();
 }
@@ -213,8 +213,8 @@ static void gui_button_cb_change (DataSubEditor me, GuiButtonEvent /* event */) 
 	 */
 	Editor_broadcastDataChanged (my root);
 	update (me);
-	for (int isub = 1; isub <= my root -> children.size(); isub ++) {
-		DataSubEditor subeditor = my root -> children [isub];
+	for (int isub = 1; isub <= my root -> children.size; isub ++) {
+		DataSubEditor subeditor = my root -> children.at [isub];
 		if (subeditor != me) update (subeditor);
 	}
 	return;
@@ -480,6 +480,8 @@ static void showStructMember (
 		GuiThing_show (fieldData -> button);
 	} else if (type == collectionofwa) {
 		fieldData -> address = (Daata) memberAddress;   // direct  // FIXME: not guaranteed for auto objects
+		Melder_casual (U"Daata ", Melder_pointer (fieldData -> address));
+		Melder_casual (U"Class ", ((Daata) fieldData -> address) -> classInfo -> className);
 		if (! fieldData -> address) return;   // no button if no object
 		fieldData -> description = memberDescription;
 		fieldData -> rank = 0;
@@ -732,7 +734,7 @@ static void DataEditor_destroyAllChildren (DataEditor me) {
 		To destroy all children, we travel them from youngest to oldest,
 		because the array of children will change from under us:
 	*/
-	for (int i = my children.size(); i >= 1; i --) {
+	for (int i = my children.size; i >= 1; i --) {
 		/*
 			An optimization coming!
 			

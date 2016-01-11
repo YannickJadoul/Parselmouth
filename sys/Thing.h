@@ -73,12 +73,12 @@ struct structClassInfo {
 #define Thing_declare(klas) \
 	typedef struct struct##klas *klas; \
 	typedef _Thing_auto <struct##klas> auto##klas; \
+	extern struct structClassInfo theClassInfo_##klas; \
 	extern ClassInfo class##klas
 
 #define Thing_define(klas,parentKlas) \
 	Thing_declare (klas); \
 	typedef struct##parentKlas klas##_Parent; \
-	extern struct structClassInfo theClassInfo_##klas; \
 	struct struct##klas : public struct##parentKlas
 
 #define Thing_implement(klas,parentKlas,version) \
@@ -242,7 +242,7 @@ void * _Thing_check (Thing me, ClassInfo table, const char *fileName, int line);
 
 /* For debugging. */
 
-long Thing_getTotalNumberOfThings ();
+extern long theTotalNumberOfThings;
 /* This number is 0 initially, increments at every successful `new', and decrements at every `forget'. */
 
 template <class T>
@@ -479,7 +479,7 @@ public:
 	 * In function arguments, transfer of ownership works only explicitly:
 	 *    extern void Collection_addItem_move (Collection me, autoDaata item);
 	 *    autoPitch pitch = Pitch_create (...);
-	 *    Collection_addItem_transfer (collection, pitch.move());   // compiler error if you don't call move()
+	 *    Collection_addItem_move (collection, pitch.move());   // compiler error if you don't call move()
 	 */
 	template <class Y> _Thing_auto<Y> static_cast_move () {
 		return _Thing_auto<Y> (static_cast<Y*> (our releaseToAmbiguousOwner()));
