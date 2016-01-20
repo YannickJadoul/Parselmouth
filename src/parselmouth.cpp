@@ -1,4 +1,7 @@
 #include "fon/Sound.h"
+#include "fon/Sound_to_Intensity.h"
+#include "fon/Sound_to_Pitch.h"
+#include "dwsys/NUMmachar.h"
 #include "dwtools/Sound_to_MFCC.h"
 #include "sys/melder.h"
 #include "sys/Thing.h"
@@ -42,6 +45,12 @@ boost::numpy::ndarray getCoefficients(MFCC cc)
 
 BOOST_PYTHON_MODULE(parselmouth)
 {
+	// TODO Look at praat initialization again, see if there's a better solution that ad-hoc copy-pasting
+	NUMmachar ();
+	NUMinit ();
+	Melder_alloc_init ();
+	Melder_message_init ();
+
 	Melder_batch = true;
 	
 	using namespace boost::python;
@@ -58,6 +67,25 @@ BOOST_PYTHON_MODULE(parselmouth)
 				Melder_clearError();
 				throw std::runtime_error(message);
 	        });
+
+
+	enum class Interpolation
+	{
+		NEAREST = Vector_VALUE_INTERPOLATION_NEAREST,
+		LINEAR = Vector_VALUE_INTERPOLATION_LINEAR,
+		CUBIC = Vector_VALUE_INTERPOLATION_CUBIC,
+		SINC70 = Vector_VALUE_INTERPOLATION_SINC70,
+		SINC700 = Vector_VALUE_INTERPOLATION_SINC700
+	};
+
+	enum_<Interpolation>("Interpolation")
+		.value("nearest", Interpolation::NEAREST)
+		.value("linear", Interpolation::LINEAR)
+		.value("cubic", Interpolation::CUBIC)
+		.value("sinc70", Interpolation::SINC70)
+		.value("sinc700", Interpolation::SINC700)
+		.export_values()
+	;
 
 
 	enum_<kSound_windowShape>("WindowShape")
@@ -90,7 +118,7 @@ BOOST_PYTHON_MODULE(parselmouth)
 		.export_values()
 	;
 
-	class_<structSound, CopyableAutoThing<structSound>, boost::noncopyable> ("Sound", no_init)
+	class_<structSound, CopyableAutoThing<structSound>, boost::noncopyable>("Sound", no_init)
 		.def(constructor(&readSound,
 				(arg("self"), arg("path"))))
 
@@ -105,7 +133,6 @@ BOOST_PYTHON_MODULE(parselmouth)
 
 		/*.def("create_pure_tone",
 				returnsAutoThing(&Sound_createAsPureTone),
-				return_value_policy<manage_new_object>(),
 				(arg("number_of channels") = 1, arg("start_time") = 0.0, arg("end_time") = 0.4, arg("sample_rate") = 44100.0, arg("frequency") = 440.0, arg("amplitude") = 0.2, arg("fade_in_duration") = 0.01, arg("fade_out_duration") = 0.01))
 				.staticmethod("create_pure_tone")
 
@@ -232,6 +259,17 @@ BOOST_PYTHON_MODULE(parselmouth)
 		.def("extract_part_for_overlap",
 				&Sound_extractPartForOverlap,
 				(arg("self"), arg("start_time"), arg("end_time"), arg("overlap")))
+
+		.def("as_array",
+				[] (back_reference<Sound> self) -> ndarray { return from_data(&self.get()->z[1][1], dtype::get_builtin<double>(), std::vector<long>({self.get()->ny, self.get()->nx}), std::vector<long>({self.get()->nx * static_cast<long>(sizeof(double)), sizeof(double)}), self.source()); })
+
+		.def("to_pitch",
+				&Sound_to_Pitch,
+				(arg("self"), arg("time_step") = 0.0, arg("minimum_pitch") = 75.0, arg("maximum_pitch") = 600.0))
+
+		.def("to_intensity", // TODO Maybe get a template thing that just changes the type of the arguments, so we won't have an integer expected by parselmouth when it should be a boolean.
+				[] (Sound self, double minimum_pitch, double time_step, bool subtract_mean) { return Sound_to_Intensity(self, minimum_pitch, time_step, subtract_mean); },
+				(arg("self"), arg("minimum_pitch") = 100.0, arg("time_step") = 0.0, arg("subtract_mean") = true))
 	;
 	auto_thing_converter<structSound>();
 
@@ -248,4 +286,42 @@ BOOST_PYTHON_MODULE(parselmouth)
 				arg("self"))
 	;
 	auto_thing_converter<structMFCC>();
+
+
+	enum_<kPitch_unit>("PitchUnit")
+		.value("hertz", kPitch_unit_HERTZ)
+		.value("hertz_logarithmic", kPitch_unit_HERTZ_LOGARITHMIC)
+		.value("mel", kPitch_unit_MEL)
+		.value("log_hertz", kPitch_unit_LOG_HERTZ)
+		.value("mel", kPitch_unit_MEL)
+		.value("semitones_1", kPitch_unit_SEMITONES_1)
+		.value("semitones_100", kPitch_unit_SEMITONES_100)
+		.value("semitones_200", kPitch_unit_SEMITONES_200)
+		.value("semitones_440", kPitch_unit_SEMITONES_440)
+		.value("erb", kPitch_unit_ERB)
+		.export_values()
+	;
+
+	class_<structPitch, CopyableAutoThing<structPitch>, boost::noncopyable>("Pitch", no_init)
+		.def("__str__",
+				[] (Pitch self) { MelderInfoInterceptor info; self->v_info(); return info.get(); },
+				arg("self"))
+
+		.def("get_value",
+				[] (Pitch self, double time, kPitch_unit unit, bool interpolate) { return Pitch_getValueAtTime(self, time, unit, interpolate); },
+				(arg("self"), arg("time"), arg("unit") = kPitch_unit_HERTZ, arg("interpolate") = true))
+	;
+	auto_thing_converter<structPitch>();
+
+
+	class_<structIntensity, CopyableAutoThing<structIntensity>, boost::noncopyable>("Intensity", no_init)
+		.def("__str__",
+				[] (Intensity self) { MelderInfoInterceptor info; self->v_info(); return info.get(); },
+				arg("self"))
+
+		.def("get_value", // TODO Should be part of Vector class?
+				[] (Intensity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
+				(arg("self"), arg("time"), arg("interpolation") = Interpolation::CUBIC))
+	;
+	auto_thing_converter<structIntensity>();
 }
