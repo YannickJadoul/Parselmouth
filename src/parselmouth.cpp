@@ -1,4 +1,5 @@
 #include "fon/Sound.h"
+#include "fon/Sound_to_Harmonicity.h"
 #include "fon/Sound_to_Intensity.h"
 #include "fon/Sound_to_Pitch.h"
 #include "dwsys/NUMmachar.h"
@@ -270,6 +271,10 @@ BOOST_PYTHON_MODULE(parselmouth)
 		.def("to_intensity", // TODO Maybe get a template thing that just changes the type of the arguments, so we won't have an integer expected by parselmouth when it should be a boolean.
 				[] (Sound self, double minimum_pitch, double time_step, bool subtract_mean) { return Sound_to_Intensity(self, minimum_pitch, time_step, subtract_mean); },
 				(arg("self"), arg("minimum_pitch") = 100.0, arg("time_step") = 0.0, arg("subtract_mean") = true))
+
+		.def("to_harmonicity_cc",
+				&Sound_to_Harmonicity_cc,
+				(arg("self"), arg("time_step") = 0.01, arg("minimum_pitch") = 75.0, arg("silence_treshold") = 0.1, arg("periods_per_window") = 1.0))
 	;
 	auto_thing_converter<structSound>();
 
@@ -324,4 +329,16 @@ BOOST_PYTHON_MODULE(parselmouth)
 				(arg("self"), arg("time"), arg("interpolation") = Interpolation::CUBIC))
 	;
 	auto_thing_converter<structIntensity>();
+
+
+	class_<structHarmonicity, CopyableAutoThing<structHarmonicity>, boost::noncopyable>("Harmonicity", no_init)
+		.def("__str__",
+				[] (Harmonicity self) { MelderInfoInterceptor info; self->v_info(); return info.get(); },
+				arg("self"))
+
+		.def("get_value", // TODO Should be part of Vector class?
+				[] (Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
+				(arg("self"), arg("time"), arg("interpolation") = Interpolation::CUBIC))
+	;
+	auto_thing_converter<structHarmonicity>();
 }
