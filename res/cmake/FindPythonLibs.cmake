@@ -173,16 +173,21 @@ else()
             if(NOT EXISTS "${PYTHON_LIBRARY}")
               set(_PYTHON_SHORT_VERSION_NO_DOT "${_PYTHON_MAJOR_VERSION}${_PYTHON_MINOR_VERSION}")
               set(_PYTHON_LIBRARY_NAMES python${_PYTHON_SHORT_VERSION} python${_PYTHON_SHORT_VERSION_NO_DOT})
-              FIND_LIBRARY(PYTHON_LIBRARY
+              FIND_LIBRARY(PYTHON_LIB
                 NAMES ${_PYTHON_LIBRARY_NAMES}
                 PATH_SUFFIXES
+                .
                 python${_PYTHON_SHORT_VERSION}/config
                 python${_PYTHON_SHORT_VERSION_NO_DOT}/config
+                python${_PYTHON_SHORT_VERSION}/config-${CMAKE_LIBRARY_ARCHITECTURE}
+                python${_PYTHON_SHORT_VERSION_NO_DOT}/config-${CMAKE_LIBRARY_ARCHITECTURE}
                 PATHS
                 ${_PYTHON_LIBRARY_DIR}
                 ${_PYTHON_PREFIX}/lib $
                 {_PYTHON_PREFIX}/libs
                 NO_DEFAULT_PATH)
+              get_filename_component(PYTHON_LIBRARY "${PYTHON_LIB}" ABSOLUTE)
+              unset(PYTHON_LIB)
 
               if(WIN32)
                 find_library(PYTHON_DEBUG_LIBRARY
