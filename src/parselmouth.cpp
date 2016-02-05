@@ -268,6 +268,10 @@ BOOST_PYTHON_MODULE(parselmouth)
 				&Sound_to_Pitch,
 				(arg("self"), arg("time_step") = 0.0, arg("minimum_pitch") = 75.0, arg("maximum_pitch") = 600.0))
 
+		.def("to_pitch_ac",
+				[] (Sound self, double time_step, double minimum_pitch, double periods_per_window, int max_candidates, bool very_accurate, double silence_treshold, double voicing_threshold, double octave_cost, double octave_jump_cost, double voiced_unvoiced_cost, double pitch_ceiling) { return Sound_to_Pitch_ac(self, time_step, minimum_pitch, periods_per_window, max_candidates, very_accurate, silence_treshold, voicing_threshold, octave_cost, octave_jump_cost, voiced_unvoiced_cost, pitch_ceiling); },
+				(arg("self"), arg("time_step") = 0.0, arg("minimum_pitch") = 75.0, arg("periods_per_window") = 3.0, arg("max_candidates") = 15, arg("very_accurate") = false, arg("silence_treshold") = 0.03, arg("voicing_threshold") = 0.45, arg("octave_cost") = 0.01, arg("octave_jump_cost") = 0.35, arg("voiced_unvoiced_cost") = 0.14, arg("pitch_ceiling") = 600.0))
+
 		.def("to_intensity", // TODO Maybe get a template thing that just changes the type of the arguments, so we won't have an integer expected by parselmouth when it should be a boolean.
 				[] (Sound self, double minimum_pitch, double time_step, bool subtract_mean) { return Sound_to_Intensity(self, minimum_pitch, time_step, subtract_mean); },
 				(arg("self"), arg("minimum_pitch") = 100.0, arg("time_step") = 0.0, arg("subtract_mean") = true))
