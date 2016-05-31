@@ -2,19 +2,18 @@
  *
  * Copyright (C) 1992-2011,2012,2013,2014,2015 Paul Boersma, 2013 Tom Naughton
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "GraphicsP.h"
@@ -91,13 +90,18 @@ static void psRevertLine (GraphicsPostscript me) {
 		HPEN newPen;
 		int lineWidth_pixels = LINE_WIDTH_IN_PIXELS (me) + 0.5;
 		if (! lineWidth_pixels) lineWidth_pixels = 1;
-		my d_fatNonSolid = my lineType != Graphics_DRAWN && my lineWidth > 1;
+		my d_fatNonSolid = my lineType != Graphics_DRAWN && lineWidth_pixels > 1;
 		if (Melder_debug == 10) {
 			LOGBRUSH brush;
 			brush. lbStyle = BS_SOLID;
 			brush. lbColor = my d_winForegroundColour;
 			brush. lbHatch = my lineType == Graphics_DRAWN ? 0 : my lineType == Graphics_DOTTED ? PS_DOT : my lineType == Graphics_DASHED ? PS_DASH : PS_DASHDOT;
-			newPen = ExtCreatePen (PS_GEOMETRIC, lineWidth_pixels, & brush, 0, nullptr);
+			if (my lineType == Graphics_DRAWN) {
+				newPen = ExtCreatePen (PS_GEOMETRIC, lineWidth_pixels, & brush, 0, nullptr);
+			} else {
+				DWORD style [] = { 36, 33 };
+				newPen = ExtCreatePen (PS_GEOMETRIC | PS_USERSTYLE, lineWidth_pixels, & brush, 2, style);
+			}
 		} else {
 			/*newPen = CreatePen (my lineType == Graphics_DRAWN ? PS_SOLID :
 				my lineType == Graphics_DOTTED ? PS_DOT : my lineType == Graphics_DASHED ? PS_DASH : PS_DASHDOT,

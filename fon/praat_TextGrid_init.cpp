@@ -1,20 +1,19 @@
 /* praat_TextGrid_init.cpp
  *
- * Copyright (C) 1992-2012,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2012,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "praat.h"
@@ -48,7 +47,7 @@ DIRECT2 (AnyTier_into_TextGrid) {
 	autoTextGrid grid = TextGrid_createWithoutTiers (1e30, -1e30);
 	LOOP {
 		iam (AnyTier);
-		TextGrid_addTier_copy (grid.peek(), me);
+		TextGrid_addTier_copy (grid.get(), me);
 	}
 	praat_new (grid.move(), U"grid");
 END2 }
@@ -624,16 +623,16 @@ END2 }
 FORM (SpellingChecker_edit, U"Edit spelling checker", U"SpellingChecker") {
 	LABEL (U"", U"-- Syntax --")
 	SENTENCE (U"Forbidden strings", U"")
-	BOOLEAN (U"Check matching parentheses", 0)
+	BOOLEAN (U"Check matching parentheses", false)
 	SENTENCE (U"Separating characters", U"")
-	BOOLEAN (U"Allow all parenthesized", 0)
+	BOOLEAN (U"Allow all parenthesized", false)
 	LABEL (U"", U"-- Capitals --")
-	BOOLEAN (U"Allow all names", 0)
+	BOOLEAN (U"Allow all names", false)
 	SENTENCE (U"Name prefixes", U"")
-	BOOLEAN (U"Allow all abbreviations", 0)
+	BOOLEAN (U"Allow all abbreviations", false)
 	LABEL (U"", U"-- Capitalization --")
-	BOOLEAN (U"Allow caps sentence-initially", 0)
-	BOOLEAN (U"Allow caps after colon", 0)
+	BOOLEAN (U"Allow caps sentence-initially", false)
+	BOOLEAN (U"Allow caps after colon", false)
 	LABEL (U"", U"-- Word parts --")
 	SENTENCE (U"Allow all words containing", U"")
 	SENTENCE (U"Allow all words starting with", U"")
@@ -832,9 +831,11 @@ DO
 		int position = GET_INTEGER (U"Position");
 		const char32 *name = GET_STRING (U"Name");
 		if (itier > my tiers->size) itier = my tiers->size;
-		autoFunction newTier = Data_copy (my tiers->at [itier]);
-		Thing_setName (newTier.peek(), name);
-		my tiers -> addItemAtPosition_move (newTier.move(), position);
+		{// scope
+			autoFunction newTier = Data_copy (my tiers->at [itier]);
+			Thing_setName (newTier.get(), name);
+			my tiers -> addItemAtPosition_move (newTier.move(), position);
+		}
 		praat_dataChanged (me);
 	}
 END2 }
@@ -869,7 +870,7 @@ DIRECT2 (TextGrid_edit) {
 	LOOP if (CLASS == classTextGrid) {
 		iam (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, sound, true, nullptr, nullptr);
-		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication);
+		Editor_setPublicationCallback (editor.get(), cb_TextGridEditor_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
 	}
@@ -887,7 +888,7 @@ DO
 	LOOP if (CLASS == classTextGrid) {
 		iam (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, sound, true, nullptr, Melder_peek32to8 (GET_STRING (U"Callback text")));
-		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication);
+		Editor_setPublicationCallback (editor.get(), cb_TextGridEditor_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
 	}
@@ -904,7 +905,7 @@ DIRECT2 (TextGrid_LongSound_edit) {
 	LOOP if (CLASS == classTextGrid) {
 		iam (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, longSound, false, nullptr, nullptr);
-		Editor_setPublicationCallback (editor.peek(), cb_TextGridEditor_publication);
+		Editor_setPublicationCallback (editor.get(), cb_TextGridEditor_publication);
 		praat_installEditor2 (editor.get(), IOBJECT, ilongSound);
 		editor.releaseToUser();
 	}
@@ -946,10 +947,10 @@ DIRECT2 (TextGrid_LongSound_SpellingChecker_edit) {
 	}
 END2 }
 
-FORM (TextGrid_extractPart, U"TextGrid: Extract part", 0) {
+FORM (TextGrid_extractPart, U"TextGrid: Extract part", nullptr) {
 	REAL (U"left Time range (s)", U"0.0")
 	REAL (U"right Time range (s)", U"1.0")
-	BOOLEAN (U"Preserve times", 0)
+	BOOLEAN (U"Preserve times", false)
 	OK2
 DO
 	LOOP {
@@ -1004,7 +1005,7 @@ FORM (TextGrid_extractOneTier, U"TextGrid: Extract one tier", nullptr) {
 DO
 	Function tier = pr_TextGrid_peekTier (dia);   // a reference
 	autoTextGrid grid = TextGrid_createWithoutTiers (1e30, -1e30);
-	TextGrid_addTier_copy (grid.peek(), tier);   // no transfer of tier ownership, because a copy is made
+	TextGrid_addTier_copy (grid.get(), tier);   // no transfer of tier ownership, because a copy is made
 	praat_new (grid.move(), tier -> name);
 END2 }
 
@@ -1221,10 +1222,12 @@ DO
 		iam (TextGrid);
 		int position = GET_INTEGER (U"Position");
 		const char32 *name = GET_STRING (U"Name");
-		autoIntervalTier tier = IntervalTier_create (my xmin, my xmax);
-		if (position > my tiers->size) position = my tiers->size + 1;
-		Thing_setName (tier.peek(), name);
-		my tiers -> addItemAtPosition_move (tier.move(), position);
+		{// scope
+			autoIntervalTier tier = IntervalTier_create (my xmin, my xmax);
+			if (position > my tiers->size) position = my tiers->size + 1;
+			Thing_setName (tier.get(), name);
+			my tiers -> addItemAtPosition_move (tier.move(), position);
+		}
 		praat_dataChanged (me);
 	}
 END2 }
@@ -1252,10 +1255,12 @@ DO
 		iam (TextGrid);
 		int position = GET_INTEGER (U"Position");
 		const char32 *name = GET_STRING (U"Name");
-		autoTextTier tier = TextTier_create (my xmin, my xmax);
-		if (position > my tiers->size) position = my tiers->size + 1;
-		Thing_setName (tier.peek(), name);
-		my tiers -> addItemAtPosition_move (tier.move(), position);
+		{// scope
+			autoTextTier tier = TextTier_create (my xmin, my xmax);
+			if (position > my tiers->size) position = my tiers->size + 1;
+			Thing_setName (tier.get(), name);
+			my tiers -> addItemAtPosition_move (tier.move(), position);
+		}
 		praat_dataChanged (me);
 	}
 END2 }
@@ -1583,7 +1588,7 @@ DIRECT2 (TextGrid_AnyTier_append) {
 	autoTextGrid newGrid = Data_copy (oldGrid);
 	LOOP if (OBJECT != oldGrid) {
 		iam (AnyTier);
-		TextGrid_addTier_copy (newGrid.peek(), me);
+		TextGrid_addTier_copy (newGrid.get(), me);
 	}
 	praat_new (newGrid.move(), oldGrid -> name);
 END2 }

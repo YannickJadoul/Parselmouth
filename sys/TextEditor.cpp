@@ -1,20 +1,19 @@
 /* TextEditor.cpp
  *
- * Copyright (C) 1997-2012,2013,2015 Paul Boersma, 2010 Franz Brausse
+ * Copyright (C) 1997-2012,2013,2015,2016 Paul Boersma, 2010 Franz Brausse
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "TextEditor.h"
@@ -36,7 +35,9 @@ static CollectionOf <structTextEditor> theReferencesToAllOpenTextEditors;
 
 /***** TextEditor methods *****/
 
-void structTextEditor :: v_destroy () {
+void structTextEditor :: v_destroy () noexcept {
+	our openDialog.reset();   // don't delay till delete
+	our saveDialog.reset();   // don't delay till delete
 	theReferencesToAllOpenTextEditors. undangleItem (this);
 	TextEditor_Parent :: v_destroy ();
 }
@@ -658,7 +659,7 @@ void TextEditor_init (TextEditor me, const char32 *initialText) {
 autoTextEditor TextEditor_create (const char32 *initialText) {
 	try {
 		autoTextEditor me = Thing_new (TextEditor);
-		TextEditor_init (me.peek(), initialText);
+		TextEditor_init (me.get(), initialText);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Text window not created.");

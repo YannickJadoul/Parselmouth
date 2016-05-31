@@ -2,19 +2,18 @@
  *
  * Copyright (C) 1992-2011,2013,2014,2015 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "ManPagesM.h"
@@ -1382,7 +1381,7 @@ LIST_ITEM1 (U"@@Scripting 5.2. Expressions@ (numeric, string)")
 LIST_ITEM1 (U"@@Scripting 5.3. Jumps@ (if, then, elsif, else, endif)")
 LIST_ITEM1 (U"@@Scripting 5.4. Loops@ (for/endfor, while/endwhile, repeat/until)")
 LIST_ITEM1 (U"@@Scripting 5.5. Procedures@ (\\@ , procedure)")
-LIST_ITEM1 (U"@@Scripting 5.6. Arrays")
+LIST_ITEM1 (U"@@Scripting 5.6. Arrays and dictionaries")
 LIST_ITEM1 (U"@@Scripting 5.7. Including other scripts")
 LIST_ITEM1 (U"@@Scripting 5.8. Quitting@ (exitScript)")
 LIST_ITEM (U"@@Scripting 6. Communication outside the script")
@@ -2217,7 +2216,7 @@ CODE (U"#for i from 1 to n")
 CODE (U"#endfor")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5. Language elements reference", U"ppgb", 20130421)
+MAN_BEGIN (U"Scripting 5. Language elements reference", U"ppgb", 20160405)
 NORMAL (U"In a Praat script, you can use variables, expressions, and functions, of numeric as well as string type, "
 	"and most of the control structures known from other procedural computer languages. "
 	"The way the distinction between numbers and strings is made, may remind you of the programming language Basic.")
@@ -2226,7 +2225,7 @@ LIST_ITEM (U"@@Scripting 5.2. Expressions@ (numeric, string)")
 LIST_ITEM (U"@@Scripting 5.3. Jumps@ (if, then, elsif, else, endif)")
 LIST_ITEM (U"@@Scripting 5.4. Loops@ (for/endfor, while/endwhile, repeat/until)")
 LIST_ITEM (U"@@Scripting 5.5. Procedures@ (\\@ , procedure)")
-LIST_ITEM (U"@@Scripting 5.6. Arrays@")
+LIST_ITEM (U"@@Scripting 5.6. Arrays and dictionaries@")
 LIST_ITEM (U"@@Scripting 5.7. Including other scripts@")
 LIST_ITEM (U"@@Scripting 5.8. Quitting@ (exit)")
 MAN_END
@@ -2650,7 +2649,7 @@ CODE (U"#endproc")
 NORMAL (U"However, this uses variable substitution, a trick better avoided.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5.6. Arrays", U"ppgb", 20140111)
+MAN_BEGIN (U"Scripting 5.6. Arrays and dictionaries", U"ppgb", 20160405)
 NORMAL (U"You can use arrays of numeric and string variables:")
 CODE (U"#for i #from 1 #to 5")
 	CODE1 (U"square [i] = i * i")
@@ -2664,6 +2663,11 @@ CODE (U"#for i #from 1 #to 5")
 	CODE1 (U"#appendInfoLine: \"The square of \", i, \" is \", square [i]")
 CODE (U"#endfor")
 NORMAL (U"You can use any number of variables in a script, but you can also use Matrix or Sound objects for arrays.")
+NORMAL (U"In the examples above, the %index into the array was always a number. "
+	" A %hash or %dictionary is an array variable where the index is a string:")
+CODE (U"age [\"John\"] = 36")
+CODE (U"age [\"Babs\"] = 39")
+CODE (U"#writeInfoLine: \"John is \", age [\"John\"], \" years old.\"")
 MAN_END
 
 MAN_BEGIN (U"Scripting 5.7. Including other scripts", U"ppgb", 20140111)

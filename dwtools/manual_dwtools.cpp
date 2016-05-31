@@ -2,19 +2,18 @@
  *
  * Copyright (C) 1993-2016 David Weenink
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -37,14 +36,14 @@ static autoTableOfReal getStandardizedLogFrequencyPolsData (bool includeLevels) 
 			my data[i][j] = log10 (my data[i][j]);
 		}
 	}
-	TableOfReal_standardizeColumns (me.peek());
-	TableOfReal_setColumnLabel (me.peek(), 1, U"standardized log (%F__1_)");
-	TableOfReal_setColumnLabel (me.peek(), 2, U"standardized log (%F__2_)");
-	TableOfReal_setColumnLabel (me.peek(), 3, U"standardized log (%F__3_)");
+	TableOfReal_standardizeColumns (me.get());
+	TableOfReal_setColumnLabel (me.get(), 1, U"standardized log (%F__1_)");
+	TableOfReal_setColumnLabel (me.get(), 2, U"standardized log (%F__2_)");
+	TableOfReal_setColumnLabel (me.get(), 3, U"standardized log (%F__3_)");
 	if (includeLevels) {
-		TableOfReal_setColumnLabel (me.peek(), 4, U"standardized %L__1_");
-		TableOfReal_setColumnLabel (me.peek(), 5, U"standardized %L__1_");
-		TableOfReal_setColumnLabel (me.peek(), 6, U"standardized %L__3_");
+		TableOfReal_setColumnLabel (me.get(), 4, U"standardized %L__1_");
+		TableOfReal_setColumnLabel (me.get(), 5, U"standardized %L__1_");
+		TableOfReal_setColumnLabel (me.get(), 6, U"standardized %L__3_");
 	}
 	return me;
 }
@@ -52,20 +51,20 @@ static autoTableOfReal getStandardizedLogFrequencyPolsData (bool includeLevels) 
 static void drawPolsF1F2_log (Graphics g) {
 	autoTableOfReal me = getStandardizedLogFrequencyPolsData (0);
 	Graphics_setWindow (g, -2.9, 2.9, -2.9, 2.9);
-	TableOfReal_drawScatterPlot (me.peek(), g, 1, 2, 0, 0, -2.9, 2.9, -2.9, 2.9, 10, 1, U"+", 1);
+	TableOfReal_drawScatterPlot (me.get(), g, 1, 2, 0, 0, -2.9, 2.9, -2.9, 2.9, 10, 1, U"+", 1);
 }
 
 static void drawPolsF1F2ConcentrationEllipses (Graphics g) {
 	autoTableOfReal me = getStandardizedLogFrequencyPolsData (0);
-	autoDiscriminant d = TableOfReal_to_Discriminant (me.peek());
-	Discriminant_drawConcentrationEllipses (d.peek(), g, 1, 0, nullptr, 0, 1, 2, -2.9, 2.9, -2.9, 2.9, 12, 1);
+	autoDiscriminant d = TableOfReal_to_Discriminant (me.get());
+	Discriminant_drawConcentrationEllipses (d.get(), g, 1, 0, nullptr, 0, 1, 2, -2.9, 2.9, -2.9, 2.9, 12, 1);
 }
 
 static void drawPolsDiscriminantConfiguration (Graphics g) {
 	autoTableOfReal me = getStandardizedLogFrequencyPolsData (0);
-	autoDiscriminant d = TableOfReal_to_Discriminant (me.peek());
-	autoConfiguration c = Discriminant_and_TableOfReal_to_Configuration (d.peek(), me.peek(), 2);
-	Configuration_draw (c.peek(), g, 1, 2, -2.9, 2.9, -2.9, 2.9, 0, 1, U"", 1);
+	autoDiscriminant d = TableOfReal_to_Discriminant (me.get());
+	autoConfiguration c = Discriminant_and_TableOfReal_to_Configuration (d.get(), me.get(), 2);
+	Configuration_draw (c.get(), g, 1, 2, -2.9, 2.9, -2.9, 2.9, 0, 1, U"", 1);
 }
 
 static void drawBoxPlot (Graphics g) {
@@ -317,7 +316,7 @@ NORMAL (U"An object of type Categories represents an ordered collection of categ
 ENTRY (U"Categories commands")
 NORMAL (U"Creation:")
 LIST_ITEM (U"\\bu ##Create an empty Categories#")
-LIST_ITEM (U"\\bu @@FFNet & Pattern: To Categories...@")
+LIST_ITEM (U"\\bu @@FFNet & PatternList: To Categories...@")
 NORMAL (U"Viewing and editing:")
 LIST_ITEM (U"\\bu @CategoriesEditor")
 NORMAL (U"Analysis:")
@@ -1199,22 +1198,17 @@ NORMAL (U"In case the covariance matrix is diagonal, the algorithm is much simpl
 MAN_END
 
 MAN_BEGIN (U"Covariance & TableOfReal: Extract quantile range...", U"djmw", 20040225)
-INTRO (U"Extract those rows from the selected @TableOfReal object whose Mahalanobis "
-	"distance, with respect to the selected @Covariance object, are within the "
+INTRO (U"Extract those rows from the selected @TableOfReal object whose @@Mahalanobis "
+	"distance@, with respect to the selected @Covariance object, are within the "
 	"quantile range.")
 MAN_END
 
 MAN_BEGIN (U"Covariance & TableOfReal: To TableOfReal (mahalanobis)...", U"djmw", 20151209)
-INTRO (U"Calculate Mahalanobis distance for the selected @TableOfReal with respect to the "
+INTRO (U"Calculate @@Mahalanobis distance@ for the selected @TableOfReal with respect to the "
 	"selected @Covariance object.")
 ENTRY (U"Setting")
 TAG (U"##Use table centroid")
 DEFINITION (U"Use the mean vector calculated from the columns in the selected TableOfReal instead of the means in the selected Covariance.")
-ENTRY (U"Explanation")
-NORMAL (U"The Mahalanobis distance is defined as")
-FORMULA (U"%d = \\Vr((#%x - #x\\-^)\\'p #S^^-1^ (#%x - #x\\-^)),")
-NORMAL (U"where #%x is a vector, #x\\-^ is the average and #S is the covariance matrix. ")
-NORMAL (U"It is the multivariate form of the distance measured in units of standard deviation.")
 ENTRY (U"Example")
 NORMAL (U"Count the number of items that are within 1, 2, 3, 4 and 5 standard deviations from the mean.")
 NORMAL (U"We first create a table with only one column and 10000 rows and fill it with numbers drawn from "
@@ -1526,11 +1520,21 @@ NORMAL (U"More details about these data and how they were measured can be found 
 	"@@Weenink (1985)@.")
 MAN_END
 
-MAN_BEGIN (U"Discriminant", U"djmw", 19981103)
+MAN_BEGIN (U"Discriminant", U"djmw", 20160128)
 INTRO (U"One of the @@types of objects@ in P\\s{RAAT}.")
 NORMAL (U"An object of type Discriminant represents the discriminant structure of a multivariate "
-	"data set with several groups. This discriminant structure consists of a number of orthogonal "
-	"directions in space, along which maximum separability of the groups can occur.")
+	"data set, i.e. a %%numberOfObservations%\\xx%%dimension% matrix. Each row in this data set belongs to one of %%numberOfGroups% groups (or %%classes% or %categories%, whatever terminology you prefer). " 
+	"A Discriminant can be used as a classifier to discriminate between these %%numberOfGroups% groups.")
+ENTRY (U"##Inside a Discriminant")
+NORMAL (U"With @@Inspect@, you will see that a Discriminant contains the following data:")
+LIST_ITEM (U"##eigen#")
+DEFINITION (U"the @@Eigen|eigen@ structure, i.e. the eigenvalues and eigenvectors.")
+LIST_ITEM (U"##numberOfGroups")
+DEFINITION (U"the number of groups between which we can discriminate.")
+LIST_ITEM (U"##groups")
+DEFINITION (U"a list of %%dimension%\\xx%%dimension% @SSCP matrices, one for each group, %numberOfGroups in total.")
+LIST_ITEM (U"##aprioriProbabilities")
+DEFINITION (U"an array with %numberOfGroups apriori probabilities of group membership")
 ENTRY (U"Commands")
 NORMAL (U"Creation:")
 LIST_ITEM (U"\\bu @@Discriminant analysis@ tutorial")
@@ -1765,9 +1769,9 @@ ENTRY (U"Algorithm")
 NORMAL (U"See @@SSCP: Get confidence ellipse area...")
 MAN_END
 
-MAN_BEGIN (U"Discriminant & Pattern: To Categories...", U"djmw", 20040422)
+MAN_BEGIN (U"Discriminant & PatternList: To Categories...", U"djmw", 20040422)
 INTRO (U"A command to use the selected @Discriminant to classify each pattern from the "
-	"selected @Pattern into a category.")
+	"selected @PatternList into a category.")
 NORMAL (U"Arguments as in @@Discriminant & TableOfReal: To ClassificationTable...@.")
 MAN_END
 
@@ -1803,29 +1807,27 @@ NORMAL (U"The a priori probabilities normally will have values that are related 
 FORMULA (U"%aprioriProbability__%i_ = %n__%i_ / \\Si__%k=1..%numberOfGroups_ %n__%k_")
 MAN_END
 
-MAN_BEGIN (U"Discriminant & TableOfReal: To Configuration...", U"djmw", 20040407)
+MAN_BEGIN (U"Discriminant & TableOfReal: To Configuration...", U"djmw", 20160119)
 INTRO (U"A command to project each row in the selected @TableOfReal onto "
-	"a space spanned by the eigenvectors of the selected @Discriminant. ")
+	"a subspace spanned by the eigenvectors of the selected @Discriminant. ")
 ENTRY (U"Settings")
 TAG (U"##Number of dimensions")
-DEFINITION (U"specifies the number of eigenvectors taken into account, i.e., determines "
-	"the dimension of the resulting @Configuration. When the default value (0) is "
-	"given the resulting Configuration will have the maximum dimension as allowed by "
-	"the number of eigenvectors in the selected Discriminant.")
+DEFINITION (U"specifies the dimension of the resulting @Configuration. This dimension cannot exceed a maximum dimension that is implicitly determined by the selected Discriminant. When the default value (0) is "
+	"given the resulting Configuration will have the maximum dimension as allowed by Discrimininant. "
+	"(Technically speaking: the number of eigenvectors (or eigenvalues) in the selected Discriminant is equal to the maximum allowed dimension.)")
 ENTRY (U"Precondition")
-NORMAL (U"The number of columns in the TableOfReal must equal the dimension of the "
-	"eigenvectors in the Discriminant.")
+NORMAL (U"The dimension of the Discriminant and the Configuration must conform in the sense that the number of columns in the TableOfReal and the length of an eigenvector in the Discriminant must be equal.")
 NORMAL (U"See also @@Eigen & TableOfReal: Project...@.")
 MAN_END
 
 MAN_BEGIN (U"Discriminant & TableOfReal: To TableOfReal (mahalanobis)...", U"djmw", 20140509)
-INTRO (U"Calculate Mahalanobis distances for the selected @TableOfReal with respect to one group in the "
+INTRO (U"Calculate @@Mahalanobis distance@s for the selected @TableOfReal with respect to one group in the "
 	"selected @Discriminant object.")
 ENTRY (U"Settings")
 TAG (U"##Group label")
 DEFINITION (U"defines which group mean to use for the distance calculation.")
 TAG (U"##Pool covariance matrices")
-DEFINITION (U"when on use a pooled covariance matrix instead of the group covariance matrix.")
+DEFINITION (U"when on, use a pooled covariance matrix instead of the group covariance matrix.")
 ENTRY (U"Algorithm")
 NORMAL (U"See @@Covariance & TableOfReal: To TableOfReal (mahalanobis)...@.")
 ENTRY (U"Example")
@@ -2152,7 +2154,7 @@ NORMAL (U"A @@Scree plot|scree@ plot can be obtained if both %%Fraction of eigen
 	"and %%Cumulative% are unchecked.")
 MAN_END
 
-MAN_BEGIN (U"Eigen: Draw eigenvector...", U"djmw", 20040407)
+MAN_BEGIN (U"Eigen: Draw eigenvector...", U"djmw", 20160223)
 INTRO (U"A command to draw an eigenvector from the selected @Eigen.")
 ENTRY (U"Settings")
 TAG (U"##Eigenvector number")
@@ -2164,7 +2166,7 @@ DEFINITION (U"when on, the eigenvector is multiplied with the square root of the
 	"quantitatively the elements in different component loading vectors because "
 	"the %i-th element in the %j-th component loading vector gives the covariance between the %i-th "
 	"original variable and the %j-th principal component.)")
-TAG (U"##Element rang%")
+TAG (U"##Element range#")
 DEFINITION (U"determine the first and last element of the vector that must be drawn.")
 TAG (U"##Minimum# and ##Maximum#")
 DEFINITION (U"determine the lower and upper bounds of the plot (choosing #Maximum smaller than #Minimum "
@@ -2201,22 +2203,40 @@ INTRO (U"A command to query the selected @Eigen for the %j^^th^ element of the "
 	"%i^^th^ eigenvector.")
 MAN_END
 
-MAN_BEGIN (U"Eigen & Matrix: Project...", U"djmw", 20040407)
+MAN_BEGIN (U"Eigen & Matrix: To Matrix (project columns)...", U"djmw", 20160223)
 INTRO (U"A command to project the columns of the @Matrix object onto the "
 	"eigenspace of the @Eigen object.")
 ENTRY (U"Setting")
 TAG (U"##Number of dimensions")
 DEFINITION (U"defines the dimension, i.e., the number of rows, of the "
-	"resulting object.")
+	"resulting Matrix object.")
 ENTRY (U"Algorithm")
 NORMAL (U"Project each column of the Matrix on the coordinate "
 	"system given by the eigenvectors of the Eigen object. This can be done "
 	"as follows:")
-FORMULA (U"%y__%ji_ = \\Si__%k=1..%numberOfColums_ %e__jk_ %x__%ki_, where")
-NORMAL (U"%y__%ji_ is the %j-th element of the %i-th column of the resulting "
-	"(matrix) object, %e__%jk_ is the %k-th element of the %j-th eigenvector "
-	"and, %x__%ki_ is the %k-th element of the %i-th column of the selected "
-	"matrix object.")
+FORMULA (U"%y__%ij_ = \\Si__%k=1..%dimension_ %e__ik_ %z__%kj_, where")
+NORMAL (U"%y__%ij_ is the %j-th element of the %i-th row of the result, "
+	"%e__%ik_ is the %k-th element of the %i-th eigenvector, "
+	"%z__%kj_ is the %k-th element of the %j-th column of the selected "
+	"Matrix object, and %%dimension% is the number of elements in an eigenvector.")
+MAN_END
+
+MAN_BEGIN (U"Eigen & Matrix: To Matrix (project rows)...", U"djmw", 20160223)
+INTRO (U"A command to project the rows of the @Matrix object onto the "
+	"eigenspace of the @Eigen object.")
+ENTRY (U"Setting")
+TAG (U"##Number of dimensions")
+DEFINITION (U"defines the dimension, i.e., the number of columns, of the "
+	"resulting Matrix object.")
+ENTRY (U"Algorithm")
+NORMAL (U"Project each row of the Matrix on the coordinate "
+	"system given by the eigenvectors of the Eigen object. This can be done "
+	"as follows:")
+FORMULA (U"%y__%ij_ = \\Si__%k=1..%dimension_ %e__jk_ %z__%ik_, where")
+NORMAL (U"%y__%ij_ is the %j-th element of the %i-th row of the result, "
+	"%e__%jk_ is the %k-th element of the %j-th eigenvector, "
+	"%z__%ik_ is the %k-th element of the %i-th row of the selected "
+	"Matrix object, and %%dimension% is the number of elements in an eigenvector.")
 MAN_END
 
 MAN_BEGIN (U"Eigen & SSCP: Project", U"djmw", 20020328)
@@ -2271,13 +2291,13 @@ INTRO (U"You can choose this command after selecting two objects of type @Excita
 NORMAL (U"A new object is created that contains the second object appended after the first.")
 MAN_END
 
-MAN_BEGIN (U"Excitations: To Pattern...", U"djmw", 19960918)
-INTRO (U"A command to convert every selected @Excitations to a @Pattern object.")
+MAN_BEGIN (U"Excitations: To PatternList...", U"djmw", 19960918)
+INTRO (U"A command to convert every selected @Excitations to a @PatternList object.")
 ENTRY (U"Setting")
 TAG (U"##Join")
-DEFINITION (U"the number of subsequent @Excitation objects to combine into one row of @Pattern. "
-	"E.g. if an #Excitation has length 26 and %join = 2 then each row of #Pattern "
-	"contains 52 elements. The number of rows in #Pattern will be %%my size% / 2. "
+DEFINITION (U"the number of subsequent @Excitation objects to combine into one row of @PatternList. "
+	"E.g. if an #Excitation has length 26 and %join = 2 then each row of #PatternList "
+	"contains 52 elements. The number of rows in #PatternList will be %%my size% / 2. "
 	"In the conversion process the elements of an #Excitation will be divided by 100.0 in order "
 	"to guarantee that all patterns have values between 0 and 1.")
 MAN_END
@@ -2373,6 +2393,36 @@ INTRO (U"$$fisherQ$ (%f, %df1, %df2) returns the area under Fisher's F-distribut
 	"from %f to +\\oo.")
 MAN_END
 
+MAN_BEGIN (U"IDX file format", U"djmw", 20160220)
+INTRO (U"The IDX file format is a simple format for vectors and multidimensional matrices of various numerical types. ")
+NORMAL (U"The basic format according to %%http://yann.lecun.com/exdb/mnist/% is:")
+CODE (U"magic number")
+CODE (U"size in dimension 1")
+CODE (U"size in dimension 2")
+CODE (U"size in dimension 3")
+CODE (U"....")
+CODE (U"size in dimension N")
+CODE (U"data")
+NORMAL (U"The magic number is four bytes long. The first 2 bytes are always 0.")
+NORMAL (U"The third byte codes the type of the data:")
+CODE (U"0x08: unsigned byte")
+CODE (U"0x09: signed byte")
+CODE (U"0x0B: short (2 bytes)")
+CODE (U"0x0C: int (4 bytes)")
+CODE (U"0x0D: float (4 bytes)")
+CODE (U"0x0E: double (8 bytes)")
+NORMAL (U"The fouth byte codes the number of dimensions of the vector/matrix: 1 for vectors, 2 for matrices....")
+NORMAL (U"The sizes in each dimension are 4-byte integers (big endian, like in most non-Intel processors).")
+NORMAL (U"The data is stored like in a C array, i.e. the index in the last dimension changes the fastest.")
+ENTRY (U"Behaviour")
+NORMAL (U"If the storage format indicates that there are more than 2 dimensions, the resulting Matrix accumulates dimensions 2 and higher in the columns. For example, with three dimensions of size n1, n2 and n3, respectively, the resulting Matrix object will have n1 rows and %%n2\\xxn3% columns.")
+
+ENTRY (U"Example")
+NORMAL (U"The training and testing data of the MNIST database of handwritten digits at http://yann.lecun.com/exdb/mnist/ is stored in %%compressed% IDX formatted files. ")
+NORMAL (U"Reading the uncompressed file %%train-images-idx3-ubyte% available at http://yann.lecun.com/exdb/mnist/ with 60000 images of 28\\xx28 pixel data, will result in a new Matrix object with 60000 rows and 784 (=28\\xx28) columns. Each cell will contain a number in the interval from 0 to 255.")
+NORMAL (U"Reading the uncompressed file %%train-labels-idx1-ubyte% with 60000 labels will result in a new Matrix object with 1 row and 60000 columns. Each cell will contain a number in the interval from 0 to 9.")
+MAN_END
+
 MAN_BEGIN (U"ISpline", U"djmw", 19990627)
 INTRO (U"One of the @@types of objects@ in P\\s{RAAT}. ")
 NORMAL (U"An object of type ISpline represents a linear combination of basis "
@@ -2423,6 +2473,17 @@ NORMAL (U"We find polynomial coefficients %c__%k_ such that")
 FORMULA (U"\\Si__%k=1..%numberOfCoefficients_ %c__%k_ %x^^%k^ = "
 	"\\Si__%k=1..%numberOfCoefficients_ %l__%k_ %P__%k_(%x)")
 NORMAL (U"We use the recurrence relation for @@Legendre polynomials@ to calculate these coefficients.")
+MAN_END
+
+MAN_BEGIN (U"Mahalanobis distance", U"djmw", 20160120)
+INTRO (U"The Mahalanobis distance is defined as the distance between a (multidimensional) point and a distribution. "
+	"It is the multivariate form of the distance measured in units of standard deviation and is "
+	"named after the famous Indian statistician R.P. Mahalanobis (1893 \\-- 1972).")
+NORMAL (U"Given a normal distribution with covariance matrix ##S# and mean ##\\mu#, the squared Mahalanobis distance of a point "
+	"##x## to the mean of this distribution is given by %d^^2^(##x#)=(##x#-##\\mu#)##\\'p###S#^^-1^(##x#-##\\mu#), where "
+	"(##x#-##\\mu#)##\\'p# is the transpose of (##x#-##\\mu#).")
+NORMAL (U"The distance formula above says that we have to weigh dimensions according to their covariances. If the covariance matrix ##S# "
+	"happens to be diagonal the formula above reduces to %d^^2^(##x#)=\\Si__%i=1_^^N^ (%x__%i_-%\\mu__%i_)^^2^/%\\si__%i_.")
 MAN_END
 
 MAN_BEGIN (U"Matrix: Draw distribution...", U"djmw", 20041110)
@@ -2526,18 +2587,18 @@ NORMAL (U"An object of type MSpline represents a linear combination of basis "
 FORMULA (U"MSpline (%x) = \\Si__%k=1..%numberOfCoefficients_ %c__%k_ %mspline__%k_(%x)")
 MAN_END
 
-MAN_BEGIN (U"Pattern", U"djmw", 20041201)
+MAN_BEGIN (U"PatternList", U"djmw", 20160524)
 INTRO (U"One of the @@types of objects@ in P\\s{RAAT}.")
-INTRO (U"An object of type Pattern represents a sequence of patterns that can serve as "
-	"inputs for a neural net. All elements in a Pattern have to be in the interval [0,1].")
-ENTRY (U"Pattern commands")
+INTRO (U"An object of type PatternList is a list of patterns that can serve as "
+	"inputs for a neural net. All elements in a PatternList have to be in the interval [0,1].")
+ENTRY (U"PatternList commands")
 NORMAL (U"Creation:")
-LIST_ITEM (U"\\bu ##Create Pattern with zeroes...#")
-LIST_ITEM (U"\\bu @@TableOfReal: To Pattern and Categories...@")
+LIST_ITEM (U"\\bu ##Create PatternList with zeroes...#")
+LIST_ITEM (U"\\bu @@TableOfReal: To PatternList and Categories...@")
 NORMAL (U"Synthesis:")
-LIST_ITEM (U"\\bu @@FFNet & Pattern: To Categories...@")
-LIST_ITEM (U"\\bu @@Pattern & Categories: To FFNet...@")
-ENTRY (U"Inside a Pattern")
+LIST_ITEM (U"\\bu @@FFNet & PatternList: To Categories...@")
+LIST_ITEM (U"\\bu @@PatternList & Categories: To FFNet...@")
+ENTRY (U"Inside a PatternList")
 NORMAL (U"With @Inspect you will see that this type contains the same "
 	"attributes as a @Matrix.")
 MAN_END
@@ -2876,7 +2937,7 @@ FORMULA (U"%z__%k_ = %r e^^%i %k %\\fi^, where,")
 FORMULA (U"%\\fi = \\pi / (%numberOfFrequencies \\-- 1) and %r = 1.")
 MAN_END
 
-MAN_BEGIN (U"Principal component analysis", U"djmw", 20120510)
+MAN_BEGIN (U"Principal component analysis", U"djmw", 20160222)
 INTRO (U"This tutorial describes how you can perform principal component "
        "analysis with P\\s{RAAT}.")
 NORMAL (U"Principal component analysis (PCA) involves a mathematical procedure "
@@ -2890,9 +2951,9 @@ LIST_ITEM (U"\\bu To discover or to reduce the dimensionality of the data set.")
 LIST_ITEM (U"\\bu To identify new meaningful underlying variables.")
 ENTRY (U"2. How to start")
 NORMAL (U"We assume that the multi-dimensional data have been collected in a @TableOfReal data matrix, "
-	"in which the rows are associated with the cases and the columns with the variables.")
+	"in which the rows are associated with the cases and the columns with the variables. The TableOfReal is therefore interpreted as %%numberOfRows% data vectors, each data vector has %%numberofColumns% elements.")
 NORMAL (U"Traditionally, principal component analysis is performed on the "
-	"symmetric @@Covariance|Covariance@ matrix or on the symmetric @@correlation|Correlation@ matrix. "
+	"@@Covariance|Covariance@ matrix or on the @@correlation|Correlation@ matrix. "
 	"These matrices can be calculated from the data matrix. "
 	"The covariance matrix contains scaled @@SSCP|sums of squares and cross products@. "
 	"A correlation matrix is like a covariance matrix but first the variables, i.e. the columns, have been standardized.  "
@@ -2900,7 +2961,7 @@ NORMAL (U"Traditionally, principal component analysis is performed on the "
 	"variables differ much, or if the units of measurement of the "
 	"variables differ. You can standardize the data in the TableOfReal by choosing @@TableOfReal: Standardize columns|Standardize columns@.")
 NORMAL (U"To perform the analysis, we select the TabelOfReal data matrix in the list of objects and choose "
-	"@@TableOfReal: To PCA|To PCA@. This results in a new PCA object in the "
+	"@@TableOfReal: To PCA|To PCA@. This will result in a new PCA object in the "
 	"list of objects.")
 NORMAL (U"We can now make a @@Scree plot|scree@ plot of the eigenvalues, @@Eigen: Draw "
 	"eigenvalues...|Draw eigenvalues...@ "
@@ -2911,14 +2972,15 @@ NORMAL (U"We can now make a @@Scree plot|scree@ plot of the eigenvalues, @@Eigen
 	"accounted for...@. You might also check for the equality of a "
 	"number of eigenvalues: @@PCA: Get equality of eigenvalues...|Get equality "
 	"of eigenvalues...@.")
-ENTRY (U"3. Determining the number of components")
-NORMAL (U"There are two methods to help you to choose the number of components. "
+ENTRY (U"3. Determining the number of components to keep")
+NORMAL (U"There are two methods to help you to choose the number of components to keep. "
 	"Both methods are based on relations between the eigenvalues.")
 LIST_ITEM (U"\\bu Plot the eigenvalues, @@Eigen: Draw eigenvalues...|"
 	"Draw eigenvalues...@. If the points on the graph tend to level out (show an \"elbow\"), "
 	"these eigenvalues are usually close enough to zero that they can be "
 	"ignored.")
-LIST_ITEM (U"\\bu Limit the number of components to that number that accounts for a certain fraction of the total variance. For example, if you are satisfied with 95% of the total variance explained then use the number you get by the query ##Get number of components (VAF)... 0.95#.")
+LIST_ITEM (U"\\bu Limit the number of components to that number that accounts for a certain fraction of the total variance. For example, "
+	"if you are satisfied with 95\\%  of the total variance explained, then use the number you get by the query @@PCA: Get number of components (VAF)...|Get number of components (VAF)...@ 0.95#.")
 ENTRY (U"4. Getting the principal components")
 NORMAL (U"Principal components are obtained by projecting the multivariate "
 	"datavectors on the space spanned by the eigenvectors. This can be done "
@@ -3720,13 +3782,15 @@ DEFINITION (U"determines the label for a silent interval in the TextGrid.") \
 TAG (U"##Sounding interval label") \
 DEFINITION (U"determines the label for a sounding interval in the TextGrid.")
 
-MAN_BEGIN (U"Sound: To TextGrid (silences)...", U"djmw", 20061205)
+MAN_BEGIN (U"Sound: To TextGrid (silences)...", U"djmw", 20160406)
 INTRO (U"A command that creates a @TextGrid in which the silent and sounding intervals of the selected @Sound are marked.")
 ENTRY (U"Settings")
 xxx_to_TextGrid_detectSilences_COMMON_PARAMETERS_HELP
 ENTRY (U"Algorithm")
-NORMAL (U"First the intensity is determined according to the @@Sound: To Intensity...@ command. "
-	"Next the silent and sounding intervas are determined as in the @@Intensity: To TextGrid (silences)...@ command.")
+NORMAL (U"First a copy of the sound is @@Sound: Filter (pass Hann band)...|bandpass filtered@ between 80 and 8000 Hz to "
+	"remove especially the low frequency noise that can have a significant influence on the intensity measurement but does not "
+	"really contribute to the sound. Next the @@Sound: To Intensity...|intensity of the filtered sound@ is determined. "
+	"Finally the silent and sounding intervals are determined @@Intensity: To TextGrid (silences)...|from the intensity curve@.")
 MAN_END
 
 MAN_BEGIN (U"Intensity: To TextGrid (silences)...", U"djmw", 20061201)
@@ -4071,8 +4135,8 @@ NORMAL (U"Normally %numberOfConstraints will equal 1. However, when the SSCP was
 MAN_END
 
 MAN_BEGIN (U"SSCP & TableOfReal: Extract quantile range...", U"djmw", 20040225)
-INTRO (U"Extract those rows from the selected @TableOfReal object whose Mahalanobis "
-	"distance, with respect to the selected @SSCP object, are within the "
+INTRO (U"Extract those rows from the selected @TableOfReal object whose @@Mahalanobis "
+	"distance@, with respect to the selected @SSCP object, are within the "
 	"quantile range.")
 MAN_END
 
@@ -4686,9 +4750,10 @@ NORMAL (U"The a priori probabilities in the Discriminant will be calculated from
 FORMULA (U"%aprioriProbability__%i_ = %n__%i_ / \\Si__%k=1..%numberOfGroups_ %n__%k_")
 MAN_END
 
-MAN_BEGIN (U"TableOfReal: To PCA", U"djmw", 19980106)
+MAN_BEGIN (U"TableOfReal: To PCA", U"djmw", 20160223)
 INTRO (U"A command that creates a @PCA object from every selected "
-	"@TableOfReal object.")
+	"@TableOfReal object, where the TableOfReal object is interpreted as row-oriented, i.e. %%numberOfRows% data vectors, each data vector has %%numberofColumns% elements.")
+NORMAL (U"In @@Principal component analysis|the tutorial on PCA@ you will find more info on principal component analysis.")
 MAN_END
 
 MAN_BEGIN (U"TableOfReal: To SSCP...", U"djmw", 19990218)
@@ -4701,9 +4766,9 @@ NORMAL (U"where %x__%mn_ is the element %m in column %n and %x\\-^__%n_ "
 	"is the mean of column %n.")
 MAN_END
 
-MAN_BEGIN (U"TableOfReal: To Pattern and Categories...", U"djmw", 20040429)
-INTRO (U"Extracts a @Pattern and a @Categories from the selected @TableOfReal.")
-NORMAL (U"The selected rows and columns are copied into the Pattern and "
+MAN_BEGIN (U"TableOfReal: To PatternList and Categories...", U"djmw", 20040429)
+INTRO (U"Extracts a @PatternList and a @Categories from the selected @TableOfReal.")
+NORMAL (U"The selected rows and columns are copied into the PatternList and "
 	"the corresponding row labels are copied into a Categories. ")
 MAN_END
 

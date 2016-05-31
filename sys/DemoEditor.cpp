@@ -1,20 +1,19 @@
 /* DemoEditor.cpp
  *
- * Copyright (C) 2009-2011,2013,2015 Paul Boersma
+ * Copyright (C) 2009-2011,2013,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "DemoEditor.h"
@@ -28,7 +27,7 @@ static DemoEditor theReferenceToTheOnlyDemoEditor;
 
 /***** DemoEditor methods *****/
 
-void structDemoEditor :: v_destroy () {
+void structDemoEditor :: v_destroy () noexcept {
 	Melder_free (praatPicture);
 	theReferenceToTheOnlyDemoEditor = nullptr;
 	DemoEditor_Parent :: v_destroy ();
@@ -126,7 +125,7 @@ void DemoEditor_init (DemoEditor me) {
 autoDemoEditor DemoEditor_create () {
 	try {
 		autoDemoEditor me = Thing_new (DemoEditor);
-		DemoEditor_init (me.peek());
+		DemoEditor_init (me.get());
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Demo window not created.");
@@ -181,6 +180,9 @@ int Demo_show () {
 	if (! theReferenceToTheOnlyDemoEditor) return 0;
 	autoDemoOpen demo;
 	GuiThing_show (theReferenceToTheOnlyDemoEditor -> d_windowForm);
+	#if defined (macintosh)
+		Graphics_updateWs (theReferenceToTheOnlyDemoEditor -> graphics.get());
+	#endif
 	GuiShell_drain (theReferenceToTheOnlyDemoEditor -> d_windowForm);
 	return 1;
 }
@@ -209,7 +211,8 @@ void Demo_waitForInput (Interpreter interpreter) {
 			#elif cocoa
 				do {
 					NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-					[theReferenceToTheOnlyDemoEditor -> d_windowForm -> d_cocoaWindow   flushWindow];
+					[theReferenceToTheOnlyDemoEditor -> d_windowForm -> d_cocoaShell   flushWindow];
+					Graphics_updateWs (theReferenceToTheOnlyDemoEditor -> graphics.get());   // make sure that even texts will be drawn
 					NSEvent *nsEvent = [NSApp
 						nextEventMatchingMask: NSAnyEventMask
 						untilDate: [NSDate distantFuture]   // wait

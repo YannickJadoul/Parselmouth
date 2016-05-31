@@ -2,19 +2,18 @@
  *
  * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "ManPagesM.h"
@@ -23,13 +22,36 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"What's new?", U"ppgb", 20160115)
+MAN_BEGIN (U"What's new?", U"ppgb", 20160523)
 INTRO (U"Latest changes in Praat.")
-/*LIST_ITEM (U"• Manual page about @@drawing a vowel triangle@.")*/
+//LIST_ITEM (U"• Manual page about @@drawing a vowel triangle@.")
+
+NORMAL (U"##6.0.18# (23 May 2016)")
+LIST_ITEM (U"• Windows: better dotted lines.")
+LIST_ITEM (U"• TextGrid window: again better automatic alignment.")
+NORMAL (U"##6.0.17# (21 April 2016)")
+LIST_ITEM (U"• TextGrid window: better automatic alignment.")
+NORMAL (U"##6.0.16# (5 April 2016)")
+LIST_ITEM (U"• Scripting: \"hashes\": variables can now be indexed with strings rather than only with numbers.")
+LIST_ITEM (U"• TextGrid window: fewer out-of-order messages in automatic alignment.")
+NORMAL (U"##6.0.15# (21 March 2016)")
+LIST_ITEM (U"• TextGrid window: removed a bug whereby Praat could do automatic alignment only on sounds sampled at 44.1 kHz.")
+LIST_ITEM (U"• TextGrid window: improved the location of the final boundary in automatic alignment.")
+LIST_ITEM (U"• Table window: added a preference for the interpretation of graphical style symbols (\\% \\# \\^ \\_ \\@ ).")
+NORMAL (U"##6.0.14# (11 February 2016)")
+LIST_ITEM (U"• Linux: corrected a bug by which the Tab short-cut for playing a sound would not work if the NumLock key was on.")
+LIST_ITEM (U"• Mac 64-bit: corrected a bug that could cause Praat to crash if the Tab key was pressed in a dialog window.")
+NORMAL (U"##6.0.13# (31 January 2016)")
+LIST_ITEM (U"• Windows: corrected a bug that could cause Praat to crash when closing a script window.")
+LIST_ITEM (U"• Mac 64-bit: progress bars with movies.")
+NORMAL (U"##6.0.12# (24 January 2016)")
+LIST_ITEM (U"• Windows 32-bit: corrected a bug that could cause Praat to crash when closing the Sound window after popping up dialog boxes.")
+LIST_ITEM (U"• Mac 64-bit: better $$demoShow()$.")
+LIST_ITEM (U"• Mac 64-bit: working Matrix movies and articulatory synthesizer movies.")
 NORMAL (U"##6.0.11# (18 January 2016)")
 LIST_ITEM (U"• Corrected a bug that could cause Praat to crash when drawing a Spectrum with undefined values.")
 LIST_ITEM (U"• Mac 64-bit: corrected a bug by which some text in the Sound window would sometimes not be drawn.")
-LIST_ITEM (U"• Mac 64-bit demo window: improved the working of demoShow().")
+LIST_ITEM (U"• Mac 64-bit demo window: improved the working of $$demoShow()$.")
 NORMAL (U"##6.0.10# (8 January 2016)")
 LIST_ITEM (U"• Corrected a bug that would cause Praat to crash when starting an ExperimentMFC window.")
 LIST_ITEM (U"• Mac 64-bit: corrected a bug that would cause black selections in the Sound window.")
@@ -37,7 +59,7 @@ NORMAL (U"##6.0.09# (1 January 2016)")
 LIST_ITEM (U"• Windows 64-bit: corrected a bug that could cause Praat to crash when closing the Sound window after popping up dialog boxes.")
 NORMAL (U"##6.0.08# (5 December 2015)")
 LIST_ITEM (U"• Windows command line: the $$--a$ option can be used when redirecting the output to pipes and files.")
-LIST_ITEM (U"• Linux command line: the $$--run$ option is not needed in the Terminal when directing output "
+LIST_ITEM (U"• Linux command line: the $$--run$ option is not needed in the Terminal when redirecting output "
 	"(unless you redirect standard output, standard input %and standard error).")
 NORMAL (U"##6.0.07# (30 November 2015)")
 LIST_ITEM (U"• Mac 64-bit: repaired dragging selections (which got broken in the El Capitan fix in 6.0.06).")
@@ -554,7 +576,7 @@ LIST_ITEM (U"• Scripting: support for arrays with multiple indexes.")
 LIST_ITEM (U"• Linux: made spectrogram drawing compatible with Ubuntu 10.10.")
 LIST_ITEM (U"• Linux: made sound more easily available on Ubuntu 10.10.")
 NORMAL (U"##5.2.01# (4 November 2010)")
-LIST_ITEM (U"• Scripting: support for numeric @@Scripting 5.6. Arrays|arrays@.")
+LIST_ITEM (U"• Scripting: support for numeric @@Scripting 5.6. Arrays and dictionaries|arrays@.")
 MAN_END
 
 MAN_BEGIN (U"What was new in 5.2?", U"ppgb", 20101029)
@@ -1814,7 +1836,7 @@ LIST_ITEM (U"PortAudio: Portable Audio Library by Ross Bencina, Phil Burk, Bjorn
 LIST_ITEM (U"Espeak: text-to-speech synthesizer by Jonathan Duddington (GPL).")
 LIST_ITEM (U"MAD: MPEG Audio Decoder by Underbit Technologies (GPL).")
 LIST_ITEM (U"FLAC: Free Lossless Audio Codec by Josh Coalson.")
-LIST_ITEM (U"fftpack: public domain Fourier transforms by Paul Swarztrauber and Monty.")
+LIST_ITEM (U"fftpack: public domain Fourier transforms by Paul Swarztrauber and Christopher Montgomery.")
 LIST_ITEM (U"LAPACK: public domain numeric algorithms by Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd., "
 	"Courant Institute, Argonne National Lab, and Rice University.")
 LIST_ITEM (U"Regular expressions by Henry Spencer, Mark Edel, Christopher Conrad, Eddy De Greef (GPL).")
@@ -3700,7 +3722,7 @@ LIST_ITEM (U"• @Artword: articulatory target specifications as functions of ti
 LIST_ITEM (U"• (@VocalTract: area function)")
 NORMAL (U"Neural net package:")
 LIST_ITEM (U"• @FFNet: feed-forward neural net")
-LIST_ITEM (U"• @Pattern")
+LIST_ITEM (U"• @PatternList")
 LIST_ITEM (U"• @Categories: for classification (#CategoriesEditor)")
 NORMAL (U"Numerical and statistical analysis:")
 LIST_ITEM (U"• @Eigen: eigenvectors and eigenvalues")

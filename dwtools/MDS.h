@@ -6,19 +6,18 @@
  *
  * Copyright (C) 1993-2011, 2015-2016 David Weenink, 2015 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -99,7 +98,7 @@ Thing_define (MDSVec, Daata) {
 	double *proximity;
 	long *iPoint, *jPoint;
 
-	void v_destroy ()
+	void v_destroy () noexcept
 		override;
 };
 
@@ -194,23 +193,22 @@ void Transformator_setNormalization (Transformator me, int normalization);
 autoDistance Transformator_transform (Transformator me, MDSVec vec, Distance dist, Weight w);
 
 Thing_define (ISplineTransformator, Transformator) {
-	// new data:
-	public:
-		long numberOfInteriorKnots, order, numberOfParameters;
-		double **m, *b, *knot;
-	// overridden methods:
-		virtual void v_destroy ();
-		virtual autoDistance v_transform (MDSVec vec, Distance dist, Weight w);
+	long numberOfInteriorKnots, order, numberOfParameters;
+	double **m, *b, *knot;
+
+	void v_destroy () noexcept
+		override;
+	autoDistance v_transform (MDSVec vec, Distance dist, Weight w)
+		override;
 };
 
 autoISplineTransformator ISplineTransformator_create (long numberOfPoints, long numberOfInteriorKnots, long order);
 
 Thing_define (RatioTransformator, Transformator) {
-	// new data:
-	public:
-		double ratio;
-	// overridden methods:
-		virtual autoDistance v_transform (MDSVec vec, Distance dist, Weight w);
+	double ratio;
+
+	autoDistance v_transform (MDSVec vec, Distance dist, Weight w)
+		override;
 };
 
 autoRatioTransformator RatioTransformator_create (long numberOfPoints);
@@ -261,7 +259,7 @@ Thing_define (Kruskal, Thing) {
 	double **dx;
 	autoMinimizer minimizer;
 
-	void v_destroy ()
+	void v_destroy () noexcept
 		override;
 };
 

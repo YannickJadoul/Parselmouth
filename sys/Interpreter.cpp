@@ -2,56 +2,18 @@
  *
  * Copyright (C) 1993-2011,2013,2014,2015 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-
-/*
- * pb 2002/03/07 GPL
- * pb 2002/03/25 option menus
- * pb 2002/06/04 include the script compiler
- * pb 2002/09/26 removed bug: crashed if a line in a form contained only the word "comment"
- * pb 2002/11/25 Melder_double
- * pb 2002/12/10 include files
- * pb 2002/12/14 more informative error messages
- * pb 2003/05/19 Melder_atof
- * pb 2003/07/15 assert
- * pb 2003/07/19 if undefined fails
- * pb 2004/10/16 C++ compatible structs
- * pb 2004/12/06 made Interpreter_getArgumentsFromDialog resistant to changes in the script while the dialog is up
- * pb 2005/01/01 there can be spaces before the "form" statement
- * pb 2005/11/26 allow mixing of "option" and "button", as in Ui.c
- * pb 2006/01/11 local variables
- * pb 2007/02/05 preferencesDirectory$, homeDirectory$, temporaryDirectory$
- * pb 2007/04/02 allow comments (with '#' or ';' or empty lines) in forms
- * pb 2007/04/19 allow comments with '!' in forms
- * pb 2007/05/24 some wchar
- * pb 2007/06/09 wchar
- * pb 2007/08/12 more wchar
- * pb 2007/11/30 removed bug: allowed long arguments to the "call" statement (thanks to Ingmar Steiner)
- * pb 2007/12/10 predefined numeric variables macintosh/windows/unix
- * pb 2008/04/30 new Formula API
- * pb 2008/05/01 arrays
- * pb 2008/05/15 praatVersion, praatVersion$
- * pb 2009/01/04 Interpreter_voidExpression
- * pb 2009/01/17 arguments to UiForm callbacks
- * pb 2009/01/20 pause forms
- * pb 2009/03/17 split up structPraat
- * pb 2009/12/22 invokingButtonTitle
- * pb 2010/04/30 guard against leading nonbreaking spaces
- * pb 2011/05/14 C++
- * pb 2015/05/30 char32
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <ctype.h>
@@ -79,7 +41,7 @@ extern structMelderDir praatDir;
 
 Thing_implement (InterpreterVariable, SimpleString, 0);
 
-void structInterpreterVariable :: v_destroy () {
+void structInterpreterVariable :: v_destroy () noexcept {
 	Melder_free (string);
 	Melder_free (stringValue);
 	NUMmatrix_free (numericArrayValue. data, 1, 1);
@@ -105,7 +67,7 @@ static autoInterpreterVariable InterpreterVariable_create (const char32 *key) {
 
 Thing_implement (Interpreter, Thing, 0);
 
-void structInterpreter :: v_destroy () {
+void structInterpreter :: v_destroy () noexcept {
 	Melder_free (our environmentName);
 	for (int ipar = 1; ipar <= Interpreter_MAXNUM_PARAMETERS; ipar ++)
 		Melder_free (our arguments [ipar]);
@@ -705,9 +667,7 @@ InterpreterVariable Interpreter_lookUpVariable (Interpreter me, const char32 *ke
 	 * The variable doesn't yet exist: create a new one.
 	 */
 	autoInterpreterVariable variable = InterpreterVariable_create (variableNameIncludingProcedureName);
-	InterpreterVariable variable_ref = variable.get();
-	my variables. addItem_move (variable.move());
-	return variable_ref;
+	return my variables. addItem_move (variable.move());
 	#endif
 }
 
@@ -1557,9 +1517,15 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								}
 								if (*p == U'\n' || *p == U'\0')
 									Melder_throw (U"Missing closing bracket (]) in indexed variable.");
-								double numericIndexValue;
-								Interpreter_numericExpression (me, index.string, & numericIndexValue);
-								MelderString_append (& indexedVariableName, numericIndexValue);
+								struct Formula_Result result;
+								Interpreter_anyExpression (me, index.string, & result);
+								if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
+									double numericIndexValue = result.result.numericResult;
+									MelderString_append (& indexedVariableName, numericIndexValue);
+								} else if (result.expressionType == kFormula_EXPRESSION_TYPE_STRING) {
+									MelderString_append (& indexedVariableName, U"\"", result.result.stringResult, U"\"");
+									Melder_free (result.result.stringResult);
+								}
 								MelderString_appendCharacter (& indexedVariableName, *p);
 								if (*p == U']') {
 									break;
@@ -1696,8 +1662,15 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								}
 								if (*p == U'\n' || *p == U'\0')
 									Melder_throw (U"Missing closing bracket (]) in indexed variable.");
-								Interpreter_numericExpression (me, index.string, & value);
-								MelderString_append (& indexedVariableName, value);
+								struct Formula_Result result;
+								Interpreter_anyExpression (me, index.string, & result);
+								if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
+									double numericIndexValue = result.result.numericResult;
+									MelderString_append (& indexedVariableName, numericIndexValue);
+								} else if (result.expressionType == kFormula_EXPRESSION_TYPE_STRING) {
+									MelderString_append (& indexedVariableName, U"\"", result.result.stringResult, U"\"");
+									Melder_free (result.result.stringResult);
+								}
 								MelderString_appendCharacter (& indexedVariableName, *p);
 								if (*p == ']') {
 									break;

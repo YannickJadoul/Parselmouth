@@ -1,20 +1,19 @@
 /* DataEditor.cpp
  *
- * Copyright (C) 1995-2012,2015 Paul Boersma
+ * Copyright (C) 1995-2012,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #define NAME_X  30
@@ -64,7 +63,7 @@ static inline const char32 * strip_d (const char32 *s) {
 
 Thing_implement (DataSubEditor, Editor, 0);
 
-void structDataSubEditor :: v_destroy () {
+void structDataSubEditor :: v_destroy () noexcept {
 	for (int i = 1; i <= kDataSubEditor_MAXNUM_ROWS; i ++)
 		Melder_free (d_fieldData [i]. history);
 	if (our root)
@@ -115,7 +114,7 @@ static void gui_button_cb_change (DataSubEditor me, GuiButtonEvent /* event */) 
 		#elif gtk
 			gboolean visible;
 			g_object_get (G_OBJECT (my d_fieldData [irow]. text), "visible", & visible, nullptr);
-		#elif defined (macintosh) && ! useCarbon
+		#elif defined (macintosh)
 			bool visible = ! [(GuiCocoaTextField *) my d_fieldData [irow]. text -> d_widget   isHidden];
 		#else
 			bool visible = false;
@@ -512,7 +511,7 @@ static void StructEditor_init (StructEditor me, DataEditor root, const char32 *t
 static void StructEditor_create (DataEditor root, const char32 *title, void *address, Data_Description description) {
 	try {
 		autoStructEditor me = Thing_new (StructEditor);
-		StructEditor_init (me.peek(), root, title, address, description);
+		StructEditor_init (me.get(), root, title, address, description);
 		return me.releaseToUser();
 	} catch (MelderError) {
 		Melder_throw (U"Struct inspector window not created.");
@@ -619,7 +618,7 @@ static void VectorEditor_create (DataEditor root, const char32 *title, void *add
 		autoVectorEditor me = Thing_new (VectorEditor);
 		my d_minimum = minimum;
 		my d_maximum = maximum;
-		DataSubEditor_init (me.peek(), root, title, address, description);
+		DataSubEditor_init (me.get(), root, title, address, description);
 		return me.releaseToUser();
 	} catch (MelderError) {
 		Melder_throw (U"Vector inspector window not created.");
@@ -680,7 +679,7 @@ static void MatrixEditor_create (DataEditor root, const char32 *title, void *add
 		my d_maximum = max1;
 		my d_min2 = min2;
 		my d_max2 = max2;
-		DataSubEditor_init (me.peek(), root, title, address, description);
+		DataSubEditor_init (me.get(), root, title, address, description);
 		return me.releaseToUser();
 	} catch (MelderError) {
 		Melder_throw (U"Matrix inspector window not created.");
@@ -718,7 +717,7 @@ static void ClassEditor_init (ClassEditor me, DataEditor root, const char32 *tit
 static void ClassEditor_create (DataEditor root, const char32 *title, void *address, Data_Description description) {
 	try {
 		autoClassEditor me = Thing_new (ClassEditor);
-		ClassEditor_init (me.peek(), root, title, address, description);
+		ClassEditor_init (me.get(), root, title, address, description);
 		return me.releaseToUser();
 	} catch (MelderError) {
 		Melder_throw (U"Class inspector window not created.");
@@ -754,7 +753,7 @@ static void DataEditor_destroyAllChildren (DataEditor me) {
 
 			Second, we make the child forget the parent,
 			so that the child won't try to remove the reference
-			that the parent has to her:
+			that the parent had to her (but no longer has):
 		*/
 		child -> root = nullptr;
 		/*
@@ -778,8 +777,7 @@ static void DataEditor_destroyAllChildren (DataEditor me) {
 	}
 }
 
-void structDataEditor :: v_destroy ()
-{
+void structDataEditor :: v_destroy () noexcept {
 	DataEditor_destroyAllChildren (this);
 	DataEditor_Parent :: v_destroy ();
 }
@@ -806,7 +804,7 @@ autoDataEditor DataEditor_create (const char32 *title, Daata data) {
 		if (Class_getDescription (klas) == nullptr)
 			Melder_throw (U"Class ", klas -> className, U" cannot be inspected.");
 		autoDataEditor me = Thing_new (DataEditor);
-		ClassEditor_init (me.peek(), me.peek(), title, data, Class_getDescription (klas));
+		ClassEditor_init (me.get(), me.get(), title, data, Class_getDescription (klas));
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Inspector window not created.");
