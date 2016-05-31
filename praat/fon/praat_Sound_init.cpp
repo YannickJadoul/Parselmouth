@@ -1,20 +1,19 @@
 /* praat_Sound_init.cpp
  *
- * Copyright (C) 1992-2012,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2012,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "praat.h"
@@ -476,9 +475,9 @@ DIRECT2 (Sounds_concatenateRecoverably) {
 		}
 		iinterval ++;
 		if (iinterval > 1) {
-			TextGrid_insertBoundary (him.peek(), 1, tmin);
+			TextGrid_insertBoundary (him.get(), 1, tmin);
 		}
-		TextGrid_setIntervalText (him.peek(), 1, iinterval, my name);
+		TextGrid_setIntervalText (him.get(), 1, iinterval, my name);
 		nx += my nx;
 		tmin = tmax;
 	}
@@ -584,7 +583,7 @@ static void common_Sound_create (UiForm dia, Interpreter interpreter, bool allow
 			throw;   // unexpected error; wait for generic message
 		}
 	}
-	Matrix_formula ((Matrix) sound.peek(), GET_STRING (U"formula"), interpreter, nullptr);
+	Matrix_formula (sound.get(), GET_STRING (U"formula"), interpreter, nullptr);
 	praat_new (sound.move(), GET_STRING (U"Name"));
 	//praat_updateSelection ();
 }
@@ -655,7 +654,7 @@ END2 }
 FORM (old_Sounds_crossCorrelate, U"Cross-correlate (short)", nullptr) {
 	REAL (U"From lag (s)", U"-0.1")
 	REAL (U"To lag (s)", U"0.1")
-	BOOLEAN (U"Normalize", 1)
+	BOOLEAN (U"Normalize", true)
 	OK2
 DO
 	Sound s1 = nullptr, s2 = nullptr;
@@ -719,7 +718,7 @@ FORM (old_Sound_draw, U"Sound: Draw", nullptr) {
 	REAL (U"right Time range", U"0.0 (= all)")
 	REAL (U"left Vertical range", U"0.0")
 	REAL (U"right Vertical range", U"0.0 (= auto)")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	OK2
 DO
 	autoPraatPicture picture;
@@ -735,7 +734,7 @@ FORM (Sound_draw, U"Sound: Draw", nullptr) {
 	REAL (U"right Time range", U"0.0 (= all)")
 	REAL (U"left Vertical range", U"0.0")
 	REAL (U"right Vertical range", U"0.0 (= auto)")
-	BOOLEAN (U"Garnish", 1)
+	BOOLEAN (U"Garnish", true)
 	LABEL (U"", U"")
 	OPTIONMENU (U"Drawing method", 1)
 		OPTION (U"Curve")
@@ -778,7 +777,7 @@ DIRECT2 (Sound_edit) {
 	LOOP {
 		iam (Sound);
 		autoSoundEditor editor = SoundEditor_create (ID_AND_FULL_NAME, me);
-		Editor_setPublicationCallback (editor.peek(), cb_SoundEditor_publication);
+		Editor_setPublicationCallback (editor.get(), cb_SoundEditor_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
 	}
@@ -1428,7 +1427,7 @@ FORM_READ2 (Sound_readSeparateChannelsFromSoundFile, U"Read separate channels fr
 		*lastPeriod = U'\0';
 	}
 	for (long ichan = 1; ichan <= sound -> ny; ichan ++) {
-		autoSound thee = Sound_extractChannel (sound.peek(), ichan);
+		autoSound thee = Sound_extractChannel (sound.get(), ichan);
 		praat_new (thee.move(), name, U"_ch", ichan);
 	}
 END2 }
@@ -2034,7 +2033,7 @@ DO
 END2 }
 
 FORM (Sound_to_Spectrum, U"Sound: To Spectrum", U"Sound: To Spectrum...") {
-	BOOLEAN (U"Fast", 1)
+	BOOLEAN (U"Fast", true)
 	OK2
 DO
 	LOOP {
@@ -2245,7 +2244,7 @@ FORM_WRITE2 (Sound_writeToStereoAifcFile, U"Save as stereo AIFC file", nullptr, 
 		list. addItem_ref (me);
 	}
 	autoSound stereo = Sounds_combineToStereo (& list);
-	Sound_writeToAudioFile (stereo.peek(), file, Melder_AIFC, 16);
+	Sound_writeToAudioFile (stereo.get(), file, Melder_AIFC, 16);
 END2 }
 
 FORM_WRITE2 (Sound_writeToStereoAiffFile, U"Save as stereo AIFF file", nullptr, U"aiff") {
@@ -2255,7 +2254,7 @@ FORM_WRITE2 (Sound_writeToStereoAiffFile, U"Save as stereo AIFF file", nullptr, 
 		list. addItem_ref (me);
 	}
 	autoSound stereo = Sounds_combineToStereo (& list);
-	Sound_writeToAudioFile (stereo.peek(), file, Melder_AIFF, 16);
+	Sound_writeToAudioFile (stereo.get(), file, Melder_AIFF, 16);
 END2 }
 
 FORM_WRITE2 (Sound_writeToStereoNextSunFile, U"Save as stereo NeXT/Sun file", nullptr, U"au") {
@@ -2265,7 +2264,7 @@ FORM_WRITE2 (Sound_writeToStereoNextSunFile, U"Save as stereo NeXT/Sun file", nu
 		list. addItem_ref (me);
 	}
 	autoSound stereo = Sounds_combineToStereo (& list);
-	Sound_writeToAudioFile (stereo.peek(), file, Melder_NEXT_SUN, 16);
+	Sound_writeToAudioFile (stereo.get(), file, Melder_NEXT_SUN, 16);
 END2 }
 
 FORM_WRITE2 (Sound_writeToStereoNistFile, U"Save as stereo NIST file", nullptr, U"nist") {
@@ -2275,7 +2274,7 @@ FORM_WRITE2 (Sound_writeToStereoNistFile, U"Save as stereo NIST file", nullptr, 
 		list. addItem_ref (me);
 	}
 	autoSound stereo = Sounds_combineToStereo (& list);
-	Sound_writeToAudioFile (stereo.peek(), file, Melder_NIST, 16);
+	Sound_writeToAudioFile (stereo.get(), file, Melder_NIST, 16);
 END2 }
 
 FORM_WRITE2 (Sound_writeToStereoFlacFile, U"Save as stereo FLAC file", nullptr, U"flac") {
@@ -2285,7 +2284,7 @@ FORM_WRITE2 (Sound_writeToStereoFlacFile, U"Save as stereo FLAC file", nullptr, 
 		list. addItem_ref (me);
 	}
 	autoSound stereo = Sounds_combineToStereo (& list);
-	Sound_writeToAudioFile (stereo.peek(), file, Melder_FLAC, 16);
+	Sound_writeToAudioFile (stereo.get(), file, Melder_FLAC, 16);
 END2 }
 
 FORM_WRITE2 (Sound_writeToStereoWavFile, U"Save as stereo WAV file", nullptr, U"wav") {
@@ -2295,7 +2294,7 @@ FORM_WRITE2 (Sound_writeToStereoWavFile, U"Save as stereo WAV file", nullptr, U"
 		list. addItem_ref (me);
 	}
 	autoSound stereo = Sounds_combineToStereo (& list);
-	Sound_writeToAudioFile (stereo.peek(), file, Melder_WAV, 16);
+	Sound_writeToAudioFile (stereo.get(), file, Melder_WAV, 16);
 END2 }
 
 FORM_WRITE2 (Sound_writeToSunAudioFile, U"Save as NeXT/Sun file", nullptr, U"au") {

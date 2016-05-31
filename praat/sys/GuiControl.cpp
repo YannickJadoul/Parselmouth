@@ -2,19 +2,18 @@
  *
  * Copyright (C) 1993-2012,2013,2015 Paul Boersma, 2008 Stefan de Koninck, 2010 Franz Brausse, 2013 Tom Naughton
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "GuiP.h"
@@ -148,6 +147,8 @@ int GuiControl_getX (GuiControl me) {
 		return [(NSView *) my d_widget frame]. origin. x;
 	#elif motif
 		return my d_widget -> x;
+	#else
+		return 0;
 	#endif
 }
 
@@ -158,6 +159,8 @@ int GuiControl_getY (GuiControl me) {
 		return [(NSView *) my d_widget frame]. origin. y;
 	#elif motif
 		return my d_widget -> y;
+	#else
+		return 0;
 	#endif
 }
 
@@ -168,6 +171,8 @@ int GuiControl_getWidth (GuiControl me) {
 		return [(NSView *) my d_widget frame]. size. width;
 	#elif motif
 		return my d_widget -> width;
+	#else
+		return 0;
 	#endif
 }
 
@@ -178,6 +183,8 @@ int GuiControl_getHeight (GuiControl me) {
 		return [(NSView *) my d_widget frame]. size. height;
 	#elif motif
 		return my d_widget -> height;
+	#else
+		return 0;
 	#endif
 }
 

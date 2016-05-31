@@ -1,20 +1,19 @@
 /* Formula.cpp
  *
- * Copyright (C) 1992-2011,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2011,2013,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <ctype.h>
@@ -3053,9 +3052,13 @@ static void do_indexedNumericVariable () {
 	w -= nindex;
 	for (int iindex = 1; iindex <= nindex; iindex ++) {
 		Stackel index = & theStack [w + iindex];
-		if (index -> which != Stackel_NUMBER)
-			Melder_throw (U"In indexed variables, the index has to be a number, not ", Stackel_whichText (index), U".");
-		MelderString_append (& totalVariableName, index -> number, iindex == nindex ? U"]" : U",");
+		if (index -> which == Stackel_NUMBER) {
+			MelderString_append (& totalVariableName, index -> number, iindex == nindex ? U"]" : U",");
+		} else if (index -> which == Stackel_STRING) {
+			MelderString_append (& totalVariableName, U"\"", index -> string, U"\"", iindex == nindex ? U"]" : U",");
+		} else {
+			Melder_throw (U"In indexed variables, the index has to be a number or a string, not ", Stackel_whichText (index), U".");
+		}
 	}
 	InterpreterVariable var = Interpreter_hasVariable (theInterpreter, totalVariableName.string);
 	if (! var)
@@ -3074,9 +3077,13 @@ static void do_indexedStringVariable () {
 	w -= nindex;
 	for (int iindex = 1; iindex <= nindex; iindex ++) {
 		Stackel index = & theStack [w + iindex];
-		if (index -> which != Stackel_NUMBER)
-			Melder_throw (U"In indexed variables, the index has to be a number, not ", Stackel_whichText (index), U".");
-		MelderString_append (& totalVariableName, index -> number, iindex == nindex ? U"]" : U",");
+		if (index -> which == Stackel_NUMBER) {
+			MelderString_append (& totalVariableName, index -> number, iindex == nindex ? U"]" : U",");
+		} else if (index -> which == Stackel_STRING) {
+			MelderString_append (& totalVariableName, U"\"", index -> string, U"\"", iindex == nindex ? U"]" : U",");
+		} else {
+			Melder_throw (U"In indexed variables, the index has to be a number or a string, not ", Stackel_whichText (index), U".");
+		}
 	}
 	InterpreterVariable var = Interpreter_hasVariable (theInterpreter, totalVariableName.string);
 	if (! var)
@@ -4921,12 +4928,12 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 	pushNumber (1.0);
 } break; case FALSE_: {
 	pushNumber (0.0);
-/* Possible compiler BUG: many compilers cannot handle the following assignment. */
-/* Those compilers have trouble with praat's AND and OR. */
 } break; case IFTRUE_: {
 	Stackel condition = pop;
 	if (condition->which == Stackel_NUMBER) {
 		if (condition->number != 0.0) {
+/* Possible compiler BUG: some compilers cannot handle the following assignment. */
+/* Those compilers will have trouble with praat's AND and OR. */
 			programPointer = f [programPointer]. content.label - theOptimize;
 		}
 	} else {

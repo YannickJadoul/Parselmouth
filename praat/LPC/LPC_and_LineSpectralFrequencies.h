@@ -1,8 +1,8 @@
-#ifndef _Discriminant_Pattern_Categories_h_
-#define _Discriminant_Pattern_Categories_h_
-/* Discriminant_Pattern_Categories.h
+#ifndef _LPC_and_LineSpectralFrequencies_h_
+#define _LPC_and_LineLineSpectralFrequencies_h_
+/* LPC_and_LineLineSpectralFrequencies.h
  *
- * Copyright (C) 2004-2011, 2015 David Weenink
+ * Copyright (C) 2016 David Weenink
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,23 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- djmw 20040422 Initial version
- djmw 20110307 Latest modification
-*/
+#include "LPC.h"
+#include "LineSpectralFrequencies.h"
 
-#ifndef _Discriminant_h_
-	#include "Discriminant.h"
-#endif
-#ifndef _Pattern_h_
-	#include "Pattern.h"
-#endif
-#ifndef _Categories_h_	
-	#include "Categories.h"
-#endif
+autoLineSpectralFrequencies LPC_to_LineSpectralFrequencies (LPC me, double gridSize);
 
-autoDiscriminant Pattern_and_Categories_to_Discriminant (Pattern me, Categories thee);
+autoLPC LineSpectralFrequencies_to_LPC (LineSpectralFrequencies me);
 
-autoCategories Discriminant_and_Pattern_to_Categories (Discriminant me, Pattern thee, int poolCovarianceMatrices, int useAprioriProbabilities);
 
-#endif /* _Discriminant_Pattern_Categories_h_ */
+#endif /* _LPC_and_LineSpectralFrequencies_h_ */

@@ -1,20 +1,19 @@
 /* HyperPage.cpp
  *
- * Copyright (C) 1996-2011,2012,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1996-2011,2012,2013,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <ctype.h>
@@ -49,7 +48,7 @@ Thing_implement (HyperLink, Daata, 0);
 
 autoHyperLink HyperLink_create (const char32 *name, double x1DC, double x2DC, double y1DC, double y2DC) {
 	autoHyperLink me = Thing_new (HyperLink);
-	Thing_setName (me.peek(), name);
+	Thing_setName (me.get(), name);
 	my x1DC = x1DC, my x2DC = x2DC, my y1DC = y1DC, my y2DC = y2DC;
 	return me;
 }
@@ -588,7 +587,7 @@ static void print (void *void_me, Graphics graphics) {
 
 /********** class HyperPage **********/
 
-void structHyperPage :: v_destroy () {
+void structHyperPage :: v_destroy () noexcept {
 	Melder_free (our entryHint);
 	for (int i = 0; i < 20; i ++) Melder_free (our history [i]. page);
 	Melder_free (our currentPageTitle);

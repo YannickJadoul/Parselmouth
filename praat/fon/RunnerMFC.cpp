@@ -1,20 +1,19 @@
 /* RunnerMFC.cpp
  *
- * Copyright (C) 2001-2011,2013,2015 Paul Boersma
+ * Copyright (C) 2001-2011,2013,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -34,7 +33,7 @@
 
 Thing_implement (RunnerMFC, Editor, 0);
 
-void structRunnerMFC :: v_destroy () {
+void structRunnerMFC :: v_destroy () noexcept {
 	our RunnerMFC_Parent :: v_destroy ();
 }
 
@@ -439,17 +438,17 @@ void structRunnerMFC :: v_createChildren () {
 autoRunnerMFC RunnerMFC_create (const char32 *title, autoExperimentMFCList experiments) {
 	try {
 		autoRunnerMFC me = Thing_new (RunnerMFC);
-		Editor_init (me.peek(), 0, 0, 2000, 2000, title, nullptr);
+		Editor_init (me.get(), 0, 0, 2000, 2000, title, nullptr);
 		my experiments = experiments.move();
 		my graphics = Graphics_create_xmdrawingarea (my d_drawingArea);
 
 struct structGuiDrawingArea_ResizeEvent event { my d_drawingArea, 0 };
 event. width  = GuiControl_getWidth  (my d_drawingArea);
 event. height = GuiControl_getHeight (my d_drawingArea);
-gui_drawingarea_cb_resize (me.peek(), & event);
+gui_drawingarea_cb_resize (me.get(), & event);
 
 		my iexperiment = 1;
-		RunnerMFC_startExperiment (me.peek());
+		RunnerMFC_startExperiment (me.get());
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Experiment window not created.");

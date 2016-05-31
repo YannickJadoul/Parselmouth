@@ -1,20 +1,19 @@
-/* FFNet_Activation_Categories.cpp
+/* FFNet_ActivationList_Categories.cpp
  *
- * Copyright (C) 1997-2011, 2015 David Weenink
+ * Copyright (C) 1997-2011, 2015-2016 David Weenink
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,7 +23,7 @@
  djmw 20071014 Melder_error<n>
 */
 
-#include "FFNet_Activation_Categories.h"
+#include "FFNet_ActivationList_Categories.h"
 
 static long winnerTakesAll (FFNet me, const double activation[]) {
 	long pos = 1;
@@ -53,7 +52,7 @@ static long stochastic (FFNet me, const double activation[]) {
 	return i;
 }
 
-autoCategories FFNet_Activation_to_Categories (FFNet me, Activation activation, int labeling) {
+autoCategories FFNet_ActivationList_to_Categories (FFNet me, ActivationList activation, int labeling) {
 	try {
 		long (*labelingFunction) (FFNet me, const double act[]);
 
@@ -76,22 +75,22 @@ autoCategories FFNet_Activation_to_Categories (FFNet me, Activation activation, 
 	}
 }
 
-autoActivation FFNet_Categories_to_Activation (FFNet me, Categories thee) {
+autoActivationList FFNet_Categories_to_ActivationList (FFNet me, Categories thee) {
 	try {
 		autoCategories uniq = Categories_selectUniqueItems (thee);
 
 		if (! my outputCategories) {
 			Melder_throw (U"The FFNet does not have categories.");
 		}
-		long nl = OrderedOfString_isSubsetOf (uniq.peek(), my outputCategories.peek(), 0);
+		long nl = OrderedOfString_isSubsetOf (uniq.get(), my outputCategories.get(), 0);
 		if (nl == 0) {
 			Melder_throw (U"The Categories do not match the categories of the FFNet.");
 		}
 
-		autoActivation him = Activation_create (thy size, my nOutputs);
+		autoActivationList him = ActivationList_create (thy size, my nOutputs);
 		for (long i = 1; i <= thy size; i ++) {
 			const char32 *citem = OrderedOfString_itemAtIndex_c (thee, i);
-			long pos = OrderedOfString_indexOfItem_c (my outputCategories.peek(), citem);
+			long pos = OrderedOfString_indexOfItem_c (my outputCategories.get(), citem);
 			if (pos < 1) {
 				Melder_throw (U"The FFNet doesn't know the category ", citem, U".");
 			}
@@ -99,8 +98,8 @@ autoActivation FFNet_Categories_to_Activation (FFNet me, Categories thee) {
 		}
 		return him;
 	} catch (MelderError) {
-		Melder_throw (me, U": no Activation created.");
+		Melder_throw (me, U": no ActivationList created.");
 	}
 }
 
-/* End of file FFNet_Activation_Categories.cpp */
+/* End of file FFNet_ActivationList_Categories.cpp */

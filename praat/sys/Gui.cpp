@@ -1,32 +1,19 @@
 /* Gui.cpp
  *
- * Copyright (C) 1992-2011,2012 Paul Boersma
+ * Copyright (C) 1992-2011,2012,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-
-/*
- * pb 2002/03/07 GPL
- * pb 2002/03/11 Mach
- * pb 2004/10/21 on Unix, Ctrl becomes the command key
- * pb 2007/06/09 wchar
- * pb 2007/12/13 Gui
- * sdk 2008/02/08 GTK
- * sdk 2008/03/24 GDK
- * pb 2010/11/29 removed explicit Motif
- * pb 2011/04/06 C++
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "GuiP.h"
@@ -52,7 +39,7 @@ int Gui_getResolution (GuiObject widget) {
 		#elif gtk
 			resolution = gdk_screen_get_resolution (gdk_display_get_default_screen (gtk_widget_get_display (GTK_WIDGET (widget))));
 		#else
-			Melder_fatal ("Gui_getResolution: unknown platform.");
+			Melder_fatal (U"Gui_getResolution: unknown platform.");
 		#endif
 	}
 	return 100;   // in conformance with most other applications; and so that fonts always look the same size in the Demo window
@@ -75,27 +62,14 @@ void GuiGtk_initialize () {
 
 void Gui_getWindowPositioningBounds (double *x, double *y, double *width, double *height) {
 	#if defined (macintosh)
-		#if useCarbon
-			HIRect rect;
-			HIWindowGetAvailablePositioningBounds (kCGNullDirectDisplay, kHICoordSpaceScreenPixel, & rect);
-			if (x) *x = rect. origin. x;
-			if (y) *y = rect. origin. y;
-			if (width) *width = rect. size. width;
-			if (height) *height = rect. size. height - 22;   // subtract title bar height (or is it the menu height?)
-		#else
-    
-            NSRect rect;
-            NSArray *screenArray = [NSScreen screens];
-            NSInteger screenCount = [screenArray count];
-            NSInteger index  = 0;
-            
-            for (index = 0; index < screenCount; index++)
-            {
-                NSScreen *screen = [screenArray objectAtIndex: index];
-                rect = [screen visibleFrame];
-            }
-        
-		#endif
+		NSRect rect;
+		NSArray *screenArray = [NSScreen screens];
+		NSInteger screenCount = [screenArray count];
+		NSInteger index = 0;
+		for (index = 0; index < screenCount; index ++) {
+			NSScreen *screen = [screenArray objectAtIndex: index];
+			rect = [screen visibleFrame];
+		}
 		if (x) *x = rect. origin. x;
 		if (y) *y = rect. origin. y;
 		if (width) *width = rect. size. width;
@@ -133,7 +107,7 @@ void Gui_getWindowPositioningBounds (double *x, double *y, double *width, double
 		if (y) *y = 0;
 		if (width) *width = gdk_screen_get_width (screen);
 		if (height) *height = gdk_screen_get_height (screen);
-	#elif ! defined (NO_GRAPHICS)
+	#elif defined (UNIX) && ! defined (NO_GRAPHICS)
 		if (x) *x = 0;
 		if (y) *y = 0;
 		if (width) *width = WidthOfScreen (DefaultScreenOfDisplay (XtDisplay (parent)));

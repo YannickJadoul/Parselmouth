@@ -1,20 +1,19 @@
 /* praat_picture.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "praatP.h"
@@ -506,7 +505,7 @@ static void DO_Picture_writeToPdfFile (UiForm sendingForm, int /* narg */, Stack
 			try {
 				//autoPraatPicture picture;
 				autoGraphics graphics = Graphics_create_pdffile (file, 300, NUMundefined, 10.24, NUMundefined, 7.68);
-				Graphics_play (GRAPHICS, graphics.peek());
+				Graphics_play (GRAPHICS, graphics.get());
 			} catch (MelderError) {
 				Melder_throw (U"Picture not written to PDF file ", file, U".");
 			}
@@ -530,7 +529,7 @@ static void DO_Picture_writeToPngFile_300 (UiForm sendingForm, int /* narg */, S
 		} else {
 			try {
 				autoGraphics graphics = Graphics_create_pngfile (file, 300, 0.0, 10.24, 0.0, 7.68);
-				Graphics_play (GRAPHICS, graphics.peek());
+				Graphics_play (GRAPHICS, graphics.get());
 			} catch (MelderError) {
 				Melder_throw (U"Picture not written to PNG file ", file, U".");
 			}
@@ -554,7 +553,7 @@ static void DO_Picture_writeToPngFile_600 (UiForm sendingForm, int /* narg */, S
 		} else {
 			try {
 				autoGraphics graphics = Graphics_create_pngfile (file, 600, 0.0, 10.24, 0.0, 7.68);
-				Graphics_play (GRAPHICS, graphics.peek());
+				Graphics_play (GRAPHICS, graphics.get());
 			} catch (MelderError) {
 				Melder_throw (U"Picture not written to PNG file ", file, U".");
 			}
@@ -773,7 +772,7 @@ DO
 	function -> nx = n;
 	function -> x1 = fromX;
 	function -> dx = (toX - fromX) / (n - 1);
-	Formula_compile (interpreter, function.peek(), formula, kFormula_EXPRESSION_TYPE_NUMERIC, true);
+	Formula_compile (interpreter, function.get(), formula, kFormula_EXPRESSION_TYPE_NUMERIC, true);
 	for (long i = 1; i <= n; i ++) {
 		struct Formula_Result result;
 		Formula_run (1, i, & result);
@@ -971,7 +970,7 @@ DIRECT (DrawInnerBox) {
 } END
 
 FORM (Text_left, U"Praat picture: Text left", U"Text left/right/top/bottom...") {
-	BOOLEAN (U"Far", 1)
+	BOOLEAN (U"Far", true)
 	TEXTFIELD (U"text", U"")
 OK2
 DO
@@ -980,7 +979,7 @@ DO
 END2 }
 
 FORM (Text_right, U"Praat picture: Text right", U"Text left/right/top/bottom...") {
-	BOOLEAN (U"Far", 1)
+	BOOLEAN (U"Far", true)
 	TEXTFIELD (U"text", U"")
 OK2
 DO
@@ -989,7 +988,7 @@ DO
 END2 }
 
 FORM (Text_top, U"Praat picture: Text top", U"Text left/right/top/bottom...") {
-	BOOLEAN (U"Far", 0)
+	BOOLEAN (U"Far", false)
 	TEXTFIELD (U"text", U"")
 OK2
 DO
@@ -998,7 +997,7 @@ DO
 END2 }
 
 FORM (Text_bottom, U"Praat picture: Text bottom", U"Text left/right/top/bottom...") {
-	BOOLEAN (U"Far", 1)
+	BOOLEAN (U"Far", true)
 	TEXTFIELD (U"text", U"")
 OK2
 DO
@@ -1009,9 +1008,9 @@ END2 }
 static void dia_marksEvery (UiForm dia) {
 	POSITIVE (U"Units", U"1.0")
 	POSITIVE (U"Distance", U"0.1")
-	BOOLEAN (U"Write numbers", 1)
-	BOOLEAN (U"Draw ticks", 1)
-	BOOLEAN (U"Draw dotted lines", 1)
+	BOOLEAN (U"Write numbers", true)
+	BOOLEAN (U"Draw ticks", true)
+	BOOLEAN (U"Draw dotted lines", true)
 }
 static void do_marksEvery (UiForm dia, void (*Graphics_marksEvery) (Graphics, double, double, bool, bool, bool)) {
 	autoPraatPicture picture;
@@ -1030,9 +1029,9 @@ FORM (Marks_top_every, U"Praat picture: Marks top every...", U"Marks left/right/
 
 static void dia_marks (UiForm dia) {
 	NATURAL (U"Number of marks", U"6")
-	BOOLEAN (U"Write numbers", 1)
-	BOOLEAN (U"Draw ticks", 1)
-	BOOLEAN (U"Draw dotted lines", 1)
+	BOOLEAN (U"Write numbers", true)
+	BOOLEAN (U"Draw ticks", true)
+	BOOLEAN (U"Draw dotted lines", true)
 }
 static void do_marks (UiForm dia, void (*Graphics_marks) (Graphics, int, bool, bool, bool)) {
 	long numberOfMarks = GET_INTEGER (U"Number of marks");
@@ -1052,9 +1051,9 @@ FORM (Marks_top, U"Praat picture: Marks top", U"Marks left/right/top/bottom...")
 
 static void dia_marksLogarithmic (UiForm dia) {
 	NATURAL (U"Marks per decade", U"3")
-	BOOLEAN (U"Write numbers", 1)
-	BOOLEAN (U"Draw ticks", 1)
-	BOOLEAN (U"Draw dotted lines", 1)
+	BOOLEAN (U"Write numbers", true)
+	BOOLEAN (U"Draw ticks", true)
+	BOOLEAN (U"Draw dotted lines", true)
 }
 static void do_marksLogarithmic (UiForm dia, void (*Graphics_marksLogarithmic) (Graphics, int, bool, bool, bool)) {
 	long numberOfMarksPerDecade = GET_INTEGER (U"Marks per decade");
@@ -1079,9 +1078,9 @@ static void sortBoundingBox (double *x1WC, double *x2WC, double *y1WC, double *y
 
 static void dia_oneMark (UiForm dia) {
 	REAL (U"Position", U"0.0")
-	BOOLEAN (U"Write number", 1)
-	BOOLEAN (U"Draw tick", 1)
-	BOOLEAN (U"Draw dotted line", 1)
+	BOOLEAN (U"Write number", true)
+	BOOLEAN (U"Draw tick", true)
+	BOOLEAN (U"Draw dotted line", true)
 	LABEL (U"", U"Draw text:")
 	TEXTFIELD (U"text", U"")
 }
@@ -1385,7 +1384,7 @@ DIRECT (Picture_settings_report) {
 		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
 		Graphics_inqWsWindow (GRAPHICS, & x1wNDC, & x2wNDC, & y1wNDC, & y2wNDC);
 		double wDC = (x2DC - x1DC) / (x2wNDC - x1wNDC);
-		double hDC = abs (y2DC - y1DC) / (y2wNDC - y1wNDC);
+		double hDC = labs (y2DC - y1DC) / (y2wNDC - y1wNDC);
 		xmargin *= Graphics_getResolution (GRAPHICS) / wDC;
 		ymargin *= Graphics_getResolution (GRAPHICS) / hDC;
 	}

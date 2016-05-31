@@ -1,20 +1,19 @@
 /* Editor.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
+ * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <time.h>
@@ -42,7 +41,7 @@ Thing_implement (Editor, Thing, 0);
 
 Thing_implement (EditorCommand, Thing, 0);
 
-void structEditorCommand :: v_destroy () {
+void structEditorCommand :: v_destroy () noexcept {
 	Melder_free (our itemTitle);
 	Melder_free (our script);
 	EditorCommand_Parent :: v_destroy ();
@@ -52,7 +51,7 @@ void structEditorCommand :: v_destroy () {
 
 Thing_implement (EditorMenu, Thing, 0);
 
-void structEditorMenu :: v_destroy () {
+void structEditorMenu :: v_destroy () noexcept {
 	Melder_free (our menuTitle);
 	EditorMenu_Parent :: v_destroy ();
 }
@@ -83,7 +82,7 @@ GuiMenuItem EditorMenu_addCommand (EditorMenu me, const char32 *itemTitle /* cat
 	thy itemWidget =
 		! commandCallback ? GuiMenu_addSeparator (my menuWidget) :
 		flags & Editor_HIDDEN ? nullptr :
-		GuiMenu_addItem (my menuWidget, itemTitle, flags, commonCallback, thee.peek());   // DANGLE BUG: me can be killed by Collection_addItem(), but EditorCommand::destroy doesn't remove the item
+		GuiMenu_addItem (my menuWidget, itemTitle, flags, commonCallback, thee.get());   // DANGLE BUG: me can be killed by Collection_addItem(), but EditorCommand::destroy doesn't remove the item
 	thy commandCallback = commandCallback;
 	GuiMenuItem result = thy itemWidget;
 	my commands. addItem_move (thee.move());
@@ -97,9 +96,7 @@ EditorMenu Editor_addMenu (Editor me, const char32 *menuTitle, long flags) {
 	thy d_editor = me;
 	thy menuTitle = Melder_dup (menuTitle);
 	thy menuWidget = GuiMenu_createInWindow (my d_windowForm, menuTitle, flags);
-	EditorMenu result = thee.peek();
-	my menus. addItem_move (thee.move());
-	return result;
+	return my menus. addItem_move (thee.move());
 }
 
 /*GuiObject EditorMenu_getMenuWidget (EditorMenu me) { return my menuWidget; }*/
@@ -137,7 +134,7 @@ GuiMenuItem Editor_addCommandScript (Editor me, const char32 *menuTitle, const c
 			cmd -> menu = menu;
 			cmd -> itemTitle = Melder_dup_f (itemTitle);
 			cmd -> itemWidget = script == nullptr ? GuiMenu_addSeparator (menu -> menuWidget) :
-				GuiMenu_addItem (menu -> menuWidget, itemTitle, flags, commonCallback, cmd.peek());   // DANGLE BUG
+				GuiMenu_addItem (menu -> menuWidget, itemTitle, flags, commonCallback, cmd.get());   // DANGLE BUG
 			cmd -> commandCallback = Editor_scriptCallback;
 			if (str32len (script) == 0) {
 				cmd -> script = Melder_dup_f (U"");
@@ -204,13 +201,15 @@ void Editor_doMenuCommand (Editor me, const char32 *commandTitle, int narg, Stac
 
 /********** class Editor **********/
 
-void structEditor :: v_destroy () {
+void structEditor :: v_destroy () noexcept {
 	trace (U"enter");
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
 	/*
 	 * The following command must be performed before the shell is destroyed.
 	 * Otherwise, we would be forgetting dangling command dialogs here.
 	 */
+	our menus.removeAllItems();
+
 	Editor_broadcastDestruction (this);
 	if (our d_windowForm) {
 		#if gtk
@@ -219,9 +218,9 @@ void structEditor :: v_destroy () {
 				gtk_widget_destroy (GTK_WIDGET (our d_windowForm -> d_gtkWindow));
 			}
 		#elif cocoa
-			if (our d_windowForm -> d_cocoaWindow) {
-				NSWindow *cocoaWindow = our d_windowForm -> d_cocoaWindow;
-				//d_windowForm -> d_cocoaWindow = nullptr;
+			if (our d_windowForm -> d_cocoaShell) {
+				NSWindow *cocoaWindow = our d_windowForm -> d_cocoaShell;
+				//d_windowForm -> d_cocoaShell = nullptr;
 				[cocoaWindow close];
 			}
 		#elif motif

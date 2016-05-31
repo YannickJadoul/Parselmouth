@@ -2,19 +2,18 @@
  *
  * Copyright (C) 1992-2012,2014,2015 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 //#define USE_STAT  1
@@ -154,7 +153,7 @@ static autoStrings Strings_createAsFileOrDirectoryList (const char32 *path /* ca
 					(type == Strings_createAsFileOrDirectoryList_TYPE_DIRECTORY && S_ISDIR (stats. st_mode)))
 				{
 					Melder_8bitFileRepresentationToStr32_inline (entry -> d_name, buffer32);
-					unsigned long length = str32len (buffer32);
+					int64 length = str32len (buffer32);
 					if (buffer32 [0] != U'.' &&
 						(left. length == 0 || str32nequ (buffer32, left. string, left. length)) &&
 						(right. length == 0 || (length >= right. length && str32equ (buffer32 + (length - right. length), right. string))))
@@ -164,7 +163,7 @@ static autoStrings Strings_createAsFileOrDirectoryList (const char32 *path /* ca
 				}
 			}
 			closedir (d);
-			Strings_sort (me.peek());
+			Strings_sort (me.get());
 			return me;
 		} catch (MelderError) {
 			if (d) closedir (d);   // "finally"
@@ -195,7 +194,7 @@ static autoStrings Strings_createAsFileOrDirectoryList (const char32 *path /* ca
 				} while (FindNextFileW (searchHandle, & findData));
 				FindClose (searchHandle);
 			}
-			Strings_sort (me.peek());
+			Strings_sort (me.get());
 			return me;
 		} catch (MelderError) {
 			throw;

@@ -1,20 +1,19 @@
 /* praat_Fon.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "praat.h"
@@ -39,6 +38,8 @@
 #include "Matrix_and_Pitch.h"
 #include "Matrix_and_PointProcess.h"
 #include "Matrix_and_Polygon.h"
+#include "Matrix_extensions.h"
+
 #include "MovieWindow.h"
 #include "ParamCurve.h"
 #include "Photo.h"
@@ -151,14 +152,20 @@ int praat_Fon_formula (UiForm dia, Interpreter interpreter) {
 	return 1;
 }
 
+static autoGraphics graphics;
+
+static void gui_drawingarea_cb_expose (Thing /* boss */, GuiDrawingArea_ExposeEvent /* event */) {
+	if (! graphics) return;
+	Graphics_play (graphics.get(), graphics.get());
+}
+
 extern "C" Graphics Movie_create (const char32 *title, int width, int height);
 extern "C" Graphics Movie_create (const char32 *title, int width, int height) {
-	static autoGraphics graphics;
 	static GuiDialog dialog;
 	static GuiDrawingArea drawingArea;
 	if (! graphics) {
 		dialog = GuiDialog_create (theCurrentPraatApplication -> topShell, 100, 100, width + 2, height + 2, title, nullptr, nullptr, 0);
-		drawingArea = GuiDrawingArea_createShown (dialog, 0, width, 0, height, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
+		drawingArea = GuiDrawingArea_createShown (dialog, 0, width, 0, height, gui_drawingarea_cb_expose, nullptr, nullptr, nullptr, nullptr, 0);
 		GuiThing_show (dialog);
 		graphics = Graphics_create_xmdrawingarea (drawingArea);
 	}
@@ -1253,7 +1260,7 @@ DIRECT2 (FormantGrid_edit) {
 	LOOP {
 		iam (FormantGrid);
 		autoFormantGridEditor editor = FormantGridEditor_create (ID_AND_FULL_NAME, me);
-		Editor_setPublicationCallback (editor.peek(), cb_FormantGridEditor_publish);
+		Editor_setPublicationCallback (editor.get(), cb_FormantGridEditor_publish);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
 	}
@@ -1382,7 +1389,7 @@ DO
 	point -> numberOfFormants = numberOfFormants;
 	LOOP {
 		iam (FormantTier);
-		autoFormantPoint point2 = Data_copy (point.peek());
+		autoFormantPoint point2 = Data_copy (point.get());
 		AnyTier_addPoint_move (me->asAnyTier(), point2.move());
 		praat_dataChanged (me);
 	}
@@ -1860,6 +1867,18 @@ DO
 	Pitch_Intensity_draw (pitch, intensity, GRAPHICS,
 		GET_REAL (U"From frequency"), GET_REAL (U"To frequency"),
 		GET_REAL (U"From intensity"), GET_REAL (U"To intensity"), GET_INTEGER (U"Garnish"), 1);
+END2 }
+
+DIRECT2 (Pitch_Intensity_getMean) {
+	Pitch pitch = nullptr;
+	Intensity intensity = nullptr;
+	LOOP {
+		if (CLASS == classPitch) pitch = (Pitch) OBJECT;
+		if (CLASS == classIntensity) intensity = (Intensity) OBJECT;
+		if (pitch && intensity) break;   // OPTIMIZE
+	}
+	double value = Pitch_Intensity_getMean (pitch, intensity);
+	Melder_informationReal (value, U"dB");
 END2 }
 
 DIRECT2 (Pitch_Intensity_getMeanAbsoluteSlope) {
@@ -2428,7 +2447,7 @@ DIRECT2 (Manipulation_edit) {
 	LOOP {
 		iam (Manipulation);
 		autoManipulationEditor editor = ManipulationEditor_create (ID_AND_FULL_NAME, me);
-		Editor_setPublicationCallback (editor.peek(), cb_ManipulationEditor_publication);
+		Editor_setPublicationCallback (editor.get(), cb_ManipulationEditor_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
 	}
@@ -2619,7 +2638,7 @@ DO
 	autoMatrix me = Matrix_create (
 		xmin, xmax, GET_INTEGER (U"Number of columns"), GET_REAL (U"dx"), GET_REAL (U"x1"),
 		ymin, ymax, GET_INTEGER (U"Number of rows"), GET_REAL (U"dy"), GET_REAL (U"y1"));
-	Matrix_formula (me.peek(), GET_STRING (U"formula"), interpreter, nullptr);
+	Matrix_formula (me.get(), GET_STRING (U"formula"), interpreter, nullptr);
 	praat_new (me.move(), GET_STRING (U"Name"));
 END2 }
 
@@ -2632,7 +2651,7 @@ FORM (Matrix_createSimple, U"Create simple Matrix", U"Create simple Matrix...") 
 	OK2
 DO
 	autoMatrix me = Matrix_createSimple (GET_INTEGER (U"Number of rows"), GET_INTEGER (U"Number of columns"));
-	Matrix_formula (me.peek(), GET_STRING (U"formula"), interpreter, nullptr);
+	Matrix_formula (me.get(), GET_STRING (U"formula"), interpreter, nullptr);
 	praat_new (me.move(), GET_STRING (U"Name"));
 END2 }
 
@@ -3008,7 +3027,7 @@ DIRECT2 (Matrix_to_ParamCurve) {
 	Matrix m1 = nullptr, m2 = nullptr;
 	LOOP (m1 ? m2 : m1) = (Matrix) OBJECT;
 	autoSound sound1 = Matrix_to_Sound (m1), sound2 = Matrix_to_Sound (m2);
-	autoParamCurve thee = ParamCurve_create (sound1.peek(), sound2.peek());
+	autoParamCurve thee = ParamCurve_create (sound1.get(), sound2.get());
 	praat_new (thee.move(), m1 -> name, U"_", m2 -> name);
 END2 }
 
@@ -6461,7 +6480,8 @@ void praat_uvafon_init () {
 	Data_recognizeFileType (cgnSyntaxFileRecognizer);
 	Data_recognizeFileType (chronologicalTextGridTextFileRecognizer);
 	Data_recognizeFileType (imageFileRecognizer);
-
+	Data_recognizeFileType (IDXFormattedMatrixFileRecognizer);
+	
 	structManipulationEditor :: f_preferences ();
 	structSpectrumEditor     :: f_preferences ();
 	structFormantGridEditor  :: f_preferences ();
@@ -7207,6 +7227,7 @@ praat_addAction1 (classTransition, 0, U"Cast", nullptr, 0, nullptr);
 	praat_addAction2 (classIntensity, 1, classPitch, 1, U"Draw", nullptr, 0, nullptr);
 	praat_addAction2 (classIntensity, 1, classPitch, 1, U"Draw (phonetogram)...", nullptr, 0, DO_Pitch_Intensity_draw);
 	praat_addAction2 (classIntensity, 1, classPitch, 1, U"Speckle (phonetogram)...", nullptr, praat_HIDDEN, DO_Pitch_Intensity_speckle);   /* grandfathered 2005 */
+	praat_addAction2 (classIntensity, 1, classPitch, 1, U"Get mean", nullptr, 1, DO_Pitch_Intensity_getMean);
 	praat_addAction2 (classIntensity, 1, classPitch, 1, U"Get mean absolute slope", nullptr, 1, DO_Pitch_Intensity_getMeanAbsoluteSlope);
 	praat_addAction2 (classIntensity, 1, classPointProcess, 1, U"To IntensityTier", nullptr, 0, DO_Intensity_PointProcess_to_IntensityTier);
 	praat_addAction2 (classIntensityTier, 1, classPointProcess, 1, U"To IntensityTier", nullptr, 0, DO_IntensityTier_PointProcess_to_IntensityTier);

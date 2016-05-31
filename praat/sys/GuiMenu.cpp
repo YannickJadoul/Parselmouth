@@ -1,27 +1,26 @@
 /* GuiMenu.cpp
  *
- * Copyright (C) 1992-2012,2013,2015 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse, 2013 Tom Naughton
+ * Copyright (C) 1992-2012,2013,2015,2016 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse, 2013 Tom Naughton
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "GuiP.h"
 
 Thing_implement (GuiMenu, GuiThing, 0);
 
-void structGuiMenu :: v_destroy () {
+void structGuiMenu :: v_destroy () noexcept {
 	our GuiMenu_Parent :: v_destroy ();   // if (d_widget) { _GuiObject_setUserData (d_widget, nullptr); GuiObject_destroy (d_widget); }
 }
 
@@ -73,16 +72,23 @@ void structGuiMenu :: v_destroy () {
 			}
 			if (character == NSTabCharacter) {
 				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
-				if ([cocoaKeyWindow class] == [GuiCocoaWindow class]) {
-					GuiWindow window = (GuiWindow) [(GuiCocoaWindow *) cocoaKeyWindow   getUserData];
-					if (window -> d_tabCallback) {
-						try {
-							struct structGuiMenuItemEvent event { nullptr, false, false, false, false };
-							window -> d_tabCallback (window -> d_tabBoss, & event);
-						} catch (MelderError) {
-							Melder_flushError (U"Tab key not completely handled.");
+				if ([cocoaKeyWindow class] == [GuiCocoaShell class]) {
+					GuiShell shell = (GuiShell) [(GuiCocoaShell *) cocoaKeyWindow   getUserData];
+					if (shell -> classInfo == classGuiWindow) {
+						GuiWindow window = (GuiWindow) shell;
+						if (window -> d_tabCallback) {
+							try {
+								struct structGuiMenuItemEvent event { nullptr, false, false, false, false };
+								window -> d_tabCallback (window -> d_tabBoss, & event);
+							} catch (MelderError) {
+								Melder_flushError (U"Tab key not completely handled.");
+							}
+							return;
 						}
-						return;
+					} else {
+						/*
+							We're in a dialog. Do nothing. Send the event on.
+						*/
 					}
 				}
 			} else if (character == NSBackTabCharacter) {
@@ -94,44 +100,58 @@ void structGuiMenu :: v_destroy () {
 				 * one can get here as well by pressing Ctrl-Y (Y is the 25th letter in the alphabet).
 				 */
 				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
-				if ([cocoaKeyWindow class] == [GuiCocoaWindow class]) {
-					GuiWindow window = (GuiWindow) [(GuiCocoaWindow *) cocoaKeyWindow   getUserData];
-					if ([nsEvent modifierFlags] & NSShiftKeyMask) {
+				if ([cocoaKeyWindow class] == [GuiCocoaShell class]) {
+					GuiShell shell = (GuiShell) [(GuiCocoaShell *) cocoaKeyWindow   getUserData];
+					if (shell -> classInfo == classGuiWindow) {
+						GuiWindow window = (GuiWindow) shell;
+						if ([nsEvent modifierFlags] & NSShiftKeyMask) {
+							/*
+								Make sure we got here by Shift-Tab rather than Ctrl-Y.
+							*/
+							if (window -> d_shiftTabCallback) {
+								try {
+									struct structGuiMenuItemEvent event { nullptr, false, false, false, false };
+									window -> d_shiftTabCallback (window -> d_shiftTabBoss, & event);
+								} catch (MelderError) {
+									Melder_flushError (U"Tab key not completely handled.");
+								}
+								return;
+							}
+						} else {
+							/*
+							 * We probably got in this branch by pressing Ctrl-Y.
+							 * People sometimes press that because it means "yank" (= Paste) in Emacs,
+							 * and indeed sending this key combination on, as we do here,
+							 * implements (together with Ctrl-K = "kil" = Cut)
+							 * a special cut & paste operation in text fields.
+							 */
+							// do nothing, i.e. send on
+						}
+					} else {
 						/*
-						 * Make sure we got here by Shift-Tab rather than Ctrl-Y.
-						 */
-						if (window -> d_shiftTabCallback) {
+							We're in a dialog. Do nothing. Send on.
+						*/
+					}
+				}
+			} else if (character == NSDeleteCharacter) {
+				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
+				if ([cocoaKeyWindow class] == [GuiCocoaShell class]) {
+					GuiShell shell = (GuiShell) [(GuiCocoaShell *) cocoaKeyWindow   getUserData];
+					if (shell -> classInfo == classGuiWindow) {
+						GuiWindow window = (GuiWindow) shell;
+						if (([nsEvent modifierFlags] & NSAlternateKeyMask) && window -> d_optionBackspaceCallback) {
 							try {
 								struct structGuiMenuItemEvent event { nullptr, false, false, false, false };
-								window -> d_shiftTabCallback (window -> d_shiftTabBoss, & event);
+								window -> d_optionBackspaceCallback (window -> d_optionBackspaceBoss, & event);
 							} catch (MelderError) {
-								Melder_flushError (U"Tab key not completely handled.");
+								Melder_flushError (U"Option-Backspace not completely handled.");
 							}
 							return;
 						}
 					} else {
 						/*
-						 * We probably got in this branch by pressing Ctrl-Y.
-						 * People sometimes press that because it means "yank" (= Paste) in Emacs,
-						 * and indeed sending this key combination on, as we do here,
-						 * implements (together with Ctrl-K = "kil" = Cut)
-						 * a special cut & paste operation in text fields.
-						 */
-						// do nothing, i.e. send on
-					}
-				}
-			} else if (character == NSDeleteCharacter) {
-				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
-				if ([cocoaKeyWindow class] == [GuiCocoaWindow class]) {
-					GuiWindow window = (GuiWindow) [(GuiCocoaWindow *) cocoaKeyWindow   getUserData];
-					if (([nsEvent modifierFlags] & NSAlternateKeyMask) && window -> d_optionBackspaceCallback) {
-						try {
-							struct structGuiMenuItemEvent event { nullptr, false, false, false, false };
-							window -> d_optionBackspaceCallback (window -> d_optionBackspaceBoss, & event);
-						} catch (MelderError) {
-							Melder_flushError (U"Option-Backspace not completely handled.");
-						}
-						return;
+							We're in a dialog. Do nothing. Send on.
+						*/
 					}
 				}
 			}

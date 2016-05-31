@@ -1,20 +1,19 @@
-/* Activation.cpp
+/* ActivationList.cpp
  *
  * Copyright (C) 1993-2012, 2015 David Weenink
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,11 +23,11 @@
  djmw 20110304 Thing_new
  */
 
-#include "Activation.h"
+#include "ActivationList.h"
 
-Thing_implement (Activation, Matrix, 2);
+Thing_implement (ActivationList, Matrix, 2);
 
-int _Activation_checkElements (Activation me) {
+int _ActivationList_checkElements (ActivationList me) {
 	for (long i = 1; i <= my ny; i++) {
 		for (long j = 1; j <= my nx; j++) {
 			if (my z[i][j] < 0.0 || my z[i][j] > 1) {
@@ -39,31 +38,31 @@ int _Activation_checkElements (Activation me) {
 	return 1;
 }
 
-void Activation_init (Activation me, long ny, long nx) {
+void ActivationList_init (ActivationList me, long ny, long nx) {
 	Matrix_init (me, 1.0, nx, nx, 1.0, 1.0, 1.0, ny, ny, 1.0, 1.0);
 }
 
-autoActivation Activation_create (long ny, long nx) {
+autoActivationList ActivationList_create (long ny, long nx) {
 	try {
-		autoActivation me = Thing_new (Activation);
-		Activation_init (me.peek(), ny, nx);
+		autoActivationList me = Thing_new (ActivationList);
+		ActivationList_init (me.get(), ny, nx);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Activation not created.");
 	}
 }
 
-autoActivation Matrix_to_Activation (Matrix me) {
+autoActivationList Matrix_to_ActivationList (Matrix me) {
 	try {
-		autoActivation thee = Activation_create (my ny, my nx);
+		autoActivationList thee = ActivationList_create (my ny, my nx);
 		NUMmatrix_copyElements (my z, thy z, 1, my ny, 1, my nx);
 		return thee;
 	} catch (MelderError) {
-		Melder_throw (me, U": not converted to Activation.");
+		Melder_throw (me, U": not converted to ActivationList.");
 	}
 }
 
-autoMatrix Activation_to_Matrix (Activation me) {
+autoMatrix ActivationList_to_Matrix (ActivationList me) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
 		NUMmatrix_copyElements (my z, thy z, 1, my ny, 1, my nx);

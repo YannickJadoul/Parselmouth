@@ -1,20 +1,19 @@
 /* praat.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "melder.h"
@@ -27,13 +26,6 @@
 	#include <signal.h>
 #endif
 #include <locale.h>
-#ifdef macintosh
-	#include "macport_on.h"
-    #if useCarbon
-        #include <Carbon/Carbon.h>
-    #endif
-	#include "macport_off.h"
-#endif
 #if defined (UNIX)
 	#include <unistd.h>
 #endif
@@ -1035,13 +1027,7 @@ static bool tryToAttachToTheCommandLine ()
 	return weHaveSucceeded;
 }
 
-void praat_init (const char32 *title, int argc, char **argv)
-{
-	bool weWereStartedFromTheCommandLine = tryToAttachToTheCommandLine ();
-
-	for (int iarg = 0; iarg < argc; iarg ++) {
-		//Melder_casual (U"arg ", iarg, U": <<", Melder_peek8to32 (argv [iarg]), U">>");
-	}
+static void setThePraatLocale () {
 	#if defined (UNIX)
 		setlocale (LC_ALL, "C");
 		//setenv ("PULSE_LATENCY_MSEC", "1", 0);   // Rafael Laboissiere, August 2014
@@ -1050,6 +1036,9 @@ void praat_init (const char32 *title, int argc, char **argv)
 	#elif defined (macintosh)
 		setlocale (LC_ALL, "en_US");   // required to make swprintf work correctly; the default "C" locale does not do that!
 	#endif
+}
+
+static void getSystemVersion () {
 	#ifdef macintosh
 		SInt32 sys1, sys2, sys3;
 		Gestalt ('sys1', & sys1);
@@ -1057,21 +1046,16 @@ void praat_init (const char32 *title, int argc, char **argv)
 		Gestalt ('sys3', & sys3);
 		Melder_systemVersion = sys1 * 10000 + sys2 * 100 + sys3;
 	#endif
-	/*
-		Initialize numerical libraries.
-	*/
+}
+
+static void initializeNumericalLibraries () {
 	NUMmachar ();
 	NUMinit ();
 	Melder_alloc_init ();
 	Melder_message_init ();
-	/*
-		Remember the current directory. Useful only for scripts run from batch.
-	*/
-	Melder_rememberShellDirectory ();
+}
 
-	/*
-	 * Install the preferences of the Praat shell, and set the defaults.
-	 */
+static void installPraatShellPreferences () {
 	praat_statistics_prefs ();   // number of sessions, memory used...
 	praat_picture_prefs ();   // font...
 	Graphics_prefs ();
@@ -1082,6 +1066,49 @@ void praat_init (const char32 *title, int argc, char **argv)
 	Melder_textEncoding_prefs ();
 	Printer_prefs ();   // paper size, printer command...
 	structTextEditor :: f_preferences ();   // font size...
+}
+
+extern "C" void praatlib_init () {
+	setThePraatLocale ();   // FIXME: don't use the global locale
+	getSystemVersion ();
+	initializeNumericalLibraries ();
+	Melder_rememberShellDirectory ();
+	installPraatShellPreferences ();   // needed in the library, because this sets the defaults
+	praatP.argc = 0;
+	praatP.argv = nullptr;
+	praatP.argumentNumber = 1;
+	Melder_batch = true;
+	praatP.userWantsToOpen = false;
+	praatP.title = Melder_dup (U"Praatlib");
+	theCurrentPraatApplication -> batch = true;
+	Melder_getHomeDir (& homeDir);
+	praat_actions_init ();
+	praat_menuCommands_init ();
+	Thing_recognizeClassesByName (classCollection, classStrings, classManPages, classStringSet, nullptr);
+	Thing_recognizeClassByOtherName (classStringSet, U"SortedSetOfString");
+	Melder_backgrounding = true;
+	praat_addMenus (nullptr);
+	praat_addFixedButtons (nullptr);
+	praat_addMenus2 ();
+}
+
+void praat_init (const char32 *title, int argc, char **argv)
+{
+	bool weWereStartedFromTheCommandLine = tryToAttachToTheCommandLine ();
+
+	for (int iarg = 0; iarg < argc; iarg ++) {
+		//Melder_casual (U"arg ", iarg, U": <<", Melder_peek8to32 (argv [iarg]), U">>");
+	}
+	setThePraatLocale ();
+	getSystemVersion ();
+	initializeNumericalLibraries ();
+
+	/*
+		Remember the current directory. Useful only for scripts run from batch.
+	*/
+	Melder_rememberShellDirectory ();
+
+	installPraatShellPreferences ();
 
 	praatP.argc = argc;
 	praatP.argv = argv;
@@ -1282,17 +1309,10 @@ void praat_init (const char32 *title, int argc, char **argv)
 		if (! Melder_batch)
 			motif_win_setUserMessageCallback (cb_userMessage);
 	#elif defined (macintosh)
-		#if useCarbon
-			if (! Melder_batch) {
-				motif_mac_setUserMessageCallback (cb_userMessage);
-				Gui_setQuitApplicationCallback (cb_quitApplication);
-			}
-		#else
-			if (! Melder_batch) {
-				mac_setUserMessageCallback (cb_userMessage);
-				Gui_setQuitApplicationCallback (cb_quitApplication);
-			}
-		#endif
+		if (! Melder_batch) {
+			mac_setUserMessageCallback (cb_userMessage);
+			Gui_setQuitApplicationCallback (cb_quitApplication);
+		}
 	#endif
 
 	/*
@@ -1306,7 +1326,7 @@ void praat_init (const char32 *title, int argc, char **argv)
 	GuiWindow raam = nullptr;
 	if (Melder_batch) {
 		MelderString_empty (& theCurrentPraatApplication -> batchName);
-		for (unsigned int i = praatP.argumentNumber - 1; i < argc; i ++) {
+		for (int i = praatP.argumentNumber - 1; i < argc; i ++) {
 			if (i >= praatP.argumentNumber) MelderString_append (& theCurrentPraatApplication -> batchName, U" ");
 			bool needsQuoting = !! strchr (argv [i], ' ') && (i == praatP.argumentNumber - 1 || i < argc - 1);
 			if (needsQuoting) MelderString_append (& theCurrentPraatApplication -> batchName, U"\"");
@@ -1363,15 +1383,9 @@ void praat_init (const char32 *title, int argc, char **argv)
 	} else {
 
 		#ifdef macintosh
-			#if ! useCarbon
-				AEInstallEventHandler (758934755, 0, (AEEventHandlerProcPtr) (mac_processSignal8), 0, false);   // for receiving sendpraat
-				AEInstallEventHandler (758934756, 0, (AEEventHandlerProcPtr) (mac_processSignal16), 0, false);   // for receiving sendpraatW
-			#endif
+			AEInstallEventHandler (758934755, 0, (AEEventHandlerProcPtr) (mac_processSignal8), 0, false);   // for receiving sendpraat
+			AEInstallEventHandler (758934756, 0, (AEEventHandlerProcPtr) (mac_processSignal16), 0, false);   // for receiving sendpraatW
 			MelderGui_create (raam);   // BUG: default Melder_assert would call printf recursively!!!
-		#endif
-		#if defined (macintosh) && useCarbon
-			trace (U"creating the menu bar along the top of the screen (Mac only)");
-			GuiWindow_addMenuBar (raam);   // yes, on the Mac we create a menu bar twice: once at the top of the screen, once in the Objects window
 		#endif
 		trace (U"creating the menu bar in the Objects window");
 		GuiWindow_addMenuBar (raam);
@@ -1450,7 +1464,11 @@ static void executeStartUpFile (MelderDir startUpDirectory, const char32 *fileNa
 			trace (U"keyval ", event -> keyval, U", type ", event -> type);
 			if ((event -> keyval == GDK_Tab || event -> keyval == GDK_ISO_Left_Tab) && event -> type == GDK_KEY_PRESS) {
 				trace (U"tab key pressed in window ", Melder_pointer (widget));
-				if ((event -> state & GDK_MODIFIER_MASK) == 0) {
+				constexpr bool theTabKeyShouldWorkEvenIfNumLockIsOn = true;
+				constexpr uint32 theProbableNumLockModifierMask = GDK_MOD2_MASK;
+				constexpr uint32 modifiersToIgnore = ( theTabKeyShouldWorkEvenIfNumLockIsOn ? theProbableNumLockModifierMask : 0 );
+				constexpr uint32 modifiersNotToIgnore = GDK_MODIFIER_MASK & ~ modifiersToIgnore;
+				if ((event -> state & modifiersNotToIgnore) == 0) {
 					if (GTK_IS_WINDOW (widget)) {
 						GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
 						trace (U"tab pressed in GTK window ", Melder_pointer (shell));
@@ -1462,7 +1480,7 @@ static void executeStartUpFile (MelderDir startUpDirectory, const char32 *fileNa
 							return true;
 						}
 					}
-				} else if ((event -> state & GDK_MODIFIER_MASK) == GDK_SHIFT_MASK) {
+				} else if ((event -> state & modifiersNotToIgnore) == GDK_SHIFT_MASK) {
 					if (GTK_IS_WINDOW (widget)) {
 						GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
 						trace (U"shift-tab pressed in GTK window ", Melder_pointer (shell));
@@ -1488,12 +1506,8 @@ void praat_run () {
 	trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 
 	trace (U"adding the Quit command");
-	#if defined (macintosh) && useCarbon
-		praat_addMenuCommand (U"Objects", U"Praat", U"Quit", nullptr, praat_HIDDEN, DO_Quit);   // the Quit command is needed for scripts, not for the GUI
-	#else
-		praat_addMenuCommand (U"Objects", U"Praat", U"-- quit --", nullptr, 0, nullptr);
-		praat_addMenuCommand (U"Objects", U"Praat", U"Quit", nullptr, praat_UNHIDABLE + 'Q', DO_Quit);
-	#endif
+	praat_addMenuCommand (U"Objects", U"Praat", U"-- quit --", nullptr, 0, nullptr);
+	praat_addMenuCommand (U"Objects", U"Praat", U"Quit", nullptr, praat_UNHIDABLE + 'Q', DO_Quit);
 
 	trace (U"read the preferences file, and notify those who want to be notified of this");
 	/* ...namely, those who already have a window (namely, the Picture window),
@@ -1536,8 +1550,8 @@ void praat_run () {
 			autoStrings directoryNames = Strings_createAsDirectoryList (Melder_fileToPath (& searchPattern));
 			if (directoryNames -> numberOfStrings > 0) {
 				for (long i = 1; i <= directoryNames -> numberOfStrings; i ++) {
-					structMelderDir pluginDir = { { 0 } };
-					structMelderFile plugin = { 0 };
+					structMelderDir pluginDir { { 0 } };
+					structMelderFile plugin { 0 };
 					MelderDir_getSubdir (& praatDir, directoryNames -> strings [i], & pluginDir);
 					MelderDir_getFile (& pluginDir, U"setup.praat", & plugin);
 					if (MelderFile_readable (& plugin)) {

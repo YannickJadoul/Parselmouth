@@ -1,20 +1,19 @@
 /* TextGridEditor.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 /* Erez Volk added FLAC support in 2007 */
 
@@ -507,13 +506,13 @@ static void menu_cb_DrawTextGridAndPitch (TextGridEditor me, EDITOR_ARGS_FORM) {
 			if (! my d_pitch) Melder_throw (U"Cannot compute pitch.");
 		}
 		Editor_openPraatPicture (me);
-		double pitchFloor_hidden = Function_convertStandardToSpecialUnit (my d_pitch.peek(), my p_pitch_floor, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
-		double pitchCeiling_hidden = Function_convertStandardToSpecialUnit (my d_pitch.peek(), my p_pitch_ceiling, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
-		double pitchFloor_overt = Function_convertToNonlogarithmic (my d_pitch.peek(), pitchFloor_hidden, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
-		double pitchCeiling_overt = Function_convertToNonlogarithmic (my d_pitch.peek(), pitchCeiling_hidden, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
-		double pitchViewFrom_overt = my p_pitch_viewFrom < my p_pitch_viewTo ? my p_pitch_viewFrom : pitchFloor_overt;
-		double pitchViewTo_overt = my p_pitch_viewFrom < my p_pitch_viewTo ? my p_pitch_viewTo : pitchCeiling_overt;
-		TextGrid_Pitch_drawSeparately ((TextGrid) my data, my d_pitch.peek(), my pictureGraphics, my d_startWindow, my d_endWindow,
+		double pitchFloor_hidden = Function_convertStandardToSpecialUnit (my d_pitch.get(), my p_pitch_floor, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
+		double pitchCeiling_hidden = Function_convertStandardToSpecialUnit (my d_pitch.get(), my p_pitch_ceiling, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
+		double pitchFloor_overt = Function_convertToNonlogarithmic (my d_pitch.get(), pitchFloor_hidden, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
+		double pitchCeiling_overt = Function_convertToNonlogarithmic (my d_pitch.get(), pitchCeiling_hidden, Pitch_LEVEL_FREQUENCY, my p_pitch_unit);
+		double pitchViewFrom_overt = ( my p_pitch_viewFrom < my p_pitch_viewTo ? my p_pitch_viewFrom : pitchFloor_overt );
+		double pitchViewTo_overt = ( my p_pitch_viewFrom < my p_pitch_viewTo ? my p_pitch_viewTo : pitchCeiling_overt );
+		TextGrid_Pitch_drawSeparately ((TextGrid) my data, my d_pitch.get(), my pictureGraphics, my d_startWindow, my d_endWindow,
 			pitchViewFrom_overt, pitchViewTo_overt, GET_INTEGER (U"Show boundaries and points"), my p_useTextStyles, GET_INTEGER (U"Garnish"),
 			GET_INTEGER (U"Speckle"), my p_pitch_unit);
 		FunctionEditor_garnish (me);
@@ -1011,8 +1010,8 @@ static void menu_cb_PublishTier (TextGridEditor me, EDITOR_ARGS_DIRECT) {
 	checkTierSelection (me, U"publish a tier");
 	Function tier = grid -> tiers->at [my selectedTier];
 	autoTextGrid publish = TextGrid_createWithoutTiers (1e30, -1e30);
-	TextGrid_addTier_copy (publish.peek(), tier);
-	Thing_setName (publish.peek(), tier -> name);
+	TextGrid_addTier_copy (publish.get(), tier);
+	Thing_setName (publish.get(), tier -> name);
 	Editor_broadcastPublication (me, publish.move());
 }
 
@@ -1063,12 +1062,14 @@ static void menu_cb_AddIntervalTier (TextGridEditor me, EDITOR_ARGS_FORM) {
 		TextGrid grid = (TextGrid) my data;
 		int position = GET_INTEGER (U"Position");
 		char32 *name = GET_STRING (U"Name");
-		autoIntervalTier tier = IntervalTier_create (grid -> xmin, grid -> xmax);
-		if (position > grid -> tiers->size) position = grid -> tiers->size + 1;
-		Thing_setName (tier.peek(), name);
+		{// scope
+			autoIntervalTier tier = IntervalTier_create (grid -> xmin, grid -> xmax);
+			if (position > grid -> tiers->size) position = grid -> tiers->size + 1;
+			Thing_setName (tier.get(), name);
 
-		Editor_save (me, U"Add interval tier");
-		grid -> tiers-> addItemAtPosition_move (tier.move(), position);
+			Editor_save (me, U"Add interval tier");
+			grid -> tiers -> addItemAtPosition_move (tier.move(), position);
+		}
 
 		my selectedTier = position;
 		FunctionEditor_updateText (me);
@@ -1089,12 +1090,14 @@ static void menu_cb_AddPointTier (TextGridEditor me, EDITOR_ARGS_FORM) {
 		TextGrid grid = (TextGrid) my data;
 		int position = GET_INTEGER (U"Position");
 		char32 *name = GET_STRING (U"Name");
-		autoTextTier tier = TextTier_create (grid -> xmin, grid -> xmax);
-		if (position > grid -> tiers->size) position = grid -> tiers->size + 1;
-		Thing_setName (tier.peek(), name);
+		{// scope
+			autoTextTier tier = TextTier_create (grid -> xmin, grid -> xmax);
+			if (position > grid -> tiers->size) position = grid -> tiers->size + 1;
+			Thing_setName (tier.get(), name);
 
-		Editor_save (me, U"Add point tier");
-		grid -> tiers-> addItemAtPosition_move (tier.move(), position);
+			Editor_save (me, U"Add point tier");
+			grid -> tiers -> addItemAtPosition_move (tier.move(), position);
+		}
 
 		my selectedTier = position;
 		FunctionEditor_updateText (me);
@@ -1119,13 +1122,15 @@ static void menu_cb_DuplicateTier (TextGridEditor me, EDITOR_ARGS_FORM) {
 		char32 *name = GET_STRING (U"Name");
 		checkTierSelection (me, U"duplicate a tier");
 		Function tier = grid -> tiers->at [my selectedTier];
-		autoFunction newTier = Data_copy (tier);
-		if (position > grid -> tiers->size)
-			position = grid -> tiers->size + 1;
-		Thing_setName (newTier.peek(), name);
+		{// scope
+			autoFunction newTier = Data_copy (tier);
+			if (position > grid -> tiers->size)
+				position = grid -> tiers->size + 1;
+			Thing_setName (newTier.get(), name);
 
-		Editor_save (me, U"Duplicate tier");
-		grid -> tiers-> addItemAtPosition_move (newTier.move(), position);
+			Editor_save (me, U"Duplicate tier");
+			grid -> tiers -> addItemAtPosition_move (newTier.move(), position);
+		}
 
 		my selectedTier = position;
 		FunctionEditor_updateText (me);
@@ -2177,7 +2182,7 @@ void TextGridEditor_init (TextGridEditor me, const char32 *title, TextGrid grid,
 autoTextGridEditor TextGridEditor_create (const char32 *title, TextGrid grid, Sampled sound, bool ownSound, SpellingChecker spellingChecker, const char *callbackSocket) {
 	try {
 		autoTextGridEditor me = Thing_new (TextGridEditor);
-		TextGridEditor_init (me.peek(), title, grid, sound, ownSound, spellingChecker, callbackSocket);
+		TextGridEditor_init (me.get(), title, grid, sound, ownSound, spellingChecker, callbackSocket);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"TextGrid window not created.");

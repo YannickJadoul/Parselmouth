@@ -2,19 +2,18 @@
  *
  * Copyright (C) 1992-2012, 2015 David Weenink
  *
- * This program is free software; you can redistribute it and/or modify
+ * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
+ * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -130,7 +129,7 @@ FORM (Configuration_create, U"Create Configuration", U"Create Configuration...")
 	OK
 DO
 	autoConfiguration me = Configuration_create (GET_INTEGER (U"Number of points"), GET_INTEGER (U"Number of dimensions"));
-	TableOfReal_formula (me.peek(), GET_STRING (U"formula"), interpreter, nullptr);
+	TableOfReal_formula (me.get(), GET_STRING (U"formula"), interpreter, nullptr);
 	praat_new (me.move(), GET_STRING (U"Name"));
 END
 
@@ -1461,7 +1460,7 @@ DO
 	Melder_assert (distances->size > 0 && configuration);
 	autoConfiguration configurationResult;
 	autoSalience salienceResult;
-	DistanceList_Configuration_indscal (distances.peek(), configuration,
+	DistanceList_Configuration_indscal (distances.get(), configuration,
 		GET_INTEGER (U"Normalize scalar products"),
 		GET_REAL (U"Tolerance"),
 		GET_INTEGER (U"Maximum number of iterations"),
@@ -1487,7 +1486,7 @@ DO
 	}
 	Melder_assert (distances->size > 0 && configuration);
 	double varianceAccountedFor;
-	DistanceList_Configuration_vaf (distances.peek(), configuration,
+	DistanceList_Configuration_vaf (distances.get(), configuration,
 		GET_INTEGER (U"Normalize scalar products"),
 		& varianceAccountedFor);
 	Melder_information (varianceAccountedFor);
@@ -1512,7 +1511,7 @@ DO
 	}
 	Melder_assert (distances->size > 0 && configuration && salience);
 	double varianceAccountedFor;
-	DistanceList_Configuration_Salience_vaf (distances.peek(), configuration, salience,
+	DistanceList_Configuration_Salience_vaf (distances.get(), configuration, salience,
 		GET_INTEGER (U"Normalize scalar products"),
 		& varianceAccountedFor);
 	Melder_information (varianceAccountedFor);
@@ -1541,7 +1540,7 @@ DO
 	}
 	Melder_assert (dissimilarities->size > 0 && configuration && salience);
 	double varianceAccountedFor;
-	DissimilarityList_Configuration_Salience_vaf (dissimilarities.peek(), configuration, salience,
+	DissimilarityList_Configuration_Salience_vaf (dissimilarities.get(), configuration, salience,
 		GET_INTEGER (U"Handling of ties"),
 		GET_INTEGER (U"Normalize scalar products"),
 		& varianceAccountedFor);
@@ -1574,7 +1573,7 @@ DO
 	double varianceAccountedFor;
 	autoConfiguration configurationResult;
 	autoSalience salienceResult;
-	DistanceList_Configuration_Salience_indscal (thee.peek(), configuration, salience,
+	DistanceList_Configuration_Salience_indscal (thee.get(), configuration, salience,
 		GET_INTEGER (U"Normalize scalar products"),
 		GET_REAL (U"Tolerance"),
 		GET_INTEGER (U"Maximum number of iterations"),
