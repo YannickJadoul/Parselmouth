@@ -11,7 +11,7 @@ using CopyableAutoThing = MovingCopyable<_Thing_auto<T>>;
 template <typename T>
 inline T *get_pointer(const _Thing_auto<T> &ptr)
 {
-	return ptr.peek();
+	return ptr.get();
 }
 
 namespace boost {

@@ -1,4 +1,4 @@
-add_sources(Activation.cpp AffineTransform.cpp
+add_sources(ActivationList.cpp AffineTransform.cpp
             Categories.cpp CategoriesEditor.cpp
             Categories_and_Strings.cpp CCA.cpp CCA_and_Correlation.cpp
             CC.cpp CCs_to_DTW.cpp
@@ -7,7 +7,7 @@ add_sources(Activation.cpp AffineTransform.cpp
             Configuration_AffineTransform.cpp
             Configuration_and_Procrustes.cpp DataModeler.cpp Distance.cpp
             DTW.cpp DTW_and_TextGrid.cpp
-            Discriminant.cpp Discriminant_Pattern_Categories.cpp
+            Discriminant.cpp Discriminant_PatternList_Categories.cpp
             EditDistanceTable.cpp EEG_extensions.cpp
             Eigen_and_Matrix.cpp Eigen_and_Procrustes.cpp
             Eigen_and_TableOfReal.cpp
@@ -26,7 +26,7 @@ add_sources(Activation.cpp AffineTransform.cpp
             Matrix_extensions.cpp
             Matrix_Categories.cpp MDS.cpp
             OptimalCeilingTier.cpp OptimalCeilingTierEditor.cpp
-            Pattern.cpp PCA.cpp
+            PatternList.cpp PCA.cpp
             Pitch_extensions.cpp Polynomial.cpp
             Polygon_extensions.cpp Procrustes.cpp
             Proximity.cpp
