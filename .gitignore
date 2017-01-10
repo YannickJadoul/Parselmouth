@@ -9,4 +9,5 @@ installed/
 /.cproject
 /.project
 .settings/
+.csettings/
 
