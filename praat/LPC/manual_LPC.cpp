@@ -103,7 +103,7 @@ SCRIPT (5, Manual_SETTINGS_WINDOW_HEIGHT (7), U""
 	Manual_DRAW_SETTINGS_WINDOW_RADIO (U"", U"Parabolic", 0)
 	Manual_DRAW_SETTINGS_WINDOW_RADIO (U"", U"Cubic", 1)
 	Manual_DRAW_SETTINGS_WINDOW_RADIO (U"", U"Sinc70", 0)
-	Manual_DRAW_SETTINGS_WINDOW_RANGE("Tilt line quefrency range (s)", U"0.001", U"0.0 (=end)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE("Tilt line quefrency range (s)", U"0.001", U"0.0 (= end)")
 	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU(U"Fit method", U"Robust")
 )
 NORMAL (U"The meaning of these settings is explained @@PowerCepstrum: Get peak prominence...|here@.")
@@ -194,7 +194,7 @@ SCRIPT (7, Manual_SETTINGS_WINDOW_HEIGHT (7), U""
 	Manual_DRAW_SETTINGS_WINDOW_RADIO (U"", U"Parabolic", 0)
 	Manual_DRAW_SETTINGS_WINDOW_RADIO (U"", U"Cubic", 1)
 	Manual_DRAW_SETTINGS_WINDOW_RADIO (U"", U"Sinc70", 0)
-	Manual_DRAW_SETTINGS_WINDOW_RANGE (U"Tilt line quefrency range (s)", U"0.001", U"0.0 (=end)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE (U"Tilt line quefrency range (s)", U"0.001", U"0.0 (= end)")
 	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU (U"Fit method", U"Robust")
 )
 TAG (U"##Search peak in pitch range")
@@ -623,6 +623,11 @@ LIST_ITEM (U"1.  We perform a spectrum analysis on a mel frequency scale "
 	"(see @@Sound: To MelSpectrogram...@ for details).")
 LIST_ITEM (U"2.  We convert the melspectrogram values to mel frequency cepstral "
 	"coefficients (see @@MelSpectrogram: To MFCC...@ for details).")
+MAN_END
+
+MAN_BEGIN (U"Spectrum: To PowerCepstrum", U"djmw", 20160909)
+INTRO (U"A command to create a @PowerCepstrum from every selected @Spectrum.")
+ENTRY (U"Mathematical procedure")
 MAN_END
 
 MAN_BEGIN (U"VocalTractTier", U"djmw", 20120423)

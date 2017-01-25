@@ -661,7 +661,7 @@ static void initialize (SoundRecorder me) {
 			#if defined (macintosh)
 			#elif defined (_WIN32)
 				(void) me;
-			#elif defined (linux)
+			#elif defined (linux) && ! defined (NO_AUDIO)
 				int sampleRate = (int) theControlPanel. sampleRate, sampleSize = 16;
 				int channels = my numberOfChannels, stereo = ( my numberOfChannels == 2 ), val;
 				#if __BYTE_ORDER == __BIG_ENDIAN
@@ -725,7 +725,7 @@ static void gui_radiobutton_cb_input (SoundRecorder me, GuiRadioButtonEvent even
 			} catch (MelderError) {
 				Melder_flushError ();
 			}
-		#elif defined (linux)
+		#elif defined (linux) && ! defined (NO_AUDIO)
 			int fd_mixer = open ("/dev/mixer", O_WRONLY);		
 			if (fd_mixer == -1) {
 				Melder_flushError (U"(Sound_record:) Cannot open /dev/mixer.");
@@ -774,7 +774,7 @@ static void gui_radiobutton_cb_fsamp (SoundRecorder me, GuiRadioButtonEvent even
 			#elif defined (macintosh)
 				//SPBCloseDevice (my refNum);
 				initialize (me);
-			#elif defined (linux)		
+			#elif defined (linux) && ! defined (NO_AUDIO)
 				close (my fd);
 				initialize (me);
 			#endif
@@ -913,41 +913,41 @@ static void writeAudioFile (SoundRecorder me, MelderFile file, int audioFileType
 }
 
 static void menu_cb_writeWav (SoundRecorder me, EDITOR_ARGS_FORM) {
-	EDITOR_FORM_WRITE (U"Save as WAV file", nullptr)
+	EDITOR_FORM_SAVE (U"Save as WAV file", nullptr)
 		char32 *name = GuiText_getString (my soundName);
 		Melder_sprint (defaultName,300, name, U".wav");
 		Melder_free (name);
-	EDITOR_DO_WRITE
+	EDITOR_DO_SAVE
 		writeAudioFile (me, file, Melder_WAV);
 	EDITOR_END
 }
 
 static void menu_cb_writeAifc (SoundRecorder me, EDITOR_ARGS_FORM) {
-	EDITOR_FORM_WRITE (U"Save as AIFC file", nullptr)
+	EDITOR_FORM_SAVE (U"Save as AIFC file", nullptr)
 		char32 *name = GuiText_getString (my soundName);
 		Melder_sprint (defaultName,300, name, U".aifc");
 		Melder_free (name);
-	EDITOR_DO_WRITE
+	EDITOR_DO_SAVE
 		writeAudioFile (me, file, Melder_AIFC);
 	EDITOR_END
 }
 
 static void menu_cb_writeNextSun (SoundRecorder me, EDITOR_ARGS_FORM) {
-	EDITOR_FORM_WRITE (U"Save as NeXT/Sun file", nullptr)
+	EDITOR_FORM_SAVE (U"Save as NeXT/Sun file", nullptr)
 		char32 *name = GuiText_getString (my soundName);
 		Melder_sprint (defaultName,300, name, U".au");
 		Melder_free (name);
-	EDITOR_DO_WRITE
+	EDITOR_DO_SAVE
 		writeAudioFile (me, file, Melder_NEXT_SUN);
 	EDITOR_END
 }
 
 static void menu_cb_writeNist (SoundRecorder me, EDITOR_ARGS_FORM) {
-	EDITOR_FORM_WRITE (U"Save as NIST file", nullptr)
+	EDITOR_FORM_SAVE (U"Save as NIST file", nullptr)
 		char32 *name = GuiText_getString (my soundName);
 		Melder_sprint (defaultName,300, name, U".nist");
 		Melder_free (name);
-	EDITOR_DO_WRITE
+	EDITOR_DO_SAVE
 		writeAudioFile (me, file, Melder_NIST);
 	EDITOR_END
 }

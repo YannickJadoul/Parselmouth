@@ -202,51 +202,6 @@ void praat_list_foreground () {
 	}
 }
 
-Daata praat_onlyObject (ClassInfo klas) {
-	int IOBJECT, result = 0, found = 0;
-	WHERE (SELECTED && CLASS == klas) { result = IOBJECT; found += 1; }
-	if (found != 1) return nullptr;
-	return theCurrentPraatObjects -> list [result]. object;
-}
-
-Daata praat_firstObject (ClassInfo klas) {
-	int IOBJECT;
-	LOOP {
-		if (CLASS == klas) return theCurrentPraatObjects -> list [IOBJECT]. object;
-	}
-	return nullptr;   // this is often OK
-}
-
-Daata praat_onlyObject_generic (ClassInfo klas) {
-	int IOBJECT, result = 0, found = 0;
-	WHERE (SELECTED && Thing_isSubclass (CLASS, klas)) { result = IOBJECT; found += 1; }
-	if (found != 1) return nullptr;
-	return theCurrentPraatObjects -> list [result]. object;
-}
-
-Daata praat_firstObject_generic (ClassInfo klas) {
-	int IOBJECT;
-	LOOP {
-		if (Thing_isSubclass (CLASS, klas)) return theCurrentPraatObjects -> list [IOBJECT]. object;
-	}
-	return nullptr;   // this is often OK
-}
-
-praat_Object praat_onlyScreenObject () {
-	int IOBJECT, result = 0, found = 0;
-	WHERE (SELECTED) { result = IOBJECT; found += 1; }
-	if (found != 1) Melder_fatal (U"praat_onlyScreenObject: found ", found, U" objects instead of 1.");
-	return & theCurrentPraatObjects -> list [result];
-}
-
-Daata praat_firstObject_any () {
-	int IOBJECT;
-	LOOP {
-		return theCurrentPraatObjects -> list [IOBJECT]. object;
-	}
-	return nullptr;   // this is often OK
-}
-
 autoCollection praat_getSelectedObjects () {
 	autoCollection thee = Collection_create ();
 	int IOBJECT;
@@ -510,14 +465,13 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2) {
 }
 
 void praat_removeObject (int i) {
-	int j, ieditor;
 	praat_remove (i, true);   // dangle
-	for (j = i; j < theCurrentPraatObjects -> n; j ++)
+	for (int j = i; j < theCurrentPraatObjects -> n; j ++)
 		theCurrentPraatObjects -> list [j] = theCurrentPraatObjects -> list [j + 1];   // undangle but create second references
 	theCurrentPraatObjects -> list [theCurrentPraatObjects -> n]. name = nullptr;   // undangle or remove second reference
 	theCurrentPraatObjects -> list [theCurrentPraatObjects -> n]. object = nullptr;   // undangle or remove second reference
 	theCurrentPraatObjects -> list [theCurrentPraatObjects -> n]. isSelected = 0;
-	for (ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++)
+	for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++)
 		theCurrentPraatObjects -> list [theCurrentPraatObjects -> n]. editors [ieditor] = nullptr;   // undangle or remove second reference
 	MelderFile_setToNull (& theCurrentPraatObjects -> list [theCurrentPraatObjects -> n]. file);   // undangle or remove second reference
 	-- theCurrentPraatObjects -> n;
@@ -814,7 +768,7 @@ static int publishProc (autoDaata me) {
 
 /***** QUIT *****/
 
-FORM (Quit, U"Confirm Quit", U"Quit")
+FORM (DO_Quit, U"Confirm Quit", U"Quit") {
 	LABEL (U"label", U"You have objects in your list!")
 	OK
 {
@@ -834,7 +788,7 @@ FORM (Quit, U"Confirm Quit", U"Quit")
 }
 DO
 	praat_exit (0);
-END
+END }
 
 static void gui_cb_quit (Thing /* me */) {
 	DO_Quit (nullptr, 0, nullptr, nullptr, nullptr, nullptr, false, nullptr);
@@ -915,7 +869,7 @@ void praat_dontUsePictureWindow () { praatP.dontUsePictureWindow = true; }
 			sendpraatW (nullptr, Melder_peek32toW (praatP.title), 0, Melder_peek32toW (text));
 		#endif
 	}
-#elif cocoa
+#elif macintosh
 	static int (*theUserMessageCallback) (char32 *message);
 	static void mac_setUserMessageCallback (int (*userMessageCallback) (char32 *message)) {
 		theUserMessageCallback = userMessageCallback;
@@ -964,20 +918,6 @@ void praat_dontUsePictureWindow () { praatP.dontUsePictureWindow = true; }
 		}
 		return noErr;
 	}
-	static int cb_userMessage (char32 *message) {
-		autoPraatBackground background;
-		try {
-			praat_executeScriptFromText (message);
-		} catch (MelderError) {
-			Melder_flushError (praatP.title, U": message not completely handled.");
-		}
-		return 0;
-	}
-	static int cb_quitApplication () {
-		DO_Quit (nullptr, 0, nullptr, nullptr, nullptr, nullptr, false, nullptr);
-		return 0;
-	}
-#elif defined (macintosh)
 	static int cb_userMessage (char32 *message) {
 		autoPraatBackground background;
 		try {
@@ -1155,7 +1095,7 @@ void praat_init (const char32 *title, int argc, char **argv)
 			MelderInfo_writeLine (U"  --version        print the Praat version");
 			MelderInfo_writeLine (U"  --help           print this list of command line options");
 			MelderInfo_writeLine (U"  -a, --ansi       Windows only: use ISO Latin-1 encoding instead of UTF-16LE");
-			MelderInfo_writeLine (U"                   (this option is needed when you redirect to a pipe or file");
+			MelderInfo_writeLine (U"                   (this option is needed when you redirect to a pipe or file)");
 			MelderInfo_close ();
 			exit (0);
 		} else if (strequ (argv [praatP.argumentNumber], "-a") || strequ (argv [praatP.argumentNumber], "--ansi")) {
@@ -1350,8 +1290,6 @@ void praat_init (const char32 *title, int argc, char **argv)
 			argv [0] = Melder_32to8 (praatP. title);   // argc == 4
 			Gui_setOpenDocumentCallback (cb_openDocument);
 			GuiAppInitialize ("Praatwulg", argc, argv);
-		#elif defined (macintosh)
-			GuiAppInitialize ("Praatwulg", argc, argv);
 		#endif
 
 		trace (U"creating and installing the Objects window");
@@ -1507,7 +1445,7 @@ void praat_run () {
 
 	trace (U"adding the Quit command");
 	praat_addMenuCommand (U"Objects", U"Praat", U"-- quit --", nullptr, 0, nullptr);
-	praat_addMenuCommand (U"Objects", U"Praat", U"Quit", nullptr, praat_UNHIDABLE + 'Q', DO_Quit);
+	praat_addMenuCommand (U"Objects", U"Praat", U"Quit", nullptr, praat_UNHIDABLE | 'Q' | praat_NO_API, DO_Quit);
 
 	trace (U"read the preferences file, and notify those who want to be notified of this");
 	/* ...namely, those who already have a window (namely, the Picture window),
@@ -1584,10 +1522,16 @@ void praat_run () {
 		Melder_assert ((double) dummy == 40000.0);
 		Melder_assert ((double) (int16_t) dummy == -25536.0);
 	}
+	{ unsigned int dummy = 40000;
+		Melder_assert ((int) (int16_t) dummy == -25536);
+		Melder_assert ((short) (int16_t) dummy == -25536);
+		Melder_assert ((double) dummy == 40000.0);
+		Melder_assert ((double) (int16_t) dummy == -25536.0);
+	}
 	{
 		int64 dummy = 1000000000000;
 		if (! str32equ (Melder_integer (dummy), U"1000000000000"))
-			Melder_fatal (U"The number 1000000000000 is mistaken written on this machine as ", dummy, U".");
+			Melder_fatal (U"The number 1000000000000 is mistakenly written on this machine as ", dummy, U".");
 	}
 	{ uint32_t dummy = 0xffffffff;
 		Melder_assert ((int64) dummy == 4294967295LL);
@@ -1671,6 +1615,8 @@ void praat_run () {
 		praat_sortMenuCommands ();
 		praat_sortActions ();
 
+		praatP.phase = praat_HANDLING_EVENTS;
+
 		if (praatP.userWantsToOpen) {
 			for (; praatP.argumentNumber < praatP.argc; praatP.argumentNumber ++) {
 				//Melder_casual (U"File to open <<", Melder_peek8to32 (theArgv [iarg]), U">>");
@@ -1683,8 +1629,6 @@ void praat_run () {
 				}
 			}
 		}
-
-		praatP.phase = praat_HANDLING_EVENTS;
 
 		#if gtk
 			//gtk_widget_add_events (G_OBJECT (theCurrentPraatApplication -> topShell), GDK_ALL_EVENTS_MASK);

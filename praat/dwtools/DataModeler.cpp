@@ -197,7 +197,7 @@ void DataModeler_getExtremaY (DataModeler me, double *p_ymin, double *p_ymax) {
 	}
 }
 
-double DataModeler_getDataPointValue (DataModeler me, long index) {
+double DataModeler_getDataPointYValue (DataModeler me, long index) {
 	double value = NUMundefined;
 	if (index > 0 && index <= my numberOfDataPoints && my dataPointStatus[index] != DataModeler_DATA_INVALID) {
 		value = my y[index];
@@ -205,19 +205,40 @@ double DataModeler_getDataPointValue (DataModeler me, long index) {
 	return value;
 }
 
-void DataModeler_setDataPointValue (DataModeler me, long index, double value) {
+double DataModeler_getDataPointXValue (DataModeler me, long index) {
+	double value = NUMundefined;
+	if (index > 0 && index <= my numberOfDataPoints && my dataPointStatus[index] != DataModeler_DATA_INVALID) {
+		value = my x[index];
+	}
+	return value;
+}
+
+void DataModeler_setDataPointYValue (DataModeler me, long index, double value) {
 	if (index > 0 && index <= my numberOfDataPoints) {
 		my y[index] = value;
 	}
 }
 
-void DataModeler_setDataPointSigma (DataModeler me, long index, double sigma) {
+void DataModeler_setDataPointXValue (DataModeler me, long index, double value) {
+	if (index > 0 && index <= my numberOfDataPoints) {
+		my x[index] = value;
+	}
+}
+
+void DataModeler_setDataPointValues (DataModeler me, long index, double xvalue, double yvalue) {
+	if (index > 0 && index <= my numberOfDataPoints) {
+		my x[index] = xvalue;
+		my y[index] = yvalue;
+	}
+}
+
+void DataModeler_setDataPointYSigma (DataModeler me, long index, double sigma) {
 	if (index > 0 && index <= my numberOfDataPoints) {
 		my sigmaY[index] = sigma;
 	}
 }
 
-double DataModeler_getDataPointSigma (DataModeler me, long index) {
+double DataModeler_getDataPointYSigma (DataModeler me, long index) {
 	double sigma = NUMundefined;
 	if (index > 0 && index <= my numberOfDataPoints) {
 		sigma = my sigmaY[index];
@@ -979,6 +1000,19 @@ double DataModeler_getResidualSumOfSquares (DataModeler me, long *numberOfDataPo
 	return n > 0 ? rss : NUMundefined;
 }
 
+void DataModeler_reportChiSquared (DataModeler me, int weighDataType) {
+	int useSigmaY = weighDataType - 1;
+	MelderInfo_writeLine (U"Chi squared test:");
+	MelderInfo_writeLine (useSigmaY == DataModeler_DATA_WEIGH_EQUAL ? U"Standard deviation is estimated from the data." :
+		useSigmaY == DataModeler_DATA_WEIGH_SIGMA ? U"Sigmas are used as estimate for local standard deviations." : 
+		useSigmaY == DataModeler_DATA_WEIGH_RELATIVE ? U"1/Q's are used as estimate for local standard deviations." :
+		U"Sqrt sigmas are used as estimate for local standard deviations.");
+	double ndf, probability, chisq = DataModeler_getChiSquaredQ (me, useSigmaY, &probability, &ndf);
+	MelderInfo_writeLine (U"Chi squared = ", chisq);
+	MelderInfo_writeLine (U"Probability = ", probability);
+	MelderInfo_writeLine (U"Number of degrees of freedom = ", ndf);	
+}
+
 double DataModeler_estimateSigmaY (DataModeler me) {
 	try {
 		long numberOfDataPoints = 0;
@@ -1010,7 +1044,7 @@ double FormantModeler_getDataPointValue (FormantModeler me, long iformant, long 
 	double value = NUMundefined;
 	if (iformant > 0 && iformant <= my trackmodelers.size) {
 		DataModeler ff = my trackmodelers.at [iformant];
-		value = DataModeler_getDataPointValue (ff, index);
+		value = DataModeler_getDataPointYValue (ff, index);
 	}
 	return value;
 }
@@ -1018,7 +1052,7 @@ double FormantModeler_getDataPointValue (FormantModeler me, long iformant, long 
 void FormantModeler_setDataPointValue (FormantModeler me, long iformant, long index, double value) {
 	if (iformant > 0 && iformant <= my trackmodelers.size) {
 		DataModeler ff = my trackmodelers.at [iformant];
- 		DataModeler_setDataPointValue (ff, index, value);
+ 		DataModeler_setDataPointYValue (ff, index, value);
 	}
 }
 
@@ -1026,7 +1060,7 @@ double FormantModeler_getDataPointSigma (FormantModeler me, long iformant, long 
 	double sigma = NUMundefined;
 	if (iformant > 0 && iformant <= my trackmodelers.size) {
 		DataModeler ff = (DataModeler) my trackmodelers.at [iformant];
-		sigma = DataModeler_getDataPointSigma (ff, index);
+		sigma = DataModeler_getDataPointYSigma (ff, index);
 	}
 	return sigma;
 }
@@ -1034,7 +1068,7 @@ double FormantModeler_getDataPointSigma (FormantModeler me, long iformant, long 
 void FormantModeler_setDataPointSigma (FormantModeler me, long iformant, long index, double sigma) {
 	if (iformant > 0 && iformant <= my trackmodelers.size) {
 		DataModeler ff = my trackmodelers.at [iformant];
- 		DataModeler_setDataPointSigma (ff, index, sigma);
+ 		DataModeler_setDataPointYSigma (ff, index, sigma);
 	}
 }
 
@@ -1852,6 +1886,30 @@ double FormantModeler_getFormantsConstraintsFactor (FormantModeler me, double mi
 	double f3 = FormantModeler_getParameterValue (me, 3, 1); // trackmodelers -> item[3] -> parameter[1]
 	double minF3Factor = f3 > minF3 ? 1 : sqrt (minF3 - f3 + 1.0);
 	return minF1Factor * maxF1Factor * minF2Factor * maxF2Factor * minF3Factor;
+}
+
+
+void FormantModeler_reportChiSquared (FormantModeler me, int weighDataType) {
+	long numberOfFormants = my trackmodelers.size;
+	int useSigmaY = weighDataType - 1;
+	double chisq = 0, ndf = 0, probability;
+	MelderInfo_writeLine (U"Chi squared tests for individual models of each of ", numberOfFormants, U" formant track:");
+	MelderInfo_writeLine (useSigmaY == DataModeler_DATA_WEIGH_EQUAL ? U"Standard deviation is estimated from the data." :
+		useSigmaY == DataModeler_DATA_WEIGH_SIGMA ? U"\tBandwidths are used as estimate for local standard deviations." : 
+		useSigmaY == DataModeler_DATA_WEIGH_RELATIVE ? U"\t1/Q's are used as estimate for local standard deviations." :
+		U"\tSqrt bandwidths are used as estimate for local standard deviations.");
+	for (long iformant = 1; iformant <= numberOfFormants; iformant ++) {
+		chisq = FormantModeler_getChiSquaredQ (me, iformant, iformant, useSigmaY, &probability, &ndf);
+		MelderInfo_writeLine (U"Formant track ", iformant, U":");
+		MelderInfo_writeLine (U"\tChi squared (F", iformant, U") = ", chisq);
+		MelderInfo_writeLine (U"\tProbability (F", iformant, U") = ", probability);
+		MelderInfo_writeLine (U"\tNumber of degrees of freedom (F", iformant, U") = ", ndf);
+	}
+	chisq = FormantModeler_getChiSquaredQ (me, 1, numberOfFormants, useSigmaY, & probability, & ndf);
+	MelderInfo_writeLine (U"Chi squared test for the complete model with ", numberOfFormants, U" formants:");
+	MelderInfo_writeLine (U"\tChi squared = ", chisq);
+	MelderInfo_writeLine (U"\tProbability = ", probability);
+	MelderInfo_writeLine (U"\tNumber of degrees of freedom = ", ndf);
 }
 
 long Formants_getSmoothestInInterval (CollectionOf<structFormant>* me, double tmin, double tmax, long numberOfFormantTracks, long numberOfParametersPerTrack,
