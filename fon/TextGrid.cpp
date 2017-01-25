@@ -397,7 +397,7 @@ autoTextTier TextTier_readFromXwaves (MelderFile file) {
 			double time;
 			long colour;
 			char mark [300];
-			if (sscanf (line, "%lf%ld%s", & time, & colour, mark) < 3)   // BUG: buffer overflow
+			if (sscanf (line, "%lf%ld%299s", & time, & colour, mark) < 3)   // BUG: buffer overflow
 				Melder_throw (U"Line too short: \"", Melder_peek8to32 (line), U"\".");
 			TextTier_addPoint (me.get(), time, Melder_peek8to32 (mark));
 		}
@@ -924,7 +924,7 @@ autoIntervalTier IntervalTier_readFromXwaves (MelderFile file) {
 
 			line = MelderFile_readLine (file);
 			if (! line) break;   // normal end-of-file
-			numberOfElements = sscanf (line, "%lf%ld%s", & time, & colour, mark);
+			numberOfElements = sscanf (line, "%lf%ld%199s", & time, & colour, mark);
 			if (numberOfElements == 0) {
 				break;   // an empty line, hopefully at the end
 			}
@@ -1068,7 +1068,7 @@ static void genericize (char32 **pstring, char32 *buffer) {
 	}
 }
 
-void TextGrid_genericize (TextGrid me) {
+void TextGrid_convertToBackslashTrigraphs (TextGrid me) {
 	try {
 		autostring32 buffer = Melder_calloc (char32, TextGrid_maximumLabelLength (me) * 3 + 1);
 		for (long itier = 1; itier <= my tiers->size; itier ++) {
@@ -1092,7 +1092,7 @@ void TextGrid_genericize (TextGrid me) {
 	}
 }
 
-void TextGrid_nativize (TextGrid me) {
+void TextGrid_convertToUnicode (TextGrid me) {
 	try {
 		autostring32 buffer = Melder_calloc (char32, TextGrid_maximumLabelLength (me) + 1);
 		for (long itier = 1; itier <= my tiers->size; itier ++) {

@@ -30,7 +30,7 @@
 
 
 static autoTableOfReal getStandardizedLogFrequencyPolsData (bool includeLevels) {
-	autoTableOfReal me = TableOfReal_createFromPolsData_50males (includeLevels);
+	autoTableOfReal me = TableOfReal_create_pols1973 (includeLevels);
 	for (long i = 1; i <= my numberOfRows; i++) {
 		for (long j = 1; j <= 3; j++) {
 			my data[i][j] = log10 (my data[i][j]);
@@ -1300,7 +1300,7 @@ DEFINITION (U"define the coefficients of each @@Legendre polynomials|Legendre po
 	"The coefficient of the polynomial with the highest degree comes last.")
 MAN_END
 
-MAN_BEGIN (U"Create Sound from gammatone...", U"djmw", 20100517)
+MAN_BEGIN (U"Create Sound as gammatone...", U"djmw", 20161013)
 INTRO (U"A command to create a @Sound as a @@gammatone@.")
 ENTRY (U"Settings")
 TAG (U"##Name")
@@ -1342,7 +1342,7 @@ NORMAL (U"To avoid @aliasing in the chirp sound, a sound is only generated durin
 	"instantaneous frequency is greater than zero and smaller than the @@Nyquist frequency@.")
 MAN_END
 
-MAN_BEGIN (U"Create Sound from Shepard tone...", U"djmw", 20140117)
+MAN_BEGIN (U"Create Sound as Shepard tone...", U"djmw", 20161013)
 INTRO (U"One of the commands that create a @Sound.")
 ENTRY (U"Settings")
 TAG (U"##Name")
@@ -1393,7 +1393,7 @@ NORMAL (U"The following script generates 12 static Shepard tone complexes, 1 sem
 CODE (U"fadeTime = 0.010")
 CODE (U"for i to 12")
 CODE1 (U"fraction = (i-1)/12")
-CODE1 (U"Create Sound from Shepard tone: \"s\" + string\\$  (i), 0, 0.1, 22050, 4.863, 10, 0, 34, fraction")
+CODE1 (U"Create Sound as Shepard tone: \"s\" + string\\$  (i), 0, 0.1, 22050, 4.863, 10, 0, 34, fraction")
 CODE1 (U"Fade in: 0, 0, fadeTime, \"no\"")
 CODE1 (U"Fade out: 0, 0.1, -fadeTime, \"no\"")
 CODE (U"endfor")
@@ -2201,6 +2201,33 @@ MAN_END
 MAN_BEGIN (U"Eigen: Get eigenvector element...", U"djmw", 20040225)
 INTRO (U"A command to query the selected @Eigen for the %j^^th^ element of the "
 	"%i^^th^ eigenvector.")
+MAN_END
+
+MAN_BEGIN (U"Eigen: Extract eigenvector...", U"djmw", 20160617)
+INTRO (U"Extract a specified eigenvector from the @Eigen as a @Matrix.")
+ENTRY (U"Settings")
+TAG (U"##Eigenvector number")
+DEFINITION (U"determines the eigenvector.")
+TAG (U"##Number of rows")
+DEFINITION (U"determines the number of rows of the newly created Matrix. If left 0, the number of rows is determined from the dimension, i.e. the number of elements, of the eigenvector and the #numberOfColumns argument as the %dimension / %numberOfColumns, rounded to the next larger integer.")
+TAG (U"##Number of columns")
+DEFINITION (U"determines the number of columns of the newly created Matrix. If left 0, the number of columns is determined by from the dimension, i.e. the number of elements, of the eigenvector and the #numberOfRows argument as  %dimension / %numberOfRows, rounded to the next larger integer.\nIf both ##Number of rows# and ##Number of columns# are zero, a Matrix with only one row and %dimension columns will be created.")
+ENTRY (U"Examples")
+NORMAL (U"Suppose we have an eigenvector of dimension 3 with elements {0.705, 0.424, 0.566}, then the newly created Matrix will depend on the ##Number of rows# and ##Number of columns# argument as follows:")
+NORMAL (U"If %numberOfRows=0 and %numberOfColumns=0, then the Matrix will have 1 row and 3 columns:")
+CODE (U"0.705 0.424 0.566")
+NORMAL (U"If %numberOfRows=3 and %numberOfColumns=0, then the Matrix will have 3 rows and 1 column:")
+CODE (U"0.705")
+CODE (U"0.424")
+CODE (U"0.566")
+NORMAL (U"If %numberOfRows=2 and %numberOfColumns=2, then the Matrix will have 2 rows and 2 columns:")
+CODE (U"0.705 0.424")
+CODE (U"0.566 0.0")
+NORMAL (U"If %numberOfRows=4 and %numberOfColumns=3, then the we get:")
+CODE (U"0.705 0.424 0.566")
+CODE (U"0.0   0.0   0.0 ")
+CODE (U"0.0   0.0   0.0 ")
+CODE (U"0.0   0.0   0.0 ")
 MAN_END
 
 MAN_BEGIN (U"Eigen & Matrix: To Matrix (project columns)...", U"djmw", 20160223)
@@ -3482,8 +3509,8 @@ INTRO (U"A command to draw only those parts of a @Sound where a condition holds.
 ENTRY (U"Settings")
 SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (5), U""
 	Manual_DRAW_SETTINGS_WINDOW ("Sound: Draw where...", 5)
-	Manual_DRAW_SETTINGS_WINDOW_RANGE("Time range (s)", "0.0", "0.0 (=all)")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (=all)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE("Time range (s)", "0.0", "0.0 (= all)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= all)")
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN("Garnish", 1)
 	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU("Drawing method", "Curve")
 	Manual_DRAW_SETTINGS_WINDOW_TEXT ("Draw only those parts where the following condition holds",
@@ -3639,8 +3666,8 @@ ENTRY (U"Settings")
 SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (6), U""
 	Manual_DRAW_SETTINGS_WINDOW ("Sound: Paint where...", 6)
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Colour (0-1, name, {r,g,b})", "0.5")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE("Time range (s)", "0.0", "0.0 (=all)")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (=all)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE("Time range (s)", "0.0", "0.0 (= all)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= all)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Fill from level", "0")
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN("Garnish", 1)
 	Manual_DRAW_SETTINGS_WINDOW_TEXT ("Paint only those parts where the following condition holds",
@@ -3707,8 +3734,8 @@ ENTRY (U"Settings")
 SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (4), U""
 	Manual_DRAW_SETTINGS_WINDOW ("Sounds: Paint enclosed", 4)
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Colour (0-1, name, {r,g,b})", "0.5")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE("Time range (s)", "0.0", "0.0 (=all)")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (=all)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE("Time range (s)", "0.0", "0.0 (= all)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= all)")
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN("Garnish", 1)
 )
 TAG (U"##Colour")
@@ -4196,7 +4223,7 @@ ENTRY (U"Settings")
 SCRIPT (6, Manual_SETTINGS_WINDOW_HEIGHT (10), U""
 	Manual_DRAW_SETTINGS_WINDOW ("Table: Bar plot where", 10)
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Vertical column(s)", "")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE("Vertical range", "0.0", "0.0 (=autoscaling)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE("Vertical range", "0.0", "0.0 (= autoscaling)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Column with labels", "")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Distance of first bar from border", "1.0")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Distance between bar groups", "1.0")
@@ -4288,13 +4315,13 @@ ENTRY (U"Settings")
 SCRIPT (7, Manual_SETTINGS_WINDOW_HEIGHT (8), U""
 	Manual_DRAW_SETTINGS_WINDOW ("Table: Line graph where", 8)
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Vertical column", "")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (=autoscaling)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= autoscaling)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Horizontal column", "")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Horizontal range", "0.0", "0.0 (=autoscaling)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Horizontal range", "0.0", "0.0 (= autoscaling)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Text", "+")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Label text angle (degrees)", "0.0")
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN("Garnish", 1)
-	Manual_DRAW_SETTINGS_WINDOW_TEXT("Formula:", "1; (=everything)")
+	Manual_DRAW_SETTINGS_WINDOW_TEXT("Formula:", "1; (= everything)")
 )
 TAG (U"##Vertical column")
 DEFINITION (U"The column whose data points you want to plot.")
@@ -4391,14 +4418,14 @@ ENTRY (U"Settings")
 SCRIPT (6, Manual_SETTINGS_WINDOW_HEIGHT (9), U""
 	Manual_DRAW_SETTINGS_WINDOW ("Table: Vertical confidence intervals plot where", 9)
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Horizontal column", "")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Horizontal range", "0.0", "0.0 (=autoscaling)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Horizontal range", "0.0", "0.0 (= autoscaling)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Vertical column", "")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (=autoscaling)")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= autoscaling)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Lower error value column", "")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Upper error value column", "")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Bar size (mm)", "1.0")
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN("Garnish", 1)
-	Manual_DRAW_SETTINGS_WINDOW_TEXT("Formula", "1; (=everything)")
+	Manual_DRAW_SETTINGS_WINDOW_TEXT("Formula", "1; (= everything)")
 )
 TAG (U"##Horizontal column")
 DEFINITION (U"determines the data along the horizontal axis.")

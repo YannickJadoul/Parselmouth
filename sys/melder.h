@@ -166,7 +166,7 @@ inline static int64 str32spn (const char32 *string1, const char32 *string2) {
 	char32 kar1, kar2;
 cont:
 	kar1 = * p ++;
-	for (const char32 * q = string2; (kar2 = * q ++) != 0;)
+	for (const char32 * q = string2; (kar2 = * q ++) != U'\0';)
 		if (kar2 == kar1)
 			goto cont;
 	return p - 1 - string1;
@@ -408,13 +408,13 @@ struct structMelderDir {
 typedef struct structMelderDir *MelderDir;
 
 const char32 * MelderFile_name (MelderFile file);
-char32 * MelderDir_name (MelderDir dir);
+const char32 * MelderDir_name (MelderDir dir);
 void Melder_pathToDir (const char32 *path, MelderDir dir);
 void Melder_pathToFile (const char32 *path, MelderFile file);
 void Melder_relativePathToFile (const char32 *path, MelderFile file);
-char32 * Melder_dirToPath (MelderDir dir);
+const char32 * Melder_dirToPath (MelderDir dir);
 	/* Returns a pointer internal to 'dir', like "/u/paul/praats" or "D:\Paul\Praats" */
-char32 * Melder_fileToPath (MelderFile file);
+const char32 * Melder_fileToPath (MelderFile file);
 void MelderFile_copy (MelderFile file, MelderFile copy);
 void MelderDir_copy (MelderDir dir, MelderDir copy);
 bool MelderFile_equal (MelderFile file1, MelderFile file2);
@@ -430,7 +430,7 @@ void MelderDir_getParentDir (MelderDir file, MelderDir parent);
 bool MelderDir_isDesktop (MelderDir dir);
 void MelderDir_getSubdir (MelderDir parent, const char32 *subdirName, MelderDir subdir);
 void Melder_rememberShellDirectory ();
-char32 * Melder_getShellDirectory ();
+const char32 * Melder_getShellDirectory ();
 void Melder_getHomeDir (MelderDir homeDir);
 void Melder_getPrefDir (MelderDir prefDir);
 void Melder_getTempDir (MelderDir tempDir);
@@ -1174,10 +1174,6 @@ extern bool Melder_batch;   // true if run from the batch or from an interactive
 extern bool Melder_backgrounding;   // true if running a script
 extern bool Melder_consoleIsAnsi;
 extern bool Melder_asynchronous;   // true if specified by the "asynchronous" directive in a script
-#ifndef CONTROL_APPLICATION
-	typedef struct structGuiWindow *GuiWindow;
-	extern GuiWindow Melder_topShell;
-#endif
 
 /********** OVERRIDE DEFAULT BEHAVIOUR **********/
 
@@ -1192,6 +1188,8 @@ void Melder_setInformationProc (void (*informationProc) (const char32 *message))
 void Melder_setHelpProc (void (*help) (const char32 *query));
 void Melder_setSearchProc (void (*search) ());
 void Melder_setWarningProc (void (*warningProc) (const char32 *message));
+void Melder_setProgressProc (void (*progress) (double, const char32 *));
+void Melder_setMonitorProc (void * (*monitor) (double, const char32 *));
 void Melder_setErrorProc (void (*errorProc) (const char32 *message));
 void Melder_setFatalProc (void (*fatalProc) (const char32 *message));
 void Melder_setRecordProc (int (*record) (double));
@@ -1323,6 +1321,7 @@ const char32 * MelderQuantity_getShortUnitText (int quantity);   // e.g. "s"
 
 char32 * Melder_getenv (const char32 *variableName);
 void Melder_system (const char32 *command);   // spawn a system command
+void Melder_execv (const char32 *executableFileName, int narg, char32 **args);   // spawn a subprocess
 double Melder_clock ();   // seconds since 1969
 
 struct autoMelderProgressOff {

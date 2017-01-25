@@ -1,6 +1,6 @@
 /* RealTierEditor.cpp
  *
- * Copyright (C) 1992-2011,2012,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2011,2012,2013,2014,2015,2016 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ void structRealTierEditor :: v_createMenus () {
 	EditorMenu_addCommand (menu, U"Add point at cursor", 'T', menu_cb_addPointAtCursor);
 	EditorMenu_addCommand (menu, U"Add point at...", 0, menu_cb_addPointAt);
 	EditorMenu_addCommand (menu, U"-- remove point --", 0, nullptr);
-	EditorMenu_addCommand (menu, U"Remove point(s)", GuiMenu_OPTION + 'T', menu_cb_removePoints);
+	EditorMenu_addCommand (menu, U"Remove point(s)", GuiMenu_OPTION | 'T', menu_cb_removePoints);
 }
 
 void RealTierEditor_updateScaling (RealTierEditor me) {
@@ -149,7 +149,7 @@ void structRealTierEditor :: v_dataChanged () {
 void structRealTierEditor :: v_draw () {
 	RealTier data = (RealTier) our data;
 	long n = data -> points.size;
-	Melder_casual (U"structRealTierEditor :: v_draw ", n);
+	trace (U"structRealTierEditor :: v_draw ", n);
 	Graphics_Viewport viewport;
 	if (our d_sound.data) {
 		viewport = Graphics_insetViewport (our d_graphics.get(), 0.0, 1.0, 1.0 - SOUND_HEIGHT, 1.0);
@@ -175,7 +175,7 @@ void structRealTierEditor :: v_draw () {
 	Graphics_text (our d_graphics.get(), our d_endWindow, our ymin,   Melder_float (Melder_half (our ymin)), our v_rightTickUnits ());
 	long ifirstSelected = AnyTier_timeToHighIndex (data->asAnyTier(), our d_startSelection);
 	long ilastSelected = AnyTier_timeToLowIndex (data->asAnyTier(), our d_endSelection);
-	Melder_casual (U"structRealTierEditor :: v_draw: selected from ", our d_startSelection, U" ",
+	trace (U"structRealTierEditor :: v_draw: selected from ", our d_startSelection, U" ",
 		ifirstSelected, U" to ", our d_endSelection, U" ", ilastSelected);
 	long imin = AnyTier_timeToHighIndex (data->asAnyTier(), our d_startWindow);
 	long imax = AnyTier_timeToLowIndex (data->asAnyTier(), our d_endWindow);

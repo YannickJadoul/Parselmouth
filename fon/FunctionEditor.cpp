@@ -1,6 +1,6 @@
 /* FunctionEditor.cpp
  *
- * Copyright (C) 1992-2011,2012,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2011,2012,2013,2014,2015,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -962,7 +962,7 @@ void structFunctionEditor :: v_createMenuItems_view_audio (EditorMenu menu) {
 	EditorMenu_addCommand (menu, U"Audio:", GuiMenu_INSENSITIVE, menu_cb_play /* dummy */);
 	EditorMenu_addCommand (menu, U"Play...", 0, menu_cb_play);
 	EditorMenu_addCommand (menu, U"Play or stop", GuiMenu_TAB, menu_cb_playOrStop);
-	EditorMenu_addCommand (menu, U"Play window", GuiMenu_SHIFT + GuiMenu_TAB, menu_cb_playWindow);
+	EditorMenu_addCommand (menu, U"Play window", GuiMenu_SHIFT | GuiMenu_TAB, menu_cb_playWindow);
 	EditorMenu_addCommand (menu, U"Interrupt playing", GuiMenu_ESCAPE, menu_cb_interruptPlaying);
 }
 
@@ -1001,12 +1001,12 @@ void structFunctionEditor :: v_createMenus () {
 	/*Editor_addCommand (this, U"Select", U"Move cursor back by half a second", motif_, menu_cb_moveCursorBy);*/
 	Editor_addCommand (this, U"Select", U"Select earlier", GuiMenu_UP_ARROW, menu_cb_selectEarlier);
 	Editor_addCommand (this, U"Select", U"Select later", GuiMenu_DOWN_ARROW, menu_cb_selectLater);
-	Editor_addCommand (this, U"Select", U"Move start of selection left", GuiMenu_SHIFT + GuiMenu_UP_ARROW, menu_cb_moveBleft);
+	Editor_addCommand (this, U"Select", U"Move start of selection left", GuiMenu_SHIFT | GuiMenu_UP_ARROW, menu_cb_moveBleft);
 	Editor_addCommand (this, U"Select", U"Move begin of selection left", Editor_HIDDEN, menu_cb_moveBleft);
-	Editor_addCommand (this, U"Select", U"Move start of selection right", GuiMenu_SHIFT + GuiMenu_DOWN_ARROW, menu_cb_moveBright);
+	Editor_addCommand (this, U"Select", U"Move start of selection right", GuiMenu_SHIFT | GuiMenu_DOWN_ARROW, menu_cb_moveBright);
 	Editor_addCommand (this, U"Select", U"Move begin of selection right", Editor_HIDDEN, menu_cb_moveBright);
-	Editor_addCommand (this, U"Select", U"Move end of selection left", GuiMenu_COMMAND + GuiMenu_UP_ARROW, menu_cb_moveEleft);
-	Editor_addCommand (this, U"Select", U"Move end of selection right", GuiMenu_COMMAND + GuiMenu_DOWN_ARROW, menu_cb_moveEright);
+	Editor_addCommand (this, U"Select", U"Move end of selection left", GuiMenu_COMMAND | GuiMenu_UP_ARROW, menu_cb_moveEleft);
+	Editor_addCommand (this, U"Select", U"Move end of selection right", GuiMenu_COMMAND | GuiMenu_DOWN_ARROW, menu_cb_moveEright);
 }
 
 void structFunctionEditor :: v_createHelpMenuItems (EditorMenu menu) {
@@ -1023,11 +1023,22 @@ static void gui_drawingarea_cb_expose (FunctionEditor me, GuiDrawingArea_ExposeE
 static void gui_drawingarea_cb_click (FunctionEditor me, GuiDrawingArea_ClickEvent event) {
 	if (! my d_graphics) return;   // could be the case in the very beginning
 	my shiftKeyPressed = event -> shiftKeyPressed;
-	Graphics_setWindow (my d_graphics.get(), my functionViewerLeft, my functionViewerRight, 0.0, my height);
+	Graphics_setWindow (my d_graphics.get(), my functionViewerLeft, my selectionViewerRight, 0.0, my height);
 	double xWC, yWC;
 	Graphics_DCtoWC (my d_graphics.get(), event -> x, event -> y, & xWC, & yWC);
 
-	if (yWC > BOTTOM_MARGIN + space * 3 && yWC < my height - (TOP_MARGIN + space)) {   // in signal region?
+	if (xWC > my selectionViewerLeft)
+	{
+		Graphics_setViewport (my d_graphics.get(), my selectionViewerLeft + MARGIN, my selectionViewerRight - MARGIN,
+			BOTTOM_MARGIN + space * 3, my height - (TOP_MARGIN + space));
+		Graphics_setWindow (my d_graphics.get(), 0.0, 1.0, 0.0, 1.0);
+		Graphics_DCtoWC (my d_graphics.get(), event -> x, event -> y, & xWC, & yWC);
+		my v_clickSelectionViewer (xWC, yWC);
+		my v_updateText ();
+		drawNow (me);
+		updateGroup (me);
+	}
+	else if (yWC > BOTTOM_MARGIN + space * 3 && yWC < my height - (TOP_MARGIN + space)) {   // in signal region?
 		int needsUpdate;
 		Graphics_setViewport (my d_graphics.get(), my functionViewerLeft + MARGIN, my functionViewerRight - MARGIN,
 			BOTTOM_MARGIN + space * 3, my height - (TOP_MARGIN + space));
@@ -1397,6 +1408,9 @@ bool structFunctionEditor :: v_clickE (double xWC, double /* yWC */) {
 		our d_endSelection = dummy;
 	}
 	return FunctionEditor_UPDATE_NEEDED;
+}
+
+void structFunctionEditor :: v_clickSelectionViewer (double /* xWC */, double /* yWC */) {
 }
 
 void FunctionEditor_insetViewport (FunctionEditor me) {

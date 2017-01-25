@@ -35,18 +35,18 @@
 #define _Thing_auto_DEBUG  0
 
 /*
-	Use the macro 'I' for an object in the formal parameter lists
-	(if the explicit type cannot be used).
 	Use the macro 'iam'
 	as the first declaration in a function definition.
 	After this, the object 'me' has the right class (for the compiler),
 	so that you can use the macro 'my' to refer to members.
-	Example: int Person_getAge (I) { iam (Person); return my age; }
+	Example: int Person_getAge (void *void_me) { iam (Person); return my age; }
 */
 #define iam(klas)  klas me = (klas) void_me
 #define my  me ->
 #define thy  thee ->
+#define your  you ->
 #define his  him ->
+#define her  she ->
 #define our  this ->
 
 typedef struct structClassInfo *ClassInfo;
@@ -55,7 +55,7 @@ struct structClassInfo {
 	 * The following five fields are statically initialized by the Thing_implement() macro.
 	 */
 	const char32 *className;
-	ClassInfo parent;
+	ClassInfo semanticParent;
 	long size;
 	Thing (* _new) ();   // objects have to be constructed via this function, because it calls C++ "new", which initializes the C++ class pointer
 	long version;
@@ -75,14 +75,14 @@ struct structClassInfo {
 	extern struct structClassInfo theClassInfo_##klas; \
 	extern ClassInfo class##klas
 
-#define Thing_define(klas,parentKlas) \
+#define Thing_define(klas,syntacticParentKlas) \
 	Thing_declare (klas); \
-	typedef struct##parentKlas klas##_Parent; \
-	struct struct##klas : public struct##parentKlas
+	typedef struct##syntacticParentKlas klas##_Parent; \
+	struct struct##klas : public struct##syntacticParentKlas
 
-#define Thing_implement(klas,parentKlas,version) \
+#define Thing_implement(klas,semanticParentKlas,version) \
 	static Thing _##klas##_new () { return new struct##klas; } \
-	struct structClassInfo theClassInfo_##klas = { U"" #klas, & theClassInfo_##parentKlas, sizeof (class struct##klas), _##klas##_new, version, 0, nullptr}; \
+	struct structClassInfo theClassInfo_##klas = { U"" #klas, & theClassInfo_##semanticParentKlas, sizeof (class struct##klas), _##klas##_new, version, 0, nullptr}; \
 	ClassInfo class##klas = & theClassInfo_##klas
 
 /*
@@ -166,7 +166,7 @@ bool Thing_isSubclass (ClassInfo klas, ClassInfo ancestor);
 */
 
 void Thing_info (Thing me);
-void Thing_infoWithIdAndFile (Thing me, unsigned long id, MelderFile file);
+void Thing_infoWithIdAndFile (Thing me, long id, MelderFile file);
 
 void Thing_recognizeClassesByName (ClassInfo readableClass, ...);
 /*
@@ -331,7 +331,7 @@ public:
 	/*
 		Sometimes the ownership is determined by a flag such as _ownItems or _ownData or _ownSound.
 		In that case, the autoThing has be released as a raw Thing pointer,
-		and the ambiguous owner may become responsible for destruction the object.
+		and the ambiguous owner may become responsible for destroying the object.
 		In Praat, this happens with Collection items and with some editors.
 	*/
 	T* releaseToAmbiguousOwner () noexcept {
