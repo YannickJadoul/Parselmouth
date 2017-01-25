@@ -124,8 +124,8 @@ PYBIND11_PLUGIN(parselmouth) {
 	;
 
 	py::class_<structSound, autoSound>(m, "Sound")
-		.def("__str__",
-				[] (Sound self) { MelderInfoInterceptor info; self->v_info(); return info.get(); })
+		.def("__str__", // TODO Should probably be part of the Thing class?
+				[] (Sound self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 
 		.def_static("read_file",
 				&readSound,
@@ -138,8 +138,7 @@ PYBIND11_PLUGIN(parselmouth) {
 //		.def("create_tone_complex",
 //				&Sound_createFromToneComplex,
 //				"start_time"_a = 0.0, "end_time"_a = 1.0, "sample_rate"_a = 44100.0, "phase"_a = 440.0, "amplitude"_a = 0.2, "fade_in_duration"_a = 0.01, "fade_out_duration"_a = 0.01)
-//				// double startingTime, double endTime,	double sampleRate, int phase, double frequencyStep,	double firstFrequency, double ceiling, long numberOfComponents
-
+//				// double startingTime, double endTime, double sampleRate, int phase, double frequencyStep, double firstFrequency, double ceiling, long numberOfComponents
 
 		.def("to_mfcc",
 				&Sound_to_MFCC,
@@ -248,7 +247,7 @@ PYBIND11_PLUGIN(parselmouth) {
 				"start_time"_a, "end_time"_a, "overlap"_a)
 
 		.def("as_array",
-				[] (Sound self) -> py::array { return py::array(py::dtype::of<double>(), {static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)}, &self->z[1][1], py::cast(self)); })
+				[] (Sound self) { return py::array_t<double>({static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)}, &self->z[1][1], py::cast(self)); })
 
 		.def("to_pitch",
 				&Sound_to_Pitch,
@@ -265,6 +264,73 @@ PYBIND11_PLUGIN(parselmouth) {
 		.def("to_harmonicity_cc",
 				&Sound_to_Harmonicity_cc,
 				"time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0)
+	;
+
+	py::class_<structMFCC, autoMFCC>(m, "MFCC")
+		//.def(constructor(&Sound_to_MFCC,
+		//		(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0)))
+
+		.def("__str__", // TODO Should probably be part of the Thing class?
+				[] (MFCC self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
+
+		.def("get_coefficients",
+				[] (MFCC mfcc)
+					{
+						auto maxCoefficients = CC_getMaximumNumberOfCoefficients(mfcc, 1, mfcc->nx);
+						py::array_t<double> array({static_cast<size_t>(mfcc->nx), static_cast<size_t>(maxCoefficients + 1)}, nullptr);
+
+						for (auto i = 0; i < mfcc->nx; ++i) {
+							*array.mutable_data(i, 0) = mfcc->frame[i+1].c0;
+							for (auto j = 1; j <= maxCoefficients; ++j) {
+								*array.mutable_data(i, j) = (j <= mfcc->frame[i+1].numberOfCoefficients) ? mfcc->frame[i+1].c[j] : std::numeric_limits<double>::quiet_NaN();
+							}
+						}
+
+						return array;
+					})
+	;
+
+
+	py::enum_<kPitch_unit>(m, "PitchUnit")
+		.value("hertz", kPitch_unit_HERTZ)
+		.value("hertz_logarithmic", kPitch_unit_HERTZ_LOGARITHMIC)
+		.value("mel", kPitch_unit_MEL)
+		.value("log_hertz", kPitch_unit_LOG_HERTZ)
+		.value("mel", kPitch_unit_MEL)
+		.value("semitones_1", kPitch_unit_SEMITONES_1)
+		.value("semitones_100", kPitch_unit_SEMITONES_100)
+		.value("semitones_200", kPitch_unit_SEMITONES_200)
+		.value("semitones_440", kPitch_unit_SEMITONES_440)
+		.value("erb", kPitch_unit_ERB)
+	;
+
+	py::class_<structPitch, autoPitch>(m, "Pitch")
+		.def("__str__", // TODO Should probably be part of the Thing class?
+				[] (Pitch self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
+
+		.def("get_value",
+				[] (Pitch self, double time, kPitch_unit unit, bool interpolate) { return Pitch_getValueAtTime(self, time, unit, interpolate); },
+				"time"_a, "unit"_a = kPitch_unit_HERTZ, "interpolate"_a = true)
+	;
+
+
+	py::class_<structIntensity, autoIntensity>(m, "Intensity")
+		.def("__str__", // TODO Should probably be part of the Thing class?
+				[] (Intensity self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
+
+		.def("get_value", // TODO Should be part of Vector class
+				[] (Intensity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
+				"time"_a, "interpolation"_a = Interpolation::CUBIC)
+	;
+
+
+	py::class_<structHarmonicity, autoHarmonicity>(m, "Harmonicity")
+		.def("__str__", // TODO Should probably be part of the Thing class?
+				[] (Harmonicity self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
+
+		.def("get_value", // TODO Should be part of Vector class
+				[] (Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
+				"time"_a, "interpolation"_a = Interpolation::CUBIC)
 	;
 
 	return m.ptr();
