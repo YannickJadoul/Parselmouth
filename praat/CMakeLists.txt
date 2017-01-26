@@ -1,7 +1,5 @@
 include(${PROJECT_SOURCE_DIR}/res/cmake/add_sources.cmake)
 
-find_package(GTK2 REQUIRED gtk)
-
 set(PRAAT_SUBDIRECTORIES external/gsl
                          external/glpk
                          external/mp3
@@ -22,10 +20,9 @@ set(PRAAT_SUBDIRECTORIES external/gsl
                          artsynth
                          contrib/ola)
 
-set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES}
-                       ${GTK2_INCLUDE_DIRS})
+set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES})
 
-set(PRAAT_DEFINITIONS "-DFLAC__NOASM ${GTK2_DEFINITIONS}")
+set(PRAAT_DEFINITIONS "-DFLAC__NOASM -DNO_GRAPHICS")
 
 set(PRAAT_C_FLAGS "-std=gnu99 -pthread")
 set(PRAAT_CXX_FLAGS "-std=c++11 -pthread")
@@ -64,7 +61,7 @@ foreach(SUBDIR ${PRAAT_SUBDIRECTORIES})
 endforeach()
 
 add_library(praat ${SRC})
-target_link_libraries(praat ${GTK2_LIBRARIES})
+target_link_libraries(praat)
 
 if (APPLE)
 	find_library(COCOA_LIBRARY Cocoa)
