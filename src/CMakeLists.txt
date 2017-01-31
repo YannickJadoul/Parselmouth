@@ -1,4 +1,4 @@
-include_directories(${PRAAT_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${BOOST_NUMPY_INCLUDE_DIRS})
+include_directories(${PRAAT_INCLUDE_DIRS})
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_definitions(${PRAAT_DEFINITIONS})

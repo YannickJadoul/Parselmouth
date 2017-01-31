@@ -22,24 +22,21 @@ set(PRAAT_SUBDIRECTORIES external/gsl
 
 set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES})
 
-set(PRAAT_DEFINITIONS "-DFLAC__NOASM -DNO_GRAPHICS")
+set(PRAAT_DEFINITIONS "-DFLAC__NOASM -DNO_AUDIO -DNO_GRAPHICS -DNO_NETWORK")
 
 set(PRAAT_C_FLAGS "-std=gnu99 -pthread")
 set(PRAAT_CXX_FLAGS "-std=c++11 -pthread")
 
 
 # Trying to convert the flags from the Praat makefiles...
-if (APPLE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -x objective-c++")
-	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -DuseCarbon=0 -Dmacintosh")
-elseif (UNIX)
+if (UNIX)
 	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -DUNIX")
 	
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -Dlinux")
 	endif()
 else ()
-	message(FATAL_ERROR "Other build environments than Unix and OSX are not supported.")
+	message(FATAL_ERROR "Other build environments than Unix (including OS X) are not supported.")
 endif ()
 
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -62,15 +59,6 @@ endforeach()
 
 add_library(praat ${SRC})
 target_link_libraries(praat)
-
-if (APPLE)
-	find_library(COCOA_LIBRARY Cocoa)
-	find_library(AUDIO_TOOLBOX_LIBRARY AudioToolbox)
-	find_library(AUDIO_UNIT_LIBRARY AudioUnit)
-	find_library(CORE_AUDIO_LIBRARY CoreAudio)
-	mark_as_advanced(COCOA_LIBRARY AUDIO_TOOLBOX_LIBRARY AUDIO_UNIT_LIBRARY CORE_AUDIO_LIBRARY)
-	target_link_libraries(praat ${COCOA_LIBRARY} ${AUDIO_TOOLBOX_LIBRARY} ${AUDIO_UNIT_LIBRARY} ${CORE_AUDIO_LIBRARY})
-endif()
 
 foreach(X ${PRAAT_INCLUDE_DIRS})
 	get_filename_component(X ${X} ABSOLUTE)
