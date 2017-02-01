@@ -45,7 +45,7 @@
 	#include <gtk/gtk.h>
 	#include <gdk/gdk.h>
 	#include <cairo/cairo.h>
-#elif defined (macintosh)
+#elif cocoa
 	#include "macport_on.h"
     #include <Cocoa/Cocoa.h>
 	#include "macport_off.h"

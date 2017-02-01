@@ -41,6 +41,8 @@
 			#include <sys/soundcard.h>
 		#endif
 	#endif
+#else
+	#include <unistd.h>
 #endif
 
 struct SoundRecorder_Device {

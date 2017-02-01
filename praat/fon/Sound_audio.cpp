@@ -52,6 +52,7 @@
 	#include <unistd.h>   /* open write close read */
 #else
 	#include <fcntl.h>
+	#include <unistd.h>
 #endif
 
 static int ulaw2linear [] = 

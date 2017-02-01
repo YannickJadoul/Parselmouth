@@ -8,6 +8,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas ${PRAAT_CXX_F
 set(SRC parselmouth.cpp)
 
 pybind11_add_module(parselmouth ${SRC})
-target_link_libraries(parselmouth praat)
+target_link_libraries(parselmouth PRIVATE praat)
 install(TARGETS parselmouth DESTINATION ${CMAKE_INSTALL_PREFIX})
 
