@@ -16,26 +16,7 @@
 #include "praat/MelderInfoInterceptor.h"
 
 
-namespace pybind11 {
-namespace detail {
-
-template <typename Thing>
-class type_caster<_Thing_auto<Thing>> {
-public:
-    static handle cast(_Thing_auto<Thing> &&src, return_value_policy policy, handle parent) {
-        handle result = type_caster_base<Thing>::cast(src.get(), policy, parent);
-        if (result)
-            src.releaseToAmbiguousOwner();
-        return result;
-    }
-    static PYBIND11_DESCR name() { return type_caster_base<Thing>::name(); }
-};
-
-template <typename Thing>
-struct is_holder_type<Thing, _Thing_auto<Thing>> : std::true_type {};
-
-}
-}
+PYBIND11_DECLARE_HOLDER_TYPE(T, _Thing_auto<T>);
 
 
 autoSound readSound(const std::string &path)
