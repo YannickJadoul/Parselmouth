@@ -4,11 +4,13 @@
 #include <pybind11/stl.h>
 
 #include "fon/Sound.h"
+#include "fon/Sound_and_Spectrogram.h"
 #include "fon/Sound_to_Harmonicity.h"
 #include "fon/Sound_to_Intensity.h"
 #include "fon/Sound_to_Pitch.h"
 #include "dwsys/NUMmachar.h"
 #include "dwtools/Sound_to_MFCC.h"
+#include "dwtools/Spectrogram_extensions.h"
 #include "sys/Thing.h"
 
 #include "praat/MelderInfoInterceptor.h"
@@ -121,6 +123,15 @@ PYBIND11_PLUGIN(parselmouth) {
 	py::enum_<kSounds_convolve_signalOutsideTimeDomain>(m, "SignalOutsideTimeDomain")
 		.value("zero", kSounds_convolve_signalOutsideTimeDomain_ZERO)
 		.value("similar", kSounds_convolve_signalOutsideTimeDomain_SIMILAR)
+	;
+
+	py::enum_<kSound_to_Spectrogram_windowShape>(m, "SpectralAnalysisWindowShape")
+		.value("square", kSound_to_Spectrogram_windowShape_SQUARE)
+		.value("hamming", kSound_to_Spectrogram_windowShape_HAMMING)
+		.value("bartlett", kSound_to_Spectrogram_windowShape_BARTLETT)
+		.value("welch", kSound_to_Spectrogram_windowShape_WELCH)
+		.value("hanning", kSound_to_Spectrogram_windowShape_HANNING)
+		.value("gaussian", kSound_to_Spectrogram_windowShape_GAUSSIAN)
 	;
 
 	py::class_<structSound, autoSound>(m, "Sound")
@@ -247,7 +258,7 @@ PYBIND11_PLUGIN(parselmouth) {
 				"start_time"_a, "end_time"_a, "overlap"_a)
 
 		.def("as_array",
-				[] (Sound self) { return py::array_t<double>({static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)}, &self->z[1][1], py::cast(self)); })
+				[] (Sound self) { return py::array_t<double>({ static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)}, &self->z[1][1], py::cast(self)); })
 
 		.def("to_pitch",
 				&Sound_to_Pitch,
@@ -264,6 +275,19 @@ PYBIND11_PLUGIN(parselmouth) {
 		.def("to_harmonicity_cc",
 				&Sound_to_Harmonicity_cc,
 				"time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0)
+
+		.def("to_spectrogram",
+				[] (Sound self, double window_length, double maximum_frequency, double time_step, double frequency_step, kSound_to_Spectrogram_windowShape window_shape) { return Sound_to_Spectrogram(self, window_length, maximum_frequency, time_step, frequency_step, window_shape, 8.0, 8.0); },
+				"window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN)
+
+		.def("save_wav",
+				[] (Sound self, const std::string &path)
+					{
+						structMelderFile file = { nullptr };
+						Melder_relativePathToFile(Melder_peek8to32(path.c_str()), &file);
+						Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
+					},
+				"path"_a)
 	;
 
 	py::class_<structMFCC, autoMFCC>(m, "MFCC")
@@ -288,6 +312,9 @@ PYBIND11_PLUGIN(parselmouth) {
 
 						return array;
 					})
+		.def("to_mel_spectrogram",
+				&MFCC_to_MelSpectrogram,
+				"from_coefficient"_a = 0, "to_coefficient"_a = 0, "include_c0"_a = true);
 	;
 
 
@@ -331,6 +358,86 @@ PYBIND11_PLUGIN(parselmouth) {
 		.def("get_value", // TODO Should be part of Vector class
 				[] (Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
 				"time"_a, "interpolation"_a = Interpolation::CUBIC)
+	;
+
+	py::class_<structMelSpectrogram, autoMelSpectrogram>(m, "MelSpectrogram")
+		.def("__str__",
+				[] (MelSpectrogram self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
+
+		.def("as_array",
+				[] (MelSpectrogram self) { { return py::array_t<double>({ static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)}, &self->z[1][1], py::cast(self)); } })
+
+		.def_readonly("xmin",
+				static_cast<double structMelSpectrogram::*>(&structMelSpectrogram::xmin))
+
+		.def_readonly("xmax",
+				static_cast<double structMelSpectrogram::*>(&structMelSpectrogram::xmax))
+
+		.def_readonly("x1",
+				static_cast<double structMelSpectrogram::*>(&structMelSpectrogram::x1))
+
+		.def_readonly("dx",
+				static_cast<double structMelSpectrogram::*>(&structMelSpectrogram::dx))
+
+		.def_readonly("nx",
+				static_cast<int structMelSpectrogram::*>(&structMelSpectrogram::nx))
+
+		.def_readonly("fmin",
+				static_cast<double structMelSpectrogram::*>(&structMelSpectrogram::ymin))
+
+		.def_readonly("fmax",
+				static_cast<double structMelSpectrogram::*>(&structMelSpectrogram::ymax))
+
+		.def_readonly("f1",
+				static_cast<double structMelSpectrogram::*>(&structMelSpectrogram::y1))
+
+		.def_readonly("df",
+				static_cast<double structMelSpectrogram::*>(&structMelSpectrogram::dy))
+
+		.def_readonly("nf",
+				static_cast<long structMelSpectrogram::*>(&structMelSpectrogram::ny))
+
+		.def("frequency_to_hertz",
+				&structMelSpectrogram::v_frequencyToHertz,
+				"frequency"_a)
+	;
+
+	py::class_<structSpectrogram, autoSpectrogram>(m, "Spectrogram")
+		.def("__str__",
+				[] (Spectrogram self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
+
+		.def("as_array",
+				[] (Spectrogram self) { { return py::array_t<double>({ static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)}, &self->z[1][1], py::cast(self)); } })
+
+		.def_readonly("xmin",
+				static_cast<double structSpectrogram::*>(&structSpectrogram::xmin))
+
+		.def_readonly("xmax",
+				static_cast<double structSpectrogram::*>(&structSpectrogram::xmax))
+
+		.def_readonly("x1",
+				static_cast<double structSpectrogram::*>(&structSpectrogram::x1))
+
+		.def_readonly("dx",
+				static_cast<double structSpectrogram::*>(&structSpectrogram::dx))
+
+		.def_readonly("nx",
+				static_cast<int structSpectrogram::*>(&structSpectrogram::nx))
+
+		.def_readonly("fmin",
+				static_cast<double structSpectrogram::*>(&structSpectrogram::ymin))
+
+		.def_readonly("fmax",
+				static_cast<double structSpectrogram::*>(&structSpectrogram::ymax))
+
+		.def_readonly("f1",
+				static_cast<double structSpectrogram::*>(&structSpectrogram::y1))
+
+		.def_readonly("df",
+				static_cast<double structSpectrogram::*>(&structSpectrogram::dy))
+
+		.def_readonly("nf",
+				static_cast<long structSpectrogram::*>(&structSpectrogram::ny))
 	;
 
 	return m.ptr();
