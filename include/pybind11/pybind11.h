@@ -51,9 +51,14 @@ public:
     }
 
     /// Construct a cpp_function from a lambda function (possibly with internal state)
-    template <typename Func, typename... Extra,
-             typename FuncType = typename detail::remove_class<decltype(&std::remove_reference<Func>::type::operator())>::type>
+    template <typename Func, typename... Extra, typename = detail::enable_if_t<
+        detail::satisfies_none_of<
+            typename std::remove_reference<Func>::type,
+            std::is_function, std::is_pointer, std::is_member_pointer
+        >::value>
+    >
     cpp_function(Func &&f, const Extra&... extra) {
+        using FuncType = typename detail::remove_class<decltype(&std::remove_reference<Func>::type::operator())>::type;
         initialize(std::forward<Func>(f),
                    (FuncType *) nullptr, extra...);
     }
@@ -326,8 +331,10 @@ protected:
             signatures += "Overloaded function.\n\n";
         }
         // Then specific overload signatures
+        bool first_user_def = true;
         for (auto it = chain_start; it != nullptr; it = it->next) {
             if (options::show_function_signatures()) {
+                if (index > 0) signatures += "\n";
                 if (chain)
                     signatures += std::to_string(++index) + ". ";
                 signatures += rec->name;
@@ -335,12 +342,16 @@ protected:
                 signatures += "\n";
             }
             if (it->doc && strlen(it->doc) > 0 && options::show_user_defined_docstrings()) {
+                // If we're appending another docstring, and aren't printing function signatures, we
+                // need to append a newline first:
+                if (!options::show_function_signatures()) {
+                    if (first_user_def) first_user_def = false;
+                    else signatures += "\n";
+                }
                 if (options::show_function_signatures()) signatures += "\n";
                 signatures += it->doc;
                 if (options::show_function_signatures()) signatures += "\n";
             }
-            if (it->next)
-                signatures += "\n";
         }
 
         /* Install docstring */
@@ -918,7 +929,9 @@ public:
     }
 
     template <typename Func, typename... Extra> class_ &
-    def_static(const char *name_, Func f, const Extra&... extra) {
+    def_static(const char *name_, Func &&f, const Extra&... extra) {
+        static_assert(!std::is_member_function_pointer<Func>::value,
+                "def_static(...) called with a non-static member function pointer");
         cpp_function cf(std::forward<Func>(f), name(name_), scope(*this),
                         sibling(getattr(*this, name_, none())), extra...);
         attr(cf.name()) = cf;
@@ -1116,26 +1129,33 @@ private:
 template <typename Type> class enum_ : public class_<Type> {
 public:
     using class_<Type>::def;
+    using class_<Type>::def_property_readonly_static;
     using Scalar = typename std::underlying_type<Type>::type;
     template <typename T> using arithmetic_tag = std::is_same<T, arithmetic>;
 
     template <typename... Extra>
     enum_(const handle &scope, const char *name, const Extra&... extra)
-      : class_<Type>(scope, name, extra...), m_parent(scope) {
+      : class_<Type>(scope, name, extra...), m_entries(), m_parent(scope) {
 
         constexpr bool is_arithmetic =
             !std::is_same<detail::first_of_t<arithmetic_tag, void, Extra...>,
                           void>::value;
 
-        auto entries = new std::unordered_map<Scalar, const char *>();
-        def("__repr__", [name, entries](Type value) -> std::string {
-            auto it = entries->find((Scalar) value);
-            return std::string(name) + "." +
-                ((it == entries->end()) ? std::string("???")
-                                        : std::string(it->second));
+        auto m_entries_ptr = m_entries.inc_ref().ptr();
+        def("__repr__", [name, m_entries_ptr](Type value) -> pybind11::str {
+            for (const auto &kv : reinterpret_borrow<dict>(m_entries_ptr)) {
+                if (pybind11::cast<Type>(kv.second) == value)
+                    return pybind11::str("{}.{}").format(name, kv.first);
+            }
+            return pybind11::str("{}.???").format(name);
         });
+        def_property_readonly_static("__members__", [m_entries_ptr](object /* self */) {
+            dict m;
+            for (const auto &kv : reinterpret_borrow<dict>(m_entries_ptr))
+                m[kv.first] = kv.second;
+            return m;
+        }, return_value_policy::copy);
         def("__init__", [](Type& value, Scalar i) { value = (Type)i; });
-        def("__init__", [](Type& value, Scalar i) { new (&value) Type((Type) i); });
         def("__int__", [](Type value) { return (Scalar) value; });
         def("__eq__", [](const Type &value, Type *value2) { return value2 && value == *value2; });
         def("__ne__", [](const Type &value, Type *value2) { return !value2 || value != *value2; });
@@ -1172,26 +1192,25 @@ public:
         // Pickling and unpickling -- needed for use with the 'multiprocessing' module
         def("__getstate__", [](const Type &value) { return pybind11::make_tuple((Scalar) value); });
         def("__setstate__", [](Type &p, tuple t) { new (&p) Type((Type) t[0].cast<Scalar>()); });
-        m_entries = entries;
     }
 
     /// Export enumeration entries into the parent scope
-    enum_ &export_values() {
-        for (auto item : reinterpret_borrow<dict>(((PyTypeObject *) this->m_ptr)->tp_dict)) {
-            if (isinstance(item.second, this->m_ptr))
-                m_parent.attr(item.first) = item.second;
-        }
+    enum_& export_values() {
+        for (const auto &kv : m_entries)
+            m_parent.attr(kv.first) = kv.second;
         return *this;
     }
 
     /// Add an enumeration entry
     enum_& value(char const* name, Type value) {
-        this->attr(name) = pybind11::cast(value, return_value_policy::copy);
-        (*m_entries)[(Scalar) value] = name;
+        auto v = pybind11::cast(value, return_value_policy::copy);
+        this->attr(name) = v;
+        m_entries[pybind11::str(name)] = v;
         return *this;
     }
+
 private:
-    std::unordered_map<Scalar, const char *> *m_entries;
+    dict m_entries;
     handle m_parent;
 };
 

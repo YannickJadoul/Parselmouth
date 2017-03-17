@@ -396,13 +396,9 @@ template<size_t ...S> struct make_index_sequence_impl <0, S...> { typedef index_
 template<size_t N> using make_index_sequence = typename make_index_sequence_impl<N>::type;
 #endif
 
-#if defined(PYBIND11_CPP17) || defined(_MSC_VER)
-using std::bool_constant;
-using std::negation;
-#else
+/// Backports of std::bool_constant and std::negation to accomodate older compilers
 template <bool B> using bool_constant = std::integral_constant<bool, B>;
-template <class T> using negation = bool_constant<!T::value>;
-#endif
+template <typename T> struct negation : bool_constant<!T::value> { };
 
 /// Compile-time all/any/none of that check the boolean value of all template types
 #ifdef PYBIND11_CPP17
@@ -622,6 +618,24 @@ template <typename T> struct format_descriptor<T, detail::enable_if_t<detail::is
 
 template <typename T> constexpr const char format_descriptor<
     T, detail::enable_if_t<detail::is_fmt_numeric<T>::value>>::value[2];
+
+NAMESPACE_BEGIN(detail)
+
+template <typename T, typename SFINAE = void> struct compare_buffer_info {
+    static bool compare(const buffer_info& b) {
+        return b.format == format_descriptor<T>::format() && b.itemsize == sizeof(T);
+    }
+};
+
+template <typename T> struct compare_buffer_info<T, detail::enable_if_t<std::is_integral<T>::value>> {
+    static bool compare(const buffer_info& b) {
+        return b.itemsize == sizeof(T) && (b.format == format_descriptor<T>::value ||
+            ((sizeof(T) == sizeof(long)) && b.format == (std::is_unsigned<T>::value ? "L" : "l")) ||
+            ((sizeof(T) == sizeof(size_t)) && b.format == (std::is_unsigned<T>::value ? "N" : "n")));
+    }
+};
+
+NAMESPACE_END(detail)
 
 /// RAII wrapper that temporarily clears any Python error state
 struct error_scope {
