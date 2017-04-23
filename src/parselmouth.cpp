@@ -29,7 +29,7 @@ autoSound readSound(const std::string &path)
 
 void initializePraat()
 {
-	// TODO Look at praat initialization again, see if there's a better solution that ad-hoc copy-pasting
+	// TODO Look at praat initialization again, see if there's a better solution that ad-hoc copy-pasting (praatlib_init?)
 	NUMmachar ();
 	NUMinit ();
 	Melder_alloc_init ();

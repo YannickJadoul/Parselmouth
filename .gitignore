@@ -2,6 +2,7 @@ build/
 bin/
 lib/
 installed/
+dist/
 
 *~
 .DS_Store

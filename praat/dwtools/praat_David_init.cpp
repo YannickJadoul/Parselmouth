@@ -1302,8 +1302,8 @@ DO
 	NUMBER_ONE_END (U" (confidence ellipse area)")
 }
 
-FORM (REAL_Discriminant_getLnDeterminant_group, U"Discriminant: Get determinant (group)", U"Discriminant: Get determinant (group)...")
-	SENTENCEVAR (groupLabel, U"Group label", U"") {
+FORM (REAL_Discriminant_getLnDeterminant_group, U"Discriminant: Get determinant (group)", U"Discriminant: Get determinant (group)...") {
+	SENTENCEVAR (groupLabel, U"Group label", U"")
 	OK
 DO
 	NUMBER_ONE (Discriminant)
@@ -5994,8 +5994,7 @@ DO
 }
 
 DIRECT (NEW_SVD_extractLeftSingularVectors) {
-	LOOP {
-		iam (SVD);
+	CONVERT_EACH (SVD);
 		autoTableOfReal result = SVD_extractLeftSingularVectors (me);
 	CONVERT_EACH_END (my name, U"_lsv")
 }
