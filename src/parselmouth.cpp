@@ -1,3 +1,5 @@
+#include "Bindings.h"
+
 #include <pybind11/pybind11.h>
 
 #include <pybind11/numpy.h>
@@ -42,10 +44,35 @@ void initializePraat()
 namespace py = pybind11;
 using namespace py::literals;
 
+
+namespace parselmouth {
+
+template <>
+struct Binding<Sound> {
+	using Type = py::class_<structSound, autoSound>;
+
+	static Type create(py::module &module) {
+		return Type(module, "Sound");
+	}
+};
+
+template <>
+struct Binding<MFCC> {
+	using Type = py::class_<structMFCC, autoMFCC>;
+
+	static Type create(py::module &module) {
+		return Type(module, "MFCC");
+	}
+};
+
+} // parselmouth
+
+
 PYBIND11_PLUGIN(parselmouth) {
 	initializePraat();
 
 	py::module m("parselmouth");
+	parselmouth::Bindings<Sound, MFCC> bindings(m);
 
 
     static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError);
@@ -115,7 +142,7 @@ PYBIND11_PLUGIN(parselmouth) {
 		.value("gaussian", kSound_to_Spectrogram_windowShape_GAUSSIAN)
 	;
 
-	py::class_<structSound, autoSound>(m, "Sound")
+	bindings.get<Sound>()
 		.def("__str__", // TODO Should probably be part of the Thing class?
 				[] (Sound self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 
@@ -271,7 +298,7 @@ PYBIND11_PLUGIN(parselmouth) {
 				"path"_a)
 	;
 
-	py::class_<structMFCC, autoMFCC>(m, "MFCC")
+	bindings.get<MFCC>()
 		//.def(constructor(&Sound_to_MFCC,
 		//		(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0)))
 
