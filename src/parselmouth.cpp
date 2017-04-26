@@ -5,6 +5,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
+#include "fon/Formant.h"
 #include "fon/Sound.h"
 #include "fon/Sound_and_Spectrogram.h"
 #include "fon/Sound_to_Harmonicity.h"
@@ -47,32 +48,48 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-template <>
-struct Binding<Sound> {
-	using Type = py::class_<structSound, autoSound>;
+template <typename Class, typename... Extra>
+struct ClassBinding {
+	using Creator = ClassBinding<Class, Extra...>;
+	using Type = pybind11::class_<Class, Extra...>;
 
-	static Type create(py::module &module) {
-		return Type(module, "Sound");
-	}
+	static Type create(pybind11::handle &scope);
 };
 
-template <>
-struct Binding<MFCC> {
-	using Type = py::class_<structMFCC, autoMFCC>;
 
-	static Type create(py::module &module) {
-		return Type(module, "MFCC");
-	}
-};
+#define CLASS_BINDING(Type, ...) namespace parselmouth { template<> struct Binding<Type> : ClassBinding<__VA_ARGS__> {}; }
+#define CLASS_BINDING_CREATOR(Type, ...) namespace parselmouth { template <> BindingType<Type> Binding<Type>::Creator::create(pybind11::handle &scope) { return { scope, __VA_ARGS__ }; } }
 
 } // parselmouth
+
+
+#define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, auto##Type) CLASS_BINDING_CREATOR(Type, #Type, __VA_ARGS__)
+
+
+
+#define PRAAT_CLASSES \
+    Sound, \
+    Spectrum, \
+    Spectrogram, \
+    Pitch, \
+    Intensity, \
+    Formant, \
+    MFCC
+
+PRAAT_CLASS_BINDING(Sound)
+PRAAT_CLASS_BINDING(Spectrum)
+PRAAT_CLASS_BINDING(Spectrogram)
+PRAAT_CLASS_BINDING(Pitch)
+PRAAT_CLASS_BINDING(Intensity)
+PRAAT_CLASS_BINDING(Formant)
+PRAAT_CLASS_BINDING(MFCC)
 
 
 PYBIND11_PLUGIN(parselmouth) {
 	initializePraat();
 
 	py::module m("parselmouth");
-	parselmouth::Bindings<Sound, MFCC> bindings(m);
+	parselmouth::Bindings<PRAAT_CLASSES> bindings(m);
 
 
     static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError);
@@ -339,7 +356,7 @@ PYBIND11_PLUGIN(parselmouth) {
 		.value("erb", kPitch_unit_ERB)
 	;
 
-	py::class_<structPitch, autoPitch>(m, "Pitch")
+	bindings.get<Pitch>()
 		.def("__str__", // TODO Should probably be part of the Thing class?
 				[] (Pitch self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 
@@ -349,7 +366,7 @@ PYBIND11_PLUGIN(parselmouth) {
 	;
 
 
-	py::class_<structIntensity, autoIntensity>(m, "Intensity")
+	bindings.get<Intensity>()
 		.def("__str__", // TODO Should probably be part of the Thing class?
 				[] (Intensity self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 
@@ -410,7 +427,7 @@ PYBIND11_PLUGIN(parselmouth) {
 				"frequency"_a)
 	;
 
-	py::class_<structSpectrogram, autoSpectrogram>(m, "Spectrogram")
+	bindings.get<Spectrogram>()
 		.def("__str__",
 				[] (Spectrogram self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 
