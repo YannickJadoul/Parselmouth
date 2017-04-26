@@ -1,6 +1,4 @@
-#include "Bindings.h"
-
-#include <pybind11/pybind11.h>
+#include "Parselmouth.h"
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
@@ -17,9 +15,6 @@
 #include "sys/Thing.h"
 
 #include "praat/MelderInfoInterceptor.h"
-
-
-PYBIND11_DECLARE_HOLDER_TYPE(T, _Thing_auto<T>);
 
 
 autoSound readSound(const std::string &path)
@@ -46,50 +41,11 @@ namespace py = pybind11;
 using namespace py::literals;
 
 
-namespace parselmouth {
-
-template <typename Class, typename... Extra>
-struct ClassBinding {
-	using Creator = ClassBinding<Class, Extra...>;
-	using Type = pybind11::class_<Class, Extra...>;
-
-	static Type create(pybind11::handle &scope);
-};
-
-
-#define CLASS_BINDING(Type, ...) namespace parselmouth { template<> struct Binding<Type> : ClassBinding<__VA_ARGS__> {}; }
-#define CLASS_BINDING_CREATOR(Type, ...) namespace parselmouth { template <> BindingType<Type> Binding<Type>::Creator::create(pybind11::handle &scope) { return { scope, __VA_ARGS__ }; } }
-
-} // parselmouth
-
-
-#define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, auto##Type) CLASS_BINDING_CREATOR(Type, #Type, __VA_ARGS__)
-
-
-
-#define PRAAT_CLASSES \
-    Sound, \
-    Spectrum, \
-    Spectrogram, \
-    Pitch, \
-    Intensity, \
-    Formant, \
-    MFCC
-
-PRAAT_CLASS_BINDING(Sound)
-PRAAT_CLASS_BINDING(Spectrum)
-PRAAT_CLASS_BINDING(Spectrogram)
-PRAAT_CLASS_BINDING(Pitch)
-PRAAT_CLASS_BINDING(Intensity)
-PRAAT_CLASS_BINDING(Formant)
-PRAAT_CLASS_BINDING(MFCC)
-
-
 PYBIND11_PLUGIN(parselmouth) {
 	initializePraat();
 
 	py::module m("parselmouth");
-	parselmouth::Bindings<PRAAT_CLASSES> bindings(m);
+	parselmouth::PraatBindings bindings(m);
 
 
     static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError);
