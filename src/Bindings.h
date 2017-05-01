@@ -2,6 +2,7 @@
 #ifndef INC_BINDINGS_H
 #define INC_BINDINGS_H
 
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -17,8 +18,37 @@ template <class... Ts> using all_of = std::is_same<bools<Ts::value..., true>, bo
 template <class... Ts> using any_of = negation<all_of<negation<Ts>...>>;
 template <class... Ts> using none_of = negation<any_of<Ts...>>;
 
-} // namespace detail
 
+template <typename... Types>
+struct all_unique;
+
+template <>
+struct all_unique<> : std::true_type {};
+
+template <typename Type, typename... Others>
+struct all_unique<Type, Others...> : bool_constant<none_of<std::is_same<Type, Others>...>::value && all_unique<Others...>::value> {};
+
+template <typename... Types>
+constexpr auto all_unique_v = all_unique<Types...>::value;
+
+
+template <typename Type, typename Tuple>
+struct index_of;
+
+template <typename Type, typename... Others>
+struct index_of<Type, std::tuple<Type, Others...>> {
+	static constexpr unsigned int value = 0;
+};
+
+template <typename Type, typename Other, typename... Others>
+struct index_of<Type, std::tuple<Other, Others...>> {
+	static constexpr auto value = index_of<Type, std::tuple<Others...>>::value + 1;
+};
+
+template <typename Type, typename Tuple>
+constexpr auto index_of_v = index_of<Type, Tuple>::value;
+
+} // namespace detail
 
 
 template <typename Type>
@@ -28,65 +58,22 @@ template <typename T>
 using BindingType = typename Binding<T>::Type;
 
 
-namespace detail {
-
-template <typename... Types>
-class BindingsImpl;
-
-template <typename First, typename... Rest>
-class BindingsImpl<First, Rest...> {
-public:
-	static constexpr bool all_unique = none_of<std::is_same<First, Rest>...>::value && BindingsImpl<Rest...>::all_unique;
-
-	template <typename... Args>
-	BindingsImpl(Args &&... args) : m_first(Binding<First>::create(args...)), m_rest(std::forward<Args>(args)...) {}
-
-	template <typename T, std::enable_if_t<std::is_same<T, First>::value>* = nullptr>
-	BindingType<T> &get() {
-		return m_first;
-	}
-
-	template <typename T, std::enable_if_t<!std::is_same<T, First>::value>* = nullptr>
-	BindingType<T> &get() {
-		return m_rest.template get<T>();
-	}
-
-private:
-	BindingType<First> m_first;
-	BindingsImpl<Rest...> m_rest;
-};
-
-template <>
-class BindingsImpl<> {
-public:
-	static constexpr bool all_unique = true;
-
-	template <typename... Args>
-	BindingsImpl(Args &&...) {}
-};
-
-} // namespace detail
-
-
 template <typename... Types>
 class Bindings {
 public:
-	using Impl = detail::BindingsImpl<Types...>;
-
-	static_assert(Impl::all_unique, "Multiple identical template parameter types are specified");
+	static_assert(detail::all_unique_v<Types...>, "Multiple identical template parameter types are specified");
 
 	template <typename... Args>
-	Bindings(Args &&... args) : m_impl(std::forward<Args>(args)...) {}
+	Bindings(Args &&... args) : m_bindings{Binding<Types>::create(args...)...} {}
 
 	template <typename T>
 	BindingType<T> &get() {
 		static_assert(detail::any_of<std::is_same<T, Types>...>::value, "The specified type is not a member of these bindings");
-
-		return m_impl.template get<T>();
+		return std::get<detail::index_of_v<T, std::tuple<Types...>>>(m_bindings);
 	}
 
 private:
-	Impl m_impl;
+	std::tuple<BindingType<Types>...> m_bindings;
 };
 
 } // namespace parselmouth
