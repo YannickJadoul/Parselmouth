@@ -1,4 +1,4 @@
-include(${PROJECT_SOURCE_DIR}/res/cmake/add_sources.cmake)
+include(add_sources)
 
 set(PRAAT_SUBDIRECTORIES external/gsl
                          external/glpk
@@ -69,4 +69,3 @@ set(PRAAT_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${PRAAT_INCLUDE_DIRS_ABS} PAR
 set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} PARENT_SCOPE)
 set(PRAAT_C_FLAGS ${PRAAT_C_FLAGS} PARENT_SCOPE)
 set(PRAAT_CXX_FLAGS ${PRAAT_CXX_FLAGS} PARENT_SCOPE)
-

@@ -1,11 +1,12 @@
 #pragma once
-#ifndef INC_PARSELMOUTH_H
-#define INC_PARSELMOUTH_H
+#ifndef INC_PARSELMOUTH_PARSELMOUTH_H
+#define INC_PARSELMOUTH_PARSELMOUTH_H
 
 #include "Bindings.h"
 
 #include "dwtools/MFCC.h"
 #include "fon/Formant.h"
+#include "fon/Harmonicity.h"
 #include "fon/Intensity.h"
 #include "fon/Pitch.h"
 #include "fon/Sound.h"
@@ -35,30 +36,40 @@ struct ClassBinding {
 #define CLASS_BINDING_CREATOR(Type, ...) template <> inline BindingType<Type> Binding<Type>::Creator::create(pybind11::handle &scope) { return { scope, __VA_ARGS__ }; }
 
 
-#define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, auto##Type) CLASS_BINDING_CREATOR(Type, #Type, __VA_ARGS__)
+#define PRAAT_CLASS_BINDING(Type, Base, ...) CLASS_BINDING(Type, struct##Type, auto##Type, struct##Base) CLASS_BINDING_CREATOR(Type, #Type, __VA_ARGS__)
 
 
 
 #define PRAAT_CLASSES \
-    Sound, \
-    Spectrum, \
-    Spectrogram, \
-    Pitch, \
-    Intensity, \
-    Formant, \
+	Thing,            \
+    Sound,            \
+    Spectrum,         \
+    Spectrogram,      \
+    Pitch,            \
+    Intensity,        \
+	Harmonicity,      \
+    Formant,          \
     MFCC
 
-PRAAT_CLASS_BINDING(Sound)
-PRAAT_CLASS_BINDING(Spectrum)
-PRAAT_CLASS_BINDING(Spectrogram)
-PRAAT_CLASS_BINDING(Pitch)
-PRAAT_CLASS_BINDING(Intensity)
-PRAAT_CLASS_BINDING(Formant)
-PRAAT_CLASS_BINDING(MFCC)
+
+CLASS_BINDING(Thing, structThing, autoThing)
+CLASS_BINDING_CREATOR(Thing, "Thing")
+
+PRAAT_CLASS_BINDING(Sound, Thing)
+PRAAT_CLASS_BINDING(Spectrum, Thing)
+PRAAT_CLASS_BINDING(Spectrogram, Thing)
+PRAAT_CLASS_BINDING(Pitch, Thing)
+PRAAT_CLASS_BINDING(Intensity, Thing)
+PRAAT_CLASS_BINDING(Harmonicity, Thing)
+PRAAT_CLASS_BINDING(Formant, Thing)
+PRAAT_CLASS_BINDING(MFCC, Thing)
 
 
 using PraatBindings = Bindings<PRAAT_CLASSES>;
 
+void initThing(PraatBindings &bindings);
+void initSound(PraatBindings &bindings);
+
 } // parselmouth
 
-#endif // INC_PARSELMOUTH_H
+#endif // INC_PARSELMOUTH_PARSELMOUTH_H
