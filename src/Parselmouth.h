@@ -32,7 +32,7 @@ struct ClassBinding {
 
 
 #define CLASS_BINDING(Type, ...) template<> struct Binding<Type> : ClassBinding<__VA_ARGS__> {};
-#define CLASS_BINDING_CREATOR(Type, ...) template <> BindingType<Type> Binding<Type>::Creator::create(pybind11::handle &scope) { return { scope, __VA_ARGS__ }; }
+#define CLASS_BINDING_CREATOR(Type, ...) template <> inline BindingType<Type> Binding<Type>::Creator::create(pybind11::handle &scope) { return { scope, __VA_ARGS__ }; }
 
 
 #define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, auto##Type) CLASS_BINDING_CREATOR(Type, #Type, __VA_ARGS__)
