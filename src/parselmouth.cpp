@@ -4,6 +4,7 @@
 #include <pybind11/stl.h>
 
 #include "fon/Formant.h"
+#include "fon/Manipulation.h"
 #include "fon/Sound.h"
 #include "fon/Sound_and_Spectrogram.h"
 #include "fon/Sound_to_Harmonicity.h"
@@ -269,6 +270,10 @@ PYBIND11_PLUGIN(parselmouth) {
 						Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
 					},
 				"path"_a)
+
+		.def("to_manipulation",
+				&Sound_to_Manipulation,
+				"time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0)
 	;
 
 	bindings.get<MFCC>()
@@ -419,6 +424,25 @@ PYBIND11_PLUGIN(parselmouth) {
 
 		.def_readonly("nf",
 				static_cast<long structSpectrogram::*>(&structSpectrogram::ny))
+	;
+
+	py::class_<structPitchTier, autoPitchTier>(m, "PitchTier")
+		.def("shift_frequencies",
+				[] (PitchTier self, double tmin, double tmax, double shift, kPitch_unit unit) { PitchTier_shiftFrequencies(self, tmin, tmax, shift, unit); },
+				"tmin"_a, "tmax"_a, "shift"_a = -20.0, "unit"_a = kPitch_unit::kPitch_unit_HERTZ)
+		.def_readonly("tmin",
+				static_cast<double structPitchTier::*>(&structPitchTier::xmin))
+		.def_readonly("tmax",
+				static_cast<double structPitchTier::*>(&structPitchTier::xmax))
+	;
+
+	py::class_<structManipulation, autoManipulation>(m, "Manipulation")
+		.def("get_resynthesis_lpc",
+		     [] (Manipulation self) { return Manipulation_to_Sound(self, Manipulation_PITCH_LPC); })
+		.def("get_resynthesis_overlap_add",
+		     [] (Manipulation self) { return Manipulation_to_Sound(self, Manipulation_OVERLAPADD); })
+		.def_property_readonly("pitch",
+				[] (Manipulation self) { return self->pitch.get(); })
 	;
 
 	return m.ptr();
