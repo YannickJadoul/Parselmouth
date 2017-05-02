@@ -1,8 +1,9 @@
-#include <pybind11/pybind11.h>
+#include "Parselmouth.h"
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
+#include "fon/Formant.h"
 #include "fon/Sound.h"
 #include "fon/Sound_and_Spectrogram.h"
 #include "fon/Sound_to_Harmonicity.h"
@@ -14,9 +15,6 @@
 #include "sys/Thing.h"
 
 #include "praat/MelderInfoInterceptor.h"
-
-
-PYBIND11_DECLARE_HOLDER_TYPE(T, _Thing_auto<T>);
 
 
 autoSound readSound(const std::string &path)
@@ -42,10 +40,12 @@ void initializePraat()
 namespace py = pybind11;
 using namespace py::literals;
 
+
 PYBIND11_PLUGIN(parselmouth) {
 	initializePraat();
 
 	py::module m("parselmouth");
+	parselmouth::PraatBindings bindings(m);
 
 
     static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError);
@@ -115,7 +115,7 @@ PYBIND11_PLUGIN(parselmouth) {
 		.value("gaussian", kSound_to_Spectrogram_windowShape_GAUSSIAN)
 	;
 
-	py::class_<structSound, autoSound>(m, "Sound")
+	bindings.get<Sound>()
 		.def("__str__", // TODO Should probably be part of the Thing class?
 				[] (Sound self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 
@@ -271,7 +271,7 @@ PYBIND11_PLUGIN(parselmouth) {
 				"path"_a)
 	;
 
-	py::class_<structMFCC, autoMFCC>(m, "MFCC")
+	bindings.get<MFCC>()
 		//.def(constructor(&Sound_to_MFCC,
 		//		(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0)))
 
@@ -312,7 +312,7 @@ PYBIND11_PLUGIN(parselmouth) {
 		.value("erb", kPitch_unit_ERB)
 	;
 
-	py::class_<structPitch, autoPitch>(m, "Pitch")
+	bindings.get<Pitch>()
 		.def("__str__", // TODO Should probably be part of the Thing class?
 				[] (Pitch self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 
@@ -322,7 +322,7 @@ PYBIND11_PLUGIN(parselmouth) {
 	;
 
 
-	py::class_<structIntensity, autoIntensity>(m, "Intensity")
+	bindings.get<Intensity>()
 		.def("__str__", // TODO Should probably be part of the Thing class?
 				[] (Intensity self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 
@@ -383,7 +383,7 @@ PYBIND11_PLUGIN(parselmouth) {
 				"frequency"_a)
 	;
 
-	py::class_<structSpectrogram, autoSpectrogram>(m, "Spectrogram")
+	bindings.get<Spectrogram>()
 		.def("__str__",
 				[] (Spectrogram self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.get()); }) // TODO Python 2 expects an old string for __str__ to work, while std::string is transformed into unicode. Check how Python 3 handles this and come up with a solution.
 

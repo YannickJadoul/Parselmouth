@@ -3,7 +3,7 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_definitions(${PRAAT_DEFINITIONS})
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PRAAT_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas ${PRAAT_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas -std=c++14 ${PRAAT_CXX_FLAGS}")
 
 set(SRC parselmouth.cpp)
 
