@@ -15,7 +15,8 @@ namespace parselmouth {
 
 namespace {
 
-autoSound readSound(const std::string &path) {
+autoSound readSound(const std::string &path)
+{
 	structMelderFile file = {nullptr};
 	Melder_relativePathToFile(Melder_peek8to32(path.c_str()), &file);
 	return Sound_readFromSoundFile(&file);
@@ -23,7 +24,8 @@ autoSound readSound(const std::string &path) {
 
 } // namespace
 
-void initSound(parselmouth::PraatBindings &bindings) {
+void initSound(parselmouth::PraatBindings &bindings)
+{
 	bindings.get<Sound>()
 			.def_static("read_file",
 			            &readSound,

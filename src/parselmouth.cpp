@@ -63,34 +63,6 @@ PYBIND11_PLUGIN(parselmouth) {
 		.value("sinc700", Interpolation::SINC700)
 	;
 
-
-	py::enum_<kSound_windowShape>(m, "WindowShape")
-		.value("rectangular", kSound_windowShape_RECTANGULAR)
-		.value("triangular", kSound_windowShape_TRIANGULAR)
-		.value("parabolic", kSound_windowShape_PARABOLIC)
-		.value("hanning", kSound_windowShape_HANNING)
-		.value("hamming", kSound_windowShape_HAMMING)
-		.value("gaussian1", kSound_windowShape_GAUSSIAN_1)
-		.value("gaussian2", kSound_windowShape_GAUSSIAN_2)
-		.value("gaussian3", kSound_windowShape_GAUSSIAN_3)
-		.value("gaussian4", kSound_windowShape_GAUSSIAN_4)
-		.value("gaussian5", kSound_windowShape_GAUSSIAN_5)
-		.value("kaiser1", kSound_windowShape_KAISER_1)
-		.value("kaiser2", kSound_windowShape_KAISER_2)
-	;
-
-	py::enum_<kSounds_convolve_scaling>(m, "AmplitudeScaling")
-		.value("integral", kSounds_convolve_scaling_INTEGRAL)
-		.value("sum", kSounds_convolve_scaling_SUM)
-		.value("normalize", kSounds_convolve_scaling_NORMALIZE)
-		.value("peak_0_99", kSounds_convolve_scaling_PEAK_099)
-	;
-
-	py::enum_<kSounds_convolve_signalOutsideTimeDomain>(m, "SignalOutsideTimeDomain")
-		.value("zero", kSounds_convolve_signalOutsideTimeDomain_ZERO)
-		.value("similar", kSounds_convolve_signalOutsideTimeDomain_SIMILAR)
-	;
-
 	py::enum_<kSound_to_Spectrogram_windowShape>(m, "SpectralAnalysisWindowShape")
 		.value("square", kSound_to_Spectrogram_windowShape_SQUARE)
 		.value("hamming", kSound_to_Spectrogram_windowShape_HAMMING)
@@ -102,6 +74,7 @@ PYBIND11_PLUGIN(parselmouth) {
 
 	initThing(bindings);
 	initSound(bindings);
+	initSoundEnums(bindings);
 
 	bindings.get<MFCC>()
 		//.def(constructor(&Sound_to_MFCC,

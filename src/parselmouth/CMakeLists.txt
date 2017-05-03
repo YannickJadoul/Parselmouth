@@ -1,2 +1,3 @@
 add_sources(Thing.cpp
-            Sound.cpp)
+            Sound.cpp
+            SoundEnums.cpp)
