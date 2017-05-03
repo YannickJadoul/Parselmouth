@@ -8,18 +8,7 @@
 #include "fon/Sound_and_Spectrogram.h"
 #include "dwsys/NUMmachar.h"
 #include "dwtools/Spectrogram_extensions.h"
-
-
-void initializePraat()
-{
-	// TODO Look at praat initialization again, see if there's a better solution that ad-hoc copy-pasting (praatlib_init?)
-	NUMmachar ();
-	NUMinit ();
-	Melder_alloc_init ();
-	Melder_message_init ();
-
-	Melder_batch = true;
-}
+#include "sys/praat.h"
 
 
 namespace py = pybind11;
@@ -27,11 +16,10 @@ using namespace py::literals;
 
 
 PYBIND11_PLUGIN(parselmouth) {
-	initializePraat();
+	praatlib_init();
 
 	py::module m("parselmouth");
 	parselmouth::PraatBindings bindings(m);
-
 
     static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError);
 	py::register_exception_translator([](std::exception_ptr p) {
