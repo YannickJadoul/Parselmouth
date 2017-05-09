@@ -14,6 +14,21 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+namespace parselmouth {
+
+enum class Interpolation // TODO Remove/move to header
+{
+	NEAREST = Vector_VALUE_INTERPOLATION_NEAREST,
+	LINEAR = Vector_VALUE_INTERPOLATION_LINEAR,
+	CUBIC = Vector_VALUE_INTERPOLATION_CUBIC,
+	SINC70 = Vector_VALUE_INTERPOLATION_SINC70,
+	SINC700 = Vector_VALUE_INTERPOLATION_SINC700
+};
+
+}
+
+using namespace parselmouth;
+
 
 PYBIND11_PLUGIN(parselmouth) {
 	praatlib_init();
@@ -34,23 +49,6 @@ PYBIND11_PLUGIN(parselmouth) {
 			}});
 
 
-	enum class Interpolation
-	{
-		NEAREST = Vector_VALUE_INTERPOLATION_NEAREST,
-		LINEAR = Vector_VALUE_INTERPOLATION_LINEAR,
-		CUBIC = Vector_VALUE_INTERPOLATION_CUBIC,
-		SINC70 = Vector_VALUE_INTERPOLATION_SINC70,
-		SINC700 = Vector_VALUE_INTERPOLATION_SINC700
-	};
-
-	py::enum_<Interpolation>(m, "Interpolation")
-		.value("nearest", Interpolation::NEAREST)
-		.value("linear", Interpolation::LINEAR)
-		.value("cubic", Interpolation::CUBIC)
-		.value("sinc70", Interpolation::SINC70)
-		.value("sinc700", Interpolation::SINC700)
-	;
-
 	py::enum_<kSound_to_Spectrogram_windowShape>(m, "SpectralAnalysisWindowShape")
 		.value("square", kSound_to_Spectrogram_windowShape_SQUARE)
 		.value("hamming", kSound_to_Spectrogram_windowShape_HAMMING)
@@ -61,8 +59,9 @@ PYBIND11_PLUGIN(parselmouth) {
 	;
 
 	initThing(bindings);
-	initSound(bindings);
+	initVector(bindings);
 	initSoundEnums(bindings);
+	initSound(bindings);
 
 	bindings.get<MFCC>()
 		//.def(constructor(&Sound_to_MFCC,

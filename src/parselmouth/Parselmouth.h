@@ -42,12 +42,16 @@ using EnumBinding = PyBinding<pybind11::enum_, Enum>;
 #define BINDING_CREATOR(Type, ...) template <> inline BindingType<Type> Binding<Type>::Creator::create(pybind11::handle &scope) { return { scope, __VA_ARGS__ }; }
 
 #define PRAAT_CLASS_BINDING(Type, Base, ...) CLASS_BINDING(Type, struct##Type, auto##Type, struct##Base) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
-#define PRAAT_ENUM_BINDING(Type, EnumType, ...) using Type = EnumType; ENUM_BINDING(Type, EnumType) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
+#define PRAAT_ENUM_BINDING(Type, ...) ENUM_BINDING(Type, Type) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
+#define PRAAT_ENUM_BINDING_ALIAS(Alias, Type, ...) using Alias = Type; PRAAT_ENUM_BINDING(Alias, __VA_ARGS__)
 
+
+enum class Interpolation;
 
 
 #define PRAAT_CLASSES            \
         Thing,                   \
+        Vector,                  \
         Sound,                   \
         Spectrum,                \
         Spectrogram,             \
@@ -58,6 +62,7 @@ using EnumBinding = PyBinding<pybind11::enum_, Enum>;
         MFCC
 
 #define PRAAT_ENUMS              \
+        Interpolation,           \
         WindowShape,             \
         AmplitudeScaling,        \
         SignalOutsideTimeDomain
@@ -66,7 +71,8 @@ using EnumBinding = PyBinding<pybind11::enum_, Enum>;
 CLASS_BINDING(Thing, structThing, autoThing)
 BINDING_CREATOR(Thing, "Thing")
 
-PRAAT_CLASS_BINDING(Sound, Thing)
+PRAAT_CLASS_BINDING(Vector, Thing)
+PRAAT_CLASS_BINDING(Sound, Vector)
 PRAAT_CLASS_BINDING(Spectrum, Thing)
 PRAAT_CLASS_BINDING(Spectrogram, Thing)
 PRAAT_CLASS_BINDING(Pitch, Thing)
@@ -75,14 +81,16 @@ PRAAT_CLASS_BINDING(Harmonicity, Thing)
 PRAAT_CLASS_BINDING(Formant, Thing)
 PRAAT_CLASS_BINDING(MFCC, Thing)
 
-PRAAT_ENUM_BINDING(WindowShape, kSound_windowShape)
-PRAAT_ENUM_BINDING(AmplitudeScaling, kSounds_convolve_scaling)
-PRAAT_ENUM_BINDING(SignalOutsideTimeDomain, kSounds_convolve_signalOutsideTimeDomain)
+PRAAT_ENUM_BINDING(Interpolation)
+PRAAT_ENUM_BINDING_ALIAS(WindowShape, kSound_windowShape)
+PRAAT_ENUM_BINDING_ALIAS(AmplitudeScaling, kSounds_convolve_scaling)
+PRAAT_ENUM_BINDING_ALIAS(SignalOutsideTimeDomain, kSounds_convolve_signalOutsideTimeDomain)
 
 
 using PraatBindings = Bindings<PRAAT_CLASSES, PRAAT_ENUMS>;
 
 void initThing(PraatBindings &bindings);
+void initVector(PraatBindings &bindings);
 void initSound(PraatBindings &bindings);
 void initSoundEnums(PraatBindings &bindings);
 
