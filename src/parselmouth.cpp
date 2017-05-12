@@ -1,6 +1,6 @@
 #include "parselmouth/Parselmouth.h"
 
-#include <pybind11/numpy.h>
+#include <pybind11/numpy.h> // TODO Add to dependencies in setup.py? What happens when pybind11 is not installed?
 #include <pybind11/stl.h>
 
 #include "fon/Formant.h"
