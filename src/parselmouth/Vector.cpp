@@ -31,21 +31,22 @@ void initVector(PraatBindings &bindings)
 
 	// TODO Something to get rid of duplicate functions with different names?
 	bindings.get<Vector>()
+			// TODO py::is_operator()
 			.def("add",
 			     &Vector_addScalar,
 			     "number"_a)
 
 			.def("__iadd__",
 			     [] (Vector self, double number) { Vector_addScalar(self, number); return self; },
-			     "number"_a)
+			     "number"_a, py::is_operator())
 
 			.def("__add__",
 			     [] (Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), number); return result; },
-			     "number"_a)
+			     "number"_a, py::is_operator())
 
 			.def("__radd__",
 			     [] (Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), number); return result; },
-			     "number"_a)
+			     "number"_a, py::is_operator())
 
 			.def("subtract",
 			     [] (Vector self, double number) { Vector_addScalar(self, -number); },
@@ -53,11 +54,11 @@ void initVector(PraatBindings &bindings)
 
 			.def("__isub__",
 			     [] (Vector self, double number) { Vector_addScalar(self, -number); return self; },
-			     "number"_a)
+			     "number"_a, py::is_operator())
 
 			.def("__sub__",
 			     [] (Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), -number); return result; },
-			     "number"_a)
+			     "number"_a, py::is_operator())
 
 			.def("subtract_mean",
 			     &Vector_subtractMean)
@@ -68,15 +69,15 @@ void initVector(PraatBindings &bindings)
 
 			.def("__imul__",
 			     [] (Vector self, double factor) { Vector_multiplyByScalar(self, factor); return self; },
-			     "factor"_a)
+			     "factor"_a, py::is_operator())
 
 			.def("__mul__",
 			     [] (Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), factor); return result; },
-			     "factor"_a)
+			     "factor"_a, py::is_operator())
 
 			.def("__rmul__",
 			     [] (Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), factor); return result; },
-			     "factor"_a)
+			     "factor"_a, py::is_operator())
 
 			.def("divide",
 			     [] (Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); },
@@ -84,20 +85,20 @@ void initVector(PraatBindings &bindings)
 
 			.def("__itruediv__",
 			     [] (Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); return self; },
-			     "factor"_a)
+			     "factor"_a, py::is_operator())
 
 			.def("__truediv__",
 			     [] (Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), 1 / factor); return result; },
-			     "factor"_a)
+			     "factor"_a, py::is_operator())
 
 #       if PY_MAJOR_VERSION < 3
 			.def("__idiv__",
 			     [] (Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); return self; },
-			     "factor"_a)
+			     "factor"_a, py::is_operator())
 
 			.def("__div__",
 			     [] (Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), 1 / factor); return result; },
-			     "factor"_a)
+			     "factor"_a, py::is_operator())
 #       endif
 
 			.def("scale",
