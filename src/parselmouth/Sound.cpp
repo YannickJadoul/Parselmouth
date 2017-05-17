@@ -17,6 +17,7 @@ namespace parselmouth {
 
 template <typename T>
 using optional = std::experimental::optional<T>;
+using std::experimental::nullopt;
 
 namespace {
 
@@ -47,7 +48,7 @@ void initSound(parselmouth::PraatBindings &bindings)
 
 
 	bindings.get<Sound>()
-					// TODO Constructors: from file (?) and from array
+			// TODO Constructors: from file (?) and from array
 
 			.def("autocorrelate",
 			     &Sound_autoCorrelate,
@@ -81,16 +82,20 @@ void initSound(parselmouth::PraatBindings &bindings)
 			// TODO Cross-correlate (short)?
 
 			.def("de_emphasize",
-			     &Sound_deEmphasis,
-			     "from_frequency"_a = 50.0) // TODO "from" / "from_frequency" ? Not POSITIVE now!?
+			     [] (Sound self, double fromFrequency, bool normalize) {
+				     Sound_deEmphasis (self, fromFrequency);
+				     if (normalize) {
+					     Vector_scale(self, 0.99);
+				     }
+			     },
+			     "from_frequency"_a = 50.0, "normalize"_a = true) // TODO "from" / "from_frequency" ? Not POSITIVE now!?
 
 			.def("deepen_band_modulation", // TODO All arguments POSITIVE
 			     &Sound_deepenBandModulation,
 			     "enhancement"_a = 20.0, "from_frequency"_a = 300.0, "to_frequency"_a = 8000.0, "slow_modulation"_a = 3.0, "fast_modulation"_a = 30.0, "band_smoothing"_a = 100.0)
 
 			.def("extract_all_channels",
-			     [] (Sound self)
-			     {
+			     [] (Sound self) {
 				     std::vector<Sound> result; // TODO Make std::vector<autoSound>
 				     result.reserve(self->ny);
 				     for (auto i = 1; i <= self->ny; ++i) {
@@ -104,8 +109,7 @@ void initSound(parselmouth::PraatBindings &bindings)
 			     "channel"_a)
 
 			.def("extract_channel", // TODO Channel enum type?
-			     [] (Sound self, std::string channel)
-			     {
+			     [] (Sound self, std::string channel) {
 				     std::transform(channel.begin(), channel.end(), channel.begin(), static_cast<int (*)(int)>(&std::tolower));
 				     if (channel == "left")
 					     return Sound_extractChannel(self, 1);
@@ -122,11 +126,11 @@ void initSound(parselmouth::PraatBindings &bindings)
 
 			.def("extract_part", // TODO relativeWidth is POSITIVE // TODO Something for optional<double> for from and to in Sounds?
 			     [] (Sound self,optional<double> from, optional<double> to, kSound_windowShape windowShape, double relativeWidth, bool preserveTimes) { return Sound_extractPart(self, from.value_or(self->xmin), to.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
-			     "from"_a = nullptr, "to"_a = nullptr, "window_shape"_a = kSound_windowShape_RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false)
+			     "from"_a = nullopt, "to"_a = nullopt, "window_shape"_a = kSound_windowShape_RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false)
 
 			.def("extract_part_for_overlap", // TODO Overlap is POSITIVE
 			     [] (Sound self, optional<double> from, optional<double> to, double overlap) { return Sound_extractPartForOverlap(self, from.value_or(self->xmin), to.value_or(self->xmax), overlap); },
-			     "from"_a = nullptr, "to"_a = nullptr, "overlap"_a)
+			     "from"_a = nullopt, "to"_a = nullopt, "overlap"_a)
 
 			// TODO Filters
 			// TODO Group different filters into enum/class/...?
@@ -135,7 +139,7 @@ void initSound(parselmouth::PraatBindings &bindings)
 
 			.def("get_energy",
 			     [] (Sound self, optional<double> from, optional<double> to) { return Sound_getEnergy(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
-			     "from"_a = nullptr, "to"_a = nullptr)
+			     "from"_a = nullopt, "to"_a = nullopt)
 
 			.def("get_energy_in_air",
 			     &Sound_getEnergyInAir)
@@ -168,36 +172,40 @@ void initSound(parselmouth::PraatBindings &bindings)
 
 			.def("get_power",
 			     [] (Sound self, optional<double> from, optional<double> to) { return Sound_getPower(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
-			     "from"_a = nullptr, "to"_a = nullptr)
+			     "from"_a = nullopt, "to"_a = nullopt)
 
 			.def("get_power_in_air",
 			     &Sound_getPowerInAir)
 
 			.def("get_root_mean_square",
 			     [] (Sound self, optional<double> from, optional<double> to) { return Sound_getRootMeanSquare(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
-			     "from"_a = nullptr, "to"_a = nullptr)
+			     "from"_a = nullopt, "to"_a = nullopt)
 
 			.def("get_rms",
 			     [] (Sound self, optional<double> from, optional<double> to) { return Sound_getRootMeanSquare(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
-			     "from"_a = nullptr, "to"_a = nullptr)
+			     "from"_a = nullopt, "to"_a = nullopt)
 
-			.def("get_sample_period",
+			.def("get_sampling_period",
 			     [] (Sound self) { return self->dx; })
 
-			.def_readonly("sample_period",
-			              static_cast<double structSound::*>(&structSound::dx)) // TODO Remove static_cast once Sampled is exported, or once this is fixed
+			.def_property("sampling_period",
+			              [] (Sound self) { return self->dx; },
+			              [] (Sound self, double period) { Sound_overrideSamplingFrequency(self, 1 / period); })
 
-			.def("get_sample_rate",
+			.def("get_sampling_frequency",
 			     [] (Sound self) { return 1 / self->dx; })
 
-			.def_property_readonly("sample_period",
-			                       [] (Sound self) { return 1 / self->dx; })
+			.def_property("sampling_frequency",
+			              [] (Sound self) { return 1 / self->dx; },
+			              [] (Sound self, double frequency) { Sound_overrideSamplingFrequency(self, frequency); })
 
 			.def("get_time_from_index", // TODO PraatIndex to distinguish 1-based silliness?
 			     [] (Sound self, long sample) { return Sampled_indexToX(self, sample); },
 			     "sample"_a)
 
 			// TODO Get value at sample index
+			// TODO Set value at sample index
+
 
 			.def("lengthen", // TODO Lengthen (Overlap-add) ? // TODO All parameters are POSITIVE
 			     [] (Sound self, double minimumPitch, double maximumPitch, double factor) {
@@ -210,6 +218,40 @@ void initSound(parselmouth::PraatBindings &bindings)
 			     &Sound_multiplyByWindow,
 			     "window_shape"_a)
 
+			.def("override_sample_frequency", // TODO Rate vs. frequency? // TODO Setter of sample_rate? // TODO newFrequency is POSITIVE
+			     [] (Sound self, double newFrequency) { Sound_overrideSamplingFrequency(self, newFrequency); },
+			     "new_frequency"_a)
+
+			.def("pre_emphasize",
+			     [] (Sound self, double fromFrequency, bool normalize) {
+				     Sound_preEmphasis(self, fromFrequency);
+				     if (normalize) {
+					     Vector_scale(self, 0.99);
+				     }
+			     },
+			     "from_frequency"_a = 50.0, "normalize"_a = true) // TODO "from" / "from_frequency" ? Not POSITIVE now!?
+
+			.def("resample",
+			     &Sound_resample,
+			     "new_frequency"_a, "precision"_a = 50)
+
+			.def("reverse",
+			     [] (Sound self, optional<double> from, optional<double> to) { Sound_reverse(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+			     "from"_a = nullopt, "to"_a = nullopt)
+
+			.def("scale_intensity",
+			     &Sound_scaleIntensity,
+			     "new_average_intensity"_a)
+
+			.def("set_to_zero", // TODO Set part to zero
+			     [] (Sound self, optional<double> from, optional<double> to, bool roundToNearestZeroCrossing) { Sound_setZero(self, from.value_or(self->xmin), to.value_or(self->xmax), roundToNearestZeroCrossing); },
+				"from"_a = nullopt, "to"_a = nullopt, "round_to_nearest_zero_crossing"_a = true)
+
+			// TODO Sound to Intensity, Formant, Harmonicity, ...
+
+
+			// TODO Reading files, obviously
+			// TODO Writing files
 			;
 }
 

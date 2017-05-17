@@ -31,7 +31,6 @@ void initVector(PraatBindings &bindings)
 
 	// TODO Something to get rid of duplicate functions with different names?
 	bindings.get<Vector>()
-			// TODO py::is_operator()
 			.def("add",
 			     &Vector_addScalar,
 			     "number"_a)
@@ -101,11 +100,11 @@ void initVector(PraatBindings &bindings)
 			     "factor"_a, py::is_operator())
 #       endif
 
-			.def("scale",
+			.def("scale", // TODO scale is POSITIVE
 			     &Vector_scale,
 			     "scale"_a)
 
-			.def("scale_peak",
+			.def("scale_peak", // TODO scale is POSITIVE
 			     &Vector_scale,
 			     "new_peak"_a = 0.99)
 
