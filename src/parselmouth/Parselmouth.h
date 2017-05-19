@@ -72,16 +72,23 @@ using EnumBinding = PyBinding<pybind11::enum_, Enum>;
 #define ENUM_BINDING(Type, ...) template<> struct Binding<Type> : EnumBinding<__VA_ARGS__> {};
 #define BINDING_CREATOR(Type, ...) template <> inline BindingType<Type> Binding<Type>::Creator::create(pybind11::handle &scope) { return { scope, __VA_ARGS__ }; }
 
-#define PRAAT_CLASS_BINDING(Type, Base, ...) CLASS_BINDING(Type, struct##Type, auto##Type, struct##Base) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
+#define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, auto##Type, Type##_Parent) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
+#define PRAAT_CLASS_BINDING_BASE(Type, Base, ...) CLASS_BINDING(Type, struct##Type, auto##Type, struct##Base) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
 #define PRAAT_ENUM_BINDING(Type, ...) ENUM_BINDING(Type, Type) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
 #define PRAAT_ENUM_BINDING_ALIAS(Alias, Type, ...) using Alias = Type; PRAAT_ENUM_BINDING(Alias, __VA_ARGS__)
 
 
 enum class Interpolation;
 
+using structData = structDaata;
+using Data = Daata;
+using autoData = autoDaata;
+using Data_Parent = Daata_Parent;
+
 
 #define PRAAT_CLASSES            \
         Thing,                   \
+        Data,                    \
         Vector,                  \
         Sound,                   \
         Spectrum,                \
@@ -102,15 +109,16 @@ enum class Interpolation;
 CLASS_BINDING(Thing, structThing, autoThing)
 BINDING_CREATOR(Thing, "Thing")
 
-PRAAT_CLASS_BINDING(Vector, Thing)
-PRAAT_CLASS_BINDING(Sound, Vector)
-PRAAT_CLASS_BINDING(Spectrum, Thing)
-PRAAT_CLASS_BINDING(Spectrogram, Thing)
-PRAAT_CLASS_BINDING(Pitch, Thing)
-PRAAT_CLASS_BINDING(Intensity, Thing)
-PRAAT_CLASS_BINDING(Harmonicity, Thing)
-PRAAT_CLASS_BINDING(Formant, Thing)
-PRAAT_CLASS_BINDING(MFCC, Thing)
+PRAAT_CLASS_BINDING(Data)
+PRAAT_CLASS_BINDING_BASE(Vector, Data, pybind11::buffer_protocol()) // TODO Expose bindings for Matrix
+PRAAT_CLASS_BINDING(Sound)
+PRAAT_CLASS_BINDING_BASE(Spectrum, Data) // TODO Expose bindings for Matrix
+PRAAT_CLASS_BINDING_BASE(Spectrogram, Data) // TODO Expose bindings for Matrix
+PRAAT_CLASS_BINDING_BASE(Pitch, Data) // TODO Expose bindings for Sampled
+PRAAT_CLASS_BINDING(Intensity)
+PRAAT_CLASS_BINDING(Harmonicity)
+PRAAT_CLASS_BINDING_BASE(Formant, Data) // TODO Expose bindings for Sampled
+PRAAT_CLASS_BINDING_BASE(MFCC, Data) // TODO Expose bindings for CC & Sampled
 
 PRAAT_ENUM_BINDING(Interpolation)
 PRAAT_ENUM_BINDING_ALIAS(WindowShape, kSound_windowShape)
@@ -121,6 +129,7 @@ PRAAT_ENUM_BINDING_ALIAS(SignalOutsideTimeDomain, kSounds_convolve_signalOutside
 using PraatBindings = Bindings<PRAAT_CLASSES, PRAAT_ENUMS>;
 
 void initThing(PraatBindings &bindings);
+void initData(PraatBindings &bindings);
 void initVector(PraatBindings &bindings);
 void initSound(PraatBindings &bindings);
 void initSoundEnums(PraatBindings &bindings);

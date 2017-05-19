@@ -59,6 +59,7 @@ PYBIND11_PLUGIN(parselmouth) {
 	;
 
 	initThing(bindings);
+	initData(bindings);
 	initVector(bindings);
 	initSoundEnums(bindings);
 	initSound(bindings);

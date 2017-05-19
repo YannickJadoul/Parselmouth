@@ -21,6 +21,21 @@ using std::experimental::nullopt;
 
 namespace {
 
+template <typename Class>
+void constructInstanceHolder(py::handle self, typename Class::holder_type &&holder)
+{
+	// TODO HACK DETECTED: Remove/cleanup
+	auto instance = reinterpret_cast<typename Class::instance_type *>(self.ptr());
+	auto &internals = py::detail::get_internals();
+	internals.registered_instances.erase(internals.registered_instances.find(instance->value));
+	::operator delete(instance->value);
+	instance->value = py::detail::holder_helper<typename Class::holder_type>::get(holder);
+	instance->holder = std::move(holder);
+	instance->holder_constructed = true;
+	instance->owned = true;
+	internals.registered_instances.emplace(instance->value, instance);
+}
+
 template <typename T, typename Container>
 OrderedOf<T> referencesToOrderedOf(const Container &container)
 {
@@ -29,26 +44,47 @@ OrderedOf<T> referencesToOrderedOf(const Container &container)
 	return orderedOf;
 }
 
-autoSound readSound(const std::string &path)
-{
-	structMelderFile file = {nullptr};
-	Melder_relativePathToFile(Melder_peek8to32(path.c_str()), &file);
-	return Sound_readFromSoundFile(&file);
-}
-
 } // namespace
 
 void initSound(parselmouth::PraatBindings &bindings)
 {
-	// TODO Remove
 	bindings.get<Sound>()
-			.def_static("read_file",
-			            &readSound,
-			            "path"_a);
+			// TODO Constructors: from file (?)
+			.def("__init__", // TODO sampling_frequency is POSITIVE // TODO Use init_factory once part of pybind11
+			     [] (py::handle self, py::array_t<double> samples, double samplingFrequency, double startTime) {
+				     auto ndim = samples.ndim();
+				     if (ndim > 2) {
+					     throw py::value_error("Cannot create Sound from an array with more than 2 dimensions");
+				     }
 
+				     auto nx = samples.shape(0);
+				     auto ny = ndim == 2 ? samples.shape(1) : 1;
+				     auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
+				     for (auto i = 0; i < nx; ++i) {
+					     if (ndim == 2) {
+						     for (auto j = 0; j < ny; ++j) {
+							     result->z[j + 1][i + 1] = samples.at(i, j); // TODO Unsafe accessor in later versions of pybind11?
+						     }
+					     }
+					     else {
+						     result->z[1][i+1] = samples.at(i);
+					     }
+				     }
 
-	bindings.get<Sound>()
-			// TODO Constructors: from file (?) and from array
+				     constructInstanceHolder<BindingType<Sound>>(self, std::move(result)); // TODO init_factory
+			     },
+			     "samples"_a, "sampling_frequency"_a, "start_time"_a = 0.0)
+
+			.def("__init__",
+			     [] (py::handle self, const std::string &filePath) { // TODO Think about bytes vs unicode again // TODO Use init_factory once part of pybind11
+				     structMelderFile file = {};
+				     Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
+				     constructInstanceHolder<BindingType<Sound>>(self, Sound_readFromSoundFile(&file));
+			     },
+			     "file_path"_a)
+
+			// TODO Constructor from file or io.IOBase?
+			// TODO Constructor from Praat-format file?
 
 			.def("autocorrelate",
 			     &Sound_autoCorrelate,
@@ -68,7 +104,7 @@ void initSound(parselmouth::PraatBindings &bindings)
 			.def("convert_to_mono",
 			     &Sound_convertToMono)
 
-			.def("convert_to_stereos",
+			.def("convert_to_stereo",
 			     &Sound_convertToStereo)
 
 			// TODO Automatically wrap to have Sound -> structSound& ?
@@ -253,6 +289,8 @@ void initSound(parselmouth::PraatBindings &bindings)
 			// TODO Reading files, obviously
 			// TODO Writing files
 			;
+
+	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 }
 
 } // namespace parselmouth
