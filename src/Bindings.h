@@ -46,6 +46,11 @@ public:
 	template <typename... Args>
 	Bindings(Args &&... args) : m_bindings{Binding<Types>(args...)...} {}
 
+	void init() {
+		void *unused[] = { (std::get<Binding<Types>>(m_bindings).init(), nullptr)... };
+		(void) unused;
+	}
+
 	template <typename T>
 	Binding<T> &get() {
 		static_assert(detail::any_of<std::is_same<T, Types>...>::value, "The specified type is not a member of these bindings");

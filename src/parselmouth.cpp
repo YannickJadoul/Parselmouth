@@ -58,11 +58,7 @@ PYBIND11_PLUGIN(parselmouth) {
 		.value("gaussian", kSound_to_Spectrogram_windowShape_GAUSSIAN)
 	;
 
-	initThing(bindings);
-	initData(bindings);
-	initVector(bindings);
-	initSoundEnums(bindings);
-	initSound(bindings);
+	bindings.init();
 
 	bindings.get<MFCC>()
 		//.def(constructor(&Sound_to_MFCC,
