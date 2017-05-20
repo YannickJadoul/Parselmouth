@@ -53,28 +53,27 @@ void make_implicitly_convertible_from_string(pybind11::enum_<Type> &enumType, bo
 	pybind11::implicitly_convertible<std::string, Type>();
 };
 
-
-template <template<typename...> class Class, typename... Args>
-struct PyBinding {
-	using Creator = PyBinding<Class, Args...>;
-	using Type = Class<Args...>;
-
-	static Type create(pybind11::handle &scope);
+template <typename Base>
+class PyBinding : public Base {
+public:
+	template <typename... Extra>
+	PyBinding(pybind11::handle &scope, Extra &&... extra) : Base(scope, std::forward<Extra>(extra)...) {}
 };
 
 template <typename Class, typename... Extra>
-using ClassBinding = PyBinding<pybind11::class_, Class, Extra...>;
+using ClassBinding = PyBinding<pybind11::class_<Class, Extra...>>;
 
 template <typename Enum>
-using EnumBinding = PyBinding<pybind11::enum_, Enum>;
+using EnumBinding = PyBinding<pybind11::enum_<Enum>>;
 
-#define CLASS_BINDING(Type, ...) template<> struct Binding<Type> : ClassBinding<__VA_ARGS__> {};
-#define ENUM_BINDING(Type, ...) template<> struct Binding<Type> : EnumBinding<__VA_ARGS__> {};
-#define BINDING_CREATOR(Type, ...) template <> inline BindingType<Type> Binding<Type>::Creator::create(pybind11::handle &scope) { return { scope, __VA_ARGS__ }; }
 
-#define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, auto##Type, Type##_Parent) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
-#define PRAAT_CLASS_BINDING_BASE(Type, Base, ...) CLASS_BINDING(Type, struct##Type, auto##Type, struct##Base) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
-#define PRAAT_ENUM_BINDING(Type, ...) ENUM_BINDING(Type, Type) BINDING_CREATOR(Type, #Type, __VA_ARGS__)
+#define CLASS_BINDING(Type, ...) template<> class Binding<Type> : public ClassBinding<__VA_ARGS__> { private: using Base = ClassBinding<__VA_ARGS__>; public: Binding(pybind11::handle &scope); };
+#define ENUM_BINDING(Type, ...) template<> class Binding<Type> : public EnumBinding<__VA_ARGS__> { private: using Base = EnumBinding<__VA_ARGS__>; public: Binding(pybind11::handle &scope); };
+#define BINDING_CONSTRUCTOR(Type, ...) inline Binding<Type>::Binding(pybind11::handle &scope) : Base{scope, __VA_ARGS__} {}
+
+#define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, auto##Type, Type##_Parent) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__)
+#define PRAAT_CLASS_BINDING_BASE(Type, Base, ...) CLASS_BINDING(Type, struct##Type, auto##Type, struct##Base) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__)
+#define PRAAT_ENUM_BINDING(Type, ...) ENUM_BINDING(Type, Type) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__)
 #define PRAAT_ENUM_BINDING_ALIAS(Alias, Type, ...) using Alias = Type; PRAAT_ENUM_BINDING(Alias, __VA_ARGS__)
 
 
@@ -107,7 +106,7 @@ using Data_Parent = Daata_Parent;
 
 
 CLASS_BINDING(Thing, structThing, autoThing)
-BINDING_CREATOR(Thing, "Thing")
+BINDING_CONSTRUCTOR(Thing, "Thing")
 
 PRAAT_CLASS_BINDING(Data)
 PRAAT_CLASS_BINDING_BASE(Vector, Data, pybind11::buffer_protocol()) // TODO Expose bindings for Matrix

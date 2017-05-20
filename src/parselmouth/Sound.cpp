@@ -71,7 +71,7 @@ void initSound(parselmouth::PraatBindings &bindings)
 					     }
 				     }
 
-				     constructInstanceHolder<BindingType<Sound>>(self, std::move(result)); // TODO init_factory
+				     constructInstanceHolder<Binding<Sound>>(self, std::move(result)); // TODO init_factory
 			     },
 			     "samples"_a, "sampling_frequency"_a, "start_time"_a = 0.0)
 
@@ -79,7 +79,7 @@ void initSound(parselmouth::PraatBindings &bindings)
 			     [] (py::handle self, const std::string &filePath) { // TODO Think about bytes vs unicode again // TODO Use init_factory once part of pybind11
 				     structMelderFile file = {};
 				     Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
-				     constructInstanceHolder<BindingType<Sound>>(self, Sound_readFromSoundFile(&file));
+				     constructInstanceHolder<Binding<Sound>>(self, Sound_readFromSoundFile(&file));
 			     },
 			     "file_path"_a)
 

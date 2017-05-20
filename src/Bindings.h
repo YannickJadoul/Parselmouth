@@ -31,31 +31,11 @@ struct all_unique<Type, Others...> : bool_constant<none_of<std::is_same<Type, Ot
 template <typename... Types>
 constexpr auto all_unique_v = all_unique<Types...>::value;
 
-
-template <typename Type, typename Tuple>
-struct index_of;
-
-template <typename Type, typename... Others>
-struct index_of<Type, std::tuple<Type, Others...>> {
-	static constexpr unsigned int value = 0;
-};
-
-template <typename Type, typename Other, typename... Others>
-struct index_of<Type, std::tuple<Other, Others...>> {
-	static constexpr auto value = index_of<Type, std::tuple<Others...>>::value + 1;
-};
-
-template <typename Type, typename Tuple>
-constexpr auto index_of_v = index_of<Type, Tuple>::value;
-
 } // namespace detail
 
 
 template <typename Type>
-struct Binding;
-
-template <typename T>
-using BindingType = typename Binding<T>::Type;
+class Binding;
 
 
 template <typename... Types>
@@ -64,16 +44,16 @@ public:
 	static_assert(detail::all_unique_v<Types...>, "Multiple identical template parameter types are specified");
 
 	template <typename... Args>
-	Bindings(Args &&... args) : m_bindings{Binding<Types>::create(args...)...} {}
+	Bindings(Args &&... args) : m_bindings{Binding<Types>(args...)...} {}
 
 	template <typename T>
-	BindingType<T> &get() {
+	Binding<T> &get() {
 		static_assert(detail::any_of<std::is_same<T, Types>...>::value, "The specified type is not a member of these bindings");
-		return std::get<detail::index_of_v<T, std::tuple<Types...>>>(m_bindings);
+		return std::get<Binding<T>>(m_bindings);
 	}
 
 private:
-	std::tuple<BindingType<Types>...> m_bindings;
+	std::tuple<Binding<Types>...> m_bindings;
 };
 
 } // namespace parselmouth
