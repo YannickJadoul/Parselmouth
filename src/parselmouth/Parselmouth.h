@@ -74,6 +74,7 @@ using EnumBinding = pybind11::enum_<Enum>;
 
 
 enum class Interpolation;
+enum class SoundFileFormat;
 
 using structData = structDaata;
 using Data = Daata;
@@ -98,7 +99,8 @@ using Data_Parent = Daata_Parent;
         Interpolation,           \
         WindowShape,             \
         AmplitudeScaling,        \
-        SignalOutsideTimeDomain
+        SignalOutsideTimeDomain, \
+        SoundFileFormat
 
 
 CLASS_BINDING(Thing, structThing, autoThing)
@@ -119,6 +121,7 @@ PRAAT_ENUM_BINDING(Interpolation)
 PRAAT_ENUM_BINDING_ALIAS(WindowShape, kSound_windowShape)
 PRAAT_ENUM_BINDING_ALIAS(AmplitudeScaling, kSounds_convolve_scaling)
 PRAAT_ENUM_BINDING_ALIAS(SignalOutsideTimeDomain, kSounds_convolve_signalOutsideTimeDomain)
+PRAAT_ENUM_BINDING(SoundFileFormat)
 
 NO_BINDING_INIT(Spectrum)
 NO_BINDING_INIT(Spectrogram)

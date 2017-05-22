@@ -44,7 +44,35 @@ OrderedOf<T> referencesToOrderedOf(const Container &container)
 	return orderedOf;
 }
 
+structMelderFile pathToMelderFile(const std::u32string &filePath) { // TODO type_caster structMelderFile?
+	structMelderFile file = {};
+	Melder_relativePathToFile(filePath.c_str(), &file);
+	return file;
+}
+
 } // namespace
+
+enum class SoundFileFormat // TODO Nest within Sound?
+{
+	WAV,
+	AIFF,
+	AIFC,
+	NEXT_SUN,
+	NIST,
+	FLAC,
+	KAY,
+	SESAM,
+	WAV_24,
+	WAV_32,
+	RAW_8_SIGNED,
+	RAW_8_UNSIGNED,
+	RAW_16_BE,
+	RAW_16_LE,
+	RAW_24_BE,
+	RAW_24_LE,
+	RAW_32_BE,
+	RAW_32_LE
+};
 
 // TODO Export befóre using default values for them
 // TODO Can be nested within Sound? Valid documentation (i.e. parselmouth.Sound.WindowShape instead of parselmouth.WindowShape)?
@@ -82,8 +110,30 @@ void Binding<SignalOutsideTimeDomain>::init() {
 	make_implicitly_convertible_from_string<SignalOutsideTimeDomain>(*this, true);
 }
 
+void Binding<SoundFileFormat>::init() {
+	value("WAV", SoundFileFormat::WAV);
+	value("AIFF", SoundFileFormat::AIFF);
+	value("AIFC", SoundFileFormat::AIFC);
+	value("NEXT_SUN", SoundFileFormat::NEXT_SUN);
+	value("NIST", SoundFileFormat::NIST);
+	value("FLAC", SoundFileFormat::FLAC);
+	value("KAY", SoundFileFormat::KAY);
+	value("SESAM", SoundFileFormat::SESAM);
+	value("WAV_24", SoundFileFormat::WAV_24);
+	value("WAV_32", SoundFileFormat::WAV_32);
+	value("RAW_8_SIGNED", SoundFileFormat::RAW_8_SIGNED);
+	value("RAW_8_UNSIGNED", SoundFileFormat::RAW_8_UNSIGNED);
+	value("RAW_16_BE", SoundFileFormat::RAW_16_BE);
+	value("RAW_16_LE", SoundFileFormat::RAW_16_LE);
+	value("RAW_24_BE", SoundFileFormat::RAW_24_BE);
+	value("RAW_24_LE", SoundFileFormat::RAW_24_LE);
+	value("RAW_32_BE", SoundFileFormat::RAW_32_BE);
+	value("RAW_32_LE", SoundFileFormat::RAW_32_LE);
+
+	make_implicitly_convertible_from_string<SoundFileFormat>(*this, true);
+}
+
 void Binding<Sound>::init() {
-	// TODO Constructors: from file (?)
 	def("__init__", // TODO sampling_frequency is POSITIVE // TODO Use init_factory once part of pybind11
 	    [] (py::handle self, py::array_t<double> samples, double samplingFrequency, double startTime) {
 		    auto ndim = samples.ndim();
@@ -110,12 +160,90 @@ void Binding<Sound>::init() {
 	    "samples"_a, "sampling_frequency"_a, "start_time"_a = 0.0);
 
 	def("__init__",
-	    [] (py::handle self, const std::string &filePath) { // TODO Think about bytes vs unicode again // TODO Use init_factory once part of pybind11
-		    structMelderFile file = {};
-		    Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
+	    [] (py::handle self, const std::u32string &filePath) { // TODO Use init_factory once part of pybind11
+		    auto file = pathToMelderFile(filePath);
 		    constructInstanceHolder<Binding<Sound>>(self, Sound_readFromSoundFile(&file));
 	    },
 	    "file_path"_a);
+
+	def("save", // TODO Copy the overload from Data?
+	    [] (Sound self, const std::u32string &filePath, SoundFileFormat format) {
+		    auto file = pathToMelderFile(filePath);
+			switch(format) {
+				case SoundFileFormat::WAV:
+					Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
+					break;
+
+				case SoundFileFormat::AIFF:
+					Sound_saveAsAudioFile(self, &file, Melder_AIFF, 16);
+					break;
+
+				case SoundFileFormat::AIFC:
+					Sound_saveAsAudioFile(self, &file, Melder_AIFC, 16);
+					break;
+
+				case SoundFileFormat::NEXT_SUN:
+					Sound_saveAsAudioFile(self, &file, Melder_NEXT_SUN, 16);
+					break;
+
+				case SoundFileFormat::NIST:
+					Sound_saveAsAudioFile(self, &file, Melder_NIST, 16);
+					break;
+
+				case SoundFileFormat::FLAC:
+					Sound_saveAsAudioFile(self, &file, Melder_FLAC, 16);
+					break;
+
+				case SoundFileFormat::KAY:
+					Sound_saveAsKayFile (self, &file);
+					break;
+
+				case SoundFileFormat::SESAM:
+					Sound_saveAsSesamFile (self, &file);
+					break;
+
+				case SoundFileFormat::WAV_24:
+					Sound_saveAsAudioFile(self, &file, Melder_WAV, 24);
+					break;
+
+				case SoundFileFormat::WAV_32:
+					Sound_saveAsAudioFile(self, &file, Melder_WAV, 32);
+					break;
+
+				case SoundFileFormat::RAW_8_SIGNED:
+					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_SIGNED);
+					break;
+
+				case SoundFileFormat::RAW_8_UNSIGNED:
+					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_UNSIGNED);
+					break;
+
+				case SoundFileFormat::RAW_16_BE:
+					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_BIG_ENDIAN);
+					break;
+
+				case SoundFileFormat::RAW_16_LE:
+					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_LITTLE_ENDIAN);
+					break;
+
+				case SoundFileFormat::RAW_24_BE:
+					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_BIG_ENDIAN);
+					break;
+
+				case SoundFileFormat::RAW_24_LE:
+					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_LITTLE_ENDIAN);
+					break;
+
+				case SoundFileFormat::RAW_32_BE:
+					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_BIG_ENDIAN);
+					break;
+
+				case SoundFileFormat::RAW_32_LE:
+					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_LITTLE_ENDIAN);
+					break;
+			}
+	    },
+	    "file_path"_a, "format"_a);
 
 	// TODO Constructor from file or io.IOBase?
 	// TODO Constructor from Praat-format file?
@@ -318,10 +446,6 @@ void Binding<Sound>::init() {
 	    "from"_a = nullopt, "to"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
 
 	// TODO Sound to Intensity, Formant, Harmonicity, ...
-
-
-	// TODO Reading files, obviously
-	// TODO Writing files
 
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 }
