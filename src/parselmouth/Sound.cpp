@@ -169,79 +169,79 @@ void Binding<Sound>::init() {
 	def("save", // TODO Copy the overload from Data?
 	    [] (Sound self, const std::u32string &filePath, SoundFileFormat format) {
 		    auto file = pathToMelderFile(filePath);
-			switch(format) {
-				case SoundFileFormat::WAV:
-					Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
-					break;
+		    switch(format) {
+		    case SoundFileFormat::WAV:
+			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
+			    break;
 
-				case SoundFileFormat::AIFF:
-					Sound_saveAsAudioFile(self, &file, Melder_AIFF, 16);
-					break;
+		    case SoundFileFormat::AIFF:
+			    Sound_saveAsAudioFile(self, &file, Melder_AIFF, 16);
+			    break;
 
-				case SoundFileFormat::AIFC:
-					Sound_saveAsAudioFile(self, &file, Melder_AIFC, 16);
-					break;
+		    case SoundFileFormat::AIFC:
+			    Sound_saveAsAudioFile(self, &file, Melder_AIFC, 16);
+			    break;
 
-				case SoundFileFormat::NEXT_SUN:
-					Sound_saveAsAudioFile(self, &file, Melder_NEXT_SUN, 16);
-					break;
+		    case SoundFileFormat::NEXT_SUN:
+			    Sound_saveAsAudioFile(self, &file, Melder_NEXT_SUN, 16);
+			    break;
 
-				case SoundFileFormat::NIST:
-					Sound_saveAsAudioFile(self, &file, Melder_NIST, 16);
-					break;
+		    case SoundFileFormat::NIST:
+			    Sound_saveAsAudioFile(self, &file, Melder_NIST, 16);
+			    break;
 
-				case SoundFileFormat::FLAC:
-					Sound_saveAsAudioFile(self, &file, Melder_FLAC, 16);
-					break;
+		    case SoundFileFormat::FLAC:
+			    Sound_saveAsAudioFile(self, &file, Melder_FLAC, 16);
+			    break;
 
-				case SoundFileFormat::KAY:
-					Sound_saveAsKayFile (self, &file);
-					break;
+		    case SoundFileFormat::KAY:
+			    Sound_saveAsKayFile (self, &file);
+			    break;
 
-				case SoundFileFormat::SESAM:
-					Sound_saveAsSesamFile (self, &file);
-					break;
+		    case SoundFileFormat::SESAM:
+			    Sound_saveAsSesamFile (self, &file);
+			    break;
 
-				case SoundFileFormat::WAV_24:
-					Sound_saveAsAudioFile(self, &file, Melder_WAV, 24);
-					break;
+		    case SoundFileFormat::WAV_24:
+			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 24);
+			    break;
 
-				case SoundFileFormat::WAV_32:
-					Sound_saveAsAudioFile(self, &file, Melder_WAV, 32);
-					break;
+		    case SoundFileFormat::WAV_32:
+			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 32);
+			    break;
 
-				case SoundFileFormat::RAW_8_SIGNED:
-					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_SIGNED);
-					break;
+		    case SoundFileFormat::RAW_8_SIGNED:
+			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_SIGNED);
+			    break;
 
-				case SoundFileFormat::RAW_8_UNSIGNED:
-					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_UNSIGNED);
-					break;
+		    case SoundFileFormat::RAW_8_UNSIGNED:
+			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_UNSIGNED);
+			    break;
 
-				case SoundFileFormat::RAW_16_BE:
-					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_BIG_ENDIAN);
-					break;
+		    case SoundFileFormat::RAW_16_BE:
+			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_BIG_ENDIAN);
+			    break;
 
-				case SoundFileFormat::RAW_16_LE:
-					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_LITTLE_ENDIAN);
-					break;
+		    case SoundFileFormat::RAW_16_LE:
+			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_LITTLE_ENDIAN);
+			    break;
 
-				case SoundFileFormat::RAW_24_BE:
-					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_BIG_ENDIAN);
-					break;
+		    case SoundFileFormat::RAW_24_BE:
+			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_BIG_ENDIAN);
+			    break;
 
-				case SoundFileFormat::RAW_24_LE:
-					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_LITTLE_ENDIAN);
-					break;
+		    case SoundFileFormat::RAW_24_LE:
+			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_LITTLE_ENDIAN);
+			    break;
 
-				case SoundFileFormat::RAW_32_BE:
-					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_BIG_ENDIAN);
-					break;
+		    case SoundFileFormat::RAW_32_BE:
+			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_BIG_ENDIAN);
+			    break;
 
-				case SoundFileFormat::RAW_32_LE:
-					Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_LITTLE_ENDIAN);
-					break;
-			}
+		    case SoundFileFormat::RAW_32_LE:
+			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_LITTLE_ENDIAN);
+			    break;
+		    }
 	    },
 	    "file_path"_a, "format"_a);
 
@@ -260,7 +260,7 @@ void Binding<Sound>::init() {
 	def_static("concatenate", // TODO Overlap is POSITIVE
 	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds, double overlap) { auto ordered = referencesToOrderedOf<structSound>(sounds); return Sounds_concatenate(ordered, overlap); },
 	           "sounds"_a, "overlap"_a = 0.0);
-	// TODO concatenate recoverably
+	// TODO concatenate recoverably (dependends on having TextGrid)
 	// TODO concatenate as member function?
 
 	def("convert_to_mono",
@@ -323,7 +323,7 @@ void Binding<Sound>::init() {
 	    [] (Sound self) { return Sound_extractChannel(self, 2); });
 
 	def("extract_part", // TODO relativeWidth is POSITIVE // TODO Something for optional<double> for from and to in Sounds?
-	    [] (Sound self,optional<double> from, optional<double> to, kSound_windowShape windowShape, double relativeWidth, bool preserveTimes) { return Sound_extractPart(self, from.value_or(self->xmin), to.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
+	    [] (Sound self, optional<double> from, optional<double> to, kSound_windowShape windowShape, double relativeWidth, bool preserveTimes) { return Sound_extractPart(self, from.value_or(self->xmin), to.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
 	    "from"_a = nullopt, "to"_a = nullopt, "window_shape"_a = kSound_windowShape_RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
 
 	def("extract_part_for_overlap", // TODO Overlap is POSITIVE
@@ -346,7 +346,7 @@ void Binding<Sound>::init() {
 	    &Sampled_xToIndex,
 	    "time"_a);
 
-	def("get_intensity", // TODO Get intensity (dB) -> get_intensity_dB/get_intensity_db
+	def("get_intensity", // TODO Get intensity (dB) -> get_intensity_dB/get_intensity_db ?
 	    &Sound_getIntensity_dB);
 
 	def("get_nearest_zero_crossing", // TODO Channel is CHANNEL
@@ -416,7 +416,7 @@ void Binding<Sound>::init() {
 	    &Sound_multiplyByWindow,
 	    "window_shape"_a);
 
-	def("override_sample_frequency", // TODO Rate vs. frequency? // TODO Setter of sample_rate? // TODO newFrequency is POSITIVE
+	def("override_sampling_frequency", // TODO newFrequency is POSITIVE
 	    [] (Sound self, double newFrequency) { Sound_overrideSamplingFrequency(self, newFrequency); },
 	    "new_frequency"_a);
 

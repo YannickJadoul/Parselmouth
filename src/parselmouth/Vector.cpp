@@ -105,7 +105,7 @@ void Binding<Vector>::init()
 	    [] (Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), 1 / factor); return result; },
 	    "factor"_a, py::is_operator());
 
-#       if PY_MAJOR_VERSION < 3
+#if PY_MAJOR_VERSION < 3
 	def("__idiv__",
 	    [] (Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); return self; },
 	    "factor"_a, py::is_operator());
@@ -113,7 +113,7 @@ void Binding<Vector>::init()
 	def("__div__",
 	    [] (Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), 1 / factor); return result; },
 	    "factor"_a, py::is_operator());
-#       endif
+#endif
 
 	def("scale", // TODO scale is POSITIVE
 	    &Vector_scale,

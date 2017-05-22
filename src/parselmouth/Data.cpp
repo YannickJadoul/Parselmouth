@@ -18,6 +18,7 @@ void Binding<Data>::init()
 	def("copy",
 	    &Data_copy<structData>);
 
+	// TODO attr("__copy__") = attr("copy"); ?
 	def("__copy__",
 	    &Data_copy<structData>);
 
