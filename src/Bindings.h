@@ -47,7 +47,7 @@ public:
 	Bindings(Args &&... args) : m_bindings{Binding<Types>(args...)...} {}
 
 	void init() {
-		void *unused[] = { (std::get<Binding<Types>>(m_bindings).init(), nullptr)... };
+		int unused[] = { (std::get<Binding<Types>>(m_bindings).init(), 0)... };
 		(void) unused;
 	}
 
