@@ -22,7 +22,7 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             MFCC.cpp
             manual_DataModeler.cpp manual_dwtools.cpp manual_BSS.cpp manual_HMM.cpp
             manual_KlattGrid.cpp manual_MDS.cpp manual_Permutation.cpp
-            Minimizers.cpp
+            Minimizers.cpp MixingMatrix.cpp
             Matrix_extensions.cpp
             Matrix_Categories.cpp MDS.cpp
             OptimalCeilingTier.cpp OptimalCeilingTierEditor.cpp
@@ -31,6 +31,7 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             Polygon_extensions.cpp Procrustes.cpp
             Proximity.cpp
             Resonator.cpp
+            Sound_and_MixingMatrix.cpp
             Sound_and_Spectrogram_extensions.cpp Sound_and_PCA.cpp Sound_extensions.cpp
             Sound_to_MFCC.cpp Sounds_to_DTW.cpp
             Sound_to_Pitch2.cpp Sound_to_SPINET.cpp SPINET.cpp SPINET_to_Pitch.cpp
