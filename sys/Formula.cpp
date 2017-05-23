@@ -109,8 +109,8 @@ enum { GEENSYMBOOL_,
 		HERTZ_TO_MEL_, MEL_TO_HERTZ_, HERTZ_TO_SEMITONES_, SEMITONES_TO_HERTZ_,
 		ERB_, HERTZ_TO_ERB_, ERB_TO_HERTZ_,
 		SUM_, MEAN_, STDEV_, CENTER_,
-		STRINGSTR_,
-	#define HIGH_FUNCTION_1  STRINGSTR_
+		STRINGSTR_, SLEEP_,
+	#define HIGH_FUNCTION_1  SLEEP_
 
 	/* Functions of 2 variables; if you add, update the #defines. */
 	#define LOW_FUNCTION_2  ARCTAN2_
@@ -142,7 +142,7 @@ enum { GEENSYMBOOL_,
 		PAUSE_FORM_ADD_CHOICE_, PAUSE_FORM_ADD_OPTION_MENU_, PAUSE_FORM_ADD_OPTION_,
 		PAUSE_FORM_ADD_COMMENT_, END_PAUSE_FORM_,
 		CHOOSE_READ_FILESTR_, CHOOSE_WRITE_FILESTR_, CHOOSE_DIRECTORYSTR_,
-		DEMO_WINDOW_TITLE_, DEMO_SHOW_, DEMO_WAIT_FOR_INPUT_, DEMO_INPUT_, DEMO_CLICKED_IN_,
+		DEMO_WINDOW_TITLE_, DEMO_SHOW_, DEMO_WAIT_FOR_INPUT_, DEMO_PEEK_INPUT_, DEMO_INPUT_, DEMO_CLICKED_IN_,
 		DEMO_CLICKED_, DEMO_X_, DEMO_Y_, DEMO_KEY_PRESSED_, DEMO_KEY_,
 		DEMO_SHIFT_KEY_PRESSED_, DEMO_COMMAND_KEY_PRESSED_, DEMO_OPTION_KEY_PRESSED_, DEMO_EXTRA_CONTROL_KEY_PRESSED_,
 		ZERO_NUMVEC_, ZERO_NUMMAT_,
@@ -231,7 +231,7 @@ static const char32 *Formula_instructionNames [1 + hoogsteSymbool] = { U"",
 	U"hertzToMel", U"melToHertz", U"hertzToSemitones", U"semitonesToHertz",
 	U"erb", U"hertzToErb", U"erbToHertz",
 	U"sum", U"mean", U"stdev", U"center",
-	U"string$",
+	U"string$", U"sleep",
 	U"arctan2", U"randomUniform", U"randomInteger", U"randomGauss", U"randomBinomial",
 	U"chiSquareP", U"chiSquareQ", U"incompleteGammaP", U"invChiSquareQ", U"studentP", U"studentQ", U"invStudentQ",
 	U"beta", U"beta2", U"besselI", U"besselK", U"lnBeta",
@@ -252,7 +252,7 @@ static const char32 *Formula_instructionNames [1 + hoogsteSymbool] = { U"",
 	U"choice", U"optionMenu", U"option",
 	U"comment", U"endPause",
 	U"chooseReadFile$", U"chooseWriteFile$", U"chooseDirectory$",
-	U"demoWindowTitle", U"demoShow", U"demoWaitForInput", U"demoInput", U"demoClickedIn",
+	U"demoWindowTitle", U"demoShow", U"demoWaitForInput", U"demoPeekInput", U"demoInput", U"demoClickedIn",
 	U"demoClicked", U"demoX", U"demoY", U"demoKeyPressed", U"demoKey$",
 	U"demoShiftKeyPressed", U"demoCommandKeyPressed", U"demoOptionKeyPressed", U"demoExtraControlKeyPressed",
 	U"zero#", U"zero##",
@@ -4211,6 +4211,15 @@ static void do_stringStr () {
 		Melder_throw (U"The function \"string$\" requires a number, not ", Stackel_whichText (value), U".");
 	}
 }
+static void do_sleep () {
+	Stackel value = pop;
+	if (value->which == Stackel_NUMBER) {
+		Melder_sleep (value->number);
+		pushNumber (1);
+	} else {
+		Melder_throw (U"The function \"sleep\" requires a number, not ", Stackel_whichText (value), U".");
+	}
+}
 static void do_fixedStr () {
 	Stackel precision = pop, value = pop;
 	if (value->which == Stackel_NUMBER && precision->which == Stackel_NUMBER) {
@@ -4787,6 +4796,13 @@ static void do_demoWaitForInput () {
 	if (n->number != 0)
 		Melder_throw (U"The function \"demoWaitForInput\" requires 0 arguments, not ", n->number, U".");
 	Demo_waitForInput (theInterpreter);
+	pushNumber (1);
+}
+static void do_demoPeekInput () {
+	Stackel n = pop;
+	if (n->number != 0)
+		Melder_throw (U"The function \"demoPeekInput\" requires 0 arguments, not ", n->number, U".");
+	Demo_peekInput (theInterpreter);
 	pushNumber (1);
 }
 static void do_demoInput () {
@@ -5638,6 +5654,7 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case MINUS_OBJECT_ : { do_minusObject  ();
 } break; case REMOVE_OBJECT_: { do_removeObject ();
 } break; case STRINGSTR_: { do_stringStr ();
+} break; case SLEEP_: { do_sleep ();
 } break; case FIXEDSTR_: { do_fixedStr ();
 } break; case PERCENTSTR_: { do_percentStr ();
 } break; case DELETE_FILE_: { do_deleteFile ();
@@ -5670,6 +5687,7 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case DEMO_WINDOW_TITLE_: { do_demoWindowTitle ();
 } break; case DEMO_SHOW_: { do_demoShow ();
 } break; case DEMO_WAIT_FOR_INPUT_: { do_demoWaitForInput ();
+} break; case DEMO_PEEK_INPUT_: { do_demoPeekInput ();
 } break; case DEMO_INPUT_: { do_demoInput ();
 } break; case DEMO_CLICKED_IN_: { do_demoClickedIn ();
 } break; case DEMO_CLICKED_: { do_demoClicked ();

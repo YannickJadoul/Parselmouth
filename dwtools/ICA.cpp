@@ -1,6 +1,6 @@
-/* ICA.c
+/* ICA.cpp
  *
- * Copyright (C) 2010-2012, 2015-2016 David Weenink
+ * Copyright (C) 2010-2012, 2015-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -611,58 +611,6 @@ autoDiagonalizer Diagonalizer_create (long dimension) {
 
 /************************ MixingMatrix **********************************/
 
-Thing_implement (MixingMatrix, TableOfReal, 0);
-
-autoMixingMatrix MixingMatrix_create (long numberOfChannels, long numberOfComponents) {
-	try {
-		autoMixingMatrix me = Thing_new (MixingMatrix);
-		TableOfReal_init (me.get(), numberOfChannels, numberOfComponents);
-		MixingMatrix_initializeRandom (me.get());
-		return me;
-	} catch (MelderError) {
-		Melder_throw (U"MixingMatrix not created.");
-	}
-}
-
-autoMixingMatrix MixingMatrix_createSimple (long numberOfChannels, long numberOfComponents, char32 *elements) {
-	try {
-		long inum = 1, ntokens = Melder_countTokens (elements);
-		if (ntokens == 0) {
-			Melder_throw (U"No matrix elements.");
-		}
-		long nwanted = numberOfChannels * numberOfComponents;
-
-		autoMixingMatrix me = MixingMatrix_create (numberOfChannels, numberOfComponents);
-
-		// Construct the full matrix from the elements
-		double number;
-		for (char32 *token = Melder_firstToken (elements); token != nullptr && inum <= ntokens; token = Melder_nextToken (), inum++) {
-			long irow = (inum - 1) / numberOfComponents + 1;
-			long icol = (inum - 1) % numberOfComponents + 1;
-			Interpreter_numericExpression (0, token, &number);
-
-			my data[irow][icol] = number;
-		}
-		if (ntokens < nwanted) {
-			for (long i = inum; i <= nwanted; i++) {
-				long irow = (inum - 1) / numberOfComponents + 1;
-				long icol = (inum - 1) % numberOfComponents + 1;
-				my data[irow][icol] = number; // repeat the last number given!
-			}
-		}
-		return me;
-	} catch (MelderError) {
-		Melder_throw (U"MixingMatrix not created.");
-	}
-}
-
-void MixingMatrix_initializeRandom (MixingMatrix me) {
-	for (long i = 1; i <= my numberOfRows; i++) {
-		for (long j = 1; j <= my numberOfColumns; j++) {
-			my data[i][j] = NUMrandomGauss (0, 1);
-		}
-	}
-}
 
 /***************** Diagonalizer & MixingMatrix *************************/
 
@@ -683,6 +631,7 @@ autoDiagonalizer MixingMatrix_to_Diagonalizer (MixingMatrix me) {
 autoMixingMatrix Diagonalizer_to_MixingMatrix (Diagonalizer me) {
 	try {
 		autoMixingMatrix thee = MixingMatrix_create (my numberOfRows, my numberOfColumns);
+		MixingMatrix_setRandomGauss ( thee.get(), 0.0, 1.0);
 		NUMpseudoInverse (my data, my numberOfRows, my numberOfColumns, thy data, 0);
 		return thee;
 	} catch (MelderError) {
@@ -690,57 +639,11 @@ autoMixingMatrix Diagonalizer_to_MixingMatrix (Diagonalizer me) {
 	}
 }
 
-/********************* Sound & MixingMatrix ************************************/
-
-autoSound Sound_and_MixingMatrix_mix (Sound me, MixingMatrix thee) {
-	try {
-		if (my ny != thy numberOfColumns) {
-			Melder_throw (U"The number of components in the MixingMatrix and the number of channels in the Sound must be equal.");
-		}
-		autoSound him = Sound_create (thy numberOfRows, my xmin, my xmax, my nx, my dx, my x1);
-		for (long i = 1; i <= thy numberOfRows; i++) {
-			for (long j = 1; j <= my nx; j++) {
-				double mix = 0;
-				for (long k = 1; k <= my ny; k++) {
-					mix += thy data[i][k] * my z[k][j];
-				}
-				his z[i][j] = mix;
-			}
-		}
-		return him;
-	} catch (MelderError) {
-		Melder_throw (me, U": not mixed.");
-	}
-}
-
-autoSound Sound_and_MixingMatrix_unmix (Sound me, MixingMatrix thee) {
-	try {
-		if (my ny != thy numberOfRows) {
-			Melder_throw (U"The MixingMatrix and the Sound must have the same number of channels.");
-		}
-
-		autoNUMmatrix<double> minv (1, thy numberOfColumns, 1, thy numberOfRows);
-		NUMpseudoInverse (thy data, thy numberOfRows, thy numberOfColumns, minv.peek(), 0);
-		autoSound him = Sound_create (thy numberOfColumns, my xmin, my xmax, my nx, my dx, my x1);
-		for (long i = 1; i <= thy numberOfColumns; i++) {
-			for (long j = 1; j <= my nx; j++) {
-				double s = 0;
-				for (long k = 1; k <= my ny; k++) {
-					s += minv[i][k] * my z[k][j];
-				}
-				his z[i][j] = s;
-			}
-		}
-		return him;
-	} catch (MelderError) {
-		Melder_throw (me, U": not unmixed.");
-	}
-}
-
 autoMixingMatrix Sound_to_MixingMatrix (Sound me, double startTime, double endTime, long ncovars, double lagStep, long maxNumberOfIterations, double tol, int method) {
 	try {
 		autoCrossCorrelationTableList ccs = Sound_to_CrossCorrelationTableList (me, startTime, endTime, lagStep, ncovars);
 		autoMixingMatrix thee = MixingMatrix_create (my ny, my ny);
+		MixingMatrix_setRandomGauss ( thee.get(), 0.0, 1.0);
 		MixingMatrix_and_CrossCorrelationTableList_improveUnmixing (thee.get(), ccs.get(), maxNumberOfIterations, tol, method);
 		return thee;
 	} catch (MelderError) {

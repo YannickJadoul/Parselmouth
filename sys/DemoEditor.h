@@ -2,7 +2,7 @@
 #define _DemoEditor_h_
 /* DemoEditor.h
  *
- * Copyright (C) 2009-2011,2012,2015 Paul Boersma
+ * Copyright (C) 2009-2011,2012,2015,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ struct autoDemoOpen {
 int Demo_windowTitle (const char32 *title);
 int Demo_show ();
 void Demo_waitForInput (Interpreter interpreter);
+void Demo_peekInput (Interpreter interpreter);
 bool Demo_clicked ();
 double Demo_x ();
 double Demo_y ();
@@ -72,6 +73,7 @@ bool Demo_extraControlKeyPressed ();
 /* Shortcuts: */
 bool Demo_input (const char32 *keys);
 bool Demo_clickedIn (double left, double right, double bottom, double top);
+void Demo_timer (double duration);
 
 /* End of file DemoEditor.h */
 #endif

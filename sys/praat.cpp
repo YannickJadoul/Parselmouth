@@ -221,7 +221,7 @@ void praat_write_do (UiForm dia, const char32 *extension) {
 	WHERE (SELECTED) { if (! data) data = (Daata) OBJECT; found += 1; }
 	if (found == 1) {
 		MelderString_copy (& defaultFileName, data -> name);
-		if (defaultFileName.length > 50) { defaultFileName.string [50] = U'\0'; defaultFileName.length = 50; }
+		if (defaultFileName.length > 200) { defaultFileName.string [200] = U'\0'; defaultFileName.length = 200; }
 		MelderString_append (& defaultFileName, U".", extension ? extension : Thing_className (data));
 	} else if (! extension) {
 		MelderString_copy (& defaultFileName, U"praat.Collection");
@@ -320,10 +320,10 @@ void praat_newWithFile (autoDaata me, MelderFile file, const char32 *myName) {
 		 */
 		char32 *p = str32rchr (givenName.string, U'.');
 		if (p) *p = U'\0';
-		praat_cleanUpName (givenName.string);
 	} else {
 		MelderString_copy (& givenName, my name && my name [0] ? my name : U"untitled");
 	}
+	praat_cleanUpName (givenName.string);
 	MelderString_append (& name, Thing_className (me.get()), U" ", givenName.string);
 
 	if (theCurrentPraatObjects -> n == praat_MAXNUM_OBJECTS) {
@@ -1290,13 +1290,13 @@ void praat_init (const char32 *title, int argc, char **argv)
 			trace (U"locale ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 			g_set_application_name (Melder_peek32to8 (title));
 			trace (U"locale ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-		#elif cocoa
-			//[NSApplication sharedApplication];
-			[GuiCocoaApplication sharedApplication];
-		#elif defined (_WIN32)
+		#elif motif
 			argv [0] = Melder_32to8 (praatP. title);   // argc == 4
 			Gui_setOpenDocumentCallback (cb_openDocument);
 			GuiAppInitialize ("Praatwulg", argc, argv);
+		#elif cocoa
+			//[NSApplication sharedApplication];
+			[GuiCocoaApplication sharedApplication];
 		#endif
 
 		trace (U"creating and installing the Objects window");
@@ -1652,14 +1652,14 @@ void praat_run () {
 			trace (U"start the GTK event loop");
 			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 			gtk_main ();
-		#elif cocoa
-			[NSApp run];
 		#elif motif
 			for (;;) {
 				XEvent event;
 				GuiNextEvent (& event);
 				XtDispatchEvent (& event);
 			}
+		#elif cocoa
+			[NSApp run];
 		#endif
 	}
 }
