@@ -203,6 +203,10 @@ def test_wrap():
     a2 = wrap(a1d)
     assert_references(a1d, a2, a1)
 
+    a1m = a1[::-1, ::-1, ::-1]
+    a2 = wrap(a1m)
+    assert_references(a1m, a2, a1)
+
 
 def test_numpy_view(capture):
     from pybind11_tests.array import ArrayClass
@@ -339,3 +343,93 @@ def test_greedy_string_overload():  # issue 685
     assert issue685("abc") == "string"
     assert issue685(np.array([97, 98, 99], dtype='b')) == "array"
     assert issue685(123) == "other"
+
+
+def test_array_unchecked_fixed_dims(msg):
+    from pybind11_tests.array import (proxy_add2, proxy_init3F, proxy_init3, proxy_squared_L2_norm,
+                                      proxy_auxiliaries2, array_auxiliaries2)
+
+    z1 = np.array([[1, 2], [3, 4]], dtype='float64')
+    proxy_add2(z1, 10)
+    assert np.all(z1 == [[11, 12], [13, 14]])
+
+    with pytest.raises(ValueError) as excinfo:
+        proxy_add2(np.array([1., 2, 3]), 5.0)
+    assert msg(excinfo.value) == "array has incorrect number of dimensions: 1; expected 2"
+
+    expect_c = np.ndarray(shape=(3, 3, 3), buffer=np.array(range(3, 30)), dtype='int')
+    assert np.all(proxy_init3(3.0) == expect_c)
+    expect_f = np.transpose(expect_c)
+    assert np.all(proxy_init3F(3.0) == expect_f)
+
+    assert proxy_squared_L2_norm(np.array(range(6))) == 55
+    assert proxy_squared_L2_norm(np.array(range(6), dtype="float64")) == 55
+
+    assert proxy_auxiliaries2(z1) == [11, 11, True, 2, 8, 2, 2, 4, 32]
+    assert proxy_auxiliaries2(z1) == array_auxiliaries2(z1)
+
+
+def test_array_unchecked_dyn_dims(msg):
+    from pybind11_tests.array import (proxy_add2_dyn, proxy_init3_dyn, proxy_auxiliaries2_dyn,
+                                      array_auxiliaries2)
+    z1 = np.array([[1, 2], [3, 4]], dtype='float64')
+    proxy_add2_dyn(z1, 10)
+    assert np.all(z1 == [[11, 12], [13, 14]])
+
+    expect_c = np.ndarray(shape=(3, 3, 3), buffer=np.array(range(3, 30)), dtype='int')
+    assert np.all(proxy_init3_dyn(3.0) == expect_c)
+
+    assert proxy_auxiliaries2_dyn(z1) == [11, 11, True, 2, 8, 2, 2, 4, 32]
+    assert proxy_auxiliaries2_dyn(z1) == array_auxiliaries2(z1)
+
+
+def test_array_failure():
+    from pybind11_tests.array import (array_fail_test, array_t_fail_test,
+                                      array_fail_test_negative_size)
+
+    with pytest.raises(ValueError) as excinfo:
+        array_fail_test()
+    assert str(excinfo.value) == 'cannot create a pybind11::array from a nullptr'
+
+    with pytest.raises(ValueError) as excinfo:
+        array_t_fail_test()
+    assert str(excinfo.value) == 'cannot create a pybind11::array_t from a nullptr'
+
+    with pytest.raises(ValueError) as excinfo:
+        array_fail_test_negative_size()
+    assert str(excinfo.value) == 'negative dimensions are not allowed'
+
+
+def test_array_resize(msg):
+    from pybind11_tests.array import (array_reshape2, array_resize3)
+
+    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype='float64')
+    array_reshape2(a)
+    assert(a.size == 9)
+    assert(np.all(a == [[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+
+    # total size change should succced with refcheck off
+    array_resize3(a, 4, False)
+    assert(a.size == 64)
+    # ... and fail with refcheck on
+    try:
+        array_resize3(a, 3, True)
+    except ValueError as e:
+        assert(str(e).startswith("cannot resize an array"))
+    # transposed array doesn't own data
+    b = a.transpose()
+    try:
+        array_resize3(b, 3, False)
+    except ValueError as e:
+        assert(str(e).startswith("cannot resize this array: it does not own its data"))
+    # ... but reshape should be fine
+    array_reshape2(b)
+    assert(b.shape == (8, 8))
+
+
+@pytest.unsupported_on_pypy
+def test_array_create_and_resize(msg):
+    from pybind11_tests.array import create_and_resize
+    a = create_and_resize(2)
+    assert(a.size == 4)
+    assert(np.all(a == 42.))

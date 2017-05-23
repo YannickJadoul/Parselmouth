@@ -124,8 +124,15 @@ extern "C" inline int pybind11_meta_setattro(PyObject* obj, PyObject* name, PyOb
     // descriptor (`property`) instead of calling `tp_descr_get` (`property.__get__()`).
     PyObject *descr = _PyType_Lookup((PyTypeObject *) obj, name);
 
-    // Call `static_property.__set__()` instead of replacing the `static_property`.
-    if (descr && PyObject_IsInstance(descr, (PyObject *) get_internals().static_property_type)) {
+    // The following assignment combinations are possible:
+    //   1. `Type.static_prop = value`             --> descr_set: `Type.static_prop.__set__(value)`
+    //   2. `Type.static_prop = other_static_prop` --> setattro:  replace existing `static_prop`
+    //   3. `Type.regular_attribute = value`       --> setattro:  regular attribute assignment
+    const auto static_prop = (PyObject *) get_internals().static_property_type;
+    const auto call_descr_set = descr && PyObject_IsInstance(descr, static_prop)
+                                && !PyObject_IsInstance(value, static_prop);
+    if (call_descr_set) {
+        // Call `static_property.__set__()` instead of replacing the `static_property`.
 #if !defined(PYPY_VERSION)
         return Py_TYPE(descr)->tp_descr_set(descr, obj, value);
 #else
@@ -137,9 +144,29 @@ extern "C" inline int pybind11_meta_setattro(PyObject* obj, PyObject* name, PyOb
         }
 #endif
     } else {
+        // Replace existing attribute.
         return PyType_Type.tp_setattro(obj, name, value);
     }
 }
+
+#if PY_MAJOR_VERSION >= 3
+/**
+ * Python 3's PyInstanceMethod_Type hides itself via its tp_descr_get, which prevents aliasing
+ * methods via cls.attr("m2") = cls.attr("m1"): instead the tp_descr_get returns a plain function,
+ * when called on a class, or a PyMethod, when called on an instance.  Override that behaviour here
+ * to do a special case bypass for PyInstanceMethod_Types.
+ */
+extern "C" inline PyObject *pybind11_meta_getattro(PyObject *obj, PyObject *name) {
+    PyObject *descr = _PyType_Lookup((PyTypeObject *) obj, name);
+    if (descr && PyInstanceMethod_Check(descr)) {
+        Py_INCREF(descr);
+        return descr;
+    }
+    else {
+        return PyType_Type.tp_getattro(obj, name);
+    }
+}
+#endif
 
 /** This metaclass is assigned by default to all pybind11 types and is required in order
     for static properties to function correctly. Users may override this using `py::metaclass`.
@@ -168,6 +195,9 @@ inline PyTypeObject* make_default_metaclass() {
 
     type->tp_new = pybind11_meta_new;
     type->tp_setattro = pybind11_meta_setattro;
+#if PY_MAJOR_VERSION >= 3
+    type->tp_getattro = pybind11_meta_getattro;
+#endif
 
     if (PyType_Ready(type) < 0)
         pybind11_fail("make_default_metaclass(): failure in PyType_Ready()!");
@@ -177,17 +207,79 @@ inline PyTypeObject* make_default_metaclass() {
     return type;
 }
 
-/// Instance creation function for all pybind11 types. It only allocates space for the
-/// C++ object, but doesn't call the constructor -- an `__init__` function must do that.
-extern "C" inline PyObject *pybind11_object_new(PyTypeObject *type, PyObject *, PyObject *) {
+/// For multiple inheritance types we need to recursively register/deregister base pointers for any
+/// base classes with pointers that are difference from the instance value pointer so that we can
+/// correctly recognize an offset base class pointer. This calls a function with any offset base ptrs.
+inline void traverse_offset_bases(void *valueptr, const detail::type_info *tinfo, void *self,
+        bool (*f)(void * /*parentptr*/, void * /*self*/)) {
+    for (handle h : reinterpret_borrow<tuple>(tinfo->type->tp_bases)) {
+        if (auto parent_tinfo = get_type_info((PyTypeObject *) h.ptr())) {
+            for (auto &c : parent_tinfo->implicit_casts) {
+                if (c.first == tinfo->cpptype) {
+                    auto *parentptr = c.second(valueptr);
+                    if (parentptr != valueptr)
+                        f(parentptr, self);
+                    traverse_offset_bases(parentptr, parent_tinfo, self, f);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+inline bool register_instance_impl(void *ptr, void *self) {
+    get_internals().registered_instances.emplace(ptr, self);
+    return true; // unused, but gives the same signature as the deregister func
+}
+inline bool deregister_instance_impl(void *ptr, void *self) {
+    auto &registered_instances = get_internals().registered_instances;
+    auto range = registered_instances.equal_range(ptr);
+    for (auto it = range.first; it != range.second; ++it) {
+        if (Py_TYPE(self) == Py_TYPE(it->second)) {
+            registered_instances.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
+inline void register_instance(void *self, const type_info *tinfo) {
+    auto *inst = (instance_essentials<void> *) self;
+    register_instance_impl(inst->value, self);
+    if (!tinfo->simple_ancestors)
+        traverse_offset_bases(inst->value, tinfo, self, register_instance_impl);
+}
+
+inline bool deregister_instance(void *self, const detail::type_info *tinfo) {
+    auto *inst = (instance_essentials<void> *) self;
+    bool ret = deregister_instance_impl(inst->value, self);
+    if (!tinfo->simple_ancestors)
+        traverse_offset_bases(inst->value, tinfo, self, deregister_instance_impl);
+    return ret;
+}
+
+/// Creates a new instance which, by default, includes allocation (but not construction of) the
+/// wrapped C++ instance.  If allocating value, the instance is registered; otherwise
+/// register_instance will need to be called once the value has been assigned.
+inline PyObject *make_new_instance(PyTypeObject *type, bool allocate_value /*= true (in cast.h)*/) {
     PyObject *self = type->tp_alloc(type, 0);
     auto instance = (instance_essentials<void> *) self;
     auto tinfo = get_type_info(type);
-    instance->value = ::operator new(tinfo->type_size);
     instance->owned = true;
     instance->holder_constructed = false;
-    get_internals().registered_instances.emplace(instance->value, self);
+    if (allocate_value) {
+        instance->value = tinfo->operator_new(tinfo->type_size);
+        register_instance(self, tinfo);
+    } else {
+        instance->value = nullptr;
+    }
     return self;
+}
+
+/// Instance creation function for all pybind11 types. It only allocates space for the
+/// C++ object, but doesn't call the constructor -- an `__init__` function must do that.
+extern "C" inline PyObject *pybind11_object_new(PyTypeObject *type, PyObject *, PyObject *) {
+    return make_new_instance(type);
 }
 
 /// An `__init__` function constructs the C++ object. Users should provide at least one
@@ -205,25 +297,20 @@ extern "C" inline int pybind11_object_init(PyObject *self, PyObject *, PyObject 
     return -1;
 }
 
-/// Instance destructor function for all pybind11 types. It calls `type_info.dealloc`
-/// to destroy the C++ object itself, while the rest is Python bookkeeping.
-extern "C" inline void pybind11_object_dealloc(PyObject *self) {
+/// Clears all internal data from the instance and removes it from registered instances in
+/// preparation for deallocation.
+inline void clear_instance(PyObject *self) {
     auto instance = (instance_essentials<void> *) self;
-    if (instance->value) {
+    bool has_value = instance->value;
+    type_info *tinfo = nullptr;
+    if (has_value || instance->holder_constructed) {
         auto type = Py_TYPE(self);
-        get_type_info(type)->dealloc(self);
-
-        auto &registered_instances = get_internals().registered_instances;
-        auto range = registered_instances.equal_range(instance->value);
-        bool found = false;
-        for (auto it = range.first; it != range.second; ++it) {
-            if (type == Py_TYPE(it->second)) {
-                registered_instances.erase(it);
-                found = true;
-                break;
-            }
-        }
-        if (!found)
+        tinfo = get_type_info(type);
+        tinfo->dealloc(self);
+    }
+    if (has_value) {
+        if (!tinfo) tinfo = get_type_info(Py_TYPE(self));
+        if (!deregister_instance(self, tinfo))
             pybind11_fail("pybind11_object_dealloc(): Tried to deallocate unregistered instance!");
 
         if (instance->weakrefs)
@@ -233,6 +320,12 @@ extern "C" inline void pybind11_object_dealloc(PyObject *self) {
         if (dict_ptr)
             Py_CLEAR(*dict_ptr);
     }
+}
+
+/// Instance destructor function for all pybind11 types. It calls `type_info.dealloc`
+/// to destroy the C++ object itself, while the rest is Python bookkeeping.
+extern "C" inline void pybind11_object_dealloc(PyObject *self) {
+    clear_instance(self);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -341,7 +434,7 @@ inline void enable_dynamic_attributes(PyHeapTypeObject *heap_type) {
 #endif
     type->tp_flags |= Py_TPFLAGS_HAVE_GC;
     type->tp_dictoffset = type->tp_basicsize; // place dict at the end
-    type->tp_basicsize += sizeof(PyObject *); // and allocate enough space for it
+    type->tp_basicsize += (ssize_t)sizeof(PyObject *); // and allocate enough space for it
     type->tp_traverse = pybind11_traverse;
     type->tp_clear = pybind11_clear;
 
@@ -367,7 +460,7 @@ extern "C" inline int pybind11_getbuffer(PyObject *obj, Py_buffer *view, int fla
     view->ndim = 1;
     view->internal = info;
     view->buf = info->ptr;
-    view->itemsize = (ssize_t) info->itemsize;
+    view->itemsize = info->itemsize;
     view->len = view->itemsize;
     for (auto s : info->shape)
         view->len *= s;
@@ -375,8 +468,8 @@ extern "C" inline int pybind11_getbuffer(PyObject *obj, Py_buffer *view, int fla
         view->format = const_cast<char *>(info->format.c_str());
     if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES) {
         view->ndim = (int) info->ndim;
-        view->strides = (ssize_t *) &info->strides[0];
-        view->shape = (ssize_t *) &info->shape[0];
+        view->strides = &info->strides[0];
+        view->shape = &info->shape[0];
     }
     Py_INCREF(view->obj);
     return 0;

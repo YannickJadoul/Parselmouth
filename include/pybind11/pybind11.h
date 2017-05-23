@@ -31,6 +31,9 @@
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #  pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #  pragma GCC diagnostic ignored "-Wattributes"
+#  if __GNUC__ >= 7
+#    pragma GCC diagnostic ignored "-Wnoexcept-type"
+#  endif
 #endif
 
 #include "attr.h"
@@ -122,7 +125,7 @@ protected:
         >;
 
         static_assert(detail::expected_num_args<Extra...>(sizeof...(Args), cast_in::has_args, cast_in::has_kwargs),
-                      "The number of named arguments does not match the function signature");
+                      "The number of argument annotations does not match the number of function arguments");
 
         /* Dispatch code which converts function arguments and performs the actual function call */
         rec->impl = [](detail::function_call &call) -> handle {
@@ -143,8 +146,11 @@ protected:
             /* Override policy for rvalues -- usually to enforce rvp::move on an rvalue */
             const auto policy = detail::return_value_policy_override<Return>::policy(call.func.policy);
 
+            /* Function scope guard -- defaults to the compile-to-nothing `void_type` */
+            using Guard = detail::extract_guard_t<Extra...>;
+
             /* Perform the function call */
-            handle result = cast_out::cast(args_converter.template call<Return>(cap->f),
+            handle result = cast_out::cast(args_converter.template call<Return, Guard>(cap->f),
                                            policy, call.parent);
 
             /* Invoke call policy post-call hook */
@@ -246,7 +252,7 @@ protected:
         if (type_depth != 0 || types[type_index] != nullptr)
             pybind11_fail("Internal error while parsing type signature (2)");
 
-        #if !defined(PYBIND11_CPP14)
+        #if !defined(PYBIND11_CONSTEXPR_DESCR)
             delete[] types;
             delete[] text;
         #endif
@@ -265,10 +271,8 @@ protected:
         rec->is_constructor = !strcmp(rec->name, "__init__") || !strcmp(rec->name, "__setstate__");
         rec->nargs = (std::uint16_t) args;
 
-#if PY_MAJOR_VERSION < 3
-        if (rec->sibling && PyMethod_Check(rec->sibling.ptr()))
-            rec->sibling = PyMethod_GET_FUNCTION(rec->sibling.ptr());
-#endif
+        if (rec->sibling && PYBIND11_INSTANCE_METHOD_CHECK(rec->sibling.ptr()))
+            rec->sibling = PYBIND11_INSTANCE_METHOD_GET_FUNCTION(rec->sibling.ptr());
 
         detail::function_record *chain = nullptr, *chain_start = rec;
         if (rec->sibling) {
@@ -277,7 +281,7 @@ protected:
                 chain = (detail::function_record *) rec_capsule;
                 /* Never append a method to an overload chain of a parent class;
                    instead, hide the parent's overloads in this case */
-                if (chain->scope != rec->scope)
+                if (!chain->scope.is(rec->scope))
                     chain = nullptr;
             }
             // Don't trigger for things like the default __init__, which are wrapper_descriptors that we are intentionally replacing
@@ -294,8 +298,8 @@ protected:
             rec->def->ml_meth = reinterpret_cast<PyCFunction>(*dispatcher);
             rec->def->ml_flags = METH_VARARGS | METH_KEYWORDS;
 
-            capsule rec_capsule(rec, [](PyObject *o) {
-                destruct((detail::function_record *) PyCapsule_GetPointer(o, nullptr));
+            capsule rec_capsule(rec, [](void *ptr) {
+                destruct((detail::function_record *) ptr);
             });
 
             object scope_module;
@@ -315,6 +319,15 @@ protected:
             m_ptr = rec->sibling.ptr();
             inc_ref();
             chain_start = chain;
+            if (chain->is_method != rec->is_method)
+                pybind11_fail("overloading a method with both static and instance methods is not supported; "
+                    #if defined(NDEBUG)
+                        "compile in debug mode for more details"
+                    #else
+                        "error while attempting to bind " + std::string(rec->is_method ? "instance" : "static") + " method " +
+                        std::string(pybind11::str(rec->scope.attr("__name__"))) + "." + std::string(rec->name) + signature
+                    #endif
+                );
             while (chain->next)
                 chain = chain->next;
             chain->next = rec;
@@ -771,13 +784,12 @@ public:
     //
     // overwrite should almost always be false: attempting to overwrite objects that pybind11 has
     // established will, in most cases, break things.
-    PYBIND11_NOINLINE void add_object(const char *name, object &obj, bool overwrite = false) {
+    PYBIND11_NOINLINE void add_object(const char *name, handle obj, bool overwrite = false) {
         if (!overwrite && hasattr(*this, name))
             pybind11_fail("Error during initialization: multiple incompatible definitions with name \"" +
                     std::string(name) + "\"");
 
-        obj.inc_ref(); // PyModule_AddObject() steals a reference
-        PyModule_AddObject(ptr(), name, obj.ptr());
+        PyModule_AddObject(ptr(), name, obj.inc_ref().ptr() /* steals a reference */);
     }
 };
 
@@ -802,9 +814,13 @@ protected:
         /* Register supplemental type information in C++ dict */
         auto *tinfo = new detail::type_info();
         tinfo->type = (PyTypeObject *) m_ptr;
+        tinfo->cpptype = rec.type;
         tinfo->type_size = rec.type_size;
+        tinfo->operator_new = rec.operator_new;
         tinfo->init_holder = rec.init_holder;
         tinfo->dealloc = rec.dealloc;
+        tinfo->simple_type = true;
+        tinfo->simple_ancestors = true;
 
         auto &internals = get_internals();
         auto tindex = std::type_index(*rec.type);
@@ -813,8 +829,14 @@ protected:
         internals.registered_types_cpp[tindex] = tinfo;
         internals.registered_types_py[m_ptr] = tinfo;
 
-        if (rec.bases.size() > 1 || rec.multiple_inheritance)
+        if (rec.bases.size() > 1 || rec.multiple_inheritance) {
             mark_parents_nonsimple(tinfo->type);
+            tinfo->simple_ancestors = false;
+        }
+        else if (rec.bases.size() == 1) {
+            auto parent_tinfo = get_type_info((PyTypeObject *) rec.bases[0].ptr());
+            tinfo->simple_ancestors = parent_tinfo->simple_ancestors;
+        }
     }
 
     /// Helper function which tags all parents of a type using mult. inheritance
@@ -860,6 +882,18 @@ protected:
     }
 };
 
+/// Set the pointer to operator new if it exists. The cast is needed because it can be overloaded.
+template <typename T, typename = void_t<decltype(static_cast<void *(*)(size_t)>(T::operator new))>>
+void set_operator_new(type_record *r) { r->operator_new = &T::operator new; }
+
+template <typename> void set_operator_new(...) { }
+
+/// Call class-specific delete if it exists or global otherwise. Can also be an overload set.
+template <typename T, typename = void_t<decltype(static_cast<void (*)(void *)>(T::operator delete))>>
+void call_operator_delete(T *p) { T::operator delete(p); }
+
+inline void call_operator_delete(void *p) { ::operator delete(p); }
+
 NAMESPACE_END(detail)
 
 template <typename type_, typename... options>
@@ -873,9 +907,9 @@ class class_ : public detail::generic_type {
 
 public:
     using type = type_;
-    using type_alias = detail::first_of_t<is_subtype, void, options...>;
+    using type_alias = detail::exactly_one_t<is_subtype, void, options...>;
     constexpr static bool has_alias = !std::is_void<type_alias>::value;
-    using holder_type = detail::first_of_t<is_holder, std::unique_ptr<type>, options...>;
+    using holder_type = detail::exactly_one_t<is_holder, std::unique_ptr<type>, options...>;
     using instance_type = detail::instance<type, holder_type>;
 
     static_assert(detail::all_of<is_valid_class_option<options>...>::value,
@@ -885,27 +919,39 @@ public:
 
     template <typename... Extra>
     class_(handle scope, const char *name, const Extra &... extra) {
-        detail::type_record record;
+        using namespace detail;
+
+        // MI can only be specified via class_ template options, not constructor parameters
+        static_assert(
+            none_of<is_pyobject<Extra>...>::value || // no base class arguments, or:
+            (   constexpr_sum(is_pyobject<Extra>::value...) == 1 && // Exactly one base
+                constexpr_sum(is_base<options>::value...)   == 0 && // no template option bases
+                none_of<std::is_same<multiple_inheritance, Extra>...>::value), // no multiple_inheritance attr
+            "Error: multiple inheritance bases must be specified via class_ template options");
+
+        type_record record;
         record.scope = scope;
         record.name = name;
         record.type = &typeid(type);
-        record.type_size = sizeof(detail::conditional_t<has_alias, type_alias, type>);
+        record.type_size = sizeof(conditional_t<has_alias, type_alias, type>);
         record.instance_size = sizeof(instance_type);
         record.init_holder = init_holder;
         record.dealloc = dealloc;
         record.default_holder = std::is_same<holder_type, std::unique_ptr<type>>::value;
+
+        set_operator_new<type>(&record);
 
         /* Register base classes specified via template arguments to class_, if any */
         bool unused[] = { (add_base<options>(record), false)..., false };
         (void) unused;
 
         /* Process optional arguments, if any */
-        detail::process_attributes<Extra...>::init(extra..., &record);
+        process_attributes<Extra...>::init(extra..., &record);
 
-        detail::generic_type::initialize(record);
+        generic_type::initialize(record);
 
         if (has_alias) {
-            auto &instances = pybind11::detail::get_internals().registered_types_cpp;
+            auto &instances = get_internals().registered_types_cpp;
             instances[std::type_index(typeid(type_alias))] = instances[std::type_index(typeid(type))];
         }
     }
@@ -972,6 +1018,16 @@ public:
             return new buffer_info(((capture *) ptr)->func(caster));
         }, ptr);
         return *this;
+    }
+
+    template <typename Return, typename Class, typename... Args>
+    class_ &def_buffer(Return (Class::*func)(Args...)) {
+        return def_buffer([func] (type &obj) { return (obj.*func)(); });
+    }
+
+    template <typename Return, typename Class, typename... Args>
+    class_ &def_buffer(Return (Class::*func)(Args...) const) {
+        return def_buffer([func] (const type &obj) { return (obj.*func)(); });
     }
 
     template <typename C, typename D, typename... Extra>
@@ -1073,13 +1129,15 @@ private:
     template <typename T>
     static void init_holder_helper(instance_type *inst, const holder_type * /* unused */, const std::enable_shared_from_this<T> * /* dummy */) {
         try {
-            new (&inst->holder) holder_type(std::static_pointer_cast<typename holder_type::element_type>(inst->value->shared_from_this()));
-            inst->holder_constructed = true;
-        } catch (const std::bad_weak_ptr &) {
-            if (inst->owned) {
-                new (&inst->holder) holder_type(inst->value);
+            auto sh = std::dynamic_pointer_cast<typename holder_type::element_type>(inst->value->shared_from_this());
+            if (sh) {
+                new (&inst->holder) holder_type(std::move(sh));
                 inst->holder_constructed = true;
             }
+        } catch (const std::bad_weak_ptr &) {}
+        if (!inst->holder_constructed && inst->owned) {
+            new (&inst->holder) holder_type(inst->value);
+            inst->holder_constructed = true;
         }
     }
 
@@ -1115,7 +1173,7 @@ private:
         if (inst->holder_constructed)
             inst->holder.~holder_type();
         else if (inst->owned)
-            ::operator delete(inst->value);
+            detail::call_operator_delete(inst->value);
     }
 
     static detail::function_record *get_function_record(handle h) {
@@ -1131,15 +1189,12 @@ public:
     using class_<Type>::def;
     using class_<Type>::def_property_readonly_static;
     using Scalar = typename std::underlying_type<Type>::type;
-    template <typename T> using arithmetic_tag = std::is_same<T, arithmetic>;
 
     template <typename... Extra>
     enum_(const handle &scope, const char *name, const Extra&... extra)
       : class_<Type>(scope, name, extra...), m_entries(), m_parent(scope) {
 
-        constexpr bool is_arithmetic =
-            !std::is_same<detail::first_of_t<arithmetic_tag, void, Extra...>,
-                          void>::value;
+        constexpr bool is_arithmetic = detail::any_of<std::is_same<arithmetic, Extra>...>::value;
 
         auto m_entries_ptr = m_entries.inc_ref().ptr();
         def("__repr__", [name, m_entries_ptr](Type value) -> pybind11::str {
@@ -1157,6 +1212,9 @@ public:
         }, return_value_policy::copy);
         def("__init__", [](Type& value, Scalar i) { value = (Type)i; });
         def("__int__", [](Type value) { return (Scalar) value; });
+        #if PY_MAJOR_VERSION < 3
+            def("__long__", [](Type value) { return (Scalar) value; });
+        #endif
         def("__eq__", [](const Type &value, Type *value2) { return value2 && value == *value2; });
         def("__ne__", [](const Type &value, Type *value2) { return !value2 || value != *value2; });
         if (is_arithmetic) {
@@ -1231,7 +1289,7 @@ template <typename... Args> struct init {
         using Alias = typename Class::type_alias;
         handle cl_type = cl;
         cl.def("__init__", [cl_type](handle self_, Args... args) {
-                if (self_.get_type() == cl_type)
+                if (self_.get_type().is(cl_type))
                     new (self_.cast<Base *>()) Base(args...);
                 else
                     new (self_.cast<Alias *>()) Alias(args...);
@@ -1291,6 +1349,7 @@ NAMESPACE_END(detail)
 template <typename... Args> detail::init<Args...> init() { return detail::init<Args...>(); }
 template <typename... Args> detail::init_alias<Args...> init_alias() { return detail::init_alias<Args...>(); }
 
+/// Makes a python iterator from a first and past-the-end C++ InputIterator.
 template <return_value_policy Policy = return_value_policy::reference_internal,
           typename Iterator,
           typename Sentinel,
@@ -1316,6 +1375,8 @@ iterator make_iterator(Iterator first, Sentinel last, Extra &&... extra) {
     return (iterator) cast(state { first, last, true });
 }
 
+/// Makes an python iterator over the keys (`.first`) of a iterator over pairs from a
+/// first and past-the-end InputIterator.
 template <return_value_policy Policy = return_value_policy::reference_internal,
           typename Iterator,
           typename Sentinel,
@@ -1341,11 +1402,15 @@ iterator make_key_iterator(Iterator first, Sentinel last, Extra &&... extra) {
     return (iterator) cast(state { first, last, true });
 }
 
+/// Makes an iterator over values of an stl container or other container supporting
+/// `std::begin()`/`std::end()`
 template <return_value_policy Policy = return_value_policy::reference_internal,
           typename Type, typename... Extra> iterator make_iterator(Type &value, Extra&&... extra) {
     return make_iterator<Policy>(std::begin(value), std::end(value), extra...);
 }
 
+/// Makes an iterator over the keys (`.first`) of a stl map-like container supporting
+/// `std::begin()`/`std::end()`
 template <return_value_policy Policy = return_value_policy::reference_internal,
           typename Type, typename... Extra> iterator make_key_iterator(Type &value, Extra&&... extra) {
     return make_key_iterator<Policy>(std::begin(value), std::end(value), extra...);
@@ -1375,7 +1440,8 @@ void register_exception_translator(ExceptionTranslator&& translator) {
         std::forward<ExceptionTranslator>(translator));
 }
 
-/* Wrapper to generate a new Python exception type.
+/**
+ * Wrapper to generate a new Python exception type.
  *
  * This should only be used with PyErr_SetString for now.
  * It is not (yet) possible to use as a py::base.
@@ -1400,7 +1466,8 @@ public:
     }
 };
 
-/** Registers a Python exception in `m` of the given `name` and installs an exception translator to
+/**
+ * Registers a Python exception in `m` of the given `name` and installs an exception translator to
  * translate the C++ exception to the created Python exception using the exceptions what() method.
  * This is intended for simple exception translations; for more complex translation, register the
  * exception object and translator directly.
@@ -1658,7 +1725,7 @@ inline function get_type_overload(const void *this_ptr, const detail::type_info 
         Py_file_input, d.ptr(), d.ptr());
     if (result == nullptr)
         throw error_already_set();
-    if ((handle) d["self"] == Py_None)
+    if (d["self"].is_none())
         return function();
     Py_DECREF(result);
 #endif

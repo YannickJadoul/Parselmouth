@@ -3,15 +3,28 @@ image:
 - Visual Studio 2017
 - Visual Studio 2015
 test: off
+build:
+  parallel: true
 platform:
 - x64
 - x86
 environment:
   matrix:
   - CONDA: 36
+    CPP: 14
   - CONDA: 27
+    CPP: 14
+  - CONDA: 36
+    CPP: latest
 matrix:
-  fast_finish: true  # Stop remaining jobs after a job failure
+  exclude:
+    - image: Visual Studio 2015
+      platform: x86
+    - image: Visual Studio 2015
+      CPP: latest
+    - image: Visual Studio 2017
+      CPP: latest
+      platform: x86
 install:
 - ps: |
     if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
@@ -29,11 +42,11 @@ install:
       conda install -y -q pytest numpy scipy
     }
 - ps: |
-    Start-FileDownload 'http://bitbucket.org/eigen/eigen/get/3.3.0.zip'
-    7z x 3.3.0.zip -y > $null
-    $env:CMAKE_INCLUDE_PATH = "eigen-eigen-26667be4f70b"
+    Start-FileDownload 'http://bitbucket.org/eigen/eigen/get/3.3.3.zip'
+    7z x 3.3.3.zip -y > $null
+    $env:CMAKE_INCLUDE_PATH = "eigen-eigen-67e894c6cd8f"
 build_script:
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DPYBIND11_WERROR=ON
+- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DPYBIND11_CPP_STANDARD=/std:c++%CPP% -DPYBIND11_WERROR=ON -DCMAKE_SUPPRESS_REGENERATION=1
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmake --build . --config Release --target pytest -- /v:m /logger:%MSBuildLogger%
 - cmake --build . --config Release --target test_cmake_build -- /v:m /logger:%MSBuildLogger%

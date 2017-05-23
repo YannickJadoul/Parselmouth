@@ -1,5 +1,6 @@
 # Python < 3 needs this: coding=utf-8
 import pytest
+import pybind11_tests
 
 from pybind11_tests import ExamplePythonTypes, ConstructorStats, has_optional, has_exp_optional
 
@@ -258,7 +259,7 @@ def test_module():
 
 
 def test_print(capture):
-    from pybind11_tests import test_print_function
+    from pybind11_tests import test_print_function, test_print_failure, debug_enabled
 
     with capture:
         test_print_function()
@@ -271,6 +272,14 @@ def test_print(capture):
         py::print + str.format = this
     """
     assert capture.stderr == "this goes to stderr"
+
+    with pytest.raises(RuntimeError) as excinfo:
+        test_print_failure()
+    assert str(excinfo.value) == "make_tuple(): unable to convert " + (
+        "argument of type 'UnregisteredType' to Python object"
+        if debug_enabled else
+        "arguments to Python object (compile in debug mode for details)"
+    )
 
 
 def test_str_api():
@@ -360,6 +369,23 @@ def test_exp_optional():
     assert test_nullopt_exp(None) == 42
     assert test_nullopt_exp(42) == 42
     assert test_nullopt_exp(43) == 43
+
+
+@pytest.mark.skipif(not hasattr(pybind11_tests, "load_variant"), reason='no <variant>')
+def test_variant(doc):
+    from pybind11_tests import load_variant, load_variant_2pass, cast_variant
+
+    assert load_variant(1) == "int"
+    assert load_variant("1") == "std::string"
+    assert load_variant(1.0) == "double"
+    assert load_variant(None) == "std::nullptr_t"
+
+    assert load_variant_2pass(1) == "int"
+    assert load_variant_2pass(1.0) == "double"
+
+    assert cast_variant() == (5, "Hello")
+
+    assert doc(load_variant) == "load_variant(arg0: Union[int, str, float, None]) -> str"
 
 
 def test_constructors():
@@ -503,6 +529,20 @@ def test_single_char_arguments():
     assert str(excinfo.value) == toolong_message
 
 
+def test_bytes_to_string():
+    """Tests the ability to pass bytes to C++ string-accepting functions.  Note that this is
+    one-way: the only way to return bytes to Python is via the pybind11::bytes class."""
+    # Issue #816
+    from pybind11_tests import strlen, string_length
+    import sys
+    byte = bytes if sys.version_info[0] < 3 else str
+
+    assert strlen(byte("hi")) == 2
+    assert string_length(byte("world")) == 5
+    assert string_length(byte("a\x00b")) == 3
+    assert strlen(byte("a\x00b")) == 1  # C-string limitation
+
+
 def test_builtins_cast_return_none():
     """Casters produced with PYBIND11_TYPE_CASTER() should convert nullptr to None"""
     import pybind11_tests as m
@@ -512,3 +552,45 @@ def test_builtins_cast_return_none():
     assert m.return_none_bool() is None
     assert m.return_none_int() is None
     assert m.return_none_float() is None
+
+
+def test_none_deferred():
+    """None passed as various argument types should defer to other overloads"""
+    import pybind11_tests as m
+
+    assert not m.defer_none_cstring("abc")
+    assert m.defer_none_cstring(None)
+    assert not m.defer_none_custom(m.ExamplePythonTypes.new_instance())
+    assert m.defer_none_custom(None)
+    assert m.nodefer_none_void(None)
+    if has_optional:
+        assert m.nodefer_none_optional(None)
+
+
+def test_capsule_with_destructor(capture):
+    import pybind11_tests as m
+    pytest.gc_collect()
+    with capture:
+        a = m.return_capsule_with_destructor()
+        del a
+        pytest.gc_collect()
+    assert capture.unordered == """
+        creating capsule
+        destructing capsule
+    """
+
+    with capture:
+        a = m.return_capsule_with_destructor_2()
+        del a
+        pytest.gc_collect()
+    assert capture.unordered == """
+        creating capsule
+        destructing capsule: 1234
+    """
+
+
+def test_void_caster():
+    import pybind11_tests as m
+
+    assert m.load_nullptr_t(None) is None
+    assert m.cast_nullptr_t() is None
