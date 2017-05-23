@@ -50,6 +50,25 @@ void reset_refs() {
 // Returns element 2,1 from a matrix (used to test copy/nocopy)
 double get_elem(Eigen::Ref<const Eigen::MatrixXd> m) { return m(2, 1); };
 
+
+// Returns a matrix with 10*r + 100*c added to each matrix element (to help test that the matrix
+// reference is referencing rows/columns correctly).
+template <typename MatrixArgType> Eigen::MatrixXd adjust_matrix(MatrixArgType m) {
+    Eigen::MatrixXd ret(m);
+    for (int c = 0; c < m.cols(); c++) for (int r = 0; r < m.rows(); r++)
+        ret(r, c) += 10*r + 100*c;
+    return ret;
+}
+
+struct CustomOperatorNew {
+    CustomOperatorNew() = default;
+
+    Eigen::Matrix4d a = Eigen::Matrix4d::Zero();
+    Eigen::Matrix4d b = Eigen::Matrix4d::Identity();
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+};
+
 test_initializer eigen([](py::module &m) {
     typedef Eigen::Matrix<float, 5, 6, Eigen::RowMajor> FixedMatrixR;
     typedef Eigen::Matrix<float, 5, 6> FixedMatrixC;
@@ -261,4 +280,22 @@ test_initializer eigen([](py::module &m) {
     // Also test a row-major-only no-copy const ref:
     m.def("get_elem_rm_nocopy", [](Eigen::Ref<const Eigen::Matrix<long, -1, -1, Eigen::RowMajor>> &m) -> long { return m(2, 1); },
             py::arg().noconvert());
+
+    // Issue #738: 1xN or Nx1 2D matrices were neither accepted nor properly copied with an
+    // incompatible stride value on the length-1 dimension--but that should be allowed (without
+    // requiring a copy!) because the stride value can be safely ignored on a size-1 dimension.
+    m.def("iss738_f1", &adjust_matrix<const Eigen::Ref<const Eigen::MatrixXd> &>, py::arg().noconvert());
+    m.def("iss738_f2", &adjust_matrix<const Eigen::Ref<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>> &>, py::arg().noconvert());
+
+    // Make sure named arguments are working properly:
+    m.def("matrix_multiply", [](const py::EigenDRef<const Eigen::MatrixXd> A, const py::EigenDRef<const Eigen::MatrixXd> B)
+            -> Eigen::MatrixXd {
+        if (A.cols() != B.rows()) throw std::domain_error("Nonconformable matrices!");
+        return A * B;
+    }, py::arg("A"), py::arg("B"));
+
+    py::class_<CustomOperatorNew>(m, "CustomOperatorNew")
+        .def(py::init<>())
+        .def_readonly("a", &CustomOperatorNew::a)
+        .def_readonly("b", &CustomOperatorNew::b);
 });

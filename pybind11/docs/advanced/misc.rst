@@ -15,6 +15,7 @@ T2>, myFunc)``. In this case, the preprocessor assumes that the comma indicates
 the beginning of the next parameter. Use a ``typedef`` to bind the template to
 another name and use it in the macro to avoid this problem.
 
+.. _gil:
 
 Global Interpreter Lock (GIL)
 =============================
@@ -67,6 +68,13 @@ could be realized as follows (important changes highlighted):
 
         return m.ptr();
     }
+
+The ``call_go`` wrapper can also be simplified using the `call_guard` policy
+(see :ref:`call_policies`) which yields the same result:
+
+.. code-block:: cpp
+
+    m.def("call_go", &call_go, py::call_guard<py::gil_scoped_release>());
 
 
 Binding sequence data types, iterators, the slicing protocol, etc.
@@ -170,6 +178,20 @@ would be then able to access the data behind the same pointer.
 
 .. [#f6] https://docs.python.org/3/extending/extending.html#using-capsules
 
+Module Destructors
+==================
+
+pybind11 does not provide an explicit mechanism to invoke cleanup code at
+module destruction time. In rare cases where such functionality is required, it
+is possible to emulate it using Python capsules with a destruction callback.
+
+.. code-block:: cpp
+
+    auto cleanup_callback = []() {
+        // perform cleanup here -- this function is called with the GIL held
+    };
+
+    m.add_object("_cleanup", py::capsule(cleanup_callback));
 
 Generating documentation using Sphinx
 =====================================

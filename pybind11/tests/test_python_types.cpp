@@ -186,6 +186,7 @@ struct MoveOutContainer {
     std::list<Value> move_list() const { return {{0}, {1}, {2}}; }
 };
 
+struct UnregisteredType { };
 
 test_initializer python_types([](py::module &m) {
     /* No constructor is explicitly defined below. An exception is raised when
@@ -234,6 +235,13 @@ test_initializer python_types([](py::module &m) {
 
         py::print("{a} + {b} = {c}"_s.format("a"_a="py::print", "b"_a="str.format", "c"_a="this"));
     });
+
+    m.def("test_print_failure", []() { py::print(42, UnregisteredType()); });
+#if !defined(NDEBUG)
+    m.attr("debug_enabled") = true;
+#else
+    m.attr("debug_enabled") = false;
+#endif
 
     m.def("test_str_format", []() {
         auto s1 = "{} + {} = {}"_s.format(1, 2, 3);
@@ -345,6 +353,28 @@ test_initializer python_types([](py::module &m) {
 
     m.attr("has_optional") = has_optional;
     m.attr("has_exp_optional") = has_exp_optional;
+
+#ifdef PYBIND11_HAS_VARIANT
+    struct visitor {
+        const char *operator()(int) { return "int"; }
+        const char *operator()(std::string) { return "std::string"; }
+        const char *operator()(double) { return "double"; }
+        const char *operator()(std::nullptr_t) { return "std::nullptr_t"; }
+    };
+
+    m.def("load_variant", [](std::variant<int, std::string, double, std::nullptr_t> v) {
+        return std::visit(visitor(), v);
+    });
+
+    m.def("load_variant_2pass", [](std::variant<double, int> v) {
+        return std::visit(visitor(), v);
+    });
+
+    m.def("cast_variant", []() {
+        using V = std::variant<int, std::string>;
+        return py::make_tuple(V(5), V("Hello"));
+    });
+#endif
 
     m.def("test_default_constructors", []() {
         return py::dict(
@@ -465,11 +495,47 @@ test_initializer python_types([](py::module &m) {
     m.def("ord_char32", [](char32_t c) -> uint32_t { return c; });
     m.def("ord_wchar", [](wchar_t c) -> int { return c; });
 
+    m.def("strlen", [](char *s) { return strlen(s); });
+    m.def("string_length", [](std::string s) { return s.length(); });
+
     m.def("return_none_string", []() -> std::string * { return nullptr; });
     m.def("return_none_char",   []() -> const char *  { return nullptr; });
     m.def("return_none_bool",   []() -> bool *        { return nullptr; });
     m.def("return_none_int",    []() -> int *         { return nullptr; });
     m.def("return_none_float",  []() -> float *       { return nullptr; });
+
+    m.def("defer_none_cstring", [](char *) { return false; });
+    m.def("defer_none_cstring", [](py::none) { return true; });
+    m.def("defer_none_custom", [](ExamplePythonTypes *) { return false; });
+    m.def("defer_none_custom", [](py::none) { return true; });
+    // void and optional, however, don't defer:
+    m.def("nodefer_none_void", [](void *) { return true; });
+    m.def("nodefer_none_void", [](py::none) { return false; });
+#ifdef PYBIND11_HAS_OPTIONAL
+    m.def("nodefer_none_optional", [](std::optional<int>) { return true; });
+    m.def("nodefer_none_optional", [](py::none) { return false; });
+#endif
+
+    m.def("return_capsule_with_destructor",
+        []() {
+            py::print("creating capsule");
+            return py::capsule([]() {
+                py::print("destructing capsule");
+            });
+        }
+    );
+
+    m.def("return_capsule_with_destructor_2",
+        []() {
+            py::print("creating capsule");
+            return py::capsule((void *) 1234, [](void *ptr) {
+                py::print("destructing capsule: {}"_s.format((size_t) ptr));
+            });
+        }
+    );
+
+    m.def("load_nullptr_t", [](std::nullptr_t) {}); // not useful, but it should still compile
+    m.def("cast_nullptr_t", []() { return std::nullptr_t{}; });
 });
 
 #if defined(_MSC_VER)

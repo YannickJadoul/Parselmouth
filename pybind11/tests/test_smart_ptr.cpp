@@ -214,6 +214,12 @@ struct SharedFromThisRef {
     std::shared_ptr<B> shared = std::make_shared<B>();
 };
 
+// Issue #865: shared_from_this doesn't work with virtual inheritance
+struct SharedFromThisVBase : std::enable_shared_from_this<SharedFromThisVBase> {
+    virtual ~SharedFromThisVBase() = default;
+};
+struct SharedFromThisVirt : virtual SharedFromThisVBase {};
+
 template <typename T>
 class CustomUniquePtr {
     std::unique_ptr<T> impl;
@@ -258,6 +264,11 @@ test_initializer smart_ptr_and_references([](py::module &pm) {
         .def("set_ref", [](SharedFromThisRef &, const B &) { return true; })
         .def("set_holder", [](SharedFromThisRef &, std::shared_ptr<B>) { return true; });
 
+    // Issue #865: shared_from_this doesn't work with virtual inheritance
+    static std::shared_ptr<SharedFromThisVirt> sft(new SharedFromThisVirt());
+    py::class_<SharedFromThisVirt, std::shared_ptr<SharedFromThisVirt>>(m, "SharedFromThisVirt")
+        .def_static("get", []() { return sft.get(); });
+
     struct C {
         C() { print_created(this); }
         ~C() { print_destroyed(this); }
@@ -265,4 +276,10 @@ test_initializer smart_ptr_and_references([](py::module &pm) {
 
     py::class_<C, CustomUniquePtr<C>>(m, "TypeWithMoveOnlyHolder")
         .def_static("make", []() { return CustomUniquePtr<C>(new C); });
+
+    struct HeldByDefaultHolder { };
+
+    py::class_<HeldByDefaultHolder>(m, "HeldByDefaultHolder")
+        .def(py::init<>())
+        .def_static("load_shared_ptr", [](std::shared_ptr<HeldByDefaultHolder>) {});
 });

@@ -70,6 +70,22 @@ struct StringStruct {
     std::array<char, 3> b;
 };
 
+struct ComplexStruct {
+    std::complex<float> cflt;
+    std::complex<double> cdbl;
+};
+
+std::ostream& operator<<(std::ostream& os, const ComplexStruct& v) {
+    return os << "c:" << v.cflt << "," << v.cdbl;
+}
+
+struct ArrayStruct {
+    char a[3][4];
+    int32_t b[2];
+    std::array<uint8_t, 3> c;
+    std::array<float, 2> d[4];
+};
+
 PYBIND11_PACKED(struct StructWithUglyNames {
     int8_t __x__;
     uint64_t __y__;
@@ -89,6 +105,27 @@ std::ostream& operator<<(std::ostream& os, const StringStruct& v) {
     os << "',b='";
     for (size_t i = 0; i < 3 && v.b[i]; i++) os << v.b[i];
     return os << "'";
+}
+
+std::ostream& operator<<(std::ostream& os, const ArrayStruct& v) {
+    os << "a={";
+    for (int i = 0; i < 3; i++) {
+        if (i > 0)
+            os << ',';
+        os << '{';
+        for (int j = 0; j < 3; j++)
+            os << v.a[i][j] << ',';
+        os << v.a[i][3] << '}';
+    }
+    os << "},b={" << v.b[0] << ',' << v.b[1];
+    os << "},c={" << int(v.c[0]) << ',' << int(v.c[1]) << ',' << int(v.c[2]);
+    os << "},d={";
+    for (int i = 0; i < 4; i++) {
+        if (i > 0)
+            os << ',';
+        os << '{' << v.d[i][0] << ',' << v.d[i][1] << '}';
+    }
+    return os << '}';
 }
 
 std::ostream& operator<<(std::ostream& os, const EnumStruct& v) {
@@ -149,7 +186,7 @@ py::array_t<StringStruct, 0> create_string_array(bool non_empty) {
     if (non_empty) {
         auto req = arr.request();
         auto ptr = static_cast<StringStruct*>(req.ptr);
-        for (size_t i = 0; i < req.size * req.itemsize; i++)
+        for (ssize_t i = 0; i < req.size * req.itemsize; i++)
             static_cast<char*>(req.ptr)[i] = 0;
         ptr[1].a[0] = 'a'; ptr[1].b[0] = 'a';
         ptr[2].a[0] = 'a'; ptr[2].b[0] = 'a';
@@ -159,6 +196,24 @@ py::array_t<StringStruct, 0> create_string_array(bool non_empty) {
         ptr[3].a[1] = 'b'; ptr[3].b[1] = 'b';
 
         ptr[3].a[2] = 'c'; ptr[3].b[2] = 'c';
+    }
+    return arr;
+}
+
+py::array_t<ArrayStruct, 0> create_array_array(size_t n) {
+    auto arr = mkarray_via_buffer<ArrayStruct>(n);
+    auto ptr = (ArrayStruct *) arr.mutable_data();
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < 3; j++)
+            for (size_t k = 0; k < 4; k++)
+                ptr[i].a[j][k] = char('A' + (i * 100 + j * 10 + k) % 26);
+        for (size_t j = 0; j < 2; j++)
+            ptr[i].b[j] = int32_t(i * 1000 + j);
+        for (size_t j = 0; j < 3; j++)
+            ptr[i].c[j] = uint8_t(i * 10 + j);
+        for (size_t j = 0; j < 4; j++)
+            for (size_t k = 0; k < 2; k++)
+                ptr[i].d[j][k] = float(i) * 100.0f + float(j) * 10.0f + float(k);
     }
     return arr;
 }
@@ -173,12 +228,24 @@ py::array_t<EnumStruct, 0> create_enum_array(size_t n) {
     return arr;
 }
 
+py::array_t<ComplexStruct, 0> create_complex_array(size_t n) {
+    auto arr = mkarray_via_buffer<ComplexStruct>(n);
+    auto ptr = (ComplexStruct *) arr.mutable_data();
+    for (size_t i = 0; i < n; i++) {
+        ptr[i].cflt.real(float(i));
+        ptr[i].cflt.imag(float(i) + 0.25f);
+        ptr[i].cdbl.real(double(i) + 0.5);
+        ptr[i].cdbl.imag(double(i) + 0.75);
+    }
+    return arr;
+}
+
 template <typename S>
 py::list print_recarray(py::array_t<S, 0> arr) {
     const auto req = arr.request();
     const auto ptr = static_cast<S*>(req.ptr);
     auto l = py::list();
-    for (size_t i = 0; i < req.size; i++) {
+    for (ssize_t i = 0; i < req.size; i++) {
         std::stringstream ss;
         ss << ptr[i];
         l.append(py::str(ss.str()));
@@ -194,7 +261,9 @@ py::list print_format_descriptors() {
         py::format_descriptor<PartialStruct>::format(),
         py::format_descriptor<PartialNestedStruct>::format(),
         py::format_descriptor<StringStruct>::format(),
-        py::format_descriptor<EnumStruct>::format()
+        py::format_descriptor<ArrayStruct>::format(),
+        py::format_descriptor<EnumStruct>::format(),
+        py::format_descriptor<ComplexStruct>::format()
     };
     auto l = py::list();
     for (const auto &fmt : fmts) {
@@ -211,8 +280,10 @@ py::list print_dtypes() {
         py::str(py::dtype::of<PartialStruct>()),
         py::str(py::dtype::of<PartialNestedStruct>()),
         py::str(py::dtype::of<StringStruct>()),
+        py::str(py::dtype::of<ArrayStruct>()),
         py::str(py::dtype::of<EnumStruct>()),
-        py::str(py::dtype::of<StructWithUglyNames>())
+        py::str(py::dtype::of<StructWithUglyNames>()),
+        py::str(py::dtype::of<ComplexStruct>())
     };
     auto l = py::list();
     for (const auto &s : dtypes) {
@@ -225,8 +296,8 @@ py::array_t<int32_t, 0> test_array_ctors(int i) {
     using arr_t = py::array_t<int32_t, 0>;
 
     std::vector<int32_t> data { 1, 2, 3, 4, 5, 6 };
-    std::vector<size_t> shape { 3, 2 };
-    std::vector<size_t> strides { 8, 4 };
+    std::vector<ssize_t> shape { 3, 2 };
+    std::vector<ssize_t> strides { 8, 4 };
 
     auto ptr = data.data();
     auto vptr = (void *) ptr;
@@ -351,7 +422,9 @@ test_initializer numpy_dtypes([](py::module &m) {
     PYBIND11_NUMPY_DTYPE(PartialStruct, bool_, uint_, float_, ldbl_);
     PYBIND11_NUMPY_DTYPE(PartialNestedStruct, a);
     PYBIND11_NUMPY_DTYPE(StringStruct, a, b);
+    PYBIND11_NUMPY_DTYPE(ArrayStruct, a, b, c, d);
     PYBIND11_NUMPY_DTYPE(EnumStruct, e1, e2);
+    PYBIND11_NUMPY_DTYPE(ComplexStruct, cflt, cdbl);
     PYBIND11_NUMPY_DTYPE(TrailingPaddingStruct, a, b);
     PYBIND11_NUMPY_DTYPE(CompareStruct, x, y, z);
 
@@ -378,8 +451,12 @@ test_initializer numpy_dtypes([](py::module &m) {
     m.def("get_format_unbound", &get_format_unbound);
     m.def("create_string_array", &create_string_array);
     m.def("print_string_array", &print_recarray<StringStruct>);
+    m.def("create_array_array", &create_array_array);
+    m.def("print_array_array", &print_recarray<ArrayStruct>);
     m.def("create_enum_array", &create_enum_array);
     m.def("print_enum_array", &print_recarray<EnumStruct>);
+    m.def("create_complex_array", &create_complex_array);
+    m.def("print_complex_array", &print_recarray<ComplexStruct>);
     m.def("test_array_ctors", &test_array_ctors);
     m.def("test_dtype_ctors", &test_dtype_ctors);
     m.def("test_dtype_methods", &test_dtype_methods);

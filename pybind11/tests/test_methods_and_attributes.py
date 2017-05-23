@@ -80,6 +80,24 @@ def test_properties():
     assert instance.def_property == 3
 
 
+def test_copy_method():
+    """Issue #443: calling copied methods fails in Python 3"""
+    from pybind11_tests import ExampleMandA
+
+    ExampleMandA.add2c = ExampleMandA.add2
+    ExampleMandA.add2d = ExampleMandA.add2b
+    a = ExampleMandA(123)
+    assert a.value == 123
+    a.add2(ExampleMandA(-100))
+    assert a.value == 23
+    a.add2b(ExampleMandA(20))
+    assert a.value == 43
+    a.add2c(ExampleMandA(6))
+    assert a.value == 49
+    a.add2d(ExampleMandA(-7))
+    assert a.value == 42
+
+
 def test_static_properties():
     from pybind11_tests import TestProperties as Type
 
@@ -109,6 +127,12 @@ def test_static_properties():
     instance.def_readwrite_static = 2
     assert Type.def_readwrite_static == 2
     assert instance.def_readwrite_static == 2
+
+    # It should be possible to override properties in derived classes
+    from pybind11_tests import TestPropertiesOverride as TypeOverride
+
+    assert TypeOverride().def_readonly == 99
+    assert TypeOverride.def_readonly_static == 99
 
 
 def test_static_cls():
@@ -140,6 +164,28 @@ def test_metaclass_override():
     MetaclassOverride.readonly = 2
     assert MetaclassOverride.readonly == 2
     assert isinstance(MetaclassOverride.__dict__["readonly"], int)
+
+
+def test_no_mixed_overloads():
+    from pybind11_tests import debug_enabled
+
+    with pytest.raises(RuntimeError) as excinfo:
+        ExampleMandA.add_mixed_overloads1()
+    assert (str(excinfo.value) ==
+            "overloading a method with both static and instance methods is not supported; " +
+            ("compile in debug mode for more details" if not debug_enabled else
+             "error while attempting to bind static method ExampleMandA.overload_mixed1"
+             "() -> str")
+            )
+
+    with pytest.raises(RuntimeError) as excinfo:
+        ExampleMandA.add_mixed_overloads2()
+    assert (str(excinfo.value) ==
+            "overloading a method with both static and instance methods is not supported; " +
+            ("compile in debug mode for more details" if not debug_enabled else
+             "error while attempting to bind instance method ExampleMandA.overload_mixed2"
+             "(self: pybind11_tests.ExampleMandA, arg0: int, arg1: int) -> str")
+            )
 
 
 @pytest.mark.parametrize("access", ["ro", "rw", "static_ro", "static_rw"])

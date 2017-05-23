@@ -34,8 +34,10 @@ set(PYTHON_LIBRARIES ${PYTHON_LIBRARIES} CACHE INTERNAL "")
 set(PYTHON_MODULE_PREFIX ${PYTHON_MODULE_PREFIX} CACHE INTERNAL "")
 set(PYTHON_MODULE_EXTENSION ${PYTHON_MODULE_EXTENSION} CACHE INTERNAL "")
 
+# NB: when adding a header don't forget to also add it to setup.py
 set(PYBIND11_HEADERS
   include/pybind11/attr.h
+  include/pybind11/buffer_info.h
   include/pybind11/cast.h
   include/pybind11/chrono.h
   include/pybind11/class_support.h
@@ -105,9 +107,14 @@ if (PYBIND11_INSTALL)
   configure_package_config_file(tools/${PROJECT_NAME}Config.cmake.in
                                 "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
                                 INSTALL_DESTINATION ${PYBIND11_CMAKECONFIG_INSTALL_DIR})
+  # Remove CMAKE_SIZEOF_VOID_P from ConfigVersion.cmake since the library does
+  # not depend on architecture specific settings or libraries.
+  set(_PYBIND11_CMAKE_SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
+  unset(CMAKE_SIZEOF_VOID_P)
   write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
                                    VERSION ${${PROJECT_NAME}_VERSION}
                                    COMPATIBILITY AnyNewerVersion)
+  set(CMAKE_SIZEOF_VOID_P ${_PYBIND11_CMAKE_SIZEOF_VOID_P})
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
                 ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
                 tools/FindPythonLibsNew.cmake

@@ -28,6 +28,7 @@ endif()
 set(PYBIND11_TEST_FILES
   test_alias_initialization.cpp
   test_buffers.cpp
+  test_call_policies.cpp
   test_callbacks.cpp
   test_chrono.cpp
   test_class_args.cpp
@@ -40,7 +41,6 @@ set(PYBIND11_TEST_FILES
   test_exceptions.cpp
   test_inheritance.cpp
   test_issues.cpp
-  test_keep_alive.cpp
   test_kwargs_and_defaults.cpp
   test_methods_and_attributes.cpp
   test_modules.cpp
@@ -162,9 +162,15 @@ if(NOT PYBIND11_PYTEST_FOUND)
   set(PYBIND11_PYTEST_FOUND TRUE CACHE INTERNAL "")
 endif()
 
+if(CMAKE_VERSION VERSION_LESS 3.2)
+  set(PYBIND11_USES_TERMINAL "")
+else()
+  set(PYBIND11_USES_TERMINAL "USES_TERMINAL")
+endif()
+
 # A single command to compile and run the tests
 add_custom_target(pytest COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYBIND11_PYTEST_FILES}
-                  DEPENDS pybind11_tests WORKING_DIRECTORY ${testdir})
+                  DEPENDS pybind11_tests WORKING_DIRECTORY ${testdir} ${PYBIND11_USES_TERMINAL})
 
 if(PYBIND11_TEST_OVERRIDE)
   add_custom_command(TARGET pytest POST_BUILD
@@ -197,7 +203,7 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.1)
 
     set(build_options "-DCMAKE_PREFIX_PATH=${PROJECT_BINARY_DIR}/mock_install"
                       "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-                      "-DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}"
+                      "-DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}"
                       "-DPYBIND11_CPP_STANDARD=${PYBIND11_CPP_STANDARD}")
     if(NOT ARG_INSTALL)
       list(APPEND build_options "-DPYBIND11_PROJECT_DIR=${PROJECT_SOURCE_DIR}")

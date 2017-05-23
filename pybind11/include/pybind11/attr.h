@@ -1,5 +1,5 @@
 /*
-    pybind11/pybind11.h: Infrastructure for processing custom
+    pybind11/attr.h: Infrastructure for processing custom
     type and function attributes
 
     Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
@@ -58,7 +58,7 @@ struct metaclass {
     handle value;
 
     PYBIND11_DEPRECATED("py::metaclass() is no longer required. It's turned on by default now.")
-    metaclass() = default;
+    metaclass() {}
 
     /// Override pybind11's default metaclass
     explicit metaclass(handle value) : value(value) { }
@@ -66,6 +66,44 @@ struct metaclass {
 
 /// Annotation to mark enums as an arithmetic type
 struct arithmetic { };
+
+/** \rst
+    A call policy which places one or more guard variables (``Ts...``) around the function call.
+
+    For example, this definition:
+
+    .. code-block:: cpp
+
+        m.def("foo", foo, py::call_guard<T>());
+
+    is equivalent to the following pseudocode:
+
+    .. code-block:: cpp
+
+        m.def("foo", [](args...) {
+            T scope_guard;
+            return foo(args...); // forwarded arguments
+        });
+ \endrst */
+template <typename... Ts> struct call_guard;
+
+template <> struct call_guard<> { using type = detail::void_type; };
+
+template <typename T>
+struct call_guard<T> {
+    static_assert(std::is_default_constructible<T>::value,
+                  "The guard type must be default constructible");
+
+    using type = T;
+};
+
+template <typename T, typename... Ts>
+struct call_guard<T, Ts...> {
+    struct type {
+        T guard{}; // Compose multiple guard types with left-to-right default-constructor order
+        typename call_guard<Ts...>::type next{};
+    };
+};
 
 /// @} annotations
 
@@ -174,6 +212,9 @@ struct type_record {
     /// How large is pybind11::instance<type>?
     size_t instance_size = 0;
 
+    /// The global operator new can be overridden with a class-specific variant
+    void *(*operator_new)(size_t) = ::operator new;
+
     /// Function pointer to class_<..>::init_holder
     void (*init_holder)(PyObject *, const void *) = nullptr;
 
@@ -225,7 +266,7 @@ struct type_record {
             dynamic_attr = true;
 
         if (caster)
-            base_info->implicit_casts.push_back(std::make_pair(type, caster));
+            base_info->implicit_casts.emplace_back(type, caster);
     }
 };
 
@@ -333,7 +374,7 @@ template <> struct process_attribute<arg_v> : process_attribute_default<arg_v> {
     }
 };
 
-/// Process a parent class attribute
+/// Process a parent class attribute.  Single inheritance only (class_ itself already guarantees that)
 template <typename T>
 struct process_attribute<T, enable_if_t<is_pyobject<T>::value>> : process_attribute_default<handle> {
     static void init(const handle &h, type_record *r) { r->bases.append(h); }
@@ -371,7 +412,10 @@ struct process_attribute<metaclass> : process_attribute_default<metaclass> {
 template <>
 struct process_attribute<arithmetic> : process_attribute_default<arithmetic> {};
 
-/***
+template <typename... Ts>
+struct process_attribute<call_guard<Ts...>> : process_attribute_default<call_guard<Ts...>> { };
+
+/**
  * Process a keep_alive call policy -- invokes keep_alive_impl during the
  * pre-call handler if both Nurse, Patient != 0 and use the post-call handler
  * otherwise
@@ -406,6 +450,13 @@ template <typename... Args> struct process_attributes {
         ignore_unused(unused);
     }
 };
+
+template <typename T>
+using is_call_guard = is_instantiation<call_guard, T>;
+
+/// Extract the ``type`` from the first `call_guard` in `Extras...` (or `void_type` if none found)
+template <typename... Extra>
+using extract_guard_t = typename exactly_one_t<is_call_guard, call_guard<>, Extra...>::type;
 
 /// Check the number of named arguments at compile time
 template <typename... Extra,
