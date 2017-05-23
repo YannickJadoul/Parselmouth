@@ -166,6 +166,9 @@ void Binding<Sound>::init() {
 	    },
 	    "file_path"_a);
 
+	// TODO Constructor from file or io.IOBase?
+	// TODO Constructor from Praat-format file?
+
 	def("save", // TODO Copy the overload from Data?
 	    [] (Sound self, const std::u32string &filePath, SoundFileFormat format) {
 		    auto file = pathToMelderFile(filePath);
@@ -244,9 +247,8 @@ void Binding<Sound>::init() {
 		    }
 	    },
 	    "file_path"_a, "format"_a);
-
-	// TODO Constructor from file or io.IOBase?
-	// TODO Constructor from Praat-format file?
+	// TODO Determine file format based on extension, and make format optional
+	// TODO Coordinate this save function with the (future) save in Data
 
 	def("autocorrelate",
 	    &Sound_autoCorrelate,
@@ -445,7 +447,26 @@ void Binding<Sound>::init() {
 	    [] (Sound self, optional<double> from, optional<double> to, bool roundToNearestZeroCrossing) { Sound_setZero(self, from.value_or(self->xmin), to.value_or(self->xmax), roundToNearestZeroCrossing); },
 	    "from"_a = nullopt, "to"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
 
-	// TODO Sound to Intensity, Formant, Harmonicity, ...
+	def("to_intensity", // TODO Minimum pitch is POSITIVE, for some reason time step is not
+	    [](Sound self, double minimumPitch, optional<double> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep.value_or(0.0), subtractMean); },
+	    "minimum_pitch"_a = 100.0, "time_step"_a = nullopt, "subtract_mean"_a = true);
+
+	def("to_harmonicity_ac", // TODO Time step, minimum pitch and periods per window are POSITIVE
+	    &Sound_to_Harmonicity_ac,
+	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
+
+	def("to_harmonicity_cc", // TODO Time step, minimum pitch and periods per window are POSITIVE
+	    &Sound_to_Harmonicity_cc,
+	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
+
+	def("to_harmonicity_gne", // TODO All parameters are POSITIVE
+	    &Sound_to_Harmonicity_GNE,
+	    "minimum_frequency"_a = 500.0, "maximum_frequency"_a = 4500.0, "bandwidth"_a = 1000.0, "step"_a = 80.0);
+
+	// TODO to_harmonicity(SoundToHarmonicityMethod) ?
+
+
+	// TODO Sound to Formant, Pitch, ...
 
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 }

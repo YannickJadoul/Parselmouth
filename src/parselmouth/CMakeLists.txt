@@ -1,4 +1,6 @@
-add_sources(Thing.cpp
-            Data.cpp
+add_sources(Data.cpp
+            Harmonicity.cpp
+            Intensity.cpp
             Sound.cpp
+            Thing.cpp
             Vector.cpp)
