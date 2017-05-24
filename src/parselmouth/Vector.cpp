@@ -29,8 +29,7 @@ void Binding<Interpolation>::init() {
 	make_implicitly_convertible_from_string<Interpolation>(*this, true);
 }
 
-void Binding<Vector>::init()
-{
+void Binding<Vector>::init() {
 	// TODO values property and buffer protocol should probably be part of the Matrix class
 	def_property_readonly("values",
 	                      [](Vector self) {

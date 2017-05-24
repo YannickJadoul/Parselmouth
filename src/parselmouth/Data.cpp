@@ -7,6 +7,7 @@ namespace parselmouth {
 
 void Binding<Data>::init()
 {
+	// TODO Cast to intermediate type (i.e., Sound not known to parselmouth, then return Vector Python object instead of Data)
 	//def_static("read", // TODO Praat-format files not recognized because we cannot call praat_uvafon_init because INCLUDE_MANPAGES cannot be used because somehow that's not supposed to be called after only praatlib_init() instead of praat_init()
 	//           [] (const std::string &filePath) { // TODO std::string to MelderFile functionality in separate function? Cfr. Sound.__init__
 	//	           structMelderFile file = {};
@@ -24,6 +25,8 @@ void Binding<Data>::init()
 
 	def("__deepcopy__",
 	    &Data_copy<structData>);
+
+	// TODO Pickling?
 }
 
 } // namespace parselmouth

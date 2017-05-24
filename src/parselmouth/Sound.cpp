@@ -24,16 +24,16 @@ namespace {
 template <typename Class>
 void constructInstanceHolder(py::handle self, typename Class::holder_type &&holder)
 {
-	// TODO HACK DETECTED: Remove/cleanup
+	// TODO Replace with init_factory once pybind11 has this feature
 	auto instance = reinterpret_cast<typename Class::instance_type *>(self.ptr());
-	auto &internals = py::detail::get_internals();
-	internals.registered_instances.erase(internals.registered_instances.find(instance->value));
-	::operator delete(instance->value);
+
+	py::detail::clear_instance((PyObject *) instance);
+
 	instance->value = py::detail::holder_helper<typename Class::holder_type>::get(holder);
 	instance->holder = std::move(holder);
 	instance->holder_constructed = true;
 	instance->owned = true;
-	internals.registered_instances.emplace(instance->value, instance);
+	py::detail::register_instance(instance, py::detail::get_type_info(typeid(typename Class::type)));
 }
 
 template <typename T, typename Container>
@@ -144,15 +144,17 @@ void Binding<Sound>::init() {
 		    auto nx = samples.shape(0);
 		    auto ny = ndim == 2 ? samples.shape(1) : 1;
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
-		    for (size_t i = 0; i < nx; ++i) {
-			    if (ndim == 2) {
-				    for (size_t j = 0; j < ny; ++j) {
-					    result->z[j + 1][i + 1] = samples.at(i, j); // TODO Unsafe accessor in later versions of pybind11?
-				    }
-			    }
-			    else {
-				    result->z[1][i+1] = samples.at(i);
-			    }
+
+		    if (ndim == 2) {
+			    auto unchecked = samples.unchecked<2>();
+			    for (ssize_t i = 0; i < nx; ++i)
+				    for (ssize_t j = 0; j < ny; ++j)
+					    result->z[j+1][i+1] = unchecked(i, j);
+		    }
+		    else {
+			    auto unchecked = samples.unchecked<1>();
+			    for (ssize_t i = 0; i < nx; ++i)
+				    result->z[1][i+1] = unchecked(i);
 		    }
 
 		    constructInstanceHolder<Binding<Sound>>(self, std::move(result)); // TODO init_factory
