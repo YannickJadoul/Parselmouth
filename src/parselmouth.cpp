@@ -9,7 +9,10 @@
 #include "dwsys/NUMmachar.h"
 #include "dwtools/Spectrogram_extensions.h"
 #include "sys/praat.h"
+#include "sys/praat_version.h"
 
+#define xstr(s) str(s) // TODO Move somewhere else?
+#define str(s) #s
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -57,6 +60,9 @@ PYBIND11_PLUGIN(parselmouth) {
 		.value("hanning", kSound_to_Spectrogram_windowShape_HANNING)
 		.value("gaussian", kSound_to_Spectrogram_windowShape_GAUSSIAN)
 	;
+
+	m.attr("PRAAT_VERSION") = PYBIND11_STR_TYPE(xstr(PRAAT_VERSION_STR)); // TODO Python 2, return str or unicode? (i.e., PYBIND11_STR_TYPE vs. py::cast)
+	m.attr("PRAAT_VERSION_DATE") = PYBIND11_STR_TYPE(xstr(PRAAT_DAY) " " xstr(PRAAT_MONTH) " " xstr(PRAAT_YEAR));
 
 	bindings.init();
 
