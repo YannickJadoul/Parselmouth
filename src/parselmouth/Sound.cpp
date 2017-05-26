@@ -3,6 +3,7 @@
 #include "dwtools/Sound_extensions.h"
 #include "dwtools/Sound_to_MFCC.h"
 #include "fon/Sound_and_Spectrogram.h"
+#include "fon/Sound_and_Spectrum.h"
 #include "fon/Sound_to_Harmonicity.h"
 #include "fon/Sound_to_Intensity.h"
 #include "fon/Sound_to_Pitch.h"
@@ -21,23 +22,8 @@ using std::experimental::nullopt;
 
 namespace {
 
-template <typename Class>
-void constructInstanceHolder(py::handle self, typename Class::holder_type &&holder)
-{
-	// TODO Replace with init_factory once pybind11 has this feature
-	auto instance = reinterpret_cast<typename Class::instance_type *>(self.ptr());
-
-	py::detail::clear_instance((PyObject *) instance);
-
-	instance->value = py::detail::holder_helper<typename Class::holder_type>::get(holder);
-	instance->holder = std::move(holder);
-	instance->holder_constructed = true;
-	instance->owned = true;
-	py::detail::register_instance(instance, py::detail::get_type_info(typeid(typename Class::type)));
-}
-
 template <typename T, typename Container>
-OrderedOf<T> referencesToOrderedOf(const Container &container)
+OrderedOf<T> referencesToOrderedOf(const Container &container) // TODO type_caster?
 {
 	OrderedOf<T> orderedOf;
 	std::for_each(begin(container), end(container), [&orderedOf] (T &item) { orderedOf.addItem_ref(&item); });
@@ -135,31 +121,31 @@ void Binding<SoundFileFormat>::init() {
 
 void Binding<Sound>::init() {
 	def("__init__", // TODO sampling_frequency is POSITIVE // TODO Use init_factory once part of pybind11
-	    [] (py::handle self, py::array_t<double> samples, double samplingFrequency, double startTime) {
-		    auto ndim = samples.ndim();
+	    [] (py::handle self, py::array_t<double, 0> values, double samplingFrequency, double startTime) {
+		    auto ndim = values.ndim();
 		    if (ndim > 2) {
 			    throw py::value_error("Cannot create Sound from an array with more than 2 dimensions");
 		    }
 
-		    auto nx = samples.shape(0);
-		    auto ny = ndim == 2 ? samples.shape(1) : 1;
+		    auto nx = values.shape(0);
+		    auto ny = ndim == 2 ? values.shape(1) : 1;
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
 
 		    if (ndim == 2) {
-			    auto unchecked = samples.unchecked<2>();
+			    auto unchecked = values.unchecked<2>();
 			    for (ssize_t i = 0; i < nx; ++i)
 				    for (ssize_t j = 0; j < ny; ++j)
 					    result->z[j+1][i+1] = unchecked(i, j);
 		    }
 		    else {
-			    auto unchecked = samples.unchecked<1>();
+			    auto unchecked = values.unchecked<1>();
 			    for (ssize_t i = 0; i < nx; ++i)
 				    result->z[1][i+1] = unchecked(i);
 		    }
 
 		    constructInstanceHolder<Binding<Sound>>(self, std::move(result)); // TODO init_factory
 	    },
-	    "samples"_a, "sampling_frequency"_a, "start_time"_a = 0.0);
+	    "values"_a, "sampling_frequency"_a, "start_time"_a = 0.0);
 
 	def("__init__",
 	    [] (py::handle self, const std::u32string &filePath) { // TODO Use init_factory once part of pybind11
@@ -298,7 +284,7 @@ void Binding<Sound>::init() {
 
 	def("extract_all_channels",
 	    [] (Sound self) {
-		    std::vector<Sound> result; // TODO Make std::vector<autoSound>
+		    std::vector<Sound> result; // TODO Make std::vector<autoSound> once pybind11 supports this
 		    result.reserve(self->ny);
 		    for (auto i = 1; i <= self->ny; ++i) {
 			    result.emplace_back(Sound_extractChannel(self, i).releaseToAmbiguousOwner());
@@ -448,6 +434,10 @@ void Binding<Sound>::init() {
 	def("set_to_zero", // TODO Set part to zero
 	    [] (Sound self, optional<double> from, optional<double> to, bool roundToNearestZeroCrossing) { Sound_setZero(self, from.value_or(self->xmin), to.value_or(self->xmax), roundToNearestZeroCrossing); },
 	    "from"_a = nullopt, "to"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
+
+	def("to_spectrum",
+	    [] (Sound self, bool fast) { return Sound_to_Spectrum(self, fast); },
+		"fast"_a = true);
 
 	def("to_intensity", // TODO Minimum pitch is POSITIVE, for some reason time step is not
 	    [](Sound self, double minimumPitch, optional<double> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep.value_or(0.0), subtractMean); },

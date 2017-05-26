@@ -53,6 +53,21 @@ void make_implicitly_convertible_from_string(pybind11::enum_<Type> &enumType, bo
 	pybind11::implicitly_convertible<std::string, Type>();
 };
 
+template <typename Class>
+void constructInstanceHolder(pybind11::handle self, typename Class::holder_type &&holder)
+{
+	// TODO Replace with init_factory once pybind11 has this feature
+	auto instance = reinterpret_cast<typename Class::instance_type *>(self.ptr());
+
+	pybind11::detail::clear_instance((PyObject *) instance);
+
+	instance->value = pybind11::detail::holder_helper<typename Class::holder_type>::get(holder);
+	instance->holder = std::move(holder);
+	instance->holder_constructed = true;
+	instance->owned = true;
+	pybind11::detail::register_instance(instance, pybind11::detail::get_type_info(typeid(typename Class::type)));
+}
+
 
 template <typename Class, typename... Extra>
 using ClassBinding = pybind11::class_<Class, Extra...>;
@@ -123,7 +138,6 @@ PRAAT_ENUM_BINDING_ALIAS(AmplitudeScaling, kSounds_convolve_scaling)
 PRAAT_ENUM_BINDING_ALIAS(SignalOutsideTimeDomain, kSounds_convolve_signalOutsideTimeDomain)
 PRAAT_ENUM_BINDING(SoundFileFormat)
 
-NO_BINDING_INIT(Spectrum)
 NO_BINDING_INIT(Spectrogram)
 NO_BINDING_INIT(Pitch)
 NO_BINDING_INIT(Formant)
