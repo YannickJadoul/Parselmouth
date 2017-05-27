@@ -12,7 +12,7 @@ void Binding<Spectrogram>::init() {
 	// TODO Constructor!
 
 	def("get_power_at",
-	    [] (Spectrogram self, double time, double frequency) { return Matrix_getValueAtXY(self, time, frequency); },
+	    [](Spectrogram self, double time, double frequency) { return Matrix_getValueAtXY(self, time, frequency); },
 		"time"_a, "frequency"_a);
 
 	def("to_spectrum_slice", // TODO Pythonic alias?

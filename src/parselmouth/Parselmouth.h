@@ -30,7 +30,7 @@ template <typename Type>
 void make_implicitly_convertible_from_string(pybind11::enum_<Type> &enumType, bool ignoreCase=false)
 {
 	enumType.def("__init__",
-	             [enumType, ignoreCase] (Type &self, const std::string &value)
+	             [enumType, ignoreCase](Type &self, const std::string &value)
 	             {
 		             auto values = enumType.attr("__members__").template cast<pybind11::dict>();
 

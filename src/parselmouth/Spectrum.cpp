@@ -19,7 +19,7 @@ using std::experimental::nullopt;
 
 void Binding<Spectrum>::init() {
 	def("__init__", // TODO maximum frequency > 0
-	    [] (py::handle self, py::array_t<double, 0> values, double maximumFrequency) {
+	    [](py::handle self, py::array_t<double, 0> values, double maximumFrequency) {
 		    auto ndim = values.ndim();
 		    if (ndim > 2) {
 			    throw py::value_error("Cannot create Spectrum from an array with more than 2 dimensions");
@@ -51,7 +51,7 @@ void Binding<Spectrum>::init() {
 	    "values"_a, "maximum_frequency"_a);
 
 	def("__init__", // TODO maximum frequency > 0
-	    [] (py::handle self, py::array_t<std::complex<double>, 0> values, double maximumFrequency) {
+	    [](py::handle self, py::array_t<std::complex<double>, 0> values, double maximumFrequency) {
 		    auto ndim = values.ndim();
 		    if (ndim > 1) {
 			    throw py::value_error("Cannot create Spectrum from a complex array with more than 1 dimension");
@@ -75,7 +75,7 @@ void Binding<Spectrum>::init() {
 	// TODO Tabulate - List ?
 
 	def("get_lowest_frequency",
-	    [] (Spectrum self) { return self->xmin; });
+	    [](Spectrum self) { return self->xmin; });
 
 	def_readonly("lowest_frequency",
 	             static_cast<double structSpectrum::*>(&structSpectrum::xmin)); // TODO Remove when not required by pybind11 anymore
@@ -84,7 +84,7 @@ void Binding<Spectrum>::init() {
 	             static_cast<double structSpectrum::*>(&structSpectrum::xmin)); // TODO Remove when not required by pybind11 anymore
 
 	def("get_highest_frequency",
-	    [] (Spectrum self) { return self->xmax; });
+	    [](Spectrum self) { return self->xmax; });
 
 	def_readonly("highest_frequency",
 	             static_cast<double structSpectrum::*>(&structSpectrum::xmax)); // TODO Remove when not required by pybind11 anymore
@@ -93,7 +93,7 @@ void Binding<Spectrum>::init() {
 	             static_cast<double structSpectrum::*>(&structSpectrum::xmax)); // TODO Remove when not required by pybind11 anymore
 
 	def("get_number_of_bins",
-	    [] (Spectrum self) { return self->nx; });
+	    [](Spectrum self) { return self->nx; });
 
 	def_readonly("num_bins",
 	             static_cast<int32 structSpectrum::*>(&structSpectrum::nx)); // TODO Remove when not required by pybind11 anymore
@@ -102,7 +102,7 @@ void Binding<Spectrum>::init() {
 	             static_cast<int32 structSpectrum::*>(&structSpectrum::nx)); // TODO Remove when not required by pybind11 anymore
 
 	def("get_bin_width",
-	    [] (Spectrum self) { return self->dx; });
+	    [](Spectrum self) { return self->dx; });
 
 	def_readonly("bin_width",
 	             static_cast<double structSpectrum::*>(&structSpectrum::dx)); // TODO Remove when not required by pybind11 anymore
@@ -111,15 +111,15 @@ void Binding<Spectrum>::init() {
 	             static_cast<double structSpectrum::*>(&structSpectrum::dx)); // TODO Remove when not required by pybind11 anymore
 
 	def("get_frequency_from_bin_number", // TODO band number is NATURAL // TODO Somehow link with "Sampled" class?
-	    [] (Spectrum self, long bandNumber) { return Sampled_indexToX(self, bandNumber); },
+	    [](Spectrum self, long bandNumber) { return Sampled_indexToX(self, bandNumber); },
 	    "band_number"_a);
 
 	def("get_bin_number_from_frequency", // TODO Somehow link with "Sampled" class?
-	    [] (Spectrum self, long frequency) { return Sampled_xToIndex(self, frequency); },
+	    [](Spectrum self, long frequency) { return Sampled_xToIndex(self, frequency); },
 	    "frequency"_a);
 
 	def("get_real_value_in_bin", // TODO bin number is NATURAL
-	    [] (Spectrum self, long binNumber) {
+	    [](Spectrum self, long binNumber) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    return self->z[1][binNumber];
@@ -127,7 +127,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a);
 
 	def("get_imaginary_value_in_bin", // TODO bin number is NATURAL
-	    [] (Spectrum self, long binNumber) {
+	    [](Spectrum self, long binNumber) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    return self->z[2][binNumber];
@@ -135,7 +135,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a);
 
 	def("get_value_in_bin", // TODO bin number is NATURAL
-	    [] (Spectrum self, long binNumber) {
+	    [](Spectrum self, long binNumber) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    return std::complex<double>(self->z[1][binNumber], self->z[2][binNumber]);
@@ -143,7 +143,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a);
 
 	def("__getitem__",
-	    [] (Spectrum self, long index) {
+	    [](Spectrum self, long index) {
 		    if (index < 0 || index >= self->nx)
 			    throw py::index_error("bin index out of range");
 		    return std::complex<double>(self->z[1][index+1], self->z[2][index+1]);
@@ -151,7 +151,7 @@ void Binding<Spectrum>::init() {
 	    "index"_a);
 
 	def("set_real_value_in_bin", // TODO bin number is NATURAL
-	    [] (Spectrum self, long binNumber, double value) {
+	    [](Spectrum self, long binNumber, double value) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    self->z[1][binNumber] = value;
@@ -159,7 +159,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a, "value"_a);
 
 	def("get_imaginary_value_in_bin", // TODO bin number is NATURAL
-	    [] (Spectrum self, long binNumber, double value) {
+	    [](Spectrum self, long binNumber, double value) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    self->z[2][binNumber] = value;
@@ -167,7 +167,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a, "value"_a);
 
 	def("get_value_in_bin", // TODO bin number is NATURAL
-	    [] (Spectrum self, long binNumber, std::complex<double> value) {
+	    [](Spectrum self, long binNumber, std::complex<double> value) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    self->z[1][binNumber] = value.real();
@@ -176,7 +176,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a, "value"_a);
 
 	def("__setitem__",
-	    [] (Spectrum self, long index, std::complex<double> value) {
+	    [](Spectrum self, long index, std::complex<double> value) {
 		    if (index < 0 || index >= self->nx)
 			    throw py::index_error("bin index out of range");
 		    self->z[1][index+1] = value.real();
@@ -185,35 +185,35 @@ void Binding<Spectrum>::init() {
 	    "index"_a, "value"_a);
 
 	def("get_band_energy",
-	    [] (Spectrum self, optional<double> bandFloor, optional<double> bandCeiling) { return Spectrum_getBandEnergy(self, bandFloor.value_or(self->xmin), bandCeiling.value_or(self->xmax)); },
+	    [](Spectrum self, optional<double> bandFloor, optional<double> bandCeiling) { return Spectrum_getBandEnergy(self, bandFloor.value_or(self->xmin), bandCeiling.value_or(self->xmax)); },
 	    "band_floor"_a = nullopt, "band_ceiling"_a = nullopt);
 
 	def("get_band_energy",
-	    [] (Spectrum self, std::pair<optional<double>, optional<double>> band) { return Spectrum_getBandEnergy(self, band.first.value_or(self->xmin), band.second.value_or(self->xmax)); },
+	    [](Spectrum self, std::pair<optional<double>, optional<double>> band) { return Spectrum_getBandEnergy(self, band.first.value_or(self->xmin), band.second.value_or(self->xmax)); },
 	    "band"_a = std::make_pair(nullopt, nullopt));
 
 	def("get_band_density",
-	    [] (Spectrum self, optional<double> bandFloor, optional<double> bandCeiling) { return Spectrum_getBandDensity(self, bandFloor.value_or(self->xmin), bandCeiling.value_or(self->xmax)); },
+	    [](Spectrum self, optional<double> bandFloor, optional<double> bandCeiling) { return Spectrum_getBandDensity(self, bandFloor.value_or(self->xmin), bandCeiling.value_or(self->xmax)); },
 	    "band_floor"_a = nullopt, "band_ceiling"_a = nullopt);
 
 	def("get_band_density",
-	    [] (Spectrum self, std::pair<optional<double>, optional<double>> band) { return Spectrum_getBandDensity(self, band.first.value_or(self->xmin), band.second.value_or(self->xmax)); },
+	    [](Spectrum self, std::pair<optional<double>, optional<double>> band) { return Spectrum_getBandDensity(self, band.first.value_or(self->xmin), band.second.value_or(self->xmax)); },
 	    "band"_a = std::make_pair(nullopt, nullopt));
 
 	def("get_band_energy_difference",
-	    [] (Spectrum self, optional<double> lowBandFloor, optional<double> lowBandCeiling, optional<double> highBandFloor, optional<double> highBandCeiling) { return Spectrum_getBandEnergyDifference(self, lowBandFloor.value_or(self->xmin), lowBandCeiling.value_or(self->xmax), highBandFloor.value_or(self->xmin), highBandCeiling.value_or(self->xmax)); },
+	    [](Spectrum self, optional<double> lowBandFloor, optional<double> lowBandCeiling, optional<double> highBandFloor, optional<double> highBandCeiling) { return Spectrum_getBandEnergyDifference(self, lowBandFloor.value_or(self->xmin), lowBandCeiling.value_or(self->xmax), highBandFloor.value_or(self->xmin), highBandCeiling.value_or(self->xmax)); },
 	    "low_band_floor"_a = nullopt, "low_band_ceiling"_a = nullopt, "high_band_floor"_a = nullopt, "high_band_ceiling"_a = nullopt);
 
 	def("get_band_energy_difference",
-	    [] (Spectrum self, std::pair<optional<double>, optional<double>> lowBand, std::pair<optional<double>, optional<double>> highBand) { return Spectrum_getBandEnergyDifference(self, lowBand.first.value_or(self->xmin), lowBand.second.value_or(self->xmax), highBand.first.value_or(self->xmin), highBand.second.value_or(self->xmax)); },
+	    [](Spectrum self, std::pair<optional<double>, optional<double>> lowBand, std::pair<optional<double>, optional<double>> highBand) { return Spectrum_getBandEnergyDifference(self, lowBand.first.value_or(self->xmin), lowBand.second.value_or(self->xmax), highBand.first.value_or(self->xmin), highBand.second.value_or(self->xmax)); },
 	    "low_band"_a = std::make_pair(nullopt, nullopt), "high_band"_a = std::make_pair(nullopt, nullopt));
 
 	def("get_band_density_difference",
-	    [] (Spectrum self, optional<double> lowBandFloor, optional<double> lowBandCeiling, optional<double> highBandFloor, optional<double> highBandCeiling) { return Spectrum_getBandDensityDifference(self, lowBandFloor.value_or(self->xmin), lowBandCeiling.value_or(self->xmax), highBandFloor.value_or(self->xmin), highBandCeiling.value_or(self->xmax)); },
+	    [](Spectrum self, optional<double> lowBandFloor, optional<double> lowBandCeiling, optional<double> highBandFloor, optional<double> highBandCeiling) { return Spectrum_getBandDensityDifference(self, lowBandFloor.value_or(self->xmin), lowBandCeiling.value_or(self->xmax), highBandFloor.value_or(self->xmin), highBandCeiling.value_or(self->xmax)); },
 	    "low_band_floor"_a = nullopt, "low_band_ceiling"_a = nullopt, "high_band_floor"_a = nullopt, "high_band_ceiling"_a = nullopt);
 
 	def("get_band_density_difference",
-	    [] (Spectrum self, std::pair<optional<double>, optional<double>> lowBand, std::pair<optional<double>, optional<double>> highBand) { return Spectrum_getBandDensityDifference(self, lowBand.first.value_or(self->xmin), lowBand.second.value_or(self->xmax), highBand.first.value_or(self->xmin), highBand.second.value_or(self->xmax)); },
+	    [](Spectrum self, std::pair<optional<double>, optional<double>> lowBand, std::pair<optional<double>, optional<double>> highBand) { return Spectrum_getBandDensityDifference(self, lowBand.first.value_or(self->xmin), lowBand.second.value_or(self->xmax), highBand.first.value_or(self->xmin), highBand.second.value_or(self->xmax)); },
 	    "low_band"_a = std::make_pair(nullopt, nullopt), "high_band"_a = std::make_pair(nullopt, nullopt));
 
 	def("get_centre_of_gravity", // TODO power is POSITIVE

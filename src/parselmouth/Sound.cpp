@@ -358,48 +358,48 @@ void Binding<Sound>::init() {
 	    "time"_a, "channel"_a = 1);
 
 	def("get_number_of_channels",
-	    [] (Sound self) { return self->ny; });
+	    [](Sound self) { return self->ny; });
 
 	def_readonly("num_channels",
 	             static_cast<long structSound::*>(&structSound::ny)); // TODO Remove static_cast once SampledXY is exported, or once this is fixed
 
 	def("get_number_of_samples",
-	    [] (Sound self) { return self->nx; });
+	    [](Sound self) { return self->nx; });
 
 	def_readonly("num_samples",
 	             static_cast<int32 structSound::*>(&structSound::nx)); // TODO Remove static_cast once Sampled is exported, or once this is fixed
 
 	def("get_power",
-	    [] (Sound self, optional<double> from, optional<double> to) { return Sound_getPower(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [](Sound self, optional<double> from, optional<double> to) { return Sound_getPower(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
 	    "from"_a = nullopt, "to"_a = nullopt);
 
 	def("get_power_in_air",
 	    &Sound_getPowerInAir);
 
 	def("get_root_mean_square",
-	    [] (Sound self, optional<double> from, optional<double> to) { return Sound_getRootMeanSquare(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [](Sound self, optional<double> from, optional<double> to) { return Sound_getRootMeanSquare(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
 	    "from"_a = nullopt, "to"_a = nullopt);
 
 	def("get_rms",
-	    [] (Sound self, optional<double> from, optional<double> to) { return Sound_getRootMeanSquare(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [](Sound self, optional<double> from, optional<double> to) { return Sound_getRootMeanSquare(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
 	    "from"_a = nullopt, "to"_a = nullopt);
 
 	def("get_sampling_period",
-	    [] (Sound self) { return self->dx; });
+	    [](Sound self) { return self->dx; });
 
 	def_property("sampling_period",
-	             [] (Sound self) { return self->dx; },
-	             [] (Sound self, double period) { Sound_overrideSamplingFrequency(self, 1 / period); });
+	             [](Sound self) { return self->dx; },
+	             [](Sound self, double period) { Sound_overrideSamplingFrequency(self, 1 / period); });
 
 	def("get_sampling_frequency",
-	    [] (Sound self) { return 1 / self->dx; });
+	    [](Sound self) { return 1 / self->dx; });
 
 	def_property("sampling_frequency",
-	             [] (Sound self) { return 1 / self->dx; },
-	             [] (Sound self, double frequency) { Sound_overrideSamplingFrequency(self, frequency); });
+	             [](Sound self) { return 1 / self->dx; },
+	             [](Sound self, double frequency) { Sound_overrideSamplingFrequency(self, frequency); });
 
 	def("get_time_from_index", // TODO PraatIndex to distinguish 1-based silliness?
-	    [] (Sound self, long sample) { return Sampled_indexToX(self, sample); },
+	    [](Sound self, long sample) { return Sampled_indexToX(self, sample); },
 	    "sample"_a);
 
 	// TODO Get value at sample index
@@ -407,7 +407,7 @@ void Binding<Sound>::init() {
 
 
 	def("lengthen", // TODO Lengthen (Overlap-add) ? // TODO All parameters are POSITIVE
-	    [] (Sound self, double minimumPitch, double maximumPitch, double factor) {
+	    [](Sound self, double minimumPitch, double maximumPitch, double factor) {
 		    if (minimumPitch >= maximumPitch) Melder_throw (U"Maximum pitch should be greater than minimum pitch.");
 		    return Sound_lengthen_overlapAdd(self, minimumPitch, maximumPitch, factor);
 	    },
@@ -418,11 +418,11 @@ void Binding<Sound>::init() {
 	    "window_shape"_a);
 
 	def("override_sampling_frequency", // TODO newFrequency is POSITIVE
-	    [] (Sound self, double newFrequency) { Sound_overrideSamplingFrequency(self, newFrequency); },
+	    [](Sound self, double newFrequency) { Sound_overrideSamplingFrequency(self, newFrequency); },
 	    "new_frequency"_a);
 
 	def("pre_emphasize",
-	    [] (Sound self, double fromFrequency, bool normalize) {
+	    [](Sound self, double fromFrequency, bool normalize) {
 		    Sound_preEmphasis(self, fromFrequency);
 		    if (normalize) {
 			    Vector_scale(self, 0.99);
@@ -435,7 +435,7 @@ void Binding<Sound>::init() {
 	    "new_frequency"_a, "precision"_a = 50);
 
 	def("reverse",
-	    [] (Sound self, optional<double> from, optional<double> to) { Sound_reverse(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [](Sound self, optional<double> from, optional<double> to) { Sound_reverse(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
 	    "from"_a = nullopt, "to"_a = nullopt);
 
 	def("scale_intensity",
@@ -443,15 +443,15 @@ void Binding<Sound>::init() {
 	    "new_average_intensity"_a);
 
 	def("set_to_zero", // TODO Set part to zero
-	    [] (Sound self, optional<double> from, optional<double> to, bool roundToNearestZeroCrossing) { Sound_setZero(self, from.value_or(self->xmin), to.value_or(self->xmax), roundToNearestZeroCrossing); },
+	    [](Sound self, optional<double> from, optional<double> to, bool roundToNearestZeroCrossing) { Sound_setZero(self, from.value_or(self->xmin), to.value_or(self->xmax), roundToNearestZeroCrossing); },
 	    "from"_a = nullopt, "to"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
 
 	def("to_spectrum",
-	    [] (Sound self, bool fast) { return Sound_to_Spectrum(self, fast); },
+	    [](Sound self, bool fast) { return Sound_to_Spectrum(self, fast); },
 		"fast"_a = true);
 
 	def("to_spectrogram", // TODO window length, maximum frequency, time step and frequency step are all POSITIVE
-	    [] (Sound self, double window_length, double maximum_frequency, double time_step, double frequency_step, kSound_to_Spectrogram_windowShape window_shape) { return Sound_to_Spectrogram(self, window_length, maximum_frequency, time_step, frequency_step, window_shape, 8.0, 8.0); },
+	    [](Sound self, double window_length, double maximum_frequency, double time_step, double frequency_step, kSound_to_Spectrogram_windowShape window_shape) { return Sound_to_Spectrogram(self, window_length, maximum_frequency, time_step, frequency_step, window_shape, 8.0, 8.0); },
 	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN);
 
 	def("to_intensity", // TODO Minimum pitch is POSITIVE, for some reason time step is not
