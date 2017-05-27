@@ -16,8 +16,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-template <typename T>
-using optional = std::experimental::optional<T>;
+using std::experimental::optional;
 using std::experimental::nullopt;
 
 namespace {
@@ -167,6 +166,8 @@ void Binding<Sound>::init() {
 
 	// TODO Constructor from file or io.IOBase?
 	// TODO Constructor from Praat-format file?
+	// TODO Constructor from py::buffer?
+	// TODO Empty constructor?
 
 	def("save", // TODO Copy the overload from Data?
 	    [] (Sound self, const std::u32string &filePath, SoundFileFormat format) {
@@ -334,7 +335,7 @@ void Binding<Sound>::init() {
 	// TODO Filters
 	// TODO Group different filters into enum/class/...?
 
-	// TODO Formula and Formula (part)
+	// TODO Formula and Formula (part) (reimplement because of different parameters, i.e. channels?)
 
 	def("get_energy",
 	    [] (Sound self, optional<double> from, optional<double> to) { return Sound_getEnergy(self, from.value_or(self->xmin), to.value_or(self->xmax)); },

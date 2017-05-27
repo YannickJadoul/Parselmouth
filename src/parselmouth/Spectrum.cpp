@@ -13,8 +13,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-template <typename T>
-using optional = std::experimental::optional<T>;
+using std::experimental::optional;
 using std::experimental::nullopt;
 
 void Binding<Spectrum>::init() {

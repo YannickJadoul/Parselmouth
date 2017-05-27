@@ -1,6 +1,5 @@
 #include "Parselmouth.h"
 
-#include <pybind11/numpy.h> // TODO numpy dependency of python library
 #include <pybind11/stl.h>
 
 #include <experimental/optional>
@@ -30,20 +29,6 @@ void Binding<Interpolation>::init() {
 }
 
 void Binding<Vector>::init() {
-	// TODO values property and buffer protocol should probably be part of the Matrix class
-	def_property_readonly("values",
-	                      [](Vector self) {
-		                      return py::array({static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)},
-		                                       {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)},
-		                                       &self->z[1][1], py::cast(self));
-	                      });
-
-	def_buffer([](Vector self) { // TODO Simplify once pybind11 gets updated
-		return py::buffer_info(&self->z[1][1], sizeof(double), py::format_descriptor<double>::format(), 2,
-		                       {static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)},
-		                       {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)});
-	});
-
 	// TODO Something to get rid of duplicate functions with different names?
 	def("add",
 	    &Vector_addScalar,
