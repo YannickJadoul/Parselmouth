@@ -1,9 +1,7 @@
 #include "Parselmouth.h"
 
 #include "dwtools/Sound_to_MFCC.h"
-#include "fon/Sound_and_Spectrogram.h"
 #include "fon/Sound_to_Harmonicity.h"
-#include "fon/Sound_to_Intensity.h"
 #include "fon/Sound_to_Pitch.h"
 
 #include <pybind11/numpy.h>
@@ -41,14 +39,6 @@ void initSound(parselmouth::PraatBindings &bindings)
 			        bool very_accurate, double silence_treshold, double voicing_threshold, double octave_cost,
 			        double octave_jump_cost, double voiced_unvoiced_cost, double pitch_ceiling) { return Sound_to_Pitch_ac(self, time_step, minimum_pitch, periods_per_window, max_candidates, very_accurate, silence_treshold, voicing_threshold, octave_cost, octave_jump_cost, voiced_unvoiced_cost, pitch_ceiling); },
 			     "time_step"_a = 0.0, "minimum_pitch"_a = 75.0, "periods_per_window"_a = 3.0, "max_candidates"_a = 15, "very_accurate"_a = false, "silence_treshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0)
-
-			.def("to_spectrogram",
-			     [](Sound self, double window_length, double maximum_frequency, double time_step, double frequency_step,
-			        kSound_to_Spectrogram_windowShape window_shape) {
-				     return Sound_to_Spectrogram(self, window_length, maximum_frequency, time_step, frequency_step, window_shape, 8.0, 8.0);
-			     },
-			     "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002,
-			     "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN)
 
 			;
 }

@@ -119,8 +119,19 @@ void Binding<SoundFileFormat>::init() {
 	make_implicitly_convertible_from_string<SoundFileFormat>(*this, true);
 }
 
+void Binding<SpectralAnalysisWindowShape>::init() {
+	value("SQUARE", kSound_to_Spectrogram_windowShape_SQUARE);
+	value("HAMMING", kSound_to_Spectrogram_windowShape_HAMMING);
+	value("BARTLETT", kSound_to_Spectrogram_windowShape_BARTLETT);
+	value("WELCH", kSound_to_Spectrogram_windowShape_WELCH);
+	value("HANNING", kSound_to_Spectrogram_windowShape_HANNING);
+	value("GAUSSIAN", kSound_to_Spectrogram_windowShape_GAUSSIAN);
+
+	make_implicitly_convertible_from_string<SpectralAnalysisWindowShape>(*this, true);
+}
+
 void Binding<Sound>::init() {
-	def("__init__", // TODO sampling_frequency is POSITIVE // TODO Use init_factory once part of pybind11
+	def("__init__", // TODO sampling_frequency is POSITIVE // TODO Use init_factory once part of pybind11 // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
 	    [] (py::handle self, py::array_t<double, 0> values, double samplingFrequency, double startTime) {
 		    auto ndim = values.ndim();
 		    if (ndim > 2) {
@@ -438,6 +449,10 @@ void Binding<Sound>::init() {
 	def("to_spectrum",
 	    [] (Sound self, bool fast) { return Sound_to_Spectrum(self, fast); },
 		"fast"_a = true);
+
+	def("to_spectrogram", // TODO window length, maximum frequency, time step and frequency step are all POSITIVE
+	    [] (Sound self, double window_length, double maximum_frequency, double time_step, double frequency_step, kSound_to_Spectrogram_windowShape window_shape) { return Sound_to_Spectrogram(self, window_length, maximum_frequency, time_step, frequency_step, window_shape, 8.0, 8.0); },
+	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN);
 
 	def("to_intensity", // TODO Minimum pitch is POSITIVE, for some reason time step is not
 	    [](Sound self, double minimumPitch, optional<double> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep.value_or(0.0), subtractMean); },

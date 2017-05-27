@@ -4,12 +4,14 @@
 
 #include "Bindings.h"
 
+// TODO Forward declarations?
 #include "dwtools/MFCC.h"
 #include "fon/Formant.h"
 #include "fon/Harmonicity.h"
 #include "fon/Intensity.h"
 #include "fon/Pitch.h"
 #include "fon/Sound.h"
+#include "fon/Sound_and_Spectrogram.h"
 #include "fon/Spectrogram.h"
 #include "fon/Spectrum.h"
 #include "sys/Thing.h"
@@ -97,25 +99,26 @@ using autoData = autoDaata;
 using Data_Parent = Daata_Parent;
 
 
-#define PRAAT_CLASSES            \
-        Thing,                   \
-        Data,                    \
-        Vector,                  \
-        Sound,                   \
-        Spectrum,                \
-        Spectrogram,             \
-        Pitch,                   \
-        Intensity,               \
-        Harmonicity,             \
-        Formant,                 \
+#define PRAAT_CLASSES                \
+        Thing,                       \
+        Data,                        \
+        Vector,                      \
+        Sound,                       \
+        Spectrum,                    \
+        Spectrogram,                 \
+        Pitch,                       \
+        Intensity,                   \
+        Harmonicity,                 \
+        Formant,                     \
         MFCC
 
-#define PRAAT_ENUMS              \
-        Interpolation,           \
-        WindowShape,             \
-        AmplitudeScaling,        \
-        SignalOutsideTimeDomain, \
-        SoundFileFormat
+#define PRAAT_ENUMS                  \
+        Interpolation,               \
+        WindowShape,                 \
+        AmplitudeScaling,            \
+        SignalOutsideTimeDomain,     \
+        SoundFileFormat,             \
+        SpectralAnalysisWindowShape
 
 
 CLASS_BINDING(Thing, structThing, autoThing)
@@ -137,8 +140,8 @@ PRAAT_ENUM_BINDING_ALIAS(WindowShape, kSound_windowShape)
 PRAAT_ENUM_BINDING_ALIAS(AmplitudeScaling, kSounds_convolve_scaling)
 PRAAT_ENUM_BINDING_ALIAS(SignalOutsideTimeDomain, kSounds_convolve_signalOutsideTimeDomain)
 PRAAT_ENUM_BINDING(SoundFileFormat)
+PRAAT_ENUM_BINDING_ALIAS(SpectralAnalysisWindowShape, kSound_to_Spectrogram_windowShape)
 
-NO_BINDING_INIT(Spectrogram)
 NO_BINDING_INIT(Pitch)
 NO_BINDING_INIT(Formant)
 NO_BINDING_INIT(MFCC)

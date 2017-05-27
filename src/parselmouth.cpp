@@ -5,7 +5,6 @@
 
 #include "fon/Formant.h" // TODO "" vs <> for Praat imports?
 #include "fon/Manipulation.h"
-#include "fon/Sound_and_Spectrogram.h"
 #include "dwsys/NUMmachar.h"
 #include "dwtools/Spectrogram_extensions.h"
 #include "sys/praat.h"
@@ -50,16 +49,6 @@ PYBIND11_PLUGIN(parselmouth) {
 				Melder_clearError();
 				melderErrorException(message.c_str());
 			}});
-
-
-	py::enum_<kSound_to_Spectrogram_windowShape>(m, "SpectralAnalysisWindowShape")
-		.value("square", kSound_to_Spectrogram_windowShape_SQUARE)
-		.value("hamming", kSound_to_Spectrogram_windowShape_HAMMING)
-		.value("bartlett", kSound_to_Spectrogram_windowShape_BARTLETT)
-		.value("welch", kSound_to_Spectrogram_windowShape_WELCH)
-		.value("hanning", kSound_to_Spectrogram_windowShape_HANNING)
-		.value("gaussian", kSound_to_Spectrogram_windowShape_GAUSSIAN)
-	;
 
 	m.attr("PRAAT_VERSION") = PYBIND11_STR_TYPE(xstr(PRAAT_VERSION_STR)); // TODO Python 2, return str or unicode? (i.e., PYBIND11_STR_TYPE vs. py::cast)
 	m.attr("PRAAT_VERSION_DATE") = PYBIND11_STR_TYPE(xstr(PRAAT_DAY) " " xstr(PRAAT_MONTH) " " xstr(PRAAT_YEAR));
@@ -161,41 +150,6 @@ PYBIND11_PLUGIN(parselmouth) {
 		.def("frequency_to_hertz",
 				&structMelSpectrogram::v_frequencyToHertz,
 				"frequency"_a)
-	;
-
-	bindings.get<Spectrogram>()
-		.def("as_array",
-				[] (Spectrogram self) { { return py::array_t<double>({ static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, {sizeof(double), static_cast<size_t>(self->nx) * sizeof(double)}, &self->z[1][1], py::cast(self)); } })
-
-		.def_readonly("xmin",
-				static_cast<double structSpectrogram::*>(&structSpectrogram::xmin))
-
-		.def_readonly("xmax",
-				static_cast<double structSpectrogram::*>(&structSpectrogram::xmax))
-
-		.def_readonly("x1",
-				static_cast<double structSpectrogram::*>(&structSpectrogram::x1))
-
-		.def_readonly("dx",
-				static_cast<double structSpectrogram::*>(&structSpectrogram::dx))
-
-		.def_readonly("nx",
-				static_cast<int structSpectrogram::*>(&structSpectrogram::nx))
-
-		.def_readonly("fmin",
-				static_cast<double structSpectrogram::*>(&structSpectrogram::ymin))
-
-		.def_readonly("fmax",
-				static_cast<double structSpectrogram::*>(&structSpectrogram::ymax))
-
-		.def_readonly("f1",
-				static_cast<double structSpectrogram::*>(&structSpectrogram::y1))
-
-		.def_readonly("df",
-				static_cast<double structSpectrogram::*>(&structSpectrogram::dy))
-
-		.def_readonly("nf",
-				static_cast<long structSpectrogram::*>(&structSpectrogram::ny))
 	;
 
 	bindings.get<Sound>()
