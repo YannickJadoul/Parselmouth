@@ -130,6 +130,8 @@ void Binding<SpectralAnalysisWindowShape>::init() {
 }
 
 void Binding<Sound>::init() {
+	// TODO Put in logical order, instead of alphabetically
+
 	def("__init__", // TODO sampling_frequency is POSITIVE // TODO Use init_factory once part of pybind11 // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
 	    [] (py::handle self, py::array_t<double, 0> values, double samplingFrequency, double startTime) {
 		    auto ndim = values.ndim();
@@ -169,7 +171,7 @@ void Binding<Sound>::init() {
 	// TODO Constructor from py::buffer?
 	// TODO Empty constructor?
 
-	def("save", // TODO Copy the overload from Data?
+	def("save",
 	    [] (Sound self, const std::u32string &filePath, SoundFileFormat format) {
 		    auto file = pathToMelderFile(filePath);
 		    switch(format) {
@@ -288,7 +290,7 @@ void Binding<Sound>::init() {
 			    Vector_scale(self, 0.99);
 		    }
 	    },
-	    "from_frequency"_a = 50.0, "normalize"_a = true); // TODO "from" / "from_frequency" ? Not POSITIVE now!?
+	    "from_frequency"_a = 50.0, "normalize"_a = true); // TODO Not POSITIVE now!?
 
 	def("deepen_band_modulation", // TODO All arguments POSITIVE
 	    &Sound_deepenBandModulation,
@@ -429,7 +431,7 @@ void Binding<Sound>::init() {
 			    Vector_scale(self, 0.99);
 		    }
 	    },
-	    "from_frequency"_a = 50.0, "normalize"_a = true); // TODO "from" / "from_frequency" ? Not POSITIVE now!?
+	    "from_frequency"_a = 50.0, "normalize"_a = true); // TODO Not POSITIVE now!?
 
 	def("resample",
 	    &Sound_resample,

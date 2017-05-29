@@ -27,6 +27,8 @@ void Binding<Data>::init()
 	    &Data_copy<structData>);
 
 	// TODO Pickling?
+
+	// TODO v_equal
 }
 
 } // namespace parselmouth

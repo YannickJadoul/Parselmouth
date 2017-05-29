@@ -1,6 +1,6 @@
 #include "parselmouth/Parselmouth.h"
 
-#include <pybind11/numpy.h> // TODO Add to dependencies in setup.py? What happens when pybind11 is not installed?
+#include <pybind11/numpy.h> // TODO Add to dependencies in setup.py? What happens when numpy is not installed?
 #include <pybind11/stl.h>
 
 #include "fon/Formant.h" // TODO "" vs <> for Praat imports?
@@ -12,6 +12,8 @@
 
 #define xstr(s) str(s) // TODO Move somewhere else?
 #define str(s) #s
+
+// TODO What to do with NUMundefined?
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -50,8 +52,8 @@ PYBIND11_PLUGIN(parselmouth) {
 				melderErrorException(message.c_str());
 			}});
 
-	m.attr("PRAAT_VERSION") = PYBIND11_STR_TYPE(xstr(PRAAT_VERSION_STR)); // TODO Python 2, return str or unicode? (i.e., PYBIND11_STR_TYPE vs. py::cast)
-	m.attr("PRAAT_VERSION_DATE") = PYBIND11_STR_TYPE(xstr(PRAAT_DAY) " " xstr(PRAAT_MONTH) " " xstr(PRAAT_YEAR));
+	m.attr("PRAAT_VERSION") = py::cast(xstr(PRAAT_VERSION_STR));
+	m.attr("PRAAT_VERSION_DATE") = py::cast(xstr(PRAAT_DAY) " " xstr(PRAAT_MONTH) " " xstr(PRAAT_YEAR));
 
 	bindings.init();
 

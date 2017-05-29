@@ -239,7 +239,6 @@ void Binding<Spectrum>::init() {
 	    &Spectrum_getCentralMoment,
 	    "moment"_a, "power"_a = 2.0);
 
-	// TODO Formula not in Matrix? (documentation / significance of parameters is different?)
 	// TODO Filter Hann bands
 
 	def("cepstral_smoothing", // TODO bandwith is POSITIVE
