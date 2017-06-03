@@ -1,5 +1,7 @@
 #include "Parselmouth.h"
 
+#include "utils/SignatureCast.h"
+
 #include "fon/Sound_and_Spectrogram.h"
 #include "fon/Spectrum_and_Spectrogram.h"
 
@@ -9,6 +11,8 @@ using namespace py::literals;
 namespace parselmouth {
 
 void Binding<Spectrogram>::init() {
+	using signature_cast_placeholder::_;
+
 	// TODO Constructor!
 
 	def("get_power_at",
@@ -19,12 +23,12 @@ void Binding<Spectrogram>::init() {
 	    &Spectrogram_to_Spectrum,
 	    "time"_a);
 
-	def("synthesize_sound", // TODO Sampling frequency not POSITIVE!?
-	    &Spectrogram_to_Sound,
+	def("synthesize_sound",
+	    signature_cast<_ (_, Positive<double>)>(Spectrogram_to_Sound),
 		"sampling_frequency"_a = 44100.0);
 
-	def("to_sound", // TODO Sampling frequency not POSITIVE!?
-	    &Spectrogram_to_Sound,
+	def("to_sound",
+	    signature_cast<_ (_, Positive<double>)>(Spectrogram_to_Sound),
 	    "sampling_frequency"_a = 44100.0);
 
 

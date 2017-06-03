@@ -1,5 +1,7 @@
 #include "Parselmouth.h"
 
+#include "utils/SignatureCast.h"
+
 #include <pybind11/stl.h>
 
 #include <experimental/optional>
@@ -29,6 +31,8 @@ void Binding<Interpolation>::init() {
 }
 
 void Binding<Vector>::init() {
+	using signature_cast_placeholder::_;
+
 	// TODO Something to get rid of duplicate functions with different names?
 	def("add",
 	    &Vector_addScalar,
@@ -77,7 +81,7 @@ void Binding<Vector>::init() {
 	    [](Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), factor); return result; },
 	    "factor"_a, py::is_operator());
 
-	def("divide",
+	def("divide", // TODO Not zero?
 	    [](Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); },
 	    "factor"_a);
 
@@ -99,12 +103,12 @@ void Binding<Vector>::init() {
 	    "factor"_a, py::is_operator());
 #endif
 
-	def("scale", // TODO scale is POSITIVE
-	    &Vector_scale,
+	def("scale",
+	    signature_cast<_ (_, Positive<double>)>(Vector_scale),
 	    "scale"_a);
 
-	def("scale_peak", // TODO scale is POSITIVE
-	    &Vector_scale,
+	def("scale_peak",
+	    signature_cast<_ (_, Positive<double>)>(Vector_scale),
 	    "new_peak"_a = 0.99);
 
 	def("get_value", // TODO Default for interpolation? Different for Sound (SINC70), Harmonicity/Intensity/Formants (CUBIC) and Ltas (LINEAR); take praat_TimeFunction.h into account

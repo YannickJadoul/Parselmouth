@@ -1,5 +1,7 @@
 #include "Parselmouth.h"
 
+#include "utils/SignatureCast.h"
+
 #include "dwtools/Sound_extensions.h"
 #include "dwtools/Sound_to_MFCC.h"
 #include "fon/Sound_and_Spectrogram.h"
@@ -130,10 +132,12 @@ void Binding<SpectralAnalysisWindowShape>::init() {
 }
 
 void Binding<Sound>::init() {
+	using signature_cast_placeholder::_;
+
 	// TODO Put in logical order, instead of alphabetically
 
-	def("__init__", // TODO sampling_frequency is POSITIVE // TODO Use init_factory once part of pybind11 // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
-	    [] (py::handle self, py::array_t<double, 0> values, double samplingFrequency, double startTime) {
+	def("__init__", // TODO Use init_factory once part of pybind11 // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
+	    [] (py::handle self, py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) {
 		    auto ndim = values.ndim();
 		    if (ndim > 2) {
 			    throw py::value_error("Cannot create Sound from an array with more than 2 dimensions");
@@ -258,11 +262,17 @@ void Binding<Sound>::init() {
 
 	// TODO Make sure pybind11's std::reference_wrapper does not accept None/nullptr
 	def_static("combine_to_stereo",
-	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds) { auto ordered = referencesToOrderedOf<structSound>(sounds); return Sounds_combineToStereo(&ordered); },
+	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds) {
+		           auto ordered = referencesToOrderedOf<structSound>(sounds);
+		           return Sounds_combineToStereo(&ordered);
+	           },
 	           "sounds"_a);
 
-	def_static("concatenate", // TODO Overlap is POSITIVE
-	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds, double overlap) { auto ordered = referencesToOrderedOf<structSound>(sounds); return Sounds_concatenate(ordered, overlap); },
+	def_static("concatenate",
+	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds, Positive<double> overlap) {
+		           auto ordered = referencesToOrderedOf<structSound>(sounds);
+		           return Sounds_concatenate(ordered, overlap);
+	           },
 	           "sounds"_a, "overlap"_a = 0.0);
 	// TODO concatenate recoverably (dependends on having TextGrid)
 	// TODO concatenate as member function?
@@ -292,8 +302,8 @@ void Binding<Sound>::init() {
 	    },
 	    "from_frequency"_a = 50.0, "normalize"_a = true); // TODO Not POSITIVE now!?
 
-	def("deepen_band_modulation", // TODO All arguments POSITIVE
-	    &Sound_deepenBandModulation,
+	def("deepen_band_modulation",
+	    signature_cast<_ (_, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>)>(Sound_deepenBandModulation),
 	    "enhancement"_a = 20.0, "from_frequency"_a = 300.0, "to_frequency"_a = 8000.0, "slow_modulation"_a = 3.0, "fast_modulation"_a = 30.0, "band_smoothing"_a = 100.0);
 
 	def("extract_all_channels",
@@ -326,12 +336,12 @@ void Binding<Sound>::init() {
 	def("extract_right_channel",
 	    [] (Sound self) { return Sound_extractChannel(self, 2); });
 
-	def("extract_part", // TODO relativeWidth is POSITIVE // TODO Something for optional<double> for from and to in Sounds?
-	    [] (Sound self, optional<double> from, optional<double> to, kSound_windowShape windowShape, double relativeWidth, bool preserveTimes) { return Sound_extractPart(self, from.value_or(self->xmin), to.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
+	def("extract_part", // TODO Something for optional<double> for from and to in Sounds?
+	    [] (Sound self, optional<double> from, optional<double> to, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, from.value_or(self->xmin), to.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
 	    "from"_a = nullopt, "to"_a = nullopt, "window_shape"_a = kSound_windowShape_RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
 
-	def("extract_part_for_overlap", // TODO Overlap is POSITIVE
-	    [] (Sound self, optional<double> from, optional<double> to, double overlap) { return Sound_extractPartForOverlap(self, from.value_or(self->xmin), to.value_or(self->xmax), overlap); },
+	def("extract_part_for_overlap",
+	    [] (Sound self, optional<double> from, optional<double> to, Positive<double> overlap) { return Sound_extractPartForOverlap(self, from.value_or(self->xmin), to.value_or(self->xmax), overlap); },
 	    "from"_a = nullopt, "to"_a = nullopt, "overlap"_a);
 
 	// TODO Filters
@@ -409,9 +419,10 @@ void Binding<Sound>::init() {
 	// TODO Set value at sample index
 
 
-	def("lengthen", // TODO Lengthen (Overlap-add) ? // TODO All parameters are POSITIVE
-	    [](Sound self, double minimumPitch, double maximumPitch, double factor) {
-		    if (minimumPitch >= maximumPitch) Melder_throw (U"Maximum pitch should be greater than minimum pitch.");
+	def("lengthen", // TODO Lengthen (Overlap-add) ?
+	    [](Sound self, Positive<double> minimumPitch, Positive<double> maximumPitch, Positive<double> factor) {
+		    if (minimumPitch >= maximumPitch)
+			    Melder_throw (U"Maximum pitch should be greater than minimum pitch.");
 		    return Sound_lengthen_overlapAdd(self, minimumPitch, maximumPitch, factor);
 	    },
 	    "minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0, "factor"_a);
@@ -420,8 +431,8 @@ void Binding<Sound>::init() {
 	    &Sound_multiplyByWindow,
 	    "window_shape"_a);
 
-	def("override_sampling_frequency", // TODO newFrequency is POSITIVE
-	    [](Sound self, double newFrequency) { Sound_overrideSamplingFrequency(self, newFrequency); },
+	def("override_sampling_frequency",
+	    signature_cast<_ (_, Positive<double>)>(Sound_overrideSamplingFrequency),
 	    "new_frequency"_a);
 
 	def("pre_emphasize",
@@ -445,32 +456,32 @@ void Binding<Sound>::init() {
 	    &Sound_scaleIntensity,
 	    "new_average_intensity"_a);
 
-	def("set_to_zero", // TODO Set part to zero
+	def("set_to_zero", // TODO Set part to zero ?
 	    [](Sound self, optional<double> from, optional<double> to, bool roundToNearestZeroCrossing) { Sound_setZero(self, from.value_or(self->xmin), to.value_or(self->xmax), roundToNearestZeroCrossing); },
 	    "from"_a = nullopt, "to"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
 
 	def("to_spectrum",
-	    [](Sound self, bool fast) { return Sound_to_Spectrum(self, fast); },
+	    signature_cast<_ (_, bool)>(Sound_to_Spectrum),
 		"fast"_a = true);
 
-	def("to_spectrogram", // TODO window length, maximum frequency, time step and frequency step are all POSITIVE
-	    [](Sound self, double window_length, double maximum_frequency, double time_step, double frequency_step, kSound_to_Spectrogram_windowShape window_shape) { return Sound_to_Spectrogram(self, window_length, maximum_frequency, time_step, frequency_step, window_shape, 8.0, 8.0); },
+	def("to_spectrogram",
+	    [](Sound self, Positive<double> window_length, Positive<double> maximum_frequency, Positive<double> time_step, Positive<double> frequency_step, kSound_to_Spectrogram_windowShape window_shape) { return Sound_to_Spectrogram(self, window_length, maximum_frequency, time_step, frequency_step, window_shape, 8.0, 8.0); },
 	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN);
 
-	def("to_intensity", // TODO Minimum pitch is POSITIVE, for some reason time step is not
-	    [](Sound self, double minimumPitch, optional<double> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep.value_or(0.0), subtractMean); },
+	def("to_intensity",
+	    [](Sound self, Positive<double> minimumPitch, optional<Positive<double>> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep.value_or(0.0), subtractMean); },
 	    "minimum_pitch"_a = 100.0, "time_step"_a = nullopt, "subtract_mean"_a = true);
 
-	def("to_harmonicity_ac", // TODO Time step, minimum pitch and periods per window are POSITIVE
-	    &Sound_to_Harmonicity_ac,
+	def("to_harmonicity_ac",
+	    signature_cast<_ (_, Positive<double>, Positive<double>, _, Positive<double>)>(Sound_to_Harmonicity_ac),
 	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
-	def("to_harmonicity_cc", // TODO Time step, minimum pitch and periods per window are POSITIVE
-	    &Sound_to_Harmonicity_cc,
+	def("to_harmonicity_cc",
+	    signature_cast<_ (_, Positive<double>, Positive<double>, _, Positive<double>)>(Sound_to_Harmonicity_cc),
 	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
-	def("to_harmonicity_gne", // TODO All parameters are POSITIVE
-	    &Sound_to_Harmonicity_GNE,
+	def("to_harmonicity_gne",
+	    signature_cast<_ (_, Positive<double>, Positive<double>, Positive<double>, Positive<double>)>(Sound_to_Harmonicity_GNE),
 	    "minimum_frequency"_a = 500.0, "maximum_frequency"_a = 4500.0, "bandwidth"_a = 1000.0, "step"_a = 80.0);
 
 	// TODO to_harmonicity(SoundToHarmonicityMethod) ?

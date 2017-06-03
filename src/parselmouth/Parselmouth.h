@@ -22,6 +22,68 @@
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, _Thing_auto<T>);
 
+namespace parselmouth {
+
+// TODO Code organization, move to own header & folder
+template <typename T>
+class Positive {
+public:
+	Positive() : m_wrapped() {}
+
+	template <typename... Args>
+	Positive(Args &&... args) : m_wrapped(std::forward<Args>(args)...) {
+		if (m_wrapped <= 0)
+			throw std::domain_error("Wrapped type of Positive constructed with value smaller than or equal to zero");
+	}
+
+	Positive(const Positive<T> &other) = default;
+	Positive(const T &wrapped) : m_wrapped(wrapped) {}
+
+	Positive &operator=(const Positive<T> &other) = default;
+	Positive &operator=(const T &wrapped) { m_wrapped = wrapped; return *this; }
+
+	operator T&() { return m_wrapped; }
+	operator const T&() const { return m_wrapped; }
+
+private:
+	T m_wrapped;
+};
+
+} // namespace parselmouth
+
+namespace pybind11 {
+namespace detail {
+
+template <typename T>
+class type_caster<parselmouth::Positive<T>> {
+public:
+	using PositiveT = parselmouth::Positive<T>;
+	using TCaster = make_caster<T>;
+
+	bool load(handle src, bool convert) {
+		TCaster subCaster;
+
+		if (!subCaster.load(src, convert))
+			return false;
+
+		auto subValue = cast_op<T>(subCaster);
+		if (subValue <= 0)
+			return false;
+
+		value = std::move(subValue);
+
+		return true;
+	}
+
+	static handle cast(const PositiveT& src, return_value_policy policy, handle parent) {
+		return TCaster::cast(src, policy, parent);
+	}
+
+	PYBIND11_TYPE_CASTER(PositiveT, _("Positive[") + TCaster::name() + _("]"));
+};
+
+} // namespace detail
+} // namespace pybind11
 
 namespace parselmouth {
 
