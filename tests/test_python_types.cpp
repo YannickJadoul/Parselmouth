@@ -188,6 +188,33 @@ struct MoveOutContainer {
 
 struct UnregisteredType { };
 
+// Class that can be move- and copy-constructed, but not assigned
+struct NoAssign {
+    int value;
+
+    explicit NoAssign(int value = 0) : value(value) {}
+    NoAssign(const NoAssign &) = default;
+    NoAssign(NoAssign &&) = default;
+
+    NoAssign &operator=(const NoAssign &) = delete;
+    NoAssign &operator=(NoAssign &&) = delete;
+};
+
+// Increments on copy
+struct IncrIntWrapper {
+    int i;
+    IncrIntWrapper(int i) : i(i) {}
+    IncrIntWrapper(const IncrIntWrapper &copy) : i(copy.i + 1) {}
+};
+
+std::vector<std::reference_wrapper<IncrIntWrapper>> incr_int_wrappers() {
+    static IncrIntWrapper x1(1), x2(2);
+    std::vector<std::reference_wrapper<IncrIntWrapper>> r;
+    r.emplace_back(x1);
+    r.emplace_back(x2);
+    return r;
+};
+
 test_initializer python_types([](py::module &m) {
     /* No constructor is explicitly defined below. An exception is raised when
        trying to construct it directly from Python */
@@ -235,6 +262,10 @@ test_initializer python_types([](py::module &m) {
 
         py::print("{a} + {b} = {c}"_s.format("a"_a="py::print", "b"_a="str.format", "c"_a="this"));
     });
+
+    py::class_<NoAssign>(m, "NoAssign", "Class with no C++ assignment operators")
+        .def(py::init<>())
+        .def(py::init<int>());
 
     m.def("test_print_failure", []() { py::print(42, UnregisteredType()); });
 #if !defined(NDEBUG)
@@ -326,6 +357,7 @@ test_initializer python_types([](py::module &m) {
 #ifdef PYBIND11_HAS_OPTIONAL
     has_optional = true;
     using opt_int = std::optional<int>;
+    using opt_no_assign = std::optional<NoAssign>;
     m.def("double_or_zero", [](const opt_int& x) -> int {
         return x.value_or(0) * 2;
     });
@@ -335,11 +367,15 @@ test_initializer python_types([](py::module &m) {
     m.def("test_nullopt", [](opt_int x) {
         return x.value_or(42);
     }, py::arg_v("x", std::nullopt, "None"));
+    m.def("test_no_assign", [](const opt_no_assign &x) {
+        return x ? x->value : 42;
+    }, py::arg_v("x", std::nullopt, "None"));
 #endif
 
 #ifdef PYBIND11_HAS_EXP_OPTIONAL
     has_exp_optional = true;
     using exp_opt_int = std::experimental::optional<int>;
+    using exp_opt_no_assign = std::experimental::optional<NoAssign>;
     m.def("double_or_zero_exp", [](const exp_opt_int& x) -> int {
         return x.value_or(0) * 2;
     });
@@ -348,6 +384,9 @@ test_initializer python_types([](py::module &m) {
     });
     m.def("test_nullopt_exp", [](exp_opt_int x) {
         return x.value_or(42);
+    }, py::arg_v("x", std::experimental::nullopt, "None"));
+    m.def("test_no_assign_exp", [](const exp_opt_no_assign &x) {
+        return x ? x->value : 42;
     }, py::arg_v("x", std::experimental::nullopt, "None"));
 #endif
 
@@ -536,6 +575,61 @@ test_initializer python_types([](py::module &m) {
 
     m.def("load_nullptr_t", [](std::nullptr_t) {}); // not useful, but it should still compile
     m.def("cast_nullptr_t", []() { return std::nullptr_t{}; });
+
+    struct IntWrapper { int i; IntWrapper(int i) : i(i) { } };
+    py::class_<IntWrapper>(m, "IntWrapper")
+        .def(py::init<int>())
+        .def("__repr__", [](const IntWrapper &p) { return "IntWrapper[" + std::to_string(p.i) + "]"; });
+
+    // #171: Can't return reference wrappers (or STL datastructures containing them)
+    // Also used to test #848: reference_wrapper shouldn't allow None
+    m.def("return_vec_of_reference_wrapper", [](std::reference_wrapper<IntWrapper> p4) {
+        IntWrapper *p1 = new IntWrapper{1};
+        IntWrapper *p2 = new IntWrapper{2};
+        IntWrapper *p3 = new IntWrapper{3};
+        std::vector<std::reference_wrapper<IntWrapper>> v;
+        v.push_back(std::ref(*p1));
+        v.push_back(std::ref(*p2));
+        v.push_back(std::ref(*p3));
+        v.push_back(p4);
+        return v;
+    });
+
+    // Reference-wrapper to non-generic type caster type:
+    m.def("refwrap_int", [](std::reference_wrapper<int> p) { return 10 * p.get(); });
+
+    // Not currently supported (std::pair caster has return-by-value cast operator);
+    // triggers static_assert failure.
+    //m.def("refwrap_pair", [](std::reference_wrapper<std::pair<int, int>>) { });
+
+    // Test that copying/referencing is working as expected with reference_wrappers:
+    py::class_<IncrIntWrapper>(m, "IncrIntWrapper")
+        .def(py::init<int>())
+        .def_readonly("i", &IncrIntWrapper::i);
+
+    m.def("refwrap_list_refs", []() {
+        py::list l;
+        for (auto &f : incr_int_wrappers()) l.append(py::cast(f, py::return_value_policy::reference));
+        return l;
+    });
+    m.def("refwrap_list_copies", []() {
+        py::list l;
+        for (auto &f : incr_int_wrappers()) l.append(py::cast(f, py::return_value_policy::copy));
+        return l;
+    });
+    m.def("refwrap_iiw", [](const IncrIntWrapper &w) { return w.i; });
+    m.def("refwrap_call_iiw", [](IncrIntWrapper &w, py::function f) {
+        py::list l;
+        l.append(f(std::ref(w)));
+        l.append(f(std::cref(w)));
+        IncrIntWrapper x(w.i);
+        l.append(f(std::ref(x)));
+        IncrIntWrapper y(w.i);
+        auto r3 = std::ref(y);
+        l.append(f(r3));
+        return l;
+    });
+
 });
 
 #if defined(_MSC_VER)

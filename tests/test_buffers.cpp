@@ -74,6 +74,11 @@ private:
     float *m_data;
 };
 
+class SquareMatrix : public Matrix {
+public:
+    SquareMatrix(ssize_t n) : Matrix(n, n) { }
+};
+
 struct PTMFBuffer {
     int32_t value = 0;
 
@@ -131,15 +136,16 @@ test_initializer buffers([](py::module &m) {
        .def_buffer([](Matrix &m) -> py::buffer_info {
             return py::buffer_info(
                 m.data(),                               /* Pointer to buffer */
-                sizeof(float),                          /* Size of one scalar */
-                py::format_descriptor<float>::format(), /* Python struct-style format descriptor */
-                2,                                      /* Number of dimensions */
                 { m.rows(), m.cols() },                 /* Buffer dimensions */
                 { sizeof(float) * size_t(m.rows()),     /* Strides (in bytes) for each index */
                   sizeof(float) }
             );
         })
         ;
+
+    // Derived classes inherit the buffer protocol and the buffer access function
+    py::class_<SquareMatrix, Matrix>(m, "SquareMatrix")
+        .def(py::init<ssize_t>());
 
     py::class_<PTMFBuffer>(m, "PTMFBuffer", py::buffer_protocol())
         .def(py::init<>())

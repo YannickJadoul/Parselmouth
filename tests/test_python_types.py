@@ -337,7 +337,8 @@ def test_accessors():
 
 @pytest.mark.skipif(not has_optional, reason='no <optional>')
 def test_optional():
-    from pybind11_tests import double_or_zero, half_or_none, test_nullopt
+    from pybind11_tests import (double_or_zero, half_or_none, test_nullopt,
+                                test_no_assign, NoAssign)
 
     assert double_or_zero(None) == 0
     assert double_or_zero(42) == 84
@@ -352,10 +353,16 @@ def test_optional():
     assert test_nullopt(42) == 42
     assert test_nullopt(43) == 43
 
+    assert test_no_assign() == 42
+    assert test_no_assign(None) == 42
+    assert test_no_assign(NoAssign(43)) == 43
+    pytest.raises(TypeError, test_no_assign, 43)
+
 
 @pytest.mark.skipif(not has_exp_optional, reason='no <experimental/optional>')
 def test_exp_optional():
-    from pybind11_tests import double_or_zero_exp, half_or_none_exp, test_nullopt_exp
+    from pybind11_tests import (double_or_zero_exp, half_or_none_exp, test_nullopt_exp,
+                                test_no_assign_exp, NoAssign)
 
     assert double_or_zero_exp(None) == 0
     assert double_or_zero_exp(42) == 84
@@ -369,6 +376,11 @@ def test_exp_optional():
     assert test_nullopt_exp(None) == 42
     assert test_nullopt_exp(42) == 42
     assert test_nullopt_exp(43) == 43
+
+    assert test_no_assign_exp() == 42
+    assert test_no_assign_exp(None) == 42
+    assert test_no_assign_exp(NoAssign(43)) == 43
+    pytest.raises(TypeError, test_no_assign_exp, 43)
 
 
 @pytest.mark.skipif(not hasattr(pybind11_tests, "load_variant"), reason='no <variant>')
@@ -594,3 +606,41 @@ def test_void_caster():
 
     assert m.load_nullptr_t(None) is None
     assert m.cast_nullptr_t() is None
+
+
+def test_reference_wrapper():
+    """std::reference_wrapper<T> tests.
+
+    #171: Can't return reference wrappers (or STL data structures containing them)
+    #848: std::reference_wrapper accepts nullptr / None arguments [but shouldn't]
+    (no issue): reference_wrappers should work for types with custom type casters
+    """
+    from pybind11_tests import (IntWrapper, return_vec_of_reference_wrapper, refwrap_int,
+                                IncrIntWrapper, refwrap_iiw, refwrap_call_iiw,
+                                refwrap_list_copies, refwrap_list_refs)
+
+    # 171:
+    assert str(return_vec_of_reference_wrapper(IntWrapper(4))) == \
+        "[IntWrapper[1], IntWrapper[2], IntWrapper[3], IntWrapper[4]]"
+
+    # 848:
+    with pytest.raises(TypeError) as excinfo:
+        return_vec_of_reference_wrapper(None)
+    assert "incompatible function arguments" in str(excinfo.value)
+
+    assert refwrap_int(42) == 420
+
+    a1 = refwrap_list_copies()
+    a2 = refwrap_list_copies()
+    assert [x.i for x in a1] == [2, 3]
+    assert [x.i for x in a2] == [2, 3]
+    assert not a1[0] is a2[0] and not a1[1] is a2[1]
+
+    b1 = refwrap_list_refs()
+    b2 = refwrap_list_refs()
+    assert [x.i for x in b1] == [1, 2]
+    assert [x.i for x in b2] == [1, 2]
+    assert b1[0] is b2[0] and b1[1] is b2[1]
+
+    assert refwrap_iiw(IncrIntWrapper(5)) == 5
+    assert refwrap_call_iiw(IncrIntWrapper(10), refwrap_iiw) == [10, 10, 10, 10]

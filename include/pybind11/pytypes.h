@@ -44,7 +44,7 @@ using tuple_accessor = accessor<accessor_policies::tuple_item>;
 
 /// Tag and check to identify a class which implements the Python object API
 class pyobject_tag { };
-template <typename T> using is_pyobject = std::is_base_of<pyobject_tag, typename std::remove_reference<T>::type>;
+template <typename T> using is_pyobject = std::is_base_of<pyobject_tag, remove_reference_t<T>>;
 
 /** \rst
     A mixin class which adds common functions to `handle`, `object` and various accessors.
@@ -116,6 +116,9 @@ public:
     bool is_none() const { return derived().ptr() == Py_None; }
     PYBIND11_DEPRECATED("Use py::str(obj) instead")
     pybind11::str str() const;
+
+    /// Get or set the object's docstring, i.e. ``obj.__doc__``.
+    str_attr_accessor doc() const;
 
     /// Return the object's current reference count
     int ref_count() const { return static_cast<int>(Py_REFCNT(derived().ptr())); }
@@ -1247,6 +1250,9 @@ template <typename D> template <typename T> bool object_api<D>::contains(T &&ite
 
 template <typename D>
 pybind11::str object_api<D>::str() const { return pybind11::str(derived()); }
+
+template <typename D>
+str_attr_accessor object_api<D>::doc() const { return attr("__doc__"); }
 
 template <typename D>
 handle object_api<D>::get_type() const { return (PyObject *) Py_TYPE(derived().ptr()); }

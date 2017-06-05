@@ -56,12 +56,12 @@ public:
     /// Construct a cpp_function from a lambda function (possibly with internal state)
     template <typename Func, typename... Extra, typename = detail::enable_if_t<
         detail::satisfies_none_of<
-            typename std::remove_reference<Func>::type,
+            detail::remove_reference_t<Func>,
             std::is_function, std::is_pointer, std::is_member_pointer
         >::value>
     >
     cpp_function(Func &&f, const Extra&... extra) {
-        using FuncType = typename detail::remove_class<decltype(&std::remove_reference<Func>::type::operator())>::type;
+        using FuncType = typename detail::remove_class<decltype(&detail::remove_reference_t<Func>::operator())>::type;
         initialize(std::forward<Func>(f),
                    (FuncType *) nullptr, extra...);
     }
@@ -93,7 +93,7 @@ protected:
     template <typename Func, typename Return, typename... Args, typename... Extra>
     void initialize(Func &&f, Return (*)(Args...), const Extra&... extra) {
 
-        struct capture { typename std::remove_reference<Func>::type f; };
+        struct capture { detail::remove_reference_t<Func> f; };
 
         /* Store the function including any extra state it might have (e.g. a lambda capture object) */
         auto rec = make_function_record();
@@ -150,8 +150,8 @@ protected:
             using Guard = detail::extract_guard_t<Extra...>;
 
             /* Perform the function call */
-            handle result = cast_out::cast(args_converter.template call<Return, Guard>(cap->f),
-                                           policy, call.parent);
+            handle result = cast_out::cast(
+                std::move(args_converter).template call<Return, Guard>(cap->f), policy, call.parent);
 
             /* Invoke call policy post-call hook */
             detail::process_attributes<Extra...>::postcall(call, result);
@@ -466,18 +466,23 @@ protected:
                 size_t args_copied = 0;
 
                 // 1. Copy any position arguments given.
-                bool bad_kwarg = false;
+                bool bad_arg = false;
                 for (; args_copied < args_to_copy; ++args_copied) {
-                    if (kwargs_in && args_copied < func.args.size() && func.args[args_copied].name
-                            && PyDict_GetItemString(kwargs_in, func.args[args_copied].name)) {
-                        bad_kwarg = true;
+                    argument_record *arg_rec = args_copied < func.args.size() ? &func.args[args_copied] : nullptr;
+                    if (kwargs_in && arg_rec && arg_rec->name && PyDict_GetItemString(kwargs_in, arg_rec->name)) {
+                        bad_arg = true;
                         break;
                     }
 
-                    call.args.push_back(PyTuple_GET_ITEM(args_in, args_copied));
-                    call.args_convert.push_back(args_copied < func.args.size() ? func.args[args_copied].convert : true);
+                    handle arg(PyTuple_GET_ITEM(args_in, args_copied));
+                    if (arg_rec && !arg_rec->none && arg.is_none()) {
+                        bad_arg = true;
+                        break;
+                    }
+                    call.args.push_back(arg);
+                    call.args_convert.push_back(arg_rec ? arg_rec->convert : true);
                 }
-                if (bad_kwarg)
+                if (bad_arg)
                     continue; // Maybe it was meant for another overload (issue #688)
 
                 // We'll need to copy this if we steal some kwargs for defaults
@@ -793,6 +798,10 @@ public:
     }
 };
 
+/// \ingroup python_builtins
+/// Return a dictionary representing the global symbol table, i.e. ``__main__.__dict__``.
+inline dict globals() { return module::import("__main__").attr("__dict__").cast<dict>(); }
+
 NAMESPACE_BEGIN(detail)
 /// Generic support for creating new Python heap types
 class generic_type : public object {
@@ -942,8 +951,7 @@ public:
         set_operator_new<type>(&record);
 
         /* Register base classes specified via template arguments to class_, if any */
-        bool unused[] = { (add_base<options>(record), false)..., false };
-        (void) unused;
+        PYBIND11_EXPAND_SIDE_EFFECTS(add_base<options>(record));
 
         /* Process optional arguments, if any */
         process_attributes<Extra...>::init(extra..., &record);
