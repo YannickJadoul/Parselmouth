@@ -34,10 +34,9 @@ enum class Interpolation // TODO Remove/move to header
 using namespace parselmouth;
 
 
-PYBIND11_PLUGIN(parselmouth) {
+PYBIND11_MODULE(parselmouth, m) {
 	praatlib_init();
 
-	py::module m("parselmouth");
 	parselmouth::PraatBindings bindings(m);
 
     static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError);
@@ -178,6 +177,4 @@ PYBIND11_PLUGIN(parselmouth) {
 		.def_property_readonly("pitch",
 				[] (Manipulation self) { return self->pitch.get(); })
 	;
-
-	return m.ptr();
 }

@@ -260,7 +260,6 @@ void Binding<Sound>::init() {
 	    &Sound_autoCorrelate,
 	    "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
 
-	// TODO Make sure pybind11's std::reference_wrapper does not accept None/nullptr
 	def_static("combine_to_stereo",
 	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds) {
 		           auto ordered = referencesToOrderedOf<structSound>(sounds);
@@ -283,14 +282,13 @@ void Binding<Sound>::init() {
 	def("convert_to_stereo",
 	    &Sound_convertToStereo);
 
-	// TODO Automatically wrap to have Sound -> structSound& ?
 	def("convolve",
-	    [] (Sound self, structSound &other, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain &signal_outside_time_domain) { return Sounds_convolve(self, &other, scaling, signal_outside_time_domain); },
-	    "other"_a, "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
+	    &Sounds_convolve,
+	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
 
 	def("cross_correlate",
-	    [] (Sound self, structSound &other, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain &signal_outside_time_domain) { return Sounds_crossCorrelate(self, &other, scaling, signal_outside_time_domain); },
-	    "other"_a, "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
+	    &Sounds_crossCorrelate,
+	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
 	// TODO Cross-correlate (short)?
 
 	def("de_emphasize",
