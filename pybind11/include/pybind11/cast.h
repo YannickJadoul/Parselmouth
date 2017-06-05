@@ -15,6 +15,7 @@
 #include "descr.h"
 #include <array>
 #include <limits>
+#include <tuple>
 
 NAMESPACE_BEGIN(pybind11)
 NAMESPACE_BEGIN(detail)
@@ -57,7 +58,7 @@ PYBIND11_NOINLINE inline internals &get_internals() {
     handle builtins(PyEval_GetBuiltins());
     const char *id = PYBIND11_INTERNALS_ID;
     if (builtins.contains(id) && isinstance<capsule>(builtins[id])) {
-        internals_ptr = capsule(builtins[id]);
+        internals_ptr = *static_cast<internals **>(capsule(builtins[id]));
     } else {
         internals_ptr = new internals();
         #if defined(WITH_THREAD)
@@ -67,7 +68,7 @@ PYBIND11_NOINLINE inline internals &get_internals() {
             PyThread_set_key_value(internals_ptr->tstate, tstate);
             internals_ptr->istate = tstate->interp;
         #endif
-        builtins[id] = capsule(internals_ptr);
+        builtins[id] = capsule(&internals_ptr);
         internals_ptr->registered_exception_translators.push_front(
             [](std::exception_ptr p) -> void {
                 try {
@@ -381,11 +382,33 @@ protected:
     object temp;
 };
 
-/* Determine suitable casting operator */
+/**
+ * Determine suitable casting operator for pointer-or-lvalue-casting type casters.  The type caster
+ * needs to provide `operator T*()` and `operator T&()` operators.
+ *
+ * If the type supports moving the value away via an `operator T&&() &&` method, it should use
+ * `movable_cast_op_type` instead.
+ */
 template <typename T>
-using cast_op_type = typename std::conditional<std::is_pointer<typename std::remove_reference<T>::type>::value,
-    typename std::add_pointer<intrinsic_t<T>>::type,
-    typename std::add_lvalue_reference<intrinsic_t<T>>::type>::type;
+using cast_op_type =
+    conditional_t<std::is_pointer<remove_reference_t<T>>::value,
+        typename std::add_pointer<intrinsic_t<T>>::type,
+        typename std::add_lvalue_reference<intrinsic_t<T>>::type>;
+
+/**
+ * Determine suitable casting operator for a type caster with a movable value.  Such a type caster
+ * needs to provide `operator T*()`, `operator T&()`, and `operator T&&() &&`.  The latter will be
+ * called in appropriate contexts where the value can be moved rather than copied.
+ *
+ * These operator are automatically provided when using the PYBIND11_TYPE_CASTER macro.
+ */
+template <typename T>
+using movable_cast_op_type =
+    conditional_t<std::is_pointer<typename std::remove_reference<T>::type>::value,
+        typename std::add_pointer<intrinsic_t<T>>::type,
+    conditional_t<std::is_rvalue_reference<T>::value,
+        typename std::add_rvalue_reference<intrinsic_t<T>>::type,
+        typename std::add_lvalue_reference<intrinsic_t<T>>::type>>;
 
 // std::is_copy_constructible isn't quite enough: it lets std::vector<T> (and similar) through when
 // T is non-copyable, but code containing such a copy constructor fails to actually compile.
@@ -462,7 +485,7 @@ public:
             nullptr, nullptr, holder);
     }
 
-    template <typename T> using cast_op_type = pybind11::detail::cast_op_type<T>;
+    template <typename T> using cast_op_type = cast_op_type<T>;
 
     operator itype*() { return (type *) value; }
     operator itype&() { if (!value) throw reference_cast_error(); return *((itype *) value); }
@@ -498,17 +521,30 @@ template <typename type> using make_caster = type_caster<intrinsic_t<type>>;
 template <typename T> typename make_caster<T>::template cast_op_type<T> cast_op(make_caster<T> &caster) {
     return caster.operator typename make_caster<T>::template cast_op_type<T>();
 }
-template <typename T> typename make_caster<T>::template cast_op_type<T> cast_op(make_caster<T> &&caster) {
-    return cast_op<T>(caster);
+template <typename T> typename make_caster<T>::template cast_op_type<typename std::add_rvalue_reference<T>::type>
+cast_op(make_caster<T> &&caster) {
+    return std::move(caster).operator
+        typename make_caster<T>::template cast_op_type<typename std::add_rvalue_reference<T>::type>();
 }
 
-template <typename type> class type_caster<std::reference_wrapper<type>> : public type_caster_base<type> {
+template <typename type> class type_caster<std::reference_wrapper<type>> {
+private:
+    using caster_t = make_caster<type>;
+    caster_t subcaster;
+    using subcaster_cast_op_type = typename caster_t::template cast_op_type<type>;
+    static_assert(std::is_same<typename std::remove_const<type>::type &, subcaster_cast_op_type>::value,
+            "std::reference_wrapper<T> caster requires T to have a caster with an `T &` operator");
 public:
+    bool load(handle src, bool convert) { return subcaster.load(src, convert); }
+    static PYBIND11_DESCR name() { return caster_t::name(); }
     static handle cast(const std::reference_wrapper<type> &src, return_value_policy policy, handle parent) {
-        return type_caster_base<type>::cast(&src.get(), policy, parent);
+        // It is definitely wrong to take ownership of this pointer, so mask that rvp
+        if (policy == return_value_policy::take_ownership || policy == return_value_policy::automatic)
+            policy = return_value_policy::automatic_reference;
+        return caster_t::cast(&src.get(), policy, parent);
     }
     template <typename T> using cast_op_type = std::reference_wrapper<type>;
-    operator std::reference_wrapper<type>() { return std::ref(*((type *) this->value)); }
+    operator std::reference_wrapper<type>() { return subcaster.operator subcaster_cast_op_type&(); }
 };
 
 #define PYBIND11_TYPE_CASTER(type, py_name) \
@@ -522,7 +558,8 @@ public:
         } \
         operator type*() { return &value; } \
         operator type&() { return value; } \
-        template <typename _T> using cast_op_type = pybind11::detail::cast_op_type<_T>
+        operator type&&() && { return std::move(value); } \
+        template <typename _T> using cast_op_type = pybind11::detail::movable_cast_op_type<_T>
 
 
 template <typename CharT> using is_std_char_type = any_of<
@@ -858,7 +895,7 @@ public:
     }
 
     static PYBIND11_DESCR name() { return type_descr(_(PYBIND11_STRING_NAME)); }
-    template <typename _T> using cast_op_type = typename std::remove_reference<pybind11::detail::cast_op_type<_T>>::type;
+    template <typename _T> using cast_op_type = remove_reference_t<pybind11::detail::cast_op_type<_T>>;
 };
 
 template <typename T1, typename T2> class type_caster<std::pair<T1, T2>> {
@@ -892,9 +929,8 @@ public:
 
     template <typename T> using cast_op_type = type;
 
-    operator type() {
-        return type(cast_op<T1>(first), cast_op<T2>(second));
-    }
+    operator type() & { return type(cast_op<T1>(first), cast_op<T2>(second)); }
+    operator type() && { return type(cast_op<T1>(std::move(first)), cast_op<T2>(std::move(second))); }
 protected:
     make_caster<T1> first;
     make_caster<T2> second;
@@ -925,17 +961,21 @@ public:
 
     template <typename T> using cast_op_type = type;
 
-    operator type() { return implicit_cast(indices{}); }
+    operator type() & { return implicit_cast(indices{}); }
+    operator type() && { return std::move(*this).implicit_cast(indices{}); }
 
 protected:
     template <size_t... Is>
-    type implicit_cast(index_sequence<Is...>) { return type(cast_op<Tuple>(std::get<Is>(value))...); }
+    type implicit_cast(index_sequence<Is...>) & { return type(cast_op<Tuple>(std::get<Is>(subcasters))...); }
+    template <size_t... Is>
+    type implicit_cast(index_sequence<Is...>) && { return type(cast_op<Tuple>(std::move(std::get<Is>(subcasters)))...); }
+
 
     static constexpr bool load_impl(const sequence &, bool, index_sequence<>) { return true; }
 
     template <size_t... Is>
     bool load_impl(const sequence &seq, bool convert, index_sequence<Is...>) {
-        for (bool r : {std::get<Is>(value).load(seq[Is], convert)...})
+        for (bool r : {std::get<Is>(subcasters).load(seq[Is], convert)...})
             if (!r)
                 return false;
         return true;
@@ -960,7 +1000,7 @@ protected:
         return result.release();
     }
 
-    std::tuple<make_caster<Tuple>...> value;
+    std::tuple<make_caster<Tuple>...> subcasters;
 };
 
 /// Helper class which abstracts away certain actions. Users can provide specializations for
@@ -1353,14 +1393,17 @@ template <return_value_policy policy = return_value_policy::automatic_reference,
 /// Annotation for arguments
 struct arg {
     /// Constructs an argument with the name of the argument; if null or omitted, this is a positional argument.
-    constexpr explicit arg(const char *name = nullptr) : name(name), flag_noconvert(false) { }
+    constexpr explicit arg(const char *name = nullptr) : name(name), flag_noconvert(false), flag_none(true) { }
     /// Assign a value to this argument
     template <typename T> arg_v operator=(T &&value) const;
     /// Indicate that the type should not be converted in the type caster
     arg &noconvert(bool flag = true) { flag_noconvert = flag; return *this; }
+    /// Indicates that the argument should/shouldn't allow None (e.g. for nullable pointer args)
+    arg &none(bool flag = true) { flag_none = flag; return *this; }
 
     const char *name; ///< If non-null, this is a named kwargs argument
     bool flag_noconvert : 1; ///< If set, do not allow conversion (requires a supporting type caster!)
+    bool flag_none : 1; ///< If set (the default), allow None to be passed to this argument
 };
 
 /// \ingroup annotations
@@ -1392,6 +1435,9 @@ public:
 
     /// Same as `arg::noconvert()`, but returns *this as arg_v&, not arg&
     arg_v &noconvert(bool flag = true) { arg::noconvert(flag); return *this; }
+
+    /// Same as `arg::nonone()`, but returns *this as arg_v&, not arg&
+    arg_v &none(bool flag = true) { arg::none(flag); return *this; }
 
     /// The default value
     object value;
@@ -1465,13 +1511,13 @@ public:
     }
 
     template <typename Return, typename Guard, typename Func>
-    enable_if_t<!std::is_void<Return>::value, Return> call(Func &&f) {
-        return call_impl<Return>(std::forward<Func>(f), indices{}, Guard{});
+    enable_if_t<!std::is_void<Return>::value, Return> call(Func &&f) && {
+        return std::move(*this).template call_impl<Return>(std::forward<Func>(f), indices{}, Guard{});
     }
 
     template <typename Return, typename Guard, typename Func>
-    enable_if_t<std::is_void<Return>::value, void_type> call(Func &&f) {
-        call_impl<Return>(std::forward<Func>(f), indices{}, Guard{});
+    enable_if_t<std::is_void<Return>::value, void_type> call(Func &&f) && {
+        std::move(*this).template call_impl<Return>(std::forward<Func>(f), indices{}, Guard{});
         return void_type();
     }
 
@@ -1481,7 +1527,7 @@ private:
 
     template <size_t... Is>
     bool load_impl_sequence(function_call &call, index_sequence<Is...>) {
-        for (bool r : {std::get<Is>(value).load(call.args[Is], call.args_convert[Is])...})
+        for (bool r : {std::get<Is>(argcasters).load(call.args[Is], call.args_convert[Is])...})
             if (!r)
                 return false;
         return true;
@@ -1489,10 +1535,10 @@ private:
 
     template <typename Return, typename Func, size_t... Is, typename Guard>
     Return call_impl(Func &&f, index_sequence<Is...>, Guard &&) {
-        return std::forward<Func>(f)(cast_op<Args>(std::get<Is>(value))...);
+        return std::forward<Func>(f)(cast_op<Args>(std::move(std::get<Is>(argcasters)))...);
     }
 
-    std::tuple<make_caster<Args>...> value;
+    std::tuple<make_caster<Args>...> argcasters;
 };
 
 /// Helper class which collects only positional arguments for a Python function call.

@@ -137,7 +137,6 @@ void vector_modifiers(enable_if_t<std::is_copy_constructible<typename Vector::va
 
     cl.def("extend",
        [](Vector &v, const Vector &src) {
-           v.reserve(v.size() + src.size());
            v.insert(v.end(), src.begin(), src.end());
        },
        arg("L"),
@@ -146,6 +145,8 @@ void vector_modifiers(enable_if_t<std::is_copy_constructible<typename Vector::va
 
     cl.def("insert",
         [](Vector &v, SizeType i, const T &x) {
+            if (i > v.size())
+                throw index_error();
             v.insert(v.begin() + (DiffType) i, x);
         },
         arg("i") , arg("x"),

@@ -12,7 +12,7 @@ Reference
 Macros
 ======
 
-.. doxygendefine:: PYBIND11_PLUGIN
+.. doxygendefine:: PYBIND11_MODULE
 
 .. _core_types:
 
@@ -57,6 +57,17 @@ Passing extra arguments to ``def`` or ``class_``
 
 .. doxygengroup:: annotations
     :members:
+
+Embedding the interpreter
+=========================
+
+.. doxygendefine:: PYBIND11_EMBEDDED_MODULE
+
+.. doxygenfunction:: initialize_interpreter
+
+.. doxygenfunction:: finalize_interpreter
+
+.. doxygenclass:: scoped_interpreter
 
 Python build-in functions
 =========================

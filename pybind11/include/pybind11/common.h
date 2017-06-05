@@ -194,6 +194,8 @@ extern "C" {
     PYBIND11_TOSTRING(PYBIND11_VERSION_MAJOR) "_" PYBIND11_TOSTRING(PYBIND11_VERSION_MINOR) "__"
 
 /** \rst
+    ***Deprecated in favor of PYBIND11_MODULE***
+
     This macro creates the entry point that will be invoked when the Python interpreter
     imports a plugin library. Please create a `module` in the function body and return
     the pointer to its underlying Python object at the end.
@@ -207,6 +209,7 @@ extern "C" {
         }
 \endrst */
 #define PYBIND11_PLUGIN(name)                                                  \
+    PYBIND11_DEPRECATED("PYBIND11_PLUGIN is deprecated, use PYBIND11_MODULE")  \
     static PyObject *pybind11_init();                                          \
     PYBIND11_PLUGIN_IMPL(name) {                                               \
         int major, minor;                                                      \
@@ -233,6 +236,54 @@ extern "C" {
         }                                                                      \
     }                                                                          \
     PyObject *pybind11_init()
+
+/** \rst
+    This macro creates the entry point that will be invoked when the Python interpreter
+    imports an extension module. The module name is given as the fist argument and it
+    should not be in quotes. The second macro argument defines a variable of type
+    `py::module` which can be used to initialize the module.
+
+    .. code-block:: cpp
+
+        PYBIND11_MODULE(example, m) {
+            m.doc() = "pybind11 example module";
+
+            // Add bindings here
+            m.def("foo", []() {
+                return "Hello, World!";
+            });
+        }
+\endrst */
+#define PYBIND11_MODULE(name, variable)                                        \
+    static void pybind11_init_##name(pybind11::module &);                      \
+    PYBIND11_PLUGIN_IMPL(name) {                                               \
+        int major, minor;                                                      \
+        if (sscanf(Py_GetVersion(), "%i.%i", &major, &minor) != 2) {           \
+            PyErr_SetString(PyExc_ImportError, "Can't parse Python version."); \
+            return nullptr;                                                    \
+        } else if (major != PY_MAJOR_VERSION || minor != PY_MINOR_VERSION) {   \
+            PyErr_Format(PyExc_ImportError,                                    \
+                         "Python version mismatch: module was compiled for "   \
+                         "version %i.%i, while the interpreter is running "    \
+                         "version %i.%i.", PY_MAJOR_VERSION, PY_MINOR_VERSION, \
+                         major, minor);                                        \
+            return nullptr;                                                    \
+        }                                                                      \
+        auto m = pybind11::module(#name);                                      \
+        try {                                                                  \
+            pybind11_init_##name(m);                                           \
+            return m.ptr();                                                    \
+        } catch (pybind11::error_already_set &e) {                             \
+            e.clear();                                                         \
+            PyErr_SetString(PyExc_ImportError, e.what());                      \
+            return nullptr;                                                    \
+        } catch (const std::exception &e) {                                    \
+            PyErr_SetString(PyExc_ImportError, e.what());                      \
+            return nullptr;                                                    \
+        }                                                                      \
+    }                                                                          \
+    void pybind11_init_##name(pybind11::module &variable)
+
 
 NAMESPACE_BEGIN(pybind11)
 
@@ -348,10 +399,12 @@ inline internals &get_internals();
 using std::enable_if_t;
 using std::conditional_t;
 using std::remove_cv_t;
+using std::remove_reference_t;
 #else
 template <bool B, typename T = void> using enable_if_t = typename std::enable_if<B, T>::type;
 template <bool B, typename T, typename F> using conditional_t = typename std::conditional<B, T, F>::type;
 template <typename T> using remove_cv_t = typename std::remove_cv<T>::type;
+template <typename T> using remove_reference_t = typename std::remove_reference<T>::type;
 #endif
 
 /// Index sequences
@@ -364,6 +417,12 @@ template<size_t N, size_t ...S> struct make_index_sequence_impl : make_index_seq
 template<size_t ...S> struct make_index_sequence_impl <0, S...> { typedef index_sequence<S...> type; };
 template<size_t N> using make_index_sequence = typename make_index_sequence_impl<N>::type;
 #endif
+
+/// Make an index sequence of the indices of true arguments
+template <typename ISeq, size_t, bool...> struct select_indices_impl { using type = ISeq; };
+template <size_t... IPrev, size_t I, bool B, bool... Bs> struct select_indices_impl<index_sequence<IPrev...>, I, B, Bs...>
+    : select_indices_impl<conditional_t<B, index_sequence<IPrev..., I>, index_sequence<IPrev...>>, I + 1, Bs...> {};
+template <bool... Bs> using select_indices = typename select_indices_impl<index_sequence<>, 0, Bs...>::type;
 
 /// Backports of std::bool_constant and std::negation to accomodate older compilers
 template <bool B> using bool_constant = std::integral_constant<bool, B>;
@@ -503,6 +562,14 @@ struct is_input_iterator<T, void_t<decltype(*std::declval<T &>()), decltype(++st
 
 /// Ignore that a variable is unused in compiler warnings
 inline void ignore_unused(const int *) { }
+
+/// Apply a function over each element of a parameter pack
+#ifdef __cpp_fold_expressions
+#define PYBIND11_EXPAND_SIDE_EFFECTS(PATTERN) (((PATTERN), void()), ...)
+#else
+using expand_side_effects = bool[];
+#define PYBIND11_EXPAND_SIDE_EFFECTS(PATTERN) pybind11::detail::expand_side_effects{ ((PATTERN), void(), false)..., false }
+#endif
 
 NAMESPACE_END(detail)
 

@@ -33,7 +33,7 @@ set(PYBIND11_TEST_FILES
   test_chrono.cpp
   test_class_args.cpp
   test_constants_and_functions.cpp
-  test_copy_move_policies.cpp
+  test_copy_move.cpp
   test_docstring_options.cpp
   test_eigen.cpp
   test_enum.cpp
@@ -128,6 +128,10 @@ pybind11_add_module(pybind11_tests THIN_LTO pybind11_tests.cpp
 
 pybind11_enable_warnings(pybind11_tests)
 
+if(MSVC)
+  target_compile_options(pybind11_tests PRIVATE /utf-8)
+endif()
+
 if(EIGEN3_FOUND)
   if (PYBIND11_EIGEN_VIA_TARGET)
     target_link_libraries(pybind11_tests PRIVATE Eigen3::Eigen)
@@ -191,6 +195,9 @@ add_custom_command(TARGET pybind11_tests POST_BUILD
   COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/libsize.py
   $<TARGET_FILE:pybind11_tests> ${CMAKE_CURRENT_BINARY_DIR}/sosize-$<TARGET_FILE_NAME:pybind11_tests>.txt)
 
+# Test embedding the interpreter. Provides the `cpptest` target.
+add_subdirectory(test_embed)
+
 # Test CMake build using functions and targets from subdirectory or installed location
 add_custom_target(test_cmake_build)
 if(NOT CMAKE_VERSION VERSION_LESS 3.1)
@@ -229,6 +236,9 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.1)
 
   pybind11_add_build_test(subdirectory_function)
   pybind11_add_build_test(subdirectory_target)
+  if(NOT ${PYTHON_MODULE_EXTENSION} MATCHES "pypy")
+    pybind11_add_build_test(subdirectory_embed)
+  endif()
 
   if(PYBIND11_INSTALL)
     add_custom_target(mock_install ${CMAKE_COMMAND}
@@ -238,6 +248,9 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.1)
 
     pybind11_add_build_test(installed_function INSTALL)
     pybind11_add_build_test(installed_target INSTALL)
+    if(NOT ${PYTHON_MODULE_EXTENSION} MATCHES "pypy")
+      pybind11_add_build_test(installed_embed INSTALL)
+    endif()
   endif()
 endif()
 
