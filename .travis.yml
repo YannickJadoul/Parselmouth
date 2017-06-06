@@ -1,0 +1,139 @@
+language: cpp
+dist: trusty
+sudo: false
+cache: ccache
+
+env:
+  global: BUILD_TYPE=Debug
+compiler: gcc
+
+matrix:
+  include:
+    - env: PYTHON=2.7 GCC=5
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+
+    - env: PYTHON=3.4 GCC=5
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+
+    - env: PYTHON=3.5 GCC=5
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+
+    - env: PYTHON=3.6 GCC=5
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - deadsnakes
+          packages:
+            - g++-5
+            - python3.6-dev
+
+    - env: PYTHON=2.7 GCC=5 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+
+    - env: PYTHON=3.6 GCC=5 BUILD_TYPE=Release
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - deadsnakes
+          packages:
+            - g++-5
+            - python3.6-dev
+
+    - env: PYTHON=2.7 GCC=7
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+
+    - env: PYTHON=3.6 GCC=7
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - deadsnakes
+          packages:
+            - g++-7
+            - python3.6-dev
+
+    - env: PYTHON=2.7 CLANG=3.8
+      compiler: clang
+      addons:
+        apt:
+          packages:
+            - clang-3.8
+            - libc++-dev
+
+    - env: PYTHON=3.6 CLANG=3.8
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - deadsnakes
+          packages:
+            - clang-3.8
+            - libc++-dev
+            - python3.6-dev
+
+    - env: PYTHON=2
+      os: osx
+      osx_image: xcode8.3
+
+    - env: PYTHON=3
+      os: osx
+      osx_image: xcode8.3
+
+before_install:
+  - |
+    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      if [ -n "$GCC" ]; then
+        CC=gcc-$GCC
+        CXX=g++-$GCC
+      elif [ -n "$CLANG" ]; then
+        CC="ccache clang-$CLANG"
+        CXX="ccache clang++-$CLANG"
+        export CFLAGS="-Qunused-arguments"
+        export CXXFLAGS="-Qunused-arguments -stdlib=libc++"
+      fi
+      PYTHON_CMD=python$PYTHON
+    elif [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      brew install ccache
+      PATH=$PATH:/usr/local/opt/ccache/libexec
+      if [ "$PYTHON" == "3" ]; then
+        brew update
+        brew install python3
+        PYTHON_CMD=python3
+      else
+        PYTHON_CMD=python
+      fi
+      CC=clang
+      CXX=clang++
+    fi
+
+script:
+  - mkdir build && cd build && cmake -DPYBIND11_PYTHON_VERSION=$PYTHON -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+  - make install -j 2
+  - cd ../installed && $PYTHON_CMD -c "import parselmouth"
