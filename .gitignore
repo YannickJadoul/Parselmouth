@@ -1,14 +1,17 @@
+# Build and binary folder of CMake and Python distutils
 build/
-bin/
-lib/
 installed/
 dist/
 
+# OS X temporary and cache files
 *~
 .DS_Store
 
+# Eclipse
 /.cproject
 /.project
 .settings/
 .csettings/
 
+# CLion
+.idea/
