@@ -21,6 +21,8 @@
 #ifndef INC_PARSELMOUTH_PARSELMOUTH_H
 #define INC_PARSELMOUTH_PARSELMOUTH_H
 
+#include <pybind11/pybind11.h>
+
 #include "Bindings.h"
 
 // TODO Forward declarations?
@@ -35,8 +37,6 @@
 #include "fon/Spectrum.h"
 #include "sys/Thing.h"
 #include "praat/UndefPraatMacros.h"
-
-#include <pybind11/pybind11.h>
 
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, _Thing_auto<T>);
