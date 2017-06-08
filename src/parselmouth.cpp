@@ -30,8 +30,8 @@
 #include "sys/praat.h"
 #include "sys/praat_version.h"
 
-#define xstr(s) str(s) // TODO Move somewhere else?
-#define str(s) #s
+#define XSTR(s) STR(s) // TODO Move somewhere else?
+#define STR(s) #s
 
 // TODO What to do with NUMundefined?
 
@@ -71,10 +71,10 @@ PYBIND11_MODULE(parselmouth, m) {
 				melderErrorException(message.c_str());
 			}});
 
-	m.attr("__version__") = PYBIND11_STR_TYPE(xstr(PARSELMOUTH_VERSION));
-	m.attr("VERSION") = py::cast(xstr(PARSELMOUTH_VERSION));
-	m.attr("PRAAT_VERSION") = py::cast(xstr(PRAAT_VERSION_STR));
-	m.attr("PRAAT_VERSION_DATE") = py::cast(xstr(PRAAT_DAY) " " xstr(PRAAT_MONTH) " " xstr(PRAAT_YEAR));
+	m.attr("__version__") = PYBIND11_STR_TYPE(XSTR(PARSELMOUTH_VERSION));
+	m.attr("VERSION") = py::str(XSTR(PARSELMOUTH_VERSION));
+	m.attr("PRAAT_VERSION") = py::str(XSTR(PRAAT_VERSION_STR));
+	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
 
 	bindings.init();
 
