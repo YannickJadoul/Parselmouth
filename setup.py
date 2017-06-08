@@ -121,7 +121,6 @@ setup(
 	keywords='praat speech signal processing phonetics',
 	install_requires=[
 		'numpy>=1.7.0',
-		'cmake',
 	],
 	ext_modules=[CMakeExtension('parselmouth')],
 	cmdclass=dict(build_ext=CMakeBuild),
