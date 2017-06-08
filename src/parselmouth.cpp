@@ -18,6 +18,7 @@
  */
 
 #include "parselmouth/Parselmouth.h"
+#include "version.h"
 
 #include <pybind11/numpy.h> // TODO Add to dependencies in setup.py? What happens when numpy is not installed?
 #include <pybind11/stl.h>
@@ -70,6 +71,8 @@ PYBIND11_MODULE(parselmouth, m) {
 				melderErrorException(message.c_str());
 			}});
 
+	m.attr("__version__") = PYBIND11_STR_TYPE(xstr(PARSELMOUTH_VERSION));
+	m.attr("VERSION") = py::cast(xstr(PARSELMOUTH_VERSION));
 	m.attr("PRAAT_VERSION") = py::cast(xstr(PRAAT_VERSION_STR));
 	m.attr("PRAAT_VERSION_DATE") = py::cast(xstr(PRAAT_DAY) " " xstr(PRAAT_MONTH) " " xstr(PRAAT_YEAR));
 

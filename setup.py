@@ -15,11 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
+import io
 import os
-import re
-import sys
 import platform
+import re
 import subprocess
+import sys
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -67,20 +68,53 @@ class CMakeBuild(build_ext):
 			build_args += ['--', '-j2']
 
 		env = os.environ.copy()
-		env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
-															  self.distribution.get_version())
+		env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''), self.distribution.get_version())
 		if not os.path.exists(self.build_temp):
 			os.makedirs(self.build_temp)
 		subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
 		subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
+def read(*names, **kwargs):
+	with io.open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
+		return fp.read()
+
+def find_version(*file_paths):
+	version_file = read(*file_paths)
+	version_match = re.search(r"^#define PARSELMOUTH_VERSION ([0-9a-z.]+)$", version_file, re.M)
+	if version_match:
+		return version_match.group(1)
+	raise RuntimeError("Unable to find version string.")
+
 setup(
 	name='praat-parselmouth',
-	version='0.0.1',
+	version=find_version('src', 'version.h'),
+	description='Praat bindings for Python, the Pythonic way',
+	url='https://github.com/YannickJadoul/Parselmouth',
 	author='Yannick Jadoul',
 	author_email='Yannick.Jadoul@ai.vub.ac.be',
-	description='PRAAT bindings for Python, the Python way',
-	long_description='',
+	license='GPLv3',
+	classifiers=[
+		'Intended Audience :: Developers',
+		'Intended Audience :: Science/Research',
+		'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+		'Operating System :: MacOS :: MacOS X',
+		'Operating System :: POSIX :: Linux',
+		'Operating System :: Unix',
+		'Programming Language :: C++',
+		'Programming Language :: Python :: 2',
+		'Programming Language :: Python :: 2.7',
+		'Programming Language :: Python :: 3',
+		'Programming Language :: Python :: 3.3',
+		'Programming Language :: Python :: 3.4',
+		'Programming Language :: Python :: 3.5',
+		'Programming Language :: Python :: 3.6',
+		'Topic :: Scientific/Engineering',
+		'Topic :: Software Development :: Libraries :: Python Modules',
+	],
+	keywords='praat speech signal processing phonetics',
+	install_requires=[
+		'numpy>=1.7.0',
+	],
 	ext_modules=[CMakeExtension('parselmouth')],
 	cmdclass=dict(build_ext=CMakeBuild),
 	zip_safe=False,
