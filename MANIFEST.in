@@ -3,4 +3,4 @@ include CMakeLists.txt
 recursive-include src *
 recursive-include pybind11 *
 recursive-include praat *
-recursive-include etc *
+recursive-include res *
