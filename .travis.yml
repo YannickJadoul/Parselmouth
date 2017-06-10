@@ -101,10 +101,12 @@ matrix:
     - env: PYTHON=2
       os: osx
       osx_image: xcode8.3
+      compiler: clang
 
     - env: PYTHON=3
       os: osx
       osx_image: xcode8.3
+      compiler: clang
 
 before_install:
   - |
