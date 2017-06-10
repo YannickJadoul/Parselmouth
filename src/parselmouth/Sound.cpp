@@ -486,7 +486,7 @@ void Binding<Sound>::init() {
 	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN);
 
 	def("to_intensity",
-	    [](Sound self, Positive<double> minimumPitch, optional<Positive<double>> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep.value_or(0.0), subtractMean); },
+	    [](Sound self, Positive<double> minimumPitch, optional<Positive<double>> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep ? static_cast<double>(*timeStep) : 0.0, subtractMean); },
 	    "minimum_pitch"_a = 100.0, "time_step"_a = nullopt, "subtract_mean"_a = true);
 
 	def("to_harmonicity_ac",
