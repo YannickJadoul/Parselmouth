@@ -189,6 +189,7 @@ void Binding<Sound>::init() {
 	    },
 	    "file_path"_a);
 
+	// TODO Constructor from few special file formats that are not detectable by header
 	// TODO Constructor from file or io.IOBase?
 	// TODO Constructor from Praat-format file?
 	// TODO Constructor from py::buffer?

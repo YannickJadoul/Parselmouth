@@ -19,6 +19,7 @@ add_sources(Data.cpp
             Harmonicity.cpp
             Intensity.cpp
             Matrix.cpp
+            Pitch.cpp
             Sound.cpp
             Spectrogram.cpp
             Spectrum.cpp

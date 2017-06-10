@@ -225,7 +225,6 @@ PRAAT_ENUM_BINDING_ALIAS(SignalOutsideTimeDomain, kSounds_convolve_signalOutside
 PRAAT_ENUM_BINDING(SoundFileFormat)
 PRAAT_ENUM_BINDING_ALIAS(SpectralAnalysisWindowShape, kSound_to_Spectrogram_windowShape)
 
-NO_BINDING_INIT(Pitch)
 NO_BINDING_INIT(Formant)
 NO_BINDING_INIT(MFCC)
 

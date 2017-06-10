@@ -38,7 +38,6 @@ void Binding<Data>::init()
 	def("copy",
 	    &Data_copy<structData>);
 
-	// TODO attr("__copy__") = attr("copy"); ?
 	def("__copy__",
 	    &Data_copy<structData>);
 
@@ -47,7 +46,13 @@ void Binding<Data>::init()
 
 	// TODO Pickling?
 
-	// TODO v_equal
+	def("__eq__",
+		&Data_equal,
+		"other"_a.none(false), py::is_operator());
+
+	def("__ne__",
+	    [](Data self, Data other) { return !Data_equal(self, other); },
+	    "other"_a.none(false), py::is_operator());
 }
 
 } // namespace parselmouth
