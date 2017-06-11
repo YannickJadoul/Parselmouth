@@ -112,7 +112,7 @@ matrix:
       os: osx
       compiler: clang
       script:
-        - pip install git+https://github.com/YannickJadoul/cibuildwheel.git
+        - pip install cibuildwheel
         - CIBW_SKIP="cp26-*" cibuildwheel
       deploy:
         provider: releases
