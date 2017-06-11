@@ -20,6 +20,11 @@ import pip
 pip.main(['install', 'praat-parselmouth'])
 ```
 
+- On Mac OS X, this should be fairly quickly.
+- On a Linux system, we do not have a binary distribution yet, but `pip install praat-parselmouth` should automatically build your project in 5 to 10 minutes if you have `cmake` installed.
+- Unfortunately, at this point in time, we do not have a Windows version available to download from the Python Package Index. Work will be done on this, and even sooner if we get feedback from interested potential Windows users ;-)
+
+
 If this results in an error, try updating `pip` to the latest version by running
 ```
 pip install -U pip
