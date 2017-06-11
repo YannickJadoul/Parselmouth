@@ -1,5 +1,4 @@
-include LICENSE
-include CMakeLists.txt
+include README.md LICENSE CMakeLists.txt
 recursive-include src *
 recursive-include pybind11 *
 recursive-include praat *

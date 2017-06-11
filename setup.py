@@ -94,7 +94,8 @@ def find_version(*file_paths):
 setup(
 	name='praat-parselmouth',
 	version=find_version('src', 'version.h'),
-	description='Praat bindings for Python, the Pythonic way',
+	description='Praat in Python, the Pythonic way',
+	long_description=read('README.md'),
 	url='https://github.com/YannickJadoul/Parselmouth',
 	author='Yannick Jadoul',
 	author_email='Yannick.Jadoul@ai.vub.ac.be',
