@@ -19,6 +19,8 @@
 
 #include "Parselmouth.h"
 
+#include "utils/pybind11/Optional.h"
+
 #include <pybind11/numpy.h> // TODO numpy dependency of python library
 #include <pybind11/stl.h>
 
@@ -26,9 +28,6 @@ namespace py = pybind11;
 using namespace py::literals;
 
 namespace parselmouth {
-
-using std::experimental::optional;
-using std::experimental::nullopt;
 
 void Binding<Matrix>::init() {
 	def_property_readonly("values",

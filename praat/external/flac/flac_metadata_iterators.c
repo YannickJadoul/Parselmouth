@@ -39,9 +39,9 @@
 #include <string.h>
 
 #if defined _WIN32
-#include <utime.h> /* for utime() */
 #include <io.h> /* for chmod() */
 #include <sys/types.h> /* for off_t */
+#include <sys/utime.h> /* for utime() */
 #else
 #include <sys/types.h> /* some flavors of BSD (like OS X) require this to get time_t */
 #include <utime.h> /* for utime() */
@@ -54,6 +54,11 @@
 #include "flac_FLAC_assert.h"
 #include "flac_FLAC_stream_decoder.h"
 #include "flac_share_alloc.h"
+
+#ifdef _MSC_VER
+#define ftello ftell
+#define fseeko fseek
+#endif
 
 #ifdef max
 #undef max

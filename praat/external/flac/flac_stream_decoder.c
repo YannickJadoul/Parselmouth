@@ -56,6 +56,11 @@
 #include "flac_private_md5.h"
 #include "flac_private_memory.h"
 
+#ifdef _MSC_VER
+#define ftello ftell
+#define fseeko fseek
+#endif
+
 #ifdef max
 #undef max
 #endif

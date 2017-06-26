@@ -383,7 +383,11 @@ static HENHMETAFILE copyToMetafile (Picture me) {
 void Picture_copyToClipboard (Picture me) {
 	try {
 		HENHMETAFILE metafile = copyToMetafile (me);
+#ifndef NO_GRAPHICS
 		OpenClipboard (((GraphicsScreen) my graphics.get()) -> d_winWindow);
+#else
+		OpenClipboard (NULL);
+#endif
 		EmptyClipboard ();
 		SetClipboardData (CF_ENHMETAFILE, metafile);
 		CloseClipboard ();

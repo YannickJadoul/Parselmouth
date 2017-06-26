@@ -1006,6 +1006,8 @@ FLAC_API FLAC__bool FLAC__format_picture_is_legal(const FLAC__StreamMetadata_Pic
 // pb 20080502
 #if defined (_WIN32) && ! defined (__CYGWIN__)
 	#ifndef __cplusplus
+		#include <stdint.h>
+
 		uint32_t * Melder_peek8to32 (const char *string);
 		const uint16_t * Melder_peek32to16 (const uint32_t *string);
 	#endif

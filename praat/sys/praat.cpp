@@ -483,7 +483,7 @@ void praat_removeObject (int i) {
 static void praat_exit (int exit_code) {
 //Melder_setTracing (true);
 	int IOBJECT;
-	#ifdef _WIN32
+	#if motif
 		if (! theCurrentPraatApplication -> batch) {
 			Melder_assert (theCurrentPraatApplication);
 			Melder_assert (theCurrentPraatApplication -> topShell);
@@ -1252,7 +1252,7 @@ void praat_init (const char32 *title, int argc, char **argv)
 				Melder_clearError ();
 			}
 		}
-	#elif defined (_WIN32)
+	#elif !defined(NO_GRAPHICS) && defined (_WIN32)
 		if (! Melder_batch)
 			motif_win_setUserMessageCallback (cb_userMessage);
 	#elif defined (macintosh)

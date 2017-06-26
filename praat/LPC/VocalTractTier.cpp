@@ -39,6 +39,8 @@
 #include "oo_DESCRIPTION.h"
 #include "VocalTractTier_def.h"
 
+#include <ciso646>
+
 void VocalTract_drawSegments (VocalTract me, Graphics g, double maxLength, double maxArea, bool closedAtGlottis)
 {
 	Graphics_setInner (g);

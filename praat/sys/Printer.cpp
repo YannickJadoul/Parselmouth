@@ -16,7 +16,11 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <unistd.h> // close
+#ifndef _MSC_VER
+	#include <unistd.h> // close
+#else
+	#define close _close
+#endif
 
 #include "melder.h"
 
@@ -127,7 +131,7 @@ void Printer_nextPage () {
 			StartPage (theWinDC);
 			initPostScriptPage ();
 		} else {
-			if (EndPage (theWinDC) < 0) ;   /* BUG: should give the opportunity of cancellation. */
+			if (EndPage (theWinDC) < 0) (void) 0;   /* BUG: should give the opportunity of cancellation. */
 			StartPage (theWinDC);
 			/*
 			 * Since StartPage has reset the DC, restore some of our non-default settings.
@@ -328,7 +332,7 @@ int Printer_print (void (*draw) (void *boss, Graphics g), void *boss) {
 					];
 				}
 			#endif
-		#elif defined (_WIN32)
+		#elif motif
 			int postScriptCode = POSTSCRIPT_PASSTHROUGH;
 			DOCINFO docInfo;
 			DEVMODE *devMode;

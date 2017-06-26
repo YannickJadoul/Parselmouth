@@ -33,6 +33,8 @@
 #include <sys/stat.h>
 #ifndef PLATFORM_WINDOWS
 #include <unistd.h>
+#else
+#include <windows.h>
 #endif
 
 #include "speak_lib.h"

@@ -51,7 +51,11 @@ struct CompleteSignatureImpl;
 template<typename Return, typename... Args, typename R, typename... A>
 struct CompleteSignatureImpl<Return (Args...), R (A...)> {
 	using _ = signature_cast_placeholder::_;
+#ifndef _MSC_VER
 	using Type = std::conditional_t<std::is_same<Return, _>::value, R, Return> (std::conditional_t<std::is_same<Args, _>::value, A, Args>...);
+#else
+	using Type = typename std::conditional<std::is_same<Return, _>::value, R, Return>::type (typename std::conditional<std::is_same<Args, _>::value, A, Args>::type...);
+#endif
 };
 
 

@@ -36,7 +36,7 @@ void structThing :: v_info ()
 struct structClassInfo theClassInfo_Thing = {
 	U"Thing",
 	nullptr,   // no parent class
-	sizeof (class structThing),
+	sizeof (struct structThing),
 	nullptr,   // no _new function (not needed, because Thing is never instantiated)
 	0,         // version
 	0,         // sequentialUniqueIdOfReadableClass

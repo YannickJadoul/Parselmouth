@@ -24,6 +24,11 @@
 #include "flac_FLAC_stream_encoder.h"
 #include "mp3.h"
 
+#ifdef _MSC_VER
+	#define ftello ftell
+	#define fseeko fseek
+#endif
+
 /***** WRITING *****/
 
 #ifndef WAVE_FORMAT_PCM

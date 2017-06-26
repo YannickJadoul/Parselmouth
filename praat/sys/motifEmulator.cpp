@@ -29,7 +29,7 @@
 static void (*theOpenDocumentCallback) (MelderFile file);
 static int (*theQuitApplicationCallback) ();
 
-#if defined (_WIN32)
+#if motif
 
 /* The Motif emulator for Macintosh and Windows. */
 

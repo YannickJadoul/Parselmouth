@@ -82,7 +82,7 @@ struct structClassInfo {
 
 #define Thing_implement(klas,semanticParentKlas,version) \
 	static Thing _##klas##_new () { return new struct##klas; } \
-	struct structClassInfo theClassInfo_##klas = { U"" #klas, & theClassInfo_##semanticParentKlas, sizeof (class struct##klas), _##klas##_new, version, 0, nullptr}; \
+	struct structClassInfo theClassInfo_##klas = { U"" #klas, & theClassInfo_##semanticParentKlas, sizeof (struct struct##klas), _##klas##_new, version, 0, nullptr}; \
 	ClassInfo class##klas = & theClassInfo_##klas
 
 /*

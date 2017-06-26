@@ -29,6 +29,8 @@
 #include "Vector.h"
 #include "DoublyLinkedList.h"
 
+#include <ciso646>
+
 // not for self-intesecting polygons!
 static double Polygon_area (Polygon me) {
 	double area = 0;

@@ -1330,7 +1330,7 @@ void MelderAudio_play16 (int16_t *buffer, long sampleRate, long numberOfSamples,
 				MelderAudio_isPlaying = false;
 				Melder_throw (U"16-bit audio not played.");
 			}
-		#elif defined (_WIN32)
+		#elif defined (_WIN32) && ! defined (NO_AUDIO)
 			try {
 				WAVEFORMATEX waveFormat;
 				MMRESULT err;
@@ -1454,7 +1454,9 @@ void MelderAudio_play16 (int16_t *buffer, long sampleRate, long numberOfSamples,
 						}
 					}
 				} else {
+				#if motif
 					my workProcId_motif = GuiAddWorkProc (workProc_motif, nullptr);
+				#endif
 					return;
 				}
 				flush ();

@@ -44,6 +44,8 @@
 #include "oo_DESCRIPTION.h"
 #include "HMM_def.h"
 
+#include <ciso646>
+
 Thing_implement (HMM, Daata, 0);
 Thing_implement (HMMState, Daata, 0);
 Thing_implement (HMMStateList, Ordered, 0);

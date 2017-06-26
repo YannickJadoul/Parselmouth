@@ -21,6 +21,11 @@
 #include "abcio.h"
 #define my  me ->
 
+#ifdef _MSC_VER
+	#define ftello ftell
+	#define fseeko fseek
+#endif
+
 char32 MelderReadText_getChar (MelderReadText me) {
 	if (my string32) {
 		if (* my readPointer32 == U'\0') return U'\0';

@@ -258,8 +258,8 @@
 #define oo_STRUCT_MATRIX(Type,x,nrow,ncol)  { U"" #x, structwa, Melder_offsetof (ooSTRUCT, x), sizeof (struct struct##Type), U"" #Type, & struct##Type :: s_description, 2, (const char32 *) 0, U"" #nrow, (const char32 *) 0, U"" #ncol },
 
 #define oo_AUTO_OBJECT(Type,version,x)  { U"" #x, autoobjectwa, Melder_offsetof (ooSTRUCT, x), sizeof (Type), U"" #Type, & theClassInfo_##Type },
-#define oo_COLLECTION_OF(Type,x,ItemType,version)  { U"" #x, collectionofwa, Melder_offsetof (ooSTRUCT, x), sizeof (class struct##ItemType), U"" #Type, & theClassInfo_Collection, 0, (const char32 *) & theClassInfo_##ItemType },
-#define oo_AUTO_COLLECTION(Type,x,ItemType,version)  { U"" #x, autocollectionwa, Melder_offsetof (ooSTRUCT, x), sizeof (class struct##ItemType), U"" #Type, & theClassInfo_##Type, 0, (const char32 *) & theClassInfo_##ItemType },
+#define oo_COLLECTION_OF(Type,x,ItemType,version)  { U"" #x, collectionofwa, Melder_offsetof (ooSTRUCT, x), sizeof (struct struct##ItemType), U"" #Type, & theClassInfo_Collection, 0, (const char32 *) & theClassInfo_##ItemType },
+#define oo_AUTO_COLLECTION(Type,x,ItemType,version)  { U"" #x, autocollectionwa, Melder_offsetof (ooSTRUCT, x), sizeof (struct struct##ItemType), U"" #Type, & theClassInfo_##Type, 0, (const char32 *) & theClassInfo_##ItemType },
 #define oo_FILE(x)
 #define oo_DIR(x)
 
@@ -272,7 +272,7 @@
 
 #define oo_DEFINE_CLASS(Class,Parent) \
 	static struct structData_Description the##Class##_description [] = { \
-		{ U"" #Class, inheritwa, 0, sizeof (class struct##Class), U"" #Class, & theClassInfo_##Parent },
+		{ U"" #Class, inheritwa, 0, sizeof (struct struct##Class), U"" #Class, & theClassInfo_##Parent },
 #define oo_END_CLASS(Class) \
 		{ 0 } \
 	}; \

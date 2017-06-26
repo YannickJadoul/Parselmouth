@@ -20,10 +20,9 @@
 #include "Parselmouth.h"
 
 #include "utils/SignatureCast.h"
+#include "utils/pybind11/Optional.h"
 
 #include <pybind11/stl.h>
-
-#include <experimental/optional>
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -131,7 +130,7 @@ void Binding<Vector>::init() {
 	    "new_peak"_a = 0.99);
 
 	def("get_value", // TODO Default for interpolation? Different for Sound (SINC70), Harmonicity/Intensity/Formants (CUBIC) and Ltas (LINEAR); take praat_TimeFunction.h into account
-	    [](Vector self, double x, std::experimental::optional<long> channel, Interpolation interpolation) { return Vector_getValueAtX (self, x, channel.value_or(Vector_CHANNEL_AVERAGE), static_cast<int>(interpolation)); },
+	    [](Vector self, double x, optional<long> channel, Interpolation interpolation) { return Vector_getValueAtX (self, x, channel.value_or(Vector_CHANNEL_AVERAGE), static_cast<int>(interpolation)); },
 	    "x"_a, "channel"_a = nullptr, "interpolation"_a = Interpolation::CUBIC);
 }
 

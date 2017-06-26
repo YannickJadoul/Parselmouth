@@ -196,8 +196,9 @@ void * KNN_threadDistribution
 
 void KNN_threadTest ()
 {
-    void * dummy[KNN_getNumberOfCPUs()];
-    KNN_threadDistribution(KNN_threadTestAux, (void **) &dummy, KNN_getNumberOfCPUs());
+    void ** dummy = new void *[KNN_getNumberOfCPUs()];
+    KNN_threadDistribution(KNN_threadTestAux, dummy, KNN_getNumberOfCPUs());
+    delete[] dummy;
 }
 
 

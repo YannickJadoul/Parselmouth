@@ -68,6 +68,8 @@
 #include "Manipulation.h"
 #include "NUM2.h"
 
+#include <ciso646>
+
 
 #define MAX_T  0.02000000001   /* Maximum interval between two voice pulses (otherwise voiceless). */
 

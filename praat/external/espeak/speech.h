@@ -38,10 +38,6 @@
 #define NO_VARIADIC_MACROS
 #endif
 
-/* ppgb, 23 December 2011 */
-#undef PLATFORM_POSIX
-#undef PLATFORM_WINDOWS
-
 #define PATHSEP  '/'
 
 /* ppgb, 23 December 2011 */

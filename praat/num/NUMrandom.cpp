@@ -74,7 +74,12 @@
 #if defined (__MINGW32__) || defined (linux)
 	#define UINT64_C(n)  n ## ULL
 #endif
-#include <unistd.h>
+#ifndef _MSC_VER
+	#include <unistd.h>
+#else
+	#include <windows.h>
+	#define getpid GetCurrentProcessId
+#endif
 #include "melder.h"
 #include "NUM.h"
 #define my me ->

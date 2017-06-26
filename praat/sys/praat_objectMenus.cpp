@@ -722,7 +722,7 @@ void praat_addMenus2 () {
 		praat_addMenuCommand (U"Objects", U"Help", itemTitle_about.string, nullptr, praat_UNHIDABLE, WINDOW_About);
 	#endif
 
-	#if defined (macintosh) || defined (_WIN32)
+	#if cocoa || motif
 		Gui_setOpenDocumentCallback (cb_openDocument);
 	#endif
 }

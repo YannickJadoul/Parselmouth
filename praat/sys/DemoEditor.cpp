@@ -248,7 +248,7 @@ void Demo_waitForInput (Interpreter interpreter) {
 				} while (! theReferenceToTheOnlyDemoEditor -> clicked &&
 				         ! theReferenceToTheOnlyDemoEditor -> keyPressed &&
 						 ! theReferenceToTheOnlyDemoEditor -> userWantsToClose);
-			#elif defined (_WIN32)
+			#elif motif
 				do {
 					XEvent event;
 					GuiNextEvent (& event);
@@ -310,7 +310,7 @@ void Demo_peekInput (Interpreter interpreter) {
 				}
 				[NSApp  updateWindows];   // called automatically?
 				[pool release];
-			#elif defined (_WIN32)
+			#elif !defined(NO_GRAPHICS) && defined (_WIN32)
 				XEvent event;
 				while (PeekMessage (& event, 0, 0, 0, PM_REMOVE)) {
 					XtDispatchEvent (& event);

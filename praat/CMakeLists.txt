@@ -24,19 +24,27 @@ set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES})
 
 set(PRAAT_DEFINITIONS "-DFLAC__NOASM -DNO_AUDIO -DNO_GRAPHICS -DNO_NETWORK")
 
-set(PRAAT_C_FLAGS "-std=gnu99 -pthread")
-set(PRAAT_CXX_FLAGS "-std=c++11 -pthread")
-
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # Trying to convert the flags from the Praat makefiles...
 if (UNIX)
+	set(PRAAT_C_FLAGS "-pthread")
+	set(PRAAT_CXX_FLAGS "-pthread")
+	
 	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -DUNIX")
+	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -DPLATFORM_POSIX") # eSpeak
 	
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -Dlinux")
 	endif()
-else ()
-	message(FATAL_ERROR "Other build environments than Unix (including OS X) are not supported.")
+elseif (WIN32)
+	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -D_CRT_SECURE_NO_WARNINGS -DUNICODE") # Windows no "safe alternatives" warning, and Windows unicode API by default
+	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -DFLAC__NO_DLL") # flac
+	set(PRAAT_DEFINITIONS "${PRAAT_DEFINITIONS} -DPLATFORM_WINDOWS") # eSpeak
+	set(PRAAT_CXX_FLAGS "${PRAAT_CXX_FLAGS} /wd4068") # "warning C4068: unknown pragma": #pragma mark
+	set(PRAAT_CXX_FLAGS "${PRAAT_CXX_FLAGS} /EHs") # Some 'extern "C"' functions throw exceptions: make sure they're caught
 endif ()
 
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)

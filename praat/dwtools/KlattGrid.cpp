@@ -62,6 +62,8 @@
 #include "oo_DESCRIPTION.h"
 #include "KlattGrid_def.h"
 
+#include <ciso646>
+
 /*
  * A KlattGrid consists of a great many tiers that can be independently modified.
  * 

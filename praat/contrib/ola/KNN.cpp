@@ -1661,7 +1661,7 @@ void KNN_SA_t_step
     if (i1 > i2)
         OlaSWAP (long, i1, i2);
 
-    long partitions[i2 - i1 + 1];
+    long *partitions = new long [i2 - i1 + 1];
 
     KNN_SA_partition(((KNN_SA_t *) istruct)->p, i1, i2, partitions);
 
@@ -1680,6 +1680,8 @@ void KNN_SA_t_step
         
         OlaSWAP (long, ((KNN_SA_t *) istruct) -> indices [i1], ((KNN_SA_t *) istruct) -> indices [i2]); 
     }
+
+    delete[] partitions;
 }
 
 void KNN_SA_t_copy

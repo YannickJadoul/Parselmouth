@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 
 #include "utils/SignatureCast.h"
+#include "utils/pybind11/Optional.h"
 
 #include "dwtools/Spectrum_extensions.h"
 #include "fon/Spectrum.h"
@@ -33,9 +34,6 @@ namespace py = pybind11;
 using namespace py::literals;
 
 namespace parselmouth {
-
-using std::experimental::optional;
-using std::experimental::nullopt;
 
 void Binding<Spectrum>::init() {
 	using signature_cast_placeholder::_;

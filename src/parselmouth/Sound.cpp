@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 
 #include "utils/SignatureCast.h"
+#include "utils/pybind11/Optional.h"
 
 #include "dwtools/Sound_extensions.h"
 #include "dwtools/Sound_to_MFCC.h"
@@ -36,9 +37,6 @@ namespace py = pybind11;
 using namespace py::literals;
 
 namespace parselmouth {
-
-using std::experimental::optional;
-using std::experimental::nullopt;
 
 namespace {
 
@@ -340,7 +338,7 @@ void Binding<Sound>::init() {
 
 	def("extract_channel", // TODO Channel enum type?
 	    [] (Sound self, std::string channel) {
-		    std::transform(channel.begin(), channel.end(), channel.begin(), static_cast<int (*)(int)>(&std::tolower));
+		    std::transform(channel.begin(), channel.end(), channel.begin(), tolower);
 		    if (channel == "left")
 			    return Sound_extractChannel(self, 1);
 		    if (channel == "right")
