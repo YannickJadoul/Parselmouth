@@ -156,7 +156,12 @@ static _inline FLAC__uint32 local_swap32_(FLAC__uint32 x)
 }
 static void local_swap32_block_(FLAC__uint32 *start, FLAC__uint32 len)
 {
-	__asm {
+	while (len > 0) {
+		*start = local_swap32_(*start);
+		++start;
+		--len;
+	}
+	/*__asm {
 		mov edx, start
 		mov ecx, len
 		test ecx, ecx
@@ -169,7 +174,7 @@ loop1:
 		dec ecx
 		jmp short loop1
 done1:
-	}
+	}*/
 }
 #endif
 
@@ -261,7 +266,7 @@ FLAC__bool bitreader_read_from_client_(FLAC__BitReader *br)
 #if WORDS_BIGENDIAN
 #else
 	end = (br->words*FLAC__BYTES_PER_WORD + br->bytes + bytes + (FLAC__BYTES_PER_WORD-1)) / FLAC__BYTES_PER_WORD;
-# if defined(_MSC_VER) && (FLAC__BYTES_PER_WORD == 4)
+# if false && defined(_MSC_VER) && (FLAC__BYTES_PER_WORD == 4)
 	if(br->cpu_info.type == FLAC__CPUINFO_TYPE_IA32 && br->cpu_info.data.ia32.bswap) {
 		start = br->words;
 		local_swap32_block_(br->buffer + start, end - start);

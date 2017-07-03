@@ -3,7 +3,7 @@
 /* Luckily we assume C99, which makes life easier. */
 
 /* Compile with Intel implementation for Win32, otherwise 64-bit */
-#if defined (_WIN32) && defined (_MSC_VER) || defined (__GNUC__) && defined (__i386__) && ! defined (macintosh)
+#if defined (_WIN32) && defined (_MSC_VER) && !defined(_WIN64) || defined (__GNUC__) && defined (__i386__) && ! defined (macintosh)
 #  define FPM_INTEL
 #else /* !_WIN32 */
 #  define FPM_64BIT
