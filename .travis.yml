@@ -113,6 +113,7 @@ matrix:
       compiler: clang
       script:
         - pip install cibuildwheel
+        - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
         - CIBW_SKIP="cp26-*" cibuildwheel
       deploy:
         provider: releases
@@ -140,7 +141,7 @@ before_install:
       PYTHON_CMD=python$PYTHON
     elif [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew install ccache
-      PATH=$PATH:/usr/local/opt/ccache/libexec
+      export PATH=/usr/local/opt/ccache/libexec:$PATH
       if [ "$PYTHON" == "3" ]; then
         brew update
         brew install python3
