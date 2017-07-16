@@ -20,7 +20,6 @@
 #ifndef INC_MELDER_INFO_INTERCEPTOR_H
 #define INC_MELDER_INFO_INTERCEPTOR_H
 
-#include <sys/melder.h>
 #include "sys/melder.h"
 #include "UndefPraatMacros.h"
 

@@ -21,7 +21,7 @@
 
 #include "utils/pybind11/Optional.h"
 
-#include <pybind11/numpy.h> // TODO numpy dependency of python library
+#include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

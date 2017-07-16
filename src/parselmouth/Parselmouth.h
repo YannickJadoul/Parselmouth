@@ -58,11 +58,18 @@ public:
 	Positive(const Positive<T> &other) = default;
 	Positive(const T &wrapped) : m_wrapped(wrapped) {}
 
+	Positive(Positive<T> &&other) = default;
+	Positive(T &&wrapped) : m_wrapped(std::move(wrapped)) {}
+
 	Positive &operator=(const Positive<T> &other) = default;
 	Positive &operator=(const T &wrapped) { m_wrapped = wrapped; return *this; }
 
-	operator T&() { return m_wrapped; }
-	operator const T&() const { return m_wrapped; }
+	Positive &operator=(Positive<T> &&other) = default;
+	Positive &operator=(T &&wrapped) { m_wrapped = std::move(wrapped); return *this; }
+
+	operator T&() & { return m_wrapped; }
+	operator const T&() const & { return m_wrapped; }
+	operator T&&() && { return std::move(m_wrapped); }
 
 private:
 	T m_wrapped;
@@ -98,7 +105,7 @@ public:
 		return TCaster::cast(src, policy, parent);
 	}
 
-	PYBIND11_TYPE_CASTER(PositiveT, _("Positive[") + TCaster::name() + _("]"));
+	PYBIND11_TYPE_CASTER(PositiveT, _("Positive[") + TCaster::name() + _("]")); // TODO Python implementation of what Positive[] is, to get typecheckers happy?
 };
 
 } // namespace detail

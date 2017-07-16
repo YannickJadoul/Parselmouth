@@ -20,7 +20,7 @@
 #include "parselmouth/Parselmouth.h"
 #include "version.h"
 
-#include <pybind11/numpy.h> // TODO Add to dependencies in setup.py? What happens when numpy is not installed?
+#include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
 #include "fon/Formant.h" // TODO "" vs <> for Praat imports?
@@ -30,7 +30,7 @@
 #include "sys/praat.h"
 #include "sys/praat_version.h"
 
-#define XSTR(s) STR(s) // TODO Move somewhere else?
+#define XSTR(s) STR(s)
 #define STR(s) #s
 
 // TODO What to do with NUMundefined?
@@ -64,7 +64,7 @@ PYBIND11_MODULE(parselmouth, m) {
 			try {
 				if (p) std::rethrow_exception(p);
 			}
-			catch (const MelderError &e) {
+			catch (const MelderError &) {
 				std::string message(Melder_peek32to8(Melder_getError()));
 				message.erase(message.length() - 1);
 				Melder_clearError();
