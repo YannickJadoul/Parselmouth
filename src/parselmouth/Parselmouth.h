@@ -43,47 +43,66 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, _Thing_auto<T>);
 
 namespace parselmouth {
 
-// TODO Code organization, move to own header & folder
-template <typename T>
-class Positive {
+template <typename T, typename Impl>
+class Predicate {
+private:
+	using This = Predicate<T, Impl>;
+
 public:
-	Positive() : m_wrapped() {}
+	Predicate() : m_wrapped() {}
 
 	template <typename... Args>
-	Positive(Args &&... args) : m_wrapped(std::forward<Args>(args)...) {
-		if (m_wrapped <= 0)
-			throw std::domain_error("Wrapped type of Positive constructed with value smaller than or equal to zero");
+	Predicate(Args &&... args) : m_wrapped(std::forward<Args>(args)...) {
+		if (!Impl::check(m_wrapped))
+			throw std::domain_error(std::string(Impl::name()) + " constructed with invalid value");
 	}
 
-	Positive(const Positive<T> &other) = default;
-	Positive(const T &wrapped) : m_wrapped(wrapped) {}
+	Predicate(const This &other) = default;
+	Predicate(This &&other) = default;
 
-	Positive(Positive<T> &&other) = default;
-	Positive(T &&wrapped) : m_wrapped(std::move(wrapped)) {}
+	Predicate &operator=(const This &other) = default;
+	Predicate &operator=(This &&other) = default;
 
-	Positive &operator=(const Positive<T> &other) = default;
-	Positive &operator=(const T &wrapped) { m_wrapped = wrapped; return *this; }
-
-	Positive &operator=(Positive<T> &&other) = default;
-	Positive &operator=(T &&wrapped) { m_wrapped = std::move(wrapped); return *this; }
-
-	operator T&() & { return m_wrapped; }
-	operator const T&() const & { return m_wrapped; }
-	operator T&&() && { return std::move(m_wrapped); }
+	operator T &() & { return m_wrapped; }
+	operator const T &() const & { return m_wrapped; }
+	operator T &&() && { return std::move(m_wrapped); }
 
 private:
 	T m_wrapped;
 };
+
+// TODO Code organization, move to own header & folder
+class PositiveImpl {
+public:
+	template <typename T>
+	static bool check(const T &value) { return value > 0; }
+
+	static constexpr auto &name() { return "Positive"; }
+};
+
+template <typename T>
+using Positive = Predicate<T, PositiveImpl>;
+
+class NonNegativeImpl {
+public:
+	template <typename T>
+	static bool check(const T &value) { return value >= 0; }
+
+	static constexpr auto &name() { return "NonNegative"; }
+};
+
+template <typename T>
+using NonNegative = Predicate<T, NonNegativeImpl>;
 
 } // namespace parselmouth
 
 namespace pybind11 {
 namespace detail {
 
-template <typename T>
-class type_caster<parselmouth::Positive<T>> {
+template <typename T, typename Impl>
+class type_caster<parselmouth::Predicate<T, Impl>> {
 public:
-	using PositiveT = parselmouth::Positive<T>;
+	using PredicateT = parselmouth::Predicate<T, Impl>;
 	using TCaster = make_caster<T>;
 
 	bool load(handle src, bool convert) {
@@ -93,7 +112,7 @@ public:
 			return false;
 
 		auto subValue = cast_op<T>(subCaster);
-		if (subValue <= 0)
+		if (!Impl::check(subValue))
 			return false;
 
 		value = std::move(subValue);
@@ -101,11 +120,11 @@ public:
 		return true;
 	}
 
-	static handle cast(const PositiveT& src, return_value_policy policy, handle parent) {
+	static handle cast(const PredicateT &src, return_value_policy policy, handle parent) {
 		return TCaster::cast(src, policy, parent);
 	}
 
-	PYBIND11_TYPE_CASTER(PositiveT, _("Positive[") + TCaster::name() + _("]")); // TODO Python implementation of what Positive[] is, to get typecheckers happy?
+	PYBIND11_TYPE_CASTER(PredicateT, _(Impl::name()) + _("[") + TCaster::name() + _("]")); // TODO Python implementation of what Positive[T]/NonNegative[T]/... is, to get typecheckers happy?
 };
 
 } // namespace detail
