@@ -1,7 +1,10 @@
 language: cpp
 dist: trusty
 sudo: false
-cache: ccache
+cache:
+  ccache: true
+  directories:
+    - $HOME/Library/Caches/Homebrew
 
 env:
   global: BUILD_TYPE=Debug
@@ -10,100 +13,60 @@ compiler: gcc
 matrix:
   include:
     - env: PYTHON=2.7 GCC=5
-      addons:
+      addons: &gcc5
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
+          sources: [ubuntu-toolchain-r-test]
+          packages: [g++-5]
 
     - env: PYTHON=3.4 GCC=5
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
+      addons: *gcc5
 
     - env: PYTHON=3.5 GCC=5
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
+      addons: *gcc5
 
     - env: PYTHON=3.6 GCC=5
-      addons:
+      addons: &gcc5-python36
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - deadsnakes
-          packages:
-            - g++-5
-            - python3.6-dev
+          sources: [ubuntu-toolchain-r-test, deadsnakes]
+          packages: [g++-5, python3.6-dev]
 
     - env: PYTHON=2.7 GCC=5 BUILD_TYPE=Release
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
+      addons: *gcc5
 
     - env: PYTHON=3.6 GCC=5 BUILD_TYPE=Release
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - deadsnakes
-          packages:
-            - g++-5
-            - python3.6-dev
+      addons: *gcc5-python36
 
     - env: PYTHON=2.7 GCC=7
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
+          sources: [ubuntu-toolchain-r-test]
+          packages: [g++-7]
 
     - env: PYTHON=3.6 GCC=7
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - deadsnakes
-          packages:
-            - g++-7
-            - python3.6-dev
+          sources: [ubuntu-toolchain-r-test, deadsnakes]
+          packages: [g++-7, python3.6-dev]
 
     - env: PYTHON=2.7 CLANG=3.8
       compiler: clang
       addons:
         apt:
-          packages:
-            - clang-3.8
-            - libc++-dev
+          packages: [clang-3.8, libc++-dev]
 
     - env: PYTHON=3.6 CLANG=3.8
       compiler: clang
       addons:
         apt:
-          sources:
-            - deadsnakes
-          packages:
-            - clang-3.8
-            - libc++-dev
-            - python3.6-dev
+          sources: [deadsnakes]
+          packages: [clang-3.8, libc++-dev, python3.6-dev]
 
-    - env: PYTHON=2
+    - env: PYTHON=2.7
       os: osx
       osx_image: xcode8.3
       compiler: clang
 
-    - env: PYTHON=3
+    - env: PYTHON=3.6
       os: osx
       osx_image: xcode8.3
       compiler: clang
@@ -113,7 +76,8 @@ matrix:
       compiler: clang
       script:
         - pip install cibuildwheel
-        - CIBW_SKIP="cp26-*" cibuildwheel
+        - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
+        - CIBW_SKIP="cp33-*" cibuildwheel
       deploy:
         provider: releases
         api_key:
@@ -126,6 +90,8 @@ matrix:
           tags: true
 
 before_install:
+  - set -e
+  - if [ "$TRAVIS_BRANCH" == "appveyor" ]; then travis_terminate 0; fi
   - |
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       if [ -n "$GCC" ]; then
@@ -139,9 +105,10 @@ before_install:
       fi
       PYTHON_CMD=python$PYTHON
     elif [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      brew update > /dev/null
       brew install ccache
-      PATH=$PATH:/usr/local/opt/ccache/libexec
-      if [ "$PYTHON" == "3" ]; then
+      export PATH=/usr/local/opt/ccache/libexec:$PATH
+      if [ "${PYTHON%%.*}" == "3" ]; then
         brew update
         brew install python3
         PYTHON_CMD=python3
