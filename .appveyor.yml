@@ -1,0 +1,57 @@
+image: Visual Studio 2017
+build:
+  parallel: true
+platform:
+  - x64
+  - x86
+configuration:
+  - Debug
+  - Release
+environment:
+  matrix:
+    - PYTHON: 27
+    - PYTHON: 34
+    - PYTHON: 35
+    - PYTHON: 36
+    - WHEELS: 1
+      CIBW_SKIP: cp33-* cp35-* cp36-*
+    - WHEELS: 1
+      CIBW_SKIP: cp27-* cp33-* cp34-*
+
+matrix:
+  exclude:
+    - configuration: Release
+      PYTHON: 34
+    - configuration: Release
+      PYTHON: 35
+    - platform: x86
+      PYTHON: 34
+    - platform: x86
+      PYTHON: 35
+    - configuration: Release
+      platform: x86
+    - configuration: Debug
+      WHEELS: 1
+
+branches:
+  except:
+    - travis
+
+install:
+  - ps: |
+      if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
+      if ($env:PYTHON) {
+        if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
+        $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
+      }
+  - if defined WHEELS ( pip install cibuildwheel )
+build_script:
+  - if defined WHEELS ( set PYTHONUNBUFFERED=1 && cibuildwheel --output-dir wheelhouse )
+  - if not defined WHEELS ( cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" )
+  - if not defined WHEELS ( set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" )
+  - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target install -- /v:m /logger:%MSBuildLogger% )
+test_script:
+  - if not defined WHEELS ( cd installed && python -c "import parselmouth" )
+artifacts:
+  - path: "wheelhouse\\*.whl"
+    name: Wheels
