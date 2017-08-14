@@ -5,7 +5,7 @@ Though other attempts have been made at porting functionality from Praat to Pyth
 
 Please note that Parselmouth is currently in premature state and in active development. While the amount of functionality that is currently present is not huge, more will be added over the next few months.
 
-Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby), if you have any question, remarks, or requests!
+Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) if you have any question, remarks, or requests!
 
 
 
@@ -19,10 +19,10 @@ or, in case you have multiple installations of Python and don't know which `pip`
 import pip
 pip.main(['install', 'praat-parselmouth'])
 ```
+*The latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call pip immediately from the command line*
 
-- On Mac OS X, this should be fairly quickly.
+- On Windows and Mac OS X, the installation should finish fairly quickly.
 - On a Linux system, we do not have a binary distribution yet, but `pip install praat-parselmouth` should automatically build your project in 5 to 10 minutes if you have `cmake` installed.
-- Unfortunately, at this point in time, we do not have a Windows version available to download from the Python Package Index. Work will be done on this, and even sooner if we get feedback from interested potential Windows users ;-)
 
 
 If this results in an error, try updating `pip` to the latest version by running
@@ -115,8 +115,12 @@ Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Ne
 - Special thanks go to [Bill Thompson](https://billdthompson.github.io/) and [Robin Jadoul](https://github.com/RobinJadoul/) for their non-visible-in-history but very valuable contributions.
 
 ## License
-Parselmouth is released under the GNU General Public License, version 3 or later. See [the `LICENSE` file](LICENSE) for details.
+* Parselmouth is released under the GNU General Public License, version 3 or later. See [the `LICENSE` file](LICENSE) for details.
 
-[Praat](https://github.com/praat/praat) is released under [the GNU General Public License, version 2 or later](praat/main/GNU_General_Public_License.txt). Small changes to this code base, made in the context of Parselmouth, can be found within the `git` history.
+* [Praat](https://github.com/praat/praat) is released under [the GNU General Public License, version 2 or later](praat/main/GNU_General_Public_License.txt). Small changes to this code base, made in the context of Parselmouth, can be found within the `git` history.
 
-[pybind11](https://github.com/pybind/pybind11) is released under [a BSD-style license](pybind11/LICENSE).
+  Parselmouth only exposes Praat's existing functionality and implementation of algorithms. If you use Parselmouth in your research and plan to cite it in a scientific publication, please do not forget to [*cite Praat*](http://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html).
+
+  > Boersma, Paul & Weenink, David (2017). Praat: doing phonetics by computer [Computer program]. Version 6.0.28, retrieved 23 March 2017 from [http://www.praat.org/](http://www.praat.org/)  
+
+* [pybind11](https://github.com/pybind/pybind11) is released under [a BSD-style license](pybind11/LICENSE).
