@@ -41,47 +41,51 @@ import parselmouth
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn
+seaborn.set() # Use seaborn's default style to make graphs more pretty
 
-# Plot nice figures using Python’s “standard” matplotlib library
+# Plot nice figures using Python’s "standard" matplotlib library
 snd = parselmouth.Sound("~/z6a.WAVE")
-max_t = snd.num_samples / snd.sampling_frequency
-plt.plot(np.linspace(0, max_t, snd.num_samples), snd.values)
-plt.xlim([0, max_t])
+plt.figure()
+plt.plot(snd.x1 + snd.dx * np.arange(snd.nx), snd.values)
+plt.xlim([snd.xmin, snd.xmax])
 plt.xlabel("time [s]")
 plt.ylabel("amplitude")
-plt.show() # or plt.savefig("sound.pdf)
+plt.show() # or plt.savefig("sound.pdf")
 ```
 ![example_sound.png](res/images/example_sound.png)
 ```Python
-def draw_spectrogram(spectrogram, max_t, max_f=5000, dynamic_range=70):
-    X = np.linspace(0, max_t, spectrogram.values.shape[0])
-    Y = np.linspace(0, max_f, spectrogram.values.shape[1])
+def draw_spectrogram(spectrogram, dynamic_range=70):
+    X = spectrogram.x1 + spectrogram.dx * (np.arange(spectrogram.nx + 1) - 0.5)
+    Y = spectrogram.y1 + spectrogram.dy * (np.arange(spectrogram.ny + 1) - 0.5)
     sg_db = 10 * np.log10(spectrogram.values.T)
     plt.pcolormesh(X, Y, sg_db, vmin=sg_db.max() - dynamic_range, cmap='afmhot')
+    plt.ylim([spectrogram.ymin, spectrogram.ymax])
     plt.xlabel("time [s]")
     plt.ylabel("frequency [Hz]")
 
-def draw_intensity(intensity, max_t):
-    plt.plot(np.linspace(0, max_t, intensity.values.shape[0]), intensity.values, linewidth=3, color='w')
-    plt.plot(np.linspace(0, max_t, intensity.values.shape[0]), intensity.values, linewidth=1)
+def draw_intensity(intensity):
+    plt.plot(intensity.x1 + intensity.dx * np.arange(intensity.nx), intensity.values, linewidth=3, color='w')
+    plt.plot(intensity.x1 + intensity.dx * np.arange(intensity.nx), intensity.values, linewidth=1)
     plt.grid(False)
-    plt.xlim([0, max_t])
     plt.ylim(0)
     plt.ylabel("intensity [dB]")
 
 intensity = snd.to_intensity()
-
 spectrogram = snd.to_spectrogram()
-draw_spectrogram(spectrogram, max_t)
+plt.figure()
+draw_spectrogram(spectrogram)
 plt.twinx()
-draw_intensity(intensity, max_t)
-plt.show() # or plt.savefig("spectrogram.pdf)
+draw_intensity(intensity)
+plt.xlim([snd.xmin, snd.xmax])
+plt.show() # or plt.savefig("spectrogram.pdf")
 ```
 ![example_spectrogram.png](res/images/example_spectrogram.png)
 ```Python
 spectrogram = snd.to_spectrogram(window_length=0.05)
-draw_spectrogram(spectrogram, max_t)
-plt.show() # or plt.savefig("spectrogram_0.05.pdf)
+plt.figure()
+draw_spectrogram(spectrogram)
+plt.xlim([snd.xmin, snd.xmax])
+plt.show() # or plt.savefig("spectrogram_0.05.pdf")
 ```
 ![example_spectrogram_0.05.png](res/images/example_spectrogram_0.05.png)
 ```Python
