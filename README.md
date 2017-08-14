@@ -56,8 +56,8 @@ plt.show() # or plt.savefig("sound.pdf)
 def draw_spectrogram(spectrogram, max_t, max_f=5000, dynamic_range=70):
     X = np.linspace(0, max_t, spectrogram.values.shape[0])
     Y = np.linspace(0, max_f, spectrogram.values.shape[1])
-    spectrogram_db = 10 * np.log10(spectrogram.values.T)
-    plt.pcolormesh(X, Y, sg_db, vmin=spectrogram_db.max() - dynamic_range, cmap='afmhot')
+    sg_db = 10 * np.log10(spectrogram.values.T)
+    plt.pcolormesh(X, Y, sg_db, vmin=sg_db.max() - dynamic_range, cmap='afmhot')
     plt.xlabel("time [s]")
     plt.ylabel("frequency [Hz]")
 
