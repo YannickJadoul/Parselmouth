@@ -72,13 +72,9 @@ matrix:
       compiler: clang
 
     - stage: wheels
-      os: osx
-      compiler: clang
       script:
-        - pip install cibuildwheel
-        - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
-        - CIBW_SKIP="cp33-*" cibuildwheel
-      deploy:
+        - python setup.py sdist -d wheelhouse
+      deploy: &github-releases-deploy
         provider: releases
         api_key:
           secure: a/odACohfUh1T00U/v2T9TCiY4KRfgUwBsFJHf1mzmaphZIPwY8lLgYC1HvV7FD+ijrV9FQVxh+u5A+JbHlDSioW5LE5WXaB4KOYUphcCgoy47/FbyxJpQWNy62segip6/RDvKhpgHCc0Ii8qgXBSLtjyoiCRxbXyfX2u5EbD5fkU5Wip4o7Mqk2cp5NEXWx/u76SvOHH+zhueM2MkP4HvPSMI20jFs1vxb4VNK1EE++GdcZq3mwWFAJyPkuMVKxSF430Svm/qkE33btFQpdtAkUdh0jVu+tBD3RBOHvPAKab4uvDU2Pl5WFl+LYwyYKoZYQAIKVhGrwMbb5LlAaR0sfhq4YqT8HMqPBUPEOMo6OQ3zBoQER7QzHPQRFJBPptNMLtc3ugo0YdDc7bHlocDCah2TErlrzEzNxiC0vFCYv+hVSllWtQwMf56s/6LTQVxgska63tqUWbfA6M4yV37s9wJQsyrdlKnepJWdDDm1WxrZ0nhwxMN/tR+TmYi+tnDkY+JxPwBXyibg/ZARn+7spdjrKbE3uKFwQG2OqkJXiW3LOc7VDyK/s5mj1qJmHDTjTOlwyw5BDclkHAF3hvnci7BefkRRKpba01neFmoMHhdidhvvwLCxhEPTgGKW0rwUfMPJpElWJkjI1OmCpwyyEeOP0IOIZKmvdajsINJY=
@@ -88,6 +84,15 @@ matrix:
         on:
           repo: YannickJadoul/Parselmouth
           tags: true
+
+    - stage: wheels
+      os: osx
+      compiler: clang
+      script:
+        - pip install cibuildwheel
+        - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
+        - CIBW_SKIP="cp33-*" cibuildwheel
+      deploy: *github-releases-deploy
 
 before_install:
   - set -e
