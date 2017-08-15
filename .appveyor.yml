@@ -58,9 +58,10 @@ artifacts:
 
 deploy:
   provider: GitHub
-  description: ''
   auth_token:
     secure: k/rbI8NyOne2TXwt49at6R7MfhL1gsMU257T++hJgCj7RsO+q6xpQfWkSqAMFfa7
+  description: ''
   artifact: Wheels
   on:
     appveyor_repo_tag: true
+  draft: true
