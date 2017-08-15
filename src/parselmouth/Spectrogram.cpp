@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 
 #include "utils/SignatureCast.h"
+#include "utils/pybind11/NumericPredicates.h"
 
 #include "fon/Sound_and_Spectrogram.h"
 #include "fon/Spectrum_and_Spectrogram.h"

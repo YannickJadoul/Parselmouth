@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 
 #include "utils/SignatureCast.h"
+#include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
 #include "dwtools/Sound_extensions.h"
@@ -475,7 +476,7 @@ void Binding<Sound>::init() {
 	    "fast"_a = true);
 
 	def("to_spectrogram",
-	    [](Sound self, Positive<double> window_length, Positive<double> maximum_frequency, Positive<double> time_step, Positive<double> frequency_step, kSound_to_Spectrogram_windowShape window_shape) { return Sound_to_Spectrogram(self, window_length, maximum_frequency, time_step, frequency_step, window_shape, 8.0, 8.0); },
+	    [](Sound self, Positive<double> windowLength, Positive<double> maximumFrequency, Positive<double> timeStep, Positive<double> frequencyStep, kSound_to_Spectrogram_windowShape windowShape) { return Sound_to_Spectrogram(self, windowLength, maximumFrequency, timeStep, frequencyStep, windowShape, 8.0, 8.0); },
 	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN);
 
 	// TODO To Formant...
@@ -495,7 +496,7 @@ void Binding<Sound>::init() {
 	           "sounds"_a);
 
 	def_static("concatenate",
-	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds, Positive<double> overlap) {
+	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds, NonNegative<double> overlap) {
 		           auto ordered = referencesToOrderedOf<structSound>(sounds);
 		           return Sounds_concatenate(ordered, overlap);
 	           },

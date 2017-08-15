@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 
 #include "utils/SignatureCast.h"
+#include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
 #include "dwtools/Spectrum_extensions.h"
