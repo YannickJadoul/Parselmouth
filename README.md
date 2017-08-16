@@ -1,4 +1,11 @@
 # Parselmouth - Praat in Python, the Pythonic way
+
+[![PyPI](https://img.shields.io/pypi/v/praat-parselmouth.svg)](https://pypi.python.org/pypi/praat-parselmouth)
+[![Gitter chat](https://img.shields.io/gitter/room/PraatParselmouth/Lobby.svg)](https://gitter.im/PraatParselmouth/Lobby)
+[![Travis CI status](https://img.shields.io/travis/YannickJadoul/Parselmouth.svg)](https://travis-ci.org/YannickJadoul/Parselmouth/)
+[![AppVeyor status](https://img.shields.io/appveyor/ci/YannickJadoul/Parselmouth.svg)](https://ci.appveyor.com/project/YannickJadoul/parselmouth)
+[![License](https://img.shields.io/pypi/l/praat-parselmouth.svg)](https://github.com/YannickJadoul/Parselmouth/blob/master/LICENSE)
+
 **Parselmouth** is a Python library for the [Praat](http://www.praat.org) software.
 
 Though other attempts have been made at porting functionality from Praat to Python, Parselmouth is unique in its aim to provide a complete and Pythonic interface to the internal Praat code. While other projects either wrap Praat's scripting language or reimplementing parts of Praat's functionality in Python, Parselmouth directly accesses Praat's C/C++ code (which means the algorithms and their output are exactly the same as in Praat) and provides efficient access to the program's data, but *also* provides an interface that looks no different from any other Python library.
