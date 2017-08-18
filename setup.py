@@ -91,11 +91,38 @@ def find_version(*file_paths):
 		return version_match.group(1)
 	raise RuntimeError("Unable to find version string.")
 
+long_description="""Parselmouth - Praat in Python, the Pythonic way
+===============================================
+
+**Parselmouth** is a Python library for the
+`Praat <http://www.praat.org>`__ software.
+
+Though other attempts have been made at porting functionality from Praat
+to Python, Parselmouth is unique in its aim to provide a complete and
+Pythonic interface to the internal Praat code. While other projects
+either wrap Praat's scripting language or reimplementing parts of
+Praat's functionality in Python, Parselmouth directly accesses Praat's
+C/C++ code (which means the algorithms and their output are exactly the
+same as in Praat) and provides efficient access to the program's data,
+but *also* provides an interface that looks no different from any other
+Python library.
+
+Drop by our `Gitter chat
+room <https://gitter.im/PraatParselmouth/Lobby>`__ if you have any
+question, remarks, or requests!
+
+*More information on the
+`**installation** <https://github.com/YannickJadoul/Parselmouth#installation>`__
+and some basic
+`**examples** <https://github.com/YannickJadoul/Parselmouth#example-usage>`__
+can be found on **Parselmouth's GitHub repository**:
+https://github.com/YannickJadoul/Parselmouth*"""
+
 setup(
 	name='praat-parselmouth',
 	version=find_version('src', 'version.h'),
 	description='Praat in Python, the Pythonic way',
-	long_description=read('README.md'),
+	long_description=long_description,
 	url='https://github.com/YannickJadoul/Parselmouth',
 	author='Yannick Jadoul',
 	author_email='Yannick.Jadoul@ai.vub.ac.be',
@@ -111,7 +138,6 @@ setup(
 		'Programming Language :: Python :: 2',
 		'Programming Language :: Python :: 2.7',
 		'Programming Language :: Python :: 3',
-		'Programming Language :: Python :: 3.3',
 		'Programming Language :: Python :: 3.4',
 		'Programming Language :: Python :: 3.5',
 		'Programming Language :: Python :: 3.6',

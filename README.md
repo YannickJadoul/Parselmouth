@@ -14,19 +14,25 @@ Please note that Parselmouth is currently in premature state and in active devel
 
 Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) if you have any question, remarks, or requests!
 
-
-
 ## Installation
 Parselmouth can be installed like any other Python library, using (a recent version of) the Python package manager `pip`:
 ```
 pip install praat-parselmouth
 ```
-or, in case you have multiple installations of Python and don't know which `pip` belongs to which Python version *(looking at you, OS X)*:
-```python
+or, to update your installed version to the latest release:
+```
+pip install -U praat-parselmouth
+```
+*The version number of your current Parselmouth installation, can be found in the `parselmouth.__version__` variable.*
+
+If you use the Anaconda distribution of Python, you can use the same `pip` command in a terminal of the appropriate Anaconda environment, either activated through the [Anaconda Navigator](https://docs.continuum.io/anaconda/navigator/tutorials/manage-environments#using-an-environment) or [conda tool](https://docs.continuum.io/docs_oss/conda/using/envs#change-environments-activate-deactivate).
+
+In case you have multiple installations of Python and don't know which `pip` belongs to which Python version *(looking at you, OS X)*:
+```Python
 import pip
 pip.main(['install', 'praat-parselmouth'])
 ```
-*The latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call pip immediately from the command line*
+*The latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call pip immediately from the command line.*
 
 - On Windows and Mac OS X, the installation should finish fairly quickly.
 - On a Linux system, we do not have a binary distribution yet, but `pip install praat-parselmouth` should automatically build your project in 5 to 10 minutes if you have `cmake` installed.
@@ -50,7 +56,7 @@ import matplotlib.pyplot as plt
 import seaborn
 seaborn.set() # Use seaborn's default style to make graphs more pretty
 
-# Plot nice figures using Python’s "standard" matplotlib library
+# Plot nice figures using Python's "standard" matplotlib library
 snd = parselmouth.Sound("~/z6a.WAVE")
 plt.figure()
 plt.plot(snd.x1 + snd.dx * np.arange(snd.nx), snd.values)
