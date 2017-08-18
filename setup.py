@@ -111,12 +111,9 @@ Drop by our `Gitter chat
 room <https://gitter.im/PraatParselmouth/Lobby>`__ if you have any
 question, remarks, or requests!
 
-*More information on the
-`**installation** <https://github.com/YannickJadoul/Parselmouth#installation>`__
-and some basic
-`**examples** <https://github.com/YannickJadoul/Parselmouth#example-usage>`__
-can be found on **Parselmouth's GitHub repository**:
-https://github.com/YannickJadoul/Parselmouth*"""
+More information on the **installation** and some basic **examples**
+can be found on Parselmouth's GitHub repository:
+https://github.com/YannickJadoul/Parselmouth"""
 
 setup(
 	name='praat-parselmouth',
