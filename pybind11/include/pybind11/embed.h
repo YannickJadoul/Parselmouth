@@ -51,7 +51,6 @@
             pybind11_init_##name(m);                                          \
             return m.ptr();                                                   \
         } catch (pybind11::error_already_set &e) {                            \
-            e.clear();                                                        \
             PyErr_SetString(PyExc_ImportError, e.what());                     \
             return nullptr;                                                   \
         } catch (const std::exception &e) {                                   \
@@ -64,7 +63,7 @@
     void pybind11_init_##name(pybind11::module &variable)
 
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
 
 /// Python 2.7/3.x compatible version of `PyImport_AppendInittab` and error checks.
@@ -100,8 +99,7 @@ inline void initialize_interpreter(bool init_signal_handlers = true) {
     Py_InitializeEx(init_signal_handlers ? 1 : 0);
 
     // Make .py files in the working directory available by default
-    auto sys_path = reinterpret_borrow<list>(module::import("sys").attr("path"));
-    sys_path.append(".");
+    module::import("sys").attr("path").cast<list>().append(".");
 }
 
 /** \rst
@@ -143,7 +141,11 @@ inline void finalize_interpreter() {
     handle builtins(PyEval_GetBuiltins());
     const char *id = PYBIND11_INTERNALS_ID;
 
-    detail::internals **internals_ptr_ptr = nullptr;
+    // Get the internals pointer (without creating it if it doesn't exist).  It's possible for the
+    // internals to be created during Py_Finalize() (e.g. if a py::capsule calls `get_internals()`
+    // during destruction), so we get the pointer-pointer here and check it after Py_Finalize().
+    detail::internals **internals_ptr_ptr = &detail::get_internals_ptr();
+    // It could also be stashed in builtins, so look there too:
     if (builtins.contains(id) && isinstance<capsule>(builtins[id]))
         internals_ptr_ptr = capsule(builtins[id]);
 
@@ -188,4 +190,4 @@ private:
     bool is_valid = true;
 };
 
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)

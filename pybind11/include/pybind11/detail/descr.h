@@ -1,5 +1,5 @@
 /*
-    pybind11/descr.h: Helper type for concatenating type signatures
+    pybind11/detail/descr.h: Helper type for concatenating type signatures
     either at runtime (C++11) or compile time (C++14)
 
     Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
@@ -12,7 +12,7 @@
 
 #include "common.h"
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
 
 /* Concatenate type signatures at compile time using C++14 */
@@ -182,4 +182,4 @@ PYBIND11_NOINLINE inline descr type_descr(descr&& d) { return _("{") + std::move
 #endif
 
 NAMESPACE_END(detail)
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)

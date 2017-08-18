@@ -12,7 +12,7 @@
 #include "pybind11.h"
 #include <functional>
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
 
 template <typename Return, typename... Args>
@@ -46,7 +46,8 @@ public:
             auto c = reinterpret_borrow<capsule>(PyCFunction_GET_SELF(cfunc.ptr()));
             auto rec = (function_record *) c;
 
-            if (rec && rec->is_stateless && rec->data[1] == &typeid(function_type)) {
+            if (rec && rec->is_stateless &&
+                    same_type(typeid(function_type), *reinterpret_cast<const std::type_info *>(rec->data[1]))) {
                 struct capture { function_type f; };
                 value = ((capture *) &rec->data)->f;
                 return true;
@@ -81,4 +82,4 @@ public:
 };
 
 NAMESPACE_END(detail)
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)

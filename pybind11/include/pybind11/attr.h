@@ -12,7 +12,7 @@
 
 #include "cast.h"
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 /// \addtogroup annotations
 /// @{
@@ -64,6 +64,9 @@ struct metaclass {
     explicit metaclass(handle value) : value(value) { }
 };
 
+/// Annotation that marks a class as local to the module:
+struct module_local { const bool value; constexpr module_local(bool v = true) : value(v) { } };
+
 /// Annotation to mark enums as an arithmetic type
 struct arithmetic { };
 
@@ -113,8 +116,6 @@ enum op_id : int;
 enum op_type : int;
 struct undefined_t;
 template <op_id id, op_type ot, typename L = undefined_t, typename R = undefined_t> struct op_;
-template <typename... Args> struct init;
-template <typename... Args> struct init_alias;
 inline void keep_alive_impl(size_t Nurse, size_t Patient, function_call &call, handle ret);
 
 /// Internal data structure which holds metadata about a keyword argument
@@ -196,7 +197,7 @@ struct function_record {
 /// Special data structure which (temporarily) holds metadata about a bound class
 struct type_record {
     PYBIND11_NOINLINE type_record()
-        : multiple_inheritance(false), dynamic_attr(false), buffer_protocol(false) { }
+        : multiple_inheritance(false), dynamic_attr(false), buffer_protocol(false), module_local(false) { }
 
     /// Handle to the parent scope
     handle scope;
@@ -210,17 +211,17 @@ struct type_record {
     /// How large is the underlying C++ type?
     size_t type_size = 0;
 
-    /// How large is pybind11::instance<type>?
-    size_t instance_size = 0;
+    /// How large is the type's holder?
+    size_t holder_size = 0;
 
     /// The global operator new can be overridden with a class-specific variant
     void *(*operator_new)(size_t) = ::operator new;
 
-    /// Function pointer to class_<..>::init_holder
-    void (*init_holder)(PyObject *, const void *) = nullptr;
+    /// Function pointer to class_<..>::init_instance
+    void (*init_instance)(instance *, const void *) = nullptr;
 
     /// Function pointer to class_<..>::dealloc
-    void (*dealloc)(PyObject *) = nullptr;
+    void (*dealloc)(detail::value_and_holder &) = nullptr;
 
     /// List of base classes of the newly created type
     list bases;
@@ -243,17 +244,20 @@ struct type_record {
     /// Is the default (unique_ptr) holder type used?
     bool default_holder : 1;
 
-    PYBIND11_NOINLINE void add_base(const std::type_info *base, void *(*caster)(void *)) {
-        auto base_info = detail::get_type_info(*base, false);
+    /// Is the class definition local to the module shared object?
+    bool module_local : 1;
+
+    PYBIND11_NOINLINE void add_base(const std::type_info &base, void *(*caster)(void *)) {
+        auto base_info = detail::get_type_info(base, false);
         if (!base_info) {
-            std::string tname(base->name());
+            std::string tname(base.name());
             detail::clean_type_id(tname);
             pybind11_fail("generic_type: type \"" + std::string(name) +
                           "\" referenced unknown base type \"" + tname + "\"");
         }
 
         if (default_holder != base_info->default_holder) {
-            std::string tname(base->name());
+            std::string tname(base.name());
             detail::clean_type_id(tname);
             pybind11_fail("generic_type: type \"" + std::string(name) + "\" " +
                     (default_holder ? "does not have" : "has") +
@@ -384,7 +388,7 @@ struct process_attribute<T, enable_if_t<is_pyobject<T>::value>> : process_attrib
 /// Process a parent class attribute (deprecated, does not support multiple inheritance)
 template <typename T>
 struct process_attribute<base<T>> : process_attribute_default<base<T>> {
-    static void init(const base<T> &, type_record *r) { r->add_base(&typeid(T), nullptr); }
+    static void init(const base<T> &, type_record *r) { r->add_base(typeid(T), nullptr); }
 };
 
 /// Process a multiple inheritance attribute
@@ -408,6 +412,10 @@ struct process_attribute<metaclass> : process_attribute_default<metaclass> {
     static void init(const metaclass &m, type_record *r) { r->metaclass = m.value; }
 };
 
+template <>
+struct process_attribute<module_local> : process_attribute_default<module_local> {
+    static void init(const module_local &l, type_record *r) { r->module_local = l.value; }
+};
 
 /// Process an 'arithmetic' attribute for enums (does nothing here)
 template <>
@@ -468,4 +476,4 @@ constexpr bool expected_num_args(size_t nargs, bool has_args, bool has_kwargs) {
 }
 
 NAMESPACE_END(detail)
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)

@@ -9,13 +9,13 @@
 
 #pragma once
 
-#include "common.h"
+#include "detail/common.h"
 #include "operators.h"
 
 #include <algorithm>
 #include <sstream>
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
 
 /* SFINAE helper class used by 'is_comparable */
@@ -66,10 +66,7 @@ template <typename, typename, typename... Args> void vector_if_insertion_operato
 template <typename, typename, typename... Args> void vector_modifiers(const Args &...) { }
 
 template<typename Vector, typename Class_>
-void vector_if_copy_constructible(enable_if_t<
-    std::is_copy_constructible<Vector>::value &&
-    std::is_copy_constructible<typename Vector::value_type>::value, Class_> &cl) {
-
+void vector_if_copy_constructible(enable_if_t<is_copy_constructible<Vector>::value, Class_> &cl) {
     cl.def(init<const Vector &>(), "Copy constructor");
 }
 
@@ -113,7 +110,7 @@ void vector_if_equal_operator(enable_if_t<is_comparable<Vector>::value, Class_> 
 // (Technically, some of these (pop and __delitem__) don't actually require copyability, but it seems
 // silly to allow deletion but not insertion, so include them here too.)
 template <typename Vector, typename Class_>
-void vector_modifiers(enable_if_t<std::is_copy_constructible<typename Vector::value_type>::value, Class_> &cl) {
+void vector_modifiers(enable_if_t<is_copy_constructible<typename Vector::value_type>::value, Class_> &cl) {
     using T = typename Vector::value_type;
     using SizeType = typename Vector::size_type;
     using DiffType = typename Vector::difference_type;
@@ -376,10 +373,16 @@ NAMESPACE_END(detail)
 // std::vector
 //
 template <typename Vector, typename holder_type = std::unique_ptr<Vector>, typename... Args>
-class_<Vector, holder_type> bind_vector(module &m, std::string const &name, Args&&... args) {
+class_<Vector, holder_type> bind_vector(handle scope, std::string const &name, Args&&... args) {
     using Class_ = class_<Vector, holder_type>;
 
-    Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
+    // If the value_type is unregistered (e.g. a converting type) or is itself registered
+    // module-local then make the vector binding module-local as well:
+    using vtype = typename Vector::value_type;
+    auto vtype_info = detail::get_type_info(typeid(vtype));
+    bool local = !vtype_info || vtype_info->module_local;
+
+    Class_ cl(scope, name.c_str(), pybind11::module_local(local), std::forward<Args>(args)...);
 
     // Declare the buffer interface if a buffer_protocol() is passed in
     detail::vector_buffer<Vector, Class_, Args...>(cl);
@@ -487,7 +490,7 @@ void map_assignment(enable_if_t<std::is_copy_assignable<typename Map::mapped_typ
 template<typename Map, typename Class_>
 void map_assignment(enable_if_t<
         !std::is_copy_assignable<typename Map::mapped_type>::value &&
-        std::is_copy_constructible<typename Map::mapped_type>::value,
+        is_copy_constructible<typename Map::mapped_type>::value,
         Class_> &cl) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
@@ -531,12 +534,22 @@ template <typename Map, typename Class_> auto map_if_insertion_operator(Class_ &
 NAMESPACE_END(detail)
 
 template <typename Map, typename holder_type = std::unique_ptr<Map>, typename... Args>
-class_<Map, holder_type> bind_map(module &m, const std::string &name, Args&&... args) {
+class_<Map, holder_type> bind_map(handle scope, const std::string &name, Args&&... args) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
     using Class_ = class_<Map, holder_type>;
 
-    Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
+    // If either type is a non-module-local bound type then make the map binding non-local as well;
+    // otherwise (e.g. both types are either module-local or converting) the map will be
+    // module-local.
+    auto tinfo = detail::get_type_info(typeid(MappedType));
+    bool local = !tinfo || tinfo->module_local;
+    if (local) {
+        tinfo = detail::get_type_info(typeid(KeyType));
+        local = !tinfo || tinfo->module_local;
+    }
+
+    Class_ cl(scope, name.c_str(), pybind11::module_local(local), std::forward<Args>(args)...);
 
     cl.def(init<>());
 
@@ -585,4 +598,4 @@ class_<Map, holder_type> bind_map(module &m, const std::string &name, Args&&... 
     return cl;
 }
 
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)

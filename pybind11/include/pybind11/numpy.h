@@ -34,7 +34,7 @@
    upon the library user. */
 static_assert(sizeof(ssize_t) == sizeof(Py_intptr_t), "ssize_t != Py_intptr_t");
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 class array; // Forward declaration
 
@@ -689,7 +689,7 @@ public:
      * care: the array must not be destroyed or reshaped for the duration of the returned object,
      * and the caller must take care not to access invalid dimensions or dimension indices.
      */
-    template <typename T, ssize_t Dims = -1> detail::unchecked_mutable_reference<T, Dims> mutable_unchecked() {
+    template <typename T, ssize_t Dims = -1> detail::unchecked_mutable_reference<T, Dims> mutable_unchecked() & {
         if (Dims >= 0 && ndim() != Dims)
             throw std::domain_error("array has incorrect number of dimensions: " + std::to_string(ndim()) +
                     "; expected " + std::to_string(Dims));
@@ -703,7 +703,7 @@ public:
      * reshaped for the duration of the returned object, and the caller must take care not to access
      * invalid dimensions or dimension indices.
      */
-    template <typename T, ssize_t Dims = -1> detail::unchecked_reference<T, Dims> unchecked() const {
+    template <typename T, ssize_t Dims = -1> detail::unchecked_reference<T, Dims> unchecked() const & {
         if (Dims >= 0 && ndim() != Dims)
             throw std::domain_error("array has incorrect number of dimensions: " + std::to_string(ndim()) +
                     "; expected " + std::to_string(Dims));
@@ -876,7 +876,7 @@ public:
      * care: the array must not be destroyed or reshaped for the duration of the returned object,
      * and the caller must take care not to access invalid dimensions or dimension indices.
      */
-    template <ssize_t Dims = -1> detail::unchecked_mutable_reference<T, Dims> mutable_unchecked() {
+    template <ssize_t Dims = -1> detail::unchecked_mutable_reference<T, Dims> mutable_unchecked() & {
         return array::mutable_unchecked<T, Dims>();
     }
 
@@ -887,7 +887,7 @@ public:
      * for the duration of the returned object, and the caller must take care not to access invalid
      * dimensions or dimension indices.
      */
-    template <ssize_t Dims = -1> detail::unchecked_reference<T, Dims> unchecked() const {
+    template <ssize_t Dims = -1> detail::unchecked_reference<T, Dims> unchecked() const & {
         return array::unchecked<T, Dims>();
     }
 
@@ -1147,6 +1147,11 @@ private:
     }
 };
 
+#ifdef __CLION_IDE__ // replace heavy macro with dummy code for the IDE (doesn't affect code)
+# define PYBIND11_NUMPY_DTYPE(Type, ...) ((void)0)
+# define PYBIND11_NUMPY_DTYPE_EX(Type, ...) ((void)0)
+#else
+
 #define PYBIND11_FIELD_DESCRIPTOR_EX(T, Field, Name)                                          \
     ::pybind11::detail::field_descriptor {                                                    \
         Name, offsetof(T, Field), sizeof(decltype(std::declval<T>().Field)),                  \
@@ -1213,6 +1218,8 @@ private:
 #define PYBIND11_NUMPY_DTYPE_EX(Type, ...) \
     ::pybind11::detail::npy_format_descriptor<Type>::register_dtype \
         ({PYBIND11_MAP2_LIST (PYBIND11_FIELD_DESCRIPTOR_EX, Type, __VA_ARGS__)})
+
+#endif // __CLION_IDE__
 
 template  <class T>
 using array_iterator = typename std::add_pointer<T>::type;
@@ -1564,10 +1571,10 @@ vectorize(Return (*f) (Args ...)) {
 }
 
 // lambda vectorizer:
-template <typename Func, typename FuncType = typename detail::remove_class<decltype(&detail::remove_reference_t<Func>::operator())>::type>
+template <typename Func, detail::enable_if_t<detail::is_lambda<Func>::value, int> = 0>
 auto vectorize(Func &&f) -> decltype(
-        detail::vectorize_extractor(std::forward<Func>(f), (FuncType *) nullptr)) {
-    return detail::vectorize_extractor(std::forward<Func>(f), (FuncType *) nullptr);
+        detail::vectorize_extractor(std::forward<Func>(f), (detail::function_signature_t<Func> *) nullptr)) {
+    return detail::vectorize_extractor(std::forward<Func>(f), (detail::function_signature_t<Func> *) nullptr);
 }
 
 // Vectorize a class method (non-const):
@@ -1584,7 +1591,7 @@ Helper vectorize(Return (Class::*f)(Args...) const) {
     return Helper(std::mem_fn(f));
 }
 
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
