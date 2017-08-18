@@ -1,5 +1,5 @@
 /*
-    pybind11/typeid.h: Convenience wrapper classes for basic Python types
+    pybind11/pytypes.h: Convenience wrapper classes for basic Python types
 
     Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "common.h"
+#include "detail/common.h"
 #include "buffer_info.h"
 #include <utility>
 #include <type_traits>
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 /* A few forward declarations */
 class handle; class object;
@@ -279,6 +279,42 @@ template <typename T> T reinterpret_borrow(handle h) { return {h, object::borrow
 \endrst */
 template <typename T> T reinterpret_steal(handle h) { return {h, object::stolen_t{}}; }
 
+NAMESPACE_BEGIN(detail)
+inline std::string error_string();
+NAMESPACE_END(detail)
+
+/// Fetch and hold an error which was already set in Python.  An instance of this is typically
+/// thrown to propagate python-side errors back through C++ which can either be caught manually or
+/// else falls back to the function dispatcher (which then raises the captured error back to
+/// python).
+class error_already_set : public std::runtime_error {
+public:
+    /// Constructs a new exception from the current Python error indicator, if any.  The current
+    /// Python error indicator will be cleared.
+    error_already_set() : std::runtime_error(detail::error_string()) {
+        PyErr_Fetch(&type.ptr(), &value.ptr(), &trace.ptr());
+    }
+
+    inline ~error_already_set();
+
+    /// Give the currently-held error back to Python, if any.  If there is currently a Python error
+    /// already set it is cleared first.  After this call, the current object no longer stores the
+    /// error variables (but the `.what()` string is still available).
+    void restore() { PyErr_Restore(type.release().ptr(), value.release().ptr(), trace.release().ptr()); }
+
+    // Does nothing; provided for backwards compatibility.
+    PYBIND11_DEPRECATED("Use of error_already_set.clear() is deprecated")
+    void clear() {}
+
+    /// Check if the currently trapped error type matches the given Python exception class (or a
+    /// subclass thereof).  May also be passed a tuple to search for any exception class matches in
+    /// the given tuple.
+    bool matches(handle ex) const { return PyErr_GivenExceptionMatches(ex.ptr(), type.ptr()); }
+
+private:
+    object type, value, trace;
+};
+
 /** \defgroup python_builtins _
     Unless stated otherwise, the following C++ functions behave the same
     as their Python counterparts.
@@ -388,6 +424,8 @@ class accessor : public object_api<accessor<Policy>> {
 
 public:
     accessor(handle obj, key_type key) : obj(obj), key(std::move(key)) { }
+    accessor(const accessor &a) = default;
+    accessor(accessor &&a) = default;
 
     // accessor overload required to override default assignment operator (templates are not allowed
     // to replace default compiler-generated assignments).
@@ -693,7 +731,12 @@ NAMESPACE_END(detail)
 #define PYBIND11_OBJECT_CVT(Name, Parent, CheckFun, ConvertFun) \
     PYBIND11_OBJECT_COMMON(Name, Parent, CheckFun) \
     /* This is deliberately not 'explicit' to allow implicit conversion from object: */ \
-    Name(const object &o) : Parent(ConvertFun(o.ptr()), stolen_t{}) { if (!m_ptr) throw error_already_set(); }
+    Name(const object &o) \
+    : Parent(check_(o) ? o.inc_ref().ptr() : ConvertFun(o.ptr()), stolen_t{}) \
+    { if (!m_ptr) throw error_already_set(); } \
+    Name(object &&o) \
+    : Parent(check_(o) ? o.release().ptr() : ConvertFun(o.ptr()), stolen_t{}) \
+    { if (!m_ptr) throw error_already_set(); }
 
 #define PYBIND11_OBJECT(Name, Parent, CheckFun) \
     PYBIND11_OBJECT_COMMON(Name, Parent, CheckFun) \
@@ -929,6 +972,28 @@ private:
     }
 };
 
+NAMESPACE_BEGIN(detail)
+// Converts a value to the given unsigned type.  If an error occurs, you get back (Unsigned) -1;
+// otherwise you get back the unsigned long or unsigned long long value cast to (Unsigned).
+// (The distinction is critically important when casting a returned -1 error value to some other
+// unsigned type: (A)-1 != (B)-1 when A and B are unsigned types of different sizes).
+template <typename Unsigned>
+Unsigned as_unsigned(PyObject *o) {
+    if (sizeof(Unsigned) <= sizeof(unsigned long)
+#if PY_VERSION_HEX < 0x03000000
+            || PyInt_Check(o)
+#endif
+    ) {
+        unsigned long v = PyLong_AsUnsignedLong(o);
+        return v == (unsigned long) -1 && PyErr_Occurred() ? (Unsigned) -1 : (Unsigned) v;
+    }
+    else {
+        unsigned long long v = PyLong_AsUnsignedLongLong(o);
+        return v == (unsigned long long) -1 && PyErr_Occurred() ? (Unsigned) -1 : (Unsigned) v;
+    }
+}
+NAMESPACE_END(detail)
+
 class int_ : public object {
 public:
     PYBIND11_OBJECT_CVT(int_, object, PYBIND11_LONG_CHECK, PyNumber_Long)
@@ -954,17 +1019,11 @@ public:
     template <typename T,
               detail::enable_if_t<std::is_integral<T>::value, int> = 0>
     operator T() const {
-        if (sizeof(T) <= sizeof(long)) {
-            if (std::is_signed<T>::value)
-                return (T) PyLong_AsLong(m_ptr);
-            else
-                return (T) PyLong_AsUnsignedLong(m_ptr);
-        } else {
-            if (std::is_signed<T>::value)
-                return (T) PYBIND11_LONG_AS_LONGLONG(m_ptr);
-            else
-                return (T) PYBIND11_LONG_AS_UNSIGNED_LONGLONG(m_ptr);
-        }
+        return std::is_unsigned<T>::value
+            ? detail::as_unsigned<T>(m_ptr)
+            : sizeof(T) <= sizeof(long)
+              ? (T) PyLong_AsLong(m_ptr)
+              : (T) PYBIND11_LONG_AS_LONGLONG(m_ptr);
     }
 };
 
@@ -1014,8 +1073,8 @@ public:
     PYBIND11_DEPRECATED("Use reinterpret_borrow<capsule>() or reinterpret_steal<capsule>()")
     capsule(PyObject *ptr, bool is_borrowed) : object(is_borrowed ? object(ptr, borrowed_t{}) : object(ptr, stolen_t{})) { }
 
-    explicit capsule(const void *value)
-        : object(PyCapsule_New(const_cast<void *>(value), nullptr, nullptr), stolen_t{}) {
+    explicit capsule(const void *value, const char *name = nullptr, void (*destructor)(PyObject *) = nullptr)
+        : object(PyCapsule_New(const_cast<void *>(value), name, destructor), stolen_t{}) {
         if (!m_ptr)
             pybind11_fail("Could not allocate capsule object!");
     }
@@ -1052,10 +1111,13 @@ public:
     }
 
     template <typename T> operator T *() const {
-        T * result = static_cast<T *>(PyCapsule_GetPointer(m_ptr, nullptr));
+        auto name = this->name();
+        T * result = static_cast<T *>(PyCapsule_GetPointer(m_ptr, name));
         if (!result) pybind11_fail("Unable to extract capsule contents!");
         return result;
     }
+
+    const char *name() const { return PyCapsule_GetName(m_ptr); }
 };
 
 class tuple : public object {
@@ -1258,4 +1320,4 @@ template <typename D>
 handle object_api<D>::get_type() const { return (PyObject *) Py_TYPE(derived().ptr()); }
 
 NAMESPACE_END(detail)
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)

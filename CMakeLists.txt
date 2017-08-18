@@ -36,14 +36,16 @@ set(PYTHON_MODULE_EXTENSION ${PYTHON_MODULE_EXTENSION} CACHE INTERNAL "")
 
 # NB: when adding a header don't forget to also add it to setup.py
 set(PYBIND11_HEADERS
+  include/pybind11/detail/class.h
+  include/pybind11/detail/common.h
+  include/pybind11/detail/descr.h
+  include/pybind11/detail/init.h
+  include/pybind11/detail/typeid.h
   include/pybind11/attr.h
   include/pybind11/buffer_info.h
   include/pybind11/cast.h
   include/pybind11/chrono.h
-  include/pybind11/class_support.h
-  include/pybind11/common.h
   include/pybind11/complex.h
-  include/pybind11/descr.h
   include/pybind11/options.h
   include/pybind11/eigen.h
   include/pybind11/embed.h
@@ -55,7 +57,6 @@ set(PYBIND11_HEADERS
   include/pybind11/pytypes.h
   include/pybind11/stl.h
   include/pybind11/stl_bind.h
-  include/pybind11/typeid.h
 )
 string(REPLACE "include/" "${CMAKE_CURRENT_SOURCE_DIR}/include/"
        PYBIND11_HEADERS "${PYBIND11_HEADERS}")
@@ -68,7 +69,7 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # extract project version from source
-file(STRINGS "${PYBIND11_INCLUDE_DIR}/pybind11/common.h" pybind11_version_defines
+file(STRINGS "${PYBIND11_INCLUDE_DIR}/pybind11/detail/common.h" pybind11_version_defines
      REGEX "#define PYBIND11_VERSION_(MAJOR|MINOR|PATCH) ")
 foreach(ver ${pybind11_version_defines})
   if (ver MATCHES "#define PYBIND11_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
@@ -94,6 +95,9 @@ if(NOT (CMAKE_VERSION VERSION_LESS 3.0))  # CMake >= 3.0
 
   add_library(module INTERFACE)
   add_library(pybind11::module ALIAS module)
+  if(NOT MSVC)
+    target_compile_options(module INTERFACE -fvisibility=hidden)
+  endif()
   target_link_libraries(module INTERFACE pybind11::pybind11)
   if(WIN32 OR CYGWIN)
     target_link_libraries(module INTERFACE $<BUILD_INTERFACE:${PYTHON_LIBRARIES}>)
@@ -107,8 +111,7 @@ if(NOT (CMAKE_VERSION VERSION_LESS 3.0))  # CMake >= 3.0
 endif()
 
 if (PYBIND11_INSTALL)
-  install(FILES ${PYBIND11_HEADERS}
-          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/pybind11)
+  install(DIRECTORY ${PYBIND11_INCLUDE_DIR}/pybind11 DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
   # GNUInstallDirs "DATADIR" wrong here; CMake search path wants "share".
   set(PYBIND11_CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}" CACHE STRING "install path for pybind11Config.cmake")
 
@@ -130,10 +133,16 @@ if (PYBIND11_INSTALL)
           DESTINATION ${PYBIND11_CMAKECONFIG_INSTALL_DIR})
 
   if(NOT (CMAKE_VERSION VERSION_LESS 3.0))
+    if(NOT PYBIND11_EXPORT_NAME)
+      set(PYBIND11_EXPORT_NAME "${PROJECT_NAME}Targets")
+    endif()
+
     install(TARGETS pybind11 module embed
-            EXPORT "${PROJECT_NAME}Targets")
-    install(EXPORT "${PROJECT_NAME}Targets"
-            NAMESPACE "${PROJECT_NAME}::"
-            DESTINATION ${PYBIND11_CMAKECONFIG_INSTALL_DIR})
+            EXPORT "${PYBIND11_EXPORT_NAME}")
+    if(PYBIND11_MASTER_PROJECT)
+      install(EXPORT "${PYBIND11_EXPORT_NAME}"
+              NAMESPACE "${PROJECT_NAME}::"
+              DESTINATION ${PYBIND11_CMAKECONFIG_INSTALL_DIR})
+    endif()
   endif()
 endif()

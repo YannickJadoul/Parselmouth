@@ -1,3 +1,5 @@
+.. _embedding:
+
 Embedding the interpreter
 #########################
 
@@ -111,7 +113,7 @@ Python modules can be imported using `module::import()`:
 .. code-block:: cpp
 
     py::module sys = py::module::import("sys");
-    py::print(sys.attr("path"))
+    py::print(sys.attr("path"));
 
 For convenience, the current working directory is included in ``sys.path`` when
 embedding the interpreter. This makes it easy to import local Python files:
@@ -131,6 +133,7 @@ embedding the interpreter. This makes it easy to import local Python files:
     int n = result.cast<int>();
     assert(n == 3);
 
+.. _embedding_modules:
 
 Adding embedded modules
 =======================
