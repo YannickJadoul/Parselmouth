@@ -152,8 +152,7 @@ void Binding<SpectralAnalysisWindowShape>::init() {
 void Binding<Sound>::init() {
 	using signature_cast_placeholder::_;
 
-	def("__init__", // TODO Use init_factory once part of pybind11 // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
-	    [] (py::handle self, py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) {
+	def(py::init([] (py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
 		    auto ndim = values.ndim();
 		    if (ndim > 2) {
 			    throw py::value_error("Cannot create Sound from an array with more than 2 dimensions");
@@ -175,15 +174,14 @@ void Binding<Sound>::init() {
 				    result->z[1][i+1] = unchecked(i);
 		    }
 
-		    constructInstanceHolder<Binding<Sound>>(self, std::move(result)); // TODO init_factory
-	    },
+		    return result;
+	    }),
 	    "values"_a, "sampling_frequency"_a, "start_time"_a = 0.0);
 
-	def("__init__",
-	    [] (py::handle self, const std::u32string &filePath) { // TODO Use init_factory once part of pybind11
+	def(py::init([] (const std::u32string &filePath) {
 		    auto file = pathToMelderFile(filePath);
-		    constructInstanceHolder<Binding<Sound>>(self, Sound_readFromSoundFile(&file));
-	    },
+		    return Sound_readFromSoundFile(&file);
+	    }),
 	    "file_path"_a);
 
 	// TODO Constructor from few special file formats that are not detectable by header
@@ -273,27 +271,21 @@ void Binding<Sound>::init() {
 	// TODO Determine file format based on extension, and make format optional
 	// TODO Coordinate this save function with the (future) save in Data
 
-	def("get_number_of_channels",
-	    [](Sound self) { return self->ny; });
+	def("get_number_of_channels", [](Sound self) { return self->ny; });
 
-	def_readonly("num_channels",
-	             static_cast<long structSound::*>(&structSound::ny)); // TODO Remove static_cast once SampledXY is exported, or once this is fixed
+	def_readonly("num_channels", &structSound::ny); // TODO Remove static_cast once SampledXY is exported, or once this is fixed
 
-	def("get_number_of_samples",
-	    [](Sound self) { return self->nx; });
+	def("get_number_of_samples", [](Sound self) { return self->nx; });
 
-	def_readonly("num_samples",
-	             static_cast<int32 structSound::*>(&structSound::nx)); // TODO Remove static_cast once Sampled is exported, or once this is fixed
+	def_readonly("num_samples", &structSound::nx); // TODO Remove static_cast once Sampled is exported, or once this is fixed
 
-	def("get_sampling_period",
-	    [](Sound self) { return self->dx; });
+	def("get_sampling_period", [](Sound self) { return self->dx; });
 
 	def_property("sampling_period",
 	             [](Sound self) { return self->dx; },
 	             [](Sound self, double period) { Sound_overrideSamplingFrequency(self, 1 / period); });
 
-	def("get_sampling_frequency",
-	    [](Sound self) { return 1 / self->dx; });
+	def("get_sampling_frequency", [](Sound self) { return 1 / self->dx; });
 
 	def_property("sampling_frequency",
 	             [](Sound self) { return 1 / self->dx; },

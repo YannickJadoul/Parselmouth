@@ -39,8 +39,7 @@ namespace parselmouth {
 void Binding<Spectrum>::init() {
 	using signature_cast_placeholder::_;
 
-	def("__init__",
-	    [](py::handle self, py::array_t<double, 0> values, Positive<double> maximumFrequency) {
+	def(py::init([](py::array_t<double, 0> values, Positive<double> maximumFrequency) {
 		    auto ndim = values.ndim();
 		    if (ndim > 2) {
 			    throw py::value_error("Cannot create Spectrum from an array with more than 2 dimensions");
@@ -67,12 +66,11 @@ void Binding<Spectrum>::init() {
 			    }
 		    }
 
-		    constructInstanceHolder<Binding<Spectrum>>(self, std::move(result));
-	    },
+		    return result;
+	    }),
 	    "values"_a, "maximum_frequency"_a);
 
-	def("__init__",
-	    [](py::handle self, py::array_t<std::complex<double>, 0> values, Positive<double> maximumFrequency) {
+	def(py::init([](py::array_t<std::complex<double>, 0> values, Positive<double> maximumFrequency) {
 		    auto ndim = values.ndim();
 		    if (ndim > 1) {
 			    throw py::value_error("Cannot create Spectrum from a complex array with more than 1 dimension");
@@ -87,49 +85,37 @@ void Binding<Spectrum>::init() {
 			    result->z[2][i + 1] = unchecked(i).imag();
 		    }
 
-		    constructInstanceHolder<Binding<Spectrum>>(self, std::move(result));
-	    },
+		    return result;
+	    }),
 	    "values"_a, "maximum_frequency"_a);
 
 	// TODO Constructor from Sound?
 
 	// TODO Tabulate - List ?
 
-	def("get_lowest_frequency",
-	    [](Spectrum self) { return self->xmin; });
+	def("get_lowest_frequency", [](Spectrum self) { return self->xmin; });
 
-	def_readonly("lowest_frequency",
-	             static_cast<double structSpectrum::*>(&structSpectrum::xmin)); // TODO Remove when not required by pybind11 anymore
+	def_readonly("lowest_frequency", &structSpectrum::xmin);
 
-	def_readonly("fmin",
-	             static_cast<double structSpectrum::*>(&structSpectrum::xmin)); // TODO Remove when not required by pybind11 anymore
+	def_readonly("fmin", &structSpectrum::xmin);
 
-	def("get_highest_frequency",
-	    [](Spectrum self) { return self->xmax; });
+	def("get_highest_frequency", [](Spectrum self) { return self->xmax; });
 
-	def_readonly("highest_frequency",
-	             static_cast<double structSpectrum::*>(&structSpectrum::xmax)); // TODO Remove when not required by pybind11 anymore
+	def_readonly("highest_frequency", &structSpectrum::xmax);
 
-	def_readonly("fmax",
-	             static_cast<double structSpectrum::*>(&structSpectrum::xmax)); // TODO Remove when not required by pybind11 anymore
+	def_readonly("fmax", &structSpectrum::xmax);
 
-	def("get_number_of_bins",
-	    [](Spectrum self) { return self->nx; });
+	def("get_number_of_bins", [](Spectrum self) { return self->nx; });
 
-	def_readonly("num_bins",
-	             static_cast<int32 structSpectrum::*>(&structSpectrum::nx)); // TODO Remove when not required by pybind11 anymore
+	def_readonly("num_bins", &structSpectrum::nx);
 
-	def_readonly("nf",
-	             static_cast<int32 structSpectrum::*>(&structSpectrum::nx)); // TODO Remove when not required by pybind11 anymore
+	def_readonly("nf", &structSpectrum::nx);
 
-	def("get_bin_width",
-	    [](Spectrum self) { return self->dx; });
+	def("get_bin_width", [](Spectrum self) { return self->dx; });
 
-	def_readonly("bin_width",
-	             static_cast<double structSpectrum::*>(&structSpectrum::dx)); // TODO Remove when not required by pybind11 anymore
+	def_readonly("bin_width", &structSpectrum::dx);
 
-	def_readonly("df",
-	             static_cast<double structSpectrum::*>(&structSpectrum::dx)); // TODO Remove when not required by pybind11 anymore
+	def_readonly("df", &structSpectrum::dx);
 
 	def("get_frequency_from_bin_number", // TODO Somehow link with "Sampled" class?
 	    [](Spectrum self, Positive<long> bandNumber) { return Sampled_indexToX(self, bandNumber); },

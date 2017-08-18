@@ -56,25 +56,25 @@ void Binding<Matrix>::init() {
 	    "formula"_a, "x_range"_a = std::make_pair(nullopt, nullopt), "y_range"_a = std::make_pair(nullopt, nullopt));
 
 	// TODO Part of bugfix of README example: move to Sampled / SampledXY
-	def_readonly("xmin", static_cast<double structMatrix::*>(&structMatrix::xmin));
+	def_readonly("xmin", &structMatrix::xmin);
 
-	def_readonly("xmax", static_cast<double structMatrix::*>(&structMatrix::xmax));
+	def_readonly("xmax", &structMatrix::xmax);
 
-	def_readonly("nx", static_cast<int32 structMatrix::*>(&structMatrix::nx));
+	def_readonly("nx", &structMatrix::nx);
 
-	def_readonly("x1", static_cast<double structMatrix::*>(&structMatrix::x1));
+	def_readonly("x1", &structMatrix::x1);
 
-	def_readonly("dx", static_cast<double structMatrix::*>(&structMatrix::dx));
+	def_readonly("dx", &structMatrix::dx);
 
-	def_readonly("ymin", static_cast<double structMatrix::*>(&structMatrix::ymin));
+	def_readonly("ymin", &structMatrix::ymin);
 
-	def_readonly("ymax", static_cast<double structMatrix::*>(&structMatrix::ymax));
+	def_readonly("ymax", &structMatrix::ymax);
 
-	def_readonly("ny", static_cast<long structMatrix::*>(&structMatrix::ny));
+	def_readonly("ny", &structMatrix::ny);
 
-	def_readonly("y1", static_cast<double structMatrix::*>(&structMatrix::y1));
+	def_readonly("y1", &structMatrix::y1);
 
-	def_readonly("dy", static_cast<double structMatrix::*>(&structMatrix::dy));
+	def_readonly("dy", &structMatrix::dy);
 }
 
 } // namespace parselmouth
