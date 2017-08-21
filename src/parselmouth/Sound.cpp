@@ -18,6 +18,7 @@
  */
 
 #include "Parselmouth.h"
+#include "TimeClassAspects.h"
 
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
@@ -151,6 +152,8 @@ void Binding<SpectralAnalysisWindowShape>::init() {
 
 void Binding<Sound>::init() {
 	using signature_cast_placeholder::_;
+
+	initTimeFrameSampled(*this);
 
 	def(py::init([] (py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
 		    auto ndim = values.ndim();

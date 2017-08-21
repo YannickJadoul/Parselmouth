@@ -18,6 +18,7 @@
  */
 
 #include "Parselmouth.h"
+#include "TimeClassAspects.h"
 
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
@@ -32,6 +33,8 @@ namespace parselmouth {
 
 void Binding<Spectrogram>::init() {
 	using signature_cast_placeholder::_;
+
+	initTimeFrameSampled(*this);
 
 	// TODO Constructor!
 

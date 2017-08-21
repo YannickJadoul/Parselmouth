@@ -18,6 +18,7 @@
  */
 
 #include "Parselmouth.h"
+#include "TimeClassAspects.h"
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -25,6 +26,7 @@ using namespace py::literals;
 namespace parselmouth {
 
 void Binding<Pitch>::init() {
+	initTimeFrameSampled(*this);
 
 }
 
