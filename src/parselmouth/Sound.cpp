@@ -296,7 +296,7 @@ void Binding<Sound>::init() {
 	    "sample"_a);
 
 	def("get_index_from_time",
-	    &Sampled_xToIndex,
+	    signature_cast<_ (Sound, _)>(Sampled_xToIndex),
 	    "time"_a);
 
 	// TODO Get value at time & sample number
