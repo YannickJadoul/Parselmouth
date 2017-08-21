@@ -313,21 +313,21 @@ void Binding<Sound>::init() {
 	// TODO Get mean (Vector?)
 
 	def("get_root_mean_square",
-	    [](Sound self, optional<double> from, optional<double> to) { return Sound_getRootMeanSquare(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [](Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt);
 
 	// TODO Get standard deviation
 
 	def("get_rms",
-	    [](Sound self, optional<double> from, optional<double> to) { return Sound_getRootMeanSquare(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [](Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt);
 
 	def("get_energy",
-	    [] (Sound self, optional<double> from, optional<double> to) { return Sound_getEnergy(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [] (Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getEnergy(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt);
 
 	def("get_power",
-	    [](Sound self, optional<double> from, optional<double> to) { return Sound_getPower(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [](Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getPower(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt);
 
 	def("get_energy_in_air",
@@ -340,7 +340,7 @@ void Binding<Sound>::init() {
 	    &Sound_getIntensity_dB);
 
 	def("reverse",
-	    [](Sound self, optional<double> from, optional<double> to) { Sound_reverse(self, from.value_or(self->xmin), to.value_or(self->xmax)); },
+	    [](Sound self, optional<double> fromTime, optional<double> toTime) { Sound_reverse(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt);
 
 	// TODO Formula and Formula (part) (reimplement from Vector/Matrix because of different parameters, i.e. channels?)
@@ -356,7 +356,7 @@ void Binding<Sound>::init() {
 	// TODO Set value at sample number
 
 	def("set_to_zero", // TODO Set part to zero ?
-	    [](Sound self, optional<double> from, optional<double> to, bool roundToNearestZeroCrossing) { Sound_setZero(self, from.value_or(self->xmin), to.value_or(self->xmax), roundToNearestZeroCrossing); },
+	    [](Sound self, optional<double> fromTime, optional<double> toTime, bool roundToNearestZeroCrossing) { Sound_setZero(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), roundToNearestZeroCrossing); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
 
 	def("override_sampling_frequency",
@@ -391,10 +391,10 @@ void Binding<Sound>::init() {
 
 	def("extract_all_channels",
 	    [] (Sound self) {
-		    std::vector<Sound> result; // TODO Make std::vector<autoSound> once pybind11 supports this
+		    std::vector<autoSound> result;
 		    result.reserve(self->ny);
 		    for (auto i = 1; i <= self->ny; ++i) {
-			    result.emplace_back(Sound_extractChannel(self, i).releaseToAmbiguousOwner());
+			    result.emplace_back(Sound_extractChannel(self, i));
 		    }
 		    return result;
 	    });
@@ -420,11 +420,11 @@ void Binding<Sound>::init() {
 	    [] (Sound self) { return Sound_extractChannel(self, 2); });
 
 	def("extract_part", // TODO Something for optional<double> for from and to in Sounds?
-	    [] (Sound self, optional<double> from, optional<double> to, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, from.value_or(self->xmin), to.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
+	    [] (Sound self, optional<double> fromTime, optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "window_shape"_a = kSound_windowShape_RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
 
 	def("extract_part_for_overlap",
-	    [] (Sound self, optional<double> from, optional<double> to, Positive<double> overlap) { return Sound_extractPartForOverlap(self, from.value_or(self->xmin), to.value_or(self->xmax), overlap); },
+	    [] (Sound self, optional<double> fromTime, optional<double> toTime, Positive<double> overlap) { return Sound_extractPartForOverlap(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), overlap); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "overlap"_a);
 
 	def("resample",
