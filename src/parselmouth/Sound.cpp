@@ -179,7 +179,7 @@ void Binding<Sound>::init() {
 
 		    return result;
 	    }),
-	    "values"_a, "sampling_frequency"_a, "start_time"_a = 0.0);
+	    "values"_a, "sampling_frequency"_a = 44100.0, "start_time"_a = 0.0);
 
 	def(py::init([] (const std::u32string &filePath) {
 		    auto file = pathToMelderFile(filePath);
@@ -446,6 +446,9 @@ void Binding<Sound>::init() {
 	    signature_cast<_ (_, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>)>(Sound_deepenBandModulation),
 	    "enhancement"_a = 20.0, "from_frequency"_a = 300.0, "to_frequency"_a = 8000.0, "slow_modulation"_a = 3.0, "fast_modulation"_a = 30.0, "band_smoothing"_a = 100.0);
 
+	def("to_pitch",
+	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
+	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
 	// TODO To Pitch...
 
 	def("to_harmonicity_ac",

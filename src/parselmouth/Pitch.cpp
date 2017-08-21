@@ -20,6 +20,11 @@
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
 
+#include "utils/pybind11/NumericPredicates.h"
+#include "utils/pybind11/Optional.h"
+
+#include "fon/Pitch_to_Sound.h"
+
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -28,6 +33,19 @@ namespace parselmouth {
 void Binding<Pitch>::init() {
 	initTimeFrameSampled(*this);
 
+	// TODO Which constructors? From Sound?
+
+	def("to_sound_pulses",
+		[](Pitch self, optional<double> fromTime, optional<double> toTime) { return Pitch_to_Sound(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), false); },
+		"from_time"_a = nullopt, "to_time"_a = nullopt);
+
+	def("to_sound_hum",
+	    [](Pitch self, optional<double> fromTime, optional<double> toTime) { return Pitch_to_Sound(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), true); },
+	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+
+	def("to_sound_sine",
+	    [](Pitch self, optional<double> fromTime, optional<double> toTime, Positive<double> samplingFrequency, double roundToNearestZeroCrossing) { return Pitch_to_Sound_sine(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), samplingFrequency, roundToNearestZeroCrossing); },
+	    "from_time"_a = nullopt, "to_time"_a = nullopt, "sampling_frequency"_a = 44100.0, "round_to_nearest_zero_crossing"_a = true);
 }
 
 } // namespace parselmouth
