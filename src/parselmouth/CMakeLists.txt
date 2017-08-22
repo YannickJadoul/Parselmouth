@@ -16,6 +16,7 @@
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
 add_sources(Data.cpp
+            Formant.cpp
             Harmonicity.cpp
             Intensity.cpp
             Matrix.cpp

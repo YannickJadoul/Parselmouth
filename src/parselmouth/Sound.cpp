@@ -28,6 +28,7 @@
 #include "dwtools/Sound_to_MFCC.h"
 #include "fon/Sound_and_Spectrogram.h"
 #include "fon/Sound_and_Spectrum.h"
+#include "fon/Sound_to_Formant.h"
 #include "fon/Sound_to_Harmonicity.h"
 #include "fon/Sound_to_Intensity.h"
 #include "fon/Sound_to_Pitch.h"
@@ -477,6 +478,9 @@ void Binding<Sound>::init() {
 	    [](Sound self, Positive<double> windowLength, Positive<double> maximumFrequency, Positive<double> timeStep, Positive<double> frequencyStep, kSound_to_Spectrogram_windowShape windowShape) { return Sound_to_Spectrogram(self, windowLength, maximumFrequency, timeStep, frequencyStep, windowShape, 8.0, 8.0); },
 	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN);
 
+	def("to_formant_burg", // TODO Praat has Max. number of formants as REAL? What the hell? "Pi formants for me, please."? (I know, I know; see Praat documentation)
+	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> maxNumberOfFormants, double maximumFormant, Positive<double> windowLength, Positive<double> preEmphasisFrom) { return Sound_to_Formant_burg(self, timeStep ? static_cast<double>(*timeStep) : 0.0, maxNumberOfFormants, maximumFormant, windowLength, preEmphasisFrom); },
+		"time_step"_a = nullopt, "max_number_of_formants"_a = 5.0, "maximum_formant"_a = 5500.0, "window_length"_a = 0.025, "pre_emphasis_from"_a = 50.0);
 	// TODO To Formant...
 
 	def("to_intensity",
