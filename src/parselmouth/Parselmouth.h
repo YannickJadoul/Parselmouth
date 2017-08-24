@@ -25,7 +25,7 @@
 
 #include "Bindings.h"
 
-// TODO Forward declarations?
+// TODO Forward declarations? -> Thing_declare
 #include "dwtools/MFCC.h"
 #include "fon/Formant.h"
 #include "fon/Harmonicity.h"

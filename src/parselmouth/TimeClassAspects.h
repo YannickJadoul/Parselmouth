@@ -49,7 +49,7 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 
 	def_property("start_time",
 	             [](Class *self) { return self->xmin; },
-	             [](Class *self, double time) { Function_shiftXTo(self, self->xmin, time); }); // TODO Shifting instead of scaling? What about a proxy class in between that implements +=, -=, *=, /=?
+	             [](Class *self, double time) { Function_shiftXTo(self, self->xmin, time); });
 
 	def("get_end_time", [](Class *self) { return self->xmax; });
 
@@ -83,7 +83,7 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 	    signature_cast<_ (Class *, _, _)>(Function_shiftXTo),
 		"time"_a, "new_time"_a);
 
-	def("shift_times_to", // TODO This, or an enum, or nothing at all?
+	def("shift_times_to",
 	    [](Class *self, std::string fromTime, double toTime) {
 		    std::transform(fromTime.begin(), fromTime.end(), fromTime.begin(), ::tolower);
 
@@ -113,6 +113,8 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 		    Function_scaleXTo(self, newStartTime, newEndTime);
 	    },
 	    "new_start_time"_a, "new_end_time"_a);
+
+	// TODO tmin, tmax ?
 }
 
 template <typename Class, typename... Extra>
@@ -151,6 +153,9 @@ void initTimeFrameSampled(ClassBinding<Class, Extra...> &binding) {
 	def("time_to_frame_number",
 	    [](Class *self, Positive<long> time) { return Sampled_indexToX(self, time); },
 	    "time"_a);
+
+	// TODO get_frame_times() ?
+	// TODO t1, dt, nt, ts ?
 	}
 
 } // namespace parselmouth
