@@ -277,11 +277,11 @@ void Binding<Sound>::init() {
 
 	def("get_number_of_channels", [](Sound self) { return self->ny; });
 
-	def_readonly("num_channels", &structSound::ny); // TODO Remove static_cast once SampledXY is exported, or once this is fixed
+	def_readonly("n_channels", &structSound::ny); // TODO Remove static_cast once SampledXY is exported, or once this is fixed
 
 	def("get_number_of_samples", [](Sound self) { return self->nx; });
 
-	def_readonly("num_samples", &structSound::nx); // TODO Remove static_cast once Sampled is exported, or once this is fixed
+	def_readonly("n_samples", &structSound::nx); // TODO Remove static_cast once Sampled is exported, or once this is fixed
 
 	def("get_sampling_period", [](Sound self) { return self->dx; });
 

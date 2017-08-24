@@ -132,7 +132,7 @@ void initTimeFrameSampled(ClassBinding<Class, Extra...> &binding) {
 
 	def("get_number_of_frames", [](Class *self) { return self->nx; });
 
-	def_readonly("num_frames", &Class::nx);
+	def_readonly("n_frames", &Class::nx);
 
 	def("get_time_step", [](Class *self) { return self->dx; });
 

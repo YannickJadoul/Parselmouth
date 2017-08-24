@@ -107,7 +107,7 @@ void Binding<Spectrum>::init() {
 
 	def("get_number_of_bins", [](Spectrum self) { return self->nx; });
 
-	def_readonly("num_bins", &structSpectrum::nx);
+	def_readonly("n_bins", &structSpectrum::nx);
 
 	def_readonly("nf", &structSpectrum::nx);
 
