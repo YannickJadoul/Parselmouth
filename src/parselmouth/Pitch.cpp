@@ -30,6 +30,19 @@ using namespace py::literals;
 
 namespace parselmouth {
 
+void Binding<PitchUnit>::init() {
+	value("HERTZ", kPitch_unit_HERTZ);
+	value("HERTZ_LOGARITHMIC", kPitch_unit_HERTZ_LOGARITHMIC);
+	value("MEL", kPitch_unit_MEL);
+	value("LOG_HERTZ", kPitch_unit_LOG_HERTZ); // TODO Huh? HERTZ_LOGARITHMIC and LOG_HERTZ!?
+	value("MEL", kPitch_unit_MEL);
+	value("SEMITONES_1", kPitch_unit_SEMITONES_1);
+	value("SEMITONES_100", kPitch_unit_SEMITONES_100);
+	value("SEMITONES_200", kPitch_unit_SEMITONES_200);
+	value("SEMITONES_440", kPitch_unit_SEMITONES_440);
+	value("ERB", kPitch_unit_ERB);
+}
+
 void Binding<Pitch>::init() {
 	initTimeFrameSampled(*this);
 
@@ -46,6 +59,25 @@ void Binding<Pitch>::init() {
 	def("to_sound_sine",
 	    [](Pitch self, optional<double> fromTime, optional<double> toTime, Positive<double> samplingFrequency, double roundToNearestZeroCrossing) { return Pitch_to_Sound_sine(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), samplingFrequency, roundToNearestZeroCrossing); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "sampling_frequency"_a = 44100.0, "round_to_nearest_zero_crossing"_a = true);
+
+	def("count_voiced_frames",
+		&Pitch_countVoicedFrames);
+
+	// TODO Get value at time..., Get value in frame...
+	def("get_value", // TODO Cleanup temporary
+	    [] (Pitch self, double time, kPitch_unit unit, bool interpolate) { return Pitch_getValueAtTime(self, time, unit, interpolate); },
+	    "time"_a, "unit"_a = kPitch_unit_HERTZ, "interpolate"_a = true);
+	// TODO Minimum, Time of minimum, Maximum, Time of maximum, ...
+	// TODO Get mean absolute slope (+ without octave jumps)
+
+	// TODO Formula
+
+	// TODO To TextGrid..., To TextTier, To IntervalTier: depends TextGrid and Tiers
+	// TODO To PointProcess: depends on PointProcess
+
+	// TODO To Matrix -> .values?
+
+
 }
 
 } // namespace parselmouth

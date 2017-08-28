@@ -146,8 +146,7 @@ PRAAT_ENUM_BINDING_ALIAS(AmplitudeScaling, kSounds_convolve_scaling)
 PRAAT_ENUM_BINDING_ALIAS(SignalOutsideTimeDomain, kSounds_convolve_signalOutsideTimeDomain)
 PRAAT_ENUM_BINDING(SoundFileFormat)
 PRAAT_ENUM_BINDING_ALIAS(SpectralAnalysisWindowShape, kSound_to_Spectrogram_windowShape)
-
-NO_BINDING_INIT(MFCC)
+PRAAT_ENUM_BINDING_ALIAS(PitchUnit, kPitch_unit)
 
 
 using PraatBindings = Bindings<PRAAT_ENUMS, PRAAT_CLASSES>;

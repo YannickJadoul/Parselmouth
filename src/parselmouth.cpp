@@ -20,13 +20,7 @@
 #include "parselmouth/Parselmouth.h"
 #include "version.h"
 
-#include <pybind11/numpy.h>
-#include <pybind11/stl.h>
-
-#include "fon/Formant.h" // TODO "" vs <> for Praat imports?
-#include "fon/Manipulation.h"
-#include "dwsys/NUMmachar.h"
-#include "dwtools/Spectrogram_extensions.h"
+// TODO "" vs <> for Praat imports?
 #include "sys/praat.h"
 #include "sys/praat_version.h"
 
@@ -78,57 +72,11 @@ PYBIND11_MODULE(parselmouth, m) {
 
 	bindings.init();
 
-	bindings.get<MFCC>()
-		//.def(constructor(&Sound_to_MFCC,
-		//		(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0)))
-
-		.def("get_coefficients",
-				[] (MFCC mfcc)
-					{
-						auto maxCoefficients = CC_getMaximumNumberOfCoefficients(mfcc, 1, mfcc->nx);
-						py::array_t<double> array({static_cast<size_t>(mfcc->nx), static_cast<size_t>(maxCoefficients + 1)}, nullptr);
-
-						for (auto i = 0; i < mfcc->nx; ++i) {
-							*array.mutable_data(i, 0) = mfcc->frame[i+1].c0;
-							for (auto j = 1; j <= maxCoefficients; ++j) {
-								*array.mutable_data(i, j) = (j <= mfcc->frame[i+1].numberOfCoefficients) ? mfcc->frame[i+1].c[j] : std::numeric_limits<double>::quiet_NaN();
-							}
-						}
-
-						return array;
-					})
-		.def("to_mel_spectrogram",
-				&MFCC_to_MelSpectrogram,
-				"from_coefficient"_a = 0, "to_coefficient"_a = 0, "include_c0"_a = true);
-	;
-
-
-	py::enum_<kPitch_unit>(m, "PitchUnit")
-		.value("hertz", kPitch_unit_HERTZ)
-		.value("hertz_logarithmic", kPitch_unit_HERTZ_LOGARITHMIC)
-		.value("mel", kPitch_unit_MEL)
-		.value("log_hertz", kPitch_unit_LOG_HERTZ)
-		.value("mel", kPitch_unit_MEL)
-		.value("semitones_1", kPitch_unit_SEMITONES_1)
-		.value("semitones_100", kPitch_unit_SEMITONES_100)
-		.value("semitones_200", kPitch_unit_SEMITONES_200)
-		.value("semitones_440", kPitch_unit_SEMITONES_440)
-		.value("erb", kPitch_unit_ERB)
-	;
-
-	bindings.get<Pitch>()
-		.def("get_value",
-				[] (Pitch self, double time, kPitch_unit unit, bool interpolate) { return Pitch_getValueAtTime(self, time, unit, interpolate); },
-				"time"_a, "unit"_a = kPitch_unit_HERTZ, "interpolate"_a = true)
-	;
-
-
 	bindings.get<Intensity>()
 		.def("get_value", // TODO Should be part of Vector class
 				[] (Intensity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
 				"time"_a, "interpolation"_a = Interpolation::CUBIC)
 	;
-
 
 	bindings.get<Harmonicity>()
 		.def("get_value", // TODO Should be part of Vector class
