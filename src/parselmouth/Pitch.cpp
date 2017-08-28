@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
 
+#include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
@@ -41,6 +42,8 @@ void Binding<PitchUnit>::init() {
 	value("SEMITONES_200", kPitch_unit_SEMITONES_200);
 	value("SEMITONES_440", kPitch_unit_SEMITONES_440);
 	value("ERB", kPitch_unit_ERB);
+
+	make_implicitly_convertible_from_string(*this, true);
 }
 
 void Binding<Pitch>::init() {

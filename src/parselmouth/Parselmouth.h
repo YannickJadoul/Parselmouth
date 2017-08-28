@@ -43,37 +43,6 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, _Thing_auto<T>);
 
 namespace parselmouth {
 
-// TODO Move to its own header?
-template <typename Type>
-void make_implicitly_convertible_from_string(pybind11::enum_<Type> &enumType, bool ignoreCase=false)
-{
-	enumType.def("__init__",
-	             [enumType, ignoreCase](Type &self, const std::string &value)
-	             {
-		             auto values = enumType.attr("__members__").template cast<pybind11::dict>();
-
-		             auto strValue = pybind11::str(value);
-		             if (values.contains(strValue)) {
-			             new (&self) Type(values[strValue].template cast<Type>());
-			             return;
-		             }
-
-		             if (ignoreCase) {
-			             auto upperStrValue = strValue.attr("upper")();
-			             for (auto &item : values) {
-				             if (item.first.attr("upper")().attr("__eq__")(upperStrValue)) {
-					             new (&self) Type(item.second.template cast<Type>());
-					             return;
-				             }
-			             }
-		             }
-
-		             throw pybind11::value_error("\"" + value + "\" is not a valid value for enum type " + enumType.attr("__name__").template cast<std::string>());
-	             });
-	pybind11::implicitly_convertible<std::string, Type>();
-};
-
-
 template <typename Class, typename... Extra>
 using ClassBinding = pybind11::class_<Class, Extra...>;
 

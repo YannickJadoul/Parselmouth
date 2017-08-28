@@ -21,6 +21,7 @@
 #include "TimeClassAspects.h"
 
 #include "utils/SignatureCast.h"
+#include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
@@ -98,7 +99,7 @@ void Binding<WindowShape>::init() {
 	value("KAISER1", kSound_windowShape_KAISER_1);
 	value("KAISER2", kSound_windowShape_KAISER_2);
 
-	make_implicitly_convertible_from_string<WindowShape>(*this, true);
+	make_implicitly_convertible_from_string(*this, true);
 }
 
 void Binding<AmplitudeScaling>::init() {
@@ -107,14 +108,14 @@ void Binding<AmplitudeScaling>::init() {
 	value("NORMALIZE", kSounds_convolve_scaling_NORMALIZE);
 	value("PEAK_0_99", kSounds_convolve_scaling_PEAK_099);
 
-	make_implicitly_convertible_from_string<AmplitudeScaling>(*this, true);
+	make_implicitly_convertible_from_string(*this, true);
 }
 
 void Binding<SignalOutsideTimeDomain>::init() {
 	value("ZERO", kSounds_convolve_signalOutsideTimeDomain_ZERO);
 	value("SIMILAR", kSounds_convolve_signalOutsideTimeDomain_SIMILAR);
 
-	make_implicitly_convertible_from_string<SignalOutsideTimeDomain>(*this, true);
+	make_implicitly_convertible_from_string(*this, true);
 }
 
 void Binding<SoundFileFormat>::init() {
@@ -137,7 +138,7 @@ void Binding<SoundFileFormat>::init() {
 	value("RAW_32_BE", SoundFileFormat::RAW_32_BE);
 	value("RAW_32_LE", SoundFileFormat::RAW_32_LE);
 
-	make_implicitly_convertible_from_string<SoundFileFormat>(*this, true);
+	make_implicitly_convertible_from_string(*this, true);
 }
 
 void Binding<SpectralAnalysisWindowShape>::init() {
@@ -148,7 +149,7 @@ void Binding<SpectralAnalysisWindowShape>::init() {
 	value("HANNING", kSound_to_Spectrogram_windowShape_HANNING);
 	value("GAUSSIAN", kSound_to_Spectrogram_windowShape_GAUSSIAN);
 
-	make_implicitly_convertible_from_string<SpectralAnalysisWindowShape>(*this, true);
+	make_implicitly_convertible_from_string(*this, true);
 }
 
 void Binding<Sound>::init() {
