@@ -122,7 +122,8 @@ using Data_Parent = Daata_Parent;
         AmplitudeScaling,            \
         SignalOutsideTimeDomain,     \
         SoundFileFormat,             \
-        SpectralAnalysisWindowShape
+        SpectralAnalysisWindowShape, \
+		PitchUnit
 
 
 CLASS_BINDING(Thing, structThing, autoThing)
