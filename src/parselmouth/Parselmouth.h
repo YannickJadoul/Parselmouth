@@ -25,7 +25,7 @@
 
 #include "Bindings.h"
 
-// TODO Forward declarations? -> Thing_declare
+// TODO A way to forward declare things, or another way to cut compilation dependencies on a single file.
 #include "dwtools/MFCC.h"
 #include "fon/Formant.h"
 #include "fon/Harmonicity.h"

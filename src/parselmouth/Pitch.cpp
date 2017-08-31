@@ -47,6 +47,8 @@ void Binding<PitchUnit>::init() {
 }
 
 void Binding<Pitch>::init() {
+	using signature_cast_placeholder::_;
+
 	initTimeFrameSampled(*this);
 
 	// TODO Which constructors? From Sound?
@@ -78,9 +80,23 @@ void Binding<Pitch>::init() {
 	// TODO To TextGrid..., To TextTier, To IntervalTier: depends TextGrid and Tiers
 	// TODO To PointProcess: depends on PointProcess
 
+	def("interpolate",
+	    &Pitch_interpolate);
+
+	def("smooth",
+		signature_cast<_ (_, Positive<double>)>(Pitch_smooth),
+		"bandwidth"_a = 10.0);
+
+	def("subtract_linear_fit",
+	    [] (Pitch self, PitchUnit unit) { return Pitch_subtractLinearFit(self, static_cast<int>(unit)); },
+		"unit"_a = PitchUnit::kPitch_unit_HERTZ);
+
+	def("kill_octave_jumps",
+		&Pitch_killOctaveJumps);
+
+	// TODO To PitchTier: depends on PitchTier
+
 	// TODO To Matrix -> .values?
-
-
 }
 
 } // namespace parselmouth
