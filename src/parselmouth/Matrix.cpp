@@ -56,10 +56,6 @@ void Binding<Matrix>::init() {
 	    "formula"_a, "x_range"_a = std::make_pair(nullopt, nullopt), "y_range"_a = std::make_pair(nullopt, nullopt));
 
 	// TODO Part of bugfix of README example: move to Sampled / SampledXY
-	def_readonly("xmin", &structMatrix::xmin);
-
-	def_readonly("xmax", &structMatrix::xmax);
-
 	def_readonly("nx", &structMatrix::nx);
 
 	def_readonly("x1", &structMatrix::x1);

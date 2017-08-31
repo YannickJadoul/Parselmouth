@@ -17,6 +17,7 @@
 
 add_sources(Data.cpp
             Formant.cpp
+            Function.cpp
             Harmonicity.cpp
             Intensity.cpp
             Matrix.cpp

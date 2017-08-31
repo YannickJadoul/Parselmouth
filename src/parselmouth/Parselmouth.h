@@ -74,6 +74,7 @@ using Data_Parent = Daata_Parent;
 #define PRAAT_CLASSES                \
         Thing,                       \
         Data,                        \
+        Function,                    \
         Matrix,                      \
         Vector,                      \
         Sound,                       \
@@ -99,16 +100,17 @@ CLASS_BINDING(Thing, structThing, autoThing)
 BINDING_CONSTRUCTOR(Thing, "Thing")
 
 PRAAT_CLASS_BINDING(Data)
-PRAAT_CLASS_BINDING_BASE(Matrix, Data, pybind11::buffer_protocol())
+PRAAT_CLASS_BINDING(Function)
+PRAAT_CLASS_BINDING_BASE(Matrix, Function, pybind11::buffer_protocol())
 PRAAT_CLASS_BINDING(Vector)
 PRAAT_CLASS_BINDING(Sound)
 PRAAT_CLASS_BINDING(Spectrum)
 PRAAT_CLASS_BINDING(Spectrogram)
-PRAAT_CLASS_BINDING_BASE(Pitch, Data) // TODO Expose bindings for Sampled
+PRAAT_CLASS_BINDING_BASE(Pitch, Function) // TODO Expose bindings for Sampled
 PRAAT_CLASS_BINDING(Intensity)
 PRAAT_CLASS_BINDING(Harmonicity)
-PRAAT_CLASS_BINDING_BASE(Formant, Data) // TODO Expose bindings for Sampled
-PRAAT_CLASS_BINDING_BASE(MFCC, Data) // TODO Expose bindings for CC & Sampled
+PRAAT_CLASS_BINDING_BASE(Formant, Function) // TODO Expose bindings for Sampled
+PRAAT_CLASS_BINDING_BASE(MFCC, Function) // TODO Expose bindings for CC & Sampled
 
 PRAAT_ENUM_BINDING(Interpolation)
 PRAAT_ENUM_BINDING_ALIAS(WindowShape, kSound_windowShape)

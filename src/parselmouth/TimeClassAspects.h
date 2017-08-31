@@ -31,6 +31,9 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+#define WRAP_BINDING_METHOD(method_name) auto method_name = [&binding](auto &&... args) { binding.method_name(std::forward<decltype(args)>(args)...); }
+
+
 namespace parselmouth {
 
 template <typename Class, typename... Extra>
@@ -38,12 +41,13 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 	static_assert(std::is_base_of<structFunction, Class>::value, "Class needs to be a Praat Function subclass");
 
 
-	auto def = [&binding](auto &&... args) { binding.def(std::forward<decltype(args)>(args)...); };
-	auto def_property = [&binding](auto &&... args) { binding.def_property(std::forward<decltype(args)>(args)...); };
-	auto def_property_readonly = [&binding](auto &&... args) { binding.def_property_readonly(std::forward<decltype(args)>(args)...); };
+	WRAP_BINDING_METHOD(def);
+	WRAP_BINDING_METHOD(def_property);
+	WRAP_BINDING_METHOD(def_property_readonly);
 
 	using signature_cast_placeholder::_;
 
+	// TODO Get rid of code duplication with Function?
 
 	def("get_start_time", [](Class *self) { return self->xmin; });
 
@@ -122,8 +126,8 @@ void initTimeFrameSampled(ClassBinding<Class, Extra...> &binding) {
 	static_assert(std::is_base_of<structSampled, Class>::value, "Class needs to be a Praat Sampled subclass");
 
 
-	auto def = [&binding](auto &&... args) { binding.def(std::forward<decltype(args)>(args)...); };
-	auto def_readonly = [&binding](auto &&... args) { binding.def_readonly(std::forward<decltype(args)>(args)...); };
+	WRAP_BINDING_METHOD(def);
+	WRAP_BINDING_METHOD(def_readonly);
 
 	using signature_cast_placeholder::_;
 
