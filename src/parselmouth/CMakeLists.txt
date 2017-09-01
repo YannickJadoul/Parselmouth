@@ -23,6 +23,7 @@ add_sources(Data.cpp
             Matrix.cpp
             MFCC.cpp
             Pitch.cpp
+            Sampled.cpp
             Sound.cpp
             Spectrogram.cpp
             Spectrum.cpp
