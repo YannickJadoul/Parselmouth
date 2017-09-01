@@ -35,6 +35,7 @@ void Binding<Data>::init()
 	//           },
 	//           "file_path"_a);
 
+	// TODO How about derived Python classes?
 	def("copy",
 	    &Data_copy<structData>);
 
@@ -42,7 +43,8 @@ void Binding<Data>::init()
 	    &Data_copy<structData>);
 
 	def("__deepcopy__",
-	    &Data_copy<structData>);
+	    [](Data self, py::dict) { return Data_copy<structData>(self); },
+		"memo"_a);
 
 	// TODO Pickling?
 
