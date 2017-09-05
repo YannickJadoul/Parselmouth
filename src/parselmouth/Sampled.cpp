@@ -33,6 +33,8 @@ void Binding<Sampled>::init()
 	// TODO What about setting these properties? Any desired effect
 	def_readonly("nx", &structSampled::nx);
 
+	def("__len__", [](Sampled self) { return self->nx; });
+
 	def_readonly("x1", &structSampled::x1);
 
 	def_readonly("dx", &structSampled::dx);
@@ -46,6 +48,8 @@ void Binding<Sampled>::init()
 			}
 			return xs;
 		});
+
+	// TODO Sampled_indexToX, Sampled_xToIndex, etc
 }
 
 } // namespace parselmouth

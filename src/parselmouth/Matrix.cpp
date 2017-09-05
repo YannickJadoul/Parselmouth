@@ -54,17 +54,6 @@ void Binding<Matrix>::init() {
 		    Matrix_formula_part(self, xRange.first.value_or(self->xmin), xRange.second.value_or(self->xmax), yRange.first.value_or(self->ymin), yRange.second.value_or(self->ymax), formula.c_str(), nullptr, nullptr);
 	    },
 	    "formula"_a, "x_range"_a = std::make_pair(nullopt, nullopt), "y_range"_a = std::make_pair(nullopt, nullopt));
-
-	// TODO Part of bugfix of README example: move to Sampled / SampledXY
-	def_readonly("ymin", &structMatrix::ymin);
-
-	def_readonly("ymax", &structMatrix::ymax);
-
-	def_readonly("ny", &structMatrix::ny);
-
-	def_readonly("y1", &structMatrix::y1);
-
-	def_readonly("dy", &structMatrix::dy);
 }
 
 } // namespace parselmouth

@@ -26,7 +26,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Sampled>::init()
+void Binding<SampledXY>::init()
 {
 	def_readonly("ymin", &structSampledXY::ymin);
 
@@ -49,6 +49,8 @@ void Binding<Sampled>::init()
 		    }
 		    return ys;
 	    });
+
+	// TODO Sampled_indexToY, Sampled_yToIndex, etc
 }
 
 } // namespace parselmouth
