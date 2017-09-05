@@ -28,24 +28,27 @@ namespace parselmouth {
 
 void Binding<Sampled>::init()
 {
-	// TODO Unit handling
+	def_readonly("ymin", &structSampledXY::ymin);
 
-	// TODO What about setting these properties? Any desired effect
-	def_readonly("nx", &structSampled::nx);
+	def_readonly("ymax", &structSampledXY::ymax);
 
-	def_readonly("x1", &structSampled::x1);
+	def_property_readonly("yrange", [](SampledXY self) { return std::make_pair(self->ymin, self->ymax); });
 
-	def_readonly("dx", &structSampled::dx);
+	def_readonly("ny", &structSampledXY::ny);
 
-	def("xs",
-		[](Sampled self) { // TODO This or rather use Python call to numpy?
-			py::array_t<double> xs(self->nx);
-			auto unchecked = xs.mutable_unchecked<1>();
-			for (auto i = 0; i < self->nx; ++i) {
-				unchecked(i) = self->x1 + i * self->dx;
-			}
-			return xs;
-		});
+	def_readonly("y1", &structSampledXY::y1);
+
+	def_readonly("dy", &structSampledXY::dy);
+
+	def("ys",
+	    [](SampledXY self) {
+		    py::array_t<double> ys(self->ny);
+		    auto unchecked = ys.mutable_unchecked<1>();
+		    for (auto i = 0; i < self->ny; ++i) {
+			    unchecked(i) = self->y1 + i * self->dy;
+		    }
+		    return ys;
+	    });
 }
 
 } // namespace parselmouth
