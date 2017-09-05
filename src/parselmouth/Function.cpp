@@ -61,7 +61,7 @@ void Binding<Function>::init()
 	    signature_cast<_ (_, Positive<double>)>(Function_scaleXBy),
 	    "scale"_a);
 
-	def("scale_times_to",
+	def("scale_x_to",
 	    [](Function self, double newXmin, double newXmax) {
 		    if (newXmin >= newXmax)
 			    Melder_throw (U"New xmin should be greater than new xmax.");
