@@ -20,6 +20,7 @@
 #include "NUMmachar.h"
 #include <ctype.h>
 #include <stdarg.h>
+#include <limits>
 #if defined (UNIX) || defined (macintosh)
 	#include <sys/types.h>
 	#include <sys/stat.h>
@@ -1573,7 +1574,9 @@ void praat_run () {
 	}
 	Melder_assert (isdefined (0.0));
 	Melder_assert (isdefined (1e300));
+#ifndef _MSC_VER
 	Melder_assert (isundef ((real) 1e320L));
+#endif
 	Melder_assert (isundef (pow (10.0, 330)));
 #ifndef _MSC_VER
 	Melder_assert (isundef (0.0 / 0.0));
