@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Yannick Jadoul
+ * Copyright (C) 2017  Yannick Jadoul
  *
  * This file is part of Parselmouth.
  *
@@ -17,11 +17,15 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#ifndef INC_MELDER_INFO_INTERCEPTOR_H
-#define INC_MELDER_INFO_INTERCEPTOR_H
+#ifndef INC_PARSELMOUTH_MELDER_UTILS_H
+#define INC_PARSELMOUTH_MELDER_UTILS_H
 
 #include "sys/melder.h"
 #include "UndefPraatMacros.h"
+
+#include <string>
+
+namespace parselmouth {
 
 class MelderInfoInterceptor
 {
@@ -36,4 +40,12 @@ private:
 	autoMelderDivertInfo m_divertInfo;
 };
 
-#endif // INC_MELDER_INFO_INTERCEPTOR_H
+inline structMelderFile pathToMelderFile(const std::u32string &filePath) { // TODO type_caster structMelderFile?
+	structMelderFile file = {};
+	Melder_relativePathToFile(filePath.c_str(), &file);
+	return file;
+}
+
+}
+
+#endif // INC_PARSELMOUTH_MELDER_UTILS_H

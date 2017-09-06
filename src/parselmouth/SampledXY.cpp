@@ -51,6 +51,7 @@ void Binding<SampledXY>::init()
 	    });
 
 	// TODO Sampled_indexToY, Sampled_yToIndex, etc
+	// TODO WindowSamplesY
 }
 
 } // namespace parselmouth

@@ -19,7 +19,7 @@
 
 #include "Parselmouth.h"
 
-#include "praat/MelderInfoInterceptor.h"
+#include "praat/MelderUtils.h"
 
 namespace py = pybind11;
 using namespace py::literals;

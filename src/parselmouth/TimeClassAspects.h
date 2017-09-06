@@ -49,6 +49,13 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 
 	// TODO Get rid of code duplication with Function?
 
+	// TODO What about this?
+	/* binding.attr("tmin") = binding.attr("xmin");
+	binding.attr("tmax") = binding.attr("xmax");
+	binding.attr("nt") = binding.attr("nx");
+	binding.attr("t1") = binding.attr("x1");
+	binding.attr("dt") = binding.attr("dx");*/
+
 	def("get_start_time", [](Class *self) { return self->xmin; });
 
 	def_property("start_time",

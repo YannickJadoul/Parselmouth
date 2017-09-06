@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
 
+#include "praat/MelderUtils.h"
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
@@ -50,12 +51,6 @@ OrderedOf<T> referencesToOrderedOf(const Container &container) // TODO type_cast
 	OrderedOf<T> orderedOf;
 	std::for_each(begin(container), end(container), [&orderedOf] (T &item) { orderedOf.addItem_ref(&item); });
 	return orderedOf;
-}
-
-structMelderFile pathToMelderFile(const std::u32string &filePath) { // TODO type_caster structMelderFile?
-	structMelderFile file = {};
-	Melder_relativePathToFile(filePath.c_str(), &file);
-	return file;
 }
 
 } // namespace
