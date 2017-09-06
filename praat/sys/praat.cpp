@@ -1252,7 +1252,7 @@ void praat_init (const char32 *title, int argc, char **argv)
 				Melder_clearError ();
 			}
 		}
-	#elif !defined(NO_GRAPHICS) && defined (_WIN32)
+	#elif motif && defined (_WIN32)
 		if (! Melder_batch)
 			motif_win_setUserMessageCallback (cb_userMessage);
 	#elif defined (macintosh)

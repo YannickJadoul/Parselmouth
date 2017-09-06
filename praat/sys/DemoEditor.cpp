@@ -310,7 +310,7 @@ void Demo_peekInput (Interpreter interpreter) {
 				}
 				[NSApp  updateWindows];   // called automatically?
 				[pool release];
-			#elif !defined(NO_GRAPHICS) && defined (_WIN32)
+			#elif motif
 				XEvent event;
 				while (PeekMessage (& event, 0, 0, 0, PM_REMOVE)) {
 					XtDispatchEvent (& event);
