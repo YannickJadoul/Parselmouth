@@ -1,6 +1,6 @@
 /* manual_dwtools.cpp
  *
- * Copyright (C) 1993-2016 David Weenink
+ * Copyright (C) 1993-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2410,6 +2410,21 @@ NORMAL (U"form the eigenvectors. The important eigenvectors, of course, correspo
 	"to the positions where the %l eigenvalues are not infinite.")
 MAN_END
 
+MAN_BEGIN (U"Get incomplete gamma...", U"djmw", 20170531)
+INTRO (U"Get the value of the @@incomplete gamma function@ for particular values of \\al and %x.")
+ENTRY (U"Algorithm")
+NORMAL (U"The algorithm is taken from @@Kostlan & Gokhman (1987)@.")
+MAN_END
+
+MAN_BEGIN (U"incomplete gamma function", U"djmw", 20170531)
+INTRO (U"The incomplete gamma function is defined as:")
+FORMULA (U"\\Ga(\\al, %x) = \\in__%x_^^\\oo^ %t^^\\al\\-m1^e^^-%t^dt, \\Ga(\\al) = \\Ga(\\al, 0),")
+NORMAL (U"where \\al and %x are complex numbers and Re(\\al) > 0.")
+NORMAL (U"The complementary incomplete gamma function is defined as:")
+FORMULA (U"\\ga(\\al, %x) = \\in__%0_^^%x^ %t^^\\al\\-m1^e^^-%t^dt = \\Ga(\\al)\\-m\\Ga(\\al, %x).")
+
+MAN_END
+
 MAN_BEGIN (U"invFisherQ", U"djmw", 20000525)
 INTRO (U"$$invFisherQ$ (%q, %df1, %df2) returns the value %f for which "
 	"$$@fisherQ (%f, %df1, %df2) = %q.")
@@ -2614,6 +2629,10 @@ NORMAL (U"An object of type MSpline represents a linear combination of basis "
 FORMULA (U"MSpline (%x) = \\Si__%k=1..%numberOfCoefficients_ %c__%k_ %mspline__%k_(%x)")
 MAN_END
 
+MAN_BEGIN (U"pairwise algorithm for computing sample variances", U"djmw", 20170806)
+INTRO (U"An algorithm to compute the mean and the variance of an array of numbers. By pairwise combining array elements, the total number of arithmetic operations is reduced and therefore also the noise due to finite precision arithmetic. The algorithm is described in @@Chan, Golub & LeVeque (1979)@ and a comparison with other algorithms is presented in @@Chan, Golub & LeVeque (1983)@.")
+MAN_END
+
 MAN_BEGIN (U"PatternList", U"djmw", 20160524)
 INTRO (U"One of the @@types of objects@ in P\\s{RAAT}.")
 INTRO (U"An object of type PatternList is a list of patterns that can serve as "
@@ -2795,6 +2814,126 @@ MAN_END
 
 MAN_BEGIN (U"PitchTier: To Pitch...", U"djmw", 20061128)
 INTRO (U"Synthesizes a new @Pitch from the selected @PitchTier.")
+MAN_END
+
+MAN_BEGIN (U"PitchTier: Modify interval...", U"djmw", 20170801)
+INTRO (U"Modifies a selected interval from the chosen @PitchTier by replacing the contents of the interval by newly defined pitch points.")
+ENTRY (U"Settings")
+SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (12), U""
+	Manual_DRAW_SETTINGS_WINDOW (U"PitchTier: Modify interval", 12)
+	Manual_DRAW_SETTINGS_WINDOW_RANGE (U"Time range (s)", U"0.0", U"0.0")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD (U"Relative times", U"0.0 0.5 1.0")
+	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU (U"...are...", U"fractions")
+	"Text... 50 left y half ...of the interval duration which will be added...\n" \
+	"y += 40\n" \
+	"Text... 50 left y half ...to the start time of the interval.\n" \
+	"y += 40\n" \
+	Manual_DRAW_SETTINGS_WINDOW_FIELD (U"The \"pitch\" values", U"100.0 200.0 100.0")
+	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU (U"...are...", U"frequencies")
+	"Text... 50 left y half ...to be added to the anchor value (if used)...\n" \
+	"y += 40\n" \
+	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU (U"...which is the...",U"not used")
+	"Text... 50 left y half ...frequency value in the interval...\n" \
+	"y += 40\n" \
+	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU (U"Pitch frequency unit",U"Hertz")
+)
+TAG (U"##Time range (s)")
+DEFINITION (U"the start and end time of the interval where the changes will be applied.")
+TAG (U"##Relative times")
+DEFINITION (U"determine, together with the following option, the times of the new pitch points with respect to the start time of the interval.")
+TAG (U"##...are...")
+DEFINITION (U"determines how the times %t__%i_ of the new pitch points are calculated. The time of each new pitch point is determined by adding to the start time of the interval a time calculated from the relative time value. If %%t%__min_ and %%t%__max_ are the start and end time of the interval and %%r%__i_ is the %%i%^^th^ relative time, the times %t__%i_ are calculated according to the options as:")
+TAG1 (U"%%fractions%")
+DEFINITION (U"%%t%__%i_ = %t__min_ + %r__%i_ (%t__max_ \\-- %t__min_). The relative time values are fractions of the interval duration. Normally fractions are numbers in the range 0.0 to 1.0, although smaller and larger numbers are allowed.")
+TAG1 (U"%%percentages%")
+DEFINITION (U"%%t%__%i_ = %t__min_+ 0.01 %r__%i_ (%t__max_ \\-- %t__min_). The relative time values are percentages of the interval duration. Normally percentages are numbers in the range 0.0 to 100.0, although smaller and larger numbers are allowed.")
+TAG1 (U"%%independent%")
+DEFINITION (U"%%t%__%i_ = %t__min_ + %r__%i_. The relative time values specify an offset in seconds here. ")
+TAG (U"##The \"pitch\" values")
+DEFINITION (U"determine, together with the next two options, the frequency value of the new pitch points. Each value here must link to the corresponding time value.")
+TAG (U"##...are...")
+DEFINITION (U"determines the interpretation of the \"pitch\" value. Possible choices are")
+TAG1 (U"%%frequencies%")
+DEFINITION (U"the values are frequencies in hertz.")
+TAG1 (U"%%fractions%")
+DEFINITION (U"the values are fractions of a pitch value that is specified by the next option. Normally fractions are numbers in the range 0.0 to 1.0, although smaller and larger numbers are allowed.")
+TAG1 (U"%%percentages%")
+DEFINITION (U"the values are percentages of a pitch value that is specified by the next option. Normally percentages are numbers in the range 0.0 to 100.0, although smaller and larger numbers are allowed.")
+TAG1 (U"%%start and slopes%")
+DEFINITION (U"the values are a start frequency followed by slopes in Herz per second.")
+TAG1 (U"%%slopes and end%")
+DEFINITION (U"the values are slopes in herz per second followed by an end frequency in herz.")
+TAG1 (U"%%music notes%")
+DEFINITION (U"the values are music notes specified on the twelve tone scale as a0, a\\# 0, b0, c0, c\\# 0, d0, d\\# 0, e0, f0, f\\# 0, g0, g\\# 0, a1, a\\# 1, ... a4, ..., or g\\# 9. Here the octave is indicated by the number, 0 being the lowest octave and 9 the highest. The a4 is choosen to be at 440 Hz. Therefore, a0 is the note with the lowest frequency, four octaves below the a4 and corresponds to a frequency of 27.5 Hz. As a scale of reference we give a0 = 27.5 Hz, a1 = 55 Hz, a2 = 110 Hz, a3 = 220 Hz, a4 = 440 Hz, a5 = 880 Hz, a6 = 1760 Hz, a7 = 3520 Hz, a8 = 7040 Hz and a9 = 14080 Hz.")
+TAG (U"##...which is the...")
+DEFINITION (U"the anchor point value, if used. The following options may be given for the anchor point frequency value:")
+TAG1 (U"%%not used%")
+DEFINITION (U"no anchor point frequency value is necessary. The previous two options are sufficient to determine the new pitch frequencies. This means that the \"pitch\" values given cannot be %%fractions% or %%percentages%.")
+TAG1 (U"%%current%")
+DEFINITION (U"the current pitch frequency at the corresponding time.")
+TAG1 (U"%%start%")
+DEFINITION (U"the pitch frequency at the start of the interval.")
+TAG1 (U"%%end%")
+DEFINITION (U"the pitch frequency at the end of the interval.")
+TAG1 (U"%%mean of the curve%")
+DEFINITION (U"the @@PitchTier: Get mean (curve)...|mean of the curve@ within the interval.")
+TAG1 (U" %%mean of the points%")
+DEFINITION (U"the @@PitchTier: Get mean (points)...|mean of the points@ within the interval.")
+TAG1 (U"%%maximum%")
+DEFINITION (U"the maximum pitch frequency in the interval.")
+TAG1 (U"%%minimum%")
+DEFINITION (U"the minimum pitch frequency in the interval.")
+TAG (U"##Pitch frequency unit")
+DEFINITION (U"Hertz")
+MAN_END
+
+MAN_BEGIN (U"PitchTier: Modify interval (tone levels)...", U"djmw", 20170801)
+INTRO (U"Modifies a selected interval from the chosen @PitchTier by replacing the contents of the interval by newly defined pitch points.")
+NORMAL (U"For tone languages the pitch contours of the tones are often expressed as a sequence of tone levels instead of a sequence of real frequency values in hertz because tone levels abstract away from the possibly different pitch ranges of individual speakers.")
+NORMAL (U"The tone levels %T are calculated from a given pitch %%frequency% in hertz as:")
+FORMULA (U"%T = %%numberOfToneLevels% \\.c log (%%frequency% / %F__min_) / log (%F__max_ / %F__min_),")
+NORMAL (U"where %F__min_ and %F__max_ are the minimum and the maximum frequency of a speaker's pitch range and %%numberOfToneLevels% is the number of levels into which the pitch range is divided. "
+	"This formula maps any frequency between %F__min_ and %F__max_ to a number between 0 and %%numberOfToneLevels%.")
+NORMAL (U"To get the frequency in hertz from a specified tone level %T we have to use the inverse formula:")
+FORMULA (U"%%frequency% = %F__min_ \\.c 10^^(%T \\.c log (%F__max_ / %F__min_)) / %%numberOfToneLevels%)^.")
+ENTRY (U"Settings")
+SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (9), U""
+	Manual_DRAW_SETTINGS_WINDOW (U"PitchTier: Modify interval (tone levels)", 9)
+	Manual_DRAW_SETTINGS_WINDOW_RANGE (U"Time range (s)", U"0.0", U"0.0")
+	Manual_DRAW_SETTINGS_WINDOW_RANGE (U"Pitch range (Hz)", U"80.0", U"200.0")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD (U"Number of tone levels", U"5")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD (U"Relative times", U"0.0 0.5 1.0")
+	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU (U"...are...",U"fractions")
+	"Text... 50 left y half ...of the interval duration which will be added...\n" \
+	"y += 40\n" \
+	"Text... 50 left y half ...to the start time of the interval.\n" \
+	"y += 40\n" \
+	Manual_DRAW_SETTINGS_WINDOW_FIELD (U"Tone levels", U"2.1 2.1 5.0")
+)
+TAG (U"##Time range (s)")
+DEFINITION (U"the start and end time of the interval where the changes will be applied.")
+TAG (U"##Pitch range (Hz)")
+DEFINITION (U"The minimum and maximum frequency to which the tone levels refer.")
+TAG (U"##Number of tone levels")
+DEFINITION (U"The number of levels into which the pitch range is divided.")
+TAG (U"##Relative times")
+DEFINITION (U"determine, together with the following option, the times of the new pitch points with respect to the start time of the interval.")
+DEFINITION (U"determines how the times %t__%i_ of the new pitch points are calculated. The time of each new pitch point is determined by adding to the start time of the interval a time calculated from the relative time value. If %%t%__min_ and %%t%__max_ are the start and end time of the interval and %%r%__i_ is the %%i%^^th^ relative time, the times %t__%i_ are calculated according to the options as:")
+TAG1 (U"%%fractions%")
+DEFINITION (U"%%t%__%i_ = %t__min_ + %r__%i_ (%t__max_ \\-- %t__min_). The relative time values are fractions of the interval duration. Normally fractions are numbers in the range 0.0 to 1.0, although smaller and larger numbers are allowed.")
+TAG1 (U"%%percentages%")
+DEFINITION (U"%%t%__%i_ = %t__min_+ 0.01 %r__%i_ (%t__max_ \\-- %t__min_). The relative time values are percentages of the interval duration. Normally percentages are numbers in the range 0.0 to 100.0, although smaller and larger numbers are allowed.")
+TAG1 (U"%%independent%")
+DEFINITION (U"%%t%__%i_ = %t__min_ + %r__%i_. The relative time values specify an offset in seconds here. ")
+
+TAG (U"##Tone levels")
+DEFINITION (U"specify the frequencies at the corresponding time points as tone levels.")
+ENTRY (U"Algorithm")
+NORMAL (U"1. The real times are calculated from the relative times.")
+NORMAL (U"2. The frequencies are calculated from the tone levels.")
+NORMAL (U"3. The real times and the frequencies are sorted together by time.")
+NORMAL (U"4. All pitch points in the PitchTier between the first and the last time of the sorted time array are removed.")
+NORMAL (U"5. The newly calculated pitch points are added to the PitchTier.")
 MAN_END
 
 MAN_BEGIN (U"Polygon: Rotate...", U"djmw", 20100418)
@@ -4719,6 +4858,8 @@ FORMULA (U"(%x__%ij_ \\-- %\\mu__%j_) / %\\si__%j_, ")
 NORMAL (U"where %\\mu__%j_ and %\\si__%j_ are the mean and the standard deviation as calculated "
 	"from the %j^^th^ column, respectively. After standardization all column means will equal zero "
 	"and all column standard deviations will equal one.")
+ENTRY (U"Algorithm")
+NORMAL (U"Standard deviations are calculated with the corrected two-pass algorithm as described in @@Chan, Golub & LeVeque (1983)@.")
 MAN_END
 
 MAN_BEGIN (U"TableOfReal: To Configuration (lda)...", U"djmw", 19981103)
@@ -4939,6 +5080,91 @@ NORMAL (U"We add an extra (empty) interval into each %%interval tier%. "
 NORMAL (U"For %%point tiers% only the domain will be changed.")
 MAN_END
 
+MAN_BEGIN (U"TextGrid & DurationTier: To TextGrid (scale times)", U"djmw", 20170612)
+INTRO (U"Scales the durations of the selected @@TextGrid@ intervals as specified by the selected @@DurationTier@.")
+
+MAN_END
+
+MAN_BEGIN (U"TextGrid: To DurationTier...", U"djmw", 20170617)
+INTRO (U"Returns a @@DurationTier@ that could scale the durations of the specified intervals of the selected @@TextGrid@ with a specified factor.")
+ENTRY (U"Settings")
+SCRIPT (6, Manual_SETTINGS_WINDOW_HEIGHT (5), U""
+	Manual_DRAW_SETTINGS_WINDOW ("TextGrid: To DurationTier", 5)
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Tier number", "1")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD("Time scale factor", "2.0")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD("Left transition duration", "1e-10")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD("Right transition duration", "1e-10")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Scale intervals whose labels", "starts with")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("...the text", "hi")
+)
+TAG (U"##Tier number#")
+DEFINITION (U"specifies the tier with the intervals.")
+TAG (U"##Time scale factor")
+DEFINITION (U"specifies the scale factor by which the duration of a selected interval has to be multiplied.")
+TAG (U"##Left transition duration#")
+DEFINITION (U"specifies how long it takes to go from a time scale factor of 1.0 to the specified one. Default a very small duration is used. ")
+TAG (U"##Right transition duration#")
+DEFINITION (U"specifies the time it takes to go from the specified time scale factor to 1.0. Default a very small duration is used.")
+TAG (U"##Scale intervals whose labels")
+DEFINITION (U"specifies the interval selection criterion.")
+TAG (U"##...the text")
+DEFINITION (U"specifies the text used in the selection criterion.")
+ENTRY (U"Algorithm")
+SCRIPT (5, 3, U"ymin = 0.9\n"
+	"Axes: 0, 1, ymin, 2.0\n" 
+	"t1 = 0.2\n"
+	"t4 = 0.9\n"
+	"timeScaleFactor = 1.5\n"
+	"leftTransitionDuration = 0.1\n"
+	"rightTransitionDuration = 0.2\n"
+	"t2 = t1 + leftTransitionDuration\n"
+	"t3 = t4 - rightTransitionDuration\n"
+	"Solid line\n"
+	"Draw line: t1, 1, t2, timeScaleFactor\n"
+	"Draw line: t2, timeScaleFactor, t3, timeScaleFactor\n"
+	"Draw line: t3, timeScaleFactor, t4, 1.0\n"
+	"Dotted line\n"
+	"Draw line: 0, 1, t1, 1\n"
+	"Draw line: t4, 1.0, 1.0, 1.0\n"
+	"Draw line: t1, ymin, t1, timeScaleFactor+0.1\n"
+	"Draw line: t2, ymin, t2, timeScaleFactor+0.1\n"
+	"Draw two-way arrow: t1, timeScaleFactor+0.1, t2, timeScaleFactor+0.1\n"
+	"Text: (t1+t2)/2, \"Centre\", timeScaleFactor+0.1, \"Bottom\", \"leftTransitionDuration\"\n"
+	"Draw line: t3, ymin, t3, timeScaleFactor+0.1\n"
+	"Draw line: t4, ymin, t4, timeScaleFactor+0.1\n"
+	"Draw two-way arrow: t3, timeScaleFactor+0.1, t4, timeScaleFactor+0.1\n"
+	"Text: (t3+t4)/2, \"Centre\", timeScaleFactor+0.1, \"Bottom\", \"rightTransitionDuration\"\n"
+	"One mark bottom: t1, \"no\", \"yes\", \"no\", \"t__1_\"\n"
+	"One mark bottom: t2, \"no\", \"yes\", \"no\", \"t__2_\"\n"
+	"One mark bottom: t3, \"no\", \"yes\", \"no\", \"t__3_\"\n"
+	"One mark bottom: t4, \"no\", \"yes\", \"no\", \"t__4_\"\n"
+	"One mark left: 1.0, \"yes\", \"yes\", \"no\", \"\"\n"
+	"Text bottom: \"yes\", \"Time (s) \\->\"\n"
+	"Text left: \"yes\", \"Duration scale factor \\->\"\n"
+	"Draw inner box\n"
+)
+NORMAL (U"For each selected interval its duration will be specified by four points in the duration tier as the figure above shows. "
+	"Given that the start time "
+	"and the end time of the interval are at %t__1_ and %t__4_, respectively, the times of these four points will be "
+	"%t__1_, %t__2_=%t__1_+%%leftTransitionDuration%, %t__3_=%t__4_-%%rightTransitionDuration% and %t__4_. The associated duration scale factors "
+	"will be 1.0, %%timeScalefactor%, %%timeScalefactor% and 1.0, respectively.")
+NORMAL (U"Normally we would use very small values for the right and the left transition durations and the curve in the figure above "
+	"would look more like a rectangular block instead of the trapezium above. If, on the contrary, larger values for the durations are taken, such that the sum of "
+	"the left and the right transition durations %%exceeds% the interval's width, then the ordering of the time points at %t__1_ to %t__4_ changes "
+	"which will have unexpected results on the duration tier.")
+ENTRY (U"Examples")
+NORMAL (U"Suppose you want to change the durations of some parts in a sound. The way to go is:")
+LIST_ITEM (U"1. Create a TextGrid with at least one interval tier with the segments of interest labeled.")
+LIST_ITEM (U"2. Select the TextGrid and choose the ##To DurationTier...# option.")
+LIST_ITEM (U"3. Use the selected sound to create a @@Manipulation@ object from it. Check and eventually correct the pitch measurements in this object (##View & Edit#) as the quality of the resynthesis depends critically on the quality of the pitch measurements.")
+LIST_ITEM (U"4. Select the Manipulation object and the newly created DurationTier object together and choose ##Replace duration tier#.")
+LIST_ITEM (U"5. Select the Manipulation object and choose ##Get resynthesis (overlap-add)#. The newly created sound object will have the "
+	"durations of its selected intervals changed.")
+LIST_ITEM (U"6. Optionally you might also want to scale the TextGrid to line up with the newly created sound too. You can do so by selecting the "
+	"TextGrid and the DurationTier together and choose ##To TextGrid (scale times)#. You will get a new TextGrid that is nicely "
+	"aligned with the new sound.")
+MAN_END
+
 MAN_BEGIN (U"TIMIT acoustic-phonetic speech corpus", U"djmw", 19970320)
 INTRO (U"A large American-English speech corpus that resulted from the joint efforts "
 	"of several American research sites.")
@@ -5036,10 +5262,10 @@ NORMAL (U"for 0 \\<_ %x \\<_ 1 and %a and %b and %a+%b not equal to a negative i
 //Symmetry: $I_x(a,b) = 1 - I_{1-x}(b,a)$
 MAN_END
 
-MAN_BEGIN (U"incompleteGammaP", U"djmw", 20071024)
+MAN_BEGIN (U"incompleteGammaP", U"djmw", 20170531)
 TAG (U"##incompleteGammaP (%a, %x)")
 DEFINITION (U"incompleteGammaP = 1/\\Ga(%a)\\in__0_^%x e^^-%t^%t^^%a-1^ dt,")
-NORMAL (U"For %x\\>_ 0 and %a not a negative integer.")
+NORMAL (U"where %x and %a are real numbers that satisfy %x\\>_ 0 and %a not being a negative integer.")
 MAN_END
 
 MAN_BEGIN (U"lnBeta", U"djmw", 20071024)
@@ -5071,6 +5297,14 @@ NORMAL (U"A. Boomsma (1977): \"Comparing approximations of confidence intervals 
 	"#31: 179-186.")
 MAN_END
 
+MAN_BEGIN (U"Chan, Golub & LeVeque (1983)", U"djmw", 20170802)
+NORMAL (U"T.F. Chan, G.H. Golub & R.J. LeVeque (1983): \"Algorithms for computing the sample variance: Analysis and recommendations.\" %%The American Statistician% #37: 242\\--247.")
+MAN_END
+
+MAN_BEGIN (U"Chan, Golub & LeVeque (1979)", U"djmw", 20170802)
+NORMAL (U"T.F. Chan, G.H. Golub & R.J. LeVeque (1979): \"Updating formulae and an pairwise algorithm for computing sample variances.\" %%Stanford working paper STAN-CS-79-773%, 1\\--22.")
+MAN_END
+
 MAN_BEGIN (U"Cooley & Lohnes (1971)", U"djmw", 20060322)
 NORMAL (U"W.W. Colley & P.R. Lohnes (1971): %%Multivariate data analysis%. "
 	"John Wiley & Sons.")
@@ -5078,8 +5312,7 @@ MAN_END
 
 MAN_BEGIN (U"Davis & Mermelstein (1980)", U"djmw", 20010419)
 NORMAL (U"S.B. Davis & P. Mermelstein (1980), \"Comparison of parametric "
-	"representations for monosyllabic word recognition in continuously "
-	"spoken sentences.\" "
+	"representations for monosyllabic word recognition in continuously spoken sentences.\" "
 	"%%IEEE Transactions on ASSP% #28: 357\\--366.")
 MAN_END
 
@@ -5143,7 +5376,7 @@ NORMAL (U"P.I.M. Johannesma (1972): \"The pre-response stimulus ensemble of "
 MAN_END
 
 MAN_BEGIN (U"Johnson (1998)", U"djmw", 20000525)
-NORMAL (U"D.E. Johnson (1998): %%Applied Multivariate methods%.")
+NORMAL (U"D.E. Johnson (1998): %%Applied multivariate methods%.")
 MAN_END
 
 MAN_BEGIN (U"Keating & Esposito (2006)", U"djmw", 20130620)
@@ -5159,8 +5392,12 @@ MAN_BEGIN (U"Kim & Kim (2006)", U"djmw", 20110617)
 NORMAL (U"D.H. Kim & M.-J. Kim (2006): \"An extension of polygon clipping to resolve degenerate cases.\" %%Computer-Aided Design & Applications% #3: 447\\--456.")
 MAN_END
 
+MAN_BEGIN (U"Kostlan & Gokhman (1987)", U"djmw", 20170530)
+NORMAL (U"E. Kostlan & D. Gokhman (1987): \"A program for calculating the incomplete gamma function.\" %%Technical report, Dept. of Mathematics, Univ. of California, Berkeley, 1987.")
+MAN_END
+
 MAN_BEGIN (U"Krishnamoorthy & Yu (2004)", U"djmw", 20090813)
-NORMAL (U"K. Krishnamoortht & J. Yu (2004): \"Modified Nel and Van der Merwe test for multivariate "
+NORMAL (U"K. Krishnamoorthy & J. Yu (2004): \"Modified Nel and Van der Merwe test for multivariate "
 	"Behrens-Fisher problem.\" %%Statistics & Probability Letters% #66: 161\\--169.")
 MAN_END
 
@@ -5172,7 +5409,7 @@ NORMAL (U"L.F. Lamel, R.H. Kassel & S. Sennef (1986): \"Speech Database "
 MAN_END
 
 MAN_BEGIN (U"Morrison (1990)", U"djmw", 19980123)
-NORMAL (U"D.F. Morrison (1990): %%Multivariate Statistical Methods%. "
+NORMAL (U"D.F. Morrison (1990): %%Multivariate statistical methods%. "
 	"New York: McGraw-Hill.")
 MAN_END
 

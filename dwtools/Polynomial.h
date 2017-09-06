@@ -41,7 +41,7 @@
 
 void FunctionTerms_init (FunctionTerms me, double xmin, double xmax, long numberOfCoefficients);
 
-void FunctionTerms_initFromString (FunctionTerms me, double xmin, double xmax, const char32 *s, int allowTrailingZeros);
+void FunctionTerms_initFromString (FunctionTerms me, double xmin, double xmax, const char32 *s, bool allowTrailingZeros);
 
 autoFunctionTerms FunctionTerms_create (double xmin, double xmax, long numberOfCoefficients);
 
@@ -152,7 +152,7 @@ void Polynomial_divide_firstOrderFactor (Polynomial me, double factor, double *p
 /* Functions: calculate coefficients of new polynomial P(x)/(x-a)
  * if p_remainder != nullptr it will contain 
  *		remainder after dividing by monomial factor x-a.
- * 		NUMundefined if my numberOfCoefficients == 1 (error condition)
+ * 		`undefined` if my numberOfCoefficients == 1 (error condition)
  * Postcondition: my numberOfCoefficients reduced by 1 
 */
 

@@ -1,6 +1,6 @@
 /* praat_Stat.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -292,13 +292,12 @@ DIRECT (HELP_StatisticsTutorial) {
 
 DIRECT (WINDOW_Table_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot edit a Table from batch.");
-	LOOP {
-		iam_LOOP (Table);
+	FIND_ONE_WITH_IOBJECT (Table)
 		autoTableEditor editor = TableEditor_create (ID_AND_FULL_NAME, me);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 // MARK: Tabulate
 
@@ -934,7 +933,7 @@ DO
 		long columnNumber = Table_getColumnIndexFromColumnLabel (me, extractAllRowsWhereColumn___);
 		autoTable result = Table_extractRowsWhereColumn_number (me, columnNumber, ___is___, ___theNumber);
 	CONVERT_EACH_END (my name, U"_", Table_messageColumn (me, columnNumber), U"_",
-		NUMdefined (___theNumber) ? Melder_integer (lround (___theNumber)) : U"undefined")
+		isdefined (___theNumber) ? Melder_integer (lround (___theNumber)) : U"undefined")
 }
 
 FORM (NEW_Table_extractRowsWhereColumn_text, U"Table: Extract rows where column (text)", nullptr) {

@@ -1,6 +1,6 @@
 /* praat_Fon.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -172,13 +172,12 @@ END }
 
 DIRECT (WINDOW_Corpus_edit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot edit a Corpus from batch.");
-	LOOP {
-		iam (Corpus);
+	FIND_ONE_WITH_IOBJECT (Corpus)
 		autoTableEditor editor = TableEditor_create (ID_AND_FULL_NAME, me);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 // MARK: - DISTRIBUTIONS
 
@@ -741,7 +740,7 @@ FORM (REAL_Harmonicity_getValueInFrame, U"Get value in frame", U"Harmonicity: Ge
 	OK
 DO
 	NUMBER_ONE (Harmonicity)
-		double result = frameNumber < 1 || frameNumber > my nx ? NUMundefined : my z [1] [frameNumber];
+		double result = ( frameNumber < 1 || frameNumber > my nx ? undefined : my z [1] [frameNumber] );
 	NUMBER_ONE_END (U" dB")
 }
 
@@ -804,7 +803,7 @@ FORM (REAL_Intensity_getValueInFrame, U"Get value in frame", U"Intensity: Get va
 	OK
 DO
 	NUMBER_ONE (Intensity)
-		double result = frameNumber < 1 || frameNumber > my nx ? NUMundefined : my z [1] [frameNumber];
+		double result = ( frameNumber < 1 || frameNumber > my nx ? undefined : my z [1] [frameNumber] );
 	NUMBER_ONE_END (U" dB")
 }
 
@@ -1233,7 +1232,7 @@ FORM (REAL_Ltas_getValueInBin, U"Get value in bin", U"Ltas: Get value in bin..."
 	OK
 DO
 	NUMBER_ONE (Ltas)
-		double result = binNumber < 1 || binNumber > my nx ? NUMundefined : my z [1] [binNumber];
+		double result = binNumber < 1 || binNumber > my nx ? undefined : my z [1] [binNumber];
 	NUMBER_ONE_END (U" dB")
 }
 
@@ -1281,14 +1280,13 @@ static void cb_ManipulationEditor_publication (Editor /* editor */, autoDaata pu
 }
 DIRECT (WINDOW_Manipulation_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a Manipulation from batch.");
-	LOOP {
-		iam (Manipulation);
+	FIND_ONE_WITH_IOBJECT (Manipulation)
 		autoManipulationEditor editor = ManipulationEditor_create (ID_AND_FULL_NAME, me);
 		Editor_setPublicationCallback (editor.get(), cb_ManipulationEditor_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 DIRECT (NEW_Manipulation_extractDurationTier) {
 	CONVERT_EACH (Manipulation)
@@ -1552,13 +1550,12 @@ DO
 
 DIRECT (WINDOW_Pitch_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a Pitch from batch.");
-	LOOP {
-		iam (Pitch);
+	FIND_ONE_WITH_IOBJECT (Pitch)
 		autoPitchEditor editor = PitchEditor_create (ID_AND_FULL_NAME, me);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 FORM (MODIFY_Pitch_formula, U"Pitch: Formula", U"Formula...") {
 	LABEL (U"", U"x = time; col = frame; row = candidate (1 = current path); frequency (time, candidate) :=")
@@ -2224,13 +2221,12 @@ DO
 
 DIRECT (WINDOW_Spectrogram_view) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a Spectrogram from batch.");
-	LOOP {
-		iam (Spectrogram);
+	FIND_ONE_WITH_IOBJECT (Spectrogram)
 		autoSpectrogramEditor editor = SpectrogramEditor_create (ID_AND_FULL_NAME, me);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 // MARK: - SPECTRUM
 
@@ -2244,13 +2240,12 @@ DIRECT (HELP_Spectrum_help) {
 
 DIRECT (WINDOW_Spectrum_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a Spectrum from batch.");
-	LOOP {
-		iam (Spectrum);
+	FIND_ONE_WITH_IOBJECT (Spectrum)
 		autoSpectrumEditor editor = SpectrumEditor_create (ID_AND_FULL_NAME, me);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 // MARK: Draw
 
@@ -2578,7 +2573,7 @@ DIRECT (NEW_Spectrum_to_SpectrumTier_peaks) {
 FORM (NEW1_Strings_createAsFileList, U"Create Strings as file list", U"Create Strings as file list...") {
 	SENTENCEVAR (name, U"Name", U"fileList")
 	LABEL (U"", U"File path:")
-	static structMelderDir defaultDir { { 0 } };
+	static structMelderDir defaultDir { };
 	Melder_getHomeDir (& defaultDir);
 	static const char32 *homeDirectory = Melder_dirToPath (& defaultDir);
 	static char32 defaultPath [kMelder_MAXPATH+1];
@@ -2603,7 +2598,7 @@ DO
 FORM (NEW1_Strings_createAsDirectoryList, U"Create Strings as directory list", U"Create Strings as directory list...") {
 	SENTENCEVAR (name, U"Name", U"directoryList")
 	LABEL (U"", U"Path:")
-	static structMelderDir defaultDir = { { 0 } };
+	static structMelderDir defaultDir { };
 	Melder_getHomeDir (& defaultDir);
 	static const char32 *homeDirectory = Melder_dirToPath (& defaultDir);
 	static char32 defaultPath [kMelder_MAXPATH+1];
@@ -2651,13 +2646,12 @@ DIRECT (HELP_Strings_help) {
 
 DIRECT (WINDOW_Strings_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a Strings from batch.");
-	LOOP {
-		iam (Strings);
+	FIND_ONE_WITH_IOBJECT (Strings)
 		autoStringsEditor editor = StringsEditor_create (ID_AND_FULL_NAME, me);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 // MARK: Query
 

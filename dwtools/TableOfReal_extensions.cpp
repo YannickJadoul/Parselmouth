@@ -1,6 +1,6 @@
 /* TableOfReal_extensions.cpp
  *
- * Copyright (C) 1993-2012, 2014, 2015, 2017 David Weenink
+ * Copyright (C) 1993-2012, 2014, 2015, 2017 David Weenink, 2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -294,7 +294,7 @@ void TableOfReal_to_PatternList_and_Categories (TableOfReal me, long fromrow, lo
 }
 
 void TableOfReal_getColumnExtrema (TableOfReal me, long col, double *p_min, double *p_max) {
-	double min = NUMundefined, max = NUMundefined;
+	double min = undefined, max = undefined;
 	if (col < 1 || col > my numberOfColumns) {
 		Melder_throw (U"Invalid column number.");
 	}
@@ -324,16 +324,16 @@ void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, const char32 *
 		Melder_throw (U"Invalid columns");
 	}
 
-	long nrows;
-	autoNUMvector<double> irows (NUMstring_to_numbers (rows, &nrows), 1);
-	for (long i = 1; i <= nrows; i++) {
-		long irow = (long) floor (irows[i]);
+	integer nrows;
+	autoNUMvector <real> irows (NUMstring_to_numbers (rows, & nrows), 1);
+	for (integer i = 1; i <= nrows; i ++) {
+		integer irow = (long) floor (irows [i]);
 		if (irow < 0 || irow > my numberOfRows) {
 			Melder_throw (U"Invalid row (", irow, U").");
 		}
 		if (ymin >= ymax) {
 			double min, max;
-			NUMvector_extrema (my data[irow], colb, cole, &min, &max);
+			NUMvector_extrema (my data [irow], colb, cole, & min, & max);
 			if (i > 1) {
 				if (min < ymin) {
 					ymin = min;
@@ -342,12 +342,13 @@ void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, const char32 *
 					ymax = max;
 				}
 			} else {
-				ymin = min; ymax = max;
+				ymin = min;
+				ymax = max;
 			}
 		}
 	}
-	long ngreys;
-	autoNUMvector<double> igreys (NUMstring_to_numbers (greys, &ngreys), 1);
+	integer ngreys;
+	autoNUMvector <real> igreys (NUMstring_to_numbers (greys, & ngreys), 1);
 
 	Graphics_setWindow (g, 0.0, 1.0, ymin, ymax);
 	Graphics_setInner (g);
@@ -503,13 +504,13 @@ void TableOfReal_drawBoxPlots (TableOfReal me, Graphics g, long rowmin, long row
 	Graphics_setWindow (g, colmin - 0.5, colmax + 0.5, ymin, ymax);
 	Graphics_setInner (g);
 
-	for (long j = colmin; j <= colmax; j++) {
+	for (long j = colmin; j <= colmax; j ++) {
 		double x = j, r = 0.05, w = 0.2, t;
 		long ndata = 0;
 
 		for (long i = 1; i <= numberOfRows; i++) {
-			if ( (t = my data[rowmin + i - 1][j]) != NUMundefined) {
-				data[++ndata] = t;
+			if (isdefined (t = my data [rowmin + i - 1] [j])) {
+				data [++ ndata] = t;
 			}
 		}
 		Graphics_boxAndWhiskerPlot (g, data.peek(), ndata, x, r, w, ymin, ymax);
@@ -652,14 +653,13 @@ void TableOfReal_centreColumns_byRowLabel (TableOfReal me) {
 
 double TableOfReal_getRowSum (TableOfReal me, long index) {
 	if (index < 1 || index > my numberOfRows) {
-		return NUMundefined;
+		return undefined;
 	}
-
-	double sum = 0.0;
+	real80 sum = 0.0;
 	for (long j = 1; j <= my numberOfColumns; j ++) {
 		sum += my data [index] [j];
 	}
-	return sum;
+	return (real) sum;
 }
 
 double TableOfReal_getColumnSumByLabel (TableOfReal me, const char32 *label) {
@@ -680,14 +680,13 @@ double TableOfReal_getRowSumByLabel (TableOfReal me, const char32 *label) {
 
 double TableOfReal_getColumnSum (TableOfReal me, long index) {
 	if (index < 1 || index > my numberOfColumns) {
-		return NUMundefined;
+		return undefined;
 	}
-
-	double sum = 0.0;
+	real80 sum = 0.0;
 	for (long i = 1; i <= my numberOfRows; i ++) {
 		sum += my data [i] [index];
 	}
-	return sum;
+	return (real) sum;
 }
 
 double TableOfReal_getGrandSum (TableOfReal me) {
@@ -729,13 +728,13 @@ void TableOfReal_normalizeTable (TableOfReal me, double norm) {
 }
 
 double TableOfReal_getTableNorm (TableOfReal me) {
-	double sumsq = 0.0;
+	real80 sumsq = 0.0;
 	for (long i = 1; i <= my numberOfRows; i++) {
 		for (long j = 1; j <= my numberOfColumns; j++) {
 			sumsq += my data[i][j] * my data[i][j];
 		}
 	}
-	return sqrt (sumsq);
+	return sqrt ((real) sumsq);
 }
 
 int TableOfReal_checkPositive (TableOfReal me) {
@@ -744,14 +743,15 @@ int TableOfReal_checkPositive (TableOfReal me) {
 	for (long i = 1; i <= my numberOfRows; i++) {
 		for (long j = 1; j <= my numberOfColumns; j++) {
 			if (my data[i][j] < 0.0) {
-				negative ++; break;
+				negative ++;
+				break;
 			}
 		}
 	}
 	return negative == 0;
 }
 
-/* NUMundefined ??? */
+/* undefined ??? */
 void NUMdmatrix_getColumnExtrema (double **a, long rowb, long rowe, long icol, double *min, double *max);
 void NUMdmatrix_getColumnExtrema (double **a, long rowb, long rowe, long icol, double *min, double *max) {
 	*min = *max = a[rowb][icol];
@@ -982,7 +982,7 @@ bool TableOfRealList_haveIdenticalDimensions (TableOfRealList me) {
 double TableOfReal_getColumnQuantile (TableOfReal me, long col, double quantile) {
 	try {
 		if (col < 1 || col > my numberOfColumns) {
-			return NUMundefined;
+			return undefined;
 		}
 		autoNUMvector<double> values (1, my numberOfRows);
 
@@ -994,7 +994,7 @@ double TableOfReal_getColumnQuantile (TableOfReal me, long col, double quantile)
 		double r = NUMquantile (my numberOfRows, values.peek(), quantile);
 		return r;
 	} catch (MelderError) {
-		return NUMundefined;
+		return undefined;
 	}
 }
 
@@ -1565,16 +1565,16 @@ double TableOfReal_normalityTest_BHEP (TableOfReal me, double *h, double *p_tnb,
 		double beta2 = beta * beta, beta4 = beta2 * beta2, beta8 = beta4 * beta4;
 		double gamma = 1 + 2 * beta2, gamma2 = gamma * gamma, gamma4 = gamma2 * gamma2;
 		double delta = 1.0 + beta2 * (4 + 3 * beta2), delta2 = delta * delta;
-		double prob = NUMundefined;
+		double prob = undefined;
 
 		if (*h <= 0) {
 			*h = NUMsqrt1_2 / beta;
 		}
 
-		double tnb = NUMundefined, lnmu = NUMundefined, lnvar = NUMundefined;
+		double tnb = undefined, lnmu = undefined, lnvar = undefined;
 
 		if (n < 2 || p < 1) {
-			return NUMundefined;
+			return undefined;
 		}
 
 		autoCovariance thee = TableOfReal_to_Covariance (me);

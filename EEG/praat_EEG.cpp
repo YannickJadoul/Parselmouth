@@ -1,6 +1,6 @@
 /* praat_EEG.cpp
  *
- * Copyright (C) 2011-2012,2013,2014,2015,2016 Paul Boersma
+ * Copyright (C) 2011-2012,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,12 +43,10 @@ static void cb_EEGWindow_publication (Editor /* editor */, autoDaata publication
 		praat_updateSelection ();
 		if (isaSpectralSlice) {
 			int IOBJECT;
-			LOOP {
-				iam_LOOP (Spectrum);
-				autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
-				praat_installEditor (editor2.get(), IOBJECT);
-				editor2.releaseToUser();
-			}
+			FIND_ONE_WITH_IOBJECT (Spectrum)
+			autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
+			praat_installEditor (editor2.get(), IOBJECT);
+			editor2.releaseToUser();
 		}
 	} catch (MelderError) {
 		Melder_flushError ();
@@ -56,14 +54,13 @@ static void cb_EEGWindow_publication (Editor /* editor */, autoDaata publication
 }
 DIRECT (WINDOW_EEG_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit an EEG from batch.");
-	LOOP {
-		iam_LOOP (EEG);
+	FIND_ONE_WITH_IOBJECT (EEG)
 		autoEEGWindow editor = EEGWindow_create (ID_AND_FULL_NAME, me);
 		Editor_setPublicationCallback (editor.get(), cb_EEGWindow_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 // MARK: Query
 
@@ -319,12 +316,10 @@ static void cb_ERPWindow_publication (Editor /* editor */, autoDaata publication
 		praat_updateSelection ();
 		if (isaSpectralSlice) {
 			int IOBJECT;
-			LOOP {
-				iam_LOOP (Spectrum);
-				autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
-				praat_installEditor (editor2.get(), IOBJECT);
-				editor2.releaseToUser();
-			}
+			FIND_ONE_WITH_IOBJECT (Spectrum)
+			autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
+			praat_installEditor (editor2.get(), IOBJECT);
+			editor2.releaseToUser();
 		}
 	} catch (MelderError) {
 		Melder_flushError ();
@@ -332,14 +327,13 @@ static void cb_ERPWindow_publication (Editor /* editor */, autoDaata publication
 }
 DIRECT (WINDOW_ERP_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit an ERP from batch.");
-	LOOP {
-		iam_LOOP (ERP);
+	FIND_ONE_WITH_IOBJECT (ERP)
 		autoERPWindow editor = ERPWindow_create (ID_AND_FULL_NAME, me);
 		Editor_setPublicationCallback (editor.get(), cb_ERPWindow_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 // MARK: Tabulate
 

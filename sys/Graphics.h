@@ -19,6 +19,7 @@
  */
 
 #include "Thing.h"
+#include "longchar.h"
 
 #include "Graphics_enums.h"
 
@@ -34,6 +35,7 @@ typedef struct {
 	double size_real;
 	unsigned long code;
 	char32 kar;
+	Longchar_Info karInfo;
 	double width;
 	union { long integer; const char *string; void *pointer; } font;
 	int cell, line, run;
@@ -132,7 +134,7 @@ Thing_define (Graphics, Thing) {
 	virtual void v_fillRoundedRectangle (double x1DC, double x2DC, double y1DC, double y2DC, double r);
 	virtual void v_arrowHead (double xDC, double yDC, double angle);
 	virtual bool v_mouseStillDown () { return false; }
-	virtual void v_getMouseLocation (double *xWC, double *yWC) { *xWC = *yWC = NUMundefined; }
+	virtual void v_getMouseLocation (double *xWC, double *yWC) { *xWC = *yWC = undefined; }
 	virtual void v_flushWs () { }
 	virtual void v_clearWs () { }
 	virtual void v_updateWs () { }
@@ -378,10 +380,6 @@ void Graphics_getMouseLocation (Graphics me, double *xWC, double *yWC);
 void Graphics_nextSheetOfPaper (Graphics me);
 
 void Graphics_prefs ();
-
-#if defined (UNIX)
-	#define USE_PANGO  1
-#endif
 
 /* End of file Graphics.h */
 #endif

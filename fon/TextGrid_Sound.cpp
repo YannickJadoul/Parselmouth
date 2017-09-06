@@ -83,7 +83,7 @@ static void IntervalTier_insertIntervalDestructively (IntervalTier me, double tm
 	/*
 	 * Empty the interval in the word tier.
 	 */
-	trace (U"Empty interval %ld down to ", lastIntervalNumber, U".", firstIntervalNumber);
+	trace (U"Empty interval ", lastIntervalNumber, U" down to ", U".", firstIntervalNumber);
 	for (long iinterval = lastIntervalNumber; iinterval >= firstIntervalNumber; iinterval --) {
 		TextInterval interval = my intervals.at [iinterval];
 		if (interval -> xmin > tmin && interval -> xmin < tmax) {
@@ -360,7 +360,7 @@ void TextGrid_Sound_draw (TextGrid me, Sound sound, Graphics g, double tmin, dou
 	/*
 	 * Draw sound in upper part.
 	 */
-	long first, last;
+	integer first, last;
 	if (sound && Sampled_getWindowSamples (sound, tmin, tmax, & first, & last) > 1) {
 		Graphics_setLineType (g, Graphics_DOTTED);
 		Graphics_line (g, tmin, 0.0, tmax, 0.0);

@@ -22,10 +22,22 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"What's new?", U"ppgb", 20170327)
+MAN_BEGIN (U"What's new?", U"ppgb", 20170722)
 INTRO (U"Latest changes in Praat.")
 //LIST_ITEM (U"• Manual page about @@drawing a vowel triangle@.")
 
+NORMAL (U"##6.0.31# (21 August 2017)")
+LIST_ITEM (U"• Scripting: more vectors and matrices.")
+LIST_ITEM (U"• Numerics: faster and more precise sums, means, standard deviations.")
+NORMAL (U"##6.0.30# (22 July 2017)")
+LIST_ITEM (U"• Removed a bug that caused an incorrect title for a PitchTier or PointProcess window.")
+LIST_ITEM (U"• Removed a bug that caused Praat to crash when doing a linear regression on a Table with no rows.")
+LIST_ITEM (U"• Scripting: $$object[]$, @@Scripting 5.7. Vectors and matrices|vectors@.")
+LIST_ITEM (U"• Graphics: better text drawing details.")
+LIST_ITEM (U"• Linux: possibility to compile Praat without a GUI but with graphics file output.")
+NORMAL (U"##6.0.29# (24 May 2017)")
+LIST_ITEM (U"• Sound window: channel muting.")
+LIST_ITEM (U"• Linux: support for Chinese, Japanese, Korean, Indic, Arabic and Hebrew characters in TextGrids and elsewhere.")
 NORMAL (U"##6.0.28# (23 March 2017)")
 LIST_ITEM (U"• Scripting: $$demoPeekInput()$ for animations in combination with $$sleep()$.")
 NORMAL (U"##6.0.27# (18 March 2017)")
@@ -1474,7 +1486,7 @@ ENTRY (U"Praat 4.1, 5 June 2003")
 		"or Table_tokens [i, \"F1\"].")
 	LIST_ITEM (U"• Assignment by modification, as with += -= *= /=.")
 	LIST_ITEM (U"• New functions: date\\$ (), extractNumber, extractWord\\$ , extractLine\\$ . See @@Formulas 5. String functions@.")
-	LIST_ITEM (U"• @@Scripting 5.7. Including other scripts@.")
+	LIST_ITEM (U"• @@Scripting 5.8. Including other scripts@.")
 	LIST_ITEM (U"• String formulas in the calculator.")
 	LIST_ITEM (U"• Stopped support of things that had been undocumented for the last four years: "
 		"#let, #getnumber, #getstring, #ARGS, #copy, #proc, variables with capitals, and strings in numeric variables; "
