@@ -40,7 +40,7 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             Table_extensions.cpp TableOfReal_and_SVD.cpp
             TableOfReal_extensions.cpp
             TableOfReal_and_Permutation.cpp
-            TextGrid_extensions.cpp
+            TextGrid_and_DurationTier.cpp TextGrid_and_PitchTier.cpp TextGrid_extensions.cpp
             VowelEditor.cpp
             praat_MDS_init.cpp praat_BSS_init.cpp praat_HMM_init.cpp
             praat_KlattGrid_init.cpp praat_DataModeler_init.cpp praat_David_init.cpp)

@@ -101,16 +101,16 @@ void Binding<Matrix>::init() {
 
 	def("get_minimum",
 		[](Matrix self) {
-			double minimum = NUMundefined;
-			double maximum = NUMundefined;
+			double minimum = undefined;
+			double maximum = undefined;
 			Matrix_getWindowExtrema(self, 0, 0, 0, 0, &minimum, &maximum);
 			return minimum;
 		});
 
 	def("get_maximum",
 	    [](Matrix self) {
-		    double minimum = NUMundefined;
-		    double maximum = NUMundefined;
+		    double minimum = undefined;
+		    double maximum = undefined;
 		    Matrix_getWindowExtrema(self, 0, 0, 0, 0, &minimum, &maximum);
 		    return maximum;
 	    });

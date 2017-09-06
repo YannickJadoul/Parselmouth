@@ -1,4 +1,4 @@
-add_sources(abcio.cpp complex.cpp
+add_sources(abcio.cpp complex.cpp tensor.cpp
             melder_ftoa.cpp melder_atof.cpp melder_error.cpp melder_alloc.cpp melder.cpp melder_strings.cpp
             melder_token.cpp melder_files.cpp melder_audio.cpp melder_audiofiles.cpp
             melder_debug.cpp melder_sysenv.cpp melder_info.cpp melder_quantity.cpp
