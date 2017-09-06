@@ -662,7 +662,8 @@ void NUMscale (double *x, double xminfrom, double xmaxfrom, double xminto, doubl
 		1.0 / undefined
 	will evaluate as 0.0, i.e. this version of `undefined` does not propagate properly.
 */
-#define undefined  (0.0/0.0)
+//#define undefined  (0.0/0.0)
+#define undefined NAN
 //#define undefined  NAN   /* a future definition? */
 //#define undefined  (0.0/0.0)   /* an alternative future definition */
 

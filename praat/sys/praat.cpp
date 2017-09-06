@@ -1559,8 +1559,12 @@ void praat_run () {
 		Melder_assert (! str32str (U"hellogoodbye", U"oygo"));
 	}
 	Melder_assert (isundef (undefined));
+#ifndef _MSC_VER
 	Melder_assert (isinf (1.0 / 0.0));
 	Melder_assert (isnan (0.0 / 0.0));
+#endif
+	Melder_assert (isinf (INFINITY));
+	Melder_assert (isnan (NAN));
 	{
 		double x = sqrt (-10.0);
 		//if (! isnan (x)) printf ("sqrt (-10.0) = %g\n", x);   // -10.0 on Windows
@@ -1571,8 +1575,12 @@ void praat_run () {
 	Melder_assert (isdefined (1e300));
 	Melder_assert (isundef ((real) 1e320L));
 	Melder_assert (isundef (pow (10.0, 330)));
+#ifndef _MSC_VER
 	Melder_assert (isundef (0.0 / 0.0));
 	Melder_assert (isundef (1.0 / 0.0));
+#endif
+	Melder_assert (isundef (NAN));
+	Melder_assert (isundef (INFINITY));
 	{
 		numvec x { };
 		Melder_assert (! x.at);
