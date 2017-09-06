@@ -1453,7 +1453,7 @@ public:
 
 const  char32 * Melder_numvec  (numvec value);
 const  char32 * Melder_nummat  (nummat value);
-typedef class structThing *Thing;   // forward declaration
+typedef struct structThing *Thing;   // forward declaration
 const char32 * Thing_messageName (Thing me);
 struct MelderArg {
 	const char32 *_arg;
@@ -1597,7 +1597,7 @@ void Melder_trace (const char *fileName, int lineNumber, const char *functionNam
 void Melder_trace (const char *fileName, int lineNumber, const char *functionName, Melder_16_TO_19_ARGS);
 #ifdef NDEBUG
 	#define Melder_assert(x)   ((void) 0)
-	#define trace(x)   ((void) 0)
+	#define trace(...)   ((void) 0)
 #else
 	#define Melder_assert(x)   ((x) ? (void) (0) : (Melder_assert_ (__FILE__, __LINE__, #x), abort ()))
 	#define trace(...)   (! Melder_isTracing ? (void) 0 : Melder_trace (__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__))
@@ -2092,7 +2092,7 @@ void * Melder_monitor (double progress, Melder_16_TO_19_ARGS);
 		          Graphics_text (monitor.graphics(), ...);
 		      }
 */
-typedef class structGraphics *Graphics;
+typedef struct structGraphics *Graphics;
 class autoMelderMonitor {
 	Graphics _graphics;
 public:
