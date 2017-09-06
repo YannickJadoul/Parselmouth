@@ -19,9 +19,13 @@
  */
 
 /*
- * Determine the widget set.
+	Determine the widget set, honouring the compiler switch NO_GUI
+	and/or the compiler switch NO_GRAPHICS, which entails NO_GUI.
  */
-#if defined (NO_GRAPHICS)
+#if defined (NO_GRAPHICS) && ! defined (NO_GUI)
+	#define NO_GUI
+#endif
+#if defined (NO_GUI)
 	#define gtk 0
 	#define motif 0
 	#define cocoa 0
@@ -37,15 +41,28 @@
 	#define gtk 0
 	#define motif 0
 	#define cocoa 1
+#else
+	/*
+		Unknown platforms have no GUI.
+	*/
+	#define gtk 0
+	#define motif 0
+	#define cocoa 0
 #endif
 
 #include "Collection.h"
 
-#if gtk
-	#include <gtk/gtk.h>
-	#include <gdk/gdk.h>
-	#include <cairo/cairo.h>
-#elif cocoa
+#if defined (UNIX)
+	#if gtk
+		#include <gtk/gtk.h>
+		#include <gdk/gdk.h>
+	#endif
+	#if ! defined (NO_GRAPHICS)
+		#include <cairo/cairo.h>
+		#include <pango/pango.h>
+		#include <pango/pangocairo.h>
+	#endif
+#elif defined (macintosh)
 	#include "macport_on.h"
     #include <Cocoa/Cocoa.h>
 	#include "macport_off.h"

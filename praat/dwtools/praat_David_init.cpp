@@ -1,6 +1,6 @@
 /* praat_David_init.cpp
  *
- * Copyright (C) 1993-2016 David Weenink, 2015 Paul Boersma
+ * Copyright (C) 1993-2017 David Weenink, 2015 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@
  djmw 20120813 Latest modification.
 */
 
-#include "NUM2.h"
+#include "NUMcomplex.h"
 #include "NUMlapack.h"
 #include "NUMmachar.h"
 
@@ -129,6 +129,8 @@
 #include "Sound_to_Pitch2.h"
 #include "Sound_to_SPINET.h"
 #include "TableOfReal_and_SVD.h"
+#include "TextGrid_and_DurationTier.h"
+#include "TextGrid_and_PitchTier.h"
 #include "VowelEditor.h"
 
 #include "praat_TimeFrameSampled.h"
@@ -1526,7 +1528,7 @@ DO
 	MODIFY_FIRST_OF_TWO_END
 }
 
-FORM (NEW1_DTW_and_Polygon_to_Matrix_cummulativeDistances, U"DTW & Polygon: To Matrix (cumm. distances)", nullptr) {
+FORM (NEW1_DTW_and_Polygon_to_Matrix_cumulativeDistances, U"DTW & Polygon: To Matrix (cum. distances)", nullptr) {
     RADIOVAR (slopeConstraint, U"Slope constraint", 1)
 		RADIOBUTTON (U"no restriction")
 		RADIOBUTTON (U"1/3 < slope < 3")
@@ -1535,7 +1537,7 @@ FORM (NEW1_DTW_and_Polygon_to_Matrix_cummulativeDistances, U"DTW & Polygon: To M
     OK
 DO
     CONVERT_TWO (DTW, Polygon)
-		autoMatrix result = DTW_and_Polygon_to_Matrix_cummulativeDistances (me, you, slopeConstraint);
+		autoMatrix result = DTW_and_Polygon_to_Matrix_cumulativeDistances (me, you, slopeConstraint);
      CONVERT_TWO_END (my name, U"_", slopeConstraint);
 }
 
@@ -1797,7 +1799,7 @@ FORM (REAL_DTW_getDistanceValue, U"DTW: Get distance value", nullptr) {
 	OK
 DO
 	NUMBER_ONE (DTW)
-		double result = NUMundefined;
+		double result = undefined;
 		if ((xTime >= my xmin && xTime <= my xmax) && (yTime >= my ymin && yTime <= my ymax)) {
 			long irow = Matrix_yToNearestRow (me, yTime);
 			long icol = Matrix_xToNearestColumn (me, xTime);
@@ -1890,7 +1892,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (NEW_DTW_to_Matrix_cummulativeDistances, U"DTW: To Matrix", nullptr) {
+FORM (NEW_DTW_to_Matrix_cumulativeDistances, U"DTW: To Matrix", nullptr) {
     REALVAR (sakoeChibaBand, U"Sakoe-Chiba band (s)", U"0.05")
     RADIOVAR (slopeConstraint, U"Slope constraint", 1)
 		RADIOBUTTON (U"no restriction")
@@ -1900,7 +1902,7 @@ FORM (NEW_DTW_to_Matrix_cummulativeDistances, U"DTW: To Matrix", nullptr) {
     OK
 DO
     CONVERT_EACH (DTW)
-        autoMatrix result = DTW_to_Matrix_cummulativeDistances (me, sakoeChibaBand, slopeConstraint);
+        autoMatrix result = DTW_to_Matrix_cumulativeDistances (me, sakoeChibaBand, slopeConstraint);
 	CONVERT_EACH_END (my name, U"_cd")
 }
 
@@ -2219,7 +2221,7 @@ FORM (REAL_Eigen_getEigenvalue, U"Eigen: Get eigenvalue", U"Eigen: Get eigenvalu
 	OK
 DO
 	NUMBER_ONE (Eigen)
-		double result = NUMundefined;
+		double result = undefined;
 		if (eigenvalueNumber > 0 && eigenvalueNumber <= my numberOfEigenvalues) {
 			result = my eigenvalues [eigenvalueNumber];
 		}
@@ -2955,7 +2957,7 @@ FORM (REAL_FunctionTerms_getCoefficient, U"FunctionTerms: Get coefficient", null
 	OK
 DO
 	NUMBER_ONE (FunctionTerms)
-		double result = (index > 0 && index <= my numberOfCoefficients) ? my coefficients [index] : NUMundefined;
+		double result = ( index > 0 && index <= my numberOfCoefficients ? my coefficients [index] : undefined );
 	NUMBER_ONE_END (U"")
 }
 
@@ -3592,7 +3594,7 @@ FORM (REAL_FilterBank_getValueInCell, U"Get value in cell", nullptr) {
 	OK
 DO
 	NUMBER_ONE (FilterBank)
-		double result = NUMundefined;
+		double result = undefined;
 		if ((frequency >= my ymin && frequency <= my ymax) && (time >+ my xmin && time <= my ymin)) {
 			long col = Matrix_xToNearestColumn (me, time);
 			if (col < 1) {
@@ -3663,7 +3665,7 @@ FORM (REAL_BandFilterSpectrogram_getValueInCell, U"Get value in cell", nullptr) 
 	OK
 DO
 	NUMBER_ONE (BandFilterSpectrogram)
-		double result = NUMundefined;
+		double result = undefined;
 		if ((frequency >= my ymin && frequency <= my ymax) && (time >+ my xmin && time <= my ymin)) {
 			long col = Matrix_xToNearestColumn (me, time);
 			if (col < 1) {
@@ -3975,7 +3977,7 @@ FORM (REAL_PatternList_getValue, U"", nullptr) {
 	OK
 DO
 	NUMBER_ONE (PatternList)
-		double result = patternNumber <= my ny && nodeNumber <= my nx ? my z [patternNumber] [nodeNumber] : NUMundefined;
+		double result = ( patternNumber <= my ny && nodeNumber <= my nx ? my z [patternNumber] [nodeNumber] : undefined );
 	NUMBER_ONE_END (U"")
 }
 
@@ -4398,6 +4400,71 @@ DO
 	CONVERT_EACH_END (my name)
 }
 
+FORM (MODIFY_PitchTier_modifyInterval, U"PitchTier: Modify interval", U"PitchTier: Modify interval...") {
+	REAL4 (fromTime, U"left Time range (s)", U"0.0")
+	REAL4 (toTime, U"right Time range", U"0.0 (= all)")
+	LABEL (U"", U"")
+	SENTENCEVAR (timesString, U"Relative times", U"0.0 0.5 1.0")
+	OPTIONMENUVAR (timeOffset, U"...are...", 1)
+		OPTION (U"fractions")
+		OPTION (U"percentages")
+		OPTION (U"independent")
+	LABEL (U"", U"...of the interval duration which will be added...")
+	LABEL (U"", U"...to the start time of the interval.")
+	SENTENCEVAR (pitches_string, U"The \"pitch\" values", U"100 200 100")
+	OPTIONMENUVAR (pitch_as, U"...are...", 1)
+		OPTION (U"frequencies")
+		OPTION (U"fractions")
+		OPTION (U"percentages")
+		OPTION (U"start and slopes")
+		OPTION (U"slopes and end")
+		OPTION (U"music notes")
+//		OPTION (U"semitones")
+	LABEL (U"", U"...to be added to the anchor value (if used)...")
+	OPTIONMENUVAR (pitch_is, U"...which is the...", 1)
+		OPTION (U"not used")
+		OPTION (U"current")
+		OPTION (U"start")
+		OPTION (U"end")
+		OPTION (U"mean of the curve")
+		OPTION (U"mean of the points")
+		OPTION (U"maximum")
+		OPTION (U"minimum")
+	LABEL (U"", U"...frequency value in the interval.")
+	LABEL (U"", U"")
+	OPTIONMENUVAR (pitch_unit, U"Pitch frequency unit", 1)
+		OPTION (U"Hertz")
+
+	OK
+DO
+	MODIFY_EACH (PitchTier)
+		PitchTier_modifyInterval (me, fromTime, toTime, timesString, timeOffset, pitches_string, pitch_unit, pitch_as, pitch_is);
+	MODIFY_EACH_END
+}
+
+
+FORM (MODIFY_PitchTier_modifyInterval_toneLevels, U"PitchTier: Modify interval (tone levels)", U"PitchTier: Modify interval (tone levels)...") {
+	REAL4 (fromTime, U"left Time range (s)", U"0.0")
+	REAL4 (toTime, U"right Time range", U"0.0 (= all)")
+	REAL4 (fmin, U"left Pitch range (Hz)", U"80.0")
+	REAL4 (fmax, U"right Pitch range", U"200.0")
+	NATURAL4 (numberOfToneLevels, U"Number of tone levels", U"5")
+	LABEL (U"", U"")
+	SENTENCEVAR (times_string, U"Relative times", U"0.0 0.5 1.0")
+	OPTIONMENUVAR (time_offset, U"...are...", 1)
+		OPTION (U"fractions")
+		OPTION (U"percentages")
+		OPTION (U"independent")
+	LABEL (U"", U"...of the interval duration which will be added...")
+	LABEL (U"", U"...to the start time of the interval.")
+	SENTENCEVAR (pitches_string, U"Tone levels", U"2.1 2.1 5.0")
+	OK
+DO
+	MODIFY_EACH (PitchTier)
+		PitchTier_modifyInterval_toneLevels (me, fromTime, toTime, fmin, fmax, numberOfToneLevels, times_string, time_offset, pitches_string);
+	MODIFY_EACH_END
+}
+
 /******************* Polygon & Categories *************************************/
 
 FORM (NEW1_Polygon_createSimple, U"Create simple Polygon", U"Create simple Polygon...") {
@@ -4435,7 +4502,7 @@ FORM (REAL_Polygon_getPointX, U"Polygon: Get point (x)", nullptr) {
 	OK
 DO
 	NUMBER_ONE (Polygon)
-		double result = pointNumber <= my numberOfPoints ? my x[pointNumber] : NUMundefined;
+		double result = ( pointNumber <= my numberOfPoints ? my x [pointNumber] : undefined );
 	NUMBER_ONE_END (U" (x [", pointNumber, U"])")
 }
 
@@ -4444,7 +4511,7 @@ FORM (REAL_Polygon_getPointY, U"Polygon: Get point (y)", nullptr) {
 	OK
 DO
 	NUMBER_ONE (Polygon)
-		double result = pointNumber <= my numberOfPoints ? my y[pointNumber] : NUMundefined;
+		double result = ( pointNumber <= my numberOfPoints ? my y [pointNumber] : undefined );
 	NUMBER_ONE_END (U" (y [", pointNumber, U"])")
 }
 
@@ -4458,8 +4525,8 @@ DO
 	REQUIRE (eps >= 0, U"The precision cannot be negative.")
 	STRING_ONE (Polygon)
 		int loc = Polygon_getLocationOfPoint (me, x, y, eps);
-		const char32 * result = loc == Polygon_INSIDE ? U"I" : loc == Polygon_OUTSIDE ? U"O" :
-		loc == Polygon_EDGE ? U"E" : U"V";
+		const char32 * result = ( loc == Polygon_INSIDE ? U"I" : loc == Polygon_OUTSIDE ? U"O" :
+			loc == Polygon_EDGE ? U"E" : U"V" );
 	STRING_ONE_END
 }
 
@@ -4638,12 +4705,12 @@ FORM (INFO_Polynomial_getDerivativesAtX, U"Polynomial: Get derivatives at X", nu
 	INTEGERVAR (numberOfDerivatives, U"Number of derivatives", U"2")
 	OK
 DO
-	autoNUMvector<double> derivatives (0L, numberOfDerivatives);
+	autoNUMvector <double> derivatives ((integer) 0, numberOfDerivatives);
 	INFO_ONE (Polynomial)
 		Polynomial_evaluateDerivatives (me, x, derivatives.peek(), numberOfDerivatives);
 		MelderInfo_open ();
-			for (long i = 0; i <= numberOfDerivatives; i++) {
-				MelderInfo_writeLine (i, U": ", i < my numberOfCoefficients ? derivatives [i] : NUMundefined);
+			for (integer i = 0; i <= numberOfDerivatives; i ++) {
+				MelderInfo_writeLine (i, U": ", i < my numberOfCoefficients ? derivatives [i] : undefined);
 			}
 		MelderInfo_close ();
 	INFO_ONE_END
@@ -4786,7 +4853,7 @@ DO
 	INFO_ONE (Roots)
 		dcomplex z = Roots_getRoot (me, rootNumber);
 		MelderInfo_open ();
-			MelderInfo_writeLine (z.re, z.im,  U" i");
+			MelderInfo_writeLine (z.re, U"+", z.im,  U"i");
 		MelderInfo_close ();
 	INFO_ONE_END
 }
@@ -4857,6 +4924,7 @@ DIRECT (INFO_Praat_ReportFloatingPointProperties) {
 	MelderInfo_writeLine (U"Underflow threshold (= radix ^ (expmin - 1)): ", NUMfpp -> rmin);
 	MelderInfo_writeLine (U"Safe minimum (such that its inverse does not overflow): ", NUMfpp -> sfmin);
 	MelderInfo_writeLine (U"Overflow threshold (= (1 - eps) * radix ^ expmax): ", NUMfpp -> rmax);
+	MelderInfo_writeLine (U"\nA long double is ", sizeof (long double), U" bytes");
 	MelderInfo_close ();
 END }
 
@@ -4881,6 +4949,18 @@ DO
 	REQUIRE (probability >= 0 && probability <= 1, U"Probability must be in (0,1).")
 	double result = NUMinvTukeyQ (probability, numberOfMeans, degreesOfFreedon, numberOfRows);
 	Melder_information (result, U" (inv tukeyQ)");
+END }
+
+FORM (COMPLEX_Praat_getIncompleteGamma, U"Get incomplete gamma", U"Get incomplete gamma...") {
+	POSITIVEVAR (reAlpha, U"Real part of alpha", U"4.0")
+	REALVAR (imAlpha, U"Imaginary part of alpha", U"0.0")
+	REALVAR (reX, U"Real part of X", U"4.0")
+	REALVAR (imX, U"Imaginary part of X", U"0.0")
+	OK
+DO
+	double result_re, result_im;
+	NUMincompleteGammaFunction (reAlpha, imAlpha, reX, imX, & result_re, & result_im);
+	Melder_information (result_re, U"+", result_im, U"i");
 END }
 
 /******************** Sound ****************************************/
@@ -5857,7 +5937,7 @@ FORM (REAL_SSCP_getCentroidElement, U"SSCP: Get centroid element", U"SSCP: Get c
 	OK
 DO
 	NUMBER_ONE (SSCP)
-		double result = NUMundefined;
+		double result = undefined;
 		if (number > 0 && number <= my numberOfColumns) {
 			result = my centroid [number];
 		}
@@ -6985,6 +7065,26 @@ DO
 	CONVERT_COUPLE_END (my name, U"_", your name);
 }
 
+FORM (NEW_TextGrid_to_DurationTier, U"TextGrid: To DurationTier", U"TextGrid: To DurationTier...") {
+	NATURALVAR (tierNumber, U"Tier number", U"1")
+	POSITIVEVAR (timeScaleFactor, U"Time scale factor", U"2.0")
+	POSITIVEVAR (leftTransitionDuration, U"Left transition duration (s)", U"1e-10")
+	POSITIVEVAR (rightTransitionDuration, U"Right transition duration (s)", U"1e-10")
+	OPTIONMENU_ENUM4 (___, U"Scale intervals whose label ", kMelder_string, DEFAULT)
+	SENTENCE4 (___theText, U"...the text", U"hi")
+	OK
+DO
+	CONVERT_EACH (TextGrid)
+		autoDurationTier result = TextGrid_to_DurationTier (me,tierNumber, timeScaleFactor,leftTransitionDuration, rightTransitionDuration, ___, ___theText);
+	CONVERT_EACH_END (my name)
+}
+
+DIRECT (NEW_TextGrid_and_DurationTier_to_TextGrid) {
+	CONVERT_TWO (TextGrid, DurationTier)
+		autoTextGrid result = TextGrid_and_DurationTier_scaleTimes (me, you);
+	CONVERT_TWO_END (my name, U"_", your name)
+}
+
 FORM (NEW1_TextGrids_and_EditCostsTable_to_Table_textAlignmentment, U"TextGrids & EditCostsTable: To Table(text alignmentment)", nullptr) {
 	NATURALVAR (targetTierNumber, U"Target tier", U"1")
 	NATURALVAR (sourceTierNumber, U"Source tier", U"1")
@@ -7267,6 +7367,7 @@ void praat_uvafon_David_init () {
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report floating point properties", U"Report integer properties", 0, INFO_Praat_ReportFloatingPointProperties);
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Get TukeyQ...", 0, praat_HIDDEN, REAL_Praat_getTukeyQ);
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Get invTukeyQ...", 0, praat_HIDDEN, REAL_Praat_getInvTukeyQ);
+	praat_addMenuCommand (U"Objects", U"Goodies", U"Get incomplete gamma...", 0, praat_HIDDEN, COMPLEX_Praat_getIncompleteGamma);
 //	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as espeak voices", U"Create Strings as directory list...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsEspeakVoices);
 	praat_addMenuCommand (U"Objects", U"New", U"Create iris data set", U"Create TableOfReal...", 1, NEW1_CreateIrisDataset);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Permutation...", nullptr, 0, NEW_Permutation_create);
@@ -7576,7 +7677,7 @@ void praat_uvafon_David_init () {
     praat_addAction1 (classDTW, 0, U"Find path (band & slope)...", nullptr, 0, MODIFY_DTW_findPath_bandAndSlope);
     praat_addAction1 (classDTW, 0, U"To Polygon...", nullptr, 1, NEW_DTW_to_Polygon);
 	praat_addAction1 (classDTW, 0, U"To Matrix (distances)", nullptr, 0, NEW_DTW_to_Matrix_distances);
-    praat_addAction1 (classDTW, 0, U"To Matrix (cumm. distances)...", nullptr, 0, NEW_DTW_to_Matrix_cummulativeDistances);
+    praat_addAction1 (classDTW, 0, U"To Matrix (cum. distances)...", nullptr, 0, NEW_DTW_to_Matrix_cumulativeDistances);
 	praat_addAction1 (classDTW, 0, U"Swap axes", nullptr, 0, NEW_DTW_swapAxes);
 
 	praat_addAction2 (classDTW, 1, classMatrix, 1, U"Replace matrix", nullptr, 0, MODIFY_DTW_and_Matrix_replace);
@@ -7584,7 +7685,7 @@ void praat_uvafon_David_init () {
 	praat_addAction2 (classDTW, 1, classIntervalTier, 1, U"To Table (distances)", nullptr, 0, NEW1_DTW_and_IntervalTier_to_Table);
 
     praat_addAction2 (classDTW, 1, classPolygon, 1, U"Find path inside...", nullptr, 0, MODIFY_DTW_and_Polygon_findPathInside);
-    praat_addAction2 (classDTW, 1, classPolygon, 1, U"To Matrix (cumm. distances)...", nullptr, 0, NEW1_DTW_and_Polygon_to_Matrix_cummulativeDistances);
+    praat_addAction2 (classDTW, 1, classPolygon, 1, U"To Matrix (cum. distances)...", nullptr, 0, NEW1_DTW_and_Polygon_to_Matrix_cumulativeDistances);
 	praat_addAction2 (classDTW, 1, classSound, 2, U"Draw...", nullptr, 0, GRAPHICS_DTW_and_Sounds_draw);
 	praat_addAction2 (classDTW, 1, classSound, 2, U"Draw warp (x)...", nullptr, 0, GRAPHICS_DTW_and_Sounds_drawWarpX);
 
@@ -7840,6 +7941,8 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classPitch, 2, U"To DTW...", U"To PointProcess", praat_HIDDEN, NEW1_Pitches_to_DTW);
 
 	praat_addAction1 (classPitchTier, 0, U"To Pitch...", U"To Sound (sine)...", 1, NEW_PitchTier_to_Pitch);
+	praat_addAction1 (classPitchTier, 0, U"Modify interval...", U"Add point...", 1, MODIFY_PitchTier_modifyInterval); 
+	praat_addAction1 (classPitchTier, 0, U"Modify interval (tone levels)...", U"Modify interval...", 1, MODIFY_PitchTier_modifyInterval_toneLevels); 
 	praat_addAction1 (classPolygon, 0, QUERY_BUTTON, U"Paint circles...", 0, 0);
 	praat_addAction1 (classPolygon, 0, U"Get number of points", QUERY_BUTTON, 1, INTEGER_Polygon_getNumberOfPoints);
 	praat_addAction1 (classPolygon, 0, U"Get point (x)...", U"Get number of points", 1, REAL_Polygon_getPointX);
@@ -8080,6 +8183,9 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classTextGrid, 0, U"Replace interval text...", U"Set interval text...", 2, MODIFY_TextGrid_replaceIntervalTexts);
 	praat_addAction1 (classTextGrid, 0, U"Replace point text...", U"Set point text...", 2, MODIFY_TextGrid_replacePointTexts);
 	praat_addAction1 (classTextGrid, 2, U"To Table (text alignment)...", U"Extract part...", 0, NEW1_TextGrids_to_Table_textAlignmentment);
+	
+	praat_addAction1 (classTextGrid, 0, U"To DurationTier...", U"Concatenate", 0, NEW_TextGrid_to_DurationTier);
+	praat_addAction2 (classTextGrid, 1, classDurationTier, 1, U"To TextGrid (scale times)", nullptr, 0, NEW_TextGrid_and_DurationTier_to_TextGrid);
 	praat_addAction2 (classTextGrid, 2, classEditCostsTable, 1, U"To Table (text alignment)...", nullptr, 0, NEW1_TextGrids_and_EditCostsTable_to_Table_textAlignmentment);
 
 	INCLUDE_MANPAGES (manual_dwtools_init)

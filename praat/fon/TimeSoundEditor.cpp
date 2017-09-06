@@ -196,18 +196,18 @@ static void do_write (TimeSoundEditor me, MelderFile file, int format, int numbe
 	} else if (my d_sound.data) {
 		Sound sound = my d_sound.data;
 		double margin = 0.0;
-		long nmargin = (long) floor (margin / sound -> dx);
-		long first, last, numberOfSamples = Sampled_getWindowSamples (sound,
+		integer nmargin = (integer) floor (margin / sound -> dx);
+		integer first, last, numberOfSamples = Sampled_getWindowSamples (sound,
 			my startSelection, my endSelection, & first, & last) + nmargin * 2;
 		first -= nmargin;
 		last += nmargin;
 		if (numberOfSamples) {
 			autoSound save = Sound_create (sound -> ny, 0.0, numberOfSamples * sound -> dx, numberOfSamples, sound -> dx, 0.5 * sound -> dx);
-			long offset = first - 1;
+			integer offset = first - 1;
 			if (first < 1) first = 1;
 			if (last > sound -> nx) last = sound -> nx;
-			for (long channel = 1; channel <= sound -> ny; channel ++) {
-				for (long i = first; i <= last; i ++) {
+			for (integer channel = 1; channel <= sound -> ny; channel ++) {
+				for (integer i = first; i <= last; i ++) {
 					save -> z [channel] [i - offset] = sound -> z [channel] [i];
 				}
 			}
@@ -436,7 +436,7 @@ void structTimeSoundEditor :: v_updateMenuItems_file () {
 		sound = d_longSound.data;
 	}
 	if (! sound) return;
-	long first, last, selectedSamples = Sampled_getWindowSamples (sound, our startSelection, our endSelection, & first, & last);
+	integer first, last, selectedSamples = Sampled_getWindowSamples (sound, our startSelection, our endSelection, & first, & last);
 	if (drawButton) {
 		GuiThing_setSensitive (drawButton, selectedSamples != 0);
 		GuiThing_setSensitive (publishButton, selectedSamples != 0);
@@ -480,7 +480,7 @@ void TimeSoundEditor_drawSound (TimeSoundEditor me, double globalMinimum, double
 		Graphics_text (my graphics.get(), 0.5, 0.5, U"(window too large; zoom in to see the data)");
 		return;
 	}
-	long first, last;
+	integer first, last;
 	if (Sampled_getWindowSamples (sound ? (Sampled) sound : (Sampled) longSound, my startWindow, my endWindow, & first, & last) <= 1) {
 		Graphics_setWindow (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
 		Graphics_setTextAlignment (my graphics.get(), Graphics_CENTRE, Graphics_HALF);
@@ -564,18 +564,18 @@ void TimeSoundEditor_drawSound (TimeSoundEditor me, double globalMinimum, double
 			double mid = 0.5 * (minimum + maximum);
 			Graphics_text (my graphics.get(), my startWindow, mid, Melder_float (Melder_half (mid)));
 		} else {
-			if (! cursorVisible || ! NUMdefined (cursorFunctionValue) || Graphics_dyWCtoMM (my graphics.get(), cursorFunctionValue - minimum) > 5.0) {
+			if (! cursorVisible || isundef (cursorFunctionValue) || Graphics_dyWCtoMM (my graphics.get(), cursorFunctionValue - minimum) > 5.0) {
 				Graphics_setTextAlignment (my graphics.get(), Graphics_RIGHT, Graphics_BOTTOM);
 				Graphics_text (my graphics.get(), my startWindow, minimum, Melder_float (Melder_half (minimum)));
 			}
-			if (! cursorVisible || ! NUMdefined (cursorFunctionValue) || Graphics_dyWCtoMM (my graphics.get(), maximum - cursorFunctionValue) > 5.0) {
+			if (! cursorVisible || isundef (cursorFunctionValue) || Graphics_dyWCtoMM (my graphics.get(), maximum - cursorFunctionValue) > 5.0) {
 				Graphics_setTextAlignment (my graphics.get(), Graphics_RIGHT, Graphics_TOP);
 				Graphics_text (my graphics.get(), my startWindow, maximum, Melder_float (Melder_half (maximum)));
 			}
 		}
 		if (minimum < 0 && maximum > 0 && ! horizontal) {
 			Graphics_setWindow (my graphics.get(), 0.0, 1.0, minimum, maximum);
-			if (! cursorVisible || ! NUMdefined (cursorFunctionValue) || fabs (Graphics_dyWCtoMM (my graphics.get(), cursorFunctionValue - 0.0)) > 3.0) {
+			if (! cursorVisible || isundef (cursorFunctionValue) || fabs (Graphics_dyWCtoMM (my graphics.get(), cursorFunctionValue - 0.0)) > 3.0) {
 				Graphics_setTextAlignment (my graphics.get(), Graphics_RIGHT, Graphics_HALF);
 				Graphics_text (my graphics.get(), 0.0, 0.0, U"0");
 			}
@@ -595,18 +595,13 @@ void TimeSoundEditor_drawSound (TimeSoundEditor me, double globalMinimum, double
 			Graphics_setTextAlignment (my graphics.get(), Graphics_LEFT, Graphics_HALF);
 			Graphics_setTextAlignment (my graphics.get(), Graphics_LEFT, Graphics_HALF);
 			const char32 *channelName = my v_getChannelName (ichan);
-			static MelderString channelLabel;
+			static MelderString channelLabel { };
 			MelderString_copy (& channelLabel, ( channelName ? U"ch" : U"Ch " ), ichan);
 			if (channelName)
 				MelderString_append (& channelLabel, U": ", channelName);
 			//
-		#if linux && ! USE_PANGO
-			MelderString_append (& channelLabel, U" ", (my d_sound.muteChannels [ichan] ? U"off": U"on"));
-		#else
-			#define UNITEXT_SPEAKER_WITH_CANCELLATION_STROKE U"\U0001F507"
-			#define UNITEXT_SPEAKER U"\U0001F508"
-			MelderString_append (& channelLabel, U" ", (my d_sound.muteChannels [ichan] ? UNITEXT_SPEAKER_WITH_CANCELLATION_STROKE: UNITEXT_SPEAKER));
-		#endif
+			MelderString_append (& channelLabel, U" ",
+				( my d_sound.muteChannels [ichan] ? UNITEXT_SPEAKER_WITH_CANCELLATION_STROKE : UNITEXT_SPEAKER ));
 			if (ichan > 8 && ichan - my d_sound.channelOffset == 1) {
 				MelderString_append (& channelLabel, U"      " UNITEXT_UPWARDS_ARROW);
 			} else if (ichan >= 8 && ichan - my d_sound.channelOffset == 8 && ichan < nchan) {
@@ -627,7 +622,7 @@ void TimeSoundEditor_drawSound (TimeSoundEditor me, double globalMinimum, double
 		/*if (ichan == 1) FunctionEditor_SoundAnalysis_drawPulses (this);*/
 		if (sound) {
 			Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, minimum, maximum);
-			if (cursorVisible && NUMdefined (cursorFunctionValue))
+			if (cursorVisible && isdefined (cursorFunctionValue))
 				FunctionEditor_drawCursorFunctionValue (me, cursorFunctionValue, Melder_float (Melder_half (cursorFunctionValue)), U"");
 			Graphics_setColour (my graphics.get(), Graphics_BLACK);
 			Graphics_function (my graphics.get(), sound -> z [ichan], first, last,

@@ -691,12 +691,10 @@ static void cb_TextGridEditor_publication (Editor /* editor */, autoDaata public
 		praat_updateSelection ();
 		if (isaSpectralSlice) {
 			int IOBJECT;
-			LOOP {
-				iam (Spectrum);
-				autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
-				praat_installEditor (editor2.get(), IOBJECT);
-				editor2.releaseToUser();
-			}
+			FIND_ONE_WITH_IOBJECT (Spectrum)
+			autoSpectrumEditor editor2 = SpectrumEditor_create (ID_AND_FULL_NAME, me);
+			praat_installEditor (editor2.get(), IOBJECT);
+			editor2.releaseToUser();
 		}
 	} catch (MelderError) {
 		Melder_flushError ();
@@ -704,36 +702,26 @@ static void cb_TextGridEditor_publication (Editor /* editor */, autoDaata public
 }
 DIRECT (WINDOW_TextGrid_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a TextGrid from batch.");
-	Sound sound = nullptr;
-	LOOP {
-		if (CLASS == classSound) sound = (Sound) OBJECT;   // may stay null
-	}
-	LOOP if (CLASS == classTextGrid) {
-		iam (TextGrid);
-		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, sound, true, nullptr, nullptr);
+	FIND_TWO_WITH_IOBJECT (TextGrid, Sound)   // Sound may be NULL
+		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, you, true, nullptr, nullptr);
 		Editor_setPublicationCallback (editor.get(), cb_TextGridEditor_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 FORM (WINDOW_TextGrid_viewAndEditWithCallback, U"TextGrid: View & Edit with callback", nullptr) {
 	SENTENCE4 (callbackText, U"Callback text", U"r1")
 	OK
 DO
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a TextGrid from batch.");
-	Sound sound = nullptr;
-	LOOP {
-		if (CLASS == classSound) sound = (Sound) OBJECT;   // may stay null
-	}
-	LOOP if (CLASS == classTextGrid) {
-		iam (TextGrid);
-		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, sound, true, nullptr, Melder_peek32to8 (callbackText));
+	FIND_TWO_WITH_IOBJECT (TextGrid, Sound)   // Sound may be NULL
+		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, you, true, nullptr, Melder_peek32to8 (callbackText));
 		Editor_setPublicationCallback (editor.get(), cb_TextGridEditor_publication);
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
-	}
-END }
+	END
+}
 
 DIRECT (WINDOW_TextGrid_LongSound_viewAndEdit) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a TextGrid from batch.");

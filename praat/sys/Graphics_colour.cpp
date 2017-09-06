@@ -40,7 +40,7 @@ Graphics_Colour
 	Graphics_WINDOW_BACKGROUND_COLOUR = { 0.90, 0.90, 0.85 };
 
 inline static const char32 * rgbColourName (Graphics_Colour colour) {
-	static MelderString buffer;
+	static MelderString buffer { };
 	MelderString_copy (& buffer,
 		U"{", Melder_fixed (colour. red, 6),
 		U",", Melder_fixed (colour. green, 6),
@@ -389,11 +389,11 @@ void Graphics_xorOn (Graphics graphics, Graphics_Colour colour) {
 	if (graphics -> screen) {
 		GraphicsScreen me = static_cast <GraphicsScreen> (graphics);
 		#if cairo
-			GdkColor colourXorWhite { 0,
-				(uint16) ((uint16) (colour. red   * 65535.0) ^ (uint16) 0xFFFF),
-				(uint16) ((uint16) (colour. green * 65535.0) ^ (uint16) 0xFFFF),
-				(uint16) ((uint16) (colour. blue  * 65535.0) ^ (uint16) 0xFFFF) };
 			#if ALLOW_GDK_DRAWING
+				GdkColor colourXorWhite { 0,
+					(uint16) ((uint16) (colour. red   * 65535.0) ^ (uint16) 0xFFFF),
+					(uint16) ((uint16) (colour. green * 65535.0) ^ (uint16) 0xFFFF),
+					(uint16) ((uint16) (colour. blue  * 65535.0) ^ (uint16) 0xFFFF) };
 				gdk_gc_set_rgb_fg_color (my d_gdkGraphicsContext, & colourXorWhite);
 				gdk_gc_set_function (my d_gdkGraphicsContext, GDK_XOR);
 				gdk_flush ();
@@ -418,8 +418,8 @@ void Graphics_xorOff (Graphics graphics) {
 	if (graphics -> screen) {
 		GraphicsScreen me = static_cast <GraphicsScreen> (graphics);
 		#if cairo
-			GdkColor black { 0, 0x0000, 0x0000, 0x0000 };
 			#if ALLOW_GDK_DRAWING
+				GdkColor black { 0, 0x0000, 0x0000, 0x0000 };
 				gdk_gc_set_rgb_fg_color (my d_gdkGraphicsContext, & black);
 				gdk_gc_set_function (my d_gdkGraphicsContext, GDK_COPY);
 				gdk_flush ();   // to undraw the last drawing

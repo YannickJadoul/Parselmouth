@@ -2,7 +2,7 @@
 #define _Formula_h_
 /* Formula.h
  *
- * Copyright (C) 1990-2011,2013,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1990-2011,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
  */
 
 #include "Data.h"
+#include "tensor.h"
 
 #define kFormula_EXPRESSION_TYPE_NUMERIC  0
 #define kFormula_EXPRESSION_TYPE_STRING  1
@@ -28,16 +29,6 @@
 #define kFormula_EXPRESSION_TYPE_NUMERIC_TENSOR4  5
 #define kFormula_EXPRESSION_TYPE_STRING_ARRAY  6
 #define kFormula_EXPRESSION_TYPE_UNKNOWN  7
-
-struct Formula_NumericVector {
-	long numberOfElements;
-	double *data;
-};
-
-struct Formula_NumericMatrix {
-	long numberOfRows, numberOfColumns;
-	double **data;
-};
 
 Thing_declare (InterpreterVariable);
 
@@ -50,12 +41,14 @@ typedef struct structStackel {
 	#define Stackel_NUMERIC_TENSOR4  5
 	#define Stackel_STRING_ARRAY  6
 	#define Stackel_VARIABLE  -1
+	#define Stackel_OBJECT  -2
 	int which;   /* 0 or negative = no clean-up required, positive = requires clean-up */
 	union {
 		double number;
 		char32 *string;
-		struct Formula_NumericVector numericVector;
-		struct Formula_NumericMatrix numericMatrix;
+		Daata object;
+		numvec numericVector;
+		nummat numericMatrix;
 		InterpreterVariable variable;
 	};
 } *Stackel;
@@ -66,8 +59,8 @@ struct Formula_Result {
 	union {
 		double numericResult;
 		char32 *stringResult;
-		struct Formula_NumericVector numericVectorResult;
-		struct Formula_NumericMatrix numericMatrixResult;
+		numvec numericVectorResult;
+		nummat numericMatrixResult;
 	} result;
 };
 
@@ -75,7 +68,7 @@ Thing_declare (Interpreter);
 
 void Formula_compile (Interpreter interpreter, Daata data, const char32 *expression, int expressionType, bool optimize);
 
-void Formula_run (long row, long col, struct Formula_Result *result);
+void Formula_run (long row, long col, Formula_Result *result);
 
 /* End of file Formula.h */
 #endif

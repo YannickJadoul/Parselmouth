@@ -1,6 +1,6 @@
 /* NUMrandom.cpp
  *
- * Copyright (C) 1992-2011,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1992-2011,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,8 +81,6 @@
 	#define getpid GetCurrentProcessId
 #endif
 #include "melder.h"
-#include "NUM.h"
-#define my me ->
 
 #define NN  312
 #define MM  156
@@ -182,7 +180,7 @@ void NUMrandom_init () {
 		}
 		keys [4] = (uint64_t) (int64) getpid ();   // unique between processes that run simultaneously on the same computer
 		#ifndef _WIN32
-		keys [5] = (uint64_t) (int64) gethostid ();   // unique between computers
+		//keys [5] = (uint64_t) (int64) gethostid ();   // unique between computers; but can be SLOW because it could have to access the internet
 		#endif
 		states [threadNumber]. init_by_array64 (keys, numberOfKeys);
 	}

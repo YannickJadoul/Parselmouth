@@ -507,7 +507,9 @@ void TextGrid_setTierName (TextGrid me, long itier, const char32 *newName) {
 static void IntervalTier_cutInterval (IntervalTier me, long index, int extend_option) {
 	long size_pre = my intervals.size;
 
-	// There always must be at least one interval
+	/*
+	 * There always must be at least one interval
+	 */
 	if (size_pre == 1 || index > size_pre || index < 1) {
 		return;
 	}
@@ -517,20 +519,28 @@ static void IntervalTier_cutInterval (IntervalTier me, long index, int extend_op
 	double xmax = ti -> xmax;
 	my intervals. removeItem (index);
 	if (index == 1) { 
-		// Change xmin of the new first interval.
+		/*
+		 * Change xmin of the new first interval.
+		 */
 		ti = my intervals.at [index];
 		ti -> xmin = xmin;
 	} else if (index == size_pre) { 
-		// Change xmax of the new last interval.
+		/*
+		 * Change xmax of the new last interval.
+		 */
 		ti = my intervals.at [my intervals.size];
 		ti -> xmax = xmax;
 	} else {
 		if (extend_option == 0) { 
-			// extend earlier interval to the right
+			/*
+			 * Extend earlier interval to the right
+			 */
 			ti = my intervals.at [index - 1];
 			ti -> xmax = xmax;
 		} else {
-			// extend next interval to the left
+			/*
+			 * Extend next interval to the left
+			 */
 			ti = my intervals.at [index];
 			ti -> xmin = xmin;
 		}
@@ -728,7 +738,7 @@ void TextTiers_append_inline (TextTier me, TextTier thee, bool preserveTimes) {
 	try {
 		for (long iint = 1; iint <= thy points.size; iint ++) {
 			autoTextPoint tp = Data_copy (thy points.at [iint]);
-			if (not preserveTimes) {
+			if (! preserveTimes) {
 				tp -> number += my xmax - thy xmin;
 			}
 			my points. addItem_move (tp.move());
@@ -808,6 +818,18 @@ autoTextGrid TextGrids_to_TextGrid_appendContinuous (OrderedOf<structTextGrid>* 
 	} catch (MelderError) {
 		Melder_throw (U"No aligned TextGrid created from Collection.");
 	}
+}
+
+static void NUMshift (double *x, double dx) {   // TODO: make global
+	*x += dx;
+}
+
+static autoIntervalTier IntervalTier_shiftBoundaries (IntervalTier me, double startTime, double shiftTime) {   // TODO: make global
+	autoIntervalTier result;   // TODO: implement
+	(void) me;   // TODO: use
+	(void) startTime;   // TODO: use
+	(void) shiftTime;   // TODO: use
+	return result;
 }
 
 /* End of file TextGrid_extensions.cpp */

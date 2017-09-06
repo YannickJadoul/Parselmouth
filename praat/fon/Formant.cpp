@@ -1,6 +1,6 @@
 /* Formant.cpp
  *
- * Copyright (C) 1992-2012,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1992-2012,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ void structFormant :: v_info () {
 double structFormant :: v_getValueAtSample (long iframe, long which, int units) {
 	Formant_Frame frame = & d_frames [iframe];
 	long iformant = which >> 1;
-	if (iformant < 1 || iformant > frame -> nFormants) return NUMundefined;
+	if (iformant < 1 || iformant > frame -> nFormants) return undefined;
 	double frequency = frame -> formant [iformant]. frequency;
 	if ((which & 1) == 0) {
 		return units ? NUMhertzToBark (frequency) : frequency;
@@ -75,13 +75,13 @@ double structFormant :: v_getValueAtSample (long iframe, long which, int units) 
 		double bandwidth = frame -> formant [iformant]. bandwidth;
 		if (units) {
 			double fleft = frequency - 0.5 * bandwidth, fright = frequency + 0.5 * bandwidth;
-			fleft = fleft <= 0.0 ? 0.0 : NUMhertzToBark (fleft);   // prevent NUMundefined
+			fleft = ( fleft <= 0.0 ? 0.0 : NUMhertzToBark (fleft) );   // prevent undefined
 			fright = NUMhertzToBark (fright);
 			return fright - fleft;
 		}
 		return bandwidth;
 	}
-	return NUMundefined;
+	return undefined;
 }
 
 autoFormant Formant_create (double tmin, double tmax, long nt, double dt, double t1,
@@ -115,18 +115,18 @@ long Formant_getMaxNumFormants (Formant me) {
 }
 
 void Formant_drawTracks (Formant me, Graphics g, double tmin, double tmax, double fmax, int garnish) {
-	long itmin, itmax, ntrack = Formant_getMinNumFormants (me);
+	integer itmin, itmax, ntrack = Formant_getMinNumFormants (me);
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
 	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) return;
 	Graphics_setInner (g);
 	Graphics_setWindow (g, tmin, tmax, 0.0, fmax);
-	for (long itrack = 1; itrack <= ntrack; itrack ++) {
-		for (long iframe = itmin; iframe < itmax; iframe ++) {
+	for (integer itrack = 1; itrack <= ntrack; itrack ++) {
+		for (integer iframe = itmin; iframe < itmax; iframe ++) {
 			Formant_Frame curFrame = & my d_frames [iframe], nextFrame = & my d_frames [iframe + 1];
 			double x1 = Sampled_indexToX (me, iframe), x2 = Sampled_indexToX (me, iframe + 1);
 			double f1 = curFrame -> formant [itrack]. frequency;
 			double f2 = nextFrame -> formant [itrack]. frequency;
-			if (NUMdefined (x1) && NUMdefined (f1) && NUMdefined (x2) && NUMdefined (f2))
+			if (isdefined (x1) && isdefined (f1) && isdefined (x2) && isdefined (f2))
 				Graphics_line (g, x1, f1, x2, f2);
 		}
 	}
@@ -143,7 +143,7 @@ void Formant_drawTracks (Formant me, Graphics g, double tmin, double tmax, doubl
 void Formant_drawSpeckles_inside (Formant me, Graphics g, double tmin, double tmax, double fmin, double fmax,
 	double suppress_dB)
 {
-	long itmin, itmax;
+	integer itmin, itmax;
 	double maximumIntensity = 0.0, minimumIntensity;
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
 	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) return;
@@ -235,9 +235,9 @@ void Formant_getExtrema (Formant me, int iformant, double tmin, double tmax, dou
 	if (fmax) *fmax = 0.0;
 	if (iformant < 1) return;
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
-	long itmin, itmax;
+	integer itmin, itmax;
 	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) return;
-	for (long iframe = itmin; iframe <= itmax; iframe ++) {
+	for (integer iframe = itmin; iframe <= itmax; iframe ++) {
 		Formant_Frame frame = & my d_frames [iframe];
 		if (iformant > frame -> nFormants) continue;
 		double f = frame -> formant [iformant]. frequency;
@@ -251,7 +251,7 @@ void Formant_getMinimumAndTime (Formant me, int iformant, double tmin, double tm
 	double *return_minimum, double *return_timeOfMinimum)
 {
 	Sampled_getMinimumAndX (me, tmin, tmax, iformant << 1, bark, interpolate, return_minimum, return_timeOfMinimum);
-	if (return_minimum && *return_minimum <= 0.0) *return_minimum = NUMundefined;
+	if (return_minimum && *return_minimum <= 0.0) *return_minimum = undefined;
 }
 
 double Formant_getMinimum (Formant me, int iformant, double tmin, double tmax, int bark, int interpolate) {
@@ -270,7 +270,7 @@ void Formant_getMaximumAndTime (Formant me, int iformant, double tmin, double tm
 	double *return_maximum, double *return_timeOfMaximum)
 {
 	Sampled_getMaximumAndX (me, tmin, tmax, iformant << 1, bark, interpolate, return_maximum, return_timeOfMaximum);
-	if (return_maximum && *return_maximum <= 0.0) *return_maximum = NUMundefined;   // unlikely
+	if (return_maximum && *return_maximum <= 0.0) *return_maximum = undefined;   // unlikely
 }
 
 double Formant_getMaximum (Formant me, int iformant, double tmin, double tmax, int bark, int interpolate) {
@@ -294,14 +294,14 @@ double Formant_getMean (Formant me, int iformant, double tmin, double tmax, int 
 }
 
 double Formant_getStandardDeviation (Formant me, int iformant, double tmin, double tmax, int bark) {
-	if (iformant < 1 || tmin == NUMundefined || tmax == NUMundefined) return NUMundefined;
+	if (iformant < 1 || isundef (tmin) || isundef (tmax)) return undefined;
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
-	long itmin, itmax;
-	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) return NUMundefined;
+	integer itmin, itmax;
+	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) return undefined;
 	double mean = Formant_getMean (me, iformant, tmin, tmax, bark);
 	double sum = 0.0;
-	long n = 0;
-	for (long iframe = itmin; iframe <= itmax; iframe ++) {
+	integer n = 0;
+	for (integer iframe = itmin; iframe <= itmax; iframe ++) {
 		Formant_Frame frame = & my d_frames [iframe];
 		if (iformant > frame -> nFormants) continue;
 		double f = frame -> formant [iformant]. frequency;
@@ -311,7 +311,7 @@ double Formant_getStandardDeviation (Formant me, int iformant, double tmin, doub
 		sum += (f - mean) * (f - mean);
 	}
 	if (n > 1) return sqrt (sum / (n - 1));
-	return NUMundefined;
+	return undefined;
 }
 
 double Formant_getValueAtTime (Formant me, int iformant, double time, int bark) {
@@ -332,7 +332,7 @@ void Formant_scatterPlot (Formant me, Graphics g, double tmin, double tmax,
 {
 	if (iformant1 < 1 || iformant2 < 1) return;
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
-	long itmin, itmax;
+	integer itmin, itmax;
 	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) return;
 	if (fmax1 == fmin1)
 		Formant_getExtrema (me, iformant1, tmin, tmax, & fmin1, & fmax1);
@@ -496,9 +496,9 @@ autoTable Formant_downto_Table (Formant me, bool includeFrameNumbers,
 					Table_setStringValue (thee.get(), iframe, ++ icol, Melder_fixed (formant -> bandwidth, frequencyDecimals));
 			}
 			for (long iformant = frame -> nFormants + 1; iformant <= my maxnFormants; iformant ++) {
-				Table_setNumericValue (thee.get(), iframe, ++ icol, NUMundefined);
+				Table_setNumericValue (thee.get(), iframe, ++ icol, undefined);
 				if (includeBandwidths)
-					Table_setNumericValue (thee.get(), iframe, ++ icol, NUMundefined);
+					Table_setNumericValue (thee.get(), iframe, ++ icol, undefined);
 			}
 		}
 		return thee;

@@ -1,6 +1,6 @@
 /* Transition.cpp
  *
- * Copyright (C) 1997-2012,2015,2016 Paul Boersma
+ * Copyright (C) 1997-2012,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ void structTransition :: v_info () {
 }
 
 void structTransition :: v_writeText (MelderFile file) {
-	texputi4 (file, numberOfStates, U"numberOfStates", 0,0,0,0,0);
+	texputi32 (file, numberOfStates, U"numberOfStates", 0,0,0,0,0);
 	MelderFile_write (file, U"\nstateLabels []: ");
 	if (numberOfStates < 1) MelderFile_write (file, U"(empty)");
 	MelderFile_write (file, U"\n");
@@ -101,7 +101,7 @@ static void print4 (char *buffer, double value, int iformat, int width, int prec
 		if (numerator == 0)
 			snprintf (buffer, 40, "0");
 		else if (denominator > 1)
-			snprintf (buffer, 40, "%ld/%ld", numerator, denominator);
+			snprintf (buffer, 40, "%s/%s", Melder8_integer (numerator), Melder8_integer (denominator));
 		else
 			snprintf (buffer, 40, "%.7g", value);
 	} else {

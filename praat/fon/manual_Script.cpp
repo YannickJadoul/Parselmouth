@@ -1,6 +1,6 @@
 /* manual_Script.cpp
  *
- * Copyright (C) 1992-2011,2013,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2011,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -482,7 +482,7 @@ INTRO (U"Analogously to the formulas that you can use for creating new objects (
 	"can find in the @Modify menu when you select an object.")
 ENTRY (U"Modifying a Sound with a formula")
 NORMAL (U"Record a sound with your microphone and talk very lowly. If you don't know how to record a sound in Praat, "
-	"consult the @Intro. Once the Sound objetc is in the list, click #%Play. The result will sound very soft. "
+	"consult the @Intro. Once the Sound object is in the list, click #%Play. The result will sound very soft. "
 	"Then choose ##Formula...# from the #Modify menu and type")
 CODE (U"self * 3")
 NORMAL (U"Click OK, then click #Play again. The sound is much louder now. You have multiplied the amplitude of every sample "
@@ -702,7 +702,7 @@ TAG (U"##undefined")
 DEFINITION (U"a special value, see @undefined")
 MAN_END
 
-MAN_BEGIN (U"Formulas 4. Mathematical functions", U"ppgb", 20080318)
+MAN_BEGIN (U"Formulas 4. Mathematical functions", U"ppgb", 20170718)
 TAG (U"##abs (%x)")
 DEFINITION (U"absolute value")
 TAG (U"##round (%x)")
@@ -768,13 +768,13 @@ DEFINITION (U"the error function: 2/\\Vr%\\pi __0_\\in^%x exp(-%t^2) %dt")
 TAG (U"##erfc (%x)")
 DEFINITION (U"the complement of the error function: 1 - erf (%x)")
 TAG (U"##randomUniform (%min, %max)")
-DEFINITION (U"uniform random deviate between %min (inclusive) and %max (exclusive)")
+DEFINITION (U"uniform random real number between %min (inclusive) and %max (exclusive)")
 TAG (U"##randomInteger (%min, %max)")
-DEFINITION (U"uniform random deviate between %min and %max (inclusive)")
+DEFINITION (U"uniform random integer number between %min and %max (inclusive)")
 TAG (U"##randomGauss (%\\mu, %\\si)")
-DEFINITION (U"Gaussian random deviate with mean %\\mu and standard deviation %\\si")
+DEFINITION (U"Gaussian random real number with mean %\\mu and standard deviation %\\si")
 TAG (U"##randomPoisson (%mean)")
-DEFINITION (U"Poisson random deviate")
+DEFINITION (U"Poisson random real number")
 TAG (U"##lnGamma (%x)")
 DEFINITION (U"logarithm of the \\Ga function")
 TAG (U"##gaussP (%z)")
@@ -960,22 +960,26 @@ CODE (U"800;sqrt(2)*sin(2*pi*103*0.5)+10\\^ (-40/20)*randomGauss(0,1)")
 NORMAL (U"evaluates to 800.")
 MAN_END
 
-MAN_BEGIN (U"Formulas 7. Attributes of objects", U"ppgb", 20070225)
+MAN_BEGIN (U"Formulas 7. Attributes of objects", U"ppgb", 20170614)
 NORMAL (U"You can refer to several attributes of objects that are visible in the @@List of Objects@. "
-	"To do so, use the type and the name of the object, connected with an underscore. "
-	"Thus, $$Sound_hallo$ refers to an existing Sound object whose name is \"hallo\" "
-	"(if there is more than one such object, it refers to the one that was created last). "
-	"You can also use the unique ID instead of the name. Thus, $$Object_113$ refers to the 113th object that you created in the list.")
-NORMAL (U"To refer to an attribute, you use the period ( `.'). "
-	"Thus, $$Sound_hallo.nx$ is the number of samples of Sound_hallo, and "
-	"$$1 / Sound_hallo.dx$ is the sampling frequency of Sound_hallo.")
+	"To do so, use either the unique ID of the object, or the type and the name of the object. "
+	"Thus, $$object[113]$ refers to the object that has the number 113 in the list, "
+	"and $$object[\"Sound hallo\"]$ refers to an existing Sound object whose name is \"hallo\" "
+	"(if there is more than one such object, it refers to the one that was created last).")
+NORMAL (U"To refer to an attribute, you use the period (\".\"). "
+	"Thus, $$object[\"Sound hallo\"].nx$ is the number of samples of the Sound called %hallo, and "
+	"$$1/object[\"Sound hallo\"].dx$ is its sampling frequency.")
 ENTRY (U"Attributes in the calculator")
 NORMAL (U"Record a Sound (read the @Intro if you do not know how to do that), "
-	"name it \"mysound\" (or anything else), and type the following formula into the @calculator:")
-CODE (U"Sound_mysound.nx")
+	"and name it \"mysound\" (or anything else). An object with a name like \"3. Sound mysound\" "
+	"will appear in the list. Then type into the @calculator the formula")
+CODE (U"object[3].nx")
+NORMAL (U"or")
+CODE (U"object[\"Sound mysound\"].nx")
 NORMAL (U"After you click OK, the Info window will show the number of samples. Since you could have got this result "
-	"by simply choosing ##%%Get number of samples#% from the @Query menu, these attribute tricks are not very "
-	"useful in the calculator. We will see that they are much more useful in creation and modification formulas and in scripts.")
+	"by simply selecting the object and choosing ##%%Get number of samples#% from the @Query menu, "
+	"these attribute tricks are not very useful in the calculator. "
+	"We will see that they are much more useful in creation and modification formulas and in scripts.")
 ENTRY (U"List of possible attributes")
 NORMAL (U"The following attributes are available:")
 TAG (U"#xmin")
@@ -1023,84 +1027,79 @@ DEFINITION (U"the number of frequency bands in a Spectrogram or Cochleagram obje
 	"the number of divisions of the %y domain for a Matrix object (= %nrow).")
 TAG (U"#dy")
 DEFINITION (U"the distance between adjacent frequency bands in a Spectrogram object, in hertz; "
-	"the distance between adjacent frequency bands in a Cochleagram object, in hertz; "
+	"the distance between adjacent frequency bands in a Cochleagram object, in Bark; "
 	"the vertical distance between cells in a Matrix object.")
 ENTRY (U"Attributes in a creation formula")
 NORMAL (U"In formulas for creating a new object, you can refer to the attributes of any object, "
 	"but you will often want to refer to the attributes of the object that is just being created. You can do that in two ways.")
 NORMAL (U"The first way is to use the name of the object, as above. Choose @@Create Sound from formula...@, supply %hello for its name, "
 	"supply arbitrary values for the starting and finishing time, and type the following formula:")
-CODE (U"(x - Sound_hello.xmin) / (Sound_hello.xmax - Sound_hello.xmin)")
+CODE (U"(x - object[\"Sound hello\"].xmin) / (object[\"Sound hello\"].xmax - object[\"Sound hello\"].xmin)")
 NORMAL (U"When you edit this sound, you can see that it creates a straight line that rises from 0 to 1 within the time domain.")
 NORMAL (U"The formula above will also work if the Sound under creation is called %goodbye, and a Sound called %hello already exists; "
-	"of course, in such a case $$Sound_hello.xmax$ refers to a property of the already existing sound.")
+	"of course, in such a case $$object[\"Sound hello\"].xmax$ refers to a property of the already existing sound.")
 NORMAL (U"If a formula refers to an object under creation, there is a shorter way: you do not have to supply the name of the object at all, "
 	"so you can simply write")
 CODE (U"(x - xmin) / (xmax - xmin)")
 NORMAL (U"The attributes that you can use in this implicit way are %xmin, %xmax, %ncol, %nrow, %nx, %dx, %ny, and %dy. "
-	"To disambiguate in case there exists a script variable %xmin as well, you can write %%Self.xmin%.")
+	"To disambiguate in case there exists a script variable %xmin as well "
+	"(Praat will complain if this is the case), you can write $$Self.xmin$.")
 ENTRY (U"Attributes in a modification formula")
 NORMAL (U"In formulas for modifying an existing object, you refer to attributes in the same way as in creation formulas, "
 	"i.e., you do not have to specify the name of the object that is being modified. The formula")
 CODE (U"self * 20 \\^  (- (x - xmin) / (xmax - xmin))")
 NORMAL (U"causes the sound to decay exponentially in such a way that it has only 5 percent of its initial amplitude at the end. "
-	"If you apply this formula to multiple Sound objects at the same time, %xmax will refer to the finishing time of each Sound separately "
-	"as it is modified. To disambiguate in case there exists a script variable %xmin as well, you can write %%Self.xmin%.")
+	"If you apply this formula to multiple Sound objects at the same time, $xmax will refer to the finishing time of each Sound separately "
+	"as that Sound is modified.")
 NORMAL (U"More examples of the use of attributes are on the next page.")
 MAN_END
 
-MAN_BEGIN (U"Formulas 8. Data in objects", U"ppgb", 20140223)
+MAN_BEGIN (U"Formulas 8. Data in objects", U"ppgb", 20170614)
 NORMAL (U"With square brackets, you can get the values inside some objects.")
 ENTRY (U"Object contents in the calculator")
 NORMAL (U"The outcomes of the following examples can be checked with the @calculator.")
-TAG (U"##Matrix_hello [10, 3]")
+TAG (U"##object [%%objectName\\$  or id%, %rowNumber, %columnNumber]")
+TAG (U"$$object [\"Matrix hello\", 10, 3]")
 DEFINITION (U"gives the value in the cell at the third column of the 10th row of the Matrix called %hello.")
-TAG (U"##Sound_hello [0, 10000]")
-DEFINITION (U"gives the value (in Pa) of the 1000th sample of the Sound %hello, averaged over the channels.")
-TAG (U"##Sound_hello [1, 10000]")
-DEFINITION (U"gives the value (in Pa) of the 1000th sample of the left channel of the Sound %hello.")
-TAG (U"##Sound_hello [2, 10000]")
-DEFINITION (U"gives the value (in Pa) of the 1000th sample of the right channel of the Sound %hello.")
-TAG (U"##Sound_hello [10000]")
-DEFINITION (U"this can mean various things. In the calculator it means the same as ##Sound_hello [0, 10000]#, "
-	"but in modification formulas it can mean ##Sound_hello [row, 10000]#, where %row refers to the channel. This variation exists in order to make "
-	"older Praat scripts (from the time that Praat did not support stereo) compatible with present-day Praat versions; "
-	"because of possible confusions, the use of ##Sound_hello [10000]# is not recommended.")
-TAG (U"##TableOfReal_tokens [5, 12]")
+TAG (U"$$object [5, 10, 3]")
+DEFINITION (U"gives the value in the cell at the third column of the 10th row of the Matrix whose unique ID is 5 "
+	"(i.e. that is labelled with the number 5 in the list of objects).")
+TAG (U"$$object [\"Sound hello\", 0, 10000]")
+DEFINITION (U"gives the value (in Pa) of the 10000th sample of the Sound %hello, averaged over the channels.")
+TAG (U"$$object [23, 1, 10000]")
+DEFINITION (U"gives the value (in Pa) of the 10000th sample of the left channel of the Sound with ID 23.")
+TAG (U"$$object [23, 2, 10000]")
+DEFINITION (U"gives the value (in Pa) of the 10000th sample of the right channel of the Sound with ID 23.")
+TAG (U"$$object [\"TableOfReal tokens\", 5, 12]")
 DEFINITION (U"gives the value in the cell at the fifth row of the 12th column of the TableOfReal called %tokens.")
-TAG (U"##TableOfReal_tokens [5, \"F1\"]")
+TAG (U"$$object [\"TableOfReal tokens\", 5, \"F1\"]")
 DEFINITION (U"gives the value in the cell at the fifth row of the column labelled %F1 of the TableOfReal %tokens.")
-TAG (U"##TableOfReal_tokens [\"\\bsct\", \"F1\"]")
+TAG (U"$$object [\"TableOfReal tokens\", \"\\bsct\", \"F1\"]")
 DEFINITION (U"gives the value in the cell at the row labelled %%\\bsct% of column %F1 of the TableOfReal %tokens.")
-TAG (U"##Table_listeners [3, \"m3ae\"]")
+TAG (U"$$object [\"Table listeners\", 3, \"m3ae\"]")
 DEFINITION (U"gives the numeric value in the cell at the third row of column %m3ae of the Table %listeners.")
-TAG (U"##Table_listeners [3, 12]")
+TAG (U"$$object [\"Table listeners\", 3, 12]")
 DEFINITION (U"gives the numeric value in the cell at the third row of the 12th column of the Table %listeners.")
-TAG (U"##Table_results\\$  [3, \"response\"]")
+TAG (U"$$object\\$  [\"Table results\", 3, \"response\"]")
 DEFINITION (U"gives the string value in the cell at the third row of column %response of the Table %results.")
-TAG (U"##Table_results\\$  [3, 12]")
+TAG (U"$$object\\$  [\"Table results\", 3, 12]")
 DEFINITION (U"gives the string value in the cell at the third row of the 12th column of the Table %results.")
-TAG (U"##PitchTier_hello [8]")
+TAG (U"$$object [\"PitchTier hello\", 8]")
 DEFINITION (U"gives the pitch (in Hertz) of the 8th point in the PitchTier %hello.")
 NORMAL (U"Cells (or samples, or points) outside the objects are considered to contain zeroes.")
 ENTRY (U"Interpolation")
 NORMAL (U"The values inside some objects can be interpolated.")
-TAG (U"##Sound_hello (0.7, 0)")
+TAG (U"$$object (\"Sound hello\", 0.7, 0)")
 DEFINITION (U"gives the value (in Pa) at a time of 0.7 seconds in the Sound %hello, by linear interpolation between "
 	"the two samples that are nearest to 0.7 seconds. The channels are averaged.")
-TAG (U"##Sound_hello (0.7, 1)")
+TAG (U"$$object (\"Sound hello\", 0.7, 1)")
 DEFINITION (U"gives the interpolated value (in Pa) at a time of 0.7 seconds in the left channel of the Sound %hello.")
-TAG (U"##Sound_hello (0.7, 2)")
+TAG (U"$$object (\"Sound hello\", 0.7, 2)")
 DEFINITION (U"gives the interpolated value (in Pa) at a time of 0.7 seconds in the right channel of the Sound %hello.")
-TAG (U"##Sound_hello (0.7)")
-DEFINITION (U"this can mean various things. In the calculator it means the same as ##Sound_hello (0.7, 0)#, "
-	"but in modification formulas it can mean ##Sound_hello (0.7, row)#, where %row refers to the channel. This variation exists in order to make "
-	"older Praat scripts (from the time that Praat did not support stereo) compatible with present-day Praat versions; "
-	"because of possible confusions, the use of ##Sound_hello (0.7)# is not recommended.")
-TAG (U"##Spectrogram_hallo (0.7, 2500)")
+TAG (U"$$object (\"Spectrogram hallo\", 0.7, 2500)")
 DEFINITION (U"gives the value at a time of 0.7 seconds and at a frequency of 2500 Hz in the Spectrogram %hallo, "
 	"by linear interpolation between the four samples that are nearest to that point.")
-TAG (U"##PitchTier_hullo (0.7)")
+TAG (U"$$object (\"PitchTier hullo\", 0.7)")
 DEFINITION (U"gives the pitch (in Hertz) at a time of 0.7 seconds in the PitchTier %hullo.")
 NORMAL (U"In the interpolation, times outside the time domain of the objects are considered to contain zeroes (this does not apply to PitchTiers and the like, "
 	"which undergo @@constant extrapolation@).")
@@ -1108,30 +1107,33 @@ ENTRY (U"Object contents in a modification formula")
 NORMAL (U"Suppose you want to do the difficult way of reversing the contents of a Sound called %hello (the easy way is to choose #Reverse "
 	"from the @Modify menu). You select this sound, then choose @@Copy...@ to duplicate it to a new Sound, which you name %%hello_reverse%. "
 	"You select this new Sound and choose ##Formula...# from the @Modify menu. The formula will be")
-CODE (U"Sound_hello [ncol + 1 - col]")
+CODE (U"object [\"Sound hello\", row, ncol + 1 - col]")
 NORMAL (U"From this example, you see that the indices between [ ] may be formulas themselves, and that you can use implicit attributes like %ncol "
-	"and position references like %col. An alternative formula is")
-CODE (U"Sound_hello (xmax - x)")
-NORMAL (U"at least if %xmin is zero. The advantage of the second method is that is also works correctly if the two sounds have different sampling frequencies; "
-	"the disadvantage is that it may do some interpolation between the samples, which deteriorates the sound quality.")
+	"and position references like %col (also %row, which here means that the reversal is performed for each channel). "
+	"An alternative formula is")
+CODE (U"object (\"Sound hello\", xmax - x, y)")
+NORMAL (U"at least if %xmin is zero. The advantage of the second method is that it also works correctly if the two sounds have different sampling frequencies; "
+	"the disadvantage is that it may do some interpolation between the samples, which deteriorates the sound quality "
+	"(the use of %y here means that the reversal is done for all %y values, i.e. all channels).")
 ENTRY (U"Object contents in a script")
 NORMAL (U"In scripts, the indices between [ ] and the values between ( ) may be formulas themselves and contain variables. "
-	"The following script computes the sum of all the cells along the diagonal of a Matrix named %hello.")
+	"The following script computes the sum of all the cells along the diagonal of a Matrix.")
+CODE (U"matrix = Create simple matrix: 10, 10, \"x*y\"")
 CODE (U"sumDiagonal = 0")
-CODE (U"for i to Matrix_hello.ncol")
-	CODE1 (U"sumDiagonal += Matrix_hello [i, i]")
+CODE (U"for i to object[matrix].ncol")
+	CODE1 (U"sumDiagonal += object [matrix, i, i]")
 CODE (U"endfor")
-CODE (U"writeInfoLine: \"The sum of cells along the diagonal is \", sumDiagonal, \".\"")
+CODE (U"writeInfoLine: \"The sum of the cells along the diagonal is \", sumDiagonal, \".\"")
 NORMAL (U"This example could have been written completely with commands from the dynamic menu:")
-CODE (U"select Matrix hello")
+CODE (U"matrix = Create simple matrix: 10, 10, \"x*y\"")
 CODE (U"sumDiagonal = 0")
 CODE (U"ncol = Get number of columns")
 CODE (U"for i to ncol")
 	CODE1 (U"value = Get value in cell: i, i")
 	CODE1 (U"sumDiagonal += value")
 CODE (U"endfor")
-CODE (U"writeInfoLine: \"The sum of cells along the diagonal is \", sumDiagonal, \".\"")
-NORMAL (U"The first version, which accesses the contents directly, is not only three lines shorter, but also three times faster.")
+CODE (U"writeInfoLine: \"The sum of the cells along the diagonal is \", sumDiagonal, \".\"")
+NORMAL (U"The first version, which accesses the contents directly, is not only two lines shorter, but also three times faster.")
 MAN_END
 
 MAN_BEGIN (U"Hidden commands", U"ppgb", 20110129)
@@ -1355,7 +1357,7 @@ NORMAL (U"On Linux the file is called #prefs5, "
 	"for instance ##/home/miep/.praat-dir/prefs5#.")
 MAN_END
 
-MAN_BEGIN (U"Scripting", U"ppgb", 20141012)
+MAN_BEGIN (U"Scripting", U"ppgb", 20170718)
 INTRO (U"This is one of the tutorials of the Praat program. It assumes you are familiar with the @Intro.")
 NORMAL (U"A %script is a text that consists of menu commands and action commands. "
 	"If you %run the script (perhaps from a @ScriptEditor), "
@@ -1382,8 +1384,9 @@ LIST_ITEM1 (U"@@Scripting 5.3. Jumps@ (if, then, elsif, else, endif)")
 LIST_ITEM1 (U"@@Scripting 5.4. Loops@ (for/endfor, while/endwhile, repeat/until)")
 LIST_ITEM1 (U"@@Scripting 5.5. Procedures@ (\\@ , procedure)")
 LIST_ITEM1 (U"@@Scripting 5.6. Arrays and dictionaries")
-LIST_ITEM1 (U"@@Scripting 5.7. Including other scripts")
-LIST_ITEM1 (U"@@Scripting 5.8. Quitting@ (exitScript)")
+LIST_ITEM1 (U"@@Scripting 5.7. Vectors and matrices")
+LIST_ITEM1 (U"@@Scripting 5.8. Including other scripts")
+LIST_ITEM1 (U"@@Scripting 5.9. Quitting@ (exitScript)")
 LIST_ITEM (U"@@Scripting 6. Communication outside the script")
 LIST_ITEM1 (U"@@Scripting 6.1. Arguments to the script@ (form/endform, runScript)")
 LIST_ITEM1 (U"@@Scripting 6.2. Writing to the Info window@ (writeInfoLine, appendInfoLine, appendInfo, tab\\$ )")
@@ -2216,7 +2219,7 @@ CODE (U"#for i from 1 to n")
 CODE (U"#endfor")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5. Language elements reference", U"ppgb", 20160405)
+MAN_BEGIN (U"Scripting 5. Language elements reference", U"ppgb", 20170718)
 NORMAL (U"In a Praat script, you can use variables, expressions, and functions, of numeric as well as string type, "
 	"and most of the control structures known from other procedural computer languages. "
 	"The way the distinction between numbers and strings is made, may remind you of the programming language Basic.")
@@ -2226,8 +2229,9 @@ LIST_ITEM (U"@@Scripting 5.3. Jumps@ (if, then, elsif, else, endif)")
 LIST_ITEM (U"@@Scripting 5.4. Loops@ (for/endfor, while/endwhile, repeat/until)")
 LIST_ITEM (U"@@Scripting 5.5. Procedures@ (\\@ , procedure)")
 LIST_ITEM (U"@@Scripting 5.6. Arrays and dictionaries@")
-LIST_ITEM (U"@@Scripting 5.7. Including other scripts@")
-LIST_ITEM (U"@@Scripting 5.8. Quitting@ (exit)")
+LIST_ITEM (U"@@Scripting 5.7. Vectors and matrices")
+LIST_ITEM (U"@@Scripting 5.8. Including other scripts@")
+LIST_ITEM (U"@@Scripting 5.9. Quitting@ (exit)")
 MAN_END
 
 MAN_BEGIN (U"Scripting 5.1. Variables", U"ppgb", 20140111)
@@ -2649,7 +2653,7 @@ CODE (U"#endproc")
 NORMAL (U"However, this uses variable substitution, a trick better avoided.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5.6. Arrays and dictionaries", U"ppgb", 20160405)
+MAN_BEGIN (U"Scripting 5.6. Arrays and dictionaries", U"ppgb", 20170718)
 NORMAL (U"You can use arrays of numeric and string variables:")
 CODE (U"#for i #from 1 #to 5")
 	CODE1 (U"square [i] = i * i")
@@ -2662,15 +2666,109 @@ CODE (U"#writeInfoLine: \"Some squares:\"")
 CODE (U"#for i #from 1 #to 5")
 	CODE1 (U"#appendInfoLine: \"The square of \", i, \" is \", square [i]")
 CODE (U"#endfor")
-NORMAL (U"You can use any number of variables in a script, but you can also use Matrix or Sound objects for arrays.")
 NORMAL (U"In the examples above, the %index into the array was always a number. "
 	" A %hash or %dictionary is an array variable where the index is a string:")
 CODE (U"age [\"John\"] = 36")
 CODE (U"age [\"Babs\"] = 39")
 CODE (U"#writeInfoLine: \"John is \", age [\"John\"], \" years old.\"")
+ENTRY (U"See also")
+NORMAL (U"You can use any number of array and dictionary variables in a script, "
+	"but for many applications, namely whenever it were useful to look at a numeric array as a single object, "
+	"it may be better to use vectors and matrices (see @@Scripting 5.7. Vectors and matrices@) "
+	"or to use Matrix or Sound objects.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5.7. Including other scripts", U"ppgb", 20140111)
+MAN_BEGIN (U"Scripting 5.7. Vectors and matrices", U"ppgb", 20170821)
+ENTRY (U"1. What is a vector?")
+NORMAL (U"A ##numeric vector# is an array of numbers, regarded as a single object. "
+	"For instance, the squares of the first five integers can be collected in the vector { 1, 4, 9, 16, 25 }. "
+	"In a Praat script, you can put a vector into a variable whose name ends in a number sign (\"\\# \"):")
+CODE (U"squares\\#  = { 1, 4, 9, 16, 25 }")
+NORMAL (U"After this, the variable %%squares\\# % contains the value { 1, 4, 9, 16, 25 }. "
+	"We say that the vector %%squares\\# % has five %dimensions, i.e. it contains five numbers.")
+NORMAL (U"Whereas in @@Scripting 3.2. Numeric variables@ we talked about a numeric variable as being analogous to a house "
+	"where somebody (the numeric %value) could live, a numeric vector with five dimensions "
+	"can be seen as a %street that contains five houses, which are numbered with the indexes 1, 2, 3, 4 and 5, "
+	"each house containing a numeric value. Thus, the street %%squares\\# % contains the following five houses: "
+	"%%squares\\# % [1], %%squares\\# % [2], %%squares\\# % [3], %%squares\\# % [4] and %%squares\\# % [5]. "
+	"Their values (the numbers that currently live in these houses) are 1, 4, 9, 16 and 25, respectively.")
+NORMAL (U"To list the five values with a loop, you could do:")
+CODE (U"#writeInfoLine: \"Some squares:\"")
+CODE (U"#for i #from 1 #to 5")
+	CODE1 (U"#appendInfoLine: \"The square of \", i, \" is \", squares\\#  [i]")
+CODE (U"#endfor")
+NORMAL (U"Instead of the above procedure to get the vector %%squares\\# %, with a pre-computed list of five squares, "
+	"you could compute the five values with a formula, as in the example of @@Scripting 5.6. Arrays and dictionaries@. "
+	"However, in order to put a value into an element of the vector, you have to create the vector first "
+	"(i.e., you have to build the whole street before you can put something in a house), "
+	"so we start by creating a vector with five zeroes in it:")
+CODE (U"squares\\#  = zero\\#  (5)")
+NORMAL (U"After this, %%squares\\# % is the vector { 0, 0, 0, 0, 0 }, i.e., the value of each element is zero. "
+	"Now that the vector (street) exists, we can put values into (populate) the five elements (houses):")
+CODE (U"#for i #from 1 #to 5")
+	CODE1 (U"squares\\#  [i] = i * i")
+CODE (U"#endfor")
+NORMAL (U"After this, the variable $$squares\\# $ has the value { 1, 4, 9, 16, 25 }, as before, "
+	"but now we had the computer compute the squares.")
+ENTRY (U"2. Creating a vector")
+NORMAL (U"You can create a vector in many ways. The first way we saw was with a ##vector literal#, "
+	"i.e. a series of numbers (or numeric formulas) between braces:")
+CODE (U"lengths\\#  = { 1.83, 1.795, 1.76 }")
+NORMAL (U"The second way we saw was to create a series of #zeroes. To create a vector consisting of 10,000 zeroes, you do")
+CODE (U"zero\\#  (10000)")
+NORMAL (U"Another important type of vector is a series of random numbers. "
+	"To create a vector consisting of 10,000 values drawn from a ##Gaussian distribution# "
+	"with true mean 0.0 and true standard deviation 1.0, you could do")
+CODE (U"noise\\#  = randomGauss\\#  (10000, 0.0, 1.0)")
+NORMAL (U"To create a vector consisting of 10,000 values drawn from a ##uniform distribution of real numbers# "
+	"with true minimum 0.0 and true maximum 1.0, you use")
+CODE (U"randomUniform\\#  (10000, 0.0, 1.0)")
+NORMAL (U"To create a vector consisting of 10,000 values drawn from a ##uniform distribution of integer numbers# "
+	"with true minimum 1 and true maximum 10, you use")
+CODE (U"randomInteger\\#  (10000, 1, 10)")
+NORMAL (U"Vectors can also be created by some menu commands. For instance, to get vectors representing "
+	"the times and pitch frequencies of the frames in a Pitch object, you can do")
+CODE (U"selectObject: myPitch")
+CODE (U"times\\#  = Get times of frames")
+CODE (U"pitches\\#  = Get values in frames")
+ENTRY (U"3. Turning a vector into a number")
+NORMAL (U"For the vector defined above, you can compute the #sum of the five values as")
+CODE (U"sum (squares\\# )")
+NORMAL (U"which gives 55. You compute the #average of the five values as")
+CODE (U"mean (squares\\# )")
+NORMAL (U"which gives 11. You compute the ##standard deviation# of the values as ")
+CODE (U"stdev (squares\\# )")
+NORMAL (U"which gives 9.669539802906858 (the standard deviation is undefined for vectors with fewer than 2 elements). "
+	"The ##center of gravity# of the distribution defined by regarding "
+	"the five values as relative frequencies as a function of the index from 1 to 5 is computed by")
+CODE (U"center (squares\\# )")
+NORMAL (U"which gives 4.090909090909091 (for a vector with five elements, the result will always be "
+	"a number between 1.0 and 5.0). You compute the ##inner product# of two equally long vectors as follows:")
+CODE (U"other\\#  = { 2, 1.5, 1, 0.5, 0 }")
+CODE (U"result\\#  = inner (squares\\# , other\\# )")
+NORMAL (U"which gives 1*2 + 4*1.5 + 9*1 + 16*0.5 + 25*0 = 25. "
+	"The formula for this is \\su__%i=1_^5 squares[i] * other[i], so that an alternative piece of code could be")
+CODE (U"result\\#  = sumOver (i to 5, squares\\#  [i] * other\\#  [i])")
+ENTRY (U"4. Converting vectors to vectors")
+CODE (U"a\\#  = squares\\#  + 5   ; adding a number to each element of a vector")
+NORMAL (U"causes a\\#  to become the vector { 6, 9, 14, 21, 30 }.")
+CODE (U"b\\#  = a\\#  + { 3.14, 2.72, 3.16, -1, 7.5 }   ; adding two vectors of the same length")
+NORMAL (U"causes b\\#  to become the vector { 9.14, 16.72, 17.16, 20, 37.5 }.")
+CODE (U"c\\#  = b\\#  / 2   ; dividing each element of a vector")
+NORMAL (U"causes c\\#  to become the vector { 4.57, 8.36, 8.58, 10, 18.75 }.")
+CODE (U"d\\#  = b\\#  * c\\#    ; elementwise multiplication")
+NORMAL (U"causes d\\#  to become the vector { xx, 8.36, 8.58, 10, 18.75 }.")
+NORMAL (U"A vector can also be given to a ##menu command# that returns another vector. "
+	"For instance, to get a vector representing the pitch frequencies at 0.01-second intervals in a Pitch object, "
+	"you can do")
+CODE (U"selectObject: myPitch")
+CODE (U"tmin = Get start time")
+CODE (U"tmax = Get end time")
+CODE (U"times\\#  = sequence_by_centre\\#  (tmin, tmax, 0.01)")
+CODE (U"pitches\\#  = Get values at times: times\\# , \"hertz\", \"linear\"")
+MAN_END
+
+MAN_BEGIN (U"Scripting 5.8. Including other scripts", U"ppgb", 20170718)
 INTRO (U"You can include other scripts within your script:")
 CODE (U"a = 5")
 CODE (U"include square.praat")
@@ -2692,7 +2790,7 @@ NORMAL (U"You can \"nest\" include files, i.e., included scripts can include oth
 NORMAL (U"The #include statement can only be at the start of a line: you cannot put any spaces in front of it.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5.8. Quitting", U"ppgb", 20140124)
+MAN_BEGIN (U"Scripting 5.9. Quitting", U"ppgb", 20170718)
 NORMAL (U"Usually, the execution of your script ends when the interpreter has executed the last line "
 	"that is not within a procedure definition. However, you can also explicitly stop the script:")
 TAG (U"#exitScript ( )")
@@ -3160,9 +3258,9 @@ NORMAL (U"In this example, $$fonsg19.hum.uva.nl$ is the computer on which MovieE
 NORMAL (U"The number 6667 is the port number on which MovieEdit is listening. Other programs will use different port numbers.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 6.8. Messages to the user", U"ppgb", 201401024)
+MAN_BEGIN (U"Scripting 6.8. Messages to the user", U"ppgb", 20170718)
 NORMAL (U"If the user makes a mistake (e.g. types conflicting settings into your form window), "
-	"you can use the #exitScript function (@@Scripting 5.8. Quitting|\\SS5.8@) "
+	"you can use the #exitScript function (@@Scripting 5.9. Quitting|\\SS5.8@) "
 	"to stop the execution of the script with an error message:")
 CODE (U"form My analysis")
 	CODE1 (U"real Starting_time_(s) 0.0")
@@ -3240,7 +3338,7 @@ NORMAL (U"Praat will start up, opening the script $$my script.praat$$ in a scrip
 NORMAL (U"On the Mac, you do")
 CODE (U"/Applications/Praat.app/Contents/MacOS/Praat --open \"my script.praat\"")
 NORMAL (U"and on Linux")
-CODE (U"/usr/bin/praat data/hello.wav --open \"my script.praat\"")
+CODE (U"/usr/bin/praat --open \"my script.praat\"")
 NORMAL (U"Note that on all three platforms, you have to supply quotes around the file name "
 	"if that file name contains one or more spaces, as here between $$my$ and $$script$ "
 	"or above between $$Program$ and $$Files$. This is because the script languages of "
@@ -3253,7 +3351,7 @@ CODE (U"\"C:\\bsProgram Files\\bsPraat.exe\" --run \"my script.praat\"")
 NORMAL (U"Praat will execute the script $$my script.praat$$ without showing Praat's GUI, "
 	"i.e. without showing its usual two windows. "
 	"In fact, any output that would normally go to the Info window, "
-	"will now go directly to the Console window in which you typed te command. "
+	"will now go directly to the Console window in which you typed the command. "
 	"If Praat was already running when you typed the command, "
 	"its windows will not be affected. In fact, the GUI-instantiation of Praat and the Console-instantiation "
 	"can run simultaneously without them noticing each other's existence; "
@@ -3261,7 +3359,7 @@ NORMAL (U"Praat will execute the script $$my script.praat$$ without showing Praa
 NORMAL (U"On the Mac, you type")
 CODE (U"/Applications/Praat.app/Contents/MacOS/Praat --run \"my script.praat\"")
 NORMAL (U"and on Linux")
-CODE (U"/usr/bin/praat data/hello.wav --run \"my script.praat\"")
+CODE (U"/usr/bin/praat --run \"my script.praat\"")
 NORMAL (U"What happens on all platforms is that the Console or Terminal starts up Praat, "
 	"then Praat executes the script, and then Praat closes itself.")
 
@@ -4083,7 +4181,7 @@ CODE (U"endwhile")
 NORMAL (U"The first sound will stop playing soon after the user clicks for the second time.")
 ENTRY (U"Animation")
 NORMAL (U"In the above examples, things will often get drawn to the screen with some delay, "
-	"i.e., you may not see the erasures and paintings happening. This is because several operating systems "
+	"i.e., you may not see the erasures and paintings happen. This is because several operating systems "
 	"use %buffering of graphics. These systems will draw the graphics only just before getting user input. "
 	"This means that #demoWaitForInput is the place where your drawings will typically be painted on the screen. "
 	"If you want painting to happen earlier (e.g. in animations), you can use")

@@ -1,6 +1,6 @@
 /* Vector.cpp
  *
- * Copyright (C) 1992-2011,2014,2015 Paul Boersma
+ * Copyright (C) 1992-2011,2014,2015,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,11 +26,11 @@ double structVector :: v_getVector (long irow, long icol) {
 	if (ny == 1) return z [1] [icol];   // optimization
 	if (irow == 0) {
 		if (ny == 2) return 0.5 * (z [1] [icol] + z [2] [icol]);   // optimization
-		double sum = 0.0;
+		real80 sum = 0.0;
 		for (long channel = 1; channel <= ny; channel ++) {
 			sum += z [channel] [icol];
 		}
-		return sum / ny;
+		return real (sum / ny);
 	}
 	Melder_assert (irow > 0 && irow <= ny);
 	return z [irow] [icol];
@@ -41,7 +41,7 @@ double structVector :: v_getVector (long irow, long icol) {
 //
 double structVector :: v_getFunction1 (long irow, double x) {
 	double rcol = (x - x1) / dx + 1.0;
-	long icol = floor (rcol);
+	integer icol = (integer) floor (rcol);
 	double dcol = rcol - icol;
 	double z1;
 	if (icol < 1 || icol > nx) {
@@ -52,11 +52,11 @@ double structVector :: v_getFunction1 (long irow, double x) {
 		if (ny == 2) {
 			z1 = 0.5 * (z [1] [icol] + z [2] [icol]);   // optimization
 		} else {
-			double sum = 0.0;
-			for (long channel = 1; channel <= ny; channel ++) {
+			real80 sum = 0.0;
+			for (integer channel = 1; channel <= ny; channel ++) {
 				sum += z [channel] [icol];
 			}
-			z1 = sum / ny;
+			z1 = real (sum / ny);
 		}
 	} else {
 		Melder_assert (irow > 0 && irow <= ny);
@@ -71,11 +71,11 @@ double structVector :: v_getFunction1 (long irow, double x) {
 		if (ny == 2) {
 			z2 = 0.5 * (z [1] [icol + 1] + z [2] [icol + 1]);   // optimization
 		} else {
-			double sum = 0.0;
+			real80 sum = 0.0;
 			for (long channel = 1; channel <= ny; channel ++) {
 				sum += z [channel] [icol + 1];
 			}
-			z2 = sum / ny;
+			z2 = real (sum / ny);
 		}
 	} else {
 		Melder_assert (irow > 0 && irow <= ny);
@@ -96,13 +96,13 @@ double structVector :: v_getValueAtSample (long isamp, long ilevel, int unit) {
 	} else if (ny == 2) {
 		value = 0.5 * (z [1] [isamp] + z [2] [isamp]);   // optimization
 	} else {
-		double sum = 0.0;
+		real80 sum = 0.0;
 		for (long channel = 1; channel <= ny; channel ++) {
 			sum += z [channel] [isamp];
 		}
-		value = sum / ny;
+		value = real (sum / ny);
 	}
-	return NUMdefined (value) ? v_convertStandardToSpecialUnit (value, ilevel, unit) : NUMundefined;
+	return isdefined (value) ? v_convertStandardToSpecialUnit (value, ilevel, unit) : undefined;
 }
 
 Thing_implement (Vector, Matrix, 2);
@@ -114,7 +114,7 @@ Thing_implement (Vector, Matrix, 2);
 //
 double Vector_getValueAtX (Vector me, double x, long ilevel, int interpolation) {
 	double leftEdge = my x1 - 0.5 * my dx, rightEdge = leftEdge + my nx * my dx;
-	if (x <  leftEdge || x > rightEdge) return NUMundefined;
+	if (x <  leftEdge || x > rightEdge) return undefined;
 	if (ilevel > Vector_CHANNEL_AVERAGE) {
 		Melder_assert (ilevel <= my ny);
 		return NUM_interpolate_sinc (my z [ilevel], my nx, Sampled_xToIndex (me, x),
@@ -137,7 +137,7 @@ double Vector_getValueAtX (Vector me, double x, long ilevel, int interpolation) 
 void Vector_getMinimumAndX (Vector me, double xmin, double xmax, long channel, int interpolation,
 	double *return_minimum, double *return_xOfMinimum)
 {
-	long imin, imax, n = my nx;
+	integer imin, imax, n = my nx;
 	Melder_assert (channel >= 1 && channel <= my ny);
 	double *y = my z [channel];
 	double minimum, x;
@@ -158,7 +158,7 @@ void Vector_getMinimumAndX (Vector me, double xmin, double xmax, long channel, i
 		if (y [imax] < minimum) minimum = y [imax], x = imax;
 		if (imin == 1) imin ++;
 		if (imax == my nx) imax --;
-		for (long i = imin; i <= imax; i ++) {
+		for (integer i = imin; i <= imax; i ++) {
 			if (y [i] < y [i - 1] && y [i] <= y [i + 1]) {
 				double i_real, localMinimum = NUMimproveMinimum (y, n, i, interpolation, & i_real);
 				if (localMinimum < minimum) minimum = localMinimum, x = i_real;
@@ -212,7 +212,7 @@ long Vector_getChannelOfMinimum (Vector me, double xmin, double xmax, int interp
 void Vector_getMaximumAndX (Vector me, double xmin, double xmax, long channel, int interpolation,
 	double *return_maximum, double *return_xOfMaximum)
 {
-	long imin, imax, i, n = my nx;
+	integer imin, imax, i, n = my nx;
 	Melder_assert (channel >= 1 && channel <= my ny);
 	double *y = my z [channel];
 	double maximum, x;
@@ -298,18 +298,18 @@ double Vector_getMean (Vector me, double xmin, double xmax, long channel) {
 
 double Vector_getStandardDeviation (Vector me, double xmin, double xmax, long ilevel) {
 	if (xmax <= xmin) { xmin = my xmin; xmax = my xmax; }
-	long imin, imax, n = Sampled_getWindowSamples (me, xmin, xmax, & imin, & imax);
-	if (n < 2) return NUMundefined;
+	integer imin, imax, n = Sampled_getWindowSamples (me, xmin, xmax, & imin, & imax);
+	if (n < 2) return undefined;
 	if (ilevel == Vector_CHANNEL_AVERAGE) {
-		double sum2 = 0.0;
-		for (long channel = 1; channel <= my ny; channel ++) {
+		real80 sum2 = 0.0;
+		for (integer channel = 1; channel <= my ny; channel ++) {
 			double mean = Vector_getMean (me, xmin, xmax, channel);
-			for (long i = imin; i <= imax; i ++) {
+			for (integer i = imin; i <= imax; i ++) {
 				double diff = my z [channel] [i] - mean;
 				sum2 += diff * diff;
 			}
 		}
-		return sqrt (sum2 / (n * my ny - my ny));   // The number of constraints equals the number of channels,
+		return sqrt (real (sum2 / (n * my ny - my ny)));   // The number of constraints equals the number of channels,
 				// because from every channel its own mean was subtracted.
 				// Corollary: a two-channel mono sound will have the same stdev as the corresponding one-channel sound.
 	}
@@ -373,21 +373,21 @@ void Vector_draw (Vector me, Graphics g, double *pxmin, double *pxmax, double *p
 	bool xreversed = *pxmin > *pxmax, yreversed = *pymin > *pymax;
 	if (xreversed) { double temp = *pxmin; *pxmin = *pxmax; *pxmax = temp; }
 	if (yreversed) { double temp = *pymin; *pymin = *pymax; *pymax = temp; }
-	long ixmin, ixmax, ix;
 	/*
-	 * Automatic domain.
-	 */
+		Automatic domain.
+	*/
 	if (*pxmin == *pxmax) {
 		*pxmin = my xmin;
 		*pxmax = my xmax;
 	}
 	/*
-	 * Domain expressed in sample numbers.
-	 */
+		Domain expressed in sample numbers.
+	*/
+	integer ixmin, ixmax;
 	Matrix_getWindowSamplesX (me, *pxmin, *pxmax, & ixmin, & ixmax);
 	/*
-	 * Automatic vertical range.
-	 */
+		Automatic vertical range.
+	*/
 	if (*pymin == *pymax) {
 		Matrix_getWindowExtrema (me, ixmin, ixmax, 1, 1, pymin, pymax);
 		if (*pymin == *pymax) {
@@ -396,12 +396,12 @@ void Vector_draw (Vector me, Graphics g, double *pxmin, double *pxmax, double *p
 		}
 	}
 	/*
-	 * Set coordinates for drawing.
-	 */
+		Set coordinates for drawing.
+	*/
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xreversed ? *pxmax : *pxmin, xreversed ? *pxmin : *pxmax, yreversed ? *pymax : *pymin, yreversed ? *pymin : *pymax);
 	if (str32str (method, U"bars") || str32str (method, U"Bars")) {
-		for (ix = ixmin; ix <= ixmax; ix ++) {
+		for (integer ix = ixmin; ix <= ixmax; ix ++) {
 			double x = Sampled_indexToX (me, ix);
 			double y = my z [1] [ix];
 			double left = x - 0.5 * my dx, right = x + 0.5 * my dx;
@@ -415,12 +415,12 @@ void Vector_draw (Vector me, Graphics g, double *pxmin, double *pxmax, double *p
 			}
 		}
 	} else if (str32str (method, U"poles") || str32str (method, U"Poles")) {
-		for (ix = ixmin; ix <= ixmax; ix ++) {
+		for (integer ix = ixmin; ix <= ixmax; ix ++) {
 			double x = Sampled_indexToX (me, ix);
-			Graphics_line (g, x, 0, x, my z [1] [ix]);
+			Graphics_line (g, x, 0.0, x, my z [1] [ix]);
 		}
 	} else if (str32str (method, U"speckles") || str32str (method, U"Speckles")) {
-		for (ix = ixmin; ix <= ixmax; ix ++) {
+		for (integer ix = ixmin; ix <= ixmax; ix ++) {
 			double x = Sampled_indexToX (me, ix);
 			Graphics_speckle (g, x, my z [1] [ix]);
 		}

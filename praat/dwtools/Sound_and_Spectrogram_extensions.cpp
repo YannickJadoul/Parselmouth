@@ -170,22 +170,22 @@ autoBarkSpectrogram Sound_to_BarkSpectrogram (Sound me, double analysisWidth, do
 static void Sound_into_MelSpectrogram_frame (Sound me, MelSpectrogram thee, long frame) {
 	autoSpectrum him = Sound_to_Spectrum_power (me);
 
-	for (long ifilter = 1; ifilter <= thy ny; ifilter ++) {
+	for (integer ifilter = 1; ifilter <= thy ny; ifilter ++) {
 		double power = 0;
 		double fc_mel = thy y1 + (ifilter - 1) * thy dy;
 		double fc_hz = thy v_frequencyToHertz (fc_mel);
 		double fl_hz = thy v_frequencyToHertz (fc_mel - thy dy);
 		double fh_hz =  thy v_frequencyToHertz (fc_mel + thy dy);
-		long ifrom, ito;
-		Sampled_getWindowSamples (him.get(), fl_hz, fh_hz, &ifrom, &ito);
-		for (long i = ifrom; i <= ito; i++) {
+		integer ifrom, ito;
+		Sampled_getWindowSamples (him.get(), fl_hz, fh_hz, & ifrom, & ito);
+		for (integer i = ifrom; i <= ito; i ++) {
 			// Bin with a triangular filter the power (= amplitude-squared)
 
 			double f = his x1 + (i - 1) * his dx;
 			double a = NUMtriangularfilter_amplitude (fl_hz, fc_hz, fh_hz, f);
-			power += a * his z[1][i];
+			power += a * his z [1] [i];
 		}
-		thy z[ifilter][frame] = power;
+		thy z [ifilter] [frame] = power;
 	}
 }
 
@@ -303,7 +303,7 @@ autoSpectrogram Sound_and_Pitch_to_Spectrogram (Sound me, Pitch thee, double ana
 
 		double f0_median = Pitch_getQuantile (thee, thy xmin, thy xmax, 0.5, kPitch_unit_HERTZ);
 
-		if (f0_median == NUMundefined || f0_median == 0.0) {
+		if (isundef (f0_median) || f0_median == 0.0) {
 			f0_median = 100.0;
 			Melder_warning (U"Pitch values undefined. Bandwith fixed to 100 Hz. ");
 		}
@@ -336,7 +336,7 @@ autoSpectrogram Sound_and_Pitch_to_Spectrogram (Sound me, Pitch thee, double ana
 			double t = Sampled_indexToX (him.get(), iframe);
 			double b, f0 = Pitch_getValueAtTime (thee, t, kPitch_unit_HERTZ, 0);
 
-			if (f0 == NUMundefined || f0 == 0.0) {
+			if (isundef (f0) || f0 == 0.0) {
 				f0_undefined ++;
 				f0 = f0_median;
 			}
@@ -347,7 +347,7 @@ autoSpectrogram Sound_and_Pitch_to_Spectrogram (Sound me, Pitch thee, double ana
 			Sound_into_Spectrogram_frame (sframe.get(), him.get(), iframe, b);
 
 			if (iframe % 10 == 1) {
-				Melder_progress ( (double) iframe / numberOfFrames, U"Frame ", iframe, U" out of ",
+				Melder_progress ((double) iframe / numberOfFrames, U"Frame ", iframe, U" out of ",
 					numberOfFrames, U".");
 			}
 		}
