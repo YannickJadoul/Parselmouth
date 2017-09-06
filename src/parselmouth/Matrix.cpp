@@ -77,15 +77,15 @@ void Binding<Matrix>::init() {
 	def("get_column_distance", [](Matrix self) { return self->dx; });
 
 	def("get_y_of_row",
-	    [](Matrix self, Positive<long> rowNumber) { return Matrix_rowToY(self, rowNumber); },
+	    [](Matrix self, Positive<integer> rowNumber) { return Matrix_rowToY(self, rowNumber); },
 	    "row_number"_a);
 
 	def("get_x_of_column",
-	    [](Matrix self, Positive<long> columnNumber) { return Matrix_rowToY(self, columnNumber); },
+	    [](Matrix self, Positive<integer> columnNumber) { return Matrix_rowToY(self, columnNumber); },
 	    "column_number"_a);
 
 	def("get_value_in_cell",
-	    [](Matrix self, Positive<long> rowNumber, Positive<long> columnNumber) {
+	    [](Matrix self, Positive<integer> rowNumber, Positive<integer> columnNumber) {
 		    if (rowNumber > self->ny) Melder_throw (U"Row number must not exceed number of rows.");
 		    if (columnNumber > self->nx) Melder_throw (U"Column number must not exceed number of columns.");
 		    return self->z[rowNumber][columnNumber]; },
@@ -136,7 +136,7 @@ void Binding<Matrix>::init() {
 	    "formula"_a, "x_range"_a = std::make_pair(nullopt, nullopt), "y_range"_a = std::make_pair(nullopt, nullopt));
 
 	def("set_value",
-	    [](Matrix self, Positive<long> rowNumber, Positive<long> columnNumber, double newValue) {
+	    [](Matrix self, Positive<integer> rowNumber, Positive<integer> columnNumber, double newValue) {
 		    if (rowNumber > self->ny) Melder_throw (U"Your row number should not be greater than your number of rows.");
 		    if (columnNumber > self->nx) Melder_throw (U"Your column number should not be greater than your number of columns.");
 		    self->z[rowNumber][columnNumber] = newValue;

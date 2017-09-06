@@ -88,7 +88,7 @@ void Binding<Pitch>::init() {
 		"bandwidth"_a = 10.0);
 
 	def("subtract_linear_fit",
-	    [] (Pitch self, PitchUnit unit) { return Pitch_subtractLinearFit(self, static_cast<int>(unit)); },
+	    [] (Pitch self, kPitch_unit unit) { return Pitch_subtractLinearFit(self, unit); },
 		"unit"_a = PitchUnit::kPitch_unit_HERTZ);
 
 	def("kill_octave_jumps",

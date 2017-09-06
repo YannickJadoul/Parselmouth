@@ -118,7 +118,7 @@ void Binding<Spectrum>::init() {
 	def_readonly("df", &structSpectrum::dx);
 
 	def("get_frequency_from_bin_number", // TODO Somehow link with "Sampled" class?
-	    [](Spectrum self, Positive<long> bandNumber) { return Sampled_indexToX(self, bandNumber); },
+	    [](Spectrum self, Positive<integer> bandNumber) { return Sampled_indexToX(self, bandNumber); },
 	    "band_number"_a);
 
 	def("get_bin_number_from_frequency", // TODO Somehow link with "Sampled" class?
@@ -126,7 +126,7 @@ void Binding<Spectrum>::init() {
 	    "frequency"_a);
 
 	def("get_real_value_in_bin",
-	    [](Spectrum self, Positive<long> binNumber) {
+	    [](Spectrum self, Positive<integer> binNumber) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    return self->z[1][binNumber];
@@ -134,7 +134,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a);
 
 	def("get_imaginary_value_in_bin",
-	    [](Spectrum self, Positive<long> binNumber) {
+	    [](Spectrum self, Positive<integer> binNumber) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    return self->z[2][binNumber];
@@ -142,7 +142,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a);
 
 	def("get_value_in_bin",
-	    [](Spectrum self, Positive<long> binNumber) {
+	    [](Spectrum self, Positive<integer> binNumber) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    return std::complex<double>(self->z[1][binNumber], self->z[2][binNumber]);
@@ -150,7 +150,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a);
 
 	def("__getitem__",
-	    [](Spectrum self, long index) {
+	    [](Spectrum self, integer index) {
 		    if (index < 0 || index >= self->nx)
 			    throw py::index_error("bin index out of range");
 		    return std::complex<double>(self->z[1][index+1], self->z[2][index+1]);
@@ -158,7 +158,7 @@ void Binding<Spectrum>::init() {
 	    "index"_a);
 
 	def("set_real_value_in_bin",
-	    [](Spectrum self, Positive<long> binNumber, double value) {
+	    [](Spectrum self, Positive<integer> binNumber, double value) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    self->z[1][binNumber] = value;
@@ -166,7 +166,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a, "value"_a);
 
 	def("get_imaginary_value_in_bin",
-	    [](Spectrum self, Positive<long> binNumber, double value) {
+	    [](Spectrum self, Positive<integer> binNumber, double value) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    self->z[2][binNumber] = value;
@@ -174,7 +174,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a, "value"_a);
 
 	def("get_value_in_bin",
-	    [](Spectrum self, Positive<long> binNumber, std::complex<double> value) {
+	    [](Spectrum self, Positive<integer> binNumber, std::complex<double> value) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
 		    self->z[1][binNumber] = value.real();
@@ -183,7 +183,7 @@ void Binding<Spectrum>::init() {
 	    "bin_number"_a, "value"_a);
 
 	def("__setitem__",
-	    [](Spectrum self, long index, std::complex<double> value) {
+	    [](Spectrum self, integer index, std::complex<double> value) {
 		    if (index < 0 || index >= self->nx)
 			    throw py::index_error("bin index out of range");
 		    self->z[1][index+1] = value.real();

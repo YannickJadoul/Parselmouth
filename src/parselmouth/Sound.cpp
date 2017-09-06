@@ -292,7 +292,7 @@ void Binding<Sound>::init() {
 	             [](Sound self, double frequency) { Sound_overrideSamplingFrequency(self, frequency); });
 
 	def("get_time_from_index", // TODO PraatIndex to distinguish 1-based silliness? // TODO Get time from sample number...
-	    [](Sound self, long sample) { return Sampled_indexToX(self, sample); },
+	    signature_cast<_ (Sound, _)>(&Sampled_indexToX<integer>),
 	    "sample"_a);
 
 	def("get_index_from_time",
