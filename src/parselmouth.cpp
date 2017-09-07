@@ -20,14 +20,11 @@
 #include "parselmouth/Parselmouth.h"
 #include "version.h"
 
-// TODO "" vs <> for Praat imports?
-#include "sys/praat.h"
-#include "sys/praat_version.h"
+#include <praat/sys/praat.h>
+#include <praat/sys/praat_version.h>
 
 #define XSTR(s) STR(s)
 #define STR(s) #s
-
-// TODO What to do with NUMundefined?
 
 namespace py = pybind11;
 using namespace py::literals;

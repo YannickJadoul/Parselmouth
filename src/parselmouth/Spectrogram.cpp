@@ -23,8 +23,8 @@
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
 
-#include "fon/Sound_and_Spectrogram.h"
-#include "fon/Spectrum_and_Spectrogram.h"
+#include <praat/fon/Sound_and_Spectrogram.h>
+#include <praat/fon/Spectrum_and_Spectrogram.h>
 
 namespace py = pybind11;
 using namespace py::literals;

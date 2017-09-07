@@ -26,16 +26,16 @@
 #include "Bindings.h"
 
 // TODO A way to forward declare things, or another way to cut compilation dependencies on a single file.
-#include "dwtools/MFCC.h"
-#include "fon/Formant.h"
-#include "fon/Harmonicity.h"
-#include "fon/Intensity.h"
-#include "fon/Pitch.h"
-#include "fon/Sound.h"
-#include "fon/Sound_and_Spectrogram.h"
-#include "fon/Spectrogram.h"
-#include "fon/Spectrum.h"
-#include "sys/Thing.h"
+#include <praat/dwtools/MFCC.h>
+#include <praat/fon/Formant.h>
+#include <praat/fon/Harmonicity.h>
+#include <praat/fon/Intensity.h>
+#include <praat/fon/Pitch.h>
+#include <praat/fon/Sound.h>
+#include <praat/fon/Sound_and_Spectrogram.h>
+#include <praat/fon/Spectrogram.h>
+#include <praat/fon/Spectrum.h>
+#include <praat/sys/Thing.h>
 #include "praat/UndefPraatMacros.h"
 
 

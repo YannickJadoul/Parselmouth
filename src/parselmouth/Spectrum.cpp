@@ -23,10 +23,10 @@
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
-#include "dwtools/Spectrum_extensions.h"
-#include "fon/Spectrum.h"
-#include "fon/Spectrum_and_Spectrogram.h"
-#include "fon/Sound_and_Spectrum.h"
+#include <praat/dwtools/Spectrum_extensions.h>
+#include <praat/fon/Spectrum.h>
+#include <praat/fon/Spectrum_and_Spectrogram.h>
+#include <praat/fon/Sound_and_Spectrum.h>
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>

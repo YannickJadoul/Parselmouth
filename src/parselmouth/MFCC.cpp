@@ -21,7 +21,7 @@
 
 #include <pybind11/numpy.h>
 
-#include "dwtools/Spectrogram_extensions.h"
+#include <praat/dwtools/Spectrogram_extensions.h>
 
 namespace py = pybind11;
 using namespace py::literals;

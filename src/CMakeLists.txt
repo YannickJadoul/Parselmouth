@@ -17,15 +17,8 @@
 
 include(add_sources)
 
-include_directories(${PRAAT_INCLUDE_DIRS})
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(BEFORE ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-
-add_definitions(${PRAAT_DEFINITIONS})
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PRAAT_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PRAAT_CXX_FLAGS}")
 if (UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unknown-pragmas")
 elseif (WIN32)
@@ -37,5 +30,11 @@ add_sources(parselmouth.cpp)
 add_subdirectory(parselmouth)
 
 pybind11_add_module(parselmouth ${SRC})
+
+set_property(TARGET parselmouth PROPERTY C_STANDARD 99)
+set_property(TARGET parselmouth PROPERTY CXX_STANDARD 14)
+set_property(TARGET parselmouth PROPERTY CXX_STANDARD_REQUIRED TRUE)
+
 target_link_libraries(parselmouth PRIVATE praat)
+
 install(TARGETS parselmouth DESTINATION ${CMAKE_INSTALL_PREFIX})

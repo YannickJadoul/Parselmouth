@@ -20,7 +20,7 @@
 #ifndef INC_PARSELMOUTH_MELDER_UTILS_H
 #define INC_PARSELMOUTH_MELDER_UTILS_H
 
-#include "sys/melder.h"
+#include <praat/sys/melder.h>
 #include "UndefPraatMacros.h"
 
 #include <string>

@@ -24,7 +24,7 @@
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
-#include "fon/Pitch_to_Sound.h"
+#include <praat/fon/Pitch_to_Sound.h>
 
 namespace py = pybind11;
 using namespace py::literals;
