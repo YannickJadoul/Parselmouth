@@ -5,9 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 ### Added
-- Added time domain query and modification methods on Sampled classes with a time aspect. 
+- Added time domain query and modification methods on Sampled classes with a time aspect.
+- Exposed classes in the middle of Praat's inheritance hierarchy, `Function`, `Sampled`, and `SampledXY`.
 ### Changed
-- 'number of' accessors prefixed changed from `num_` to `n_` (e.g., `Sound.num_channels` ->`Sound.n_channels`). 
+- 'number of' accessors prefixed changed from `num_` to `n_` (e.g., `Sound.num_channels` ->`Sound.n_channels`).
+- Updated Praat version to 6.0.31.
 
 ## [0.1.1] - 2017-08-18
 ### Added
