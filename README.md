@@ -27,13 +27,6 @@ pip install -U praat-parselmouth
 
 If you use the Anaconda distribution of Python, you can use the same `pip` command in a terminal of the appropriate Anaconda environment, either activated through the [Anaconda Navigator](https://docs.continuum.io/anaconda/navigator/tutorials/manage-environments#using-an-environment) or [conda tool](https://docs.continuum.io/docs_oss/conda/using/envs#change-environments-activate-deactivate).
 
-In case you have multiple installations of Python and don't know which `pip` belongs to which Python version *(looking at you, OS X)*:
-```Python
-import pip
-pip.main(['install', 'praat-parselmouth'])
-```
-*The latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call pip immediately from the command line.*
-
 - On Windows and Mac OS X, the installation should finish fairly quickly.
 - On a Linux system, we do not have a binary distribution yet, but `pip install praat-parselmouth` should automatically build your project in 5 to 10 minutes if you have `cmake` installed.
 
@@ -44,8 +37,27 @@ pip install -U pip
 ```
 If you do not have `pip` installed, you follow these instructions to install pip: https://pip.pypa.io/en/stable/installing/
 
+### Multiple Python versions
+In case you have multiple installations of Python and don't know which `pip` belongs to which Python version *(looking at you, OS X)*:
+```
+python -m pip install praat-parselmouth
+```
+
+Finding out the exact location of the `python` executable (to call the previous command) for a certain Python installation can be done by typing the following lines in your Python interpreter: 
+```Python
+import sys
+print(sys.executable)
+```
+
+Yet another way to install Parselmouth is from within Python itself: 
+```Python
+import pip
+pip.main(['install', 'praat-parselmouth'])
+```
+*However, the latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call pip immediately from the command line.*
+
 ### Troubleshooting
-Since the project is still in an early development phase, it is possible that you run into more problems when trying to install or use Parselmouth. If you would do so after trying this, please drop by the [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby), log a GitHub issue, or write [me](mailto:Yannick.Jadoul@ai.vub.ac.be) a quick email. We are of course very grateful for you feedback!
+Since the project is still in an early development phase, it is possible that you run into more problems when trying to install or use Parselmouth. If you would do so after trying this, please drop by the [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby), log a GitHub issue, or write [me](mailto:Yannick.Jadoul@ai.vub.ac.be) a quick email. We would be very happy to solve these problems!
 
 ## Example usage
 ```Python
