@@ -33,7 +33,6 @@ public:
 	MelderInfoInterceptor() : m_string(), m_divertInfo(&m_string) {}
 	std::u32string string() { return m_string.string; }
 	std::string bytes() { return Melder_peek32to8(m_string.string); }
-	std::string get() { return Melder_peek32to8(m_string.string); }
 
 private:
 	autoMelderString m_string;

@@ -26,13 +26,27 @@ using namespace py::literals;
 
 namespace parselmouth {
 
+py::bytes encodeAsPreferredEncoding(const py::str &unicode) {
+	static auto locale = py::module::import("locale");
+	auto preferredencoding = locale.attr("getpreferredencoding")();
+	return unicode.attr("encode")(preferredencoding, "replace");
+}
+
 void Binding<Thing>::init()
 {
-	def("__" PYBIND11_STRING_NAME "__", // Python 2 vs. Python 3 - __unicode__ vs. __str__
+#if PY_MAJOR_VERSION >= 3
+	def("__str__",
 	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return info.string(); });
 
-	def("__" PYBIND11_BYTES_NAME "__", // Python 2 vs. Python 3 - __str__ vs. __bytes__
+	def("__bytes__",
 	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.bytes()); });
+#else
+	def("__unicode__",
+	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return info.string(); });
+
+	def("__str__",
+	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return encodeAsPreferredEncoding(py::cast(info.string())); });
+#endif
 }
 
 } // namespace parselmouth
