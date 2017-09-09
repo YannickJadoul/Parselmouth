@@ -37,13 +37,7 @@ class CMakeExtension(Extension):
 class CMakeBuild(build_ext):
 	def run(self):
 		try:
-			import cmake
-			cmake_executable = os.path.join(cmake.CMAKE_BIN_DIR, 'cmake')
-		except ImportError:
-			cmake_executable = 'cmake'
-
-		try:
-			out = subprocess.check_output([cmake_executable, '--version'])
+			out = subprocess.check_output(['cmake', '--version'])
 		except OSError:
 			raise RuntimeError("CMake must be installed to build the following extensions: " +
 							   ", ".join(e.name for e in self.extensions))
@@ -54,9 +48,9 @@ class CMakeBuild(build_ext):
 				raise RuntimeError("CMake >= 3.1.0 is required on Windows")
 
 		for ext in self.extensions:
-			self.build_extension(ext, cmake_executable)
+			self.build_extension(ext)
 
-	def build_extension(self, ext, cmake_executable):
+	def build_extension(self, ext):
 		extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
 		cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
 					  '-DPYTHON_EXECUTABLE=' + sys.executable]
@@ -77,8 +71,8 @@ class CMakeBuild(build_ext):
 		env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''), self.distribution.get_version())
 		if not os.path.exists(self.build_temp):
 			os.makedirs(self.build_temp)
-		subprocess.check_call([cmake_executable, ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
-		subprocess.check_call([cmake_executable, '--build', '.'] + build_args, cwd=self.build_temp)
+		subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+		subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 def read(*names, **kwargs):
 	with io.open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
