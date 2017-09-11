@@ -27,9 +27,8 @@ using namespace py::literals;
 namespace parselmouth {
 
 py::bytes encodeAsPreferredEncoding(const py::str &unicode) {
-	static auto locale = py::module::import("locale");
-	auto preferredencoding = locale.attr("getpreferredencoding")();
-	return unicode.attr("encode")(preferredencoding, "replace");
+	auto encoding = py::module::import("locale").attr("getpreferredencoding")();
+	return unicode.attr("encode")(encoding, "replace");
 }
 
 void Binding<Thing>::init()

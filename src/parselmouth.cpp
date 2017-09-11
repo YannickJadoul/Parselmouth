@@ -55,7 +55,7 @@ PYBIND11_MODULE(parselmouth, m) {
 			try {
 				if (p) std::rethrow_exception(p);
 			}
-			catch (const MelderError &) {
+			catch (const MelderError &) { // TODO Unicode encoding?
 				std::string message(Melder_peek32to8(Melder_getError()));
 				message.erase(message.length() - 1);
 				Melder_clearError();
