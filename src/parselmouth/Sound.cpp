@@ -511,7 +511,15 @@ void Binding<Sound>::init() {
 	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
 	// TODO Cross-correlate (short)?
 
+	def("to_mfcc", // Watch out for different order of arguments in interface than in Sound_to_MFCC // TODO REQUIRE (numberOfCoefficients < 25, U"The number of coefficients should be less than 25.")
+	    [](Sound self, Positive<long> numberOfCoefficients, Positive<double> windowLength, Positive<double> timeStep, Positive<double> firstFilterFrequency, Positive<double> distanceBetweenFilters, optional<Positive<double>> maximumFrequency) {
+		    if (numberOfCoefficients >= 25) Melder_throw(U"The number of coefficients should be less than 25.");
+		    return Sound_to_MFCC(self, numberOfCoefficients, windowLength, timeStep, firstFilterFrequency, maximumFrequency ? static_cast<double>(*maximumFrequency) : 0.0, distanceBetweenFilters);
+	    },
+	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = nullopt);
+
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
+	// TODO Still a bunch of Sound in praat_LPC_init.cpp
 }
 
 } // namespace parselmouth

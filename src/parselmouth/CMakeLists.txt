@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
-add_sources(Data.cpp
+add_sources(CC.cpp
+            Data.cpp
             Formant.cpp
             Function.cpp
             Harmonicity.cpp

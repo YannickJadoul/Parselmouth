@@ -86,6 +86,7 @@ using Data_Parent = Daata_Parent;
         Intensity,                   \
         Harmonicity,                 \
         Formant,                     \
+        CC,                          \
         MFCC
 
 #define PRAAT_ENUMS                  \
@@ -114,7 +115,8 @@ PRAAT_CLASS_BINDING(Pitch)
 PRAAT_CLASS_BINDING(Intensity)
 PRAAT_CLASS_BINDING(Harmonicity)
 PRAAT_CLASS_BINDING(Formant)
-PRAAT_CLASS_BINDING_BASE(MFCC, Sampled) // TODO Expose bindings for CC
+PRAAT_CLASS_BINDING(CC)
+PRAAT_CLASS_BINDING(MFCC)
 
 PRAAT_ENUM_BINDING(Interpolation)
 PRAAT_ENUM_BINDING_ALIAS(WindowShape, kSound_windowShape)

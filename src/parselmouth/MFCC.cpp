@@ -19,6 +19,9 @@
 
 #include "Parselmouth.h"
 
+#include "utils/SignatureCast.h"
+#include "utils/pybind11/NumericPredicates.h"
+
 #include <pybind11/numpy.h>
 
 #include <praat/dwtools/Spectrogram_extensions.h>
@@ -29,8 +32,34 @@ using namespace py::literals;
 namespace parselmouth {
 
 void Binding<MFCC>::init() {
-	//def(constructor(&Sound_to_MFCC,
-	//		(arg("self"), arg("sound"), arg("number_of_coefficients") = 12, arg("analysis_width") = 0.015, arg("dt") = 0.005, arg("f1_mel") = 100.0, arg("fmax_mel") = 0.0, arg("df_mel") = 100.0)))
+	using signature_cast_placeholder::_;
+
+	// TODO Constructor from Sound? Other constructors?
+
+	// TODO To MelSpectrogram..., To TableOfReal... (? -> pandas?),
+
+	/*def("to_mel_spectrogram", // TODO Uncomment once we have a MelSpectrogram!
+	    &MFCC_to_MelSpectrogram,
+	    "from_coefficient"_a = 0, "to_coefficient"_a = 0, "include_c0"_a = true);*/
+
+	def("to_matrix_features",
+	    signature_cast<_ (_, Positive<double>, _)>(MFCC_to_Matrix_features),
+	    "window_length"_a = 0.025, "include_energy"_a = false);
+
+	def("extract_features",
+	    signature_cast<_ (_, Positive<double>, _)>(MFCC_to_Matrix_features),
+	    "window_length"_a = 0.025, "include_energy"_a = false);
+
+	def("to_sound",
+	    &MFCC_to_Sound);
+
+	def("cross_correlate",
+	    &MFCCs_convolve,
+	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
+
+	def("convolve",
+	    &MFCCs_convolve,
+	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
 
 	def("get_coefficients",
 	    [] (MFCC mfcc)
@@ -47,10 +76,6 @@ void Binding<MFCC>::init() {
 
 		    return array;
 	    });
-
-	def("to_mel_spectrogram",
-	    &MFCC_to_MelSpectrogram,
-	    "from_coefficient"_a = 0, "to_coefficient"_a = 0, "include_c0"_a = true);
 }
 
 } // namespace parselmouth
