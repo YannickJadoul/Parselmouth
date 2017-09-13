@@ -23,6 +23,8 @@ matrix:
 
     - env: PYTHON=3.5 GCC=5
       addons: *gcc5
+      install:
+        - pyenv global system 3.5 # https://github.com/travis-ci/travis-ci/issues/8363
 
     - env: PYTHON=3.6 GCC=5
       addons: &gcc5-python36
@@ -93,12 +95,12 @@ matrix:
       services:
         - docker
       install:
-        - sudo pip install https://github.com/YannickJadoul/cibuildwheel/archive/linux-python-bin-path.zip
+        - sudo pip install https://github.com/YannickJadoul/cibuildwheel/archive/master.zip
         - mkdir gcc-i386 && wget -q https://github.com/Noctem/pogeo-toolchain/releases/download/v1.4/gcc-7.2-binutils-2.29-centos5-i686.tar.bz2 -O - | tar xj -C gcc-i386 --strip-components=1
         - mkdir gcc-x86_64 && wget -q https://github.com/Noctem/pogeo-toolchain/releases/download/v1.4/gcc-7.2-binutils-2.29-centos5-x86-64.tar.bz2 -O - | tar xj -C gcc-x86_64 --strip-components=1
         - mkdir ccache && wget -q https://www.samba.org/ftp/ccache/ccache-3.3.4.tar.bz2 -O - | tar xj -C ccache --strip-components=1
       script:
-        - export CIBW_ENVIRONMENT='ARCH=`uname -i` PATH="`pwd`/gcc-$ARCH/bin:$PATH" CC="ccache cc" CXX="ccache c++" CXXFLAGS="-static-libstdc++" LD_LIBRARY_PATH="`pwd`/gcc-$ARCH/lib" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`'
+        - export CIBW_ENVIRONMENT='ARCH=`uname -i` PATH="`pwd`/gcc-$ARCH/bin:$PATH" CC="ccache cc" CXX="ccache c++" CXXFLAGS="-static-libstdc++" LD_LIBRARY_PATH="`pwd`/gcc-$ARCH/lib" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"` CCACHE_DIR=/host'$HOME'/.ccache'
         - export CIBW_BEFORE_BUILD='{pip} install cmake && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install)'
         - CIBW_SKIP="cp33-*" cibuildwheel
       deploy: *github-releases-deploy
