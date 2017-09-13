@@ -513,7 +513,7 @@ void Binding<Sound>::init() {
 
 	def("to_mfcc", // Watch out for different order of arguments in interface than in Sound_to_MFCC // TODO REQUIRE (numberOfCoefficients < 25, U"The number of coefficients should be less than 25.")
 	    [](Sound self, Positive<long> numberOfCoefficients, Positive<double> windowLength, Positive<double> timeStep, Positive<double> firstFilterFrequency, Positive<double> distanceBetweenFilters, optional<Positive<double>> maximumFrequency) {
-		    if (numberOfCoefficients >= 25) Melder_throw(U"The number of coefficients should be less than 25.");
+		    // if (numberOfCoefficients >= 25) Melder_throw(U"The number of coefficients should be less than 25."); // Might be wrong, but I see no reason to enforce this, in the actual code
 		    return Sound_to_MFCC(self, numberOfCoefficients, windowLength, timeStep, firstFilterFrequency, maximumFrequency ? static_cast<double>(*maximumFrequency) : 0.0, distanceBetweenFilters);
 	    },
 	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = nullopt);
