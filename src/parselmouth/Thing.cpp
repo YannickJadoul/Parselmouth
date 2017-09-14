@@ -35,16 +35,13 @@ void Binding<Thing>::init()
 {
 #if PY_MAJOR_VERSION >= 3
 	def("__str__",
-	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return info.string(); });
-
-	def("__bytes__",
-	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return py::bytes(info.bytes()); });
+	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return info.get(); });
 #else
 	def("__unicode__",
-	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return info.string(); });
+	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return info.get(); });
 
 	def("__str__",
-	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return encodeAsPreferredEncoding(py::cast(info.string())); });
+	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return encodeAsPreferredEncoding(py::cast(info.get())); });
 #endif
 }
 
