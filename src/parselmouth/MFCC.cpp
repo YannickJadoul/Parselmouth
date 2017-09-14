@@ -60,22 +60,6 @@ void Binding<MFCC>::init() {
 	def("convolve",
 	    &MFCCs_convolve,
 	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
-
-	def("get_coefficients",
-	    [] (MFCC mfcc)
-	    {
-		    auto maxCoefficients = CC_getMaximumNumberOfCoefficients(mfcc, 1, mfcc->nx);
-		    py::array_t<double> array({static_cast<size_t>(mfcc->nx), static_cast<size_t>(maxCoefficients + 1)}, nullptr);
-
-		    for (auto i = 0; i < mfcc->nx; ++i) {
-			    *array.mutable_data(i, 0) = mfcc->frame[i+1].c0;
-			    for (auto j = 1; j <= maxCoefficients; ++j) {
-				    *array.mutable_data(i, j) = (j <= mfcc->frame[i+1].numberOfCoefficients) ? mfcc->frame[i+1].c[j] : std::numeric_limits<double>::quiet_NaN();
-			    }
-		    }
-
-		    return array;
-	    });
 }
 
 } // namespace parselmouth

@@ -135,6 +135,24 @@ void Binding<CC>::init() {
 		    (j == 0 ? frame.c0 : frame.c[j]) = value;
 	    },
 	    "ij"_a, "value"_a);
+
+	def("to_array",
+	    [] (CC cc)
+	    {
+		    auto maxCoefficients = CC_getMaximumNumberOfCoefficients(cc, 1, cc->nx);
+		    py::array_t<double> array({static_cast<size_t>(cc->nx), static_cast<size_t>(maxCoefficients + 1)});
+
+		    auto unchecked = array.mutable_unchecked<2>();
+		    for (auto i = 0; i < cc->nx; ++i) {
+			    auto &frame = cc->frame[i+1];
+			    unchecked(i, 0) = frame.c0;
+			    for (auto j = 0; j < maxCoefficients; ++j) {
+				    unchecked(i, j+1) = (j < frame.numberOfCoefficients) ? frame.c[j+1] : std::numeric_limits<double>::quiet_NaN();
+			    }
+		    }
+
+		    return array;
+	    });
 }
 
 } // namespace parselmouth
