@@ -24,6 +24,7 @@
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
+#include <praat/fon/Matrix_and_Pitch.h>
 #include <praat/fon/Pitch_to_Sound.h>
 
 namespace py = pybind11;
@@ -68,14 +69,31 @@ void Binding<Pitch>::init() {
 	def("count_voiced_frames",
 		&Pitch_countVoicedFrames);
 
-	// TODO Get value at time..., Get value in frame...
-	def("get_value", // TODO Cleanup temporary
-	    [] (Pitch self, double time, kPitch_unit unit, bool interpolate) { return Pitch_getValueAtTime(self, time, unit, interpolate); },
-	    "time"_a, "unit"_a = kPitch_unit_HERTZ, "interpolate"_a = true);
+	def("get_value_at_time",
+	    [] (Pitch self, double time, kPitch_unit unit, Interpolation interpolation) {
+		    if (interpolation != Interpolation::NEAREST && interpolation != Interpolation::LINEAR)
+			    Melder_throw(U"Pitch values can only be queried using NEAREST or LINEAR interpolation");
+		    auto value = Sampled_getValueAtX(self, time, Pitch_LEVEL_FREQUENCY, unit, interpolation == Interpolation::LINEAR);
+		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, unit);
+	    },
+	    "time"_a, "unit"_a = kPitch_unit_HERTZ, "interpolation"_a = Interpolation::LINEAR);
+
+	// TODO get_strength_at_time ? -> Pitch strength unit enum
+
+	def("get_value_in_frame",
+	    [] (Pitch self, long frameNumber, kPitch_unit unit) {
+		    auto value = Sampled_getValueAtSample(self, frameNumber, Pitch_LEVEL_FREQUENCY, unit);
+		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, unit);
+	    },
+	    "frame_number"_a, "unit"_a = kPitch_unit_HERTZ);
+
 	// TODO Minimum, Time of minimum, Maximum, Time of maximum, ...
 	// TODO Get mean absolute slope (+ without octave jumps)
+	// TODO Count differences -> Melder_info's ?
 
-	// TODO Formula
+	def("formula",
+	    [](Pitch self, const std::u32string &formula) { Pitch_formula(self, formula.c_str(), nullptr); },
+	    "formula"_a);
 
 	// TODO To TextGrid..., To TextTier, To IntervalTier: depends TextGrid and Tiers
 	// TODO To PointProcess: depends on PointProcess
@@ -96,7 +114,10 @@ void Binding<Pitch>::init() {
 
 	// TODO To PitchTier: depends on PitchTier
 
-	// TODO To Matrix -> .values?
+	def("to_matrix",
+	    &Pitch_to_Matrix);
+
+	def_readonly("ceiling", &structPitch::ceiling);
 }
 
 } // namespace parselmouth

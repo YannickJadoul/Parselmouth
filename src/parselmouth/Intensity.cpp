@@ -28,6 +28,10 @@ void Binding<Intensity>::init() {
 	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
 
 	initTimeFrameSampled(*this);
+
+	def("get_value", // TODO Should be part of Vector class
+	    [] (Intensity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
+	    "time"_a, "interpolation"_a = Interpolation::CUBIC);
 }
 
 } // namespace parselmouth

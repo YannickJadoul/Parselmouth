@@ -62,8 +62,15 @@ using EnumBinding = pybind11::enum_<Enum>;
 
 #define NO_BINDING_INIT(Type) inline void Binding<Type>::init() {}
 
+enum class Interpolation // TODO Remove/move to own/shared header
+{
+    NEAREST = Vector_VALUE_INTERPOLATION_NEAREST,
+    LINEAR = Vector_VALUE_INTERPOLATION_LINEAR,
+    CUBIC = Vector_VALUE_INTERPOLATION_CUBIC,
+    SINC70 = Vector_VALUE_INTERPOLATION_SINC70,
+    SINC700 = Vector_VALUE_INTERPOLATION_SINC700
+};
 
-enum class Interpolation;
 enum class SoundFileFormat;
 
 using structData = structDaata;

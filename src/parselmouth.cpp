@@ -29,33 +29,17 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-namespace parselmouth {
-
-enum class Interpolation // TODO Remove/move to header
-{
-	NEAREST = Vector_VALUE_INTERPOLATION_NEAREST,
-	LINEAR = Vector_VALUE_INTERPOLATION_LINEAR,
-	CUBIC = Vector_VALUE_INTERPOLATION_CUBIC,
-	SINC70 = Vector_VALUE_INTERPOLATION_SINC70,
-	SINC700 = Vector_VALUE_INTERPOLATION_SINC700
-};
-
-}
-
-using namespace parselmouth;
-
-
 PYBIND11_MODULE(parselmouth, m) {
 	praatlib_init();
 
 	parselmouth::PraatBindings bindings(m);
 
-    static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError);
+    static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError); // TODO Own file?
 	py::register_exception_translator([](std::exception_ptr p) {
 			try {
 				if (p) std::rethrow_exception(p);
 			}
-			catch (const MelderError &) { // TODO Unicode encoding?
+			catch (const MelderError &) { // TODO Unicode encoding? Python 2 vs. Python 3?
 				std::string message(Melder_peek32to8(Melder_getError()));
 				message.erase(message.length() - 1);
 				Melder_clearError();
@@ -68,16 +52,4 @@ PYBIND11_MODULE(parselmouth, m) {
 	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
 
 	bindings.init();
-
-	bindings.get<Intensity>()
-		.def("get_value", // TODO Should be part of Vector class
-				[] (Intensity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
-				"time"_a, "interpolation"_a = Interpolation::CUBIC)
-	;
-
-	bindings.get<Harmonicity>()
-		.def("get_value", // TODO Should be part of Vector class
-				[] (Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
-				"time"_a, "interpolation"_a = Interpolation::CUBIC)
-	;
 }
