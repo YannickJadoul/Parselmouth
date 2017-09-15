@@ -13,32 +13,28 @@
 
 NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
+
+template <>
+class type_caster<value_and_holder> {
+public:
+    bool load(handle h, bool) {
+        value = reinterpret_cast<value_and_holder *>(h.ptr());
+        return true;
+    }
+
+    template <typename> using cast_op_type = value_and_holder &;
+    operator value_and_holder &() { return *value; }
+    static PYBIND11_DESCR name() { return type_descr(_<value_and_holder>()); }
+
+private:
+    value_and_holder *value = nullptr;
+};
+
 NAMESPACE_BEGIN(initimpl)
 
 inline void no_nullptr(void *ptr) {
     if (!ptr) throw type_error("pybind11::init(): factory function returned nullptr");
 }
-
-// Makes sure the `value` for the given value_and_holder is not preallocated (e.g. by a previous
-// old-style placement new `__init__` that requires a preallocated, uninitialized value).  If
-// preallocated, deallocate.  Returns the (null) value pointer reference ready for allocation.
-inline void *&deallocate(value_and_holder &v_h) {
-    if (v_h) v_h.type->dealloc(v_h);
-    return v_h.value_ptr();
-}
-
-PYBIND11_NOINLINE inline value_and_holder load_v_h(handle self_, type_info *tinfo) {
-    if (!self_ || !tinfo)
-        throw type_error("__init__(self, ...) called with invalid `self` argument");
-
-    auto *inst = reinterpret_cast<instance *>(self_.ptr());
-    auto result = inst->get_value_and_holder(tinfo, false);
-    if (!result.inst)
-        throw type_error("__init__(self, ...) called with invalid `self` argument");
-
-    return result;
-}
-
 
 // Implementing functions for all forms of py::init<...> and py::init(...)
 template <typename Class> using Cpp = typename Class::type;
@@ -64,7 +60,7 @@ constexpr bool is_alias(void *) { return false; }
 template <typename Class>
 void construct_alias_from_cpp(std::true_type /*is_alias_constructible*/,
                               value_and_holder &v_h, Cpp<Class> &&base) {
-    deallocate(v_h) = new Alias<Class>(std::move(base));
+    v_h.value_ptr() = new Alias<Class>(std::move(base));
 }
 template <typename Class>
 [[noreturn]] void construct_alias_from_cpp(std::false_type /*!is_alias_constructible*/,
@@ -98,7 +94,7 @@ void construct(value_and_holder &v_h, Cpp<Class> *ptr, bool need_alias) {
         // it was a normal instance, then steal the holder away into a local variable; thus
         // the holder and destruction happens when we leave the C++ scope, and the holder
         // class gets to handle the destruction however it likes.
-        deallocate(v_h) = ptr;
+        v_h.value_ptr() = ptr;
         v_h.set_instance_registered(true); // To prevent init_instance from registering it
         v_h.type->init_instance(v_h.inst, nullptr); // Set up the holder
         Holder<Class> temp_holder(std::move(v_h.holder<Holder<Class>>())); // Steal the holder
@@ -106,11 +102,9 @@ void construct(value_and_holder &v_h, Cpp<Class> *ptr, bool need_alias) {
         v_h.set_instance_registered(false);
 
         construct_alias_from_cpp<Class>(is_alias_constructible<Class>{}, v_h, std::move(*ptr));
-    }
-    else {
-        // Otherwise the type isn't inherited, so we don't need an Alias and can just store the Cpp
-        // pointer directory:
-        deallocate(v_h) = ptr;
+    } else {
+        // Otherwise the type isn't inherited, so we don't need an Alias
+        v_h.value_ptr() = ptr;
     }
 }
 
@@ -119,7 +113,7 @@ void construct(value_and_holder &v_h, Cpp<Class> *ptr, bool need_alias) {
 template <typename Class, enable_if_t<Class::has_alias, int> = 0>
 void construct(value_and_holder &v_h, Alias<Class> *alias_ptr, bool) {
     no_nullptr(alias_ptr);
-    deallocate(v_h) = static_cast<Cpp<Class> *>(alias_ptr);
+    v_h.value_ptr() = static_cast<Cpp<Class> *>(alias_ptr);
 }
 
 // Holder return: copy its pointer, and move or copy the returned holder into the new instance's
@@ -133,7 +127,7 @@ void construct(value_and_holder &v_h, Holder<Class> holder, bool need_alias) {
         throw type_error("pybind11::init(): construction failed: returned holder-wrapped instance "
                          "is not an alias instance");
 
-    deallocate(v_h) = ptr;
+    v_h.value_ptr() = ptr;
     v_h.type->init_instance(v_h.inst, &holder);
 }
 
@@ -148,7 +142,7 @@ void construct(value_and_holder &v_h, Cpp<Class> &&result, bool need_alias) {
     if (Class::has_alias && need_alias)
         construct_alias_from_cpp<Class>(is_alias_constructible<Class>{}, v_h, std::move(result));
     else
-        deallocate(v_h) = new Cpp<Class>(std::move(result));
+        v_h.value_ptr() = new Cpp<Class>(std::move(result));
 }
 
 // return-by-value version 2: returning a value of the alias type itself.  We move-construct an
@@ -158,48 +152,38 @@ template <typename Class>
 void construct(value_and_holder &v_h, Alias<Class> &&result, bool) {
     static_assert(std::is_move_constructible<Alias<Class>>::value,
         "pybind11::init() return-by-alias-value factory function requires a movable alias class");
-    deallocate(v_h) = new Alias<Class>(std::move(result));
+    v_h.value_ptr() = new Alias<Class>(std::move(result));
 }
 
 // Implementing class for py::init<...>()
-template <typename... Args> struct constructor {
+template <typename... Args>
+struct constructor {
     template <typename Class, typename... Extra, enable_if_t<!Class::has_alias, int> = 0>
     static void execute(Class &cl, const Extra&... extra) {
-        auto *cl_type = get_type_info(typeid(Cpp<Class>));
-        cl.def("__init__", [cl_type](handle self_, Args... args) {
-            auto v_h = load_v_h(self_, cl_type);
-            if (v_h.instance_registered()) return; // Ignore duplicate __init__ calls (see above)
-
-            construct<Class>(v_h, new Cpp<Class>(std::forward<Args>(args)...), false);
-        }, extra...);
+        cl.def("__init__", [](value_and_holder &v_h, Args... args) {
+            v_h.value_ptr() = new Cpp<Class>{std::forward<Args>(args)...};
+        }, is_new_style_constructor(), extra...);
     }
 
     template <typename Class, typename... Extra,
               enable_if_t<Class::has_alias &&
                           std::is_constructible<Cpp<Class>, Args...>::value, int> = 0>
     static void execute(Class &cl, const Extra&... extra) {
-        auto *cl_type = get_type_info(typeid(Cpp<Class>));
-        cl.def("__init__", [cl_type](handle self_, Args... args) {
-            auto v_h = load_v_h(self_, cl_type);
-            if (v_h.instance_registered()) return; // Ignore duplicate __init__ calls (see above)
-
-            if (Py_TYPE(v_h.inst) == cl_type->type)
-                construct<Class>(v_h, new Cpp<Class>(std::forward<Args>(args)...), false);
+        cl.def("__init__", [](value_and_holder &v_h, Args... args) {
+            if (Py_TYPE(v_h.inst) == v_h.type->type)
+                v_h.value_ptr() = new Cpp<Class>{std::forward<Args>(args)...};
             else
-                construct<Class>(v_h, new Alias<Class>(std::forward<Args>(args)...), true);
-        }, extra...);
+                v_h.value_ptr() = new Alias<Class>{std::forward<Args>(args)...};
+        }, is_new_style_constructor(), extra...);
     }
 
     template <typename Class, typename... Extra,
               enable_if_t<Class::has_alias &&
                           !std::is_constructible<Cpp<Class>, Args...>::value, int> = 0>
     static void execute(Class &cl, const Extra&... extra) {
-        auto *cl_type = get_type_info(typeid(Cpp<Class>));
-        cl.def("__init__", [cl_type](handle self_, Args... args) {
-            auto v_h = load_v_h(self_, cl_type);
-            if (v_h.instance_registered()) return; // Ignore duplicate __init__ calls (see above)
-            construct<Class>(v_h, new Alias<Class>(std::forward<Args>(args)...), true);
-        }, extra...);
+        cl.def("__init__", [](value_and_holder &v_h, Args... args) {
+            v_h.value_ptr() = new Alias<Class>{std::forward<Args>(args)...};
+        }, is_new_style_constructor(), extra...);
     }
 };
 
@@ -208,122 +192,133 @@ template <typename... Args> struct alias_constructor {
     template <typename Class, typename... Extra,
               enable_if_t<Class::has_alias && std::is_constructible<Alias<Class>, Args...>::value, int> = 0>
     static void execute(Class &cl, const Extra&... extra) {
-        auto *cl_type = get_type_info(typeid(Cpp<Class>));
-        cl.def("__init__", [cl_type](handle self_, Args... args) {
-            auto v_h = load_v_h(self_, cl_type);
-            if (v_h.instance_registered()) return; // Ignore duplicate __init__ calls (see above)
-            construct<Class>(v_h, new Alias<Class>(std::forward<Args>(args)...), true);
-        }, extra...);
+        cl.def("__init__", [](value_and_holder &v_h, Args... args) {
+            v_h.value_ptr() = new Alias<Class>{std::forward<Args>(args)...};
+        }, is_new_style_constructor(), extra...);
     }
 };
 
 // Implementation class for py::init(Func) and py::init(Func, AliasFunc)
-template <typename CFunc, typename AFuncIn, typename... Args> struct factory {
-private:
-    using CFuncType = typename std::remove_reference<CFunc>::type;
-    using AFunc = conditional_t<std::is_void<AFuncIn>::value, void_type, AFuncIn>;
-    using AFuncType = typename std::remove_reference<AFunc>::type;
+template <typename CFunc, typename AFunc = void_type (*)(),
+          typename = function_signature_t<CFunc>, typename = function_signature_t<AFunc>>
+struct factory;
 
-    CFuncType class_factory;
-    AFuncType alias_factory;
+// Specialization for py::init(Func)
+template <typename Func, typename Return, typename... Args>
+struct factory<Func, void_type (*)(), Return(Args...)> {
+    remove_reference_t<Func> class_factory;
 
-public:
-    // Constructor with a single function/lambda to call; for classes without aliases or with
-    // aliases that can be move constructed from the base.
-    factory(CFunc &&f) : class_factory(std::forward<CFunc>(f)) {}
+    factory(Func &&f) : class_factory(std::forward<Func>(f)) { }
 
-    // Constructor with two functions/lambdas, for a class with distinct class/alias factories: the
-    // first is called when an alias is not needed, the second when the alias is needed.  Requires
-    // non-void AFunc.
-    factory(CFunc &&c, AFunc &&a) :
-        class_factory(std::forward<CFunc>(c)), alias_factory(std::forward<AFunc>(a)) {}
-
-    // Add __init__ definition for a class that either has no alias or has no separate alias
-    // factory; this always constructs the class itself.  If the class is registered with an alias
+    // The given class either has no alias or has no separate alias factory;
+    // this always constructs the class itself.  If the class is registered with an alias
     // type and an alias instance is needed (i.e. because the final type is a Python class
     // inheriting from the C++ type) the returned value needs to either already be an alias
     // instance, or the alias needs to be constructible from a `Class &&` argument.
-    template <typename Class, typename... Extra,
-              enable_if_t<!Class::has_alias || std::is_void<AFuncIn>::value, int> = 0>
-    void execute(Class &cl, const Extra&... extra) && {
-        auto *cl_type = get_type_info(typeid(Cpp<Class>));
+    template <typename Class, typename... Extra>
+    void execute(Class &cl, const Extra &...extra) && {
         #if defined(PYBIND11_CPP14)
-        cl.def("__init__", [cl_type, func = std::move(class_factory)]
+        cl.def("__init__", [func = std::move(class_factory)]
         #else
-        CFuncType &func = class_factory;
-        cl.def("__init__", [cl_type, func]
+        auto &func = class_factory;
+        cl.def("__init__", [func]
         #endif
-        (handle self_, Args... args) {
-            auto v_h = load_v_h(self_, cl_type);
-            // If this value is already registered it must mean __init__ is invoked multiple times;
-            // we really can't support that in C++, so just ignore the second __init__.
-            if (v_h.instance_registered()) return;
-
-            construct<Class>(v_h, func(std::forward<Args>(args)...), Py_TYPE(v_h.inst) != cl_type->type);
-        }, extra...);
-    }
-
-    // Add __init__ definition for a class with an alias *and* distinct alias factory; the former is
-    // called when the `self` type passed to `__init__` is the direct class (i.e. not inherited), the latter
-    // when `self` is a Python-side subtype.
-    template <typename Class, typename... Extra,
-              enable_if_t<Class::has_alias && !std::is_void<AFuncIn>::value, int> = 0>
-    void execute(Class &cl, const Extra&... extra) && {
-        auto *cl_type = get_type_info(typeid(Cpp<Class>));
-
-        #if defined(PYBIND11_CPP14)
-        cl.def("__init__", [cl_type, class_func = std::move(class_factory), alias_func = std::move(alias_factory)]
-        #else
-        CFuncType &class_func = class_factory;
-        AFuncType &alias_func = alias_factory;
-        cl.def("__init__", [cl_type, class_func, alias_func]
-        #endif
-        (handle self_, Args... args) {
-            auto v_h = load_v_h(self_, cl_type);
-            if (v_h.instance_registered()) return; // (see comment above)
-
-            if (Py_TYPE(v_h.inst) == cl_type->type)
-                // If the instance type equals the registered type we don't have inheritance, so
-                // don't need the alias and can construct using the class function:
-                construct<Class>(v_h, class_func(std::forward<Args>(args)...), false);
-            else
-                construct<Class>(v_h, alias_func(std::forward<Args>(args)...), true);
-        }, extra...);
+        (value_and_holder &v_h, Args... args) {
+            construct<Class>(v_h, func(std::forward<Args>(args)...),
+                             Py_TYPE(v_h.inst) != v_h.type->type);
+        }, is_new_style_constructor(), extra...);
     }
 };
 
-template <typename Func> using functype =
-    conditional_t<std::is_function<remove_reference_t<Func>>::value, remove_reference_t<Func> *,
-    conditional_t<is_function_pointer<remove_reference_t<Func>>::value, remove_reference_t<Func>,
-    Func>>;
+// Specialization for py::init(Func, AliasFunc)
+template <typename CFunc, typename AFunc,
+          typename CReturn, typename... CArgs, typename AReturn, typename... AArgs>
+struct factory<CFunc, AFunc, CReturn(CArgs...), AReturn(AArgs...)> {
+    static_assert(sizeof...(CArgs) == sizeof...(AArgs),
+                  "pybind11::init(class_factory, alias_factory): class and alias factories "
+                  "must have identical argument signatures");
+    static_assert(all_of<std::is_same<CArgs, AArgs>...>::value,
+                  "pybind11::init(class_factory, alias_factory): class and alias factories "
+                  "must have identical argument signatures");
 
-// Helper definition to infer the detail::initimpl::factory template types from a callable object
-template <typename Func, typename Return, typename... Args>
-factory<functype<Func>, void, Args...> func_decltype(Return (*)(Args...));
+    remove_reference_t<CFunc> class_factory;
+    remove_reference_t<AFunc> alias_factory;
 
-// metatemplate that ensures the Class and Alias factories take identical arguments: we need to be
-// able to call either one with the given arguments (depending on the final instance type).
-template <typename Return1, typename Return2, typename... Args1, typename... Args2>
-inline constexpr bool require_matching_arguments(Return1 (*)(Args1...), Return2 (*)(Args2...)) {
-    static_assert(sizeof...(Args1) == sizeof...(Args2),
-        "pybind11::init(class_factory, alias_factory): class and alias factories must have identical argument signatures");
-    static_assert(all_of<std::is_same<Args1, Args2>...>::value,
-        "pybind11::init(class_factory, alias_factory): class and alias factories must have identical argument signatures");
-    return true;
+    factory(CFunc &&c, AFunc &&a)
+        : class_factory(std::forward<CFunc>(c)), alias_factory(std::forward<AFunc>(a)) { }
+
+    // The class factory is called when the `self` type passed to `__init__` is the direct
+    // class (i.e. not inherited), the alias factory when `self` is a Python-side subtype.
+    template <typename Class, typename... Extra>
+    void execute(Class &cl, const Extra&... extra) && {
+        static_assert(Class::has_alias, "The two-argument version of `py::init()` can "
+                                        "only be used if the class has an alias");
+        #if defined(PYBIND11_CPP14)
+        cl.def("__init__", [class_func = std::move(class_factory), alias_func = std::move(alias_factory)]
+        #else
+        auto &class_func = class_factory;
+        auto &alias_func = alias_factory;
+        cl.def("__init__", [class_func, alias_func]
+        #endif
+        (value_and_holder &v_h, CArgs... args) {
+            if (Py_TYPE(v_h.inst) == v_h.type->type)
+                // If the instance type equals the registered type we don't have inheritance, so
+                // don't need the alias and can construct using the class function:
+                construct<Class>(v_h, class_func(std::forward<CArgs>(args)...), false);
+            else
+                construct<Class>(v_h, alias_func(std::forward<CArgs>(args)...), true);
+        }, is_new_style_constructor(), extra...);
+    }
+};
+
+/// Set just the C++ state. Same as `__init__`.
+template <typename Class, typename T>
+void setstate(value_and_holder &v_h, T &&result, bool need_alias) {
+    construct<Class>(v_h, std::forward<T>(result), need_alias);
 }
 
-// Unimplemented function provided only for its type signature (via `decltype`), which resolves to
-// the appropriate specialization of the above `init` struct with the appropriate function, argument
-// and return types.
-template <typename CFunc, typename AFunc,
-          typename CReturn, typename... CArgs, typename AReturn, typename... AArgs,
-          bool = require_matching_arguments((CReturn (*)(CArgs...)) nullptr, (AReturn (*)(AArgs...)) nullptr)>
-factory<functype<CFunc>, functype<AFunc>, CArgs...> func_decltype(CReturn (*)(CArgs...), AReturn (*)(AArgs...));
+/// Set both the C++ and Python states
+template <typename Class, typename T, typename O,
+          enable_if_t<std::is_convertible<O, handle>::value, int> = 0>
+void setstate(value_and_holder &v_h, std::pair<T, O> &&result, bool need_alias) {
+    construct<Class>(v_h, std::move(result.first), need_alias);
+    setattr((PyObject *) v_h.inst, "__dict__", result.second);
+}
 
-// Resolves to the appropriate specialization of the `pybind11::detail::initimpl::factory<...>` for a
-// given init function or pair of class/alias init functions.
-template <typename... Func> using factory_t = decltype(func_decltype<Func...>(
-    (function_signature_t<Func> *) nullptr...));
+/// Implementation for py::pickle(GetState, SetState)
+template <typename Get, typename Set,
+          typename = function_signature_t<Get>, typename = function_signature_t<Set>>
+struct pickle_factory;
+
+template <typename Get, typename Set,
+          typename RetState, typename Self, typename NewInstance, typename ArgState>
+struct pickle_factory<Get, Set, RetState(Self), NewInstance(ArgState)> {
+    static_assert(std::is_same<intrinsic_t<RetState>, intrinsic_t<ArgState>>::value,
+                  "The type returned by `__getstate__` must be the same "
+                  "as the argument accepted by `__setstate__`");
+
+    remove_reference_t<Get> get;
+    remove_reference_t<Set> set;
+
+    pickle_factory(Get get, Set set)
+        : get(std::forward<Get>(get)), set(std::forward<Set>(set)) { }
+
+    template <typename Class, typename... Extra>
+    void execute(Class &cl, const Extra &...extra) && {
+        cl.def("__getstate__", std::move(get));
+
+#if defined(PYBIND11_CPP14)
+        cl.def("__setstate__", [func = std::move(set)]
+#else
+        auto &func = set;
+        cl.def("__setstate__", [func]
+#endif
+        (value_and_holder &v_h, ArgState state) {
+            setstate<Class>(v_h, func(std::forward<ArgState>(state)),
+                            Py_TYPE(v_h.inst) != v_h.type->type);
+        }, is_new_style_constructor(), extra...);
+    }
+};
 
 NAMESPACE_END(initimpl)
 NAMESPACE_END(detail)

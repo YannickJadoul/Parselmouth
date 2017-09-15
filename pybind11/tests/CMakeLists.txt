@@ -12,7 +12,7 @@ option(PYBIND11_WERROR  "Report all warnings as errors"  OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     # We're being loaded directly, i.e. not via add_subdirectory, so make this
     # work as its own project and load the pybind11Config to get the tools we need
-    project(pybind11_tests)
+    project(pybind11_tests CXX)
 
     find_package(pybind11 REQUIRED CONFIG)
 endif()
@@ -40,6 +40,7 @@ set(PYBIND11_TEST_FILES
   test_eval.cpp
   test_exceptions.cpp
   test_factory_constructors.cpp
+  test_iostream.cpp
   test_kwargs_and_defaults.cpp
   test_local_bindings.cpp
   test_methods_and_attributes.cpp
@@ -75,6 +76,8 @@ string(REPLACE ".cpp" ".py" PYBIND11_PYTEST_FILES "${PYBIND11_TEST_FILES}")
 set(PYBIND11_CROSS_MODULE_TESTS
   test_exceptions.py
   test_local_bindings.py
+  test_stl.py
+  test_stl_binders.py
 )
 
 # Check if Eigen is available; if not, remove from PYBIND11_TEST_FILES (but
@@ -113,8 +116,8 @@ if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
   endif()
 endif()
 
-# Optional dependency for some tests
-find_package(Boost)
+# Optional dependency for some tests (boost::variant is only supported with version >= 1.56)
+find_package(Boost 1.56)
 
 # Compile with compiler warnings turned on
 function(pybind11_enable_warnings target_name)

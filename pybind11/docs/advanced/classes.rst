@@ -86,7 +86,7 @@ functions, and :func:`PYBIND11_OVERLOAD` should be used for functions which have
 a default implementation.  There are also two alternate macros
 :func:`PYBIND11_OVERLOAD_PURE_NAME` and :func:`PYBIND11_OVERLOAD_NAME` which
 take a string-valued name argument between the *Parent class* and *Name of the
-function* slots, which defines the name of function in Python. This is required 
+function* slots, which defines the name of function in Python. This is required
 when the C++ and Python versions of the
 function have different names, e.g.  ``operator()`` vs ``__call__``.
 
@@ -361,14 +361,8 @@ Custom constructors
 
 The syntax for binding constructors was previously introduced, but it only
 works when a constructor of the appropriate arguments actually exists on the
-C++ side.  To extend this to more general cases, pybind11 offers two different
-approaches: binding factory functions, and placement-new creation.
-
-Factory function constructors
------------------------------
-
-It is possible to expose a Python-side constructor from a C++ function that
-returns a new object by value or pointer.  For example, suppose you have a
+C++ side.  To extend this to more general cases, pybind11 makes it possible
+to bind factory functions as constructors. For example, suppose you have a
 class like this:
 
 .. code-block:: cpp
@@ -381,12 +375,15 @@ class like this:
         static Example create(int a) { return Example(a); }
     };
 
-While it is possible to expose the ``create`` method to Python, it is often
-preferrable to expose it on the Python side as a constructor rather than a
-named static method.  You can do this by calling ``.def(py::init(...))`` with
-the function reference returning the new instance passed as an argument.  It is
-also possible to use this approach to bind a function returning a new instance
-by raw pointer or by the holder (e.g. ``std::unique_ptr``).
+    py::class_<Example>(m, "Example")
+        .def(py::init(&Example::create));
+
+While it is possible to create a straightforward binding of the static
+``create`` method, it may sometimes be preferable to expose it as a constructor
+on the Python side. This can be accomplished by calling ``.def(py::init(...))``
+with the function reference returning the new instance passed as an argument.
+It is also possible to use this approach to bind a function returning a new
+instance by raw pointer or by the holder (e.g. ``std::unique_ptr``).
 
 The following example shows the different approaches:
 
@@ -421,18 +418,20 @@ The following example shows the different approaches:
 When the constructor is invoked from Python, pybind11 will call the factory
 function and store the resulting C++ instance in the Python instance.
 
-When combining factory functions constructors with :ref:`overriding_virtuals`
-there are two approaches.  The first is to add a constructor to the alias class
-that takes a base value by rvalue-reference.  If such a constructor is
-available, it will be used to construct an alias instance from the value
-returned by the factory function.  The second option is to provide two factory
-functions to ``py::init()``: the first will be invoked when no alias class is
-required (i.e. when the class is being used but not inherited from in Python),
-and the second will be invoked when an alias is required.
+When combining factory functions constructors with :ref:`virtual function
+trampolines <overriding_virtuals>` there are two approaches.  The first is to
+add a constructor to the alias class that takes a base value by
+rvalue-reference.  If such a constructor is available, it will be used to
+construct an alias instance from the value returned by the factory function.
+The second option is to provide two factory functions to ``py::init()``: the
+first will be invoked when no alias class is required (i.e. when the class is
+being used but not inherited from in Python), and the second will be invoked
+when an alias is required.
 
 You can also specify a single factory function that always returns an alias
 instance: this will result in behaviour similar to ``py::init_alias<...>()``,
-as described in :ref:`extended_aliases`.
+as described in the :ref:`extended trampoline class documentation
+<extended_aliases>`.
 
 The following example shows the different factory approaches for a class with
 an alias:
@@ -461,34 +460,29 @@ an alias:
         .def(py::init([]() { return new PyExample(); }))
         ;
 
-Low-level placement-new construction
-------------------------------------
+Brace initialization
+--------------------
 
-A second approach for creating new instances use C++ placement new to construct
-an object in-place in preallocated memory.  To do this, you simply bind a
-method name ``__init__`` that takes the class instance as the first argument by
-pointer or reference, then uses a placement-new constructor to construct the
-object in the pre-allocated (but uninitialized) memory.
-
-For example, instead of:
+``pybind11::init<>`` internally uses C++11 brace initialization to call the
+constructor of the target class. This means that it can be used to bind
+*implicit* constructors as well:
 
 .. code-block:: cpp
 
-    py::class_<Example>(m, "Example")
-        .def(py::init<int>());
+    struct Aggregate {
+        int a;
+        std::string b;
+    };
 
-you could equivalently write:
+    py::class_<Aggregate>(m, "Aggregate")
+        .def(py::init<int, const std::string &>());
 
-.. code-block:: cpp
+.. note::
 
-    py::class_<Example>(m, "Example")
-        .def("__init__",
-            [](Example &instance, int arg) {
-                new (&instance) Example(arg);
-            }
-        );
-
-which will invoke the constructor in-place at the pre-allocated memory.
+    Note that brace initialization preferentially invokes constructor overloads
+    taking a ``std::initializer_list``. In the rare event that this causes an
+    issue, you can work around it by using ``py::init(...)`` with a lambda
+    function that constructs the new object as desired.
 
 .. _classes_with_non_public_destructors:
 
@@ -558,6 +552,10 @@ Python side:
 
     Implicit conversions from ``A`` to ``B`` only work when ``B`` is a custom
     data type that is exposed to Python via pybind11.
+
+    To prevent runaway recursion, implicit conversions are non-reentrant: an
+    implicit conversion invoked as part of another implicit conversion of the
+    same type (i.e. from ``A`` to ``B``) will fail.
 
 .. _static_properties:
 
@@ -657,13 +655,15 @@ throwing a type error.
     complete example that demonstrates how to work with overloaded operators in
     more detail.
 
+.. _pickling:
+
 Pickling support
 ================
 
 Python's ``pickle`` module provides a powerful facility to serialize and
 de-serialize a Python object graph into a binary data stream. To pickle and
-unpickle C++ classes using pybind11, two additional functions must be provided.
-Suppose the class in question has the following signature:
+unpickle C++ classes using pybind11, a ``py::pickle()`` definition must be
+provided. Suppose the class in question has the following signature:
 
 .. code-block:: cpp
 
@@ -679,8 +679,9 @@ Suppose the class in question has the following signature:
         int m_extra = 0;
     };
 
-The binding code including the requisite ``__setstate__`` and ``__getstate__`` methods [#f3]_
-looks as follows:
+Pickling support in Python is enabled by defining the ``__setstate__`` and
+``__getstate__`` methods [#f3]_. For pybind11 classes, use ``py::pickle()``
+to bind these two functions:
 
 .. code-block:: cpp
 
@@ -689,21 +690,28 @@ looks as follows:
         .def("value", &Pickleable::value)
         .def("extra", &Pickleable::extra)
         .def("setExtra", &Pickleable::setExtra)
-        .def("__getstate__", [](const Pickleable &p) {
-            /* Return a tuple that fully encodes the state of the object */
-            return py::make_tuple(p.value(), p.extra());
-        })
-        .def("__setstate__", [](Pickleable &p, py::tuple t) {
-            if (t.size() != 2)
-                throw std::runtime_error("Invalid state!");
+        .def(py::pickle(
+            [](const Pickleable &p) { // __getstate__
+                /* Return a tuple that fully encodes the state of the object */
+                return py::make_tuple(p.value(), p.extra());
+            },
+            [](py::tuple t) { // __setstate__
+                if (t.size() != 2)
+                    throw std::runtime_error("Invalid state!");
 
-            /* Invoke the in-place constructor. Note that this is needed even
-               when the object just has a trivial default constructor */
-            new (&p) Pickleable(t[0].cast<std::string>());
+                /* Create a new C++ instance */
+                Pickleable p(t[0].cast<std::string>());
 
-            /* Assign any additional state */
-            p.setExtra(t[1].cast<int>());
-        });
+                /* Assign any additional state */
+                p.setExtra(t[1].cast<int>());
+
+                return p;
+            }
+        ));
+
+The ``__setstate__`` part of the ``py::picke()`` definition follows the same
+rules as the single-argument version of ``py::init()``. The return type can be
+a value, pointer or holder type. See :ref:`custom_constructors` for details.
 
 An instance can now be pickled as follows:
 
@@ -775,27 +783,29 @@ Module-local class bindings
 
 When creating a binding for a class, pybind by default makes that binding
 "global" across modules.  What this means is that a type defined in one module
-can be passed to functions of other modules that expect the same C++ type.  For
+can be returned from any module resulting in the same Python type.  For
 example, this allows the following:
 
 .. code-block:: cpp
 
     // In the module1.cpp binding code for module1:
     py::class_<Pet>(m, "Pet")
-        .def(py::init<std::string>());
+        .def(py::init<std::string>())
+        .def_readonly("name", &Pet::name);
 
 .. code-block:: cpp
 
     // In the module2.cpp binding code for module2:
-    m.def("pet_name", [](Pet &p) { return p.name(); });
+    m.def("create_pet", [](std::string name) { return new Pet(name); });
 
 .. code-block:: pycon
 
     >>> from module1 import Pet
-    >>> from module2 import pet_name
-    >>> mypet = Pet("Kitty")
-    >>> pet_name(mypet)
-    'Kitty'
+    >>> from module2 import create_pet
+    >>> pet1 = Pet("Kitty")
+    >>> pet2 = create_pet("Doggy")
+    >>> pet2.name()
+    'Doggy'
 
 When writing binding code for a library, this is usually desirable: this
 allows, for example, splitting up a complex library into multiple Python
@@ -855,39 +865,45 @@ the ``py::class_`` constructor:
     py::class<pets::Pet>(m, "Pet", py::module_local())
         .def("get_name", &pets::Pet::name);
 
-This makes the Python-side ``dogs.Pet`` and ``cats.Pet`` into distinct classes
-that can only be accepted as ``Pet`` arguments within those classes.  This
-avoids the conflict and allows both modules to be loaded.
+This makes the Python-side ``dogs.Pet`` and ``cats.Pet`` into distinct classes,
+avoiding the conflict and allowing both modules to be loaded.  C++ code in the
+``dogs`` module that casts or returns a ``Pet`` instance will result in a
+``dogs.Pet`` Python instance, while C++ code in the ``cats`` module will result
+in a ``cats.Pet`` Python instance.
 
-One limitation of this approach is that because ``py::module_local`` types are
-distinct on the Python side, it is not possible to pass such a module-local
-type as a C++ ``Pet``-taking function outside that module.  For example, if the
-above ``cats`` and ``dogs`` module are each extended with a function:
+This does come with two caveats, however: First, external modules cannot return
+or cast a ``Pet`` instance to Python (unless they also provide their own local
+bindings).  Second, from the Python point of view they are two distinct classes.
+
+Note that the locality only applies in the C++ -> Python direction.  When
+passing such a ``py::module_local`` type into a C++ function, the module-local
+classes are still considered.  This means that if the following function is
+added to any module (including but not limited to the ``cats`` and ``dogs``
+modules above) it will be callable with either a ``dogs.Pet`` or ``cats.Pet``
+argument:
 
 .. code-block:: cpp
 
-    m.def("petname", [](pets::Pet &p) { return p.name(); });
+    m.def("pet_name", [](const pets::Pet &pet) { return pet.name(); });
 
-you will only be able to call the function with the local module's class:
+For example, suppose the above function is added to each of ``cats.cpp``,
+``dogs.cpp`` and ``frogs.cpp`` (where ``frogs.cpp`` is some other module that
+does *not* bind ``Pets`` at all).
 
 .. code-block:: pycon
 
-    >>> import cats, dogs  # No error because of the added py::module_local()
+    >>> import cats, dogs, frogs  # No error because of the added py::module_local()
     >>> mycat, mydog = cats.Cat("Fluffy"), dogs.Dog("Rover")
-    >>> (cats.petname(mycat), dogs.petname(mydog))
+    >>> (cats.pet_name(mycat), dogs.pet_name(mydog))
     ('Fluffy', 'Rover')
-    >>> cats.petname(mydog)
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-    TypeError: petname(): incompatible function arguments. The following argument types are supported:
-        1. (arg0: cats.Pet) -> str
+    >>> (cats.pet_name(mydog), dogs.pet_name(mycat), frogs.pet_name(mycat))
+    ('Rover', 'Fluffy', 'Fluffy')
 
-    Invoked with: <dogs.Dog object at 0x123>
-
-It is possible to use ``py::module_local()`` registrations in one module even if another module
-registers the same type globally: within the module with the module-local definition, all C++
-instances will be cast to the associated bound Python type.  Outside the module, any such values
-are converted to the global Python type created elsewhere.
+It is possible to use ``py::module_local()`` registrations in one module even
+if another module registers the same type globally: within the module with the
+module-local definition, all C++ instances will be cast to the associated bound
+Python type.  In other modules any such values are converted to the global
+Python type created elsewhere.
 
 .. note::
 
@@ -908,3 +924,78 @@ are converted to the global Python type created elsewhere.
 
     The file :file:`tests/test_local_bindings.cpp` contains additional examples
     that demonstrate how ``py::module_local()`` works.
+
+Binding protected member functions
+==================================
+
+It's normally not possible to expose ``protected`` member functions to Python:
+
+.. code-block:: cpp
+
+    class A {
+    protected:
+        int foo() const { return 42; }
+    };
+
+    py::class_<A>(m, "A")
+        .def("foo", &A::foo); // error: 'foo' is a protected member of 'A'
+
+On one hand, this is good because non-``public`` members aren't meant to be
+accessed from the outside. But we may want to make use of ``protected``
+functions in derived Python classes.
+
+The following pattern makes this possible:
+
+.. code-block:: cpp
+
+    class A {
+    protected:
+        int foo() const { return 42; }
+    };
+
+    class Publicist : public A { // helper type for exposing protected functions
+    public:
+        using A::foo; // inherited with different access modifier
+    };
+
+    py::class_<A>(m, "A") // bind the primary class
+        .def("foo", &Publicist::foo); // expose protected methods via the publicist
+
+This works because ``&Publicist::foo`` is exactly the same function as
+``&A::foo`` (same signature and address), just with a different access
+modifier. The only purpose of the ``Publicist`` helper class is to make
+the function name ``public``.
+
+If the intent is to expose ``protected`` ``virtual`` functions which can be
+overridden in Python, the publicist pattern can be combined with the previously
+described trampoline:
+
+.. code-block:: cpp
+
+    class A {
+    public:
+        virtual ~A() = default;
+
+    protected:
+        virtual int foo() const { return 42; }
+    };
+
+    class Trampoline : public A {
+    public:
+        int foo() const override { PYBIND11_OVERLOAD(int, A, foo, ); }
+    };
+
+    class Publicist : public A {
+    public:
+        using A::foo;
+    };
+
+    py::class_<A, Trampoline>(m, "A") // <-- `Trampoline` here
+        .def("foo", &Publicist::foo); // <-- `Publicist` here, not `Trampoline`!
+
+.. note::
+
+    MSVC 2015 has a compiler bug (fixed in version 2017) which
+    requires a more explicit function binding in the form of
+    ``.def("foo", static_cast<int (A::*)() const>(&Publicist::foo));``
+    where ``int (A::*)() const`` is the type of ``A::foo``.

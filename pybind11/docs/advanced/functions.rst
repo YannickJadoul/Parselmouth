@@ -177,9 +177,10 @@ indices start at one, while zero refers to the return value. For methods, index
 index ``2``. Arbitrarily many call policies can be specified. When a ``Nurse``
 with value ``None`` is detected at runtime, the call policy does nothing.
 
-This feature internally relies on the ability to create a *weak reference* to
-the nurse object, which is permitted by all classes exposed via pybind11. When
-the nurse object does not support weak references, an exception will be thrown.
+When the nurse is not a pybind11-registered type, the implementation internally
+relies on the ability to create a *weak reference* to the nurse object. When
+the nurse object is not a pybind11-registered type and does not support weak
+references, an exception will be thrown.
 
 Consider the following example: here, the binding code for a list append
 operation ties the lifetime of the newly added element to the underlying
@@ -189,6 +190,17 @@ container:
 
     py::class_<List>(m, "List")
         .def("append", &List::append, py::keep_alive<1, 2>());
+
+For consistency, the argument indexing is identical for constructors. Index
+``1`` still refers to the implicit ``this`` pointer, i.e. the object which is
+being constructed. Index ``0`` refers to the return type which is presumed to
+be ``void`` when a constructor is viewed like a function. The following example
+ties the lifetime of the constructor element to the constructed object:
+
+.. code-block:: cpp
+
+    py::class_<Nurse>(m, "Nurse")
+        .def(py::init<Patient &>(), py::keep_alive<1, 2>());
 
 .. note::
 
@@ -405,6 +417,8 @@ name, i.e. by specifying ``py::arg().noconvert()``.
     enable no-convert behaviour for just one of several arguments, you will
     need to specify a ``py::arg()`` annotation for each argument with the
     no-convert argument modified to ``py::arg().noconvert()``.
+
+.. _none_arguments:
 
 Allow/Prohibiting None arguments
 ================================
