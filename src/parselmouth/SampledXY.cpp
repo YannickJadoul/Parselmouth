@@ -50,6 +50,27 @@ void Binding<SampledXY>::init()
 		    return ys;
 	    });
 
+	def("y_grid",
+	    [](SampledXY self) {
+		    py::array_t<double> grid(self->ny + 1);
+		    auto unchecked = grid.mutable_unchecked<1>();
+		    for (auto i = 0; i < self->ny + 1; ++i) {
+			    unchecked(i) = self->y1 + (i - 0.5) * self->dy;
+		    }
+		    return grid;
+	    });
+
+	def("y_bins",
+	    [](SampledXY self) {
+		    py::array_t<double> bins({self->ny, 2L});
+		    auto unchecked = bins.mutable_unchecked<2>();
+		    for (auto i = 0; i < self->ny; ++i) {
+			    unchecked(i, 0) = self->y1 + (i - 0.5) * self->dy;
+			    unchecked(i, 1) = self->y1 + (i + 0.5) * self->dy;
+		    }
+		    return bins;
+	    });
+
 	// TODO Sampled_indexToY, Sampled_yToIndex, etc
 	// TODO WindowSamplesY
 }

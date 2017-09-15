@@ -49,6 +49,27 @@ void Binding<Sampled>::init()
 			return xs;
 		});
 
+	def("x_grid",
+	    [](Sampled self) {
+		    py::array_t<double> grid(self->nx + 1);
+		    auto unchecked = grid.mutable_unchecked<1>();
+		    for (auto i = 0; i < self->nx + 1; ++i) {
+			    unchecked(i) = self->x1 + (i - 0.5) * self->dx;
+		    }
+		    return grid;
+	    });
+
+	def("x_bins",
+	    [](Sampled self) {
+		    py::array_t<double> bins({self->nx, 2});
+		    auto unchecked = bins.mutable_unchecked<2>();
+		    for (auto i = 0; i < self->nx; ++i) {
+			    unchecked(i, 0) = self->x1 + (i - 0.5) * self->dx;
+			    unchecked(i, 1) = self->x1 + (i + 0.5) * self->dx;
+		    }
+		    return bins;
+	    });
+
 	// TODO Sampled_indexToX, Sampled_xToIndex, etc
 	// TODO WindowSamplesX
 }

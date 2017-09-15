@@ -136,6 +136,10 @@ void Binding<CC>::init() {
 	    },
 	    "ij"_a, "value"_a);
 
+	def("__iter__",
+	    [](CC self) { return py::make_iterator(&self->frame[1], &self->frame[self->nx+1]); },
+	    py::keep_alive<0, 1>());
+
 	def("to_array",
 	    [] (CC cc)
 	    {

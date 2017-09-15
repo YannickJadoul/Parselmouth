@@ -31,15 +31,6 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-enum class Interpolation
-{
-	NEAREST = Vector_VALUE_INTERPOLATION_NEAREST,
-	LINEAR = Vector_VALUE_INTERPOLATION_LINEAR,
-	CUBIC = Vector_VALUE_INTERPOLATION_CUBIC,
-	SINC70 = Vector_VALUE_INTERPOLATION_SINC70,
-	SINC700 = Vector_VALUE_INTERPOLATION_SINC700
-};
-
 void Binding<Interpolation>::init() {
 	value("NEAREST", Interpolation::NEAREST);
 	value("LINEAR", Interpolation::LINEAR);
