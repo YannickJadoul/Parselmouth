@@ -15,7 +15,7 @@ Please note that Parselmouth is currently in premature state and in active devel
 Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) if you have any question, remarks, or requests!
 
 ## Installation
-Parselmouth can be installed like any other Python library, using (a recent version of) the Python package manager `pip`:
+Parselmouth can be installed like any other Python library, using (a recent version of) the Python package manager `pip`, on Linux, macOS, and Windows:
 ```
 pip install praat-parselmouth
 ```
@@ -27,11 +27,7 @@ pip install -U praat-parselmouth
 
 If you use the Anaconda distribution of Python, you can use the same `pip` command in a terminal of the appropriate Anaconda environment, either activated through the [Anaconda Navigator](https://docs.continuum.io/anaconda/navigator/tutorials/manage-environments#using-an-environment) or [conda tool](https://docs.continuum.io/docs_oss/conda/using/envs#change-environments-activate-deactivate).
 
-- On Windows and Mac OS X, the installation should finish fairly quickly.
-- On a Linux system, we do not have a binary distribution yet, but `pip install praat-parselmouth` should automatically build your project in 5 to 10 minutes if you have `cmake` installed.
-
-
-If this results in an error, try updating `pip` to the latest version by running
+If this results in an error or takes a long time, try updating `pip` to the latest version by running
 ```
 pip install -U pip
 ```
@@ -71,7 +67,7 @@ seaborn.set() # Use seaborn's default style to make graphs more pretty
 # Plot nice figures using Python's "standard" matplotlib library
 snd = parselmouth.Sound("~/z6a.WAVE")
 plt.figure()
-plt.plot(snd.x1 + snd.dx * np.arange(snd.nx), snd.values)
+plt.plot(snd.xs(), snd.values)
 plt.xlim([snd.xmin, snd.xmax])
 plt.xlabel("time [s]")
 plt.ylabel("amplitude")
@@ -80,8 +76,7 @@ plt.show() # or plt.savefig("sound.pdf")
 ![example_sound.png](res/images/example_sound.png)
 ```Python
 def draw_spectrogram(spectrogram, dynamic_range=70):
-    X = spectrogram.x1 + spectrogram.dx * (np.arange(spectrogram.nx + 1) - 0.5)
-    Y = spectrogram.y1 + spectrogram.dy * (np.arange(spectrogram.ny + 1) - 0.5)
+    X, Y = spectrogram.x_grid(), spectrogram.y_grid()
     sg_db = 10 * np.log10(spectrogram.values.T)
     plt.pcolormesh(X, Y, sg_db, vmin=sg_db.max() - dynamic_range, cmap='afmhot')
     plt.ylim([spectrogram.ymin, spectrogram.ymax])
@@ -89,8 +84,8 @@ def draw_spectrogram(spectrogram, dynamic_range=70):
     plt.ylabel("frequency [Hz]")
 
 def draw_intensity(intensity):
-    plt.plot(intensity.x1 + intensity.dx * np.arange(intensity.nx), intensity.values, linewidth=3, color='w')
-    plt.plot(intensity.x1 + intensity.dx * np.arange(intensity.nx), intensity.values, linewidth=1)
+    plt.plot(intensity.xs(), intensity.values, linewidth=3, color='w')
+    plt.plot(intensity.xs(), intensity.values, linewidth=1)
     plt.grid(False)
     plt.ylim(0)
     plt.ylabel("intensity [dB]")
