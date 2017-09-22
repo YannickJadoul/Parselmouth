@@ -114,9 +114,13 @@ matrix:
         - CIBW_SKIP="cp33-*" cibuildwheel
       deploy: *github-releases-deploy
 
+branches:
+  except:
+    - appveyor
+    - docs
+
 before_install:
   - set -e
-  - if [ "$TRAVIS_BRANCH" == "appveyor" ]; then travis_terminate 0; fi
   - |
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       if [ -n "$GCC" ]; then
