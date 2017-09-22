@@ -1,7 +1,10 @@
 # Build and binary folder of CMake and Python distutils
-build/
-installed/
-dist/
+/build/
+/installed/
+/dist/
+
+# Build folder of Sphinx
+/docs/_build
 
 # OS X temporary and cache files
 *~
