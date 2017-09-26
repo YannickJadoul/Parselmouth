@@ -55,7 +55,7 @@ void Binding<CC_Frame>::init() {
 	    "i"_a, "value"_a);
 
 	def("__len__",
-	    [](CC self) { return self->maximumNumberOfCoefficients + 1; });
+	    [](CC_Frame self) { return self->numberOfCoefficients + 1; });
 
 	def("to_array",
 	    [](CC_Frame self) {
