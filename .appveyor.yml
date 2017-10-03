@@ -36,6 +36,7 @@ matrix:
 branches:
   except:
     - travis
+    - docs
 
 install:
   - ps: |

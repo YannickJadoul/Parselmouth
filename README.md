@@ -4,6 +4,7 @@
 [![Gitter chat](https://img.shields.io/gitter/room/PraatParselmouth/Lobby.svg)](https://gitter.im/PraatParselmouth/Lobby)
 [![Travis CI status](https://img.shields.io/travis/YannickJadoul/Parselmouth/master.svg)](https://travis-ci.org/YannickJadoul/Parselmouth/)
 [![AppVeyor status](https://img.shields.io/appveyor/ci/YannickJadoul/Parselmouth/master.svg)](https://ci.appveyor.com/project/YannickJadoul/parselmouth)
+[![ReadTheDocs status](https://readthedocs.org/projects/docs/badge/?version=latest)](https://docs.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/pypi/l/praat-parselmouth.svg)](https://github.com/YannickJadoul/Parselmouth/blob/master/LICENSE)
 
 **Parselmouth** is a Python library for the [Praat](http://www.praat.org) software.
@@ -23,37 +24,8 @@ or, to update your installed version to the latest release:
 ```
 pip install -U praat-parselmouth
 ```
-*The version number of your current Parselmouth installation, can be found in the `parselmouth.__version__` variable.*
 
-If you use the Anaconda distribution of Python, you can use the same `pip` command in a terminal of the appropriate Anaconda environment, either activated through the [Anaconda Navigator](https://docs.continuum.io/anaconda/navigator/tutorials/manage-environments#using-an-environment) or [conda tool](https://docs.continuum.io/docs_oss/conda/using/envs#change-environments-activate-deactivate).
-
-If this results in an error or takes a long time, try updating `pip` to the latest version by running
-```
-pip install -U pip
-```
-If you do not have `pip` installed, you follow these instructions to install pip: https://pip.pypa.io/en/stable/installing/
-
-### Multiple Python versions
-In case you have multiple installations of Python and don't know which `pip` belongs to which Python version *(looking at you, OS X)*:
-```
-python -m pip install praat-parselmouth
-```
-
-Finding out the exact location of the `python` executable (to call the previous command) for a certain Python installation can be done by typing the following lines in your Python interpreter: 
-```Python
-import sys
-print(sys.executable)
-```
-
-Yet another way to install Parselmouth is from within Python itself: 
-```Python
-import pip
-pip.main(['install', 'praat-parselmouth'])
-```
-*However, the latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call pip immediately from the command line.*
-
-### Troubleshooting
-Since the project is still in an early development phase, it is possible that you run into more problems when trying to install or use Parselmouth. If you would do so after trying this, please drop by the [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby), log a GitHub issue, or write [me](mailto:Yannick.Jadoul@ai.vub.ac.be) a quick email. We would be very happy to solve these problems!
+For more detailed instructions, please refer to the [documentation](parselmouth.readthedocs.io/en/stable/installation.html).
 
 ## Example usage
 ```Python
@@ -73,7 +45,7 @@ plt.xlabel("time [s]")
 plt.ylabel("amplitude")
 plt.show() # or plt.savefig("sound.pdf")
 ```
-![example_sound.png](res/images/example_sound.png)
+![example_sound.png](docs/images/example_sound.png)
 ```Python
 def draw_spectrogram(spectrogram, dynamic_range=70):
     X, Y = spectrogram.x_grid(), spectrogram.y_grid()
@@ -99,7 +71,7 @@ draw_intensity(intensity)
 plt.xlim([snd.xmin, snd.xmax])
 plt.show() # or plt.savefig("spectrogram.pdf")
 ```
-![example_spectrogram.png](res/images/example_spectrogram.png)
+![example_spectrogram.png](docs/images/example_spectrogram.png)
 ```Python
 spectrogram = snd.to_spectrogram(window_length=0.05)
 plt.figure()
@@ -107,7 +79,7 @@ draw_spectrogram(spectrogram)
 plt.xlim([snd.xmin, snd.xmax])
 plt.show() # or plt.savefig("spectrogram_0.05.pdf")
 ```
-![example_spectrogram_0.05.png](res/images/example_spectrogram_0.05.png)
+![example_spectrogram_0.05.png](docs/images/example_spectrogram_0.05.png)
 ```Python
 # Find all .wav files in a directory, pre-emphasize and save as new .wav and .aiff file
 import glob
@@ -122,10 +94,10 @@ for wave_file in glob.glob('/home/yannick/*.wav'):
 ```
 
 ## Documentation
-Though it is rather ugly and little for the moment, until more work will be done on this, the existing API documentation can be found [here](http://ai.vub.ac.be/~yajadoul/parselmouth.html).
+Our documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.io/). Soon, it will contain the API reference of Parselmouth, but until then, the existing API documentation can be found [here](http://ai.vub.ac.be/~yajadoul/parselmouth.html).
 
 ## Development
-Currently, the actual project and Parselmouth's code is not very well documented. Or well,  hardly documented at all. That is planned to still change in order to allow for easier contribution to this open source project.
+Currently, the actual project and Parselmouth's code is not very well documented. Or well, hardly documented at all. That is planned to still change in order to allow for easier contribution to this open source project.
 
 Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Next to that, to manually build Parselmouth, the only requirement is a modern C++ compiler supporting the C++14 standard.
 
@@ -141,6 +113,6 @@ Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Ne
 
   Parselmouth only exposes Praat's existing functionality and implementation of algorithms. If you use Parselmouth in your research and plan to cite it in a scientific publication, please do not forget to [*cite Praat*](http://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html).
 
-  > Boersma, Paul & Weenink, David (2017). Praat: doing phonetics by computer [Computer program]. Version 6.0.28, retrieved 23 March 2017 from [http://www.praat.org/](http://www.praat.org/)  
+  > Boersma, Paul & Weenink, David (2017). Praat: doing phonetics by computer [Computer program]. Version 6.0.28, retrieved 23 March 2017 from [http://www.praat.org/](http://www.praat.org/)
 
 * [pybind11](https://github.com/pybind/pybind11) is released under [a BSD-style license](pybind11/LICENSE).
