@@ -1,5 +1,5 @@
 python:
   version: 3
-  pip_install: True
+  pip_install: False
 requirements_file: docs/requirements.txt
 

@@ -58,6 +58,11 @@ author = 'Yannick Jadoul'
 
 setup_py_version = subprocess.check_output([sys.executable, os.path.abspath(os.path.join('..', 'setup.py')), '--version']).decode('ascii').strip()
 
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'https://dl.bintray.com/yannickjadoul/Parselmouth/praat_parselmouth-0.1.0-cp35-cp35m-manylinux1_x86_64.rtd.docs.whl'])
+
+import parselmouth
+print(parselmouth.__version__)
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
