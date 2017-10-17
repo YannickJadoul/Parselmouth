@@ -7,7 +7,9 @@ cache:
     - $HOME/Library/Caches/Homebrew
 
 env:
-  global: BUILD_TYPE=Debug
+  global:
+    - BUILD_TYPE=Debug
+    - secure: MXiwE0nmtuJfodSofdsRwD03JtbI9VgwHs+h5gsn/lP/ZrdKDSHPIOfLa2LyaFJWzwv45+NKxAyfJWBOYQ06eSq036FdiBsWkYmuSQcEGkKdB+EDxd4lUX3MxeTGMvBCng3PPyM2aDm117FD6xQTjblvpd87cJyCQWuanEczmj/5vGgBQKqHuOdH2CfoKbtzeo46uS/taNbI5jhGaGPeKk+VmzJtO79CdAGathvb2W0JKTqEsQGszty6DC1Gdt1bNQ5N+MJ2KFC/yGvG0/jgXJYB5s3viCHW0dez5Dl5Bqk4VVaCsqYg+kZGtI7FznSvFXybBj7g4HlNH80DQXlhxwk7iTHfKUQFrwSUMg0ojibERiHG0/UJXFf5fttjbU/6+Mdag+Bxb5J+f/fGZu6JEsEIoEbXBgi6Q5weYh0r2qQ0g/qZpF6g9eEQHdW6ATg9rBFqJPsmGZmqFYwvTi5cu+jGmVihl8nOir7WfyZbnEsd0TcDgDraABjLL18SDwpbFahcbr4L+rzd+4J3j6ToO78SQOMJglprZM08YReTXzdkXtINAOogoNQWfbzUpXL9AjGAcTLmbzhJwP/WAIzFDuM2X5ElOwvwqjL4gsSDDwGsn1cNbMp2pN4UlptoxpyLAF5IiYcw6TrgqzKq6R5GYnCNcsXMpsbkNGd0AcJoK/U=
 compiler: gcc
 
 matrix:
@@ -73,24 +75,49 @@ matrix:
       osx_image: xcode8.3
       compiler: clang
 
-    - stage: docs
-      script: $PYTHON_CMD setup.py bdist_wheel
-
     - stage: wheels
+      if: branch != docs
       script:
         - python setup.py sdist -d wheelhouse
-      deploy: &github-releases-deploy
-        provider: releases
-        api_key:
-          secure: a/odACohfUh1T00U/v2T9TCiY4KRfgUwBsFJHf1mzmaphZIPwY8lLgYC1HvV7FD+ijrV9FQVxh+u5A+JbHlDSioW5LE5WXaB4KOYUphcCgoy47/FbyxJpQWNy62segip6/RDvKhpgHCc0Ii8qgXBSLtjyoiCRxbXyfX2u5EbD5fkU5Wip4o7Mqk2cp5NEXWx/u76SvOHH+zhueM2MkP4HvPSMI20jFs1vxb4VNK1EE++GdcZq3mwWFAJyPkuMVKxSF430Svm/qkE33btFQpdtAkUdh0jVu+tBD3RBOHvPAKab4uvDU2Pl5WFl+LYwyYKoZYQAIKVhGrwMbb5LlAaR0sfhq4YqT8HMqPBUPEOMo6OQ3zBoQER7QzHPQRFJBPptNMLtc3ugo0YdDc7bHlocDCah2TErlrzEzNxiC0vFCYv+hVSllWtQwMf56s/6LTQVxgska63tqUWbfA6M4yV37s9wJQsyrdlKnepJWdDDm1WxrZ0nhwxMN/tR+TmYi+tnDkY+JxPwBXyibg/ZARn+7spdjrKbE3uKFwQG2OqkJXiW3LOc7VDyK/s5mj1qJmHDTjTOlwyw5BDclkHAF3hvnci7BefkRRKpba01neFmoMHhdidhvvwLCxhEPTgGKW0rwUfMPJpElWJkjI1OmCpwyyEeOP0IOIZKmvdajsINJY=
-        tag_name: $TRAVIS_TAG
-        file_glob: true
-        file: wheelhouse/*
-        skip_cleanup: true
-        on:
-          repo: YannickJadoul/Parselmouth
-          tags: true
-        draft: true
+      before_deploy:
+        - &bintray-before-deploy |
+          PARSELMOUTH_VERSION=`python setup.py --version`
+          echo "{
+            \"package\": {
+              \"name\": \"CI-Wheels\",
+              \"repo\": \"Parselmouth\",
+              \"subject\": \"yannickjadoul\"
+            },
+            \"version\": {
+                \"name\": \"$TRAVIS_BRANCH-$PARSELMOUTH_VERSION\",
+                \"desc\": \"Latest wheels for $TRAVIS_BRANCH branch for version $PARSELMOUTH_VERSION\",
+                \"released\": \"\",
+                \"vcs_tag\": \"$TRAVIS_TAG\"
+            },
+            \"files\": [{\"includePattern\": \"wheelhouse/(.*)\", \"uploadPattern\": \"$TRAVIS_BRANCH/\$1\", \"matrixParams\": { \"override\": 1 }}],
+            \"publish\": true
+          }" > bintray.json
+      deploy: 
+        - &bintray-deploy
+          provider: bintray
+          file: bintray.json
+          user: YannickJadoul
+          key:
+            secure: an0RPZkTc9vqCe9mdik94fSImmnCsiZLmd6HPncfczfGWJdo5iEP9FbmdHMC47mnl+kNiHGS/3dyhGtkbtwAihGLOVfPjyTk4JXac7c4YwhYAvlzRWeKafti0Cg1lmdGlX1CUowDzpuKROiOqjeN4fYvKjVfCqNCVPvluQpkX/RVNAdzbNQggggSvh3Blf2WNVflGdd0RNUr1Z4gZGyH6DbkZ2zbOt7PRU0cYm2NEbgN/mKPGpoKK1voWrSa57r3DYo+nbtk76oTGnqK7j8E4pOxr0uUCSwAYj5cIoOlcErZICDyyNLULgROPv8oXqhpZ8HkyTOMkUK2Lniq9h5kwmkby9GiRFBtLMJTU9rAHTwmP9AdF2eKngQf69Tw/f9UqvDjpsoBxshoZecI+Wsf5IJ/qc8Zffx4lm7k4uHl+Y8fcXCi5VtqODtOwSa/KIkGSLIus4PKaTO++7jmUA/DKEhUgTQfosYdUUUm2lua3ZMJ1o62M73XFFUxn5G5NaR5G/mosgsoFcJ3vnejt+ljf7j5C7Du7Hx3gZDwMzhrYG2DJEoRUNEahJV4djFsiDyIhoyYSsuLr0jQnT3//f5uqSlMP7PE4f98NEQxixM4naZaizBggyyAXwvlFxqqmxJxDq5dZCVgJTc3dTeEgJCi/Q5vURZqWvXt/EeLyB7anO4=
+          on:
+            all_branches: true
+        - &github-releases-deploy
+          provider: releases
+          api_key:
+            secure: a/odACohfUh1T00U/v2T9TCiY4KRfgUwBsFJHf1mzmaphZIPwY8lLgYC1HvV7FD+ijrV9FQVxh+u5A+JbHlDSioW5LE5WXaB4KOYUphcCgoy47/FbyxJpQWNy62segip6/RDvKhpgHCc0Ii8qgXBSLtjyoiCRxbXyfX2u5EbD5fkU5Wip4o7Mqk2cp5NEXWx/u76SvOHH+zhueM2MkP4HvPSMI20jFs1vxb4VNK1EE++GdcZq3mwWFAJyPkuMVKxSF430Svm/qkE33btFQpdtAkUdh0jVu+tBD3RBOHvPAKab4uvDU2Pl5WFl+LYwyYKoZYQAIKVhGrwMbb5LlAaR0sfhq4YqT8HMqPBUPEOMo6OQ3zBoQER7QzHPQRFJBPptNMLtc3ugo0YdDc7bHlocDCah2TErlrzEzNxiC0vFCYv+hVSllWtQwMf56s/6LTQVxgska63tqUWbfA6M4yV37s9wJQsyrdlKnepJWdDDm1WxrZ0nhwxMN/tR+TmYi+tnDkY+JxPwBXyibg/ZARn+7spdjrKbE3uKFwQG2OqkJXiW3LOc7VDyK/s5mj1qJmHDTjTOlwyw5BDclkHAF3hvnci7BefkRRKpba01neFmoMHhdidhvvwLCxhEPTgGKW0rwUfMPJpElWJkjI1OmCpwyyEeOP0IOIZKmvdajsINJY=
+          tag_name: $TRAVIS_TAG
+          file_glob: true
+          file: wheelhouse/*
+          skip_cleanup: true
+          on:
+            repo: YannickJadoul/Parselmouth
+            tags: true
+          draft: true
 
     - stage: wheels
       os: linux
@@ -105,17 +132,30 @@ matrix:
       script:
         - export CIBW_ENVIRONMENT='ARCH=`uname -i` PATH="`pwd`/gcc-$ARCH/bin:$PATH" CC="ccache cc" CXX="ccache c++" CXXFLAGS="-static-libstdc++" LD_LIBRARY_PATH="`pwd`/gcc-$ARCH/lib" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"` CCACHE_DIR=/host'$HOME'/.ccache'
         - export CIBW_BEFORE_BUILD='{pip} install cmake && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install)'
-        - CIBW_SKIP="cp33-*" cibuildwheel
-      deploy: *github-releases-deploy
+        - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_SKIP="cp27-* cp33-* cp34-* cp36-* *-i686"; else export CIBW_SKIP="cp33-*"; fi
+        - cibuildwheel
+      before_deploy:
+        - *bintray-before-deploy
+      deploy:
+        - *bintray-deploy
+        - *github-releases-deploy
+      after_deploy:
+        - curl -X POST -d "branches=$TRAVIS_BRANCH" -d "token=$READTHEDOCS_WEBHOOK_TOKEN" https://readthedocs.org/api/v2/webhook/parselmouth/15985/
 
     - stage: wheels
+      if: branch != docs
       os: osx
       compiler: clang
       script:
         - pip install cibuildwheel
         - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
-        - CIBW_SKIP="cp33-*" cibuildwheel
-      deploy: *github-releases-deploy
+        - export CIBW_SKIP="cp33-*"
+        - cibuildwheel
+      before_deploy:
+        - *bintray-before-deploy
+      deploy:
+        - *bintray-deploy
+        - *github-releases-deploy
 
 branches:
   except:
@@ -124,9 +164,7 @@ branches:
 stages:
   - name: test
     if: branch != docs
-  - name: docs
   - name: wheels
-    if: branch != docs
 
 before_install:
   - set -e
