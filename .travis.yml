@@ -73,6 +73,9 @@ matrix:
       osx_image: xcode8.3
       compiler: clang
 
+    - stage: docs
+      script: $PYTHON_CMD setup.py bdist_wheel
+
     - stage: wheels
       script:
         - python setup.py sdist -d wheelhouse
@@ -117,7 +120,13 @@ matrix:
 branches:
   except:
     - appveyor
-    - docs
+
+stages:
+  - name: test
+    if: branch != docs
+  - name: docs
+  - name: wheels
+    if: branch != docs
 
 before_install:
   - set -e
