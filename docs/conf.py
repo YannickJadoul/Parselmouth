@@ -25,7 +25,6 @@ import os
 import subprocess
 import sys
 
-import os
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
 # -- General configuration ------------------------------------------------
@@ -38,7 +37,9 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage']
 
@@ -108,8 +109,10 @@ pygments_style = 'sphinx'
 todo_include_todos = True
 
 # Autodoc configuration
-
 autodoc_member_order = 'groupwise'
+
+# Intersphinx configuration
+intersphinx_mapping = {'python': ('https://docs.python.org/3.5', None)}
 
 
 # -- Options for HTML output ----------------------------------------------

@@ -1,8 +1,6 @@
 API Reference
 =============
 
-.. currentmodule:: parselmouth
-
 .. automodule:: parselmouth
     :members:
     :special-members:
