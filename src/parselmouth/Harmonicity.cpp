@@ -30,7 +30,7 @@ void Binding<Harmonicity>::init() {
 	initTimeFrameSampled(*this);
 
 	def("get_value", // TODO Should be part of Vector class
-	    [] (Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
+	    [](Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
 	    "time"_a, "interpolation"_a = Interpolation::CUBIC);
 }
 

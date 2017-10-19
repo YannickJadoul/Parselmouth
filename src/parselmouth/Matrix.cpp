@@ -43,14 +43,14 @@ void Binding<Matrix>::init() {
 	def_buffer([](Matrix self) { return py::buffer_info(&self->z[1][1], {static_cast<ssize_t>(self->nx), static_cast<ssize_t>(self->ny)}, {static_cast<ssize_t>(sizeof(double)), static_cast<ssize_t>(self->nx * sizeof(double))}); });
 
 	def("save_as_matrix_text_file",
-	    [] (Matrix self, const std::u32string &filePath) {
+	    [](Matrix self, const std::u32string &filePath) {
 		    auto file = pathToMelderFile(filePath);
 		    Matrix_writeToMatrixTextFile(self, &file);
 	    },
 	    "file_path"_a);
 
 	def("save_as_headerless_spreadsheet_file",
-	    [] (Matrix self, const std::u32string &filePath) {
+	    [](Matrix self, const std::u32string &filePath) {
 		    auto file = pathToMelderFile(filePath);
 		    Matrix_writeToHeaderlessSpreadsheetFile(self, &file);
 	    },
@@ -119,7 +119,7 @@ void Binding<Matrix>::init() {
 	    &Matrix_getSum);
 
 	def("formula", // TODO Make formula into some kind of class?
-	    [] (Matrix self, const std::u32string &formula, optional<double> fromX, optional<double> toX, optional<double> fromY, optional<double> toY) {
+	    [](Matrix self, const std::u32string &formula, optional<double> fromX, optional<double> toX, optional<double> fromY, optional<double> toY) {
 		    if (!fromX && !toX && !fromY && !toY) {
 			    Matrix_formula(self, formula.c_str(), nullptr, nullptr);
 		    }
@@ -130,7 +130,7 @@ void Binding<Matrix>::init() {
 	    "formula"_a, "from_x"_a = nullopt, "to_x"_a = nullopt, "from_y"_a = nullopt, "to_y"_a = nullopt);
 
 	def("formula",
-	    [] (Matrix self, const std::u32string &formula, std::pair<optional<double>, optional<double>> xRange, std::pair<optional<double>, optional<double>> yRange) {
+	    [](Matrix self, const std::u32string &formula, std::pair<optional<double>, optional<double>> xRange, std::pair<optional<double>, optional<double>> yRange) {
 		    Matrix_formula_part(self, xRange.first.value_or(self->xmin), xRange.second.value_or(self->xmax), yRange.first.value_or(self->ymin), yRange.second.value_or(self->ymax), formula.c_str(), nullptr, nullptr);
 	    },
 	    "formula"_a, "x_range"_a = std::make_pair(nullopt, nullopt), "y_range"_a = std::make_pair(nullopt, nullopt));

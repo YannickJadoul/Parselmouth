@@ -141,7 +141,7 @@ void Binding<CC>::init() {
 	    py::keep_alive<0, 1>());
 
 	def("to_array",
-	    [] (CC cc)
+	    [](CC cc)
 	    {
 		    auto maxCoefficients = CC_getMaximumNumberOfCoefficients(cc, 1, cc->nx);
 		    py::array_t<double> array({static_cast<size_t>(cc->nx), static_cast<size_t>(maxCoefficients + 1)});

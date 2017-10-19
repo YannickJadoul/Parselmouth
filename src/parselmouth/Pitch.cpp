@@ -70,7 +70,7 @@ void Binding<Pitch>::init() {
 		&Pitch_countVoicedFrames);
 
 	def("get_value_at_time",
-	    [] (Pitch self, double time, kPitch_unit unit, Interpolation interpolation) {
+	    [](Pitch self, double time, kPitch_unit unit, Interpolation interpolation) {
 		    if (interpolation != Interpolation::NEAREST && interpolation != Interpolation::LINEAR)
 			    Melder_throw(U"Pitch values can only be queried using NEAREST or LINEAR interpolation");
 		    auto value = Sampled_getValueAtX(self, time, Pitch_LEVEL_FREQUENCY, unit, interpolation == Interpolation::LINEAR);
@@ -81,7 +81,7 @@ void Binding<Pitch>::init() {
 	// TODO get_strength_at_time ? -> Pitch strength unit enum
 
 	def("get_value_in_frame",
-	    [] (Pitch self, long frameNumber, kPitch_unit unit) {
+	    [](Pitch self, long frameNumber, kPitch_unit unit) {
 		    auto value = Sampled_getValueAtSample(self, frameNumber, Pitch_LEVEL_FREQUENCY, unit);
 		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, unit);
 	    },
@@ -106,7 +106,7 @@ void Binding<Pitch>::init() {
 		"bandwidth"_a = 10.0);
 
 	def("subtract_linear_fit",
-	    [] (Pitch self, kPitch_unit unit) { return Pitch_subtractLinearFit(self, unit); },
+	    [](Pitch self, kPitch_unit unit) { return Pitch_subtractLinearFit(self, unit); },
 		"unit"_a = PitchUnit::kPitch_unit_HERTZ);
 
 	def("kill_octave_jumps",

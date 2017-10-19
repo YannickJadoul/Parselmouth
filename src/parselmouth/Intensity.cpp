@@ -57,7 +57,7 @@ void Binding<Intensity>::init() {
 	initTimeFrameSampled(*this);
 
 	def("get_value", // TODO Should be part of Vector class
-	    [] (Intensity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
+	    [](Intensity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
 	    "time"_a, "interpolation"_a = Interpolation::CUBIC);
 
 	// TODO 'Get mean' should probably also be added to Sampled once units get figured out?

@@ -152,7 +152,7 @@ void Binding<Sound>::init() {
 
 	initTimeFrameSampled(*this);
 
-	def(py::init([] (py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
+	def(py::init([](py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
 		    auto ndim = values.ndim();
 		    if (ndim > 2) {
 			    throw py::value_error("Cannot create Sound from an array with more than 2 dimensions");
@@ -178,7 +178,7 @@ void Binding<Sound>::init() {
 	    }),
 	    "values"_a, "sampling_frequency"_a = 44100.0, "start_time"_a = 0.0);
 
-	def(py::init([] (const std::u32string &filePath) {
+	def(py::init([](const std::u32string &filePath) {
 		    auto file = pathToMelderFile(filePath);
 		    return Sound_readFromSoundFile(&file);
 	    }),
@@ -191,7 +191,7 @@ void Binding<Sound>::init() {
 	// TODO Empty constructor?
 
 	def("save",
-	    [] (Sound self, const std::u32string &filePath, SoundFileFormat format) {
+	    [](Sound self, const std::u32string &filePath, SoundFileFormat format) {
 		    auto file = pathToMelderFile(filePath);
 		    switch(format) {
 		    case SoundFileFormat::WAV:
@@ -323,7 +323,7 @@ void Binding<Sound>::init() {
 	    "from_time"_a = nullopt, "to_time"_a = nullopt);
 
 	def("get_energy",
-	    [] (Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getEnergy(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	    [](Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getEnergy(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt);
 
 	def("get_power",
@@ -375,7 +375,7 @@ void Binding<Sound>::init() {
 	    "from_frequency"_a = 50.0, "normalize"_a = true); // TODO Not POSITIVE now!?
 
 	def("de_emphasize",
-	    [] (Sound self, double fromFrequency, bool normalize) {
+	    [](Sound self, double fromFrequency, bool normalize) {
 		    Sound_deEmphasis (self, fromFrequency);
 		    if (normalize) {
 			    Vector_scale(self, 0.99);
@@ -390,7 +390,7 @@ void Binding<Sound>::init() {
 	    &Sound_convertToStereo);
 
 	def("extract_all_channels",
-	    [] (Sound self) {
+	    [](Sound self) {
 		    std::vector<autoSound> result;
 		    result.reserve(self->ny);
 		    for (auto i = 1; i <= self->ny; ++i) {
@@ -404,7 +404,7 @@ void Binding<Sound>::init() {
 	    "channel"_a);
 
 	def("extract_channel", // TODO Channel enum type?
-	    [] (Sound self, std::string channel) {
+	    [](Sound self, std::string channel) {
 		    std::transform(channel.begin(), channel.end(), channel.begin(), tolower);
 		    if (channel == "left")
 			    return Sound_extractChannel(self, 1);
@@ -414,17 +414,17 @@ void Binding<Sound>::init() {
 	    });
 
 	def("extract_left_channel",
-	    [] (Sound self) { return Sound_extractChannel(self, 1); });
+	    [](Sound self) { return Sound_extractChannel(self, 1); });
 
 	def("extract_right_channel",
-	    [] (Sound self) { return Sound_extractChannel(self, 2); });
+	    [](Sound self) { return Sound_extractChannel(self, 2); });
 
 	def("extract_part", // TODO Something for optional<double> for from and to in Sounds?
-	    [] (Sound self, optional<double> fromTime, optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
+	    [](Sound self, optional<double> fromTime, optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "window_shape"_a = kSound_windowShape_RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
 
 	def("extract_part_for_overlap",
-	    [] (Sound self, optional<double> fromTime, optional<double> toTime, Positive<double> overlap) { return Sound_extractPartForOverlap(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), overlap); },
+	    [](Sound self, optional<double> fromTime, optional<double> toTime, Positive<double> overlap) { return Sound_extractPartForOverlap(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), overlap); },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "overlap"_a);
 
 	def("resample",
@@ -487,14 +487,14 @@ void Binding<Sound>::init() {
 	// TODO Group different filters into enum/class/...?
 
 	def_static("combine_to_stereo",
-	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds) {
+	           [](const std::vector<std::reference_wrapper<structSound>> &sounds) {
 		           auto ordered = referencesToOrderedOf<structSound>(sounds);
 		           return Sounds_combineToStereo(&ordered);
 	           },
 	           "sounds"_a);
 
 	def_static("concatenate",
-	           [] (const std::vector<std::reference_wrapper<structSound>> &sounds, NonNegative<double> overlap) {
+	           [](const std::vector<std::reference_wrapper<structSound>> &sounds, NonNegative<double> overlap) {
 		           auto ordered = referencesToOrderedOf<structSound>(sounds);
 		           return Sounds_concatenate(ordered, overlap);
 	           },
