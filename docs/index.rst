@@ -16,6 +16,7 @@ Drop by our `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_ if yo
    installation
    examples
 
+   api_reference
 
 
 Indices and tables
