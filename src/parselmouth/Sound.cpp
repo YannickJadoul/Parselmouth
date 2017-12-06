@@ -28,6 +28,7 @@
 
 #include <praat/dwtools/Sound_extensions.h>
 #include <praat/dwtools/Sound_to_MFCC.h>
+#include <praat/dwtools/Sound_to_Pitch2.h>
 #include <praat/fon/Sound_and_Spectrogram.h>
 #include <praat/fon/Sound_and_Spectrum.h>
 #include <praat/fon/Sound_to_Formant.h>
@@ -76,6 +77,29 @@ enum class SoundFileFormat // TODO Nest within Sound?
 	RAW_32_BE,
 	RAW_32_LE
 };
+
+enum class ToPitchMethod
+{
+	AC,
+	CC,
+	SPINET,
+	SHS
+};
+
+enum class ToHarmonicityMethod
+{
+	CC,
+	AC,
+	GNE
+};
+
+PRAAT_ENUM_BINDING(ToPitchMethod);
+PRAAT_ENUM_BINDING(ToHarmonicityMethod);
+
+#define NESTED_ENUMS                  \
+        ToPitchMethod,                \
+        ToHarmonicityMethod
+
 
 // TODO Export befóre using default values for them
 // TODO Can be nested within Sound? Valid documentation (i.e. parselmouth.Sound.WindowShape instead of parselmouth.WindowShape)?
@@ -147,8 +171,28 @@ void Binding<SpectralAnalysisWindowShape>::init() {
 	make_implicitly_convertible_from_string(*this, true);
 }
 
+void Binding<ToPitchMethod>::init() {
+	value("AC", ToPitchMethod::AC);
+	value("CC", ToPitchMethod::CC);
+	value("SPINET", ToPitchMethod::SPINET);
+	value("SHS", ToPitchMethod::SHS);
+
+	make_implicitly_convertible_from_string(*this, true);
+}
+
+void Binding<ToHarmonicityMethod>::init() {
+	value("AC", ToHarmonicityMethod::AC);
+	value("CC", ToHarmonicityMethod::CC);
+	value("GNE", ToHarmonicityMethod::GNE);
+
+	make_implicitly_convertible_from_string(*this, true);
+}
+
 void Binding<Sound>::init() {
 	using signature_cast_placeholder::_;
+
+	Bindings<NESTED_ENUMS> subBindings(*this);
+	subBindings.init();
 
 	initTimeFrameSampled(*this);
 
@@ -444,23 +488,80 @@ void Binding<Sound>::init() {
 	    "enhancement"_a = 20.0, "from_frequency"_a = 300.0, "to_frequency"_a = 8000.0, "slow_modulation"_a = 3.0, "fast_modulation"_a = 30.0, "band_smoothing"_a = 100.0);
 
 	def("to_pitch",
+	    [](Sound self, ToPitchMethod method, py::args args, py::kwargs kwargs) -> py::object {
+		    auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
+		    switch (method) {
+		    case ToPitchMethod::AC:
+			    return callMethod("to_pitch_ac");
+		    case ToPitchMethod::CC:
+			    return callMethod("to_pitch_cc");
+		    case ToPitchMethod::SPINET:
+			    return callMethod("to_pitch_spinet");
+		    case ToPitchMethod::SHS:
+			    return callMethod("to_pitch_shs");
+		    }
+		    return py::none();
+	    },
+	    "method"_a = ToPitchMethod::AC);
+
+	def("to_pitch",
 	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
 	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
-	// TODO To Pitch...
 
-	def("to_harmonicity_ac",
-	    signature_cast<_ (_, Positive<double>, Positive<double>, _, Positive<double>)>(Sound_to_Harmonicity_ac),
-	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
+	def("to_pitch_ac",
+	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
+		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		    return Sound_to_Pitch_ac(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 3.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
+	    },
+	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
+
+	def("to_pitch_cc",
+	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
+		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		    return Sound_to_Pitch_cc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 1.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
+	    },
+	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
+
+	def("to_pitch_spinet",
+	    [](Sound self, Positive<double> timeStep, Positive<double> windowLength, Positive<double> minimumFilterFrequency, Positive<double> maximumFilterFrequency, Positive<long> numberOfFilters, Positive<double> ceiling, Positive<int> maxNumberOfCandidates) {
+		    if (minimumFilterFrequency >= maximumFilterFrequency) Melder_throw(U"Maximum frequency must be larger than minimum frequency.");
+		    return Sound_to_Pitch_SPINET(self, timeStep, windowLength, minimumFilterFrequency, maximumFilterFrequency, numberOfFilters, ceiling, maxNumberOfCandidates);
+	    },
+	    "time_step"_a = 0.005, "window_length"_a = 0.04, "minimum_filter_frequency"_a = 70.0, "maximum_filter_frequency"_a = 5000.0, "number_of_filters"_a = 250, "ceiling"_a = 500.0, "max_number_of_candidates"_a = 15);
+
+	def("sound_to_pitch_shs",
+	    [](Sound self, Positive<double> timeStep, Positive<double> minimumPitch, Positive<long> maxNumberOfCandidates, Positive<double> maximumFrequencyComponent, Positive<long> maxNumberOfSubharmonics, Positive<double> compressionFactor, Positive<double> ceiling, Positive<long> numberOfPointsPerOctave) {
+		    if (minimumPitch >= ceiling) Melder_throw(U"Minimum pitch should be smaller than ceiling.");
+		    if (ceiling > maximumFrequencyComponent) Melder_throw(U"Maximum frequency must be greater than or equal to ceiling.");
+		    return Sound_to_Pitch_shs(self, timeStep, minimumPitch, maximumFrequencyComponent, ceiling, maxNumberOfSubharmonics, maxNumberOfCandidates, compressionFactor, numberOfPointsPerOctave);
+	    }, "time_step"_a = 0.01, "minimum_pitch"_a = 50.0, "max_number_of_candidates"_a = 15, "maximum_frequency_component"_a = 1250.0, "max_number_of_subharmonics"_a = 15, "compression_factor"_a = 0.84, "pitch_ceiling"_a = 600.0, "number_of_points_per_octave"_a = 48);
+
+	def("to_harmonicity",
+	    [](Sound self, ToHarmonicityMethod method, py::args args, py::kwargs kwargs) -> py::object {
+		    auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
+		    switch (method) {
+		    case ToHarmonicityMethod::AC:
+			    return callMethod("to_harmonicity_ac");
+		    case ToHarmonicityMethod::CC:
+			    return callMethod("to_harmonicity_cc");
+		    case ToHarmonicityMethod::GNE:
+			    return callMethod("to_harmonicity_gne");
+		    }
+		    return py::none();
+	    },
+	    "method"_a = ToHarmonicityMethod::CC);
 
 	def("to_harmonicity_cc",
 	    signature_cast<_ (_, Positive<double>, Positive<double>, _, Positive<double>)>(Sound_to_Harmonicity_cc),
 	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
+	def("to_harmonicity_ac",
+	    signature_cast<_ (_, Positive<double>, Positive<double>, _, Positive<double>)>(Sound_to_Harmonicity_ac),
+	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
+
 	def("to_harmonicity_gne",
 	    signature_cast<_ (_, Positive<double>, Positive<double>, Positive<double>, Positive<double>)>(Sound_to_Harmonicity_GNE),
 	    "minimum_frequency"_a = 500.0, "maximum_frequency"_a = 4500.0, "bandwidth"_a = 1000.0, "step"_a = 80.0);
-
-	// TODO to_harmonicity(SoundToHarmonicityMethod) ?
 
 	def("autocorrelate",
 	    &Sound_autoCorrelate,
@@ -476,7 +577,7 @@ void Binding<Sound>::init() {
 
 	def("to_formant_burg", // TODO Praat has Max. number of formants as REAL? What the hell? "Pi formants for me, please."? (I know, I know; see Praat documentation)
 	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> maxNumberOfFormants, double maximumFormant, Positive<double> windowLength, Positive<double> preEmphasisFrom) { return Sound_to_Formant_burg(self, timeStep ? static_cast<double>(*timeStep) : 0.0, maxNumberOfFormants, maximumFormant, windowLength, preEmphasisFrom); },
-		"time_step"_a = nullopt, "max_number_of_formants"_a = 5.0, "maximum_formant"_a = 5500.0, "window_length"_a = 0.025, "pre_emphasis_from"_a = 50.0);
+	    "time_step"_a = nullopt, "max_number_of_formants"_a = 5.0, "maximum_formant"_a = 5500.0, "window_length"_a = 0.025, "pre_emphasis_from"_a = 50.0);
 	// TODO To Formant...
 
 	def("to_intensity",
