@@ -97,7 +97,7 @@ matrix:
             \"files\": [{\"includePattern\": \"wheelhouse/(.*)\", \"uploadPattern\": \"$TRAVIS_BRANCH/\$1\", \"matrixParams\": { \"override\": 1 }}],
             \"publish\": true
           }" > bintray.json
-      deploy: 
+      deploy:
         - &bintray-deploy
           provider: bintray
           file: bintray.json
@@ -181,11 +181,11 @@ before_install:
       fi
       PYTHON_CMD=python$PYTHON
     elif [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      unset -f cd; # Workaround for weird 'shell_session_update' issue: https://github.com/travis-ci/travis-ci/issues/8703
       brew update > /dev/null
       brew install ccache
       export PATH=/usr/local/opt/ccache/libexec:$PATH
       if [ "${PYTHON%%.*}" == "3" ]; then
-        brew update
         brew install python3
         PYTHON_CMD=python3
       else
