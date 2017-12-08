@@ -43,11 +43,11 @@ void Binding<MFCC>::init() {
 	    "from_coefficient"_a = 0, "to_coefficient"_a = 0, "include_c0"_a = true);*/
 
 	def("to_matrix_features",
-	    signature_cast<_ (_, Positive<double>, _)>(MFCC_to_Matrix_features),
+	    args_cast<_, Positive<double>, _>(MFCC_to_Matrix_features),
 	    "window_length"_a = 0.025, "include_energy"_a = false);
 
 	def("extract_features",
-	    signature_cast<_ (_, Positive<double>, _)>(MFCC_to_Matrix_features),
+	    args_cast<_, Positive<double>, _>(MFCC_to_Matrix_features),
 	    "window_length"_a = 0.025, "include_energy"_a = false);
 
 	def("to_sound",

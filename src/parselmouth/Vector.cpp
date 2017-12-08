@@ -115,11 +115,11 @@ void Binding<Vector>::init() {
 #endif
 
 	def("scale",
-	    signature_cast<_ (_, Positive<double>)>(Vector_scale),
+	    args_cast<_, Positive<double>>(Vector_scale),
 	    "scale"_a);
 
 	def("scale_peak",
-	    signature_cast<_ (_, Positive<double>)>(Vector_scale),
+	    args_cast<_, Positive<double>>(Vector_scale),
 	    "new_peak"_a = 0.99);
 
 	def("get_value", // TODO Default for interpolation? Different for Sound (SINC70), Harmonicity/Intensity/Formants (CUBIC) and Ltas (LINEAR); take praat_TimeFunction.h into account

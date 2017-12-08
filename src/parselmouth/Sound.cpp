@@ -336,11 +336,11 @@ void Binding<Sound>::init() {
 	             [](Sound self, double frequency) { Sound_overrideSamplingFrequency(self, frequency); });
 
 	def("get_time_from_index", // TODO PraatIndex to distinguish 1-based silliness? // TODO Get time from sample number...
-	    signature_cast<_ (Sound, _)>(&Sampled_indexToX<integer>),
+	    args_cast<Sound, _>(&Sampled_indexToX<integer>),
 	    "sample"_a);
 
 	def("get_index_from_time",
-	    signature_cast<_ (Sound, _)>(Sampled_xToIndex),
+	    args_cast<Sound, _>(Sampled_xToIndex),
 	    "time"_a);
 
 	// TODO Get value at time & sample number
@@ -404,7 +404,7 @@ void Binding<Sound>::init() {
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
 
 	def("override_sampling_frequency",
-	    signature_cast<_ (_, Positive<double>)>(Sound_overrideSamplingFrequency),
+	    args_cast<_, Positive<double>>(Sound_overrideSamplingFrequency),
 	    "new_frequency"_a);
 
 	// TODO Filter with one formant (in-line)...
@@ -484,7 +484,7 @@ void Binding<Sound>::init() {
 	    "minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0, "factor"_a);
 
 	def("deepen_band_modulation",
-	    signature_cast<_ (_, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>)>(Sound_deepenBandModulation),
+	    args_cast<_, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>>(Sound_deepenBandModulation),
 	    "enhancement"_a = 20.0, "from_frequency"_a = 300.0, "to_frequency"_a = 8000.0, "slow_modulation"_a = 3.0, "fast_modulation"_a = 30.0, "band_smoothing"_a = 100.0);
 
 	def("to_pitch",
@@ -552,15 +552,15 @@ void Binding<Sound>::init() {
 	    "method"_a = ToHarmonicityMethod::CC);
 
 	def("to_harmonicity_cc",
-	    signature_cast<_ (_, Positive<double>, Positive<double>, _, Positive<double>)>(Sound_to_Harmonicity_cc),
+	    args_cast<_, Positive<double>, Positive<double>, _, Positive<double>>(Sound_to_Harmonicity_cc),
 	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
 	def("to_harmonicity_ac",
-	    signature_cast<_ (_, Positive<double>, Positive<double>, _, Positive<double>)>(Sound_to_Harmonicity_ac),
+	    args_cast<_, Positive<double>, Positive<double>, _, Positive<double>>(Sound_to_Harmonicity_ac),
 	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
 	def("to_harmonicity_gne",
-	    signature_cast<_ (_, Positive<double>, Positive<double>, Positive<double>, Positive<double>)>(Sound_to_Harmonicity_GNE),
+	    args_cast<_, Positive<double>, Positive<double>, Positive<double>, Positive<double>>(Sound_to_Harmonicity_GNE),
 	    "minimum_frequency"_a = 500.0, "maximum_frequency"_a = 4500.0, "bandwidth"_a = 1000.0, "step"_a = 80.0);
 
 	def("autocorrelate",
@@ -568,7 +568,7 @@ void Binding<Sound>::init() {
 	    "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
 
 	def("to_spectrum",
-	    signature_cast<_ (_, bool)>(Sound_to_Spectrum),
+	    args_cast<_, bool>(Sound_to_Spectrum),
 	    "fast"_a = true);
 
 	def("to_spectrogram",

@@ -100,6 +100,11 @@ auto signature_cast(Function &&f) {
 	return detail::SignatureCastImpl<typename detail::CompleteSignature<Signature, Function>::Type>::exec(std::forward<Function>(f));
 }
 
+template<typename... Args, typename Function>
+auto args_cast(Function &&f) {
+	return signature_cast<signature_cast_placeholder::_ (Args...)>(std::forward<Function>(f));
+}
+
 } // namespace parselmouth
 
 #endif // INC_PARSELMOUTH_SIGNATURE_CAST_H

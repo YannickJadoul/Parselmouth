@@ -102,7 +102,7 @@ void Binding<Pitch>::init() {
 	    &Pitch_interpolate);
 
 	def("smooth",
-		signature_cast<_ (_, Positive<double>)>(Pitch_smooth),
+		args_cast<_, Positive<double>>(Pitch_smooth),
 		"bandwidth"_a = 10.0);
 
 	def("subtract_linear_fit",

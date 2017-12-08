@@ -87,11 +87,11 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 	def_property_readonly("duration", [](Class *self) { return self->xmax - self->xmin; });
 
 	def("shift_times_by",
-	    signature_cast<_ (Class *, _)>(Function_shiftXBy),
+	    args_cast<Class *, _>(Function_shiftXBy),
 		"seconds"_a);
 
 	def("shift_times_to",
-	    signature_cast<_ (Class *, _, _)>(Function_shiftXTo),
+	    args_cast<Class *, _, _>(Function_shiftXTo),
 		"time"_a, "new_time"_a);
 
 	def("shift_times_to",
@@ -114,7 +114,7 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 		"time"_a, "new_time"_a);
 
 	def("scale_times_by",
-		signature_cast<_ (Class *, Positive<double>)>(Function_scaleXBy),
+		args_cast<Class *, Positive<double>>(Function_scaleXBy),
 		"scale"_a);
 
 	def("scale_times_to",
@@ -150,11 +150,11 @@ void initTimeFrameSampled(ClassBinding<Class, Extra...> &binding) {
 	def_readonly("time_step", &Class::dx);
 
 	def("get_time_from_frame_number",
-	    signature_cast<_ (Class *, _)>(Sampled_xToIndex),
+	    args_cast<Class *, _>(Sampled_xToIndex),
 		"frame_number"_a);
 
 	def("frame_number_to_time",
-	    signature_cast<_ (Class *, _)>(Sampled_xToIndex),
+	    args_cast<Class *, _>(Sampled_xToIndex),
 	    "frame_number"_a);
 
 	def("get_frame_number_from_time",

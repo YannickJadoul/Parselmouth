@@ -47,11 +47,11 @@ void Binding<Spectrogram>::init() {
 	    "time"_a);
 
 	def("synthesize_sound",
-	    signature_cast<_ (_, Positive<double>)>(Spectrogram_to_Sound),
+	    args_cast<_, Positive<double>>(Spectrogram_to_Sound),
 		"sampling_frequency"_a = 44100.0);
 
 	def("to_sound",
-	    signature_cast<_ (_, Positive<double>)>(Spectrogram_to_Sound),
+	    args_cast<_, Positive<double>>(Spectrogram_to_Sound),
 	    "sampling_frequency"_a = 44100.0);
 
 

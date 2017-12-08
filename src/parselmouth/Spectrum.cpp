@@ -224,37 +224,37 @@ void Binding<Spectrum>::init() {
 	    "low_band"_a = std::make_pair(nullopt, nullopt), "high_band"_a = std::make_pair(nullopt, nullopt));
 
 	def("get_centre_of_gravity",
-	    signature_cast<_ (_, Positive<double>)>(Spectrum_getCentreOfGravity),
+	    args_cast<_, Positive<double>>(Spectrum_getCentreOfGravity),
 	    "power"_a = 2.0);
 
 	def("get_center_of_gravity",
-	    signature_cast<_ (_, Positive<double>)>(Spectrum_getCentreOfGravity),
+	    args_cast<_, Positive<double>>(Spectrum_getCentreOfGravity),
 	    "power"_a = 2.0);
 
 	def("get_standard_deviation",
-	    signature_cast<_ (_, Positive<double>)>(Spectrum_getStandardDeviation),
+	    args_cast<_, Positive<double>>(Spectrum_getStandardDeviation),
 	    "power"_a = 2.0);
 
 	def("get_skewness",
-	    signature_cast<_ (_, Positive<double>)>(Spectrum_getSkewness),
+	    args_cast<_, Positive<double>>(Spectrum_getSkewness),
 	    "power"_a = 2.0);
 
 	def("get_kurtosis",
-	    signature_cast<_ (_, Positive<double>)>(Spectrum_getKurtosis),
+	    args_cast<_, Positive<double>>(Spectrum_getKurtosis),
 	    "power"_a = 2.0);
 
 	def("get_central_moment",
-	    signature_cast<_ (_, Positive<double>, Positive<double>)>(Spectrum_getCentralMoment),
+	    args_cast<_, Positive<double>, Positive<double>>(Spectrum_getCentralMoment),
 	    "moment"_a, "power"_a = 2.0);
 
 	// TODO Filter Hann bands
 
 	def("cepstral_smoothing",
-	    signature_cast<_ (_, Positive<double>)>(Spectrum_cepstralSmoothing),
+	    args_cast<_, Positive<double>>(Spectrum_cepstralSmoothing),
 	    "bandwidth"_a = 500.0);
 
 	def("lpc_smoothing",
-	    signature_cast<_ (_, Positive<int>, Positive<double>)>(Spectrum_lpcSmoothing),
+	    args_cast<_, Positive<int>, Positive<double>>(Spectrum_lpcSmoothing),
 	    "num_peaks"_a = 5, "pre_emphasis_from"_a = 50.0);
 
 	def("to_sound",

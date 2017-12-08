@@ -80,15 +80,15 @@ void Binding<CC>::init() {
 	initTimeFrameSampled(*this);
 
 	def("get_number_of_coefficients",
-	    signature_cast<_ (_, Positive<long>)>(CC_getNumberOfCoefficients),
+	    args_cast<_, Positive<long>>(CC_getNumberOfCoefficients),
 	    "frame_number"_a);
 
 	def("get_value_in_frame",
-	    signature_cast<_ (_, Positive<long>, Positive<long>)>(CC_getValueInFrame),
+	    args_cast<_, Positive<long>, Positive<long>>(CC_getValueInFrame),
 	    "frame_number"_a, "index"_a);
 
 	def("get_c0_value_in_frame",
-	    signature_cast<_ (_, Positive<long>)>(CC_getC0ValueInFrame),
+	    args_cast<_, Positive<long>>(CC_getC0ValueInFrame),
 	    "frame_number"_a);
 
 	def("to_matrix",
