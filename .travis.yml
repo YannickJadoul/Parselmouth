@@ -147,8 +147,8 @@ matrix:
       os: osx
       compiler: clang
       script:
-        - pip install cibuildwheel
-        - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
+        - $PYTHON_CMD -m pip install cibuildwheel
+        - export CCACHE_BASEDIR=`$PYTHON_CMD -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
         - export CIBW_SKIP="cp33-*"
         - cibuildwheel
       before_deploy:
@@ -189,7 +189,7 @@ before_install:
         brew install python3
         PYTHON_CMD=python3
       else
-        PYTHON_CMD=python
+        PYTHON_CMD=python2
       fi
       CC=clang
       CXX=clang++
