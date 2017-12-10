@@ -35,7 +35,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-PRAAT_STRUCT_BINDING(Frame, Pitch_Candidate)
+PRAAT_STRUCT_BINDING(Candidate, Pitch_Candidate)
 PRAAT_STRUCT_BINDING(Frame, Pitch_Frame)
 
 void Binding<PitchUnit>::init() {
