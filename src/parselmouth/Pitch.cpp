@@ -20,9 +20,12 @@
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
 
+#include "praat/MelderUtils.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
+
+#include <pybind11/numpy.h>
 
 #include <praat/fon/Matrix_and_Pitch.h>
 #include <praat/fon/Pitch_to_Sound.h>
@@ -32,12 +35,14 @@ using namespace py::literals;
 
 namespace parselmouth {
 
+PRAAT_STRUCT_BINDING(Frame, Pitch_Candidate)
+PRAAT_STRUCT_BINDING(Frame, Pitch_Frame)
+
 void Binding<PitchUnit>::init() {
 	value("HERTZ", kPitch_unit_HERTZ);
 	value("HERTZ_LOGARITHMIC", kPitch_unit_HERTZ_LOGARITHMIC);
 	value("MEL", kPitch_unit_MEL);
 	value("LOG_HERTZ", kPitch_unit_LOG_HERTZ); // TODO Huh? HERTZ_LOGARITHMIC and LOG_HERTZ!?
-	value("MEL", kPitch_unit_MEL);
 	value("SEMITONES_1", kPitch_unit_SEMITONES_1);
 	value("SEMITONES_100", kPitch_unit_SEMITONES_100);
 	value("SEMITONES_200", kPitch_unit_SEMITONES_200);
@@ -47,8 +52,43 @@ void Binding<PitchUnit>::init() {
 	make_implicitly_convertible_from_string(*this, true);
 }
 
+void Binding<Pitch_Candidate>::init() {
+	def_readonly("frequency", &structPitch_Candidate::frequency); // TODO readwrite?
+	def_readonly("strength", &structPitch_Candidate::strength);
+}
+
+void Binding<Pitch_Frame>::init() {
+	using PitchCandidate = structPitch_Candidate;
+	PYBIND11_NUMPY_DTYPE(PitchCandidate, frequency, strength);
+
+	def_readonly("intensity", &structPitch_Frame::intensity);
+
+	def_property_readonly("selected",
+	                      [](Pitch_Frame self) { return &self->candidate[1]; });
+
+	def_property_readonly("candidates", [](Pitch_Frame self) { return py::array(self->nCandidates, &self->candidate[1], py::cast(self)); });
+
+	def("__getitem__",
+	    [](Pitch_Frame self, long i) {
+		    if (i < 0) i += self->nCandidates; // Python-style negative indexing
+		    if (i < 0 || i >= self->nCandidates) throw py::index_error("Pitch Frame index out of range");
+		    return self->candidate[i+1];
+	    },
+	    "i"_a, py::return_value_policy::reference_internal);
+
+	// TODO __setitem__ ?
+
+	def("__len__",
+	    [](Pitch_Frame self) { return self->nCandidates; });
+
+	// TODO Make number of candidates changeable?
+}
+
 void Binding<Pitch>::init() {
 	using signature_cast_placeholder::_;
+
+	Bindings<Pitch_Candidate, Pitch_Frame> subBindings(*this);
+	subBindings.init();
 
 	initTimeFrameSampled(*this);
 
@@ -88,8 +128,50 @@ void Binding<Pitch>::init() {
 	    "frame_number"_a, "unit"_a = kPitch_unit_HERTZ);
 
 	// TODO Minimum, Time of minimum, Maximum, Time of maximum, ...
-	// TODO Get mean absolute slope (+ without octave jumps)
-	// TODO Count differences -> Melder_info's ?
+
+	def("get_mean_absolute_slope",
+	    [](Pitch self, kPitch_unit unit) {
+		    double slope;
+		    long nVoiced = 0;
+		    switch (unit) {
+		    case kPitch_unit_HERTZ:
+			    nVoiced = Pitch_getMeanAbsSlope_hertz(self, &slope);
+			    break;
+		    case kPitch_unit_MEL:
+			    nVoiced = Pitch_getMeanAbsSlope_mel(self, &slope);
+			    break;
+		    case kPitch_unit_SEMITONES_1:
+		    case kPitch_unit_SEMITONES_100:
+		    case kPitch_unit_SEMITONES_200:
+		    case kPitch_unit_SEMITONES_440:
+			    nVoiced = Pitch_getMeanAbsSlope_semitones(self, &slope);
+			    break;
+		    case kPitch_unit_ERB:
+			    nVoiced = Pitch_getMeanAbsSlope_erb(self, &slope);
+			    break;
+		    case kPitch_unit_HERTZ_LOGARITHMIC:
+		    case kPitch_unit_LOG_HERTZ:
+			    Melder_throw(U"The mean absolute slope of a Pitch object can only be calculated with units HERTZ, MEL, SEMITONES_1, SEMITONES_100, SEMITONES_200, SEMITONES_440, and ERB");
+		    }
+		    if (nVoiced < 2)
+			    return double{undefined};
+		    return slope;
+	    }, "unit"_a = kPitch_unit_HERTZ);
+
+	def("get_slope_without_octave_jumps",
+	    [](Pitch self) {
+		    double slope;
+		    Pitch_getMeanAbsSlope_noOctave(self, &slope);
+		    return slope;
+	    });
+
+	def("count_differences",
+	    [](Pitch self, Pitch other) {
+		    MelderInfoInterceptor info;
+		    Pitch_difference(self, other);
+		    return info.get();
+	    },
+	    "other"_a.none(false));
 
 	def("formula",
 	    [](Pitch self, const std::u32string &formula) { Pitch_formula(self, formula.c_str(), nullptr); },
@@ -117,7 +199,70 @@ void Binding<Pitch>::init() {
 	def("to_matrix",
 	    &Pitch_to_Matrix);
 
-	def_readonly("ceiling", &structPitch::ceiling);
+	def_readwrite("ceiling", &structPitch::ceiling);
+
+	def_readonly("max_n_candidates", &structPitch::maxnCandidates);
+
+	def("get_frame",
+	    [](Pitch self, Positive<long> frameNumber) {
+		    if (frameNumber > self->nx) Melder_throw(U"Frame number out of range");
+		    return &self->frame[frameNumber];
+	    },
+	    "frame_number"_a, py::return_value_policy::reference_internal);
+
+	def("__getitem__",
+	    [](Pitch self, long i) {
+		    if (i < 0) i += self->nx; // Python-style negative indexing
+		    if (i < 0 || i >= self->nx) throw py::index_error("Pitch index out of range");
+		    return &self->frame[i+1];
+	    },
+	    "i"_a, py::return_value_policy::reference_internal);
+
+	def("__getitem__",
+	    [](Pitch self, std::tuple<long, long> ij) {
+		    long i, j; std::tie(i, j) = ij;
+		    if (i < 0) i += self->nx; // Python-style negative indexing
+		    if (i < 0 || i >= self->nx) throw py::index_error("Pitch index out of range");
+		    auto &frame = self->frame[i+1];
+		    if (j < 0) j += frame.nCandidates; // Python-style negative indexing
+		    if (j < 0 || j >= frame.nCandidates) throw py::index_error("Pitch Frame index out of range");
+		    return &frame.candidate[j+1];
+	    },
+	    "ij"_a, py::return_value_policy::reference_internal);
+
+	// TODO __setitem__
+
+	def("__iter__",
+	    [](Pitch self) { return py::make_iterator(&self->frame[1], &self->frame[self->nx+1]); },
+	    py::keep_alive<0, 1>());
+
+	def("to_array",
+	    [](Pitch self) {
+		    auto maxCandidates = Pitch_getMaxnCandidates(self);
+		    py::array_t<structPitch_Candidate> array({static_cast<size_t>(self->nx), static_cast<size_t>(maxCandidates)});
+
+		    auto unchecked = array.mutable_unchecked<2>();
+		    for (auto i = 0; i < self->nx; ++i) {
+			    auto &frame = self->frame[i+1];
+			    for (auto j = 0; j < maxCandidates; ++j) {
+				    unchecked(i, j) = (j < frame.nCandidates) ? frame.candidate[j+1] : structPitch_Candidate{std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
+			    }
+		    }
+
+		    return array;
+	    });
+
+	def_property_readonly("selected",
+	                      [](Pitch self) {
+		                      py::array_t<structPitch_Candidate> array(static_cast<size_t>(self->nx));
+
+		                      auto unchecked = array.mutable_unchecked<1>();
+		                      for (auto i = 0; i < self->nx; ++i) {
+			                      unchecked(i) = self->frame[i+1].candidate[1];
+		                      }
+
+		                      return array;
+	                      });
 }
 
 } // namespace parselmouth

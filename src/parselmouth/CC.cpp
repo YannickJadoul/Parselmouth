@@ -42,14 +42,16 @@ void Binding<CC_Frame>::init() {
 
 	def("__getitem__",
 	    [](CC_Frame self, long i) {
-			if (i < 0 || i >= self->numberOfCoefficients) throw py::index_error();
+		    if (i < 0) i += self->numberOfCoefficients; // Python-style negative indexing // TODO Index type?
+			if (i < 0 || i >= self->numberOfCoefficients) throw py::index_error("CC Frame index out of range");
 		    return i == 0 ? self->c0 : self->c[i];
 	    },
 		"i"_a);
 
 	def("__setitem__",
 	    [](CC_Frame self, long i, double value) {
-		    if (i < 0 || i >= self->numberOfCoefficients) throw py::index_error();
+		    if (i < 0) i += self->numberOfCoefficients; // Python-style negative indexing
+		    if (i < 0 || i >= self->numberOfCoefficients) throw py::index_error("CC Frame index out of range");
 		    (i == 0 ? self->c0 : self->c[i]) = value;
 	    },
 	    "i"_a, "value"_a);
@@ -111,27 +113,32 @@ void Binding<CC>::init() {
 
 	def("__getitem__",
 	    [](CC self, long i) {
-		    if (i < 0 || i >= self->nx) throw py::index_error();
+		    if (i < 0) i += self->nx; // Python-style negative indexing
+		    if (i < 0 || i >= self->nx) throw py::index_error("CC index out of range");
 		    return &self->frame[i+1];
 	    },
 	    "i"_a, py::return_value_policy::reference_internal);
 
 	def("__getitem__",
 	    [](CC self, std::tuple<long, long> ij) {
-		    long i; long j; std::tie(i, j) = ij;
-		    if (i < 0 || i >= self->nx) throw py::index_error();
+		    long i, j; std::tie(i, j) = ij;
+		    if (i < 0) i += self->nx; // Python-style negative indexing
+		    if (i < 0 || i >= self->nx) throw py::index_error("CC index out of range");
 		    auto &frame = self->frame[i+1];
-		    if (j < 0 || j > frame.numberOfCoefficients) throw py::index_error();
+		    if (j < 0) j += frame.numberOfCoefficients; // Python-style negative indexing
+		    if (j < 0 || j > frame.numberOfCoefficients) throw py::index_error("CC Frame index out of range");
 		    return j == 0 ? frame.c0 : frame.c[j];
 	    },
 	    "ij"_a);
 
 	def("__setitem__",
 	    [](CC self, std::tuple<long, long> ij, double value) {
-		    long i; long j; std::tie(i, j) = ij;
-		    if (i < 0 || i >= self->nx) throw py::index_error();
+		    long i, j; std::tie(i, j) = ij;
+		    if (i < 0) i += self->nx; // Python-style negative indexing
+		    if (i < 0 || i >= self->nx) throw py::index_error("CC index out of range");
 		    auto &frame = self->frame[i+1];
-		    if (j < 0 || j > frame.numberOfCoefficients) throw py::index_error();
+		    if (j < 0) j += frame.numberOfCoefficients; // Python-style negative indexing
+		    if (j < 0 || j > frame.numberOfCoefficients) throw py::index_error("CC Frame index out of range");
 		    (j == 0 ? frame.c0 : frame.c[j]) = value;
 	    },
 	    "ij"_a, "value"_a);
@@ -141,14 +148,13 @@ void Binding<CC>::init() {
 	    py::keep_alive<0, 1>());
 
 	def("to_array",
-	    [](CC cc)
-	    {
-		    auto maxCoefficients = CC_getMaximumNumberOfCoefficients(cc, 1, cc->nx);
-		    py::array_t<double> array({static_cast<size_t>(cc->nx), static_cast<size_t>(maxCoefficients + 1)});
+	    [](CC self) {
+		    auto maxCoefficients = CC_getMaximumNumberOfCoefficients(self, 1, self->nx);
+		    py::array_t<double> array({static_cast<size_t>(self->nx), static_cast<size_t>(maxCoefficients + 1)});
 
 		    auto unchecked = array.mutable_unchecked<2>();
-		    for (auto i = 0; i < cc->nx; ++i) {
-			    auto &frame = cc->frame[i+1];
+		    for (auto i = 0; i < self->nx; ++i) {
+			    auto &frame = self->frame[i+1];
 			    unchecked(i, 0) = frame.c0;
 			    for (auto j = 0; j < maxCoefficients; ++j) {
 				    unchecked(i, j+1) = (j < frame.numberOfCoefficients) ? frame.c[j+1] : std::numeric_limits<double>::quiet_NaN();
