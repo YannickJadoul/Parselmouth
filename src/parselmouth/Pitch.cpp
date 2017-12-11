@@ -26,6 +26,7 @@
 #include "utils/pybind11/Optional.h"
 
 #include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 
 #include <praat/fon/Matrix_and_Pitch.h>
 #include <praat/fon/Pitch_to_Sound.h>
@@ -53,8 +54,10 @@ void Binding<PitchUnit>::init() {
 }
 
 void Binding<Pitch_Candidate>::init() {
-	def_readonly("frequency", &structPitch_Candidate::frequency); // TODO readwrite?
+	def_readonly("frequency", &structPitch_Candidate::frequency); // TODO readwrite? Then we need to return references instead of copies in Pitch_Frame.
 	def_readonly("strength", &structPitch_Candidate::strength);
+
+	// TODO Reference to Pitch_Frame to have ".select()"?
 }
 
 void Binding<Pitch_Frame>::init() {
@@ -63,24 +66,64 @@ void Binding<Pitch_Frame>::init() {
 
 	def_readonly("intensity", &structPitch_Frame::intensity);
 
-	def_property_readonly("selected",
-	                      [](Pitch_Frame self) { return &self->candidate[1]; });
+	def_property("selected",
+	             [](Pitch_Frame self) { return &self->candidate[1]; },
+	             [](Pitch_Frame self, Pitch_Candidate candidate) {
+		             for (long j = 1; j <= self->nCandidates; j++) {
+			             if (&self->candidate[j] == candidate) {
+				             std::swap(self->candidate[1], self->candidate[j]);
+				             return;
+			             }
+		             }
+		             throw py::value_error("'candidate' is not a Pitch Candidate of this frame");
+	             });
 
-	def_property_readonly("candidates", [](Pitch_Frame self) { return py::array(self->nCandidates, &self->candidate[1], py::cast(self)); });
+	def_property_readonly("candidates", [](Pitch_Frame self) { return std::vector<structPitch_Candidate>(&self->candidate[1], &self->candidate[self->nCandidates + 1]); });
+
+	def("unvoice",
+	    [](Pitch_Frame self) {
+		    for (long j = 1; j <= self->nCandidates; j++) {
+			    if (self->candidate[j].frequency == 0.0) {
+				    std::swap(self->candidate[1], self->candidate[j]);
+				    break;
+			    }
+		    }
+	    });
+
+	def("select",
+	    [](Pitch_Frame self, Pitch_Candidate candidate) {
+		    for (long j = 1; j <= self->nCandidates; j++) {
+			    if (self->candidate[j].frequency == candidate->frequency && self->candidate[j].strength == candidate->strength) {
+				    std::swap(self->candidate[1], self->candidate[j]);
+				    return;
+			    }
+		    }
+		    throw py::value_error("'candidate' is not a Pitch Candidate of this frame");
+	    },
+	    "candidate"_a.none(false));
+
+	def("select",
+	    [](Pitch_Frame self, long i) {
+		    if (i < 0) i += self->nCandidates; // Python-style negative indexing
+		    if (i < 0 || i >= self->nCandidates) throw py::index_error("Pitch Frame index out of range");
+		    return std::swap(self->candidate[1], self->candidate[i+1]);
+	    },
+	    "i"_a);
 
 	def("__getitem__",
 	    [](Pitch_Frame self, long i) {
 		    if (i < 0) i += self->nCandidates; // Python-style negative indexing
 		    if (i < 0 || i >= self->nCandidates) throw py::index_error("Pitch Frame index out of range");
-		    return self->candidate[i+1];
+		    return self->candidate[i+1]; // Not a(n) (internal) reference, because unvoice and select would then change the value of a returned Pitch_Candidate
 	    },
-	    "i"_a, py::return_value_policy::reference_internal);
-
-	// TODO __setitem__ ?
+	    "i"_a);
 
 	def("__len__",
 	    [](Pitch_Frame self) { return self->nCandidates; });
 
+	def("as_array", [](Pitch_Frame self) { return py::array(self->nCandidates, &self->candidate[1], py::cast(self)); });
+
+	// TODO __setitem__ ?
 	// TODO Make number of candidates changeable?
 }
 
@@ -226,9 +269,9 @@ void Binding<Pitch>::init() {
 		    auto &frame = self->frame[i+1];
 		    if (j < 0) j += frame.nCandidates; // Python-style negative indexing
 		    if (j < 0 || j >= frame.nCandidates) throw py::index_error("Pitch Frame index out of range");
-		    return &frame.candidate[j+1];
+		    return frame.candidate[j+1];
 	    },
-	    "ij"_a, py::return_value_policy::reference_internal);
+	    "ij"_a);
 
 	// TODO __setitem__
 
@@ -254,6 +297,14 @@ void Binding<Pitch>::init() {
 
 	def_property_readonly("selected",
 	                      [](Pitch self) {
+		                      std::vector<structPitch_Candidate> vector;
+		                      vector.reserve(self->nx);
+		                      std::transform(&self->frame[1], &self->frame[self->nx + 1], std::back_inserter(vector), [](auto &frame) { return frame.candidate[1]; });
+		                      return vector;
+	                      });
+
+	def_property_readonly("selected_array",
+	                      [](Pitch self) {
 		                      py::array_t<structPitch_Candidate> array(static_cast<size_t>(self->nx));
 
 		                      auto unchecked = array.mutable_unchecked<1>();
@@ -263,6 +314,58 @@ void Binding<Pitch>::init() {
 
 		                      return array;
 	                      });
+
+	def("path_finder",
+	    args_cast<_, _, _, _, _, _, Positive<double>, bool>(Pitch_pathFinder),
+	    "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "ceiling"_a = 600.0, "pull_formants"_a = false);
+
+	def("step",
+	    [](Pitch self, double step, Positive<double> precision, optional<double> fromTime, optional<double> toTime) { Pitch_step(self, step, precision, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	    "step"_a, "precision"_a = 0.1, "from_time"_a = nullopt, "to_time"_a = nullopt);
+
+	def("octave_up",
+	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+		    Pitch_step(self, 2.0, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
+	    },
+	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+
+	def("fifth_up",
+	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+		    Pitch_step(self, 1.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
+	    },
+	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+
+	def("fifth_down",
+	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+		    Pitch_step(self, 1 / 1.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
+	    },
+	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+
+	def("octave_down",
+	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+		    Pitch_step(self, 0.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
+	    },
+	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+
+	def("unvoice",
+	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+		    long ileft = Sampled_xToHighIndex(self, fromTime.value_or(self->xmin));
+		    long iright = Sampled_xToLowIndex(self, toTime.value_or(self->xmax));
+
+		    if (ileft < 1) ileft = 1;
+		    if (iright > self->nx) iright = self-> nx;
+
+		    for (auto i = ileft; i <= iright; i ++) {
+			    auto &frame = self->frame[i];
+			    for (long j = 1; j <= frame.nCandidates; j++) {
+				    if (frame.candidate[j].frequency == 0.0) {
+					    std::swap(frame.candidate[1], frame.candidate[j]);
+					    break;
+				    }
+			    }
+		    }
+	    },
+	    "from_time"_a = nullopt, "to_time"_a = nullopt);
 }
 
 } // namespace parselmouth

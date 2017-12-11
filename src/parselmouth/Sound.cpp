@@ -513,14 +513,14 @@ void Binding<Sound>::init() {
 		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
 		    return Sound_to_Pitch_ac(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 3.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
 	    },
-	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
+	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "ceiling"_a = 600.0);
 
 	def("to_pitch_cc",
 	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
 		    return Sound_to_Pitch_cc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 1.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
 	    },
-	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
+	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "ceiling"_a = 600.0);
 
 	def("to_pitch_spinet",
 	    [](Sound self, Positive<double> timeStep, Positive<double> windowLength, Positive<double> minimumFilterFrequency, Positive<double> maximumFilterFrequency, Positive<long> numberOfFilters, Positive<double> ceiling, Positive<int> maxNumberOfCandidates) {
@@ -529,12 +529,12 @@ void Binding<Sound>::init() {
 	    },
 	    "time_step"_a = 0.005, "window_length"_a = 0.04, "minimum_filter_frequency"_a = 70.0, "maximum_filter_frequency"_a = 5000.0, "number_of_filters"_a = 250, "ceiling"_a = 500.0, "max_number_of_candidates"_a = 15);
 
-	def("sound_to_pitch_shs",
+	def("to_pitch_shs",
 	    [](Sound self, Positive<double> timeStep, Positive<double> minimumPitch, Positive<long> maxNumberOfCandidates, Positive<double> maximumFrequencyComponent, Positive<long> maxNumberOfSubharmonics, Positive<double> compressionFactor, Positive<double> ceiling, Positive<long> numberOfPointsPerOctave) {
 		    if (minimumPitch >= ceiling) Melder_throw(U"Minimum pitch should be smaller than ceiling.");
 		    if (ceiling > maximumFrequencyComponent) Melder_throw(U"Maximum frequency must be greater than or equal to ceiling.");
 		    return Sound_to_Pitch_shs(self, timeStep, minimumPitch, maximumFrequencyComponent, ceiling, maxNumberOfSubharmonics, maxNumberOfCandidates, compressionFactor, numberOfPointsPerOctave);
-	    }, "time_step"_a = 0.01, "minimum_pitch"_a = 50.0, "max_number_of_candidates"_a = 15, "maximum_frequency_component"_a = 1250.0, "max_number_of_subharmonics"_a = 15, "compression_factor"_a = 0.84, "pitch_ceiling"_a = 600.0, "number_of_points_per_octave"_a = 48);
+	    }, "time_step"_a = 0.01, "minimum_pitch"_a = 50.0, "max_number_of_candidates"_a = 15, "maximum_frequency_component"_a = 1250.0, "max_number_of_subharmonics"_a = 15, "compression_factor"_a = 0.84, "ceiling"_a = 600.0, "number_of_points_per_octave"_a = 48);
 
 	def("to_harmonicity",
 	    [](Sound self, ToHarmonicityMethod method, py::args args, py::kwargs kwargs) -> py::object {
