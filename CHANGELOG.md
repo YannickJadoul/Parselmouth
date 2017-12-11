@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+## [0.2.1] - 2017-12-11
+### Added
+- Set up documentation on ReadTheDocs, including a rough API reference.
+### Changed
+- Exposed some missing `Intensity` and `Pitch` methods, and `Pitch`'s internals.
+### Fixed
+- Made Travis CI and AppVeyor install NumPy.
+
 ## [0.2.0] - 2017-09-15
 ### Added
 - Added time domain query and modification methods on Sampled classes with a time aspect.
@@ -35,7 +43,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - Main functionality of `Thing`, `Data`, `Matrix`, `Vector`, `Sound`, `Spectrum`, `Spectrogram`, and `Intensity` classes. Preliminary implementations of `Pitch`, `Harmonicity`, `Formant`, and `MFCC`.
 - Basic Travis CI configuration.
 
-[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/YannickJadoul/Parselmouth/compare/e363540...v0.1.0
