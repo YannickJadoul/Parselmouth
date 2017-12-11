@@ -27,6 +27,7 @@ set(PRAAT_DEFINITIONS -DNO_GUI -DNO_AUDIO -DNO_GRAPHICS -DNO_NETWORK)
 # Trying to convert the flags from the Praat makefiles...
 if (UNIX)
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} -pthread)
+	set(PRAAT_FLAGS_PRIVATE -Wno-trigraphs -Wno-logical-op-parentheses)
 	
 	set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} -DUNIX)
 	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} -DPLATFORM_POSIX) # eSpeak
@@ -58,7 +59,7 @@ endforeach()
 add_library(praat ${SRC})
 target_include_directories(praat PUBLIC ${PRAAT_INCLUDE_DIRS})
 target_compile_definitions(praat PUBLIC ${PRAAT_DEFINITIONS} PRIVATE ${PRAAT_DEFINITIONS_PRIVATE})
-target_compile_options(praat PUBLIC ${PRAAT_FLAGS})
+target_compile_options(praat PUBLIC ${PRAAT_FLAGS} PRIVATE ${PRAAT_FLAGS_PRIVATE})
 
 set_property(TARGET praat PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 set_property(TARGET praat PROPERTY C_STANDARD 99)
