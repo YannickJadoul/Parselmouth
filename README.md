@@ -25,7 +25,7 @@ or, to update your installed version to the latest release:
 pip install -U praat-parselmouth
 ```
 
-For more detailed instructions, please refer to the [documentation](parselmouth.readthedocs.io/en/stable/installation.html).
+For more detailed instructions, please refer to the [documentation](https://parselmouth.readthedocs.io/en/latest/installation.html).
 
 ## Example usage
 ```Python
@@ -94,7 +94,7 @@ for wave_file in glob.glob('/home/yannick/*.wav'):
 ```
 
 ## Documentation
-Our documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.io/). Soon, it will contain the API reference of Parselmouth, but until then, the existing API documentation can be found [here](http://ai.vub.ac.be/~yajadoul/parselmouth.html).
+Our documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.io/), including the API reference of Parselmouth.
 
 ## Development
 Currently, the actual project and Parselmouth's code is not very well documented. Or well, hardly documented at all. That is planned to still change in order to allow for easier contribution to this open source project.
