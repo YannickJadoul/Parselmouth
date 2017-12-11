@@ -67,6 +67,8 @@ void Binding<Intensity>::init() {
 		    return Intensity_getAverage(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), static_cast<int>(averagingMethod));
 	    },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "averaging_method"_a = AveragingMethod::ENERGY);
+
+	// TODO Pitch_Intensity_getMean & Pitch_Intensity_getMeanAbsoluteSlope ? (cfr. Pitch)
 }
 
 } // namespace parselmouth

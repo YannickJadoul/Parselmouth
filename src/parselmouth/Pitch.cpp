@@ -366,6 +366,8 @@ void Binding<Pitch>::init() {
 		    }
 	    },
 	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+
+	// TODO Pitch_Intensity_getMean & Pitch_Intensity_getMeanAbsoluteSlope ? (cfr. Intensity)
 }
 
 } // namespace parselmouth
