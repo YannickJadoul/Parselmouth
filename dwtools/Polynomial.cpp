@@ -1,6 +1,6 @@
 /* Polynomial.cpp
  *
- * Copyright (C) 1993-2016 David Weenink
+ * Copyright (C) 1993-2016,2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
  djmw 20030619 Added SVD_compute before SVD_solve
  djmw 20060510 Polynomial_to_Roots: changed behaviour. All roots found are now saved.
  	In previous version a nullptr pointer was returned. New error messages.
- djmw 20061021 printf expects %ld for 'long int'
  djmw 20071012 Added: o_CAN_WRITE_AS_ENCODING.h
  djmw 20071201 Melder_warning<n>
  djmw 20080122 float -> double
@@ -278,19 +277,16 @@ static void svdcvm (double **v, long mfit, long ma, int *frozen, double *w, doub
 
 Thing_implement (FunctionTerms, Function, 0);
 
-double structFunctionTerms :: v_evaluate (double x) {
-	(void) x;
+double structFunctionTerms :: v_evaluate (double /* x */) {
 	return undefined;
 }
 
-void structFunctionTerms :: v_evaluate_z (dcomplex *z, dcomplex *p) {
-	(void) z;
-	p -> re = p -> im = undefined;
+dcomplex structFunctionTerms :: v_evaluate_z (dcomplex /* z */) {
+	return { undefined, undefined };
 }
 
-void structFunctionTerms :: v_evaluateTerms (double x, double terms[]) {
-	(void) x;
-	for (long i = 1; i <= numberOfCoefficients; i++) {
+void structFunctionTerms :: v_evaluateTerms (double /* x */, double terms []) {
+	for (long i = 1; i <= numberOfCoefficients; i ++) {
 		terms [i] = undefined;
 	}
 }
@@ -379,8 +375,8 @@ double FunctionTerms_evaluate (FunctionTerms me, double x) {
 	return my v_evaluate (x);
 }
 
-void FunctionTerms_evaluate_z (FunctionTerms me, dcomplex *z, dcomplex *p) {
-	my v_evaluate_z (z, p);
+dcomplex FunctionTerms_evaluate_z (FunctionTerms me, dcomplex z) {
+	return my v_evaluate_z (z);
 }
 
 void FunctionTerms_evaluateTerms (FunctionTerms me, double x, double terms[]) {
@@ -564,17 +560,17 @@ double structPolynomial :: v_evaluate (double x) {
 	return (double) p;
 }
 
-void structPolynomial :: v_evaluate_z (dcomplex *z, dcomplex *p) {
-	long double x = z -> re, y = z -> im;
+dcomplex structPolynomial :: v_evaluate_z (dcomplex z) {
+	real80 x = z.re, y = z.im;
 
-	long double pr = coefficients [numberOfCoefficients];
-	long double pi = 0;
-	for (long i = numberOfCoefficients - 1; i > 0; i--) {
+	real80 pr = coefficients [numberOfCoefficients];
+	real80 pi = 0.0;
+	for (long i = numberOfCoefficients - 1; i > 0; i --) {
 		long double prtmp = pr;
-		pr =  pr * x - pi * y + coefficients[i];
+		pr =  pr * x - pi * y + coefficients [i];
 		pi = prtmp * y + pi * x;
 	}
-	p -> re = (double) pr; p -> im = (double) pi;
+	return { (double) pr, (double) pi };
 }
 
 void structPolynomial :: v_evaluateTerms (double x, double terms[]) {
@@ -688,8 +684,8 @@ autoPolynomial Polynomial_scaleX (Polynomial me, double xmin, double xmax) {
 
 		double a = (my xmin - my xmax) / (xmin - xmax);
 		double b = my xmin - a * xmin;
-		thy coefficients[2] = my coefficients[2] * a;
-		thy coefficients[1] += my coefficients[2] * b;
+		thy coefficients [2] = my coefficients [2] * a;
+		thy coefficients [1] += my coefficients [2] * b;
 		if (my numberOfCoefficients == 2) {
 			return thee;
 		}
@@ -700,13 +696,15 @@ autoPolynomial Polynomial_scaleX (Polynomial me, double xmin, double xmax) {
 
 		// Start the recursion: P[1] = a x + b; P[0] = 1;
 
-		pnm1[2] = a; pnm1[1] = b; pnm2[1] = 1;
-		for (long n = 2; n <= my numberOfCoefficients - 1; n++) {
+		pnm1 [2] = a;
+		pnm1 [1] = b;
+		pnm2 [1] = 1;
+		for (long n = 2; n <= my numberOfCoefficients - 1; n ++) {
 			double *t1 = pnm1, *t2 = pnm2;
 			NUMpolynomial_recurrence (pn, n, a, b, 0, pnm1, pnm2);
 			if (my coefficients[n + 1] != 0) {
-				for (long j = 1; j <= n + 1; j++) {
-					thy coefficients[j] += my coefficients[n + 1] * pn[j];
+				for (long j = 1; j <= n + 1; j ++) {
+					thy coefficients [j] += my coefficients [n + 1] * pn [j];
 				}
 			}
 			pnm1 = pn;
@@ -723,22 +721,23 @@ double Polynomial_evaluate (Polynomial me, double x) {
 	return my v_evaluate (x);
 }
 
-void Polynomial_evaluate_z (Polynomial me, dcomplex *z, dcomplex *p) {
-	my v_evaluate_z (z, p);
+dcomplex Polynomial_evaluate_z (Polynomial me, dcomplex z) {
+	return my v_evaluate_z (z);
 }
 
 static void Polynomial_evaluate_z_cart (Polynomial me, double r, double phi, double *re, double *im) {
 	double rn = 1;
 
-	*re = my coefficients[1]; *im = 0;
-	if (r == 0) {
+	*re = my coefficients [1];
+	*im = 0.0;
+	if (r == 0.0) {
 		return;
 	}
-	for (long i = 2; i <= my numberOfCoefficients; i++) {
+	for (long i = 2; i <= my numberOfCoefficients; i ++) {
 		rn *= r;
 		double arg = (i - 1) * phi;
-		*re += my coefficients[i] * rn * cos (arg);
-		*im += my coefficients[i] * rn * sin (arg);
+		*re += my coefficients [i] * rn * cos (arg);
+		*im += my coefficients [i] * rn * sin (arg);
 	}
 }
 
@@ -749,8 +748,8 @@ autoPolynomial Polynomial_getDerivative (Polynomial me) {
 			return Polynomial_create (my xmin, my xmax, 0);
 		}
 		autoPolynomial thee = Polynomial_create (my xmin, my xmax, my numberOfCoefficients - 2);
-		for (long i = 1; i <= thy numberOfCoefficients; i++) {
-			thy coefficients[i] = i * my coefficients[i + 1];
+		for (long i = 1; i <= thy numberOfCoefficients; i ++) {
+			thy coefficients [i] = i * my coefficients [i + 1];
 		}
 		return thee;
 	} catch (MelderError) {
@@ -761,8 +760,8 @@ autoPolynomial Polynomial_getDerivative (Polynomial me) {
 autoPolynomial Polynomial_getPrimitive (Polynomial me, double constant) {
 	try {
 		autoPolynomial thee = Polynomial_create (my xmin, my xmax, my numberOfCoefficients);
-		for (long i = 1; i <= my numberOfCoefficients; i++) {
-			thy coefficients[i + 1] = my coefficients[i] / i;
+		for (long i = 1; i <= my numberOfCoefficients; i ++) {
+			thy coefficients [i + 1] = my coefficients [i] / i;
 		}
 		thy coefficients [1] = constant;
 		return thee;
@@ -780,9 +779,9 @@ void Polynomial_initFromRealRoots (Polynomial me, double *roots, long numberOfRo
 		FunctionTerms_extendCapacityIf (me, numberOfRoots + 1);
 		double *c = & my coefficients [1];
 		long n = 1;
-		c [0] = - roots[1];
+		c [0] = - roots [1];
 		c [1] = 1.0;
-		for (long i = 2; i <= numberOfRoots; i++) {
+		for (long i = 2; i <= numberOfRoots; i ++) {
 			c [n + 1] = c [n];
 			for (long j = n; j >= 1; j --) {
 				c [j] = c [j - 1] - c [j] * roots [i];
@@ -827,7 +826,7 @@ void Polynomial_initFromProductOfSecondOrderTerms (Polynomial me, double *a, lon
 		for (long j = numberOfCoefficients; j > 2; j --) {
 			my coefficients [j] += a [i] * my coefficients [j - 1] + my coefficients [j - 2];
 		}
-		my coefficients [2] += a [i]; // a [i] * my coefficients [1]
+		my coefficients [2] += a [i];   // a [i] * my coefficients [1]
 		numberOfCoefficients += 2;
 	}
 	my numberOfCoefficients = numberOfCoefficients;
@@ -934,7 +933,7 @@ void Polynomials_divide (Polynomial me, Polynomial thee, autoPolynomial *q, auto
 		if (degree < 0) {
 			degree = 0;
 		}
-		while (degree > 1 && rc[degree] == 0) {
+		while (degree > 1 && rc [degree] == 0.0) {
 			degree--;
 		}
 		ar = Polynomial_create (my xmin, my xmax, degree);
@@ -949,7 +948,7 @@ void Polynomials_divide (Polynomial me, Polynomial thee, autoPolynomial *q, auto
 Thing_implement (LegendreSeries, FunctionTerms, 0);
 
 double structLegendreSeries :: v_evaluate (double x) {
-	double p = coefficients[1];
+	double p = coefficients [1];
 
 	// Transform x from domain [xmin, xmax] to domain [-1, 1]
 
@@ -960,7 +959,7 @@ double structLegendreSeries :: v_evaluate (double x) {
 	double pim1 = x = (2 * x - xmin - xmax) / (xmax - xmin);
 
 	if (numberOfCoefficients > 1) {
-		double pim2 = 1, twox = 2 * x, f2 = x, d = 1.0;
+		double pim2 = 1, twox = 2.0 * x, f2 = x, d = 1.0;
 		p += coefficients[2] * pim1;
 		for (long i = 3; i <= numberOfCoefficients; i++) {
 			double f1 = d++;
@@ -975,7 +974,7 @@ double structLegendreSeries :: v_evaluate (double x) {
 
 void structLegendreSeries :: v_evaluateTerms (double x, double terms[]) {
 	if (x < xmin || x > xmax) {
-		for (long i = 1; i <= numberOfCoefficients; i++) {
+		for (long i = 1; i <= numberOfCoefficients; i ++) {
 			terms[i] = undefined;
 		}
 		return;
@@ -987,12 +986,12 @@ void structLegendreSeries :: v_evaluateTerms (double x, double terms[]) {
 
 	terms[1] = 1;
 	if (numberOfCoefficients > 1) {
-		double twox = 2 * x, f2 = x, d = 1.0;
+		double twox = 2.0 * x, f2 = x, d = 1.0;
 		terms[2] = x;
-		for (long i = 3; i <= numberOfCoefficients; i++) {
-			double f1 = d++;
+		for (long i = 3; i <= numberOfCoefficients; i ++) {
+			double f1 = d ++;
 			f2 += twox;
-			terms[i] = (f2 * terms[i - 1] - f1 * terms[i - 2]) / d;
+			terms[i] = (f2 * terms [i - 1] - f1 * terms [i - 2]) / d;
 		}
 	}
 }
@@ -1031,12 +1030,12 @@ autoLegendreSeries LegendreSeries_getDerivative (LegendreSeries me) {
 	try {
 		autoLegendreSeries thee = LegendreSeries_create (my xmin, my xmax, my numberOfCoefficients - 1);
 
-		for (long n = 1; n <= my numberOfCoefficients - 1; n++) {
+		for (long n = 1; n <= my numberOfCoefficients - 1; n ++) {
 			// P[n]'(x) = Sum (k=0..nonNegative, (2n - 4k - 1) P[n-2k-1](x))
 
 			long n2 = n - 1;
-			for (long k = 0; n2 >= 0; k++, n2 -= 2) {
-				thy coefficients [n2 + 1] += (2 * n - 4 * k - 1) * my coefficients[n + 1];
+			for (long k = 0; n2 >= 0; k ++, n2 -= 2) {
+				thy coefficients [n2 + 1] += (2 * n - 4 * k - 1) * my coefficients [n + 1];
 			}
 		}
 		return thee;
@@ -1050,12 +1049,12 @@ autoPolynomial LegendreSeries_to_Polynomial (LegendreSeries me) {
 		double xmin = -1, xmax = 1;
 		autoPolynomial thee = Polynomial_create (xmin, xmax, my numberOfCoefficients - 1);
 
-		thy coefficients[1] = my coefficients[1]; /* * p[1] */
+		thy coefficients [1] = my coefficients [1];   /* * p[1] */
 		if (my numberOfCoefficients == 1) {
 			return thee;
 		}
 
-		thy coefficients[2] = my coefficients[2]; /* * p[2] */
+		thy coefficients [2] = my coefficients [2];   /* * p[2] */
 		if (my numberOfCoefficients > 2) {
 			autoNUMvector<double> buf (1, 3 * my numberOfCoefficients);
 
@@ -1065,15 +1064,16 @@ autoPolynomial LegendreSeries_to_Polynomial (LegendreSeries me) {
 
 			// Start the recursion: P[1] = x; P[0] = 1;
 
-			pnm1[2] = 1; pnm2[1] = 1;
-			for (long n = 2; n <= my numberOfCoefficients - 1; n++) {
+			pnm1 [2] = 1;
+			pnm2 [1] = 1;
+			for (long n = 2; n <= my numberOfCoefficients - 1; n ++) {
 				double a = (2 * n - 1.0) / n;
 				double c = - (n - 1.0) / n;
 				double *t1 = pnm1, *t2 = pnm2;
 				NUMpolynomial_recurrence (pn, n, a, 0, c, pnm1, pnm2);
-				if (my coefficients[n + 1] != 0) {
-					for (long j = 1; j <= n + 1; j++) {
-						thy coefficients[j] += my coefficients[n + 1] * pn[j];
+				if (my coefficients [n + 1] != 0) {
+					for (long j = 1; j <= n + 1; j ++) {
+						thy coefficients [j] += my coefficients [n + 1] * pn [j];
 					}
 				}
 				pnm1 = pn; pnm2 = t1; pn = t2;
@@ -1103,17 +1103,17 @@ autoRoots Roots_create (long numberOfRoots) {
 }
 
 void Roots_fixIntoUnitCircle (Roots me) {
-	dcomplex z10 = dcomplex_create (1, 0);
-	for (long i = my min; i <= my max; i++) {
-		if (dcomplex_abs (my v[i]) > 1.0) {
-			my v[i] = dcomplex_div (z10, dcomplex_conjugate (my v[i]));
+	dcomplex z10 { 1.0, 0.0 };
+	for (long i = my min; i <= my max; i ++) {
+		if (dcomplex_abs (my v [i]) > 1.0) {
+			my v [i] = dcomplex_div (z10, dcomplex_conjugate (my v [i]));
 		}
 	}
 }
 
 static void NUMdcvector_extrema_re (dcomplex v[], long lo, long hi, double *min, double *max) {
 	*min = *max = v[lo].re;
-	for (long i = lo + 1; i <= hi; i++) {
+	for (long i = lo + 1; i <= hi; i ++) {
 		if (v[i].re < *min) {
 			*min = v[i].re;
 		} else if (v[i].re > *max) {
@@ -1124,11 +1124,11 @@ static void NUMdcvector_extrema_re (dcomplex v[], long lo, long hi, double *min,
 
 static void NUMdcvector_extrema_im (dcomplex v[], long lo, long hi, double *min, double *max) {
 	*min = *max = v[lo].im;
-	for (long i = lo + 1; i <= hi; i++) {
-		if (v[i].im < *min) {
-			*min = v[i].im;
-		} else if (v[i].im > *max) {
-			*max = v[i].im;
+	for (long i = lo + 1; i <= hi; i ++) {
+		if (v [i]. im < *min) {
+			*min = v [i]. im;
+		} else if (v [i]. im > *max) {
+			*max = v [i]. im;
 		}
 	}
 }
@@ -1138,14 +1138,15 @@ void Roots_draw (Roots me, Graphics g, double rmin, double rmax, double imin, do
 	double eps = 1e-6;
 
 	if (rmax <= rmin) {
-		NUMdcvector_extrema_re (my v, 1, my max, &rmin, &rmax);
+		NUMdcvector_extrema_re (my v, 1, my max, & rmin, & rmax);
 	}
 	double denum = fabs (rmax) > fabs (rmin) ? fabs (rmax) : fabs (rmin);
 	if (denum == 0) {
 		denum = 1;
 	}
 	if (fabs ( (rmax - rmin) / denum) < eps) {
-		rmin -= 1; rmax += 1;
+		rmin -= 1;
+		rmax += 1;
 	}
 	if (imax <= imin) {
 		NUMdcvector_extrema_im (my v, 1, my max, &imin, &imax);
@@ -1155,7 +1156,8 @@ void Roots_draw (Roots me, Graphics g, double rmin, double rmax, double imin, do
 		denum = 1;
 	}
 	if (fabs ( (imax - imin) / denum) < eps) {
-		imin -= 1; imax += 1;
+		imin -= 1;
+		imax += 1;
 	}
 	Graphics_setInner (g);
 	Graphics_setWindow (g, rmin, rmax, imin, imax);
@@ -1171,10 +1173,10 @@ void Roots_draw (Roots me, Graphics g, double rmin, double rmax, double imin, do
 	Graphics_unsetInner (g);
 	if (garnish) {
 		Graphics_drawInnerBox (g);
-		if (rmin * rmax < 0) {
+		if (rmin * rmax < 0.0) {
 			Graphics_markLeft (g, 0.0, true, true, true, U"0");
 		}
-		if (imin * imax < 0) {
+		if (imin * imax < 0.0) {
 			Graphics_markBottom (g, 0.0, true, true, true, U"0");
 		}
 		Graphics_marksLeft (g, 2, true, true, false);
@@ -1186,7 +1188,7 @@ void Roots_draw (Roots me, Graphics g, double rmin, double rmax, double imin, do
 
 autoRoots Polynomial_to_Roots (Polynomial me) {
 	try {
-		long np1 = my numberOfCoefficients, n = np1 - 1, n2 = n * n;
+		integer np1 = my numberOfCoefficients, n = np1 - 1, n2 = n * n;
 
 		if (n < 1) {
 			Melder_throw (U"Cannot find roots of a constant function.");
@@ -1195,33 +1197,33 @@ autoRoots Polynomial_to_Roots (Polynomial me) {
 		// Allocate storage for Hessenberg matrix (n * n) plus real and imaginary
 		// parts of eigenvalues wr[1..n] and wi[1..n].
 
-		autoNUMvector<double> hes (1, n2 + n + n);
-		double *wr = &hes[n2];
-		double *wi = &hes[n2 + n];
+		autoNUMvector <double> hes (1, n2 + n + n);
+		double *wr = & hes [n2];
+		double *wi = & hes [n2 + n];
 
 		// Fill the upper Hessenberg matrix (storage is Fortran)
 		// C: [i][j] -> Fortran: (j-1)*n + i
 
-		for (long i = 1; i <= n; i++) {
-			hes[ (i - 1) *n + 1] = - (my coefficients[np1 - i] / my coefficients[np1]);
+		for (integer i = 1; i <= n; i ++) {
+			hes [(i - 1) * n + 1] = - (my coefficients [np1 - i] / my coefficients [np1]);
 			if (i < n) {
-				hes[ (i - 1) *n + 1 + i] = 1;
+				hes [(i - 1) * n + 1 + i] = 1;
 			}
 		}
 
 		// Find out the working storage needed
 
 		char job = 'E', compz = 'N';
-		long ilo = 1, ihi = n, ldh = n, ldz = n, lwork = -1, info;
-		double *z = 0, wt[1];
+		integer ilo = 1, ihi = n, ldh = n, ldz = n, lwork = -1, info;
+		double *z = 0, wt [1];
 		NUMlapack_dhseqr (&job, &compz, &n, &ilo, &ihi, &hes[1], &ldh, &wr[1], &wi[1], z, &ldz, wt, &lwork, &info);
 		if (info != 0) {
 			if (info < 0) {
 				Melder_throw (U"Programming error. Argument ", info, U" in NUMlapack_dhseqr has illegal value.");
 			}
 		}
-		lwork = (long) floor (wt[0]);
-		autoNUMvector<double> work (1, lwork);
+		lwork = Melder_iroundDown (wt[0]);
+		autoNUMvector <double> work (1, lwork);
 
 		// Find eigenvalues.
 
@@ -1709,10 +1711,10 @@ static double NUMmspline2 (double points[], long numberOfPoints, long order, lon
 
 	// Calculate M[i](x|1,t) according to eq.2.
 
-	for (long k = 1; k <= order; k++) {
+	for (long k = 1; k <= order; k ++) {
 		long k1 = index - order + k, k2 = k1 + 1;
-		m[k] = 0;
-		if (k1 > 0 && k2 <= numberOfPoints && x >= points[k1] && x < points[k2]) {
+		m [k] = 0;
+		if (k1 > 0 && k2 <= numberOfPoints && x >= points[k1] && x < points [k2]) {
 			m[k] = 1 / (points[k2] - points[k1]);
 		}
 	}

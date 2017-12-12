@@ -26,7 +26,7 @@ Thing_implement (ScriptEditor, TextEditor, 0);
 static CollectionOf <structScriptEditor> theReferencesToAllOpenScriptEditors;
 
 bool ScriptEditors_dirty () {
-	for (long i = 1; i <= theReferencesToAllOpenScriptEditors.size; i ++) {
+	for (integer i = 1; i <= theReferencesToAllOpenScriptEditors.size; i ++) {
 		ScriptEditor me = theReferencesToAllOpenScriptEditors.at [i];
 		if (my dirty) return true;
 	}
@@ -155,74 +155,64 @@ static void menu_cb_runSelection (ScriptEditor me, EDITOR_ARGS_DIRECT) {
 
 static void menu_cb_addToMenu (ScriptEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Add to menu", U"Add to fixed menu...")
-		WORD (U"Window", U"?")
-		SENTENCE (U"Menu", U"File")
-		SENTENCE (U"Command", U"Do it...")
-		SENTENCE (U"After command", U"")
-		INTEGER (U"Depth", U"0")
-		LABEL (U"", U"Script file:")
-		TEXTFIELD (U"Script", U"")
+		WORD (window, U"Window", U"?")
+		SENTENCE (menu, U"Menu", U"File")
+		SENTENCE (command, U"Command", U"Do it...")
+		SENTENCE (afterCommand, U"After command", U"")
+		INTEGER (depth, U"Depth", U"0")
+		TEXTFIELD (scriptFile, U"Script file:", U"")
 	EDITOR_OK
-		if (my editorClass) SET_STRING (U"Window", my editorClass -> className)
+		if (my editorClass) SET_STRING (window, my editorClass -> className)
 		if (my name [0])
-			SET_STRING (U"Script", my name)
+			SET_STRING (scriptFile, my name)
 		else
-			SET_STRING (U"Script", U"(please save your script first)")
+			SET_STRING (scriptFile, U"(please save your script first)")
 	EDITOR_DO
-		praat_addMenuCommandScript (GET_STRING (U"Window"),
-			GET_STRING (U"Menu"), GET_STRING (U"Command"), GET_STRING (U"After command"),
-			GET_INTEGER (U"Depth"), GET_STRING (U"Script"));
+		praat_addMenuCommandScript (window, menu, command, afterCommand, depth, scriptFile);
 		praat_show ();
 	EDITOR_END
 }
 
 static void menu_cb_addToFixedMenu (ScriptEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Add to fixed menu", U"Add to fixed menu...");
-		RADIO (U"Window", 1)
+		RADIOSTR (window, U"Window", 1)
 			RADIOBUTTON (U"Objects")
 			RADIOBUTTON (U"Picture")
-		SENTENCE (U"Menu", U"New")
-		SENTENCE (U"Command", U"Do it...")
-		SENTENCE (U"After command", U"")
-		INTEGER (U"Depth", U"0")
-		LABEL (U"", U"Script file:")
-		TEXTFIELD (U"Script", U"")
+		SENTENCE (menu, U"Menu", U"New")
+		SENTENCE (command, U"Command", U"Do it...")
+		SENTENCE (afterCommand, U"After command", U"")
+		INTEGER (depth, U"Depth", U"0")
+		TEXTFIELD (scriptFile, U"Script file:", U"")
 	EDITOR_OK
 		if (my name [0])
-			SET_STRING (U"Script", my name)
+			SET_STRING (scriptFile, my name)
 		else
-			SET_STRING (U"Script", U"(please save your script first)")
+			SET_STRING (scriptFile, U"(please save your script first)")
 	EDITOR_DO
-		praat_addMenuCommandScript (GET_STRING (U"Window"),
-			GET_STRING (U"Menu"), GET_STRING (U"Command"), GET_STRING (U"After command"),
-			GET_INTEGER (U"Depth"), GET_STRING (U"Script"));
+		praat_addMenuCommandScript (window, menu, command, afterCommand, depth, scriptFile);
 		praat_show ();
 	EDITOR_END
 }
 
 static void menu_cb_addToDynamicMenu (ScriptEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Add to dynamic menu", U"Add to dynamic menu...")
-		WORD (U"Class 1", U"Sound")
-		INTEGER (U"Number 1", U"0")
-		WORD (U"Class 2", U"")
-		INTEGER (U"Number 2", U"0")
-		WORD (U"Class 3", U"")
-		INTEGER (U"Number 3", U"0")
-		SENTENCE (U"Command", U"Do it...")
-		SENTENCE (U"After command", U"")
-		INTEGER (U"Depth", U"0")
-		LABEL (U"", U"Script file:")
-		TEXTFIELD (U"Script", U"")
+		WORD (class1, U"Class 1", U"Sound")
+		INTEGER (number1, U"Number 1", U"0")
+		WORD (class2, U"Class 2", U"")
+		INTEGER (number2, U"Number 2", U"0")
+		WORD (class3, U"Class 3", U"")
+		INTEGER (number3, U"Number 3", U"0")
+		SENTENCE (command, U"Command", U"Do it...")
+		SENTENCE (afterCommand, U"After command", U"")
+		INTEGER (depth, U"Depth", U"0")
+		TEXTFIELD (scriptFile, U"Script file:", U"")
 	EDITOR_OK
 		if (my name [0])
-			SET_STRING (U"Script", my name)
+			SET_STRING (scriptFile, my name)
 		else
-			SET_STRING (U"Script", U"(please save your script first)")
+			SET_STRING (scriptFile, U"(please save your script first)")
 	EDITOR_DO
-		praat_addActionScript (GET_STRING (U"Class 1"), GET_INTEGER (U"Number 1"),
-			GET_STRING (U"Class 2"), GET_INTEGER (U"Number 2"), GET_STRING (U"Class 3"),
-			GET_INTEGER (U"Number 3"), GET_STRING (U"Command"), GET_STRING (U"After command"),
-			GET_INTEGER (U"Depth"), GET_STRING (U"Script"));
+		praat_addActionScript (class1, number1, class2, number2, class3, number3, command, afterCommand, depth, scriptFile);
 		praat_show ();
 	EDITOR_END
 }
@@ -235,7 +225,7 @@ static void menu_cb_pasteHistory (ScriptEditor me, EDITOR_ARGS_DIRECT) {
 	char32 *history = UiHistory_get ();
 	if (! history || history [0] == U'\0')
 		Melder_throw (U"No history.");
-	long length = str32len (history);
+	integer length = str32len (history);
 	if (history [length - 1] != U'\n') {
 		UiHistory_write (U"\n");
 		history = UiHistory_get ();
@@ -245,7 +235,7 @@ static void menu_cb_pasteHistory (ScriptEditor me, EDITOR_ARGS_DIRECT) {
 		history ++;
 		length --;
 	}
-	long first = 0, last = 0;
+	integer first = 0, last = 0;
 	char32 *text = GuiText_getStringAndSelectionPosition (my textWidget, & first, & last);
 	Melder_free (text);
 	GuiText_replace (my textWidget, first, last, history);
@@ -332,7 +322,7 @@ autoScriptEditor ScriptEditor_createFromText (Editor environment, const char32 *
 
 autoScriptEditor ScriptEditor_createFromScript_canBeNull (Editor environment, Script script) {
 	try {
-		for (long ieditor = 1; ieditor <= theReferencesToAllOpenScriptEditors.size; ieditor ++) {
+		for (integer ieditor = 1; ieditor <= theReferencesToAllOpenScriptEditors.size; ieditor ++) {
 			ScriptEditor editor = theReferencesToAllOpenScriptEditors.at [ieditor];
 			if (MelderFile_equal (& script -> file, & editor -> file)) {
 				Editor_raise (editor);
@@ -354,7 +344,7 @@ autoScriptEditor ScriptEditor_createFromScript_canBeNull (Editor environment, Sc
 }
 
 void ScriptEditor_debug_printAllOpenScriptEditors () {
-	for (long ieditor = 1; ieditor <= theReferencesToAllOpenScriptEditors.size; ieditor ++) {
+	for (integer ieditor = 1; ieditor <= theReferencesToAllOpenScriptEditors.size; ieditor ++) {
 		ScriptEditor editor = theReferencesToAllOpenScriptEditors.at [ieditor];
 		Melder_casual (U"Open script editor #", ieditor, U": <<", & editor -> file, U">>");
 	}

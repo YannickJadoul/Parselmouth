@@ -25,27 +25,25 @@
 */
 
 /*
-	The Cepstrum is a sequence of REAL numbers.
+	The Cepstrum is a sequence of real numbers.
 	It is the spectrum of the power spectrum of a (sound) signal.
 */
 
 #include "Matrix.h"
 
 Thing_define (Cepstrum, Matrix) {
-	// overridden methods:
-	public:
-		virtual double v_getValueAtSample (long isamp, long which, int units);
+	double v_getValueAtSample (integer isamp, integer which, int units)
+		override;
 };
 
 /*
-	The Cepstrum is a sequence of REAL numbers.
+	The Cepstrum is a sequence of real numbers.
 	It is the power spectrum of the power spectrum of a (sound) signal.
 */
 
 Thing_define (PowerCepstrum, Cepstrum) {
-	// overridden methods:
-	public:
-		virtual double v_getValueAtSample (long isamp, long which, int units);
+	double v_getValueAtSample (integer isamp, integer which, int units)
+		override;
 };
 
 /*

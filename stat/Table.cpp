@@ -51,19 +51,19 @@ void structTable :: v_info () {
 	MelderInfo_writeLine (U"Number of columns: ", our numberOfColumns);
 }
 
-const char32 * structTable :: v_getColStr (long columnNumber) {
+const char32 * structTable :: v_getColStr (integer columnNumber) {
 	if (columnNumber < 1 || columnNumber > our numberOfColumns) return nullptr;
 	return our columnHeaders [columnNumber]. label ? our columnHeaders [columnNumber]. label : U"";
 }
 
-double structTable :: v_getMatrix (long rowNumber, long columnNumber) {
+double structTable :: v_getMatrix (integer rowNumber, integer columnNumber) {
 	if (rowNumber < 1 || rowNumber > our rows.size) return undefined;
 	if (columnNumber < 1 || columnNumber > our numberOfColumns) return undefined;
 	char32 *stringValue = our rows.at [rowNumber] -> cells [columnNumber]. string;
 	return stringValue ? Melder_atof (stringValue) : undefined;
 }
 
-const char32 * structTable :: v_getMatrixStr (long rowNumber, long columnNumber) {
+const char32 * structTable :: v_getMatrixStr (integer rowNumber, integer columnNumber) {
 	if (rowNumber < 1 || rowNumber > our rows.size) return U"";
 	if (columnNumber < 1 || columnNumber > our numberOfColumns) return U"";
 	char32 *stringValue = our rows.at [rowNumber] -> cells [columnNumber]. string;
@@ -99,6 +99,13 @@ autoTable Table_createWithoutColumnNames (integer numberOfRows, integer numberOf
 	} catch (MelderError) {
 		Melder_throw (U"Table not created.");
 	}
+}
+
+const char32 * Table_messageColumn (Table me, integer column) {
+	if (column >= 1 && column <= my numberOfColumns && my columnHeaders [column]. label && my columnHeaders [column]. label [0] != U'\0')
+		return Melder_cat (U"\"", my columnHeaders [column]. label, U"\"");
+	else
+		return Melder_integer (column);
 }
 
 void Table_initWithColumnNames (Table me, integer numberOfRows, const char32 *columnNames) {
@@ -184,7 +191,7 @@ void Table_removeColumn (Table me, integer columnNumber) {
 		}
 		my numberOfColumns --;
 	} catch (MelderError) {
-		Melder_throw (me, U": column ", columnNumber, U" not removed.");
+		Melder_throw (me, U": column ", Table_messageColumn (me, columnNumber), U" not removed.");
 	}
 }
 
@@ -390,7 +397,7 @@ bool Table_isCellNumeric_ErrorFalse (Table me, integer rowNumber, integer column
 		while (*cell == U' ' || *cell == U'\t' || *cell == U'\n' || *cell == U'\r') cell ++;
 		return *cell == U'\0';   // only white space after the "?" or "--undefined--"
 	}
-	return Melder_isStringNumeric_nothrow (cell);
+	return Melder_isStringNumeric (cell);
 }
 
 bool Table_isColumnNumeric_ErrorFalse (Table me, integer columnNumber) {
@@ -623,11 +630,11 @@ integer Table_drawRowFromDistribution (Table me, integer columnNumber) {
 		} while (irow > my rows.size);   // guard against rounding errors
 		return irow;
 	} catch (MelderError) {
-		Melder_throw (me, U": cannot draw a row from the distribution of column ", columnNumber, U".");
+		Melder_throw (me, U": cannot draw a row from the distribution of column ", Table_messageColumn (me, columnNumber), U".");
 	}
 }
 
-autoTable Table_extractRowsWhereColumn_number (Table me, integer columnNumber, int which_Melder_NUMBER, double criterion) {
+autoTable Table_extractRowsWhereColumn_number (Table me, integer columnNumber, kMelder_number which, double criterion) {
 	try {
 		Table_checkSpecifiedColumnNumberWithinRange (me, columnNumber);
 		Table_numericize_Assert (me, columnNumber);   // extraction should work even if cells are not defined
@@ -637,7 +644,7 @@ autoTable Table_extractRowsWhereColumn_number (Table me, integer columnNumber, i
 		}
 		for (integer irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
-			if (Melder_numberMatchesCriterion (row -> cells [columnNumber]. number, which_Melder_NUMBER, criterion)) {
+			if (Melder_numberMatchesCriterion (row -> cells [columnNumber]. number, which, criterion)) {
 				autoTableRow newRow = Data_copy (row);
 				thy rows. addItem_move (newRow.move());
 			}
@@ -651,7 +658,7 @@ autoTable Table_extractRowsWhereColumn_number (Table me, integer columnNumber, i
 	}
 }
 
-autoTable Table_extractRowsWhereColumn_string (Table me, integer columnNumber, int which_Melder_STRING, const char32 *criterion) {
+autoTable Table_extractRowsWhereColumn_string (Table me, integer columnNumber, kMelder_string which, const char32 *criterion) {
 	try {
 		Table_checkSpecifiedColumnNumberWithinRange (me, columnNumber);
 		autoTable thee = Table_create (0, my numberOfColumns);
@@ -661,7 +668,7 @@ autoTable Table_extractRowsWhereColumn_string (Table me, integer columnNumber, i
 		}
 		for (integer irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
-			if (Melder_stringMatchesCriterion (row -> cells [columnNumber]. string, which_Melder_STRING, criterion)) {
+			if (Melder_stringMatchesCriterion (row -> cells [columnNumber]. string, which, criterion)) {
 				autoTableRow newRow = Data_copy (row);
 				thy rows. addItem_move (newRow.move());
 			}
@@ -1332,10 +1339,10 @@ void Table_formula_columnRange (Table me, integer fromColumn, integer toColumn, 
 				Formula_Result result;
 				Formula_run (irow, icol, & result);
 				if (result. expressionType == kFormula_EXPRESSION_TYPE_STRING) {
-					Table_setStringValue (me, irow, icol, result. result.stringResult);
-					Melder_free (result. result.stringResult);
+					Table_setStringValue (me, irow, icol, result. stringResult);
+					Melder_free (result. stringResult);
 				} else if (result. expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
-					Table_setNumericValue (me, irow, icol, result. result.numericResult);
+					Table_setNumericValue (me, irow, icol, result. numericResult);
 				} else if (result. expressionType == kFormula_EXPRESSION_TYPE_NUMERIC_VECTOR) {
 					Melder_throw (me, U": cannot put vectors into cells.");
 				} else if (result. expressionType == kFormula_EXPRESSION_TYPE_NUMERIC_MATRIX) {
@@ -1858,20 +1865,43 @@ void Table_list (Table me, bool includeRowNumbers) {
 	MelderInfo_close ();
 }
 
-static void _Table_writeToCharacterSeparatedFile (Table me, MelderFile file, char32 kar) {
+static void writeToCharacterSeparatedFile (Table me, MelderFile file, char32 separator, bool interpretQuotes) {
 	autoMelderString buffer;
 	for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
-		if (icol != 1) MelderString_appendCharacter (& buffer, kar);
-		char32 *s = my columnHeaders [icol]. label;
+		if (icol != 1) MelderString_appendCharacter (& buffer, separator);
+		const char32 *s = my columnHeaders [icol]. label;
 		MelderString_append (& buffer, ( s && s [0] != U'\0' ? s : U"?" ));
 	}
 	MelderString_appendCharacter (& buffer, U'\n');
 	for (integer irow = 1; irow <= my rows.size; irow ++) {
 		TableRow row = my rows.at [irow];
 		for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
-			if (icol != 1) MelderString_appendCharacter (& buffer, kar);
-			char32 *s = row -> cells [icol]. string;
-			MelderString_append (& buffer, ( s && s [0] != U'\0' ? s : U"?" ));
+			if (icol != 1) MelderString_appendCharacter (& buffer, separator);
+			const char32 *s = row -> cells [icol]. string;
+			if (! s) s = U"";
+			if (s [0] == U'\0') {
+				bool separatorIsInvisible = ( separator == U'\t' );
+				bool emptyStringsWillBeVisibleEnough = ! separatorIsInvisible;   // it's fine to have ",,,,,," in a comma environment
+				bool replaceEmptyStringsWithSomethingVisible = ! emptyStringsWillBeVisibleEnough;
+				if (replaceEmptyStringsWithSomethingVisible) {
+					MelderString_appendCharacter (& buffer, U'?');
+				}
+			} else if (str32chr (s, separator)) {
+				if (interpretQuotes) {
+					MelderString_appendCharacter (& buffer, U'\"');
+					MelderString_append (& buffer, s);
+					MelderString_appendCharacter (& buffer, U'\"');
+				} else {
+					const char32 *separatorText =
+						separator == U'\t' ? U"a separating tab" :
+						separator == U',' ? U"a separating comma" :
+						separator == U';' ? U"a separating semicolon" :
+						U"a separator symbol";
+					Melder_throw (U"Row ", irow, U" contains ", separatorText, U" inside a cell without providing the possiblity of quoting.");
+				}
+			} else {
+				MelderString_append (& buffer, s);
+			}
 		}
 		MelderString_appendCharacter (& buffer, U'\n');
 	}
@@ -1880,7 +1910,7 @@ static void _Table_writeToCharacterSeparatedFile (Table me, MelderFile file, cha
 
 void Table_writeToTabSeparatedFile (Table me, MelderFile file) {
 	try {
-		_Table_writeToCharacterSeparatedFile (me, file, U'\t');
+		writeToCharacterSeparatedFile (me, file, U'\t', false);
 	} catch (MelderError) {
 		Melder_throw (me, U": not written to tab-separated file.");
 	}
@@ -1888,7 +1918,15 @@ void Table_writeToTabSeparatedFile (Table me, MelderFile file) {
 
 void Table_writeToCommaSeparatedFile (Table me, MelderFile file) {
 	try {
-		_Table_writeToCharacterSeparatedFile (me, file, U',');
+		writeToCharacterSeparatedFile (me, file, U',', true);
+	} catch (MelderError) {
+		Melder_throw (me, U": not written to comma-separated file.");
+	}
+}
+
+void Table_writeToSemicolonSeparatedFile (Table me, MelderFile file) {
+	try {
+		writeToCharacterSeparatedFile (me, file, U';', true);
 	} catch (MelderError) {
 		Melder_throw (me, U": not written to comma-separated file.");
 	}
@@ -1900,28 +1938,28 @@ autoTable Table_readFromTableFile (MelderFile file) {
 		/*
 		 * Count columns.
 		 */
-		integer ncol = 0;
+		integer numberOfColumns = 0;
 		char32 *p = & string [0];
 		for (;;) {
 			char32 kar = *p++;
 			if (kar == U'\n' || kar == U'\0') break;
 			if (kar == U' ' || kar == U'\t') continue;
-			ncol ++;
+			numberOfColumns ++;
 			do { kar = *p++; } while (kar != U' ' && kar != U'\t' && kar != U'\n' && kar != U'\0');
 			if (kar == U'\n' || kar == U'\0') break;
 		}
-		if (ncol < 1) Melder_throw (U"No columns.");
+		if (numberOfColumns < 1) Melder_throw (U"No columns.");
 
 		/*
 		 * Count elements.
 		 */
 		p = & string [0];
-		integer nelements = 0;
+		integer numberOfElements = 0;
 		for (;;) {
 			char32 kar = *p++;
 			if (kar == U'\0') break;
 			if (kar == U' ' || kar == U'\t' || kar == U'\n') continue;
-			nelements ++;
+			numberOfElements ++;
 			do { kar = *p++; } while (kar != U' ' && kar != U'\t' && kar != U'\n' && kar != U'\0');
 			if (kar == U'\0') break;
 		}
@@ -1929,20 +1967,20 @@ autoTable Table_readFromTableFile (MelderFile file) {
 		/*
 		 * Check if all columns are complete.
 		 */
-		if (nelements == 0 || nelements % ncol != 0)
-			Melder_throw (U"The number of elements (", nelements, U") is not a multiple of the number of columns (", ncol, U").");
+		if (numberOfElements == 0 || numberOfElements % numberOfColumns != 0)
+			Melder_throw (U"The number of elements (", numberOfElements, U") is not a multiple of the number of columns (", numberOfColumns, U").");
 
 		/*
 		 * Create empty table.
 		 */
-		integer nrow = nelements / ncol - 1;
-		autoTable me = Table_create (nrow, ncol);
+		integer numberOfRows = numberOfElements / numberOfColumns - 1;
+		autoTable me = Table_create (numberOfRows, numberOfColumns);
 
 		/*
 		 * Read elements.
 		 */
 		p = & string [0];
-		for (integer icol = 1; icol <= ncol; icol ++) {
+		for (integer icol = 1; icol <= numberOfColumns; icol ++) {
 			while (*p == U' ' || *p == U'\t') { Melder_assert (*p != U'\0'); p ++; }
 			static MelderString buffer { };
 			MelderString_empty (& buffer);
@@ -1950,9 +1988,9 @@ autoTable Table_readFromTableFile (MelderFile file) {
 			Table_setColumnLabel (me.get(), icol, buffer.string);
 			MelderString_empty (& buffer);
 		}
-		for (integer irow = 1; irow <= nrow; irow ++) {
+		for (integer irow = 1; irow <= numberOfRows; irow ++) {
 			TableRow row = my rows.at [irow];
-			for (integer icol = 1; icol <= ncol; icol ++) {
+			for (integer icol = 1; icol <= numberOfColumns; icol ++) {
 				while (*p == U' ' || *p == U'\t' || *p == U'\n') { Melder_assert (*p != U'\0'); p ++; }
 				static MelderString buffer { };
 				MelderString_empty (& buffer);
@@ -1967,13 +2005,13 @@ autoTable Table_readFromTableFile (MelderFile file) {
 	}
 }
 
-autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 separator) {
+autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 separator, bool interpretQuotes) {
 	try {
 		autostring32 string = MelderFile_readText (file);
 
 		/*
-		 * Kill final new-line symbols.
-		 */
+			Kill final new-line symbols.
+	 	*/
 		for (int64 length = str32len (string.peek());
 		     length > 0 && string [length - 1] == U'\n';
 			 length = str32len (string.peek()))
@@ -1982,38 +2020,44 @@ autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 sepa
 		}
 
 		/*
-		 * Count columns.
-		 */
-		integer ncol = 1;
+			Count columns.
+ 		*/
+		integer numberOfColumns = 1;
 		const char32 *p = & string [0];
 		for (;;) {
 			char32 kar = *p++;
 			if (kar == U'\0') Melder_throw (U"No rows.");
 			if (kar == U'\n') break;
-			if (kar == separator) ncol ++;
+			if (kar == separator) numberOfColumns ++;
 		}
 
 		/*
-		 * Count rows.
-		 */
-		integer nrow = 1;
-		for (;;) {
-			char32 kar = *p++;
-			if (kar == U'\0') break;
-			if (kar == U'\n') nrow ++;
+			Count rows.
+	 	*/
+		integer numberOfRows = 1;
+	 	{// scope
+			bool withinQuotes = false;
+			for (;;) {
+				char32 kar = *p++;
+				if (interpretQuotes && kar == U'\"') withinQuotes = ! withinQuotes;
+				if (! withinQuotes) {
+					if (kar == U'\0') break;
+					if (kar == U'\n') numberOfRows ++;
+				}
+			}
 		}
 
 		/*
-		 * Create empty table.
-		 */
-		autoTable me = Table_create (nrow, ncol);
+			Create empty table.
+		*/
+		autoTable me = Table_create (numberOfRows, numberOfColumns);
 
 		/*
-		 * Read column names.
-		 */
+			Read column names.
+	 	*/
 		autoMelderString buffer;
 		p = & string [0];
-		for (integer icol = 1; icol <= ncol; icol ++) {
+		for (integer icol = 1; icol <= numberOfColumns; icol ++) {
 			MelderString_empty (& buffer);
 			while (*p != separator && *p != U'\n') {
 				Melder_assert (*p != U'\0');
@@ -2025,21 +2069,27 @@ autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 sepa
 		}
 
 		/*
-		 * Read cells.
-		 */
-		for (integer irow = 1; irow <= nrow; irow ++) {
+			Read cells.
+	 	*/
+		for (integer irow = 1; irow <= numberOfRows; irow ++) {
 			TableRow row = my rows.at [irow];
-			for (integer icol = 1; icol <= ncol; icol ++) {
+			for (integer icol = 1; icol <= numberOfColumns; icol ++) {
 				MelderString_empty (& buffer);
-				while (*p != separator && *p != U'\n' && *p != U'\0') {
-					MelderString_appendCharacter (& buffer, *p);
+				bool withinQuotes = false;
+				while (*p != separator && *p != U'\n' && *p != U'\0' || withinQuotes) {
+					if (interpretQuotes && *p == U'\"') {
+						withinQuotes = ! withinQuotes;
+					} else {
+						MelderString_appendCharacter (& buffer, *p);
+					}
 					p ++;
 				}
 				if (*p == U'\0') {
-					if (irow != nrow) Melder_fatal (U"irow ", irow, U", nrow ", nrow, U", icol ", icol, U", ncol ", ncol);
-					if (icol != ncol) Melder_throw (U"Last row incomplete.");
+					if (irow != numberOfRows)
+						Melder_fatal (U"irow ", irow, U", nrow ", numberOfRows, U", icol ", icol, U", ncol ", numberOfColumns);
+					if (icol != numberOfColumns) Melder_throw (U"Last row incomplete.");
 				} else if (*p == U'\n') {
-					if (icol != ncol) Melder_throw (U"Row ", irow, U" incomplete.");
+					if (icol != numberOfColumns) Melder_throw (U"Row ", irow, U" incomplete.");
 					p ++;
 				} else {
 					Melder_assert (*p == separator);

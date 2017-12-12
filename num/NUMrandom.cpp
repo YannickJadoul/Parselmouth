@@ -265,8 +265,8 @@ double NUMrandomUniform (double lowest, double highest) {
 	return lowest + (highest - lowest) * NUMrandomFraction ();
 }
 
-long NUMrandomInteger (long lowest, long highest) {
-	return lowest + (long) ((highest - lowest + 1) * NUMrandomFraction ());   // round down by truncation, because positive
+integer NUMrandomInteger (integer lowest, integer highest) {
+	return lowest + (integer) ((highest - lowest + 1) * NUMrandomFraction ());   // round down by truncation, because positive
 }
 
 bool NUMrandomBernoulli (double probability) {
@@ -366,7 +366,7 @@ double NUMrandomPoisson (double mean) {
 	if (mean < 8.0) {
 		static double expMean;
 		double product = 1.0;
-		long result = -1;
+		integer result = -1;
 		if (mean != previousMean) {
 			previousMean = mean;
 			expMean = exp (- mean);

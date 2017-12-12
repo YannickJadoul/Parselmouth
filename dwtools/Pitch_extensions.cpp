@@ -120,32 +120,32 @@ autoPitch Pitch_scaleTime (Pitch me, double scaleFactor) {
 	}
 }
 
-static double HertzToSpecial (double value, int pitchUnit) {
-	return	pitchUnit == kPitch_unit_HERTZ ? value :
-		pitchUnit == kPitch_unit_HERTZ_LOGARITHMIC ? value <= 0.0 ? undefined : log10 (value) :
-		pitchUnit == kPitch_unit_MEL ? NUMhertzToMel (value) :
-		pitchUnit == kPitch_unit_LOG_HERTZ ? value <= 0.0 ? undefined : log10 (value) :
-		pitchUnit == kPitch_unit_SEMITONES_1 ? value <= 0.0 ? undefined : 12.0 * log (value / 1.0) / NUMln2 :
-		pitchUnit == kPitch_unit_SEMITONES_100 ? value <= 0.0 ? undefined : 12.0 * log (value / 100.0) / NUMln2 :
-		pitchUnit == kPitch_unit_SEMITONES_200 ? value <= 0.0 ? undefined : 12.0 * log (value / 200.0) / NUMln2 :
-		pitchUnit == kPitch_unit_SEMITONES_440 ? value <= 0.0 ? undefined : 12.0 * log (value / 440.0) / NUMln2 :
-		pitchUnit == kPitch_unit_ERB ? NUMhertzToErb (value) : undefined;
+static double HertzToSpecial (double value, kPitch_unit pitchUnit) {
+	return	pitchUnit == kPitch_unit::HERTZ ? value :
+		pitchUnit == kPitch_unit::HERTZ_LOGARITHMIC ? value <= 0.0 ? undefined : log10 (value) :
+		pitchUnit == kPitch_unit::MEL ? NUMhertzToMel (value) :
+		pitchUnit == kPitch_unit::LOG_HERTZ ? value <= 0.0 ? undefined : log10 (value) :
+		pitchUnit == kPitch_unit::SEMITONES_1 ? value <= 0.0 ? undefined : 12.0 * log (value / 1.0) / NUMln2 :
+		pitchUnit == kPitch_unit::SEMITONES_100 ? value <= 0.0 ? undefined : 12.0 * log (value / 100.0) / NUMln2 :
+		pitchUnit == kPitch_unit::SEMITONES_200 ? value <= 0.0 ? undefined : 12.0 * log (value / 200.0) / NUMln2 :
+		pitchUnit == kPitch_unit::SEMITONES_440 ? value <= 0.0 ? undefined : 12.0 * log (value / 440.0) / NUMln2 :
+		pitchUnit == kPitch_unit::ERB ? NUMhertzToErb (value) : undefined;
 }
 
-static double SpecialToHertz (double value, int pitchUnit) {
-	return	pitchUnit == kPitch_unit_HERTZ ? value :
-		pitchUnit == kPitch_unit_HERTZ_LOGARITHMIC ? pow (10.0, value) :
-		pitchUnit == kPitch_unit_MEL ? NUMmelToHertz (value) :
-		pitchUnit == kPitch_unit_LOG_HERTZ ? pow (10.0, value) :
-		pitchUnit == kPitch_unit_SEMITONES_1 ? 1.0 * exp (value * (NUMln2 / 12.0)) :
-		pitchUnit == kPitch_unit_SEMITONES_100 ? 100.0 * exp (value * (NUMln2 / 12.0)) :
-		pitchUnit == kPitch_unit_SEMITONES_200 ? 200.0 * exp (value * (NUMln2 / 12.0)) :
-		pitchUnit == kPitch_unit_SEMITONES_440 ? 440.0 * exp (value * (NUMln2 / 12.0)) :
-		pitchUnit == kPitch_unit_ERB ? NUMerbToHertz (value) : undefined;
+static double SpecialToHertz (double value, kPitch_unit pitchUnit) {
+	return	pitchUnit == kPitch_unit::HERTZ ? value :
+		pitchUnit == kPitch_unit::HERTZ_LOGARITHMIC ? pow (10.0, value) :
+		pitchUnit == kPitch_unit::MEL ? NUMmelToHertz (value) :
+		pitchUnit == kPitch_unit::LOG_HERTZ ? pow (10.0, value) :
+		pitchUnit == kPitch_unit::SEMITONES_1 ? 1.0 * exp (value * (NUMln2 / 12.0)) :
+		pitchUnit == kPitch_unit::SEMITONES_100 ? 100.0 * exp (value * (NUMln2 / 12.0)) :
+		pitchUnit == kPitch_unit::SEMITONES_200 ? 200.0 * exp (value * (NUMln2 / 12.0)) :
+		pitchUnit == kPitch_unit::SEMITONES_440 ? 440.0 * exp (value * (NUMln2 / 12.0)) :
+		pitchUnit == kPitch_unit::ERB ? NUMerbToHertz (value) : undefined;
 }
 
-autoPitchTier PitchTier_normalizePitchRange (PitchTier me, double pitchMin_ref_Hz, double pitchMax_ref_Hz, double pitchMin_Hz, double pitchMax_Hz, int pitchUnit);
-autoPitchTier PitchTier_normalizePitchRange (PitchTier me, double pitchMin_ref_Hz, double pitchMax_ref_Hz, double pitchMin_Hz, double pitchMax_Hz, int pitchUnit) {
+autoPitchTier PitchTier_normalizePitchRange (PitchTier me, double pitchMin_ref_Hz, double pitchMax_ref_Hz, double pitchMin_Hz, double pitchMax_Hz, kPitch_unit pitchUnit);
+autoPitchTier PitchTier_normalizePitchRange (PitchTier me, double pitchMin_ref_Hz, double pitchMax_ref_Hz, double pitchMin_Hz, double pitchMax_Hz, kPitch_unit pitchUnit) {
 	try {
 		double fminr = HertzToSpecial (pitchMin_ref_Hz, pitchUnit);
 		double fmaxr = HertzToSpecial (pitchMax_ref_Hz, pitchUnit);
@@ -187,7 +187,7 @@ autoPitch PitchTier_to_Pitch (PitchTier me, double dt, double pitchFloor, double
 			Melder_throw (U"The pitch ceiling must be larger than the pitch floor.");
 		}
 		double tmin = my xmin, tmax = my xmax, t1 = my xmin + dt / 2.0;
-		long nt = (long) floor ((tmax - tmin - t1) / dt);
+		integer nt = Melder_iroundDown ((tmax - tmin - t1) / dt);
 		if (t1 + nt * dt < tmax) {
 			nt ++;
 		}

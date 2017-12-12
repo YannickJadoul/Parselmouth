@@ -42,7 +42,7 @@ typedef struct structStackel {
 	#define Stackel_STRING_ARRAY  6
 	#define Stackel_VARIABLE  -1
 	#define Stackel_OBJECT  -2
-	int which;   /* 0 or negative = no clean-up required, positive = requires clean-up */
+	int which;   // 0 or negative = no clean-up required, positive = requires clean-up
 	union {
 		double number;
 		char32 *string;
@@ -51,6 +51,7 @@ typedef struct structStackel {
 		nummat numericMatrix;
 		InterpreterVariable variable;
 	};
+	bool owned;
 } *Stackel;
 const char32 *Stackel_whichText (Stackel me);
 
@@ -61,14 +62,15 @@ struct Formula_Result {
 		char32 *stringResult;
 		numvec numericVectorResult;
 		nummat numericMatrixResult;
-	} result;
+	};
+	bool owned;
 };
 
 Thing_declare (Interpreter);
 
 void Formula_compile (Interpreter interpreter, Daata data, const char32 *expression, int expressionType, bool optimize);
 
-void Formula_run (long row, long col, Formula_Result *result);
+void Formula_run (integer row, integer col, Formula_Result *result);
 
 /* End of file Formula.h */
 #endif

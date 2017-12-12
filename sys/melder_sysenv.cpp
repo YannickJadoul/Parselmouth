@@ -1,6 +1,6 @@
 /* melder_sysenv.cpp
  *
- * Copyright (C) 1992-2011,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2007,2011,2012,2015-2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ char32 * Melder_getenv (const char32 *variableName) {
 		static char32 buffer [11] [255];
 		static int ibuffer = 0;
 		if (++ ibuffer == 11) ibuffer = 0;
-		long n = GetEnvironmentVariableW (variableName, buffer [ibuffer], 255);   BUG
+		DWORD n = GetEnvironmentVariableW (variableName, buffer [ibuffer], 255);   BUG
 		if (n == ERROR_ENVVAR_NOT_FOUND) return nullptr;
 		return & buffer [ibuffer] [0];
 	#else

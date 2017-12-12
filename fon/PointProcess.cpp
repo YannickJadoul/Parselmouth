@@ -205,6 +205,31 @@ void PointProcess_addPoint (PointProcess me, double t) {
 	}
 }
 
+void PointProcess_addPoints (PointProcess me, numvec times) {
+	try {
+		integer newNumberOfPoints = my nt + times.size;
+		if (newNumberOfPoints > my maxnt) {
+			integer newMaxnt = newNumberOfPoints + my maxnt;   // this is at least a doubling
+			/*
+				Create without change.
+			*/
+			autoNUMvector <double> newTimes (1, newMaxnt);
+			NUMvector_copyElements (my t, newTimes.peek(), 1, my nt);
+			/*
+				Change without error.
+			*/
+			NUMvector_free (my t, 1);
+			my t = newTimes.transfer();
+			my maxnt = newMaxnt;
+		}
+		NUMvector_copyElements (times.at, & my t [my nt], 1, times.size);
+		my nt += times.size;
+		NUMsort_d (newNumberOfPoints, my t);
+	} catch (MelderError) {
+		Melder_throw (me, U": points not added.");
+	}
+}
+
 void PointProcess_removePoint (PointProcess me, integer pointNumber) {
 	if (pointNumber < 1 || pointNumber > my nt) return;
 	for (integer i = pointNumber; i < my nt; i ++)
@@ -318,7 +343,7 @@ autoPointProcess PointProcesses_difference (PointProcess me, PointProcess thee) 
 void PointProcess_fill (PointProcess me, double tmin, double tmax, double period) {
 	try {
 		if (tmax <= tmin) tmin = my xmin, tmax = my xmax;   // autowindowing
-		integer n = (integer) floor ((tmax - tmin) / period);
+		integer n = Melder_iroundDown ((tmax - tmin) / period);
 		double t = 0.5 * (tmin + tmax - n * period);
 		for (integer i = 1; i <= n; i ++, t += period) {
 			PointProcess_addPoint (me, t);

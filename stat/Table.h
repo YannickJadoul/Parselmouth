@@ -2,7 +2,7 @@
 #define _Table_h_
 /* Table.h
  *
- * Copyright (C) 2002-2011,2012,2014,2015 Paul Boersma
+ * Copyright (C) 2002-2011,2012,2014,2015,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,11 +107,12 @@ void Table_drawEllipse_e (Table me, Graphics g, integer xcolumn, integer ycolumn
 void Table_list (Table me, bool includeRowNumbers);
 void Table_writeToTabSeparatedFile (Table me, MelderFile file);
 void Table_writeToCommaSeparatedFile (Table me, MelderFile file);
+void Table_writeToSemicolonSeparatedFile (Table me, MelderFile file);
 autoTable Table_readFromTableFile (MelderFile file);
-autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 separator);
+autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 separator, bool interpretQuotes);
 
-autoTable Table_extractRowsWhereColumn_number (Table me, integer column, int which_Melder_NUMBER, double criterion);
-autoTable Table_extractRowsWhereColumn_string (Table me, integer column, int which_Melder_STRING, const char32 *criterion);
+autoTable Table_extractRowsWhereColumn_number (Table me, integer column, kMelder_number which, double criterion);
+autoTable Table_extractRowsWhereColumn_string (Table me, integer column, kMelder_string which, const char32 *criterion);
 autoTable Table_collapseRows (Table me, const char32 *factors_string, const char32 *columnsToSum_string,
 	const char32 *columnsToAverage_string, const char32 *columnsToMedianize_string,
 	const char32 *columnsToAverageLogarithmically_string, const char32 *columnsToMedianizeLogarithmically_string);
@@ -122,6 +123,8 @@ void Table_checkSpecifiedRowNumberWithinRange (Table me, integer rowNumber);
 void Table_checkSpecifiedColumnNumberWithinRange (Table me, integer columnNumber);
 bool Table_isCellNumeric_ErrorFalse (Table me, integer rowNumber, integer columnNumber);
 bool Table_isColumnNumeric_ErrorFalse (Table me, integer columnNumber);
+
+const char32 * Table_messageColumn (Table me, integer column);
 
 /* End of file Table.h */
 #endif

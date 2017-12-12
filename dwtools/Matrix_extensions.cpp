@@ -225,11 +225,12 @@ void Matrix_drawDistribution (Matrix me, Graphics g, double xmin, double xmax, d
 	autoNUMvector<long> freq (1, nBins);
 	double binWidth = (maximum - minimum) / nBins;
 	long nxy = 0;
-	for (long i = iymin; i <= iymax; i++) {
-		for (long j = ixmin; j <= ixmax; j++) {
-			long bin = 1 + (long) floor ( (my z[i][j] - minimum) / binWidth);
+	for (long i = iymin; i <= iymax; i ++) {
+		for (long j = ixmin; j <= ixmax; j ++) {
+			integer bin = 1 + Melder_iroundDown ((my z [i] [j] - minimum) / binWidth);
 			if (bin <= nBins && bin > 0) {
-				freq[bin]++; nxy ++;
+				freq [bin] ++;
+				nxy ++;
 			}
 		}
 	}
@@ -387,7 +388,7 @@ double Matrix_getStandardDeviation (Matrix me, double xmin, double xmax, double 
 	return sqrt (sum / (nx * ny - 1));
 }
 
-autoDaata IDXFormattedMatrixFileRecognizer (int numberOfBytesRead, const char *header, MelderFile file) {
+autoDaata IDXFormattedMatrixFileRecognizer (integer numberOfBytesRead, const char *header, MelderFile file) {
 	unsigned int numberOfDimensions, type, pos = 4;
 	/* 
 	 * 9: minumum size is 4 bytes (magic number) + 4 bytes for 1 dimension + 1 value of 1 byte
@@ -419,7 +420,7 @@ autoDaata IDXFormattedMatrixFileRecognizer (int numberOfBytesRead, const char *h
 	trace (U"Cell size =", cellSizeBytes);
 	double numberOfBytes = numberOfCells * cellSizeBytes + 4 + numberOfDimensions * 4;
 	trace (U"Number of bytes =", numberOfBytes);
-	long numberOfBytesInFile = MelderFile_length (file);
+	integer numberOfBytesInFile = MelderFile_length (file);
 	trace (U"File size = ", numberOfBytesInFile);
 	if (numberOfBytes > numberOfBytesInFile || (long) numberOfBytes < numberOfBytesInFile) { // may occur if it is not an IDX file
 		return autoDaata ();
