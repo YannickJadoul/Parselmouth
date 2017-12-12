@@ -483,12 +483,12 @@ autoTextGrid SpeechSynthesizer_and_Sound_and_TextInterval_align (SpeechSynthesiz
 		double s_thee_duration = s_thee -> xmax - s_thee -> xmin;
 		bool hasSilence_thee = fabs (t1_thee - thy xmin) > precision || fabs (t2_thee - thy xmax) > precision;
 
-		if (my d_estimateWordsPerMinute) {
+		if (my d_estimateSpeechRate) {
 			// estimate speaking rate with the number of words per minute from the text
 			double wordsPerMinute_rawTokens = 60.0 * numberOfTokens / s_thee_duration;
 			// compensation for long words: 5 characters / word
 			double wordsPerMinute_rawText = 60.0 * (str32len (his text) / 5.0) / s_thee_duration;
-			my d_wordsPerMinute =  (long) floor (0.5 * (wordsPerMinute_rawTokens + wordsPerMinute_rawText));
+			my d_wordsPerMinute = Melder_iroundDown (0.5 * (wordsPerMinute_rawTokens + wordsPerMinute_rawText));
 		}
 		autoTextGrid tg2;
 		autoSound synth = SpeechSynthesizer_and_TextInterval_to_Sound (me, him, & tg2);
@@ -624,7 +624,7 @@ autoTextGrid SpeechSynthesizer_and_Sound_and_IntervalTier_align (SpeechSynthesiz
         for (long iint = istart; iint <= iend; iint ++) {
             TextInterval ti = his intervals.at [iint];
             if (ti -> text && str32len (ti -> text) > 0) {
-                autoSound sound = Sound_extractPart (thee, ti -> xmin, ti -> xmax,  kSound_windowShape_RECTANGULAR, 1, true);
+                autoSound sound = Sound_extractPart (thee, ti -> xmin, ti -> xmax,  kSound_windowShape::RECTANGULAR, 1, true);
                 autoTextGrid grid = SpeechSynthesizer_and_Sound_and_TextInterval_align (me, sound.get(), ti, silenceThreshold, minSilenceDuration, minSoundingDuration);
                 textgrids. addItem_move (grid.move());
             }
@@ -651,7 +651,7 @@ static autoTextGrid SpeechSynthesizer_and_Sound_and_IntervalTier_align2 (SpeechS
         for (long iint = istart; iint <= iend; iint ++) {
             TextInterval ti = his intervals.at [iint];
             if (ti -> text && str32len (ti -> text) > 0) {
-                autoSound sound = Sound_extractPart (thee, ti -> xmin, ti -> xmax,  kSound_windowShape_RECTANGULAR, 1, true);
+                autoSound sound = Sound_extractPart (thee, ti -> xmin, ti -> xmax,  kSound_windowShape::RECTANGULAR, 1, true);
                 autoTextGrid grid = SpeechSynthesizer_and_Sound_and_TextInterval_align2 (me, sound.get(), ti, silenceThreshold, minSilenceDuration, minSoundingDuration, trimDuration);
                 textgrids. addItem_move (grid.move());
             }

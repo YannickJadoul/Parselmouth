@@ -43,7 +43,6 @@
  djmw 20060503 Covariance_getSignificanceOfMeansDifference: set probability = 0 if
  	var_pooled = 0 and paired.
  djmw 20060811 Removed bug in SSCP_and_TableOfReal_to_MahalanobisDistances that caused column labels always to be copied.
- djmw 20061021 printf expects %ld for 'long int'
  djmw 20061214 Corrected possible integer overflow in ellipseScalefactor.
  djmw 20071012 Added: o_CAN_WRITE_AS_ENCODING.h
  djmw 20071016 To Melder_error<n>
@@ -108,7 +107,7 @@ void structSSCP :: v_info () {
 	be multiplied to obtain the length of an ellipse axis.
 */
 double SSCP_getEllipseScalefactor (SSCP me, double scale, bool confidence) {
-	long n = (long) floor (SSCP_getNumberOfObservations (me));
+	integer n = Melder_iroundDown (SSCP_getNumberOfObservations (me));
 
 	if (confidence) {
 		long p = my numberOfColumns;
@@ -496,7 +495,7 @@ void Covariance_and_PCA_generateOneVector (Covariance me, PCA thee, double *vec,
 autoTableOfReal Covariance_to_TableOfReal_randomSampling (Covariance me, long numberOfData) {
 	try {
 		if (numberOfData <= 0) {
-			numberOfData = (long) floor (my numberOfObservations);
+			numberOfData = Melder_iroundDown (my numberOfObservations);
 		}
 		autoPCA pca = SSCP_to_PCA (me);
 		autoTableOfReal thee = TableOfReal_create (numberOfData, my numberOfColumns);
@@ -516,8 +515,8 @@ autoTableOfReal Covariance_to_TableOfReal_randomSampling (Covariance me, long nu
 autoSSCP TableOfReal_to_SSCP (TableOfReal me, long rowb, long rowe, long colb, long cole) {
 	try {
 		
-		if (! NUMdmatrix_hasFiniteElements(my data, 1, my numberOfRows, 1, my numberOfColumns)) {
-			Melder_throw (U"At least one of the table's elements is not finite or undefined.");
+		if (NUMdmatrix_containsUndefinedElements (my data, 1, my numberOfRows, 1, my numberOfColumns)) {
+			Melder_throw (U"At least one of the table's elements is undefined.");
 		}
 
 		if (rowb == 0 && rowe == 0) {
@@ -765,7 +764,7 @@ autoPCA SSCP_to_PCA (SSCP me) {
 		NUMstrings_copyElements (my columnLabels, thy labels, 1, my numberOfColumns);
 		Eigen_initFromSymmetricMatrix (thee.get(), data, my numberOfColumns);
 		NUMvector_copyElements (my centroid, thy centroid, 1, my numberOfColumns);
-		PCA_setNumberOfObservations (thee.get(), (long) floor (my numberOfObservations));
+		PCA_setNumberOfObservations (thee.get(), Melder_iroundDown (my numberOfObservations));
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": PCA not created.");
@@ -801,10 +800,10 @@ void SSCP_setCentroid (SSCP me, long component, double value) {
 	my centroid[component] = value;
 }
 
-autoCCA SSCP_to_CCA (SSCP me, long ny) {
+autoCCA SSCP_to_CCA (SSCP me, integer ny) {
 	try {
 		char upper = 'L', diag = 'N';
-		long info;
+		integer info;
 
 		if (ny < 1 || ny >= my numberOfRows) {
 			Melder_throw (U"ny < 1 || ny >= my numberOfRows");
@@ -813,7 +812,7 @@ autoCCA SSCP_to_CCA (SSCP me, long ny) {
 			Melder_throw (U"Matrix is diagonal.");
 		}
 
-		long m = my numberOfRows, nx = m - ny, xy_interchanged = nx < ny, yof = 0, xof = ny;
+		integer m = my numberOfRows, nx = m - ny, xy_interchanged = nx < ny, yof = 0, xof = ny;
 		if (xy_interchanged) {
 			yof = ny; xof = 0;
 			nx = ny; ny = m - nx;
@@ -846,11 +845,11 @@ autoCCA SSCP_to_CCA (SSCP me, long ny) {
 		// Cholesky decomposition: Syy = Uy'*Uy and Sxx = Ux'*Ux.
 		// (Pretend as if colum-major storage)
 
-		(void) NUMlapack_dpotf2 (&upper, &ny, &syy[1][1], &ny, &info);
+		(void) NUMlapack_dpotf2 (& upper, & ny, & syy [1] [1], & ny, & info);
 		if (info != 0) Melder_throw (U"The leading minor of order ", info, U" is not positive definite, and the "
 			                             U"factorization of Syy could not be completed.");
 
-		(void) NUMlapack_dpotf2 (&upper, &nx, &sxx[1][1], &nx, &info);
+		(void) NUMlapack_dpotf2 (& upper, & nx, & sxx [1] [1], & nx, & info);
 		if (info != 0) Melder_throw (U"The leading minor of order ", info, U" is not positive definite, and the "
 			                             U"factorization of Sxx could not be completed.");
 
@@ -892,13 +891,13 @@ autoCCA SSCP_to_CCA (SSCP me, long ny) {
 
 		// Prepare Uxi' * Syx' = (Syx * Uxi)'
 
-		for (long i = 1; i <= ny; i++) {
-			for (long j = 1; j <= nx; j++) {
-				double t = 0.0;
-				for (long k = 1; k <= j; k++) {
-					t += syx[i][k] * sxx[k][j];
+		for (integer i = 1; i <= ny; i ++) {
+			for (integer j = 1; j <= nx; j ++) {
+				real80 t = 0.0;
+				for (integer k = 1; k <= j; k ++) {
+					t += syx [i] [k] * sxx [k] [j];
 				}
-				a[j][i] = t;
+				a [j] [i] = (real) t;
 			}
 		}
 
@@ -929,7 +928,7 @@ autoCCA SSCP_to_CCA (SSCP me, long ny) {
 		NUMnormalizeRows (thy y -> eigenvectors, thy y -> numberOfEigenvalues, thy y -> numberOfEigenvalues, 1);
 
 		thy numberOfCoefficients = thy y -> numberOfEigenvalues;
-		thy numberOfObservations = (long) floor (my numberOfObservations);
+		thy numberOfObservations = Melder_iroundDown (my numberOfObservations);
 
 		// x = Sxx**-1 * Syx' * y
 
@@ -1056,7 +1055,7 @@ void SSCPList_getHomegeneityOfCovariances_box (SSCPList me, double *p_prob, doub
 	for (long i = 1; i <= g; i ++) {
 		SSCP t = my at [i];
 		double ni = t -> numberOfObservations - 1.0;
-		NUMdeterminant_cholesky (t -> data, p, & ln_determinant);
+		ln_determinant = NUMdeterminant_cholesky (t -> data, p);
 
 		// Box-test is for covariance matrices -> scale determinant.
 
@@ -1066,7 +1065,7 @@ void SSCPList_getHomegeneityOfCovariances_box (SSCPList me, double *p_prob, doub
 		chisq -= ni * ln_determinant;
 	}
 
-	NUMdeterminant_cholesky (pooled -> data, p, & ln_determinant);
+	ln_determinant = NUMdeterminant_cholesky (pooled -> data, p);
 	ln_determinant -= p * log (pooled -> numberOfObservations - g);
 	chisq += sum * ln_determinant;
 
@@ -1364,9 +1363,7 @@ autoCorrelation SSCP_to_Correlation (SSCP me) {
 
 double SSCP_getLnDeterminant (SSCP me) {
 	try {
-		double ln_d;
-		NUMdeterminant_cholesky (my data, my numberOfRows, & ln_d);
-		return ln_d;
+		return NUMdeterminant_cholesky (my data, my numberOfRows);
 	} catch (MelderError) {
 		return undefined;
 	}
@@ -1469,9 +1466,9 @@ void Covariance_getMarginalDensityParameters (Covariance me, double v[], double 
 }
 
 double Covariances_getMultivariateCentroidDifference (Covariance me, Covariance thee, int equalCovariances, double *p_prob, double *p_fisher, double *p_df1, double *p_df2) {
-	long p = my numberOfRows, N = (long) floor (my numberOfObservations + thy numberOfObservations);
-	long N1 = (long) floor (my numberOfObservations), n1 = N1 - 1;
-	long N2 = (long) floor (thy numberOfObservations), n2 = N2 - 1;
+	integer p = my numberOfRows, N = Melder_iroundDown (my numberOfObservations + thy numberOfObservations);
+	integer N1 = Melder_iroundDown (my numberOfObservations), n1 = N1 - 1;
+	integer N2 = Melder_iroundDown (thy numberOfObservations), n2 = N2 - 1;
 
 	double dif = undefined, fisher = undefined;
 	double df1 = p, df2 = N - p - 1;
@@ -1586,7 +1583,7 @@ void Covariances_equality (CovarianceList me, int method, double *p_prob, double
 			 */
 			double lnd;
 			try {
-				NUMdeterminant_cholesky (pool -> data, p, & lnd);
+				lnd = NUMdeterminant_cholesky (pool -> data, p);
 			} catch (MelderError) {
 				Melder_throw (U"Pooled covariance matrix is singular.");
 			}
@@ -1596,7 +1593,7 @@ void Covariances_equality (CovarianceList me, int method, double *p_prob, double
 			for (long i = 1; i <= numberOfMatrices; i ++) {
 				Covariance ci = my at [i];
 				try {
-					NUMdeterminant_cholesky (ci -> data, p, & lnd);
+					lnd = NUMdeterminant_cholesky (ci -> data, p);
 				} catch (MelderError) {
 					Melder_throw (U"Covariance matrix ", i, U" is singular.");
 				}
@@ -1652,7 +1649,7 @@ void Covariances_equality (CovarianceList me, int method, double *p_prob, double
 
 void Covariance_difference (Covariance me, Covariance thee, double *p_prob, double *p_chisq, double *p_df) {
 	long p = my numberOfRows;
-	long numberOfObservations = (long) floor (my numberOfObservations);
+	integer numberOfObservations = Melder_iroundDown (my numberOfObservations);
 	double  ln_me, ln_thee;
 	double chisq = undefined, df = undefined;
 	
@@ -1660,7 +1657,7 @@ void Covariance_difference (Covariance me, Covariance thee, double *p_prob, doub
 		Melder_throw (U"Matrices must have equal dimensions.");
 	}
 	if (my numberOfObservations != thy numberOfObservations) {
-		numberOfObservations = (long) floor (my numberOfObservations > thy numberOfObservations ?
+		numberOfObservations = Melder_iroundDown (my numberOfObservations > thy numberOfObservations ?
 		                        thy numberOfObservations : my numberOfObservations) - 1;
 		Melder_warning (U"Covariance_difference: number of observations of matrices do not agree.\n"
 		                U" The minimum  size (", numberOfObservations, U") of the two is used.");
@@ -1671,7 +1668,7 @@ void Covariance_difference (Covariance me, Covariance thee, double *p_prob, doub
 
 	autoNUMmatrix<double> linv (NUMmatrix_copy (thy data, 1, p, 1, p), 1, 1);
 	NUMlowerCholeskyInverse (linv.peek(), p, & ln_thee);
-	NUMdeterminant_cholesky (my data, p, & ln_me);
+	ln_me = NUMdeterminant_cholesky (my data, p);
 
 	/*
 		We need trace (A B^-1). We have A and the inverse L^(-1) of the
@@ -1745,7 +1742,7 @@ void Covariance_getSignificanceOfOneMean (Covariance me, long index, double mu, 
 }
 
 void Covariance_getSignificanceOfMeansDifference (Covariance me, long index1, long index2, double mu, int paired, int equalVariances, double *p_prob, double *p_t, double *p_df) {
-	long n = (long) floor (my numberOfObservations);
+	integer n = Melder_iroundDown (my numberOfObservations);
 
 	double prob = undefined, t = undefined;
 	double df = 2.0 * (n - 1);
@@ -1955,8 +1952,7 @@ void Correlation_testDiagonality_bartlett (Correlation me, long numberOfContrain
 		return;
 	}
 	if (my numberOfObservations >= numberOfContraints) {
-		double ln_determinant;
-		NUMdeterminant_cholesky (my data, p, & ln_determinant);
+		double ln_determinant = NUMdeterminant_cholesky (my data, p);
 		chisq = - ln_determinant * (my numberOfObservations - numberOfContraints - (2.0 * p + 5.0) / 6.0);
 		if (p_prob) {
 			prob = NUMchiSquareQ (chisq, df);

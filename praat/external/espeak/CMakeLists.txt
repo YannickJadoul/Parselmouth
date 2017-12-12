@@ -1,6 +1,6 @@
-add_sources(compiledict.cpp dictionary.cpp intonation.cpp klatt.cpp
-            numbers.cpp phonemelist.cpp readclause.cpp setlengths.cpp
-            sonic.cpp speak_lib.cpp synthdata.cpp synthesize.cpp
-            synth_mbrola.cpp tr_languages.cpp translate.cpp voices.cpp wavegen.cpp
-            espeakdata_phons.cpp espeakdata_dicts.cpp espeakdata_voices.cpp espeakdata_variants.cpp
-            espeakdata_FileInMemory.cpp)
+add_sources(categories.cpp compiledata.cpp compiledict.cpp dictionary.cpp encoding.cpp error.cpp intonation.cpp klatt.cpp
+            numbers.cpp phonemelist.cpp proplist.cpp readclause.cpp setlengths.cpp speech.cpp
+            synthdata.cpp synthesize.cpp
+            synth_mbrola.cpp tr_languages.cpp mnemonics.cpp translate.cpp voices.cpp wavegen.cpp
+            create_espeak_ng_FileInMemoryManager.cpp create_espeak_ng_FileInMemorySet.cpp
+            espeakdata_FileInMemory.cpp espeak_api.cpp espeak_io.cpp)

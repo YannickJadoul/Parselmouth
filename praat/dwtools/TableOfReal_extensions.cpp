@@ -34,7 +34,6 @@
  djmw 20051116 TableOfReal_drawScatterPlot draw reverse permited by choosing xmin > xmax and/or ymin>ymax
  djmw 20060301 TableOfReal_meansByRowLabels extra medianize
  djmw 20060626 Extra NULL argument for ExecRE.
- djmw 20061021 printf expects %ld for 'long int'
  djmw 20070822 wchar
  djmw 20070902 Better error messages (object type and name feedback)
  djmw 20070614 updated to version 1.30 of regular expressions.
@@ -70,8 +69,8 @@
 #define Graphics_TWOWAYARROW 2
 #define Graphics_LINE 3
 
-static autoTableOfReal TableOfReal_and_TableOfReal_columnCorrelations (TableOfReal me, TableOfReal thee, int center, int normalize);
-static autoTableOfReal TableOfReal_and_TableOfReal_rowCorrelations (TableOfReal me, TableOfReal thee, int center, int normalize);
+static autoTableOfReal TableOfReal_and_TableOfReal_columnCorrelations (TableOfReal me, TableOfReal thee, bool center, bool normalize);
+static autoTableOfReal TableOfReal_and_TableOfReal_rowCorrelations (TableOfReal me, TableOfReal thee, bool center, bool normalize);
 
 long TableOfReal_getColumnIndexAtMaximumInRow (TableOfReal me, long rowNumber) {
 	long columnNumber = 0;
@@ -327,7 +326,7 @@ void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, const char32 *
 	integer nrows;
 	autoNUMvector <real> irows (NUMstring_to_numbers (rows, & nrows), 1);
 	for (integer i = 1; i <= nrows; i ++) {
-		integer irow = (long) floor (irows [i]);
+		integer irow = Melder_iroundDown (irows [i]);
 		if (irow < 0 || irow > my numberOfRows) {
 			Melder_throw (U"Invalid row (", irow, U").");
 		}
@@ -358,7 +357,7 @@ void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, const char32 *
 	double dx = (interbarsFraction + nrows + (nrows - 1) * interbarFraction) * bar_width;
 
 	for (long i = 1; i <= nrows; i++) {
-		long irow = (long) floor (irows[i]);
+		integer irow = Melder_iroundDown (irows[i]);
 		double xb = xoffsetFraction * bar_width + (i - 1) * (1.0 + interbarFraction) * bar_width;
 
 		double x1 = xb;
@@ -716,11 +715,41 @@ void TableOfReal_normalizeRows (TableOfReal me, double norm) {
 }
 
 void TableOfReal_standardizeColumns (TableOfReal me) {
-	NUMstandardizeColumns (my data, 1, my numberOfRows, 1, my numberOfColumns);
+	if (my numberOfRows <= 1) {
+		for (integer irow = 1; irow <= my numberOfRows; irow ++) {
+			for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
+				my data [irow] [icol] = 0.0;
+			}
+		}
+		return;
+	}
+	for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
+		nummat mat { my data, my numberOfRows, my numberOfColumns };
+		real mean, stdev;
+		sum_mean_sumsq_variance_stdev_scalar (mat, icol, nullptr, & mean, nullptr, nullptr, & stdev);
+		for (integer irow = 1; irow <= my numberOfRows; irow ++) {
+			my data [irow] [icol] = (my data [irow] [icol] - mean) / stdev;
+		}
+	}
 }
 
 void TableOfReal_standardizeRows (TableOfReal me) {
-	NUMstandardizeRows (my data, 1, my numberOfRows, 1, my numberOfColumns);
+	if (my numberOfColumns <= 1) {
+		for (integer irow = 1; irow <= my numberOfRows; irow ++) {
+			for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
+				my data [irow] [icol] = 0.0;
+			}
+		}
+		return;
+	}
+	for (integer irow = 1; irow <= my numberOfRows; irow ++) {
+		numvec vec { my data [irow], my numberOfColumns };
+		real mean, stdev;
+		sum_mean_sumsq_variance_stdev_scalar (vec, nullptr, & mean, nullptr, nullptr, & stdev);
+		for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
+			my data [irow] [icol] = (my data [irow] [icol] - mean) / stdev;
+		}
+	}
 }
 
 void TableOfReal_normalizeTable (TableOfReal me, double norm) {
@@ -867,10 +896,10 @@ void TableOfReal_drawScatterPlot (TableOfReal me, Graphics g, long icx, long icy
 		rowb = 1;
 	}
 	if (rowe > m) {
-		rowe = (long) floor (m);
+		rowe = Melder_iroundDown (m);
 	}
 	if (rowe <= rowb) {
-		rowb = 1; rowe = (long) floor (m);
+		rowb = 1; rowe = Melder_iroundDown (m);
 	}
 
 	if (xmax == xmin) {
@@ -998,6 +1027,29 @@ double TableOfReal_getColumnQuantile (TableOfReal me, long col, double quantile)
 	}
 }
 
+autoTableOfReal TableOfReal_create_sandwell1987 () {
+	try {
+		/*
+			The following numbers are the 21 (approximate) data points in Fig, 2 in Sandwell (1987).
+			They were measured by djmw from a printed picture blown up by 800%.
+			The following numbers are in cm measured from the left (x) and the bottom (y) of the figure.
+			Vertical scale: 8.25 cm in the picture is 12 units, y [1] is at y = 0.0.
+			Horizontal scale: 17.75 cm is 10 units, x [1] is at x = 0.0.
+		*/
+		double x [22] = { 0.0, 0.9, 2.15, 3.5, 4.75, 5.3, 6.15, 7.15, 7.95, 8.85, 9.95, 10.15, 10.3, 11.5, 12.4, 13.3, 14.2, 15.15, 16.0, 16.85, 17.25, 18.15 };
+		double y [22] = { 0.0, 4.2, 3.5, 4.2, 5.65, 10.1, 8.5, 7.8, 7.1, 6.4, 5.65, 0.6, 5.65, 4.2, 5.65, 7.1, 6.75, 6.35, 4.2,  2.05, 4.95, 4.25 };
+		long numberOfSamples = 21;
+		autoTableOfReal thee = TableOfReal_create (numberOfSamples, 2);
+		for (long isample = 1; isample <= numberOfSamples; isample ++) {
+			thy data [isample] [1] = (x [isample] - x [1]) * 10.0 / 17.75;
+			thy data [isample] [2] = (y [isample] - y [1]) * 12.0 / 8.25;
+		}
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (U"Sandwell (1987) table not created.");
+	}
+}
+
 static autoTableOfReal TableOfReal_createPolsVanNieropData (int choice, bool include_levels) {
 	try {
 		autoTable table = Table_create_polsVanNierop1973 ();
@@ -1117,7 +1169,7 @@ autoTableOfReal TableOfReal_bootstrap (TableOfReal me) {
 	}
 }
 
-void TableOfReal_changeRowLabels (TableOfReal me, const char32 *search, const char32 *replace, int maximumNumberOfReplaces, long *nmatches, long *nstringmatches, int use_regexp) {
+void TableOfReal_changeRowLabels (TableOfReal me, const char32 *search, const char32 *replace, int maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, int use_regexp) {
 	try {
 		autostring32vector rowLabels (strs_replace (my rowLabels, 1, my numberOfRows, search, replace, maximumNumberOfReplaces, nmatches, nstringmatches, use_regexp), 1, my numberOfRows);
 		NUMstrings_free (my rowLabels, 1, my numberOfRows);
@@ -1127,7 +1179,7 @@ void TableOfReal_changeRowLabels (TableOfReal me, const char32 *search, const ch
 	}
 }
 
-void TableOfReal_changeColumnLabels (TableOfReal me, const char32 *search, const char32 *replace, int maximumNumberOfReplaces, long *nmatches, long *nstringmatches, int use_regexp) {
+void TableOfReal_changeColumnLabels (TableOfReal me, const char32 *search, const char32 *replace, int maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, int use_regexp) {
 	try {
 		autostring32vector columnLabels (strs_replace (my columnLabels, 1, my numberOfColumns, search, replace, maximumNumberOfReplaces, nmatches, nstringmatches, use_regexp), 1, my numberOfColumns);
 		NUMstrings_free (my columnLabels, 1, my numberOfColumns);
@@ -1263,14 +1315,14 @@ void TableOfReal_drawColumnAsDistribution (TableOfReal me, Graphics g, int colum
 	}
 }
 
-autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, long index[], int reverse) {
+autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, integer index[], int reverse) {
 	try {
 		if (my rowLabels == 0) {
 			Melder_throw (U"No labels to sort");
 		}
 
 		double min, max;
-		NUMvector_extrema (index, 1, my numberOfRows, &min, &max);
+		NUMvector_extrema (index, 1, my numberOfRows, & min, & max);
 		if (min < 1 || max > my numberOfRows) {
 			Melder_throw (U"One or more indices out of range [1, ", my numberOfRows, U"].");
 		}
@@ -1303,9 +1355,9 @@ autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, long index[], int r
 	}
 }
 
-long *TableOfReal_getSortedIndexFromRowLabels (TableOfReal me) {
+integer *TableOfReal_getSortedIndexFromRowLabels (TableOfReal me) {
 	try {
-		autoNUMvector<long> index (1, my numberOfRows);
+		autoNUMvector <integer> index (1, my numberOfRows);
 		NUMindexx_s (my rowLabels, my numberOfRows, index.peek());
 		return index.transfer();
 	} catch (MelderError) {
@@ -1343,18 +1395,18 @@ static void NUMmedianizeColumns (double **a, long rb, long re, long cb, long ce)
 	}
 }
 
-static void NUMstatsColumns (double **a, long rb, long re, long cb, long ce, int stats) {
-	if (stats == 0) {
-		NUMaverageColumns (a, rb, re, cb, ce);
-	} else {
+static void NUMstatsColumns (double **a, long rb, long re, long cb, long ce, bool useMedians) {
+	if (useMedians) {
 		NUMmedianizeColumns (a, rb, re, cb, ce);
+	} else {
+		NUMaverageColumns (a, rb, re, cb, ce);
 	}
 }
 
-autoTableOfReal TableOfReal_meansByRowLabels (TableOfReal me, int expand, int stats) {
+autoTableOfReal TableOfReal_meansByRowLabels (TableOfReal me, bool expand, bool useMedians) {
 	try {
 		autoTableOfReal thee;
-		autoNUMvector<long> index (TableOfReal_getSortedIndexFromRowLabels (me), 1);
+		autoNUMvector <integer> index (TableOfReal_getSortedIndexFromRowLabels (me), 1);
 		autoTableOfReal sorted = TableOfReal_sortRowsByIndex (me, index.peek(), 0);
 
 		long indexi = 1, indexr = 0;
@@ -1362,26 +1414,27 @@ autoTableOfReal TableOfReal_meansByRowLabels (TableOfReal me, int expand, int st
 		for (long i = 2; i <= my numberOfRows; i++) {
 			const char32 *li = sorted -> rowLabels[i];
 			if (Melder_cmp (li, label) != 0) {
-				NUMstatsColumns (sorted -> data, indexi, i - 1, 1, my numberOfColumns, stats);
+				NUMstatsColumns (sorted -> data, indexi, i - 1, 1, my numberOfColumns, useMedians);
 
-				if (expand == 0) {
-					indexr++;
+				if (! expand) {
+					indexr ++;
 					TableOfReal_copyOneRowWithLabel (sorted.get(), sorted.get(), indexi, indexr);
 				}
 				label = li; indexi = i;
 			}
 		}
 
-		NUMstatsColumns (sorted -> data, indexi, my numberOfRows, 1, my numberOfColumns, stats);
+		NUMstatsColumns (sorted -> data, indexi, my numberOfRows, 1, my numberOfColumns, useMedians);
 
-		if (expand != 0) {
+		if (expand) {
 			// Now invert the table.
 
-			char32 **tmp = sorted -> rowLabels; sorted -> rowLabels = my rowLabels;
+			char32 **tmp = sorted -> rowLabels;
+			sorted -> rowLabels = my rowLabels;
 			thee = TableOfReal_sortRowsByIndex (sorted.get(), index.peek(), 1);
 			sorted -> rowLabels = tmp;
 		} else {
-			indexr++;
+			indexr ++;
 			TableOfReal_copyOneRowWithLabel (sorted.get(), sorted.get(), indexi, indexr);
 			thee = TableOfReal_create (indexr, my numberOfColumns);
 			for (long i = 1; i <= indexr; i++) {
@@ -1443,10 +1496,10 @@ autoTableOfReal TableOfReal_to_TableOfReal (TableOfReal me) {
 	}
 }
 
-autoTableOfReal TableOfReal_choleskyDecomposition (TableOfReal me, int upper, int inverse) {
+autoTableOfReal TableOfReal_choleskyDecomposition (TableOfReal me, bool upper, bool inverse) {
 	try {
 		char diag = 'N';
-		long n = my numberOfColumns, lda = my numberOfRows, info;
+		integer n = my numberOfColumns, lda = my numberOfRows, info;
 
 		if (n != lda) {
 			Melder_throw (U"The table must be a square symmetric table.");
@@ -1454,16 +1507,20 @@ autoTableOfReal TableOfReal_choleskyDecomposition (TableOfReal me, int upper, in
 		autoTableOfReal thee = Data_copy (me);
 
 		if (upper) {
-			for (long i = 2; i <= n; i++) for (long j = 1; j < i; j++) {
-					thy data[i][j] = 0.0;
+			for (integer i = 2; i <= n; i ++) {
+				for (integer j = 1; j < i; j ++) {
+					thy data [i] [j] = 0.0;
 				}
+			}
 		} else {
-			for (long i = 1; i < n; i++) for (long j = i + 1; j <= n; j++) {
-					thy data[i][j] = 0.0;
+			for (integer i = 1; i < n; i ++) {
+				for (integer j = i + 1; j <= n; j ++) {
+					thy data [i] [j] = 0.0;
 				}
+			}
 		}
 		char uplo = upper ? 'L' : 'U';
-		NUMlapack_dpotf2 (&uplo, &n, &thy data[1][1], &lda, &info);
+		NUMlapack_dpotf2 (& uplo, & n, & thy data [1] [1], & lda, & info);
 		if (info != 0) {
 			Melder_throw (U"dpotf2 fails");
 		}
@@ -1624,12 +1681,12 @@ double TableOfReal_normalityTest_BHEP (TableOfReal me, double *h, double *p_tnb,
 	}
 }
 
-autoTableOfReal TableOfReal_and_TableOfReal_crossCorrelations (TableOfReal me, TableOfReal thee, int by_columns, int center, int normalize) {
+autoTableOfReal TableOfReal_and_TableOfReal_crossCorrelations (TableOfReal me, TableOfReal thee, bool by_columns, bool center, bool normalize) {
 	return by_columns ? TableOfReal_and_TableOfReal_columnCorrelations (me, thee, center, normalize) :
 	       TableOfReal_and_TableOfReal_rowCorrelations (me, thee, center, normalize);
 }
 
-autoTableOfReal TableOfReal_and_TableOfReal_rowCorrelations (TableOfReal me, TableOfReal thee, int center, int normalize) {
+autoTableOfReal TableOfReal_and_TableOfReal_rowCorrelations (TableOfReal me, TableOfReal thee, bool center, bool normalize) {
 	try {
 		if (my numberOfColumns != thy numberOfColumns) {
 			Melder_throw (U"Both tables must have the same number of columns.");
@@ -1663,7 +1720,7 @@ autoTableOfReal TableOfReal_and_TableOfReal_rowCorrelations (TableOfReal me, Tab
 	}
 }
 
-autoTableOfReal TableOfReal_and_TableOfReal_columnCorrelations (TableOfReal me, TableOfReal thee, int center, int normalize) {
+autoTableOfReal TableOfReal_and_TableOfReal_columnCorrelations (TableOfReal me, TableOfReal thee, bool center, bool normalize) {
 	try {
 		if (my numberOfRows != thy numberOfRows) {
 			Melder_throw (U"Both tables must have the same number of rows.");
@@ -1695,6 +1752,37 @@ autoTableOfReal TableOfReal_and_TableOfReal_columnCorrelations (TableOfReal me, 
 		return him;
 	} catch (MelderError) {
 		Melder_throw (U"TableOfReal with column correlations not created.");
+	}
+}
+
+autoMatrix TableOfReal_to_Matrix_interpolateOnRectangularGrid (TableOfReal me, double xmin, double xmax, double nx, double ymin, double ymax, long ny, int /* method */) {
+	try {
+		if (my numberOfColumns < 3 || my numberOfRows < 3) {
+			Melder_throw (U"Therehave to be at least three colums and rows present.");
+		}
+		autonumvec x (my numberOfRows, kTensorInitializationType :: RAW);
+		autonumvec y (my numberOfRows, kTensorInitializationType :: RAW);
+		autonumvec z (my numberOfRows, kTensorInitializationType :: RAW);
+		autonumvec weights (my numberOfRows, kTensorInitializationType :: RAW);
+		for (long irow = 1; irow <= my numberOfRows; irow ++) {
+			x [irow] = my data [irow][1];
+			y [irow] = my data [irow][2];
+			z [irow] = my data [irow][3];
+		}
+		NUMbiharmonic2DSplineInterpolation_getWeights (x.at, y.at, z.at, my numberOfRows, weights.at);
+		double dx = (xmax - xmin) / nx, dy = (ymax - ymin) / ny; 
+		autoMatrix thee = Matrix_create (xmin, xmax, nx, dx, xmin + 0.5 * dx,
+			ymin, ymax, ny, dy, ymin + 0.5 * dy);
+		for (long irow = 1; irow <= ny; irow ++) {
+			double yp = thy y1 + (irow - 1) * dy;
+			for (long icol = 1; icol <= nx; icol ++) {
+				double xp = thy x1 + (icol - 1) * dx;
+				thy z [irow] [icol] = NUMbiharmonic2DSplineInterpolation (x.at, y.at, my numberOfRows, weights.at, xp, yp);
+			}
+		}
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (me, U": interpolation not finished.");
 	}
 }
 

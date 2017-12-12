@@ -33,7 +33,7 @@ autoPitchTier PitchTier_AnyTier_to_PitchTier (PitchTier pitch, AnyTier tier) {
 		/*
 		 * Copy pitch's frequencies at tier's points to the resulting PitchTier.
 		 */
-		for (long ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
+		for (integer ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
 			AnyPoint point = tier -> points.at [ipoint];
 			double time = point -> number;
 			double frequency = RealTier_getValueAtTime (pitch, time);
@@ -63,10 +63,10 @@ autoPitchTier Pitch_AnyTier_to_PitchTier (Pitch pitch, AnyTier tier, int checkMe
 		/*
 		 * Copy pitch's frequencies at tier's points to the resulting PitchTier.
 		 */
-		for (long ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
+		for (integer ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
 			AnyPoint point = tier -> points.at [ipoint];
 			double time = point -> number;
-			double frequency = Pitch_getValueAtTime (pitch, time, kPitch_unit_HERTZ, Pitch_LINEAR);
+			double frequency = Pitch_getValueAtTime (pitch, time, kPitch_unit::HERTZ, Pitch_LINEAR);
 			if (isundef (frequency) && checkMethod != 0)
 				Melder_throw (U"No periodicity at time ", time, U" seconds.");
 			RealTier_addPoint (thee.get(), time, frequency);

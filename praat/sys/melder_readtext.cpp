@@ -1,6 +1,6 @@
 /* melder_readtext.cpp
  *
- * Copyright (C) 2008-2011,2014,2015,2017 Paul Boersma
+ * Copyright (C) 2008,2010-2012,2014-2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ char32 MelderReadText_getChar (MelderReadText me) {
 		return * my readPointer32 ++;
 	} else {
 		if (* my readPointer8 == '\0') return U'\0';
-		if (my input8Encoding == kMelder_textInputEncoding_UTF8) {
+		if (my input8Encoding == kMelder_textInputEncoding::UTF8) {
 			char32 kar1 = (char32) (char8) * my readPointer8 ++;
 			if (kar1 <= 0x00007F) {
 				return kar1;
@@ -50,9 +50,9 @@ char32 MelderReadText_getChar (MelderReadText me) {
 			} else {
 				return UNICODE_REPLACEMENT_CHARACTER;
 			}
-		} else if (my input8Encoding == kMelder_textInputEncoding_MACROMAN) {
+		} else if (my input8Encoding == kMelder_textInputEncoding::MACROMAN) {
 			return Melder_decodeMacRoman [(char8) * my readPointer8 ++];
-		} else if (my input8Encoding == kMelder_textInputEncoding_WINDOWS_LATIN1) {
+		} else if (my input8Encoding == kMelder_textInputEncoding::WINDOWS_LATIN1) {
 			return Melder_decodeWindowsLatin1 [(char8) * my readPointer8 ++];
 		} else {
 			/* Unknown encoding. */
@@ -219,7 +219,7 @@ static char32 * _MelderFile_readText (MelderFile file, char **string8) {
 				(void) Melder_killReturns_inline (*string8);
 				return nullptr;   // OK
 			} else {
-				text.reset (Melder_8to32 (text8bit.peek(), 0));
+				text.reset (Melder_8to32 (text8bit.peek(), kMelder_textInputEncoding::UNDEFINED));
 			}
 		} else {
 			length = length / 2 - 1;   // Byte Order Mark subtracted. Length = number of UTF-16 codes
@@ -292,21 +292,21 @@ MelderReadText MelderReadText_createFromFile (MelderFile file) {
 		Melder_assert (my string8);
 		my readPointer8 = & my string8 [0];
 		my input8Encoding = Melder_getInputEncoding ();
-		if (my input8Encoding == kMelder_textInputEncoding_UTF8 ||
-			my input8Encoding == kMelder_textInputEncoding_UTF8_THEN_ISO_LATIN1 ||
-			my input8Encoding == kMelder_textInputEncoding_UTF8_THEN_WINDOWS_LATIN1 ||
-			my input8Encoding == kMelder_textInputEncoding_UTF8_THEN_MACROMAN)
+		if (my input8Encoding == kMelder_textInputEncoding::UTF8 ||
+			my input8Encoding == kMelder_textInputEncoding::UTF8_THEN_ISO_LATIN1 ||
+			my input8Encoding == kMelder_textInputEncoding::UTF8_THEN_WINDOWS_LATIN1 ||
+			my input8Encoding == kMelder_textInputEncoding::UTF8_THEN_MACROMAN)
 		{
 			if (Melder_str8IsValidUtf8 (my string8)) {
-				my input8Encoding = kMelder_textInputEncoding_UTF8;
-			} else if (my input8Encoding == kMelder_textInputEncoding_UTF8) {
+				my input8Encoding = kMelder_textInputEncoding::UTF8;
+			} else if (my input8Encoding == kMelder_textInputEncoding::UTF8) {
 				Melder_throw (U"Text is not valid UTF-8; please try a different text input encoding.");
-			} else if (my input8Encoding == kMelder_textInputEncoding_UTF8_THEN_ISO_LATIN1) {
-				my input8Encoding = kMelder_textInputEncoding_ISO_LATIN1;
-			} else if (my input8Encoding == kMelder_textInputEncoding_UTF8_THEN_WINDOWS_LATIN1) {
-				my input8Encoding = kMelder_textInputEncoding_WINDOWS_LATIN1;
-			} else if (my input8Encoding == kMelder_textInputEncoding_UTF8_THEN_MACROMAN) {
-				my input8Encoding = kMelder_textInputEncoding_MACROMAN;
+			} else if (my input8Encoding == kMelder_textInputEncoding::UTF8_THEN_ISO_LATIN1) {
+				my input8Encoding = kMelder_textInputEncoding::ISO_LATIN1;
+			} else if (my input8Encoding == kMelder_textInputEncoding::UTF8_THEN_WINDOWS_LATIN1) {
+				my input8Encoding = kMelder_textInputEncoding::WINDOWS_LATIN1;
+			} else if (my input8Encoding == kMelder_textInputEncoding::UTF8_THEN_MACROMAN) {
+				my input8Encoding = kMelder_textInputEncoding::MACROMAN;
 			}
 		}
 	}

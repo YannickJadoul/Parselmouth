@@ -2,7 +2,7 @@
 #define _melder_h_
 /* melder.h
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ typedef int16_t int16;
 typedef int32_t int32;
 typedef int64_t int64;
 typedef intptr_t integer;   // the default size of an integer (a "long" is only 32 bits on 64-bit Windows)
+typedef long long_not_integer;   // for cases where we explicitly need the type "long", such as when printfing to %ld
 typedef uintptr_t uinteger;
 typedef uint8_t uint8;
 typedef uint16_t uint16;
@@ -62,6 +63,8 @@ typedef uint64_t uint64;
 #ifndef UINT24_MAX
 	#define UINT24_MAX   16777216
 #endif
+#define INTEGER_MAX  ( sizeof (integer) == 4 ? INT32_MAX : INT64_MAX )
+#define INTEGER_MIN  ( sizeof (integer) == 4 ? INT32_MIN : INT64_MIN )
 /*
 	The bounds of the contiguous set of integers that in a "double" can represent only themselves.
 */
@@ -90,6 +93,7 @@ typedef float real32;
 typedef double real64;
 typedef long double real80;   // at least 80 bits ("extended") precision, but stored in 96 or 128 bits
 typedef double real;
+#include "complex.h"
 
 #pragma mark - LAW OF DEMETER FOR CLASS FUNCTIONS DEFINED OUTSIDE CLASS DEFINITION
 
@@ -120,10 +124,10 @@ typedef char32_t char32;
 #define strequ  ! strcmp
 #define strnequ  ! strncmp
 
-inline static int64 str16len (const char16 *string) noexcept {
+inline static integer str16len (const char16 *string) noexcept {
 	const char16 *p = string;
 	while (*p != u'\0') ++ p;
-	return (int64) (p - string);
+	return p - string;
 }
 inline static char16 * str16cpy (char16 *target, const char16 *source) noexcept {
 	char16 *p = target;
@@ -132,10 +136,10 @@ inline static char16 * str16cpy (char16 *target, const char16 *source) noexcept 
 	return target;
 }
 
-inline static int64 str32len (const char32 *string) noexcept {
+inline static integer str32len (const char32 *string) noexcept {
 	const char32 *p = string;
 	while (*p != U'\0') ++ p;
-	return (int64) (p - string);
+	return p - string;
 }
 inline static char32 * str32cpy (char32 *target, const char32 *source) noexcept {
 	char32 *p = target;
@@ -143,7 +147,7 @@ inline static char32 * str32cpy (char32 *target, const char32 *source) noexcept 
 	*p = U'\0';
 	return target;
 }
-inline static char32 * str32ncpy (char32 *target, const char32 *source, int64 n) noexcept {
+inline static char32 * str32ncpy (char32 *target, const char32 *source, integer n) noexcept {
 	char32 *p = target;
 	for (; n > 0 && *source != U'\0'; -- n) * p ++ = * source ++;
 	for (; n > 0; -- n) * p ++ = U'\0';
@@ -157,7 +161,7 @@ inline static int str32cmp (const char32 *string1, const char32 *string2) noexce
 		if (*string1 == U'\0') return 0;
 	}
 }
-inline static int str32ncmp (const char32 *string1, const char32 *string2, int64 n) noexcept {
+inline static int str32ncmp (const char32 *string1, const char32 *string2, integer n) noexcept {
 	for (; n > 0; -- n, ++ string1, ++ string2) {
 		int32 diff = (int32) *string1 - (int32) *string2;
 		if (diff) return (int) diff;
@@ -166,7 +170,7 @@ inline static int str32ncmp (const char32 *string1, const char32 *string2, int64
 	return 0;
 }
 int Melder_cmp (const char32 *string1, const char32 *string2);   // regards null string as empty string
-int Melder_ncmp (const char32 *string1, const char32 *string2, int64 n);
+int Melder_ncmp (const char32 *string1, const char32 *string2, integer n);
 
 #define str32equ  ! str32cmp
 #define str32nequ  ! str32ncmp
@@ -189,7 +193,7 @@ inline static char32 * str32rchr (const char32 *string, char32 kar) noexcept {
 	return result;
 }
 inline static char32 * str32str (const char32 *string, const char32 *find) noexcept {
-	int64 length = str32len (find);
+	integer length = str32len (find);
 	if (length == 0) return (char32 *) string;
 	char32 firstCharacter = * find ++;   // optimization
 	do {
@@ -201,7 +205,7 @@ inline static char32 * str32str (const char32 *string, const char32 *find) noexc
 	} while (str32ncmp (string, find, length - 1));
 	return (char32 *) (string - 1);
 }
-inline static int64 str32spn (const char32 *string1, const char32 *string2) noexcept {
+inline static integer str32spn (const char32 *string1, const char32 *string2) noexcept {
 	const char32 *p = string1;
 	char32 kar1, kar2;
 cont:
@@ -238,51 +242,65 @@ typedef struct { double red, green, blue, transparency; } double_rgbt;
 	You can call at most 32 of them in one Melder_casual call, for instance.
 */
 
-const  char32 * Melder_integer  (int64 value) noexcept;
-const  char   * Melder8_integer (int64 value) noexcept;
+const char32 * Melder_integer  (int64 value) noexcept;
+const char   * Melder8_integer (int64 value) noexcept;
 
-const  char32 * Melder_bigInteger  (int64 value) noexcept;
-const  char   * Melder8_bigInteger (int64 value) noexcept;
+const char32 * Melder_bigInteger  (int64 value) noexcept;
+const char   * Melder8_bigInteger (int64 value) noexcept;
 
-const  char32 * Melder_boolean  (bool value) noexcept;
-const  char   * Melder8_boolean (bool value) noexcept;
+const char32 * Melder_boolean  (bool value) noexcept;
+const char   * Melder8_boolean (bool value) noexcept;
 	// "yes" or "no"
 
 /**
 	Format a double value as "--undefined--" or something in the "%.15g", "%.16g", or "%.17g" formats.
 */
-const  char32 * Melder_double  (double value) noexcept;
-const  char   * Melder8_double (double value) noexcept;
+const char32 * Melder_double  (double value) noexcept;
+const char   * Melder8_double (double value) noexcept;
 
 /**
 	Format a double value as "--undefined--" or something in the "%.9g" format.
 */
-const  char32 * Melder_single  (double value) noexcept;
-const  char   * Melder8_single (double value) noexcept;
+const char32 * Melder_single  (double value) noexcept;
+const char   * Melder8_single (double value) noexcept;
 
 /**
 	Format a double value as "--undefined--" or something in the "%.4g" format.
 */
-const  char32 * Melder_half  (double value) noexcept;
-const  char   * Melder8_half (double value) noexcept;
+const char32 * Melder_half  (double value) noexcept;
+const char   * Melder8_half (double value) noexcept;
 
 /**
 	Format a double value as "--undefined--" or something in the "%.*f" format.
 */
-const  char32 * Melder_fixed  (double value, int precision) noexcept;
-const  char   * Melder8_fixed (double value, int precision) noexcept;
+const char32 * Melder_fixed  (double value, int precision) noexcept;
+const char   * Melder8_fixed (double value, int precision) noexcept;
 
 /**
 	Format a double value with a specified precision. If exponent is -2 and precision is 2, you get things like 67E-2 or 0.00024E-2.
 */
-const  char32 * Melder_fixedExponent  (double value, int exponent, int precision) noexcept;
-const  char   * Melder8_fixedExponent (double value, int exponent, int precision) noexcept;
+const char32 * Melder_fixedExponent  (double value, int exponent, int precision) noexcept;
+const char   * Melder8_fixedExponent (double value, int exponent, int precision) noexcept;
 
 /**
 	Format a double value as a percentage. If precision is 3, you get things like "0" or "34.400%" or "0.014%" or "0.001%" or "0.0000007%".
 */
-const  char32 * Melder_percent  (double value, int precision) noexcept;
-const  char   * Melder8_percent (double value, int precision) noexcept;
+const char32 * Melder_percent  (double value, int precision) noexcept;
+const char   * Melder8_percent (double value, int precision) noexcept;
+
+/**
+	Format a dcomplex value as "--undefined--" or something in the "%.15g", "%.16g", or "%.17g" formats,
+	separated without spaces by "+" or "-" and followed by "i".
+*/
+const char32 * Melder_dcomplex  (dcomplex value) noexcept;
+const char   * Melder8_dcomplex (dcomplex value) noexcept;
+
+/**
+	Format a dcomplex value as "--undefined--" or something in the "%.9g" format,
+	separated without spaces by "+" or "-" and followed by "i".
+*/
+const char32 * Melder_scomplex  (dcomplex value) noexcept;
+const char   * Melder8_scomplex (dcomplex value) noexcept;
 
 /**
 	Convert a formatted floating-point string to something suitable for visualization with the Graphics library.
@@ -310,7 +328,7 @@ const char32 * Melder_truncate (const char32 *string, int64 width);   // will cu
 const char32 * Melder_padOrTruncate (int64 width, const char32 *string);   // will cut away, or append spaces to, the left of 'string' until 'width' is reached
 const char32 * Melder_padOrTruncate (const char32 *string, int64 width);   // will cut away, or append spaces to, the right of 'string' until 'width' is reached
 
-/********** CONSOLE **********/
+#pragma mark - CONSOLE
 
 void Melder_writeToConsole (const char32 *message, bool useStderr);
 
@@ -372,17 +390,17 @@ int64 Melder_movingReallocationsCount ();
  * Text encodings.
  */
 void Melder_textEncoding_prefs ();
-void Melder_setInputEncoding (enum kMelder_textInputEncoding encoding);
-int Melder_getInputEncoding ();
-void Melder_setOutputEncoding (enum kMelder_textOutputEncoding encoding);
-enum kMelder_textOutputEncoding Melder_getOutputEncoding ();
+void Melder_setInputEncoding (kMelder_textInputEncoding encoding);
+kMelder_textInputEncoding Melder_getInputEncoding ();
+void Melder_setOutputEncoding (kMelder_textOutputEncoding encoding);
+kMelder_textOutputEncoding Melder_getOutputEncoding ();
 
 /*
  * Some other encodings. Although not used in the above set/get functions,
  * these constants should stay separate from the above encoding constants
  * because they occur in the same fields of struct MelderFile.
  */
-const uint32 kMelder_textInputEncoding_FLAC = 0x464C4143;
+//const uint32 kMelder_textInputEncoding_FLAC = 0x464C4143;
 const uint32 kMelder_textOutputEncoding_ASCII = 0x41534349;
 const uint32 kMelder_textOutputEncoding_ISO_LATIN1 = 0x4C415401;
 const uint32 kMelder_textOutputEncoding_FLAC = 0x464C4143;
@@ -393,8 +411,8 @@ bool Melder_isEncodable (const char32 *string, int outputEncoding);
 extern char32 Melder_decodeMacRoman [256];
 extern char32 Melder_decodeWindowsLatin1 [256];
 
-long Melder_killReturns_inline (char32 *text);
-long Melder_killReturns_inline (char *text);
+integer Melder_killReturns_inline (char32 *text);
+integer Melder_killReturns_inline (char *text);
 /*
 	 Replaces all bare returns (old Mac) or return-plus-linefeed sequences (Win) with bare linefeeds
 	 (generic: Unix and modern Mac).
@@ -405,9 +423,9 @@ size_t str32len_utf8  (const char32 *string, bool nativizeNewlines);
 size_t str32len_utf16 (const char32 *string, bool nativizeNewlines);
 
 extern "C" char32 * Melder_peek8to32 (const char *string);
-void Melder_8to32_inline (const char *source, char32 *target, int inputEncoding);
+void Melder_8to32_inline (const char *source, char32 *target, kMelder_textInputEncoding inputEncoding);
 	// errors: Text is not valid UTF-8.
-char32 * Melder_8to32 (const char *string, int inputEncoding);
+char32 * Melder_8to32 (const char *string, kMelder_textInputEncoding inputEncoding);
 	// errors: Out of memory; Text is not valid UTF-8.
 char32 * Melder_8to32 (const char *string);
 	// errors: Out of memory; Text is not valid UTF-8.
@@ -438,22 +456,15 @@ void Melder_fwrite32to8 (const char32 *ptr, FILE *f);
 
 #pragma mark - STRING TO NUMBER CONVERSION
 
-bool Melder_isStringNumeric_nothrow (const char32 *string);
-double Melder_a8tof (const char *string);
-double Melder_atof (const char32 *string);
-int64 Melder_atoi (const char32 *string);
+bool Melder_isStringNumeric (const char32 *string) noexcept;
+double Melder_a8tof (const char *string) noexcept;
+double Melder_atof (const char32 *string) noexcept;
+int64 Melder_atoi (const char32 *string) noexcept;
 	/*
 	 * "3.14e-3" -> 3.14e-3
 	 * "15.6%" -> 0.156
 	 * "fghfghj" -> undefined
 	 */
-inline static long a32tol (const char32 *string) {
-	if (sizeof (wchar_t) == 4) {
-		return wcstol ((const wchar_t *) string, nullptr, 10);
-	} else {
-		return atol (Melder_peek32to8 (string));
-	}
-}
 
 /********** FILES **********/
 
@@ -473,7 +484,7 @@ struct structMelderFile {
 	char32 path [kMelder_MAXPATH+1];
 	enum class Format { none = 0, binary = 1, text = 2 } format;
 	bool openForReading, openForWriting, verbose, requiresCRLF;
-	unsigned long outputEncoding;
+	uint32 outputEncoding;
 	int indent;
 	struct FLAC__StreamEncoder *flacEncoder;
 };
@@ -514,7 +525,7 @@ void Melder_getTempDir (MelderDir tempDir);
 
 bool MelderFile_exists (MelderFile file);
 bool MelderFile_readable (MelderFile file);
-long MelderFile_length (MelderFile file);
+integer MelderFile_length (MelderFile file);
 void MelderFile_delete (MelderFile file);
 
 /* The following two should be combined with each other and with Windows extension setting: */
@@ -532,7 +543,7 @@ const char32 * MelderFile_messageName (MelderFile file);   // calls Melder_peekE
 struct structMelderReadText {
 	char32 *string32, *readPointer32;
 	char *string8, *readPointer8;
-	unsigned long input8Encoding;
+	kMelder_textInputEncoding input8Encoding;
 };
 typedef struct structMelderReadText *MelderReadText;
 
@@ -647,36 +658,18 @@ void NUMscale (double *x, double xminfrom, double xmaxfrom, double xminto, doubl
 // Instead we use the 40 digits computed by Johann von Soldner in 1809.
 #define NUM_euler  0.5772156649015328606065120900824024310422
 
-/*
-	Ideally, `undefined` should be #defined as NAN (or 0.0/0.0),
-	because that would make sure that
-		1.0 / undefined
-	evaluates as undefined.
-	However, we cannot do that as long as Praat contains any instances of
-		if (x == undefined) { ... }
-	because that condition would evaluate as false even if x were undefined
-	(because NAN is unequal to NAN).
-	Therefore, we must define, for the moment, `undefined` as positive infinity,
-	because positive infinity can be compared to itself
-	(i.e. Inf is equal to Inf). The drawback is that
-		1.0 / undefined
-	will evaluate as 0.0, i.e. this version of `undefined` does not propagate properly.
-*/
-//#define undefined  (0.0/0.0)
+//#define undefined  (0.0/0.0)   /* NaN */
 #define undefined NAN
-//#define undefined  NAN   /* a future definition? */
-//#define undefined  (0.0/0.0)   /* an alternative future definition */
 
 /*
-	Ideally, isdefined() should capture not only `undefined`, but all infinities and nans.
+	isdefined() shall capture not only `undefined`, but all infinities and NaNs.
 	This can be done with a single test for the set bits in 0x7FF0000000000000,
 	at least for 64-bit IEEE implementations. The correctness of this assumption is checked in sys/praat.cpp.
-	The portable version of isdefined() would involve both isinf() and isnan(),
+	The portable version of isdefined() involves both isinf() and isnan(), or perhaps just isfinite(),
 	but that would be slower (as tested in fon/Praat_tests.cpp)
 	and it would also get into problems on some platforms whenever both <cmath> and <math.h> are included,
 	as in dwsys/NUMcomplex.cpp.
 */
-//#define isdefined(x)  ((x) != NUMundefined)   /* an old definition, not good at capturing nans */
 //inline static bool isdefined (double x) { return ! isinf (x) && ! isnan (x); }   /* portable */
 inline static bool isdefined (double x) { return ((* (uint64_t *) & x) & 0x7FF0000000000000) != 0x7FF0000000000000; }
 inline static bool isundef (double x) { return ((* (uint64_t *) & x) & 0x7FF0000000000000) == 0x7FF0000000000000; }
@@ -776,13 +769,13 @@ integer NUM_getTotalNumberOfArrays ();   // for debugging
 
 double NUMlnGamma (double x);
 double NUMbeta (double z, double w);
-double NUMbesselI (long n, double x);   // precondition: n >= 0
+double NUMbesselI (integer n, double x);   // precondition: n >= 0
 double NUMbessel_i0_f (double x);
 double NUMbessel_i1_f (double x);
-double NUMbesselK (long n, double x);   // preconditions: n >= 0 && x > 0.0
+double NUMbesselK (integer n, double x);   // preconditions: n >= 0 && x > 0.0
 double NUMbessel_k0_f (double x);
 double NUMbessel_k1_f (double x);
-double NUMbesselK_f (long n, double x);
+double NUMbesselK_f (integer n, double x);
 double NUMsigmoid (double x);   // correct also for large positive or negative x
 double NUMinvSigmoid (double x);
 double NUMerfcc (double x);
@@ -792,7 +785,7 @@ double NUMincompleteGammaP (double a, double x);
 double NUMincompleteGammaQ (double a, double x);
 double NUMchiSquareP (double chiSquare, double degreesOfFreedom);
 double NUMchiSquareQ (double chiSquare, double degreesOfFreedom);
-double NUMcombinations (long n, long k);
+double NUMcombinations (integer n, integer k);
 double NUMincompleteBeta (double a, double b, double x);   // incomplete beta function Ix(a,b). Preconditions: a, b > 0; 0 <= x <= 1
 double NUMbinomialP (double p, double k, double n);
 double NUMbinomialQ (double p, double k, double n);
@@ -816,13 +809,13 @@ double NUMerbToHertz (double erb);
 
 /********** Sorting (NUMsort.cpp) **********/
 
-void NUMsort_d (long n, double ra []);   // heap sort
-void NUMsort_i (long n, int ra []);
-void NUMsort_l (long n, long ra []);
-void NUMsort_str (long n, char32 *a []);
-void NUMsort_p (long n, void *a [], int (*compare) (const void *, const void *));
+void NUMsort_d (integer n, double ra []);   // heap sort
+void NUMsort_i (integer n, int ra []);
+void NUMsort_integer (integer n, integer ra []);
+void NUMsort_str (integer n, char32 *a []);
+void NUMsort_p (integer n, void *a [], int (*compare) (const void *, const void *));
 
-double NUMquantile (long n, double a [], double factor);
+double NUMquantile (integer n, double a [], double factor);
 /*
 	An estimate of the quantile 'factor' (between 0 and 1) of the distribution
 	from which the set 'a [1..n]' is a sorted array of random samples.
@@ -840,7 +833,7 @@ double NUMquantile (long n, double a [], double factor);
 // Higher values than 2 yield a true sinc interpolation. Here are some examples:
 #define NUM_VALUE_INTERPOLATE_SINC70  70
 #define NUM_VALUE_INTERPOLATE_SINC700  700
-double NUM_interpolate_sinc (double y [], long nx, double x, long interpolationDepth);
+double NUM_interpolate_sinc (double y [], integer nx, double x, integer interpolationDepth);
 
 #define NUM_PEAK_INTERPOLATE_NONE  0
 #define NUM_PEAK_INTERPOLATE_PARABOLIC  1
@@ -848,29 +841,29 @@ double NUM_interpolate_sinc (double y [], long nx, double x, long interpolationD
 #define NUM_PEAK_INTERPOLATE_SINC70  3
 #define NUM_PEAK_INTERPOLATE_SINC700  4
 
-double NUMimproveExtremum (double *y, long nx, long ixmid, int interpolation, double *ixmid_real, int isMaximum);
-double NUMimproveMaximum (double *y, long nx, long ixmid, int interpolation, double *ixmid_real);
-double NUMimproveMinimum (double *y, long nx, long ixmid, int interpolation, double *ixmid_real);
+double NUMimproveExtremum (double *y, integer nx, integer ixmid, int interpolation, double *ixmid_real, int isMaximum);
+double NUMimproveMaximum (double *y, integer nx, integer ixmid, int interpolation, double *ixmid_real);
+double NUMimproveMinimum (double *y, integer nx, integer ixmid, int interpolation, double *ixmid_real);
 
 void NUM_viterbi (
-	long numberOfFrames, long maxnCandidates,
-	long (*getNumberOfCandidates) (long iframe, void *closure),
-	double (*getLocalCost) (long iframe, long icand, void *closure),
-	double (*getTransitionCost) (long iframe, long icand1, long icand2, void *closure),
-	void (*putResult) (long iframe, long place, void *closure),
+	integer numberOfFrames, integer maxnCandidates,
+	integer (*getNumberOfCandidates) (integer iframe, void *closure),
+	double (*getLocalCost) (integer iframe, integer icand, void *closure),
+	double (*getTransitionCost) (integer iframe, integer icand1, integer icand2, void *closure),
+	void (*putResult) (integer iframe, integer place, void *closure),
 	void *closure);
 
 void NUM_viterbi_multi (
-	long nframe, long ncand, int ntrack,
-	double (*getLocalCost) (long iframe, long icand, int itrack, void *closure),
-	double (*getTransitionCost) (long iframe, long icand1, long icand2, int itrack, void *closure),
-	void (*putResult) (long iframe, long place, int itrack, void *closure),
+	integer nframe, integer ncand, integer ntrack,
+	double (*getLocalCost) (integer iframe, integer icand, integer itrack, void *closure),
+	double (*getTransitionCost) (integer iframe, integer icand1, integer icand2, integer itrack, void *closure),
+	void (*putResult) (integer iframe, integer place, integer itrack, void *closure),
 	void *closure);
 
 /********** Metrics (NUM.cpp) **********/
 
 int NUMrotationsPointInPolygon
-	(double x0, double y0, long n, double x [], double y []);
+	(double x0, double y0, integer n, double x [], double y []);
 /*
 	Returns the number of times that the closed polygon
 	(x [1], y [1]), (x [2], y [2]),..., (x [n], y [n]), (x [1], y [1]) encloses the point (x0, y0).
@@ -889,7 +882,7 @@ double NUMrandomFraction_mt (int threadNumber);
 
 double NUMrandomUniform (double lowest, double highest);
 
-long NUMrandomInteger (long lowest, long highest);
+integer NUMrandomInteger (integer lowest, integer highest);
 
 bool NUMrandomBernoulli (double probability);
 double NUMrandomBernoulli_real (double probability);
@@ -902,14 +895,14 @@ double NUMrandomPoisson (double mean);
 uint32 NUMhashString (const char32 *string);
 
 void NUMfbtoa (double formant, double bandwidth, double dt, double *a1, double *a2);
-void NUMfilterSecondOrderSection_a (double x [], long n, double a1, double a2);
-void NUMfilterSecondOrderSection_fb (double x [], long n, double dt, double formant, double bandwidth);
+void NUMfilterSecondOrderSection_a (double x [], integer n, double a1, double a2);
+void NUMfilterSecondOrderSection_fb (double x [], integer n, double dt, double formant, double bandwidth);
 double NUMftopreemphasis (double f, double dt);
-void NUMpreemphasize_a (double x [], long n, double preemphasis);
-void NUMdeemphasize_a (double x [], long n, double preemphasis);
-void NUMpreemphasize_f (double x [], long n, double dt, double frequency);
-void NUMdeemphasize_f (double x [], long n, double dt, double frequency);
-void NUMautoscale (double x [], long n, double scale);
+void NUMpreemphasize_a (double x [], integer n, double preemphasis);
+void NUMdeemphasize_a (double x [], integer n, double preemphasis);
+void NUMpreemphasize_f (double x [], integer n, double dt, double frequency);
+void NUMdeemphasize_f (double x [], integer n, double dt, double frequency);
+void NUMautoscale (double x [], integer n, double scale);
 
 /* The following ANSI-C power trick generates the declarations of 156 functions. */
 #define FUNCTION(type,storage)  \
@@ -924,12 +917,13 @@ void NUMautoscale (double x [], long n, double scale);
 FUNCTION (signed char, i8)
 FUNCTION (int, i16)
 FUNCTION (long, i32)
+FUNCTION (integer, integer)
 FUNCTION (unsigned char, u8)
 FUNCTION (unsigned int, u16)
 FUNCTION (unsigned long, u32)
 FUNCTION (double, r32)
 FUNCTION (double, r64)
-FUNCTION (fcomplex, c64)
+FUNCTION (dcomplex, c64)
 FUNCTION (dcomplex, c128)
 #undef FUNCTION
 
@@ -975,7 +969,7 @@ void NUMlinprog_addVariable (NUMlinprog me, double lowerBound, double upperBound
 void NUMlinprog_addConstraint (NUMlinprog me, double lowerBound, double upperBound);
 void NUMlinprog_addConstraintCoefficient (NUMlinprog me, double coefficient);
 void NUMlinprog_run (NUMlinprog me);
-double NUMlinprog_getPrimalValue (NUMlinprog me, long ivar);
+double NUMlinprog_getPrimalValue (NUMlinprog me, integer ivar);
 
 template <class T>
 T* NUMvector (integer from, integer to) {
@@ -1246,6 +1240,8 @@ typedef autodatavector <char *> autostring8vector;
 
 class autonumvec;   // forward declaration, needed in the declaration of numvec
 
+enum class kTensorInitializationType { RAW = 0, ZERO = 1 };
+
 class numvec {
 public:
 	double *at;
@@ -1253,8 +1249,8 @@ public:
 public:
 	numvec () = default;   // for use in a union
 	numvec (double *givenAt, integer givenSize): at (givenAt), size (givenSize) { }
-	numvec (integer givenSize, bool zero) {
-		our _initAt (givenSize, zero);
+	numvec (integer givenSize, kTensorInitializationType initializationType) {
+		our _initAt (givenSize, initializationType);
 		our size = givenSize;
 	}
 	numvec (const numvec& other) = default;
@@ -1272,7 +1268,7 @@ public:
 		our size = 0;
 	}
 protected:
-	void _initAt (integer givenSize, bool zero);
+	void _initAt (integer givenSize, kTensorInitializationType initializationType);
 	void _freeAt () noexcept;
 };
 
@@ -1288,7 +1284,7 @@ protected:
 class autonumvec : public numvec {
 public:
 	autonumvec (): numvec (nullptr, 0) { }   // come into existence without a payload
-	autonumvec (integer givenSize, bool zero): numvec (givenSize, zero) { }   // come into existence and manufacture a payload
+	autonumvec (integer givenSize, kTensorInitializationType initializationType): numvec (givenSize, initializationType) { }   // come into existence and manufacture a payload
 	autonumvec (double *givenAt, integer givenSize): numvec (givenAt, givenSize) { }   // come into existence and buy a payload from a non-autonumvec
 	explicit autonumvec (numvec x): numvec (x.at, x.size) { }   // come into existence and buy a payload from a non-autonumvec (disable implicit conversion)
 	~autonumvec () {   // destroy the payload (if any)
@@ -1303,9 +1299,9 @@ public:
 	void reset () {   // destroy the current payload (if any) and have no new payload
 		our numvec :: reset ();
 	}
-	void reset (integer newSize, bool zero) {   // destroy the current payload (if any) and manufacture a new payload
+	void reset (integer newSize, kTensorInitializationType initializationType) {   // destroy the current payload (if any) and manufacture a new payload
 		our numvec :: reset ();   // exception guarantee: leave *this in a reasonable state...
-		our _initAt (newSize, zero);   // ...in case this line throws an exception
+		our _initAt (newSize, initializationType);   // ...in case this line throws an exception
 		our size = newSize;
 	}
 	void reset (double *newAt, integer newSize) {   // destroy the current payload (if any) and buy a new payload
@@ -1352,8 +1348,8 @@ public:
 public:
 	nummat () = default;   // for use in a union
 	nummat (double **givenAt, integer givenNrow, integer givenNcol): at (givenAt), nrow (givenNrow), ncol (givenNcol) { }
-	nummat (integer givenNrow, integer givenNcol, bool zero) {
-		our _initAt (givenNrow, givenNcol, zero);
+	nummat (integer givenNrow, integer givenNcol, kTensorInitializationType initializationType) {
+		our _initAt (givenNrow, givenNcol, initializationType);
 		our nrow = givenNrow;
 		our ncol = givenNcol;
 	}
@@ -1373,7 +1369,7 @@ public:
 		our ncol = 0;
 	}
 protected:
-	void _initAt (integer givenNrow, integer givenNcol, bool zero);
+	void _initAt (integer givenNrow, integer givenNcol, kTensorInitializationType initializationType);
 	void _freeAt () noexcept;
 };
 
@@ -1389,7 +1385,7 @@ protected:
 class autonummat : public nummat {
 public:
 	autonummat (): nummat { nullptr, 0, 0 } { }   // come into existence without a payload
-	autonummat (integer givenNrow, integer givenNcol, bool zero): nummat { givenNrow, givenNcol, zero } { }   // come into existence and manufacture a payload
+	autonummat (integer givenNrow, integer givenNcol, kTensorInitializationType initializationType): nummat { givenNrow, givenNcol, initializationType } { }   // come into existence and manufacture a payload
 	autonummat (double **givenAt, integer givenNrow, integer givenNcol): nummat (givenAt, givenNrow, givenNcol) { }   // come into existence and buy a payload from a non-autonummat
 	explicit autonummat (nummat x): nummat (x.at, x.nrow, x.ncol) { }   // come into existence and buy a payload from a non-autonummat (disable implicit conversion)
 	~autonummat () {   // destroy the payload (if any)
@@ -1404,9 +1400,9 @@ public:
 	void reset () {   // destroy the current payload (if any) and have no new payload
 		our nummat :: reset ();
 	}
-	void reset (integer newNrow, integer newNcol, bool zero) {   // destroy the current payload (if any) and manufacture a new payload
+	void reset (integer newNrow, integer newNcol, kTensorInitializationType initializationType) {   // destroy the current payload (if any) and manufacture a new payload
 		our nummat :: reset ();   // exception guarantee: leave *this in a reasonable state...
-		our _initAt (newNrow, newNcol, zero);   // ...in case this line throws an exception
+		our _initAt (newNrow, newNcol, initializationType);   // ...in case this line throws an exception
 		our nrow = newNrow;
 		our ncol = newNcol;
 	}
@@ -1471,6 +1467,7 @@ struct MelderArg {
 	MelderArg (const unsigned int        arg) : _arg (Melder_integer         (arg)) { }
 	MelderArg (const          short      arg) : _arg (Melder_integer         (arg)) { }
 	MelderArg (const unsigned short      arg) : _arg (Melder_integer         (arg)) { }
+	MelderArg (const dcomplex            arg) : _arg (Melder_dcomplex        (arg)) { }
 	MelderArg (const char32_t            arg) : _arg (Melder_character       (arg)) { }
 	MelderArg (void *                    arg) : _arg (Melder_integer         ((int64) arg)) { }
 	/*
@@ -1607,7 +1604,7 @@ void Melder_trace (const char *fileName, int lineNumber, const char *functionNam
 MelderFile MelderFile_open (MelderFile file);
 MelderFile MelderFile_append (MelderFile file);
 MelderFile MelderFile_create (MelderFile file);
-void * MelderFile_read (MelderFile file, long nbytes);
+void * MelderFile_read (MelderFile file, integer nbytes);
 char * MelderFile_readLine (MelderFile file);
 void MelderFile_writeCharacter (MelderFile file, wchar_t kar);
 void MelderFile_writeCharacter (MelderFile file, char32 kar);
@@ -1626,14 +1623,14 @@ void MelderFile_write (MelderFile file, Melder_12_OR_13_ARGS);
 void MelderFile_write (MelderFile file, Melder_14_OR_15_ARGS);
 void MelderFile_write (MelderFile file, Melder_16_TO_19_ARGS);
 void MelderFile_rewind (MelderFile file);
-void MelderFile_seek (MelderFile file, long position, int direction);
-long MelderFile_tell (MelderFile file);
+void MelderFile_seek (MelderFile file, integer position, int direction);
+integer MelderFile_tell (MelderFile file);
 void MelderFile_close (MelderFile file);
 void MelderFile_close_nothrow (MelderFile file);
 
 /* Read and write whole text files. */
 char32 * MelderFile_readText (MelderFile file);
-void MelderFile_writeText (MelderFile file, const char32 *text, enum kMelder_textOutputEncoding outputEncoding);
+void MelderFile_writeText (MelderFile file, const char32 *text, kMelder_textOutputEncoding outputEncoding);
 void MelderFile_appendText (MelderFile file, const char32 *text);
 
 void Melder_createDirectory (MelderDir parent, const char32 *subdirName, int mode);
@@ -1695,8 +1692,8 @@ void MelderString_copy (MelderString *me, Melder_16_TO_19_ARGS);
 void MelderString_ncopy (MelderString *me, const char32 *source, int64 n);
 
 inline static void MelderString_append (MelderString *me, Melder_1_ARG) {
-	const char32 *s1  = arg1._arg  ? arg1._arg  : U"";  int64 length1  = str32len (s1);
-	int64 sizeNeeded = me -> length + length1 + 1;
+	const char32 *s1  = arg1._arg  ? arg1._arg  : U"";  integer length1  = str32len (s1);
+	integer sizeNeeded = me -> length + length1 + 1;
 	if (sizeNeeded > me -> bufferSize) MelderString_expand (me, sizeNeeded);
 	str32cpy (me -> string + me -> length, s1);   me -> length += length1;
 }
@@ -1756,8 +1753,8 @@ void Melder_sprint (char32 *buffer, int64 bufferSize, Melder_16_TO_19_ARGS);
 
 /********** NUMBER AND STRING COMPARISON **********/
 
-bool Melder_numberMatchesCriterion (double value, int which_kMelder_number, double criterion);
-bool Melder_stringMatchesCriterion (const char32 *value, int which_kMelder_string, const char32 *criterion);
+bool Melder_numberMatchesCriterion (double value, kMelder_number which, double criterion);
+bool Melder_stringMatchesCriterion (const char32 *value, kMelder_string which, const char32 *criterion);
 
 /********** STRING PARSING **********/
 
@@ -1771,12 +1768,12 @@ bool Melder_stringMatchesCriterion (const char32 *value, int which_kMelder_strin
 		}
 */
 
-long Melder_countTokens (const char32 *string);
+integer Melder_countTokens (const char32 *string);
 char32 *Melder_firstToken (const char32 *string);
 char32 *Melder_nextToken ();
-char32 ** Melder_getTokens (const char32 *string, long *n);
+char32 ** Melder_getTokens (const char32 *string, integer *n);
 void Melder_freeTokens (char32 ***tokens);
-long Melder_searchToken (const char32 *string, char32 **tokens, long n);
+integer Melder_searchToken (const char32 *string, char32 **tokens, integer n);
 
 /********** MESSAGING ROUTINES **********/
 
@@ -1883,6 +1880,23 @@ class MelderError { };
 
 void Melder_appendError_noLine (const MelderArg& arg1);
 
+/**
+	The usual error reporting function is Melder_throw. However,
+	you may sometimes want to prepend other messages before Melder_throw,
+	without jumping away from the error-generating location.
+	In such a special case you can use Melder_appendError.
+
+	Melder_appendError() has to be followed by one of these:
+	- Melder_throw() (or just `throw`) to prepend the error to a normal exception;
+	- Melder_flushError() to show the error in the GUI
+	  (this is where a trail of Melder_throw will usually end up as well);
+	- Melder_clearError() to ignore the error.
+	
+	If you don't do this, the error will linger in your error buffer until
+	the next, probably unrelated, error is generated,
+	and your prepended error text will be shown to the user out of context,
+	which is wrong.
+*/
 void Melder_appendError (Melder_1_ARG);
 void Melder_appendError (Melder_2_ARGS);
 void Melder_appendError (Melder_3_ARGS);
@@ -1898,6 +1912,7 @@ void Melder_appendError (Melder_12_OR_13_ARGS);
 void Melder_appendError (Melder_14_OR_15_ARGS);
 void Melder_appendError (Melder_16_TO_19_ARGS);
 #define Melder_throw(...)  do { Melder_appendError (__VA_ARGS__); throw MelderError (); } while (false)
+#define Melder_require(condition, ...)  do { if (! (condition)) Melder_throw (__VA_ARGS__); } while (false)
 
 void Melder_flushError ();
 void Melder_flushError (Melder_1_ARG);
@@ -2105,7 +2120,96 @@ public:
 	Graphics graphics () { return _graphics; }
 };
 
-/********** RECORD AND PLAY ROUTINES **********/
+#pragma mark - REAL TO INTEGER CONVERSION
+
+inline static double Melder_roundDown (double x) {
+	return floor (x);
+}
+
+inline static integer Melder_iroundDown (double x) {
+	double xround = Melder_roundDown (x);
+	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,   // this formulation handles NaN correctly
+		U"When rounding down the real value ", x, U", the result cannot be represented in an integer.");
+	return (integer) xround;
+}
+
+inline static double Melder_roundUp (double x) {
+	return ceil (x);
+}
+
+inline static integer Melder_iroundUp (double x) {
+	double xround = Melder_roundUp (x);
+	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
+		U"When rounding up the real value ", x, U", the result cannot be represented in an integer.");
+	return (integer) xround;
+}
+
+inline static double Melder_roundTowardsZero (double x) {
+	return x >= 0.0 ? Melder_roundDown (x) : Melder_roundUp (x);
+}
+
+inline static integer Melder_iroundTowardsZero (double x) {
+	Melder_require (x >= (double) INTEGER_MIN && x <= (double) INTEGER_MAX,
+		U"When rounding the real value ", x, U" towards zero, the result cannot be represented in an integer.");
+	return (integer) x;
+}
+
+inline static double Melder_roundAwayFromZero (double x) {
+	return x >= 0.0 ? Melder_roundUp (x) : Melder_roundDown (x);
+}
+
+inline static integer Melder_iroundAwayFromZero (double x) {
+	double xround = Melder_roundAwayFromZero (x);
+	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
+		U"When rounding the real value ", x, U" away from zero, the result cannot be represented in an integer.");
+	return (integer) xround;
+}
+
+inline static double Melder_round_tieUp (double x) {
+	return Melder_roundDown (x + 0.5);
+}
+
+inline static integer Melder_iround_tieUp (double x) {
+	double xround = Melder_round_tieUp (x);
+	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
+		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
+	return (integer) xround;
+}
+
+inline static double Melder_round_tieDown (double x) {
+	return Melder_roundUp (x - 0.5);
+}
+
+inline static integer Melder_iround_tieDown (double x) {
+	double xround = Melder_round_tieDown (x);
+	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
+		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
+	return (integer) xround;
+}
+
+inline static double Melder_round_tieTowardsZero (double x) {
+	return x >= 0.0 ? Melder_round_tieDown (x) : Melder_round_tieUp (x);
+}
+
+inline static integer Melder_iround_tieTowardsZero (double x) {
+	double xround = Melder_round_tieTowardsZero (x);
+	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
+		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
+	return (integer) xround;
+}
+
+inline static double Melder_round_tieAwayFromZero (double x) {
+	return x >= 0.0 ? Melder_round_tieUp (x) : Melder_round_tieDown (x);
+}
+
+inline static integer Melder_iround_tieAwayFromZero (double x) {
+	double xround = Melder_round_tieAwayFromZero (x);
+	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
+		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
+	return (integer) xround;
+}
+
+#pragma mark - RECORD AND PLAY FUNCTIONS
 
 int Melder_record (double duration);
 int Melder_recordFromFile (MelderFile file);
@@ -2194,16 +2298,16 @@ void MelderAudio_setUseInternalSpeaker (bool useInternalSpeaker);   // for HP-UX
 bool MelderAudio_getUseInternalSpeaker ();
 void MelderAudio_setOutputMaximumAsynchronicity (enum kMelder_asynchronicityLevel maximumAsynchronicity);
 enum kMelder_asynchronicityLevel MelderAudio_getOutputMaximumAsynchronicity ();
-long MelderAudio_getOutputBestSampleRate (long fsamp);
+integer MelderAudio_getOutputBestSampleRate (integer fsamp);
 
 extern bool MelderAudio_isPlaying;
-void MelderAudio_play16 (int16_t *buffer, long sampleRate, long numberOfSamples, int numberOfChannels,
-	bool (*playCallback) (void *playClosure, long numberOfSamplesPlayed),   // return true to continue, false to stop
+void MelderAudio_play16 (int16_t *buffer, integer sampleRate, integer numberOfSamples, int numberOfChannels,
+	bool (*playCallback) (void *playClosure, integer numberOfSamplesPlayed),   // return true to continue, false to stop
 	void *playClosure);
 bool MelderAudio_stopPlaying (bool isExplicit);   // returns true if sound was playing
 #define MelderAudio_IMPLICIT  false
 #define MelderAudio_EXPLICIT  true
-long MelderAudio_getSamplesPlayed ();
+integer MelderAudio_getSamplesPlayed ();
 bool MelderAudio_stopWasExplicit ();
 
 void Melder_audio_prefs ();   // in init file
@@ -2242,26 +2346,26 @@ const char32 * Melder_audioFileTypeString (int audioFileType);   // "AIFF", "AIF
 #define Melder_MPEG_COMPRESSION_24 19
 #define Melder_MPEG_COMPRESSION_32 20
 int Melder_defaultAudioFileEncoding (int audioFileType, int numberOfBitsPerSamplePoint);   /* BIG_ENDIAN, BIG_ENDIAN, LITTLE_ENDIAN, BIG_ENDIAN, LITTLE_ENDIAN */
-void MelderFile_writeAudioFileHeader (MelderFile file, int audioFileType, long sampleRate, long numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
-void MelderFile_writeAudioFileTrailer (MelderFile file, int audioFileType, long sampleRate, long numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
-void MelderFile_writeAudioFile (MelderFile file, int audioFileType, const short *buffer, long sampleRate, long numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
+void MelderFile_writeAudioFileHeader (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
+void MelderFile_writeAudioFileTrailer (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
+void MelderFile_writeAudioFile (MelderFile file, int audioFileType, const short *buffer, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
 
-int MelderFile_checkSoundFile (MelderFile file, int *numberOfChannels, int *encoding,
-	double *sampleRate, long *startOfData, int32 *numberOfSamples);
+int MelderFile_checkSoundFile (MelderFile file, integer *numberOfChannels, int *encoding,
+	double *sampleRate, integer *startOfData, integer *numberOfSamples);
 /* Returns information about a just opened audio file.
  * The return value is the audio file type, or 0 if it is not a sound file or in case of error.
  * The data start at 'startOfData' bytes from the start of the file.
  */
 int Melder_bytesPerSamplePoint (int encoding);
-void Melder_readAudioToFloat (FILE *f, int numberOfChannels, int encoding, double **buffer, long numberOfSamples);
+void Melder_readAudioToFloat (FILE *f, integer numberOfChannels, int encoding, double **buffer, integer numberOfSamples);
 /* Reads channels into buffer [ichannel], which are base-1.
  */
-void Melder_readAudioToShort (FILE *f, int numberOfChannels, int encoding, short *buffer, long numberOfSamples);
+void Melder_readAudioToShort (FILE *f, integer numberOfChannels, int encoding, short *buffer, integer numberOfSamples);
 /* If stereo, buffer will contain alternating left and right values.
  * Buffer is base-0.
  */
-void MelderFile_writeFloatToAudio (MelderFile file, int numberOfChannels, int encoding, double **buffer, long numberOfSamples, int warnIfClipped);
-void MelderFile_writeShortToAudio (MelderFile file, int numberOfChannels, int encoding, const short *buffer, long numberOfSamples);
+void MelderFile_writeFloatToAudio (MelderFile file, integer numberOfChannels, int encoding, double **buffer, integer numberOfSamples, int warnIfClipped);
+void MelderFile_writeShortToAudio (MelderFile file, integer numberOfChannels, int encoding, const short *buffer, integer numberOfSamples);
 
 /********** QUANTITY **********/
 
@@ -2413,7 +2517,7 @@ public:
 
 class autoMelderTokens {
 	char32 **tokens;
-	long numberOfTokens;
+	integer numberOfTokens;
 public:
 	autoMelderTokens () {
 		tokens = nullptr;
@@ -2423,23 +2527,23 @@ public:
 	}
 	~autoMelderTokens () {
 		if (tokens) {
-			for (long itoken = 1; itoken <= numberOfTokens; itoken ++)
+			for (integer itoken = 1; itoken <= numberOfTokens; itoken ++)
 				Melder_free (tokens [itoken]);
 			Melder_freeTokens (& tokens);
 		}
 	}
-	char32*& operator[] (long i) {
+	char32*& operator[] (integer i) {
 		return tokens [i];
 	}
 	char32 ** peek () const {
 		return tokens;
 	}
-	long count () const {
+	integer count () const {
 		return numberOfTokens;
 	}
 	void reset (const char32 *string) {
 		if (tokens) {
-			for (long itoken = 1; itoken <= numberOfTokens; itoken ++)
+			for (integer itoken = 1; itoken <= numberOfTokens; itoken ++)
 				Melder_free (tokens [itoken]);
 			Melder_freeTokens (& tokens);
 		}
@@ -2507,12 +2611,12 @@ class autoMelderAudioSaveMaximumAsynchronicity {
 public:
 	autoMelderAudioSaveMaximumAsynchronicity () {
 		our _savedAsynchronicity = MelderAudio_getOutputMaximumAsynchronicity ();
-		trace (U"value was ", our _savedAsynchronicity);
+		trace (U"value was ", (int) our _savedAsynchronicity);
 		our _disowned = false;
 	}
 	~autoMelderAudioSaveMaximumAsynchronicity () {
 		MelderAudio_setOutputMaximumAsynchronicity (our _savedAsynchronicity);
-		trace (U"value set to ", our _savedAsynchronicity);
+		trace (U"value set to ", (int) our _savedAsynchronicity);
 	}
 	/*
 		Disable copying.

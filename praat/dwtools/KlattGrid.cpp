@@ -274,7 +274,7 @@ static bool FormantGrid_Intensities_isFormantDefined (FormantGrid me, OrderedOf<
 	return exists;
 }
 
-static void check_formants (long numberOfFormants, long *ifb, long *ife) {
+static void check_formants (integer numberOfFormants, integer *ifb, integer *ife) {
 	if (numberOfFormants <= 0 || *ifb > numberOfFormants || *ife < *ifb || *ife < 1) {
 		*ife = 0;  // overrules everything *ifb value is a don't care now
 		return;
@@ -1108,7 +1108,7 @@ static autoSound PhonationGrid_PhonationTier_to_Sound_voiced (PhonationGrid me, 
 			// Fill in the samples to the left of the current point.
 
 			long midSample = Sampled_xToLowIndex (him.get(), t), beginSample;
-			beginSample = midSample - (long) floor (te / his dx);
+			beginSample = midSample - Melder_iroundDown (te / his dx);
 			if (beginSample < 1) {
 				beginSample = 0;
 			}
@@ -1149,7 +1149,7 @@ static autoSound PhonationGrid_PhonationTier_to_Sound_voiced (PhonationGrid me, 
 				double ta = collisionPhase * (period * openPhase);
 				double factorPerSample = exp (- his dx / ta);
 				double value = flow * exp (- (his x1 + midSample * his dx - t) / ta);
-				long endSample = midSample + (long) floor (20.0 * ta / his dx);
+				integer endSample = midSample + Melder_iroundDown (20.0 * ta / his dx);
 				if (endSample > his nx) {
 					endSample = his nx;
 				}
@@ -1562,11 +1562,11 @@ static autoSound Sound_VocalTractGrid_CouplingGrid_filter_cascade (Sound me, Voc
 		long numberOfTrachealAntiFormants = tracheal_antiformants -> formants.size;
 		long numberOfNasalFormants = nasal_formants -> formants.size;
 		long numberOfNasalAntiFormants = nasal_antiformants -> formants.size;
-		check_formants (numberOfFormants, & (pv -> startOralFormant), & (pv -> endOralFormant));
-		check_formants (numberOfNasalFormants, & (pv -> startNasalFormant), & (pv -> endNasalFormant));
-		check_formants (numberOfTrachealFormants, & (pc -> startTrachealFormant), & (pc -> endTrachealFormant));
-		check_formants (numberOfNasalAntiFormants, & (pv -> startNasalAntiFormant), & (pv -> endNasalAntiFormant));
-		check_formants (numberOfTrachealAntiFormants, & (pc -> startTrachealAntiFormant), & (pc -> endTrachealAntiFormant));
+		check_formants (numberOfFormants, & pv -> startOralFormant, & pv -> endOralFormant);
+		check_formants (numberOfNasalFormants, & pv -> startNasalFormant, & pv -> endNasalFormant);
+		check_formants (numberOfTrachealFormants, & pc -> startTrachealFormant, & pc -> endTrachealFormant);
+		check_formants (numberOfNasalAntiFormants, & pv -> startNasalAntiFormant, & pv -> endNasalAntiFormant);
+		check_formants (numberOfTrachealAntiFormants, & pc -> startTrachealAntiFormant, & pc -> endTrachealAntiFormant);
 
 		autoSound him = Data_copy (me);
 
@@ -2463,10 +2463,10 @@ void KlattGrid_formula_amplitudes (KlattGrid me, int formantType, const char32 *
 			for (long icol = 1; icol <= amplitudes -> points.size; icol ++) {
 				Formula_Result result;
 				Formula_run (irow, icol, & result);
-				if (isundef (result. result.numericResult)) {
+				if (isundef (result. numericResult)) {
 					Melder_throw (U"Cannot put an undefined value into the tier.\nFormula not finished.");
 				}
-				amplitudes -> points.at [icol] -> value = result. result.numericResult;
+				amplitudes -> points.at [icol] -> value = result. numericResult;
 			}
 		}
 	} catch (MelderError) {
@@ -2886,8 +2886,8 @@ autoKlattGrid KlattTable_to_KlattGrid (KlattTable me, double frameDuration) {
 	try {
 		Table kt = (Table) me;
 
-		long nrows = my rows.size;
-		double tmin = 0, tmax = nrows * frameDuration;
+		long numberOfRows = my rows.size;
+		double tmin = 0, tmax = numberOfRows * frameDuration;
 		double dBNul = -300;
 		double dB_offset = -20.0 * log10 (2.0e-5) - 87.0; // in KlattTable maximum in DB_to_LIN is at 87 dB : 32767
 		double dB_offset_voicing = 20.0 * log10 (320000 / 32767); // V'[n] in range (-320000,32000)
@@ -2905,7 +2905,7 @@ autoKlattGrid KlattTable_to_KlattGrid (KlattTable me, double frameDuration) {
 		autoKlattGrid thee = KlattGrid_create (tmin, tmax, numberOfFormants, numberOfNasalFormants,
 		                                       numberOfNasalAntiFormants, numberOfTrachealFormants, numberOfTrachealAntiFormants,
 		                                       numberOfFricationFormants, numberOfDeltaFormants);
-		for (long irow = 1; irow <= nrows; irow++) {
+		for (long irow = 1; irow <= numberOfRows; irow++) {
 			double t = (irow - 1) * frameDuration;
 
 			long icol = 1;

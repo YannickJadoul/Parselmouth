@@ -1,6 +1,6 @@
 /* melder_files.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2008,2010-2017 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -127,13 +127,19 @@ void Melder_str32To8bitFileRepresentation_inline (const char32 *string, char *ut
 void Melder_8bitFileRepresentationToStr32_inline (const char *path8, char32 *path32) {
 	#if defined (macintosh)
 		CFStringRef cfpath = CFStringCreateWithCString (nullptr, path8, kCFStringEncodingUTF8);
-		Melder_assert (cfpath != 0);
+		if (! cfpath) {
+			/*
+				Probably something wrong, like a disk was disconnected in the meantime.
+			*/
+			Melder_8to32_inline (path8, path32, kMelder_textInputEncoding::UTF8);
+			Melder_throw (U"Unusual error finding or creating file ", path32, U".");
+		}
 		CFMutableStringRef cfpath2 = CFStringCreateMutableCopy (nullptr, 0, cfpath);
 		CFRelease (cfpath);
 		CFStringNormalize (cfpath2, kCFStringNormalizationFormC);   // Praat requires composed characters
-		long n_utf16 = CFStringGetLength (cfpath2);
-		long n_utf32 = 0;
-		for (long i = 0; i < n_utf16; i ++) {
+		integer n_utf16 = CFStringGetLength (cfpath2);
+		integer n_utf32 = 0;
+		for (integer i = 0; i < n_utf16; i ++) {
 			char32 kar1 = CFStringGetCharacterAtIndex (cfpath2, i);
 			if (kar1 >= 0x00D800 && kar1 <= 0x00DBFF) {
 				char32 kar2 = (char32) CFStringGetCharacterAtIndex (cfpath2, ++ i);   // convert up
@@ -148,7 +154,7 @@ void Melder_8bitFileRepresentationToStr32_inline (const char *path8, char32 *pat
 		path32 [n_utf32] = U'\0';
 		CFRelease (cfpath2);
 	#else
-		Melder_8to32_inline (path8, path32, kMelder_textInputEncoding_UTF8);
+		Melder_8to32_inline (path8, path32, kMelder_textInputEncoding::UTF8);
 	#endif
 }
 #endif
@@ -703,7 +709,7 @@ bool MelderFile_readable (MelderFile file) {
 	}
 }
 
-long MelderFile_length (MelderFile file) {
+integer MelderFile_length (MelderFile file) {
 	#if defined (UNIX)
 		char utf8path [kMelder_MAXPATH+1];
 		Melder_str32To8bitFileRepresentation_inline (file -> path, utf8path);
@@ -714,7 +720,7 @@ long MelderFile_length (MelderFile file) {
 		try {
 			autofile f = Melder_fopen (file, "r");
 			fseek (f, 0, SEEK_END);
-			long length = ftell (f);
+			integer length = ftell (f);
 			f.close (file);
 			return length;
 		} catch (MelderError) {
@@ -823,15 +829,15 @@ MelderFile MelderFile_open (MelderFile me) {
 }
 
 char * MelderFile_readLine (MelderFile me) {
-	long i;
 	static char *buffer;
-	static long capacity;
+	static integer capacity;
 	if (! my filePointer) return nullptr;
 	if (feof (my filePointer)) return nullptr;
 	if (! buffer) {
 		buffer = Melder_malloc (char, capacity = 100);
 	}
-	for (i = 0; true; i ++) {
+	integer i = 0;
+	for (; true; i ++) {
 		if (i >= capacity) {
 			buffer = (char *) Melder_realloc (buffer, capacity *= 2);
 		}
@@ -868,7 +874,7 @@ MelderFile MelderFile_create (MelderFile me) {
 	return me;
 }
 
-void MelderFile_seek (MelderFile me, long position, int direction) {
+void MelderFile_seek (MelderFile me, integer position, int direction) {
 	if (! my filePointer) return;
 	if (fseek (my filePointer, position, direction)) {
 		fclose (my filePointer);
@@ -877,9 +883,9 @@ void MelderFile_seek (MelderFile me, long position, int direction) {
 	}
 }
 
-long MelderFile_tell (MelderFile me) {
+integer MelderFile_tell (MelderFile me) {
 	if (! my filePointer) return 0;
-	long result = ftell (my filePointer);
+	integer result = ftell (my filePointer);
 	if (result == -1) {
 		fclose (my filePointer);
 		my filePointer = nullptr;

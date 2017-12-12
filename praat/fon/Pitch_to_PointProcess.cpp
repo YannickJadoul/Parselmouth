@@ -48,7 +48,7 @@ autoPointProcess Pitch_to_PointProcess (Pitch pitch) {
 }
 
 static int Pitch_getVoicedIntervalAfter (Pitch me, double after, double *tleft, double *tright) {
-	long ileft = Sampled_xToHighIndex (me, after), iright;
+	integer ileft = Sampled_xToHighIndex (me, after), iright;
 	if (ileft > my nx) return 0;   // offright
 	if (ileft < 1) ileft = 1;   // offleft
 
@@ -71,10 +71,10 @@ static int Pitch_getVoicedIntervalAfter (Pitch me, double after, double *tleft, 
 	return 1;
 }
 
-static double findExtremum_3 (double *channel1_base, double *channel2_base, long d, long n, int includeMaxima, int includeMinima) {
+static double findExtremum_3 (double *channel1_base, double *channel2_base, integer d, integer n, int includeMaxima, int includeMinima) {
 	double *channel1 = channel1_base + d, *channel2 = channel2_base ? channel2_base + d : nullptr;
 	int includeAll = includeMaxima == includeMinima;
-	long imin = 1, imax = 1, i, iextr;
+	integer imin = 1, imax = 1, i, iextr;
 	double minimum, maximum;
 	if (n < 3) {
 		if (n <= 0) return 0.0;   // outside
@@ -110,7 +110,7 @@ static double findExtremum_3 (double *channel1_base, double *channel2_base, long
 }
 
 static double Sound_findExtremum (Sound me, double tmin, double tmax, int includeMaxima, int includeMinima) {
-	long imin = Sampled_xToLowIndex (me, tmin), imax = Sampled_xToHighIndex (me, tmax);
+	integer imin = Sampled_xToLowIndex (me, tmin), imax = Sampled_xToHighIndex (me, tmax);
 	Melder_assert (isdefined (tmin));
 	Melder_assert (isdefined (tmax));
 	if (imin < 1) imin = 1;
@@ -127,16 +127,16 @@ static double Sound_findMaximumCorrelation (Sound me, double t1, double windowLe
 	double r1_best = undefined, r3_best = undefined, ir = undefined;   // assignments not necessary, but extra safe
 	double r1 = 0.0, r2 = 0.0, r3 = 0.0;
 	double halfWindowLength = 0.5 * windowLength;
-	long ileft1 = Sampled_xToNearestIndex ((Sampled) me, t1 - halfWindowLength);
-	long iright1 = Sampled_xToNearestIndex ((Sampled) me, t1 + halfWindowLength);
-	long ileft2min = Sampled_xToLowIndex ((Sampled) me, tmin2 - halfWindowLength);
-	long ileft2max = Sampled_xToHighIndex ((Sampled) me, tmax2 - halfWindowLength);
+	integer ileft1 = Sampled_xToNearestIndex ((Sampled) me, t1 - halfWindowLength);
+	integer iright1 = Sampled_xToNearestIndex ((Sampled) me, t1 + halfWindowLength);
+	integer ileft2min = Sampled_xToLowIndex ((Sampled) me, tmin2 - halfWindowLength);
+	integer ileft2max = Sampled_xToHighIndex ((Sampled) me, tmax2 - halfWindowLength);
 	*peak = 0.0;   // default
 	Melder_assert (ileft2max >= ileft2min);   // if the loop is never executed, the result will be garbage
-	for (long ileft2 = ileft2min; ileft2 <= ileft2max; ileft2 ++) {
+	for (integer ileft2 = ileft2min; ileft2 <= ileft2max; ileft2 ++) {
 		double norm1 = 0.0, norm2 = 0.0, product = 0.0, localPeak = 0.0;
-		for (long ichan = 1; ichan <= my ny; ichan ++) {
-			for (long i1 = ileft1, i2 = ileft2; i1 <= iright1; i1 ++, i2 ++) {
+		for (integer ichan = 1; ichan <= my ny; ichan ++) {
+			for (integer i1 = ileft1, i2 = ileft2; i1 <= iright1; i1 ++, i2 ++) {
 				if (i1 < 1 || i1 > my nx || i2 < 1 || i2 > my nx) continue;
 				double amp1 = my z [ichan] [i1], amp2 = my z [ichan] [i2];
 				norm1 += amp1 * amp1;
@@ -195,7 +195,7 @@ autoPointProcess Sound_Pitch_to_PointProcess_cc (Sound sound, Pitch pitch) {
 			 */
 			double tmiddle = (tleft + tright) / 2;
 			Melder_progress ((tmiddle - sound -> xmin) / (sound -> xmax - sound -> xmin), U"Sound & Pitch to PointProcess");
-			double f0middle = Pitch_getValueAtTime (pitch, tmiddle, kPitch_unit_HERTZ, Pitch_LINEAR);
+			double f0middle = Pitch_getValueAtTime (pitch, tmiddle, kPitch_unit::HERTZ, Pitch_LINEAR);
 
 			/*
 			 * Our first point is near this middle.
@@ -213,7 +213,7 @@ autoPointProcess Sound_Pitch_to_PointProcess_cc (Sound sound, Pitch pitch) {
 
 			double tsave = tmax;
 			for (;;) {
-				double f0 = Pitch_getValueAtTime (pitch, tmax, kPitch_unit_HERTZ, Pitch_LINEAR), correlation;
+				double f0 = Pitch_getValueAtTime (pitch, tmax, kPitch_unit::HERTZ, Pitch_LINEAR), correlation;
 				if (isundef (f0)) break;
 				correlation = Sound_findMaximumCorrelation (sound, tmax, 1.0 / f0, tmax - 1.25 / f0, tmax - 0.8 / f0, & tmax, & peak);
 				if (correlation == -1) /*break*/ tmax -= 1.0 / f0;   // this one period will drop out
@@ -231,7 +231,7 @@ autoPointProcess Sound_Pitch_to_PointProcess_cc (Sound sound, Pitch pitch) {
 			}
 			tmax = tsave;
 			for (;;) {
-				double f0 = Pitch_getValueAtTime (pitch, tmax, kPitch_unit_HERTZ, Pitch_LINEAR), correlation;
+				double f0 = Pitch_getValueAtTime (pitch, tmax, kPitch_unit::HERTZ, Pitch_LINEAR), correlation;
 				if (isundef (f0)) break;
 				correlation = Sound_findMaximumCorrelation (sound, tmax, 1.0 / f0, tmax + 0.8 / f0, tmax + 1.25 / f0, & tmax, & peak);
 				if (correlation == -1) /*break*/ tmax += 1.0 / f0;
@@ -274,7 +274,7 @@ autoPointProcess Sound_Pitch_to_PointProcess_peaks (Sound sound, Pitch pitch, in
 			 */
 			double tmiddle = (tleft + tright) / 2;
 			Melder_progress ((tmiddle - sound -> xmin) / (sound -> xmax - sound -> xmin), U"Sound & Pitch: To PointProcess");
-			double f0middle = Pitch_getValueAtTime (pitch, tmiddle, kPitch_unit_HERTZ, Pitch_LINEAR);
+			double f0middle = Pitch_getValueAtTime (pitch, tmiddle, kPitch_unit::HERTZ, Pitch_LINEAR);
 
 			/*
 			 * Our first point is near this middle.
@@ -286,7 +286,7 @@ autoPointProcess Sound_Pitch_to_PointProcess_peaks (Sound sound, Pitch pitch, in
 
 			double tsave = tmax;
 			for (;;) {
-				double f0 = Pitch_getValueAtTime (pitch, tmax, kPitch_unit_HERTZ, Pitch_LINEAR);
+				double f0 = Pitch_getValueAtTime (pitch, tmax, kPitch_unit::HERTZ, Pitch_LINEAR);
 				if (isundef (f0)) break;
 				tmax = Sound_findExtremum (sound, tmax - 1.25 / f0, tmax - 0.8 / f0, includeMaxima, includeMinima);
 				if (tmax < tleft) {
@@ -301,7 +301,7 @@ autoPointProcess Sound_Pitch_to_PointProcess_peaks (Sound sound, Pitch pitch, in
 			}
 			tmax = tsave;
 			for (;;) {
-				double f0 = Pitch_getValueAtTime (pitch, tmax, kPitch_unit_HERTZ, Pitch_LINEAR);
+				double f0 = Pitch_getValueAtTime (pitch, tmax, kPitch_unit::HERTZ, Pitch_LINEAR);
 				if (isundef (f0)) break;
 				tmax = Sound_findExtremum (sound, tmax + 0.8 / f0, tmax + 1.25 / f0, includeMaxima, includeMinima);
 				if (tmax > tright) {

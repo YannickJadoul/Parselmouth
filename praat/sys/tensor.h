@@ -19,7 +19,6 @@
  */
 
 #include "melder.h"
-#include <math.h>
 
 inline static double sqrt_scalar (double x) {
 	#if defined (_WIN32)
@@ -30,6 +29,7 @@ inline static double sqrt_scalar (double x) {
 
 void sum_mean_scalar (numvec x, real *p_sum, real *p_mean) noexcept;
 void sum_mean_sumsq_variance_stdev_scalar (numvec x, real *p_sum, real *p_mean, real *p_sumsq, real *p_variance, real *p_stdev) noexcept;
+void sum_mean_sumsq_variance_stdev_scalar (nummat x, integer columnNumber, real *p_sum, real *p_mean, real *p_sumsq, real *p_variance, real *p_stdev) noexcept;
 
 inline static real sum_scalar (numvec x) noexcept {
 	integer n = x.size;
@@ -107,27 +107,64 @@ inline static bool equal_numvec (numvec x, numvec y) {
 	return true;
 }
 
+inline static void numvec_copyElements_nocheck (numvec from, numvec to) {
+	for (integer i = 1; i <= from.size; i ++) {
+		to [i] = from [i];
+	}
+}
+
+inline static void nummat_copyElements_nocheck (nummat from, nummat to) {
+	for (integer irow = 1; irow <= from.nrow; irow ++) {
+		for (integer icol = 1; icol <= from.ncol; icol ++) {
+			to [irow] [icol] = from [irow] [icol];
+		}
+	}
+}
+
 inline static autonumvec add_numvec (numvec x, numvec y) {
 	if (x.size != y.size) return autonumvec { nullptr, 0 };
-	autonumvec result (x.size, false);
+	autonumvec result (x.size, kTensorInitializationType::RAW);
 	for (integer i = 1; i <= x.size; i ++) {
 		result [i] = x [i] + y [i];
 	}
 	return result;
 }
+inline static autonummat add_nummat (nummat x, nummat y) {
+	if (x.nrow != y.nrow || x.ncol != y.ncol) return autonummat { nullptr, 0, 0 };
+	autonummat result (x.nrow, x.ncol, kTensorInitializationType::RAW);
+	for (integer irow = 1; irow <= x.nrow; irow ++) {
+		for (integer icol = 1; icol <= x.ncol; icol ++) {
+			result [irow] [icol] = x [irow] [icol] + y [irow] [icol];
+		}
+	}
+	return result;
+}
 inline static autonumvec sub_numvec (numvec x, numvec y) {
 	if (x.size != y.size) return autonumvec { nullptr, 0 };
-	autonumvec result (x.size, false);
+	autonumvec result (x.size, kTensorInitializationType::RAW);
 	for (integer i = 1; i <= x.size; i ++) {
 		result [i] = x [i] - y [i];
 	}
 	return result;
 }
+inline static autonummat sub_nummat (nummat x, nummat y) {
+	if (x.nrow != y.nrow || x.ncol != y.ncol) return autonummat { nullptr, 0, 0 };
+	autonummat result (x.nrow, x.ncol, kTensorInitializationType::RAW);
+	for (integer irow = 1; irow <= x.nrow; irow ++) {
+		for (integer icol = 1; icol <= x.ncol; icol ++) {
+			result [irow] [icol] = x [irow] [icol] - y [irow] [icol];
+		}
+	}
+	return result;
+}
+
+autonumvec mul_numvec (numvec x, nummat y);
+autonumvec mul_numvec (nummat x, numvec y);
 
 autonummat copy_nummat (nummat x);
 
 inline static numvec as_numvec (nummat x) {
-	return numvec (x.nrow * x.ncol, x [1]);
+	return numvec (x [1], x.nrow * x.ncol);
 }
 
 inline static real norm_scalar (nummat x, real power) noexcept {
@@ -137,6 +174,8 @@ inline static real norm_scalar (nummat x, real power) noexcept {
 autonummat outer_nummat (numvec x, numvec y);
 
 autonummat peaks_nummat (numvec x, bool includeEdges, int interpolate, bool sortByHeight);
+
+void numvec_sort (numvec x);
 
 /* End of file tensor.h */
 #endif
