@@ -104,6 +104,7 @@ using Data_Parent = Daata_Parent;
         SignalOutsideTimeDomain,     \
         SoundFileFormat,             \
         SpectralAnalysisWindowShape, \
+        FormantUnit,                 \
 		PitchUnit
 
 
@@ -132,6 +133,7 @@ PRAAT_ENUM_BINDING_ALIAS(AmplitudeScaling, kSounds_convolve_scaling)
 PRAAT_ENUM_BINDING_ALIAS(SignalOutsideTimeDomain, kSounds_convolve_signalOutsideTimeDomain)
 PRAAT_ENUM_BINDING(SoundFileFormat)
 PRAAT_ENUM_BINDING_ALIAS(SpectralAnalysisWindowShape, kSound_to_Spectrogram_windowShape)
+PRAAT_ENUM_BINDING_ALIAS(FormantUnit, kFormant_unit)
 PRAAT_ENUM_BINDING_ALIAS(PitchUnit, kPitch_unit)
 
 

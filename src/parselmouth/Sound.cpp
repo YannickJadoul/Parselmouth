@@ -105,34 +105,34 @@ PRAAT_ENUM_BINDING(ToHarmonicityMethod);
 // TODO Can be nested within Sound? Valid documentation (i.e. parselmouth.Sound.WindowShape instead of parselmouth.WindowShape)?
 
 void Binding<WindowShape>::init() {
-	value("RECTANGULAR", kSound_windowShape_RECTANGULAR);
-	value("TRIANGULAR", kSound_windowShape_TRIANGULAR);
-	value("PARABOLIC", kSound_windowShape_PARABOLIC);
-	value("HANNING", kSound_windowShape_HANNING);
-	value("HAMMING", kSound_windowShape_HAMMING);
-	value("GAUSSIAN1", kSound_windowShape_GAUSSIAN_1);
-	value("GAUSSIAN2", kSound_windowShape_GAUSSIAN_2);
-	value("GAUSSIAN3", kSound_windowShape_GAUSSIAN_3);
-	value("GAUSSIAN4", kSound_windowShape_GAUSSIAN_4);
-	value("GAUSSIAN5", kSound_windowShape_GAUSSIAN_5);
-	value("KAISER1", kSound_windowShape_KAISER_1);
-	value("KAISER2", kSound_windowShape_KAISER_2);
+	value("RECTANGULAR", kSound_windowShape::RECTANGULAR);
+	value("TRIANGULAR", kSound_windowShape::TRIANGULAR);
+	value("PARABOLIC", kSound_windowShape::PARABOLIC);
+	value("HANNING", kSound_windowShape::HANNING);
+	value("HAMMING", kSound_windowShape::HAMMING);
+	value("GAUSSIAN1", kSound_windowShape::GAUSSIAN_1);
+	value("GAUSSIAN2", kSound_windowShape::GAUSSIAN_2);
+	value("GAUSSIAN3", kSound_windowShape::GAUSSIAN_3);
+	value("GAUSSIAN4", kSound_windowShape::GAUSSIAN_4);
+	value("GAUSSIAN5", kSound_windowShape::GAUSSIAN_5);
+	value("KAISER1", kSound_windowShape::KAISER_1);
+	value("KAISER2", kSound_windowShape::KAISER_2);
 
 	make_implicitly_convertible_from_string(*this, true);
 }
 
 void Binding<AmplitudeScaling>::init() {
-	value("INTEGRAL", kSounds_convolve_scaling_INTEGRAL);
-	value("SUM", kSounds_convolve_scaling_SUM);
-	value("NORMALIZE", kSounds_convolve_scaling_NORMALIZE);
-	value("PEAK_0_99", kSounds_convolve_scaling_PEAK_099);
+	value("INTEGRAL", kSounds_convolve_scaling::INTEGRAL);
+	value("SUM", kSounds_convolve_scaling::SUM);
+	value("NORMALIZE", kSounds_convolve_scaling::NORMALIZE);
+	value("PEAK_0_99", kSounds_convolve_scaling::PEAK_099);
 
 	make_implicitly_convertible_from_string(*this, true);
 }
 
 void Binding<SignalOutsideTimeDomain>::init() {
-	value("ZERO", kSounds_convolve_signalOutsideTimeDomain_ZERO);
-	value("SIMILAR", kSounds_convolve_signalOutsideTimeDomain_SIMILAR);
+	value("ZERO", kSounds_convolve_signalOutsideTimeDomain::ZERO);
+	value("SIMILAR", kSounds_convolve_signalOutsideTimeDomain::SIMILAR);
 
 	make_implicitly_convertible_from_string(*this, true);
 }
@@ -161,12 +161,12 @@ void Binding<SoundFileFormat>::init() {
 }
 
 void Binding<SpectralAnalysisWindowShape>::init() {
-	value("SQUARE", kSound_to_Spectrogram_windowShape_SQUARE);
-	value("HAMMING", kSound_to_Spectrogram_windowShape_HAMMING);
-	value("BARTLETT", kSound_to_Spectrogram_windowShape_BARTLETT);
-	value("WELCH", kSound_to_Spectrogram_windowShape_WELCH);
-	value("HANNING", kSound_to_Spectrogram_windowShape_HANNING);
-	value("GAUSSIAN", kSound_to_Spectrogram_windowShape_GAUSSIAN);
+	value("SQUARE", kSound_to_Spectrogram_windowShape::SQUARE);
+	value("HAMMING", kSound_to_Spectrogram_windowShape::HAMMING);
+	value("BARTLETT", kSound_to_Spectrogram_windowShape::BARTLETT);
+	value("WELCH", kSound_to_Spectrogram_windowShape::WELCH);
+	value("HANNING", kSound_to_Spectrogram_windowShape::HANNING);
+	value("GAUSSIAN", kSound_to_Spectrogram_windowShape::GAUSSIAN);
 
 	make_implicitly_convertible_from_string(*this, true);
 }
@@ -465,7 +465,7 @@ void Binding<Sound>::init() {
 
 	def("extract_part", // TODO Something for optional<double> for from and to in Sounds?
 	    [](Sound self, optional<double> fromTime, optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt, "window_shape"_a = kSound_windowShape_RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
+	    "from_time"_a = nullopt, "to_time"_a = nullopt, "window_shape"_a = kSound_windowShape::RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
 
 	def("extract_part_for_overlap",
 	    [](Sound self, optional<double> fromTime, optional<double> toTime, Positive<double> overlap) { return Sound_extractPartForOverlap(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), overlap); },
@@ -565,7 +565,7 @@ void Binding<Sound>::init() {
 
 	def("autocorrelate",
 	    &Sound_autoCorrelate,
-	    "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
+	    "scaling"_a = kSounds_convolve_scaling::PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain::ZERO);
 
 	def("to_spectrum",
 	    args_cast<_, bool>(Sound_to_Spectrum),
@@ -573,7 +573,7 @@ void Binding<Sound>::init() {
 
 	def("to_spectrogram",
 	    [](Sound self, Positive<double> windowLength, Positive<double> maximumFrequency, Positive<double> timeStep, Positive<double> frequencyStep, kSound_to_Spectrogram_windowShape windowShape) { return Sound_to_Spectrogram(self, windowLength, maximumFrequency, timeStep, frequencyStep, windowShape, 8.0, 8.0); },
-	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape_GAUSSIAN);
+	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape::GAUSSIAN);
 
 	def("to_formant_burg", // TODO Praat has Max. number of formants as REAL? What the hell? "Pi formants for me, please."? (I know, I know; see Praat documentation)
 	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> maxNumberOfFormants, double maximumFormant, Positive<double> windowLength, Positive<double> preEmphasisFrom) { return Sound_to_Formant_burg(self, timeStep ? static_cast<double>(*timeStep) : 0.0, maxNumberOfFormants, maximumFormant, windowLength, preEmphasisFrom); },
@@ -605,11 +605,11 @@ void Binding<Sound>::init() {
 
 	def("convolve",
 	    &Sounds_convolve,
-	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
+	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling::PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain::ZERO);
 
 	def("cross_correlate",
 	    &Sounds_crossCorrelate,
-	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
+	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling::PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain::ZERO);
 	// TODO Cross-correlate (short)?
 
 	def("to_mfcc", // Watch out for different order of arguments in interface than in Sound_to_MFCC // TODO REQUIRE (numberOfCoefficients < 25, U"The number of coefficients should be less than 25.")

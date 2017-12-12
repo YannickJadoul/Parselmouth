@@ -21,6 +21,7 @@
 #include "TimeClassAspects.h"
 
 #include "utils/SignatureCast.h"
+#include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 
 namespace py = pybind11;
@@ -28,18 +29,25 @@ using namespace py::literals;
 
 namespace parselmouth {
 
+void Binding<FormantUnit>::init() {
+	value("HERTZ", kFormant_unit::HERTZ);
+	value("BARK", kFormant_unit::BARK);
+
+	make_implicitly_convertible_from_string(*this, true);
+}
+
 void Binding<Formant>::init() {
 	using signature_cast_placeholder::_;
 
 	initTimeFrameSampled(*this);
 
 	def("get_value_at_time", // TODO Enum for Hertz vs. Bark?
-	    args_cast<_, Positive<int>, _, bool>(Formant_getValueAtTime),
-		"formant_number"_a, "time"_a, "bark"_a = false);
+	    args_cast<_, Positive<int>, _, _>(Formant_getValueAtTime),
+		"formant_number"_a, "time"_a, "unit"_a = kFormant_unit::HERTZ);
 
 	def("get_bandwidth_at_time",
-	    args_cast<_, Positive<int>, _, bool>(Formant_getBandwidthAtTime),
-	    "formant_number"_a, "time"_a, "bark"_a = false);
+	    args_cast<_, Positive<int>, _, _>(Formant_getBandwidthAtTime),
+	    "formant_number"_a, "time"_a, "unit"_a = kFormant_unit::HERTZ);
 }
 
 } // namespace parselmouth

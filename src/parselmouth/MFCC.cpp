@@ -55,11 +55,11 @@ void Binding<MFCC>::init() {
 
 	def("cross_correlate",
 	    &MFCCs_convolve,
-	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
+	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling::PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain::ZERO);
 
 	def("convolve",
 	    &MFCCs_convolve,
-	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling_PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain_ZERO);
+	    "other"_a.none(false), "scaling"_a = kSounds_convolve_scaling::PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain::ZERO);
 }
 
 } // namespace parselmouth

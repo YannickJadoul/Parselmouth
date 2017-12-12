@@ -41,7 +41,7 @@ void Binding<Sampled>::init()
 
 	def("xs",
 		[](Sampled self) { // TODO This or rather use Python call to numpy?
-			py::array_t<double> xs(self->nx);
+			py::array_t<double> xs(static_cast<size_t>(self->nx));
 			auto unchecked = xs.mutable_unchecked<1>();
 			for (auto i = 0; i < self->nx; ++i) {
 				unchecked(i) = self->x1 + i * self->dx;
@@ -51,7 +51,7 @@ void Binding<Sampled>::init()
 
 	def("x_grid",
 	    [](Sampled self) {
-		    py::array_t<double> grid(self->nx + 1);
+		    py::array_t<double> grid(static_cast<size_t>(self->nx) + 1);
 		    auto unchecked = grid.mutable_unchecked<1>();
 		    for (auto i = 0; i < self->nx + 1; ++i) {
 			    unchecked(i) = self->x1 + (i - 0.5) * self->dx;
@@ -61,7 +61,7 @@ void Binding<Sampled>::init()
 
 	def("x_bins",
 	    [](Sampled self) {
-		    py::array_t<double> bins({self->nx, 2});
+		    py::array_t<double> bins({static_cast<size_t>(self->nx), size_t{2}});
 		    auto unchecked = bins.mutable_unchecked<2>();
 		    for (auto i = 0; i < self->nx; ++i) {
 			    unchecked(i, 0) = self->x1 + (i - 0.5) * self->dx;

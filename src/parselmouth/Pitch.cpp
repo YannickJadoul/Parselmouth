@@ -40,15 +40,15 @@ PRAAT_STRUCT_BINDING(Candidate, Pitch_Candidate)
 PRAAT_STRUCT_BINDING(Frame, Pitch_Frame)
 
 void Binding<PitchUnit>::init() {
-	value("HERTZ", kPitch_unit_HERTZ);
-	value("HERTZ_LOGARITHMIC", kPitch_unit_HERTZ_LOGARITHMIC);
-	value("MEL", kPitch_unit_MEL);
-	value("LOG_HERTZ", kPitch_unit_LOG_HERTZ); // TODO Huh? HERTZ_LOGARITHMIC and LOG_HERTZ!?
-	value("SEMITONES_1", kPitch_unit_SEMITONES_1);
-	value("SEMITONES_100", kPitch_unit_SEMITONES_100);
-	value("SEMITONES_200", kPitch_unit_SEMITONES_200);
-	value("SEMITONES_440", kPitch_unit_SEMITONES_440);
-	value("ERB", kPitch_unit_ERB);
+	value("HERTZ", kPitch_unit::HERTZ);
+	value("HERTZ_LOGARITHMIC", kPitch_unit::HERTZ_LOGARITHMIC);
+	value("MEL", kPitch_unit::MEL);
+	value("LOG_HERTZ", kPitch_unit::LOG_HERTZ); // TODO Huh? HERTZ_LOGARITHMIC and LOG_HERTZ!?
+	value("SEMITONES_1", kPitch_unit::SEMITONES_1);
+	value("SEMITONES_100", kPitch_unit::SEMITONES_100);
+	value("SEMITONES_200", kPitch_unit::SEMITONES_200);
+	value("SEMITONES_440", kPitch_unit::SEMITONES_440);
+	value("ERB", kPitch_unit::ERB);
 
 	make_implicitly_convertible_from_string(*this, true);
 }
@@ -156,19 +156,19 @@ void Binding<Pitch>::init() {
 	    [](Pitch self, double time, kPitch_unit unit, Interpolation interpolation) {
 		    if (interpolation != Interpolation::NEAREST && interpolation != Interpolation::LINEAR)
 			    Melder_throw(U"Pitch values can only be queried using NEAREST or LINEAR interpolation");
-		    auto value = Sampled_getValueAtX(self, time, Pitch_LEVEL_FREQUENCY, unit, interpolation == Interpolation::LINEAR);
-		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, unit);
+		    auto value = Sampled_getValueAtX(self, time, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit), interpolation == Interpolation::LINEAR);
+		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
 	    },
-	    "time"_a, "unit"_a = kPitch_unit_HERTZ, "interpolation"_a = Interpolation::LINEAR);
+	    "time"_a, "unit"_a = kPitch_unit::HERTZ, "interpolation"_a = Interpolation::LINEAR);
 
 	// TODO get_strength_at_time ? -> Pitch strength unit enum
 
 	def("get_value_in_frame",
 	    [](Pitch self, long frameNumber, kPitch_unit unit) {
-		    auto value = Sampled_getValueAtSample(self, frameNumber, Pitch_LEVEL_FREQUENCY, unit);
-		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, unit);
+		    auto value = Sampled_getValueAtSample(self, frameNumber, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
+		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
 	    },
-	    "frame_number"_a, "unit"_a = kPitch_unit_HERTZ);
+	    "frame_number"_a, "unit"_a = kPitch_unit::HERTZ);
 
 	// TODO Minimum, Time of minimum, Maximum, Time of maximum, ...
 
@@ -177,29 +177,29 @@ void Binding<Pitch>::init() {
 		    double slope;
 		    long nVoiced = 0;
 		    switch (unit) {
-		    case kPitch_unit_HERTZ:
+		    case kPitch_unit::HERTZ:
 			    nVoiced = Pitch_getMeanAbsSlope_hertz(self, &slope);
 			    break;
-		    case kPitch_unit_MEL:
+		    case kPitch_unit::MEL:
 			    nVoiced = Pitch_getMeanAbsSlope_mel(self, &slope);
 			    break;
-		    case kPitch_unit_SEMITONES_1:
-		    case kPitch_unit_SEMITONES_100:
-		    case kPitch_unit_SEMITONES_200:
-		    case kPitch_unit_SEMITONES_440:
+		    case kPitch_unit::SEMITONES_1:
+		    case kPitch_unit::SEMITONES_100:
+		    case kPitch_unit::SEMITONES_200:
+		    case kPitch_unit::SEMITONES_440:
 			    nVoiced = Pitch_getMeanAbsSlope_semitones(self, &slope);
 			    break;
-		    case kPitch_unit_ERB:
+		    case kPitch_unit::ERB:
 			    nVoiced = Pitch_getMeanAbsSlope_erb(self, &slope);
 			    break;
-		    case kPitch_unit_HERTZ_LOGARITHMIC:
-		    case kPitch_unit_LOG_HERTZ:
+		    case kPitch_unit::HERTZ_LOGARITHMIC:
+		    case kPitch_unit::LOG_HERTZ:
 			    Melder_throw(U"The mean absolute slope of a Pitch object can only be calculated with units HERTZ, MEL, SEMITONES_1, SEMITONES_100, SEMITONES_200, SEMITONES_440, and ERB");
 		    }
 		    if (nVoiced < 2)
 			    return double{undefined};
 		    return slope;
-	    }, "unit"_a = kPitch_unit_HERTZ);
+	    }, "unit"_a = kPitch_unit::HERTZ);
 
 	def("get_slope_without_octave_jumps",
 	    [](Pitch self) {
@@ -232,7 +232,7 @@ void Binding<Pitch>::init() {
 
 	def("subtract_linear_fit",
 	    [](Pitch self, kPitch_unit unit) { return Pitch_subtractLinearFit(self, unit); },
-		"unit"_a = PitchUnit::kPitch_unit_HERTZ);
+		"unit"_a = kPitch_unit::HERTZ);
 
 	def("kill_octave_jumps",
 		&Pitch_killOctaveJumps);
