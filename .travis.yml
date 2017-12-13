@@ -27,31 +27,28 @@ matrix:
           packages: [python3-pip, g++-5]
 
     - env: PYTHON=3.5 GCC=5
-      addons: *gcc5
-
-    - env: PYTHON=3.6 GCC=5
-      addons: &gcc5-python36
+      addons:
         apt:
           sources: [ubuntu-toolchain-r-test, deadsnakes]
-          packages: [g++-5, python3.6-dev, python3.6-venv]
+          packages: [g++-5, python3.5-dev, python3.5-venv]
+
+    - env: PYTHON=3.6 GCC=5
+      addons: *gcc5
 
     - env: PYTHON=2.7 GCC=5 BUILD_TYPE=Release
       addons: *gcc5
 
     - env: PYTHON=3.6 GCC=5 BUILD_TYPE=Release
-      addons: *gcc5-python36
+      addons: *gcc5
 
     - env: PYTHON=2.7 GCC=7
-      addons:
+      addons: &gcc7
         apt:
           sources: [ubuntu-toolchain-r-test]
           packages: [g++-7]
 
     - env: PYTHON=3.6 GCC=7
-      addons:
-        apt:
-          sources: [ubuntu-toolchain-r-test, deadsnakes]
-          packages: [g++-7, python3.6-dev, python3.6-venv]
+      addons: *gcc7
 
     - env: PYTHON=2.7 CLANG=3.8
       compiler: clang
@@ -63,8 +60,7 @@ matrix:
       compiler: clang
       addons:
         apt:
-          sources: [deadsnakes]
-          packages: [clang-3.8, libc++-dev, python3.6-dev, python3.6-venv]
+          packages: [clang-3.8, libc++-dev]
 
     - env: PYTHON=2.7
       os: osx
@@ -180,8 +176,10 @@ before_install:
         export CFLAGS="-Qunused-arguments"
         export CXXFLAGS="-Qunused-arguments -stdlib=libc++"
       fi
-      if [ "$PYTHON" == "3.6" ]; then
-        python3.6 -m ensurepip --user
+      if [ "$PYTHON" == "3.5" ]; then
+        python$PYTHON -m ensurepip --user
+      elif [ "$PYTHON" = "3.6" ]; then
+        pyenv global system $PYTHON # https://github.com/travis-ci/travis-ci/issues/8363
       fi
       PYTHON_CMD=python$PYTHON
     elif [ "$TRAVIS_OS_NAME" == "osx" ]; then
