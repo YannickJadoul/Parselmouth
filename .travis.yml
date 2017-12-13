@@ -180,9 +180,7 @@ before_install:
         export CFLAGS="-Qunused-arguments"
         export CXXFLAGS="-Qunused-arguments -stdlib=libc++"
       fi
-      if [ "$PYTHON" == "3.5" ]; then
-        pyenv global system $PYTHON # https://github.com/travis-ci/travis-ci/issues/8363
-      elif [ "$PYTHON" == 3.6 ]; then
+      if [ "$PYTHON" == "3.6" ]; then
         python3.6 -m ensurepip --user
       fi
       PYTHON_CMD=python$PYTHON
