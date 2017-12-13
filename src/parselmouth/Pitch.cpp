@@ -177,24 +177,26 @@ void Binding<Pitch>::init() {
 		    double slope;
 		    long nVoiced = 0;
 		    switch (unit) {
-		    case kPitch_unit::HERTZ:
-			    nVoiced = Pitch_getMeanAbsSlope_hertz(self, &slope);
-			    break;
-		    case kPitch_unit::MEL:
-			    nVoiced = Pitch_getMeanAbsSlope_mel(self, &slope);
-			    break;
-		    case kPitch_unit::SEMITONES_1:
-		    case kPitch_unit::SEMITONES_100:
-		    case kPitch_unit::SEMITONES_200:
-		    case kPitch_unit::SEMITONES_440:
-			    nVoiced = Pitch_getMeanAbsSlope_semitones(self, &slope);
-			    break;
-		    case kPitch_unit::ERB:
-			    nVoiced = Pitch_getMeanAbsSlope_erb(self, &slope);
-			    break;
-		    case kPitch_unit::HERTZ_LOGARITHMIC:
-		    case kPitch_unit::LOG_HERTZ:
-			    Melder_throw(U"The mean absolute slope of a Pitch object can only be calculated with units HERTZ, MEL, SEMITONES_1, SEMITONES_100, SEMITONES_200, SEMITONES_440, and ERB");
+			case kPitch_unit::HERTZ:
+				nVoiced = Pitch_getMeanAbsSlope_hertz(self, &slope);
+				break;
+			case kPitch_unit::MEL:
+				nVoiced = Pitch_getMeanAbsSlope_mel(self, &slope);
+				break;
+			case kPitch_unit::SEMITONES_1:
+			case kPitch_unit::SEMITONES_100:
+			case kPitch_unit::SEMITONES_200:
+			case kPitch_unit::SEMITONES_440:
+				nVoiced = Pitch_getMeanAbsSlope_semitones(self, &slope);
+				break;
+			case kPitch_unit::ERB:
+				nVoiced = Pitch_getMeanAbsSlope_erb(self, &slope);
+				break;
+			case kPitch_unit::HERTZ_LOGARITHMIC:
+			case kPitch_unit::LOG_HERTZ:
+				Melder_throw(U"The mean absolute slope of a Pitch object can only be calculated with units HERTZ, MEL, SEMITONES_1, SEMITONES_100, SEMITONES_200, SEMITONES_440, and ERB");
+			case kPitch_unit::UNDEFINED:
+				Melder_throw(U"ERROR: PitchUnit should never be UNDEFINED!");
 		    }
 		    if (nVoiced < 2)
 			    return double{undefined};
