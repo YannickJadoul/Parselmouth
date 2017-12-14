@@ -62,7 +62,7 @@ void Binding<SampledXY>::init()
 
 	def("y_bins",
 	    [](SampledXY self) {
-		    py::array_t<double> bins({self->ny, 2L});
+		    py::array_t<double> bins({self->ny, integer{2}});
 		    auto unchecked = bins.mutable_unchecked<2>();
 		    for (auto i = 0; i < self->ny; ++i) {
 			    unchecked(i, 0) = self->y1 + (i - 0.5) * self->dy;

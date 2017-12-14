@@ -61,7 +61,7 @@ void Binding<Sampled>::init()
 
 	def("x_bins",
 	    [](Sampled self) {
-		    py::array_t<double> bins({static_cast<size_t>(self->nx), size_t{2}});
+		    py::array_t<double> bins({self->nx, integer{2}});
 		    auto unchecked = bins.mutable_unchecked<2>();
 		    for (auto i = 0; i < self->nx; ++i) {
 			    unchecked(i, 0) = self->x1 + (i - 0.5) * self->dx;
