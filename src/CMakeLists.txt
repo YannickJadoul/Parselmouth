@@ -24,6 +24,7 @@ if (UNIX)
 elseif (WIN32)
 	set(PYBIND11_CPP_STANDARD "/std:c++latest")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd5033") # "warning C5033: 'register' is no longer a supported storage class": in Python header files
 endif ()
 
 add_sources(parselmouth.cpp)
