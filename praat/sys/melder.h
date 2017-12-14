@@ -1694,8 +1694,8 @@ void MelderString_copy (MelderString *me, Melder_16_TO_19_ARGS);
 void MelderString_ncopy (MelderString *me, const char32 *source, int64 n);
 
 inline static void MelderString_append (MelderString *me, Melder_1_ARG) {
-	const char32 *s1  = arg1._arg  ? arg1._arg  : U"";  integer length1  = str32len (s1);
-	integer sizeNeeded = me -> length + length1 + 1;
+	const char32 *s1  = arg1._arg  ? arg1._arg  : U"";  int64 length1  = static_cast<int64>(str32len (s1));
+	int64 sizeNeeded = me -> length + length1 + 1;
 	if (sizeNeeded > me -> bufferSize) MelderString_expand (me, sizeNeeded);
 	str32cpy (me -> string + me -> length, s1);   me -> length += length1;
 }
@@ -2268,11 +2268,11 @@ void Melder_sleep (double duration);
 
 #pragma mark - AUDIO
 
-void MelderAudio_setInputSoundSystem (enum kMelder_inputSoundSystem inputSoundSystem);
-enum kMelder_inputSoundSystem MelderAudio_getInputSoundSystem ();
+void MelderAudio_setInputSoundSystem (kMelder_inputSoundSystem inputSoundSystem);
+kMelder_inputSoundSystem MelderAudio_getInputSoundSystem ();
 
-void MelderAudio_setOutputSoundSystem (enum kMelder_outputSoundSystem outputSoundSystem);
-enum kMelder_outputSoundSystem MelderAudio_getOutputSoundSystem ();
+void MelderAudio_setOutputSoundSystem (kMelder_outputSoundSystem outputSoundSystem);
+kMelder_outputSoundSystem MelderAudio_getOutputSoundSystem ();
 
 #if defined (_WIN32)
 	#define kMelderAudio_outputSilenceBefore_DEFAULT  0.0
@@ -2298,8 +2298,8 @@ double MelderAudio_getOutputSilenceAfter ();
 
 void MelderAudio_setUseInternalSpeaker (bool useInternalSpeaker);   // for HP-UX and Sun
 bool MelderAudio_getUseInternalSpeaker ();
-void MelderAudio_setOutputMaximumAsynchronicity (enum kMelder_asynchronicityLevel maximumAsynchronicity);
-enum kMelder_asynchronicityLevel MelderAudio_getOutputMaximumAsynchronicity ();
+void MelderAudio_setOutputMaximumAsynchronicity (kMelder_asynchronicityLevel maximumAsynchronicity);
+kMelder_asynchronicityLevel MelderAudio_getOutputMaximumAsynchronicity ();
 integer MelderAudio_getOutputBestSampleRate (integer fsamp);
 
 extern bool MelderAudio_isPlaying;
@@ -2609,7 +2609,7 @@ typedef _autostring <char32> autostring32;
 
 class autoMelderAudioSaveMaximumAsynchronicity {
 	bool _disowned;
-	enum kMelder_asynchronicityLevel _savedAsynchronicity;
+	kMelder_asynchronicityLevel _savedAsynchronicity;
 public:
 	autoMelderAudioSaveMaximumAsynchronicity () {
 		our _savedAsynchronicity = MelderAudio_getOutputMaximumAsynchronicity ();

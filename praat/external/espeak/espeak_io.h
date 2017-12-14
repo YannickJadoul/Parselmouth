@@ -31,7 +31,7 @@
 #define fgets(str,num,stream) espeak_io_fgets (str, num, stream)
 #define fread(ptr,size,count,stream) espeak_io_fread (ptr, size, count,stream)
 #define fgetc(stream) espeak_io_fgetc (stream)
-#define fprintf(stream,args...) espeak_io_fprintf (stream, args)
+#define fprintf(stream,...) espeak_io_fprintf (stream, __VA_ARGS__)
 #define ungetc(character,stream) espeak_io_ungetc (character, stream)
 #define GetFileLength(filename) espeak_io_GetFileLength (filename)
 #define GetVoices(path,len_path_voices,is_language_file) espeak_io_GetVoices (path, len_path_voices, is_language_file)

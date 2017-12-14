@@ -276,7 +276,7 @@ void Network_normalizeWeights (Network me, integer nodeMin, integer nodeMax, int
 	}
 }
 
-autoNetwork Network_create_rectangle (double spreadingRate, enum kNetwork_activityClippingRule activityClippingRule,
+autoNetwork Network_create_rectangle (double spreadingRate, kNetwork_activityClippingRule activityClippingRule,
 	double minimumActivity, double maximumActivity, double activityLeak,
 	double learningRate, double minimumWeight, double maximumWeight, double weightLeak,
 	integer numberOfRows, integer numberOfColumns, bool bottomRowClamped,
@@ -326,7 +326,7 @@ autoNetwork Network_create_rectangle (double spreadingRate, enum kNetwork_activi
 	}
 }
 
-autoNetwork Network_create_rectangle_vertical (double spreadingRate, enum kNetwork_activityClippingRule activityClippingRule,
+autoNetwork Network_create_rectangle_vertical (double spreadingRate, kNetwork_activityClippingRule activityClippingRule,
 	double minimumActivity, double maximumActivity, double activityLeak,
 	double learningRate, double minimumWeight, double maximumWeight, double weightLeak,
 	integer numberOfRows, integer numberOfColumns, bool bottomRowClamped,
@@ -480,7 +480,7 @@ void Network_setShunting (Network me, double shunting) {
 	Network_zeroActivities (me, 0, 0);
 }
 
-void Network_setActivityClippingRule (Network me, enum kNetwork_activityClippingRule activityClippingRule) {
+void Network_setActivityClippingRule (Network me, kNetwork_activityClippingRule activityClippingRule) {
 	my activityClippingRule = activityClippingRule;
 	Network_zeroActivities (me, 0, 0);
 }

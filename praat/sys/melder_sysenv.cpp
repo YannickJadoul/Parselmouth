@@ -47,7 +47,7 @@ char32 * Melder_getenv (const char32 *variableName) {
 		static wchar_t buffer [11] [255];
 		static int ibuffer = 0;
 		if (++ ibuffer == 11) ibuffer = 0;
-		DWORD n = GetEnvironmentVariableW (Melder_peek32toW(variableName), buffer [ibuffer], 255);   BUG
+		DWORD n = GetEnvironmentVariableW (Melder_peek32toW(variableName), buffer [ibuffer], 255);
 		if (n == ERROR_ENVVAR_NOT_FOUND) return nullptr;
 		return Melder_peekWto32(& buffer [ibuffer] [0]);
 	#else

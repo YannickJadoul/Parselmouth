@@ -823,7 +823,7 @@ static void OTMulti_modifyRankings (OTMulti me, integer iwinner, integer iloser,
 }
 
 int OTMulti_learnOne (OTMulti me, const char32 *form1, const char32 *form2,
-	enum kOTGrammar_rerankingStrategy updateRule, int direction, double plasticity, double relativePlasticityNoise)
+	kOTGrammar_rerankingStrategy updateRule, int direction, double plasticity, double relativePlasticityNoise)
 {
 	integer iloser = OTMulti_getWinner (me, form1, form2);
 	if (direction & OTMulti_LEARN_FORWARD) {
@@ -883,7 +883,7 @@ static int OTMulti_updateHistory (OTMulti me, Table thee, integer storeHistoryEv
 }
 
 
-void OTMulti_PairDistribution_learn (OTMulti me, PairDistribution thee, double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, int direction,
+void OTMulti_PairDistribution_learn (OTMulti me, PairDistribution thee, double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, int direction,
 	double initialPlasticity, integer replicationsPerPlasticity, double plasticityDecrement,
 	integer numberOfPlasticities, double relativePlasticityNoise, integer storeHistoryEvery, autoTable *history_out)
 {

@@ -355,25 +355,25 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 		UiOptionMenu_addButton (radio, labelText);
 
 #define RADIO_ENUM(enumeratedVariable, labelText, EnumeratedType, defaultEnumeratedSubvalue)  \
-		static enum EnumeratedType enumeratedVariable; \
+		static EnumeratedType enumeratedVariable; \
 		radio = UiForm_addRadio (dia, (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, labelText, \
 			(int) EnumeratedType::defaultEnumeratedSubvalue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
-			UiRadio_addButton (radio, EnumeratedType##_getText ((enum EnumeratedType) ienum));
+			UiRadio_addButton (radio, EnumeratedType##_getText ((EnumeratedType) ienum));
 
 #define OPTIONMENU_ENUM(enumeratedVariable, labelText, EnumeratedType, defaultEnumeratedSubvalue)  \
 		static EnumeratedType enumeratedVariable; \
 		radio = UiForm_addOptionMenu (dia, (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, labelText, \
 			(int) EnumeratedType::defaultEnumeratedSubvalue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
-			UiOptionMenu_addButton (radio, EnumeratedType##_getText ((enum EnumeratedType) ienum));
+			UiOptionMenu_addButton (radio, EnumeratedType##_getText ((EnumeratedType) ienum));
 
 #define OPTIONMENU_ENUMSTR(enumeratedVariableAsString, labelText, EnumeratedType, defaultEnumeratedSubvalue)  \
 		static char32 *enumeratedVariableAsString; \
 		radio = UiForm_addOptionMenu (dia, nullptr, & enumeratedVariableAsString, U"" #enumeratedVariableAsString, labelText, \
 			(int) EnumeratedType::defaultEnumeratedSubvalue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
-			UiOptionMenu_addButton (radio, EnumeratedType##_getText ((enum EnumeratedType) ienum));
+			UiOptionMenu_addButton (radio, EnumeratedType##_getText ((EnumeratedType) ienum));
 
 #define LIST(integerVariable, labelText, numberOfStrings, strings, defaultOptionNumber)  \
 		static integer integerVariable; \

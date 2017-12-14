@@ -1496,7 +1496,7 @@ void structTextGridEditor :: v_draw () {
 	TextGrid grid = (TextGrid) data;
 	Graphics_Viewport vp1, vp2;
 	integer itier, ntier = grid -> tiers->size;
-	enum kGraphics_font oldFont = Graphics_inqFont (our graphics.get());
+	kGraphics_font oldFont = Graphics_inqFont (our graphics.get());
 	int oldFontSize = Graphics_inqFontSize (our graphics.get());
 	bool showAnalysis = v_hasAnalysis () && (p_spectrogram_show || p_pitch_show || p_intensity_show || p_formant_show) && (d_longSound.data || d_sound.data);
 	double soundY = _TextGridEditor_computeSoundY (this), soundY2 = showAnalysis ? 0.5 * (1.0 + soundY) : soundY;

@@ -1234,7 +1234,7 @@ autoSound FilterBank_as_Sound (FilterBank me) {
 	}
 }
 
-autoSound FilterBanks_crossCorrelate (FilterBank me, FilterBank thee, enum kSounds_convolve_scaling scaling, enum kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
+autoSound FilterBanks_crossCorrelate (FilterBank me, FilterBank thee, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
 	try {
 		autoSound cc = Sounds_crossCorrelate ((Sound) me, (Sound) thee, scaling, signalOutsideTimeDomain);
 		return cc;
@@ -1243,7 +1243,7 @@ autoSound FilterBanks_crossCorrelate (FilterBank me, FilterBank thee, enum kSoun
 	}
 }
 
-autoSound FilterBanks_convolve (FilterBank me, FilterBank thee, enum kSounds_convolve_scaling scaling, enum kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
+autoSound FilterBanks_convolve (FilterBank me, FilterBank thee, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
 	try {
 		autoSound cc = Sounds_convolve ((Sound) me, (Sound) thee, scaling, signalOutsideTimeDomain);
 		return cc;

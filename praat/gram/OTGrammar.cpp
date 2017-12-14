@@ -1660,7 +1660,7 @@ static void OTGrammar_modifyRankings (OTGrammar me, integer itab, integer iwinne
 }
 
 void OTGrammar_learnOne (OTGrammar me, const char32 *input, const char32 *adultOutput,
-	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double plasticity, double relativePlasticityNoise, bool newDisharmonies, bool warnIfStalled, bool *grammarHasChanged)
 {
 	try {
@@ -1709,7 +1709,7 @@ void OTGrammar_learnOne (OTGrammar me, const char32 *input, const char32 *adultO
 }
 
 void OTGrammar_learn (OTGrammar me, Strings inputs, Strings outputs,
-	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double plasticity, double relativePlasticityNoise, integer numberOfChews)
 {
 	if (! inputs) inputs = outputs;
@@ -1730,7 +1730,7 @@ void OTGrammar_learn (OTGrammar me, Strings inputs, Strings outputs,
 }
 
 void OTGrammar_PairDistribution_learn (OTGrammar me, PairDistribution thee,
-	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double initialPlasticity, integer replicationsPerPlasticity, double plasticityDecrement,
 	integer numberOfPlasticities, double relativePlasticityNoise, integer numberOfChews)
 {
@@ -1949,7 +1949,7 @@ static void OTGrammar_restore (OTGrammar me) {
 }
 
 void OTGrammar_learnOneFromPartialOutput (OTGrammar me, const char32 *partialAdultOutput,
-	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double plasticity, double relativePlasticityNoise, integer numberOfChews, bool warnIfStalled)
 {
 	try {
@@ -1991,7 +1991,7 @@ void OTGrammar_learnOneFromPartialOutput (OTGrammar me, const char32 *partialAdu
 }
 
 static void OTGrammar_learnOneFromPartialOutput_opt (OTGrammar me, const char32 *partialAdultOutput, integer ipartialAdultOutput,
-	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double plasticity, double relativePlasticityNoise, integer numberOfChews, bool warnIfStalled,
 	bool resampleForVirtualProduction, bool compareOnlyPartialOutput, integer resampleForCorrectForm)
 {
@@ -2118,7 +2118,7 @@ static void OTGrammar_finalizeHistory (OTGrammar me, OTHistory thee, integer dat
 }
 
 void OTGrammar_learnFromPartialOutputs (OTGrammar me, Strings partialOutputs,
-	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double plasticity, double relativePlasticityNoise, integer numberOfChews,
 	integer storeHistoryEvery, autoOTHistory *history_out)
 {
@@ -2207,7 +2207,7 @@ static void OTGrammar_Distributions_opt_createOutputMatching (OTGrammar me, Dist
 }
 
 void OTGrammar_Distributions_learnFromPartialOutputs (OTGrammar me, Distributions thee, integer columnNumber,
-	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double initialPlasticity, integer replicationsPerPlasticity, double plasticityDecrement,
 	integer numberOfPlasticities, double relativePlasticityNoise, integer numberOfChews,
 	integer storeHistoryEvery, autoOTHistory *history_out,

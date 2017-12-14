@@ -907,7 +907,7 @@ FORM (MODIFY_OTGrammar_Stringses_learn, U"OTGrammar: Learn", U"OTGrammar & 2 Str
 	OK
 DO
 	MODIFY_FIRST_OF_ONE_AND_COUPLE_WEAK (OTGrammar, Strings)
-		OTGrammar_learn (me, you, him, evaluationNoise, (enum kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+		OTGrammar_learn (me, you, him, evaluationNoise, (kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
 			plasticity, relativePlasticitySpreading, numberOfChews);
 	MODIFY_FIRST_OF_ONE_AND_COUPLE_WEAK_END
 }
@@ -1146,7 +1146,7 @@ FORM (MODIFY_OTGrammar_PairDistribution_learn, U"OTGrammar & PairDistribution: L
 DO
 	MODIFY_FIRST_OF_TWO_WEAK (OTGrammar, PairDistribution)
 		OTGrammar_PairDistribution_learn (me, you,
-			evaluationNoise, (enum kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+			evaluationNoise, (kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
 			initialPlasticity, replicationsPerPlasticity,
 			plasticityDecrement, numberOfPlasticities, relativePlasticitySpreading, numberOfChews);
 	MODIFY_FIRST_OF_TWO_WEAK_END

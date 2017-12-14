@@ -1612,7 +1612,10 @@ void praat_run () {
 		*/
 		int exponent;
 		Melder_assert (isundef (frexp (HUGE_VAL, & exponent)));
+#ifndef _MSC_VER
 		Melder_assert (isundef (frexp (0.0/0.0, & exponent)));
+#endif
+		Melder_assert (isundef (frexp (NAN, & exponent)));
 		Melder_assert (isundef (frexp (undefined, & exponent)));
 		/*
 			The following relies on the facts that:
@@ -1623,7 +1626,10 @@ void praat_run () {
 			because `! (NaN < 1.0)` is true but `NaN >= 1.0` is false.
 		*/
 		Melder_assert (! (frexp (HUGE_VAL, & exponent) < 1.0));
+#ifndef _MSC_VER
 		Melder_assert (! (frexp (0.0/0.0, & exponent) < 1.0));
+#endif
+		Melder_assert (! (frexp (NAN, & exponent) < 1.0));
 		Melder_assert (! (frexp (undefined, & exponent) < 1.0));
 	}
 	{
