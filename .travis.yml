@@ -75,7 +75,7 @@ matrix:
     - stage: wheels
       if: branch != docs
       script:
-        - python setup.py sdist -d wheelhouse
+        - $PYTHON_CMD setup.py -q sdist -d wheelhouse
       before_deploy:
         - &bintray-before-deploy |
           PARSELMOUTH_VERSION=`python setup.py --version`
