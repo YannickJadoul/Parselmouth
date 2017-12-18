@@ -38,7 +38,7 @@ void Binding<Interpolation>::init() {
 	value("SINC70", Interpolation::SINC70);
 	value("SINC700", Interpolation::SINC700);
 
-	make_implicitly_convertible_from_string(*this, true);
+	make_implicitly_convertible_from_string(*this);
 }
 
 void Binding<Vector>::init() {

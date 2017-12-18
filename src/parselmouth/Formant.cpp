@@ -33,7 +33,7 @@ void Binding<FormantUnit>::init() {
 	value("HERTZ", kFormant_unit::HERTZ);
 	value("BARK", kFormant_unit::BARK);
 
-	make_implicitly_convertible_from_string(*this, true);
+	make_implicitly_convertible_from_string(*this);
 }
 
 void Binding<Formant>::init() {

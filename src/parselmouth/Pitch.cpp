@@ -50,7 +50,7 @@ void Binding<PitchUnit>::init() {
 	value("SEMITONES_440", kPitch_unit::SEMITONES_440);
 	value("ERB", kPitch_unit::ERB);
 
-	make_implicitly_convertible_from_string(*this, true);
+	make_implicitly_convertible_from_string(*this);
 }
 
 void Binding<Pitch_Candidate>::init() {

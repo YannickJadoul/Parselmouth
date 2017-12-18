@@ -43,7 +43,7 @@ void Binding<AveragingMethod>::init() {
 	value("SONES", AveragingMethod::SONES);
 	value("DB", AveragingMethod::DB);
 
-	make_implicitly_convertible_from_string(*this, true);
+	make_implicitly_convertible_from_string(*this);
 }
 
 void Binding<Intensity>::init() {
