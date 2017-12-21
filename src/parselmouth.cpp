@@ -21,7 +21,11 @@
 #include "version.h"
 
 #include <praat/sys/praat.h>
+#include <praat/sys/praatP.h>
 #include <praat/sys/praat_version.h>
+
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 
 #define XSTR(s) STR(s)
 #define STR(s) #s
@@ -29,8 +33,130 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+namespace parselmouth {
+
+structStackel castPythonToPraat(const py::handle &arg) {
+	if (py::isinstance<py::int_>(arg) || py::isinstance<py::float_>(arg)) {
+		return {Stackel_NUMBER, .number=py::cast<double>(arg), false};
+	} else if (py::isinstance<py::bool_>(arg)) {
+		return {Stackel_STRING, .string = Melder_dup(py::cast<bool>(arg) ? U"yes" : U"no"), true};
+	} else if (py::isinstance<py::str>(arg) && (PY_MAJOR_VERSION < 3 || !py::isinstance<py::bytes>(arg))) { // TODO Check for unicode/bytes / Python2/3 behaviours
+		return {Stackel_STRING, .string = Melder_dup(py::cast<std::u32string>(arg).c_str()), true};
+	}
+
+	try {
+		py::array_t<double> array = py::cast<py::array_t<double>>(arg).squeeze();
+		if (array.ndim() == 1) {
+			// TODO Check when we can avoid copying
+			auto vector = numvec(array.shape(0), kTensorInitializationType::RAW);
+			auto unchecked = array.unchecked<1>();
+			for (ssize_t i = 0; i < array.shape(0); ++i)
+				vector[i + 1] = unchecked(i); // TODO Make into copy utility function
+
+			return {Stackel_NUMERIC_VECTOR, .numericVector = vector, true};
+		} else if (array.ndim() == 2) {
+			// TODO Check when we can avoid copying
+			auto matrix = nummat(array.shape(0), array.shape(1), kTensorInitializationType::RAW);
+			auto unchecked = array.unchecked<2>();
+			for (ssize_t i = 0; i < array.shape(0); ++i)
+				for (ssize_t j = 0; i < array.shape(1); ++j)
+					matrix[j + 1][i + 1] = unchecked(i, j); // TODO Make into copy utility function
+
+			return {Stackel_NUMERIC_MATRIX, .numericMatrix = matrix, true};
+		}
+	}
+	catch (py::cast_error &) {}
+	catch (py::error_already_set &) {}
+
+	throw py::value_error("Cannot convert argument \"" + py::cast<std::string>(py::repr(arg)) + "\" to a known Praat argument type");
+}
+
+void initPraatModule(py::module m) {
+	m.def("call",
+	      [](std::vector<std::reference_wrapper<structData>> data, const std::u32string &command, py::args args) {
+		      //auto objects = std::make_unique<structPraatObjects>(); // TODO Should we still?
+
+		      //auto previousObjects = theCurrentPraatObjects;
+		      //theCurrentPraatObjects = objects.get();
+
+		      auto objects = theCurrentPraatObjects;
+
+		      for (auto &d : data)
+			      praat_new(Data_copy(&d.get())); // TODO Copy? What about modifications to the original object??
+		      praat_updateSelection();
+		      praat_show();
+
+		      /*objects->n = 1; // TODO praat_MAXNUM_OBJECTS
+			  objects->totalSelection = 1;
+			  objects->numberOfSelected[data->classInfo->sequentialUniqueIdOfReadableClass] = 1;
+			  objects->totalBeingCreated = 0;
+			  ++objects->uniqueId;
+
+			  auto &object = objects->list[1];
+			  object.klas = data->classInfo;
+			  object.object = Data_copy(data).releaseToAmbiguousOwner(); // TODO What about "Remove", otherwise? And what about ugly stuff like "Quit"?
+			  autoMelderString name;
+			  MelderString_append(&name, data->classInfo->className, U" ", data->name && data->name[0] ? data->name : U"untitled");
+			  object.name = Melder_dup_f(name.string);
+			  MelderFile_setToNull(&object.file);
+			  object.id = objects->uniqueId;
+			  object.isSelected = true;
+			  for (auto &editor : object.editors)
+				  editor = nullptr;
+			  object.isBeingCreated = false;
+
+			  auto previousObjects = theCurrentPraatObjects;
+			  theCurrentPraatObjects = objects.get();
+
+			  praat_show();*/
+
+		      std::vector<structStackel> praatArgs(1); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
+		      for (auto &arg : args)
+			      praatArgs.emplace_back(castPythonToPraat(arg));
+
+		      auto completedCommand = command;
+		      if (args.size() > 0 && (command.size() < 3 || command.substr(command.size() - 3, 3) != U"..."))
+			      completedCommand += U"...";
+
+		      if (!praat_doAction(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), nullptr) &&
+		          !praat_doMenuCommand(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), nullptr))
+			      Melder_throw(U"Command \"", command.c_str(), U"\" not available for given objects.");
+
+		      //theCurrentPraatObjects = previousObjects;
+
+		      for (auto i = 1; i <= objects->n; ++i) {
+			      auto &object = objects->list[i];
+			      if (static_cast<size_t>(object.id) <= data.size()) {
+				      auto oldData = &data[object.id - 1].get();
+				      oldData->v_destroy();
+				      object.object->v_copy(oldData);
+			      }
+		      }
+
+		      autoData result;
+		      for (auto i = objects->n; i > 0; --i) {
+			      auto &object = objects->list[i];
+			      if (object.isSelected && objects->totalSelection == 1) {
+				      if (static_cast<size_t>(object.id) > data.size())
+					      result = Data_copy(object.object); // TODO Can we steal this instead of copying?
+				      break;
+			      }
+			      praat_removeObject(i);
+		      }
+
+		      return result;
+	      },
+	      "objects"_a, "command"_a);
+}
+
+} // namespace parselmouth
+
+
 PYBIND11_MODULE(parselmouth, m) {
 	praatlib_init();
+	// TODO Put in one-time initialization that is run when it's actually needed?
+    INCLUDE_LIBRARY(praat_uvafon_init)
+    INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
 
 	parselmouth::PraatBindings bindings(m);
 
@@ -52,4 +178,6 @@ PYBIND11_MODULE(parselmouth, m) {
 	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
 
 	bindings.init();
+
+	parselmouth::initPraatModule(m.def_submodule("praat")); // TODO Part of the Bindings, on the longer term?
 }

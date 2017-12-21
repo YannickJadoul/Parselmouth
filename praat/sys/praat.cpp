@@ -1044,6 +1044,10 @@ extern "C" void praatlib_init () {
 	praat_addMenus (nullptr);
 	praat_addFixedButtons (nullptr);
 	praat_addMenus2 ();
+
+	// Added to registration of Praat commands by init
+	Data_setPublishProc (publishProc);
+	theCurrentPraatApplication -> manPages = ManPages_create ().releaseToAmbiguousOwner();
 }
 
 void praat_init (const char32 *title, int argc, char **argv)
