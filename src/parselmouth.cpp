@@ -20,6 +20,8 @@
 #include "parselmouth/Parselmouth.h"
 #include "version.h"
 
+#include "praat/MelderUtils.h"
+
 #include <praat/sys/praat.h>
 #include <praat/sys/praatP.h>
 #include <praat/sys/praat_version.h>
@@ -34,6 +36,8 @@ namespace py = pybind11;
 using namespace py::literals;
 
 namespace parselmouth {
+
+namespace {
 
 structStackel castPythonToPraat(const py::handle &arg) {
 	if (py::isinstance<py::int_>(arg) || py::isinstance<py::float_>(arg)) {
@@ -71,82 +75,103 @@ structStackel castPythonToPraat(const py::handle &arg) {
 	throw py::value_error("Cannot convert argument \"" + py::cast<std::string>(py::repr(arg)) + "\" to a known Praat argument type");
 }
 
+py::object castPraatResultToPython(const std::u32string &callbackName, PraatObjects praatObjects, const std::u32string &interceptedInfo, size_t nInitialObjects) {
+	if (praatObjects->totalSelection == 1) {
+		for (auto i = praatObjects->n; i > static_cast<int>(nInitialObjects); --i) {
+			auto &praatObject = praatObjects->list[i];
+			if (praatObject.isSelected)
+				return py::cast(Data_copy(praatObject.object)); // TODO Can we steal this instead of copying?
+		}
+	}
+
+	return py::none();
+}
+
+auto callPraat(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &command, py::args args) {
+	auto praatObjects = theCurrentPraatObjects;
+
+	assert(praatObjects->n == 0);
+	praatObjects->uniqueId = 0;
+
+	for (auto &data: objects)
+		praat_new(Data_copy(&data.get())); // TODO Copy? What about modifications to the original object??
+	praat_updateSelection();
+	praat_show();
+
+	std::vector<structStackel> praatArgs(1); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
+	for (auto &arg : args)
+		praatArgs.emplace_back(castPythonToPraat(arg));
+
+	auto completedCommand = command;
+	if (args.size() > 0 && (command.size() < 3 || command.substr(command.size() - 3, 3) != U"..."))
+		completedCommand += U"...";
+
+	MelderInfoInterceptor interceptor;
+
+	if (!praat_doAction(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), nullptr) &&
+	    !praat_doMenuCommand(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), nullptr))
+		Melder_throw(U"Command \"", command.c_str(), U"\" not available for given objects.");
+
+	for (auto i = 1; i <= praatObjects->n; ++i) {
+		auto &praatObject = praatObjects->list[i];
+		if (static_cast<size_t>(praatObject.id) <= objects.size()) {
+			auto oldData = &objects[praatObject.id - 1].get();
+			if (!Data_equal(oldData, praatObject.object)) {
+				oldData->v_destroy();
+				praatObject.object->v_copy(oldData);
+			}
+		}
+	}
+
+	auto result = castPraatResultToPython(U"", praatObjects, interceptor.get(), objects.size());
+
+	for (auto i = praatObjects->n; i > 0; --i) {
+		praat_removeObject(i);
+	}
+
+	assert(praatObjects->n == 0);
+
+	return result;
+
+	/*objects->n = 1; // TODO praat_MAXNUM_OBJECTS
+	objects->totalSelection = 1;
+	objects->numberOfSelected[data->classInfo->sequentialUniqueIdOfReadableClass] = 1;
+	objects->totalBeingCreated = 0;
+	++objects->uniqueId;
+
+	auto &object = objects->list[1];
+	object.klas = data->classInfo;
+	object.object = Data_copy(data).releaseToAmbiguousOwner(); // TODO What about "Remove", otherwise? And what about ugly stuff like "Quit"?
+	autoMelderString name;
+	MelderString_append(&name, data->classInfo->className, U" ", data->name && data->name[0] ? data->name : U"untitled");
+	object.name = Melder_dup_f(name.string);
+	MelderFile_setToNull(&object.file);
+	object.id = objects->uniqueId;
+	object.isSelected = true;
+	for (auto &editor : object.editors)
+		editor = nullptr;
+	object.isBeingCreated = false;
+
+	auto previousObjects = theCurrentPraatObjects;
+	theCurrentPraatObjects = objects.get();
+
+	praat_show();*/
+}
+
+}
+
 void initPraatModule(py::module m) {
 	m.def("call",
-	      [](std::vector<std::reference_wrapper<structData>> data, const std::u32string &command, py::args args) {
-		      //auto objects = std::make_unique<structPraatObjects>(); // TODO Should we still?
-
-		      //auto previousObjects = theCurrentPraatObjects;
-		      //theCurrentPraatObjects = objects.get();
-
-		      auto objects = theCurrentPraatObjects;
-
-		      for (auto &d : data)
-			      praat_new(Data_copy(&d.get())); // TODO Copy? What about modifications to the original object??
-		      praat_updateSelection();
-		      praat_show();
-
-		      /*objects->n = 1; // TODO praat_MAXNUM_OBJECTS
-			  objects->totalSelection = 1;
-			  objects->numberOfSelected[data->classInfo->sequentialUniqueIdOfReadableClass] = 1;
-			  objects->totalBeingCreated = 0;
-			  ++objects->uniqueId;
-
-			  auto &object = objects->list[1];
-			  object.klas = data->classInfo;
-			  object.object = Data_copy(data).releaseToAmbiguousOwner(); // TODO What about "Remove", otherwise? And what about ugly stuff like "Quit"?
-			  autoMelderString name;
-			  MelderString_append(&name, data->classInfo->className, U" ", data->name && data->name[0] ? data->name : U"untitled");
-			  object.name = Melder_dup_f(name.string);
-			  MelderFile_setToNull(&object.file);
-			  object.id = objects->uniqueId;
-			  object.isSelected = true;
-			  for (auto &editor : object.editors)
-				  editor = nullptr;
-			  object.isBeingCreated = false;
-
-			  auto previousObjects = theCurrentPraatObjects;
-			  theCurrentPraatObjects = objects.get();
-
-			  praat_show();*/
-
-		      std::vector<structStackel> praatArgs(1); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
-		      for (auto &arg : args)
-			      praatArgs.emplace_back(castPythonToPraat(arg));
-
-		      auto completedCommand = command;
-		      if (args.size() > 0 && (command.size() < 3 || command.substr(command.size() - 3, 3) != U"..."))
-			      completedCommand += U"...";
-
-		      if (!praat_doAction(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), nullptr) &&
-		          !praat_doMenuCommand(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), nullptr))
-			      Melder_throw(U"Command \"", command.c_str(), U"\" not available for given objects.");
-
-		      //theCurrentPraatObjects = previousObjects;
-
-		      for (auto i = 1; i <= objects->n; ++i) {
-			      auto &object = objects->list[i];
-			      if (static_cast<size_t>(object.id) <= data.size()) {
-				      auto oldData = &data[object.id - 1].get();
-				      oldData->v_destroy();
-				      object.object->v_copy(oldData);
-			      }
-		      }
-
-		      autoData result;
-		      for (auto i = objects->n; i > 0; --i) {
-			      auto &object = objects->list[i];
-			      if (object.isSelected && objects->totalSelection == 1) {
-				      if (static_cast<size_t>(object.id) > data.size())
-					      result = Data_copy(object.object); // TODO Can we steal this instead of copying?
-				      break;
-			      }
-			      praat_removeObject(i);
-		      }
-
-		      return result;
-	      },
+	      &callPraat,
 	      "objects"_a, "command"_a);
+
+	m.def("call",
+	      [](structData &data, const std::u32string &command, py::args args) { return callPraat({ std::ref(data) }, command, args); },
+	      "object"_a, "command"_a);
+
+	m.def("call",
+	      [](const std::u32string &command, py::args args) { return callPraat({}, command, args); },
+	      "command"_a);
 }
 
 } // namespace parselmouth

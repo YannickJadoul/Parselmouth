@@ -130,8 +130,8 @@ void praat_showLogo (bool autoPopDown);
 /* Communication with praat_menuCommands.cpp: */
 void praat_menuCommands_init ();
 void praat_menuCommands_exit ();
-int praat_doMenuCommand (const char32 *command, const char32 *arguments, Interpreter interpreter);   // 0 = not found
-int praat_doMenuCommand (const char32 *command, int narg, Stackel args, Interpreter interpreter);   // 0 = not found
+integer praat_doMenuCommand (const char32 *command, const char32 *arguments, Interpreter interpreter);   // 0 = not found
+integer praat_doMenuCommand (const char32 *command, int narg, Stackel args, Interpreter interpreter);   // 0 = not found
 integer praat_getNumberOfMenuCommands ();
 Praat_Command praat_getMenuCommand (integer i);
 
@@ -141,8 +141,8 @@ void praat_actions_createWriteMenu (GuiWindow window);
 void praat_actions_init ();   // creates space for action commands
 void praat_actions_createDynamicMenu (GuiWindow window);
 void praat_saveAddedActions (MelderString *buffer);
-int praat_doAction (const char32 *command, const char32 *arguments, Interpreter interpreter);   // 0 = not found
-int praat_doAction (const char32 *command, int narg, Stackel args, Interpreter interpreter);   // 0 = not found
+integer praat_doAction (const char32 *command, const char32 *arguments, Interpreter interpreter);   // 0 = not found
+integer praat_doAction (const char32 *command, int narg, Stackel args, Interpreter interpreter);   // 0 = not found
 integer praat_getNumberOfActions ();   // for ButtonEditor
 Praat_Command praat_getAction (integer i);   // for ButtonEditor
 
