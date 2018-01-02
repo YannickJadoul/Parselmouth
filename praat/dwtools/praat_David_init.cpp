@@ -1143,7 +1143,7 @@ DO
 	CONVERT_TWO_END (my name, U"_", your name)
 }
 
-DIRECT (hint_Discriminant_and_TableOfReal_to_ClassificationTable) {
+DIRECT (HINT_Discriminant_and_TableOfReal_to_ClassificationTable) {
 	Melder_information (U"You can use the Discriminant as a classifier by \nselecting a Discriminant and a TableOfReal object together.");
 END }
 
@@ -7795,7 +7795,7 @@ void praat_uvafon_David_init () {
 		praat_addAction1 (classDiscriminant, 0, U"Extract group labels", nullptr, 1, NEW_Discriminant_extractGroupLabels);
 		praat_addAction1 (classDiscriminant, 0, U"Extract Eigen", nullptr, 1, NEW_Discriminant_extractEigen);
 
-	praat_addAction1 (classDiscriminant , 0, U"& TableOfReal: To ClassificationTable?", nullptr, 0, hint_Discriminant_and_TableOfReal_to_ClassificationTable);
+	praat_addAction1 (classDiscriminant , 0, U"& TableOfReal: To ClassificationTable?", nullptr, 0, HINT_Discriminant_and_TableOfReal_to_ClassificationTable);
 
 	/*		praat_addAction1 (classDiscriminant, 1, U"Extract coefficients...", nullptr, 1, DO_Discriminant_extractCoefficients);*/
 
