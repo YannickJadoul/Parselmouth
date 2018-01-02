@@ -78,14 +78,20 @@ private:
 	autoInterpreter m_interpreter;
 };
 
+// Workarounds since GCC (6) doesn't seem to like the brace initialization of the nested anonymous struct
+structStackel stackel(double number) { auto s = structStackel{Stackel_NUMBER, {}, false}; s.number = number; return s; }
+structStackel stackel(bool boolean) { auto s = structStackel{Stackel_STRING, {}, true}; s.string = Melder_dup(boolean ? U"yes" : U"no"); return s; }
+structStackel stackel(const std::u32string &string) { auto s = structStackel{Stackel_STRING, {}, true}; s.string = Melder_dup(string.c_str()); return s; }
+structStackel stackel(const numvec &vector) { auto s = structStackel{Stackel_NUMERIC_VECTOR, {}, true}; s.numericVector = vector; return s; }
+structStackel stackel(const nummat &matrix) { auto s = structStackel{Stackel_NUMERIC_MATRIX, {}, true}; s.numericMatrix = matrix; return s; }
+
 structStackel castPythonToPraat(const py::handle &arg) {
-	if (py::isinstance<py::int_>(arg) || py::isinstance<py::float_>(arg)) {
-		return {Stackel_NUMBER, .number=py::cast<double>(arg), false};
-	} else if (py::isinstance<py::bool_>(arg)) {
-		return {Stackel_STRING, .string = Melder_dup(py::cast<bool>(arg) ? U"yes" : U"no"), true};
-	} else if (py::isinstance<py::str>(arg) && (PY_MAJOR_VERSION < 3 || !py::isinstance<py::bytes>(arg))) { // TODO Check for unicode/bytes / Python2/3 behaviours
-		return {Stackel_STRING, .string = Melder_dup(py::cast<std::u32string>(arg).c_str()), true};
-	}
+	if (py::isinstance<py::int_>(arg) || py::isinstance<py::float_>(arg))
+		return stackel(py::cast<double>(arg));
+	else if (py::isinstance<py::bool_>(arg))
+		return stackel(py::cast<bool>(arg));
+	else if (py::isinstance<py::str>(arg) && (PY_MAJOR_VERSION < 3 || !py::isinstance<py::bytes>(arg))) // TODO Check for unicode/bytes / Python2/3 behaviours
+		return stackel(py::cast<std::u32string>(arg));
 
 	try {
 		py::array_t<double> array = py::cast<py::array_t<double>>(arg).squeeze();
@@ -96,7 +102,7 @@ structStackel castPythonToPraat(const py::handle &arg) {
 			for (ssize_t i = 0; i < array.shape(0); ++i)
 				vector[i + 1] = unchecked(i); // TODO Make into copy utility function
 
-			return {Stackel_NUMERIC_VECTOR, .numericVector = vector, true};
+			return stackel(vector);
 		} else if (array.ndim() == 2) {
 			// TODO Check when we can avoid copying
 			auto matrix = nummat(array.shape(0), array.shape(1), kTensorInitializationType::RAW);
@@ -105,7 +111,7 @@ structStackel castPythonToPraat(const py::handle &arg) {
 				for (ssize_t j = 0; i < array.shape(1); ++j)
 					matrix[j + 1][i + 1] = unchecked(i, j); // TODO Make into copy utility function
 
-			return {Stackel_NUMERIC_MATRIX, .numericMatrix = matrix, true};
+			return stackel(matrix);
 		}
 	}
 	catch (py::cast_error &) {}
