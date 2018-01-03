@@ -82,15 +82,15 @@ void Binding<CC>::init() {
 	initTimeFrameSampled(*this);
 
 	def("get_number_of_coefficients",
-	    args_cast<_, Positive<long>>(CC_getNumberOfCoefficients),
+	    args_cast<_, Positive<_>>(CC_getNumberOfCoefficients),
 	    "frame_number"_a);
 
 	def("get_value_in_frame",
-	    args_cast<_, Positive<long>, Positive<long>>(CC_getValueInFrame),
+	    args_cast<_, Positive<_>, Positive<_>>(CC_getValueInFrame),
 	    "frame_number"_a, "index"_a);
 
 	def("get_c0_value_in_frame",
-	    args_cast<_, Positive<long>>(CC_getC0ValueInFrame),
+	    args_cast<_, Positive<_>>(CC_getC0ValueInFrame),
 	    "frame_number"_a);
 
 	def("to_matrix",
@@ -105,7 +105,7 @@ void Binding<CC>::init() {
 	def_readonly("max_n_coefficients", &structCC::maximumNumberOfCoefficients);
 
 	def("get_frame",
-		[](CC self, Positive<long> frameNumber) {
+		[](CC self, Positive<integer> frameNumber) {
 			if (frameNumber > self->nx) Melder_throw(U"Frame number out of range");
 			return &self->frame[frameNumber];
 		},

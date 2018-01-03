@@ -404,7 +404,7 @@ void Binding<Sound>::init() {
 	    "from_time"_a = nullopt, "to_time"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
 
 	def("override_sampling_frequency",
-	    args_cast<_, Positive<double>>(Sound_overrideSamplingFrequency),
+	    args_cast<_, Positive<_>>(Sound_overrideSamplingFrequency),
 	    "new_frequency"_a);
 
 	// TODO Filter with one formant (in-line)...
@@ -484,7 +484,7 @@ void Binding<Sound>::init() {
 	    "minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0, "factor"_a);
 
 	def("deepen_band_modulation",
-	    args_cast<_, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>, Positive<double>>(Sound_deepenBandModulation),
+	    args_cast<_, Positive<_>, Positive<_>, Positive<_>, Positive<_>, Positive<_>, Positive<_>>(Sound_deepenBandModulation),
 	    "enhancement"_a = 20.0, "from_frequency"_a = 300.0, "to_frequency"_a = 8000.0, "slow_modulation"_a = 3.0, "fast_modulation"_a = 30.0, "band_smoothing"_a = 100.0);
 
 	def("to_pitch",
@@ -504,7 +504,7 @@ void Binding<Sound>::init() {
 	    },
 	    "method"_a = ToPitchMethod::AC);
 
-	def("to_pitch",
+	def("to_pitch", // TODO Args cast for optional and optional ranges!
 	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
 	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
 
@@ -552,15 +552,15 @@ void Binding<Sound>::init() {
 	    "method"_a = ToHarmonicityMethod::CC);
 
 	def("to_harmonicity_cc",
-	    args_cast<_, Positive<double>, Positive<double>, _, Positive<double>>(Sound_to_Harmonicity_cc),
+	    args_cast<_, Positive<_>, Positive<_>, _, Positive<_>>(Sound_to_Harmonicity_cc),
 	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
 	def("to_harmonicity_ac",
-	    args_cast<_, Positive<double>, Positive<double>, _, Positive<double>>(Sound_to_Harmonicity_ac),
+	    args_cast<_, Positive<_>, Positive<_>, _, Positive<_>>(Sound_to_Harmonicity_ac),
 	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
 	def("to_harmonicity_gne",
-	    args_cast<_, Positive<double>, Positive<double>, Positive<double>, Positive<double>>(Sound_to_Harmonicity_GNE),
+	    args_cast<_, Positive<_>, Positive<_>, Positive<_>, Positive<_>>(Sound_to_Harmonicity_GNE),
 	    "minimum_frequency"_a = 500.0, "maximum_frequency"_a = 4500.0, "bandwidth"_a = 1000.0, "step"_a = 80.0);
 
 	def("autocorrelate",

@@ -229,11 +229,11 @@ void Binding<Pitch>::init() {
 	    &Pitch_interpolate);
 
 	def("smooth",
-		args_cast<_, Positive<double>>(Pitch_smooth),
+		args_cast<_, Positive<_>>(Pitch_smooth),
 		"bandwidth"_a = 10.0);
 
 	def("subtract_linear_fit",
-	    [](Pitch self, kPitch_unit unit) { return Pitch_subtractLinearFit(self, unit); },
+	    &Pitch_subtractLinearFit,
 		"unit"_a = kPitch_unit::HERTZ);
 
 	def("kill_octave_jumps",
@@ -249,7 +249,7 @@ void Binding<Pitch>::init() {
 	def_readonly("max_n_candidates", &structPitch::maxnCandidates);
 
 	def("get_frame",
-	    [](Pitch self, Positive<long> frameNumber) {
+	    [](Pitch self, Positive<integer> frameNumber) {
 		    if (frameNumber > self->nx) Melder_throw(U"Frame number out of range");
 		    return &self->frame[frameNumber];
 	    },
@@ -318,7 +318,7 @@ void Binding<Pitch>::init() {
 	                      });
 
 	def("path_finder",
-	    args_cast<_, _, _, _, _, _, Positive<double>, bool>(Pitch_pathFinder),
+	    args_cast<_, _, _, _, _, _, Positive<_>, bool>(Pitch_pathFinder),
 	    "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "ceiling"_a = 600.0, "pull_formants"_a = false);
 
 	def("step",

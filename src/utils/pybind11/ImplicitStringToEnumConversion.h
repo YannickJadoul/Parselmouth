@@ -17,6 +17,7 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
+#pragma once
 #ifndef INC_PARSELMOUTH_IMPLICIT_STRING_TO_ENUM_CONVERSION_H
 #define INC_PARSELMOUTH_IMPLICIT_STRING_TO_ENUM_CONVERSION_H
 

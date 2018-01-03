@@ -58,7 +58,7 @@ void Binding<Function>::init()
 	    "x"_a, "new_x"_a);
 
 	def("scale_x_by",
-	    args_cast<_, Positive<double>>(Function_scaleXBy),
+	    args_cast<_, Positive<_>>(Function_scaleXBy),
 	    "scale"_a);
 
 	def("scale_x_to",

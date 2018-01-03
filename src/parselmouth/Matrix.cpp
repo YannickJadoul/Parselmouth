@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 
 #include "praat/MelderUtils.h"
+#include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
@@ -32,6 +33,8 @@ using namespace py::literals;
 namespace parselmouth {
 
 void Binding<Matrix>::init() {
+	using signature_cast_placeholder::_;
+
 	// TODO Constructors (i.e., from numpy array, ...)
 
 	def_property("values",
@@ -107,11 +110,11 @@ void Binding<Matrix>::init() {
 	def("get_column_distance", [](Matrix self) { return self->dx; });
 
 	def("get_y_of_row",
-	    [](Matrix self, Positive<integer> rowNumber) { return Matrix_rowToY(self, rowNumber); },
+	    args_cast<_, Positive<integer>>(Matrix_rowToY),
 	    "row_number"_a);
 
 	def("get_x_of_column",
-	    [](Matrix self, Positive<integer> columnNumber) { return Matrix_rowToY(self, columnNumber); },
+	    args_cast<_, Positive<integer>>(Matrix_columnToX),
 	    "column_number"_a);
 
 	def("get_value_in_cell",

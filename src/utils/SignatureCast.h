@@ -32,6 +32,23 @@ struct _;
 
 namespace detail {
 
+template <typename T>
+struct ReplaceSignatureCastPlaceholderImpl {
+	template <typename Arg>
+	using Type = T;
+};
+
+template <>
+struct ReplaceSignatureCastPlaceholderImpl<signature_cast_placeholder::_> {
+	template <typename Arg>
+	using Type = Arg;
+};
+
+
+template <typename CastArg, typename ActualArg>
+using ReplaceSignatureCastPlaceholder = typename ReplaceSignatureCastPlaceholderImpl<CastArg>::template Type<ActualArg>;
+
+
 template <typename Functor>
 struct RemoveClass;
 
@@ -50,12 +67,7 @@ struct CompleteSignatureImpl;
 
 template<typename Return, typename... Args, typename R, typename... A>
 struct CompleteSignatureImpl<Return (Args...), R (A...)> {
-	using _ = signature_cast_placeholder::_;
-#ifndef _MSC_VER
-	using Type = std::conditional_t<std::is_same<Return, _>::value, R, Return> (std::conditional_t<std::is_same<Args, _>::value, A, Args>...);
-#else
-	using Type = typename std::conditional<std::is_same<Return, _>::value, R, Return>::type (typename std::conditional<std::is_same<Args, _>::value, A, Args>::type...);
-#endif
+	using Type = ReplaceSignatureCastPlaceholder<Return, R> (ReplaceSignatureCastPlaceholder<Args, A>...);
 };
 
 

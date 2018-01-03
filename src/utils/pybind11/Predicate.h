@@ -23,6 +23,8 @@
 
 #include <pybind11/pybind11.h>
 
+#include "utils/SignatureCast.h"
+
 #include <utility>
 
 namespace parselmouth {
@@ -54,6 +56,19 @@ public:
 private:
 	T m_wrapped;
 };
+
+template <typename Impl>
+class Predicate<signature_cast_placeholder::_, Impl>;
+
+namespace detail {
+
+template <typename Impl>
+struct ReplaceSignatureCastPlaceholderImpl<Predicate<signature_cast_placeholder::_, Impl>> {
+	template <typename Arg>
+	using Type = Predicate<Arg, Impl>;
+};
+
+} // namespace detail
 
 } // namespace parselmouth
 

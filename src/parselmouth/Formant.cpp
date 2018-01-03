@@ -42,11 +42,11 @@ void Binding<Formant>::init() {
 	initTimeFrameSampled(*this);
 
 	def("get_value_at_time", // TODO Enum for Hertz vs. Bark?
-	    args_cast<_, Positive<int>, _, _>(Formant_getValueAtTime),
+	    args_cast<_, Positive<_>, _, _>(Formant_getValueAtTime),
 		"formant_number"_a, "time"_a, "unit"_a = kFormant_unit::HERTZ);
 
 	def("get_bandwidth_at_time",
-	    args_cast<_, Positive<int>, _, _>(Formant_getBandwidthAtTime),
+	    args_cast<_, Positive<_>, _, _>(Formant_getBandwidthAtTime),
 	    "formant_number"_a, "time"_a, "unit"_a = kFormant_unit::HERTZ);
 }
 

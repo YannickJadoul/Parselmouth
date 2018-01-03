@@ -17,6 +17,7 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
+#pragma once
 #ifndef INC_PARSELMOUTH_TIME_CLASS_ASPECTS_H
 #define INC_PARSELMOUTH_TIME_CLASS_ASPECTS_H
 
@@ -114,7 +115,7 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 		"time"_a, "new_time"_a);
 
 	def("scale_times_by",
-		args_cast<Class *, Positive<double>>(Function_scaleXBy),
+		args_cast<Class *, Positive<_>>(Function_scaleXBy),
 		"scale"_a);
 
 	def("scale_times_to",
@@ -158,11 +159,11 @@ void initTimeFrameSampled(ClassBinding<Class, Extra...> &binding) {
 	    "frame_number"_a);
 
 	def("get_frame_number_from_time",
-		[](Class *self, Positive<long> time) { return Sampled_indexToX(self, time); },
+		args_cast<Class *, Positive<_>>(Sampled_indexToX<integer>),
 		"time"_a);
 
 	def("time_to_frame_number",
-	    [](Class *self, Positive<long> time) { return Sampled_indexToX(self, time); },
+	    args_cast<Class *, Positive<_>>(Sampled_indexToX<integer>),
 	    "time"_a);
 
 	// TODO get_frame_times() ?

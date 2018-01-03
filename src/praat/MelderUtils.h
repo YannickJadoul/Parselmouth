@@ -17,6 +17,7 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
+#pragma once
 #ifndef INC_PARSELMOUTH_MELDER_UTILS_H
 #define INC_PARSELMOUTH_MELDER_UTILS_H
 
