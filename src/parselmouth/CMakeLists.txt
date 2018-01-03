@@ -30,4 +30,5 @@ add_sources(CC.cpp
             Spectrogram.cpp
             Spectrum.cpp
             Thing.cpp
-            Vector.cpp)
+            Vector.cpp
+            praat.cpp)
