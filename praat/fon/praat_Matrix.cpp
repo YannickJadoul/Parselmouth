@@ -661,6 +661,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
+#ifndef NO_GRAPHICS
 FORM_SAVE (SAVE_Photo_saveAsAppleIconFile, U"Save as Apple icon file", nullptr, U"icns") {
 	SAVE_ONE (Photo)
 		Photo_saveAsAppleIconFile (me, file);
@@ -708,6 +709,7 @@ FORM_SAVE (SAVE_Photo_saveAsWindowsIconFile, U"Save as Windows icon file", nullp
 		Photo_saveAsWindowsIconFile (me, file);
 	SAVE_ONE_END
 }
+#endif
 
 // MARK: - PHOTO & MATRIX
 
@@ -877,17 +879,19 @@ praat_addAction1 (classMatrix, 0, U"Analyse", nullptr, 0, nullptr);
 		praat_addAction1 (classPhoto, 0, U"Extract green", nullptr, 1, NEW_Photo_extractGreen);
 		praat_addAction1 (classPhoto, 0, U"Extract blue", nullptr, 1, NEW_Photo_extractBlue);
 		praat_addAction1 (classPhoto, 0, U"Extract transparency", nullptr, 1, NEW_Photo_extractTransparency);
-	praat_addAction1 (classPhoto, 1, U"Save as PNG file...", nullptr, 0, SAVE_Photo_saveAsPNG);
-	#if defined (macintosh) || defined (_WIN32)
-		praat_addAction1 (classPhoto, 1, U"Save as TIFF file...", nullptr, 0, SAVE_Photo_saveAsTIFF);
-		praat_addAction1 (classPhoto, 1, U"Save as GIF file...", nullptr, 0, SAVE_Photo_saveAsGIF);
-		praat_addAction1 (classPhoto, 1, U"Save as Windows bitmap file...", nullptr, 0, SAVE_Photo_saveAsWindowsBitmapFile);
-		praat_addAction1 (classPhoto, 1, U"Save as lossy JPEG file...", nullptr, 0, SAVE_Photo_saveAsJPEG);
-	#endif
-	#if defined (macintosh)
-		praat_addAction1 (classPhoto, 1, U"Save as JPEG-2000 file...", nullptr, 0, SAVE_Photo_saveAsJPEG2000);
-		praat_addAction1 (classPhoto, 1, U"Save as Apple icon file...", nullptr, 0, SAVE_Photo_saveAsAppleIconFile);
-		praat_addAction1 (classPhoto, 1, U"Save as Windows icon file...", nullptr, 0, SAVE_Photo_saveAsWindowsIconFile);
+	#ifndef NO_GRAPHICS
+		praat_addAction1 (classPhoto, 1, U"Save as PNG file...", nullptr, 0, SAVE_Photo_saveAsPNG);
+		#if defined (macintosh) || defined (_WIN32)
+			praat_addAction1 (classPhoto, 1, U"Save as TIFF file...", nullptr, 0, SAVE_Photo_saveAsTIFF);
+			praat_addAction1 (classPhoto, 1, U"Save as GIF file...", nullptr, 0, SAVE_Photo_saveAsGIF);
+			praat_addAction1 (classPhoto, 1, U"Save as Windows bitmap file...", nullptr, 0, SAVE_Photo_saveAsWindowsBitmapFile);
+			praat_addAction1 (classPhoto, 1, U"Save as lossy JPEG file...", nullptr, 0, SAVE_Photo_saveAsJPEG);
+		#endif
+		#if defined (macintosh)
+			praat_addAction1 (classPhoto, 1, U"Save as JPEG-2000 file...", nullptr, 0, SAVE_Photo_saveAsJPEG2000);
+			praat_addAction1 (classPhoto, 1, U"Save as Apple icon file...", nullptr, 0, SAVE_Photo_saveAsAppleIconFile);
+			praat_addAction1 (classPhoto, 1, U"Save as Windows icon file...", nullptr, 0, SAVE_Photo_saveAsWindowsIconFile);
+		#endif
 	#endif
 
 	praat_addAction1 (classMovie, 1, U"Paint one image...", nullptr, 1, GRAPHICS_Movie_paintOneImage);

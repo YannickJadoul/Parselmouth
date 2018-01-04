@@ -98,14 +98,17 @@ void Photo_paintCells (Photo me, Graphics g, double xmin, double xmax, double ym
 */
 
 void Photo_movie (Photo me, Graphics g);
-void Photo_saveAsPNG               (Photo me, MelderFile file);
-void Photo_saveAsTIFF              (Photo me, MelderFile file);
-void Photo_saveAsGIF               (Photo me, MelderFile file);
-void Photo_saveAsWindowsBitmapFile (Photo me, MelderFile file);
-void Photo_saveAsJPEG              (Photo me, MelderFile file);
-void Photo_saveAsJPEG2000          (Photo me, MelderFile file);
-void Photo_saveAsAppleIconFile     (Photo me, MelderFile file);
-void Photo_saveAsWindowsIconFile   (Photo me, MelderFile file);
+
+#ifndef NO_GRAPHICS
+	void Photo_saveAsPNG               (Photo me, MelderFile file);
+	void Photo_saveAsTIFF              (Photo me, MelderFile file);
+	void Photo_saveAsGIF               (Photo me, MelderFile file);
+	void Photo_saveAsWindowsBitmapFile (Photo me, MelderFile file);
+	void Photo_saveAsJPEG              (Photo me, MelderFile file);
+	void Photo_saveAsJPEG2000          (Photo me, MelderFile file);
+	void Photo_saveAsAppleIconFile     (Photo me, MelderFile file);
+	void Photo_saveAsWindowsIconFile   (Photo me, MelderFile file);
+#endif
 
 /* End of file Photo.h */
 #endif

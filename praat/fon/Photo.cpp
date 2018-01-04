@@ -141,7 +141,7 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 			}
 			cairo_surface_destroy (surface);
 			return me;
-		#elif defined (_WIN32)
+		#elif defined (_WIN32) && ! defined (NO_GRAPHICS)
 			Gdiplus::Bitmap gdiplusBitmap (Melder_peek32toW (file -> path));
 			integer width = gdiplusBitmap. GetWidth ();
 			integer height = gdiplusBitmap. GetHeight ();
@@ -159,7 +159,7 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 				}
 			}
 			return me;
-		#elif defined (macintosh)
+		#elif defined (macintosh) && ! defined (NO_GRAPHICS)
 			autoPhoto me;
 			char utf8 [500];
 			Melder_str32To8bitFileRepresentation_inline (file -> path, utf8);
@@ -220,6 +220,8 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 		Melder_free (data);
 	}
 #endif
+
+#ifndef NO_GRAPHICS
 
 #if defined (linux) && ! defined (NO_GRAPHICS)
 	static void _lin_saveAsImageFile (Photo me, MelderFile file, const char32 *which) {
@@ -419,6 +421,8 @@ void Photo_saveAsWindowsIconFile (Photo me, MelderFile file) {
 		(void) file;
 	#endif
 }
+
+#endif
 
 void Photo_replaceRed (Photo me, Matrix red) {
 	my d_red = Data_copy (red);

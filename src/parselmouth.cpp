@@ -29,12 +29,11 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-
 PYBIND11_MODULE(parselmouth, m) {
 	praatlib_init();
 	// TODO Put in one-time initialization that is run when it's actually needed?
-    INCLUDE_LIBRARY(praat_uvafon_init)
-    INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
+	INCLUDE_LIBRARY(praat_uvafon_init)
+	INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
 
 	parselmouth::PraatBindings bindings(m);
 
