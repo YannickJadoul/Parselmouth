@@ -136,6 +136,7 @@ PRAAT_ENUM_BINDING_ALIAS(SpectralAnalysisWindowShape, kSound_to_Spectrogram_wind
 PRAAT_ENUM_BINDING_ALIAS(FormantUnit, kFormant_unit)
 PRAAT_ENUM_BINDING_ALIAS(PitchUnit, kPitch_unit)
 
+void initPraatModule(pybind11::module m);
 
 using PraatBindings = Bindings<PRAAT_ENUMS, PRAAT_CLASSES>;
 

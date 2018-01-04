@@ -28,11 +28,12 @@
 
 namespace parselmouth {
 
+// TODO Is this good enough? Cause actually, the autoMelderDivertInfo resets not to the buffer that was there when constructed, but just 'theForegroundBuffer' (i.e., can't nest this)
 class MelderInfoInterceptor
 {
 public:
 	MelderInfoInterceptor() : m_string(), m_divertInfo(&m_string) {}
-	std::u32string get() { return m_string.string; }
+	std::u32string get() { return m_string.string == nullptr ? U"" : m_string.string; }
 
 private:
 	autoMelderString m_string;

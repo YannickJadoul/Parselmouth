@@ -153,6 +153,7 @@ GuiMenuItem praat_addMenuCommand_ (const char32 *window, const char32 *menu, con
 typedef struct {
 	ClassInfo klas;   // the class
 	Daata object;   // the instance
+	bool owned;
 	char32 *name;   // the name of the object as it appears in the List
 	structMelderFile file;   // is this Object associated with a file?
 	integer id;   // the unique number of the object
@@ -202,6 +203,8 @@ void praat_new (autoDaata me, Melder_6_ARGS);
 void praat_new (autoDaata me, Melder_7_ARGS);
 void praat_new (autoDaata me, Melder_8_ARGS);
 void praat_new (autoDaata me, Melder_9_ARGS);
+void praat_newReference (Daata me);
+void praat_newWithFile (Daata me, bool owned, MelderFile file, const char32 *myName);
 void praat_newWithFile (autoDaata me, MelderFile file, const char32 *name);
 void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 
@@ -502,6 +505,8 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 				if (! args && ! sendingString) { \
 					file = UiFile_getFile (dia); \
 				} else { \
+					Melder_require (! args || narg == 1, U"Command requires exactly 1 argument, the name of the file to read, instead of the given ", narg, U" arguments."); \
+					Melder_require (! args || args [1]. which == Stackel_STRING, U"The file name argument should be a string, not ", Stackel_whichText (& args [1]), U"."); \
 					Melder_relativePathToFile (args ? args [1]. string : sendingString, & _file2); \
 					file = & _file2; \
 				}
@@ -523,6 +528,8 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 				if (! args && ! sendingString) { \
 					file = UiFile_getFile (dia); \
 				} else { \
+					Melder_require (! args || narg == 1, U"Command requires exactly 1 argument, the name of the file to write, instead of the given ", narg, U" arguments."); \
+					Melder_require (! args || args [1]. which == Stackel_STRING, U"The file name argument should be a string, not ", Stackel_whichText (& args [1]), U"."); \
 					Melder_relativePathToFile (args ? args [1]. string : sendingString, & _file2); \
 					file = & _file2; \
 				}

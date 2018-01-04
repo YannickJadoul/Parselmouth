@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2018  Yannick Jadoul
+ * Copyright (C) 2016-2017  Yannick Jadoul
  *
  * This file is part of Parselmouth.
  *
@@ -17,37 +17,21 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#pragma once
-#ifndef INC_PARSELMOUTH_NUMERIC_PREDICATES_H
-#define INC_PARSELMOUTH_NUMERIC_PREDICATES_H
+#ifndef INC_PARSELMOUTH_STRING_UTILS_H
+#define INC_PARSELMOUTH_STRING_UTILS_H
 
-#include "Predicate.h"
+#include <string>
 
 namespace parselmouth {
 
-class PositiveImpl {
-public:
-	template <typename T>
-	static bool check(const T &value) { return value > 0; }
+bool startsWith(const std::u32string &string, const std::u32string &prefix) {
+	return prefix.length() <= string.length() && string.compare(0, prefix.length(), prefix) == 0;
+}
 
-	static constexpr auto &name = "Positive";
-};
-
-template <typename T>
-using Positive = Predicate<T, PositiveImpl>;
-
-
-class NonNegativeImpl {
-public:
-	template <typename T>
-	static bool check(const T &value) { return value >= 0; }
-
-	static constexpr auto &name = "NonNegative";
-};
-
-template <typename T>
-using NonNegative = Predicate<T, NonNegativeImpl>;
+bool endsWith(const std::u32string &string, const std::u32string &suffix) {
+	return suffix.length() <= string.length() && string.compare(string.length() - suffix.length(), std::u32string::npos, suffix) == 0;
+}
 
 } // namespace parselmouth
 
-#endif // INC_PARSELMOUTH_NUMERIC_PREDICATES_H
+#endif // INC_PARSELMOUTH_STRING_UTILS_H

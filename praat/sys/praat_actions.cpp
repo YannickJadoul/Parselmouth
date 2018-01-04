@@ -709,20 +709,20 @@ void praat_saveAddedActions (MelderString *buffer) {
 	}
 }
 
-int praat_doAction (const char32 *command, const char32 *arguments, Interpreter interpreter) {
+integer praat_doAction (const char32 *command, const char32 *arguments, Interpreter interpreter) {
 	integer i = 1;
 	while (i <= theActions.size && (! theActions.at [i] -> executable || str32cmp (theActions.at [i] -> title, command))) i ++;
 	if (i > theActions.size) return 0;   // not found
 	theActions.at [i] -> callback (nullptr, 0, nullptr, arguments, interpreter, command, false, nullptr);
-	return 1;
+	return i;
 }
 
-int praat_doAction (const char32 *command, int narg, Stackel args, Interpreter interpreter) {
+integer praat_doAction (const char32 *command, int narg, Stackel args, Interpreter interpreter) {
 	integer i = 1;
 	while (i <= theActions.size && (! theActions.at [i] -> executable || str32cmp (theActions.at [i] -> title, command))) i ++;
 	if (i > theActions.size) return 0;   // not found
 	theActions.at [i] -> callback (nullptr, narg, args, nullptr, interpreter, command, false, nullptr);
-	return 1;
+	return i;
 }
 
 integer praat_getNumberOfActions () { return theActions.size; }

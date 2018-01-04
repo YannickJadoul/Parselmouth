@@ -778,7 +778,7 @@ template <typename T1, typename T2> struct is_copy_constructible<std::pair<T1, T
 template <typename type> class type_caster_base : public type_caster_generic {
     using itype = intrinsic_t<type>;
 public:
-    static PYBIND11_DESCR name() { return type_descr(_<type>()); }
+    static constexpr auto name = _<type>();
 
     type_caster_base() : type_caster_base(typeid(type)) { }
     explicit type_caster_base(const std::type_info &info) : type_caster_generic(info) { }
@@ -835,7 +835,7 @@ public:
             nullptr, nullptr, holder);
     }
 
-    template <typename T> using cast_op_type = cast_op_type<T>;
+    template <typename T> using cast_op_type = detail::cast_op_type<T>;
 
     operator itype*() { return (type *) value; }
     operator itype&() { if (!value) throw reference_cast_error(); return *((itype *) value); }
@@ -885,7 +885,7 @@ private:
             "std::reference_wrapper<T> caster requires T to have a caster with an `T &` operator");
 public:
     bool load(handle src, bool convert) { return subcaster.load(src, convert); }
-    static PYBIND11_DESCR name() { return caster_t::name(); }
+    static constexpr auto name = caster_t::name;
     static handle cast(const std::reference_wrapper<type> &src, return_value_policy policy, handle parent) {
         // It is definitely wrong to take ownership of this pointer, so mask that rvp
         if (policy == return_value_policy::take_ownership || policy == return_value_policy::automatic)
@@ -900,7 +900,7 @@ public:
     protected: \
         type value; \
     public: \
-        static PYBIND11_DESCR name() { return type_descr(py_name); } \
+        static constexpr auto name = py_name; \
         template <typename T_, enable_if_t<std::is_same<type, remove_cv_t<T_>>::value, int> = 0> \
         static handle cast(T_ *src, return_value_policy policy, handle parent) { \
             if (!src) return none().release(); \
@@ -980,11 +980,12 @@ public:
     static handle cast(T src, return_value_policy /* policy */, handle /* parent */) {
         if (std::is_floating_point<T>::value) {
             return PyFloat_FromDouble((double) src);
-        } else if (sizeof(T) <= sizeof(long)) {
+        } else if (sizeof(T) <= sizeof(ssize_t)) {
+            // This returns a long automatically if needed
             if (std::is_signed<T>::value)
-                return PyLong_FromLong((long) src);
+                return PYBIND11_LONG_FROM_SIGNED(src);
             else
-                return PyLong_FromUnsignedLong((unsigned long) src);
+                return PYBIND11_LONG_FROM_UNSIGNED(src);
         } else {
             if (std::is_signed<T>::value)
                 return PyLong_FromLongLong((long long) src);
@@ -1049,7 +1050,7 @@ public:
 
     template <typename T> using cast_op_type = void*&;
     operator void *&() { return value; }
-    static PYBIND11_DESCR name() { return type_descr(_("capsule")); }
+    static constexpr auto name = _("capsule");
 private:
     void *value = nullptr;
 };
@@ -1216,6 +1217,7 @@ template <typename CharT> struct type_caster<CharT, enable_if_t<is_std_char_type
     using StringCaster = type_caster<StringType>;
     StringCaster str_caster;
     bool none = false;
+    CharT one_char = 0;
 public:
     bool load(handle src, bool convert) {
         if (!src) return false;
@@ -1243,7 +1245,7 @@ public:
     }
 
     operator CharT*() { return none ? nullptr : const_cast<CharT *>(static_cast<StringType &>(str_caster).c_str()); }
-    operator CharT() {
+    operator CharT&() {
         if (none)
             throw value_error("Cannot convert None to a character");
 
@@ -1267,7 +1269,8 @@ public:
             if (char0_bytes == str_len) {
                 // If we have a 128-255 value, we can decode it into a single char:
                 if (char0_bytes == 2 && (v0 & 0xFC) == 0xC0) { // 0x110000xx 0x10xxxxxx
-                    return static_cast<CharT>(((v0 & 3) << 6) + (static_cast<unsigned char>(value[1]) & 0x3F));
+                    one_char = static_cast<CharT>(((v0 & 3) << 6) + (static_cast<unsigned char>(value[1]) & 0x3F));
+                    return one_char;
                 }
                 // Otherwise we have a single character, but it's > U+00FF
                 throw value_error("Character code point not in range(0x100)");
@@ -1278,19 +1281,20 @@ public:
         // surrogate pair with total length 2 instantly indicates a range error (but not a "your
         // string was too long" error).
         else if (StringCaster::UTF_N == 16 && str_len == 2) {
-            char16_t v0 = static_cast<char16_t>(value[0]);
-            if (v0 >= 0xD800 && v0 < 0xE000)
+            one_char = static_cast<CharT>(value[0]);
+            if (one_char >= 0xD800 && one_char < 0xE000)
                 throw value_error("Character code point not in range(0x10000)");
         }
 
         if (str_len != 1)
             throw value_error("Expected a character, but multi-character string found");
 
-        return value[0];
+        one_char = value[0];
+        return one_char;
     }
 
-    static PYBIND11_DESCR name() { return type_descr(_(PYBIND11_STRING_NAME)); }
-    template <typename _T> using cast_op_type = remove_reference_t<pybind11::detail::cast_op_type<_T>>;
+    static constexpr auto name = _(PYBIND11_STRING_NAME);
+    template <typename _T> using cast_op_type = pybind11::detail::cast_op_type<_T>;
 };
 
 // Base implementation for std::tuple and std::pair
@@ -1314,9 +1318,7 @@ public:
         return cast_impl(std::forward<T>(src), policy, parent, indices{});
     }
 
-    static PYBIND11_DESCR name() {
-        return type_descr(_("Tuple[") + detail::concat(make_caster<Ts>::name()...) + _("]"));
-    }
+    static constexpr auto name = _("Tuple[") + concat(make_caster<Ts>::name...) + _("]");
 
     template <typename T> using cast_op_type = type;
 
@@ -1414,7 +1416,7 @@ protected:
     bool load_value(value_and_holder &&v_h) {
         if (v_h.holder_constructed()) {
             value = v_h.value_ptr();
-            holder = v_h.holder<holder_type>();
+            holder = v_h.template holder<holder_type>();
             return true;
         } else {
             throw cast_error("Unable to cast from non-held to held instance (T& to Holder<T>) "
@@ -1461,7 +1463,7 @@ struct move_only_holder_caster {
         auto *ptr = holder_helper<holder_type>::get(src);
         return type_caster_base<type>::cast_holder(ptr, &src);
     }
-    static PYBIND11_DESCR name() { return type_caster_base<type>::name(); }
+    static constexpr auto name = type_caster_base<type>::name;
 };
 
 template <typename type, typename deleter>
@@ -1492,10 +1494,10 @@ template <typename base, typename holder> struct is_holder_type :
 template <typename base, typename deleter> struct is_holder_type<base, std::unique_ptr<base, deleter>> :
     std::true_type {};
 
-template <typename T> struct handle_type_name { static PYBIND11_DESCR name() { return _<T>(); } };
-template <> struct handle_type_name<bytes> { static PYBIND11_DESCR name() { return _(PYBIND11_BYTES_NAME); } };
-template <> struct handle_type_name<args> { static PYBIND11_DESCR name() { return _("*args"); } };
-template <> struct handle_type_name<kwargs> { static PYBIND11_DESCR name() { return _("**kwargs"); } };
+template <typename T> struct handle_type_name { static constexpr auto name = _<T>(); };
+template <> struct handle_type_name<bytes> { static constexpr auto name = _(PYBIND11_BYTES_NAME); };
+template <> struct handle_type_name<args> { static constexpr auto name = _("*args"); };
+template <> struct handle_type_name<kwargs> { static constexpr auto name = _("**kwargs"); };
 
 template <typename type>
 struct pyobject_caster {
@@ -1513,7 +1515,7 @@ struct pyobject_caster {
     static handle cast(const handle &src, return_value_policy /* policy */, handle /* parent */) {
         return src.inc_ref();
     }
-    PYBIND11_TYPE_CASTER(type, handle_type_name<type>::name());
+    PYBIND11_TYPE_CASTER(type, handle_type_name<type>::name);
 };
 
 template <typename T>
@@ -1574,7 +1576,7 @@ template <typename T, typename SFINAE> type_caster<T, SFINAE> &load_type(type_ca
         throw cast_error("Unable to cast Python instance to C++ type (compile in debug mode for details)");
 #else
         throw cast_error("Unable to cast Python instance of type " +
-            (std::string) str(handle.get_type()) + " to C++ type '" + type_id<T>() + "''");
+            (std::string) str(handle.get_type()) + " to C++ type '" + type_id<T>() + "'");
 #endif
     }
     return conv;
@@ -1611,6 +1613,13 @@ object cast(const T &value, return_value_policy policy = return_value_policy::au
         policy = std::is_pointer<T>::value ? return_value_policy::reference : return_value_policy::copy;
     return reinterpret_steal<object>(detail::make_caster<T>::cast(value, policy, parent));
 }
+
+// C++ type -> py::object (move)
+template <typename T, detail::enable_if_t<!detail::is_pyobject<T>::value, int> = 0, detail::enable_if_t<!std::is_reference<T>::value, int> = 0>
+object cast(T &&value, return_value_policy policy = return_value_policy::move, handle parent = handle()) {
+    return reinterpret_steal<object>(detail::make_caster<T>::cast(std::move(value), policy, parent));
+}
+
 
 template <typename T> T handle::cast() const { return pybind11::cast<T>(*this); }
 template <> inline void handle::cast() const { return; }
@@ -1799,6 +1808,10 @@ struct function_call {
     /// The `convert` value the arguments should be loaded with
     std::vector<bool> args_convert;
 
+    /// Extra references for the optional `py::args` and/or `py::kwargs` arguments (which, if
+    /// present, are also in `args` but without a reference).
+    object args_ref, kwargs_ref;
+
     /// The parent, if any
     handle parent;
 
@@ -1826,7 +1839,7 @@ public:
     static constexpr bool has_kwargs = kwargs_pos < 0;
     static constexpr bool has_args = args_pos < 0;
 
-    static PYBIND11_DESCR arg_names() { return detail::concat(make_caster<Args>::name()...); }
+    static constexpr auto arg_names = concat(type_descr(make_caster<Args>::name)...);
 
     bool load_args(function_call &call) {
         return load_impl_sequence(call, indices{});

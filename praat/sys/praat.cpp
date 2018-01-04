@@ -291,9 +291,11 @@ static void praat_remove (int iobject, bool removeVisibly) {
 	MelderFile_setToNull (& theCurrentPraatObjects -> list [iobject]. file);
 	trace (U"free name");
 	Melder_free (theCurrentPraatObjects -> list [iobject]. name);
-	trace (U"forget object");
-	forget (theCurrentPraatObjects -> list [iobject]. object);   // note: this might save a file-based object to file
-	trace (U"forgotten object");
+	if (theCurrentPraatObjects -> list [iobject]. owned) {
+		trace (U"forget object");
+		forget (theCurrentPraatObjects -> list[iobject]. object);   // note: this might save a file-based object to file
+		trace (U"forgotten object");
+	}
 }
 
 void praat_cleanUpName (char32 *name) {
@@ -307,22 +309,26 @@ void praat_cleanUpName (char32 *name) {
 
 /***** objects + commands *****/
 
-static void praat_new_unpackCollection (autoCollection me, const char32* myName) {
+static void praat_new_unpackCollection (Collection me, bool owned, const char32* myName) {
 	for (integer idata = 1; idata <= my size; idata ++) {
-		autoDaata object = autoDaata ((Daata) my at [idata]);
-		my at [idata] = nullptr;   // disown; once the elements are autoThings, the move will handle this
+		Melder_assert (my _ownItems);
+		Daata object = (Daata) my at [idata];
+		if (owned)
+			my at [idata] = nullptr;   // disown
 		const char32 *name = object -> name ? object -> name : myName;
 		Melder_assert (name);
-		praat_new (object.move(), name);   // recurse
+		praat_newWithFile (object, owned, nullptr, name);   // recurse
 	}
+	if (owned)
+		forget (me);
 }
 
-void praat_newWithFile (autoDaata me, MelderFile file, const char32 *myName) {
+void praat_newWithFile (Daata me, bool owned, MelderFile file, const char32 *myName) {
 	if (! me)
 		Melder_throw (U"No object was put into the list.");
 
 	if (my classInfo == classCollection) {
-		praat_new_unpackCollection (me.static_cast_move<structCollection>(), myName);
+		praat_new_unpackCollection (static_cast<Collection>(me), owned, myName);
 		return;
 	}
 
@@ -338,13 +344,13 @@ void praat_newWithFile (autoDaata me, MelderFile file, const char32 *myName) {
 		MelderString_copy (& givenName, my name && my name [0] ? my name : U"untitled");
 	}
 	praat_cleanUpName (givenName.string);
-	MelderString_append (& name, Thing_className (me.get()), U" ", givenName.string);
+	MelderString_append (& name, Thing_className (me), U" ", givenName.string);
 
 	if (theCurrentPraatObjects -> n == praat_MAXNUM_OBJECTS) {
 		//forget (me);
 		Melder_throw (U"The Object Window cannot contain more than ", praat_MAXNUM_OBJECTS, U" objects. You could remove some objects.");
 	}
-		
+
 	int IOBJECT = ++ theCurrentPraatObjects -> n;
 	Melder_assert (FULL_NAME == nullptr);
 	FULL_NAME = Melder_dup_f (name.string);   // all right to crash if out of memory
@@ -356,7 +362,8 @@ void praat_newWithFile (autoDaata me, MelderFile file, const char32 *myName) {
 			theCurrentPraatObjects -> n);
 	}
 	CLASS = my classInfo;
-	OBJECT = me.releaseToAmbiguousOwner();   // FIXME: should be move()
+	OBJECT = me;
+	theCurrentPraatObjects -> list [IOBJECT]. owned = owned;
 	SELECTED = false;
 	for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++)
 		EDITOR [ieditor] = nullptr;
@@ -369,6 +376,10 @@ void praat_newWithFile (autoDaata me, MelderFile file, const char32 *myName) {
 	theCurrentPraatObjects -> list [IOBJECT]. isBeingCreated = true;
 	Thing_setName (OBJECT, givenName.string);
 	theCurrentPraatObjects -> totalBeingCreated ++;
+}
+
+void praat_newWithFile (autoDaata me, MelderFile file, const char32 *myName) {
+	praat_newWithFile(me.releaseToAmbiguousOwner(), true, file, myName);
 }
 
 static MelderString thePraatNewName { };
@@ -409,6 +420,10 @@ void praat_new (autoDaata me, Melder_8_ARGS) {
 void praat_new (autoDaata me, Melder_9_ARGS) {
 	MelderString_copy (& thePraatNewName, Melder_9_ARGS_CALL);
 	praat_new (me.move(), thePraatNewName.string);
+}
+
+void praat_newReference (Daata me) {
+	praat_newWithFile (me, false, nullptr, U"");
 }
 
 void praat_updateSelection () {
@@ -1044,6 +1059,10 @@ extern "C" void praatlib_init () {
 	praat_addMenus (nullptr);
 	praat_addFixedButtons (nullptr);
 	praat_addMenus2 ();
+
+	// Added to registration of Praat commands by init
+	Data_setPublishProc (publishProc);
+	theCurrentPraatApplication -> manPages = ManPages_create ().releaseToAmbiguousOwner();
 }
 
 void praat_init (const char32 *title, int argc, char **argv)

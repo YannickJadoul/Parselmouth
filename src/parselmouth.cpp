@@ -29,8 +29,12 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+
 PYBIND11_MODULE(parselmouth, m) {
 	praatlib_init();
+	// TODO Put in one-time initialization that is run when it's actually needed?
+    INCLUDE_LIBRARY(praat_uvafon_init)
+    INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
 
 	parselmouth::PraatBindings bindings(m);
 
@@ -52,4 +56,6 @@ PYBIND11_MODULE(parselmouth, m) {
 	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
 
 	bindings.init();
+
+	parselmouth::initPraatModule(m.def_submodule("praat")); // TODO Part of the Bindings, on the longer term?
 }

@@ -408,9 +408,10 @@ void praat_sensitivizeFixedButtonCommand (const char32 *title, int sensitive) {
 		GuiThing_setSensitive (commandFound -> button, sensitive);
 }
 
-int praat_doMenuCommand (const char32 *title, const char32 *arguments, Interpreter interpreter) {
+integer praat_doMenuCommand (const char32 *title, const char32 *arguments, Interpreter interpreter) {
 	Praat_Command commandFound = nullptr;
-	for (integer i = 1; i <= theCommands.size; i ++) {
+	integer i;
+	for (i = 1; i <= theCommands.size; i ++) {
 		Praat_Command command = theCommands.at [i];
 		if (command -> executable && str32equ (command -> title, title) &&
 			(str32equ (command -> window, U"Objects") || str32equ (command -> window, U"Picture")))
@@ -421,12 +422,13 @@ int praat_doMenuCommand (const char32 *title, const char32 *arguments, Interpret
 	}
 	if (! commandFound) return 0;
 	commandFound -> callback (nullptr, 0, nullptr, arguments, interpreter, title, false, nullptr);
-	return 1;
+	return i;
 }
 
-int praat_doMenuCommand (const char32 *title, int narg, Stackel args, Interpreter interpreter) {
+integer praat_doMenuCommand (const char32 *title, int narg, Stackel args, Interpreter interpreter) {
 	Praat_Command commandFound = nullptr;
-	for (integer i = 1; i <= theCommands.size; i ++) {
+	integer i;
+	for (i = 1; i <= theCommands.size; i ++) {
 		Praat_Command command = theCommands.at [i];
 		if (command -> executable && str32equ (command -> title, title) &&
 			(str32equ (command -> window, U"Objects") || str32equ (command -> window, U"Picture")))
@@ -437,7 +439,7 @@ int praat_doMenuCommand (const char32 *title, int narg, Stackel args, Interprete
 	}
 	if (! commandFound) return 0;
 	commandFound -> callback (nullptr, narg, args, nullptr, interpreter, title, false, nullptr);
-	return 1;
+	return i;
 }
 
 integer praat_getNumberOfMenuCommands () { return theCommands.size; }

@@ -37,7 +37,7 @@ void Binding<Matrix>::init() {
 
 	// TODO Constructors (i.e., from numpy array, ...)
 
-	def_property("values",
+	def_property("values", // TODO Check Row-major/column-major things
 	             [](Matrix self) { return py::array_t<double, py::array::f_style>({static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, &self->z[1][1], py::cast(self)); },
 	             [](Matrix self, py::array_t<double> values) {
 		             auto ndim = values.ndim();
