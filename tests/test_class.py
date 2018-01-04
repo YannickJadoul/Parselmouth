@@ -44,6 +44,31 @@ def test_docstrings(doc):
     """
 
 
+def test_qualname(doc):
+    """Tests that a properly qualified name is set in __qualname__ (even in pre-3.3, where we
+    backport the attribute) and that generated docstrings properly use it and the module name"""
+    assert m.NestBase.__qualname__ == "NestBase"
+    assert m.NestBase.Nested.__qualname__ == "NestBase.Nested"
+
+    assert doc(m.NestBase.__init__) == """
+        __init__(self: m.class_.NestBase) -> None
+    """
+    assert doc(m.NestBase.g) == """
+        g(self: m.class_.NestBase, arg0: m.class_.NestBase.Nested) -> None
+    """
+    assert doc(m.NestBase.Nested.__init__) == """
+        __init__(self: m.class_.NestBase.Nested) -> None
+    """
+    assert doc(m.NestBase.Nested.fn) == """
+        fn(self: m.class_.NestBase.Nested, arg0: int, arg1: m.class_.NestBase, arg2: m.class_.NestBase.Nested) -> None
+    """  # noqa: E501 line too long
+    assert doc(m.NestBase.Nested.fa) == """
+        fa(self: m.class_.NestBase.Nested, a: int, b: m.class_.NestBase, c: m.class_.NestBase.Nested) -> None
+    """  # noqa: E501 line too long
+    assert m.NestBase.__module__ == "pybind11_tests.class_"
+    assert m.NestBase.Nested.__module__ == "pybind11_tests.class_"
+
+
 def test_inheritance(msg):
     roger = m.Rabbit('Rabbit')
     assert roger.name() + " is a " + roger.species() == "Rabbit is a parrot"
@@ -176,3 +201,62 @@ def test_operator_new_delete(capture):
         "C delete " + sz_noalias + "\n" +
         "C delete " + sz_alias + "\n"
     )
+
+
+def test_bind_protected_functions():
+    """Expose protected member functions to Python using a helper class"""
+    a = m.ProtectedA()
+    assert a.foo() == 42
+
+    b = m.ProtectedB()
+    assert b.foo() == 42
+
+    class C(m.ProtectedB):
+        def __init__(self):
+            m.ProtectedB.__init__(self)
+
+        def foo(self):
+            return 0
+
+    c = C()
+    assert c.foo() == 0
+
+
+def test_brace_initialization():
+    """ Tests that simple POD classes can be constructed using C++11 brace initialization """
+    a = m.BraceInitialization(123, "test")
+    assert a.field1 == 123
+    assert a.field2 == "test"
+
+
+@pytest.unsupported_on_pypy
+def test_class_refcount():
+    """Instances must correctly increase/decrease the reference count of their types (#1029)"""
+    from sys import getrefcount
+
+    class PyDog(m.Dog):
+        pass
+
+    for cls in m.Dog, PyDog:
+        refcount_1 = getrefcount(cls)
+        molly = [cls("Molly") for _ in range(10)]
+        refcount_2 = getrefcount(cls)
+
+        del molly
+        pytest.gc_collect()
+        refcount_3 = getrefcount(cls)
+
+        assert refcount_1 == refcount_3
+        assert refcount_2 > refcount_1
+
+
+def test_reentrant_implicit_conversion_failure(msg):
+    # ensure that there is no runaway reentrant implicit conversion (#1035)
+    with pytest.raises(TypeError) as excinfo:
+        m.BogusImplicitConversion(0)
+    assert msg(excinfo.value) == '''
+        __init__(): incompatible constructor arguments. The following argument types are supported:
+            1. m.class_.BogusImplicitConversion(arg0: m.class_.BogusImplicitConversion)
+
+        Invoked with: 0
+    '''

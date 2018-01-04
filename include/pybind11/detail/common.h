@@ -92,7 +92,7 @@
 #endif
 
 #define PYBIND11_VERSION_MAJOR 2
-#define PYBIND11_VERSION_MINOR 2
+#define PYBIND11_VERSION_MINOR 3
 #define PYBIND11_VERSION_PATCH dev0
 
 /// Include Python header, disable linking to pythonX_d.lib on Windows in debug mode
@@ -158,6 +158,8 @@
 #define PYBIND11_BYTES_SIZE PyBytes_Size
 #define PYBIND11_LONG_CHECK(o) PyLong_Check(o)
 #define PYBIND11_LONG_AS_LONGLONG(o) PyLong_AsLongLong(o)
+#define PYBIND11_LONG_FROM_SIGNED(o) PyLong_FromSsize_t((ssize_t) o)
+#define PYBIND11_LONG_FROM_UNSIGNED(o) PyLong_FromSize_t((size_t) o)
 #define PYBIND11_BYTES_NAME "bytes"
 #define PYBIND11_STRING_NAME "str"
 #define PYBIND11_SLICE_OBJECT PyObject
@@ -180,6 +182,8 @@
 #define PYBIND11_BYTES_SIZE PyString_Size
 #define PYBIND11_LONG_CHECK(o) (PyInt_Check(o) || PyLong_Check(o))
 #define PYBIND11_LONG_AS_LONGLONG(o) (PyInt_Check(o) ? (long long) PyLong_AsLong(o) : PyLong_AsLongLong(o))
+#define PYBIND11_LONG_FROM_SIGNED(o) PyInt_FromSsize_t((ssize_t) o) // Returns long if needed.
+#define PYBIND11_LONG_FROM_UNSIGNED(o) PyInt_FromSize_t((size_t) o) // Returns long if needed.
 #define PYBIND11_BYTES_NAME "str"
 #define PYBIND11_STRING_NAME "unicode"
 #define PYBIND11_SLICE_OBJECT PySliceObject
@@ -205,8 +209,7 @@ extern "C" {
 #define PYBIND11_TRY_NEXT_OVERLOAD ((PyObject *) 1) // special failure return code
 #define PYBIND11_STRINGIFY(x) #x
 #define PYBIND11_TOSTRING(x) PYBIND11_STRINGIFY(x)
-#define PYBIND11_INTERNALS_ID "__pybind11_" \
-    PYBIND11_TOSTRING(PYBIND11_VERSION_MAJOR) "_" PYBIND11_TOSTRING(PYBIND11_VERSION_MINOR) "__"
+#define PYBIND11_CONCAT(first, second) first##second
 
 /** \rst
     ***Deprecated in favor of PYBIND11_MODULE***
@@ -269,7 +272,7 @@ extern "C" {
         }
 \endrst */
 #define PYBIND11_MODULE(name, variable)                                        \
-    static void pybind11_init_##name(pybind11::module &);                      \
+    static void PYBIND11_CONCAT(pybind11_init_, name)(pybind11::module &);     \
     PYBIND11_PLUGIN_IMPL(name) {                                               \
         int major, minor;                                                      \
         if (sscanf(Py_GetVersion(), "%i.%i", &major, &minor) != 2) {           \
@@ -283,9 +286,9 @@ extern "C" {
                          major, minor);                                        \
             return nullptr;                                                    \
         }                                                                      \
-        auto m = pybind11::module(#name);                                      \
+        auto m = pybind11::module(PYBIND11_TOSTRING(name));                    \
         try {                                                                  \
-            pybind11_init_##name(m);                                           \
+            PYBIND11_CONCAT(pybind11_init_, name)(m);                          \
             return m.ptr();                                                    \
         } catch (pybind11::error_already_set &e) {                             \
             PyErr_SetString(PyExc_ImportError, e.what());                      \
@@ -295,7 +298,7 @@ extern "C" {
             return nullptr;                                                    \
         }                                                                      \
     }                                                                          \
-    void pybind11_init_##name(pybind11::module &variable)
+    void PYBIND11_CONCAT(pybind11_init_, name)(pybind11::module &variable)
 
 
 NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
@@ -389,7 +392,7 @@ struct instance {
             uint8_t *status;
         } nonsimple;
     };
-    /// Weak references (needed for keep alive):
+    /// Weak references
     PyObject *weakrefs;
     /// If true, the pointer is owned which means we're free to manage it with a holder.
     bool owned : 1;
@@ -406,10 +409,10 @@ struct instance {
      * (which is typically the size of two pointers), or when multiple inheritance is used on the
      * python side.  Non-simple layout allocates the required amount of memory to have multiple
      * bound C++ classes as parents.  Under this layout, `nonsimple.values_and_holders` is set to a
-     * pointer to allocated space of the required space to hold a a sequence of value pointers and
+     * pointer to allocated space of the required space to hold a sequence of value pointers and
      * holders followed `status`, a set of bit flags (1 byte each), i.e.
      * [val1*][holder1][val2*][holder2]...[bb...]  where each [block] is rounded up to a multiple of
-     * `sizeof(void *)`.  `nonsimple.holder_constructed` is, for convenience, a pointer to the
+     * `sizeof(void *)`.  `nonsimple.status` is, for convenience, a pointer to the
      * beginning of the [bb...] block (but not independently allocated).
      *
      * Status bits indicate whether the associated holder is constructed (&
@@ -442,73 +445,6 @@ struct instance {
 
 static_assert(std::is_standard_layout<instance>::value, "Internal error: `pybind11::detail::instance` is not standard layout!");
 
-struct overload_hash {
-    inline size_t operator()(const std::pair<const PyObject *, const char *>& v) const {
-        size_t value = std::hash<const void *>()(v.first);
-        value ^= std::hash<const void *>()(v.second)  + 0x9e3779b9 + (value<<6) + (value>>2);
-        return value;
-    }
-};
-
-// Python loads modules by default with dlopen with the RTLD_LOCAL flag; under libc++ and possibly
-// other stls, this means `typeid(A)` from one module won't equal `typeid(A)` from another module
-// even when `A` is the same, non-hidden-visibility type (e.g. from a common include).  Under
-// stdlibc++, this doesn't happen: equality and the type_index hash are based on the type name,
-// which works.  If not under a known-good stl, provide our own name-based hasher and equality
-// functions that use the type name.
-#if defined(__GLIBCXX__)
-inline bool same_type(const std::type_info &lhs, const std::type_info &rhs) { return lhs == rhs; }
-using type_hash = std::hash<std::type_index>;
-using type_equal_to = std::equal_to<std::type_index>;
-#else
-inline bool same_type(const std::type_info &lhs, const std::type_info &rhs) {
-    return lhs.name() == rhs.name() ||
-        std::strcmp(lhs.name(), rhs.name()) == 0;
-}
-struct type_hash {
-    size_t operator()(const std::type_index &t) const {
-        size_t hash = 5381;
-        const char *ptr = t.name();
-        while (auto c = static_cast<unsigned char>(*ptr++))
-            hash = (hash * 33) ^ c;
-        return hash;
-    }
-};
-struct type_equal_to {
-    bool operator()(const std::type_index &lhs, const std::type_index &rhs) const {
-        return lhs.name() == rhs.name() ||
-            std::strcmp(lhs.name(), rhs.name()) == 0;
-    }
-};
-#endif
-
-template <typename value_type>
-using type_map = std::unordered_map<std::type_index, value_type, type_hash, type_equal_to>;
-
-/// Internal data structure used to track registered instances and types
-struct internals {
-    type_map<void *> registered_types_cpp; // std::type_index -> type_info
-    std::unordered_map<PyTypeObject *, std::vector<type_info *>> registered_types_py; // PyTypeObject* -> base type_info(s)
-    std::unordered_multimap<const void *, instance*> registered_instances; // void * -> instance*
-    std::unordered_set<std::pair<const PyObject *, const char *>, overload_hash> inactive_overload_cache;
-    type_map<std::vector<bool (*)(PyObject *, void *&)>> direct_conversions;
-    std::unordered_map<const PyObject *, std::vector<PyObject *>> patients;
-    std::forward_list<void (*) (std::exception_ptr)> registered_exception_translators;
-    std::unordered_map<std::string, void *> shared_data; // Custom data to be shared across extensions
-    std::vector<PyObject *> loader_patient_stack; // Used by `loader_life_support`
-    std::forward_list<std::string> static_strings; // Stores the std::strings backing detail::c_str()
-    PyTypeObject *static_property_type;
-    PyTypeObject *default_metaclass;
-    PyObject *instance_base;
-#if defined(WITH_THREAD)
-    decltype(PyThread_create_key()) tstate = 0; // Usually an int but a long on Cygwin64 with Python 3.x
-    PyInterpreterState *istate = nullptr;
-#endif
-};
-
-/// Return a reference to the current 'internals' information
-inline internals &get_internals();
-
 /// from __cpp_future__ import (convenient aliases from C++14/17)
 #if defined(PYBIND11_CPP14) && (!defined(_MSC_VER) || _MSC_VER >= 1910)
 using std::enable_if_t;
@@ -539,7 +475,7 @@ template <size_t... IPrev, size_t I, bool B, bool... Bs> struct select_indices_i
     : select_indices_impl<conditional_t<B, index_sequence<IPrev..., I>, index_sequence<IPrev...>>, I + 1, Bs...> {};
 template <bool... Bs> using select_indices = typename select_indices_impl<index_sequence<>, 0, Bs...>::type;
 
-/// Backports of std::bool_constant and std::negation to accomodate older compilers
+/// Backports of std::bool_constant and std::negation to accommodate older compilers
 template <bool B> using bool_constant = std::integral_constant<bool, B>;
 template <typename T> struct negation : bool_constant<!T::value> { };
 
@@ -649,6 +585,11 @@ template <typename T, typename... Us> using deferred_t = typename deferred_type<
 template <typename Base, typename Derived> using is_strict_base_of = bool_constant<
     std::is_base_of<Base, Derived>::value && !std::is_same<Base, Derived>::value>;
 
+/// Like is_base_of, but also requires that the base type is accessible (i.e. that a Derived pointer
+/// can be converted to a Base pointer)
+template <typename Base, typename Derived> using is_accessible_base_of = bool_constant<
+    std::is_base_of<Base, Derived>::value && std::is_convertible<Derived *, Base *>::value>;
+
 template <template<typename...> class Base>
 struct is_template_base_of_impl {
     template <typename... Us> static std::true_type check(Base<Us...> *);
@@ -659,9 +600,9 @@ struct is_template_base_of_impl {
 /// `is_template_base_of<Base, T>` is true if `struct T : Base<U> {}` where U can be anything
 template <template<typename...> class Base, typename T>
 #if !defined(_MSC_VER)
-using is_template_base_of = decltype(is_template_base_of_impl<Base>::check((remove_cv_t<T>*)nullptr));
+using is_template_base_of = decltype(is_template_base_of_impl<Base>::check((intrinsic_t<T>*)nullptr));
 #else // MSVC2015 has trouble with decltype in template aliases
-struct is_template_base_of : decltype(is_template_base_of_impl<Base>::check((remove_cv_t<T>*)nullptr)) { };
+struct is_template_base_of : decltype(is_template_base_of_impl<Base>::check((intrinsic_t<T>*)nullptr)) { };
 #endif
 
 /// Check if T is an instantiation of the template `Class`. For example:
@@ -716,46 +657,7 @@ using expand_side_effects = bool[];
 #define PYBIND11_EXPAND_SIDE_EFFECTS(PATTERN) pybind11::detail::expand_side_effects{ ((PATTERN), void(), false)..., false }
 #endif
 
-/// Constructs a std::string with the given arguments, stores it in `internals`, and returns its
-/// `c_str()`.  Such strings objects have a long storage duration -- the internal strings are only
-/// cleared when the program exits or after interpreter shutdown (when embedding), and so are
-/// suitable for c-style strings needed by Python internals (such as PyTypeObject's tp_name).
-template <typename... Args> const char *c_str(Args &&...args) {
-    auto &strings = get_internals().static_strings;
-    strings.emplace_front(std::forward<Args>(args)...);
-    return strings.front().c_str();
-}
-
 NAMESPACE_END(detail)
-
-/// Returns a named pointer that is shared among all extension modules (using the same
-/// pybind11 version) running in the current interpreter. Names starting with underscores
-/// are reserved for internal usage. Returns `nullptr` if no matching entry was found.
-inline PYBIND11_NOINLINE void* get_shared_data(const std::string& name) {
-    auto& internals = detail::get_internals();
-    auto it = internals.shared_data.find(name);
-    return it != internals.shared_data.end() ? it->second : nullptr;
-}
-
-/// Set the shared data that can be later recovered by `get_shared_data()`.
-inline PYBIND11_NOINLINE void *set_shared_data(const std::string& name, void *data) {
-    detail::get_internals().shared_data[name] = data;
-    return data;
-}
-
-/// Returns a typed reference to a shared data entry (by using `get_shared_data()`) if
-/// such entry exists. Otherwise, a new object of default-constructible type `T` is
-/// added to the shared data under the given name and a reference to it is returned.
-template<typename T> T& get_or_create_shared_data(const std::string& name) {
-    auto& internals = detail::get_internals();
-    auto it = internals.shared_data.find(name);
-    T* ptr = (T*) (it != internals.shared_data.end() ? it->second : nullptr);
-    if (!ptr) {
-        ptr = new T();
-        internals.shared_data[name] = ptr;
-    }
-    return *ptr;
-}
 
 /// C++ bindings of builtin Python exceptions
 class builtin_exception : public std::runtime_error {
@@ -806,8 +708,12 @@ template <typename T> struct format_descriptor<T, detail::enable_if_t<std::is_ar
     static std::string format() { return std::string(1, c); }
 };
 
+#if !defined(PYBIND11_CPP17)
+
 template <typename T> constexpr const char format_descriptor<
     T, detail::enable_if_t<std::is_arithmetic<T>::value>>::value[2];
+
+#endif
 
 /// RAII wrapper that temporarily clears any Python error state
 struct error_scope {

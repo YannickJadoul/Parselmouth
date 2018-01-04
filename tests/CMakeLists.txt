@@ -12,7 +12,7 @@ option(PYBIND11_WERROR  "Report all warnings as errors"  OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     # We're being loaded directly, i.e. not via add_subdirectory, so make this
     # work as its own project and load the pybind11Config to get the tools we need
-    project(pybind11_tests)
+    project(pybind11_tests CXX)
 
     find_package(pybind11 REQUIRED CONFIG)
 endif()
@@ -40,6 +40,7 @@ set(PYBIND11_TEST_FILES
   test_eval.cpp
   test_exceptions.cpp
   test_factory_constructors.cpp
+  test_iostream.cpp
   test_kwargs_and_defaults.cpp
   test_local_bindings.cpp
   test_methods_and_attributes.cpp
@@ -75,6 +76,8 @@ string(REPLACE ".cpp" ".py" PYBIND11_PYTEST_FILES "${PYBIND11_TEST_FILES}")
 set(PYBIND11_CROSS_MODULE_TESTS
   test_exceptions.py
   test_local_bindings.py
+  test_stl.py
+  test_stl_binders.py
 )
 
 # Check if Eigen is available; if not, remove from PYBIND11_TEST_FILES (but
@@ -86,7 +89,7 @@ if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
   # Eigen 3.3.1+ exports a cmake 3.0+ target for handling dependency requirements, but also
   # produces a fatal error if loaded from a pre-3.0 cmake.
   if (NOT CMAKE_VERSION VERSION_LESS 3.0)
-    find_package(Eigen3 QUIET CONFIG)
+    find_package(Eigen3 3.2.7 QUIET CONFIG)
     if (EIGEN3_FOUND)
       if (EIGEN3_VERSION_STRING AND NOT EIGEN3_VERSION_STRING VERSION_LESS 3.3.1)
         set(PYBIND11_EIGEN_VIA_TARGET 1)
@@ -96,7 +99,7 @@ if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
   if (NOT EIGEN3_FOUND)
     # Couldn't load via target, so fall back to allowing module mode finding, which will pick up
     # tools/FindEigen3.cmake
-    find_package(Eigen3 QUIET)
+    find_package(Eigen3 3.2.7 QUIET)
   endif()
 
   if(EIGEN3_FOUND)
@@ -113,15 +116,15 @@ if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
   endif()
 endif()
 
-# Optional dependency for some tests
-find_package(Boost)
+# Optional dependency for some tests (boost::variant is only supported with version >= 1.56)
+find_package(Boost 1.56)
 
 # Compile with compiler warnings turned on
 function(pybind11_enable_warnings target_name)
   if(MSVC)
     target_compile_options(${target_name} PRIVATE /W4)
   else()
-      target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wconversion -Wcast-qual)
+      target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wconversion -Wcast-qual -Wdeprecated)
   endif()
 
   if(PYBIND11_WERROR)

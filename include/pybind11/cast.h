@@ -13,6 +13,7 @@
 #include "pytypes.h"
 #include "detail/typeid.h"
 #include "detail/descr.h"
+#include "detail/internals.h"
 #include <array>
 #include <limits>
 #include <tuple>
@@ -32,107 +33,6 @@
 
 NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
-// Forward declarations:
-inline PyTypeObject *make_static_property_type();
-inline PyTypeObject *make_default_metaclass();
-inline PyObject *make_object_base_type(PyTypeObject *metaclass);
-struct value_and_holder;
-
-/// Additional type information which does not fit into the PyTypeObject
-struct type_info {
-    PyTypeObject *type;
-    const std::type_info *cpptype;
-    size_t type_size, holder_size_in_ptrs;
-    void *(*operator_new)(size_t);
-    void (*init_instance)(instance *, const void *);
-    void (*dealloc)(value_and_holder &v_h);
-    std::vector<PyObject *(*)(PyObject *, PyTypeObject *)> implicit_conversions;
-    std::vector<std::pair<const std::type_info *, void *(*)(void *)>> implicit_casts;
-    std::vector<bool (*)(PyObject *, void *&)> *direct_conversions;
-    buffer_info *(*get_buffer)(PyObject *, void *) = nullptr;
-    void *get_buffer_data = nullptr;
-    /* A simple type never occurs as a (direct or indirect) parent
-     * of a class that makes use of multiple inheritance */
-    bool simple_type : 1;
-    /* True if there is no multiple inheritance in this type's inheritance tree */
-    bool simple_ancestors : 1;
-    /* for base vs derived holder_type checks */
-    bool default_holder : 1;
-    /* true if this is a type registered with py::module_local */
-    bool module_local : 1;
-};
-
-PYBIND11_NOINLINE inline internals *&get_internals_ptr() {
-    static internals *internals_ptr = nullptr;
-    return internals_ptr;
-}
-
-PYBIND11_NOINLINE inline internals &get_internals() {
-    internals *&internals_ptr = get_internals_ptr();
-    if (internals_ptr)
-        return *internals_ptr;
-    handle builtins(PyEval_GetBuiltins());
-    const char *id = PYBIND11_INTERNALS_ID;
-    if (builtins.contains(id) && isinstance<capsule>(builtins[id])) {
-        internals_ptr = *static_cast<internals **>(capsule(builtins[id]));
-
-        // We loaded builtins through python's builtins, which means that our error_already_set and
-        // builtin_exception may be different local classes than the ones set up in the initial
-        // exception translator, below, so add another for our local exception classes.
-        //
-        // stdlibc++ doesn't require this (types there are identified only by name)
-        #if !defined(__GLIBCXX__)
-        internals_ptr->registered_exception_translators.push_front(
-            [](std::exception_ptr p) -> void {
-                try {
-                    if (p) std::rethrow_exception(p);
-                } catch (error_already_set &e)       { e.restore();   return;
-                } catch (const builtin_exception &e) { e.set_error(); return;
-                }
-            }
-        );
-        #endif
-    } else {
-        internals_ptr = new internals();
-        #if defined(WITH_THREAD)
-            PyEval_InitThreads();
-            PyThreadState *tstate = PyThreadState_Get();
-            internals_ptr->tstate = PyThread_create_key();
-            PyThread_set_key_value(internals_ptr->tstate, tstate);
-            internals_ptr->istate = tstate->interp;
-        #endif
-        builtins[id] = capsule(&internals_ptr);
-        internals_ptr->registered_exception_translators.push_front(
-            [](std::exception_ptr p) -> void {
-                try {
-                    if (p) std::rethrow_exception(p);
-                } catch (error_already_set &e)           { e.restore();                                    return;
-                } catch (const builtin_exception &e)     { e.set_error();                                  return;
-                } catch (const std::bad_alloc &e)        { PyErr_SetString(PyExc_MemoryError,   e.what()); return;
-                } catch (const std::domain_error &e)     { PyErr_SetString(PyExc_ValueError,    e.what()); return;
-                } catch (const std::invalid_argument &e) { PyErr_SetString(PyExc_ValueError,    e.what()); return;
-                } catch (const std::length_error &e)     { PyErr_SetString(PyExc_ValueError,    e.what()); return;
-                } catch (const std::out_of_range &e)     { PyErr_SetString(PyExc_IndexError,    e.what()); return;
-                } catch (const std::range_error &e)      { PyErr_SetString(PyExc_ValueError,    e.what()); return;
-                } catch (const std::exception &e)        { PyErr_SetString(PyExc_RuntimeError,  e.what()); return;
-                } catch (...) {
-                    PyErr_SetString(PyExc_RuntimeError, "Caught an unknown exception!");
-                    return;
-                }
-            }
-        );
-        internals_ptr->static_property_type = make_static_property_type();
-        internals_ptr->default_metaclass = make_default_metaclass();
-        internals_ptr->instance_base = make_object_base_type(internals_ptr->default_metaclass);
-    }
-    return *internals_ptr;
-}
-
-// Works like internals.registered_types_cpp, but for module-local registered types:
-PYBIND11_NOINLINE inline type_map<void *> &registered_local_types_cpp() {
-    static type_map<void *> locals{};
-    return locals;
-}
 
 /// A life support system for temporary objects created by `type_caster::load()`.
 /// Adding a patient will keep it alive up until the enclosing function returns.
@@ -265,23 +165,30 @@ PYBIND11_NOINLINE inline detail::type_info* get_type_info(PyTypeObject *type) {
     return bases.front();
 }
 
-/// Return the type info for a given C++ type; on lookup failure can either throw or return nullptr.
-/// `check_global_types` can be specified as `false` to only check types registered locally to the
-/// current module.
-PYBIND11_NOINLINE inline detail::type_info *get_type_info(const std::type_index &tp,
-                                                          bool throw_if_missing = false,
-                                                          bool check_global_types = true) {
-    std::type_index type_idx(tp);
+inline detail::type_info *get_local_type_info(const std::type_index &tp) {
     auto &locals = registered_local_types_cpp();
-    auto it = locals.find(type_idx);
+    auto it = locals.find(tp);
     if (it != locals.end())
-        return (detail::type_info *) it->second;
-    if (check_global_types) {
-        auto &types = get_internals().registered_types_cpp;
-        it = types.find(type_idx);
-        if (it != types.end())
-            return (detail::type_info *) it->second;
-    }
+        return it->second;
+    return nullptr;
+}
+
+inline detail::type_info *get_global_type_info(const std::type_index &tp) {
+    auto &types = get_internals().registered_types_cpp;
+    auto it = types.find(tp);
+    if (it != types.end())
+        return it->second;
+    return nullptr;
+}
+
+/// Return the type info for a given C++ type; on lookup failure can either throw or return nullptr.
+PYBIND11_NOINLINE inline detail::type_info *get_type_info(const std::type_index &tp,
+                                                          bool throw_if_missing = false) {
+    if (auto ltype = get_local_type_info(tp))
+        return ltype;
+    if (auto gtype = get_global_type_info(tp))
+        return gtype;
+
     if (throw_if_missing) {
         std::string tname = tp.name();
         detail::clean_type_id(tname);
@@ -536,7 +443,6 @@ PYBIND11_NOINLINE inline std::string error_string() {
                 handle(frame->f_code->co_name).cast<std::string>() + "\n";
             frame = frame->f_back;
         }
-        trace = trace->tb_next;
     }
 #endif
 
@@ -576,7 +482,10 @@ inline PyObject *make_new_instance(PyTypeObject *type);
 class type_caster_generic {
 public:
     PYBIND11_NOINLINE type_caster_generic(const std::type_info &type_info)
-     : typeinfo(get_type_info(type_info)) { }
+        : typeinfo(get_type_info(type_info)), cpptype(&type_info) { }
+
+    type_caster_generic(const type_info *typeinfo)
+        : typeinfo(typeinfo), cpptype(typeinfo ? typeinfo->cpptype : nullptr) { }
 
     bool load(handle src, bool convert) {
         return load_impl<type_caster_generic>(src, convert);
@@ -597,7 +506,7 @@ public:
         auto it_instances = get_internals().registered_instances.equal_range(src);
         for (auto it_i = it_instances.first; it_i != it_instances.second; ++it_i) {
             for (auto instance_type : detail::all_type_info(Py_TYPE(it_i->second))) {
-                if (instance_type && instance_type == tinfo)
+                if (instance_type && same_type(*instance_type->cpptype, *tinfo->cpptype))
                     return handle((PyObject *) it_i->second).inc_ref();
             }
         }
@@ -655,8 +564,6 @@ public:
         return inst.release();
     }
 
-protected:
-
     // Base methods for generic caster; there are overridden in copyable_holder_caster
     void load_value(value_and_holder &&v_h) {
         auto *&vptr = v_h.value_ptr();
@@ -686,13 +593,41 @@ protected:
     }
     void check_holder_compat() {}
 
+    PYBIND11_NOINLINE static void *local_load(PyObject *src, const type_info *ti) {
+        auto caster = type_caster_generic(ti);
+        if (caster.load(src, false))
+            return caster.value;
+        return nullptr;
+    }
+
+    /// Try to load with foreign typeinfo, if available. Used when there is no
+    /// native typeinfo, or when the native one wasn't able to produce a value.
+    PYBIND11_NOINLINE bool try_load_foreign_module_local(handle src) {
+        constexpr auto *local_key = PYBIND11_MODULE_LOCAL_ID;
+        const auto pytype = src.get_type();
+        if (!hasattr(pytype, local_key))
+            return false;
+
+        type_info *foreign_typeinfo = reinterpret_borrow<capsule>(getattr(pytype, local_key));
+        // Only consider this foreign loader if actually foreign and is a loader of the correct cpp type
+        if (foreign_typeinfo->module_local_load == &local_load
+            || (cpptype && !same_type(*cpptype, *foreign_typeinfo->cpptype)))
+            return false;
+
+        if (auto result = foreign_typeinfo->module_local_load(src.ptr(), foreign_typeinfo)) {
+            value = result;
+            return true;
+        }
+        return false;
+    }
+
     // Implementation of `load`; this takes the type of `this` so that it can dispatch the relevant
     // bits of code between here and copyable_holder_caster where the two classes need different
     // logic (without having to resort to virtual inheritance).
     template <typename ThisT>
     PYBIND11_NOINLINE bool load_impl(handle src, bool convert) {
-        if (!src || !typeinfo)
-            return false;
+        if (!src) return false;
+        if (!typeinfo) return try_load_foreign_module_local(src);
         if (src.is_none()) {
             // Defer accepting None to other overloads (if we aren't in convert mode):
             if (!convert) return false;
@@ -757,7 +692,17 @@ protected:
             if (this_.try_direct_conversions(src))
                 return true;
         }
-        return false;
+
+        // Failed to match local typeinfo. Try again with global.
+        if (typeinfo->module_local) {
+            if (auto gtype = get_global_type_info(*typeinfo->cpptype)) {
+                typeinfo = gtype;
+                return load(src, false);
+            }
+        }
+
+        // Global typeinfo has precedence over foreign module_local
+        return try_load_foreign_module_local(src);
     }
 
 
@@ -778,6 +723,7 @@ protected:
     }
 
     const type_info *typeinfo = nullptr;
+    const std::type_info *cpptype = nullptr;
     void *value = nullptr;
 };
 
@@ -832,7 +778,7 @@ template <typename T1, typename T2> struct is_copy_constructible<std::pair<T1, T
 template <typename type> class type_caster_base : public type_caster_generic {
     using itype = intrinsic_t<type>;
 public:
-    static PYBIND11_DESCR name() { return type_descr(_<type>()); }
+    static constexpr auto name = _<type>();
 
     type_caster_base() : type_caster_base(typeid(type)) { }
     explicit type_caster_base(const std::type_info &info) : type_caster_generic(info) { }
@@ -889,7 +835,7 @@ public:
             nullptr, nullptr, holder);
     }
 
-    template <typename T> using cast_op_type = cast_op_type<T>;
+    template <typename T> using cast_op_type = detail::cast_op_type<T>;
 
     operator itype*() { return (type *) value; }
     operator itype&() { if (!value) throw reference_cast_error(); return *((itype *) value); }
@@ -939,7 +885,7 @@ private:
             "std::reference_wrapper<T> caster requires T to have a caster with an `T &` operator");
 public:
     bool load(handle src, bool convert) { return subcaster.load(src, convert); }
-    static PYBIND11_DESCR name() { return caster_t::name(); }
+    static constexpr auto name = caster_t::name;
     static handle cast(const std::reference_wrapper<type> &src, return_value_policy policy, handle parent) {
         // It is definitely wrong to take ownership of this pointer, so mask that rvp
         if (policy == return_value_policy::take_ownership || policy == return_value_policy::automatic)
@@ -954,7 +900,7 @@ public:
     protected: \
         type value; \
     public: \
-        static PYBIND11_DESCR name() { return type_descr(py_name); } \
+        static constexpr auto name = py_name; \
         template <typename T_, enable_if_t<std::is_same<type, remove_cv_t<T_>>::value, int> = 0> \
         static handle cast(T_ *src, return_value_policy policy, handle parent) { \
             if (!src) return none().release(); \
@@ -1018,9 +964,9 @@ public:
             );
             PyErr_Clear();
             if (type_error && convert && PyNumber_Check(src.ptr())) {
-                auto tmp = reinterpret_borrow<object>(std::is_floating_point<T>::value
-                                                      ? PyNumber_Float(src.ptr())
-                                                      : PyNumber_Long(src.ptr()));
+                auto tmp = reinterpret_steal<object>(std::is_floating_point<T>::value
+                                                     ? PyNumber_Float(src.ptr())
+                                                     : PyNumber_Long(src.ptr()));
                 PyErr_Clear();
                 return load(tmp, false);
             }
@@ -1034,11 +980,12 @@ public:
     static handle cast(T src, return_value_policy /* policy */, handle /* parent */) {
         if (std::is_floating_point<T>::value) {
             return PyFloat_FromDouble((double) src);
-        } else if (sizeof(T) <= sizeof(long)) {
+        } else if (sizeof(T) <= sizeof(ssize_t)) {
+            // This returns a long automatically if needed
             if (std::is_signed<T>::value)
-                return PyLong_FromLong((long) src);
+                return PYBIND11_LONG_FROM_SIGNED(src);
             else
-                return PyLong_FromUnsignedLong((unsigned long) src);
+                return PYBIND11_LONG_FROM_UNSIGNED(src);
         } else {
             if (std::is_signed<T>::value)
                 return PyLong_FromLongLong((long long) src);
@@ -1103,7 +1050,7 @@ public:
 
     template <typename T> using cast_op_type = void*&;
     operator void *&() { return value; }
-    static PYBIND11_DESCR name() { return type_descr(_("capsule")); }
+    static constexpr auto name = _("capsule");
 private:
     void *value = nullptr;
 };
@@ -1270,6 +1217,7 @@ template <typename CharT> struct type_caster<CharT, enable_if_t<is_std_char_type
     using StringCaster = type_caster<StringType>;
     StringCaster str_caster;
     bool none = false;
+    CharT one_char = 0;
 public:
     bool load(handle src, bool convert) {
         if (!src) return false;
@@ -1297,7 +1245,7 @@ public:
     }
 
     operator CharT*() { return none ? nullptr : const_cast<CharT *>(static_cast<StringType &>(str_caster).c_str()); }
-    operator CharT() {
+    operator CharT&() {
         if (none)
             throw value_error("Cannot convert None to a character");
 
@@ -1321,7 +1269,8 @@ public:
             if (char0_bytes == str_len) {
                 // If we have a 128-255 value, we can decode it into a single char:
                 if (char0_bytes == 2 && (v0 & 0xFC) == 0xC0) { // 0x110000xx 0x10xxxxxx
-                    return static_cast<CharT>(((v0 & 3) << 6) + (static_cast<unsigned char>(value[1]) & 0x3F));
+                    one_char = static_cast<CharT>(((v0 & 3) << 6) + (static_cast<unsigned char>(value[1]) & 0x3F));
+                    return one_char;
                 }
                 // Otherwise we have a single character, but it's > U+00FF
                 throw value_error("Character code point not in range(0x100)");
@@ -1332,19 +1281,20 @@ public:
         // surrogate pair with total length 2 instantly indicates a range error (but not a "your
         // string was too long" error).
         else if (StringCaster::UTF_N == 16 && str_len == 2) {
-            char16_t v0 = static_cast<char16_t>(value[0]);
-            if (v0 >= 0xD800 && v0 < 0xE000)
+            one_char = static_cast<CharT>(value[0]);
+            if (one_char >= 0xD800 && one_char < 0xE000)
                 throw value_error("Character code point not in range(0x10000)");
         }
 
         if (str_len != 1)
             throw value_error("Expected a character, but multi-character string found");
 
-        return value[0];
+        one_char = value[0];
+        return one_char;
     }
 
-    static PYBIND11_DESCR name() { return type_descr(_(PYBIND11_STRING_NAME)); }
-    template <typename _T> using cast_op_type = remove_reference_t<pybind11::detail::cast_op_type<_T>>;
+    static constexpr auto name = _(PYBIND11_STRING_NAME);
+    template <typename _T> using cast_op_type = pybind11::detail::cast_op_type<_T>;
 };
 
 // Base implementation for std::tuple and std::pair
@@ -1368,9 +1318,7 @@ public:
         return cast_impl(std::forward<T>(src), policy, parent, indices{});
     }
 
-    static PYBIND11_DESCR name() {
-        return type_descr(_("Tuple[") + detail::concat(make_caster<Ts>::name()...) + _("]"));
-    }
+    static constexpr auto name = _("Tuple[") + concat(make_caster<Ts>::name...) + _("]");
 
     template <typename T> using cast_op_type = type;
 
@@ -1468,7 +1416,7 @@ protected:
     bool load_value(value_and_holder &&v_h) {
         if (v_h.holder_constructed()) {
             value = v_h.value_ptr();
-            holder = v_h.holder<holder_type>();
+            holder = v_h.template holder<holder_type>();
             return true;
         } else {
             throw cast_error("Unable to cast from non-held to held instance (T& to Holder<T>) "
@@ -1515,7 +1463,7 @@ struct move_only_holder_caster {
         auto *ptr = holder_helper<holder_type>::get(src);
         return type_caster_base<type>::cast_holder(ptr, &src);
     }
-    static PYBIND11_DESCR name() { return type_caster_base<type>::name(); }
+    static constexpr auto name = type_caster_base<type>::name;
 };
 
 template <typename type, typename deleter>
@@ -1546,10 +1494,10 @@ template <typename base, typename holder> struct is_holder_type :
 template <typename base, typename deleter> struct is_holder_type<base, std::unique_ptr<base, deleter>> :
     std::true_type {};
 
-template <typename T> struct handle_type_name { static PYBIND11_DESCR name() { return _<T>(); } };
-template <> struct handle_type_name<bytes> { static PYBIND11_DESCR name() { return _(PYBIND11_BYTES_NAME); } };
-template <> struct handle_type_name<args> { static PYBIND11_DESCR name() { return _("*args"); } };
-template <> struct handle_type_name<kwargs> { static PYBIND11_DESCR name() { return _("**kwargs"); } };
+template <typename T> struct handle_type_name { static constexpr auto name = _<T>(); };
+template <> struct handle_type_name<bytes> { static constexpr auto name = _(PYBIND11_BYTES_NAME); };
+template <> struct handle_type_name<args> { static constexpr auto name = _("*args"); };
+template <> struct handle_type_name<kwargs> { static constexpr auto name = _("**kwargs"); };
 
 template <typename type>
 struct pyobject_caster {
@@ -1567,7 +1515,7 @@ struct pyobject_caster {
     static handle cast(const handle &src, return_value_policy /* policy */, handle /* parent */) {
         return src.inc_ref();
     }
-    PYBIND11_TYPE_CASTER(type, handle_type_name<type>::name());
+    PYBIND11_TYPE_CASTER(type, handle_type_name<type>::name);
 };
 
 template <typename T>
@@ -1628,7 +1576,7 @@ template <typename T, typename SFINAE> type_caster<T, SFINAE> &load_type(type_ca
         throw cast_error("Unable to cast Python instance to C++ type (compile in debug mode for details)");
 #else
         throw cast_error("Unable to cast Python instance of type " +
-            (std::string) str(handle.get_type()) + " to C++ type '" + type_id<T>() + "''");
+            (std::string) str(handle.get_type()) + " to C++ type '" + type_id<T>() + "'");
 #endif
     }
     return conv;
@@ -1853,8 +1801,15 @@ struct function_call {
     /// The `convert` value the arguments should be loaded with
     std::vector<bool> args_convert;
 
+    /// Extra references for the optional `py::args` and/or `py::kwargs` arguments (which, if
+    /// present, are also in `args` but without a reference).
+    object args_ref, kwargs_ref;
+
     /// The parent, if any
     handle parent;
+
+    /// If this is a call to an initializer, this argument contains `self`
+    handle init_self;
 };
 
 
@@ -1877,7 +1832,7 @@ public:
     static constexpr bool has_kwargs = kwargs_pos < 0;
     static constexpr bool has_args = args_pos < 0;
 
-    static PYBIND11_DESCR arg_names() { return detail::concat(make_caster<Args>::name()...); }
+    static constexpr auto arg_names = concat(type_descr(make_caster<Args>::name)...);
 
     bool load_args(function_call &call) {
         return load_impl_sequence(call, indices{});
