@@ -14,6 +14,9 @@
 TEST_SUBMODULE(class_, m) {
     // test_instance
     struct NoConstructor {
+        NoConstructor() = default;
+        NoConstructor(const NoConstructor &) = default;
+        NoConstructor(NoConstructor &&) = default;
         static NoConstructor *new_instance() {
             auto *ptr = new NoConstructor();
             print_created(ptr, "via new_instance");
@@ -82,7 +85,12 @@ TEST_SUBMODULE(class_, m) {
     m.def("dog_bark", [](const Dog &dog) { return dog.bark(); });
 
     // test_automatic_upcasting
-    struct BaseClass { virtual ~BaseClass() {} };
+    struct BaseClass {
+        BaseClass() = default;
+        BaseClass(const BaseClass &) = default;
+        BaseClass(BaseClass &&) = default;
+        virtual ~BaseClass() {}
+    };
     struct DerivedClass1 : BaseClass { };
     struct DerivedClass2 : BaseClass { };
 
@@ -302,6 +310,21 @@ TEST_SUBMODULE(class_, m) {
         .def(py::init<const BogusImplicitConversion &>());
 
     py::implicitly_convertible<int, BogusImplicitConversion>();
+
+    // test_qualname
+    // #1166: nested class docstring doesn't show nested name
+    // Also related: tests that __qualname__ is set properly
+    struct NestBase {};
+    struct Nested {};
+    py::class_<NestBase> base(m, "NestBase");
+    base.def(py::init<>());
+    py::class_<Nested>(base, "Nested")
+        .def(py::init<>())
+        .def("fn", [](Nested &, int, NestBase &, Nested &) {})
+        .def("fa", [](Nested &, int, NestBase &, Nested &) {},
+                "a"_a, "b"_a, "c"_a);
+    base.def("g", [](NestBase &, Nested &) {});
+    base.def("h", []() { return NestBase(); });
 }
 
 template <int N> class BreaksBase { public: virtual ~BreaksBase() = default; };
