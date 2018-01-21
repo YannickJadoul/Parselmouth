@@ -151,19 +151,19 @@ void initTimeFrameSampled(ClassBinding<Class, Extra...> &binding) {
 	def_readonly("time_step", &Class::dx);
 
 	def("get_time_from_frame_number",
-	    args_cast<Class *, _>(Sampled_xToIndex),
+	    args_cast<Class *, Positive<_>>(Sampled_indexToX<integer>),
 		"frame_number"_a);
 
 	def("frame_number_to_time",
-	    args_cast<Class *, _>(Sampled_xToIndex),
+	    args_cast<Class *, Positive<_>>(Sampled_indexToX<integer>),
 	    "frame_number"_a);
 
 	def("get_frame_number_from_time",
-		args_cast<Class *, Positive<_>>(Sampled_indexToX<integer>),
+	    args_cast<Class *, _>(Sampled_xToIndex),
 		"time"_a);
 
 	def("time_to_frame_number",
-	    args_cast<Class *, Positive<_>>(Sampled_indexToX<integer>),
+	    args_cast<Class *, _>(Sampled_xToIndex),
 	    "time"_a);
 
 	// TODO get_frame_times() ?
