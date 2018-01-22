@@ -43,6 +43,8 @@ void Binding<Thing>::init()
 	def("__str__",
 	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return encodeAsPreferredEncoding(py::cast(info.get())); });
 #endif
+
+	def_property_readonly("class_name", [](Thing self) { return self->classInfo->className; });
 }
 
 } // namespace parselmouth
