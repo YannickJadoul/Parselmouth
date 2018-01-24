@@ -27,6 +27,7 @@ namespace parselmouth {
 void Binding<Data>::init()
 {
 	// TODO Cast to intermediate type? (i.e., Sound not known to parselmouth, then return Vector Python object instead of Data)
+	// TODO Reading a Praat Collection
 	def_static("read", // TODO Praat-format files not recognized because we cannot call praat_uvafon_init because INCLUDE_MANPAGES cannot be used because somehow that's not supposed to be called after only praatlib_init() instead of praat_init()
 	           [](const std::string &filePath) { // TODO std::string to MelderFile functionality in separate function? Cfr. Sound.__init__
 		           structMelderFile file = {};
@@ -34,6 +35,34 @@ void Binding<Data>::init()
 		           return Data_readFromFile(&file);
 	           },
 	           "file_path"_a);
+
+	// TODO Get rid if some duplicate code
+	// TODO save with enum for type?
+	def("save_as_text_file",
+	    [](Data self, const std::string &filePath) {
+		    structMelderFile file = {};
+		    Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
+		    Data_writeToTextFile(self, &file);
+	    },
+	    "file_path"_a);
+
+	def("save_as_short_text_file",
+	    [](Data self, const std::string &filePath) {
+		    structMelderFile file = {};
+		    Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
+		    Data_writeToShortTextFile(self, &file);
+	    },
+	    "file_path"_a);
+
+	def("save_as_binary_file",
+	    [](Data self, const std::string &filePath) {
+		    structMelderFile file = {};
+		    Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
+		    Data_writeToBinaryFile(self, &file);
+	    },
+	    "file_path"_a);
+
+	// TODO Write multiple objects as one collection?
 
 	// TODO How about derived Python classes?
 	def("copy",
