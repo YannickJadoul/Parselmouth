@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Exposed calls to Praat commands through `parselmouth.praat.call`.
+- Added `Thing.class_name` as read-only property to get underlying Praat class, even when that one is not yet exposed.
+- Added `save`, `save_as_text_file`, `save_as_short_text_file`, and `save_as_binary_file` to `Data` class.
+### Changed
+- Updated Praat version to 6.0.36.
+- Updated pybind11 to development version v2.3.dev0 (for `py::args` bugfix in dispatcher).
+### Fixed
+- Corrected confusion between `get_time_from_frame_number` and `get_frame_number_from_time` in time-sampled classes.
 
 ## [0.2.1] - 2017-12-11
 ### Added
