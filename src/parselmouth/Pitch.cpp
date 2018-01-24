@@ -284,13 +284,13 @@ void Binding<Pitch>::init() {
 	def("to_array",
 	    [](Pitch self) {
 		    auto maxCandidates = Pitch_getMaxnCandidates(self);
-		    py::array_t<structPitch_Candidate> array({static_cast<size_t>(self->nx), static_cast<size_t>(maxCandidates)});
+		    py::array_t<structPitch_Candidate> array({static_cast<size_t>(maxCandidates), static_cast<size_t>(self->nx)});
 
 		    auto unchecked = array.mutable_unchecked<2>();
 		    for (auto i = 0; i < self->nx; ++i) {
 			    auto &frame = self->frame[i+1];
 			    for (auto j = 0; j < maxCandidates; ++j) {
-				    unchecked(i, j) = (j < frame.nCandidates) ? frame.candidate[j+1] : structPitch_Candidate{std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
+				    unchecked(j, i) = (j < frame.nCandidates) ? frame.candidate[j+1] : structPitch_Candidate{std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 			    }
 		    }
 

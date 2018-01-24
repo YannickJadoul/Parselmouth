@@ -150,14 +150,14 @@ void Binding<CC>::init() {
 	def("to_array",
 	    [](CC self) {
 		    auto maxCoefficients = CC_getMaximumNumberOfCoefficients(self, 1, self->nx);
-		    py::array_t<double> array({static_cast<size_t>(self->nx), static_cast<size_t>(maxCoefficients + 1)});
+		    py::array_t<double> array({static_cast<size_t>(maxCoefficients + 1), static_cast<size_t>(self->nx)});
 
 		    auto unchecked = array.mutable_unchecked<2>();
 		    for (auto i = 0; i < self->nx; ++i) {
 			    auto &frame = self->frame[i+1];
-			    unchecked(i, 0) = frame.c0;
+			    unchecked(0, i) = frame.c0;
 			    for (auto j = 0; j < maxCoefficients; ++j) {
-				    unchecked(i, j+1) = (j < frame.numberOfCoefficients) ? frame.c[j+1] : std::numeric_limits<double>::quiet_NaN();
+				    unchecked(j+1, i) = (j < frame.numberOfCoefficients) ? frame.c[j+1] : std::numeric_limits<double>::quiet_NaN();
 			    }
 		    }
 

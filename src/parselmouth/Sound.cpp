@@ -196,26 +196,26 @@ void Binding<Sound>::init() {
 
 	initTimeFrameSampled(*this);
 
-	def(py::init([](py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::f_style to be able to memcpy / NUMmatrix_copyElements ?
+	def(py::init([](py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::c_style to be able to memcpy / NUMmatrix_copyElements ?
 		    auto ndim = values.ndim();
 		    if (ndim > 2) {
 			    throw py::value_error("Cannot create Sound from an array with more than 2 dimensions");
 		    }
 
-		    auto nx = values.shape(0);
-		    auto ny = ndim == 2 ? values.shape(1) : 1;
+		    auto nx = values.shape(ndim-1);
+		    auto ny = ndim == 2 ? values.shape(0) : 1;
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
 
 		    if (ndim == 2) {
 			    auto unchecked = values.unchecked<2>();
-			    for (ssize_t i = 0; i < nx; ++i)
-				    for (ssize_t j = 0; j < ny; ++j)
-					    result->z[j+1][i+1] = unchecked(i, j);
+			    for (ssize_t i = 0; i < ny; ++i)
+				    for (ssize_t j = 0; j < nx; ++j)
+					    result->z[i+1][j+1] = unchecked(i, j);
 		    }
 		    else {
 			    auto unchecked = values.unchecked<1>();
-			    for (ssize_t i = 0; i < nx; ++i)
-				    result->z[1][i+1] = unchecked(i);
+			    for (ssize_t j = 0; j < nx; ++j)
+				    result->z[1][j+1] = unchecked(j);
 		    }
 
 		    return result;

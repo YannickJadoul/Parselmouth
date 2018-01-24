@@ -44,25 +44,25 @@ void Binding<Spectrum>::init() {
 		    if (ndim > 2) {
 			    throw py::value_error("Cannot create Spectrum from an array with more than 2 dimensions");
 		    }
-		    if (ndim == 2 && values.shape(1) > 2) {
-			    throw py::value_error("Cannot create Spectrum from 2D array where the second dimension is greater than 2");
+		    if (ndim == 2 && values.shape(0) > 2) {
+			    throw py::value_error("Cannot create Spectrum from 2-dimensional array where the first dimension is greater than 2");
 		    }
 
-		    auto n = values.shape(0);
+		    auto n = values.shape(ndim-1);
 		    auto result = Spectrum_create(maximumFrequency, n);
 
 		    if (ndim == 2) {
 			    auto unchecked = values.unchecked<2>();
 			    for (ssize_t i = 0; i < n; ++i) {
-				    result->z[1][i + 1] = unchecked(i, 0);
-				    result->z[2][i + 1] = (values.shape(1) == 2) ? unchecked(i, 1) : 0.0;
+				    result->z[1][i+1] = unchecked(0, i);
+				    result->z[2][i+1] = values.shape(1) == 2 ? unchecked(1, i) : 0.0;
 			    }
 		    }
 		    else {
 			    auto unchecked = values.unchecked<1>();
 			    for (ssize_t i = 0; i < n; ++i) {
-				    result->z[1][i + 1] = unchecked(i);
-				    result->z[2][i + 1] = 0;
+				    result->z[1][i+1] = unchecked(i);
+				    result->z[2][i+1] = 0;
 			    }
 		    }
 
@@ -81,8 +81,8 @@ void Binding<Spectrum>::init() {
 
 		    auto unchecked = values.unchecked<1>();
 		    for (ssize_t i = 0; i < n; ++i) {
-			    result->z[1][i + 1] = unchecked(i).real();
-			    result->z[2][i + 1] = unchecked(i).imag();
+			    result->z[1][i+1] = unchecked(i).real();
+			    result->z[2][i+1] = unchecked(i).imag();
 		    }
 
 		    return result;

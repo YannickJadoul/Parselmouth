@@ -38,42 +38,42 @@ void Binding<Matrix>::init() {
 	// TODO Constructors (i.e., from numpy array, ...)
 
 	def_property("values", // TODO Check Row-major/column-major things
-	             [](Matrix self) { return py::array_t<double, py::array::f_style>({static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, &self->z[1][1], py::cast(self)); },
-	             [](Matrix self, py::array_t<double> values) {
+	             [](Matrix self) { return py::array_t<double, py::array::c_style>({static_cast<size_t>(self->ny), static_cast<size_t>(self->nx)}, &self->z[1][1], py::cast(self)); },
+	             [](Matrix self, py::array_t<double, 0> values) {
 		             auto ndim = values.ndim();
 		             if (ndim > 2) {
 			             throw py::value_error("Cannot set Matrix values with an array with more than two dimensions");
 		             }
 
-		             auto nx = values.shape(0);
-		             auto ny = ndim == 2 ? values.shape(1) : 1;
+		             auto nx = values.shape(ndim-1);
+		             auto ny = ndim == 2 ? values.shape(0) : 1;
 
 		             if (ndim == 2 && values.data(0, 0) == &self->z[1][1] && nx == self->nx && ny == self->ny && values.strides(0) == sizeof(double) && values.strides(1) == ssize_t{sizeof(double)} * nx) {
 			             // This is the exact same array as we would return as the getter of this property would return, pointing to the memory we already have and own!
 			             return;
 		             }
 		             else if (nx != self->nx || ny != self->ny) {
-			             throw py::value_error("Cannot change size of Matrix values");
+			             throw py::value_error("Cannot change dimensions of Matrix values");
 		             }
 		             else {
 			             if (ndim == 2) {
 				             auto unchecked = values.unchecked<2>();
-				             for (ssize_t i = 0; i < nx; ++i)
-					             for (ssize_t j = 0; j < ny; ++j)
-						             self->z[j+1][i+1] = unchecked(i, j);
+				             for (ssize_t i = 0; i < ny; ++i)
+					             for (ssize_t j = 0; j < nx; ++j)
+						             self->z[i+1][j+1] = unchecked(i, j);
 			             }
 			             else {
 				             auto unchecked = values.unchecked<1>();
-				             for (ssize_t i = 0; i < nx; ++i)
-					             self->z[1][i+1] = unchecked(i);
+				             for (ssize_t j = 0; j < nx; ++j)
+					             self->z[1][j+1] = unchecked(j);
 			             }
 		             }
 	             });
 
 	def("as_array",
-	    [](Matrix self) { return py::array_t<double, py::array::f_style>({static_cast<size_t>(self->nx), static_cast<size_t>(self->ny)}, &self->z[1][1], py::cast(self)); });
+	    [](Matrix self) { return py::array_t<double, py::array::c_style>({static_cast<size_t>(self->ny), static_cast<size_t>(self->nx)}, &self->z[1][1], py::cast(self)); });
 
-	def_buffer([](Matrix self) { return py::buffer_info(&self->z[1][1], {static_cast<ssize_t>(self->nx), static_cast<ssize_t>(self->ny)}, {static_cast<ssize_t>(sizeof(double)), static_cast<ssize_t>(self->nx * sizeof(double))}); });
+	def_buffer([](Matrix self) { return py::buffer_info(&self->z[1][1], {static_cast<ssize_t>(self->ny), static_cast<ssize_t>(self->nx)}, {static_cast<ssize_t>(self->nx * sizeof(double)), static_cast<ssize_t>(sizeof(double))}); });
 
 	def("save_as_matrix_text_file",
 	    [](Matrix self, const std::u32string &filePath) {
