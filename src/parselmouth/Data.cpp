@@ -19,10 +19,31 @@
 
 #include "Parselmouth.h"
 
+#include "utils/pybind11/ImplicitStringToEnumConversion.h"
+
 namespace py = pybind11;
 using namespace py::literals;
 
 namespace parselmouth {
+
+enum class DataFileFormat {
+	TEXT,
+	SHORT_TEXT,
+	BINARY
+};
+
+PRAAT_ENUM_BINDING_ALIAS(FileFormat, DataFileFormat);
+
+#define NESTED_ENUMS \
+        FileFormat
+
+void Binding<DataFileFormat>::init() {
+	value("TEXT", DataFileFormat::TEXT);
+	value("SHORT_TEXT", DataFileFormat::SHORT_TEXT);
+	value("BINARY", DataFileFormat::BINARY);
+
+	make_implicitly_convertible_from_string(*this);
+}
 
 void Binding<Data>::init()
 {
@@ -36,29 +57,41 @@ void Binding<Data>::init()
 	           },
 	           "file_path"_a);
 
-	// TODO Get rid if some duplicate code
-	// TODO save with enum for type?
+	auto save = [](Data self, const std::string &filePath, DataFileFormat format) {
+		structMelderFile file = {};
+		Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
+		switch (format) {
+			case DataFileFormat::TEXT:
+				Data_writeToTextFile(self, &file);
+				break;
+			case DataFileFormat::SHORT_TEXT:
+				Data_writeToShortTextFile(self, &file);
+				break;
+			case DataFileFormat::BINARY:
+				Data_writeToBinaryFile(self, &file);
+				break;
+		}
+	};
+
+	def("save",
+	    save,
+	    "file_path"_a, "format"_a = DataFileFormat::TEXT);
+
 	def("save_as_text_file",
-	    [](Data self, const std::string &filePath) {
-		    structMelderFile file = {};
-		    Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
-		    Data_writeToTextFile(self, &file);
+	    [save](Data self, const std::string &filePath) {
+		    save(self, filePath, DataFileFormat::TEXT);
 	    },
 	    "file_path"_a);
 
 	def("save_as_short_text_file",
-	    [](Data self, const std::string &filePath) {
-		    structMelderFile file = {};
-		    Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
-		    Data_writeToShortTextFile(self, &file);
+	    [save](Data self, const std::string &filePath) {
+		    save(self, filePath, DataFileFormat::SHORT_TEXT);
 	    },
 	    "file_path"_a);
 
 	def("save_as_binary_file",
-	    [](Data self, const std::string &filePath) {
-		    structMelderFile file = {};
-		    Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
-		    Data_writeToBinaryFile(self, &file);
+	    [save](Data self, const std::string &filePath) {
+		    save(self, filePath, DataFileFormat::BINARY);
 	    },
 	    "file_path"_a);
 
