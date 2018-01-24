@@ -47,6 +47,9 @@ void Binding<DataFileFormat>::init() {
 
 void Binding<Data>::init()
 {
+	Bindings<NESTED_ENUMS> subBindings(*this);
+	subBindings.init();
+
 	// TODO Cast to intermediate type? (i.e., Sound not known to parselmouth, then return Vector Python object instead of Data)
 	// TODO Reading a Praat Collection
 	def_static("read", // TODO Praat-format files not recognized because we cannot call praat_uvafon_init because INCLUDE_MANPAGES cannot be used because somehow that's not supposed to be called after only praatlib_init() instead of praat_init()
