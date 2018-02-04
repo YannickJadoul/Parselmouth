@@ -468,8 +468,10 @@ void Melder_informationReal (double value, const char32 *units) {
 	MelderInfo_close ();
 }
 
-void Melder_divertInfo (MelderString *buffer) {
+MelderString *Melder_divertInfo (MelderString *buffer) {
+	MelderString *previousBuffer = buffer == & theForegroundBuffer ? nullptr : theInfos;
 	theInfos = ( buffer ? buffer : & theForegroundBuffer );
+	return previousBuffer;
 }
 
 void Melder_clearInfo () {

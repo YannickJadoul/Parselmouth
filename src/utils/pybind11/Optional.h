@@ -28,9 +28,11 @@ namespace parselmouth {
 #ifdef PYBIND11_HAS_OPTIONAL
 	using std::optional;
 	using std::nullopt;
+	using std::make_optional;
 #elif PYBIND11_HAS_EXP_OPTIONAL
 	using std::experimental::optional;
 	using std::experimental::nullopt;
+	using std::experimental::make_optional;
 #else
 	#error Using incompatible compiler: compiler should provide either <optional> or <experimental/optional>
 #endif
