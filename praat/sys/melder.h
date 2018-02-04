@@ -1855,12 +1855,15 @@ void Melder_information (Melder_16_TO_19_ARGS);
 
 void Melder_informationReal (double value, const char32 *units);   // %.17g or --undefined--; units may be null
 
-void Melder_divertInfo (MelderString *buffer);   // nullptr = back to normal
+MelderString *Melder_divertInfo (MelderString *buffer);   // nullptr = back to normal
 
 class autoMelderDivertInfo {
 	public:
-		autoMelderDivertInfo (MelderString *buffer) { Melder_divertInfo (buffer); }
-		~autoMelderDivertInfo () { Melder_divertInfo (nullptr); }
+		autoMelderDivertInfo (MelderString *buffer) { previousBuffer = Melder_divertInfo (buffer); }
+		~autoMelderDivertInfo () { Melder_divertInfo (previousBuffer); }
+
+	private:
+		MelderString *previousBuffer;
 };
 
 void Melder_clearInfo ();   // clear the Info window
