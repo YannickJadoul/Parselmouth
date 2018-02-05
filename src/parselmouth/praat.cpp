@@ -38,6 +38,28 @@ namespace parselmouth {
 
 namespace {
 
+template <typename T, typename PyT>
+inline T extractKwarg(py::kwargs &kwargs, const std::string &name, T defaultValue, const std::string &pyName) {
+	auto throwNotConvertible = [&]() { throw py::type_error("Keyword argument '" + name + "' should be convertible to " + pyName); };
+
+	try {
+		return py::cast<T>(PyT(kwargs.attr("pop")(name, defaultValue)));
+	}
+	catch (py::cast_error &) {
+		throwNotConvertible();
+	}
+	catch (py::error_already_set &) {
+		throwNotConvertible();
+	}
+	return defaultValue;
+}
+
+inline void checkUnkownKwargs(const py::kwargs &kwargs) {
+	if (kwargs.size() > 0) {
+		throw py::type_error("Unknown keyword argument '" + py::cast<std::string>(kwargs.begin()->first) + "'");
+	}
+}
+
 class PraatEnvironment {
 public:
 	PraatEnvironment() : m_objects(theCurrentPraatObjects), m_interpreter(Interpreter_create(nullptr, nullptr)) {
@@ -197,17 +219,8 @@ py::object castPraatResultToPython(const std::u32string &callbackName, PraatObje
 }
 
 auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &command, py::args args, py::kwargs kwargs) {
-	bool returnString = false;
-	try {
-		returnString = py::cast<bool>(kwargs.attr("pop")("return_string", false));
-	}
-	catch (py::cast_error &) {
-		throw py::type_error("Keyword argument 'return_string' should be convertible to bool");
-	}
-
-	if (kwargs.size() != 0) {
-		throw py::type_error("Unknown keyword argument '" + py::cast<std::string>(kwargs.begin()->first) + "'");
-	}
+	bool returnString = extractKwarg<bool, py::bool_>(kwargs, "return_string", false, "bool");
+	checkUnkownKwargs(kwargs);
 
 	PraatEnvironment environment;
 
@@ -251,17 +264,8 @@ auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &obj
 }
 
 auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &script, py::args args, py::kwargs kwargs) {
-	bool captureOutput = false;
-	try {
-		captureOutput = py::cast<bool>(kwargs.attr("pop")("capture_output", false));
-	}
-	catch (py::cast_error &) {
-		throw py::type_error("Keyword argument 'capture_output' should be convertible to bool");
-	}
-
-	if (kwargs.size() != 0) {
-		throw py::type_error("Unknown keyword argument '" + py::cast<std::string>(kwargs.begin()->first) + "'");
-	}
+	auto captureOutput = extractKwarg<bool, py::bool_>(kwargs, "capture_output", false, "bool");
+	checkUnkownKwargs(kwargs);
 
 	PraatEnvironment environment;
 
@@ -299,27 +303,33 @@ auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objec
 void initPraatModule(py::module m) {
 	m.def("call",
 	      &callPraatCommand,
-	      "objects"_a, "command"_a);
+	      "objects"_a, "command"_a,
+	      "Keyword arguments:\n    - return_string: bool = False");
 
 	m.def("call",
 	      [](structData &data, const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({ std::ref(data) }, command, args, kwargs); },
-	      "object"_a, "command"_a);
+	      "object"_a, "command"_a,
+	      "Keyword arguments:\n    - return_string: bool = False");
 
 	m.def("call",
 	      [](const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({}, command, args, kwargs); },
-	      "command"_a);
+	      "command"_a,
+	      "Keyword arguments:\n    - return_string: bool = False");
 
 	m.def("run",
 	      &runPraatScript,
-	      "objects"_a, "script"_a);
+	      "objects"_a, "script"_a,
+	      "Keyword arguments:\n    - capture_output: bool = False");
 
 	m.def("run",
 	      [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScript({ std::ref(data) }, script, args, kwargs); },
-	      "object"_a, "script"_a);
+	      "object"_a, "script"_a,
+	      "Keyword arguments:\n    - capture_output: bool = False");
 
 	m.def("run",
 	      [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScript({}, script, args, kwargs); },
-	      "script"_a);
+	      "script"_a,
+	      "Keyword arguments:\n    - capture_output: bool = False");
 
 #ifndef NDEBUG // TODO Only in debug?
 	auto castPraatCommand = [](const structPraat_Command &command) {
