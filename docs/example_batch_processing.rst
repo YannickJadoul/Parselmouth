@@ -12,7 +12,7 @@ Using the Python standard libraries, we can also quickly code up batch operation
 
     for wave_file in glob.glob('/home/yannick/*.wav'):
         s = parselmouth.Sound(wave_file)
-        s_pre = s.pre_emphasize()
+        s.pre_emphasize()
         s.save(os.path.splitext(wave_file)[0] + '_pre.wav', "WAV") # or parselmouth.SoundFileFormat.WAV instead of "WAV"
         s.save(os.path.splitext(wave_file)[0] + '_pre.aiff', "AIFF")
 
@@ -29,7 +29,7 @@ condition ... pp_id
 0         ... 3126
 ========= === =====
 
-The following code would read and this table, loop over it, use Praat through Parselmouth to calculate the analysis of each row, and then write an augmented CSV file to disk:
+The following code would read this table, loop over it, use Praat through Parselmouth to calculate the analysis of each row, and then write an augmented CSV file to disk (with an example set of sound fragments [#digits_audio]_):
 
 .. code:: Python
 
@@ -37,18 +37,19 @@ The following code would read and this table, loop over it, use Praat through Pa
     import pandas as pd
 
     def analyse_sound(row):
-	    condition, pp_id = row[['condition', 'pp_id']].values
-	    filepath = 'audio/{}/{}.wav'.format(condition, pp_id)
-	    sound = parselmouth.Sound(filepath)
-	    harmonicity = sound.to_harmonicity()
-	    return harmonicity.values.mean()
+        condition, pp_id = row['condition'], row['pp_id']
+        filepath = '{}_{}.wav'.format(condition, pp_id)
+        sound = parselmouth.Sound(filepath)
+        harmonicity = sound.to_harmonicity()
+        return harmonicity.values[harmonicity.values != -200].mean()
 
     # Read in the experimental results file
     dataframe = pd.read_csv('results.csv')
 
     # Apply parselmouth wrapper function row-wise
-    dataframe['harmonics_to_noise'] = dataframe.apply(analyse_sound, axis='rows') 
+    dataframe['harmonics_to_noise'] = dataframe.apply(analyse_sound, axis='columns')
 
     # Write out the updated dataframe
-    dataframe.to_csv('processed_results.csv')
+    dataframe.to_csv('processed_results.csv', index=False)
 
+.. [#digits_audio] :download:`results.csv <other/results.csv>`, :download:`1_b.wav <audio/1_b.wav>`, :download:`2_b.wav <audio/2_b.wav>`, :download:`3_b.wav <audio/3_b.wav>`, :download:`4_b.wav <audio/4_b.wav>`, :download:`5_b.wav <audio/5_b.wav>`, :download:`1_y.wav <audio/1_y.wav>`, :download:`2_y.wav <audio/2_y.wav>`, :download:`3_y.wav <audio/3_y.wav>`, :download:`4_y.wav <audio/4_y.wav>`, :download:`5_y.wav <audio/5_y.wav>`

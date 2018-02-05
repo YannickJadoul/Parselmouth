@@ -14,12 +14,12 @@ We start out by simply reading in the audio file and plotting the raw waveform:
     import numpy as np
     import matplotlib.pyplot as plt
     import seaborn as sns
-    sns.set() # Use seaborn's default style to make graphs more pretty
+    sns.set() # Use seaborn's default style to make attractive graphs
 
     # Plot nice figures using Python's "standard" matplotlib library
     snd = parselmouth.Sound("the_north_wind_and_the_sun.wav")
     plt.figure()
-    plt.plot(snd.xs(), snd.values)
+    plt.plot(snd.xs(), snd.values.T)
     plt.xlim([snd.xmin, snd.xmax])
     plt.xlabel("time [s]")
     plt.ylabel("amplitude")
@@ -34,7 +34,7 @@ It is also possible to extract part of the speech fragment and plot it separatel
     snd_part = snd.extract_part(from_time=0.9, preserve_times=True)
 
     plt.figure()
-    plt.plot(snd_part.xs(), snd_part.values, linewidth=0.5)
+    plt.plot(snd_part.xs(), snd_part.values.T, linewidth=0.5)
     plt.xlim([snd_part.xmin, snd_part.xmax])
     plt.xlabel("time [s]")
     plt.ylabel("amplitude")
@@ -48,15 +48,15 @@ Next, we can write a couple of ordinary Python functions to plot a Parselmouth `
 
     def draw_spectrogram(spectrogram, dynamic_range=70):
         X, Y = spectrogram.x_grid(), spectrogram.y_grid()
-        sg_db = 10 * np.log10(spectrogram.values.T)
+        sg_db = 10 * np.log10(spectrogram.values)
         plt.pcolormesh(X, Y, sg_db, vmin=sg_db.max() - dynamic_range, cmap='afmhot')
         plt.ylim([spectrogram.ymin, spectrogram.ymax])
         plt.xlabel("time [s]")
         plt.ylabel("frequency [Hz]")
 
     def draw_intensity(intensity):
-        plt.plot(intensity.xs(), intensity.values, linewidth=3, color='w')
-        plt.plot(intensity.xs(), intensity.values, linewidth=1)
+        plt.plot(intensity.xs(), intensity.values.T, linewidth=3, color='w')
+        plt.plot(intensity.xs(), intensity.values.T, linewidth=1)
         plt.grid(False)
         plt.ylim(0)
         plt.ylabel("intensity [dB]")
@@ -83,16 +83,19 @@ The Parselmouth fucntions and methods have the same arguments as the Praat comma
     def draw_pitch(pitch):
         # Extract selected pitch contour, and
         # replace unvoiced samples by NaN to not plot
-        pitch_values = pitch.to_matrix().values
+        pitch_values = pitch.selected_array['frequency']
         pitch_values[pitch_values==0] = np.nan
-        plt.plot(pitch.xs(), pitch_values, linewidth=3, color='w')
-        plt.plot(pitch.xs(), pitch_values, linewidth=1)
+        plt.plot(pitch.xs(), pitch_values, 'o', markersize=5, color='w')
+        plt.plot(pitch.xs(), pitch_values, 'o', markersize=2)
         plt.grid(False)
         plt.ylim(0, pitch.ceiling)
-        plt.ylabel("pitch [Hz]")
+        plt.ylabel("fundamental frequency [Hz]")
 
     pitch = snd.to_pitch()
-    spectrogram = snd.to_spectrogram(window_length=0.03, maximum_frequency=8000)
+    # If desired, pre-emphasize the sound fragment before calculating the spectrogram
+    pre_emphasized_snd = snd.copy()
+    pre_emphasized_snd.pre_emphasize()
+    spectrogram = pre_emphasized_snd.to_spectrogram(window_length=0.03, maximum_frequency=8000)
     plt.figure()
     draw_spectrogram(spectrogram)
     plt.twinx()
@@ -132,4 +135,3 @@ Using the ``FacetGrid`` functionality from *seaborn*, we can even plot plot mult
 
 .. [#nwas_audio] :download:`the_north_wind_and_the_sun.wav <audio/the_north_wind_and_the_sun.wav>`, extracted from a `Wikipedia Commons audio file <https://commons.wikimedia.org/wiki/File:Recording_of_speaker_of_British_English_(Received_Pronunciation).ogg>`_.
 .. [#digits_audio] :download:`digit_list.csv <other/digit_list.csv>`, :download:`1_b.wav <audio/1_b.wav>`, :download:`2_b.wav <audio/2_b.wav>`, :download:`3_b.wav <audio/3_b.wav>`, :download:`4_b.wav <audio/4_b.wav>`, :download:`5_b.wav <audio/5_b.wav>`, :download:`1_y.wav <audio/1_y.wav>`, :download:`2_y.wav <audio/2_y.wav>`, :download:`3_y.wav <audio/3_y.wav>`, :download:`4_y.wav <audio/4_y.wav>`, :download:`5_y.wav <audio/5_y.wav>`
-

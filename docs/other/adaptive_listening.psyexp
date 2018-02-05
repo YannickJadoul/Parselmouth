@@ -22,7 +22,7 @@
     <Param name="Show mouse" updates="None" val="True" valType="bool"/>
     <Param name="Data filename" updates="None" val="u'data/%s_%s_%s' % (expInfo['participant'], expName, expInfo['date'])" valType="code"/>
     <Param name="Show info dlg" updates="None" val="True" valType="bool"/>
-    <Param name="expName" updates="None" val="stair" valType="str"/>
+    <Param name="expName" updates="None" val="adaptive_listening" valType="str"/>
     <Param name="logging level" updates="None" val="exp" valType="code"/>
     <Param name="Screen" updates="None" val="1" valType="num"/>
   </Settings>
@@ -58,7 +58,7 @@
       <CodeComponent name="code">
         <Param name="Begin Experiment" updates="constant" val="import parselmouth&amp;#10;import numpy as np&amp;#10;import random&amp;#10;&amp;#10;conditions = ['a', 'e']&amp;#10;stimulus_files = {'a': 'audio/bat.wav', 'e': 'audio/bet.wav'}&amp;#10;&amp;#10;STANDARD_INTENSITY = 70.&amp;#10;stimuli = {}&amp;#10;for condition in conditions:&amp;#10;    stimulus = parselmouth.Sound(stimulus_files[condition])&amp;#10;    stimulus.scale_intensity(STANDARD_INTENSITY)&amp;#10;    stimuli[condition] = stimulus&amp;#10;" valType="extendedCode"/>
         <Param name="name" updates="None" val="code" valType="code"/>
-        <Param name="Begin Routine" updates="constant" val="random_condition = random.choice(conditions)&amp;#10;random_stimulus = stimuli[random_condition]&amp;#10;&amp;#10;noise_samples = np.random.normal(size=random_stimulus.num_samples)&amp;#10;noise = parselmouth.Sound(noise_samples, sampling_frequency=random_stimulus.sampling_frequency)&amp;#10;noise.scale_intensity(STANDARD_INTENSITY - level)&amp;#10;&amp;#10;noisy_stimulus = random_stimulus.copy()&amp;#10;noisy_stimulus_values = noisy_stimulus.values&amp;#10;noisy_stimulus_values += noise.values&amp;#10;noisy_stimulus.scale_intensity(STANDARD_INTENSITY)&amp;#10;&amp;#10;# 'filename' variable is set by PsychoPy and contains base file name of saved log/output files, so we'll use that to save our custom stimuli, too&amp;#10;stimulus_file_name = filename + '_stimulus_' + str(trials.thisTrialN) + '.wav'&amp;#10;noisy_stimulus.resample(44100).save(stimulus_file_name, parselmouth.SoundFileFormat.WAV)&amp;#10;sound_1.setSound(stimulus_file_name)" valType="extendedCode"/>
+        <Param name="Begin Routine" updates="constant" val="random_condition = random.choice(conditions)&amp;#10;random_stimulus = stimuli[random_condition]&amp;#10;&amp;#10;noise_samples = np.random.normal(size=random_stimulus.n_samples)&amp;#10;noisy_stimulus = parselmouth.Sound(noise_samples, sampling_frequency=random_stimulus.sampling_frequency)&amp;#10;noisy_stimulus.scale_intensity(STANDARD_INTENSITY - level)&amp;#10;noisy_stimulus.values += random_stimulus.values&amp;#10;noisy_stimulus.scale_intensity(STANDARD_INTENSITY)&amp;#10;&amp;#10;# 'filename' variable is set by PsychoPy and contains base file name&amp;#10;# of saved log/output files, so we'll use that to save our custom stimuli&amp;#10;stimulus_file_name = filename + '_stimulus_' + str(trials.thisTrialN) + '.wav'&amp;#10;noisy_stimulus.resample(44100).save(stimulus_file_name, &quot;WAV&quot;)&amp;#10;sound_1.setSound(stimulus_file_name)" valType="extendedCode"/>
         <Param name="End Routine" updates="constant" val="trials.addResponse(key_resp_2.keys == random_condition)" valType="extendedCode"/>
         <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
         <Param name="Each Frame" updates="constant" val="" valType="extendedCode"/>
@@ -90,7 +90,7 @@
       <Param name="endPoints" updates="None" val="[0, 1]" valType="num"/>
       <Param name="name" updates="None" val="trials" valType="code"/>
       <Param name="min value" updates="None" val="-50" valType="code"/>
-      <Param name="N reversals" updates="None" val="0" valType="code"/>
+      <Param name="N reversals" updates="None" val="1" valType="code"/>
       <Param name="loopType" updates="None" val="staircase" valType="str"/>
       <Param name="nReps" updates="None" val="50" valType="code"/>
       <Param name="start value" updates="None" val="10" valType="code"/>

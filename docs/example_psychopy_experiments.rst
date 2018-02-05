@@ -30,13 +30,10 @@ These are the code fragments that are inserted into the experiment with a ``Code
     random_condition = random.choice(conditions)
     random_stimulus = stimuli[random_condition]
 
-    noise_samples = np.random.normal(size=random_stimulus.num_samples)
-    noise = parselmouth.Sound(noise_samples, random_stimulus.sampling_frequency)
-    noise.scale_intensity(STANDARD_INTENSITY - level)
-
-    noisy_stimulus = random_stimulus.copy()
-    noisy_stimulus_values = noisy_stimulus.values
-    noisy_stimulus_values += noise.values
+    noise_samples = np.random.normal(size=random_stimulus.n_samples)
+    noisy_stimulus = parselmouth.Sound(noise_samples, sampling_frequency=random_stimulus.sampling_frequency)
+    noisy_stimulus.scale_intensity(STANDARD_INTENSITY - level)
+    noisy_stimulus.values += random_stimulus.values
     noisy_stimulus.scale_intensity(STANDARD_INTENSITY)
 
     # 'filename' variable is set by PsychoPy and contains base file name
