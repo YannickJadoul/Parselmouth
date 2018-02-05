@@ -35,16 +35,20 @@ void Binding<Thing>::init()
 {
 #if PY_MAJOR_VERSION >= 3
 	def("__str__",
-	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return info.get(); });
+	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return info.get(); });
 #else
 	def("__unicode__",
-	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return info.get(); });
+	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return info.get(); });
 
 	def("__str__",
-	    [](Thing self) { MelderInfoInterceptor info; self->v_info(); return encodeAsPreferredEncoding(py::cast(info.get())); });
+	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return encodeAsPreferredEncoding(py::cast(info.get())); });
 #endif
 
-	def_property_readonly("class_name", [](Thing self) { return self->classInfo->className; });
+	def_property("name", &Thing_getName, &Thing_setName);
+
+	def_property_readonly("class_name", &Thing_className);
+
+	def_property_readonly("full_name", &Thing_messageName);
 }
 
 } // namespace parselmouth
