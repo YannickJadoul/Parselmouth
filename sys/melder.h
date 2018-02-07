@@ -38,6 +38,7 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 #include <stdint.h>
+typedef unsigned char byte;
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
@@ -220,6 +221,8 @@ inline static bool isupper32 (char32 kar) { return iswupper ((int) kar); }
 inline static char32 tolower32 (char32 kar) { return (char32) towlower ((int) kar); }
 inline static char32 toupper32 (char32 kar) { return (char32) towupper ((int) kar); }
 
+bool Melder_isWhiteSpace (const char32_t kar);
+
 char32 * Melder_tok (char32 *string, const char32 *delimiter);
 
 #pragma mark - ENUMERATED TYPES
@@ -237,8 +240,8 @@ typedef struct { double red, green, blue, transparency; } double_rgbt;
 
 #pragma mark - NUMBER TO STRING CONVERSION
 
-/**
-	The following routines return a static string, chosen from a circularly used set of 32 buffers.
+/*
+	The following functions return a static string, chosen from a circularly used set of 32 buffers.
 	You can call at most 32 of them in one Melder_casual call, for instance.
 */
 
@@ -411,8 +414,8 @@ bool Melder_isEncodable (const char32 *string, int outputEncoding);
 extern char32 Melder_decodeMacRoman [256];
 extern char32 Melder_decodeWindowsLatin1 [256];
 
-integer Melder_killReturns_inline (char32 *text);
-integer Melder_killReturns_inline (char *text);
+integer Melder_killReturns_inplace (char32 *text);
+integer Melder_killReturns_inplace (char *text);
 /*
 	 Replaces all bare returns (old Mac) or return-plus-linefeed sequences (Win) with bare linefeeds
 	 (generic: Unix and modern Mac).
@@ -423,7 +426,7 @@ size_t str32len_utf8  (const char32 *string, bool nativizeNewlines);
 size_t str32len_utf16 (const char32 *string, bool nativizeNewlines);
 
 extern "C" char32 * Melder_peek8to32 (const char *string);
-void Melder_8to32_inline (const char *source, char32 *target, kMelder_textInputEncoding inputEncoding);
+void Melder_8to32_inplace (const char *source, char32 *target, kMelder_textInputEncoding inputEncoding);
 	// errors: Text is not valid UTF-8.
 char32 * Melder_8to32 (const char *string, kMelder_textInputEncoding inputEncoding);
 	// errors: Out of memory; Text is not valid UTF-8.
@@ -434,7 +437,7 @@ char32 * Melder_peek16to32 (const char16 *text);
 char32 * Melder_16to32 (const char16 *text);
 
 extern "C" char * Melder_peek32to8 (const char32 *string);
-void Melder_32to8_inline (const char32 *string, char *utf8);
+void Melder_32to8_inplace (const char32 *string, char *utf8);
 char * Melder_32to8 (const char32 *string);
 char16 * Melder_32to16 (const char32 *string);
 	// errors: Out of memory.
@@ -449,8 +452,8 @@ extern "C" char16 * Melder_peek32to16 (const char32 *string);
 	inline static char32 * Melder_Wto32 (const wchar_t *string) { return Melder_16to32 ((const char16 *) string); }
 #endif
 
-void Melder_str32To8bitFileRepresentation_inline (const char32 *string, char *utf8);
-void Melder_8bitFileRepresentationToStr32_inline (const char *utf8, char32 *string);
+void Melder_str32To8bitFileRepresentation_inplace (const char32 *string, char *utf8);
+void Melder_8bitFileRepresentationToStr32_inplace (const char *utf8, char32 *string);
 const void * Melder_peek32toCfstring (const char32 *string);
 void Melder_fwrite32to8 (const char32 *ptr, FILE *f);
 
@@ -675,7 +678,7 @@ inline static bool isundef (double x) { return ((* (uint64_t *) & x) & 0x7FF0000
 
 /********** Arrays with one index (NUMarrays.cpp) **********/
 
-void * NUMvector (integer elementSize, integer lo, integer hi, bool zero);
+byte * NUMvector_generic (integer elementSize, integer lo, integer hi, bool zero);
 /*
 	Function:
 		create a vector [lo...hi]; if `zero`, then all values are initialized to 0.
@@ -683,7 +686,7 @@ void * NUMvector (integer elementSize, integer lo, integer hi, bool zero);
 		hi >= lo;
 */
 
-void NUMvector_free (integer elementSize, void *v, integer lo) noexcept;
+void NUMvector_free_generic (integer elementSize, byte *v, integer lo) noexcept;
 /*
 	Function:
 		destroy a vector v that was created with NUMvector.
@@ -691,7 +694,7 @@ void NUMvector_free (integer elementSize, void *v, integer lo) noexcept;
 		lo must have the same values as with the creation of the vector.
 */
 
-void * NUMvector_copy (integer elementSize, void *v, integer lo, integer hi);
+byte * NUMvector_copy_generic (integer elementSize, byte *v, integer lo, integer hi);
 /*
 	Function:
 		copy (part of) a vector v, which need not have been created with NUMvector, to a new one.
@@ -699,21 +702,21 @@ void * NUMvector_copy (integer elementSize, void *v, integer lo, integer hi);
 		if v != nullptr, the values v [lo..hi] must exist.
 */
 
-void NUMvector_copyElements (integer elementSize, void *v, void *to, integer lo, integer hi);
+void NUMvector_copyElements_generic (integer elementSize, byte *v, byte *to, integer lo, integer hi);
 /*
 	copy the vector elements v [lo..hi] to those of a vector 'to'.
 	These vectors need not have been created by NUMvector.
 */
 
-bool NUMvector_equal (integer elementSize, void *v1, void *v2, integer lo, integer hi);
+bool NUMvector_equal_generic (integer elementSize, byte *v1, byte *v2, integer lo, integer hi);
 /*
 	return true if the vector elements v1 [lo..hi] are equal
 	to the corresponding elements of the vector v2; otherwise, return false.
 	The vectors need not have been created by NUMvector.
 */
 
-void NUMvector_append (integer elementSize, void **v, integer lo, integer *hi);
-void NUMvector_insert (integer elementSize, void **v, integer lo, integer *hi, integer position);
+void NUMvector_append_generic (integer elementSize, byte **v, integer lo, integer *hi);
+void NUMvector_insert_generic (integer elementSize, byte **v, integer lo, integer *hi, integer position);
 /*
 	add one element to the vector *v.
 	The new element is initialized to zero.
@@ -732,7 +735,7 @@ void * NUMmatrix (integer elementSize, integer row1, integer row2, integer col1,
 		col2 >= col1;
 */
 
-void NUMmatrix_free (integer elementSize, void *m, integer row1, integer col1) noexcept;
+void NUMmatrix_free_ (integer elementSize, byte **m, integer row1, integer col1) noexcept;
 /*
 	Function:
 		destroy a matrix m created with NUM...matrix.
@@ -749,7 +752,7 @@ void * NUMmatrix_copy (integer elementSize, void *m, integer row1, integer row2,
 		if m != nullptr: the values m [rowmin..rowmax] [colmin..colmax] must exist.
 */
 
-void NUMmatrix_copyElements (integer elementSize, void *m, void *to, integer row1, integer row2, integer col1, integer col2);
+void NUMmatrix_copyElements_ (integer elementSize, char **mfrom, char **mto, integer row1, integer row2, integer col1, integer col2);
 /*
 	copy the matrix elements m [r1..r2] [c1..c2] to those of a matrix 'to'.
 	These matrices need not have been created by NUMmatrix.
@@ -972,45 +975,45 @@ double NUMlinprog_getPrimalValue (NUMlinprog me, integer ivar);
 
 template <class T>
 T* NUMvector (integer from, integer to) {
-	T* result = static_cast <T*> (NUMvector (sizeof (T), from, to, true));
+	T* result = reinterpret_cast <T*> (NUMvector_generic (sizeof (T), from, to, true));
 	return result;
 }
 
 template <class T>
-T* NUMvector (integer from, integer to, bool zero) {
-	T* result = static_cast <T*> (NUMvector (sizeof (T), from, to, zero));
+T* NUMvector (integer from, integer to, bool initializeToZero) {
+	T* result = reinterpret_cast <T*> (NUMvector_generic (sizeof (T), from, to, initializeToZero));
 	return result;
 }
 
 template <class T>
 void NUMvector_free (T* ptr, integer from) noexcept {
-	NUMvector_free (sizeof (T), ptr, from);
+	NUMvector_free_generic (sizeof (T), reinterpret_cast <byte *> (ptr), from);
 }
 
 template <class T>
 T* NUMvector_copy (T* ptr, integer lo, integer hi) {
-	T* result = static_cast <T*> (NUMvector_copy (sizeof (T), ptr, lo, hi));
+	T* result = reinterpret_cast <T*> (NUMvector_copy_generic (sizeof (T), reinterpret_cast <byte *> (ptr), lo, hi));
 	return result;
 }
 
 template <class T>
 bool NUMvector_equal (T* v1, T* v2, integer lo, integer hi) {
-	return NUMvector_equal (sizeof (T), v1, v2, lo, hi);
+	return NUMvector_equal_generic (sizeof (T), reinterpret_cast <byte *> (v1), reinterpret_cast <byte *> (v2), lo, hi);
 }
 
 template <class T>
 void NUMvector_copyElements (T* vfrom, T* vto, integer lo, integer hi) {
-	NUMvector_copyElements (sizeof (T), vfrom, vto, lo, hi);
+	NUMvector_copyElements_generic (sizeof (T), reinterpret_cast <byte *> (vfrom), reinterpret_cast <byte *> (vto), lo, hi);
 }
 
 template <class T>
 void NUMvector_append (T** v, integer lo, integer *hi) {
-	NUMvector_append (sizeof (T), (void**) v, lo, hi);
+	NUMvector_append_generic (sizeof (T), reinterpret_cast <byte **> (v), lo, hi);
 }
 
 template <class T>
 void NUMvector_insert (T** v, integer lo, integer *hi, integer position) {
-	NUMvector_insert (sizeof (T), (void**) v, lo, hi, position);
+	NUMvector_insert_generic (sizeof (T), reinterpret_cast <byte **> (v), lo, hi, position);
 }
 
 template <class T>
@@ -1029,7 +1032,7 @@ public:
 	autoNUMvector () : d_ptr (nullptr), d_from (1) {
 	}
 	~autoNUMvector<T> () {
-		if (d_ptr) NUMvector_free (sizeof (T), d_ptr, d_from);
+		if (d_ptr) NUMvector_free (d_ptr, d_from);
 	}
 	T& operator[] (integer i) {
 		return d_ptr [i];
@@ -1044,7 +1047,7 @@ public:
 	}
 	void reset (integer from, integer to) {
 		if (d_ptr) {
-			NUMvector_free (sizeof (T), d_ptr, d_from);
+			NUMvector_free (d_ptr, d_from);
 			d_ptr = nullptr;
 		}
 		d_from = from;
@@ -1052,7 +1055,7 @@ public:
 	}
 	void reset (integer from, integer to, bool zero) {
 		if (d_ptr) {
-			NUMvector_free (sizeof (T), d_ptr, d_from);
+			NUMvector_free (d_ptr, d_from);
 			d_ptr = nullptr;
 		}
 		d_from = from;
@@ -1074,7 +1077,7 @@ T** NUMmatrix (integer row1, integer row2, integer col1, integer col2, bool zero
 
 template <class T>
 void NUMmatrix_free (T** ptr, integer row1, integer col1) noexcept {
-	NUMmatrix_free (sizeof (T), ptr, row1, col1);
+	NUMmatrix_free_ (sizeof (T), reinterpret_cast <byte **> (ptr), row1, col1);
 }
 
 template <class T>
@@ -1097,7 +1100,7 @@ bool NUMmatrix_equal (T** m1, T** m2, integer row1, integer row2, integer col1, 
 
 template <class T>
 void NUMmatrix_copyElements (T** mfrom, T** mto, integer row1, integer row2, integer col1, integer col2) {
-	NUMmatrix_copyElements (sizeof (T), mfrom, mto, row1, row2, col1, col2);
+	NUMmatrix_copyElements_ (sizeof (T), reinterpret_cast <char **> (mfrom), reinterpret_cast <char **> (mto), row1, row2, col1, col2);
 }
 
 template <class T>
@@ -1116,7 +1119,7 @@ public:
 	autoNUMmatrix () : d_ptr (nullptr), d_row1 (0), d_col1 (0) {
 	}
 	~autoNUMmatrix () {
-		if (d_ptr) NUMmatrix_free (sizeof (T), d_ptr, d_row1, d_col1);
+		if (d_ptr) NUMmatrix_free_ (sizeof (T), reinterpret_cast <byte **> (d_ptr), d_row1, d_col1);
 	}
 	T*& operator[] (integer row) {
 		return d_ptr [row];
@@ -1131,7 +1134,7 @@ public:
 	}
 	void reset (integer row1, integer row2, integer col1, integer col2) {
 		if (d_ptr) {
-			NUMmatrix_free (sizeof (T), d_ptr, d_row1, d_col1);
+			NUMmatrix_free_ (sizeof (T), reinterpret_cast <byte **> (d_ptr), d_row1, d_col1);
 			d_ptr = nullptr;
 		}
 		d_row1 = row1;
@@ -1140,7 +1143,7 @@ public:
 	}
 	void reset (integer row1, integer row2, integer col1, integer col2, bool zero) {
 		if (d_ptr) {
-			NUMmatrix_free (sizeof (T), d_ptr, d_row1, d_col1);
+			NUMmatrix_free_ (sizeof (T), reinterpret_cast <byte **> (d_ptr), d_row1, d_col1);
 			d_ptr = nullptr;
 		}
 		d_row1 = row1;
@@ -1168,7 +1171,7 @@ public:
 		if (d_ptr) {
 			for (integer i = d_from; i <= d_to; i ++)
 				Melder_free (d_ptr [i]);
-			NUMvector_free (sizeof (T), d_ptr, d_from);
+			NUMvector_free (d_ptr, d_from);
 		}
 	}
 	T& operator[] (integer i) {
@@ -1186,7 +1189,7 @@ public:
 		if (d_ptr) {
 			for (integer i = d_from; i <= d_to; i ++)
 				Melder_free (d_ptr [i]);
-			NUMvector_free (sizeof (T), d_ptr, d_from);
+			NUMvector_free (d_ptr, d_from);
 			d_ptr = nullptr;
 		}
 		d_from = from;   // this assignment is safe, because d_ptr is null
@@ -1197,7 +1200,7 @@ public:
 		if (d_ptr) {
 			for (integer i = d_from; i <= d_to; i ++)
 				Melder_free (d_ptr [i]);
-			NUMvector_free (sizeof (T), d_ptr, d_from);
+			NUMvector_free (d_ptr, d_from);
 			d_ptr = nullptr;
 		}
 		d_from = from;   // this assignment is safe, because d_ptr is null
@@ -1295,24 +1298,6 @@ public:
 		our at = nullptr;   // disown ourselves, preventing automatic destruction of the payload
 		return { oldAt, our size };
 	}
-	void reset () {   // destroy the current payload (if any) and have no new payload
-		our numvec :: reset ();
-	}
-	void reset (integer newSize, kTensorInitializationType initializationType) {   // destroy the current payload (if any) and manufacture a new payload
-		our numvec :: reset ();   // exception guarantee: leave *this in a reasonable state...
-		our _initAt (newSize, initializationType);   // ...in case this line throws an exception
-		our size = newSize;
-	}
-	void reset (double *newAt, integer newSize) {   // destroy the current payload (if any) and buy a new payload
-		if (our at) our _freeAt ();
-		our at = newAt;
-		our size = newSize;
-	}
-	void reset (numvec newX) {   // destroy the current payload (if any) and buy a new payload
-		if (our at) our _freeAt ();
-		our at = newX.at;
-		our size = newX.size;
-	}
 	/*
 		Disable copying via construction or assignment (which would violate unique ownership of the payload).
 	*/
@@ -1396,27 +1381,6 @@ public:
 		our at = nullptr;   // disown ourselves, preventing automatic destruction of the payload
 		return { oldAt, our nrow, our ncol };
 	}
-	void reset () {   // destroy the current payload (if any) and have no new payload
-		our nummat :: reset ();
-	}
-	void reset (integer newNrow, integer newNcol, kTensorInitializationType initializationType) {   // destroy the current payload (if any) and manufacture a new payload
-		our nummat :: reset ();   // exception guarantee: leave *this in a reasonable state...
-		our _initAt (newNrow, newNcol, initializationType);   // ...in case this line throws an exception
-		our nrow = newNrow;
-		our ncol = newNcol;
-	}
-	void reset (double **newAt, integer newNrow, integer newNcol) {   // destroy the current payload (if any) and buy a new payload
-		if (our at) our _freeAt ();
-		our at = newAt;
-		our nrow = newNrow;
-		our ncol = newNcol;
-	}
-	void reset (nummat newX) {   // destroy the current payload (if any) and buy a new payload
-		if (our at) our _freeAt ();
-		our at = newX.at;
-		our nrow = newX.nrow;
-		our ncol = newX.ncol;
-	}
 	/*
 		Disable copying via construction or assignment (which would violate unique ownership of the payload).
 	*/
@@ -1456,7 +1420,6 @@ struct MelderArg {
 		The types of arguments that never involve memory allocation:
 	*/
 	MelderArg (const char32 *            arg) : _arg (arg) { }
-	//MelderArg (const char   *            arg) : _arg (Melder_peek8to32 (arg)) { }
 	MelderArg (const double              arg) : _arg (Melder_double          (arg)) { }
 	MelderArg (const          long long  arg) : _arg (Melder_integer         (arg)) { }
 	MelderArg (const unsigned long long  arg) : _arg (Melder_integer         ((int64) arg)) { }
@@ -1468,7 +1431,6 @@ struct MelderArg {
 	MelderArg (const unsigned short      arg) : _arg (Melder_integer         (arg)) { }
 	MelderArg (const dcomplex            arg) : _arg (Melder_dcomplex        (arg)) { }
 	MelderArg (const char32_t            arg) : _arg (Melder_character       (arg)) { }
-	MelderArg (void *                    arg) : _arg (Melder_integer         ((int64) arg)) { }
 	/*
 		The types of arguments that sometimes involve memory allocation:
 	*/
@@ -1476,6 +1438,14 @@ struct MelderArg {
 	MelderArg (nummat                    arg) : _arg (Melder_nummat          (arg)) { }
 	MelderArg (Thing                     arg) : _arg (Thing_messageName      (arg)) { }
 	MelderArg (MelderFile                arg) : _arg (MelderFile_messageName (arg)) { }
+	/*
+		There could be more types of arguments, but those are rare;
+		you have to use explicit conversion to one of the types above.
+		For instance, you can write a char* string by using Melder_peek8to32()
+		(which sometimes involves memory allocation),
+		and you can write a void* by using Melder_pointer()
+		(which never involves memory allocation).
+	*/
 };
 
 #define Melder_1_ARG \
@@ -2131,6 +2101,7 @@ inline static integer Melder_iroundDown (double x) {
 		U"When rounding down the real value ", x, U", the result cannot be represented in an integer.");
 	return (integer) xround;
 }
+#define Melder_ifloor  Melder_iroundDown
 
 inline static double Melder_roundUp (double x) {
 	return ceil (x);
@@ -2142,6 +2113,7 @@ inline static integer Melder_iroundUp (double x) {
 		U"When rounding up the real value ", x, U", the result cannot be represented in an integer.");
 	return (integer) xround;
 }
+#define Melder_iceiling  Melder_iroundUp
 
 inline static double Melder_roundTowardsZero (double x) {
 	return x >= 0.0 ? Melder_roundDown (x) : Melder_roundUp (x);
@@ -2174,6 +2146,7 @@ inline static integer Melder_iround_tieUp (double x) {
 		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
 	return (integer) xround;
 }
+#define Melder_iround  Melder_iround_tieUp
 
 inline static double Melder_round_tieDown (double x) {
 	return Melder_roundUp (x - 0.5);

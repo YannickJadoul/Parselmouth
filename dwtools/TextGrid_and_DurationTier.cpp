@@ -19,12 +19,11 @@
 #include "TextGrid_and_DurationTier.h"
 #include "Thing.h"
 
-void IntervalTier_and_DurationTier_scaleTimes (IntervalTier me, DurationTier thee) {
-	if (my xmin != thy xmin || my xmax != thy xmax) {
-		Melder_throw (U"The domains of the IntervalTier and the DurationTier must be equal.");
-	}
+void IntervalTier_DurationTier_scaleTimes (IntervalTier me, DurationTier thee) {
+	Melder_require (my xmin == thy xmin && my xmax == thy xmax,
+		U"The domains of the IntervalTier and the DurationTier should be equal.");
 	double xmax_new = my xmin + RealTier_getArea (thee, my xmin, my xmax);
-	for (long i = 1; i <= my intervals.size; i ++) {
+	for (integer i = 1; i <= my intervals.size; i ++) {
 		TextInterval segment = my intervals.at [i];
 		double xmin = RealTier_getArea (thee, my xmin, segment -> xmin);
 		double xmax = RealTier_getArea (thee, my xmin, segment -> xmax);
@@ -34,12 +33,11 @@ void IntervalTier_and_DurationTier_scaleTimes (IntervalTier me, DurationTier the
 	my xmax = xmax_new;
 }
 
-void TextTier_and_DurationTier_scaleTimes (TextTier me, DurationTier thee) {
-	if (my xmin != thy xmin || my xmax != thy xmax) {
-		Melder_throw (U"The domains of the TextTier and the DurationTier must be equal.");
-	}
+void TextTier_DurationTier_scaleTimes (TextTier me, DurationTier thee) {
+	Melder_require (my xmin == thy xmin && my xmax == thy xmax,
+		U"The domains of the TextTier and the DurationTier should be equal.");
 	double xmax_new = my xmin + RealTier_getArea (thee, my xmin, my xmax);
-	for (long ipoint = 1; ipoint <= my points.size; ipoint++) {
+	for (integer ipoint = 1; ipoint <= my points.size; ipoint ++) {
 		TextPoint point = my points.at [ipoint];
 		double time = RealTier_getArea (thee, my xmin, point -> number);
 		point -> number = time;
@@ -47,22 +45,22 @@ void TextTier_and_DurationTier_scaleTimes (TextTier me, DurationTier thee) {
 	my xmax = xmax_new;
 }
 
-autoTextGrid TextGrid_and_DurationTier_scaleTimes (TextGrid me, DurationTier thee) {
+autoTextGrid TextGrid_DurationTier_scaleTimes (TextGrid me, DurationTier thee) {
 	try {
-		if (my xmin != thy xmin || my xmax != thy xmax) {
-			Melder_throw (U"The domains of the TextGrid and the DurationTier must be equal.");
-		}
+		Melder_require (my xmin == thy xmin && my xmax == thy xmax,
+			U"The domains of the TextGrid and the DurationTier should be equal.");
+		
 		double xmax_new = my xmin + RealTier_getArea (thee, my xmin, my xmax);
 		autoTextGrid him = Data_copy (me);
-		long numberOfTiers = my tiers -> size;
-		for (long itier = 1; itier <= numberOfTiers; itier++) {
+		integer numberOfTiers = my tiers -> size;
+		for (integer itier = 1; itier <= numberOfTiers; itier ++) {
 			Function anyTier = his tiers->at [itier];
 			if (anyTier -> classInfo == classIntervalTier) {
 				IntervalTier tier = static_cast <IntervalTier> (anyTier);
-				IntervalTier_and_DurationTier_scaleTimes (tier, thee);
+				IntervalTier_DurationTier_scaleTimes (tier, thee);
 			} else { 
 				TextTier textTier = static_cast <TextTier> (anyTier);
-				TextTier_and_DurationTier_scaleTimes (textTier, thee);
+				TextTier_DurationTier_scaleTimes (textTier, thee);
 			}
 		}
 		his xmax = xmax_new;
@@ -73,11 +71,11 @@ autoTextGrid TextGrid_and_DurationTier_scaleTimes (TextGrid me, DurationTier the
 	}
 }
 
-autoDurationTier TextGrid_to_DurationTier (TextGrid me, long tierNumber, double timeScalefactor, double leftTransitionDuration, double rightTransitionDuration, kMelder_string which, const char32 *criterion) {
+autoDurationTier TextGrid_to_DurationTier (TextGrid me, integer tierNumber, double timeScalefactor, double leftTransitionDuration, double rightTransitionDuration, kMelder_string which, const char32 *criterion) {
 	try {
 		autoDurationTier him = DurationTier_create (my xmin, my xmax);
 		IntervalTier tier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
-		for (long i = 1; i <= tier ->intervals.size; i++) {
+		for (integer i = 1; i <= tier ->intervals.size; i ++) {
 			TextInterval segment = tier -> intervals.at [i];
 			if (Melder_stringMatchesCriterion (segment -> text, which, criterion)) {
 				double xmin = segment -> xmin, xmax = segment -> xmax;
@@ -87,7 +85,7 @@ autoDurationTier TextGrid_to_DurationTier (TextGrid me, long tierNumber, double 
 				RealTier_addPoint (him.get(), xmax, 1.0);	
 			}
 		}
-		long index = tier ->intervals.size;
+		integer index = tier ->intervals.size;
 		if (index == 0) {
 			RealTier_addPoint (him.get(), my xmin, 1.0);
 		}

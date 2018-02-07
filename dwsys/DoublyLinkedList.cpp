@@ -1,6 +1,6 @@
 /* DoublyLinkedList.cpp
  *
- * Copyright (C) 2011-2013, 2015-2016 David Weenink
+ * Copyright (C) 2011-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ void DoublyLinkedList_addFront (DoublyLinkedList me, DoublyLinkedNode node) {
 		my back = node;
 		node -> next = nullptr;
 		node -> prev = nullptr;
-		my numberOfNodes++;
+		my numberOfNodes ++;
 	}
 }
 
@@ -94,7 +94,7 @@ void DoublyLinkedList_addBefore (DoublyLinkedList me, DoublyLinkedNode pos, Doub
 		pos -> prev -> next = node;
 	}
 	pos -> prev = node;
-	my numberOfNodes++;
+	my numberOfNodes ++;
 }
 
 void DoublyLinkedList_addAfter (DoublyLinkedList me, DoublyLinkedNode pos, DoublyLinkedNode node) {
@@ -106,7 +106,7 @@ void DoublyLinkedList_addAfter (DoublyLinkedList me, DoublyLinkedNode pos, Doubl
 		pos -> next -> prev = node;
 	}
 	pos -> next = node;
-	my numberOfNodes++;
+	my numberOfNodes ++;
 }
 
 void DoublyLinkedList_remove (DoublyLinkedList me, DoublyLinkedNode node) {
@@ -124,11 +124,11 @@ void DoublyLinkedList_remove (DoublyLinkedList me, DoublyLinkedNode node) {
 		node -> next -> prev = node -> prev;
 	}
 	forget (node);
-	my numberOfNodes--;
+	my numberOfNodes --;
 }
 
 // Preconditions:
-//	from and to must be part of the list
+//	from and to should be part of the list
 //	from must occur before to
 void DoublyLinkedList_sortPart (DoublyLinkedList me, DoublyLinkedNode from, DoublyLinkedNode to) {
 	// Save data
@@ -163,21 +163,21 @@ void DoublyLinkedList_sortPart (DoublyLinkedList me, DoublyLinkedNode from, Doub
 
 void DoublyLinkedList_sort (DoublyLinkedList me) {
 	Data_CompareHook::FunctionType compare = my v_getCompareHook ().get();
-	long increment = 1;
+	integer increment = 1;
 	DoublyLinkedNode front = my front, back;
 	for (;;) {
 		DoublyLinkedNode node1 = front;
 		front = nullptr;
 		back = nullptr;
 
-		long numberOfMerges = 0;
+		integer numberOfMerges = 0;
 
 		while (node1) {
 			DoublyLinkedNode node2 = node1, node;
-			long node1size = 0;
+			integer node1size = 0;
 			numberOfMerges++;
 
-			for (long i = 1; i <= increment; i++) {
+			for (integer i = 1; i <= increment; i++) {
 				node1size++;
 				node2 = node2 -> next;
 				if (! node2) {
@@ -185,7 +185,7 @@ void DoublyLinkedList_sort (DoublyLinkedList me) {
 				}
 			}
 
-			long node2size = increment;
+			integer node2size = increment;
 
 			while (node1size > 0 || (node2size > 0 && node2)) { // merge node1 and node2
 				if (node1size == 0) {
@@ -219,4 +219,4 @@ void DoublyLinkedList_sort (DoublyLinkedList me) {
 	my back = back;
 }
 
-// end of file DoublyLinkedList.cpp
+/* end of file DoublyLinkedList.cpp */

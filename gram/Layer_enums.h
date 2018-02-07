@@ -1,8 +1,6 @@
-#ifndef _RBM_extensions_h_
-#define _RBM_extensions_h_
-/* RBM_extensions.h
+/* Layer_enums.h
  *
- * Copyright (C) 2016 David Weenink
+ * Copyright (C) 2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,11 +16,9 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ActivationList.h"
-#include "PatternList.h"
-#include "RBM.h"
+enums_begin (kLayer_activationType, 0)
+	enums_add (kLayer_activationType, 0, DETERMINISTIC, U"deterministic")
+	enums_add (kLayer_activationType, 1, STOCHASTIC, U"stochastic")
+enums_end (kLayer_activationType, 1, DETERMINISTIC)
 
-
-autoActivationList RBM_PatternList_to_ActivationList (RBM me, PatternList thee);
-
-#endif /* _RBM_extensions_h_ */
+/* End of file Layer_enums.h */

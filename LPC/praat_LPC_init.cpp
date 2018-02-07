@@ -245,7 +245,7 @@ DO
 	NUMBER_ONE_END (U" dB; quefrency=", qpeak, U" s (f=", 1.0 / qpeak, U" Hz).");
 }
 
-FORM (MODIFY_PowerCepstrum_subtractTilt_inline, U"PowerCepstrum: Subtract tilt (in-line)", nullptr) {
+FORM (MODIFY_PowerCepstrum_subtractTilt_inplace, U"PowerCepstrum: Subtract tilt (in-place)", nullptr) {
 	REAL (fromQuefrency_tiltLine, U"left Tilt line quefrency range (s)", U"0.001")
 	REAL (toQuefrency_tiltLine, U"right Tilt line quefrency range (s)", U"0.0 (= end)")
 	OPTIONMENU (lineType, U"Line type", 1)
@@ -257,17 +257,17 @@ FORM (MODIFY_PowerCepstrum_subtractTilt_inline, U"PowerCepstrum: Subtract tilt (
 	OK
 DO
 	MODIFY_EACH (PowerCepstrum)
-		PowerCepstrum_subtractTilt_inline (me, fromQuefrency_tiltLine, toQuefrency_tiltLine, lineType, fitMethod);
+		PowerCepstrum_subtractTilt_inplace (me, fromQuefrency_tiltLine, toQuefrency_tiltLine, lineType, fitMethod);
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_PowerCepstrum_smooth_inline, U"PowerCepstrum: Smooth (in-line)", nullptr) {
+FORM (MODIFY_PowerCepstrum_smooth_inplace, U"PowerCepstrum: Smooth (in-place)", nullptr) {
 	REAL (quefrencySmoothingWindowDuration, U"Quefrency averaging window (s)", U"0.0005")
 	NATURAL (numberOfIterations, U"Number of iterations", U"1");
 	OK
 DO
 	MODIFY_EACH (PowerCepstrum)
-		PowerCepstrum_smooth_inline (me, quefrencySmoothingWindowDuration, numberOfIterations);
+		PowerCepstrum_smooth_inplace (me, quefrencySmoothingWindowDuration, numberOfIterations);
 	MODIFY_EACH_END
 }
 
@@ -367,7 +367,7 @@ DIRECT (REAL_PowerCepstrogram_getEndQuefrency) {
 
 DIRECT (INTEGER_PowerCepstrogram_getNumberOfQuefrencyBins) {
 	INTEGER_ONE (PowerCepstrogram)
-		long result = my ny;
+		integer result = my ny;
 	INTEGER_ONE_END (U" quefrency bins")
 }
 
@@ -393,7 +393,7 @@ DO
 	CONVERT_EACH_END (my name, U"_minusTilt")
 }
 
-FORM (MODIFY_PowerCepstrogram_subtractTilt_inline, U"PowerCepstrogram: Subtract tilt (in-line)", nullptr) {
+FORM (MODIFY_PowerCepstrogram_subtractTilt_inplace, U"PowerCepstrogram: Subtract tilt (in-place)", nullptr) {
 	REAL (fromQuefrency_tiltLine, U"left Tilt line quefrency range (s)", U"0.001")
 	REAL (toQuefrency_tiltLine, U"right Tilt line quefrency range (s)", U"0.0 (= end)")
 	OPTIONMENU (lineType, U"Line type", 2)
@@ -405,7 +405,7 @@ FORM (MODIFY_PowerCepstrogram_subtractTilt_inline, U"PowerCepstrogram: Subtract 
 	OK
 DO
 	MODIFY_EACH (PowerCepstrogram)
-		PowerCepstrogram_subtractTilt_inline (me, fromQuefrency_tiltLine, toQuefrency_tiltLine, lineType, fitMethod);
+		PowerCepstrogram_subtractTilt_inplace (me, fromQuefrency_tiltLine, toQuefrency_tiltLine, lineType, fitMethod);
 	MODIFY_EACH_END
 }
 
@@ -579,12 +579,12 @@ DO
 
 /******************** Formant & Spectrogram ************************************/
 
-FORM (NEW1_Formant_and_Spectrogram_to_IntensityTier, U"Formant & Spectrogram: To IntensityTier", U"Formant & Spectrogram: To IntensityTier...") {
+FORM (NEW1_Formant_Spectrogram_to_IntensityTier, U"Formant & Spectrogram: To IntensityTier", U"Formant & Spectrogram: To IntensityTier...") {
 	NATURAL (formantNumber, U"Formant number", U"1")
 	OK
 DO
 	CONVERT_TWO (Formant, Spectrogram)
-		autoIntensityTier result = Formant_and_Spectrogram_to_IntensityTier (me, you, formantNumber);
+		autoIntensityTier result = Formant_Spectrogram_to_IntensityTier (me, you, formantNumber);
 	CONVERT_TWO_END (my name, U"_", formantNumber)
 }
 
@@ -598,7 +598,7 @@ FORM (NEW_LFCC_to_LPC, U"LFCC: To LPC", U"LFCC: To LPC...") {
 	INTEGER (numberOfCoefficients, U"Number of coefficients", U"0")
 	OK
 DO
-	Melder_require (numberOfCoefficients >= 0, U"Number of coefficients must be greater or equal zero.");
+	Melder_require (numberOfCoefficients >= 0, U"Number of coefficients should not be less than zero.");
 	CONVERT_EACH (LFCC)
 		autoLPC result = LFCC_to_LPC (me, numberOfCoefficients);
 	CONVERT_EACH_END (my name);
@@ -659,7 +659,7 @@ DO
 	INTEGER_ONE (LPC)
 		Melder_require (frameNumber <= my nx,
 			U"Your frame number (", frameNumber, U") is too large. It should be between 1 and ", my nx, U".");
-		long result = my d_frames[frameNumber].nCoefficients;
+		integer result = my d_frames[frameNumber].nCoefficients;
 	INTEGER_ONE_END (U" coefficients")
 }
 
@@ -689,7 +689,7 @@ FORM (NEW_LPC_to_LFCC, U"LPC: To LFCC", U"LPC: To LFCC...") {
 	INTEGER (numberOfCoefficients, U"Number of coefficients", U"0")
 	OK
 DO
-	Melder_require (numberOfCoefficients >= 0, U"The number of coefficients should be greater than or equal to zero.");
+	Melder_require (numberOfCoefficients >= 0, U"The number of coefficients should not be less than zero.");
 	CONVERT_EACH (LPC)
 		autoLFCC result = LPC_to_LFCC (me, numberOfCoefficients);
 	CONVERT_EACH_END (my name)
@@ -704,7 +704,7 @@ DO
 	CONVERT_EACH_END (my name)
 }
 
-FORM (NEW_LPC_to_Polynomial, U"LPC: To Polynomial", U"LPC: To Polynomial (slice)...") {
+FORM (NEW_LPC_to_Polynomial_slice, U"LPC: To Polynomial", U"LPC: To Polynomial (slice)...") {
 	REAL (time, U"Time (s)", U"0.0")
 	OK
 DO
@@ -713,7 +713,7 @@ DO
 	CONVERT_EACH_END (my name, NUMstring_timeNoDot (time))
 }
 
-FORM (NEW_LPC_to_Spectrum, U"LPC: To Spectrum", U"LPC: To Spectrum (slice)...") {
+FORM (NEW_LPC_to_Spectrum_slice, U"LPC: To Spectrum", U"LPC: To Spectrum (slice)...") {
 	REAL (time, U"Time (seconds)", U"0.0")
 	REAL (minimumFrequencyResolution, U"Minimum frequency resolution (Hz)", U"20.0")
 	REAL (bandwidthReduction, U"Bandwidth reduction (Hz)", U"0.0")
@@ -736,7 +736,7 @@ DO
 	CONVERT_EACH_END (my name)
 }
 
-FORM (NEW_LPC_to_VocalTract_special, U"LPC: To VocalTract", U"LPC: To VocalTract (slice, special)...") {
+FORM (NEW_LPC_to_VocalTract_slice_special, U"LPC: To VocalTract", U"LPC: To VocalTract (slice, special)...") {
 	REAL (time, U"Time (s)", U"0.0")
 	REAL (glottalDamping, U"Glottal damping", U"0.1")
 	BOOLEAN (radiationDamping, U"Radiation damping", true)
@@ -748,7 +748,7 @@ DO
 	CONVERT_EACH_END (my name, NUMstring_timeNoDot (time))
 }
 
-FORM (NEW_LPC_to_VocalTract, U"LPC: To VocalTract", U"LPC: To VocalTract (slice)...") {
+FORM (NEW_LPC_to_VocalTract_slice, U"LPC: To VocalTract", U"LPC: To VocalTract (slice)...") {
 	REAL (time, U"Time (s)", U"0.0")
 	POSITIVE (lenght, U"Length (m)", U"0.17")
 	OK
@@ -824,7 +824,7 @@ static void Sound_to_LPC_addWarning (UiForm dia) {
 	LABEL (U"")
 }
 
-FORM (NEW_Sound_to_LPC_auto, U"Sound: To LPC (autocorrelation)", U"Sound: To LPC (autocorrelation)...") {
+FORM (NEW_Sound_to_LPC_autocorrelation, U"Sound: To LPC (autocorrelation)", U"Sound: To LPC (autocorrelation)...") {
 	Sound_to_LPC_addWarning (dia);
 	NATURAL (predictionOrder, U"Prediction order", U"16")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
@@ -838,7 +838,7 @@ DO
 	CONVERT_EACH_END (my name)
 }
 
-FORM (NEW_Sound_to_LPC_covar, U"Sound: To LPC (covariance)", U"Sound: To LPC (covariance)...") {
+FORM (NEW_Sound_to_LPC_covariance, U"Sound: To LPC (covariance)", U"Sound: To LPC (covariance)...") {
 	Sound_to_LPC_addWarning (dia);
 	NATURAL (predictionOrder, U"Prediction order", U"16")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
@@ -970,16 +970,16 @@ DO
 
 /******************* LPC & Sound *************************************/
 
-FORM (NEW1_LPC_and_Sound_filter, U"LPC & Sound: Filter", U"LPC & Sound: Filter...") {
+FORM (NEW1_LPC_Sound_filter, U"LPC & Sound: Filter", U"LPC & Sound: Filter...") {
 	BOOLEAN (useGain, U"Use LPC gain", false)
 	OK
 DO
 	CONVERT_TWO (LPC, Sound)
-		autoSound result = LPC_and_Sound_filter (me , you, useGain);
+		autoSound result = LPC_Sound_filter (me, you, useGain);
 	CONVERT_TWO_END (my name)
 }
 
-FORM (NEW1_LPC_and_Sound_filterWithFilterAtTime, U"LPC & Sound: Filter with one filter at time", U"LPC & Sound: Filter with filter at time...") {
+FORM (NEW1_LPC_Sound_filterWithFilterAtTime, U"LPC & Sound: Filter with one filter at time", U"LPC & Sound: Filter with filter at time...") {
 	OPTIONMENU (channel, U"Channel", 2)
 		OPTION (U"Both")
 		OPTION (U"Left")
@@ -988,17 +988,17 @@ FORM (NEW1_LPC_and_Sound_filterWithFilterAtTime, U"LPC & Sound: Filter with one 
 	OK
 DO
 	CONVERT_TWO (LPC, Sound)
-		autoSound result = LPC_and_Sound_filterWithFilterAtTime (me , you, channel - 1, time);
+		autoSound result = LPC_Sound_filterWithFilterAtTime (me, you, channel - 1, time);
 	CONVERT_TWO_END (my name)
 }
 
-DIRECT (NEW1_LPC_and_Sound_filterInverse) {
+DIRECT (NEW1_LPC_Sound_filterInverse) {
 	CONVERT_TWO (LPC, Sound)
-		autoSound result = LPC_and_Sound_filterInverse (me , you);
+		autoSound result = LPC_Sound_filterInverse (me, you);
 	CONVERT_TWO_END (my name)
 }
 
-FORM (NEW1_LPC_and_Sound_filterInverseWithFilterAtTime, U"LPC & Sound: Filter (inverse) with filter at time",
+FORM (NEW1_LPC_Sound_filterInverseWithFilterAtTime, U"LPC & Sound: Filter (inverse) with filter at time",
       U"LPC & Sound: Filter (inverse) with filter at time...") {
 	OPTIONMENU (channel, U"Channel", 2)
 		OPTION (U"Both")
@@ -1008,11 +1008,11 @@ FORM (NEW1_LPC_and_Sound_filterInverseWithFilterAtTime, U"LPC & Sound: Filter (i
 	OK
 DO
 	CONVERT_TWO (LPC, Sound)
-		autoSound result = LPC_and_Sound_filterInverseWithFilterAtTime (me , you, channel - 1, time);
+		autoSound result = LPC_Sound_filterInverseWithFilterAtTime (me, you, channel - 1, time);
 	CONVERT_TWO_END (my name)
 }
 
-FORM (NEW1_LPC_and_Sound_to_LPC_robust, U"Robust LPC analysis", U"LPC & Sound: To LPC (robust)...") {
+FORM (NEW1_LPC_Sound_to_LPC_robust, U"Robust LPC analysis", U"LPC & Sound: To LPC (robust)...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
 	POSITIVE (preEmphasisFrequency, U"Pre-emphasis frequency (Hz)", U"50.0")
 	POSITIVE (numberOfStandardDeviations, U"Number of std. dev.", U"1.5")
@@ -1022,7 +1022,7 @@ FORM (NEW1_LPC_and_Sound_to_LPC_robust, U"Robust LPC analysis", U"LPC & Sound: T
 	OK
 DO
 	CONVERT_TWO (LPC, Sound)
-		autoLPC result = LPC_and_Sound_to_LPC_robust (me, you, windowLength, preEmphasisFrequency, numberOfStandardDeviations, maximumNumberOfIterations, tolerance, locationVariable);
+		autoLPC result = LPC_Sound_to_LPC_robust (me, you, windowLength, preEmphasisFrequency, numberOfStandardDeviations, maximumNumberOfIterations, tolerance, locationVariable);
 	CONVERT_TWO_END (my name, U"_r");
 }
 
@@ -1048,8 +1048,10 @@ void praat_uvafon_LPC_init () {
 		praat_addAction1 (classPowerCepstrum, 0, U"Get rhamonics to noise ratio...", 0, 1, REAL_PowerCepstrum_getRNR);
 	praat_addAction1 (classPowerCepstrum, 1, U"Modify -", 0, 0, 0);
 		praat_addAction1 (classPowerCepstrum, 0, U"Formula...", 0, 1, MODIFY_PowerCepstrum_formula);
-		praat_addAction1 (classPowerCepstrum, 0, U"Subtract tilt (in-line)...", 0, 1, MODIFY_PowerCepstrum_subtractTilt_inline);
-		praat_addAction1 (classPowerCepstrum, 0, U"Smooth (in-line)...", 0, 1, MODIFY_PowerCepstrum_smooth_inline);
+		praat_addAction1 (classPowerCepstrum, 0, U"Subtract tilt (in-place)...", 0, 1, MODIFY_PowerCepstrum_subtractTilt_inplace);
+		praat_addAction1 (classPowerCepstrum, 0, U"Subtract tilt (in-line)...", 0, praat_DEPTH_1 + praat_DEPRECATED_2017, MODIFY_PowerCepstrum_subtractTilt_inplace);
+		praat_addAction1 (classPowerCepstrum, 0, U"Smooth (in-place)...", 0, 1, MODIFY_PowerCepstrum_smooth_inplace);
+		praat_addAction1 (classPowerCepstrum, 0, U"Smooth (in-line)...", 0, praat_DEPTH_1 + praat_DEPRECATED_2017, MODIFY_PowerCepstrum_smooth_inplace);
 
 	praat_addAction1 (classPowerCepstrum, 0, U"Subtract tilt...", 0, 0, NEW_PowerCepstrum_subtractTilt);
 	praat_addAction1 (classPowerCepstrum, 0, U"Smooth...", 0, 0, NEW_PowerCepstrum_smooth);
@@ -1071,7 +1073,8 @@ void praat_uvafon_LPC_init () {
 	praat_addAction1 (classPowerCepstrogram, 0, U"Modify -", nullptr, 0, nullptr);
 		praat_TimeFunction_modify_init (classPowerCepstrogram);
 		praat_addAction1 (classPowerCepstrogram, 0, U"Formula...", 0, 1, MODIFY_PowerCepstrogram_formula);
-		praat_addAction1 (classPowerCepstrogram, 0, U"Subtract tilt (in-line)...", 0, 1, MODIFY_PowerCepstrogram_subtractTilt_inline);
+		praat_addAction1 (classPowerCepstrogram, 0, U"Subtract tilt (in-place)...", 0, 1, MODIFY_PowerCepstrogram_subtractTilt_inplace);
+		praat_addAction1 (classPowerCepstrogram, 0, U"Subtract tilt (in-line)...", 0, praat_DEPTH_1 + praat_DEPRECATED_2017, MODIFY_PowerCepstrogram_subtractTilt_inplace);
 	praat_addAction1 (classPowerCepstrogram, 0, U"To PowerCepstrum (slice)...", 0, 0, NEW_PowerCepstrogram_to_PowerCepstrum_slice);
 	praat_addAction1 (classPowerCepstrogram, 0, U"Smooth...", 0, 0, NEW_PowerCepstrogram_smooth);
 	praat_addAction1 (classPowerCepstrogram, 0, U"Subtract tilt...", 0, 0, NEW_PowerCepstrogram_subtractTilt);
@@ -1088,7 +1091,7 @@ void praat_uvafon_LPC_init () {
 	praat_addAction1 (classFormant, 0, U"Analyse", 0, 0, 0);
 	praat_addAction1 (classFormant, 0, U"To LPC...", 0, 0, NEW_Formant_to_LPC);
 	praat_addAction1 (classFormant, 0, U"Formula...", U"Formula (bandwidths)...", 1, MODIFY_Formant_formula);
-	praat_addAction2 (classFormant, 1, classSpectrogram, 1, U"To IntensityTier...", 0, 0, NEW1_Formant_and_Spectrogram_to_IntensityTier);
+	praat_addAction2 (classFormant, 1, classSpectrogram, 1, U"To IntensityTier...", 0, 0, NEW1_Formant_Spectrogram_to_IntensityTier);
 
 	
 	
@@ -1112,10 +1115,10 @@ void praat_uvafon_LPC_init () {
 		praat_TimeFunction_modify_init (classLPC);
 	praat_addAction1 (classLPC, 0, U"Extract", 0, 0, 0);
 
-	praat_addAction1 (classLPC, 0, U"To Spectrum (slice)...", 0, 0, NEW_LPC_to_Spectrum);
-	praat_addAction1 (classLPC, 0, U"To VocalTract (slice)...", 0, 0, NEW_LPC_to_VocalTract);
-	praat_addAction1 (classLPC, 0, U"To VocalTract (slice, special)...", 0, 0, NEW_LPC_to_VocalTract_special);
-	praat_addAction1 (classLPC, 0, U"To Polynomial (slice)...", 0, 0, NEW_LPC_to_Polynomial);
+	praat_addAction1 (classLPC, 0, U"To Spectrum (slice)...", 0, 0, NEW_LPC_to_Spectrum_slice);
+	praat_addAction1 (classLPC, 0, U"To VocalTract (slice)...", 0, 0, NEW_LPC_to_VocalTract_slice);
+	praat_addAction1 (classLPC, 0, U"To VocalTract (slice, special)...", 0, 0, NEW_LPC_to_VocalTract_slice_special);
+	praat_addAction1 (classLPC, 0, U"To Polynomial (slice)...", 0, 0, NEW_LPC_to_Polynomial_slice);
 	praat_addAction1 (classLPC, 0, U"Down to Matrix (lpc)", 0, 0, NEW_LPC_downto_Matrix_lpc);
 	praat_addAction1 (classLPC, 0, U"Down to Matrix (rc)", 0, praat_HIDDEN, NEW_LPC_downto_Matrix_rc);
 	praat_addAction1 (classLPC, 0, U"Down to Matrix (area)", 0, praat_HIDDEN, NEW_LPC_downto_Matrix_area);
@@ -1127,15 +1130,15 @@ void praat_uvafon_LPC_init () {
 	praat_addAction1 (classLPC, 0, U"To LineSpectralFrequencies...", 0, 0, NEW_LPC_to_LineSpectralFrequencies);
 
 	praat_addAction2 (classLPC, 1, classSound, 1, U"Analyse", 0, 0, 0);
-	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter...", 0, 0, NEW1_LPC_and_Sound_filter);
-	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter (inverse)", 0, 0, NEW1_LPC_and_Sound_filterInverse);
-	praat_addAction2 (classLPC, 1, classSound, 1, U"To LPC (robust)...", 0, praat_HIDDEN + praat_DEPTH_1, NEW1_LPC_and_Sound_to_LPC_robust);
-	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter with filter at time...", 0, 0, NEW1_LPC_and_Sound_filterWithFilterAtTime);
-	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter (inverse) with filter at time...", 0, 0, NEW1_LPC_and_Sound_filterInverseWithFilterAtTime);
+	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter...", 0, 0, NEW1_LPC_Sound_filter);
+	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter (inverse)", 0, 0, NEW1_LPC_Sound_filterInverse);
+	praat_addAction2 (classLPC, 1, classSound, 1, U"To LPC (robust)...", 0, praat_HIDDEN + praat_DEPTH_1, NEW1_LPC_Sound_to_LPC_robust);
+	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter with filter at time...", 0, 0, NEW1_LPC_Sound_filterWithFilterAtTime);
+	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter (inverse) with filter at time...", 0, 0, NEW1_LPC_Sound_filterInverseWithFilterAtTime);
 
 
-	praat_addAction1 (classSound, 0, U"To LPC (autocorrelation)...", U"To Formant (sl)...", 1, NEW_Sound_to_LPC_auto);
-	praat_addAction1 (classSound, 0, U"To LPC (covariance)...", U"To LPC (autocorrelation)...", 1, NEW_Sound_to_LPC_covar);
+	praat_addAction1 (classSound, 0, U"To LPC (autocorrelation)...", U"To Formant (sl)...", 1, NEW_Sound_to_LPC_autocorrelation);
+	praat_addAction1 (classSound, 0, U"To LPC (covariance)...", U"To LPC (autocorrelation)...", 1, NEW_Sound_to_LPC_covariance);
 	praat_addAction1 (classSound, 0, U"To LPC (burg)...", U"To LPC (covariance)...", 1, NEW_Sound_to_LPC_burg);
 	praat_addAction1 (classSound, 0, U"To LPC (marple)...", U"To LPC (burg)...", 1, NEW_Sound_to_LPC_marple);
 	praat_addAction1 (classSound, 0, U"To MFCC...", U"To LPC (marple)...", 1, NEW_Sound_to_MFCC);

@@ -2,7 +2,7 @@
  *
  * Principal Component Analysis
  *
- * Copyright (C) 1993-2012, 2015-2016 David Weenink
+ * Copyright (C) 1993-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@
  */
 
 /*
- djmw 20000511 PCA_and_TableOfReal_to_Configuration: added centralize option.
+ djmw 20000511 PCA_TableOfReal_to_Configuration: added centralize option.
  	(later removed)
- djmw 20020327 PCA_and_TableOfReal_to_Configuration modified internals.
+ djmw 20020327 PCA_TableOfReal_to_Configuration modified internals.
  djmw 20020418 Removed some causes for compiler warnings.
- djmw 20020502 modified call Eigen_and_TableOfReal_project_into.
- djmw 20030324 Added PCA_and_TableOfReal_getFractionVariance.
+ djmw 20020502 modified call Eigen_TableOfReal_project_into.
+ djmw 20030324 Added PCA_TableOfReal_getFractionVariance.
  djmw 20061212 Changed info to Melder_writeLine<x> format.
  djmw 20071012 Added: o_CAN_WRITE_AS_ENCODING.h
  djmw 20071201 Melder_warning<n>
@@ -69,7 +69,7 @@ void structPCA :: v_info () {
 	MelderInfo_writeLine (U"Number of observations: ", numberOfObservations);
 }
 
-autoPCA PCA_create (long numberOfComponents, long dimension) {
+autoPCA PCA_create (integer numberOfComponents, integer dimension) {
 	try {
 		autoPCA me = Thing_new (PCA);
 		Eigen_init (me.get(), numberOfComponents, dimension);
@@ -81,15 +81,15 @@ autoPCA PCA_create (long numberOfComponents, long dimension) {
 	}
 }
 
-void PCA_setNumberOfObservations (PCA me, long numberOfObservations) {
+void PCA_setNumberOfObservations (PCA me, integer numberOfObservations) {
 	my numberOfObservations = numberOfObservations;
 }
 
-long PCA_getNumberOfObservations (PCA me) {
+integer PCA_getNumberOfObservations (PCA me) {
 	return my numberOfObservations;
 }
 
-void PCA_getEqualityOfEigenvalues (PCA me, long from, long to, int conservative, double *p_prob, double *p_chisq, double *p_df) {
+void PCA_getEqualityOfEigenvalues (PCA me, integer from, integer to, int conservative, double *p_prob, double *p_chisq, double *p_df) {
 	double sum = 0.0, sumln = 0.0;
 
 	double prob = undefined, df = undefined, chisq = undefined;
@@ -99,7 +99,7 @@ void PCA_getEqualityOfEigenvalues (PCA me, long from, long to, int conservative,
 		from = my numberOfEigenvalues;
 	}
 	if (from < to && from > 0 && to <= my numberOfEigenvalues) {
-		long i;
+		integer i;
 		for (i = from; i <= to; i ++) {
 			if (my eigenvalues [i] <= 0) {
 				break;
@@ -110,8 +110,8 @@ void PCA_getEqualityOfEigenvalues (PCA me, long from, long to, int conservative,
 		if (sum == 0.0) {
 			return;
 		}
-		long r = i - from;
-		long n = my numberOfObservations - 1;
+		integer r = i - from;
+		integer n = my numberOfObservations - 1;
 		if (conservative) {
 			n -= from + (r * (2 * r + 1) + 2) / (6 * r);
 		}
@@ -149,24 +149,23 @@ autoEigen PCA_to_Eigen (PCA me) {
 	}
 }
 
-static autoPCA NUMdmatrix_to_PCA (double **m, long numberOfRows, long numberOfColumns, bool byColumns) {
+static autoPCA NUMdmatrix_to_PCA (double **m, integer numberOfRows, integer numberOfColumns, bool byColumns) {
 	try {
-		if (NUMdmatrix_containsUndefinedElements (m, 1, numberOfRows, 1, numberOfColumns)) {
-			Melder_throw (U"At least one of the matrix elements is undefined.");
-		}
-		if (NUMfrobeniusnorm (numberOfRows, numberOfColumns, m) == 0.0) {
-			Melder_throw (U"All values in your table are zero.");
-		}
+		Melder_require (! NUMdmatrix_containsUndefinedElements (m, 1, numberOfRows, 1, numberOfColumns),
+			U"No matrix elements should be undefined.");
+		Melder_require (NUMfrobeniusnorm (numberOfRows, numberOfColumns, m) > 0.0,
+			U"not all values in your table should be zero.");
+		
 		autoNUMmatrix<double> mcopy;
-		long numberOfRows2, numberOfColumns2;
+		integer numberOfRows2, numberOfColumns2;
 		if (byColumns) {
 			if (numberOfColumns < numberOfRows) {
 				Melder_warning (U"The number of columns in your table is less than the number of rows. ");
 			}
 			numberOfRows2 = numberOfColumns, numberOfColumns2 = numberOfRows;
 			mcopy.reset (1, numberOfRows2, 1, numberOfColumns2);
-			for (long i = 1; i <= numberOfRows2; i ++) { // transpose
-				for (long j = 1; j <= numberOfColumns2; j++) {
+			for (integer i = 1; i <= numberOfRows2; i ++) { // transpose
+				for (integer j = 1; j <= numberOfColumns2; j++) {
 					mcopy [i] [j] = m [j] [i];
 				}
 			}
@@ -193,7 +192,7 @@ static autoPCA NUMdmatrix_to_PCA (double **m, long numberOfRows, long numberOfCo
 			eigenvectors, but the eigenvalues have to be divided by (N-1).
 		*/
 
-		for (long i = 1; i <= thy numberOfEigenvalues; i++) {
+		for (integer i = 1; i <= thy numberOfEigenvalues; i++) {
 			thy eigenvalues [i] /= (numberOfRows2 - 1);
 		}
 		return thee;
@@ -230,16 +229,16 @@ autoPCA Matrix_to_PCA_byRows (Matrix me) {
 	}
 }
 
-autoTableOfReal PCA_and_TableOfReal_to_TableOfReal_zscores (PCA me, TableOfReal thee, long numberOfDimensions) {
+autoTableOfReal PCA_TableOfReal_to_TableOfReal_zscores (PCA me, TableOfReal thee, integer numberOfDimensions) {
 	try {
 		if (numberOfDimensions == 0 || numberOfDimensions > my numberOfEigenvalues) {
 			numberOfDimensions = my numberOfEigenvalues;
 		}
 		autoTableOfReal him = TableOfReal_create (thy numberOfRows, numberOfDimensions);
-		for (long i = 1; i <= thy numberOfRows; i++) { /* row */
-			for (long j = 1; j <= numberOfDimensions; j++) {
+		for (integer i = 1; i <= thy numberOfRows; i++) { /* row */
+			for (integer j = 1; j <= numberOfDimensions; j++) {
 				double r = 0, sigma = sqrt (my eigenvalues[j]);
-				for (long k = 1; k <= my dimension; k++) {
+				for (integer k = 1; k <= my dimension; k++) {
 					// eigenvector in row, data in row
 					r += my eigenvectors[j][k] * (thy data[i][k] - my centroid[k]) / sigma;
 				}
@@ -254,14 +253,14 @@ autoTableOfReal PCA_and_TableOfReal_to_TableOfReal_zscores (PCA me, TableOfReal 
 	}
 }
 
-autoTableOfReal PCA_and_TableOfReal_to_TableOfReal_projectRows (PCA me, TableOfReal thee, long numberOfDimensionsToKeep) {
+autoTableOfReal PCA_TableOfReal_to_TableOfReal_projectRows (PCA me, TableOfReal thee, integer numberOfDimensionsToKeep) {
 	try {
 		if (numberOfDimensionsToKeep == 0 || numberOfDimensionsToKeep > my numberOfEigenvalues) {
 			numberOfDimensionsToKeep = my numberOfEigenvalues;
 		}
 
 		autoTableOfReal him = TableOfReal_create (thy numberOfRows, numberOfDimensionsToKeep);
-		Eigen_and_TableOfReal_into_TableOfReal_projectRows (me, thee, 1, him.get(), 1, numberOfDimensionsToKeep);
+		Eigen_TableOfReal_into_TableOfReal_projectRows (me, thee, 1, him.get(), 1, numberOfDimensionsToKeep);
 		NUMstrings_copyElements (thy rowLabels, his rowLabels, 1, thy numberOfRows);
 		TableOfReal_setSequentialColumnLabels (him.get(), 0, 0, U"pc", 1, 1);
 		return him;
@@ -270,13 +269,13 @@ autoTableOfReal PCA_and_TableOfReal_to_TableOfReal_projectRows (PCA me, TableOfR
 	}
 }
 
-autoConfiguration PCA_and_TableOfReal_to_Configuration (PCA me, TableOfReal thee, long numberOfDimensionsToKeep) {
+autoConfiguration PCA_TableOfReal_to_Configuration (PCA me, TableOfReal thee, integer numberOfDimensionsToKeep) {
 	try {
 		if (numberOfDimensionsToKeep == 0 || numberOfDimensionsToKeep > my numberOfEigenvalues) {
 			numberOfDimensionsToKeep = my numberOfEigenvalues;
 		}
 		autoConfiguration him = Configuration_create (thy numberOfRows, numberOfDimensionsToKeep);
-		Eigen_and_TableOfReal_into_TableOfReal_projectRows (me, thee, 1, him.get(), 1, numberOfDimensionsToKeep);
+		Eigen_TableOfReal_into_TableOfReal_projectRows (me, thee, 1, him.get(), 1, numberOfDimensionsToKeep);
 		NUMstrings_copyElements (thy rowLabels, his rowLabels, 1, thy numberOfRows);
 		TableOfReal_setSequentialColumnLabels (him.get(), 0, 0, U"pc", 1, 1);
 		return him;
@@ -285,13 +284,11 @@ autoConfiguration PCA_and_TableOfReal_to_Configuration (PCA me, TableOfReal thee
 	}
 }
 
-autoTableOfReal PCA_and_Configuration_to_TableOfReal_reconstruct (PCA me, Configuration thee) {
+autoTableOfReal PCA_Configuration_to_TableOfReal_reconstruct (PCA me, Configuration thee) {
 	try {
-		long npc = thy numberOfColumns;
-
-		if (thy numberOfColumns > my dimension) {
-			Melder_throw (U"The dimension of the Configuration must be less than or equal to the dimension of the PCA.");
-		}
+		integer npc = thy numberOfColumns;
+		Melder_require (thy numberOfColumns <= my dimension,
+			U"The dimension of the Configuration should be less than or equal to the dimension of the PCA.");
 
 		if (npc > my numberOfEigenvalues) {
 			npc = my numberOfEigenvalues;
@@ -301,11 +298,11 @@ autoTableOfReal PCA_and_Configuration_to_TableOfReal_reconstruct (PCA me, Config
 		NUMstrings_copyElements (my labels, his columnLabels, 1, my dimension);
 		NUMstrings_copyElements (thy rowLabels, his rowLabels, 1, thy numberOfRows);
 
-		for (long i = 1; i <= thy numberOfRows; i++) {
+		for (integer i = 1; i <= thy numberOfRows; i++) {
 			double *hisdata = his data[i];
-			for (long k = 1; k <= npc; k++) {
+			for (integer k = 1; k <= npc; k++) {
 				double *evec = my eigenvectors[k], pc = thy data[i][k];
-				for (long j = 1; j <= my dimension; j++) {
+				for (integer j = 1; j <= my dimension; j++) {
 					hisdata[j] += pc * evec[j];
 				}
 			}
@@ -316,7 +313,7 @@ autoTableOfReal PCA_and_Configuration_to_TableOfReal_reconstruct (PCA me, Config
 	}
 }
 
-double PCA_and_TableOfReal_getFractionVariance (PCA me, TableOfReal thee, long from, long to) {
+double PCA_TableOfReal_getFractionVariance (PCA me, TableOfReal thee, integer from, integer to) {
 	try {
 		double fraction = undefined;
 
@@ -325,7 +322,7 @@ double PCA_and_TableOfReal_getFractionVariance (PCA me, TableOfReal thee, long f
 		}
 
 		autoSSCP s = TableOfReal_to_SSCP (thee, 0, 0, 0, 0);
-		autoSSCP sp = Eigen_and_SSCP_project (me, s.get());
+		autoSSCP sp = Eigen_SSCP_project (me, s.get());
 		fraction = SSCP_getFractionVariation (sp.get(), from, to);
 		return fraction;
 	} catch (MelderError) {
@@ -342,7 +339,7 @@ autoTableOfReal PCA_to_TableOfReal_reconstruct1 (PCA me, char32 *numstring) {
 		for (integer j = 1; j <= npc; j ++) {
 			c -> data [1] [j] = pc [j];
 		}
-		autoTableOfReal him = PCA_and_Configuration_to_TableOfReal_reconstruct (me, c.get());
+		autoTableOfReal him = PCA_Configuration_to_TableOfReal_reconstruct (me, c.get());
 		return him;
 	} catch (MelderError) {
 		Melder_throw (me, U" not reconstructed.");

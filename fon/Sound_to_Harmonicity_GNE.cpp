@@ -53,7 +53,7 @@ autoMatrix Sound_to_Harmonicity_GNE (Sound me,
 {
 	try {
 		autoSound envelope [1+100];
-		integer nenvelopes = Melder_iroundDown ((fmax - fmin) / step);
+		integer nenvelopes = Melder_ifloor ((fmax - fmin) / step);
 		for (integer ienvelope = 1; ienvelope <= 100; ienvelope ++)
 			Melder_assert (! envelope [ienvelope].get());
 
@@ -79,7 +79,7 @@ autoMatrix Sound_to_Harmonicity_GNE (Sound me,
 		 * filtering would yield weakened high frequencies.
 		 */
 		autoLPC lpc = Sound_to_LPC_auto (original10k.get(), 13, 30e-3, 10e-3, 1e9);
-		autoSound flat = LPC_and_Sound_filterInverse (lpc.get(), original10k.get());
+		autoSound flat = LPC_Sound_filterInverse (lpc.get(), original10k.get());
 		autoSpectrum flatSpectrum = Sound_to_Spectrum (flat.get(), true);
 		autoSpectrum hilbertSpectrum = Data_copy (flatSpectrum.get());
 		for (integer col = 1; col <= hilbertSpectrum -> nx; col ++) {

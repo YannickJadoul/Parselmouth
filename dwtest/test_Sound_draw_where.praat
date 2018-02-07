@@ -1,77 +1,91 @@
 # Sound_drawWhere_test.praat
 # djmw 20091031,20100912, 20110524
 
+appendInfoLine: "Sound_drawWhere_test.praat"
+
 Erase all
 
-printline Draw where... Begin tests
-# maximally steep
-printline   Top: sawtooth in blue with parts above 0.5 in red
-s = Create Sound from formula... s Mono 0 1 44100 20*((x mod 0.1) - 0.05)
-ymin = -1.1
-ymax = 1.1
-Select outer viewport... 0 6 0 3
-Red
-Draw where... 0 0.4 ymin ymax n Curve self>0.5
-Blue
-Draw where... 0 0.4 ymin ymax n Curve self<=0.5
-One mark left... 0.5 y y y
-Draw inner box
-Text top... n sawtooth in blue with parts above 0.5 in red
-Remove
+Select outer viewport: 0, 6, 0, 3
+	@sawtooth
+Select outer viewport: 0, 6, 3, 6
+	@three_samples
+Select outer viewport: 0, 6, 6, 9
+	@three_samples_stereo
+Select outer viewport: 0, 6, 9, 12
+	@randomAmplitudes
 
-# corner cases
-printline   Second figure, interpolation between sample points:  three sample points, parts above 0.5 in red
-s =Create Sound from formula... s Mono 0 0.0003 10000 0
-Select outer viewport... 0 6 3 6
-Red
-Formula... if col=2 then -1 else 1 fi
-Draw where... 0 0 ymin ymax n Curve self>0.5
-Blue
-Draw where... 0 0 ymin ymax n Curve self<=0.5
-One mark left... 0.5 y y y
+procedure sawtooth
+	appendInfoLine: "Sound_drawWhere_test.praat"
+	# maximally steep
+	appendInfoLine: tab$, "Top: sawtooth in black with parts above 0.5 in Red + blue line"
+	s = Create Sound from formula: "s", 1, 0, 1, 44100, "20*((x mod 0.1) - 0.05)"
+	ymin = -1.1
+	ymax = 1.1
+	Colour: "Red"
+	Draw where: 0, 0.4, ymin, ymax, "no", "Curve", "self>0.5"
+	Colour: "Black"
+	Draw where: 0, 0.4, ymin, ymax, "no", "Curve", "self<=0.5"
+	One mark left: 0.5, "yes", "yes", "yes", ""
+	Draw inner box
+	Text top: "no", "sawtooth in blue with parts above 0.5 in red"
+	removeObject: s
+endproc
 
-Formula... if col=2 then 1 else -1 fi
-Red
-Draw where... 0 0 ymin ymax n Curve self>0.5
-Blue
-Draw where... 0 0 ymin ymax n Curve self<=0.5
-One mark left... 0.5 y y y
+procedure three_samples
+	appendInfoLine: tab$, "Interpolation between 3 sample points: parts above 0.5 in red"
+	s = Create Sound from formula: "s", 1, 0, 0.0003, 10000, "0"
+	Colour: "Red"
+	Formula: "if col=2 then -1 else 1 fi"
+	Draw where: 0, 0, ymin, ymax, "no", "Curve", "self>0.5"
+	Colour: "Black"
+	Draw where: 0, 0, ymin, ymax, "no", "Curve", "self<=0.5"
+	One mark left: 0.5, "yes", "yes", "yes", ""
 
-# Compatibility with Draw... : only draw in red
-Formula... 0.6
-Red
-Draw where... 0 0 ymin ymax n Curve 1
-Blue
-Draw where... 0 0 ymin ymax n Curve 0
-Draw inner box
-Text top... n  (2x) three sample points, parts above 0.5 in red + red line
-Remove
+	Formula: "if col=2 then 1 else -1 fi"
+	Colour: "Red"
+	Draw where: 0, 0, ymin, ymax, "no", "Curve", "self>0.5"
+	Colour: "Black"
+	Draw where: 0, 0, ymin, ymax, "no", "Curve", "self<=0.5"
+	One mark left: 0.5, "yes", "yes", "yes", ""
+	Draw inner box
+	Text top: "no", "Interpolation between 3 sample points: parts above 0.5 in red"
+	removeObject: s
+endproc
 
+procedure three_samples_stereo
+	appendInfoLine: tab$, "Stereo, interpolation between sample points:  three sample points, parts above 0.5 in Red"
+	s = Create Sound from formula: "s", 2, 0, 0.0003, 10000, "0"
+	Formula: "if row = 1 then if col=2 then -1 else 1 fi else self fi"
+	Formula: "if row = 2 then if col=2 then 1 else -1 fi else self fi"
+	Colour: "Red"
+	Draw where: 0, 0, ymin, ymax, "no", "Curve", "self>0.5"
+	Colour: "Black"
+	Draw where: 0, 0, ymin, ymax, "yes", "Curve", "self<=0.5"
+	Formula: "0.6"
+	Colour: "Red"
+	Draw where: 0, 0, ymin, ymax, "no", "Curve", "1"
+	Colour: "Black"
+	Draw where: 0, 0, ymin, ymax, "no", "Curve", "0"
+	Text top: "no", "Parts above 0.5 in red. One line at 0.6"
+	removeObject: s
+endproc
 
-# random, selection on amplitudes
-printline   Random amplitudes: parts > 0.5 in red
-Select outer viewport... 0 6 6 9
-s = Create Sound from formula... s Mono 0 0.01 10000 randomUniform(-1,1)
-Red
-Draw where... 0 0 ymin ymax n Curve self>0.5
-Blue
-Draw where... 0 0 ymin ymax n Curve self<=0.5
-One mark left... 0.5 y y y
-Draw inner box
-Text top... n Random amplitudes: parts > 0.5 in red
+procedure randomAmplitudes
+	s = Create Sound from formula: "s", 1, 0, 0.01, 10000, "randomUniform (-1, 1)"
+	appendInfoLine: tab$, "Random amplitudes: parts > 0.5 in red only in the first half of every 0.001 s"
+	Select outer viewport: 0, 6, 9, 12
+	Colour: "Red"
+	Draw where: 0.001, 0.01, ymin, ymax, "no", "Curve", "(self>0.5 and x mod 0.001 < 0.0005)"
+	Colour: "Black"
+	Draw where: 0.001, 0.01, ymin, ymax, "no", "Curve", "not (self>0.5 and x mod 0.001 < 0.0005)"
+	One mark left: 0.5, "yes", "yes", "yes", ""
+	Marks bottom every: 1, 0.0005, "no", "yes", "yes"
+	Marks bottom every: 1, 0.001, "yes", "yes", "yes"
+	Draw inner box
+	Text top: "no", "Random amplitudes: parts > 0.5 red in the first half of every 0.001 s"
+	Colour: "Black"
+	removeObject: s
+endproc
 
-# complementary selections in amplitude and time domain
-printline   Random amplitudes: parts > 0.5 in red only in the first half of every 0.001 s
-Select outer viewport... 0 6 9 12
-Red
-Draw where... 0.001 0.01 ymin ymax n Curve (self>0.5 and x mod 0.001 < 0.0005)
-Blue
-Draw where... 0.001 0.01 ymin ymax n Curve not (self>0.5 and x mod 0.001 < 0.0005)
-One mark left... 0.5 y y y
-Marks bottom every... 1 0.0005 n y y
-Marks bottom every... 1 0.001 y y y
-Draw inner box
-Text top... n Random amplitudes: parts > 0.5 red in the first half of every 0.001 s
-Remove
-printline Draw where... End tests
+appendInfoLine: "Sound_drawWhere_test.praat End"
 

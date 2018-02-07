@@ -2,7 +2,7 @@
 #define _CCA_h_
 /* CCA.h
  *
- * Copyright (C) 1993-2011, 2015-2016 David Weenink
+ * Copyright (C) 1993-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,14 +48,14 @@
 	uncorrelated with c1[1] and c2[1], and so on, for all p possible pairs.
 */
 
-autoCCA CCA_create (long numberOfCoefficients, long ny, long nx);
+autoCCA CCA_create (integer numberOfCoefficients, integer ny, integer nx);
 
-void CCA_drawEigenvector (CCA me, Graphics g, int x_or_y, long ivec, long first, long last,
+void CCA_drawEigenvector (CCA me, Graphics g, int x_or_y, integer ivec, integer first, integer last,
 	double ymin, double ymax, int weigh, double size_mm, const char32 *mark, int connect, int garnish);
 
-double CCA_getEigenvectorElement (CCA me, int x_or_y, long ivec, long element);
+double CCA_getEigenvectorElement (CCA me, int x_or_y, integer ivec, integer element);
 
-autoCCA TableOfReal_to_CCA (TableOfReal me, long ny);
+autoCCA TableOfReal_to_CCA (TableOfReal me, integer ny);
 /*
 	Solves the canonical correlation analysis equations:
 
@@ -98,7 +98,7 @@ autoCCA TableOfReal_to_CCA (TableOfReal me, long ny);
 	X2 = V2*inv(D2)*U
 */
 
-autoTableOfReal CCA_and_TableOfReal_scores (CCA me, TableOfReal thee, long numberOfFactors);
+autoTableOfReal CCA_TableOfReal_scores (CCA me, TableOfReal thee, integer numberOfFactors);
 /*
 	Return the factors in a table with 2*numberOfFactors columns.
 	The first 'numberOfFactors' columns are the scores for the dependent part
@@ -106,17 +106,17 @@ autoTableOfReal CCA_and_TableOfReal_scores (CCA me, TableOfReal thee, long numbe
 	independent part.
 */
 
-autoTableOfReal CCA_and_TableOfReal_factorLoadings (CCA me, TableOfReal thee);
+autoTableOfReal CCA_TableOfReal_factorLoadings (CCA me, TableOfReal thee);
 /*
 	Get the canonical factor loadings (also structure correlation coefficients),
 	the correlation of a canonical variable with an original variable.
 */
 
-double CCA_getCorrelationCoefficient (CCA me, long index);
+double CCA_getCorrelationCoefficient (CCA me, integer index);
 
-void CCA_getZeroCorrelationProbability (CCA me, long index, double *prob, double *chisq, double *df);
+void CCA_getZeroCorrelationProbability (CCA me, integer index, double *prob, double *chisq, double *df);
 
-autoTableOfReal CCA_and_TableOfReal_predict (CCA me, TableOfReal thee, long from);
+autoTableOfReal CCA_TableOfReal_predict (CCA me, TableOfReal thee, integer from);
 /*
 	Given independent table, predict the dependent one, on the basis of
 	the canonical correlations.

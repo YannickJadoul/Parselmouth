@@ -32,7 +32,7 @@
 
 int NUMstring_containsPrintableCharacter (const char32 *s);
 
-void NUMstring_chopWhiteSpaceAtExtremes_inline (char32 *string);
+void NUMstring_chopWhiteSpaceAtExtremes_inplace (char32 *string);
 
 real * NUMstring_to_numbers (const char32 *s, integer *numbers_found);
 /* return array with the number of numbers found */
@@ -75,7 +75,7 @@ char32 *strstr_regexp (const char32 *string, const char32 *search_regexp);
 
 char32 **strs_replace (char32 **from, integer lo, integer hi, const char32 *search,
 	const char32 *replace, int maximumNumberOfReplaces, integer *nmatches,
-	integer *nstringmatches, int use_regexp);
+	integer *nstringmatches, bool use_regexp);
 /*
 	Searches and replaces in string array of strings.
 	If use_regexp != 0, 'search' and 'replace' will be interpreted
@@ -104,7 +104,7 @@ char32 *str_replace_regexp (const char32 *string, regexp *search_compiled,
 	If maximumNumberOfReplaces <= 0 the interpreted 'replaceRE' replaces
 	ALL occurrences.
 	'search_regexp' is an efficient representation of the search RE and
-	is the result of the compileRE-function which must be called first before
+	is the result of the compileRE-function which should be called first before
 	calling this routine.
 	The number of matches found is returned in 'nmatches'.
 */
@@ -138,7 +138,7 @@ double **NUMdmatrix_transpose (double **m, integer nr, integer nc);
  * Function:
  *	 compute minimum and maximum values of array v[lo..hi].
  * Precondition:
- *	 lo and hi must be valid indices in the array.
+ *	 lo and hi should be valid indices in the array.
 */
 template <class T>
 void NUMvector_extrema (T *v, integer lo, integer hi, double *p_min, double *p_max) {
@@ -627,7 +627,6 @@ void NUMsolveEquation (double **a, integer nr, integer nc, double *b, double tol
 	a & b are destroyed during the computation.
 	Algorithm: s.v.d.
 */
-void NUMsolveEquation2 (double **a, long nr, long nc, double *b, double fractionOfSumOfEigenvalues, double *result);
 
 void NUMsolveEquations (double **a, integer nr, integer nc, double **b, integer ncb, double tol, double **x);
 /*
@@ -1015,7 +1014,13 @@ double NUMcubicSplineInterpolation (double xa[], double ya[], double y2a[], inte
 	array y2a[1..n] which is the output of NUMcubicSplineInterpolation_getSecondDerivatives above, and given
 	a value of x, this routine returns an interpolated value y.
 */
+void NUMbiharmonic2DSplineInterpolation_getWeights (double *x, double *y, double *z, integer numberOfPoints, double *weights);
+/*
+	Input: x[1..numberOfPoints], y[1..numberOfPoints], (xp,yp)
+	Output: interpolated result
+*/
 
+double NUMbiharmonic2DSplineInterpolation (double *x, double *y, integer numberOfPoints, double *weights, double xp, double yp);
 /* Biharmonic spline interpolation based on Green's function.
 	. Given z[i] values at points (x[i],y[i]) for i=1..n, 
 	Get value at new point (px,py).
@@ -1030,13 +1035,6 @@ double NUMcubicSplineInterpolation (double xa[], double ya[], double y2a[], inte
 	D. Sandwell (1987), Biharmonic spline interpolation of GEOS-3 and SEASAT altimetr data, Geophysical Research Letters 14, 139--142
 	X. Deng & Z. Tang (2011), Moving surface spline interpolation based on Green's function, Math. Geosci 43: 663--680
 */
-void NUMbiharmonic2DSplineInterpolation_getWeights (double *x, double *y, double *z, integer numberOfPoints, double *weights);
-
-/*
-	Input: x[1..numberOfPoints], y[1..numberOfPoints], (xp,yp)
-	Output: interpolated result
-*/
-double NUMbiharmonic2DSplineInterpolation (double *x, double *y, integer numberOfPoints, double *weights, double xp, double yp);
 
 
 double NUMsincpi (const double x);
@@ -1195,7 +1193,7 @@ void NUMfft_backward (NUMfft_Table table, double *data);
 /*
 	Function:
 		Calculates the inverse transform of a complex array if it is the transform of real data.
-		(Result in this case must be multiplied by 1/n.)
+		(Result in this case should be multiplied by 1/n.)
 	Preconditions:
 		n is an integer power of 2.
 		data != NULL;
@@ -1247,7 +1245,7 @@ void NUMreverseRealFastFourierTransform (double  *data, integer n);
 /*
 	Function:
 		Calculates the inverse transform of a complex array if it is the transform of real data.
-		(Result in this case must be multiplied by 1/n.)
+		(Result in this case should be multiplied by 1/n.)
 	Preconditions:
 		n is an integer power of 2.
 		data != NULL;
@@ -1270,7 +1268,7 @@ void NUMlineFit (double *x, double *y, integer numberOfPoints, double *m, double
 void NUMlineFit_theil (double *x, double *y, integer numberOfPoints, double *m, double *intercept, bool incompleteMethod);
 /*
  * Preconditions:
- *		all x[i] must be different, i.e. x[i] != x[j] for all i = 1..(numberOfPoints - 1), j = (i+1) ..numberOfPoints
+ *		all x[i] should be different, i.e. x[i] != x[j] for all i = 1..(numberOfPoints - 1), j = (i+1) ..numberOfPoints
  * Algorithm:
  * Theils robust line fit method:
  * 1. Use all combination of pairs (x[i],y[i]), (x[j],y[j]) to calculate an intercept m[k] as

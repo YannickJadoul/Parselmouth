@@ -1,6 +1,6 @@
 /* praat_DataModeler_init.cpp
  *
- * Copyright (C) 2014,2016 David Weenink
+ * Copyright (C) 2014-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ FORM (GRAPHICS_DataModeler_speckle, U"DataModeler: Speckle", nullptr) {
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
-	long order = 6;
+	integer order = 6;
 	GRAPHICS_EACH (DataModeler)
 		DataModeler_speckle (me, GRAPHICS, xmin, xmax,ymin, ymax, 0, order + 1, errorBars, barWidth_mm, xOffset_mm, garnish);
 	GRAPHICS_EACH_END
@@ -83,13 +83,13 @@ DO
 
 DIRECT (INTEGER_DataModeler_getNumberOfParameters) {
 	INTEGER_ONE (DataModeler)
-		long result = my numberOfParameters;
+		integer result = my numberOfParameters;
 	INTEGER_ONE_END (U" (= number of parameters)")
 }
 
 DIRECT (INTEGER_DataModeler_getNumberOfFixedParameters) {
 	INTEGER_ONE (DataModeler)
-		long result = DataModeler_getNumberOfFixedParameters (me);
+		integer result = DataModeler_getNumberOfFixedParameters (me);
 	INTEGER_ONE_END (U"(= number of parameters)")
 }
 
@@ -127,7 +127,7 @@ FORM (REAL_DataModeler_getVarianceOfParameters, U"DataModeler: Get variance of p
 	INTEGER (toParameter, U"right Parameter range", U"0")
 	OK
 DO
-	long nofp;
+	integer nofp;
 	NUMBER_ONE (DataModeler)
 		double result = DataModeler_getVarianceOfParameters (me, fromParameter, toParameter, &nofp);
 	NUMBER_ONE_END (U" (for ", nofp, U" free parameters)")
@@ -135,13 +135,13 @@ DO
 
 DIRECT (INTEGER_DataModeler_getNumberOfDataPoints) {
 	INTEGER_ONE (DataModeler)
-		long result = my numberOfDataPoints;
+		integer result = my numberOfDataPoints;
 	INTEGER_ONE_END (U" (= number of data points)")
 }
 
 DIRECT (INTEGER_DataModeler_getNumberOfInvalidDataPoints) {
 	INTEGER_ONE (DataModeler)
-		long result = DataModeler_getNumberOfInvalidDataPoints (me);
+		integer result = DataModeler_getNumberOfInvalidDataPoints (me);
 	INTEGER_ONE_END (U" (= number of invalid data points)")
 }
 
@@ -158,12 +158,12 @@ DO
 
 DIRECT (REAL_DataModeler_getResidualSumOfSquares) {
 	NUMBER_ONE (DataModeler)
-		long n;
+		integer n;
 		double result = DataModeler_getResidualSumOfSquares (me, &n);
 	NUMBER_ONE_END (U"  (for ", n, U" datapoints)")
 }
 
-DIRECT (REAL_DataModeler_getStandardDeviation) {
+DIRECT (REAL_DataModeler_getDataStandardDeviation) {
 	NUMBER_ONE (DataModeler)
 		double result = DataModeler_estimateSigmaY (me);
 	NUMBER_ONE_END (U"")
@@ -365,7 +365,7 @@ DO
 }
 
 FORM (NEW_Formant_to_FormantModeler, U"Formant: To FormantModeler", nullptr) {
-//double tmin, double tmax, long numberOfFormants, long numberOfParametersPerTrack
+//double tmin, double tmax, integer numberOfFormants, integer numberOfParametersPerTrack
 	REAL (fromTime, U"left Start time", U"0.0")
 	REAL (toTime, U"right End time", U"0.1")
 	NATURAL (numberOfFormants, U"Number of formants", U"3")
@@ -404,9 +404,9 @@ DO
 		iam (Formant);
 		formants. addItem_ref (me);
 	}
-	long index = Formants_getSmoothestInInterval (& formants, fromTime, toTime, numberOfFormantTracks, order + 1, weighDataType, 0, numberOfSigmas, power, 1.0, 1.0, 1.0, 1.0, 1.0);
+	integer index = Formants_getSmoothestInInterval (& formants, fromTime, toTime, numberOfFormantTracks, order + 1, weighDataType, 0, numberOfSigmas, power, 1.0, 1.0, 1.0, 1.0, 1.0);
 	// next code is necessary to get the Formant at postion index selected and to get its name
-	long iselected = 0;
+	integer iselected = 0;
 	Formant him = nullptr;
 	LOOP {
 		iselected ++;
@@ -446,9 +446,9 @@ DO
 		iam (Formant);
 		formants. addItem_ref (me);
 	}
-	long index = Formants_getSmoothestInInterval (& formants, fromTime, toTime, numberOfFormantTracks, order + 1, weighDataType, 1, numberOfSigmas, power, minimumF1, maximumF1, minimumF2, maximumF2, minimumF3);
+	integer index = Formants_getSmoothestInInterval (& formants, fromTime, toTime, numberOfFormantTracks, order + 1, weighDataType, 1, numberOfSigmas, power, minimumF1, maximumF1, minimumF2, maximumF2, minimumF3);
 	// next code is necessary to get the Formant at postion index selected and to get its name
-	long iselected = 0;
+	integer iselected = 0;
 	Formant him = nullptr;
 	LOOP {
 		iselected ++;
@@ -490,7 +490,7 @@ FORM (GRAPHICS_FormantModeler_drawTracks, U"FormantModeler: Draw tracks", nullpt
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
-	long order = 6;
+	integer order = 6;
 	GRAPHICS_EACH (FormantModeler)
 		FormantModeler_drawTracks (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, 0, order + 1, xOffset_mm, garnish);
 	GRAPHICS_EACH_END
@@ -508,7 +508,7 @@ FORM (GRAPHICS_FormantModeler_speckle, U"FormantModeler: Speckle", nullptr) {
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
-	long order = 6;
+	integer order = 6;
 	GRAPHICS_EACH (FormantModeler)
 		FormantModeler_speckle (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, 0, order + 1, errorBars, barWidth_mm, xOffset_mm, garnish);
 	GRAPHICS_EACH_END
@@ -556,7 +556,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FormantModeler_drawCumulativeChiScores, U"FormantModeler: Draw cumulative chi scores", nullptr) {
+FORM (GRAPHICS_FormantModeler_drawCumulativeChisqScores, U"FormantModeler: Draw cumulative chi scores", nullptr) {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.0")
 	REAL (fromChisq, U"left Chisq range", U"0.0")
@@ -599,7 +599,7 @@ FORM (GRAPHICS_FormantModeler_drawBasisFunction, U"FormantModeler: Draw basis fu
 	REAL (toTime, U"right Time range (s)", U"0.0")
 	REAL (ymin, U"left Amplitude range (Hz)", U"0.0")
 	REAL (ymax, U"right Amplitude range (Hz)", U"5500.0")
-	//long iterm, bool scaled, long numberOfPoints, int garnish
+	//integer iterm, bool scaled, integer numberOfPoints, int garnish
 	NATURAL (formantNumber, U"Formant number", U"1")
 	NATURAL (basisFunctionIndex, U"Basis function", U"2")
 	BOOLEAN (scale, U"Scale function with parameter value", false)
@@ -657,7 +657,7 @@ DO
 
 DIRECT (INTEGER_FormantModeler_getNumberOfTracks) {
 	INTEGER_ONE (FormantModeler)
-		long result = FormantModeler_getNumberOfTracks (me);
+		integer result = FormantModeler_getNumberOfTracks (me);
 	INTEGER_ONE_END (U" (= number of formants)")
 }
 
@@ -667,7 +667,7 @@ FORM (INTEGER_FormantModeler_getNumberOfParameters, U"FormantModeler: Get number
 	OK
 DO
 	INTEGER_ONE (FormantModeler)
-		long result = FormantModeler_getNumberOfParameters (me, formantNumber);
+		integer result = FormantModeler_getNumberOfParameters (me, formantNumber);
 	INTEGER_ONE_END (U" (= number of parameters for F", formantNumber, U")")
 }
 
@@ -677,13 +677,13 @@ FORM (INTEGER_FormantModeler_getNumberOfFixedParameters, U"FormantModeler: Get n
 	OK
 DO
 	INTEGER_ONE (FormantModeler)
-		long result = FormantModeler_getNumberOfFixedParameters (me, formantNumber);
+		integer result = FormantModeler_getNumberOfFixedParameters (me, formantNumber);
 	INTEGER_ONE_END (U" (= number of fixed parameters for F", formantNumber, U")")
 }
 
 DIRECT (INTEGER_FormantModeler_getNumberOfDataPoints) {
 	INTEGER_ONE (FormantModeler)
-		long result = FormantModeler_getNumberOfDataPoints (me);
+		integer result = FormantModeler_getNumberOfDataPoints (me);
 	INTEGER_ONE_END (U"")
 }
 
@@ -692,7 +692,7 @@ FORM (INTEGER_FormantModeler_getNumberOfInvalidDataPoints, U"FormantModeler: Get
 	OK
 DO
 	INTEGER_ONE (FormantModeler)
-		long result = FormantModeler_getNumberOfInvalidDataPoints (me, formantNumber);
+		integer result = FormantModeler_getNumberOfInvalidDataPoints (me, formantNumber);
 	INTEGER_ONE_END (U" (= number of invalid data points for F", formantNumber, U")")
 }
 
@@ -736,7 +736,7 @@ FORM (REAL_FormantModeler_getVarianceOfParameters, U"FormantModeler: Get varianc
 	INTEGER (toParameter, U"right Parameter range", U"0")
 	OK
 DO
-	long numberOfFreeParameters;
+	integer numberOfFreeParameters;
 	NUMBER_ONE (FormantModeler)
 		double result = FormantModeler_getVarianceOfParameters (me, fromFormant, toFormant, fromParameter, toParameter, & numberOfFreeParameters);
 	NUMBER_ONE_END (U" (for ", numberOfFreeParameters, U" free parameters.)")
@@ -763,7 +763,7 @@ DO
 	NUMBER_ONE_END (U" Hz^2,  (= residual sum of squares of F", formantNumber, U")")
 }
 
-FORM (REAL_FormantModeler_getStandardDeviation, U"FormantModeler: Get formant standard deviation", nullptr) {
+FORM (REAL_FormantModeler_getFormantStandardDeviation, U"FormantModeler: Get formant standard deviation", nullptr) {
 	NATURAL (formantNumber, U"Formant number", U"1")
 	OK
 DO
@@ -962,7 +962,7 @@ DO
 	CONVERT_EACH_END (my name, U"_z")
 }
 
-FORM (NEW_FormantModeler_processOutliers, U"", nullptr) {
+FORM (NEW_FormantModeler_to_FormantModeler_processOutliers, U"", nullptr) {
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"3.0")
 	BOOLEAN (useBandwidth, U"Bandwidths as standard deviation", true)
 	OK
@@ -1166,9 +1166,9 @@ FORM (NEW_Table_to_DataModeler, U"", nullptr) {
 	OK
 DO
 	CONVERT_EACH (Table)
-		long xcolumn = Table_getColumnIndexFromColumnLabel (me, columnWithX_string);
-		long ycolumn = Table_getColumnIndexFromColumnLabel (me, columnWithY_string);
-		long scolumn = Table_findColumnIndexFromColumnLabel (me, columnEithSigma_string);
+		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, columnWithX_string);
+		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, columnWithY_string);
+		integer scolumn = Table_findColumnIndexFromColumnLabel (me, columnEithSigma_string);
 		autoDataModeler result = Table_to_DataModeler (me, xmin, xmax, xcolumn, ycolumn, scolumn, maximumOrder + 1, functionType);
 	CONVERT_EACH_END (my name)
 }
@@ -1200,12 +1200,12 @@ void praat_DataModeler_init () {
 		praat_addAction1 (classDataModeler, 1, U"-- get statistics info --", 0, 1, 0);
 		
 		praat_addAction1 (classDataModeler, 0, U"Get residual sum of squares", 0, 1, REAL_DataModeler_getResidualSumOfSquares);
-		praat_addAction1 (classDataModeler, 0, U"Get data standard deviation", 0, 1, REAL_DataModeler_getStandardDeviation);
+		praat_addAction1 (classDataModeler, 0, U"Get data standard deviation", 0, 1, REAL_DataModeler_getDataStandardDeviation);
 		praat_addAction1 (classDataModeler, 0, U"Get coefficient of determination", 0, 1, REAL_DataModeler_getCoefficientOfDetermination);
 		praat_addAction1 (classDataModeler, 0, U"Report chi squared...", 0, 1, INFO_DataModeler_reportChiSquared);
 		praat_addAction1 (classDataModeler, 0, U"Get degrees of freedom", 0, 1, REAL_DataModeler_getDegreesOfFreedom);
 
-	praat_addAction1 (classDataModeler, 1, U"Modify -", 0, 0, 0);
+		praat_addAction1 (classDataModeler, 1, U"Modify -", 0, 0, 0);
 		praat_addAction1 (classDataModeler, 0, U"Set data weighing...", 0, 1, MODIFY_DataModeler_setDataWeighing);
 		praat_addAction1 (classDataModeler, 0, U"Set tolerance...", 0, 1, MODIFY_DataModeler_setTolerance);
 		praat_addAction1 (classDataModeler, 1, U"-- set parameter values --", 0, 1, 0);
@@ -1233,7 +1233,7 @@ void praat_DataModeler_init () {
 	praat_addAction1 (classFormantModeler, 0, U"Draw estimated tracks...", 0, 1, GRAPHICS_FormantModeler_drawEstimatedTracks);
 	praat_addAction1 (classFormantModeler, 0, U"Draw variances of shifted tracks...", 0, 1, GRAPHICS_FormantModeler_drawVariancesOfShiftedTracks);
 	praat_addAction1 (classFormantModeler, 0, U"Draw outliers marked...", 0, 1, GRAPHICS_FormantModeler_drawOutliersMarked);
-	praat_addAction1 (classFormantModeler, 0, U"Draw cumulative chisq scores...", 0, 1, GRAPHICS_FormantModeler_drawCumulativeChiScores);
+	praat_addAction1 (classFormantModeler, 0, U"Draw cumulative chisq scores...", 0, 1, GRAPHICS_FormantModeler_drawCumulativeChisqScores);
 	praat_addAction1 (classFormantModeler, 0, U"Normal probability plot...", 0, 1, GRAPHICS_FormantModeler_normalProbabilityPlot);
 	praat_addAction1 (classFormantModeler, 0, U"Draw basis function...", 0, 1, GRAPHICS_FormantModeler_drawBasisFunction);
 	
@@ -1256,7 +1256,7 @@ void praat_DataModeler_init () {
 
 		praat_addAction1 (classFormantModeler, 1, U"-- get statistics info --", 0, 1, 0);
 		praat_addAction1 (classFormantModeler, 0, U"Get residual sum of squares...", 0, 1, REAL_FormantModeler_getResidualSumOfSquares);
-		praat_addAction1 (classFormantModeler, 0, U"Get formant standard deviation...", 0, 1, REAL_FormantModeler_getStandardDeviation);
+		praat_addAction1 (classFormantModeler, 0, U"Get formant standard deviation...", 0, 1, REAL_FormantModeler_getFormantStandardDeviation);
 		praat_addAction1 (classFormantModeler, 0, U"Get coefficient of determination...", 0, 1, REAL_FormantModeler_getCoefficientOfDetermination);
 		praat_addAction1 (classFormantModeler, 0, U"Report chi squared...", 0, 1, INFO_FormantModeler_reportChiSquared);
 		praat_addAction1 (classFormantModeler, 0, U"Get degrees of freedom...", 0, 1, REAL_FormantModeler_getDegreesOfFreedom);
@@ -1281,7 +1281,7 @@ void praat_DataModeler_init () {
 	
 	praat_addAction1 (classFormantModeler, 0, U"To Covariance (parameters)...", 0, 0, NEW_FormantModeler_to_Covariance_parameters);
 	praat_addAction1 (classFormantModeler, 0, U"To Table (z-scores)...", 0, 0, NEW_FormantModeler_to_Table_zscores);
-	praat_addAction1 (classFormantModeler, 0, U"To FormantModeler (process outliers)...", 0, 0, NEW_FormantModeler_processOutliers);
+	praat_addAction1 (classFormantModeler, 0, U"To FormantModeler (process outliers)...", 0, 0, NEW_FormantModeler_to_FormantModeler_processOutliers);
 	praat_addAction1 (classFormantModeler, 0, U"Extract DataModeler...", 0, 0, NEW_FormantModeler_extractDataModeler);
 
 	praat_addAction1 (classOptimalCeilingTier, 1, U"View & Edit", 0, praat_ATTRACTIVE | praat_NO_API, WINDOW_OptimalCeilingTier_edit);

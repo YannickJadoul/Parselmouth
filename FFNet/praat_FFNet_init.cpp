@@ -39,7 +39,6 @@
 #include "FFNet_ActivationList_Categories.h"
 #include "FFNet_PatternList_ActivationList.h"
 #include "FFNet_PatternList_Categories.h"
-#include "RBM_extensions.h"
 
 #include "praat_FFNet.h"
 
@@ -169,13 +168,13 @@ DO
 
 DIRECT (INTEGER_FFNet_getNumberOfLayers) {
 	INTEGER_ONE (FFNet)
-		long result = my nLayers;
+		integer result = my nLayers;
 	INTEGER_ONE_END (U" layer", (my nLayers > 1 ? U"s" : U""))
 }
 
 DIRECT (INTEGER_FFNet_getNumberOfOutputs) {
 	INTEGER_ONE (FFNet)
-		long result = my nUnitsInLayer[my nLayers];
+		integer result = my nUnitsInLayer[my nLayers];
 	INTEGER_ONE_END (U" units")
 }
 
@@ -185,13 +184,13 @@ FORM (INTEGER_FFNet_getNumberOfHiddenUnits, U"FFNet: Get number of hidden units"
 	OK
 DO
 	INTEGER_ONE (FFNet)
-		long result = layer > 0 && layer <= my nLayers - 1 ? my nUnitsInLayer[layer] : 0;
+		integer result = layer > 0 && layer <= my nLayers - 1 ? my nUnitsInLayer[layer] : 0;
 	INTEGER_ONE_END (U" units")
 }
 
 DIRECT (INTEGER_FFNet_getNumberOfInputs) {
 	INTEGER_ONE (FFNet)
-		long result = my nUnitsInLayer[0];
+		integer result = my nUnitsInLayer[0];
 	INTEGER_ONE_END (U" units")
 }
 
@@ -200,13 +199,13 @@ FORM (INTEGER_FFNet_getNumberOfHiddenWeights, U"FFNet: Get number of hidden weig
 	OK
 DO
 	INTEGER_ONE (FFNet)
-		long result = (layer > 0 && layer <= my nLayers - 1) ? (my nUnitsInLayer[layer] * (my nUnitsInLayer[layer - 1] + 1)) : 0;
+		integer result = (layer > 0 && layer <= my nLayers - 1) ? (my nUnitsInLayer[layer] * (my nUnitsInLayer[layer - 1] + 1)) : 0;
 	INTEGER_ONE_END (U" weights (including biases)")
 }
 	
 DIRECT (INTEGER_FFNet_getNumberOfOutputWeights) {
 	INTEGER_ONE (FFNet)
-		long result = my nUnitsInLayer[my nLayers] * (my nUnitsInLayer[my nLayers - 1] + 1);
+		integer result = my nUnitsInLayer[my nLayers] * (my nUnitsInLayer[my nLayers - 1] + 1);
 	INTEGER_ONE_END (U" weights");
 }
 
@@ -224,7 +223,7 @@ FORM (INTEGER_FFNet_getOutputUnitOfCategory, U"FFNet: Get output unit of categor
 	OK
 DO
 	INTEGER_ONE (FFNet)
-		long result = FFNet_getOutputUnitOfCategory (me, category);
+		integer result = FFNet_getOutputUnitOfCategory (me, category);
 	INTEGER_ONE_END (U" (output unit)")
 }
 
@@ -327,12 +326,12 @@ DO
 	CONVERT_EACH_END (my name)
 }
 
-DIRECT (HINT_hint_FFNet_and_PatternList_classify) {
+DIRECT (HINT_hint_FFNet_PatternList_classify) {
 	Melder_information (U"You can use the FFNet as a classifier by selecting a\n"
 	"FFNet and a PatternList together and choosing \"To Categories...\".");
 END }
 	
-DIRECT (HINT_hint_FFNet_and_PatternList_and_Categories_learn) {
+DIRECT (HINT_hint_FFNet_PatternList_Categories_learn) {
 	Melder_information (U"You can teach a FFNet to classify by selecting a\n"
 	"FFNet, a PatternList and a Categories together and choosing \"Learn...\".");
 END }
@@ -555,14 +554,6 @@ DO
 	CONVERT_TWO_END (result -> name)
 }
 
-/*********** RBM & PatternList **********************************/
-
-DIRECT (NEW1_RBM_PatternList_to_ActivationList) {
-	CONVERT_TWO (RBM, PatternList)
-		autoActivationList result = RBM_PatternList_to_ActivationList (me, you);
-	CONVERT_TWO_END (my name, U"_", you -> name)
-}
-
 void praat_uvafon_FFNet_init () {
 	Thing_recognizeClassesByName (classFFNet, nullptr);
 
@@ -604,8 +595,8 @@ void praat_uvafon_FFNet_init () {
 	praat_addAction1 (classFFNet, 0, EXTRACT_BUTTON, nullptr, 0, nullptr);
 	praat_addAction1 (classFFNet, 0, U"Extract weights...", nullptr, 1, NEW_FFNet_extractWeights);
 	praat_addAction1 (classFFNet, 0, U"Weights to Matrix...", nullptr, praat_DEPTH_1 | praat_HIDDEN, NEW_FFNet_weightsToMatrix);
-	praat_addAction1 (classFFNet, 0, U"& PatternList: Classify?", nullptr, 0, HINT_hint_FFNet_and_PatternList_classify);
-	praat_addAction1 (classFFNet, 0, U"& PatternList & Categories: Learn?", nullptr, 0, HINT_hint_FFNet_and_PatternList_and_Categories_learn);
+	praat_addAction1 (classFFNet, 0, U"& PatternList: Classify?", nullptr, 0, HINT_hint_FFNet_PatternList_classify);
+	praat_addAction1 (classFFNet, 0, U"& PatternList & Categories: Learn?", nullptr, 0, HINT_hint_FFNet_PatternList_Categories_learn);
 
 	praat_addAction2 (classFFNet, 1, classActivationList, 1, U"Analyse", nullptr, 0, nullptr);
 	praat_addAction2 (classFFNet, 1, classActivationList, 1, U"To Categories...", nullptr, 0, NEW1_FFNet_ActivationList_to_Categories);
@@ -641,8 +632,6 @@ void praat_uvafon_FFNet_init () {
 	
 	praat_addAction2 (classPatternList, 1, classCategories, 1, U"To FFNet...", nullptr, 0, NEW1_PatternList_Categories_to_FFNet);
 	
-	praat_addAction2 (classRBM, 1, classPatternList, 1, U"To ActivationList", nullptr, 0, NEW1_RBM_PatternList_to_ActivationList);
-		
 	INCLUDE_MANPAGES (manual_FFNet_init)
 }
 

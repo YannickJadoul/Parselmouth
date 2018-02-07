@@ -18,7 +18,7 @@
 
 /*
  djmw 20020812 GPL header
- djmw 20040420 Fraction in OrderedOfString_difference must be double.
+ djmw 20040420 Fraction in OrderedOfString_difference should be double.
  djmw 20050511 Skip printing unique labels in OrderedOfString
  djmw 20061214
  djmw 20061214 Changed info to Melder_writeLine<x> format.
@@ -29,23 +29,23 @@
 #include "Simple_extensions.h"
 #include "NUM2.h"
 
-autoCollection Collection_and_Permutation_permuteItems (Collection me, Permutation him) {
+autoCollection Collection_Permutation_permuteItems (Collection me, Permutation him) {
 	try {
 		if (my size != his numberOfElements) {
 			Melder_throw (me, U"The number of elements are not equal.");
 		}
-		autoNUMvector<long> pos (1, my size);
+		autoNUMvector<integer> pos (1, my size);
 		autoCollection thee = Data_copy (me);
 
-		for (long i = 1; i <= my size; i ++) {
+		for (integer i = 1; i <= my size; i ++) {
 			pos [i] = i;
 		}
 		/* Dual meaning of array pos: */
 		/* k <  i : position of item 'k' */
 		/* k >= i : the item at position 'k' */
-		for (long i = 1; i <= my size; i++) {
-			long ti = pos [i], which = Permutation_getValueAtIndex (him, i);
-			long where = pos [which];   // where >= i
+		for (integer i = 1; i <= my size; i++) {
+			integer ti = pos [i], which = Permutation_getValueAtIndex (him, i);
+			integer where = pos [which];   // where >= i
 			Daata tmp = static_cast<Daata> (thy at [i]);
 			if (i == where) {
 				continue;
@@ -66,8 +66,8 @@ autoCollection Collection_and_Permutation_permuteItems (Collection me, Permutati
 autoCollection Collection_permuteItems (Collection me) {
 	try {
 		autoPermutation p = Permutation_create (my size);
-		Permutation_permuteRandomly_inline (p.get(), 0, 0);
-		autoCollection thee = Collection_and_Permutation_permuteItems (me, p.get());
+		Permutation_permuteRandomly_inplace (p.get(), 0, 0);
+		autoCollection thee = Collection_Permutation_permuteItems (me, p.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": items not permuted.");
@@ -101,11 +101,11 @@ int OrderedOfString_append (OrderedOfString me, const char32 *append) {
 autoOrderedOfString OrderedOfString_joinItems (OrderedOfString me, OrderedOfString thee) {
 	try {
 		if (my size != thy size) {
-			Melder_throw (U"sizes must be equal.");
+			Melder_throw (U"sizes should be equal.");
 		}
 		autoOrderedOfString him = Data_copy (me);
 
-		for (long i = 1; i <= my size; i ++) {
+		for (integer i = 1; i <= my size; i ++) {
 			SimpleString_append (his at [i], thy at [i]);
 		}
 		return him;
@@ -117,14 +117,14 @@ autoOrderedOfString OrderedOfString_joinItems (OrderedOfString me, OrderedOfStri
 autoOrderedOfString OrderedOfString_selectUniqueItems (OrderedOfString me) {
 	try {
 		autoStringSet thee = StringSet_create ();
-		for (long i = 1; i <= my size; i ++) {
+		for (integer i = 1; i <= my size; i ++) {
 			if (! thy hasItem (my at [i])) {   // FIXME: first sort, then unicize
 				autoSimpleString item = Data_copy (my at [i]);
 				thy addItem_move (item.move());
 			}
 		}
 		autoOrderedOfString him = OrderedOfString_create ();
-		for (long i = 1; i <= thy size; i ++) {
+		for (integer i = 1; i <= thy size; i ++) {
 			autoSimpleString item = Data_copy (thy at [i]);
 			his addItem_move (item.move());
 		}
@@ -134,9 +134,9 @@ autoOrderedOfString OrderedOfString_selectUniqueItems (OrderedOfString me) {
 	}
 }
 
-void OrderedOfString_frequency (OrderedOfString me, OrderedOfString thee, long *count) {
-	for (long i = 1; i <= my size; i ++) {
-		for (long j = 1; j <= thy size; j ++) {
+void OrderedOfString_frequency (OrderedOfString me, OrderedOfString thee, integer *count) {
+	for (integer i = 1; i <= my size; i ++) {
+		for (integer j = 1; j <= thy size; j ++) {
 			if (Data_equal (my at [i], thy at [j])) {
 				count[j]++;
 				break;
@@ -145,13 +145,13 @@ void OrderedOfString_frequency (OrderedOfString me, OrderedOfString thee, long *
 	}
 }
 
-long OrderedOfString_getNumberOfDifferences (OrderedOfString me, OrderedOfString thee) {
-	long numberOfDifferences = 0;
+integer OrderedOfString_getNumberOfDifferences (OrderedOfString me, OrderedOfString thee) {
+	integer numberOfDifferences = 0;
 
 	if (my size != thy size) {
 		return -1;
 	}
-	for (long i = 1; i <= my size; i ++) {
+	for (integer i = 1; i <= my size; i ++) {
 		if (! Data_equal (my at [i], thy at [i])) {
 			numberOfDifferences++;
 		}
@@ -160,7 +160,7 @@ long OrderedOfString_getNumberOfDifferences (OrderedOfString me, OrderedOfString
 }
 
 double OrderedOfString_getFractionDifferent (OrderedOfString me, OrderedOfString thee) {
-	long numberOfDifferences = OrderedOfString_getNumberOfDifferences (me, thee);
+	integer numberOfDifferences = OrderedOfString_getNumberOfDifferences (me, thee);
 
 	if (numberOfDifferences < 0) {
 		return undefined;
@@ -168,14 +168,14 @@ double OrderedOfString_getFractionDifferent (OrderedOfString me, OrderedOfString
 	return my size == 0 ? 0.0 : (0.0 + numberOfDifferences) / my size;
 }
 
-int OrderedOfString_difference (OrderedOfString me, OrderedOfString thee, long *ndif, double *fraction) {
+int OrderedOfString_difference (OrderedOfString me, OrderedOfString thee, integer *ndif, double *fraction) {
 	*ndif = 0;
 	*fraction = 1.0;
 	if (my size != thy size) {
 		Melder_flushError (U"OrderedOfString_difference: the numbers of items differ");
 		return 0;
 	}
-	for (long i = 1; i <= my size; i ++) {
+	for (integer i = 1; i <= my size; i ++) {
 		if (! Data_equal (my at [i], thy at [i])) {
 			(*ndif) ++;
 		}
@@ -185,11 +185,11 @@ int OrderedOfString_difference (OrderedOfString me, OrderedOfString thee, long *
 	return 1;
 }
 
-long OrderedOfString_indexOfItem_c (OrderedOfString me, const char32 *str) {
-	long index = 0;
+integer OrderedOfString_indexOfItem_c (OrderedOfString me, const char32 *str) {
+	integer index = 0;
 	autoSimpleString s = SimpleString_create (str);
 
-	for (long i = 1; i <= my size; i ++) {
+	for (integer i = 1; i <= my size; i ++) {
 		if (Data_equal (my at [i], s.get())) {
 			index = i;
 			break;
@@ -198,33 +198,29 @@ long OrderedOfString_indexOfItem_c (OrderedOfString me, const char32 *str) {
 	return index;
 }
 
-const char32 *OrderedOfString_itemAtIndex_c (OrderedOfString me, long index) {
+const char32 *OrderedOfString_itemAtIndex_c (OrderedOfString me, integer index) {
 	return index > 0 && index <= my size ? SimpleString_c (my at [index]) : nullptr;
 }
 
-void OrderedOfString_initWithSequentialNumbers (OrderedOfString me, long n) {
-	for (long i = 1; i <= n; i ++) {
+void OrderedOfString_initWithSequentialNumbers (OrderedOfString me, integer n) {
+	for (integer i = 1; i <= n; i ++) {
 		my addItem_move (SimpleString_create (Melder_integer (i)));
 	}
 }
 
-void OrderedOfString_changeStrings (OrderedOfString me, char32 *search, char32 *replace, int maximumNumberOfReplaces, long *nmatches, long *nstringmatches, int use_regexp) {
+void OrderedOfString_changeStrings (OrderedOfString me, char32 *search, char32 *replace, int maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, bool use_regexp) {
 	regexp *compiled_search = nullptr;
 	try {
-		if (! search) {
-			Melder_throw (U"Missing search string.");
-		}
-		if (! replace) {
-			Melder_throw (U"Missing replace string.");
-		}
+		Melder_require (search, U"The search string should not be empty.");
+		Melder_require (replace, U"The replace string should not be empty.");
 
 		if (use_regexp) {
 			compiled_search = CompileRE_throwable (search, 0);
 		}
-		for (long i = 1; i <= my size; i ++) {
+		for (integer i = 1; i <= my size; i ++) {
 			SimpleString ss = my at [i];
 			integer nmatches_sub;
-			char32 *r = use_regexp ? str_replace_regexp (ss -> string, compiled_search, replace, maximumNumberOfReplaces, &nmatches_sub) : str_replace_literal (ss -> string, search, replace, maximumNumberOfReplaces, &nmatches_sub);
+			char32 *r = use_regexp ? str_replace_regexp (ss -> string, compiled_search, replace, maximumNumberOfReplaces, & nmatches_sub) : str_replace_literal (ss -> string, search, replace, maximumNumberOfReplaces, & nmatches_sub);
 
 			// Change without error:
 			Melder_free (ss -> string);
@@ -245,14 +241,14 @@ void OrderedOfString_changeStrings (OrderedOfString me, char32 *search, char32 *
 	}
 }
 
-long OrderedOfString_isSubsetOf (OrderedOfString me, OrderedOfString thee, long *translation) { // ?? test and give number
-	long nStrings = 0;
+integer OrderedOfString_isSubsetOf (OrderedOfString me, OrderedOfString thee, integer *translation) { // ?? test and give number
+	integer nStrings = 0;
 
-	for (long i = 1; i <= my size; i ++) {
+	for (integer i = 1; i <= my size; i ++) {
 		if (translation) {
 			translation [i] = 0;
 		}
-		for (long j = 1; j <= thy size; j ++)
+		for (integer j = 1; j <= thy size; j ++)
 			if (Data_equal (my at [i], thy at [j])) {
 				if (translation) {
 					translation[i] = j;
@@ -263,21 +259,21 @@ long OrderedOfString_isSubsetOf (OrderedOfString me, OrderedOfString thee, long 
 	return nStrings;
 }
 
-void OrderedOfString_drawItem (OrderedOfString me, Graphics g, long index, double xWC, double yWC) {
+void OrderedOfString_drawItem (OrderedOfString me, Graphics g, integer index, double xWC, double yWC) {
 	if (index > 0 && index <= my size) {
 		SimpleString_draw (my at [index], g, xWC, yWC);
 	}
 }
 
-long OrderedOfString_getSize (OrderedOfString me) {
+integer OrderedOfString_getSize (OrderedOfString me) {
 	return my size;
 }
 
-void OrderedOfString_removeOccurrences (OrderedOfString me, const char32 *search, int use_regexp) {
+void OrderedOfString_removeOccurrences (OrderedOfString me, const char32 *search, bool use_regexp) {
 	if (! search) {
 		return;
 	}
-	for (long i = my size; i >= 1; i --) {
+	for (integer i = my size; i >= 1; i --) {
 		SimpleString ss = my at [i];
 		if ( (use_regexp && strstr_regexp (ss -> string, search)) ||
 		        (!use_regexp && str32str (ss -> string, search))) {

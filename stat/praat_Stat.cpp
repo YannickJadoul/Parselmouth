@@ -930,7 +930,7 @@ DO
 		integer columnNumber = Table_getColumnIndexFromColumnLabel (me, extractAllRowsWhereColumn___);
 		autoTable result = Table_extractRowsWhereColumn_number (me, columnNumber, (kMelder_number) ___is___, ___theNumber);
 	CONVERT_EACH_END (my name, U"_", Table_messageColumn (me, columnNumber), U"_",
-		isdefined (___theNumber) ? Melder_integer (lround (___theNumber)) : U"undefined")
+		isdefined (___theNumber) ? Melder_integer (Melder_iround (___theNumber)) : U"undefined")
 }
 
 FORM (NEW_Table_extractRowsWhereColumn_text, U"Table: Extract rows where column (text)", nullptr) {
@@ -981,7 +981,7 @@ DO
 	CONVERT_EACH_END (my name)
 }
 
-FORM (NEW_Table_to_TableOfReal, U"Table: Down to TableOfReal", nullptr) {
+FORM (NEW_Table_downto_TableOfReal, U"Table: Down to TableOfReal", nullptr) {
 	SENTENCE (columnForRowLabels, U"Column for row labels", U"")
 	OK
 DO
@@ -1174,7 +1174,7 @@ void praat_uvafon_stat_init () {
 		praat_addAction1 (classTable, 0, U"Transpose", nullptr, 1, NEW_Table_transpose);
 		praat_addAction1 (classTable, 0, U"Collapse rows...", nullptr, 1, NEW_Table_collapseRows);
 		praat_addAction1 (classTable, 0, U"Rows to columns...", nullptr, 1, NEW_Table_rowsToColumns);
-	praat_addAction1 (classTable, 0, U"Down to TableOfReal...", nullptr, 0, NEW_Table_to_TableOfReal);
+	praat_addAction1 (classTable, 0, U"Down to TableOfReal...", nullptr, 0, NEW_Table_downto_TableOfReal);
 
 	praat_TableOfReal_init (classTableOfReal);
 
