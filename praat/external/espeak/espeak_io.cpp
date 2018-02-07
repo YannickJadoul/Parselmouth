@@ -25,6 +25,7 @@
 #include "speech.h"
 #include "synthesize.h"
 #include <errno.h>
+#include <cctype>
 
 extern autoFileInMemoryManager espeak_ng_FileInMemoryManager;
 #define ESPEAK_FILEINMEMORYMANAGER espeak_ng_FileInMemoryManager.get()
