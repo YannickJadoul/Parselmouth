@@ -2,7 +2,7 @@
 #define _Sound_extensions_h_
 /* Sound_extensions.h
  *
- * Copyright (C) 1993-2012,2015-2017 David Weenink
+ * Copyright (C) 1993-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ autoSound Sound_readFromCmuAudioFile (MelderFile file);
 
 /* only 16 bit signed has been tested !! */
 autoSound Sound_readFromRawFile (MelderFile file, const char *format, int nBitsCoding,
-	int littleEndian, int unSigned, long skipNBytes, double samplingFrequency);
+	bool littleEndian, bool unSigned, integer skipNBytes, double samplingFrequency);
 /* Reads a Sound from a raw file:
  *	fileName	: name of the file
  *	format		: "integer" (default)
@@ -47,7 +47,7 @@ autoSound Sound_readFromDialogicADPCMFile (MelderFile file, double sampleRate);
 /*
 */
 
-void Sound_writeToRawFile (Sound me, MelderFile file, const char *format, int littleEndian, int nBitsCoding, int unSigned);
+void Sound_writeToRawFile (Sound me, MelderFile file, const char *format, bool littleEndian, int nBitsCoding, bool unSigned);
 
 void Sound_into_Sound (Sound me, Sound to, double startTime);
 /* precondition: my dx == to->dx (equal sampling times */
@@ -70,26 +70,26 @@ autoSound Sound_createGaussian (double windowDuration, double samplingFrequency)
 autoSound Sound_createHamming (double windowDuration, double samplingFrequency);
 
 autoSound Sound_createSimpleToneComplex (double minimumTime, double maximumTime, double samplingFrequency,
-	double firstFrequency, long numberOfComponents, double frequencyDistance, int scaleAmplitudes);
+	double firstFrequency, integer numberOfComponents, double frequencyDistance, bool scaleAmplitudes);
 
 autoSound Sound_createMistunedHarmonicComplex (double minimumTime, double maximumTime, double samplingFrequency,
-	double firstFrequency, long numberOfComponents, long mistunedComponent, double mistuningFraction, int scaleAmplitudes);
+	double firstFrequency, integer numberOfComponents, integer mistunedComponent, double mistuningFraction, bool scaleAmplitudes);
 
 autoSound Sound_createGammaTone (double minimumTime, double maximumTime, double samplingFrequency,
-	double gamma, double frequency, double bandwidth, double initialPhase, double addition, int scaleAmplitudes);
+	double gamma, double frequency, double bandwidth, double initialPhase, double addition, bool scaleAmplitudes);
 
 autoSound Sound_createShepardTone (double minimumTime, double maximumTime, double samplingFrequency,
-	double lowestFrequency, long numberOfComponents, double frequencyChange, double amplitudeRange);
+	double lowestFrequency, integer numberOfComponents, double frequencyChange, double amplitudeRange);
 
 autoSound Sound_createShepardToneComplex (double minimumTime, double maximumTime,
-	double samplingFrequency, double lowestFrequency, long numberOfComponents,
+	double samplingFrequency, double lowestFrequency, integer numberOfComponents,
 	double frequencyChange_st, double amplitudeRange, double octaveShiftFraction);
 
 autoSound Sound_createPattersonWightmanTone (double minimumTime, double maximumTime, double samplingFrequency,
-	double baseFrequency, double frequencyShiftRatio, long numberOfComponents);
+	double baseFrequency, double frequencyShiftRatio, integer numberOfComponents);
 
 autoSound Sound_createPlompTone (double minimumTime, double maximumTime, double samplingFrequency,
-	double baseFrequency, double frequencyFraction, long m);
+	double baseFrequency, double frequencyFraction, integer m);
 
 autoSound Sound_createFromWindowFunction (double effectiveTime, double samplingFrequency, int windowType);
 /* 1; rect 2:hamming 3: bartlet 4: welch 5: hanning 6:gaussian */
@@ -123,7 +123,7 @@ void Sound_scale_dB (Sound me, double level_dB);
 	where extremum is the maximum of the absolute values the signal values.
 */
 
-void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, int fadeGlobal);
+void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, bool fadeGlobal);
 /* if inout <= 0 fade in with (1-cos)/2  else fade out with (1+cos)/2
 	channel = 0 (all), 1 (left), 2 (right).
 */
@@ -133,24 +133,24 @@ void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, in
 #define FROM_BOTTOM_TO_TOP 2
 #define FROM_TOP_TO_BOTTOM 3
 
-void Sound_draw_btlr (Sound me, Graphics g, double tmin, double tmax, double amin, double amax, int direction, int garnish);
+void Sound_draw_btlr (Sound me, Graphics g, double tmin, double tmax, double amin, double amax, int direction, bool garnish);
 /* direction is one of the macros's FROM_LEFT_TO_RIGHT... */
 
 void Sound_drawWhere (Sound me, Graphics g, double tmin, double tmax, double minimum, double maximum,
-	bool garnish, const char32 *method, long numberOfBisections, const char32 *formula, Interpreter interpreter);
+	bool garnish, const char32 *method, integer numberOfBisections, const char32 *formula, Interpreter interpreter);
 
-void Sound_paintWhere (Sound me, Graphics g, Graphics_Colour colour, double tmin, double tmax, double minimum, double maximum, double level, bool garnish, long numberOfBisections, const char32 *formula, Interpreter interpreter);
+void Sound_paintWhere (Sound me, Graphics g, Graphics_Colour colour, double tmin, double tmax, double minimum, double maximum, double level, bool garnish, integer numberOfBisections, const char32 *formula, Interpreter interpreter);
 
 void Sounds_paintEnclosed (Sound me, Sound thee, Graphics g, Graphics_Colour colour, double tmin, double tmax,
 	double minimum, double maximum, bool garnish);
 
 autoSound Sound_changeGender (Sound me, double pitchMin, double pitchMax, double pitchRatio, double formantFrequenciesRatio, double durationRatio);
 
-autoSound Sound_and_Pitch_changeGender (Sound me, Pitch him, double pitchRatio, double formantFrequenciesRatio, double durationRatio);
+autoSound Sound_Pitch_changeGender (Sound me, Pitch him, double pitchRatio, double formantFrequenciesRatio, double durationRatio);
 
 autoSound Sound_changeGender_old (Sound me, double fmin, double fmax, double formantRatio, double new_pitch, double pitchRangeFactor, double durationFactor);
 
-autoSound Sound_and_Pitch_changeGender_old (Sound me, Pitch him, double formantRatio, double new_pitch, double pitchRangeFactor, double durationFactor);
+autoSound Sound_Pitch_changeGender_old (Sound me, Pitch him, double formantRatio, double new_pitch, double pitchRangeFactor, double durationFactor);
 
 autoPointProcess Sound_to_PointProcess_getJumps (Sound me, double minimumJump, double dt);
 /*
@@ -158,15 +158,13 @@ autoPointProcess Sound_to_PointProcess_getJumps (Sound me, double minimumJump, d
 	within time dt
 */
 
-void Sound_filter_part_formula (Sound me, double t1, double t2, const char32 *formula, Interpreter interpreter);
-
 autoSound Sound_changeSpeaker (Sound me, double pitchMin, double pitchMax,
 	double formantMultiplier, // > 0
 	double pitchMultiplier, // > 0
 	double pitchRangeMultiplier, // any number
 	double durationMultiplier); // > 0
 
-autoSound Sound_and_Pitch_changeSpeaker (Sound me, Pitch him,
+autoSound Sound_Pitch_changeSpeaker (Sound me, Pitch him,
 	double formantMultiplier, // > 0
 	double pitchMultiplier, // > 0
 	double pitchRangeMultiplier, // any number
@@ -183,7 +181,7 @@ autoTextGrid Sound_to_TextGrid_detectSilences (Sound me, double minPitch, double
 void Sound_getStartAndEndTimesOfSounding (Sound me, double minPitch, double timeStep,
 	double silenceThreshold, double minSilenceDuration, double minSoundingDuration, double *t1, double *t2);
 
-autoSound Sound_and_IntervalTier_cutPartsMatchingLabel (Sound me, IntervalTier thee, const char32 *match);
+autoSound Sound_IntervalTier_cutPartsMatchingLabel (Sound me, IntervalTier thee, const char32 *match);
 /* Cut intervals that match the label from the sound. The starting time of the new sound is
  * (1) my xmin if the first interval is not matching
  * (2) the end time of the first interval if matching
@@ -199,6 +197,6 @@ autoSound Sound_copyChannelRanges (Sound me, const char32 *ranges);
 
 autoSound Sound_removeNoise (Sound me, double noiseStart, double noiseEnd, double windowLength, double minBandFilterFrequency, double maxBandFilterFrequency, double smoothing, int method);
 
-void Sound_playAsFrequencyShifted (Sound me, double shiftBy, double newSamplingFrequency, long precision);
+void Sound_playAsFrequencyShifted (Sound me, double shiftBy, double newSamplingFrequency, integer precision);
 
 #endif /* _Sound_extensions_h_ */

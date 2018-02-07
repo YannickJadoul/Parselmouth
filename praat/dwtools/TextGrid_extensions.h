@@ -2,7 +2,7 @@
 #define _TextGrid_extensions_h_
 /* TextGrid_extensions.h
  *
- * Copyright (C) 1993-2012,2015,2017 David Weenink
+ * Copyright (C) 1993-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 #include "TextGrid.h"
 
-autoTextGrid TextGrid_readFromTIMITLabelFile (MelderFile file, int phnFile);
+autoTextGrid TextGrid_readFromTIMITLabelFile (MelderFile file, bool phnFile);
 /*
 	Read TIMIT label file with the following structure:
 		samplenumber1 samplenumber2 label1
@@ -34,7 +34,7 @@ autoTextGrid TextGrid_readFromTIMITLabelFile (MelderFile file, int phnFile);
 		samplenumber2n-1 samplenumber2n labeln
 
 	The first tier of TextGrid will contain the TIMIT labels.
-	If phnFile != 0, the second tier will contain the translation of the
+	If phnFile == true, the second tier will contain the translation of the
 	TIMIT labels into IPA labels.
 	For the translation from sample number to time a default sampling
 	frequency of 16000 Hz is assumed.
@@ -76,11 +76,11 @@ void TextGrid_extendTime (TextGrid me, double delta_time, int position);
 	Interval tiers will have a new (empty) interval at the start or the end.
 */
 
-void TextGrid_setTierName (TextGrid me, long itier, const char32 *newName);
+void TextGrid_setTierName (TextGrid me, integer itier, const char32 *newName);
 
-void TextTier_changeLabels (TextTier me, integer from, integer to, const char32 *search, const char32 *replace, int use_regexp, integer *nmatches, integer *nstringmatches);
+void TextTier_changeLabels (TextTier me, integer from, integer to, const char32 *search, const char32 *replace, bool use_regexp, integer *nmatches, integer *nstringmatches);
 
-void IntervalTier_changeLabels (IntervalTier me, integer from, integer to, const char32 *search, const char32 *replace, int use_regexp, integer *nmatches, integer *nstringmatches);
+void IntervalTier_changeLabels (IntervalTier me, integer from, integer to, const char32 *search, const char32 *replace, bool use_regexp, integer *nmatches, integer *nstringmatches);
 
 void IntervalTier_removeBoundariesBetweenIdenticallyLabeledIntervals (IntervalTier me, const char32 *label);
 
@@ -88,7 +88,7 @@ void IntervalTier_cutIntervalsOnLabelMatch (IntervalTier me, const char32 *label
 
 void IntervalTier_cutIntervals_minimumDuration (IntervalTier me, const char32 *label, double minimumDuration);
 
-void TextGrid_changeLabels (TextGrid me, integer tier, integer from, integer to, const char32 *search, const char32 *replace, int use_regexp, integer *nmatches, integer *nstringmatches);
+void TextGrid_changeLabels (TextGrid me, integer tier, integer from, integer to, const char32 *search, const char32 *replace, bool use_regexp, integer *nmatches, integer *nstringmatches);
 
 /* Set the start/end time to a smaller/larger value.
  * If mark is null, only times are changed
@@ -100,7 +100,7 @@ void IntervalTier_setLaterEndTime (IntervalTier me, double xmax, const char32 *m
 
 void IntervalTier_setEarlierStartTime (IntervalTier me, double xmin, const char32 *mark);
 
-void IntervalTier_moveBoundary (IntervalTier me, long interval, bool atStart, double newTime);
+void IntervalTier_moveBoundary (IntervalTier me, integer interval, bool atStart, double newTime);
 
 void TextTier_setLaterEndTime (TextTier me, double xmax, const char32 *mark);
 
@@ -113,11 +113,11 @@ void TextGrid_setLaterEndTime (TextGrid me, double xmax, const char32 *imark, co
 
 // Precondition: if (preserveTimes) { my xmax <= thy xmin }
 // Postcondition: my xmin preserved
-void IntervalTiers_append_inline (IntervalTier me, IntervalTier thee, bool preserveTimes);
+void IntervalTiers_append_inplace (IntervalTier me, IntervalTier thee, bool preserveTimes);
 
-void TextTiers_append_inline (TextTier me, TextTier thee, bool preserveTimes);
+void TextTiers_append_inplace (TextTier me, TextTier thee, bool preserveTimes);
 
-void TextGrids_append_inline (TextGrid me, TextGrid thee, bool preserveTimes);
+void TextGrids_append_inplace (TextGrid me, TextGrid thee, bool preserveTimes);
 
 autoTextGrid TextGrids_to_TextGrid_appendContinuous (OrderedOf<structTextGrid>* me, bool preserveTimes);
 

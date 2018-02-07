@@ -123,12 +123,9 @@ espeak_ng_STATUS LoadPhData(int *srate, espeak_ng_ERROR_CONTEXT *context)
 	n_tunes = length / sizeof(TUNE);
 
 	// read the version number and sample rate from the first 8 bytes of phondata
-	version = 0; // bytes 0-3, version number
-	rate = 0;    // bytes 4-7, sample rate
-	for (ix = 0; ix < 4; ix++) {
-		version += (wavefile_data[ix] << (ix*8));
-		rate += (wavefile_data[ix+4] << (ix*8));
-	}
+	
+	version = get_int32_le ((char *) wavefile_data); // bytes 0-3, version number
+	rate = get_int32_le ((char *) (wavefile_data + 4)); // bytes 4-7, sample rate
 
 	if (version != version_phdata)
 		return create_version_mismatch_error_context(context, path_home, version, version_phdata);
@@ -332,19 +329,19 @@ unsigned char *GetEnvelope(int index)
 	return (unsigned char *)&phondata_ptr[index];
 }
 
-static void SetUpPhonemeTable(int number, int recursing)
+static void SetUpPhonemeTable(int number, bool recursing)
 {
 	int ix;
 	int includes;
 	int ph_code;
 	PHONEME_TAB *phtab;
 
-	if (recursing == 0)
+	if (recursing == false)
 		memset(phoneme_tab_flags, 0, sizeof(phoneme_tab_flags));
 
 	if ((includes = phoneme_tab_list[number].includes) > 0) {
 		// recursively include base phoneme tables
-		SetUpPhonemeTable(includes-1, 1);
+		SetUpPhonemeTable(includes-1, true);
 	}
 
 	// now add the phonemes from this table
@@ -363,7 +360,7 @@ static void SetUpPhonemeTable(int number, int recursing)
 void SelectPhonemeTable(int number)
 {
 	n_phoneme_tab = 0;
-	SetUpPhonemeTable(number, 0); // recursively for included phoneme tables
+	SetUpPhonemeTable(number, false); // recursively for included phoneme tables
 	n_phoneme_tab++;
 	current_phoneme_table = number;
 }
@@ -465,15 +462,15 @@ static bool StressCondition(Translator *tr, PHONEME_LIST *plist, int condition, 
 
 		if ((tr->langopts.param[LOPT_REDUCE] & 0x2) && (stress_level >= pl->wordstress)) {
 			// treat the most stressed syllable in an unstressed word as stressed
-			stress_level = 4;
+			stress_level = STRESS_IS_PRIMARY;
 		}
 	}
 
-	if (condition == isMaxStress)
+	if (condition == STRESS_IS_PRIMARY)
 		return stress_level >= pl->wordstress;
 
-	if (condition == isStressed) {
-		if (stress_level > 3)
+	if (condition == STRESS_IS_SECONDARY) {
+		if (stress_level > STRESS_IS_SECONDARY)
 			return true;
 	} else {
 		if (stress_level < condition_level[condition])
@@ -632,11 +629,11 @@ static bool InterpretCondition(Translator *tr, int control, PHONEME_LIST *plist,
 		case CONDITION_IS_OTHER:
 			switch (data)
 			{
-			case isDiminished:
-			case isUnstressed:
-			case isNotStressed:
-			case isStressed:
-			case isMaxStress:
+			case STRESS_IS_DIMINISHED:
+			case STRESS_IS_UNSTRESSED:
+			case STRESS_IS_NOT_STRESSED:
+			case STRESS_IS_SECONDARY:
+			case STRESS_IS_PRIMARY:
 				return StressCondition(tr, plist, data, 0);
 			case isBreak:
 				return (ph->type == phPAUSE) || (plist_this->synthflags & SFLAG_NEXT_PAUSE);
@@ -755,7 +752,7 @@ int NumInstnWords(USHORT *prog)
 			// This instruction is followed by addWav(), 2 more words
 			return 4;
 		}
-		if (instn2 == OPCODE_CONTINUE)
+		if (instn2 == INSTN_CONTINUE)
 			return 3;
 		return 2;
 	}
@@ -812,10 +809,10 @@ void InterpretPhoneme(Translator *tr, int control, PHONEME_LIST *plist, PHONEME_
 				// instructions with no operand
 				switch (data)
 				{
-				case OPCODE_RETURN:
+				case INSTN_RETURN:
 					end_flag = 1;
 					break;
-				case OPCODE_CONTINUE:
+				case INSTN_CONTINUE:
 					break;
 				default:
 					InvalidInstn(ph, instn);
@@ -953,7 +950,7 @@ void InterpretPhoneme(Translator *tr, int control, PHONEME_LIST *plist, PHONEME_
 			param_sc = phdata->sound_param[instn2] = (instn >> 4) & 0xff;
 			prog++;
 
-			if (prog[1] != OPCODE_CONTINUE) {
+			if (prog[1] != INSTN_CONTINUE) {
 				if (instn2 < 2) {
 					// FMT() and WAV() imply Return
 					end_flag = 1;

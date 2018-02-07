@@ -22,10 +22,12 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"What's new?", U"ppgb", 20171111)
+MAN_BEGIN (U"What's new?", U"ppgb", 20180203)
 INTRO (U"Latest changes in Praat.")
 //LIST_ITEM (U"• Manual page about @@drawing a vowel triangle@.")
 
+NORMAL (U"##6.0.37# (3 February 2018)")
+LIST_ITEM (U"• Graphics: fixed crashing bug with \\bsun trigraph.")
 NORMAL (U"##6.0.36# (11 November 2017)")
 LIST_ITEM (U"• Many more languages for SpeechSynthesizer and automatic alignment (new eSpeak).")
 NORMAL (U"##6.0.35# (16 October 2017)")
@@ -1685,7 +1687,7 @@ ENTRY (U"Praat 3.7, 24 March 1998")
 	LIST_ITEM (U"• Many new interpolations.")
 	LIST_ITEM (U"• Sound enhancements: @@Sound: Lengthen (overlap-add)...@, @@Sound: Deepen band modulation...@")
 	LIST_ITEM (U"• @@Source-filter synthesis@ tutorial, @@Sound & IntensityTier: Multiply@, "
-		"##Sound & FormantTier: Filter#, @@Formant: Formula (frequencies)...@, @@Sound: Pre-emphasize (in-line)...@.")
+		"##Sound & FormantTier: Filter#, @@Formant: Formula (frequencies)...@, @@Sound: Pre-emphasize (in-place)...@.")
 	NORMAL (U"Labelling")
 	LIST_ITEM (U"• TextGrid queries (#Get times and labels in a script).")
 	LIST_ITEM (U"• @@TextGrid: Count labels...@.")
@@ -2164,10 +2166,10 @@ NORMAL (U"Some very fast Infinite Impulse Response (IIR) filters can be defined 
 LIST_ITEM (U"• @@Sound: Filter (one formant)...@")
 LIST_ITEM (U"• @@Sound: Filter (pre-emphasis)...@")
 LIST_ITEM (U"• @@Sound: Filter (de-emphasis)...@")
-NORMAL (U"And there are in-line versions, which modify the existing Sound objects:")
-LIST_ITEM (U"• @@Sound: Filter with one formant (in-line)...@")
-LIST_ITEM (U"• @@Sound: Pre-emphasize (in-line)...@")
-LIST_ITEM (U"• @@Sound: De-emphasize (in-line)...@")
+NORMAL (U"And there are in-place versions, which modify the existing Sound objects:")
+LIST_ITEM (U"• @@Sound: Filter with one formant (in-place)...@")
+LIST_ITEM (U"• @@Sound: Pre-emphasize (in-place)...@")
+LIST_ITEM (U"• @@Sound: De-emphasize (in-place)...@")
 ENTRY (U"Convolution")
 NORMAL (U"A Finite Impulse Response (FIR) filter can be described as a sampled sound. "
 	"Filtering with such a filter amounts to a %#convolution of the original sound and the filter:")

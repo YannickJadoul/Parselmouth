@@ -72,7 +72,7 @@ static int _TextGridEditor_yWCtoTier (TextGridEditor me, double yWC) {
 	TextGrid grid = (TextGrid) my data;
 	int ntier = grid -> tiers->size;
 	double soundY = _TextGridEditor_computeSoundY (me);
-	int itier = ntier - Melder_iroundDown (yWC / soundY * (double) ntier);
+	int itier = ntier - Melder_ifloor (yWC / soundY * (double) ntier);
 	if (itier < 1) itier = 1; if (itier > ntier) itier = ntier;
 	return itier;
 }
@@ -680,7 +680,7 @@ static void menu_cb_AlignInterval (TextGridEditor me, EDITOR_ARGS_DIRECT) {
 static void menu_cb_AlignmentSettings (TextGridEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Alignment settings", nullptr)
 		OPTIONMENU (language, U"Language", (int) Strings_findString (espeakdata_languages_names.get(), U"English (Great Britain)"))
-		for (long i = 1; i <= espeakdata_languages_names -> numberOfStrings; i ++) {
+		for (integer i = 1; i <= espeakdata_languages_names -> numberOfStrings; i ++) {
 			OPTION ((const char32 *) espeakdata_languages_names -> strings [i]);
 		}
 		BOOLEAN (includeWords,    U"Include words",    my default_align_includeWords ())
@@ -2126,7 +2126,7 @@ void structTextGridEditor :: v_play (double tmin, double tmax) {
 			autoSound part = LongSound_extractPart (d_longSound.data, tmin, tmax, true);
 			autoMixingMatrix thee = MixingMatrix_create (numberOfChannelsToPlay, numberOfChannels);
 			MixingMatrix_muteAndActivateChannels (thee.get(), muteChannels);
-			Sound_and_MixingMatrix_playPart (part.get(), thee.get(), tmin, tmax, theFunctionEditor_playCallback, this);
+			Sound_MixingMatrix_playPart (part.get(), thee.get(), tmin, tmax, theFunctionEditor_playCallback, this);
 		} else {
 			LongSound_playPart (d_longSound.data, tmin, tmax, theFunctionEditor_playCallback, this);
 		}
@@ -2134,7 +2134,7 @@ void structTextGridEditor :: v_play (double tmin, double tmax) {
 		if (numberOfMuteChannels > 0) {
 			autoMixingMatrix thee = MixingMatrix_create (numberOfChannelsToPlay, numberOfChannels);
 			MixingMatrix_muteAndActivateChannels (thee.get(), muteChannels);
-			Sound_and_MixingMatrix_playPart (d_sound.data, thee.get(), tmin, tmax, theFunctionEditor_playCallback, this);
+			Sound_MixingMatrix_playPart (d_sound.data, thee.get(), tmin, tmax, theFunctionEditor_playCallback, this);
 			
 		} else {
 			Sound_playPart ((Sound) d_sound.data, tmin, tmax, theFunctionEditor_playCallback, this);

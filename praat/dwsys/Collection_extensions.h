@@ -2,7 +2,7 @@
 #define _Collection_extensions_h_
 /* Collection_extensions.h
  *
- * Copyright (C) 1994-2002,2015 David Weenink, 2015 Paul Boersma
+ * Copyright (C) 1994-2017 David Weenink, 2015 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #include "Graphics.h"
 #include "Permutation.h"
 
-autoCollection Collection_and_Permutation_permuteItems (Collection me, Permutation him);
+autoCollection Collection_Permutation_permuteItems (Collection me, Permutation him);
 
 autoCollection Collection_permuteItems (Collection me);
 /* permute the order of my items */
@@ -42,30 +42,30 @@ autoOrderedOfString OrderedOfString_joinItems (OrderedOfString me, OrderedOfStri
 autoOrderedOfString OrderedOfString_selectUniqueItems (OrderedOfString me);
 /* Postcondition: thy size <= my size */
 
-void OrderedOfString_frequency (OrderedOfString me, OrderedOfString thee, long *count);
+void OrderedOfString_frequency (OrderedOfString me, OrderedOfString thee, integer *count);
 /* count how often the items in 'thee' occur in 'me' */
 /* Precondition: count[1..thy size] exists */
 
 /* To be removed Praat 4.2.4 2004040427 */
-int OrderedOfString_difference (OrderedOfString me, OrderedOfString thee, long *ndif, double *fraction);
+int OrderedOfString_difference (OrderedOfString me, OrderedOfString thee, integer *ndif, double *fraction);
 
 double OrderedOfString_getFractionDifferent (OrderedOfString me, OrderedOfString thee);
 
-long OrderedOfString_getNumberOfDifferences (OrderedOfString me, OrderedOfString thee);
+integer OrderedOfString_getNumberOfDifferences (OrderedOfString me, OrderedOfString thee);
 
-const char32 *OrderedOfString_itemAtIndex_c (OrderedOfString me, long index);
-long OrderedOfString_indexOfItem_c (OrderedOfString me, const char32 *str);
+const char32 *OrderedOfString_itemAtIndex_c (OrderedOfString me, integer index);
+integer OrderedOfString_indexOfItem_c (OrderedOfString me, const char32 *str);
 
-void OrderedOfString_drawItem (OrderedOfString me, Graphics g, long index, double xWC, double yWC);
+void OrderedOfString_drawItem (OrderedOfString me, Graphics g, integer index, double xWC, double yWC);
 
-void OrderedOfString_initWithSequentialNumbers (OrderedOfString me, long n);
+void OrderedOfString_initWithSequentialNumbers (OrderedOfString me, integer n);
 
-void OrderedOfString_removeOccurrences (OrderedOfString me, const char32 *search, int user_regexp);
+void OrderedOfString_removeOccurrences (OrderedOfString me, const char32 *search, bool use_regexp);
 
 void OrderedOfString_changeStrings (OrderedOfString me, char32 *search, char32 *replace,
-	int maximumNumberOfReplaces, long *nmatches, long *nstringmatches, int use_regexp);
+	int maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, bool use_regexp);
 
-long OrderedOfString_isSubsetOf (OrderedOfString me, OrderedOfString thee, long *translation);
+integer OrderedOfString_isSubsetOf (OrderedOfString me, OrderedOfString thee, integer *translation);
 /* Check whether my items are (a subset of)|(in) thy items.
  * Preconditions:
  *	if (translation) translation[1..my size] exists.
@@ -76,7 +76,7 @@ long OrderedOfString_isSubsetOf (OrderedOfString me, OrderedOfString thee, long 
  *	else if (translation[i] == 0) my label[i] not in thy labels.
  */
 
-long OrderedOfString_getSize (OrderedOfString me);
+integer OrderedOfString_getSize (OrderedOfString me);
 /* return my size */
 
 #endif /* _Collection_extensions_h_ */

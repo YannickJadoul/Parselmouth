@@ -29,9 +29,9 @@
 autoMatrix Matrix_readFromIDXFormatFile (MelderFile file);
 autoDaata IDXFormattedMatrixFileRecognizer (integer numberOfBytesRead, const char *header, MelderFile file);
 
-void Matrix_scatterPlot (Matrix me, Graphics g, long icx, long icy,
+void Matrix_scatterPlot (Matrix me, Graphics g, integer icx, integer icy,
     double xmin, double xmax, double ymin, double ymax,
-    double size_mm, const char32 *mark, int garnish);
+    double size_mm, const char32 *mark, bool garnish);
 /* Draw my columns ix and iy as a scatterplot (with squares)				*/
 
 void Matrix_drawAsSquares (Matrix me, Graphics graphics, double xmin, double xmax, double ymin, double ymax, int garnished);
@@ -50,13 +50,13 @@ void Matrix_scale (Matrix me, int choice);
 autoMatrix Matrix_transpose (Matrix me);
 
 void Matrix_drawDistribution (Matrix me, Graphics g, double xmin, double xmax,
-	double ymin, double ymax, double minimum, double maximum, long nBins,
+	double ymin, double ymax, double minimum, double maximum, integer nBins,
 	double freqMin, double freqmax, bool cumulative, bool garnish);
 
 void Matrix_drawSliceY (Matrix me, Graphics g, double x, double ymin, double ymax,
 	double min, double max);
 
-int Matrix_fitPolynomial (Matrix me, long maxDegree);
+int Matrix_fitPolynomial (Matrix me, integer maxDegree);
 
 autoMatrix Matrix_solveEquation (Matrix me, double tolerance);
 

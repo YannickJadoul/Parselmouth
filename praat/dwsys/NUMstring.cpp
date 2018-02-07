@@ -27,30 +27,30 @@
 
 
 int NUMstring_containsPrintableCharacter (const char32 *s) {
-	long len;
+	integer len;
 	if (s == NULL || ( (len = str32len (s)) == 0)) {
 		return 0;
 	}
-	for (long i = 0; i < len; i++) {
-		if (isgraph ((int) s[i])) {
+	for (integer i = 0; i < len; i ++) {
+		if (isgraph ((int) s [i])) {
 			return 1;
 		}
 	}
 	return 0;
 }
 
-void NUMstring_chopWhiteSpaceAtExtremes_inline (char32 *string) {
+void NUMstring_chopWhiteSpaceAtExtremes_inplace (char32 *string) {
 	int64 start = 0;
-	while (iswspace ((int) string[start]) != 0) {
-		start++;
+	while (Melder_isWhiteSpace (string [start])) {
+		start ++;
 	}
 	int64 end = str32len (string);
-	while (end != start && iswspace((int) string[end - 1]) != 0) {
-		end--;
+	while (end != start && Melder_isWhiteSpace (string [end - 1])) {
+		end --;
 	}
 	int64 n = end - start;
 	memmove (string, string + start, (size_t) (n * (int64) sizeof (char32)));
-	string[n] = 0;
+	string [n] = 0;
 }
 
 real *NUMstring_to_numbers (const char32 *s, integer *p_numbers_found) {
@@ -94,7 +94,7 @@ char32 **NUMstrings_copy (char32 **from, integer lo, integer hi) {
 	return to.transfer();
 }
 
-static char32 *appendNumberToString (const char32 *s, long number, int asArray) {
+static char32 *appendNumberToString (const char32 *s, integer number, int asArray) {
 	return Melder_dup (
 		asArray == 0 ? Melder_cat (s, number) :
 		asArray == 1 ? Melder_cat (s, U"[", number, U"]") :
@@ -117,14 +117,14 @@ int NUMstrings_setSequentialNumbering (char32 **s, integer lo, integer hi, const
 #define LOWBYTE(x)  ((unsigned char) ((x) >> 8 & 0xFF))
 
 /* a+b=c in radix 256 */
-void NUMstring_add (unsigned char *a, unsigned char *b, unsigned char *c, long n);
-void NUMstring_add (unsigned char *a, unsigned char *b, unsigned char *c, long n) {
+void NUMstring_add (unsigned char *a, unsigned char *b, unsigned char *c, integer n);
+void NUMstring_add (unsigned char *a, unsigned char *b, unsigned char *c, integer n) {
 	int j;
 	unsigned short reg = 0;
 
-	for (j = n; j > 1; j--) {
-		reg = a[j] + b[j] + HIGHBYTE (reg);
-		c[j + 1] = LOWBYTE (reg);
+	for (j = n; j > 1; j --) {
+		reg = a [j] + b [j] + HIGHBYTE (reg);
+		c [j + 1] = LOWBYTE (reg);
 	}
 }
 
@@ -145,7 +145,6 @@ char32 *str_replace_literal (const char32 *string, const char32 *search, const c
 	if (string == 0 || search == 0 || replace == 0) {
 		return NULL;
 	}
-
 
 	int len_string = str32len (string);
 	if (len_string == 0) {
@@ -180,14 +179,14 @@ char32 *str_replace_literal (const char32 *string, const char32 *search, const c
 		}
 	}
 
-	int64 len_replace = str32len (replace);
-	int64 len_result = len_string + *nmatches * (len_replace - len_search);
-	char32 *result = Melder_malloc (char32, (len_result + 1) * (int64) sizeof (char32));
+	integer len_replace = str32len (replace);
+	integer len_result = len_string + *nmatches * (len_replace - len_search);
+	char32 *result = Melder_malloc (char32, (len_result + 1) * (integer) sizeof (char32));
 	result[len_result] = '\0';
 
 	const char32 *posp = pos = string;
-	int nchar = 0, result_nchar = 0;
-	for (long i = 1; i <= *nmatches; i++) {
+	integer nchar = 0, result_nchar = 0;
+	for (integer i = 1; i <= *nmatches; i ++) {
 		pos = str32str (pos, search);
 
 		/*
@@ -227,8 +226,7 @@ char32 *str_replace_literal (const char32 *string, const char32 *search, const c
 	return result;
 }
 
-char32 *str_replace_regexp (const char32 *string, regexp *compiledSearchRE,
-                             const char32 *replaceRE, integer maximumNumberOfReplaces, integer *nmatches) {
+char32 *str_replace_regexp (const char32 *string, regexp *compiledSearchRE, const char32 *replaceRE, integer maximumNumberOfReplaces, integer *nmatches) {
 	int buf_nchar = 0;				/* # characters in 'buf' */
 	int gap_copied = 0;
 	int nchar, reverse = 0;
@@ -249,7 +247,7 @@ char32 *str_replace_regexp (const char32 *string, regexp *compiledSearchRE,
 		maximumNumberOfReplaces = 1;
 	}
 
-	long i = maximumNumberOfReplaces > 0 ? 0 : - string_length;
+	integer i = maximumNumberOfReplaces > 0 ? 0 : - string_length;
 
 	/*
 		We do not know the size of the replaced string in advance,
@@ -393,7 +391,7 @@ static char32 **strs_replace_regexp (char32 **from, integer lo, integer hi, cons
 	return result.transfer();
 }
 
-char32 **strs_replace (char32 **from, integer lo, integer hi, const char32 *search, const char32 *replace, int maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, int use_regexp) {
+char32 **strs_replace (char32 **from, integer lo, integer hi, const char32 *search, const char32 *replace, int maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, bool use_regexp) {
 	return use_regexp ? strs_replace_regexp (from, lo, hi, search, replace, maximumNumberOfReplaces, nmatches, nstringmatches) :
 		strs_replace_literal (from, lo, hi, search, replace, maximumNumberOfReplaces, nmatches, nstringmatches);
 }
@@ -415,27 +413,24 @@ static integer *getElementsOfRanges (const char32 *ranges, integer maximumElemen
 		while (*p == U' ' || *p == U'\t') p ++;
 		if (*p == U'\0') break;
 		if (isdigit ((int) *p)) {
-			long currentElement = Melder_atoi (p);
-			if (currentElement == 0)
-				Melder_throw (U"No such ", elementType, U": 0 (minimum is 1).");
-			if (currentElement > maximumElement)
-				Melder_throw (U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
+			integer currentElement = Melder_atoi (p);
+			Melder_require (currentElement != 0, U"No such ", elementType, U": 0 (minimum is 1).");
+			Melder_require (currentElement <= maximumElement, U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
+			
 			*numberOfElements += 1;
 			previousElement = currentElement;
 			do { p ++; } while (isdigit ((int) *p));
 		} else if (*p == ':') {
-			if (previousElement == 0)
-				Melder_throw (U"Cannot start range with colon.");
+			Melder_require (previousElement != 0, U"The range should not start with a colon.");
+			
 			do { p ++; } while (*p == U' ' || *p == U'\t');
-			if (*p == U'\0')
-				Melder_throw (U"Cannot end range with colon.");
-			if (! isdigit ((int) *p))
-				Melder_throw (U"End of range should be a positive whole number.");
-			long currentElement = Melder_atoi (p);
-			if (currentElement == 0)
-				Melder_throw (U"No such ", elementType, U": 0 (minimum is 1).");
-			if (currentElement > maximumElement)
-				Melder_throw (U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
+			Melder_require (*p != U'\0', U"The range should not end with a colon.");
+			Melder_require (isdigit ((int) *p), U"End of range should be a positive whole number.");
+			
+			integer currentElement = Melder_atoi (p);
+			Melder_require (currentElement != 0, U"No such ", elementType, U": 0 (minimum is 1).");
+			Melder_require (currentElement <= maximumElement, U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
+			
 			if (currentElement > previousElement) {
 				*numberOfElements += currentElement - previousElement;
 			} else {
@@ -466,19 +461,19 @@ static integer *getElementsOfRanges (const char32 *ranges, integer maximumElemen
 		while (*p == U' ' || *p == U'\t') p ++;
 		if (*p == U'\0') break;
 		if (isdigit ((int) *p)) {
-			long currentElement = Melder_atoi (p);
+			integer currentElement = Melder_atoi (p);
 			elements [++ *numberOfElements] = currentElement;
 			previousElement = currentElement;
 			do { p ++; } while (isdigit ((int) *p));
 		} else if (*p == U':') {
 			do { p ++; } while (*p == U' ' || *p == U'\t');
-			long currentElement = Melder_atoi (p);
+			integer currentElement = Melder_atoi (p);
 			if (currentElement > previousElement) {
-				for (long ielement = previousElement + 1; ielement <= currentElement; ielement ++) {
+				for (integer ielement = previousElement + 1; ielement <= currentElement; ielement ++) {
 					elements [++ *numberOfElements] = ielement;
 				}
 			} else {
-				for (long ielement = previousElement - 1; ielement >= currentElement; ielement --) {
+				for (integer ielement = previousElement - 1; ielement >= currentElement; ielement --) {
 					elements [++ *numberOfElements] = ielement;
 				}
 			}
@@ -496,7 +491,7 @@ static void NUMlvector_getUniqueNumbers (integer *numbers, integer *numberOfElem
 	integer numberOfMultiples = 0;
 	
 	numbers [1] = sorted [1];
-	long numberOfUniques = 1;
+	integer numberOfUniques = 1;
 	for (integer i = 2; i <= *numberOfElements; i ++) {
 		if (sorted [i] != sorted [i - 1]) {
 			numbers [++numberOfUniques] = sorted [i];
@@ -520,8 +515,8 @@ integer *NUMstring_getElementsOfRanges (const char32 *ranges, integer maximumEle
 
 char32 * NUMstring_timeNoDot (double time) {
 	static char32 string[100];
-	integer seconds = Melder_iroundDown (time);
-	long ms = lround ((time - seconds) * 1000.0);
+	integer seconds = Melder_ifloor (time);
+	integer ms = Melder_iround ((time - seconds) * 1000.0);
 	Melder_sprint (string,100, U"_", seconds, U"_", ms);
 	return string;
 }

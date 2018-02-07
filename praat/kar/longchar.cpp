@@ -430,8 +430,8 @@ static struct structLongchar_Info Longchar_database [] = {
 { '.', '3', 1, 0, { "/therefore",      863, 0,   0,   0,    863, 0,    863, 0,   0,   0   },  92,  92,  92,  92, UNICODE_THEREFORE },
 { '=', '~', 1, 0, { "/congruent",      549, 0,   0,   0,    549, 0,    549, 0,   0,   0   },  64,  64,  64,  64, UNICODE_APPROXIMATELY_EQUAL_TO },
 { '~', '~', 1, 0, { "/approxequal",    549, 0,   0,   0,    549, 0,    549, 0,   0,   0   }, 187, 187, 187, 187, UNICODE_ALMOST_EQUAL_TO },
-{ 'u', 'n', 1, 0, { "/underscore",     500, 0,   0,   0,    500, 0,    500, 0,   0,   0   },  95,  95,  95,  95 },
-{ 'o', 'v', 1, 0, { "/radicalex",      500, 0,   0,   0,    500, 0,    500, 0,   0,   0   },  96,  96,  96,  96 },
+{ 'u', 'n', 1, 0, { "/underscore",     500, 0,   0,   0,    500, 0,    500, 0,   0,   0   },  95,  95,  95,  95, UNICODE_LOW_LINE },
+//{ 'o', 'v', 1, 0, { "/radicalex",      500, 0,   0,   0,    500, 0,    500, 0,   0,   0   },  96,  96,  96,  96, UNICODE_GRAVE_ACCENT /* BUG */ },
 { '=', '/', 1, 0, { "/notequal",       549, 0,   0,   0,    549, 0,    549, 0,   0,   0   }, 185, 185, 185, 185, UNICODE_NOT_EQUAL_TO },
 { '=', '3', 1, 0, { "/equivalence",    549, 0,   0,   0,    549, 0,    549, 0,   0,   0   }, 186, 186, 186, 186, UNICODE_IDENTICAL_TO }, /* defined as */
 { '<', '_', 1, 0, { "/lessequal",      549, 0,   0,   0,    549, 0,    549, 0,   0,   0   }, 163, 163, 163, 163, UNICODE_LESS_THAN_OR_EQUAL_TO },
@@ -614,10 +614,10 @@ static struct structLongchar_Info Longchar_database [] = {
 
 static short where [95] [95];
 static short inited = 0;
-#define UNICODE_TOP_GENERICIZABLE  65000
-static struct { char first, second; } genericDigraph [1+UNICODE_TOP_GENERICIZABLE];
+#define UNICODE_TOP_GENERICIZABLE  65535
+static struct { char first, second; bool isSpace; } genericDigraph [1+UNICODE_TOP_GENERICIZABLE];
 
-static void init () {
+void Longchar_init () {
 	Longchar_Info data;
 	short i;
 	for (i = 0, data = & Longchar_database [0]; data -> first != '\0'; i ++, data ++) {
@@ -633,13 +633,37 @@ static void init () {
 			genericDigraph [data -> unicode]. second = data -> second;
 		}
 	}
+	genericDigraph [' ']. isSpace = true;
+	genericDigraph ['\r']. isSpace = true;
+	genericDigraph ['\n']. isSpace = true;
+	genericDigraph ['\t']. isSpace = true;
+	genericDigraph ['\f']. isSpace = true;
+	genericDigraph ['\v']. isSpace = true;
+	genericDigraph [UNICODE_OGHAM_SPACE_MARK]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_MONGOLIAN_VOWEL_SEPARATOR]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_EN_QUAD]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_EM_QUAD]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_EN_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_EM_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_THREE_PER_EM_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_FOUR_PER_EM_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_SIX_PER_EM_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_FIGURE_SPACE]. isSpace = true;   // questionable
+	genericDigraph [UNICODE_PUNCTUATION_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_THIN_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_HAIR_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_ZERO_WIDTH_SPACE]. isSpace = true;   // questionable
+	genericDigraph [UNICODE_LINE_SEPARATOR]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_PARAGRAPH_SEPARATOR]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_MEDIUM_MATHEMATICAL_SPACE]. isSpace = true;   // ISO 30112
+	genericDigraph [UNICODE_IDEOGRAPHIC_SPACE]. isSpace = true;   // ISO 30112; occurs on Japanese computers
 	inited = 1;
 }
 
 char32_t * Longchar_nativize32 (const char32_t *generic, char32_t *native, int educateQuotes) {
 	integer nquote = 0;
 	char32_t kar, kar1, kar2;
-	if (! inited) init ();
+	if (! inited) Longchar_init ();
 	while ((kar = *generic++) != U'\0') {
 		if (educateQuotes) {
 			if (kar == U'\"') {
@@ -674,7 +698,7 @@ char32_t * Longchar_nativize32 (const char32_t *generic, char32_t *native, int e
 
 char32_t *Longchar_genericize32 (const char32_t *native, char32_t *g) {
 	char32_t kar;
-	if (! inited) init ();
+	if (! inited) Longchar_init ();
 	while ((kar = *native++) != U'\0') {
 		if (kar > 128 && kar <= UNICODE_TOP_GENERICIZABLE && genericDigraph [kar]. first != U'\0') {
 			*g++ = '\\';
@@ -689,7 +713,7 @@ char32_t *Longchar_genericize32 (const char32_t *native, char32_t *g) {
 }
 
 Longchar_Info Longchar_getInfo (char32_t kar1, char32_t kar2) {
-	if (! inited) init ();
+	if (! inited) Longchar_init ();
 	short position = kar1 < 32 || kar1 > 126 || kar2 < 32 || kar2 > 126 ?
 		0 :   /* Return the 'space' character. */
 		where [kar1 - 32] [kar2 - 32];
@@ -697,8 +721,13 @@ Longchar_Info Longchar_getInfo (char32_t kar1, char32_t kar2) {
 }
 
 Longchar_Info Longchar_getInfoFromNative (char32_t kar) {
-	if (! inited) init ();
+	if (! inited) Longchar_init ();
 	return kar > UNICODE_TOP_GENERICIZABLE ? Longchar_getInfo (U' ', U' ') : Longchar_getInfo (genericDigraph [kar]. first, genericDigraph [kar]. second);
+}
+
+bool Melder_isWhiteSpace (const char32_t kar) {
+	if (! inited) Longchar_init ();
+	return kar >= 0 && kar <= UNICODE_TOP_GENERICIZABLE && genericDigraph [kar]. isSpace;
 }
 
 /* End of file longchar.cpp */

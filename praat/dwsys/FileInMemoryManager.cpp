@@ -47,6 +47,12 @@
 
 Thing_implement (FileInMemoryManager, Daata, 0);
 
+void structFileInMemoryManager :: v_info () {
+	FileInMemoryManager_Parent :: v_info ();
+	MelderInfo_writeLine (U"Number of files: ", files -> size);
+	MelderInfo_writeLine (U"Total number of bytes: ", FileInMemorySet_getTotalNumberOfBytes (files.get()));
+}
+
 bool FileInMemoryManager_hasDirectory (FileInMemoryManager me, const char32 *name) {
 		return FileInMemorySet_hasDirectory (my files.get(), name);
 }
@@ -97,7 +103,7 @@ integer SortedSetOfLong_Lookup (SortedSetOfLong me, integer number) {
 
 autoTable FileInMemoryManager_downto_Table (FileInMemoryManager me, bool openFilesOnly) {
 	try {
-		long numberOfRows = openFilesOnly ? my openFiles -> size : my files -> size;
+		integer numberOfRows = openFilesOnly ? my openFiles -> size : my files -> size;
 		autoTable thee = Table_createWithColumnNames (numberOfRows, U"path id size position");
 		for (integer irow = 1; irow <= numberOfRows; irow ++) {
 			FileInMemory fim = static_cast <FileInMemory> (openFilesOnly ? my openFiles -> at [irow] : my files -> at [irow]);
@@ -127,13 +133,11 @@ autoFileInMemorySet FileInMemoryManager_extractFiles (FileInMemoryManager me, kM
 
 static integer _FileInMemoryManager_getIndexInOpenFiles (FileInMemoryManager me, FILE *stream) {
 	integer filesIndex = reinterpret_cast<integer> (stream);
-	if (filesIndex > 0 && filesIndex <= my files -> size) {
-		FileInMemory fim = static_cast<FileInMemory> (my files -> at [filesIndex]);
-		integer openFilesIndex = FileInMemorySet_lookUp (my openFiles.get(), fim -> d_path);
-		return openFilesIndex;
-	} else {
-			Melder_throw (me, U": Invalid file index: ", filesIndex);
-	}
+	Melder_require (filesIndex > 0 && filesIndex <= my files -> size, U": Invalid file index: ", filesIndex);
+
+	FileInMemory fim = static_cast<FileInMemory> (my files -> at [filesIndex]);
+	integer openFilesIndex = FileInMemorySet_lookUp (my openFiles.get(), fim -> d_path);
+	return openFilesIndex;
 }
 
 /* 
@@ -427,31 +431,30 @@ integer FileInMemoryManager_ftell (FileInMemoryManager me, FILE *stream) {
 char *FileInMemoryManager_fgets (FileInMemoryManager me, char *str, int num, FILE *stream) {
 	integer openFilesIndex = _FileInMemoryManager_getIndexInOpenFiles (me, stream);
 	char *result = nullptr;
-	if (openFilesIndex > 0) {
-		FileInMemory fim = static_cast<FileInMemory> (my openFiles -> at [openFilesIndex]);
-		integer startPos = fim -> d_position;
-		if (startPos < fim -> d_numberOfBytes) {
-			integer i = 0, endPos = startPos + num;
-			endPos = endPos < fim -> d_numberOfBytes ? endPos : fim -> d_numberOfBytes;
-			const unsigned char * p = fim -> d_data + startPos;
-			char *p_str = str;
-			if (fim -> ungetChar > 0) {
-				/*
-					copy the ungetChar and advance one position in stream
-				*/
-				*p_str ++ = fim -> ungetChar;
-				p ++; i ++;
-				fim -> ungetChar = -1;
-			}
-			while (i ++ < num && (*p_str ++ = *p) && *p ++ != '\n');
-			str [i] = '\0';
-			fim -> d_position += i;
-			result = str; // everything ok, return the str pointer
-		} else {
-			fim -> d_errno = EOF;
+	
+	Melder_require (openFilesIndex > 0, U": File should be open.");
+
+	FileInMemory fim = static_cast<FileInMemory> (my openFiles -> at [openFilesIndex]);
+	integer startPos = fim -> d_position;
+	if (startPos < fim -> d_numberOfBytes) {
+		integer i = 0, endPos = startPos + num;
+		endPos = endPos < fim -> d_numberOfBytes ? endPos : fim -> d_numberOfBytes;
+		const unsigned char * p = fim -> d_data + startPos;
+		char *p_str = str;
+		if (fim -> ungetChar > 0) {
+			/*
+				copy the ungetChar and advance one position in stream
+			*/
+			*p_str ++ = fim -> ungetChar;
+			p ++; i ++;
+			fim -> ungetChar = -1;
 		}
+		while (i ++ < num && (*p_str ++ = *p) && *p ++ != '\n');
+		str [i] = '\0';
+		fim -> d_position += i;
+		result = str; // everything ok, return the str pointer
 	} else {
-		Melder_throw (me, U": File is not open.");
+		fim -> d_errno = EOF;
 	}
 	return result;
 }
@@ -519,30 +522,29 @@ int FileInMemoryManager_fgetc (FileInMemoryManager me, FILE *stream) {
 */
 size_t FileInMemoryManager_fread (FileInMemoryManager me, void *ptr, size_t size, size_t count, FILE *stream) {
 	integer openFilesIndex = _FileInMemoryManager_getIndexInOpenFiles (me, stream);
+	
+	Melder_require (openFilesIndex > 0 && size > 0 && count > 0, U": File should be open.");
+	
+	FileInMemory fim = static_cast<FileInMemory> (my openFiles -> at [openFilesIndex]);
 	size_t result = 0;
-	if (openFilesIndex > 0 && size > 0 && count > 0) {
-		FileInMemory fim = static_cast<FileInMemory> (my openFiles -> at [openFilesIndex]);
-		integer startPos = fim -> d_position;
-		if (startPos < fim -> d_numberOfBytes) {
-			integer i = 0, endPos = startPos + count * size;
-			
-			if (endPos > fim -> d_numberOfBytes) {
-				count = (fim -> d_numberOfBytes - startPos) / size;
-				endPos = startPos + count * size;
-				fim -> d_errno = EOF;
-			}
-			integer numberOfBytes = count * size;
-			const unsigned char * p = fim -> d_data + fim -> d_position;
-			char * str = static_cast<char *> (ptr);
-			while (i < numberOfBytes) {
-				str [i ++] = *p ++;
-			}
-			fim -> d_position = endPos;
+	integer startPos = fim -> d_position;
+	if (startPos < fim -> d_numberOfBytes) {
+		integer i = 0, endPos = startPos + count * size;
+		
+		if (endPos > fim -> d_numberOfBytes) {
+			count = (fim -> d_numberOfBytes - startPos) / size;
+			endPos = startPos + count * size;
+			fim -> d_errno = EOF;
 		}
-		result = count;
-	} else {
-		Melder_throw (me, U": File is not open.");
+		integer numberOfBytes = count * size;
+		const unsigned char * p = fim -> d_data + fim -> d_position;
+		char * str = static_cast<char *> (ptr);
+		while (i < numberOfBytes) {
+			str [i ++] = *p ++;
+		}
+		fim -> d_position = endPos;
 	}
+	result = count;
 	return result;
 }
 
@@ -711,4 +713,124 @@ int FileInMemoryManager_fprintf (FileInMemoryManager me, FILE * stream, const ch
 	}
 	return bufferSize;
 }
+
+void test_FileInMemoryManager_io (void) {
+	const char32 *path1 = U"~/kanweg1.txt";
+	const char32 *path2 = U"~/kanweg2.txt";
+	const char32 *lines1 [3] = { U"abcd\n", U"ef\n",  U"ghijk\n" };
+	const char32 *lines2 [3] = { U"lmno\n", U"pqr\n",  U"stuvwxyz\n" };
+
+	/*
+		Create a test FileInMemorySet with two (text) files in it.
+	*/
+	MelderInfo_writeLine (U"test_FileInMemoryManager_io:");
+	MelderInfo_writeLine (U"\tCreating two files: ", path1, U" and ", path2);
+	structMelderFile s_file1 = {} , s_file2 = {};
+	MelderFile file1 = & s_file1, file2 = & s_file2;
+	Melder_relativePathToFile (path1, file1);
+	Melder_relativePathToFile (path2, file2);
+	autoFileInMemorySet fims = FileInMemorySet_create ();
+
+	FILE *f = fopen (Melder_peek32to8 (file1 -> path), "w");
+	for (integer j = 0; j <= 2; j ++) {
+		fputs (Melder_peek32to8 (lines1 [j]), f);
+	}	
+	fclose (f);
+
+	f = fopen (Melder_peek32to8 (file2 -> path), "w");
+	for (integer j = 0; j <= 2; j ++) {
+		fputs (Melder_peek32to8 (lines2 [j]), f);
+	}	
+	fclose (f);
+	
+	MelderInfo_writeLine (U"\tCreating FileInMemorySet from two files...");
+	
+	autoFileInMemory fim1 = FileInMemory_create (file1);
+	fims -> addItem_move (fim1.move());
+	autoFileInMemory fim2 = FileInMemory_create (file2);
+	fims -> addItem_move (fim2.move());
+	
+	/*
+		Create the FileInMemoryManager and test
+	*/
+
+	autoFileInMemoryManager me = FileInMemoryManager_create (fims.get());
+	
+	// fopen test
+	MelderInfo_writeLine (U"\tOpen file ", file1 -> path);
+	FILE * f1 = FileInMemoryManager_fopen (me.get(), Melder_peek32to8 (file1 -> path), "r");
+	integer openFilesIndex1 = _FileInMemoryManager_getIndexInOpenFiles (me.get(), f1);
+	Melder_assert (openFilesIndex1 == 1);
+	MelderInfo_writeLine (U"\t\t ...opened");
+	
+	MelderInfo_writeLine (U"\tOpen file ", file2 -> path);
+	FILE * f2 = FileInMemoryManager_fopen (me.get(), Melder_peek32to8 (file2 -> path), "r");
+	integer openFilesIndex2 = _FileInMemoryManager_getIndexInOpenFiles (me.get(), f2);
+	Melder_assert (openFilesIndex2 == 2);
+	MelderInfo_writeLine (U"\t\t ...opened");
+	
+	FileInMemoryManager_fclose (me.get(), f2);
+	Melder_assert (my openFiles -> size == 1);
+	MelderInfo_writeLine (U"\tClosed file ", file2 -> path);
+	
+	// read from open text file
+	
+	MelderInfo_writeLine (U"\tRead as text file in memory: ", file1 -> path);
+	char buf0 [200], buf1 [200];
+	long nbuf = 200;
+	
+	FileInMemory fim = (FileInMemory) my files -> at [openFilesIndex1];
+	FILE *file0 = fopen (Melder_peek32to8 (file1 -> path), "r");
+	for (integer i = 0; i <= 2; i ++) {
+		char *p0 = fgets (buf0, nbuf, file0);
+		integer pos0 = ftell (file0);
+		char *p1 = FileInMemoryManager_fgets (me.get(), buf1, nbuf, f1);
+		integer pos1 = FileInMemoryManager_ftell (me.get(), f1);
+		Melder_assert (Melder_equ (Melder_peek8to32 (buf0), Melder_peek8to32 (buf1)));
+		Melder_assert (pos0 == pos1);
+		Melder_assert (p0 == buf0 && p1 == buf1);
+		MelderInfo_writeLine (U"\t\tRead 1 line. Positions: ", pos0, U" and ", pos1);
+	}
+
+	MelderInfo_writeLine (U"\t\tRead while at EOF, returns nullptr");	
+	char *shouldbenull = FileInMemoryManager_fgets (me.get(), buf1, nbuf, f1);
+	Melder_assert (shouldbenull == nullptr);
+	
+	MelderInfo_writeLine (U"\tFinished reading... rewind ");
+	
+	// read as binary file
+	
+	rewind (file0);
+	FileInMemoryManager_rewind (me.get(), f1);
+	
+	MelderInfo_writeLine (U"\tRead as binary file in memory: ", file1 -> path);
+	
+	Melder_assert (fim -> d_position == 0);
+	integer count = 8;
+	size_t nread0 = fread (buf0, 1, count, file0);
+	size_t nread1 =  FileInMemoryManager_fread (me.get(), buf1, 1, count, f1);
+	MelderInfo_writeLine (U"\t\tRead ", nread0, U" and ", nread1, U" bytes");
+	
+	Melder_assert (nread0 == nread0);
+	Melder_assert (fim -> d_position == count);
+	
+	nread0 = fread (buf0, 1, count, file0);
+	nread1 = FileInMemoryManager_fread (me.get(), buf1, 1, count, f1);
+	MelderInfo_writeLine (U"\t\tRead ", nread0, U" and ", nread1, U" bytes");
+	Melder_assert (nread0 == nread1);
+	
+	int eof0 = feof (file0);
+	int eof1 = FileInMemoryManager_feof (me.get(), f1);
+	MelderInfo_writeLine (U"\tEOF ? ", eof0, U" and ", eof1);
+	
+	Melder_assert (eof0 != 0 && eof1 != 0);
+	
+	//  clean up
+	
+	MelderFile_delete (file1);
+	MelderFile_delete (file2);
+	
+	MelderInfo_writeLine (U"test_FileInMemoryManager_io: OK");
+}
+
 /* End of file FileInMemoryManager.cpp */

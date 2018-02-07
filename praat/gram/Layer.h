@@ -1,4 +1,6 @@
-/* DeepBeliefNetwork_def.h
+#ifndef _Layer_h_
+#define _Layer_h_
+/* Layer.h
  *
  * Copyright (C) 2017 Paul Boersma
  *
@@ -16,14 +18,13 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Collection.h"
+#include "Matrix.h"
+#include "Layer_enums.h"
+#include "Layer_def.h"
 
-#define ooSTRUCT DeepBeliefNetwork
-oo_DEFINE_CLASS (DeepBeliefNetwork, Daata)
+Collection_define (LayerList, OrderedOf, Layer) {
+};
 
-	oo_COLLECTION_OF (OrderedOf, layers, RBM, 0)
-
-oo_END_CLASS (DeepBeliefNetwork)
-#undef ooSTRUCT
-
-
-/* End of file DeepBeliefNetwork_def.h */
+/* End of file Layer.h */
+#endif

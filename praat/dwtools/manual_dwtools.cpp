@@ -32,9 +32,9 @@
 
 static autoTableOfReal getStandardizedLogFrequencyPolsData (bool includeLevels) {
 	autoTableOfReal me = TableOfReal_create_pols1973 (includeLevels);
-	for (long i = 1; i <= my numberOfRows; i++) {
-		for (long j = 1; j <= 3; j++) {
-			my data[i][j] = log10 (my data[i][j]);
+	for (integer i = 1; i <= my numberOfRows; i ++) {
+		for (integer j = 1; j <= 3; j++) {
+			my data [i] [j] = log10 (my data [i] [j]);
 		}
 	}
 	TableOfReal_standardizeColumns (me.get());
@@ -64,7 +64,7 @@ static void drawPolsF1F2ConcentrationEllipses (Graphics g) {
 static void drawPolsDiscriminantConfiguration (Graphics g) {
 	autoTableOfReal me = getStandardizedLogFrequencyPolsData (0);
 	autoDiscriminant d = TableOfReal_to_Discriminant (me.get());
-	autoConfiguration c = Discriminant_and_TableOfReal_to_Configuration (d.get(), me.get(), 2);
+	autoConfiguration c = Discriminant_TableOfReal_to_Configuration (d.get(), me.get(), 2);
 	Configuration_draw (c.get(), g, 1, 2, -2.9, 2.9, -2.9, 2.9, 0, 1, U"", 1);
 }
 
@@ -318,7 +318,7 @@ NORMAL (U"A ##canonical variate# is a new variable (variate) formed by making a 
 	"A linear combination of variables is the same as a weighted sum of variables. "
 	"Because we can in infinitely many ways choose combinations of weights between variables in a data set, "
 	"there are also infinitely many canonical variates possible. ")
-NORMAL (U"In general additional constraints must be satisfied by the weights to get a meaningful canonical variate. "
+NORMAL (U"In general additional constraints should be satisfied by the weights to get a meaningful canonical variate. "
 	"For example, in @@Canonical correlation analysis|canonical correlation analyis@ a data set is split up into two parts, a %%dependent% and an %%independent% part. "
 	"In both parts we can form a canonical variate and we choose weights that maximize the correlation between these canonical variates "
 	"(there is an @@TableOfReal: To CCA...|algorithm@ that calculates these weights).")
@@ -564,7 +564,7 @@ NORMAL (U"In a canonical correlation analysis of the dataset above, we try "
 	"When we have found these %u__1_ and %v__1_ we next try to find a new "
 	"combination %u__2_ of the formant frequencies and a new combination "
 	"%v__2_ of the levels that have maximum correlation. These %u__2_ and "
-	"%v__2_ must be uncorrelated with %u__1_ and %v__1_. "
+	"%v__2_ should be uncorrelated with %u__1_ and %v__1_. "
 	"When we express the above with formulas we have:")
 FORMULA (U"%u__1_ = %y__11_%F__1_+%y__12_%F__2_ + %y__13_%F__3_")
 FORMULA (U"%v__1_ = %x__11_%L__1_+%x__12_%L__2_ + %x__13_%L__3_")
@@ -1026,8 +1026,8 @@ INTRO (U"Input @@Covariance@ matrix cell values.")
 ENTRY (U"Constraints on input values")
 TAG (U"A covariance matrix is a %%symmetric% matrix: values input at cell [%i,%j] will be automatically input at "
 	"cell [%j,%i] too.")
-TAG (U"All values on the diagonal must be positive numbers.")
-TAG (U"The absolute value of an off-diagonal element at cell [%i,%j] must be smaller than the corresponding diagonal "
+TAG (U"All values on the diagonal should be positive numbers.")
+TAG (U"The absolute value of an off-diagonal element at cell [%i,%j] should be smaller than the corresponding diagonal "
 	"elements at cells [%i,%i] and [%j,%j].")
 MAN_END
 
@@ -1843,7 +1843,7 @@ DEFINITION (U"specifies the dimension of the resulting @Configuration. This dime
 	"given the resulting Configuration will have the maximum dimension as allowed by Discrimininant. "
 	"(Technically speaking: the number of eigenvectors (or eigenvalues) in the selected Discriminant is equal to the maximum allowed dimension.)")
 ENTRY (U"Precondition")
-NORMAL (U"The dimension of the Discriminant and the Configuration must conform in the sense that the number of columns in the TableOfReal and the length of an eigenvector in the Discriminant must be equal.")
+NORMAL (U"The dimension of the Discriminant and the Configuration must conform in the sense that the number of columns in the TableOfReal and the length of an eigenvector in the Discriminant should be equal.")
 NORMAL (U"See also @@Eigen & TableOfReal: Project...@.")
 MAN_END
 
@@ -2194,7 +2194,7 @@ DEFINITION (U"when on, the eigenvector is multiplied with the square root of the
 	"the %i-th element in the %j-th component loading vector gives the covariance between the %i-th "
 	"original variable and the %j-th principal component.)")
 TAG (U"##Element range#")
-DEFINITION (U"determine the first and last element of the vector that must be drawn.")
+DEFINITION (U"determine the first and last element of the vector that should be drawn.")
 TAG (U"##Minimum# and ##Maximum#")
 DEFINITION (U"determine the lower and upper bounds of the plot (choosing #Maximum smaller than #Minimum "
 	"will draw the %%inverted% eigenvector). ")
@@ -2749,7 +2749,7 @@ INTRO (U"A command to ask the selected @PCA for the minimum number of "
 	"to explain the given fraction %%variance accounted for%.")
 ENTRY (U"Setting")
 TAG (U"##Variance accounted for (fraction)")
-DEFINITION (U"the fraction variance accounted for that must be explained.")
+DEFINITION (U"the fraction variance accounted for that should be explained.")
 MAN_END
 
 MAN_BEGIN (U"PCA: To TableOfReal (reconstruct 1)...", U"djmw", 20030108)
@@ -3514,9 +3514,9 @@ NORMAL (U"A scree plot shows the sorted eigenvalues, from large to "
 	"small, as a function of the eigenvalue index.")
 MAN_END
 
-MAN_BEGIN (U"singular value decomposition", U"djmw", 20120510)
+MAN_BEGIN (U"singular value decomposition", U"djmw", 20171217)
 INTRO (U"The %%singular value decomposition% (SVD) is a matrix factorization algorithm.")
-NORMAL (U"For %m > %n, the singular value decomposition of a real %m \\xx %n matrix #A is the "
+NORMAL (U"For %m >= %n, the singular value decomposition of a real %m \\xx %n matrix #A is the "
 	"factorization")
 FORMULA (U"#A = #U #\\Si #V\\'p,")
 NORMAL (U"The matrices in this factorization have the following properties:")
@@ -3527,7 +3527,37 @@ DEFINITION (U"are orthogonal matrices. The columns #u__%i_ of #U =[#u__1_, ..., 
 TAG (U"#\\Si [%n \\xx %n] = diag (%\\si__1_, ..., %\\si__%n_)")
 DEFINITION (U"is a real, nonnegative, and diagonal matrix. Its diagonal contains the so called "
 	"%%singular values% %\\si__%i_, where %\\si__1_ \\>_ ... \\>_ %\\si__%n_ \\>_ 0.")
-NORMAL (U"If %m < %n, the decomposition results in #U [%m \\xx %m] and #V [%n \\xx %m].")
+MAN_END
+
+MAN_BEGIN (U"SVD", U"djmw", 20171214)
+INTRO (U"An object of type ##SVD# represents the @@singular value decomposition@ of a matrix.")
+ENTRY (U"SVD internals")
+NORMAL (U"Given #A, an %m \\xx %n matrix with %m >= %n, the decomposition will be #A = #U #\\Si #V\\'p. ")
+NORMAL (U"In the SVD object we store the %m \\xx %n matrix #U, the %n \\xx %n matrix #V and the %%n%-dimensional vector with the singular values. ")
+NORMAL (U"If it happens that for the #A matrix %m < %n, i.e. the number of rows is less than the number of columns, then we store "
+	"the SVD of the transpose of #A and flag this internally. "
+	"In this way we can make sure that for the matrix #U the number of columns never exceeds the number of rows and at the same time that the dimension of the matrix #V never exceeds the dimension of the matrix #U. ")
+NORMAL (U"For example the SVD of a 100 \\xx 20 matrix will result in a 100 \\xx 20 matrix #U, a 20 \\ 20 matrix #V and 20 singular values, "
+	"the SVD of a 20 \\xx 100 matrix will also result in a 100 \\xx 20 matrix #U, a 20 \\ 20 matrix #V and 20 singular values, however it will be internally flagged as being transposed.")
+MAN_END
+
+MAN_BEGIN (U"SVD: Get minimum number of singular values...", U"djmw", 20171214)
+INTRO (U"A command to get the minimum number of singular values (s.v.'s) whose sum, divided by the sum of all singular values, is smaller than the given fraction.")
+ENTRY (U"Examples")
+NORMAL (U"Given an SVD with four s.v's 10.0, 6.0, 3.0 and 1.0. The sum of the s.v's is 20.0.")
+CODE (U"Get minimum number of singular values: 0.5")
+DEFINITION (U"The returned value would be 1. The first s.v. divided by the sum is 0.5 (= 10.0 / 20.0). "
+	"For any fraction lower than 0.5 the query would also return 1, because the first s.v. already covers half of the total sum.")
+CODE (U"Get minimum number of singular values: 0.8")
+DEFINITION (U"The returned value would be 2. The sum of first two s.v.'s divided by the sum is 0.8 (= (10.0 + 6.0) / 20.0). "
+	" For any fraction between 0.5 and 0.8 the query would also return 2.")
+CODE (U"Get minimum number of singular values: 0.95")
+DEFINITION (U"The returned value would be 3. The sum of first three s.v.'s divided by the sum is 0.95 (= (10.0 + 6.0 + 3.0) / 20.0)."
+	" For any fraction between 0.8 and 0.95 the query would also return 3.")
+CODE (U"Get minimum number of singular values: 0.96")
+DEFINITION (U"The returned value would be 4.")
+CODE (U"Get minimum number of singular values: 0.99")
+DEFINITION (U"The returned value would be 4.")
 MAN_END
 
 MAN_BEGIN (U"Sound & Pitch: Change speaker...", U"djmw", 20070722)
@@ -5020,9 +5050,9 @@ INTRO (U"A command that creates a @CCA object from the selected "
 ENTRY (U"Settings")
 TAG (U"%%Dimension of dependent variate (ny)")
 DEFINITION (U"defines the partition of the table into the two parts whose "
-	"correlations will be determined. The first %ny columns must be the "
+	"correlations will be determined. The first %ny columns should be the "
 	"dependent part, the rest of the columns will be interpreted as the "
-	"independent part (%nx columns). In general %nx must be larger than or "
+	"independent part (%nx columns). In general %nx should be larger than or "
 	"equal to %ny.")
 ENTRY (U"Behaviour")
 NORMAL (U"Calculates canonical correlations between the %dependent and the "

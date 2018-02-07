@@ -2,7 +2,7 @@
 #define _Cepstrogram_h_
 /* Cepstrogram.h
  *
- * Copyright (C) 2012-2013, 2016 David Weenink
+ * Copyright (C) 2012-2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,9 +48,9 @@ Thing_define (PowerCepstrogram, Cepstrogram) {
 
 */
 
-autoCepstrogram Cepstrogram_create (double tmin, double tmax, long nt, double dt, double t1, double qmin, double qmax, long nq, double dq, double q1);
+autoCepstrogram Cepstrogram_create (double tmin, double tmax, integer nt, double dt, double t1, double qmin, double qmax, integer nq, double dq, double q1);
 
-autoPowerCepstrogram PowerCepstrogram_create (double tmin, double tmax, long nt, double dt, double t1, double qmin, double qmax, long nq, double dq, double q1);
+autoPowerCepstrogram PowerCepstrogram_create (double tmin, double tmax, integer nt, double dt, double t1, double qmin, double qmax, integer nq, double dq, double q1);
 
 void PowerCepstrogram_paint (PowerCepstrogram me, Graphics g, double tmin, double tmax, double qmin, double qmax, double dBmaximum, int autoscaling, double dynamicRangedB, double dynamicCompression, int garnish);
 
@@ -68,7 +68,7 @@ autoPowerCepstrum PowerCepstrogram_to_PowerCepstrum_slice (PowerCepstrogram me, 
 
 autoPowerCepstrogram PowerCepstrogram_subtractTilt (PowerCepstrogram me, double qstartFit, double qendFit, int lineType, int fitMethod);
 
-void PowerCepstrogram_subtractTilt_inline (PowerCepstrogram me, double qstartFit, double qendFit, int lineType, int fitMethod);
+void PowerCepstrogram_subtractTilt_inplace (PowerCepstrogram me, double qstartFit, double qendFit, int lineType, int fitMethod);
 
 double PowerCepstrogram_getCPPS_hillenbrand (PowerCepstrogram me, bool subtractTiltBeforeSmoothing, double timeAveragingWindow, double quefrencyAveragingWindow, double pitchFloor, double pitchCeiling);
 
