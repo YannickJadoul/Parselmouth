@@ -1064,6 +1064,8 @@ extern "C" void praatlib_init () {
 	// Added to registration of Praat commands by init
 	Data_setPublishProc (publishProc);
 	theCurrentPraatApplication -> manPages = ManPages_create ().releaseToAmbiguousOwner();
+
+	if (! praatP.dontUsePictureWindow) praat_picture_init ();
 }
 
 void praat_init (const char32 *title, int argc, char **argv)

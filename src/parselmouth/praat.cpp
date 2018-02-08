@@ -216,6 +216,8 @@ py::object castPraatResultToPython(const std::u32string &callbackName, PraatObje
 
 	// Weird: U"BUG_", U"DANGEROUS_"
 	// Impossible: U"PLAY_", U"RECORD1_", U"WINDOW_"
+	// Does nothing: U"GRAPHICS_"
+	// Throws exception: U"MOVIE_"
 }
 
 auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &command, py::args args, py::kwargs kwargs) {

@@ -656,16 +656,19 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 #define GRAPHICS_COUPLE_AND_ONE_END  END_NO_NEW_DATA
 
 #define MOVIE_ONE(klas,title,width,height)  \
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot play a movie from batch."); \
 	Graphics graphics = Movie_create (title, width, height); \
 	FIND_ONE (klas)
 #define MOVIE_ONE_END  END_NO_NEW_DATA
 
 #define MOVIE_TWO(klas1,klas2,title,width,height)  \
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot play a movie from batch."); \
 	Graphics graphics = Movie_create (title, width, height); \
 	FIND_TWO (klas1, klas2)
 #define MOVIE_TWO_END  END_NO_NEW_DATA
 
 #define MOVIE_THREE(klas1,klas2,klas3,title,width,height)  \
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot play a movie from batch."); \
 	Graphics graphics = Movie_create (title, width, height); \
 	FIND_THREE (klas1, klas2, klas3)
 #define MOVIE_THREE_END  END_NO_NEW_DATA
