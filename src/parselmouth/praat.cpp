@@ -263,7 +263,7 @@ auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &obj
 		return castPraatResultToPython(executedCommand->nameOfCallback, environment.objects(), interceptor.get(), objects.size());
 }
 
-auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &script, py::args args, py::kwargs kwargs) {
+auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objects, char32 *script, py::args args, py::kwargs kwargs) {
 	auto captureOutput = extractKwarg<bool, py::bool_>(kwargs, "capture_output", false, "bool");
 	checkUnkownKwargs(kwargs);
 
@@ -280,30 +280,56 @@ auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objec
 	for (auto &arg : args)
 		praatArgs.emplace_back(castPythonToPraat(arg));
 
-	// TODO Somehow does not intercept everything for praat/test/fon/fourier.praat
 	// Prepare to intercept the output of the command
 	auto interceptor = captureOutput ? std::make_unique<MelderInfoInterceptor>() : nullptr;
 
 	try {
-		auto fullScript = autostring32(Melder_dup(script.c_str()));
-		Melder_includeIncludeFiles(&fullScript);
-
-		Interpreter_readParameters(environment.interpreter(), fullScript.peek());
+		Interpreter_readParameters(environment.interpreter(), script);
 		Interpreter_getArgumentsFromArgs (environment.interpreter(), static_cast<int>(praatArgs.size() - 1), praatArgs.data());
-		Interpreter_run(environment.interpreter(), fullScript.peek());
+		Interpreter_run(environment.interpreter(), script);
 	} catch (MelderError) {
 		Melder_throw(U"Script not completed.");
 	}
 
-	return captureOutput ? make_optional(interceptor->get()) : nullopt;
+	// TODO Get rid of code duplication
+	auto praatObjects = environment.objects();
+	std::vector<autoData> selected;
+	for (auto i = 1; i <= praatObjects->n; ++i) {
+		auto &praatObject = praatObjects->list[i];
+		if (praatObject.isSelected) {
+			praat_deselect(i); // Hack/workaround: if this is not called, Praat will call it while removing the object from the list, and crash on accessing object -> classInfo
+			selected.emplace_back(praatObject.object);
+			praatObject.object = nullptr;
+		}
+	}
+
+	auto pySelected = py::cast(std::move(selected));
+	return captureOutput ? py::cast(std::make_pair(pySelected, interceptor.get())) : pySelected;
+}
+
+auto runPraatScriptFromText(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &script, py::args args, py::kwargs kwargs) {
+	auto fullScript = autostring32(Melder_dup(script.c_str()));
+	Melder_includeIncludeFiles(&fullScript);
+
+	return runPraatScript(objects, fullScript.peek(), std::move(args), std::move(kwargs));
+}
+
+auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &path, py::args args, py::kwargs kwargs) {
+	auto file = pathToMelderFile(path);
+	autostring32 script = MelderFile_readText(&file);
+
+	autoMelderFileSetDefaultDir dir(&file);
+	Melder_includeIncludeFiles(&script);
+
+	return runPraatScript(objects, script.peek(), std::move(args), std::move(kwargs));
 }
 
 } // namespace
 
 void initPraatModule(py::module m) {
 	m.def("call",
-	      &callPraatCommand,
-	      "objects"_a, "command"_a,
+	      [](const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({}, command, args, kwargs); },
+	      "command"_a,
 	      "Keyword arguments:\n    - return_string: bool = False");
 
 	m.def("call",
@@ -312,23 +338,38 @@ void initPraatModule(py::module m) {
 	      "Keyword arguments:\n    - return_string: bool = False");
 
 	m.def("call",
-	      [](const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({}, command, args, kwargs); },
-	      "command"_a,
+	      &callPraatCommand,
+	      "objects"_a, "command"_a,
 	      "Keyword arguments:\n    - return_string: bool = False");
 
 	m.def("run",
-	      &runPraatScript,
-	      "objects"_a, "script"_a,
+	      [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({}, script, args, kwargs); },
+	      "script"_a,
 	      "Keyword arguments:\n    - capture_output: bool = False");
 
 	m.def("run",
-	      [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScript({ std::ref(data) }, script, args, kwargs); },
+	      [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({ std::ref(data) }, script, args, kwargs); },
 	      "object"_a, "script"_a,
 	      "Keyword arguments:\n    - capture_output: bool = False");
 
 	m.def("run",
-	      [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScript({}, script, args, kwargs); },
-	      "script"_a,
+	      &runPraatScriptFromText,
+	      "objects"_a, "script"_a,
+	      "Keyword arguments:\n    - capture_output: bool = False");
+
+	m.def("run_file",
+	      [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({}, script, args, kwargs); },
+	      "path"_a,
+	      "Keyword arguments:\n    - capture_output: bool = False");
+
+	m.def("run_file",
+	      [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({ std::ref(data) }, script, args, kwargs); },
+	      "object"_a, "path"_a,
+	      "Keyword arguments:\n    - capture_output: bool = False");
+
+	m.def("run_file",
+	      &runPraatScriptFromFile,
+	      "objects"_a, "path"_a,
 	      "Keyword arguments:\n    - capture_output: bool = False");
 
 #ifndef NDEBUG // TODO Only in debug?
