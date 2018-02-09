@@ -676,8 +676,13 @@ void NUMscale (double *x, double xminfrom, double xmaxfrom, double xminto, doubl
 //inline static bool isdefined (double x) { return ! isinf (x) && ! isnan (x); }   /* portable */
 //inline static bool isdefined (double x) { return ((* (uint64_t *) & x) & 0x7FF0000000000000) != 0x7FF0000000000000; }
 //inline static bool isundef (double x) { return ((* (uint64_t *) & x) & 0x7FF0000000000000) == 0x7FF0000000000000; }
+#ifdef isfinite
 inline static bool isdefined (double x) { return isfinite(x); }
 inline static bool isundef (double x) { return !isfinite(x); }
+#else
+inline static bool isdefined (double x) { return std::isfinite(x); }
+inline static bool isundef (double x) { return !std::isfinite(x); }
+#endif
 
 /********** Arrays with one index (NUMarrays.cpp) **********/
 
