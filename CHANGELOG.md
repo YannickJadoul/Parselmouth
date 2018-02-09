@@ -4,15 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.3.0] - 2018-02-09
 ### Added
 - Exposed calls to Praat commands through `parselmouth.praat.call`.
+- Exposed running Praat scripts through `parselmouth.praat.run` and `parselmouth.praat.run_script`.
 - Added `Thing.class_name` as read-only property to get underlying Praat class, even when that one is not yet exposed.
+- Added `name` and `full_name` properties to `Thing` class. 
 - Added `save`, `save_as_text_file`, `save_as_short_text_file`, and `save_as_binary_file` to `Data` class.
 ### Changed
-- Updated Praat version to 6.0.36.
+- Updated Praat version to 6.0.37.
 - Updated pybind11 to development version v2.3.dev0 (for `py::args` bugfix in dispatcher).
 ### Fixed
 - Corrected confusion between `get_time_from_frame_number` and `get_frame_number_from_time` in time-sampled classes.
+- Minor fixes to the examples in the docs.
 
 ## [0.2.1] - 2017-12-11
 ### Added
@@ -52,7 +57,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - Main functionality of `Thing`, `Data`, `Matrix`, `Vector`, `Sound`, `Spectrum`, `Spectrogram`, and `Intensity` classes. Preliminary implementations of `Pitch`, `Harmonicity`, `Formant`, and `MFCC`.
 - Basic Travis CI configuration.
 
-[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.1.0...v0.1.1
