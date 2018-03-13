@@ -22,8 +22,6 @@ include_directories(BEFORE ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 if (UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unknown-pragmas")
 elseif (WIN32)
-	set(PYBIND11_CPP_STANDARD "/std:c++latest")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd5033") # "warning C5033: 'register' is no longer a supported storage class": in Python header files
 endif ()
 
@@ -32,9 +30,11 @@ add_subdirectory(parselmouth)
 
 pybind11_add_module(parselmouth ${SRC})
 
-set_property(TARGET parselmouth PROPERTY C_STANDARD 99)
-set_property(TARGET parselmouth PROPERTY CXX_STANDARD 14)
-set_property(TARGET parselmouth PROPERTY CXX_STANDARD_REQUIRED TRUE)
+if (NOT WIN32)
+	set_property(TARGET parselmouth PROPERTY C_STANDARD 99)
+	set_property(TARGET parselmouth PROPERTY CXX_STANDARD 14)
+	set_property(TARGET parselmouth PROPERTY CXX_STANDARD_REQUIRED TRUE)
+endif ()
 
 target_link_libraries(parselmouth PRIVATE praat)
 
