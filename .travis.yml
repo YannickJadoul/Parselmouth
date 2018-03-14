@@ -188,9 +188,10 @@ before_install:
       brew install ccache
       export PATH=/usr/local/opt/ccache/libexec:$PATH
       if [ "${PYTHON%%.*}" == "3" ]; then
-        brew install python3
+        brew upgrade python
         PYTHON_CMD=python3
       else
+        brew unlink python && brew install python@2
         PYTHON_CMD=python2
       fi
       CC=clang
