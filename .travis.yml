@@ -101,6 +101,7 @@ matrix:
           user: YannickJadoul
           key:
             secure: an0RPZkTc9vqCe9mdik94fSImmnCsiZLmd6HPncfczfGWJdo5iEP9FbmdHMC47mnl+kNiHGS/3dyhGtkbtwAihGLOVfPjyTk4JXac7c4YwhYAvlzRWeKafti0Cg1lmdGlX1CUowDzpuKROiOqjeN4fYvKjVfCqNCVPvluQpkX/RVNAdzbNQggggSvh3Blf2WNVflGdd0RNUr1Z4gZGyH6DbkZ2zbOt7PRU0cYm2NEbgN/mKPGpoKK1voWrSa57r3DYo+nbtk76oTGnqK7j8E4pOxr0uUCSwAYj5cIoOlcErZICDyyNLULgROPv8oXqhpZ8HkyTOMkUK2Lniq9h5kwmkby9GiRFBtLMJTU9rAHTwmP9AdF2eKngQf69Tw/f9UqvDjpsoBxshoZecI+Wsf5IJ/qc8Zffx4lm7k4uHl+Y8fcXCi5VtqODtOwSa/KIkGSLIus4PKaTO++7jmUA/DKEhUgTQfosYdUUUm2lua3ZMJ1o62M73XFFUxn5G5NaR5G/mosgsoFcJ3vnejt+ljf7j5C7Du7Hx3gZDwMzhrYG2DJEoRUNEahJV4djFsiDyIhoyYSsuLr0jQnT3//f5uqSlMP7PE4f98NEQxixM4naZaizBggyyAXwvlFxqqmxJxDq5dZCVgJTc3dTeEgJCi/Q5vURZqWvXt/EeLyB7anO4=
+          skip_cleanup: true
           on:
             all_branches: true
         - &github-releases-deploy
