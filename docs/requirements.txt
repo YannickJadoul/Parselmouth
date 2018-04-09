@@ -1,2 +1,7 @@
 ipykernel
 nbsphinx
+
+matplotlib
+numpy
+pandas
+seaborn
