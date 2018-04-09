@@ -6,6 +6,9 @@
 # Build folder of Sphinx
 /docs/_build
 
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
 # OS X temporary and cache files
 *~
 .DS_Store

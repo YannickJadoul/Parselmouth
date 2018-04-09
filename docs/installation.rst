@@ -37,7 +37,6 @@ Other
     For other distributions of Python, we are expecting that our package is compatible with the Python versions that are out there and that ``pip`` can handle the installation. If you are using yet another Python distribution, we are definitely interested in hearing about it, so that we can add it to this list!
 
 
-.. _installation-psychopy:
 
 PsychoPy
 --------

@@ -8,6 +8,6 @@ Parselmouth can be used in various contexts to combine Praat functionality with 
 
     example_plotting
     example_batch_processing
+    example_pitch_manipulation
     example_psychopy_experiments
-
 
