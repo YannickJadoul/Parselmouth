@@ -1,0 +1,6 @@
+praat-parselmouth
+
+matplotlib
+numpy
+pandas
+seaborn
