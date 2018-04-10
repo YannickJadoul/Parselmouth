@@ -1,5 +1,3 @@
-praat-parselmouth
-
 matplotlib
 numpy
 pandas

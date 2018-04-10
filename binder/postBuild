@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pip install praat-parselmouth==`python setup.py --version`
+
