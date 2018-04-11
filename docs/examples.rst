@@ -6,8 +6,8 @@ Parselmouth can be used in various contexts to combine Praat functionality with 
 .. toctree::
     :maxdepth: 2
 
-    example_plotting
-    example_batch_processing
-    example_pitch_manipulation
-    example_psychopy_experiments
+    examples/plotting
+    examples/batch_processing
+    examples/pitch_manipulation
+    examples/psychopy_experiments
 
