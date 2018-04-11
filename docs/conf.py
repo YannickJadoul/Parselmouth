@@ -115,6 +115,30 @@ autodoc_member_order = 'groupwise'
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3.6', None)}
 
+if on_rtd:
+    branch_or_tag = branch or 'v{}'.format(release)
+else:
+    rev_parse_name = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('ascii').strip()
+    branch_or_tag = rev_parse_name if rev_parse_name != 'HEAD' else 'v{}'.format(release)
+
+rst_epilog = """
+.. |binder_badge_examples| image:: https://mybinder.org/badge.svg
+    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab%2Ftree%2Fdocs%2Fexamples
+""".format(branch_or_tag=branch or 'master' if on_rtd else 'docs')
+
+nbsphinx_prolog = """
+{% set docname = env.doc2path(env.docname, base='docs') %}
+
+.. only:: html
+
+    .. nbinfo::
+
+        An online, interactive version of this example is available at Binder: |binder|
+
+.. |binder| image:: https://mybinder.org/badge.svg
+    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=tree%2F{{ docname.replace('/', '%2F') }}
+"""
+
 
 # -- Options for HTML output ----------------------------------------------
 

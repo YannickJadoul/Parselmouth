@@ -11,3 +11,8 @@ Parselmouth can be used in various contexts to combine Praat functionality with 
     examples/pitch_manipulation
     examples/psychopy_experiments
 
+.. only:: html
+
+    .. note::
+
+        An online, interactive version of these examples is available at Binder: |binder_badge_examples|

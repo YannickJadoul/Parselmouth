@@ -6,6 +6,7 @@
 [![AppVeyor status](https://img.shields.io/appveyor/ci/YannickJadoul/Parselmouth/master.svg)](https://ci.appveyor.com/project/YannickJadoul/parselmouth)
 [![ReadTheDocs status](https://readthedocs.org/projects/parselmouth/badge/?version=latest)](https://parselmouth.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/pypi/l/praat-parselmouth.svg)](https://github.com/YannickJadoul/Parselmouth/blob/master/LICENSE)
+[![Binder examples](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=lab%2Ftree%2Fdocs%2Fexamples)
 
 **Parselmouth** is a Python library for the [Praat](http://www.praat.org) software.
 
@@ -14,6 +15,8 @@ Though other attempts have been made at porting functionality from Praat to Pyth
 Please note that Parselmouth is currently in premature state and in active development. While the amount of functionality that is currently present is not huge, more will be added over the next few months.
 
 Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) if you have any question, remarks, or requests!
+
+*Try out* Parselmouth online, in interactive Jupyter notebooks on [Binder](https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=lab%2Ftree%2Fdocs%2Fexamples).
 
 ## Installation
 Parselmouth can be installed like any other Python library, using (a recent version of) the Python package manager `pip`, on Linux, macOS, and Windows:
