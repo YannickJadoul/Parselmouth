@@ -127,17 +127,17 @@ rst_epilog = """
 """.format(branch_or_tag=branch or 'master' if on_rtd else 'docs')
 
 nbsphinx_prolog = """
-{% set docname = env.doc2path(env.docname, base='docs') %}
+{{% set docname = env.doc2path(env.docname, base='docs') %}}
 
 .. only:: html
 
-    .. nbinfo::
+    .. note::
 
         An online, interactive version of this example is available at Binder: |binder|
 
 .. |binder| image:: https://mybinder.org/badge.svg
-    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=tree%2F{{ docname.replace('/', '%2F') }}
-"""
+    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=tree%2F{{{{ docname.replace('/', '%2F') }}}}
+""".format(branch_or_tag=branch_or_tag)
 
 
 # -- Options for HTML output ----------------------------------------------
