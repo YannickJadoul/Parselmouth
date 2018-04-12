@@ -116,7 +116,7 @@ for wave_file in glob.glob("audio/*.wav"):
     s.save(os.path.splitext(wave_file)[0] + "_pre.aiff", 'AIFF')
 ```
 
-More examples of different use cases of Parselmouth can be found in the [documentation's examples section](https://parselmouth.readthedocs.io/en/docs/examples.html).
+More examples of different use cases of Parselmouth can be found in the [documentation's examples section](https://parselmouth.readthedocs.io/en/latest/examples.html).
 
 ## Documentation
 Our documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.io/), including the API reference of Parselmouth.
