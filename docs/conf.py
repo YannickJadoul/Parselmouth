@@ -64,7 +64,7 @@ author = 'Yannick Jadoul'
 if on_rtd:
     rtd_version = os.environ.get('READTHEDOCS_VERSION')
     setup_py_version = subprocess.check_output([sys.executable, os.path.abspath(os.path.join('..', 'setup.py')), '--version']).decode('ascii').strip()
-    
+
     if rtd_version == 'stable':
         branch = None
         try:
@@ -136,7 +136,7 @@ nbsphinx_prolog = """
         An online, interactive version of this example is available at Binder: |binder|
 
 .. |binder| image:: https://mybinder.org/badge.svg
-    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=tree%2F{{{{ docname.replace('/', '%2F') }}}}
+    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab%2Ftree%2F{{{{ docname.replace('/', '%2F') }}}}
 """.format(branch_or_tag=branch_or_tag)
 
 
