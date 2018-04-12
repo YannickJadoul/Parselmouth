@@ -36,31 +36,32 @@ import parselmouth
 
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn
-seaborn.set() # Use seaborn's default style to make graphs more pretty
+import seaborn as sns
+
+sns.set() # Use seaborn's default style to make attractive graphs
 
 # Plot nice figures using Python's "standard" matplotlib library
-snd = parselmouth.Sound("~/z6a.WAVE")
+snd = parselmouth.Sound("docs/examples/audio/the_north_wind_and_the_sun.wav")
 plt.figure()
-plt.plot(snd.xs(), snd.values)
+plt.plot(snd.xs(), snd.values.T)
 plt.xlim([snd.xmin, snd.xmax])
 plt.xlabel("time [s]")
 plt.ylabel("amplitude")
-plt.show() # or plt.savefig("sound.pdf")
+plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
 ```
 ![example_sound.png](docs/images/example_sound.png)
 ```Python
 def draw_spectrogram(spectrogram, dynamic_range=70):
     X, Y = spectrogram.x_grid(), spectrogram.y_grid()
-    sg_db = 10 * np.log10(spectrogram.values.T)
+    sg_db = 10 * np.log10(spectrogram.values)
     plt.pcolormesh(X, Y, sg_db, vmin=sg_db.max() - dynamic_range, cmap='afmhot')
     plt.ylim([spectrogram.ymin, spectrogram.ymax])
     plt.xlabel("time [s]")
     plt.ylabel("frequency [Hz]")
 
 def draw_intensity(intensity):
-    plt.plot(intensity.xs(), intensity.values, linewidth=3, color='w')
-    plt.plot(intensity.xs(), intensity.values, linewidth=1)
+    plt.plot(intensity.xs(), intensity.values.T, linewidth=3, color='w')
+    plt.plot(intensity.xs(), intensity.values.T, linewidth=1)
     plt.grid(False)
     plt.ylim(0)
     plt.ylabel("intensity [dB]")
@@ -76,25 +77,46 @@ plt.show() # or plt.savefig("spectrogram.pdf")
 ```
 ![example_spectrogram.png](docs/images/example_spectrogram.png)
 ```Python
-spectrogram = snd.to_spectrogram(window_length=0.05)
+def draw_pitch(pitch):
+    # Extract selected pitch contour, and
+    # replace unvoiced samples by NaN to not plot
+    pitch_values = pitch.selected_array['frequency']
+    pitch_values[pitch_values==0] = np.nan
+    plt.plot(pitch.xs(), pitch_values, 'o', markersize=5, color='w')
+    plt.plot(pitch.xs(), pitch_values, 'o', markersize=2)
+    plt.grid(False)
+    plt.ylim(0, pitch.ceiling)
+    plt.ylabel("fundamental frequency [Hz]")
+
+pitch = snd.to_pitch()
+# If desired, pre-emphasize the sound fragment before calculating the spectrogram
+pre_emphasized_snd = snd.copy()
+pre_emphasized_snd.pre_emphasize()
+spectrogram = pre_emphasized_snd.to_spectrogram(window_length=0.03, maximum_frequency=8000)
 plt.figure()
 draw_spectrogram(spectrogram)
+plt.twinx()
+draw_pitch(pitch)
 plt.xlim([snd.xmin, snd.xmax])
-plt.show() # or plt.savefig("spectrogram_0.05.pdf")
+plt.show() # or plt.savefig("spectrogram_0.03.pdf")
 ```
-![example_spectrogram_0.05.png](docs/images/example_spectrogram_0.05.png)
+![example_spectrogram_0.03.png](docs/images/example_spectrogram_0.03.png)
 ```Python
 # Find all .wav files in a directory, pre-emphasize and save as new .wav and .aiff file
+import parselmouth
+
 import glob
 import os.path
-from parselmouth import SoundFileFormat
 
-for wave_file in glob.glob('/home/yannick/*.wav'):
+for wave_file in glob.glob("audio/*.wav"):
+    print("Processing {}...".format(wave_file))
     s = parselmouth.Sound(wave_file)
-    s_pre = s.pre_emphasize()
-    s.save(os.path.splitext(wave_file)[0] + '_pre.wav', SoundFileFormat.WAV)
-    s.save(os.path.splitext(wave_file)[0] + '_pre.aiff', SoundFileFormat.AIFF)
+    s.pre_emphasize()
+    s.save(os.path.splitext(wave_file)[0] + "_pre.wav", 'WAV') # or parselmouth.SoundFileFormat.WAV instead of 'WAV'
+    s.save(os.path.splitext(wave_file)[0] + "_pre.aiff", 'AIFF')
 ```
+
+More examples of different use cases of Parselmouth can be found in the [documentation's examples section](https://parselmouth.readthedocs.io/en/docs/examples.html).
 
 ## Documentation
 Our documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.io/), including the API reference of Parselmouth.
