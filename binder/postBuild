@@ -2,4 +2,4 @@
 
 pip install praat-parselmouth==`python setup.py --version`
 
-jupyter labextension install @jupyter-widgets/jupyterlab-manager@0.33
+jupyter labextension install @jupyter-widgets/jupyterlab-manager && jupyter lab clean && jupyter lab build
