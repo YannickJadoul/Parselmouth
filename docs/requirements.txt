@@ -1,4 +1,5 @@
 ipykernel
+ipywidgets
 nbsphinx
 
 matplotlib
