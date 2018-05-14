@@ -155,9 +155,6 @@ the setter and getter functions:
             .def_property("name", &Pet::getName, &Pet::setName)
             // ... remainder ...
 
-Write only properties can be defined by passing ``nullptr`` as the
-input for the read function.
-
 .. seealso::
 
     Similar functions :func:`class_::def_readwrite_static`,

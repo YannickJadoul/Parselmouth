@@ -10,13 +10,20 @@
 #include "pybind11_tests.h"
 #include "constructor_stats.h"
 #include "local_bindings.h"
+#include <pybind11/stl.h>
+
+// test_brace_initialization
+struct NoBraceInitialization {
+    NoBraceInitialization(std::vector<int> v) : vec{std::move(v)} {}
+    template <typename T>
+    NoBraceInitialization(std::initializer_list<T> l) : vec(l) {}
+
+    std::vector<int> vec;
+};
 
 TEST_SUBMODULE(class_, m) {
     // test_instance
     struct NoConstructor {
-        NoConstructor() = default;
-        NoConstructor(const NoConstructor &) = default;
-        NoConstructor(NoConstructor &&) = default;
         static NoConstructor *new_instance() {
             auto *ptr = new NoConstructor();
             print_created(ptr, "via new_instance");
@@ -85,12 +92,7 @@ TEST_SUBMODULE(class_, m) {
     m.def("dog_bark", [](const Dog &dog) { return dog.bark(); });
 
     // test_automatic_upcasting
-    struct BaseClass {
-        BaseClass() = default;
-        BaseClass(const BaseClass &) = default;
-        BaseClass(BaseClass &&) = default;
-        virtual ~BaseClass() {}
-    };
+    struct BaseClass { virtual ~BaseClass() {} };
     struct DerivedClass1 : BaseClass { };
     struct DerivedClass2 : BaseClass { };
 
@@ -299,6 +301,12 @@ TEST_SUBMODULE(class_, m) {
         .def(py::init<int, const std::string &>())
         .def_readwrite("field1", &BraceInitialization::field1)
         .def_readwrite("field2", &BraceInitialization::field2);
+    // We *don't* want to construct using braces when the given constructor argument maps to a
+    // constructor, because brace initialization could go to the wrong place (in particular when
+    // there is also an `initializer_list<T>`-accept constructor):
+    py::class_<NoBraceInitialization>(m, "NoBraceInitialization")
+        .def(py::init<std::vector<int>>())
+        .def_readonly("vec", &NoBraceInitialization::vec);
 
     // test_reentrant_implicit_conversion_failure
     // #1035: issue with runaway reentrant implicit conversion
