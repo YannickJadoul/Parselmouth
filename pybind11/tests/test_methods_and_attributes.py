@@ -98,21 +98,6 @@ def test_properties():
     instance.def_property = 3
     assert instance.def_property == 3
 
-    with pytest.raises(AttributeError) as excinfo:
-        dummy = instance.def_property_writeonly  # noqa: F841 unused var
-    assert "unreadable attribute" in str(excinfo)
-
-    instance.def_property_writeonly = 4
-    assert instance.def_property_readonly == 4
-
-    with pytest.raises(AttributeError) as excinfo:
-        dummy = instance.def_property_impossible  # noqa: F841 unused var
-    assert "unreadable attribute" in str(excinfo)
-
-    with pytest.raises(AttributeError) as excinfo:
-        instance.def_property_impossible = 5
-    assert "can't set attribute" in str(excinfo)
-
 
 def test_static_properties():
     assert m.TestProperties.def_readonly_static == 1
@@ -123,27 +108,13 @@ def test_static_properties():
     m.TestProperties.def_readwrite_static = 2
     assert m.TestProperties.def_readwrite_static == 2
 
+    assert m.TestProperties.def_property_readonly_static == 2
     with pytest.raises(AttributeError) as excinfo:
-        dummy = m.TestProperties.def_writeonly_static  # noqa: F841 unused var
-    assert "unreadable attribute" in str(excinfo)
-
-    m.TestProperties.def_writeonly_static = 3
-    assert m.TestProperties.def_readonly_static == 3
-
-    assert m.TestProperties.def_property_readonly_static == 3
-    with pytest.raises(AttributeError) as excinfo:
-        m.TestProperties.def_property_readonly_static = 99
+        m.TestProperties.def_property_readonly_static = 3
     assert "can't set attribute" in str(excinfo)
 
-    m.TestProperties.def_property_static = 4
-    assert m.TestProperties.def_property_static == 4
-
-    with pytest.raises(AttributeError) as excinfo:
-        dummy = m.TestProperties.def_property_writeonly_static
-    assert "unreadable attribute" in str(excinfo)
-
-    m.TestProperties.def_property_writeonly_static = 5
-    assert m.TestProperties.def_property_static == 5
+    m.TestProperties.def_property_static = 3
+    assert m.TestProperties.def_property_static == 3
 
     # Static property read and write via instance
     instance = m.TestProperties()
@@ -155,13 +126,6 @@ def test_static_properties():
     instance.def_readwrite_static = 2
     assert m.TestProperties.def_readwrite_static == 2
     assert instance.def_readwrite_static == 2
-
-    with pytest.raises(AttributeError) as excinfo:
-        dummy = instance.def_property_writeonly_static  # noqa: F841 unused var
-    assert "unreadable attribute" in str(excinfo)
-
-    instance.def_property_writeonly_static = 4
-    assert instance.def_property_static == 4
 
     # It should be possible to override properties in derived classes
     assert m.TestPropertiesOverride().def_readonly == 99
