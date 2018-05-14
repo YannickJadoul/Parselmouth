@@ -30,7 +30,7 @@ public:
 	template <typename T>
 	static bool check(const T &value) { return value > 0; }
 
-	static constexpr auto &name = "Positive";
+	static constexpr auto &name() { return "Positive"; }
 };
 
 template <typename T>
@@ -42,7 +42,7 @@ public:
 	template <typename T>
 	static bool check(const T &value) { return value >= 0; }
 
-	static constexpr auto &name = "NonNegative";
+	static constexpr auto &name() { return "NonNegative"; }
 };
 
 template <typename T>

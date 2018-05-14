@@ -40,7 +40,7 @@ public:
 	template <typename... Args>
 	Predicate(Args &&... args) : m_wrapped(std::forward<Args>(args)...) {
 		if (!Impl::check(m_wrapped))
-			throw std::domain_error(std::string(Impl::name) + " constructed with invalid value");
+			throw std::domain_error(std::string(Impl::name()) + " constructed with invalid value");
 	}
 
 	Predicate(const This &other) = default;
@@ -100,7 +100,7 @@ public:
 		return TCaster::cast(src, policy, parent);
 	}
 
-	PYBIND11_TYPE_CASTER(PredicateT, _(Impl::name) + _("[") + TCaster::name + _("]")); // TODO Python implementation of what Positive[T]/NonNegative[T]/... is, to get typecheckers happy?
+	PYBIND11_TYPE_CASTER(PredicateT, _(Impl::name()) + _("[") + TCaster::name() + _("]")); // TODO Python implementation of what Positive[T]/NonNegative[T]/... is, to get typecheckers happy?
 };
 
 } // namespace detail
