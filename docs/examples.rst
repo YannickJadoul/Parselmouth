@@ -10,6 +10,7 @@ Parselmouth can be used in various contexts to combine Praat functionality with 
     examples/batch_processing
     examples/pitch_manipulation
     examples/psychopy_experiments
+    examples/web_service
 
 .. only:: html
 

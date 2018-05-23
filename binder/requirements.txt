@@ -1,4 +1,6 @@
+flask
 matplotlib
 numpy
 pandas
+requests
 seaborn

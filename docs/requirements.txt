@@ -2,7 +2,9 @@ ipykernel
 ipywidgets
 nbsphinx
 
+flask
 matplotlib
 numpy
 pandas
+requests
 seaborn
