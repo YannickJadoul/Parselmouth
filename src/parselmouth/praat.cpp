@@ -62,7 +62,7 @@ inline void checkUnkownKwargs(const py::kwargs &kwargs) {
 
 class PraatEnvironment {
 public:
-	PraatEnvironment() : m_objects(theCurrentPraatObjects), m_interpreter(Interpreter_create(nullptr, nullptr)) {
+	PraatEnvironment() : m_objects(theCurrentPraatObjects), m_interpreter(Interpreter_create(nullptr, nullptr)), m_lastId(0) {
 		assert(m_objects->n == 0);
 		m_objects->uniqueId = 0;
 	}
@@ -75,27 +75,61 @@ public:
 		assert(m_objects->n == 0);
 	}
 
-	auto operator*() {
-		return m_objects;
-	}
-
-	auto operator->() {
-		return m_objects;
-	}
-
-	auto objects() const {
-		return m_objects;
-	}
-
 	auto interpreter() const {
 		return m_interpreter.get();
 	}
+
+	void addObjects(const std::vector<std::reference_wrapper<structData>> &objects) {
+		// Add references to the passed objects to the Praat object list
+		for (auto &data: objects)
+			praat_newReference(&data.get()); // Since we're registering this is just a reference, running a command like "Remove" should normally be OK; through hack/workaround: a PraatObject now contains a boolean 'owned' to know if the data should be deleted
+		praat_updateSelection();
+		m_lastId = m_objects->uniqueId;
+	}
+
+	std::vector<autoData> retrieveSelectedObjects(bool assertNew = false) {
+		auto numSelected = static_cast<size_t>(m_objects->totalSelection);
+
+		std::vector<autoData> selected;
+		for (auto i = 1; i <= m_objects->n; ++i) {
+
+			auto &praatObject = m_objects->list[i];
+			if (praatObject.isSelected) {
+				if (assertNew)
+					assert(praatObject.id > m_lastId);
+				praat_deselect(i); // Hack/workaround: if this is not called, Praat will call it while removing the object from the list, and crash on accessing object -> classInfo
+				selected.emplace_back(praatObject.object);
+				praatObject.object = nullptr;
+			}
+		}
+
+		assert(m_objects->totalSelection == 0);
+		assert(numSelected == selected.size());
+		(void) numSelected; // Shut up warning in release
+
+		return selected;
+	}
+
+	structStackel toPraatArg(const py::handle &arg);
+
+	std::vector<structStackel> toPraatArgs(const py::args &args) {
+		std::vector<structStackel> praatArgs(1); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
+		for (auto &arg : args)
+			praatArgs.emplace_back(toPraatArg(arg));
+		return praatArgs;
+	}
+
+	py::object fromPraatResult(const std::u32string &callbackName, const std::u32string &interceptedInfo);
 
 private:
 	// Let's not trust the combination of Praat and static initialization order to safely have a static autoInterpreter member
 
 	PraatObjects m_objects;
 	autoInterpreter m_interpreter;
+
+	std::vector<py::object> m_keepAliveObjects;
+
+	integer m_lastId;
 };
 
 // Workarounds since GCC (6) doesn't seem to like the brace initialization of the nested anonymous struct
@@ -105,7 +139,7 @@ structStackel stackel(const std::u32string &string) { auto s = structStackel{Sta
 structStackel stackel(const numvec &vector, bool owned) { auto s = structStackel{Stackel_NUMERIC_VECTOR, {}, owned}; s.numericVector = vector; return s; }
 structStackel stackel(const nummat &matrix, bool owned) { auto s = structStackel{Stackel_NUMERIC_MATRIX, {}, owned}; s.numericMatrix = matrix; return s; }
 
-structStackel castPythonToPraat(const py::handle &arg) {
+structStackel PraatEnvironment::toPraatArg(const py::handle &arg) {
 	if (py::isinstance<py::int_>(arg) || py::isinstance<py::float_>(arg))
 		return stackel(py::cast<double>(arg));
 	else if (py::isinstance<py::bool_>(arg))
@@ -114,25 +148,29 @@ structStackel castPythonToPraat(const py::handle &arg) {
 		return stackel(py::cast<std::u32string>(arg));
 
 	try {
-		auto array = py::array_t<double, py::array::c_style>::ensure(py::cast<py::array>(arg).squeeze());
+		// Let's not 'squeeze' the array, or we might interpret a 2D matrix as 1D vector!
+		auto array = py::array_t<double, py::array::c_style>::ensure(arg);
 		if (array.ndim() == 1) {
-			// TODO Check when we can avoid copying -- but the call to 'ensure' might have just done that copy, so can we maybe keep "array" alive until after the call into Praat?
-			auto vector = numvec(array.shape(0), kTensorInitializationType::RAW);
-			auto unchecked = array.unchecked<1>();
-			for (ssize_t i = 0; i < array.shape(0); ++i)
-				vector[i + 1] = unchecked(i);
+			// Keep the object alive until the PraatEnvironment goes out of scope, and avoid a copy
+			m_keepAliveObjects.push_back(array);
 
-			return stackel(vector, true);
+			return stackel(numvec(array.mutable_data(0) - 1, array.shape(0)), false); // Remember Praat is 1-based
+			// NOTE: If Praat ever contains commands/actions that modify the vector,
+			//       we're in trouble since this will not consistently be reflected in the original NumPy array.
+			//       However, since we're indicating the vector is not owned, at least the interpreter can know.
 		} else if (array.ndim() == 2) {
-			// TODO Check when we can avoid copying -- not easy, as Praat NUMmatrix consists of two allocs (1 T** + 1 T*)
-			auto matrix = nummat(array.shape(0), array.shape(1), kTensorInitializationType::RAW);
-			auto unchecked = array.unchecked<2>();
-			for (ssize_t i = 0; i < array.shape(0); ++i)
-				for (ssize_t j = 0; i < array.shape(1); ++j)
-					matrix[i + 1][j + 1] = unchecked(i, j);
+			auto rows = new double*[array.shape(0)];
+			for (ssize_t i = 0; i < array.shape(0); ++i) {
+				rows[i] = array.mutable_data(i, 0) - 1;
+			}
 
-			return stackel(matrix, true);
+			m_keepAliveObjects.push_back(array);
+			m_keepAliveObjects.push_back(py::capsule(rows, [](void *r) { delete reinterpret_cast<double**>(r); }));
+
+			return stackel(nummat(rows - 1, array.shape(0), array.shape(1)), false);
 		}
+
+		throw py::value_error("Cannot convert " + std::to_string(array.ndim()) + "-dimensional NumPy array argument\"" + py::cast<std::string>(py::repr(arg)) + "\" to a Praat vector or matrix");
 	}
 	catch (py::cast_error &) {}
 	catch (py::error_already_set &) {}
@@ -140,7 +178,7 @@ structStackel castPythonToPraat(const py::handle &arg) {
 	throw py::value_error("Cannot convert argument \"" + py::cast<std::string>(py::repr(arg)) + "\" to a known Praat argument type");
 }
 
-py::object castPraatResultToPython(const std::u32string &callbackName, PraatObjects praatObjects, const std::u32string &interceptedInfo, size_t nInitialObjects) {
+py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName, const std::u32string &interceptedInfo) {
 	if (startsWith(callbackName, U"REAL_"))
 		return py::cast(Melder_atof(interceptedInfo.c_str()));
 
@@ -184,21 +222,8 @@ py::object castPraatResultToPython(const std::u32string &callbackName, PraatObje
 	    startsWith(callbackName, U"NEWTIMES2_") ||
 	    startsWith(callbackName, U"READ1_") ||
 	    startsWith(callbackName, U"READMANY_")) {
-		auto numSelected = static_cast<size_t>(praatObjects->totalSelection);
 
-		std::vector<autoData> selected;
-		for (auto i = 1; i <= praatObjects->n; ++i) {
-			auto &praatObject = praatObjects->list[i];
-			if (praatObject.isSelected) {
-				assert(praatObject.id > static_cast<integer>(nInitialObjects));
-				praat_deselect(i); // Hack/workaround: if this is not called, Praat will call it while removing the object from the list, and crash on accessing object -> classInfo
-				selected.emplace_back(praatObject.object);
-				praatObject.object = nullptr;
-			}
-		}
-
-		assert(praatObjects->totalSelection == 0);
-		assert(numSelected == selected.size());
+		auto selected = retrieveSelectedObjects(true);
 
 		if (selected.size() == 1 && !(startsWith(callbackName, U"NEWMANY_") || startsWith(callbackName, U"READMANY_")))
 			return py::cast(std::move(selected[0]));
@@ -220,21 +245,14 @@ py::object castPraatResultToPython(const std::u32string &callbackName, PraatObje
 	// Throws exception: U"MOVIE_"
 }
 
+
 auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &command, py::args args, py::kwargs kwargs) {
-	bool returnString = extractKwarg<bool, py::bool_>(kwargs, "return_string", false, "bool");
+	auto returnString = extractKwarg<bool, py::bool_>(kwargs, "return_string", false, "bool");
 	checkUnkownKwargs(kwargs);
 
 	PraatEnvironment environment;
-
-	// Add references to the passed objects to the Praat object list
-	for (auto &data: objects)
-		praat_newReference(&data.get()); // Since we're registering this is just a reference, running a command like "Remove" should normally be OK; through hack/workaround: a PraatObject now contains a boolean 'owned' to know if the data should be deleted
-	praat_updateSelection();
-
-	// Convert other arguments to Praat Stackels
-	std::vector<structStackel> praatArgs(1); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
-	for (auto &arg : args)
-		praatArgs.emplace_back(castPythonToPraat(arg));
+	environment.addObjects(objects);
+	auto praatArgs = environment.toPraatArgs(args);
 
 	// If there are arguments, let's help the user and append "..." to the command, if not yet there
 	auto completedCommand = command;
@@ -250,8 +268,8 @@ auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &obj
 	if (auto i = praat_doAction(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), environment.interpreter())) {
 		executedCommand = praat_getAction(i);
 	}
-	else if (auto i = praat_doMenuCommand(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), environment.interpreter())) {
-		executedCommand = praat_getMenuCommand(i);
+	else if (auto j = praat_doMenuCommand(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), environment.interpreter())) {
+		executedCommand = praat_getMenuCommand(j);
 	}
 	else {
 		Melder_throw(U"Command \"", command.c_str(), U"\" not available for given objects.");
@@ -262,7 +280,7 @@ auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &obj
 	if (returnString)
 		return py::cast(interceptor.get());
 	else
-		return castPraatResultToPython(executedCommand->nameOfCallback, environment.objects(), interceptor.get(), objects.size());
+		return environment.fromPraatResult(executedCommand->nameOfCallback, interceptor.get());
 }
 
 auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objects, char32 *script, py::args args, py::kwargs kwargs) {
@@ -270,19 +288,10 @@ auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objec
 	checkUnkownKwargs(kwargs);
 
 	PraatEnvironment environment;
+	environment.addObjects(objects);
+	auto praatArgs = environment.toPraatArgs(args);
 
-	// TODO Get rid of code duplication!
-	// Add references to the passed objects to the Praat object list
-	for (auto &data: objects)
-		praat_newReference(&data.get()); // Since we're registering this is just a reference, running a command like "Remove" should normally be OK; through hack/workaround: a PraatObject now contains a boolean 'owned' to know if the data should be deleted
-	praat_updateSelection();
-
-	// Convert other arguments to Praat Stackels
-	std::vector<structStackel> praatArgs(1); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
-	for (auto &arg : args)
-		praatArgs.emplace_back(castPythonToPraat(arg));
-
-	// Prepare to intercept the output of the command
+	// Prepare to maybe intercept the output of the script
 	auto interceptor = captureOutput ? std::make_unique<MelderInfoInterceptor>() : nullptr;
 
 	try {
@@ -293,20 +302,10 @@ auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objec
 		Melder_throw(U"Script not completed.");
 	}
 
-	// TODO Get rid of code duplication
-	auto praatObjects = environment.objects();
-	std::vector<autoData> selected;
-	for (auto i = 1; i <= praatObjects->n; ++i) {
-		auto &praatObject = praatObjects->list[i];
-		if (praatObject.isSelected) {
-			praat_deselect(i); // Hack/workaround: if this is not called, Praat will call it while removing the object from the list, and crash on accessing object -> classInfo
-			selected.emplace_back(praatObject.object);
-			praatObject.object = nullptr;
-		}
-	}
-
-	auto pySelected = py::cast(std::move(selected));
-	return captureOutput ? py::cast(std::make_pair(pySelected, interceptor.get())) : pySelected;
+	if (captureOutput)
+		return py::cast(std::make_pair(environment.retrieveSelectedObjects(), interceptor->get()));
+	else
+		return py::cast(environment.retrieveSelectedObjects());
 }
 
 auto runPraatScriptFromText(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &script, py::args args, py::kwargs kwargs) {
@@ -320,8 +319,10 @@ auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>
 	auto file = pathToMelderFile(path);
 	autostring32 script = MelderFile_readText(&file);
 
-	autoMelderFileSetDefaultDir dir(&file);
-	Melder_includeIncludeFiles(&script);
+	{
+		autoMelderFileSetDefaultDir dir(&file);
+		Melder_includeIncludeFiles(&script);
+	}
 
 	return runPraatScript(objects, script.peek(), std::move(args), std::move(kwargs));
 }
