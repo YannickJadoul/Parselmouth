@@ -1,5 +1,5 @@
 # Build and binary folder of CMake and Python distutils
-/build/
+/build*/
 /installed/
 /dist/
 
