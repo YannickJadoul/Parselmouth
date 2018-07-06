@@ -67,7 +67,7 @@ matrix:
       osx_image: xcode8.3
       compiler: clang
 
-    - env: PYTHON=3.6
+    - env: PYTHON=3.7
       os: osx
       osx_image: xcode8.3
       compiler: clang
@@ -202,8 +202,9 @@ before_install:
 
 install:
   - $PYTHON_CMD -m pip install --user --upgrade numpy
+  - $PYTHON_CMD -m pip install --user -r tests/requirements.txt
 
 script:
   - mkdir build && cd build && cmake -DPYBIND11_PYTHON_VERSION=$PYTHON -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
-  - make install -j 2
-  - cd ../installed && $PYTHON_CMD -c "import parselmouth"
+  - make install -j 2 && cd ..
+  - $PYTHON_CMD -m pytest
