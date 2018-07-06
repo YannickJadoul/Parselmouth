@@ -6,6 +6,11 @@
 # Build folder of Sphinx
 /docs/_build
 
+# Python and pytest caches
+*.pyc
+__pycache__/
+.pytest_cache/
+
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/
 
