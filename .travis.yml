@@ -140,7 +140,7 @@ matrix:
       script:
         - export CIBW_ENVIRONMENT='ARCH=`uname -i` PATH="`pwd`/gcc-$ARCH/bin:$PATH" CC="ccache cc" CXX="ccache c++" CXXFLAGS="-static-libstdc++" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"` CCACHE_DIR=/host'$HOME'/.ccache'
         - export CIBW_BEFORE_BUILD='{pip} install cmake && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install)'
-        - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_SKIP="cp27-* cp33-* cp34-* cp36-* *i686"; else export CIBW_SKIP="cp33-*"; fi
+        - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_SKIP="cp27-* cp33-* cp34-* cp36-* *i686"; else export CIBW_SKIP="cp33-* cp37-*"; fi
         - cibuildwheel
       before_deploy:
         - *bintray-before-deploy
