@@ -21,7 +21,9 @@ environment:
     - WHEELS: 1
       CIBW_SKIP: cp33-* cp35-* cp36-* cp37-*
     - WHEELS: 1
-      CIBW_SKIP: cp27-* cp33-* cp34-*
+      CIBW_SKIP: cp27-* cp33-* cp34-* cp37-*
+    - WHEELS: 1
+      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp36-*
 
 branches:
   except:
