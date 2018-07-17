@@ -1,12 +1,8 @@
 image: Visual Studio 2017
 build:
   parallel: true
-platform:
-  - x64
-  - x86
-configuration:
-  - Debug
-  - Release
+platform: x64
+configuration: Debug
 environment:
   matrix:
     - PYTHON: 27
@@ -14,29 +10,18 @@ environment:
     - PYTHON: 35
     - PYTHON: 36
     - PYTHON: 37
+    - PYTHON: 27
+      platform: x86
+    - PYTHON: 37
+      platform: x86
+    - PYTHON: 27
+      configuration: Release
+    - PYTHON: 37
+      configuration: Release
     - WHEELS: 1
       CIBW_SKIP: cp33-* cp35-* cp36-* cp37-*
     - WHEELS: 1
       CIBW_SKIP: cp27-* cp33-* cp34-*
-
-matrix:
-  exclude:
-    - configuration: Release
-      PYTHON: 34
-    - configuration: Release
-      PYTHON: 35
-    - configuration: Release
-      PYTHON: 36
-    - platform: x86
-      PYTHON: 34
-    - platform: x86
-      PYTHON: 35
-    - platform: x86
-      PYTHON: 36
-    - configuration: Release
-      platform: x86
-    - configuration: Debug
-      WHEELS: 1
 
 branches:
   except:
