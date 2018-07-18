@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.3)
 project(Parselmouth)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/res/cmake ${CMAKE_MODULE_PATH})
