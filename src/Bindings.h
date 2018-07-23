@@ -18,8 +18,8 @@
  */
 
 #pragma once
-#ifndef INC_BINDINGS_H
-#define INC_BINDINGS_H
+#ifndef INC_PARSELMOUTH_BINDINGS_H
+#define INC_PARSELMOUTH_BINDINGS_H
 
 #include <tuple>
 #include <type_traits>
@@ -96,4 +96,4 @@ private:
 
 } // namespace parselmouth
 
-#endif // INC_BINDINGS_H
+#endif // INC_PARSELMOUTH_BINDINGS_H

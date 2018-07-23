@@ -18,8 +18,8 @@
  */
 
 #pragma once
-#ifndef INC_PARSELMOUTH_NUMERIC_PREDICATES_H
-#define INC_PARSELMOUTH_NUMERIC_PREDICATES_H
+#ifndef INC_PARSELMOUTH_NUMERICPREDICATES_H
+#define INC_PARSELMOUTH_NUMERICPREDICATES_H
 
 #include "Predicate.h"
 
@@ -50,4 +50,4 @@ using NonNegative = Predicate<T, NonNegativeImpl>;
 
 } // namespace parselmouth
 
-#endif // INC_PARSELMOUTH_NUMERIC_PREDICATES_H
+#endif // INC_PARSELMOUTH_NUMERICPREDICATES_H

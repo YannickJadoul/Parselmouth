@@ -18,8 +18,8 @@
  */
 
 #pragma once
-#ifndef INC_PARSELMOUTH_MELDER_UTILS_H
-#define INC_PARSELMOUTH_MELDER_UTILS_H
+#ifndef INC_PARSELMOUTH_MELDERUTILS_H
+#define INC_PARSELMOUTH_MELDERUTILS_H
 
 #include <praat/sys/melder.h>
 #include "UndefPraatMacros.h"
@@ -53,4 +53,4 @@ inline structMelderFile pathToMelderFile(const std::u32string &filePath) { // TO
 
 }
 
-#endif // INC_PARSELMOUTH_MELDER_UTILS_H
+#endif // INC_PARSELMOUTH_MELDERUTILS_H

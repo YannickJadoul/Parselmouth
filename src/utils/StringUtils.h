@@ -17,8 +17,9 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#ifndef INC_PARSELMOUTH_STRING_UTILS_H
-#define INC_PARSELMOUTH_STRING_UTILS_H
+#pragma once
+#ifndef INC_PARSELMOUTH_STRINGUTILS_H
+#define INC_PARSELMOUTH_STRINGUTILS_H
 
 #include <string>
 
@@ -34,4 +35,4 @@ bool endsWith(const std::u32string &string, const std::u32string &suffix) {
 
 } // namespace parselmouth
 
-#endif // INC_PARSELMOUTH_STRING_UTILS_H
+#endif // INC_PARSELMOUTH_STRINGUTILS_H

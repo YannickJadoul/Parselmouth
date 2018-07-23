@@ -18,8 +18,8 @@
  */
 
 #pragma once
-#ifndef INC_PARSELMOUTH_SIGNATURE_CAST_H
-#define INC_PARSELMOUTH_SIGNATURE_CAST_H
+#ifndef INC_PARSELMOUTH_SIGNATURECAST_H
+#define INC_PARSELMOUTH_SIGNATURECAST_H
 
 #include <utility>
 
@@ -119,4 +119,4 @@ auto args_cast(Function &&f) {
 
 } // namespace parselmouth
 
-#endif // INC_PARSELMOUTH_SIGNATURE_CAST_H
+#endif // INC_PARSELMOUTH_SIGNATURECAST_H

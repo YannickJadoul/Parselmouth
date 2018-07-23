@@ -18,8 +18,8 @@
  */
 
 #pragma once
-#ifndef INC_PARSELMOUTH_TIME_CLASS_ASPECTS_H
-#define INC_PARSELMOUTH_TIME_CLASS_ASPECTS_H
+#ifndef INC_PARSELMOUTH_TIMECLASSASPECTS_H
+#define INC_PARSELMOUTH_TIMECLASSASPECTS_H
 
 #include "Parselmouth.h"
 
@@ -172,4 +172,4 @@ void initTimeFrameSampled(ClassBinding<Class, Extra...> &binding) {
 
 } // namespace parselmouth
 
-#endif // INC_PARSELMOUTH_TIME_CLASS_ASPECTS_H
+#endif // INC_PARSELMOUTH_TIMECLASSASPECTS_H

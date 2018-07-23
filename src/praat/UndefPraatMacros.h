@@ -17,5 +17,4 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#undef I
 #undef trace
