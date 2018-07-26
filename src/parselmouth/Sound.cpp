@@ -553,11 +553,11 @@ void Binding<Sound>::init() {
 
 	def("to_harmonicity_cc",
 	    args_cast<_, Positive<_>, Positive<_>, _, Positive<_>>(Sound_to_Harmonicity_cc),
-	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
+	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_threshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
 	def("to_harmonicity_ac",
 	    args_cast<_, Positive<_>, Positive<_>, _, Positive<_>>(Sound_to_Harmonicity_ac),
-	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_treshold"_a = 0.1, "periods_per_window"_a = 1.0);
+	    "time_step"_a = 0.01, "minimum_pitch"_a = 75.0, "silence_threshold"_a = 0.1, "periods_per_window"_a = 1.0);
 
 	def("to_harmonicity_gne",
 	    args_cast<_, Positive<_>, Positive<_>, Positive<_>, Positive<_>>(Sound_to_Harmonicity_GNE),
