@@ -35,7 +35,10 @@ A `manuscript introducing Parselmouth <https://ai.vub.ac.be/%7Eyajadoul/jadoul_i
        author = "Yannick Jadoul and Bill Thompson and Bart de Boer",
        title = "Introducing {P}arselmouth: A {P}ython interface to {P}raat",
        journal = "Journal of Phonetics",
-       year = "in press"
+       volume = "71",
+       pages = "1--15",
+       year = "2018",
+       doi = "https://doi.org/10.1016/j.wocn.2018.07.001"
    }
 
 Since Parselmouth exposes existing Praat functionality and algorithm implementations, we suggest also `citing Praat <http://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html>`_ when using Parselmouth in scientific research:
