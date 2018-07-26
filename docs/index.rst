@@ -10,16 +10,17 @@ Please note that Parselmouth is currently in premature state and in active devel
 Drop by our `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_ if you have any question, remarks, or requests!
 
 .. note::
+
     Try out Parselmouth online, in interactive Jupyter notebooks on Binder: |binder_badge_examples|
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Getting Started
+    :maxdepth: 2
+    :caption: Getting Started
 
-   installation
-   examples
+    installation
+    examples
 
-   api_reference
+    api_reference
 
 
 Citing Parselmouth
@@ -31,15 +32,15 @@ A `manuscript introducing Parselmouth <https://ai.vub.ac.be/%7Eyajadoul/jadoul_i
 
 .. code-block:: bibtex
 
-   @article{parselmouth,
-       author = "Yannick Jadoul and Bill Thompson and Bart de Boer",
-       title = "Introducing {P}arselmouth: A {P}ython interface to {P}raat",
-       journal = "Journal of Phonetics",
-       volume = "71",
-       pages = "1--15",
-       year = "2018",
-       doi = "https://doi.org/10.1016/j.wocn.2018.07.001"
-   }
+    @article{parselmouth,
+        author = "Yannick Jadoul and Bill Thompson and Bart de Boer",
+        title = "Introducing {P}arselmouth: A {P}ython interface to {P}raat",
+        journal = "Journal of Phonetics",
+        volume = "71",
+        pages = "1--15",
+        year = "2018",
+        doi = "https://doi.org/10.1016/j.wocn.2018.07.001"
+    }
 
 Since Parselmouth exposes existing Praat functionality and algorithm implementations, we suggest also `citing Praat <http://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html>`_ when using Parselmouth in scientific research:
 
@@ -47,12 +48,12 @@ Since Parselmouth exposes existing Praat functionality and algorithm implementat
 
 .. code-block:: bibtex
 
-   @misc{praat,
-       title = "{P}raat: doing phonetics by computer [{C}omputer program]",
-       author = "Paul Boersma and David Weenink",
-       howpublished = " Version 6.0.37, retrieved 3 February 2018 \url{http://www.praat.org/}",
-       year = "2018"
-   }
+    @misc{praat,
+        title = "{P}raat: doing phonetics by computer [{C}omputer program]",
+        author = "Paul Boersma and David Weenink",
+        howpublished = " Version 6.0.37, retrieved 3 February 2018 \url{http://www.praat.org/}",
+        year = "2018"
+    }
 
 
 Indices and tables
