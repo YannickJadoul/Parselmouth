@@ -74,12 +74,10 @@ matrix:
 
     - env: PYTHON=2.7
       os: osx
-      osx_image: xcode8.3
       compiler: clang
 
     - env: PYTHON=3.7
       os: osx
-      osx_image: xcode8.3
       compiler: clang
 
     - stage: wheels
@@ -153,7 +151,6 @@ matrix:
     - stage: wheels
       if: branch != docs
       os: osx
-      osx_image: xcode8.3
       compiler: clang
       script:
         - $PYTHON_CMD -m pip install cibuildwheel

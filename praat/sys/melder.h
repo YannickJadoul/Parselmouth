@@ -680,6 +680,7 @@ void NUMscale (double *x, double xminfrom, double xmaxfrom, double xminto, doubl
 inline static bool isdefined (double x) { return isfinite(x); }
 inline static bool isundef (double x) { return !isfinite(x); }
 #else
+#include <cmath>
 inline static bool isdefined (double x) { return std::isfinite(x); }
 inline static bool isundef (double x) { return !std::isfinite(x); }
 #endif
