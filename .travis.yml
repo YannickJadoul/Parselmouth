@@ -153,6 +153,7 @@ matrix:
     - stage: wheels
       if: branch != docs
       os: osx
+      osx_image: xcode8.3
       compiler: clang
       script:
         - $PYTHON_CMD -m pip install cibuildwheel
