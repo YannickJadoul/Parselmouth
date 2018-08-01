@@ -60,17 +60,19 @@ matrix:
     - env: PYTHON=3.6 GCC=7
       addons: *gcc7
 
-    - env: PYTHON=2.7 CLANG=3.8
+    - env: PYTHON=2.7 CLANG=5.0
       compiler: clang
       addons:
         apt:
-          packages: [clang-3.8, libc++-dev]
+          sources: [llvm-toolchain-trusty-5.0, ubuntu-toolchain-r-test]
+          packages: [clang-5.0, libstdc++-7-dev]
 
-    - env: PYTHON=3.6 CLANG=3.8
+    - env: PYTHON=3.6 CLANG=5.0
       compiler: clang
       addons:
         apt:
-          packages: [clang-3.8, libc++-dev]
+          sources: [llvm-toolchain-trusty-5.0, ubuntu-toolchain-r-test]
+          packages: [clang-5.0, libstdc++-7-dev]
 
     - env: PYTHON=2.7
       os: osx
@@ -182,7 +184,6 @@ before_install:
       elif [ -n "$CLANG" ]; then
         CC="ccache clang-$CLANG -Qunused-arguments"
         CXX="ccache clang++-$CLANG -Qunused-arguments"
-        export CXXFLAGS="-stdlib=libc++"
       fi
       if [ "$PYTHON" == "3.5" ] || [ "$PYTHON" == "3.7" ]; then
         python$PYTHON -m ensurepip --user
