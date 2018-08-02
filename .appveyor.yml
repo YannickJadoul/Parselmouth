@@ -42,7 +42,7 @@ install:
   - if defined WHEELS ( pip install cibuildwheel )
   - if not defined WHEELS ( pip install -r tests/requirements.txt )
 build_script:
-  - if defined WHEELS ( set PYTHONUNBUFFERED=1 && cibuildwheel --output-dir wheelhouse )
+  - if defined WHEELS ( cibuildwheel )
   - if not defined WHEELS ( cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" )
   - if not defined WHEELS ( set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" )
   - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target install -- /v:m /logger:%MSBuildLogger% )
