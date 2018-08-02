@@ -184,6 +184,7 @@ before_install:
       elif [ -n "$CLANG" ]; then
         CC="ccache clang-$CLANG -Qunused-arguments"
         CXX="ccache clang++-$CLANG -Qunused-arguments"
+        # -Qunused-arguments: https://petereisentraut.blogspot.com/2011/05/ccache-and-clang.html
       fi
       if [ "$PYTHON" == "3.5" ] || [ "$PYTHON" == "3.7" ]; then
         python$PYTHON -m ensurepip --user
