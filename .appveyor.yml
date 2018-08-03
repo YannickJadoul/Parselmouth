@@ -45,7 +45,7 @@ build_script:
   - if defined WHEELS ( cibuildwheel )
   - if not defined WHEELS ( cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" )
   - if not defined WHEELS ( set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" )
-  - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target all -- /v:m /logger:%MSBuildLogger% )
+  - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target all_build -- /v:m /logger:%MSBuildLogger% )
 test_script:
   - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target tests )
 artifacts:
