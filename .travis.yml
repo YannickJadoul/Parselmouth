@@ -214,5 +214,5 @@ install:
 
 script:
   - mkdir build && cd build && cmake -DPYBIND11_PYTHON_VERSION=$PYTHON -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
-  - make install -j 2 && cd ..
-  - $PYTHON_CMD -m pytest
+  - make all -j 2
+  - make tests

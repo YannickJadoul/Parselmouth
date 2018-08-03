@@ -36,3 +36,4 @@ add_subdirectory(pybind11)
 
 add_subdirectory(praat)
 add_subdirectory(src)
+add_subdirectory(tests)
