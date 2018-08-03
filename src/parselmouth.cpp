@@ -42,9 +42,11 @@ PYBIND11_MODULE(parselmouth, m) {
 			try {
 				if (p) std::rethrow_exception(p);
 			}
-			catch (const MelderError &) { // TODO Unicode encoding? Python 2 vs. Python 3?
+			catch (const MelderError &) {
+				// Python 2: Seems exception strings should be encoded in UTF-8
+				// Python 3: PyErr_SetString (in py::exception<type>::operator()) decodes from UTF-8
 				std::string message(Melder_peek32to8(Melder_getError()));
-				message.erase(message.length() - 1);
+				message.erase(message.length() - 1); // Remove closing newline
 				Melder_clearError();
 				melderErrorException(message.c_str());
 			}});
