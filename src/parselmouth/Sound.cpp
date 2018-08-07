@@ -198,9 +198,11 @@ void Binding<Sound>::init() {
 
 	def(py::init([](py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::c_style to be able to memcpy / NUMmatrix_copyElements ?
 		    auto ndim = values.ndim();
-		    if (ndim > 2) {
+
+		    if (ndim == 0)
+			    throw py::value_error("Cannot create Sound from a single 0-dimensional number");
+		    if (ndim > 2)
 			    throw py::value_error("Cannot create Sound from an array with more than 2 dimensions");
-		    }
 
 		    auto nx = values.shape(ndim-1);
 		    auto ny = ndim == 2 ? values.shape(0) : 1;
