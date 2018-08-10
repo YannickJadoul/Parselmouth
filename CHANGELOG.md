@@ -5,12 +5,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+## [0.3.1] - 2018-08-10
+### Added
+- Added Binder setup description and links from documentation.
+- Added test framework with pytest and set up first batch of tests.
+- Added Python 3.7 configurations to CI configurations.
+### Changed
+- Updated pybind11 to v2.2.3.
+- Updated documentation, changing examples from simple reStructuredText to Jupyter notebooks, executable through Binder.
+### Fixed
+- Fixed `parselmouth.praat.run_file` to include files from directory of the script file, but to run in the original working directory.
+- Corrected typo in `Sound.to_harmonicity_ac` and `to_harmonicity_cc` (see #6).
+
 ## [0.3.0] - 2018-02-09
 ### Added
 - Exposed calls to Praat commands through `parselmouth.praat.call`.
 - Exposed running Praat scripts through `parselmouth.praat.run` and `parselmouth.praat.run_script`.
 - Added `Thing.class_name` as read-only property to get underlying Praat class, even when that one is not yet exposed.
-- Added `name` and `full_name` properties to `Thing` class. 
+- Added `name` and `full_name` properties to `Thing` class.
 - Added `save`, `save_as_text_file`, `save_as_short_text_file`, and `save_as_binary_file` to `Data` class.
 ### Changed
 - Updated Praat version to 6.0.37.
@@ -57,7 +69,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - Main functionality of `Thing`, `Data`, `Matrix`, `Vector`, `Sound`, `Spectrum`, `Spectrogram`, and `Intensity` classes. Preliminary implementations of `Pitch`, `Harmonicity`, `Formant`, and `MFCC`.
 - Basic Travis CI configuration.
 
-[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.1.1...v0.2.0
