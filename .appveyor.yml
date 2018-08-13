@@ -19,11 +19,8 @@ environment:
     - PYTHON: 37
       configuration: Release
     - WHEELS: 1
-      CIBW_SKIP: cp33-* cp35-* cp36-* cp37-*
     - WHEELS: 1
-      CIBW_SKIP: cp27-* cp33-* cp34-* cp37-*
-    - WHEELS: 1
-      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp36-*
+      platform: x86
 
 branches:
   except:
@@ -33,6 +30,10 @@ branches:
 install:
   - ps: |
       if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
+      if ($env:WHEELS) {
+        $env:PYTHON = 37
+        if ($env:PLATFORM -eq "x64") { $env:CIBW_SKIP = "cp33-* *-win32" } else { $env:CIBW_SKIP = "cp33-* *-win_amd64" }
+      }
       if ($env:PYTHON) {
         if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
         $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
@@ -42,10 +43,12 @@ install:
   - if defined WHEELS ( pip install cibuildwheel )
   - if not defined WHEELS ( pip install -r tests/requirements.txt )
 build_script:
-  - if defined WHEELS ( cibuildwheel )
+  - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - if not defined WHEELS ( cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" )
-  - if not defined WHEELS ( set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" )
   - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target all_build -- /v:m /logger:%MSBuildLogger% )
+  - if defined WHEELS ( md praat_build && cd praat_build && cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" .. )
+  - if defined WHEELS ( cmake --build . --config Release --target praat -- /v:m /logger:%MSBuildLogger% && cd .. )
+  - if defined WHEELS ( set PARSELMOUTH_EXTRA_CMAKE_ARGS=-DPRAAT_IMPORT_DIR="%cd%\praat_build\praat" -DCMAKE_CXX_FLAGS="/MP" && cibuildwheel )
 test_script:
   - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target tests )
 artifacts:
