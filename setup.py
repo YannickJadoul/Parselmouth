@@ -19,6 +19,7 @@ import io
 import os
 import platform
 import re
+import shlex
 import subprocess
 import sys
 
@@ -66,6 +67,9 @@ class CMakeBuild(build_ext):
 		else:
 			cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
 			build_args += ['--', '-j2']
+
+		cmake_args += shlex.split(os.environ.get('PARSELMOUTH_EXTRA_CMAKE_ARGS', ''))
+		build_args += shlex.split(os.environ.get('PARSELMOUTH_EXTRA_BUILD_ARGS', ''))
 
 		env = os.environ.copy()
 		env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''), self.distribution.get_version())
