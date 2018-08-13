@@ -20,13 +20,13 @@ project(Parselmouth)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/res/cmake ${CMAKE_MODULE_PATH})
 
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
-endif()
+endif ()
 
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/installed CACHE STRING "Install path prefix, prepended onto install directories." FORCE)
-endif()
+endif ()
 
 if (WIN32)
 	set(PYBIND11_CPP_STANDARD "/std:c++latest")
@@ -34,6 +34,12 @@ endif ()
 
 add_subdirectory(pybind11)
 
-add_subdirectory(praat)
+if (PRAAT_IMPORT_DIR)
+	include(${PRAAT_IMPORT_DIR}/exports.cmake)
+	set(CMAKE_NO_SYSTEM_FROM_IMPORTED 1) # Get -I instead of -isystem, when importing an already-built praat lib
+else ()
+	add_subdirectory(praat)
+endif ()
+
 add_subdirectory(src)
 add_subdirectory(tests)
