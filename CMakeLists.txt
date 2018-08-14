@@ -34,8 +34,9 @@ endif ()
 
 add_subdirectory(pybind11)
 
-if (PRAAT_IMPORT_DIR)
-	include(${PRAAT_IMPORT_DIR}/exports.cmake)
+if (PREBUILT_PRAAT_DIR)
+	file(TO_CMAKE_PATH ${PREBUILT_PRAAT_DIR} PREBUILT_PRAAT_DIR_CMAKE)
+	include(${PREBUILT_PRAAT_DIR_CMAKE}/exports.cmake)
 	set(CMAKE_NO_SYSTEM_FROM_IMPORTED 1) # Get -I instead of -isystem, when importing an already-built praat lib
 else ()
 	add_subdirectory(praat)

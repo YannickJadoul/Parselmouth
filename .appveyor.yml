@@ -48,7 +48,7 @@ build_script:
   - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target all_build -- /v:m /logger:%MSBuildLogger% )
   - if defined WHEELS ( md praat_build && cd praat_build && cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" .. )
   - if defined WHEELS ( cmake --build . --config Release --target praat -- /v:m /logger:%MSBuildLogger% && cd .. )
-  - if defined WHEELS ( set PARSELMOUTH_EXTRA_CMAKE_ARGS=-DPRAAT_IMPORT_DIR="%cd%\praat_build\praat" -DCMAKE_CXX_FLAGS="/MP" && cibuildwheel )
+  - if defined WHEELS ( set PARSELMOUTH_EXTRA_CMAKE_ARGS=-DPREBUILT_PRAAT_DIR="%cd%\praat_build\praat" -DCMAKE_CXX_FLAGS="/MP" && cibuildwheel )
 test_script:
   - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target tests )
 artifacts:
