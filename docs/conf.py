@@ -113,7 +113,7 @@ todo_include_todos = True
 autodoc_member_order = 'groupwise'
 
 # Intersphinx configuration
-intersphinx_mapping = {'python': ('https://docs.python.org/3.6', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 if on_rtd:
     branch_or_tag = branch or 'v{}'.format(release)
