@@ -123,8 +123,8 @@ else:
 
 rst_epilog = """
 .. |binder_badge_examples| image:: https://mybinder.org/badge.svg
-    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab%2Ftree%2Fdocs%2Fexamples
-""".format(branch_or_tag=branch or 'master' if on_rtd else 'docs')
+    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/docs/examples
+""".format(branch_or_tag=branch_or_tag)
 
 nbsphinx_prolog = """
 {{% set docname = env.doc2path(env.docname, base='docs') %}}
@@ -136,7 +136,7 @@ nbsphinx_prolog = """
         An online, interactive version of this example is available at Binder: |binder|
 
 .. |binder| image:: https://mybinder.org/badge.svg
-    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab%2Ftree%2F{{{{ docname.replace('/', '%2F') }}}}
+    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/{{{{ docname }}}}
 """.format(branch_or_tag=branch_or_tag)
 
 
