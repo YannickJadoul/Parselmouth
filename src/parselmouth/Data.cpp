@@ -37,7 +37,7 @@ PRAAT_ENUM_BINDING_ALIAS(FileFormat, DataFileFormat);
 #define NESTED_ENUMS \
         FileFormat
 
-void Binding<DataFileFormat>::init() {
+void Binding<FileFormat>::init() {
 	value("TEXT", DataFileFormat::TEXT);
 	value("SHORT_TEXT", DataFileFormat::SHORT_TEXT);
 	value("BINARY", DataFileFormat::BINARY);
