@@ -26,7 +26,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Sampled>::init()
+PRAAT_CLASS_BINDING(Sampled)
 {
 	// TODO Unit handling
 

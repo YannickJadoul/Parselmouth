@@ -32,7 +32,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Matrix>::init() {
+PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 	using signature_cast_placeholder::_;
 
 	// TODO Constructors (i.e., from numpy array, ...)

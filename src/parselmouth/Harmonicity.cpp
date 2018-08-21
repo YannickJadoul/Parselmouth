@@ -20,9 +20,11 @@
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
 
+#include <praat/fon/Harmonicity.h>
+
 namespace parselmouth {
 
-void Binding<Harmonicity>::init() {
+PRAAT_CLASS_BINDING(Harmonicity) {
 	// TODO Get value in frame
 
 	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality

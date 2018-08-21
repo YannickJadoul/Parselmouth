@@ -33,9 +33,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-PRAAT_STRUCT_BINDING(Frame, CC_Frame)
-
-void Binding<CC_Frame>::init() {
+PRAAT_STRUCT_BINDING(Frame, CC_Frame) {
 	def_readwrite("c0", &structCC_Frame::c0);
 
 	def_property_readonly("c", [](CC_Frame self) { return py::array(self->numberOfCoefficients, &self->c[1], py::cast(self)); });
@@ -73,7 +71,7 @@ void Binding<CC_Frame>::init() {
 	// TODO Make number of coefficients changeable?
 }
 
-void Binding<CC>::init() {
+PRAAT_CLASS_BINDING(CC) {
 	using signature_cast_placeholder::_;
 
 	Bindings<CC_Frame> subBindings(*this);

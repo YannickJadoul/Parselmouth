@@ -26,7 +26,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<SampledXY>::init()
+PRAAT_CLASS_BINDING(SampledXY)
 {
 	def_readonly("ymin", &structSampledXY::ymin);
 

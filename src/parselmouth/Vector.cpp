@@ -31,7 +31,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Interpolation>::init() {
+PRAAT_ENUM_BINDING(Interpolation) {
 	value("NEAREST", Interpolation::NEAREST);
 	value("LINEAR", Interpolation::LINEAR);
 	value("CUBIC", Interpolation::CUBIC);
@@ -41,7 +41,7 @@ void Binding<Interpolation>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<Vector>::init() {
+PRAAT_CLASS_BINDING(Vector) {
 	using signature_cast_placeholder::_;
 
 	// TODO Something to get rid of duplicate functions with different names?

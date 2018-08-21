@@ -68,30 +68,57 @@ constexpr auto all_unique_v = all_unique<Types...>::value;
 template <typename Type>
 class Binding;
 
-
 template <typename... Types>
-class Bindings {
+class Bindings;
+
+template <>
+class Bindings<> {
+public:
+	template <typename... Args>
+	explicit Bindings(Args &&...) {}
+
+	void init() {}
+};
+
+template <typename Type, typename... Rest>
+class Bindings<Type, Rest...> {
 public:
 #ifndef _MSC_VER
-	static_assert(detail::all_unique_v<Types...>, "Multiple identical template parameter types are specified");
+	static_assert(detail::none_of<std::is_same<Type, Rest>...>::value, "Multiple identical template parameter types are specified");
 #endif
 
 	template <typename... Args>
-	Bindings(Args &&... args) : m_bindings{Binding<Types>(args...)...} {}
+	explicit Bindings(Args &&... args) : m_binding{args...}, m_rest{std::forward<Args>(args)...} {}
 
 	void init() {
-		int unused[] = { (std::get<Binding<Types>>(m_bindings).init(), 0)... };
-		(void) unused;
+		m_binding.init();
+		m_rest.init();
 	}
 
 	template <typename T>
 	Binding<T> &get() {
-		static_assert(detail::any_of<std::is_same<T, Types>...>::value, "The specified type is not a member of these bindings");
-		return std::get<Binding<T>>(m_bindings);
+		static_assert(std::is_same<T, Type>::value || detail::any_of<std::is_same<T, Rest>...>::value, "The specified type is not a member of these bindings");
+		return getImpl<T>();
+	}
+
+	template <typename T>
+	Binding<T> &getImpl() {
+		return getImpl<T>(std::is_same<T, Type>());
+	}
+
+	template <typename T>
+	Binding<Type> &getImpl(std::true_type) {
+		return m_binding;
+	}
+
+	template <typename T>
+	Binding<T> &getImpl(std::false_type) {
+		return m_rest.template getImpl<T>();
 	}
 
 private:
-	std::tuple<Binding<Types>...> m_bindings;
+	Binding<Type> m_binding;
+	Bindings<Rest...> m_rest;
 };
 
 } // namespace parselmouth

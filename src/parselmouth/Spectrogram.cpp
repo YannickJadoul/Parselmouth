@@ -24,6 +24,7 @@
 #include "utils/pybind11/NumericPredicates.h"
 
 #include <praat/fon/Sound_and_Spectrogram.h>
+#include <praat/fon/Spectrogram.h>
 #include <praat/fon/Spectrum_and_Spectrogram.h>
 
 namespace py = pybind11;
@@ -31,7 +32,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Spectrogram>::init() {
+PRAAT_CLASS_BINDING(Spectrogram) {
 	using signature_cast_placeholder::_;
 
 	initTimeFrameSampled(*this);

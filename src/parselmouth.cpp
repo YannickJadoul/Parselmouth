@@ -29,6 +29,52 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+Thing_declare(CC);
+Thing_declare(Daata);
+Thing_declare(Formant);
+Thing_declare(Function);
+Thing_declare(Harmonicity);
+Thing_declare(Harmonicity);
+Thing_declare(Intensity);
+Thing_declare(Matrix);
+Thing_declare(MFCC);
+Thing_declare(Pitch);
+Thing_declare(Sampled);
+Thing_declare(SampledXY);
+Thing_declare(Matrix);
+Thing_declare(Sound);
+Thing_declare(Spectrum);
+Thing_declare(Spectrogram);
+
+namespace parselmouth {
+
+using PraatBindings = Bindings<Interpolation,
+                               WindowShape,
+                               AmplitudeScaling,
+                               SignalOutsideTimeDomain,
+                               SoundFileFormat,
+                               SpectralAnalysisWindowShape,
+                               FormantUnit,
+                               PitchUnit,
+                               Thing,
+                               Data,
+                               Function,
+                               Sampled,
+                               SampledXY,
+                               Matrix,
+                               Vector,
+                               Sound,
+                               Spectrum,
+                               Spectrogram,
+                               Pitch,
+                               Intensity,
+                               Harmonicity,
+                               Formant,
+                               CC,
+                               MFCC>;
+
+}
+
 PYBIND11_MODULE(parselmouth, m) {
 	praatlib_init();
 	// TODO Put in one-time initialization that is run when it's actually needed?
@@ -37,7 +83,7 @@ PYBIND11_MODULE(parselmouth, m) {
 
 	parselmouth::PraatBindings bindings(m);
 
-    static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError); // TODO Own file?
+	static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError); // TODO Own file?
 	py::register_exception_translator([](std::exception_ptr p) {
 			try {
 				if (p) std::rethrow_exception(p);

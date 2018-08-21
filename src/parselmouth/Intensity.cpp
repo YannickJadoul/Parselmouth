@@ -23,6 +23,8 @@
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/Optional.h"
 
+#include <praat/fon/Intensity.h>
+
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -35,9 +37,7 @@ enum class AveragingMethod {
 	DB = Intensity_averaging_DB
 };
 
-PRAAT_ENUM_BINDING(AveragingMethod)
-
-void Binding<AveragingMethod>::init() {
+PRAAT_ENUM_BINDING(AveragingMethod) {
 	value("MEDIAN", AveragingMethod::MEDIAN);
 	value("ENERGY", AveragingMethod::ENERGY);
 	value("SONES", AveragingMethod::SONES);
@@ -46,7 +46,7 @@ void Binding<AveragingMethod>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<Intensity>::init() {
+PRAAT_CLASS_BINDING(Intensity) {
 	// TODO Get value in frame
 
 	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
