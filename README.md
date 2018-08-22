@@ -145,3 +145,5 @@ Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Ne
   > Boersma, P., & Weenink, D. (2018). Praat: doing phonetics by computer [Computer program]. Version 6.0.37, retrieved 3 February 2018 from [http://www.praat.org/](http://www.praat.org/)
 
 * [pybind11](https://github.com/pybind/pybind11) is released under [a BSD-style license](pybind11/LICENSE).
+
+* The audio fragment extracted from a recording of the Aesop fable *The North Wind and the Sun*, used as example audio in the documentation and tests, is a [Wikimedia Commons audio file](https://en.wikipedia.org/wiki/File:Recording_of_speaker_of_British_English_(Received_Pronunciation).ogg) licensed by the International Phonetic Association under the [Creative Commons Attribution-Share Alike 3.0 Unported license](https://creativecommons.org/licenses/by-sa/3.0/deed.en).
