@@ -154,8 +154,11 @@ matrix:
       if: branch != docs
       os: osx
       compiler: clang
-      script:
+      install:
         - $PYTHON_CMD -m pip install cibuildwheel
+      script:
+        - mkdir praat_build && cd praat_build && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2 && cd ..
+        - export PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build/praat\""
         - export CCACHE_BASEDIR=`$PYTHON_CMD -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
         - export CIBW_SKIP="cp33-*"
         - cibuildwheel
