@@ -24,6 +24,8 @@
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
+#include <praat/fon/Matrix.h>
+
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 

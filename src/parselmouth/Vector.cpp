@@ -19,10 +19,14 @@
 
 #include "Parselmouth.h"
 
+#include "Interpolation.h"
+
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
+
+#include <praat/fon/Vector.h>
 
 #include <pybind11/stl.h>
 

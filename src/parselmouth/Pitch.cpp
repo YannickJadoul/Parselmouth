@@ -18,6 +18,8 @@
  */
 
 #include "Parselmouth.h"
+
+#include "Interpolation.h"
 #include "TimeClassAspects.h"
 
 #include "praat/MelderUtils.h"
@@ -36,7 +38,6 @@ namespace py = pybind11;
 using namespace py::literals;
 
 namespace parselmouth {
-
 
 PRAAT_ENUM_BINDING(PitchUnit) {
 	value("HERTZ", kPitch_unit::HERTZ);

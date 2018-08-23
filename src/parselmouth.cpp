@@ -45,10 +45,33 @@ Thing_declare(Matrix);
 Thing_declare(Sound);
 Thing_declare(Spectrum);
 Thing_declare(Spectrogram);
+Thing_declare(Vector);
+
+using Data = Daata;
 
 namespace parselmouth {
 
-using PraatBindings = Bindings<Interpolation,
+class PraatModule;
+using PraatError = MelderError;
+
+PRAAT_EXCEPTION_BINDING(PraatError, PyExc_RuntimeError) {
+	static auto exception = *this;
+	py::register_exception_translator([](std::exception_ptr p) mutable {
+			try {
+				if (p) std::rethrow_exception(p);
+			}
+			catch (const MelderError &) {
+				// Python 2: Seems exception strings should be encoded in UTF-8
+				// Python 3: PyErr_SetString (in py::exception<type>::operator()) decodes from UTF-8
+				std::string message(Melder_peek32to8(Melder_getError()));
+				message.erase(message.length() - 1); // Remove closing newline
+				Melder_clearError();
+				exception(message.c_str());
+			}});
+}
+
+using PraatBindings = Bindings<PraatError,
+                               Interpolation,
                                WindowShape,
                                AmplitudeScaling,
                                SignalOutsideTimeDomain,
@@ -71,7 +94,8 @@ using PraatBindings = Bindings<Interpolation,
                                Harmonicity,
                                Formant,
                                CC,
-                               MFCC>;
+                               MFCC,
+                               PraatModule>;
 
 }
 
@@ -83,26 +107,10 @@ PYBIND11_MODULE(parselmouth, m) {
 
 	parselmouth::PraatBindings bindings(m);
 
-	static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError); // TODO Own file?
-	py::register_exception_translator([](std::exception_ptr p) {
-			try {
-				if (p) std::rethrow_exception(p);
-			}
-			catch (const MelderError &) {
-				// Python 2: Seems exception strings should be encoded in UTF-8
-				// Python 3: PyErr_SetString (in py::exception<type>::operator()) decodes from UTF-8
-				std::string message(Melder_peek32to8(Melder_getError()));
-				message.erase(message.length() - 1); // Remove closing newline
-				Melder_clearError();
-				melderErrorException(message.c_str());
-			}});
-
 	m.attr("__version__") = PYBIND11_STR_TYPE(XSTR(PARSELMOUTH_VERSION));
 	m.attr("VERSION") = py::str(XSTR(PARSELMOUTH_VERSION));
 	m.attr("PRAAT_VERSION") = py::str(XSTR(PRAAT_VERSION_STR));
 	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
 
 	bindings.init();
-
-	parselmouth::initPraatModule(m.def_submodule("praat")); // TODO Part of the Bindings, on the longer term?
 }

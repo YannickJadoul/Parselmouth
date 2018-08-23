@@ -19,6 +19,8 @@
 
 #include "Parselmouth.h"
 
+#include <praat/fon/SampledXY.h>
+
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;

@@ -22,6 +22,8 @@
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
 
+#include <praat/fon/Function.h>
+
 namespace py = pybind11;
 using namespace py::literals;
 

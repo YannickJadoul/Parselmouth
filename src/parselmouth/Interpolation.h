@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2018  Yannick Jadoul
+ * Copyright (C) 2018  Yannick Jadoul
  *
  * This file is part of Parselmouth.
  *
@@ -17,25 +17,22 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#include "Parselmouth.h"
+#pragma once
+#ifndef INC_PARSELMOUTH_INTERPOLATION_H
+#define INC_PARSELMOUTH_INTERPOLATION_H
 
-#include "Interpolation.h"
-#include "TimeClassAspects.h"
-
-#include <praat/fon/Harmonicity.h>
+#include <praat/fon/Vector.h>
 
 namespace parselmouth {
 
-PRAAT_CLASS_BINDING(Harmonicity) {
-	// TODO Get value in frame
+enum class Interpolation {
+	NEAREST = Vector_VALUE_INTERPOLATION_NEAREST,
+	LINEAR = Vector_VALUE_INTERPOLATION_LINEAR,
+	CUBIC = Vector_VALUE_INTERPOLATION_CUBIC,
+	SINC70 = Vector_VALUE_INTERPOLATION_SINC70,
+	SINC700 = Vector_VALUE_INTERPOLATION_SINC700
+};
 
-	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
+} // parselmouth
 
-	initTimeFrameSampled(*this);
-
-	def("get_value", // TODO Should be part of Vector class
-	    [](Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
-	    "time"_a, "interpolation"_a = Interpolation::CUBIC);
-}
-
-} // namespace parselmouth
+#endif // INC_PARSELMOUTH_INTERPOLATION_H

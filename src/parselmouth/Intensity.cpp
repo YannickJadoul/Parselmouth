@@ -18,6 +18,8 @@
  */
 
 #include "Parselmouth.h"
+
+#include "Interpolation.h"
 #include "TimeClassAspects.h"
 
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"

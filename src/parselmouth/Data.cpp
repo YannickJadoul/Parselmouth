@@ -21,6 +21,8 @@
 
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 
+#include <praat/sys/Data.h>
+
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -40,6 +42,12 @@ PRAAT_ENUM_BINDING(FileFormat) {
 
 	make_implicitly_convertible_from_string(*this);
 }
+
+// Because we'd like to expose this class as Data and not as Daata
+using structData = structDaata;
+using Data = Daata;
+using autoData = autoDaata;
+using Data_Parent = Daata_Parent;
 
 PRAAT_CLASS_BINDING(Data) {
 	Bindings<FileFormat> subBindings(*this);
