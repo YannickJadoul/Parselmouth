@@ -94,10 +94,6 @@ enum class ToHarmonicityMethod
 	GNE
 };
 
-#define NESTED_ENUMS                  \
-        ToPitchMethod,                \
-        ToHarmonicityMethod
-
 
 // TODO Export befóre using default values for them
 // TODO Can be nested within Sound? Valid documentation (i.e. parselmouth.Sound.WindowShape instead of parselmouth.WindowShape)?
@@ -187,10 +183,10 @@ PRAAT_ENUM_BINDING(ToHarmonicityMethod) {
 }
 
 PRAAT_CLASS_BINDING(Sound) {
-	using signature_cast_placeholder::_;
+	NESTED_BINDINGS(ToPitchMethod,
+	                ToHarmonicityMethod)
 
-	Bindings<NESTED_ENUMS> subBindings(*this);
-	subBindings.init();
+	using signature_cast_placeholder::_;
 
 	initTimeFrameSampled(*this);
 

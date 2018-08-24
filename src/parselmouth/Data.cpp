@@ -50,8 +50,7 @@ using autoData = autoDaata;
 using Data_Parent = Daata_Parent;
 
 PRAAT_CLASS_BINDING(Data) {
-	Bindings<FileFormat> subBindings(*this);
-	subBindings.init();
+	NESTED_BINDINGS(FileFormat)
 
 	// TODO Cast to intermediate type? (i.e., Sound not known to parselmouth, then return Vector Python object instead of Data)
 	// TODO Reading a Praat Collection

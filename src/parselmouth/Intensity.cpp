@@ -49,12 +49,11 @@ PRAAT_ENUM_BINDING(AveragingMethod) {
 }
 
 PRAAT_CLASS_BINDING(Intensity) {
+	NESTED_BINDINGS(AveragingMethod)
+
 	// TODO Get value in frame
 
 	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
-
-	Bindings<AveragingMethod> subBindings(*this);
-	subBindings.init();
 
 	initTimeFrameSampled(*this);
 

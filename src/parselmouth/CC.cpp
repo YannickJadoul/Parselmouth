@@ -73,10 +73,9 @@ PRAAT_STRUCT_BINDING(Frame, CC_Frame) {
 }
 
 PRAAT_CLASS_BINDING(CC) {
-	using signature_cast_placeholder::_;
+	NESTED_BINDINGS(CC_Frame)
 
-	Bindings<CC_Frame> subBindings(*this);
-	subBindings.init();
+	using signature_cast_placeholder::_;
 
 	initTimeFrameSampled(*this);
 

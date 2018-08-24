@@ -156,6 +156,7 @@ private:
 #define BINDING_CONSTRUCTOR(Type, ...) BindingType<Type>::BindingType(pybind11::handle &scope) : Base{scope, __VA_ARGS__} {}
 #define BINDING_INIT(Type) void BindingType<Type>::init()
 #define NO_BINDING_INIT(Type) BINDING_INIT(Type) {}
+#define NESTED_BINDINGS(...) { Bindings<__VA_ARGS__> nestedBindings(*this); nestedBindings.init(); }
 
 #define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, auto##Type, Type##_Parent) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) BINDING_INIT(Type)
 #define PRAAT_CLASS_BINDING_BASE(Type, Base, ...) CLASS_BINDING(Type, struct##Type, auto##Type, struct##Base) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__)

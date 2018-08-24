@@ -128,10 +128,10 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 }
 
 PRAAT_CLASS_BINDING(Pitch) {
-	using signature_cast_placeholder::_;
+	NESTED_BINDINGS(Pitch_Candidate,
+	                Pitch_Frame)
 
-	Bindings<Pitch_Candidate, Pitch_Frame> subBindings(*this);
-	subBindings.init();
+	using signature_cast_placeholder::_;
 
 	initTimeFrameSampled(*this);
 
