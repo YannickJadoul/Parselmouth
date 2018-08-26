@@ -29,16 +29,34 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-PYBIND11_MODULE(parselmouth, m) {
-	praatlib_init();
-	// TODO Put in one-time initialization that is run when it's actually needed?
-	INCLUDE_LIBRARY(praat_uvafon_init)
-	INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
+Thing_declare(CC);
+Thing_declare(Daata);
+Thing_declare(Formant);
+Thing_declare(Function);
+Thing_declare(Harmonicity);
+Thing_declare(Harmonicity);
+Thing_declare(Intensity);
+Thing_declare(Matrix);
+Thing_declare(MFCC);
+Thing_declare(Pitch);
+Thing_declare(Sampled);
+Thing_declare(SampledXY);
+Thing_declare(Matrix);
+Thing_declare(Sound);
+Thing_declare(Spectrum);
+Thing_declare(Spectrogram);
+Thing_declare(Vector);
 
-	parselmouth::PraatBindings bindings(m);
+using Data = Daata;
 
-    static py::exception<MelderError> melderErrorException(m, "PraatError", PyExc_RuntimeError); // TODO Own file?
-	py::register_exception_translator([](std::exception_ptr p) {
+namespace parselmouth {
+
+class PraatModule;
+using PraatError = MelderError;
+
+PRAAT_EXCEPTION_BINDING(PraatError, PyExc_RuntimeError) {
+	static auto exception = *this;
+	py::register_exception_translator([](std::exception_ptr p) mutable {
 			try {
 				if (p) std::rethrow_exception(p);
 			}
@@ -48,8 +66,46 @@ PYBIND11_MODULE(parselmouth, m) {
 				std::string message(Melder_peek32to8(Melder_getError()));
 				message.erase(message.length() - 1); // Remove closing newline
 				Melder_clearError();
-				melderErrorException(message.c_str());
+				exception(message.c_str());
 			}});
+}
+
+using PraatBindings = Bindings<PraatError,
+                               Interpolation,
+                               WindowShape,
+                               AmplitudeScaling,
+                               SignalOutsideTimeDomain,
+                               SoundFileFormat,
+                               SpectralAnalysisWindowShape,
+                               FormantUnit,
+                               PitchUnit,
+                               Thing,
+                               Data,
+                               Function,
+                               Sampled,
+                               SampledXY,
+                               Matrix,
+                               Vector,
+                               Sound,
+                               Spectrum,
+                               Spectrogram,
+                               Pitch,
+                               Intensity,
+                               Harmonicity,
+                               Formant,
+                               CC,
+                               MFCC,
+                               PraatModule>;
+
+}
+
+PYBIND11_MODULE(parselmouth, m) {
+	praatlib_init();
+	// TODO Put in one-time initialization that is run when it's actually needed?
+	INCLUDE_LIBRARY(praat_uvafon_init)
+	INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
+
+	parselmouth::PraatBindings bindings(m);
 
 	m.attr("__version__") = PYBIND11_STR_TYPE(XSTR(PARSELMOUTH_VERSION));
 	m.attr("VERSION") = py::str(XSTR(PARSELMOUTH_VERSION));
@@ -57,6 +113,4 @@ PYBIND11_MODULE(parselmouth, m) {
 	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
 
 	bindings.init();
-
-	parselmouth::initPraatModule(m.def_submodule("praat")); // TODO Part of the Bindings, on the longer term?
 }

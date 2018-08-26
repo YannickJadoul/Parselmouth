@@ -36,7 +36,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Spectrum>::init() {
+PRAAT_CLASS_BINDING(Spectrum) {
 	using signature_cast_placeholder::_;
 
 	def(py::init([](py::array_t<double, 0> values, Positive<double> maximumFrequency) {

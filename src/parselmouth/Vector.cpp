@@ -19,10 +19,14 @@
 
 #include "Parselmouth.h"
 
+#include "Interpolation.h"
+
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
+
+#include <praat/fon/Vector.h>
 
 #include <pybind11/stl.h>
 
@@ -31,7 +35,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Interpolation>::init() {
+PRAAT_ENUM_BINDING(Interpolation) {
 	value("NEAREST", Interpolation::NEAREST);
 	value("LINEAR", Interpolation::LINEAR);
 	value("CUBIC", Interpolation::CUBIC);
@@ -41,7 +45,7 @@ void Binding<Interpolation>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<Vector>::init() {
+PRAAT_CLASS_BINDING(Vector) {
 	using signature_cast_placeholder::_;
 
 	// TODO Something to get rid of duplicate functions with different names?

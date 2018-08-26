@@ -19,6 +19,8 @@
 
 #include "Parselmouth.h"
 
+#include <praat/fon/Sampled.h>
+
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;
@@ -26,7 +28,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Sampled>::init()
+PRAAT_CLASS_BINDING(Sampled)
 {
 	// TODO Unit handling
 

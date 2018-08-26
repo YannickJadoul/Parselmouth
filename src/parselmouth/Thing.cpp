@@ -31,8 +31,9 @@ py::bytes encodeAsPreferredEncoding(const py::str &unicode) {
 	return unicode.attr("encode")(encoding, "replace");
 }
 
-void Binding<Thing>::init()
-{
+CLASS_BINDING(Thing, structThing, autoThing)
+BINDING_CONSTRUCTOR(Thing, "Thing")
+BINDING_INIT(Thing) {
 #if PY_MAJOR_VERSION >= 3
 	def("__str__",
 	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return info.get(); });

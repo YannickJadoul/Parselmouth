@@ -18,6 +18,8 @@
  */
 
 #include "Parselmouth.h"
+
+#include "Interpolation.h"
 #include "TimeClassAspects.h"
 
 #include "praat/MelderUtils.h"
@@ -29,6 +31,7 @@
 #include <pybind11/stl.h>
 
 #include <praat/fon/Matrix_and_Pitch.h>
+#include <praat/fon/Pitch.h>
 #include <praat/fon/Pitch_to_Sound.h>
 
 namespace py = pybind11;
@@ -36,10 +39,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-PRAAT_STRUCT_BINDING(Candidate, Pitch_Candidate)
-PRAAT_STRUCT_BINDING(Frame, Pitch_Frame)
-
-void Binding<PitchUnit>::init() {
+PRAAT_ENUM_BINDING(PitchUnit) {
 	value("HERTZ", kPitch_unit::HERTZ);
 	value("HERTZ_LOGARITHMIC", kPitch_unit::HERTZ_LOGARITHMIC);
 	value("MEL", kPitch_unit::MEL);
@@ -53,14 +53,14 @@ void Binding<PitchUnit>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<Pitch_Candidate>::init() {
+PRAAT_STRUCT_BINDING(Candidate, Pitch_Candidate) {
 	def_readonly("frequency", &structPitch_Candidate::frequency); // TODO readwrite? Then we need to return references instead of copies in Pitch_Frame.
 	def_readonly("strength", &structPitch_Candidate::strength);
 
 	// TODO Reference to Pitch_Frame to have ".select()"?
 }
 
-void Binding<Pitch_Frame>::init() {
+PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 	using PitchCandidate = structPitch_Candidate;
 	PYBIND11_NUMPY_DTYPE(PitchCandidate, frequency, strength);
 
@@ -127,11 +127,11 @@ void Binding<Pitch_Frame>::init() {
 	// TODO Make number of candidates changeable?
 }
 
-void Binding<Pitch>::init() {
-	using signature_cast_placeholder::_;
+PRAAT_CLASS_BINDING(Pitch) {
+	NESTED_BINDINGS(Pitch_Candidate,
+	                Pitch_Frame)
 
-	Bindings<Pitch_Candidate, Pitch_Frame> subBindings(*this);
-	subBindings.init();
+	using signature_cast_placeholder::_;
 
 	initTimeFrameSampled(*this);
 

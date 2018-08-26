@@ -24,6 +24,8 @@
 #include "utils/pybind11/NumericPredicates.h"
 #include "utils/pybind11/Optional.h"
 
+#include <praat/fon/Matrix.h>
+
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
@@ -32,7 +34,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Matrix>::init() {
+PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 	using signature_cast_placeholder::_;
 
 	// TODO Constructors (i.e., from numpy array, ...)

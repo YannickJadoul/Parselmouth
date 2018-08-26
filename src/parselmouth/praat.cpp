@@ -36,6 +36,10 @@ using namespace py::literals;
 
 namespace parselmouth {
 
+using structData = structDaata;
+using Data = Daata;
+using autoData = autoDaata;
+
 namespace {
 
 template <typename T, typename PyT>
@@ -329,51 +333,53 @@ auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>
 
 } // namespace
 
-void initPraatModule(py::module m) {
-	m.def("call",
-	      [](const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({}, command, args, kwargs); },
-	      "command"_a,
-	      "Keyword arguments:\n    - return_string: bool = False");
+class PraatModule;
 
-	m.def("call",
-	      [](structData &data, const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({ std::ref(data) }, command, args, kwargs); },
-	      "object"_a, "command"_a,
-	      "Keyword arguments:\n    - return_string: bool = False");
+PRAAT_MODULE_BINDING(praat, PraatModule) {
+	def("call",
+	    [](const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({}, command, args, kwargs); },
+	    "command"_a,
+	    "Keyword arguments:\n    - return_string: bool = False");
 
-	m.def("call",
-	      &callPraatCommand,
-	      "objects"_a, "command"_a,
-	      "Keyword arguments:\n    - return_string: bool = False");
+	def("call",
+	    [](structData &data, const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({ std::ref(data) }, command, args, kwargs); },
+	    "object"_a, "command"_a,
+	    "Keyword arguments:\n    - return_string: bool = False");
 
-	m.def("run",
-	      [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({}, script, args, kwargs); },
-	      "script"_a,
-	      "Keyword arguments:\n    - capture_output: bool = False");
+	def("call",
+	    &callPraatCommand,
+	    "objects"_a, "command"_a,
+	    "Keyword arguments:\n    - return_string: bool = False");
 
-	m.def("run",
-	      [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({ std::ref(data) }, script, args, kwargs); },
-	      "object"_a, "script"_a,
-	      "Keyword arguments:\n    - capture_output: bool = False");
+	def("run",
+	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({}, script, args, kwargs); },
+	    "script"_a,
+	    "Keyword arguments:\n    - capture_output: bool = False");
 
-	m.def("run",
-	      &runPraatScriptFromText,
-	      "objects"_a, "script"_a,
-	      "Keyword arguments:\n    - capture_output: bool = False");
+	def("run",
+	    [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({ std::ref(data) }, script, args, kwargs); },
+	    "object"_a, "script"_a,
+	    "Keyword arguments:\n    - capture_output: bool = False");
 
-	m.def("run_file",
-	      [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({}, script, args, kwargs); },
-	      "path"_a,
-	      "Keyword arguments:\n    - capture_output: bool = False");
+	def("run",
+	    &runPraatScriptFromText,
+	    "objects"_a, "script"_a,
+	    "Keyword arguments:\n    - capture_output: bool = False");
 
-	m.def("run_file",
-	      [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({ std::ref(data) }, script, args, kwargs); },
-	      "object"_a, "path"_a,
-	      "Keyword arguments:\n    - capture_output: bool = False");
+	def("run_file",
+	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({}, script, args, kwargs); },
+	    "path"_a,
+	    "Keyword arguments:\n    - capture_output: bool = False");
 
-	m.def("run_file",
-	      &runPraatScriptFromFile,
-	      "objects"_a, "path"_a,
-	      "Keyword arguments:\n    - capture_output: bool = False");
+	def("run_file",
+	    [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({ std::ref(data) }, script, args, kwargs); },
+	    "object"_a, "path"_a,
+	    "Keyword arguments:\n    - capture_output: bool = False");
+
+	def("run_file",
+	    &runPraatScriptFromFile,
+	    "objects"_a, "path"_a,
+	    "Keyword arguments:\n    - capture_output: bool = False");
 
 #ifndef NDEBUG // TODO Only in debug?
 	auto castPraatCommand = [](const structPraat_Command &command) {
@@ -382,21 +388,21 @@ void initPraatModule(py::module m) {
 
 	using CastedPraatCommand = decltype(castPraatCommand(std::declval<structPraat_Command&>()));
 
-	m.def("_get_actions",
-	      [castPraatCommand]() {
-		      std::vector<CastedPraatCommand> actions;
-		      for (integer i = 1; i <= praat_getNumberOfActions(); ++i)
-			      actions.emplace_back(castPraatCommand(*praat_getAction(i)));
-		      return actions;
-	      });
+	def("_get_actions",
+	    [castPraatCommand]() {
+		    std::vector<CastedPraatCommand> actions;
+		    for (integer i = 1; i <= praat_getNumberOfActions(); ++i)
+			    actions.emplace_back(castPraatCommand(*praat_getAction(i)));
+		    return actions;
+	    });
 
-	m.def("_get_menu_commands",
-	      [castPraatCommand]() {
-		      std::vector<CastedPraatCommand> menuCommands;
-		      for (integer i = 1; i <= praat_getNumberOfMenuCommands(); ++i)
-			      menuCommands.emplace_back(castPraatCommand(*praat_getMenuCommand(i)));
-		      return menuCommands;
-	      });
+	def("_get_menu_commands",
+	    [castPraatCommand]() {
+		    std::vector<CastedPraatCommand> menuCommands;
+		    for (integer i = 1; i <= praat_getNumberOfMenuCommands(); ++i)
+		     menuCommands.emplace_back(castPraatCommand(*praat_getMenuCommand(i)));
+		    return menuCommands;
+	    });
 #endif
 }
 

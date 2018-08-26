@@ -26,6 +26,9 @@
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
 
+#include <praat/fon/Function.h>
+#include <praat/fon/Sampled.h>
+
 #include <algorithm>
 #include <type_traits>
 
@@ -38,7 +41,7 @@ using namespace py::literals;
 namespace parselmouth {
 
 template <typename Class, typename... Extra>
-void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
+void initTimeFunction(py::class_<Class, Extra...> &binding) {
 	static_assert(std::is_base_of<structFunction, Class>::value, "Class needs to be a Praat Function subclass");
 
 
@@ -130,7 +133,7 @@ void initTimeFunction(ClassBinding<Class, Extra...> &binding) {
 }
 
 template <typename Class, typename... Extra>
-void initTimeFrameSampled(ClassBinding<Class, Extra...> &binding) {
+void initTimeFrameSampled(py::class_<Class, Extra...> &binding) {
 	static_assert(std::is_base_of<structSampled, Class>::value, "Class needs to be a Praat Sampled subclass");
 
 

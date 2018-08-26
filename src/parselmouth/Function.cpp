@@ -22,13 +22,14 @@
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
 
+#include <praat/fon/Function.h>
+
 namespace py = pybind11;
 using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<Function>::init()
-{
+PRAAT_CLASS_BINDING(Function) {
 	using signature_cast_placeholder::_;
 
 	// TODO Unit handling

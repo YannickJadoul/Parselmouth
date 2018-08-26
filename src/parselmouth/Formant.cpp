@@ -24,19 +24,21 @@
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 
+#include <praat/fon/Formant.h>
+
 namespace py = pybind11;
 using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<FormantUnit>::init() {
+PRAAT_ENUM_BINDING(FormantUnit) {
 	value("HERTZ", kFormant_unit::HERTZ);
 	value("BARK", kFormant_unit::BARK);
 
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<Formant>::init() {
+PRAAT_CLASS_BINDING(Formant) {
 	using signature_cast_placeholder::_;
 
 	initTimeFrameSampled(*this);

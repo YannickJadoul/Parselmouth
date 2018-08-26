@@ -21,6 +21,8 @@
 
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 
+#include <praat/sys/Data.h>
+
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -32,12 +34,8 @@ enum class DataFileFormat {
 	BINARY
 };
 
-PRAAT_ENUM_BINDING_ALIAS(FileFormat, DataFileFormat);
-
-#define NESTED_ENUMS \
-        FileFormat
-
-void Binding<FileFormat>::init() {
+using FileFormat = DataFileFormat;
+PRAAT_ENUM_BINDING(FileFormat) {
 	value("TEXT", DataFileFormat::TEXT);
 	value("SHORT_TEXT", DataFileFormat::SHORT_TEXT);
 	value("BINARY", DataFileFormat::BINARY);
@@ -45,10 +43,14 @@ void Binding<FileFormat>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<Data>::init()
-{
-	Bindings<NESTED_ENUMS> subBindings(*this);
-	subBindings.init();
+// Because we'd like to expose this class as Data and not as Daata
+using structData = structDaata;
+using Data = Daata;
+using autoData = autoDaata;
+using Data_Parent = Daata_Parent;
+
+PRAAT_CLASS_BINDING(Data) {
+	NESTED_BINDINGS(FileFormat)
 
 	// TODO Cast to intermediate type? (i.e., Sound not known to parselmouth, then return Vector Python object instead of Data)
 	// TODO Reading a Praat Collection

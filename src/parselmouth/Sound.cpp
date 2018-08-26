@@ -29,6 +29,7 @@
 #include <praat/dwtools/Sound_extensions.h>
 #include <praat/dwtools/Sound_to_MFCC.h>
 #include <praat/dwtools/Sound_to_Pitch2.h>
+#include <praat/fon/Sound.h>
 #include <praat/fon/Sound_and_Spectrogram.h>
 #include <praat/fon/Sound_and_Spectrum.h>
 #include <praat/fon/Sound_to_Formant.h>
@@ -93,18 +94,11 @@ enum class ToHarmonicityMethod
 	GNE
 };
 
-PRAAT_ENUM_BINDING(ToPitchMethod);
-PRAAT_ENUM_BINDING(ToHarmonicityMethod);
-
-#define NESTED_ENUMS                  \
-        ToPitchMethod,                \
-        ToHarmonicityMethod
-
 
 // TODO Export befóre using default values for them
 // TODO Can be nested within Sound? Valid documentation (i.e. parselmouth.Sound.WindowShape instead of parselmouth.WindowShape)?
 
-void Binding<WindowShape>::init() {
+PRAAT_ENUM_BINDING(WindowShape) {
 	value("RECTANGULAR", kSound_windowShape::RECTANGULAR);
 	value("TRIANGULAR", kSound_windowShape::TRIANGULAR);
 	value("PARABOLIC", kSound_windowShape::PARABOLIC);
@@ -121,7 +115,7 @@ void Binding<WindowShape>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<AmplitudeScaling>::init() {
+PRAAT_ENUM_BINDING(AmplitudeScaling) {
 	value("INTEGRAL", kSounds_convolve_scaling::INTEGRAL);
 	value("SUM", kSounds_convolve_scaling::SUM);
 	value("NORMALIZE", kSounds_convolve_scaling::NORMALIZE);
@@ -130,14 +124,14 @@ void Binding<AmplitudeScaling>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<SignalOutsideTimeDomain>::init() {
+PRAAT_ENUM_BINDING(SignalOutsideTimeDomain) {
 	value("ZERO", kSounds_convolve_signalOutsideTimeDomain::ZERO);
 	value("SIMILAR", kSounds_convolve_signalOutsideTimeDomain::SIMILAR);
 
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<SoundFileFormat>::init() {
+PRAAT_ENUM_BINDING(SoundFileFormat) {
 	value("WAV", SoundFileFormat::WAV);
 	value("AIFF", SoundFileFormat::AIFF);
 	value("AIFC", SoundFileFormat::AIFC);
@@ -160,7 +154,7 @@ void Binding<SoundFileFormat>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<SpectralAnalysisWindowShape>::init() {
+PRAAT_ENUM_BINDING(SpectralAnalysisWindowShape) {
 	value("SQUARE", kSound_to_Spectrogram_windowShape::SQUARE);
 	value("HAMMING", kSound_to_Spectrogram_windowShape::HAMMING);
 	value("BARTLETT", kSound_to_Spectrogram_windowShape::BARTLETT);
@@ -171,7 +165,7 @@ void Binding<SpectralAnalysisWindowShape>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<ToPitchMethod>::init() {
+PRAAT_ENUM_BINDING(ToPitchMethod) {
 	value("AC", ToPitchMethod::AC);
 	value("CC", ToPitchMethod::CC);
 	value("SPINET", ToPitchMethod::SPINET);
@@ -180,7 +174,7 @@ void Binding<ToPitchMethod>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<ToHarmonicityMethod>::init() {
+PRAAT_ENUM_BINDING(ToHarmonicityMethod) {
 	value("AC", ToHarmonicityMethod::AC);
 	value("CC", ToHarmonicityMethod::CC);
 	value("GNE", ToHarmonicityMethod::GNE);
@@ -188,11 +182,11 @@ void Binding<ToHarmonicityMethod>::init() {
 	make_implicitly_convertible_from_string(*this);
 }
 
-void Binding<Sound>::init() {
-	using signature_cast_placeholder::_;
+PRAAT_CLASS_BINDING(Sound) {
+	NESTED_BINDINGS(ToPitchMethod,
+	                ToHarmonicityMethod)
 
-	Bindings<NESTED_ENUMS> subBindings(*this);
-	subBindings.init();
+	using signature_cast_placeholder::_;
 
 	initTimeFrameSampled(*this);
 

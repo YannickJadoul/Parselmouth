@@ -24,6 +24,7 @@
 
 #include <pybind11/numpy.h>
 
+#include <praat/dwtools/MFCC.h>
 #include <praat/dwtools/Spectrogram_extensions.h>
 
 namespace py = pybind11;
@@ -31,7 +32,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-void Binding<MFCC>::init() {
+PRAAT_CLASS_BINDING(MFCC) {
 	using signature_cast_placeholder::_;
 
 	// TODO Constructor from Sound? Other constructors?
