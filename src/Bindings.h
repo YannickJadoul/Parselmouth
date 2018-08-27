@@ -145,7 +145,7 @@ private:
 #define BINDING(Type, Kind, ...) \
 	template <> class BindingType<Type> : public Kind<__VA_ARGS__> { using Base = Kind<__VA_ARGS__>; public: explicit BindingType(pybind11::handle &); void init(); }; \
 	template <> Binding<Type>::Binding(pybind11::handle &scope) : m_binding(std::make_unique<BindingType<Type>>(scope)) {} \
-	template <> Binding<Type>::~Binding() = default; \
+	template <> Binding<Type>::~Binding() {} \
 	template <> void Binding<Type>::init() { m_binding->init(); }
 
 #define CLASS_BINDING(Type, ...) BINDING(Type, pybind11::class_, __VA_ARGS__)
