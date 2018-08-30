@@ -29,6 +29,8 @@
 #include <praat/fon/Function.h>
 #include <praat/fon/Sampled.h>
 
+#include <pybind11/numpy.h>
+
 #include <algorithm>
 #include <type_traits>
 
@@ -51,44 +53,39 @@ void initTimeFunction(py::class_<Class, Extra...> &binding) {
 
 	using signature_cast_placeholder::_;
 
-	// TODO Get rid of code duplication with Function?
+	// TODO Get rid of code duplication (also with Function)? (attr("tmin") = attr("xmin"), attr("shift_times_by") = attr("shift_x_by")) ?
 
-	// TODO What about this?
-	/* binding.attr("tmin") = binding.attr("xmin");
-	binding.attr("tmax") = binding.attr("xmax");
-	binding.attr("nt") = binding.attr("nx");
-	binding.attr("t1") = binding.attr("x1");
-	binding.attr("dt") = binding.attr("dx");*/
+	auto get_tmin = [](Class *self) { return self->xmin; };
+	auto set_tmin = [](Class *self, double time) { Function_shiftXTo(self, self->xmin, time); };
+	auto get_tmax = [](Class *self) { return self->xmax; };
+	auto set_tmax = [](Class *self, double time) { Function_shiftXTo(self, self->xmax, time); };
+	auto get_trange = [](Class *self) { return std::make_pair(self->xmin, self->xmax); };
+	auto set_trange = [](auto tmin_name, auto tmax_name) {
+							return [=](Class *self, std::pair<double, double> value) {
+								if (value.first >= value.second)
+									Melder_throw (U"New ", tmax_name, U" should be greater than new ", tmin_name, U".");
+								Function_scaleXTo(self, value.first, value.second);
+							}; };
+	auto get_duration = [](Class *self) { return self->xmax - self->xmin; };
 
-	def("get_start_time", [](Class *self) { return self->xmin; });
+	def_property("tmin", get_tmin, set_tmin);
+	def_property("tmax", get_tmax, set_tmax);
+	def_property("trange", get_trange, set_trange(U"tmin", U"tmax"));
 
-	def_property("start_time",
-	             [](Class *self) { return self->xmin; },
-	             [](Class *self, double time) { Function_shiftXTo(self, self->xmin, time); });
+	def("get_start_time", get_tmin);
+	def("get_end_time", get_tmax);
 
-	def("get_end_time", [](Class *self) { return self->xmax; });
-
-	def_property("end_time",
-	             [](Class *self) { return self->xmax; },
-	             [](Class *self, double time) { Function_shiftXTo(self, self->xmax, time); });
+	def_property("start_time", get_tmin, set_tmin);
+	def_property("end_time", get_tmax, set_tmax);
+	def_property("time_range", get_trange, set_trange(U"start time", U"end time"));
 
 	def_property("centre_time",
 	             [](Class *self) { return (self->xmax - self->xmin) / 2; },
 	             [](Class *self, double time) { Function_shiftXTo(self, (self->xmax - self->xmin) / 2, time); });
 
-	def_property("time_range",
-	             [](Class *self) { return std::make_pair(self->xmin, self->xmax); },
-	             [](Class *self, std::pair<double, double> value) {
-		             if (value.first >= value.second)
-			             Melder_throw (U"New end time should be greater than new start time.");
-		             Function_scaleXTo(self, value.first, value.second);
-	             });
-
-	def("get_total_duration", [](Class *self) { return self->xmax - self->xmin; });
-
-	def_property_readonly("total_duration", [](Class *self) { return self->xmax - self->xmin; });
-
-	def_property_readonly("duration", [](Class *self) { return self->xmax - self->xmin; });
+	def("get_total_duration", get_duration);
+	def_property_readonly("total_duration", get_duration);
+	def_property_readonly("duration", get_duration);
 
 	def("shift_times_by",
 	    args_cast<Class *, _>(Function_shiftXBy),
@@ -128,8 +125,6 @@ void initTimeFunction(py::class_<Class, Extra...> &binding) {
 		    Function_scaleXTo(self, newStartTime, newEndTime);
 	    },
 	    "new_start_time"_a, "new_end_time"_a);
-
-	// TODO tmin, tmax ?
 }
 
 template <typename Class, typename... Extra>
@@ -144,6 +139,42 @@ void initTimeFrameSampled(py::class_<Class, Extra...> &binding) {
 
 
 	initTimeFunction(binding);
+
+	def_readonly("nt", &Class::nx);
+	def_readonly("t1", &Class::x1);
+	def_readonly("dt", &Class::dx);
+
+	// TODO Get rid of code duplication with Sampled
+	def("ts",
+	    [](Class *self) { // TODO This or rather use Python call to numpy?
+		    py::array_t<double> ts(static_cast<size_t>(self->nx));
+		    auto unchecked = ts.mutable_unchecked<1>();
+		    for (auto i = 0; i < self->nx; ++i) {
+			    unchecked(i) = self->x1 + i * self->dx;
+		    }
+		    return ts;
+	    });
+
+	def("t_grid",
+	    [](Class *self) {
+		    py::array_t<double> grid(static_cast<size_t>(self->nx) + 1);
+		    auto unchecked = grid.mutable_unchecked<1>();
+		    for (auto i = 0; i < self->nx + 1; ++i) {
+			    unchecked(i) = self->x1 + (i - 0.5) * self->dx;
+		    }
+		    return grid;
+	    });
+
+	def("t_bins",
+	    [](Class *self) {
+		    py::array_t<double> bins({self->nx, integer{2}});
+		    auto unchecked = bins.mutable_unchecked<2>();
+		    for (auto i = 0; i < self->nx; ++i) {
+			    unchecked(i, 0) = self->x1 + (i - 0.5) * self->dx;
+			    unchecked(i, 1) = self->x1 + (i + 0.5) * self->dx;
+		    }
+		    return bins;
+	    });
 
 	def("get_number_of_frames", [](Class *self) { return self->nx; });
 
@@ -169,8 +200,7 @@ void initTimeFrameSampled(py::class_<Class, Extra...> &binding) {
 	    args_cast<Class *, _>(Sampled_xToIndex),
 	    "time"_a);
 
-	// TODO get_frame_times() ?
-	// TODO t1, dt, nt, ts ?
+	// TODO get_sample_times() ? (cfr. "Get sample times" / Sampled_getX_numvec)
 	}
 
 } // namespace parselmouth

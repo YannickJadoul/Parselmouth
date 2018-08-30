@@ -483,6 +483,11 @@ PRAAT_CLASS_BINDING(Sound) {
 	    args_cast<_, Positive<_>, Positive<_>, Positive<_>, Positive<_>, Positive<_>, Positive<_>>(Sound_deepenBandModulation),
 	    "enhancement"_a = 20.0, "from_frequency"_a = 300.0, "to_frequency"_a = 8000.0, "slow_modulation"_a = 3.0, "fast_modulation"_a = 30.0, "band_smoothing"_a = 100.0);
 
+	// TODO Args cast for optional and optional ranges!
+	def("to_pitch",
+	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
+	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
+
 	def("to_pitch",
 	    [](Sound self, ToPitchMethod method, py::args args, py::kwargs kwargs) -> py::object {
 		    auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
@@ -498,25 +503,21 @@ PRAAT_CLASS_BINDING(Sound) {
 		    }
 		    return py::none();
 	    },
-	    "method"_a = ToPitchMethod::AC);
-
-	def("to_pitch", // TODO Args cast for optional and optional ranges!
-	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
-	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
+	    "method"_a);
 
 	def("to_pitch_ac",
 	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
 		    return Sound_to_Pitch_ac(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 3.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
 	    },
-	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "ceiling"_a = 600.0);
+	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch_cc",
 	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
 		    return Sound_to_Pitch_cc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 1.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
 	    },
-	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "ceiling"_a = 600.0);
+	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch_spinet",
 	    [](Sound self, Positive<double> timeStep, Positive<double> windowLength, Positive<double> minimumFilterFrequency, Positive<double> maximumFilterFrequency, Positive<long> numberOfFilters, Positive<double> ceiling, Positive<int> maxNumberOfCandidates) {
