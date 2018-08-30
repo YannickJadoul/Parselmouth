@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+## [0.3.2] - 2018-08-28
+### Added
+- Exposed `tmin`, `tmax`, `trange`, `nt`, `t1`, `dt`, `ts`, `t_grid`, and `t_bins` for `TimeFunction` and `TimeSampled` aspects.
+- Added `PREBUILT_PRAAT_DIR` variable to CMake configuraiton to allow reusing an already built Praat static library.
+### Changed
+- Refactored bindings framework to allow for forward declarations and to get reduce the importance and use of `parselmouth/Parselmouth.h`.
+### Fixed
+- Fixed `parselmouth.to_pitch` overload resolution, stopping `*args` and `**kwargs` from matching all calls.
+
 ## [0.3.1] - 2018-08-10
 ### Added
 - Added Binder setup description and links from documentation.
@@ -69,7 +78,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - Main functionality of `Thing`, `Data`, `Matrix`, `Vector`, `Sound`, `Spectrum`, `Spectrogram`, and `Intensity` classes. Preliminary implementations of `Pitch`, `Harmonicity`, `Formant`, and `MFCC`.
 - Basic Travis CI configuration.
 
-[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.2.0...v0.2.1
