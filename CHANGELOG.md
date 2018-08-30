@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
-## [0.3.2] - 2018-08-28
+## [0.3.2] - 2018-08-30
 ### Added
 - Exposed `tmin`, `tmax`, `trange`, `nt`, `t1`, `dt`, `ts`, `t_grid`, and `t_bins` for `TimeFunction` and `TimeSampled` aspects.
 - Added `PREBUILT_PRAAT_DIR` variable to CMake configuraiton to allow reusing an already built Praat static library.
