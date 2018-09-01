@@ -118,7 +118,7 @@ public:
 
 	std::vector<structStackel> toPraatArgs(const py::args &args) {
 		std::vector<structStackel> praatArgs(1); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
-		for (auto &arg : args)
+		for (auto arg : args)
 			praatArgs.emplace_back(toPraatArg(arg));
 		return praatArgs;
 	}
