@@ -1,5 +1,7 @@
-include *.md LICENSE CMakeLists.txt
+include *.md LICENSE CMakeLists.txt pytest.ini
 recursive-include src *
 recursive-include pybind11 *
 recursive-include praat *
 recursive-include res *
+recursive-include tests *
+global-exclude *.py[co]
