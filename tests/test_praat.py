@@ -3,7 +3,7 @@ import pytest
 import parselmouth
 
 
-def test_run_script(resources):
+def test_run(resources):
 	script = """
 	Read from file: "{}"
 	To Intensity: 100.0, 0.0, "yes"
@@ -17,7 +17,7 @@ def test_run_script(resources):
 		parselmouth.praat.run(script, 42, "some_argument", True)
 
 
-def test_run_script_with_parameters(resources):
+def test_run_with_parameters(resources):
 	script = """
 	form Test
 		positive minPitch 100.0
@@ -39,3 +39,12 @@ def test_run_script_with_parameters(resources):
 
 	with pytest.raises(parselmouth.PraatError, match="Found 0 arguments but expected more."):
 		parselmouth.praat.run(script)
+
+
+def test_run_with_capture_output():
+	assert parselmouth.praat.run("writeInfo: 42", capture_output=True) == ([], "42")
+	assert parselmouth.praat.run("appendInfo: 42", capture_output=True) == ([], "42")
+	assert parselmouth.praat.run("writeInfoLine: 42", capture_output=True) == ([], "42\n")
+	assert parselmouth.praat.run("writeInfoLine: \"The answer\", \" - \", 42\nappendInfo: \"The question - ?\"", capture_output=True) == ([], "The answer - 42\nThe question - ?")
+	assert parselmouth.praat.run("writeInfoLine: \"The answer\", \" - \", 42\nwriteInfoLine: \"The question - ?\"", capture_output=True) == ([], "The question - ?\n")
+	assert parselmouth.praat.run("writeInfo: tab$, newline$", capture_output=True) == ([], "\t\n")
