@@ -32,7 +32,7 @@ install:
       if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
       if ($env:WHEELS) {
         $env:PYTHON = 37
-        if ($env:PLATFORM -eq "x64") { $env:CIBW_SKIP = "cp33-* *-win32" } else { $env:CIBW_SKIP = "cp33-* *-win_amd64" }
+        if ($env:PLATFORM -eq "x64") { $env:CIBW_BUILD = "*-win_amd64" } else { $env:CIBW_BUILD = "*-win32" }
       }
       if ($env:PYTHON) {
         if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
