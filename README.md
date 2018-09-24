@@ -4,7 +4,7 @@
 [![Gitter chat](https://img.shields.io/gitter/room/PraatParselmouth/Lobby.svg)](https://gitter.im/PraatParselmouth/Lobby)
 [![Travis CI status](https://img.shields.io/travis/YannickJadoul/Parselmouth/master.svg)](https://travis-ci.org/YannickJadoul/Parselmouth/)
 [![AppVeyor status](https://img.shields.io/appveyor/ci/YannickJadoul/Parselmouth/master.svg)](https://ci.appveyor.com/project/YannickJadoul/parselmouth)
-[![ReadTheDocs status](https://readthedocs.org/projects/parselmouth/badge/?version=latest)](https://parselmouth.readthedocs.io/en/latest/?badge=latest)
+[![ReadTheDocs status](https://readthedocs.org/projects/parselmouth/badge/)](https://parselmouth.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/pypi/l/praat-parselmouth.svg)](https://github.com/YannickJadoul/Parselmouth/blob/master/LICENSE)
 [![Binder examples](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=lab%2Ftree%2Fdocs%2Fexamples)
 
