@@ -1,10 +1,11 @@
 import pytest
+import pytest_lazyfixture
 
 import parselmouth
 
 
 def combined_fixture(*args, **kwargs):
-	return pytest.fixture(params=map(lambda x: pytest.param(pytest.lazy_fixture(x), id=x), args), **kwargs)
+	return pytest.fixture(params=map(lambda x: pytest.param(pytest_lazyfixture.lazy_fixture(x), id=x), args), **kwargs)
 
 
 @pytest.fixture
