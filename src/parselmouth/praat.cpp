@@ -114,6 +114,27 @@ public:
 		return selected;
 	}
 
+	std::unordered_map<std::u32string, py::object> getVariables() {
+		std::unordered_map<std::u32string, py::object> variables;
+
+		//for (const auto &[name, value] : m_interpreter->variablesMap) { // TODO C++17
+		for (const auto &e : m_interpreter->variablesMap) {
+			auto &name = e.first;
+			auto &value = e.second;
+
+			assert(name == value->string);
+
+			if (name.length() > 0 && name.back() == U'$') {
+				variables.emplace(name, py::cast(value->stringValue));
+			} else {
+				variables.emplace(name, py::cast(value->numericValue));
+			}
+			// TODO Praat vectors (#) and matrices (##)
+		}
+
+		return variables;
+	}
+
 	structStackel toPraatArg(const py::handle &arg);
 
 	std::vector<structStackel> toPraatArgs(const py::args &args) {
@@ -289,6 +310,7 @@ auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &obj
 
 auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objects, char32 *script, py::args args, py::kwargs kwargs) {
 	auto captureOutput = extractKwarg<bool, py::bool_>(kwargs, "capture_output", false, "bool");
+	auto returnVariables = extractKwarg<bool, py::bool_>(kwargs, "return_variables", false, "bool");
 	checkUnkownKwargs(kwargs);
 
 	PraatEnvironment environment;
@@ -306,10 +328,20 @@ auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objec
 		Melder_throw(U"Script not completed.");
 	}
 
-	if (captureOutput)
-		return py::cast(std::make_pair(environment.retrieveSelectedObjects(), interceptor->get()));
-	else
-		return py::cast(environment.retrieveSelectedObjects());
+	auto selectedObjects = environment.retrieveSelectedObjects();
+
+	if (!captureOutput && !returnVariables) {
+		return py::cast(std::move(selectedObjects));
+	}
+	else {
+		std::vector<py::object> results;
+		results.push_back(py::cast(std::move(selectedObjects)));
+		if (captureOutput)
+			results.push_back(py::cast(interceptor->get()));
+		if (returnVariables)
+			results.push_back(py::cast(environment.getVariables()));
+		return py::object(py::tuple(py::cast(std::move(results))));
+	}
 }
 
 auto runPraatScriptFromText(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &script, py::args args, py::kwargs kwargs) {
@@ -354,32 +386,32 @@ PRAAT_MODULE_BINDING(praat, PraatModule) {
 	def("run",
 	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({}, script, args, kwargs); },
 	    "script"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False");
+	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run",
 	    [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({ std::ref(data) }, script, args, kwargs); },
 	    "object"_a, "script"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False");
+	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run",
 	    &runPraatScriptFromText,
 	    "objects"_a, "script"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False");
+	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run_file",
 	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({}, script, args, kwargs); },
 	    "path"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False");
+	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run_file",
 	    [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({ std::ref(data) }, script, args, kwargs); },
 	    "object"_a, "path"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False");
+	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run_file",
 	    &runPraatScriptFromFile,
 	    "objects"_a, "path"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False");
+	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 #ifndef NDEBUG // TODO Only in debug?
 	auto castPraatCommand = [](const structPraat_Command &command) {

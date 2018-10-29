@@ -48,3 +48,19 @@ def test_run_with_capture_output():
 	assert parselmouth.praat.run("writeInfoLine: \"The answer\", \" - \", 42\nappendInfo: \"The question - ?\"", capture_output=True) == ([], "The answer - 42\nThe question - ?")
 	assert parselmouth.praat.run("writeInfoLine: \"The answer\", \" - \", 42\nwriteInfoLine: \"The question - ?\"", capture_output=True) == ([], "The question - ?\n")
 	assert parselmouth.praat.run("writeInfo: tab$, newline$", capture_output=True) == ([], "\t\n")
+
+
+def test_with_return_variables():
+	objects, variables = parselmouth.praat.run("a = 42\nb$ = \"abc\"", return_variables=True)
+	assert objects == []
+	assert 'a' in variables and 'a$' not in variables and isinstance(variables['a'], float) and variables['a'] == 42
+	assert 'b$' in variables and 'b' not in variables and variables['b$'] == "abc"
+	assert set(variables.keys()) == {'a', 'b$', 'newline$', 'tab$', 'shellDirectory$', 'defaultDirectory$', 'preferencesDirectory$', 'homeDirectory$', 'temporaryDirectory$', 'macintosh', 'windows', 'unix', 'left', 'right', 'mono', 'stereo', 'all', 'average', 'praatVersion$', 'praatVersion'}
+
+
+def test_with_capture_output_and_return_variables():
+	objects, output, variables = parselmouth.praat.run("a = 42\nb$ = \"abc\"\nwriteInfoLine: a\nappendInfoLine: b$", capture_output=True, return_variables=True)
+	assert objects == []
+	assert output == "42\nabc\n"
+	assert 'a' in variables and 'b$' in variables
+
