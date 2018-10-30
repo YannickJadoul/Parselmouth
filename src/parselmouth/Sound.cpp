@@ -24,7 +24,6 @@
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
-#include "utils/pybind11/Optional.h"
 
 #include <praat/dwtools/Sound_extensions.h>
 #include <praat/dwtools/Sound_to_MFCC.h>
@@ -353,22 +352,22 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO Get mean (Vector?)
 
 	def("get_root_mean_square",
-	    [](Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	// TODO Get standard deviation
 
 	def("get_rms",
-	    [](Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("get_energy",
-	    [](Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getEnergy(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getEnergy(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("get_power",
-	    [](Sound self, optional<double> fromTime, optional<double> toTime) { return Sound_getPower(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getPower(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("get_energy_in_air",
 	    &Sound_getEnergyInAir);
@@ -380,8 +379,8 @@ PRAAT_CLASS_BINDING(Sound) {
 	    &Sound_getIntensity_dB);
 
 	def("reverse",
-	    [](Sound self, optional<double> fromTime, optional<double> toTime) { Sound_reverse(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { Sound_reverse(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	// TODO Formula and Formula (part) (reimplement from Vector/Matrix because of different parameters, i.e. channels?)
 
@@ -396,8 +395,8 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO Set value at sample number
 
 	def("set_to_zero", // TODO Set part to zero ?
-	    [](Sound self, optional<double> fromTime, optional<double> toTime, bool roundToNearestZeroCrossing) { Sound_setZero(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), roundToNearestZeroCrossing); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt, "round_to_nearest_zero_crossing"_a = true);
+	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, bool roundToNearestZeroCrossing) { Sound_setZero(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), roundToNearestZeroCrossing); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "round_to_nearest_zero_crossing"_a = true);
 
 	def("override_sampling_frequency",
 	    args_cast<_, Positive<_>>(Sound_overrideSamplingFrequency),
@@ -459,13 +458,13 @@ PRAAT_CLASS_BINDING(Sound) {
 	def("extract_right_channel",
 	    [](Sound self) { return Sound_extractChannel(self, 2); });
 
-	def("extract_part", // TODO Something for optional<double> for from and to in Sounds?
-	    [](Sound self, optional<double> fromTime, optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt, "window_shape"_a = kSound_windowShape::RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
+	def("extract_part", // TODO Something for std::optional<double> for from and to in Sounds?
+	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "window_shape"_a = kSound_windowShape::RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
 
 	def("extract_part_for_overlap",
-	    [](Sound self, optional<double> fromTime, optional<double> toTime, Positive<double> overlap) { return Sound_extractPartForOverlap(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), overlap); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt, "overlap"_a);
+	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, Positive<double> overlap) { return Sound_extractPartForOverlap(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), overlap); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "overlap"_a);
 
 	def("resample",
 	    &Sound_resample,
@@ -483,10 +482,10 @@ PRAAT_CLASS_BINDING(Sound) {
 	    args_cast<_, Positive<_>, Positive<_>, Positive<_>, Positive<_>, Positive<_>, Positive<_>>(Sound_deepenBandModulation),
 	    "enhancement"_a = 20.0, "from_frequency"_a = 300.0, "to_frequency"_a = 8000.0, "slow_modulation"_a = 3.0, "fast_modulation"_a = 30.0, "band_smoothing"_a = 100.0);
 
-	// TODO Args cast for optional and optional ranges!
+	// TODO Args cast for std::optional and std::optional ranges!
 	def("to_pitch",
-	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
-	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
+	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
+	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch",
 	    [](Sound self, ToPitchMethod method, py::args args, py::kwargs kwargs) -> py::object {
@@ -501,23 +500,23 @@ PRAAT_CLASS_BINDING(Sound) {
 		    case ToPitchMethod::SHS:
 			    return callMethod("to_pitch_shs");
 		    }
-		    return py::none();
+		    return py::none(); // Unreachable
 	    },
 	    "method"_a);
 
 	def("to_pitch_ac",
-	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
+	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
 		    return Sound_to_Pitch_ac(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 3.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
 	    },
-	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
+	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch_cc",
-	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
+	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
 		    return Sound_to_Pitch_cc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 1.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
 	    },
-	    "time_step"_a = nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
+	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = true, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch_spinet",
 	    [](Sound self, Positive<double> timeStep, Positive<double> windowLength, Positive<double> minimumFilterFrequency, Positive<double> maximumFilterFrequency, Positive<long> numberOfFilters, Positive<double> ceiling, Positive<int> maxNumberOfCandidates) {
@@ -544,7 +543,7 @@ PRAAT_CLASS_BINDING(Sound) {
 		    case ToHarmonicityMethod::GNE:
 			    return callMethod("to_harmonicity_gne");
 		    }
-		    return py::none();
+		    return py::none(); // Unreachable
 	    },
 	    "method"_a = ToHarmonicityMethod::CC);
 
@@ -573,13 +572,13 @@ PRAAT_CLASS_BINDING(Sound) {
 	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape::GAUSSIAN);
 
 	def("to_formant_burg", // TODO Praat has Max. number of formants as REAL? What the hell? "Pi formants for me, please."? (I know, I know; see Praat documentation)
-	    [](Sound self, optional<Positive<double>> timeStep, Positive<double> maxNumberOfFormants, double maximumFormant, Positive<double> windowLength, Positive<double> preEmphasisFrom) { return Sound_to_Formant_burg(self, timeStep ? static_cast<double>(*timeStep) : 0.0, maxNumberOfFormants, maximumFormant, windowLength, preEmphasisFrom); },
-	    "time_step"_a = nullopt, "max_number_of_formants"_a = 5.0, "maximum_formant"_a = 5500.0, "window_length"_a = 0.025, "pre_emphasis_from"_a = 50.0);
+	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> maxNumberOfFormants, double maximumFormant, Positive<double> windowLength, Positive<double> preEmphasisFrom) { return Sound_to_Formant_burg(self, timeStep ? static_cast<double>(*timeStep) : 0.0, maxNumberOfFormants, maximumFormant, windowLength, preEmphasisFrom); },
+	    "time_step"_a = std::nullopt, "max_number_of_formants"_a = 5.0, "maximum_formant"_a = 5500.0, "window_length"_a = 0.025, "pre_emphasis_from"_a = 50.0);
 	// TODO To Formant...
 
 	def("to_intensity",
-	    [](Sound self, Positive<double> minimumPitch, optional<Positive<double>> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep ? static_cast<double>(*timeStep) : 0.0, subtractMean); },
-	    "minimum_pitch"_a = 100.0, "time_step"_a = nullopt, "subtract_mean"_a = true);
+	    [](Sound self, Positive<double> minimumPitch, std::optional<Positive<double>> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep ? static_cast<double>(*timeStep) : 0.0, subtractMean); },
+	    "minimum_pitch"_a = 100.0, "time_step"_a = std::nullopt, "subtract_mean"_a = true);
 
 	// TODO Filters
 	// TODO Group different filters into enum/class/...?
@@ -610,11 +609,11 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO Cross-correlate (short)?
 
 	def("to_mfcc", // Watch out for different order of arguments in interface than in Sound_to_MFCC // TODO REQUIRE (numberOfCoefficients < 25, U"The number of coefficients should be less than 25.")
-	    [](Sound self, Positive<long> numberOfCoefficients, Positive<double> windowLength, Positive<double> timeStep, Positive<double> firstFilterFrequency, Positive<double> distanceBetweenFilters, optional<Positive<double>> maximumFrequency) {
+	    [](Sound self, Positive<long> numberOfCoefficients, Positive<double> windowLength, Positive<double> timeStep, Positive<double> firstFilterFrequency, Positive<double> distanceBetweenFilters, std::optional<Positive<double>> maximumFrequency) {
 		    // if (numberOfCoefficients >= 25) Melder_throw(U"The number of coefficients should be less than 25."); // Might be wrong, but I see no reason to enforce this, in the actual code
 		    return Sound_to_MFCC(self, numberOfCoefficients, windowLength, timeStep, firstFilterFrequency, maximumFrequency ? static_cast<double>(*maximumFrequency) : 0.0, distanceBetweenFilters);
 	    },
-	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = nullopt);
+	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
 
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 	// TODO Still a bunch of Sound in praat_LPC_init.cpp

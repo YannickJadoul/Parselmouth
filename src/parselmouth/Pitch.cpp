@@ -25,14 +25,13 @@
 #include "praat/MelderUtils.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
-#include "utils/pybind11/Optional.h"
-
-#include <pybind11/numpy.h>
-#include <pybind11/stl.h>
 
 #include <praat/fon/Matrix_and_Pitch.h>
 #include <praat/fon/Pitch.h>
 #include <praat/fon/Pitch_to_Sound.h>
+
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -138,16 +137,16 @@ PRAAT_CLASS_BINDING(Pitch) {
 	// TODO Which constructors? From Sound?
 
 	def("to_sound_pulses",
-		[](Pitch self, optional<double> fromTime, optional<double> toTime) { return Pitch_to_Sound(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), false); },
-		"from_time"_a = nullopt, "to_time"_a = nullopt);
+		[](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) { return Pitch_to_Sound(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), false); },
+		"from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("to_sound_hum",
-	    [](Pitch self, optional<double> fromTime, optional<double> toTime) { return Pitch_to_Sound(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), true); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) { return Pitch_to_Sound(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), true); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("to_sound_sine",
-	    [](Pitch self, optional<double> fromTime, optional<double> toTime, Positive<double> samplingFrequency, double roundToNearestZeroCrossing) { return Pitch_to_Sound_sine(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), samplingFrequency, roundToNearestZeroCrossing); },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt, "sampling_frequency"_a = 44100.0, "round_to_nearest_zero_crossing"_a = true);
+	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime, Positive<double> samplingFrequency, double roundToNearestZeroCrossing) { return Pitch_to_Sound_sine(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), samplingFrequency, roundToNearestZeroCrossing); },
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "sampling_frequency"_a = 44100.0, "round_to_nearest_zero_crossing"_a = true);
 
 	def("count_voiced_frames",
 		&Pitch_countVoicedFrames);
@@ -322,35 +321,35 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "ceiling"_a = 600.0, "pull_formants"_a = false);
 
 	def("step",
-	    [](Pitch self, double step, Positive<double> precision, optional<double> fromTime, optional<double> toTime) { Pitch_step(self, step, precision, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "step"_a, "precision"_a = 0.1, "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    [](Pitch self, double step, Positive<double> precision, std::optional<double> fromTime, std::optional<double> toTime) { Pitch_step(self, step, precision, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	    "step"_a, "precision"_a = 0.1, "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("octave_up",
-	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
 		    Pitch_step(self, 2.0, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
 	    },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("fifth_up",
-	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
 		    Pitch_step(self, 1.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
 	    },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("fifth_down",
-	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
 		    Pitch_step(self, 1 / 1.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
 	    },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("octave_down",
-	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
 		    Pitch_step(self, 0.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
 	    },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("unvoice",
-	    [](Pitch self, optional<double> fromTime, optional<double> toTime) {
+	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
 		    long ileft = Sampled_xToHighIndex(self, fromTime.value_or(self->xmin));
 		    long iright = Sampled_xToLowIndex(self, toTime.value_or(self->xmax));
 
@@ -367,7 +366,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 			    }
 		    }
 	    },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt);
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	// TODO Pitch_Intensity_getMean & Pitch_Intensity_getMeanAbsoluteSlope ? (cfr. Intensity)
 }

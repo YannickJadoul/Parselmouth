@@ -21,7 +21,6 @@
 
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
-#include "utils/pybind11/Optional.h"
 
 #include <praat/dwtools/Spectrum_extensions.h>
 #include <praat/fon/Spectrum.h>
@@ -192,36 +191,36 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	    "index"_a, "value"_a);
 
 	def("get_band_energy",
-	    [](Spectrum self, optional<double> bandFloor, optional<double> bandCeiling) { return Spectrum_getBandEnergy(self, bandFloor.value_or(self->xmin), bandCeiling.value_or(self->xmax)); },
-	    "band_floor"_a = nullopt, "band_ceiling"_a = nullopt);
+	    [](Spectrum self, std::optional<double> bandFloor, std::optional<double> bandCeiling) { return Spectrum_getBandEnergy(self, bandFloor.value_or(self->xmin), bandCeiling.value_or(self->xmax)); },
+	    "band_floor"_a = std::nullopt, "band_ceiling"_a = std::nullopt);
 
 	def("get_band_energy",
-	    [](Spectrum self, std::pair<optional<double>, optional<double>> band) { return Spectrum_getBandEnergy(self, band.first.value_or(self->xmin), band.second.value_or(self->xmax)); },
-	    "band"_a = std::make_pair(nullopt, nullopt));
+	    [](Spectrum self, std::pair<std::optional<double>, std::optional<double>> band) { return Spectrum_getBandEnergy(self, band.first.value_or(self->xmin), band.second.value_or(self->xmax)); },
+	    "band"_a = std::make_pair(std::nullopt, std::nullopt));
 
 	def("get_band_density",
-	    [](Spectrum self, optional<double> bandFloor, optional<double> bandCeiling) { return Spectrum_getBandDensity(self, bandFloor.value_or(self->xmin), bandCeiling.value_or(self->xmax)); },
-	    "band_floor"_a = nullopt, "band_ceiling"_a = nullopt);
+	    [](Spectrum self, std::optional<double> bandFloor, std::optional<double> bandCeiling) { return Spectrum_getBandDensity(self, bandFloor.value_or(self->xmin), bandCeiling.value_or(self->xmax)); },
+	    "band_floor"_a = std::nullopt, "band_ceiling"_a = std::nullopt);
 
 	def("get_band_density",
-	    [](Spectrum self, std::pair<optional<double>, optional<double>> band) { return Spectrum_getBandDensity(self, band.first.value_or(self->xmin), band.second.value_or(self->xmax)); },
-	    "band"_a = std::make_pair(nullopt, nullopt));
+	    [](Spectrum self, std::pair<std::optional<double>, std::optional<double>> band) { return Spectrum_getBandDensity(self, band.first.value_or(self->xmin), band.second.value_or(self->xmax)); },
+	    "band"_a = std::make_pair(std::nullopt, std::nullopt));
 
 	def("get_band_energy_difference",
-	    [](Spectrum self, optional<double> lowBandFloor, optional<double> lowBandCeiling, optional<double> highBandFloor, optional<double> highBandCeiling) { return Spectrum_getBandEnergyDifference(self, lowBandFloor.value_or(self->xmin), lowBandCeiling.value_or(self->xmax), highBandFloor.value_or(self->xmin), highBandCeiling.value_or(self->xmax)); },
-	    "low_band_floor"_a = nullopt, "low_band_ceiling"_a = nullopt, "high_band_floor"_a = nullopt, "high_band_ceiling"_a = nullopt);
+	    [](Spectrum self, std::optional<double> lowBandFloor, std::optional<double> lowBandCeiling, std::optional<double> highBandFloor, std::optional<double> highBandCeiling) { return Spectrum_getBandEnergyDifference(self, lowBandFloor.value_or(self->xmin), lowBandCeiling.value_or(self->xmax), highBandFloor.value_or(self->xmin), highBandCeiling.value_or(self->xmax)); },
+	    "low_band_floor"_a = std::nullopt, "low_band_ceiling"_a = std::nullopt, "high_band_floor"_a = std::nullopt, "high_band_ceiling"_a = std::nullopt);
 
 	def("get_band_energy_difference",
-	    [](Spectrum self, std::pair<optional<double>, optional<double>> lowBand, std::pair<optional<double>, optional<double>> highBand) { return Spectrum_getBandEnergyDifference(self, lowBand.first.value_or(self->xmin), lowBand.second.value_or(self->xmax), highBand.first.value_or(self->xmin), highBand.second.value_or(self->xmax)); },
-	    "low_band"_a = std::make_pair(nullopt, nullopt), "high_band"_a = std::make_pair(nullopt, nullopt));
+	    [](Spectrum self, std::pair<std::optional<double>, std::optional<double>> lowBand, std::pair<std::optional<double>, std::optional<double>> highBand) { return Spectrum_getBandEnergyDifference(self, lowBand.first.value_or(self->xmin), lowBand.second.value_or(self->xmax), highBand.first.value_or(self->xmin), highBand.second.value_or(self->xmax)); },
+	    "low_band"_a = std::make_pair(std::nullopt, std::nullopt), "high_band"_a = std::make_pair(std::nullopt, std::nullopt));
 
 	def("get_band_density_difference",
-	    [](Spectrum self, optional<double> lowBandFloor, optional<double> lowBandCeiling, optional<double> highBandFloor, optional<double> highBandCeiling) { return Spectrum_getBandDensityDifference(self, lowBandFloor.value_or(self->xmin), lowBandCeiling.value_or(self->xmax), highBandFloor.value_or(self->xmin), highBandCeiling.value_or(self->xmax)); },
-	    "low_band_floor"_a = nullopt, "low_band_ceiling"_a = nullopt, "high_band_floor"_a = nullopt, "high_band_ceiling"_a = nullopt);
+	    [](Spectrum self, std::optional<double> lowBandFloor, std::optional<double> lowBandCeiling, std::optional<double> highBandFloor, std::optional<double> highBandCeiling) { return Spectrum_getBandDensityDifference(self, lowBandFloor.value_or(self->xmin), lowBandCeiling.value_or(self->xmax), highBandFloor.value_or(self->xmin), highBandCeiling.value_or(self->xmax)); },
+	    "low_band_floor"_a = std::nullopt, "low_band_ceiling"_a = std::nullopt, "high_band_floor"_a = std::nullopt, "high_band_ceiling"_a = std::nullopt);
 
 	def("get_band_density_difference",
-	    [](Spectrum self, std::pair<optional<double>, optional<double>> lowBand, std::pair<optional<double>, optional<double>> highBand) { return Spectrum_getBandDensityDifference(self, lowBand.first.value_or(self->xmin), lowBand.second.value_or(self->xmax), highBand.first.value_or(self->xmin), highBand.second.value_or(self->xmax)); },
-	    "low_band"_a = std::make_pair(nullopt, nullopt), "high_band"_a = std::make_pair(nullopt, nullopt));
+	    [](Spectrum self, std::pair<std::optional<double>, std::optional<double>> lowBand, std::pair<std::optional<double>, std::optional<double>> highBand) { return Spectrum_getBandDensityDifference(self, lowBand.first.value_or(self->xmin), lowBand.second.value_or(self->xmax), highBand.first.value_or(self->xmin), highBand.second.value_or(self->xmax)); },
+	    "low_band"_a = std::make_pair(std::nullopt, std::nullopt), "high_band"_a = std::make_pair(std::nullopt, std::nullopt));
 
 	def("get_centre_of_gravity",
 	    args_cast<_, Positive<_>>(Spectrum_getCentreOfGravity),

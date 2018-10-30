@@ -23,9 +23,10 @@
 #include "TimeClassAspects.h"
 
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
-#include "utils/pybind11/Optional.h"
 
 #include <praat/fon/Intensity.h>
+
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -64,10 +65,10 @@ PRAAT_CLASS_BINDING(Intensity) {
 	// TODO 'Get mean' should probably also be added to Sampled once units get figured out?
 
 	def("get_average",
-	    [](Intensity self, optional<double> fromTime, optional<double> toTime, AveragingMethod averagingMethod) {
+	    [](Intensity self, std::optional<double> fromTime, std::optional<double> toTime, AveragingMethod averagingMethod) {
 		    return Intensity_getAverage(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), static_cast<int>(averagingMethod));
 	    },
-	    "from_time"_a = nullopt, "to_time"_a = nullopt, "averaging_method"_a = AveragingMethod::ENERGY);
+	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "averaging_method"_a = AveragingMethod::ENERGY);
 
 	// TODO Pitch_Intensity_getMean & Pitch_Intensity_getMeanAbsoluteSlope ? (cfr. Pitch)
 }

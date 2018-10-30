@@ -24,7 +24,6 @@
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
-#include "utils/pybind11/Optional.h"
 
 #include <praat/fon/Vector.h>
 
@@ -127,8 +126,8 @@ PRAAT_CLASS_BINDING(Vector) {
 	    "new_peak"_a = 0.99);
 
 	def("get_value", // TODO Default for interpolation? Different for Sound (SINC70), Harmonicity/Intensity/Formants (CUBIC) and Ltas (LINEAR); take praat_TimeFunction.h into account
-	    [](Vector self, double x, optional<long> channel, Interpolation interpolation) { return Vector_getValueAtX (self, x, channel.value_or(Vector_CHANNEL_AVERAGE), static_cast<int>(interpolation)); },
-	    "x"_a, "channel"_a = nullopt, "interpolation"_a = Interpolation::CUBIC);
+	    [](Vector self, double x, std::optional<long> channel, Interpolation interpolation) { return Vector_getValueAtX (self, x, channel.value_or(Vector_CHANNEL_AVERAGE), static_cast<int>(interpolation)); },
+	    "x"_a, "channel"_a = std::nullopt, "interpolation"_a = Interpolation::CUBIC);
 }
 
 } // namespace parselmouth

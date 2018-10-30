@@ -21,7 +21,6 @@
 
 #include "praat/MelderUtils.h"
 #include "utils/StringUtils.h"
-#include "utils/pybind11/Optional.h"
 
 #include <praat/sys/praat.h>
 #include <praat/sys/praatP.h>
@@ -92,7 +91,7 @@ public:
 	}
 
 	std::vector<autoData> retrieveSelectedObjects(bool assertNew = false) {
-		auto numSelected = static_cast<size_t>(m_objects->totalSelection);
+		[[maybe_unused]] auto numSelected = static_cast<size_t>(m_objects->totalSelection);
 
 		std::vector<autoData> selected;
 		for (auto i = 1; i <= m_objects->n; ++i) {
@@ -109,7 +108,6 @@ public:
 
 		assert(m_objects->totalSelection == 0);
 		assert(numSelected == selected.size());
-		(void) numSelected; // Shut up warning in release
 
 		return selected;
 	}
@@ -117,11 +115,7 @@ public:
 	std::unordered_map<std::u32string, py::object> getVariables() {
 		std::unordered_map<std::u32string, py::object> variables;
 
-		//for (const auto &[name, value] : m_interpreter->variablesMap) { // TODO C++17
-		for (const auto &e : m_interpreter->variablesMap) {
-			auto &name = e.first;
-			auto &value = e.second;
-
+		for (const auto &[name, value] : m_interpreter->variablesMap) {
 			assert(name == value->string);
 
 			if (name.length() > 0 && name.back() == U'$') {

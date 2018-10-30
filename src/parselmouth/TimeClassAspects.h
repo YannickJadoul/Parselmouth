@@ -44,7 +44,7 @@ namespace parselmouth {
 
 template <typename Class, typename... Extra>
 void initTimeFunction(py::class_<Class, Extra...> &binding) {
-	static_assert(std::is_base_of<structFunction, Class>::value, "Class needs to be a Praat Function subclass");
+	static_assert(std::is_base_of_v<structFunction, Class>, "Class needs to be a Praat Function subclass");
 
 
 	WRAP_BINDING_METHOD(def);

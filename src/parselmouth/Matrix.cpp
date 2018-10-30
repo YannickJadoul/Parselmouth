@@ -22,7 +22,6 @@
 #include "praat/MelderUtils.h"
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/NumericPredicates.h"
-#include "utils/pybind11/Optional.h"
 
 #include <praat/fon/Matrix.h>
 
@@ -154,7 +153,7 @@ PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 	    &Matrix_getSum);
 
 	def("formula", // TODO Make formula into some kind of class?
-	    [](Matrix self, const std::u32string &formula, optional<double> fromX, optional<double> toX, optional<double> fromY, optional<double> toY) {
+	    [](Matrix self, const std::u32string &formula, std::optional<double> fromX, std::optional<double> toX, std::optional<double> fromY, std::optional<double> toY) {
 		    if (!fromX && !toX && !fromY && !toY) {
 			    Matrix_formula(self, formula.c_str(), nullptr, nullptr);
 		    }
@@ -162,13 +161,13 @@ PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 			    Matrix_formula_part(self, fromX.value_or(self->xmin), toX.value_or(self->xmax), fromY.value_or(self->ymin), toY.value_or(self->ymax), formula.c_str(), nullptr, nullptr);
 		    }
 	    },
-	    "formula"_a, "from_x"_a = nullopt, "to_x"_a = nullopt, "from_y"_a = nullopt, "to_y"_a = nullopt);
+	    "formula"_a, "from_x"_a = std::nullopt, "to_x"_a = std::nullopt, "from_y"_a = std::nullopt, "to_y"_a = std::nullopt);
 
 	def("formula",
-	    [](Matrix self, const std::u32string &formula, std::pair<optional<double>, optional<double>> xRange, std::pair<optional<double>, optional<double>> yRange) {
+	    [](Matrix self, const std::u32string &formula, std::pair<std::optional<double>, std::optional<double>> xRange, std::pair<std::optional<double>, std::optional<double>> yRange) {
 		    Matrix_formula_part(self, xRange.first.value_or(self->xmin), xRange.second.value_or(self->xmax), yRange.first.value_or(self->ymin), yRange.second.value_or(self->ymax), formula.c_str(), nullptr, nullptr);
 	    },
-	    "formula"_a, "x_range"_a = std::make_pair(nullopt, nullopt), "y_range"_a = std::make_pair(nullopt, nullopt));
+	    "formula"_a, "x_range"_a = std::make_pair(std::nullopt, std::nullopt), "y_range"_a = std::make_pair(std::nullopt, std::nullopt));
 
 	def("set_value",
 	    [](Matrix self, Positive<integer> rowNumber, Positive<integer> columnNumber, double newValue) {
