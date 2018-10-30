@@ -30,11 +30,7 @@ add_subdirectory(parselmouth)
 
 pybind11_add_module(parselmouth ${SRC})
 
-if (NOT WIN32)
-	set_property(TARGET parselmouth PROPERTY C_STANDARD 99)
-	set_property(TARGET parselmouth PROPERTY CXX_STANDARD 14)
-	set_property(TARGET parselmouth PROPERTY CXX_STANDARD_REQUIRED TRUE)
-endif ()
+set_target_properties(parselmouth PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED TRUE)
 
 set_target_properties(praat PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 # Fixing "ld: warning: direct access in function '...' from file '...' to global weak symbol '...' from file '...' means the weak symbol cannot

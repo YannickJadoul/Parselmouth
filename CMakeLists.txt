@@ -28,10 +28,6 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/installed CACHE STRING "Install path prefix, prepended onto install directories." FORCE)
 endif ()
 
-if (WIN32)
-	set(PYBIND11_CPP_STANDARD "/std:c++latest")
-endif ()
-
 add_subdirectory(pybind11)
 
 if (PREBUILT_PRAAT_DIR)
