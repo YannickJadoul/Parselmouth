@@ -14,64 +14,64 @@ compiler: gcc
 
 matrix:
   include:
-    - env: PYTHON=2.7 GCC=5
-      addons: &gcc5
-        apt:
-          sources: [ubuntu-toolchain-r-test]
-          packages: [g++-5]
-
-    - env: PYTHON=3.4 GCC=5
-      addons:
-        apt:
-          sources: [ubuntu-toolchain-r-test]
-          packages: [python3-pip, g++-5]
-
-    - env: PYTHON=3.5 GCC=5
-      addons:
-        apt:
-          sources: [ubuntu-toolchain-r-test, deadsnakes]
-          packages: [g++-5, python3.5-dev, python3.5-venv]
-
-    - env: PYTHON=3.6 GCC=5
-      addons: *gcc5
-
-    - env: PYTHON=3.7 GCC=5
-      # https://github.com/deadsnakes/travis-ci-python3.7-example
-      dist: xenial
-      sudo: required
-      addons:
-        apt:
-          sources: [ubuntu-toolchain-r-test, deadsnakes]
-          packages: [g++-5, python3.7-dev, python3.7-venv]
-
-    - env: PYTHON=2.7 GCC=5 BUILD_TYPE=Release
-      addons: *gcc5
-
-    - env: PYTHON=3.6 GCC=5 BUILD_TYPE=Release
-      addons: *gcc5
-
     - env: PYTHON=2.7 GCC=7
       addons: &gcc7
         apt:
           sources: [ubuntu-toolchain-r-test]
           packages: [g++-7]
 
+    - env: PYTHON=3.4 GCC=7
+      addons:
+        apt:
+          sources: [ubuntu-toolchain-r-test]
+          packages: [python3-pip, g++-7]
+
+    - env: PYTHON=3.5 GCC=7
+      addons:
+        apt:
+          sources: [ubuntu-toolchain-r-test, deadsnakes]
+          packages: [g++-7, python3.5-dev, python3.5-venv]
+
     - env: PYTHON=3.6 GCC=7
       addons: *gcc7
 
-    - env: PYTHON=2.7 CLANG=5.0
-      compiler: clang
+    - env: PYTHON=3.7 GCC=7
+      # https://github.com/deadsnakes/travis-ci-python3.7-example
+      dist: xenial
+      sudo: required
       addons:
         apt:
-          sources: [llvm-toolchain-trusty-5.0, ubuntu-toolchain-r-test]
-          packages: [clang-5.0, libstdc++-7-dev]
+          sources: [ubuntu-toolchain-r-test, deadsnakes]
+          packages: [g++-7, python3.7-dev, python3.7-venv]
 
-    - env: PYTHON=3.6 CLANG=5.0
+    - env: PYTHON=2.7 GCC=7 BUILD_TYPE=Release
+      addons: *gcc7
+
+    - env: PYTHON=3.6 GCC=7 BUILD_TYPE=Release
+      addons: *gcc7
+
+    - env: PYTHON=2.7 GCC=8
+      addons: &gcc8
+        apt:
+          sources: [ubuntu-toolchain-r-test]
+          packages: [g++-8]
+
+    - env: PYTHON=3.6 GCC=8
+      addons: *gcc8
+
+    - env: PYTHON=2.7 CLANG=6.0
       compiler: clang
       addons:
         apt:
-          sources: [llvm-toolchain-trusty-5.0, ubuntu-toolchain-r-test]
-          packages: [clang-5.0, libstdc++-7-dev]
+          sources: [llvm-toolchain-trusty-6.0, ubuntu-toolchain-r-test]
+          packages: [clang-6.0, libstdc++-7-dev]
+
+    - env: PYTHON=3.6 CLANG=6.0
+      compiler: clang
+      addons:
+        apt:
+          sources: [llvm-toolchain-trusty-6.0, ubuntu-toolchain-r-test]
+          packages: [clang-6.0, libstdc++-7-dev]
 
     - env: PYTHON=2.7
       os: osx
