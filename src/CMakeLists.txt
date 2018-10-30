@@ -20,10 +20,10 @@ include(add_sources)
 include_directories(BEFORE ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (UNIX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unknown-pragmas")
+	add_compile_options(-Wall -Wextra -Wno-unknown-pragmas -Wno-register) # error: ISO C++17 does not allow 'register' storage class specifier - in Python 2 header files
 elseif (WIN32)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd5033") # "warning C5033: 'register' is no longer a supported storage class": in Python header files
-endif ()
+	add_compile_options(/wd5033) # "warning C5033: 'register' is no longer a supported storage class" - in Python 2 header files
+endif()
 
 add_sources(parselmouth.cpp)
 add_subdirectory(parselmouth)

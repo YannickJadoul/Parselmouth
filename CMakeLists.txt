@@ -28,6 +28,7 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/installed CACHE STRING "Install path prefix, prepended onto install directories." FORCE)
 endif ()
 
+set(PYBIND11_CPP_STANDARD "") # We'll set it ourselves, in the subdirectory, because we want C++17
 add_subdirectory(pybind11)
 
 if (PREBUILT_PRAAT_DIR)
