@@ -63,6 +63,24 @@ inline void checkUnkownKwargs(const py::kwargs &kwargs) {
 	}
 }
 
+py::object autonumvecToArray(autonumvec &&vector) {
+	if (!vector.at)
+		return py::none();
+
+	auto [size, at] = std::make_tuple(vector.size, vector.at); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
+	auto capsule = py::capsule(std::make_unique<autonumvec>(std::move(vector)).release(), [](void *v) { delete reinterpret_cast<autonumvec *>(v); });
+	return py::array_t<double>(static_cast<size_t>(size), &at[1], capsule);
+}
+
+py::object autonummatToArray(autonummat &&matrix) {
+	if (!matrix.at)
+		return py::none();
+
+	auto [nrow, ncol, at] = std::make_tuple(matrix.nrow, matrix.ncol, matrix.at); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
+	auto capsule = py::capsule(std::make_unique<autonummat>(std::move(matrix)).release(), [](void *m) { delete reinterpret_cast<autonummat *>(m); });
+	return py::array_t<double, py::array::c_style>({static_cast<size_t>(nrow), static_cast<size_t>(ncol)}, &at[1][1], capsule);
+}
+
 class PraatEnvironment {
 public:
 	PraatEnvironment() : m_objects(theCurrentPraatObjects), m_interpreter(Interpreter_create(nullptr, nullptr)), m_lastId(0) {
@@ -120,10 +138,20 @@ public:
 
 			if (name.length() > 0 && name.back() == U'$') {
 				variables.emplace(name, py::cast(value->stringValue));
-			} else {
+			}
+			else if (name.length() > 1 && name.substr(name.length() - 2) == U"##") {
+				// Steal matrix value, so clear out old variable to stop Praat from deleting when cleaning up the interpreter
+				variables.emplace(name, autonummatToArray(autonummat(value->numericMatrixValue)));
+				value->numericMatrixValue = empty_nummat;
+			}
+			else if (name.length() > 0 && name.back() == U'#') {
+				// Steal vector value, so clear out old variable to stop Praat from deleting when cleaning up the interpreter
+				variables.emplace(name, autonumvecToArray(autonumvec(value->numericVectorValue)));
+				value->numericVectorValue = empty_numvec;
+			}
+			else {
 				variables.emplace(name, py::cast(value->numericValue));
 			}
-			// TODO Praat vectors (#) and matrices (##)
 		}
 
 		return variables;
@@ -218,21 +246,11 @@ py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName,
 		return py::cast(std::complex<decltype(re)>(re, im));
 	}
 
-	if (startsWith(callbackName, U"NUMVEC_")) {
-		if (!theInterpreterNumvec.at)
-			return py::none();
+	if (startsWith(callbackName, U"NUMVEC_"))
+		return autonumvecToArray(std::move(theInterpreterNumvec));
 
-		auto vector = new autonumvec(theInterpreterNumvec.move());
-		return py::array_t<double>(static_cast<size_t>(vector->size), &vector->at[1], py::capsule(vector, [](void *v) { delete reinterpret_cast<autonumvec *>(v); }));
-	}
-
-	if (startsWith(callbackName, U"NUMMAT_")) {
-		if (!theInterpreterNummat.at)
-			return py::none();
-
-		auto matrix = new autonummat(theInterpreterNummat.move());
-		return py::array_t<double, py::array::c_style>({static_cast<size_t>(matrix->nrow), static_cast<size_t>(matrix->ncol)}, &matrix->at[1][1], py::capsule(matrix, [](void *m) { delete reinterpret_cast<autonummat *>(m); }));
-	}
+	if (startsWith(callbackName, U"NUMMAT_"))
+		return autonummatToArray(std::move(theInterpreterNummat));
 
 	if (startsWith(callbackName, U"NEW_") ||
 	    startsWith(callbackName, U"NEW1_") ||
