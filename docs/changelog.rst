@@ -6,6 +6,50 @@ Changelog
 Starting with version 1.8.0, pybind11 releases use a `semantic versioning
 <http://semver.org>`_ policy.
 
+v2.2.4 (September 11, 2018)
+-----------------------------------------------------
+
+* Use new Python 3.7 Thread Specific Storage (TSS) implementation if available.
+  `#1454 <https://github.com/pybind/pybind11/pull/1454>`_,
+  `#1517 <https://github.com/pybind/pybind11/pull/1517>`_.
+
+* Fixes for newer MSVC versions and C++17 mode.
+  `#1347 <https://github.com/pybind/pybind11/pull/1347>`_.
+  `#1462 <https://github.com/pybind/pybind11/pull/1462>`_.
+
+* Propagate return value policies to type-specific casters
+  when casting STL containers.
+  `#1455 <https://github.com/pybind/pybind11/pull/1455>`_.
+
+* Allow ostream-redirection of more than 1024 characters.
+  `#1479 <https://github.com/pybind/pybind11/pull/1479>`_.
+
+* Set ``Py_DEBUG`` define when compiling against a debug Python build.
+  `#1438 <https://github.com/pybind/pybind11/pull/1438>`_.
+
+* Untangle integer logic in number type caster to work for custom
+  types that may only be castable to a restricted set of builtin types.
+  `#1442 <https://github.com/pybind/pybind11/pull/1442>`_.
+
+* CMake build system: Remember Python version in cache file.
+  `#1434 <https://github.com/pybind/pybind11/pull/1434>`_.
+
+* Fix for custom smart pointers: use ``std::addressof`` to obtain holder
+  address instead of ``operator&``.
+  `#1435 <https://github.com/pybind/pybind11/pull/1435>`_.
+
+* Properly report exceptions thrown during module initialization.
+  `#1362 <https://github.com/pybind/pybind11/pull/1362>`_.
+
+* Fixed a segmentation fault when creating empty-shaped NumPy array.
+  `#1371 <https://github.com/pybind/pybind11/pull/1371>`_.
+
+* The version of Intel C++ compiler must be >= 2017, and this is now checked by
+  the header files. `#1363 <https://github.com/pybind/pybind11/pull/1363>`_.
+
+* A few minor typo fixes and improvements to the test suite, and
+  patches that silence compiler warnings.
+
 v2.2.3 (April 29, 2018)
 -----------------------------------------------------
 
@@ -19,11 +63,15 @@ v2.2.3 (April 29, 2018)
 
 * The minimal supported version of the Intel compiler was >= 17.0 since
   pybind11 v2.1. This check is now explicit, and a compile-time error is raised
-  if the compiler meet the requirement. 
+  if the compiler meet the requirement.
   `#1363 <https://github.com/pybind/pybind11/pull/1363>`_.
 
 * Fixed an endianness-related fault in the test suite.
   `#1287 <https://github.com/pybind/pybind11/pull/1287>`_.
+
+* Intel compilers have needed to be >= 17.0 since v2.1. Now the check
+  is explicit and a compile-time error is raised if the compiler does
+  not meet the requirements.
 
 v2.2.2 (February 7, 2018)
 -----------------------------------------------------
@@ -582,7 +630,7 @@ Happy Christmas!
   being (notably dynamic attributes in custom types).
   `#527 <https://github.com/pybind/pybind11/pull/527>`_.
 
-* Significant work on the documentation -- in particular, the monolitic
+* Significant work on the documentation -- in particular, the monolithic
   ``advanced.rst`` file was restructured into a easier to read hierarchical
   organization. `#448 <https://github.com/pybind/pybind11/pull/448>`_.
 
@@ -650,8 +698,8 @@ Happy Christmas!
        <https://github.com/pybind/pybind11/pull/527>`_.
 
 
-    3. This version of pybind11 uses a redesigned mechnism for instantiating
-       trempoline classes that are used to override virtual methods from within
+    3. This version of pybind11 uses a redesigned mechanism for instantiating
+       trampoline classes that are used to override virtual methods from within
        Python. This led to the following user-visible syntax change: instead of
 
        .. code-block:: cpp
