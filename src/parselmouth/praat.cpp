@@ -67,8 +67,8 @@ py::object autonumvecToArray(autonumvec &&vector) {
 	if (!vector.at)
 		return py::none();
 
-	auto [size, at] = std::make_tuple(vector.size, vector.at); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
-	auto capsule = py::capsule(std::make_unique<autonumvec>(std::move(vector)).release(), [](void *v) { delete reinterpret_cast<autonumvec *>(v); });
+	auto [size, at] = std::tuple(vector.size, vector.at); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
+	auto capsule = py::capsule(new autonumvec(std::move(vector)), [](void *v) { delete reinterpret_cast<autonumvec *>(v); });
 	return py::array_t<double>(static_cast<size_t>(size), &at[1], capsule);
 }
 
@@ -76,8 +76,8 @@ py::object autonummatToArray(autonummat &&matrix) {
 	if (!matrix.at)
 		return py::none();
 
-	auto [nrow, ncol, at] = std::make_tuple(matrix.nrow, matrix.ncol, matrix.at); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
-	auto capsule = py::capsule(std::make_unique<autonummat>(std::move(matrix)).release(), [](void *m) { delete reinterpret_cast<autonummat *>(m); });
+	auto [nrow, ncol, at] = std::tuple(matrix.nrow, matrix.ncol, matrix.at); // Because of undefined order of evaluation of arguments, we need to make sure to save nrow, ncol, and at before moving
+	auto capsule = py::capsule(new autonummat(std::move(matrix)), [](void *m) { delete reinterpret_cast<autonummat *>(m); });
 	return py::array_t<double, py::array::c_style>({static_cast<size_t>(nrow), static_cast<size_t>(ncol)}, &at[1][1], capsule);
 }
 
@@ -427,7 +427,7 @@ PRAAT_MODULE_BINDING(praat, PraatModule) {
 
 #ifndef NDEBUG // TODO Only in debug?
 	auto castPraatCommand = [](const structPraat_Command &command) {
-		return std::make_tuple(command.name, command.nameOfCallback);
+		return std::tuple(command.name, command.nameOfCallback);
 	};
 
 	using CastedPraatCommand = decltype(castPraatCommand(std::declval<structPraat_Command&>()));

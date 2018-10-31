@@ -34,7 +34,7 @@ PRAAT_CLASS_BINDING(SampledXY)
 
 	def_readonly("ymax", &structSampledXY::ymax);
 
-	def_property_readonly("yrange", [](SampledXY self) { return std::make_pair(self->ymin, self->ymax); });
+	def_property_readonly("yrange", [](SampledXY self) { return std::pair(self->ymin, self->ymax); });
 
 	def_readonly("ny", &structSampledXY::ny);
 

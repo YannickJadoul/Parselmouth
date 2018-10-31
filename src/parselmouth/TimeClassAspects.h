@@ -59,7 +59,7 @@ void initTimeFunction(py::class_<Class, Extra...> &binding) {
 	auto set_tmin = [](Class *self, double time) { Function_shiftXTo(self, self->xmin, time); };
 	auto get_tmax = [](Class *self) { return self->xmax; };
 	auto set_tmax = [](Class *self, double time) { Function_shiftXTo(self, self->xmax, time); };
-	auto get_trange = [](Class *self) { return std::make_pair(self->xmin, self->xmax); };
+	auto get_trange = [](Class *self) { return std::pair(self->xmin, self->xmax); };
 	auto set_trange = [](auto tmin_name, auto tmax_name) {
 							return [=](Class *self, std::pair<double, double> value) {
 								if (value.first >= value.second)

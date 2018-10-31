@@ -167,7 +167,7 @@ PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 	    [](Matrix self, const std::u32string &formula, std::pair<std::optional<double>, std::optional<double>> xRange, std::pair<std::optional<double>, std::optional<double>> yRange) {
 		    Matrix_formula_part(self, xRange.first.value_or(self->xmin), xRange.second.value_or(self->xmax), yRange.first.value_or(self->ymin), yRange.second.value_or(self->ymax), formula.c_str(), nullptr, nullptr);
 	    },
-	    "formula"_a, "x_range"_a = std::make_pair(std::nullopt, std::nullopt), "y_range"_a = std::make_pair(std::nullopt, std::nullopt));
+	    "formula"_a, "x_range"_a = std::pair(std::nullopt, std::nullopt), "y_range"_a = std::pair(std::nullopt, std::nullopt));
 
 	def("set_value",
 	    [](Matrix self, Positive<integer> rowNumber, Positive<integer> columnNumber, double newValue) {

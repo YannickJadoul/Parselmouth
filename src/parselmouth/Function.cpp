@@ -43,7 +43,7 @@ PRAAT_CLASS_BINDING(Function) {
 	             [](Function self, double time) { Function_shiftXTo(self, self->xmax, time); });
 
 	def_property("xrange",
-	             [](Function self) { return std::make_pair(self->xmin, self->xmax); },
+	             [](Function self) { return std::pair(self->xmin, self->xmax); },
 	             [](Function self, std::pair<double, double> value) {
 		             if (value.first >= value.second)
 			             Melder_throw (U"New xmin should be greater than new xmax.");
