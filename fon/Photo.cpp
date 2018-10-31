@@ -1,6 +1,6 @@
 /* Photo.cpp
  *
- * Copyright (C) 2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 2013-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,13 +111,13 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 				cairo_surface_destroy (surface);
 				Melder_throw (U"Error reading PNG file.");
 			}
-			unsigned char *imageData = cairo_image_surface_get_data (surface);
+			uint8 *imageData = cairo_image_surface_get_data (surface);
 			integer bytesPerRow = cairo_image_surface_get_stride (surface);
 			cairo_format_t format = cairo_image_surface_get_format (surface);
 			autoPhoto me = Photo_createSimple (height, width);
 			if (format == CAIRO_FORMAT_ARGB32) {
 				for (integer irow = 1; irow <= height; irow ++) {
-					uint8_t *rowAddress = imageData + bytesPerRow * (height - irow);
+					uint8 *rowAddress = imageData + bytesPerRow * (height - irow);
 					for (integer icol = 1; icol <= width; icol ++) {
 						my d_blue  -> z [irow] [icol] = (* rowAddress ++) / 255.0;
 						my d_green -> z [irow] [icol] = (* rowAddress ++) / 255.0;
@@ -127,7 +127,7 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 				}
 			} else if (format == CAIRO_FORMAT_RGB24) {
 				for (integer irow = 1; irow <= height; irow ++) {
-					uint8_t *rowAddress = imageData + bytesPerRow * (height - irow);
+					uint8 *rowAddress = imageData + bytesPerRow * (height - irow);
 					for (integer icol = 1; icol <= width; icol ++) {
 						my d_blue  -> z [irow] [icol] = (* rowAddress ++) / 255.0;
 						my d_green -> z [irow] [icol] = (* rowAddress ++) / 255.0;
@@ -191,9 +191,9 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 				 */
 				CGDataProviderRef dataProvider = CGImageGetDataProvider (image);   // not retained, so don't release
 				CFDataRef data = CGDataProviderCopyData (dataProvider);
-				uint8_t *pixelData = (uint8_t *) CFDataGetBytePtr (data);
+				uint8 *pixelData = (uint8_t *) CFDataGetBytePtr (data);
 				for (integer irow = 1; irow <= height; irow ++) {
-					uint8_t *rowAddress = pixelData + bytesPerRow * (height - irow);
+					uint8 *rowAddress = pixelData + bytesPerRow * (height - irow);
 					for (integer icol = 1; icol <= width; icol ++) {
 						my d_red   -> z [irow] [icol] = (*rowAddress ++) / 255.0;
 						my d_green -> z [irow] [icol] = (*rowAddress ++) / 255.0;
@@ -222,7 +222,7 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 #endif
 
 #if defined (linux) && ! defined (NO_GRAPHICS)
-	static void _lin_saveAsImageFile (Photo me, MelderFile file, const char32 *which) {
+	static void _lin_saveAsImageFile (Photo me, MelderFile file, conststring32 which) {
 		cairo_format_t format = CAIRO_FORMAT_ARGB32;
 		integer bytesPerRow = cairo_format_stride_for_width (format, my nx);   // likely to be my nx * 4
 		integer numberOfRows = my ny;
@@ -244,7 +244,7 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 #endif
 
 #ifdef _WIN32
-	static void _win_saveAsImageFile (Photo me, MelderFile file, const char32 *mimeType) {
+	static void _win_saveAsImageFile (Photo me, MelderFile file, conststring32 mimeType) {
 		Gdiplus::Bitmap gdiplusBitmap (my nx, my ny, PixelFormat32bppARGB);
 		for (integer irow = 1; irow <= my ny; irow ++) {
 			for (integer icol = 1; icol <= my nx; icol ++) {
@@ -272,7 +272,7 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 				Gdiplus::EncoderParameters encoderParameters;
 				if (str32equ (mimeType, U"image/jpeg")) {
 					encoderParameters. Count = 1;
-					GUID guid = { 0x1D5BE4B5, 0xFA4A, 0x452D, { 0x9C, 0xDD, 0x5D, 0xB3, 0x51, 0x05, 0xE7, 0xEB }};  // EncoderQuality
+					GUID guid = { 0x1D5B'E4B5, 0xFA4A, 0x452D, { 0x9C, 0xDD, 0x5D, 0xB3, 0x51, 0x05, 0xE7, 0xEB }};  // EncoderQuality
 					encoderParameters. Parameter [0]. Guid = guid;
 					encoderParameters. Parameter [0]. Type = Gdiplus::EncoderParameterValueTypeLong;
 					encoderParameters. Parameter [0]. NumberOfValues = 1;
@@ -295,7 +295,7 @@ autoPhoto Photo_readFromImageFile (MelderFile file) {
 		integer numberOfRows = my ny;
 		unsigned char *imageData = Melder_malloc_f (unsigned char, bytesPerRow * numberOfRows);
 		for (integer irow = 1; irow <= my ny; irow ++) {
-			uint8_t *rowAddress = imageData + bytesPerRow * (my ny - irow);
+			uint8 *rowAddress = imageData + bytesPerRow * (my ny - irow);
 			for (integer icol = 1; icol <= my nx; icol ++) {
 				* rowAddress ++ = (uint8) Melder_iround (my d_red          -> z [irow] [icol] * 255.0);   // BUG: should be tested for speed
 				* rowAddress ++ = (uint8) Melder_iround (my d_green        -> z [irow] [icol] * 255.0);

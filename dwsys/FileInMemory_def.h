@@ -26,18 +26,18 @@ oo_DEFINE_CLASS (FileInMemory, Daata)
 	oo_INTEGER (d_errno)
 	oo_INT32 (ungetChar)
 	#if oo_DESTROYING
-		if (_dontOwnData) {
-			oo_POINTER(d_data)
-		} else {
+		if (! _dontOwnData) {
 			oo_UBYTE_VECTOR_FROM (d_data, 0, d_numberOfBytes)
 		}
 	#else
 		oo_UBYTE_VECTOR_FROM (d_data, 0, d_numberOfBytes) // final null byte possible
 	#endif
 	oo_UBYTE (writable)
+
 	#if oo_DECLARING || oo_DESCRIBING
 		oo_UBYTE (_dontOwnData)
 	#endif
+
 	#if oo_DECLARING
 		void v_info () override; 
 	#endif

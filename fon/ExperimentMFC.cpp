@@ -1,6 +1,6 @@
 /* ExperimentMFC.cpp
  *
- * Copyright (C) 2001-2011,2013,2016,2017 Paul Boersma
+ * Copyright (C) 2001-2009,2011-2013,2015-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,48 +73,48 @@
 
 Thing_implement (ExperimentMFC, Daata, 7);
 
-static void readSound (ExperimentMFC me, const char32 *fileNameHead, const char32 *fileNameTail,
-	double medialSilenceDuration, char32 **name, autoSound *sound)
+static void readSound (ExperimentMFC me, conststring32 fileNameHead, conststring32 fileNameTail,
+	double medialSilenceDuration, conststring32 name, autoSound *sound)
 {
 	char32 fileNameBuffer [256], *fileNames = & fileNameBuffer [0];
-	Melder_sprint (fileNameBuffer,256, *name);
+	Melder_sprint (fileNameBuffer,256, name);
 	structMelderFile file { };
 	/*
-	 * The following conversion is needed when fileNameHead is an absolute path,
-	 * and the stimulus names contain slashes for relative paths.
-	 * An ugly case, but allowed.
-	 */
+		The following conversion is needed when fileNameHead is an absolute path,
+		and the stimulus names contain slashes for relative paths.
+		An ugly case, but allowed.
+	*/
 	#if defined (_WIN32)
 		for (;;) { char32 *slash = str32chr (fileNames, U'/'); if (! slash) break; *slash = U'\\'; }
 	#endif
 	sound->reset();
 	char32 pathName [kMelder_MAXPATH+1];
 	/*
-	 * 'fileNames' can contain commas, which separate partial file names.
-	 * The separate files should be concatenated.
-	 */
+		`fileNames` can contain commas, which separate partial file names.
+		The separate files should be concatenated.
+	*/
 	for (;;) {
 		/*
-		 * Determine partial file name.
-		 */
+			Determine partial file name.
+		*/
 		char32 *comma = str32chr (fileNames, U',');
-		if (comma) *comma = '\0';
+		if (comma) *comma = U'\0';
 		/*
-		 * Determine complete (relative) file name.
-		 */
+			Determine complete (relative) file name.
+		*/
 		Melder_sprint (pathName,kMelder_MAXPATH+1, fileNameHead, fileNames, fileNameTail);
 		/*
-		 * Make sure we are in the correct directory.
-		 */
+			Make sure we are in the correct directory.
+		*/
 		if (MelderDir_isNull (& my rootDirectory)) {
 			/*
-			 * Absolute file name.
-			 */
+				Absolute file name.
+			*/
 			Melder_pathToFile (pathName, & file);
 		} else {
 			/*
-			 * Relative or absolute file name.
-			 */
+				Relative or absolute file name.
+			*/
 			MelderDir_relativePathToFile (& my rootDirectory, pathName, & file);
 			if (Melder_debug == 32) {
 				MelderInfo_open ();
@@ -125,40 +125,38 @@ static void readSound (ExperimentMFC me, const char32 *fileNameHead, const char3
 			}
 		}
 		/*
-		 * Read the substimulus.
-		 */
+			Read the substimulus.
+		*/
 		autoSound substimulus = Data_readFromFile (& file). static_cast_move<structSound>();
-		if (substimulus -> classInfo != classSound)
-			Melder_throw (U"File ", & file, U" contains a ", Thing_className (substimulus.get()), U" instead of a sound.");
+		Melder_require (substimulus -> classInfo == classSound,
+			U"File ", & file, U" contains a ", Thing_className (substimulus.get()), U" instead of a sound.");
 		/*
-		 * Check whether all sounds have the same number of channels.
-		 */
-		if (substimulus -> ny > INT16_MAX) {
-			Melder_throw (U"An ExperimentMFC cannot handle sounds with more than ", INT16_MAX, U" channels.");
-		} else if (my numberOfChannels == 0) {
-			my numberOfChannels = int16 (substimulus -> ny);   // guarded cast
+			Check whether all sounds have the same number of channels.
+		*/
+		if (my numberOfChannels == 0) {   // first time?
+			my numberOfChannels = substimulus -> ny;
 		} else if (substimulus -> ny != my numberOfChannels) {
 			Melder_throw (U"The sound in file ", & file, U" has a different number of channels than some other sound.");
 		}
 		/*
-		 * Check whether all sounds have the same sampling frequency.
-		 */
+			Check whether all sounds have the same sampling frequency.
+		*/
 		if (my samplePeriod == 0.0) {
-			my samplePeriod = substimulus -> dx;   /* This must be the first sound read. */
+			my samplePeriod = substimulus -> dx;   // this must be the first sound read
 		} else if (substimulus -> dx != my samplePeriod) {
 			Melder_throw (U"The sound in file ", & file, U" has a different sampling frequency than some other sound.");
 		}
 		/*
-		 * Append the substimuli, perhaps with silent intervals.
-		 */
+			Append the substimuli, perhaps with silent intervals.
+		*/
 		if (*sound) {
 			*sound = Sounds_append (sound->get(), medialSilenceDuration, substimulus.get());
 		} else {
 			*sound = substimulus.move();
 		}
 		/*
-		 * Cycle.
-		 */
+			Cycle.
+		*/
 		if (! comma) break;
 		fileNames = & comma [1];
 	}
@@ -180,61 +178,57 @@ void ExperimentMFC_start (ExperimentMFC me) {
 		integer responseCarrierBeforeSamples = 0, responseCarrierAfterSamples = 0, maximumResponseSamples = 0;
 		Melder_warningOff ();
 		my trial = 0;
-		NUMvector_free <integer> (my stimuli, 1);
-		NUMvector_free <integer> (my responses, 1);
-		NUMvector_free <double> (my goodnesses, 1);
-		NUMvector_free <double> (my reactionTimes, 1);
 		my playBuffer.reset();   // is this needed?
 		my pausing = false;
 		my numberOfTrials = my numberOfDifferentStimuli * my numberOfReplicationsPerStimulus;
-		my stimuli = NUMvector <integer> (1, my numberOfTrials);
-		my responses = NUMvector <integer> (1, my numberOfTrials);
-		my goodnesses = NUMvector <double> (1, my numberOfTrials);
-		my reactionTimes = NUMvector <double> (1, my numberOfTrials);
+		my stimuli = INTVECzero (my numberOfTrials);
+		my responses = INTVECzero (my numberOfTrials);
+		my goodnesses = VECzero (my numberOfTrials);
+		my reactionTimes = VECzero (my numberOfTrials);
 		/*
-		 * Read all the sounds. They must all have the same sampling frequency and number of channels.
-		 */
+			Read all the sounds. They must all have the same sampling frequency and number of channels.
+		*/
 		my samplePeriod = 0.0;
 		my numberOfChannels = 0;
 		if (my stimuliAreSounds) {
 			if (my stimulusCarrierBefore. name && my stimulusCarrierBefore. name [0]) {
-				readSound (me, my stimulusFileNameHead, my stimulusFileNameTail, my stimulusMedialSilenceDuration,
-					& my stimulusCarrierBefore. name, & my stimulusCarrierBefore. sound);
+				readSound (me, my stimulusFileNameHead.get(), my stimulusFileNameTail.get(), my stimulusMedialSilenceDuration,
+						my stimulusCarrierBefore. name.get(), & my stimulusCarrierBefore. sound);
 				stimulusCarrierBeforeSamples = my stimulusCarrierBefore. sound -> nx;
 			}
 			if (my stimulusCarrierAfter. name && my stimulusCarrierAfter. name [0]) {
-				readSound (me, my stimulusFileNameHead, my stimulusFileNameTail, my stimulusMedialSilenceDuration,
-					& my stimulusCarrierAfter. name, & my stimulusCarrierAfter. sound);
+				readSound (me, my stimulusFileNameHead.get(), my stimulusFileNameTail.get(), my stimulusMedialSilenceDuration,
+						my stimulusCarrierAfter. name.get(), & my stimulusCarrierAfter. sound);
 				stimulusCarrierAfterSamples = my stimulusCarrierAfter. sound -> nx;
 			}
 			for (integer istim = 1; istim <= my numberOfDifferentStimuli; istim ++) {
-				readSound (me, my stimulusFileNameHead, my stimulusFileNameTail, my stimulusMedialSilenceDuration,
-					& my stimulus [istim]. name, & my stimulus [istim]. sound);
+				readSound (me, my stimulusFileNameHead.get(), my stimulusFileNameTail.get(), my stimulusMedialSilenceDuration,
+						my stimulus [istim]. name.get(), & my stimulus [istim]. sound);
 				if (my stimulus [istim]. sound -> nx > maximumStimulusSamples)
 					maximumStimulusSamples = my stimulus [istim]. sound -> nx;
 			}
 		}
 		if (my responsesAreSounds) {
 			if (my responseCarrierBefore. name && my responseCarrierBefore. name [0]) {
-				readSound (me, my responseFileNameHead, my responseFileNameTail, my responseMedialSilenceDuration,
-					& my responseCarrierBefore. name, & my responseCarrierBefore. sound);
+				readSound (me, my responseFileNameHead.get(), my responseFileNameTail.get(), my responseMedialSilenceDuration,
+						my responseCarrierBefore. name.get(), & my responseCarrierBefore. sound);
 				responseCarrierBeforeSamples = my responseCarrierBefore. sound -> nx;
 			}
 			if (my responseCarrierAfter. name && my responseCarrierAfter. name [0]) {
-				readSound (me, my responseFileNameHead, my responseFileNameTail, my responseMedialSilenceDuration,
-					& my responseCarrierAfter. name, & my responseCarrierAfter. sound);
+				readSound (me, my responseFileNameHead.get(), my responseFileNameTail.get(), my responseMedialSilenceDuration,
+						my responseCarrierAfter. name.get(), & my responseCarrierAfter. sound);
 				responseCarrierAfterSamples = my responseCarrierAfter. sound -> nx;
 			}
 			for (integer iresp = 1; iresp <= my numberOfDifferentResponses; iresp ++) {
-				readSound (me, my responseFileNameHead, my responseFileNameTail, my responseMedialSilenceDuration,
-					& my response [iresp]. name, & my response [iresp]. sound);
+				readSound (me, my responseFileNameHead.get(), my responseFileNameTail.get(), my responseMedialSilenceDuration,
+						my response [iresp]. name.get(), & my response [iresp]. sound);
 				if (my response [iresp]. sound -> nx > maximumResponseSamples)
 					maximumResponseSamples = my response [iresp]. sound -> nx;
 			}
 		}
 		/*
-		 * Create the play buffer.
-		 */
+			Create the play buffer.
+		*/
 		maximumStimulusPlaySamples =
 			Melder_iround (my stimulusInitialSilenceDuration / my samplePeriod)
 			+ Melder_iround (my stimulusFinalSilenceDuration / my samplePeriod)
@@ -247,8 +241,8 @@ void ExperimentMFC_start (ExperimentMFC me) {
 		my playBuffer = Sound_create (my numberOfChannels, 0.0, maximumPlaySamples * my samplePeriod,
 			maximumPlaySamples, my samplePeriod, 0.5 * my samplePeriod);
 		/*
-		 * Determine the order in which the stimuli will be presented to the subject.
-		 */
+			Determine the order in which the stimuli will be presented to the subject.
+		*/
 		if (my randomize == kExperiment_randomize::CYCLIC_NON_RANDOM) {
 			for (integer itrial = 1; itrial <= my numberOfTrials; itrial ++)
 				my stimuli [itrial] = (itrial - 1) % my numberOfDifferentStimuli + 1;
@@ -280,7 +274,7 @@ void ExperimentMFC_start (ExperimentMFC me) {
 	} catch (MelderError) {
 		Melder_warningOn ();
 		my numberOfTrials = 0;
-		NUMvector_free (my stimuli, 1); my stimuli = nullptr;
+		my stimuli. reset();
 		Melder_throw (me, U": not started.");
 	}
 }
@@ -291,42 +285,40 @@ static void playSound (ExperimentMFC me, Sound sound, Sound carrierBefore, Sound
 	integer numberOfSamplesWritten = 0;
 
 	integer initialSilenceSamples = Melder_iround (initialSilenceDuration / my samplePeriod);
-	for (integer channel = 1; channel <= my numberOfChannels; channel ++) {
-		for (integer i = 1; i <= initialSilenceSamples; i ++) {
-			my playBuffer -> z [channel] [i] = 0.0;
-		}
+	for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++) {
+		for (integer isamp = 1; isamp <= initialSilenceSamples; isamp ++)
+			my playBuffer -> z [ichan] [isamp] = 0.0;
 	}
 	numberOfSamplesWritten += initialSilenceSamples;
 
 	if (carrierBefore) {
-		for (integer channel = 1; channel <= my numberOfChannels; channel ++) {
-			NUMvector_copyElements <double> (carrierBefore -> z [channel],
-				my playBuffer -> z [channel] + numberOfSamplesWritten, 1, carrierBefore -> nx);
+		for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++) {
+			NUMvector_copyElements <double> (carrierBefore -> z [ichan],
+					my playBuffer -> z [ichan] + numberOfSamplesWritten, 1, carrierBefore -> nx);
 		}
 		numberOfSamplesWritten += carrierBefore -> nx;
 	}
 
 	if (sound) {
-		for (integer channel = 1; channel <= my numberOfChannels; channel ++) {
-			NUMvector_copyElements <double> (sound -> z [channel],
-				my playBuffer -> z [channel] + numberOfSamplesWritten, 1, sound -> nx);
+		for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++) {
+			NUMvector_copyElements <double> (sound -> z [ichan],
+					my playBuffer -> z [ichan] + numberOfSamplesWritten, 1, sound -> nx);
 		}
 		numberOfSamplesWritten += sound -> nx;
 	}
 
 	if (carrierAfter) {
-		for (integer channel = 1; channel <= my numberOfChannels; channel ++) {
-			NUMvector_copyElements <double> (carrierAfter -> z [channel],
-				my playBuffer -> z [channel] + numberOfSamplesWritten, 1, carrierAfter -> nx);
+		for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++) {
+			NUMvector_copyElements <double> (carrierAfter -> z [ichan],
+					my playBuffer -> z [ichan] + numberOfSamplesWritten, 1, carrierAfter -> nx);
 		}
 		numberOfSamplesWritten += carrierAfter -> nx;
 	}
 
 	integer finalSilenceSamples = Melder_iround (finalSilenceDuration / my samplePeriod);
-	for (integer channel = 1; channel <= my numberOfChannels; channel ++) {
-		for (integer i = 1; i <= finalSilenceSamples; i ++) {
-			my playBuffer -> z [channel] [i + numberOfSamplesWritten] = 0.0;
-		}
+	for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++) {
+		for (integer isamp = 1; isamp <= finalSilenceSamples; isamp ++)
+			my playBuffer -> z [ichan] [isamp + numberOfSamplesWritten] = 0.0;
 	}
 	numberOfSamplesWritten += finalSilenceSamples;
 
@@ -339,14 +331,14 @@ static void playSound (ExperimentMFC me, Sound sound, Sound carrierBefore, Sound
 
 void ExperimentMFC_playStimulus (ExperimentMFC me, integer istim) {
 	playSound (me, my stimulus [istim]. sound.get(),
-		my stimulusCarrierBefore. sound.get(), my stimulusCarrierAfter. sound.get(),
-		my stimulusInitialSilenceDuration, my stimulusFinalSilenceDuration);
+			my stimulusCarrierBefore. sound.get(), my stimulusCarrierAfter. sound.get(),
+			my stimulusInitialSilenceDuration, my stimulusFinalSilenceDuration);
 }
 
 void ExperimentMFC_playResponse (ExperimentMFC me, integer iresp) {
 	playSound (me, my response [iresp]. sound.get(),
-		my responseCarrierBefore. sound.get(), my responseCarrierAfter. sound.get(),
-		my responseInitialSilenceDuration, my responseFinalSilenceDuration);
+			my responseCarrierBefore. sound.get(), my responseCarrierAfter. sound.get(),
+			my responseInitialSilenceDuration, my responseFinalSilenceDuration);
 }
 
 
@@ -376,11 +368,11 @@ autoResultsMFC ExperimentMFC_extractResults (ExperimentMFC me) {
 			Melder_warning (U"The experiment was not finished. Only the first ", my trial - 1 + my pausing, U" responses are valid.");
 		autoResultsMFC thee = ResultsMFC_create (my numberOfTrials);
 		for (integer trial = 1; trial <= my numberOfTrials; trial ++) {
-			char32 *pipe = my stimulus [my stimuli [trial]]. visibleText ?
-				str32chr (my stimulus [my stimuli [trial]]. visibleText, U'|') : nullptr;
-			thy result [trial]. stimulus = Melder_dup (Melder_cat (my stimulus [my stimuli [trial]]. name, pipe));
+			const char32 *pipe = ( my stimulus [my stimuli [trial]]. visibleText ?
+					str32chr (my stimulus [my stimuli [trial]]. visibleText.get(), U'|') : nullptr );
+			thy result [trial]. stimulus = Melder_dup (Melder_cat (my stimulus [my stimuli [trial]]. name.get(), pipe));
 			//if (my responses [trial] < 1) Melder_throw (U"No response for trial ", trial, U".")
-			thy result [trial]. response = Melder_dup (my responses [trial] ? my response [my responses [trial]]. name : U"");
+			thy result [trial]. response = Melder_dup (my responses [trial] ? my response [my responses [trial]]. name.get() : U"");
 			thy result [trial]. goodness = my goodnesses [trial];
 			thy result [trial]. reactionTime = my reactionTimes [trial];
 		}
@@ -397,15 +389,15 @@ autoResultsMFC ResultsMFC_removeUnsharedStimuli (ResultsMFC me, ResultsMFC thee)
 		for (integer i = 1; i <= thy numberOfTrials; i ++) {
 			bool present = false;
 			for (integer j = 1; j <= my numberOfTrials; j ++) {
-				if (str32equ (thy result [i]. stimulus, my result [j]. stimulus)) {
+				if (str32equ (thy result [i]. stimulus.get(), my result [j]. stimulus.get())) {
 					present = true;
 					break;
 				}
 			}
 			if (present) {
 				his numberOfTrials ++;
-				his result [his numberOfTrials]. stimulus = Melder_dup (thy result [i]. stimulus);
-				his result [his numberOfTrials]. response = Melder_dup (thy result [i]. response);
+				his result [his numberOfTrials]. stimulus = Melder_dup (thy result [i]. stimulus.get());
+				his result [his numberOfTrials]. response = Melder_dup (thy result [i]. response.get());
 			}
 		}
 		if (his numberOfTrials == 0)
@@ -443,15 +435,13 @@ autoTable ResultsMFCs_to_Table (OrderedOf<structResultsMFC>* me) {
 			ResultsMFC results = my at [iresults];
 			for (integer itrial = 1; itrial <= results -> numberOfTrials; itrial ++) {
 				irow ++;
-				Table_setStringValue (thee.get(), irow, 1, results -> name);
-				Table_setStringValue (thee.get(), irow, 2, results -> result [itrial]. stimulus);
-				Table_setStringValue (thee.get(), irow, 3, results -> result [itrial]. response);
-				if (hasGoodnesses) {
+				Table_setStringValue (thee.get(), irow, 1, results -> name.get());
+				Table_setStringValue (thee.get(), irow, 2, results -> result [itrial]. stimulus.get());
+				Table_setStringValue (thee.get(), irow, 3, results -> result [itrial]. response.get());
+				if (hasGoodnesses)
 					Table_setNumericValue (thee.get(), irow, 4, results -> result [itrial]. goodness);
-				}
-				if (hasReactionTimes) {
+				if (hasReactionTimes)
 					Table_setNumericValue (thee.get(), irow, 4 + hasGoodnesses, results -> result [itrial]. reactionTime);
-				}
 			}
 		}
 		return thee;
@@ -464,7 +454,7 @@ autoCategories ResultsMFC_to_Categories_stimuli (ResultsMFC me) {
 	try {
 		autoCategories thee = Categories_create ();
 		for (integer trial = 1; trial <= my numberOfTrials; trial ++) {
-			autoSimpleString category = SimpleString_create (my result [trial]. stimulus);
+			autoSimpleString category = SimpleString_create (my result [trial]. stimulus.get());
 			thy addItem_move (category.move());
 		}
 		return thee;
@@ -477,7 +467,7 @@ autoCategories ResultsMFC_to_Categories_responses (ResultsMFC me) {
 	try {
 		autoCategories thee = Categories_create ();
 		for (integer trial = 1; trial <= my numberOfTrials; trial ++) {
-			autoSimpleString category = SimpleString_create (my result [trial]. response);
+			autoSimpleString category = SimpleString_create (my result [trial]. response.get());
 			thy addItem_move (category.move());
 		}
 		return thee;
@@ -495,13 +485,13 @@ void Categories_sort (Categories me) {
 
 double Categories_getEntropy (Categories me) {
 	integer numberOfTokens = 0;
-	char32 *previousString = nullptr;
+	conststring32 previousString = nullptr;
 	double entropy = 0.0;
 	autoCategories thee = Data_copy (me);
 	Categories_sort (thee.get());
 	for (integer i = 1; i <= thy size; i ++) {
 		SimpleString s = thy at [i];
-		char32 *string = s -> string;
+		conststring32 string = s -> string.get();
 		if (previousString && ! str32equ (string, previousString)) {
 			double p = (double) numberOfTokens / thy size;
 			entropy -= p * NUMlog2 (p);

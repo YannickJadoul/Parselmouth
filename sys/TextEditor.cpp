@@ -1,6 +1,6 @@
 /* TextEditor.cpp
  *
- * Copyright (C) 1997-2012,2013,2015,2016,2017 Paul Boersma, 2010 Franz Brausse
+ * Copyright (C) 1997-2018 Paul Boersma, 2010 Franz Brausse
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
 
 #include "TextEditor.h"
 #include "machine.h"
-#include "longchar.h"
+#include "../kar/longchar.h"
 #include "EditorM.h"
-#include "UnicodeData.h"
+#include "../kar/UnicodeData.h"
 
 Thing_implement (TextEditor, Editor, 0);
 
@@ -75,7 +75,7 @@ static void openDocument (TextEditor me, MelderFile file) {
 		}
 	}
 	autostring32 text = MelderFile_readText (file);
-	GuiText_setString (my textWidget, text.peek());
+	GuiText_setString (my textWidget, text.get());
 	/*
 	 * GuiText_setString has invoked the changeCallback,
 	 * which has set `my dirty` to `true`. Fix this.
@@ -93,7 +93,7 @@ static void newDocument (TextEditor me) {
 
 static void saveDocument (TextEditor me, MelderFile file) {
 	autostring32 text = GuiText_getString (my textWidget);
-	MelderFile_writeText (file, text.peek(), Melder_getOutputEncoding ());
+	MelderFile_writeText (file, text.get(), Melder_getOutputEncoding ());
 	my dirty = false;
 	MelderFile_copy (file, & my file);
 	if (my v_fileBased ()) Thing_setName (me, Melder_fileToPath (file));
@@ -103,8 +103,8 @@ static void closeDocument (TextEditor me) {
 	forget (me);
 }
 
-static void cb_open_ok (UiForm sendingForm, int /* narg */, Stackel /* args */, const char32 * /* sendingString */,
-	Interpreter /* interpreter */, const char32 * /* invokingButtonTitle */, bool /* modified */, void *void_me)
+static void cb_open_ok (UiForm sendingForm, integer /* narg */, Stackel /* args */, conststring32 /* sendingString */,
+	Interpreter /* interpreter */, conststring32 /* invokingButtonTitle */, bool /* modified */, void *void_me)
 {
 	iam (TextEditor);
 	MelderFile file = UiFile_getFile (sendingForm);
@@ -114,12 +114,12 @@ static void cb_open_ok (UiForm sendingForm, int /* narg */, Stackel /* args */, 
 static void cb_showOpen (EditorCommand cmd) {
 	TextEditor me = (TextEditor) cmd -> d_editor;
 	if (! my openDialog)
-		my openDialog = autoUiForm (UiInfile_create (my windowForm, U"Open", cb_open_ok, me, nullptr, nullptr, false));
+		my openDialog = UiInfile_create (my windowForm, U"Open", cb_open_ok, me, nullptr, nullptr, false);
 	UiInfile_do (my openDialog.get());
 }
 
-static void cb_saveAs_ok (UiForm sendingForm, int /* narg */, Stackel /* args */, const char32 * /* sendingString */,
-	Interpreter /* interpreter */, const char32 * /* invokingButtonTitle */, bool /* modified */, void *void_me)
+static void cb_saveAs_ok (UiForm sendingForm, integer /* narg */, Stackel /* args */, conststring32 /* sendingString */,
+	Interpreter /* interpreter */, conststring32 /* invokingButtonTitle */, bool /* modified */, void *void_me)
 {
 	iam (TextEditor);
 	MelderFile file = UiFile_getFile (sendingForm);
@@ -128,7 +128,7 @@ static void cb_saveAs_ok (UiForm sendingForm, int /* narg */, Stackel /* args */
 
 static void menu_cb_saveAs (TextEditor me, EDITOR_ARGS_DIRECT) {
 	if (! my saveDialog)
-		my saveDialog = autoUiForm (UiOutfile_create (my windowForm, U"Save", cb_saveAs_ok, me, nullptr, nullptr));
+		my saveDialog = UiOutfile_create (my windowForm, U"Save", cb_saveAs_ok, me, nullptr, nullptr);
 	char32 defaultName [300];
 	Melder_sprint (defaultName,300, ! my v_fileBased () ? U"info.txt" : my name [0] ? MelderFile_name (& my file) : U"");
 	UiOutfile_do (my saveDialog.get(), defaultName);
@@ -399,8 +399,8 @@ static void menu_cb_erase (TextEditor me, EDITOR_ARGS_DIRECT) {
 
 static bool getSelectedLines (TextEditor me, integer *firstLine, integer *lastLine) {
 	integer left, right;
-	char32 *text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
-	integer textLength = str32len (text);
+	autostring32 text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
+	integer textLength = str32len (text.get());
 	Melder_assert (left >= 0);
 	Melder_assert (left <= right);
 	Melder_assert (right <= textLength);
@@ -421,29 +421,28 @@ static bool getSelectedLines (TextEditor me, integer *firstLine, integer *lastLi
 			(*lastLine) ++;
 		}
 	}
-	Melder_free (text);
 	return true;
 }
 
-static char32 *theFindString = nullptr, *theReplaceString = nullptr;
+static autostring32 theFindString, theReplaceString;
 static void do_find (TextEditor me) {
 	if (! theFindString) return;   // e.g. when the user does "Find again" before having done any "Find"
 	integer left, right;
 	autostring32 text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
-	char32 *location = str32str (& text [right], theFindString);
+	char32 *location = str32str (& text [right], theFindString.get());
 	if (location) {
-		integer index = location - text.peek();
-		GuiText_setSelection (my textWidget, index, index + str32len (theFindString));
+		integer index = location - text.get();
+		GuiText_setSelection (my textWidget, index, index + str32len (theFindString.get()));
 		GuiText_scrollToSelection (my textWidget);
 		#ifdef _WIN32
 			GuiThing_show (my windowForm);
 		#endif
 	} else {
 		/* Try from the start of the document. */
-		location = str32str (text.peek(), theFindString);
+		location = str32str (text.get(), theFindString.get());
 		if (location) {
-			integer index = location - text.peek();
-			GuiText_setSelection (my textWidget, index, index + str32len (theFindString));
+			integer index = location - text.get();
+			GuiText_setSelection (my textWidget, index, index + str32len (theFindString.get()));
 			GuiText_scrollToSelection (my textWidget);
 			#ifdef _WIN32
 				GuiThing_show (my windowForm);
@@ -457,14 +456,14 @@ static void do_find (TextEditor me) {
 static void do_replace (TextEditor me) {
 	if (! theReplaceString) return;   // e.g. when the user does "Replace again" before having done any "Replace"
 	autostring32 selection = GuiText_getSelection (my textWidget);
-	if (! Melder_equ (selection.peek(), theFindString)) {
+	if (! Melder_equ (selection.get(), theFindString.get())) {
 		do_find (me);
 		return;
 	}
 	integer left, right;
 	autostring32 text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
-	GuiText_replace (my textWidget, left, right, theReplaceString);
-	GuiText_setSelection (my textWidget, left, left + str32len (theReplaceString));
+	GuiText_replace (my textWidget, left, right, theReplaceString.get());
+	GuiText_setSelection (my textWidget, left, left + str32len (theReplaceString.get()));
 	GuiText_scrollToSelection (my textWidget);
 	#ifdef _WIN32
 		GuiThing_show (my windowForm);
@@ -475,10 +474,9 @@ static void menu_cb_find (TextEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Find", nullptr)
 		TEXTFIELD (findString, U"Find:", U"")
 	EDITOR_OK
-		if (theFindString) SET_STRING (findString, theFindString);
+		if (theFindString) SET_STRING (findString, theFindString.get());
 	EDITOR_DO
-		Melder_free (theFindString);
-		theFindString = Melder_dup_f (findString);
+		theFindString = Melder_dup (findString);
 		do_find (me);
 	EDITOR_END
 }
@@ -497,12 +495,10 @@ static void menu_cb_replace (TextEditor me, EDITOR_ARGS_FORM) {
 		TEXTFIELD (findString, U"Find:", U"")
 		TEXTFIELD (replaceString, U"Replace with:", U"")
 	EDITOR_OK
-		if (theFindString) SET_STRING (findString, theFindString);
-		if (theReplaceString) SET_STRING (replaceString, theReplaceString);
+		if (theFindString) SET_STRING (findString, theFindString.get());
+		if (theReplaceString) SET_STRING (replaceString, theReplaceString.get());
 	EDITOR_DO
-		Melder_free (theFindString);
 		theFindString = Melder_dup (findString);
-		Melder_free (theReplaceString);
 		theReplaceString = Melder_dup (replaceString);
 		do_replace (me);
 	EDITOR_END
@@ -548,7 +544,7 @@ static void menu_cb_goToLine (TextEditor me, EDITOR_ARGS_FORM) {
 				}
 			}
 		}
-		if (left == str32len (text.peek())) {
+		if (left == str32len (text.get())) {
 			right = left;
 		} else if (text [right] == U'\n') {
 			right ++;
@@ -561,7 +557,7 @@ static void menu_cb_goToLine (TextEditor me, EDITOR_ARGS_FORM) {
 static void menu_cb_convertToCString (TextEditor me, EDITOR_ARGS_DIRECT) {
 	autostring32 text = GuiText_getString (my textWidget);
 	char32 buffer [2] = U" ";
-	const char32 *hex [16] = { U"0", U"1", U"2", U"3", U"4", U"5", U"6", U"7", U"8", U"9", U"A", U"B", U"C", U"D", U"E", U"F" };
+	const conststring32 hex [16] = { U"0", U"1", U"2", U"3", U"4", U"5", U"6", U"7", U"8", U"9", U"A", U"B", U"C", U"D", U"E", U"F" };
 	MelderInfo_open ();
 	MelderInfo_write (U"\"");
 	for (char32 *p = & text [0]; *p != U'\0'; p ++) {
@@ -576,10 +572,10 @@ static void menu_cb_convertToCString (TextEditor me, EDITOR_ARGS_DIRECT) {
 			MelderInfo_write (U"\\\\");
 		} else if (kar > 127) {
 			if (kar <= 0x00FFFF) {
-				MelderInfo_write (U"\\u", hex [kar >> 12], hex [(kar >> 8) & 0x00000F], hex [(kar >> 4) & 0x00000F], hex [kar & 0x00000F]);
+				MelderInfo_write (U"\\u", hex [kar >> 12], hex [(kar >> 8) & 0x00'000F], hex [(kar >> 4) & 0x00'000F], hex [kar & 0x00'000F]);
 			} else {
-				MelderInfo_write (U"\\U", hex [kar >> 28], hex [(kar >> 24) & 0x00000F], hex [(kar >> 20) & 0x00000F], hex [(kar >> 16) & 0x00000F],
-					hex [(kar >> 12) & 0x00000F], hex [(kar >> 8) & 0x00000F], hex [(kar >> 4) & 0x00000F], hex [kar & 0x00000F]);
+				MelderInfo_write (U"\\U", hex [kar >> 28], hex [(kar >> 24) & 0x00'000F], hex [(kar >> 20) & 0x00'000F], hex [(kar >> 16) & 0x00'000F],
+					hex [(kar >> 12) & 0x00'000F], hex [(kar >> 8) & 0x00'000F], hex [(kar >> 4) & 0x00'000F], hex [kar & 0x00'000F]);
 			}
 		} else {
 			buffer [0] = *p;
@@ -679,7 +675,7 @@ void structTextEditor :: v_createMenus () {
 	fontSizeButton_24 = Editor_addCommand (this, U"Font", U"24", GuiMenu_CHECKBUTTON, menu_cb_24);
 }
 
-void TextEditor_init (TextEditor me, const char32 *initialText) {
+void TextEditor_init (TextEditor me, conststring32 initialText) {
 	Editor_init (me, 0, 0, 600, 400, U"", nullptr);
 	setFontSize (me, my p_fontSize);
 	if (initialText) {
@@ -690,7 +686,7 @@ void TextEditor_init (TextEditor me, const char32 *initialText) {
 	theReferencesToAllOpenTextEditors. addItem_ref (me);
 }
 
-autoTextEditor TextEditor_create (const char32 *initialText) {
+autoTextEditor TextEditor_create (conststring32 initialText) {
 	try {
 		autoTextEditor me = Thing_new (TextEditor);
 		TextEditor_init (me.get(), initialText);

@@ -2,7 +2,7 @@
 #define _Confusion_h_
 /* Confusion.h
  *
- * Copyright (C) 1993-2017 David Weenink
+ * Copyright (C) 1993-2018 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,51 +29,52 @@ Thing_define (Confusion, TableOfReal) {
 };
 
 /*
-	A Confusion matrix has both row and column labels.
+	A Confusion matrix has both row and column labels. Row labels represent the stimulus names, 
+	column labels represent the responses.
 */
 
 autoConfusion Confusion_create (integer numberOfStimuli, integer numberOfResponses);
 
-autoConfusion Confusion_createSimple (const char32 *labels);
+autoConfusion Confusion_createSimple (conststring32 labels);
 
 autoConfusion Confusion_createFromStringses (Strings stimulusLabels, Strings responseLabels);
 
 autoConfusion Categories_to_Confusion (Categories me, Categories thee);
 
-void Confusion_increase (Confusion me, const char32 *stimulus, const char32 *response);
-/* data['stim']['resp'] += 1; */
+void Confusion_increase (Confusion me, conststring32 stimulus, conststring32 response);
+/* Increase the confusion count by one: data['stim']['resp'] += 1; */
 
-double Confusion_getValue (Confusion me, const char32 *stim, const char32 *resp);
+double Confusion_getValue (Confusion me, conststring32 stimulus, conststring32 response);
 /* data['stim']['resp'] ; */
 
-void Confusion_getEntropies (Confusion me, double *h, double *hx, double *hy,
-    double *hygx, double *hxgy, double *uygx, double *uxgy, double *uxy);
+void Confusion_getEntropies (Confusion me, double *out_h, double *out_hx, double *out_hy,
+    double *out_hygx, double *out_hxgy, double *out_uygx, double *out_uxgy, double *out_uxy);
 /*  x is column variable, y is row variable
- *  *h	    entropy of whole table;
- *  *hx	    entropy of x variable
- *  *hy	    entropy of y variable
- *  *hygx   entropy of y given x
- *  *hxgy   entropy of x given y
- *  *uygx   dependency of y on x
- *  *uxgy   dependency of x on y
- *  *uxy    symmetrical dependency
+	*out_h	    entropy of whole table;
+	*out_hx	    entropy of x variable
+	*out_hy	    entropy of y variable
+	*out_hygx   entropy of y given x
+	*out_hxgy   entropy of x given y
+	*out_uygx   dependency of y on x
+	*out_uxgy   dependency of x on y
+	*out_uxy    symmetrical dependency
  */
 
-void Confusion_getFractionCorrect (Confusion me, double *fraction, integer *numberOfCorrect);
+void Confusion_getFractionCorrect (Confusion me, double *out_fraction, integer *out_numberOfCorrect);
 
 void Confusion_Matrix_draw (Confusion me, Matrix thee, Graphics g, integer index, double lowerPercentage, double xmin, double xmax, double ymin, double ymax, int garnish);
 /* 1. Draw my rowLabels centered at ( matrix->z[i][1], matrix->z[i][2]).
- * 2. Draw arrows and circles according to:
- *	for (i=1; i <= my numberOfRows; i++)
- *	{
- *		if (index != 0 && index != i) continue;
- *      draw circle at i of width: my z[i][i]/rowSum;
- *		for (j=1; j <= my numberOfColumns; j++)
- *		{
- *			if (i != j && 100*my data[i][j]/rowSum > lowerPercentage)
- *				draw arrow from i to j of width: my data[i][j]/rowSum;
- *		}
- *	}
+	2. Draw arrows and circles according to:
+	for (i=1; i <= my numberOfRows; i++)
+	{
+		if (index != 0 && index != i) continue;
+		draw circle at i of width: my z[i][i]/rowSum;
+		for (j=1; j <= my numberOfColumns; j++)
+		{
+			if (i != j && 100*my data[i][j]/rowSum > lowerPercentage)
+				draw arrow from i to j of width: my data[i][j]/rowSum;
+		}
+	}
  */
 
 autoMatrix Confusion_difference (Confusion me, Confusion thee);
@@ -81,13 +82,13 @@ autoMatrix Confusion_difference (Confusion me, Confusion thee);
 
 integer Confusion_getNumberOfEntries (Confusion me);
 
-autoConfusion Confusion_groupStimuli (Confusion me, const char32 *labels, const char32 *newLabel, integer newpos);
+autoConfusion Confusion_groupStimuli (Confusion me, conststring32 labels, conststring32 newLabel, integer newpos);
 
-autoConfusion Confusion_groupResponses (Confusion me, const char32 *labels, const char32 *newLabel, integer newpos);
+autoConfusion Confusion_groupResponses (Confusion me, conststring32 labels, conststring32 newLabel, integer newpos);
 
-autoConfusion Confusion_group (Confusion me, const char32 *labels, const char32 *newLabel, integer newpos);
+autoConfusion Confusion_group (Confusion me, conststring32 labels, conststring32 newLabel, integer newpos);
 
-autoConfusion Confusion_condense (Confusion me, const char32 *search, const char32 *replace, integer maximumNumberOfReplaces, bool use_regexp);
+autoConfusion Confusion_condense (Confusion me, conststring32 search, conststring32 replace, integer maximumNumberOfReplaces, bool use_regexp);
 /* 
 	Group row and column labels according to search and replace.
 */
@@ -101,6 +102,6 @@ autoTableOfReal Confusion_to_TableOfReal_marginals (Confusion me);
 */
 
 void Confusion_drawAsNumbers (Confusion me, Graphics g, bool marginals, int iformat, int precision);
-// option marginals draw one extra row and column with sums.
+/* option marginals draw one extra row and column with marginal sums. */
 
 #endif /* _Confusion_h_ */

@@ -95,6 +95,26 @@ autoRealTier RealTier_createWithClass (double tmin, double tmax, ClassInfo klas)
 	}
 }
 
+template <typename T> autoSomeThing <T> Thing_create () {
+	return Thing_newFromClass (nullptr);
+}
+
+template <>
+autoSomeThing <structRealTier> Thing_create <structRealTier> () {
+	return Thing_newFromClass (classRealTier). static_cast_move<structRealTier>();
+}
+
+template <typename structSomeRealTier>
+autoSomeThing <structSomeRealTier> SomeRealTier_create (double tmin, double tmax) {
+	try {
+		autoSomeThing <structSomeRealTier> me = Thing_create <structSomeRealTier> ();
+		RealTier_init (me.get(), tmin, tmax);
+		return me;
+	} catch (MelderError) {
+		Melder_throw (U"RealTier not created.");
+	}
+}
+
 void RealTier_addPoint (RealTier me, double t, double value) {
 	try {
 		autoRealPoint point = RealPoint_create (t, value);
@@ -164,7 +184,7 @@ double RealTier_getArea (RealTier me, double tmin, double tmax) {
 	 * Sum the areas between the points.
 	 * This works even if imin is 0 (offleft) and/or imax is n + 1 (offright).
 	 */
-	real80 area = 0.0;
+	longdouble area = 0.0;
 	for (integer i = imin; i < imax; i ++) {
 		double tleft, fleft, tright, fright;
 		if (i == imin) {
@@ -183,7 +203,7 @@ double RealTier_getArea (RealTier me, double tmin, double tmax) {
 		}
 		area += 0.5 * (fleft + fright) * (tright - tleft);
 	}
-	return (real) area;
+	return (double) area;
 }
 
 double RealTier_getMean_curve (RealTier me, double tmin, double tmax) {
@@ -208,8 +228,8 @@ double RealTier_getStandardDeviation_curve (RealTier me, double tmin, double tma
 	 * Add the areas between the points.
 	 * This works even if imin is 0 (offleft) and/or imax is n + 1 (offright).
 	 */
-	real mean = RealTier_getMean_curve (me, tmin, tmax);
-	real80 integral = 0.0;
+	double mean = RealTier_getMean_curve (me, tmin, tmax);
+	longdouble integral = 0.0;
 	for (integer i = imin; i < imax; i ++) {
 		double tleft, fleft, tright, fright;
 		if (i == imin) {
@@ -240,38 +260,38 @@ double RealTier_getStandardDeviation_curve (RealTier me, double tmin, double tma
 		double diff = fleft - fright;
 		integral += (sum * sum + (1.0/3.0) * diff * diff) * (tright - tleft);
 	}
-	return sqrt (0.25 * (real) integral / (tmax - tmin));
+	return sqrt (0.25 * (double) integral / (tmax - tmin));
 }
 
-real RealTier_getMean_points (RealTier me, real tmin, real tmax) {
+double RealTier_getMean_points (RealTier me, double tmin, double tmax) {
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }   // autowindow
 	integer imin, imax;
 	integer n = AnyTier_getWindowPoints (me->asAnyTier(), tmin, tmax, & imin, & imax);
 	if (n == 0) return undefined;
-	real80 sum = 0.0;
+	longdouble sum = 0.0;
 	for (integer i = imin; i <= imax; i ++)
 		sum += my points.at [i] -> value;
-	return (real) sum / n;
+	return (double) sum / n;
 }
 
-real RealTier_getStandardDeviation_points (RealTier me, real tmin, real tmax) {
+double RealTier_getStandardDeviation_points (RealTier me, double tmin, double tmax) {
 	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }   // autowindow
 	integer imin, imax;
 	integer n = AnyTier_getWindowPoints (me->asAnyTier(), tmin, tmax, & imin, & imax);
 	if (n < 2) return undefined;
-	real mean = RealTier_getMean_points (me, tmin, tmax);
-	real80 sum = 0.0;
+	double mean = RealTier_getMean_points (me, tmin, tmax);
+	longdouble sum = 0.0;
 	for (integer i = imin; i <= imax; i ++) {
-		real diff = my points.at [i] -> value - mean;
+		double diff = my points.at [i] -> value - mean;
 		sum += diff * diff;
 	}
-	return sqrt ((real) sum / (n - 1));
+	return sqrt ((double) sum / (n - 1));
 }
 
 void RealTier_multiplyPart (RealTier me, double tmin, double tmax, double factor) {
 	for (integer ipoint = 1; ipoint <= my points.size; ipoint ++) {
 		RealPoint point = my points.at [ipoint];
-		real t = point -> number;
+		double t = point -> number;
 		if (t >= tmin && t <= tmax) {
 			point -> value *= factor;
 		}
@@ -279,7 +299,7 @@ void RealTier_multiplyPart (RealTier me, double tmin, double tmax, double factor
 }
 
 void RealTier_draw (RealTier me, Graphics g, double tmin, double tmax, double fmin, double fmax,
-	int garnish, const char32 *method, const char32 *quantity)
+	int garnish, conststring32 method, conststring32 quantity)
 {
 	bool drawLines = str32str (method, U"lines") || str32str (method, U"Lines");
 	bool drawSpeckles = str32str (method, U"speckles") || str32str (method, U"Speckles");
@@ -323,7 +343,7 @@ void RealTier_draw (RealTier me, Graphics g, double tmin, double tmax, double fm
 	}
 }
 
-autoTableOfReal RealTier_downto_TableOfReal (RealTier me, const char32 *timeLabel, const char32 *valueLabel) {
+autoTableOfReal RealTier_downto_TableOfReal (RealTier me, conststring32 timeLabel, conststring32 valueLabel) {
 	try {
 		autoTableOfReal thee = TableOfReal_create (my points.size, 2);
 		TableOfReal_setColumnLabel (thee.get(), 1, timeLabel);
@@ -380,7 +400,7 @@ void RealTier_interpolateQuadratically (RealTier me, integer numberOfPointsPerPa
 	}
 }
 
-autoTable RealTier_downto_Table (RealTier me, const char32 *indexText, const char32 *timeText, const char32 *valueText) {
+autoTable RealTier_downto_Table (RealTier me, conststring32 indexText, conststring32 timeText, conststring32 valueText) {
 	try {
 		autoTable thee = Table_createWithoutColumnNames (my points.size,
 			(!! indexText) + (!! timeText) + (!! valueText));
@@ -461,12 +481,13 @@ autoRealTier PointProcess_upto_RealTier (PointProcess me, double value, ClassInf
 	}
 }
 
-void RealTier_formula (RealTier me, const char32 *expression, Interpreter interpreter, RealTier thee) {
+void RealTier_formula (RealTier me, conststring32 expression, Interpreter interpreter, RealTier thee) {
 	try {
 		Formula_compile (interpreter, me, expression, kFormula_EXPRESSION_TYPE_NUMERIC, true);
-		if (! thee) thee = me;
+		Formula_Result result;
+		if (! thee)
+			thee = me;
 		for (integer icol = 1; icol <= my points.size; icol ++) {
-			Formula_Result result;
 			Formula_run (0, icol, & result);
 			if (isundef (result. numericResult))
 				Melder_throw (U"Cannot put an undefined value into the tier.");
@@ -480,9 +501,8 @@ void RealTier_formula (RealTier me, const char32 *expression, Interpreter interp
 void RealTier_removePointsBelow (RealTier me, double level) {
 	for (integer ipoint = my points.size; ipoint > 0; ipoint --) {
 		RealPoint point = my points.at [ipoint];
-		if (point -> value < level) {
+		if (point -> value < level)
 			AnyTier_removePoint (me->asAnyTier(), ipoint);
-		}
 	}
 }
 

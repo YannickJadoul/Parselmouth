@@ -1,6 +1,6 @@
 /* praat_TextGrid_init.cpp
  *
- * Copyright (C) 1992-2012,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,11 +30,11 @@
 #undef iam
 #define iam iam_LOOP
 
-static const char32 *STRING_FROM_FREQUENCY_HZ = U"left Frequency range (Hz)";
-static const char32 *STRING_TO_FREQUENCY_HZ = U"right Frequency range (Hz)";
-static const char32 *STRING_TIER_NUMBER = U"Tier number";
-static const char32 *STRING_INTERVAL_NUMBER = U"Interval number";
-static const char32 *STRING_POINT_NUMBER = U"Point number";
+static const conststring32 STRING_FROM_FREQUENCY_HZ = U"left Frequency range (Hz)";
+static const conststring32 STRING_TO_FREQUENCY_HZ = U"right Frequency range (Hz)";
+static const conststring32 STRING_TIER_NUMBER = U"Tier number";
+static const conststring32 STRING_INTERVAL_NUMBER = U"Interval number";
+static const conststring32 STRING_POINT_NUMBER = U"Point number";
 
 // MARK: - ANYTIER (generic)
 
@@ -55,13 +55,13 @@ FORM (NEW_IntervalTier_downto_TableOfReal, U"IntervalTier: Down to TableOfReal",
 DO
 	CONVERT_EACH (IntervalTier)
 		autoTableOfReal result = IntervalTier_downto_TableOfReal (me, label);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_IntervalTier_downto_TableOfReal_any) {
 	CONVERT_EACH (IntervalTier)
 		autoTableOfReal result = IntervalTier_downto_TableOfReal_any (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_IntervalTier_getCentrePoints, U"IntervalTier: Get centre points", nullptr) {
@@ -109,7 +109,7 @@ FORM (NEW1_IntervalTier_PointProcess_startToCentre, U"From start to centre", U"I
 DO
 	CONVERT_TWO (IntervalTier, PointProcess)
 		autoPointProcess result = IntervalTier_PointProcess_startToCentre (me, you, phase);
-	CONVERT_TWO_END (my name, U"_", your name, U"_", Melder_iround (100.0 * phase));
+	CONVERT_TWO_END (my name.get(), U"_", your name.get(), U"_", Melder_iround (100.0 * phase));
 }
 
 FORM (NEW1_IntervalTier_PointProcess_endToCentre, U"From end to centre", U"IntervalTier & PointProcess: End to centre...") {
@@ -118,7 +118,7 @@ FORM (NEW1_IntervalTier_PointProcess_endToCentre, U"From end to centre", U"Inter
 DO
 	CONVERT_TWO (IntervalTier, PointProcess)
 		autoPointProcess result = IntervalTier_PointProcess_endToCentre (me, you, phase);
-	CONVERT_TWO_END (my name, U"_", your name, U"_", Melder_iround (100.0 * phase));
+	CONVERT_TWO_END (my name.get(), U"_", your name.get(), U"_", Melder_iround (100.0 * phase));
 }
 
 // MARK: - LABEL (obsolete)
@@ -126,7 +126,7 @@ DO
 DIRECT (NEW1_Label_Sound_to_TextGrid) {
 	CONVERT_TWO (Label, Sound)
 		autoTextGrid result = Label_Function_to_TextGrid (me, you);
-	CONVERT_TWO_END (your name)
+	CONVERT_TWO_END (your name.get())
 }
 
 DIRECT (HINT_Label_Sound_to_TextGrid) {
@@ -468,7 +468,7 @@ FORM (NEW1_Pitch_TextTier_to_PitchTier, U"Pitch & TextTier to PitchTier", U"Pitc
 DO
 	CONVERT_TWO (Pitch, TextTier)
 		autoPitchTier result = Pitch_AnyTier_to_PitchTier (me, you->asAnyTier(), unvoicedStrategy);
-	CONVERT_TWO_END (my name)
+	CONVERT_TWO_END (my name.get())
 }
 
 // MARK: - SOUND & TEXTGRID
@@ -578,45 +578,45 @@ FORM (WINDOW_SpellingChecker_viewAndEdit, U"Edit spelling checker", U"SpellingCh
 	SENTENCE (allowAllWordsEndingIn, U"Allow all words ending in", U"")
 OK
 	FIND_ONE (SpellingChecker)
-		SET_STRING (forbiddenStrings, my forbiddenStrings)
+		SET_STRING (forbiddenStrings, my forbiddenStrings.get())
 		SET_BOOLEAN (checkMatchingParentheses, my checkMatchingParentheses)
-		SET_STRING (separatingCharacters, my separatingCharacters)
+		SET_STRING (separatingCharacters, my separatingCharacters.get())
 		SET_BOOLEAN (allowAllParenthesized, my allowAllParenthesized)
 		SET_BOOLEAN (allowAllNames, my allowAllNames)
-		SET_STRING (namePrefixes, my namePrefixes)
+		SET_STRING (namePrefixes, my namePrefixes.get())
 		SET_BOOLEAN (allowAllAbbreviations, my allowAllAbbreviations)
 		SET_BOOLEAN (allowCapsSentenceInitially, my allowCapsSentenceInitially)
 		SET_BOOLEAN (allowCapsAfterColon, my allowCapsAfterColon)
-		SET_STRING (allowAllWordsContaining, my allowAllWordsContaining)
-		SET_STRING (allowAllWordsStartingWith, my allowAllWordsStartingWith)
-		SET_STRING (allowAllWordsEndingIn, my allowAllWordsEndingIn)
+		SET_STRING (allowAllWordsContaining, my allowAllWordsContaining.get())
+		SET_STRING (allowAllWordsStartingWith, my allowAllWordsStartingWith.get())
+		SET_STRING (allowAllWordsEndingIn, my allowAllWordsEndingIn.get())
 DO
 	MODIFY_EACH (SpellingChecker)
-		Melder_free (my forbiddenStrings); my forbiddenStrings = Melder_dup_f (forbiddenStrings);
+		my forbiddenStrings = Melder_dup (forbiddenStrings);
 		my checkMatchingParentheses = checkMatchingParentheses;
-		Melder_free (my separatingCharacters); my separatingCharacters = Melder_dup_f (separatingCharacters);
+		my separatingCharacters = Melder_dup (separatingCharacters);
 		my allowAllParenthesized = allowAllParenthesized;
 		my allowAllNames = allowAllNames;
-		Melder_free (my namePrefixes); my namePrefixes = Melder_dup_f (namePrefixes);
+		my namePrefixes = Melder_dup (namePrefixes);
 		my allowAllAbbreviations = allowAllAbbreviations;
 		my allowCapsSentenceInitially = allowCapsSentenceInitially;
 		my allowCapsAfterColon = allowCapsAfterColon;
-		Melder_free (my allowAllWordsContaining); my allowAllWordsContaining = Melder_dup_f (allowAllWordsContaining);
-		Melder_free (my allowAllWordsStartingWith); my allowAllWordsStartingWith = Melder_dup_f (allowAllWordsStartingWith);
-		Melder_free (my allowAllWordsEndingIn); my allowAllWordsEndingIn = Melder_dup_f (allowAllWordsEndingIn);
+		my allowAllWordsContaining = Melder_dup (allowAllWordsContaining);
+		my allowAllWordsStartingWith = Melder_dup (allowAllWordsStartingWith);
+		my allowAllWordsEndingIn = Melder_dup (allowAllWordsEndingIn);
 	MODIFY_EACH_END
 }
 
 DIRECT (NEW_SpellingChecker_extractWordList) {
 	CONVERT_EACH (SpellingChecker)
 		autoWordList result = SpellingChecker_extractWordList (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_SpellingChecker_extractUserDictionary) {
 	CONVERT_EACH (SpellingChecker)
 		autoStringSet result = SpellingChecker_extractUserDictionary (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (BOOLEAN_SpellingChecker_isWordAllowed, U"Is word allowed?", U"SpellingChecker") {
@@ -638,7 +638,7 @@ DO
 			Melder_throw (U"Your starting character should be 0 or positive.");
 		if (startingCharacter > (int) str32len (sentence))
 			Melder_throw (U"Your starting character should not exceed the end of the sentence.");
-		const char32 *result = SpellingChecker_nextNotAllowedWord (me, sentence, & startingCharacter);
+		conststring32 result = SpellingChecker_nextNotAllowedWord (me, sentence, & startingCharacter);
 	STRING_ONE_END
 }
 
@@ -832,8 +832,21 @@ DO
 	CONVERT_EACH (TextGrid)
 		autoTable result = TextGrid_downto_Table (me, includeLineNumber, timeDecimals,
 			includeTierNames, includeEmptyIntervals);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
+
+FORM (NEW_TextGrid_tabulateOccurrences, U"TextGrid: Tabulate occurrences", nullptr) {
+	NUMVEC (searchTiers, U"Search tiers:", U"{ 1, 2 }")
+	OPTIONMENU_ENUM (listEveryLabelThat___, U"List every label that...", kMelder_string, DEFAULT)
+	SENTENCE (___theText, U"...the text", U"hello")
+	BOOLEAN (caseSensitive, U"Case-sensitive", false)
+	OK
+DO
+	CONVERT_EACH (TextGrid)
+		autoTable result = TextGrid_tabulateOccurrences (me, searchTiers, listEveryLabelThat___, ___theText, caseSensitive);
+	CONVERT_EACH_END (my name.get(), U"_", ___theText)
+}
+
 
 // MARK: Query
 
@@ -860,7 +873,7 @@ FORM (STRING_TextGrid_getTierName, U"TextGrid: Get tier name", nullptr) {
 DO
 	STRING_ONE (TextGrid)
 		Function tier = pr_TextGrid_peekTier (me, tierNumber);
-		const char32 *result = tier -> name;
+		conststring32 result = tier -> name.get();
 	STRING_ONE_END
 }
 
@@ -927,7 +940,7 @@ FORM (STRING_TextGrid_getLabelOfInterval, U"TextGrid: Get label of interval", nu
 DO
 	STRING_ONE (TextGrid)
 		TextInterval interval = pr_TextGrid_peekInterval (me, tierNumber, intervalNumber);
-		const char32 *result = interval -> text;
+		conststring32 result = interval -> text.get();
 	STRING_ONE_END
 }
 
@@ -1038,7 +1051,7 @@ FORM (STRING_TextGrid_getLabelOfPoint, U"TextGrid: Get label of point", nullptr)
 DO
 	STRING_ONE (TextGrid)
 		TextPoint point = pr_TextGrid_peekPoint (me, tierNumber, pointNumber);
-		const char32 *result = point -> mark;
+		conststring32 result = point -> mark.get();
 	STRING_ONE_END
 }
 
@@ -1082,7 +1095,7 @@ FORM (INTEGER_TextGrid_countPointsWhere, U"Count points", U"TextGrid: Count poin
 	OK
 DO
 	NUMBER_ONE (TextGrid)
-		integer result = TextGrid_countPointsWhere (me, tierNumber, (kMelder_string) countPointsWhoseLabel___, ___theText);
+		integer result = TextGrid_countPointsWhere (me, tierNumber, countPointsWhoseLabel___, ___theText);
 	NUMBER_ONE_END (U" points containing ", ___theText);
 }
 
@@ -1311,7 +1324,7 @@ DO
 		Function tier = pr_TextGrid_peekTier (me, tierNumber);
 		autoTextGrid result = TextGrid_createWithoutTiers (1e30, -1e30);
 		TextGrid_addTier_copy (result.get(), tier);   // no transfer of tier ownership, because a copy is made
-	CONVERT_EACH_END (tier -> name)
+	CONVERT_EACH_END (tier -> name.get())
 }
 
 FORM (NEW1_TextGrid_extractTier, U"TextGrid: Extract tier", nullptr) {
@@ -1321,7 +1334,7 @@ DO
 	CONVERT_EACH (TextGrid)
 		Function tier = pr_TextGrid_peekTier (me, tierNumber);
 		autoFunction result = Data_copy (tier);
-	CONVERT_EACH_END (tier -> name)
+	CONVERT_EACH_END (tier -> name.get())
 }
 
 FORM (NEW_TextGrid_extractPart, U"TextGrid: Extract part", nullptr) {
@@ -1332,7 +1345,7 @@ FORM (NEW_TextGrid_extractPart, U"TextGrid: Extract part", nullptr) {
 DO
 	CONVERT_EACH (TextGrid)
 		autoTextGrid result = TextGrid_extractPart (me, fromTime, toTime, preserveTimes);
-	CONVERT_EACH_END (my name, U"_part")
+	CONVERT_EACH_END (my name.get(), U"_part")
 }
 
 FORM (NEW_TextGrid_getStartingPoints, U"TextGrid: Get starting points", nullptr) {
@@ -1343,7 +1356,7 @@ FORM (NEW_TextGrid_getStartingPoints, U"TextGrid: Get starting points", nullptr)
 DO
 	CONVERT_EACH (TextGrid)
 		autoPointProcess result = TextGrid_getStartingPoints (me, tierNumber, (kMelder_string) getStartingPointsWhoseLabel___, ___theText);
-	CONVERT_EACH_END (my name, U"_", ___theText)
+	CONVERT_EACH_END (my name.get(), U"_", ___theText)
 }
 
 FORM (NEW_TextGrid_getEndPoints, U"TextGrid: Get end points", nullptr) {
@@ -1354,7 +1367,7 @@ FORM (NEW_TextGrid_getEndPoints, U"TextGrid: Get end points", nullptr) {
 DO
 	CONVERT_EACH (TextGrid)
 		autoPointProcess result = TextGrid_getEndPoints (me, tierNumber, (kMelder_string) getEndPointsWhoseLabel___, ___theText);
-	CONVERT_EACH_END (my name, U"_", ___theText)
+	CONVERT_EACH_END (my name.get(), U"_", ___theText)
 }
 
 FORM (NEW_TextGrid_getCentrePoints, U"TextGrid: Get centre points", nullptr) {
@@ -1365,7 +1378,7 @@ FORM (NEW_TextGrid_getCentrePoints, U"TextGrid: Get centre points", nullptr) {
 DO
 	CONVERT_EACH (TextGrid)
 		autoPointProcess result = TextGrid_getCentrePoints (me, tierNumber, (kMelder_string) getCentrePointsWhoseLabel___, ___theText);
-	CONVERT_EACH_END (my name, U"_", ___theText)
+	CONVERT_EACH_END (my name.get(), U"_", ___theText)
 }
 
 FORM (NEW_TextGrid_getPoints, U"Get points", nullptr) {
@@ -1376,7 +1389,7 @@ FORM (NEW_TextGrid_getPoints, U"Get points", nullptr) {
 DO
 	CONVERT_EACH (TextGrid)
 		autoPointProcess result = TextGrid_getPoints (me, tierNumber, (kMelder_string) getPointsWhoseLabel___, ___theText);
-	CONVERT_EACH_END (my name, U"_", ___theText)
+	CONVERT_EACH_END (my name.get(), U"_", ___theText)
 }
 
 FORM (NEW_TextGrid_getPoints_preceded, U"Get points (preceded)", nullptr) {
@@ -1390,7 +1403,7 @@ DO
 	CONVERT_EACH (TextGrid)
 		autoPointProcess result = TextGrid_getPoints_preceded (me, tierNumber,
 			(kMelder_string) getPointsWhoseLabel___, ___theText, (kMelder_string) ___precededByALabelThat___, ____theText);
-	CONVERT_EACH_END (my name, U"_", ___theText)
+	CONVERT_EACH_END (my name.get(), U"_", ___theText)
 }
 
 FORM (NEW_TextGrid_getPoints_followed, U"Get points (followed)", nullptr) {
@@ -1404,7 +1417,7 @@ DO
 	CONVERT_EACH (TextGrid)
 		autoPointProcess result = TextGrid_getPoints_followed (me, tierNumber,
 			(kMelder_string) getPointsWhoseLabel___, ___theText, (kMelder_string) ___followedByALabelThat___, ____theText);
-	CONVERT_EACH_END (my name, U"_", ___theText)
+	CONVERT_EACH_END (my name.get(), U"_", ___theText)
 }
 
 // MARK: Synthesize
@@ -1427,14 +1440,14 @@ DIRECT (NEW1_TextGrid_IntervalTier_append) {
 	CONVERT_TWO (TextGrid, IntervalTier)
 		autoTextGrid result = Data_copy (me);
 		TextGrid_addTier_copy (result.get(), you);
-	CONVERT_TWO_END (my name)
+	CONVERT_TWO_END (my name.get())
 }
 
 DIRECT (NEW1_TextGrid_TextTier_append) {
 	CONVERT_TWO (TextGrid, TextTier)
 		autoTextGrid result = Data_copy (me);
 		TextGrid_addTier_copy (result.get(), you);
-	CONVERT_TWO_END (my name)
+	CONVERT_TWO_END (my name.get())
 }
 
 // MARK: - TEXTGRID & LONGSOUND
@@ -1460,7 +1473,7 @@ DO
 DIRECT (NEW_TextTier_downto_PointProcess) {
 	CONVERT_EACH (TextTier)
 		autoPointProcess result = AnyTier_downto_PointProcess (me->asAnyTier());
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_TextTier_downto_TableOfReal, U"TextTier: Down to TableOfReal", nullptr) {
@@ -1469,13 +1482,13 @@ FORM (NEW_TextTier_downto_TableOfReal, U"TextTier: Down to TableOfReal", nullptr
 DO
 	CONVERT_EACH (TextTier)
 		autoTableOfReal result = TextTier_downto_TableOfReal (me, label);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_TextTier_downto_TableOfReal_any) {
 	CONVERT_EACH (TextTier)
 		autoTableOfReal result = TextTier_downto_TableOfReal_any (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (STRING_TextTier_getLabelOfPoint, U"Get label of point", nullptr) {
@@ -1485,7 +1498,7 @@ DO
 	STRING_ONE (TextTier)
 		if (pointNumber > my points.size) Melder_throw (U"No such point.");
 		TextPoint point = my points.at [pointNumber];
-		const char32 *result = point -> mark;
+		conststring32 result = point -> mark.get();
 	STRING_ONE_END
 }
 
@@ -1516,13 +1529,13 @@ DO
 DIRECT (NEW_WordList_to_Strings) {
 	CONVERT_EACH (WordList)
 		autoStrings result = WordList_to_Strings (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_WordList_upto_SpellingChecker) {
 	CONVERT_EACH (WordList)
 		autoSpellingChecker result = WordList_upto_SpellingChecker (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 /***** buttons *****/
@@ -1569,8 +1582,10 @@ void praat_uvafon_TextGrid_init () {
 	praat_addAction1 (classTextGrid, 0, U"Draw...", nullptr, 1, GRAPHICS_TextGrid_draw);
 	praat_addAction1 (classTextGrid, 1, U"Draw with Sound?", nullptr, 1, HINT_TextGrid_Sound_draw);
 	praat_addAction1 (classTextGrid, 1, U"Draw with Pitch?", nullptr, 1, HINT_TextGrid_Pitch_draw);
-	praat_addAction1 (classTextGrid, 1, U"List...", nullptr, 0, LIST_TextGrid_list);
-	praat_addAction1 (classTextGrid, 0, U"Down to Table...", nullptr, 0, NEW_TextGrid_downto_Table);
+	praat_addAction1 (classTextGrid, 1, U"Tabulate -", nullptr, 0, nullptr);
+		praat_addAction1 (classTextGrid, 0, U"Down to Table...", nullptr, 1, NEW_TextGrid_downto_Table);
+		praat_addAction1 (classTextGrid, 1, U"List...", nullptr, 1, LIST_TextGrid_list);
+		praat_addAction1 (classTextGrid, 0, U"Tabulate occurrences...", nullptr, 1, NEW_TextGrid_tabulateOccurrences);
 	praat_addAction1 (classTextGrid, 0, U"Query -", nullptr, 0, nullptr);
 		praat_TimeFunction_query_init (classTextGrid);
 		praat_addAction1 (classTextGrid, 1, U"-- query textgrid --", nullptr, 1, nullptr);

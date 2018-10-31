@@ -2,7 +2,7 @@
 #define _SSCP_h_
 /* SSCP.h
  *
- * Copyright (C) 1993-2017 David Weenink
+ * Copyright (C) 1993-2018 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ void SSCP_init (SSCP me, integer dimension, integer storage);
 
 autoSSCP SSCP_create (integer dimension);
 
-void SSCP_drawTwoDimensionalEllipse_inside (SSCP me, Graphics g, double scale, const char32 *label, int fontSize);
+void SSCP_drawTwoDimensionalEllipse_inside (SSCP me, Graphics g, double scale, conststring32 label, int fontSize);
 
 double SSCP_getEllipseScalefactor (SSCP me, double scale, bool confidence);
 
@@ -103,7 +103,7 @@ autoTableOfReal SSCP_extractCentroid (SSCP me);
 autoTableOfReal Covariance_to_TableOfReal_randomSampling (Covariance me, integer numberOfData);
 /* Generate a table with data based on the covariance matrix */
 
-void Covariance_PCA_generateOneVector (Covariance me, PCA thee, double *vec, double *buf);
+void Covariance_PCA_generateOneVector_inline (Covariance me, PCA thee, VEC vec, VEC buf);
 /*
 	A convenience function to avoid the calculation of the PCA each time we want to generate a random vector
 	The PCA must be the result of a previous SSCP_to_PCA call !
@@ -128,7 +128,7 @@ autoCCA SSCP_to_CCA (SSCP me, integer ny);
 
 autoCovariance Covariance_create (integer dimension);
 
-autoCovariance Covariance_createSimple (char32 *covars, char32 *centroid, integer numberOfObservations);
+autoCovariance Covariance_createSimple (conststring32 covars, conststring32 centroid, integer numberOfObservations);
 
 autoCovariance Covariance_create_reduceStorage (integer dimension, integer storage);
 /*
@@ -143,7 +143,7 @@ autoCovariance Covariance_create_reduceStorage (integer dimension, integer stora
 
 autoCorrelation Correlation_create (integer dimension);
 
-autoCorrelation Correlation_createSimple (char32 *s_correlations, char32 *s_centroid, integer numberOfObservations);
+autoCorrelation Correlation_createSimple (conststring32 s_correlations, conststring32 s_centroid, integer numberOfObservations);
 
 autoTableOfReal Correlation_confidenceIntervals (Correlation me, double confidenceLevel, integer numberOfTests, int method);
 /*
@@ -159,13 +159,13 @@ autoTableOfReal Correlation_confidenceIntervals (Correlation me, double confiden
 */
 
 /* Precondition ||vector|| = 1 */
-void Covariance_getMarginalDensityParameters (Covariance me, double *vector, double *mu, double *stdev);
+void Covariance_getMarginalDensityParameters (Covariance me, VEC vector, double *p_mu, double *p_stdev);
 
-double Covariance_getMarginalProbabilityAtPosition (Covariance me, double vector[], double x);
+double Covariance_getMarginalProbabilityAtPosition (Covariance me, VEC vector, double x);
 
-double Covariance_getProbabilityAtPosition_string (Covariance me, char32 *xpos);
+double Covariance_getProbabilityAtPosition_string (Covariance me, conststring32 xpos);
 
-double Covariance_getProbabilityAtPosition (Covariance me, double x[]);
+double Covariance_getProbabilityAtPosition (Covariance me, VEC x);
 /* evaluate the pdf(x,mu,Sigma) at x */
 
 autoCovariance SSCP_to_Covariance (SSCP me, integer numberOfConstraints);
@@ -227,7 +227,7 @@ autoSSCPList SSCPList_extractTwoDimensions (SSCPList me, integer d1, integer d2)
 /* For inheritors */
 
 void SSCPList_drawConcentrationEllipses (SSCPList me, Graphics g, double scale,
-	bool confidence, const char32 *label, integer d1, integer d2, double xmin, double xmax,
+	bool confidence, conststring32 label, integer d1, integer d2, double xmin, double xmax,
 	double ymin, double ymax, int fontSize, bool garnish);
 
 void SSCPList_getEllipsesBoundingBoxCoordinates (SSCPList me, double scale, bool confidence,

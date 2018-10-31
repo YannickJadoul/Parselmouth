@@ -71,14 +71,14 @@ double Cochleagram_difference (Cochleagram me, Cochleagram thee, double tmin, do
 	try {
 		if (my nx != thy nx || my dx != thy dx || my x1 != thy x1)
 			Melder_throw (U"Unequal time samplings.");
-		if (my ny != thy ny)
-			Melder_throw (U"Unequal numbers of frequencies.");
+		Melder_require (my ny == thy ny,
+			U"Unequal numbers of frequencies.");
 		if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
 		integer itmin, itmax;
 		integer nt = Matrix_getWindowSamplesX (me, tmin, tmax, & itmin, & itmax);
 		if (nt == 0)
 			Melder_throw (U"Window too short.");
-		real80 diff = 0.0;
+		longdouble diff = 0.0;
 		for (integer itime = itmin; itime <= itmax; itime ++) {
 			for (integer ifreq = 1; ifreq <= my ny; ifreq ++) {
 				double d = my z [ifreq] [itime] - thy z [ifreq] [itime];
@@ -86,7 +86,7 @@ double Cochleagram_difference (Cochleagram me, Cochleagram thee, double tmin, do
 			}
 		}
 		diff /= nt * my ny;
-		return sqrt ((real) diff);
+		return sqrt ((double) diff);
 	} catch (MelderError) {
 		Melder_throw (me, U" & ", thee, U": difference not computed.");
 	}

@@ -68,7 +68,7 @@ struct CollectionOf : structDaata {
 	CollectionOf () {
 		extern ClassInfo classCollection;
 		our classInfo = classCollection;
-		our name = nullptr;
+		our name. reset();
 	}
 	virtual ~ CollectionOf () {
 		/*
@@ -197,7 +197,7 @@ struct CollectionOf : structDaata {
 		our size ++;
 		for (integer i = our size; i > pos; i --) our at [i] = our at [i - 1];
 	}
-	T* _insertItem_move (_Thing_auto <T> data, integer pos) {
+	T* _insertItem_move (autoSomeThing <T> data, integer pos) {
 		our _initializeOwnership (true);
 		our _makeRoomForOneMoreItem (pos);
 		return our at [pos] = data.releaseToAmbiguousOwner();
@@ -238,12 +238,11 @@ struct CollectionOf : structDaata {
 
 		You transfer ownership of 'thing' to the Collection.
 
-		You cannot call both
-		Collection_addItem_move() and Collection_addItem_ref() on the same Collection.
+		You cannot call both addItem_move() and addItem_ref() on the same Collection.
 		For a SortedSet, this may mean that the Collection immediately disposes of 'item',
 		if that item already occurred in the Collection.
 	*/
-	T* addItem_move (_Thing_auto<T> thing) {
+	T* addItem_move (autoSomeThing<T> thing) {
 		T* thingRef = thing.get();
 		integer index = our _v_position (thingRef);
 		if (index != 0) {
@@ -286,11 +285,13 @@ struct CollectionOf : structDaata {
 			my size == my old size - 1;
 			my _capacity not changed;
 	*/
-	_Thing_auto<T> subtractItem_move (integer pos) {
+	autoSomeThing<T> subtractItem_move (integer pos) {
 		Melder_assert (pos >= 1 && pos <= our size);
 		Melder_assert (our _ownItems);
-		_Thing_auto<T> result (our at [pos]);
-		for (integer i = pos; i < our size; i ++) our at [i] = our at [i + 1];
+		autoSomeThing<T> result;
+		result. adoptFromAmbiguousOwner (our at [pos]);
+		for (integer i = pos; i < our size; i ++)
+			our at [i] = our at [i + 1];
 		our size --;
 		return result;
 	}
@@ -298,7 +299,8 @@ struct CollectionOf : structDaata {
 		Melder_assert (pos >= 1 && pos <= our size);
 		Melder_assert (! our _ownItems);
 		T* result = our at [pos];
-		for (integer i = pos; i < our size; i ++) our at [i] = our at [i + 1];
+		for (integer i = pos; i < our size; i ++)
+			our at [i] = our at [i + 1];
 		our size --;
 		return result;
 	}
@@ -307,7 +309,7 @@ struct CollectionOf : structDaata {
 		Melder_assert (! our _ownItems);
 		our at [pos] = data;
 	}
-	T* replaceItem_move (_Thing_auto <T> data, integer pos) {
+	T* replaceItem_move (autoSomeThing <T> data, integer pos) {
 		Melder_assert (pos >= 1 && pos <= our size);
 		Melder_assert (our _ownItems);
 		_Thing_forget (our at [pos]);
@@ -325,7 +327,8 @@ struct CollectionOf : structDaata {
 	void removeItem (integer pos) {
 		Melder_assert (pos >= 1 && pos <= our size);
 		if (our _ownItems) _Thing_forget (our at [pos]);
-		for (integer i = pos; i < our size; i ++) our at [i] = our at [i + 1];
+		for (integer i = pos; i < our size; i ++)
+			our at [i] = our at [i + 1];
 		our size --;
 	}
 
@@ -337,9 +340,8 @@ struct CollectionOf : structDaata {
 	*/
 	void removeAllItems () {
 		if (our _ownItems) {
-			for (integer i = 1; i <= our size; i ++) {
+			for (integer i = 1; i <= our size; i ++)
 				_Thing_forget (our at [i]);
-			}
 		}
 		our size = 0;
 	}
@@ -477,11 +479,12 @@ struct CollectionOf : structDaata {
 #define _Collection_declare(klas,genericClass,itemClass) \
 	typedef genericClass<struct##itemClass> struct##klas; \
 	typedef genericClass<struct##itemClass> *klas; \
-	typedef _Thing_auto <genericClass<struct##itemClass>> auto##klas; \
+	typedef autoSomeThing <genericClass<struct##itemClass>> auto##klas; \
 	extern struct structClassInfo theClassInfo_##klas; \
 	extern ClassInfo class##klas; \
 	static inline auto##klas klas##_create () { \
-		auto##klas me (new genericClass<struct##itemClass>); \
+		auto##klas me; \
+		me. adoptFromAmbiguousOwner (new genericClass<struct##itemClass>); \
 		theTotalNumberOfThings += 1; \
 		return me; \
 	}
@@ -509,7 +512,7 @@ struct OrderedOf : CollectionOf <T   /*Melder_ENABLE_IF_ISA (T, structDaata)*/> 
 			If 'position' is less than 1 or greater than the current 'size',
 			insert the item at the end.
 	*/
-	T* addItemAtPosition_move (_Thing_auto <T> data, integer position) {
+	T* addItemAtPosition_move (autoSomeThing <T> data, integer position) {
 		Melder_assert (data);
 		if (position < 1 || position > our size)
 			position = our size + 1;
@@ -552,7 +555,7 @@ struct SortedOf : CollectionOf <T> {
 		Warning:
 			this leaves the collection unsorted; follow by Sorted::sort ().
 	*/
-	void addItem_unsorted_move (_Thing_auto <T> data) {
+	void addItem_unsorted_move (autoSomeThing <T> data) {
 		our _insertItem_move (data.move(), our size + 1);
 	}
 	/* Call this after a number of calls to Sorted_addItem_unsorted (). */
@@ -647,18 +650,18 @@ struct SortedSetOf : SortedOf <T> {
 				/*
 				 * Move item 'ifrom' to 'n'.
 				 */
+				Melder_assert (ifrom >= n);
 				if (ifrom != n) {
-					if (our _ownItems) {
-						_Thing_forget (our at [n]);
-					}
 					our at [n] = our at [ifrom];   // surface copy
 					our at [ifrom] = nullptr;   // undangle
 				}
 				/*
 				 * Purge items from 'ifrom'+1 to 'ito'.
 				 */
-				for (integer j = ifrom + 1; j <= ito; j ++) {
-					_Thing_forget (our at [j]);
+				if (our _ownItems) {
+					for (integer j = ifrom + 1; j <= ito; j ++) {
+						_Thing_forget (our at [j]);
+					}
 				}
 				ifrom = ito + 1;
 			}
@@ -719,28 +722,28 @@ struct SortedSetOfStringOf : SortedSetOf <T> {
 	}
 	SortedSetOfStringOf<T>&& move () noexcept { return static_cast <SortedSetOfStringOf<T>&&> (*this); }
 	static int s_compareHook (SimpleString me, SimpleString thee) noexcept {
-		return str32cmp (my string, thy string);
+		return str32cmp (my string.get(), thy string.get());
 	}
 	typename SortedOf<T>::CompareHook v_getCompareHook ()
 		override { return (typename SortedOf<T>::CompareHook) our s_compareHook; }
 
-	integer lookUp (const char32 *string) {
+	integer lookUp (conststring32 string) {
 		integer numberOfItems = our size;
 		integer left = 1, right = numberOfItems;
 		int atStart, atEnd;
 		if (numberOfItems == 0) return 0;
 
-		atEnd = str32cmp (string, our at [numberOfItems] -> string);
+		atEnd = str32cmp (string, our at [numberOfItems] -> string.get());
 		if (atEnd > 0) return 0;
 		if (atEnd == 0) return numberOfItems;
 
-		atStart = str32cmp (string, our at [1] -> string);
+		atStart = str32cmp (string, our at [1] -> string.get());
 		if (atStart < 0) return 0;
 		if (atStart == 0) return 1;
 
 		while (left < right - 1) {
 			integer mid = (left + right) / 2;
-			int here = str32cmp (string, our at [mid] -> string);
+			int here = str32cmp (string, our at [mid] -> string.get());
 			if (here == 0) return mid;
 			if (here > 0) left = mid; else right = mid;
 		}
@@ -748,32 +751,6 @@ struct SortedSetOfStringOf : SortedSetOf <T> {
 		return 0;
 	}
 
-	/**
-		Add a SimpleString to the set.
-
-		@note one can create a class that specializes SortedSetOfStringOf
-		with an element class <i>derived</i> from SimpleString.
-		Trying to call @c addString_copy() for an object of that class
-		would lead to a compile-time type mismatch error,
-		because a SimpleString cannot be inserted where a derived object is expected.
-		This is correct behaviour, because a SimpleString object has no place
-		in a homogeneous set of derived-class objects.
-
-		@param string   a C-string
-	*/
-	void addString_copy (const char32 *string) {
-		static autoSimpleString simp;
-		if (! simp) {
-			simp = SimpleString_create (U"");
-			Melder_free (simp -> string);
-		}
-		simp -> string = (char32 *) string;   // reference copy
-		integer index = our _v_position (simp.get());
-		simp -> string = nullptr;   // otherwise Praat will crash at shutdown
-		if (index == 0) return;   // OK: already there: do not add
-		autoSimpleString newSimp = SimpleString_create (string);
-		our _insertItem_move (newSimp.move(), index);
-	}
 };
 
 
@@ -786,17 +763,21 @@ struct SortedSetOfStringOf : SortedSetOf <T> {
 
 #pragma mark class DaataList
 
-Collection_define (DaataList, OrderedOf, Daata) {
+Collection_define (DaataList, OrderedOf, /* generic */ Daata) {
 };
 
 #pragma mark class StringList
 
-Collection_define (StringList, OrderedOf, SimpleString) {
+Collection_define (StringList, OrderedOf, /* final */ SimpleString) {
 };
 
 #pragma mark class StringSet
 
-Collection_define (StringSet, SortedSetOfStringOf, SimpleString) {
+Collection_define (StringSet, SortedSetOfStringOf, /* final */ SimpleString) {
+	void addString_copy (conststring32 string) {
+		autoSimpleString newSimp = SimpleString_create (string);
+		our addItem_move (newSimp.move());
+	}
 };
 
 /* End of file Collection.h */

@@ -17,9 +17,9 @@
  */
 
 #include <ctype.h>
-#include "UnicodeData.h"
+#include "../kar/UnicodeData.h"
 #include "GraphicsP.h"
-#include "longchar.h"
+#include "../kar/longchar.h"
 #include "Printer.h"
 
 extern const char * ipaSerifRegularPS [];
@@ -515,7 +515,7 @@ static void charSize (void *void_me, _Graphics_widechar *lc) {
 }
 
 static void charDraw (void *void_me, int xDC, int yDC, _Graphics_widechar *lc,
-	const char32 *codes, int nchars, int width)
+	const char32 codes [], int nchars, int width)
 {
 	iam (Graphics);
 	//Melder_casual (U"nchars ", nchars, U" first ", (int) lc->kar, U" ", (char32) lc -> kar, U" rightToLeft ", lc->rightToLeft);
@@ -540,7 +540,7 @@ static void charDraw (void *void_me, int xDC, int yDC, _Graphics_widechar *lc,
 					my d_printf (my d_file, "[1 0 0.25 1 0 0] concat 0 0 M\n");
 			}
 			my d_printf (my d_file, "(");
-			const char32 *p = codes;
+			const char32 *p = & codes [0];
 			while (*p) {
 				if (*p == U'(' || *p == U')' || *p == U'\\') {
 					my d_printf (my d_file, "\\%c", (unsigned char) *p);
@@ -599,7 +599,7 @@ static void charDraw (void *void_me, int xDC, int yDC, _Graphics_widechar *lc,
 			return;
 		#elif gdi
 			int font = lc -> font.integer_;
-			WCHAR *codesW = Melder_peek32toW (codes);
+			conststringW codesW = Melder_peek32toW (codes);
 			if (my duringXor) {
 				int descent = (1.0/216) * my fontSize * my resolution;
 				int ascent = (1.0/72) * my fontSize * my resolution;
@@ -622,7 +622,7 @@ static void charDraw (void *void_me, int xDC, int yDC, _Graphics_widechar *lc,
 				Rectangle (dc, 0, top, width, bottom);
 				SelectFont (dc, fonts [(int) my resolutionNumber] [font] [lc -> size] [lc -> style]);
 				SetTextColor (dc, my d_winForegroundColour);
-				TextOutW (dc, 0, baseline, codesW, str16len ((const char16 *) codesW));
+				TextOutW (dc, 0, baseline, codesW, str16len ((conststring16) codesW));
 				BitBlt (my d_gdiGraphicsContext, xDC, yDC - ascent, width, bottom - top, dc, 0, top, SRCINVERT);
 				return;
 			}
@@ -826,7 +826,7 @@ static void exitText (void *void_me) {
 static integer bufferSize;
 static _Graphics_widechar *theWidechar;
 static char32 *charCodes;
-static int initBuffer (const char32 *txt) {
+static int initBuffer (conststring32 txt) {
 	try {
 		integer sizeNeeded = str32len (txt) + 1;
 		if (sizeNeeded > bufferSize) {
@@ -1215,13 +1215,14 @@ static void drawCells (Graphics me, double xWC, double yWC, _Graphics_widechar l
 		charSizes (me, plc, false);
 		drawOneCell (me, xWC * my scaleX + my deltaX, yWC * my scaleY + my deltaY, plc);
 		while (plc -> kar != U'\0' && plc -> kar != U'\t') plc ++;   // find end of cell
-		if (plc -> kar == U'\0') break;   // end of text?
+		if (plc -> kar == U'\0')   // end of text?
+			break;
 		if (plc -> kar == U'\t') {   // go to next cell
 			xWC += ( tabs [itab]. alignment == Graphics_LEFT ? tabs [itab]. width :
-			       tabs [itab]. alignment == Graphics_CENTRE ? 0.5 * tabs [itab]. width : 0 ) * my fontSize / 12.0;
+				tabs [itab]. alignment == Graphics_CENTRE ? 0.5 * tabs [itab]. width : 0 ) * my fontSize / 12.0;
 			itab ++;
 			xWC += ( tabs [itab]. alignment == Graphics_LEFT ? 0 :
-			       tabs [itab]. alignment == Graphics_CENTRE ? 0.5 * tabs [itab]. width : tabs [itab]. width ) * my fontSize / 12.0;
+				tabs [itab]. alignment == Graphics_CENTRE ? 0.5 * tabs [itab]. width : tabs [itab]. width ) * my fontSize / 12.0;
 			my horizontalTextAlignment = (int) tabs [itab]. alignment;
 			my wrapWidth = tabs [itab]. width * my fontSize / 12.0;
 		}
@@ -1230,9 +1231,9 @@ static void drawCells (Graphics me, double xWC, double yWC, _Graphics_widechar l
 	my wrapWidth = saveWrapWidth;
 }
 
-static void parseTextIntoCellsLinesRuns (Graphics me, const char32 *txt /* cattable */, _Graphics_widechar a_widechar []) {
+static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* cattable */, _Graphics_widechar a_widechar []) {
 	char32 kar;
-	const char32 *in = txt;
+	const char32 *in = & txt [0];
 	int nquote = 0;
 	_Graphics_widechar *out = & a_widechar [0];
 	bool charSuperscript = false, charSubscript = false, charItalic = false, charBold = false;
@@ -1434,7 +1435,7 @@ static void parseTextIntoCellsLinesRuns (Graphics me, const char32 *txt /* catta
 	out -> rightToLeft = false;
 }
 
-double Graphics_textWidth (Graphics me, const char32 *txt) {
+double Graphics_textWidth (Graphics me, conststring32 txt) {
 	if (! initBuffer (txt)) return 0.0;
 	initText (me);
 	parseTextIntoCellsLinesRuns (me, txt, theWidechar);
@@ -1444,7 +1445,7 @@ double Graphics_textWidth (Graphics me, const char32 *txt) {
 	return width / my scaleX;
 }
 
-void Graphics_textRect (Graphics me, double x1, double x2, double y1, double y2, const char32 *txt) {
+void Graphics_textRect (Graphics me, double x1, double x2, double y1, double y2, conststring32 txt) {
 	_Graphics_widechar *plc, *startOfLine;
 	double width = 0.0, lineHeight = (1.1 / 72) * my fontSize * my resolution;
 	integer x1DC = x1 * my scaleX + my deltaX + 2, x2DC = x2 * my scaleX + my deltaX - 2;
@@ -1502,7 +1503,7 @@ void Graphics_textRect (Graphics me, double x1, double x2, double y1, double y2,
 	exitText (me);
 }
 
-static void _Graphics_text (Graphics me, double xWC, double yWC, const char32 *txt) {
+void Graphics_text (Graphics me, double xWC, double yWC, conststring32 txt) {
 	if (my wrapWidth == 0.0 && str32chr (txt, U'\n') && my textRotation == 0.0) {
 		double lineSpacingWC = (1.2/72.0) * my fontSize * my resolution / fabs (my scaleY);
 		integer numberOfLines = 1;
@@ -1536,68 +1537,10 @@ static void _Graphics_text (Graphics me, double xWC, double yWC, const char32 *t
 	drawCells (me, xWC, yWC, theWidechar);
 	exitText (me);
 	if (my recording) {
-		char *txt_utf8 = Melder_peek32to8 (txt);
+		conststring8 txt_utf8 = Melder_peek32to8 (txt);
 		int length = strlen (txt_utf8) / sizeof (double) + 1;
 		op (TEXT, 3 + length); put (xWC); put (yWC); sput (txt_utf8, length)
 	}
-}
-
-static MelderString theGraphicsTextBuffer { };
-void Graphics_text (Graphics me, double x, double y, Melder_1_ARG) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_1_ARG_CALL);   // even in the one-argument case, make a copy because s1 may be a temporary string (Melder_integer or so)
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_2_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_2_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_3_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_3_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_4_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_4_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_5_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_5_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_6_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_6_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_7_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_7_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_8_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_8_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_9_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_9_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_10_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_10_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_11_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_11_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_13_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_13_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_15_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_15_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
-}
-void Graphics_text (Graphics me, double x, double y, Melder_19_ARGS) {
-	MelderString_copy (& theGraphicsTextBuffer, Melder_19_ARGS_CALL);
-	_Graphics_text (me, x, y, theGraphicsTextBuffer.string);
 }
 
 double Graphics_inqTextX (Graphics me) { return my textX; }
@@ -1671,13 +1614,13 @@ static double psTextWidth (_Graphics_widechar string [], bool useSilipaPS) {
 	return textWidth;
 }
 
-double Graphics_textWidth_ps_mm (Graphics me, const char32 *txt, bool useSilipaPS) {
+double Graphics_textWidth_ps_mm (Graphics me, conststring32 txt, bool useSilipaPS) {
 	if (! initBuffer (txt)) return 0.0;
 	parseTextIntoCellsLinesRuns (me, txt, theWidechar);
 	return psTextWidth (theWidechar, useSilipaPS) * (double) my fontSize * (25.4 / 72.0);
 }
 
-double Graphics_textWidth_ps (Graphics me, const char32 *txt, bool useSilipaPS) {
+double Graphics_textWidth_ps (Graphics me, conststring32 txt, bool useSilipaPS) {
 	return Graphics_dxMMtoWC (me, Graphics_textWidth_ps_mm (me, txt, useSilipaPS));
 }
 

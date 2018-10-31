@@ -49,9 +49,9 @@ autoTransition Distributions_to_Transition (Distributions underlying, Distributi
 		 * Copy labels and set name.
 		 */
 		for (integer i = 1; i <= thy numberOfStates; i ++) {
-			thy stateLabels [i] = Melder_dup (underlying -> columnLabels [i]);
+			thy stateLabels [i] = Melder_dup (underlying -> columnLabels [i].get());
 		}
-		Thing_setName (thee.get(), underlying -> columnLabels [environment]);
+		Thing_setName (thee.get(), underlying -> columnLabels [environment].get());
 
 		/*
 		 * Compute the off-diagonal elements of the transition matrix in environment 'environment'.
@@ -109,10 +109,10 @@ autoTransition Distributions_to_Transition (Distributions underlying, Distributi
 		 * Compute the elements on the diagonal, so that the sum of each row is unity.
 		 */
 		for (integer i = 1; i <= thy numberOfStates; i ++) {
-			real80 sum = 0.0;
+			longdouble sum = 0.0;
 			for (integer j = 1; j <= thy numberOfStates; j ++) if (j != i)
 				sum += thy data [i] [j];
-			thy data [i] [i] = sum > 1.0 ? 0.0 : 1.0 - (real) sum;   // guard against rounding errors
+			thy data [i] [i] = sum > 1.0 ? 0.0 : 1.0 - (double) sum;   // guard against rounding errors
 		}
 
 		return thee;
@@ -161,7 +161,7 @@ autoDistributions Transition_to_Distributions_conflate (Transition me) {
 		 * Copy labels.
 		 */
 		for (integer i = 1; i <= my numberOfStates; i ++) {
-			thy rowLabels [i] = Melder_dup (my stateLabels [i]);
+			thy rowLabels [i] = Melder_dup (my stateLabels [i].get());
 		}
 
 		/*

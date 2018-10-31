@@ -1,6 +1,6 @@
 /* TextGrid.cpp
  *
- * Copyright (C) 1992-2012,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  */
 
 #include "TextGrid.h"
-#include "longchar.h"
+#include "../kar/longchar.h"
 
 #include "oo_DESTROY.h"
 #include "TextGrid_def.h"
@@ -42,7 +42,7 @@
 
 Thing_implement (TextPoint, AnyPoint, 0);
 
-autoTextPoint TextPoint_create (double time, const char32 *mark) {
+autoTextPoint TextPoint_create (double time, conststring32 mark) {
 	try {
 		autoTextPoint me = Thing_new (TextPoint);
 		my number = time;
@@ -53,19 +53,9 @@ autoTextPoint TextPoint_create (double time, const char32 *mark) {
 	}
 }
 
-void TextPoint_setText (TextPoint me, const char32 *text) {
+void TextPoint_setText (TextPoint me, conststring32 text) {
 	try {
-		/*
-		 * Be fast if the string pointers are equal.
-		 */
-		if (text == my mark) return;
-		/*
-		 * Create a temporary variable (i.e. a temporary pointer to the final string),
-		 * in order that 'my text' does not change in case of error.
-		 */
-		autostring32 newText = Melder_dup (text);
-		Melder_free (my mark);
-		my mark = newText.transfer();
+		my mark = Melder_dup (text);
 	} catch (MelderError) {
 		Melder_throw (me, U": text not set.");
 	}
@@ -73,7 +63,7 @@ void TextPoint_setText (TextPoint me, const char32 *text) {
 
 Thing_implement (TextInterval, Function, 0);
 
-autoTextInterval TextInterval_create (double tmin, double tmax, const char32 *text) {
+autoTextInterval TextInterval_create (double tmin, double tmax, conststring32 text) {
 	try {
 		autoTextInterval me = Thing_new (TextInterval);
 		my xmin = tmin;
@@ -85,21 +75,9 @@ autoTextInterval TextInterval_create (double tmin, double tmax, const char32 *te
 	}
 }
 
-void TextInterval_setText (TextInterval me, const char32 *text) {
+void TextInterval_setText (TextInterval me, conststring32 text) {
 	try {
-		/*
-		 * Be fast if the string pointers are equal.
-		 */
-		if (text == my text) return;
-		/*
-		 * Create without change.
-		 */
-		autostring32 newText = Melder_dup (text);
-		/*
-		 * Change without error.
-		 */
-		Melder_free (my text);
-		my text = newText.transfer();
+		my text = Melder_dup (text);
 	} catch (MelderError) {
 		Melder_throw (U"Text interval: text not set.");
 	}
@@ -118,7 +96,7 @@ autoTextTier TextTier_create (double tmin, double tmax) {
 	}
 }
 
-void TextTier_addPoint (TextTier me, double time, const char32 *mark) {
+void TextTier_addPoint (TextTier me, double time, conststring32 mark) {
 	try {
 		autoTextPoint point = TextPoint_create (time, mark);
 		my points. addItem_move (point.move());
@@ -282,7 +260,7 @@ void structTextGrid :: v_info () {
 	MelderInfo_writeLine (U"Number of points: ", pointCount);
 }
 
-static void IntervalTier_addInterval_unsafe (IntervalTier me, double tmin, double tmax, const char32 *label) {
+static void IntervalTier_addInterval_unsafe (IntervalTier me, double tmin, double tmax, conststring32 label) {
 	autoTextInterval interval = TextInterval_create (tmin, tmax, label);
 	my intervals.addItem_move (interval.move());
 }
@@ -331,35 +309,29 @@ autoTextGrid TextGrid_createWithoutTiers (double tmin, double tmax) {
 	}
 }
 
-autoTextGrid TextGrid_create (double tmin, double tmax, const char32 *tierNames, const char32 *pointTiers) {
+autoTextGrid TextGrid_create (double tmin, double tmax, conststring32 tierNames_string, conststring32 pointTiers_string) {
 	try {
+		autostring32vector tierNames = STRVECtokenize (tierNames_string), pointTiers = STRVECtokenize (pointTiers_string);
 		autoTextGrid me = TextGrid_createWithoutTiers (tmin, tmax);
-		char32 nameBuffer [400];
 
 		/*
-		 * Create a number of IntervalTier objects.
-		 */
-		if (tierNames && tierNames [0]) {
-			str32cpy (nameBuffer, tierNames);
-			for (char32 *tierName = Melder_tok (nameBuffer, U" "); tierName; tierName = Melder_tok (nullptr, U" ")) {
-				autoIntervalTier tier = IntervalTier_create (tmin, tmax);
-				Thing_setName (tier.get(), tierName);
-				my tiers -> addItem_move (tier.move());
-			}
+			Create a number of IntervalTier objects.
+		*/
+		for (integer itoken = 1; itoken <= tierNames.size; itoken ++) {
+			autoIntervalTier tier = IntervalTier_create (tmin, tmax);
+			Thing_setName (tier.get(), tierNames [itoken].get());
+			my tiers -> addItem_move (tier.move());
 		}
 
 		/*
-		 * Replace some IntervalTier objects with TextTier objects.
-		 */
-		if (pointTiers && pointTiers [0]) {
-			str32cpy (nameBuffer, pointTiers);
-			for (char32 *tierName = Melder_tok (nameBuffer, U" "); tierName; tierName = Melder_tok (nullptr, U" ")) {
-				for (integer itier = 1; itier <= my tiers->size; itier ++) {
-					if (str32equ (tierName, Thing_getName (my tiers->at [itier]))) {
-						autoTextTier tier = TextTier_create (tmin, tmax);
-						Thing_setName (tier.get(), tierName);
-						my tiers -> replaceItem_move (tier.move(), itier);
-					}
+			Replace some IntervalTier objects with TextTier objects.
+		*/
+		for (integer itoken = 1; itoken <= pointTiers.size; itoken ++) {
+			for (integer itier = 1; itier <= my tiers->size; itier ++) {
+				if (str32equ (pointTiers [itoken].get(), Thing_getName (my tiers->at [itier]))) {
+					autoTextTier tier = TextTier_create (tmin, tmax);
+					Thing_setName (tier.get(), pointTiers [itoken].get());
+					my tiers -> replaceItem_move (tier.move(), itier);
 				}
 			}
 		}
@@ -373,7 +345,7 @@ autoTextGrid TextGrid_create (double tmin, double tmax, const char32 *tierNames,
 
 autoTextTier TextTier_readFromXwaves (MelderFile file) {
 	try {
-		char *line;
+		conststring8 line;
 
 		autoTextTier me = TextTier_create (0, 100);
 		autoMelderFile mfile = MelderFile_open (file);
@@ -440,7 +412,7 @@ TextTier TextGrid_checkSpecifiedTierIsPointTier (TextGrid me, integer tierNumber
 	return static_cast <TextTier> (tier);
 }
 
-integer TextGrid_countLabels (TextGrid me, integer tierNumber, const char32 *text) {
+integer TextGrid_countLabels (TextGrid me, integer tierNumber, conststring32 text) {
 	try {
 		Function anyTier = TextGrid_checkSpecifiedTierNumberWithinRange (me, tierNumber);
 		integer count = 0;
@@ -448,14 +420,14 @@ integer TextGrid_countLabels (TextGrid me, integer tierNumber, const char32 *tex
 			IntervalTier tier = static_cast <IntervalTier> (anyTier);
 			for (integer i = 1; i <= tier -> intervals.size; i ++) {
 				TextInterval segment = tier -> intervals.at [i];
-				if (segment -> text && str32equ (segment -> text, text))
+				if (segment -> text && str32equ (segment -> text.get(), text))
 					count ++;
 			}
 		} else {
 			TextTier tier = static_cast <TextTier> (anyTier);
 			for (integer i = 1; i <= tier -> points.size; i ++) {
 				TextPoint point = tier -> points.at [i];
-				if (point -> mark && str32equ (point -> mark, text))
+				if (point -> mark && str32equ (point -> mark.get(), text))
 					count ++;
 			}
 		}
@@ -465,13 +437,13 @@ integer TextGrid_countLabels (TextGrid me, integer tierNumber, const char32 *tex
 	}
 }
 
-integer TextGrid_countIntervalsWhere (TextGrid me, integer tierNumber, kMelder_string which, const char32 *criterion) {
+integer TextGrid_countIntervalsWhere (TextGrid me, integer tierNumber, kMelder_string which, conststring32 criterion) {
 	try {
 		integer count = 0;
 		IntervalTier tier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
 		for (integer iinterval = 1; iinterval <= tier -> intervals.size; iinterval ++) {
 			TextInterval interval = tier -> intervals.at [iinterval];
-			if (Melder_stringMatchesCriterion (interval -> text, which, criterion)) {
+			if (Melder_stringMatchesCriterion (interval -> text.get(), which, criterion, true)) {
 				count ++;
 			}
 		}
@@ -481,13 +453,13 @@ integer TextGrid_countIntervalsWhere (TextGrid me, integer tierNumber, kMelder_s
 	}
 }
 
-integer TextGrid_countPointsWhere (TextGrid me, integer tierNumber, kMelder_string which, const char32 *criterion) {
+integer TextGrid_countPointsWhere (TextGrid me, integer tierNumber, kMelder_string which, conststring32 criterion) {
 	try {
 		integer count = 0;
 		TextTier tier = TextGrid_checkSpecifiedTierIsPointTier (me, tierNumber);
 		for (integer ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
 			TextPoint point = tier -> points.at [ipoint];
-			if (Melder_stringMatchesCriterion (point -> mark, which, criterion)) {
+			if (Melder_stringMatchesCriterion (point -> mark.get(), which, criterion, true)) {
 				count ++;
 			}
 		}
@@ -576,7 +548,7 @@ static autoTextGrid _Label_to_TextGrid (Label me, double tmin, double tmax) {
 			autoTextInterval textInterval = TextInterval_create (
 				iinterval == 1 ? tmin : autosegment -> xmin,
 				iinterval == tier->size ? tmax : autosegment -> xmax,
-				autosegment -> name);
+				autosegment -> name.get());
 			intervalTier -> intervals. addItem_move (textInterval.move());
 		}
 	}
@@ -602,7 +574,7 @@ autoTextGrid Label_Function_to_TextGrid (Label me, Function function) {
 	}
 }
 
-autoTextTier PointProcess_upto_TextTier (PointProcess me, const char32 *text) {
+autoTextTier PointProcess_upto_TextTier (PointProcess me, conststring32 text) {
 	try {
 		autoTextTier thee = TextTier_create (my xmin, my xmax);
 		for (integer i = 1; i <= my nt; i ++) {
@@ -614,13 +586,13 @@ autoTextTier PointProcess_upto_TextTier (PointProcess me, const char32 *text) {
 	}
 }
 
-autoPointProcess TextTier_getPoints (TextTier me, const char32 *text) {
+autoPointProcess TextTier_getPoints (TextTier me, conststring32 text) {
 	try {
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer i = 1; i <= my points.size; i ++) {
 			TextPoint point = my points.at [i];
 			if (text && text [0]) {
-				if (point -> mark && str32equ (text, point -> mark))
+				if (point -> mark && str32equ (text, point -> mark.get()))
 					PointProcess_addPoint (thee.get(), point -> number);
 			} else {
 				if (! point -> mark || ! point -> mark [0])
@@ -633,13 +605,13 @@ autoPointProcess TextTier_getPoints (TextTier me, const char32 *text) {
 	}
 }
 
-autoPointProcess IntervalTier_getStartingPoints (IntervalTier me, const char32 *text) {
+autoPointProcess IntervalTier_getStartingPoints (IntervalTier me, conststring32 text) {
 	try {
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer i = 1; i <= my intervals.size; i ++) {
 			TextInterval interval = my intervals.at [i];
 			if (text && text [0]) {
-				if (interval -> text && str32equ (text, interval -> text))
+				if (interval -> text && str32equ (text, interval -> text.get()))
 					PointProcess_addPoint (thee.get(), interval -> xmin);
 			} else {
 				if (! interval -> text || ! interval -> text [0])
@@ -652,13 +624,13 @@ autoPointProcess IntervalTier_getStartingPoints (IntervalTier me, const char32 *
 	}
 }
 
-autoPointProcess IntervalTier_getEndPoints (IntervalTier me, const char32 *text) {
+autoPointProcess IntervalTier_getEndPoints (IntervalTier me, conststring32 text) {
 	try {
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer i = 1; i <= my intervals.size; i ++) {
 			TextInterval interval = my intervals.at [i];
 			if (text && text [0]) {
-				if (interval -> text && str32equ (text, interval -> text))
+				if (interval -> text && str32equ (text, interval -> text.get()))
 					PointProcess_addPoint (thee.get(), interval -> xmax);
 			} else {
 				if (! interval -> text || ! interval -> text [0])
@@ -671,13 +643,13 @@ autoPointProcess IntervalTier_getEndPoints (IntervalTier me, const char32 *text)
 	}
 }
 
-autoPointProcess IntervalTier_getCentrePoints (IntervalTier me, const char32 *text) {
+autoPointProcess IntervalTier_getCentrePoints (IntervalTier me, conststring32 text) {
 	try {
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer i = 1; i <= my intervals.size; i ++) {
 			TextInterval interval = my intervals.at [i];
 			if (text && text [0]) {
-				if (interval -> text && str32equ (text, interval -> text))
+				if (interval -> text && str32equ (text, interval -> text.get()))
 					PointProcess_addPoint (thee.get(), 0.5 * (interval -> xmin + interval -> xmax));
 			} else {
 				if (! interval -> text || ! interval -> text [0])
@@ -690,13 +662,13 @@ autoPointProcess IntervalTier_getCentrePoints (IntervalTier me, const char32 *te
 	}
 }
 
-autoPointProcess TextGrid_getStartingPoints (TextGrid me, integer tierNumber, kMelder_string which, const char32 *criterion) {
+autoPointProcess TextGrid_getStartingPoints (TextGrid me, integer tierNumber, kMelder_string which, conststring32 criterion) {
 	try {
 		IntervalTier tier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer iinterval = 1; iinterval <= tier -> intervals.size; iinterval ++) {
 			TextInterval interval = tier -> intervals.at [iinterval];
-			if (Melder_stringMatchesCriterion (interval -> text, which, criterion)) {
+			if (Melder_stringMatchesCriterion (interval -> text.get(), which, criterion, true)) {
 				PointProcess_addPoint (thee.get(), interval -> xmin);
 			}
 		}
@@ -706,13 +678,13 @@ autoPointProcess TextGrid_getStartingPoints (TextGrid me, integer tierNumber, kM
 	}
 }
 
-autoPointProcess TextGrid_getEndPoints (TextGrid me, integer tierNumber, kMelder_string which, const char32 *criterion) {
+autoPointProcess TextGrid_getEndPoints (TextGrid me, integer tierNumber, kMelder_string which, conststring32 criterion) {
 	try {
 		IntervalTier tier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer iinterval = 1; iinterval <= tier -> intervals.size; iinterval ++) {
 			TextInterval interval = tier -> intervals.at [iinterval];
-			if (Melder_stringMatchesCriterion (interval -> text, which, criterion)) {
+			if (Melder_stringMatchesCriterion (interval -> text.get(), which, criterion, true)) {
 				PointProcess_addPoint (thee.get(), interval -> xmax);
 			}
 		}
@@ -722,13 +694,13 @@ autoPointProcess TextGrid_getEndPoints (TextGrid me, integer tierNumber, kMelder
 	}
 }
 
-autoPointProcess TextGrid_getCentrePoints (TextGrid me, integer tierNumber, kMelder_string which, const char32 *criterion) {
+autoPointProcess TextGrid_getCentrePoints (TextGrid me, integer tierNumber, kMelder_string which, conststring32 criterion) {
 	try {
 		IntervalTier tier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer iinterval = 1; iinterval <= tier -> intervals.size; iinterval ++) {
 			TextInterval interval = tier -> intervals.at [iinterval];
-			if (Melder_stringMatchesCriterion (interval -> text, which, criterion)) {
+			if (Melder_stringMatchesCriterion (interval -> text.get(), which, criterion, true)) {
 				PointProcess_addPoint (thee.get(), 0.5 * (interval -> xmin + interval -> xmax));
 			}
 		}
@@ -738,13 +710,13 @@ autoPointProcess TextGrid_getCentrePoints (TextGrid me, integer tierNumber, kMel
 	}
 }
 
-autoPointProcess TextGrid_getPoints (TextGrid me, integer tierNumber, kMelder_string which, const char32 *criterion) {
+autoPointProcess TextGrid_getPoints (TextGrid me, integer tierNumber, kMelder_string which, conststring32 criterion) {
 	try {
 		TextTier tier = TextGrid_checkSpecifiedTierIsPointTier (me, tierNumber);
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
 			TextPoint point = tier -> points.at [ipoint];
-			if (Melder_stringMatchesCriterion (point -> mark, which, criterion)) {
+			if (Melder_stringMatchesCriterion (point -> mark.get(), which, criterion, true)) {
 				PointProcess_addPoint (thee.get(), point -> number);
 			}
 		}
@@ -755,17 +727,17 @@ autoPointProcess TextGrid_getPoints (TextGrid me, integer tierNumber, kMelder_st
 }
 
 autoPointProcess TextGrid_getPoints_preceded (TextGrid me, integer tierNumber,
-	kMelder_string which, const char32 *criterion,
-	kMelder_string precededBy, const char32 *criterion_precededBy)
+	kMelder_string which, conststring32 criterion,
+	kMelder_string precededBy, conststring32 criterion_precededBy)
 {
 	try {
 		TextTier tier = TextGrid_checkSpecifiedTierIsPointTier (me, tierNumber);
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
 			TextPoint point = tier -> points.at [ipoint];
-			if (Melder_stringMatchesCriterion (point -> mark, which, criterion)) {
+			if (Melder_stringMatchesCriterion (point -> mark.get(), which, criterion, true)) {
 				TextPoint preceding = ( ipoint <= 1 ? nullptr : tier -> points.at [ipoint - 1] );
-				if (Melder_stringMatchesCriterion (preceding -> mark, precededBy, criterion_precededBy)) {
+				if (Melder_stringMatchesCriterion (preceding -> mark.get(), precededBy, criterion_precededBy, true)) {
 					PointProcess_addPoint (thee.get(), point -> number);
 				}
 			}
@@ -777,17 +749,17 @@ autoPointProcess TextGrid_getPoints_preceded (TextGrid me, integer tierNumber,
 }
 
 autoPointProcess TextGrid_getPoints_followed (TextGrid me, integer tierNumber,
-	kMelder_string which, const char32 *criterion,
-	kMelder_string followedBy, const char32 *criterion_followedBy)
+	kMelder_string which, conststring32 criterion,
+	kMelder_string followedBy, conststring32 criterion_followedBy)
 {
 	try {
 		TextTier tier = TextGrid_checkSpecifiedTierIsPointTier (me, tierNumber);
 		autoPointProcess thee = PointProcess_create (my xmin, my xmax, 10);
 		for (integer ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
 			TextPoint point = tier -> points.at [ipoint];
-			if (Melder_stringMatchesCriterion (point -> mark, which, criterion)) {
+			if (Melder_stringMatchesCriterion (point -> mark.get(), which, criterion, true)) {
 				TextPoint following = ( ipoint >= tier -> points.size ? nullptr : tier -> points.at [ipoint + 1] );
-				if (Melder_stringMatchesCriterion (following -> mark, followedBy, criterion_followedBy)) {
+				if (Melder_stringMatchesCriterion (following -> mark.get(), followedBy, criterion_followedBy, true)) {
 					PointProcess_addPoint (thee.get(), point -> number);
 				}
 			}
@@ -834,12 +806,12 @@ autoPointProcess IntervalTier_PointProcess_endToCentre (IntervalTier tier, Point
 	}
 }
 
-autoTableOfReal IntervalTier_downto_TableOfReal (IntervalTier me, const char32 *label) {
+autoTableOfReal IntervalTier_downto_TableOfReal (IntervalTier me, conststring32 label) {
 	try {
 		integer n = 0;
 		for (integer i = 1; i <= my intervals.size; i ++) {
 			TextInterval interval = my intervals.at [i];
-			if (! label || (label [0] == U'\0' && ! interval -> text) || (interval -> text && str32equ (interval -> text, label)))
+			if (! label || (label [0] == U'\0' && ! interval -> text) || (interval -> text && str32equ (interval -> text.get(), label)))
 				n ++;
 		}
 		autoTableOfReal thee = TableOfReal_create (n, 3);
@@ -849,9 +821,9 @@ autoTableOfReal IntervalTier_downto_TableOfReal (IntervalTier me, const char32 *
 		n = 0;
 		for (integer i = 1; i <= my intervals.size; i ++) {
 			TextInterval interval = my intervals.at [i];
-			if (! label || (label [0] == U'\0' && ! interval -> text) || (interval -> text && str32equ (interval -> text, label))) {
+			if (! label || (label [0] == U'\0' && ! interval -> text) || (interval -> text && str32equ (interval -> text.get(), label))) {
 				n ++;
-				TableOfReal_setRowLabel (thee.get(), n, interval -> text ? interval -> text : U"");
+				TableOfReal_setRowLabel (thee.get(), n, interval -> text ? interval -> text.get() : U"");
 				thy data [n] [1] = interval -> xmin;
 				thy data [n] [2] = interval -> xmax;
 				thy data [n] [3] = interval -> xmax - interval -> xmin;
@@ -867,12 +839,12 @@ autoTableOfReal IntervalTier_downto_TableOfReal_any (IntervalTier me) {
 	return IntervalTier_downto_TableOfReal (me, nullptr);
 }
 
-autoTableOfReal TextTier_downto_TableOfReal (TextTier me, const char32 *label) {
+autoTableOfReal TextTier_downto_TableOfReal (TextTier me, conststring32 label) {
 	try {
 		integer n = 0;
 		for (integer i = 1; i <= my points.size; i ++) {
 			TextPoint point = my points.at [i];
-			if (! label || (label [0] == U'\0' && ! point -> mark) || (point -> mark && str32equ (point -> mark, label)))
+			if (! label || (label [0] == U'\0' && ! point -> mark) || (point -> mark && str32equ (point -> mark.get(), label)))
 				n ++;
 		}
 		autoTableOfReal thee = TableOfReal_create (n, 1);
@@ -880,9 +852,9 @@ autoTableOfReal TextTier_downto_TableOfReal (TextTier me, const char32 *label) {
 		n = 0;
 		for (integer i = 1; i <= my points.size; i ++) {
 			TextPoint point = my points.at [i];
-			if (! label || (label [0] == U'\0' && ! point -> mark) || (point -> mark && str32equ (point -> mark, label))) {
+			if (! label || (label [0] == U'\0' && ! point -> mark) || (point -> mark && str32equ (point -> mark.get(), label))) {
 				n ++;
-				TableOfReal_setRowLabel (thee.get(), n, point -> mark ? point -> mark : U"");
+				TableOfReal_setRowLabel (thee.get(), n, point -> mark ? point -> mark.get() : U"");
 				thy data [n] [1] = point -> number;
 			}
 		}
@@ -964,7 +936,7 @@ void IntervalTier_writeToXwaves (IntervalTier me, MelderFile file) {
 		fprintf (f, "separator ;\nnfields 1\n#\n");
 		for (integer iinterval = 1; iinterval <= my intervals.size; iinterval ++) {
 			TextInterval interval = my intervals.at [iinterval];
-			fprintf (f, "\t%.6f 26\t%s\n", interval -> xmax, Melder_peek32to8 (interval -> text));
+			fprintf (f, "\t%.6f 26\t%s\n", interval -> xmax, Melder_peek32to8 (interval -> text.get()));
 		}
 		f.close (file);
 	} catch (MelderError) {
@@ -1006,11 +978,11 @@ autoTextGrid PointProcess_to_TextGrid_vuv (PointProcess me, double maxT, double 
 }
 
 integer TextInterval_labelLength (TextInterval me) {
-	return my text ? str32len (my text) : 0;
+	return my text ? str32len (my text.get()) : 0;
 }
 
 integer TextPoint_labelLength (TextPoint me) {
-	return my mark ? str32len (my mark) : 0;
+	return my mark ? str32len (my mark.get()) : 0;
 }
 
 integer IntervalTier_maximumLabelLength (IntervalTier me) {
@@ -1049,19 +1021,13 @@ integer TextGrid_maximumLabelLength (TextGrid me) {
 	return maximum;
 }
 
-static void genericize (char32 **pstring, char32 *buffer) {
-	if (*pstring) {
-		const char32 *p = (const char32 *) *pstring;
+static void genericize (autostring32& stringRef, mutablestring32 buffer) {
+	if (stringRef) {
+		const char32 *p = & stringRef [0];
 		while (*p) {
 			if (*p > 126) {   // only if necessary
-				char32 *newString;
-				Longchar_genericize32 (*pstring, buffer);
-				newString = Melder_dup (buffer);
-				/*
-				 * Replace string only if copying was OK.
-				 */
-				Melder_free (*pstring);
-				*pstring = newString;
+				Longchar_genericize32 (stringRef.get(), buffer);
+				stringRef = Melder_dup (buffer);
 				break;
 			}
 			p ++;
@@ -1071,20 +1037,20 @@ static void genericize (char32 **pstring, char32 *buffer) {
 
 void TextGrid_convertToBackslashTrigraphs (TextGrid me) {
 	try {
-		autostring32 buffer = Melder_calloc (char32, TextGrid_maximumLabelLength (me) * 3 + 1);
+		autostring32 buffer (TextGrid_maximumLabelLength (me) * 3);
 		for (integer itier = 1; itier <= my tiers->size; itier ++) {
 			Function anyTier = my tiers->at [itier];
 			if (anyTier -> classInfo == classIntervalTier) {
 				IntervalTier tier = static_cast <IntervalTier> (anyTier);
 				for (integer i = 1; i <= tier -> intervals.size; i ++) {
 					TextInterval interval = tier -> intervals.at [i];
-					genericize (& interval -> text, buffer.peek());
+					genericize (interval -> text, buffer.get());
 				}
 			} else {
 				TextTier tier = static_cast <TextTier> (anyTier);
 				for (integer i = 1; i <= tier -> points.size; i ++) {
 					TextPoint point = tier -> points.at [i];
-					genericize (& point -> mark, buffer.peek());
+					genericize (point -> mark, buffer.get());
 				}
 			}
 		}
@@ -1095,7 +1061,7 @@ void TextGrid_convertToBackslashTrigraphs (TextGrid me) {
 
 void TextGrid_convertToUnicode (TextGrid me) {
 	try {
-		autostring32 buffer = Melder_calloc (char32, TextGrid_maximumLabelLength (me) + 1);
+		autostring32 buffer (TextGrid_maximumLabelLength (me));
 		for (integer itier = 1; itier <= my tiers->size; itier ++) {
 			Function anyTier = my tiers->at [itier];
 			if (anyTier -> classInfo == classIntervalTier) {
@@ -1103,8 +1069,8 @@ void TextGrid_convertToUnicode (TextGrid me) {
 				for (integer i = 1; i <= tier -> intervals.size; i ++) {
 					TextInterval interval = tier -> intervals.at [i];
 					if (interval -> text) {
-						Longchar_nativize32 (interval -> text, buffer.peek(), false);
-						str32cpy (interval -> text, buffer.peek());
+						Longchar_nativize32 (interval -> text.get(), buffer.get(), false);
+						str32cpy (interval -> text.get(), buffer.get());
 					}
 				}
 			} else {
@@ -1112,8 +1078,8 @@ void TextGrid_convertToUnicode (TextGrid me) {
 				for (integer i = 1; i <= tier -> points.size; i ++) {
 					TextPoint point = tier -> points.at [i];
 					if (point -> mark) {
-						Longchar_nativize32 (point -> mark, buffer.peek(), false);
-						str32cpy (point -> mark, buffer.peek());
+						Longchar_nativize32 (point -> mark.get(), buffer.get(), false);
+						str32cpy (point -> mark.get(), buffer.get());
 					}
 				}
 			}
@@ -1124,22 +1090,22 @@ void TextGrid_convertToUnicode (TextGrid me) {
 }
 
 void TextInterval_removeText (TextInterval me) {
-	Melder_free (my text);
+	my text. reset();
 }
 
 void TextPoint_removeText (TextPoint me) {
-	Melder_free (my mark);
+	my mark. reset();
 }
 
 void IntervalTier_removeText (IntervalTier me) {
-	integer ninterval = my intervals.size;
-	for (integer iinterval = 1; iinterval <= ninterval; iinterval ++)
+	integer numberOfIntervals = my intervals.size;
+	for (integer iinterval = 1; iinterval <= numberOfIntervals; iinterval ++)
 		TextInterval_removeText (my intervals.at [iinterval]);
 }
 
 void TextTier_removeText (TextTier me) {
-	integer npoint = my points.size;
-	for (integer ipoint = 1; ipoint <= npoint; ipoint ++)
+	integer numberOfPoints = my points.size;
+	for (integer ipoint = 1; ipoint <= numberOfPoints; ipoint ++)
 		TextPoint_removeText (my points.at [ipoint]);
 }
 
@@ -1156,8 +1122,8 @@ void TextGrid_insertBoundary (TextGrid me, integer tierNumber, double t) {
 			Melder_throw (U"Cannot add a boundary at ", Melder_fixed (t, 6), U" seconds, because this is outside the time domain of the intervals.");
 		TextInterval interval = intervalTier -> intervals.at [intervalNumber];
 		/*
-		 * Move the text to the left of the boundary.
-		 */
+			Move the text to the left of the boundary.
+		*/
 		autoTextInterval newInterval = TextInterval_create (t, interval -> xmax, U"");
 		interval -> xmax = t;
 		intervalTier -> intervals. addItem_move (newInterval.move());
@@ -1173,15 +1139,15 @@ void IntervalTier_removeLeftBoundary (IntervalTier me, integer intervalNumber) {
 		TextInterval left = my intervals.at [intervalNumber - 1];
 		TextInterval right = my intervals.at [intervalNumber];
 		/*
-		 * Move the text to the left of the boundary.
-		 */
+			Move the text to the left of the boundary.
+		*/
 		left -> xmax = right -> xmax;   // collapse left and right intervals into left interval
 		if (! right -> text) {
 			;
 		} else if (! left -> text) {
-			TextInterval_setText (left, right -> text);
+			TextInterval_setText (left, right -> text.get());
 		} else {
-			TextInterval_setText (left, Melder_cat (left -> text, right -> text));
+			TextInterval_setText (left, Melder_cat (left -> text.get(), right -> text.get()));
 		}
 		my intervals. removeItem (intervalNumber);   // remove right interval
 	} catch (MelderError) {
@@ -1205,7 +1171,7 @@ void TextGrid_removeBoundaryAtTime (TextGrid me, integer tierNumber, double t) {
 	}
 }
 
-void TextGrid_setIntervalText (TextGrid me, integer tierNumber, integer intervalNumber, const char32 *text) {
+void TextGrid_setIntervalText (TextGrid me, integer tierNumber, integer intervalNumber, conststring32 text) {
 	try {
 		IntervalTier intervalTier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
 		if (intervalNumber < 1 || intervalNumber > intervalTier -> intervals.size)
@@ -1217,7 +1183,7 @@ void TextGrid_setIntervalText (TextGrid me, integer tierNumber, integer interval
 	}
 }
 
-void TextGrid_insertPoint (TextGrid me, integer tierNumber, double time, const char32 *mark) {
+void TextGrid_insertPoint (TextGrid me, integer tierNumber, double time, conststring32 mark) {
 	try {
 		TextTier textTier = TextGrid_checkSpecifiedTierIsPointTier (me, tierNumber);
 		if (AnyTier_hasPoint (textTier->asAnyTier(), time))
@@ -1234,13 +1200,13 @@ void TextTier_removePoint (TextTier me, integer ipoint) {
 	my points. removeItem (ipoint);
 }
 
-void TextTier_removePoints (TextTier me, kMelder_string which, const char32 *criterion) {
+void TextTier_removePoints (TextTier me, kMelder_string which, conststring32 criterion) {
 	for (integer i = my points.size; i > 0; i --)
-		if (Melder_stringMatchesCriterion (my points.at [i] -> mark, which, criterion))
+		if (Melder_stringMatchesCriterion (my points.at [i] -> mark.get(), which, criterion, true))
 			my points. removeItem (i);
 }
 
-void TextGrid_removePoints (TextGrid me, integer tierNumber, kMelder_string which, const char32 *criterion) {
+void TextGrid_removePoints (TextGrid me, integer tierNumber, kMelder_string which, conststring32 criterion) {
 	try {
 		TextTier tier = TextGrid_checkSpecifiedTierIsPointTier (me, tierNumber);
 		TextTier_removePoints (tier, which, criterion);
@@ -1249,7 +1215,7 @@ void TextGrid_removePoints (TextGrid me, integer tierNumber, kMelder_string whic
 	}
 }
 
-void TextGrid_setPointText (TextGrid me, integer tierNumber, integer pointNumber, const char32 *text) {
+void TextGrid_setPointText (TextGrid me, integer tierNumber, integer pointNumber, conststring32 text) {
 	try {
 		TextTier textTier = TextGrid_checkSpecifiedTierIsPointTier (me, tierNumber);
 		if (pointNumber < 1 || pointNumber > textTier -> points.size)
@@ -1317,33 +1283,33 @@ autoTextGrid TextGrid_readFromChronologicalTextFile (MelderFile file) {
 	try {
 		int formatVersion = 0;
 		autoMelderReadText text = MelderReadText_createFromFile (file);
-		autostring32 tag = texgetw16 (text.peek());
-		if (! str32equ (tag.peek(), U"Praat chronological TextGrid text file"))
+		autostring32 tag = texgetw16 (text.get());
+		if (! str32equ (tag.get(), U"Praat chronological TextGrid text file"))
 			Melder_throw (U"This is not a chronological TextGrid text file.");
 		autoTextGrid me = Thing_new (TextGrid);
-		my structFunction :: v_readText (text.peek(), formatVersion);
+		my structFunction :: v_readText (text.get(), formatVersion);
 		my tiers = FunctionList_create ();
-		integer numberOfTiers = texgeti32 (text.peek());
+		integer numberOfTiers = texgeti32 (text.get());
 		for (integer itier = 1; itier <= numberOfTiers; itier ++) {
-			autostring32 klas = texgetw16 (text.peek());
-			if (str32equ (klas.peek(), U"IntervalTier")) {
+			autostring32 klas = texgetw16 (text.get());
+			if (str32equ (klas.get(), U"IntervalTier")) {
 				autoIntervalTier tier = Thing_new (IntervalTier);
-				tier -> name = texgetw16 (text.peek());
-				tier -> structFunction :: v_readText (text.peek(), formatVersion);
+				tier -> name = texgetw16 (text.get());
+				tier -> structFunction :: v_readText (text.get(), formatVersion);
 				my tiers -> addItem_move (tier.move());
-			} else if (str32equ (klas.peek(), U"TextTier")) {
+			} else if (str32equ (klas.get(), U"TextTier")) {
 				autoTextTier tier = Thing_new (TextTier);
-				tier -> name = texgetw16 (text.peek());
-				tier -> structFunction :: v_readText (text.peek(), formatVersion);
+				tier -> name = texgetw16 (text.get());
+				tier -> structFunction :: v_readText (text.get(), formatVersion);
 				my tiers -> addItem_move (tier.move());
 			} else {
-				Melder_throw (U"Unknown tier class \"", klas.peek(), U"\".");
+				Melder_throw (U"Unknown tier class \"", klas.get(), U"\".");
 			}
 		}
 		for (;;) {
 			integer tierNumber;
 			try {
-				tierNumber = texgeti32 (text.peek());
+				tierNumber = texgeti32 (text.get());
 			} catch (MelderError) {
 				if (str32str (Melder_getError (), U"Early end of text")) {
 					Melder_clearError ();
@@ -1356,12 +1322,12 @@ autoTextGrid TextGrid_readFromChronologicalTextFile (MelderFile file) {
 			if (anyTier -> classInfo == classIntervalTier) {
 				IntervalTier tier = static_cast <IntervalTier> (anyTier);
 				autoTextInterval interval = Thing_new (TextInterval);
-				interval -> v_readText (text.peek(), formatVersion);
+				interval -> v_readText (text.get(), formatVersion);
 				tier -> intervals. addItem_move (interval.move());   // not earlier: sorting depends on contents of interval
 			} else {
 				TextTier tier = static_cast <TextTier> (anyTier);
 				autoTextPoint point = Thing_new (TextPoint);
-				point -> v_readText (text.peek(), formatVersion);
+				point -> v_readText (text.get(), formatVersion);
 				tier -> points. addItem_move (point.move());   // not earlier: sorting depends on contents of point
 			}
 		}
@@ -1371,7 +1337,7 @@ autoTextGrid TextGrid_readFromChronologicalTextFile (MelderFile file) {
 	}
 }
 
-static void writeQuotedString (MelderFile file, const char32 *string) {
+static void writeQuotedString (MelderFile file, conststring32 string) {
 	MelderFile_writeCharacter (file, U'\"');
 	if (string) {
 		char32 kar;
@@ -1401,7 +1367,7 @@ void TextGrid_writeToChronologicalTextFile (TextGrid me, MelderFile file) {
 			MelderFile_write (file, U"\n");
 			writeQuotedString (file, Thing_className (anyTier));
 			MelderFile_write (file, U" ");
-			writeQuotedString (file, anyTier -> name);
+			writeQuotedString (file, anyTier -> name.get());
 			MelderFile_write (file, U" ", anyTier -> xmin, U" ", anyTier -> xmax);
 		}
 		for (;;) {
@@ -1446,15 +1412,15 @@ void TextGrid_writeToChronologicalTextFile (TextGrid me, MelderFile file) {
 				if (anyTier -> classInfo == classIntervalTier) {
 					IntervalTier tier = static_cast <IntervalTier> (anyTier);
 					TextInterval interval = tier -> intervals.at [firstRemainingElement];
-					if (tier -> name) MelderFile_write (file, U"\n\n! ", tier -> name, U":");
+					if (tier -> name) MelderFile_write (file, U"\n\n! ", tier -> name.get(), U":");
 					MelderFile_write (file, U"\n", firstRemainingTier, U" ", interval -> xmin, U" ", interval -> xmax);
-					texputw32 (file, interval -> text, U"", 0,0,0,0,0);
+					texputw32 (file, interval -> text.get(), U"", 0,0,0,0,0);
 				} else {
 					TextTier tier = static_cast <TextTier> (anyTier);
 					TextPoint point = tier -> points.at [firstRemainingElement];
-					if (tier -> name) MelderFile_write (file, U"\n\n! ", tier -> name, U":");
+					if (tier -> name) MelderFile_write (file, U"\n\n! ", tier -> name.get(), U":");
 					MelderFile_write (file, U"\n", firstRemainingTier, U" ", point -> number, U" ");
-					texputw32 (file, point -> mark, U"", 0,0,0,0,0);
+					texputw32 (file, point -> mark.get(), U"", 0,0,0,0,0);
 				}
 				sortingTime = firstRemainingTime;
 				sortingTier = firstRemainingTier;
@@ -1523,7 +1489,7 @@ autoTextGrid TextGrid_readFromCgnSyntaxFile (MelderFile file) {
 				 */
 				for (integer itier = 1; itier <= my tiers->size; itier ++) {
 					IntervalTier tier = static_cast <IntervalTier> (my tiers->at [itier]);
-					if (str32equ (tier -> name, Melder_peek8to32 (speakerName))) {
+					if (str32equ (tier -> name.get(), Melder_peek8to32 (speakerName))) {
 						speakerTier = itier;
 						break;
 					}
@@ -1699,8 +1665,8 @@ autoTable TextGrid_downto_Table (TextGrid me, bool includeLineNumbers, int timeD
 						Table_setNumericValue (thee.get(), irow, ++ icol, irow);
 					Table_setStringValue (thee.get(), irow, ++ icol, Melder_fixed (interval -> xmin, timeDecimals));
 					if (includeTierNames)
-						Table_setStringValue (thee.get(), irow, ++ icol, tier -> name);
-					Table_setStringValue (thee.get(), irow, ++ icol, interval -> text);
+						Table_setStringValue (thee.get(), irow, ++ icol, tier -> name.get());
+					Table_setStringValue (thee.get(), irow, ++ icol, interval -> text.get());
 					Table_setStringValue (thee.get(), irow, ++ icol, Melder_fixed (interval -> xmax, timeDecimals));
 				}
 			}
@@ -1714,14 +1680,77 @@ autoTable TextGrid_downto_Table (TextGrid me, bool includeLineNumbers, int timeD
 					Table_setNumericValue (thee.get(), irow, ++ icol, irow);
 				Table_setStringValue (thee.get(), irow, ++ icol, Melder_fixed (point -> number, timeDecimals));
 				if (includeTierNames)
-					Table_setStringValue (thee.get(), irow, ++ icol, tier -> name);
-				Table_setStringValue (thee.get(), irow, ++ icol, point -> mark);
+					Table_setStringValue (thee.get(), irow, ++ icol, tier -> name.get());
+				Table_setStringValue (thee.get(), irow, ++ icol, point -> mark.get());
 				Table_setStringValue (thee.get(), irow, ++ icol, Melder_fixed (point -> number, timeDecimals));
 			}
 		}
 	}
 	integer columns [1+2] = { 0, 1 + includeLineNumbers, 3 + includeLineNumbers + includeTierNames };   // sort by tmin and tmax
-	Table_sortRows_Assert (thee.get(), columns, 2);
+	Table_sortRows_Assert (thee.get(), constINTVEC (columns, 2));
+	return thee;
+}
+
+autoTable TextGrid_tabulateOccurrences (TextGrid me, constVEC searchTiers, kMelder_string which, conststring32 criterion, bool caseSensitive) {
+	const int timeDecimals = 6;
+	integer numberOfRows = 0;
+	for (integer itier = 1; itier <= searchTiers.size; itier ++) {
+		integer tierNumber = Melder_iround (searchTiers [itier]);
+		Melder_require (tierNumber > 0 && tierNumber <= my tiers->size, U"Tier number out of range.");
+		Function anyTier = my tiers->at [tierNumber];
+		if (anyTier -> classInfo == classIntervalTier) {
+			IntervalTier tier = static_cast <IntervalTier> (anyTier);
+			for (integer iinterval = 1; iinterval <= tier -> intervals.size; iinterval ++) {
+				TextInterval interval = tier -> intervals.at [iinterval];
+				if (Melder_stringMatchesCriterion (interval -> text.get(), which, criterion, caseSensitive)) {
+					numberOfRows ++;
+				}
+			}
+		} else {
+			TextTier tier = static_cast <TextTier> (anyTier);
+			for (integer ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
+				TextPoint point = tier -> points.at [ipoint];
+				if (Melder_stringMatchesCriterion (point -> mark.get(), which, criterion, caseSensitive)) {
+					numberOfRows ++;
+				}
+			}
+		}
+	}
+	autoTable thee = Table_createWithColumnNames (numberOfRows, U"time tier text");
+	integer rowNumber = 0;
+	for (integer itier = 1; itier <= searchTiers.size; itier ++) {
+		integer tierNumber = Melder_iround (searchTiers [itier]);
+		Function anyTier = my tiers->at [tierNumber];
+		if (anyTier -> classInfo == classIntervalTier) {
+			IntervalTier tier = static_cast <IntervalTier> (anyTier);
+			for (integer iinterval = 1; iinterval <= tier -> intervals.size; iinterval ++) {
+				TextInterval interval = tier -> intervals.at [iinterval];
+				if (Melder_stringMatchesCriterion (interval -> text.get(), which, criterion, caseSensitive)) {
+					++ rowNumber;
+					Melder_assert (rowNumber <= numberOfRows);
+					double time = 0.5 * (interval -> xmin + interval -> xmax);
+					Table_setStringValue (thee.get(), rowNumber, 1, Melder_fixed (time, timeDecimals));
+					Table_setStringValue (thee.get(), rowNumber, 2, tier -> name.get());
+					Table_setStringValue (thee.get(), rowNumber, 3, interval -> text.get());
+				}
+			}
+		} else {
+			TextTier tier = static_cast <TextTier> (anyTier);
+			for (integer ipoint = 1; ipoint <= tier -> points.size; ipoint ++) {
+				TextPoint point = tier -> points.at [ipoint];
+				if (Melder_stringMatchesCriterion (point -> mark.get(), which, criterion, caseSensitive)) {
+					++ rowNumber;
+					Melder_assert (rowNumber <= numberOfRows);
+					double time = point -> number;
+					Table_setStringValue (thee.get(), rowNumber, 1, Melder_fixed (time, timeDecimals));
+					Table_setStringValue (thee.get(), rowNumber, 2, tier -> name.get());
+					Table_setStringValue (thee.get(), rowNumber, 3, point -> mark.get());
+				}
+			}
+		}
+	}
+	integer columns [1+1] = { 0, 1 };   // sort by time
+	Table_sortRows_Assert (thee.get(), constINTVEC (columns, 1));
 	return thee;
 }
 

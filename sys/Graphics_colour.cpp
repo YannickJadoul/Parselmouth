@@ -1,6 +1,6 @@
 /* Graphics_colour.cpp
  *
- * Copyright (C) 1992-2011,2012,2013,2014,2015,2016,2017 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2005,2007-2018 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ Graphics_Colour
 	Graphics_GREY = { 0.5, 0.5, 0.5 },
 	Graphics_WINDOW_BACKGROUND_COLOUR = { 0.90, 0.90, 0.85 };
 
-inline static const char32 * rgbColourName (Graphics_Colour colour) {
+inline static conststring32 rgbColourName (Graphics_Colour colour) {
 	static MelderString buffer { };
 	MelderString_copy (& buffer,
 		U"{", Melder_fixed (colour. red, 6),
@@ -49,7 +49,7 @@ inline static const char32 * rgbColourName (Graphics_Colour colour) {
 	);
 	return buffer.string;
 }
-const char32 * Graphics_Colour_name (Graphics_Colour colour) {
+conststring32 Graphics_Colour_name (Graphics_Colour colour) {
 	return
 		Graphics_Colour_equal (colour, Graphics_BLACK) ? U"black" :
 		Graphics_Colour_equal (colour, Graphics_WHITE) ? U"white" :
@@ -68,6 +68,22 @@ const char32 * Graphics_Colour_name (Graphics_Colour colour) {
 		Graphics_Colour_equal (colour, Graphics_SILVER) ? U"silver" :
 		Graphics_Colour_equal (colour, Graphics_GREY) ? U"grey" :
 		rgbColourName (colour);
+}
+
+constexpr int theNumberOfCyclingColours = 10;
+static Graphics_Colour theCyclingBackgroundColours [theNumberOfCyclingColours] = {
+	Graphics_GREEN, Graphics_SILVER, Graphics_BLUE, Graphics_YELLOW, Graphics_RED,
+	Graphics_CYAN, Graphics_MAROON, Graphics_LIME, Graphics_TEAL, Graphics_MAGENTA
+};
+static Graphics_Colour theCyclingTextColours [theNumberOfCyclingColours] = {
+	Graphics_WHITE, Graphics_BLACK, Graphics_WHITE, Graphics_BLACK, Graphics_WHITE,
+	Graphics_BLACK, Graphics_WHITE, Graphics_BLACK, Graphics_WHITE, Graphics_BLACK
+};
+Graphics_Colour Graphics_cyclingBackgroundColour (integer category) {
+	return theCyclingBackgroundColours [(category - 1) % theNumberOfCyclingColours];
+}
+Graphics_Colour Graphics_cyclingTextColour (integer category) {
+	return theCyclingTextColours [(category - 1) % theNumberOfCyclingColours];
 }
 
 #if quartz

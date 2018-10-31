@@ -1,6 +1,6 @@
 /* CCA.c
  *
- * Copyright (C) 1993-2017 David Weenink
+ * Copyright (C) 1993-2018 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,14 +78,14 @@ autoCCA CCA_create (integer numberOfCoefficients, integer ny, integer nx) {
 	}
 }
 
-void CCA_drawEigenvector (CCA me, Graphics g, int x_or_y, integer ivec, integer first, integer last, double ymin, double ymax, int weigh, double size_mm, const char32 *mark,	int connect, int garnish) {
+void CCA_drawEigenvector (CCA me, Graphics g, int x_or_y, integer ivec, integer first, integer last, double ymin, double ymax, int weigh, double size_mm, conststring32 mark, int connect, int garnish) {
 	Eigen e = my x.get();
 	Strings labels = my xLabels.get();
 	if (x_or_y == 1) {
 		e = my y.get();
 		labels = my yLabels.get();
 	}
-	Eigen_drawEigenvector (e, g, ivec, first, last, ymin, ymax, weigh, size_mm, mark, connect, labels -> strings, garnish);
+	Eigen_drawEigenvector (e, g, ivec, first, last, ymin, ymax, weigh, size_mm, mark, connect, labels -> strings.peek2(), garnish);
 }
 
 double CCA_getEigenvectorElement (CCA me, int x_or_y, integer ivec, integer element) {
@@ -95,18 +95,18 @@ double CCA_getEigenvectorElement (CCA me, int x_or_y, integer ivec, integer elem
 
 autoCCA TableOfReal_to_CCA (TableOfReal me, integer ny) {
 	try {
-		integer n = my numberOfRows, nx = my numberOfColumns - ny;
+		integer n = my numberOfRows, nx = my numberOfColumns - ny, nmax_xy = nx > ny ? nx : ny;
 		Melder_require (ny > 0 && ny < my numberOfColumns, U"Dimension of first part not correct.");
 		Melder_require (ny <= nx, U"The dimension of the dependent part (", ny, U") should not exceed "
 				"the dimension of the independent part (", nx, U").");
-		Melder_require (n >= ny, U"The number of observations should be larger then ", ny, U".");
+		Melder_require (n >= nmax_xy, U"The number of observations should be larger than  ", nmax_xy - 1, U".");
 		Melder_require (! NUMdmatrix_containsUndefinedElements (my data, 1, my numberOfRows, 1, my numberOfColumns),
 			U"At least one of the table's elements is undefined."); 	
 		
 		// Use svd as (temporary) storage, and copy data
 
-		autoSVD svdy = SVD_create (n, ny);
-		autoSVD svdx = SVD_create (n, nx);
+		autoSVD svdy = SVD_create (n, ny);   // n >= ny, hence no transposition
+		autoSVD svdx = SVD_create (n, nx);	 // n >= nx, hence no transposition
 
 		for (integer i = 1; i <= n; i ++) {
 			for (integer j = 1; j <= ny; j ++) {
@@ -128,8 +128,8 @@ autoCCA TableOfReal_to_CCA (TableOfReal me, integer ny) {
 		
 		// Centre the data and svd it.
 
-		NUMcentreColumns (uy, 1, n, 1, ny, nullptr);
-		NUMcentreColumns (ux, 1, n, 1, nx, nullptr);
+		MATcentreEachColumn_inplace (MAT (uy, n, ny));
+		MATcentreEachColumn_inplace (MAT (ux, n, nx));
 
 		SVD_compute (svdy.get());
 		SVD_compute (svdx.get());
@@ -145,11 +145,11 @@ autoCCA TableOfReal_to_CCA (TableOfReal me, integer ny) {
 
 		for (integer i = 1; i <= nx; i ++) {
 			for (integer j = 1; j <= ny; j ++) {
-				double t = 0.0;
+				longdouble t = 0.0;
 				for (integer q = 1; q <= n; q ++) {
 					t += ux [q] [i] * uy [q] [j];
 				}
-				uc [i] [j] = t;
+				uc [i] [j] = (double) t;
 			}
 		}
 
@@ -158,8 +158,8 @@ autoCCA TableOfReal_to_CCA (TableOfReal me, integer ny) {
 		integer numberOfCoefficients = ny - numberOfZeroedc;
 
 		autoCCA thee = CCA_create (numberOfCoefficients, ny, nx);
-		thy yLabels = strings_to_Strings (my columnLabels, 1, ny);
-		thy xLabels = strings_to_Strings (my columnLabels, ny + 1, my numberOfColumns);
+		thy yLabels = strings_to_Strings (my columnLabels.peek2(), 1, ny);
+		thy xLabels = strings_to_Strings (my columnLabels.peek2(), ny + 1, my numberOfColumns);
 
 		double **evecy = thy y -> eigenvectors;
 		double **evecx = thy x -> eigenvectors;
@@ -179,18 +179,18 @@ autoCCA TableOfReal_to_CCA (TableOfReal me, integer ny) {
 			double ccc = svdc -> d [i];
 			thy y -> eigenvalues [i] = thy x -> eigenvalues [i] = ccc * ccc;
 			for (integer j = 1; j <= ny; j ++) {
-				double t = 0.0;
+				longdouble t = 0.0;
 				for (integer q = 1; q <= ny - numberOfZeroedy; q ++) {
 					t += vc [q] [i] * vy [j] [q] / svdy -> d [q];
 				}
-				evecy [i] [j] = t;
+				evecy [i] [j] = (double) t;
 			}
 			for (integer j = 1; j <= nx; j ++) {
-				double t = 0.0;
+				longdouble t = 0.0;
 				for (integer q = 1; q <= nx - numberOfZeroedx; q ++) {
 					t += uc [q] [i] * vx [j] [q] / svdx -> d [q];
 				}
-				evecx [i] [j] = t;
+				evecx [i] [j] = (double) t;
 			}
 		}
 
@@ -211,7 +211,8 @@ autoTableOfReal CCA_TableOfReal_scores (CCA me, TableOfReal thee, integer number
 		integer n = thy numberOfRows;
 		integer nx = my x -> dimension, ny = my y -> dimension;
 
-		Melder_require (ny + nx == thy numberOfColumns, U"The number of columns in the table (", thy numberOfColumns,
+		Melder_require (ny + nx == thy numberOfColumns,
+			U"The number of columns in the table (", thy numberOfColumns,
 			U") should agree with the dimensions of the CCA object (ny + nx = ", ny, U" + ", nx, U").");
 
 		if (numberOfFactors == 0) {
@@ -221,7 +222,7 @@ autoTableOfReal CCA_TableOfReal_scores (CCA me, TableOfReal thee, integer number
 			U"The number of factors should be in interval [1, ", my numberOfCoefficients, U"].");
 		
 		autoTableOfReal him = TableOfReal_create (n, 2 * numberOfFactors);
-		NUMstrings_copyElements (thy rowLabels, his rowLabels, 1, thy numberOfRows);
+		his rowLabels. copyElementsFrom (thy rowLabels.get());
 		Eigen_TableOfReal_into_TableOfReal_projectRows (my y.get(), thee, 1, him.get(), 1, numberOfFactors);
 		Eigen_TableOfReal_into_TableOfReal_projectRows (my x.get(), thee, ny + 1, him.get(), numberOfFactors + 1, numberOfFactors);
 		TableOfReal_setSequentialColumnLabels (him.get(), 1, numberOfFactors, U"y_", 1, 1);
@@ -262,11 +263,11 @@ autoTableOfReal CCA_TableOfReal_predict (CCA me, TableOfReal thee, integer from)
 		for (integer i = 1; i <= thy numberOfRows; i ++) {
 			NUMvector_copyElements (his data [i], buf.peek(), 1, ny);
 			for (integer j = 1; j <= ny; j ++) {
-				double t = 0.0;
+				longdouble t = 0.0;
 				for (integer k = 1; k <= ny; k ++) {
 					t += sqrt (d [k]) * v [k] [j] * buf [k];
 				}
-				his data [i] [j] = t;
+				his data [i] [j] = (double) t;
 			}
 		}
 		return him;
@@ -292,7 +293,7 @@ double CCA_getCorrelationCoefficient (CCA me, integer index) {
 	return sqrt (my y -> eigenvalues[index]);
 }
 
-void CCA_getZeroCorrelationProbability (CCA me, integer index, double *p_prob, double *p_chisq, double *p_df) {
+void CCA_getZeroCorrelationProbability (CCA me, integer index, double *out_prob, double *out_chisq, double *out_df) {
 	double lambda = 1.0, *ev = my y -> eigenvalues;
 	integer nev = my y -> numberOfEigenvalues;
 	integer ny = my y -> dimension, nx = my x -> dimension;
@@ -307,14 +308,14 @@ void CCA_getZeroCorrelationProbability (CCA me, integer index, double *p_prob, d
 		chisq = - (my numberOfObservations - (ny + nx + 3.0) / 2.0) * log (lambda);
 		prob = NUMchiSquareQ (chisq, df);
 	}
-	if (p_chisq) {
-		*p_chisq = chisq;
+	if (out_chisq) {
+		*out_chisq = chisq;
 	}
-	if (p_df) {
-		*p_df = df;
+	if (out_df) {
+		*out_df = df;
 	}
-	if (p_prob) {
-		*p_prob = prob;
+	if (out_prob) {
+		*out_prob = prob;
 	}
 }
 

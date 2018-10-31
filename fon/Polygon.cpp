@@ -42,10 +42,10 @@ void structPolygon :: v_info () {
 }
   
 void structPolygon :: v_writeText (MelderFile file) {
-	texputi32 (file, our numberOfPoints, U"numberOfPoints", 0,0,0,0,0);
+	texputi32 (file, our numberOfPoints, U"numberOfPoints");
 	for (integer i = 1; i <= our numberOfPoints; i ++) {
-		texputr64 (file, our x [i], U"x [", Melder_integer (i), U"]", 0,0,0);
-		texputr64 (file, our y [i], U"y [", Melder_integer (i), U"]", 0,0,0);
+		texputr64 (file, our x [i], U"x [", Melder_integer (i), U"]");
+		texputr64 (file, our y [i], U"y [", Melder_integer (i), U"]");
 	}
 }
 
@@ -53,8 +53,8 @@ void structPolygon :: v_readText (MelderReadText text, int /*formatVersion*/) {
 	our numberOfPoints = texgeti32 (text);
 	if (our numberOfPoints < 1)
 		Melder_throw (U"Cannot read a Polygon with only ", our numberOfPoints, U" points.");
-	our x = NUMvector <double> (1, our numberOfPoints);
-	our y = NUMvector <double> (1, our numberOfPoints);
+	our x = VECraw (our numberOfPoints);
+	our y = VECraw (our numberOfPoints);
 	for (integer i = 1; i <= our numberOfPoints; i ++) {
 		our x [i] = texgetr64 (text);
 		our y [i] = texgetr64 (text);
@@ -65,8 +65,8 @@ autoPolygon Polygon_create (integer numberOfPoints) {
 	try {
 		autoPolygon me = Thing_new (Polygon);
 		my numberOfPoints = numberOfPoints;
-		my x = NUMvector <double> (1, numberOfPoints);
-		my y = NUMvector <double> (1, numberOfPoints);
+		my x = VECzero (numberOfPoints);
+		my y = VECzero (numberOfPoints);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Polygon not created.");

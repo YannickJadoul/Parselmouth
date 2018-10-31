@@ -1,6 +1,6 @@
 /* LogisticRegression.cpp
  *
- * Copyright (C) 2005-2012,2015,2016,2017 Paul Boersma
+ * Copyright (C) 2005-2012,2015-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  */
 
 #include "LogisticRegression.h"
-#include "UnicodeData.h"
+#include "../kar/UnicodeData.h"
 
 #include "oo_DESTROY.h"
 #include "LogisticRegression_def.h"
@@ -42,28 +42,28 @@ Thing_implement (LogisticRegression, Regression, 0);
 
 void structLogisticRegression :: v_info () {
 	LogisticRegression_Parent :: v_info ();
-	MelderInfo_writeLine (U"Dependent 1: ", our dependent1);
-	MelderInfo_writeLine (U"Dependent 2: ", our dependent2);
+	MelderInfo_writeLine (U"Dependent 1: ", our dependent1.get());
+	MelderInfo_writeLine (U"Dependent 2: ", our dependent2.get());
 	MelderInfo_writeLine (U"Interpretation:");
-	MelderInfo_write (U"   ln (P(", dependent2, U")/P(", dependent1, U")) " UNITEXT_ALMOST_EQUAL_TO U" ", Melder_fixed (intercept, 6));
+	MelderInfo_write (U"   ln (P(", our dependent2.get(), U")/P(", our dependent1.get(), U")) " UNITEXT_ALMOST_EQUAL_TO U" ", Melder_fixed (intercept, 6));
 	for (integer ivar = 1; ivar <= parameters.size; ivar ++) {
 		RegressionParameter parm = parameters.at [ivar];
-		MelderInfo_write (parm -> value < 0.0 ? U" - " : U" + ", Melder_fixed (fabs (parm -> value), 6), U" * ", parm -> label);
+		MelderInfo_write (parm -> value < 0.0 ? U" - " : U" + ", Melder_fixed (fabs (parm -> value), 6), U" * ", parm -> label.get());
 	}
 	MelderInfo_writeLine (U"");
 	MelderInfo_writeLine (U"Log odds ratios:");
 	for (integer ivar = 1; ivar <= parameters.size; ivar ++) {
 		RegressionParameter parm = parameters.at [ivar];
-		MelderInfo_writeLine (U"   Log odds ratio of factor ", parm -> label, U": ", Melder_fixed ((parm -> maximum - parm -> minimum) * parm -> value, 6));
+		MelderInfo_writeLine (U"   Log odds ratio of factor ", parm -> label.get(), U": ", Melder_fixed ((parm -> maximum - parm -> minimum) * parm -> value, 6));
 	}
 	MelderInfo_writeLine (U"Odds ratios:");
 	for (integer ivar = 1; ivar <= parameters.size; ivar ++) {
 		RegressionParameter parm = parameters.at [ivar];
-		MelderInfo_writeLine (U"   Odds ratio of factor ", parm -> label, U": ", exp ((parm -> maximum - parm -> minimum) * parm -> value));
+		MelderInfo_writeLine (U"   Odds ratio of factor ", parm -> label.get(), U": ", exp ((parm -> maximum - parm -> minimum) * parm -> value));
 	}
 }
 
-autoLogisticRegression LogisticRegression_create (const char32 *dependent1, const char32 *dependent2) {
+autoLogisticRegression LogisticRegression_create (conststring32 dependent1, conststring32 dependent2) {
 	try {
 		autoLogisticRegression me = Thing_new (LogisticRegression);
 		Regression_init (me.get());
@@ -75,9 +75,11 @@ autoLogisticRegression LogisticRegression_create (const char32 *dependent1, cons
 	}
 }
 
-static autoLogisticRegression _Table_to_LogisticRegression (Table me, integer *factors, integer numberOfFactors, integer dependent1, integer dependent2) {
-	integer numberOfParameters = numberOfFactors + 1;
-	integer numberOfCells = my rows.size, numberOfY0 = 0, numberOfY1 = 0, numberOfData = 0;
+static autoLogisticRegression _Table_to_LogisticRegression (Table me, constINTVEC factors, integer dependent1, integer dependent2) {
+	const integer numberOfFactors = factors.size;
+	const integer numberOfParameters = numberOfFactors + 1;
+	const integer numberOfCells = my rows.size;
+	integer numberOfY0 = 0, numberOfY1 = 0, numberOfData = 0;
 	double logLikelihood = 1e307, previousLogLikelihood = 1e308;
 	if (numberOfParameters < 1)   // includes intercept
 		Melder_throw (U"Not enough columns (has to be more than 1).");
@@ -90,11 +92,11 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, integer *f
 	autoNUMvector <double> meanX (1, numberOfFactors);
 	autoNUMvector <double> stdevX (1, numberOfFactors);
 	autoNUMmatrix <double> smallMatrix (0, numberOfFactors, 0, numberOfParameters);
-	autoLogisticRegression thee = LogisticRegression_create (my columnHeaders [dependent1]. label, my columnHeaders [dependent2]. label);
+	autoLogisticRegression thee = LogisticRegression_create (my columnHeaders [dependent1]. label.get(), my columnHeaders [dependent2]. label.get());
 	for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
 		double minimum = Table_getMinimum (me, factors [ivar]);
 		double maximum = Table_getMaximum (me, factors [ivar]);
-		Regression_addParameter (thee.get(), my columnHeaders [factors [ivar]]. label, minimum, maximum, 0.0);
+		Regression_addParameter (thee.get(), my columnHeaders [factors [ivar]]. label.get(), minimum, maximum, 0.0);
 	}
 	for (integer icell = 1; icell <= numberOfCells; icell ++) {
 		y0 [icell] = Table_getNumericValue_Assert (me, icell, dependent1);
@@ -111,9 +113,9 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, integer *f
 	if (numberOfY0 == 0 && numberOfY1 == 0)
 		Melder_throw (U"No data in either class. Cannot determine result.");
 	if (numberOfY0 == 0)
-		Melder_throw (U"No data in class ", my columnHeaders [dependent1]. label, U". Cannot determine result.");
+		Melder_throw (U"No data in class ", my columnHeaders [dependent1]. label.get(), U". Cannot determine result.");
 	if (numberOfY1 == 0)
-		Melder_throw (U"No data in class ", my columnHeaders [dependent2]. label, U". Cannot determine result.");
+		Melder_throw (U"No data in class ", my columnHeaders [dependent2]. label.get(), U". Cannot determine result.");
 	/*
 	 * Normalize the data.
 	 */
@@ -262,15 +264,14 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, integer *f
 	return thee;
 }
 
-autoLogisticRegression Table_to_LogisticRegression (Table me, const char32 *factors_columnLabelString,
-	const char32 *dependent1_columnLabel, const char32 *dependent2_columnLabel)
+autoLogisticRegression Table_to_LogisticRegression (Table me, conststring32 factors_columnLabelString,
+	conststring32 dependent1_columnLabel, conststring32 dependent2_columnLabel)
 {
 	try {
-		integer numberOfFactors;
-		autoNUMvector <integer> factors_columnIndices (Table_getColumnIndicesFromColumnLabelString (me, factors_columnLabelString, & numberOfFactors), 1);
+		auto factors_columnIndices = Table_getColumnIndicesFromColumnLabelString (me, factors_columnLabelString);
 		integer dependent1_columnIndex = Table_getColumnIndexFromColumnLabel (me, dependent1_columnLabel);
 		integer dependent2_columnIndex = Table_getColumnIndexFromColumnLabel (me, dependent2_columnLabel);
-		autoLogisticRegression thee = _Table_to_LogisticRegression (me, factors_columnIndices.peek(), numberOfFactors, dependent1_columnIndex, dependent2_columnIndex);
+		autoLogisticRegression thee = _Table_to_LogisticRegression (me, factors_columnIndices.get(), dependent1_columnIndex, dependent2_columnIndex);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": logistic regression not performed.");
@@ -334,9 +335,9 @@ void LogisticRegression_drawBoundary (LogisticRegression me, Graphics graphics, 
 	Graphics_unsetInner (graphics);
 	if (garnish) {
 		Graphics_drawInnerBox (graphics);
-		Graphics_textBottom (graphics, true, parmx -> label);
+		Graphics_textBottom (graphics, true, parmx -> label.get());
 		Graphics_marksBottom (graphics, 2, true, true, false);
-		Graphics_textLeft (graphics, true, parmy -> label);
+		Graphics_textLeft (graphics, true, parmy -> label.get());
 		Graphics_marksLeft (graphics, 2, true, true, false);
 	}
 }

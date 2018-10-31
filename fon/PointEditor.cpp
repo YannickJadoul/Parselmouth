@@ -162,7 +162,10 @@ void structPointEditor :: v_draw () {
 		integer first, last;
 		if (Sampled_getWindowSamples (sound, our startWindow, our endWindow, & first, & last) >= 1) {
 			Matrix_getWindowExtrema (sound, first, last, 1, 1, & minimum, & maximum);
-			if (minimum == maximum) minimum -= 1.0, maximum += 1.0;
+			if (minimum == maximum) {
+				minimum -= 1.0;
+				maximum += 1.0;
+			}
 		}
 	}
 	Graphics_setWindow (our graphics.get(), our startWindow, our endWindow, minimum, maximum);
@@ -196,7 +199,7 @@ void structPointEditor :: v_play (double a_tmin, double a_tmax) {
 	}
 }
 
-autoPointEditor PointEditor_create (const char32 *title, PointProcess point, Sound sound) {
+autoPointEditor PointEditor_create (conststring32 title, PointProcess point, Sound sound) {
 	try {
 		autoPointEditor me = Thing_new (PointEditor);
 		if (sound) {

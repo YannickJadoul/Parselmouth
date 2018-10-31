@@ -32,11 +32,12 @@
  djmw 20040622 Less horizontal labels in Eigen_drawEigenvector.
  djmw 20050706 Shortened horizontal offsets in Eigen_drawEigenvalues from 1 to 0.5
  djmw 20051204 Eigen_initFromSquareRoot adapted for nrows < ncols
- djmw 20071012 Added: o_CAN_WRITE_AS_ENCODING.h
+ djmw 20071012 Added: oo_CAN_WRITE_AS_ENCODING.h
  djmw 20110304 Thing_new
 */
 
 #include "Eigen.h"
+#include "MAT_numerics.h"
 #include "NUMmachar.h"
 #include "NUMlapack.h"
 #include "NUMclapack.h"
@@ -213,41 +214,15 @@ void Eigen_initFromSquareRootPair (Eigen me, double **a, integer numberOfRows, i
 	NUMnormalizeRows (my eigenvectors, my numberOfEigenvalues, numberOfColumns, 1);
 }
 
-void Eigen_initFromSymmetricMatrix (Eigen me, double **a, integer n) {
-	double wt[1], temp;
-	char jobz = 'V', uplo = 'U';
-	integer lwork = -1, info;
-
-	my dimension = my numberOfEigenvalues = n;
-
+void Eigen_initFromSymmetricMatrix (Eigen me, constMAT a) {
+	Melder_assert (a.ncol == a.nrow);
 	if (! my eigenvectors) {
-		Eigen_init (me, n, n);
-	}
-
-	NUMmatrix_copyElements (a, my eigenvectors, 1, n, 1, n);
-
-	// Get size of work array
-
-	(void) NUMlapack_dsyev (& jobz, & uplo, & n, & my eigenvectors [1] [1], & n, & my eigenvalues [1], wt, & lwork, & info);
-	Melder_require (info == 0, U"dsyev initialization fails");
-	
-
-	lwork = Melder_ifloor (wt [0]);
-	autoNUMvector <double> work ((integer) 0, lwork);
-
-	(void) NUMlapack_dsyev (&jobz, &uplo, &n, &my eigenvectors[1][1], &n, &my eigenvalues[1], work.peek(), & lwork, & info);
-	Melder_require (info == 0, U"dsyev fails");
-
-	// We want descending order instead of ascending.
-
-	for (integer i = 1; i <= n / 2; i ++) {
-		integer ilast = n - i + 1;
-
-		SWAP (my eigenvalues [i], my eigenvalues [ilast])
-		for (integer j = 1; j <= n; j ++) {
-			SWAP (my eigenvectors [i] [j], my eigenvectors [ilast] [j])
-		}
-	}
+		Eigen_init (me, a.ncol, a.ncol);
+	}	
+	MAT eigenvectors (my eigenvectors, my numberOfEigenvalues, my dimension);
+	VEC eigenvalues (my eigenvalues, my numberOfEigenvalues);
+	MATtranspose_preallocated (eigenvectors, a);
+	MAT_getEigenSystemFromSymmetricMatrix_inplace (eigenvectors, true, eigenvalues, false);
 }
 
 autoEigen Eigen_create (integer numberOfEigenvalues, integer dimension) {
@@ -285,15 +260,15 @@ double Eigen_getSumOfEigenvalues (Eigen me, integer from, integer to) {
 	if (to > my numberOfEigenvalues || from > to) {
 		return undefined;
 	}
-	double sum = 0.0;
+	longdouble sum = 0.0;
 	for (integer i = from; i <= to; i++) {
 		sum += my eigenvalues[i];
 	}
-	return sum;
+	return (double) sum;
 }
 
 double Eigen_getCumulativeContributionOfComponents (Eigen me, integer from, integer to) {
-	double partial = 0.0, sum = 0.0;
+	longdouble partial = 0.0, sum = 0.0;
 
 	if (to == 0) {
 		to = my numberOfEigenvalues;
@@ -318,7 +293,7 @@ integer Eigen_getDimensionOfFraction (Eigen me, double fraction) {
 	}
 
 	integer n = 1;
-	double p = my eigenvalues[1];
+	longdouble p = my eigenvalues [1];
 	while (p / sum < fraction && n < my numberOfEigenvalues) {
 		p += my eigenvalues [++ n];
 	}
@@ -359,7 +334,7 @@ void Eigen_invertEigenvector (Eigen me, integer ivec) {
 	}
 }
 
-void Eigen_drawEigenvalues (Eigen me, Graphics g, integer first, integer last, double ymin, double ymax, bool fractionOfTotal, bool cumulative, double size_mm, const char32 *mark, bool garnish) {
+void Eigen_drawEigenvalues (Eigen me, Graphics g, integer first, integer last, double ymin, double ymax, bool fractionOfTotal, bool cumulative, double size_mm, conststring32 mark, bool garnish) {
 	double xmin = first, xmax = last, scale = 1.0, sumOfEigenvalues = 0.0;
 
 	if (first < 1) {
@@ -406,7 +381,9 @@ void Eigen_drawEigenvalues (Eigen me, Graphics g, integer first, integer last, d
 	}
 }
 
-void Eigen_drawEigenvector (Eigen me, Graphics g, integer ivec, integer first, integer last, double ymin, double ymax, bool weigh, double size_mm, const char32 *mark, bool connect, char32 **rowLabels, bool garnish) {
+void Eigen_drawEigenvector (Eigen me, Graphics g, integer ivec, integer first, integer last,
+	double ymin, double ymax, bool weigh, double size_mm, conststring32 mark, bool connect, char32 **rowLabels, bool garnish)
+{
 	double xmin = first, xmax = last;
 
 	if (ivec < 1 || ivec > my numberOfEigenvalues) {
@@ -546,12 +523,12 @@ void Eigen_matrix_into_matrix_principalComponents (Eigen me, double **from, inte
 	
 	for (integer irow = 1; irow <= numberOfRows; irow ++) {
 		for (integer icol = 1; icol <= numberOfDimensionsToKeep; icol ++) {
-			real80 r = 0.0;
+			longdouble r = 0.0;
 			for (integer k = 1; k <= my dimension; k ++) {
 				// eigenvector[icol] is in row[icol] of my eigenvectors
 				r += my eigenvectors  [icol] [k] * from [irow] [from_colbegin + k - 1];
 			}
-			to [irow] [to_colbegin + icol - 1] = (real) r;
+			to [irow] [to_colbegin + icol - 1] = (double) r;
 		}
 	}
 }

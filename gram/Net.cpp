@@ -1,6 +1,6 @@
 /* Net.cpp
  *
- * Copyright (C) 2017 Paul Boersma
+ * Copyright (C) 2017,2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,6 @@
 
 //#include <OpenCL/OpenCL.h>
 #include "Net.h"
-#include "tensor.h"
-#include "PAIRWISE_SUM.h"
 
 #include "oo_DESTROY.h"
 #include "Net_def.h"
@@ -50,14 +48,14 @@ static autoRBMLayer RBMLayer_create (integer numberOfInputNodes, integer numberO
 	try {
 		autoRBMLayer me = Thing_new (RBMLayer);
 		my numberOfInputNodes = numberOfInputNodes;
-		my inputBiases = NUMvector <double> (1, numberOfInputNodes);
-		my inputActivities = NUMvector <double> (1, numberOfInputNodes);
-		my inputReconstruction = NUMvector <double> (1, numberOfInputNodes);
+		my inputBiases = VECzero (numberOfInputNodes);
+		my inputActivities = VECzero (numberOfInputNodes);
+		my inputReconstruction = VECzero (numberOfInputNodes);
 		my numberOfOutputNodes = numberOfOutputNodes;
-		my outputBiases = NUMvector <double> (1, numberOfOutputNodes);
-		my outputActivities = NUMvector <double> (1, numberOfOutputNodes);
-		my outputReconstruction = NUMvector <double> (1, numberOfOutputNodes);
-		my weights = NUMmatrix <double> (1, numberOfInputNodes, 1, numberOfOutputNodes);
+		my outputBiases = VECzero (numberOfOutputNodes);
+		my outputActivities = VECzero (numberOfOutputNodes);
+		my outputReconstruction = VECzero (numberOfOutputNodes);
+		my weights = MATzero (numberOfInputNodes, numberOfOutputNodes);
 		my inputsAreBinary = inputsAreBinary;
 		return me;
 	} catch (MelderError) {
@@ -77,7 +75,7 @@ autoNet Net_createEmpty (integer numberOfInputNodes) {
 	}
 }
 
-void Net_initAsDeepBeliefNet (Net me, numvec numbersOfNodes, bool inputsAreBinary) {
+void Net_initAsDeepBeliefNet (Net me, constVEC numbersOfNodes, bool inputsAreBinary) {
 	if (numbersOfNodes.size < 2)
 		Melder_throw (U"A deep belief net should have at least two levels of nodes.");
 	integer numberOfLayers = numbersOfNodes.size - 1;
@@ -92,7 +90,7 @@ void Net_initAsDeepBeliefNet (Net me, numvec numbersOfNodes, bool inputsAreBinar
 	}
 }
 
-autoNet Net_createAsDeepBeliefNet (numvec numbersOfNodes, bool inputsAreBinary) {
+autoNet Net_createAsDeepBeliefNet (constVEC numbersOfNodes, bool inputsAreBinary) {
 	try {
 		autoNet me = Thing_new (Net);
 		Net_initAsDeepBeliefNet (me.get(), numbersOfNodes, inputsAreBinary);
@@ -103,10 +101,7 @@ autoNet Net_createAsDeepBeliefNet (numvec numbersOfNodes, bool inputsAreBinary) 
 }
 
 static void copyOutputsToInputs (Layer me, Layer you) {
-	Melder_assert (my numberOfOutputNodes == your numberOfInputNodes);
-	for (integer inode = 1; inode <= my numberOfOutputNodes; inode ++) {
-		your inputActivities [inode] = my outputActivities [inode];
-	}
+	vectorcopy_preallocated (your inputActivities.get(), my outputActivities.get());
 }
 
 inline static double logistic (double excitation) {
@@ -123,14 +118,14 @@ static void Layer_sampleOutput (Layer me) {
 void structRBMLayer :: v_spreadUp (kLayer_activationType activationType) {
 	integer numberOfOutputNodes = our numberOfOutputNodes;
 	for (integer jnode = 1; jnode <= numberOfOutputNodes; jnode ++) {
-		PAIRWISE_SUM (real80, excitation, integer, our numberOfInputNodes,
- 			double *p_inputActivity = & our inputActivities [0];
- 			double *p_weight = & our weights [1] [jnode] - numberOfOutputNodes,
- 			( p_inputActivity += 1, p_weight += numberOfOutputNodes ),
- 			(real80) *p_inputActivity * (real80) *p_weight
-		);
+		PAIRWISE_SUM (longdouble, excitation, integer, our numberOfInputNodes,
+ 			double *p_inputActivity = & our inputActivities [1];
+ 			double *p_weight = & our weights [1] [jnode],
+ 			(longdouble) *p_inputActivity * (longdouble) *p_weight,
+ 			( p_inputActivity += 1, p_weight += numberOfOutputNodes )
+		)
 		excitation += our outputBiases [jnode];
-		our outputActivities [jnode] = logistic ((real) excitation);
+		our outputActivities [jnode] = logistic ((double) excitation);
 	}
 	if (activationType == kLayer_activationType::STOCHASTIC)
 		Layer_sampleOutput (this);
@@ -166,25 +161,22 @@ void Net_sampleOutput (Net me) {
 }
 
 static void copyInputsToOutputs (Layer me, Layer you) {
-	Melder_assert (my numberOfInputNodes == your numberOfOutputNodes);
-	for (integer inode = 1; inode <= my numberOfInputNodes; inode ++) {
-		your outputActivities [inode] = my inputActivities [inode];
-	}
+	vectorcopy_preallocated (your outputActivities.get(), my inputActivities.get());
 }
 
 void structRBMLayer :: v_spreadDown (kLayer_activationType activationType) {
 	for (integer inode = 1; inode <= our numberOfInputNodes; inode ++) {
-		PAIRWISE_SUM (real80, excitation, integer, our numberOfOutputNodes,
- 			double *p_weight = & our weights [inode] [0];
- 			double *p_outputActivity = & our outputActivities [0],
- 			( p_weight += 1, p_outputActivity += 1 ),
- 			(real80) *p_weight * (real80) *p_outputActivity
-		);
+		PAIRWISE_SUM (longdouble, excitation, integer, our numberOfOutputNodes,
+ 			double *p_weight = & our weights [inode] [1];
+ 			double *p_outputActivity = & our outputActivities [1],
+ 			(longdouble) *p_weight * (longdouble) *p_outputActivity,
+ 			( p_weight += 1, p_outputActivity += 1 )
+		)
 		excitation += our inputBiases [inode];
 		if (our inputsAreBinary) {
-			our inputActivities [inode] = logistic ((real) excitation);
+			our inputActivities [inode] = logistic ((double) excitation);
 		} else {   // linear
-			our inputActivities [inode] = (real) excitation;
+			our inputActivities [inode] = (double) excitation;
 		}
 	}
 	if (activationType == kLayer_activationType::STOCHASTIC)
@@ -202,17 +194,17 @@ void Net_spreadDown (Net me, kLayer_activationType activationType) {
 
 void structRBMLayer :: v_spreadDown_reconstruction () {
 	for (integer inode = 1; inode <= our numberOfInputNodes; inode ++) {
-		PAIRWISE_SUM (real80, excitation, integer, our numberOfOutputNodes,
- 			double *p_weight = & our weights [inode] [0];
- 			double *p_outputActivity = & our outputActivities [0],
- 			( p_weight += 1, p_outputActivity += 1 ),
- 			(real80) *p_weight * (real80) *p_outputActivity
-		);
+		PAIRWISE_SUM (longdouble, excitation, integer, our numberOfOutputNodes,
+ 			double *p_weight = & our weights [inode] [1];
+ 			double *p_outputActivity = & our outputActivities [1],
+ 			(longdouble) *p_weight * (longdouble) *p_outputActivity,
+ 			( p_weight += 1, p_outputActivity += 1 )
+		)
 		excitation += our inputBiases [inode];
 		if (our inputsAreBinary) {
-			our inputReconstruction [inode] = logistic ((real) excitation);
+			our inputReconstruction [inode] = logistic ((double) excitation);
 		} else {   // linear
-			our inputReconstruction [inode] = (real) excitation;
+			our inputReconstruction [inode] = (double) excitation;
 		}
 	}
 }
@@ -226,14 +218,14 @@ void Net_spreadDown_reconstruction (Net me) {
 void structRBMLayer :: v_spreadUp_reconstruction () {
 	integer numberOfOutputNodes = our numberOfOutputNodes;
 	for (integer jnode = 1; jnode <= our numberOfOutputNodes; jnode ++) {
-		PAIRWISE_SUM (real80, excitation, integer, our numberOfInputNodes,
- 			double *p_inputActivity = & our inputReconstruction [0];
- 			double *p_weight = & our weights [1] [jnode] - numberOfOutputNodes,
- 			( p_inputActivity += 1, p_weight += numberOfOutputNodes ),
- 			(real80) *p_inputActivity * (real80) *p_weight
-		);
+		PAIRWISE_SUM (longdouble, excitation, integer, our numberOfInputNodes,
+ 			double *p_inputActivity = & our inputReconstruction [1];
+ 			double *p_weight = & our weights [1] [jnode],
+ 			(longdouble) *p_inputActivity * (longdouble) *p_weight,
+ 			( p_inputActivity += 1, p_weight += numberOfOutputNodes )
+		)
 		excitation += our outputBiases [jnode];
-		our outputReconstruction [jnode] = logistic ((real) excitation);
+		our outputReconstruction [jnode] = logistic ((double) excitation);
 	}
 }
 
@@ -338,7 +330,7 @@ autoActivationList Net_PatternList_to_ActivationList (Net me, PatternList thee, 
 		for (integer ipattern = 1; ipattern <= thy ny; ipattern ++) {
 			Net_PatternList_applyToInput (me, thee, ipattern);
 			Net_spreadUp (me, activationType);
-			NUMvector_copyElements <double> (outputLayer -> outputActivities, activations -> z [ipattern], 1, outputLayer -> numberOfOutputNodes);
+			NUMvector_copyElements <double> (outputLayer -> outputActivities.at, activations -> z [ipattern], 1, outputLayer -> numberOfOutputNodes);
 		}
 		return activations;
 	} catch (MelderError) {
@@ -349,7 +341,7 @@ autoActivationList Net_PatternList_to_ActivationList (Net me, PatternList thee, 
 static autoMatrix Layer_extractInputActivities (Layer me) {
 	try {
 		autoMatrix thee = Matrix_createSimple (1, my numberOfInputNodes);
-		NUMvector_copyElements <double> (my inputActivities, thy z [1], 1, my numberOfInputNodes);
+		NUMvector_copyElements <double> (my inputActivities.at, thy z [1], 1, my numberOfInputNodes);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": input activities not extracted.");
@@ -363,7 +355,7 @@ autoMatrix Net_extractInputActivities (Net me) {
 static autoMatrix Layer_extractOutputActivities (Layer me) {
 	try {
 		autoMatrix thee = Matrix_createSimple (1, my numberOfOutputNodes);
-		NUMvector_copyElements <double> (my outputActivities, thy z [1], 1, my numberOfOutputNodes);
+		NUMvector_copyElements <double> (my outputActivities.at, thy z [1], 1, my numberOfOutputNodes);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": output activities not extracted.");
@@ -377,7 +369,7 @@ autoMatrix Net_extractOutputActivities (Net me) {
 autoMatrix structRBMLayer :: v_extractInputReconstruction () {
 	try {
 		autoMatrix thee = Matrix_createSimple (1, our numberOfInputNodes);
-		NUMvector_copyElements <double> (our inputReconstruction, thy z [1], 1, our numberOfInputNodes);
+		NUMvector_copyElements <double> (our inputReconstruction.at, thy z [1], 1, our numberOfInputNodes);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (this, U": input reconstruction not extracted.");
@@ -391,7 +383,7 @@ autoMatrix Net_extractInputReconstruction (Net me) {
 autoMatrix structRBMLayer :: v_extractOutputReconstruction () {
 	try {
 		autoMatrix thee = Matrix_createSimple (1, our numberOfOutputNodes);
-		NUMvector_copyElements <double> (our outputReconstruction, thy z [1], 1, our numberOfOutputNodes);
+		NUMvector_copyElements <double> (our outputReconstruction.at, thy z [1], 1, our numberOfOutputNodes);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (this, U": output reconstruction not extracted.");
@@ -405,7 +397,7 @@ autoMatrix Net_extractOutputReconstruction (Net me) {
 autoMatrix structRBMLayer :: v_extractInputBiases () {
 	try {
 		autoMatrix thee = Matrix_createSimple (1, our numberOfInputNodes);
-		NUMvector_copyElements <double> (our inputBiases, thy z [1], 1, our numberOfInputNodes);
+		NUMvector_copyElements <double> (our inputBiases.at, thy z [1], 1, our numberOfInputNodes);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (this, U": input biases not extracted.");
@@ -431,7 +423,7 @@ autoMatrix Net_extractInputBiases (Net me, integer layerNumber) {
 autoMatrix structRBMLayer :: v_extractOutputBiases () {
 	try {
 		autoMatrix thee = Matrix_createSimple (1, our numberOfOutputNodes);
-		NUMvector_copyElements <double> (our outputBiases, thy z [1], 1, our numberOfOutputNodes);
+		NUMvector_copyElements <double> (our outputBiases.at, thy z [1], 1, our numberOfOutputNodes);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (this, U": input biases not extracted.");
@@ -450,7 +442,7 @@ autoMatrix Net_extractOutputBiases (Net me, integer layerNumber) {
 autoMatrix structRBMLayer :: v_extractWeights () {
 	try {
 		autoMatrix thee = Matrix_createSimple (our numberOfInputNodes, our numberOfOutputNodes);
-		NUMmatrix_copyElements <double> (our weights, thy z, 1, our numberOfInputNodes, 1, our numberOfOutputNodes);
+		NUMmatrix_copyElements <double> (our weights.at, thy z, 1, our numberOfInputNodes, 1, our numberOfOutputNodes);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (this, U": weights not extracted.");
@@ -466,12 +458,12 @@ autoMatrix Net_extractWeights (Net me, integer layerNumber) {
 	}
 }
 
-autonummat structRBMLayer :: v_getWeights_nummat () {
-	return copy_nummat ({ our weights, our numberOfInputNodes, our numberOfOutputNodes });
+autoMAT structRBMLayer :: v_getWeights () {
+	return matrixcopy (our weights.get());
 }
 
-autonummat Net_getWeights_nummat (Net me, integer layerNumber) {
-	return my layers->at [layerNumber] -> v_getWeights_nummat ();
+autoMAT Net_getWeights (Net me, integer layerNumber) {
+	return my layers->at [layerNumber] -> v_getWeights ();
 }
 
 /* End of file Net.cpp */

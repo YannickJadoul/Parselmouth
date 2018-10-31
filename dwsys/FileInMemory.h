@@ -2,7 +2,7 @@
 #define _FileInMemory_h_
 /* FileInMemory.h
  *
- * Copyright (C) 2011-2017 David Weenink, 2015 Paul Boersma
+ * Copyright (C) 2011-2017 David Weenink, 2015,2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,14 +27,17 @@ autoFileInMemory FileInMemory_create (MelderFile file);
 
 /*
 	If the FileInMemory is created from static data we do not need to copy the data into the object but only
-	create a link to the data. This implies that the data cannot be deleted if the FileInMemory object gets destroyed. However, if the FileInMemory object is copied, for exampled, then we also have to copy the data and the copied object has to become owner of these copied data. This is automatically guaranteed by our implementation because _dontOwnData is default initialised as false.
-	Only if we create a  FileInMemory object from data we have to be explicit about ownership.
+	create a link to the data. This implies that the data cannot be deleted if the FileInMemory object gets
+	destroyed. However, if the FileInMemory object is copied, for example, then we also have to copy the data,
+	and the copied object has to become owner of these copied data. This is automatically guaranteed by our
+	implementation, because _dontOwnData is default-initialised as false.
+	Only if we create a FileInMemory object from data we have to be explicit about ownership.
 */
-autoFileInMemory FileInMemory_createWithData (integer numberOfBytes, const char *data, bool isStaticData, const char32 *path, const char32 *id);
+autoFileInMemory FileInMemory_createWithData (integer numberOfBytes, const char *data, bool isStaticData, conststring32 path, conststring32 id);
 
-void FileInMemory_setId (FileInMemory me, const char32 *newId);
+void FileInMemory_setId (FileInMemory me, conststring32 newId);
 
-void FileInMemory_showAsCode (FileInMemory me, const char32 *name, integer numberOfBytesPerLine);
+void FileInMemory_showAsCode (FileInMemory me, conststring32 name, integer numberOfBytesPerLine);
 
 
 #endif // _FileInMemory_h_

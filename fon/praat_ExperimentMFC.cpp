@@ -1,6 +1,6 @@
 /* praat_ExperimentMFC.cpp
  *
- * Copyright (C) 2001-2012,2015,2016 Paul Boersma
+ * Copyright (C) 2001-2007,2009-2012,2015-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ END }
 DIRECT (NEW_ExperimentMFC_extractResults) {
 	CONVERT_EACH (ExperimentMFC)
 		autoResultsMFC result = ExperimentMFC_extractResults (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: - RESULTS_MFC
@@ -86,7 +86,7 @@ DO
 	STRING_ONE (ResultsMFC)
 		if (trial > my numberOfTrials)
 			Melder_throw (U"Trial ", trial, U" does not exist (maximum ", my numberOfTrials, U").");
-		const char32 *result = my result [trial]. response;
+		conststring32 result = my result [trial]. response.get();
 	STRING_ONE_END
 }
 
@@ -97,26 +97,26 @@ DO
 	STRING_ONE (ResultsMFC)
 		if (trial > my numberOfTrials)
 			Melder_throw (U"Trial ", trial, U" does not exist (maximum ", my numberOfTrials, U").");
-		const char32 *result = my result [trial]. stimulus;
+		conststring32 result = my result [trial]. stimulus.get();
 	STRING_ONE_END
 }
 
 DIRECT (NEW1_ResultsMFC_removeUnsharedStimuli) {
 	CONVERT_COUPLE (ResultsMFC)
 		autoResultsMFC result = ResultsMFC_removeUnsharedStimuli (me, you);
-	CONVERT_COUPLE_END (your name, U"_shared")
+	CONVERT_COUPLE_END (your name.get(), U"_shared")
 }
 
 DIRECT (NEW_ResultsMFC_to_Categories_stimuli) {
 	CONVERT_EACH (ResultsMFC)
 		autoCategories result = ResultsMFC_to_Categories_stimuli (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_ResultsMFC_to_Categories_responses) {
 	CONVERT_EACH (ResultsMFC)
 		autoCategories result = ResultsMFC_to_Categories_responses (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW1_ResultsMFCs_to_Table) {

@@ -1,6 +1,6 @@
 /* longchar.cpp
  *
- * Copyright (C) 1992-2011,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2009,2011-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,6 @@
  */
 
 #include "longchar.h"
-#include <stdio.h>   /* For error message. */
 #include "UnicodeData.h"
 
 static struct structLongchar_Info Longchar_database [] = {
@@ -609,58 +608,41 @@ static struct structLongchar_Info Longchar_database [] = {
 /* Not yet bitmapped or measured. */
 { 'f', '5', 3, 0, { "/flower5",        800, 0,   0,   0,    800, 0,    800, 0,   0,   0   },  96,  96,  96,  96, UNICODE_WHITE_FLORETTE }, /* sympathy flower */
 
-{'\0','\0', 0, 0, { 0,                   0, 0,   0,   0,      0, 0,      0, 0,   0,   0   },   0,   0,   0,   0 }  /* Closing. */
+{'\0','\0', 0, 0, { 0,                   0, 0,   0,   0,      0, 0,      0, 0,   0,   0   },   0,   0,   0,   0, 0 }  /* Closing. */
 };
 
 static short where [95] [95];
 static short inited = 0;
-#define UNICODE_TOP_GENERICIZABLE  65535
-static struct { char first, second; bool isSpace; } genericDigraph [1+UNICODE_TOP_GENERICIZABLE];
+
+UCD_CodePointInfo theUnicodeDatabase [1+kUCD_TOP_OF_LIST] =
+{
+	#include "UCD_features_generated.h"
+};
 
 void Longchar_init () {
-	Longchar_Info data;
-	short i;
-	for (i = 0, data = & Longchar_database [0]; data -> first != '\0'; i ++, data ++) {
+	Longchar_Info data = & Longchar_database [0];
+	short i = 0;
+	for (; data -> first != '\0'; i ++, data ++) {
 		short *location = & where [data -> first - 32] [data -> second - 32];
 		if (*location) {
-			/* Doubly defined symbol; an error! */
-			/* We may not be able to use Melder_error yet, so just write a warning to stderr. */
-			fprintf (stderr, "Longchar init: symbol \"%c%c\" doubly defined.\n", data -> first, data -> second);
+			/*
+				Doubly defined symbol; an error!
+				We may not be able to use Melder_error yet,
+				so just write a warning to stderr.
+			*/
+			fprintf (stderr, "Longchar init: symbol \"%c%c\" doubly defined.\n",
+					data -> first, data -> second);
 		}
 		*location = i;
-		if (data -> unicode <= UNICODE_TOP_GENERICIZABLE) {
-			genericDigraph [data -> unicode]. first = data -> first;
-			genericDigraph [data -> unicode]. second = data -> second;
+		if (data -> unicode <= kUCD_TOP_OF_LIST) {
+			theUnicodeDatabase [data -> unicode]. first = data -> first;
+			theUnicodeDatabase [data -> unicode]. second = data -> second;
 		}
 	}
-	genericDigraph [' ']. isSpace = true;
-	genericDigraph ['\r']. isSpace = true;
-	genericDigraph ['\n']. isSpace = true;
-	genericDigraph ['\t']. isSpace = true;
-	genericDigraph ['\f']. isSpace = true;
-	genericDigraph ['\v']. isSpace = true;
-	genericDigraph [UNICODE_OGHAM_SPACE_MARK]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_MONGOLIAN_VOWEL_SEPARATOR]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_EN_QUAD]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_EM_QUAD]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_EN_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_EM_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_THREE_PER_EM_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_FOUR_PER_EM_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_SIX_PER_EM_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_FIGURE_SPACE]. isSpace = true;   // questionable
-	genericDigraph [UNICODE_PUNCTUATION_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_THIN_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_HAIR_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_ZERO_WIDTH_SPACE]. isSpace = true;   // questionable
-	genericDigraph [UNICODE_LINE_SEPARATOR]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_PARAGRAPH_SEPARATOR]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_MEDIUM_MATHEMATICAL_SPACE]. isSpace = true;   // ISO 30112
-	genericDigraph [UNICODE_IDEOGRAPHIC_SPACE]. isSpace = true;   // ISO 30112; occurs on Japanese computers
 	inited = 1;
 }
 
-char32_t * Longchar_nativize32 (const char32_t *generic, char32_t *native, int educateQuotes) {
+char32 * Longchar_nativize32 (conststring32 generic, char32 *native, int educateQuotes) {
 	integer nquote = 0;
 	char32_t kar, kar1, kar2;
 	if (! inited) Longchar_init ();
@@ -692,27 +674,27 @@ char32_t * Longchar_nativize32 (const char32_t *generic, char32_t *native, int e
 			*native++ = kar;
 		}
 	}
-	*native++ = '\0';
+	*native++ = U'\0';
 	return native;
 }
 
-char32_t *Longchar_genericize32 (const char32_t *native, char32_t *g) {
+char32_t *Longchar_genericize32 (conststring32 native, char32 *g) {
 	char32_t kar;
 	if (! inited) Longchar_init ();
 	while ((kar = *native++) != U'\0') {
-		if (kar > 128 && kar <= UNICODE_TOP_GENERICIZABLE && genericDigraph [kar]. first != U'\0') {
+		if (kar > 128 && kar <= kUCD_TOP_OF_LIST && theUnicodeDatabase [kar]. first != U'\0') {
 			*g++ = '\\';
-			*g++ = genericDigraph [kar]. first;
-			*g++ = genericDigraph [kar]. second;
+			*g++ = theUnicodeDatabase [kar]. first;
+			*g++ = theUnicodeDatabase [kar]. second;
 		} else {
 			*g++ = kar;
 		}
 	}
-	*g++ = '\0';
+	*g++ = U'\0';
 	return g;
 }
 
-Longchar_Info Longchar_getInfo (char32_t kar1, char32_t kar2) {
+Longchar_Info Longchar_getInfo (char32 kar1, char32 kar2) {
 	if (! inited) Longchar_init ();
 	short position = kar1 < 32 || kar1 > 126 || kar2 < 32 || kar2 > 126 ?
 		0 :   /* Return the 'space' character. */
@@ -720,14 +702,9 @@ Longchar_Info Longchar_getInfo (char32_t kar1, char32_t kar2) {
 	return & Longchar_database [position];
 }
 
-Longchar_Info Longchar_getInfoFromNative (char32_t kar) {
+Longchar_Info Longchar_getInfoFromNative (char32 kar) {
 	if (! inited) Longchar_init ();
-	return kar > UNICODE_TOP_GENERICIZABLE ? Longchar_getInfo (U' ', U' ') : Longchar_getInfo (genericDigraph [kar]. first, genericDigraph [kar]. second);
-}
-
-bool Melder_isWhiteSpace (const char32_t kar) {
-	if (! inited) Longchar_init ();
-	return kar >= 0 && kar <= UNICODE_TOP_GENERICIZABLE && genericDigraph [kar]. isSpace;
+	return kar > kUCD_TOP_OF_LIST ? Longchar_getInfo (U' ', U' ') : Longchar_getInfo (theUnicodeDatabase [kar]. first, theUnicodeDatabase [kar]. second);
 }
 
 /* End of file longchar.cpp */

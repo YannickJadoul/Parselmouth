@@ -1,6 +1,6 @@
 /* SpellingChecker.cpp
  *
- * Copyright (C) 1999-2011,2015 Paul Boersma
+ * Copyright (C) 1999-2007,2011,2012,2015-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
 #include "oo_DESCRIPTION.h"
 #include "SpellingChecker_def.h"
 
-#include "longchar.h"
+#include "../kar/longchar.h"
 
 Thing_implement (SpellingChecker, Daata, 0);
 
@@ -84,11 +84,11 @@ void SpellingChecker_replaceUserDictionary (SpellingChecker me, StringSet userDi
 	}
 }
 
-static int startsWithCapital (const char32 *word) {
+static int startsWithCapital (conststring32 word) {
 	return iswupper ((int) word [0]) || (word [0] == '\\' && iswupper ((int) word [1]));
 }
 
-bool SpellingChecker_isWordAllowed (SpellingChecker me, const char32 *word) {
+bool SpellingChecker_isWordAllowed (SpellingChecker me, conststring32 word) {
 	int wordLength = str32len (word);
 	if (my allowAllWordsContaining && my allowAllWordsContaining [0]) {
 		char32 *p = & my allowAllWordsContaining [0];
@@ -146,7 +146,7 @@ bool SpellingChecker_isWordAllowed (SpellingChecker me, const char32 *word) {
 		}
 	}
 	if (my allowAllWordsStartingWith && my allowAllWordsStartingWith [0]) {
-		char32 *p = & my allowAllWordsStartingWith [0];
+		const char32 *p = & my allowAllWordsStartingWith [0];
 		while (*p) {
 			char32 token [100], *q = & token [0];
 			int tokenLength;
@@ -160,7 +160,7 @@ bool SpellingChecker_isWordAllowed (SpellingChecker me, const char32 *word) {
 		}
 	}
 	if (my allowAllWordsEndingIn && my allowAllWordsEndingIn [0]) {
-		char32 *p = & my allowAllWordsEndingIn [0];
+		const char32 *p = & my allowAllWordsEndingIn [0];
 		while (*p) {
 			char32 token [100], *q = & token [0];
 			int tokenLength;
@@ -185,18 +185,18 @@ bool SpellingChecker_isWordAllowed (SpellingChecker me, const char32 *word) {
 	return false;
 }
 
-void SpellingChecker_addNewWord (SpellingChecker me, const char32 *word) {
+void SpellingChecker_addNewWord (SpellingChecker me, conststring32 word) {
 	try {
-		autostring32 generic = Melder_calloc (char32, 3 * str32len (word) + 1);
-		Longchar_genericize32 (word, generic.peek());
-		my userDictionary -> addString_copy (generic.transfer());
+		autostring32 generic (3 * str32len (word));
+		Longchar_genericize32 (word, generic.get());
+		my userDictionary -> addString_copy (generic.get());
 	} catch (MelderError) {
 		Melder_throw (me, U": word \"", word, U"\" not added.");
 	}
 }
 
-char32 * SpellingChecker_nextNotAllowedWord (SpellingChecker me, const char32 *sentence, integer *start) {
-	const char32 *p = sentence + *start;
+char32 * SpellingChecker_nextNotAllowedWord (SpellingChecker me, conststring32 sentence, integer *start) {
+	const char32 *p = & sentence [*start];
 	for (;;) {
 		if (*p == U'\0') {
 			return nullptr;   // all words allowed
@@ -212,14 +212,14 @@ char32 * SpellingChecker_nextNotAllowedWord (SpellingChecker me, const char32 *s
 					p ++;
 				}
 			}
-		} else if (*p == U' ' || (my separatingCharacters && str32chr (my separatingCharacters, *p))) {
+		} else if (*p == U' ' || (my separatingCharacters && str32chr (my separatingCharacters.get(), *p))) {
 			p ++;
 		} else {
 			static char32 word [100];
 			char32 *q = & word [0];
 			*start = p - sentence;
 			for (;;) {
-				if (*p == U'\0' || *p == U' ' || (my separatingCharacters && str32chr (my separatingCharacters, *p))) {
+				if (*p == U'\0' || *p == U' ' || (my separatingCharacters && str32chr (my separatingCharacters.get(), *p))) {
 					*q ++ = U'\0';
 					if (SpellingChecker_isWordAllowed (me, word)) {
 						/* Don't increment p (may contain a zero or a parenthesis). */

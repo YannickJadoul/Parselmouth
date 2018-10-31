@@ -28,11 +28,22 @@ Thing_declare (Interpreter);
 
 #if 1
 template <typename T, typename... Args>
-	_Thing_auto <T> Thing_create (Args ... args) {
-		_Thing_auto <T> me (new T);   // this `new` has to set classInfo
+	autoSomeThing <T> Thing_create (Args ... args) {
+		autoSomeThing <T> me (new T);   // this `new` has to set classInfo
 		my T::init (args...);
 		return me;
 	}
+
+template <typename... ArgumentTypes>
+autoMatrix CreateMatrix (ArgumentTypes... arguments) {
+	try {
+		autoMatrix me = Thing_new (Matrix);
+		Matrix_init (me.get(), arguments...);
+		return me;
+	} catch (MelderError) {
+		Melder_throw (U"Matrix object not created.");
+	}
+}
 #endif
 
 void Matrix_init
@@ -166,7 +177,7 @@ integer Matrix_getWindowExtrema (Matrix me, integer ixmin, integer ixmax, intege
 		if result == 0, *minimum and *maximum are not changed;
 */
 
-void Matrix_formula (Matrix me, const char32 *expression, Interpreter interpreter, Matrix target);
+void Matrix_formula (Matrix me, conststring32 expression, Interpreter interpreter, Matrix target);
 /*
 	Arguments:
 		"me" is the Matrix referred to as "self" or with "nx" etc. in the expression
@@ -182,7 +193,7 @@ void Matrix_formula (Matrix me, const char32 *expression, Interpreter interprete
 		0 in case of failure, otherwise 1.
 */
 void Matrix_formula_part (Matrix me, double xmin, double xmax, double ymin, double ymax,
-	const char32 *expression, Interpreter interpreter, Matrix target);
+	conststring32 expression, Interpreter interpreter, Matrix target);
 
 /***** Graphics routines. *****/
 /*

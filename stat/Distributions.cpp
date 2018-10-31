@@ -43,20 +43,20 @@ void Distributions_checkSpecifiedColumnNumberWithinRange (Distributions me, inte
 		Melder_throw (me, U": the specified column number is ", columnNumber, U", but should be at most my number of columns (", my numberOfColumns, U").");
 }
 
-void Distributions_peek (Distributions me, integer column, char32 **string, integer *number) {
+void Distributions_peek (Distributions me, integer column, conststring32 *out_string, integer *out_number) {
 	Distributions_checkSpecifiedColumnNumberWithinRange (me, column);
 	if (my numberOfRows < 1)
 		Melder_throw (me, U": I have no candidates.");
-	real80 total = 0.0;
+	longdouble total = 0.0;
 	for (integer irow = 1; irow <= my numberOfRows; irow ++) {
-		total += (real80) my data [irow] [column];
+		total += (longdouble) my data [irow] [column];
 	}
 	if (total <= 0.0)
 		Melder_throw (me, U": the total weight of column ", column, U" is not positive.");
 	integer irow;
 	do {
-		double rand = NUMrandomUniform (0, (real) total);
-		real80 sum = 0.0;
+		double rand = NUMrandomUniform (0, (double) total);
+		longdouble sum = 0.0;
 		for (irow = 1; irow <= my numberOfRows; irow ++) {
 			sum += my data [irow] [column];
 			if (rand <= sum) break;
@@ -64,63 +64,61 @@ void Distributions_peek (Distributions me, integer column, char32 **string, inte
 	} while (irow > my numberOfRows);   // guard against rounding errors
 	if (! my rowLabels [irow])
 		Melder_throw (me, U": no string in row ", irow, U".");
-	if (string)
-		*string = my rowLabels [irow];
-	if (number)
-		*number = irow;
+	if (out_string)
+		*out_string = my rowLabels [irow].get();
+	if (out_number)
+		*out_number = irow;
 }
 
-double Distributions_getProbability (Distributions me, const char32 *string, integer column) {
+double Distributions_getProbability (Distributions me, conststring32 string, integer column) {
 	integer row, rowOfString = 0;
-	real80 total = 0.0;
+	longdouble total = 0.0;
 	if (column < 1 || column > my numberOfColumns) return undefined;
 	for (row = 1; row <= my numberOfRows; row ++) {
 		total += my data [row] [column];
-		if (my rowLabels [row] && str32equ (my rowLabels [row], string))
+		if (my rowLabels [row] && str32equ (my rowLabels [row].get(), string))
 			rowOfString = row;
 	}
 	if (total <= 0.0) return undefined;
 	if (rowOfString == 0) return 0.0;
-	return my data [rowOfString] [column] / (real) total;
+	return my data [rowOfString] [column] / (double) total;
 }
 
 double Distributionses_getMeanAbsoluteDifference (Distributions me, Distributions thee, integer column) {
 	if (column < 1 || column > my numberOfColumns || column > thy numberOfColumns ||
 	    my numberOfRows != thy numberOfRows) return undefined;
-	real80 total = 0.0;
+	longdouble total = 0.0;
 	for (integer irow = 1; irow <= my numberOfRows; irow ++) {
-		total += (real80) fabs (my data [irow] [column] - thy data [irow] [column]);
+		total += (longdouble) fabs (my data [irow] [column] - thy data [irow] [column]);
 	}
-	return (real) total / my numberOfRows;
+	return (double) total / my numberOfRows;
 }
 
 static void unicize (Distributions me) {
 	/* Must have been sorted beforehand. */
 	integer nrow = 0, ifrom = 1;
 	for (integer irow = 1; irow <= my numberOfRows; irow ++) {
-		if (irow == my numberOfRows || (my rowLabels [irow] == nullptr) != (my rowLabels [irow + 1] == nullptr) ||
-		    (my rowLabels [irow] != nullptr && ! str32equ (my rowLabels [irow], my rowLabels [irow + 1])))
+		if (irow == my numberOfRows || !! my rowLabels [irow] != !! my rowLabels [irow + 1] ||
+		    my rowLabels [irow] && ! str32equ (my rowLabels [irow].get(), my rowLabels [irow + 1].get()))
 		{
 			/*
-			 * Detected a change.
-			 */
+				Detected a change.
+			*/
 			nrow ++;
 			integer ito = irow;
 			/*
-			 * Move row 'ifrom' to 'nrow'. May be the same row.
-			 */
+				Move row 'ifrom' to 'nrow'. May be the same row.
+			*/
 			if (ifrom != nrow) {
-				Melder_free (my rowLabels [nrow]);
-				my rowLabels [nrow] = my rowLabels [ifrom];   // surface copy
-				my rowLabels [ifrom] = nullptr;   // undangle
+				my rowLabels [nrow] = my rowLabels [ifrom].move();
 				for (integer icol = 1; icol <= my numberOfColumns; icol ++)
 					my data [nrow] [icol] = my data [ifrom] [icol];
 			}
 			/*
-			 * Purge rows from 'ifrom'+1 to 'ito'.
-			 */
+				Purge rows from 'ifrom'+1 to 'ito'.
+			*/
 			for (integer j = ifrom + 1; j <= ito; j ++) {
-				Melder_free (my rowLabels [j]);
+				my rowLabels [j]. reset();
 				for (integer icol = 1; icol <= my numberOfColumns; icol ++)
 					my data [nrow] [icol] += my data [j] [icol];
 			}

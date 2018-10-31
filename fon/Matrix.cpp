@@ -205,8 +205,8 @@ integer Matrix_getWindowExtrema (Matrix me, integer ixmin, integer ixmax, intege
 }
 
 double Matrix_getValueAtXY (Matrix me, double x, double y) {
-	real row_real = (y - my y1) / my dy + 1.0;
-	real col_real = (x - my x1) / my dx + 1.0;
+	double row_real = (y - my y1) / my dy + 1.0;
+	double col_real = (x - my x1) / my dx + 1.0;
 	/*
 	 * We imagine a unit square around every (xi, yi) point in the matrix.
 	 * For (x, y) values outside the union of these squares, the z value is undefined.
@@ -220,8 +220,8 @@ double Matrix_getValueAtXY (Matrix me, double x, double y) {
 	integer topRow = bottomRow + 1;         // 1 <= topRow <= my ny + 1
 	integer leftCol = Melder_ifloor (col_real);     // 0 <= leftCol <= my nx
 	integer rightCol = leftCol + 1;         // 1 <= rightCol <= my nx + 1
-	real drow = row_real - bottomRow;    // 0.0 <= drow < 1.0
-	real dcol = col_real - leftCol;      // 0.0 <= dcol < 1.0
+	double drow = row_real - bottomRow;    // 0.0 <= drow < 1.0
+	double dcol = col_real - leftCol;      // 0.0 <= dcol < 1.0
 	/*
 	 * If adjacent points exist
 	 * (i.e., both row numbers are between 1 and my ny,
@@ -241,19 +241,19 @@ double Matrix_getValueAtXY (Matrix me, double x, double y) {
 }
 
 double Matrix_getSum (Matrix me) {
-	real80 sum = 0.0;
+	longdouble sum = 0.0;
 	for (integer irow = 1; irow <= my ny; irow ++)
 		for (integer icol = 1; icol <= my nx; icol ++)
 			sum += my z [irow] [icol];
-	return (real) sum;
+	return (double) sum;
 }
 
 double Matrix_getNorm (Matrix me) {
-	real80 sum = 0.0;
+	longdouble sum = 0.0;
 	for (integer irow = 1; irow <= my ny; irow ++)
 		for (integer icol = 1; icol <= my nx; icol ++)
 			sum += my z [irow] [icol] * my z [irow] [icol];
-	return sqrt ((real) sum);
+	return sqrt ((double) sum);
 }
 
 void Matrix_drawRows (Matrix me, Graphics g, double xmin, double xmax, double ymin, double ymax,
@@ -433,7 +433,7 @@ void Matrix_movie (Matrix me, Graphics g) {
 autoMatrix Matrix_readAP (MelderFile file) {
 	try {
 		autofile f = Melder_fopen (file, "rb");
-		int16_t header [256];
+		int16 header [256];
 		for (integer i = 0; i < 256; i ++)
 			header [i] = bingeti16LE (f);
 		double samplingFrequency = header [100];   // converting up (from 16 to 54 bytes)
@@ -484,57 +484,61 @@ autoMatrix Matrix_appendRows (Matrix me, Matrix thee, ClassInfo klas) {
 	}
 }
 
-autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-compatible
+autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-compatible (use of fscanf)
 	try {
 		autofile f = Melder_fopen (file, "rb");
 
 		/*
-		 * Count number of columns.
-		 */
-		integer ncol = 0;
+			Count columns.
+		*/
+		integer numberOfColumns = 0;
 		for (;;) {
 			int kar = fgetc (f);
-			if (kar == '\n' || kar == '\r' || kar == EOF) break;
-			if (kar == ' ' || kar == '\t') continue;
-			ncol ++;
+			if (kar == EOF || Melder_isVerticalSpace ((char32) kar))
+				break;
+			if (Melder_isHorizontalSpace ((char32) kar))
+				continue;
+			numberOfColumns ++;
 			do {
 				kar = fgetc (f);
-			} while (kar != ' ' && kar != '\t' && kar != '\n' && kar != '\r' && kar != EOF);
-			if (kar == '\n' || kar == '\r' || kar == EOF) break;
+			} while (kar != EOF && ! Melder_isHorizontalOrVerticalSpace ((char32) kar));
+			if (kar == EOF || Melder_isVerticalSpace ((char32) kar)) break;
 		}
-		if (ncol == 0)
+		if (numberOfColumns == 0)
 			Melder_throw (U"File empty");
 
 		/*
-		 * Count number of elements.
-		 */
+			Count elements.
+		*/
 		rewind (f);
-		integer nelements = 0;
+		integer numberOfElements = 0;
 		for (;;) {
 			double element;
-			if (fscanf (f, "%lf", & element) < 1) break;   // zero or end-of-file
-			nelements ++;
+			if (fscanf (f, "%lf", & element) < 1)
+				break;   // zero or end-of-file
+			numberOfElements ++;
 		}
 
 		/*
-		 * Check if all columns are complete.
-		 */
-		if (nelements == 0 || nelements % ncol != 0)
-			Melder_throw (U"The number of elements (", nelements, U") is not a multiple of the number of columns (", ncol, U").");
+			Check if all columns are complete.
+		*/
+		if (numberOfElements == 0 || numberOfElements % numberOfColumns != 0)
+			Melder_throw (U"The number of elements (", numberOfElements, U") is not a multiple of the number of columns (", numberOfColumns, U").");
 
 		/*
-		 * Create simple matrix.
-		 */
-		integer nrow = nelements / ncol;
-		autoMatrix me = Matrix_createSimple (nrow, ncol);
+			Create simple matrix.
+		*/
+		integer numberOfRows = numberOfElements / numberOfColumns;
+		autoMatrix me = Matrix_createSimple (numberOfRows, numberOfColumns);
 
 		/*
-		 * Read elements.
-		 */
+			Read elements.
+		*/
 		rewind (f);
-		for (integer irow = 1; irow <= nrow; irow ++)
-			for (integer icol = 1; icol <= ncol; icol ++)
+		for (integer irow = 1; irow <= numberOfRows; irow ++) {
+			for (integer icol = 1; icol <= numberOfColumns; icol ++)
 				fscanf (f, "%lf", & my z [irow] [icol]);
+		}
 
 		f.close (file);
 		return me;
@@ -545,11 +549,12 @@ autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-
 
 void Matrix_eigen (Matrix me, autoMatrix *out_eigenvectors, autoMatrix *out_eigenvalues) {
 	try {
-		if (my nx != my ny)
-			Melder_throw (U"(Matrix not square.");
-
+		Melder_require (my nx == my ny, 
+			U"The number of rows and the number of columns must be equal.");
+		
+		MAT a (my z, my nx, my nx);
 		autoEigen eigen = Thing_new (Eigen);
-		Eigen_initFromSymmetricMatrix (eigen.get(), my z, my nx);
+		Eigen_initFromSymmetricMatrix (eigen.get(), a);
 		autoMatrix eigenvectors = Data_copy (me);
 		autoMatrix eigenvalues = Matrix_create (1.0, 1.0, 1, 1.0, 1.0, my ymin, my ymax, my ny, my dy, my y1);
 		for (integer i = 1; i <= my nx; i ++) {
@@ -575,9 +580,8 @@ autoMatrix Matrix_power (Matrix me, integer power) {
 			for (integer irow = 1; irow <= my ny; irow ++) {
 				for (integer icol = 1; icol <= my nx; icol ++) {
 					thy z [irow] [icol] = 0.0;
-					for (integer i = 1; i <= my nx; i ++) {
+					for (integer i = 1; i <= my nx; i ++)
 						thy z [irow] [icol] += his z [irow] [i] * my z [i] [icol];
-					}
 				}
 			}
 		}
@@ -597,7 +601,8 @@ void Matrix_writeToMatrixTextFile (Matrix me, MelderFile file) {
 				Melder8_double (my dy), Melder8_double (my y1));
 		for (integer i = 1; i <= my ny; i ++) {
 			for (integer j = 1; j <= my nx; j ++) {
-				if (j > 1) fprintf (f, " ");
+				if (j > 1)
+					fprintf (f, " ");
 				fprintf (f, "%s", Melder8_double (my z [i] [j]));
 			}
 			fprintf (f, "\n");
@@ -613,7 +618,8 @@ void Matrix_writeToHeaderlessSpreadsheetFile (Matrix me, MelderFile file) {
 		autofile f = Melder_fopen (file, "w");
 		for (integer i = 1; i <= my ny; i ++) {
 			for (integer j = 1; j <= my nx; j ++) {
-				if (j > 1) fprintf (f, "\t");
+				if (j > 1)
+					fprintf (f, "\t");
 				fprintf (f, "%s", Melder8_single (my z [i] [j]));
 			}
 			fprintf (f, "\n");
@@ -624,11 +630,12 @@ void Matrix_writeToHeaderlessSpreadsheetFile (Matrix me, MelderFile file) {
 	}
 }
 
-void Matrix_formula (Matrix me, const char32 *expression, Interpreter interpreter, Matrix target) {
+void Matrix_formula (Matrix me, conststring32 expression, Interpreter interpreter, Matrix target) {
 	try {
-		Formula_Result result;
 		Formula_compile (interpreter, me, expression, kFormula_EXPRESSION_TYPE_NUMERIC, true);
-		if (! target) target = me;
+		Formula_Result result;
+		if (! target)
+			target = me;
 		for (integer irow = 1; irow <= my ny; irow ++) {
 			for (integer icol = 1; icol <= my nx; icol ++) {
 				Formula_run (irow, icol, & result);
@@ -641,17 +648,24 @@ void Matrix_formula (Matrix me, const char32 *expression, Interpreter interprete
 }
 
 void Matrix_formula_part (Matrix me, double xmin, double xmax, double ymin, double ymax,
-	const char32 *expression, Interpreter interpreter, Matrix target)
+	conststring32 expression, Interpreter interpreter, Matrix target)
 {
 	try {
-		if (xmax <= xmin) { xmin = my xmin; xmax = my xmax; }
-		if (ymax <= ymin) { ymin = my ymin; ymax = my ymax; }
+		if (xmax <= xmin) {
+			xmin = my xmin;
+			xmax = my xmax;
+		}
+		if (ymax <= ymin) {
+			ymin = my ymin;
+			ymax = my ymax;
+		}
 		integer ixmin, ixmax, iymin, iymax;
 		(void) Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax);
 		(void) Matrix_getWindowSamplesY (me, ymin, ymax, & iymin, & iymax);
-		Formula_Result result;
 		Formula_compile (interpreter, me, expression, kFormula_EXPRESSION_TYPE_NUMERIC, true);
-		if (! target) target = me;
+		Formula_Result result;
+		if (! target)
+			target = me;
 		for (integer irow = iymin; irow <= iymax; irow ++) {
 			for (integer icol = ixmin; icol <= ixmax; icol ++) {
 				Formula_run (irow, icol, & result);

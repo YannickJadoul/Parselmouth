@@ -1,6 +1,6 @@
 /* EEG.cpp
  *
- * Copyright (C) 2011-2012,2013,2014,2015,2017 Paul Boersma
+ * Copyright (C) 2011-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,11 +85,10 @@ autoEEG EEG_create (double tmin, double tmax) {
 	}
 }
 
-integer EEG_getChannelNumber (EEG me, const char32 *channelName) {
+integer EEG_getChannelNumber (EEG me, conststring32 channelName) {
 	for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++) {
-		if (Melder_equ (my channelNames [ichan], channelName)) {
+		if (Melder_equ (my channelNames [ichan].get(), channelName))
 			return ichan;
-		}
 	}
 	return 0;
 }
@@ -125,7 +124,7 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 		if (numberOfBytesInHeaderRecord != (numberOfChannels + 1) * 256)
 			Melder_throw (U"Number of bytes in header record (", numberOfBytesInHeaderRecord,
 				U") doesn't match number of channels (", numberOfChannels, U").");
-		autostring32vector channelNames (1, numberOfChannels);
+		autostring32vector channelNames (numberOfChannels);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 16, f); buffer [16] = '\0';   // labels of the channels
 			/*
@@ -139,9 +138,9 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 				}
 			}
 			channelNames [ichannel] = Melder_8to32 (buffer);
-			trace (U"Channel <<", channelNames [ichannel], U">>");
+			trace (U"Channel <<", channelNames [ichannel].get(), U">>");
 		}
-		bool hasLetters = str32equ (channelNames [numberOfChannels], U"EDF Annotations");
+		bool hasLetters = str32equ (channelNames [numberOfChannels].get(), U"EDF Annotations");
 		double samplingFrequency = undefined;
 		for (integer channel = 1; channel <= numberOfChannels; channel ++) {
 			fread (buffer, 1, 80, f); buffer [80] = '\0';   // transducer type
@@ -149,22 +148,22 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 		for (integer channel = 1; channel <= numberOfChannels; channel ++) {
 			fread (buffer, 1, 8, f); buffer [8] = '\0';   // physical dimension of channels
 		}
-		autonumvec physicalMinimum (numberOfChannels, kTensorInitializationType::RAW);
+		autoVEC physicalMinimum (numberOfChannels, kTensorInitializationType::RAW);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 8, f); buffer [8] = '\0';
 			physicalMinimum [ichannel] = atof (buffer);
 		}
-		autonumvec physicalMaximum (numberOfChannels, kTensorInitializationType::RAW);
+		autoVEC physicalMaximum (numberOfChannels, kTensorInitializationType::RAW);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 8, f); buffer [8] = '\0';
 			physicalMaximum [ichannel] = atof (buffer);
 		}
-		autonumvec digitalMinimum (numberOfChannels, kTensorInitializationType::RAW);
+		autoVEC digitalMinimum (numberOfChannels, kTensorInitializationType::RAW);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 8, f); buffer [8] = '\0';
 			digitalMinimum [ichannel] = atof (buffer);
 		}
-		autonumvec digitalMaximum (numberOfChannels, kTensorInitializationType::RAW);
+		autoVEC digitalMaximum (numberOfChannels, kTensorInitializationType::RAW);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 8, f); buffer [8] = '\0';
 			digitalMaximum [ichannel] = atof (buffer);
@@ -193,26 +192,26 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 		his numberOfChannels = numberOfChannels;
 		autoSound me = Sound_createSimple (numberOfChannels, duration, samplingFrequency);
 		Melder_assert (my nx == numberOfSamplesPerDataRecord * numberOfDataRecords);
-		autoNUMvector <unsigned char> dataBuffer ((integer) 0, 3 * numberOfSamplesPerDataRecord - 1);
+		autoNUMvector <uint8> dataBuffer ((integer) 0, 3 * numberOfSamplesPerDataRecord - 1);
 		for (integer record = 1; record <= numberOfDataRecords; record ++) {
 			for (integer channel = 1; channel <= numberOfChannels; channel ++) {
 				double factor = channel == numberOfChannels ? 1.0 : physicalMinimum [channel] / digitalMinimum [channel];
 				if (channel < numberOfChannels - EEG_getNumberOfExtraSensors (him.get())) factor /= 1000000.0;
 				if (is24bit) {
 					fread (& dataBuffer [0], 3, (size_t) numberOfSamplesPerDataRecord, f);
-					unsigned char *p = & dataBuffer [0];
+					uint8 *p = & dataBuffer [0];
 					for (integer i = 1; i <= numberOfSamplesPerDataRecord; i ++) {
 						integer sample = i + (record - 1) * numberOfSamplesPerDataRecord;
 						Melder_assert (sample <= my nx);
-						uint8_t lowByte = *p ++, midByte = *p ++, highByte = *p ++;
-						uint32_t externalValue = ((uint32_t) highByte << 16) | ((uint32_t) midByte << 8) | (uint32_t) lowByte;
+						uint8 lowByte = *p ++, midByte = *p ++, highByte = *p ++;
+						uint32 externalValue = ((uint32) highByte << 16) | ((uint32) midByte << 8) | (uint32) lowByte;
 						if ((highByte & 128) != 0)   // is the 24-bit sign bit on?
-							externalValue |= 0xFF000000;   // extend negative sign to 32 bits
-						my z [channel] [sample] = (int32_t) externalValue * factor;
+							externalValue |= 0xFF00'0000;   // extend negative sign to 32 bits
+						my z [channel] [sample] = (int32) externalValue * factor;
 					}
 				} else {
 					fread (& dataBuffer [0], 2, (size_t) numberOfSamplesPerDataRecord, f);
-					unsigned char *p = & dataBuffer [0];
+					uint8 *p = & dataBuffer [0];
 					for (integer i = 1; i <= numberOfSamplesPerDataRecord; i ++) {
 						integer sample = i + (record - 1) * numberOfSamplesPerDataRecord;
 						Melder_assert (sample <= my nx);
@@ -226,7 +225,7 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 		int numberOfStatusBits = 8;
 		for (integer i = 1; i <= my nx; i ++) {
 			uint32 value = (uint32) (int32) my z [numberOfChannels] [i];
-			if (value & 0x0000FF00) {
+			if (value & 0x0000'FF00) {
 				numberOfStatusBits = 16;
 			}
 		}
@@ -237,9 +236,9 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 			double time = undefined;
 			for (integer i = 1; i <= my nx; i ++) {
 				uint32 value = (uint32) (int32) my z [numberOfChannels] [i];
-				for (int byte = 1; byte <= numberOfStatusBits / 8; byte ++) {
-					uint32 mask = byte == 1 ? 0x000000ff : 0x0000ff00;
-					char32 kar = byte == 1 ? (value & mask) : (value & mask) >> 8;
+				for (int ibyte = 1; ibyte <= numberOfStatusBits / 8; ibyte ++) {
+					uint32 mask = ( ibyte == 1 ? 0x0000'00ff : 0x0000'ff00 );
+					char32 kar = ( ibyte == 1 ? (value & mask) : (value & mask) >> 8 );
 					if (kar != U'\0' && kar != 20) {
 						MelderString_appendCharacter (& letters, kar);
 					} else if (letters. string [0] != U'\0') {
@@ -302,7 +301,7 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 			}
 		}
 		f.close (file);
-		his channelNames = channelNames.transfer();
+		his channelNames = std::move (channelNames);
 		his sound = me.move();
 		his textgrid = thee.move();
 		if (EEG_getNumberOfCapElectrodes (him.get()) == 32) {
@@ -449,15 +448,13 @@ void EEG_filter (EEG me, double lowFrequency, double lowWidth, double highFreque
 	}
 }
 
-void EEG_setChannelName (EEG me, integer channelNumber, const char32 *a_name) {
-	autostring32 l_name = Melder_dup (a_name);
-	Melder_free (my channelNames [channelNumber]);
-	my channelNames [channelNumber] = l_name.transfer();
+void EEG_setChannelName (EEG me, integer channelNumber, conststring32 newName) {
+	my channelNames [channelNumber] = Melder_dup (newName);
 }
 
 void EEG_setExternalElectrodeNames (EEG me,
-	const char32 *nameExg1, const char32 *nameExg2, const char32 *nameExg3, const char32 *nameExg4,
-	const char32 *nameExg5, const char32 *nameExg6, const char32 *nameExg7, const char32 *nameExg8)
+	conststring32 nameExg1, conststring32 nameExg2, conststring32 nameExg3, conststring32 nameExg4,
+	conststring32 nameExg5, conststring32 nameExg6, conststring32 nameExg7, conststring32 nameExg8)
 {
 	if (EEG_getNumberOfExternalElectrodes (me) != 8)
 		Melder_throw (U"There aren't 8 external electrodes.");
@@ -472,13 +469,13 @@ void EEG_setExternalElectrodeNames (EEG me,
 	EEG_setChannelName (me, firstExternalElectrode + 7, nameExg8);
 }
 
-void EEG_subtractReference (EEG me, const char32 *channelNumber1_text, const char32 *channelNumber2_text) {
-	integer channelNumber1 = EEG_getChannelNumber (me, channelNumber1_text);
+void EEG_subtractReference (EEG me, conststring32 channelName1, conststring32 channelName2) {
+	integer channelNumber1 = EEG_getChannelNumber (me, channelName1);
 	if (channelNumber1 == 0)
-		Melder_throw (me, U": no channel named \"", channelNumber1_text, U"\".");
-	integer channelNumber2 = EEG_getChannelNumber (me, channelNumber2_text);
-	if (channelNumber2 == 0 && channelNumber2_text [0] != '\0')
-		Melder_throw (me, U": no channel named \"", channelNumber2_text, U"\".");
+		Melder_throw (me, U": no channel named \"", channelName1, U"\".");
+	integer channelNumber2 = EEG_getChannelNumber (me, channelName2);
+	if (channelNumber2 == 0 && channelName2 [0] != '\0')
+		Melder_throw (me, U": no channel named \"", channelName2, U"\".");
 	const integer numberOfElectrodeChannels = my numberOfChannels - EEG_getNumberOfExtraSensors (me);
 	for (integer isamp = 1; isamp <= my sound -> nx; isamp ++) {
 		double referenceValue = channelNumber2 == 0 ? my sound -> z [channelNumber1] [isamp] :
@@ -523,7 +520,7 @@ void EEG_setChannelToZero (EEG me, integer channelNumber) {
 	}
 }
 
-void EEG_setChannelToZero (EEG me, const char32 *channelName) {
+void EEG_setChannelToZero (EEG me, conststring32 channelName) {
 	try {
 		integer channelNumber = EEG_getChannelNumber (me, channelName);
 		if (channelNumber == 0)
@@ -534,9 +531,9 @@ void EEG_setChannelToZero (EEG me, const char32 *channelName) {
 	}
 }
 
-void EEG_removeTriggers (EEG me, kMelder_string which, const char32 *criterion) {
+void EEG_removeTriggers (EEG me, kMelder_string which, conststring32 criterion) {
 	try {
-		if (my textgrid -> tiers->size < 2 || ! Melder_equ (my textgrid -> tiers->at [2] -> name, U"Trigger"))
+		if (my textgrid -> tiers->size < 2 || ! Melder_equ (my textgrid -> tiers->at [2] -> name.get(), U"Trigger"))
 			Melder_throw (me, U" does not have a Trigger channel.");
 		TextGrid_removePoints (my textgrid.get(), 2, which, criterion);
 	} catch (MelderError) {
@@ -550,8 +547,8 @@ autoEEG EEG_extractChannel (EEG me, integer channelNumber) {
 			Melder_throw (U"No channel ", channelNumber, U".");
 		autoEEG thee = EEG_create (my xmin, my xmax);
 		thy numberOfChannels = 1;
-		thy channelNames = NUMvector <char32 *> (1, 1);
-		thy channelNames [1] = Melder_dup (my channelNames [1]);
+		thy channelNames = autostring32vector (1);
+		thy channelNames [1] = Melder_dup (my channelNames [1].get());
 		thy sound = Sound_extractChannel (my sound.get(), channelNumber);
 		thy textgrid = Data_copy (my textgrid.get());
 		return thee;
@@ -560,7 +557,7 @@ autoEEG EEG_extractChannel (EEG me, integer channelNumber) {
 	}
 }
 
-autoEEG EEG_extractChannel (EEG me, const char32 *channelName) {
+autoEEG EEG_extractChannel (EEG me, conststring32 channelName) {
 	try {
 		integer channelNumber = EEG_getChannelNumber (me, channelName);
 		if (channelNumber == 0)
@@ -571,20 +568,83 @@ autoEEG EEG_extractChannel (EEG me, const char32 *channelName) {
 	}
 }
 
+autoEEG EEG_extractChannels (EEG me, constVEC channelNumbers) {
+	try {
+		integer numberOfChannels = channelNumbers.size;
+		Melder_require (numberOfChannels > 0,
+			U"The number of channels should be greater than 0.");
+		autoEEG you = EEG_create (my xmin, my xmax);
+		your sound = Sound_extractChannels (my sound.get(), channelNumbers);
+		your numberOfChannels = numberOfChannels;
+		your channelNames = autostring32vector (numberOfChannels);
+		for (integer ichan = 1; ichan <= numberOfChannels; ichan ++) {
+			integer originalChannelNumber = Melder_iround (channelNumbers [ichan]);
+			your channelNames [ichan] = Melder_dup (my channelNames [originalChannelNumber].get());
+		}
+		your textgrid = Data_copy (my textgrid.get());
+		return you;
+	} catch (MelderError) {
+		Melder_throw (me, U": channels not extracted.");
+	}
+}
+
+static void Sound_removeChannel (Sound me, integer channelNumber) {
+	try {
+		Melder_require (channelNumber >= 1 && channelNumber <= my ny,
+			U"No channel ", channelNumber, U".");
+		Melder_require (my ny > 1,
+			U"Cannot remove last remaining channel.");
+		for (integer ichan = channelNumber; ichan < my ny; ichan ++) {
+			NUMvector_copyElements (my z [ichan + 1], my z [ichan], 1, my nx);
+		}
+		my ymax -= 1.0;
+		my ny -= 1;
+	} catch (MelderError) {
+		Melder_throw (me, U": channel ", channelNumber, U" not removed.");
+	}
+}
+
+void EEG_removeChannel (EEG me, integer channelNumber) {
+	try {
+		if (channelNumber < 1 || channelNumber > my numberOfChannels)
+			Melder_throw (U"No channel ", channelNumber, U".");
+		for (integer ichan = channelNumber; ichan < my numberOfChannels; ichan ++) {
+			my channelNames [ichan] = my channelNames [ichan + 1].move();
+		}
+		my channelNames [my numberOfChannels]. reset();
+		my numberOfChannels -= 1;
+		Sound_removeChannel (my sound.get(), channelNumber);
+	} catch (MelderError) {
+		Melder_throw (me, U": channel ", channelNumber, U" not removed.");
+	}
+}
+
+void EEG_removeChannel (EEG me, conststring32 channelName) {
+	try {
+		integer channelNumber = EEG_getChannelNumber (me, channelName);
+		if (channelNumber == 0)
+			Melder_throw (U"No channel named \"", channelName, U"\".");
+		EEG_removeChannel (me, channelNumber);
+	} catch (MelderError) {
+		Melder_throw (me, U": channel ", channelName, U" not removed.");
+	}
+}
+
 autoEEG EEGs_concatenate (OrderedOf<structEEG>* me) {
 	try {
 		if (my size < 1)
 			Melder_throw (U"Cannot concatenate zero EEG objects.");
 		EEG first = my at [1];
 		integer numberOfChannels = first -> numberOfChannels;
-		char32 **channelNames = first -> channelNames;
+		autostring32vector channelNames = STRVECclone (first -> channelNames.get());
 		for (integer ieeg = 2; ieeg <= my size; ieeg ++) {
 			EEG other = my at [ieeg];
 			if (other -> numberOfChannels != numberOfChannels)
 				Melder_throw (U"The number of channels of ", other, U" does not match the number of channels of ", first, U".");
 			for (integer ichan = 1; ichan <= numberOfChannels; ichan ++) {
-				if (! Melder_equ (other -> channelNames [ichan], channelNames [ichan]))
-					Melder_throw (U"Channel ", ichan, U" has a different name in ", other, U" (", other -> channelNames [ichan], U") than in ", first, U" (", channelNames [ichan], U").");
+				if (! Melder_equ (other -> channelNames [ichan].get(), channelNames [ichan].get()))
+					Melder_throw (U"Channel ", ichan, U" has a different name in ", other,
+						U" (", other -> channelNames [ichan].get(), U") than in ", first, U" (", channelNames [ichan].get(), U").");
 			}
 		}
 		OrderedOf<structSound> soundList;
@@ -596,10 +656,7 @@ autoEEG EEGs_concatenate (OrderedOf<structEEG>* me) {
 		}
 		autoEEG thee = Thing_new (EEG);
 		thy numberOfChannels = numberOfChannels;
-		thy channelNames = NUMvector <char32 *> (1, numberOfChannels);
-		for (integer ichan = 1; ichan <= numberOfChannels; ichan ++) {
-			thy channelNames [ichan] = Melder_dup (channelNames [ichan]);
-		}
+		thy channelNames = std::move (channelNames);
 		thy sound = Sounds_concatenate (soundList, 0.0);
 		thy textgrid = TextGrids_concatenate (& textgridList);
 		thy xmin = thy textgrid -> xmin;
@@ -614,10 +671,7 @@ autoEEG EEG_extractPart (EEG me, double tmin, double tmax, bool preserveTimes) {
 	try {
 		autoEEG thee = Thing_new (EEG);
 		thy numberOfChannels = my numberOfChannels;
-		thy channelNames = NUMvector <char32 *> (1, my numberOfChannels);
-		for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++) {
-			thy channelNames [ichan] = Melder_dup (my channelNames [ichan]);
-		}
+		thy channelNames = STRVECclone (my channelNames.get());
 		thy sound = Sound_extractPart (my sound.get(), tmin, tmax, kSound_windowShape::RECTANGULAR, 1.0, preserveTimes);
 		thy textgrid = TextGrid_extractPart (my textgrid.get(), tmin, tmax, preserveTimes);
 		thy xmin = thy textgrid -> xmin;
@@ -636,13 +690,16 @@ void EEG_replaceTextGrid (EEG me, TextGrid textgrid) {
 	}
 }
 
-autoMixingMatrix EEG_to_MixingMatrix (EEG me, integer maxNumberOfIterations, double tol, int method) {
+autoMixingMatrix EEG_to_MixingMatrix (EEG me,
+	double startTime, double endTime, integer numberOfCrossCorrelations, double lagStep,
+	integer maxNumberOfIterations, double tol, int method)
+{
 	try {
-		autoCrossCorrelationTableList tables = Sound_to_CrossCorrelationTableList (my sound.get(), 0.0, 0.0, 0.002, 1);
+		autoCrossCorrelationTableList tables = Sound_to_CrossCorrelationTableList (my sound.get(), startTime, endTime, numberOfCrossCorrelations, lagStep);
 		autoMixingMatrix thee = MixingMatrix_create (my sound -> ny, my sound -> ny);
-		MixingMatrix_setRandomGauss ( thee.get(), 0.0, 1.0);
+		MixingMatrix_setRandomGauss (thee.get(), 0.0, 1.0);
 		for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++) {
-			TableOfReal_setRowLabel (thee.get(), ichan, my channelNames [ichan]);
+			TableOfReal_setRowLabel (thee.get(), ichan, my channelNames [ichan].get());
 			TableOfReal_setColumnLabel (thee.get(), ichan, Melder_cat (U"ic", ichan));
 		}
 		MixingMatrix_CrossCorrelationTableList_improveUnmixing (thee.get(), tables.get(), maxNumberOfIterations, tol, method);
@@ -650,6 +707,42 @@ autoMixingMatrix EEG_to_MixingMatrix (EEG me, integer maxNumberOfIterations, dou
 	} catch (MelderError) {
 		Melder_throw (me, U": no MixingMatrix created.");
 	}
+}
+
+autoEEG EEG_MixingMatrix_to_EEG_unmix (EEG me, MixingMatrix you) {
+	Melder_require (my numberOfChannels == your numberOfRows,
+		U"To be able to unmix, the number of channels in ", me, U" (", my numberOfChannels, U")",
+		U" should be equal to the number of rows in ", you, U" (", your numberOfRows, U").");
+	for (integer ichan = 1; ichan <= your numberOfRows; ichan ++) {
+		Melder_require (Melder_equ (my channelNames [ichan].get(), your rowLabels [ichan].get()),
+			U"To be able to unmix, the name of channel ", ichan,
+			U" should be the same in ", me, U" (where it is ", my channelNames [ichan].get(), U")",
+			U" as in ", you, U" (where it is ", your rowLabels [ichan].get(), U").");
+	}
+	autoEEG him = EEG_create (my xmin, my xmax);
+	his sound = Sound_MixingMatrix_unmix (my sound.get(), you);
+	his textgrid = Data_copy (my textgrid.get());
+	his numberOfChannels = your numberOfColumns;
+	his channelNames = STRVECclone (your columnLabels.get());
+	return him;
+}
+
+autoEEG EEG_MixingMatrix_to_EEG_mix (EEG me, MixingMatrix you) {
+	Melder_require (my numberOfChannels == your numberOfColumns,
+		U"To be able to mix, the number of channels in ", me, U" (", my numberOfChannels, U")",
+		U" should be equal to the number of columns in ", you, U" (", your numberOfColumns, U").");
+	for (integer ichan = 1; ichan <= your numberOfColumns; ichan ++) {
+		Melder_require (Melder_equ (my channelNames [ichan].get(), your columnLabels [ichan].get()),
+			U"To be able to mix, the name of channel ", ichan,
+			U" should be the same in ", me, U" (where it is ", my channelNames [ichan].get(), U")",
+			U" as in ", you, U" (where it is ", your columnLabels [ichan].get(), U").");
+	}
+	autoEEG him = EEG_create (my xmin, my xmax);
+	his sound = Sound_MixingMatrix_mix (my sound.get(), you);
+	his textgrid = Data_copy (my textgrid.get());
+	his numberOfChannels = your numberOfRows;
+	his channelNames = STRVECclone (your rowLabels.get());
+	return him;
 }
 
 /* End of file EEG.cpp */

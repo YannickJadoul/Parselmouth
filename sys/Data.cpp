@@ -1,6 +1,6 @@
 /* Data.cpp
  *
- * Copyright (C) 1992-2012,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2006,2008-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ autoDaata _Data_copy (Daata me) {
 		if (! me) return autoDaata();
 		autoDaata thee = Thing_newFromClass (my classInfo).static_cast_move <structDaata> ();
 		my v_copy (thee.get());
-		Thing_setName (thee.get(), my name);
+		Thing_setName (thee.get(), my name.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not copied.");
@@ -185,7 +185,7 @@ void Data_readText (Daata me, MelderReadText text, int formatVersion) {
 autoDaata Data_readFromTextFile (MelderFile file) {
 	try {
 		autoMelderReadText text = MelderReadText_createFromFile (file);
-		char32 *line = MelderReadText_readLine (text.peek());
+		const mutablestring32 line = MelderReadText_readLine (text.get());
 		if (! line)
 			Melder_throw (U"No lines.");
 		/*
@@ -199,8 +199,8 @@ autoDaata Data_readFromTextFile (MelderFile file) {
 		autoDaata me;
 		int formatVersion;
 		if (end) {
-			autostring32 klas = texgetw16 (text.peek());
-			me = Thing_newFromClassName (klas.peek(), & formatVersion).static_cast_move <structDaata> ();
+			autostring32 klas = texgetw16 (text.get());
+			me = Thing_newFromClassName (klas.get(), & formatVersion).static_cast_move <structDaata> ();
 		} else {
 			end = str32str (line, U"TextFile");
 			if (! end)
@@ -210,7 +210,7 @@ autoDaata Data_readFromTextFile (MelderFile file) {
 			formatVersion = -1;   // old version
 		}
 		MelderFile_getParentDir (file, & Data_directoryBeingRead);
-		Data_readText (me.get(), text.peek(), formatVersion);
+		Data_readText (me.get(), text.get(), formatVersion);
 		file -> format = structMelderFile :: Format :: text;
 		return me;
 	} catch (MelderError) {
@@ -255,7 +255,7 @@ autoDaata Data_readFromBinaryFile (MelderFile file) {
 		if (end) {
 			fseek (f, strlen ("ooBinaryFile"), 0);
 			autostring8 klas = bingets8 (f);
-			me = Thing_newFromClassName (Melder_peek8to32 (klas.peek()), & formatVersion).static_cast_move <structDaata> ();
+			me = Thing_newFromClassName (Melder_peek8to32 (klas.get()), & formatVersion).static_cast_move <structDaata> ();
 		} else {
 			end = strstr (line, "BinaryFile");
 			if (! end) {
@@ -385,7 +385,7 @@ int Data_Description_countMembers (Data_Description structDescription) {
 	return count;
 }
 
-Data_Description Data_Description_findMatch (Data_Description structDescription, const char32 *name) {
+Data_Description Data_Description_findMatch (Data_Description structDescription, conststring32 name) {
 	for (Data_Description desc = structDescription; desc -> name; desc ++)
 		if (str32equ (name, desc -> name)) return desc;
 	if (structDescription [0]. type == inheritwa) {
@@ -396,7 +396,7 @@ Data_Description Data_Description_findMatch (Data_Description structDescription,
 	return nullptr;   // not found
 }
 
-Data_Description Data_Description_findNumberUse (Data_Description structDescription, const char32 *string) {
+Data_Description Data_Description_findNumberUse (Data_Description structDescription, conststring32 string) {
 	for (Data_Description desc = structDescription; desc -> name; desc ++) {
 		if (desc -> max1 && str32equ (desc -> max1, string)) return desc;
 		if (desc -> max2 && str32equ (desc -> max2, string)) return desc;
@@ -421,16 +421,15 @@ int64 Data_Description_integer (void *address, Data_Description description) {
 		case uintwa:           return * (unsigned int *)     ((char *) address + description -> offset);
 		case uintegerwa:       return (int64) * (uinteger *) ((char *) address + description -> offset);   // ignore numbers above 2^63 - 1
 		case questionwa:       return * (bool *)             ((char *) address + description -> offset);
-		case objectwa:         return (* (Collection *)      ((char *) address + description -> offset))->size;
-		case autoobjectwa:     return (* (Collection *)      ((char *) address + description -> offset))->size;   // FIXME: alignment not guaranteed
+		case objectwa:         return (* (Collection *)      ((char *) address + description -> offset))->size;   // FIXME: alignment not guaranteed
 		case collectionofwa:   return (  (Collection)        ((char *) address + description -> offset))->size;   // FIXME: alignment not guaranteed
-		case autocollectionwa: return (* (Collection *)      ((char *) address + description -> offset))->size;   // FIXME: alignment not guaranteed
+		case collectionwa:     return (* (Collection *)      ((char *) address + description -> offset))->size;   // FIXME: alignment not guaranteed
 		default: return 0;
 	}
 }
 
 int Data_Description_evaluateInteger (void *structAddress, Data_Description structDescription,
-	const char32 *formula, integer *result)
+	conststring32 formula, integer *result)
 {
 	if (! formula) {   // this was a VECTOR_FROM array
 		*result = 1;

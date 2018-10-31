@@ -1,6 +1,6 @@
 /* praat_statistics.cpp
  *
- * Copyright (C) 1992-2012,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2012,2014-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include <time.h>
 #include <locale.h>
+#include <thread>
 #include "praatP.h"
 
 static struct {
@@ -114,6 +115,10 @@ void praat_reportSystemProperties () {
 	#ifdef linux
 		MelderInfo_writeLine (U"linux is \"" xstr (linux) "\".");
 	#endif
+	MelderInfo_writeLine (U"The number of processors is ", std::thread::hardware_concurrency(), U".");
+	#ifdef macintosh
+		MelderInfo_writeLine (U"system version is ", Melder_systemVersion, U".");
+	#endif
 	MelderInfo_close ();
 }
 
@@ -180,6 +185,15 @@ void praat_reportMemoryUse () {
 	MelderInfo_writeLine (U"\nNumber of fixed menu commands: ", praat_getNumberOfMenuCommands ());
 	MelderInfo_writeLine (U"Number of dynamic menu commands: ", praat_getNumberOfActions ());
 	MelderInfo_close ();
+}
+
+void MelderCasual_memoryUse (integer message) {
+	integer numberOfStrings = MelderString_allocationCount () - MelderString_deallocationCount ();
+	integer numberOfArrays = NUM_getTotalNumberOfArrays ();
+	integer numberOfThings = theTotalNumberOfThings;
+	integer numberOfOther = Melder_allocationCount () - Melder_deallocationCount () - numberOfStrings - numberOfArrays - numberOfThings;
+	Melder_casual (U"Memory ", message, U": ",
+		numberOfStrings, U" strings, ", numberOfArrays, U" arrays, ", numberOfThings, U" things, ", numberOfOther, U" other.");
 }
 
 /* End of file praat_statistics.cpp */

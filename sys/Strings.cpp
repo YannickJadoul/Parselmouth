@@ -1,6 +1,6 @@
 /* Strings.cpp
  *
- * Copyright (C) 1992-2012,2014,2015,2017 Paul Boersma
+ * Copyright (C) 1992-2008,2011-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
 #endif
 
 #include "Strings_.h"
-#include "longchar.h"
+#include "../kar/longchar.h"
 
 #include "oo_DESTROY.h"
 #include "Strings_def.h"
@@ -64,7 +64,7 @@ Thing_implement (Strings, Daata, 0);
 static integer Strings_totalLength (Strings me) {
 	integer totalLength = 0;
 	for (integer i = 1; i <= my numberOfStrings; i ++) {
-		totalLength += str32len (my strings [i]);
+		totalLength += str32len (my strings [i].get());
 	}
 	return totalLength;
 }
@@ -72,7 +72,7 @@ static integer Strings_totalLength (Strings me) {
 static integer Strings_maximumLength (Strings me) {
 	integer maximumLength = 0;
 	for (integer i = 1; i <= my numberOfStrings; i ++) {
-		integer length = str32len (my strings [i]);
+		integer length = str32len (my strings [i].get());
 		if (length > maximumLength) {
 			maximumLength = length;
 		}
@@ -87,43 +87,54 @@ void structStrings :: v_info () {
 	MelderInfo_writeLine (U"Longest string: ", Strings_maximumLength (this), U" characters");
 }
 
-const char32 * structStrings :: v_getVectorStr (integer icol) {
+conststring32 structStrings :: v_getVectorStr (integer icol) {
 	if (icol < 1 || icol > our numberOfStrings) return U"";
-	char32 *stringValue = strings [icol];
+	char32 *stringValue = strings [icol].get();
 	return stringValue ? stringValue : U"";
 }
 
 #define Strings_createAsFileOrDirectoryList_TYPE_FILE  0
 #define Strings_createAsFileOrDirectoryList_TYPE_DIRECTORY  1
-static autoStrings Strings_createAsFileOrDirectoryList (const char32 *path /* cattable */, int type) {
+static autoStrings Strings_createAsFileOrDirectoryList (conststring32 path /* cattable */, int type) {
 	#if USE_STAT
-		/*
-		 * Initialize.
-		 */
 		DIR *d = nullptr;
 		try {
-			autoMelderString filePath, searchDirectory, left, right;
 			/*
-			 * Parse the path.
-			 * Example: in /Users/paul/sounds/h*.wav",
-			 * the search directory is "/Users/paul/sounds",
-			 * the left environment is "h", and the right environment is ".wav".
-			 */
+				Parse the path.
+				This can be either a directory name such as "/Users/paul/sounds"
+				or a wildcarded path such as "/Users/paul/sounds/h*.wav".
+				Example: in "/Users/paul/sounds/h*llo.*av",
+				the search directory is "/Users/paul/sounds",
+				the left environment is "h", the middle environment is "llo.", and the right environment is "av".
+			*/
+			autoMelderString searchDirectory, left, middle, right, filePath;
 			MelderString_copy (& searchDirectory, path);
-			char32 *asterisk = str32rchr (searchDirectory. string, '*');
-			if (asterisk) {
-				*asterisk = '\0';
-				searchDirectory. length = asterisk - searchDirectory. string;   // probably superfluous, but correct
+			char32 *asterisk1 = str32chr (searchDirectory. string, U'*');
+			char32 *asterisk2 = str32rchr (searchDirectory. string, U'*');
+			if (asterisk1) {
+				/*
+					The path is a wildcarded path.
+				*/
+				*asterisk1 = U'\0';
+				*asterisk2 = U'\0';
+				searchDirectory. length = asterisk1 - searchDirectory. string;   // probably superfluous, but correct
 				char32 *lastSlash = str32rchr (searchDirectory. string, Melder_DIRECTORY_SEPARATOR);
 				if (lastSlash) {
-					*lastSlash = '\0';   // This fixes searchDirectory.
+					*lastSlash = U'\0';   // this fixes searchDirectory
 					searchDirectory. length = lastSlash - searchDirectory. string;   // probably superfluous, but correct
 					MelderString_copy (& left, lastSlash + 1);
 				} else {
 					MelderString_copy (& left, searchDirectory. string);   // quickly save...
 					MelderString_empty (& searchDirectory);   // ...before destruction
 				}
-				MelderString_copy (& right, asterisk + 1);
+				if (asterisk1 != asterisk2) {
+					MelderString_copy (& middle, asterisk1 + 1);
+				}
+				MelderString_copy (& right, asterisk2 + 1);
+			} else {
+				/*
+					We're finished. No asterisk, hence the path is a directory name.
+				*/
 			}
 			char buffer8 [kMelder_MAXPATH+1];
 			Melder_str32To8bitFileRepresentation_inplace (searchDirectory. string, buffer8);
@@ -153,10 +164,27 @@ static autoStrings Strings_createAsFileOrDirectoryList (const char32 *path /* ca
 				{
 					Melder_8bitFileRepresentationToStr32_inplace (entry -> d_name, buffer32);
 					int64 length = str32len (buffer32);
-					if (buffer32 [0] != U'.' &&
-						(left. length == 0 || str32nequ (buffer32, left. string, left. length)) &&
-						(right. length == 0 || (length >= right. length && str32equ (buffer32 + (length - right. length), right. string))))
-					{
+					integer numberOfMatchedCharacters = 0;
+					bool doesTheLeftMatch = true;
+					if (left. length != 0) {
+						doesTheLeftMatch = str32nequ (buffer32, left. string, left. length);
+						if (doesTheLeftMatch)
+							numberOfMatchedCharacters = left.length;
+					}
+					bool doesTheMiddleMatch = true;
+					if (middle. length != 0) {
+						char32 *position = str32str (buffer32 + numberOfMatchedCharacters, middle. string);
+						doesTheMiddleMatch = !! position;
+						if (doesTheMiddleMatch)
+							numberOfMatchedCharacters = position - buffer32 + middle.length;
+					}
+					bool doesTheRightMatch = true;
+					if (right. length != 0) {
+						int64 startOfRight = length - right. length;
+						doesTheRightMatch = startOfRight >= numberOfMatchedCharacters &&
+							str32equ (buffer32 + startOfRight, right. string);
+					}
+					if (buffer32 [0] != U'.' && doesTheLeftMatch && doesTheMiddleMatch && doesTheRightMatch) {
 						Strings_insert (me.get(), 0, buffer32);
 					}
 				}
@@ -200,7 +228,7 @@ static autoStrings Strings_createAsFileOrDirectoryList (const char32 *path /* ca
 	#endif
 }
 
-autoStrings Strings_createAsFileList (const char32 *path /* cattable */) {
+autoStrings Strings_createAsFileList (conststring32 path /* cattable */) {
 	try {
 		return Strings_createAsFileOrDirectoryList (path, Strings_createAsFileOrDirectoryList_TYPE_FILE);
 	} catch (MelderError) {
@@ -208,7 +236,7 @@ autoStrings Strings_createAsFileList (const char32 *path /* cattable */) {
 	}
 }
 
-autoStrings Strings_createAsDirectoryList (const char32 *path /* cattable */) {
+autoStrings Strings_createAsDirectoryList (conststring32 path /* cattable */) {
 	try {
 		return Strings_createAsFileOrDirectoryList (path, Strings_createAsFileOrDirectoryList_TYPE_DIRECTORY);
 	} catch (MelderError) {
@@ -223,20 +251,20 @@ autoStrings Strings_readFromRawTextFile (MelderFile file) {
 		/*
 		 * Count number of strings.
 		 */
-		int64 n = MelderReadText_getNumberOfLines (text.peek());
+		int64 n = MelderReadText_getNumberOfLines (text.get());
 
 		/*
 		 * Create.
 		 */
 		autoStrings me = Thing_new (Strings);
-		if (n > 0) my strings = NUMvector <char32 *> (1, n);
+		if (n > 0) my strings = autostring32vector (n);
 		my numberOfStrings = n;
 
 		/*
 		 * Read strings.
 		 */
 		for (integer i = 1; i <= n; i ++) {
-			char32 *line = MelderReadText_readLine (text.peek());
+			const mutablestring32 line = MelderReadText_readLine (text.get());
 			my strings [i] = Melder_dup (line);
 		}
 		return me;
@@ -248,7 +276,7 @@ autoStrings Strings_readFromRawTextFile (MelderFile file) {
 void Strings_writeToRawTextFile (Strings me, MelderFile file) {
 	autoMelderString buffer;
 	for (integer i = 1; i <= my numberOfStrings; i ++) {
-		MelderString_append (& buffer, my strings [i], U"\n");
+		MelderString_append (& buffer, my strings [i].get(), U"\n");
 	}
 	MelderFile_writeText (file, buffer.string, Melder_getOutputEncoding ());
 }
@@ -256,25 +284,19 @@ void Strings_writeToRawTextFile (Strings me, MelderFile file) {
 void Strings_randomize (Strings me) {
 	for (integer i = 1; i < my numberOfStrings; i ++) {
 		integer other = NUMrandomInteger (i, my numberOfStrings);
-		char32 *dummy = my strings [other];
-		my strings [other] = my strings [i];
-		my strings [i] = dummy;
+		std::swap (my strings [other], my strings [i]);
 	}
 }
 
 void Strings_genericize (Strings me) {
-	autostring32 buffer = Melder_calloc (char32, Strings_maximumLength (me) * 3 + 1);
+	autostring32 buffer (Strings_maximumLength (me) * 3);
 	for (integer i = 1; i <= my numberOfStrings; i ++) {
-		const char32 *p = (const char32 *) my strings [i];
+		const conststring32 string = my strings [i].get();
+		const char32 *p = & string [0];
 		while (*p) {
 			if (*p > 126) {   // backslashes are not converted, i.e. genericize^2 == genericize
-				Longchar_genericize32 (my strings [i], buffer.peek());
-				autostring32 newString = Melder_dup (buffer.peek());
-				/*
-				 * Replace string only if copying was OK.
-				 */
-				Melder_free (my strings [i]);
-				my strings [i] = newString.transfer();
+				Longchar_genericize32 (string, buffer.get());
+				my strings [i] = Melder_dup (buffer.get());
 				break;
 			}
 			p ++;
@@ -283,74 +305,62 @@ void Strings_genericize (Strings me) {
 }
 
 void Strings_nativize (Strings me) {
-	autostring32 buffer = Melder_calloc (char32, Strings_maximumLength (me) + 1);
+	autostring32 buffer = (Strings_maximumLength (me));
 	for (integer i = 1; i <= my numberOfStrings; i ++) {
-		Longchar_nativize32 (my strings [i], buffer.peek(), false);
-		autostring32 newString = Melder_dup (buffer.peek());
-		/*
-		 * Replace string only if copying was OK.
-		 */
-		Melder_free (my strings [i]);
-		my strings [i] = newString.transfer();
+		Longchar_nativize32 (my strings [i].get(), buffer.get(), false);
+		my strings [i] = Melder_dup (buffer.get());
 	}
 }
 
 void Strings_sort (Strings me) {
-	NUMsort_str (my numberOfStrings, my strings);
+	NUMsort_str (my strings.get());
 }
 
 void Strings_remove (Strings me, integer position) {
-	if (position < 1 || position > my numberOfStrings) {
-		Melder_throw (U"You supplied a position of ", position, U", but for this string it has to be in the range [1, ", my numberOfStrings, U"].");
-	}
-	Melder_free (my strings [position]);
-	for (integer i = position; i < my numberOfStrings; i ++) {
-		my strings [i] = my strings [i + 1];
-	}
+	if (position < 1 || position > my numberOfStrings)
+		Melder_throw (U"You supplied a position of ", position, U", but for this string it should be in the range [1, ", my numberOfStrings, U"].");
+	for (integer i = position; i < my numberOfStrings; i ++)
+		my strings [i] = my strings [i + 1]. move();
+	my strings [my numberOfStrings]. reset();
 	my numberOfStrings --;
 }
 
-void Strings_replace (Strings me, integer position, const char32 *text) {
-	if (position < 1 || position > my numberOfStrings) {
-		Melder_throw (U"You supplied a position of ", position, U", but for this string it has to be in the range [1, ", my numberOfStrings, U"].");
-	}
-	if (Melder_equ (my strings [position], text))
+void Strings_replace (Strings me, integer position, conststring32 text) {
+	if (position < 1 || position > my numberOfStrings)
+		Melder_throw (U"You supplied a position of ", position, U", but for this string it should be in the range [1, ", my numberOfStrings, U"].");
+	if (Melder_equ (my strings [position].get(), text))
 		return;   // nothing to change
 	/*
-	 * Create without change.
-	 */
+		Create without change.
+	*/
 	autostring32 newString = Melder_dup (text);
 	/*
-	 * Change without error.
-	 */
-	Melder_free (my strings [position]);
-	my strings [position] = newString.transfer();
+		Change without error.
+	*/
+	my strings [position] = newString. move();
 }
 
-void Strings_insert (Strings me, integer position, const char32 *text) {
+void Strings_insert (Strings me, integer position, conststring32 text) {
 	if (position == 0) {
 		position = my numberOfStrings + 1;
 	} else if (position < 1 || position > my numberOfStrings + 1) {
-		Melder_throw (U"You supplied a position of ", position, U", but for this string it has to be in the range [1, ", my numberOfStrings, U"].");
+		Melder_throw (U"You supplied a position of ", position, U", but for this string it should be in the range [1, ", my numberOfStrings, U"].");
 	}
 	/*
-	 * Create without change.
-	 */
+		Create without change.
+	*/
 	autostring32 newString = Melder_dup (text);
-	autoNUMvector <char32 *> newStrings (1, my numberOfStrings + 1);
+	autostring32vector newStrings (my numberOfStrings + 1);
 	/*
-	 * Change without error.
-	 */
-	for (integer i = 1; i < position; i ++) {
-		newStrings [i] = my strings [i];
-	}
-	newStrings [position] = newString.transfer();
+		Change without error.
+	*/
+	for (integer i = 1; i < position; i ++)
+		newStrings [i] = my strings [i]. move();
+	newStrings [position] = newString. move();
 	my numberOfStrings ++;
-	for (integer i = position + 1; i <= my numberOfStrings; i ++) {
-		newStrings [i] = my strings [i - 1];
-	}
-	NUMvector_free (my strings, 1);
-	my strings = newStrings.transfer();
+	for (integer i = position + 1; i <= my numberOfStrings; i ++)
+		newStrings [i] = my strings [i - 1]. move();
+	my strings = std::move (newStrings);
 }
 
 /* End of file Strings.cpp */

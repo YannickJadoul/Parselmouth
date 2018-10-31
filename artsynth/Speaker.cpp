@@ -1,6 +1,6 @@
 /* Speaker.cpp
  *
- * Copyright (C) 1992-2005,2007,2011,2012,2015-2017 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2011,2012,2015-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
 
 Thing_implement (Speaker, Daata, 0);
 
-autoSpeaker Speaker_create (const char32 *kindOfSpeaker, int16 numberOfVocalCordMasses) {
+autoSpeaker Speaker_create (conststring32 kindOfSpeaker, int16 numberOfVocalCordMasses) {
 	autoSpeaker me = Thing_new (Speaker);
 
 	/* Supralaryngeal dimensions are taken from P. Mermelstein (1973):		*/
@@ -112,20 +112,21 @@ autoSpeaker Speaker_create (const char32 *kindOfSpeaker, int16 numberOfVocalCord
 
 	my nose.Dx = 0.007 * scaling;
 	my nose.Dz = 0.014 * scaling;
-	my nose.weq [0] = 0.018 * scaling;
-	my nose.weq [1] = 0.016 * scaling;
-	my nose.weq [2] = 0.014 * scaling;
-	my nose.weq [3] = 0.020 * scaling;
-	my nose.weq [4] = 0.023 * scaling;
-	my nose.weq [5] = 0.020 * scaling;
-	my nose.weq [6] = 0.035 * scaling;
+	my nose.weq = VECraw (14);
+	my nose.weq [1] = 0.018 * scaling;
+	my nose.weq [2] = 0.016 * scaling;
+	my nose.weq [3] = 0.014 * scaling;
+	my nose.weq [4] = 0.020 * scaling;
+	my nose.weq [5] = 0.023 * scaling;
+	my nose.weq [6] = 0.020 * scaling;
 	my nose.weq [7] = 0.035 * scaling;
-	my nose.weq [8] = 0.030 * scaling;
-	my nose.weq [9] = 0.022 * scaling;
-	my nose.weq [10] = 0.016 * scaling;
-	my nose.weq [11] = 0.010 * scaling;
-	my nose.weq [12] = 0.012 * scaling;
-	my nose.weq [13] = 0.013 * scaling;
+	my nose.weq [8] = 0.035 * scaling;
+	my nose.weq [9] = 0.030 * scaling;
+	my nose.weq [10] = 0.022 * scaling;
+	my nose.weq [11] = 0.016 * scaling;
+	my nose.weq [12] = 0.010 * scaling;
+	my nose.weq [13] = 0.012 * scaling;
+	my nose.weq [14] = 0.013 * scaling;
 
 	return me;
 }

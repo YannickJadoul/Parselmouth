@@ -152,12 +152,12 @@ static int Native_titleWidth (GuiObject me) {
 		HDC dc = GetDC (my parent -> window);
 		SIZE size;
 		SelectFont (dc, GetStockFont (ANSI_VAR_FONT));   // possible BUG
-		WCHAR *nameW = Melder_peek32toW (my name);
+		conststringW nameW = Melder_peek32toW (my name.get());
 		GetTextExtentPoint32 (dc, nameW, wcslen (nameW), & size);
 		ReleaseDC (my parent -> window, dc);
 		return size. cx;
 	} else {
-		return 7 * str32len (my name);
+		return 7 * str32len (my name.get());
 	}
 }
 
@@ -181,7 +181,7 @@ static int NativeButton_preferredHeight (GuiObject me) {
 
 /***** WIDGET *****/
 
-GuiObject _Gui_initializeWidget (int widgetClass, GuiObject parent, const char32 *name) {
+GuiObject _Gui_initializeWidget (int widgetClass, GuiObject parent, conststring32 name) {
 	GuiObject me = Melder_calloc_f (struct structGuiObject, 1);
 	if (Melder_debug == 34)
 		Melder_casual (U"from _Gui_initializeWidget\t", Melder_pointer (me), U"\t1\t", sizeof (struct structGuiObject));
@@ -256,7 +256,7 @@ GuiObject _Gui_initializeWidget (int widgetClass, GuiObject parent, const char32
 			my height = Gui_LABEL_HEIGHT;
 		} break; case xmCascadeButtonWidgetClass: {
 			if (my parent -> rowColumnType == XmMENU_BAR) {
-				char32 *hyphen = str32str (my name, U" -");
+				char32 *hyphen = str32str (my name.get(), U" -");
 				if (hyphen) hyphen [2] = U'\0';   // chop any trailing spaces
 				my x = 2;
 				my y = 2;
@@ -374,9 +374,9 @@ void _GuiNativeControl_setSensitive (GuiObject me) {
 	EnableWindow (my window, ! my insensitive);
 }
 
-char32 * _GuiWin_expandAmpersands (const char32 *title) {
+char32 * _GuiWin_expandAmpersands (conststring32 title) {
 	static char32 buffer [300];
-	const char32 *from = title;
+	const char32 *from = & title [0];
 	char32 *to = & buffer [0];
 	while (*from) { if (*from == U'&') * to ++ = U'&'; * to ++ = * from ++; } * to = U'\0';
 	return buffer;
@@ -388,7 +388,7 @@ void _GuiNativeControl_setTitle (GuiObject me) {
 	SelectBrush (dc, GetStockBrush (LTGRAY_BRUSH));
 	Rectangle (dc, 0, 0, my width, my height);
 	ReleaseDC (my window, dc);
-	SetWindowTextW (my window, Melder_peek32toW (_GuiWin_expandAmpersands (my name)));
+	SetWindowTextW (my window, Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())));
 }
 
 static int _XmScrollBar_check (GuiObject me) {
@@ -471,9 +471,9 @@ static void NativeMenuItem_setText (GuiObject me) {
 	int acc = my motiff.pushButton.acceleratorChar, modifiers = my motiff.pushButton.acceleratorModifiers;
 	static MelderString title { };
 	if (acc == 0) {
-		MelderString_copy (& title, _GuiWin_expandAmpersands (my name));
+		MelderString_copy (& title, _GuiWin_expandAmpersands (my name.get()));
 	} else {
-		static const char32 *keyStrings [256] = {
+		static const conststring32 keyStrings [256] = {
 			0, U"<-", U"->", U"Up", U"Down", U"PAUSE", U"Del", U"Ins", U"Backspace", U"Tab", U"LineFeed", U"Home", U"End", U"Enter", U"PageUp", U"PageDown",
 			U"Esc", U"F1", U"F2", U"F3", U"F4", U"F5", U"F6", U"F7", U"F8", U"F9", U"F10", U"F11", U"F12", 0, 0, 0,
 			U"Space", U"!", U"\"", U"#", U"$", U"%", U"&", U"\'", U"(", U")", U"*", U"+", U",", U"-", U".", U"/",
@@ -490,8 +490,8 @@ static void NativeMenuItem_setText (GuiObject me) {
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, U"-", U"`", U"=", U"\'", 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-		const char32 *keyString = keyStrings [acc] ? keyStrings [acc] : U"???";
-		MelderString_copy (& title, _GuiWin_expandAmpersands (my name), U"\t",
+		const conststring32 keyString = keyStrings [acc] ? keyStrings [acc] : U"???";
+		MelderString_copy (& title, _GuiWin_expandAmpersands (my name.get()), U"\t",
 			modifiers & _motif_COMMAND_MASK ? U"Ctrl-" : NULL,
 			modifiers & _motif_OPTION_MASK ? U"Alt-" : NULL,
 			modifiers & _motif_SHIFT_MASK ? U"Shift-" : NULL, keyString);
@@ -586,7 +586,7 @@ static void _GuiNativizeWidget (GuiObject me) {
 				 * Insert the menu before the Help menu, if that exists; otherwise, at the end.
 				 */
 				for (menu = my parent -> firstChild; menu; menu = menu -> nextSibling) {
-					if (MEMBER (menu, PulldownMenu) && str32equ (menu -> name, U"Help") && menu != me) {
+					if (MEMBER (menu, PulldownMenu) && str32equ (menu -> name.get(), U"Help") && menu != me) {
 						beforeID = (UINT) menu -> nat.menu./*handle*/id;
 						break;
 					}
@@ -595,8 +595,8 @@ static void _GuiNativizeWidget (GuiObject me) {
 					MENUITEMINFO info;
 					info. cbSize = sizeof (MENUITEMINFO);
 					info. fMask = MIIM_TYPE | MIIM_SUBMENU | MIIM_ID;
-					info. fType = MFT_STRING | ( str32equ (my name, U"Help") ? MFT_RIGHTJUSTIFY : 0 );
-					info. dwTypeData = Melder_peek32toW (my name);
+					info. fType = MFT_STRING | ( str32equ (my name.get(), U"Help") ? MFT_RIGHTJUSTIFY : 0 );
+					info. dwTypeData = (mutablestringW) Melder_peek32toW (my name.get());
 					info. hSubMenu = my nat.menu.handle;
 					info. wID = (UINT) my nat.menu./*handle*/id;
 					InsertMenuItem (my parent -> nat.menu.handle, beforeID, 0, & info);
@@ -613,7 +613,7 @@ static void _GuiNativizeWidget (GuiObject me) {
 		case xmLabelWidgetClass: Melder_fatal (U"Should be implemented in GuiLabel."); break;
 		case xmCascadeButtonWidgetClass: {
 			if (! my motiff.cascadeButton.inBar) {
-				my window = CreateWindow (L"button", Melder_peek32toW (_GuiWin_expandAmpersands (my name)),
+				my window = CreateWindow (L"button", Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())),
 					WS_CHILD | BS_PUSHBUTTON | WS_CLIPSIBLINGS,
 					my x, my y, my width, my height, my parent -> window, (HMENU) 1, theGui.instance, NULL);
 				SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
@@ -624,14 +624,14 @@ static void _GuiNativizeWidget (GuiObject me) {
 		case xmTextWidgetClass: Melder_fatal (U"Should be implemented in GuiText."); break;
 		case xmToggleButtonWidgetClass: Melder_fatal (U"Should be implemented in GuiCheckButton and GuiRadioButton."); break;
 		case xmScaleWidgetClass: {
-			my window = CreateWindow (PROGRESS_CLASS, Melder_peek32toW (_GuiWin_expandAmpersands (my name)), WS_CHILD | WS_CLIPSIBLINGS,
+			my window = CreateWindow (PROGRESS_CLASS, Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())), WS_CHILD | WS_CLIPSIBLINGS,
 				my x, my y, my width, my height, my parent -> window, (HMENU) 1, theGui.instance, NULL);
 			SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
 			SendMessage (my window, PBM_SETRANGE, (WPARAM) 0, (LPARAM) MAKELONG (0, 10000));
 		} break;
 		case xmScrollBarWidgetClass: {
-			my window = CreateWindow (L"scrollbar", Melder_peek32toW (my name), WS_CHILD |
-				( str32equ (my name, U"verticalScrollBar") ? SBS_VERT : SBS_HORZ ) | WS_CLIPSIBLINGS,
+			my window = CreateWindow (L"scrollbar", Melder_peek32toW (my name.get()), WS_CHILD |
+				( str32equ (my name.get(), U"verticalScrollBar") ? SBS_VERT : SBS_HORZ ) | WS_CLIPSIBLINGS,
 				my x, my y, my width, my height, my parent -> window, (HMENU) 1, theGui.instance, NULL);
 			SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
 			NativeScrollBar_set (me);
@@ -911,7 +911,6 @@ static void _motif_setValues (GuiObject me, va_list arg) {
 		case XmNlabelString:
 			Melder_assert (MEMBER2 (me, CascadeButton, PushButton));
 			text = va_arg (arg, char *);
-			Melder_free (my name);
 			my name = Melder_8to32 (text);   // BUG throwable
 			if (my inMenu) {
 				NativeMenuItem_setText (me);
@@ -1003,7 +1002,6 @@ static void _motif_setValues (GuiObject me, va_list arg) {
 		case XmNtitleString:
 			Melder_assert (MEMBER (me, Scale));
 			text = va_arg (arg, char *);
-			Melder_free (my name);
 			my name = Melder_8to32 (text);   // BUG throwable
 			_Gui_invalidateWidget (me);
 			break;
@@ -1419,7 +1417,7 @@ void XtDestroyWidget (GuiObject me) {
 			theMenus [my nat.menu.id] = NULL;
 		} break;
 	}
-	Melder_free (my name);
+	my name. reset();   // not automatic
 	if (my parent && me == my parent -> firstChild)   // remove dangling reference
 		my parent -> firstChild = my nextSibling;
 	if (my previousSibling)   // remove dangling reference
@@ -1468,20 +1466,20 @@ static void mapWidget (GuiObject me) {
 		switch (my widgetClass) {
 			case xmPushButtonWidgetClass: {
 				InsertMenu (my nat.entry.handle, position, MF_STRING | MF_BYPOSITION | ( my insensitive ? MF_GRAYED : MF_ENABLED ),
-					my nat.entry.id, Melder_peek32toW (_GuiWin_expandAmpersands (my name)));
+					my nat.entry.id, Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())));
 			} break;
 			case xmToggleButtonWidgetClass: {
 				InsertMenu (my nat.entry.handle, position, MF_STRING | MF_UNCHECKED | MF_BYPOSITION | ( my insensitive ? MF_GRAYED : MF_ENABLED ),
-					my nat.entry.id, Melder_peek32toW (_GuiWin_expandAmpersands (my name)));
+					my nat.entry.id, Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())));
 			} break;
 			case xmCascadeButtonWidgetClass: {
 				my nat.entry.id = (ULONG_PTR) my subMenuId -> nat.menu.handle;
 				InsertMenu (my nat.entry.handle, position, MF_POPUP | MF_BYPOSITION | ( my insensitive ? MF_GRAYED : MF_ENABLED ),
-					my nat.entry.id, Melder_peek32toW (_GuiWin_expandAmpersands (my name)));
+					my nat.entry.id, Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())));
 			} break;
 			case xmSeparatorWidgetClass: {
 				InsertMenu (my nat.entry.handle, position, MF_SEPARATOR | MF_BYPOSITION,
-					my nat.entry.id, Melder_peek32toW (_GuiWin_expandAmpersands (my name)));
+					my nat.entry.id, Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())));
 			} break;
 		}
 	} else switch (my widgetClass) {
@@ -1503,7 +1501,7 @@ static void mapWidget (GuiObject me) {
 		case xmToggleButtonWidgetClass: _GuiNativeControl_show (me); break;
 		case xmScrollBarWidgetClass: {
 			if (! my window) {
-				my window = CreateWindow (L"scrollbar", Melder_peek32toW (my name), WS_CHILD |
+				my window = CreateWindow (L"scrollbar", Melder_peek32toW (my name.get()), WS_CHILD |
 					( my orientation == XmHORIZONTAL ? SBS_HORZ : SBS_VERT) | WS_CLIPSIBLINGS,
 					my x, my y, my width, my height, my parent -> window, (HMENU) 1, theGui.instance, NULL);
 				SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
@@ -1712,13 +1710,13 @@ void GuiAppInitialize (const char *name, unsigned int argc, char **argv)
 		windowClass. hCursor = LoadCursor (NULL, IDC_ARROW);
 		windowClass. hbrBackground = /*(HBRUSH) (COLOR_WINDOW + 1)*/ GetStockBrush (LTGRAY_BRUSH);
 		windowClass. lpszMenuName = NULL;
-		windowClass. lpszClassName = Melder_32toW (theWindowClassName);
+		windowClass. lpszClassName = Melder_32toW (theWindowClassName).transfer();
 		windowClass. hIconSm = NULL;
 		RegisterClassEx (& windowClass);
 		windowClass. hbrBackground = GetStockBrush (WHITE_BRUSH);
-		windowClass. lpszClassName = Melder_32toW (theDrawingAreaClassName);
+		windowClass. lpszClassName = Melder_32toW (theDrawingAreaClassName).transfer();
 		RegisterClassEx (& windowClass);
-		windowClass. lpszClassName = Melder_32toW (theApplicationClassName);
+		windowClass. lpszClassName = Melder_32toW (theApplicationClassName).transfer();
 		RegisterClassEx (& windowClass);
 		InitCommonControls ();
 	}
@@ -1767,7 +1765,7 @@ void XtVaGetValues (GuiObject me, ...) {
 		case XmNlabelString:
 		case XmNtitleString:
 			Melder_assert (my widgetClass == xmCascadeButtonWidgetClass || my widgetClass == xmScaleWidgetClass);
-			text = Melder_32to8 (my name);   // BUG throwable
+			text = Melder_32to8 (my name.get()).transfer();   // BUG throwable
 			*va_arg (arg, char **) = text;
 			break;
 		case XmNdialogTitle:
@@ -2382,7 +2380,7 @@ int APIENTRY WinMain (HINSTANCE instance, HINSTANCE /*previousInstance*/, LPSTR 
 	WCHAR** argvW = CommandLineToArgvW (GetCommandLineW (), & argc);
 	char** argv = Melder_malloc (char*, argc);
 	for (int iarg = 0; iarg < argc; iarg ++) {
-		argv [iarg] = Melder_32to8 (Melder_peekWto32 (argvW [iarg]));
+		argv [iarg] = Melder_32to8 (Melder_peekWto32 (argvW [iarg])).transfer();
 	}
 	return main (argc, argv);
 }

@@ -108,8 +108,8 @@ FORM (INFO_DataModeler_getParameterStatus, U"DataModeler: Get parameter status",
 DO
 	STRING_ONE (DataModeler)
 		int status = DataModeler_getParameterStatus (me, parameterNumber);
-		const char32 *result = status == DataModeler_PARAMETER_FREE ? U"Free" : (status == DataModeler_PARAMETER_FIXED ? U"Fixed" :
-		U"Undefined");
+		conststring32 result = ( status == DataModeler_PARAMETER_FREE ? U"Free" :
+			status == DataModeler_PARAMETER_FIXED ? U"Fixed" : U"Undefined" );
 	STRING_ONE_END
 }
 
@@ -202,7 +202,7 @@ FORM (INFO_DataModeler_getDataPointStatus, U"DataModeler: Get data point status"
 DO
 	STRING_ONE (DataModeler)
 		int status = DataModeler_getDataPointStatus (me, index);
-		const char32 *result = status == DataModeler_DATA_INVALID ? U"Invalid" : U"Valid";
+		conststring32 result = ( status == DataModeler_DATA_INVALID ? U"Invalid" : U"Valid" );
 	STRING_ONE_END
 }
 
@@ -352,7 +352,7 @@ DIRECT (MODIFY_DataModeler_fitModel) {
 DIRECT (NEW_DataModeler_to_Covariance_parameters) {
 	CONVERT_EACH (DataModeler)
 		autoCovariance result = DataModeler_to_Covariance_parameters (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_DataModeler_to_Table_zscores, U"DataModeler: To Table (z-scores)", nullptr) {
@@ -361,7 +361,7 @@ FORM (NEW_DataModeler_to_Table_zscores, U"DataModeler: To Table (z-scores)", nul
 DO
 	CONVERT_EACH (DataModeler)
 		autoTable result = DataModeler_to_Table_zscores (me, useSigmaY);
-	CONVERT_EACH_END (my name, U"_z");
+	CONVERT_EACH_END (my name.get(), U"_z");
 }
 
 FORM (NEW_Formant_to_FormantModeler, U"Formant: To FormantModeler", nullptr) {
@@ -380,7 +380,7 @@ DO
 	Melder_require (order >= 0, U"The order should be at least zero.");
 	CONVERT_EACH (Formant)
 		autoFormantModeler result = Formant_to_FormantModeler (me, fromTime, toTime, numberOfFormants, order + 1, weighDataType);
-	CONVERT_EACH_END (my name, U"_o", order);
+	CONVERT_EACH_END (my name.get(), U"_o", order);
 }
 
 FORM (NEW1_Formants_extractSmoothestPart, U"Formants: Extract smoothest part", U"Formants: Extract smoothest part") {
@@ -415,8 +415,8 @@ DO
 		}
 	}
 	Melder_assert (him);
-	autoFormant thee = Formant_extractPart (him, fromTime, toTime);
-	praat_new (thee.move(), his name, U"_part");
+	autoFormant result = Formant_extractPart (him, fromTime, toTime);
+	praat_new (result.move(), his name.get(), U"_part");
 END }
 
 FORM (NEW1_Formants_extractSmoothestPart_constrained, U"Formants: Extract smoothest part (constrained)", U"Formants: Extract smoothest part (constrained)...") {
@@ -457,8 +457,8 @@ DO
 		}
 	}
 	Melder_assert (him);
-	autoFormant thee = Formant_extractPart (him, fromTime, toTime);
-	praat_new (thee.move(), his name, U"_part");
+	autoFormant result = Formant_extractPart (him, fromTime, toTime);
+	praat_new (result.move(), his name.get(), U"_part");
 END }
 
 /********************** FormantModeler ******************************/
@@ -651,7 +651,7 @@ FORM (INFO_FormantModeler_getDataPointStatus, U"FormantModeler: Get data point s
 DO
 	INTEGER_ONE (FormantModeler)
 		int status = FormantModeler_getDataPointStatus (me, formantNumber, index);
-		const char32 *result = status == DataModeler_DATA_INVALID ? U"Invalid" : U"Valid";
+		conststring32 result = ( status == DataModeler_DATA_INVALID ? U"Invalid" : U"Valid" );
 	INTEGER_ONE_END (U"")
 }
 
@@ -713,8 +713,10 @@ FORM (INFO_FormantModeler_getParameterStatus, U"FormantModeler: Get parameter st
 DO
 	STRING_ONE (FormantModeler)
 		int status = FormantModeler_getParameterStatus (me, formantNumber, parameterNumber);
-		const char32 *result = Melder_cat (status == DataModeler_PARAMETER_FREE ? U"Free" : (status == DataModeler_PARAMETER_FIXED ? U"Fixed" :
-		U"Undefined"), U" (= status of parameter ", parameterNumber, U" for F", formantNumber, U")");
+		conststring32 result = Melder_cat (
+			status == DataModeler_PARAMETER_FREE ? U"Free" : status == DataModeler_PARAMETER_FIXED ? U"Fixed" : U"Undefined",
+			U" (= status of parameter ", parameterNumber, U" for F", formantNumber, U")"
+		);
 	STRING_ONE_END
 }
 
@@ -941,7 +943,7 @@ FORM (NEW_FormantModeler_to_Covariance_parameters, U"", nullptr) {
 DO
 	CONVERT_EACH (FormantModeler)
 		autoCovariance result = FormantModeler_to_Covariance_parameters (me, formantNumber);
-	CONVERT_EACH_END (my name, U"_", formantNumber);
+	CONVERT_EACH_END (my name.get(), U"_", formantNumber);
 }
 
 FORM (NEW_FormantModeler_extractDataModeler, U"FormantModeler: Extract DataModeler", nullptr) {
@@ -950,7 +952,7 @@ FORM (NEW_FormantModeler_extractDataModeler, U"FormantModeler: Extract DataModel
 DO
 	CONVERT_EACH (FormantModeler)
 		autoDataModeler result = FormantModeler_extractDataModeler (me, formantNumber);
-	CONVERT_EACH_END (my name, U"_", formantNumber)
+	CONVERT_EACH_END (my name.get(), U"_", formantNumber)
 }
 
 FORM (NEW_FormantModeler_to_Table_zscores, U"", nullptr) {
@@ -959,7 +961,7 @@ FORM (NEW_FormantModeler_to_Table_zscores, U"", nullptr) {
 DO
 	CONVERT_EACH (FormantModeler)
 		autoTable result = FormantModeler_to_Table_zscores (me, useBandwidth);
-	CONVERT_EACH_END (my name, U"_z")
+	CONVERT_EACH_END (my name.get(), U"_z")
 }
 
 FORM (NEW_FormantModeler_to_FormantModeler_processOutliers, U"", nullptr) {
@@ -969,7 +971,7 @@ FORM (NEW_FormantModeler_to_FormantModeler_processOutliers, U"", nullptr) {
 DO
 	CONVERT_EACH (FormantModeler)
 		autoFormantModeler result = FormantModeler_processOutliers (me, numberOfSigmas, useBandwidth);
-	CONVERT_EACH_END (my name, U"_outliers");
+	CONVERT_EACH_END (my name.get(), U"_outliers");
 }
 
 
@@ -993,7 +995,7 @@ FORM (NEW_Pitch_to_PitchModeler, U"Pitch: To PitchModeler", nullptr) {
 DO
 	CONVERT_EACH (Pitch)
 		autoPitchModeler result = Pitch_to_PitchModeler (me, fromTime, toTime, order + 1);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (GRAPHICS_PitchModeler_draw, U"PitchModeler: Draw", nullptr) {
@@ -1060,7 +1062,7 @@ DO
 	CONVERT_EACH (Sound)
 		double ceiling;
 		autoFormant result = Sound_to_Formant_interval (me, fromTime, toTime, windowLength, timeStep, fromFrequency, toFrequency, numberOfFrequencySteps, preEmphasisFrequency, numberOfFormantTracks, order + 1, weighDataType, numberOfSigmas, power, 0, 1, 1, 1, 1, 1, &ceiling);
-	CONVERT_EACH_END (my name, U"_", Melder_fixed (ceiling, 0))
+	CONVERT_EACH_END (my name.get(), U"_", Melder_fixed (ceiling, 0))
 }
 
 FORM (NEW_Sound_to_Formant_interval_constrained, U"Sound: To Formant (interval, constrained)", nullptr) {
@@ -1093,7 +1095,7 @@ DO
 	CONVERT_EACH (Sound)
 		double ceiling;
 		autoFormant result = Sound_to_Formant_interval (me, fromTime, toTime, windowLength, timeStep, fromFrequency,  toFrequency, numberOfFrequencySteps, preEmphasisFrequency, numberOfFormantTracks, order + 1, weighDataType, numberOfSigmas, power, 1, minimumF1, maximumF1, minimumF2, maximumF2, minimumF3, & ceiling);
-	CONVERT_EACH_END (my name, U"_", Melder_fixed (ceiling, 0));
+	CONVERT_EACH_END (my name.get(), U"_", Melder_fixed (ceiling, 0));
 }
 
 FORM (NEW_Sound_to_Formant_interval_constrained_robust, U"Sound: To Formant (interval, constrained, robust)", nullptr) {
@@ -1126,7 +1128,7 @@ DO
 	CONVERT_EACH (Sound)
 		double ceiling;
 		autoFormant result = Sound_to_Formant_interval_robust (me, fromTime, toTime, windowLength, timeStep, fromFrequency, fromFrequency, numberOfFrequencySteps, preEmphasisFrequency, numberOfFormantTracks, order + 1, weighDataType, numberOfSigmas, power, 1, minimumF1, maximumF1, minimumF2, minimumF2, minimumF3, &ceiling);
-	CONVERT_EACH_END (my name, U"_", Melder_fixed (ceiling, 0))
+	CONVERT_EACH_END (my name.get(), U"_", Melder_fixed (ceiling, 0))
 }
 
 FORM (NEW_Sound_to_OptimalCeilingTier, U"", nullptr) {
@@ -1151,7 +1153,7 @@ FORM (NEW_Sound_to_OptimalCeilingTier, U"", nullptr) {
 DO
 	CONVERT_EACH (Sound)
 		autoOptimalCeilingTier result = Sound_to_OptimalCeilingTier (me, windowLength, timeStep, fromFrequency, toFrequency, numberOfFrequencySteps, preEmphasisFrequency, smoothingWindow_s, numberOfFormantTracks, order + 1, weighDataType, numberOfSigmas, power);
-	CONVERT_EACH_END (my name);
+	CONVERT_EACH_END (my name.get());
 }
 
 FORM (NEW_Table_to_DataModeler, U"", nullptr) {
@@ -1170,7 +1172,7 @@ DO
 		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, columnWithY_string);
 		integer scolumn = Table_findColumnIndexFromColumnLabel (me, columnEithSigma_string);
 		autoDataModeler result = Table_to_DataModeler (me, xmin, xmax, xcolumn, ycolumn, scolumn, maximumOrder + 1, functionType);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 void praat_DataModeler_init ();
