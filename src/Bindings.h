@@ -36,7 +36,7 @@ template <bool B> using bool_constant = std::integral_constant<bool, B>;
 template <typename T> struct negation : bool_constant<!T::value> {};
 
 // Compile-time all/any/none of that check the boolean value of all template types
-#ifdef __cpp_fold_expressions
+#if defined(__cpp_fold_expressions) && !(defined(_MSC_VER) && (_MSC_VER < 1916))
 template <class... Ts> using all_of = bool_constant<(Ts::value && ...)>;
 template <class... Ts> using any_of = bool_constant<(Ts::value || ...)>;
 #elif !defined(_MSC_VER)
