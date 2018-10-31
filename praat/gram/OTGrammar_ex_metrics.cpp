@@ -1,6 +1,6 @@
 /* OTGrammar_ex_metrics.cpp
  *
- * Copyright (C) 2001-2007,2009,2011,2012,2014-2017 Paul Boersma
+ * Copyright (C) 2001-2007,2009,2011,2012,2014-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@
 
 #define NUMBER_OF_CONSTRAINTS  22
 
-static const char32 *constraintNames [1+NUMBER_OF_CONSTRAINTS] = { 0,
+static const conststring32 constraintNames [1+NUMBER_OF_CONSTRAINTS] = { 0,
 	U"WSP", U"FtNonfinal", U"Iambic", U"Parse", U"FootBin", U"WFL", U"WFR", U"Main-L", U"Main-R", U"AFL", U"AFR", U"Nonfinal",
 	U"Trochaic", U"FtBimor", U"FtBisyl", U"Peripheral", U"MainNonfinal", U"HeadNonfinal", U"*Clash", U"*Lapse", U"WeightByPosition", U"*C\\mu" };
 
@@ -69,23 +69,27 @@ static void addCandidate (OTGrammarTableau me, integer numberOfSyllables, int st
 	bool footedToTheLeft [], bool footedToTheRight [], int surfaceWeightPattern [],
 	int overtFormsHaveSecondaryStress)
 {
-	static const char32 *syllable [] = { U"L", U"L1", U"L2", U"H", U"H1", U"H2", U"K", U"K1", U"K2", U"J", U"J1", U"J2" };
-	static const char32 *syllableWithoutSecondaryStress [] = { U"L", U"L1", U"L", U"H", U"H1", U"H", U"K", U"K1", U"K", U"J", U"J1", U"J" };
+	static const conststring32 syllable [] = { U"L", U"L1", U"L2", U"H", U"H1", U"H2", U"K", U"K1", U"K2", U"J", U"J1", U"J2" };
+	static const conststring32 syllableWithoutSecondaryStress [] = { U"L", U"L1", U"L", U"H", U"H1", U"H", U"K", U"K1", U"K", U"J", U"J1", U"J" };
 	char32 output [100];
 	str32cpy (output, U"[");
 	for (integer isyll = 1; isyll <= numberOfSyllables; isyll ++) {
-		if (isyll > 1) str32cpy (output + str32len (output), U" ");
-		str32cpy (output + str32len (output), ( overtFormsHaveSecondaryStress ? syllable : syllableWithoutSecondaryStress )
+		if (isyll > 1)
+			str32cat (output, U" ");
+		str32cat (output, ( overtFormsHaveSecondaryStress ? syllable : syllableWithoutSecondaryStress )
 				[stress [isyll] + 3 * (surfaceWeightPattern [isyll] - 1)]);
 	}
-	str32cpy (output + str32len (output), U"] \\-> /");
+	str32cat (output, U"] \\-> /");
 	for (integer isyll = 1; isyll <= numberOfSyllables; isyll ++) {
-		if (isyll > 1) str32cpy (output + str32len (output), U" ");
-		if (footedToTheRight [isyll] || (! footedToTheLeft [isyll] && stress [isyll] != 0)) str32cpy (output + str32len (output), U"(");
-		str32cpy (output + str32len (output), syllable [stress [isyll] + 3 * (surfaceWeightPattern [isyll] - 1)]);
-		if (footedToTheLeft [isyll] || (! footedToTheRight [isyll] && stress [isyll] != 0)) str32cpy (output + str32len (output), U")");
+		if (isyll > 1)
+			str32cat (output, U" ");
+		if (footedToTheRight [isyll] || (! footedToTheLeft [isyll] && stress [isyll] != 0))
+			str32cat (output, U"(");
+		str32cat (output, syllable [stress [isyll] + 3 * (surfaceWeightPattern [isyll] - 1)]);
+		if (footedToTheLeft [isyll] || (! footedToTheRight [isyll] && stress [isyll] != 0))
+			str32cat (output, U")");
 	}
-	str32cpy (output + str32len (output), U"/");
+	str32cat (output, U"/");
 	my candidates [++ my numberOfCandidates]. output = Melder_dup (output);
 }
 
@@ -99,7 +103,8 @@ static void fillSurfaceWeightPattern (OTGrammarTableau me, integer numberOfSylla
 		if (underlyingWeightPattern [isyll] < 3) {
 			minSurfaceWeight [isyll] = maxSurfaceWeight [isyll] = underlyingWeightPattern [isyll];   // L -> L; H -> H
 		} else {
-			minSurfaceWeight [isyll] = 3, maxSurfaceWeight [isyll] = 4;   // C -> { J, K }
+			minSurfaceWeight [isyll] = 3;
+			maxSurfaceWeight [isyll] = 4;   // C -> { J, K }
 		}
 	}
 	surfaceWeightPattern [6] = surfaceWeightPattern [7] = 1;   // constant L
@@ -178,12 +183,13 @@ static void fillTableau (OTGrammarTableau me, integer numberOfSyllables, int und
 	static int numberOfCandidates_codas [1+7] = { 0, 1, 24, 192, 1408, 9600, 984, 3136 };
 	str32cpy (input, U"|");
 	for (integer isyll = 1; isyll <= numberOfSyllables; isyll ++) {
-		static const char32 *syllable_noCodas [] = { U"", U"L", U"H" };
-		static const char32 *syllable_codas [] = { U"", U"cv", U"cv:", U"cvc" };
-		if (isyll > 1) str32cpy (input + str32len (input), includeCodas ? U"." : U" ");
-		str32cpy (input + str32len (input), ( includeCodas ? syllable_codas : syllable_noCodas ) [underlyingWeightPattern [isyll]]);
+		static const conststring32 syllable_noCodas [] = { U"", U"L", U"H" };
+		static const conststring32 syllable_codas [] = { U"", U"cv", U"cv:", U"cvc" };
+		if (isyll > 1)
+			str32cat (input, includeCodas ? U"." : U" ");
+		str32cat (input, ( includeCodas ? syllable_codas : syllable_noCodas ) [underlyingWeightPattern [isyll]]);
 	}
-	str32cpy (input + str32len (input), U"|");
+	str32cat (input, U"|");
 	my input = Melder_dup (input);
 	my candidates = NUMvector <structOTGrammarCandidate> (1, ( includeCodas ? numberOfCandidates_codas : numberOfCandidates_noCodas ) [numberOfSyllables]);
 	for (integer mainStressed = 1; mainStressed <= numberOfSyllables; mainStressed ++) {
@@ -226,28 +232,27 @@ static void computeViolationMarks (OTGrammarCandidate me) {
 	#define isLight(s)  ((s) == 'L' || (s) == 'K')
 	#define isSyllable(s)  (isHeavy (s) || isLight (s))
 	#define isStress(s)  ((s) == '1' || (s) == '2')
-	int depth;
-	char32 *firstSlash = str32chr (my output, U'/');
-	char32 *lastSlash = & my output [str32len (my output) - 1];
+	const char32 *firstSlash = str32chr (my output.get(), U'/');
+	const char32 *lastSlash = & my output [str32len (my output.get()) - 1];
 	my marks = NUMvector <int> (1, my numberOfConstraints = NUMBER_OF_CONSTRAINTS);
 	/* Violations of WSP: count all H not followed by 1 or 2. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isHeavy (p [0]) && ! isStress (p [1]))
 			my marks [WSP] ++;
 	}
 	/* Violations of FtNonfinal: count all heads followed by ). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isStress (p [0]) && p [1] == U')')
 			my marks [FtNonfinal] ++;
 	}
 	/* Violations of Iambic: count all heads not followed by ). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isStress (p [0]) && p [1] != U')')
 			my marks [Iambic] ++;
 	}
 	/* Violations of Parse and Peripheral: count all syllables not between (). */
-	depth = 0;
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	int depth = 0;
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'(') depth ++;
 		else if (p [0] == U')') depth --;
 		else if (isSyllable (p [0]) && depth != 1) {
@@ -257,7 +262,7 @@ static void computeViolationMarks (OTGrammarCandidate me) {
 		}
 	}
 	/* Violations of FootBin: count all (L1) and (L2). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isLight (p [0]) && p [-1] == U'(' && isStress (p [1]) && p [2] == ')')
 			my marks [FootBin] ++;
 	}
@@ -286,18 +291,18 @@ static void computeViolationMarks (OTGrammarCandidate me) {
 		}
 	}
 	/* Violations of AFL: count syllables from every foot to left edge. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'(') {
-			for (char32 *q = p; q != firstSlash; q --) {
+			for (const char32 *q = p; q != firstSlash; q --) {
 				if (isSyllable (q [0]))
 					my marks [AFL] ++;
 			}
 		}
 	}
 	/* Violations of AFR: count syllables from every foot to right edge. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U')') {
-			for (char32 *q = p; q != lastSlash; q ++) {
+			for (const char32 *q = p; q != lastSlash; q ++) {
 				if (isSyllable (q [0]))
 					my marks [AFR] ++;
 			}
@@ -307,12 +312,12 @@ static void computeViolationMarks (OTGrammarCandidate me) {
 	if (lastSlash [-1] == U')')
 		my marks [Nonfinal] = 1;
 	/* Violations of Trochaic: count all heads not preceded by (. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isStress (p [0]) && p [-2] != U'(')
 			my marks [Trochaic] ++;
 	}
 	/* Violations of FootBimoraic: count weight between (). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'(') {
 			int weight = 0;
 			for (p ++; p [0] != U')'; p ++) {
@@ -323,13 +328,13 @@ static void computeViolationMarks (OTGrammarCandidate me) {
 		}
 	}
 	/* Violations of FootBisyllabic: count all (X1) and (X2). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isSyllable (p [0]) && p [-1] == U'(' && isStress (p [1]) && p [2] == U')')
 			my marks [FootBisyllabic] ++;
 	}
 	/* Violations of MainNonfinal: count all final / preceded by ) preceded by 1 in the same foot. */
 	if (lastSlash [-1] == U')') {
-		for (char32 *p = lastSlash - 2; ; p --) {
+		for (const char32 *p = lastSlash - 2; ; p --) {
 			if (p [0] == U'2') break;
 			if (p [0] == U'1') {
 				my marks [MainNonfinal] = 1;
@@ -342,7 +347,7 @@ static void computeViolationMarks (OTGrammarCandidate me) {
 		if (lastSlash [-2] == U'1') {
 			my marks [HeadNonfinal] = 2;
 		} else {
-			for (char32 *p = lastSlash - 2; ; p --) {
+			for (const char32 *p = lastSlash - 2; ; p --) {
 				if (p [0] == U'2') break;
 				if (p [0] == U'1') {
 					my marks [HeadNonfinal] = 1;
@@ -352,13 +357,12 @@ static void computeViolationMarks (OTGrammarCandidate me) {
 		}
 	}
 	/* Violations of *Clash: count all 1 and 2 followed by an 1 or 2 after the next L or H. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isStress (p [0])) {
-			for (char32 *q = p + 1; q != lastSlash; q ++) {
+			for (const char32 *q = p + 1; q != lastSlash; q ++) {
 				if (isSyllable (q [0])) {
-					if (isStress (q [1])) {
+					if (isStress (q [1]))
 						my marks [Clash] ++;
-					}
 					break;
 				}
 			}
@@ -366,24 +370,23 @@ static void computeViolationMarks (OTGrammarCandidate me) {
 	}
 	/* Violations of *Lapse: count all sequences of three unstressed syllables. */
 	depth = 0;
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isSyllable (p [0])) {
 			if (isStress (p [1])) {
 				depth = 0;
 			} else {
-				if (++ depth > 2) {
+				if (++ depth > 2)
 					my marks [Lapse] ++;
-				}
 			}
 		}
 	}
 	/* Violations of WeightByPosition: count all K. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'K')
 			my marks [WeightByPosition] ++;
 	}
 	/* Violations of *MoraicConsonant: count all J. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'J')
 			my marks [MoraicConsonant] ++;
 	}
@@ -395,14 +398,13 @@ static void replaceOutput (OTGrammarCandidate me) {
 	char32 newOutput [100], *q = & newOutput [0];
 	for (const char32 *p = & my output [0]; *p != U'\0'; p ++) {
 		if (p [0] == U' ') {
-			*q ++ = p [-1] == U']' || p [1] == U'/' ? U' ' : U'.';
+			*q ++ = ( p [-1] == U']' || p [1] == U'/' ? U' ' : U'.' );
 		} else if (isSyllable (p [0])) {
 			*q ++ = U'c';
 			if (abstract) {
 				*q ++ = U'V';
-				if (isStress (p [1])) {
+				if (isStress (p [1]))
 					*q ++ = p [1];
-				}
 				if (p [0] == U'L') {
 					;
 				} else if (p [0] == U'H') {
@@ -430,7 +432,6 @@ static void replaceOutput (OTGrammarCandidate me) {
 		}
 	}
 	*q = U'\0';
-	Melder_free (my output);
 	my output = Melder_dup (newOutput);
 }
 
@@ -464,9 +465,8 @@ autoOTGrammar OTGrammar_create_metrics (
 		my tableaus = NUMvector <structOTGrammarTableau> (1, numberOfTableaus);
 		for (int numberOfSyllables = 2; numberOfSyllables <= 7; numberOfSyllables ++) {
 			integer numberOfUnderlyingWeightPatterns = numberOfSyllables > 5 ? 1 : Melder_iround (pow (maximumUnderlyingWeight, numberOfSyllables));
-			for (integer isyll = 1; isyll <= numberOfSyllables; isyll ++) {
-				underlyingWeightPattern [isyll] = 1;   /* L or cv */
-			}
+			for (integer isyll = 1; isyll <= numberOfSyllables; isyll ++)
+				underlyingWeightPattern [isyll] = 1;   // L or cv
 			for (integer iweightPattern = 1; iweightPattern <= numberOfUnderlyingWeightPatterns; iweightPattern ++) {
 				fillTableau (& my tableaus [++ my numberOfTableaus], numberOfSyllables, underlyingWeightPattern, overtFormsHaveSecondaryStress, includeCodas);
 				/*
@@ -484,9 +484,8 @@ autoOTGrammar OTGrammar_create_metrics (
 		/* Compute violation marks. */
 		for (integer itab = 1; itab <= my numberOfTableaus; itab ++) {
 			OTGrammarTableau tableau = & my tableaus [itab];
-			for (integer icand = 1; icand <= tableau -> numberOfCandidates; icand ++) {
+			for (integer icand = 1; icand <= tableau -> numberOfCandidates; icand ++)
 				computeViolationMarks (& tableau -> candidates [icand]);
-			}
 		}
 		OTGrammar_checkIndex (me.get());
 		OTGrammar_newDisharmonies (me.get(), 0.0);
@@ -495,9 +494,12 @@ autoOTGrammar OTGrammar_create_metrics (
 		} else {
 			OTGrammar_removeConstraint (me.get(), U"FtNonfinal");
 		}
-		if (! includeFootBimoraic) OTGrammar_removeConstraint (me.get(), U"FtBimor");
-		if (! includeFootBisyllabic) OTGrammar_removeConstraint (me.get(), U"FtBisyl");
-		if (! includePeripheral) OTGrammar_removeConstraint (me.get(), U"Peripheral");
+		if (! includeFootBimoraic)
+			OTGrammar_removeConstraint (me.get(), U"FtBimor");
+		if (! includeFootBisyllabic)
+			OTGrammar_removeConstraint (me.get(), U"FtBisyl");
+		if (! includePeripheral)
+			OTGrammar_removeConstraint (me.get(), U"Peripheral");
 		if (nonfinalityConstraint == 1) {
 			OTGrammar_removeConstraint (me.get(), U"MainNonfinal");
 			OTGrammar_removeConstraint (me.get(), U"HeadNonfinal");
@@ -519,9 +521,8 @@ autoOTGrammar OTGrammar_create_metrics (
 		if (includeCodas) {
 			for (integer itab = 1; itab <= my numberOfTableaus; itab ++) {
 				OTGrammarTableau tableau = & my tableaus [itab];
-				for (integer icand = 1; icand <= tableau -> numberOfCandidates; icand ++) {
+				for (integer icand = 1; icand <= tableau -> numberOfCandidates; icand ++)
 					replaceOutput (& tableau -> candidates [icand]);
-				}
 			}
 		}
 		return me;

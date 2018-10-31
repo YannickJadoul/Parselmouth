@@ -34,7 +34,7 @@ typedef struct structDataSubEditor_FieldData {
 	void *address;
 	Data_Description description;
 	integer minimum, maximum, min2, max2;
-	char32 *history;   // the full prefix of the members
+	autostring32 history;   // the full prefix of the members
 	int rank;   // should the button open a StructEditor (0) or VectorEditor (1) or MatrixEditor (2) ?
 	int y;
 } *DataSubEditor_FieldData;
@@ -101,7 +101,7 @@ Thing_define (DataEditor, ClassEditor) {
 		override;
 };
 
-autoDataEditor DataEditor_create (const char32 *title, Daata data);
+autoDataEditor DataEditor_create (conststring32 title, Daata data);
 
 /* End of file DataEditor.h */
 #endif

@@ -1,6 +1,6 @@
 /* praat_gram.cpp
  *
- * Copyright (C) 1997-2017 Paul Boersma
+ * Copyright (C) 1997-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "OTGrammarEditor.h"
 #include "OTMultiEditor.h"
 #include "Net.h"
+#include "NoulliGridEditor.h"
 
 #include "praat_TableOfReal.h"
 
@@ -59,7 +60,8 @@ DO
 		autoNetwork result = Network_create (spreadingRate,
 			(kNetwork_activityClippingRule) activityClippingRule,
 			minimumActivity, maximumActivity, activityLeak, learningRate, minimumWeight, maximumWeight, weightLeak,
-			fromX, toX, fromY, toY, 0, 0);
+			fromX, toX, fromY, toY, 0, 0
+		);
 	CREATE_ONE_END (name)
 }
 
@@ -78,7 +80,8 @@ DO
 		autoNetwork result = Network_create_rectangle (spreadingRate,
 			(kNetwork_activityClippingRule) activityClippingRule,
 			minimumActivity, maximumActivity, activityLeak, learningRate, minimumWeight, maximumWeight, weightLeak,
-			numberOfRows, numberOfColumns, bottomRowClamped, minimumInitialWeight, maximumInitialWeight);
+			numberOfRows, numberOfColumns, bottomRowClamped, minimumInitialWeight, maximumInitialWeight
+		);
 	CREATE_ONE_END (U"rectangle_", numberOfRows, U"_", numberOfColumns)
 }
 
@@ -97,7 +100,8 @@ DO
 		autoNetwork result = Network_create_rectangle_vertical (spreadingRate,
 			(kNetwork_activityClippingRule) activityClippingRule,
 			minimumActivity, maximumActivity, activityLeak, learningRate, minimumWeight, maximumWeight, weightLeak,
-			numberOfRows, numberOfColumns, bottomRowClamped, minimumInitialWeight, maximumInitialWeight);
+			numberOfRows, numberOfColumns, bottomRowClamped, minimumInitialWeight, maximumInitialWeight
+		);
 	CREATE_ONE_END (U"rectangle_", numberOfRows, U"_", numberOfColumns)
 }
 
@@ -130,7 +134,8 @@ DO
 	INFO_ONE (Network)
 		Network_listNodes (me, fromNodeNumber, toNodeNumber,
 			includeNodeNumbers, includeX, includeY, positionDecimals,
-			includeClamped, includeActivity, includeExcitation, activityDecimals);
+			includeClamped, includeActivity, includeExcitation, activityDecimals
+		);
 	INFO_ONE_END
 }
 
@@ -150,8 +155,9 @@ DO
 	CONVERT_EACH (Network)
 		autoTable result = Network_nodes_downto_Table (me, fromNodeNumber, toNodeNumber,
 			includeNodeNumbers, includeX, includeY, positionDecimals,
-			includeClamped, includeActivity, includeExcitation, activityDecimals);
-	CONVERT_EACH_END (my name)
+			includeClamped, includeActivity, includeExcitation, activityDecimals
+		);
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: Query
@@ -452,7 +458,7 @@ DO
 	STRING_ONE (OTGrammar)
 		if (constraintNumber > my numberOfConstraints)
 			Melder_throw (U"The specified constraint number should not exceed the number of constraints.");
-		const char32 *result = my constraints [constraintNumber]. name;
+		const conststring32 result = my constraints [constraintNumber]. name.get();
 	STRING_ONE_END
 }
 
@@ -491,7 +497,7 @@ DO
 	STRING_ONE (OTGrammar)
 		if (tableauNumber > my numberOfTableaus)
 			Melder_throw (U"The specified tableau number should not exceed the number of tableaus.");
-		const char32 *result = my tableaus [tableauNumber]. input;
+		const conststring32 result = my tableaus [tableauNumber]. input.get();
 	STRING_ONE_END
 }
 
@@ -517,7 +523,7 @@ DO
 		OTGrammarTableau tableau = & my tableaus [tableauNumber];
 		if (candidateNumber > tableau -> numberOfCandidates)
 			Melder_throw (U"The specified candidate should not exceed the number of candidates.");
-		const char32 *result = tableau -> candidates [candidateNumber]. output;
+		const conststring32 result = tableau -> candidates [candidateNumber]. output.get();
 	STRING_ONE_END
 }
 
@@ -618,8 +624,8 @@ DO
 	FIND_ONE (OTGrammar)
 		integer bestInput, bestOutput;
 		OTGrammar_getInterpretiveParse (me, partialOutput, & bestInput, & bestOutput);
-		Melder_information (U"Best input = ", bestInput, U": ", my tableaus [bestInput]. input,
-			U"\nBest output = ", bestOutput, U": ", my tableaus [bestInput]. candidates [bestOutput]. output);
+		Melder_information (U"Best input = ", bestInput, U": ", my tableaus [bestInput]. input.get(),
+			U"\nBest output = ", bestOutput, U": ", my tableaus [bestInput]. candidates [bestOutput]. output.get());
 	END
 }
 
@@ -649,20 +655,20 @@ FORM (NEW_OTGrammar_generateInputs, U"Generate inputs", U"OTGrammar: Generate in
 DO
 	CONVERT_EACH (OTGrammar)
 		autoStrings result = OTGrammar_generateInputs (me, numberOfTrials);
-	CONVERT_EACH_END (my name, U"_in")
+	CONVERT_EACH_END (my name.get(), U"_in")
 }
 
 DIRECT (NEW_OTGrammar_getInputs) {
 	CONVERT_EACH (OTGrammar)
 		autoStrings result = OTGrammar_getInputs (me);
-	CONVERT_EACH_END (my name, U"_in")
+	CONVERT_EACH_END (my name.get(), U"_in")
 }
 
 DIRECT (NEW_MODIFY_OTGrammar_measureTypology) {
 	LOOP try {
 		iam (OTGrammar);
 		autoDistributions thee = OTGrammar_measureTypology_WEAK (me);
-		praat_new (thee.move(), my name, U"_out");
+		praat_new (std::move (thee), my name.get(), U"_out");
 		praat_dataChanged (me);
 	} catch (MelderError) {
 		praat_dataChanged (OBJECT);
@@ -687,9 +693,8 @@ FORM (STRING_MODIFY_OTGrammar_inputToOutput, U"OTGrammar: Input to output", U"OT
 	OK
 DO
 	FIND_ONE (OTGrammar)
-		char32 output [100];
-		OTGrammar_inputToOutput (me, inputForm, output, evaluationNoise);
-		Melder_information (output);
+		autostring32 output = OTGrammar_inputToOutput (me, inputForm, evaluationNoise);
+		Melder_information (output.get());
 		praat_dataChanged (me);
 	END
 }
@@ -702,7 +707,7 @@ FORM (NEW1_MODIFY_OTGrammar_inputToOutputs, U"OTGrammar: Input to outputs", U"OT
 DO
 	FIND_ONE (OTGrammar)
 		autoStrings thee = OTGrammar_inputToOutputs (me, inputForm, trials, evaluationNoise);
-		praat_new (thee.move(), my name, U"_out");
+		praat_new (thee.move(), my name.get(), U"_out");
 		praat_dataChanged (me);
 	END
 }
@@ -716,7 +721,7 @@ DO
 		iam (OTGrammar);
 		try {
 			autoDistributions thee = OTGrammar_to_Distribution (me, trialsPerInput, evaluationNoise);
-			praat_new (thee.move(), my name, U"_out");
+			praat_new (thee.move(), my name.get(), U"_out");
 			praat_dataChanged (me);
 		} catch (MelderError) {
 			praat_dataChanged (me);
@@ -733,7 +738,7 @@ DO
 	LOOP try {
 		iam (OTGrammar);
 		autoPairDistribution thee = OTGrammar_to_PairDistribution (me, trialsPerInput, evaluationNoise);
-		praat_new (thee.move(), my name, U"_out");
+		praat_new (thee.move(), my name.get(), U"_out");
 		praat_dataChanged (me);
 	} catch (MelderError) {
 		praat_dataChanged (OBJECT);
@@ -880,7 +885,7 @@ FORM (NEW1_MODIFY_OTGrammar_Strings_inputsToOutputs, U"OTGrammar: Inputs to outp
 DO
 	FIND_TWO (OTGrammar, Strings)
 		autoStrings result = OTGrammar_inputsToOutputs (me, you, evaluationNoise);
-		praat_new (result.move(), my name, U"_out");
+		praat_new (result.move(), my name.get(), U"_out");
 		praat_dataChanged (me);
 	END
 }
@@ -934,7 +939,7 @@ DO
 			Melder_flushError ();
 			// trickle down to save history
 		}
-		if (history) praat_new (history.move(), my name);
+		if (history) praat_new (history.move(), my name.get());
 	END
 }
 
@@ -974,13 +979,15 @@ DO
 			OTGrammar_Distributions_learnFromPartialOutputs (me, you, columnNumber, evaluationNoise,
 				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
 				initialPlasticity, replicationsPerPlasticity, plasticityDecrement, numberOfPlasticities,
-				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, false, false, 0);
+				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, false, false, 0
+			);
 			praat_dataChanged (me);
 		} catch (MelderError) {
 			praat_dataChanged (me);
 			Melder_flushError ();
 		}
-		if (history) praat_new (history.move(), my name);
+		if (history)
+			praat_new (history.move(), my name.get());
 	END
 }
 
@@ -1004,13 +1011,15 @@ DO
 			OTGrammar_Distributions_learnFromPartialOutputs (me, you, columnNumber, evaluationNoise,
 				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
 				initialPlasticity, replicationsPerPlasticity, plasticityDecrement, numberOfPlasticities,
-				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 0);
+				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 0
+			);
 			praat_dataChanged (me);
 		} catch (MelderError) {
 			praat_dataChanged (me);
 			Melder_flushError ();
 		}
-		if (history) praat_new (history.move(), my name);
+		if (history)
+			praat_new (history.move(), my name.get());
 	END
 }
 
@@ -1034,13 +1043,15 @@ DO
 			OTGrammar_Distributions_learnFromPartialOutputs (me, you, columnNumber, evaluationNoise,
 				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
 				initialPlasticity, replicationsPerPlasticity, plasticityDecrement, numberOfPlasticities,
-				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 1000);
+				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 1000
+			);
 			praat_dataChanged (me);
 		} catch (MelderError) {
 			praat_dataChanged (me);
 			Melder_flushError ();
 		}
-		if (history) praat_new (history.move(), my name);
+		if (history)
+			praat_new (history.move(), my name.get());
 	END
 }
 
@@ -1064,13 +1075,15 @@ DO
 			OTGrammar_Distributions_learnFromPartialOutputs (me, you, columnNumber, evaluationNoise,
 				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
 				initialPlasticity, replicationsPerPlasticity, plasticityDecrement, numberOfPlasticities,
-				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 1);
+				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 1
+			);
 			praat_dataChanged (me);
 		} catch (MelderError) {
 			praat_dataChanged (me);
 			Melder_flushError ();
 		}
-		if (history) praat_new (history.move(), my name);
+		if (history)
+			praat_new (history.move(), my name.get());
 	END
 }
 
@@ -1091,7 +1104,7 @@ FORM (MODIFY_OTGrammar_PairDistribution_findPositiveWeights, U"OTGrammar & PairD
 	OK
 DO
 	MODIFY_FIRST_OF_TWO (OTGrammar, PairDistribution)
-		OTGrammar_PairDistribution_findPositiveWeights_e (me, you, weightFloor, marginOfSeparation);
+		OTGrammar_PairDistribution_findPositiveWeights (me, you, weightFloor, marginOfSeparation);
 	MODIFY_FIRST_OF_TWO_END
 }
 
@@ -1236,7 +1249,7 @@ DO
 	STRING_ONE (OTMulti)
 		if (constraintNumber > my numberOfConstraints)
 			Melder_throw (U"Your constraint number should not exceed the number of constraints.");
-		const char32 *result = my constraints [constraintNumber]. name;
+		const conststring32 result = my constraints [constraintNumber]. name.get();
 	STRING_ONE_END
 }
 
@@ -1284,7 +1297,7 @@ DO
 	STRING_ONE (OTMulti)
 		if (candidateNumber > my numberOfCandidates)
 			Melder_throw (U"Your candidate number should not exceed the number of candidates.");
-		const char32 *result = my candidates [candidateNumber]. string;
+		const conststring32 result = my candidates [candidateNumber]. string.get();
 	STRING_ONE_END
 }
 
@@ -1330,9 +1343,8 @@ FORM (STRING_MODIFY_OTMulti_generateOptimalForm, U"OTMulti: Generate optimal for
 	OK
 DO
 	FIND_ONE (OTMulti)
-		char32 output [100];
-		OTMulti_generateOptimalForm (me, partialForm1, partialForm2, output, evaluationNoise);
-		Melder_information (output);
+		autostring32 output = OTMulti_generateOptimalForm (me, partialForm1, partialForm2, evaluationNoise);
+		Melder_information (output.get());
 		praat_dataChanged (me);
 	END
 }
@@ -1347,7 +1359,7 @@ DO
 	FIND_ONE (OTMulti)
 		autoStrings thee = OTMulti_generateOptimalForms (me, partialForm1, partialForm2,
 			numberOfTrials, evaluationNoise);
-		praat_new (thee.move(), my name, U"_out");
+		praat_new (thee.move(), my name.get(), U"_out");
 		praat_dataChanged (me);
 	END
 }
@@ -1364,7 +1376,7 @@ DO
 		try {
 			autoDistributions result = OTMulti_to_Distribution (me, partialForm1, partialForm2,
 				numberOfTrials, evaluationNoise);
-			praat_new (result.move(), my name, U"_out");
+			praat_new (result.move(), my name.get(), U"_out");
 			praat_dataChanged (me);
 		} catch (MelderError) {
 			praat_dataChanged (me);
@@ -1488,7 +1500,7 @@ DO
 			Melder_flushError ();
 			// trickle down to save history
 		}
-		if (history) praat_new (history.move(), my name);
+		if (history) praat_new (history.move(), my name.get());
 	END
 }
 
@@ -1500,7 +1512,7 @@ FORM (NEW1_MODIFY_OTMulti_Strings_generateOptimalForms, U"OTGrammar: Inputs to o
 DO
 	FIND_TWO (OTMulti, Strings)
 		autoStrings result = OTMulti_Strings_generateOptimalForms (me, you, evaluationNoide);
-		praat_new (result.move(), my name, U"_out");
+		praat_new (result.move(), my name.get(), U"_out");
 		praat_dataChanged (me);
 	END
 }
@@ -1578,25 +1590,25 @@ DO
 DIRECT (NEW_Net_extractInputActivities) {
 	CONVERT_EACH (Net)
 		autoMatrix result = Net_extractInputActivities (me);
-	CONVERT_EACH_END (my name, U"_inputActivities")
+	CONVERT_EACH_END (my name.get(), U"_inputActivities")
 }
 
 DIRECT (NEW_Net_extractOutputActivities) {
 	CONVERT_EACH (Net)
 		autoMatrix result = Net_extractOutputActivities (me);
-	CONVERT_EACH_END (my name, U"_outputActivities")
+	CONVERT_EACH_END (my name.get(), U"_outputActivities")
 }
 
 DIRECT (NEW_Net_extractInputReconstruction) {
 	CONVERT_EACH (Net)
 		autoMatrix result = Net_extractInputReconstruction (me);
-	CONVERT_EACH_END (my name, U"_inputReconstruction")
+	CONVERT_EACH_END (my name.get(), U"_inputReconstruction")
 }
 
 DIRECT (NEW_Net_extractOutputReconstruction) {
 	CONVERT_EACH (Net)
 		autoMatrix result = Net_extractOutputReconstruction (me);
-	CONVERT_EACH_END (my name, U"_outputReconstruction")
+	CONVERT_EACH_END (my name.get(), U"_outputReconstruction")
 }
 
 FORM (NEW_Net_extractInputBiases, U"Net: Extract input biases", nullptr) {
@@ -1605,7 +1617,7 @@ FORM (NEW_Net_extractInputBiases, U"Net: Extract input biases", nullptr) {
 DO
 	CONVERT_EACH (Net)
 		autoMatrix result = Net_extractInputBiases (me, layerNumber);
-	CONVERT_EACH_END (my name, U"_inputBiases")
+	CONVERT_EACH_END (my name.get(), U"_inputBiases")
 }
 
 FORM (NEW_Net_extractOutputBiases, U"Net: Extract output biases", nullptr) {
@@ -1614,7 +1626,7 @@ FORM (NEW_Net_extractOutputBiases, U"Net: Extract output biases", nullptr) {
 DO
 	CONVERT_EACH (Net)
 		autoMatrix result = Net_extractOutputBiases (me, layerNumber);
-	CONVERT_EACH_END (my name, U"_outputBiases")
+	CONVERT_EACH_END (my name.get(), U"_outputBiases")
 }
 
 FORM (NEW_Net_extractWeights, U"Net: Extract weights", nullptr) {
@@ -1623,7 +1635,7 @@ FORM (NEW_Net_extractWeights, U"Net: Extract weights", nullptr) {
 DO
 	CONVERT_EACH (Net)
 		autoMatrix result = Net_extractWeights (me, layerNumber);
-	CONVERT_EACH_END (my name, U"_weights")
+	CONVERT_EACH_END (my name.get(), U"_weights")
 }
 
 FORM (NUMMAT_Net_getWeights, U"Net: Get weigths", nullptr) {
@@ -1631,7 +1643,7 @@ FORM (NUMMAT_Net_getWeights, U"Net: Get weigths", nullptr) {
 	OK
 DO
 	NUMMAT_ONE (Net)
-		autonummat result = Net_getWeights_nummat (me, layerNumber);
+		autoMAT result = Net_getWeights (me, layerNumber);
 	NUMMAT_ONE_END
 }
 
@@ -1679,7 +1691,20 @@ FORM (NEW1_Net_PatternList_to_ActivationList, U"Net & PatternList: To Activation
 DO
 	CONVERT_TWO (Net, PatternList)
 		autoActivationList result = Net_PatternList_to_ActivationList (me, you, activationType);
-	CONVERT_TWO_END (my name, U"_", your name)
+	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+}
+
+// MARK: - NOULLIGRID
+
+// MARK: View & Edit
+
+DIRECT (WINDOW_NoulliGrid_viewAndEdit) {
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot edit a NoulliGrid from batch.");
+	FIND_TWO_WITH_IOBJECT (NoulliGrid, Sound)   // Sound may be null
+		autoNoulliGridEditor editor = NoulliGridEditor_create (ID_AND_FULL_NAME, me, you, true);
+		praat_installEditor (editor.get(), IOBJECT);
+		editor.releaseToUser();
+	END
 }
 
 // MARK: - buttons
@@ -1689,8 +1714,11 @@ void praat_uvafon_gram_init () {
 	Thing_recognizeClassesByName (classNetwork,
 		classOTGrammar, classOTHistory, classOTMulti,
 		classRBMLayer, classFullyConnectedLayer, classNet,
+		classNoulliTier, classNoulliGrid,
 		nullptr);
 	Thing_recognizeClassByOtherName (classOTGrammar, U"OTCase");
+
+	structNoulliGridEditor :: f_preferences ();
 
 	praat_addMenuCommand (U"Objects", U"New", U"Constraint grammars", nullptr, 0, nullptr);
 		praat_addMenuCommand (U"Objects", U"New", U"OT learning tutorial", nullptr, praat_DEPTH_1 | praat_NO_API, HELP_OT_learning_tutorial);
@@ -1865,6 +1893,9 @@ void praat_uvafon_gram_init () {
 	praat_addAction2 (classNet, 1, classPatternList, 1, U"Learn...", nullptr, 0, MODIFY_Net_PatternList_learn);
 	praat_addAction2 (classNet, 1, classPatternList, 1, U"Learn by layer...", nullptr, 0, MODIFY_Net_PatternList_learnByLayer);
 	praat_addAction2 (classNet, 1, classPatternList, 1, U"To ActivationList", nullptr, 0, NEW1_Net_PatternList_to_ActivationList);
+
+	praat_addAction1 (classNoulliGrid, 1, U"View & Edit", nullptr, praat_ATTRACTIVE, WINDOW_NoulliGrid_viewAndEdit);
+	praat_addAction2 (classNoulliGrid, 1, classSound, 1, U"View & Edit", nullptr, praat_ATTRACTIVE, WINDOW_NoulliGrid_viewAndEdit);
 }
 
 /* End of file praat_gram.cpp */

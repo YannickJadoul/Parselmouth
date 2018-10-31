@@ -7,7 +7,7 @@ set(PRAAT_SUBDIRECTORIES external/gsl
                          external/portaudio
                          external/espeak
                          kar
-                         num
+                         melder
                          sys
                          dwsys
                          stat
@@ -59,4 +59,4 @@ target_compile_definitions(praat PUBLIC ${PRAAT_DEFINITIONS} PRIVATE ${PRAAT_DEF
 target_compile_options(praat PUBLIC ${PRAAT_FLAGS} PRIVATE ${PRAAT_FLAGS_PRIVATE})
 export(TARGETS praat FILE exports.cmake)
 
-set_target_properties(praat PROPERTIES C_STANDARD 99 CXX_STANDARD 11 CXX_STANDARD_REQUIRED TRUE)
+set_target_properties(praat PROPERTIES C_STANDARD 99 CXX_STANDARD 14 CXX_STANDARD_REQUIRED TRUE)

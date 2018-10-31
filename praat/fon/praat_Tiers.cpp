@@ -1,6 +1,6 @@
 /* praat_Tiers.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,8 @@ FORM (NEW1_AmplitudeTier_create, U"Create empty AmplitudeTier", nullptr) {
 	REAL (endTime, U"End time (s)", U"1.0")
 	OK
 DO
-	if (endTime <= startTime) Melder_throw (U"The end time should be greater than the start time.");
+	Melder_require (endTime > startTime,
+		U"The end time should be greater than the start time.");
 	CREATE_ONE
 		autoAmplitudeTier result = AmplitudeTier_create (startTime, endTime);
 	CREATE_ONE_END (name)
@@ -53,7 +54,8 @@ DIRECT (HELP_AmplitudeTier_help) {
 // MARK: View & Edit
 
 DIRECT (WINDOW_AmplitudeTier_viewAndEdit) {
-	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit an AmplitudeTier from batch.");
+	Melder_require (! theCurrentPraatApplication -> batch,
+		U"Cannot view or edit an AmplitudeTier from batch.");
 	FIND_TWO_WITH_IOBJECT (AmplitudeTier, Sound)   // Sound may be null
 		autoAmplitudeTierEditor editor = AmplitudeTierEditor_create (ID_AND_FULL_NAME, me, you, true);
 		praat_installEditor (editor.get(), IOBJECT);
@@ -192,7 +194,7 @@ FORM (NEW_AmplitudeTier_to_Sound, U"AmplitudeTier: To Sound (pulse train)", U"Am
 DO
 	CONVERT_EACH (AmplitudeTier)
 		autoSound result = AmplitudeTier_to_Sound (me, samplingFrequency, interpolationDepth);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: Convert
@@ -200,13 +202,13 @@ DO
 DIRECT (NEW_AmplitudeTier_downto_PointProcess) {
 	CONVERT_EACH (AmplitudeTier)
 		autoPointProcess result = AnyTier_downto_PointProcess (me->asAnyTier());
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_AmplitudeTier_downto_TableOfReal) {
 	CONVERT_EACH (AmplitudeTier)
 		autoTableOfReal result = AmplitudeTier_downto_TableOfReal (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_AmplitudeTier_to_IntensityTier, U"AmplitudeTier: To IntensityTier", U"AmplitudeTier: To IntensityTier...") {
@@ -215,7 +217,7 @@ FORM (NEW_AmplitudeTier_to_IntensityTier, U"AmplitudeTier: To IntensityTier", U"
 DO
 	CONVERT_EACH (AmplitudeTier)
 		autoIntensityTier result = AmplitudeTier_to_IntensityTier (me, threshold);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: - AMPLITUDETIER & SOUND
@@ -223,7 +225,7 @@ DO
 DIRECT (NEW1_Sound_AmplitudeTier_multiply) {
 	CONVERT_TWO (Sound, AmplitudeTier)
 		autoSound result = Sound_AmplitudeTier_multiply (me, you);
-	CONVERT_TWO_END (my name, U"_amp")
+	CONVERT_TWO_END (my name.get(), U"_amp")
 }
 
 // MARK: - DURATIONTIER
@@ -236,7 +238,8 @@ FORM (NEW1_DurationTier_create, U"Create empty DurationTier", U"Create DurationT
 	REAL (endTime, U"End time (s)", U"1.0")
 	OK
 DO
-	if (endTime <= startTime) Melder_throw (U"Your end time should be greater than your start time.");
+	Melder_require (endTime > startTime,
+		U"Your end time should be greater than your start time.");
 	CREATE_ONE
 		autoDurationTier result = DurationTier_create (startTime, endTime);
 	CREATE_ONE_END (name)
@@ -251,7 +254,8 @@ DIRECT (HELP_DurationTier_help) {
 // MARK: View & Edit
 
 DIRECT (WINDOW_DurationTier_edit) {
-	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a DurationTier from batch.");
+	Melder_require (! theCurrentPraatApplication -> batch,
+		U"Cannot view or edit a DurationTier from batch.");
 	FIND_TWO_WITH_IOBJECT (DurationTier, Sound)   // Sound may be null
 		autoDurationTierEditor editor = DurationTierEditor_create (ID_AND_FULL_NAME, me, you, true);
 		praat_installEditor (editor.get(), IOBJECT);
@@ -335,7 +339,7 @@ DO
 DIRECT (NEW_DurationTier_downto_PointProcess) {
 	CONVERT_EACH (DurationTier)
 		autoPointProcess result = AnyTier_downto_PointProcess (me->asAnyTier());
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: - FORMANTGRID
@@ -353,7 +357,8 @@ FORM (NEW1_FormantGrid_create, U"Create FormantGrid", nullptr) {
 	REAL (initialBandwidthSpacing, U"Initial bandwidth spacing (Hz)", U"50.0")
 	OK
 DO
-	if (endTime <= startTime) Melder_throw (U"Your end time should be greater than your start time.");
+	Melder_require (endTime > startTime,
+		U"Your end time should be greater than your start time.");
 	CREATE_ONE
 		autoFormantGrid result = FormantGrid_create (startTime, endTime, numberOfFormants,
 			initialFirstFormant, initialFormatSpacing, initialFirstBandwidth, initialBandwidthSpacing);
@@ -370,8 +375,8 @@ DIRECT (HELP_FormantGrid_help) {
 
 static void cb_FormantGridEditor_publish (Editor /* me */, autoDaata publish) {
 	/*
-	 * Keep the gate for error handling.
-	 */
+		Keep the gate for error handling.
+	*/
 	try {
 		praat_new (publish.move(), U"fromFormantGridEditor");
 		praat_updateSelection ();
@@ -380,7 +385,8 @@ static void cb_FormantGridEditor_publish (Editor /* me */, autoDaata publish) {
 	}
 }
 DIRECT (WINDOW_FormantGrid_edit) {
-	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a FormantGrid from batch.");
+	Melder_require (! theCurrentPraatApplication -> batch,
+		U"Cannot view or edit a FormantGrid from batch.");
 	FIND_ONE_WITH_IOBJECT (FormantGrid)
 		autoFormantGridEditor editor = FormantGridEditor_create (ID_AND_FULL_NAME, me);
 		Editor_setPublicationCallback (editor.get(), cb_FormantGridEditor_publish);
@@ -466,10 +472,11 @@ FORM (NEW_FormantGrid_to_Formant, U"FormantGrid: To Formant", nullptr) {
 	REAL (intensity, U"Intensity (Pa\u00B2)", U"0.1")
 	OK
 DO
-	if (intensity < 0.0) Melder_throw (U"Intensity cannot be negative.");
+	Melder_require (intensity >= 0.0,
+		U"The intensity cannot be negative.");
 	CONVERT_EACH (FormantGrid)
 		autoFormant result = FormantGrid_to_Formant (me, timeStep, intensity);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: - FORMANTGRID & SOUND
@@ -477,13 +484,13 @@ DO
 DIRECT (NEW1_Sound_FormantGrid_filter) {
 	CONVERT_TWO (Sound, FormantGrid)
 		autoSound result = Sound_FormantGrid_filter (me, you);
-	CONVERT_TWO_END (my name, U"_filt")
+	CONVERT_TWO_END (my name.get(), U"_filt")
 }
 
 DIRECT (NEW1_Sound_FormantGrid_filter_noscale) {
 	CONVERT_TWO (Sound, FormantGrid)
 		autoSound result = Sound_FormantGrid_filter_noscale (me, you);
-	CONVERT_TWO_END (my name, U"_filt")
+	CONVERT_TWO_END (my name.get(), U"_filt")
 }
 
 // MARK: - FORMANTTIER
@@ -496,7 +503,8 @@ FORM (NEW1_FormantTier_create, U"Create empty FormantTier", nullptr) {
 	REAL (endTime, U"End time (s)", U"1.0")
 	OK
 DO
-	if (endTime <= startTime) Melder_throw (U"Your end time should be greater than your start time.");
+	Melder_require (endTime > startTime,
+		U"Your end time should be greater than your start time.");
 	CREATE_ONE
 		autoFormantTier result = FormantTier_create (startTime, endTime);
 	CREATE_ONE_END (name)
@@ -544,13 +552,13 @@ FORM (MODIFY_FormantTier_addPoint, U"Add one point", U"FormantTier: Add point...
 	TEXTFIELD (formantBandwidthPairs, U"Frequencies and bandwidths (Hz):", U"500 50 1500 100 2500 150 3500 200 4500 300")
 	OK
 DO
-	autoFormantPoint point = FormantPoint_create (time);
-	double *f = point -> formant, *b = point -> bandwidth;
-	char *fbpairs = Melder_peek32to8 (formantBandwidthPairs);
+	autoFormantPoint point = FormantPoint_create (time, 10);
+	double *f = point -> formant.at, *b = point -> bandwidth.at;
+	conststring8 fbpairs = Melder_peek32to8 (formantBandwidthPairs);
 	int numberOfFormants = sscanf (fbpairs, "%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf",
-		f, b, f+1, b+1, f+2, b+2, f+3, b+3, f+4, b+4, f+5, b+5, f+6, b+6, f+7, b+7, f+8, b+8, f+9, b+9) / 2;
-	if (numberOfFormants < 1)
-		Melder_throw (U"Number of formant-bandwidth pairs must be at least 1.");
+		f+1, b+1, f+2, b+2, f+3, b+3, f+4, b+4, f+5, b+5, f+6, b+6, f+7, b+7, f+8, b+8, f+9, b+9, f+10, b+10) / 2;
+	Melder_require (numberOfFormants >= 1,
+		U"The number of formant-bandwidth pairs must be at least 1.");
 	point -> numberOfFormants = numberOfFormants;
 	MODIFY_EACH (FormantTier)
 		autoFormantPoint point2 = Data_copy (point.get());
@@ -567,7 +575,7 @@ FORM (NEW_FormantTier_downto_TableOfReal, U"Down to TableOfReal", nullptr) {
 DO
 	CONVERT_EACH (FormantTier)
 		autoTableOfReal result = FormantTier_downto_TableOfReal (me, includeFormants, includeBandwidths);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: - FORMANTTIER & SOUND
@@ -575,13 +583,13 @@ DO
 DIRECT (NEW1_Sound_FormantTier_filter) {
 	CONVERT_TWO (Sound, FormantTier)
 		autoSound result = Sound_FormantTier_filter (me, you);
-	CONVERT_TWO_END (my name, U"_filt")
+	CONVERT_TWO_END (my name.get(), U"_filt")
 }
 
 DIRECT (NEW1_Sound_FormantTier_filter_noscale) {
 	CONVERT_TWO (Sound, FormantTier)
 		autoSound result = Sound_FormantTier_filter_noscale (me, you);
-	CONVERT_TWO_END (my name, U"_filt")
+	CONVERT_TWO_END (my name.get(), U"_filt")
 }
 
 // MARK: - INTENSITYTIER
@@ -594,7 +602,8 @@ FORM (NEW1_IntensityTier_create, U"Create empty IntensityTier", nullptr) {
 	REAL (endTime, U"End time (s)", U"1.0")
 	OK
 DO
-	if (endTime <= startTime) Melder_throw (U"Your end time should be greater than your start time.");
+	Melder_require (endTime > startTime,
+		U"Your end time should be greater than your start time.");
 	CREATE_ONE
 		autoIntensityTier result = IntensityTier_create (startTime, endTime);
 	CREATE_ONE_END (name)
@@ -609,7 +618,8 @@ DIRECT (HELP_IntensityTier_help) {
 // MARK: View & Edit
 
 DIRECT (WINDOW_IntensityTier_viewAndEdit) {
-	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit an IntensityTier from batch.");
+	Melder_require (! theCurrentPraatApplication -> batch,
+		U"Cannot view or edit an IntensityTier from batch.");
 	FIND_TWO_WITH_IOBJECT (IntensityTier, Sound)   // Sound may be null
 		autoIntensityTierEditor editor = IntensityTierEditor_create (ID_AND_FULL_NAME, me, you, true);
 		praat_installEditor (editor.get(), IOBJECT);
@@ -676,19 +686,19 @@ DO
 DIRECT (NEW_IntensityTier_downto_PointProcess) {
 	CONVERT_EACH (IntensityTier)
 		autoPointProcess result = AnyTier_downto_PointProcess (me->asAnyTier());
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_IntensityTier_downto_TableOfReal) {
 	CONVERT_EACH (IntensityTier)
 		autoTableOfReal result = IntensityTier_downto_TableOfReal (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_IntensityTier_to_AmplitudeTier) {
 	CONVERT_EACH (IntensityTier)
 		autoAmplitudeTier result = IntensityTier_to_AmplitudeTier (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: - INTENSITYTIER & POINTPROCESS
@@ -696,7 +706,7 @@ DIRECT (NEW_IntensityTier_to_AmplitudeTier) {
 DIRECT (NEW1_IntensityTier_PointProcess_to_IntensityTier) {
 	CONVERT_TWO (IntensityTier, PointProcess)
 		autoIntensityTier result = IntensityTier_PointProcess_to_IntensityTier (me, you);
-	CONVERT_TWO_END (my name)
+	CONVERT_TWO_END (my name.get())
 }
 
 // MARK: - INTENSITYTIER & SOUND
@@ -704,7 +714,7 @@ DIRECT (NEW1_IntensityTier_PointProcess_to_IntensityTier) {
 DIRECT (NEW1_Sound_IntensityTier_multiply_old) {
 	CONVERT_TWO (Sound, IntensityTier)
 		autoSound result = Sound_IntensityTier_multiply (me, you, true);
-	CONVERT_TWO_END (my name, U"_int")
+	CONVERT_TWO_END (my name.get(), U"_int")
 }
 
 FORM (NEW1_Sound_IntensityTier_multiply, U"Sound & IntervalTier: Multiply", nullptr) {
@@ -713,7 +723,7 @@ FORM (NEW1_Sound_IntensityTier_multiply, U"Sound & IntervalTier: Multiply", null
 DO
 	CONVERT_TWO (Sound, IntensityTier)
 		autoSound result = Sound_IntensityTier_multiply (me, you, scaleTo09);
-	CONVERT_TWO_END (my name, U"_int")
+	CONVERT_TWO_END (my name.get(), U"_int")
 }
 
 // MARK: - PITCHTIER
@@ -734,7 +744,8 @@ FORM (NEW1_PitchTier_create, U"Create empty PitchTier", nullptr) {
 	REAL (endTime, U"End time (s)", U"1.0")
 	OK
 DO
-	if (endTime <= startTime) Melder_throw (U"Your end time should be greater than your start time.");
+	Melder_require (endTime > startTime,
+		U"Your end time should be greater than your start time.");
 	CREATE_ONE
 		autoPitchTier result = PitchTier_create (startTime, endTime);
 	CREATE_ONE_END (name)
@@ -743,7 +754,7 @@ DO
 DIRECT (NEW_PitchTier_downto_PointProcess) {
 	CONVERT_EACH (PitchTier)
 		autoPointProcess result = AnyTier_downto_PointProcess (me->asAnyTier());
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PitchTier_downto_TableOfReal, U"PitchTier: Down to TableOfReal", nullptr) {
@@ -754,7 +765,7 @@ FORM (NEW_PitchTier_downto_TableOfReal, U"PitchTier: Down to TableOfReal", nullp
 DO
 	CONVERT_EACH (PitchTier)
 		autoTableOfReal result = PitchTier_downto_TableOfReal (me, unit);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (GRAPHICS_old_PitchTier_draw, U"PitchTier: Draw", nullptr) {
@@ -764,8 +775,8 @@ FORM (GRAPHICS_old_PitchTier_draw, U"PitchTier: Draw", nullptr) {
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
-	if (toFrequency <= fromFrequency)
-		Melder_throw (U"Your maximum frequency should be greater than your minimum frequency.");
+	Melder_require (toFrequency > fromFrequency,
+		U"Your maximum frequency should be greater than your minimum frequency.");
 	GRAPHICS_EACH (PitchTier)
 		PitchTier_draw (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency,
 			garnish, U"lines and speckles");
@@ -784,15 +795,16 @@ FORM (GRAPHICS_PitchTier_draw, U"PitchTier: Draw", nullptr) {
 		OPTION (U"lines and speckles")
 	OK
 DO_ALTERNATIVE (GRAPHICS_old_PitchTier_draw)
-	if (toFrequency <= fromFrequency)
-		Melder_throw (U"Your maximum frequency should be greater than your minimum frequency.");
+	Melder_require (toFrequency > fromFrequency,
+		U"Your maximum frequency should be greater than your minimum frequency.");
 	GRAPHICS_EACH (PitchTier)
 		PitchTier_draw (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, garnish, drawingMethod);
 	GRAPHICS_EACH_END
 }
 
 DIRECT (WINDOW_PitchTier_viewAndEdit) {
-	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a PitchTier from batch.");
+	Melder_require (! theCurrentPraatApplication -> batch,
+		U"Cannot view or edit a PitchTier from batch.");
 	FIND_TWO_WITH_IOBJECT (PitchTier, Sound)   // Sound may be null
 		autoPitchTierEditor editor = PitchTierEditor_create (ID_AND_FULL_NAME, me, you, true);
 		praat_installEditor (editor.get(), IOBJECT);
@@ -952,7 +964,7 @@ DO
 DIRECT (NEW_PitchTier_to_PointProcess) {
 	CONVERT_EACH (PitchTier)
 		autoPointProcess result = PitchTier_to_PointProcess (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PitchTier_to_Sound_phonation, U"PitchTier: To Sound (phonation)", nullptr) {
@@ -969,7 +981,7 @@ DO
 	CONVERT_EACH (PitchTier)
 		autoSound result = PitchTier_to_Sound_phonation (me, samplingFrequency,
 			adaptationFactor, maximumPeriod, openPhase, collisionPhase, power1, power2, hum);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PitchTier_to_Sound_pulseTrain, U"PitchTier: To Sound (pulse train)", nullptr) {
@@ -983,7 +995,7 @@ DO
 	CONVERT_EACH (PitchTier)
 		autoSound result = PitchTier_to_Sound_pulseTrain (me, samplingFrequency,
 			adaptationFactor, adaptationTime, interpolationDepth, hum);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PitchTier_to_Sound_sine, U"PitchTier: To Sound (sine)", nullptr) {
@@ -992,7 +1004,7 @@ FORM (NEW_PitchTier_to_Sound_sine, U"PitchTier: To Sound (sine)", nullptr) {
 DO
 	CONVERT_EACH (PitchTier)
 		autoSound result = PitchTier_to_Sound_sine (me, 0.0, 0.0, samplingFrequency);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (HINT_PitchTier_Sound_viewAndEdit) {
@@ -1024,7 +1036,7 @@ DIRECT (INFO_PitchTier_Manipulation_replace) {
 DIRECT (NEW1_PitchTier_PointProcess_to_PitchTier) {
 	CONVERT_TWO (PitchTier, PointProcess)
 		autoPitchTier result = PitchTier_PointProcess_to_PitchTier (me, you);
-	CONVERT_TWO_END (my name)
+	CONVERT_TWO_END (my name.get())
 }
 
 // MARK: - POINTPROCESS
@@ -1053,8 +1065,8 @@ FORM (NEW1_PointProcess_createEmpty, U"Create an empty PointProcess", U"Create e
 	REAL (endTime, U"End time (s)", U"1.0")
 	OK
 DO
-	if (endTime < startTime)
-		Melder_throw (U"Your end time (", endTime, U") should not be less than your start time (", startTime, U").");
+	Melder_require (endTime >= startTime,
+		U"Your end time (", endTime, U") should not be less than your start time (", startTime, U").");
 	CREATE_ONE
 		autoPointProcess result = PointProcess_create (startTime, endTime, 0);
 	CREATE_ONE_END (name)
@@ -1067,8 +1079,8 @@ FORM (NEW1_PointProcess_createPoissonProcess, U"Create Poisson process", U"Creat
 	POSITIVE (density, U"Density (/s)", U"100.0")
 	OK
 DO
-	if (endTime < startTime)
-		Melder_throw (U"Your end time (", endTime, U") should not be less than your start time (", startTime, U").");
+	Melder_require (endTime >= startTime,
+		U"Your end time (", endTime, U") should not be less than your start time (", startTime, U").");
 	CREATE_ONE
 		autoPointProcess result = PointProcess_createPoissonProcess (startTime, endTime, density);
 	CREATE_ONE_END (name)
@@ -1091,7 +1103,8 @@ DO
 }
 
 DIRECT (WINDOW_PointProcess_viewAndEdit) {
-	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a PointProcess from batch.");
+	Melder_require (! theCurrentPraatApplication -> batch,
+		U"Cannot view or edit a PointProcess from batch.");
 	FIND_TWO_WITH_IOBJECT (PointProcess, Sound)   // Sound may be null
 		autoPointEditor editor = PointEditor_create (ID_AND_FULL_NAME, me, you);
 		praat_installEditor (editor.get(), IOBJECT);
@@ -1310,13 +1323,13 @@ DO
 DIRECT (NEW_PointProcess_to_IntervalTier) {
 	CONVERT_EACH (PointProcess)
 		autoIntervalTier result = IntervalTier_create (my xmin, my xmax);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_PointProcess_to_Matrix) {
 	CONVERT_EACH (PointProcess)
 		autoMatrix result = PointProcess_to_Matrix (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PointProcess_to_PitchTier, U"PointProcess: To PitchTier", U"PointProcess: To PitchTier...") {
@@ -1325,7 +1338,7 @@ FORM (NEW_PointProcess_to_PitchTier, U"PointProcess: To PitchTier", U"PointProce
 DO
 	CONVERT_EACH (PointProcess)
 		autoPitchTier result = PointProcess_to_PitchTier (me, maximumInterval);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PointProcess_to_TextGrid, U"PointProcess: To TextGrid...", U"PointProcess: To TextGrid...") {
@@ -1335,7 +1348,7 @@ FORM (NEW_PointProcess_to_TextGrid, U"PointProcess: To TextGrid...", U"PointProc
 DO
 	CONVERT_EACH (PointProcess)
 		autoTextGrid result = TextGrid_create (my xmin, my xmax, tierNames, pointTiers);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PointProcess_to_TextGrid_vuv, U"PointProcess: To TextGrid (vuv)...", U"PointProcess: To TextGrid (vuv)...") {
@@ -1345,13 +1358,13 @@ FORM (NEW_PointProcess_to_TextGrid_vuv, U"PointProcess: To TextGrid (vuv)...", U
 DO
 	CONVERT_EACH (PointProcess)
 		autoTextGrid result = PointProcess_to_TextGrid_vuv (me, maximumPeriod, meanPeriod);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_PointProcess_to_TextTier) {
 	CONVERT_EACH (PointProcess)
 		autoTextTier result = TextTier_create (my xmin, my xmax);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PointProcess_to_Sound_phonation, U"PointProcess: To Sound (phonation)", U"PointProcess: To Sound (phonation)...") {
@@ -1367,7 +1380,7 @@ DO
 	CONVERT_EACH (PointProcess)
 		autoSound result = PointProcess_to_Sound_phonation (me, samplingFrequency,
 			adaptationFactor, maximumPeriod, openPhase, collisionPhase, power1, power2);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PointProcess_to_Sound_pulseTrain, U"PointProcess: To Sound (pulse train)", U"PointProcess: To Sound (pulse train)...") {
@@ -1380,13 +1393,13 @@ DO
 	CONVERT_EACH (PointProcess)
 		autoSound result = PointProcess_to_Sound_pulseTrain (me, samplingFrequency,
 			adaptationFactor, adaptationTime, interpolationDepth);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_PointProcess_to_Sound_hum) {
 	CONVERT_EACH (PointProcess)
 		autoSound result = PointProcess_to_Sound_hum (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW1_PointProcesses_union) {
@@ -1401,7 +1414,7 @@ FORM (NEW_PointProcess_upto_IntensityTier, U"PointProcess: Up to IntensityTier",
 DO
 	CONVERT_EACH (PointProcess)
 		autoIntensityTier result = PointProcess_upto_IntensityTier (me, intensity);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PointProcess_upto_PitchTier, U"PointProcess: Up to PitchTier", U"PointProcess: Up to PitchTier...") {
@@ -1410,7 +1423,7 @@ FORM (NEW_PointProcess_upto_PitchTier, U"PointProcess: Up to PitchTier", U"Point
 DO
 	CONVERT_EACH (PointProcess)
 		autoPitchTier result = PointProcess_upto_PitchTier (me, frequency);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_PointProcess_upto_TextTier, U"PointProcess: Up to TextTier", U"PointProcess: Up to TextTier...") {
@@ -1419,7 +1432,7 @@ FORM (NEW_PointProcess_upto_TextTier, U"PointProcess: Up to TextTier", U"PointPr
 DO
 	CONVERT_EACH (PointProcess)
 		autoTextTier result = PointProcess_upto_TextTier (me, text);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (MODIFY_PointProcess_voice, U"PointProcess: Fill unvoiced parts", nullptr) {
@@ -1521,13 +1534,13 @@ DO
 	CONVERT_TWO (PointProcess, Sound)
 		autoAmplitudeTier result = PointProcess_Sound_to_AmplitudeTier_period (me, you, fromTime, toTime,
 			shortestPeriod, longestPeriod, maximumPeriodFactor);
-	CONVERT_TWO_END (your name, U"_", my name)
+	CONVERT_TWO_END (your name.get(), U"_", my name.get())
 }
 
 DIRECT (NEW1_PointProcess_Sound_to_AmplitudeTier_point) {
 	CONVERT_TWO (PointProcess, Sound)
 		autoAmplitudeTier result = PointProcess_Sound_to_AmplitudeTier_point (me, you);
-	CONVERT_TWO_END (your name, U"_", my name);
+	CONVERT_TWO_END (your name.get(), U"_", my name.get());
 }
 
 FORM (NEW1_PointProcess_Sound_to_Ltas, U"PointProcess & Sound: To Ltas", nullptr) {
@@ -1541,7 +1554,7 @@ DO
 	CONVERT_TWO (PointProcess, Sound)
 		autoLtas result = PointProcess_Sound_to_Ltas (me, you,
 			maximumFrequency, bandwidth, shortestPeriod, longestPeriod, maximumPeriodFactor);
-	CONVERT_TWO_END (your name)
+	CONVERT_TWO_END (your name.get())
 }
 
 FORM (NEW1_PointProcess_Sound_to_Ltas_harmonics, U"PointProcess & Sound: To Ltas (harmonics", nullptr) {
@@ -1554,7 +1567,7 @@ DO
 	CONVERT_TWO (PointProcess, Sound)
 		autoLtas result = PointProcess_Sound_to_Ltas_harmonics (me, you,
 			maximumHarmonic, shortestPeriod, longestPeriod, maximumPeriodFactor);
-	CONVERT_TWO_END (your name)
+	CONVERT_TWO_END (your name.get())
 }
 
 FORM (NEW1_Sound_PointProcess_to_SoundEnsemble_correlate, U"Sound & PointProcess: To SoundEnsemble (correlate)", nullptr) {
@@ -1564,7 +1577,7 @@ FORM (NEW1_Sound_PointProcess_to_SoundEnsemble_correlate, U"Sound & PointProcess
 DO
 	CONVERT_TWO (Sound, PointProcess)
 		autoSound result = Sound_PointProcess_to_SoundEnsemble_correlate (me, you, fromTime, toTime);
-	CONVERT_TWO_END (your name)
+	CONVERT_TWO_END (your name.get())
 }
 
 // MARK: - SPECTRUMTIER
@@ -1572,7 +1585,7 @@ DO
 DIRECT (NEW_SpectrumTier_downto_Table) {
 	CONVERT_EACH (SpectrumTier)
 		autoTable result = SpectrumTier_downto_Table (me, true, true, true);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (GRAPHICS_old_SpectrumTier_draw, U"SpectrumTier: Draw", nullptr) {   // 2010-10-19

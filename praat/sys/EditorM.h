@@ -2,7 +2,7 @@
 #define _EditorM_h_
 /* EditorM.h
  *
- * Copyright (C) 1992-2011,2013,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2013,2015-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,27 +45,26 @@
 #undef SET_BOOLEAN
 #undef SET_STRING
 #undef SET_ENUM
-#undef GET_FILE
 
-#define EDITOR_ARGS_FORM  EditorCommand cmd, UiForm sendingForm, int narg, Stackel args, const char32 *sendingString, Interpreter interpreter
-#define EDITOR_ARGS_CMD  EditorCommand cmd, UiForm, int, Stackel, const char32 *, Interpreter
-#define EDITOR_ARGS_DIRECT  EditorCommand, UiForm, int, Stackel, const char32 *, Interpreter
+#define EDITOR_ARGS_FORM  EditorCommand cmd, UiForm _sendingForm_, integer _narg_, Stackel _args_, conststring32 _sendingString_, Interpreter interpreter
+#define EDITOR_ARGS_CMD  EditorCommand cmd, UiForm, integer, Stackel, conststring32, Interpreter
+#define EDITOR_ARGS_DIRECT  EditorCommand, UiForm, integer, Stackel, conststring32, Interpreter
 
-#define EDITOR_FORM(title,helpTitle)  \
+#define EDITOR_FORM(title, helpTitle)  \
 	UiField _radio_ = nullptr; \
 	(void) _radio_; \
 	if (cmd -> d_uiform) goto _form_inited_; \
-	cmd -> d_uiform = UiForm_createE (cmd, title, cmd -> itemTitle, helpTitle);
+	cmd -> d_uiform = UiForm_createE (cmd, title, cmd -> itemTitle.get(), helpTitle);
 
 #define EDITOR_OK  \
 	UiForm_finish (cmd -> d_uiform.get()); \
 _form_inited_: \
-	if (! args && ! sendingForm && ! sendingString) {
+	if (! _args_ && ! _sendingForm_ && ! _sendingString_) {
 
 #define EDITOR_DO  \
 		UiForm_do (cmd -> d_uiform.get(), false); \
-	} else if (! sendingForm) { \
-		UiForm_parseStringE (cmd, narg, args, sendingString, interpreter); \
+	} else if (! _sendingForm_) { \
+		UiForm_parseStringE (cmd, _narg_, _args_, _sendingString_, interpreter); \
 	} else {
 
 #define EDITOR_END  \
@@ -133,7 +132,7 @@ _form_inited_: \
 
 
 #define WORD_VARIABLE(stringVariable) \
-	static char32 *stringVariable;
+	static conststring32 stringVariable;
 
 #define WORD_FIELD(stringVariable, labelText, defaultStringValue) \
 	UiForm_addWord (cmd -> d_uiform.get(), & stringVariable, nullptr, labelText, defaultStringValue);
@@ -144,7 +143,7 @@ _form_inited_: \
 
 
 #define SENTENCE_VARIABLE(stringVariable) \
-	static char32 *stringVariable;
+	static conststring32 stringVariable;
 
 #define SENTENCE_FIELD(stringVariable, labelText, defaultStringValue) \
 	UiForm_addSentence (cmd -> d_uiform.get(), & stringVariable, nullptr, labelText, defaultStringValue);
@@ -192,7 +191,7 @@ _form_inited_: \
 
 
 #define MUTABLE_LABEL_VARIABLE(stringVariable) \
-	static char32 *stringVariable;
+	static conststring32 stringVariable;
 
 #define MUTABLE_LABEL_FIELD(stringVariable, labelText) \
 	UiForm_addLabel (cmd -> d_uiform.get(), & stringVariable, labelText);
@@ -203,7 +202,7 @@ _form_inited_: \
 
 
 #define TEXTFIELD_VARIABLE(stringVariable) \
-	static char32 *stringVariable;
+	static conststring32 stringVariable;
 
 #define TEXTFIELD_FIELD(stringVariable, labelText, defaultValue) \
 	if (labelText != nullptr) UiForm_addLabel (cmd -> d_uiform.get(), nullptr, labelText); \
@@ -226,7 +225,7 @@ _form_inited_: \
 
 
 #define RADIOSTR(stringVariable, labelText, defaultValue) \
-	static char32 *stringVariable; \
+	static conststring32 stringVariable; \
 	_radio_ = UiForm_addRadio (cmd -> d_uiform.get(), nullptr, & stringVariable, nullptr, labelText, defaultValue, 1);
 
 
@@ -246,7 +245,7 @@ _form_inited_: \
 
 
 #define OPTIONMENUSTR(stringVariable, labelText, defaultValue) \
-	static char32 *stringVariable; \
+	static conststring32 stringVariable; \
 	_radio_ = UiForm_addOptionMenu (cmd -> d_uiform.get(), nullptr, & stringVariable, nullptr, labelText, defaultValue, 1);
 
 
@@ -294,9 +293,9 @@ _form_inited_: \
 	OPTIONMENU_ENUM_FIELD (enumeratedVariable, labelText, EnumeratedType, defaultValue)
 
 
-#define LIST(integerVariable, labelText, numberOfStrings, strings, defaultValue) \
+#define LIST(integerVariable, labelText, strings, defaultValue) \
 	static integer integerVariable; \
-	UiForm_addList (cmd -> d_uiform.get(), & integerVariable, nullptr, nullptr, labelText, numberOfStrings, strings, defaultValue);
+	UiForm_addList (cmd -> d_uiform.get(), & integerVariable, nullptr, nullptr, labelText, strings, defaultValue);
 
 /*
 	Seven optional functions to change the content of a field on the basis of the current
@@ -329,25 +328,47 @@ _form_inited_: \
 
 #define DIALOG  cmd -> d_uiform
 
-#define EDITOR_FORM_SAVE(title,helpTitle) \
+#define EDITOR_FORM_SAVE(title, helpTitle) \
 	if (! cmd -> d_uiform) { \
-		cmd -> d_uiform = autoUiForm (UiOutfile_createE (cmd, title, cmd -> itemTitle, helpTitle)); \
-		} if (! args && ! sendingForm && ! sendingString) { char32 defaultName [300]; defaultName [0] = U'\0';
+		cmd -> d_uiform = UiOutfile_createE (cmd, title, cmd -> itemTitle.get(), helpTitle); \
+		} if (! _args_ && ! _sendingForm_ && ! _sendingString_) { char32 defaultName [300]; defaultName [0] = U'\0';
 #define EDITOR_DO_SAVE \
-	UiOutfile_do (cmd -> d_uiform.get(), defaultName); } else { MelderFile file; structMelderFile file2 { }; \
-		if (! args && ! sendingString) file = UiFile_getFile (sendingForm); \
-		else { Melder_relativePathToFile (args ? args [1]. string : sendingString, & file2); file = & file2; }
+	(void) interpreter; \
+	UiOutfile_do (cmd -> d_uiform.get(), defaultName); } else { MelderFile file; structMelderFile _file2 { }; \
+	if (_args_) { \
+		Melder_require (_narg_ == 1, \
+			U"Command requires exactly 1 argument, the name of the file to write, instead of the given ", _narg_, U" arguments."); \
+		Melder_require (_args_ [1]. which == Stackel_STRING, \
+			U"The file name argument should be a string, not ", _args_ [1]. whichText(), U"."); \
+		Melder_relativePathToFile (_args_ [1]. getString(), & _file2); \
+		file = & _file2; \
+	} else if (_sendingString_) { \
+		Melder_relativePathToFile (_sendingString_, & _file2); \
+		file = & _file2; \
+	} else { \
+		file = UiFile_getFile (cmd -> d_uiform.get()); \
+	}
 
-#define EDITOR_FORM_READ(title,helpTitle) \
+#define EDITOR_FORM_READ(title, helpTitle) \
 	if (! cmd -> d_uiform) { \
-		cmd -> d_uiform = autoUiForm (UiInfile_createE (cmd, title, cmd -> itemTitle, helpTitle)); \
-		} if (! args && ! sendingForm && ! sendingString) {
+		cmd -> d_uiform = UiInfile_createE (cmd, title, cmd -> itemTitle.get(), helpTitle); \
+		} if (! _args_ && ! _sendingForm_ && ! _sendingString_) {
 #define EDITOR_DO_READ \
-	UiInfile_do (cmd -> d_uiform.get()); } else { MelderFile file; structMelderFile file2 { }; \
-		if (! args && ! sendingString) file = UiFile_getFile (sendingForm); \
-		else { Melder_relativePathToFile (args ? args [1]. string : sendingString, & file2); file = & file2; }
-
-#define GET_FILE  UiForm_getFile (cmd -> d_uiform.get())
+	(void) interpreter; \
+	UiInfile_do (cmd -> d_uiform.get()); } else { MelderFile file; structMelderFile _file2 { }; \
+	if (_args_) { \
+		Melder_require (_narg_ == 1, \
+			U"Command requires exactly 1 argument, the name of the file to read, instead of the given ", _narg_, U" arguments."); \
+		Melder_require (_args_ [1]. which == Stackel_STRING, \
+			U"The file name argument should be a string, not ", _args_ [1]. whichText(), U"."); \
+		Melder_relativePathToFile (_args_ [1]. getString(), & _file2); \
+		file = & _file2; \
+	} else if (_sendingString_) { \
+		Melder_relativePathToFile (_sendingString_, & _file2); \
+		file = & _file2; \
+	} else { \
+		file = UiFile_getFile (cmd -> d_uiform.get()); \
+	}
 
 /* End of file EditorM.h */
 #endif

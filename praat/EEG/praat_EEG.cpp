@@ -1,6 +1,6 @@
 /* praat_EEG.cpp
  *
- * Copyright (C) 2011-2012,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 2011-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ DO
 	STRING_ONE (EEG)
 		if (channelNumber > my numberOfChannels)
 			Melder_throw (me, U": there are only ", my numberOfChannels, U" channels.");
-		const char32 *result = my channelNames [channelNumber];
+		conststring32 result = my channelNames [channelNumber].get();
 	STRING_ONE_END
 }
 
@@ -105,14 +105,14 @@ OK
 	FIND_ONE (EEG)
 		if (EEG_getNumberOfExternalElectrodes (me) == 8) {
 			const integer offsetExternalElectrode = EEG_getNumberOfCapElectrodes (me);
-			SET_STRING (externalElectrode1, my channelNames [offsetExternalElectrode + 1])
-			SET_STRING (externalElectrode2, my channelNames [offsetExternalElectrode + 2])
-			SET_STRING (externalElectrode3, my channelNames [offsetExternalElectrode + 3])
-			SET_STRING (externalElectrode4, my channelNames [offsetExternalElectrode + 4])
-			SET_STRING (externalElectrode5, my channelNames [offsetExternalElectrode + 5])
-			SET_STRING (externalElectrode6, my channelNames [offsetExternalElectrode + 6])
-			SET_STRING (externalElectrode7, my channelNames [offsetExternalElectrode + 7])
-			SET_STRING (externalElectrode8, my channelNames [offsetExternalElectrode + 8])
+			SET_STRING (externalElectrode1, my channelNames [offsetExternalElectrode + 1].get())
+			SET_STRING (externalElectrode2, my channelNames [offsetExternalElectrode + 2].get())
+			SET_STRING (externalElectrode3, my channelNames [offsetExternalElectrode + 3].get())
+			SET_STRING (externalElectrode4, my channelNames [offsetExternalElectrode + 4].get())
+			SET_STRING (externalElectrode5, my channelNames [offsetExternalElectrode + 5].get())
+			SET_STRING (externalElectrode6, my channelNames [offsetExternalElectrode + 6].get())
+			SET_STRING (externalElectrode7, my channelNames [offsetExternalElectrode + 7].get())
+			SET_STRING (externalElectrode8, my channelNames [offsetExternalElectrode + 8].get())
 		}
 DO
 	MODIFY_EACH (EEG)
@@ -150,6 +150,15 @@ FORM (MODIFY_EEG_setChannelToZero, U"Set channel to zero", nullptr) {
 DO
 	MODIFY_EACH (EEG)
 		EEG_setChannelToZero (me, channel);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EEG_removeChannel, U"Remove channel", nullptr) {
+	SENTENCE (channel, U"Channel", U"Iz")
+	OK
+DO
+	MODIFY_EACH (EEG)
+		EEG_removeChannel (me, channel);
 	MODIFY_EACH_END
 }
 
@@ -195,7 +204,16 @@ FORM (NEW_EEG_extractChannel, U"EEG: Extract channel", nullptr) {
 DO
 	CONVERT_EACH (EEG)
 		autoEEG result = EEG_extractChannel (me, channelName);
-	CONVERT_EACH_END (my name, U"_", channelName)
+	CONVERT_EACH_END (my name.get(), U"_", channelName)
+}
+
+FORM (NEW_EEG_extractChannels, U"EEG: Extract channels", nullptr) {
+	NUMVEC (channels, U"Channel numbers:", U"to# (64)")
+	OK
+DO
+	CONVERT_EACH (EEG)
+		autoEEG result = EEG_extractChannels (me, channels);
+	CONVERT_EACH_END (my name.get(), U"_ch")
 }
 
 FORM (NEW_EEG_extractPart, U"EEG: Extract part", nullptr) {
@@ -206,21 +224,21 @@ FORM (NEW_EEG_extractPart, U"EEG: Extract part", nullptr) {
 DO
 	CONVERT_EACH (EEG)
 		autoEEG result = EEG_extractPart (me, fromTime, toTime, preserveTimes);
-	CONVERT_EACH_END (my name, U"_part")
+	CONVERT_EACH_END (my name.get(), U"_part")
 }
 
 DIRECT (NEW_EEG_extractSound) {
 	CONVERT_EACH (EEG)
 		if (! my sound) Melder_throw (me, U": I don't contain a waveform.");
 		autoSound result = EEG_extractSound (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 DIRECT (NEW_EEG_extractTextGrid) {
 	CONVERT_EACH (EEG)
 		if (! my textgrid) Melder_throw (me, U": I don't contain marks.");
 		autoTextGrid result = EEG_extractTextGrid (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_EEG_to_ERPTier_bit, U"To ERPTier (bit)", nullptr) {
@@ -231,7 +249,7 @@ FORM (NEW_EEG_to_ERPTier_bit, U"To ERPTier (bit)", nullptr) {
 DO
 	CONVERT_EACH (EEG)
 		autoERPTier result = EEG_to_ERPTier_bit (me, fromTime, toTime, markerBit);
-	CONVERT_EACH_END (my name, U"_bit", markerBit)
+	CONVERT_EACH_END (my name.get(), U"_bit", markerBit)
 }
 
 FORM (NEW_EEG_to_ERPTier_marker, U"To ERPTier (marker)", nullptr) {
@@ -242,7 +260,7 @@ FORM (NEW_EEG_to_ERPTier_marker, U"To ERPTier (marker)", nullptr) {
 DO
 	CONVERT_EACH (EEG)
 		autoERPTier result = EEG_to_ERPTier_marker (me, fromTime, toTime, (uint16) markerNumber);
-	CONVERT_EACH_END (my name, U"_", markerNumber)
+	CONVERT_EACH_END (my name.get(), U"_", markerNumber)
 }
 
 FORM (NEW_EEG_to_ERPTier_triggers, U"To ERPTier (triggers)", nullptr) {
@@ -254,7 +272,7 @@ FORM (NEW_EEG_to_ERPTier_triggers, U"To ERPTier (triggers)", nullptr) {
 DO
 	CONVERT_EACH (EEG)
 		autoERPTier result = EEG_to_ERPTier_triggers (me, fromTime, toTime, (kMelder_string) getEveryEventWithATriggerThat, theText);
-	CONVERT_EACH_END (my name, U"_trigger", theText)
+	CONVERT_EACH_END (my name.get(), U"_trigger", theText)
 }
 
 FORM (NEW_EEG_to_ERPTier_triggers_preceded, U"To ERPTier (triggers, preceded)", nullptr) {
@@ -269,7 +287,7 @@ DO
 	CONVERT_EACH (EEG)
 		autoERPTier result = EEG_to_ERPTier_triggers_preceded (me, fromTime, toTime,
 			(kMelder_string) getEveryEventWithATriggerThat, text1, (kMelder_string) andIsPrecededByATriggerThat, text2);
-	CONVERT_EACH_END (my name, U"_trigger", text2)
+	CONVERT_EACH_END (my name.get(), U"_trigger", text2)
 }
 
 // MARK: Convert
@@ -281,6 +299,9 @@ DIRECT (NEW1_EEGs_concatenate) {
 }
 
 FORM (NEW_EEG_to_MixingMatrix, U"To MixingMatrix", nullptr) {
+	praat_TimeFunction_RANGE (startTime, endTime)
+	NATURAL (numberOfCrossCorrelations, U"Number of cross-correlations", U"40")
+	POSITIVE (lagStep, U"Lag step (s)", U"0.002")
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"100")
 	POSITIVE (tolerance, U"Tolerance", U"0.001")
 	OPTIONMENUx (diagonalizationMethod, U"Diagonalization method", 2, 1)
@@ -290,8 +311,21 @@ FORM (NEW_EEG_to_MixingMatrix, U"To MixingMatrix", nullptr) {
 DO
 	CONVERT_EACH (EEG)
 		autoMixingMatrix result = EEG_to_MixingMatrix (me,
+			startTime, endTime, numberOfCrossCorrelations, lagStep,
 			maximumNumberOfIterations, tolerance, diagonalizationMethod);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
+}
+
+DIRECT (NEW_EEG_MixingMatrix_to_EEG_unmix) {
+	CONVERT_TWO (EEG, MixingMatrix)
+		autoEEG result = EEG_MixingMatrix_to_EEG_unmix (me, you);
+	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+}
+
+DIRECT (NEW_EEG_MixingMatrix_to_EEG_mix) {
+	CONVERT_TWO (EEG, MixingMatrix)
+		autoEEG result = EEG_MixingMatrix_to_EEG_mix (me, you);
+	CONVERT_TWO_END (my name.get(), U"_", your name.get())
 }
 
 // MARK: - EEG & TextGrid
@@ -350,7 +384,7 @@ DO
 	CONVERT_EACH (ERP)
 		autoTable result = ERP_tabulate (me, includeSampleNumber,
 			includeTime, timeDecimals, voltageDecimals, voltageUnits);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: Draw
@@ -418,7 +452,7 @@ DO
 	STRING_ONE (ERP)
 		if (channelNumber > my ny)
 			Melder_throw (me, U": there are only ", my ny, U" channels.");
-		const char32 *result = my channelNames [channelNumber];
+		conststring32 result = my channelNames [channelNumber].get();
 	STRING_ONE_END
 }
 
@@ -565,7 +599,7 @@ DO
 		integer channelNumber = ERP_getChannelNumber (me, channelName);
 		if (channelNumber == 0) Melder_throw (me, U": no channel named \"", channelName, U"\".");
 		autoSound result = Sound_extractChannel (me, channelNumber);
-	CONVERT_EACH_END (my name, U"_", channelName)
+	CONVERT_EACH_END (my name.get(), U"_", channelName)
 }
 
 // MARK: Convert
@@ -573,7 +607,7 @@ DO
 DIRECT (NEW_ERP_downto_Sound) {
 	CONVERT_EACH (ERP)
 		autoSound result = ERP_downto_Sound (me);
-	CONVERT_EACH_END (my name)
+	CONVERT_EACH_END (my name.get())
 }
 
 // MARK: - ERPTIER
@@ -593,7 +627,7 @@ DO
 	STRING_ONE (ERPTier)
 		if (channelNumber > my numberOfChannels)
 			Melder_throw (me, U": there are only ", my numberOfChannels, U" channels.");
-		const char32 *result = my channelNames [channelNumber];
+		conststring32 result = my channelNames [channelNumber].get();
 	STRING_ONE_END
 }
 
@@ -657,13 +691,13 @@ FORM (NEW_ERPTier_to_ERP, U"ERPTier: To ERP", nullptr) {
 DO
 	CONVERT_EACH (ERPTier)
 		autoERP result = ERPTier_extractERP (me, eventNumber);
-	CONVERT_EACH_END (my name, U"_", eventNumber)
+	CONVERT_EACH_END (my name.get(), U"_", eventNumber)
 }
 
 DIRECT (NEW_ERPTier_to_ERP_mean) {
 	CONVERT_EACH (ERPTier)
 		autoERP result = ERPTier_to_ERP_mean (me);
-	CONVERT_EACH_END (my name, U"_mean")
+	CONVERT_EACH_END (my name.get(), U"_mean")
 }
 
 // MARK: - ERPTIER & TABLE
@@ -677,7 +711,7 @@ DO
 	CONVERT_TWO (ERPTier, Table)
 		integer columnNumber = Table_getColumnIndexFromColumnLabel (you, extractAllEventsWhereColumn___);
 		autoERPTier result = ERPTier_extractEventsWhereColumn_number (me, you, columnNumber, (kMelder_number) ___is___, ___theNumber);
-	CONVERT_TWO_END (my name)
+	CONVERT_TWO_END (my name.get())
 }
 
 FORM (NEW1_ERPTier_Table_extractEventsWhereColumn_text, U"Extract events where column (text)", nullptr) {
@@ -689,17 +723,15 @@ DO
 	CONVERT_TWO (ERPTier, Table)
 		integer columnNumber = Table_getColumnIndexFromColumnLabel (you, extractAllEventsWhereColumn___);
 		autoERPTier result = ERPTier_extractEventsWhereColumn_string (me, you, columnNumber, (kMelder_string) ___, ___theText);
-	CONVERT_TWO_END (my name)
+	CONVERT_TWO_END (my name.get())
 }
 
 // MARK: - file recognizers
 
-static autoDaata bdfFileRecognizer (integer nread, const char * /* header */, MelderFile file) {
-	const char32 *fileName = MelderFile_name (file);
-	bool isBdfFile = Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".bdf") ||
-	                 Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".BDF");
-	bool isEdfFile = Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".edf") ||
-	                 Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".EDF");
+static autoDaata bdfFileRecognizer (integer nread, const char [] /* header */, MelderFile file) {
+	conststring32 fileName = MelderFile_name (file);
+	bool isBdfFile = Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".bdf", false);
+	bool isEdfFile = Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".edf", false);
 	if (nread < 512 || (! isBdfFile && ! isEdfFile)) return autoDaata ();
 	return EEG_readFromBdfFile (file);
 }
@@ -728,8 +760,10 @@ void praat_EEG_init () {
 		praat_addAction1 (classEEG, 0, U"Filter...", nullptr, 1, MODIFY_EEG_filter);
 		praat_addAction1 (classEEG, 0, U"Remove triggers...", nullptr, 1, MODIFY_EEG_removeTriggers);
 		praat_addAction1 (classEEG, 0, U"Set channel to zero...", nullptr, 1, MODIFY_EEG_setChannelToZero);
+		praat_addAction1 (classEEG, 0, U"Remove channel...", nullptr, 1, MODIFY_EEG_removeChannel);
 	praat_addAction1 (classEEG, 0, U"Analyse", nullptr, 0, nullptr);
 		praat_addAction1 (classEEG, 0, U"Extract channel...", nullptr, 0, NEW_EEG_extractChannel);
+		praat_addAction1 (classEEG, 0, U"Extract channels...", nullptr, 0, NEW_EEG_extractChannels);
 		praat_addAction1 (classEEG, 0, U"Extract part...", nullptr, 0, NEW_EEG_extractPart);
 		praat_addAction1 (classEEG, 0, U"To ERPTier -", nullptr, 0, nullptr);
 		praat_addAction1 (classEEG, 0, U"To ERPTier (bit)...", nullptr, 1, NEW_EEG_to_ERPTier_bit);
@@ -790,6 +824,8 @@ void praat_EEG_init () {
 		praat_addAction1 (classERPTier, 0, U"Extract ERP...", nullptr, 0, NEW_ERPTier_to_ERP);
 		praat_addAction1 (classERPTier, 0, U"To ERP (mean)", nullptr, 0, NEW_ERPTier_to_ERP_mean);
 
+	praat_addAction2 (classEEG, 1, classMixingMatrix, 1, U"To EEG (unmix)", nullptr, 0, NEW_EEG_MixingMatrix_to_EEG_unmix);
+	praat_addAction2 (classEEG, 1, classMixingMatrix, 1, U"To EEG (mix)", nullptr, 0, NEW_EEG_MixingMatrix_to_EEG_mix);
 	praat_addAction2 (classEEG, 1, classTextGrid, 1, U"Replace TextGrid", nullptr, 0, MODIFY_EEG_TextGrid_replaceTextGrid);
 	praat_addAction2 (classERPTier, 1, classTable, 1, U"Extract -", nullptr, 0, nullptr);
 	praat_addAction2 (classERPTier, 1, classTable, 1, U"Extract events where column (number)...", nullptr, 1, NEW1_ERPTier_Table_extractEventsWhereColumn_number);

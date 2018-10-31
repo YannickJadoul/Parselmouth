@@ -62,6 +62,10 @@ void Pitch_Frame_init (Pitch_Frame me, int nCandidates);
 		my intensity == 0.0; // silent
 */
 
+inline static bool Pitch_util_frequencyIsVoiced (double f, double ceiling) {
+	return f > 0.0 && f < ceiling;   // note: return false is f is NaN
+}
+
 bool Pitch_isVoiced_i (Pitch me, integer index);
 /*
 	Is the frame 'index' voiced?
@@ -194,7 +198,7 @@ void Pitch_step (Pitch me, double step, double precision, double tmin, double tm
 	as long as that candidate is in between 0 and my ceiling.
 */
 
-void Pitch_formula (Pitch me, const char32 *formula, Interpreter interpreter);
+void Pitch_formula (Pitch me, conststring32 formula, Interpreter interpreter);
 
 /* End of file Pitch.h */
 #endif

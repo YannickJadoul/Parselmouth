@@ -38,6 +38,8 @@ Thing_define (Vector, Matrix) {
 		override { return false; }
 	double v_getValueAtSample (integer isamp, integer ilevel, int unit)
 		override;
+
+	VEC channel (integer channelNumber) { return { our z [channelNumber], our nx }; }
 };
 
 #define Vector_CHANNEL_AVERAGE  0
@@ -75,7 +77,7 @@ void Vector_multiplyByScalar (Vector me, double scalar);
 void Vector_scale (Vector me, double scale);
 
 void Vector_draw (Vector me, Graphics g, double *pxmin, double *pxmax, double *pymin, double *pymax,
-	double defaultDy, const char32 *method);
+	double defaultDy, conststring32 method);
 /*
 	If *pxmin equals *pxmax, then autowindowing from my xmin to my xmax.
 	If *pymin equals *pymax, then autoscaling from minimum to maximum;

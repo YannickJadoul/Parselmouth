@@ -1,6 +1,6 @@
 /* OTMulti_ex_metrics.cpp
  *
- * Copyright (C) 2014-2017 Paul Boersma
+ * Copyright (C) 2014-2018 Paul Boersma
  * Forked from OTGrammar_ex_metrics.cpp, Copyright (C) 2001-2007,2009,2011,2012 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
@@ -46,36 +46,40 @@
 
 #define NUMBER_OF_CONSTRAINTS  22
 
-static const char32 *constraintNames [1+NUMBER_OF_CONSTRAINTS] { 0,
+static const conststring32 constraintNames [1+NUMBER_OF_CONSTRAINTS] { 0,
 	U"WSP", U"FtNonfinal", U"Iambic", U"Parse", U"FootBin", U"WFL", U"WFR", U"Main-L", U"Main-R", U"AFL", U"AFR", U"Nonfinal",
 	U"Trochaic", U"FtBimor", U"FtBisyl", U"Peripheral", U"MainNonfinal", U"HeadNonfinal", U"*Clash", U"*Lapse", U"WeightByPosition", U"*C\\mu" };
 
-static void addCandidate (OTMulti me, const char32 *underlyingForm, integer numberOfSyllables, int stress [],
+static void addCandidate (OTMulti me, conststring32 underlyingForm, integer numberOfSyllables, int stress [],
 	bool footedToTheLeft [], bool footedToTheRight [], int surfaceWeightPattern [],
 	int overtFormsHaveSecondaryStress)
 {
-	static const char32 *syllable [] { U"L", U"L1", U"L2", U"H", U"H1", U"H2", U"K", U"K1", U"K2", U"J", U"J1", U"J2" };
-	static const char32 *syllableWithoutSecondaryStress [] { U"L", U"L1", U"L", U"H", U"H1", U"H", U"K", U"K1", U"K", U"J", U"J1", U"J" };
+	static const conststring32 syllable [] { U"L", U"L1", U"L2", U"H", U"H1", U"H2", U"K", U"K1", U"K2", U"J", U"J1", U"J2" };
+	static const conststring32 syllableWithoutSecondaryStress [] { U"L", U"L1", U"L", U"H", U"H1", U"H", U"K", U"K1", U"K", U"J", U"J1", U"J" };
 	char32 string [150];
 	str32cpy (string, underlyingForm);
-	str32cpy (string + str32len (string), U" /");
+	str32cat (string, U" /");
 	for (integer isyll = 1; isyll <= numberOfSyllables; isyll ++) {
-		if (isyll > 1) str32cpy (string + str32len (string), U" ");
-		if (footedToTheRight [isyll] || (! footedToTheLeft [isyll] && stress [isyll] != 0)) str32cpy (string + str32len (string), U"(");
-		str32cpy (string + str32len (string), syllable [stress [isyll] + 3 * (surfaceWeightPattern [isyll] - 1)]);
-		if (footedToTheLeft [isyll] || (! footedToTheRight [isyll] && stress [isyll] != 0)) str32cpy (string + str32len (string), U")");
+		if (isyll > 1)
+			str32cat (string, U" ");
+		if (footedToTheRight [isyll] || (! footedToTheLeft [isyll] && stress [isyll] != 0))
+			str32cat (string, U"(");
+		str32cat (string, syllable [stress [isyll] + 3 * (surfaceWeightPattern [isyll] - 1)]);
+		if (footedToTheLeft [isyll] || (! footedToTheRight [isyll] && stress [isyll] != 0))
+			str32cat (string, U")");
 	}
-	str32cpy (string + str32len (string), U"/ [");
+	str32cat (string, U"/ [");
 	for (integer isyll = 1; isyll <= numberOfSyllables; isyll ++) {
-		if (isyll > 1) str32cpy (string + str32len (string), U" ");
-		str32cpy (string + str32len (string), ( overtFormsHaveSecondaryStress ? syllable : syllableWithoutSecondaryStress )
+		if (isyll > 1)
+			str32cat (string, U" ");
+		str32cat (string, ( overtFormsHaveSecondaryStress ? syllable : syllableWithoutSecondaryStress )
 				[stress [isyll] + 3 * (surfaceWeightPattern [isyll] - 1)]);
 	}
-	str32cpy (string + str32len (string), U"]");
+	str32cat (string, U"]");
 	my candidates [++ my numberOfCandidates]. string = Melder_dup (string);
 }
 
-static void fillSurfaceWeightPattern (OTMulti me, const char32 *underlyingForm, integer numberOfSyllables, int stress [],
+static void fillSurfaceWeightPattern (OTMulti me, conststring32 underlyingForm, integer numberOfSyllables, int stress [],
 	bool footedToTheLeft [], bool footedToTheRight [], int underlyingWeightPattern [],
 	int overtFormsHaveSecondaryStress)
 {
@@ -113,7 +117,7 @@ static void fillSurfaceWeightPattern (OTMulti me, const char32 *underlyingForm, 
 	}
 }
 
-static void path (OTMulti me, const char32 *underlyingForm, integer numberOfSyllables, int stress [],
+static void path (OTMulti me, conststring32 underlyingForm, integer numberOfSyllables, int stress [],
 	int startingSyllable, bool footedToTheLeft_in [], bool footedToTheRight_in [], int underlyingWeightPattern [],
 	int overtFormsHaveSecondaryStress)
 {
@@ -150,7 +154,7 @@ static void path (OTMulti me, const char32 *underlyingForm, integer numberOfSyll
 	}
 }
 
-static void fillOvertStressPattern (OTMulti me, const char32 *underlyingForm, integer numberOfSyllables, int stress [], int underlyingWeightPattern [],
+static void fillOvertStressPattern (OTMulti me, conststring32 underlyingForm, integer numberOfSyllables, int stress [], int underlyingWeightPattern [],
 	int overtFormsHaveSecondaryStress)
 {
 	bool footedToTheLeft [10], footedToTheRight [10];
@@ -166,12 +170,13 @@ static void fillTableau (OTMulti me, integer numberOfSyllables, int underlyingWe
 	char32 underlyingForm [100];
 	str32cpy (underlyingForm, U"|");
 	for (integer isyll = 1; isyll <= numberOfSyllables; isyll ++) {
-		static const char32 *syllable_noCodas [] = { U"", U"L", U"H" };
-		static const char32 *syllable_codas [] = { U"", U"cv", U"cv:", U"cvc" };
-		if (isyll > 1) str32cpy (underlyingForm + str32len (underlyingForm), includeCodas ? U"." : U" ");
-		str32cpy (underlyingForm + str32len (underlyingForm), ( includeCodas ? syllable_codas : syllable_noCodas ) [underlyingWeightPattern [isyll]]);
+		static const conststring32 syllable_noCodas [] = { U"", U"L", U"H" };
+		static const conststring32 syllable_codas [] = { U"", U"cv", U"cv:", U"cvc" };
+		if (isyll > 1)
+			str32cat (underlyingForm, includeCodas ? U"." : U" ");
+		str32cat (underlyingForm, ( includeCodas ? syllable_codas : syllable_noCodas ) [underlyingWeightPattern [isyll]]);
 	}
-	str32cpy (underlyingForm + str32len (underlyingForm), U"|");
+	str32cat (underlyingForm, U"|");
 	for (integer mainStressed = 1; mainStressed <= numberOfSyllables; mainStressed ++) {
 		int stress [10];
 		stress [mainStressed] = 1;
@@ -212,28 +217,27 @@ static void computeViolationMarks (OTCandidate me) {
 	#define isLight(s)  ((s) == U'L' || (s) == U'K')
 	#define isSyllable(s)  (isHeavy (s) || isLight (s))
 	#define isStress(s)  ((s) == U'1' || (s) == U'2')
-	int depth;
-	char32 *firstSlash = str32chr (my string, U'/');
-	char32 *lastSlash = str32chr (firstSlash + 1, U'/');
+	const char32 * const firstSlash = str32chr (my string.get(), U'/');
+	const char32 * const lastSlash = str32chr (firstSlash + 1, U'/');
 	my marks = NUMvector <int> (1, my numberOfConstraints = NUMBER_OF_CONSTRAINTS);
 	/* Violations of WSP: count all H not followed by 1 or 2. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isHeavy (p [0]) && ! isStress (p [1]))
 			my marks [WSP] ++;
 	}
 	/* Violations of FtNonfinal: count all heads followed by ). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isStress (p [0]) && p [1] == ')')
 			my marks [FtNonfinal] ++;
 	}
 	/* Violations of Iambic: count all heads not followed by ). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isStress (p [0]) && p [1] != ')')
 			my marks [Iambic] ++;
 	}
 	/* Violations of Parse and Peripheral: count all syllables not between (). */
-	depth = 0;
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	int depth = 0;
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'(') depth ++;
 		else if (p [0] == U')') depth --;
 		else if (isSyllable (p [0]) && depth != 1) {
@@ -243,7 +247,7 @@ static void computeViolationMarks (OTCandidate me) {
 		}
 	}
 	/* Violations of FootBin: count all (L1) and (L2). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isLight (p [0]) && p [-1] == '(' && isStress (p [1]) && p [2] == U')')
 			my marks [FootBin] ++;
 	}
@@ -255,7 +259,7 @@ static void computeViolationMarks (OTCandidate me) {
 		my marks [WFR] = 1;
 	/* Violations of Main_L: count syllables from foot containing X1 to left edge. */
 	{
-		char32 *p = str32chr (firstSlash, U'1');
+		const char32 *p = str32chr (firstSlash, U'1');
 		for (; *p != U'('; p --) { }
 		for (; p != firstSlash; p --) {
 			if (isSyllable (p [0]))
@@ -264,7 +268,7 @@ static void computeViolationMarks (OTCandidate me) {
 	}
 	/* Violations of Main_R: count syllables from foot containing X1 to right edge. */
 	{
-		char32 *p = str32chr (firstSlash, U'1');
+		const char32 *p = str32chr (firstSlash, U'1');
 		for (; *p != U')'; p ++) { }
 		for (; p != lastSlash; p ++) {
 			if (isSyllable (p [0]))
@@ -272,18 +276,18 @@ static void computeViolationMarks (OTCandidate me) {
 		}
 	}
 	/* Violations of AFL: count syllables from every foot to left edge. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'(') {
-			for (char32 *q = p; q != firstSlash; q --) {
+			for (const char32 *q = p; q != firstSlash; q --) {
 				if (isSyllable (q [0]))
 					my marks [AFL] ++;
 			}
 		}
 	}
 	/* Violations of AFR: count syllables from every foot to right edge. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U')') {
-			for (char32 *q = p; q != lastSlash; q ++) {
+			for (const char32 *q = p; q != lastSlash; q ++) {
 				if (isSyllable (q [0]))
 					my marks [AFR] ++;
 			}
@@ -293,12 +297,12 @@ static void computeViolationMarks (OTCandidate me) {
 	if (lastSlash [-1] == U')')
 		my marks [Nonfinal] = 1;
 	/* Violations of Trochaic: count all heads not preceded by (. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isStress (p [0]) && p [-2] != '(')
 			my marks [Trochaic] ++;
 	}
 	/* Violations of FootBimoraic: count weight between (). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'(') {
 			int weight = 0;
 			for (p ++; p [0] != ')'; p ++) {
@@ -309,13 +313,13 @@ static void computeViolationMarks (OTCandidate me) {
 		}
 	}
 	/* Violations of FootBisyllabic: count all (X1) and (X2). */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isSyllable (p [0]) && p [-1] == U'(' && isStress (p [1]) && p [2] == U')')
 			my marks [FootBisyllabic] ++;
 	}
 	/* Violations of MainNonfinal: count all final / preceded by ) preceded by 1 in the same foot. */
 	if (lastSlash [-1] == U')') {
-		for (char32 *p = lastSlash - 2; ; p --) {
+		for (const char32 *p = lastSlash - 2; ; p --) {
 			if (p [0] == '2') break;
 			if (p [0] == '1') {
 				my marks [MainNonfinal] = 1;
@@ -328,7 +332,7 @@ static void computeViolationMarks (OTCandidate me) {
 		if (lastSlash [-2] == U'1') {
 			my marks [HeadNonfinal] = 2;
 		} else {
-			for (char32 *p = lastSlash - 2; ; p --) {
+			for (const char32 *p = lastSlash - 2; ; p --) {
 				if (p [0] == U'2') break;
 				if (p [0] == U'1') {
 					my marks [HeadNonfinal] = 1;
@@ -338,9 +342,9 @@ static void computeViolationMarks (OTCandidate me) {
 		}
 	}
 	/* Violations of *Clash: count all 1 and 2 followed by an 1 or 2 after the next L or H. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isStress (p [0])) {
-			for (char32 *q = p + 1; q != lastSlash; q ++) {
+			for (const char32 *q = p + 1; q != lastSlash; q ++) {
 				if (isSyllable (q [0])) {
 					if (isStress (q [1])) {
 						my marks [Clash] ++;
@@ -352,7 +356,7 @@ static void computeViolationMarks (OTCandidate me) {
 	}
 	/* Violations of *Lapse: count all sequences of three unstressed syllables. */
 	depth = 0;
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (isSyllable (p [0])) {
 			if (isStress (p [1])) {
 				depth = 0;
@@ -364,12 +368,12 @@ static void computeViolationMarks (OTCandidate me) {
 		}
 	}
 	/* Violations of WeightByPosition: count all K. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'K')
 			my marks [WeightByPosition] ++;
 	}
 	/* Violations of *MoraicConsonant: count all J. */
-	for (char32 *p = firstSlash + 1; p != lastSlash; p ++) {
+	for (const char32 *p = firstSlash + 1; p != lastSlash; p ++) {
 		if (p [0] == U'J')
 			my marks [MoraicConsonant] ++;
 	}
@@ -416,7 +420,6 @@ static void replaceOutput (OTCandidate me) {
 		}
 	}
 	*q = U'\0';
-	Melder_free (my string);
 	my string = Melder_dup (newString);
 }
 

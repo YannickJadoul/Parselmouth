@@ -1,6 +1,6 @@
 /* SoundRecorder.cpp
  *
- * Copyright (C) 1992-2011,2012,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -104,11 +104,11 @@ static void win_fillHeader (SoundRecorder me, int which) {
 	my waveHeader [which]. reserved = 0;
 }
 static void win_waveInCheck (SoundRecorder me) {
-	char32 messageText [MAXERRORLENGTH];
+	wchar_t messageText [MAXERRORLENGTH];
 	MMRESULT err;
 	if (my err == MMSYSERR_NOERROR) return;
-	err = waveInGetErrorText (my err, Melder_32toW (messageText), MAXERRORLENGTH);
-	if (err == MMSYSERR_NOERROR) Melder_throw (messageText);
+	err = waveInGetErrorText (my err, messageText, MAXERRORLENGTH);
+	if (err == MMSYSERR_NOERROR) Melder_throw (Melder_peekWto32 (messageText));
 	else if (err == MMSYSERR_BADERRNUM) Melder_throw (U"Error number ", my err, U" out of range.");
 	else if (err == MMSYSERR_NODRIVER) Melder_throw (U"No sound driver present.");
 	else if (err == MMSYSERR_NOMEM) Melder_throw (U"Out of memory.");
@@ -225,8 +225,8 @@ static void stopRecording (SoundRecorder me) {
 }
 
 void structSoundRecorder :: v_destroy () noexcept {
-	stopRecording (this);   // must occur before freeing my buffer
-	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);   // must also occur before freeing my buffer
+	stopRecording (this);   // must occur before freeing our buffer
+	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);   // must also occur before freeing our buffer
 	#if cocoa
 		if (our d_cocoaTimer) CFRunLoopTimerInvalidate (our d_cocoaTimer);
 	#elif gtk
@@ -234,7 +234,7 @@ void structSoundRecorder :: v_destroy () noexcept {
 	#elif motif
 		if (our workProcId) XtRemoveWorkProc (our workProcId);
 	#endif
-	NUMvector_free (buffer, 0);
+	NUMvector_free (our buffer, 0);
 
 	if (our inputUsesPortAudio) {
 		if (our portaudioStream) Pa_StopStream (our portaudioStream);
@@ -251,7 +251,7 @@ void structSoundRecorder :: v_destroy () noexcept {
 			if (our fd != -1) close (our fd);
 		#endif
 	}
-	SoundRecorder_Parent :: v_destroy ();
+	our SoundRecorder_Parent :: v_destroy ();
 }
 
 static void showMaximum (SoundRecorder me, int channel, double maximum) {
@@ -620,7 +620,7 @@ static void publish (SoundRecorder me) {
 	}
 	if (my soundName) {
 		autostring32 name = GuiText_getString (my soundName);
-		Thing_setName (sound.get(), name.peek());
+		Thing_setName (sound.get(), name.get());
 	}
 	Editor_broadcastPublication (me, sound.move());
 }
@@ -914,9 +914,8 @@ static void writeAudioFile (SoundRecorder me, MelderFile file, int audioFileType
 
 static void menu_cb_writeWav (SoundRecorder me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM_SAVE (U"Save as WAV file", nullptr)
-		char32 *name = GuiText_getString (my soundName);
-		Melder_sprint (defaultName,300, name, U".wav");
-		Melder_free (name);
+		autostring32 name = GuiText_getString (my soundName);
+		Melder_sprint (defaultName,300, name.get(), U".wav");
 	EDITOR_DO_SAVE
 		writeAudioFile (me, file, Melder_WAV);
 	EDITOR_END
@@ -924,9 +923,8 @@ static void menu_cb_writeWav (SoundRecorder me, EDITOR_ARGS_FORM) {
 
 static void menu_cb_writeAifc (SoundRecorder me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM_SAVE (U"Save as AIFC file", nullptr)
-		char32 *name = GuiText_getString (my soundName);
-		Melder_sprint (defaultName,300, name, U".aifc");
-		Melder_free (name);
+		autostring32 name = GuiText_getString (my soundName);
+		Melder_sprint (defaultName,300, name.get(), U".aifc");
 	EDITOR_DO_SAVE
 		writeAudioFile (me, file, Melder_AIFC);
 	EDITOR_END
@@ -934,9 +932,8 @@ static void menu_cb_writeAifc (SoundRecorder me, EDITOR_ARGS_FORM) {
 
 static void menu_cb_writeNextSun (SoundRecorder me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM_SAVE (U"Save as NeXT/Sun file", nullptr)
-		char32 *name = GuiText_getString (my soundName);
-		Melder_sprint (defaultName,300, name, U".au");
-		Melder_free (name);
+		autostring32 name = GuiText_getString (my soundName);
+		Melder_sprint (defaultName,300, name.get(), U".au");
 	EDITOR_DO_SAVE
 		writeAudioFile (me, file, Melder_NEXT_SUN);
 	EDITOR_END
@@ -944,9 +941,8 @@ static void menu_cb_writeNextSun (SoundRecorder me, EDITOR_ARGS_FORM) {
 
 static void menu_cb_writeNist (SoundRecorder me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM_SAVE (U"Save as NIST file", nullptr)
-		char32 *name = GuiText_getString (my soundName);
-		Melder_sprint (defaultName,300, name, U".nist");
-		Melder_free (name);
+		autostring32 name = GuiText_getString (my soundName);
+		Melder_sprint (defaultName,300, name.get(), U".nist");
 	EDITOR_DO_SAVE
 		writeAudioFile (me, file, Melder_NIST);
 	EDITOR_END

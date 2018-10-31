@@ -1,6 +1,6 @@
 /* manual_tutorials.cpp
  *
- * Copyright (C) 1992-2017 Paul Boersma
+ * Copyright (C) 1992-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,30 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"What's new?", U"ppgb", 20180203)
+MAN_BEGIN (U"What's new?", U"ppgb", 20180908)
 INTRO (U"Latest changes in Praat.")
 //LIST_ITEM (U"• Manual page about @@drawing a vowel triangle@.")
 
+NORMAL (U"##6.0.43# (8 September 2018)")
+LIST_ITEM (U"• removed a very old bug that could create invalid TextGrids during forced alignment.")
+LIST_ITEM (U"• Windows: repaired a bug introduced in 6.0.41 "
+	"that caused a crash in several places (such as when changing the sample rate in the SoundRecorder) "
+	"when Praat had been started with a double click.")
+LIST_ITEM (U"• Windows: repaired a bug introduced in 6.0.41 that caused Praat to crash when exiting.")
+NORMAL (U"##6.0.42# (15 August 2018)")
+LIST_ITEM (U"• Repaired a bug introduced in 6.0.41 that caused a crash in pause windows.")
+NORMAL (U"##6.0.41# (6 August 2018)")
+LIST_ITEM (U"• Interoperability: the Windows edition can now communicate with other software in UTF-8.")
+NORMAL (U"##6.0.40# (11 May 2018)")
+LIST_ITEM (U"• Scripting: @@Scripting 4.3. Querying objects|selected\\#  ()@.")
+LIST_ITEM (U"• Table window: cell selection.")
+LIST_ITEM (U"• Unicode-savvy regular expressions.")
+NORMAL (U"##6.0.39# (3 April 2018)")
+LIST_ITEM (U"• More string matching (case-insensive, word-level).")
+NORMAL (U"##6.0.38# (29 March 2018)")
+LIST_ITEM (U"• Concordance: ##TextGrid: Tabulate occurrences...#.")
+LIST_ITEM (U"• Some @@Independent Component Analysis on EEG@.")
+LIST_ITEM (U"• Removed many small bugs.")
 NORMAL (U"##6.0.37# (3 February 2018)")
 LIST_ITEM (U"• Graphics: fixed crashing bug with \\bsun trigraph.")
 NORMAL (U"##6.0.36# (11 November 2017)")

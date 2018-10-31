@@ -1,6 +1,6 @@
 /* OTMulti.cpp
  *
- * Copyright (C) 2005-2017 Paul Boersma
+ * Copyright (C) 2005-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -150,9 +150,9 @@ void structOTMulti :: v_readText (MelderReadText text, int formatVersion) {
 
 Thing_implement (OTMulti, Daata, 2);
 
-integer OTMulti_getConstraintIndexFromName (OTMulti me, const char32 *name) {
+integer OTMulti_getConstraintIndexFromName (OTMulti me, conststring32 name) {
 	for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
-		if (Melder_equ (my constraints [icons]. name, name)) {
+		if (Melder_equ (my constraints [icons]. name.get(), name)) {
 			return icons;
 		}
 	}
@@ -173,7 +173,7 @@ static int constraintCompare (const void *first, const void *second) {
 	/*
 	 * Tied constraints are sorted alphabetically.
 	 */
-	return str32cmp (my constraints [icons]. name, my constraints [jcons]. name);
+	return str32cmp (my constraints [icons]. name.get(), my constraints [jcons]. name.get());
 }
 
 void OTMulti_sort (OTMulti me) {
@@ -181,10 +181,10 @@ void OTMulti_sort (OTMulti me) {
 	qsort (& my index [1], my numberOfConstraints, sizeof (integer), constraintCompare);
 	for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
 		OTConstraint constraint = & my constraints [my index [icons]];
-		constraint -> tiedToTheLeft = icons > 1 &&
-			my constraints [my index [icons - 1]]. disharmony == constraint -> disharmony;
-		constraint -> tiedToTheRight = icons < my numberOfConstraints &&
-			my constraints [my index [icons + 1]]. disharmony == constraint -> disharmony;
+		constraint -> tiedToTheLeft = ( icons > 1 &&
+			my constraints [my index [icons - 1]]. disharmony == constraint -> disharmony );
+		constraint -> tiedToTheRight = ( icons < my numberOfConstraints &&
+			my constraints [my index [icons + 1]]. disharmony == constraint -> disharmony );
 	}
 }
 
@@ -259,12 +259,12 @@ int OTMulti_compareCandidates (OTMulti me, integer icand1, integer icand2) {
 	return 0;   /* None of the comparisons found a difference between the two candidates. Hence, they are equally good. */
 }
 
-int OTMulti_candidateMatches (OTMulti me, integer icand, const char32 *form1, const char32 *form2) {
-	const char32 *string = my candidates [icand]. string;
-	return (form1 [0] == '\0' || str32str (string, form1)) && (form2 [0] == '\0' || str32str (string, form2));
+int OTMulti_candidateMatches (OTMulti me, integer icand, conststring32 form1, conststring32 form2) {
+	conststring32 string = my candidates [icand]. string.get();
+	return (form1 [0] == U'\0' || str32str (string, form1)) && (form2 [0] == U'\0' || str32str (string, form2));
 }
 
-static void _OTMulti_fillInHarmonies (OTMulti me, const char32 *form1, const char32 *form2) {
+static void _OTMulti_fillInHarmonies (OTMulti me, conststring32 form1, conststring32 form2) {
 	if (my decisionStrategy == kOTGrammar_decisionStrategy::OPTIMALITY_THEORY) return;
 	for (integer icand = 1; icand <= my numberOfCandidates; icand ++) if (OTMulti_candidateMatches (me, icand, form1, form2)) {
 		OTCandidate candidate = & my candidates [icand];
@@ -300,7 +300,7 @@ static void _OTMulti_fillInHarmonies (OTMulti me, const char32 *form1, const cha
 	}
 }
 
-static void _OTMulti_fillInProbabilities (OTMulti me, const char32 *form1, const char32 *form2) {
+static void _OTMulti_fillInProbabilities (OTMulti me, conststring32 form1, conststring32 form2) {
 	double maximumHarmony = -1e308;
 	for (integer icand = 1; icand <= my numberOfCandidates; icand ++) if (OTMulti_candidateMatches (me, icand, form1, form2)) {
 		OTCandidate candidate = & my candidates [icand];
@@ -327,7 +327,7 @@ static void _OTMulti_fillInProbabilities (OTMulti me, const char32 *form1, const
 
 class MelderError_OTMulti_NoMatchingCandidate: public MelderError {};
 
-integer OTMulti_getWinner (OTMulti me, const char32 *form1, const char32 *form2) {
+integer OTMulti_getWinner (OTMulti me, conststring32 form1, conststring32 form2) {
 	try {
 		integer icand_best = 0;
 		if (my decisionStrategy == kOTGrammar_decisionStrategy::MAXIMUM_ENTROPY ||
@@ -553,7 +553,7 @@ static void OTMulti_modifyRankings (OTMulti me, integer iwinner, integer iloser,
 		if (icons > my numberOfConstraints) {   // completed the loop?
 			if (warnIfStalled && ! equivalent)
 				Melder_warning (U"Correct output is harmonically bounded (by having strict superset violations as compared to the learner's output)! EDCD stalls.\n"
-					U"Correct output: ", loser -> string, U"\nLearner's output: ", winner -> string);
+					U"Correct output: ", loser -> string.get(), U"\nLearner's output: ", winner -> string.get());
 			return;
 		}
 		/*
@@ -623,7 +623,8 @@ static void OTMulti_modifyRankings (OTMulti me, integer iwinner, integer iloser,
 		}
 		if (icons > my numberOfConstraints) {   // completed the loop?
 			if (my decisionStrategy == kOTGrammar_decisionStrategy::OPTIMALITY_THEORY) {
-				Melder_throw (U"(OTGrammar_step:) Loser equals correct candidate: loser \"", loser -> string, U"\", winner \"", winner -> string, U"\".");
+				Melder_throw (U"(OTGrammar_step:) Loser equals correct candidate: loser \"",
+					loser -> string.get(), U"\", winner \"", winner -> string.get(), U"\".");
 			} else {
 				// do nothing
 			}
@@ -677,7 +678,8 @@ static void OTMulti_modifyRankings (OTMulti me, integer iwinner, integer iloser,
 			}
 			if (icons > my numberOfConstraints) {   // completed the loop?
 				if (my decisionStrategy == kOTGrammar_decisionStrategy::OPTIMALITY_THEORY) {
-					Melder_throw (U"(OTGrammar_step:) Loser equals correct candidate: loser \"", loser -> string, U"\", winner \"", winner -> string, U"\".");
+					Melder_throw (U"(OTGrammar_step:) Loser equals correct candidate: loser \"",
+						loser -> string.get(), U"\", winner \"", winner -> string.get(), U"\".");
 				} else {
 					// do nothing
 				}
@@ -733,7 +735,8 @@ static void OTMulti_modifyRankings (OTMulti me, integer iwinner, integer iloser,
 			}
 			if (icons > my numberOfConstraints) {   // completed the loop?
 				if (my decisionStrategy == kOTGrammar_decisionStrategy::OPTIMALITY_THEORY) {
-					Melder_throw (U"(OTGrammar_step:) Loser equals correct candidate: loser \"", loser -> string, U"\", winner \"", winner -> string, U"\".");
+					Melder_throw (U"(OTGrammar_step:) Loser equals correct candidate: loser \"",
+						loser -> string.get(), U"\", winner \"", winner -> string.get(), U"\".");
 				} else {
 					// do nothing
 				}
@@ -822,7 +825,7 @@ static void OTMulti_modifyRankings (OTMulti me, integer iwinner, integer iloser,
 	}
 }
 
-int OTMulti_learnOne (OTMulti me, const char32 *form1, const char32 *form2,
+int OTMulti_learnOne (OTMulti me, conststring32 form1, conststring32 form2,
 	kOTGrammar_rerankingStrategy updateRule, int direction, double plasticity, double relativePlasticityNoise)
 {
 	integer iloser = OTMulti_getWinner (me, form1, form2);
@@ -850,7 +853,7 @@ static autoTable OTMulti_createHistory (OTMulti me, integer storeHistoryEvery, i
 		Table_setColumnLabel (thee.get(), 2, U"Form1");
 		Table_setColumnLabel (thee.get(), 3, U"Form2");
 		for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
-			Table_setColumnLabel (thee.get(), 3 + icons, my constraints [icons]. name);
+			Table_setColumnLabel (thee.get(), 3 + icons, my constraints [icons]. name.get());
 		}
 		Table_setNumericValue (thee.get(), 1, 1, 0);
 		Table_setStringValue (thee.get(), 1, 2, U"(initial)");
@@ -864,7 +867,7 @@ static autoTable OTMulti_createHistory (OTMulti me, integer storeHistoryEvery, i
 	}
 }
 
-static int OTMulti_updateHistory (OTMulti me, Table thee, integer storeHistoryEvery, integer idatum, const char32 *form1, const char32 *form2)
+static int OTMulti_updateHistory (OTMulti me, Table thee, integer storeHistoryEvery, integer idatum, conststring32 form1, conststring32 form2)
 {
 	try {
 		if (idatum % storeHistoryEvery == 0) {
@@ -900,7 +903,7 @@ void OTMulti_PairDistribution_learn (OTMulti me, PairDistribution thee, double e
 		}
 		for (integer iplasticity = 1; iplasticity <= numberOfPlasticities; iplasticity ++) {
 			for (integer ireplication = 1; ireplication <= replicationsPerPlasticity; ireplication ++) {
-				char32 *form1, *form2;
+				conststring32 form1, form2;
 				PairDistribution_peekPair (thee, & form1, & form2);
 				++ idatum;
 				if (monitor.graphics() && idatum % (numberOfData / 400 + 1) == 0) {
@@ -954,7 +957,7 @@ void OTMulti_PairDistribution_learn (OTMulti me, PairDistribution thee, double e
 	}
 }
 
-static integer OTMulti_crucialCell (OTMulti me, integer icand, integer iwinner, integer numberOfOptimalCandidates, const char32 *form1, const char32 *form2)
+static integer OTMulti_crucialCell (OTMulti me, integer icand, integer iwinner, integer numberOfOptimalCandidates, conststring32 form1, conststring32 form2)
 {
 	if (my numberOfCandidates < 2) return 0;   // if there is only one candidate, all cells can be greyed
 	if (OTMulti_compareCandidates (me, icand, iwinner) == 0) {   // candidate equally good as winner?
@@ -992,7 +995,7 @@ static double OTMulti_constraintWidth (Graphics g, OTConstraint constraint, bool
 	char32 text [100], *newLine;
 	double maximumWidth = showDisharmony ? 0.8 * Graphics_textWidth_ps (g, Melder_fixed (constraint -> disharmony, 1), true) : 0.0,
 		firstWidth, secondWidth;
-	str32cpy (text, constraint -> name);
+	str32cpy (text, constraint -> name.get());
 	newLine = str32chr (text, U'\n');
 	if (newLine) {
 		*newLine = U'\0';
@@ -1007,7 +1010,7 @@ static double OTMulti_constraintWidth (Graphics g, OTConstraint constraint, bool
 	return maximumWidth;
 }
 
-void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const char32 *form2, bool vertical, bool showDisharmonies) {
+void OTMulti_drawTableau (OTMulti me, Graphics g, conststring32 form1, conststring32 form2, bool vertical, bool showDisharmonies) {
 	integer winner, winner1 = 0, winner2 = 0;
 	double x, y, fontSize = Graphics_inqFontSize (g);
 	Graphics_Colour colour = Graphics_inqColour (g);
@@ -1044,7 +1047,7 @@ void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const cha
 		headerHeight = 0.0;
 		for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
 			OTConstraint constraint = & my constraints [icons];
-			double constraintTextWidth = Graphics_textWidth (g, constraint -> name);
+			double constraintTextWidth = Graphics_textWidth (g, constraint -> name.get());
 			if (constraintTextWidth > headerHeight)
 				headerHeight = constraintTextWidth;
 		}
@@ -1054,7 +1057,7 @@ void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const cha
 		headerHeight = rowHeight;
 		for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
 			OTConstraint constraint = & my constraints [icons];
-			if (str32chr (constraint -> name, U'\n')) {
+			if (str32chr (constraint -> name.get(), U'\n')) {
 				headerHeight += 0.7 * rowHeight;
 				break;
 			}
@@ -1074,7 +1077,7 @@ void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const cha
 		    (form2 [0] != U'\0' && OTMulti_candidateMatches (me, icand, form2, U"")) ||
 		    (form1 [0] == U'\0' && form2 [0] == U'\0'))
 		{
-			double width = Graphics_textWidth_ps (g, my candidates [icand]. string, true);
+			double width = Graphics_textWidth_ps (g, my candidates [icand]. string.get(), true);
 			if (width > candWidth) candWidth = width;
 			numberOfMatchingCandidates ++;
 			if (OTMulti_compareCandidates (me, icand, winner) == 0) {
@@ -1125,9 +1128,9 @@ void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const cha
 	for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
 		OTConstraint constraint = & my constraints [my index [icons]];
 		double width = vertical ? rowHeight / worldAspectRatio : OTMulti_constraintWidth (g, constraint, showDisharmonies) + margin * 2;
-		if (str32chr (constraint -> name, U'\n')) {
+		if (str32chr (constraint -> name.get(), U'\n')) {
 			char32 *newLine;
-			Melder_sprint (text,200, constraint -> name);
+			Melder_sprint (text,200, constraint -> name.get());
 			newLine = str32chr (text, U'\n');
 			*newLine = U'\0';
 			Graphics_setTextAlignment (g, Graphics_CENTRE, Graphics_TOP);
@@ -1136,10 +1139,10 @@ void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const cha
 			Graphics_text (g, x + 0.5 * width, y, newLine + 1);
 		} else if (vertical) {
 			Graphics_setTextAlignment (g, Graphics_LEFT, Graphics_HALF);
-			Graphics_text (g, x + 0.5 * width, y + margin, constraint -> name);
+			Graphics_text (g, x + 0.5 * width, y + margin, constraint -> name.get());
 		} else {
 			Graphics_setTextAlignment (g, Graphics_CENTRE, Graphics_HALF);
-			Graphics_text (g, x + 0.5 * width, y + 0.5 * headerHeight, constraint -> name);
+			Graphics_text (g, x + 0.5 * width, y + 0.5 * headerHeight, constraint -> name.get());
 		}
 		if (showDisharmonies) {
 			Graphics_setTextAlignment (g, Graphics_CENTRE, Graphics_BOTTOM);
@@ -1171,7 +1174,7 @@ void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const cha
 		x = doubleLineDx;
 		y -= rowHeight;
 		Graphics_setTextAlignment (g, Graphics_RIGHT, Graphics_HALF);
-		Graphics_text (g, x + candWidth - margin, y + descent, my candidates [icand]. string);
+		Graphics_text (g, x + candWidth - margin, y + descent, my candidates [icand]. string.get());
 		if (candidateIsOptimal) {
 			Graphics_setTextAlignment (g, Graphics_LEFT, Graphics_HALF);
 			Graphics_setFontSize (g, (int) ((bidirectional ? 1.2 : 1.5) * fontSize));
@@ -1228,15 +1231,15 @@ void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const cha
 			markString [0] = U'\0';
 			if (bidirectional && my candidates [icand]. marks [index] > 0) {
 				if ((candidateIsOptimal1 || candidateIsOptimal2) && ! candidateIsOptimal) {
-					str32cpy (markString + str32len (markString), U"\\<-");
+					str32cat (markString, U"\\<-");
 				}
 			}
 			if (bidirectional && my candidates [icand]. marks [index] < 0) {
 				if (candidateIsOptimal && ! candidateIsOptimal1) {
-					str32cpy (markString + str32len (markString), U"\\<-");
+					str32cat (markString, U"\\<-");
 				}
 				if (candidateIsOptimal && ! candidateIsOptimal2) {
-					str32cpy (markString + str32len (markString), U"\\<-");
+					str32cat (markString, U"\\<-");
 				}
 			}
 			/*
@@ -1249,42 +1252,39 @@ void OTMulti_drawTableau (OTMulti me, Graphics g, const char32 *form1, const cha
 			{
 				int winnerMarks = my candidates [winner]. marks [index];
 				if (winnerMarks + 1 > 5) {
-					str32cpy (markString + str32len (markString), Melder_integer (winnerMarks + 1));
+					str32cat (markString, Melder_integer (winnerMarks + 1));
 				} else {
 					for (integer imark = 1; imark <= winnerMarks + 1; imark ++)
-						str32cpy (markString + str32len (markString), U"*");
+						str32cat (markString, U"*");
 				}
 				for (integer imark = my candidates [icand]. marks [index]; imark < 0; imark ++)
-					str32cpy (markString + str32len (markString), U"+");
-				str32cpy (markString + str32len (markString), U"!");
+					str32cat (markString, U"+");
+				str32cat (markString, U"!");
 				if (my candidates [icand]. marks [index] - (winnerMarks + 2) + 1 > 5) {
-					str32cpy (markString + str32len (markString), Melder_integer (my candidates [icand]. marks [index] - (winnerMarks + 2) + 1));
+					str32cat (markString, Melder_integer (my candidates [icand]. marks [index] - (winnerMarks + 2) + 1));
 				} else {
 					for (integer imark = winnerMarks + 2; imark <= my candidates [icand]. marks [index]; imark ++)
-						str32cpy (markString + str32len (markString), U"*");
+						str32cat (markString, U"*");
 				}
 			} else {
 				if (my candidates [icand]. marks [index] > 5) {
-					str32cpy (markString + str32len (markString), Melder_integer (my candidates [icand]. marks [index]));
+					str32cat (markString, Melder_integer (my candidates [icand]. marks [index]));
 				} else {
 					for (integer imark = 1; imark <= my candidates [icand]. marks [index]; imark ++)
-						str32cpy (markString + str32len (markString), U"*");
+						str32cat (markString, U"*");
 					for (integer imark = my candidates [icand]. marks [index]; imark < 0; imark ++)
-						str32cpy (markString + str32len (markString), U"+");
+						str32cat (markString, U"+");
 				}
 			}
 			if (bidirectional && my candidates [icand]. marks [index] > 0) {
-				if (candidateIsOptimal && ! candidateIsOptimal1) {
-					str32cpy (markString + str32len (markString), U"\\->");
-				}
-				if (candidateIsOptimal && ! candidateIsOptimal2) {
-					str32cpy (markString + str32len (markString), U"\\->");
-				}
+				if (candidateIsOptimal && ! candidateIsOptimal1)
+					str32cat (markString, U"\\->");
+				if (candidateIsOptimal && ! candidateIsOptimal2)
+					str32cat (markString, U"\\->");
 			}
 			if (bidirectional && my candidates [icand]. marks [index] < 0) {
-				if ((candidateIsOptimal1 || candidateIsOptimal2) && ! candidateIsOptimal) {
-					str32cpy (markString + str32len (markString), U"\\->");
-				}
+				if ((candidateIsOptimal1 || candidateIsOptimal2) && ! candidateIsOptimal)
+					str32cat (markString, U"\\->");
 			}
 			Graphics_text (g, x + 0.5 * width, y + descent, markString);
 			Graphics_setColour (g, colour);
@@ -1337,7 +1337,7 @@ void OTMulti_setConstraintPlasticity (OTMulti me, integer constraint, double pla
 	}
 }
 
-void OTMulti_removeConstraint (OTMulti me, const char32 *constraintName) {
+void OTMulti_removeConstraint (OTMulti me, conststring32 constraintName) {
 	try {
 		integer removed = 0;
 
@@ -1345,11 +1345,11 @@ void OTMulti_removeConstraint (OTMulti me, const char32 *constraintName) {
 			Melder_throw (me, U": cannot remove last constraint.");
 
 		/*
-		 * Look for the constraint to be removed.
-		 */
+			Look for the constraint to be removed.
+		*/
 		for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
 			OTConstraint constraint = & my constraints [icons];
-			if (str32equ (constraint -> name, constraintName)) {
+			if (str32equ (constraint -> name.get(), constraintName)) {
 				removed = icons;
 				break;
 			}
@@ -1357,19 +1357,16 @@ void OTMulti_removeConstraint (OTMulti me, const char32 *constraintName) {
 		if (removed == 0)
 			Melder_throw (U"No constraint \"", constraintName, U"\".");
 		/*
-		 * Remove the constraint while reusing the memory space.
-		 */
+			Remove the constraint while reusing the memory space.
+		*/
+		for (integer icons = removed; icons < my numberOfConstraints; icons ++) {
+			my constraints [icons] = std::move (my constraints [icons + 1]);
+		}
+		my constraints [my numberOfConstraints]. destroy ();   // this will do nothing except if the removed constraint is the last one
 		my numberOfConstraints -= 1;
 		/*
-		 * Shift constraints.
-		 */
-		Melder_free (my constraints [removed]. name);
-		for (integer icons = removed; icons <= my numberOfConstraints; icons ++) {
-			my constraints [icons] = my constraints [icons + 1];
-		}
-		/*
-		 * Shift tableau rows.
-		 */
+			Shift tableau rows.
+		*/
 		for (integer icand = 1; icand <= my numberOfCandidates; icand ++) {
 			OTCandidate candidate = & my candidates [icand];
 			candidate -> numberOfConstraints -= 1;
@@ -1378,8 +1375,8 @@ void OTMulti_removeConstraint (OTMulti me, const char32 *constraintName) {
 			}
 		}
 		/*
-		 * Rebuild index.
-		 */
+			Rebuild index.
+		*/
 		for (integer icons = 1; icons <= my numberOfConstraints; icons ++) my index [icons] = icons;
 		OTMulti_sort (me);
 	} catch (MelderError) {
@@ -1387,11 +1384,11 @@ void OTMulti_removeConstraint (OTMulti me, const char32 *constraintName) {
 	}
 }
 
-void OTMulti_generateOptimalForm (OTMulti me, const char32 *form1, const char32 *form2, char32 *optimalForm, double evaluationNoise) {
+autostring32 OTMulti_generateOptimalForm (OTMulti me, conststring32 form1, conststring32 form2, double evaluationNoise) {
 	try {
 		OTMulti_newDisharmonies (me, evaluationNoise);
 		integer winner = OTMulti_getWinner (me, form1, form2);
-		str32cpy (optimalForm, my candidates [winner]. string);
+		return Melder_dup (my candidates [winner]. string.get());
 	} catch (MelderError) {
 		Melder_throw (me, U": optimal form not generated.");
 	}
@@ -1402,65 +1399,57 @@ autoStrings OTMulti_Strings_generateOptimalForms (OTMulti me, Strings thee, doub
 		autoStrings outputs = Thing_new (Strings);
 		integer n = thy numberOfStrings;
 		outputs -> numberOfStrings = n;
-		outputs -> strings = NUMvector <char32 *> (1, n);
-		for (integer i = 1; i <= n; i ++) {
-			char32 output [100];
-			OTMulti_generateOptimalForm (me, thy strings [i], U"", output, evaluationNoise);
-			outputs -> strings [i] = Melder_dup (output);
-		}
+		outputs -> strings = autostring32vector (n);
+		for (integer i = 1; i <= n; i ++)
+			outputs -> strings [i] = OTMulti_generateOptimalForm (me, thy strings [i].get(), U"", evaluationNoise);
 		return outputs;
 	} catch (MelderError) {
 		Melder_throw (me, U" & ", thee, U": optimal forms not generated.");
 	}
 }
 
-autoStrings OTMulti_generateOptimalForms (OTMulti me, const char32 *form1, const char32 *form2, integer numberOfTrials, double evaluationNoise) {
+autoStrings OTMulti_generateOptimalForms (OTMulti me, conststring32 form1, conststring32 form2, integer numberOfTrials, double evaluationNoise) {
 	try {
 		autoStrings outputs = Thing_new (Strings);
 		outputs -> numberOfStrings = numberOfTrials;
-		outputs -> strings = NUMvector <char32 *> (1, numberOfTrials);
-		for (integer i = 1; i <= numberOfTrials; i ++) {
-			char32 output [100];
-			OTMulti_generateOptimalForm (me, form1, form2, output, evaluationNoise);
-			outputs -> strings [i] = Melder_dup (output);
-		}
+		outputs -> strings = autostring32vector (numberOfTrials);
+		for (integer i = 1; i <= numberOfTrials; i ++)
+			outputs -> strings [i] = OTMulti_generateOptimalForm (me, form1, form2, evaluationNoise);
 		return outputs;
 	} catch (MelderError) {
 		Melder_throw (me, U": optimal forms not generated.");
 	}
 }
 
-autoDistributions OTMulti_to_Distribution (OTMulti me, const char32 *form1, const char32 *form2,
+autoDistributions OTMulti_to_Distribution (OTMulti me, conststring32 form1, conststring32 form2,
 	integer numberOfTrials, double evaluationNoise)
 {
 	try {
 		integer totalNumberOfOutputs = 0, iout = 0;
 		/*
-		 * Count the total number of outputs.
-		 */
-		for (integer icand = 1; icand <= my numberOfCandidates; icand ++) {
-			if (OTMulti_candidateMatches (me, icand, form1, form2)) {
+			Count the total number of outputs.
+		*/
+		for (integer icand = 1; icand <= my numberOfCandidates; icand ++)
+			if (OTMulti_candidateMatches (me, icand, form1, form2))
 				totalNumberOfOutputs ++;
-			}
-		}
 		/*
-		 * Create the distribution. One row for every output form.
-		 */
+			Create the distribution. One row for every output form.
+		*/
 		autoDistributions thee = Distributions_create (totalNumberOfOutputs, 1);
-		autoNUMvector <integer> index (1, my numberOfCandidates);
+		autoINTVEC index = INTVECraw (my numberOfCandidates);
 		/*
-		 * Set the row labels to the output strings.
-		 */
+			Set the row labels to the output strings.
+		*/
 		iout = 0;
 		for (integer icand = 1; icand <= my numberOfCandidates; icand ++) {
 			if (OTMulti_candidateMatches (me, icand, form1, form2)) {
-				thy rowLabels [++ iout] = Melder_dup (my candidates [icand]. string);
+				thy rowLabels [++ iout] = Melder_dup (my candidates [icand]. string.get());
 				index [icand] = iout;
 			}
 		}
 		/*
-		 * Compute a number of outputs and store the results.
-		 */
+			Compute a number of outputs and store the results.
+		*/
 		for (integer itrial = 1; itrial <= numberOfTrials; itrial ++) {
 			OTMulti_newDisharmonies (me, evaluationNoise);
 			integer iwinner = OTMulti_getWinner (me, form1, form2);

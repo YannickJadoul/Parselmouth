@@ -1,6 +1,6 @@
 /* Net_def.h
  *
- * Copyright (C) 2017 Paul Boersma
+ * Copyright (C) 2017-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,37 +21,37 @@
 oo_DEFINE_CLASS (RBMLayer, Layer)
 
 	oo_QUESTION (inputsAreBinary)
-	oo_DOUBLE_MATRIX (weights, numberOfInputNodes, numberOfOutputNodes)
-	oo_DOUBLE_VECTOR (inputBiases, numberOfInputNodes)
-	oo_DOUBLE_VECTOR (outputBiases, numberOfOutputNodes)
+	oo_MAT (weights, numberOfInputNodes, numberOfOutputNodes)
+	oo_VEC (inputBiases, numberOfInputNodes)
+	oo_VEC (outputBiases, numberOfOutputNodes)
 
-	oo_DOUBLE_VECTOR (inputReconstruction, numberOfInputNodes)
-	oo_DOUBLE_VECTOR (outputReconstruction, numberOfOutputNodes)
+	oo_VEC (inputReconstruction, numberOfInputNodes)
+	oo_VEC (outputReconstruction, numberOfOutputNodes)
 
 	#if oo_DECLARING
-		virtual void v_spreadUp (kLayer_activationType)
+		void v_spreadUp (kLayer_activationType)
 			override;
-		virtual void v_sampleInput ()
+		void v_sampleInput ()
 			override;
-		virtual void v_spreadDown (kLayer_activationType)
+		void v_spreadDown (kLayer_activationType)
 			override;
-		virtual void v_spreadDown_reconstruction ()
+		void v_spreadDown_reconstruction ()
 			override;
-		virtual void v_spreadUp_reconstruction ()
+		void v_spreadUp_reconstruction ()
 			override;
-		virtual void v_update (double learningRate)
+		void v_update (double learningRate)
 			override;
-		virtual autoMatrix v_extractInputReconstruction ()
+		autoMatrix v_extractInputReconstruction ()
 			override;
-		virtual autoMatrix v_extractOutputReconstruction ()
+		autoMatrix v_extractOutputReconstruction ()
 			override;
-		virtual autoMatrix v_extractInputBiases ()
+		autoMatrix v_extractInputBiases ()
 			override;
-		virtual autoMatrix v_extractOutputBiases ()
+		autoMatrix v_extractOutputBiases ()
 			override;
-		virtual autoMatrix v_extractWeights ()
+		autoMatrix v_extractWeights ()
 			override;
-		virtual autonummat v_getWeights_nummat ()
+		autoMAT v_getWeights ()
 			override;
 	#endif
 
@@ -63,19 +63,19 @@ oo_END_CLASS (RBMLayer)
 #define ooSTRUCT FullyConnectedLayer
 oo_DEFINE_CLASS (FullyConnectedLayer, Layer)
 
-	oo_DOUBLE_MATRIX (weights, numberOfInputNodes, numberOfOutputNodes)
-	oo_DOUBLE_VECTOR (outputBiases, numberOfOutputNodes)
+	oo_MAT (weights, numberOfInputNodes, numberOfOutputNodes)
+	oo_VEC (outputBiases, numberOfOutputNodes)
 
 	#if oo_DECLARING &&0
-		virtual void v_spreadUp (kLayer_activationType)
+		void v_spreadUp (kLayer_activationType)
 			override;
-		virtual void v_update (double learningRate)
+		void v_update (double learningRate)
 			override;
-		virtual autoMatrix v_extractOutputBiases ()
+		autoMatrix v_extractOutputBiases ()
 			override;
-		virtual autoMatrix v_extractWeights ()
+		autoMatrix v_extractWeights ()
 			override;
-		virtual autonummat v_getWeights_nummat ()
+		autoMAT v_getWeights ()
 			override;
 	#endif
 
@@ -87,7 +87,7 @@ oo_END_CLASS (FullyConnectedLayer)
 #define ooSTRUCT Net
 oo_DEFINE_CLASS (Net, Daata)
 
-	oo_AUTO_OBJECT (LayerList, 0, layers)
+	oo_OBJECT (LayerList, 0, layers)
 
 oo_END_CLASS (Net)
 #undef ooSTRUCT

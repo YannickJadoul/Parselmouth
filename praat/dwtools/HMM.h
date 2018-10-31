@@ -105,7 +105,7 @@ void HMMState_setLabel (HMMState me, char32 *label);
 
 autoHMM HMM_create (int leftToRight, integer numberOfStates, integer numberOfObservationSymbols);
 
-autoHMM HMM_createSimple (int leftToRight, const char32 *states_string, const char32 *symbols_string);
+autoHMM HMM_createSimple (int leftToRight, conststring32 states_string, conststring32 symbols_string);
 
 autoHMM HMM_createContinuousModel (int leftToRight, integer numberOfStates, integer numberOfObservationSymbols,
 	integer numberOfMixtureComponentsPerSymbol, integer componentDimension, integer componentStorage);
@@ -147,11 +147,11 @@ void HMM_unExpandPCA (HMM me);
 /*
 	Set the probabilities. A probability zero value indicates that this p cannot be changed during training/learning.
 */
-void HMM_setTransitionProbabilities (HMM me, integer state_number, char32 *state_probs);
+void HMM_setTransitionProbabilities (HMM me, integer state_number, conststring32 state_probs);
 
-void HMM_setEmissionProbabilities (HMM me, integer state_number, char32 *emission_probs);
+void HMM_setEmissionProbabilities (HMM me, integer state_number, conststring32 emission_probs);
 
-void HMM_setStartProbabilities (HMM me, char32 *probs);
+void HMM_setStartProbabilities (HMM me, conststring32 probs);
 
 
 double HMM_getProbabilityAtTimeBeingInState (HMM me, integer itime, integer istate);

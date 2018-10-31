@@ -2,7 +2,7 @@
 #define _praat_Matrix_h_
 /* praat_Matrix.h
  *
- * Copyright (C) 2016 Paul Boersma
+ * Copyright (C) 2016,2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,9 +25,7 @@
 #include "Matrix.h"
 #include "praat.h"
 
-int praat_Matrix_formula (UiForm dia, Interpreter interpreter);
-
-extern "C" Graphics Movie_create (const char32 *title, int width, int height);
+extern "C" Graphics Movie_create (conststring32 title, int width, int height);
 
 /*
 	Action buttons.

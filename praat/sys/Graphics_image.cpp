@@ -226,38 +226,38 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me, double **z_floa
 					*pixelAddress ++ = kar; \
 					*pixelAddress ++ = kar; \
 					*pixelAddress ++ = kar; \
-					*pixelAddress ++ = 0; \
+					*pixelAddress ++ = 255; \
 				} else if (my colourScale == kGraphics_colourScale::BLUE_TO_RED) { \
 					if (value < 0.0) { \
 						*pixelAddress ++ = 0; \
 						*pixelAddress ++ = 0; \
 						*pixelAddress ++ = 63; \
-						*pixelAddress ++ = 0; \
+						*pixelAddress ++ = 255; \
 					} else if (value < 64.0) { \
 						*pixelAddress ++ = 0; \
 						*pixelAddress ++ = 0; \
 						*pixelAddress ++ = (int) (value * 3 + 63.999); \
-						*pixelAddress ++ = 0; \
+						*pixelAddress ++ = 255; \
 					} else if (value < 128.0) { \
 						*pixelAddress ++ = (int) (value * 4 - 256.0); \
 						*pixelAddress ++ = (int) (value * 4 - 256.0); \
 						*pixelAddress ++ = 255; \
-						*pixelAddress ++ = 0; \
+						*pixelAddress ++ = 255; \
 					} else if (value < 192.0) { \
 						*pixelAddress ++ = 255; \
 						*pixelAddress ++ = (int) ((256.0 - value) * 4 - 256.0); \
 						*pixelAddress ++ = (int) ((256.0 - value) * 4 - 256.0); \
-						*pixelAddress ++ = 0; \
+						*pixelAddress ++ = 255; \
 					} else if (value < 256.0) { \
 						*pixelAddress ++ = (int) ((256.0 - value) * 3 + 63.999); \
 						*pixelAddress ++ = 0; \
 						*pixelAddress ++ = 0; \
-						*pixelAddress ++ = 0; \
+						*pixelAddress ++ = 255; \
 					} else { \
 						*pixelAddress ++ = 63; \
 						*pixelAddress ++ = 0; \
 						*pixelAddress ++ = 0; \
-						*pixelAddress ++ = 0; \
+						*pixelAddress ++ = 255; \
 					} \
 				}
 		#else
@@ -328,7 +328,7 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me, double **z_floa
 								*pixelAddress ++ = red          * 255.0;
 								*pixelAddress ++ = green        * 255.0;
 								*pixelAddress ++ = blue         * 255.0;
-								*pixelAddress ++ = transparency * 255.0;
+								*pixelAddress ++ = (1.0 - transparency) * 255.0;
 							#endif
 						}
 					} else {
@@ -411,7 +411,7 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me, double **z_floa
 				);
 				Melder_assert (dataProvider != nullptr);
 				image = CGImageCreate (clipx2 - clipx1, numberOfRows,
-					8, 32, bytesPerRow, colourSpace, kCGImageAlphaNone, dataProvider, nullptr, false, kCGRenderingIntentDefault);
+					8, 32, bytesPerRow, colourSpace, kCGImageAlphaLast, dataProvider, nullptr, false, kCGRenderingIntentDefault);
 				CGDataProviderRelease (dataProvider);
 			} else if (0) {
 				Melder_assert (CGBitmapContextCreate != nullptr);
@@ -709,7 +709,7 @@ void Graphics_image8 (Graphics me, unsigned char **z, integer ix1, integer ix2, 
 	integer iy1, integer iy2, double y1WC, double y2WC, uint8 minimum, uint8 maximum)
 { cellArrayOrImage (me, nullptr, nullptr, z, ix1, ix2, x1WC, x2WC, iy1, iy2, y1WC, y2WC, minimum, maximum, true); }
 
-static void _GraphicsScreen_imageFromFile (GraphicsScreen me, const char32 *relativeFileName, double x1, double x2, double y1, double y2) {
+static void _GraphicsScreen_imageFromFile (GraphicsScreen me, conststring32 relativeFileName, double x1, double x2, double y1, double y2) {
 	integer x1DC = wdx (x1), x2DC = wdx (x2), y1DC = wdy (y1), y2DC = wdy (y2);
 	integer width = x2DC - x1DC, height = my yIsZeroAtTheTop ? y1DC - y2DC : y2DC - y1DC;
 	#if 0
@@ -805,12 +805,12 @@ static void _GraphicsScreen_imageFromFile (GraphicsScreen me, const char32 *rela
 	#endif
 }
 
-void Graphics_imageFromFile (Graphics me, const char32 *relativeFileName, double x1, double x2, double y1, double y2) {
+void Graphics_imageFromFile (Graphics me, conststring32 relativeFileName, double x1, double x2, double y1, double y2) {
 	if (my screen) {
 		_GraphicsScreen_imageFromFile (static_cast <GraphicsScreen> (me), relativeFileName, x1, x2, y1, y2);
 	}
 	if (my recording) {
-		char *txt_utf8 = Melder_peek32to8 (relativeFileName);
+		conststring8 txt_utf8 = Melder_peek32to8 (relativeFileName);
 		int length = strlen (txt_utf8) / sizeof (double) + 1;
 		op (IMAGE_FROM_FILE, 5 + length); put (x1); put (x2); put (y1); put (y2); sput (txt_utf8, length)
 	}

@@ -2,7 +2,7 @@
 #define _NUM2_h_
 /* NUM2.h
  *
- * Copyright (C) 1997-2017 David Weenink
+ * Copyright (C) 1997-2018 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,17 +24,13 @@
 */
 
 #include <limits.h>
-#include "melder.h"
-#include "regularExp.h"
+#include "../melder/melder.h"
+#include "MAT_numerics.h"
 
 /* machine precision */
 #define NUMeps 2.2e-16
 
-int NUMstring_containsPrintableCharacter (const char32 *s);
-
-void NUMstring_chopWhiteSpaceAtExtremes_inplace (char32 *string);
-
-real * NUMstring_to_numbers (const char32 *s, integer *numbers_found);
+double * NUMstring_to_numbers (conststring32 s, integer *numbers_found);
 /* return array with the number of numbers found */
 
 /*
@@ -42,40 +38,24 @@ real * NUMstring_to_numbers (const char32 *s, integer *numbers_found);
  * 1, 4, 2, 3, 4, 5, 6, 7, 4, 3, 3, 4, 5, 4, 3, 2
  * Overlap is allowed. Ranges can go up and down.
  */
-integer *NUMstring_getElementsOfRanges (const char32 *ranges, integer maximumElement, integer *numberOfElements, integer *numberOfMultiples, const char32 *elementType, bool sortedUniques);
+integer *NUMstring_getElementsOfRanges (conststring32 ranges, integer maximumElement,
+	integer *numberOfElements, integer *numberOfMultiples, conststring32 elementType, bool sortedUniques);
 
 char32 * NUMstring_timeNoDot (double time);
 
-int NUMstrings_equal (const char32 **s1, const char32 **s2, integer lo, integer hi);
-
-void NUMstrings_copyElements (char32 **from, char32**to, integer lo, integer hi);
-
-void NUMstrings_free (char32 **s, integer lo, integer hi);
-
-int NUMstrings_setSequentialNumbering (char32 **s, integer lo, integer hi, const char32 *precursor, integer number, integer increment, int asArray);
-/*
-	Set s[lo]   = precursor<number>
-	s[lo+1] = precursor<number+1>
-	...
-	s[hi]   = precursor<number+hi-lo>
-*/
-
-char32 **NUMstrings_copy (char32 **from, integer lo, integer hi);
-
-regexp *NUMregexp_compile (const char32 *regexp);
+regexp *NUMregexp_compile (conststring32 regexp);
 /* Compiles a regular expression to a datastructure used by the regexp engine */
 
-
-char32 *strstr_regexp (const char32 *string, const char32 *search_regexp);
+char32 *strstr_regexp (conststring32 string, conststring32 search_regexp);
 /*
 	Returns a pointer to the first occurrence in 'string' of the
 	regular expression 'searchRE'. It returns a null pointer if
 	no match is found.
 */
 
-char32 **strs_replace (char32 **from, integer lo, integer hi, const char32 *search,
-	const char32 *replace, int maximumNumberOfReplaces, integer *nmatches,
-	integer *nstringmatches, bool use_regexp);
+autostring32vector string32vector_searchAndReplace (string32vector me,
+	conststring32 search, conststring32 replace, int maximumNumberOfReplaces,
+	integer *nmatches, integer *nstringmatches, bool use_regexp);
 /*
 	Searches and replaces in string array of strings.
 	If use_regexp != 0, 'search' and 'replace' will be interpreted
@@ -89,28 +69,7 @@ char32 **strs_replace (char32 **from, integer lo, integer hi, const char32 *sear
 	'nstringmatches'.
 */
 
-char32 *str_replace_literal (const char32 *string, const char32 *search,
-	const char32 *replace, integer maximumNumberOfReplaces, integer *nmatches);
-/*
-	Search and replace in 'string'.
-	The maximum number of replaces is limited by 'maximumNumberOfReplaces'.
-*/
-
-char32 *str_replace_regexp (const char32 *string, regexp *search_compiled,
-	const char32 *replace_regexp, integer maximumNumberOfReplaces, integer *nmatches);
-/*
-	Searches and replaces 'maximumNumberOfReplaces' times in 'string' on
-	the basis of regular expressions (RE).
-	If maximumNumberOfReplaces <= 0 the interpreted 'replaceRE' replaces
-	ALL occurrences.
-	'search_regexp' is an efficient representation of the search RE and
-	is the result of the compileRE-function which should be called first before
-	calling this routine.
-	The number of matches found is returned in 'nmatches'.
-*/
-
-
-void NUMdmatrix_printMatlabForm (double **m, integer nr, integer nc, const char32 *name);
+void NUMdmatrix_printMatlabForm (double **m, integer nr, integer nc, conststring32 name);
 /*
 	Print a matrix in a form that can be used as input for octave/matlab.
 							1 2 3
@@ -122,17 +81,11 @@ void NUMdmatrix_printMatlabForm (double **m, integer nr, integer nc, const char3
 		7, 8, 9 ];
 */
 
-bool NUMdmatrix_containsUndefinedElements (double **m, integer row1, integer row2, integer col1, integer col2);
+bool NUMdmatrix_containsUndefinedElements (const double * const *m, integer row1, integer row2, integer col1, integer col2);
 /* true if at least one of the elements is undefined (i.e. infinite or NaN) */
 
 void NUMdmatrix_diagnoseCells (double **m, integer rb, integer re, integer cb, integer ce, integer maximumNumberOfPositionsToReport);
 /* which cells are not finite? */
-
-double **NUMdmatrix_transpose (double **m, integer nr, integer nc);
-/*
-	Transpose a nr x nc matrix.
-*/
-
 
 /*  NUMvector_extrema
  * Function:
@@ -141,28 +94,24 @@ double **NUMdmatrix_transpose (double **m, integer nr, integer nc);
  *	 lo and hi should be valid indices in the array.
 */
 template <class T>
-void NUMvector_extrema (T *v, integer lo, integer hi, double *p_min, double *p_max) {
-	T min = v[lo];
-	T max = min;
+void NUMvector_extrema (const T *v, integer lo, integer hi, double *p_min, double *p_max) {
+	double min = v [lo];
+	double max = min;
 	for (integer i = lo + 1; i <= hi; i++)
 	{
-		if (v[i] < min) min = v[i];
-		else if (v[i] > max) max = v[i];
+		if (v [i] < min) min = v [i];
+		else if (v [i] > max) max = v [i];
 	}
-	if (p_min) {
-		*p_min = min;
-	}
-	if (p_max) {
-		*p_max = max;
-	}
+	if (p_min) *p_min = min;
+	if (p_max) *p_max = max;
 }
 
 template <class T>
-void NUMmatrix_extrema (T **x, integer rb, integer re, integer cb, integer ce, double *p_min, double *p_max) {
+void NUMmatrix_extrema (const T * const *x, integer rb, integer re, integer cb, integer ce, double *p_min, double *p_max) {
 	T min = x[rb][cb], max = min;
 	for (integer i = rb; i <= re; i++) {
 		for (integer j = cb; j <= ce; j++) {
-			T t = x[i][j];
+			T t = x[i] [j];
 			if (t < min) min = t;
 			else if (t > max) max = t;
 		}
@@ -175,7 +124,12 @@ void NUMmatrix_extrema (T **x, integer rb, integer re, integer cb, integer ce, d
 	}
 }
 
-
+template <class T>
+double NUMmatrix_extremum (const T * const *x, integer rb, integer re, integer cb, integer ce) {
+	double min, max;
+	NUMmatrix_extrema (x, rb, re, cb, ce, & min, & max);
+	return fabs (max) > fabs (min) ? max : min;
+}
 
 /* NUMvector_clip
 	Clip array values.
@@ -209,22 +163,6 @@ double NUMvector_normalize2 (double v[], integer n);
 double NUMvector_getNorm1 (const double v[], integer n);
 
 double NUMvector_getNorm2 (const double v[], integer n);
-
-void  NUMcentreRows (double **a, integer rb, integer re, integer cb, integer ce);
-/*
-	a[i][j] -= a[i][.]
-*/
-void NUMcentreColumns (double **a, integer rb, integer re, integer cb, integer ce, double *centres);
-/*
-	a[i][j] -= a[.][j]
-	if centres != NULL the means are returned in centres[1..re-rb+1]
-*/
-
-void NUMdoubleCentre (double **a, integer rb, integer re, integer cb, integer ce);
-/*
-	Function: Make the average value of each column and each row zero.
-		a[i][j] += - a[i][.] - a[.][j] + a[.][.]
-*/
 
 void NUMnormalizeRows (double **a, integer nr, integer nc, double norm);
 
@@ -281,7 +219,7 @@ void NUMstatistics_huber (double *x, integer n, double *location, bool wantlocat
 	If work == NULL, the routine allocates (and destroys) its own memory.
 */
 
-void NUMmonotoneRegression (const double x[], integer n, double xs[]);
+autoVEC VECmonotoneRegression (constVEC x);
 /*
 	Find numbers xs[1..n] that have a monotone relationship with
 	the numbers in x[1..n].
@@ -312,24 +250,24 @@ void NUMsort2 (integer n, T1 *a, T2 *b) {
 		return;   /* Already sorted. */
 	}
 	if (n == 2) {
-		if (a[1] > a[2]) {
-			min = a[2]; a[2] = a[1]; a[1] = min;
-			min2 = b[2]; b[2] = b[1]; b[1] = min2;
+		if (a [1] > a [2]) {
+			min = a [2]; a [2] = a [1]; a [1] = min;
+			min2 = b [2]; b [2] = b [1]; b [1] = min2;
 		}
 		return;
 	}
 	if (n <= 12) {
-		for (i = 1; i < n; i++) {
-			min = a[i];
+		for (i = 1; i < n; i ++) {
+			min = a [i];
 			imin = i;
-			for (j = i + 1; j <= n; j++) {
-				if (a[j] < min) {
+			for (j = i + 1; j <= n; j ++) {
+				if (a [j] < min) {
 					min = a [j];
 					imin = j;
 				}
 			}
-			a[imin] = a[i]; a[i] = min;
-			min2 = b[imin]; b[imin] = b[i]; b[i] = min2;
+			a [imin] = a [i]; a [i] = min;
+			min2 = b [imin]; b [imin] = b [i]; b [i] = min2;
 		}
 		return;
 	}
@@ -338,14 +276,14 @@ void NUMsort2 (integer n, T1 *a, T2 *b) {
 	r = n;
 	for (;;) {
 		if (l > 1) {
-			l--;
-			k = a[l]; kb = b[l];
+			l --;
+			k = a [l]; kb = b [l];
 		} else /* l == 1 */ {
-			k = a[r]; kb = b[r];
-			a[r] = a[1]; b[r] = b[1];
-			r--;
+			k = a [r]; kb = b [r];
+			a [r] = a [1]; b [r] = b [1];
+			r --;
 			if (r == 1) {
-				a[1] = k; b[1] = kb; return;
+				a [1] = k; b [1] = kb; return;
 			}
 		}
 		/* H3 */
@@ -354,29 +292,35 @@ void NUMsort2 (integer n, T1 *a, T2 *b) {
 			i = j;
 			j = j << 1;
 			if (j > r) break;
-			if (j < r && a[j] < a[j + 1]) j++; /* H5 */
+			if (j < r && a [j] < a [j + 1]) j ++; /* H5 */
 			/* if (k >= a[j]) break; H6 */
-			a[i] = a[j]; b[i] = b[j]; /* H7 */
+			a [i] = a [j]; b [i] = b [j]; /* H7 */
 		}
 		/* a[i] = k; b[i] = kb; H8 */
 		for (;;) { /*H8' */
 			j = i;
 			i = j >> 1;
 			/* H9' */
-			if (j == l || k <= a[i]) {
-				a[j] = k; b[j] = kb; break;
+			if (j == l || k <= a [i]) {
+				a [j] = k; b [j] = kb; break;
 			}
-			a[j] = a[i]; b[j] = b[i];
+			a [j] = a [i]; b [j] = b [i];
 		}
 	}
 }
 
+void NUMsort3 (VEC a, INTVEC iv1, INTVEC iv2, bool descending); // TODO template
+/* Sort a together with iv1  and iv2 */
+
+
+autoINTVEC NUMindexx (constVEC a);
+autoINTVEC NUMindexx_s (constSTRVEC a);
 void NUMindexx (const double a[], integer n, integer indx[]);
 void NUMindexx_s (char32 *a[], integer n, integer indx[]);
 /*
 	Indexes the array a[1..n], i.e., outputs the array indx[1..n] such that
-	a[ indx[i] ] is in ascending order for i=1..n;
-	No preservation of order amoung equals (see NUMsort2_...)
+	a [indx[i]] is in ascending order for i=1..n;
+	No preservation of order among equals (see NUMsort2_...)
 */
 
 
@@ -677,7 +621,7 @@ void NUMsolveWeaklyConstrainedLinearRegression (double **f, integer n, integer m
 		alpha >= 0
 */
 
-void NUMProcrustes (double **x, double **y, integer nPoints,
+void NUMprocrustes (double **x, double **y, integer nPoints,
 	integer nDimensions, double **t, double v[], double *s);
 /*
 	Given two configurations x and y (nPoints x nDimensions), find the
@@ -838,7 +782,7 @@ double NUMinvTukeyQ (double p, double cc, double df, double rr);
  *  df = degrees of freedom of error term
  */
 
-double NUMnormalityTest_HenzeZirkler (double **data, integer n, integer p, double *beta, double *tnb, double *lnmu, double *lnvar);
+double NUMnormalityTest_HenzeZirkler (constMAT data, double *beta, double *tnb, double *lnmu, double *lnvar);
 /*
 	Multivariate normality test of nxp data matrix according to the method described in Henze & Wagner (1997).
 	The test statistic is returned in tnb, together with the lognormal mean 'lnmu' and the lognormal variance 'lnvar'.
@@ -956,7 +900,7 @@ double NUMformantfilter_amplitude (double fc, double bw, double f);
 	Preconditions: f > 0 && bw > 0
 */
 
-int NUMburg (double x[], integer n, double a[], int m, double *xms);
+int NUMburg (const double x[], integer n, double a[], int m, double *xms);
 /*
 	Calculates linear prediction coefficients according to the algorithm
 	from J.P. Burg as described by N.Anderson in Childers, D. (ed), Modern
@@ -1344,5 +1288,13 @@ void NUMlpc_area_to_lpc (double *area, integer n, double *lpc);
 
 // lpc[1..n] to area[1..n+1], area[m+1] = 0.0001; (1 cm^2)
 void NUMlpc_lpc_to_area (double *lpc, integer m, double *area);
+
+/*
+ Fix indices to be in the range [lowerLimit, upperLimit].
+*/
+void NUMfixIndicesInRange (integer lowerLimit, integer upperLimit, integer *lowIndex, integer *highIndex);
+
+void MAT_getEntropies (constMAT m, double *out_h, double *out_hx, 
+	double *out_hy,	double *out_hygx, double *out_hxgy, double *out_uygx, double *out_uxgy, double *out_uxy);
 
 #endif // _NUM2_h_

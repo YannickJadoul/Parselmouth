@@ -2,7 +2,7 @@
 #define _Gui_h_
 /* Gui.h
  *
- * Copyright (C) 1993-2017 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2018 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -213,24 +213,24 @@
 	/*
 	 * Xm widget classes.
 	 */
-	#define xmBulletinBoardWidgetClass  0x00000001
-	#define xmDrawingAreaWidgetClass  0x00000002
-	#define xmFormWidgetClass  0x00000004
-	#define xmFrameWidgetClass  0x00000008
-	#define xmLabelWidgetClass  0x00000010
-	#define xmListWidgetClass  0x00000020
-	#define xmMenuBarWidgetClass  0x00000040
-	#define xmPulldownMenuWidgetClass  0x00000100
-	#define xmPushButtonWidgetClass  0x00000200
-	#define xmRowColumnWidgetClass  0x00000400
-	#define xmScaleWidgetClass  0x00000800
-	#define xmScrollBarWidgetClass  0x00001000
-	#define xmScrolledWindowWidgetClass  0x00002000
-	#define xmSeparatorWidgetClass  0x00004000
-	#define xmShellWidgetClass  0x00008000
-	#define xmTextWidgetClass  0x00010000
-	#define xmToggleButtonWidgetClass  0x00020000
-	#define xmCascadeButtonWidgetClass  0x00040000
+	#define xmBulletinBoardWidgetClass  0x0000'0001
+	#define xmDrawingAreaWidgetClass  0x0000'0002
+	#define xmFormWidgetClass  0x0000'0004
+	#define xmFrameWidgetClass  0x0000'0008
+	#define xmLabelWidgetClass  0x0000'0010
+	#define xmListWidgetClass  0x0000'0020
+	#define xmMenuBarWidgetClass  0x0000'0040
+	#define xmPulldownMenuWidgetClass  0x0000'0100
+	#define xmPushButtonWidgetClass  0x0000'0200
+	#define xmRowColumnWidgetClass  0x0000'0400
+	#define xmScaleWidgetClass  0x0000'0800
+	#define xmScrollBarWidgetClass  0x0000'1000
+	#define xmScrolledWindowWidgetClass  0x0000'2000
+	#define xmSeparatorWidgetClass  0x0000'4000
+	#define xmShellWidgetClass  0x0000'8000
+	#define xmTextWidgetClass  0x0001'0000
+	#define xmToggleButtonWidgetClass  0x0002'0000
+	#define xmCascadeButtonWidgetClass  0x0004'0000
 	#define xmPushButtonGadgetClass  xmPushButtonWidgetClass
 	#define xmCascadeButtonGadgetClass  xmCascadeButtonWidgetClass
 	#define xmSeparatorGadgetClass  xmSeparatorWidgetClass
@@ -361,7 +361,7 @@ Thing_define (GuiShell, GuiForm) {
 
 int GuiShell_getShellWidth  (GuiShell me);   // needed because GuiControl_getWidth yields the width of the inner form
 int GuiShell_getShellHeight (GuiShell me);
-void GuiShell_setTitle (GuiShell me, const char32 *title /* cattable */);
+void GuiShell_setTitle (GuiShell me, conststring32 title /* cattable */);
 void GuiShell_drain (GuiShell me);   // drain the double graphics buffer
 
 /********** GuiButton **********/
@@ -388,16 +388,18 @@ Thing_define (GuiButton, GuiControl) {
 #define GuiButton_ATTRACTIVE  8
 GuiButton GuiButton_create      (GuiForm parent,
 	int left, int right, int top, int bottom,
-	const char32 *text,
+	conststring32 text,
 	GuiButton_ActivateCallback activateCallback, Thing boss,
-	uint32 flags);
+	uint32 flags
+);
 GuiButton GuiButton_createShown (GuiForm parent,
 	int left, int right, int top, int bottom,
-	const char32 *text,
+	conststring32 text,
 	GuiButton_ActivateCallback activateCallback, Thing boss,
-	uint32 flags);
+	uint32 flags
+);
 
-void GuiButton_setText (GuiButton me, const char32 *text /* cattable */);
+void GuiButton_setText (GuiButton me, conststring32 text /* cattable */);
 
 /********** GuiCheckButton **********/
 
@@ -419,14 +421,16 @@ Thing_define (GuiCheckButton, GuiControl) {
 #define GuiCheckButton_INSENSITIVE  2
 GuiCheckButton GuiCheckButton_create      (GuiForm parent,
 	int left, int right, int top, int bottom,
-	const char32 *text,
+	conststring32 text,
 	GuiCheckButton_ValueChangedCallback valueChangedCallback, Thing boss,
-	uint32 flags);
+	uint32 flags
+);
 GuiCheckButton GuiCheckButton_createShown (GuiForm parent,
 	int left, int right, int top, int bottom,
-	const char32 *text,
+	conststring32 text,
 	GuiCheckButton_ValueChangedCallback valueChangedCallback, Thing boss,
-	uint32 flags);
+	uint32 flags
+);
 
 bool GuiCheckButton_getValue (GuiCheckButton me);
 void GuiCheckButton_setValue (GuiCheckButton me, bool value);
@@ -440,9 +444,10 @@ Thing_define (GuiDialog, GuiShell) {
 #define GuiDialog_MODAL  1
 GuiDialog GuiDialog_create (GuiWindow parent,
 	int x, int y, int width, int height,
-	const char32 *title,
+	conststring32 title,
 	GuiShell_GoAwayCallback goAwayCallback, Thing goAwayBoss,
-	uint32 flags);
+	uint32 flags
+);
 
 /********** GuiDrawingArea **********/
 
@@ -520,9 +525,9 @@ void GuiDrawingArea_setResizeCallback (GuiDrawingArea me, GuiDrawingArea_ResizeC
 
 /********** GuiFileSelect **********/
 
-autoStringSet GuiFileSelect_getInfileNames (GuiWindow parent, const char32 *title, bool allowMultipleFiles);
-char32 * GuiFileSelect_getOutfileName (GuiWindow parent, const char32 *title, const char32 *defaultName);
-char32 * GuiFileSelect_getDirectoryName (GuiWindow parent, const char32 *title);
+autoStringSet GuiFileSelect_getInfileNames (GuiWindow parent, conststring32 title, bool allowMultipleFiles);
+autostring32 GuiFileSelect_getOutfileName (GuiWindow parent, conststring32 title, conststring32 defaultName);
+autostring32 GuiFileSelect_getDirectoryName (GuiWindow parent, conststring32 title);
 
 /********** GuiForm **********/
 
@@ -539,11 +544,11 @@ Thing_define (GuiLabel, GuiControl) {
 #define GuiLabel_CENTRE  1
 #define GuiLabel_RIGHT  2
 GuiLabel GuiLabel_create      (GuiForm parent, int left, int right, int top, int bottom,
-	const char32 *text, uint32 flags);
+	conststring32 text, uint32 flags);
 GuiLabel GuiLabel_createShown (GuiForm parent, int left, int right, int top, int bottom,
-	const char32 *text, uint32 flags);
+	conststring32 text, uint32 flags);
 
-void GuiLabel_setText (GuiLabel me, const char32 *text /* cattable */);
+void GuiLabel_setText (GuiLabel me, conststring32 text /* cattable */);
 
 /********** GuiList **********/
 
@@ -578,8 +583,8 @@ Thing_define (GuiList, GuiControl) {
 	#endif
 };
 
-GuiList GuiList_create      (GuiForm parent, int left, int right, int top, int bottom, bool allowMultipleSelection, const char32 *header);
-GuiList GuiList_createShown (GuiForm parent, int left, int right, int top, int bottom, bool allowMultipleSelection, const char32 *header);
+GuiList GuiList_create      (GuiForm parent, int left, int right, int top, int bottom, bool allowMultipleSelection, conststring32 header);
+GuiList GuiList_createShown (GuiForm parent, int left, int right, int top, int bottom, bool allowMultipleSelection, conststring32 header);
 
 void GuiList_deleteAllItems (GuiList me);
 void GuiList_deleteItem (GuiList me, integer position);
@@ -601,9 +606,9 @@ integer GuiList_getTopPosition (GuiList me);
 		A value of 1 therefore puts the new item at the top of the list.
 		A value of 0 is special: the item is put at the bottom of the list.
  */
-void GuiList_insertItem  (GuiList me, const char32 *itemText /* cattable */, integer position);
+void GuiList_insertItem  (GuiList me, conststring32 itemText /* cattable */, integer position);
 
-void GuiList_replaceItem (GuiList me, const char32 *itemText /* cattable */, integer position);
+void GuiList_replaceItem (GuiList me, conststring32 itemText /* cattable */, integer position);
 void GuiList_setTopPosition (GuiList me, integer topPosition);
 void GuiList_selectItem (GuiList me, integer position);
 void GuiList_setSelectionChangedCallback (GuiList me, GuiList_SelectionChangedCallback callback, Thing boss);
@@ -638,9 +643,9 @@ Thing_define (GuiMenu, GuiThing) {
 		override;
 };
 
-GuiMenu GuiMenu_createInWindow (GuiWindow window, const char32 *title, uint32 flags);
-GuiMenu GuiMenu_createInMenu (GuiMenu supermenu, const char32 *title, uint32 flags);
-GuiMenu GuiMenu_createInForm (GuiForm form, int left, int right, int top, int bottom, const char32 *title, uint32 flags);
+GuiMenu GuiMenu_createInWindow (GuiWindow window, conststring32 title, uint32 flags);
+GuiMenu GuiMenu_createInMenu (GuiMenu supermenu, conststring32 title, uint32 flags);
+GuiMenu GuiMenu_createInForm (GuiForm form, int left, int right, int top, int bottom, conststring32 title, uint32 flags);
 
 void GuiMenu_empty (GuiMenu me);
 
@@ -707,7 +712,7 @@ Thing_define (GuiMenuItem, GuiThing) {
 #define GuiMenu_F12  28
 // or any ASCII character (preferably a letter or digit) between 32 and 126
 
-GuiMenuItem GuiMenu_addItem (GuiMenu menu, const char32 *title, uint32 flags,
+GuiMenuItem GuiMenu_addItem (GuiMenu menu, conststring32 title, uint32 flags,
 	GuiMenuItemCallback callback, Thing boss);
 /* Flags is a combination of the above defines (both layout and accelerators). */
 GuiMenuItem GuiMenu_addSeparator (GuiMenu menu);
@@ -734,7 +739,7 @@ void GuiOptionMenu_init (GuiOptionMenu me, GuiForm parent, int left, int right, 
 GuiOptionMenu GuiOptionMenu_create        (GuiForm parent, int left, int right, int top, int bottom, uint32 flags);
 GuiOptionMenu GuiOptionMenu_createShown   (GuiForm parent, int left, int right, int top, int bottom, uint32 flags);
 
-void GuiOptionMenu_addOption (GuiOptionMenu me, const char32 *text);
+void GuiOptionMenu_addOption (GuiOptionMenu me, conststring32 text);
 int GuiOptionMenu_getValue (GuiOptionMenu me);
 void GuiOptionMenu_setValue (GuiOptionMenu me, int value);
 
@@ -777,9 +782,9 @@ Thing_define (GuiRadioButton, GuiControl) {
 #define GuiRadioButton_SET  1
 #define GuiRadioButton_INSENSITIVE  2
 GuiRadioButton GuiRadioButton_create      (GuiForm parent, int left, int right, int top, int bottom,
-	const char32 *buttonText, GuiRadioButtonCallback valueChangedCallback, Thing valueChangedBoss, uint32 flags);
+	conststring32 buttonText, GuiRadioButtonCallback valueChangedCallback, Thing valueChangedBoss, uint32 flags);
 GuiRadioButton GuiRadioButton_createShown (GuiForm parent, int left, int right, int top, int bottom,
-	const char32 *buttonText, GuiRadioButtonCallback valueChangedCallback, Thing valueChangedBoss, uint32 flags);
+	conststring32 buttonText, GuiRadioButtonCallback valueChangedCallback, Thing valueChangedBoss, uint32 flags);
 
 void GuiRadioGroup_begin ();
 void GuiRadioGroup_end ();
@@ -899,19 +904,19 @@ GuiText GuiText_createShown (GuiForm parent, int left, int right, int top, int b
 
 void GuiText_copy (GuiText me);
 void GuiText_cut (GuiText me);
-char32 * GuiText_getSelection (GuiText me);
-char32 * GuiText_getString (GuiText me);
-char32 * GuiText_getStringAndSelectionPosition (GuiText me, integer *first, integer *last);
+autostring32 GuiText_getSelection (GuiText me);
+autostring32 GuiText_getString (GuiText me);
+autostring32 GuiText_getStringAndSelectionPosition (GuiText me, integer *first, integer *last);
 void GuiText_paste (GuiText me);
 void GuiText_redo (GuiText me);
 void GuiText_remove (GuiText me);
-void GuiText_replace (GuiText me, integer from_pos, integer to_pos, const char32 *value);
+void GuiText_replace (GuiText me, integer from_pos, integer to_pos, conststring32 value);
 void GuiText_scrollToSelection (GuiText me);
 void GuiText_setChangedCallback (GuiText me, GuiText_ChangedCallback changedCallback, Thing changedBoss);
 void GuiText_setFontSize (GuiText me, int size);
 void GuiText_setRedoItem (GuiText me, GuiMenuItem item);
 void GuiText_setSelection (GuiText me, integer first, integer last);
-void GuiText_setString (GuiText me, const char32 *text);
+void GuiText_setString (GuiText me, conststring32 text);
 void GuiText_setUndoItem (GuiText me, GuiMenuItem item);
 void GuiText_undo (GuiText me);
 
@@ -936,7 +941,7 @@ Thing_define (GuiWindow, GuiShell) {
 /* GuiWindow creation flags: */
 #define GuiWindow_FULLSCREEN  1
 GuiWindow GuiWindow_create (int x, int y, int width, int height, int minimumWidth, int minimumHeight,
-	const char32 *title /* cattable */, GuiShell_GoAwayCallback goAwayCallback, Thing goAwayBoss, uint32 flags);
+	conststring32 title /* cattable */, GuiShell_GoAwayCallback goAwayCallback, Thing goAwayBoss, uint32 flags);
 	// returns a Form widget that has a new Shell parent.
 
 void GuiWindow_addMenuBar (GuiWindow me);
@@ -962,6 +967,11 @@ void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file)
 void Gui_setQuitApplicationCallback (int (*quitApplicationCallback) (void));
 
 extern uinteger theGuiTopLowAccelerators [8];
+
+/*
+	'parent' is the top-level widget returned by GuiAppInitialize.
+*/
+void Gui_injectMessageProcs (GuiWindow parent);
 
 /* End of file Gui.h */
 #endif

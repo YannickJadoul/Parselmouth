@@ -1,6 +1,6 @@
 /* ManipulationEditor.cpp
  *
- * Copyright (C) 1992-2011,2012,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ Thing_implement (ManipulationEditor, FunctionEditor, 0);
  * 5. create the button in createMenus and update updateMenus;
  */
 
-static const char32 *units_strings [] = { 0, U"Hz", U"st" };
+static const conststring32 units_strings [] = { 0, U"Hz", U"st" };
 
 static int prefs_synthesisMethod = Manipulation_OVERLAPADD;   /* Remembered across editor creations, not across Praat sessions. */
 
@@ -223,7 +223,7 @@ static void menu_cb_addPitchPointAtSlice (ManipulationEditor me, EDITOR_ARGS_DIR
 	if (! pulses) Melder_throw (U"There are no pulses.");
 	if (! ana -> pitch) return;
 	integer ileft = PointProcess_getLowIndex (pulses, 0.5 * (my startSelection + my endSelection)), iright = ileft + 1, nt = pulses -> nt;
-	double *t = pulses -> t;
+	double *t = pulses -> t.at;
 	double f = my pitchTier.cursor;   // default
 	Editor_save (me, U"Add pitch point");
 	if (nt <= 1) {
@@ -669,7 +669,7 @@ static void drawPitchArea (ManipulationEditor me, double ymin, double ymax) {
 	int cursorVisible = my startSelection == my endSelection && my startSelection >= my startWindow && my startSelection <= my endWindow;
 	double minimumFrequency = YLIN (50);
 	int rangePrecisions [] = { 0, 1, 2 };
-	const char32 *rangeUnits [] = { U"", U" Hz", U" st" };
+	static const conststring32 rangeUnits [] = { U"", U" Hz", U" st" };
 
 	/*
 	 * Pitch contours.
@@ -978,9 +978,12 @@ static bool clickPitch (ManipulationEditor me, double xWC, double yWC, bool shif
 		Graphics_getMouseLocation (my graphics.get(), & xWC_new, & yWC_new);
 		if (xWC_new != xWC || yWC_new != yWC) {
 			drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
-			if (dragHorizontal) dt += xWC_new - xWC;
-			if (dragVertical) df += yWC_new - yWC;
-			xWC = xWC_new, yWC = yWC_new;
+			if (dragHorizontal)
+				dt += xWC_new - xWC;
+			if (dragVertical)
+				df += yWC_new - yWC;
+			xWC = xWC_new;
+			yWC = yWC_new;
 			drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
 		}
 	}
@@ -989,7 +992,8 @@ static bool clickPitch (ManipulationEditor me, double xWC, double yWC, bool shif
 	/*
 	 * Dragged inside window?
 	 */
-	if (xWC < my startWindow || xWC > my endWindow) return 1;
+	if (xWC < my startWindow || xWC > my endWindow)
+		return 1;
 
 	/*
 	 * Points not dragged past neighbours?
@@ -1012,15 +1016,20 @@ static bool clickPitch (ManipulationEditor me, double xWC, double yWC, bool shif
 		RealPoint point = pitch -> points.at [i];
 		point -> number += dt;
 		point -> value = YLININV (YLIN (point -> value) + df);
-		if (point -> value < 50.0) point -> value = 50.0;
-		if (point -> value > YLININV (my p_pitch_maximum)) point -> value = YLININV (my p_pitch_maximum);
+		if (point -> value < 50.0)
+			point -> value = 50.0;
+		if (point -> value > YLININV (my p_pitch_maximum))
+			point -> value = YLININV (my p_pitch_maximum);
 	}
 
 	/*
 	 * Make sure that the same pitch points are still selected (a problem with Undo...).
 	 */
 
-	if (draggingSelection) my startSelection += dt, my endSelection += dt;
+	if (draggingSelection) {
+		my startSelection += dt;
+		my endSelection += dt;
+	}
 	if (my startSelection == my endSelection) {
 		RealPoint point = pitch -> points.at [ifirstSelected];
 		my startSelection = my endSelection = point -> number;
@@ -1206,7 +1215,7 @@ void structManipulationEditor :: v_play (double a_tmin, double a_tmax) {
 	}
 }
 
-autoManipulationEditor ManipulationEditor_create (const char32 *title, Manipulation ana) {
+autoManipulationEditor ManipulationEditor_create (conststring32 title, Manipulation ana) {
 	try {
 		autoManipulationEditor me = Thing_new (ManipulationEditor);
 		FunctionEditor_init (me.get(), title, ana);

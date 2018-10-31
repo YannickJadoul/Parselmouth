@@ -108,8 +108,13 @@ void RealTierEditor_updateScaling (RealTierEditor me) {
 		double ymin = RealTier_getMinimumValue (data);
 		double ymax = RealTier_getMaximumValue (data);
 		double range = ymax - ymin;
-		if (range == 0.0) ymin -= 1.0, ymax += 1.0;
-		else ymin -= 0.2 * range, ymax += 0.2 * range;
+		if (range == 0.0) {
+			ymin -= 1.0;
+			ymax += 1.0;
+		} else {
+			ymin -= 0.2 * range;
+			ymax += 0.2 * range;
+		}
 		if (isdefined (my v_minimumLegalValue()) && ymin < my v_minimumLegalValue ())
 			ymin = my v_minimumLegalValue ();
 		if (isdefined (my v_maximumLegalValue ()) && ymin > my v_maximumLegalValue ())
@@ -372,7 +377,7 @@ void structRealTierEditor :: v_play (double a_tmin, double a_tmax) {
 		Sound_playPart (our d_sound.data, a_tmin, a_tmax, theFunctionEditor_playCallback, this);
 }
 
-void RealTierEditor_init (RealTierEditor me, const char32 *title, RealTier data, Sound sound, bool ownSound) {
+void RealTierEditor_init (RealTierEditor me, conststring32 title, RealTier data, Sound sound, bool ownSound) {
 	Melder_assert (data);
 	Melder_assert (Thing_isa (data, classRealTier));
 	TimeSoundEditor_init (me, title, data, sound, ownSound);

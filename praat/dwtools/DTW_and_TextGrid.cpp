@@ -67,25 +67,37 @@ autoIntervalTier DTW_IntervalTier_to_IntervalTier (DTW me, IntervalTier thee, do
 			autoIntervalTier him = Data_copy (thee);
 			his xmin = my xmin;
 			his xmax = my xmax;
-			for (integer i = 1; i <= his intervals.size; i ++) {
-				TextInterval textinterval = his intervals.at [i];
-				double xmin = DTW_getXTimeFromYTime (me, textinterval -> xmin);
-				textinterval -> xmin = xmin;
-				double xmax = DTW_getXTimeFromYTime (me, textinterval -> xmax);
+			TextInterval textinterval = his intervals.at [1];
+			textinterval -> xmin = his xmin;
+			double xmax = DTW_getXTimeFromYTime (me, textinterval -> xmax);
+			textinterval -> xmax = xmax;
+			for (integer i = 2; i <= his intervals.size; i ++) {
+				textinterval = his intervals.at [i];
+				textinterval -> xmin = xmax;
+				xmax = DTW_getXTimeFromYTime (me, textinterval -> xmax);
 				textinterval -> xmax = xmax;
 			}
+			textinterval = his intervals.at [his intervals.size];
+			textinterval -> xmax = his xmax;
+			Melder_assert (textinterval -> xmin < textinterval -> xmax);
 			return him;
 		} else if (fabs (my xmin - thy xmin) <= precision && fabs (my xmax - thy xmax) <= precision) { // map from X to Y
 			autoIntervalTier him = Data_copy (thee);
 			his xmin = my ymin;
 			his xmax = my ymax;
-			for (integer i = 1; i <= his intervals.size; i ++) {
-				TextInterval textinterval = his intervals.at [i];
-				double xmin = DTW_getYTimeFromXTime (me, textinterval -> xmin);
-				textinterval -> xmin = xmin;
-				double xmax = DTW_getYTimeFromXTime (me, textinterval -> xmax);
+			TextInterval textinterval = his intervals.at [1];
+			textinterval -> xmin = his xmin;
+			double xmax = DTW_getYTimeFromXTime (me, textinterval -> xmax);
+			textinterval -> xmax = xmax;
+			for (integer i = 2; i <= his intervals.size; i ++) {
+				textinterval = his intervals.at [i];
+				textinterval -> xmin = xmax;
+				xmax = DTW_getYTimeFromXTime (me, textinterval -> xmax);
 				textinterval -> xmax = xmax;
 			}
+			textinterval = his intervals.at [his intervals.size];
+			textinterval -> xmax = his xmax;
+			Melder_assert (textinterval -> xmin < textinterval -> xmax);
 			return him;
 		} else {
 			Melder_throw (U"The domain of the IntervalTier and one of the domains of the DTW should be equal.");
@@ -141,14 +153,14 @@ autoTable DTW_IntervalTier_to_Table (DTW me, IntervalTier thee, double precision
 				double xmax = DTW_getXTimeFromYTime (me, textinterval -> xmax);
 				integer ixmin, ixmax;
 				integer numberOfFrames = Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax);
-				double sumOfDistances = 0;
+				double sumOfDistances = 0.0;
 				while (pathIndex < my pathLength && my path [pathIndex].x < ixmax) {
 					sumOfDistances += my z [my path [pathIndex].y] [my path [pathIndex].x];
 					pathIndex ++;
 				}
 				Table_setNumericValue (him.get(), i, 1, textinterval -> xmin);
 				Table_setNumericValue (him.get(), i, 2, textinterval -> xmax);
-				Table_setStringValue  (him.get(), i, 3, textinterval -> text);
+				Table_setStringValue  (him.get(), i, 3, textinterval -> text.get());
 				Table_setNumericValue (him.get(), i, 4, sumOfDistances / numberOfFrames);
 			}
 		} else if (fabs (my xmin - thy xmin) <= precision && fabs (my xmax - thy xmax) <= precision) {  // map from X to Y
@@ -166,7 +178,7 @@ autoTable DTW_IntervalTier_to_Table (DTW me, IntervalTier thee, double precision
 				}
 				Table_setNumericValue (him.get(), i, 1, textinterval -> xmin);
 				Table_setNumericValue (him.get(), i, 2, textinterval -> xmax);
-				Table_setStringValue  (him.get(), i, 3, textinterval -> text);
+				Table_setStringValue  (him.get(), i, 3, textinterval -> text.get());
 				Table_setNumericValue (him.get(), i, 4, sumOfDistances / numberOfFrames);
 			}
 		} else {
@@ -201,7 +213,7 @@ autoTextTier DTW_TextTier_to_TextTier_old (DTW me, TextTier thee) {
 
 autoIntervalTier DTW_IntervalTier_to_IntervalTier_old (DTW me, IntervalTier thee) {
 	try {
-		if ( (my xmin != thy xmin) || my xmax != thy xmax) Melder_throw
+		if (my xmin != thy xmin || my xmax != thy xmax) Melder_throw
 			(U"The domain of the IntervalTier and the DTW should be equal.");
 
 		autoIntervalTier him = Data_copy (thee);
@@ -237,7 +249,6 @@ autoTextGrid DTW_TextGrid_to_TextGrid_old (DTW me, TextGrid thee) {
 			Daata anyTier = thy tiers->at [i];
 
 			if (anyTier -> classInfo == classIntervalTier) {
-
 				autoIntervalTier tier = DTW_IntervalTier_to_IntervalTier_old (me, (IntervalTier) anyTier);
 				TextGrid_addTier_copy (him.get(), tier.get());
 			} else if (anyTier -> classInfo == classTextTier) {

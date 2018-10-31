@@ -52,7 +52,7 @@ void structMovie :: v_info ()
 	MelderInfo_writeLine (U"   First frame centred at: ", x1, U" seconds");
 }
 
-void Movie_init (Movie me, autoSound sound, const char32 *folderName, autoStrings fileNames)
+void Movie_init (Movie me, autoSound sound, conststring32 folderName, autoStrings fileNames)
 {
 	Sampled_init (me, sound -> xmin, sound -> xmax, fileNames ? fileNames -> numberOfStrings : 0, 0.04, 0.0);
 	my d_sound = sound.move();
@@ -90,9 +90,9 @@ void Movie_paintOneImageInside (Movie me, Graphics graphics, integer frameNumber
 		Melder_assert (my d_fileNames);
 		Melder_assert (my d_fileNames -> numberOfStrings == my nx);
 		structMelderDir folder { };
-		Melder_pathToDir (my d_folderName, & folder);
+		Melder_pathToDir (my d_folderName.get(), & folder);
 		structMelderFile file { };
-		MelderDir_getFile (& folder, my d_fileNames -> strings [frameNumber], & file);
+		MelderDir_getFile (& folder, my d_fileNames -> strings [frameNumber].get(), & file);
 		Graphics_imageFromFile (graphics, Melder_fileToPath (& file), xmin, xmax, ymin, ymax);
 	} catch (MelderError) {
 		Melder_throw (me, U": image ", frameNumber, U" not painted.");

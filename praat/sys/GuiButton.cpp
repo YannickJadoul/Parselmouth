@@ -1,6 +1,6 @@
 /* GuiButton.cpp
  *
- * Copyright (C) 1993-2012,2015,2016,2017 Paul Boersma,
+ * Copyright (C) 1993-2008,2010-2018 Paul Boersma,
  *               2007-2008 Stefan de Konink, 2010 Franz Brausse, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
@@ -63,7 +63,7 @@ Thing_implement (GuiButton, GuiControl, 0);
 			try {
 				my d_activateCallback (my d_activateBoss, & event);
 			} catch (MelderError) {
-				Melder_flushError (U"Your click on button \"", widget -> name, U"\" was not completely handled.");
+				Melder_flushError (U"Your click on button \"", widget -> name.get(), U"\" was not completely handled.");
 			}
 		}
 	}
@@ -74,7 +74,7 @@ Thing_implement (GuiButton, GuiControl, 0);
 			try {
 				my d_activateCallback (my d_activateBoss, & event);
 			} catch (MelderError) {
-				Melder_flushError (U"Your key click on button \"", widget -> name, U"\" was not completely handled.");
+				Melder_flushError (U"Your key click on button \"", widget -> name.get(), U"\" was not completely handled.");
 			}
 			return true;
 		}
@@ -105,7 +105,7 @@ Thing_implement (GuiButton, GuiControl, 0);
 			try {
 				my d_activateCallback (my d_activateBoss, & event);
 			} catch (MelderError) {
-				Melder_flushError (U"Your click on button \"", my name, U"\" was not completely handled.");
+				Melder_flushError (U"Your click on button \"", my name.get(), U"\" was not completely handled.");
 			}
 		}
 	}
@@ -113,7 +113,7 @@ Thing_implement (GuiButton, GuiControl, 0);
 #endif
 
 GuiButton GuiButton_create (GuiForm parent, int left, int right, int top, int bottom,
-	const char32 *buttonText, GuiButton_ActivateCallback activateCallback, Thing activateBoss, uint32 flags)
+	conststring32 buttonText, GuiButton_ActivateCallback activateCallback, Thing activateBoss, uint32 flags)
 {
 	autoGuiButton me = Thing_new (GuiButton);
 	my d_shell = parent -> d_shell;
@@ -141,7 +141,7 @@ GuiButton GuiButton_create (GuiForm parent, int left, int right, int top, int bo
 	#elif motif
 		my d_widget = _Gui_initializeWidget (xmPushButtonWidgetClass, parent -> d_widget, buttonText);
 		_GuiObject_setUserData (my d_widget, me.get());
-		my d_widget -> window = CreateWindow (L"button", Melder_peek32toW (_GuiWin_expandAmpersands (my d_widget -> name)),
+		my d_widget -> window = CreateWindow (L"button", Melder_peek32toW (_GuiWin_expandAmpersands (my d_widget -> name.get())),
 			WS_CHILD
 			| ( flags & (GuiButton_DEFAULT | GuiButton_ATTRACTIVE) ? BS_DEFPUSHBUTTON : BS_PUSHBUTTON )
 			| WS_CLIPSIBLINGS,
@@ -158,7 +158,7 @@ GuiButton GuiButton_create (GuiForm parent, int left, int right, int top, int bo
 		}
 	#elif cocoa
 		GuiCocoaButton *button = [[GuiCocoaButton alloc] init];
-		my name = Melder_dup (buttonText);
+		my name = Melder_dup_f (buttonText);
 		my d_widget = (GuiObject) button;
 		my v_positionInForm (my d_widget, left, right, top, bottom, parent);
 		[button setUserData: me.get()];
@@ -195,18 +195,17 @@ GuiButton GuiButton_create (GuiForm parent, int left, int right, int top, int bo
 }
 
 GuiButton GuiButton_createShown (GuiForm parent, int left, int right, int top, int bottom,
-	const char32 *buttonText, GuiButton_ActivateCallback activateCallback, Thing activateBoss, uint32 flags)
+	conststring32 buttonText, GuiButton_ActivateCallback activateCallback, Thing activateBoss, uint32 flags)
 {
 	GuiButton me = GuiButton_create (parent, left, right, top, bottom, buttonText, activateCallback, activateBoss, flags);
 	GuiThing_show (me);
 	return me;
 }
 
-void GuiButton_setText (GuiButton me, const char32 *text /* cattable */) {
+void GuiButton_setText (GuiButton me, conststring32 text /* cattable */) {
 	#if gtk
 		gtk_button_set_label (GTK_BUTTON (my d_widget), Melder_peek32to8 (text));
 	#elif motif
-		Melder_free (my d_widget -> name);
 		my d_widget -> name = Melder_dup_f (text);
 		_GuiNativeControl_setTitle (my d_widget);
 	#elif cocoa

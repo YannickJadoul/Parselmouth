@@ -2,7 +2,7 @@
 #define _TableOfReal_extensions_h_
 /* TableOfReal_extensions.h
  *
- * Copyright (C) 1993-2017 David Weenink
+ * Copyright (C) 1993-2018 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,12 +18,14 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "TableOfReal.h"
-#include "Collection.h"
-#include "PatternList.h"
 #include "Categories.h"
+#include "Collection.h"
+#include "Graphics_extensions.h"
+#include "Matrix_extensions.h"
+#include "PatternList.h"
 #include "Strings_.h"
 #include "SSCP.h"
+#include "TableOfReal.h"
 
 void TableOfReal_to_PatternList_and_Categories(TableOfReal me, integer fromrow, integer torow, integer fromcol, integer tocol,
 	autoPatternList *p, autoCategories *c);
@@ -39,9 +41,9 @@ void TableOfReal_Categories_setRowLabels (TableOfReal me, Categories thee);
 
 autoTableOfReal TableOfReal_sortOnlyByRowLabels (TableOfReal me);
 
-integer *TableOfReal_getSortedIndexFromRowLabels (TableOfReal me);
+autoINTVEC TableOfReal_getSortedIndexFromRowLabels (TableOfReal me);
 
-autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, integer index[], bool reverse);
+autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, constINTVEC index, bool reverse);
 // thy data[reverse ? i : index[i]][j] = my data[reverse ? index[i] : i]
 
 autoTableOfReal TableOfReal_createIrisDataset ();
@@ -59,17 +61,17 @@ void TableOfReal_getColumnExtrema (TableOfReal me, integer col, double *min, dou
 
 integer TableOfReal_getColumnIndexAtMaximumInRow (TableOfReal me, integer rowNumber);
 
-const char32 *TableOfReal_getColumnLabelAtMaximumInRow (TableOfReal me, integer rowNumber);
+conststring32 TableOfReal_getColumnLabelAtMaximumInRow (TableOfReal me, integer rowNumber);
 
-void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, const char32 *rows, integer colb, integer cole,
+void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, conststring32 rows, integer colb, integer cole,
 	double ymin, double ymax, double xoffsetFraction, double interbarFraction,
-	double interbarsFraction, const char32 *greys, bool garnish);
+	double interbarsFraction, conststring32 greys, bool garnish);
 
 void TableOfReal_drawScatterPlot (TableOfReal me, Graphics g, integer icx, integer icy, integer rowb,
 	integer rowe, double xmin, double xmax, double ymin, double ymax,
-	int labelSize, bool useRowLabels, const char32 *label, bool garnish);
+	int labelSize, bool useRowLabels, conststring32 label, bool garnish);
 
-void TableOfReal_drawAsScalableSquares (TableOfReal me, Graphics g, double zmin, double zmax, double cellSizeFactor, bool randomFillOrder, bool garnish);
+void TableOfReal_drawAsScalableSquares (TableOfReal me, Graphics g, integer rowmin, integer rowmax, integer colmin, integer colmax, kGraphicsMatrixOrigin origin, double cellSizeFactor, kGraphicsMatrixCellDrawingOrder fillOrder, bool garnish);
 
 void TableOfReal_drawScatterPlotMatrix (TableOfReal me, Graphics g, integer colb, integer cole, double fractionWhite);
 
@@ -87,14 +89,11 @@ void TableOfReal_drawBiplot (TableOfReal me, Graphics g, double xmin, double xma
 void TableOfReal_drawColumnAsDistribution (TableOfReal me, Graphics g, integer column, double minimum, double maximum, integer nBins,
 	double freqMin, double freqMax, bool cumulative, bool garnish);
 
-integer TableOfReal_getNumberOfLabelMatches (TableOfReal me, const char32 *search, bool columnLabels,
+integer TableOfReal_getNumberOfLabelMatches (TableOfReal me, conststring32 search, bool columnLabels,
 	bool use_regexp);
 /*
 	Find number of labels that match search description.
 */
-
-bool TableOfReal_equalLabels (TableOfReal me, TableOfReal thee, bool rowLabels, bool columnLabels);
-/* return 1 when labels are equal else 0 */
 
 void TableOfReal_copyLabels (TableOfReal me, TableOfReal thee, int rowOrigin, int columnOrigin);
 /*
@@ -109,18 +108,18 @@ void TableOfReal_copyLabels (TableOfReal me, TableOfReal thee, int rowOrigin, in
 
 void TableOfReal_setLabelsFromCollectionItemNames (TableOfReal me, Collection thee, bool setRowLabels, bool setColumnLabels);
 
-void TableOfReal_setSequentialColumnLabels (TableOfReal me, integer from, integer to, const char32 *precursor, integer number, integer increment);
+void TableOfReal_setSequentialColumnLabels (TableOfReal me, integer from, integer to, conststring32 precursor, integer number, integer increment);
 
-void TableOfReal_setSequentialRowLabels (TableOfReal me, integer from, integer to, const char32 *precursor, integer number, integer increment);
+void TableOfReal_setSequentialRowLabels (TableOfReal me, integer from, integer to, conststring32 precursor, integer number, integer increment);
 
 bool TableOfReal_hasRowLabels (TableOfReal me);
 
 bool TableOfReal_hasColumnLabels (TableOfReal me);
 
-void TableOfReal_changeRowLabels (TableOfReal me, const char32 *search, const char32 *replace,
+void TableOfReal_changeRowLabels (TableOfReal me, conststring32 search, conststring32 replace,
 	integer maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, bool use_regexp);
 
-void TableOfReal_changeColumnLabels (TableOfReal me, const char32 *search, const char32 *replace,
+void TableOfReal_changeColumnLabels (TableOfReal me, conststring32 search, conststring32 replace,
 	integer maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, bool use_regexp);
 /*
 	Change all row/column labels. The 'search' and 'replace' string are
@@ -140,11 +139,11 @@ void TableOfReal_centreColumns_byRowLabel (TableOfReal me);
 
 double TableOfReal_getColumnQuantile (TableOfReal me, integer col, double quantile);
 
-double TableOfReal_getRowSumByLabel (TableOfReal me, const char32 *label);
+double TableOfReal_getRowSumByLabel (TableOfReal me, conststring32 label);
 
 double TableOfReal_getRowSum (TableOfReal me, integer index);
 
-double TableOfReal_getColumnSumByLabel (TableOfReal me, const char32 *label);
+double TableOfReal_getColumnSumByLabel (TableOfReal me, conststring32 label);
 
 double TableOfReal_getColumnSum (TableOfReal me, integer index);
 
@@ -154,7 +153,7 @@ void TableOfReal_centreRows (TableOfReal me);
 
 void TableOfReal_doubleCentre (TableOfReal me);
 
-bool TableOfReal_checkPositive (TableOfReal me);
+bool TableOfReal_checkNonNegativity (TableOfReal me);
 
 double TableOfReal_getTableNorm (TableOfReal me);
 

@@ -190,7 +190,9 @@ int FilterBank_getFrequencyScale (FilterBank me) {
 	return my v_getFrequencyScale ();
 }
 
-void FilterBank_drawFrequencyScales (FilterBank me, Graphics g, int horizontalScale, double xmin, double xmax, int verticalScale, double ymin, double ymax, int garnish) {
+void FilterBank_drawFrequencyScales (FilterBank me, Graphics g, int horizontalScale, double xmin, double xmax,
+	int verticalScale, double ymin, double ymax, bool garnish)
+{
 	int myFreqScale = FilterBank_getFrequencyScale (me);
 
 	if (xmin < 0 || xmax < 0 || ymin < 0 || ymax < 0) {
@@ -245,32 +247,28 @@ void FilterBank_drawFrequencyScales (FilterBank me, Graphics g, int horizontalSc
 	}
 }
 
-void FilterBank_paint (FilterBank me, Graphics g, double xmin, double xmax, double ymin, double ymax, double minimum, double maximum, int garnish) {
-	if (xmax <= xmin) {
-		xmin = my xmin; xmax = my xmax; 
-	}
-	if (ymax <= ymin) {
-		ymin = my ymin; ymax = my ymax;
-	}
+void FilterBank_paint (FilterBank me, Graphics g, double xmin, double xmax,
+	double ymin, double ymax, double minimum, double maximum, bool garnish)
+{
+	if (xmax <= xmin)
+		xmin = my xmin, xmax = my xmax;
+	if (ymax <= ymin)
+		ymin = my ymin, ymax = my ymax;
 	integer ixmin, ixmax, iymin, iymax;
 	(void) Matrix_getWindowSamplesX (me, xmin - 0.49999 * my dx, xmax + 0.49999 * my dx, & ixmin, & ixmax);
 	(void) Matrix_getWindowSamplesY (me, ymin - 0.49999 * my dy, ymax + 0.49999 * my dy, & iymin, & iymax);
-	if (maximum <= minimum) {
-		(void) Matrix_getWindowExtrema (me, ixmin, ixmax, iymin, iymax, &minimum, &maximum);
-	}
-	if (maximum <= minimum) { 
-		minimum -= 1.0; maximum += 1.0;
-	}
-	if (xmin >= xmax || ymin >= ymax) {
+	if (maximum <= minimum)
+		(void) Matrix_getWindowExtrema (me, ixmin, ixmax, iymin, iymax, & minimum, & maximum);
+	if (maximum <= minimum)
+		minimum -= 1.0, maximum += 1.0;
+	if (xmin >= xmax || ymin >= ymax)
 		return;
-	}
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 	Graphics_image (g, my z,
 			ixmin, ixmax, Sampled_indexToX   (me, ixmin - 0.5), Sampled_indexToX   (me, ixmax + 0.5),
 			iymin, iymax, SampledXY_indexToY (me, iymin - 0.5), SampledXY_indexToY (me, iymax + 0.5),
 			minimum, maximum);
-
 	Graphics_unsetInner (g);
 	if (garnish) {
 		Graphics_drawInnerBox (g);
@@ -281,17 +279,16 @@ void FilterBank_paint (FilterBank me, Graphics g, double xmin, double xmax, doub
 	}
 }
 
-void BarkFilter_drawSekeyHansonFilterFunctions (BarkFilter me, Graphics g, int toFreqScale, int fromFilter, int toFilter, double zmin, double zmax, int dbScale, double ymin, double ymax, int garnish) {
-	if (! checkLimits (me, FilterBank_BARK, toFreqScale, & fromFilter, & toFilter, & zmin, & zmax, dbScale, & ymin, & ymax)) {
+void BarkFilter_drawSekeyHansonFilterFunctions (BarkFilter me, Graphics g, int toFreqScale, int fromFilter, int toFilter,
+	double zmin, double zmax, int dbScale, double ymin, double ymax, bool garnish)
+{
+	if (! checkLimits (me, FilterBank_BARK, toFreqScale, & fromFilter, & toFilter, & zmin, & zmax, dbScale, & ymin, & ymax))
 		return;
-	}
-
 	integer n = 1000;
 	autoNUMvector<double> a (1, n);
 
 	Graphics_setInner (g);
 	Graphics_setWindow (g, zmin, zmax, ymin, ymax);
-
 	for (integer j = fromFilter; j <= toFilter; j ++) {
 		double df = (zmax - zmin) / (n - 1);
 		double zMid = Matrix_rowToY (me, j);
@@ -304,12 +301,10 @@ void BarkFilter_drawSekeyHansonFilterFunctions (BarkFilter me, Graphics g, int t
 			} else {
 				z -= zMid + 0.215;
 				a [i] = 7.0 - 7.5 * z - 17.5 * sqrt (0.196 + z * z);
-				if (! dbScale) {
+				if (! dbScale)
 					a [i] = pow (10.0, a [i]);
-				}
 			}
 		}
-
 		integer ibegin, iend;
 		setDrawingLimits (a.peek(), n, ymin, ymax, & ibegin, & iend);
 		if (ibegin <= iend) {
@@ -318,13 +313,10 @@ void BarkFilter_drawSekeyHansonFilterFunctions (BarkFilter me, Graphics g, int t
 			Graphics_function (g, a.peek(), ibegin, iend, fmin, fmax);
 		}
 	}
-
-
 	Graphics_unsetInner (g);
-
 	if (garnish) {
 		double distance = dbScale ? 10.0 : 1.0;
-		const char32 *ytext = dbScale ? U"Amplitude (dB)" : U"Amplitude";
+		conststring32 ytext = dbScale ? U"Amplitude (dB)" : U"Amplitude";
 		Graphics_drawInnerBox (g);
 		Graphics_marksBottom (g, 2, true, true, false);
 		Graphics_marksLeftEvery (g, 1.0, distance, true, true, false);
@@ -335,7 +327,9 @@ void BarkFilter_drawSekeyHansonFilterFunctions (BarkFilter me, Graphics g, int t
 
 Thing_implement (MelFilter, FilterBank, 2);
 
-autoMelFilter MelFilter_create (double tmin, double tmax, integer nt, double dt, double t1, double fmin, double fmax, integer nf, double df, double f1) {
+autoMelFilter MelFilter_create (double tmin, double tmax, integer nt, double dt, double t1,
+	double fmin, double fmax, integer nf, double df, double f1)
+{
 	try {
 		autoMelFilter me = Thing_new (MelFilter);
 		Matrix_init (me.get(), tmin, tmax, nt, dt, t1, fmin, fmax, nf, df, f1);
@@ -356,7 +350,9 @@ void FilterBank_drawFilters (I, Graphics g, integer fromf, integer tof,
 
 }*/
 
-void FilterBank_drawTimeSlice (FilterBank me, Graphics g, double t, double fmin, double fmax, double min, double max, const char32 *xlabel, int garnish) {
+void FilterBank_drawTimeSlice (FilterBank me, Graphics g, double t,
+	double fmin, double fmax, double min, double max, conststring32 xlabel, bool garnish)
+{
 	Matrix_drawSliceY (me, g, t, fmin, fmax, min, max);
 	if (garnish) {
 		Graphics_drawInnerBox (g);
@@ -368,7 +364,9 @@ void FilterBank_drawTimeSlice (FilterBank me, Graphics g, double t, double fmin,
 	}
 }
 
-void MelFilter_drawFilterFunctions (MelFilter me, Graphics g, int toFreqScale, int fromFilter, int toFilter, double zmin, double zmax, int dbScale, double ymin, double ymax, int garnish) {
+void MelFilter_drawFilterFunctions (MelFilter me, Graphics g, int toFreqScale, int fromFilter, int toFilter,
+	double zmin, double zmax, int dbScale, double ymin, double ymax, bool garnish)
+{
 	if (! checkLimits (me, FilterBank_MEL, toFreqScale, & fromFilter, & toFilter, & zmin, & zmax, dbScale, & ymin, & ymax)) {
 		return;
 	}
@@ -425,7 +423,7 @@ void MelFilter_drawFilterFunctions (MelFilter me, Graphics g, int toFreqScale, i
 /*
 void MelFilter_drawFilters (MelFilter me, Graphics g, integer from, integer to,
 	double fmin, double fmax, double ymin, double ymax, int dbscale,
-	int garnish)
+	bool garnish)
 {
 	integer i;
 	double df = my dy;
@@ -499,7 +497,9 @@ autoFormantFilter FormantFilter_create (double tmin, double tmax, integer nt, do
 	}
 }
 
-void FormantFilter_drawFilterFunctions (FormantFilter me, Graphics g, double bandwidth, int toFreqScale, int fromFilter, int toFilter, double zmin, double zmax, int dbScale, double ymin, double ymax, int garnish) {
+void FormantFilter_drawFilterFunctions (FormantFilter me, Graphics g, double bandwidth, int toFreqScale, int fromFilter, int toFilter,
+	double zmin, double zmax, int dbScale, double ymin, double ymax, bool garnish)
+{
 	if (! checkLimits (me, FilterBank_HERTZ, toFreqScale, & fromFilter, & toFilter, & zmin, & zmax, dbScale, & ymin, & ymax)) {
 		return;
 	}
@@ -527,7 +527,7 @@ void FormantFilter_drawFilterFunctions (FormantFilter me, Graphics g, double ban
 			} else {
 				a [i] = NUMformantfilter_amplitude (fc, bandwidth, z);
 				if (dbScale) {
-					a [i] = to_dB (a [i], 10, ymin);
+					a [i] = to_dB (a [i], 10.0, ymin);
 				}
 			}
 		}
@@ -544,8 +544,8 @@ void FormantFilter_drawFilterFunctions (FormantFilter me, Graphics g, double ban
 	Graphics_unsetInner (g);
 
 	if (garnish) {
-		double distance = dbScale ? 10 : 1;
-		char32 const *ytext = dbScale ? U"Amplitude (dB)" : U"Amplitude";
+		double distance = dbScale ? 10.0 : 1.0;
+		conststring32 ytext = dbScale ? U"Amplitude (dB)" : U"Amplitude";
 		Graphics_drawInnerBox (g);
 		Graphics_marksBottom (g, 2, true, true, false);
 		Graphics_marksLeftEvery (g, 1.0, distance, true, true, false);
@@ -568,7 +568,7 @@ autoFormantFilter Matrix_to_FormantFilter (Matrix me) {
 autoSpectrum FormantFilter_to_Spectrum_slice (FormantFilter me, double t) {
 	try {
 		double sqrtref = sqrt (FilterBank_DBREF);
-		double factor2 = 2 * 10 * FilterBank_DBFAC;
+		double factor2 = 2.0 * 10.0 * FilterBank_DBFAC;
 		autoSpectrum thee = Spectrum_create (my ymax, my ny);
 
 		thy xmin = my ymin;
@@ -577,19 +577,17 @@ autoSpectrum FormantFilter_to_Spectrum_slice (FormantFilter me, double t) {
 		thy dx = my dy;   /* Frequency step. */
 
 		integer frame = Sampled_xToNearestIndex (me, t);
-		if (frame < 1) {
+		if (frame < 1)
 			frame = 1;
-		}
-		if (frame > my nx) {
+		if (frame > my nx)
 			frame = my nx;
-		}
 
 		for (integer i = 1; i <= my ny; i ++) {
 			/*
 				power = ref * 10 ^ (value / 10)
 				sqrt(power) = sqrt(ref) * 10 ^ (value / (2*10))
 			*/
-			thy z [1] [i] = sqrtref * pow (10, my z [i] [frame] / factor2);
+			thy z [1] [i] = sqrtref * pow (10.0, my z [i] [frame] / factor2);
 			thy z [2] [i] = 0.0;
 		}
 		return thee;
@@ -602,13 +600,12 @@ autoIntensity FilterBank_to_Intensity (FilterBank me) {
 	try {
 		autoIntensity thee = Intensity_create (my xmin, my xmax, my nx, my dx, my x1);
 
-		double db_ref = 10 * log10 (FilterBank_DBREF);
+		double db_ref = 10.0 * log10 (FilterBank_DBREF);
 		for (integer j = 1; j <= my nx; j ++) {
-			double p = 0;
-			for (integer i = 1; i <= my ny; i ++) {
-				p += FilterBank_DBREF * exp (NUMln10 * my z [i] [j] / 10);
-			}
-			thy z [1] [j] = 10 * log10 (p) - db_ref;
+			longdouble p = 0.0;
+			for (integer i = 1; i <= my ny; i ++)
+				p += FilterBank_DBREF * exp (NUMln10 * my z [i] [j] / 10.0);
+			thy z [1] [j] = 10.0 * log10 ((double) p) - db_ref;
 		}
 		return thee;
 	} catch (MelderError) {
@@ -618,12 +615,10 @@ autoIntensity FilterBank_to_Intensity (FilterBank me) {
 
 void FilterBank_equalizeIntensities (FilterBank me, double intensity_db) {
 	for (integer j = 1; j <= my nx; j ++) {
-		double p = 0;
-		for (integer i = 1; i <= my ny; i ++) {
-			p += FilterBank_DBREF * exp (NUMln10 * my z [i] [j] / 10);
-		}
-
-		double delta_db = intensity_db - 10 * log10 (p / FilterBank_DBREF);
+		longdouble p = 0.0;
+		for (integer i = 1; i <= my ny; i ++)
+			p += FilterBank_DBREF * exp (NUMln10 * my z [i] [j] / 10.0);
+		double delta_db = intensity_db - 10.0 * log10 (p / FilterBank_DBREF);
 
 		for (integer i = 1; i <= my ny; i ++) {
 			my z [i] [j] += delta_db;
@@ -758,15 +753,13 @@ autoMFCC MelFilter_to_MFCC (MelFilter me, integer numberOfCoefficients) {
 		// 20130220 new interpretation of maximumNumberOfCoefficients necessary for inverse transform 
 		autoMFCC thee = MFCC_create (my xmin, my xmax, my nx, my dx, my x1, my ny - 1, my ymin, my ymax);
 		for (integer frame = 1; frame <= my nx; frame ++) {
-			CC_Frame cf = (CC_Frame) & thy frame [frame];
-			for (integer i = 1; i <= my ny; i ++) {
+			CC_Frame cf = & thy frame [frame];
+			for (integer i = 1; i <= my ny; i ++)
 				x [i] = my z [i] [frame];
-			}
 			NUMcosineTransform (x.peek(), y.peek(), my ny, cosinesTable.peek());
 			CC_Frame_init (cf, numberOfCoefficients);
-			for (integer i = 1; i <= numberOfCoefficients; i ++) {
+			for (integer i = 1; i <= numberOfCoefficients; i ++)
 				cf -> c [i] = y [i + 1];
-			}
 			cf -> c0 = y [1];
 		}
 		return thee;
@@ -783,7 +776,8 @@ autoMelFilter MFCC_to_MelFilter (MFCC me, integer first, integer last) {
 		autoNUMvector<double> y (1, nf);
 
 		if (first >= last) {
-			first = 0; last = nf - 1;
+			first = 0;
+			last = nf - 1;
 		}
 		Melder_require (first >= 0 && last <= nf, U"MFCC_to_MelFilter: coefficients should be in interval [0,", my maximumNumberOfCoefficients, U"].");
 		
@@ -791,16 +785,14 @@ autoMelFilter MFCC_to_MelFilter (MFCC me, integer first, integer last) {
 		autoMelFilter thee = MelFilter_create (my xmin, my xmax, my nx, my dx, my x1, my fmin, my fmax, nf, df, df);
 
 		for (integer frame = 1; frame <= my nx; frame ++) {
-			CC_Frame cf = (CC_Frame) & my frame [frame];
+			CC_Frame cf = & my frame [frame];
 			integer iend = MIN (last, cf -> numberOfCoefficients);
-			x [1] = first == 0 ? cf -> c0 : 0;
-			for (integer i = 1; i <= my maximumNumberOfCoefficients; i ++) {
+			x [1] = ( first == 0 ? cf -> c0 : 0.0);
+			for (integer i = 1; i <= my maximumNumberOfCoefficients; i ++)
 				x [i + 1] = i < first || i > iend ? 0 : cf -> c [i];
-			}
 			NUMinverseCosineTransform (x.peek(), y.peek(), nf, cosinesTable.peek());
-			for (integer i = 1; i <= nf; i ++) {
+			for (integer i = 1; i <= nf; i ++)
 				thy z [i] [frame] = y [i];
-			}
 		}
 		return thee;
 	} catch (MelderError) {
@@ -841,20 +833,18 @@ static autoMelFilter MFCC_to_MelFilter2 (MFCC me, integer first_cc, integer last
 		autoMelFilter thee = MelFilter_create (my xmin, my xmax, my nx, my dx, my x1, fmin, fmax, nf, df_mel, f1_mel);
 
 		for (integer frame = 1; frame <= my nx; frame ++) {
-			CC_Frame cf = (CC_Frame) & my frame [frame];
+			CC_Frame cf = & my frame [frame];
 			integer ie = MIN (last_cc, cf -> numberOfCoefficients);
 			for (integer j = 1; j <= nf; j ++) {
 				double t = 0;
-				for (integer i = first_cc; i <= ie; i ++) {
+				for (integer i = first_cc; i <= ie; i ++)
 					t += cf -> c [i] * dct [i] [j];
-				}
 
 				// The inverse CT has a factor 1/N
 
 				t /= nf;
-				if (use_c0) {
+				if (use_c0)
 					t +=  cf -> c0;
-				}
 				thy z [j] [frame] = t;
 			}
 		}
@@ -1034,26 +1024,24 @@ static int Sound_into_MelFilter_frame (Sound me, MelFilter thee, integer frame) 
 
 autoMelFilter Sound_to_MelFilter (Sound me, double analysisWidth, double dt, double f1_mel, double fmax_mel, double df_mel) {
 	try {
-		double t1, samplingFrequency = 1 / my dx, nyquist = 0.5 * samplingFrequency;
-		double windowDuration = 2 * analysisWidth; /* gaussian window */
-		double fmin_mel = 0;
+		double t1, samplingFrequency = 1.0 / my dx, nyquist = 0.5 * samplingFrequency;
+		double windowDuration = 2.0 * analysisWidth; /* gaussian window */
+		double fmin_mel = 0.0;
 		double fbottom = HZTOMEL (100.0), fceiling = HZTOMEL (nyquist);
 		integer nt, frameErrorCount = 0;
 
 		// Check defaults.
 
-		if (fmax_mel <= 0 || fmax_mel > fceiling) {
+		if (fmax_mel <= 0.0 || fmax_mel > fceiling)
+			fmax_mel = fceiling;
+		if (fmax_mel <= f1_mel) {
+			f1_mel = fbottom;
 			fmax_mel = fceiling;
 		}
-		if (fmax_mel <= f1_mel) {
-			f1_mel = fbottom; fmax_mel = fceiling;
-		}
-		if (f1_mel <= 0) {
+		if (f1_mel <= 0.0)
 			f1_mel = fbottom;
-		}
-		if (df_mel <= 0) {
+		if (df_mel <= 0.0)
 			df_mel = 100.0;
-		}
 
 		// Determine the number of filters.
 
@@ -1071,12 +1059,10 @@ autoMelFilter Sound_to_MelFilter (Sound me, double analysisWidth, double dt, dou
 			double t = Sampled_indexToX (thee.get(), i);
 			Sound_into_Sound (me, sframe.get(), t - windowDuration / 2);
 			Sounds_multiply (sframe.get(), window.get());
-			if (! Sound_into_MelFilter_frame (sframe.get(), thee.get(), i)) {
+			if (! Sound_into_MelFilter_frame (sframe.get(), thee.get(), i))
 				frameErrorCount ++;
-			}
-			if ( (i % 10) == 1) {
+			if (i % 10 == 1)
 				Melder_progress ((double) i / nt, U"Frame ", i, U" out of ", nt, U".");
-			}
 		}
 
 		if (frameErrorCount) {
@@ -1127,16 +1113,15 @@ static int Sound_into_FormantFilter_frame (Sound me, FormantFilter thee, integer
 
 autoFormantFilter Sound_to_FormantFilter (Sound me, double analysisWidth, double dt, double f1_hz, double fmax_hz, double df_hz, double relative_bw, double minimumPitch, double maximumPitch) {
 	try {
-		double floor = 80, ceiling = 600;
+		double floor = 80.0, ceiling = 600.0;
 		if (minimumPitch >= maximumPitch) {
-			minimumPitch = floor; maximumPitch = ceiling;
-		}
-		if (minimumPitch <= 0) {
 			minimumPitch = floor;
-		}
-		if (maximumPitch <= 0) {
 			maximumPitch = ceiling;
 		}
+		if (minimumPitch <= 0.0)
+			minimumPitch = floor;
+		if (maximumPitch <= 0.0)
+			maximumPitch = ceiling;
 
 		autoPitch thee = Sound_to_Pitch (me, dt, minimumPitch, maximumPitch);
 		autoFormantFilter ff = Sound_Pitch_to_FormantFilter (me, thee.get(), analysisWidth, dt, f1_hz, fmax_hz, df_hz, relative_bw);
@@ -1148,11 +1133,12 @@ autoFormantFilter Sound_to_FormantFilter (Sound me, double analysisWidth, double
 
 autoFormantFilter Sound_Pitch_to_FormantFilter (Sound me, Pitch thee, double analysisWidth, double dt, double f1_hz, double fmax_hz, double df_hz, double relative_bw) {
 	try {
-		double t1, windowDuration = 2 * analysisWidth;   // Gaussian window
-		double nyquist = 0.5 / my dx, samplingFrequency = 2 * nyquist, fmin_hz = 0;
-		integer nt, f0_undefined = 0;
+		double t1, windowDuration = 2.0 * analysisWidth;   // Gaussian window
+		double nyquist = 0.5 / my dx, samplingFrequency = 2.0 * nyquist, fmin_hz = 0.0;
+		integer nt, numberOfUndefinedPitches = 0;
 
-		Melder_require (my xmin >= thy xmin && my xmax <= thy xmax, U"The domain of the Sound should be included in the domain of the Pitch.");
+		Melder_require (my xmin >= thy xmin && my xmax <= thy xmax,
+			U"The domain of the Sound should be included in the domain of the Pitch.");
 
 		double f0_median = Pitch_getQuantile (thee, thy xmin, thy xmax, 0.5, kPitch_unit::HERTZ);
 
@@ -1161,18 +1147,14 @@ autoFormantFilter Sound_Pitch_to_FormantFilter (Sound me, Pitch thee, double ana
 			Melder_warning (U"Pitch values undefined. Bandwith fixed to 100 Hz. ");
 		}
 
-		if (f1_hz <= 0) {
-			f1_hz = 100;
-		}
-		if (fmax_hz <= 0) {
+		if (f1_hz <= 0.0)
+			f1_hz = 100.0;
+		if (fmax_hz <= 0.0)
 			fmax_hz = nyquist;
-		}
-		if (df_hz <= 0) {
-			df_hz = f0_median / 2;
-		}
-		if (relative_bw <= 0) {
+		if (df_hz <= 0.0)
+			df_hz = f0_median / 2.0;
+		if (relative_bw <= 0.0)
 			relative_bw = 1.1;
-		}
 
 		fmax_hz = MIN (fmax_hz, nyquist);
 		integer nf = Melder_iround ( (fmax_hz - f1_hz) / df_hz);
@@ -1191,18 +1173,17 @@ autoFormantFilter Sound_Pitch_to_FormantFilter (Sound me, Pitch thee, double ana
 			double b, f0 = Pitch_getValueAtTime (thee, t, kPitch_unit::HERTZ, 0);
 
 			if (isundef (f0) || f0 == 0.0) {
-				f0_undefined ++;
+				numberOfUndefinedPitches ++;
 				f0 = f0_median;
 			}
 			b = relative_bw * f0;
-			Sound_into_Sound (me, sframe.get(), t - windowDuration / 2);
+			Sound_into_Sound (me, sframe.get(), t - windowDuration / 2.0);
 			Sounds_multiply (sframe.get(), window.get());
 
 			Sound_into_FormantFilter_frame (sframe.get(), him.get(), i, b);
 
-			if (i % 10 == 1) {
+			if (i % 10 == 1)
 				Melder_progress ((double) i / nt, U"Frame ", i, U" out of ", nt, U".");
-			}
 		}
 
 		double ref = FilterBank_DBREF * gaussian_window_squared_correction (window -> nx);

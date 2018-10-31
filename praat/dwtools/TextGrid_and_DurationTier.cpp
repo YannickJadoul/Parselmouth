@@ -71,13 +71,15 @@ autoTextGrid TextGrid_DurationTier_scaleTimes (TextGrid me, DurationTier thee) {
 	}
 }
 
-autoDurationTier TextGrid_to_DurationTier (TextGrid me, integer tierNumber, double timeScalefactor, double leftTransitionDuration, double rightTransitionDuration, kMelder_string which, const char32 *criterion) {
+autoDurationTier TextGrid_to_DurationTier (TextGrid me, integer tierNumber,
+	double timeScalefactor, double leftTransitionDuration, double rightTransitionDuration, kMelder_string which, conststring32 criterion)
+{
 	try {
 		autoDurationTier him = DurationTier_create (my xmin, my xmax);
 		IntervalTier tier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
 		for (integer i = 1; i <= tier ->intervals.size; i ++) {
 			TextInterval segment = tier -> intervals.at [i];
-			if (Melder_stringMatchesCriterion (segment -> text, which, criterion)) {
+			if (Melder_stringMatchesCriterion (segment -> text.get(), which, criterion, true)) {
 				double xmin = segment -> xmin, xmax = segment -> xmax;
 				RealTier_addPoint (him.get(), xmin, 1.0);
 				RealTier_addPoint (him.get(), xmin + leftTransitionDuration, timeScalefactor);

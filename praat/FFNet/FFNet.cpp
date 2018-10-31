@@ -62,15 +62,14 @@ static void bookkeeping (FFNet me);
 
 Thing_implement (FFNet, Daata, 0);
 
-char32 * FFNet_createNameFromTopology (FFNet me) {
+autostring32 FFNet_createNameFromTopology (FFNet me) {
 	autoMelderString name;
 	MelderString_copy (& name, my nUnitsInLayer [0]);
 	for (integer i = 1; i <= my nLayers; i ++) {
 		MelderString_appendCharacter (& name, U'-');
 		MelderString_append (& name, my nUnitsInLayer [i]);
 	}
-	autostring32 naam = Melder_dup (name.string);
-	return naam.transfer();
+	return Melder_dup (name.string);
 }
 
 /****** non-linearities ****************************************************/
@@ -302,11 +301,11 @@ void FFNet_reset (FFNet me, double weightRange) {
 	my minimizer.reset();
 }
 
-const char32* FFNet_getCategoryOfOutputUnit (FFNet me, integer outputUnit) {
-	const char32 *result = U"-- undefined --";
+conststring32 FFNet_getCategoryOfOutputUnit (FFNet me, integer outputUnit) {
+	conststring32 result = U"-- undefined --";
 	if (my outputCategories && outputUnit <= my outputCategories -> size) {
 		SimpleString ss = my outputCategories->at [outputUnit];
-		result = ss -> string;
+		result = ss -> string.get();
 	}
 	return result;
 }
@@ -316,7 +315,7 @@ integer FFNet_getOutputUnitOfCategory (FFNet me, const char32* category) {
 	if (my outputCategories) {
 		for (integer i = 1; i <= my outputCategories -> size; i ++) {
 			SimpleString s = my outputCategories->at [i];
-			if (Melder_equ (s -> string, category)) {
+			if (Melder_equ (s -> string.get(), category)) {
 				result = i;
 				break;
 			}
@@ -710,7 +709,7 @@ autoCollection FFNet_createIrisExample (integer numberOfHidden1, integer numberO
 		autoFFNet me = FFNet_create (4, numberOfHidden1, numberOfHidden2, 3, false);
 		FFNet_setOutputCategories (me.get(), uniq.get());
 		autostring32 name = FFNet_createNameFromTopology (me.get());
-		Thing_setName (me.get(), name.peek());
+		Thing_setName (me.get(), name.get());
 		collection -> addItem_move (me.move());
 		autoTableOfReal iris = TableOfReal_createIrisDataset ();
 
@@ -781,7 +780,7 @@ autoFFNet PatternList_Categories_to_FFNet (PatternList me, Categories you, integ
 		autoFFNet result = FFNet_create (my nx, numberOfUnits1, numberOfUnits2, numberOfOutputs, false);
 		FFNet_setOutputCategories (result.get(), uniq.get());
 		autostring32 ffnetName = FFNet_createNameFromTopology (result.get());
-		Thing_setName (result.get(), ffnetName.peek());
+		Thing_setName (result.get(), ffnetName.get());
 		return result;
 	} catch (MelderError) {
 		Melder_throw (me, you, U": no FFNet created.");

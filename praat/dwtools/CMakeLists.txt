@@ -12,6 +12,7 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             Eigen_and_Matrix.cpp Eigen_and_Procrustes.cpp
             Eigen_and_TableOfReal.cpp
             Eigen_and_SSCP.cpp Excitations.cpp
+            espeakdata_FileInMemory.cpp
             FilterBank.cpp FormantGrid_extensions.cpp
             GaussianMixture.cpp
             HMM.cpp
@@ -19,7 +20,7 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             LFCC.cpp LongSound_extensions.cpp
             KlattGrid.cpp KlattGridEditors.cpp KlattTable.cpp
             Ltas_extensions.cpp
-            MFCC.cpp
+            MDSVec.cpp MFCC.cpp
             manual_DataModeler.cpp manual_dwtools.cpp manual_BSS.cpp manual_HMM.cpp
             manual_KlattGrid.cpp manual_MDS.cpp manual_Permutation.cpp
             Minimizers.cpp MixingMatrix.cpp
@@ -29,7 +30,7 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             PatternList.cpp PCA.cpp
             Pitch_extensions.cpp Polynomial.cpp
             Polygon_extensions.cpp Procrustes.cpp
-            Proximity.cpp
+            Proximity.cpp Proximity_and_Distance.cpp
             Resonator.cpp
             Sound_and_MixingMatrix.cpp
             Sound_and_Spectrogram_extensions.cpp Sound_and_PCA.cpp Sound_extensions.cpp
@@ -37,7 +38,7 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             Sound_to_Pitch2.cpp Sound_to_SPINET.cpp SPINET.cpp SPINET_to_Pitch.cpp
             Spectrogram_extensions.cpp Spectrum_extensions.cpp SSCP.cpp Strings_extensions.cpp
             SpeechSynthesizer.cpp SpeechSynthesizer_and_TextGrid.cpp
-            Table_extensions.cpp TableOfReal_and_SVD.cpp
+            Table_and_Strings.cpp Table_extensions.cpp TableOfReal_and_SVD.cpp
             TableOfReal_extensions.cpp
             TableOfReal_and_Permutation.cpp
             TextGrid_and_DurationTier.cpp TextGrid_and_PitchTier.cpp TextGrid_extensions.cpp

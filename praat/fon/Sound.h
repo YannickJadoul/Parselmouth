@@ -100,6 +100,7 @@ autoSound Sound_createSimple (integer numberOfChannels, double duration, double 
 autoSound Sound_convertToMono (Sound me);
 autoSound Sound_convertToStereo (Sound me);
 autoSound Sound_extractChannel (Sound me, integer ichannel);
+autoSound Sound_extractChannels (Sound me, constVEC channelNumbers);
 autoSound Sounds_combineToStereo (OrderedOf<structSound>* me);
 
 /* Levels for Sampled_getValueAtSample (me, index, level, unit) */
@@ -189,7 +190,7 @@ autoSound Sound_filter_deemphasis (Sound me, double frequency);
 void Sound_reverse (Sound me, double tmin, double tmax);
 
 void Sound_draw (Sound me, Graphics g,
-	double tmin, double tmax, double minimum, double maximum, bool garnish, const char32 *method);
+	double tmin, double tmax, double minimum, double maximum, bool garnish, conststring32 method);
 /* For method, see Vector_draw. */
 
 autoMatrix Sound_to_Matrix (Sound me);

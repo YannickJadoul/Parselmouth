@@ -72,21 +72,22 @@ void Polygon_getExtrema (Polygon me, double *p_xmin, double *p_xmax, double *p_y
 	}
 }
 
-autoPolygon Polygon_createSimple (char32 *xystring) {
+autoPolygon Polygon_createSimple (conststring32 xystring) {
 	try {
 		integer numberOfInputs;
 		autoNUMvector <double> xys (NUMstring_to_numbers (xystring, & numberOfInputs), 1);
-		Melder_require (numberOfInputs >= 6, U"There should be at least 3 points (= x,y pairs) in the Polygon");
-		Melder_require (numberOfInputs % 2 == 0, U"One value is missing.");
+		Melder_require (numberOfInputs >= 6,
+			U"There should be at least 3 points (= x,y pairs) in the Polygon");
+		Melder_require (numberOfInputs % 2 == 0,
+			U"One value is missing.");
 		
 		integer numberOfPoints = numberOfInputs / 2;
 		autoPolygon me = Polygon_create (numberOfPoints);
 		for (integer i = 1; i <= numberOfPoints; i ++) {
 			my x [i] = xys [2 * i - 1];
 			my y [i] = xys [2 * i];
-			if (i > 1 && my x [i] == my x [i - 1] && my y [i] == my y [i - 1]) {
+			if (i > 1 && my x [i] == my x [i - 1] && my y [i] == my y [i - 1])
 				Melder_warning (U"Two successives vertices are equal.");
-			}
 		}
 		return me;
 	} catch (MelderError) {
@@ -154,13 +155,13 @@ void Polygon_Categories_draw (Polygon me, Categories thee, Graphics graphics, do
 	}
 
 	if (xmax == xmin) {
-		NUMvector_extrema (my x, 1, my numberOfPoints, & min, & max);
+		NUMvector_extrema (my x.at, 1, my numberOfPoints, & min, & max);
 		tmp = max - min == 0 ? 0.5 : 0.0;
 		xmin = min - tmp; xmax = max + tmp;
 	}
 
 	if (ymax == ymin) {
-		NUMvector_extrema (my y, 1, my numberOfPoints, & min, & max);
+		NUMvector_extrema (my y.at, 1, my numberOfPoints, & min, & max);
 		tmp = max - min == 0 ? 0.5 : 0.0;
 		ymin = min - tmp; ymax = max + tmp;
 	}
@@ -170,7 +171,8 @@ void Polygon_Categories_draw (Polygon me, Categories thee, Graphics graphics, do
 	Graphics_setTextAlignment (graphics, Graphics_CENTRE, Graphics_HALF);
 
 	for (integer i = 1; i <= my numberOfPoints; i ++) {
-		OrderedOfString_drawItem (thee, graphics, i, my x [i], my y [i]);
+		SimpleString category = thy at [i];
+		Graphics_text (graphics, my x [i], my y [i], category -> string.get());
 	}
 	Graphics_unsetInner (graphics);
 	if (garnish) {
@@ -222,7 +224,7 @@ static void setWindow (Polygon me, Graphics graphics, double xmin, double xmax, 
 	Graphics_setWindow (graphics, xmin, xmax, ymin, ymax);
 }
 
-void Polygon_drawMarks (Polygon me, Graphics g, double xmin, double xmax, double ymin, double ymax, double size_mm, const char32 *mark) {
+void Polygon_drawMarks (Polygon me, Graphics g, double xmin, double xmax, double ymin, double ymax, double size_mm, conststring32 mark) {
 	Graphics_setInner (g);
 	setWindow (me, g, xmin, xmax, ymin, ymax);
 	for (integer i = 1; i <= my numberOfPoints; i ++) {
@@ -611,13 +613,15 @@ static bool pointsInsideInterval (double *x, integer n, integer istart, integer 
 			imin = index;
 		}
 	}
-	*jstart = imin; *jend = imax;
+	*jstart = imin;
+	*jend = imax;
 	if (x [istart] > x [iend]) {
 		*jstart = imax;
 		*jend = imin;
 	}
 	if (x [istart] == x [*jstart] and x [iend] == x [*jend]) {   // if there are duplicates of the extrema
-		*jstart = istart; *jend = iend;
+		*jstart = istart;
+		*jend = iend;
 	}
 	return *jstart == istart and * jend == iend;
 }
@@ -642,8 +646,8 @@ static void _Polygons_copyNonCollinearities (Polygon me, Polygon thee, integer c
 	// Determine if all collinear point are within the interval [colstart,colend]
 	integer jstart, jend;
 	bool allPointsInside = ( my x [collstart] != my x [collend] ?
-	                         pointsInsideInterval (my x, my numberOfPoints, collstart, collend, &jstart, &jend) :
-	                         pointsInsideInterval (my y, my numberOfPoints, collstart, collend, &jstart, &jend) );
+	                         pointsInsideInterval (my x.at, my numberOfPoints, collstart, collend, &jstart, &jend) :
+	                         pointsInsideInterval (my y.at, my numberOfPoints, collstart, collend, &jstart, &jend) );
 	if (not allPointsInside) {
 		if (collstart != jstart) { // also include the extreme point at start
 			thy numberOfPoints ++;
@@ -779,11 +783,17 @@ static void Vertices_print (Vertices me, Vertices thee) {
 	MelderInfo_writeLine (U"");
 	while (n != 0) {
 		double x = VERTEX (n) -> x, y = VERTEX (n) -> y, alpha = VERTEX (n) -> alpha;
-		const char32 *type = 0, *itype;
+		conststring32 type, itype;
 		if (VERTEX (n) -> intersect == 0) {
-			type = U"S"; ns ++; nt = ns; itype = U"-"; nt2 = 0;
+			type = U"S";
+			ns ++;
+			nt = ns;
+			itype = U"-";
+			nt2 = 0;
 		} else {
-			type = U"I"; nt = VERTEX (n) -> id; nt2 = VERTEX (VERTEX (n) -> neighbour) -> id;
+			type = U"I";
+			nt = VERTEX (n) -> id;
+			nt2 = VERTEX (VERTEX (n) -> neighbour) -> id;
 			itype = Melder_integer (VERTEX (n) -> intersect);
 		}
 		MelderInfo_write (type, nt, U" I", itype, U", (", x, U", ", y, U"), ");
@@ -794,11 +804,17 @@ static void Vertices_print (Vertices me, Vertices thee) {
 	n = thy front;
 	while (n != 0) {
 		double x = VERTEX (n) -> x, y = VERTEX (n) -> y, alpha = VERTEX (n) -> alpha;
-		const char32 *type = 0, *itype;
+		conststring32 type, itype;
 		if (VERTEX (n) -> intersect == 0) {
-			type = U"C"; nc ++; nt = nc; itype = U"-"; nt2 = 0;
+			type = U"C";
+			nc ++;
+			nt = nc;
+			itype = U"-";
+			nt2 = 0;
 		} else {
-			type = U"I"; nt = VERTEX (n) -> id; nt2 = VERTEX (VERTEX (n) -> neighbour) -> id;
+			type = U"I";
+			nt = VERTEX (n) -> id;
+			nt2 = VERTEX (VERTEX (n) -> neighbour) -> id;
 			itype = Melder_integer (VERTEX (n) -> intersect);
 		}
 		MelderInfo_write (type, nt, U" I", itype, U", (", x, U", ", y, U"), ");

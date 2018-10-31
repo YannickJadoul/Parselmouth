@@ -1,6 +1,6 @@
 /* SSCP.cpp
  *
- * Copyright (C) 1993-2017 David Weenink
+ * Copyright (C) 1993-2018 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -187,10 +187,10 @@ static autoSSCP _SSCP_extractTwoDimensions (SSCP me, integer d1, integer d2) {
 	thy centroid [2] = my centroid [d2];
 	thy numberOfObservations = my numberOfObservations;
 
-	TableOfReal_setColumnLabel (thee.get(), 1, my columnLabels [d1]);
-	TableOfReal_setColumnLabel (thee.get(), 2, my columnLabels [d2]);
-	TableOfReal_setRowLabel (thee.get(), 1, my columnLabels [d1]);
-	TableOfReal_setRowLabel (thee.get(), 2, my columnLabels [d2]);
+	TableOfReal_setColumnLabel (thee.get(), 1, my columnLabels [d1].get());
+	TableOfReal_setColumnLabel (thee.get(), 2, my columnLabels [d2].get());
+	TableOfReal_setRowLabel (thee.get(), 1, my columnLabels [d1].get());
+	TableOfReal_setRowLabel (thee.get(), 2, my columnLabels [d2].get());
 	return thee;
 }
 
@@ -208,7 +208,7 @@ autoSSCPList SSCPList_extractTwoDimensions (SSCPList me, integer d1, integer d2)
 	}
 }
 
-void SSCP_drawTwoDimensionalEllipse_inside (SSCP me, Graphics g, double scale, const char32 *label, int fontSize) {
+void SSCP_drawTwoDimensionalEllipse_inside (SSCP me, Graphics g, double scale, conststring32 label, int fontSize) {
 	try {
 		integer nsteps = 100;
 		autoNUMvector <double> x ((integer) 0, nsteps);
@@ -249,7 +249,7 @@ void SSCP_drawTwoDimensionalEllipse_inside (SSCP me, Graphics g, double scale, c
 
 static void _SSCP_drawTwoDimensionalEllipse (SSCP me, Graphics g, double scale, int fontSize) {
 	integer nsteps = 100;
-	const char32 *name;
+	conststring32 name;
 
 	autoNUMvector <double> x ((integer) 0, nsteps);
 	autoNUMvector <double> y ((integer) 0, nsteps);
@@ -462,9 +462,12 @@ double SSCP_getCumulativeContributionOfComponents (SSCP me, integer from, intege
 }
 
 /* For nxn matrix only ! */
-void Covariance_PCA_generateOneVector (Covariance me, PCA thee, double *vec, double *buf) {
+void Covariance_PCA_generateOneVector_inline (Covariance me, PCA thee, VEC vec, VEC buf) {
 	// Generate the multi-normal vector elements N(0,sigma)
-
+	Melder_require (thy dimension == my numberOfRows, 
+		U"The PCA must have the same dimension as the Covariance.");
+	Melder_require (vec.size == buf.size && my numberOfColumns == buf.size, 
+		U"The vectors and the PCA must have the same dimension.");
 	for (integer j = 1; j <= my numberOfColumns; j ++) {
 		buf [j] = NUMrandomGauss (0.0, sqrt (thy eigenvalues [j]));
 	}
@@ -478,7 +481,7 @@ void Covariance_PCA_generateOneVector (Covariance me, PCA thee, double *vec, dou
 		}
 	}
 
-	// Restore the centroid
+	// Add the centroid
 
 	for (integer j = 1; j <= my numberOfColumns; j ++) {
 		vec [j] += my centroid [j];
@@ -492,13 +495,14 @@ autoTableOfReal Covariance_to_TableOfReal_randomSampling (Covariance me, integer
 		}
 		autoPCA pca = SSCP_to_PCA (me);
 		autoTableOfReal thee = TableOfReal_create (numberOfData, my numberOfColumns);
-		autoNUMvector<double> buf (1, my numberOfColumns);
-
+		autoVEC buf (my numberOfColumns, kTensorInitializationType::RAW);
+		VEC v; v.size = my numberOfColumns;
 		for (integer i = 1; i <= numberOfData; i ++) {
-			Covariance_PCA_generateOneVector (me, pca.get(), thy data [i], buf.peek());
+			v.at = thy data [i];
+			Covariance_PCA_generateOneVector_inline (me, pca.get(), v, buf.get());
 		}
 
-		NUMstrings_copyElements (my columnLabels, thy columnLabels, 1, my numberOfColumns);
+		thy columnLabels. copyElementsFrom (my columnLabels.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not random sampled.");
@@ -531,17 +535,13 @@ autoSSCP TableOfReal_to_SSCP (TableOfReal me, integer rowb, integer rowe, intege
 				"(The number of data points was less than the number of variables.)");
 		}
 		autoSSCP thee = SSCP_create (numberOfColumns);
-		autoNUMmatrix<double> v (1, numberOfRows, 1, numberOfColumns);
+		autoMAT v = MATraw (numberOfRows, numberOfColumns);
 
-		integer nvalidrows = 0;
-		for (integer i = 1; i <= numberOfRows; i ++) {
-			nvalidrows ++;
-			for (integer j = 1; j <= numberOfColumns; j ++) {
+		for (integer i = 1; i <= numberOfRows; i ++)
+			for (integer j = 1; j <= numberOfColumns; j ++)
 				v [i] [j] = my data [rowb + i - 1] [colb + j - 1];
-			}
-		}
 
-		NUMcentreColumns (v.peek(), 1, numberOfRows, 1, numberOfColumns, thy centroid);
+		MATcentreEachColumn_inplace (v.get(), thy centroid);
 
 		SSCP_setNumberOfObservations (thee.get(), numberOfRows);
 
@@ -557,7 +557,7 @@ autoSSCP TableOfReal_to_SSCP (TableOfReal me, integer rowb, integer rowe, intege
 			}
 		}
 		for (integer j = 1; j <= numberOfColumns; j ++) {
-			char32 *label = my columnLabels [colb + j - 1];
+			conststring32 label = my columnLabels [colb + j - 1].get();
 			TableOfReal_setColumnLabel (thee.get(), j, label);
 			TableOfReal_setRowLabel (thee.get(), j, label);
 		}
@@ -606,7 +606,7 @@ autoTableOfReal Covariance_TableOfReal_mahalanobis (Covariance me, TableOfReal t
 		for (integer k = 1; k <= thy numberOfRows; k ++) {
 			his data [k] [1] = sqrt (NUMmahalanobisDistance_chi (covari.peek(), thy data [k], centroid.peek(), my numberOfRows, my numberOfRows));
 			if (thy rowLabels [k]) {
-				TableOfReal_setRowLabel (him.get(), k, thy rowLabels [k]);
+				TableOfReal_setRowLabel (him.get(), k, thy rowLabels [k].get());
 			}
 		}
 		TableOfReal_setColumnLabel (him.get(), 1, U"d");
@@ -636,8 +636,7 @@ autoTableOfReal Covariance_TableOfReal_extractDistanceQuantileRange (Covariance 
 		Melder_require (nsel > 0, U"Not enough data in quantile interval.");
 		
 		autoTableOfReal r = TableOfReal_create (nsel, thy numberOfColumns);
-		NUMstrings_copyElements (thy columnLabels, r -> columnLabels, 1, thy numberOfColumns);
-		//((r -> columnLabels = NUMstrings_copy (thy columnLabels, 1, thy numberOfColumns)) == nullptr)) goto end;
+		r -> columnLabels. copyElementsFrom (thy columnLabels.get());
 
 		integer k = 0;
 		for (integer i = 1; i <= thy numberOfRows; i ++) {
@@ -689,10 +688,10 @@ autoSSCPList TableOfReal_to_SSCPList_byLabel (TableOfReal me) {
 
 		Melder_warningOff ();
 		integer lastrow = 0, numberOfMatrices = 0, numberOfSingularMatrices = 0, index = 1;
-		const char32 *label = mew -> rowLabels [1];
+		conststring32 label = mew -> rowLabels [1].get();
 		for (integer i = 2; i <= my numberOfRows; i ++) {
 			integer numberOfRowsInCurrent = 0;
-			const char32 *currentLabel = mew -> rowLabels [i];
+			conststring32 currentLabel = mew -> rowLabels [i].get();
 			if (Melder_cmp (currentLabel, label) != 0) {
 				// current label different from previous one(s)
 				numberOfRowsInCurrent = i - index;
@@ -712,7 +711,7 @@ autoSSCPList TableOfReal_to_SSCPList_byLabel (TableOfReal me) {
 					numberOfSingularMatrices ++;
 				}
 				autoSSCP t = TableOfReal_to_SSCP (mew.get(), index, lastrow, 0, 0);
-				if (! (label = mew -> rowLabels [index])) {
+				if (! (label = mew -> rowLabels [index].get())) {
 					label = U"?";
 				}
 				Thing_setName (t.get(), label);
@@ -738,20 +737,18 @@ autoSSCPList TableOfReal_to_SSCPList_byLabel (TableOfReal me) {
 
 autoPCA SSCP_to_PCA (SSCP me) {
 	try {
-		double **data = my data;
-		autoNUMmatrix<double> adata;
+		autoMAT mat (my numberOfColumns, my numberOfColumns, kTensorInitializationType::ZERO);
 		autoPCA thee = PCA_create (my numberOfColumns, my numberOfColumns);
 
 		if (my numberOfRows == 1) { // 1xn matrix -> nxn
-			// ugly hack
-			adata.reset (1, my numberOfColumns, 1, my numberOfColumns);
 			for (integer i = 1; i <= my numberOfColumns; i ++) {
-				data [i] [i] = my data [1] [i];
+				mat [i] [i] = my data [1] [i];
 			}
-			data = adata.peek();
+		} else {
+			NUMmatrix_copyElements <double> (my data, mat.at, 1, my numberOfColumns, 1, my numberOfColumns);
 		}
-		NUMstrings_copyElements (my columnLabels, thy labels, 1, my numberOfColumns);
-		Eigen_initFromSymmetricMatrix (thee.get(), data, my numberOfColumns);
+		thy labels. copyElementsFrom_upTo (my columnLabels.get(), my numberOfColumns);
+		Eigen_initFromSymmetricMatrix (thee.get(), mat.get());
 		NUMvector_copyElements (my centroid, thy centroid, 1, my numberOfColumns);
 		PCA_setNumberOfObservations (thee.get(), Melder_ifloor (my numberOfObservations));
 		return thee;
@@ -763,14 +760,14 @@ autoPCA SSCP_to_PCA (SSCP me) {
 void SSCP_setValue (SSCP me, integer row, integer col, double value) {
 	Melder_require (col > 0 && col <= my numberOfColumns, U"Illegal column number.");
 	Melder_require (row > 0 && row <= my numberOfRows, U"Illegal row number.");
-	Melder_require (! (row == col && value <= 0), U"Diagonal element should always be a positive number.");
+	Melder_require (! (row == col && value <= 0.0), U"Diagonal element should always be a positive number.");
 	
 	if (my numberOfRows == 1) { // diagonal
 		Melder_require (row == col, U"Row and column number should be equal for a diagonal matrix.");
 		my data [1] [row] = value;
 	} else {
-		Melder_require (!(row != col && (fabs (value) > my data [row] [row] || fabs (value) > my data [row] [row])),
-			U"The off-diagonal should not be larger than the diagonal values. Input diagonal elements first, or change this value.");
+		Melder_require (! (row != col && (fabs (value) > my data [row] [row] || fabs (value) > my data [col] [col])),
+			U"The off-diagonal values should not be larger than the diagonal values. Input diagonal elements first, or change this value.");
 		my data [row] [col] = my data [col] [row] = value;
 	}
 }
@@ -866,11 +863,11 @@ autoCCA SSCP_to_CCA (SSCP me, integer ny) {
 
 		for (integer i = 1; i <= ny; i ++) {
 			for (integer j = 1; j <= nx; j ++) {
-				real80 t = 0.0;
+				longdouble t = 0.0;
 				for (integer k = 1; k <= j; k ++) {
 					t += syx [i] [k] * sxx [k] [j];
 				}
-				a [j] [i] = (real) t;
+				a [j] [i] = (double) t;
 			}
 		}
 
@@ -1064,7 +1061,11 @@ autoSSCPList SSCPList_toTwoDimensions (SSCPList me, double v1 [], double v2 []) 
 }
 
 
-void SSCPList_drawConcentrationEllipses (SSCPList me, Graphics g, double scale, bool confidence, const char32 *label, integer d1, integer d2, double xmin, double xmax, double ymin, double ymax, int fontSize, bool garnish) {
+void SSCPList_drawConcentrationEllipses (SSCPList me, Graphics g,
+	double scale, bool confidence, conststring32 label,
+	integer d1, integer d2, double xmin, double xmax, double ymin, double ymax,
+	int fontSize, bool garnish)
+{
 	SSCP t = my at [1];
 
 	Melder_require (d1 > 0 && d1 <= t -> numberOfColumns && d2 > 0 && d2 <= t -> numberOfColumns && d1 != d2, U"Incorrect axes.");
@@ -1108,9 +1109,9 @@ void SSCPList_drawConcentrationEllipses (SSCPList me, Graphics g, double scale, 
 		t = my at [1];
 		Graphics_drawInnerBox (g);
 		Graphics_marksLeft (g, 2, true, true, false);
-		Graphics_textLeft (g, true, t -> columnLabels [d2] ? t -> columnLabels [d2] : Melder_cat (U"Dimension ", d2));
+		Graphics_textLeft (g, true, t -> columnLabels [d2] ? t -> columnLabels [d2].get() : Melder_cat (U"Dimension ", d2));
 		Graphics_marksBottom (g, 2, true, true, false);
-		Graphics_textBottom (g, true, t -> columnLabels [d1] ? t -> columnLabels [d1] : Melder_cat (U"Dimension ", d1));
+		Graphics_textBottom (g, true, t -> columnLabels [d1] ? t -> columnLabels [d1].get() : Melder_cat (U"Dimension ", d1));
 	}
 }
 
@@ -1128,7 +1129,7 @@ autoTableOfReal SSCP_extractCentroid (SSCP me) {
 	try {
 		autoTableOfReal thee = TableOfReal_create (1, my numberOfColumns);
 		NUMvector_copyElements (my centroid, thy data [1], 1, my numberOfColumns);
-		thy columnLabels = NUMstrings_copy (my columnLabels, 1, my numberOfColumns);
+		thy columnLabels. copyElementsFrom (my columnLabels.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": centroid not extracted.");
@@ -1160,11 +1161,11 @@ autoCovariance Covariance_create_reduceStorage (integer dimension, integer stora
 
 
 
-autoCovariance Covariance_createSimple (char32 *s_covariances, char32 *s_centroid, integer numberOfObservations) {
+autoCovariance Covariance_createSimple (conststring32 s_covariances, conststring32 s_centroid, integer numberOfObservations) {
 	try {
 		integer dimension, numberOfCovariances;
-		autoNUMvector <real> centroid (NUMstring_to_numbers (s_centroid, & dimension), 1);
-		autoNUMvector <real> covariances (NUMstring_to_numbers (s_covariances, & numberOfCovariances), 1);
+		autoNUMvector <double> centroid (NUMstring_to_numbers (s_centroid, & dimension), 1);
+		autoNUMvector <double> covariances (NUMstring_to_numbers (s_covariances, & numberOfCovariances), 1);
 		integer numberOfCovariances_wanted = dimension * (dimension + 1) / 2;
 		Melder_require (numberOfCovariances == numberOfCovariances_wanted,
 			U"The number of covariance matrix elements and the number of centroid elements should agree. "
@@ -1210,7 +1211,7 @@ autoCovariance Covariance_createSimple (char32 *s_covariances, char32 *s_centroi
 	}
 }
 
-autoCorrelation Correlation_createSimple (char32 *s_correlations, char32 *s_centroid, integer numberOfObservations) {
+autoCorrelation Correlation_createSimple (conststring32 s_correlations, conststring32 s_centroid, integer numberOfObservations) {
 	try {
 		integer dimension, numberOfCorrelations;
 		autoNUMvector<double> centroids (NUMstring_to_numbers (s_centroid, & dimension), 1);
@@ -1236,7 +1237,7 @@ autoCorrelation Correlation_createSimple (char32 *s_correlations, char32 *s_cent
 			}
 		}
 
-		// Check if a valid correlations, first check variances then covariances
+		// Check if a valid correlations, first check diagonal then off-diagonals
 
 		for (integer irow = 1; irow <= dimension; irow ++) {
 			Melder_require (my data [irow] [irow] == 1.0, U"The diagonal matrix elements should all equal 1.0.");
@@ -1346,11 +1347,10 @@ static double **productOfSquareMatrices (double **s1, double **s2, integer n) {
 	autoNUMmatrix<double> r (1, n, 1, n);
 	for (integer i = 1; i <= n; i ++) {
 		for (integer j = 1; j <= n; j ++) {
-			double sum = 0;
-			for (integer k = 1; k <= n; k ++) {
+			longdouble sum = 0.0;
+			for (integer k = 1; k <= n; k ++)
 				sum += s1 [i] [k] * s2 [k] [j];
-			}
-			r [i] [j] = sum;
+			r [i] [j] = (double) sum;
 		}
 	}
 	return r.transfer();
@@ -1363,31 +1363,32 @@ static double traceOfSquaredMatrixProduct (double **s1, double **s2, integer n) 
 	return trace2;
 }
 
-double Covariance_getProbabilityAtPosition_string (Covariance me, char32 *vector) {
-	autoNUMvector<double> v (1, my numberOfColumns);
-	integer i = 0;
-	for (char32 *token = Melder_firstToken (vector); token != nullptr; token = Melder_nextToken ()) {
-		v [++ i] = Melder_atof (token);
-		if (i == my numberOfColumns) {
+double Covariance_getProbabilityAtPosition_string (Covariance me, conststring32 vector_string) {
+	autostring32vector vector = STRVECtokenize (vector_string);
+	autoVEC v = VECzero (my numberOfColumns);
+	for (integer i = 1; i <= vector.size; i ++) {
+		v [i] = Melder_atof (vector [i].get());
+		if (i == my numberOfColumns)
 			break;
-		}
 	}
-	double p = Covariance_getProbabilityAtPosition (me, v.peek());
+	double p = Covariance_getProbabilityAtPosition (me, v.get());
 	return p;
 }
 
-double Covariance_getProbabilityAtPosition (Covariance me, double x []) {
+double Covariance_getProbabilityAtPosition (Covariance me, VEC x) {
+	Melder_require (x.size == my numberOfColumns,
+		U"The dimensions of the Covariance and the vector should agree.");
 	if (my lowerCholesky == 0) {
-		SSCP_expandLowerCholesky (me);
+		SSCP_expandLowerCholesky ((SSCP) me);
 	}
 	double ln2pid = my numberOfColumns * log (NUM2pi);
-	double dsq = NUMmahalanobisDistance_chi (my lowerCholesky, x, my centroid, my numberOfRows, my numberOfColumns);
+	double dsq = NUMmahalanobisDistance_chi (my lowerCholesky, x.at, my centroid, my numberOfRows, my numberOfColumns);
 	double lnN = - 0.5 * (ln2pid + my lnd + dsq);
 	double p =  exp (lnN);
 	return p;
 }
 
-double Covariance_getMarginalProbabilityAtPosition (Covariance me, double vector [], double x) {
+double Covariance_getMarginalProbabilityAtPosition (Covariance me, VEC vector, double x) {
 	double mu, stdev;
 	Covariance_getMarginalDensityParameters (me, vector, &mu, &stdev);
 	double dx = (x - mu) / stdev;
@@ -1396,16 +1397,17 @@ double Covariance_getMarginalProbabilityAtPosition (Covariance me, double vector
 }
 
 /* Precondition ||v|| = 1 */
-void Covariance_getMarginalDensityParameters (Covariance me, double v [], double *p_mu, double *p_stdev) {
+void Covariance_getMarginalDensityParameters (Covariance me, VEC v, double *p_mu, double *p_stdev) {
+	Melder_assert (v.size == my numberOfColumns);
 	if (p_mu) {
-		double mu = 0.0;
+		longdouble mu = 0.0;
 		for (integer m = 1; m <= my numberOfColumns; m ++) {
 			mu += v [m] * my centroid [m];
 		}
-		*p_mu = mu;
+		*p_mu = (double) mu;
 	}
 	if (p_stdev) {
-		double stdev = 0;
+		longdouble stdev = 0.0;
 		if (my numberOfRows == 1) { // 1xn diagonal matrix
 			for (integer m = 1; m <= my numberOfColumns; m ++) {
 				stdev += v [m] * my data [1] [m] * v [m];
@@ -1655,7 +1657,8 @@ static void checkOneIndex (TableOfReal me, integer index) {
 static void checkTwoIndices (TableOfReal me, integer index1, integer index2) {
 	Melder_require (index1 > 0 && index1 <= my numberOfColumns && index2 > 0 && index2 <= my numberOfColumns,
 		U"Index should be in interval [1, ", my numberOfColumns, U"].");
-	Melder_require (index1 != index2,U"Indices should be different.");
+	Melder_require (index1 != index2, 
+		U"Indices should be different.");
 }
 
 void Covariance_getSignificanceOfOneMean (Covariance me, integer index, double mu, double *p_prob, double *p_t, double *p_df) {

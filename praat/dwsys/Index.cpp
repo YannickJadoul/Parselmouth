@@ -47,7 +47,7 @@
 #include "oo_DESCRIPTION.h"
 #include "Index_def.h"
 
-const char32 *undefinedClassLabel = U"";
+static const conststring32 undefinedClassLabel = U"";
 Thing_implement (Index, Daata, 0);
 
 void structIndex :: v_info () {
@@ -105,31 +105,31 @@ integer Index_getClassIndexFromItemIndex (Index me, integer itemIndex) {
 	return result;
 }
 
-int StringsIndex_getClassIndexFromClassLabel (StringsIndex me, char32 *klasLabel) {
+int StringsIndex_getClassIndexFromClassLabel (StringsIndex me, conststring32 klasLabel) {
 	for (integer i = 1; i <= my classes->size; i ++) {
 		SimpleString ss = (SimpleString) my classes->at [i];   // FIXME cast
-		if (Melder_equ (ss -> string, klasLabel)) {
+		if (Melder_equ (ss -> string.get(), klasLabel)) {
 			return i;
 		}
 	}
 	return 0;
 }
 
-const char32 *StringsIndex_getClassLabelFromClassIndex (StringsIndex me, integer klasIndex) {
-	const char32 *result = undefinedClassLabel;
+conststring32 StringsIndex_getClassLabelFromClassIndex (StringsIndex me, integer klasIndex) {
+	conststring32 result = undefinedClassLabel;
 	if (klasIndex > 0 && klasIndex <= my classes -> size) {
 		SimpleString ss = (SimpleString) my classes->at [klasIndex];   // FIXME cast
-		result = ss -> string;
+		result = ss -> string.get();
 	}
 	return result;
 }
 
-const char32 *StringsIndex_getItemLabelFromItemIndex (StringsIndex me, integer itemNumber) {
-	const char32 *result = undefinedClassLabel;
+conststring32 StringsIndex_getItemLabelFromItemIndex (StringsIndex me, integer itemNumber) {
+	conststring32 result = undefinedClassLabel;
 	if (itemNumber > 0 && itemNumber <= my numberOfItems) {
 		integer klas = my classIndex [itemNumber];
 		SimpleString ss = (SimpleString) my classes->at [klas];   // FIXME cast
-		result = ss -> string;
+		result = ss -> string.get();
 	}
 	return result;
 }

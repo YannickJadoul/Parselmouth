@@ -28,7 +28,7 @@
 
 autoDiscriminant Discriminant_create (integer numberOfGroups, integer numberOfEigenvalues, integer dimension);
 
-integer Discriminant_groupLabelToIndex (Discriminant me, const char32 *label);
+integer Discriminant_groupLabelToIndex (Discriminant me, conststring32 label);
 
 void Discriminant_setAprioriProbability (Discriminant me, integer group, double p);
 
@@ -41,7 +41,7 @@ integer Discriminant_getNumberOfFunctions (Discriminant me);
 double Discriminant_getWilksLambda (Discriminant me, integer numberOfDimensions);
 
 void Discriminant_getPartialDiscriminationProbability (Discriminant me,
-	integer numberOfDimensions, double *probability, double *chisq, double *df);
+	integer numberOfDimensions, double *out_probability, double *out_chisq, double *out_df);
 
 double Discriminant_getConcentrationEllipseArea (Discriminant me, integer group,
 	double scale, bool confidence, bool discriminantDirections, integer d1, integer d2);
@@ -55,7 +55,7 @@ void Discriminant_drawTerritorialMap (Discriminant me, Graphics g, bool discrimi
 	bool poolCovarianceMatrices, bool garnish);
 
 void Discriminant_drawConcentrationEllipses (Discriminant me, Graphics g,
-	double scale, bool confidence, char32 *label, bool discriminantDirections,
+	double scale, bool confidence, conststring32 label, bool discriminantDirections,
 	integer d1, integer d2, double xmin, double xmax, double ymin, double ymax,
 	int fontSize, bool garnish);
 

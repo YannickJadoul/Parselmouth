@@ -333,7 +333,7 @@ void Configuration_rotateToPrincipalDirections (Configuration me) {
 	}
 }
 
-void Configuration_draw (Configuration me, Graphics g, int xCoordinate, int yCoordinate, double xmin, double xmax, double ymin, double ymax, int labelSize, bool useRowLabels, const char32 *label, bool garnish)
+void Configuration_draw (Configuration me, Graphics g, int xCoordinate, int yCoordinate, double xmin, double xmax, double ymin, double ymax, int labelSize, bool useRowLabels, conststring32 label, bool garnish)
 {
 	integer nPoints = my numberOfRows, numberOfDimensions = my numberOfColumns;
 
@@ -374,8 +374,8 @@ void Configuration_draw (Configuration me, Graphics g, int xCoordinate, int yCoo
 	Graphics_setFontSize (g, labelSize);
 	for (integer i = 1; i <= my numberOfRows; i ++) {
 		if (x [i] >= xmin && x [i] <= xmax && y [i] >= ymin && y [i] <= ymax) {
-			const char32 *plotLabel = ( useRowLabels ? my rowLabels [i] : label );
-			if (NUMstring_containsPrintableCharacter (plotLabel)) {
+			conststring32 plotLabel = ( useRowLabels ? my rowLabels [i].get() : label );
+			if (Melder_findInk (plotLabel)) {
 				Graphics_text (g, x [i], y [i], plotLabel);
 			} else {
 				noLabel ++;
@@ -391,10 +391,10 @@ void Configuration_draw (Configuration me, Graphics g, int xCoordinate, int yCoo
 		if (numberOfDimensions > 1) {
 			Graphics_marksLeft (g, 2, true, true, false);
 			if (my columnLabels[xCoordinate]) {
-				Graphics_textBottom (g, true, my columnLabels[xCoordinate]);
+				Graphics_textBottom (g, true, my columnLabels [xCoordinate].get());
 			}
 			if (my columnLabels[yCoordinate]) {
-				Graphics_textLeft (g, true, my columnLabels[yCoordinate]);
+				Graphics_textLeft (g, true, my columnLabels [yCoordinate].get());
 			}
 		}
 	}
@@ -404,7 +404,7 @@ void Configuration_draw (Configuration me, Graphics g, int xCoordinate, int yCoo
 	}
 }
 
-void Configuration_drawConcentrationEllipses (Configuration me, Graphics g, double scale, bool confidence, const char32 *label, integer d1, integer d2, double xmin, double xmax, double ymin, double ymax, int fontSize, bool garnish) {
+void Configuration_drawConcentrationEllipses (Configuration me, Graphics g, double scale, bool confidence, conststring32 label, integer d1, integer d2, double xmin, double xmax, double ymin, double ymax, int fontSize, bool garnish) {
 	autoSSCPList sscps = TableOfReal_to_SSCPList_byLabel (me);
 	SSCPList_drawConcentrationEllipses (sscps.get(), g, scale, confidence, label, d1, d2, xmin, xmax, ymin, ymax, fontSize, garnish);
 }
@@ -494,8 +494,8 @@ autoConfiguration Configuration_createLetterRExample (int choice) {
 }
 
 autoConfiguration Configuration_createCarrollWishExample () {
-	double  x [10] = {0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0,  0.0,  1.0};
-	double  y [10] = {0.0,  1.0, 1.0, 1.0,  0.0, 0.0, 0.0, -1.0, -1.0, -1.0};
+	double x [10] = {0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0,  0.0,  1.0 };
+	double y [10] = {0,  1.0, 1.0, 1.0,  0.0, 0.0, 0.0, -1.0, -1.0, -1.0 };
 	char32 const *label[] = { U"", U"A", U"B", U"C", U"D", U"E", U"F", U"G", U"H", U"I"};
 	try {
 		integer nObjects = 9;

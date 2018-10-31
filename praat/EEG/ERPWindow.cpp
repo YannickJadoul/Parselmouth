@@ -1,6 +1,6 @@
 /* ERPWindow.cpp
  *
- * Copyright (C) 2012,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 2012-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -151,7 +151,7 @@ static BiosemiLocationData biosemiCapCoordinates32 [1+32] =
 
 void ERP_drawScalp_garnish (Graphics graphics, double vmin, double vmax, kGraphics_colourScale colourScale) {
 	integer n = 201;
-	autonummat legend (n, 2, kTensorInitializationType::RAW);
+	autoMAT legend (n, 2, kTensorInitializationType::RAW);
 	for (integer irow = 1; irow <= n; irow ++) {
 		for (integer icol = 1; icol <= 2; icol ++) {
 			legend [irow] [icol] = (irow - 1) / (n - 1.0);
@@ -174,8 +174,8 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 	//Graphics_fillRectangle (graphics, -1.1, 1.1, -1.01, 1.19);
 	//Graphics_setColour (graphics, Graphics_BLACK);
 	integer numberOfDrawableChannels =
-			my ny >= 64 && Melder_equ (my channelNames [64], U"O2") ? 64 :
-			my ny >= 32 && Melder_equ (my channelNames [32], U"Cz") ? 32 :
+			my ny >= 64 && Melder_equ (my channelNames [64].get(), U"O2") ? 64 :
+			my ny >= 32 && Melder_equ (my channelNames [32].get(), U"Cz") ? 32 :
 			0;
 	BiosemiLocationData *biosemiLocationData = numberOfDrawableChannels == 64 ? biosemiCapCoordinates64 : numberOfDrawableChannels == 32 ? biosemiCapCoordinates32 : 0;
 	for (integer ichan = 1; ichan <= numberOfDrawableChannels; ichan ++) {
@@ -189,20 +189,20 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 	}
 	integer n = 201;
 	double d = 2.0 / (n - 1);
-	autonumvec mean (numberOfDrawableChannels, kTensorInitializationType::RAW);
+	autoVEC mean (numberOfDrawableChannels, kTensorInitializationType::RAW);
 	for (integer ichan = 1; ichan <= numberOfDrawableChannels; ichan ++) {
 		mean [ichan] = tmin == tmax ?
 				Sampled_getValueAtX (me, tmin, ichan, 0, true) :
 				Vector_getMean (me, tmin, tmax, ichan);
 	}
-	autonummat image (n, n, kTensorInitializationType::RAW);
+	autoMAT image (n, n, kTensorInitializationType::RAW);
 	for (integer irow = 1; irow <= n; irow ++) {
 		double y = -1.0 + (irow - 1) * d;
 		for (integer icol = 1; icol <= n; icol ++) {
 			double x = -1.0 + (icol - 1) * d;
 			if (x * x + y * y <= 1.0) {
 				double value = undefined;
-				real80 sum = 0.0, weight = 0.0;
+				longdouble sum = 0.0, weight = 0.0;
 				for (integer ichan = 1; ichan <= numberOfDrawableChannels; ichan ++) {
 					double dx = x - biosemiLocationData [ichan]. topX;
 					double dy = y - biosemiLocationData [ichan]. topY;
@@ -216,7 +216,7 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 					weight += 1.0 / distance;
 				}
 				if (isundef (value))
-					value = ( sum == 0.0 ? 0.0 : real (sum / weight) );
+					value = ( sum == 0.0 ? 0.0 : double (sum / weight) );
 				image [irow] [icol] = value;
 			}
 		}
@@ -277,8 +277,8 @@ void structERPWindow :: v_drawSelectionViewer () {
 	Graphics_fillRectangle (our graphics.get(), -1.1, 1.1, -1.01, 1.19);
 	Graphics_setColour (our graphics.get(), Graphics_BLACK);
 	integer numberOfDrawableChannels =
-			erp -> ny >= 64 && Melder_equ (erp -> channelNames [64], U"O2") ? 64 :
-			erp -> ny >= 32 && Melder_equ (erp -> channelNames [32], U"Cz") ? 32 :
+			erp -> ny >= 64 && Melder_equ (erp -> channelNames [64].get(), U"O2") ? 64 :
+			erp -> ny >= 32 && Melder_equ (erp -> channelNames [32].get(), U"Cz") ? 32 :
 			0;
 	BiosemiLocationData *biosemiLocationData = numberOfDrawableChannels == 64 ? biosemiCapCoordinates64 : numberOfDrawableChannels == 32 ? biosemiCapCoordinates32 : 0;
 	for (integer ichan = 1; ichan <= numberOfDrawableChannels; ichan ++) {
@@ -292,21 +292,21 @@ void structERPWindow :: v_drawSelectionViewer () {
 	}
 	integer n = 201;
 	double d = 2.0 / (n - 1);
-	autonumvec means (numberOfDrawableChannels, kTensorInitializationType::RAW);
+	autoVEC means (numberOfDrawableChannels, kTensorInitializationType::RAW);
 	for (integer ichan = 1; ichan <= numberOfDrawableChannels; ichan ++) {
 		means [ichan] =
 			our startSelection == our endSelection ?
 				Sampled_getValueAtX (erp, our startSelection, ichan, 0, true) :
 				Vector_getMean (erp, our startSelection, our endSelection, ichan);
 	}
-	autonummat image (n, n, kTensorInitializationType::RAW);
+	autoMAT image (n, n, kTensorInitializationType::RAW);
 	for (integer irow = 1; irow <= n; irow ++) {
 		double y = -1.0 + (irow - 1) * d;
 		for (integer icol = 1; icol <= n; icol ++) {
 			double x = -1.0 + (icol - 1) * d;
 			if (x * x + y * y <= 1.0) {
 				double value = undefined;
-				real80 sum = 0.0, weight = 0.0;
+				longdouble sum = 0.0, weight = 0.0;
 				for (integer ichan = 1; ichan <= numberOfDrawableChannels; ichan ++) {
 					double dx = x - biosemiLocationData [ichan]. topX;
 					double dy = y - biosemiLocationData [ichan]. topY;
@@ -320,7 +320,7 @@ void structERPWindow :: v_drawSelectionViewer () {
 					weight += 1.0 / distance;
 				}
 				if (isundef (value))
-					value = ( sum == 0.0 ? 0.0 : real (sum / weight) );
+					value = ( sum == 0.0 ? 0.0 : double (sum / weight) );
 				image [irow] [icol] = value;
 			}
 		}
@@ -403,7 +403,7 @@ void structERPWindow :: v_prefs_getValues (EditorCommand /* cmd */) {
 	FunctionEditor_redraw (this);
 }
 
-autoERPWindow ERPWindow_create (const char32 *title, ERP data) {
+autoERPWindow ERPWindow_create (conststring32 title, ERP data) {
 	Melder_assert (data);
 	try {
 		autoERPWindow me = Thing_new (ERPWindow);

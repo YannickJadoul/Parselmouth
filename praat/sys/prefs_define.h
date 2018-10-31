@@ -1,6 +1,6 @@
 /* prefs_define.h
  *
- * Copyright (C) 2013,2015,2017 Paul Boersma
+ * Copyright (C) 2013,2015-2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,19 +43,19 @@
 
 #define prefs_add_int(Klas,name,version,default) \
 	int struct##Klas :: s_##name; \
-	const char32 * struct##Klas :: sdefault_##name = default;
+	conststring32 struct##Klas :: sdefault_##name = default;
 #define prefs_add_int_with_data(Klas,name,version,default)  prefs_add_int (Klas, name, version, default)
 #define prefs_override_int(Klas,name,version,default) \
 	int struct##Klas :: s_##name; \
-	const char32 * struct##Klas :: sdefault_##name = default;
+	conststring32 struct##Klas :: sdefault_##name = default;
 
 #define prefs_add_integer(Klas,name,version,default) \
 	integer struct##Klas :: s_##name; \
-	const char32 * struct##Klas :: sdefault_##name = default;
+	conststring32 struct##Klas :: sdefault_##name = default;
 #define prefs_add_integer_with_data(Klas,name,version,default)  prefs_add_integer (Klas, name, version, default)
 #define prefs_override_integer(Klas,name,version,default) \
 	integer struct##Klas :: s_##name; \
-	const char32 * struct##Klas :: sdefault_##name = default;
+	conststring32 struct##Klas :: sdefault_##name = default;
 
 #define prefs_add_bool(Klas,name,version,default) \
 	bool struct##Klas :: s_##name; \
@@ -67,11 +67,11 @@
 
 #define prefs_add_double(Klas,name,version,default) \
 	double struct##Klas :: s_##name; \
-	const char32 * struct##Klas :: sdefault_##name = default;
+	conststring32 struct##Klas :: sdefault_##name = default;
 #define prefs_add_double_with_data(Klas,name,version,default)  prefs_add_double (Klas, name, version, default)
 #define prefs_override_double(Klas,name,version,default) \
 	double struct##Klas :: s_##name; \
-	const char32 * struct##Klas :: sdefault_##name = default;
+	conststring32 struct##Klas :: sdefault_##name = default;
 
 #define prefs_add_enum(Klas,name,version,enumerated,default) \
 	enumerated struct##Klas :: s_##name; \
@@ -83,11 +83,11 @@
 
 #define prefs_add_string(Klas,name,version,default) \
 	char32 struct##Klas :: s_##name [Preferences_STRING_BUFFER_SIZE]; \
-	const char32 * struct##Klas :: sdefault_##name = default;
+	conststring32 struct##Klas :: sdefault_##name = default;
 #define prefs_add_string_with_data(Klas,name,version,default)  prefs_add_string (Klas, name, version, default)
 #define prefs_override_string(Klas,name,version,default) \
 	char32 struct##Klas :: s_##name [Preferences_STRING_BUFFER_SIZE]; \
-	const char32 * struct##Klas :: sdefault_##name = default;
+	conststring32 struct##Klas :: sdefault_##name = default;
 
 #define prefs_end(Klas)
 

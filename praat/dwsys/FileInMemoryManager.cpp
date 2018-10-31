@@ -53,7 +53,7 @@ void structFileInMemoryManager :: v_info () {
 	MelderInfo_writeLine (U"Total number of bytes: ", FileInMemorySet_getTotalNumberOfBytes (files.get()));
 }
 
-bool FileInMemoryManager_hasDirectory (FileInMemoryManager me, const char32 *name) {
+bool FileInMemoryManager_hasDirectory (FileInMemoryManager me, conststring32 name) {
 		return FileInMemorySet_hasDirectory (my files.get(), name);
 }
 
@@ -107,8 +107,8 @@ autoTable FileInMemoryManager_downto_Table (FileInMemoryManager me, bool openFil
 		autoTable thee = Table_createWithColumnNames (numberOfRows, U"path id size position");
 		for (integer irow = 1; irow <= numberOfRows; irow ++) {
 			FileInMemory fim = static_cast <FileInMemory> (openFilesOnly ? my openFiles -> at [irow] : my files -> at [irow]);
-			Table_setStringValue (thee.get(), irow, 1, fim -> d_path);
-			Table_setStringValue (thee.get(), irow, 2, fim -> d_id);
+			Table_setStringValue (thee.get(), irow, 1, fim -> d_path.get());
+			Table_setStringValue (thee.get(), irow, 2, fim -> d_id.get());
 			Table_setNumericValue (thee.get(), irow, 3, fim -> d_numberOfBytes);
 			Table_setNumericValue (thee.get(), irow, 4, fim -> d_position);
 		}
@@ -127,7 +127,7 @@ autoFileInMemory FileInMemoryManager_createFile (FileInMemoryManager me, MelderF
 	}
 }
 
-autoFileInMemorySet FileInMemoryManager_extractFiles (FileInMemoryManager me, kMelder_string which, const char32 *criterion) {
+autoFileInMemorySet FileInMemoryManager_extractFiles (FileInMemoryManager me, kMelder_string which, conststring32 criterion) {
 	return FileInMemorySet_extractFiles (my files.get(), which, criterion);
 }
 
@@ -136,7 +136,7 @@ static integer _FileInMemoryManager_getIndexInOpenFiles (FileInMemoryManager me,
 	Melder_require (filesIndex > 0 && filesIndex <= my files -> size, U": Invalid file index: ", filesIndex);
 
 	FileInMemory fim = static_cast<FileInMemory> (my files -> at [filesIndex]);
-	integer openFilesIndex = FileInMemorySet_lookUp (my openFiles.get(), fim -> d_path);
+	integer openFilesIndex = FileInMemorySet_lookUp (my openFiles.get(), fim -> d_path.get());
 	return openFilesIndex;
 }
 
@@ -715,10 +715,10 @@ int FileInMemoryManager_fprintf (FileInMemoryManager me, FILE * stream, const ch
 }
 
 void test_FileInMemoryManager_io (void) {
-	const char32 *path1 = U"~/kanweg1.txt";
-	const char32 *path2 = U"~/kanweg2.txt";
-	const char32 *lines1 [3] = { U"abcd\n", U"ef\n",  U"ghijk\n" };
-	const char32 *lines2 [3] = { U"lmno\n", U"pqr\n",  U"stuvwxyz\n" };
+	conststring32 path1 = U"~/kanweg1.txt";
+	conststring32 path2 = U"~/kanweg2.txt";
+	conststring32 lines1 [3] = { U"abcd\n", U"ef\n",  U"ghijk\n" };
+	conststring32 lines2 [3] = { U"lmno\n", U"pqr\n",  U"stuvwxyz\n" };
 
 	/*
 		Create a test FileInMemorySet with two (text) files in it.
