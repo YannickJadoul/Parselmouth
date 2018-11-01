@@ -70,6 +70,11 @@ extern "C" void FLAC__stream_encoder_delete (FLAC__StreamEncoder *);
 	#include <unistd.h>
 #endif
 
+#ifdef _MSC_VER
+	#define ftello ftell
+	#define fseeko fseek
+#endif
+
 static char32 theShellDirectory [kMelder_MAXPATH+1];
 void Melder_rememberShellDirectory () {
 	structMelderDir shellDir { };
