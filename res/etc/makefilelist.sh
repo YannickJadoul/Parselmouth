@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
-for SUBDIR in $(find . -name 'Makefile' | xargs dirname)
+for SUBDIR in $(find . -mindepth 2 -name 'Makefile' | xargs dirname)
 do
 	if [ -f "$SUBDIR/CMakeLists.txt" ]
 	then
