@@ -44,6 +44,7 @@ elseif (WIN32)
 	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_WINDOWS) # eSpeak
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /wd4068) # "warning C4068: unknown pragma": #pragma mark
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /EHs) # Some 'extern "C"' functions throw exceptions: make sure they're caught
+	set(PRAAT_FLAGS ${PRAAT_FLAGS} /utf-8) # Because Praat contains source files with unicode chars encoded as UTF-8, and because UTF-8 is not default enough for MSVC to read and compile these files correctly
 endif ()
 
 foreach(SUBDIR ${PRAAT_SUBDIRECTORIES})
