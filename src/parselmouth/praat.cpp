@@ -63,21 +63,21 @@ inline void checkUnkownKwargs(const py::kwargs &kwargs) {
 	}
 }
 
-py::object autonumvecToArray(autonumvec &&vector) {
+py::object autoVECToArray(autoVEC &&vector) {
 	if (!vector.at)
 		return py::none();
 
 	auto [size, at] = std::tuple(vector.size, vector.at); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
-	auto capsule = py::capsule(new autonumvec(std::move(vector)), [](void *v) { delete reinterpret_cast<autonumvec *>(v); });
+	auto capsule = py::capsule(new autoVEC(std::move(vector)), [](void *v) { delete reinterpret_cast<autoVEC *>(v); });
 	return py::array_t<double>(static_cast<size_t>(size), &at[1], capsule);
 }
 
-py::object autonummatToArray(autonummat &&matrix) {
+py::object autoMATToArray(autoMAT &&matrix) {
 	if (!matrix.at)
 		return py::none();
 
 	auto [nrow, ncol, at] = std::tuple(matrix.nrow, matrix.ncol, matrix.at); // Because of undefined order of evaluation of arguments, we need to make sure to save nrow, ncol, and at before moving
-	auto capsule = py::capsule(new autonummat(std::move(matrix)), [](void *m) { delete reinterpret_cast<autonummat *>(m); });
+	auto capsule = py::capsule(new autoMAT(std::move(matrix)), [](void *m) { delete reinterpret_cast<autoMAT *>(m); });
 	return py::array_t<double, py::array::c_style>({static_cast<size_t>(nrow), static_cast<size_t>(ncol)}, &at[1][1], capsule);
 }
 
@@ -134,20 +134,24 @@ public:
 		std::unordered_map<std::u32string, py::object> variables;
 
 		for (const auto &[name, value] : m_interpreter->variablesMap) {
-			assert(name == value->string);
+			assert(name == value->string.get());
 
 			if (name.length() > 0 && name.back() == U'$') {
-				variables.emplace(name, py::cast(value->stringValue));
+				variables.emplace(name, py::cast(value->stringValue.get()));
 			}
 			else if (name.length() > 1 && name.substr(name.length() - 2) == U"##") {
 				// Steal matrix value, so clear out old variable to stop Praat from deleting when cleaning up the interpreter
-				variables.emplace(name, autonummatToArray(autonummat(value->numericMatrixValue)));
-				value->numericMatrixValue = empty_nummat;
+				autoMAT matrix;
+				matrix.adoptFromAmbiguousOwner(value->numericMatrixValue);
+				value->numericMatrixValue = emptyMAT;
+				variables.emplace(name, autoMATToArray(std::move(matrix)));
 			}
 			else if (name.length() > 0 && name.back() == U'#') {
 				// Steal vector value, so clear out old variable to stop Praat from deleting when cleaning up the interpreter
-				variables.emplace(name, autonumvecToArray(autonumvec(value->numericVectorValue)));
-				value->numericVectorValue = empty_numvec;
+				autoVEC vector;
+				vector.adoptFromAmbiguousOwner(value->numericVectorValue);
+				value->numericVectorValue = emptyVEC;
+				variables.emplace(name, autoVECToArray(std::move(vector)));
 			}
 			else {
 				variables.emplace(name, py::cast(value->numericValue));
@@ -157,12 +161,13 @@ public:
 		return variables;
 	}
 
-	structStackel toPraatArg(const py::handle &arg);
+	void toPraatArg(structStackel &stackel, const py::handle &arg);
 
 	std::vector<structStackel> toPraatArgs(const py::args &args) {
-		std::vector<structStackel> praatArgs(1); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
-		for (auto arg : args)
-			praatArgs.emplace_back(toPraatArg(arg));
+		std::vector<structStackel> praatArgs(1 + args.size()); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
+		for (size_t i = 1; i < praatArgs.size(); ++i) {
+			toPraatArg(praatArgs[i], args[i-1]);
+		}
 		return praatArgs;
 	}
 
@@ -180,19 +185,19 @@ private:
 };
 
 // Workarounds since GCC (6) doesn't seem to like the brace initialization of the nested anonymous struct
-structStackel stackel(double number) { auto s = structStackel{Stackel_NUMBER, {}, false}; s.number = number; return s; }
-structStackel stackel(bool boolean) { auto s = structStackel{Stackel_STRING, {}, true}; s.string = Melder_dup(boolean ? U"yes" : U"no"); return s; }
-structStackel stackel(const std::u32string &string) { auto s = structStackel{Stackel_STRING, {}, true}; s.string = Melder_dup(string.c_str()); return s; }
-structStackel stackel(const numvec &vector, bool owned) { auto s = structStackel{Stackel_NUMERIC_VECTOR, {}, owned}; s.numericVector = vector; return s; }
-structStackel stackel(const nummat &matrix, bool owned) { auto s = structStackel{Stackel_NUMERIC_MATRIX, {}, owned}; s.numericMatrix = matrix; return s; }
+void fillStackel(structStackel &s, double number) { s.which = Stackel_NUMBER; s.number = number; }
+void fillStackel(structStackel &s, bool boolean) { s.which = Stackel_STRING; s._string = Melder_dup(boolean ? U"yes" : U"no"); }
+void fillStackel(structStackel &s, const std::u32string &string) { s.which = Stackel_STRING; s._string = Melder_dup(string.c_str()); }
+void fillStackel(structStackel &s, const VEC &vector, bool owned) { s.which = Stackel_NUMERIC_VECTOR; s.owned = owned; s.numericVector = vector; }
+void fillStackel(structStackel &s, const MAT &matrix, bool owned) { s.which = Stackel_NUMERIC_MATRIX, s.owned = owned; s.numericMatrix = matrix; }
 
-structStackel PraatEnvironment::toPraatArg(const py::handle &arg) {
+void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg) {
 	if (py::isinstance<py::int_>(arg) || py::isinstance<py::float_>(arg))
-		return stackel(py::cast<double>(arg));
+		return fillStackel(stackel, py::cast<double>(arg));
 	else if (py::isinstance<py::bool_>(arg))
-		return stackel(py::cast<bool>(arg));
+		return fillStackel(stackel, py::cast<bool>(arg));
 	else if (py::isinstance<py::str>(arg) && (PY_MAJOR_VERSION < 3 || !py::isinstance<py::bytes>(arg)))
-		return stackel(py::cast<std::u32string>(arg));
+		return fillStackel(stackel, py::cast<std::u32string>(arg));
 
 	try {
 		// Let's not 'squeeze' the array, or we might interpret a 2D matrix as 1D vector!
@@ -201,7 +206,7 @@ structStackel PraatEnvironment::toPraatArg(const py::handle &arg) {
 			// Keep the object alive until the PraatEnvironment goes out of scope, and avoid a copy
 			m_keepAliveObjects.push_back(array);
 
-			return stackel(numvec(array.mutable_data(0) - 1, array.shape(0)), false); // Remember Praat is 1-based
+			return fillStackel(stackel, VEC(array.mutable_data(0) - 1, array.shape(0)), false); // Remember Praat is 1-based
 			// NOTE: If Praat ever contains commands/actions that modify the vector,
 			//       we're in trouble since this will not consistently be reflected in the original NumPy array.
 			//       However, since we're indicating the vector is not owned, at least the interpreter can know.
@@ -214,7 +219,7 @@ structStackel PraatEnvironment::toPraatArg(const py::handle &arg) {
 			m_keepAliveObjects.push_back(array);
 			m_keepAliveObjects.push_back(py::capsule(rows, [](void *r) { delete reinterpret_cast<double**>(r); }));
 
-			return stackel(nummat(rows - 1, array.shape(0), array.shape(1)), false);
+			return fillStackel(stackel, MAT(rows - 1, array.shape(0), array.shape(1)), false);
 		}
 
 		throw py::value_error("Cannot convert " + std::to_string(array.ndim()) + "-dimensional NumPy array argument\"" + py::cast<std::string>(py::repr(arg)) + "\" to a Praat vector or matrix");
@@ -247,10 +252,10 @@ py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName,
 	}
 
 	if (startsWith(callbackName, U"NUMVEC_"))
-		return autonumvecToArray(std::move(theInterpreterNumvec));
+		return autoVECToArray(std::move(theInterpreterNumvec));
 
 	if (startsWith(callbackName, U"NUMMAT_"))
-		return autonummatToArray(std::move(theInterpreterNummat));
+		return autoMATToArray(std::move(theInterpreterNummat));
 
 	if (startsWith(callbackName, U"NEW_") ||
 	    startsWith(callbackName, U"NEW1_") ||
@@ -360,7 +365,7 @@ auto runPraatScriptFromText(const std::vector<std::reference_wrapper<structData>
 	auto fullScript = autostring32(Melder_dup(script.c_str()));
 	Melder_includeIncludeFiles(&fullScript);
 
-	return runPraatScript(objects, fullScript.peek(), std::move(args), std::move(kwargs));
+	return runPraatScript(objects, fullScript.get(), std::move(args), std::move(kwargs));
 }
 
 auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &path, py::args args, py::kwargs kwargs) {
@@ -372,7 +377,7 @@ auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>
 		Melder_includeIncludeFiles(&script);
 	}
 
-	return runPraatScript(objects, script.peek(), std::move(args), std::move(kwargs));
+	return runPraatScript(objects, script.get(), std::move(args), std::move(kwargs));
 }
 
 } // namespace
@@ -427,7 +432,7 @@ PRAAT_MODULE_BINDING(praat, PraatModule) {
 
 #ifndef NDEBUG // TODO Only in debug?
 	auto castPraatCommand = [](const structPraat_Command &command) {
-		return std::tuple(command.name, command.nameOfCallback);
+		return std::tuple(command.name.get(), command.nameOfCallback);
 	};
 
 	using CastedPraatCommand = decltype(castPraatCommand(std::declval<structPraat_Command&>()));

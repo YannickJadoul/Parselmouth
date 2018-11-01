@@ -470,7 +470,7 @@ public:
 		elsewhere than at the head of the vector,
 		you should shift the elements after resizing.
 	*/
-	bool resize (integer newSize, integer *inout_capacity,
+	void resize (integer newSize, integer *inout_capacity,
 		kTensorInitializationType initializationType = kTensorInitializationType::ZERO)
 	{
 		if (newSize > *inout_capacity) {

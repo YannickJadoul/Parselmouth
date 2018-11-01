@@ -21,7 +21,7 @@
 #ifndef INC_PARSELMOUTH_MELDERUTILS_H
 #define INC_PARSELMOUTH_MELDERUTILS_H
 
-#include <praat/sys/melder.h>
+#include <praat/melder/melder.h>
 #include "UndefPraatMacros.h"
 
 #include <string>

@@ -224,7 +224,7 @@ inline static bool Melder_isAsciiDecimalNumber (char32 kar) {
 	We cannot really internationalize std::isxdigit ():
 */
 inline static bool Melder_isHexadecimalDigit (char32 kar) {
-	return kar >= U'0' && kar <= U'9' || kar >= U'A' && kar <= U'Z' || kar >= U'a' && kar <= U'z';
+	return (kar >= U'0' && kar <= U'9') || (kar >= U'A' && kar <= U'Z') || (kar >= U'a' && kar <= U'z');
 }
 
 /*

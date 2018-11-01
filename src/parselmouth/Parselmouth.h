@@ -34,7 +34,7 @@ enum class kSound_windowShape;
 enum class kSounds_convolve_scaling;
 enum class kSounds_convolve_signalOutsideTimeDomain;
 
-PYBIND11_DECLARE_HOLDER_TYPE(T, _Thing_auto<T>);
+PYBIND11_DECLARE_HOLDER_TYPE(T, autoSomeThing<T>);
 
 namespace parselmouth {
 
