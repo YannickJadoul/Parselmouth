@@ -28,43 +28,6 @@
 #include <utility>
 
 namespace parselmouth {
-namespace detail {
-
-// Taken from from pybind11's details
-// Backports of std::bool_constant and std::negation to accomodate older compilers
-template <bool B> using bool_constant = std::integral_constant<bool, B>;
-template <typename T> struct negation : bool_constant<!T::value> {};
-
-// Compile-time all/any/none of that check the boolean value of all template types
-#if defined(__cpp_fold_expressions) && !(defined(_MSC_VER) && (_MSC_VER < 1916))
-template <class... Ts> using all_of = bool_constant<(Ts::value && ...)>;
-template <class... Ts> using any_of = bool_constant<(Ts::value || ...)>;
-#elif !defined(_MSC_VER)
-template <bool...> struct bools {};
-template <class... Ts> using all_of = std::is_same<bools<Ts::value..., true>, bools<true, Ts::value...>>;
-template <class... Ts> using any_of = negation<all_of<negation<Ts>...>>;
-#else
-// MSVC has trouble with the above, but supports std::conjunction, which we can use instead (albeit
-// at a slight loss of compilation efficiency).
-template <class... Ts> using all_of = std::conjunction<Ts...>;
-template <class... Ts> using any_of = std::disjunction<Ts...>;
-#endif
-template <class... Ts> using none_of = negation<any_of<Ts...>>;
-
-
-template <typename... Types>
-struct all_unique;
-
-template <>
-struct all_unique<> : std::true_type {};
-
-template <typename Type, typename... Others>
-struct all_unique<Type, Others...> : bool_constant<none_of<std::is_same<Type, Others>...>::value && all_unique<Others...>::value> {};
-
-template <typename... Types>
-constexpr auto all_unique_v = all_unique<Types...>::value;
-
-} // namespace detail
 
 template <typename Type>
 class BindingType;
@@ -101,44 +64,32 @@ public:
 	void init() {}
 };
 
-template <typename Type, typename... Rest>
-class Bindings<Type, Rest...> {
+template <typename First, typename... Rest>
+class Bindings<First, Rest...> {
 public:
 #ifndef _MSC_VER
-	static_assert(detail::none_of<std::is_same<Type, Rest>...>::value, "Multiple identical template parameter types are specified");
+	static_assert(!(std::is_same_v<First, Rest> || ...), "Multiple identical template parameter types are specified");
 #endif
 
 	template <typename... Args>
-	explicit Bindings(Args &&... args) : m_binding{args...}, m_rest{std::forward<Args>(args)...} {}
+	explicit Bindings(Args &&... args) : m_first{args...}, m_rest{std::forward<Args>(args)...} {}
 
 	void init() {
-		m_binding.init();
+		m_first.init();
 		m_rest.init();
 	}
 
 	template <typename T>
 	Binding<T> &get() {
-		static_assert(std::is_same<T, Type>::value || detail::any_of<std::is_same<T, Rest>...>::value, "The specified type is not a member of these bindings");
-		return getImpl<T>();
-	}
-
-	template <typename T>
-	Binding<T> &getImpl() {
-		return getImpl<T>(std::is_same<T, Type>());
-	}
-
-	template <typename T>
-	Binding<Type> &getImpl(std::true_type) {
-		return m_binding;
-	}
-
-	template <typename T>
-	Binding<T> &getImpl(std::false_type) {
-		return m_rest.template getImpl<T>();
+		static_assert(std::is_same_v<T, First> || (std::is_same_v<T, Rest> || ...), "The specified type is not a member of these bindings");
+		if constexpr (std::is_same_v<T, First>)
+			return m_first;
+		else
+			return m_rest.template get<T>();
 	}
 
 private:
-	Binding<Type> m_binding;
+	Binding<First> m_first;
 	Bindings<Rest...> m_rest;
 };
 
