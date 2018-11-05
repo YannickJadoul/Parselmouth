@@ -31,7 +31,7 @@ py::bytes encodeAsPreferredEncoding(const py::str &unicode) {
 	return unicode.attr("encode")(encoding, "replace");
 }
 
-CLASS_BINDING(Thing, structThing, autoThing)
+CLASS_BINDING(Thing, structThing, detail::PraatHolder<structThing>)
 BINDING_CONSTRUCTOR(Thing, "Thing")
 BINDING_INIT(Thing) {
 #if PY_MAJOR_VERSION >= 3

@@ -305,9 +305,6 @@ public:
 		our reset();
 		our ptr = newPtr;
 	}
-	explicit autoSomeThing(T *p) noexcept : autoSomeThing() {
-		adoptFromAmbiguousOwner(p);
-	}
 	T* releaseToAmbiguousOwner () noexcept {
 		T* temp = our ptr;
 		our ptr = nullptr;   // make the pointer non-automatic again

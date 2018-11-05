@@ -119,7 +119,8 @@ public:
 				if (assertNew)
 					assert(praatObject.id > m_lastId);
 				praat_deselect(i); // Hack/workaround: if this is not called, Praat will call it while removing the object from the list, and crash on accessing object -> classInfo
-				selected.emplace_back(praatObject.object);
+				selected.emplace_back();
+				selected.back().adoptFromAmbiguousOwner(praatObject.object);
 				praatObject.object = nullptr;
 			}
 		}
