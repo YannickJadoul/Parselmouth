@@ -202,7 +202,6 @@ before_install:
       brew install ccache
       export PATH=/usr/local/opt/ccache/libexec:$PATH
       if [ "${PYTHON%%.*}" == "3" ]; then
-        brew cask uninstall oclint # Workaround for upgrading gcc, see https://github.com/travis-ci/travis-ci/issues/8826
         brew outdated python || upgrade python
         PYTHON_CMD=python3
       else
