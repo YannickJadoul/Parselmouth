@@ -21,6 +21,8 @@
 
 #include "praat/MelderUtils.h"
 
+#include <praat/sys/praatP.h>
+
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -45,7 +47,7 @@ BINDING_INIT(Thing) {
 	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return encodeAsPreferredEncoding(py::cast(info.get())); });
 #endif
 
-	def_property("name", &Thing_getName, &Thing_setName);
+	def_property("name", &Thing_getName, [](Thing self, char32 *name) { praat_cleanUpName(name); Thing_setName(self, name); });
 
 	def_property_readonly("class_name", &Thing_className);
 

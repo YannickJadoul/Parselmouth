@@ -5,6 +5,18 @@ import parselmouth
 import textwrap
 
 
+def test_call_with_extra_objects(sound):
+	sound.name = "the sound"
+	assert sound.name == "the_sound" # TODO Move (check) somewhere else (as well), e.g. test_thing.py?
+	new = parselmouth.praat.call("Create Sound from formula", "new", sound.n_channels, sound.start_time, sound.end_time, sound.sampling_frequency, "0")
+	parselmouth.praat.call(new, "Formula", "self [col] + Sound_the_sound [col]", extra_objects=[sound])
+	assert np.all(sound.values == new.values)
+	# assert sound == new fails because x1 floating point values are not exactly equal, because Praat calculates both in a slightly different way
+
+	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with lower case\)"):
+		parselmouth.praat.call(new, "Formula", "self [col] + Sound_the_sound [col]")
+
+
 def test_run(resources):
 	script = textwrap.dedent("""\
 	Read from file: "{}"
@@ -43,6 +55,17 @@ def test_run_with_parameters(resources):
 		parselmouth.praat.run(script)
 
 
+@pytest.mark.skip
+def test_run_with_extra_objects(sound):
+	new = parselmouth.Sound(np.zeros((sound.n_channels, sound.n_samples)), sampling_frequency=sound.sampling_frequency, start_time=sound.start_time)
+	sound.name = "the sound"
+	parselmouth.praat.run(new, "Formula: ~ self [col] + Sound_the_sound [col]", extra_objects=[sound])
+	assert np.all(sound.values == new.values)
+
+	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with lower case\)"):
+		parselmouth.praat.run(new, "Formula: ~ self [col] + Sound_the_sound [col]")
+
+
 def test_run_with_capture_output():
 	assert parselmouth.praat.run("writeInfo: 42", capture_output=True) == ([], "42")
 	assert parselmouth.praat.run("appendInfo: 42", capture_output=True) == ([], "42")
@@ -52,7 +75,7 @@ def test_run_with_capture_output():
 	assert parselmouth.praat.run("writeInfo: tab$, newline$", capture_output=True) == ([], "\t\n")
 
 
-def test_with_return_variables():
+def test_run_with_return_variables():
 	script = textwrap.dedent("""\
 	a = 42
 	b$ = "abc"
@@ -69,7 +92,7 @@ def test_with_return_variables():
 	assert set(variables.keys()) == {'a', 'b$', 'c#', 'd##', 'newline$', 'tab$', 'shellDirectory$', 'defaultDirectory$', 'preferencesDirectory$', 'homeDirectory$', 'temporaryDirectory$', 'macintosh', 'windows', 'unix', 'left', 'right', 'mono', 'stereo', 'all', 'average', 'praatVersion$', 'praatVersion'}
 
 
-def test_with_capture_output_and_return_variables():
+def test_run_with_capture_output_and_return_variables():
 	script = textwrap.dedent("""\
 	a = 42
 	b$ = "abc"

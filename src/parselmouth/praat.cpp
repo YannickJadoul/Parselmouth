@@ -100,11 +100,17 @@ public:
 		return m_interpreter.get();
 	}
 
-	void addObjects(const std::vector<std::reference_wrapper<structData>> &objects) {
+	void addObjects(const std::vector<std::reference_wrapper<structData>> &objects, bool select) {
 		// Add references to the passed objects to the Praat object list
-		for (auto &data: objects)
+		for (auto &data: objects) {
 			praat_newReference(&data.get()); // Since we're registering this is just a reference, running a command like "Remove" should normally be OK; through hack/workaround: a PraatObject now contains a boolean 'owned' to know if the data should be deleted
-		praat_updateSelection();
+			m_objects->list[m_objects->n].isBeingCreated = false;
+			if (select)
+				praat_select(m_objects->n);
+		}
+		// praat_updateSelection will change which objects are selected, and we don't want that
+		m_objects->totalBeingCreated = 0;
+		praat_show();
 		m_lastId = m_objects->uniqueId;
 	}
 
@@ -290,11 +296,13 @@ py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName,
 
 
 auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &objects, const std::u32string &command, py::args args, py::kwargs kwargs) {
+	auto extraObjects = extractKwarg<std::vector<std::reference_wrapper<structData>>, py::list>(kwargs, "extra_objects", {}, "List[parselmouth.Data]");
 	auto returnString = extractKwarg<bool, py::bool_>(kwargs, "return_string", false, "bool");
 	checkUnkownKwargs(kwargs);
 
 	PraatEnvironment environment;
-	environment.addObjects(objects);
+	environment.addObjects(objects, true);
+	environment.addObjects(extraObjects, false);
 	auto praatArgs = environment.toPraatArgs(args);
 
 	// If there are arguments, let's help the user and append "..." to the command, if not yet there
@@ -327,12 +335,14 @@ auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &obj
 }
 
 auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objects, char32 *script, py::args args, py::kwargs kwargs) {
+	auto extraObjects = extractKwarg<std::vector<std::reference_wrapper<structData>>, py::list>(kwargs, "extra_objects", {}, "List[parselmouth.Data]");
 	auto captureOutput = extractKwarg<bool, py::bool_>(kwargs, "capture_output", false, "bool");
 	auto returnVariables = extractKwarg<bool, py::bool_>(kwargs, "return_variables", false, "bool");
 	checkUnkownKwargs(kwargs);
 
 	PraatEnvironment environment;
-	environment.addObjects(objects);
+	environment.addObjects(objects, true);
+	environment.addObjects(extraObjects, false);
 	auto praatArgs = environment.toPraatArgs(args);
 
 	// Prepare to maybe intercept the output of the script
@@ -389,47 +399,48 @@ PRAAT_MODULE_BINDING(praat, PraatModule) {
 	def("call",
 	    [](const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({}, command, args, kwargs); },
 	    "command"_a,
-	    "Keyword arguments:\n    - return_string: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - return_string: bool = False");
 
 	def("call",
 	    [](structData &data, const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({ std::ref(data) }, command, args, kwargs); },
 	    "object"_a, "command"_a,
-	    "Keyword arguments:\n    - return_string: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - return_string: bool = False");
 
 	def("call",
 	    &callPraatCommand,
 	    "objects"_a, "command"_a,
-	    "Keyword arguments:\n    - return_string: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - return_string: bool = False");
 
 	def("run",
 	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({}, script, args, kwargs); },
 	    "script"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run",
 	    [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({ std::ref(data) }, script, args, kwargs); },
 	    "object"_a, "script"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run",
 	    &runPraatScriptFromText,
 	    "objects"_a, "script"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run_file",
 	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({}, script, args, kwargs); },
 	    "path"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run_file",
 	    [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({ std::ref(data) }, script, args, kwargs); },
 	    "object"_a, "path"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 	def("run_file",
 	    &runPraatScriptFromFile,
 	    "objects"_a, "path"_a,
-	    "Keyword arguments:\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
+
 
 #ifndef NDEBUG // TODO Only in debug?
 	auto castPraatCommand = [](const structPraat_Command &command) {
