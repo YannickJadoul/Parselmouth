@@ -91,10 +91,10 @@ public:
 		m_lastId = m_objects->uniqueId;
 	}
 
-	std::vector<autoData> retrieveSelectedObjects(bool assertNew = false) {
+	auto retrieveSelectedObjects(bool assertNew = false) {
 		auto numSelected = static_cast<size_t>(m_objects->totalSelection);
 
-		std::vector<autoData> selected;
+		std::vector<py::object> selected;
 		for (auto i = 1; i <= m_objects->n; ++i) {
 
 			auto &praatObject = m_objects->list[i];
@@ -102,8 +102,12 @@ public:
 				if (assertNew)
 					assert(praatObject.id > m_lastId);
 				praat_deselect(i); // Hack/workaround: if this is not called, Praat will call it while removing the object from the list, and crash on accessing object -> classInfo
-				selected.emplace_back(praatObject.object);
-				praatObject.object = nullptr;
+
+				// We cannot just wrap the object as autoData, because it might not be newly created, and so a pybind11 holder in a Python object owns it rather than Praat (see praatObject.owned)
+				// Luckily, pybind11 also provides the solution: py::cast will return a py::object with the existing Python instance for a C++ object that already has a Python counterpart
+				auto object = praatObject.object;
+				praatObject.object = nullptr; // Just in case py::cast goes wrong and throws, let's clean out praatObject.object to make sure we don't segfault with a double delete in ~PraatEnvironment
+				selected.emplace_back(py::cast(object)); // If not owned/not new, this will return the existing instance; if owned/new this will take ownership and create a autoData holder inside the py::object
 			}
 		}
 
@@ -230,7 +234,7 @@ py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName,
 		auto selected = retrieveSelectedObjects(true);
 
 		if (selected.size() == 1 && !(startsWith(callbackName, U"NEWMANY_") || startsWith(callbackName, U"READMANY_")))
-			return py::cast(std::move(selected[0]));
+			return std::move(selected[0]);
 		else
 			return py::cast(std::move(selected));
 	}
