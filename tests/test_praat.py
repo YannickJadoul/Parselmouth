@@ -5,13 +5,20 @@ import parselmouth
 import textwrap
 
 
+def test_call_return_many(sound):
+	stereo_sound = sound.convert_to_stereo()
+	channels = parselmouth.praat.call(stereo_sound, "Extract all channels")
+	assert len(channels) == 2
+	assert np.all(channels[0].values == sound.values)
+	assert np.all(channels[1].values == sound.values)
+
+
 def test_call_with_extra_objects(sound):
+	new = parselmouth.Sound(np.zeros((sound.n_channels, sound.n_samples)), sampling_frequency=sound.sampling_frequency, start_time=sound.start_time)
 	sound.name = "the sound"
 	assert sound.name == "the_sound" # TODO Move (check) somewhere else (as well), e.g. test_thing.py?
-	new = parselmouth.praat.call("Create Sound from formula", "new", sound.n_channels, sound.start_time, sound.end_time, sound.sampling_frequency, "0")
 	parselmouth.praat.call(new, "Formula", "self [col] + Sound_the_sound [col]", extra_objects=[sound])
-	assert np.all(sound.values == new.values)
-	# assert sound == new fails because x1 floating point values are not exactly equal, because Praat calculates both in a slightly different way
+	assert sound == new
 
 	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with lower case\)"):
 		parselmouth.praat.call(new, "Formula", "self [col] + Sound_the_sound [col]")
@@ -55,12 +62,11 @@ def test_run_with_parameters(resources):
 		parselmouth.praat.run(script)
 
 
-@pytest.mark.skip
 def test_run_with_extra_objects(sound):
 	new = parselmouth.Sound(np.zeros((sound.n_channels, sound.n_samples)), sampling_frequency=sound.sampling_frequency, start_time=sound.start_time)
 	sound.name = "the sound"
 	parselmouth.praat.run(new, "Formula: ~ self [col] + Sound_the_sound [col]", extra_objects=[sound])
-	assert np.all(sound.values == new.values)
+	assert sound == new
 
 	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with lower case\)"):
 		parselmouth.praat.run(new, "Formula: ~ self [col] + Sound_the_sound [col]")
