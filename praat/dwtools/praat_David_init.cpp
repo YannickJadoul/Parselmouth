@@ -6024,7 +6024,7 @@ DO
 	NUMBER_ONE_END (U" (concentation ellipse area)")
 }
 
-DIRECT (NUMBER_SSCP_getDegreesOfFreedom) {
+DIRECT (REAL_SSCP_getDegreesOfFreedom) {
 	NUMBER_ONE (SSCP)
 		double result = SSCP_getDegreesOfFreedom (me);
 	NUMBER_ONE_END (U" (degrees of freedom)")
@@ -7470,7 +7470,7 @@ static void praat_Spline_init (ClassInfo klas) {
 static void praat_SSCP_query_init (ClassInfo klas) {
 	praat_addAction1 (klas, 1, U"-- statistics --", U"Get value...", 1, 0);
 	praat_addAction1 (klas, 1, U"Get number of observations", U"-- statistics --", 1, INTEGER_SSCP_getNumberOfObservations);
-	praat_addAction1 (klas, 1, U"Get degrees of freedom", U"Get number of observations", 1, NUMBER_SSCP_getDegreesOfFreedom);
+	praat_addAction1 (klas, 1, U"Get degrees of freedom", U"Get number of observations", 1, REAL_SSCP_getDegreesOfFreedom);
 	praat_addAction1 (klas, 1, U"Get centroid element...", U"Get degrees of freedom", 1, REAL_SSCP_getCentroidElement);
 	praat_addAction1 (klas, 1, U"Get ln(determinant)", U"Get centroid element...", 1, REAL_SSCP_getLnDeterminant);
 }

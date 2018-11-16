@@ -1,5 +1,6 @@
 import pytest
 
+import itertools
 import numpy as np
 import parselmouth
 import textwrap
@@ -110,3 +111,16 @@ def test_run_with_capture_output_and_return_variables():
 	assert objects == []
 	assert output == "42\nabc\n"
 	assert 'a' in variables and 'b$' in variables
+
+
+def test_praat_callback_prefixes():
+	separators = {'nullptr', '0'}
+	values = {'REAL', 'INTEGER', 'BOOLEAN', 'COMPLEX', 'STRING', 'NUMVEC', 'NUMMAT'}
+	objects = {'NEW', 'NEW1', 'NEW2', 'NEWMANY', 'NEWTIMES2', 'READ1', 'READMANY'}
+	info = {'HINT', 'INFO', 'LIST'}
+	nothing = {'HELP', 'MODIFY', 'PRAAT', 'PREFS', 'SAVE', 'GRAPHICS'}
+	exception = {'PLAY', 'RECORD1', 'WINDOW', 'MOVIE'}
+	weird = {'BUG', 'DANGEROUS'}
+
+	prefixes = set(action[1].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
+	assert prefixes == separators | values | objects | info | nothing | exception | weird

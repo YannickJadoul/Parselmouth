@@ -283,10 +283,8 @@ py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName,
 			return py::cast(std::move(selected));
 	}
 
-	if (!interceptedInfo.empty()) // U"HINT_", U"INFO_", U"LIST_"
+	if (!interceptedInfo.empty()) // U"STRING_", U"HINT_", U"INFO_", U"LIST_"
 		return py::cast(interceptedInfo);
-
-	// TODO U"GRAPHICS_" and U"MOVIE_" crashes
 
 	// U"HELP_", U"MODIFY_", U"PRAAT_", U"PREFS_", U"SAVE_"
 	return py::none();
@@ -394,6 +392,12 @@ auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>
 	return runPraatScript(objects, script.get(), std::move(args), std::move(kwargs));
 }
 
+auto castPraatCommand(const structPraat_Command &command) {
+	return std::tuple(command.title.get(), command.nameOfCallback);
+}
+
+using CastedPraatCommand = decltype(castPraatCommand(std::declval<structPraat_Command&>()));
+
 } // namespace
 
 class PraatModule;
@@ -445,15 +449,8 @@ PRAAT_MODULE_BINDING(praat, PraatModule) {
 	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
 
 
-#ifndef NDEBUG // TODO Only in debug?
-	auto castPraatCommand = [](const structPraat_Command &command) {
-		return std::tuple(command.name.get(), command.nameOfCallback);
-	};
-
-	using CastedPraatCommand = decltype(castPraatCommand(std::declval<structPraat_Command&>()));
-
 	def("_get_actions",
-	    [castPraatCommand]() {
+	    []() {
 		    std::vector<CastedPraatCommand> actions;
 		    for (integer i = 1; i <= praat_getNumberOfActions(); ++i)
 			    actions.emplace_back(castPraatCommand(*praat_getAction(i)));
@@ -461,13 +458,12 @@ PRAAT_MODULE_BINDING(praat, PraatModule) {
 	    });
 
 	def("_get_menu_commands",
-	    [castPraatCommand]() {
+	    []() {
 		    std::vector<CastedPraatCommand> menuCommands;
 		    for (integer i = 1; i <= praat_getNumberOfMenuCommands(); ++i)
-		     menuCommands.emplace_back(castPraatCommand(*praat_getMenuCommand(i)));
+				menuCommands.emplace_back(castPraatCommand(*praat_getMenuCommand(i)));
 		    return menuCommands;
 	    });
-#endif
 }
 
 } // namespace parselmouth
