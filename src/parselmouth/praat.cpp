@@ -93,6 +93,7 @@ public:
 			praat_removeObject(i);
 		}
 
+		assert(m_objects->totalSelection == 0);
 		assert(m_objects->n == 0);
 	}
 
@@ -114,7 +115,7 @@ public:
 		m_lastId = m_objects->uniqueId;
 	}
 
-	auto retrieveSelectedObjects(bool assertNew = false) {
+	auto retrieveSelectedObjects(bool onlyNew = false) {
 		[[maybe_unused]] auto numSelected = static_cast<size_t>(m_objects->totalSelection);
 
 		std::vector<py::object> selected;
@@ -122,8 +123,10 @@ public:
 
 			auto &praatObject = m_objects->list[i];
 			if (praatObject.isSelected) {
-				if (assertNew)
-					assert(praatObject.id > m_lastId);
+				// Sometimes we're only interested in returning new objects (i.e. to implement 'call'), but Praat did not add new ones and did not deselect the old ones (e.g. when a warning is shown).
+				if (onlyNew && praatObject.id <= m_lastId)
+					continue;
+
 				praat_deselect(i); // Hack/workaround: if this is not called, Praat will call it while removing the object from the list, and crash on accessing object -> classInfo
 
 				// We cannot just wrap the object as autoData, because it might not be newly created, and so a pybind11 holder in a Python object owns it rather than Praat (see praatObject.owned)
@@ -134,8 +137,7 @@ public:
 			}
 		}
 
-		assert(m_objects->totalSelection == 0);
-		assert(numSelected == selected.size());
+		assert(numSelected == selected.size() + m_objects->totalSelection);
 
 		return selected;
 	}

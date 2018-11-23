@@ -53,10 +53,12 @@ namespace parselmouth {
 
 class PraatModule;
 using PraatError = MelderError;
+class PraatWarning {};
 
 PRAAT_EXCEPTION_BINDING(PraatError, PyExc_RuntimeError) {
+	// Exception translators need to be convertible to void (*) (std::exception_ptr), so we cannot capture and store *this in the lambda.
 	static auto exception = *this;
-	py::register_exception_translator([](std::exception_ptr p) mutable {
+	py::register_exception_translator([](std::exception_ptr p) {
 			try {
 				if (p) std::rethrow_exception(p);
 			}
@@ -70,7 +72,16 @@ PRAAT_EXCEPTION_BINDING(PraatError, PyExc_RuntimeError) {
 			}});
 }
 
+PRAAT_EXCEPTION_BINDING(PraatWarning, PyExc_UserWarning) {
+	static auto warning = *this;
+	Melder_setWarningProc([](const char32 *message) {
+			if (PyErr_WarnEx(warning.ptr(), Melder_peek32to8(message), 1) < 0)
+				throw py::error_already_set();
+			});
+}
+
 using PraatBindings = Bindings<PraatError,
+                               PraatWarning,
                                Interpolation,
                                WindowShape,
                                AmplitudeScaling,
