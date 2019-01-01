@@ -58,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Parselmouth'
-copyright = '2017-2018, Yannick Jadoul'
+copyright = '2017-2019, Yannick Jadoul'
 author = 'Yannick Jadoul'
 
 if on_rtd:
