@@ -9,9 +9,11 @@ Please note that Parselmouth is currently in premature state and in active devel
 
 Drop by our `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_ if you have any question, remarks, or requests!
 
-.. note::
+.. only:: html
 
-    Try out Parselmouth online, in interactive Jupyter notebooks on Binder: |binder_badge_examples|
+    .. note::
+
+        Try out Parselmouth online, in interactive Jupyter notebooks on Binder: |binder_badge_examples|
 
 .. toctree::
     :maxdepth: 2
