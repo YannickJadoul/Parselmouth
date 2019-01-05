@@ -5,7 +5,7 @@ import parselmouth
 
 
 def combined_fixture(*args, **kwargs):
-	return pytest.fixture(params=map(lambda x: pytest.param(pytest_lazyfixture.lazy_fixture(x), id=x), args), **kwargs)
+	return pytest.fixture(params=map(pytest_lazyfixture.lazy_fixture, args), ids=args, **kwargs)
 
 
 @pytest.fixture
@@ -22,4 +22,8 @@ def spectrogram(sound):
 
 @combined_fixture('sound', 'intensity', 'spectrogram')
 def sampled(request):
+	yield request.param
+
+@combined_fixture('sampled')
+def thing(request):
 	yield request.param
