@@ -3,3 +3,4 @@ numpy >= 1.7.0
 pytest
 pytest-lazy-fixture
 
+future

@@ -1,5 +1,7 @@
 import pytest
 
+from builtins import str  # Python 2 compatibility
+
 
 # TODO 'thing' resource fixture
 def test_name(sound):
