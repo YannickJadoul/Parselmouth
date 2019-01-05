@@ -5,3 +5,4 @@ recursive-include praat *
 recursive-include res *
 recursive-include tests *
 global-exclude *.py[co]
+exclude praat/generate/Unicode/*.pdf
