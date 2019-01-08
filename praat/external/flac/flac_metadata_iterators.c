@@ -56,8 +56,9 @@
 #include "flac_share_alloc.h"
 
 #ifdef _MSC_VER
-#define ftello ftell
-#define fseeko fseek
+// off_t defined in flac_FLAC_metadata.h
+#define ftello _ftelli64
+#define fseeko _fseeki64
 #endif
 
 #ifdef max

@@ -37,6 +37,10 @@
 #include "flac_FLAC_callback.h"
 #include "flac_FLAC_format.h"
 
+#ifdef _MSC_VER
+#define off_t __int64
+#endif
+
 /* --------------------------------------------------------------------
    (For an example of how all these routines are used, see the source
    code for the unit tests in src/test_libFLAC/metadata_*.c, or

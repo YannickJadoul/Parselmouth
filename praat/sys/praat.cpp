@@ -1911,10 +1911,8 @@ void praat_testPlatformAssumptions() {
 		"sizeof(longdouble) should be at least 8");   // this can be 8, 12 or 16
 	static_assert (sizeof (integer) == sizeof (void *),
 		"sizeof(integer) should equal the size of a pointer");
-#ifndef _MSC_VER
 	static_assert (sizeof (off_t) >= 8,
 		"sizeof(off_t) is less than 8. Compile Praat with -D_FILE_OFFSET_BITS=64.");
-#endif
 }
 
 /* End of file praat.cpp */

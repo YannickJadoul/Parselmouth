@@ -57,8 +57,9 @@
 #include "flac_private_memory.h"
 
 #ifdef _MSC_VER
-#define ftello ftell
-#define fseeko fseek
+#define off_t __int64
+#define ftello _ftelli64
+#define fseeko _fseeki64
 #endif
 
 #ifdef max
