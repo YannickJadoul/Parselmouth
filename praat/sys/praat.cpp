@@ -1585,6 +1585,118 @@ void praat_run () {
 		}
 	}
 
+	praat_testPlatformAssumptions();
+
+	if (Melder_batch) {
+		if (thePraatStandAloneScriptText) {
+			try {
+				praat_executeScriptFromText (thePraatStandAloneScriptText);
+				praat_exit (0);
+			} catch (MelderError) {
+				Melder_flushError (praatP.title.get(), U": stand-alone script session interrupted.");
+				praat_exit (-1);
+			}
+		} else if (praatP.hasCommandLineInput) {
+			try {
+				praat_executeCommandFromStandardInput (praatP.title.get());
+				praat_exit (0);
+			} catch (MelderError) {
+				Melder_flushError (praatP.title.get(), U": command line session interrupted.");
+				praat_exit (-1);
+			}
+		} else {
+			try {
+				//Melder_casual (U"Script <<", theCurrentPraatApplication -> batchName.string, U">>");
+				praat_executeScriptFromFileNameWithArguments (theCurrentPraatApplication -> batchName.string);
+				praat_exit (0);
+			} catch (MelderError) {
+				Melder_flushError (praatP.title.get(), U": script command <<",
+					theCurrentPraatApplication -> batchName.string, U">> not completed.");
+				praat_exit (-1);
+			}
+		}
+	} else /* GUI */ {
+		if (! praatP.ignorePreferenceFiles) {
+			trace (U"reading the added script buttons");
+			/* Each line separately: every error should be ignored.
+			 */
+			praatP.phase = praat_READING_BUTTONS;
+			{// scope
+				autostring32 buttons;
+				try {
+					buttons = MelderFile_readText (& buttonsFile);
+				} catch (MelderError) {
+					Melder_clearError ();
+				}
+				if (buttons) {
+					char32 *line = buttons.get();
+					for (;;) {
+						char32 *newline = str32chr (line, U'\n');
+						if (newline) *newline = U'\0';
+						try {
+							praat_executeCommand (nullptr, line);
+						} catch (MelderError) {
+							Melder_clearError ();   // ignore this line, but not necessarily the next
+						}
+						if (! newline) break;
+						line = newline + 1;
+					}
+				}
+			}
+		}
+
+		trace (U"sorting the commands");
+		trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
+		praat_sortMenuCommands ();
+		praat_sortActions ();
+
+		praatP.phase = praat_HANDLING_EVENTS;
+
+		if (praatP.userWantsToOpen) {
+			for (; praatP.argumentNumber < praatP.argc; praatP.argumentNumber ++) {
+				//Melder_casual (U"File to open <<", Melder_peek8to32 (theArgv [iarg]), U">>");
+				autostring32 text = Melder_dup (Melder_cat (U"Read from file... ",
+															Melder_peek8to32 (praatP.argv [praatP.argumentNumber])));
+				try {
+					praat_executeScriptFromText (text.get());
+				} catch (MelderError) {
+					Melder_flushError ();
+				}
+			}
+		}
+
+		#if gtk
+			//gtk_widget_add_events (G_OBJECT (theCurrentPraatApplication -> topShell), GDK_ALL_EVENTS_MASK);
+			trace (U"install GTK key snooper");
+			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
+			#if ALLOW_GDK_DRAWING
+				g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event",
+					G_CALLBACK (cb_userMessage), nullptr);
+			#endif
+			signal (SIGUSR1, cb_sigusr1);
+			#if ALLOW_GDK_DRAWING
+				gtk_key_snooper_install (theKeySnooper, 0);
+			#endif
+			trace (U"start the GTK event loop");
+			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
+			gtk_main ();
+		#elif motif
+			for (;;) {
+				XEvent event;
+				GuiNextEvent (& event);
+				XtDispatchEvent (& event);
+			}
+		#elif cocoa
+			[NSApp run];
+		#endif
+	}
+}
+
+// Enabling asserts for praat_testPlatformAssumptions
+#undef Melder_assert
+#define Melder_assert(x) ((x) ? void (0) : Melder_assert_ (__FILE__, __LINE__, #x))
+
+void praat_testPlatformAssumptions() {
 	/*
 		Check the locale, to ensure identical behaviour on all computers.
 	*/
@@ -1803,110 +1915,6 @@ void praat_run () {
 	static_assert (sizeof (off_t) >= 8,
 		"sizeof(off_t) is less than 8. Compile Praat with -D_FILE_OFFSET_BITS=64.");
 #endif
-
-	if (Melder_batch) {
-		if (thePraatStandAloneScriptText) {
-			try {
-				praat_executeScriptFromText (thePraatStandAloneScriptText);
-				praat_exit (0);
-			} catch (MelderError) {
-				Melder_flushError (praatP.title.get(), U": stand-alone script session interrupted.");
-				praat_exit (-1);
-			}
-		} else if (praatP.hasCommandLineInput) {
-			try {
-				praat_executeCommandFromStandardInput (praatP.title.get());
-				praat_exit (0);
-			} catch (MelderError) {
-				Melder_flushError (praatP.title.get(), U": command line session interrupted.");
-				praat_exit (-1);
-			}
-		} else {
-			try {
-				//Melder_casual (U"Script <<", theCurrentPraatApplication -> batchName.string, U">>");
-				praat_executeScriptFromFileNameWithArguments (theCurrentPraatApplication -> batchName.string);
-				praat_exit (0);
-			} catch (MelderError) {
-				Melder_flushError (praatP.title.get(), U": script command <<",
-					theCurrentPraatApplication -> batchName.string, U">> not completed.");
-				praat_exit (-1);
-			}
-		}
-	} else /* GUI */ {
-		if (! praatP.ignorePreferenceFiles) {
-			trace (U"reading the added script buttons");
-			/* Each line separately: every error should be ignored.
-			 */
-			praatP.phase = praat_READING_BUTTONS;
-			{// scope
-				autostring32 buttons;
-				try {
-					buttons = MelderFile_readText (& buttonsFile);
-				} catch (MelderError) {
-					Melder_clearError ();
-				}
-				if (buttons) {
-					char32 *line = buttons.get();
-					for (;;) {
-						char32 *newline = str32chr (line, U'\n');
-						if (newline) *newline = U'\0';
-						try {
-							praat_executeCommand (nullptr, line);
-						} catch (MelderError) {
-							Melder_clearError ();   // ignore this line, but not necessarily the next
-						}
-						if (! newline) break;
-						line = newline + 1;
-					}
-				}
-			}
-		}
-
-		trace (U"sorting the commands");
-		trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-		praat_sortMenuCommands ();
-		praat_sortActions ();
-
-		praatP.phase = praat_HANDLING_EVENTS;
-
-		if (praatP.userWantsToOpen) {
-			for (; praatP.argumentNumber < praatP.argc; praatP.argumentNumber ++) {
-				//Melder_casual (U"File to open <<", Melder_peek8to32 (theArgv [iarg]), U">>");
-				autostring32 text = Melder_dup (Melder_cat (U"Read from file... ",
-															Melder_peek8to32 (praatP.argv [praatP.argumentNumber])));
-				try {
-					praat_executeScriptFromText (text.get());
-				} catch (MelderError) {
-					Melder_flushError ();
-				}
-			}
-		}
-
-		#if gtk
-			//gtk_widget_add_events (G_OBJECT (theCurrentPraatApplication -> topShell), GDK_ALL_EVENTS_MASK);
-			trace (U"install GTK key snooper");
-			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-			#if ALLOW_GDK_DRAWING
-				g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event",
-					G_CALLBACK (cb_userMessage), nullptr);
-			#endif
-			signal (SIGUSR1, cb_sigusr1);
-			#if ALLOW_GDK_DRAWING
-				gtk_key_snooper_install (theKeySnooper, 0);
-			#endif
-			trace (U"start the GTK event loop");
-			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-			gtk_main ();
-		#elif motif
-			for (;;) {
-				XEvent event;
-				GuiNextEvent (& event);
-				XtDispatchEvent (& event);
-			}
-		#elif cocoa
-			[NSApp run];
-		#endif
-	}
 }
 
 /* End of file praat.cpp */

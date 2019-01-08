@@ -142,13 +142,32 @@ using PraatBindings = Bindings<PraatError,
                                MFCC,
                                PraatModule>;
 
+} // namespace parselmouth
+
+void initializePraat() {
+	Melder_setFatalProc([](const char32 *message) {
+		auto extraMessage = "Praat failed to initialize and cannot be used by Parselmouth:\n\n"s +
+		                    Melder_peek32to8(message) + "\n"s +
+		                    "Since Parselmouth uses Praat's code, it can only be run on platforms that can run Praat.\n"s
+				                    "If you can run Praat as standalone program or if you think it should be able to, please\n"
+				                    "report the error to the maintainers, at https://github.com/YannickJadoul/Parselmouth."s;
+		PyErr_SetString(PyExc_Exception, extraMessage.c_str());
+		throw py::error_already_set();
+	});
+
+	static bool initialized = false;
+	if (!initialized) {
+		praatlib_init();
+		INCLUDE_LIBRARY(praat_uvafon_init)
+		INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
+		initialized = true;
+	}
+
+	praat_testPlatformAssumptions();
 }
 
 PYBIND11_MODULE(parselmouth, m) {
-	praatlib_init();
-	// TODO Put in one-time initialization that is run when it's actually needed?
-	INCLUDE_LIBRARY(praat_uvafon_init)
-	INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
+	initializePraat();
 
 	parselmouth::PraatBindings bindings(m);
 
