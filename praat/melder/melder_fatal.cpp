@@ -43,7 +43,7 @@ void Melder_fatal (const MelderArg& arg1,
 	const MelderArg& arg5, const MelderArg& arg6, const MelderArg& arg7,
 	const MelderArg& arg8, const MelderArg& arg9, const MelderArg& arg10)
 {
-	MelderThread_LOCK (theMelder_fatal_mutex);
+	// MelderThread_LOCK (theMelder_fatal_mutex);
 	conststring32 s1  = arg1. _arg ? arg1. _arg : U"";   int64 length1  = str32len (s1);
 	conststring32 s2  = arg2. _arg ? arg2. _arg : U"";   int64 length2  = str32len (s2);
 	conststring32 s3  = arg3. _arg ? arg3. _arg : U"";   int64 length3  = str32len (s3);
@@ -77,7 +77,7 @@ void Melder_assert_ (const char *fileName, int lineNumber, const char *condition
 	 * Hence, character conversion is done inline rather than with Melder_peek8to32(),
 	 * and Melder_integer() is also avoided.
 	 */
-	MelderThread_LOCK (theMelder_fatal_mutex);
+	// MelderThread_LOCK (theMelder_fatal_mutex);
 	static char32 fileNameBuffer [1000], conditionBuffer [1000], lineNumberBuffer [40];
 	Melder_8to32_inplace (fileName, fileNameBuffer, kMelder_textInputEncoding::UTF8);
 	Melder_8to32_inplace (condition, conditionBuffer, kMelder_textInputEncoding::UTF8);

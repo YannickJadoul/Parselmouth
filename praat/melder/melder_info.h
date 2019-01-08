@@ -23,10 +23,11 @@
 */
 
 namespace MelderInfo {
-	using Proc = void (*) (conststring32 message);
-	void _defaultProc (conststring32 message);
+	using Proc = void (*) (conststring32 message, size_t i);
+	void _defaultProc (conststring32 message, size_t i);
 	extern Proc _p_currentProc;
 	extern MelderString _foregroundBuffer, *_p_currentBuffer;
+	extern size_t _bufferOffset;
 };
 
 void MelderInfo_open ();   // clear the Info window in the background

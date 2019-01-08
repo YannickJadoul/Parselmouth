@@ -17,7 +17,6 @@ def test_call_return_many(sound):
 def test_call_with_extra_objects(sound):
 	new = parselmouth.Sound(np.zeros((sound.n_channels, sound.n_samples)), sampling_frequency=sound.sampling_frequency, start_time=sound.start_time)
 	sound.name = "the sound"
-	assert sound.name == "the_sound" # TODO Move (check) somewhere else (as well), e.g. test_thing.py?
 	parselmouth.praat.call(new, "Formula", "self [col] + Sound_the_sound [col]", extra_objects=[sound])
 	assert sound == new
 
@@ -71,6 +70,21 @@ def test_run_with_extra_objects(sound):
 
 	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with lower case\)"):
 		parselmouth.praat.run(new, "Formula: ~ self [col] + Sound_the_sound [col]")
+
+
+def test_run_sys_stdout(capsys):
+	parselmouth.praat.run("writeInfo: 42")
+	assert capsys.readouterr().out == "42"
+	parselmouth.praat.run("appendInfo: 42")
+	assert capsys.readouterr().out == "42"  # TODO Not correct, "4242"
+	parselmouth.praat.run("writeInfoLine: 42")
+	assert capsys.readouterr().out == "42\n"
+	parselmouth.praat.run("writeInfoLine: \"The answer\", \" - \", 42\nappendInfo: \"The question - ?\"")
+	assert capsys.readouterr().out == "The answer - 42\nThe question - ?"  # TODO Not correct, "The answer - 42\nThe answer - 42\nThe question - ?"
+	parselmouth.praat.run("writeInfoLine: \"The answer\", \" - \", 42\nwriteInfoLine: \"The question - ?\"")
+	assert capsys.readouterr().out == "The answer - 42\nThe question - ?\n"
+	parselmouth.praat.run("writeInfo: tab$, newline$")
+	assert capsys.readouterr().out == "\t\n"
 
 
 def test_run_with_capture_output():

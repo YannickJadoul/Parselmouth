@@ -42,7 +42,7 @@ InfoEditor InfoEditor_getTheReferenceToTheOnlyInstance () {
 	return theReferenceToTheOnlyInfoEditor;
 }
 
-static void gui_information (conststring32 message) {
+static void gui_information (conststring32 message, size_t) {
 	InfoEditor editor = InfoEditor_getTheReferenceToTheOnlyInstance ();
 	GuiText_setString (editor -> textWidget, message);
 	GuiThing_show (editor -> windowForm);

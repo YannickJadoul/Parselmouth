@@ -36,8 +36,8 @@ void _recursiveTemplate_Melder_casual (const MelderArg& first, Args... rest) {
 
 template <typename... Args>
 void Melder_casual (const MelderArg& first, Args... rest) {
-	_recursiveTemplate_Melder_casual (first, rest...);
-	MelderConsole::write (U"\n", true);
+	// _recursiveTemplate_Melder_casual (first, rest...);
+	// MelderConsole::write (U"\n", true);
 }
 
 void MelderCasual_memoryUse (integer message = 0);
