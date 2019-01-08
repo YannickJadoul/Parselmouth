@@ -17,10 +17,14 @@ def intensity(sound):
 	yield sound.to_intensity()
 
 @pytest.fixture
+def pitch(sound):
+	yield sound.to_pitch()
+
+@pytest.fixture
 def spectrogram(sound):
 	yield sound.to_spectrogram()
 
-@combined_fixture('sound', 'intensity', 'spectrogram')
+@combined_fixture('intensity', 'pitch', 'spectrogram', 'sound')
 def sampled(request):
 	yield request.param
 
