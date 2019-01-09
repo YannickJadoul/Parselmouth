@@ -27,7 +27,8 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
-# setuptools to CMake solution by https://github.com/pybind/cmake_example/
+
+# setuptools to CMake solution based on https://github.com/pybind/cmake_example/
 
 class CMakeExtension(Extension):
 	def __init__(self, name, sourcedir=''):
@@ -40,8 +41,7 @@ class CMakeBuild(build_ext):
 		try:
 			out = subprocess.check_output(['cmake', '--version'])
 		except OSError:
-			raise RuntimeError("CMake must be installed to build the following extensions: " +
-							   ", ".join(e.name for e in self.extensions))
+			raise RuntimeError("CMake must be installed to build the following extensions: " + ", ".join(e.name for e in self.extensions))
 
 		if platform.system() == "Windows":
 			cmake_version = LooseVersion(re.search(r'version\s*([\d.]+)', out.decode()).group(1))
@@ -53,8 +53,7 @@ class CMakeBuild(build_ext):
 
 	def build_extension(self, ext):
 		extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
-		cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-					  '-DPYTHON_EXECUTABLE=' + sys.executable]
+		cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir, '-DPYTHON_EXECUTABLE=' + sys.executable]
 
 		cfg = 'Debug' if self.debug else 'Release'
 		build_args = ['--config', cfg]
@@ -78,9 +77,11 @@ class CMakeBuild(build_ext):
 		subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
 		subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
-def read(*names, **kwargs):
-	with io.open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
-		return fp.read()
+
+def read(*args):
+	with io.open(os.path.join(os.path.dirname(__file__), *args), encoding='utf8') as f:
+		return f.read()
+
 
 def find_version(*file_paths):
 	version_file = read(*file_paths)
@@ -88,6 +89,7 @@ def find_version(*file_paths):
 	if version_match:
 		return version_match.group(1)
 	raise RuntimeError("Unable to find version string.")
+
 
 long_description="""Parselmouth - Praat in Python, the Pythonic way
 ===============================================
@@ -115,12 +117,12 @@ https://github.com/YannickJadoul/Parselmouth"""
 
 setup(
 	name='praat-parselmouth',
-	version=find_version('src', 'version.h'),
-	description='Praat in Python, the Pythonic way',
+	version=find_version("src", "version.h"),
+	description="Praat in Python, the Pythonic way",
 	long_description=long_description,
-	url='https://github.com/YannickJadoul/Parselmouth',
-	author='Yannick Jadoul',
-	author_email='Yannick.Jadoul@ai.vub.ac.be',
+	url="https://github.com/YannickJadoul/Parselmouth",
+	author="Yannick Jadoul",
+	author_email="Yannick.Jadoul@ai.vub.ac.be",
 	license='GPLv3',
 	classifiers=[
 		'Intended Audience :: Developers',
@@ -140,7 +142,7 @@ setup(
 		'Topic :: Scientific/Engineering',
 		'Topic :: Software Development :: Libraries :: Python Modules',
 	],
-	keywords='praat speech signal processing phonetics',
+	keywords="praat speech signal processing phonetics",
 	install_requires=[
 		'numpy>=1.7.0',
 	],
