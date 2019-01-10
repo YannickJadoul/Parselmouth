@@ -7,7 +7,7 @@ Though other attempts have been made at porting functionality from Praat to Pyth
 
 Please note that Parselmouth is currently in premature state and in active development. While the amount of functionality that is currently present is not huge, more will be added over the next few months. As such, *feedback* and possibly *contributions* are highly appreciated.
 
-Drop by our `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_ if you have any question, remarks, or requests!
+Drop by our `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_ or post a message to our `Google discussion group <https://groups.google.com/d/forum/parselmouth>`_ if you have any question, remarks, or requests!
 
 .. only:: html
 

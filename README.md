@@ -14,7 +14,7 @@ Though other attempts have been made at porting functionality from Praat to Pyth
 
 Please note that Parselmouth is currently in premature state and in active development. While the amount of functionality that is currently present is not huge, more will be added over the next few months.
 
-Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) if you have any question, remarks, or requests!
+Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) or post a message to our [Google discussion group](https://groups.google.com/d/forum/parselmouth) if you have any question, remarks, or requests!
 
 *Try out* Parselmouth online, in interactive Jupyter notebooks on [Binder](https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=lab%2Ftree%2Fdocs%2Fexamples).
 
