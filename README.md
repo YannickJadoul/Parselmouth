@@ -49,7 +49,7 @@ plt.xlabel("time [s]")
 plt.ylabel("amplitude")
 plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
 ```
-![example_sound.png](docs/images/example_sound.png)
+![docs/images/example_sound.png](docs/images/example_sound.png)
 ```Python
 def draw_spectrogram(spectrogram, dynamic_range=70):
     X, Y = spectrogram.x_grid(), spectrogram.y_grid()
@@ -75,7 +75,7 @@ draw_intensity(intensity)
 plt.xlim([snd.xmin, snd.xmax])
 plt.show() # or plt.savefig("spectrogram.pdf")
 ```
-![example_spectrogram.png](docs/images/example_spectrogram.png)
+![docs/images/example_spectrogram.png](docs/images/example_spectrogram.png)
 ```Python
 def draw_pitch(pitch):
     # Extract selected pitch contour, and
@@ -100,7 +100,7 @@ draw_pitch(pitch)
 plt.xlim([snd.xmin, snd.xmax])
 plt.show() # or plt.savefig("spectrogram_0.03.pdf")
 ```
-![example_spectrogram_0.03.png](docs/images/example_spectrogram_0.03.png)
+![docs/images/example_spectrogram_0.03.png](docs/images/example_spectrogram_0.03.png)
 ```Python
 # Find all .wav files in a directory, pre-emphasize and save as new .wav and .aiff file
 import parselmouth
@@ -123,8 +123,9 @@ Our documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.i
 
 ## Development
 Currently, the actual project and Parselmouth's code is not very well documented. Or well, hardly documented at all. That is planned to still change in order to allow for easier contribution to this open source project.
+Until that day in some undefined future, if you want to contribute to Parselmouth, do let me know [on Gitter](https://gitter.im/PraatParselmouth/Development) or [by email](mailto:Yannick.Jadoul@ai.vub.ac.be), and I will very gladly guide you through the project and help you get started.
 
-Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Next to that, to manually build Parselmouth, the only requirement is a modern C++ compiler supporting the C++14 standard.
+Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Next to that, to manually build Parselmouth, the only requirement is a modern C++ compiler supporting the C++17 standard.
 
 ## Acknowledgements
 - Parselmouth builds on the extensive code base of [Praat](https://github.com/praat/praat) by Paul Boersma, which actually implements the huge variety of speech processing and phonetic algorithms that can now be accessed through Parselmouth.
