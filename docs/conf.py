@@ -125,7 +125,7 @@ else:
     branch_or_tag = rev_parse_name if rev_parse_name != 'HEAD' else 'v{}'.format(release)
 
 rst_epilog = """
-.. |binder_badge_examples| image:: https://mybinder.org/badge.svg
+.. |binder_badge_examples| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/docs/examples
 """.format(branch_or_tag=branch_or_tag)
 
@@ -138,7 +138,7 @@ nbsphinx_prolog = """
 
         An online, interactive version of this example is available at Binder: |binder|
 
-.. |binder| image:: https://mybinder.org/badge.svg
+.. |binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/{{{{ docname }}}}
 """.format(branch_or_tag=branch_or_tag)
 
