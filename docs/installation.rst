@@ -95,7 +95,7 @@ Yet another way to install Parselmouth is from within Python itself::
 
 .. note::
 
-     However, the latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call ``pip`` or ``python`` immediately from the command line.
+    However, the latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call ``pip`` or ``python`` immediately from the command line.
 
 
 Pip version

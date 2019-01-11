@@ -30,7 +30,7 @@ Citing Parselmouth
 
 A `manuscript introducing Parselmouth <https://ai.vub.ac.be/%7Eyajadoul/jadoul_introducing-parselmouth_a-python-interface-to-praat.pdf>`_ has been published in the Journal of Phonetics. Scientific work and publications can for now cite Parselmouth in the following way:
 
-   Jadoul, Y., Thompson, B., & de Boer, B. (2018). Introducing Parselmouth: A Python interface to Praat. *Journal of Phonetics*, *71*, 1-15. https://doi.org/10.1016/j.wocn.2018.07.001
+    Jadoul, Y., Thompson, B., & de Boer, B. (2018). Introducing Parselmouth: A Python interface to Praat. *Journal of Phonetics*, *71*, 1-15. https://doi.org/10.1016/j.wocn.2018.07.001
 
 .. code-block:: bibtex
 
@@ -46,13 +46,13 @@ A `manuscript introducing Parselmouth <https://ai.vub.ac.be/%7Eyajadoul/jadoul_i
 
 Since Parselmouth exposes existing Praat functionality and algorithm implementations, we suggest also `citing Praat <http://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html>`_ when using Parselmouth in scientific research:
 
-   Boersma, P., & Weenink, D. (2018). Praat: doing phonetics by computer [Computer program]. Version 6.0.43, retrieved 8 September 2018 from http://www.praat.org/
+    Boersma, P., & Weenink, D. (2018). Praat: doing phonetics by computer [Computer program]. Version 6.0.43, retrieved 8 September 2018 from http://www.praat.org/
 
 .. code-block:: bibtex
 
     @misc{praat,
-        title = "{P}raat: doing phonetics by computer [{C}omputer program]",
         author = "Paul Boersma and David Weenink",
+        title = "{P}raat: doing phonetics by computer [{C}omputer program]",
         howpublished = "Version 6.0.43, retrieved 8 September 2018 \url{http://www.praat.org/}",
         year = "2018"
     }
