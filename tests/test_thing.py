@@ -1,5 +1,7 @@
 import pytest
 
+import re
+
 from builtins import str  # Python 2 compatibility
 
 
@@ -22,6 +24,11 @@ def test_no_name(thing):
 
 
 def test_info(thing):
-	assert thing.info() == str(thing)
+	def clear_date(info_str):
+		cleared, count = re.subn(r'^Date: .*\d\d:\d\d:\d\d.*', '', info_str, flags=re.MULTILINE)
+		assert count == 1
+		return cleared
+
+	assert clear_date(thing.info()) == clear_date(str(thing))
 	thing.name = "a thing"
-	assert thing.info() == str(thing)
+	assert clear_date(thing.info()) == clear_date(str(thing))
