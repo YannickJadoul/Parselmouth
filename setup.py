@@ -91,7 +91,8 @@ def find_version(*file_paths):
 	raise RuntimeError("Unable to find version string.")
 
 
-long_description="""Parselmouth - Praat in Python, the Pythonic way
+long_description="""\
+Parselmouth - Praat in Python, the Pythonic way
 ===============================================
 
 **Parselmouth** is a Python library for the
@@ -108,7 +109,9 @@ but *also* provides an interface that looks no different from any other
 Python library.
 
 Drop by our `Gitter chat
-room <https://gitter.im/PraatParselmouth/Lobby>`__ if you have any
+room <https://gitter.im/PraatParselmouth/Lobby>`__ or post a message to
+our `Google discussion
+group <https://groups.google.com/d/forum/parselmouth>`__ if you have any
 question, remarks, or requests!
 
 More information on the **installation** and some basic **examples**
