@@ -149,8 +149,8 @@ void initializePraat() {
 		auto extraMessage = "Praat failed to initialize and cannot be used by Parselmouth:\n\n"s +
 		                    Melder_peek32to8(message) + "\n"s +
 		                    "Since Parselmouth uses Praat's code, it can only be run on platforms that can run Praat.\n"s
-				                    "If you can run Praat as standalone program or if you think it should be able to, please\n"
-				                    "report the error to the maintainers, at https://github.com/YannickJadoul/Parselmouth."s;
+		                    "If you can run Praat as standalone program or if you think it should be able to, please\n"
+		                    "report the error to the maintainers, at https://github.com/YannickJadoul/Parselmouth."s;
 		PyErr_SetString(PyExc_Exception, extraMessage.c_str());
 		throw py::error_already_set();
 	});
