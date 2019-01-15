@@ -133,10 +133,12 @@ setup(
 	author_email="Yannick.Jadoul@ai.vub.ac.be",
 	license='GPLv3',
 	classifiers=[
+		'Development Status :: 5 - Production/Stable',
 		'Intended Audience :: Developers',
 		'Intended Audience :: Science/Research',
 		'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
 		'Operating System :: MacOS :: MacOS X',
+		'Operating System :: Microsoft :: Windows'
 		'Operating System :: POSIX :: Linux',
 		'Operating System :: Unix',
 		'Programming Language :: C++',
@@ -150,7 +152,8 @@ setup(
 		'Topic :: Scientific/Engineering',
 		'Topic :: Software Development :: Libraries :: Python Modules',
 	],
-	keywords="praat speech signal processing phonetics",
+	keywords=["praat", "speech", "signal processing", "phonetics"],
+	python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
 	install_requires=[
 		'numpy>=1.7.0',
 	],
