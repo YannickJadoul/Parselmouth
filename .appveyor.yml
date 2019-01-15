@@ -38,8 +38,9 @@ install:
         if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
         $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
       }
-  - python -m pip install --upgrade pip
-  - pip install --upgrade wheel numpy
+  - ps: $env:PIP_ONLY_BINARY = "numpy"  # For Python 3.4, no binary wheels are available for NumPy versions >= 1.16.0
+  - pip install --upgrade pip wheel
+  - pip install --upgrade numpy
   - if defined WHEELS ( pip install cibuildwheel )
   - if not defined WHEELS ( pip install -r tests/requirements.txt )
 build_script:
