@@ -124,6 +124,11 @@ setup(
 	description="Praat in Python, the Pythonic way",
 	long_description=long_description,
 	url="https://github.com/YannickJadoul/Parselmouth",
+	project_urls={
+		"Bug Tracker": "https://github.com/YannickJadoul/Parselmouth/issues",
+		"Documentation": "https://parselmouth.readthedocs.io/",
+		"Source Code": "https://github.com/YannickJadoul/Parselmouth",
+	},
 	author="Yannick Jadoul",
 	author_email="Yannick.Jadoul@ai.vub.ac.be",
 	license='GPLv3',
