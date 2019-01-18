@@ -36,13 +36,16 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
-    'nbsphinx']
+sys.path.insert(1, os.path.abspath(os.path.dirname(__file__)))
+extensions = ['sphinx.ext.napoleon',
+              'sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.doctest',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.todo',
+              'sphinx.ext.coverage',
+              'nbsphinx',
+              'pybind11_docstrings']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -116,7 +119,8 @@ todo_include_todos = True
 autodoc_member_order = 'groupwise'
 
 # Intersphinx configuration
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'numpy': ('https://docs.scipy.org/doc/numpy/', None)}
 
 if on_rtd:
     branch_or_tag = branch or 'v{}'.format(release)
@@ -141,6 +145,10 @@ nbsphinx_prolog = """
 .. |binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/{{{{ docname }}}}
 """.format(branch_or_tag=branch_or_tag)
+
+
+def setup(app):
+    app.add_stylesheet('css/custom.css')
 
 
 # -- Options for HTML output ----------------------------------------------

@@ -1,0 +1,8 @@
+.field li p {
+    font-size: inherit;
+    display: inline;
+}
+
+.field p:empty {
+   display: none;
+}

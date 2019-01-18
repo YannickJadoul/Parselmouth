@@ -407,18 +407,89 @@ class PraatModule;
 PRAAT_MODULE_BINDING(praat, PraatModule) {
 	def("call",
 	    [](const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({}, command, args, kwargs); },
-	    "command"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - return_string: bool = False");
+	    "command"_a);
 
 	def("call",
 	    [](structData &data, const std::u32string &command, py::args args, py::kwargs kwargs) { return callPraatCommand({ std::ref(data) }, command, args, kwargs); },
-	    "object"_a, "command"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - return_string: bool = False");
+	    "object"_a, "command"_a);
 
 	def("call",
 	    &callPraatCommand,
-	    "objects"_a, "command"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - return_string: bool = False");
+	    "objects"_a, "command"_a, R"(Call a Praat command.
+
+This function provides a Python interface to call available Praat commands
+based on the label in the Praat user interface and documentation, similar
+to the Praat scripting language.
+
+Calling a Praat command through this function roughly corresponds to the
+following scenario in the Praat user interface or scripting language:
+
+1. Zero, one, or multiple `parselmouth.Data` objects are put into Praat's
+   global object list and are 'selected'.
+2. The argument values are converted into Praat values.
+   E.g., `True` and `False` are converted into ``"yes"`` and ``"no"``.
+3. The Praat command is executed on the selected objects with the
+   converted arguments.
+4. The result of the command is returned. The type of the result depends
+   on the result of the Praat command.
+5. Praat's object list is emptied again, such that the following
+   execution of this function is independent from the current one.
+
+Parameters
+----------
+object : parselmouth.Data
+    A single object to add to the Praat object list, which will be
+    selected when the Praat command is called.
+objects : List[parselmouth.Data]
+    Multiple objects to be added to the Praat object list, which will be
+    selected when the Praat command is called.
+command : str
+	The Praat action to call. This is the same command name as one would
+    use in a Praat script and corresponds to the label on the button in
+    the Praat user interface.
+*args
+    The list of values to be passed as arguments to the Praat command.
+    Allowed types for these arguments are:
+
+    - :class:`int` or :class:`float`: passed as a Praat numeric value
+    - :class:`bool`: converted into ``"yes"``/``"no"``
+    - :class:`str`: passed as Praat string value
+    - :class:`numpy.ndarray`: passed as Praat vector or matrix, if the
+      array contains numeric values and is 1D or 2D, respectively.
+
+Keyword Arguments
+-----------------
+extra_objects: List[parselmouth.Data]
+    Extra objects added to the Praat object list that will not be selected
+    when the command is called (default value: ``[]``).
+return_string: bool
+    Return the rew string written in the Praat info window instead of the
+    converted Python object (default value: ``False``).
+
+Returns
+-------
+object
+    The result of the Praat command. The actual value returned depends on
+    what the Praat command does. The following types can be returned:
+
+    - If ``return_string=True`` was passed, a `str` value is returned,
+      which contains the text that would have been written to the Praat
+      info window.
+    - A :class:`float`, :class:`int`, :class:`bool`, or :class:`complex`
+      value is returned when the Praat command would write such a value to
+      the Praat info window.
+    - A :class:`numpy.ndarray` value is returned if the command returns a
+      Praat vector or matrix.
+    - A :class:`parselmouth.Data` object is returned if the command always
+      creates exactly one object. If the actual type of the Praat object is
+      known as a class in Parselmouth, an object of a subtype of
+      :class:`parselmouth.Data` is returned.
+    - A list of :class:`parselmouth.Data` is returned if the command can
+      create multiple new objects (even if this particular execution of the
+      command only added one object to the Praat object list).
+    - A :class:`str` is returned when a string or info text would be
+      written to the Praat info window.
+)");
 
 	def("run",
 	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({}, script, args, kwargs); },
