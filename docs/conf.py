@@ -123,6 +123,10 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy/', None)}
 
 default_role = 'py:obj'
+nitpicky = True
+nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
+                  ('py:class', 'List'),
+                  ('py:obj', 'List')]
 
 
 if on_rtd:

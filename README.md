@@ -1,6 +1,6 @@
 # Parselmouth - Praat in Python, the Pythonic way
 
-[![PyPI](https://img.shields.io/pypi/v/praat-parselmouth.svg)](https://pypi.python.org/pypi/praat-parselmouth)
+[![PyPI](https://img.shields.io/pypi/v/praat-parselmouth.svg)](https://pypi.org/project/praat-parselmouth/)
 [![Gitter chat](https://img.shields.io/gitter/room/PraatParselmouth/Lobby.svg?logo=gitter&logoColor=fff&colorB=51bb9b)](https://gitter.im/PraatParselmouth/Lobby)
 [![Travis CI status](https://img.shields.io/travis/YannickJadoul/Parselmouth/master.svg?logo=travis)](https://travis-ci.org/YannickJadoul/Parselmouth/)
 [![AppVeyor status](https://img.shields.io/appveyor/ci/YannickJadoul/Parselmouth/master.svg?logo=appveyor)](https://ci.appveyor.com/project/YannickJadoul/parselmouth)

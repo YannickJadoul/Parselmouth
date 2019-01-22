@@ -28,7 +28,7 @@ Drop by our `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_ or po
 Citing Parselmouth
 ------------------
 
-A `manuscript introducing Parselmouth <https://ai.vub.ac.be/%7Eyajadoul/jadoul_introducing-parselmouth_a-python-interface-to-praat.pdf>`_ has been published in the Journal of Phonetics. Scientific work and publications can for now cite Parselmouth in the following way:
+A `manuscript introducing Parselmouth <https://ai.vub.ac.be/~yajadoul/jadoul_introducing-parselmouth_a-python-interface-to-praat.pdf>`_ has been published in the Journal of Phonetics. Scientific work and publications can for now cite Parselmouth in the following way:
 
     Jadoul, Y., Thompson, B., & de Boer, B. (2018). Introducing Parselmouth: A Python interface to Praat. *Journal of Phonetics*, *71*, 1-15. https://doi.org/10.1016/j.wocn.2018.07.001
 

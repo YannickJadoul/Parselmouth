@@ -25,7 +25,7 @@ Python distributions
 --------------------
 
 Anaconda
-    If you use the Anaconda distribution of Python, you can use the same ``pip`` command in a terminal of the appropriate Anaconda environment, either activated through the `Anaconda Navigator <https://docs.continuum.io/anaconda/navigator/tutorials/manage-environments#using-an-environment>`_ or `conda tool <https://docs.continuum.io/docs_oss/conda/using/envs#change-environments-activate-deactivate>`_.
+    If you use the Anaconda distribution of Python, you can use the same ``pip`` command in a terminal of the appropriate Anaconda environment, either activated through the `Anaconda Navigator <https://docs.continuum.io/anaconda/navigator/tutorials/manage-environments/#using-an-environment>`_ or `conda tool <https://conda.io/projects/continuumio-conda/en/latest/user-guide/tasks/manage-environments.html#activating-an-environment>`_.
 
 Homebrew & MacPorts
     We currently do not have Homebrew or MacPorts packages to install Parselmouth. As far as we know however, Parselmouth can just be installed with the accompanying ``pip`` of these distributions.
@@ -41,9 +41,9 @@ Other
 PsychoPy
 --------
 
-As a Python library Parselmouth is perfect to be used within a PsychoPy experiment. There two different ways in which `PsychoPy can be installed <http://www.psychopy.org/installation.html>`_: it can just be manually installed as a standard Python library, in which case Parselmouth can just be installed next to it with ``pip``. For Windows and Mac OS X, however, *standalone* versions of PsychoPy exist, and the software does currently not allow for external libraries to be installed with ``pip``. These steps can be followed to install Parselmouth in a standalone PsychoPy:
+As a Python library Parselmouth is perfect to be used within a PsychoPy experiment. There two different ways in which `PsychoPy can be installed <https://www.psychopy.org/installation.html>`_: it can just be manually installed as a standard Python library, in which case Parselmouth can just be installed next to it with ``pip``. For Windows and Mac OS X, however, *standalone* versions of PsychoPy exist, and the software does currently not allow for external libraries to be installed with ``pip``. These steps can be followed to install Parselmouth in a standalone PsychoPy:
 
-1. Go to https://pypi.python.org/pypi/praat-parselmouth.
+1. Go to https://pypi.org/project/praat-parselmouth/.
 2. Download the file ``praat_parselmouth-x.y.z-cp27-cp27m-win32.whl`` *(for Windows)* or ``praat_parselmouth-x.y.z-cp27-cp27m-macosx_10_6_intel.whl`` *(for Mac OS X)* - where x.y.z will be the latest released version of Parselmouth. Be sure to find the right file in the list, containing both ``cp27``, and ``win32`` *(Windows)* or ``macos`` *(Mac OS X)*  in its name!
 3. Rename the downloaded file by replacing the ``.whl`` extension by ``.zip``.
 4. Extract this zip archive somewhere on your computer, in your directory of choice. Remember the name and location of the extracted folder that contains the file ``parselmouth.pyd`` *(Windows)* or ``parselmouth.so`` *(Mac OS X)*.
@@ -63,7 +63,7 @@ As a Python library Parselmouth is perfect to be used within a PsychoPy experime
 
 .. note::
 
-    These instructions were tested with the ``StandalonePsychoPy-1.85.2-win32.exe`` and ``StandalonePsychoPy-1.85.2-OSX_64bit.dmg`` version downloaded from http://psychopy.org/installation.html.
+    These instructions were tested with the ``StandalonePsychoPy-1.85.2-win32.exe`` and ``StandalonePsychoPy-1.85.2-OSX_64bit.dmg`` version downloaded from https://www.psychopy.org/installation.html.
 
 
 Troubleshooting
