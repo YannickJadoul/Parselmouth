@@ -157,7 +157,7 @@ matrix:
       osx_image: xcode10
       compiler: clang
       install:
-        - $PYTHON_CMD -m pip install cibuildwheel
+        - $PYTHON_CMD -m pip install git+https://github.com/YannickJadoul/cibuildwheel.git@pip-19-stalling-workaround
       script:
         - mkdir praat_build && cd praat_build && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2 && cd ..
         - export PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build/praat\""
