@@ -27,11 +27,11 @@
 namespace parselmouth {
 
 PRAAT_CLASS_BINDING(Harmonicity) {
+	addTimeFrameSampledMixin(*this);
+
 	// TODO Get value in frame
 
 	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
-
-	initTimeFrameSampled(*this);
 
 	def("get_value", // TODO Should be part of Vector class
 	    [](Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },

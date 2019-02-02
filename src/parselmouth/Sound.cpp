@@ -182,12 +182,12 @@ PRAAT_ENUM_BINDING(ToHarmonicityMethod) {
 }
 
 PRAAT_CLASS_BINDING(Sound) {
+	addTimeFrameSampledMixin(*this);
+
 	NESTED_BINDINGS(ToPitchMethod,
 	                ToHarmonicityMethod)
 
 	using signature_cast_placeholder::_;
-
-	initTimeFrameSampled(*this);
 
 	def(py::init([](py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::c_style to be able to memcpy / NUMmatrix_copyElements ?
 		    auto ndim = values.ndim();

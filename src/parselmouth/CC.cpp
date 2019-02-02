@@ -73,11 +73,11 @@ PRAAT_STRUCT_BINDING(Frame, CC_Frame) {
 }
 
 PRAAT_CLASS_BINDING(CC) {
+	addTimeFrameSampledMixin(*this);
+
 	NESTED_BINDINGS(CC_Frame)
 
 	using signature_cast_placeholder::_;
-
-	initTimeFrameSampled(*this);
 
 	def("get_number_of_coefficients",
 	    args_cast<_, Positive<_>>(CC_getNumberOfCoefficients),

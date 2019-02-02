@@ -33,9 +33,9 @@ using namespace py::literals;
 namespace parselmouth {
 
 PRAAT_CLASS_BINDING(Spectrogram) {
-	using signature_cast_placeholder::_;
+	addTimeFrameSampledMixin(*this);
 
-	initTimeFrameSampled(*this);
+	using signature_cast_placeholder::_;
 
 	// TODO Constructor!
 

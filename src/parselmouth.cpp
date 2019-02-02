@@ -51,6 +51,9 @@ using Data = Daata;
 
 namespace parselmouth {
 
+struct TimeFunction;
+struct TimeFrameSampled;
+
 class PraatModule;
 using PraatError = MelderError;
 class PraatWarning {};
@@ -127,7 +130,9 @@ using PraatBindings = Bindings<PraatError,
                                Thing,
                                Data,
                                Function,
+                               TimeFunction,
                                Sampled,
+                               TimeFrameSampled,
                                SampledXY,
                                Matrix,
                                Vector,

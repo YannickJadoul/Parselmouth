@@ -127,12 +127,12 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 }
 
 PRAAT_CLASS_BINDING(Pitch) {
+	addTimeFrameSampledMixin(*this);
+
 	NESTED_BINDINGS(Pitch_Candidate,
 	                Pitch_Frame)
 
 	using signature_cast_placeholder::_;
-
-	initTimeFrameSampled(*this);
 
 	// TODO Which constructors? From Sound?
 

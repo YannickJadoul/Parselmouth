@@ -50,13 +50,13 @@ PRAAT_ENUM_BINDING(AveragingMethod) {
 }
 
 PRAAT_CLASS_BINDING(Intensity) {
+	addTimeFrameSampledMixin(*this);
+
 	NESTED_BINDINGS(AveragingMethod)
 
 	// TODO Get value in frame
 
 	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
-
-	initTimeFrameSampled(*this);
 
 	def("get_value", // TODO Should be part of Vector class
 	    [](Intensity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },

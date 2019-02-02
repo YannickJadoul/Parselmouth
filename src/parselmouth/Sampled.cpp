@@ -19,6 +19,8 @@
 
 #include "Parselmouth.h"
 
+#include "TimeClassAspects.h"
+
 #include <praat/fon/Sampled.h>
 
 #include <pybind11/numpy.h>
@@ -74,6 +76,73 @@ PRAAT_CLASS_BINDING(Sampled)
 
 	// TODO Sampled_indexToX, Sampled_xToIndex, etc
 	// TODO WindowSamplesX
+}
+
+
+CLASS_BINDING(TimeFrameSampled, TimeFrameSampled, structSampled, detail::PraatHolder<TimeFrameSampled>)
+BINDING_CONSTRUCTOR(TimeFrameSampled, "TimeFrameSampled")
+BINDING_INIT(TimeFrameSampled) {
+	using signature_cast_placeholder::_;
+
+	addTimeFunctionMixin(*this);
+
+	def_readonly("nt", &structSampled::nx);
+	def_readonly("t1", &structSampled::x1);
+	def_readonly("dt", &structSampled::dx);
+
+	// TODO Get rid of code duplication with Sampled
+	def("ts",
+	    [](Sampled self) { // TODO This or rather use Python call to numpy?
+		    py::array_t<double> ts(static_cast<size_t>(self->nx));
+		    auto unchecked = ts.mutable_unchecked<1>();
+		    for (auto i = 0; i < self->nx; ++i) {
+			    unchecked(i) = self->x1 + i * self->dx;
+		    }
+		    return ts;
+	    });
+
+	def("t_grid",
+	    [](Sampled self) {
+		    py::array_t<double> grid(static_cast<size_t>(self->nx) + 1);
+		    auto unchecked = grid.mutable_unchecked<1>();
+		    for (auto i = 0; i < self->nx + 1; ++i) {
+			    unchecked(i) = self->x1 + (i - 0.5) * self->dx;
+		    }
+		    return grid;
+	    });
+
+	def("t_bins",
+	    [](Sampled self) {
+		    py::array_t<double> bins({self->nx, integer{2}});
+		    auto unchecked = bins.mutable_unchecked<2>();
+		    for (auto i = 0; i < self->nx; ++i) {
+			    unchecked(i, 0) = self->x1 + (i - 0.5) * self->dx;
+			    unchecked(i, 1) = self->x1 + (i + 0.5) * self->dx;
+		    }
+		    return bins;
+	    });
+
+	def("get_number_of_frames", [](Sampled self) { return self->nx; });
+
+	def_readonly("n_frames", &structSampled::nx);
+
+	def("get_time_step", [](Sampled self) { return self->dx; });
+
+	def_readonly("time_step", &structSampled::dx);
+
+	def("get_time_from_frame_number",
+	    args_cast<_, Positive<_>>(Sampled_indexToX<integer>),
+	    "frame_number"_a);
+
+	def("frame_number_to_time",
+	    args_cast<_, Positive<_>>(Sampled_indexToX<integer>),
+	    "frame_number"_a);
+
+	def("get_frame_number_from_time", Sampled_xToIndex, "time"_a);
+
+	def("time_to_frame_number", Sampled_xToIndex, "time"_a);
+
+	// TODO get_sample_times() ? (cfr. "Get sample times" / Sampled_getX_numvec)
 }
 
 } // namespace parselmouth

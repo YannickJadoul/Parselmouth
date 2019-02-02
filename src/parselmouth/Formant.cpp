@@ -39,9 +39,9 @@ PRAAT_ENUM_BINDING(FormantUnit) {
 }
 
 PRAAT_CLASS_BINDING(Formant) {
-	using signature_cast_placeholder::_;
+	addTimeFrameSampledMixin(*this);
 
-	initTimeFrameSampled(*this);
+	using signature_cast_placeholder::_;
 
 	def("get_value_at_time", // TODO Enum for Hertz vs. Bark?
 	    args_cast<_, Positive<_>, _, _>(Formant_getValueAtTime),
