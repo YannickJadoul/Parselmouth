@@ -28,11 +28,6 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-py::bytes encodeAsPreferredEncoding(const py::str &unicode) {
-	auto encoding = py::module::import("locale").attr("getpreferredencoding")();
-	return unicode.attr("encode")(encoding, "replace");
-}
-
 CLASS_BINDING(Thing, structThing, detail::PraatHolder<structThing>)
 BINDING_CONSTRUCTOR(Thing, "Thing")
 BINDING_INIT(Thing) {
@@ -44,7 +39,7 @@ BINDING_INIT(Thing) {
 	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return info.get(); });
 
 	def("__str__",
-	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return encodeAsPreferredEncoding(py::cast(info.get())); });
+	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return info.get(); });
 #endif
 
 	def_property("name", &Thing_getName, [](Thing self, char32 *name) { if (name) praat_cleanUpName(name); Thing_setName(self, name); });
