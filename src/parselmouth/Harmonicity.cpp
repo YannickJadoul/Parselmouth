@@ -24,6 +24,9 @@
 
 #include <praat/fon/Harmonicity.h>
 
+namespace py = pybind11;
+using namespace py::literals;
+
 namespace parselmouth {
 
 PRAAT_CLASS_BINDING(Harmonicity) {

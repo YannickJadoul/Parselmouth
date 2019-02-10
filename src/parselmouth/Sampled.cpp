@@ -21,6 +21,9 @@
 
 #include "TimeClassAspects.h"
 
+#include "utils/SignatureCast.h"
+#include "utils/pybind11/NumericPredicates.h"
+
 #include <praat/fon/Sampled.h>
 
 #include <pybind11/numpy.h>

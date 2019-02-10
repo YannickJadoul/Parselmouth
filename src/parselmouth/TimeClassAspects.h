@@ -23,24 +23,16 @@
 
 #include "Parselmouth.h"
 
-#include "utils/SignatureCast.h"
-#include "utils/pybind11/NumericPredicates.h"
-
 #include <praat/fon/Function.h>
 #include <praat/fon/Sampled.h>
 
-#include <pybind11/numpy.h>
-
-#include <algorithm>
-#include <type_traits>
-
 namespace py = pybind11;
-using namespace py::literals;
 
 namespace parselmouth {
 
 struct TimeFunction : public structFunction {};
 struct TimeFrameSampled : public structSampled {};
+
 
 template <typename Mixin>
 void addMixinBase(py::handle &binding) {
