@@ -45,7 +45,7 @@ install:
   - if not defined WHEELS ( pip install -r tests/requirements.txt )
 build_script:
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - if not defined WHEELS ( cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" )
+  - if not defined WHEELS ( md build && cd build && cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" .. )
   - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target all_build -- /v:m /logger:%MSBuildLogger% )
   - if defined WHEELS ( md praat_build && cd praat_build && cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" .. )
   - if defined WHEELS ( cmake --build . --config Release --target praat -- /v:m /logger:%MSBuildLogger% && cd .. )
