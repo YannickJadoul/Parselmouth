@@ -136,5 +136,5 @@ def test_praat_callback_prefixes():
 	exception = {'PLAY', 'RECORD1', 'WINDOW', 'MOVIE'}
 	weird = {'BUG', 'DANGEROUS'}
 
-	prefixes = set(action[1].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
+	prefixes = set(action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
 	assert prefixes == separators | values | objects | info | nothing | exception | weird

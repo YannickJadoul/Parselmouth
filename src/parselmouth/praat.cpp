@@ -395,7 +395,17 @@ auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>
 }
 
 auto castPraatCommand(const structPraat_Command &command) {
-	return std::tuple(command.title.get(), command.nameOfCallback);
+	// Don't blame me, blame Praat using class1, class2, ... instead of a list
+	#define CAST_CLASS(N) command.class##N->className, command.n##N
+	#define MAYBE_ADD_CLASS(N) if (command.class##N) classes.emplace_back(CAST_CLASS(N))
+
+	std::vector<decltype(std::tuple(CAST_CLASS(1)))> classes;
+	MAYBE_ADD_CLASS(1);
+	MAYBE_ADD_CLASS(2);
+	MAYBE_ADD_CLASS(3);
+	MAYBE_ADD_CLASS(4);
+
+	return std::tuple(command.title.get(), std::move(classes), command.nameOfCallback);
 }
 
 using CastedPraatCommand = decltype(castPraatCommand(std::declval<structPraat_Command&>()));
