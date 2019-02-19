@@ -443,7 +443,7 @@ objects : List[parselmouth.Data]
     Multiple objects to be added to the Praat object list, which will be
     selected when the Praat command is called.
 command : str
-	The Praat action to call. This is the same command name as one would
+    The Praat action to call. This is the same command name as one would
     use in a Praat script and corresponds to the label on the button in
     the Praat user interface.
 *args
@@ -460,10 +460,10 @@ Keyword Arguments
 -----------------
 extra_objects: List[parselmouth.Data]
     Extra objects added to the Praat object list that will not be selected
-    when the command is called (default value: `[]`).
+    when the command is called (default value: ``[]``).
 return_string: bool
     Return the rew string written in the Praat info window instead of the
-    converted Python object (default value: `False`).
+    converted Python object (default value: ``False``).
 
 Returns
 -------
@@ -487,6 +487,11 @@ object
       command only added one object to the Praat object list).
     - A `str` is returned when a string or info text would be written to
       the Praat info window.
+
+See Also
+--------
+parselmouth.praat.run, parselmouth.praat.run_file
+:praat:`Scripting`
 )");
 
 	def("run",
