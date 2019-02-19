@@ -129,15 +129,18 @@ GuiMenu praat_objects_resolveMenu (conststring32 menu) {
 /********** Callbacks of the Praat menu. **********/
 
 DIRECT (WINDOW_About) {
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot show 'About' window from batch.");
 	praat_showLogo (false);
 END }
 
 DIRECT (WINDOW_praat_newScript) {
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a script from batch.");
 	autoScriptEditor editor = ScriptEditor_createFromText (nullptr, nullptr);
 	editor.releaseToUser();
 END }
 
 DIRECT (WINDOW_praat_openScript) {
+    if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot view or edit a script from batch.");
 	autoScriptEditor editor = ScriptEditor_createFromText (nullptr, nullptr);
 	TextEditor_showOpen (editor.get());
 	editor.releaseToUser();
@@ -150,6 +153,7 @@ static void cb_ButtonEditor_destruction (Editor /* editor */) {
 }
 
 DIRECT (WINDOW_praat_editButtons) {
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot edit buttons from batch.");
 	if (theReferenceToTheOnlyButtonEditor) {
 		Editor_raise (theReferenceToTheOnlyButtonEditor);
 	} else {
