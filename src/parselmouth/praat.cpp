@@ -386,10 +386,9 @@ auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>
 	auto file = pathToMelderFile(path);
 	autostring32 script = MelderFile_readText(&file);
 
-	{
-		autoMelderFileSetDefaultDir dir(&file);
-		Melder_includeIncludeFiles(&script);
-	}
+	// Praat treats filenames inside scripts as relative to the script, so we'll do the same
+	autoMelderFileSetDefaultDir dir(&file);
+	Melder_includeIncludeFiles(&script);
 
 	return runPraatScript(objects, script.get(), std::move(args), std::move(kwargs));
 }
