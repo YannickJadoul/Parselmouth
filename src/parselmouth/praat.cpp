@@ -457,11 +457,11 @@ command : str
 
 Keyword Arguments
 -----------------
-extra_objects: List[parselmouth.Data]
+extra_objects : List[parselmouth.Data]
     Extra objects added to the Praat object list that will not be selected
     when the command is called (default value: ``[]``).
-return_string: bool
-    Return the rew string written in the Praat info window instead of the
+return_string : bool
+    Return the raw string written in the Praat info window instead of the
     converted Python object (default value: ``False``).
 
 Returns
@@ -495,33 +495,138 @@ parselmouth.praat.run, parselmouth.praat.run_file
 
 	def("run",
 	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({}, script, args, kwargs); },
-	    "script"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "script"_a);
 
 	def("run",
 	    [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromText({ std::ref(data) }, script, args, kwargs); },
-	    "object"_a, "script"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "object"_a, "script"_a);
 
 	def("run",
 	    &runPraatScriptFromText,
-	    "objects"_a, "script"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "objects"_a, "script"_a, R"(Run a Praat script.
+
+Given a string with a Praat script, run this script as if run inside Praat
+itself. Similarly to `parselmouth.praat.call`, Parselmouth objects and
+Python argument values can be passed into the script.
+
+Calling this function roughly corresponds to the following sequence of
+steps in Praat:
+
+1. Zero, one, or multiple `parselmouth.Data` objects are put into Praat's
+   global object list and are 'selected'.
+2. The Python argument values are converted into Praat values; see `call`.
+3. The Praat script is opened and run with the converted values as
+   arguments; see :praat:`Scripting 6.1. Arguments to the script`.
+4. The results of the execution of the script are returned; see below.
+5. Praat's object list is emptied again, such that a future execution of
+   this function is independent from the current call.
+
+Arguments
+---------
+object : parselmouth.Data
+    A single object to add to the Praat object list, which will be selected
+    when the Praat script is run.
+objects : List[parselmouth.Data]
+    Multiple objects to be added to the Praat object list, which will be
+    selected when the Praat script is run.
+script : str
+    The content of the Praat script to be run.
+*args
+    The list of values to be passed as arguments to the Praat script. For
+    more details on the allowed types of these argument, see `call`.
+
+Keyword arguments
+-----------------
+extra_objects : List[parselmouth.Data]
+    Extra objects added to the Praat object list that will not be selected
+    when the command is called (default value: ``[]``).
+capture_output : bool
+    Intercept and also return the output written to the Praat info window,
+    instead of forwarding it to the Python standard output; see below
+    (default value: ``False``).
+return_variables : bool
+    Also return a `dict` of the Praat variables and their values at the
+    end of the script's execution; see below (default value: ``False``).
+
+Returns
+-------
+object
+    A list of `parselmouth.Data` objects selected at the end of the
+    script's execution.
+
+    Optionally, extra values are returned:
+
+    - A `str` containing the intercepted output if ``capture_output=True``
+      was passed.
+    - A `dict` mapping variable names (`str`) to their values (`object`)
+      if ``return_variables`` is ``True``. The values of Praat's variables
+      get converted to Python values:
+
+      - A Praat string variable, with a name starting with ``$``, is
+        returned as `str` value.
+      - A Praat vector or matrix variable, respectively starting with
+        ``#`` or ``##``, is returned as `numpy.ndarray`.
+      - A numeric variable, without variable name prefix, is converted to
+        a Python `float`.
+
+See Also
+--------
+parselmouth.praat.run_file, parselmouth.praat.call
+:praat:`Scripting`
+)");
 
 	def("run_file",
-	    [](const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({}, script, args, kwargs); },
-	    "path"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    [](const std::u32string &path, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({}, path, args, kwargs); },
+	    "path"_a);
 
 	def("run_file",
-	    [](structData &data, const std::u32string &script, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({ std::ref(data) }, script, args, kwargs); },
-	    "object"_a, "path"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    [](structData &data, const std::u32string &path, py::args args, py::kwargs kwargs) { return runPraatScriptFromFile({ std::ref(data) }, path, args, kwargs); },
+	    "object"_a, "path"_a);
 
 	def("run_file",
 	    &runPraatScriptFromFile,
-	    "objects"_a, "path"_a,
-	    "Keyword arguments:\n    - extra_objects: List[parselmouth.Data] = []\n    - capture_output: bool = False\n    - return_variables: bool = False");
+	    "objects"_a, "path"_a, R"(Run a Praat script from file.
+
+Given the filename of a Praat script, the script is read and run the same
+way as a script string passed to `parselmouth.praat.run`. See `run` for
+details on the manner in which the script gets executed.
+
+One thing to note is that relative filenames in the Praat script
+(including those in potential 'include' statements in the script; see
+:praat:`Scripting 5.8. Including other scripts`) will be resolved relative
+to the path of the script file, just like in Praat. Also note that Praat
+accomplishes this by temporarily changing the current working during the
+execution of the script.
+
+Arguments
+---------
+object : parselmouth.Data
+    A single object to add to the Praat object list, which will be selected
+    when the Praat script is run.
+objects : List[parselmouth.Data]
+    Multiple objects to be added to the Praat object list, which will be
+    selected when the Praat script is run.
+path : str
+    The filename of the Praat script to run.
+*args
+    The list of values to be passed as arguments to the Praat script. For
+    more details on the allowed types of these argument, see `call`.
+
+Keyword arguments
+-----------------
+**kwargs
+    See `parselmouth.praat.run`.
+
+Returns
+-------
+object
+    See `parselmouth.praat.run`.
+
+See Also
+--------
+parselmouth.praat.run, parselmouth.praat.call
+:praat:`Scripting`
+)");
 
 
 	def("_get_actions",
