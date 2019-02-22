@@ -433,6 +433,9 @@ following scenario in the Praat user interface or scripting language:
 5. Praat's object list is emptied again, such that a future execution of
    this function is independent from the current call.
 
+The use of `call` is demonstrated in the `Pitch manipulation and Praat
+commands <examples/pitch_manipulation.ipynb>`_ example.
+
 Parameters
 ----------
 object : parselmouth.Data
@@ -505,9 +508,10 @@ parselmouth.praat.run, parselmouth.praat.run_file
 	    &runPraatScriptFromText,
 	    "objects"_a, "script"_a, R"(Run a Praat script.
 
-Given a string with a Praat script, run this script as if run inside Praat
-itself. Similarly to `parselmouth.praat.call`, Parselmouth objects and
-Python argument values can be passed into the script.
+Given a string with the contents of a Praat script, run this script as if
+it was run inside Praat itself. Similarly to `parselmouth.praat.call`,
+Parselmouth objects and Python argument values can be passed into the
+script.
 
 Calling this function roughly corresponds to the following sequence of
 steps in Praat:
@@ -520,6 +524,16 @@ steps in Praat:
 4. The results of the execution of the script are returned; see below.
 5. Praat's object list is emptied again, such that a future execution of
    this function is independent from the current call.
+
+Note that the script will be run in Praat's so-called 'batch' mode; see
+:praat:`Scripting 6.9. Calling from the command line`. Since the script is
+run from inside a Python program, the Praat functionality is run without
+graphical user interface and no windows (such as *"View & Edit"*) can be
+opened by the Praat script. However, the functionality in these windows is
+also available in different ways: for example, opening a *Sound* object in
+a *"View & Edit"* window, making a selection, and choosing *"Extract
+selected sound (windowed)..."* can also be achieved by directly using the
+*"Extract part..."* command of the *Sound* object.
 
 Arguments
 ---------
