@@ -3,6 +3,7 @@ import pytest
 import parselmouth
 
 import inspect
+import itertools
 import re
 
 
@@ -20,7 +21,7 @@ def all_members(obj):
 
 
 def all_docstrings(obj):
-	for member in all_members(obj):
+	for member in itertools.chain((obj,), all_members(obj)):
 		docstring = getattr(member, '__doc__', None)  # __doc__ instead of inspect.getdoc to not replace tabs
 		if docstring is not None:
 			yield member, docstring
