@@ -18,7 +18,7 @@ or, to update your installed version to the latest release::
 
 .. note::
 
-    To figure out if you can or should update, the version number of your current Parselmouth installation can be found in the `parselmouth.__version__` and `parselmouth.VERSION` variables. The version of Praat on which this version of Parselmouth is based and the release date of that Praat version are available as `parselmouth.PRAAT_VERSION` and `parselmouth.PRAAT_VERSION_DATE`, respectively.
+    To figure out if you can or should update, the version number of your current Parselmouth installation can be found in the `parselmouth.VERSION` variables. The version of Praat on which this version of Parselmouth is based and the release date of that Praat version are available as `parselmouth.PRAAT_VERSION` and `parselmouth.PRAAT_VERSION_DATE`, respectively.
 
 
 Python distributions
