@@ -159,6 +159,16 @@ def test_run_with_capture_output_and_return_variables():
 	assert 'a' in variables and 'b$' in variables
 
 
+def test_remove_referenced_objects(sound):
+	mean = sound.values.mean()
+	assert parselmouth.praat.call(sound, "Remove") is None
+	assert sound.values.mean() == mean
+
+	many_sounds = [sound.copy() for _ in range(10)]
+	assert parselmouth.praat.run(many_sounds[:5], "select all\nRemove", extra_objects=many_sounds[5:]) == []
+	assert all(s.values.mean() == mean for s in many_sounds)
+
+
 def test_praat_callback_prefixes():
 	separators = {'nullptr', '0'}
 	values = {'REAL', 'INTEGER', 'BOOLEAN', 'COMPLEX', 'STRING', 'NUMVEC', 'NUMMAT'}
@@ -170,3 +180,4 @@ def test_praat_callback_prefixes():
 
 	prefixes = set(action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
 	assert prefixes == separators | values | objects | info | nothing | exception | weird
+
