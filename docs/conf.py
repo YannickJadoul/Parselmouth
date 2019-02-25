@@ -36,13 +36,17 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
-    'nbsphinx']
+sys.path.insert(1, os.path.abspath(os.path.dirname(__file__)))
+extensions = ['sphinx.ext.napoleon',
+              'sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.doctest',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.todo',
+              'sphinx.ext.coverage',
+              'nbsphinx',
+              'pybind11_docstrings',
+              'praat_manual']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -68,7 +72,7 @@ if on_rtd:
     if rtd_version == 'stable':
         branch = None
         try:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'praat-parselmouth=={}'.format(setup_py_version)])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', 'praat-parselmouth=={}'.format(setup_py_version)])
         except subprocess.CalledProcessError:
             branch = 'master'
     else:
@@ -79,7 +83,7 @@ if on_rtd:
         rtd_impl_tag = 'cp{}{}'.format(sys.version_info.major, sys.version_info.minor)
         rtd_abi_tag = rtd_impl_tag + 'm'
         rtd_platform_tag = 'manylinux1_x86_64'
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'https://dl.bintray.com/yannickjadoul/Parselmouth/{}/praat_parselmouth-{}-{}-{}-{}.whl'.format(branch, setup_py_version, rtd_impl_tag, rtd_abi_tag, rtd_platform_tag)])
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', 'https://dl.bintray.com/yannickjadoul/Parselmouth/{}/praat_parselmouth-{}-{}-{}-{}.whl'.format(branch, setup_py_version, rtd_impl_tag, rtd_abi_tag, rtd_platform_tag)])
 else:
     sys.path.insert(0, os.path.abspath(os.path.join('..', 'installed')))
 
@@ -116,7 +120,15 @@ todo_include_todos = True
 autodoc_member_order = 'groupwise'
 
 # Intersphinx configuration
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'numpy': ('https://docs.scipy.org/doc/numpy/', None)}
+
+default_role = 'py:obj'
+nitpicky = True
+nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
+                  ('py:class', 'List'),
+                  ('py:obj', 'List')]
+
 
 if on_rtd:
     branch_or_tag = branch or 'v{}'.format(release)
@@ -141,6 +153,10 @@ nbsphinx_prolog = """
 .. |binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/{{{{ docname }}}}
 """.format(branch_or_tag=branch_or_tag)
+
+
+def setup(app):
+    app.add_stylesheet('css/custom.css')
 
 
 # -- Options for HTML output ----------------------------------------------

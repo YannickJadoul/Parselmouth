@@ -1,0 +1,7 @@
+.field li p {
+    display: inline;
+}
+
+.field p:empty {
+   display: none;
+}

@@ -149,12 +149,22 @@ using PraatBindings = Bindings<PraatError,
 
 } // namespace parselmouth
 
+namespace {
+
+inline std::string attr_doc(const py::module &m, const char *name, const char *doc) {
+	auto attr = m.attr(name);
+	return ".. data:: "s + name + "\n    :annotation: = "s + py::cast<std::string>(py::repr(attr)) + "\n\n    "s + doc + "\n\n"s;
+}
+
+} // namespace
+
+// Cannot be put into an anonymous namespace, because "INCLUDE_LIBRARY" will not work anymore.
 void initializePraat() {
 	Melder_setFatalProc([](const char32 *message) {
 		auto extraMessage = "Praat failed to initialize and cannot be used by Parselmouth:\n\n"s +
 		                    Melder_peek32to8(message) + "\n"s +
 		                    "Since Parselmouth uses Praat's code, it can only be run on platforms that can run Praat.\n"s
-		                    "If you can run Praat as standalone program or if you think it should be able to, please\n"
+		                    "If you can run Praat as standalone program or if you think it should be able to, please\n"s
 		                    "report the error to the maintainers, at https://github.com/YannickJadoul/Parselmouth."s;
 		PyErr_SetString(PyExc_Exception, extraMessage.c_str());
 		throw py::error_already_set();
@@ -180,6 +190,10 @@ PYBIND11_MODULE(parselmouth, m) {
 	m.attr("VERSION") = py::str(XSTR(PARSELMOUTH_VERSION));
 	m.attr("PRAAT_VERSION") = py::str(XSTR(PRAAT_VERSION_STR));
 	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
+
+	m.doc() = attr_doc(m, "VERSION", "This version of Parselmouth.") +
+	          attr_doc(m, "PRAAT_VERSION", "The version of the Praat version on which this version of Parselmouth\n    is based.") +
+	          attr_doc(m, "PRAAT_VERSION_DATE", "The release date of the Praat version on which this version of\n    Parselmouth is based.");
 
 	parselmouth::redirectMelderInfo();
 	parselmouth::redirectMelderError();
