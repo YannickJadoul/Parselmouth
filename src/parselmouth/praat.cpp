@@ -198,7 +198,7 @@ private:
 
 // Workarounds since GCC (6) doesn't seem to like the brace initialization of the nested anonymous struct
 void fillStackel(structStackel &s, double number) { s.which = Stackel_NUMBER; s.number = number; }
-void fillStackel(structStackel &s, bool boolean) { s.which = Stackel_STRING; s._string = Melder_dup(boolean ? U"yes" : U"no"); }
+void fillStackel(structStackel &s, bool boolean) { s.which = Stackel_NUMBER; s.number = boolean; }
 void fillStackel(structStackel &s, const std::u32string &string) { s.which = Stackel_STRING; s._string = Melder_dup(string.c_str()); }
 void fillStackel(structStackel &s, const VEC &vector, bool owned) { s.which = Stackel_NUMERIC_VECTOR; s.owned = owned; s.numericVector = vector; }
 void fillStackel(structStackel &s, const MAT &matrix, bool owned) { s.which = Stackel_NUMERIC_MATRIX, s.owned = owned; s.numericMatrix = matrix; }
