@@ -586,11 +586,11 @@ object
       if ``return_variables`` is ``True``. The values of Praat's variables
       get converted to Python values:
 
-      - A Praat string variable, with a name starting with ``$``, is
-        returned as `str` value.
-      - A Praat vector or matrix variable, respectively starting with
-        ``#`` or ``##``, is returned as `numpy.ndarray`.
-      - A numeric variable, without variable name prefix, is converted to
+      - A Praat string variable, with a name ending in ``$``, is returned
+        as `str` value.
+      - A Praat vector or matrix variable, respectively ending in ``#`` or
+        ``##``, is returned as `numpy.ndarray`.
+      - A numeric variable, without variable name suffix, is converted to
         a Python `float`.
 
 See Also
