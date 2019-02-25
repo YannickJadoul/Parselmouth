@@ -1,8 +1,10 @@
 import pytest
 
+import parselmouth
+
 import itertools
 import numpy as np
-import parselmouth
+import os
 import textwrap
 
 
@@ -159,6 +161,13 @@ def test_run_with_capture_output_and_return_variables():
 	assert 'a' in variables and 'b$' in variables
 
 
+def test_run_file_relative_paths(resources):
+	script_path = resources["script.praat"]
+	sound_path = resources["the_north_wind_and_the_sun.wav"]
+	assert os.getcwd() != os.path.abspath(os.path.dirname(script_path))
+	assert parselmouth.praat.run_file(script_path, os.path.relpath(sound_path, os.path.dirname(script_path)))[0] == parselmouth.Sound(sound_path)
+
+
 def test_remove_referenced_objects(sound):
 	mean = sound.values.mean()
 	assert parselmouth.praat.call(sound, "Remove") is None
@@ -180,4 +189,3 @@ def test_praat_callback_prefixes():
 
 	prefixes = set(action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
 	assert prefixes == separators | values | objects | info | nothing | exception | weird
-
