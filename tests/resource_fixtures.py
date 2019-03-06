@@ -31,3 +31,7 @@ def sampled(request):
 @combined_fixture('sampled')
 def thing(request):
 	yield request.param
+
+@pytest.fixture
+def text_grid(resources):
+	yield parselmouth.Data.read(resources["the_north_wind_and_the_sun.TextGrid"])

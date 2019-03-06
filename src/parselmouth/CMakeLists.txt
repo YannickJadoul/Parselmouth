@@ -29,6 +29,7 @@ add_sources(CC.cpp
             Sound.cpp
             Spectrogram.cpp
             Spectrum.cpp
+            TextGrid.cpp
             Thing.cpp
             Vector.cpp
             praat.cpp)

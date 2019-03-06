@@ -42,6 +42,7 @@ Thing_declare(MFCC);
 Thing_declare(Pitch);
 Thing_declare(Sampled);
 Thing_declare(SampledXY);
+Thing_declare(TextGrid);
 Thing_declare(Sound);
 Thing_declare(Spectrum);
 Thing_declare(Spectrogram);
@@ -145,6 +146,7 @@ using PraatBindings = Bindings<PraatError,
                                Formant,
                                CC,
                                MFCC,
+                               TextGrid,
                                PraatModule>;
 
 } // namespace parselmouth
