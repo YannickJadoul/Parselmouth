@@ -309,7 +309,7 @@ public:
     /// Check if the currently trapped error type matches the given Python exception class (or a
     /// subclass thereof).  May also be passed a tuple to search for any exception class matches in
     /// the given tuple.
-    bool matches(handle ex) const { return PyErr_GivenExceptionMatches(ex.ptr(), type.ptr()); }
+    bool matches(handle exc) const { return PyErr_GivenExceptionMatches(type.ptr(), exc.ptr()); }
 
 private:
     object type, value, trace;
