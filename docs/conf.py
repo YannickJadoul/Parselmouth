@@ -121,7 +121,8 @@ autodoc_member_order = 'groupwise'
 
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       'numpy': ('https://docs.scipy.org/doc/numpy/', None)}
+                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
+                       'tgt': ('https://textgridtools.readthedocs.io/en/stable', None)}
 
 default_role = 'py:obj'
 nitpicky = True

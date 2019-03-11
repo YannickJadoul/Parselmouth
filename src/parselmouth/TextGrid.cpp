@@ -34,6 +34,34 @@ using u32ostringstream = std::basic_ostringstream<char32_t>;
 
 namespace parselmouth {
 
+bool isTgtTextGrid(py::handle o) {
+	try {
+		auto tgt = py::module::import("tgt");
+		return py::isinstance(o, tgt.attr("TextGrid"));
+	}
+	catch (py::error_already_set &e) {
+		if (e.matches(PyExc_ImportError))
+			return false;
+		else
+			throw;
+	}
+};
+
+class TgtTextGrid : public py::object {
+	PYBIND11_OBJECT_DEFAULT(TgtTextGrid, py::object, isTgtTextGrid)
+};
+
+} // namespace parselmouth
+
+namespace pybind11 {
+namespace detail {
+
+template <> struct handle_type_name<parselmouth::TgtTextGrid> { static PYBIND11_DESCR name() { return _("tgt.core.TextGrid"); } };
+
+}
+}
+
+namespace parselmouth {
 namespace {
 
 py::module importTgt() {
@@ -70,7 +98,7 @@ py::object toTgtIntervalTier(const py::module &tgt, IntervalTier tier) {
 	return tgtTier;
 }
 
-py::object toTgtTextGrid(TextGrid textGrid) {
+TgtTextGrid toTgtTextGrid(TextGrid textGrid) {
 	auto tgt = importTgt();
 
 	auto tgtTextGrid = tgt.attr("TextGrid")();
@@ -115,7 +143,7 @@ autoIntervalTier fromTgtIntervalTier(const py::handle &tgtIntervalTier) {
 	return tier;
 }
 
-autoTextGrid fromTgtTextGrid(const py::object &tgtTextGrid) {
+autoTextGrid fromTgtTextGrid(const TgtTextGrid &tgtTextGrid) {
 	auto tgt = importTgt();
 	auto tgtPointTierType = tgt.attr("PointTier");
 	auto tgtIntervalTierType = tgt.attr("IntervalTier");
