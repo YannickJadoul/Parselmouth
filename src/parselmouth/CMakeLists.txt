@@ -30,6 +30,7 @@ add_sources(CC.cpp
             Spectrogram.cpp
             Spectrum.cpp
             TextGrid.cpp
+            TextGridTools.cpp
             Thing.cpp
             Vector.cpp
             praat.cpp)
