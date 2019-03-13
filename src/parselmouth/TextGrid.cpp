@@ -19,7 +19,7 @@
 
 #include "Parselmouth.h"
 
-#include "TextGrid.h"
+#include <praat/fon/TextGrid.h>
 
 #include <pybind11/stl.h>
 
@@ -33,33 +33,28 @@ using namespace std::string_literals;
 using u32ostringstream = std::basic_ostringstream<char32_t>;
 
 namespace parselmouth {
+namespace {
 
 bool isTgtTextGrid(py::handle o) {
 	try {
-		auto tgt = py::module::import("tgt");
-		return py::isinstance(o, tgt.attr("TextGrid"));
+		return py::isinstance(o, py::module::import("tgt").attr("TextGrid"));
 	}
 	catch (py::error_already_set &e) {
-		if (e.matches(PyExc_ImportError))
-			return false;
-		else
-			throw;
+		return false;
 	}
 };
 
+}
+
 class TgtTextGrid : public py::object {
+public:
 	PYBIND11_OBJECT_DEFAULT(TgtTextGrid, py::object, isTgtTextGrid)
 };
 
 } // namespace parselmouth
 
-namespace pybind11 {
-namespace detail {
+template <> struct pybind11::detail::handle_type_name<parselmouth::TgtTextGrid> { static PYBIND11_DESCR name() { return _("tgt.core.TextGrid"); } };
 
-template <> struct handle_type_name<parselmouth::TgtTextGrid> { static PYBIND11_DESCR name() { return _("tgt.core.TextGrid"); } };
-
-}
-}
 
 namespace parselmouth {
 namespace {
@@ -139,7 +134,6 @@ autoIntervalTier fromTgtIntervalTier(const py::handle &tgtIntervalTier) {
 	for (const auto &tgtInterval : tgtIntervalTier.attr("intervals")) {
 		tier->intervals.addItem_move(fromTgtInterval(tgtInterval));
 	}
-	// TODO Check tier not empty
 	return tier;
 }
 
@@ -150,7 +144,7 @@ autoTextGrid fromTgtTextGrid(const TgtTextGrid &tgtTextGrid) {
 
 	auto textGrid = TextGrid_createWithoutTiers(py::cast<double>(tgtTextGrid.attr("start_time")), py::cast<double>(tgtTextGrid.attr("end_time")));
 	for (const auto &tgtTier : tgtTextGrid.attr("tiers")) {
-		if (py::isinstance(tgtTier, tgtPointTierType)) // TODO Replace by py::isinstance<...>(tgtTier)? Or tier.tier_type()?
+		if (py::isinstance(tgtTier, tgtPointTierType)) // TODO Replace by py::isinstance<TgtIntervalTier>(tgtTier)?
 			textGrid->tiers->addItem_move(fromTgtPointTier(tgtTier));
 		else if (py::isinstance(tgtTier, tgtIntervalTierType))
 			textGrid->tiers->addItem_move(fromTgtIntervalTier(tgtTier));
@@ -164,17 +158,24 @@ autoTextGrid fromTgtTextGrid(const TgtTextGrid &tgtTextGrid) {
 } // namespace
 
 
+/* NOTES on Praat assumptions:
+ *
+ * 1) Praat's UI does not allow TextGrids without tiers, but when programming, it seems nice to allow a programmer to have empty TextGrids.
+ * 2) Normally, tier names should be a single-ink words (see _kUiField_type::WORD_, STRVECtokenize, Melder_findEndOfInk) and cannot contain a space.
+ *
+ * We are ignoring both assumptions here, here. I'm not expecting things to break (especially not for 2), so let's see what happens and fix this if necessary.
+ */
+
+
 PRAAT_CLASS_BINDING(TextGrid) {
 	// Note: this overload should come before the `std::vector` overload, since strings can be converted into vectors of characters
 	def(py::init([] (double startTime, double endTime, const std::u32string &allTierNames, const std::u32string &pointTierNames) {
 		    if (endTime <= startTime) Melder_throw(U"The end time should be greater than the start time");
-			    return TextGrid_create(startTime, endTime, allTierNames.c_str(), pointTierNames.c_str());
+		    return TextGrid_create(startTime, endTime, allTierNames.c_str(), pointTierNames.c_str());
 	    }),
 	    "start_time"_a, "end_time"_a, "tier_names"_a, "point_tier_names"_a);
 
 	def(py::init([] (double startTime, double endTime, const std::vector<std::u32string> &allTierNames, const std::vector<std::u32string> &pointTierNames) {
-			// TODO Necessary? What about empty TextGrids? No tiers are not allowed by Praat. Also use TextGrid_create (but what about weird names with spaces)?
-			// TODO "Name" should be a single ink-word and cannot contain a space.
 		    if (endTime <= startTime) Melder_throw(U"The end time should be greater than the start time");
 
 		    std::unordered_set<std::u32string> allTierNamesSet(allTierNames.begin(), allTierNames.end());
