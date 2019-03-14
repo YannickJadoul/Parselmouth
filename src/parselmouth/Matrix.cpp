@@ -19,8 +19,8 @@
 
 #include "Parselmouth.h"
 
-#include "praat/MelderUtils.h"
 #include "utils/SignatureCast.h"
+#include "utils/praat/MelderUtils.h"
 #include "utils/pybind11/NumericPredicates.h"
 
 #include <praat/fon/Matrix.h>

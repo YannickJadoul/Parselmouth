@@ -20,8 +20,6 @@
 #include "Parselmouth.h"
 #include "TextGridTools.h"
 
-#include "praat/MelderUtils.h"
-
 #include <praat/fon/TextGrid.h>
 
 #include <pybind11/stl.h>

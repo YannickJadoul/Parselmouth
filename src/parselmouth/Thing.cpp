@@ -19,7 +19,7 @@
 
 #include "Parselmouth.h"
 
-#include "praat/MelderUtils.h"
+#include "utils/praat/MelderUtils.h"
 
 #include <praat/sys/praatP.h>
 

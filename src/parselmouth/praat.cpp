@@ -19,8 +19,8 @@
 
 #include "parselmouth/Parselmouth.h"
 
-#include "praat/MelderUtils.h"
 #include "utils/StringUtils.h"
+#include "utils/praat/MelderUtils.h"
 
 #include <praat/sys/praat.h>
 #include <praat/sys/praatP.h>

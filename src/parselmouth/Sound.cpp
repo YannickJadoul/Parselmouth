@@ -20,8 +20,8 @@
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
 
-#include "praat/MelderUtils.h"
 #include "utils/SignatureCast.h"
+#include "utils/praat/MelderUtils.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 
