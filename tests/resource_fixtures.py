@@ -10,7 +10,7 @@ def combined_fixture(*args, **kwargs):
 
 @pytest.fixture
 def sound(resources):
-	yield parselmouth.Data.read(resources["the_north_wind_and_the_sun.wav"])
+	yield parselmouth.read(resources["the_north_wind_and_the_sun.wav"])
 
 @pytest.fixture
 def intensity(sound):
@@ -34,4 +34,4 @@ def thing(request):
 
 @pytest.fixture
 def text_grid(resources):
-	yield parselmouth.Data.read(resources["the_north_wind_and_the_sun.TextGrid"])
+	yield parselmouth.read(resources["the_north_wind_and_the_sun.TextGrid"])

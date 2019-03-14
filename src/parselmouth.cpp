@@ -201,4 +201,6 @@ PYBIND11_MODULE(parselmouth, m) {
 	parselmouth::redirectMelderError();
 
 	bindings.init();
+
+	m.attr("read") = bindings.get<Data>().get().attr("read");
 }

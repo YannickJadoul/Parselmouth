@@ -19,6 +19,7 @@
 
 #include "Parselmouth.h"
 
+#include "utils/praat/MelderUtils.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 
 #include <praat/sys/Data.h>
@@ -54,17 +55,31 @@ PRAAT_CLASS_BINDING(Data) {
 
 	// TODO Cast to intermediate type? (i.e., Sound not known to parselmouth, then return Vector Python object instead of Data)
 	// TODO Reading a Praat Collection
-	def_static("read", // TODO Praat-format files not recognized because we cannot call praat_uvafon_init because INCLUDE_MANPAGES cannot be used because somehow that's not supposed to be called after only praatlib_init() instead of praat_init()
-	           [](const std::string &filePath) { // TODO std::string to MelderFile functionality in separate function? Cfr. Sound.__init__
-		           structMelderFile file = {};
-		           Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
+	def_static("read",
+	           [](const std::u32string &filePath) {
+		           auto file = pathToMelderFile(filePath);
 		           return Data_readFromFile(&file);
 	           },
-	           "file_path"_a);
+	           "file_path"_a,
+	           R"(Read a file into a `parselmouth.Data` object.
 
-	auto save = [](Data self, const std::string &filePath, DataFileFormat format) {
-		structMelderFile file = {};
-		Melder_relativePathToFile(Melder_peek8to32(filePath.c_str()), &file);
+Parameters
+----------
+file_path : str
+    The path of the file on disk to read.
+
+Returns
+-------
+parselmouth.Data
+    The Praat Data object that was read.
+
+See also
+--------
+:praat:`Read from file...`
+)");
+
+	auto save = [](Data self, const std::u32string &filePath, DataFileFormat format) {
+		auto file = pathToMelderFile(filePath);
 		switch (format) {
 			case DataFileFormat::TEXT:
 				Data_writeToTextFile(self, &file);
@@ -83,19 +98,19 @@ PRAAT_CLASS_BINDING(Data) {
 	    "file_path"_a, "format"_a = DataFileFormat::TEXT);
 
 	def("save_as_text_file",
-	    [save](Data self, const std::string &filePath) {
+	    [save](Data self, const std::u32string &filePath) {
 		    save(self, filePath, DataFileFormat::TEXT);
 	    },
 	    "file_path"_a);
 
 	def("save_as_short_text_file",
-	    [save](Data self, const std::string &filePath) {
+	    [save](Data self, const std::u32string &filePath) {
 		    save(self, filePath, DataFileFormat::SHORT_TEXT);
 	    },
 	    "file_path"_a);
 
 	def("save_as_binary_file",
-	    [save](Data self, const std::string &filePath) {
+	    [save](Data self, const std::u32string &filePath) {
 		    save(self, filePath, DataFileFormat::BINARY);
 	    },
 	    "file_path"_a);
