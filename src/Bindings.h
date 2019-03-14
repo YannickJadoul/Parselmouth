@@ -41,6 +41,8 @@ public:
 
 	void init();
 
+	pybind11::handle get();
+
 private:
 	std::unique_ptr<BindingType<Type>> m_binding;
 };
@@ -97,7 +99,8 @@ private:
 	template <> class BindingType<Type> : public Kind<__VA_ARGS__> { using Base = Kind<__VA_ARGS__>; public: explicit BindingType(pybind11::handle &); void init(); }; \
 	template <> Binding<Type>::Binding(pybind11::handle &scope) : m_binding(std::make_unique<BindingType<Type>>(scope)) {} \
 	template <> Binding<Type>::~Binding() {} \
-	template <> void Binding<Type>::init() { m_binding->init(); }
+	template <> void Binding<Type>::init() { m_binding->init(); } \
+	template <> pybind11::handle Binding<Type>::get() { return *m_binding; }
 
 #define CLASS_BINDING(Type, ...) BINDING(Type, pybind11::class_, __VA_ARGS__)
 #define ENUM_BINDING(Type, Enum) BINDING(Type, pybind11::enum_, Enum)
