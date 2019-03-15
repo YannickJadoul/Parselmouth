@@ -11,7 +11,7 @@ item []:
         name = "phonemes" 
         xmin = 0 
         xmax = 1.283265306122449 
-        intervals: size = 17 
+        intervals: size = 16 
         intervals [1]:
             xmin = 0 
             xmax = 0.06834975785384344 
@@ -30,53 +30,49 @@ item []:
             text = "n" 
         intervals [5]:
             xmin = 0.2061349091724575 
-            xmax = 0.2934351947791256 
+            xmax = 0.30880021874037517 
             text = "ɔ" 
         intervals [6]:
-            xmin = 0.2934351947791256 
-            xmax = 0.3514847625226594 
-            text = "ɹ" 
-        intervals [7]:
-            xmin = 0.3514847625226594 
+            xmin = 0.30880021874037517 
             xmax = 0.46230666457849673 
             text = "θ" 
-        intervals [8]:
+        intervals [7]:
             xmin = 0.46230666457849673 
             xmax = 0.49477342517553885 
             text = "w" 
-        intervals [9]:
+        intervals [8]:
             xmin = 0.49477342517553885 
             xmax = 0.5504775558385259 
             text = "ɪ" 
-        intervals [10]:
+        intervals [9]:
             xmin = 0.5504775558385259 
             xmax = 0.6864284078871509 
             text = "n" 
-        intervals [11]:
+        intervals [10]:
             xmin = 0.6864284078871509 
             xmax = 0.70675552925189 
             text = "d" 
-        intervals [12]:
+        intervals [11]:
             xmin = 0.70675552925189 
             xmax = 0.7571330473436337 
             text = "ə" 
-        intervals [13]:
+        intervals [12]:
             xmin = 0.7571330473436337 
             xmax = 0.8495823589351875 
             text = "n" 
-        intervals [14]:
+        intervals [13]:
             xmin = 0.8495823589351875 
             xmax = 0.8947320227357138 
             text = "ə" 
-        intervals [15]:
+        intervals [14]:
             xmin = 0.8947320227357138 
             xmax = 1.0384214079574572 
             text = "s" 
-        intervals [16]:
+        intervals [15]:
             xmin = 1.0384214079574572 
             xmax = 1.1414251864114717 
             text = "ʌ" 
-        intervals [17]:
+        intervals [16]:
             xmin = 1.1414251864114717 
             xmax = 1.283265306122449 
             text = "n" 
