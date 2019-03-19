@@ -1,8 +1,19 @@
-include *.md LICENSE CMakeLists.txt pytest.ini
-recursive-include src *
-recursive-include pybind11 *
-recursive-include praat *
-recursive-include res *
-recursive-include tests *
+include *.md
+include LICENSE
+
+include CMakeLists.txt
+graft src
+graft pybind11
+graft praat
+
+graft res
+
+include pytest.ini
+graft tests
+
+graft docs
+prune docs/_build
+
 global-exclude *.py[co]
+
 exclude praat/generate/Unicode/*.pdf
