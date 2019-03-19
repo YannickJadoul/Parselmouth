@@ -58,21 +58,21 @@ def test_call_parameters(sound):
 	# If a Praat command with a NUMMAT argument gets added, a test should be added
 
 
-def test_run(resources):
+def test_run(sound_path):
 	script = textwrap.dedent("""\
 	Read from file: "{}"
 	To Intensity: 100.0, 0.0, "yes"
 	selectObject: 1
 	selectObject: "Intensity the_north_wind_and_the_sun"
-	""".format(resources["the_north_wind_and_the_sun.wav"]))
+	""".format(sound_path))
 
-	assert parselmouth.praat.run(script)[0] == parselmouth.Sound(resources["the_north_wind_and_the_sun.wav"]).to_intensity()
+	assert parselmouth.praat.run(script)[0] == parselmouth.Sound(sound_path).to_intensity()
 
 	with pytest.raises(parselmouth.PraatError, match="Found 3 arguments but expected only 0."):
 		parselmouth.praat.run(script, 42, "some_argument", True)
 
 
-def test_run_with_parameters(resources):
+def test_run_with_parameters(sound_path):
 	script = textwrap.dedent("""
 	form Test
 		positive minPitch 100.0
@@ -84,13 +84,13 @@ def test_run_with_parameters(resources):
 	To Intensity: minPitch, timeStep, subtractMean
 	selectObject: 1
 	selectObject: "Intensity the_north_wind_and_the_sun"
-	""".format(resources["the_north_wind_and_the_sun.wav"]))
+	""".format(sound_path))
 
 	min_pitch = 75
 	time_step = 0.05
 	subtract_mean = False
 
-	assert parselmouth.praat.run(script, min_pitch, time_step, subtract_mean)[0] == parselmouth.Sound(resources["the_north_wind_and_the_sun.wav"]).to_intensity(min_pitch, time_step, subtract_mean)
+	assert parselmouth.praat.run(script, min_pitch, time_step, subtract_mean)[0] == parselmouth.Sound(sound_path).to_intensity(min_pitch, time_step, subtract_mean)
 
 	with pytest.raises(parselmouth.PraatError, match="Found 0 arguments but expected more."):
 		parselmouth.praat.run(script)
@@ -161,9 +161,8 @@ def test_run_with_capture_output_and_return_variables():
 	assert 'a' in variables and 'b$' in variables
 
 
-def test_run_file_relative_paths(resources):
+def test_run_file_relative_paths(sound_path, resources):
 	script_path = resources["script.praat"]
-	sound_path = resources["the_north_wind_and_the_sun.wav"]
 	assert os.getcwd() != os.path.abspath(os.path.dirname(script_path))
 	assert parselmouth.praat.run_file(script_path, os.path.relpath(sound_path, os.path.dirname(script_path)))[0] == parselmouth.Sound(sound_path)
 
