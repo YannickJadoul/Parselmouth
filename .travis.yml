@@ -180,6 +180,10 @@ stages:
 
 before_install:
   - set -e
+  - | # Use the latest version of Python (that is easily available on Travis CI) to create source distributions and to run cibuildwheel
+    if [ "$TRAVIS_BUILD_STAGE_NAME" == "Wheels" ]; then
+      PYTHON=3.6
+    fi
   - |
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       if [ -n "$GCC" ]; then
