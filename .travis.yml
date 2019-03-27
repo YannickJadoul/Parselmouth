@@ -85,8 +85,13 @@ matrix:
 
     - stage: wheels
       if: branch != docs
+      install:
+        - pip install --user check-manifest
+        - CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
       script:
+        - check-manifest
         - python setup.py -q sdist -d wheelhouse
+        - pip install --user wheelhouse/*.tar.gz
       before_deploy:
         - &bintray-before-deploy |
           PARSELMOUTH_VERSION=`python setup.py --version`
