@@ -85,9 +85,10 @@ matrix:
 
     - stage: wheels
       if: branch != docs
+      addons: *gcc7
       install:
         - pip install --user check-manifest
-        - CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
+        - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
       script:
         - check-manifest
         - python setup.py -q sdist -d wheelhouse
@@ -188,6 +189,9 @@ before_install:
   - | # Use the latest version of Python (that is easily available on Travis CI) to create source distributions and to run cibuildwheel
     if [ "$TRAVIS_BUILD_STAGE_NAME" == "Wheels" ]; then
       PYTHON=3.6
+      if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+        GCC=7
+      fi
     fi
   - |
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
