@@ -215,7 +215,7 @@ before_install:
       CC=clang
       CXX=clang++
     fi
-    $PYTHON_CMD -m pip install --user --upgrade pip wheel
+    $PYTHON_CMD -m pip install --user --upgrade pip wheel setuptools
     export PIP_ONLY_BINARY="numpy"
   # PIP_ONLY_BINARY since there are no NumPy binary wheels available for Python 3.4 and NumPy versions >= 1.16.0
 
