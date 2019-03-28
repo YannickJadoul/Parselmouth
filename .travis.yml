@@ -87,12 +87,13 @@ matrix:
       if: branch != docs
       addons: *gcc7
       install:
-        - pip install --user check-manifest
+        - pip install --user check-manifest twine
         - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
       script:
         - check-manifest
         - python setup.py -q sdist -d wheelhouse
         - pip install --user wheelhouse/*.tar.gz
+        - twine check wheelhouse/*
       before_deploy:
         - &bintray-before-deploy |
           PARSELMOUTH_VERSION=`python setup.py --version`
@@ -140,7 +141,7 @@ matrix:
       services:
         - docker
       install:
-        - pip install --user cibuildwheel
+        - pip install --user cibuildwheel twine
         - mkdir gcc-i386 && wget -q https://github.com/Noctem/pogeo-toolchain/releases/download/v1.5/gcc-7.3-centos5-i686.tar.bz2 -O - | tar xj -C gcc-i386 --strip-components=1
         - mkdir gcc-x86_64 && wget -q https://github.com/Noctem/pogeo-toolchain/releases/download/v1.5/gcc-7.3-centos5-x86-64.tar.bz2 -O - | tar xj -C gcc-x86_64 --strip-components=1
         - mkdir ccache && wget -q https://www.samba.org/ftp/ccache/ccache-3.6.tar.bz2 -O - | tar xj -C ccache --strip-components=1
@@ -149,6 +150,7 @@ matrix:
         - export CIBW_BEFORE_BUILD='pip install cmake && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) && [ -d praat_build_$ARCH ] || (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
         - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_BUILD="cp36-manylinux1_x86_64"; fi
         - cibuildwheel
+        - twine check wheelhouse/*
       before_deploy:
         - *bintray-before-deploy
       deploy:
@@ -163,12 +165,13 @@ matrix:
       osx_image: xcode10
       compiler: clang
       install:
-        - pip install cibuildwheel
+        - pip install cibuildwheel twine
       script:
         - mkdir praat_build && cd praat_build && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2 && cd ..
         - export PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build/praat\""
         - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
         - cibuildwheel
+        - twine check wheelhouse/*
       before_deploy:
         - *bintray-before-deploy
       deploy:
