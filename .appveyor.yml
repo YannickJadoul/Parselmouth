@@ -39,10 +39,9 @@ install:
         $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
       }
   - ps: $env:PIP_ONLY_BINARY = "numpy"  # For Python 3.4, no binary wheels are available for NumPy versions >= 1.16.0
-  - python -m pip install --upgrade pip  # Needs to be `python -m pip` because pip executable is (potentially) replaced
-  - pip install --upgrade wheel numpy
+  - python -m pip install --upgrade pip wheel # Needs to be `python -m pip` because pip executable is (potentially) replaced
   - if defined WHEELS ( pip install cibuildwheel )
-  - if not defined WHEELS ( pip install -r tests/requirements.txt )
+  - if not defined WHEELS ( pip install --upgrade -r tests/requirements.txt )
 build_script:
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - if not defined WHEELS ( md build && cd build && cmake -G "Visual Studio 15 2017" -A "%CMAKE_ARCH%" -DCMAKE_SUPPRESS_REGENERATION=1 -DCMAKE_CXX_FLAGS="/MP" .. )

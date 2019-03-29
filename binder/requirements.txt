@@ -1,6 +1,2 @@
-flask
-matplotlib
-numpy
-pandas
-requests
-seaborn
+-r ../requirements.txt
+-r ../docs/examples/requirements.txt

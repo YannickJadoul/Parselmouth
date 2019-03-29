@@ -2,6 +2,7 @@ include *.md
 include LICENSE
 
 include CMakeLists.txt
+include requirements.txt
 graft src
 graft pybind11
 graft praat
