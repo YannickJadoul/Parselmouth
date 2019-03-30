@@ -24,7 +24,7 @@ Projects using Parselmouth
 
 The following projects provide larger, real-life examples and demonstrate the use of Parselmouth:
 
-- The `my-voice-analysis <https://github.com/Shahabks/my-voice-analysis>`_ project by Shahab Sabahi (`@Shahabks <https://github.com/Shahabks>`_) provides a Python library for voice analysis, interfacing Python to his previously developed Praat script.
+- The `my-voice-analysis <https://github.com/Shahabks/my-voice-analysis>`_ and `myprosody <https://github.com/Shahabks/myprosody>`_ projects by Shahab Sabahi (`@Shahabks <https://github.com/Shahabks>`_) provide Python libraries for voice analysis and acoustical statistics, interfacing Python to his previously developed Praat scripts.
 - David R. Feinberg (`@drfeinberg <https://github.com/drfeinberg>`_) has written multiple Python scripts and programs with Parselmouth to analyse properties of speech recordings:
 
     - `Praat Scripts <https://osf.io/huz7d/>`_ is a collection of Praat scripts used in research, translated into Python.
