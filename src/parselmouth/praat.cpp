@@ -105,9 +105,10 @@ public:
 
 				// We cannot just wrap the object as autoData, because it might not be newly created, and so a pybind11 holder in a Python object owns it rather than Praat (see praatObject.owned)
 				// Luckily, pybind11 also provides the solution: py::cast will return a py::object with the existing Python instance for a C++ object that already has a Python counterpart
-				auto object = praatObject.object;
+				autoData object(praatObject.object);
 				praatObject.object = nullptr; // Just in case py::cast goes wrong and throws, let's clean out praatObject.object to make sure we don't segfault with a double delete in ~PraatEnvironment
-				selected.emplace_back(py::cast(object)); // If not owned/not new, this will return the existing instance; if owned/new this will take ownership and create a autoData holder inside the py::object
+				selected.emplace_back(py::cast(std::move(object))); // If not owned/not new, this will return the existing instance; if owned/new this will take ownership and create a autoData holder inside the py::object
+				object.releaseToAmbiguousOwner();
 			}
 		}
 
