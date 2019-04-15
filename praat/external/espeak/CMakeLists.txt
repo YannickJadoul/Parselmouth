@@ -6,4 +6,5 @@ add_sources(categories.cpp compiledata.cpp compiledict.cpp
             synthdata.cpp synthesize.cpp
             synth_mbrola.cpp tr_languages.cpp mnemonics.cpp translate.cpp voices.cpp wavegen.cpp
             create_espeak_ng_FileInMemoryManager.cpp create_espeak_ng_FileInMemorySet.cpp
-            espeakdata_FileInMemory.cpp espeak_io.cpp)
+            espeakdata_FileInMemory.cpp espeak_io.cpp
+            case.cpp ctype.cpp)

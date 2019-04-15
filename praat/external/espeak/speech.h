@@ -65,4 +65,20 @@ extern char path_home[N_PATH_HOME];    // this is the espeak-ng-data directory
 
 extern ESPEAK_NG_API void strncpy0(char *to, const char *from, int size);
 
+// Parselmouth: See speech.cpp
+#include <wctype.h>
+#include "ucd.h"
+#define iswalnum(c) ucd::isalnum(c)
+#define iswalpha(c) ucd::isalpha(c)
+#define iswblank(c) ucd::isblank(c)
+#define iswcntrl(c) ucd::iscntrl(c)
+#define iswdigit(c) ucd::isdigit(c)
+#define iswgraph(c) ucd::isgraph(c)
+#define iswlower(c) ucd::islower(c)
+#define iswprint(c) ucd::isprint(c)
+#define iswpunct(c) ucd::ispunct(c)
+#define iswspace(c) ucd::isspace(c)
+#define iswupper(c) ucd::isupper(c)
+#define iswxdigit(c) ucd::isxdigit(c)
+
 #endif // SPEECH_H
