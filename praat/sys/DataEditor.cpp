@@ -172,7 +172,15 @@ static void gui_button_cb_change (DataSubEditor me, GuiButtonEvent /* event */) 
 				case floatwa: { * (double *) my d_fieldData [irow]. address = Melder_atof (text.get()); } break;
 				case doublewa: { * (double *) my d_fieldData [irow]. address = Melder_atof (text.get()); } break;
 				case complexwa: { dcomplex *x = (dcomplex *) my d_fieldData [irow]. address;
-					sscanf (Melder_peek32to8 (text.get()), "%lf + %lf i", & x -> re, & x -> im); } break;
+					const char *str = Melder_peek32to8 (text.get());
+					char *p;
+					x -> re = Melder8_strtod(str, &p);
+					if (p == str) break;
+					str = p;
+					while (Melder_isHorizontalOrVerticalSpace(*str)) ++str;
+					if (*str != '+') break;
+					x -> im = Melder8_strtod(str, &p);
+					/*sscanf (Melder_peek32to8 (text.get()), "%lf + %lf i", & x -> re, & x -> im);*/ } break;
 				case enumwa: {
 					if (str32len (text.get()) < 3) goto error;
 					text [str32len (text.get()) - 1] = '\0';   // remove trailing ">"

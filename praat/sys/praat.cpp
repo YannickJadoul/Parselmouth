@@ -1062,7 +1062,10 @@ static void installPraatShellPreferences () {
 }
 
 extern "C" void praatlib_init () {
-	setThePraatLocale ();   // FIXME: don't use the global locale
+	// Fix issue #11 by not setting the global locale
+	// "Extension modules should never call setlocale(), except to find out what the current locale is."
+	// https://docs.python.org/3.7/library/locale.html#for-extension-writers-and-programs-that-embed-python
+	// setThePraatLocale ();   // FIXME: don't use the global locale
 	Melder_init ();
 	Melder_rememberShellDirectory ();
 	installPraatShellPreferences ();   // needed in the library, because this sets the defaults

@@ -217,14 +217,14 @@ static void drawNow (FunctionEditor me) {
 		double left = my rect [i]. left, right = my rect [i]. right;
 		double bottom = my rect [i]. bottom, top = my rect [i]. top;
 		if (left < right) {
-			const char *format = my v_format_long ();
+			decltype(&structFunctionEditor::v_format_long) format = nullptr; // const char *format = my v_format_long ();
 			double value = undefined, inverseValue = 0.0;
 			switch (i) {
 				case 0: {
-					format = my v_format_totalDuration ();
+					format = &structFunctionEditor::v_format_totalDuration;
 					value = my tmax - my tmin;
 				} break; case 1: {
-					format = my v_format_window ();
+					format = &structFunctionEditor::v_format_window;
 					value = my endWindow - my startWindow;
 					/*
 						Window domain text.
@@ -249,28 +249,28 @@ static void drawNow (FunctionEditor me) {
 				} break; case 6: {
 					value = my marker [3] - my marker [2];
 				} break; case 7: {
-					format = my v_format_selection ();
+					format = &structFunctionEditor::v_format_selection;
 					value = my endSelection - my startSelection;
 					inverseValue = 1.0 / value;
 				}
 			}
 			char text8 [100];
-			snprintf (text8, 100, format, value, inverseValue);
+			(me->*(format ? format : &structFunctionEditor::v_format_long)) (text8, 100, value, inverseValue);
 			autostring32 text = Melder_8to32 (text8);
 			if (Graphics_textWidth (my graphics.get(), text.get()) < right - left) {
 				Graphics_text (my graphics.get(), 0.5 * (left + right), 0.5 * (bottom + top) - verticalCorrection, text.get());
-			} else if (format == my v_format_long ()) {
-				snprintf (text8, 100, my v_format_short (), value);
+			} else if (!format /* format == my v_format_long () */) {
+				my v_format_short (text8, 100, value, 0.0);
 				text = Melder_8to32 (text8);
 				if (Graphics_textWidth (my graphics.get(), text.get()) < right - left)
 					Graphics_text (my graphics.get(), 0.5 * (left + right), 0.5 * (bottom + top) - verticalCorrection, text.get());
 			} else {
-				snprintf (text8, 100, my v_format_long (), value);
+				my v_format_long (text8, 100, value, 0.0);
 				text = Melder_8to32 (text8);
 				if (Graphics_textWidth (my graphics.get(), text.get()) < right - left) {
 						Graphics_text (my graphics.get(), 0.5 * (left + right), 0.5 * (bottom + top) - verticalCorrection, text.get());
 				} else {
-					snprintf (text8, 100, my v_format_short (), my endSelection - my startSelection);
+					my v_format_short (text8, 100, value, 0.0);
 					text = Melder_8to32 (text8);
 					if (Graphics_textWidth (my graphics.get(), text.get()) < right - left)
 						Graphics_text (my graphics.get(), 0.5 * (left + right), 0.5 * (bottom + top) - verticalCorrection, text.get());

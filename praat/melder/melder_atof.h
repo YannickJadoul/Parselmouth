@@ -18,6 +18,8 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
+double Melder8_strtod(const char *str, char **end_str = nullptr) noexcept;
+
 /**
 	Return true if the string contains no more than a floating-point number
 	optionally surrounded by whitespace.

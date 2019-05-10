@@ -85,7 +85,7 @@ void SpellingChecker_replaceUserDictionary (SpellingChecker me, StringSet userDi
 }
 
 static int startsWithCapital (conststring32 word) {
-	return iswupper ((int) word [0]) || (word [0] == '\\' && iswupper ((int) word [1]));
+	return Melder_isUpperCaseLetter(word [0]) || (word [0] == '\\' && Melder_isUpperCaseLetter(word [1]));
 }
 
 bool SpellingChecker_isWordAllowed (SpellingChecker me, conststring32 word) {

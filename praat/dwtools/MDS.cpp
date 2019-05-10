@@ -2555,7 +2555,7 @@ void drawSplines (Graphics g, double low, double high, double ymin, double ymax,
 		conststring8 start = Melder_peek32to8 (interiorKnots);   // UGLY; because of non-availability of str32tod
 		mutablestring8 end;   // this is not actually mutated, but strtod's signature requires this
 		while (*start) {
-			double value = strtod (start, & end);
+			double value = Melder8_strtod (start, & end);
 			start = end;
 			if (value < low || value > high) {
 				Melder_warning (U"drawSplines: knots should be in interval (", low, U", ", high, U")");

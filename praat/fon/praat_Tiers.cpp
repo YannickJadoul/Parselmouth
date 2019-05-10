@@ -555,8 +555,16 @@ DO
 	autoFormantPoint point = FormantPoint_create (time, 10);
 	double *f = point -> formant.at, *b = point -> bandwidth.at;
 	conststring8 fbpairs = Melder_peek32to8 (formantBandwidthPairs);
-	int numberOfFormants = sscanf (fbpairs, "%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf",
-		f+1, b+1, f+2, b+2, f+3, b+3, f+4, b+4, f+5, b+5, f+6, b+6, f+7, b+7, f+8, b+8, f+9, b+9, f+10, b+10) / 2;
+	unsigned int n = 0;
+	const char *s = fbpairs;
+	char *p;
+	for (double *x : {f+1, b+1, f+2, b+2, f+3, b+3, f+4, b+4, f+5, b+5, f+6, b+6, f+7, b+7, f+8, b+8, f+9, b+9, f+10, b+10}) {
+		*x = Melder8_strtod(s, &p);
+		if (p == s) break;
+		++n;
+		s = p;
+	}
+	int numberOfFormants = n / 2;
 	Melder_require (numberOfFormants >= 1,
 		U"The number of formant-bandwidth pairs must be at least 1.");
 	point -> numberOfFormants = numberOfFormants;

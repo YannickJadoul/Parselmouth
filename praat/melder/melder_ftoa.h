@@ -38,6 +38,8 @@ conststring8 Melder8_boolean (bool value) noexcept;
 */
 conststring32 Melder_double (double value) noexcept;
 conststring8 Melder8_double (double value) noexcept;
+conststring32 Melder_double (double value, integer precision, char format = 'g') noexcept;
+conststring8 Melder8_double (double value, integer precision, char format = 'g') noexcept;
 
 /**
 	Format a double value as "--undefined--" or something in the "%.9g" format.

@@ -535,7 +535,7 @@ static void charDraw (void *void_me, int xDC, int yDC, _Graphics_widechar *lc,
 			if (my textRotation != 0.0 || slant) {
 				my d_printf (my d_file, "gsave currentpoint translate ");
 				if (my textRotation != 0.0)
-					my d_printf (my d_file, "%.6g rotate 0 0 M\n", (double) my textRotation);
+					my d_printf (my d_file, "%s rotate 0 0 M\n", Melder8_double((double) my textRotation, 6));
 				if (slant)
 					my d_printf (my d_file, "[1 0 0.25 1 0 0] concat 0 0 M\n");
 			}
