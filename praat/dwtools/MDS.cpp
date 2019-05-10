@@ -2862,7 +2862,7 @@ void drawSplines (Graphics g, double low, double high, double ymin, double ymax,
 	{ // scope
 		char *start = Melder_peek32to8 (interiorKnots), *end;   // UGLY; because of non-availability of str32tod
 		while (*start) {
-			double value = strtod (start, &end);
+			double value = Melder8_strtod (start, &end);
 			start = end;
 			if (value < low || value > high) {
 				Melder_warning (U"drawSplines: knots should be in interval (", low, U", ", high, U")");

@@ -397,7 +397,9 @@ autoTextTier TextTier_readFromXwaves (MelderFile file) {
 			double time;
 			long_not_integer colour;
 			char mark [300];
-			if (sscanf (line, "%lf%ld%299s", & time, & colour, mark) < 3)   // BUG: buffer overflow
+			char *p;
+			time = Melder8_strtod(line, &p);
+			if (p == line || sscanf (p, "%ld%299s", & colour, mark) < 2) // if (sscanf (line, "%lf%ld%299s", & time, & colour, mark) < 3)   // BUG: buffer overflow
 				Melder_throw (U"Line too short: \"", Melder_peek8to32 (line), U"\".");
 			TextTier_addPoint (me.get(), time, Melder_peek8to32 (mark));
 		}
@@ -925,7 +927,13 @@ autoIntervalTier IntervalTier_readFromXwaves (MelderFile file) {
 
 			line = MelderFile_readLine (file);
 			if (! line) break;   // normal end-of-file
-			numberOfElements = sscanf (line, "%lf%ld%199s", & time, & colour, mark);
+			char *p;
+			time = Melder8_strtod(line, &p);
+			if (p == line)
+				numberOfElements = 0;
+			else
+				numberOfElements = sscanf (p, "%ld%199s", & colour, mark) + 1;
+			// numberOfElements = sscanf (line, "%lf%ld%199s", & time, & colour, mark);
 			if (numberOfElements == 0) {
 				break;   // an empty line, hopefully at the end
 			}
@@ -964,7 +972,7 @@ void IntervalTier_writeToXwaves (IntervalTier me, MelderFile file) {
 		fprintf (f, "separator ;\nnfields 1\n#\n");
 		for (integer iinterval = 1; iinterval <= my intervals.size; iinterval ++) {
 			TextInterval interval = my intervals.at [iinterval];
-			fprintf (f, "\t%.6f 26\t%s\n", interval -> xmax, Melder_peek32to8 (interval -> text));
+			fprintf (f, "\t%s 26\t%s\n", Melder8_double(interval -> xmax, 6), Melder_peek32to8 (interval -> text));
 		}
 		f.close (file);
 	} catch (MelderError) {

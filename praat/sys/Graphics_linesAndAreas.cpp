@@ -36,13 +36,13 @@ static void psPrepareLine (GraphicsPostscript me) {
 			(long_not_integer) (my resolution / 100), (long_not_integer) (my resolution / 60 + lineWidth_pixels),
 			(long_not_integer) (my resolution / 25), (long_not_integer) (my resolution / 60 + lineWidth_pixels));
 	if (my lineWidth != 1.0)
-		my d_printf (my d_file, "%g setlinewidth\n", lineWidth_pixels);
+		my d_printf (my d_file, "%s setlinewidth\n", Melder8_double(lineWidth_pixels, 6 /* %g has default precision 6, according to printf docs */));
 }
 static void psRevertLine (GraphicsPostscript me) {
 	if (my lineType != Graphics_DRAWN)
 		my d_printf (my d_file, "[] 0 setdash\n");
 	if (my lineWidth != 1.0)
-		my d_printf (my d_file, "%g setlinewidth\n", my resolution > 192 ? my resolution / 192.0 : 1.0);   // 0.375 point
+		my d_printf (my d_file, "%s setlinewidth\n", Melder8_double(my resolution > 192 ? my resolution / 192.0 : 1.0, 6 /* %g has default precision 6, according to printf docs */));   // 0.375 point
 }
 
 #if cairo
@@ -262,10 +262,10 @@ void structGraphicsScreen :: v_polyline (integer numberOfPoints, double *xyDC, b
 void structGraphicsPostscript :: v_polyline (integer numberOfPoints, double *xyDC, bool close) {
 	integer nn = 2 * numberOfPoints;
 	psPrepareLine (this);
-	our d_printf (our d_file, "N %.7g %.7g moveto\n", xyDC [0], xyDC [1]);
+	our d_printf (our d_file, "N %s %s moveto\n", Melder8_double(xyDC [0], 7), Melder8_double(xyDC [1], 7));
 	for (integer i = 2; i < nn; i += 2) {
 		double dx = xyDC [i] - xyDC [i - 2], dy = xyDC [i + 1] - xyDC [i - 1];
-		our d_printf (our d_file, "%.7g %.7g L\n", dx, dy);
+		our d_printf (our d_file, "%s %s L\n", Melder8_double(dx, 7), Melder8_double(dy, 7));
 	}
 	if (close)
 		our d_printf (our d_file, "closepath ");
@@ -306,9 +306,9 @@ void structGraphicsScreen :: v_fillArea (integer numberOfPoints, double *xyDC) {
 
 void structGraphicsPostscript :: v_fillArea (integer numberOfPoints, double *xyDC) {
 	integer nn = numberOfPoints + numberOfPoints;
-	d_printf (d_file, "N %.7g %.7g M\n", xyDC [0], xyDC [1]);
+	d_printf (d_file, "N %s %s M\n", Melder8_double(xyDC [0], 7), Melder8_double(xyDC [1], 7));
 	for (integer i = 2; i < nn; i += 2) {
-		d_printf (d_file, "%.7g %.7g L\n", xyDC [i] - xyDC [i - 2], xyDC [i + 1] - xyDC [i - 1]);
+		d_printf (d_file, "%s %s L\n", Melder8_double(xyDC [i] - xyDC [i - 2], 7), Melder8_double(xyDC [i + 1] - xyDC [i - 1], 7));
 	}
 	d_printf (d_file, "closepath fill\n");
 }
@@ -347,8 +347,8 @@ void structGraphicsScreen :: v_rectangle (double x1DC, double x2DC, double y1DC,
 
 void structGraphicsPostscript :: v_rectangle (double x1DC, double x2DC, double y1DC, double y2DC) {
 	psPrepareLine (this);
-	d_printf (d_file, "N %.7g %.7g M %.7g %.7g lineto %.7g %.7g lineto %.7g %.7g lineto closepath stroke\n",
-		x1DC, y1DC, x2DC, y1DC, x2DC, y2DC, x1DC, y2DC);
+	d_printf (d_file, "N %s %s M %s %s lineto %s %s lineto %s %s lineto closepath stroke\n",
+		Melder8_double(x1DC, 7), Melder8_double(y1DC, 7), Melder8_double(x2DC, 7), Melder8_double(y1DC, 7), Melder8_double(x2DC, 7), Melder8_double(y2DC, 7), Melder8_double(x1DC, 7), Melder8_double(y2DC, 7));
 	psRevertLine (this);
 }
 
@@ -385,8 +385,8 @@ void structGraphicsScreen :: v_fillRectangle (double x1DC, double x2DC, double y
 
 void structGraphicsPostscript :: v_fillRectangle (double x1DC, double x2DC, double y1DC, double y2DC) {
 	d_printf (d_file,
-		"N %.7g %.7g M %.7g %.7g lineto %.7g %.7g lineto %.7g %.7g lineto closepath fill\n",
-		x1DC, y1DC, x2DC, y1DC, x2DC, y2DC, x1DC, y2DC);
+		"N %s %s M %s %s lineto %s %s lineto %s %s lineto closepath fill\n",
+		Melder8_double(x1DC, 7), Melder8_double(y1DC, 7), Melder8_double(x2DC, 7), Melder8_double(y1DC, 7), Melder8_double(x2DC, 7), Melder8_double(y2DC, 7), Melder8_double(x1DC, 7), Melder8_double(y2DC, 7));
 }
 
 void structGraphicsScreen :: v_circle (double xDC, double yDC, double rDC) {
@@ -468,10 +468,10 @@ void structGraphicsPostscript :: v_ellipse (double x1DC, double x2DC, double y1D
 		/* However, we have to scale back before the actual 'stroke', */
 		/* because we want the normal line thickness; */
 		/* So we cannot use 'gsave' and 'grestore', which clear the path (Cookbook 3). */
-		d_printf (d_file, "gsave %.7g %.7g translate %.7g %.7g scale N 0 0 1 0 360 arc\n"
-			" %.7g %.7g scale stroke grestore\n",
-			0.5 * (x2DC + x1DC), 0.5 * (y2DC + y1DC), 0.5 * (x2DC - x1DC), 0.5 * (y2DC - y1DC),
-			2.0 / (x2DC - x1DC), 2.0 / (y2DC - y1DC));
+		d_printf (d_file, "gsave %s %s translate %s %s scale N 0 0 1 0 360 arc\n"
+			" %s %s scale stroke grestore\n",
+			Melder8_double(0.5 * (x2DC + x1DC), 7), Melder8_double(0.5 * (y2DC + y1DC), 7), Melder8_double(0.5 * (x2DC - x1DC), 7), Melder8_double(0.5 * (y2DC - y1DC), 7),
+			Melder8_double(2.0 / (x2DC - x1DC), 7), Melder8_double(2.0 / (y2DC - y1DC), 7));
 		psRevertLine (this);
 	}
 }
@@ -505,7 +505,7 @@ void structGraphicsScreen :: v_arc (double xDC, double yDC, double rDC, double f
 
 void structGraphicsPostscript :: v_arc (double xDC, double yDC, double rDC, double fromAngle, double toAngle) {
 	psPrepareLine (this);
-	d_printf (d_file, "N %.7g %.7g %.7g %.7g %.7g arc stroke\n", xDC, yDC, rDC, fromAngle, toAngle);
+	d_printf (d_file, "N %s %s %s %s %s arc stroke\n", Melder8_double(xDC, 7), Melder8_double(yDC, 7), Melder8_double(rDC, 7), Melder8_double(fromAngle, 7), Melder8_double(toAngle, 7));
 	psRevertLine (this);
 }
 
@@ -537,7 +537,7 @@ void structGraphicsScreen :: v_fillCircle (double xDC, double yDC, double rDC) {
 }
 
 void structGraphicsPostscript :: v_fillCircle (double xDC, double yDC, double rDC) {
-	d_printf (d_file, "N %.7g %.7g %.7g FC\n", xDC, yDC, rDC);
+	d_printf (d_file, "N %s %s %s FC\n", Melder8_double(xDC, 7), Melder8_double(yDC, 7), Melder8_double(rDC, 7));
 }
 
 void structGraphicsScreen :: v_fillEllipse (double x1DC, double x2DC, double y1DC, double y2DC) {
@@ -574,8 +574,8 @@ void structGraphicsScreen :: v_fillEllipse (double x1DC, double x2DC, double y1D
 }
 
 void structGraphicsPostscript :: v_fillEllipse (double x1DC, double x2DC, double y1DC, double y2DC) {
-	d_printf (d_file, "gsave %.7g %.7g translate %.7g %.7g scale N 0 0 1 FC grestore\n",
-		(x2DC + x1DC) / 2.0, (y2DC + y1DC) / 2.0, (x2DC - x1DC) / 2.0, (y2DC - y1DC) / 2.0);
+	d_printf (d_file, "gsave %s %s translate %s %s scale N 0 0 1 FC grestore\n",
+		Melder8_double((x2DC + x1DC) / 2.0, 7), Melder8_double((y2DC + y1DC) / 2.0, 7), Melder8_double((x2DC - x1DC) / 2.0, 7), Melder8_double((y2DC - y1DC) / 2.0, 7));
 }
 
 void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, double y2DC) {
@@ -1108,8 +1108,8 @@ void structGraphicsScreen :: v_arrowHead (double xDC, double yDC, double angle) 
 
 void structGraphicsPostscript :: v_arrowHead (double xDC, double yDC, double angle) {
 	double length = resolution * arrowSize / 10.0, radius = resolution * arrowSize / 30.0;
-	d_printf (d_file, "gsave %.7g %.7g translate %.7g rotate\n"
-		"N 0 0 M %.7g 0 %.7g -60 60 arc closepath fill grestore\n", xDC, yDC, angle, - length, radius);
+	d_printf (d_file, "gsave %s %s translate %s rotate\n"
+		"N 0 0 M %s 0 %s -60 60 arc closepath fill grestore\n", Melder8_double(xDC, 7), Melder8_double(yDC, 7), Melder8_double(angle, 7), Melder8_double(- length, 7), Melder8_double(radius, 7));
 }
 
 void Graphics_arrow (Graphics me, double x1WC, double y1WC, double x2WC, double y2WC) {

@@ -260,6 +260,9 @@ const char   * Melder8_boolean (bool value) noexcept;
 */
 const char32 * Melder_double  (double value) noexcept;
 const char   * Melder8_double (double value) noexcept;
+const char32 * Melder_double (double value, integer precision, char format = 'g') noexcept;
+const char   * Melder8_double (double value, integer precision, char format = 'g') noexcept;
+
 
 /**
 	Format a double value as "--undefined--" or something in the "%.9g" format.
@@ -459,6 +462,7 @@ void Melder_fwrite32to8 (const char32 *ptr, FILE *f);
 
 #pragma mark - STRING TO NUMBER CONVERSION
 
+double Melder8_strtod(const char *str, char **end_str = nullptr) noexcept;
 bool Melder_isStringNumeric (const char32 *string) noexcept;
 double Melder_a8tof (const char *string) noexcept;
 double Melder_atof (const char32 *string) noexcept;

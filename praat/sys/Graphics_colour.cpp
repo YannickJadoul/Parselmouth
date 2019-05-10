@@ -99,7 +99,7 @@ void _Graphics_setColour (Graphics graphics, Graphics_Colour colour) {
 		#endif
 	} else if (graphics -> postScript) {
 		GraphicsPostscript me = static_cast <GraphicsPostscript> (graphics);
-		my d_printf (my d_file, "%.6g %.6g %.6g setrgbcolor\n", colour. red, colour. green, colour. blue);
+		my d_printf (my d_file, "%s %s %s setrgbcolor\n", Melder8_double(colour. red, 6), Melder8_double(colour. green, 6), Melder8_double(colour. blue, 6));
 	}
 }
 
@@ -137,7 +137,7 @@ void _Graphics_setGrey (Graphics graphics, double fgrey) {
 	} else if (graphics -> postScript) {
 		GraphicsPostscript me = static_cast <GraphicsPostscript> (graphics);
 		if (fgrey < 0.0) fgrey = 0.0; else if (fgrey > 1.0) fgrey = 1.0;
-		my d_printf (my d_file, "%.6g setgray\n", fgrey);
+		my d_printf (my d_file, "%s setgray\n", Melder8_double(fgrey, 6));
 	}
 }
 

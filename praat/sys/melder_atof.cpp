@@ -18,6 +18,44 @@
 
 #include "melder.h"
 
+#include <iostream>
+#include <locale>
+
+namespace {
+
+struct array_istreambuf : public std::streambuf {
+	explicit array_istreambuf(const char *in) {
+		auto ccin = const_cast<char *>(in);
+		setg(ccin, ccin, ccin + strlen(in));
+	}
+
+	using std::streambuf::gptr;
+};
+
+double strtod_c(const char *s, char **e) {
+	static auto cLocale = std::locale::classic();
+	static auto &cNumget = std::use_facet<std::num_get<char>>(cLocale);
+	static auto &cCtype = std::use_facet<std::ctype<char>>(cLocale);
+	static std::ios format(nullptr);  // Wake me up when Praat gets thread-safe. But I'd hope that that global array of buffers will also have changed by then.
+	std::ios_base::iostate err = std::ios_base::goodbit;
+
+	const char *p = s;
+	while (cCtype.is(std::ctype_base::space, *p)) ++p;
+
+	array_istreambuf buffer(p);
+	double value = 0.0;
+	cNumget.get(&buffer, nullptr, format, err, value);
+
+	if (e) *e = (err == std::ios_base::goodbit ? buffer.gptr() : const_cast<char *>(s));
+	return value;
+}
+
+}
+
+double Melder8_strtod(const char *str, char **end_str /*= nullptr*/) noexcept {
+	return strtod_c(str, end_str);
+}
+
 template <typename T>
 static const T *findEndOfNumericString (const T *string) noexcept {
 	const T *p = & string [0];
@@ -97,7 +135,7 @@ double Melder_a8tof (const char *string) noexcept {
 	const char *p = findEndOfNumericString (string);
 	if (! p) return undefined;
 	Melder_assert (p - string > 0);
-	return p [-1] == '%' ? 0.01 * strtod (string, nullptr) : strtod (string, nullptr);
+	return p [-1] == '%' ? 0.01 * Melder8_strtod (string, nullptr) : Melder8_strtod (string, nullptr);
 }
 
 double Melder_atof (const char32 *string) noexcept {

@@ -1457,7 +1457,7 @@ void NUMgsvdcmp (double **a, integer m, integer n, double **b, integer p, int pr
 
 		for (i = 1; i <= *l; i++) {
 			norms[i] = NUMnorm2 (n, TOVEC (q[1][*k + i]), n);
-			printf ("%f ", norms[i]);
+			// printf ("%f ", norms[i]);
 		}
 	}
 }
