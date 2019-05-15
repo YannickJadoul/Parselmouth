@@ -142,7 +142,7 @@ static bool isTimitPhoneticLabel (const char label[]) {
 static bool isTimitWord (const char label[]) {
 	const char *p = label;
 	for (; *p; p++) {
-		if (isupper (*p) && *p != '\'') {
+		if (isupper32 (*p) && *p != '\'') {
 			return false;
 		}
 	}

@@ -84,8 +84,6 @@ void SpellingChecker_replaceUserDictionary (SpellingChecker me, StringSet userDi
 	}
 }
 
-#include <locale>
-
 static int startsWithCapital (const char32 *word) {
 	return isupper32(word [0]) || (word [0] == '\\' && isupper32(word [1]));
 }

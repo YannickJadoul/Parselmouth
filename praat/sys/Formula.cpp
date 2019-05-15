@@ -644,7 +644,7 @@ static void Formula_lexan () {
 		} else if (kar >= U'A' && kar <= U'Z') {
 			bool endsInDollarSign = false;
 			stokaan;
-			do stokkar while (isalnum ((int) kar) || kar == U'_');   // TODO: allow more than just ASCII
+			do stokkar while (isalnum32 (kar) || kar == U'_');   // TODO: allow more than just ASCII
 			if (kar == U'$') { stokkar endsInDollarSign = true; }
 			stokuit;
 			oudkar;

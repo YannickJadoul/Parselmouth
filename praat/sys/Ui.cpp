@@ -136,7 +136,7 @@ static void UiField_setDefault (UiField me) {
 static int colourToValue (UiField me, char32 *string) {
 	char32 *p = string;
 	while (*p == U' ' || *p == U'\t') p ++;
-	*p = (char32) tolower ((int) *p);
+	*p = tolower32 (*p);
 	char32 first = *p;
 	if (first == U'{') {
 		my colourValue. red = Melder_atof (++ p);
@@ -147,7 +147,7 @@ static int colourToValue (UiField me, char32 *string) {
 		if (! p) return 0;
 		my colourValue. blue = Melder_atof (++ p);
 	} else {
-		*p = (char32) tolower ((int) *p);
+		*p = tolower32 (*p);
 		if (str32equ (p, U"black")) my colourValue = Graphics_BLACK;
 		else if (str32equ (p, U"white")) my colourValue = Graphics_WHITE;
 		else if (str32equ (p, U"red")) my colourValue = Graphics_RED;

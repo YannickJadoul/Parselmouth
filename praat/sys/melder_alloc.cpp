@@ -304,13 +304,7 @@ bool Melder_equ_firstCharacterCaseInsensitive (const char32 *string1, const char
 	if (*string1 == U'\0') return *string2 == U'\0';
 	if (*string1 == *string2)
 		return ! str32cmp (string1 + 1, string2 + 1);
-	if (sizeof (wchar_t) == 2) {
-		if (*string1 > 65536 || *string2 > 65536)
-			return false;
-		if (towlower ((char16) *string1) != towlower ((char16) *string2)) return false;
-	} else {
-		if (towlower ((int32) *string1) != towlower ((int32) *string2)) return false;
-	}
+	if (tolower32 (*string1) != tolower32 (*string2)) return false;
 	return ! str32cmp (string1 + 1, string2 + 1);
 }
 

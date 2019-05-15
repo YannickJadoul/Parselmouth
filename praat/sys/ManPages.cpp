@@ -27,10 +27,10 @@ Thing_implement (ManPages, Daata, 0);
 #define LONGEST_FILE_NAME  55
 
 static bool isAllowedFileNameCharacter (char32 c) {
-	return isalnum ((int) c) || c == U'_' || c == U'-' || c == U'+';
+	return isalnum32 (c) || c == U'_' || c == U'-' || c == U'+';
 }
 static bool isSingleWordCharacter (char32 c) {
-	return isalnum ((int) c) || c == U'_';
+	return isalnum32 (c) || c == U'_';
 }
 
 static integer lookUp_unsorted (ManPages me, const char32 *title);

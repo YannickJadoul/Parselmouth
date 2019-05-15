@@ -118,6 +118,8 @@ extern bool Melder_isTracing;
 
 #pragma mark - STRINGS
 
+#include "ucd.h"
+
 typedef unsigned char char8;
 typedef char16_t char16;
 typedef char32_t char32;
@@ -216,10 +218,15 @@ cont:
 			goto cont;
 	return p - 1 - string1;
 }
-inline static bool islower32 (char32 kar) { return iswlower ((int) kar); }
-inline static bool isupper32 (char32 kar) { return iswupper ((int) kar); }
-inline static char32 tolower32 (char32 kar) { return (char32) towlower ((int) kar); }
-inline static char32 toupper32 (char32 kar) { return (char32) towupper ((int) kar); }
+inline static bool isalnum32 (char32 kar) { return ucd::isalnum (kar); }
+inline static bool isalpha32 (char32 kar) { return ucd::isalpha (kar); }
+inline static bool isdigit32 (char32 kar) { return ucd::isdigit (kar); }
+inline static bool isgraph32 (char32 kar) { return ucd::isgraph (kar); }
+inline static bool islower32 (char32 kar) { return ucd::islower (kar); }
+inline static bool isspace32 (char32 kar) { return ucd::isspace (kar); }
+inline static bool isupper32 (char32 kar) { return ucd::isupper (kar); }
+inline static char32 tolower32 (char32 kar) { return (char32) ucd::tolower (kar); }
+inline static char32 toupper32 (char32 kar) { return (char32) ucd::toupper (kar); }
 
 bool Melder_isWhiteSpace (const char32_t kar);
 

@@ -1009,7 +1009,7 @@ static char32 *piece (int *flag_param, len_range *range_param) {
 			   value for max and min of 65,535 is due to using 2 bytes to store
 			   each value in the compiled regex code. */
 
-			while (isdigit ((int) *Reg_Parse)) {
+			while (isdigit32 (*Reg_Parse)) {
 				/* (6553 * 10 + 6) > 65535 (16 bit max) */
 
 				if ( (min_max [i] == 6553UL && (*Reg_Parse - '0') <= 5) ||
@@ -1753,9 +1753,9 @@ static char32 *atom (int *flag_param, len_range *range_param) {
 
 						if (Is_Case_Insensitive) {
 							second_value =
-							    (unsigned int) tolower ( (int) second_value);
+							    (unsigned int) tolower32 ( (int) second_value);
 							last_value =
-							    (unsigned int) tolower ( (int) last_value);
+							    (unsigned int) tolower32 ( (int) last_value);
 						}
 
 						/* For case insensitive, something like [A-_] will
@@ -1910,7 +1910,7 @@ static char32 *atom (int *flag_param, len_range *range_param) {
 
 						if ( (test = numeric_escape (*Reg_Parse, &Reg_Parse))) {
 							if (Is_Case_Insensitive) {
-								emit_byte (tolower ((int) test));
+								emit_byte (tolower32 (test));
 							} else {
 								emit_byte (test);
 							}
@@ -1940,7 +1940,7 @@ static char32 *atom (int *flag_param, len_range *range_param) {
 						/* Ordinary character */
 
 						if (Is_Case_Insensitive) {
-							emit_byte (tolower ((int) *Reg_Parse));
+							emit_byte (tolower32 (*Reg_Parse));
 						} else {
 							emit_byte (*Reg_Parse);
 						}
@@ -2046,10 +2046,10 @@ static void emit_class_byte (char32 c) {
 	if (Code_Emit_Ptr == &Compute_Size) {
 		Reg_Size++;
 
-		if (Is_Case_Insensitive && iswalpha ((int) c)) {
+		if (Is_Case_Insensitive && isalpha32 (c)) {
 			Reg_Size++;
 		}
-	} else if (Is_Case_Insensitive && iswalpha ((int) c)) {
+	} else if (Is_Case_Insensitive && isalpha32 (c)) {
 		/* For case insensitive character classes, emit both upper and lower case
 		   versions of alphabetical characters. */
 
@@ -2317,7 +2317,7 @@ static char32 *shortcut_escape (
 			if (emit == EMIT_CLASS_BYTES) {
 				klas = ASCII_Digits;
 			} else if (emit == EMIT_NODE) {
-				ret_val = (iswlower ((int) c) ? emit_node (DIGIT) : emit_node (NOT_DIGIT));
+				ret_val = (islower32 (c) ? emit_node (DIGIT) : emit_node (NOT_DIGIT));
 			}
 			break;
 
@@ -2326,7 +2326,7 @@ static char32 *shortcut_escape (
 			if (emit == EMIT_CLASS_BYTES) {
 				klas = Letter_Char;
 			} else if (emit == EMIT_NODE) {
-				ret_val = (iswlower ((int) c) ? emit_node (LETTER) : emit_node (NOT_LETTER));
+				ret_val = (islower32 (c) ? emit_node (LETTER) : emit_node (NOT_LETTER));
 			}
 			break;
 
@@ -2339,9 +2339,9 @@ static char32 *shortcut_escape (
 				klas = White_Space;
 			} else if (emit == EMIT_NODE) {
 				if (Match_Newline) {
-					ret_val = (iswlower ((int) c) ? emit_node (SPACE_NL) : emit_node (NOT_SPACE_NL));
+					ret_val = (islower32 (c) ? emit_node (SPACE_NL) : emit_node (NOT_SPACE_NL));
 				} else {
-					ret_val = (iswlower ((int) c) ? emit_node (SPACE) : emit_node (NOT_SPACE));
+					ret_val = (islower32 (c) ? emit_node (SPACE) : emit_node (NOT_SPACE));
 				}
 			}
 			break;
@@ -2351,7 +2351,7 @@ static char32 *shortcut_escape (
 			if (emit == EMIT_CLASS_BYTES) {
 				klas = Word_Char;
 			} else if (emit == EMIT_NODE) {
-				ret_val = (iswlower ((int) c) ? emit_node (WORD_CHAR) : emit_node (NOT_WORD_CHAR));
+				ret_val = (islower32 (c) ? emit_node (WORD_CHAR) : emit_node (NOT_WORD_CHAR));
 			}
 			break;
 
@@ -2581,7 +2581,7 @@ static char32 *back_ref (
 
 	paren_no = (int) (* (c + c_offset) - (char32) ('0'));
 
-	if (!iswdigit ((int) * (c + c_offset)) || /* Only \1, \2, ... \9 are supported.  */
+	if (!isdigit32 (* (c + c_offset)) || /* Only \1, \2, ... \9 are supported.  */
 	        paren_no == 0) {              /* Should be caught by numeric_escape. */
 
 		return NULL;
@@ -2965,11 +2965,11 @@ static int init_ansi_classes () {
 		space_count  = 0;
 
 		for (i = 1; i < (int) UCHAR_MAX; i++) {
-			if (isalnum (i) || i == underscore) {
+			if (isalnum32 (i) || i == underscore) {
 				Word_Char [word_count++] = (char32) i;
 			}
 
-			if (isalpha (i)) {
+			if (isalpha32 (i)) {
 				Letter_Char [letter_count++] = (char32) i;
 			}
 
@@ -2977,7 +2977,7 @@ static int init_ansi_classes () {
 			   handled by switches within the original regex and is thus omitted
 			   here. */
 
-			if (isspace (i) && (i != (int) '\n')) {
+			if (isspace32 (i) && (i != (int) '\n')) {
 				White_Space [space_count++] = (char32) i;
 			}
 
@@ -3151,7 +3151,7 @@ static int match (char32 *prog, int *branch_index_param) {
 
 				while ( (test = *opnd++) != '\0') {
 					if (AT_END_OF_STRING (Reg_Input) ||
-					        tolower32 (*Reg_Input++) != test) {
+					        tolower32(*Reg_Input++) != test) {
 
 						MATCH_RETURN (0);
 					}
@@ -3265,7 +3265,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				MATCH_RETURN (0);
 
 			case WORD_CHAR: /* \w (word character; alpha-numeric or underscore) */
-				if ( (isalnum ( (int) *Reg_Input) || *Reg_Input == '_') &&
+				if ( (isalnum32 (*Reg_Input) || *Reg_Input == '_') &&
 				        !AT_END_OF_STRING (Reg_Input)) {
 					Reg_Input++; break;
 				}
@@ -3273,7 +3273,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				MATCH_RETURN (0);
 
 			case NOT_WORD_CHAR:/* \W (NOT a word character) */
-				if (isalnum ( (int) *Reg_Input) ||
+				if (isalnum32 (*Reg_Input) ||
 				        *Reg_Input == '_'          ||
 				        *Reg_Input == '\n'         ||
 				        AT_END_OF_STRING (Reg_Input)) {
@@ -3297,7 +3297,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				Reg_Input++; break;
 
 			case DIGIT: /* \d, same as [0123456789] */
-				if (!isdigit ( (int) *Reg_Input) ||
+				if (!isdigit32 (*Reg_Input) ||
 				        AT_END_OF_STRING (Reg_Input)) {
 					MATCH_RETURN (0);
 				}
@@ -3305,7 +3305,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				Reg_Input++; break;
 
 			case NOT_DIGIT: /* \D, same as [^0123456789] */
-				if (isdigit ( (int) *Reg_Input) ||
+				if (isdigit32 (*Reg_Input) ||
 				        *Reg_Input == '\n'         ||
 				        AT_END_OF_STRING (Reg_Input)) {
 					MATCH_RETURN (0);
@@ -3314,7 +3314,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				Reg_Input++; break;
 
 			case LETTER: /* \l, same as [a-zA-Z] */
-				if (!isalpha ( (int) *Reg_Input) ||
+				if (!isalpha32 (*Reg_Input) ||
 				        AT_END_OF_STRING (Reg_Input)) {
 					MATCH_RETURN (0);
 				}
@@ -3322,7 +3322,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				Reg_Input++; break;
 
 			case NOT_LETTER: /* \L, same as [^0123456789] */
-				if (isalpha ( (int) *Reg_Input)  ||
+				if (isalpha32 (*Reg_Input)  ||
 				        *Reg_Input == '\n' ||
 				        AT_END_OF_STRING (Reg_Input)) {
 					MATCH_RETURN (0);
@@ -3331,7 +3331,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				Reg_Input++; break;
 
 			case SPACE: /* \s, same as [ \t\r\f\v] */
-				if (!isspace ( (int) *Reg_Input) ||
+				if (!isspace32 (*Reg_Input) ||
 				        *Reg_Input == '\n'          ||
 				        AT_END_OF_STRING (Reg_Input)) {
 					MATCH_RETURN (0);
@@ -3340,7 +3340,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				Reg_Input++; break;
 
 			case SPACE_NL: /* \s, same as [\n \t\r\f\v] */
-				if (!isspace ( (int) *Reg_Input) ||
+				if (!isspace32 (*Reg_Input) ||
 				        AT_END_OF_STRING (Reg_Input)) {
 					MATCH_RETURN (0);
 				}
@@ -3348,7 +3348,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				Reg_Input++; break;
 
 			case NOT_SPACE: /* \S, same as [^\n \t\r\f\v] */
-				if (isspace ( (int) *Reg_Input) ||
+				if (isspace32 (*Reg_Input) ||
 				        AT_END_OF_STRING (Reg_Input)) {
 					MATCH_RETURN (0);
 				}
@@ -3356,7 +3356,7 @@ static int match (char32 *prog, int *branch_index_param) {
 				Reg_Input++; break;
 
 			case NOT_SPACE_NL: /* \S, same as [^ \t\r\f\v] */
-				if ( (isspace ( (int) *Reg_Input) && *Reg_Input != '\n') ||
+				if ( (isspace32 (*Reg_Input) && *Reg_Input != '\n') ||
 				        AT_END_OF_STRING (Reg_Input)) {
 					MATCH_RETURN (0);
 				}
@@ -3563,7 +3563,7 @@ static int match (char32 *prog, int *branch_index_param) {
 
 						while (captured < finish) {
 							if (AT_END_OF_STRING (Reg_Input) ||
-							        tolower (*captured++) != tolower (*Reg_Input++)) {
+							        tolower32 (*captured++) != tolower32 (*Reg_Input++)) {
 								MATCH_RETURN (0);
 							}
 						}
@@ -3906,7 +3906,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case WORD_CHAR: /* \w (word character, alpha-numeric or underscore) */
 			while (count < max_cmp                     &&
-			        (iswalnum ( (int) *input_str) ||
+			        (isalnum32 (*input_str) ||
 			         *input_str == U'_') &&
 			        !AT_END_OF_STRING (input_str)) {
 
@@ -3917,7 +3917,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case NOT_WORD_CHAR:/* \W (NOT a word character) */
 			while (count < max_cmp                      &&
-			        !iswalnum ( (int) *input_str)          &&
+			        !isalnum32 (*input_str)          &&
 			        *input_str != U'_'    &&
 			        *input_str != U'\n'   &&
 			        !AT_END_OF_STRING (input_str)) {
@@ -3929,7 +3929,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case DIGIT: /* same as [0123456789] */
 			while (count < max_cmp              &&
-			        isdigit ( (int) *input_str)   &&
+			        isdigit32 (*input_str)   &&
 			        !AT_END_OF_STRING (input_str)) {
 				count++; input_str++;
 			}
@@ -3938,7 +3938,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case NOT_DIGIT: /* same as [^0123456789] */
 			while (count < max_cmp              &&
-			        !iswdigit ( (int) *input_str)  &&
+			        !isdigit32 (*input_str)  &&
 			        *input_str != U'\n'           &&
 			        !AT_END_OF_STRING (input_str)) {
 
@@ -3949,7 +3949,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case SPACE: /* same as [ \t\r\f\v]-- doesn't match newline. */
 			while (count < max_cmp             &&
-			        iswspace ( (int) *input_str)  &&
+			        isspace32 (*input_str)  &&
 			        *input_str != U'\n'          &&
 			        !AT_END_OF_STRING (input_str)) {
 
@@ -3960,7 +3960,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case SPACE_NL: /* same as [\n \t\r\f\v]-- matches newline. */
 			while (count < max_cmp             &&
-			        iswspace ( (int) *input_str)  &&
+			        isspace32 (*input_str)  &&
 			        !AT_END_OF_STRING (input_str)) {
 
 				count++; input_str++;
@@ -3970,7 +3970,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case NOT_SPACE: /* same as [^\n \t\r\f\v]-- doesn't match newline. */
 			while (count < max_cmp              &&
-			        !iswspace ( (int) *input_str)  &&
+			        !isspace32 (*input_str)  &&
 			        !AT_END_OF_STRING (input_str)) {
 
 				count++; input_str++;
@@ -3980,7 +3980,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case NOT_SPACE_NL: /* same as [^ \t\r\f\v]-- matches newline. */
 			while (count < max_cmp                                     &&
-			        (!iswspace ( (int) *input_str) || *input_str == '\n')  &&
+			        (!isspace32 (*input_str) || *input_str == '\n')  &&
 			        !AT_END_OF_STRING (input_str)) {
 
 				count++; input_str++;
@@ -3990,7 +3990,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case LETTER: /* same as [a-zA-Z] */
 			while (count < max_cmp             &&
-			        iswalpha ( (int) *input_str)  &&
+			        isalpha32 (*input_str)  &&
 			        !AT_END_OF_STRING (input_str)) {
 
 				count++; input_str++;
@@ -4000,7 +4000,7 @@ static unsigned long greedy (char32 *p, long max) {
 
 		case NOT_LETTER: /* same as [^a-zA-Z] */
 			while (count < max_cmp              &&
-			        !iswalpha ( (int) *input_str)  &&
+			        !isalpha32 (*input_str)  &&
 			        *input_str != '\n'           &&
 			        !AT_END_OF_STRING (input_str)) {
 
@@ -4187,7 +4187,7 @@ static void adjustcase (char32 *str, int len, char32 chgcase) {
 	/* The tokens \u and \l only modify the first character while the tokens
 	   \U and \L modify the entire string. */
 
-	if (iswlower ((int) chgcase) && len > 0) {
+	if (islower32 (chgcase) && len > 0) {
 		len = 1;
 	}
 

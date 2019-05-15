@@ -1195,7 +1195,7 @@ void praat_init (const char32 *title, int argc, char **argv)
 	/*
 	 * Construct a main-window title like "MyProg 3.2".
 	 */
-	programName [0] = (char32) tolower ((int) programName [0]);
+	programName [0] = tolower32 (programName [0]);
 
 	/*
 	 * Get home directory, e.g. "/home/miep/", or "/Users/miep/", or just "/".

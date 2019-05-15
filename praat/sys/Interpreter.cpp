@@ -667,13 +667,13 @@ static bool isCommand (const char32 *p) {
 	/*
 	 * Otherwise, things that start with lower case are formulas.
 	 */
-	if (! isupper ((int) *p)) return false;
+	if (! isupper32 (*p)) return false;
 	/*
 	 * The remaining possibility is things that start with upper case.
 	 * If they contain an underscore, they are object names, hence we must have a formula.
 	 * Otherwise, we have a command.
 	 */
-	while (isalnum ((int) *p)) p ++;
+	while (isalnum32 (*p)) p ++;
 	return *p != '_';
 }
 
@@ -1437,7 +1437,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 			str32cpy (parameter, my parameters [ipar]);
 			parameterToVariable (me, my types [ipar], parameter, ipar);
 			if (parameter [0] >= U'A' && parameter [0] <= U'Z') {
-				parameter [0] = (char32) tolower ((int) parameter [0]);
+				parameter [0] = tolower32 (parameter [0]);
 				parameterToVariable (me, my types [ipar], parameter, ipar);
 			}
 		}
@@ -1896,7 +1896,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						optionally preceded by a period and optionally followed by a $ and/or #.
 					*/
 					if (*p == U'.') p ++;
-					while (isalnum ((int) *p) || *p == U'_' || *p == U'.')  p ++;
+					while (isalnum32 (*p) || *p == U'_' || *p == U'.')  p ++;
 					if (*p == U'$') {
 						/*
 							Assign to a string variable.

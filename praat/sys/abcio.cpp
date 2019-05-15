@@ -47,7 +47,7 @@ static int64 getInteger (MelderReadText me) {
 	/*
 	 * Look for the first numeric character.
 	 */
-	for (c = MelderReadText_getChar (me); c != U'-' && ! isdigit ((int) c) && c != U'+'; c = MelderReadText_getChar (me)) {
+	for (c = MelderReadText_getChar (me); c != U'-' && ! isdigit32 (c) && c != U'+'; c = MelderReadText_getChar (me)) {
 		if (c == U'\0')
 			Melder_throw (U"Early end of text detected while looking for an integer (line ", MelderReadText_getLineNumber (me), U").");
 		if (c == U'!') {   // end-of-line comment?
@@ -84,7 +84,7 @@ static int64 getInteger (MelderReadText me) {
 static uint64 getUnsigned (MelderReadText me) {
 	char buffer [41];
 	char32 c;
-	for (c = MelderReadText_getChar (me); ! isdigit ((int) c) && c != U'+'; c = MelderReadText_getChar (me)) {
+	for (c = MelderReadText_getChar (me); ! isdigit32 (c) && c != U'+'; c = MelderReadText_getChar (me)) {
 		if (c == U'\0')
 			Melder_throw (U"Early end of text detected while looking for an unsigned integer (line ", MelderReadText_getLineNumber (me), U").");
 		if (c == U'!') {   // end-of-line comment?
@@ -125,7 +125,7 @@ static double getReal (MelderReadText me) {
 	char buffer [41], *slash;
 	char32 c;
 	do {
-		for (c = MelderReadText_getChar (me); c != U'-' && ! isdigit ((int) c) && c != U'+'; c = MelderReadText_getChar (me)) {
+		for (c = MelderReadText_getChar (me); c != U'-' && ! isdigit32 (c) && c != U'+'; c = MelderReadText_getChar (me)) {
 			if (c == U'\0')
 				Melder_throw (U"Early end of text detected while looking for a real number (line ", MelderReadText_getLineNumber (me), U").");
 			if (c == U'!') {   // end-of-line comment?
@@ -179,7 +179,7 @@ static int getEnum (MelderReadText me, int (*getValue) (const char32 *)) {
 					Melder_throw (U"Early end of text detected in comment while looking for an enumerated value (line ", MelderReadText_getLineNumber (me), U").");
 			}
 		}
-		if (c == U'-' || isdigit ((int) c) || c == U'+')
+		if (c == U'-' || isdigit32 (c) || c == U'+')
 			Melder_throw (U"Found a number while looking for an enumerated value in text (line ", MelderReadText_getLineNumber (me), U").");
 		if (c == U'\"')
 			Melder_throw (U"Found a string while looking for an enumerated value in text (line ", MelderReadText_getLineNumber (me), U").");
@@ -221,7 +221,7 @@ static char32 * getString (MelderReadText me) {
 					Melder_throw (U"Early end of text detected in comment while looking for a string (line ", MelderReadText_getLineNumber (me), U").");
 			}
 		}
-		if (c == U'-' || isdigit ((int) c) || c == U'+')
+		if (c == U'-' || isdigit32 (c) || c == U'+')
 			Melder_throw (U"Found a number while looking for a string in text (line ", MelderReadText_getLineNumber (me), U").");
 		if (c == U'<')
 			Melder_throw (U"Found an enumerated value while looking for a string in text (line ", MelderReadText_getLineNumber (me), U").");

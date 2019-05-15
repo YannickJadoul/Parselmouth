@@ -32,7 +32,7 @@ int NUMstring_containsPrintableCharacter (const char32 *s) {
 		return 0;
 	}
 	for (integer i = 0; i < len; i ++) {
-		if (isgraph ((int) s [i])) {
+		if (isgraph32 (s [i])) {
 			return 1;
 		}
 	}
@@ -412,20 +412,20 @@ static integer *getElementsOfRanges (const char32 *ranges, integer maximumElemen
 	for (;;) {
 		while (*p == U' ' || *p == U'\t') p ++;
 		if (*p == U'\0') break;
-		if (isdigit ((int) *p)) {
+		if (isdigit32 (*p)) {
 			integer currentElement = Melder_atoi (p);
 			Melder_require (currentElement != 0, U"No such ", elementType, U": 0 (minimum is 1).");
 			Melder_require (currentElement <= maximumElement, U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
 			
 			*numberOfElements += 1;
 			previousElement = currentElement;
-			do { p ++; } while (isdigit ((int) *p));
+			do { p ++; } while (isdigit32 (*p));
 		} else if (*p == ':') {
 			Melder_require (previousElement != 0, U"The range should not start with a colon.");
 			
 			do { p ++; } while (*p == U' ' || *p == U'\t');
 			Melder_require (*p != U'\0', U"The range should not end with a colon.");
-			Melder_require (isdigit ((int) *p), U"End of range should be a positive whole number.");
+			Melder_require (isdigit32 (*p), U"End of range should be a positive whole number.");
 			
 			integer currentElement = Melder_atoi (p);
 			Melder_require (currentElement != 0, U"No such ", elementType, U": 0 (minimum is 1).");
@@ -437,7 +437,7 @@ static integer *getElementsOfRanges (const char32 *ranges, integer maximumElemen
 				*numberOfElements += previousElement - currentElement;
 			}
 			previousElement = currentElement;
-			do { p ++; } while (isdigit ((int) *p));
+			do { p ++; } while (isdigit32 (*p));
 		} else {
 			Melder_throw (U"Start of range should be a positive whole number.");
 		}
@@ -460,11 +460,11 @@ static integer *getElementsOfRanges (const char32 *ranges, integer maximumElemen
 	for (;;) {
 		while (*p == U' ' || *p == U'\t') p ++;
 		if (*p == U'\0') break;
-		if (isdigit ((int) *p)) {
+		if (isdigit32 (*p)) {
 			integer currentElement = Melder_atoi (p);
 			elements [++ *numberOfElements] = currentElement;
 			previousElement = currentElement;
-			do { p ++; } while (isdigit ((int) *p));
+			do { p ++; } while (isdigit32 (*p));
 		} else if (*p == U':') {
 			do { p ++; } while (*p == U' ' || *p == U'\t');
 			integer currentElement = Melder_atoi (p);
@@ -478,7 +478,7 @@ static integer *getElementsOfRanges (const char32 *ranges, integer maximumElemen
 				}
 			}
 			previousElement = currentElement;
-			do { p ++; } while (isdigit ((int) *p));
+			do { p ++; } while (isdigit32 (*p));
 		}
 	}
 	return elements.transfer();

@@ -42,7 +42,7 @@ static void menu_cb_writeOneToHtmlFile (Manual me, EDITOR_ARGS_FORM) {
 		autoMelderString buffer;
 		MelderString_copy (& buffer, manPages -> pages.at [my path] -> title);
 		char32 *p = buffer.string;
-		while (*p) { if (! isalnum ((int) *p) && *p != U'_') *p = U'_'; p ++; }
+		while (*p) { if (! isalnum32 (*p) && *p != U'_') *p = U'_'; p ++; }
 		MelderString_append (& buffer, U".html");
 		Melder_sprint (defaultName,300, buffer.string);
 	EDITOR_DO_SAVE

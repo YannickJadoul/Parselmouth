@@ -186,12 +186,12 @@ int praat_executeCommand (Interpreter interpreter, char32 *command) {
 	//trace (U"praat_executeCommand: ", Melder_pointer (interpreter), U": ", command);
 	if (command [0] == U'\0' || command [0] == U'#' || command [0] == U'!' || command [0] == U';')
 		/* Skip empty lines and comments. */;
-	else if ((command [0] == U'.' || command [0] == U'+' || command [0] == U'-') && isupper ((int) command [1])) {   // selection?
+	else if ((command [0] == U'.' || command [0] == U'+' || command [0] == U'-') && isupper32 (command [1])) {   // selection?
 		int IOBJECT = praat_findObjectFromString (interpreter, command + 1);
 		if (command [0] == '.') praat_deselectAll ();
 		if (command [0] == '-') praat_deselect (IOBJECT); else praat_select (IOBJECT); 
 		praat_show ();
-	} else if (islower ((int) command [0])) {   // all directives start with a lower-case letter
+	} else if (islower32 (command [0])) {   // all directives start with a lower-case letter
 		if (str32nequ (command, U"select ", 7)) {
 			if (str32nequ (command + 7, U"all", 3) && (command [10] == U'\0' || command [10] == U' ' || command [10] == U'\t')) {
 				praat_selectAll ();
@@ -296,7 +296,7 @@ int praat_executeCommand (Interpreter interpreter, char32 *command) {
 		} else if (str32nequ (command, U"editor", 6)) {
 			if (theCurrentPraatObjects != & theForegroundPraatObjects)
 				Melder_throw (U"The script command \"editor\" is not available inside manuals.");
-			if (command [6] == U' ' && isalpha ((int) command [7])) {
+			if (command [6] == U' ' && isalpha32 (command [7])) {
 				praatP. editor = praat_findEditorFromString (command + 7);
 			} else if (command [6] == U'\0') {
 				if (interpreter && interpreter -> editorClass) {
