@@ -1333,7 +1333,7 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 				if (! links [++ numberOfLinks]. name)   // make room for saving link info
 					links [numberOfLinks]. name = Melder_calloc_f (char32, MAX_LINK_LENGTH + 1);
 				to = links [numberOfLinks]. name, max = to + MAX_LINK_LENGTH;
-				while (*from && (isalnum ((int) *from) || *from == U'_') && to < max)   // until end-of-word...
+				while (*from && (Melder_isAlphanumeric (*from) || *from == U'_') && to < max)   // until end-of-word...
 					*to ++ = *from++;   // ... copy one character
 				*to = '\0';   // close saved link info
 				/*
@@ -1399,7 +1399,7 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 			kar = U' ';
 		}
 		if (wordItalic | wordBold | wordCode | wordLink) {
-			if (! isalnum ((int) kar) && kar != U'_')   // FIXME: this test could be more precise.
+			if (! Melder_isAlphanumeric (kar) && kar != U'_')   // FIXME: this test could be more precise.
 				wordItalic = wordBold = wordCode = wordLink = false;
 		}
 		out -> style =
