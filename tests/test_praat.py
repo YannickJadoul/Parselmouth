@@ -39,3 +39,9 @@ def test_run_script_with_parameters(resources):
 
 	with pytest.raises(parselmouth.PraatError, match="Found 0 arguments but expected more."):
 		parselmouth.praat.run(script)
+
+
+def test_call_no_objects(sound):
+	assert parselmouth.praat.call(sound, "Get number of samples") == sound.n_samples
+	with pytest.raises(parselmouth.PraatError, match="Command \"Get number of samples\" not available for given objects."):
+		assert parselmouth.praat.call("Get number of samples")
