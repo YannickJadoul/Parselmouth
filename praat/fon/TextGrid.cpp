@@ -972,7 +972,7 @@ void IntervalTier_writeToXwaves (IntervalTier me, MelderFile file) {
 		fprintf (f, "separator ;\nnfields 1\n#\n");
 		for (integer iinterval = 1; iinterval <= my intervals.size; iinterval ++) {
 			TextInterval interval = my intervals.at [iinterval];
-			fprintf (f, "\t%s 26\t%s\n", Melder8_double(interval -> xmax, 6), Melder_peek32to8 (interval -> text));
+			fprintf (f, "\t%s 26\t%s\n", Melder8_double(interval -> xmax, 6, 'f'), Melder_peek32to8 (interval -> text));
 		}
 		f.close (file);
 	} catch (MelderError) {

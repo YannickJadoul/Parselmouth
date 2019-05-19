@@ -105,7 +105,7 @@ static void print4 (char *buffer, double value, int iformat, int width, int prec
 		else
 			snprintf (buffer, 40, "%s", Melder8_double(value, 7));
 	} else {
-		snprintf(buffer, 40, "%s", Melder8_double(value, precision, iformat == 1 ? 'f' : iformat == 2 ? 'e' : 'g'));
+		snprintf(buffer, 40, "%*s", width, Melder8_double(value, precision, iformat == 1 ? 'f' : iformat == 2 ? 'e' : 'g'));
 		// snprintf (formatString, 40, "%%%d.%d%c", width, precision, iformat == 1 ? 'f' : iformat == 2 ? 'e' : 'g');
 		// snprintf (buffer, 40, formatString, value);
 	}
