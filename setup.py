@@ -135,7 +135,7 @@ setup(
 		'Intended Audience :: Science/Research',
 		'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
 		'Operating System :: MacOS :: MacOS X',
-		'Operating System :: Microsoft :: Windows'
+		'Operating System :: Microsoft :: Windows',
 		'Operating System :: POSIX :: Linux',
 		'Operating System :: Unix',
 		'Programming Language :: C++',
