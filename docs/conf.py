@@ -74,7 +74,7 @@ if on_rtd:
         try:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', 'praat-parselmouth=={}'.format(setup_py_version)])
         except subprocess.CalledProcessError:
-            branch = 'master'
+            branch = 'stable'
     else:
         branch = 'master' if rtd_version == 'latest' else rtd_version
 

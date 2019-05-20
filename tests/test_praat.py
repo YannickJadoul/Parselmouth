@@ -177,6 +177,12 @@ def test_remove_referenced_objects(sound):
 	assert all(s.values.mean() == mean for s in many_sounds)
 
 
+def test_call_no_objects(sound):
+	assert parselmouth.praat.call(sound, "Get number of samples") == sound.n_samples
+	with pytest.raises(parselmouth.PraatError, match="Command \"Get number of samples\" not available for given objects."):
+		assert parselmouth.praat.call("Get number of samples")
+
+
 def test_praat_callback_prefixes():
 	separators = {'nullptr', '0'}
 	values = {'REAL', 'INTEGER', 'BOOLEAN', 'COMPLEX', 'STRING', 'NUMVEC', 'NUMMAT'}

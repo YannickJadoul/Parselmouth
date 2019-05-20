@@ -141,7 +141,7 @@ bool SpellingChecker_isWordAllowed (SpellingChecker me, conststring32 word) {
 		const char32 *p = & word [0];
 		for (;;) {
 			if (*p == '\0') return true;
-			if (iswlower ((int) *p)) break;
+			if (Melder_isLowerCaseLetter (*p)) break;
 			p ++;
 		}
 	}

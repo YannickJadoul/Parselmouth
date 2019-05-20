@@ -92,6 +92,7 @@ public:
 		for (auto i = m_objects->n; i > 0; --i) {
 			praat_removeObject(i);
 		}
+		praat_show();
 
 		assert(m_objects->totalSelection == 0);
 		assert(m_objects->n == 0);
