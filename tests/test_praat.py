@@ -194,3 +194,9 @@ def test_praat_callback_prefixes():
 
 	prefixes = set(action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
 	assert prefixes == separators | values | objects | info | nothing | exception | weird
+
+
+@pytest.mark.praat
+def test_praat_tests(capsys, request):
+	assert parselmouth.praat.run_file(os.path.join(os.path.dirname(request.fspath.dirname), "praat", "test", "runAllPraatTests.praat")) == []
+	assert "ALL PRAAT TESTS WENT OK" in capsys.readouterr().out

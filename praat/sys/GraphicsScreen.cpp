@@ -535,7 +535,9 @@ autoGraphics Graphics_create_xmdrawingarea (GuiDrawingArea w) {
 	#endif
 
 	my d_drawingArea = static_cast <GuiDrawingArea> (w);   /* Now !!!!!!!!!! */
-	Melder_assert (my d_drawingArea -> d_widget);
+	#ifndef NO_GRAPHICS
+		Melder_assert (my d_drawingArea -> d_widget);
+	#endif
 	my screen = true;
 	my yIsZeroAtTheTop = true;
 	#if cairo
@@ -554,6 +556,9 @@ autoGraphics Graphics_create_xmdrawingarea (GuiDrawingArea w) {
 	#elif quartz
 		Graphics_init (me.get(), Gui_getResolution (nullptr));
 		GraphicsScreen_init (me.get(), my d_drawingArea -> d_widget, my d_drawingArea -> d_widget);
+	#else
+		Graphics_init (me.get(), Gui_getResolution (nullptr));
+		GraphicsScreen_init (me.get(), nullptr, nullptr);
 	#endif
 
 	#if cairo && gtk
