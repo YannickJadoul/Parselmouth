@@ -26,7 +26,7 @@ or, to update your installed version to the latest release:
 pip install -U praat-parselmouth
 ```
 
-For more detailed instructions, please refer to the [documentation](https://parselmouth.readthedocs.io/en/latest/installation.html).
+For more detailed instructions, please refer to the [documentation](https://parselmouth.readthedocs.io/en/stable/installation.html).
 
 ## Example usage
 ```Python
@@ -114,10 +114,10 @@ for wave_file in glob.glob("audio/*.wav"):
     s.save(os.path.splitext(wave_file)[0] + "_pre.aiff", 'AIFF')
 ```
 
-More examples of different use cases of Parselmouth can be found in the [documentation's examples section](https://parselmouth.readthedocs.io/en/latest/examples.html).
+More examples of different use cases of Parselmouth can be found in the [documentation's examples section](https://parselmouth.readthedocs.io/en/stable/examples.html).
 
 ## Documentation
-Our documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.io/), including the API reference of Parselmouth.
+Documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.io/), including the API reference of Parselmouth.
 
 ## Development
 Currently, the actual project and Parselmouth's code is not very well documented. Or well, hardly documented at all. That is planned to still change in order to allow for easier contribution to this open source project.
@@ -133,7 +133,7 @@ Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Ne
 ## License
 * Parselmouth is released under the GNU General Public License, version 3 or later. See [the `LICENSE` file](LICENSE) for details.
 
-  A [manuscript introducing Parselmouth](https://ai.vub.ac.be/~yajadoul/jadoul_introducing-parselmouth_a-python-interface-to-praat.pdf) has been [published in the Journal of Phonetics](https://www.sciencedirect.com/science/article/pii/S0095447017301389). Scientific research using Parselmouth's functionality can [*cite Parselmouth*](https://parselmouth.readthedocs.io/en/latest/#citing-parselmouth) as follows:
+  A [manuscript introducing Parselmouth](https://ai.vub.ac.be/~yajadoul/jadoul_introducing-parselmouth_a-python-interface-to-praat.pdf) has been [published in the Journal of Phonetics](https://www.sciencedirect.com/science/article/pii/S0095447017301389). Scientific research using Parselmouth's functionality can [*cite Parselmouth*](https://parselmouth.readthedocs.io/en/stable/#citing-parselmouth) as follows:
   
   > Jadoul, Y., Thompson, B., & de Boer, B. (2018). Introducing Parselmouth: A Python interface to Praat. *Journal of Phonetics*, *71*, 1-15. https://doi.org/10.1016/j.wocn.2018.07.001
 
