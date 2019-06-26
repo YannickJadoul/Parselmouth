@@ -86,16 +86,14 @@ Finding out the exact location of the ``python`` executable (to call the previou
     >>> import sys
     >>> print(sys.executable)
 
-If executing this in your Python sheel would for example print ``/usr/bin/python``, then you would run ``/usr/bin/python -m pip install praat-parselmouth`` in a terminal to install Parselmouth. (``-U`` can again be added to update an already installation to the latest version.)
+If executing this in your Python shell would for example print ``/usr/bin/python``, then you would run ``/usr/bin/python -m pip install praat-parselmouth`` in a terminal to install Parselmouth. (``-U`` can again be added to update an already installation to the latest version.)
 
-Yet another way to install Parselmouth is from within Python itself::
-	
-    >>> import pip
-    >>> pip.main(['install', 'praat-parselmouth'])
+Combining these two approaches, you can install Parselmouth from within Python itself without knowing where that version of Python is installed::
 
-.. note::
+    >>> import sys, subprocess
+    >>> subprocess.call([sys.executable, '-m', 'pip', 'install', 'praat-parselmouth'])
 
-     However, the latter approach for some unknown reason sometimes takes quite a lot of time. If this happens, you can either be patient, or you can try figuring out how to call ``pip`` or ``python`` immediately from the command line.
+Extra arguments to ``pip`` can be added by inserting them as strings into the list of arguments passed to ``subprocess.call`` (e.g., to update an existing installation of Parselmouth: ``[..., 'install', '-U', 'praat-parselmouth']``).
 
 
 Pip version
