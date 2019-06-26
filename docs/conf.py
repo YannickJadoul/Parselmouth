@@ -119,6 +119,10 @@ autodoc_member_order = 'groupwise'
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 default_role = 'py:obj'
+nitpicky = True
+nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
+                  ('py:class', 'List'),
+                  ('py:obj', 'List')]
 
 
 if on_rtd:
