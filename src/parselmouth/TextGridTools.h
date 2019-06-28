@@ -48,6 +48,6 @@ autoTextGrid fromTgtTextGrid(TgtTextGrid textGrid);
 
 } // namespace parselmouth
 
-template <> struct pybind11::detail::handle_type_name<parselmouth::TgtTextGrid> { static PYBIND11_DESCR name() { return _("tgt.core.TextGrid"); } };
+template <> struct pybind11::detail::handle_type_name<parselmouth::TgtTextGrid> { static constexpr auto name = _("tgt.core.TextGrid"); };
 
 #endif // INC_PARSELMOUTH_TEXTGRIDTOOLS_H

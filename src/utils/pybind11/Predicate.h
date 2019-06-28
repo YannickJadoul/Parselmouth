@@ -100,7 +100,7 @@ public:
 		return TCaster::cast(src, policy, parent);
 	}
 
-	PYBIND11_TYPE_CASTER(PredicateT, _(Impl::name()) + _("[") + TCaster::name() + _("]")); // TODO Python implementation of what Positive[T]/NonNegative[T]/... is, to get typecheckers happy?
+	PYBIND11_TYPE_CASTER(PredicateT, _(Impl::name()) + _("[") + TCaster::name + _("]")); // TODO Python implementation of what Positive[T]/NonNegative[T]/... is, to get typecheckers happy?
 };
 
 } // namespace detail
