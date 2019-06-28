@@ -201,8 +201,10 @@ before_install:
         CC=gcc-$GCC
         CXX=g++-$GCC
       elif [ -n "$CLANG" ]; then
-        CC="ccache clang-$CLANG -Qunused-arguments"
-        CXX="ccache clang++-$CLANG -Qunused-arguments"
+        CC="ccache clang-$CLANG"
+        CXX="ccache clang++-$CLANG"
+        export CFLAGS="-Qunused-arguments"
+        export CXXFLAGS="-Qunused-arguments -fsized-deallocation"
         # -Qunused-arguments: https://petereisentraut.blogspot.com/2011/05/ccache-and-clang.html
       fi
       if [ "$PYTHON" == "3.5" ] || [ "$PYTHON" == "3.7" ]; then
