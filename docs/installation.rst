@@ -37,25 +37,43 @@ Other
     For other distributions of Python, we are expecting that our package is compatible with the Python versions that are out there and that ``pip`` can handle the installation. If you are using yet another Python distribution, we are definitely interested in hearing about it, so that we can add it to this list!
 
 
-
 PsychoPy
 --------
 
-As a Python library Parselmouth is perfect to be used within a PsychoPy experiment. There two different ways in which `PsychoPy can be installed <https://www.psychopy.org/installation.html>`_: it can just be manually installed as a standard Python library, in which case Parselmouth can just be installed next to it with ``pip``. For Windows and Mac OS X, however, *standalone* versions of PsychoPy exist, and the software does currently not allow for external libraries to be installed with ``pip``. These steps can be followed to install Parselmouth in a standalone PsychoPy:
+As a Python library, Parselmouth can be used in a PsychoPy experiment. There are two different ways in which `PsychoPy can be installed <https://www.psychopy.org/download.html>`_: it can just be manually installed as a standard Python library, in which case Parselmouth can just be installed next to it with ``pip``. For Windows and Mac OS X, however, *standalone* versions of PsychoPy exist, and the software does currently not allow for external libraries to be installed with ``pip``.
+
+To install Parselmouth in a standalone version of PsychoPy, the following script can be opened and run from within the PsychoPy Coder interface: :download:`psychopy_installation.py`
+
+.. note::
+
+    If running the script results in an error mentioning ``TLSV1_ALERT_PROTOCOL_VERSION``, the version of PsychoPy/Python is too old and you will need to follow the manual instructions underneath.
+
+Alternatively, you can follow these steps to manually install Parselmouth into a standalone version of PsychoPy:
+
+0. Find out which version of Python PsychoPy is running.
+
+    * To do so, you can run ``import sys; print(sys.version_info)`` in the *Shell* tab of the PsychoPy Coder interface. Remember the first two numbers of the version (major and minor; e.g., 3.6).
+    * On *Windows*, also run ``import platform; print(platform.architecture()[0])`` and remember whether the Python executable's architecture is ``32bit`` or ``64bit``.
 
 1. Go to https://pypi.org/project/praat-parselmouth/.
-2. Download the file ``praat_parselmouth-x.y.z-cp27-cp27m-win32.whl`` *(for Windows)* or ``praat_parselmouth-x.y.z-cp27-cp27m-macosx_10_6_intel.whl`` *(for Mac OS X)* - where x.y.z will be the latest released version of Parselmouth. Be sure to find the right file in the list, containing both ``cp27``, and ``win32`` *(Windows)* or ``macos`` *(Mac OS X)*  in its name!
+2. Download the file ``praat_parselmouth-x.y.z-cpVV-cpVVm-AA.whl`` *(for Windows)* or ``praat_parselmouth-x.y.z-cpVV-cpVVm-macosx_10_6_intel.whl`` *(for Mac OS X)* - where:
+
+    * *x.y.z* will be the version of Parselmouth you want to install
+    * *VV* are the first two numbers of the Python version
+    * For *Windows*, *AA* is ``win32`` if you have a ``32bit`` architecture, and ``win_amd64`` for ``64bit``
+
+   Be sure to find the right file in the list, containing both the correct Python version, and ``win32``/``win_amd64`` *(Windows)* or ``macosx`` *(Mac OS X)*  in its name!
 3. Rename the downloaded file by replacing the ``.whl`` extension by ``.zip``.
 4. Extract this zip archive somewhere on your computer, in your directory of choice. Remember the name and location of the extracted folder that contains the file ``parselmouth.pyd`` *(Windows)* or ``parselmouth.so`` *(Mac OS X)*.
 5. Open PsychoPy, open the *Preferences* window, go to the *General* tab.
 6. In the *General* tab of the PsychoPy *Preferences*, in the *paths* field, add the folder where you just extracted the Parselmouth library to the list, enclosing the path in quotemarks. (On *Windows*, also replace all ``\`` charachters by ``/``.)
 
-    * For example, if the list was empty (``[]``), you could make it look like ``['C:/Users/Yannick/Parselmouth-0.1.1/']`` or ``['/Users/yannick/Parselmouth-0.1.1/']``.
+    * For example, if the list was empty (``[]``), you could make it look like ``['C:/Users/Yannick/parselmouth-psychopy/']`` or ``['/Users/yannick/parselmouth-psychopy/']``.
     * On *Windows*, to find the right location to enter in the PsychoPy settings, right click ``parselmouth.pyd``, choose *Properties*, and look at the *Location* field.
     * On *Mac OS X*, to find the right location to enter in the PsychoPy settings, right click ``parselmouth.so``, choose *Get info*, and look at the *where* field.
-    * On *Mac OS X*, dragging the folder into a terminal window will also give you the full path, with slashes.
+    * On *Mac OS X*, dragging the folder into a terminal window will also give you the full path with slashes.
 
-7. Click *Ok* to save the PsychoPy settings and close the *Preferences* window.
+7. Click *Ok* to save the PsychoPy settings, close the *Preferences* window, and restart PsychoPy.
 8. *Optional*: if you want to check if Parselmouth was installed correctly, open the PsychoPy Coder interface, open the *Shell* tab, and type ``import parselmouth``.
 
     * If this results in an error message, please let us know, and we'll try to help you fix what went wrong!
@@ -63,7 +81,7 @@ As a Python library Parselmouth is perfect to be used within a PsychoPy experime
 
 .. note::
 
-    These instructions were tested with the ``StandalonePsychoPy-1.85.2-win32.exe`` and ``StandalonePsychoPy-1.85.2-OSX_64bit.dmg`` version downloaded from https://www.psychopy.org/installation.html.
+    These instructions were tested with the standalone versions `3.1.3 <https://github.com/psychopy/psychopy/releases/tag/3.1.3>`_ and `1.85.2 <https://github.com/psychopy/psychopy/releases/tag/1.85.2>`_ of PsychoPy. Things might have changed since then, so if running the script or following the manual steps results in an error, please do not hesitate to get in touch.
 
 
 Troubleshooting
