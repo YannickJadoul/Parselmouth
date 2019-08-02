@@ -286,8 +286,13 @@ py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName,
 			return py::cast(std::move(selected));
 	}
 
-	if (!interceptedInfo.empty()) // U"STRING_", U"HINT_", U"INFO_", U"LIST_"
+	if (startsWith(callbackName, U"STRING_") ||
+	    startsWith(callbackName, U"HINT_") ||
+	    startsWith(callbackName, U"INFO_") ||
+	    startsWith(callbackName, U"LIST_")) {
+
 		return py::cast(interceptedInfo);
+	}
 
 	// U"HELP_", U"MODIFY_", U"PRAAT_", U"PREFS_", U"SAVE_"
 	return py::none();

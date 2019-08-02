@@ -7,6 +7,8 @@ import numpy as np
 import os
 import textwrap
 
+from builtins import str  # Python 2 compatibility
+
 
 def test_call_return_many(sound):
 	stereo_sound = sound.convert_to_stereo()
@@ -56,6 +58,12 @@ def test_call_parameters(sound):
 		assert parselmouth.praat.call(many_channels, "Extract channels", np.array([[2, 3, 5, 7]])) == 4
 
 	# If a Praat command with a NUMMAT argument gets added, a test should be added
+
+
+def test_call_return_values(text_grid):
+	assert isinstance(parselmouth.praat.call(text_grid, "Get tier name", 1), str)
+	parselmouth.praat.call(text_grid, "Set tier name", 1, "")
+	assert parselmouth.praat.call(text_grid, "Get tier name", 1) == ""
 
 
 def test_run(sound_path):
