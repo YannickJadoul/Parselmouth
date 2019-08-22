@@ -47,37 +47,34 @@ matrix:
     - env: PYTHON=3.7 GCC=7 BUILD_TYPE=Release
       addons: *gcc7
 
-    - env: PYTHON=2.7 GCC=8
-      addons: &gcc8
+    - env: PYTHON=2.7 GCC=9
+      addons: &gcc9
         apt:
           sources: [ubuntu-toolchain-r-test]
-          packages: [g++-8]
+          packages: [g++-9]
 
-    - env: PYTHON=3.7 GCC=8
-      addons: *gcc8
+    - env: PYTHON=3.7 GCC=9
+      addons: *gcc9
 
-    - env: PYTHON=2.7 CLANG=6.0
+    - env: PYTHON=2.7 CLANG=8
       compiler: clang
-      addons:
+      addons: &clang8
         apt:
-          sources: [llvm-toolchain-xenial-6.0, ubuntu-toolchain-r-test]
-          packages: [clang-6.0, libstdc++-7-dev]
+          sources: [llvm-toolchain-xenial-8]
+          packages: [clang-8, libc++-8-dev, libc++abi-8-dev]
 
-    - env: PYTHON=3.7 CLANG=6.0
+    - env: PYTHON=3.7 CLANG=8
       compiler: clang
-      addons:
-        apt:
-          sources: [llvm-toolchain-xenial-6.0, ubuntu-toolchain-r-test]
-          packages: [clang-6.0, libstdc++-7-dev]
+      addons: *clang8
 
     - env: PYTHON=2.7
       os: osx
-      osx_image: xcode10
+      osx_image: xcode11
       compiler: clang
 
     - env: PYTHON=3.7
       os: osx
-      osx_image: xcode10
+      osx_image: xcode11
       compiler: clang
 
     - stage: wheels
@@ -201,9 +198,10 @@ before_install:
       elif [ -n "$CLANG" ]; then
         CC="ccache clang-$CLANG"
         CXX="ccache clang++-$CLANG"
-        export CFLAGS="-Qunused-arguments"
-        export CXXFLAGS="-Qunused-arguments -fsized-deallocation"
-        # -Qunused-arguments: https://petereisentraut.blogspot.com/2011/05/ccache-and-clang.html
+        export CXXFLAGS="-stdlib=libc++"
+        export LDFLAGS="-stdlib=libc++"
+        export CCACHE_CPP2=true
+        # CCACHE_CPP2: https://petereisentraut.blogspot.com/2011/05/ccache-and-clang.html
       fi
       if [ "$PYTHON" = "3.6" ]; then
         python$PYTHON -m ensurepip --user
