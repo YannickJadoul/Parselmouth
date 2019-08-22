@@ -1,5 +1,5 @@
 language: cpp
-dist: trusty
+dist: xenial
 sudo: false
 cache:
   ccache: true
@@ -23,30 +23,28 @@ matrix:
     - env: PYTHON=3.4 GCC=7
       addons:
         apt:
-          sources: [ubuntu-toolchain-r-test]
-          packages: [python3-pip, g++-7]
+          sources: [ubuntu-toolchain-r-test, deadsnakes]
+          packages: [python3-pip, g++-7, python3.4-dev, python3.4-venv]
 
     - env: PYTHON=3.5 GCC=7
       addons:
         apt:
           sources: [ubuntu-toolchain-r-test, deadsnakes]
-          packages: [g++-7, python3.5-dev, python3.5-venv]
+          packages: [python3-pip, g++-7, python3.5-dev, python3.5-venv]
 
     - env: PYTHON=3.6 GCC=7
-      addons: *gcc7
-
-    - env: PYTHON=3.7 GCC=7
-      # https://github.com/deadsnakes/travis-ci-python3.7-example
-      dist: xenial
       addons:
         apt:
           sources: [ubuntu-toolchain-r-test, deadsnakes]
-          packages: [g++-7, python3.7-dev, python3.7-venv]
+          packages: [g++-7, python3.6-dev, python3.6-venv]
+
+    - env: PYTHON=3.7 GCC=7
+      addons: *gcc7
 
     - env: PYTHON=2.7 GCC=7 BUILD_TYPE=Release
       addons: *gcc7
 
-    - env: PYTHON=3.6 GCC=7 BUILD_TYPE=Release
+    - env: PYTHON=3.7 GCC=7 BUILD_TYPE=Release
       addons: *gcc7
 
     - env: PYTHON=2.7 GCC=8
@@ -55,21 +53,21 @@ matrix:
           sources: [ubuntu-toolchain-r-test]
           packages: [g++-8]
 
-    - env: PYTHON=3.6 GCC=8
+    - env: PYTHON=3.7 GCC=8
       addons: *gcc8
 
     - env: PYTHON=2.7 CLANG=6.0
       compiler: clang
       addons:
         apt:
-          sources: [llvm-toolchain-trusty-6.0, ubuntu-toolchain-r-test]
+          sources: [llvm-toolchain-xenial-6.0, ubuntu-toolchain-r-test]
           packages: [clang-6.0, libstdc++-7-dev]
 
-    - env: PYTHON=3.6 CLANG=6.0
+    - env: PYTHON=3.7 CLANG=6.0
       compiler: clang
       addons:
         apt:
-          sources: [llvm-toolchain-trusty-6.0, ubuntu-toolchain-r-test]
+          sources: [llvm-toolchain-xenial-6.0, ubuntu-toolchain-r-test]
           packages: [clang-6.0, libstdc++-7-dev]
 
     - env: PYTHON=2.7
@@ -190,7 +188,7 @@ before_install:
   - set -e
   - | # Use the latest version of Python (that is easily available on Travis CI) to create source distributions and to run cibuildwheel
     if [ "$TRAVIS_BUILD_STAGE_NAME" == "Wheels" ]; then
-      PYTHON=3.6
+      PYTHON=3.7
       if [ "$TRAVIS_OS_NAME" == "linux" ]; then
         GCC=7
       fi
@@ -207,9 +205,9 @@ before_install:
         export CXXFLAGS="-Qunused-arguments -fsized-deallocation"
         # -Qunused-arguments: https://petereisentraut.blogspot.com/2011/05/ccache-and-clang.html
       fi
-      if [ "$PYTHON" == "3.5" ] || [ "$PYTHON" == "3.7" ]; then
+      if [ "$PYTHON" = "3.6" ]; then
         python$PYTHON -m ensurepip --user
-      elif [ "$PYTHON" = "3.6" ]; then
+      elif [ "$PYTHON" = "3.7" ]; then
         pyenv global system $PYTHON # https://github.com/travis-ci/travis-ci/issues/8363
       fi
       PYTHON_CMD=python$PYTHON
