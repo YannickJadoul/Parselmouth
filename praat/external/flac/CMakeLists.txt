@@ -4,7 +4,7 @@ add_sources(flac_bitmath.c
             flac_cpu.c
             flac_crc.c
             flac_fixed.c
-            flac_float.c
+            # flac_float.c
             flac_format.c
             flac_lpc.c
             flac_md5.c
