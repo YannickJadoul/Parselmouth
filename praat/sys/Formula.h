@@ -65,13 +65,17 @@ typedef struct structStackel {
 		MAT numericMatrix;
 		InterpreterVariable variable;
 	};
-	structStackel () {
-		memset (this, 0, sizeof (structStackel));   // union-safe zeroing of all members of structStackel
-		Melder_assert (our which == Stackel_NUMBER);   // check that on this computer, 0 is represented with zero bits only
-		Melder_assert (our number == 0.0);   // check that on this computer, 0.0 is represented with zero bits only
-		Melder_assert (! our _string);   // check that on this computer, a plain-old-data null pointer is represented with zero bits only
-		Melder_assert (! our object);   // check that on this computer, a class null pointer is represented with zero bits only
-		Melder_assert (! our owned);   // check that on this computer, false is represented with zero bits only
+	structStackel () : which(Stackel_NUMBER), owned(false), number(0.0)
+	#ifndef STACKEL_VARIANTS_ARE_PACKED_IN_A_UNION
+		, _string(), object(nullptr), numericVector(), numericMatrix(), variable(nullptr)
+	#endif
+	{
+		//memset (this, 0, sizeof (structStackel));   // union-safe zeroing of all members of structStackel
+		//Melder_assert (our which == Stackel_NUMBER);   // check that on this computer, 0 is represented with zero bits only
+		//Melder_assert (our number == 0.0);   // check that on this computer, 0.0 is represented with zero bits only
+		//Melder_assert (! our _string);   // check that on this computer, a plain-old-data null pointer is represented with zero bits only
+		//Melder_assert (! our object);   // check that on this computer, a class null pointer is represented with zero bits only
+		//Melder_assert (! our owned);   // check that on this computer, false is represented with zero bits only
 	}
 	void reset () {   // union-safe destruction: test which variant we have
 		if (our which <= Stackel_NUMBER)
@@ -92,8 +96,30 @@ typedef struct structStackel {
 	structStackel& operator= (structStackel&& other) noexcept {   // generalized move assignment
 		if (& other != this) {
 			our reset();
-			memmove (this, & other, sizeof (structStackel));   // union-safe: even our biggest variant is bit-copied entirely
-			memset (& other, 0, sizeof (structStackel));   // union-safe: even the biggest variant in `other` is erased
+			switch (other.which) {
+			case Stackel_NUMBER:
+				number = other.number;
+				break;
+			case Stackel_STRING:
+				std::swap(_string, other._string);
+				break;
+			case Stackel_OBJECT:
+				std::swap(object, other.object);
+				break;
+			case Stackel_NUMERIC_VECTOR:
+				std::swap(numericVector, other.numericVector);
+				break;
+			case Stackel_NUMERIC_MATRIX:
+				std::swap(numericMatrix, other.numericMatrix);
+				break;
+			case Stackel_VARIABLE:
+				std::swap(variable, other.variable);
+				break;
+			}
+			other.which = Stackel_NUMBER;
+			other.owned = false;
+			//memmove (this, & other, sizeof (structStackel));   // union-safe: even our biggest variant is bit-copied entirely
+			//memset (& other, 0, sizeof (structStackel));   // union-safe: even the biggest variant in `other` is erased
 		}
 		return *this;
 	}
