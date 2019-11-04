@@ -129,10 +129,10 @@ If you do not have ``pip`` installed, you follow these instructions to install p
 
 Sometimes on Windows, the installation works, but importing Parselmouth fails with an error message saying ``ImportError: DLL load failed: The specified module could not be found.``. This error is cause by some missing system files, but can luckily be solved quite easily by installing the "Microsoft Visual C++ Redistributable for Visual Studio 2017".
 
-The "Microsoft Visual C++ Redistributable for Visual Studio 2017" installer can be downloaded from `Microsoft's website <https://visualstudio.microsoft.com/downloads/>`_, listed under the "Other Tools and Frameworks" section. These are the direct download links to the relevant files:
+The "Microsoft Visual C++ Redistributable for Visual Studio 2019" installer can be downloaded from `Microsoft's website <https://visualstudio.microsoft.com/downloads/>`_, listed under the "Other Tools and Frameworks" section. These are the direct download links to the relevant files:
 
-- For a 64-bit Python installation: https://aka.ms/vs/15/release/VC_redist.x64.exe
-- For a 32-bit Python installation: https://aka.ms/vs/15/release/VC_redist.x86.exe
+- For a 64-bit Python installation: https://aka.ms/vs/16/release/VC_redist.x64.exe
+- For a 32-bit Python installation: https://aka.ms/vs/16/release/VC_redist.x86.exe
 
 To check which Python version you are using, you can look at the first line of output when starting a Python shell. The version information should contain ``[MSC v.xxxx 64 bit (AMD64)]`` in a 64-bit installation, or ``[MSC v.xxxx 32 bit (Intel)]`` in a 32-bit installation.
 

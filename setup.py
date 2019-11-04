@@ -60,8 +60,7 @@ class CMakeBuild(build_ext):
 
 		if platform.system() == "Windows":
 			cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
-			if sys.maxsize > 2**32:
-				cmake_args += ['-A', 'x64']
+			cmake_args += ['-A', 'x64' if sys.maxsize > 2**32 else 'Win32']
 			build_args += ['--', '/m']
 		else:
 			cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
