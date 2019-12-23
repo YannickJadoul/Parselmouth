@@ -20,12 +20,6 @@ matrix:
           sources: [ubuntu-toolchain-r-test]
           packages: [g++-7]
 
-    - env: PYTHON=3.4 GCC=7
-      addons:
-        apt:
-          sources: [ubuntu-toolchain-r-test, deadsnakes]
-          packages: [python3-pip, g++-7, python3.4-dev, python3.4-venv]
-
     - env: PYTHON=3.5 GCC=7
       addons:
         apt:
@@ -40,6 +34,13 @@ matrix:
 
     - env: PYTHON=3.7 GCC=7
       addons: *gcc7
+
+    - env: PYTHON=3.8 GCC=7
+      dist: xenial
+      addons:
+        apt:
+          sources: [ubuntu-toolchain-r-test, deadsnakes]
+          packages: [g++-7, python3.8-dev, python3.8-venv]
 
     - env: PYTHON=2.7 GCC=7 BUILD_TYPE=Release
       addons: *gcc7
@@ -141,7 +142,9 @@ matrix:
         - mkdir ccache && wget -q https://www.samba.org/ftp/ccache/ccache-3.6.tar.bz2 -O - | tar xj -C ccache --strip-components=1
       script:
         - export CIBW_ENVIRONMENT='ARCH=`uname -i` PATH="`pwd`/gcc-$ARCH/bin:$PATH" CC="ccache cc" CXX="ccache c++" CXXFLAGS="-static-libstdc++" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"` CCACHE_DIR=/host'$HOME'/.ccache PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build_$ARCH/praat\"" PIP_ONLY_BINARY="numpy"'
-        - export CIBW_BEFORE_BUILD='pip install cmake && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) && [ -d praat_build_$ARCH ] || (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
+        - export CIBW_MANYLINUX_X86_64_IMAGE='manylinux1' CIBW_MANYLINUX_I686_IMAGE='manylinux1'
+        # There's no cmake package on PyPI for cp38 on manylinux1, so we'll have to install it with 3.7 and symlink
+        - export CIBW_BEFORE_BUILD='[ -f /usr/local/bin/cmake ] || (/opt/python/cp37-cp37m/bin/pip install cmake && ln -s /opt/python/cp37-cp37m/bin/cmake /usr/local/bin/cmake) && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) && [ -d praat_build_$ARCH ] || (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
         - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_BUILD="cp37-manylinux1_x86_64"; fi
         - cibuildwheel
         - twine check wheelhouse/*
@@ -203,7 +206,7 @@ before_install:
         export CCACHE_CPP2=true
         # CCACHE_CPP2: https://petereisentraut.blogspot.com/2011/05/ccache-and-clang.html
       fi
-      if [ "$PYTHON" = "3.6" ]; then
+      if [ "$PYTHON" == "3.6" ] || [ "$PYTHON" == "3.8" ]; then
         python$PYTHON -m ensurepip --user
       elif [ "$PYTHON" = "3.7" ]; then
         pyenv global system $PYTHON # https://github.com/travis-ci/travis-ci/issues/8363
@@ -227,9 +230,7 @@ before_install:
     alias python="$PYTHON_CMD"
     alias pip="$PYTHON_CMD -m pip"
     shopt -s expand_aliases
-  - |
-    pip install --user --upgrade pip setuptools wheel
-    export PIP_ONLY_BINARY="numpy"  # PIP_ONLY_BINARY since there are no NumPy binary wheels available for Python 3.4 and NumPy versions >= 1.16.0
+  - pip install --user --upgrade pip setuptools wheel
 
 install:
   - pip install --user --upgrade -r tests/requirements.txt
