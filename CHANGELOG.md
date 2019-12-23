@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 ## [Unreleased]
 
 ## [0.3.3] - 2019-05-19
+### Added
+- Added support for Python 3.8 (2019-12-23).
+
 ### Fixed
 - Fixed crash in `praat.call` and `praat.run` when returning already existing Praat objects.
 - Fixed bug/crash in `praat.call` and `praat.run` when passing empty list of objects.
