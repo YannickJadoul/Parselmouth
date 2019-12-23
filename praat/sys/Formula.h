@@ -116,6 +116,7 @@ typedef struct structStackel {
 				std::swap(variable, other.variable);
 				break;
 			}
+			our which = other.which;
 			other.which = Stackel_NUMBER;
 			other.owned = false;
 			//memmove (this, & other, sizeof (structStackel));   // union-safe: even our biggest variant is bit-copied entirely
