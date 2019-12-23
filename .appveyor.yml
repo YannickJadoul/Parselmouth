@@ -6,17 +6,17 @@ configuration: Debug
 environment:
   matrix:
     - PYTHON: 27
-    - PYTHON: 34
     - PYTHON: 35
     - PYTHON: 36
     - PYTHON: 37
+    - PYTHON: 38
     - PYTHON: 27
       platform: x86
-    - PYTHON: 37
+    - PYTHON: 38
       platform: x86
     - PYTHON: 27
       configuration: Release
-    - PYTHON: 37
+    - PYTHON: 38
       configuration: Release
     - WHEELS: 1
     - WHEELS: 1
@@ -38,7 +38,6 @@ install:
         if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
         $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
       }
-  - ps: $env:PIP_ONLY_BINARY = "numpy"  # For Python 3.4, no binary wheels are available for NumPy versions >= 1.16.0
   - python -m pip install --upgrade pip  # Needs to be `python -m pip` because pip executable is (potentially) replaced
   - pip install --upgrade wheel numpy
   - if defined WHEELS ( pip install cibuildwheel )
