@@ -122,6 +122,7 @@ setup(
 	version=find_version("src", "version.h"),
 	description="Praat in Python, the Pythonic way",
 	long_description=long_description,
+	long_description_content_type='text/x-rst',
 	url="https://github.com/YannickJadoul/Parselmouth",
 	project_urls={
 		"Bug Tracker": "https://github.com/YannickJadoul/Parselmouth/issues",
