@@ -21,6 +21,7 @@
 
 #include "utils/StringUtils.h"
 #include "utils/praat/MelderUtils.h"
+#include "utils/pybind11/MakeCapsule.h"
 
 #include <praat/sys/praat.h>
 #include <praat/sys/praatP.h>
@@ -68,7 +69,7 @@ py::object autoVECToArray(autoVEC &&vector) {
 		return py::none();
 
 	auto [size, at] = std::tuple(vector.size, vector.at); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
-	auto capsule = py::capsule(new autoVEC(std::move(vector)), [](void *v) { delete reinterpret_cast<autoVEC *>(v); });
+	auto capsule = make_capsule(std::make_unique<autoVEC>(std::move(vector)));
 	return py::array_t<double>(static_cast<size_t>(size), &at[1], capsule);
 }
 
@@ -77,7 +78,7 @@ py::object autoMATToArray(autoMAT &&matrix) {
 		return py::none();
 
 	auto [nrow, ncol, at] = std::tuple(matrix.nrow, matrix.ncol, matrix.at); // Because of undefined order of evaluation of arguments, we need to make sure to save nrow, ncol, and at before moving
-	auto capsule = py::capsule(new autoMAT(std::move(matrix)), [](void *m) { delete reinterpret_cast<autoMAT *>(m); });
+	auto capsule = make_capsule(std::make_unique<autoMAT>(std::move(matrix)));
 	return py::array_t<double, py::array::c_style>({static_cast<size_t>(nrow), static_cast<size_t>(ncol)}, &at[1][1], capsule);
 }
 
@@ -224,15 +225,16 @@ void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg)
 			//       we're in trouble since this will not consistently be reflected in the original NumPy array.
 			//       However, since we're indicating the vector is not owned, at least the interpreter can know.
 		} else if (array.ndim() == 2) {
-			auto rows = new double*[array.shape(0)];
+			auto rows = std::make_unique<double*[]>(array.shape(0));
 			for (ssize_t i = 0; i < array.shape(0); ++i) {
 				rows[i] = array.mutable_data(i, 0) - 1;
 			}
 
+			auto rows_ptr = rows.get();
 			m_keepAliveObjects.push_back(array);
-			m_keepAliveObjects.push_back(py::capsule(rows, [](void *r) { delete reinterpret_cast<double**>(r); }));
+			m_keepAliveObjects.push_back(make_capsule(std::move(rows)));
 
-			return fillStackel(stackel, MAT(rows - 1, array.shape(0), array.shape(1)), false);
+			return fillStackel(stackel, MAT(rows_ptr - 1, array.shape(0), array.shape(1)), false);
 		}
 
 		throw py::value_error("Cannot convert " + std::to_string(array.ndim()) + "-dimensional NumPy array argument\"" + py::cast<std::string>(py::repr(arg)) + "\" to a Praat vector or matrix");
