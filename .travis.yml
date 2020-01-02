@@ -197,6 +197,7 @@ before_install:
       PYTHON_CMD=python$PYTHON
     elif [ "$TRAVIS_OS_NAME" == "osx" ]; then
       unset -f cd; # Workaround for weird 'shell_session_update' issue: https://github.com/travis-ci/travis-ci/issues/8703
+      brew unlink python@2
       brew update > /dev/null
       brew install ccache
       export PATH=/usr/local/opt/ccache/libexec:$PATH
