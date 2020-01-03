@@ -25,14 +25,16 @@ if '' not in sys.path:
 
 
 def pytest_addoption(parser):
-	parser.addoption('--praat-tests', action="store_true", default=False, help="run Praat tests")
+	parser.addoption('--run-praat-tests', action="store_true", default=False, help="run Praat tests")
 
 
 def pytest_collection_modifyitems(config, items):
-	praat_tests = bool(config.getoption('--praat-tests'))
-	for item in items:
-		if praat_tests != ('praat' in item.keywords):
-			item.add_marker(pytest.mark.skip())
+	praat_tests = bool(config.getoption('--run-praat-tests'))
+	if not praat_tests:
+		skip_marker = pytest.mark.skip(reason="need --run-praat-tests option to run")
+		for item in items:
+			if 'praat_test' in item.keywords:
+				item.add_marker(skip_marker)
 
 
 class Resources(object):
