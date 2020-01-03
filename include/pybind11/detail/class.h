@@ -350,6 +350,7 @@ extern "C" inline void pybind11_object_dealloc(PyObject *self) {
     auto type = Py_TYPE(self);
     type->tp_free(self);
 
+#if PY_VERSION_HEX < 0x03080000
     // `type->tp_dealloc != pybind11_object_dealloc` means that we're being called
     // as part of a derived type's dealloc, in which case we're not allowed to decref
     // the type here. For cross-module compatibility, we shouldn't compare directly
@@ -357,6 +358,11 @@ extern "C" inline void pybind11_object_dealloc(PyObject *self) {
     auto pybind11_object_type = (PyTypeObject *) get_internals().instance_base;
     if (type->tp_dealloc == pybind11_object_type->tp_dealloc)
         Py_DECREF(type);
+#else
+    // This was not needed before Python 3.8 (Python issue 35810)
+    // https://github.com/pybind/pybind11/issues/1946
+    Py_DECREF(type);
+#endif
 }
 
 /** Create the type which can be used as a common base for all classes.  This is
@@ -586,6 +592,9 @@ inline PyObject* make_new_python_type(const type_record &rec) {
     type->tp_as_number = &heap_type->as_number;
     type->tp_as_sequence = &heap_type->as_sequence;
     type->tp_as_mapping = &heap_type->as_mapping;
+#if PY_VERSION_HEX >= 0x03050000
+    type->tp_as_async = &heap_type->as_async;
+#endif
 
     /* Flags */
     type->tp_flags |= Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE;
