@@ -47,7 +47,10 @@ set(PRAAT_DEFINITIONS_PRIVATE _FILE_OFFSET_BITS=64)
 # Trying to convert the flags from the Praat makefiles...
 if (UNIX)
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} -pthread)
-	set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} -Wno-trigraphs -Wno-logical-op-parentheses)
+	set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} -Wno-trigraphs)
+	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} -Wno-logical-op-parentheses -Wno-shift-op-parentheses) # Clang complains a lot about '-Wlogical-op-parentheses' and '-Wshift-op-parentheses' warnings, but GCC doesn't know this option
+	endif()
 	
 	set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} UNIX)
 	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_POSIX HAVE_MKSTEMP) # eSpeak
