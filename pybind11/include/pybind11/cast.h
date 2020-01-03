@@ -775,7 +775,9 @@ template <typename T, typename SFINAE = void> struct is_copy_constructible : std
 // so, copy constructability depends on whether the value_type is copy constructible.
 template <typename Container> struct is_copy_constructible<Container, enable_if_t<all_of<
         std::is_copy_constructible<Container>,
-        std::is_same<typename Container::value_type &, typename Container::reference>
+        std::is_same<typename Container::value_type &, typename Container::reference>,
+        // Avoid infinite recursion
+        negation<std::is_same<Container, typename Container::value_type>>
     >::value>> : is_copy_constructible<typename Container::value_type> {};
 
 #if !defined(PYBIND11_CPP17)
@@ -995,9 +997,11 @@ public:
         }
 
         bool py_err = py_value == (py_type) -1 && PyErr_Occurred();
+
+        // Protect std::numeric_limits::min/max with parentheses
         if (py_err || (std::is_integral<T>::value && sizeof(py_type) != sizeof(T) &&
-                       (py_value < (py_type) std::numeric_limits<T>::min() ||
-                        py_value > (py_type) std::numeric_limits<T>::max()))) {
+                       (py_value < (py_type) (std::numeric_limits<T>::min)() ||
+                        py_value > (py_type) (std::numeric_limits<T>::max)()))) {
             bool type_error = py_err && PyErr_ExceptionMatches(
 #if PY_VERSION_HEX < 0x03000000 && !defined(PYPY_VERSION)
                 PyExc_SystemError
