@@ -10,6 +10,7 @@ environment:
     - PYTHON: 36
     - PYTHON: 37
     - PYTHON: 38
+      RUN_PRAAT_TESTS: 1
     - PYTHON: 27
       platform: x86
     - PYTHON: 38
@@ -49,6 +50,7 @@ build_script:
   - if defined WHEELS ( cmake --build . --config Release --target praat -- /v:m /logger:%MSBuildLogger% && cd .. )
   - if defined WHEELS ( set PARSELMOUTH_EXTRA_CMAKE_ARGS=-DPREBUILT_PRAAT_DIR="%cd%\praat_build\praat" -DCMAKE_CXX_FLAGS="/MP" && cibuildwheel )
 test_script:
+  - ps: if ($env:RUN_PRAAT_TESTS) { $env:PYTEST_ADDOPTS="--run-praat-tests" }
   - if not defined WHEELS ( cmake --build . --config "%CONFIGURATION%" --target tests )
 artifacts:
   - path: "wheelhouse\\*.whl"

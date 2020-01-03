@@ -35,7 +35,7 @@ matrix:
     - env: PYTHON=3.7 GCC=7
       addons: *gcc7
 
-    - env: PYTHON=3.8 GCC=7
+    - env: PYTHON=3.8 GCC=7 RUN_PRAAT_TESTS=1
       dist: xenial
       addons:
         apt:
@@ -73,7 +73,7 @@ matrix:
       osx_image: xcode11
       compiler: clang
 
-    - env: PYTHON=3.7
+    - env: PYTHON=3.7 RUN_PRAAT_TESTS=1
       os: osx
       osx_image: xcode11
       compiler: clang
@@ -239,4 +239,5 @@ install:
 script:
   - mkdir build && cd build && cmake -DPYBIND11_PYTHON_VERSION=$PYTHON -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
   - make all -j 2
+  - if [ -n "$RUN_PRAAT_TESTS" ]; then export PYTEST_ADDOPTS="--run-praat-tests"; fi
   - make tests
