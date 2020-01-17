@@ -34,7 +34,6 @@ PRAAT_DWTEST_BASE_DIR = os.path.join(PRAAT_BASE_DIR, "dwtest")
 
 PRAAT_TEST_IGNORE_DIRS = ["manually", "speed", "fon ExperimentMFC"]
 PRAAT_DWTEST_XFAIL = [
-	"test_LPC.praat",
 	"test_SpeechSynthesizer.praat",
 	"test_SpeechSynthesizer_alignment.praat",
 	"test_alignment.praat",

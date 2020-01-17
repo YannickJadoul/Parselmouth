@@ -46,7 +46,7 @@ double strtod_c(const char *s, char **e) {
 	double value = 0.0;
 	cNumget.get(&buffer, nullptr, format, err, value);
 
-	if (e) *e = (err == std::ios_base::goodbit ? buffer.gptr() : const_cast<char *>(s));
+	if (e) *e = ((err & ~std::ios_base::eofbit) == std::ios_base::goodbit ? buffer.gptr() : const_cast<char *>(s));
 	return value;
 }
 
