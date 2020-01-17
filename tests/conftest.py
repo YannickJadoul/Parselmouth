@@ -28,13 +28,13 @@ def pytest_addoption(parser):
 	parser.addoption('--run-praat-tests', action="store_true", default=False, help="run Praat tests")
 
 
+def pytest_configure(config):
+	config.addinivalue_line("markers", "praat_test: marks the tests running the (slow) Praat tests")
+
+
 def pytest_collection_modifyitems(config, items):
-	praat_tests = bool(config.getoption('--run-praat-tests'))
-	if not praat_tests:
-		skip_marker = pytest.mark.skip(reason="need --run-praat-tests option to run")
-		for item in items:
-			if 'praat_test' in item.keywords:
-				item.add_marker(skip_marker)
+	if not config.getoption('--run-praat-tests'):
+		items[:] = [item for item in items if 'praat_test' not in item.keywords]
 
 
 class Resources(object):

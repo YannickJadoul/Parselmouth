@@ -6,3 +6,4 @@ pytest-lazy-fixture
 tgt
 
 future
+glob2 ; python_version < '3'
