@@ -239,5 +239,5 @@ install:
 script:
   - mkdir build && cd build && cmake -DPYBIND11_PYTHON_VERSION=$PYTHON -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
   - make all -j 2
-  - if [ -n "$RUN_PRAAT_TESTS" ]; then export PYTEST_ADDOPTS="--run-praat-tests" TRAVIS_WAIT="travis_wait 30"; fi
-  - $TRAVIS_WAIT make tests
+  - if [ -n "$RUN_PRAAT_TESTS" ]; then export PYTEST_ADDOPTS="--run-praat-tests"; fi
+  - make tests
