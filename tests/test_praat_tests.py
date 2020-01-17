@@ -32,18 +32,12 @@ PRAAT_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..",  
 PRAAT_TEST_BASE_DIR = os.path.join(PRAAT_BASE_DIR, "test")
 PRAAT_DWTEST_BASE_DIR = os.path.join(PRAAT_BASE_DIR, "dwtest")
 
-PRAAT_TEST_IGNORE_DIRS = ["manually", "speed", "fon ExperimentMFC"]
-PRAAT_DWTEST_XFAIL = [
-	"test_SpeechSynthesizer.praat",
-	"test_SpeechSynthesizer_alignment.praat",
-	"test_alignment.praat",
-	"test_bss_twoSoundsMixed.praat",
-]
+PRAAT_TEST_IGNORE_SUBDIRS = ["manually", "speed", "fon ExperimentMFC"]
 
 
 def find_praat_test_files():
 	for dir in glob.iglob(os.path.join(PRAAT_TEST_BASE_DIR, "*", "")):
-		if os.path.basename(os.path.dirname(dir)) in PRAAT_TEST_IGNORE_DIRS:
+		if os.path.basename(os.path.dirname(dir)) in PRAAT_TEST_IGNORE_SUBDIRS:
 			continue
 		for fn in glob.iglob(os.path.join(dir, "**", "*.praat"), recursive=True):
 			rel_fn = os.path.relpath(fn, PRAAT_TEST_BASE_DIR)
@@ -53,8 +47,7 @@ def find_praat_test_files():
 def find_praat_dwtest_files():
 	for fn in glob.iglob(os.path.join(PRAAT_DWTEST_BASE_DIR, "test_*.praat")):
 		rel_fn = os.path.relpath(fn, PRAAT_DWTEST_BASE_DIR)
-		marks = [pytest.mark.xfail()] if rel_fn in PRAAT_DWTEST_XFAIL else []
-		yield pytest.param(fn, id=rel_fn, marks=marks)
+		yield pytest.param(fn, id=rel_fn)
 
 
 PRAAT_TEST_FILES = sorted(find_praat_test_files())
@@ -62,12 +55,12 @@ PRAAT_DWTEST_FILES = sorted(find_praat_dwtest_files())
 
 
 @pytest.mark.parametrize('test_file', PRAAT_TEST_FILES)
-def test_praat_test(capsys, test_file):
+def test_praat_test(test_file):
 	print(test_file)
 	assert parselmouth.praat.run_file(test_file) == []
 
 
 @pytest.mark.parametrize('test_file', PRAAT_DWTEST_FILES)
-def test_praat_dwtest(capsys, test_file):
+def test_praat_dwtest(test_file):
 	print(test_file)
 	assert parselmouth.praat.run_file(test_file) == []

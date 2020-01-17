@@ -19,10 +19,10 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stdio.h>
-	
+#include <cstdio>
+
 #define PATH_ESPEAK_DATA "/home/david/projects/espeak-ng/espeak-ng-data"
-	
+
 #define fopen(filename,mode) espeak_io_fopen (filename, mode)
 #define fclose(stream) espeak_io_fclose (stream)
 #define feof(stream) espeak_io_feof (stream)	
