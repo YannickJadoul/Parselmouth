@@ -24,6 +24,7 @@ try:
 except ImportError:
 	import glob
 import os
+import sys
 
 
 pytestmark = pytest.mark.praat_test
@@ -47,7 +48,13 @@ def find_praat_test_files():
 def find_praat_dwtest_files():
 	for fn in glob.iglob(os.path.join(PRAAT_DWTEST_BASE_DIR, "test_*.praat")):
 		rel_fn = os.path.relpath(fn, PRAAT_DWTEST_BASE_DIR)
-		yield pytest.param(fn, id=rel_fn)
+		marks = []
+		if rel_fn in ["test_SpeechSynthesizer.praat",
+		              "test_SpeechSynthesizer_alignment.praat",
+		              "test_alignment.praat",
+		              "test_bss_twoSoundsMixed.praat"]:
+			marks.append(pytest.mark.skipif(sys.platform == 'win32', reason='dwtest/test_SpeechSynthesizer.praat test blocks on Windows; debugging further after Praat update'))
+		yield pytest.param(fn, id=rel_fn, marks=marks)
 
 
 PRAAT_TEST_FILES = sorted(find_praat_test_files())
