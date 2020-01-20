@@ -42,7 +42,10 @@ def find_praat_test_files():
 			continue
 		for fn in glob.iglob(os.path.join(dir, "**", "*.praat"), recursive=True):
 			rel_fn = os.path.relpath(fn, PRAAT_TEST_BASE_DIR)
-			yield pytest.param(fn, id=rel_fn)
+			marks = []
+			if rel_fn == os.path.join("num", "mean.praat"):
+				marks.append(pytest.mark.xfail(sys.platform == 'win32', reason="`long double` is only double precision when compiling with MSVC, causing `assert mean ({ -1e18, 3, 1e18 }) = 1` to fail"))
+			yield pytest.param(fn, id=rel_fn, marks=marks)
 
 
 def find_praat_dwtest_files():
@@ -53,7 +56,7 @@ def find_praat_dwtest_files():
 		              "test_SpeechSynthesizer_alignment.praat",
 		              "test_alignment.praat",
 		              "test_bss_twoSoundsMixed.praat"]:
-			marks.append(pytest.mark.skipif(sys.platform == 'win32', reason='dwtest/test_SpeechSynthesizer.praat test blocks on Windows; debugging further after Praat update'))
+			marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="tests hang on AppVeyor CI; debugging further after Praat update"))
 		yield pytest.param(fn, id=rel_fn, marks=marks)
 
 
