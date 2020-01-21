@@ -1,6 +1,6 @@
 -r ../requirements.txt
 
-pytest<5.3.3
+pytest
 pytest-lazy-fixture
 
 tgt
