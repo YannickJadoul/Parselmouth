@@ -66,11 +66,9 @@ PRAAT_DWTEST_FILES = sorted(find_praat_dwtest_files())
 
 @pytest.mark.parametrize('test_file', PRAAT_TEST_FILES)
 def test_praat_test(test_file):
-	print(test_file)
 	assert parselmouth.praat.run_file(test_file) == []
 
 
 @pytest.mark.parametrize('test_file', PRAAT_DWTEST_FILES)
 def test_praat_dwtest(test_file):
-	print(test_file)
 	assert parselmouth.praat.run_file(test_file) == []

@@ -24,15 +24,16 @@
 namespace {
 
 struct array_istreambuf : public std::streambuf {
-	explicit array_istreambuf(const char *in) {
+	explicit array_istreambuf(const char *in, const char *end) {
 		auto ccin = const_cast<char *>(in);
-		setg(ccin, ccin, ccin + strlen(in));
+		auto ccend = const_cast<char *>(end);
+		setg(ccin, ccin, ccend);
 	}
 
 	using std::streambuf::gptr;
 };
 
-double strtod_c(const char *s, char **e) {
+double strtod_c(const char *s, const char *r, char **e) {
 	static auto cLocale = std::locale::classic();
 	static auto &cNumget = std::use_facet<std::num_get<char>>(cLocale);
 	static auto &cCtype = std::use_facet<std::ctype<char>>(cLocale);
@@ -42,7 +43,7 @@ double strtod_c(const char *s, char **e) {
 	const char *p = s;
 	while (cCtype.is(std::ctype_base::space, *p)) ++p;
 
-	array_istreambuf buffer(p);
+	array_istreambuf buffer(p, r);
 	double value = 0.0;
 	cNumget.get(&buffer, nullptr, format, err, value);
 
@@ -50,10 +51,6 @@ double strtod_c(const char *s, char **e) {
 	return value;
 }
 
-}
-
-double Melder8_strtod(const char *str, char **end_str /*= nullptr*/) noexcept {
-	return strtod_c(str, end_str);
 }
 
 /**
@@ -140,6 +137,12 @@ bool Melder_isStringNumeric (conststring32 string) noexcept {
 	return *p == U'\0';
 }
 
+double Melder8_strtod(const char *str, char **end_str /*= nullptr*/) noexcept {
+	// findEndOfNumericString(str) because https://bugs.llvm.org/show_bug.cgi?id=17782
+	// See https://github.com/tardate/LittleCodingKata/blob/master/cpp/DoubleTrouble/README.md
+	return strtod_c(str, findEndOfNumericString(str), end_str);
+}
+
 double Melder_a8tof (conststring8 string) noexcept {
 	if (! string)
 		return undefined;
@@ -147,7 +150,7 @@ double Melder_a8tof (conststring8 string) noexcept {
 	if (! p)
 		return undefined;
 	Melder_assert (p - & string [0] > 0);
-	return p [-1] == '%' ? 0.01 * Melder8_strtod (string, nullptr) : Melder8_strtod (string, nullptr);
+	return p [-1] == '%' ? 0.01 * strtod_c (string, p, nullptr) : strtod_c (string, p, nullptr);
 }
 
 double Melder_atof (conststring32 string) noexcept {
