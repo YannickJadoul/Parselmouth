@@ -107,6 +107,7 @@ public:
 		// Add references to the passed objects to the Praat object list
 		for (auto &data: objects) {
 			praat_newReference(&data.get()); // Since we're registering this is just a reference, running a command like "Remove" should normally be OK; through hack/workaround: a PraatObject now contains a boolean 'owned' to know if the data should be deleted
+			// praat_newReference could add multiple new objects if it unpacks a Collection object, but normally, it shouldn't be possible to create a Collection object
 			m_objects->list[m_objects->n].isBeingCreated = false;
 			if (select)
 				praat_select(m_objects->n);
@@ -216,28 +217,31 @@ void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg)
 	try {
 		// Let's not 'squeeze' the array, or we might interpret a 2D matrix as 1D vector!
 		auto array = py::array_t<double, py::array::c_style>::ensure(arg);
-		if (array.ndim() == 1) {
-			// Keep the object alive until the PraatEnvironment goes out of scope, and avoid a copy
-			m_keepAliveObjects.push_back(array);
 
-			return fillStackel(stackel, VEC(array.mutable_data(0) - 1, array.shape(0)), false); // Remember Praat is 1-based
-			// NOTE: If Praat ever contains commands/actions that modify the vector,
-			//       we're in trouble since this will not consistently be reflected in the original NumPy array.
-			//       However, since we're indicating the vector is not owned, at least the interpreter can know.
-		} else if (array.ndim() == 2) {
-			auto rows = std::make_unique<double*[]>(array.shape(0));
-			for (ssize_t i = 0; i < array.shape(0); ++i) {
-				rows[i] = array.mutable_data(i, 0) - 1;
+		if (array) {
+			if (array.ndim() == 1) {
+				// Keep the object alive until the PraatEnvironment goes out of scope, and avoid a copy
+				m_keepAliveObjects.push_back(array);
+
+				return fillStackel(stackel, VEC(array.mutable_data(0) - 1, array.shape(0)), false); // Remember Praat is 1-based
+				// NOTE: If Praat ever contains commands/actions that modify the vector,
+				//       we're in trouble since this will not consistently be reflected in the original NumPy array.
+				//       However, since we're indicating the vector is not owned, at least the interpreter can know.
+			} else if (array.ndim() == 2) {
+				auto rows = std::make_unique<double*[]>(array.shape(0));
+				for (ssize_t i = 0; i < array.shape(0); ++i) {
+					rows[i] = array.mutable_data(i, 0) - 1;
+				}
+
+				auto rows_ptr = rows.get();
+				m_keepAliveObjects.push_back(array);
+				m_keepAliveObjects.push_back(make_capsule(std::move(rows)));
+
+				return fillStackel(stackel, MAT(rows_ptr - 1, array.shape(0), array.shape(1)), false);
 			}
 
-			auto rows_ptr = rows.get();
-			m_keepAliveObjects.push_back(array);
-			m_keepAliveObjects.push_back(make_capsule(std::move(rows)));
-
-			return fillStackel(stackel, MAT(rows_ptr - 1, array.shape(0), array.shape(1)), false);
+			throw py::value_error("Cannot convert " + std::to_string(array.ndim()) + "-dimensional NumPy array argument\"" + py::cast<std::string>(py::repr(arg)) + "\" to a Praat vector or matrix");
 		}
-
-		throw py::value_error("Cannot convert " + std::to_string(array.ndim()) + "-dimensional NumPy array argument\"" + py::cast<std::string>(py::repr(arg)) + "\" to a Praat vector or matrix");
 	}
 	catch (py::cast_error &) {}
 	catch (py::error_already_set &) {}

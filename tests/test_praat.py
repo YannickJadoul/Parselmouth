@@ -208,6 +208,14 @@ def test_call_no_objects(sound):
 		assert parselmouth.praat.call("Get number of samples")
 
 
+def test_unknown_argument_type(sound, text_grid, tmp_path):
+	class Something:
+		pass
+
+	with pytest.raises(ValueError, match="Cannot convert argument \"<.*Something.*>\" to a known Praat argument type"):
+		parselmouth.praat.call("Read from file", Something())
+
+
 def test_praat_callback_prefixes():
 	separators = {'nullptr', '0'}
 	values = {'REAL', 'INTEGER', 'BOOLEAN', 'COMPLEX', 'STRING', 'NUMVEC', 'NUMMAT'}
@@ -219,3 +227,11 @@ def test_praat_callback_prefixes():
 
 	prefixes = set(action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
 	assert prefixes == separators | values | objects | info | nothing | exception | weird
+
+
+def test_collection_object(sound, text_grid, tmp_path):
+	collection_path = tmp_path / "sound_and_text_grid.Collection"
+	parselmouth.praat.call([sound, text_grid], "Save as text file", str(collection_path))
+	[reread_sound, reread_text_grid] = parselmouth.praat.call("Read from file", str(collection_path))
+	assert reread_sound == sound
+	assert reread_text_grid == text_grid
