@@ -192,6 +192,10 @@ def test_run_file_relative_paths(sound_path, resources):
 	assert parselmouth.praat.run_file(script_path, os.path.relpath(sound_path, os.path.dirname(script_path)))[0] == parselmouth.Sound(sound_path)
 
 
+def test_run_return_input_object(sound):
+	assert parselmouth.praat.run(sound, "")[0] == sound
+
+
 def test_remove_referenced_objects(sound):
 	mean = sound.values.mean()
 	assert parselmouth.praat.call(sound, "Remove") is None
