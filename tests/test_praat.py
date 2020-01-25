@@ -186,10 +186,19 @@ def test_run_with_capture_output_and_return_variables():
 	assert 'a' in variables and 'b$' in variables
 
 
-def test_run_file_relative_paths(sound_path, resources):
-	script_path = resources["script.praat"]
+def test_run_file_relative_paths(sound_path, script_path):
 	assert os.getcwd() != os.path.abspath(os.path.dirname(script_path))
-	assert parselmouth.praat.run_file(script_path, os.path.relpath(sound_path, os.path.dirname(script_path)))[0] == parselmouth.Sound(sound_path)
+	rel_sound_path = os.path.relpath(sound_path, os.path.dirname(script_path))
+	assert parselmouth.praat.run_file(script_path, rel_sound_path)[0] == parselmouth.Sound(sound_path)
+
+
+def test_run_file_keep_cwd(sound_path, script_path):
+	assert os.getcwd() != os.path.abspath(os.path.dirname(script_path))
+	rel_sound_path = os.path.relpath(sound_path, os.path.dirname(script_path))
+	rel_to_cwd_sound_path = os.path.relpath(sound_path, os.getcwd())
+	assert parselmouth.praat.run_file(script_path, rel_to_cwd_sound_path, keep_cwd=True)[0] == parselmouth.Sound(sound_path)
+	with pytest.raises(parselmouth.PraatError, match=r"Cannot open file .*{}.*".format(rel_sound_path)):
+		parselmouth.praat.run_file(script_path, rel_sound_path, keep_cwd=True)
 
 
 def test_run_return_input_object(sound):
@@ -209,7 +218,7 @@ def test_remove_referenced_objects(sound):
 def test_call_no_objects(sound):
 	assert parselmouth.praat.call(sound, "Get number of samples") == sound.n_samples
 	with pytest.raises(parselmouth.PraatError, match="Command \"Get number of samples\" not available for given objects."):
-		assert parselmouth.praat.call("Get number of samples")
+		parselmouth.praat.call("Get number of samples")
 
 
 def test_unknown_argument_type(sound, text_grid, tmp_path):

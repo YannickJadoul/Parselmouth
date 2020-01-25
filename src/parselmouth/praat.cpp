@@ -398,9 +398,14 @@ auto runPraatScriptFromFile(const std::vector<std::reference_wrapper<structData>
 	auto file = pathToMelderFile(path);
 	autostring32 script = MelderFile_readText(&file);
 
+	auto keepCwd = extractKwarg<bool, py::bool_>(kwargs, "keep_cwd", false, "bool");
+
 	// Praat treats filenames inside scripts as relative to the script, so we'll do the same
-	autoMelderFileSetDefaultDir dir(&file);
+	auto dir = std::make_optional<autoMelderFileSetDefaultDir>(&file);
 	Melder_includeIncludeFiles(&script);
+
+	if (keepCwd)
+		dir = std::nullopt;
 
 	return runPraatScript(objects, script.get(), std::move(args), std::move(kwargs));
 }
@@ -650,6 +655,12 @@ path : str
 
 Keyword arguments
 -----------------
+keep_cwd : bool
+    Keep the current working directory (see `os.getcwd`) when running the
+    script, rather than changing it to the script's parent directory, as
+    Praat does by default (default value: ``False``). Note that even when
+    set to ``True``, the filenames in the Praat script's include statements
+    will be resolved relatively to the directory containing the script.
 **kwargs
     See `parselmouth.praat.run`.
 

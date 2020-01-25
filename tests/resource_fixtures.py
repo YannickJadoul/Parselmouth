@@ -68,3 +68,8 @@ def text_grid_path(resources):
 @pytest.fixture
 def text_grid(text_grid_path):
 	yield parselmouth.read(text_grid_path)
+
+
+@pytest.fixture
+def script_path(resources):
+	yield resources["script.praat"]
