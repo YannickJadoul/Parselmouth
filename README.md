@@ -16,6 +16,8 @@ Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) or post
 
 *Try out* Parselmouth online, in interactive Jupyter notebooks on [Binder](https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=lab%2Ftree%2Fdocs%2Fexamples).
 
+**Warning**: The upcoming release of Parselmouth 0.4.0 will be the *last version* supporting Python 2. Python 2 has reached End Of Life on January 1, 2020, and is officially not supported anymore: see https://python3statement.org/. It is strongly suggested to [move to Python 3](https://docs.python.org/3/howto/pyporting.html), to be able to use new Parselmouth functionality after the 0.4.0 release.
+
 ## Installation
 Parselmouth can be installed like any other Python library, using (a recent version of) the Python package manager `pip`, on Linux, macOS, and Windows:
 ```
