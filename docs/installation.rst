@@ -8,7 +8,7 @@ Parselmouth can be installed like any other Python library, using (a recent vers
 
     pip install praat-parselmouth
 
-or, to update your installed version to the latest release::
+To update your installed version to the latest release, add ``-U`` (or ``--upgrade``) to the command::
 
     pip install -U praat-parselmouth
 
