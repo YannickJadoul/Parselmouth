@@ -140,7 +140,7 @@ matrix:
         - export CIBW_ENVIRONMENT='ARCH=`uname -i` PATH="`pwd`/gcc-$ARCH/bin:$PATH" CC="ccache cc" CXX="ccache c++" CXXFLAGS="-static-libstdc++" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"` CCACHE_DIR=/host'$HOME'/.ccache PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build_$ARCH/praat\""'
         - export CIBW_MANYLINUX_X86_64_IMAGE='manylinux1' CIBW_MANYLINUX_I686_IMAGE='manylinux1'
         # There's no cmake package on PyPI for cp38 on manylinux1, so we'll have to install it with 3.7 and symlink
-        - export CIBW_BEFORE_BUILD='[ -f /usr/local/bin/cmake ] || (/opt/python/cp37-cp37m/bin/pip install cmake && ln -s /opt/python/cp37-cp37m/bin/cmake /usr/local/bin/cmake) && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) && [ -d praat_build_$ARCH ] || (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
+        - export CIBW_BEFORE_BUILD='[ -f /usr/local/bin/cmake ] || (/opt/python/cp37-cp37m/bin/pip install cmake==3.13.3 && ln -s /opt/python/cp37-cp37m/bin/cmake /usr/local/bin/cmake) && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) && [ -d praat_build_$ARCH ] || (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
         - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_BUILD="cp36-manylinux_x86_64"; fi
         - cibuildwheel
       before_deploy:
