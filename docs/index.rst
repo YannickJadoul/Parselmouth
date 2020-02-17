@@ -1,3 +1,5 @@
+.. image:: images/logo-full.png
+
 Parselmouth -- Praat in Python, the Pythonic way
 ================================================
 

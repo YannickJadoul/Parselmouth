@@ -1,3 +1,4 @@
+![Parselmouth](docs/images/logo-full.png)
 # Parselmouth - Praat in Python, the Pythonic way
 
 [![PyPI](https://img.shields.io/pypi/v/praat-parselmouth.svg)](https://pypi.org/project/praat-parselmouth/)
