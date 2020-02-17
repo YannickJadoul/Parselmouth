@@ -173,7 +173,7 @@ html_theme = 'default' if on_rtd else 'sphinx_rtd_theme'
 #
 # html_theme_options = {}
 
-html_logo = "logo.png"
+html_logo = "images/logo.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -251,6 +251,9 @@ texinfo_documents = [
      author, 'Parselmouth', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+latex_logo = "images/logo-full.pdf"
 
 
 
