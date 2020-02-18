@@ -82,7 +82,7 @@ if on_rtd:
         # PEP 425 tags
         rtd_impl_tag = 'cp{}{}'.format(sys.version_info.major, sys.version_info.minor)
         rtd_abi_tag = rtd_impl_tag + 'm'
-        rtd_platform_tag = 'manylinux1_x86_64'
+        rtd_platform_tag = 'manylinux2010_x86_64'
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', 'https://dl.bintray.com/yannickjadoul/Parselmouth/{}/praat_parselmouth-{}-{}-{}-{}.whl'.format(branch, setup_py_version, rtd_impl_tag, rtd_abi_tag, rtd_platform_tag)])
 else:
     sys.path.insert(0, os.path.abspath(os.path.join('..', 'installed')))
