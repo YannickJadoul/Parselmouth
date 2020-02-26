@@ -34,7 +34,8 @@ size_t MelderInfo::_bufferOffset = 0;
 
 void MelderInfo_open () {
 	MelderString_empty (MelderInfo::_p_currentBuffer);
-	MelderInfo::_bufferOffset = 0;
+	if (MelderInfo::_p_currentBuffer == & MelderInfo::_foregroundBuffer)
+		MelderInfo::_bufferOffset = 0;
 }
 
 void MelderInfo_close () {

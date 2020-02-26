@@ -17,6 +17,8 @@
 
 import parselmouth
 
+import textwrap
+
 
 def test_stdout(sound, capsys):
 	pitch = sound.to_pitch_ac()
@@ -38,3 +40,14 @@ def test_stderr(sound, capsys):
 
 	pitch.count_differences(other_pitch)
 	assert capsys.readouterr() == ("", "Pitch_difference: these Pitches are not aligned.\n")
+
+
+def test_melder_open_while_diverted(sound, capsys):
+	script = """\
+	writeInfoLine: "BEFORE"
+	ignore$ = Report system properties
+	appendInfoLine: "AFTER"
+	"""
+
+	parselmouth.praat.run(script)
+	assert capsys.readouterr() == ("BEFORE\nAFTER\n", "")
