@@ -9,7 +9,6 @@ cache:
 env:
   global:
     - BUILD_TYPE=Debug
-    - secure: MXiwE0nmtuJfodSofdsRwD03JtbI9VgwHs+h5gsn/lP/ZrdKDSHPIOfLa2LyaFJWzwv45+NKxAyfJWBOYQ06eSq036FdiBsWkYmuSQcEGkKdB+EDxd4lUX3MxeTGMvBCng3PPyM2aDm117FD6xQTjblvpd87cJyCQWuanEczmj/5vGgBQKqHuOdH2CfoKbtzeo46uS/taNbI5jhGaGPeKk+VmzJtO79CdAGathvb2W0JKTqEsQGszty6DC1Gdt1bNQ5N+MJ2KFC/yGvG0/jgXJYB5s3viCHW0dez5Dl5Bqk4VVaCsqYg+kZGtI7FznSvFXybBj7g4HlNH80DQXlhxwk7iTHfKUQFrwSUMg0ojibERiHG0/UJXFf5fttjbU/6+Mdag+Bxb5J+f/fGZu6JEsEIoEbXBgi6Q5weYh0r2qQ0g/qZpF6g9eEQHdW6ATg9rBFqJPsmGZmqFYwvTi5cu+jGmVihl8nOir7WfyZbnEsd0TcDgDraABjLL18SDwpbFahcbr4L+rzd+4J3j6ToO78SQOMJglprZM08YReTXzdkXtINAOogoNQWfbzUpXL9AjGAcTLmbzhJwP/WAIzFDuM2X5ElOwvwqjL4gsSDDwGsn1cNbMp2pN4UlptoxpyLAF5IiYcw6TrgqzKq6R5GYnCNcsXMpsbkNGd0AcJoK/U=
 compiler: gcc
 
 matrix:
@@ -127,6 +126,8 @@ matrix:
           draft: true
 
     - stage: wheels
+      env:
+        - secure: MXiwE0nmtuJfodSofdsRwD03JtbI9VgwHs+h5gsn/lP/ZrdKDSHPIOfLa2LyaFJWzwv45+NKxAyfJWBOYQ06eSq036FdiBsWkYmuSQcEGkKdB+EDxd4lUX3MxeTGMvBCng3PPyM2aDm117FD6xQTjblvpd87cJyCQWuanEczmj/5vGgBQKqHuOdH2CfoKbtzeo46uS/taNbI5jhGaGPeKk+VmzJtO79CdAGathvb2W0JKTqEsQGszty6DC1Gdt1bNQ5N+MJ2KFC/yGvG0/jgXJYB5s3viCHW0dez5Dl5Bqk4VVaCsqYg+kZGtI7FznSvFXybBj7g4HlNH80DQXlhxwk7iTHfKUQFrwSUMg0ojibERiHG0/UJXFf5fttjbU/6+Mdag+Bxb5J+f/fGZu6JEsEIoEbXBgi6Q5weYh0r2qQ0g/qZpF6g9eEQHdW6ATg9rBFqJPsmGZmqFYwvTi5cu+jGmVihl8nOir7WfyZbnEsd0TcDgDraABjLL18SDwpbFahcbr4L+rzd+4J3j6ToO78SQOMJglprZM08YReTXzdkXtINAOogoNQWfbzUpXL9AjGAcTLmbzhJwP/WAIzFDuM2X5ElOwvwqjL4gsSDDwGsn1cNbMp2pN4UlptoxpyLAF5IiYcw6TrgqzKq6R5GYnCNcsXMpsbkNGd0AcJoK/U=
       os: linux
       sudo: required
       services:
