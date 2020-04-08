@@ -80,7 +80,7 @@ matrix:
 
     - stage: wheels
       if: branch != docs
-      addons: *gcc7
+      addons: *gcc9
       install:
         - pip install --user check-manifest twine
         - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
@@ -142,7 +142,7 @@ matrix:
         - export CIBW_ENVIRONMENT='ARCH=`uname -i` CC="ccache cc" CXX="ccache c++" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"` CCACHE_DIR=/host'$HOME'/.ccache PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build_$ARCH/praat\"" PIP_ONLY_BINARY="numpy"'
         # There's no cmake package on PyPI for cp38 on manylinux1 and no manylinux2010 wheels for i686, so we'll have to install it once with 3.7 and symlink
         - export CIBW_BEFORE_BUILD='[ -f /usr/local/bin/cmake ] || (/opt/python/cp37-cp37m/bin/pip install --only-binary cmake cmake && ln -s /opt/python/cp37-cp37m/bin/cmake /usr/local/bin/cmake) && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) && [ -d praat_build_$ARCH ] || (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
-        - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_BUILD="cp37-manylinux_x86_64"; fi
+        - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_BUILD='cp37-manylinux_x86_64'; fi
         - cibuildwheel
         - twine check wheelhouse/*
       before_deploy:
@@ -164,6 +164,7 @@ matrix:
         - mkdir praat_build && cd praat_build && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2 && cd ..
         - export PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build/praat\""
         - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
+        - export CIBW_ENVIRONMENT='MACOSX_DEPLOYMENT_TARGET=10.14'
         - cibuildwheel
         - twine check wheelhouse/*
       before_deploy:
@@ -187,7 +188,7 @@ before_install:
     if [ "$TRAVIS_BUILD_STAGE_NAME" == "wheels" ]; then
       PYTHON=3.7
       if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-        GCC=7
+        GCC=9
       fi
     fi
   - |
