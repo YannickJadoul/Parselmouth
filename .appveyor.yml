@@ -34,6 +34,7 @@ install:
       if ($env:WHEELS) {
         $env:PYTHON = 37
         if ($env:PLATFORM -eq "x64") { $env:CIBW_BUILD = "*-win_amd64" } else { $env:CIBW_BUILD = "*-win32" }
+        $env:CIBW_SKIP = "pp*-*"
       }
       if ($env:PYTHON) {
         if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }

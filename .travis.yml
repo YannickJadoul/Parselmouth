@@ -9,7 +9,6 @@ cache:
 env:
   global:
     - BUILD_TYPE=Debug
-    - secure: MXiwE0nmtuJfodSofdsRwD03JtbI9VgwHs+h5gsn/lP/ZrdKDSHPIOfLa2LyaFJWzwv45+NKxAyfJWBOYQ06eSq036FdiBsWkYmuSQcEGkKdB+EDxd4lUX3MxeTGMvBCng3PPyM2aDm117FD6xQTjblvpd87cJyCQWuanEczmj/5vGgBQKqHuOdH2CfoKbtzeo46uS/taNbI5jhGaGPeKk+VmzJtO79CdAGathvb2W0JKTqEsQGszty6DC1Gdt1bNQ5N+MJ2KFC/yGvG0/jgXJYB5s3viCHW0dez5Dl5Bqk4VVaCsqYg+kZGtI7FznSvFXybBj7g4HlNH80DQXlhxwk7iTHfKUQFrwSUMg0ojibERiHG0/UJXFf5fttjbU/6+Mdag+Bxb5J+f/fGZu6JEsEIoEbXBgi6Q5weYh0r2qQ0g/qZpF6g9eEQHdW6ATg9rBFqJPsmGZmqFYwvTi5cu+jGmVihl8nOir7WfyZbnEsd0TcDgDraABjLL18SDwpbFahcbr4L+rzd+4J3j6ToO78SQOMJglprZM08YReTXzdkXtINAOogoNQWfbzUpXL9AjGAcTLmbzhJwP/WAIzFDuM2X5ElOwvwqjL4gsSDDwGsn1cNbMp2pN4UlptoxpyLAF5IiYcw6TrgqzKq6R5GYnCNcsXMpsbkNGd0AcJoK/U=
 compiler: gcc
 
 matrix:
@@ -131,6 +130,8 @@ matrix:
           draft: true
 
     - stage: wheels
+      env:
+        - secure: MXiwE0nmtuJfodSofdsRwD03JtbI9VgwHs+h5gsn/lP/ZrdKDSHPIOfLa2LyaFJWzwv45+NKxAyfJWBOYQ06eSq036FdiBsWkYmuSQcEGkKdB+EDxd4lUX3MxeTGMvBCng3PPyM2aDm117FD6xQTjblvpd87cJyCQWuanEczmj/5vGgBQKqHuOdH2CfoKbtzeo46uS/taNbI5jhGaGPeKk+VmzJtO79CdAGathvb2W0JKTqEsQGszty6DC1Gdt1bNQ5N+MJ2KFC/yGvG0/jgXJYB5s3viCHW0dez5Dl5Bqk4VVaCsqYg+kZGtI7FznSvFXybBj7g4HlNH80DQXlhxwk7iTHfKUQFrwSUMg0ojibERiHG0/UJXFf5fttjbU/6+Mdag+Bxb5J+f/fGZu6JEsEIoEbXBgi6Q5weYh0r2qQ0g/qZpF6g9eEQHdW6ATg9rBFqJPsmGZmqFYwvTi5cu+jGmVihl8nOir7WfyZbnEsd0TcDgDraABjLL18SDwpbFahcbr4L+rzd+4J3j6ToO78SQOMJglprZM08YReTXzdkXtINAOogoNQWfbzUpXL9AjGAcTLmbzhJwP/WAIzFDuM2X5ElOwvwqjL4gsSDDwGsn1cNbMp2pN4UlptoxpyLAF5IiYcw6TrgqzKq6R5GYnCNcsXMpsbkNGd0AcJoK/U=
       os: linux
       sudo: required
       services:
@@ -141,7 +142,8 @@ matrix:
       script:
         - export CIBW_ENVIRONMENT='ARCH=`uname -i` CC="ccache cc" CXX="ccache c++" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"` CCACHE_DIR=/host'$HOME'/.ccache PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build_$ARCH/praat\"" PIP_ONLY_BINARY="numpy"'
         # There's no cmake package on PyPI for cp38 on manylinux1 and no manylinux2010 wheels for i686, so we'll have to install it once with 3.7 and symlink
-        - export CIBW_BEFORE_BUILD='[ -f /usr/local/bin/cmake ] || (/opt/python/cp37-cp37m/bin/pip install --only-binary cmake cmake && ln -s /opt/python/cp37-cp37m/bin/cmake /usr/local/bin/cmake) && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) && [ -d praat_build_$ARCH ] || (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
+        - export CIBW_BEFORE_BUILD='pip install cmake && [ -d ccache/$ARCH ] || (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) && [ -d praat_build_$ARCH ] || (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
+        - export CIBW_SKIP='pp*-*'
         - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_BUILD='cp37-manylinux_x86_64'; fi
         - cibuildwheel
         - twine check wheelhouse/*
