@@ -136,6 +136,13 @@ void vector_modifiers(enable_if_t<is_copy_constructible<typename Vector::value_t
         return v.release();
     }));
 
+    cl.def("clear",
+        [](Vector &v) {
+            v.clear();
+        },
+        "Clear the contents"
+    );
+
     cl.def("extend",
        [](Vector &v, const Vector &src) {
            v.insert(v.end(), src.begin(), src.end());
@@ -512,7 +519,7 @@ template <typename, typename, typename... Args> void map_assignment(const Args &
 
 // Map assignment when copy-assignable: just copy the value
 template <typename Map, typename Class_>
-void map_assignment(enable_if_t<std::is_copy_assignable<typename Map::mapped_type>::value, Class_> &cl) {
+void map_assignment(enable_if_t<is_copy_assignable<typename Map::mapped_type>::value, Class_> &cl) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
 
@@ -528,7 +535,7 @@ void map_assignment(enable_if_t<std::is_copy_assignable<typename Map::mapped_typ
 // Not copy-assignable, but still copy-constructible: we can update the value by erasing and reinserting
 template<typename Map, typename Class_>
 void map_assignment(enable_if_t<
-        !std::is_copy_assignable<typename Map::mapped_type>::value &&
+        !is_copy_assignable<typename Map::mapped_type>::value &&
         is_copy_constructible<typename Map::mapped_type>::value,
         Class_> &cl) {
     using KeyType = typename Map::key_type;

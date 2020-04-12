@@ -64,6 +64,9 @@ def test_vector_int():
     del v_int2[-1]
     assert v_int2 == m.VectorInt([0, 99, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 88])
 
+    v_int2.clear()
+    assert len(v_int2) == 0
+
 # related to the PyPy's buffer protocol.
 @pytest.unsupported_on_pypy
 def test_vector_buffer():
@@ -211,6 +214,44 @@ def test_noncopyable_containers():
         vsum += v.value
 
     assert vsum == 150
+
+    # nested std::map<std::vector>
+    nvnc = m.get_nvnc(5)
+    for i in range(1, 6):
+        for j in range(0, 5):
+            assert nvnc[i][j].value == j + 1
+
+    for k, v in nvnc.items():
+        for i, j in enumerate(v, start=1):
+            assert j.value == i
+
+    # nested std::map<std::map>
+    nmnc = m.get_nmnc(5)
+    for i in range(1, 6):
+        for j in range(10, 60, 10):
+            assert nmnc[i][j].value == 10 * j
+
+    vsum = 0
+    for k_o, v_o in nmnc.items():
+        for k_i, v_i in v_o.items():
+            assert v_i.value == 10 * k_i
+            vsum += v_i.value
+
+    assert vsum == 7500
+
+    # nested std::unordered_map<std::unordered_map>
+    numnc = m.get_numnc(5)
+    for i in range(1, 6):
+        for j in range(10, 60, 10):
+            assert numnc[i][j].value == 10 * j
+
+    vsum = 0
+    for k_o, v_o in numnc.items():
+        for k_i, v_i in v_o.items():
+            assert v_i.value == 10 * k_i
+            vsum += v_i.value
+
+    assert vsum == 7500
 
 
 def test_map_delitem():
