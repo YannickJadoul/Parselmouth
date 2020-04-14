@@ -166,7 +166,7 @@ matrix:
         - mkdir praat_build && cd praat_build && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2 && cd ..
         - export PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build/praat\""
         - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
-        - export CIBW_ENVIRONMENT='MACOSX_DEPLOYMENT_TARGET=10.14'
+        - export CIBW_ENVIRONMENT='MACOSX_DEPLOYMENT_TARGET=10.9'
         - cibuildwheel
         - twine check wheelhouse/*
       before_deploy:
