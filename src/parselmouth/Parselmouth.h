@@ -64,7 +64,7 @@ class type_caster<autoSomeThing<T>> : public type_caster<parselmouth::detail::Pr
 }
 
 #define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, parselmouth::detail::PraatHolder<struct##Type>, Type##_Parent) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) BINDING_INIT(Type)
-#define PRAAT_CLASS_BINDING_BASE(Type, Base, ...) CLASS_BINDING(Type, struct##Type, auto##Type, struct##Base) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__)
+#define PRAAT_CLASS_BINDING_BASE(Type, Base, ...) CLASS_BINDING(Type, struct##Type, parselmouth::detail::PraatHolder<struct##Type>, struct##Base) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) BINDING_INIT(Type)
 #define PRAAT_ENUM_BINDING(Type, ...) ENUM_BINDING(Type, Type) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) BINDING_INIT(Type)
 #define PRAAT_STRUCT_BINDING(Name, Type, ...) CLASS_BINDING(Type, struct##Type) BINDING_CONSTRUCTOR(Type, #Name, __VA_ARGS__) BINDING_INIT(Type)
 #define PRAAT_MODULE_BINDING(Name, Type, ...) MODULE_BINDING(Type) BINDING_CONSTRUCTOR(Type, #Name, __VA_ARGS__) BINDING_INIT(Type)
