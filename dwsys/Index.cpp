@@ -1,6 +1,6 @@
 /* Index.cpp
  *
- * Copyright (C) 2005-2011, 2015-2017 David Weenink
+ * Copyright (C) 2005-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,29 +56,27 @@ void structIndex :: v_info () {
 }
 
 void Index_init (Index me, integer numberOfItems) {
-	Melder_require (numberOfItems > 0, U"The index should not be empty.");
-	
+	Melder_require (numberOfItems > 0,
+		U"The index should not be empty.");
 	my classes = Ordered_create ();
 	my numberOfItems = numberOfItems;
-	my classIndex = NUMvector<integer> (1, numberOfItems);
+	my classIndex = newINTVECzero (numberOfItems);
 }
 
 autoIndex Index_extractPart (Index me, integer from, integer to) {
 	try {
-		if (from == 0) {
+		if (from == 0)
 			from = 1;
-		}
-		if (to == 0) {
+		if (to == 0)
 			to = my numberOfItems;
-		}
-		Melder_require (from <= to && from > 0 && to <= my numberOfItems, U"Range should be in interval [1,", my numberOfItems, U"].");
+		Melder_require (from <= to && from > 0 && to <= my numberOfItems,
+			U"Range should be in interval [1,", my numberOfItems, U"].");
 		
 		autoIndex thee = Data_copy (me);
 		thy numberOfItems = to - from + 1;
 		
-		for (integer i = 1; i <= thy numberOfItems; i ++) {
+		for (integer i = 1; i <= thy numberOfItems; i ++)
 			thy classIndex [i] = my classIndex [from + i - 1];
-		}
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": part not extracted.");
@@ -99,18 +97,16 @@ autoStringsIndex StringsIndex_create (integer numberOfItems) {
 
 integer Index_getClassIndexFromItemIndex (Index me, integer itemIndex) {
 	integer result = 0;
-	if (itemIndex >= 0 && itemIndex <= my numberOfItems) {
+	if (itemIndex >= 0 && itemIndex <= my numberOfItems)
 		result = my classIndex [itemIndex];
-	}
 	return result;
 }
 
 int StringsIndex_getClassIndexFromClassLabel (StringsIndex me, conststring32 klasLabel) {
 	for (integer i = 1; i <= my classes->size; i ++) {
-		SimpleString ss = (SimpleString) my classes->at [i];   // FIXME cast
-		if (Melder_equ (ss -> string.get(), klasLabel)) {
+		const SimpleString ss = (SimpleString) my classes->at [i];   // FIXME cast
+		if (Melder_equ (ss -> string.get(), klasLabel))
 			return i;
-		}
 	}
 	return 0;
 }
@@ -118,7 +114,7 @@ int StringsIndex_getClassIndexFromClassLabel (StringsIndex me, conststring32 kla
 conststring32 StringsIndex_getClassLabelFromClassIndex (StringsIndex me, integer klasIndex) {
 	conststring32 result = undefinedClassLabel;
 	if (klasIndex > 0 && klasIndex <= my classes -> size) {
-		SimpleString ss = (SimpleString) my classes->at [klasIndex];   // FIXME cast
+		const SimpleString ss = (SimpleString) my classes->at [klasIndex];   // FIXME cast
 		result = ss -> string.get();
 	}
 	return result;
@@ -127,19 +123,18 @@ conststring32 StringsIndex_getClassLabelFromClassIndex (StringsIndex me, integer
 conststring32 StringsIndex_getItemLabelFromItemIndex (StringsIndex me, integer itemNumber) {
 	conststring32 result = undefinedClassLabel;
 	if (itemNumber > 0 && itemNumber <= my numberOfItems) {
-		integer klas = my classIndex [itemNumber];
-		SimpleString ss = (SimpleString) my classes->at [klas];   // FIXME cast
+		const integer klas = my classIndex [itemNumber];
+		const SimpleString ss = (SimpleString) my classes->at [klas];   // FIXME cast
 		result = ss -> string.get();
 	}
 	return result;
 }
 
-integer StringsIndex_countItems (StringsIndex me, int iclass) {
+integer StringsIndex_countItems (StringsIndex me, integer iclass) {
 	integer sum = 0;
 	for (integer i = 1; i <= my numberOfItems; i ++) {
-		if (my classIndex [i] == iclass) {
+		if (my classIndex [i] == iclass)
 			sum ++;
-		}
 	}
 	return sum;
 }

@@ -1,6 +1,6 @@
 /* Gui.cpp
  *
- * Copyright (C) 1992-2008,2010-2017 Paul Boersma
+ * Copyright (C) 1992-2008,2010-2017,2019,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 
 #include "GuiP.h"
 #include "machine.h"
-#include <math.h>   // floor
 #include <locale.h>
 
 Thing_implement (GuiThing, Thing, 0);
@@ -97,8 +96,8 @@ void Gui_getWindowPositioningBounds (double *x, double *y, double *width, double
 	#elif cocoa
 		NSRect rect;
 		NSArray *screenArray = [NSScreen screens];
-		NSInteger screenCount = [screenArray count];
-		NSInteger index = 0;
+		NSUInteger screenCount = [screenArray count];
+		NSUInteger index = 0;
 		for (index = 0; index < screenCount; index ++) {
 			NSScreen *screen = [screenArray objectAtIndex: index];
 			rect = [screen visibleFrame];

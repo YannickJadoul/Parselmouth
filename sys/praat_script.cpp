@@ -1,6 +1,6 @@
 /* praat_script.cpp
  *
- * Copyright (C) 1993-2018 Paul Boersma
+ * Copyright (C) 1993-2020 Paul Boersma
  * 
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
 #include "praatP.h"
 #include "praat_script.h"
 #include "sendpraat.h"
@@ -30,9 +29,9 @@ static int praat_findObjectFromString (Interpreter interpreter, conststring32 st
 		while (*string == U' ') string ++;
 		if (*string >= U'A' && *string <= U'Z') {
 			/*
-			 * Find the object by its name.
-			 */
-			static MelderString buffer { };
+				Find the object by its name.
+			*/
+			static MelderString buffer;
 			MelderString_copy (& buffer, string);
 			char32 *space = str32chr (buffer.string, U' ');
 			if (! space)
@@ -45,9 +44,9 @@ static int praat_findObjectFromString (Interpreter interpreter, conststring32 st
 					return IOBJECT;
 			}
 			/*
-			 * No object with that name. Perhaps the class name was wrong?
-			 */
-			ClassInfo klas = Thing_classFromClassName (className, NULL);
+				No object with that name. Perhaps the class name was wrong?
+			*/
+			ClassInfo klas = Thing_classFromClassName (className, nullptr);
 			WHERE_DOWN (1) {
 				Daata object = (Daata) OBJECT;
 				if (str32equ (klas -> className, Thing_className (OBJECT)) && str32equ (givenName, object -> name.get()))
@@ -56,8 +55,8 @@ static int praat_findObjectFromString (Interpreter interpreter, conststring32 st
 			Melder_throw (U"No object with that name.");
 		} else {
 			/*
-			 * Find the object by its ID.
-			 */
+				Find the object by its ID.
+			*/
 			double value;
 			Interpreter_numericExpression (interpreter, string, & value);
 			integer id = (integer) value;
@@ -72,7 +71,8 @@ static int praat_findObjectFromString (Interpreter interpreter, conststring32 st
 
 Editor praat_findEditorFromString (conststring32 string) {
 	int IOBJECT;
-	while (*string == U' ') string ++;
+	while (*string == U' ')
+		string ++;
 	if (*string >= U'A' && *string <= U'Z') {
 		WHERE_DOWN (1) {
 			for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
@@ -82,7 +82,8 @@ Editor praat_findEditorFromString (conststring32 string) {
 					const char32 *space = str32chr (editor -> name.get(), U' ');   // editors tend to be called like "3. Sound kanweg"
 					if (space) {   // but not all
 						conststring32 name = space + 1;
-						if (str32equ (name, string)) return editor;
+						if (str32equ (name, string))
+							return editor;
 					}
 				}
 			}
@@ -91,7 +92,8 @@ Editor praat_findEditorFromString (conststring32 string) {
 		WHERE_DOWN (1) {
 			for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
 				Editor editor = theCurrentPraatObjects -> list [IOBJECT]. editors [ieditor];
-				if (editor && str32equ (editor -> name.get(), string)) return editor;
+				if (editor && str32equ (editor -> name.get(), string))
+					return editor;
 			}
 		}
 	}
@@ -104,7 +106,8 @@ Editor praat_findEditorById (integer id) {
 		if (ID == id) {
 			for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
 				Editor editor = theCurrentPraatObjects -> list [IOBJECT]. editors [ieditor];
-				if (editor) return editor;
+				if (editor)
+					return editor;
 			}
 		}
 	}
@@ -189,7 +192,7 @@ int praat_executeCommand (Interpreter interpreter, char32 *command) {
 		else
 			praat_select (IOBJECT); 
 		praat_show ();
-	} else if (Melder_isAsciiLowerCaseLetter (command [0])) {   // all directives start with an ASCII lower-case letter
+	} else if (Melder_isLetter (command [0]) && ! Melder_isUpperCaseLetter (command [0])) {   // all directives start with an ASCII lower-case letter
 		if (str32nequ (command, U"select ", 7)) {
 			if (str32nequ (command + 7, U"all", 3) && (command [10] == U'\0' || command [10] == U' ' || command [10] == U'\t')) {
 				praat_selectAll ();
@@ -288,7 +291,7 @@ int praat_executeCommand (Interpreter interpreter, char32 *command) {
 				return 1;   // in batch we ignore pause statements
 			UiPause_begin (theCurrentPraatApplication -> topShell, U"stop or continue", interpreter);
 			UiPause_comment (str32equ (command, U"pause") ? U"..." : command + 6);
-			UiPause_end (1, 1, 0, U"Continue", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, interpreter);
+			UiPause_end (1, 1, 0, U"Continue", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, interpreter);
 		} else if (str32nequ (command, U"execute ", 8)) {
 			praat_executeScriptFromFileNameWithArguments (command + 8);
 		} else if (str32nequ (command, U"editor", 6)) {
@@ -308,7 +311,7 @@ int praat_executeCommand (Interpreter interpreter, char32 *command) {
 		} else if (str32nequ (command, U"endeditor", 9)) {
 			if (theCurrentPraatObjects != & theForegroundPraatObjects)
 				Melder_throw (U"The script command \"endeditor\" is not available inside manuals.");
-			praatP. editor = NULL;
+			praatP. editor = nullptr;
 		} else if (str32nequ (command, U"sendpraat ", 10)) {
 			if (theCurrentPraatObjects != & theForegroundPraatObjects)
 				Melder_throw (U"The script command \"sendpraat\" is not available inside manuals.");
@@ -449,9 +452,9 @@ int praat_executeCommand (Interpreter interpreter, char32 *command) {
 		}
 		if (theCurrentPraatObjects == & theForegroundPraatObjects && praatP. editor) {
 			if (hasColon) {
-				Editor_doMenuCommand (praatP. editor, command2, narg, args, NULL, interpreter);
+				Editor_doMenuCommand (praatP. editor, command2, narg, args, nullptr, interpreter);
 			} else {
-				Editor_doMenuCommand (praatP. editor, command, 0, NULL, arguments, interpreter);
+				Editor_doMenuCommand (praatP. editor, command, 0, nullptr, arguments, interpreter);
 			}
 		} else if (theCurrentPraatObjects != & theForegroundPraatObjects &&
 		    (str32nequ (command, U"Save ", 5) ||
@@ -501,14 +504,21 @@ int praat_executeCommand (Interpreter interpreter, char32 *command) {
 					}
 				}
 				if (! theCommandIsAnExistingMenuCommand) {
+					const integer length = str32len (command);
 					if (str32nequ (command, U"ARGS ", 5)) {
 						Melder_throw (U"Command \"ARGS\" no longer supported. Instead use \"form\" and \"endform\".");
 					} else if (str32chr (command, U'=')) {
 						Melder_throw (U"Command \"", command, U"\" not recognized.\n"
 							U"Probable cause: you are trying to use a variable name that starts with a capital.");
-					} else if (command [0] != U'\0' && command [str32len (command) - 1] == U' ') {
+					} else if (length >= 1 && Melder_isHorizontalSpace (command [length - 1])) {
 						Melder_throw (U"Command \"", command, U"\" not available for current selection. "
 							U"It may be helpful to remove the trailing spaces.");
+					} else if (length >= 2 && Melder_isHorizontalSpace (command [length - 2]) && command [length - 1] == U':') {
+						Melder_throw (U"Command \"", command, U"\" not available for current selection. "
+							U"It may be helpful to remove the space before the colon.");
+					} else if (str32nequ (command, U"\"ooTextFile\"", 12)) {
+						Melder_throw (U"Command \"", command, U"\" not available for current selection. "
+							U"It is possible that this file is not a Praat script but a Praat data file that you can open with \"Read from file...\".");
 					} else {
 						Melder_throw (U"Command \"", command, U"\" not available for current selection.");
 					}
@@ -523,14 +533,15 @@ int praat_executeCommand (Interpreter interpreter, char32 *command) {
 void praat_executeCommandFromStandardInput (conststring32 programName) {
 	char command8 [1000];   // can be recursive
 	/*
-	 * FIXME: implement for Windows.
-	 */
+		FIXME: implement for Windows.
+	*/
 	for (;;) {
 		printf ("%s > ", Melder_peek32to8 (programName));
 		if (! fgets (command8, 999, stdin))
 			Melder_throw (U"Cannot read input.");
 		char *newLine = strchr (command8, '\n');
-		if (newLine) *newLine = '\0';
+		if (newLine)
+			*newLine = '\0';
 		autostring32 command32 = Melder_8to32 (command8);
 		try {
 			praat_executeCommand (nullptr, command32.get());
@@ -558,8 +569,8 @@ void praat_executeScriptFromFile (MelderFile file, conststring32 arguments) {
 
 void praat_executeScriptFromFileName (conststring32 fileName, integer narg, Stackel args) {
 	/*
-	 * The argument 'fileName' is unsafe. Duplicate its contents.
-	 */
+		The argument 'fileName' is unsafe. Duplicate its contents.
+	*/
 	structMelderFile file { };
 	Melder_relativePathToFile (fileName, & file);
 	try {
@@ -580,24 +591,30 @@ void praat_executeScriptFromFileNameWithArguments (conststring32 nameAndArgument
 	const char32 *p, *arguments;
 	structMelderFile file { };
 	/*
-	 * Split into file name and arguments.
-	 */
+		Split into file name and arguments.
+	*/
 	p = nameAndArguments;
-	while (*p == U' ' || *p == U'\t') p ++;
+	while (*p == U' ' || *p == U'\t')
+		p ++;
 	if (*p == U'\"') {
 		char32 *q = path;
 		p ++;   // skip quote
-		while (*p != U'\"' && *p != U'\0') * q ++ = * p ++;
+		while (*p != U'\"' && *p != U'\0')
+			* q ++ = * p ++;
 		*q = U'\0';
 		arguments = p;
-		if (*arguments == U'\"') arguments ++;
-		if (*arguments == U' ') arguments ++;
+		if (*arguments == U'\"')
+			arguments ++;
+		if (*arguments == U' ')
+			arguments ++;
 	} else {
 		char32 *q = path;
-		while (*p != U' ' && *p != U'\0') * q ++ = * p ++;
+		while (*p != U' ' && *p != U'\0')
+			* q ++ = * p ++;
 		*q = U'\0';
 		arguments = p;
-		if (*arguments == U' ') arguments ++;
+		if (*arguments == U' ')
+			arguments ++;
 	}
 	Melder_relativePathToFile (path, & file);
 	praat_executeScriptFromFile (& file, arguments);
@@ -655,7 +672,8 @@ static void firstPassThroughScript (MelderFile file) {
 		if (Interpreter_readParameters (interpreter.get(), text.get()) > 0) {
 			autoUiForm form = Interpreter_createForm (interpreter.get(),
 				praatP.editor ? praatP.editor -> windowForm : theCurrentPraatApplication -> topShell,
-				Melder_fileToPath (file), secondPassThroughScript, NULL, false);
+				Melder_fileToPath (file), secondPassThroughScript, nullptr, false
+			);
 			UiForm_destroyWhenUnmanaged (form.get());
 			UiForm_do (form.get(), false);
 			form. releaseToUser();

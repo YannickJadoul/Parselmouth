@@ -1,6 +1,6 @@
 /* espeakdata_FileInMemory.cpp
  *
- * Copyright (C) David Weenink 2012,2015-2018
+ * Copyright (C) David Weenink 2012-2020
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,11 +37,11 @@ autoTable espeakdata_voices_propertiesTable;
 autoStrings espeakdata_voices_names;
 autoStrings espeakdata_languages_names;
 
-integer Table_getRownumberOfStringInColumn (Table me, conststring32 string, integer icol) {
+static integer Table_getRownumberOfStringInColumn (Table me, conststring32 string, integer icol) {
 	integer row = 0;
 	if (icol > 0 && icol <= my numberOfColumns) {
 		for (integer irow = 1; irow <= my rows.size; irow ++) {
-			TableRow myRow = my rows.at [irow];
+			const TableRow myRow = my rows.at [irow];
 			if (Melder_equ (myRow -> cells [icol]. string.get(), string)) {
 				return irow;
 			}
@@ -57,7 +57,7 @@ void espeakdata_praat_init () {
 		espeakdata_voices_propertiesTable = Table_createAsEspeakVoicesProperties ();
 		espeakdata_languages_names = Table_column_to_Strings (espeakdata_languages_propertiesTable.get(), 2);
 		espeakdata_voices_names = Table_column_to_Strings (espeakdata_voices_propertiesTable.get(), 2);
-		int test = 1;
+		const int test = 1;
 		if (* ((char *) & test) != 1) { // (too?) simple endian test
 			espeak_ng_data_to_bigendian ();
 		}
@@ -70,20 +70,20 @@ void espeakdata_praat_init () {
 
 // imitates fgets_strip for file in memory
 const char * espeakdata_get_voicedata (const char *data, integer ndata, char *buf, integer nbuf, integer *index) {
-	if (ndata <= 0 || nbuf <= 0 || *index >= ndata) {
+	if (ndata <= 0 || nbuf <= 0 || *index >= ndata)
 		return 0;
-	}
+
 	integer i = 0;
 	while (i < nbuf && *index < ndata && ((buf [i] = data [i]) != '\n')) {
 		i ++;
 		(*index) ++;
 	}
 	(*index) ++;   // ppgb 20151020 fix
-	integer idata = i + 1;
+	const integer idata = i + 1;
 	buf [i] = '\0';
-	while (-- i >= 0 && ESPEAK_ISSPACE (buf[i])) {
+	while (-- i >= 0 && ESPEAK_ISSPACE (buf[i]))
 		buf [i] = 0;
-	}
+
 	char *p = strstr (buf, "//");
 	if (p)
 		*p = '\0';
@@ -91,49 +91,54 @@ const char * espeakdata_get_voicedata (const char *data, integer ndata, char *bu
 }
 
 
-static conststring32 get_wordAfterPrecursor_u8 (const unsigned char *text8, conststring32 precursor) {
+static conststring32 get_wordAfterPrecursor_u8 (constvector<unsigned char> const& text8, conststring32 precursor) {
 	static char32 word [100];
 	/*
 		1. Find (first occurrence of) 'precursor' at the start of a line (with optional leading whitespace).
 		2. Get the words after 'precursor' (skip leading and trailing whitespace).
 	*/
 	autoMelderString regex;
-	conststring32 text = Melder_peek8to32 (reinterpret_cast<const char *> (text8));
+	const conststring32 text = Melder_peek8to32 (reinterpret_cast<const char *> (text8.asArgumentToFunctionThatExpectsZeroBasedArray()));
 	MelderString_append (& regex, U"^\\s*", precursor, U"\\s+");
 	char32 *p = nullptr;
 	const char32 *pmatch = strstr_regexp (text, regex.string);
 	if (pmatch) {
 		pmatch += str32len (precursor); // skip 'precursor'
-		while (*pmatch == U' ' || *pmatch == U'\t') { pmatch ++; } // skip whitespace after 'precursor'
+		while (*pmatch == U' ' || *pmatch == U'\t')
+			pmatch ++; // skip whitespace after 'precursor'
 		p = word;
 		char32 *p_end = p + 99;
-		while ((*p = *pmatch ++) && *p != U' ' && *p != U'\t' && *p != U'\n' && *p != U'\r' && p < p_end) { p ++; };
+		while ((*p = *pmatch ++) && *p != U' ' && *p != U'\t' && *p != U'\n' && *p != U'\r' && p < p_end)
+			p ++;
 		*p = U'\0';
 		p = word;
 	}
 	return p;
 }
 
-static conststring32 get_stringAfterPrecursor_u8 (const unsigned char *text8, conststring32 precursor) {
+static conststring32 get_stringAfterPrecursor_u8 (constvector<unsigned char> const& text8, conststring32 precursor) {
 	static char32 word [100];
 	/*
 		1. Find (first occurrence of) 'precursor' at the start of a line (with optional leading whitespace).
 		2. Get the words after 'precursor' (skip leading and trailing whitespace).
 	*/
 	autoMelderString regex;
-	conststring32 text = Melder_peek8to32 (reinterpret_cast<const char *> (text8));
+	const conststring32 text = Melder_peek8to32 (reinterpret_cast<const char *> (text8.asArgumentToFunctionThatExpectsZeroBasedArray()));
 	MelderString_append (& regex, U"^\\s*", precursor, U"\\s+");
 	char32 *p = nullptr;
 	const char32 *pmatch = strstr_regexp (text, regex.string);
 	if (pmatch) {
 		pmatch += str32len (precursor); // skip 'precursor'
-		while (*pmatch == U' ' || *pmatch == U'\t') { pmatch ++; }; // skip whitespace after 'precursor'
+		while (*pmatch == U' ' || *pmatch == U'\t')
+			pmatch ++; // skip whitespace after 'precursor'
 		//pmatch --;
 		p = word;
 		char32 *p_end = p + 99;
 		// also discard text after comment '//'
-		while ((*p = *pmatch ++) && *p != U'\n' && *p != U'\r' && *p != U'/' && *(p+1) != U'/' && p < p_end) { p ++; }; // copy to end of line
-		while (*p == U' ' || *p == U'\t' || *p == U'\n' || *p == U'\r') { p --; }; // remove trailing white space
+		while ((*p = *pmatch ++) && *p != U'\n' && *p != U'\r' && *p != U'/' && *(p+1) != U'/' && p < p_end)
+			p ++; // copy to end of line
+		while (*p == U' ' || *p == U'\t' || *p == U'\n' || *p == U'\r')
+			p --; // remove trailing white space
 		*(++ p) = U'\0';
 		p = word;
 	}
@@ -142,33 +147,33 @@ static conststring32 get_stringAfterPrecursor_u8 (const unsigned char *text8, co
 
 autoTable Table_createAsEspeakVoicesProperties () {
 	try {
-		static const conststring32 criterion = U"/voices/!v/";
+		constexpr conststring32 criterion = U"/voices/!v/";
 		FileInMemorySet me = espeak_ng_FileInMemoryManager -> files.get();
-		integer numberOfMatches = FileInMemorySet_findNumberOfMatches_path (me, kMelder_string :: CONTAINS, criterion);
+		const integer numberOfMatches = FileInMemorySet_findNumberOfMatches_path (me, kMelder_string :: CONTAINS, criterion);
 		autoTable thee = Table_createWithColumnNames (numberOfMatches, U"id name index gender age variant");
 		integer irow = 0;
 		for (integer ifile = 1; ifile <= my size; ifile ++) {
-			FileInMemory fim = (FileInMemory) my at [ifile];
+			const FileInMemory fim = (FileInMemory) my at [ifile];
 			if (Melder_stringMatchesCriterion (fim -> d_path.get(), kMelder_string :: CONTAINS, criterion, true)) {
 				irow ++;
 				Table_setStringValue (thee.get(), irow, 1, fim -> d_id.get());
-				const char32 *name = get_stringAfterPrecursor_u8 (fim -> d_data, U"name");
+				const char32 *name = get_stringAfterPrecursor_u8 (fim -> d_data.get(), U"name");
 				// The first character of name must be upper case
 				if (name) {
 					autoMelderString capitalFirst;
 					MelderString_copy (& capitalFirst, name); // we cannot modify original
-					char32 capital = Melder_toUpperCase (*name);
+					const char32 capital = Melder_toUpperCase (*name);
 					*(capitalFirst. string) = capital;
 					Table_setStringValue (thee.get(), irow, 2, capitalFirst. string);
 				} else {
 					Table_setStringValue (thee.get(), irow, 2, fim -> d_id.get());
 				}
 				Table_setNumericValue (thee.get(), irow, 3, ifile);
-				conststring32 word = get_wordAfterPrecursor_u8 (fim -> d_data, U"gender");
+				conststring32 word = get_wordAfterPrecursor_u8 (fim -> d_data.get(), U"gender");
 				Table_setStringValue (thee.get(), irow, 4, (word ? word : U"0"));
-				word = get_wordAfterPrecursor_u8 (fim -> d_data, U"age");
+				word = get_wordAfterPrecursor_u8 (fim -> d_data.get(), U"age");
 				Table_setStringValue (thee.get(), irow, 5, (word ? word : U"0"));
-				word = get_stringAfterPrecursor_u8 (fim -> d_data, U"variant");
+				word = get_stringAfterPrecursor_u8 (fim -> d_data.get(), U"variant");
 				Table_setStringValue (thee.get(), irow, 6, (word ? word : U"0"));
 			}
 		}
@@ -182,17 +187,17 @@ autoTable Table_createAsEspeakVoicesProperties () {
 
 autoTable Table_createAsEspeakLanguagesProperties () {
 	try {
-		static const conststring32 criterion = U"/lang/";
+		constexpr conststring32 criterion = U"/lang/";
 		FileInMemorySet me = espeak_ng_FileInMemoryManager -> files.get();
-		integer numberOfMatches = FileInMemorySet_findNumberOfMatches_path (me, kMelder_string :: CONTAINS, criterion);
+		const integer numberOfMatches = FileInMemorySet_findNumberOfMatches_path (me, kMelder_string :: CONTAINS, criterion);
 		autoTable thee = Table_createWithColumnNames (numberOfMatches, U"id name index"); // old: Default English
 		integer irow = 0;
 		for (integer ifile = 1; ifile <= my size; ifile ++) {
-			FileInMemory fim = (FileInMemory) my at [ifile];
+			const FileInMemory fim = (FileInMemory) my at [ifile];
 			if (Melder_stringMatchesCriterion (fim -> d_path.get(), kMelder_string :: CONTAINS, criterion, true)) {
 				irow ++;
 				Table_setStringValue (thee.get(), irow, 1, fim -> d_id.get());
-				const char32 *word = get_stringAfterPrecursor_u8 (fim -> d_data, U"name");
+				const char32 *word = get_stringAfterPrecursor_u8 (fim -> d_data.get(), U"name");
 				Table_setStringValue (thee.get(), irow, 2, ( word ? word : fim -> d_id.get() ));
 				Table_setNumericValue (thee.get(), irow, 3, ifile);
 			}

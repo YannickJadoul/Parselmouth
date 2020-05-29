@@ -75,6 +75,10 @@ void Graphics_init (Graphics me, int resolution) {
 		my resolutionNumber = kGraphics_resolution::DPI_96;
 	} else if (resolution == 100) {
 		my resolutionNumber = kGraphics_resolution::DPI_100;
+	} else if (resolution == 120) {
+		my resolutionNumber = kGraphics_resolution::DPI_120;
+	} else if (resolution == 150) {
+		my resolutionNumber = kGraphics_resolution::DPI_150;
 	} else if (resolution == 180) {
 		my resolutionNumber = kGraphics_resolution::DPI_180;
 	} else if (resolution == 200) {
@@ -105,7 +109,7 @@ void Graphics_init (Graphics me, int resolution) {
 	my arrowSize = 1.0;
 	my speckleSize = 1.0;
 	my font = kGraphics_font::HELVETICA;
-	my fontSize = 10;
+	my fontSize = 10.0;
 	my fontStyle = Graphics_NORMAL;
 	my record = nullptr;
 	my irecord = my nrecord = 0;
@@ -231,7 +235,7 @@ void Graphics_setViewport (Graphics me, double x1NDC, double x2NDC, double y1NDC
 void Graphics_setInner (Graphics me) {
 	double margin = 2.8 * my fontSize * my resolution / 72.0;
 	double wDC = (my d_x2DC - my d_x1DC) / (my d_x2wNDC - my d_x1wNDC) * (my d_x2NDC - my d_x1NDC);
-	double hDC = labs (my d_y2DC - my d_y1DC) / (my d_y2wNDC - my d_y1wNDC) * (my d_y2NDC - my d_y1NDC);
+	double hDC = integer_abs (my d_y2DC - my d_y1DC) / (my d_y2wNDC - my d_y1wNDC) * (my d_y2NDC - my d_y1NDC);
 	double dx = 1.5 * margin / wDC;
 	double dy = margin / hDC;
 	my horTick = 0.06 * dx, my vertTick = 0.09 * dy;

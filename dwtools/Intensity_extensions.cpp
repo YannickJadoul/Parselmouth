@@ -1,6 +1,6 @@
 /* Intensity_extensions.cpp
  *
- * Copyright (C) 2007-2017 David Weenink, 2015,2017 Paul Boersma
+ * Copyright (C) 2007-2019 David Weenink, 2015,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,20 +27,18 @@
 #include "TextGrid_extensions.h"
 
 static void IntervalTier_addBoundaryUnsorted (IntervalTier me, integer iinterval, double time, conststring32 leftLabel) {
-	if (time <= my xmin || time >= my xmax)
-		Melder_throw (U"Time is outside interval.");
-
+	Melder_require (time > my xmin && time < my xmax,
+		U"Time is outside interval.");
 	/*
 		Find interval to split.
 	*/
-	if (iinterval <= 0) {
+	if (iinterval <= 0)
 		iinterval = IntervalTier_timeToLowIndex (me, time);
-	}
 
 	/*
 		Modify end time of left label.
 	*/
-	TextInterval ti = my intervals.at [iinterval];
+	const TextInterval ti = my intervals.at [iinterval];
 	ti -> xmax = time;
 	TextInterval_setText (ti, leftLabel);
 
@@ -53,30 +51,29 @@ autoTextGrid Intensity_to_TextGrid_detectSilences (Intensity me,
 	conststring32 silenceLabel, conststring32 soundingLabel)
 {
 	try {
-		double duration = my xmax - my xmin, time;
+		const double duration = my xmax - my xmin;
 
-		Melder_require (silenceThreshold_dB < 0.0, U"The silence threshold w.r.t. the maximum intensity should be a negative number.");
+		Melder_require (silenceThreshold_dB < 0.0,
+			U"The silence threshold w.r.t. the maximum intensity should be a negative number.");
 
 		autoTextGrid thee = TextGrid_create (my xmin, my xmax, U"silences", U"");
-		IntervalTier it = (IntervalTier) thy tiers->at [1];
+		const IntervalTier it = (IntervalTier) thy tiers->at [1];
 		TextInterval_setText (it -> intervals.at [1], soundingLabel);
-		if (minSilenceDuration > duration) {
+		if (minSilenceDuration > duration)
 			return thee;
-		}
 
 		double intensity_max_db, intensity_min_db, xOfMaximum, xOfMinimum;
 		Vector_getMaximumAndX (me, 0.0, 0.0, 1, NUM_PEAK_INTERPOLATE_PARABOLIC, & intensity_max_db, & xOfMaximum);
 		Vector_getMinimumAndX (me, 0.0, 0.0, 1, NUM_PEAK_INTERPOLATE_PARABOLIC, & intensity_min_db, & xOfMinimum);
 		double intensity_dbRange = intensity_max_db - intensity_min_db;
 
-		if (intensity_dbRange < 10.0) {
+		if (intensity_dbRange < 10.0)
 			Melder_warning (U"The loudest and softest part in your sound differ by only ", intensity_dbRange, U" dB.");
-		}
-		double intensityThreshold = intensity_max_db - fabs (silenceThreshold_dB);
 
-		if (minSilenceDuration > duration || intensityThreshold < intensity_min_db) {
+		const double intensityThreshold = intensity_max_db - fabs (silenceThreshold_dB);
+
+		if (minSilenceDuration > duration || intensityThreshold < intensity_min_db)
 			return thee;
-		}
 
 		bool inSilenceInterval = my z [1] [1] < intensityThreshold;
 		integer iinterval = 1;
@@ -98,16 +95,14 @@ autoTextGrid Intensity_to_TextGrid_detectSilences (Intensity me,
 			}
 
 			if (addBoundary) {
-				time = my x1 + (i - 1) * my dx;
+				const double time = my x1 + (i - 1) * my dx;
 				IntervalTier_addBoundaryUnsorted (it, iinterval, time, label);
 				iinterval ++;
 			}
 		}
-
 		/*
 			(re)label last interval.
 		*/
-
 		label = inSilenceInterval ? silenceLabel : soundingLabel;
 		TextInterval_setText (it -> intervals.at [iinterval], label);
 		it -> intervals. sort ();
@@ -131,11 +126,11 @@ autoTextGrid Intensity_to_TextGrid_detectSilences (Intensity me,
 
 autoIntensity IntensityTier_to_Intensity (IntensityTier me, double dt) {
 	try {
-		integer nt = Melder_ifloor ((my xmax - my xmin) / dt);
-		double t1 = 0.5 * dt;
+		const integer nt = Melder_ifloor ((my xmax - my xmin) / dt);
+		const double t1 = 0.5 * dt;
 		autoIntensity thee = Intensity_create (my xmin, my xmax, nt, dt, t1);
 		for (integer i = 1; i <= nt; i ++) {
-			double time = t1 + (i - 1) * dt;
+			const double time = t1 + (i - 1) * dt;
 			thy z [1] [i] = RealTier_getValueAtTime (me, time);
 		}
 		return thee;
@@ -145,8 +140,7 @@ autoIntensity IntensityTier_to_Intensity (IntensityTier me, double dt) {
 }
 
 autoTextGrid IntensityTier_to_TextGrid_detectSilences (IntensityTier me, double dt, double silenceThreshold_dB, double minSilenceDuration,
-	double minSoundingDuration, conststring32 silenceLabel, conststring32 soundingLabel)
-{
+	double minSoundingDuration, conststring32 silenceLabel, conststring32 soundingLabel) {
 	try {
 		autoIntensity intensity = IntensityTier_to_Intensity (me, dt);
 		autoTextGrid thee = Intensity_to_TextGrid_detectSilences (intensity.get(), silenceThreshold_dB, minSilenceDuration, minSoundingDuration, silenceLabel, soundingLabel);

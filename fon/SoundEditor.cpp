@@ -1,6 +1,6 @@
 /* SoundEditor.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma, 2007 Erez Volk (FLAC support)
+ * Copyright (C) 1992-2018 Paul Boersma, 2007 Erez Volk (FLAC support)
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,38 +59,34 @@ static void menu_cb_Cut (SoundEditor me, EDITOR_ARGS_DIRECT) {
 				U"because you cannot create a Sound with 0 samples.\n"
 				U"You could consider using Copy instead.");
 		if (selectionNumberOfSamples) {
-			double **oldData = sound -> z;
 			/*
-			 * Create without change.
-			 */
+				Create without change.
+			*/
 			autoSound publish = Sound_create (sound -> ny, 0.0, selectionNumberOfSamples * sound -> dx,
 							selectionNumberOfSamples, sound -> dx, 0.5 * sound -> dx);
 			for (integer channel = 1; channel <= sound -> ny; channel ++) {
 				integer j = 0;
-				for (integer i = first; i <= last; i ++) {
-					publish -> z [channel] [++ j] = oldData [channel] [i];
-				}
+				for (integer i = first; i <= last; i ++)
+					publish -> z [channel] [++ j] = sound -> z [channel] [i];
 			}
-			autoNUMmatrix <double> newData (1, sound -> ny, 1, newNumberOfSamples);
+			autoMAT newData = newMATraw (sound -> ny, newNumberOfSamples);
 			for (integer channel = 1; channel <= sound -> ny; channel ++) {
 				integer j = 0;
-				for (integer i = 1; i < first; i ++) {
-					newData [channel] [++ j] = oldData [channel] [i];
-				}
-				for (integer i = last + 1; i <= oldNumberOfSamples; i ++) {
-					newData [channel] [++ j] = oldData [channel] [i];
-				}
+				for (integer i = 1; i < first; i ++)
+					newData [channel] [++ j] = sound -> z [channel] [i];
+				for (integer i = last + 1; i <= oldNumberOfSamples; i ++)
+					newData [channel] [++ j] = sound -> z [channel] [i];
+				Melder_assert (j == newData.ncol);
 			}
 			Editor_save (me, U"Cut");
 			/*
-			 * Change without error.
-			 */
-			NUMmatrix_free <double> (oldData, 1, 1);
+				Change without error.
+			*/
 			sound -> xmin = 0.0;
 			sound -> xmax = newNumberOfSamples * sound -> dx;
 			sound -> nx = newNumberOfSamples;
 			sound -> x1 = 0.5 * sound -> dx;
-			sound -> z = newData.transfer();
+			sound -> z = newData.move();
 			Sound_clipboard = publish.move();
 
 			/* Start updating the markers of the FunctionEditor, respecting the invariants. */
@@ -151,7 +147,6 @@ static void menu_cb_Paste (SoundEditor me, EDITOR_ARGS_DIRECT) {
 	Sound sound = (Sound) my data;
 	integer leftSample = Sampled_xToLowIndex (sound, my endSelection);
 	integer oldNumberOfSamples = sound -> nx, newNumberOfSamples;
-	double **oldData = sound -> z;
 	if (! Sound_clipboard) {
 		Melder_warning (U"Clipboard is empty; nothing pasted.");
 		return;
@@ -168,31 +163,28 @@ static void menu_cb_Paste (SoundEditor me, EDITOR_ARGS_DIRECT) {
 	if (leftSample > oldNumberOfSamples) leftSample = oldNumberOfSamples;
 	newNumberOfSamples = oldNumberOfSamples + Sound_clipboard -> nx;
 	/*
-	 * Check without change.
-	 */
-	autoNUMmatrix <double> newData (1, sound -> ny, 1, newNumberOfSamples);
+		Check without change.
+	*/
+	autoMAT newData = newMATraw (sound -> ny, newNumberOfSamples);
 	for (integer channel = 1; channel <= sound -> ny; channel ++) {
 		integer j = 0;
-		for (integer i = 1; i <= leftSample; i ++) {
-			newData [channel] [++ j] = oldData [channel] [i];
-		}
-		for (integer i = 1; i <= Sound_clipboard -> nx; i ++) {
+		for (integer i = 1; i <= leftSample; i ++)
+			newData [channel] [++ j] = sound -> z [channel] [i];
+		for (integer i = 1; i <= Sound_clipboard -> nx; i ++)
 			newData [channel] [++ j] = Sound_clipboard -> z [channel] [i];
-		}
-		for (integer i = leftSample + 1; i <= oldNumberOfSamples; i ++) {
-			newData [channel] [++ j] = oldData [channel] [i];
-		}
+		for (integer i = leftSample + 1; i <= oldNumberOfSamples; i ++)
+			newData [channel] [++ j] = sound -> z [channel] [i];
+		Melder_assert (j == newData.ncol);
 	}
 	Editor_save (me, U"Paste");
 	/*
-	 * Change without error.
-	 */
-	NUMmatrix_free <double> (oldData, 1, 1);
+		Change without error.
+	*/
 	sound -> xmin = 0.0;
 	sound -> xmax = newNumberOfSamples * sound -> dx;
 	sound -> nx = newNumberOfSamples;
 	sound -> x1 = 0.5 * sound -> dx;
-	sound -> z = newData.transfer();
+	sound -> z = newData.move();
 
 	/* Start updating the markers of the FunctionEditor, respecting the invariants. */
 
@@ -329,10 +321,10 @@ void structSoundEditor :: v_draw () {
 	 * We check beforehand whether the window fits the LongSound buffer.
 	 */
 	if (our d_longSound.data && our endWindow - our startWindow > our d_longSound.data -> bufferLength) {
-		Graphics_setColour (our graphics.get(), Graphics_WHITE);
+		Graphics_setColour (our graphics.get(), Melder_WHITE);
 		Graphics_setWindow (our graphics.get(), 0.0, 1.0, 0.0, 1.0);
 		Graphics_fillRectangle (our graphics.get(), 0.0, 1.0, 0.0, 1.0);
-		Graphics_setColour (our graphics.get(), Graphics_BLACK);
+		Graphics_setColour (our graphics.get(), Melder_BLACK);
 		Graphics_setTextAlignment (our graphics.get(), Graphics_CENTRE, Graphics_BOTTOM);
 		Graphics_text (our graphics.get(), 0.5, 0.5,   U"(window longer than ", Melder_float (Melder_single (our d_longSound.data -> bufferLength)), U" seconds)");
 		Graphics_setTextAlignment (our graphics.get(), Graphics_CENTRE, Graphics_TOP);
@@ -344,7 +336,7 @@ void structSoundEditor :: v_draw () {
 
 	if (showAnalysis)
 		viewport = Graphics_insetViewport (our graphics.get(), 0.0, 1.0, 0.5, 1.0);
-	Graphics_setColour (our graphics.get(), Graphics_WHITE);
+	Graphics_setColour (our graphics.get(), Melder_WHITE);
 	Graphics_setWindow (our graphics.get(), 0.0, 1.0, 0.0, 1.0);
 	Graphics_fillRectangle (our graphics.get(), 0.0, 1.0, 0.0, 1.0);
 	TimeSoundEditor_drawSound (this, our d_sound.minimum, our d_sound.maximum);
@@ -388,21 +380,20 @@ void structSoundEditor :: v_draw () {
 }
 
 void structSoundEditor :: v_play (double a_tmin, double a_tmax) {
-	integer numberOfChannels = our d_longSound.data ? our d_longSound.data -> numberOfChannels : our d_sound.data -> ny;
+	integer numberOfChannels = ( our d_longSound.data ? our d_longSound.data -> numberOfChannels : our d_sound.data -> ny );
 	integer numberOfMuteChannels = 0;
-	bool *muteChannels = our d_sound. muteChannels;
-	for (integer i = 1; i <= numberOfChannels; i ++) {
-		if (muteChannels [i]) {
+	Melder_assert (our d_sound.muteChannels.size == numberOfChannels);
+	for (integer ichan = 1; ichan <= numberOfChannels; ichan ++)
+		if (our d_sound.muteChannels [ichan])
 			numberOfMuteChannels ++;
-		}
-	}
 	integer numberOfChannelsToPlay = numberOfChannels - numberOfMuteChannels;
-	Melder_require (numberOfChannelsToPlay > 0, U"Please select at least one channel to play.");
+	Melder_require (numberOfChannelsToPlay > 0,
+		U"Please select at least one channel to play.");
 	if (our d_longSound.data) {
 		if (numberOfMuteChannels > 0) {
 			autoSound part = LongSound_extractPart (our d_longSound.data, a_tmin, a_tmax, 1);
 			autoMixingMatrix thee = MixingMatrix_create (numberOfChannelsToPlay, numberOfChannels);
-			MixingMatrix_muteAndActivateChannels (thee.get(), muteChannels);
+			MixingMatrix_muteAndActivateChannels (thee.get(), our d_sound.muteChannels.get());
 			Sound_MixingMatrix_playPart (part.get(), thee.get(), a_tmin, a_tmax, theFunctionEditor_playCallback, this);
 		} else {
 			LongSound_playPart (our d_longSound.data, a_tmin, a_tmax, theFunctionEditor_playCallback, this);
@@ -410,7 +401,7 @@ void structSoundEditor :: v_play (double a_tmin, double a_tmax) {
 	} else {
 		if (numberOfMuteChannels > 0) {
 			autoMixingMatrix thee = MixingMatrix_create (numberOfChannelsToPlay, numberOfChannels);
-			MixingMatrix_muteAndActivateChannels (thee.get(), muteChannels);
+			MixingMatrix_muteAndActivateChannels (thee.get(), our d_sound.muteChannels.get());
 			Sound_MixingMatrix_playPart (our d_sound.data, thee.get(), a_tmin, a_tmax, theFunctionEditor_playCallback, this);
 		} else {
 			Sound_playPart (our d_sound.data, a_tmin, a_tmax, theFunctionEditor_playCallback, this);
@@ -419,10 +410,9 @@ void structSoundEditor :: v_play (double a_tmin, double a_tmax) {
 }
 
 bool structSoundEditor :: v_click (double xWC, double yWC, bool shiftKeyPressed) {
-	if ((our p_spectrogram_show || our p_formant_show) && yWC < 0.5 && xWC > our startWindow && xWC < our endWindow) {
+	if ((our p_spectrogram_show || our p_formant_show) && yWC < 0.5 && xWC > our startWindow && xWC < our endWindow)
 		our d_spectrogram_cursor = our p_spectrogram_viewFrom +
-			2.0 * yWC * (our p_spectrogram_viewTo - our p_spectrogram_viewFrom);
-	}
+				2.0 * yWC * (our p_spectrogram_viewTo - our p_spectrogram_viewFrom);
 	return SoundEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);   // drag & update
 }
 

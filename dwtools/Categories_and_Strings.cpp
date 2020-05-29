@@ -1,6 +1,6 @@
 /* Categories_and_Strings.cpp
  *
- * Copyright (C) 1993-2017 David Weenink
+ * Copyright (C) 1993-2018 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,14 +25,15 @@
 
 autoStrings Categories_to_Strings (Categories me) {
 	try {
-		Melder_require (my size > 0, U"There should be at least one category present.");
+		Melder_require (my size > 0,
+			U"There should be at least one category present.");
 		
 		autoStrings thee = Thing_new (Strings);
-		thy strings = autostring32vector (my size);
+		thy strings = autoSTRVEC (my size);
 		thy numberOfStrings = my size;
 
 		for (integer i = 1; i <= my size; i ++) {
-			SimpleString s = my at [i];
+			const SimpleString s = my at [i];
 			thy strings [i] = Melder_dup (s -> string.get());
 		}
 		return thee;

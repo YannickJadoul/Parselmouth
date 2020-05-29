@@ -154,7 +154,7 @@ autoAmplitudeTier PointProcess_Sound_to_AmplitudeTier_period (PointProcess me, S
 	double pmin, double pmax, double maximumPeriodFactor)
 {
 	try {
-		if (tmax <= tmin) tmin = my xmin, tmax = my xmax;
+		Function_unidirectionalAutowindow (me, & tmin, & tmax);
 		integer imin, imax;
 		integer numberOfPeaks = PointProcess_getWindowPoints (me, tmin, tmax, & imin, & imax);
 		if (numberOfPeaks < 3) Melder_throw (U"Too few pulses between ", tmin, U" and ", tmax, U" seconds.");
@@ -348,9 +348,8 @@ autoSound AmplitudeTier_to_Sound (AmplitudeTier me, double samplingFrequency, in
 		double dt = 1.0 / samplingFrequency;
 		double tmid = (my xmin + my xmax) / 2;
 		double t1 = tmid - 0.5 * (sound_nt - 1) * dt;
-		double *sound;
 		autoSound you = Sound_create (1, my xmin, my xmax, sound_nt, dt, t1);
-		sound = your z [1];
+		VEC sound = your z.row (1);
 		for (integer it = 1; it <= my points.size; it ++) {
 			RealPoint point = my points.at [it];
 			double t = point -> number, amplitude = point -> value, angle, halfampsinangle;

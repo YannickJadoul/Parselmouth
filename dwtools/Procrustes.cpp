@@ -1,6 +1,6 @@
 /* Procrustes.cpp
  *
- * Copyright (C) 1993-2018 David Weenink
+ * Copyright (C) 1993-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,18 +46,16 @@
 #include "oo_DESCRIPTION.h"
 #include "Procrustes_def.h"
 
+#include "NUM2.h"
+
 Thing_implement (Procrustes, AffineTransform, 0);
 
-void structProcrustes :: v_transform (double **in, integer nrows, double **out) {
-	for (integer i = 1; i <= nrows; i ++) {
-		for (integer j = 1; j <= n; j ++) {
-			longdouble tmp = 0.0;
-			for (integer k = 1; k <= n; k ++) {
-				tmp += in [i] [k] * r [k] [j];
-			}
-			out [i] [j] = s * tmp + t [j];
-		}
-	}
+void structProcrustes :: v_transform (MATVU const& out, constMATVU const& in) {
+	Melder_assert (in.nrow == out.nrow && in.ncol == out.ncol);
+	Melder_assert (in.ncol == dimension);
+	MATmul (out, in, our r.get());
+	out  *=  our s;
+	out  +=  our t.all();
 }
 
 autoAffineTransform structProcrustes :: v_invert () {
@@ -66,39 +64,24 @@ autoAffineTransform structProcrustes :: v_invert () {
 		R is symmetric rotation matrix -->
 		inverse is transpose!
 	*/
-
-	thy s = s == 0.0 ? 1.0 : 1.0 / s;
-
-	for (integer i = 1; i <= n; i ++) {
-		for (integer j = i + 1; j <= n; j ++) {
-			thy r [i] [j] = r [j] [i];
-			thy r [j] [i] = r [i] [j];
-		}
-		thy t [i] = 0.0;
-		for (integer j = 1; j <= thy n; j ++) {
-			thy t [i] -= thy r [j] [i] * t [j];
-		}
-
-		thy t [i] *= thy s;
-	}
+	thy s = ( our s == 0.0 ? 1.0 : 1.0 / our s );
+	thy r.all() <<= our r.transpose();
+	VECmul (thy t.get(), our r.get(), our t.get());
+	thy t.get()  *=  - thy s;
 	return thee.move();   // explicit move() seems to be needed because of the type difference
 }
 
 static void Procrustes_setDefaults (Procrustes me) {
 	my s = 1.0;
-	for (integer i = 1; i <= my n; i ++) {
-		my t [i] = 0.0;
-		my r [i] [i] = 1.0;
-		for (integer j = i + 1; j <= my n; j ++) {
-			my r [i] [j] = my r [j] [i] = 0.0;
-		}
-	}
+	my t.all() <<= 0.0;
+	my r.all() <<= 0.0;
+	my r.diagonal() <<= 1.0;
 }
 
-autoProcrustes Procrustes_create (integer n) {
+autoProcrustes Procrustes_create (integer dimension) {
 	try {
 		autoProcrustes me = Thing_new (Procrustes);
-		AffineTransform_init (me.get(), n);
+		AffineTransform_init (me.get(), dimension);
 		Procrustes_setDefaults (me.get());
 		return me;
 	} catch (MelderError) {

@@ -1,6 +1,6 @@
 /* Harmonicity.cpp
  *
- * Copyright (C) 1992-2008,2011,2012,2015-2018 Paul Boersma
+ * Copyright (C) 1992-2008,2011,2012,2015-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,12 @@
 Thing_implement (Harmonicity, Vector, 2);
 
 static autoVEC Harmonicity_getSoundingValues (Harmonicity me, double tmin, double tmax) {
-	if (tmax <= tmin) { tmin = my xmin; tmax = my xmax; }
+	Function_unidirectionalAutowindow (me, & tmin, & tmax);
 	integer imin, imax;
 	integer numberOfFrames = Sampled_getWindowSamples (me, tmin, tmax, & imin, & imax);
 	if (numberOfFrames < 1)
 		return autoVEC();
-	autoVEC soundingValues = VECraw (numberOfFrames);
+	autoVEC soundingValues = newVECraw (numberOfFrames);
 	integer numberOfSoundingFrames = 0;
 	for (integer iframe = imin; iframe <= imax; iframe ++)
 		if (my z [1] [iframe] != -200.0)
@@ -77,11 +77,10 @@ void structHarmonicity :: v_info () {
 				Melder_single (NUMquantile (soundingValues.get(), 0.75)), U" dB");
 		MelderInfo_writeLine (U"Minimum: ", Melder_single (soundingValues [1]), U" dB");
 		MelderInfo_writeLine (U"Maximum: ", Melder_single (soundingValues [soundingValues.size]), U" dB");
-		double mean, stdev;
-		NUM_sum_mean_sumsq_variance_stdev (soundingValues.get(), nullptr, & mean, nullptr, nullptr, & stdev);
-		MelderInfo_writeLine (U"Average: ", Melder_single (mean), U" dB");
+		MelderGaussianStats stats = NUMmeanStdev (soundingValues.all());
+		MelderInfo_writeLine (U"Average: ", Melder_single (stats.mean), U" dB");
 		if (soundingValues.size > 1)
-			MelderInfo_writeLine (U"Standard deviation: ", Melder_single (stdev), U" dB");
+			MelderInfo_writeLine (U"Standard deviation: ", Melder_single (stats.stdev), U" dB");
 	}
 }
 
@@ -98,7 +97,7 @@ autoHarmonicity Harmonicity_create (double tmin, double tmax, integer nt, double
 autoMatrix Harmonicity_to_Matrix (Harmonicity me) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
-		NUMvector_copyElements (my z [1], thy z [1], 1, my nx);
+		thy z.all() <<= my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U"not converted to Matrix.");
@@ -108,7 +107,7 @@ autoMatrix Harmonicity_to_Matrix (Harmonicity me) {
 autoHarmonicity Matrix_to_Harmonicity (Matrix me) {
 	try {
 		autoHarmonicity thee = Harmonicity_create (my xmin, my xmax, my nx, my dx, my x1);
-		NUMvector_copyElements (my z [1], thy z [1], 1, my nx);
+		thy z.all() <<= my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U"not converted to Harmonicity.");

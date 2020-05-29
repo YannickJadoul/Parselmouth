@@ -2,7 +2,7 @@
 #define _melder_debug_h_
 /* melder_debug.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ namespace MelderTrace {
 	void _close (FILE *f);
 	conststring8  _peek32to8  (conststring32 string);
 	conststring16 _peek32to16 (conststring32 string);
-};
+}
 
 inline static void _recursiveTemplate_Melder_trace (FILE *f, const MelderArg& arg) {
 	if (arg._arg)
@@ -61,7 +61,7 @@ void Melder_trace (conststring8 sourceCodeFileName, int lineNumber, conststring8
 }
 
 #ifdef NDEBUG
-	#define trace(x)   ((void) 0)
+	#define trace(...)   ((void) 0)
 #else
 	#define trace(...)   (! Melder_isTracing ? (void) 0 : Melder_trace (__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__))
 #endif

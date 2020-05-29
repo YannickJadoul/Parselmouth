@@ -2,7 +2,7 @@
 #define _PAIRWISE_SUM_h_
 /* PAIRWISE_SUM.h
  *
- * Copyright (C) 2017,2018 Paul Boersma <paul.boersma@uva.nl>
+ * Copyright (C) 2017-2019 Paul Boersma <paul.boersma@uva.nl>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -159,7 +159,7 @@
 
 	## 4. PRECISION OF SEQUENTIAL SUMMATION
 	
-	The worst case floating-point rounding error for sequential summation is N * epsilon,
+	The worst-case floating-point rounding error for sequential summation is N * epsilon,
 	where N is the number of numbers to add, and epsilon is the precision of one number.
 	The expected random-walk rounding error is epsilon * sqrt (N).
 
@@ -265,21 +265,33 @@
 		)
 		printf ("%.17g", (double) inner);
 
-	Note for the sixth argument: you can see here that you can do the two increments simultaneously
-	by using parentheses and a comma; fortunately, the C macro preprocessor understands enough
-	about parentheses to see that you mean the sixth argument to be a single argument.
-
-	Note for the seventh argument: as 64-bit multiplication loses a lot of the precision of its
+	Note for the sixth argument: as 64-bit multiplication loses a lot of the precision of its
 	two 64-bit operands, it is advisable to convert both operands to `long double`
 	*before* the multiplication, as is done here. This usually costs no extra computation
 	time (it can actually be faster). If you do
-	
+
 		PAIRWISE_SUM (long double, inner, long, n,
 			const double *xx = & x [1]; const double *yy = & y [1], *xx * *yy, (++ xx, ++ yy))
 		printf ("%.17g", (double) inner);
 
 	instead, the conversion to `long double` is done (by the macro) *after* the multiplication,
 	which is less precise.
+
+	Note for the seventh argument: you can see here that you can do the two increments simultaneously
+	by using parentheses and a comma; fortunately, the C macro preprocessor understands enough
+	about parentheses to see that you mean the seventh argument to be a single argument.
+
+	If you find the tricks with the semicolon and the parentheses too arcane, you can also just do
+
+		PAIRWISE_SUM (long double, inner, long, n,
+			long i = 1,
+			(long double) x [i] * (long double) y [i],
+			i ++
+		)
+		printf ("%.17g", (double) inner);
+
+	and hope (i.e. test) that the compiler creates equally fast code. This method with its
+	additional loop counter will usually be needed anyway when you want to *nest* pairwise sums.
 
 	Other use cases include array multiplication with strides...
 
@@ -300,7 +312,7 @@
 			(long double) *xx * (long double) *filter,
 			(xx += 1, filter -= 1)
 		)
-		result [i] = conv;
+		result [i] = (double) conv;
 	}
 
 	... and matrix multiplication, and computing norms.

@@ -2,7 +2,7 @@
 #define _melder_audiofiles_h_
 /* melder_audiofiles.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,16 +45,18 @@ conststring32 Melder_audioFileTypeString (int audioFileType);   // "AIFF", "AIFC
 #define Melder_POLYPHONE  12
 #define Melder_IEEE_FLOAT_32_BIG_ENDIAN  13
 #define Melder_IEEE_FLOAT_32_LITTLE_ENDIAN  14
-#define Melder_FLAC_COMPRESSION_16 15
-#define Melder_FLAC_COMPRESSION_24 16
-#define Melder_FLAC_COMPRESSION_32 17
-#define Melder_MPEG_COMPRESSION_16 18
-#define Melder_MPEG_COMPRESSION_24 19
-#define Melder_MPEG_COMPRESSION_32 20
+#define Melder_IEEE_FLOAT_64_BIG_ENDIAN  15
+#define Melder_IEEE_FLOAT_64_LITTLE_ENDIAN  16
+#define Melder_FLAC_COMPRESSION_16 17
+#define Melder_FLAC_COMPRESSION_24 18
+#define Melder_FLAC_COMPRESSION_32 19
+#define Melder_MPEG_COMPRESSION_16 20
+#define Melder_MPEG_COMPRESSION_24 21
+#define Melder_MPEG_COMPRESSION_32 22
 int Melder_defaultAudioFileEncoding (int audioFileType, int numberOfBitsPerSamplePoint);   /* BIG_ENDIAN, BIG_ENDIAN, LITTLE_ENDIAN, BIG_ENDIAN, LITTLE_ENDIAN */
-void MelderFile_writeAudioFileHeader (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
-void MelderFile_writeAudioFileTrailer (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
-void MelderFile_writeAudioFile (MelderFile file, int audioFileType, const short *buffer, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint);
+void MelderFile_writeAudioFileHeader (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, integer numberOfChannels, int numberOfBitsPerSamplePoint);
+void MelderFile_writeAudioFileTrailer (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, integer numberOfChannels, int numberOfBitsPerSamplePoint);
+void MelderFile_writeAudioFile (MelderFile file, int audioFileType, const short *buffer, integer sampleRate, integer numberOfSamples, integer numberOfChannels, int numberOfBitsPerSamplePoint);
 
 int MelderFile_checkSoundFile (MelderFile file, integer *numberOfChannels, int *encoding,
 	double *sampleRate, integer *startOfData, integer *numberOfSamples);
@@ -63,14 +65,14 @@ int MelderFile_checkSoundFile (MelderFile file, integer *numberOfChannels, int *
  * The data start at 'startOfData' bytes from the start of the file.
  */
 int Melder_bytesPerSamplePoint (int encoding);
-void Melder_readAudioToFloat (FILE *f, integer numberOfChannels, int encoding, double **buffer, integer numberOfSamples);
+void Melder_readAudioToFloat (FILE *f, int encoding, MAT buffer);
 /* Reads channels into buffer [ichannel], which are base-1.
  */
 void Melder_readAudioToShort (FILE *f, integer numberOfChannels, int encoding, short *buffer, integer numberOfSamples);
 /* If stereo, buffer will contain alternating left and right values.
  * Buffer is base-0.
  */
-void MelderFile_writeFloatToAudio (MelderFile file, integer numberOfChannels, int encoding, double **buffer, integer numberOfSamples, int warnIfClipped);
+void MelderFile_writeFloatToAudio (MelderFile file, constMATVU const& buffer, int encoding, bool warnIfClipped);
 void MelderFile_writeShortToAudio (MelderFile file, integer numberOfChannels, int encoding, const short *buffer, integer numberOfSamples);
 
 /* End of file melder_audiofiles.h */

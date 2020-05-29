@@ -1,6 +1,6 @@
 /* Pitch_def.h
  *
- * Copyright (C) 1992-2006,2008,2011,2012,2015-2018 Paul Boersma
+ * Copyright (C) 1992-2006,2008,2011,2012,2015-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ oo_DEFINE_STRUCT (Pitch_Frame)
 		oo_INTEGER (nCandidates)
 	#endif
 
-	oo_STRUCT_VECTOR (Pitch_Candidate, candidate, nCandidates)
+	oo_STRUCTVEC (Pitch_Candidate, candidates, nCandidates)
 
 oo_END_STRUCT (Pitch_Frame)
 #undef ooSTRUCT
@@ -80,7 +80,7 @@ oo_DEFINE_CLASS (Pitch, Sampled)
 
 	oo_DOUBLE (ceiling)
 	oo_INT16 (maxnCandidates)
-	oo_STRUCT_VECTOR (Pitch_Frame, frame, nx)
+	oo_STRUCTVEC (Pitch_Frame, frames, nx)
 
 	#if oo_DECLARING
 		void v_info ()
@@ -101,6 +101,10 @@ oo_DEFINE_CLASS (Pitch, Sampled)
 			override;
 		double v_getValueAtSample (integer sampleNumber, integer level, int unit)
 			override;
+		conststring32 v_getIndexText () const
+			override { return U"frame number"; }
+		conststring32 v_getNxText () const
+			override { return U"the number of frames"; }
 	#endif
 
 oo_END_CLASS (Pitch)

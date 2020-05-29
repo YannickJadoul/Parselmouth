@@ -1,6 +1,6 @@
 /* NUMhuber.cpp
  *
- * Copyright (C) 1994-2008, 2015-2017 David Weenink
+ * Copyright (C) 1994-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,109 +22,73 @@
 */
 
 #include "NUM2.h"
+#include "melder.h"
 
-void NUMmad (double *x, integer n, double *location, bool wantlocation, double *mad, double *work) {
-	double *tmp = work;
-
-	*mad = undefined;
-	Melder_require (n > 0, U"The dimension should be larger than zero.");
-	
-	if (n == 1) {
-		*location = x[1];
+void NUMmad (constVEC x, double *inout_location, bool wantlocation, double *out_mad, VEC const& workSpace) {
+	Melder_assert (inout_location);
+	Melder_assert (workSpace.size >= x.size);
+	if (x.size == 1) {
+		if (wantlocation)
+			*inout_location= x [1];
+		if (out_mad)
+			*out_mad = undefined;
 		return;
 	}
-	autoNUMvector<double> atmp;
-	if (! work)  {
-		atmp.reset (1, n);
-		tmp = atmp.peek();
-	}
-
-	for (integer i = 1; i <= n; i ++) {
-		tmp [i] = x [i];
-	}
-
+	
+	VEC work = workSpace.part (1, x.size);
+	work <<= x;
+	
 	if (wantlocation) {
-		NUMsort_d (n, tmp);
-		*location = NUMquantile (n, tmp, 0.5);
+		VECsort_inplace (work);
+		*inout_location = NUMquantile (work, 0.5);
 	}
-
-	for (integer i = 1; i <= n; i++) {
-		tmp [i] = fabs (tmp [i] - *location);
+	if (out_mad) {
+		for (integer i = 1; i <= x.size; i ++)
+			work [i] = fabs (work [i] - *inout_location);
+		VECsort_inplace (work);
+		*out_mad = 1.4826 * NUMquantile (work, 0.5);
 	}
-
-	NUMsort_d (n, tmp);
-	*mad = 1.4826 * NUMquantile (n, tmp, 0.5);
 }
 
 static double NUMgauss (double x) {
 	return NUM1_sqrt2pi * exp (- 0.5 * x * x);
 }
 
-void NUMstatistics_huber (double *x, integer n, double *location, bool wantlocation,
-                          double *scale, bool wantscale, double k, double tol, double *work) {
-	double *tmp = work;
-	double theta = 2.0 * NUMgaussP (k) - 1.0;
-	double beta = theta + k * k * (1.0 - theta) - 2.0 * k * NUMgauss (k);
-	integer n1 = n;
+void NUMstatistics_huber (constVEC x, double *inout_location, bool wantlocation, double *inout_scale, bool wantscale, double k_stdev, double tol, integer maximumNumberOfiterations, VEC const& workSpace) {
+	Melder_assert (inout_location && inout_scale);
+	Melder_assert (workSpace.size >= x.size);
+	
+	const double theta = 2.0 * NUMgaussP (k_stdev) - 1.0;
+	const double beta = theta + k_stdev * k_stdev * (1.0 - theta) - 2.0 * k_stdev * NUMgauss (k_stdev);
+	double scale = *inout_scale, location = *inout_location;
+	
+	NUMmad (x, & location, wantlocation, & scale, workSpace);
+	if (scale > 0.0) {
+		VEC work = workSpace.part (1, x.size);
+		const double degreesOfFreedom = ( wantlocation ? x.size - 1 : x.size );
+		integer iter = 0;
+		bool farFromLocation = false, farFromScale = false;
+		do {
+			const double previousLocation = location;
+			const double previousScale = scale;
 
-	autoNUMvector<double> atmp;
-	if (work == 0)  {
-		atmp.reset (1, n);
-		tmp = atmp.peek();
-	}
-	double mad;
-	NUMmad (x, n, location, wantlocation, & mad, tmp);
-	if (wantscale) {
-		*scale = mad;
-	}
-	if (*scale == 0) {
-		Melder_throw (U"Scale is zero.");
-	}
-
-	double mu0, mu1 = *location;
-	double s0, s1 = *scale;
-
-	if (wantlocation) {
-		n1 = n - 1;
-	}
-
-	do {
-		mu0 = mu1;
-		s0 = s1;
-
-		double low  = mu0 - k * s0;
-		double high = mu0 + k * s0;
-
-		for (integer i = 1; i <= n; i ++) {
-			if (x [i] < low) {
-				tmp [i] = low;
-			} else if (x [i] > high) {
-				tmp [i] = high;
-			} else {
-				tmp [i] =  x [i];
+			work  <<=  x;
+			VECclip_inplace (work, location - k_stdev * scale, location + k_stdev * scale); // winsorize
+			
+			if (wantlocation) {
+				location = NUMmean (work);
+				farFromLocation = ( fabs (location - previousLocation) > std::max (tol * fabs (location), NUMeps) );
 			}
-		}
-		if (wantlocation) {
-			mu1 = 0.0;
-			for (integer i = 1; i <= n; i ++) {
-				mu1 += tmp [i];
+			if (wantscale) {
+				work  -=  location;
+				const double sumsq = NUMsum2 (work);
+				scale = sqrt (sumsq / (degreesOfFreedom * beta));
+				farFromScale = ( fabs (scale - previousScale) > std::max (tol * scale, NUMeps) );
 			}
-			mu1 /= n;
-		}
-		if (wantscale) {
-			s1 = 0.0;
-			for (integer i = 1; i <= n; i ++) {
-				double dx = tmp [i] - mu1;
-				s1 += dx * dx;
-			}
-			s1 = sqrt (s1 / (n1 * beta));
-		}
-	} while (fabs (mu0 - mu1) > tol * s0 || fabs (s0 - s1) > tol * s0); //TODO fabs (mu0 - mu1) > tol * s0 ??
-
-	if (wantlocation) {
-		*location = mu1;
+		} while (++ iter < maximumNumberOfiterations && (farFromScale || farFromLocation));
 	}
-	if (wantscale) {
-		*scale = s1;
-	}
+	if (wantlocation)
+		*inout_location = location;
+	if (wantscale)
+		*inout_scale = scale;
 }

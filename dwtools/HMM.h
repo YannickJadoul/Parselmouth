@@ -2,7 +2,7 @@
 #define _HMM_h_
 /* HMM.h
  *
- * Copyright (C) 2010-2017 David Weenink
+ * Copyright (C) 2010-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +25,11 @@
 #include "SSCP.h"
 #include "Index.h"
 
+
 Thing_declare (HMMStateList);
 Thing_declare (HMMObservationList);
+
+#include "HMM_enums.h"
 
 #include "HMM_def.h"
 
@@ -50,16 +53,17 @@ Thing_define (HMMBaumWelch, Daata) {
 	integer numberOfSymbols;
 	double lnProb;
 	double minProb;
-	double **alpha;
-	double **beta;
-	double *scale;
-	double **gamma;
-	double ***xi;
-	double **aij_num, **aij_denom;
-	double **bik_num, **bik_denom;
-
-	void v_destroy () noexcept
-		override;
+	autoMAT alpha;
+	autoMAT beta;
+	autoVEC scale;
+	autoMAT gamma;
+	autoTEN3 xi;
+	autoVEC aij_num_p0;
+	autoMAT aij_num;
+	autoVEC aij_denom_p0;
+	autoMAT aij_denom;
+	autoMAT bik_num;
+	autoMAT bik_denom;
 };
 
 Thing_define (HMMStateSequence, Strings) {
@@ -108,14 +112,14 @@ autoHMM HMM_create (int leftToRight, integer numberOfStates, integer numberOfObs
 autoHMM HMM_createSimple (int leftToRight, conststring32 states_string, conststring32 symbols_string);
 
 autoHMM HMM_createContinuousModel (int leftToRight, integer numberOfStates, integer numberOfObservationSymbols,
-	integer numberOfMixtureComponentsPerSymbol, integer componentDimension, integer componentStorage);
+	integer numberOfMixtureComponentsPerSymbol, integer componentDimension, kHMMstorage componentStorage);
 
 autoHMM HMM_createFullContinuousModel (int leftToRight, integer numberOfStates, integer numberOfObservationSymbols,
 	integer numberOfFeatureStreams, integer *dimensionOfStream, integer *numberOfGaussiansforStream);
 
 autoHMM HMM_createFromHMMObservationSequence (HMMObservationSequence me, integer numberOfStates, int leftToRight);
 
-void HMM_draw (HMM me, Graphics g, int garnish);
+void HMM_draw (HMM me, Graphics g, bool garnish);
 
 void HMM_drawBackwardProbabilitiesIllustration (Graphics g, bool garnish);
 
@@ -133,7 +137,7 @@ void HMM_setDefaultObservations (HMM me);
 
 void HMM_setDefaultTransitionProbs (HMM me);
 
-void HMM_setDefaultStartProbs (HMM me);
+void HMM_setDefaultInitialStateProbs (HMM me);
 
 void HMM_setDefaultEmissionProbs (HMM me);
 
@@ -180,7 +184,7 @@ double HMM_HMMStateSequence_getProbability (HMM me, HMMStateSequence thee);
 
 void HMM_HMMObservationSequenceBag_learn (HMM me, HMMObservationSequenceBag thee, double delta_lnp, double minProb, int info);
 
-void HMM_HMMStateSequence_drawTrellis (HMM me, HMMStateSequence thee, Graphics g, int connect, int garnish);
+void HMM_HMMStateSequence_drawTrellis (HMM me, HMMStateSequence thee, Graphics g, bool connect, bool garnish);
 
 double HMM_HMMObservationSequence_getProbability (HMM me, HMMObservationSequence thee);
 

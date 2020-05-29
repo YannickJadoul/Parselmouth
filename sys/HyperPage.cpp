@@ -1,6 +1,6 @@
 /* HyperPage.cpp
  *
- * Copyright (C) 1996-2018 Paul Boersma
+ * Copyright (C) 1996-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
 #include "HyperPage.h"
 #include "Printer.h"
 #include "machine.h"
@@ -145,7 +144,7 @@ void HyperPage_initSheetOfPaper (HyperPage me) {
 
 static void updateVerticalScrollBar (HyperPage me);
 
-void HyperPage_any (HyperPage me, conststring32 text, kGraphics_font font, int size, int style, double minFooterDistance,
+void HyperPage_any (HyperPage me, conststring32 text, kGraphics_font font, double size, int style, double minFooterDistance,
 	double x, double secondIndent, double topSpacing, double bottomSpacing, uint32 method)
 {
 	if (my rightMargin == 0) return;   // no infinite heights please
@@ -218,7 +217,7 @@ if (! my printing) {
 }
 
 void HyperPage_pageTitle (HyperPage me, conststring32 title) {
-	HyperPage_any (me, title, my p_font, my p_fontSize * 2, 0,
+	HyperPage_any (me, title, my p_font, my p_fontSize * 2.0, 0,
 		2.0, 0.0, 0.0, my printing ? 0.4/2 : 0.2/2, 0.3/2, HyperPage_ADD_BORDER);
 }
 void HyperPage_intro (HyperPage me, conststring32 text) {
@@ -290,7 +289,7 @@ void HyperPage_prototype (HyperPage me, conststring32 text) {
 void HyperPage_formula (HyperPage me, conststring32 formula) {
 	double topSpacing = 0.2, bottomSpacing = 0.2, minFooterDistance = 0.0;
 	kGraphics_font font = my p_font;
-	int size = my p_fontSize;
+	double size = my p_fontSize;
 if (! my printing) {
 	my d_y -= ( my previousBottomSpacing > topSpacing ? my previousBottomSpacing : topSpacing ) * size / 12.0;
 	my d_y -= size * (1.2/72);
@@ -380,7 +379,7 @@ void HyperPage_script (HyperPage me, double width_inches, double height_inches, 
 	autoInterpreter interpreter = Interpreter_createFromEnvironment (nullptr);
 	double topSpacing = 0.1, bottomSpacing = 0.1, minFooterDistance = 0.0;
 	kGraphics_font font = my p_font;
-	int size = my p_fontSize;
+	double size = my p_fontSize;
 	double true_width_inches = width_inches * ( width_inches < 0.0 ? -1.0 : size / 12.0 );
 	double true_height_inches = height_inches * ( height_inches < 0.0 ? -1.0 : size / 12.0 );
 if (! my printing) {
@@ -411,7 +410,7 @@ if (! my printing) {
 			theCurrentPraatPicture -> font = (int) font;
 			theCurrentPraatPicture -> fontSize = size;
 			theCurrentPraatPicture -> lineType = Graphics_DRAWN;
-			theCurrentPraatPicture -> colour = Graphics_BLACK;
+			theCurrentPraatPicture -> colour = Melder_BLACK;
 			theCurrentPraatPicture -> lineWidth = 1.0;
 			theCurrentPraatPicture -> arrowSize = 1.0;
 			theCurrentPraatPicture -> speckleSize = 1.0;
@@ -455,7 +454,7 @@ if (! my printing) {
 			Graphics_setLineWidth (my graphics.get(), 1.0);
 			Graphics_setArrowSize (my graphics.get(), 1.0);
 			Graphics_setSpeckleSize (my graphics.get(), 1.0);
-			Graphics_setColour (my graphics.get(), Graphics_BLACK);
+			Graphics_setColour (my graphics.get(), Melder_BLACK);
 			/*Graphics_Link *paragraphLinks;
 			integer numberOfParagraphLinks = Graphics_getLinks (& paragraphLinks);
 			if (my links) for (integer ilink = 1; ilink <= numberOfParagraphLinks; ilink ++) {
@@ -508,7 +507,7 @@ if (! my printing) {
 		theCurrentPraatPicture -> font = (int) font;
 		theCurrentPraatPicture -> fontSize = size;
 		theCurrentPraatPicture -> lineType = Graphics_DRAWN;
-		theCurrentPraatPicture -> colour = Graphics_BLACK;
+		theCurrentPraatPicture -> colour = Melder_BLACK;
 		theCurrentPraatPicture -> lineWidth = 1.0;
 		theCurrentPraatPicture -> arrowSize = 1.0;
 		theCurrentPraatPicture -> speckleSize = 1.0;
@@ -551,7 +550,7 @@ if (! my printing) {
 		Graphics_setLineWidth (my ps, 1.0);
 		Graphics_setArrowSize (my ps, 1.0);
 		Graphics_setSpeckleSize (my ps, 1.0);
-		Graphics_setColour (my ps, Graphics_BLACK);
+		Graphics_setColour (my ps, Melder_BLACK);
 		theCurrentPraatApplication = & theForegroundPraatApplication;
 		theCurrentPraatObjects = & theForegroundPraatObjects;
 		theCurrentPraatPicture = & theForegroundPraatPicture;
@@ -680,23 +679,23 @@ static void updateSizeMenu (HyperPage me) {
 	GuiMenuItem_check (my fontSizeButton_18, my p_fontSize == 18);
 	GuiMenuItem_check (my fontSizeButton_24, my p_fontSize == 24);
 }
-static void setFontSize (HyperPage me, int fontSize) {
+static void setFontSize (HyperPage me, double fontSize) {
 	my pref_fontSize () = my p_fontSize = fontSize;
 	if (my graphics) Graphics_updateWs (my graphics.get());
 	updateSizeMenu (me);
 }
 
-static void menu_cb_10 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 10); }
-static void menu_cb_12 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 12); }
-static void menu_cb_14 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 14); }
-static void menu_cb_18 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 18); }
-static void menu_cb_24 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 24); }
+static void menu_cb_10 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 10.0); }
+static void menu_cb_12 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 12.0); }
+static void menu_cb_14 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 14.0); }
+static void menu_cb_18 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 18.0); }
+static void menu_cb_24 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 24.0); }
 
 static void menu_cb_fontSize (HyperPage me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Font size", nullptr)
-		NATURAL (fontSize, U"Font size (points)", my default_fontSize ())
+		POSITIVE (fontSize, U"Font size (points)", my default_fontSize ())
 	EDITOR_OK
-		SET_INTEGER (fontSize, my p_fontSize)
+		SET_REAL (fontSize, my p_fontSize)
 	EDITOR_DO
 		setFontSize (me, fontSize);
 	EDITOR_END
@@ -868,13 +867,13 @@ static void gui_drawingarea_cb_resize (HyperPage me, GuiDrawingArea_ResizeEvent 
 }
 
 static void gui_button_cb_previousPage (HyperPage me, GuiButtonEvent /* event */) {
-	HyperPage_goToPage_i (me, my v_getCurrentPageNumber () > 1 ?
+	HyperPage_goToPage_number (me, my v_getCurrentPageNumber () > 1 ?
 		my v_getCurrentPageNumber () - 1 : my v_getNumberOfPages ());
 }
 
 static void gui_button_cb_nextPage (HyperPage me, GuiButtonEvent /* event */) {
 	integer currentPageNumber = my v_getCurrentPageNumber ();
-	HyperPage_goToPage_i (me, currentPageNumber < my v_getNumberOfPages () ? currentPageNumber + 1 : 1);
+	HyperPage_goToPage_number (me, currentPageNumber < my v_getNumberOfPages () ? currentPageNumber + 1 : 1);
 }
 
 void structHyperPage :: v_createChildren () {
@@ -957,8 +956,8 @@ int HyperPage_goToPage (HyperPage me, conststring32 title) {
 	return 1;	
 }
 
-void HyperPage_goToPage_i (HyperPage me, integer i) {
-	my v_goToPage_i (i);   // catch -> HyperPage_clear (me); ?
+void HyperPage_goToPage_number (HyperPage me, integer i) {
+	my v_goToPage_number (i);   // catch -> HyperPage_clear (me); ?
 	my top = 0;
 	HyperPage_clear (me);
 	updateVerticalScrollBar (me);   // scroll to the top (my top == 0)

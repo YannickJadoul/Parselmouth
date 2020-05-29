@@ -1,6 +1,6 @@
 /* manual_FFNet.c
  *
- * Copyright (C) 1994-2013, 2016 David Weenink
+ * Copyright (C) 1994-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -329,7 +329,7 @@ DEFINITION (U"the number of different categories that you want the net to learn.
 TAG (U"##Number of units in hidden layer 1#, ##Number of units in hidden layer 2#") \
 DEFINITION (U"determine the number of units in the hidden layers. " \
 	"If you want a neural net with no hidden layers, both numbers have to be 0. "\
-	"If you want a neural net with only 1 hidden layer then one of these numbers has to differ from 0. ")
+	"If you want a neural net with only 1 hidden layer then one of these numbers should differ from 0. ")
 
 MAN_BEGIN (U"Create FFNet...", U"djmw", 20040420)
 INTRO (U"Create a new feedforward neural net of type @FFNet.")

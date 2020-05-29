@@ -1,6 +1,6 @@
 /* CC_def.h
  * 
- * Copyright (C) 1993-2013 David Weenink
+ * Copyright (C) 1993-2018 David Weenink
  * 
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,14 +24,14 @@ oo_DEFINE_STRUCT (CC_Frame)
 	#if oo_READING_BINARY
 		oo_VERSION_UNTIL (1)
 			oo_FLOAT (c0)
-			oo_FLOAT_VECTOR (c, numberOfCoefficients)
+			oo_obsoleteVEC32 (c, numberOfCoefficients)
 		oo_VERSION_ELSE
 			oo_DOUBLE (c0)
-			oo_DOUBLE_VECTOR (c, numberOfCoefficients)
+			oo_VEC (c, numberOfCoefficients)
 		oo_VERSION_END
 	#else
 		oo_DOUBLE (c0)
-		oo_DOUBLE_VECTOR (c, numberOfCoefficients)
+		oo_VEC (c, numberOfCoefficients)
 	#endif
 
 oo_END_STRUCT (CC_Frame)
@@ -45,7 +45,7 @@ oo_DEFINE_CLASS (CC, Sampled)
 	oo_DOUBLE (fmax)
 	// c[0]..c[maximumNumberOfCoefficients] ; needed for inverse transform
 	oo_INTEGER (maximumNumberOfCoefficients)
-	oo_STRUCT_VECTOR (CC_Frame, frame, nx)
+	oo_STRUCTVEC (CC_Frame, frame, nx)
 
 	#if oo_DECLARING
 		void v_info ()

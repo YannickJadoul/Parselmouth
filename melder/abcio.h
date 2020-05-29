@@ -2,7 +2,7 @@
 #define _abcio_h_
 /* abcio.h
  *
- * Copyright (C) 1992-2011,2015,2017,2018 Paul Boersma
+ * Copyright (C) 1992-2011,2015,2017-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ int texgeti8 (MelderReadText text);
 int16 texgeti16 (MelderReadText text);
 int32 texgeti32 (MelderReadText text);
 integer texgetinteger (MelderReadText text);
+#define texgetinteger16BE texgetinteger
 #define texgetinteger32BE texgetinteger
 unsigned int texgetu8 (MelderReadText text);
 uint16 texgetu16 (MelderReadText text);
@@ -38,8 +39,6 @@ int texgete16 (MelderReadText text, enum_generic_getValue getValue);
 bool texgeteb (MelderReadText text);
 bool texgeteq (MelderReadText text);
 bool texgetex (MelderReadText text);
-autostring8 texgets16 (MelderReadText text);
-autostring8 texgets32 (MelderReadText text);
 autostring32 texgetw16 (MelderReadText text);
 autostring32 texgetw32 (MelderReadText text);
 
@@ -47,32 +46,35 @@ void texindent (MelderFile file);
 void texexdent (MelderFile file);
 void texresetindent (MelderFile file);
 
-#define texput_UP_TO_SIX_NULLABLE_STRINGS  \
+#define texput_UP_TO_NINE_NULLABLE_STRINGS  \
 	conststring32 s1 = nullptr, conststring32 s2 = nullptr, conststring32 s3 = nullptr, \
-	conststring32 s4 = nullptr, conststring32 s5 = nullptr, conststring32 s6 = nullptr
-void texputintro   (MelderFile file,                                        texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputi8      (MelderFile file, int i,                                 texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputi16     (MelderFile file, int i,                                 texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputi32     (MelderFile file, long i,                                texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputinteger (MelderFile file, integer i,                             texput_UP_TO_SIX_NULLABLE_STRINGS);
+	conststring32 s4 = nullptr, conststring32 s5 = nullptr, conststring32 s6 = nullptr, \
+	conststring32 s7 = nullptr, conststring32 s8 = nullptr, conststring32 s9 = nullptr
+void texputintro   (MelderFile file,                                        texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputi8      (MelderFile file, int i,                                 texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputi16     (MelderFile file, int i,                                 texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputi32     (MelderFile file, long i,                                texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputinteger (MelderFile file, integer i,                             texput_UP_TO_NINE_NULLABLE_STRINGS);
+#define texputinteger16BE texputinteger
 #define texputinteger32BE texputinteger
-void texputu8      (MelderFile file, unsigned int u,                        texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputu16     (MelderFile file, unsigned int u,                        texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputu32     (MelderFile file, unsigned long u,                       texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputr32     (MelderFile file, double x,                              texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputr64     (MelderFile file, double x,                              texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputc64     (MelderFile file, dcomplex z,                            texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputc128    (MelderFile file, dcomplex z,                            texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texpute8      (MelderFile file, int i, conststring32 (*getText) (int), texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texpute16     (MelderFile file, int i, conststring32 (*getText) (int), texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputeb      (MelderFile file, bool i,                                texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputeq      (MelderFile file, bool i,                                texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputex      (MelderFile file, bool i,                                texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputs8      (MelderFile file, conststring8 s,                        texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputs16     (MelderFile file, conststring8 s,                        texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputs32     (MelderFile file, conststring8 s,                        texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputw16     (MelderFile file, conststring32 s,                       texput_UP_TO_SIX_NULLABLE_STRINGS);
-void texputw32     (MelderFile file, conststring32 s,                       texput_UP_TO_SIX_NULLABLE_STRINGS);
+void texputu8      (MelderFile file, unsigned int u,                        texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputu16     (MelderFile file, unsigned int u,                        texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputu32     (MelderFile file, unsigned long u,                       texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputr32     (MelderFile file, double x,                              texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputr64     (MelderFile file, double x,                              texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputc64     (MelderFile file, dcomplex z,                            texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputc128    (MelderFile file, dcomplex z,                            texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texpute8      (MelderFile file, int i, conststring32 (*getText) (int), texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texpute16     (MelderFile file, int i, conststring32 (*getText) (int), texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputeb      (MelderFile file, bool i,                                texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputeq      (MelderFile file, bool i,                                texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputex      (MelderFile file, bool i,                                texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputs8      (MelderFile file, conststring8 s,                        texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputs16     (MelderFile file, conststring8 s,                        texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputs32     (MelderFile file, conststring8 s,                        texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputw16     (MelderFile file, conststring32 s,                       texput_UP_TO_NINE_NULLABLE_STRINGS);
+void texputw32     (MelderFile file, conststring32 s,                       texput_UP_TO_NINE_NULLABLE_STRINGS);
+#undef texput_UP_TO_NINE_NULLABLE_STRINGS
 
 /* Portable device-independent binary input and output. */
 /* Works on all machines with 8-bit bytes and chars, and 2's complement integers. */
@@ -90,6 +92,7 @@ int16 bingeti16 (FILE *f);   void binputi16 (int16 i, FILE *f);   // -32768..327
 int32 bingeti24 (FILE *f);   void binputi24 (int32 i, FILE *f);   // -8388608..8388607
 int32 bingeti32 (FILE *f);   void binputi32 (int32 i, FILE *f);   // -2147483648..2147483647
 integer bingetinteger32BE (FILE *f);   void binputinteger32BE (integer i, FILE *f);
+integer bingetinteger16BE (FILE *f);   void binputinteger16BE (integer i, FILE *f);
 /*
 	Read or write signed or unsigned integers from or to 2 or 4 bytes in the stream 'f',
 	in big-endian byte order (most significant byte first).
@@ -165,6 +168,7 @@ double bingetr64 (FILE *f);   void binputr64 (double x, FILE *f);
 	Denormalized: from 4.9e-324.
 	This is the native format of a `double` on Silicon Graphics Iris and PowerMac.
 */
+double bingetr64LE (FILE *f);   void binputr64LE (double x, FILE *f);   // least significant bit first
 
 double bingetr80 (FILE *f);   void binputr80 (double x, FILE *f);
 /*

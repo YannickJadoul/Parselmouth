@@ -1,6 +1,6 @@
 /* Cepstrumc_def.h
  *
- * Copyright (C) 1994-2008 David Weenink
+ * Copyright (C) 1994-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,15 +25,18 @@
 oo_DEFINE_STRUCT (Cepstrumc_Frame)
 
 	oo_INT (nCoefficients)
-
+	
 	#if oo_READING_BINARY
 		oo_VERSION_UNTIL (1)
-			oo_FLOAT_VECTOR_FROM (c, 0, nCoefficients)
+			oo_FLOAT (c0)
+			oo_obsoleteVEC32 (c, nCoefficients)
 		oo_VERSION_ELSE
-			oo_DOUBLE_VECTOR_FROM (c, 0, nCoefficients)
+			oo_DOUBLE (c0)
+			oo_VEC (c, nCoefficients)
 		oo_VERSION_END
 	#else
-		oo_DOUBLE_VECTOR_FROM (c, 0, nCoefficients)
+		oo_DOUBLE (c0)
+		oo_VEC (c, nCoefficients)
 	#endif
 	
 oo_END_STRUCT (Cepstrumc_Frame)
@@ -45,7 +48,7 @@ oo_DEFINE_CLASS (Cepstrumc, Sampled)
 
 	oo_DOUBLE (samplingFrequency)   // from Sound
 	oo_INT (maxnCoefficients)
-	oo_STRUCT_VECTOR (Cepstrumc_Frame, frame, nx)
+	oo_STRUCTVEC (Cepstrumc_Frame, frame, nx)
 
 	#if oo_DECLARING
 		void v_info ()

@@ -1,6 +1,6 @@
 /* GuiMenu.cpp
  *
- * Copyright (C) 1992-2012,2013,2015,2016,2017 Paul Boersma,
+ * Copyright (C) 1992-2005,2007-2019 Paul Boersma,
  *               2008 Stefan de Konink, 2010 Franz Brausse, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
@@ -31,16 +31,20 @@ void structGuiMenu :: v_destroy () noexcept {
 		(void) void_me;
 		GuiMenu me = (GuiMenu) _GuiObject_getUserData (widget);
 		trace (U"destroying GuiMenu ", Melder_pointer (me));
-		if (! me) return;   // we could be destroying me
+		if (! me)
+			return;   // we could be destroying me
 		my d_widget = nullptr;   // undangle
-		if (my d_cascadeButton) my d_cascadeButton -> d_widget = nullptr;   // undangle
-		if (my d_menuItem) my d_menuItem -> d_widget = nullptr;   // undangle
+		if (my d_cascadeButton)
+			my d_cascadeButton -> d_widget = nullptr;   // undangle
+		if (my d_menuItem)
+			my d_menuItem -> d_widget = nullptr;   // undangle
 		forget (me);
 	}
 	static void _guiGtkMenuCascadeButton_destroyCallback (GuiObject widget, gpointer void_me) {
 		(void) void_me;
 		GuiMenu me = (GuiMenu) _GuiObject_getUserData (widget);
-		if (! me) return;
+		if (! me)
+			return;
 		trace (U"destroying GuiButton ", Melder_pointer (my d_cascadeButton.get()));
 		gtk_widget_destroy (GTK_WIDGET (my d_widget));
 	}
@@ -50,16 +54,24 @@ void structGuiMenu :: v_destroy () noexcept {
 		(void) call;
 		GuiMenu me = (GuiMenu) _GuiObject_getUserData (widget);
 		trace (U"destroying GuiMenu ", Melder_pointer (me));
-		if (! me) return;   // we could be destroying me
+		if (! me)
+			return;   // we could be destroying me
 		my d_widget = nullptr;   // undangle
-		if (my d_cascadeButton) my d_cascadeButton -> d_widget = nullptr;   // undangle
-		if (my d_menuItem) my d_menuItem -> d_widget = nullptr;   // undangle
+		if (my d_cascadeButton)
+			my d_cascadeButton -> d_widget = nullptr;   // undangle
+		if (my d_menuItem)
+			my d_menuItem -> d_widget = nullptr;   // undangle
 		forget (me);
 	}
 #elif cocoa
 	static void (*theOpenDocumentCallback) (MelderFile file);
-	void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file)) {
+	static void (*theFinishedOpeningDocumentsCallback) ();
+	void Gui_setOpenDocumentCallback (
+		void (*openDocumentCallback) (MelderFile file),
+		void (*finishedOpeningDocumentsCallback) ()
+	) {
 		theOpenDocumentCallback = openDocumentCallback;
+		theFinishedOpeningDocumentsCallback = finishedOpeningDocumentsCallback;
 	}
 	static NSMenu *theMenuBar;
 	static int theNumberOfMenuBarItems = 0;
@@ -186,14 +198,21 @@ void structGuiMenu :: v_destroy () noexcept {
 	- (void) application: (NSApplication *) sender openFiles: (NSArray *) fileNames
 	{
 		(void) sender;
-		if (praatP.userWantsToOpen) return;
+		if (praatP.userWantsToOpen)
+			return;
 		for (NSUInteger i = 1; i <= [fileNames count]; i ++) {
-			NSString *cocoaFileName = [fileNames objectAtIndex: i - 1];
-			structMelderFile file { };
-			Melder_8bitFileRepresentationToStr32_inplace ([cocoaFileName UTF8String], file. path);
-			if (theOpenDocumentCallback)
-				theOpenDocumentCallback (& file);
+			try {
+				NSString *cocoaFileName = [fileNames objectAtIndex: i - 1];
+				structMelderFile file { };
+				Melder_8bitFileRepresentationToStr32_inplace ([cocoaFileName UTF8String], file. path);
+				if (theOpenDocumentCallback)
+					theOpenDocumentCallback (& file);
+			} catch (MelderError) {
+				Melder_throw (U"Cannot open dropped file.");
+			}
 		}
+		if (theFinishedOpeningDocumentsCallback)
+			theFinishedOpeningDocumentsCallback ();
 	}
 	@end
 #endif

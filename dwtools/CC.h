@@ -2,7 +2,7 @@
 #define _CC_h_
 /* CC.h
  *
- * Copyright (C) 1993-2017 David Weenink
+ * Copyright (C) 1993-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ void CC_init (CC me, double tmin, double tmax, integer nt, double dt, double t1,
 
 void CC_getNumberOfCoefficients_extrema (CC me, integer startframe, integer endframe, integer *min, integer *max);
 
+integer CC_getMaximumNumberOfCoefficientsUsed (CC me);
+
 integer CC_getMinimumNumberOfCoefficients (CC me, integer startframe, integer endframe);
 
 integer CC_getMaximumNumberOfCoefficients (CC me, integer startframe, integer endframe);
@@ -44,9 +46,9 @@ double CC_getValueInFrame (CC me, integer iframe, integer index);
 
 double CC_getC0ValueInFrame (CC me, integer iframe);
 
-void CC_paint (CC me, Graphics g, double xmin, double xmax, integer cmin, integer cmax, double minimum, double maximum, int garnish);
+void CC_paint (CC me, Graphics g, double xmin, double xmax, integer cmin, integer cmax, double minimum, double maximum, bool garnish);
 
-void CC_drawC0 (CC me, Graphics g, double xmin, double xmax, double ymin, double ymax, int garnish);
+void CC_drawC0 (CC me, Graphics g, double xmin, double xmax, double ymin, double ymax, bool garnish);
 
 autoMatrix CC_to_Matrix (CC me);
 

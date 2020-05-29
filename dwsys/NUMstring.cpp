@@ -1,6 +1,6 @@
 /* NUMstring.cpp
  *
- * Copyright (C) 2012-2017 David Weenink
+ * Copyright (C) 2012-2018 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,21 +20,17 @@
  djmw 20121005 First version
 */
 
-#include <ctype.h>
-#include <wctype.h>
 #include "Interpreter.h"
 #include "NUM2.h"
 
-double *NUMstring_to_numbers (conststring32 s, integer *out_numbers_found) {   // TODO: turn into autoVEC
-	autostring32vector tokens = STRVECtokenize (s);
+autoVEC newVECfromString (conststring32 s) {
+	autoSTRVEC tokens = newSTRVECtokenize (s);
 	if (tokens.size < 1)
 		Melder_throw (U"Empty string.");
-	autoNUMvector <double> numbers (1, tokens.size);
+	autoVEC numbers = newVECraw (tokens.size);
 	for (integer inum = 1; inum <= tokens.size; inum ++)
-		Interpreter_numericExpression (0, tokens [inum].get(), & numbers [inum]);
-	if (out_numbers_found)
-		*out_numbers_found = tokens.size;
-	return numbers.transfer();
+		Interpreter_numericExpression (nullptr, tokens [inum].get(), & numbers [inum]);
+	return numbers;
 }
 
 char32 *strstr_regexp (conststring32 string, conststring32 search_regexp) {
@@ -49,19 +45,19 @@ char32 *strstr_regexp (conststring32 string, conststring32 search_regexp) {
 	return charp;
 }
 
-static autostring32vector string32vector_searchAndReplace_literal (string32vector me,
+static autoSTRVEC string32vector_searchAndReplace_literal (constSTRVEC me,
 	conststring32 search, conststring32 replace, int maximumNumberOfReplaces,
 	integer *out_numberOfMatches, integer *out_numberOfStringMatches)
 {
 	if (! search || ! replace)
-		return autostring32vector();
-	autostring32vector result (me.size);
+		return autoSTRVEC();
+	autoSTRVEC result (me.size);
 
 	integer nmatches_sub = 0, nmatches = 0, nstringmatches = 0;
 	for (integer i = 1; i <= me.size; i ++) {
 		conststring32 string = ( me [i] ? me [i] : U"" );   // treat null as an empty string
 
-		result [i] = STRreplace (string, search, replace, maximumNumberOfReplaces, & nmatches_sub);
+		result [i] = newSTRreplace (string, search, replace, maximumNumberOfReplaces, & nmatches_sub);
 		if (nmatches_sub > 0) {
 			nmatches += nmatches_sub;
 			nstringmatches ++;
@@ -74,23 +70,23 @@ static autostring32vector string32vector_searchAndReplace_literal (string32vecto
 	return result;
 }
 
-static autostring32vector string32vector_searchAndReplace_regexp (string32vector me,
+static autoSTRVEC string32vector_searchAndReplace_regexp (constSTRVEC me,
 	conststring32 searchRE, conststring32 replaceRE, int maximumNumberOfReplaces,
 	integer *out_numberOfMatches, integer *out_numberOfStringMatches)
 {
 	if (! searchRE || ! replaceRE)
-		return autostring32vector();
+		return autoSTRVEC();
 
 	integer nmatches_sub = 0;
 
 	regexp *compiledRE = CompileRE_throwable (searchRE, 0);
 
-	autostring32vector result (me.size);
+	autoSTRVEC result (me.size);
 
 	integer nmatches = 0, nstringmatches = 0;
 	for (integer i = 1; i <= me.size; i ++) {
 		conststring32 string = ( me [i] ? me [i] : U"" );   // treat null as an empty string
-		result [i] = STRreplace_regex (string, compiledRE, replaceRE, maximumNumberOfReplaces, & nmatches_sub);
+		result [i] = newSTRreplace_regex (string, compiledRE, replaceRE, maximumNumberOfReplaces, & nmatches_sub);
 		if (nmatches_sub > 0) {
 			nmatches += nmatches_sub;
 			nstringmatches ++;
@@ -103,8 +99,8 @@ static autostring32vector string32vector_searchAndReplace_regexp (string32vector
 	return result;
 }
 
-autostring32vector string32vector_searchAndReplace (string32vector me,
-	conststring32 search, conststring32 replace, int maximumNumberOfReplaces,
+autoSTRVEC string32vector_searchAndReplace (constSTRVEC me,
+	conststring32 search, conststring32 replace, integer maximumNumberOfReplaces,
 	integer *nmatches, integer *nstringmatches, bool use_regexp)
 {
 	return use_regexp ?
@@ -117,126 +113,122 @@ autostring32vector string32vector_searchAndReplace (string32vector me,
  * 1, 4, 2, 3, 4, 5, 6, 7, 4, 3, 3, 4, 5, 4, 3, 2
  * Overlap is allowed. Ranges can go up and down.
  */
-static integer *getElementsOfRanges (conststring32 ranges, integer maximumElement, integer *numberOfElements, conststring32 elementType) {
+static autoINTVEC getElementsOfRanges (conststring32 ranges, integer maximumElement, conststring32 elementType) {
 	/*
 		Count the elements.
 	*/
 	integer previousElement = 0;
-	*numberOfElements = 0;
+	integer numberOfElements = 0;
 	const char32 *p = & ranges [0];
 	for (;;) {
-		while (Melder_isHorizontalSpace (*p)) p ++;
+		while (Melder_isHorizontalSpace (*p))
+			p ++;
 		if (*p == U'\0')
 			break;
 		if (Melder_isAsciiDecimalNumber (*p)) {
-			integer currentElement = Melder_atoi (p);
+			const integer currentElement = Melder_atoi (p);
 			Melder_require (currentElement != 0,
 				U"No such ", elementType, U": 0 (minimum is 1).");
 			Melder_require (currentElement <= maximumElement,
 				U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
-			
-			*numberOfElements += 1;
+			numberOfElements += 1;
 			previousElement = currentElement;
-			do { p ++; } while (Melder_isAsciiDecimalNumber (*p));
+			do {
+				p ++;
+			} while (Melder_isAsciiDecimalNumber (*p));
 		} else if (*p == ':') {
-			Melder_require (previousElement != 0, U"The range should not start with a colon.");
-			
-			do { p ++; } while (Melder_isHorizontalSpace (*p));
+			Melder_require (previousElement != 0,
+				U"The range should not start with a colon.");
+			do {
+				p ++;
+			} while (Melder_isHorizontalSpace (*p));
 			Melder_require (*p != U'\0',
 				U"The range should not end with a colon.");
 			Melder_require (Melder_isAsciiDecimalNumber (*p),
 				U"End of range should be a positive whole number.");
-			
-			integer currentElement = Melder_atoi (p);
+			const integer currentElement = Melder_atoi (p);
 			Melder_require (currentElement != 0,
 				U"No such ", elementType, U": 0 (minimum is 1).");
 			Melder_require (currentElement <= maximumElement,
 				U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
 			
-			if (currentElement > previousElement) {
-				*numberOfElements += currentElement - previousElement;
-			} else {
-				*numberOfElements += previousElement - currentElement;
-			}
+			if (currentElement > previousElement)
+				numberOfElements += currentElement - previousElement;
+			else
+				numberOfElements += previousElement - currentElement;
 			previousElement = currentElement;
-			do { p ++; } while (Melder_isAsciiDecimalNumber (*p));
+			do {
+				p ++;
+			} while (Melder_isAsciiDecimalNumber (*p));
 		} else {
 			Melder_throw (U"Start of range should be a positive whole number.");
 		}
 	}
-
 	/*
 		Create room for the elements.
 	*/
-	if (*numberOfElements == 0)
-		return nullptr;
-	autoNUMvector <integer> elements (1, *numberOfElements);
-
+	Melder_require (numberOfElements > 0,
+		U"No element(s) found");
+	autoINTVEC elements = newINTVECraw (numberOfElements);
 	/*
 		Store the elements.
 	*/
 	previousElement = 0;
-	*numberOfElements = 0;
+	numberOfElements = 0;
 	p = & ranges [0];
 	for (;;) {
-		while (Melder_isHorizontalSpace (*p)) p ++;
+		while (Melder_isHorizontalSpace (*p))
+			p ++;
 		if (*p == U'\0')
 			break;
 		if (Melder_isAsciiDecimalNumber (*p)) {
-			integer currentElement = Melder_atoi (p);
-			elements [++ *numberOfElements] = currentElement;
+			const integer currentElement = Melder_atoi (p);
+			elements [++ numberOfElements] = currentElement;
 			previousElement = currentElement;
-			do { p ++; } while (Melder_isAsciiDecimalNumber (*p));
+			do {
+				p ++;
+			} while (Melder_isAsciiDecimalNumber (*p));
 		} else if (*p == U':') {
-			do { p ++; } while (Melder_isHorizontalSpace (*p));
-			integer currentElement = Melder_atoi (p);
-			if (currentElement > previousElement) {
+			do {
+				p ++;
+			} while (Melder_isHorizontalSpace (*p));
+			const integer currentElement = Melder_atoi (p);
+			if (currentElement > previousElement)
 				for (integer ielement = previousElement + 1; ielement <= currentElement; ielement ++)
-					elements [++ *numberOfElements] = ielement;
-			} else {
+					elements [++ numberOfElements] = ielement;
+			else
 				for (integer ielement = previousElement - 1; ielement >= currentElement; ielement --)
-					elements [++ *numberOfElements] = ielement;
-			}
+					elements [++ numberOfElements] = ielement;
 			previousElement = currentElement;
-			do { p ++; } while (Melder_isAsciiDecimalNumber (*p));
+			do {
+				p ++;
+			} while (Melder_isAsciiDecimalNumber (*p));
 		}
 	}
-	return elements.transfer();
+	return elements;
 }
 
-static void NUMlvector_getUniqueNumbers (integer numbers[], integer *inout_numberOfElements, integer *out_numberOfMultiples) {
-	Melder_assert (inout_numberOfElements);
-	autoNUMvector< integer> sorted (NUMvector_copy <integer> (numbers, 1, *inout_numberOfElements), 1);
-	NUMsort_integer (*inout_numberOfElements, sorted.peek());
-	integer numberOfMultiples = 0;
-
-	numbers [1] = sorted [1];
+static autoINTVEC INTVEC_getUniqueNumbers (constINTVEC const& numbers) {
+	autoINTVEC sorted = newINTVECsort (numbers);
 	integer numberOfUniques = 1;
-	for (integer i = 2; i <= *inout_numberOfElements; i ++) {
-		if (sorted [i] != sorted [i - 1]) {
-			numbers [++ numberOfUniques] = sorted [i];
-		} else {
-			numberOfMultiples ++;
-		}
-	}
-	*inout_numberOfElements = numberOfUniques;
-	if (out_numberOfMultiples)
-		*out_numberOfMultiples = numberOfMultiples;
+	for (integer i = 2; i <= numbers.size; i ++)
+		if (sorted [i] != sorted [i - 1])
+			sorted [++ numberOfUniques] = sorted [i];
+	sorted. resize (numberOfUniques);
+	return sorted;
 }
 
-integer *NUMstring_getElementsOfRanges (conststring32 ranges, integer maximumElement,
-	integer *numberOfElements, integer *numberOfMultiples, conststring32 elementType, bool sortedUniques)
-{
-	autoNUMvector<integer> elements (getElementsOfRanges (ranges, maximumElement, numberOfElements, elementType), 1);
-	if (sortedUniques && *numberOfElements > 0)
-		NUMlvector_getUniqueNumbers (elements.peek(), numberOfElements, numberOfMultiples);
-	return elements.transfer();
+autoINTVEC NUMstring_getElementsOfRanges (conststring32 ranges, integer maximumElement, conststring32 elementType, bool sortedUniques) {
+	autoINTVEC elements = getElementsOfRanges (ranges, maximumElement, elementType);
+	if (sortedUniques)
+		return INTVEC_getUniqueNumbers (elements.get());
+	return elements;
 }
 
 char32 * NUMstring_timeNoDot (double time) {
 	static char32 string [100];
-	integer seconds = Melder_ifloor (time);
-	integer ms = Melder_iround ((time - seconds) * 1000.0);
+	const integer seconds = Melder_ifloor (time);
+	const integer ms = Melder_iround ((time - seconds) * 1000.0);
 	Melder_sprint (string,100, U"_", seconds, U"_", ms);
 	return string;
 }

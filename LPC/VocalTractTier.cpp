@@ -1,6 +1,6 @@
 /* VocalTractTier.cpp
  *
- * Copyright (C) 2012-2017 David Weenink
+ * Copyright (C) 2012-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,14 +39,27 @@
 #include "oo_DESCRIPTION.h"
 #include "VocalTractTier_def.h"
 
+Thing_implement (VocalTractPoint, AnyPoint, 0);
+
+autoVocalTractPoint VocalTractPoint_create (VocalTract me, double time) {
+	try {
+		autoVocalTractPoint thee = Thing_new (VocalTractPoint);
+		thy number = time;
+		thy d_vocalTract = Data_copy (me);
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (me, U": VocalTractPoint not created.");
+	}
+}
+
 void VocalTract_drawSegments (VocalTract me, Graphics g, double maxLength, double maxArea, bool closedAtGlottis)
 {
 	Graphics_setInner (g);
-	double maxCrossection = sqrt (maxArea);
+	const double maxCrossection = sqrt (maxArea);
 	Graphics_setWindow (g, 0.0, maxLength, -maxCrossection, maxCrossection);
 	for (integer isection = 1; isection <= my nx; isection ++) {
-		double x1 = (isection - 1.0) * my dx, x2 = x1 + my dx;
-		double crosssection2 = sqrt (my z [1] [isection]);
+		const double x1 = (isection - 1.0) * my dx, x2 = x1 + my dx;
+		const double crosssection2 = sqrt (my z [1] [isection]);
 		Graphics_line (g, x1, crosssection2, x2, crosssection2);
 		Graphics_line (g, x1, -crosssection2, x2, -crosssection2);
 		if (isection > 1) {
@@ -59,23 +72,6 @@ void VocalTract_drawSegments (VocalTract me, Graphics g, double maxLength, doubl
 	}
 	Graphics_unsetInner (g);
 }
-
-/***** VocalTractPoint *****/
-
-Thing_implement (VocalTractPoint, AnyPoint, 0);
-
-autoVocalTractPoint VocalTract_to_VocalTractPoint (VocalTract me, double time) {
-	try {
-		autoVocalTractPoint thee = Thing_new (VocalTractPoint);
-		thy number = time;
-		thy d_vocalTract = Data_copy (me);
-		return thee;
-	} catch (MelderError) {
-		Melder_throw (me, U": not converted to VocalTractPoint.");
-	}
-}
-
-/***** VocalTractTier *****/
 
 Thing_implement (VocalTractTier, Function, 0);
 
@@ -92,23 +88,16 @@ autoVocalTractTier VocalTractTier_create (double fromTime, double toTime) {
 autoVocalTractTier VocalTract_to_VocalTractTier (VocalTract me, double startTime, double endTime, double time) {
 	try {
 		autoVocalTractTier thee = VocalTractTier_create (startTime, endTime);
-		VocalTractTier_addVocalTract_copy (thee.get(), time, me);
+		VocalTractTier_addVocalTract (thee.get(), time, me);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to VocalTractTier");
 	}
 }
 
-void VocalTractTier_addVocalTract_copy (VocalTractTier me, double time, VocalTract vocaltract) {
+void VocalTractTier_addVocalTract (VocalTractTier me, double time, VocalTract vocaltract) {
 	try {
-		autoVocalTractPoint thee = VocalTract_to_VocalTractPoint (vocaltract, time);
-		if (my d_vocalTracts.size > 0) {
-			VocalTractPoint vtp = my d_vocalTracts.at [1];
-			integer numberOfSections = vtp -> d_vocalTract -> nx;
-			if (numberOfSections != vocaltract -> nx) {
-				Melder_throw (U"The number of sections should be equal to ", numberOfSections, U".");
-			}
-		}
+		autoVocalTractPoint thee = VocalTractPoint_create (vocaltract, time);
 		my d_vocalTracts. addItem_move (thee.move());
 	} catch (MelderError) {
 		Melder_throw (me, U": no VocalTract added.");
@@ -118,17 +107,17 @@ void VocalTractTier_addVocalTract_copy (VocalTractTier me, double time, VocalTra
 autoVocalTract VocalTractTier_to_VocalTract (VocalTractTier me, double time) {
 	try {
 		Melder_assert (my d_vocalTracts.size > 0);
-		VocalTractPoint vtp = my d_vocalTracts.at [1];
-		integer numberOfSections = vtp -> d_vocalTract -> nx;
+		const VocalTractPoint vtp = my d_vocalTracts.at [1];
+		const integer numberOfSections = vtp -> d_vocalTract -> nx;
 		autoVocalTract thee = VocalTract_create (numberOfSections, vtp -> d_vocalTract -> dx);
 		for (integer isection = 1; isection <= numberOfSections; isection ++) {
 			autoRealTier section = RealTier_create (my xmin, my xmax);
 			for (integer i = 1; i <= my d_vocalTracts.size; i ++) {
-				VocalTractPoint vtpi = my d_vocalTracts.at [i];
-				double areai = vtpi -> d_vocalTract -> z [1] [isection];
+				const VocalTractPoint vtpi = my d_vocalTracts.at [i];
+				const double areai = vtpi -> d_vocalTract -> z [1] [isection];
 				RealTier_addPoint (section.get(), vtpi -> number, areai);
 			}
-			thy z[1][isection] = RealTier_getValueAtTime (section.get(), time);
+			thy z[1] [isection] = RealTier_getValueAtTime (section.get(), time);
 		}
 		return thee;
 	} catch (MelderError) {
@@ -138,37 +127,35 @@ autoVocalTract VocalTractTier_to_VocalTract (VocalTractTier me, double time) {
 
 autoLPC VocalTractTier_to_LPC (VocalTractTier me, double timeStep) {
 	try {
-		if (my d_vocalTracts.size == 0) {
-			Melder_throw (U"Empty VocalTractTier");
-		}
-		integer numberOfFrames = Melder_ifloor ((my xmax - my xmin) / timeStep);
-		VocalTractPoint vtp = my d_vocalTracts.at [1];
+		Melder_require (my d_vocalTracts.size > 0.0,
+			U"The VocalTractTier should not be empty.");
+		const integer numberOfFrames = Melder_ifloor ((my xmax - my xmin) / timeStep);
+		const VocalTractPoint vtp = my d_vocalTracts.at [1];
 		integer numberOfSections = vtp -> d_vocalTract -> nx;
-		double samplingPeriod = 1.0 / (1000.0 * numberOfSections);
-		autoNUMmatrix<double> area (1, numberOfFrames, 1, numberOfSections + 1);
-		autoNUMvector<double> areavec (1, numberOfSections + 1);
+		const double samplingPeriod = 1.0 / (1000.0 * numberOfSections);
+		
+		autoMAT area = newMATzero (numberOfFrames, numberOfSections);
+		autoVEC areavec = newVECraw (numberOfSections);
 		autoLPC thee = LPC_create (my xmin, my xmax, numberOfFrames, timeStep, timeStep / 2.0, numberOfSections, samplingPeriod);
 		// interpolate each section
 		for (integer isection = 1; isection <= numberOfSections; isection ++) {
 			autoRealTier sectioni = RealTier_create (my xmin, my xmax);
 			for (integer i = 1; i <= my d_vocalTracts.size; i ++) {
-				VocalTractPoint vtpi = my d_vocalTracts.at [i];
-				double areai = vtpi -> d_vocalTract -> z [1] [isection];
+				const VocalTractPoint vtpi = my d_vocalTracts.at [i];
+				const double areai = vtpi -> d_vocalTract -> z [1] [isection];
 				RealTier_addPoint (sectioni.get(), vtpi -> number, areai);
 			}
 			for (integer iframe = 1; iframe <= numberOfFrames; iframe ++) {
-				double time = thy x1 + (iframe - 1) * thy dx;
+				const double time = thy x1 + (iframe - 1) * thy dx;
 				area [iframe] [isection] = RealTier_getValueAtTime (sectioni.get(), time);
-				area [iframe] [numberOfSections + 1] = 0.0001;   // normalisation is area[n+1] = 0.0001
 			}
 		}
 		for (integer iframe = 1; iframe <= numberOfFrames; iframe ++) {
-			LPC_Frame frame = & thy d_frames [iframe];
+			const LPC_Frame frame = & thy d_frames [iframe];
 			LPC_Frame_init (frame, numberOfSections);
-			for (integer i = 1; i <= numberOfSections + 1; i ++) {
-				areavec [i] = area [iframe] [numberOfSections + 1 - i];
-			}
-			NUMlpc_area_to_lpc (areavec.peek(), numberOfSections + 1, frame -> a);
+			for (integer i = 1; i <= numberOfSections; i ++)
+				areavec [i] = area [iframe] [numberOfSections + 1 - i]; // reverse
+			VEClpc_from_area (frame -> a.get(), areavec.get());
 			frame -> gain = 1e-6;   // something
 		}
 		return thee;

@@ -1,6 +1,6 @@
 /* Spectrum.cpp
  *
- * Copyright (C) 1992-2012,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2008,2011,2012,2014-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,35 +96,45 @@ autoSpectrum Spectrum_create (double fmax, integer nf) {
 }
 
 int Spectrum_getPowerDensityRange (Spectrum me, double *minimum, double *maximum) {
-	*minimum = 1e308, *maximum = 0.0;
+	*minimum = 1e308;
+	*maximum = 0.0;
 	for (integer ifreq = 1; ifreq <= my nx; ifreq ++) {
 		double oneSidedPowerSpectralDensity =   // Pa2 Hz-2 s-1
 			2.0 * (my z [1] [ifreq] * my z [1] [ifreq] + my z [2] [ifreq] * my z [2] [ifreq]) * my dx;
-		if (oneSidedPowerSpectralDensity < *minimum) *minimum = oneSidedPowerSpectralDensity;
-		if (oneSidedPowerSpectralDensity > *maximum) *maximum = oneSidedPowerSpectralDensity;
+		if (oneSidedPowerSpectralDensity < *minimum)
+			*minimum = oneSidedPowerSpectralDensity;
+		if (oneSidedPowerSpectralDensity > *maximum)
+			*maximum = oneSidedPowerSpectralDensity;
 	}
-	if (*maximum == 0.0) return 0;
-	*minimum = 10 * log10 (*minimum / 4.0e-10);
-	*maximum = 10 * log10 (*maximum / 4.0e-10);
+	if (*maximum == 0.0)
+		return 0;
+	*minimum = 10.0 * log10 (*minimum / 4.0e-10);
+	*maximum = 10.0 * log10 (*maximum / 4.0e-10);
 	return 1;
 }
 
 void Spectrum_drawInside (Spectrum me, Graphics g, double fmin, double fmax, double minimum, double maximum) {
 	bool autoscaling = ( minimum >= maximum );
-
-	if (fmax <= fmin) { fmin = my xmin; fmax = my xmax; }
+	if (fmax <= fmin) {
+		fmin = my xmin;
+		fmax = my xmax;
+	}
 	integer ifmin, ifmax;
-	if (! Matrix_getWindowSamplesX (me, fmin, fmax, & ifmin, & ifmax)) return;
-
-	autoNUMvector <double> yWC (ifmin, ifmax);
+	const integer nf = Matrix_getWindowSamplesX (me, fmin, fmax, & ifmin, & ifmax);
+	if (nf == 0)
+		return;
+	auto ybuffer = newVECzero (nf);
+	double *yWC = & ybuffer [1 - ifmin];
 
 	/*
-	 * First pass: compute power density.
-	 */
-	if (autoscaling) maximum = -1e308;
+		First pass: compute power density.
+	*/
+	if (autoscaling)
+		maximum = -1e308;
 	for (integer ifreq = ifmin; ifreq <= ifmax; ifreq ++) {
 		double y = my v_getValueAtSample (ifreq, 0, 2);
-		if (autoscaling && y > maximum) maximum = y;
+		if (autoscaling && y > maximum)
+			maximum = y;
 		yWC [ifreq] = y;
 	}
 	if (autoscaling) {
@@ -139,15 +149,13 @@ void Spectrum_drawInside (Spectrum me, Graphics g, double fmin, double fmax, dou
 	}
 
 	/*
-	 * Second pass: clip.
-	 */
-	for (integer ifreq = ifmin; ifreq <= ifmax; ifreq ++) {
-		if (yWC [ifreq] < minimum) yWC [ifreq] = minimum;
-		else if (yWC [ifreq] > maximum) yWC [ifreq] = maximum;
-	}
+		Second pass: clip.
+	*/
+	for (integer ifreq = ifmin; ifreq <= ifmax; ifreq ++)
+		Melder_clip (minimum, & yWC [ifreq], maximum);
 
 	Graphics_setWindow (g, fmin, fmax, minimum, maximum);
-	Graphics_function (g, yWC.peek(), ifmin, ifmax, Matrix_columnToX (me, ifmin), Matrix_columnToX (me, ifmax));
+	Graphics_function (g, yWC, ifmin, ifmax, Matrix_columnToX (me, ifmin), Matrix_columnToX (me, ifmax));
 }
 
 void Spectrum_draw (Spectrum me, Graphics g, double fmin, double fmax, double minimum, double maximum, int garnish) {
@@ -165,31 +173,37 @@ void Spectrum_draw (Spectrum me, Graphics g, double fmin, double fmax, double mi
 
 void Spectrum_drawLogFreq (Spectrum me, Graphics g, double fmin, double fmax, double minimum, double maximum, int garnish) {
 	bool autoscaling = ( minimum >= maximum );
-	if (fmax <= fmin) { fmin = my xmin; fmax = my xmax; }
+	if (fmax <= fmin) {
+		fmin = my xmin;
+		fmax = my xmax;
+	}
 	integer ifmin, ifmax;
-	if (! Matrix_getWindowSamplesX (me, fmin, fmax, & ifmin, & ifmax)) return;
+	const integer nf = Matrix_getWindowSamplesX (me, fmin, fmax, & ifmin, & ifmax);
+	if (nf == 0)
+		return;
 if(ifmin==1)ifmin=2;  /* BUG */
-	autoNUMvector <double> xWC (ifmin, ifmax);
-	autoNUMvector <double> yWC (ifmin, ifmax);
+	auto xbuffer = newVECzero (nf), ybuffer = newVECzero (nf);
+	double *xWC = & xbuffer [1 - ifmin], *yWC = & ybuffer [1 - ifmin];
 
 	/*
-	 * First pass: compute power density.
-	 */
-	if (autoscaling) maximum = -1e6;
+		First pass: compute power density.
+	*/
+	if (autoscaling)
+		maximum = -1e6;
 	for (integer ifreq = ifmin; ifreq <= ifmax; ifreq ++) {
 		xWC [ifreq] = log10 (my x1 + (ifreq - 1) * my dx);
 		yWC [ifreq] = my v_getValueAtSample (ifreq, 0, 2);
-		if (autoscaling && yWC [ifreq] > maximum) maximum = yWC [ifreq];
+		if (autoscaling && yWC [ifreq] > maximum)
+			maximum = yWC [ifreq];
 	}
-	if (autoscaling) minimum = maximum - 60;   // default dynamic range is 60 dB
+	if (autoscaling)
+		minimum = maximum - 60;   // default dynamic range is 60 dB
 
 	/*
-	 * Second pass: clip.
-	 */
-	for (integer ifreq = ifmin; ifreq <= ifmax; ifreq ++) {
-		if (yWC [ifreq] < minimum) yWC [ifreq] = minimum;
-		else if (yWC [ifreq] > maximum) yWC [ifreq] = maximum;
-	}
+		Second pass: clip.
+	*/
+	for (integer ifreq = ifmin; ifreq <= ifmax; ifreq ++)
+		Melder_clip (minimum, & yWC [ifreq], maximum);
 
 	Graphics_setInner (g);
 	Graphics_setWindow (g, log10 (fmin), log10 (fmax), minimum, maximum);
@@ -204,43 +218,43 @@ if(ifmin==1)ifmin=2;  /* BUG */
 	}
 }
 
-autoTable Spectrum_downto_Table (Spectrum me, bool includeBinNumbers, bool includeFrequency,
+autoTable Spectrum_tabulate (Spectrum me, bool includeBinNumbers, bool includeFrequency,
 	bool includeRealPart, bool includeImaginaryPart, bool includeEnergyDensity, bool includePowerDensity)
 {
 	try {
 		autoTable thee = Table_createWithoutColumnNames (my nx,
-			includeBinNumbers + includeFrequency + includeRealPart + includeImaginaryPart + includeEnergyDensity + includePowerDensity);
+				includeBinNumbers + includeFrequency + includeRealPart + includeImaginaryPart + includeEnergyDensity + includePowerDensity);
 		integer icol = 0;
-		if (includeBinNumbers) Table_setColumnLabel (thee.get(), ++ icol, U"bin");
-		if (includeFrequency) Table_setColumnLabel (thee.get(), ++ icol, U"freq(Hz)");
-		if (includeRealPart) Table_setColumnLabel (thee.get(), ++ icol, U"re(Pa/Hz)");
-		if (includeImaginaryPart) Table_setColumnLabel (thee.get(), ++ icol, U"im(Pa/Hz)");
-		if (includeEnergyDensity) Table_setColumnLabel (thee.get(), ++ icol, U"energy(Pa^2/Hz^2)");
-		if (includePowerDensity) Table_setColumnLabel (thee.get(), ++ icol, U"pow(dB/Hz)");
+		if (includeBinNumbers)
+			Table_setColumnLabel (thee.get(), ++ icol, U"bin");
+		if (includeFrequency)
+			Table_setColumnLabel (thee.get(), ++ icol, U"freq(Hz)");
+		if (includeRealPart)
+			Table_setColumnLabel (thee.get(), ++ icol, U"re(Pa/Hz)");
+		if (includeImaginaryPart)
+			Table_setColumnLabel (thee.get(), ++ icol, U"im(Pa/Hz)");
+		if (includeEnergyDensity)
+			Table_setColumnLabel (thee.get(), ++ icol, U"energy(Pa^2/Hz^2)");
+		if (includePowerDensity)
+			Table_setColumnLabel (thee.get(), ++ icol, U"pow(dB/Hz)");
 		for (integer ibin = 1; ibin <= my nx; ibin ++) {
 			icol = 0;
-			if (includeBinNumbers) Table_setNumericValue (thee.get(), ibin, ++ icol, ibin);
-			if (includeFrequency) Table_setNumericValue (thee.get(), ibin, ++ icol, my x1 + (ibin - 1) * my dx);
-			if (includeRealPart) Table_setNumericValue (thee.get(), ibin, ++ icol, my z [1] [ibin]);
-			if (includeImaginaryPart) Table_setNumericValue (thee.get(), ibin, ++ icol, my z [2] [ibin]);
-			if (includeEnergyDensity) Table_setNumericValue (thee.get(), ibin, ++ icol, Sampled_getValueAtSample (me, ibin, 0, 1));
-			if (includePowerDensity) Table_setNumericValue (thee.get(), ibin, ++ icol, Sampled_getValueAtSample (me, ibin, 0, 2));
+			if (includeBinNumbers)
+				Table_setNumericValue (thee.get(), ibin, ++ icol, ibin);
+			if (includeFrequency)
+				Table_setNumericValue (thee.get(), ibin, ++ icol, my x1 + (ibin - 1) * my dx);
+			if (includeRealPart)
+				Table_setNumericValue (thee.get(), ibin, ++ icol, my z [1] [ibin]);
+			if (includeImaginaryPart)
+				Table_setNumericValue (thee.get(), ibin, ++ icol, my z [2] [ibin]);
+			if (includeEnergyDensity)
+				Table_setNumericValue (thee.get(), ibin, ++ icol, Sampled_getValueAtSample (me, ibin, 0, 1));
+			if (includePowerDensity)
+				Table_setNumericValue (thee.get(), ibin, ++ icol, Sampled_getValueAtSample (me, ibin, 0, 2));
 		}
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to Table.");
-	}
-}
-
-void Spectrum_list (Spectrum me, bool includeBinNumbers, bool includeFrequency,
-	bool includeRealPart, bool includeImaginaryPart, bool includeEnergyDensity, bool includePowerDensity)
-{
-	try {
-		autoTable table = Spectrum_downto_Table (me, includeBinNumbers, includeFrequency,
-			includeRealPart, includeImaginaryPart, includeEnergyDensity, includePowerDensity);
-		Table_list (table.get(), false);
-	} catch (MelderError) {
-		Melder_throw (me, U": not listed.");
 	}
 }
 
@@ -269,38 +283,39 @@ autoMatrix Spectrum_to_Matrix (Spectrum me) {
 autoSpectrum Spectrum_cepstralSmoothing (Spectrum me, double bandWidth) {
 	try {
 		/*
-		 * dB-spectrum is log (power).
-		 */
+			dB-spectrum is log (power).
+		*/
 		autoSpectrum dBspectrum = Data_copy (me);
-		double *re = dBspectrum -> z [1], *im = dBspectrum -> z [2];
+		VEC re = dBspectrum -> z.row (1), im = dBspectrum -> z.row (2);
 		for (integer i = 1; i <= dBspectrum -> nx; i ++) {
 			re [i] = log (re [i] * re [i] + im [i] * im [i] + 1e-308);
 			im [i] = 0.0;
 		}
 
 		/*
-		 * Cepstrum is Fourier transform of dB-spectrum.
-		 */
+			Cepstrum is Fourier transform of dB-spectrum.
+		*/
 		autoSound cepstrum = Spectrum_to_Sound (dBspectrum.get());
 
 		/*
-		 * Multiply cepstrum by a Gaussian.
-		 */
-		double factor = - bandWidth * bandWidth;
+			Multiply cepstrum by a Gaussian.
+		*/
+		const double factor = - bandWidth * bandWidth;
 		for (integer i = 1; i <= cepstrum -> nx; i ++) {
 			double t = (i - 1) * cepstrum -> dx;
 			cepstrum -> z [1] [i] *= exp (factor * t * t) * ( i == 1 ? 1.0 : 2.0 );
 		}
 
 		/*
-		 * Smoothed power spectrum is original power spectrum convolved with a Gaussian.
-		 */
+			Smoothed power spectrum is original power spectrum convolved with a Gaussian.
+		*/
 		autoSpectrum thee = Sound_to_Spectrum (cepstrum.get(), true);
 
 		/*
-		 * Convert power spectrum back into a "complex" spectrum without phase information.
-		 */
-		re = thy z [1], im = thy z [2];
+			Convert power spectrum back into a "complex" spectrum without phase information.
+		*/
+		re = thy z.row (1);
+		im = thy z.row (2);
 		for (integer i = 1; i <= thy nx; i ++) {
 			re [i] = exp (0.5 * re [i]);   // i.e., sqrt (exp (re [i]))
 			im [i] = 0.0;
@@ -315,7 +330,7 @@ void Spectrum_passHannBand (Spectrum me, double fmin, double fmax0, double smoot
 	double fmax = fmax0 == 0.0 ? my xmax : fmax0;
 	double f1 = fmin - smooth, f2 = fmin + smooth, f3 = fmax - smooth, f4 = fmax + smooth;
 	double halfpibysmooth = smooth != 0.0 ? NUMpi / (2.0 * smooth) : 0.0;
-	double *re = my z [1], *im = my z [2];
+	double *re = & my z [1] [0], *im = & my z [2] [0];
 	for (integer i = 1; i <= my nx; i ++) {
 		double frequency = my x1 + (i - 1) * my dx;
 		if (frequency < f1 || frequency > f4) re [i] = im [i] = 0.0;
@@ -335,7 +350,7 @@ void Spectrum_stopHannBand (Spectrum me, double fmin, double fmax0, double smoot
 	double fmax = fmax0 == 0.0 ? my xmax : fmax0;
 	double f1 = fmin - smooth, f2 = fmin + smooth, f3 = fmax - smooth, f4 = fmax + smooth;
 	double halfpibysmooth = smooth != 0.0 ? NUMpi / (2.0 * smooth) : 0.0;
-	double *re = my z [1], *im = my z [2];
+	VEC re = my z.row (1), im = my z.row (2);
 	for (integer i = 1; i <= my nx; i ++) {
 		double frequency = my x1 + (i - 1) * my dx;
 		if (frequency < f1 || frequency > f4) continue;
@@ -444,15 +459,17 @@ double Spectrum_getKurtosis (Spectrum me, double power) {
 	return m4 / (m2 * m2) - 3;
 }
 
-void Spectrum_getNearestMaximum (Spectrum me, double frequency, double *frequencyOfMaximum, double *heightOfMaximum) {
+MelderPoint Spectrum_getNearestMaximum (Spectrum me, double frequency) {
 	try {
 		autoSpectrumTier thee = Spectrum_to_SpectrumTier_peaks (me);
 		integer index = AnyTier_timeToNearestIndex (thee.get()->asAnyTier(), frequency);
 		if (index == 0)
 			Melder_throw (U"No peak.");
 		RealPoint point = thy points.at [index];
-		*frequencyOfMaximum = point -> number;
-		*heightOfMaximum = point -> value;
+		MelderPoint result;
+		result. x = point -> number;
+		result. y = point -> value;
+		return result;
 	} catch (MelderError) {
 		Melder_throw (me, U": no nearest maximum found.");
 	}

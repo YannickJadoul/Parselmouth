@@ -1,6 +1,6 @@
 /* Interpreter.cpp
  *
- * Copyright (C) 1993-2018 Paul Boersma
+ * Copyright (C) 1993-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
 #include "Interpreter.h"
 #include "praatP.h"
 extern structMelderDir praatDir;
@@ -35,22 +34,18 @@ extern structMelderDir praatDir;
 #define Interpreter_BOOLEAN 6
 #define Interpreter_SENTENCE 7
 #define Interpreter_TEXT 8
-#define Interpreter_CHOICE 9
-#define Interpreter_OPTIONMENU 10
-#define Interpreter_BUTTON 11
-#define Interpreter_OPTION 12
-#define Interpreter_COMMENT 13
+#define Interpreter_VECTOR 9
+#define Interpreter_MATRIX 10
+#define Interpreter_CHOICE 11
+#define Interpreter_OPTIONMENU 12
+#define Interpreter_BUTTON 13
+#define Interpreter_OPTION 14
+#define Interpreter_COMMENT 15
 
 autoVEC theInterpreterNumvec;
 autoMAT theInterpreterNummat;
 
 Thing_implement (InterpreterVariable, SimpleString, 0);
-
-void structInterpreterVariable :: v_destroy () noexcept {
-	NUMvector_free (our numericVectorValue.at, 1);
-	NUMmatrix_free (our numericMatrixValue.at, 1, 1);
-	InterpreterVariable_Parent :: v_destroy ();
-}
 
 static autoInterpreterVariable InterpreterVariable_create (conststring32 key) {
 	try {
@@ -221,6 +216,10 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 				{ type = Interpreter_SENTENCE; parameterLocation = startOfLine + 8; }
 			else if (str32nequ (startOfLine, U"text", 4) && Melder_isEndOfInk (startOfLine [4]))
 				{ type = Interpreter_TEXT; parameterLocation = startOfLine + 4; }
+			else if (str32nequ (startOfLine, U"vector", 6) && Melder_isEndOfInk (startOfLine [6]))
+				{ type = Interpreter_VECTOR; parameterLocation = startOfLine + 6; }
+			else if (str32nequ (startOfLine, U"matrix", 6) && Melder_isEndOfInk (startOfLine [6]))
+				{ type = Interpreter_MATRIX; parameterLocation = startOfLine + 6; }
 			else if (str32nequ (startOfLine, U"choice", 6) && Melder_isEndOfInk (startOfLine [6]))
 				{ type = Interpreter_CHOICE; parameterLocation = startOfLine + 6; }
 			else if (str32nequ (startOfLine, U"optionmenu", 10) && Melder_isEndOfInk (startOfLine [10]))
@@ -320,6 +319,10 @@ autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, conststring
 				UiForm_addSentence (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
 			case Interpreter_TEXT:
 				UiForm_addText (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
+			case Interpreter_VECTOR:
+				UiForm_addNumvec (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
+			case Interpreter_MATRIX:
+				UiForm_addNummat (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
 			case Interpreter_CHOICE:
 				radio = UiForm_addRadio (form.get(), nullptr, nullptr, nullptr, parameter, Melder_atoi (my arguments [ipar].get()), 1); break;
 			case Interpreter_OPTIONMENU:
@@ -669,7 +672,7 @@ static bool isCommand (conststring32 string) {
 		(str32nequ (p + 2, U"warn ", 5) || str32nequ (p + 2, U"progress ", 9) || str32nequ (p + 2, U"check ", 6))) return true;
 	if (str32nequ (p, U"demo ", 5)) return true;
 	/*
-	 * Otherwise, things that start with lower case are formulas.
+	 * Otherwise, things that start with nonupper case are formulas.
 	 */
 	if (! Melder_isUpperCaseLetter (*p)) return false;
 	/*
@@ -699,16 +702,14 @@ static void parameterToVariable (Interpreter me, int type, conststring32 in_para
 	}
 }
 
-inline static void NumericVectorVariable_move (InterpreterVariable variable, VEC movedVector, bool owned) {
-	VEC variableVector = variable -> numericVectorValue;
-	if (owned) {
+inline static void NumericVectorVariable_move (InterpreterVariable variable, VEC movedVector, bool rightHandSideOwned) {
+	if (rightHandSideOwned) {
 		/*
 			Statement like: a# = b# + c#
 		*/
-		variable -> numericVectorValue. reset();
-		variable -> numericVectorValue = movedVector;
-	} else if (variableVector.size == movedVector.size) {
-		if (variableVector.at == movedVector.at) {
+		variable -> numericVectorValue. adoptFromAmbiguousOwner (movedVector);
+	} else if (variable -> numericVectorValue.size == movedVector.size) {
+		if (variable -> numericVectorValue.cells == movedVector.cells) {
 			/*
 				Statement like: a# = a#
 			*/
@@ -717,28 +718,24 @@ inline static void NumericVectorVariable_move (InterpreterVariable variable, VEC
 			/*
 				Statement like: a# = b#   // with matching sizes
 			*/
-			vectorcopy_preallocated (variableVector, movedVector);
+			variable -> numericVectorValue.all() <<= movedVector;
 		}
 	} else {
 		/*
 			Statement like: a# = b#   // with non-matching sizes
 		*/
-		autoVEC copiedVector = VECcopy (movedVector);
-		variable -> numericVectorValue. reset();
-		variable -> numericVectorValue = copiedVector. releaseToAmbiguousOwner();
+		variable -> numericVectorValue = newVECcopy (movedVector);
 	}
 }
 
-inline static void NumericMatrixVariable_move (InterpreterVariable variable, MAT movedMatrix, bool owned) {
-	MAT variableMatrix = variable -> numericMatrixValue;
-	if (owned) {
+inline static void NumericMatrixVariable_move (InterpreterVariable variable, MAT movedMatrix, bool rightHandSideOwned) {
+	if (rightHandSideOwned) {
 		/*
 			Statement like: a## = b## + c##
 		*/
-		variable -> numericMatrixValue. reset();
-		variable -> numericMatrixValue = movedMatrix;
-	} else if (variableMatrix.nrow == movedMatrix.nrow && variableMatrix.ncol == movedMatrix.ncol) {
-		if (variableMatrix.at == movedMatrix.at) {
+		variable -> numericMatrixValue. adoptFromAmbiguousOwner (movedMatrix);
+	} else if (variable -> numericMatrixValue.nrow == movedMatrix.nrow && variable -> numericMatrixValue.ncol == movedMatrix.ncol) {
+		if (variable -> numericMatrixValue.cells == movedMatrix.cells) {
 			/*
 				Statement like: a## = a##
 			*/
@@ -747,78 +744,68 @@ inline static void NumericMatrixVariable_move (InterpreterVariable variable, MAT
 			/*
 				Statement like: a## = b##   // with matching sizes
 			*/
-			matrixcopy_preallocated (variableMatrix, movedMatrix);
+			variable -> numericMatrixValue.all() <<= movedMatrix;
 		}
 	} else {
 		/*
 			Statement like: a## = b##   // with non-matching sizes
 		*/
-		autoMAT copiedMatrix = matrixcopy (movedMatrix);
-		variable -> numericMatrixValue. reset();
-		variable -> numericMatrixValue = copiedMatrix. releaseToAmbiguousOwner();
+		variable -> numericMatrixValue = newMATcopy (movedMatrix);
 	}
 }
 
 inline static void NumericVectorVariable_add (InterpreterVariable variable, double scalar) {
-	VEC variableVector = variable -> numericVectorValue;
-	for (integer i = 1; i <= variableVector.size; i ++)
-		variableVector [i] += scalar;
+	variable -> numericVectorValue.all()  +=  scalar;
 }
-inline static void NumericVectorVariable_add (InterpreterVariable variable, VEC vector) {
-	VEC variableVector = variable -> numericVectorValue;
-	if (vector.size != variableVector.size)
-		Melder_throw (U"You cannot add a vector with size ", vector.size,
-		              U" to a vector with a different size (", variableVector.size, U").");
-	for (integer i = 1; i <= variableVector.size; i ++)
-		variableVector [i] += vector [i];
+inline static void NumericVectorVariable_add (InterpreterVariable variable, constVEC vector) {
+	const VEC& variableVector = variable -> numericVectorValue.get();
+	Melder_require (vector.size == variableVector.size,
+		U"You cannot add a vector with size ", vector.size,
+		U" to a vector with a different size (", variableVector.size, U")."
+	);
+	variableVector  +=  vector;
 }
 inline static void NumericVectorVariable_subtract (InterpreterVariable variable, double scalar) {
-	VEC variableVector = variable -> numericVectorValue;
-	for (integer i = 1; i <= variableVector.size; i ++)
-		variableVector [i] -= scalar;
+	variable -> numericVectorValue.all()  -=  scalar;
 }
-inline static void NumericVectorVariable_subtract (InterpreterVariable variable, VEC vector) {
-	VEC variableVector = variable -> numericVectorValue;
-	if (vector.size != variableVector.size)
-		Melder_throw (U"You cannot subtract a vector with size ", vector.size,
-		              U" from a vector with a different size (", variableVector.size, U").");
-	for (integer i = 1; i <= variableVector.size; i ++)
-		variableVector [i] -= vector [i];
+inline static void NumericVectorVariable_subtract (InterpreterVariable variable, constVEC vector) {
+	const VEC& variableVector = variable -> numericVectorValue.get();
+	Melder_require (vector.size == variable -> numericVectorValue.size,
+		U"You cannot subtract a vector with size ", vector.size,
+		U" from a vector with a different size (", variableVector.size, U")."
+	);
+	variableVector  -=  vector;
 }
 inline static void NumericVectorVariable_multiply (InterpreterVariable variable, double scalar) {
-	VEC variableVector = variable -> numericVectorValue;
-	for (integer i = 1; i <= variableVector.size; i ++)
-		variableVector [i] *= scalar;
+	variable -> numericVectorValue.all()  *=  scalar;
 }
-inline static void NumericVectorVariable_multiply (InterpreterVariable variable, VEC vector) {
-	VEC variableVector = variable -> numericVectorValue;
-	if (vector.size != variableVector.size)
-		Melder_throw (U"You cannot multiply a vector with size ", variableVector.size,
-		              U" with a vector with a different size (", vector.size, U").");
-	for (integer i = 1; i <= variableVector.size; i ++)
-		variableVector [i] *= vector [i];
+inline static void NumericVectorVariable_multiply (InterpreterVariable variable, constVEC vector) {
+	const VEC& variableVector = variable -> numericVectorValue.get();
+	Melder_require (vector.size != variableVector.size,
+		U"You cannot multiply a vector with size ", variableVector.size,
+		U" with a vector with a different size (", vector.size, U")."
+	);
+	variableVector  *=  vector;
 }
 inline static void NumericVectorVariable_divide (InterpreterVariable variable, double scalar) {
-	VEC variableVector = variable -> numericVectorValue;
-	for (integer i = 1; i <= variableVector.size; i ++)
-		variableVector [i] /= scalar;
+	variable -> numericVectorValue.all()  /=  scalar;
 }
-inline static void NumericVectorVariable_divide (InterpreterVariable variable, VEC vector) {
-	VEC variableVector = variable -> numericVectorValue;
-	if (vector.size != variableVector.size)
-		Melder_throw (U"You cannot divide a vector with size ", variableVector.size,
-		              U" by a vector with a different size (", vector.size, U").");
-	for (integer i = 1; i <= variableVector.size; i ++)
-		variableVector [i] /= vector [i];
+inline static void NumericVectorVariable_divide (InterpreterVariable variable, constVEC vector) {
+	const VEC& variableVector = variable -> numericVectorValue.get();
+	Melder_require (vector.size != variableVector.size,
+		U"You cannot divide a vector with size ", variableVector.size,
+		U" by a vector with a different size (", vector.size, U")."
+	);
+	variableVector  /=  vector;
 }
 inline static void NumericMatrixVariable_add (InterpreterVariable variable, double scalar) {
-	MAT variableMatrix = variable -> numericMatrixValue;
+	MAT variableMatrix = variable -> numericMatrixValue.get();
 	for (integer irow = 1; irow <= variableMatrix.nrow; irow ++)
 		for (integer icol = 1; icol <= variableMatrix.ncol; icol ++)
 			variableMatrix [irow] [icol] += scalar;
 }
-inline static void NumericMatrixVariable_add (InterpreterVariable variable, MAT matrix) {
-	MAT variableMatrix = variable -> numericMatrixValue;
+inline static void NumericMatrixVariable_add (InterpreterVariable variable, constMAT matrix) {
+	MAT variableMatrix = variable -> numericMatrixValue.get();
 	if (matrix.nrow != variableMatrix.nrow || matrix.ncol != variableMatrix.ncol)
 		Melder_throw (U"You cannot add a matrix with size ", matrix.nrow, U"x", matrix.ncol,
 		              U" to a matrix with a different size (", variableMatrix.nrow, U"x", variableMatrix.ncol, U").");
@@ -827,13 +814,13 @@ inline static void NumericMatrixVariable_add (InterpreterVariable variable, MAT 
 			variableMatrix [irow] [icol] += matrix [irow] [icol];
 }
 inline static void NumericMatrixVariable_subtract (InterpreterVariable variable, double scalar) {
-	MAT variableMatrix = variable -> numericMatrixValue;
+	MAT variableMatrix = variable -> numericMatrixValue.get();
 	for (integer irow = 1; irow <= variableMatrix.nrow; irow ++)
 		for (integer icol = 1; icol <= variableMatrix.ncol; icol ++)
 			variableMatrix [irow] [icol] -= scalar;
 }
-inline static void NumericMatrixVariable_subtract (InterpreterVariable variable, MAT matrix) {
-	MAT variableMatrix = variable -> numericMatrixValue;
+inline static void NumericMatrixVariable_subtract (InterpreterVariable variable, constMAT matrix) {
+	MAT variableMatrix = variable -> numericMatrixValue.get();
 	if (matrix.nrow != variableMatrix.nrow || matrix.ncol != variableMatrix.ncol)
 		Melder_throw (U"You cannot subtract a matrix with size ", matrix.nrow, U"x", matrix.ncol,
 		              U" from a matrix with a different size (", variableMatrix.nrow, U"x", variableMatrix.ncol, U").");
@@ -842,13 +829,13 @@ inline static void NumericMatrixVariable_subtract (InterpreterVariable variable,
 			variableMatrix [irow] [icol] -= matrix [irow] [icol];
 }
 inline static void NumericMatrixVariable_multiply (InterpreterVariable variable, double scalar) {
-	MAT variableMatrix = variable -> numericMatrixValue;
+	MAT variableMatrix = variable -> numericMatrixValue.get();
 	for (integer irow = 1; irow <= variableMatrix.nrow; irow ++)
 		for (integer icol = 1; icol <= variableMatrix.ncol; icol ++)
 			variableMatrix [irow] [icol] *= scalar;
 }
-inline static void NumericMatrixVariable_multiply (InterpreterVariable variable, MAT matrix) {
-	MAT variableMatrix = variable -> numericMatrixValue;
+inline static void NumericMatrixVariable_multiply (InterpreterVariable variable, constMAT matrix) {
+	MAT variableMatrix = variable -> numericMatrixValue.get();
 	if (matrix.nrow != variableMatrix.nrow || matrix.ncol != variableMatrix.ncol)
 		Melder_throw (U"You cannot multiply a matrix with size ", variableMatrix.nrow, U"x", variableMatrix.ncol,
 		              U" from a matrix with a different size (", matrix.nrow, U"x", matrix.ncol, U").");
@@ -857,13 +844,13 @@ inline static void NumericMatrixVariable_multiply (InterpreterVariable variable,
 			variableMatrix [irow] [icol] *= matrix [irow] [icol];
 }
 inline static void NumericMatrixVariable_divide (InterpreterVariable variable, double scalar) {
-	MAT variableMatrix = variable -> numericMatrixValue;
+	MAT variableMatrix = variable -> numericMatrixValue.get();
 	for (integer irow = 1; irow <= variableMatrix.nrow; irow ++)
 		for (integer icol = 1; icol <= variableMatrix.ncol; icol ++)
 			variableMatrix [irow] [icol] /= scalar;
 }
-inline static void NumericMatrixVariable_divide (InterpreterVariable variable, MAT matrix) {
-	MAT variableMatrix = variable -> numericMatrixValue;
+inline static void NumericMatrixVariable_divide (InterpreterVariable variable, constMAT matrix) {
+	MAT variableMatrix = variable -> numericMatrixValue.get();
 	if (matrix.nrow != variableMatrix.nrow || matrix.ncol != variableMatrix.ncol)
 		Melder_throw (U"You cannot divide a matrix with size ", variableMatrix.nrow, U"x", variableMatrix.ncol,
 		              U" by a matrix with a different size (", matrix.nrow, U"x", matrix.ncol, U").");
@@ -873,7 +860,7 @@ inline static void NumericMatrixVariable_divide (InterpreterVariable variable, M
 }
 
 static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
-	char32 * const *lines, integer numberOfLines, integer& lineNumber, integer callStack [], int& callDepth)
+	constvector <mutablestring32> const& lines, integer& lineNumber, integer callStack [], int& callDepth)
 {
 	/*
 		Modern type of procedure calls, with comma separation, quoted strings, and array support.
@@ -881,9 +868,11 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 		We just passed the `@` sign, so we continue by looking for a procedure name at the call site.
 	*/
 	char32 *p = command;
-	while (Melder_isHorizontalSpace (*p)) p ++;   // skip whitespace
+	while (Melder_isHorizontalSpace (*p))
+		p ++;   // skip whitespace
 	char32 *callName = p;
-	while (Melder_staysWithinInk (*p) && *p != U'(' && *p != U':') p ++;
+	while (Melder_staysWithinInk (*p) && *p != U'(' && *p != U':')
+		p ++;
 	if (p == callName) Melder_throw (U"Missing procedure name after \"@\".");
 	bool hasArguments = ( *p != U'\0' );
 	if (hasArguments) {
@@ -891,7 +880,8 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 		*p = U'\0';   // close procedure name
 		if (! parenthesisOrColonFound) {
 			p ++;   // step over first white space
-			while (Melder_isHorizontalSpace (*p)) p ++;   // skip more whitespace
+			while (Melder_isHorizontalSpace (*p))
+				p ++;   // skip more whitespace
 			hasArguments = ( *p != U'\0' );
 			parenthesisOrColonFound = ( *p == U'(' || *p == U':' );
 			if (hasArguments && ! parenthesisOrColonFound)
@@ -901,49 +891,60 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 	}
 	integer callLength = str32len (callName);
 	integer iline = 1;
-	for (; iline <= numberOfLines; iline ++) {
-		if (! str32nequ (lines [iline], U"procedure ", 10)) continue;
+	for (; iline <= lines.size; iline ++) {
+		if (! str32nequ (lines [iline], U"procedure ", 10))
+			continue;
 		char32 *q = lines [iline] + 10;
-		while (Melder_isHorizontalSpace (*q)) q ++;   // skip whitespace before procedure name
+		while (Melder_isHorizontalSpace (*q))
+			q ++;   // skip whitespace before procedure name
 		char32 *procName = q;
-		while (Melder_staysWithinInk (*q) && *q != U'(' && *q != U':') q ++;
+		while (Melder_staysWithinInk (*q) && *q != U'(' && *q != U':')
+			q ++;
 		if (q == procName) Melder_throw (U"Missing procedure name after 'procedure'.");
 		if (q - procName == callLength && str32nequ (procName, callName, callLength)) {
 			/*
-			 * We found the procedure definition.
-			 */
+				We found the procedure definition.
+			*/
 			if (++ my callDepth > Interpreter_MAX_CALL_DEPTH)
 				Melder_throw (U"Call depth greater than ", Interpreter_MAX_CALL_DEPTH, U".");
 			str32cpy (my procedureNames [my callDepth], callName);
 			bool parenthesisOrColonFound = ( *q == U'(' || *q == U':' );
-			if (*q) q ++;   // step over parenthesis or colon or first white space
+			if (*q)
+				q ++;   // step over parenthesis or colon or first white space
 			if (! parenthesisOrColonFound) {
-				while (Melder_isHorizontalSpace (*q)) q ++;   // skip more whitespace
-				if (*q == U'(' || *q == U':') q ++;   // step over parenthesis or colon
+				while (Melder_isHorizontalSpace (*q))
+					q ++;   // skip more whitespace
+				if (*q == U'(' || *q == U':')
+					q ++;   // step over parenthesis or colon
 			}
-			while (*q && *q != U')') {
-				static MelderString argument { };
+			while (*q && *q != U')' && *q != U';') {
+				static MelderString argument;
 				MelderString_empty (& argument);
-				while (Melder_isHorizontalSpace (*p)) p ++;
-				while (Melder_isHorizontalSpace (*q)) q ++;
+				while (Melder_isHorizontalSpace (*p))
+					p ++;
+				while (Melder_isHorizontalSpace (*q))
+					q ++;
 				conststring32 parameterName = q;
-				while (Melder_staysWithinInk (*q) && *q != U',' && *q != U')') q ++;   // collect parameter name
+				while (Melder_staysWithinInk (*q) && *q != U',' && *q != U')' && *q != U';')
+					q ++;   // collect parameter name
 				int expressionDepth = 0;
 				for (; *p; p ++) {
 					if (*p == U',') {
-						if (expressionDepth == 0) break;   // depth-0 comma ends expression
+						if (expressionDepth == 0)
+							break;   // depth-0 comma ends expression
 						MelderString_appendCharacter (& argument, U',');
-					} else if (*p == U')') {
-						if (expressionDepth == 0) break;   // depth-0 closing parenthesis ends expression
+					} else if (*p == U')' || *p == U']' || *p == U'}') {
+						if (expressionDepth == 0)
+							break;   // depth-0 closing parenthesis ends expression
 						expressionDepth --;
-						MelderString_appendCharacter (& argument, U')');
-					} else if (*p == U'(') {
+						MelderString_appendCharacter (& argument, *p);
+					} else if (*p == U'(' || *p == U'[' || *p == U'{') {
 						expressionDepth ++;
-						MelderString_appendCharacter (& argument, U'(');
+						MelderString_appendCharacter (& argument, *p);
 					} else if (*p == U'\"') {
 						/*
-						 * Enter a string literal.
-						 */
+							Enter a string literal.
+						*/
 						MelderString_appendCharacter (& argument, U'\"');
 						p ++;
 						for (;; p ++) {
@@ -1025,30 +1026,38 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 			break;
 		}
 	}
-	if (iline > numberOfLines) Melder_throw (U"Procedure \"", callName, U"\" not found.");
+	if (iline > lines.size)
+		Melder_throw (U"Procedure \"", callName, U"\" not found.");
 }
 static void Interpreter_do_oldProcedureCall (Interpreter me, char32 *command,
-	char32 * const *lines, integer numberOfLines, integer& lineNumber, integer callStack [], int& callDepth)
+	constvector <mutablestring32> const& lines, integer& lineNumber, integer callStack [], int& callDepth)
 {
 	/*
 		Old type of procedure calls, with space separation, unquoted strings, and no array support.
 	*/
 	char32 *p = command;
-	while (Melder_isHorizontalSpace (*p)) p ++;   // skip whitespace
+	while (Melder_isHorizontalSpace (*p))
+		p ++;   // skip whitespace
 	char32 *callName = p;
-	while (*p != U'\0' && ! Melder_isHorizontalSpace (*p) && *p != U'(' && *p != U':') p ++;
-	if (p == callName) Melder_throw (U"Missing procedure name after 'call'.");
-	bool hasArguments = *p != U'\0';
+	while (*p != U'\0' && ! Melder_isHorizontalSpace (*p) && *p != U'(' && *p != U':')
+		p ++;
+	if (p == callName)
+		Melder_throw (U"Missing procedure name after 'call'.");
+	bool hasArguments = ( *p != U'\0' );
 	*p = U'\0';   // close procedure name
 	integer callLength = str32len (callName);
 	integer iline = 1;
-	for (; iline <= numberOfLines; iline ++) {
-		if (! str32nequ (lines [iline], U"procedure ", 10)) continue;
+	for (; iline <= lines.size; iline ++) {
+		if (! str32nequ (lines [iline], U"procedure ", 10))
+			continue;
 		char32 *q = lines [iline] + 10;
-		while (Melder_isHorizontalSpace (*q)) q ++;
+		while (Melder_isHorizontalSpace (*q))
+			q ++;
 		char32 *procName = q;
-		while (*q != U'\0' && ! Melder_isHorizontalSpace (*q) && *q != U'(' && *q != U':') q ++;
-		if (q == procName) Melder_throw (U"Missing procedure name after 'procedure'.");
+		while (*q != U'\0' && ! Melder_isHorizontalSpace (*q) && *q != U'(' && *q != U':')
+			q ++;
+		if (q == procName)
+			Melder_throw (U"Missing procedure name after 'procedure'.");
 		bool hasParameters = ( *q != U'\0' );
 		if (q - procName == callLength && str32nequ (procName, callName, callLength)) {
 			if (hasArguments && ! hasParameters)
@@ -1062,18 +1071,23 @@ static void Interpreter_do_oldProcedureCall (Interpreter me, char32 *command,
 				bool parenthesisOrColonFound = ( *q == U'(' || *q == U':' );
 				q ++;   // step over parenthesis or colon or first white space
 				if (! parenthesisOrColonFound) {
-					while (Melder_isHorizontalSpace (*q)) q ++;   // skip more whitespace
-					if (*q == U'(' || *q == U':') q ++;   // step over parenthesis or colon
+					while (Melder_isHorizontalSpace (*q))
+						q ++;   // skip more whitespace
+					if (*q == U'(' || *q == U':')
+						q ++;   // step over parenthesis or colon
 				}
 				++ p;   // first argument
-				while (*q && *q != ')') {
+				while (*q && *q != U')') {
 					char32 *par, save;
-					static MelderString arg { };
+					static MelderString arg;
 					MelderString_empty (& arg);
-					while (Melder_isHorizontalSpace (*p)) p ++;
-					while (Melder_isHorizontalSpace (*q) || *q == U',' || *q == U')') q ++;
+					while (Melder_isHorizontalSpace (*p))
+						p ++;
+					while (Melder_isHorizontalSpace (*q) || *q == U',' || *q == U')')
+						q ++;
 					par = q;
-					while (*q != U'\0' && ! Melder_isHorizontalSpace (*q) && *q != U',' && *q != U')') q ++;   // collect parameter name
+					while (*q != U'\0' && ! Melder_isHorizontalSpace (*q) && *q != U',' && *q != U')')
+						q ++;   // collect parameter name
 					if (*q) {   // does anything follow the parameter name?
 						if (*p == U'\"') {
 							p ++;   // skip initial quote
@@ -1093,7 +1107,10 @@ static void Interpreter_do_oldProcedureCall (Interpreter me, char32 *command,
 							while (*p != U'\0' && ! Melder_isHorizontalSpace (*p))
 								MelderString_appendCharacter (& arg, *p ++);   // white space separates
 						}
-						if (*p) { *p = U'\0'; p ++; }
+						if (*p) {
+							*p = U'\0';
+							p ++;
+						}
 					} else {   // else rest of line
 						while (*p != '\0')
 							MelderString_appendCharacter (& arg, *p ++);
@@ -1120,21 +1137,24 @@ static void Interpreter_do_oldProcedureCall (Interpreter me, char32 *command,
 			break;
 		}
 	}
-	if (iline > numberOfLines) Melder_throw (U"Procedure \"", callName, U"\" not found.");
+	if (iline > lines.size)
+		Melder_throw (U"Procedure \"", callName, U"\" not found.");
 }
 
 static void assignToNumericVectorElement (Interpreter me, char32 *& p, const char32* vectorName, MelderString& valueString) {
 	integer indexValue = 0;
-	static MelderString index { };
+	static MelderString index;
 	MelderString_empty (& index);
 	int depth = 0;
 	bool inString = false;
 	while ((depth > 0 || *p != U']' || inString) && Melder_staysWithinLine (*p)) {
 		MelderString_appendCharacter (& index, *p);
 		if (*p == U'[') {
-			if (! inString) depth ++;
+			if (! inString)
+				depth ++;
 		} else if (*p == U']') {
-			if (! inString) depth --;
+			if (! inString)
+				depth --;
 		}
 		if (*p == U'"') inString = ! inString;
 		p ++;
@@ -1149,14 +1169,15 @@ static void assignToNumericVectorElement (Interpreter me, char32 *& p, const cha
 		Melder_throw (U"Element index should be numeric.");
 	}
 	p ++;   // step over closing bracket
-	while (Melder_isHorizontalSpace (*p)) p ++;
+	while (Melder_isHorizontalSpace (*p))
+		p ++;
 	if (*p != U'=')
 		Melder_throw (U"Missing '=' after vector element ", vectorName, U" [", index.string, U"].");
 	p ++;   // step over equals sign
-	while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment
-	if (*p == U'\0') {
+	while (Melder_isHorizontalSpace (*p))
+		p ++;   // go to first token after assignment
+	if (*p == U'\0')
 		Melder_throw (U"Missing expression after vector element ", vectorName, U" [", index.string, U"].");
-	}
 	double value;
 	if (isCommand (p)) {
 		/*
@@ -1193,7 +1214,7 @@ static void assignToNumericVectorElement (Interpreter me, char32 *& p, const cha
 	if (indexValue > var -> numericVectorValue.size)
 		Melder_throw (U"A vector index cannot be greater than the number of elements (here ",
 			var -> numericVectorValue.size, U"). The index you supplied is ", indexValue, U".");
-	var -> numericVectorValue.at [indexValue] = value;
+	var -> numericVectorValue [indexValue] = value;
 }
 
 static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const char32* matrixName, MelderString& valueString) {
@@ -1201,16 +1222,18 @@ static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const cha
 	/*
 		Get the row number.
 	*/
-	static MelderString rowFormula { };
+	static MelderString rowFormula;
 	MelderString_empty (& rowFormula);
 	int depth = 0;
 	bool inString = false;
 	while ((depth > 0 || *p != U',' || inString) && Melder_staysWithinLine (*p)) {
 		MelderString_appendCharacter (& rowFormula, *p);
 		if (*p == U'[' || *p == U'(') {
-			if (! inString) depth ++;
+			if (! inString)
+				depth ++;
 		} else if (*p == U']' || *p == U')') {
-			if (! inString) depth --;
+			if (! inString)
+				depth --;
 		}
 		if (*p == U'"') inString = ! inString;
 		p ++;
@@ -1228,18 +1251,21 @@ static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const cha
 	/*
 		Get the column number.
 	*/
-	static MelderString columnFormula { };
+	static MelderString columnFormula;
 	MelderString_empty (& columnFormula);
 	depth = 0;
 	inString = false;
 	while ((depth > 0 || *p != U']' || inString) && Melder_staysWithinLine (*p)) {
 		MelderString_appendCharacter (& columnFormula, *p);
 		if (*p == U'[') {
-			if (! inString) depth ++;
+			if (! inString)
+				depth ++;
 		} else if (*p == U']') {
-			if (! inString) depth --;
+			if (! inString)
+				depth --;
 		}
-		if (*p == U'"') inString = ! inString;
+		if (*p == U'"')
+			inString = ! inString;
 		p ++;
 	}
 	if (! Melder_staysWithinLine (*p))
@@ -1257,10 +1283,9 @@ static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const cha
 			rowFormula.string, U",", columnFormula.string, U"].");
 	p ++;   // step over equals sign
 	while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment
-	if (*p == U'\0') {
+	if (*p == U'\0')
 		Melder_throw (U"Missing expression after matrix element ", matrixName, U" [",
-			rowFormula.string, U",", columnFormula.string, U"].");
-	}
+				rowFormula.string, U",", columnFormula.string, U"].");
 	double value;
 	if (isCommand (p)) {
 		/*
@@ -1301,16 +1326,16 @@ static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const cha
 	if (columnNumber > var -> numericMatrixValue. ncol)
 		Melder_throw (U"A column number cannot be greater than the number of columns (here ",
 			var -> numericMatrixValue. ncol, U"). The column number you supplied is ", columnNumber, U".");
-	var -> numericMatrixValue.at [rowNumber] [columnNumber] = value;
+	var -> numericMatrixValue [rowNumber] [columnNumber] = value;
 }
 
 void Interpreter_run (Interpreter me, char32 *text) {
-	autoNUMvector <char32 *> lines;   // not autostringvector, because the elements are reference copies
+	autovector <mutablestring32> lines;   // not autostringvector, because the elements are reference copies
 	integer lineNumber = 0;
 	bool assertionFailed = false;
 	try {
-		static MelderString valueString { };   // to divert the info
-		static MelderString assertErrorString { };
+		static MelderString valueString;   // to divert the info
+		static MelderString assertErrorString;
 		char32 *command = text;
 		autoMelderString command2;
 		autoMelderString buffer;
@@ -1319,41 +1344,49 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		int callDepth = 0, chopped = 0, ipar;
 		my callDepth = 0;
 		/*
-		 * The "environment" is null if we are in the Praat shell, or an editor otherwise.
-		 */
-		if (my editorClass) {
+			The "environment" is null if we are in the Praat shell, or an editor otherwise.
+		*/
+		if (my editorClass)
 			praatP. editor = praat_findEditorFromString (my environmentName.get());
-		} else {
+		else
 			praatP. editor = nullptr;
-		}
 		/*
-		 * Start.
-		 */
+			Start.
+		*/
 		my running = true;
 		/*
-		 * Count lines and set the newlines to zero.
-		 */
+			Count lines and set the newlines to zero.
+		*/
 		while (! atLastLine) {
 			char32 *endOfLine = command;
-			while (Melder_staysWithinLine (*endOfLine)) endOfLine ++;
-			if (*endOfLine == U'\0') atLastLine = true;
+			while (Melder_staysWithinLine (*endOfLine))
+				endOfLine ++;
+			if (*endOfLine == U'\0')
+				atLastLine = true;
 			*endOfLine = U'\0';
 			numberOfLines ++;
 			command = endOfLine + 1;
 		}
 		/*
-		 * Remember line starts and labels.
-		 */
-		lines.reset (1, numberOfLines);
+			Remember line starts and labels.
+		*/
+		lines. resize (numberOfLines);
 		for (lineNumber = 1, command = text; lineNumber <= numberOfLines; lineNumber ++, command += str32len (command) + 1 + chopped) {
-			while (Melder_isHorizontalSpace (*command) || *command == UNICODE_NO_BREAK_SPACE) command ++;   // nbsp can occur for scripts copied from the manual
+			while (Melder_isHorizontalSpace (*command))
+				command ++;   // nbsp can occur for scripts copied from the manual
 			/*
-			 * Chop trailing spaces?
-			 */
+				Chop trailing spaces?
+			*/
 			#if 0
 				chopped = 0;
 				int length = str32len (command);
-				while (length > 0) { char kar = command [-- length]; if (! Melder_isHorizontalSpace (kar)) break; command [length] = '\0'; chopped ++; }
+				while (length > 0) {
+					char kar = command [-- length];
+					if (! Melder_isHorizontalSpace (kar))
+						break;
+					command [length] = U'\0';
+					chopped ++;
+				}
 			#endif
 			lines [lineNumber] = command;
 			if (str32nequ (command, U"label ", 6)) {
@@ -1368,8 +1401,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 			}
 		}
 		/*
-		 * Connect continuation lines.
-		 */
+			Connect continuation lines.
+		*/
 		trace (U"connect continuation lines");
 		for (lineNumber = numberOfLines; lineNumber >= 2; lineNumber --) {
 			char32 *line = lines [lineNumber];
@@ -1382,14 +1415,14 @@ void Interpreter_run (Interpreter me, char32 *text) {
 			}
 		}
 		/*
-		 * Copy the parameter names and argument values into the array of variables.
-		 */
+			Copy the parameter names and argument values into the array of variables.
+		*/
 		my variablesMap. clear ();
 		for (ipar = 1; ipar <= my numberOfParameters; ipar ++) {
 			char32 parameter [200];
 			/*
-			 * Create variable names as-are and variable names without capitals.
-			 */
+				Create variable names as-are and variable names without capitals.
+			*/
 			str32cpy (parameter, my parameters [ipar]);
 			parameterToVariable (me, my types [ipar], parameter, ipar);
 			if (parameter [0] >= U'A' && parameter [0] <= U'Z') {
@@ -1398,8 +1431,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 			}
 		}
 		/*
-		 * Initialize some variables.
-		 */
+			Initialize some variables.
+		*/
 		Interpreter_addStringVariable (me, U"newline$", U"\n");
 		Interpreter_addStringVariable (me, U"tab$", U"\t");
 		Interpreter_addStringVariable (me, U"shellDirectory$", Melder_getShellDirectory ());
@@ -1438,8 +1471,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		Interpreter_addStringVariable (me, U"praatVersion$", U"" xstr(PRAAT_VERSION_STR));
 		Interpreter_addNumericVariable (me, U"praatVersion", PRAAT_VERSION_NUM);
 		/*
-		 * Execute commands.
-		 */
+			Execute commands.
+		*/
 		trace (U"going to handle ", numberOfLines, U" lines");
 		//for (lineNumber = 1; lineNumber <= numberOfLines; lineNumber ++) {
 			//trace (U"line ", lineNumber, U": ", lines [lineNumber]);
@@ -1455,43 +1488,49 @@ void Interpreter_run (Interpreter me, char32 *text) {
 				bool fail = false;
 				MelderString_copy (& command2, lines [lineNumber]);
 				c0 = command2. string [0];
-				if (c0 == U'\0') continue;
+				if (c0 == U'\0')
+					continue;
 				/*
-				 * Substitute variables.
-				 */
+					Substitute variables.
+				*/
 				trace (U"substituting variables");
 				for (char32 *p = & command2. string [0]; *p != U'\0'; p ++) if (*p == U'\'') {
 					/*
-					 * Found a left quote. Search for a matching right quote.
-					 */
-					char32 *q = p + 1, varName [300], *r, *s, *colon;
+						Found a left quote. Search for a matching right quote.
+					*/
+					char32 *q = p + 1, varName [300], *r, *s;
 					integer precision = -1;
 					bool percent = false;
-					while (*q != U'\0' && *q != U'\'' && q - p < 299) q ++;
-					if (*q == U'\0') break;   // no matching right quote? done with this line!
-					if (q - p == 1 || q - p >= 299) continue;   // ignore empty and too long variable names
+					while (*q != U'\0' && *q != U'\'' && q - p < 299)
+						q ++;
+					if (*q == U'\0')
+						break;   // no matching right quote? done with this line!
+					if (q - p == 1 || q - p >= 299)
+						continue;   // ignore empty and too long variable names
 					trace (U"found ", q - p - 1);
 					/*
-					 * Found a right quote. Get potential variable name.
-					 */
-					for (r = p + 1, s = varName; q - r > 0; r ++, s ++) *s = *r;
+						Found a right quote. Get potential variable name.
+					*/
+					for (r = p + 1, s = varName; q - r > 0; r ++, s ++)
+						*s = *r;
 					*s = U'\0';   // trailing null byte
-					colon = str32chr (varName, U':');
+					char32 *colon = str32chr (varName, U':');
 					if (colon) {
 						precision = Melder_atoi (colon + 1);
-						if (str32chr (colon + 1, U'%')) percent = true;
-						*colon = '\0';
+						if (str32chr (colon + 1, U'%'))
+							percent = true;
+						*colon = U'\0';
 					}
 					InterpreterVariable var = Interpreter_hasVariable (me, varName);
 					if (var) {
 						/*
-						 * Found a variable (p points to the left quote, q to the right quote). Substitute.
-						 */
+							Found a variable (p points to the left quote, q to the right quote). Substitute.
+						*/
 						integer headlen = p - command2.string;
-						conststring32 string = var -> stringValue ? var -> stringValue.get() :
-							percent ? Melder_percent (var -> numericValue, precision) :
-							precision >= 0 ?  Melder_fixed (var -> numericValue, precision) :
-							Melder_double (var -> numericValue);
+						conststring32 string = ( var -> stringValue ? var -> stringValue.get() :
+								percent ? Melder_percent (var -> numericValue, precision) :
+								precision >= 0 ?  Melder_fixed (var -> numericValue, precision) :
+								Melder_double (var -> numericValue) );
 						integer arglen = str32len (string);
 						MelderString_ncopy (& buffer, command2.string, headlen);
 						MelderString_append (& buffer, string, q + 1);
@@ -1503,7 +1542,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 				}
 				trace (U"resume");
 				c0 = command2.string [0];   // resume in order to allow things like 'c$' = 5
-				if ((c0 < U'a' || c0 > U'z') && c0 != U'@' && ! (c0 == U'.' && command2.string [1] >= U'a' && command2.string [1] <= U'z')) {
+				if ((! Melder_isLetter (c0) || Melder_isUpperCaseLetter (c0)) && c0 != U'@' &&
+						! (c0 == U'.' && Melder_isLetter (command2.string [1]) && ! Melder_isUpperCaseLetter (command2.string [1]))) {
 					praat_executeCommand (me, command2.string);
 				/*
 				 * Interpret control flow and variables.
@@ -1513,7 +1553,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						fail = true;
 						break;
 					case U'@':
-						Interpreter_do_procedureCall (me, command2.string + 1, lines.peek(), numberOfLines, lineNumber, callStack, callDepth);
+						Interpreter_do_procedureCall (me, command2.string + 1, lines.get(), lineNumber, callStack, callDepth);
 						break;
 					case U'a':
 						if (str32nequ (command2.string, U"assert ", 7)) {
@@ -1527,27 +1567,40 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						} else if (str32nequ (command2.string, U"asserterror ", 12)) {
 							MelderString_copy (& assertErrorString, command2.string + 12);
 							assertErrorLineNumber = lineNumber;
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U'b':
 						fail = true;
 						break;
 					case U'c':
 						if (str32nequ (command2.string, U"call ", 5)) {
-							Interpreter_do_oldProcedureCall (me, command2.string + 5, lines.peek(), numberOfLines, lineNumber, callStack, callDepth);
-						} else fail = true;
+							Interpreter_do_oldProcedureCall (me, command2.string + 5, lines.get(), lineNumber, callStack, callDepth);
+						} else
+							fail = true;
 						break;
 					case U'd':
 						if (str32nequ (command2.string, U"dec ", 4)) {
 							InterpreterVariable var = Interpreter_lookUpVariable (me, command2.string + 4);
 							var -> numericValue -= 1.0;
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U'e':
-						if (command2.string [1] == 'n' && command2.string [2] == 'd') {
-							if (str32nequ (command2.string, U"endif", 5) && ! Melder_staysWithinInk (command2.string [5])) {
+						if (command2.string [1] == U'n' && command2.string [2] == U'd') {
+							if (str32nequ (command2.string, U"endif", 5) &&
+									(! Melder_staysWithinInk (command2.string [5]) || command2.string [5] == U';'))
+							{
+								const char32 *startOfInk = Melder_findInk (command2.string + 5);
+								if (startOfInk && *startOfInk != U';')
+									Melder_throw (U"Stray text after 'endif'.");
 								/* Ignore. */
-							} else if (str32nequ (command2.string, U"endfor", 6) && ! Melder_staysWithinInk (command2.string [6])) {
+							} else if (str32nequ (command2.string, U"endfor", 6) &&
+									(! Melder_staysWithinInk (command2.string [6]) || command2.string [6] == U';'))
+							{
+								const char32 *startOfInk = Melder_findInk (command2.string + 6);
+								if (startOfInk && *startOfInk != U';')
+									Melder_throw (U"Stray text after 'endfor'.");
 								int depth = 0;
 								integer iline;
 								for (iline = lineNumber - 1; iline > 0; iline --) {
@@ -1555,40 +1608,71 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									if (line [0] == U'f' && line [1] == U'o' && line [2] == U'r' && line [3] == U' ') {
 										if (depth == 0) { lineNumber = iline - 1; fromendfor = true; break; }   // go before 'for'
 										else depth --;
-									} else if (str32nequ (lines [iline], U"endfor", 6) && ! Melder_staysWithinInk (lines [iline] [6])) {
+									} else if (str32nequ (lines [iline], U"endfor", 6) &&
+											(! Melder_staysWithinInk (lines [iline] [6]) || lines [iline] [6] == U';'))
+									{
 										depth ++;
 									}
 								}
 								if (iline <= 0) Melder_throw (U"Unmatched 'endfor'.");
-							} else if (str32nequ (command2.string, U"endwhile", 8) && ! Melder_staysWithinInk (command2.string [8])) {
+							} else if (str32nequ (command2.string, U"endwhile", 8) &&
+									(! Melder_staysWithinInk (command2.string [8]) || command2.string [8] == U';'))
+							{
+								const char32 *startOfInk = Melder_findInk (command2.string + 8);
+								if (startOfInk && *startOfInk != U';')
+									Melder_throw (U"Stray text after 'endwhile'.");
 								int depth = 0;
 								integer iline;
 								for (iline = lineNumber - 1; iline > 0; iline --) {
 									if (str32nequ (lines [iline], U"while ", 6)) {
-										if (depth == 0) { lineNumber = iline - 1; break; }   // go before 'while'
-										else depth --;
-									} else if (str32nequ (lines [iline], U"endwhile", 8) && ! Melder_staysWithinInk (lines [iline] [8])) {
+										if (depth == 0) {
+											lineNumber = iline - 1;
+											break;   // go before 'while'
+										} else
+											depth --;
+									} else if (str32nequ (lines [iline], U"endwhile", 8) &&
+											(! Melder_staysWithinInk (lines [iline] [8]) || lines [iline] [8] == U';'))
+									{
 										depth ++;
 									}
 								}
 								if (iline <= 0) Melder_throw (U"Unmatched 'endwhile'.");
-							} else if (str32nequ (command2.string, U"endproc", 7) && ! Melder_staysWithinInk (command2.string [7])) {
-								if (callDepth == 0) Melder_throw (U"Unmatched 'endproc'.");
+							} else if (str32nequ (command2.string, U"endproc", 7) &&
+									(! Melder_staysWithinInk (command2.string [7]) || command2.string [7] == U';'))
+							{
+								const char32 *startOfInk = Melder_findInk (command2.string + 7);
+								if (startOfInk && *startOfInk != U';')
+									Melder_throw (U"Stray text after 'endproc'.");
+								if (callDepth == 0)
+									Melder_throw (U"Unmatched 'endproc'.");
 								lineNumber = callStack [callDepth --];
 								-- my callDepth;
 							} else fail = true;
-						} else if (str32nequ (command2.string, U"else", 4) && ! Melder_staysWithinInk (command2.string [4])) {
+						} else if (str32nequ (command2.string, U"else", 4) &&
+								(! Melder_staysWithinInk (command2.string [4]) || command2.string [4] == U';'))
+						{
+							const char32 *startOfInk = Melder_findInk (command2.string + 4);
+							if (startOfInk && *startOfInk != U';')
+								Melder_throw (U"Stray text after 'else'.");
 							int depth = 0;
 							integer iline;
 							for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
-								if (str32nequ (lines [iline], U"endif", 5) && ! Melder_staysWithinInk (lines [iline] [5])) {
+								if (str32nequ (lines [iline], U"endif", 5) &&
+										(! Melder_staysWithinInk (lines [iline] [5]) || lines [iline] [5] == U';'))
+								{
+									startOfInk = Melder_findInk (lines [iline] + 5);
+									if (startOfInk && *startOfInk != U';') {
+										lineNumber = iline;   // on behalf of the error message
+										Melder_throw (U"Stray text after 'endif'.");
+									}
 									if (depth == 0) { lineNumber = iline; break; }   // go after `endif`
 									else depth --;
 								} else if (str32nequ (lines [iline], U"if ", 3)) {
 									depth ++;
 								}
 							}
-							if (iline > numberOfLines) Melder_throw (U"Unmatched 'else'.");
+							if (iline > numberOfLines)
+								Melder_throw (U"Unmatched 'else'.");
 						} else if (str32nequ (command2.string, U"elsif ", 6) || str32nequ (command2.string, U"elif ", 5)) {
 							if (fromif) {
 								double value;
@@ -1598,63 +1682,108 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									int depth = 0;
 									integer iline;
 									for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
-										if (str32nequ (lines [iline], U"endif", 5) && ! Melder_staysWithinInk (lines [iline] [5])) {
-											if (depth == 0) { lineNumber = iline; break; }   // go after `endif`
-											else depth --;
-										} else if (str32nequ (lines [iline], U"else", 4) && ! Melder_staysWithinInk (lines [iline] [4])) {
-											if (depth == 0) { lineNumber = iline; break; }   // go after `else`
+										if (str32nequ (lines [iline], U"endif", 5) &&
+												(! Melder_staysWithinInk (lines [iline] [5]) || lines [iline] [5] == U';'))
+										{
+											const char32 *startOfInk = Melder_findInk (lines [iline] + 5);
+											if (startOfInk && *startOfInk != U';') {
+												lineNumber = iline;   // on behalf of error message
+												Melder_throw (U"Stray text after 'endif'.");
+											}
+											if (depth == 0) {
+												lineNumber = iline;
+												break;   // go after `endif`
+											} else
+												depth --;
+										} else if (str32nequ (lines [iline], U"else", 4) &&
+												(! Melder_staysWithinInk (lines [iline] [4]) || lines [iline] [4] == U';'))
+										{
+											const char32 *startOfInk = Melder_findInk (lines [iline] + 4);
+											if (startOfInk && *startOfInk != U';') {
+												lineNumber = iline;   // on behalf of error message
+												Melder_throw (U"Stray text after 'else'.");
+											}
+											if (depth == 0) {
+												lineNumber = iline;
+												break;   // go after `else`
+											}
 										} else if ((str32nequ (lines [iline], U"elsif", 5) && ! Melder_staysWithinInk (lines [iline] [5]))
 											|| (str32nequ (lines [iline], U"elif", 4) && ! Melder_staysWithinInk (lines [iline] [4]))) {
-											if (depth == 0) { lineNumber = iline - 1; fromif = true; break; }   // go at next 'elsif' or 'elif'
+											if (depth == 0) {
+												lineNumber = iline - 1;
+												fromif = true;
+												break;   // go at next 'elsif' or 'elif'
+											}
 										} else if (str32nequ (lines [iline], U"if ", 3)) {
 											depth ++;
 										}
 									}
-									if (iline > numberOfLines) Melder_throw (U"Unmatched 'elsif'.");
+									if (iline > numberOfLines)
+										Melder_throw (U"Unmatched 'elsif'.");
 								}
 							} else {
 								int depth = 0;
 								integer iline;
 								for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
-									if (str32nequ (lines [iline], U"endif", 5) && ! Melder_staysWithinInk (lines [iline] [5])) {
-										if (depth == 0) { lineNumber = iline; break; }   // go after `endif`
-										else depth --;
+									if (str32nequ (lines [iline], U"endif", 5) &&
+											(! Melder_staysWithinInk (lines [iline] [5]) || lines [iline] [5] == U';'))
+									{
+										const char32 *startOfInk = Melder_findInk (lines [iline] + 5);
+										if (startOfInk && *startOfInk != U';') {
+											lineNumber = iline;   // on behalf of error message
+											Melder_throw (U"Stray text after 'endif'.");
+										}
+										if (depth == 0) {
+											lineNumber = iline;
+											break;   // go after `endif`
+										} else
+											depth --;
 									} else if (str32nequ (lines [iline], U"if ", 3)) {
 										depth ++;
 									}
 								}
-								if (iline > numberOfLines) Melder_throw (U"'elsif' not matched with 'endif'.");
+								if (iline > numberOfLines)
+									Melder_throw (U"'elsif' not matched with 'endif'.");
 							}
 						} else if (str32nequ (command2.string, U"exit", 4)) {
 							if (command2.string [4] == U'\0') {
 								lineNumber = numberOfLines;   // go after end
 							} else if (command2.string [4] == U' ') {
 								Melder_throw (command2.string + 5);
-							} else fail = true;
+							} else
+								fail = true;
 						} else if (str32nequ (command2.string, U"echo ", 5)) {
 							/*
-							 * Make sure that lines like "echo = 3" will not be regarded as assignments.
-							 */
+								Make sure that lines like "echo = 3" will not be regarded as assignments.
+							*/
 							praat_executeCommand (me, command2.string);
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U'f':
 						if (command2.string [1] == U'o' && command2.string [2] == U'r' && command2.string [3] == U' ') {   // for_
 							double toValue, loopVariable;
 							char32 *frompos = str32str (command2.string, U" from "), *topos = str32str (command2.string, U" to ");
 							char32 *varpos = command2.string + 4, *endvar = frompos;
-							if (! topos) Melder_throw (U"Missing \'to\' in \'for\' loop.");
-							if (! endvar) endvar = topos;
-							while (*endvar == U' ') { *endvar = '\0'; endvar --; }
-							while (*varpos == U' ') varpos ++;
-							if (endvar - varpos < 0) Melder_throw (U"Missing loop variable after \'for\'.");
+							if (! topos)
+								Melder_throw (U"Missing \'to\' in \'for\' loop.");
+							if (! endvar)
+								endvar = topos;
+							while (*endvar == U' ') {
+								*endvar = U'\0';
+								endvar --;
+							}
+							while (*varpos == U' ')
+								varpos ++;
+							if (endvar - varpos < 0)
+								Melder_throw (U"Missing loop variable after \'for\'.");
 							InterpreterVariable var = Interpreter_lookUpVariable (me, varpos);
 							Interpreter_numericExpression (me, topos + 4, & toValue);
 							if (fromendfor) {
 								fromendfor = false;
 								loopVariable = var -> numericValue + 1.0;
 							} else if (frompos) {
-								*topos = '\0';
+								*topos = U'\0';
 								Interpreter_numericExpression (me, frompos + 6, & loopVariable);
 							} else {
 								loopVariable = 1.0;
@@ -1664,22 +1793,37 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								int depth = 0;
 								integer iline;
 								for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
-									if (str32nequ (lines [iline], U"endfor", 6)) {
-										if (depth == 0) { lineNumber = iline; break; }   // go after 'endfor'
-										else depth --;
+									if (str32nequ (lines [iline], U"endfor", 6) &&
+											(! Melder_staysWithinInk (lines [iline] [6]) || lines [iline] [6] == U';'))
+									{
+										const char32 *startOfInk = Melder_findInk (lines [iline] + 6);
+										if (startOfInk && *startOfInk != U';') {
+											lineNumber = iline;   // on behalf of error message
+											Melder_throw (U"Stray text after 'endfor'.");
+										}
+										if (depth == 0) {
+											lineNumber = iline;
+											break;   // go after 'endfor'
+										} else
+											depth --;
 									} else if (str32nequ (lines [iline], U"for ", 4)) {
 										depth ++;
 									}
 								}
-								if (iline > numberOfLines) Melder_throw (U"Unmatched 'for'.");
+								if (iline > numberOfLines)
+									Melder_throw (U"Unmatched 'for'.");
 							}
 						} else if (str32nequ (command2.string, U"form", 4) && Melder_isEndOfInk (command2.string [4])) {
 							integer iline;
 							for (iline = lineNumber + 1; iline <= numberOfLines; iline ++)
-								if (str32nequ (lines [iline], U"endform", 7) && Melder_isEndOfInk (lines [iline] [7]))
-									{ lineNumber = iline; break; }   // go after 'endform'
-							if (iline > numberOfLines) Melder_throw (U"Unmatched 'form'.");
-						} else fail = true;
+								if (str32nequ (lines [iline], U"endform", 7) && Melder_isEndOfInk (lines [iline] [7])) {
+									lineNumber = iline;
+									break;   // go after 'endform'
+								}
+							if (iline > numberOfLines)
+								Melder_throw (U"Unmatched 'form'.");
+						} else
+							fail = true;
 						break;
 					case U'g':
 						if (str32nequ (command2.string, U"goto ", 5)) {
@@ -1687,50 +1831,79 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							str32ncpy (labelName, command2.string + 5, 1+Interpreter_MAX_LABEL_LENGTH);
 							labelName [Interpreter_MAX_LABEL_LENGTH] = U'\0';
 							char32 *space = str32chr (labelName, U' ');
-							if (space == labelName) Melder_throw (U"Missing label name after 'goto'.");
+							if (space == labelName)
+								Melder_throw (U"Missing label name after 'goto'.");
 							bool dojump = true;
 							if (space) {
 								double value;
 								*space = '\0';
 								Interpreter_numericExpression (me, command2.string + 6 + str32len (labelName), & value);
-								if (value == 0.0) dojump = false;
+								if (value == 0.0)
+									dojump = false;
 							}
 							if (dojump) {
 								integer ilabel = lookupLabel (me, labelName);
 								lineNumber = my labelLines [ilabel];   // loop will add 1
 							}
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U'h':
 						fail = true;
 						break;
 					case U'i':
-						if (command2.string [1] == U'f' && command2.string [2] == U' ') {   // if_
+						if (command2.string [1] == U'f' && Melder_isHorizontalSpace (command2.string [2])) {   // if_
 							double value;
 							Interpreter_numericExpression (me, command2.string + 3, & value);
 							if (value == 0.0) {
 								int depth = 0;
 								integer iline;
 								for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
-									if (str32nequ (lines [iline], U"endif", 5)) {
-										if (depth == 0) { lineNumber = iline; break; }   // go after 'endif'
-										else depth --;
-									} else if (str32nequ (lines [iline], U"else", 4)) {
-										if (depth == 0) { lineNumber = iline; break; }   // go after 'else'
+									if (str32nequ (lines [iline], U"endif", 5) &&
+											(! Melder_staysWithinInk (lines [iline] [5]) || lines [iline] [5] == U';'))
+									{
+										const char32 *startOfInk = Melder_findInk (lines [iline] + 5);
+										if (startOfInk && *startOfInk != U';') {
+											lineNumber = iline;   // on behalf of error message
+											Melder_throw (U"Stray text after 'endif'.");
+										}
+										if (depth == 0) {
+											lineNumber = iline;
+											break;   // go after 'endif'
+										} else
+											depth --;
+									} else if (str32nequ (lines [iline], U"else", 4) &&
+											(! Melder_staysWithinInk (lines [iline] [4]) || lines [iline] [4] == U';'))
+									{
+										const char32 *startOfInk = Melder_findInk (lines [iline] + 4);
+										if (startOfInk && *startOfInk != U';') {
+											lineNumber = iline;   // on behalf of error message
+											Melder_throw (U"Stray text after 'else'.");
+										}
+										if (depth == 0) {
+											lineNumber = iline;
+											break;   // go after 'else'
+										}
 									} else if (str32nequ (lines [iline], U"elsif ", 6) || str32nequ (lines [iline], U"elif ", 5)) {
-										if (depth == 0) { lineNumber = iline - 1; fromif = true; break; }   // go at 'elsif'
+										if (depth == 0) {
+											lineNumber = iline - 1;
+											fromif = true;
+											break;   // go at 'elsif'
+										}
 									} else if (str32nequ (lines [iline], U"if ", 3)) {
 										depth ++;
 									}
 								}
-								if (iline > numberOfLines) Melder_throw (U"Unmatched 'if'.");
+								if (iline > numberOfLines)
+									Melder_throw (U"Unmatched 'if'.");
 							} else if (isundef (value)) {
 								Melder_throw (U"The value of the 'if' condition is undefined.");
 							}
 						} else if (str32nequ (command2.string, U"inc ", 4)) {
 							InterpreterVariable var = Interpreter_lookUpVariable (me, command2.string + 4);
 							var -> numericValue += 1.0;
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U'j':
 						fail = true;
@@ -1741,7 +1914,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 					case U'l':
 						if (str32nequ (command2.string, U"label ", 6)) {
 							;   // ignore labels
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U'm':
 						fail = true;
@@ -1756,7 +1930,14 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						if (str32nequ (command2.string, U"procedure ", 10)) {
 							integer iline = lineNumber + 1;
 							for (; iline <= numberOfLines; iline ++) {
-								if (str32nequ (lines [iline], U"endproc", 7) && ! Melder_staysWithinInk (lines [iline] [7])) {
+								if (str32nequ (lines [iline], U"endproc", 7) &&
+										(! Melder_staysWithinInk (lines [iline] [7]) || lines [iline] [7] == U';'))
+								{
+									const char32 *startOfInk = Melder_findInk (lines [iline] + 7);
+									if (startOfInk && *startOfInk != U';') {
+										lineNumber = iline;   // on behalf of error message
+										Melder_throw (U"Stray text after 'endproc'.");
+									}
 									lineNumber = iline;
 									break;
 								}   // go after `endproc`
@@ -1768,21 +1949,30 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							 */
 							if (command2.string [5] == U' ' || (str32nequ (command2.string + 5, U"line", 4) && (command2.string [9] == U' ' || command2.string [9] == U'\0'))) {
 								praat_executeCommand (me, command2.string);
-							} else fail = true;
-						} else fail = true;
+							} else
+								fail = true;
+						} else
+							fail = true;
 						break;
 					case U'q':
 						fail = true;
 						break;
 					case U'r':
-						if (str32nequ (command2.string, U"repeat", 6) && ! Melder_staysWithinInk (command2.string [6])) {
+						if (str32nequ (command2.string, U"repeat", 6) &&
+								(! Melder_staysWithinInk (command2.string [6]) || command2.string [6] == U';'))
+						{
+							const char32 *startOfInk = Melder_findInk (command2.string + 6);
+							if (startOfInk && *startOfInk != U';')
+								Melder_throw (U"Stray text after 'repeat'.");
 							/* Ignore. */
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U's':
 						if (str32nequ (command2.string, U"stopwatch", 9) && ! Melder_staysWithinInk (command2.string [9])) {
 							(void) Melder_stopwatch ();   // reset stopwatch
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U't':
 						fail = true;
@@ -1795,16 +1985,23 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								int depth = 0;
 								integer iline = lineNumber - 1;
 								for (; iline > 0; iline --) {
-									if (str32nequ (lines [iline], U"repeat", 6) && ! Melder_staysWithinInk (lines [iline] [6])) {
-										if (depth == 0) { lineNumber = iline; break; }   // go after `repeat`
-										else depth --;
+									if (str32nequ (lines [iline], U"repeat", 6) &&
+											(! Melder_staysWithinInk (lines [iline] [6]) || lines [iline] [6] == U';'))
+									{
+										if (depth == 0) {
+											lineNumber = iline;
+											break;   // go after `repeat`
+										} else
+											depth --;
 									} else if (str32nequ (lines [iline], U"until ", 6)) {
 										depth ++;
 									}
 								}
-								if (iline <= 0) Melder_throw (U"Unmatched 'until'.");
+								if (iline <= 0)
+									Melder_throw (U"Unmatched 'until'.");
 							}
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U'v':
 						fail = true;
@@ -1817,16 +2014,28 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								int depth = 0;
 								integer iline = lineNumber + 1;
 								for (; iline <= numberOfLines; iline ++) {
-									if (str32nequ (lines [iline], U"endwhile", 8) && ! Melder_staysWithinInk (lines [iline] [8])) {
-										if (depth == 0) { lineNumber = iline; break; }   // go after `endwhile`
-										else depth --;
+									if (str32nequ (lines [iline], U"endwhile", 8) &&
+											(! Melder_staysWithinInk (lines [iline] [8]) || lines [iline] [8] == U';'))
+									{
+										const char32 *startOfInk = Melder_findInk (lines [iline] + 8);
+										if (startOfInk && *startOfInk != U';') {
+											lineNumber = iline;
+											Melder_throw (U"Stray text after 'endwhile'.");
+										}
+										if (depth == 0) {
+											lineNumber = iline;
+											break;   // go after `endwhile`
+										} else
+											depth --;
 									} else if (str32nequ (lines [iline], U"while ", 6)) {
 										depth ++;
 									}
 								}
-								if (iline > numberOfLines) Melder_throw (U"Unmatched 'while'.");
+								if (iline > numberOfLines)
+									Melder_throw (U"Unmatched 'while'.");
 							}
-						} else fail = true;
+						} else
+							fail = true;
 						break;
 					case U'x':
 						fail = true;
@@ -1837,21 +2046,25 @@ void Interpreter_run (Interpreter me, char32 *text) {
 					case U'z':
 						fail = true;
 						break;
-					default: break;
+					default:
+						fail = true;
+						break;
 				}
 				if (fail) {
 					/*
-						Found an unknown word starting with a lower-case letter, optionally preceded by a period.
+						Found an unknown word starting with a nonupper-case letter, optionally preceded by a period.
 						See whether the word is a variable name.
 					*/
-					trace (U"found an unknown word starting with a lower-case letter, optionally preceded by a period");
+					trace (U"found an unknown word starting with a nonupper-case letter, optionally preceded by a period");
 					char32 *p = & command2.string [0];
 					/*
 						Variable names consist of a sequence of letters, digits, and underscores,
 						optionally preceded by a period and optionally followed by a $ and/or #.
 					*/
-					if (*p == U'.') p ++;
-					while (Melder_isWordCharacter (*p) || *p == U'.') p ++;
+					if (*p == U'.')
+						p ++;
+					while (Melder_isWordCharacter (*p) || *p == U'.')
+						p ++;
 					if (*p == U'$') {
 						/*
 							Assign to a string variable.
@@ -1859,17 +2072,18 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						trace (U"detected an assignment to a string variable");
 						char32 *endOfVariable = ++ p;
 						char32 *variableName = command2.string;
-						while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after variable name
+						while (Melder_isHorizontalSpace (*p))
+							p ++;   // go to first token after variable name
 						if (*p == U'[') {
 							/*
 								This must be an assignment to an indexed string variable.
 							*/
 							*endOfVariable = U'\0';
-							static MelderString indexedVariableName { };
+							static MelderString indexedVariableName;
 							MelderString_copy (& indexedVariableName, command2.string, U"[");
 							for (;;) {
 								p ++;   // skip opening bracket or comma
-								static MelderString index { };
+								static MelderString index;
 								MelderString_empty (& index);
 								int depth = 0;
 								bool inString = false;
@@ -1993,7 +2207,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							/*
 								Assign to a numeric matrix variable or to a matrix element.
 							*/
-							static MelderString matrixName { };
+							static MelderString matrixName;
 							p ++;   // go to second '#'
 							*p = U'\0';   // erase the last number sign temporarily
 							MelderString_copy (& matrixName, command2.string, U'#');
@@ -2014,8 +2228,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									*/
 									praat_executeCommand (me, p);
 									InterpreterVariable var = Interpreter_lookUpVariable (me, matrixName.string);
-									var -> numericMatrixValue.reset();
-									var -> numericMatrixValue = theInterpreterNummat.releaseToAmbiguousOwner();
+									var -> numericMatrixValue = theInterpreterNummat.move();
 								} else {
 									MAT value;
 									bool owned;
@@ -2094,33 +2307,36 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									Melder_throw (U"The matrix ", matrixName.string, U" does not exist.\n"
 										"You can assign a formula only to an existing matrix.");
 								static Matrix matrixObject;
-								if (! matrixObject) {
-									matrixObject = Matrix_createSimple (1, 1). releaseToAmbiguousOwner();   // prevent destruction when program ends
-								}
-								MAT mat = var -> numericMatrixValue;
+								if (! matrixObject)
+									matrixObject = Matrix_createSimple (1, 1). releaseToAmbiguousOwner();   // prevent exit-time destruction
+								MAT mat = var -> numericMatrixValue.get();
 								matrixObject -> xmax = mat.ncol + 0.5;
 								matrixObject -> nx = mat.ncol;
 								matrixObject -> ymax = mat.nrow + 0.5;
 								matrixObject -> ny = mat.nrow;
-								matrixObject -> z = mat.at;
+								matrixObject -> z.cells = mat.cells;   // just a reference (YUCK)
+								matrixObject -> z.nrow = mat.nrow;
+								matrixObject -> z.ncol = mat.ncol;
 								Matrix_formula (matrixObject, p, me, nullptr);
 							} else Melder_throw (U"Missing '=' after matrix variable ", matrixName.string, U".");
 						} else {
 							/*
 								Assign to a numeric vector variable or to a vector element.
 							*/
-							static MelderString vectorName { };
+							static MelderString vectorName;
 							*p = U'\0';   // erase the number sign temporarily
 							MelderString_copy (& vectorName, command2.string, U"#");
 							*p = U'#';   // put the number sign back
 							p ++;   // step over number sign
-							while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after array name
+							while (Melder_isHorizontalSpace (*p))
+								p ++;   // go to first token after array name
 							if (*p == U'=') {
 								/*
 									This must be an assignment to a vector variable.
 								*/
 								p ++;   // step over equals sign
-								while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment
+								while (Melder_isHorizontalSpace (*p))
+									p ++;   // go to first token after assignment
 								if (*p == U'\0')
 									Melder_throw (U"Missing right-hand expression in assignment to vector ", vectorName.string, U".");
 								if (isCommand (p)) {
@@ -2129,8 +2345,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									*/
 									praat_executeCommand (me, p);
 									InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);
-									var -> numericVectorValue.reset();
-									var -> numericVectorValue = theInterpreterNumvec.releaseToAmbiguousOwner();
+									var -> numericVectorValue = theInterpreterNumvec.move();
 								} else {
 									VEC value;
 									bool owned;
@@ -2201,7 +2416,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									This must be a formula assignment to a vector variable.
 								*/
 								p ++;   // step over tilde
-								while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment
+								while (Melder_isHorizontalSpace (*p))
+									p ++;   // go to first token after assignment
 								if (*p == U'\0')
 									Melder_throw (U"Missing formula expression for vector ", vectorName.string, U".");
 								InterpreterVariable var = Interpreter_hasVariable (me, vectorName.string);
@@ -2209,27 +2425,29 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									Melder_throw (U"The vector ", vectorName.string, U" does not exist.\n"
 										"You can assign a formula only to an existing vector.");
 								static Matrix vectorObject;
-								if (! vectorObject) {
+								if (! vectorObject)
 									vectorObject = Matrix_createSimple (1, 1). releaseToAmbiguousOwner();   // prevent destruction when program ends
-								}
-								VEC vec = var -> numericVectorValue;
+								VEC vec = var -> numericVectorValue.get();
+								//vectorObject -> xmin = 0.5;
 								vectorObject -> xmax = vec.size + 0.5;
 								vectorObject -> nx = vec.size;
-								vectorObject -> z [1] = vec.at;
+								vectorObject -> z.cells = & vec [1];
+								//vectorObject -> z.nrow = 1;
+								vectorObject -> z.ncol = vec.size;
 								Matrix_formula (vectorObject, p, me, nullptr);
 							} else Melder_throw (U"Missing '=' or '+=' or '[' or '~' after vector variable ", vectorName.string, U".");
 						}
 					} else {
 						/*
-						 * Try to assign to a numeric variable.
-						 */
+							Try to assign to a numeric variable.
+						*/
 						double value;
 						char32 *variableName = command2.string;
 						int typeOfAssignment = 0;   // plain assignment
 						if (*p == U'\0') {
 							/*
-							 * Command ends here: it may be a PraatShell command.
-							 */
+								Command ends here: it may be a PraatShell command.
+							*/
 							praat_executeCommand (me, command2.string);
 							continue;   // next line
 						}
@@ -2239,18 +2457,18 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							/*
 								This must be an assignment (though: "echo = ..." ???)
 							*/
-							typeOfAssignment = *p == U'+' ? 1 : *p == U'-' ? 2 : *p == U'*' ? 3 : *p == U'/' ? 4 : 0;
+							typeOfAssignment = ( *p == U'+' ? 1 : *p == U'-' ? 2 : *p == U'*' ? 3 : *p == U'/' ? 4 : 0 );
 							*endOfVariable = U'\0';   // close variable name; FIXME: this can be any weird character, e.g. hallo&
 						} else if (*p == U'[') {
 							/*
 								This must be an assignment to an indexed numeric variable.
 							*/
 							*endOfVariable = U'\0';
-							static MelderString indexedVariableName { };
+							static MelderString indexedVariableName;
 							MelderString_copy (& indexedVariableName, command2.string, U"[");
 							for (;;) {
 								p ++;   // skip opening bracket or comma
-								static MelderString index { };
+								static MelderString index;
 								MelderString_empty (& index);
 								int depth = 0;
 								bool inString = false;
@@ -2284,9 +2502,10 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							}
 							variableName = indexedVariableName.string;
 							p ++;   // skip closing bracket
-							while (Melder_isHorizontalSpace (*p)) p ++;
+							while (Melder_isHorizontalSpace (*p))
+								p ++;
 							if (*p == U'=' || ((*p == U'+' || *p == U'-' || *p == U'*' || *p == U'/') && p [1] == U'=')) {
-								typeOfAssignment = *p == U'+' ? 1 : *p == U'-' ? 2 : *p == U'*' ? 3 : *p == U'/' ? 4 : 0;
+								typeOfAssignment = ( *p == U'+' ? 1 : *p == U'-' ? 2 : *p == U'*' ? 3 : *p == U'/' ? 4 : 0 );
 							}
 						} else {
 							/*
@@ -2295,9 +2514,11 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							praat_executeCommand (me, variableName);
 							continue;   // next line
 						}
-						p += typeOfAssignment == 0 ? 1 : 2;
-						while (Melder_isHorizontalSpace (*p)) p ++;
-						if (*p == U'\0') Melder_throw (U"Missing expression after variable ", variableName, U".");
+						p += ( typeOfAssignment == 0 ? 1 : 2 );
+						while (Melder_isHorizontalSpace (*p))
+							p ++;
+						if (*p == U'\0')
+							Melder_throw (U"Missing expression after variable ", variableName, U".");
 						/*
 							Three classes of assignments:
 								var = formula
@@ -2334,8 +2555,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							Interpreter_numericExpression (me, p, & value);
 						}
 						/*
-						 * Assign the value to a variable.
-						 */
+							Assign the value to a variable.
+						*/
 						if (typeOfAssignment == 0) {
 							/*
 								Use an existing variable, or create a new one.
@@ -2348,7 +2569,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								Modify an existing variable.
 							*/
 							InterpreterVariable var = Interpreter_hasVariable (me, variableName);
-							if (! var) Melder_throw (U"The variable ", variableName, U" does not exist. You can modify only existing variables.");
+							if (! var)
+								Melder_throw (U"The variable ", variableName, U" does not exist. You can modify only existing variables.");
 							if (isundef (var -> numericValue)) {
 								/* Keep it that way. */
 							} else {

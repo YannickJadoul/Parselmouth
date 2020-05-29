@@ -39,12 +39,13 @@ DIRECT (MODIFY_Categories_sort) {
 // MARK: - EXPERIMENT_MFC
 
 DIRECT (WINDOW_ExperimentMFC_run) {
-	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot run experiments from the command line.");
+	if (theCurrentPraatApplication -> batch)
+		Melder_throw (U"Cannot run experiments from the command line.");
 	autoRunnerMFC runner;
 	{// scope
 		/*
 			This `scope` comment refers to the idea that an autoThing (here, `list`)
-			is created in the beginning of the scope and invalidated at the end of the scope (by `move`).
+			is created at the beginning of the scope and invalidated at the end of the scope (by `move`).
 		*/
 		FIND_TYPED_LIST (ExperimentMFC, ExperimentMFCList)
 		Melder_assert (list->size >= 1);

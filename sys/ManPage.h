@@ -2,7 +2,7 @@
 #define _ManPage_h_
 /* ManPage.h
  *
- * Copyright (C) 1996-2008,2011,2012,2015-2018 Paul Boersma
+ * Copyright (C) 1996-2008,2011,2012,2014-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 typedef struct structManPage_Paragraph {
 	enum kManPage_type type;
-	conststring32 text;
+	conststring32 text;   // not an autostring32, because it could be a string literal (if not dynamic)
 	double width, height;
 	void (*draw) (Graphics g);
 } *ManPage_Paragraph;
@@ -32,9 +32,8 @@ typedef struct structManPage_Paragraph {
 Thing_define (ManPage, Thing) {
 	autostring32 title, author;
 	integer date;
-	struct structManPage_Paragraph *paragraphs;
-	integer nlinksHither, nlinksThither;
-	integer *linksHither, *linksThither;
+	autovector <structManPage_Paragraph> paragraphs;
+	autoINTVEC linksHither, linksThither;
 	double recordingTime;
 };
 

@@ -82,16 +82,16 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, constINTVE
 	integer numberOfY0 = 0, numberOfY1 = 0, numberOfData = 0;
 	double logLikelihood = 1e307, previousLogLikelihood = 1e308;
 	if (numberOfParameters < 1)   // includes intercept
-		Melder_throw (U"Not enough columns (has to be more than 1).");
+		Melder_throw (U"Not enough columns (should be more than 1).");
 	/*
-	 * Divide up the contents of the table into a number of independent variables (x) and two dependent variables (y0 and y1).
-	 */
-	autoNUMmatrix <double> x (1, numberOfCells, 0, numberOfFactors);   // column 0 is the intercept
-	autoNUMvector <double> y0 (1, numberOfCells);
-	autoNUMvector <double> y1 (1, numberOfCells);
-	autoNUMvector <double> meanX (1, numberOfFactors);
-	autoNUMvector <double> stdevX (1, numberOfFactors);
-	autoNUMmatrix <double> smallMatrix (0, numberOfFactors, 0, numberOfParameters);
+		Divide up the contents of the table into a number of independent variables (x) and two dependent variables (y0 and y1).
+	*/
+	autoMAT x = newMATzero (numberOfCells, 1+numberOfFactors);   // column 1 is the intercept
+	autoVEC y0 = newVECzero (numberOfCells);
+	autoVEC y1 = newVECzero (numberOfCells);
+	autoVEC meanX = newVECzero (numberOfFactors);
+	autoVEC stdevX = newVECzero (numberOfFactors);
+	autoMAT smallMatrix = newMATzero (1+numberOfFactors, 1+numberOfParameters);
 	autoLogisticRegression thee = LogisticRegression_create (my columnHeaders [dependent1]. label.get(), my columnHeaders [dependent2]. label.get());
 	for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
 		double minimum = Table_getMinimum (me, factors [ivar]);
@@ -104,10 +104,10 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, constINTVE
 		numberOfY0 += y0 [icell];
 		numberOfY1 += y1 [icell];
 		numberOfData += y0 [icell] + y1 [icell];
-		x [icell] [0] = 1.0;   // intercept
+		x [icell] [1+0] = 1.0;   // intercept
 		for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
-			x [icell] [ivar] = Table_getNumericValue_Assert (me, icell, factors [ivar]);
-			meanX [ivar] += x [icell] [ivar] * (y0 [icell] + y1 [icell]);
+			x [icell] [1+ivar] = Table_getNumericValue_Assert (me, icell, factors [ivar]);
+			meanX [ivar] += x [icell] [1+ivar] * (y0 [icell] + y1 [icell]);
 		}
 	}
 	if (numberOfY0 == 0 && numberOfY1 == 0)
@@ -121,20 +121,16 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, constINTVE
 	 */
 	for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
 		meanX [ivar] /= numberOfData;
-		for (integer icell = 1; icell <= numberOfCells; icell ++) {
-			x [icell] [ivar] -= meanX [ivar];
-		}
+		for (integer icell = 1; icell <= numberOfCells; icell ++)
+			x [icell] [1+ivar] -= meanX [ivar];
 	}
-	for (integer icell = 1; icell <= numberOfCells; icell ++) {
-		for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
-			stdevX [ivar] += x [icell] [ivar] * x [icell] [ivar] * (y0 [icell] + y1 [icell]);
-		}
-	}
+	for (integer icell = 1; icell <= numberOfCells; icell ++)
+		for (integer ivar = 1; ivar <= numberOfFactors; ivar ++)
+			stdevX [ivar] += x [icell] [1+ivar] * x [icell] [1+ivar] * (y0 [icell] + y1 [icell]);
 	for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
 		stdevX [ivar] = sqrt (stdevX [ivar] / numberOfData);
-		for (integer icell = 1; icell <= numberOfCells; icell ++) {
-			x [icell] [ivar] /= stdevX [ivar];
-		}
+		for (integer icell = 1; icell <= numberOfCells; icell ++)
+			x [icell] [1+ivar] /= stdevX [ivar];
 	}
 	/*
 	 * Initial state of iteration: the null model.
@@ -147,11 +143,9 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, constINTVE
 	integer iteration = 1;
 	for (; iteration <= 100; iteration ++) {
 		previousLogLikelihood = logLikelihood;
-		for (integer ivar = 0; ivar <= numberOfFactors; ivar ++) {
-			for (integer jvar = ivar; jvar <= numberOfParameters; jvar ++) {
-				smallMatrix [ivar] [jvar] = 0.0;
-			}
-		}
+		for (integer ivar = 0; ivar <= numberOfFactors; ivar ++)
+			for (integer jvar = ivar; jvar <= numberOfParameters; jvar ++)
+				smallMatrix [1+ivar] [1+jvar] = 0.0;
 		/*
 		 * Compute the current log likelihood.
 		 */
@@ -160,7 +154,7 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, constINTVE
 			double fittedLogit = thy intercept, fittedP, fittedQ, fittedLogP, fittedLogQ, fittedPQ, fittedVariance;
 			for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
 				RegressionParameter parm = thy parameters.at [ivar];
-				fittedLogit += parm -> value * x [icell] [ivar];
+				fittedLogit += parm -> value * x [icell] [1+ivar];
 			}
 			/*
 			 * Basically we have fittedP = 1.0 / (1.0 + exp (- fittedLogit)),
@@ -208,56 +202,49 @@ static autoLogisticRegression _Table_to_LogisticRegression (Table me, constINTVE
 				/*
 				 * The last column gets the gradient of LL: dLL/da, dLL/db, dLL/dc.
 				 */
-				smallMatrix [ivar] [numberOfParameters] += x [icell] [ivar] * (y1 [icell] * fittedQ - y0 [icell] * fittedP);
-				for (integer jvar = ivar; jvar <= numberOfFactors; jvar ++) {
-					smallMatrix [ivar] [jvar] += x [icell] [ivar] * x [icell] [jvar] * fittedVariance;
-				}
+				smallMatrix [1+ivar] [1+numberOfParameters] += x [icell] [1+ivar] * (y1 [icell] * fittedQ - y0 [icell] * fittedP);
+				for (integer jvar = ivar; jvar <= numberOfFactors; jvar ++)
+					smallMatrix [1+ivar] [1+jvar] += x [icell] [1+ivar] * x [icell] [1+jvar] * fittedVariance;
 			}
 		}
-		if (fabs (logLikelihood - previousLogLikelihood) < 1e-11) {
+		if (fabs (logLikelihood - previousLogLikelihood) < 1e-11)
 			break;
-		}
 		/*
 		 * Make matrix symmetric.
 		 */
-		for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
-			for (integer jvar = 0; jvar < ivar; jvar ++) {
-				smallMatrix [ivar] [jvar] = smallMatrix [jvar] [ivar];
-			}
-		}
+		for (integer ivar = 1; ivar <= numberOfFactors; ivar ++)
+			for (integer jvar = 0; jvar < ivar; jvar ++)
+				smallMatrix [1+ivar] [1+jvar] = smallMatrix [1+jvar] [1+ivar];
 		/*
 		 * Invert matrix in the simplest way, and shift and wipe the last column with it.
 		 */
 		for (integer ivar = 0; ivar <= numberOfFactors; ivar ++) {
-			double pivot = smallMatrix [ivar] [ivar];   /* Save diagonal. */
-			smallMatrix [ivar] [ivar] = 1.0;
-			for (integer jvar = 0; jvar <= numberOfParameters; jvar ++) {
-				smallMatrix [ivar] [jvar] /= pivot;
-			}
+			const double pivot = smallMatrix [1+ivar] [1+ivar];   /* Save diagonal. */
+			smallMatrix [1+ivar] [1+ivar] = 1.0;
+			for (integer jvar = 0; jvar <= numberOfParameters; jvar ++)
+				smallMatrix [1+ivar] [1+jvar] /= pivot;
 			for (integer jvar = 0; jvar <= numberOfFactors; jvar ++) {
 				if (jvar != ivar) {
-					double temp = smallMatrix [jvar] [ivar];
-					smallMatrix [jvar] [ivar] = 0.0;
-					for (integer kvar = 0; kvar <= numberOfParameters; kvar ++) {
-						smallMatrix [jvar] [kvar] -= temp * smallMatrix [ivar] [kvar];
-					}
+					const double temp = smallMatrix [1+jvar] [1+ivar];
+					smallMatrix [1+jvar] [1+ivar] = 0.0;
+					for (integer kvar = 0; kvar <= numberOfParameters; kvar ++)
+						smallMatrix [1+jvar] [1+kvar] -= temp * smallMatrix [1+ivar] [1+kvar];
 				}
 			}
 		}
 		/*
 		 * Update the parameters from the last column of smallMatrix.
 		 */
-		thy intercept += smallMatrix [0] [numberOfParameters];
+		thy intercept += smallMatrix [1+0] [1+numberOfParameters];
 		for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
-			RegressionParameter parm = thy parameters.at [ivar];
-			parm -> value += smallMatrix [ivar] [numberOfParameters];
+			const RegressionParameter parm = thy parameters.at [ivar];
+			parm -> value += smallMatrix [1+ivar] [1+numberOfParameters];
 		}
 	}
-	if (iteration > 100) {
+	if (iteration > 100)
 		Melder_warning (U"Logistic regression has not converged in 100 iterations. The results are unreliable.");
-	}
 	for (integer ivar = 1; ivar <= numberOfFactors; ivar ++) {
-		RegressionParameter parm = thy parameters.at [ivar];
+		const RegressionParameter parm = thy parameters.at [ivar];
 		parm -> value /= stdevX [ivar];
 		thy intercept -= parm -> value * meanX [ivar];
 	}
@@ -269,8 +256,8 @@ autoLogisticRegression Table_to_LogisticRegression (Table me, conststring32 fact
 {
 	try {
 		auto factors_columnIndices = Table_getColumnIndicesFromColumnLabelString (me, factors_columnLabelString);
-		integer dependent1_columnIndex = Table_getColumnIndexFromColumnLabel (me, dependent1_columnLabel);
-		integer dependent2_columnIndex = Table_getColumnIndexFromColumnLabel (me, dependent2_columnLabel);
+		const integer dependent1_columnIndex = Table_getColumnIndexFromColumnLabel (me, dependent1_columnLabel);
+		const integer dependent2_columnIndex = Table_getColumnIndexFromColumnLabel (me, dependent2_columnLabel);
 		autoLogisticRegression thee = _Table_to_LogisticRegression (me, factors_columnIndices.get(), dependent1_columnIndex, dependent2_columnIndex);
 		return thee;
 	} catch (MelderError) {

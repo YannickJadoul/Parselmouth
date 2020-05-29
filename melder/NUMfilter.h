@@ -2,7 +2,7 @@
 #define _NUMfilter_h_
 /* NUMfilter.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
  */
 
 void NUMfbtoa (double formant, double bandwidth, double dt, double *a1, double *a2);
-void NUMfilterSecondOrderSection_a (double x [], integer n, double a1, double a2);
-void NUMfilterSecondOrderSection_fb (double x [], integer n, double dt, double formant, double bandwidth);
+void VECfilterSecondOrderSection_a_inplace (VECVU const& x, double a1, double a2);
+void VECfilterSecondOrderSection_fb_inplace (VECVU const& x, double dt, double formant, double bandwidth);
 double NUMftopreemphasis (double f, double dt);
-void NUMpreemphasize_a (double x [], integer n, double preemphasis);
-void NUMdeemphasize_a (double x [], integer n, double preemphasis);
-void NUMpreemphasize_f (double x [], integer n, double dt, double frequency);
-void NUMdeemphasize_f (double x [], integer n, double dt, double frequency);
+void VECpreemphasize_a_inplace (VECVU const& x, double preemphasis);
+void VECdeemphasize_a_inplace (VECVU const& x, double preemphasis);
+void VECpreemphasize_f_inplace (VECVU const& x, double dt, double frequency);
+void VECdeemphasize_f_inplace (VECVU const& x, double dt, double frequency);
 
 /* End of file NUMfilter.h */
 #endif

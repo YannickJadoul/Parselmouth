@@ -1,6 +1,6 @@
 /* manual_tutorials.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,103 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"What's new?", U"ppgb", 20180908)
+MAN_BEGIN (U"What's new?", U"ppgb", 20200520)
 INTRO (U"Latest changes in Praat.")
-//LIST_ITEM (U"• Manual page about @@drawing a vowel triangle@.")
-
+NORMAL (U"##6.1.15# (20 May 2020)")
+LIST_ITEM (U"• Repaired a bug introduced in 6.0.44 that could cause an incorrect (namely, totally constant) ClassificationTable.")
+NORMAL (U"##6.1.14# (2 May 2020)")
+LIST_ITEM (U"• Repaired a bug in drawing ranges introduced in 6.1.06.")
+NORMAL (U"##6.1.13# (19 April 2020)")
+LIST_ITEM (U"• Repaired discriminant analysis on i386 processors.")
+LIST_ITEM (U"• Scripting: enabled predictability by setting random seeds.")
+LIST_ITEM (U"• Automated batch testing on x86_64, i386 and ARMv7 processors.")
+NORMAL (U"##6.1.12# (13 April 2020)")
+LIST_ITEM (U"• All non-GUI tests can be automated from batch.")
+LIST_ITEM (U"• Repaired a bug introduced in 6.0 whereby a KlattGrid-generated Sound would always be peak-scaled.")
+NORMAL (U"##6.1.11# (6 April 2020)")
+LIST_ITEM (U"• Better messages.")
+LIST_ITEM (U"• Overhauled VowelEditor.")
+LIST_ITEM (U"• Repaired crashes after creating a Formant from a Spectrum or an Excitation.")
+NORMAL (U"##6.1.10# (23 March 2020)")
+LIST_ITEM (U"• Faster formant computation.")
+LIST_ITEM (U"• More LPC queries.")
+NORMAL (U"##6.1.09# (26 January 2020)")
+LIST_ITEM (U"• Accept some more kinds of broken WAV files.")
+LIST_ITEM (U"• Improved box plot drawing.")
+LIST_ITEM (U"• More Network commands.")
+NORMAL (U"##6.1.08# (5 December 2019)")
+LIST_ITEM (U"• Repaired a bug with automatic alignment for TextGrids (introduced in 6.1.07).")
+NORMAL (U"##6.1.07# (26 November 2019)")
+LIST_ITEM (U"• Raspberry Pi edition.")
+NORMAL (U"##6.1.06# (8 November 2019)")
+LIST_ITEM (U"• Chromebook edition.")
+LIST_ITEM (U"• Scripting: colour fields now take name, grey value or RGB vector.")
+NORMAL (U"##6.1.05# (16 October 2019)")
+LIST_ITEM (U"• Repaired a bug introduced in 6.0.44 that could cause rubbish LPC smoothing.")
+LIST_ITEM (U"• Repaired a rare crash when dragging a selection on the Mac.")
+NORMAL (U"##6.1.04# (28 September 2019)")
+LIST_ITEM (U"• @Electroglottography.")
+LIST_ITEM (U"• Sound and other windows: ##Widen or shrink selection...#.")
+LIST_ITEM (U"• ##KlattGrid: Create from vowel...#.")
+LIST_ITEM (U"• Fix rectangle playing bug when selection viewer is on.")
+LIST_ITEM (U"• Selection viewer separately visible for Sound window and TextGrid window.")
+LIST_ITEM (U"• Scripting: allow comments after parameter list.")
+LIST_ITEM (U"• Scripting: fix CR/LF pasting from Microsoft Word.")
+NORMAL (U"##6.1.03# (1 September 2019)")
+LIST_ITEM (U"• Sound window: ##Widen or shrink selection...#.")
+NORMAL (U"##6.1.02# (25 August 2019)")
+LIST_ITEM (U"• Repaired ##Sound: Concatenate with overlap...#.")
+LIST_ITEM (U"• Mac: Info and script windows: prevent line breaks caused by tab stops.")
+NORMAL (U"##6.1.01# (14 August 2019)")
+LIST_ITEM (U"• Repaired ##TextGrid: Replace interval texts...#.")
+NORMAL (U"##6.1# (13 July 2019)")
+NORMAL (U"##6.0.57# (1 July 2019)")
+LIST_ITEM (U"• Repaired a crash when an editor window zoomed in to a zero time range.")
+LIST_ITEM (U"• Repaired a crash when playing a matrix movie with one row or a constant value.")
+LIST_ITEM (U"• Repaired a crash when reconstructing a TableOfReal from a PCA.")
+LIST_ITEM (U"• Scripting: allow comments after `else`, `endif`, `endfor`...")
+NORMAL (U"##6.0.56# (20 June 2019)")
+LIST_ITEM (U"• Windows: file dropping on the Praat icon works for higher-Unicode file names.")
+LIST_ITEM (U"• SpellingChecker: Unicode support.")
+NORMAL (U"##6.0.55# (13 June 2019)")
+LIST_ITEM (U"• Unicode normalization in file names.")
+NORMAL (U"##6.0.54# (6 June 2019)")
+LIST_ITEM (U"• Removed a bug introduced in 6.0.51 that could cause incorrect axes in Demo window.")
+NORMAL (U"##6.0.53# (26 May 2019)")
+LIST_ITEM (U"• Much faster playing of short parts of long sounds that need resampling.")
+LIST_ITEM (U"• Better handling of broken CSV files.")
+LIST_ITEM (U"• 64-bit floating-point WAV files.")
+NORMAL (U"##6.0.52# (2 May 2019)")
+LIST_ITEM (U"• Removed a bug introduced in 6.0.51 that could cause turning a Discriminant into a Configuration to crash.")
+LIST_ITEM (U"• Removed a bug introduced in contour grey drawing in August 2017.")
+NORMAL (U"##6.0.51# (29 April 2019)")
+LIST_ITEM (U"• Script window: Use Selection for Find.")
+LIST_ITEM (U"• Removed a bug introduced in 6.0.41 that could cause Praat to crash after removing an element from a Strings or a row from a TableOfReal.")
+NORMAL (U"##6.0.50# (31 March 2019)")
+LIST_ITEM (U"• Manual updates, speed, more tests.")
+LIST_ITEM (U"• Scripting: rowSums\\# , columnSums\\# ; randomGauss\\# \\#  finally with four arguments.")
+NORMAL (U"##6.0.49# (2 March 2019)")
+LIST_ITEM (U"• Removed a bug introduced in 6.0.41 whereby a script could misreport an undefined table value.")
+LIST_ITEM (U"• Removed a bug introduced in 6.0.44 whereby an MFCC's maximum frequency could be ignored.")
+LIST_ITEM (U"• Pitch: Tabulate candidates.")
+LIST_ITEM (U"• SoundSet.")
+NORMAL (U"##6.0.48# (17 February 2019)")
+LIST_ITEM (U"• Removed a bug introduced in 6.0.44 whereby Praat could crash when drawing a function without any points.")
+LIST_ITEM (U"• Removed a bug whereby Praat would not start up on macOS 10.10 (because of required GPU libraries).")
+NORMAL (U"##6.0.47# (8 February 2019)")
+LIST_ITEM (U"• Removed a bug introduced in 6.0.44 whereby a cepstral peak prominence would be computed incorrectly.")
+NORMAL (U"##6.0.46# (3 January 2019)")
+LIST_ITEM (U"• Removed a crashing bug in the LongSound window introduced in 6.0.44.")
+LIST_ITEM (U"• Removed a bug causing incorrect conversion from Formant to LPC introduced in 6.0.44.")
+LIST_ITEM (U"• More space for actions in buttons window.")
+NORMAL (U"##6.0.45# (1 January 2019)")
+LIST_ITEM (U"• Removed a crashing bug in EditDistanceTable introduced in 6.0.44.")
+LIST_ITEM (U"• Removed a crashing bug in KlattGrid drawing introduced in 6.0.44.")
+LIST_ITEM (U"• Removed a bug introduced in 6.0.44 whereby old HMM files were read incorrectly.")
+NORMAL (U"##6.0.44# (31 December 2018)")
+LIST_ITEM (U"• Bug fixes and speed.")
 NORMAL (U"##6.0.43# (8 September 2018)")
-LIST_ITEM (U"• removed a very old bug that could create invalid TextGrids during forced alignment.")
+LIST_ITEM (U"• Removed a very old bug that could create invalid TextGrids during forced alignment.")
 LIST_ITEM (U"• Windows: repaired a bug introduced in 6.0.41 "
 	"that caused a crash in several places (such as when changing the sample rate in the SoundRecorder) "
 	"when Praat had been started with a double click.")
@@ -165,6 +256,31 @@ NORMAL (U"##6.0.02# (30 October 2015)")
 LIST_ITEM (U"• Corrected the redrawing of analyses in the Sound window after a change in the sound.")
 NORMAL (U"##6.0.01# (29 October 2015)")
 LIST_ITEM (U"• Windows: fixed a bug that caused Praat to crash at start-up in some Windows versions.")
+ENTRY (U"What used to be new?")
+LIST_ITEM (U"• @@What was new in 6.0?")
+LIST_ITEM (U"• @@What was new in 5.4?")
+LIST_ITEM (U"• @@What was new in 5.3?")
+LIST_ITEM (U"• @@What was new in 5.2?")
+LIST_ITEM (U"• @@What was new in 5.1?")
+LIST_ITEM (U"• @@What was new in 5.0?")
+LIST_ITEM (U"• @@What was new in 4.6?")
+LIST_ITEM (U"• @@What was new in 4.5?")
+LIST_ITEM (U"• @@What was new in 4.4?")
+LIST_ITEM (U"• @@What was new in 4.3?")
+LIST_ITEM (U"• @@What was new in 4.2?")
+LIST_ITEM (U"• @@What was new in 4.1?")
+LIST_ITEM (U"• @@What was new in 4.0?")
+LIST_ITEM (U"• @@What was new in 3.9?")
+LIST_ITEM (U"• @@What was new in 3.8?")
+LIST_ITEM (U"• @@What was new in 3.7?")
+LIST_ITEM (U"• @@What was new in 3.6?")
+LIST_ITEM (U"• @@What was new in 3.5?")
+LIST_ITEM (U"• @@What was new in 3.3?")
+LIST_ITEM (U"• @@What was new in 3.2?")
+LIST_ITEM (U"• @@What was new in 3.1?")
+MAN_END
+
+MAN_BEGIN (U"What was new in 6.0?", U"ppgb", 20151028)
 NORMAL (U"##6.0# (28 October 2015)")
 LIST_ITEM (U"• Linux: use PulseAudio as the server for playing sound.")
 LIST_ITEM (U"• Windows: removed Praatcon.exe, because Praat.exe can now be used from the command line.")
@@ -247,27 +363,6 @@ NORMAL (U"##5.4.01# (9 November 2014)")
 LIST_ITEM (U"• @MelSpectrogram, @BarkSpectrogram.")
 LIST_ITEM (U"• Linux: removed a bug that could cause too many flashes when scrolling a Sound window.")
 LIST_ITEM (U"• Mac: repaired a bug that could cause a crash in the VowelEditor window.")
-ENTRY (U"What used to be new?")
-LIST_ITEM (U"• @@What was new in 5.4?")
-LIST_ITEM (U"• @@What was new in 5.3?")
-LIST_ITEM (U"• @@What was new in 5.2?")
-LIST_ITEM (U"• @@What was new in 5.1?")
-LIST_ITEM (U"• @@What was new in 5.0?")
-LIST_ITEM (U"• @@What was new in 4.6?")
-LIST_ITEM (U"• @@What was new in 4.5?")
-LIST_ITEM (U"• @@What was new in 4.4?")
-LIST_ITEM (U"• @@What was new in 4.3?")
-LIST_ITEM (U"• @@What was new in 4.2?")
-LIST_ITEM (U"• @@What was new in 4.1?")
-LIST_ITEM (U"• @@What was new in 4.0?")
-LIST_ITEM (U"• @@What was new in 3.9?")
-LIST_ITEM (U"• @@What was new in 3.8?")
-LIST_ITEM (U"• @@What was new in 3.7?")
-LIST_ITEM (U"• @@What was new in 3.6?")
-LIST_ITEM (U"• @@What was new in 3.5?")
-LIST_ITEM (U"• @@What was new in 3.3?")
-LIST_ITEM (U"• @@What was new in 3.2?")
-LIST_ITEM (U"• @@What was new in 3.1?")
 MAN_END
 
 MAN_BEGIN (U"What was new in 5.4?", U"ppgb", 20141003)
@@ -885,7 +980,7 @@ LIST_ITEM (U"• Sound: @@Combine to stereo@ works even if the two mono sounds h
 NORMAL (U"##5.0.33# (9 September 2008)")
 LIST_ITEM (U"• Windows: prevented warning messages about \"Widget type\".")
 NORMAL (U"##5.0.32# (12 August 2008)")
-LIST_ITEM (U"• Contributed by Ola Söder: @@kNN classifiers@ and @@k-means clustering@.")
+LIST_ITEM (U"• Contributed by Ola Söder: kNN classifiers and k-means clustering.")
 LIST_ITEM (U"• Made UTF-16-encoded chronological TextGrid files readable.")
 NORMAL (U"##5.0.31# (6 August 2008)")
 LIST_ITEM (U"• Macintosh: corrected a bug introduced in 5.0.30 that caused Praat to crash when you pressed the Tab key "
@@ -1909,7 +2004,7 @@ LIST_ITEM (U"David Weenink: "
 LIST_ITEM (U"Stefan de Konink and Franz Brauße: major help in port to GTK.")
 LIST_ITEM (U"Tom Naughton: major help in port to Cocoa.")
 LIST_ITEM (U"Erez Volk: adaptation of FLAC and MAD.")
-LIST_ITEM (U"Ola Söder: @@kNN classifiers@, @@k-means clustering@.")
+LIST_ITEM (U"Ola Söder: kNN classifiers, k-means clustering.")
 LIST_ITEM (U"Rafael Laboissière: adaptation of XIPA, audio bug fixes for Linux.")
 LIST_ITEM (U"Darryl Purnell created the first version of audio for Praat for Linux.")
 NORMAL (U"We included the following freely available software libraries in Praat (sometimes with adaptations):")
@@ -1923,7 +2018,7 @@ LIST_ITEM (U"Espeak: text-to-speech synthesizer by Jonathan Duddington and Reece
 LIST_ITEM (U"MAD: MPEG Audio Decoder by Underbit Technologies (GPL 2 or later).")
 LIST_ITEM (U"FLAC: Free Lossless Audio Codec by Josh Coalson (BSD 3-clause license).")
 LIST_ITEM (U"fftpack: public domain Fourier transforms by Paul Swarztrauber and Christopher Montgomery.")
-LIST_ITEM (U"LAPACK: public domain numeric algorithms by Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd., "
+LIST_ITEM (U"@LAPACK: public domain numeric algorithms by Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd., "
 	"Courant Institute, Argonne National Lab, and Rice University.")
 LIST_ITEM (U"Regular expressions by Henry Spencer, Mark Edel, Christopher Conrad, Eddy De Greef (GPL 2 or later).")
 NORMAL (U"For their financial support during the development of Praat:")
@@ -2736,7 +2831,7 @@ NORMAL (U"To the right of the window, you may see three pitch values, written wi
 	"at the cursor, or the average pitch in the selection.")
 MAN_END
 
-MAN_BEGIN (U"Intro 4.2. Configuring the pitch contour", U"ppgb", 20050830)
+MAN_BEGIN (U"Intro 4.2. Configuring the pitch contour", U"ppgb", 20190331)
 NORMAL (U"With @@Pitch settings...@ from the #Pitch menu, "
 	"you can determine how the pitch contour is displayed and how it is computed. "
 	"These settings will be remembered across Praat sessions. "
@@ -2746,9 +2841,13 @@ ENTRY (U"The %%pitch range% setting")
 NORMAL (U"This is the most important setting for pitch analysis. The standard range is from 75 to 500 hertz, "
 	"which means that the pitch analysis method will only find values between 75 and 500 Hz. "
 	"The range that you set here will be shown to the right of the analysis window.")
-NORMAL (U"For a male voice, you may want to set the floor to 75 Hz, and the ceiling to 300 Hz; "
-	"for a female voice, set the range to 100-500 Hz instead. For creaky voice you will want to set it much "
-	"lower than 75 Hz.")
+NORMAL (U"You should set the range to values appropriate for your speaker, "
+	"but a problem is that speakers vary enormously in their pitch ranges. "
+	"For many low-pitched (e.g. average male) voices, you may want to set the floor to 75 Hz, and the ceiling to 300 Hz; "
+	"for many high-pitched (e.g. average female) voices, a range of 100-500 Hz may instead be appropriate. "
+	"On the high side, some children can reach almost 2000 Hz when yelling; "
+	"on the low side, creaky voice can go as low as 40 Hz; "
+	"for the speakers you are investigating, you may therefore want to experiment with this setting.")
 NORMAL (U"Here is why you have to supply these settings. If the pitch floor is 75 Hz, "
 	"the pitch analysis method requires a 40-millisecond analysis window, "
 	"i.e., in order to measure the F0 at a time of, say, 0.850 seconds, "
@@ -2760,7 +2859,7 @@ NORMAL (U"Here is why you have to supply these settings. If the pitch floor is 7
 NORMAL (U"So setting the floor of the pitch range is a technical requirement for the pitch analysis. "
 	"If you set it too low, you will miss very fast F0 changes, and if you set it too high, "
 	"you will miss very low F0 values. For children's voices you can often use 200 Hz, "
-	"although 75 Hz will still give you the same time resolution as you get for the males.")
+	"although 75 Hz will still give you the same time resolution as you get for low-pitched voices.")
 ENTRY (U"The %units setting")
 NORMAL (U"This setting determines the units of the vertical pitch scale. Most people like to see the pitch range "
 	"in hertz, but there are several other possibilities.")
@@ -3752,7 +3851,7 @@ MAN_BEGIN (U"Technical", U"ppgb", 20120915)
 INTRO (U"The title of a submenu of the @@Praat menu@.")
 MAN_END
 
-MAN_BEGIN (U"Types of objects", U"ppgb", 20141109)
+MAN_BEGIN (U"Types of objects", U"ppgb", 20190928)
 INTRO (U"Praat contains the following types of objects and @Editors. "
 	"For an introduction and tutorials, see @Intro.")
 NORMAL (U"General purpose:")
@@ -3774,6 +3873,7 @@ LIST_ITEM1 (U"• @Voice (jitter, shimmer, noise)")
 LIST_ITEM (U"• @Pitch: articulatory fundamental frequency, acoustic periodicity, or perceptual pitch (@PitchEditor)")
 LIST_ITEM (U"• @Harmonicity: degree of periodicity")
 LIST_ITEM (U"• @Intensity, @IntensityTier: intensity contour")
+LIST_ITEM (U"• @Electroglottogram")
 NORMAL (U"Spectral analysis:")
 LIST_ITEM (U"• Tutorials:")
 LIST_ITEM1 (U"• @@Intro 3. Spectral analysis")

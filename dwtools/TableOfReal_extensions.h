@@ -2,7 +2,7 @@
 #define _TableOfReal_extensions_h_
 /* TableOfReal_extensions.h
  *
- * Copyright (C) 1993-2018 David Weenink
+ * Copyright (C) 1993-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,11 +24,9 @@
 #include "Matrix_extensions.h"
 #include "PatternList.h"
 #include "Strings_.h"
-#include "SSCP.h"
 #include "TableOfReal.h"
 
-void TableOfReal_to_PatternList_and_Categories(TableOfReal me, integer fromrow, integer torow, integer fromcol, integer tocol,
-	autoPatternList *p, autoCategories *c);
+void TableOfReal_to_PatternList_and_Categories(TableOfReal me, integer fromrow, integer torow, integer fromcol, integer tocol, autoPatternList *out_p, autoCategories *out_c);
 
 autoTableOfReal TableOfReal_transpose (TableOfReal me);
 
@@ -69,7 +67,7 @@ void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, conststring32 
 
 void TableOfReal_drawScatterPlot (TableOfReal me, Graphics g, integer icx, integer icy, integer rowb,
 	integer rowe, double xmin, double xmax, double ymin, double ymax,
-	int labelSize, bool useRowLabels, conststring32 label, bool garnish);
+	integer labelSize, bool useRowLabels, conststring32 label, bool garnish);
 
 void TableOfReal_drawAsScalableSquares (TableOfReal me, Graphics g, integer rowmin, integer rowmax, integer colmin, integer colmax, kGraphicsMatrixOrigin origin, double cellSizeFactor, kGraphicsMatrixCellDrawingOrder fillOrder, bool garnish);
 
@@ -153,7 +151,7 @@ void TableOfReal_centreRows (TableOfReal me);
 
 void TableOfReal_doubleCentre (TableOfReal me);
 
-bool TableOfReal_checkNonNegativity (TableOfReal me);
+bool TableOfReal_isNonNegative (TableOfReal me);
 
 double TableOfReal_getTableNorm (TableOfReal me);
 
@@ -167,7 +165,7 @@ void TableOfReal_standardizeColumns (TableOfReal me);
 
 void TableOfReal_standardizeRows (TableOfReal me);
 
-autoTableOfReal TableOfReal_rankColumns (TableOfReal me);
+autoTableOfReal TableOfReal_rankColumns (TableOfReal me, integer fromColumn, integer toColumn);
 
 autoTableOfReal TableOfReal_meansByRowLabels (TableOfReal me, bool expand, bool useMedians);
 /*
@@ -193,7 +191,7 @@ autoTableOfReal TableOfReal_appendColumns (TableOfReal me, TableOfReal thee);
 void TableOfReal_copyOneRowWithLabel (TableOfReal me, TableOfReal thee, integer myrow, integer thyrow);
 
 /* Henze & Wagner (1997), A new approach to the BHEP tests for multivariate normality, Journal of Multivariate Analysis 62, 1-23. */
-double TableOfReal_normalityTest_BHEP (TableOfReal me, double *beta /* input and output */, double *tnb, double *lnmu, double *lnvar);
+double TableOfReal_normalityTest_BHEP (TableOfReal me, double *h, double *out_tnb, double *out_lnmu, double *out_lnvar, bool *out_singularCovariance);
 
 autoTableOfReal TableOfReal_TableOfReal_crossCorrelations (TableOfReal me, TableOfReal thee, bool by_columns, bool center, bool normalize);
 

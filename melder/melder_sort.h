@@ -2,7 +2,7 @@
 #define _melder_sort_h_
 /* melder_sort.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,21 +20,14 @@
 
 /********** Sorting **********/
 
-void VECsort_inplace (VEC x);
-
-void NUMsort_d (integer n, double ra []);   // heap sort
-void NUMsort_integer (integer n, integer ra []);
-void NUMsort_str (string32vector a);
-void NUMsort_p (integer n, void *a [], int (*compare) (const void *, const void *));
-
 double NUMquantile (integer n, double a [], double factor);
-double NUMquantile (constVEC a, double factor);
+double NUMquantile (const constVECVU& a, double factor) noexcept;
 /*
 	An estimate of the quantile 'factor' (between 0 and 1) of the distribution
 	from which the set 'a [1..n]' is a sorted array of random samples.
 	For instance, if 'factor' is 0.5, this function returns an estimate of
 	the median of the distribution underlying the sorted set a [].
-	If your array has not been sorted, first sort it with NUMsort (n, a).
+	If your array has not been sorted, first sort it with VECsort ().
 */
 
 /* End of file melder_sort.h */
