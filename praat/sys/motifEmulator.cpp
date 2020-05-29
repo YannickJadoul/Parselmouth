@@ -1,6 +1,6 @@
 /* motifEmulator.cpp
  *
- * Copyright (C) 1993-2011,2012,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1993-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "machine.h"
 
 static void (*theOpenDocumentCallback) (MelderFile file);
+static void (*theFinishedOpeningDocumentsCallback) ();
 static int (*theQuitApplicationCallback) ();
 
 #if motif
@@ -469,7 +470,7 @@ static void NativeMenuItem_setSensitive (GuiObject me) {
 
 static void NativeMenuItem_setText (GuiObject me) {
 	int acc = my motiff.pushButton.acceleratorChar, modifiers = my motiff.pushButton.acceleratorModifiers;
-	static MelderString title { };
+	static MelderString title;
 	if (acc == 0) {
 		MelderString_copy (& title, _GuiWin_expandAmpersands (my name.get()));
 	} else {
@@ -1676,16 +1677,22 @@ void GuiAppInitialize (const char *name, unsigned int argc, char **argv)
 		window = FindWindow (Melder_peek32toW (theWindowClassName), NULL);
 		if (window != NULL) {
 			/*
-			 * We are in the second instance of Praat.
-			 * The user double-clicked Praat while it was running,
-			 * or she dropped a file on the Praat icon,
-			 * or she double-clicked a Praat file.
-			 */
+				We are in the second instance of Praat.
+				The user double-clicked the Praat icon,
+				or dropped a file on the Praat icon,
+				or double-clicked a Praat file,
+				while Praat was already running.
+			*/
 			if (IsIconic (window)) ShowWindow (window, SW_RESTORE);
 			SetForegroundWindow (window);
 			if (theOpenDocumentCallback) {
 				for (unsigned int iarg = 1; iarg < argc; iarg ++) {
 					if (argv [iarg] [0] != '-') {
+						/*
+							The user dropped a file on the Praat icon,
+							or double-clicked a Praat file,
+							while Praat was already running.
+						*/
 						structMelderDir dir { };
 						Melder_sprint (dir. path,kMelder_MAXPATH+1, Melder_getShellDirectory ());
 						Melder_setDefaultDir (& dir);
@@ -1695,6 +1702,8 @@ void GuiAppInitialize (const char *name, unsigned int argc, char **argv)
 					}
 				}
 			}
+			if (theFinishedOpeningDocumentsCallback)
+				theFinishedOpeningDocumentsCallback ();
 			exit (0);   // possible problem
 		}
 
@@ -2665,8 +2674,9 @@ void motif_win_setUserMessageCallback (int (*userMessageCallback) (void)) {
 	theUserMessageCallback = userMessageCallback;
 }
 
-void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file)) {
+void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file), void (*finishedOpeningDocumentsCallback) ()) {
 	theOpenDocumentCallback = openDocumentCallback;
+	theFinishedOpeningDocumentsCallback = finishedOpeningDocumentsCallback;
 }
 #endif
 

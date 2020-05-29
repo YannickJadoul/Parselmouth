@@ -1,6 +1,6 @@
 /* TextGrid.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -311,7 +311,7 @@ autoTextGrid TextGrid_createWithoutTiers (double tmin, double tmax) {
 
 autoTextGrid TextGrid_create (double tmin, double tmax, conststring32 tierNames_string, conststring32 pointTiers_string) {
 	try {
-		autostring32vector tierNames = STRVECtokenize (tierNames_string), pointTiers = STRVECtokenize (pointTiers_string);
+		autoSTRVEC tierNames = newSTRVECtokenize (tierNames_string), pointTiers = newSTRVECtokenize (pointTiers_string);
 		autoTextGrid me = TextGrid_createWithoutTiers (tmin, tmax);
 
 		/*
@@ -1033,8 +1033,8 @@ static void genericize (autostring32& stringRef, mutablestring32 buffer) {
 	if (stringRef) {
 		const char32 *p = & stringRef [0];
 		while (*p) {
-			if (*p > 126) {   // only if necessary
-				Longchar_genericize32 (stringRef.get(), buffer);
+			if (*p > 126) {   // OPTIMIZE: allocate a new string only if necessary
+				Longchar_genericize (stringRef.get(), buffer);
 				stringRef = Melder_dup (buffer);
 				break;
 			}
@@ -1045,7 +1045,7 @@ static void genericize (autostring32& stringRef, mutablestring32 buffer) {
 
 void TextGrid_convertToBackslashTrigraphs (TextGrid me) {
 	try {
-		autostring32 buffer (TextGrid_maximumLabelLength (me) * 3);
+		autostring32 buffer (TextGrid_maximumLabelLength (me) * 3);   // OPTIMIZE: use only one allocation if more are not necessary
 		for (integer itier = 1; itier <= my tiers->size; itier ++) {
 			Function anyTier = my tiers->at [itier];
 			if (anyTier -> classInfo == classIntervalTier) {
@@ -1077,7 +1077,7 @@ void TextGrid_convertToUnicode (TextGrid me) {
 				for (integer i = 1; i <= tier -> intervals.size; i ++) {
 					TextInterval interval = tier -> intervals.at [i];
 					if (interval -> text) {
-						Longchar_nativize32 (interval -> text.get(), buffer.get(), false);
+						Longchar_nativize (interval -> text.get(), buffer.get(), false);
 						str32cpy (interval -> text.get(), buffer.get());
 					}
 				}
@@ -1086,7 +1086,7 @@ void TextGrid_convertToUnicode (TextGrid me) {
 				for (integer i = 1; i <= tier -> points.size; i ++) {
 					TextPoint point = tier -> points.at [i];
 					if (point -> mark) {
-						Longchar_nativize32 (point -> mark.get(), buffer.get(), false);
+						Longchar_nativize (point -> mark.get(), buffer.get(), false);
 						str32cpy (point -> mark.get(), buffer.get());
 					}
 				}
@@ -1694,7 +1694,7 @@ autoTable TextGrid_downto_Table (TextGrid me, bool includeLineNumbers, int timeD
 			}
 		}
 	}
-	integer columns [1+2] = { 0, 1 + includeLineNumbers, 3 + includeLineNumbers + includeTierNames };   // sort by tmin and tmax
+	integer columns [2] = { 1 + includeLineNumbers, 3 + includeLineNumbers + includeTierNames };   // sort by tmin and tmax
 	Table_sortRows_Assert (thee.get(), constINTVEC (columns, 2));
 	return thee;
 }
@@ -1757,7 +1757,7 @@ autoTable TextGrid_tabulateOccurrences (TextGrid me, constVEC searchTiers, kMeld
 			}
 		}
 	}
-	integer columns [1+1] = { 0, 1 };   // sort by time
+	integer columns [1] = { 1 };   // sort by time
 	Table_sortRows_Assert (thee.get(), constINTVEC (columns, 1));
 	return thee;
 }

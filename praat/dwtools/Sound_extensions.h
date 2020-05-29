@@ -2,7 +2,7 @@
 #define _Sound_extensions_h_
 /* Sound_extensions.h
  *
- * Copyright (C) 1993-2018 David Weenink
+ * Copyright (C) 1993-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 #include "Collection.h"
 #include "PointProcess.h"
 #include "TextGrid.h"
+#include "Sound_extensions_enums.h"
+
 Thing_declare (Interpreter);
 
 int Sound_writeToNistAudioFile (Sound me, MelderFile file);
@@ -99,15 +101,17 @@ autoSound Sound_filterByGammaToneFilter4 (Sound me, double centre_frequency, dou
 autoSound Sound_filterByGammaToneFilter (Sound me, double centre_frequency, double bandwidth, double gamma, double initialPhase);
 
 void Sounds_multiply (Sound me, Sound thee);
-/* precondition: my nx = thy nx */
+/* precondition: my nx == thy nx */
 
 double Sound_correlateParts (Sound me, double t1, double t2, double duration);
 /*
 	Correlate part (t1, t1+duration) with (t2, t2+duration)
 */
 
-void Sound_localMean (Sound me, double fromTime, double toTime, double *mean);
-void Sound_localPeak (Sound me, double fromTime, double toTime, double ref, double *peak);
+double Sound_localMean (Sound me, double fromTime, double toTime);
+double Sound_localPeak (Sound me, double fromTime, double toTime, double reference);
+
+double Sound_getNearestLevelCrossing (Sound me, integer channel, double position, double level, kSoundSearchDirection searchDirection);
 
 autoSound Sound_localAverage (Sound me, double averaginginterval, int windowType);
 /* y[n] = sum(i=-n, i=n, x[n+i])/(2*n+1) */
@@ -128,23 +132,18 @@ void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, bo
 	channel = 0 (all), 1 (left), 2 (right).
 */
 
-#define FROM_LEFT_TO_RIGHT 0
-#define FROM_RIGHT_TO_LEFT 1
-#define FROM_BOTTOM_TO_TOP 2
-#define FROM_TOP_TO_BOTTOM 3
-
-void Sound_draw_btlr (Sound me, Graphics g, double tmin, double tmax, double amin, double amax, int direction, bool garnish);
+void Sound_draw_btlr (Sound me, Graphics g, double tmin, double tmax, double amin, double amax, kSoundDrawingDirection drawingDirection, bool garnish);
 /* direction is one of the macros's FROM_LEFT_TO_RIGHT... */
 
 void Sound_drawWhere (Sound me, Graphics g, double tmin, double tmax, double minimum, double maximum,
 	bool garnish, conststring32 method, integer numberOfBisections, conststring32 formula, Interpreter interpreter);
 
-void Sound_paintWhere (Sound me, Graphics g, Graphics_Colour colour, double tmin, double tmax,
+void Sound_paintWhere (Sound me, Graphics g, MelderColour colour, double tmin, double tmax,
 	double minimum, double maximum, double level, bool garnish,
 	integer numberOfBisections, conststring32 formula, Interpreter interpreter
 );
 
-void Sounds_paintEnclosed (Sound me, Sound thee, Graphics g, Graphics_Colour colour, double tmin, double tmax,
+void Sounds_paintEnclosed (Sound me, Sound thee, Graphics g, MelderColour colour, double tmin, double tmax,
 	double minimum, double maximum, bool garnish);
 
 autoSound Sound_changeGender (Sound me, double pitchMin, double pitchMax, double pitchRatio, double formantFrequenciesRatio, double durationRatio);
@@ -155,10 +154,10 @@ autoSound Sound_changeGender_old (Sound me, double fmin, double fmax, double for
 
 autoSound Sound_Pitch_changeGender_old (Sound me, Pitch him, double formantRatio, double new_pitch, double pitchRangeFactor, double durationFactor);
 
-autoPointProcess Sound_to_PointProcess_getJumps (Sound me, double minimumJump, double dt);
+autoPointProcess Sound_to_PointProcess_getJumps (Sound me, integer channel, double minimumJump, double maximumDuration);
 /*
 	Marks jumps in the signal where the amplitude changes more than 'minimumJump'
-	within time dt
+	within a time interval of maximumDuration
 */
 
 autoSound Sound_changeSpeaker (Sound me, double pitchMin, double pitchMax,
@@ -184,7 +183,7 @@ autoTextGrid Sound_to_TextGrid_detectSilences (Sound me, double minPitch, double
 	conststring32 silentLabel, conststring32 soundingLabel);
 
 void Sound_getStartAndEndTimesOfSounding (Sound me, double minPitch, double timeStep,
-	double silenceThreshold, double minSilenceDuration, double minSoundingDuration, double *t1, double *t2);
+	double silenceThreshold, double minSilenceDuration, double minSoundingDuration, double *out_t1, double *out_t2);
 
 autoSound Sound_IntervalTier_cutPartsMatchingLabel (Sound me, IntervalTier thee, conststring32 match);
 /* Cut intervals that match the label from the sound. The starting time of the new sound is
@@ -200,7 +199,9 @@ autoSound Sound_trimSilences (Sound me, double trimDuration, bool onlyAtStartAnd
 
 autoSound Sound_copyChannelRanges (Sound me, conststring32 ranges);
 
-autoSound Sound_removeNoise (Sound me, double noiseStart, double noiseEnd, double windowLength, double minBandFilterFrequency, double maxBandFilterFrequency, double smoothing, int method);
+autoSound Sound_removeNoise (Sound me, double noiseStart, double noiseEnd, double windowLength, double minBandFilterFrequency, double maxBandFilterFrequency, double smoothing, kSoundNoiseReductionMethod method);
+
+autoSound Sound_reduceNoise (Sound me, double noiseStart, double noiseEnd, double windowLength, double minBandFilterFrequency, double maxBandFilterFrequency, double smoothing, double noiseReduction_dB, kSoundNoiseReductionMethod method);
 
 void Sound_playAsFrequencyShifted (Sound me, double shiftBy, double newSamplingFrequency, integer precision);
 

@@ -1,6 +1,6 @@
 /* manual_Script.cpp
  *
- * Copyright (C) 1992-2017 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -789,7 +789,7 @@ TAG (U"##undefined")
 DEFINITION (U"a special value, see @undefined")
 MAN_END
 
-MAN_BEGIN (U"Formulas 5. Mathematical functions", U"ppgb", 20170718)
+MAN_BEGIN (U"Formulas 5. Mathematical functions", U"ppgb", 20200405)
 TAG (U"##abs (%x)")
 DEFINITION (U"absolute value")
 TAG (U"##round (%x)")
@@ -855,13 +855,23 @@ DEFINITION (U"the error function: 2/\\Vr%\\pi __0_\\in^%x exp(-%t^2) %dt")
 TAG (U"##erfc (%x)")
 DEFINITION (U"the complement of the error function: 1 - erf (%x)")
 TAG (U"##randomUniform (%min, %max)")
-DEFINITION (U"uniform random real number between %min (inclusive) and %max (exclusive)")
+DEFINITION (U"a uniform random real number between %min (inclusive) and %max (exclusive)")
 TAG (U"##randomInteger (%min, %max)")
-DEFINITION (U"uniform random integer number between %min and %max (inclusive)")
+DEFINITION (U"a uniform random integer number between %min and %max (inclusive)")
 TAG (U"##randomGauss (%\\mu, %\\si)")
-DEFINITION (U"Gaussian random real number with mean %\\mu and standard deviation %\\si")
+DEFINITION (U"a Gaussian random real number with mean %\\mu and standard deviation %\\si")
 TAG (U"##randomPoisson (%mean)")
-DEFINITION (U"Poisson random real number")
+DEFINITION (U"a Poisson random real number")
+TAG (U"##randomGamma (%%shape%, %%rate%)")
+DEFINITION (U"a random number drawn from a Gamma distribution with shape parameter %\\al "
+	"and rate parameter %\\be, which is defined as "
+	"%f(%x; %\\al, %\\be) = (1 / \\Ga (%\\al)) %\\be%^^%\\al^ %x^^%\\al\\-m1^ %e^^\\-m%\\be %x^, "
+	"for %x > 0, %\\al > 0 and %\\be > 0, following the method by @@Marsaglia & Tsang (2000)@")
+TAG (U"##random\\_ initializeWithSeedUnsafelyButPredictably (%seed)")
+DEFINITION (U"can be used in a script to create a reproducible sequence of random numbers "
+	"(warning: this exceptional situation will continue to exist throughout Praat until you call the following function)")
+TAG (U"##random\\_ initializeSafelyAndPredictably ()")
+DEFINITION (U"undoes the exceptional situation caused by the previous function")
 TAG (U"##lnGamma (%x)")
 DEFINITION (U"logarithm of the \\Ga function")
 TAG (U"##gaussP (%z)")
@@ -931,7 +941,7 @@ TAG (U"##besselK (%n, %x)")
 NORMAL (U"For functions with arrays, see @@Scripting 5.7. Vectors and matrices@.")
 MAN_END
 
-MAN_BEGIN (U"Formulas 6. String functions", U"ppgb", 20180318)
+MAN_BEGIN (U"Formulas 6. String functions", U"ppgb", 20180825)
 INTRO (U"String functions are functions that either return a text string or have at least one text string as an argument. "
 	"Since string computations are not very useful in the @calculator, in settings windows, or in creation and "
 	"modification formulas, this page only gives examples of strings in scripts, so that the example may contain "
@@ -1057,6 +1067,10 @@ DEFINITION (U"To write the day of the month into the Info window, you type:")
 		CODE2 (U"date\\$  = date\\$  ()")
 		CODE2 (U"day\\$  = mid\\$  (date\\$ , 9, 2)")
 		CODE2 (U"writeInfoLine: \"The month day is \", day\\$ , \".\"")
+TAG (U"##unicode\\$  (228)")
+DEFINITION (U"gives the 228th Unicode codepoint, i.e. \"ä\".")
+TAG (U"##unicode (\"ä\")")
+DEFINITION (U"gives the Unicode codepoint number of \"ä\", i.e. 228.")
 TAG (U"##extractNumber (\"Type: Sound\" + newline\\$  + \"Name: hello there\" + newline\\$  + \"Size: 44007\", \"Size:\")")
 DEFINITION (U"looks for a number after the first occurrence of \"Size:\" in the long string. Outcome: 44007. "
 	"This is useful in scripts that try to get information from long reports, as the following script that "
@@ -1571,7 +1585,7 @@ CODE (U"Play")
 CODE (U"Erase all")
 NORMAL (U"When you run this script, you'll see a rectangle appear in the ##Praat Picture# window "
 	"(that's what the command ##Draw inner box# in the #Margins menu does), "
-	"then you'll hear the Sound play tiwce, then you'll see the rectangle disappear from the Picture window "
+	"then you'll hear the Sound play twice, then you'll see the rectangle disappear from the Picture window "
 	"(that's what the command ##Erase all# from the #Edit menu does).")
 NORMAL (U"Here we see that the Praat scripting language is an example of a %%procedural programming language%, "
 	"which means that the five %statements are executed in the order in which they appear in the script, "
@@ -1616,7 +1630,7 @@ NORMAL (U"It advisable to use$$ .praat $as the extension for script file names. 
 	"On the Mac and on Windows, if you drag a$$ .praat $file on the Praat icon, Praat will also start up and show the script.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 2. How to script settings windows", U"ppgb", 20170926)
+MAN_BEGIN (U"Scripting 2. How to script settings windows", U"ppgb", 20191106)
 INTRO (U"Not all menu commands are as simple as those on the @@Scripting 1. Your first scripts|previous page@, "
 	"which act immediately once you choose them from a menu (e.g. ##Play#, ##Erase all#). "
 	"Most commands in Praat require the user to supply additional information; "
@@ -1756,7 +1770,25 @@ CODE (U"Read from file: \"../Animals/miauw.aifc\"")
 NORMAL (U"where \"..\" is the general way on all platforms to go one folder up in the hierarchy.")
 NORMAL (U"Note that on Windows you could use the backslash (\"\\bs\") instead of the forward slash (\"/\"), "
 	"but with the forward slash your script will work on all three platforms.")
-ENTRY (U"7. How to supply arguments automatically")
+ENTRY (U"7. Colour arguments")
+NORMAL (U"Several commands in the World and Pen menus of the Picture window, "
+	"as well as many object drawing commands, ask for a colour in the following way:")
+SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (5), U""
+	Manual_DRAW_SETTINGS_WINDOW ("Praat picture: Paint rectangle", 5)
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Colour (0-1, name, or {r,g,b})", "0.5")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("From x", "0.0")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("To x", "1.0")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("From y", "0.0")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("To y", "1.0")
+)
+NORMAL (U"For the colour, you can supply, as text, one of the 16 explicit names that also appear in the Pen menu:")
+CODE (U"Paint rectangle: \"maroon\", 0.0, 1.0, 0.0, 1.0")
+NORMAL (U"Alternatively, you can supply a grey value, as a number between 0.0 (black) and 1.0 (white). The following produces a very light grey:")
+CODE (U"Paint rectangle: 0.9, 0.0, 1.0, 0.0, 1.0")
+NORMAL (U"Finally, you can supply an explicit RGB (red\\--green\\--blue) value, as a \"vector\" of three numbers between 0.0 and 1.0. "
+	"The following produces dark pink:")
+CODE (U"Paint rectangle: {0.8,0.2,0.4}, 0.0, 1.0, 0.0, 1.0")
+ENTRY (U"8. How to supply arguments automatically")
 NORMAL (U"Now you know all the ways to write the arguments of commands in a script line. "
 	"If you dislike manually copying arguments from settings windows into your script, "
 	"or if you are not sure whether something is a numeric or a string argument, "
@@ -1770,7 +1802,7 @@ MAN_END
 MAN_BEGIN (U"Scripting 3. Simple language elements", U"ppgb", 20130421)
 INTRO (U"The Praat scripting language doesn't only call the menu commands "
 	"discussed in the @@Scripting 1. Your first scripts|first@ and @@Scripting 2. How to script settings windows|second@ chapters of this tutorial, "
-	"it is only a general procedural programming language that allows you to compute numbers, handle texts, and make custom analyses.")
+	"it is also a general procedural programming language that allows you to compute numbers, handle texts, and make custom analyses.")
 NORMAL (U"This chapter focuses on the things you need most. It is designed in such a way that you can work through it even if you haven't written computer programs before.")
 LIST_ITEM (U"@@Scripting 3.1. Hello world@ (writeInfoLine, appendInfoLine)")
 LIST_ITEM (U"@@Scripting 3.2. Numeric variables@ (assignments)")
@@ -2846,7 +2878,7 @@ NORMAL (U"You can use any number of array and dictionary variables in a script, 
 	"or to use Matrix or Sound objects.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5.7. Vectors and matrices", U"ppgb", 20180426)
+MAN_BEGIN (U"Scripting 5.7. Vectors and matrices", U"ppgb", 20190825)
 ENTRY (U"1. What is a vector?")
 NORMAL (U"A ##numeric vector# is an array of numbers, regarded as a single object. "
 	"For instance, the squares of the first five integers can be collected in the vector { 1, 4, 9, 16, 25 }. "
@@ -2862,7 +2894,7 @@ NORMAL (U"Whereas in @@Scripting 3.2. Numeric variables@ we talked about a numer
 	"Their values (the numbers that currently live in these houses) are 1, 4, 9, 16 and 25, respectively.")
 NORMAL (U"To list the five values with a loop, you could do:")
 CODE (U"#writeInfoLine: \"Some squares:\"")
-CODE (U"#for i #from 1 #to 5")
+CODE (U"#for i #from 1 #to size (squares\\# )")
 	CODE1 (U"#appendInfoLine: \"The square of \", i, \" is \", squares\\#  [i]")
 CODE (U"#endfor")
 NORMAL (U"Instead of the above procedure to get the vector %%squares\\# %, with a pre-computed list of five squares, "
@@ -2873,7 +2905,7 @@ NORMAL (U"Instead of the above procedure to get the vector %%squares\\# %, with 
 CODE (U"squares\\#  = zero\\#  (5)")
 NORMAL (U"After this, %%squares\\# % is the vector { 0, 0, 0, 0, 0 }, i.e., the value of each element is zero. "
 	"Now that the vector (street) exists, we can put values into (populate) the five elements (houses):")
-CODE (U"#for i #from 1 #to 5")
+CODE (U"#for i #from 1 #to size (squares\\# )")
 	CODE1 (U"squares\\#  [i] = i * i")
 CODE (U"#endfor")
 NORMAL (U"After this, the variable $$squares\\# $ has the value { 1, 4, 9, 16, 25 }, as before, "
@@ -2897,8 +2929,8 @@ CODE (U"randomInteger\\#  (10000, 1, 10)")
 NORMAL (U"Vectors can also be created by some menu commands. For instance, to get vectors representing "
 	"the times and pitch frequencies of the frames in a Pitch object, you can do")
 CODE (U"selectObject: myPitch")
-CODE (U"times\\#  = Get times of frames")
-CODE (U"pitches\\#  = Get values in frames")
+CODE (U"times\\#  = List all frame times")
+CODE (U"pitches\\#  = List values in all frames: \"Hertz\"")
 ENTRY (U"3. Turning a vector into a number")
 NORMAL (U"For the vector defined above, you can compute the #sum of the five values as")
 CODE (U"sum (squares\\# )")
@@ -2915,7 +2947,7 @@ NORMAL (U"which gives 4.090909090909091 (for a vector with five elements, the re
 CODE (U"other\\#  = { 2, 1.5, 1, 0.5, 0 }")
 CODE (U"result = inner (squares\\# , other\\# )")
 NORMAL (U"which gives 1*2 + 4*1.5 + 9*1 + 16*0.5 + 25*0 = 25. "
-	"The formula for this is \\su__%i=1_^5 squares[i] * other[i], so that an alternative piece of code could be")
+	"The formula for this is \\su__%i=1_^5 %squares[%i] * %other[%i], so that an alternative piece of code could be")
 CODE (U"result = sumOver (i to 5, squares\\#  [i] * other\\#  [i])")
 ENTRY (U"4. Converting vectors to vectors")
 CODE (U"a\\#  = squares\\#  + 5   ; adding a number to each element of a vector")
@@ -2932,8 +2964,66 @@ NORMAL (U"A vector can also be given to a ##menu command# that returns another v
 CODE (U"selectObject: myPitch")
 CODE (U"tmin = Get start time")
 CODE (U"tmax = Get end time")
-CODE (U"times\\#  = sequence_by_centre\\#  (tmin, tmax, 0.01)")
-CODE (U"pitches\\#  = Get values at times: times\\# , \"hertz\", \"linear\"")
+CODE (U"times\\#  = between_by\\#  (tmin, tmax, 0.01)")
+CODE (U"pitches\\#  = List values at times: times\\# , \"hertz\", \"linear\"")
+ENTRY (U"5. What is a matrix?")
+NORMAL (U"A ##numeric matrix# is a two-indexed array of numbers, regarded as a single object. "
+	"In a Praat script, you can put a matrix into a variable whose name ends in two number signs (\"\\# \\# \"):")
+CODE (U"confusion\\# \\#  = {{ 3, 6, 2 }, { 8, 2, 1 }}")
+NORMAL (U"After this, the variable %%confusion\\# \\# % contains the value {{ 3, 6, 2 }, { 8, 2, 1 }}. "
+	"We say that the matrix %%confusion\\# % has two %rows and three %columns, i.e. it contains six numbers.")
+NORMAL (U"Whereas a numeric vector with five dimensions could be seen (see above) as a street that contains five houses, "
+	"the matrix %%confusion\\# \\# % can be seen as a city district with two avenues crossed by three streets.")
+ENTRY (U"6. Creating a matrix")
+NORMAL (U"You can create a matrix in many ways. The first way we saw was with a ##matrix literal#, "
+	"i.e. a series of series of numbers (or numeric formulas) between nested braces.")
+NORMAL (U"The second way is as a matrix of #zeroes. To create a matrix consisting of 100 rows of 10,000 zeroes, you do")
+CODE (U"a\\# \\#  = zero\\# \\#  (100, 10000)")
+NORMAL (U"After this,")
+CODE (U"numberOfRows (a\\# \\# )")
+NORMAL (U"is 100, and")
+CODE (U"numberOfColumns (a\\# \\# )")
+NORMAL (U"is 10000.")
+NORMAL (U"Another important type of matrix is one filled with random numbers. "
+	"To create a matrix consisting of 100 rows of 10,000 values drawn from a ##Gaussian distribution# "
+	"with true mean 0.0 and true standard deviation 1.0, you can do")
+CODE (U"noise\\# \\#  = randomGauss\\# \\#  (100, 10000, 0.0, 1.0)")
+NORMAL (U"You can create a matrix as the outer product of two vectors:")
+CODE (U"m\\# \\#  = outer\\# \\#  (u\\# , v\\# )")
+NORMAL (U"which is the same as")
+CODE (U"m\\# \\#  = zeros\\# \\#  (size (u\\# ), size (v\\# ))")
+CODE (U"#for irow #to size (u\\# )")
+	CODE1 (U"#for icol #to size (v\\# )")
+		CODE2 (U"m\\# \\#  [irow, icol] = u\\#  [irow] * v\\#  [icol]")
+	CODE1 (U"#endfor")
+CODE (U"#endfor")
+NORMAL (U"or in mathematical notation")
+FORMULA (U"%m__%ij_ = %u__%i_ %v__%j_   (%i = 1..%M, %j = 1..%N)")
+NORMAL (U"where %M is the number of rows and %N is the number of columns.")
+ENTRY (U"7. Computations with matrices")
+NORMAL (U"You can add matrices:")
+CODE (U"c\\# \\#  = a\\# \\#  + b\\# \\# ")
+NORMAL (U"Elementwise multiplication:")
+CODE (U"c\\# \\#  = a\\# \\#  * b\\# \\# ")
+NORMAL (U"which does")
+FORMULA (U"%c__%ij_ = %a__%ij_ %b__%ij_   (%i = 1..%M, %j = 1..%N)")
+NORMAL (U"Matrix multiplication:")
+CODE (U"c\\# \\#  = mul\\# \\#  (a\\# \\# , b\\# \\# )")
+NORMAL (U"which does")
+FORMULA (U"%m__%ij_ = \\su__%k=1_^K  %a__%ik_ %b__%kj_   (%i = 1..%M, %j = 1..%N)")
+NORMAL (U"where %M is the number of rows of %a, %N is the number of columns of %b, "
+	"and %K is the number of columns of %a, which has to be equal to the number if rows of %b.")
+NORMAL (U"Matrix-by-vector multiplication:")
+CODE (U"v\\#  = mul\\#  (m\\# \\# , u\\# )")
+NORMAL (U"which does")
+FORMULA (U"%v__%i_ = \\su__%j=1_^N  %m__%ij_ %u__%j_   (%i = 1..%M)")
+NORMAL (U"where %M is the number of rows of %m, and %N is the number of columns of %m, "
+	"which has to be equal to the dimension of %u. Also")
+CODE (U"v\\#  = mul\\#  (u\\# , m\\# \\# )")
+NORMAL (U"which does")
+FORMULA (U"%v__%j_ = \\su__%i=1_^M  %u__%i_ %m__%ij_   (%j = 1..%N)")
+NORMAL (U"where %M is the number of rows of %m, which has to be equal to the dimension of %u, "
+	"and %N is the number of columns of %m.")
 MAN_END
 
 MAN_BEGIN (U"Scripting 5.8. Including other scripts", U"ppgb", 20170718)
@@ -2958,16 +3048,16 @@ NORMAL (U"You can \"nest\" include files, i.e., included scripts can include oth
 NORMAL (U"The #include statement can only be at the start of a line: you cannot put any spaces in front of it.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5.9. Quitting", U"ppgb", 20170718)
+MAN_BEGIN (U"Scripting 5.9. Quitting", U"ppgb", 20190713)
 NORMAL (U"Usually, the execution of your script ends when the interpreter has executed the last line "
 	"that is not within a procedure definition. However, you can also explicitly stop the script:")
 TAG (U"#exitScript ( )")
 DEFINITION (U"stops the execution of the script in the normal way, i.e. without any messages to the user. "
-	"Any settings window is removed from the screen.")
+	"Any settings (form) window is removed from the screen (unless Apply was clicked instead of OK).")
 TAG (U"#exitScript: %%error-message%")
 DEFINITION (U"stops the execution of the script while sending an error message to the user. "
 	"You can use the same argument list as with #writeInfoLine. "
-	"Any settings window will stay on the screen.")
+	"Any settings (form) window will stay on the screen.")
 NORMAL (U"For an example, see @@Scripting 6.8. Messages to the user@.")
 MAN_END
 
@@ -3259,7 +3349,7 @@ CODE (U"time = stopwatch")
 CODE (U"writeInfoLine: a, \" \", fixed\\$  (time, 3)")
 MAN_END
 
-MAN_BEGIN (U"Scripting 6.6. Controlling the user", U"ppgb", 20170317)
+MAN_BEGIN (U"Scripting 6.6. Controlling the user", U"ppgb", 20190827)
 INTRO (U"You can temporarily halt a Praat script:")
 TAG (U"#pauseScript: %message")
 DEFINITION (U"suspends execution of the script, and allows the user to interrupt it. "
@@ -3297,7 +3387,7 @@ CODE (U"for i to 5")
 		CODE2 (U"#comment: \"Then click Stop or one of the continuation buttons.\"")
 	CODE1 (U"clicked = #endPause: \"Continue\", \"Next\", \"Proceed\", 2")
 	CODE1 (U"appendInfoLine: number_of_people, \" \", worth, \" \", sampling_frequency, \" \", clicked")
-	CODE1 (U"appendInfoLine: \"Compression: \", compression, \" (\", compression\\$ ")
+	CODE1 (U"appendInfoLine: \"Compression: \", compression, \" (\", compression\\$ , \")\"")
 	CODE1 (U"appendInfoLine: \"Number of channels: \", number_of_channels\\$ ")
 CODE (U"endfor")
 NORMAL (U"This example uses several tricks. A useful one is seen with %number_of_channels: "
@@ -3395,8 +3485,8 @@ CODE (U"#beginPause: \"Learning settings\"")
 CODE (U"clicked = #endPause: \"Cancel\", \"OK\", 2, 1")
 CODE (U"if clicked = 2")
 CODE1 (U"learningRate = learning_rate")
-CODE1 (U"includeForward = directions = 1 or directions = 3")
-CODE1 (U"includeBackward = directions = 2 or directions = 3")
+CODE1 (U"includeForward = ( directions = 1 or directions = 3 )")
+CODE1 (U"includeBackward = ( directions = 2 or directions = 3 )")
 CODE (U"endif")
 NORMAL (U"In this example, the default button is 2 (i.e. #OK), and the cancel button is 1 (i.e. #Cancel). "
 	"The form will now contain no #Stop button, and if the user closes the window, "

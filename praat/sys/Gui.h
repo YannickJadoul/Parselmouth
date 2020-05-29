@@ -2,7 +2,7 @@
 #define _Gui_h_
 /* Gui.h
  *
- * Copyright (C) 1993-2018 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2019 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,8 @@
 	#include "winport_off.h"
 #endif
 
+#include "machine.h"
+
 #define Gui_LEFT_DIALOG_SPACING  20
 #define Gui_RIGHT_DIALOG_SPACING  20
 #define Gui_TOP_DIALOG_SPACING  14
@@ -87,11 +89,7 @@
 #define Gui_CHECKBUTTON_HEIGHT  20
 #define Gui_LABEL_SPACING  8
 #define Gui_OPTIONMENU_HEIGHT  20
-#if gtk
-	#define Gui_PUSHBUTTON_HEIGHT  25
-#else
-	#define Gui_PUSHBUTTON_HEIGHT  20
-#endif
+#define Gui_PUSHBUTTON_HEIGHT  Machine_getButtonHeight ()
 #define Gui_OK_BUTTON_WIDTH  69
 #define Gui_CANCEL_BUTTON_WIDTH  69
 #define Gui_APPLY_BUTTON_WIDTH  69
@@ -592,7 +590,7 @@ void GuiList_deselectAllItems (GuiList me);
 void GuiList_deselectItem (GuiList me, integer position);
 integer GuiList_getBottomPosition (GuiList me);
 integer GuiList_getNumberOfItems (GuiList me);
-integer * GuiList_getSelectedPositions (GuiList me, integer *numberOfSelected);
+autoINTVEC GuiList_getSelectedPositions (GuiList me);
 integer GuiList_getTopPosition (GuiList me);
 
 /**
@@ -913,10 +911,10 @@ void GuiText_remove (GuiText me);
 void GuiText_replace (GuiText me, integer from_pos, integer to_pos, conststring32 value);
 void GuiText_scrollToSelection (GuiText me);
 void GuiText_setChangedCallback (GuiText me, GuiText_ChangedCallback changedCallback, Thing changedBoss);
-void GuiText_setFontSize (GuiText me, int size);
+void GuiText_setFontSize (GuiText me, double size);
 void GuiText_setRedoItem (GuiText me, GuiMenuItem item);
 void GuiText_setSelection (GuiText me, integer first, integer last);
-void GuiText_setString (GuiText me, conststring32 text);
+void GuiText_setString (GuiText me, conststring32 text, bool undoable = true);
 void GuiText_setUndoItem (GuiText me, GuiMenuItem item);
 void GuiText_undo (GuiText me);
 
@@ -963,7 +961,7 @@ void GuiObject_destroy (GuiObject me);
 
 /********** EVENTS **********/
 
-void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file));
+void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file), void (*finishedOpeningDocumentsCallback) ());
 void Gui_setQuitApplicationCallback (int (*quitApplicationCallback) (void));
 
 extern uinteger theGuiTopLowAccelerators [8];

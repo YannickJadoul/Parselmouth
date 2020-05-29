@@ -2,7 +2,7 @@
 #define _Formula_h_
 /* Formula.h
  *
- * Copyright (C) 1990-2011,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1990-2005,2007,2008,2011-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,11 +83,21 @@ typedef struct structStackel {
 		if (our which == Stackel_STRING) {
 			our _string. reset();
 		} else if (our which == Stackel_NUMERIC_VECTOR) {
-			if (our owned)
-				our numericVector. reset();   // ambiguous owner happens to own; this is the reason why a VEC has a reset() method
+			if (our owned) {
+				{// scope
+					autoVEC removable;
+					removable. adoptFromAmbiguousOwner (our numericVector);
+				}
+				our numericVector = VEC ();   // undangle
+			}
 		} else if (our which == Stackel_NUMERIC_MATRIX) {
-			if (our owned)
-				our numericMatrix. reset();   // ambiguous owner happens to own; this is the reason why a MAT has a reset() method
+			if (our owned) {
+				{// scope
+					autoMAT removable;
+					removable. adoptFromAmbiguousOwner (our numericMatrix);
+				}
+				our numericMatrix = MAT ();   // undangle
+			}
 		}
 	}
 	~structStackel () {   // union-safe destruction: test which variant we have
@@ -152,15 +162,23 @@ struct Formula_Result {
 		our expressionType = kFormula_EXPRESSION_TYPE_NUMERIC;
 		our numericResult = 0.0;
 		our stringResult = autostring32();
-		our numericVectorResult = emptyVEC;
-		our numericMatrixResult = emptyMAT;
+		our numericVectorResult = VEC ();
+		our numericMatrixResult = MAT ();
 		our owned = false;
 	}
 	void reset () {
 		our stringResult. reset();
 		if (our owned) {
-			our numericVectorResult. reset();
-			our numericMatrixResult. reset();
+			{// scope
+				autoVEC removable;
+				removable. adoptFromAmbiguousOwner (our numericVectorResult);
+			}
+			our numericVectorResult = VEC ();   // undangle
+			{// scope
+				autoMAT mat;
+				mat. adoptFromAmbiguousOwner (our numericMatrixResult);
+			}
+			our numericMatrixResult = MAT ();   // undangle
 		}
 	}
 	~ Formula_Result () {

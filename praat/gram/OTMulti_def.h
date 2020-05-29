@@ -1,6 +1,6 @@
 /* OTMulti_def.h
  *
- * Copyright (C) 2005,2007,2009-2011,2015-2018 Paul Boersma
+ * Copyright (C) 2005,2007,2009-2011,2015-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ oo_DEFINE_STRUCT (OTCandidate)
 
 	oo_STRING (string)
 	oo_INTEGER (numberOfConstraints)
-	oo_INT_VECTOR (marks, numberOfConstraints)
+	oo_INTVEC16 (marks, numberOfConstraints)
 
 	#if ! oo_READING && ! oo_WRITING
 		oo_DOUBLE (harmony)
@@ -68,10 +68,10 @@ oo_DEFINE_CLASS (OTMulti, Daata)
 		oo_DOUBLE (leak)
 	oo_ENDFROM
 	oo_INTEGER (numberOfConstraints)
-	oo_STRUCT_VECTOR (OTConstraint, constraints, numberOfConstraints)
-	oo_INTEGER_VECTOR (index, numberOfConstraints)
+	oo_STRUCTVEC (OTConstraint, constraints, numberOfConstraints)
+	oo_INTVEC (index, numberOfConstraints)
 	oo_INTEGER (numberOfCandidates)
-	oo_STRUCT_VECTOR (OTCandidate, candidates, numberOfCandidates)
+	oo_STRUCTVEC (OTCandidate, candidates, numberOfCandidates)
 
 	#if oo_READING
 		OTMulti_sort (this);

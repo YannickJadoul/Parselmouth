@@ -1,6 +1,6 @@
 /* praat_Sound_init.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include "Sound_to_PointProcess.h"
 #include "SoundEditor.h"
 #include "SoundRecorder.h"
+#include "SoundSet.h"
 #include "SpectrumEditor.h"
 #include "TextGrid_Sound.h"
 #include "mp3.h"
@@ -337,8 +338,10 @@ DO
 }
 
 FORM (NEW_Sound_autoCorrelate, U"Sound: autocorrelate", U"Sound: Autocorrelate...") {
-	RADIO_ENUM (amplitudeScaling, U"Amplitude scaling", kSounds_convolve_scaling, DEFAULT)
-	RADIO_ENUM (signalOutsideTimeDomainIs, U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain, DEFAULT)
+	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
+	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
  	OK
 DO
 	CONVERT_EACH (Sound)
@@ -351,6 +354,22 @@ DIRECT (NEW1_Sounds_combineToStereo) {
 		autoSound result = Sounds_combineToStereo (& list);
 		integer numberOfChannels = result -> ny;   // dereference before transferring
 	CONVERT_LIST_END (U"combined_", numberOfChannels)
+}
+
+DIRECT (NEW1_Sounds_combineIntoSoundList) {
+	CONVERT_LIST (Sound)
+		autoSoundList result = SoundList_create ();
+		for (integer iobject = 1; iobject <= list.size; iobject ++)
+			result -> addItem_move (Data_copy (list.at [iobject]));
+	CONVERT_LIST_END (U"list")
+}
+
+DIRECT (NEW1_Sounds_combineIntoSoundSet) {
+	CONVERT_LIST (Sound)
+		autoSoundSet result = SoundSet_create ();
+		for (integer iobject = 1; iobject <= list.size; iobject ++)
+			result -> addItem_move (Data_copy (list.at [iobject]));
+	CONVERT_LIST_END (U"ensemble")
 }
 
 DIRECT (NEW1_Sounds_concatenate) {
@@ -376,12 +395,12 @@ DIRECT (NEW2_Sounds_concatenateRecoverably) {
 		if (numberOfChannels == 0) {
 			numberOfChannels = my ny;
 		} else if (my ny != numberOfChannels) {
-			Melder_throw (U"To concatenate sounds, their numbers of channels (mono, stereo) must be equal.");
+			Melder_throw (U"To concatenate sounds, their numbers of channels (mono, stereo) should be equal.");
 		}
 		if (dx == 0.0) {
 			dx = my dx;
 		} else if (my dx != dx) {
-			Melder_throw (U"To concatenate sounds, their sampling frequencies must be equal.\n"
+			Melder_throw (U"To concatenate sounds, their sampling frequencies should be equal.\n"
 				"You could resample one or more of the sounds before concatenating.");
 		}
 		nx += my nx;
@@ -392,13 +411,10 @@ DIRECT (NEW2_Sounds_concatenateRecoverably) {
 	LOOP {
 		iam (Sound);
 		double tmax = tmin + my nx * dx;
-		for (integer channel = 1; channel <= numberOfChannels; channel ++) {
-			NUMvector_copyElements (my z [channel], thy z [channel] + nx, 1, my nx);
-		}
+		thy z.verticalBand (nx + 1, nx + my nx) <<= my z.all();
 		iinterval ++;
-		if (iinterval > 1) {
+		if (iinterval > 1)
 			TextGrid_insertBoundary (him.get(), 1, tmin);
-		}
 		TextGrid_setIntervalText (him.get(), 1, iinterval, my name.get());
 		nx += my nx;
 		tmin = tmax;
@@ -428,14 +444,14 @@ DIRECT (NEW1_Sounds_convolve_old) {
 }
 
 FORM (NEW1_Sounds_convolve, U"Sounds: Convolve", U"Sounds: Convolve...") {
-	RADIO_ENUM (amplitudeScaling, U"Amplitude scaling", kSounds_convolve_scaling, DEFAULT)
-	RADIO_ENUM (signalOutsideTimeDomainIs, U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain, DEFAULT)
+	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
+	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
 	CONVERT_COUPLE (Sound)
-		autoSound result = Sounds_convolve (me, you,
-			(kSounds_convolve_scaling) amplitudeScaling,
-			(kSounds_convolve_signalOutsideTimeDomain) signalOutsideTimeDomainIs);
+		autoSound result = Sounds_convolve (me, you, amplitudeScaling, signalOutsideTimeDomainIs);
 	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
 }
 
@@ -569,14 +585,14 @@ DO
 }
 
 FORM (NEW1_Sounds_crossCorrelate, U"Sounds: Cross-correlate", U"Sounds: Cross-correlate...") {
-	RADIO_ENUM (amplitudeScaling, U"Amplitude scaling", kSounds_convolve_scaling, DEFAULT)
-	RADIO_ENUM (signalOutsideTimeDomainIs, U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain, DEFAULT)
+	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
+	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO_ALTERNATIVE (NEW1_old_Sounds_crossCorrelate)
 	CONVERT_COUPLE (Sound)
-		autoSound result = Sounds_crossCorrelate (me, you,
-			(kSounds_convolve_scaling) amplitudeScaling,
-			(kSounds_convolve_signalOutsideTimeDomain) signalOutsideTimeDomainIs);
+		autoSound result = Sounds_crossCorrelate (me, you, amplitudeScaling, signalOutsideTimeDomainIs);
 	CONVERT_COUPLE_END (U"cc_", my name.get(), U"_", your name.get())
 }
 
@@ -706,14 +722,14 @@ DIRECT (NEW_Sound_extractLeftChannel) {
 FORM (NEW_Sound_extractPart, U"Sound: Extract part", nullptr) {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.1")
-	OPTIONMENU_ENUM (windowShape, U"Window shape", kSound_windowShape, DEFAULT)
+	OPTIONMENU_ENUM (kSound_windowShape, windowShape, U"Window shape", kSound_windowShape::DEFAULT)
 	POSITIVE (relativeWidth, U"Relative width", U"1.0")
 	BOOLEAN (preserveTimes, U"Preserve times", false)
 	OK
 DO
 	CONVERT_EACH (Sound)
 		autoSound result = Sound_extractPart (me, fromTime, toTime,
-			(kSound_windowShape) windowShape, relativeWidth, preserveTimes);
+			windowShape, relativeWidth, preserveTimes);
 	CONVERT_EACH_END (my name.get(), U"_part")
 }
 
@@ -1037,9 +1053,9 @@ DO
 	NUMBER_ONE_END (U" seconds")
 }
 
-DIRECT (NUMVEC_Sound_getSampleTimes) {
+DIRECT (NUMVEC_Sound_listAllSampleTimes) {
 	NUMVEC_ONE (Sound)
-		autoVEC result = Sampled_getAllXValues (me);
+		autoVEC result = Sampled_listAllXValues (me);
 	NUMVEC_ONE_END
 }
 
@@ -1155,11 +1171,11 @@ DO
 }
 
 FORM (MODIFY_Sound_multiplyByWindow, U"Sound: Multiply by window", nullptr) {
-	OPTIONMENU_ENUM (windowShape, U"Window shape", kSound_windowShape, HANNING)
+	OPTIONMENU_ENUM (kSound_windowShape, windowShape, U"Window shape", kSound_windowShape::HANNING)
 	OK
 DO
 	MODIFY_EACH (Sound)
-		Sound_multiplyByWindow (me, (kSound_windowShape) windowShape);
+		Sound_multiplyByWindow (me, windowShape);
 	MODIFY_EACH_END
 }
 
@@ -1297,8 +1313,8 @@ extern "C" void* Praat_Sound_resample (void* sound, double newSamplingFrequency,
 #if 0
 void* Praat_Sound_resample (void* sound, double newSamplingFrequency, int precision) {
 	try {
-		if (newSamplingFrequency <= 0.0) Melder_throw (U"`newSamplingFrequency` has to be positive.");
-		if (precision <= 0) Melder_throw (U"`precision` has to be greater than 0.");
+		if (newSamplingFrequency <= 0.0) Melder_throw (U"`newSamplingFrequency` should be positive.");
+		if (precision <= 0) Melder_throw (U"`precision` should be greater than 0.");
 		autoSound thee = Sound_resample ((Sound) sound, newSamplingFrequency, precision);
 		return (void*) thee.releaseToAmbiguousOwner();
 	} catch (MelderError) {
@@ -1752,13 +1768,13 @@ FORM (NEW_Sound_to_Spectrogram, U"Sound: To Spectrogram", U"Sound: To Spectrogra
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"5000.0")
 	POSITIVE (timeStep, U"Time step (s)", U"0.002")
 	POSITIVE (frequencyStep, U"Frequency step (Hz)", U"20.0")
-	RADIO_ENUM (windowShape, U"Window shape", kSound_to_Spectrogram_windowShape, DEFAULT)
+	RADIO_ENUM (kSound_to_Spectrogram_windowShape, windowShape,
+			U"Window shape", kSound_to_Spectrogram_windowShape::DEFAULT)
 	OK
 DO
 	CONVERT_EACH (Sound)
 		autoSpectrogram result = Sound_to_Spectrogram (me, windowLength,
-			maximumFrequency, timeStep,
-			frequencyStep, (kSound_to_Spectrogram_windowShape) windowShape, 8.0, 8.0);
+			maximumFrequency, timeStep, frequencyStep, windowShape, 8.0, 8.0);
 	CONVERT_EACH_END (my name.get())
 }
 
@@ -1801,26 +1817,29 @@ DIRECT (NEW_Sound_to_TextTier) {
 
 FORM (PREFS_SoundInputPrefs, U"Sound recording preferences", U"SoundRecorder") {
 	NATURAL (bufferSize, U"Buffer size (MB)", U"60")
-	OPTIONMENU_ENUM (inputSoundSystem, U"Input sound system", kMelder_inputSoundSystem, DEFAULT)
+	OPTIONMENU_ENUM (kMelder_inputSoundSystem, inputSoundSystem,
+			U"Input sound system", kMelder_inputSoundSystem::DEFAULT)
 OK
 	SET_INTEGER (bufferSize, SoundRecorder_getBufferSizePref_MB ())
 	SET_ENUM (inputSoundSystem, kMelder_inputSoundSystem, MelderAudio_getInputSoundSystem())
 DO
 	if (bufferSize > 1000) Melder_throw (U"Buffer size cannot exceed 1000 megabytes.");
 	SoundRecorder_setBufferSizePref_MB (bufferSize);
-	MelderAudio_setInputSoundSystem ((kMelder_inputSoundSystem) inputSoundSystem);
+	MelderAudio_setInputSoundSystem (inputSoundSystem);
 END }
 
 FORM (PREFS_SoundOutputPrefs, U"Sound playing preferences", nullptr) {
 	LABEL (U"The following determines how sounds are played.")
 	LABEL (U"Between parentheses, you find what you can do simultaneously.")
 	LABEL (U"Decrease asynchronicity if sound plays with discontinuities.")
-	OPTIONMENU_ENUM (maximumAsynchronicity, U"Maximum asynchronicity", kMelder_asynchronicityLevel, DEFAULT)
+	OPTIONMENU_ENUM (kMelder_asynchronicityLevel, maximumAsynchronicity,
+			U"Maximum asynchronicity", kMelder_asynchronicityLevel::DEFAULT)
 	#define xstr(s) str(s)
 	#define str(s) #s
 	REAL (silenceBefore, U"Silence before (s)", U"" xstr (kMelderAudio_outputSilenceBefore_DEFAULT))
 	REAL (silenceAfter, U"Silence after (s)", U"" xstr (kMelderAudio_outputSilenceAfter_DEFAULT))
-	OPTIONMENU_ENUM (outputSoundSystem, U"Output sound system", kMelder_outputSoundSystem, DEFAULT)
+	OPTIONMENU_ENUM (kMelder_outputSoundSystem, outputSoundSystem,
+			U"Output sound system", kMelder_outputSoundSystem::DEFAULT)
 OK
 	SET_ENUM (maximumAsynchronicity, kMelder_asynchronicityLevel, MelderAudio_getOutputMaximumAsynchronicity ())
 	SET_REAL (silenceBefore, MelderAudio_getOutputSilenceBefore ())
@@ -1828,10 +1847,10 @@ OK
 	SET_ENUM (outputSoundSystem, kMelder_outputSoundSystem, MelderAudio_getOutputSoundSystem())
 DO
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
-	MelderAudio_setOutputMaximumAsynchronicity ((kMelder_asynchronicityLevel) maximumAsynchronicity);
+	MelderAudio_setOutputMaximumAsynchronicity (maximumAsynchronicity);
 	MelderAudio_setOutputSilenceBefore (silenceBefore);
 	MelderAudio_setOutputSilenceAfter (silenceAfter);
-	MelderAudio_setOutputSoundSystem ((kMelder_outputSoundSystem) outputSoundSystem);
+	MelderAudio_setOutputSoundSystem (outputSoundSystem);
 	END
 }
 
@@ -1985,6 +2004,40 @@ FORM_SAVE (SAVE_Sound_saveAsWavFile, U"Save as WAV file", nullptr, U"wav") {
 	SAVE_TYPED_LIST_END
 }
 
+/***** SOUNDLIST *****/
+
+DIRECT (NEWMANY_SoundList_extractAllSounds) {
+	CONVERT_EACH (SoundList)
+		autoSoundList result = Data_copy (me);
+		result -> classInfo = classCollection;   // YUCK, in order to force automatic unpacking
+	CONVERT_EACH_END (U"dummy")
+}
+
+/***** SOUNDSET *****/
+
+DIRECT (NEWMANY_SoundSet_extractAllSounds) {
+	CONVERT_EACH (SoundSet)
+		autoSoundSet result = Data_copy (me);
+		result -> classInfo = classCollection;   // YUCK, in order to force automatic unpacking
+	CONVERT_EACH_END (U"dummy")
+}
+
+FORM (NEW2_SoundSet_Table_getRandomizedPatterns, U"SoundSet & Table: Get randomized patterns", nullptr) {
+	SENTENCE (columnName, U"Column name", U"")
+	NATURAL (numberOfPatterns, U"Number of patterns", U"1000")
+	NATURAL (inputSize, U"Input size (number of samples)", U"8000")
+	NATURAL (outputSize, U"Output size (number of classes)", U"5")
+	OK
+DO
+	FIND_TWO (SoundSet, Table)
+		autoPatternList inputs, outputs;
+		SoundSet_Table_getRandomizedPatterns (me, you, columnName, numberOfPatterns, inputSize, outputSize,
+			& inputs, & outputs);
+		praat_new (inputs.move(), U"inputs");
+		praat_new (outputs.move(), U"outputs");
+	END
+}
+
 /***** STOP *****/
 
 DIRECT (PLAY_stopPlayingSound) {
@@ -2010,14 +2063,21 @@ static autoDaata macSoundOrEmptyFileRecognizer (integer nread, const char * /* h
 }
 
 static autoDaata soundFileRecognizer (integer nread, const char *header, MelderFile file) {
-	if (nread < 16) return autoDaata ();
-	if (strnequ (header, "FORM", 4) && strnequ (header + 8, "AIF", 3)) return Sound_readFromSoundFile (file);
-	if (strnequ (header, "RIFF", 4) && (strnequ (header + 8, "WAVE", 4) || strnequ (header + 8, "CDDA", 4))) return Sound_readFromSoundFile (file);
-	if (strnequ (header, ".snd", 4)) return Sound_readFromSoundFile (file);
-	if (strnequ (header, "NIST_1A", 7)) return Sound_readFromSoundFile (file);
-	if (strnequ (header, "fLaC", 4)) return Sound_readFromSoundFile (file);   // Erez Volk, March 2007
+	if (nread < 16)
+		return autoDaata ();
+	if (strnequ (header, "FORM", 4) && strnequ (header + 8, "AIF", 3))
+		return Sound_readFromSoundFile (file);
+	if (strnequ (header, "RIFF", 4) && (strnequ (header + 8, "WAVE", 4) || strnequ (header + 8, "CDDA", 4)))
+		return Sound_readFromSoundFile (file);
+	if (strnequ (header, ".snd", 4))
+		return Sound_readFromSoundFile (file);
+	if (strnequ (header, "NIST_1A", 7))
+		return Sound_readFromSoundFile (file);
+	if (strnequ (header, "fLaC", 4))
+		return Sound_readFromSoundFile (file);   // Erez Volk, March 2007
 	if ((Melder_stringMatchesCriterion (MelderFile_name (file), kMelder_string::ENDS_WITH, U".mp3", false))
-		&& mp3_recognize (nread, header)) return Sound_readFromSoundFile (file);   // Erez Volk, May 2007
+			&& mp3_recognize (nread, header))
+		return Sound_readFromSoundFile (file);   // Erez Volk, May 2007
 	return autoDaata ();
 }
 
@@ -2028,24 +2088,28 @@ static autoDaata movieFileRecognizer (integer nread, const char * /* header */, 
 		header [4], header [5], header [6],
 		header [7], header [8], header [9]);*/
 	if (nread < 512 || (! Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".mov", false) &&
-	                    ! Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".avi", false))) return autoDaata ();
+	                    ! Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".avi", false)))
+		return autoDaata ();
 	Melder_throw (U"This Praat version cannot open movie files.");
 	return autoDaata ();
 }
 
 static autoDaata sesamFileRecognizer (integer nread, const char * /* header */, MelderFile file) {
 	conststring32 fileName = MelderFile_name (file);
-	if (nread < 512 || (! Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".sdf", false))) return autoDaata ();
+	if (nread < 512 || (! Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".sdf", false)))
+		return autoDaata ();
 	return Sound_readFromSesamFile (file);
 }
 
 static autoDaata bellLabsFileRecognizer (integer nread, const char *header, MelderFile file) {
-	if (nread < 16 || ! strnequ (& header [0], "SIG\n", 4)) return autoDaata ();
+	if (nread < 16 || ! strnequ (& header [0], "SIG\n", 4))
+		return autoDaata ();
 	return Sound_readFromBellLabsFile (file);
 }
 
 static autoDaata kayFileRecognizer (integer nread, const char *header, MelderFile file) {
-	if (nread <= 12 || ! strnequ (& header [0], "FORMDS16", 8)) return autoDaata ();
+	if (nread <= 12 || ! strnequ (& header [0], "FORMDS16", 8))
+		return autoDaata ();
 	return Sound_readFromKayFile (file);
 }
 
@@ -2054,20 +2118,27 @@ static autoDaata kayFileRecognizer (integer nread, const char *header, MelderFil
 static autoSound melderSound, melderSoundFromFile;
 static Sound last;
 static int recordProc (double duration) {
-	if (last == melderSound.get()) last = nullptr;
+	if (last == melderSound.get())
+		last = nullptr;
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
 	melderSound = Sound_record_fixedTime (1, 1.0, 0.5, 44100, duration);
-	if (! melderSound) return 0;
+	if (! melderSound)
+		return 0;
 	last = melderSound.get();
 	return 1;
 }
 static int recordFromFileProc (MelderFile file) {
-	if (last == melderSoundFromFile.get()) last = nullptr;
+	if (last == melderSoundFromFile.get())
+		last = nullptr;
 	Melder_warningOff ();   // like "missing samples"
 	melderSoundFromFile = Data_readFromFile (file). static_cast_move<structSound>();
 	Melder_warningOn ();
-	if (! melderSoundFromFile) return 0;
-	if (! Thing_isa (melderSoundFromFile.get(), classSound)) { melderSoundFromFile.reset(); return 0; }
+	if (! melderSoundFromFile)
+		return 0;
+	if (! Thing_isa (melderSoundFromFile.get(), classSound)) {
+		melderSoundFromFile.reset();
+		return 0;
+	}
 	last = melderSoundFromFile.get();
 	Sound_play (melderSoundFromFile.get(), nullptr, nullptr);
 	return 1;
@@ -2082,7 +2153,8 @@ static void playReverseProc () {
 	/*if (melderSound) Sound_playReverse (melderSound);*/
 }
 static int publishPlayedProc () {
-	if (! last) return 0;
+	if (! last)
+		return 0;
 	autoSound sound = Data_copy (last);
 	return Data_publish (sound.move());
 }
@@ -2090,7 +2162,7 @@ static int publishPlayedProc () {
 /***** buttons *****/
 
 void praat_Sound_init () {
-	Thing_recognizeClassesByName (classSound, classLongSound, nullptr);
+	Thing_recognizeClassesByName (classSound, classLongSound, classSoundList, classSoundSet, nullptr);
 
 	Data_recognizeFileType (macSoundOrEmptyFileRecognizer);
 	Data_recognizeFileType (soundFileRecognizer);
@@ -2260,7 +2332,8 @@ void praat_Sound_init () {
 		praat_addAction1 (classSound, 1, U"-- get time discretization --", nullptr, 2, nullptr);
 		praat_addAction1 (classSound, 1, U"Get time from sample number...", nullptr, 2, REAL_Sound_getTimeFromIndex);
 		praat_addAction1 (classSound, 1,   U"Get time from index...", U"*Get time from sample number...", praat_DEPTH_2 | praat_DEPRECATED_2004, REAL_Sound_getTimeFromIndex);
-		praat_addAction1 (classSound, 1, U"Get sample times", nullptr, 2, NUMVEC_Sound_getSampleTimes);
+		praat_addAction1 (classSound, 1, U"List all sample times", nullptr, 2, NUMVEC_Sound_listAllSampleTimes);
+		praat_addAction1 (classSound, 1,   U"Get sample times", U"*List all sample times", praat_DEPTH_2 | praat_DEPRECATED_2019, NUMVEC_Sound_listAllSampleTimes);
 		praat_addAction1 (classSound, 1, U"Get sample number from time...", nullptr, 2, REAL_Sound_getIndexFromTime);
 		praat_addAction1 (classSound, 1,   U"Get index from time...", U"*Get sample number from time...", praat_DEPTH_2 | praat_DEPRECATED_2004, REAL_Sound_getIndexFromTime);
 		praat_addAction1 (classSound, 1, U"-- get content --", nullptr, 1, nullptr);
@@ -2384,6 +2457,8 @@ void praat_Sound_init () {
 		praat_addAction1 (classSound, 0, U"Filter (de-emphasis)...", nullptr, 1, NEW_Sound_filter_deemphasis);
 	praat_addAction1 (classSound, 0, U"Combine -", nullptr, 0, nullptr);
 		praat_addAction1 (classSound, 0, U"Combine to stereo", nullptr, 1, NEW1_Sounds_combineToStereo);
+		praat_addAction1 (classSound, 0, U"Combine into SoundList", nullptr, 1, NEW1_Sounds_combineIntoSoundList);
+		praat_addAction1 (classSound, 0, U"Combine into SoundSet", nullptr, 1, NEW1_Sounds_combineIntoSoundSet);
 		praat_addAction1 (classSound, 0, U"Concatenate", nullptr, 1, NEW1_Sounds_concatenate);
 		praat_addAction1 (classSound, 0, U"Concatenate recoverably", nullptr, 1, NEW2_Sounds_concatenateRecoverably);
 		praat_addAction1 (classSound, 0, U"Concatenate with overlap...", nullptr, 1, NEW1_Sounds_concatenateWithOverlap);
@@ -2404,6 +2479,11 @@ void praat_Sound_init () {
 	praat_addAction2 (classLongSound, 0, classSound, 0,   U"Write to NIST file...", U"*Save as NIST file...", praat_DEPRECATED_2011, SAVE_LongSound_Sound_saveAsNistFile);
 	praat_addAction2 (classLongSound, 0, classSound, 0, U"Save as FLAC file...", nullptr, 0, SAVE_LongSound_Sound_saveAsFlacFile);
 	praat_addAction2 (classLongSound, 0, classSound, 0,   U"Write to FLAC file...", U"*Save as FLAC file...", praat_DEPRECATED_2011, SAVE_LongSound_Sound_saveAsFlacFile);
+
+	praat_addAction1 (classSoundList, 1, U"Extract all Sounds", nullptr, 0, NEWMANY_SoundList_extractAllSounds);
+
+	praat_addAction1 (classSoundSet, 1, U"Extract all Sounds", nullptr, 0, NEWMANY_SoundSet_extractAllSounds);
+	praat_addAction2 (classSoundSet, 1, classTable, 1, U"Get randomized patterns...", nullptr, 0, NEW2_SoundSet_Table_getRandomizedPatterns);
 }
 
 /* End of file praat_Sound.cpp */

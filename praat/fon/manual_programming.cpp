@@ -37,7 +37,7 @@ MAN_END
 MAN_BEGIN (U"TextGrid file formats", U"ppgb", 20180821)
 INTRO (U"This page describes the syntax and semantics of TextGrid files that Praat can read and/or write.")
 ENTRY (U"1. The full text format of a minimal TextGrid")
-NORMAL (U"If you record a Sound with a druation of 2.3 seconds, and then do ##To TextGrid...#, "
+NORMAL (U"If you record a Sound with a duration of 2.3 seconds, and then do ##To TextGrid...#, "
 	"you are asked to provide tier names and to say which of these tiers are point tiers. "
 	"If you click OK without changing the settings from their standard values, "
 	"you obtain a TextGrid with two interval tiers, called %Mary and %John, and one point tier called %bell. "
@@ -413,15 +413,15 @@ NORMAL (U"To start extending Praat’s functionality, you can edit ##main/main_P
 CODE (U"\\# include \"praat.h\"")
 CODE (U"")
 CODE (U"DIRECT (HelloFromJane)")
-CODE1 (U"Melder_information (U\"Hello, I am Jane.\");")
+	CODE1 (U"Melder_information (U\"Hello, I am Jane.\");")
 CODE (U"END")
 CODE (U"")
 CODE (U"int main (int argc, char **argv) {")
-CODE1 (U"praat_init (U\"Praat_Jane\", argc, argv);")
-CODE1 (U"INCLUDE_LIBRARY (praat_uvafon_init)")
-CODE1 (U"praat_addMenuCommand (U\"Objects\", U\"New\", U\"Hello from Jane...\", nullptr, 0, DO_HelloFromJane);")
-CODE1 (U"praat_run ();")
-CODE1 (U"return 0;")
+	CODE1 (U"praat_init (U\"Praat_Jane\", argc, argv);")
+	CODE1 (U"INCLUDE_LIBRARY (praat_uvafon_init)")
+	CODE1 (U"praat_addMenuCommand (U\"Objects\", U\"New\", U\"Hello from Jane...\", nullptr, 0, DO_HelloFromJane);")
+	CODE1 (U"praat_run ();")
+	CODE1 (U"return 0;")
 CODE (U"}")
 ENTRY (U"5. Learning how to program")
 NORMAL (U"To see how objects are defined, take a look at ##sys/Thing.h#, ##sys/Daata.h#, "

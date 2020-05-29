@@ -1,6 +1,6 @@
 /* praat.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
  */
 
 #include "melder.h"
-#include <ctype.h>
 #include <stdarg.h>
 #include <limits>
 #if defined (UNIX) || defined (macintosh)
@@ -138,10 +137,10 @@ integer praat_idOfSelected (ClassInfo klas, integer inplace) {
 }
 
 autoVEC praat_idsOfAllSelected (ClassInfo klas) {
-	autoVEC result (praat_numberOfSelected (klas), kTensorInitializationType::RAW);
+	autoVEC result = newVECraw (praat_numberOfSelected (klas));
 	integer selectedObjectNumber = 0, IOBJECT;
 	WHERE (SELECTED && (! klas || CLASS == klas)) {
-		result.at [++ selectedObjectNumber] = ID;
+		result [++ selectedObjectNumber] = ID;
 	}
 	return result;
 }
@@ -198,24 +197,24 @@ void praat_select (int IOBJECT) {
 	Thing object = theCurrentPraatObjects -> list [IOBJECT]. object;
 	Melder_assert (object);
 	integer readableClassId = object -> classInfo -> sequentialUniqueIdOfReadableClass;
-	if (readableClassId == 0) Melder_fatal (U"No sequential unique ID for class ", object -> classInfo -> className, U".");
+	if (readableClassId == 0)
+		Melder_fatal (U"No sequential unique ID for class ", object -> classInfo -> className, U".");
 	theCurrentPraatObjects -> numberOfSelected [readableClassId] += 1;
-	if (! theCurrentPraatApplication -> batch && ! Melder_backgrounding) {
+	if (! theCurrentPraatApplication -> batch && ! Melder_backgrounding)
 		GuiList_selectItem (praatList_objects, IOBJECT);
-	}
 }
 
 void praat_selectAll () { int IOBJECT; WHERE (1) praat_select (IOBJECT); }
 
 void praat_list_background () {
 	int IOBJECT;
-	WHERE (SELECTED) GuiList_deselectItem (praatList_objects, IOBJECT);
+	WHERE (SELECTED)
+		GuiList_deselectItem (praatList_objects, IOBJECT);
 }
 void praat_list_foreground () {
 	int IOBJECT;
-	WHERE (SELECTED) {
+	WHERE (SELECTED)
 		GuiList_selectItem (praatList_objects, IOBJECT);
-	}
 }
 
 autoCollection praat_getSelectedObjects () {
@@ -231,8 +230,8 @@ autoCollection praat_getSelectedObjects () {
 char32 *praat_name (int IOBJECT) { return str32chr (FULL_NAME, U' ') + 1; }
 
 void praat_write_do (UiForm dia, conststring32 extension) {
-	static MelderString defaultFileName { };
-	if (extension && str32chr (extension, '.')) {
+	static MelderString defaultFileName;
+	if (extension && str32chr (extension, U'.')) {
 		/*
 			Apparently, the "extension" is a complete file name.
 			This should be used as the default file name.
@@ -246,10 +245,17 @@ void praat_write_do (UiForm dia, conststring32 extension) {
 		*/
 		int IOBJECT, found = 0;
 		Daata data = nullptr;
-		WHERE (SELECTED) { if (! data) data = (Daata) OBJECT; found += 1; }
+		WHERE (SELECTED) {
+			if (! data)
+				data = (Daata) OBJECT;
+			found += 1;
+		}
 		if (found == 1) {
 			MelderString_copy (& defaultFileName, data -> name.get());
-			if (defaultFileName.length > 200) { defaultFileName.string [200] = U'\0'; defaultFileName.length = 200; }
+			if (defaultFileName.length > 200) {
+				defaultFileName.string [200] = U'\0';
+				defaultFileName.length = 200;
+			}
 			MelderString_append (& defaultFileName, U".", extension ? extension : Thing_className (data));
 		} else if (! extension) {
 			MelderString_copy (& defaultFileName, U"praat.Collection");
@@ -400,7 +406,7 @@ void praat_newWithFile (autoDaata me, MelderFile file, const char32 *myName) {
 	praat_newWithFile(me.releaseToAmbiguousOwner(), true, file, myName);
 }
 
-static MelderString thePraatNewName { };
+static MelderString thePraatNewName;
 void praat_new (autoDaata me) {
 	praat_newWithFile (me.move(), nullptr, U"");
 }
@@ -434,7 +440,7 @@ void praat_updateSelection () {
 
 static void gui_cb_list_selectionChanged (Thing /* boss */, GuiList_SelectionChangedEvent event) {
 	Melder_assert (event -> list == praatList_objects);
-	int IOBJECT;
+	integer IOBJECT;
 	bool first = true;
 	WHERE (SELECTED) {
 		SELECTED = false;
@@ -443,22 +449,18 @@ static void gui_cb_list_selectionChanged (Thing /* boss */, GuiList_SelectionCha
 		Melder_assert (theCurrentPraatObjects -> numberOfSelected [readableClassId] >= 0);
 	}
 	theCurrentPraatObjects -> totalSelection = 0;
-	integer numberOfSelected;
-	integer *selected = GuiList_getSelectedPositions (praatList_objects, & numberOfSelected);
-	if (selected) {
-		for (integer iselected = 1; iselected <= numberOfSelected; iselected ++) {
-			IOBJECT = selected [iselected];
-			SELECTED = true;
-			integer readableClassId = theCurrentPraatObjects -> list [IOBJECT]. object -> classInfo -> sequentialUniqueIdOfReadableClass;
-			theCurrentPraatObjects -> numberOfSelected [readableClassId] ++;
-			Melder_assert (theCurrentPraatObjects -> numberOfSelected [readableClassId] > 0);
-			UiHistory_write (first ? U"\nselectObject: \"" : U"\nplusObject: \"");
-			UiHistory_write_expandQuotes (FULL_NAME);
-			UiHistory_write (U"\"");
-			first = false;
-			theCurrentPraatObjects -> totalSelection += 1;
-		}
-		NUMvector_free (selected, 1);
+	autoINTVEC selected = GuiList_getSelectedPositions (praatList_objects);
+	for (integer iselected = 1; iselected <= selected.size; iselected ++) {
+		IOBJECT = selected [iselected];
+		SELECTED = true;
+		integer readableClassId = theCurrentPraatObjects -> list [IOBJECT]. object -> classInfo -> sequentialUniqueIdOfReadableClass;
+		theCurrentPraatObjects -> numberOfSelected [readableClassId] ++;
+		Melder_assert (theCurrentPraatObjects -> numberOfSelected [readableClassId] > 0);
+		UiHistory_write (first ? U"\nselectObject: \"" : U"\nplusObject: \"");
+		UiHistory_write_expandQuotes (FULL_NAME);
+		UiHistory_write (U"\"");
+		first = false;
+		theCurrentPraatObjects -> totalSelection += 1;
 	}
 	praat_show ();
 }
@@ -668,8 +670,9 @@ static void cb_Editor_publication (Editor /* me */, autoDaata publication) {
 	praat_updateSelection ();
 }
 
-int praat_installEditor (Editor editor, int IOBJECT) {
-	if (! editor) return 0;
+void praat_installEditor (Editor editor, int IOBJECT) {
+	if (! editor)
+		return;
 	for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
 		if (! EDITOR [ieditor]) {
 			EDITOR [ieditor] = editor;
@@ -677,15 +680,16 @@ int praat_installEditor (Editor editor, int IOBJECT) {
 			Editor_setDataChangedCallback (editor, cb_Editor_dataChanged);
 			if (! editor -> d_publicationCallback)
 				Editor_setPublicationCallback (editor, cb_Editor_publication);
-			return 1;
+			//Thing_setName (editor, Melder_cat (editor -> name.get(), U" [", ieditor + 1, U"]"));   // would break existing scripts
+			return;
 		}
 	}
-	//forget (editor);
 	Melder_throw (U"(praat_installEditor:) Cannot have more than ", praat_MAXNUM_EDITORS, U" editors with one object.");
 }
 
-int praat_installEditor2 (Editor editor, int i1, int i2) {
-	if (! editor) return 0;
+void praat_installEditor2 (Editor editor, int i1, int i2) {
+	if (! editor)
+		return;
 	int ieditor1 = 0;
 	for (; ieditor1 < praat_MAXNUM_EDITORS; ieditor1 ++)
 		if (! theCurrentPraatObjects -> list [i1]. editors [ieditor1])
@@ -701,14 +705,13 @@ int praat_installEditor2 (Editor editor, int i1, int i2) {
 		if (! editor -> d_publicationCallback)
 			Editor_setPublicationCallback (editor, cb_Editor_publication);
 	} else {
-		//forget (editor);
 		Melder_throw (U"(praat_installEditor2:) Cannot have more than ", praat_MAXNUM_EDITORS, U" editors with one object.");
 	}
-	return 1;
 }
 
-int praat_installEditor3 (Editor editor, int i1, int i2, int i3) {
-	if (! editor) return 0;
+void praat_installEditor3 (Editor editor, int i1, int i2, int i3) {
+	if (! editor)
+		return;
 	int ieditor1 = 0;
 	for (; ieditor1 < praat_MAXNUM_EDITORS; ieditor1 ++)
 		if (! theCurrentPraatObjects -> list [i1]. editors [ieditor1])
@@ -728,41 +731,36 @@ int praat_installEditor3 (Editor editor, int i1, int i2, int i3) {
 		if (! editor -> d_publicationCallback)
 			Editor_setPublicationCallback (editor, cb_Editor_publication);
 	} else {
-		//forget (editor);
 		Melder_throw (U"(praat_installEditor3:) Cannot have more than ", praat_MAXNUM_EDITORS, U" editors with one object.");
 	}
-	return 1;
 }
 
-int praat_installEditorN (Editor editor, DaataList objects) {
-	if (! editor) return 0;
+void praat_installEditorN (Editor editor, DaataList objects) {
+	if (! editor)
+		return;
 	/*
-	 * First check whether all objects in the Ordered are also in the List of Objects (Praat crashes if not),
-	 * and check whether there is room to add an editor for each.
-	 */
+		First check whether all objects in the Ordered are also in the List of Objects (Praat crashes if not),
+		and check whether there is room to add an editor for each.
+	*/
 	for (integer iOrderedObject = 1; iOrderedObject <= objects->size; iOrderedObject ++) {
 		Daata object = objects->at [iOrderedObject];
 		integer iPraatObject = 1;
 		for (; iPraatObject <= theCurrentPraatObjects -> n; iPraatObject ++) {
 			if (object == theCurrentPraatObjects -> list [iPraatObject]. object) {
 				int ieditor = 0;
-				for (; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
-					if (! theCurrentPraatObjects -> list [iPraatObject]. editors [ieditor]) {
+				for (; ieditor < praat_MAXNUM_EDITORS; ieditor ++)
+					if (! theCurrentPraatObjects -> list [iPraatObject]. editors [ieditor])
 						break;
-					}
-				}
-				if (ieditor >= praat_MAXNUM_EDITORS) {
-					//forget (editor);
+				if (ieditor >= praat_MAXNUM_EDITORS)
 					Melder_throw (U"Cannot view the same object in more than ", praat_MAXNUM_EDITORS, U" windows.");
-				}
 				break;
 			}
 		}
 		Melder_assert (iPraatObject <= theCurrentPraatObjects -> n);   // an element of the Ordered does not occur in the List of Objects
 	}
 	/*
-	 * There appears to be room for all elements of the Ordered. The editor window can appear. Install the editor in all objects.
-	 */
+		There appears to be room for all elements of the Ordered. The editor window can appear. Install the editor in all objects.
+	*/
 	for (integer iOrderedObject = 1; iOrderedObject <= objects->size; iOrderedObject ++) {
 		Daata object = objects->at [iOrderedObject];
 		integer iPraatObject = 1;
@@ -785,7 +783,6 @@ int praat_installEditorN (Editor editor, DaataList objects) {
 		}
 		Melder_assert (iPraatObject <= theCurrentPraatObjects -> n);   // we already checked, but still
 	}
-	return 1;
 }
 
 void praat_dataChanged (Daata object) {
@@ -802,9 +799,8 @@ void praat_dataChanged (Daata object) {
 	WHERE (OBJECT == object) {
 		for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
 			Editor editor = EDITOR [ieditor];
-			if (editor) {
+			if (editor)
 				Editor_dataChanged (editor);
-			}
 		}
 	}
 	if (duringError) {
@@ -911,7 +907,8 @@ void praat_dontUsePictureWindow () { praatP.dontUsePictureWindow = true; }
 					Melder_flushError (praatP.title.get(), U": message not completely handled.");
 				}
 			}
-			if (narg && pid) kill (pid, SIGUSR2);
+			if (narg != 0 && pid != 0)
+				kill (pid, SIGUSR2);
 			return true;
 		}
 	#endif
@@ -926,18 +923,18 @@ void praat_dontUsePictureWindow () { praatP.dontUsePictureWindow = true; }
 		return 0;
 	}
 	extern "C" char *sendpraat (void *display, const char *programName, long timeOut, const char *text);
-	extern "C" wchar_t *sendpraatW (void *display, const wchar_t *programName, long timeOut, const wchar_t *text);
 	static void cb_openDocument (MelderFile file) {
 		char32 text [kMelder_MAXPATH+25];
 		/*
-		 * The user dropped a file on the Praat icon, while Praat is already running.
-		 */
-		Melder_sprint (text,500, U"Read from file... ", file -> path);
-		#ifdef __CYGWIN__
-			sendpraat (nullptr, Melder_peek32to8 (praatP.title.get()), 0, Melder_peek32to8 (text));
-		#else
-			sendpraatW (nullptr, Melder_peek32toW (praatP.title.get()), 0, Melder_peek32toW (text));
-		#endif
+			The user dropped a file on the Praat icon,
+			or double-clicked a Praat file,
+			while Praat is already running.
+		*/
+		Melder_sprint (text,500, U"Read from file: ~", file -> path);
+		sendpraat (nullptr, Melder_peek32to8 (praatP.title.get()), 0, Melder_peek32to8 (text));
+	}
+	static void cb_finishedOpeningDocuments () {
+		praat_updateSelection ();
 	}
 #elif macintosh
 	static int (*theUserMessageCallback) (char32 *message);
@@ -959,28 +956,6 @@ void praat_dontUsePictureWindow () { praatP.dontUsePictureWindow = true; }
 			AEGetParamPtr (theAppleEvent, 1, typeUTF8Text, nullptr, & buffer [0], actualSize, nullptr);
 			if (theUserMessageCallback) {
 				autostring32 buffer32 = Melder_8to32 (buffer);
-				theUserMessageCallback (buffer32.get());
-			}
-			free (buffer);
-			duringAppleEvent = false;
-		}
-		return noErr;
-	}
-	static pascal OSErr mac_processSignal16 (const AppleEvent *theAppleEvent, AppleEvent * /* reply */, long /* handlerRefCon */) {
-		static bool duringAppleEvent = false;   // FIXME: may have to be atomic?
-		if (! duringAppleEvent) {
-			char16 *buffer;
-			Size actualSize;
-			duringAppleEvent = true;
-			//AEInteractWithUser (kNoTimeOut, nullptr, nullptr);   // use time out of 0 to execute immediately (without bringing to foreground)
-			ProcessSerialNumber psn;
-			GetCurrentProcess (& psn);
-			SetFrontProcess (& psn);
-			AEGetParamPtr (theAppleEvent, 1, typeUTF16ExternalRepresentation, nullptr, nullptr, 0, & actualSize);
-			buffer = (char16 *) malloc ((size_t) actualSize);
-			AEGetParamPtr (theAppleEvent, 1, typeUTF16ExternalRepresentation, nullptr, & buffer [0], actualSize, nullptr);
-			if (theUserMessageCallback) {
-				autostring32 buffer32 = Melder_16to32 (buffer);
 				theUserMessageCallback (buffer32.get());
 			}
 			free (buffer);
@@ -1162,7 +1137,7 @@ void praat_init (conststring32 title, int argc, char **argv)
 			MelderInfo_writeLine (U"  -u, --utf16      use UTF-16LE output encoding, no BOM (the default on Windows)");
 			MelderInfo_writeLine (U"  -8, --utf8       use UTF-8 output encoding (the default on MacOS and Linux)");
 			MelderInfo_writeLine (U"  -a, --ansi       use ISO Latin-1 output encoding (lossy, hence not recommended)");
-			MelderInfo_writeLine (U"                   (on Windows, use -0 or -a when you redirect to a pipe or file)");
+			MelderInfo_writeLine (U"                   (on Windows, use -8 or -a when you redirect to a pipe or file)");
 			MelderInfo_close ();
 			exit (0);
 		} else if (strequ (argv [praatP.argumentNumber], "-8") || strequ (argv [praatP.argumentNumber], "--utf8")) {
@@ -1182,6 +1157,18 @@ void praat_init (conststring32 title, int argc, char **argv)
 			(void) 0;   // ignore this option, which was added by the Finder, perhaps when dragging a file on Praat (Process Serial Number)
 			praatP.argumentNumber += 1;
 		#endif
+		} else if (strequ (argv [praatP.argumentNumber], "-sgi") ||
+			strequ (argv [praatP.argumentNumber], "-motif") ||
+			strequ (argv [praatP.argumentNumber], "-solaris") ||
+			strequ (argv [praatP.argumentNumber], "-hp") ||
+			strequ (argv [praatP.argumentNumber], "-sum4") ||
+			strequ (argv [praatP.argumentNumber], "-mac") ||
+			strequ (argv [praatP.argumentNumber], "-win32") ||
+			strequ (argv [praatP.argumentNumber], "-linux") ||
+			strequ (argv [praatP.argumentNumber], "-cocoa") ||
+			strequ (argv [praatP.argumentNumber], "-chrome")
+		) {
+			praatP.argumentNumber += 1;
 		} else {
 			unknownCommandLineOption = Melder_8to32 (argv [praatP.argumentNumber]);
 			praatP.argumentNumber = INT32_MAX;   // ignore all other command line options
@@ -1347,11 +1334,14 @@ void praat_init (conststring32 title, int argc, char **argv)
 	if (Melder_batch) {
 		MelderString_empty (& theCurrentPraatApplication -> batchName);
 		for (int i = praatP.argumentNumber - 1; i < argc; i ++) {
-			if (i >= praatP.argumentNumber) MelderString_append (& theCurrentPraatApplication -> batchName, U" ");
+			if (i >= praatP.argumentNumber)
+				MelderString_append (& theCurrentPraatApplication -> batchName, U" ");
 			bool needsQuoting = !! strchr (argv [i], ' ') && (i == praatP.argumentNumber - 1 || i < argc - 1);
-			if (needsQuoting) MelderString_append (& theCurrentPraatApplication -> batchName, U"\"");
+			if (needsQuoting)
+				MelderString_append (& theCurrentPraatApplication -> batchName, U"\"");
 			MelderString_append (& theCurrentPraatApplication -> batchName, Melder_peek8to32 (argv [i]));
-			if (needsQuoting) MelderString_append (& theCurrentPraatApplication -> batchName, U"\"");
+			if (needsQuoting)
+				MelderString_append (& theCurrentPraatApplication -> batchName, U"\"");
 		}
 	} else {
 		trace (U"starting the application");
@@ -1365,11 +1355,20 @@ void praat_init (conststring32 title, int argc, char **argv)
 			trace (U"locale ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 		#elif motif
 			argv [0] = Melder_32to8 (praatP. title.get()).transfer();   // argc == 4
-			Gui_setOpenDocumentCallback (cb_openDocument);
+			Gui_setOpenDocumentCallback (cb_openDocument, cb_finishedOpeningDocuments);
 			GuiAppInitialize ("Praatwulg", argc, argv);
 		#elif cocoa
 			//[NSApplication sharedApplication];
-			[GuiCocoaApplication sharedApplication];
+			NSApplication *theApp = [GuiCocoaApplication sharedApplication];
+			/*
+				We want to get rid of the Search field in the help menu.
+				By default, such a Search field will come up automatically when we create a menu with the title "Help".
+				By changing this title to "SomeFakeTitleOfAMenuThatWillNeverBeInstantiated",
+				we trick macOS into thinking that our help menu is called "SomeFakeTitleOfAMenuThatWillNeverBeInstantiated".
+				As a result, the Search field will come up only when we create a menu
+				titled "SomeFakeTitleOfAMenuThatWillNeverBeInstantiated", which is never.
+			*/
+			theApp.helpMenu = [[NSMenu alloc] initWithTitle:@"SomeFakeTitleOfAMenuThatWillNeverBeInstantiated"];
 		#endif
 
 		trace (U"creating and installing the Objects window");
@@ -1402,7 +1401,6 @@ void praat_init (conststring32 title, int argc, char **argv)
 
 		#ifdef macintosh
 			AEInstallEventHandler (758934755, 0, (AEEventHandlerProcPtr) (mac_processSignal8), 0, false);   // for receiving sendpraat
-			AEInstallEventHandler (758934756, 0, (AEEventHandlerProcPtr) (mac_processSignal16), 0, false);   // for receiving sendpraatW
 			injectMessageAndInformationProcs (raam);   // BUG: default Melder_assert would call printf recursively!!!
 		#endif
 		trace (U"creating the menu bar in the Objects window");
@@ -1436,9 +1434,8 @@ void praat_init (conststring32 title, int argc, char **argv)
 			}
 		#endif
 		#ifdef UNIX
-			if (! praatP.ignorePreferenceFiles) {
+			if (! praatP.ignorePreferenceFiles)
 				Preferences_read (& prefsFile);
-			}
 		#endif
 		#if ! defined (macintosh)
 			trace (U"initializing the Gui late");
@@ -1534,7 +1531,8 @@ void praat_run () {
 	 */
 	if (! praatP.ignorePreferenceFiles) {
 		Preferences_read (& prefsFile);
-		if (! praatP.dontUsePictureWindow) praat_picture_prefsChanged ();
+		if (! praatP.dontUsePictureWindow)
+			praat_picture_prefsChanged ();
 		praat_statistics_prefsChanged ();
 	}
 
@@ -1641,7 +1639,8 @@ void praat_run () {
 						} catch (MelderError) {
 							Melder_clearError ();   // ignore this line, but not necessarily the next
 						}
-						if (! newline) break;
+						if (! newline)
+							break;
 						line = newline + 1;
 					}
 				}
@@ -1658,6 +1657,11 @@ void praat_run () {
 		if (praatP.userWantsToOpen) {
 			for (; praatP.argumentNumber < praatP.argc; praatP.argumentNumber ++) {
 				//Melder_casual (U"File to open <<", Melder_peek8to32 (theArgv [iarg]), U">>");
+				/*
+					The use double-clicked a Praat file,
+					or dropped a file on the Praat icon,
+					while Praat was not yet running.
+				*/
 				autostring32 text = Melder_dup (Melder_cat (U"Read from file... ",
 															Melder_peek8to32 (praatP.argv [praatP.argumentNumber])));
 				try {
@@ -1774,6 +1778,7 @@ void praat_testPlatformAssumptions() {
 	{ unsigned char dummy = 200;
 		Melder_assert ((int) dummy == 200);
 	}
+	Melder_assert (integer_abs (-1000) == integer (1000));
 	{ int dummy = 200;
 		Melder_assert ((int) (signed char) dummy == -56);   // bingeti8 relies on this
 		Melder_assert ((int) (unsigned char) dummy == 200);
@@ -1883,21 +1888,35 @@ void praat_testPlatformAssumptions() {
 		Melder_assert (! (frexp (NAN, & exponent) < 1.0));
 		Melder_assert (! (frexp (undefined, & exponent) < 1.0));
 	}
+	Melder_assert (str32equ (Melder_integer (1234567), U"1234567"));
+	Melder_assert (str32equ (Melder_integer (-1234567), U"-1234567"));
+	MelderColour notExplicitlyIniitialized;
+	Melder_assert (str32equ (Melder_colour (notExplicitlyIniitialized), U"{0,0,0}"));
+	Melder_assert (str32equ (Melder_colour (MelderColour (0.25, 0.50, 0.875)), U"{0.25,0.5,0.875}"));
 	{
-		//VEC xn;   // uninitialized
-		//Melder_assert (! xn.at);
-		//Melder_assert (xn.size == 0);
+		VEC xn;   // uninitialized
+		Melder_assert (! xn.cells);
+		Melder_assert (xn.size == 0);
 		VEC x { };
-		Melder_assert (! x.at);
+		Melder_assert (! x.cells);
 		Melder_assert (x.size == 0);
-		//constVEC xc { };   // no default constructor
+		constVEC xnc;   // zero-initialized
+		Melder_assert (! xnc.cells);
+		Melder_assert (xnc.size == 0);
+		constVEC xc { };
+		Melder_assert (! xc.cells);
+		Melder_assert (xc.size == 0);
+		MAT yn;
+		Melder_assert (! yn.cells);
+		Melder_assert (yn.nrow == 0);
+		Melder_assert (yn.ncol == 0);
 		MAT y { };
-		Melder_assert (! y.at);
+		Melder_assert (! y.cells);
 		Melder_assert (y.nrow == 0);
 		Melder_assert (y.ncol == 0);
 		//autoMAT z {y.at,y.nrow,y.ncol};   // explicit construction not OK
 		autoMAT a = autoMAT { };
-		Melder_assert (! a.at);
+		Melder_assert (! a.cells);
 		Melder_assert (a.nrow == 0);
 		Melder_assert (a.ncol == 0);
 		//a = z.move();

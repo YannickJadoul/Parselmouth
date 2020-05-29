@@ -84,7 +84,8 @@ void Regression_addParameter (Regression me, conststring32 label, double minimum
 integer Regression_getFactorIndexFromFactorName_e (Regression me, conststring32 factorName) {
 	for (integer iparm = 1; iparm <= my parameters.size; iparm ++) {
 		RegressionParameter parm = my parameters.at [iparm];
-		if (Melder_equ (factorName, parm -> label.get())) return iparm;
+		if (Melder_equ (factorName, parm -> label.get()))
+			return iparm;
 	}
 	Melder_throw (me, U" has no parameter named \"", factorName, U"\".");
 }
@@ -103,7 +104,7 @@ autoLinearRegression LinearRegression_create () {
 
 autoLinearRegression Table_to_LinearRegression (Table me) {
 	try {
-		integer numberOfIndependentVariables = my numberOfColumns - 1, numberOfParameters = my numberOfColumns;
+		const integer numberOfIndependentVariables = my numberOfColumns - 1, numberOfParameters = my numberOfColumns;
 		if (numberOfParameters < 1)   // includes intercept
 			Melder_throw (U"Not enough columns (has to be more than 1).");
 		integer numberOfCells = my rows.size;
@@ -112,13 +113,12 @@ autoLinearRegression Table_to_LinearRegression (Table me) {
 		if (numberOfCells < numberOfParameters) {
 			Melder_warning (U"Solution is not unique (more parameters than cases).");
 		}
-		autoNUMmatrix <double> u (1, numberOfCells, 1, numberOfParameters);
-		autoNUMvector <double> b (1, numberOfCells);
-		autoNUMvector <double> x (1, numberOfParameters);
+		autoMAT u = newMATraw (numberOfCells, numberOfParameters);
+		autoVEC b = newVECraw (numberOfCells);
 		autoLinearRegression thee = LinearRegression_create ();
 		for (integer ivar = 1; ivar <= numberOfIndependentVariables; ivar ++) {
-			double minimum = Table_getMinimum (me, ivar);
-			double maximum = Table_getMaximum (me, ivar);
+			const double minimum = Table_getMinimum (me, ivar);
+			const double maximum = Table_getMaximum (me, ivar);
 			Regression_addParameter (thee.get(), my columnHeaders [ivar]. label.get(), minimum, maximum, 0.0);
 		}
 		for (integer icell = 1; icell <= numberOfCells; icell ++) {
@@ -128,10 +128,10 @@ autoLinearRegression Table_to_LinearRegression (Table me) {
 			u [icell] [numberOfParameters] = 1.0;   // for the intercept
 			b [icell] = Table_getNumericValue_Assert (me, icell, my numberOfColumns);   // the dependent variable
 		}
-		NUMsolveEquation (u.peek(), numberOfCells, numberOfParameters, b.peek(), NUMeps * numberOfCells, x.peek());
+		autoVEC x = newVECsolve (u.get(), b.get(), NUMeps * numberOfCells);
 		thy intercept = x [numberOfParameters];
 		for (integer ivar = 1; ivar <= numberOfIndependentVariables; ivar ++) {
-			RegressionParameter parm = thy parameters.at [ivar];
+			const RegressionParameter parm = thy parameters.at [ivar];
 			parm -> value = x [ivar];
 		}
 		return thee;

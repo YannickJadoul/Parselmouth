@@ -1,6 +1,6 @@
 /* praat_picture.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ static bool praat_mouseSelectsInnerViewport;
 
 void praat_picture_prefs () {
 	Preferences_addEnum (U"Picture.font", & theCurrentPraatPicture -> font, kGraphics_font, kGraphics_font::DEFAULT);
-	Preferences_addInt (U"Picture.fontSize", & theCurrentPraatPicture -> fontSize, 10);
+	Preferences_addDouble (U"Picture.fontSize", & theCurrentPraatPicture -> fontSize, 10.0);
 	Preferences_addBool (U"Picture.mouseSelectsInnerViewport", & praat_mouseSelectsInnerViewport, false);
 }
 
@@ -72,14 +72,14 @@ DIRECT (GRAPHICS_Courier)   { setFont (kGraphics_font::COURIER);   END }
 static GuiMenuItem praatButton_10, praatButton_12, praatButton_14, praatButton_18, praatButton_24;
 static void updateSizeMenu () {
 	if (! theCurrentPraatApplication -> batch) {
-		GuiMenuItem_check (praatButton_10, theCurrentPraatPicture -> fontSize == 10);
-		GuiMenuItem_check (praatButton_12, theCurrentPraatPicture -> fontSize == 12);
-		GuiMenuItem_check (praatButton_14, theCurrentPraatPicture -> fontSize == 14);
-		GuiMenuItem_check (praatButton_18, theCurrentPraatPicture -> fontSize == 18);
-		GuiMenuItem_check (praatButton_24, theCurrentPraatPicture -> fontSize == 24);
+		GuiMenuItem_check (praatButton_10, theCurrentPraatPicture -> fontSize == 10.0);
+		GuiMenuItem_check (praatButton_12, theCurrentPraatPicture -> fontSize == 12.0);
+		GuiMenuItem_check (praatButton_14, theCurrentPraatPicture -> fontSize == 14.0);
+		GuiMenuItem_check (praatButton_18, theCurrentPraatPicture -> fontSize == 18.0);
+		GuiMenuItem_check (praatButton_24, theCurrentPraatPicture -> fontSize == 24.0);
 	}
 }
-static void setFontSize (int fontSize) {
+static void setFontSize (double fontSize) {
 	//Melder_casual("Praat picture: set font size %d", (int) fontSize);
 	{// scope
 		autoPraatPicture picture;
@@ -91,15 +91,15 @@ static void setFontSize (int fontSize) {
 	}
 }
 
-DIRECT (GRAPHICS_10) { setFontSize (10); END }
-DIRECT (GRAPHICS_12) { setFontSize (12); END }
-DIRECT (GRAPHICS_14) { setFontSize (14); END }
-DIRECT (GRAPHICS_18) { setFontSize (18); END }
-DIRECT (GRAPHICS_24) { setFontSize (24); END }
+DIRECT (GRAPHICS_10) { setFontSize (10.0); END }
+DIRECT (GRAPHICS_12) { setFontSize (12.0); END }
+DIRECT (GRAPHICS_14) { setFontSize (14.0); END }
+DIRECT (GRAPHICS_18) { setFontSize (18.0); END }
+DIRECT (GRAPHICS_24) { setFontSize (24.0); END }
 FORM (GRAPHICS_Font_size, U"Praat picture: Font size", U"Font menu") {
-	NATURAL (fontSize, U"Font size (points)", U"10")
+	POSITIVE (fontSize, U"Font size (points)", U"10")
 OK
-	SET_INTEGER (fontSize, (integer) theCurrentPraatPicture -> fontSize);
+	SET_REAL (fontSize, (integer) theCurrentPraatPicture -> fontSize);
 DO
 	setFontSize (fontSize);
 END }
@@ -186,7 +186,7 @@ DO
 		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
 		Graphics_inqWsWindow (GRAPHICS, & x1wNDC, & x2wNDC, & y1wNDC, & y2wNDC);
 		double wDC = (x2DC - x1DC) / (x2wNDC - x1wNDC);
-		double hDC = labs (y2DC - y1DC) / (y2wNDC - y1wNDC);
+		double hDC = integer_abs (y2DC - y1DC) / (y2wNDC - y1wNDC);
 		xmargin *= Graphics_getResolution (GRAPHICS) / wDC;
 		ymargin *= Graphics_getResolution (GRAPHICS) / hDC;
 	}
@@ -219,6 +219,9 @@ DO
 		if (top < bottom) { double temp; temp = top; top = bottom; bottom = temp; }
 		theCurrentPraatPicture -> y1NDC = bottom - ymargin;
 		theCurrentPraatPicture -> y2NDC = top + ymargin;
+		Graphics_setViewport (GRAPHICS,
+			theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC,
+			theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);   // to ensure that Demo_x() updates
 	}
 	trace (U"3:"
 		U" x1NDC ", theCurrentPraatPicture -> x1NDC,
@@ -254,22 +257,28 @@ DO
 	theCurrentPraatPicture -> x1NDC = left;
 	theCurrentPraatPicture -> x2NDC = right;
 	if (theCurrentPraatPicture == & theForegroundPraatPicture) {
-		if (top > bottom) { double temp; temp = top; top = bottom; bottom = temp; }
+		if (top > bottom)
+			std::swap (top, bottom);
 		theCurrentPraatPicture -> y1NDC = 12-bottom;
 		theCurrentPraatPicture -> y2NDC = 12-top;
 		Picture_setSelection (praat_picture.get(), theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC, false);
 		Graphics_updateWs (GRAPHICS);   // BUG: needed on Cocoa, but why?
 	} else if (theCurrentPraatObjects != & theForegroundPraatObjects) {   // in manual?
-		if (top > bottom) { double temp; temp = top; top = bottom; bottom = temp; }
+		if (top > bottom)
+			std::swap (top, bottom);
 		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
 		Graphics_inqWsWindow (GRAPHICS, & x1wNDC, & x2wNDC, & y1wNDC, & y2wNDC);
 		double height_NDC = y2wNDC - y1wNDC;
 		theCurrentPraatPicture -> y1NDC = height_NDC-bottom;
 		theCurrentPraatPicture -> y2NDC = height_NDC-top;
 	} else {
-		if (top < bottom) { double temp; temp = top; top = bottom; bottom = temp; }
+		if (top < bottom)
+			std::swap (top, bottom);
 		theCurrentPraatPicture -> y1NDC = bottom;
 		theCurrentPraatPicture -> y2NDC = top;
+		Graphics_setViewport (GRAPHICS,
+			theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC,
+			theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);   // to ensure that Demo_x() updates
 	}
 END }
 
@@ -308,26 +317,25 @@ static GuiMenuItem praatButton_black, praatButton_white, praatButton_red, praatB
 
 static void updatePenMenu () {
 	if (! theCurrentPraatApplication -> batch) {
-		for (int i = Graphics_DRAWN; i <= Graphics_DASHED; i ++) {
+		for (int i = Graphics_DRAWN; i <= Graphics_DASHED; i ++)
 			GuiMenuItem_check (praatButton_lines [i], theCurrentPraatPicture -> lineType == i);
-		}
-		GuiMenuItem_check (praatButton_black   , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_BLACK));
-		GuiMenuItem_check (praatButton_white   , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_WHITE));
-		GuiMenuItem_check (praatButton_red     , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_RED));
-		GuiMenuItem_check (praatButton_green   , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_GREEN));
-		GuiMenuItem_check (praatButton_blue    , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_BLUE));
-		GuiMenuItem_check (praatButton_yellow  , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_YELLOW));
-		GuiMenuItem_check (praatButton_cyan    , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_CYAN));
-		GuiMenuItem_check (praatButton_magenta , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_MAGENTA));
-		GuiMenuItem_check (praatButton_maroon  , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_MAROON));
-		GuiMenuItem_check (praatButton_lime    , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_LIME));
-		GuiMenuItem_check (praatButton_navy    , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_NAVY));
-		GuiMenuItem_check (praatButton_teal    , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_TEAL));
-		GuiMenuItem_check (praatButton_purple  , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_PURPLE));
-		GuiMenuItem_check (praatButton_olive   , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_OLIVE));
-		GuiMenuItem_check (praatButton_pink    , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_PINK));
-		GuiMenuItem_check (praatButton_silver  , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_SILVER));
-		GuiMenuItem_check (praatButton_grey    , Graphics_Colour_equal (theCurrentPraatPicture -> colour, Graphics_GREY));
+		GuiMenuItem_check (praatButton_black   , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_BLACK));
+		GuiMenuItem_check (praatButton_white   , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_WHITE));
+		GuiMenuItem_check (praatButton_red     , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_RED));
+		GuiMenuItem_check (praatButton_green   , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_GREEN));
+		GuiMenuItem_check (praatButton_blue    , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_BLUE));
+		GuiMenuItem_check (praatButton_yellow  , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_YELLOW));
+		GuiMenuItem_check (praatButton_cyan    , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_CYAN));
+		GuiMenuItem_check (praatButton_magenta , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_MAGENTA));
+		GuiMenuItem_check (praatButton_maroon  , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_MAROON));
+		GuiMenuItem_check (praatButton_lime    , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_LIME));
+		GuiMenuItem_check (praatButton_navy    , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_NAVY));
+		GuiMenuItem_check (praatButton_teal    , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_TEAL));
+		GuiMenuItem_check (praatButton_purple  , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_PURPLE));
+		GuiMenuItem_check (praatButton_olive   , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_OLIVE));
+		GuiMenuItem_check (praatButton_pink    , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_PINK));
+		GuiMenuItem_check (praatButton_silver  , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_SILVER));
+		GuiMenuItem_check (praatButton_grey    , MelderColour_equal (theCurrentPraatPicture -> colour, Melder_GREY));
 	}
 }
 static void setLineType (int lineType) {
@@ -336,9 +344,8 @@ static void setLineType (int lineType) {
 		Graphics_setLineType (GRAPHICS, lineType);
 	}
 	theCurrentPraatPicture -> lineType = lineType;
-	if (theCurrentPraatPicture == & theForegroundPraatPicture) {
+	if (theCurrentPraatPicture == & theForegroundPraatPicture)
 		updatePenMenu ();
-	}
 }
 DIRECT (GRAPHICS_Solid_line)         { setLineType (Graphics_DRAWN);         END }
 DIRECT (GRAPHICS_Dotted_line)        { setLineType (Graphics_DOTTED);        END }
@@ -383,7 +390,7 @@ DO
 	theCurrentPraatPicture -> speckleSize = speckleSize;
 END }
 
-static void setColour (Graphics_Colour colour) {
+static void setColour (MelderColour colour) {
 	{// scope
 		autoPraatPicture picture;
 		Graphics_setColour (GRAPHICS, colour);
@@ -393,23 +400,23 @@ static void setColour (Graphics_Colour colour) {
 		updatePenMenu ();
 	}
 }
-DIRECT (GRAPHICS_Black)   { setColour (Graphics_BLACK);   END }
-DIRECT (GRAPHICS_White)   { setColour (Graphics_WHITE);   END }
-DIRECT (GRAPHICS_Red)     { setColour (Graphics_RED);     END }
-DIRECT (GRAPHICS_Green)   { setColour (Graphics_GREEN);   END }
-DIRECT (GRAPHICS_Blue)    { setColour (Graphics_BLUE);    END }
-DIRECT (GRAPHICS_Yellow)  { setColour (Graphics_YELLOW);  END }
-DIRECT (GRAPHICS_Cyan)    { setColour (Graphics_CYAN);    END }
-DIRECT (GRAPHICS_Magenta) { setColour (Graphics_MAGENTA); END }
-DIRECT (GRAPHICS_Maroon)  { setColour (Graphics_MAROON);  END }
-DIRECT (GRAPHICS_Lime)    { setColour (Graphics_LIME);    END }
-DIRECT (GRAPHICS_Navy)    { setColour (Graphics_NAVY);    END }
-DIRECT (GRAPHICS_Teal)    { setColour (Graphics_TEAL);    END }
-DIRECT (GRAPHICS_Purple)  { setColour (Graphics_PURPLE);  END }
-DIRECT (GRAPHICS_Olive)   { setColour (Graphics_OLIVE);   END }
-DIRECT (GRAPHICS_Pink)    { setColour (Graphics_PINK);    END }
-DIRECT (GRAPHICS_Silver)  { setColour (Graphics_SILVER);  END }
-DIRECT (GRAPHICS_Grey)    { setColour (Graphics_GREY);    END }
+DIRECT (GRAPHICS_Black)   { setColour (Melder_BLACK);   END }
+DIRECT (GRAPHICS_White)   { setColour (Melder_WHITE);   END }
+DIRECT (GRAPHICS_Red)     { setColour (Melder_RED);     END }
+DIRECT (GRAPHICS_Green)   { setColour (Melder_GREEN);   END }
+DIRECT (GRAPHICS_Blue)    { setColour (Melder_BLUE);    END }
+DIRECT (GRAPHICS_Yellow)  { setColour (Melder_YELLOW);  END }
+DIRECT (GRAPHICS_Cyan)    { setColour (Melder_CYAN);    END }
+DIRECT (GRAPHICS_Magenta) { setColour (Melder_MAGENTA); END }
+DIRECT (GRAPHICS_Maroon)  { setColour (Melder_MAROON);  END }
+DIRECT (GRAPHICS_Lime)    { setColour (Melder_LIME);    END }
+DIRECT (GRAPHICS_Navy)    { setColour (Melder_NAVY);    END }
+DIRECT (GRAPHICS_Teal)    { setColour (Melder_TEAL);    END }
+DIRECT (GRAPHICS_Purple)  { setColour (Melder_PURPLE);  END }
+DIRECT (GRAPHICS_Olive)   { setColour (Melder_OLIVE);   END }
+DIRECT (GRAPHICS_Pink)    { setColour (Melder_PINK);    END }
+DIRECT (GRAPHICS_Silver)  { setColour (Melder_SILVER);  END }
+DIRECT (GRAPHICS_Grey)    { setColour (Melder_GREY);    END }
 
 FORM (GRAPHICS_Colour, U"Praat picture: Colour", nullptr) {
 	COLOUR (colour, U"Colour (0-1, name, or {r,g,b})", U"0.0")
@@ -497,10 +504,13 @@ FORM (GRAPHICS_PostScript_settings, U"PostScript settings", U"PostScript setting
 	#if defined (_WIN32)
 		BOOLEAN (allowDirectPostscript, U"Allow direct PostScript", true);
 	#endif
-	RADIO_ENUM (greyResolution, U"Grey resolution", kGraphicsPostscript_spots, DEFAULT)
+	RADIO_ENUM (kGraphicsPostscript_spots, greyResolution,
+			U"Grey resolution", kGraphicsPostscript_spots::DEFAULT)
 	#if defined (UNIX)
-		RADIO_ENUM (paperSize, U"Paper size", kGraphicsPostscript_paperSize, DEFAULT)
-		RADIO_ENUM (orientation, U"Orientation", kGraphicsPostscript_orientation, DEFAULT)
+		RADIO_ENUM (kGraphicsPostscript_paperSize, paperSize,
+				U"Paper size", kGraphicsPostscript_paperSize::DEFAULT)
+		RADIO_ENUM (kGraphicsPostscript_orientation, orientation,
+				U"Orientation", kGraphicsPostscript_orientation::DEFAULT)
 		POSITIVE (magnification, U"Magnification", U"1.0");
 		#if defined (linux)
 			TEXTFIELD (printCommand, U"Print command:", U"lpr %s")
@@ -508,7 +518,8 @@ FORM (GRAPHICS_PostScript_settings, U"PostScript settings", U"PostScript setting
 			TEXTFIELD (printCommand, U"Print command:", U"lp -c %s")
 		#endif
 	#endif
-	RADIO_ENUM (fontChoiceStrategy, U"Font choice strategy", kGraphicsPostscript_fontChoiceStrategy, DEFAULT)
+	RADIO_ENUM (kGraphicsPostscript_fontChoiceStrategy, fontChoiceStrategy,
+			U"Font choice strategy", kGraphicsPostscript_fontChoiceStrategy::DEFAULT)
 OK
 	#if defined (_WIN32)
 		SET_BOOLEAN (allowDirectPostscript, thePrinter. allowDirectPostScript)
@@ -581,8 +592,8 @@ DIRECT (GRAPHICS_Erase_all) {
 		Graphics_clearWs (GRAPHICS);
 		#if 1
 		autoPraatPicture picture;
-		Graphics_Colour colour = GRAPHICS -> colour;
-		Graphics_setColour (GRAPHICS, Graphics_WHITE);
+		MelderColour colour = GRAPHICS -> colour;
+		Graphics_setColour (GRAPHICS, Melder_WHITE);
 		double x1, y1, x2, y2;
 		//Melder_casual (GRAPHICS -> d_x1DC, U" ", GRAPHICS -> d_y1DC, U" ", GRAPHICS -> d_x2DC, U" ", GRAPHICS -> d_y2DC);
 		Graphics_DCtoWC (GRAPHICS, GRAPHICS -> d_x1DC, GRAPHICS -> d_y1DC, & x1, & y1);
@@ -598,7 +609,8 @@ END }
 
 FORM (GRAPHICS_Text, U"Praat picture: Text", U"Text...") {
 	REAL (horizontalPosition, U"Horizontal position", U"0.0")
-	OPTIONMENU_ENUM (horizontalAlignment, U"Horizontal alignment", kGraphics_horizontalAlignment, LEFT)
+	OPTIONMENU_ENUM (kGraphics_horizontalAlignment, horizontalAlignment,
+			U"Horizontal alignment", kGraphics_horizontalAlignment::LEFT)
 	REAL (verticalPosition, U"Vertical position", U"0.0")
 	OPTIONMENUx (verticalAlignment, U"Vertical alignment", 2, 0)
 		OPTION (U"Bottom")
@@ -626,14 +638,14 @@ FORM (GRAPHICS_TextSpecial, U"Praat picture: Text special", nullptr) {
 		OPTION (U"Bottom")
 		OPTION (U"Half")
 		OPTION (U"Top")
-	OPTIONMENU_ENUM (font, U"Font", kGraphics_font, DEFAULT)
-	NATURAL (fontSize, U"Font size", U"10")
+	OPTIONMENU_ENUM (kGraphics_font, font, U"Font", kGraphics_font::DEFAULT)
+	POSITIVE (fontSize, U"Font size", U"10")
 	SENTENCE (rotation, U"Rotation (degrees or dx;dy)", U"0")
 	TEXTFIELD (text, U"Text:", U"")
 OK
 DO
 	kGraphics_font currentFont = Graphics_inqFont (GRAPHICS);
-	int currentSize = Graphics_inqFontSize (GRAPHICS);
+	const double currentSize = Graphics_inqFontSize (GRAPHICS);
 	GRAPHICS_NONE
 		Graphics_setTextAlignment (GRAPHICS, (kGraphics_horizontalAlignment) horizontalAlignment, verticalAlignment);
 		Graphics_setInner (GRAPHICS);
@@ -719,11 +731,15 @@ FORM (GRAPHICS_DrawFunction, U"Praat picture: Draw function", nullptr) {
 	TEXTFIELD (formula, U"Formula:", U"x^2 - x^4")
 	OK
 DO
+	if (numberOfHorizontalSteps < 2)
+		return;
 	double x1WC, x2WC, y1WC, y2WC;
-	if (numberOfHorizontalSteps < 2) return;
 	Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
-	if (fromX == toX) fromX = x1WC, toX = x2WC;
-	autoNUMvector <double> y (1, numberOfHorizontalSteps);
+	if (fromX == toX) {
+		fromX = x1WC;
+		toX = x2WC;
+	}
+	autoVEC y = newVECraw (numberOfHorizontalSteps);
 	autoPraatPictureFunction function = Thing_new (PraatPictureFunction);
 	function -> xmin = x1WC;
 	function -> xmax = x2WC;
@@ -738,7 +754,7 @@ DO
 	}
 	GRAPHICS_NONE
 		Graphics_setInner (GRAPHICS);
-		Graphics_function (GRAPHICS, y.peek(), 1, numberOfHorizontalSteps, fromX, toX);
+		Graphics_function (GRAPHICS, & y [0], 1, numberOfHorizontalSteps, fromX, toX);
 		Graphics_unsetInner (GRAPHICS);
 	GRAPHICS_NONE_END
 }
@@ -934,8 +950,10 @@ OK
 	SET_REAL (top, y1WC)
 	SET_REAL (bottom, y2WC)
 DO
-	if (left == right) Melder_throw (U"Left and right should not be equal.");
-	if (top == bottom) Melder_throw (U"Top and bottom should not be equal.");
+	if (left == right)
+		Melder_throw (U"Left and right should not be equal.");
+	if (top == bottom)
+		Melder_throw (U"Top and bottom should not be equal.");
 	GRAPHICS_NONE
 		Graphics_setWindow (GRAPHICS, left, right, bottom, top);
 	GRAPHICS_NONE_END
@@ -1434,7 +1452,7 @@ DIRECT (GRAPHICS_Picture_settings_report) {
 		double x1wNDC, x2wNDC, y1wNDC, y2wNDC;
 		Graphics_inqWsWindow (GRAPHICS, & x1wNDC, & x2wNDC, & y1wNDC, & y2wNDC);
 		double wDC = (x2DC - x1DC) / (x2wNDC - x1wNDC);
-		double hDC = labs (y2DC - y1DC) / (y2wNDC - y1wNDC);
+		double hDC = integer_abs (y2DC - y1DC) / (y2wNDC - y1wNDC);
 		xmargin *= Graphics_getResolution (GRAPHICS) / wDC;
 		ymargin *= Graphics_getResolution (GRAPHICS) / hDC;
 	}
@@ -1462,7 +1480,7 @@ DIRECT (GRAPHICS_Picture_settings_report) {
 	MelderInfo_writeLine (U"Line width: ", theCurrentPraatPicture -> lineWidth);
 	MelderInfo_writeLine (U"Arrow size: ", theCurrentPraatPicture -> arrowSize);
 	MelderInfo_writeLine (U"Speckle size: ", theCurrentPraatPicture -> speckleSize);
-	MelderInfo_writeLine (U"Colour: ", Graphics_Colour_name (theCurrentPraatPicture -> colour));
+	MelderInfo_writeLine (U"Colour: ", MelderColour_name (theCurrentPraatPicture -> colour));
 	MelderInfo_writeLine (U"Red: ", theCurrentPraatPicture -> colour. red);
 	MelderInfo_writeLine (U"Green: ", theCurrentPraatPicture -> colour. green);
 	MelderInfo_writeLine (U"Blue: ", theCurrentPraatPicture -> colour. blue);
@@ -1488,7 +1506,7 @@ static void cb_selectionChanged (Picture p, void * /* closure */,
 	theCurrentPraatPicture -> y1NDC = sely1;
 	theCurrentPraatPicture -> y2NDC = sely2;
 	if (praat_mouseSelectsInnerViewport) {
-		int fontSize = Graphics_inqFontSize (GRAPHICS);
+		const double fontSize = Graphics_inqFontSize (GRAPHICS);
 		double xmargin = fontSize * 4.2 / 72.0, ymargin = fontSize * 2.8 / 72.0;
 		if (ymargin > 0.4 * (theCurrentPraatPicture -> y2NDC - theCurrentPraatPicture -> y1NDC)) ymargin = 0.4 * (theCurrentPraatPicture -> y2NDC - theCurrentPraatPicture -> y1NDC);
 		if (xmargin > 0.4 * (theCurrentPraatPicture -> x2NDC - theCurrentPraatPicture -> x1NDC)) xmargin = 0.4 * (theCurrentPraatPicture -> x2NDC - theCurrentPraatPicture -> x1NDC);
@@ -1603,7 +1621,7 @@ void praat_picture_init () {
 	GuiDrawingArea drawingArea = nullptr;
 	int margin, width, height, resolution, x, y;
 	theCurrentPraatPicture -> lineType = Graphics_DRAWN;
-	theCurrentPraatPicture -> colour = Graphics_BLACK;
+	theCurrentPraatPicture -> colour = Melder_BLACK;
 	theCurrentPraatPicture -> lineWidth = 1.0;
 	theCurrentPraatPicture -> arrowSize = 1.0;
 	theCurrentPraatPicture -> speckleSize = 1.0;

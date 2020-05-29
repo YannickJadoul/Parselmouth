@@ -1,6 +1,6 @@
 /* LPC.cpp
  *
- * Copyright (C) 1994-2017 David Weenink
+ * Copyright (C) 1994-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 
 #include "LPC_and_Polynomial.h"
 #include "NUM2.h"
+#include "Roots.h"
 
 #include "oo_DESTROY.h"
 #include "LPC_def.h"
@@ -49,6 +50,13 @@
 #include "oo_DESCRIPTION.h"
 #include "LPC_def.h"
 
+#include "enums_getText.h"
+#undef _LPC_enums_h_
+#include "LPC_enums.h"
+#include "enums_getValue.h"
+#undef _LPC_enums_h_
+#include "LPC_enums.h"
+
 Thing_implement (LPC, Sampled, 1);
 
 void structLPC :: v_info () {
@@ -60,21 +68,20 @@ void structLPC :: v_info () {
 	MelderInfo_writeLine (U"First frame at: ", x1, U" (s).");
 }
 
-void LPC_Frame_init (LPC_Frame me, int nCoefficients) {
-	if (nCoefficients != 0) {
-		my a = NUMvector<double> (1, nCoefficients);
-	}
-	my nCoefficients = nCoefficients;
+void LPC_Frame_init (LPC_Frame me, integer nCoefficients) {
+	if (nCoefficients != 0)
+		my a = newVECzero (nCoefficients);
+	my nCoefficients = my a.size; // maintain invariant
 }
 
-void LPC_init (LPC me, double tmin, double tmax, integer nt, double dt, double t1, int predictionOrder, double samplingPeriod) {
+void LPC_init (LPC me, double tmin, double tmax, integer nt, double dt, double t1, integer predictionOrder, double samplingPeriod) {
 	my samplingPeriod = samplingPeriod;
 	my maxnCoefficients = predictionOrder;
 	Sampled_init (me, tmin, tmax, nt, dt, t1);
-	my d_frames = NUMvector<structLPC_Frame> (1, nt);
+	my d_frames = newvectorzero <structLPC_Frame> (nt);
 }
 
-autoLPC LPC_create (double tmin, double tmax, integer nt, double dt, double t1, int predictionOrder, double samplingPeriod) {
+autoLPC LPC_create (double tmin, double tmax, integer nt, double dt, double t1, integer predictionOrder, double samplingPeriod) {
 	try {
 		autoLPC me = Thing_new (LPC);
 		LPC_init (me.get(), tmin, tmax, nt, dt, t1, predictionOrder, samplingPeriod);
@@ -85,22 +92,20 @@ autoLPC LPC_create (double tmin, double tmax, integer nt, double dt, double t1, 
 }
 
 void LPC_drawGain (LPC me, Graphics g, double tmin, double tmax, double gmin, double gmax, bool garnish) {
-	if (tmax <= tmin) {
-		tmin = my xmin;
-		tmax = my xmax;
-	}
+	Function_unidirectionalAutowindow (me, & tmin, & tmax);
 	integer itmin, itmax;
-	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) {
+	if (! Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax))
 		return;
-	}
-	autoNUMvector<double> gain (itmin, itmax);
 
-	for (integer iframe = itmin; iframe <= itmax; iframe ++) {
-		gain [iframe] = my d_frames [iframe]. gain;
-	}
-	if (gmax <= gmin) {
-		NUMvector_extrema (gain.peek(), itmin, itmax, & gmin, & gmax);
-	}
+	const integer numberOfSelected = itmax - itmin + 1;
+	autoVEC gain = newVECraw (numberOfSelected);
+
+	for (integer iframe = itmin; iframe <= itmax; iframe ++)
+		gain [iframe - itmin + 1] = my d_frames [iframe]. gain;
+
+	if (gmax <= gmin)
+		NUMextrema (gain.get(), & gmin, & gmax);
+
 	if (gmax == gmin) {
 		gmin = 0;
 		gmax += 0.5;
@@ -109,8 +114,8 @@ void LPC_drawGain (LPC me, Graphics g, double tmin, double tmax, double gmin, do
 	Graphics_setInner (g);
 	Graphics_setWindow (g, tmin, tmax, gmin, gmax);
 	for (integer iframe = itmin; iframe <= itmax; iframe ++) {
-		double x = Sampled_indexToX (me, iframe);
-		Graphics_speckle (g, x, gain[iframe]);
+		const double x = Sampled_indexToX (me, iframe);
+		Graphics_speckle (g, x, gain [iframe - itmin + 1]);
 	}
 	Graphics_unsetInner (g);
 	if (garnish) {
@@ -122,20 +127,18 @@ void LPC_drawGain (LPC me, Graphics g, double tmin, double tmax, double gmin, do
 	}
 }
 
-void LPC_drawPoles (LPC me, Graphics g, double time, int garnish) {
+void LPC_drawPoles (LPC me, Graphics g, double time, bool garnish) {
 	autoPolynomial p = LPC_to_Polynomial (me, time);
 	autoRoots r = Polynomial_to_Roots (p.get());
-	Roots_draw (r.get(), g, -1.0, 1.0, -1.0, 1.0, U"+", 12, garnish);
+	Roots_draw (r.get(), g, -1.0, 1.0, -1.0, 1.0, U"+", 12.0, garnish);
 }
 
 autoMatrix LPC_downto_Matrix_lpc (LPC me) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, 0.5 + my maxnCoefficients, my maxnCoefficients, 1.0, 1.0);
 		for (integer j = 1; j <= my nx; j ++) {
-			LPC_Frame lpc = & my d_frames [j];
-			for (integer i = 1; i <= lpc -> nCoefficients; i ++) {
-				thy z [i] [j] = lpc -> a [i];
-			}
+			const LPC_Frame lpcf = & my d_frames [j];
+			thy z.column (j).part (1, lpcf -> nCoefficients) <<= lpcf -> a.get();
 		}
 		return thee;
 	} catch (MelderError) {
@@ -146,13 +149,11 @@ autoMatrix LPC_downto_Matrix_lpc (LPC me) {
 autoMatrix LPC_downto_Matrix_rc (LPC me) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, 0.5 + my maxnCoefficients, my maxnCoefficients, 1.0, 1.0);
-		autoNUMvector<double> rc (1, my maxnCoefficients);
+		autoVEC rc = newVECzero (my maxnCoefficients);
 		for (integer j = 1; j <= my nx; j ++) {
-			LPC_Frame lpc = & my d_frames [j];
-			NUMlpc_lpc_to_rc (lpc -> a, lpc -> nCoefficients, rc.peek());
-			for (integer i = 1; i <= lpc -> nCoefficients; i ++) {
-				thy z [i] [j] = rc [i];
-			}
+			const LPC_Frame lpc = & my d_frames [j];
+			VECrc_from_lpc (rc.part (1, lpc -> nCoefficients), lpc -> a.part (1, lpc -> nCoefficients));
+			thy z.column (j).part (1, lpc -> nCoefficients) <<= rc.get();
 		}
 		return thee;
 	} catch (MelderError) {
@@ -163,15 +164,15 @@ autoMatrix LPC_downto_Matrix_rc (LPC me) {
 autoMatrix LPC_downto_Matrix_area (LPC me) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, 0.5 + my maxnCoefficients, my maxnCoefficients, 1.0, 1.0);
-		autoNUMvector<double> rc (1, my maxnCoefficients);
-		autoNUMvector<double> area (1, my maxnCoefficients);
+		autoVEC rc = newVECraw (my maxnCoefficients);
+		autoVEC area = newVECraw (my maxnCoefficients);
 		for (integer j = 1; j <= my nx; j ++) {
-			LPC_Frame lpc = & my d_frames [j];
-			NUMlpc_lpc_to_rc (lpc -> a, lpc -> nCoefficients, rc.peek());
-			NUMlpc_rc_to_area (rc.peek(), lpc -> nCoefficients, area.peek());
-			for (integer i = 1; i <= lpc -> nCoefficients; i ++) {
-				thy z [i] [j] = area [i];
-			}
+			const LPC_Frame lpc = & my d_frames [j];
+			VECrc_from_lpc (rc.part (1, lpc -> nCoefficients), lpc -> a.part (1, lpc -> nCoefficients));
+			VECarea_from_rc (area.part (1, lpc -> nCoefficients), rc.part (1, lpc -> nCoefficients));
+			if (lpc -> nCoefficients < my maxnCoefficients)
+				area.part (lpc -> nCoefficients + 1, my maxnCoefficients) <<= 0.0;
+			thy z.column (j) <<= area.get();
 		}
 		return thee;
 	} catch (MelderError) {

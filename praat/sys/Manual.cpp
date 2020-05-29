@@ -1,6 +1,6 @@
 /* Manual.cpp
  *
- * Copyright (C) 1996-2018 Paul Boersma
+ * Copyright (C) 1996-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
 #include "Manual.h"
 #include "Printer.h"
 #include "machine.h"
@@ -40,13 +39,17 @@ static void menu_cb_writeOneToHtmlFile (Manual me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM_SAVE (U"Save as HTML file", nullptr)
 		ManPages manPages = (ManPages) my data;
 		autoMelderString buffer;
-		MelderString_copy (& buffer, manPages -> pages.at [my path] -> title.get());
+		MelderString_copy (& buffer, manPages -> pages.at [my visiblePageNumber] -> title.get());
 		char32 *p = buffer.string;
-		while (*p) { if (! Melder_isAlphanumeric (*p) && *p != U'_') *p = U'_'; p ++; }
+		while (*p) {
+			if (! Melder_isAlphanumeric ((int) *p) && *p != U'_')
+				*p = U'_';
+			p ++;
+		}
 		MelderString_append (& buffer, U".html");
 		Melder_sprint (defaultName,300, buffer.string);
 	EDITOR_DO_SAVE
-		ManPages_writeOneToHtmlFile ((ManPages) my data, my path, file);
+		ManPages_writeOneToHtmlFile ((ManPages) my data, my visiblePageNumber, file);
 	EDITOR_END
 }
 
@@ -63,37 +66,38 @@ static void menu_cb_writeAllToHtmlDir (Manual me, EDITOR_ARGS_FORM) {
 static void menu_cb_searchForPageList (Manual me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Search for page", nullptr)
 		static ManPages manPages;
-		static conststring32vector pages;
+		static constSTRVEC pages;
 		manPages = (ManPages) my data;
 		pages = ManPages_getTitles (manPages);
 		LIST (page, U"Page", pages, 1)
 	EDITOR_OK
 	EDITOR_DO
-		HyperPage_goToPage_i (me, page);
+		HyperPage_goToPage_number (me, page);
 	EDITOR_END
 }
 
 void structManual :: v_draw () {
 	ManPages manPages = (ManPages) our data;
-	ManPage page;
 	#if motif
 	Graphics_clearWs (our graphics.get());
 	#endif
-	if (our path == SEARCH_PAGE) {
+	if (our visiblePageNumber == SEARCH_PAGE) {
 		HyperPage_pageTitle (this, U"Best matches");
 		HyperPage_intro (this, U"The best matches to your query seem to be:");
 		for (int i = 1; i <= our numberOfMatches; i ++) {
 			char32 link [300];
-			page = manPages -> pages.at [matches [i]];
+			ManPage page = manPages -> pages.at [matches [i]];
 			Melder_sprint (link,300, U"• @@", page -> title.get());
 			HyperPage_listItem (this, link);
 		}
 		return;
 	}
-	page = manPages -> pages.at [path];
-	if (! our paragraphs) return;
+	ManPage page = manPages -> pages.at [our visiblePageNumber];
+	//if (! our paragraphs____)
+	//	return;
 	HyperPage_pageTitle (this, page -> title.get());
-	for (ManPage_Paragraph paragraph = & page -> paragraphs [0]; (int) paragraph -> type != 0; paragraph ++) {
+	for (integer ipar = 1; ipar <= page -> paragraphs.size; ipar ++) {
+		ManPage_Paragraph paragraph = & page -> paragraphs [ipar];
 		switch (paragraph -> type) {
 			case  kManPage_type::INTRO: HyperPage_intro (this, paragraph -> text); break;
 			case  kManPage_type::ENTRY: HyperPage_entry (this, paragraph -> text); break;
@@ -125,12 +129,11 @@ void structManual :: v_draw () {
 			default: break;
 		}
 	}
-	if (ManPages_uniqueLinksHither (manPages, our path)) {
-		integer ilink, jlink, lastParagraph = 0;
+	if (ManPages_uniqueLinksHither (manPages, our visiblePageNumber)) {
+		integer ilink, jlink;
 		bool goAhead = true;
-		while ((int) page -> paragraphs [lastParagraph]. type != 0) lastParagraph ++;
-		if (lastParagraph > 0) {
-			conststring32 text = page -> paragraphs [lastParagraph - 1]. text;
+		if (page -> paragraphs.size > 0) {
+			conststring32 text = page -> paragraphs [page -> paragraphs.size]. text;
 			if (! text || text [0] == U'\0' || text [str32len (text) - 1] != U':') {
 				if (our printing && our suppressLinksHither)
 					goAhead = false;
@@ -138,10 +141,10 @@ void structManual :: v_draw () {
 					HyperPage_entry (this, U"Links to this page");
 			}
 		}
-		if (goAhead) for (ilink = 1; ilink <= page -> nlinksHither; ilink ++) {
+		if (goAhead) for (ilink = 1; ilink <= page -> linksHither.size; ilink ++) {
 			integer link = page -> linksHither [ilink];
 			bool alreadyShown = false;
-			for (jlink = 1; jlink <= page -> nlinksThither; jlink ++)
+			for (jlink = 1; jlink <= page -> linksThither.size; jlink ++)
 				if (page -> linksThither [jlink] == link)
 					alreadyShown = true;
 			if (! alreadyShown) {
@@ -155,8 +158,7 @@ void structManual :: v_draw () {
 	if (! our printing && page -> date) {
 		char32 signature [100];
 		integer date = page -> date;
-		int imonth = date % 10000 / 100;
-		if (imonth < 0 || imonth > 12) imonth = 0;
+		const integer imonth = Melder_clipped (0_integer, date % 10000 / 100, 12_integer);
 		Melder_sprint (signature,100,
 			U"© ", str32equ (page -> author.get(), U"ppgb") ? U"Paul Boersma" :
 			       str32equ (page -> author.get(), U"djmw") ? U"David Weenink" : page -> author.get(),
@@ -175,7 +177,7 @@ void structManual :: v_draw () {
 static void print (void *void_me, Graphics graphics) {
 	iam (Manual);
 	ManPages manPages = (ManPages) my data;
-	integer numberOfPages = manPages -> pages.size, savePage = my path;
+	integer numberOfPages = manPages -> pages.size, saveVisiblePageNumber = my visiblePageNumber;
 	my ps = graphics;
 	Graphics_setDollarSignIsCode (my ps, true);
 	Graphics_setAtSignIsLink (my ps, true);
@@ -186,16 +188,11 @@ static void print (void *void_me, Graphics graphics) {
 		if (my printPagesStartingWith == nullptr ||
 		    Melder_stringMatchesCriterion (page -> title.get(), kMelder_string::STARTS_WITH, my printPagesStartingWith, true))
 		{
-			ManPage_Paragraph par;
-			my path = ipage;
-			my paragraphs = page -> paragraphs;
-			my numberOfParagraphs = 0;
-			par = my paragraphs;
-			while ((int) (par ++) -> type != 0) my numberOfParagraphs ++;
+			my visiblePageNumber = ipage;
 			my currentPageTitle = Melder_dup_f (page -> title.get());
-			my v_goToPage_i (ipage);
+			my v_goToPage_number (ipage);
 			my v_draw ();
-			my v_goToPage_i (savePage);
+			my v_goToPage_number (saveVisiblePageNumber);
 		}
 	}
 	my printing = false;
@@ -231,8 +228,8 @@ static void menu_cb_printRange (Manual me, EDITOR_ARGS_FORM) {
 		SET_STRING (leftOrInsideHeader, date.get())
 		SET_STRING (rightOrOutsideHeader, my name.get())
 		if (my d_printingPageNumber) SET_INTEGER (firstPageNumber, my d_printingPageNumber + 1)
-		if (my path >= 1 && my path <= manPages -> pages.size) {
-			ManPage page = manPages -> pages.at [my path];
+		if (my visiblePageNumber >= 1 && my visiblePageNumber <= manPages -> pages.size) {
+			ManPage page = manPages -> pages.at [my visiblePageNumber];
 			SET_STRING (printAllPagesWhoseTitleStartsWith, page -> title.get());
 		}
 	EDITOR_DO
@@ -252,41 +249,40 @@ static void menu_cb_printRange (Manual me, EDITOR_ARGS_FORM) {
 
 /********** SEARCHING **********/
 
-static double *goodnessOfMatch;
-
-static double searchToken (ManPages me, integer ipage, char32 *token) {
+static double searchToken (ManPages me, integer ipage, conststring32 token) {
 	double goodness = 0.0;
 	ManPage page = my pages.at [ipage];
-	struct structManPage_Paragraph *par = & page -> paragraphs [0];
-	if (! token [0]) return 1.0;
+	if (! token [0])
+		return 1.0;
 	/*
-	 * Try to find a match in the title, case-insensitively.
-	 */
-	static MelderString buffer { };
+		Try to find a match in the title, case-insensitively.
+	*/
+	static MelderString buffer;
 	MelderString_copy (& buffer, page -> title.get());
-	for (char32 *p = & buffer.string [0]; *p != U'\0'; p ++) *p = Melder_toLowerCase (*p);
+	for (char32 *p = & buffer.string [0]; *p != U'\0'; p ++)
+		*p = Melder_toLowerCase (*p);
 	if (str32str (buffer.string, token)) {
 		goodness += 300.0;   // lots of points for a match in the title!
 		if (str32equ (buffer.string, token))
 			goodness += 10000.0;   // even more points for an exact match!
 	}
 	/*
-	 * Try to find a match in the paragraphs, case-insensitively.
-	 */
-	while ((int) par -> type != 0) {
+		Try to find a match in the paragraphs, case-insensitively.
+	*/
+	for (integer ipar = 1; ipar <= page -> paragraphs.size; ipar ++) {
+		ManPage_Paragraph par = & page -> paragraphs [ipar];
 		if (par -> text) {
 			char32 *ptoken;
 			MelderString_copy (& buffer, par -> text);
-			for (char32 *p = & buffer.string [0]; *p != '\0'; p ++) *p = Melder_toLowerCase (*p);
+			for (char32 *p = & buffer.string [0]; *p != '\0'; p ++)
+				*p = Melder_toLowerCase (*p);
 			ptoken = str32str (buffer.string, token);
 			if (ptoken) {
 				goodness += 10.0;   // ten points for every paragraph with a match!
-				if (str32str (ptoken + str32len (token), token)) {
+				if (str32str (ptoken + str32len (token), token))
 					goodness += 1.0;   // one point for every second occurrence in a paragraph!
-				}
 			}
 		}
-		par ++;
 	}
 	return goodness;
 }
@@ -294,29 +290,33 @@ static double searchToken (ManPages me, integer ipage, char32 *token) {
 static void search (Manual me, conststring32 query) {
 	ManPages manPages = (ManPages) my data;
 	integer numberOfPages = manPages -> pages.size;
-	static MelderString searchText { };
+	static MelderString searchText;
 	MelderString_copy (& searchText, query);
 	for (char32 *p = & searchText.string [0]; *p != U'\0'; p ++) {
-		if (*p == U'\n') *p = U' ';
+		if (*p == U'\n')
+			*p = U' ';
 		*p = Melder_toLowerCase (*p);
 	}
-	if (! goodnessOfMatch)
-		goodnessOfMatch = NUMvector <double> (1, numberOfPages);
+	static autoVEC goodnessOfMatch;
+	if (NUMisEmpty (goodnessOfMatch))
+		goodnessOfMatch = newVECzero (numberOfPages);
 	for (integer ipage = 1; ipage <= numberOfPages; ipage ++) {
 		char32 *token = searchText.string;
 		goodnessOfMatch [ipage] = 1.0;
 		for (;;) {
 			char32 *space = str32chr (token, U' ');
-			if (space) *space = U'\0';
+			if (space)
+				*space = U'\0';
 			goodnessOfMatch [ipage] *= searchToken (manPages, ipage, token);
-			if (! space) break;
+			if (! space)
+				break;
 			*space = U' ';   // restore
 			token = space + 1;
 		}
 	}
 	/*
-	 * Find the 20 best matches.
-	 */
+		Find the 20 best matches.
+	*/
 	my numberOfMatches = 0;
 	for (integer imatch = 1; imatch <= 20; imatch ++) {
 		integer imax = 0;
@@ -331,7 +331,7 @@ static void search (Manual me, conststring32 query) {
 		my matches [++ my numberOfMatches] = imax;
 		goodnessOfMatch [imax] = 0.0;   // skip next time
 	}
-	HyperPage_goToPage_i (me, SEARCH_PAGE);
+	HyperPage_goToPage_number (me, SEARCH_PAGE);
 }
 
 void Manual_search (Manual me, conststring32 query) {
@@ -342,12 +342,12 @@ void Manual_search (Manual me, conststring32 query) {
 static void gui_button_cb_home (Manual me, GuiButtonEvent /* event */) {
 	ManPages pages = (ManPages) my data;
 	integer iHome = ManPages_lookUp (pages, U"Intro");
-	HyperPage_goToPage_i (me, iHome ? iHome : 1);
+	HyperPage_goToPage_number (me, iHome ? iHome : 1);
 }
  
 static void gui_button_cb_record (Manual me, GuiButtonEvent /* event */) {
 	ManPages manPages = (ManPages) my data;
-	ManPage manPage = ( my path < 1 ? nullptr : manPages -> pages.at [my path] );
+	ManPage manPage = ( my visiblePageNumber < 1 ? nullptr : manPages -> pages.at [my visiblePageNumber] );
 	GuiThing_setSensitive (my recordButton,  false);
 	GuiThing_setSensitive (my playButton,    false);
 	GuiThing_setSensitive (my publishButton, false);
@@ -432,11 +432,11 @@ void structManual :: v_createHelpMenuItems (EditorMenu menu) {
 void structManual :: v_defaultHeaders (EditorCommand cmd) {
 	Manual me = (Manual) cmd -> d_editor;
 	ManPages manPages = (ManPages) my data;
-	if (my path) {
+	if (my visiblePageNumber > 0) {
 		char32 string [400];
 		static const conststring32 shortMonth [] =
 			{ U"Jan", U"Feb", U"Mar", U"Apr", U"May", U"Jun", U"Jul", U"Aug", U"Sep", U"Oct", U"Nov", U"Dec" };
-		ManPage page = manPages -> pages.at [my path];
+		ManPage page = manPages -> pages.at [my visiblePageNumber];
 		integer date = page -> date;
 		SET_STRING (my outsideHeader, page -> title.get())
 		SET_STRING (my insideFooter, page -> author.get())
@@ -453,24 +453,20 @@ integer structManual :: v_getNumberOfPages () {
 }
 
 integer structManual :: v_getCurrentPageNumber () {
-	return our path ? our path : 1;
+	return our visiblePageNumber > 0 ? our visiblePageNumber : 1;
 }
 
-void structManual :: v_goToPage_i (integer pageNumber) {
+void structManual :: v_goToPage_number (integer goToPageNumber) {
 	ManPages manPages = (ManPages) our data;
-	if (pageNumber < 1 || pageNumber > manPages -> pages.size) {
-		if (pageNumber == SEARCH_PAGE) {
-			our path = SEARCH_PAGE;
+	if (goToPageNumber < 1 || goToPageNumber > manPages -> pages.size) {
+		if (goToPageNumber == SEARCH_PAGE) {
+			our visiblePageNumber = SEARCH_PAGE;
 			our currentPageTitle. reset();
 			return;
-		} else Melder_throw (U"Page ", pageNumber, U" not found.");
+		} else Melder_throw (U"Page ", goToPageNumber, U" not found.");
 	}
-	our path = pageNumber;
-	ManPage page = manPages -> pages.at [path];
-	our paragraphs = page -> paragraphs;
-	our numberOfParagraphs = 0;
-	ManPage_Paragraph par = paragraphs;
-	while ((int) (par ++) -> type != 0) our numberOfParagraphs ++;
+	our visiblePageNumber = goToPageNumber;
+	ManPage page = manPages -> pages.at [our visiblePageNumber];
 	our currentPageTitle = Melder_dup_f (page -> title.get());
 }
 
@@ -495,27 +491,29 @@ int structManual :: v_goToPage (conststring32 title) {
 		integer i = ManPages_lookUp (manPages, title);
 		if (! i)
 			Melder_throw (U"Page \"", title, U"\" not found.");
-		our v_goToPage_i (i);
+		our v_goToPage_number (i);
 		return 1;
 	}
 }
 
 void Manual_init (Manual me, conststring32 title, Daata data, bool ownData) {
 	ManPages manPages = (ManPages) data;
-	integer i;
-	if ((i = ManPages_lookUp (manPages, title)) == 0)
+	integer lookUpPageNumber;
+	if ((lookUpPageNumber = ManPages_lookUp (manPages, title)) == 0)
 		Melder_throw (U"Page \"", title, U"\" not found.");
-	my path = i;
-	ManPage page = manPages -> pages.at [i];
-	my paragraphs = page -> paragraphs;
-	my numberOfParagraphs = 0;
-	ManPage_Paragraph par = my paragraphs;
-	while ((int) (par ++) -> type != 0) my numberOfParagraphs ++;
+	my visiblePageNumber = lookUpPageNumber;
+	ManPage page = manPages -> pages.at [lookUpPageNumber];
 
+	/*
+		The title of the window is the title of the whole manual, not the title of the page.
+		If the first page has a title that starts with "-", then that is the title;
+		otherwise, the title is just "Manual".
+	*/
 	char32 windowTitle [101];
 	if (manPages -> pages.at [1] -> title [0] == U'-') {
 		Melder_sprint (windowTitle,101, & manPages -> pages.at [1] -> title [1]);
-		if (windowTitle [str32len (windowTitle) - 1] == U'-') windowTitle [str32len (windowTitle) - 1] = U'\0';
+		if (windowTitle [str32len (windowTitle) - 1] == U'-')
+			windowTitle [str32len (windowTitle) - 1] = U'\0';
 	} else {
 		Melder_sprint (windowTitle,101, U"Manual");
 	}

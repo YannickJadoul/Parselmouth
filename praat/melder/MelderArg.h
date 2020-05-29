@@ -2,7 +2,7 @@
 #define _melder_arg_h_
 /* MelderArg.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,11 +38,14 @@ struct MelderArg {
 	MelderArg (const unsigned short      arg) : _arg (Melder_integer         (arg)) { }
 	MelderArg (const dcomplex            arg) : _arg (Melder_dcomplex        (arg)) { }
 	MelderArg (const char32              arg) : _arg (Melder_character       (arg)) { }
+	MelderArg (const MelderColour        arg) : _arg (Melder_colour          (arg)) { }
 	/*
 		The types of arguments that sometimes involve memory allocation:
 	*/
-	MelderArg (VEC                       arg) : _arg (Melder_VEC             (arg)) { }
-	MelderArg (MAT                       arg) : _arg (Melder_MAT             (arg)) { }
+	MelderArg (constVECVU const&         arg) : _arg (Melder_VEC             (arg)) { }
+	MelderArg (constMATVU const&         arg) : _arg (Melder_MAT             (arg)) { }
+	MelderArg (VECVU const&              arg) : _arg (Melder_VEC             (arg)) { }
+	MelderArg (MATVU const&              arg) : _arg (Melder_MAT             (arg)) { }
 	MelderArg (Thing                     arg) : _arg (Thing_messageName      (arg)) { }
 	MelderArg (MelderFile                arg) : _arg (MelderFile_messageName (arg)) { }
 	/*

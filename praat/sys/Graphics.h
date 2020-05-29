@@ -2,7 +2,7 @@
 #define _Graphics_h_
 /* Graphics.h
  *
- * Copyright (C) 1992-2005,2007-2018 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@
 #include "../kar/longchar.h"
 
 #include "Graphics_enums.h"
-
-typedef struct { double red, green, blue; } Graphics_Colour;
 
 typedef struct { double x1NDC, x2NDC, y1NDC, y2NDC; } Graphics_Viewport;
 
@@ -98,13 +96,14 @@ Thing_define (Graphics, Thing) {
 		/* Current coordinate transformation. */
 	/* Graphics state. */
 	int lineType;
-	Graphics_Colour colour;
+	MelderColour colour;
 	double lineWidth, arrowSize, speckleSize;
 	kGraphics_colourScale colourScale;
 	int horizontalTextAlignment, verticalTextAlignment;
 	double textRotation, wrapWidth, secondIndent, textX, textY;
 	kGraphics_font font;
-	int fontSize, fontStyle;
+	double fontSize;
+	int fontStyle;
 	int percentSignIsItalic, numberSignIsBold, circumflexIsSuperscript, underscoreIsSubscript;
 	int dollarSignIsCode, atSignIsLink;
 	bool recording, duringXor;
@@ -158,6 +157,11 @@ autoGraphics Graphics_create_xmdrawingarea (GuiDrawingArea drawingArea);
 
 int Graphics_getResolution (Graphics me);
 
+#if defined (macintosh)
+	#define SUPPORT_DIRECT_DRAWING  1
+#else
+	#define SUPPORT_DIRECT_DRAWING  1
+#endif
 void Graphics_setWsViewport (Graphics me, integer x1DC, integer x2DC, integer y1DC, integer y2DC);
 void Graphics_resetWsViewport (Graphics me, integer x1DC, integer x2DC, integer y1DC, integer y2DC);
 void Graphics_setWsWindow (Graphics me, double x1NDC, double x2NDC, double y1NDC, double y2NDC);
@@ -166,7 +170,7 @@ void Graphics_inqWsWindow (Graphics me, double *x1NDC, double *x2NDC, double *y1
 void Graphics_clearWs (Graphics me);
 void Graphics_flushWs (Graphics me);
 void Graphics_updateWs (Graphics me);
-void Graphics_beginMovieFrame (Graphics me, Graphics_Colour *colour);
+void Graphics_beginMovieFrame (Graphics me, MelderColour *colour);
 void Graphics_endMovieFrame (Graphics me, double frameDuration);
 void Graphics_DCtoWC (Graphics me, integer xDC, integer yDC, double *xWC, double *yWC);
 void Graphics_WCtoDC (Graphics me, double xWC, double yWC, integer *xDC, integer *yDC);
@@ -189,27 +193,27 @@ void Graphics_textRect (Graphics me, double x1, double x2, double y1, double y2,
 double Graphics_textWidth       (Graphics me, conststring32 text /* cattable */);
 double Graphics_textWidth_ps    (Graphics me, conststring32 text /* cattable */, bool useSilipaPS);
 double Graphics_textWidth_ps_mm (Graphics me, conststring32 text /* cattable */, bool useSilipaPS);
-void Graphics_fillArea (Graphics me, integer numberOfPoints, double *x, double *y);
-void Graphics_cellArray (Graphics me, double **z, integer ix1, integer ix2, double x1, double x2,
-	integer iy1, integer iy2, double y1, double y2, double minimum, double maximum);
-void Graphics_cellArray_colour (Graphics me, double_rgbt **z, integer ix1, integer ix2, double x1, double x2,
-	integer iy1, integer iy2, double y1, double y2, double minimum, double maximum);
-void Graphics_cellArray8 (Graphics me, unsigned char **z, integer ix1, integer ix2, double x1, double x2,
-	integer iy1, integer iy2, double y1, double y2, unsigned char minimum, unsigned char maximum);
-void Graphics_image (Graphics me, double **z, integer ix1, integer ix2, double x1, double x2,
-	integer iy1, integer iy2, double y1, double y2, double minimum, double maximum);
-void Graphics_image_colour (Graphics me, double_rgbt **z, integer ix1, integer ix2, double x1, double x2,
-	integer iy1, integer iy2, double y1, double y2, double minimum, double maximum);
-void Graphics_image8 (Graphics me, unsigned char **z, integer ix1, integer ix2, double x1, double x2,
-	integer iy1, integer iy2, double y1, double y2, uint8 minimum, uint8 maximum);
+void Graphics_fillArea (Graphics me, integer numberOfPoints, double const *x, double const *y);
+void Graphics_cellArray (Graphics me, constMATVU const& z,
+	double x1, double x2, double y1, double y2, double minimum, double maximum);
+void Graphics_cellArray_colour (Graphics me, constmatrixview <MelderColour> const& z,
+	double x1, double x2, double y1, double y2, double minimum, double maximum);
+void Graphics_cellArray8 (Graphics me, constmatrixview <unsigned char> const& z,
+	double x1, double x2, double y1, double y2, unsigned char minimum, unsigned char maximum);
+void Graphics_image (Graphics me, constMATVU const& z,
+	double x1, double x2, double y1, double y2, double minimum, double maximum);
+void Graphics_image_colour (Graphics me, constmatrixview <MelderColour> const& z,
+	double x1, double x2, double y1, double y2, double minimum, double maximum);
+void Graphics_image8 (Graphics me, constmatrixview <unsigned char> const& z,
+	double x1, double x2, double y1, double y2, uint8 minimum, uint8 maximum);
 void Graphics_imageFromFile (Graphics me, conststring32 relativeFileName, double x1, double x2, double y1, double y2);
 void Graphics_line (Graphics me, double x1, double y1, double x2, double y2);
 void Graphics_rectangle (Graphics me, double x1, double x2, double y1, double y2);
 void Graphics_fillRectangle (Graphics me, double x1, double x2, double y1, double y2);
 void Graphics_roundedRectangle (Graphics me, double x1, double x2, double y1, double y2, double r_mm);
 void Graphics_fillRoundedRectangle (Graphics me, double x1, double x2, double y1, double y2, double r_mm);
-void Graphics_function (Graphics me, double y [], integer ix1, integer ix2, double x1, double x2);   // y [ix1..ix2]
-void Graphics_function16 (Graphics me, int16 y [], int stagger, integer ix1, integer ix2, double x1, double x2);   // y [ix1..ix2] or y [ix1*2..ix2*2]
+void Graphics_function (Graphics me, const double y [], integer ix1, integer ix2, double x1, double x2);   // y [ix1..ix2]
+void Graphics_function16 (Graphics me, const int16 y [], integer stride, integer ix1, integer ix2, double x1, double x2);   // y [ix1..ix2] or y [ix1*2..ix2*2]
 void Graphics_circle (Graphics me, double x, double y, double r);
 void Graphics_fillCircle (Graphics me, double x, double y, double r);
 void Graphics_circle_mm (Graphics me, double x, double y, double d);
@@ -228,19 +232,10 @@ void Graphics_mark (Graphics me, double x, double y, double size_mm, conststring
 void Graphics_button (Graphics me, double x1, double x2, double y1, double y2);
 void Graphics_innerRectangle (Graphics me, double x1, double x2, double y1, double y2);
 
-extern Graphics_Colour Graphics_BLACK, Graphics_WHITE, Graphics_RED, Graphics_GREEN, Graphics_BLUE,
-	Graphics_CYAN, Graphics_MAGENTA, Graphics_YELLOW, Graphics_MAROON, Graphics_LIME, Graphics_NAVY, Graphics_TEAL,
-	Graphics_PURPLE, Graphics_OLIVE, Graphics_PINK, Graphics_SILVER, Graphics_GREY, Graphics_WINDOW_BACKGROUND_COLOUR;
-conststring32 Graphics_Colour_name (Graphics_Colour colour);
-static inline bool Graphics_Colour_equal (Graphics_Colour colour1, Graphics_Colour colour2) {
-	return colour1. red == colour2. red && colour1. green == colour2. green && colour1. blue == colour2. blue;
-}
-Graphics_Colour Graphics_cyclingBackgroundColour (integer category);
-Graphics_Colour Graphics_cyclingTextColour (integer category);
-void Graphics_setColour (Graphics me, Graphics_Colour colour);
+void Graphics_setColour (Graphics me, MelderColour colour);
 void Graphics_setGrey (Graphics me, double grey);
 
-void Graphics_xorOn (Graphics me, Graphics_Colour colour);
+void Graphics_xorOn (Graphics me, MelderColour colour);
 void Graphics_xorOff (Graphics me);
 void Graphics_highlight (Graphics me, double x1, double x2, double y1, double y2);
 void Graphics_unhighlight (Graphics me, double x1, double x2, double y1, double y2);
@@ -260,7 +255,7 @@ void Graphics_unhighlight2 (Graphics me, double x1, double x2, double y1, double
 void Graphics_setTextAlignment (Graphics me, kGraphics_horizontalAlignment horizontal, int vertical);
 
 void Graphics_setFont (Graphics me, kGraphics_font font);
-void Graphics_setFontSize (Graphics me, int height);
+void Graphics_setFontSize (Graphics me, double height);
 
 #define Graphics_NORMAL  0
 #define Graphics_BOLD  1
@@ -302,24 +297,26 @@ void Graphics_setColourScale (Graphics me, kGraphics_colourScale colourScale);
 void Graphics_inqViewport (Graphics me, double *x1NDC, double *x2NDC, double *y1NDC, double *y2NDC);
 void Graphics_inqWindow (Graphics me, double *x1WC, double *x2WC, double *y1WC, double *y2WC);
 kGraphics_font Graphics_inqFont (Graphics me);
-int Graphics_inqFontSize (Graphics me);
+double Graphics_inqFontSize (Graphics me);
 int Graphics_inqFontStyle (Graphics me);
 int Graphics_inqLineType (Graphics me);
 double Graphics_inqLineWidth (Graphics me);
 double Graphics_inqArrowSize (Graphics me);
 double Graphics_inqSpeckleSize (Graphics me);
-Graphics_Colour Graphics_inqColour (Graphics me);
+MelderColour Graphics_inqColour (Graphics me);
 kGraphics_colourScale Graphics_inqColourScale (Graphics me);
 
-void Graphics_contour (Graphics me, double **z,
-	integer ix1, integer ix2, double x1WC, double x2WC, integer iy1, integer iy2, double y1WC, double y2WC, double height);
-void Graphics_altitude (Graphics me, double **z,
-	integer ix1, integer ix2, double x1, double x2, integer iy1, integer iy2, double y1, double y2, int numberOfBorders, double borders []);
-void Graphics_grey (Graphics me, double **z,
-	integer ix1, integer ix2, double x1, double x2, integer iy1, integer iy2, double y1, double y2, int numberOfBorders, double borders []);
+void Graphics_contour (Graphics me, constMATVU const& z,
+	double x1WC, double x2WC, double y1WC, double y2WC, double height);
+void Graphics_altitude (Graphics me, constMATVU const& z,
+	double x1WC, double x2WC, double y1WC, double y2WC, int numberOfBorders, double borders []);
+void Graphics_grey (Graphics me, constMATVU const& z,
+	double x1WC, double x2WC, double y1WC, double y2WC, int numberOfBorders, double borders []);
 #define Graphics_gray Graphics_grey
-void Graphics_surface (Graphics me, double **z, integer ix1, integer ix2, double x1, double x2,
-	integer iy1, integer iy2, double y1, double y2, double minimum, double maximum, double elevation, double azimuth);
+void Graphics_surface (Graphics me, constMATVU const& z,
+	double x1WC, double x2WC, double y1WC, double y2WC,
+	double minimum, double maximum, double elevation, double azimuth
+);
 
 void Graphics_setInner (Graphics me);
 void Graphics_unsetInner (Graphics me);

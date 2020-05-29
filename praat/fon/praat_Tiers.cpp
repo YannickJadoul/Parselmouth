@@ -1,6 +1,6 @@
 /* praat_Tiers.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -553,7 +553,7 @@ FORM (MODIFY_FormantTier_addPoint, U"Add one point", U"FormantTier: Add point...
 	OK
 DO
 	autoFormantPoint point = FormantPoint_create (time, 10);
-	double *f = point -> formant.at, *b = point -> bandwidth.at;
+	double *f = & point -> formant [0], *b = & point -> bandwidth [0];
 	conststring8 fbpairs = Melder_peek32to8 (formantBandwidthPairs);
 	unsigned int n = 0;
 	const char *s = fbpairs;

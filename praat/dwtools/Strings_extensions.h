@@ -2,7 +2,7 @@
 #define _Strings_extensions_h_
 /* Strings_extensions.h
  *
- * Copyright (C) 1993-2017 David Weenink
+ * Copyright (C) 1993-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ autoStrings Strings_append (OrderedOf<structStrings>* me);
 autoStrings Strings_change (Strings me, conststring32 search, conststring32 replace,
 	int maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, bool use_regexp);
 
-autoStrings strings_to_Strings (char32 **strings, integer from, integer to);
+autoStrings Strings_createFromSTRVEC (constSTRVEC const& strings, integer from, integer to);
 
 autoStrings Strings_extractPart (Strings me, integer start, integer end);
 
@@ -59,7 +59,7 @@ autoStringsIndex Table_to_StringsIndex_column (Table me, integer column);
 
 autoStrings StringsIndex_to_Strings (StringsIndex me);
 
-autoPermutation Strings_to_Permutation (Strings me, int sort);
+autoPermutation Strings_to_Permutation (Strings me, bool sort);
 
 autoStrings Strings_Permutation_permuteStrings (Strings me, Permutation thee);
 

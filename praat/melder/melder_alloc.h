@@ -2,7 +2,7 @@
 #define _melder_alloc_h_
 /* melder_alloc.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 /* These functions also maintain a count of the total number of blocks allocated. */
 
 void Melder_alloc_init ();   // to be called around program start-up
-void Melder_message_init ();   // to be called around program start-up
 void * _Melder_malloc (int64 size);
 #define Melder_malloc(type,numberOfElements)  (type *) _Melder_malloc ((numberOfElements) * (int64) sizeof (type))
 void * _Melder_malloc_f (int64 size);
@@ -35,8 +34,6 @@ void * _Melder_calloc (int64 numberOfElements, int64 elementSize);
 #define Melder_calloc(type,numberOfElements)  (type *) _Melder_calloc (numberOfElements, sizeof (type))
 void * _Melder_calloc_f (int64 numberOfElements, int64 elementSize);
 #define Melder_calloc_f(type,numberOfElements)  (type *) _Melder_calloc_f (numberOfElements, sizeof (type))
-char * Melder_strdup (const char *string);
-char * Melder_strdup_f (const char *string);
 
 #define Melder_free(pointer)  _Melder_free ((void **) & (pointer))
 void _Melder_free (void **pointer) noexcept;
@@ -50,7 +47,7 @@ void _Melder_free (void **pointer) noexcept;
 int64 Melder_allocationCount ();
 /*
 	Returns the total number of successful calls to
-	Melder_malloc, Melder_realloc (if 'ptr' is null), Melder_calloc, and Melder_strdup,
+	Melder_malloc, Melder_realloc (if 'ptr' is null), and Melder_calloc,
 	since the start of the process. Mainly for debugging purposes.
 */
 
@@ -63,12 +60,40 @@ int64 Melder_deallocationCount ();
 int64 Melder_allocationSize ();
 /*
 	Returns the total number of bytes allocated in calls to
-	Melder_malloc, Melder_realloc (if moved), Melder_calloc, and Melder_strdup,
+	Melder_malloc, Melder_realloc (if moved), and Melder_calloc,
 	since the start of the process. Mainly for debugging purposes.
 */
 
 int64 Melder_reallocationsInSituCount ();
 int64 Melder_movingReallocationsCount ();
+
+/********** Arrays. **********/
+
+
+namespace MelderArray {
+
+	enum class kInitializationType { RAW = 0, ZERO = 1 };
+
+	byte * _alloc_generic (integer cellSize, integer numberOfCells, kInitializationType initializationType);
+	void _free_generic (byte *cells, integer numberOfCells) noexcept;
+
+	template <class T>
+	T* _alloc (integer numberOfCells, kInitializationType initializationType) {
+		T* result = reinterpret_cast <T*> (MelderArray:: _alloc_generic (sizeof (T), numberOfCells, initializationType));
+		return result;
+	}
+
+	template <class T>
+	void _free (T* cells, integer numberOfCells) noexcept {
+		_free_generic (reinterpret_cast <byte *> (cells), numberOfCells);
+	}
+
+}
+
+int64 MelderArray_allocationCount ();
+int64 MelderArray_deallocationCount ();
+int64 MelderArray_cellAllocationCount ();
+int64 MelderArray_cellDeallocationCount ();
 
 /* End of file melder_alloc.h */
 #endif

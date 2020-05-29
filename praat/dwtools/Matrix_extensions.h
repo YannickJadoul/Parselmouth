@@ -2,7 +2,7 @@
 #define _Matrix_extensions_h_
 /* Matrix_extensions.h
  *
- * Copyright (C) 1993-2011, 2015-2018 David Weenink
+ * Copyright (C) 1993-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@
 #include "Matrix.h"
 #include "Eigen.h"
 #include "Graphics.h"
-#include "Matrix_extensions_enums.h"
+#include "Graphics_extensions.h"
+#include "SVD.h"
 
 autoMatrix Matrix_readFromIDXFormatFile (MelderFile file);
 autoDaata IDXFormattedMatrixFileRecognizer (integer numberOfBytesRead, const char *header, MelderFile file);
@@ -38,7 +39,7 @@ void Matrix_scatterPlot (Matrix me, Graphics g, integer icx, integer icy,
 
 void Matrix_drawAsSquares_inside (Matrix me, Graphics g, double xmin, double xmax, double ymin, double ymax, kGraphicsMatrixOrigin origin, double cellAreaScaleFactor, kGraphicsMatrixCellDrawingOrder drawingOrder);
 
-void Matrix_drawAsSquares (Matrix me, Graphics graphics, double xmin, double xmax, double ymin, double ymax, int garnished);
+void Matrix_drawAsSquares (Matrix me, Graphics graphics, double xmin, double xmax, double ymin, double ymax, bool garnished);
 /* Draw a Matrix as small squares whose area correspond to the matrix element */
 /* The square is filled with black if the weights are negative					*/
 
@@ -64,6 +65,8 @@ int Matrix_fitPolynomial (Matrix me, integer maxDegree);
 
 autoMatrix Matrix_solveEquation (Matrix me, double tolerance);
 
+autoMatrix Matrix_solveEquation (Matrix me, Matrix thee, double tolerance); // Me * X = Thee
+
 double Matrix_getMean (Matrix me, double xmin, double xmax, double ymin, double ymax);
 
 double Matrix_getStandardDeviation (Matrix me, double xmin, double xmax, double ymin, double ymax);
@@ -71,6 +74,9 @@ double Matrix_getStandardDeviation (Matrix me, double xmin, double xmax, double 
 autoEigen Matrix_to_Eigen (Matrix me);
 /* Symmetric matrix */
 
+autoMatrix SVD_to_Matrix (SVD me, integer from, integer to);
+
+autoCOMPVEC Matrix_listEigenvalues (Matrix me);
 void Matrix_Eigen_complex (Matrix me, autoMatrix *out_eigenvectors, autoMatrix *out_eigenvalues);
 /* General square matrix */
 

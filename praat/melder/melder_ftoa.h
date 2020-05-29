@@ -2,7 +2,7 @@
 #define _melder_ftoa_h_
 /* melder_ftoa.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +32,13 @@ conststring8 Melder8_bigInteger (int64 value) noexcept;
 conststring32 Melder_boolean (bool value) noexcept;
 conststring8 Melder8_boolean (bool value) noexcept;
 	// "yes" or "no"
+
+conststring32 Melder_onoff (bool value) noexcept;
+conststring8 Melder8_onoff (bool value) noexcept;
+
+conststring32 Melder_kleenean (kleenean value) noexcept;
+conststring8 Melder8_kleenean (kleenean value) noexcept;
+	// "unknown" (< 0), "yes" (> 0), or "no" (0)
 
 /**
 	Format a double value as "--undefined--" or something in the "%.15g", "%.16g", or "%.17g" formats.
@@ -104,11 +111,14 @@ conststring32 Melder_float (conststring32 number) noexcept;
 conststring32 Melder_naturalLogarithm (double lnNumber) noexcept;
 conststring8 Melder8_naturalLogarithm (double lnNumber) noexcept;
 
-conststring32 Melder_pointer (void *pointer) noexcept;
-conststring8 Melder8_pointer (void *pointer) noexcept;
+conststring32 Melder_pointer (const void *pointer) noexcept;
+conststring8 Melder8_pointer (const void *pointer) noexcept;
 
 conststring32 Melder_character (char32 kar) noexcept;
 conststring8 Melder8_character (char32 kar) noexcept;
+
+conststring32 Melder_colour (MelderColour colour) noexcept;
+conststring8 Melder8_colour (MelderColour colour) noexcept;
 
 conststring32 Melder_pad (int64 width, conststring32 string);   // will append spaces to the left of 'string' until 'width' is reached; no truncation
 conststring32 Melder_pad (conststring32 string, int64 width);   // will append spaces to the right of 'string' until 'width' is reached; no truncation

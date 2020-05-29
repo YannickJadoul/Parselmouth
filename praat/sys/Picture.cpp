@@ -1,6 +1,6 @@
 /* Picture.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brauße
+ * Copyright (C) 1992-2019 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brauße
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,12 +43,12 @@ static void drawMarkers (Picture me)
 {
 	/* Fill the entire canvas with GC's background. */
 
-	Graphics_setColour (my selectionGraphics.get(), Graphics_WHITE);
+	Graphics_setColour (my selectionGraphics.get(), Melder_WHITE);
 	Graphics_fillRectangle (my selectionGraphics.get(), 0, SIDE, 0, SIDE);
 
 	/* Draw yellow grid lines for coarse navigation. */
 
-	Graphics_setColour (my selectionGraphics.get(), Graphics_YELLOW);
+	Graphics_setColour (my selectionGraphics.get(), Melder_YELLOW);
 	for (int i = YELLOW_GRID; i < SIDE; i += YELLOW_GRID) {
 		Graphics_line (my selectionGraphics.get(), 0, i, SIDE, i);
 		Graphics_line (my selectionGraphics.get(), i, 0, i, SIDE);
@@ -56,7 +56,7 @@ static void drawMarkers (Picture me)
 
 	/* Draw red ticks and numbers for feedback on viewport measurement. */
 
-	Graphics_setColour (my selectionGraphics.get(), Graphics_RED);
+	Graphics_setColour (my selectionGraphics.get(), Melder_RED);
 	for (int i = 1; i < SIDE; i ++) {
 		double x = i;
 		Graphics_setTextAlignment (my selectionGraphics.get(), Graphics_CENTRE, Graphics_TOP);
@@ -82,7 +82,7 @@ static void drawMarkers (Picture me)
 		Graphics_line (my selectionGraphics.get(), 0, y, 0.04, y);
 	}
 
-	Graphics_setColour (my selectionGraphics.get(), Graphics_BLACK);
+	Graphics_setColour (my selectionGraphics.get(), Melder_BLACK);
 }
 
 static void drawSelection (Picture me, int high) {
@@ -162,7 +162,7 @@ static void gui_drawingarea_cb_click (Picture me, GuiDrawingArea_ClickEvent even
 			if (iy < iystart) { iy1 = iy; iy2 = iystart; }
 			else              { iy1 = iystart; iy2 = iy; }
 			if (my mouseSelectsInnerViewport) {
-				int fontSize = Graphics_inqFontSize (my graphics.get());
+				const double fontSize = Graphics_inqFontSize (my graphics.get());
 				double xmargin = fontSize * 4.2 / 72.0, ymargin = fontSize * 2.8 / 72.0;
 				if (xmargin > ix2 - ix1 + 1) xmargin = ix2 - ix1 + 1;
 				if (ymargin > iy2 - iy1 + 1) ymargin = iy2 - iy1 + 1;
@@ -403,7 +403,7 @@ void Picture_writeToWindowsMetafile (Picture me, MelderFile file) {
 	try {
 		HENHMETAFILE metafile = copyToMetafile (me);
 		MelderFile_delete (file);   // overwrite any existing file with the same name
-		DeleteEnhMetaFile (CopyEnhMetaFile (metafile, Melder_peek32toW (file -> path)));
+		DeleteEnhMetaFile (CopyEnhMetaFile (metafile, Melder_peek32toW_fileSystem (file -> path)));
 		DeleteEnhMetaFile (metafile);
 	} catch (MelderError) {
 		Melder_throw (U"Picture not written to Windows metafile ", file);

@@ -1,6 +1,6 @@
 /* ArtwordEditor.cpp
  *
- * Copyright (C) 1992-2013,2015-2018 Paul Boersma
+ * Copyright (C) 1992-2013,2015-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,16 +39,12 @@ static void updateList (ArtwordEditor me) {
 
 static void gui_button_cb_removeTarget (ArtwordEditor me, GuiButtonEvent /* event */) {
 	Artword artword = (Artword) my data;
-	integer numberOfSelectedPositions;
-	integer *selectedPositions = GuiList_getSelectedPositions (my list, & numberOfSelectedPositions);   // BUG memory
-	if (selectedPositions) {
-		for (integer ipos = numberOfSelectedPositions; ipos > 0; ipos --) {
-			integer position = selectedPositions [ipos];
-			Melder_assert (position >= 1 && position <= INT16_MAX);
-			Artword_removeTarget (artword, my muscle, (int16) position);   // guarded conversion
-		}
+	autoINTVEC selectedPositions = GuiList_getSelectedPositions (my list);
+	for (integer ipos = selectedPositions.size; ipos > 0; ipos --) {
+		integer position = selectedPositions [ipos];
+		Melder_assert (position >= 1 && position <= INT16_MAX);
+		Artword_removeTarget (artword, my muscle, (int16) position);   // guarded conversion
 	}
-	NUMvector_free (selectedPositions, 1);
 	updateList (me);
 	Editor_broadcastDataChanged (me);
 }
@@ -65,18 +61,16 @@ static void gui_button_cb_addTarget (ArtwordEditor me, GuiButtonEvent /* event *
 
 	/* Optimization instead of "updateList (me)". */
 
-	if (tim < 0) tim = 0.0;
-	if (tim > artword -> totalTime) tim = artword -> totalTime;
+	Melder_clip (0.0, & tim, artword -> totalTime);
 	while (tim != a -> times [i]) {
 		i ++;
 		Melder_assert (i <= a -> numberOfTargets);   // can fail if tim is in an extended precision register
 	}
 	const conststring32 itemText = Melder_cat (Melder_single (tim), U"  ", Melder_single (value));
-	if (a -> numberOfTargets == oldCount) {
+	if (a -> numberOfTargets == oldCount)
 		GuiList_replaceItem (my list, itemText, i);
-	} else {
+	else
 		GuiList_insertItem (my list, itemText, i);
-	}
 	Graphics_updateWs (my graphics.get());
 	Editor_broadcastDataChanged (me);
 }

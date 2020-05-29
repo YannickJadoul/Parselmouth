@@ -1,6 +1,6 @@
 /* GuiText.cpp
  *
- * Copyright (C) 1993-2017 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2019 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -619,6 +619,47 @@ GuiText GuiText_create (GuiForm parent, int left, int right, int top, int bottom
 				[my d_cocoaTextView setMinSize: NSMakeSize (contentSize. width, contentSize.height)];    // El Capitan Developer Beta 2
 			}
 			[my d_cocoaTextView setMaxSize: NSMakeSize (FLT_MAX, FLT_MAX)];
+			if ((true)) {
+				/*
+					The Info window and the Script window have the problem that if a tab occurs after 336 points,
+					the text breaks to the next line.
+					The probable cause is found in NSParagraphStyle:
+					(1) "The NSTextTab objects, sorted by location, define the tab stops for the paragraph style.
+					     The default value is an array of 12 left-aligned tabs at 28-point intervals."
+					(2) The default value of defaultTabInterval ("Tabs after the last specified in tabStops are
+						placed at integer multiples of this distance (if positive).") is 0.0,
+						probably meaning that the next tab stop has to be sought on the next line.
+					We therefore try to prevent the unwanted line break by setting defaultTabInterval to 28.0.
+				*/
+				//NSMutableParagraphStyle *paragraphStyle = [[my d_cocoaTextView defaultParagraphStyle] mutableCopy];   // this one doesn't work (in 10.14.6)
+				NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+				[paragraphStyle setParagraphStyle: [my d_cocoaTextView defaultParagraphStyle]];   // should be superfluous
+				[paragraphStyle setDefaultTabInterval: 28.0];
+				[my d_cocoaTextView setDefaultParagraphStyle: paragraphStyle];
+				[paragraphStyle release];
+				/*
+					The trick above works only when we insert text by setString, not when we edit the text manually.
+					However, we can correctly edit manually *after* setString has been called with a non-empty string (see below).
+				*/
+				/*
+					We can experiment with setting additional tab stops at 400 and 500 points.
+				*/
+				//[paragraphStyle setTabStops: [NSArray array]];
+				//NSDictionary *emptyDictionary = [[NSDictionary alloc] init];
+				//NSTextTab *tab400 = [[NSTextTab alloc] initWithTextAlignment: NSTextAlignmentLeft   location: 400.0   options: emptyDictionary];
+				//NSTextTab *tab400 = [[NSTextTab alloc] initWithType: NSLeftTabStopType   location: 400.0];
+				//[paragraphStyle addTabStop: tab400];
+				//NSTextTab *tab500 = [[NSTextTab alloc] initWithTextAlignment: NSTextAlignmentLeft   location: 500.0   options: emptyDictionary];
+				//NSTextTab *tab500 = [[NSTextTab alloc] initWithType: NSLeftTabStopType   location: 500.0];
+				//[paragraphStyle addTabStop: tab500];
+				/*
+					We can experiment with attributed strings.
+					This won't work here, perhaps because the length of the string, and hence the "range", will change later.
+				*/
+				//NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
+				//[attributes setObject: paragraphStyle   forKey: NSParagraphStyleAttributeName];
+				//[[my d_cocoaTextView textStorage] addAttributes: attributes   range: NSMakeRange (0, [[[my d_cocoaTextView textStorage] string] length])];
+			}
 			[my d_cocoaTextView setVerticallyResizable: YES];
 			[my d_cocoaTextView setHorizontallyResizable: YES];
 			[my d_cocoaTextView setAutoresizingMask: NSViewWidthSizable | NSViewHeightSizable];
@@ -640,6 +681,13 @@ GuiText GuiText_create (GuiForm parent, int left, int right, int top, int bottom
 			[my d_cocoaTextView setAutomaticTextReplacementEnabled: NO];
 			[my d_cocoaTextView setAutomaticDashSubstitutionEnabled: NO];
 			[my d_cocoaTextView setDelegate: my d_cocoaTextView];
+			/*
+				Regrettably, we have to implement the following HACK
+				to prevent tab-based line breaks even when editing manually.
+			*/
+			[my d_cocoaTextView   setString: @" "];
+			[my d_cocoaTextView   setString: @""];
+
 		} else {
 			my d_widget = [[GuiCocoaTextField alloc] init];
 			my v_positionInForm (my d_widget, left, right, top, bottom, parent);
@@ -672,7 +720,8 @@ void GuiText_copy (GuiText me) {
 			gtk_text_buffer_copy_clipboard (buffer, cb);
 		}
 	#elif motif
-		if (! NativeText_getSelectionRange (my d_widget, nullptr, nullptr)) return;
+		if (! NativeText_getSelectionRange (my d_widget, nullptr, nullptr))
+			return;
 		SendMessage (my d_widget -> window, WM_COPY, 0, 0);
 	#elif cocoa
 		if (my d_cocoaTextView) {
@@ -693,7 +742,8 @@ void GuiText_cut (GuiText me) {
 			gtk_text_buffer_cut_clipboard (buffer, cb, gtk_text_view_get_editable (GTK_TEXT_VIEW (my d_widget)));
 		}
 	#elif motif
-		if (! my d_editable || ! NativeText_getSelectionRange (my d_widget, nullptr, nullptr)) return;
+		if (! my d_editable || ! NativeText_getSelectionRange (my d_widget, nullptr, nullptr))
+			return;
 		SendMessage (my d_widget -> window, WM_CUT, 0, 0);   // this will send the EN_CHANGE message, hence no need to call the valueChangedCallbacks
 		UpdateWindow (my d_widget -> window);
 	#elif cocoa
@@ -820,43 +870,35 @@ autostring32 GuiText_getStringAndSelectionPosition (GuiText me, integer *first, 
 		(void) Melder_killReturns_inplace (result.get());
 		return result;
 	#elif cocoa
-		if (my d_cocoaTextView) {
-			NSString *nsString = [my d_cocoaTextView   string];
-			autostring32 result = Melder_8to32 ([nsString UTF8String]);
-			trace (U"string ", result.get());
-			NSRange nsRange = [my d_cocoaTextView   selectedRange];
-			*first = uinteger_to_integer (nsRange. location);
-			*last = *first + uinteger_to_integer (nsRange. length);
-			for (integer i = 0; i < *first; i ++) {
-				if (result [i] > 0xFFFF) {
-					(*first) --;
-					(*last) --;
-				}
-			}
-			for (integer i = *first; i < *last; i ++) {
-				if (result [i] > 0xFFFF)
-					(*last) --;
-			}
-			return result;
-		} else {
-			NSString *nsString = [(NSTextField *) my d_widget   stringValue];
-			autostring32 result = Melder_8to32 ([nsString UTF8String]);
-			trace (U"string ", result.get());
-			NSRange nsRange = [[[(NSTextField *) my d_widget   window] fieldEditor: NO forObject: nil] selectedRange];
-			*first = uinteger_to_integer (nsRange. location);
-			*last = *first + uinteger_to_integer (nsRange. length);
-			for (integer i = 0; i < *first; i ++) {
-				if (result [i] > 0xFFFF) {
-					(*first) --;
-					(*last) --;
-				}
-			}
-			for (integer i = *first; i < *last; i ++) {
-				if (result [i] > 0xFFFF)
-					(*last) --;
-			}
-			return result;
-		}
+		NSString *nsString = ( my d_cocoaTextView ?
+				[my d_cocoaTextView   string] :
+				[(NSTextField *) my d_widget   stringValue] );
+		autostring16 buffer16 = Melder_32to16 (Melder_peek8to32 ([nsString UTF8String]));
+		NSText *nsText = ( my d_cocoaTextView ?
+				my d_cocoaTextView :
+				[[(NSTextField *) my d_widget   window] fieldEditor: NO forObject: nil] );
+		NSRange nsRange = [nsText   selectedRange];
+		*first = uinteger_to_integer (nsRange. location);
+		*last = *first + uinteger_to_integer (nsRange. length);
+		/*
+			The UTF-16 string may contain sequences of carriage return and newline,
+			for instance whenever a text has been copy-pasted from Microsoft Word,
+			in which case the carriage return has to be deleted and `first` and/or `last`
+			may have to be decremented.
+		*/
+		integer differenceFirst = 0;
+		for (integer i = 0; i < *first; i ++)
+			if (buffer16 [i] == 13 && (buffer16 [i + 1] == L'\n' || buffer16 [i + 1] == 0x0085))
+				differenceFirst ++;
+		integer differenceLast = differenceFirst;
+		for (integer i = *first; i < *last; i ++)
+			if (buffer16 [i] == 13 && (buffer16 [i + 1] == L'\n' || buffer16 [i + 1] == 0x0085))
+				differenceLast ++;
+		*first -= differenceFirst;
+		*last -= differenceLast;
+		autostring32 result = Melder_dup_f (Melder_peek16to32 (buffer16.get()));
+		(void) Melder_killReturns_inplace (result.get());
+		return result;
 	#else
 		return autostring32();
 	#endif
@@ -986,7 +1028,7 @@ void GuiText_setChangedCallback (GuiText me, GuiText_ChangedCallback changedCall
 	my d_changedBoss = changedBoss;
 }
 
-void GuiText_setFontSize (GuiText me, int size) {
+void GuiText_setFontSize (GuiText me, double size) {
 	#if gtk
 		GtkRcStyle *modStyle = gtk_widget_get_modifier_style (GTK_WIDGET (my d_widget));
 		trace (U"before initializing Pango: locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
@@ -1007,13 +1049,13 @@ void GuiText_setFontSize (GuiText me, int size) {
 		autostring32 text = GuiText_getStringAndSelectionPosition (me, & first, & last);
 		GuiText_setString (me, U"");   // erase all
 		UpdateWindow (my d_widget -> window);
-		if (size <= 10) {
+		if (size <= 10.0) {
 			SetWindowFont (my d_widget -> window, font10, false);
-		} else if (size <= 12) {
+		} else if (size <= 12.0) {
 			SetWindowFont (my d_widget -> window, font12, false);
-		} else if (size <= 14) {
+		} else if (size <= 14.0) {
 			SetWindowFont (my d_widget -> window, font14, false);
-		} else if (size <= 18) {
+		} else if (size <= 18.0) {
 			SetWindowFont (my d_widget -> window, font18, false);
 		} else {
 			SetWindowFont (my d_widget -> window, font24, false);
@@ -1072,8 +1114,12 @@ void GuiText_setSelection (GuiText me, integer first, integer last) {
 			On Windows, characters are counted in UTF-16 units, whereas 'first' and 'last' are in UTF-32 units. Convert.
 		*/
 		integer numberOfLeadingHighUnicodeValues = 0, numberOfSelectedHighUnicodeValues = 0;
-		for (integer i = 0; i < first; i ++) if (text [i] > 0xFFFF) numberOfLeadingHighUnicodeValues ++;
-		for (integer i = first; i < last; i ++) if (text [i] > 0xFFFF) numberOfSelectedHighUnicodeValues ++;
+		for (integer i = 0; i < first; i ++)
+			if (text [i] > 0xFFFF)
+				numberOfLeadingHighUnicodeValues ++;
+		for (integer i = first; i < last; i ++)
+			if (text [i] > 0xFFFF)
+				numberOfSelectedHighUnicodeValues ++;
 
 		first += numberOfLeadingLineBreaks;
 		last += numberOfLeadingLineBreaks + numberOfSelectedLineBreaks;
@@ -1087,9 +1133,17 @@ void GuiText_setSelection (GuiText me, integer first, integer last) {
 			On Cocoa, characters are counted in UTF-16 units, whereas 'first' and 'last' are in UTF-32 units. Convert.
 		*/
 		autostring32 text = GuiText_getString (me);
+		/*
+			The following line is needed in case GuiText_getString removed carriage returns.
+		*/
+		GuiText_setString (me, text.get());
 		integer numberOfLeadingHighUnicodeValues = 0, numberOfSelectedHighUnicodeValues = 0;
-		for (integer i = 0; i < first; i ++) if (text [i] > 0xFFFF) numberOfLeadingHighUnicodeValues ++;
-		for (integer i = first; i < last; i ++) if (text [i] > 0xFFFF) numberOfSelectedHighUnicodeValues ++;
+		for (integer i = 0; i < first; i ++)
+			if (text [i] > 0xFFFF)
+				numberOfLeadingHighUnicodeValues ++;
+		for (integer i = first; i < last; i ++)
+			if (text [i] > 0xFFFF)
+				numberOfSelectedHighUnicodeValues ++;
 		first += numberOfLeadingHighUnicodeValues;
 		last += numberOfLeadingHighUnicodeValues + numberOfSelectedHighUnicodeValues;
 
@@ -1100,7 +1154,7 @@ void GuiText_setSelection (GuiText me, integer first, integer last) {
 	}
 }
 
-void GuiText_setString (GuiText me, conststring32 text) {
+void GuiText_setString (GuiText me, conststring32 text, bool undoable) {
 	#if gtk
 		if (G_OBJECT_TYPE (my d_widget) == GTK_TYPE_ENTRY) {
 			gtk_entry_set_text (GTK_ENTRY (my d_widget), Melder_peek32to8 (text));
@@ -1130,9 +1184,22 @@ void GuiText_setString (GuiText me, conststring32 text) {
 		if (my d_cocoaTextView) {
 			NSRange nsRange = NSMakeRange (0, [[my d_cocoaTextView   textStorage] length]);
 			NSString *nsString = (NSString *) Melder_peek32toCfstring (text);
-			[my d_cocoaTextView   shouldChangeTextInRange: nsRange   replacementString: nsString];   // to make this action undoable
+			if (undoable)
+				[my d_cocoaTextView   shouldChangeTextInRange: nsRange   replacementString: nsString];   // to make this action undoable
 			//[[my d_cocoaTextView   textStorage] replaceCharactersInRange: nsRange   withString: nsString];
-			[my d_cocoaTextView   setString: nsString];
+			if (true) {
+				[my d_cocoaTextView   setString: nsString];
+			} else {
+				NSMutableParagraphStyle * aMutableParagraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
+				[aMutableParagraphStyle setTabStops: [NSArray array]];
+				NSTextTab *tab400 = [[NSTextTab alloc] initWithType: NSLeftTabStopType location: 400.0];
+				[aMutableParagraphStyle addTabStop: tab400];
+				NSTextTab *tab500 = [[NSTextTab alloc] initWithType: NSLeftTabStopType location: 500.0];
+				[aMutableParagraphStyle addTabStop: tab500];
+				NSMutableAttributedString * attributedString = [[NSMutableAttributedString alloc]   initWithString: nsString];
+				[attributedString addAttribute: NSParagraphStyleAttributeName   value: aMutableParagraphStyle   range: NSMakeRange (0, [nsString length])];
+				[[my d_cocoaTextView textStorage] setAttributedString: attributedString];
+			}
 			[my d_cocoaTextView   scrollRangeToVisible: NSMakeRange ([[my d_cocoaTextView   textStorage] length], 0)];   // to the end
 			//[[my d_cocoaTextView   window] setViewsNeedDisplay: YES];
 			//[[my d_cocoaTextView   window] display];

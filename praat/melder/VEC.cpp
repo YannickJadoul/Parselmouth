@@ -19,69 +19,154 @@
 #include "melder.h"
 #include "../dwsys/NUM2.h"   /* for NUMsort2 */
 
-inline static void columnSumAndMean (constMAT x, integer columnNumber,
-	double *out_sum, double *out_mean)
-{
-	integer stride = x.ncol;
-	PAIRWISE_SUM (longdouble, sum, integer, x.nrow,
-		const double *xx = & x [1] [columnNumber],
-		(longdouble) *xx,
-		xx += stride
-	)
-	if (out_sum) *out_sum = (double) sum;
-	if (out_mean) *out_mean = double (sum / x.nrow);
-}
+#ifdef macintosh
+	#include "macport_on.h"
+	#include <Accelerate/Accelerate.h>
+	#include "macport_off.h"
+#endif
 
-inline static double inner_stride_ (constVEC x, constVEC y, integer stride) {
-	if (x.size != y.size)
-		return undefined;
-	PAIRWISE_SUM (longdouble, sum, integer, x.size,
-		const double *xx = & x [1];
-		const double *yy = & y [1],
-		(longdouble) *xx * (longdouble) *yy,
-		(xx += 1, yy += stride)   // this goes way beyond the confines of y
-	)
-	return (double) sum;
+#if defined (macintosh)
+void VECadd_macfast_ (const VECVU& target, const constVECVU& x, const constVECVU& y) noexcept {
+	integer n = target.size;
+	vDSP_vaddD (& x [1], x.stride, & y [1], y.stride, & target [1], target.stride, integer_to_uinteger (n));
+	/*
+		Speed if always vDSP_vaddD:
+			//9.3,1.26,0.21, 0.10,0.42,0.70, 1.17,1.97,5.32
+		Speed if always explicit loop:
+			0.61,1.99,4.32, 4.39,2.61,1.51, 0.85,0.50,0.41
+		Combined:
+			6.1,1.19,0.23, 0.13,0.41,0.70, 1.19,2.02,2.45
+	*/
 }
+#endif
 
-autoVEC VECmul (constVEC vec, constMAT mat) {
-	if (mat.nrow != vec.size)
-		return autoVEC();
-	autoVEC result = VECraw (mat.ncol);
-	VECmul_preallocated (result.get(), vec, mat);
+autoVEC newVECfrom_to (double from, double to) {
+	const integer numberOfElements = Melder_ifloor (to - from + 1.0);
+	if (numberOfElements < 1)
+		return autoVEC ();
+	autoVEC result = newVECraw (numberOfElements);
+	for (integer i = 1; i <= numberOfElements; i ++)
+		result [i] = from + (double) (i - 1);
 	return result;
 }
 
-void VECmul_preallocated (VEC target, constVEC vec, constMAT mat) {
-	for (integer j = 1; j <= mat.ncol; j ++) {
-		if ((false)) {
-			target [j] = 0.0;
-			for (integer i = 1; i <= mat.nrow; i ++)
-				target [j] += vec [i] * mat [i] [j];
-		} else {
-			target [j] = inner_stride_ (vec, constVEC (& mat [1] [j] - 1, mat.nrow), mat.ncol);
+autoVEC newVECbetween_by (double from, double to, double by) {
+	Melder_require (by != 0.0,
+		U"between_by#: cannot have a step (“by”) of zero.");
+	/*
+		The following algorithm works for both positive and negative `by`.
+	*/
+	const integer numberOfElements = Melder_ifloor ((to - from) / by + 1.0);
+	if (numberOfElements < 1)
+		return autoVEC ();
+	const double spaceNeeded = (numberOfElements - 1) * by;
+	const double spaceOnEdges = (to - from) - spaceNeeded;
+	const double first = from + 0.5 * spaceOnEdges;
+	autoVEC result = newVECraw (numberOfElements);
+	for (integer i = 1; i <= numberOfElements; i ++)
+		result [i] = first + (double) (i - 1) * by;
+	return result;
+}
+
+autoVEC newVECfrom_to_by (double from, double to, double by) {
+	Melder_require (by != 0.0,
+		U"from_to_by#: cannot have a step (“by”) of zero.");
+	/*
+		The following algorithm works for both positive and negative `by`.
+	*/
+	const integer numberOfElements = Melder_ifloor ((to - from) / by + 1.0);
+	if (numberOfElements < 1)
+		return autoVEC ();
+	autoVEC result = newVECraw (numberOfElements);
+	for (integer i = 1; i <= numberOfElements; i ++)
+		result [i] = from + (double) (i - 1) * by;
+	return result;
+}
+
+void VECmul (VECVU const& target, constVECVU const& vec, constMATVU const& mat) noexcept {
+	Melder_assert (mat.nrow == vec.size);
+	Melder_assert (target.size == mat.ncol);
+	if ((true)) {
+		for (integer icol = 1; icol <= mat.ncol; icol ++) {
+			target [icol] = 0.0;
+			for (integer irow = 1; irow <= mat.nrow; irow ++)
+				target [icol] += vec [irow] * mat [irow] [icol];
+		}
+	} else if ((false)) {
+		for (integer icol = 1; icol <= mat.ncol; icol ++) {
+			PAIRWISE_SUM (longdouble, sum, integer, vec.size,
+				const double *px = & vec [1];
+				const double *py = & mat [1] [icol],
+				(longdouble) *px * (longdouble) *py,
+				(px += vec.stride, py += mat.rowStride)   // this goes way beyond the confines of mat
+			)
+			target [icol] = double (sum);
 		}
 	}
 }
 
-autoVEC VECmul (constMAT mat, constVEC vec) {
-	if (vec.size != mat.ncol)
-		return autoVEC();
-	autoVEC result = VECraw (mat.nrow);
-	VECmul_preallocated (result.get(), mat, vec);
+autoVEC newVECmul (constVECVU const& vec, constMATVU const& mat) {
+	autoVEC result = newVECraw (mat.ncol);
+	VECmul (result.get(), vec, mat);
 	return result;
 }
 
-void VECmul_preallocated (VEC target, constMAT mat, constVEC vec) {
+void VECmul (VECVU const& target, constMATVU const& mat, constVECVU const& vec) noexcept {
+	Melder_assert (vec.size == mat.ncol);
+	Melder_assert (target.size == mat.nrow);
 	for (integer i = 1; i <= mat.nrow; i ++) {
 		if ((false)) {
 			target [i] = 0.0;
 			for (integer j = 1; j <= vec.size; j ++)
 				target [i] += mat [i] [j] * vec [j];
 		} else {
-			target [i] = NUMinner (constVEC (& mat [i] [1] - 1, mat.ncol), vec);
+			target [i] = NUMinner (mat.row (i), vec);
 		}
 	}
+}
+
+autoVEC newVECmul (constMATVU const& mat, constVECVU const& vec) {
+	autoVEC result = newVECraw (mat.nrow);
+	VECmul (result.all(), mat, vec);
+	return result;
+}
+
+void VECpower (VECVU const& target, constVECVU const& vec, double power) {
+	if (power == 2.0) {
+		for (integer i = 1; i <= target.size; i ++)
+			target [i] = vec [i] * vec [i];
+	} else if (power < 0.0) {
+		if (power == -1.0) {
+			for (integer i = 1; i <= target.size; i ++) {
+				Melder_require (vec [i] != 0.0,
+					U"Cannot raise zero to a negative power.");
+				target [i] = 1.0 / vec [i];
+			}
+		} else if (power == -2.0) {
+			for (integer i = 1; i <= target.size; i ++) {
+				Melder_require (vec [i] != 0.0,
+					U"Cannot raise zero to a negative power.");
+				target [i] = 1.0 / (vec [i] * vec [i]);
+			}
+		} else {
+			for (integer i = 1; i <= target.size; i ++) {
+				Melder_require (vec [i] != 0.0,
+					U"Cannot raise zero to a negative power.");
+				target [i] = pow (vec [i], power);
+			}
+		}
+	} else {
+		for (integer i = 1; i <= target.size; i ++)
+			target [i] = pow (vec [i], power);
+	}
+}
+
+autoVEC newVECto (double to) {
+	const integer numberOfElements = Melder_ifloor (to);
+	autoVEC result = newVECraw (numberOfElements);
+	for (integer i = 1; i <= numberOfElements; i ++)
+		result [i] = (double) i;
+	return result;
 }
 
 /* End of file VEC.cpp */

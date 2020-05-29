@@ -1,6 +1,6 @@
 /* Proximity.cpp
  *
- * Copyright (C) 1993-2018 David Weenink
+ * Copyright (C) 1993-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ static double Dissimilarity_getAverage (Dissimilarity me) {
 	integer numberOfPositives = 0;
 	for (integer i = 1; i <= my numberOfRows - 1; i ++) {
 		for (integer j = i + 1; j <= my numberOfRows; j ++) {
-			double proximity = 0.5 * (my data [i] [j] + my data [j] [i]);
+			const longdouble proximity = 0.5 * (my data [i] [j] + my data [j] [i]);
 			if (proximity > 0.0) {
 				numberOfPositives ++;
 				sum += proximity;
@@ -72,7 +72,7 @@ autoDissimilarity Dissimilarity_createLetterRExample (double noiseStd) {
 
 		for (integer i = 1; i <= my numberOfRows - 1; i ++) {
 			for (integer j = i + 1; j <= my numberOfRows; j ++) {
-				double dis = my data [i] [j];
+				const double dis = my data [i] [j];
 				my data [j] [i] = my data [i] [j] = dis * dis + 5.0 + NUMrandomUniform (0.0, noiseStd);
 			}
 		}
@@ -82,25 +82,32 @@ autoDissimilarity Dissimilarity_createLetterRExample (double noiseStd) {
 	}
 }
 
+/*
+	Get the best estimate for the additive constant:
+		"distance = dissimilarity + constant"
+	F. Cailliez (1983), The analytical solution of the additive constant problem, Psychometrika 48, 305-308.
+*/
 double Dissimilarity_getAdditiveConstant (Dissimilarity me) {
 	double additiveConstant = undefined;
 	try {
-		integer nPoints = my numberOfRows, nPoints2 = 2 * nPoints;
-		Melder_require (nPoints > 0, U"Matrix part should not be empty.");
-
-		// Return c = average dissimilarity in case of failure
-
+		const integer nPoints = my numberOfRows, nPoints2 = 2 * nPoints;
+		Melder_require (nPoints > 0,
+			U"Matrix part should not be empty.");
+		/*
+			Return c = average dissimilarity in case of failure
+		*/
 		additiveConstant = Dissimilarity_getAverage (me);
-		Melder_require (isdefined (additiveConstant), U"There are no positive dissimilarities.");
+		Melder_require (isdefined (additiveConstant),
+			U"There are no positive dissimilarities.");
 		
-		autoMAT wd (nPoints, nPoints, kTensorInitializationType::ZERO);
-		autoMAT wdsqrt (nPoints, nPoints, kTensorInitializationType::ZERO);
-
-		// The matrices D & D1/2 with distances (squared and linear)
-
+		autoMAT wd = newMATzero (nPoints, nPoints);
+		autoMAT wdsqrt = newMATzero (nPoints, nPoints);
+		/*
+			The matrices D & D1/2 with distances (squared and linear)
+		*/
 		for (integer i = 1; i <= nPoints - 1; i ++) {
 			for (integer j = i + 1; j <= nPoints; j ++) {
-				double proximity = (my data [i] [j] + my data [j] [i]) / 2.0;
+				const double proximity = (my data [i] [j] + my data [j] [i]) / 2.0;
 				wdsqrt [j] [i] = wdsqrt [i] [j] = - proximity / 2.0; // djmw 20180830
 				wd [j] [i] = wd [i] [j] = - proximity * proximity / 2.0;
 			}
@@ -108,38 +115,35 @@ double Dissimilarity_getAdditiveConstant (Dissimilarity me) {
 
 		MATdoubleCentre_inplace (wdsqrt.get());
 		MATdoubleCentre_inplace (wd.get());
-
-		// Calculate the B matrix according to eq. 6
-		
-		autoMAT b (nPoints2, nPoints2, kTensorInitializationType::ZERO);
-
-		for (integer i = 1; i <= nPoints; i ++) {
-			for (integer j = 1; j <= nPoints; j ++) {
-				b [i] [nPoints + j] = 2.0 * wd [i] [j];
-				b [nPoints + i] [nPoints + j] = -4.0 * wdsqrt [i] [j];
-				b [nPoints + i] [i] = -1.0;
-			}
-		}
-
-		// Get eigenvalues
-		
-		autoVEC eigenvalues_re, eigenvalues_im;
-		MAT_getEigenSystemFromGeneralMatrix (b.get(), nullptr, nullptr, & eigenvalues_re, & eigenvalues_im);
-		
-		// Get largest real eigenvalue
-		double largestEigenvalue = - fabs (eigenvalues_re [1]);
+		/*
+			Calculate the B matrix according to eq. 6
+		*/
+		autoMAT b = newMATzero (nPoints2, nPoints2);
+		b.part (1, nPoints, nPoints + 1, nPoints2) <<= 2.0  *  wd.get();
+		b.part (nPoints + 1, nPoints2, 1, nPoints).diagonal() <<= - 1.0;
+		b.part (nPoints + 1, nPoints2, nPoints + 1, nPoints2) <<= -4.0  *  wdsqrt.get();
+		/*
+			Get eigenvalues
+		*/
+		autoCOMPVEC eigenvalues;
+		MAT_getEigenSystemFromGeneralSquareMatrix (b.get(), & eigenvalues, nullptr);
+		/*
+			Get largest real eigenvalue
+		*/
 		integer numberOfRealEigenvalues = 0;
+		double largestRealEigenvalue = std::numeric_limits<double>::lowest();
 		for (integer i = 1; i <= nPoints2; i ++) {
-			if (eigenvalues_im [i] == 0.0) {
+			if (eigenvalues [i] .imag() == 0.0) {
 				++ numberOfRealEigenvalues;
-				if (eigenvalues_re [i] > largestEigenvalue)
-					largestEigenvalue = eigenvalues_re [i];
+				if (eigenvalues [i] .real() > largestRealEigenvalue)
+					largestRealEigenvalue = eigenvalues [i] .real();
 			}
 		}
 		
-		Melder_require (largestEigenvalue >= 0, U"The largest eigenvalue should not be negative.");
+		Melder_require (largestRealEigenvalue >= 0,
+			U"The largest eigenvalue should be positive.");
 		
-		additiveConstant = largestEigenvalue;
+		additiveConstant = largestRealEigenvalue;
 		return additiveConstant;
 	} catch (MelderError) {
 		Melder_throw (U"Additive constant not calculated.");

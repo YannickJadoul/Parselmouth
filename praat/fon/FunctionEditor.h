@@ -2,7 +2,7 @@
 #define _FunctionEditor_h_
 /* FunctionEditor.h
  *
- * Copyright (C) 1992-2011,2012,2013,2014,2015,2017 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,10 +82,13 @@ Thing_define (FunctionEditor, Editor) {
 	virtual void v_drawSelectionViewer () { }
 	virtual void v_drawRealTimeSelectionViewer (int /* phase */, double /* time */) { }
 	virtual void v_prepareDraw () { }   // for less flashing
+	virtual conststring32 v_domainName () { return U"time"; }
+	virtual conststring32 v_selectionViewerName () { return U"selection viewer"; }
 	virtual conststring32 v_format_domain () { return U"Time domain:"; }
 	virtual void v_format_short (char *s, size_t n, double value, double) { snprintf(s, n, u8"%s", Melder8_double(value, 3, 'f')); /* return u8"%.3f"; */ }
 	virtual void v_format_long (char *s, size_t n, double value, double) { snprintf(s, n, u8"%s", Melder8_double(value, 6, 'f')); /* return u8"%f"; */ }
-	virtual conststring32 v_format_units () { return U"seconds"; }
+	virtual conststring32 v_format_units_long () { return U"seconds"; }
+	virtual conststring32 v_format_units_short () { return U"s"; }
 	virtual void v_format_totalDuration (char *s, size_t n, double value, double) { snprintf(s, n, u8"Total duration %s seconds", Melder8_double(value, 6, 'f')); /* return u8"Total duration %f seconds"; */ }
 	virtual void v_format_window (char *s, size_t n,double value, double) { snprintf(s, n, u8"Visible part %s seconds", Melder8_double(value, 6, 'f')); /* return u8"Visible part %f seconds"; */ }
 	virtual void v_format_selection (char *s, size_t n, double value, double inverseValue) { snprintf(s, n, u8"%s (%s / s)", Melder8_double(value, 6, 'f'), Melder8_double(inverseValue, 3, 'f')); /* return u8"%f (%.3f / s)"; */ }

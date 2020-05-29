@@ -1,6 +1,6 @@
 /* Ui.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,6 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <wctype.h>
-#include <ctype.h>
 #include "../kar/longchar.h"
 #include "machine.h"
 #include "GuiP.h"
@@ -67,14 +65,16 @@ static autoUiOption UiOption_create (conststring32 label) {
 }
 
 UiOption UiRadio_addButton (UiField me, conststring32 label) {
-	if (! me) return nullptr;
+	if (! me)
+		return nullptr;
 	Melder_assert (my type == _kUiField_type::RADIO_ || my type == _kUiField_type::OPTIONMENU_);
 	autoUiOption thee = UiOption_create (label);
 	return my options. addItem_move (thee.move());
 }
 
 UiOption UiOptionMenu_addButton (UiField me, conststring32 label) {
-	if (! me) return nullptr;
+	if (! me)
+		return nullptr;
 	Melder_assert (my type == _kUiField_type::RADIO_ || my type == _kUiField_type::OPTIONMENU_);
 	autoUiOption thee = UiOption_create (label);
 	return my options. addItem_move (thee.move());
@@ -84,6 +84,11 @@ UiOption UiOptionMenu_addButton (UiField me, conststring32 label) {
 
 static void UiField_setDefault (UiField me) {
 	switch (my type) {
+		case _kUiField_type::LABEL_:
+		{
+			// do nothing
+		}
+		break;
 		case _kUiField_type::REAL_:
 		case _kUiField_type::REAL_OR_UNDEFINED_:
 		case _kUiField_type::POSITIVE_:
@@ -127,47 +132,14 @@ static void UiField_setDefault (UiField me) {
 	}
 }
 
-static int colourToValue (UiField me, char32 *string) {
-	char32 *p = string;
-	Melder_skipHorizontalSpace (& p);
-	*p = Melder_toLowerCase (*p);
-	char32 first = *p;
-	if (first == U'{') {
-		my colourValue. red = Melder_atof (++ p);
-		p = str32chr (p, U',');
-		if (! p) return 0;
-		my colourValue. green = Melder_atof (++ p);
-		p = str32chr (p, U',');
-		if (! p) return 0;
-		my colourValue. blue = Melder_atof (++ p);
-	} else {
-		*p = Melder_toLowerCase (*p);
-		if (str32equ (p, U"black")) my colourValue = Graphics_BLACK;
-		else if (str32equ (p, U"white")) my colourValue = Graphics_WHITE;
-		else if (str32equ (p, U"red")) my colourValue = Graphics_RED;
-		else if (str32equ (p, U"green")) my colourValue = Graphics_GREEN;
-		else if (str32equ (p, U"blue")) my colourValue = Graphics_BLUE;
-		else if (str32equ (p, U"yellow")) my colourValue = Graphics_YELLOW;
-		else if (str32equ (p, U"cyan")) my colourValue = Graphics_CYAN;
-		else if (str32equ (p, U"magenta")) my colourValue = Graphics_MAGENTA;
-		else if (str32equ (p, U"maroon")) my colourValue = Graphics_MAROON;
-		else if (str32equ (p, U"lime")) my colourValue = Graphics_LIME;
-		else if (str32equ (p, U"navy")) my colourValue = Graphics_NAVY;
-		else if (str32equ (p, U"teal")) my colourValue = Graphics_TEAL;
-		else if (str32equ (p, U"purple")) my colourValue = Graphics_PURPLE;
-		else if (str32equ (p, U"olive")) my colourValue = Graphics_OLIVE;
-		else if (str32equ (p, U"pink")) my colourValue = Graphics_PINK;
-		else if (str32equ (p, U"silver")) my colourValue = Graphics_SILVER;
-		else if (str32equ (p, U"grey")) my colourValue = Graphics_GREY;
-		else { *p = first; return 0; }
-		*p = first;
-	}
-	return 1;
-}
-
 static void UiField_widgetToValue (UiField me) {
 	switch (my type)
 	{
+		case _kUiField_type::LABEL_:
+		{
+			// do nothing
+		}
+		break;
 		case _kUiField_type::REAL_:
 		case _kUiField_type::REAL_OR_UNDEFINED_:
 		case _kUiField_type::POSITIVE_:
@@ -236,7 +208,7 @@ static void UiField_widgetToValue (UiField me) {
 			if (owned) {
 				my numericVectorValue. adoptFromAmbiguousOwner (result);
 			} else {
-				my numericVectorValue = VECcopy (result);
+				my numericVectorValue = newVECcopy (result);
 			}
 			if (my numericVectorVariable)
 				*my numericVectorVariable = my numericVectorValue.get();
@@ -251,7 +223,7 @@ static void UiField_widgetToValue (UiField me) {
 			if (owned) {
 				my numericMatrixValue. adoptFromAmbiguousOwner (result);
 			} else {
-				my numericMatrixValue = matrixcopy (result);
+				my numericMatrixValue = newMATcopy (result);
 			}
 			if (my numericMatrixVariable)
 				*my numericMatrixVariable = my numericMatrixValue.get();
@@ -275,7 +247,7 @@ static void UiField_widgetToValue (UiField me) {
 			if (my integerValue == 0)
 				Melder_throw (U"No option chosen for “", my name.get(), U"”.");
 			if (my intVariable)
-				*my intVariable = my integerValue - my subtract;
+				*my intVariable = int (my integerValue) - my subtract;
 			if (my stringVariable)
 				*my stringVariable = my options.at [my integerValue] -> name.get();
 		}
@@ -286,22 +258,21 @@ static void UiField_widgetToValue (UiField me) {
 			if (my integerValue == 0)
 				Melder_throw (U"No option chosen for “", my name.get(), U"”.");
 			if (my intVariable)
-				*my intVariable = my integerValue - my subtract;
+				*my intVariable = int (my integerValue) - my subtract;
 			if (my stringVariable)
 				*my stringVariable = my options.at [my integerValue] -> name.get();
 		}
 		break;
 		case _kUiField_type::LIST_:
 		{
-			integer numberOfSelected, *selected = GuiList_getSelectedPositions (my list, & numberOfSelected);   // BUG memory
-			if (! selected) {
+			autoINTVEC selected = GuiList_getSelectedPositions (my list);
+			if (selected.size == 0) {
 				Melder_warning (U"No items selected.");
 				my integerValue = 1;
 			} else {
-				if (numberOfSelected > 1)
+				if (selected.size > 1)
 					Melder_warning (U"More than one item selected.");
 				my integerValue = selected [1];
-				NUMvector_free <integer> (selected, 1);
 			}
 			if (my integerVariable)
 				*my integerVariable = my integerValue;
@@ -312,11 +283,13 @@ static void UiField_widgetToValue (UiField me) {
 		case _kUiField_type::COLOUR_:
 		{
 			autostring32 string = GuiText_getString (my text);
-			if (colourToValue (me, string.get())) {
-				// do nothing
+			MelderColour colour = MelderColour_fromColourNameOrRGBString (string.get());
+			if (colour.valid()) {
+				my colourValue = colour;
 			} else {
-				Interpreter_numericExpression (nullptr, string.get(), & my colourValue. red);
-				my colourValue. green = my colourValue. blue = my colourValue. red;
+				double greyValue;
+				Interpreter_numericExpression (nullptr, string.get(), & greyValue);
+				my colourValue = MelderColour (greyValue);
 			}
 			if (my colourVariable)
 				*my colourVariable = my colourValue;
@@ -326,16 +299,23 @@ static void UiField_widgetToValue (UiField me) {
 
 /***** History mechanism. *****/
 
-static MelderString theHistory { };
-void UiHistory_write (conststring32 string) { MelderString_append (& theHistory, string); }
+static MelderString theHistory;
+void UiHistory_write (conststring32 string) {
+	MelderString_append (& theHistory, string);
+}
 void UiHistory_write_expandQuotes (conststring32 string) {
-	if (! string) return;
+	if (! string)
+		return;
 	for (const char32 *p = & string [0]; *p != U'\0'; p ++) {
-		if (*p == U'\"') MelderString_append (& theHistory, U"\"\""); else MelderString_appendCharacter (& theHistory, *p);
+		if (*p == U'\"')
+			MelderString_append (& theHistory, U"\"\"");
+		else
+			MelderString_appendCharacter (& theHistory, *p);
 	}
 }
 void UiHistory_write_colonize (conststring32 string) {
-	if (! string) return;
+	if (! string)
+		return;
 	for (const char32 *p = & string [0]; *p != U'\0'; p ++) {
 		if (*p == U'.' && p [1] == U'.' && p [2] == U'.') {
 			MelderString_append (& theHistory, U":");
@@ -345,8 +325,12 @@ void UiHistory_write_colonize (conststring32 string) {
 		}
 	}
 }
-char32 *UiHistory_get () { return theHistory.string; }
-void UiHistory_clear () { MelderString_empty (& theHistory); }
+char32 *UiHistory_get () {
+	return theHistory.string;
+}
+void UiHistory_clear () {
+	MelderString_empty (& theHistory);
+}
 
 /***** class UiForm: dialog windows *****/
 
@@ -396,23 +380,22 @@ static void UiForm_okOrApply (UiForm me, GuiButton button, int hide) {
 		Melder_flushError (U"Please correct command window “", my name.get(), U"” or cancel.");
 		return;
 	}
-	if (my okButton) GuiThing_setSensitive (my okButton, false);
-	for (int i = 1; i <= my numberOfContinueButtons; i ++)
-		if (my continueButtons [i])
-			GuiThing_setSensitive (my continueButtons [i], false);
+	if (my okButton)     GuiThing_setSensitive (my okButton,     false);
 	if (my applyButton)  GuiThing_setSensitive (my applyButton,  false);
 	if (my cancelButton) GuiThing_setSensitive (my cancelButton, false);
 	if (my revertButton) GuiThing_setSensitive (my revertButton, false);
 	if (my helpButton)   GuiThing_setSensitive (my helpButton,   false);
+	for (int i = 1; i <= my numberOfContinueButtons; i ++)
+		if (my continueButtons [i])
+			GuiThing_setSensitive (my continueButtons [i], false);
+
 	#if defined (_WIN32)
 		GdiFlush ();
 	#endif
 	if (my isPauseForm) {
-		for (int i = 1; i <= my numberOfContinueButtons; i ++) {
-			if (button == my continueButtons [i]) {
+		for (int i = 1; i <= my numberOfContinueButtons; i ++)
+			if (button == my continueButtons [i])
 				my clickedContinueButton = i;
-			}
-		}
 	}
 	/*
 		Keep the gate for error handling.
@@ -433,6 +416,11 @@ static void UiForm_okOrApply (UiForm me, GuiButton button, int hide) {
 				UiField field = my field [ifield].get();
 				switch (field -> type)
 				{
+					case _kUiField_type::LABEL_:
+					{
+						// do nothing
+					}
+					break;
 					case _kUiField_type::REAL_:
 					case _kUiField_type::REAL_OR_UNDEFINED_:
 					case _kUiField_type::POSITIVE_:
@@ -481,9 +469,19 @@ static void UiForm_okOrApply (UiForm me, GuiButton button, int hide) {
 					break;
 					case _kUiField_type::COLOUR_:
 					{
-						UiHistory_write (next -- ? U", \"" : U" \"");
-						UiHistory_write (Graphics_Colour_name (field -> colourValue));
-						UiHistory_write (U"\"");
+						conststring32 colourString = MelderColour_namePrettyOrNull (field -> colourValue);
+						if (colourString) {
+							UiHistory_write (next -- ? U", \"" : U" \"");
+							UiHistory_write (colourString);
+							UiHistory_write (U"\"");
+						} else if (field -> colourValue. isGrey()) {
+							UiHistory_write (next -- ? U", " : U" ");
+							UiHistory_write (Melder_double (field -> colourValue. red));
+						} else {
+							colourString = MelderColour_nameRGB (field -> colourValue);
+							UiHistory_write (next -- ? U", " : U" ");
+							UiHistory_write (colourString);
+						}
 					}
 				}
 			}
@@ -515,14 +513,14 @@ static void UiForm_okOrApply (UiForm me, GuiButton button, int hide) {
 		}
 		Melder_flushError ();
 	}
-	if (my okButton) GuiThing_setSensitive (my okButton, true);
-	for (int i = 1; i <= my numberOfContinueButtons; i ++)
-		if (my continueButtons [i])
-			GuiThing_setSensitive (my continueButtons [i], true);
+	if (my okButton)     GuiThing_setSensitive (my okButton,     true);
 	if (my applyButton)  GuiThing_setSensitive (my applyButton,  true);
 	if (my cancelButton) GuiThing_setSensitive (my cancelButton, true);
 	if (my revertButton) GuiThing_setSensitive (my revertButton, true);
 	if (my helpButton)   GuiThing_setSensitive (my helpButton,   true);
+	for (int i = 1; i <= my numberOfContinueButtons; i ++)
+		if (my continueButtons [i])
+			GuiThing_setSensitive (my continueButtons [i], true);
 }
 
 static void gui_button_cb_ok (UiForm me, GuiButtonEvent event) {
@@ -712,7 +710,7 @@ UiField UiForm_addOptionMenu (UiForm me, int *intVariable, conststring32 *string
 	return thee;
 }
 
-UiField UiForm_addList (UiForm me, integer *integerVariable, conststring32 *stringVariable, conststring32 variableName, conststring32 label, conststring32vector strings, integer defaultValue) {
+UiField UiForm_addList (UiForm me, integer *integerVariable, conststring32 *stringVariable, conststring32 variableName, conststring32 label, constSTRVEC strings, integer defaultValue) {
 	UiField thee = UiForm_addField (me, _kUiField_type::LIST_, label);
 	thy strings = strings;
 	thy integerDefaultValue = defaultValue;
@@ -722,7 +720,7 @@ UiField UiForm_addList (UiForm me, integer *integerVariable, conststring32 *stri
 	return thee;
 }
 
-UiField UiForm_addColour (UiForm me, Graphics_Colour *colourVariable, conststring32 variableName, conststring32 label, conststring32 defaultValue) {
+UiField UiForm_addColour (UiForm me, MelderColour *colourVariable, conststring32 variableName, conststring32 label, conststring32 defaultValue) {
 	UiField thee = UiForm_addField (me, _kUiField_type::COLOUR_, label);
 	thy stringDefaultValue = Melder_dup (defaultValue);
 	thy colourVariable = colourVariable;
@@ -747,7 +745,7 @@ UiField UiForm_addChannel (UiForm me, integer *variable, conststring32 variableN
 #define HELP_BUTTON_X  20
 #define LIST_HEIGHT  192
 
-static MelderString theFinishBuffer { };
+static MelderString theFinishBuffer;
 
 static void appendColon () {
 	integer length = theFinishBuffer.length;
@@ -1136,16 +1134,16 @@ static void UiField_api_header_C (UiField me, UiField next, bool isLastNonLabelF
 		}
 
 		MelderInfo_write (U"   // ");
-		if (isPositive) {
+		if (isPositive)
 			MelderInfo_write (U"positive, ");
-		}
-		if (unitsContainRange) {
+		if (unitsContainRange)
 			MelderInfo_write (units, U", ");
-		}
 		MelderInfo_write (U"e.g. ");
-		if (isText) MelderInfo_write (U"\"");
+		if (isText)
+			MelderInfo_write (U"\"");
 		MelderInfo_write (defaultValue);
-		if (isText) MelderInfo_write (U"\"");
+		if (isText)
+			MelderInfo_write (U"\"");
 		if (unitsAreAvailable && ! unitsContainRange) {
 			MelderInfo_write (U" ", units);
 		}
@@ -1161,7 +1159,8 @@ static void UiField_api_header_C (UiField me, UiField next, bool isLastNonLabelF
 		MelderInfo_write (U"\"; other choice", ( my options.size > 2 ? U"s" : U"" ), U":");
 		bool firstWritten = false;
 		for (int i = 1; i <= my options.size; i ++) {
-			if (i == my integerDefaultValue) continue;
+			if (i == my integerDefaultValue)
+				continue;
 			if (firstWritten) MelderInfo_write (U",");
 			MelderInfo_write (U" \"", my options.at [i] -> name.get(), U"\"");
 			firstWritten = true;
@@ -1182,9 +1181,8 @@ void UiForm_info (UiForm me, integer narg) {
 				break;
 			}
 		}
-		for (int ifield = 1; ifield <= my numberOfFields; ifield ++) {
+		for (int ifield = 1; ifield <= my numberOfFields; ifield ++)
 			UiField_api_header_C (my field [ifield].get(), ifield == my numberOfFields ? nullptr : my field [ifield + 1].get(), ifield == lastNonLabelFieldNumber);
-		}
 	}
 }
 
@@ -1226,7 +1224,10 @@ static void UiField_argToValue (UiField me, Stackel arg, Interpreter /* interpre
 					Melder_throw (U"Argument \"", my name.get(), U"\" should be a number, not ", arg -> whichText(), U".");
 				}
 			} else if (arg -> which == Stackel_NUMBER) {
-				my integerValue = Melder_iround (arg -> number);
+				double realValue = arg -> number;
+				my integerValue = Melder_iround (realValue);
+				Melder_require (my integerValue == realValue,
+					U"Argument \"", my name.get(), U"\" should be a whole number.");
 				if (my type == _kUiField_type::NATURAL_ && my integerValue < 1)
 					Melder_throw (U"Argument \"", my name.get(), U"\" should be a positive whole number.");
 			} else {
@@ -1255,7 +1256,7 @@ static void UiField_argToValue (UiField me, Stackel arg, Interpreter /* interpre
 				my numericVectorValue. adoptFromAmbiguousOwner (arg -> numericVector);
 				arg -> owned = false;
 			} else {
-				my numericVectorValue = VECcopy (arg -> numericVector);
+				my numericVectorValue = newVECcopy (arg -> numericVector);
 			}
 			if (my numericVectorVariable)
 				*my numericVectorVariable = my numericVectorValue.get();
@@ -1269,7 +1270,7 @@ static void UiField_argToValue (UiField me, Stackel arg, Interpreter /* interpre
 				my numericMatrixValue. adoptFromAmbiguousOwner (arg -> numericMatrix);
 				arg -> owned = false;
 			} else {
-				my numericMatrixValue = matrixcopy (arg -> numericMatrix);
+				my numericMatrixValue = newMATcopy (arg -> numericMatrix);
 			}
 			if (my numericMatrixVariable)
 				*my numericMatrixVariable = my numericMatrixValue.get();
@@ -1287,7 +1288,7 @@ static void UiField_argToValue (UiField me, Stackel arg, Interpreter /* interpre
 						U"\" can only be a number or one of the strings \"yes\" or \"no\".");
 				}
 			} else if (arg -> which == Stackel_NUMBER) {
-				my integerValue = arg -> number == 0.0 ? 0.0 : 1.0;
+				my integerValue = ( arg -> number == 0.0 ? 0.0 : 1.0 );
 			} else {
 				Melder_throw (U"Boolean argument \"", my name.get(), U"\" should be a number (0 or 1), not ", arg -> whichText(), U".");
 			}
@@ -1325,7 +1326,7 @@ static void UiField_argToValue (UiField me, Stackel arg, Interpreter /* interpre
 				}
 			}
 			if (my intVariable)
-				*my intVariable = my integerValue - my subtract;
+				*my intVariable = int (my integerValue) - my subtract;
 			if (my stringVariable)
 				*my stringVariable = my options.at [my integerValue] -> name.get();
 		}
@@ -1336,7 +1337,8 @@ static void UiField_argToValue (UiField me, Stackel arg, Interpreter /* interpre
 				Melder_throw (U"List argument \"", my name.get(), U"\" should be a string, not ", arg -> whichText(), U".");
 			integer i = 1;
 			for (; i <= my strings.size; i ++)
-				if (str32equ (arg -> getString(), my strings [i])) break;
+				if (str32equ (arg -> getString(), my strings [i]))
+					break;
 			if (i > my strings.size)
 				Melder_throw (U"List argument \"", my name.get(), U"\" cannot have the value \"", arg -> getString(), U"\".");
 			my integerValue = i;
@@ -1354,9 +1356,15 @@ static void UiField_argToValue (UiField me, Stackel arg, Interpreter /* interpre
 				my colourValue. red = my colourValue. green = my colourValue. blue = arg -> number;
 			} else if (arg -> which == Stackel_STRING) {
 				autostring32 string2 = Melder_dup (arg -> getString());
-				if (! colourToValue (me, string2.get()))
+				MelderColour colour = MelderColour_fromColourNameOrRGBString (string2.get());
+				if (colour.valid())
+					my colourValue = colour;
+				else
 					Melder_throw (U"Cannot compute a colour from \"", string2.get(), U"\".");
-			}
+			} else if (arg -> which == Stackel_NUMERIC_VECTOR) {
+				my colourValue = MelderColour (arg -> numericVector);
+			} else
+				Melder_throw (U"Colour argument \"", my name.get(), U"\" should be a string or number or numeric vector, not ", arg -> whichText(), U".");
 			if (my colourVariable)
 				*my colourVariable = my colourValue;
 		}
@@ -1475,7 +1483,7 @@ static void UiField_stringToValue (UiField me, conststring32 string, Interpreter
 				Melder_throw (U"Field \"", my name.get(), U"\" must not have the value \"", string, U"\".");
 			}
 			if (my intVariable)
-				*my intVariable = my integerValue - my subtract;
+				*my intVariable = int (my integerValue) - my subtract;
 			if (my stringVariable)
 				*my stringVariable = my options.at [my integerValue] -> name.get();
 		}
@@ -1484,7 +1492,8 @@ static void UiField_stringToValue (UiField me, conststring32 string, Interpreter
 		{
 			integer i = 1;
 			for (; i <= my strings.size; i ++)
-				if (str32equ (string, my strings [i])) break;
+				if (str32equ (string, my strings [i]))
+					break;
 			if (i > my strings.size)
 				Melder_throw (U"Field \"", my name.get(), U"\" must not have the value \"", string, U"\".");
 			my integerValue = i;
@@ -1497,18 +1506,21 @@ static void UiField_stringToValue (UiField me, conststring32 string, Interpreter
 		case _kUiField_type::COLOUR_:
 		{
 			autostring32 string2 = Melder_dup (string);
-			if (colourToValue (me, string2.get())) {
-				/* OK */
+			MelderColour colour = MelderColour_fromColourNameOrRGBString (string2.get());
+			if (colour.valid()) {
+				my colourValue = colour;
 			} else {
 				try {
-					Interpreter_numericExpression (interpreter, string2.get(), & my colourValue. red);
-					my colourValue. green = my colourValue. blue = my colourValue. red;
+					double greyValue;
+					Interpreter_numericExpression (interpreter, string2.get(), & greyValue);
+					my colourValue = MelderColour (greyValue);
 				} catch (MelderError) {
 					Melder_clearError ();
 					Melder_throw (U"Cannot compute a colour from \"", string2.get(), U"\".");
 				}
 			}
-			if (my colourVariable) *my colourVariable = my colourValue;
+			if (my colourVariable)
+				*my colourVariable = my colourValue;
 		}
 		break;
 		default:
@@ -1541,10 +1553,7 @@ void UiForm_parseString (UiForm me, conststring32 arguments, Interpreter interpr
 		int ichar = 0;
 		if (my field [i] -> type == _kUiField_type::LABEL_)
 			continue;   // ignore non-trailing fields without a value
-		/*
-			Skip spaces until next argument.
-		*/
-		while (*arguments == U' ' || *arguments == U'\t') arguments ++;
+		Melder_skipHorizontalOrVerticalSpace (& arguments);   // go to next argument
 		/*
 			The argument is everything up to the next space, or, if that starts with a double quote,
 			everything between this quote and the matching double quote;
@@ -1559,7 +1568,8 @@ void UiForm_parseString (UiForm me, conststring32 arguments, Interpreter interpr
 			for (;;) {
 				if (*arguments == U'\0')
 					Melder_throw (U"Missing matching quote.");
-				if (*arguments == U'\"' && * ++ arguments != U'\"') break;   // remember second quote
+				if (*arguments == U'\"' && * ++ arguments != U'\"')
+					break;   // remember second quote
 				stringValue [ichar ++] = *arguments ++;
 			}
 		} else {
@@ -1578,7 +1588,7 @@ void UiForm_parseString (UiForm me, conststring32 arguments, Interpreter interpr
 		Leading spaces are skipped, but trailing spaces are included.
 	*/
 	if (size > 0) {
-		while (*arguments == U' ' || *arguments == U'\t') arguments ++;
+		Melder_skipHorizontalOrVerticalSpace (& arguments);   // rid leading spaces
 		try {
 			UiField_stringToValue (my field [size].get(), arguments, interpreter);
 		} catch (MelderError) {
@@ -1857,7 +1867,7 @@ void UiForm_setString (UiForm me, conststring32 *p_variable, conststring32 value
 	Melder_fatal (U"Text field not found in command window \"", my name.get(), U"\".");
 }
 
-void UiForm_setColourAsGreyValue (UiForm me, Graphics_Colour *p_variable, double greyValue) {
+void UiForm_setColourAsGreyValue (UiForm me, MelderColour *p_variable, double greyValue) {
 	for (int ifield = 1; ifield <= my numberOfFields; ifield ++) {
 		UiField field = my field [ifield].get();
 		if (field -> colourVariable == p_variable) {
@@ -2032,7 +2042,7 @@ char32 * UiForm_getString_check (UiForm me, conststring32 fieldName) {
 	return nullptr;
 }
 
-Graphics_Colour UiForm_getColour_check (UiForm me, conststring32 fieldName) {
+MelderColour UiForm_getColour_check (UiForm me, conststring32 fieldName) {
 	UiField field = findField_check (me, fieldName);
 	switch (field -> type)
 	{
@@ -2042,16 +2052,16 @@ Graphics_Colour UiForm_getColour_check (UiForm me, conststring32 fieldName) {
 		break;
 		default:
 		{
-			Melder_throw (U"Cannot find a real value in field \"", fieldName, U"\" in the form.\n"
+			Melder_throw (U"Cannot find a colour value in field \"", fieldName, U"\" in the form.\n"
 				U"The script may have changed while the form was open.\n"
 				U"Please click Cancel in the form and try again.");
 		}
 	}
-	return Graphics_BLACK;
+	return Melder_BLACK;
 }
 
 void UiForm_Interpreter_addVariables (UiForm me, Interpreter interpreter) {
-	static MelderString lowerCaseFieldName { };
+	static MelderString lowerCaseFieldName;
 	for (int ifield = 1; ifield <= my numberOfFields; ifield ++) {
 		UiField field = my field [ifield].get();
 		MelderString_copy (& lowerCaseFieldName, field -> name.get());

@@ -2,7 +2,7 @@
 #define _melder_h_
 /* melder.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,16 +28,11 @@
 #ifdef __MINGW32__
 	#include <sys/types.h>   // for off_t
 #endif
-#include <stdbool.h>
+//#include <stdbool.h>
 #include <functional>   // std::move, std::forward
 #include <memory>   // unique_ptr
 #include <new>   // placement new
-
-#include "melder_assert.h"   // Melder_assert
-#include "melder_int.h"   // <stdint.h>, int64, integer_to_uinteger (requires Melder_assert)
-#include "melder_pointer.h"   // NULL
-#include "melder_real.h"   // longdouble
-#include "complex.h"   // dcomplex
+#include <algorithm>   // std::min
 
 #ifdef _MSC_VER
 	#define off_t __int64
@@ -57,7 +52,14 @@
 #define her  she ->
 #define iam(klas)  klas me = (klas) void_me
 
-#include "melder_alloc.h"   // Melder_malloc (requires int64), Melder_free, Melder_strdup
+#include "melder_assert.h"   // Melder_assert
+#include "melder_int.h"   // <stdint.h>, int64, integer_to_uinteger (requires Melder_assert)
+#include "melder_pointer.h"   // NULL
+#include "melder_real.h"   // longdouble, MelderPoint, MelderRealRange
+#include "NUMmath.h"   // <math.h>, NUMpi, undefined
+#include "complex.h"   // <complex>, dcomplex
+
+#include "melder_alloc.h"   // Melder_malloc (requires int64), Melder_free, MelderArray
 #include "melder_string32.h"   // char32, conststring32, autostring32 (requires Melder_malloc, our), Melder_dup
 #include "melder_kar.h"   // Melder_hasInk (requires char32), Melder_toLowerCase
 #include "melder_str32.h"   // str32len, str32cpy, str32cmp_caseInsensitive (requires Melder_toLowerCase)
@@ -71,16 +73,15 @@
 #define ALLOW_GDK_DRAWING  (gtk && 1)   /* change to (gtk && 0) if you want to try out GTK 3 */
 /* */
 
-typedef struct { double red, green, blue, transparency; } double_rgbt;
-
-#include "melder_ftoa.h"   // Melder_double, Melder_pad (require dcomplex, conststring32)
+#include "melder_tensor.h"   // VEC, autoMAT, Melder_VEC
+#include "melder_colour.h"   // MelderColour (requires VEC)
+#include "melder_ftoa.h"   // Melder_double, Melder_pad (require dcomplex, conststring32, MelderColour)
 #include "melder_console.h"   // MelderConsole (requires conststring32)
 #include "melder_textencoding.h"   // str32len_utf8, Melder_32to8
 #include "melder_atof.h"
 #include "melder_files.h"   // Melder_fopen, MelderFile, MelderDir
-#include "melder_tensor.h"   // NUMvector, autoNUMmatrix, VEC, autoMAT, Melder_VEC
-#include "melder_strvec.h"   // string32vector, autostring32vector (requires NUMvector)
-#include "melder_sort.h"   // VECsort_inplace (requires VEC), NUMsort_str (requires string32vector)
+#include "melder_strvec.h"   // STRVEC, autoSTRVEC (requires MelderArray)
+#include "melder_sort.h"   // VECsort_inplace (requires VEC), STRVECsort_inplace (requires STRVEC)
 
 #include "MelderArg.h"   // MelderArg (requires Melder_double, MelderFile, Melder_VEC)
 #include "melder_debug.h"   // trace (requires MelderFile, MelderArg), Melder_debug
@@ -92,6 +93,7 @@ typedef struct { double red, green, blue, transparency; } double_rgbt;
 #include "melder_casual.h"
 #include "melder_info.h"
 #include "melder_error.h"   // Melder_throw (requires MelderArg)
+#include "melder_require.h"
 #include "melder_warning.h"
 #include "melder_fatal.h"
 #include "melder_progress.h"
@@ -142,7 +144,6 @@ void Melder_init ();   // inits NUmrandom, alloc, message, Melder_systemVersion
 
 #include "melder_templates.h"   // Melder_ENABLE_IF_ISA, MelderCallback, MelderCompareHook
 
-#include "NUMmath.h"   // <math.h>, NUMpi, undefined
 #include "NUMspecfunc.h"
 #include "NUMear.h"
 #include "NUMinterpol.h"

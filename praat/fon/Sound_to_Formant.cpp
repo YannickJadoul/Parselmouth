@@ -1,6 +1,6 @@
 /* Sound_to_Formant.cpp
  *
- * Copyright (C) 1992-2011,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1992-2008,2010-2012,2014-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,65 +31,66 @@
 #include "Sound_to_Formant.h"
 #include "NUM2.h"
 #include "Polynomial.h"
+#include "Roots.h"
 
 static void burg (constVEC samples, VEC coefficients,
 	Formant_Frame frame, double nyquistFrequency, double safetyMargin)
 {
-	double a0;
-	NUMburg (samples.at, samples.size, coefficients.at, coefficients.size, & a0);
-
+	double a0 = VECburg (coefficients, samples);
+	(void) a0;
 	/*
-	 * Convert LP coefficients to polynomial.
+		Convert LP coefficients to polynomial.
 	 */
 	autoPolynomial polynomial = Polynomial_create (-1, 1, coefficients.size);
-	for (int i = 1; i <= coefficients.size; i ++)
+	for (integer i = 1; i <= coefficients.size; i ++)
 		polynomial -> coefficients [i] = - coefficients [coefficients.size - i + 1];
 	polynomial -> coefficients [coefficients.size + 1] = 1.0;
 
 	/*
-	 * Find the roots of the polynomial.
+		Find the roots of the polynomial.
 	 */
 	autoRoots roots = Polynomial_to_Roots (polynomial.get());
 	Roots_fixIntoUnitCircle (roots.get());
 
-	Melder_assert (frame -> nFormants == 0 && ! frame -> formant);
+	Melder_assert (frame -> numberOfFormants == 0 && NUMisEmpty (frame -> formant.get()));
 
 	/*
-	 * First pass: count the formants.
-	 * The roots come in conjugate pairs, so we need only count those above the real axis.
+		First pass: count the formants.
+		The roots come in conjugate pairs, so we need only count those above the real axis.
 	 */
-	for (int i = roots -> min; i <= roots -> max; i ++) if (roots -> v [i]. im >= 0) {
-		double f = fabs (atan2 (roots -> v [i].im, roots -> v [i].re)) * nyquistFrequency / NUMpi;
-		if (f >= safetyMargin && f <= nyquistFrequency - safetyMargin)
-			frame -> nFormants ++;
-	}
+	for (integer iroot = 1; iroot <= roots -> numberOfRoots; iroot ++)
+		if (roots -> roots [iroot].imag() >= 0.0) {
+			double f = fabs (atan2 (roots -> roots [iroot].imag(), roots -> roots [iroot].real())) * nyquistFrequency / NUMpi;
+			if (f >= safetyMargin && f <= nyquistFrequency - safetyMargin)
+				frame -> numberOfFormants ++;
+		}
 
 	/*
-	 * Create space for formant data.
+		Create space for formant data.
 	 */
-	if (frame -> nFormants > 0)
-		frame -> formant = NUMvector <structFormant_Formant> (1, frame -> nFormants);
+	if (frame -> numberOfFormants > 0)
+		frame -> formant = newvectorzero <structFormant_Formant> (frame -> numberOfFormants);
 
 	/*
-	 * Second pass: fill in the formants.
+		Second pass: fill in the formants.
 	 */
 	int iformant = 0;
-	for (int i = roots -> min; i <= roots -> max; i ++) if (roots -> v [i]. im >= 0.0) {
-		double f = fabs (atan2 (roots -> v [i].im, roots -> v [i].re)) * nyquistFrequency / NUMpi;
-		if (f >= safetyMargin && f <= nyquistFrequency - safetyMargin) {
-			Formant_Formant formant = & frame -> formant [++ iformant];
-			formant -> frequency = f;
-			formant -> bandwidth = -
-				log (roots -> v [i].re * roots -> v [i].re + roots -> v [i].im * roots -> v [i].im) * nyquistFrequency / NUMpi;
+	for (integer iroot = 1; iroot <= roots -> numberOfRoots; iroot ++)
+		if (roots -> roots [iroot].imag() >= 0.0) {
+			double f = fabs (atan2 (roots -> roots [iroot].imag(), roots -> roots [iroot].real())) * nyquistFrequency / NUMpi;
+			if (f >= safetyMargin && f <= nyquistFrequency - safetyMargin) {
+				Formant_Formant formant = & frame -> formant [++ iformant];
+				formant -> frequency = f;
+				formant -> bandwidth = -
+					log (norm (roots -> roots [iroot])) * nyquistFrequency / NUMpi;
+			}
 		}
-	}
-	Melder_assert (iformant == frame -> nFormants);   // may fail if some frequency is NaN
+	Melder_assert (iformant == frame -> numberOfFormants);   // may fail if some frequency is NaN
 }
 
-static int findOneZero (int ijt, double vcx [], double a, double b, double *zero) {
+static int findOneZero (integer ijt, double vcx [], double a, double b, double *zero) {
 	double x = 0.5 * (a + b), fa = 0.0, fb = 0.0, fx = 0.0;
-	integer k;
-	for (k = ijt; k >= 0; k --) {
+	for (integer k = ijt; k >= 0; k --) {
 		fa = vcx [k] + a * fa;
 		fb = vcx [k] + b * fb;
 	}
@@ -107,14 +108,21 @@ static int findOneZero (int ijt, double vcx [], double a, double b, double *zero
 		fx = 0.0;
 		/*x = fa == fb ? 0.5 * (a + b) : a + fa * (a - b) / (fb - fa);*/
 		x = 0.5 * (a + b);   // simple bisection
-		for (k = ijt; k >= 0; k --) fx = vcx [k] + x * fx;
-		if (fa * fx > 0.0) { a = x; fa = fx; } else { b = x; fb = fx; }
+		for (integer k = ijt; k >= 0; k --)
+			fx = vcx [k] + x * fx;
+		if (fa * fx > 0.0) {
+			a = x;
+			fa = fx;
+		} else {
+			b = x;
+			fb = fx;
+		}
 	} while (fabs (fx) > 1e-5);
 	*zero = x;
 	return 1;   // OK
 }
 
-static int findNewZeroes (int ijt, double ppORIG [], int degree,
+static int findNewZeroes (integer ijt, double ppORIG [], integer degree,
 	double zeroes [])   // In / out
 {
 	static double cosa [7] [7] = {
@@ -126,18 +134,20 @@ static int findNewZeroes (int ijt, double ppORIG [], int degree,
 		{  0,  10,   0, -40,   0,  32,   0 },
 		{ -2,   0,  36,   0, -96,   0,  64 } };
 	double pp [33], newZeroes [33], px [33];
-	int pt, vt, i, half_degree = (degree + 1) / 2;
-	for (vt = 0; vt <= half_degree; vt ++) pp [vt] = ppORIG [vt];
+	integer const half_degree = (degree + 1) / 2;
+	for (integer vt = 0; vt <= half_degree; vt ++)
+		pp [vt] = ppORIG [vt];
 	if (! (degree & 1))
-		for (vt = 1; vt <= half_degree; vt ++) pp [vt] -= pp [vt - 1];
-	for (i = 0; i <= half_degree; i ++)
+		for (integer vt = 1; vt <= half_degree; vt ++)
+			pp [vt] -= pp [vt - 1];
+	for (integer i = 0; i <= half_degree; i ++)
 		px [i] = cosa [half_degree] [i];
-	for (pt = half_degree - 1; pt >= 0; pt --)
-		for (vt = 0; vt <= half_degree; vt ++)
+	for (integer pt = half_degree - 1; pt >= 0; pt --)
+		for (integer vt = 0; vt <= half_degree; vt ++)
 			px [vt] += pp [half_degree - pt] * cosa [pt] [vt];
 	/* Fill an array with the new zeroes, which lie between the old zeroes. */
 	newZeroes [0] = 1.0;
-	for (i = 1; i <= half_degree; i ++) {
+	for (integer i = 1; i <= half_degree; i ++) {
 		if (! findOneZero (ijt, px, zeroes [i - 1], zeroes [i], & newZeroes [i])) {
 			Melder_casual (
 				U"Degree ", degree,
@@ -147,50 +157,62 @@ static int findNewZeroes (int ijt, double ppORIG [], int degree,
 		}
 	}
 	newZeroes [half_degree + 1] = -1.0;
-	/* Grow older. */
-	for (i = 0; i <= half_degree + 1; i ++)
+	/*
+		Grow older.
+	*/
+	for (integer i = 0; i <= half_degree + 1; i ++)
 		zeroes [i] = newZeroes [i];
 	return 1;
 }
 
 static int splitLevinson (
 	constVEC samples,   // the windowed signal xw [1..nx]
-	int ncof,   // the coefficients cof [1..ncof]
+	integer ncof,   // the coefficients cof [1..ncof]
 	Formant_Frame frame, double nyquistFrequency)   // put the results here
 {
 	int result = 1;
 	double rx [100], zeroes [33];
-	for (int i = 0; i <= 32; i ++)
+	for (integer i = 0; i <= 32; i ++)
 		zeroes [i] = 0.0;
-	/* Compute the autocorrelation of the windowed signal. */
-	for (int i = 0; i < ncof; i ++) {
+	/*
+		Compute the autocorrelation of the windowed signal.
+	*/
+	for (integer i = 0; i < ncof; i ++) {
 		rx [i] = 0.0;
-		for (int j = 1; j <= samples.size - i; j ++)
+		for (integer j = 1; j <= samples.size - i; j ++)
 			rx [i] += samples [j] * samples [j + i];
 	}
-	/* Normalize autocorrelation; (should we also divide by the autocorrelation of the window?). */
-	for (int i = 1; i < ncof; i ++)
+	/*
+		Normalize autocorrelation;
+		(should we also divide by the autocorrelation of the window?).
+	*/
+	for (integer i = 1; i < ncof; i ++)
 		rx [i] /= rx [0]; rx [0] = 1.0;
 
-	/* Compute zeroes. */
+	/*
+		Compute zeroes.
+	*/
 	{
 		double tau = 0.5 * rx [0];
 		double pnu [33], pk [33], pkz [33];
-		for (int i = 0; i <= 32; i ++)
+		for (integer i = 0; i <= 32; i ++)
 			pkz [i] = pk [i] = 0.0;
-		pkz [0] = 1.0; pk [0] = 1.0; pk [1] = 1.0;
-		for (int degree = 1; degree < ncof; degree ++) {
-			int t = degree / 2;
+		pkz [0] = 1.0;
+		pk [0] = 1.0;
+		pk [1] = 1.0;
+		for (integer degree = 1; degree < ncof; degree ++) {
+			integer t = degree / 2;
 			double tauk = rx [0] + rx [degree], alfak;
-			for (int it = 1; it <= t; it ++)
+			for (integer it = 1; it <= t; it ++)
 				tauk += pk [it] * ( 2 * it == degree ? rx [it] : rx [it] + rx [degree - it] );
 			alfak = tauk / tau;
 			tau = tauk;
 			pnu [0] = 1.0;
-			int ijt = (degree + 1) / 2;
-			for (int it = ijt; it > 0; it --)
+			integer ijt = (degree + 1) / 2;
+			for (integer it = ijt; it > 0; it --)
 				pnu [it] = pk [it] + pk [it - 1] - alfak * pkz [it - 1];
-			if (2 * ijt == degree) pnu [ijt + 1] = pnu [ijt];
+			if (2 * ijt == degree)
+				pnu [ijt + 1] = pnu [ijt];
 			if (degree == 1) {
 				(void) 0;
 			} else if (degree == 2) {
@@ -203,30 +225,38 @@ static int splitLevinson (
 					result = 0;
 					goto loopEnd;
 				}
-			/* Grow older. */
-			for (int i = 0; i <= 32; i ++) {
+			/*
+				Grow older.
+			*/
+			for (integer i = 0; i <= 32; i ++) {
 				pkz [i] = pk [i];
 				pk [i] = pnu [i];
 			}
 		}
 	}
 loopEnd:
-	/* First pass: count the poles. */
-	for (int i = 1; i <= ncof / 2; i ++) {
-		if (zeroes [i] == 0.0 || zeroes [i] == -1.0) break;
-		frame -> nFormants ++;
+	/*
+		First pass: count the poles.
+	*/
+	for (integer i = 1; i <= ncof / 2; i ++) {
+		if (zeroes [i] == 0.0 || zeroes [i] == -1.0)
+			break;
+		frame -> numberOfFormants ++;
 	}
-
-	/* Create space for formant data. */
-	if (frame -> nFormants > 0)
-	    frame -> formant = NUMvector <structFormant_Formant> (1, frame -> nFormants);
-
-	/* Second pass: fill in the poles. */
-	int iformant = 0;
-	for (int i = 1; i <= ncof / 2; i ++) {
+	/*
+		Create space for formant data.
+	*/
+	if (frame -> numberOfFormants > 0)
+	    frame -> formant = newvectorzero <structFormant_Formant> (frame -> numberOfFormants);
+	/*
+		Second pass: fill in the poles.
+	*/
+	integer iformant = 0;
+	for (integer i = 1; i <= ncof / 2; i ++) {
 		Formant_Formant formant = & frame -> formant [++ iformant];
-		if (zeroes [i] == 0.0 || zeroes [i] == -1.0) break;
-		formant -> frequency =  acos (zeroes [i]) * nyquistFrequency / NUMpi;
+		if (zeroes [i] == 0.0 || zeroes [i] == -1.0)
+			break;
+		formant -> frequency = acos (zeroes [i]) * nyquistFrequency / NUMpi;
 		formant -> bandwidth = 50.0;
 	}
 
@@ -234,17 +264,16 @@ loopEnd:
 }
 
 static void Sound_preEmphasis (Sound me, double preEmphasisFrequency) {
-	double preEmphasis = exp (-2.0 * NUMpi * preEmphasisFrequency * my dx);
-	for (integer channel = 1; channel <= my ny; channel ++) {
-		double *s = my z [channel]; 
-		for (integer i = my nx; i >= 2; i --) s [i] -= preEmphasis * s [i - 1];
-	}
+	const double preEmphasis = exp (-2.0 * NUMpi * preEmphasisFrequency * my dx);
+	for (integer channel = 1; channel <= my ny; channel ++)
+		for (integer i = my nx; i >= 2; i --)
+			my z [channel] [i] -= preEmphasis * my z [channel] [i - 1];
 }
 
 void Formant_sort (Formant me) {
 	for (integer iframe = 1; iframe <= my nx; iframe ++) {
-		Formant_Frame frame = & my d_frames [iframe];
-		integer n = frame -> nFormants;
+		Formant_Frame frame = & my frames [iframe];
+		integer n = frame -> numberOfFormants;
 		for (integer i = 1; i < n; i ++) {
 			double min = frame -> formant [i]. frequency;
 			integer imin = i;
@@ -254,7 +283,7 @@ void Formant_sort (Formant me) {
 					imin = j;
 				}
 			if (imin != i) {
-				double min_bandwidth = frame -> formant [imin]. bandwidth;
+				const double min_bandwidth = frame -> formant [imin]. bandwidth;
 				frame -> formant [imin]. frequency = frame -> formant [i]. frequency;
 				frame -> formant [imin]. bandwidth = frame -> formant [i]. bandwidth;
 				frame -> formant [i]. frequency = min;
@@ -264,18 +293,18 @@ void Formant_sort (Formant me) {
 	}
 }
 
-static autoFormant Sound_to_Formant_any_inplace (Sound me, double dt_in, int numberOfPoles,
+static autoFormant Sound_to_Formant_any_inplace (Sound me, double dt_in, integer numberOfPoles,
 	double halfdt_window, int which, double preemphasisFrequency, double safetyMargin)
 {
-	double dt = dt_in > 0.0 ? dt_in : halfdt_window / 4.0;
-	double physicalDuration = my nx * my dx, t1;
+	const double dt = ( dt_in > 0.0 ? dt_in : halfdt_window / 4.0 );
+	const double physicalDuration = my nx * my dx;
 	double dt_window = 2.0 * halfdt_window;
 	integer nFrames = 1 + Melder_ifloor ((physicalDuration - dt_window) / dt);
 	integer nsamp_window = Melder_ifloor (dt_window / my dx), halfnsamp_window = nsamp_window / 2;
 
 	if (nsamp_window < numberOfPoles + 1)
 		Melder_throw (U"Window too short.");
-	t1 = my x1 + 0.5 * (physicalDuration - my dx - (nFrames - 1) * dt);   // centre of first frame
+	double t1 = my x1 + 0.5 * (physicalDuration - my dx - (nFrames - 1) * dt);   // centre of first frame
 	if (nFrames < 1) {
 		nFrames = 1;
 		t1 = my x1 + 0.5 * physicalDuration;
@@ -290,43 +319,44 @@ static autoFormant Sound_to_Formant_any_inplace (Sound me, double dt_in, int num
 	Sound_preEmphasis (me, preemphasisFrequency);
 
 	/* Gaussian window. */
-	auto window = VECraw (nsamp_window);
+	autoVEC window = newVECraw (nsamp_window);
 	for (integer i = 1; i <= nsamp_window; i ++) {
-		double imid = 0.5 * (nsamp_window + 1), edge = exp (-12.0);
+		const double imid = 0.5 * (nsamp_window + 1), edge = exp (-12.0);
 		window [i] = (exp (-48.0 * (i - imid) * (i - imid) / (nsamp_window + 1) / (nsamp_window + 1)) - edge) / (1.0 - edge);
 	}
 
 	integer maximumFrameLength = nsamp_window;
-	auto frameBuffer = VECraw (maximumFrameLength);
-	auto coefficients = VECraw (numberOfPoles);   // superfluous if which==2, but nobody uses that anyway
+	auto frameBuffer = newVECraw (maximumFrameLength);
+	auto coefficients = newVECraw (numberOfPoles);   // superfluous if which==2, but nobody uses that anyway
 	for (integer iframe = 1; iframe <= nFrames; iframe ++) {
-		double t = Sampled_indexToX (thee.get(), iframe);
-		integer leftSample = Sampled_xToLowIndex (me, t);
-		integer rightSample = leftSample + 1;
+		const double t = Sampled_indexToX (thee.get(), iframe);
+		const integer leftSample = Sampled_xToLowIndex (me, t);
+		const integer rightSample = leftSample + 1;
 		integer startSample = rightSample - halfnsamp_window;
 		integer endSample = leftSample + halfnsamp_window;
 		double maximumIntensity = 0.0;
-		if (startSample < 1) startSample = 1;   // this should not be more than a rounding problem
-		if (endSample > my nx) endSample = my nx;   // this should not be more than a rounding problem
+		Melder_clipLeft (1_integer, & startSample);   // this should not be more than a rounding problem
+		Melder_clipRight (& endSample, my nx);   // this should not be more than a rounding problem
 		for (integer i = startSample; i <= endSample; i ++) {
-			double value = Sampled_getValueAtSample (me, i, Sound_LEVEL_MONO, 0);
+			const double value = Sampled_getValueAtSample (me, i, Sound_LEVEL_MONO, 0);
 			if (value * value > maximumIntensity)
 				maximumIntensity = value * value;
 		}
-		thy d_frames [iframe]. intensity = maximumIntensity;
-		if (maximumIntensity == 0.0) continue;   // Burg cannot stand all zeroes
+		thy frames [iframe]. intensity = maximumIntensity;
+		if (maximumIntensity == 0.0)
+			continue;   // Burg cannot stand all zeroes
 
 		/* Copy a pre-emphasized window to a frame. */
 		const integer actualFrameLength = endSample - startSample + 1;   // should rarely be less than nsamp_window
-		VEC frame = frameBuffer.subview (1, actualFrameLength);
+		VEC frame = frameBuffer.part (1, actualFrameLength);
 		const integer offset = startSample - 1;
 		for (integer isamp = 1; isamp <= actualFrameLength; isamp ++)
 			frame [isamp] = Sampled_getValueAtSample (me, offset + isamp, Sound_LEVEL_MONO, 0) * window [isamp];
 
 		if (which == 1) {
-			burg (frame, coefficients.get(), & thy d_frames [iframe], 0.5 / my dx, safetyMargin);
+			burg (frame, coefficients.get(), & thy frames [iframe], 0.5 / my dx, safetyMargin);
 		} else if (which == 2) {
-			if (! splitLevinson (frame, numberOfPoles, & thy d_frames [iframe], 0.5 / my dx)) {
+			if (! splitLevinson (frame, numberOfPoles, & thy frames [iframe], 0.5 / my dx)) {
 				Melder_clearError ();
 				Melder_casual (U"(Sound_to_Formant:)"
 					U" Analysis results of frame ", iframe,
@@ -340,10 +370,10 @@ static autoFormant Sound_to_Formant_any_inplace (Sound me, double dt_in, int num
 	return thee;
 }
 
-autoFormant Sound_to_Formant_any (Sound me, double dt, int numberOfPoles, double maximumFrequency,
+autoFormant Sound_to_Formant_any (Sound me, double dt, integer numberOfPoles, double maximumFrequency,
 	double halfdt_window, int which, double preemphasisFrequency, double safetyMargin)
 {
-	double nyquist = 0.5 / my dx;
+	const double nyquist = 0.5 / my dx;
 	autoSound sound;
 	if (maximumFrequency <= 0.0 || fabs (maximumFrequency / nyquist - 1) < 1.0e-12) {
 		sound = Data_copy (me);   // will be modified
@@ -355,7 +385,7 @@ autoFormant Sound_to_Formant_any (Sound me, double dt, int numberOfPoles, double
 
 autoFormant Sound_to_Formant_burg (Sound me, double dt, double nFormants, double maximumFrequency, double halfdt_window, double preemphasisFrequency) {
 	try {
-		return Sound_to_Formant_any (me, dt, (int) (2 * nFormants), maximumFrequency, halfdt_window, 1, preemphasisFrequency, 50.0);
+		return Sound_to_Formant_any (me, dt, Melder_iround (2.0 * nFormants), maximumFrequency, halfdt_window, 1, preemphasisFrequency, 50.0);
 	} catch (MelderError) {
 		Melder_throw (me, U": formant analysis (Burg) not performed.");
 	}
@@ -363,7 +393,7 @@ autoFormant Sound_to_Formant_burg (Sound me, double dt, double nFormants, double
 
 autoFormant Sound_to_Formant_keepAll (Sound me, double dt, double nFormants, double maximumFrequency, double halfdt_window, double preemphasisFrequency) {
 	try {
-		return Sound_to_Formant_any (me, dt, (int) (2 * nFormants), maximumFrequency, halfdt_window, 1, preemphasisFrequency, 0.0);
+		return Sound_to_Formant_any (me, dt, Melder_iround (2.0 * nFormants), maximumFrequency, halfdt_window, 1, preemphasisFrequency, 0.0);
 	} catch (MelderError) {
 		Melder_throw (me, U": formant analysis (keep all) not performed.");
 	}
@@ -371,7 +401,7 @@ autoFormant Sound_to_Formant_keepAll (Sound me, double dt, double nFormants, dou
 
 autoFormant Sound_to_Formant_willems (Sound me, double dt, double nFormants, double maximumFrequency, double halfdt_window, double preemphasisFrequency) {
 	try {
-		return Sound_to_Formant_any (me, dt, (int) (2 * nFormants), maximumFrequency, halfdt_window, 2, preemphasisFrequency, 50.0);
+		return Sound_to_Formant_any (me, dt, Melder_iround (2.0 * nFormants), maximumFrequency, halfdt_window, 2, preemphasisFrequency, 50.0);
 	} catch (MelderError) {
 		Melder_throw (me, U": formant analysis (Burg) not performed.");
 	}

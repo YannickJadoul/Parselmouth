@@ -1,6 +1,6 @@
 /* manual_dwtools.cpp
  *
- * Copyright (C) 1993-2018 David Weenink
+ * Copyright (C) 1993-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,15 +28,14 @@
 #include "Table_extensions.h"
 #include "Configuration.h"
 #include "Discriminant.h"
+#include "Electroglottogram.h"
 
 
 static autoTableOfReal getStandardizedLogFrequencyPolsData (bool includeLevels) {
 	autoTableOfReal me = TableOfReal_create_pols1973 (includeLevels);
-	for (integer i = 1; i <= my numberOfRows; i ++) {
-		for (integer j = 1; j <= 3; j++) {
+	for (integer i = 1; i <= my numberOfRows; i ++)
+		for (integer j = 1; j <= 3; j++)
 			my data [i] [j] = log10 (my data [i] [j]);
-		}
-	}
 	TableOfReal_standardizeColumns (me.get());
 	TableOfReal_setColumnLabel (me.get(), 1, U"standardized log (%F__1_)");
 	TableOfReal_setColumnLabel (me.get(), 2, U"standardized log (%F__2_)");
@@ -50,35 +49,35 @@ static autoTableOfReal getStandardizedLogFrequencyPolsData (bool includeLevels) 
 }
 
 static void drawPolsF1F2_log (Graphics g) {
-	autoTableOfReal me = getStandardizedLogFrequencyPolsData (0);
+	autoTableOfReal me = getStandardizedLogFrequencyPolsData (false);
 	Graphics_setWindow (g, -2.9, 2.9, -2.9, 2.9);
-	TableOfReal_drawScatterPlot (me.get(), g, 1, 2, 0, 0, -2.9, 2.9, -2.9, 2.9, 10, 1, U"+", 1);
+	TableOfReal_drawScatterPlot (me.get(), g, 1, 2, 0, 0, -2.9, 2.9, -2.9, 2.9, 10, true, U"+", true);
 }
 
 static void drawPolsF1F2ConcentrationEllipses (Graphics g) {
-	autoTableOfReal me = getStandardizedLogFrequencyPolsData (0);
+	autoTableOfReal me = getStandardizedLogFrequencyPolsData (false);
 	autoDiscriminant d = TableOfReal_to_Discriminant (me.get());
-	Discriminant_drawConcentrationEllipses (d.get(), g, 1, 0, nullptr, 0, 1, 2, -2.9, 2.9, -2.9, 2.9, 12, 1);
+	Discriminant_drawConcentrationEllipses (d.get(), g, 1, false, nullptr, false, 1, 2, -2.9, 2.9, -2.9, 2.9, 12, true);
 }
 
 static void drawPolsDiscriminantConfiguration (Graphics g) {
-	autoTableOfReal me = getStandardizedLogFrequencyPolsData (0);
+	autoTableOfReal me = getStandardizedLogFrequencyPolsData (false);
 	autoDiscriminant d = TableOfReal_to_Discriminant (me.get());
 	autoConfiguration c = Discriminant_TableOfReal_to_Configuration (d.get(), me.get(), 2);
-	Configuration_draw (c.get(), g, 1, 2, -2.9, 2.9, -2.9, 2.9, 0, 1, U"", 1);
+	Configuration_draw (c.get(), g, 1, 2, -2.9, 2.9, -2.9, 2.9, 0, true, U"", true);
 }
 
 static void drawBoxPlot (Graphics g) {
-	double q25 = 25, q50 = 50, q75 = 60, mean = 45;
-	double hspread = q75 - q25, r = 0.05, w = 0.2;
-	double lowerInnerFence = q25 - 1.5 * hspread;
-	double upperInnerFence = q75 + 1.5 * hspread;
-	double upperOuterFence = q75 + 3.0 * hspread;
-	double lowerWhisker = lowerInnerFence + 0.1 * hspread;
-	double upperWhisker = upperInnerFence - 0.5 * hspread;
-	double ymin = lowerWhisker - 0.1 * hspread, ymax = q75 + 4 * hspread;
-	double x = 0, dx = 0.01, xar = x + 0.7, xtl = xar + dx;
-	double xal1 = x + r + dx, xal2 = x + w + r, y;
+	const double q25 = 25, q50 = 50, q75 = 60, mean = 45;
+	const double hspread = q75 - q25, r = 0.05, w = 0.2;
+	const double lowerInnerFence = q25 - 1.5 * hspread;
+	const double upperInnerFence = q75 + 1.5 * hspread;
+	const double upperOuterFence = q75 + 3.0 * hspread;
+	const double lowerWhisker = lowerInnerFence + 0.1 * hspread;
+	const double upperWhisker = upperInnerFence - 0.5 * hspread;
+	const double ymin = lowerWhisker - 0.1 * hspread, ymax = q75 + 4 * hspread;
+	const double x = 0, dx = 0.01, xar = x + 0.7, xtl = xar + dx;
+	const double xal1 = x + r + dx, xal2 = x + w + r;
 
 	Graphics_setWindow (g, -1, 2, ymin, ymax);
 	Graphics_setInner (g);
@@ -94,7 +93,7 @@ static void drawBoxPlot (Graphics g) {
 	Graphics_line (g, x, q75, x, upperWhisker);
 	Graphics_line (g, x - r, upperWhisker, x + r, upperWhisker);
 
-	y = q75 + 2.5 * hspread;
+	double y = q75 + 2.5 * hspread;
 	Graphics_text (g, x, y, U"*");
 	Graphics_arrow (g, xar, y, xal1, y);
 	Graphics_text (g, xtl, y, U"outlier > %%upperInnerFence%");
@@ -134,24 +133,38 @@ static void drawBoxPlot (Graphics g) {
 }
 
 static void drawPartionedMatrix (Graphics g) {
-	double min = 0, max = 10, x1, x2, y1, y2;
+	const double min = 0.0, max = 10.0;
 	Graphics_setWindow (g, min, max, min, max);
-	x1 = 0; x2 = max; y1 = y2 = 7;
+	double x1 = 0.0;
+	double x2 = max;
+	double y1 = 7.0;
+	double y2 = 7.0;
 	Graphics_setLineType (g, Graphics_DOTTED);
 	Graphics_line (g, x1, y1, x2, y2);
-	x1 = x2 = 3; y1 = 0; y2 = max;
+	x1 = x2 = 3.0;
+	y1 = 0.0;
+	y2 = max;
 	Graphics_line (g, x1, y1, x2, y2);
 	Graphics_setLineType (g, Graphics_DRAWN);
-	x1 = 1.5; y1 = 7+3/2;
-	Graphics_setFontSize (g, 14);
-	Graphics_setTextAlignment (g, Graphics_CENTRE, Graphics_HALF);
+	x1 = 1.5;
+	y1 = 7.0 + 3.0 / 2.0;
+	Graphics_setFontSize (g, 14.0);
+	Graphics_setTextAlignment (g, kGraphics_horizontalAlignment::CENTRE, Graphics_HALF);
 	Graphics_text (g, x1, y1, U"##S__yy_#");
-	x1 = 3 + 7/2;
+	x1 = 3.0 + 7.0 / 2.0;
 	Graphics_text (g, x1, y1, U"##S__yx_#");
-	y1 = 7/2;
+	y1 = 7.0 / 2.0;
 	Graphics_text (g, x1, y1, U"##S__xx_#");
 	x1 = 1.5;
 	Graphics_text (g, x1, y1, U"##S__xy_#");
+}
+
+void Electroglottogram_drawStylized (Graphics g) {
+	Electroglottogram_drawStylized (g, true, false);
+}
+
+void Electroglottogram_drawStylizedLevels (Graphics g) {
+	Electroglottogram_drawStylized (g, false, true);
 }
 
 void manual_dwtools_init (ManPages me);
@@ -240,8 +253,8 @@ LIST_ITEM (U"%%lowerOuterFence% = %%q25% \\-- 3.0 * %%hspread% (not in figure)")
 LIST_ITEM (U"%%lowerInnerFence% = %%q25% \\-- 1.5 * %%hspread% (not in figure)")
 LIST_ITEM (U"%%upperInnerFence% = %%q75% + 1.5 * %%hspread%")
 LIST_ITEM (U"%%upperOuterFence% = %%q75% + 3.0 * %%hspread%")
-LIST_ITEM (U"%%lowerWhisker% = smallest data value larger then %%lowerInnerFence%")
-LIST_ITEM (U"%%upperWhisker% = largest data value smaller then %%upperInnerFence%")
+LIST_ITEM (U"%%lowerWhisker% = smallest data value larger than %%lowerInnerFence%")
+LIST_ITEM (U"%%upperWhisker% = largest data value smaller than %%upperInnerFence%")
 NORMAL (U"The box plot is a summary of the data in which:")
 LIST_ITEM (U"\\bu the horizontal lines of the rectangle correspond to "
 	" %%q25%, %%q50% and %%q75%, respectively.")
@@ -441,18 +454,18 @@ INTRO (U"Determine from the selected @CCA and @Correlation objects the correlati
 	"coefficients%.")
 MAN_END
 
-MAN_BEGIN (U"CCA & Correlation: Get variance fraction...", U"djmw", 20060323)
+MAN_BEGIN (U"CCA & Correlation: Get variance fraction...", U"djmw", 20181112)
 INTRO (U"Determine from the selected @CCA and @Correlation objects the fraction of the variance "
 	"explained by the selected @@canonical variate@ range.")
 ENTRY (U"Settings")
-TAG (U"##%X or Y")
+TAG (U"##X or Y#")
 DEFINITION (U"determines whether you select the dependent (y) or the independent (x) set.")
 TAG (U"##Canonical variate range")
 DEFINITION (U"determines the canonical variates (or canonical variables).")
 ENTRY (U"Remarks")
 NORMAL (U"1. In general the variance fractions for a particular canonical variate in the "
 	"dependent and in the independent set are not the same.")
-NORMAL (U"2. In general, the variance fractions for all canonical variates do not sum to 1.")
+NORMAL (U"2. In general, the variance fractions for all canonical variates do not sum to 1. \n(The technical reason is that for canonical correlation analysis in general the eigenvectors are not orthogonal, i.e. they overlap and therefore, necessarily, also the variance fractions overlap.) ")
 ENTRY (U"Algorithm")
 NORMAL (U"The formula's can be found on page 170 of @@Cooley & Lohnes (1971)@.")
 NORMAL (U"For example, the fraction of the variance explained by the %i^^th^ canonical "
@@ -468,9 +481,9 @@ NORMAL (U"The Stewart-Love redundancy for a single @@canonical variate@ is the f
 	"canonical variate in a set times the fraction of shared variance between the corresponding canonical variates in the two sets.")
 NORMAL (U"The Stewart-Love redundancy for a canonical variate range is the sum of the individual redundancies.")
 ENTRY (U"Settings")
-TAG (U"##X or Y")
+TAG (U"##X or Y#")
 DEFINITION (U"determines whether you select the dependent (y) or the independent (x) set.")
-TAG (U"##Canonical variate range")
+TAG (U"##Canonical variate range#")
 DEFINITION (U"determines the canonical variates (or canonical variables).")
 ENTRY (U"Algorithm")
 NORMAL (U"The formula's can be found on page 170 of @@Cooley & Lohnes (1971)@.")
@@ -498,7 +511,7 @@ MAN_BEGIN (U"CCA & TableOfReal: To TableOfReal (scores)...", U"djmw", 20040407)
 INTRO (U"Determines the scores on the dependent and the independent canonical "
 	"variates from the selected @CCA and @TableOfReal objects.")
 ENTRY (U"Settings")
-TAG (U"##Number of canonical correlations")
+TAG (U"##Number of canonical correlations#")
 DEFINITION (U"determines the dimension, i.e., the number of elements of the resulting "
 	"canonical score vectors. The newly created table will have twice this number of "
 	"columns because we have calculated score vectors for the dependent and the "
@@ -515,7 +528,7 @@ NORMAL (U"The scores for the dependent data will be in the lower numbered column
 MAN_END
 
 
-MAN_BEGIN (U"Canonical correlation analysis", U"djmw", 20170829)
+MAN_BEGIN (U"Canonical correlation analysis", U"djmw", 20181118)
 INTRO (U"This tutorial will show you how to perform canonical correlation "
        "analysis with Praat.")
 ENTRY (U"1. Objective of canonical correlation analysis")
@@ -608,7 +621,7 @@ CODE (U"u1     1      .      .     0.860   .      .")
 CODE (U"u2     .      1      .      .     0.531   .")
 CODE (U"u3     .      .      1      .      .     0.070")
 CODE (U"v1    0.860   .      .      1      .      .")
-CODE (U"v2     .     0.1     .      .      1      .")
+CODE (U"v2     .     0.531     .      .      1      .")
 CODE (U"v3     .      .     0.070   .      .      1")
 NORMAL (U"The scores with a dot are zero to numerical precision. In this table the "
 	"only correlations that differ from zero are the canonical correlations. "
@@ -998,7 +1011,7 @@ INTRO (U"Create a @@Correlation@ matrix with its centroid.")
 ENTRY (U"Settings")
 TAG (U"##Correlations")
 DEFINITION (U"define the correlations. Because a correlation matrix is a symmetric matrix, only the upper triangular "
-	"part of the matrix has to be input (row-wise). If your correlation matrix is "
+	"part of the matrix needs to be input (row-wise). If your correlation matrix is "
 	"of dimension %d, your input needs %d(%d+1)/2 elements. The first %d input elements are the elements of the first "
 	"row of the correaltion matrix, the next %d-1 input elements are for the second row, then %d-2 for the third row, etc.")
 TAG (U"##Centroid")
@@ -1012,7 +1025,7 @@ INTRO (U"Create a @@Covariance@ matrix with its centroid.")
 ENTRY (U"Settings")
 TAG (U"##Covariances")
 DEFINITION (U"define the covariances. Because a covariance matrix is a symmetric matrix, only the upper triangular "
-	"part of the matrix has to be input (row-wise). If your covariance matrix is "
+	"part of the matrix needs to be input (row-wise). If your covariance matrix is "
 	"of dimension %d, your input needs %d(%d+1)/2 elements. The first %d input elements are the elements of the first "
 	"row of the covariance matrix, the next %d-1 input elements are for the second row, then %d-2 for the third row, etc.")
 TAG (U"##Centroid")
@@ -1237,13 +1250,13 @@ CODE (U"selectObject: c, t0")
 CODE (U"ts = To TableOfReal (mahalanobis): \"no\"")
 CODE (U"")
 CODE (U"for nsigma to 5")
-CODE1 (U"  selectObject: ts")
-CODE1 (U"  extraction = Extract rows where:  ~ self < nsigma")
-CODE1 (U"  nr = Get number of rows")
-CODE1 (U"  nrp = nr / n * 100")
-CODE1 (U"  expect = (1 - 2 * gaussQ (nsigma)) * 100")
-CODE1 (U"  writeInfoLine: nsigma, \"-sigma: \", nrp, \"%, \", expect, \"%\"")
-CODE1 (U"  removeObject: extraction")
+	CODE1 (U"selectObject: ts")
+	CODE1 (U"extraction = Extract rows where:  ~ self < nsigma")
+	CODE1 (U"nr = Get number of rows")
+	CODE1 (U"nrp = nr / n * 100")
+	CODE1 (U"expect = (1 - 2 * gaussQ (nsigma)) * 100")
+	CODE1 (U"writeInfoLine: nsigma, \"-sigma: \", nrp, \"%, \", expect, \"%\"")
+	CODE1 (U"removeObject: extraction")
 CODE (U"endfor")
 MAN_END
 
@@ -1257,16 +1270,16 @@ DEFINITION (U"define the coefficients of each @@Chebyshev polynomials|Chebyshev 
 	"The coefficient of the polynomial with the highest degree comes last.")
 MAN_END
 
-MAN_BEGIN (U"Create ISpline...", U"djmw", 20040407)
+MAN_BEGIN (U"Create ISpline...", U"djmw", 20181224)
 INTRO (U"A command to create an @ISpline from a list of coefficients.")
 ENTRY (U"Settings")
 TAG (U"##Xmin# and ##Xmax#")
 DEFINITION (U"define the domain of the polynomial @spline.")
-TAG (U"%Degree")
+TAG (U"##Degree")
 DEFINITION (U"defines the degree of the polynomial @spline.")
-TAG (U"%Coefficients")
+TAG (U"##Coefficients")
 DEFINITION (U"define the coefficients of the basis polynomials.")
-TAG (U"%%Interior knots")
+TAG (U"##Interior knots")
 DEFINITION (U"define the positions in the domain where continuity conditions are defined.")
 ENTRY (U"Behaviour")
 NORMAL (U"The number of coefficients and the number of interior knots must satisfy "
@@ -1407,10 +1420,10 @@ NORMAL (U"The following script generates 12 static Shepard tone complexes, 1 sem
 	"with a cosine window to temper the abrupt start and finish.")
 CODE (U"fadeTime = 0.010")
 CODE (U"for i to 12")
-CODE1 (U"fraction = (i-1)/12")
-CODE1 (U"Create Sound as Shepard tone: \"s\" + string\\$  (i), 0, 0.1, 22050, 4.863, 10, 0, 34, fraction")
-CODE1 (U"Fade in: 0, 0, fadeTime, \"no\"")
-CODE1 (U"Fade out: 0, 0.1, -fadeTime, \"no\"")
+	CODE1 (U"fraction = (i-1)/12")
+	CODE1 (U"Create Sound as Shepard tone: \"s\" + string\\$  (i), 0, 0.1, 22050, 4.863, 10, 0, 34, fraction")
+	CODE1 (U"Fade in: 0, 0, fadeTime, \"no\"")
+	CODE1 (U"Fade out: 0, 0.1, -fadeTime, \"no\"")
 CODE (U"endfor")
 MAN_END
 
@@ -1423,7 +1436,7 @@ INTRO (U"A command to create a @Table object filled with the "
 ENTRY (U"Table layout")
 NORMAL (U"The created table will contain 9 columns:")
 TAG (U"Column 1, labelled as %Type")
-DEFINITION (U"speaker type: \"m\", \"w\" or \"c\" (for %man, %women or %child).")
+DEFINITION (U"speaker type: \"m\", \"w\" or \"c\" (for %man, %woman or %child).")
 TAG (U"Column 2, labelled as %Sex")
 DEFINITION (U"speaker sex: either \"m\" or \"f\" (for %male or %female).")
 TAG (U"Column 3, labelled as %Speaker")
@@ -1483,7 +1496,7 @@ INTRO (U"A command to create a @Table object filled with the "
 ENTRY (U"Table layout")
 NORMAL (U"The created table will contain 9 columns:")
 TAG (U"Column 1, labelled as %Type")
-DEFINITION (U"speaker type: \"m\", \"w\" or \"c\" (for %man, %women or %child).")
+DEFINITION (U"speaker type: \"m\", \"w\" or \"c\" (for %man, %woman or %child).")
 TAG (U"Column 2, labelled as %Sex")
 DEFINITION (U"speaker sex: either \"m\" or \"f\" (for %male or %female).")
 TAG (U"Column 3, labelled as %Speaker")
@@ -1681,10 +1694,10 @@ CODE (U"for irow to numberOfRows")
 	CODE1 (U"if irow = 1")
 		CODE2 (U"confusion = To Confusion: \"yes\"")
 	CODE1 (U"else")
-CODE2 (U"    plusObject: confusion")
-CODE2 (U"    Increase confusion count")
-CODE (U"  endif")
-CODE (U"  removeObject: rowi, rest, discriminant, classification")
+		CODE2 (U"plusObject: confusion")
+		CODE2 (U"Increase confusion count")
+	CODE1 (U"endif")
+	CODE1 (U"removeObject: rowi, rest, discriminant, classification")
 CODE (U"endfor")
 CODE (U"selectObject: confusion")
 CODE (U"fractionCorrect = Get fraction correct")
@@ -1694,15 +1707,15 @@ ENTRY (U"5.2 Bootstrap classification")
 NORMAL (U"The following script summarizes bootstrap classification.")
 CODE (U"fractionCorrect = 0")
 CODE (U"for i to numberOfBootstraps")
-CODE (U"  selectObject: table")
-CODE (U"  resampled = To TableOfReal (bootstrap)")
-CODE (U"  discriminant = To Discriminant")
-CODE (U"  plusObject: resampled")
-CODE (U"  classification = To ClassificationTable: \"yes\", \"yes\"")
-CODE (U"  confusion = To Confusion: \"yes\"")
-CODE (U"  fc = Get fraction correct")
-CODE (U"  fractionCorrect += fc")
-CODE (U"  removeObject: resampled, discriminant, classification, confusion")
+	CODE1 (U"selectObject: table")
+	CODE1 (U"resampled = To TableOfReal (bootstrap)")
+	CODE1 (U"discriminant = To Discriminant")
+	CODE1 (U"plusObject: resampled")
+	CODE1 (U"classification = To ClassificationTable: \"yes\", \"yes\"")
+	CODE1 (U"confusion = To Confusion: \"yes\"")
+	CODE1 (U"fc = Get fraction correct")
+	CODE1 (U"fractionCorrect += fc")
+	CODE1 (U"removeObject: resampled, discriminant, classification, confusion")
 CODE (U"endfor")
 CODE (U"fractionCorrect /= numberOfBootstraps")
 CODE (U"appendInfoLine: fractionCorrect, \" (= fraction correct, bootstrapped \", numberOfBootstraps, \" times).\"")
@@ -2324,6 +2337,128 @@ NORMAL (U"%e__%jk_ is the %k-th element of the %j-th eigenvector, %x__%ik_ is "
 	"the %i-th row of the matrix part of the resulting object.")
 MAN_END
 
+MAN_BEGIN (U"Electroglottogram", U"djmw", 20190829)
+INTRO (U"One of the @@types of objects@ in Praat. The ##Electroglottogram# represents changes in vocal fold contact area during vocal fold vibration.")
+ENTRY (U"The Electroglottogram waveform")
+NORMAL (U"The following picture shows part of one cycle of a stereotypical (stylized)  waveform, with landmarks.")
+PICTURE (5,3, Electroglottogram_drawStylized)
+NORMAL (U"The orientation of the signal is in the (now) conventional way where the positive y-direction signals larger %%vocal fold contact area% (VFCA). The landmarks refer to:")
+LIST_ITEM (U"\\bu a \\-- initial contact of the lower vocal fold margins;")
+LIST_ITEM (U"\\bu b \\-- the upper vocal fold margins make initial (but not full) contact;")
+LIST_ITEM (U"\\bu c \\-- maximum vocal fold contact reached;")
+LIST_ITEM (U"\\bu d \\-- de-contacting phase initiated by separation of the lower vocal fold margins;")
+LIST_ITEM (U"\\bu e \\-- upper margins start to separate;")
+LIST_ITEM (U"\\bu f \\-- glottis is open, with minimal contact area.")
+ENTRY (U"How to get an Electroglottogram?")
+NORMAL (U"From standard electroglottography measurements generally a multi-channel sound file results. One channel of this file contains the recorded electroglottogram, the other the recorded sound. You can extract the electroglottogram with the @@Sound: Extract Electroglottogram...|Extract Electroglottogram...@ command that you will find under the ##Sound: Convert -# menu.")
+ENTRY (U"Glottal opening and closure times")
+NORMAL (U"Getting exact timing of the %%glottal closure instants%% (GCI) and %%glottal opening "
+	"instants% (GOI) from the Electroglottogram is problematic because as @@Herbst (2019)@ "
+	"notes: the vocal folds do not vibrate as a uniform mass. Rather, "
+	"their vibration is characterized by phase differences along both the inferior–superior and "
+	"anterior–posterior dimensions. These phase differences cause time-delayed contacting and "
+	"de-contacting of the vocal folds along the respective axes. There is thus no specific instant "
+	"of glottal closing and opening, but rather an interval during which the closing and opening, "
+	"respectively, occur. ")
+MAN_END
+
+MAN_BEGIN (U"Electroglottogram: High-pass filter...", U"djmw", 20190827)
+INTRO (U"Applies a high-pass filter to the Electroglottogram to filter away signal artifacts like baseline and amplitude drifts.")
+ENTRY (U"Settings")
+TAG (U"##From frequency (Hz)#")
+DEFINITION (U"Frequencies lower than this frequency are suppressed.")
+TAG (U"##Smoothing (Hz)")
+DEFINITION (U"defines the width of the transition area between fully suppressed and fully passed "
+	"frequencies. Frequencies below %%fromFrequency% will be fully suppressed, frequencies larger "
+	"than %%fromFrequency%+%%smoothing% will be fully passed.")
+MAN_END
+
+MAN_BEGIN (U"Electroglottogram: First central difference...", U"djmw", 20190827)
+INTRO (U"Calculates an approximation of the derivative of the @@Electroglottogram@.")
+ENTRY (U"Settings")
+TAG (U"##Scale absolute peak at 0.99")
+DEFINITION (U"defines whether the \"derivative\" should be scaled or not.")
+ENTRY (U"Algorithm")
+NORMAL (U"We take the first central difference, "
+	"(d%%x%(%%t%)/d%%t%)[%%i%] = (%%x%[%%i%+1] - %%x%[%%i%-1])/(2\\De%%t%).")
+NORMAL (U"The real derivative can be found by using the @@Electroglottogram: Derivative...|Derivative...@ method.")
+MAN_END
+
+MAN_BEGIN (U"Electroglottogram: Get closed glottis intervals...", U"djmw", 20190906)
+INTRO (U"Calculates the intervals where the glottis is closed from the selected @@Electroglottogram@.")
+ENTRY (U"Settings")
+TAG (U"##Pitch floor (Hz)#")
+DEFINITION (U"intervals with a lower pitch will not be considered. ")
+TAG (U"##Pitch ceiling (Hz)#")
+DEFINITION (U"intervals with a higher pitch will not be considered.")
+TAG (U"##Closing threshold#")
+DEFINITION (U"the moment of closing of the vocal folds will be taken at a fixed point between a cycle's peak and valley amplitude level.")
+PICTURE (4.0, 3.0, Electroglottogram_drawStylizedLevels)
+DEFINITION (U"The picture shows, for a %%closingThreshold% value of 0.3, the Closed Glottis Interval that starts at time %t__1_ and ends at time %t__2_. These times were found by calculating the two level crossings at amplitude %%valley+closingThreshold(peak\\--valley)%.")
+TAG (U"##Peak threshold#")
+DEFINITION (U"cycles with peaks whose relative amplitudes with respect to the maximum peak are lower than this value are not considered.")
+ENTRY (U"Algorithm")
+NORMAL (U"The algorithm first tries to find peaks and valleys, guided by the settings for the pitch floor and ceiling. From the level crossings before and after a peak the times of glottal closing and opening are determined.")
+ENTRY (U"Warning")
+NORMAL (U"Getting exact timing of the %%glottal closure instants%% (GCI) and %%glottal opening "
+	"instants% (GOI) from the Electroglottogram is problematic because as @@Herbst (2019)@ "
+	"notes: the vocal folds do not vibrate as a uniform mass. Rather, "
+	"their vibration is characterized by phase differences along both the inferior–superior and "
+	"anterior–posterior dimensions. These phase differences cause time-delayed contacting and "
+	"de-contacting of the vocal folds along the respective axes. There is thus no specific instant "
+	"of glottal closing and opening, but rather an interval during which the closing and opening, "
+	"respectively, occur. ")
+MAN_END
+
+MAN_BEGIN (U"Electroglottogram: Derivative...", U"djmw", 20190930)
+INTRO (U"Calculates the derivative of the @@Electroglottogram@.")
+ENTRY (U"Settings")
+TAG (U"##Low-pass frequency (Hz)")
+DEFINITION (U"defines the highest frequency to keep in the derivative.")
+TAG (U"##Smoothing (Hz)")
+DEFINITION (U"defines the width of the transition area between fully passed and fully suppressed "
+	"frequencies. Frequencies below %%lowpassFrequency% will be fully passed, frequencies larger "
+	"than %%lowpassFrequency%+%%smoothing% will be fully suppressed.")
+TAG (U"##Scale absolute peak at 0.99")
+DEFINITION (U"defines whether the derivative should be scaled or not.")
+ENTRY (U"Algorithm")
+NORMAL (U"The derivative of a wave form %%x%(%%t%) is most easily calculated in the spectral domain. According to "
+	"Fourier theory, if %%x%(%%t%) = \\in%%X%(%%f%)exp(2\\pi%%ift%) %%dt%, then"
+	" d%%x%(%%t%)/d%%t% = \\in%%X(%%f%)2\\pi%%if% exp(2\\pi%%ift%)d%%t%, where %%X%(%%f%) is the spectrum "
+	"of the %%x%(%%t).")
+NORMAL (U"Therefore, by taking the spectrum of the signal and from this spectrum calculate new real and "
+	"imaginary components and then transform back to the time doain we get the derivative.")
+NORMAL (U"The multiplication of the spectral components with the factor 2\\pi%%if% will result in a new "
+	"%%X%\\'p(%%f%) whose components will be: Re(%%X\\'p%(%%f%)) = -2\\pi%%f% Im (%%X%(%%f%)) and Im(%%X\\'p%(%%f%)) =2\\pi%%f% Re(%%X%(%%f%)).")
+ENTRY (U"About dEGG")
+NORMAL (U"The derivative of the Electroglottogram is often indicated as dEGG or DEGG. @@Henrich et al. (2004)@ used the peaks in the derivative to find the %%glottal closure instants% and sometimes also the %%glottal opening instants%. "
+	"However, in their paper and also in other papers like, for example,  @@Herbst et al. (2014)@, the derivative they use is not the exact derivative as calculated in the way explained above. "
+	"Instead they calculate an approximation of the derivative by taking either the first difference, "
+	"(d%%x%(%%t%)/d%%t%)[%%i%] = (%%x%[%%i%] - %%x%[%%i%-1])/\\De%%t%, or by taking the first central difference, "
+	"(d%%x%(%%t%)/d%%t%)[%%i%] = (%%x%[%%i%+1] - %%x%[%%i%-1])/(2\\De%%t%).")
+MAN_END
+
+MAN_BEGIN (U"Electroglottogram: To AmplitudeTier (levels)...", U"djmw", 20190831)
+INTRO (U"For the selected @@Electroglottogram@, according to the chosen value of the %%closing threshold%, the amplitude at the moment of glottal closure in each glottal cycle is calculated as a proportion of the difference between the values at the peak and the valley of each cycle.")
+ENTRY (U"Settings")
+TAG (U"##Pitch floor (Hz)#")
+DEFINITION (U"defines the lowest pitch we want to consider.")
+TAG (U"##Pitch ceiling (Hz)#")
+DEFINITION (U"defines the highest pitch we want to consider.")
+TAG (U"##Closing threshold (0-1)#")
+DEFINITION (U"defines the relative amplitude in each glottal cycle where the moment of glottal closure will be chosen. ")
+MAN_END
+
+MAN_BEGIN (U"electroglottography", U"djmw", 20190929)
+INTRO (U"Electroglottography (EGG) is a low-cost, noninvasive technology for measuring changes of relative vocal fold contact area during laryngeal voice production @@Herbst (2019)|(Herbst, 2019)@.")
+NORMAL (U"In electroglottography (EGG) a high-frequency, low-amperage current is passed between two "
+	"electrodes placed on each side of the thyroid cartilage. Changes in vocal fold contact area "
+	"(VFCA) during vocal fold vibration result in admittance variation, and the resulting "
+	"(demodulated) EGG signal is proportional to the relative VFCA.")
+NORMAL (U"In Praat the EGG signal is represented by the @@Electroglottogram@.")
+NORMAL (U"From standard electroglottography measurements generally a multi-channel sound file results. One channel of this file contains the recorded electroglottogram, the other the recorded sound. You can extract the electroglottogram with the @@Sound: Extract Electroglottogram...|Extract Electroglottogram...@ command that you will find under the ##Sound: Convert -# menu.")
+MAN_END
+
 MAN_BEGIN (U"equivalent rectangular bandwidth", U"djmw", 19980713)
 INTRO (U"The %%equivalent rectangular bandwidth% (ERB) of a filter is defined "
 	"as the width of a rectangular filter whose height equals the peak gain of "
@@ -2500,6 +2635,14 @@ NORMAL (U"An object of type ISpline represents a linear combination of basis "
 FORMULA (U"ISpline (%x) = \\Si__%k=1..%numberOfCoefficients_ %c__%k_ %ispline__%k_(%x)")
 MAN_END
 
+MAN_BEGIN (U"Itakura-Saito divergence", U"djmw", 20190619)
+INTRO (U"The ##Itakura-Saito divergence# is one of the many measures used to measure the similarity between an object %x and a reference %y.")
+NORMAL (U"It is defined as %d(%x|%y)= %x/%y - log(%x/%y) - 1. Only if %x = %y the divergence is zero.")
+NORMAL (U"It is called a divergence and not a distance, technically speaking, because it is not symmetric: %d(%x|%y) is not the same as %d(%y|%x).")
+NORMAL (U"One of the advantages of the Itakura-Saito divergence is its scale invariance which means that %d(%\\lax|%\\lay)=%d(%x|%y), "
+"for any number \\la. This makes it a very suitable measure for the comparison of audio spectra.")
+MAN_END
+
 MAN_BEGIN (U"jackknife", U"djmw", 20141101)
 INTRO (U"A technique for estimating the bias and standard deviation of an estimate.")
 NORMAL (U"Suppose we have a sample #%x = (%x__1_, %x__2_,...%x__n_) and wish to estimate "
@@ -2511,6 +2654,13 @@ MAN_END
 
 MAN_BEGIN (U"Kirshenbaum phonetic encoding", U"djmw", 20120413)
 INTRO (U"The Kirshenbaum phonetic encoding represents International Phonetic Alphabet symbols using ascii characters. See: http://www.kirshenbaum.net/IPA/ascii-ipa.pdf. The @@espeak@ speech synthesizer on which our synthesizer is based accepts this encoding as text input. ")
+MAN_END
+
+MAN_BEGIN (U"LAPACK", U"djmw", 20200131)
+NORMAL (U"From %%http://www.netlib.org/lapack%:")
+DEFINITION (U"\"LAPACK provides routines for solving systems of simultaneous linear equations, least-squares solutions of linear systems of equations, eigenvalue problems and singular value problems. All the necessary matrix factorizations are also provided.\"")
+NORMAL (U"LAPACK is written in the computer language FORTRAN. In Praat we use CLAPACK, a version which was automatically translated from FORTRAN to C.")
+NORMAL (U"More information can be found in the @@Anderson et al. (1999)|LAPACK's user guide@.")
 MAN_END
 
 MAN_BEGIN (U"Legendre polynomials", U"djmw", 19990620)
@@ -2598,6 +2748,18 @@ NORMAL (U"Singular value decomposition with backsubstitution. "
 NORMAL (U"See for more details: @@Golub & van Loan (1996)@ chapters 2 and 3.")
 MAN_END
 
+MAN_BEGIN (U"Matrix: To NMF (m.u.)...", U"djmw", 20190409)
+INTRO (U"A command to get the @@non-negative matrix factorization@ of a matrix by means of a multiplicative update algorithm.")
+MAN_END
+
+MAN_BEGIN (U"Matrix: To NMF (ALS)...", U"djmw", 20190409)
+INTRO (U"A command to get the @@non-negative matrix factorization@ of a matrix by means of an Alternating Least Squares algorithm.")
+MAN_END
+
+MAN_BEGIN (U"Matrix: To NMF (IS)...", U"djmw", 20191025)
+INTRO (U"A command to get the @@non-negative matrix factorization@ of a matrix based on the Itakura-Saito distance as was described in @@Févotte, Bertin & Durrieu (2009)@.")
+MAN_END
+
 MAN_BEGIN (U"MelFilter", U"djmw", 20141022)
 INTRO (U"A #deprecated @@types of objects|type of object@ in P\\s{RAAT}. It is replaced by the @@MelSpectrogram@.")
 NORMAL (U"An object of type MelFilter represents an acoustic time-frequency "
@@ -2654,6 +2816,40 @@ NORMAL (U"An object of type MSpline represents a linear combination of basis "
 	"m@spline functions. Each basis %mspline is a positive polynomial function "
 	"of degree %p.")
 FORMULA (U"MSpline (%x) = \\Si__%k=1..%numberOfCoefficients_ %c__%k_ %mspline__%k_(%x)")
+MAN_END
+
+MAN_BEGIN (U"NMF", U"djmw", 20190312)
+INTRO (U"An object of type ##NMF# represents the @@non-negative matrix factorization@ of a matrix.")
+MAN_END
+
+MAN_BEGIN (U"non-negative matrix factorization", U"djmw", 20191024)
+INTRO (U"The ##non-negative matrix factorization## or ##NMF# is a factorization of a data matrix ##D#, whose elements are all non-negative, into a feature matrix ##F# and a weights matrix ##W# such that ##D \\~~ F*W#, where the elements of ##F# and ##W# are also all non-negative.")
+ENTRY (U"Algorithms for computing NMF")
+NORMAL (U"More backgroud on the algorithms used can be found in @@Berry et al. (2007)@")
+NORMAL (U"The algorithms fall into three general classes:")
+TAG (U"##1. Multiplicative updates#,")
+TAG (U"##2. Alternating Least squares#,")
+TAG (U"##3. Projected Gradient.#")
+ENTRY (U"Multiplicative Updates")
+CODE (U"initialize F and W")
+CODE (U"while iter < maxinter and not convergence")
+	CODE1 (U"(MU) W = W .* (F'*D) ./ (F'*F*W + 10^^−9^)")
+	CODE1 (U"(MU) F = F .* (D*W') ./ (F*W*W' + 10^^−9^)")
+	CODE1 (U"test for convergence")
+CODE (U"endwhile")
+NORMAL (U"In the multiplicative update (MU) steps above \"*\" means ordinary matrix multiplication while \".*\" and \"./\" mean elementwise matrix operations. The factors 10^^-9^ guard against division by zero.")
+ENTRY (U"Alternating Least Squares")
+NORMAL (U"The optimization of ##D \\~~ F*W# is not convex in both ##F# and ##W# it is convex in either ##F# or ##W#. Therefor given one, the other can be found by a simple least squares (LS) algorithm. This can be done in an alternating fashion.")
+NORMAL (U"The Aternating Least Squares (ALS) algorithm is as follows:")
+CODE (U"initialize F")
+CODE (U"while iter < maxinter and not convergence")
+	CODE1 (U"(LS) Solve for W in matrix equation F'*F*W = F'*D")
+	CODE1 (U"(NONNEG) Set all negative elements in W to 0")
+	CODE1 (U"(LS) Solve for F in matrix equation W*W'*F' = W*D'")
+	CODE1 (U"(NONNEG) Set all negative elements in F to 0")
+	CODE1 (U"test for convergence")
+CODE (U"endwhile")
+NORMAL (U"")
 MAN_END
 
 MAN_BEGIN (U"pairwise algorithm for computing sample variances", U"djmw", 20170806)
@@ -3528,6 +3724,169 @@ DEFINITION (U"is a real, nonnegative, and diagonal matrix. Its diagonal contains
 	"%%singular values% %\\si__%i_, where %\\si__1_ \\>_ ... \\>_ %\\si__%n_ \\>_ 0.")
 MAN_END
 
+MAN_BEGIN (U"solving matrix equations", U"djmw", 20191231)
+INTRO (U"In this manual you will learn how to solve different kinds of equations involving matrices and vectors.")
+NORMAL (U"Given a matrix #A and a vector #y, the types of equations we like to solve are of the form ##y#=##A\\.cx#, where #A and #y are given. The task is to find the vector #x. The first two subsections show how to deal with this equation with no constraints on the solution vector #x. Section 4 will show how to deal with the situation when the solution vector #x is constrained.")
+NORMAL (U"In the equation above, the matrix and the vectors have to conform. This means that the number of rows of #A should equal the size of the #y vector and the size of the solution vector #x will always equal the number of colums of #A.")
+NORMAL (U"Note: In Praat scripting we don't distinguish in notation between a vector and its transpose.")
+ENTRY (U"1. Matrix A is square")
+NORMAL (U"In this case an exact solution for #x is possible because if #A is \"well behaved\" we can calculate its inverse and the solution will be #x = ##A^^-1^\\.cy#. The function ##solve\\#  (a\\# \\# , y\\# )# is for this type of problem.")
+NORMAL (U"The following example shows an exactly solvable system because #A is a square matrix and \"well behaved\":")
+CODE (U"a\\# \\#  = {{0, 2, 0, 1},")
+CODE (U"...    {2, 2, 3, 2},")
+CODE (U"...    {4,-3, 0, 1},")
+CODE (U"...    {6, 1,-6,-5}}")
+CODE (U"y\\#  = {0,-2,-7,6}")
+CODE (U"x\\#  = solve\\#  (a\\# \\# , y\\# )")
+CODE (U"writeInfoLine: x\\# ")
+NORMAL (U"My info window shows:")
+NORMAL (U"-0.49999999999999967 1.000000000000001 0.3333333333333344 -2.0000000000000027")
+NORMAL (U"As a check we can calculate the norm of the difference between #y and ##A\\.cx# which should be zero for a perfect solution.")
+CODE (U"appendInfoLine: norm (y\\#  - mul\\#  (a\\# \\# , x\\# ))")
+NORMAL (U"My info window shows 1.0777744118960794e-14, which is almost zero (it is not exactly zero due to rounding errors because real numbers cannot be represented exactly in a computer.")
+
+ENTRY (U"2. Matrix A has more rows than columns")
+NORMAL (U"If the matrix has more rows than colums an exact solution is generally not possible and the best thing we can do is to find a solution vector #x that %%minimizes% the squared distance between the vectors #y and ##A\\.cx#. The problem now can be posed as: find the vector #x that minimizes ||#y - ##A\\.cx#||^2. This is a regression problem which can be solved using @@singular value decomposition@.")
+NORMAL (U"The following example shows a 5\\xx2 matrix #A. The solution therefore is a vector with two elements.")
+CODE (U"a\\# \\#  = {{-0.84,-0.184},")
+CODE (U"...    { 0.09, 1.26},")
+CODE (U"...    { 0.62,-0.20},")
+CODE (U"...    {-1.48,-1.03},")
+CODE (U"...    { 1.29, 0.03}}")
+CODE (U"y\\#  = {-0.19, -0.90, -1.53, -2.30, 0.58}")
+CODE (U"x\\#  = solve\\#  (a\\# \\# , y\\# )")
+CODE (U"writeInfoLine: x\\# ")
+NORMAL (U"My info window shows:")
+NORMAL (U"0.5881230621928452 0.21643159712237164")
+NORMAL (U"We can calculate the norm of the difference:")
+CODE (U"appendInfoLine: norm (y\\#  - mul\\#  (a\\# \\# , x\\# ))")
+NORMAL (U"My info window shows:")
+NORMAL (U"2.556992185298919")
+NORMAL (U"This means that no other vector #x can be found that has ||#y - ##A\\.cx#|| < 2.556992185298919!")
+
+ENTRY (U"3. Matrix A has more columns than rows")
+NORMAL (U"If the number of colums is larger than the number of rows the system in general is underdetermined, i.e. we can not determine a complete solution vector.")
+ENTRY (U"4. The x# vector is constrained")
+NORMAL (U"If there are additional constraints on the vector #x we can handle three different cases:")
+
+ENTRY (U"4.1 Constraints on the squared norm of the solution #x")
+NORMAL (U"These can be expressed in the following form: %%minimize% ||#y - ##A\\.cx#||^2 + \\al(##x\\'px# - \\de) for some \\al > 0 and \\de \\>_ 0. Here the constraint on the squared norm ##x\\'px# of #x is enforced by adding a penalty function with weighing factor \\al.")
+NORMAL (U"The function to use is ##solveWeaklyConstrained\\# # (#a\\# \\# , #y\\# , %%#alpha%, %%#delta%)")
+NORMAL (U"The function is called \"weakly constrained\" because the penalty function prohibits a relatively large departure of ##x\\'px# from \\de. If we let \\al go to infinity we have a constrained least squares regression problem of minimizing ||#y - ##A\\.cx#||^^2^ subject to ##x\\'px# = \\de. The algorithm we have implemented is descrobed by @@Ten Berge (1991)@.")
+ENTRY (U"4.1.1 An example from the cited paper with an 6\\xx2 matrix #A")
+CODE (U"a\\# \\#  = {{ 4, 1, 0.5},")
+CODE (U"...    { 4,-1,-0.5},")
+CODE (U"...    {-4, 1,-0.5},")
+CODE (U"...    {-4,-1, 0.5},")
+CODE (U"...    { 2, 0,   0},")
+CODE (U"...    {-2, 0,   0}}")
+CODE (U"y\\#  = {-1,-1,-1,-1,-1,1}")
+CODE (U"alpha = 6.0")
+CODE (U"delta = 2 / 3")
+CODE (U"x\\#  = solveWeaklyConstrained\\# (a\\# \\# , y\\# , alpha, delta)")
+CODE (U"writeInfoLine: x\\# ")
+NORMAL (U"My info window shows:")
+NORMAL (U"-0.0563380281690141 -3.341667830688472e-17 0.7616819283108669")
+ENTRY (U"4.1.2 The solution of the regression without the constraint")
+NORMAL (U"No constraints are involed if we set \\al = 0")
+CODE (U"x\\#  = solveWeaklyConstrained\\# (a\\# \\# , y\\# , 0.0, delta)")
+CODE (U"writeInfoLine: x\\# ")
+NORMAL (U"My info window shows:")
+NORMAL (U"-0.05555555555555557 -5.696494054485392e-17 3.0458443711512004e-16")
+NORMAL (U"The same solution would have appeared if we had used the following code:")
+CODE (U"x\\#  = solve\\# (a\\# \\# , y\\# )")
+CODE (U"writeInfoLine: x\\# ")
+ENTRY (U"4.1.3. To enforce a solution where the norm of the solution equals one")
+NORMAL (U"We choose a very large value for \\al and set \\de to 1.0.")
+CODE (U"x\\#  = solveWeaklyConstrained\\# (a\\# \\# , y\\# , 1e100, 1.0)")
+CODE (U"writeInfoLine: x\\# ")
+NORMAL (U"My info window shows: ")
+NORMAL (U"-0.05633802816901411 -3.341667830688472e-17 0.9984117520251988")
+
+ENTRY (U"4.2. Constraint of nonnegativity of the solution")
+NORMAL (U"Here we constrain the elements of the solution to be nonnegative. The problem is stated as %minimize ||#y - #A\\.c#x||^2 where all %x__%i_ \\>_ 0.")
+NORMAL (U"This problem can be solved by an iterative alternating least squares method as described by @@Borg & Groenen (1997)@. The function to use is ##solveNonnegative\\#  (a\\# \\# , y\\#  [,x\\# ], %maximumNumberOfIterations, %tolerance, %infoLevel)#")
+NORMAL (U"The parameters have the following meaning:")
+TAG (U"##a\\# \\# , y\\# #")
+DEFINITION (U"the #A matrix and the #y vector.")
+TAG (U"##[,x\\# ]#")
+DEFINITION (U"the optional vector to start the iterations. If not given the procedure starts with the zero vector.")
+TAG (U"##maximumNumberOfIterations")
+DEFINITION (U"the maximum number of iterations that should be run if the tolerance criterion is not met.")
+TAG (U"##tolerance")
+DEFINITION (U"is a criterion value that is needed to decide when to stop the iterations. If %d(%n) is the squared approximation error in the %n-th step of the iteration, i.e. %d(%n) = ||#y - ##A\\.cx#(%n)||^^2^, where #x(%n) is the approximation of #x at step %n, then the iteration stops if either d(n) == 0 or")
+DEFINITION (U"|%d(%n) - %d(%n-1)| / ||#y||^2 < %tolerance.")
+TAG (U"##infoLevel")
+DEFINITION (U"determines the amount of information that is written to the info window during iterations. No info is written if the value is zero.")
+NORMAL (U"As an example consider:")
+CODE (U"a\\# \\#  = {{-4, 2, 2}, ")
+CODE (U"       { 2, 4, 2}, ")
+CODE (U"       { 1, 1, 1},")
+CODE (U"       { 2,-1, 3}}")
+CODE (U"y\\# = {1,2,1,3}")
+CODE (U"result\\#  = solveNonnegative\\#  (a\\# \\# , y\\# ,  100, 1e-17, 0)")
+CODE (U"writeInfoLine: result\\# ")
+NORMAL (U"My info window shows:")
+NORMAL (U"0.17687074830212887 0 0.8594104308385341")
+NORMAL (U"")
+NORMAL (U"The same ##a\\# \\# # and ##y\\# # with extra output and only three iterations:")
+CODE (U"result\\#  = solveNonnegative\\#  (a\\# \\# , y\\# , 3, 1e-17, 2)")
+CODE (U"writeInfoLine: result\\# ")
+NORMAL (U"Now my info window shows:")
+NORMAL (U"Iteration: 1, error: 2.7083144168962345")
+NORMAL (U"Iteration: 2, error: 0.22835187182198863")
+NORMAL (U"Iteration: 3, error: 0.019415103584264275")
+NORMAL (U"Number of iterations: 3; Minimum: 0.019415103584264275")
+NORMAL (U"0.18686771227425772 0.0063553925295192215 0.8542134965490019")
+NORMAL (U"The solution is not reached after only 3 iterations. We use the found solution to start a new iteration:")
+CODE (U"result\\#  = solveNonnegative\\#  (a\\# \\# , y\\# , result\\# , 100, 1e-17, 1)")
+CODE (U"writeInfoLine: result\\# ")
+NORMAL (U"My info window shows")
+NORMAL (U"Number of iterations: 6; Minimum: 0.011337868480725613")
+NORMAL (U"0.17687074830212887 0 0.8594104308385341")
+NORMAL (U"The final solution has been reached after 6 extra iterations.")
+
+ENTRY (U"4.3 Constraints on the sparseness of the solution")
+NORMAL (U"As we have seen above, if the number of columns is larger than the number of rows then a unique solution does not exist in general because the number of unknowns is larger than the number of equations. However, there is an exception:")
+NORMAL (U"If the matrix #A has some special properties #and the solution vector has to be sparse, i.e. most of its values are zero, then we can find the #x that minimizes ||#y - ##A\\.cx#||^2.")
+NORMAL (U"In general an iterative procedure is needed for the minimization. We have implemented one based on %%iterative hard thresholding% which is described by @@Blumensath & Davies (2010)@. ")
+NORMAL (U"##solveSparse\\#  (a\\# \\# , y\\#  [,x\\# ], %%maximumNumberOfNonzeros%, %%maximumNumberOfIterations%, %%tolerance%, %%info%)#")
+NORMAL (U"The parameters have the following meaning:")
+TAG (U"##a\\# \\# , y\\# #")
+DEFINITION (U"the #A matrix and the #y vector.")
+TAG (U"##[,x\\# ]#")
+DEFINITION (U"the optional vector to start the iterations. If not given the procedure starts with the zero vector.")
+TAG (U"##maximumNumberOfNonzeros")
+DEFINITION (U"the maximum number of nonzero elements in the solution vector, i.e. the sparsity.")
+TAG (U"##maximumNumberOfIterations")
+DEFINITION (U"the maximum number of iterations that should be run if the tolerance criterion is not met.")
+TAG (U"##tolerance")
+DEFINITION (U"is a criterion value that is needed to decide when to stop the iterations. If %d(%n) is the squared approximation error in the %n-th step of the iteration, i.e. %d(%n) = ||#y - ##A\\.cx#(%n)||^^2^, where #x(%n) is the approximation of #x at step %n, then the iteration stops if")
+DEFINITION (U"|%d(%n) - %d(%n-1)|/||#y||^2 < %tolerance.")
+TAG (U"##infoLevel")
+DEFINITION (U"determines the amount of information that is written to the info window during iterations. No info is written if the value is zero.")
+NORMAL (U"In the following example we first construct a sparse vector #x, with random numbers between 0.1 and 10, and a random Gaussian matrix #A. From these two we construct our #y. We then solve the sparse system and compare its solution #xs to the constructed #x.")
+CODE (U"nrow = 100")
+CODE (U"ncol = 1000")
+CODE (U"x\\#  = zero\\#  (ncol)")
+CODE (U"for i to size (x\\# )")
+CODE (U"  x\\#  [i] = if randomUniform (0,1) < 0.005 then randomUniform (0.1, 10) else 0.0 fi")
+CODE (U"endfor")
+CODE (U"\\#  On average in x\\#  5 out of 1000 will be unequal zero.")
+CODE (U"a\\#  = randomGauss\\# \\#  (nrow, ncol, 0.0, 1.0 / nrow)")
+CODE (U"y\\#  = mul\\#  (a\\# \\# , x\\# )")
+CODE (U"maximumNumberOfNonzeros = 10")
+CODE (U"maximumNumberOfIterations = 200")
+CODE (U"tolerance = 1e-17")
+CODE (U"info = 0; no info")
+CODE (U"xs\\#  = solveSparse\\#  (a\\# \\# , y\\# , maximumNumberOfNonzeros, maximumNumberOfIterations, tolerance, info)")
+CODE (U"\\#  We have found the solution now check")
+CODE (U"dif\\#  = x\\#  - xs\\# ")
+CODE (U"inner = inner (dif\\# , dif\\# )")
+CODE (U"writeInfoLine: if inner > 1e-7 then \"error\" else \"OK\" endif")
+NORMAL (U"My info window shows: OK.")
+MAN_END
+
 MAN_BEGIN (U"SVD", U"djmw", 20171214)
 INTRO (U"An object of type ##SVD# represents the @@singular value decomposition@ of a matrix.")
 ENTRY (U"SVD internals")
@@ -3590,7 +3949,7 @@ NORMAL (U"The quality of the @@overlap-add|manipulation@ depends on the pitch me
 NORMAL (U"The arguments that control the pitch measurement are:")
 TAG (U"##Minimum pitch (Hz)# (standard value: 75 Hz)")
 DEFINITION (U"pitch candidates below this frequency will not be considered.")
-TAG (U"##%Maximum pitch (Hz)# (standard value: 600 Hz)")
+TAG (U"##Maximum pitch (Hz)# (standard value: 600 Hz)")
 DEFINITION (U"pitch candidates above this frequency will be ignored.")
 NORMAL (U"The arguments that control the manipulation are:")
 TAG (U"##Formant shift ratio")
@@ -4033,32 +4392,32 @@ NORMAL (U"The effectiveness of the %%Minimum silent interval duration% and %%Min
 	"or silent intervals with a duration smaller than this effective analysis window duration.")
 MAN_END
 
-MAN_BEGIN (U"Sound: Trim silences...", U"djmw", 20120323)
-INTRO (U"A command that creates from the selected @Sound a new sound in which all silence durations are not longer than a specified value.")
+MAN_BEGIN (U"Sound: Trim silences...", U"djmw", 20190914)
+INTRO (U"A command that creates from the selected @Sound a new sound with silence durations not longer than a specified value.")
 ENTRY (U"Settings")
-TAG (U"%%Trim duration (s)%,")
+TAG (U"##Trim duration (s)#")
 DEFINITION (U"specifies the maximum allowed silence duration.")
-TAG (U"%%Minimum pitch (Hz)%, and, %Time step (s)%,")
+TAG (U"##Minimum pitch (Hz)#, and, ##Time step (s)#")
 DEFINITION (U"determine how we measure the intensities on which the determination of silent intervals is based. See @@Sound: To Intensity...@ for more info.")
-TAG (U"%%Silence threshold (dB)%, %%Minimum silent interval duration (s)%, and %%Minimum sounding interval duration%,")
+TAG (U"##Silence threshold (dB)#, ##Minimum silent interval duration (s)#, and ##Minimum sounding interval duration#")
 DEFINITION (U"determine how the silent intervals will be determined. See @@Intensity: To TextGrid (silences)...@ for more info.")
-TAG (U"%%Save trimming info as TextGrid%,")
-DEFINITION (U"determines if a TextGrid with trimming information will also be created. The TextGrid will have one tier where interval of the %%originating% sound that were trimmed have been labeled. ")
-TAG (U"%%Trim label%,")
+TAG (U"##Save trimming info as TextGrid#")
+DEFINITION (U"determines if a TextGrid with trimming information will also be created. The TextGrid will have one tier where intervals of the %%originating% sound that were trimmed have been labeled. ")
+TAG (U"##Trim label#")
 DEFINITION (U"determines the label that the trimmed intervals in the TextGrid will get.")
 MAN_END
 
-MAN_BEGIN (U"Sound & Pitch: To Spectrogram...", U"djmw", 20141024)
+MAN_BEGIN (U"Sound & Pitch: To Spectrogram...", U"djmw", 20191008)
 INTRO (U"A command that creates a @Spectrogram object from the selected "
 	"@Sound and @Pitch objects by @@band filtering in the frequency domain@ with a "
 	"bank of filters whose bandwidths depend on the local pitch.")
 NORMAL (U"The filter functions used are:")
-FORMULA (U"%#H(%f, %F__0_) = 1 / (((%f__%c_^^2^ - %f^2) /%f\\.c%B(%F__0_)))^2 + 1),")
+FORMULA (U"%#H(%f, %f__0_) = 1 / (((%f__%c_^^2^ - %f^2) /%f\\.c%B(%f__0_)))^2 + 1),")
 NORMAL (U"where %f__%c_ is the central (resonance) frequency of the filter. "
-	"%B(%F__0_) is the bandwidth in Hz and determined as")
-FORMULA (U"%B(%F__0_) = %relativeBandwidth\\.c%F__0_, ")
-NORMAL (U"where %F__0_ is the fundamental frequency as determined from the Pitch "
-	"object. Whenever the value of %F__0_ is undefined, a value of 100 Hz is taken.")
+	"%B(%f__0_) is the bandwidth in Hz and determined as")
+FORMULA (U"%B(%f__0_) = %relativeBandwidth\\.c%f__0_, ")
+NORMAL (U"where %f__0_ is the fundamental frequency as determined from the Pitch "
+	"object. Whenever the value of %f__0_ is undefined, a value of 100 Hz is taken.")
 MAN_END
 
 MAN_BEGIN (U"Sound: To MelFilter...", U"djmw", 20141022)
@@ -4142,7 +4501,7 @@ DEFINITION (U"the number of neighbouring frequency points that are used in the c
 	"The precision relates linearly to the amount of computing time needed to get the new shifted spectrum.")
 MAN_END
 
-MAN_BEGIN (U"SpeechSynthesizer", U"djmw", 20120413)
+MAN_BEGIN (U"SpeechSynthesizer", U"djmw", 20190811)
 INTRO (U"The SpeechSynthesizer is one of the @@types of objects@ in Praat. It creates a speech sound from text. The actual text-to-speech synthesis is performed by the @@Espeak|eSpeak NG@ speech synthsizer and therefore our SpeechSynthsizer is merely an interface to Espeak.")
 ENTRY (U"Commands")
 NORMAL (U"Creation:")
@@ -4152,7 +4511,7 @@ LIST_ITEM (U"\\bu @@SpeechSynthesizer: Play text...|Play text...@")
 LIST_ITEM (U"\\bu @@SpeechSynthesizer: To Sound...|To Sound...@")
 NORMAL (U"Modification:")
 LIST_ITEM (U"\\bu @@SpeechSynthesizer: Set text input settings...|Set text input settings...@")
-LIST_ITEM (U"\\bu @@SpeechSynthesizer: Set speech output settings...|Set speech output settings...@")
+LIST_ITEM (U"\\bu @@SpeechSynthesizer: Speech output settings...|Speech output settings...@")
 MAN_END
 
 MAN_BEGIN (U"Create SpeechSynthesizer...", U"djmw", 20171101)
@@ -4189,7 +4548,7 @@ TAG (U"##Input phoneme codes are#")
 DEFINITION (U"currently only @@Kirshenbaum phonetic encoding@ is available.")
 MAN_END
 
-MAN_BEGIN (U"SpeechSynthesizer: Set speech output settings...", U"djmw", 20171102)
+MAN_BEGIN (U"SpeechSynthesizer: Speech output settings...", U"djmw", 20190811)
 INTRO (U"A command available in the ##Modify# menu when you select a @@SpeechSynthesizer@.")
 ENTRY (U"Settings")
 TAG (U"##Sampling frequency#")
@@ -4224,6 +4583,20 @@ NORMAL (U"With @Inspect you will see that this type contains the same "
 	"attributes as a @TableOfReal with the following extras:")
 TAG (U"%numberOfObservations")
 TAG (U"%centroid")
+MAN_END
+
+MAN_BEGIN (U"Sound: Extract Electroglottogram...", U"djmw", 20190929)
+INTRO (U"Extract one of the channels of a @@Sound@ as an @@Electroglottogram@.")
+ENTRY (U"Settings")
+TAG (U"##Channel number#")
+DEFINITION (U"defines the Electroglottogram channel in the sound.")
+TAG (U"##Invert#")
+DEFINITION (U"defines whether the wave in the Elecletroglottogram channel has to be inverted or not. "
+	"The convention is that a positive direction in the Electroglottogram wave corresponds to "
+	"an increase in contact area between the vocal folds which occurs if the vocal folds are closing. "
+	"Since closing the vocal folds, in general, happens much faster than opening them, the steepest "
+	"slope in each cycle of the wave should be the %%upward% slope. If this is not the case you "
+	"should invert the wave.")
 MAN_END
 
 MAN_BEGIN (U"SSCP: Draw sigma ellipse...", U"djmw", 19990222)
@@ -4669,22 +5042,22 @@ SCRIPT (6, Manual_SETTINGS_WINDOW_HEIGHT (9), U""
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN("Garnish", 1)
 	Manual_DRAW_SETTINGS_WINDOW_TEXT("Formula", "1; (= everything)")
 )
-TAG (U"##Horizontal column")
+TAG (U"##Horizontal column#")
 DEFINITION (U"determines the data along the horizontal axis.")
-TAG (U"##Horizontal range")
+TAG (U"##Horizontal range#")
 DEFINITION (U"determines the lower and upper limits of the plot.")
-TAG (U"##Vertical column")
+TAG (U"##Vertical column#")
 DEFINITION (U"determines the data along the horizontal axis.")
-TAG (U"##Vertical range")
+TAG (U"##Vertical range#")
 DEFINITION (U"determines the lower and upper limits of the plot.")
-TAG (U"##Lower error value column, Upper error value column")
+TAG (U"##Lower error value column#, ##Upper error value column#")
 DEFINITION (U"determine the size of the vertical lines that will be drawn. These lines are drawn between the points (%x,%y-%low) and (%x, %y+%up), "
 	"where %x and %y are the values from the %%horizontal column% and the %%vertical column%, respectively, and, %low and %up are the corresponding values "
 	"in the %%lower error value column% and the %%upper error value column%, respectively. If either of these column names is not given the corresponding values (%low and/or %up) will taken as zero. This makes it possible to draw one-sided and two-sided error bars. If your "
 	"errors are symmetric around the y-position, your table only needs one column and you can supply the name of this column in both fields.")
-TAG (U"##Bar size (mm)")
+TAG (U"##Bar size (mm)#")
 DEFINITION (U"determines the width of the horizontal bars or whishers at the lower an postion of the drawn line. ")
-TAG (U"##Garnish")
+TAG (U"##Garnish#")
 DEFINITION (U"determines whether or not some decoration is drawn.")
 TAG (U"##Formula")
 DEFINITION (U"can be used to supply an expression to select only those rows for plotting where the expression evaluates to %%true%. A 1 value always evaluates to %%true%.")
@@ -4707,13 +5080,13 @@ INTRO (U"Performs a one-way analysis of variance on the data in one column of a 
 ENTRY (U"Settings")
 TAG (U"##Column with data#")
 DEFINITION (U"the label of the column who's data will be analyzed.")
-TAG (U"##Factor")
+TAG (U"##Factor#")
 DEFINITION (U"the label of the column with the names of the levels.")
-TAG (U"##Table with means")
+TAG (U"##Table with means#")
 DEFINITION (U"if checked, a Table with the mean values of the levels will be created.")
-TAG (U"##Table with differences between means")
+TAG (U"##Table with differences between means#")
 DEFINITION (U"if checked, a Table with the differences between the mean values of the levels will be created.")
-TAG (U"##Table with Tukey's post-hoc test")
+TAG (U"##Table with Tukey's post-hoc test#")
 DEFINITION (U"if checked, a Table with Tukey's HSD tests will be created. Each value in this Table measures the probability that the corresponding difference between the level means happened by chance. The test compares all possible level means and is based on the studentized range distribution.")
 MAN_END
 
@@ -4758,7 +5131,7 @@ CODE (U"        iy       270       136       231       212")
 CODE (U"        uh       273       136       234       214")
 CODE (U"        uw       278       139       235       218")
 CODE (U"      Mean       264       131       223       206")
-NORMAL (U"The first column of this table shows the vowel codes while the first row shows the speaker types (child, man, women). "
+NORMAL (U"The first column of this table shows the vowel codes while the first row shows the speaker types (child, man, woman). "
 	"The last row and the last column of the table shows the averages for the factors Type and Vowel, respectively. The actual "
 	"data are unbalanced because we have 300, 660 and 560 replications per column respectively (for each speaker we have two replcations of the data).")
 ENTRY (U"Algorithm")
@@ -4770,7 +5143,7 @@ INTRO (U"Performs a one-way Kruskal-Wallis analysis on the data in one column of
 ENTRY (U"Settings")
 TAG (U"##Column with data#")
 DEFINITION (U"the label of the column who's data will be analyzed.")
-TAG (U"##Factor")
+TAG (U"##Factor#")
 DEFINITION (U"the label of the column with the names of the levels.")
 ENTRY (U"Algorithm")
 NORMAL (U"The analysis is done on the ranked data and consists of the following steps:")
@@ -4785,7 +5158,7 @@ MAN_END
 MAN_BEGIN (U"TableOfReal: Report multivariate normality (BHEP)...", U"djmw", 20090701)
 INTRO (U"Report about multivariate normality according to the @@BHEP multivariate normality test@.")
 ENTRY (U"Settings")
-TAG (U"##Smoothing parameter")
+TAG (U"##Smoothing parameter#")
 DEFINITION (U"determines the smoothing parameter %h.")
 MAN_END
 
@@ -4811,7 +5184,7 @@ INTRO (U"A command to draw a biplot for each column in the selected "
 ENTRY (U"Settings")
 TAG (U"##Xmin#, ##Xmax#, ##Ymin#, ##Ymax#")
 DEFINITION (U"determine the drawing boundaries.")
-TAG (U"##Split factor")
+TAG (U"##Split factor#")
 DEFINITION (U"determines the weighing of the row and column structure "
 	"(see below).")
 ENTRY (U"Behaviour")
@@ -4850,7 +5223,7 @@ TAG (U"##From row#, ##To row#")
 DEFINITION (U"determine the rows to be drawn.")
 TAG (U"##From column#, ##To column#")
 DEFINITION (U"determine the columns to be drawn.")
-TAG (U"##Origin")
+TAG (U"##Origin#")
 DEFINITION (U"determines the drawing orientation. For a table with %%nrow% rows and %%ncol% columns:")
 TAG1 (U"%%top-left%: cel [1][1] will be at the top left position in the drawing, cell [%%nrow%][%%ncol%] will be at bottom right position.")
 TAG1 (U"%%top-right%: cel [1][1] will be at the top right position in the drawing, cell [%%nrow%][%%ncol%] will be at bottom left position.")
@@ -4863,8 +5236,8 @@ DEFINITION (U"determines in what order the squares will be drawn. The order is o
 	"i.e. if the cell area scale factor is larger than 1.0.")
 TAG1 (U"%%rows%: start with the first row, cell [1][1] to cell [1][%%ncol%], next the second row, etc...")
 TAG1 (U"%%columns% start with column 1, cell [1][1] to cell [%%nrow%][1], next column 2 etc...")
-TAG1 (U"%%increasing-values%: first sort the cell values in increasing order and then start drawing them, the cell with the smallest value first. ")
-TAG1 (U"%%decreasing-values%: first sort the cell values in decreasing order and then start drawing them, the cell with the largest value first.")
+TAG1 (U"%%increasing values%: first sort the cell values in increasing order and then start drawing them, the cell with the smallest value first. ")
+TAG1 (U"%%decreasing values%: first sort the cell values in decreasing order and then start drawing them, the cell with the largest value first.")
 TAG1 (U"%%random%: draw cells in random order. If the cell area scale factor is larger than 1.0 this may result in a different graph of the same table for each successive call.")
 MAN_END
 
@@ -4913,11 +5286,11 @@ MAN_BEGIN (U"TableOfReal: Select columns where row...", U"djmw", 20140117)
 INTRO (U"Copy columns from the selected @TableOfReal object to a new "
 	"TableOfReal object.")
 ENTRY (U"Settings")
-TAG (U"##Columns")
+TAG (U"##Columns#")
 DEFINITION (U"defines the indices of the columns to be selected. Ranges can be "
 	"defined with a colon \":\". Columns will be selected in the specified "
 	"order.")
-TAG (U"##Row condition")
+TAG (U"##Row condition#")
 DEFINITION (U"specifies a condition for the selection of rows. If the "
 	"condition evaluates as %true for a particular row, the selected elements "
 	"in this row will be copied. See @@Matrix: Formula...@ for the kind of "
@@ -5072,7 +5445,7 @@ MAN_BEGIN (U"TableOfReal: To CCA...", U"djmw", 20020424)
 INTRO (U"A command that creates a @CCA object from the selected "
 	"@TableOfReal object.")
 ENTRY (U"Settings")
-TAG (U"%%Dimension of dependent variate (ny)")
+TAG (U"##Dimension of dependent variate (ny)#")
 DEFINITION (U"defines the partition of the table into the two parts whose "
 	"correlations will be determined. The first %ny columns should be the "
 	"dependent part, the rest of the columns will be interpreted as the "
@@ -5134,7 +5507,7 @@ MAN_BEGIN (U"TableOfReal: To TableOfReal (means by row labels)...", U"djmw", 201
 INTRO (U"A command that appears in the ##Multivariate statistics# menu if you select a @@TableOfReal@. "
 	"It calculates the multivariate means for the different row labels from the selected TableOfReal.")
 ENTRY (U"Setting")
-TAG (U"##Expand")
+TAG (U"##Expand#")
 DEFINITION (U"when %off, then for a table with %n rows and %m different labels (%m\\<_%n), the resulting table will have %m rows. "
 	"When %on, the dimensions of the resulting table will be the same as the originating, and corresponding means substituded "
 	"in each row.")
@@ -5152,7 +5525,7 @@ MAN_END
 MAN_BEGIN (U"TextGrid: Extend time...", U"djmw", 20020702)
 INTRO (U"Extends the domain of the selected @TextGrid object.")
 ENTRY (U"Settings")
-TAG (U"##Extend domain by")
+TAG (U"##Extend domain by#")
 DEFINITION (U"defines the amount of time by which the domain will be extended.")
 TAG (U"##At")
 DEFINITION (U"defines whether starting times or finishing times will be "
@@ -5184,7 +5557,7 @@ SCRIPT (6, Manual_SETTINGS_WINDOW_HEIGHT (5), U""
 )
 TAG (U"##Tier number#")
 DEFINITION (U"specifies the tier with the intervals.")
-TAG (U"##Time scale factor")
+TAG (U"##Time scale factor#")
 DEFINITION (U"specifies the scale factor by which the duration of a selected interval has to be multiplied.")
 TAG (U"##Left transition duration#")
 DEFINITION (U"specifies how long it takes to go from a time scale factor of 1.0 to the specified one. Default a very small duration is used. ")
@@ -5263,7 +5636,7 @@ NORMAL (U"The text corpus design was done by the Massachusetts Institute of "
 	"of Standards and Technology (NIST) (@@Lamel et al. (1986)@).")
 MAN_END
 
-MAN_BEGIN (U"VowelEditor", U"djmw", 20111124)
+MAN_BEGIN (U"VowelEditor", U"djmw", 20200403)
 INTRO (U"An Editor for generating vowel-like @@sound|Sound@s from mouse movements.")
 ENTRY (U"How to get a sound")
 NORMAL (U"With the mouse button down, you can move the mouse cursor around in the plane "
@@ -5292,8 +5665,6 @@ NORMAL (U"The bottom line in the Editor displays the first and second formant fr
 ENTRY (U"Edit menu")
 TAG (U"##Set F0...")
 DEFINITION (U"Set pitch and slope.")
-TAG (U"##Set F3 & F4...")
-DEFINITION (U"Set the frequencies and bandwidths for the third and fourth formant.")
 TAG (U"##Reverse trajectory")
 DEFINITION (U"Reverses the trajectory (like editor button).")   // ??
 TAG (U"##Modify trajectory duration...")
@@ -5312,27 +5683,30 @@ DEFINITION (U"Show the vowel marks in the editor from a fixed set of vowel inven
 TAG (U"##Show vowel marks from Table file...#")
 DEFINITION (U"Put your own marks in the editor. The Table needs to have at least three mandatory columns "
 	"labeled \"Vowel\", \"F1\" and  \"F2\" and "
-	"one optional column labeled \"Size\". The Vowel column contains the vowel marker labels, the F1 and "
+	" two optional column labeled \"Size\" and \"Colour\". The Vowel column contains the vowel marker labels, the F1 and "
 	"F2 columns have the first and second formant frequencies in Hertz. The optional Size column contains "
-	"the font size of the vowel markers.")
+	"the font size of the vowel markers, while the Colour column contains the @@Colour|colour@ specification of each vowel.")
 TAG (U"##Show trajectory time markers every...")
 DEFINITION (U"Shows time markers as small bars orthogonal to the trajectory. ")
-ENTRY (U"Publishing")
+ENTRY (U"File menu")
+TAG (U"##Preferences...#")
+DEFINITION (U"Here you can modify the sharpness of the F1 and F2 peaks and also add a number of higher formants.")
 TAG (U"##Publish Sound")
+DEFINITION (U"Make the synthesized sound available in the object menu.")
 TAG (U"##Extract FormantTier")
 TAG (U"##Extract PitchTier")
 DEFINITION (U"Publish the Sound, the PitchTier and the FormantTier from the trajectory.")
 TAG (U"##Draw trajectory...")
-DEFINITION (U"Draws the trajectory in the picture window")
+DEFINITION (U"Draws the trajectory in the picture window.")
 MAN_END
 
-MAN_BEGIN (U"VowelEditor: Show vowel marks from Table file...", U"djmw", 20111124)
+MAN_BEGIN (U"VowelEditor: Show vowel marks from Table file...", U"djmw", 20200403)
 INTRO (U"A command in the @@VowelEditor@ that lets you set your own vowel marks. ")
 ENTRY (U"Layout of the Table")
 NORMAL (U"The Table needs at least three mandatory columns labeled \"Vowel\", \"F1\" and  \"F2\" and "
-	"one optional column labeled \"Size\". The Vowel column contains the vowel marker labels, the F1 and "
+	"two optional column labeled \"Size\" and \"Colour\". The Vowel column contains the vowel marker labels, the F1 and "
 	"F2 columns have the first and second formant frequencies in Hertz. The optional Size column contains "
-	"the font size of the vowel markers.")
+	"the font size of the vowel markers, while the Colour column contains the @@Colour|colour@ specification of each vowel.")
 MAN_END
 
 /********************** GSL ********************************************/
@@ -5360,6 +5734,11 @@ MAN_END
 
 /********************* References **************************************/
 
+MAN_BEGIN (U"Anderson et al. (1999)", U"djmw", 20200131)
+NORMAL (U"E. Anderson, Z. Bai, C. Bischof, S. Blackford, J. Demmel, J. Dongarra, J. Du Croz, A. Greenbaum, "
+	"S. Hammarling, A. McKenney & D. Sorensen (1999): %%LAPACK users' guide%. Third edition. Philadelphia, PA: Society for Industrial and Applied Mathematics.")
+MAN_END
+
 MAN_BEGIN (U"Bai & Demmel (1993)", U"djmw", 19981007)
 NORMAL (U"Z. Bai & J. Demmel (1993): \"Computing the generalized singular value "
 	"decomposition.\" %%SIAM J. Sci. Comput.% #14: 1464\\--1486.")
@@ -5368,7 +5747,18 @@ MAN_END
 MAN_BEGIN (U"Bartlett (1954)", U"djmw", 20011111)
 NORMAL (U"M.S. Bartlett (1954): \"A note on multiplying factors for various "
 	"chi-squared approximations.\", %%Joural of the Royal Statistical Society, "
-	"Series B% #16: 296\\--298")
+	"Series B% #16: 296\\--298.")
+MAN_END
+
+MAN_BEGIN (U"Berry et al. (2007)", U"djmw", 20190321)
+NORMAL (U"M.W. Berry, M. Browne, A.N. Langville, V.P. Pauca & R.J. Plemmons (2007): "
+	"\"Algorithms and applications for approximate nonnegative matrix factorization.\", "
+	"Computational Statistics & Data Analysis ##52#: 155\\--173.")
+MAN_END
+
+MAN_BEGIN (U"Blumensath & Davies (2010)", U"djmw", 20190601)
+NORMAL (U"T. Blumensath & M.E. Davies: \"Normalised iterative hard thresholding;"
+	" guaranteed stability and performance\", %%IEEE Journal of Selected Topics in Signal Processing% #4: 298\\--309.")
 MAN_END
 
 MAN_BEGIN (U"Boll (1979)", U"djmw", 20121021)
@@ -5420,6 +5810,11 @@ NORMAL (U"Espeak is a free text to speech synthesizer. It was developed by Jonat
 NORMAL (U"The wikipedia page https://en.wikipedia.org/wiki/ESpeakNG gives more details.")
 MAN_END
 
+MAN_BEGIN (U"Févotte, Bertin & Durrieu (2009)", U"djmw", 20190618)
+NORMAL (U"C. Févotte, N. Bertin & J.-L. Durrieu (2009): \"Nonnegative matrix factorization with the Itakura-Saito divergene: "
+	"with applications to music analysis\", %%Neural Computation% #21: 793\\--830.")
+MAN_END
+
 MAN_BEGIN (U"Flanagan (1960)", U"djmw", 19980713)
 NORMAL (U"J.L. Flanagan (1960): \"Models for approximating basilar membrane "
 	"displacement.\" %%Bell System Technical Journal% #39: 1163\\--1191.")
@@ -5444,6 +5839,10 @@ NORMAL (U"M.T. Heath, J.A. Laub, C.C. Paige & R.C. Ward (1986): \"Computing the 
 	"%%SIAM J. Sci. Statist. Comput.% #7: 1147\\--1159.")
 MAN_END
 
+MAN_BEGIN (U"Henrich et al. (2004)", U"djmw", 20190903)
+NORMAL (U"N. Henrich, C. d'Alessandro, B. Doval & M. Castellengo (2004): \"On the use of the derivative of electroglottographic signals for characterization of nonpathological phonation.\" %%Journal of the Acoustical Society of America% #115: 1321\\--1332.")
+MAN_END
+
 MAN_BEGIN (U"Hermes (1988)", U"djmw", 19980123)
 NORMAL (U"D.J. Hermes (1988): \"Measurement of pitch by subharmonic "
 	"summation.\" %%Journal of the Acoustical Society of America% #83: 257\\--264.")
@@ -5454,6 +5853,14 @@ NORMAL (U"N. Henze & T. Wagner (1997): \"A new npproach to the BHEP Tests for Mu
 	"%%Journal of Multivariate Analysis% #62: 1\\--23.")
 MAN_END
 
+MAN_BEGIN (U"Herbst et al. (2014)", U"djmw", 20190829)
+NORMAL (U"C. Herbst, J. Lohscheller, J. \\S<vec, N. Henrich, G. Weissengruber & W. Tecumseh Fitch (2014): \"Glottal opening and closing events investigated by electroglottography and super-high-speed video recordings.\", %%The Journal of Experimental Biology% #217: 955\\--963.")
+MAN_END
+
+MAN_BEGIN (U"Herbst (2019)", U"djmw", 20190826)
+NORMAL (U"C. Herbst (2019): \"Electroglottography - An update.\", %%Journal of Voice%: In press.")
+MAN_END
+
 MAN_BEGIN (U"Hormann & Agathos (2001)", U"djmw", 20110617)
 NORMAL (U"K. Hormann & A. Agathos (2001): \"The point in polygon problem for arbitrary polygons.\" "
 	"%%Computational Geometry% #20: 131\\--144.")
@@ -5462,6 +5869,17 @@ MAN_END
 MAN_BEGIN (U"Irino & Patterson (1997)", U"djmw", 20100517)
 NORMAL (U"T. Irino & R.D. Patterson (1997): \"A time-domain, level-dependent "
 	"auditory filter: The gammachirp.\" %%Journal of the Acoustical Society of America% #101: 412\\--419.")
+MAN_END
+
+MAN_BEGIN (U"Itakura & Saito (1968)", U"djmw", 20190617)
+NORMAL (U"F. Itakura & S. Saito (1968): \"Analysis synthesis telephony based on the maximum likelihood method.\""
+	"In %%Proc. 6th International Congress on Acoustics%, Los Alamitos, CA: IEEE: C-17\\--20.")
+MAN_END
+
+MAN_BEGIN (U"Janecek et al. (2011)", U"djmw", 20190312)
+NORMAL (U"A. Janecek, S. Schulze Grotthoff & W.N. Gangsterer (2011): "
+		"\"LIBNMF \\-- A library for nonnegative matrix factorization.\""
+		"%%Computing and informatics% #30: 205\\--224")
 MAN_END
 
 MAN_BEGIN (U"Johannesma (1972)", U"djmw", 19980123)
@@ -5501,6 +5919,21 @@ NORMAL (U"L.F. Lamel, R.H. Kassel & S. Sennef (1986): \"Speech Database "
 	"Development: Design and Analysis of the Acoustic-Phonetic Corpus.\" "
 	"%%Proc. DARPA Speech Recognition Workshop%, Report No. SAIC-86/1546, "
 	"100\\--119.")
+MAN_END
+
+MAN_BEGIN (U"Lee & Seung (2001)", U"djmw", 20190312)
+NORMAL (U"D.D. Lee & S.H. Seung (2001): \"Algorithms for non-negative matrix factorization.\" "
+	"%%Advances in in neural information processing systems% #13: 556\\--562.")
+MAN_END
+
+MAN_BEGIN (U"Magron & Virtanen (2018)", U"djmw", 20191024)
+NORMAL (U"P. Magron & T. Virtanen (2018): \"Expectation-maximization algorithms for Itakura-Saito "
+	"nonnegative matrix factorization.\" HAL-01632082v2.")
+MAN_END
+
+MAN_BEGIN (U"Marsaglia & Tsang (2000)", U"djmw", 20190620)
+NORMAL (U"G. Marsaglia & W.W. Tsang (2000): \"A simple method for generating gamma variables.\""
+	" %%ACM Transactions on Mathematical Software% #26: 363\\--372.")
 MAN_END
 
 MAN_BEGIN (U"Morrison (1990)", U"djmw", 19980123)
@@ -5554,6 +5987,10 @@ MAN_BEGIN (U"Slaney (1993)", U"djmw", 19980712)
 NORMAL (U"M. Slaney (1993): \"An efficient implementation of the "
 	"Patterson-Holdsworth auditory filterbank.\" "
 	"%%Apple Computer Technical Report% #35, 41 pages.")
+MAN_END
+
+MAN_BEGIN (U"Ten Berge (1991)", U"djmw", 20191221)
+NORMAL (U"J. Ten Berge (1991): \"A general solution for a class of weakly constrained linear regression problems.\", %%Psychometrika% #56, 601\\--609.")
 MAN_END
 
 MAN_BEGIN (U"Tribolet et al. (1979)", U"djmw", 20010114)

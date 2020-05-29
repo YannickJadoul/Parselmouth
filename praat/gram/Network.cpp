@@ -1,6 +1,6 @@
 /* Network.cpp
  *
- * Copyright (C) 2009,2011-2017 Paul Boersma
+ * Copyright (C) 2009,2011-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@
  */
 
 #include "Network.h"
+#include "Matrix.h"
+#include "Formula.h"
 
 #include "oo_DESTROY.h"
 #include "Network_def.h"
@@ -92,9 +94,9 @@ void Network_init (Network me, double spreadingRate, kNetwork_activityClippingRu
 	my ymin = ymin;
 	my ymax = ymax;
 	my numberOfNodes = numberOfNodes;
-	my nodes = NUMvector <structNetworkNode> (1, numberOfNodes);
+	my nodes = newvectorzero <structNetworkNode> (numberOfNodes);
 	my numberOfConnections = numberOfConnections;
-	my connections = NUMvector <structNetworkConnection> (1, numberOfConnections);
+	my connections = newvectorzero <structNetworkConnection> (numberOfConnections);
 }
 
 autoNetwork Network_create (double spreadingRate, kNetwork_activityClippingRule activityClippingRule,
@@ -115,28 +117,54 @@ autoNetwork Network_create (double spreadingRate, kNetwork_activityClippingRule 
 
 double Network_getActivity (Network me, integer nodeNumber) {
 	try {
-		if (nodeNumber <= 0 || nodeNumber > my numberOfNodes)
-			Melder_throw (me, U": node number (", nodeNumber, U") out of the range 1..", my numberOfNodes, U".");
+		my checkNodeNumber (nodeNumber);
 		return my nodes [nodeNumber]. activity;
 	} catch (MelderError) {
 		Melder_throw (me, U": activity not gotten.");
 	}
 }
 
+autoVEC Network_getActivities (Network me, integer fromNode, integer toNode) {
+	try {
+		const integer newNumberOfNodes = my checkAndDefaultNodeRange (& fromNode, & toNode);
+		autoVEC result = newVECraw (newNumberOfNodes);
+		for (integer inode = 1; inode <= result.size; inode ++)
+			result [inode] = my nodes [fromNode - 1 + inode]. activity;
+		return result;
+	} catch (MelderError) {
+		Melder_throw (me, U": activities not gotten.");
+	}
+}
+
 void Network_setActivity (Network me, integer nodeNumber, double activity) {
 	try {
-		if (nodeNumber <= 0 || nodeNumber > my numberOfNodes)
-			Melder_throw (me, U": node number (", nodeNumber, U") out of the range 1..", my numberOfNodes, U".");
+		my checkNodeNumber (nodeNumber);
 		my nodes [nodeNumber]. activity = my nodes [nodeNumber]. excitation = activity;
 	} catch (MelderError) {
 		Melder_throw (me, U": activity not set.");
 	}
 }
 
+void Network_formula_activities (Network me, integer fromNode, integer toNode, conststring32 expression, Interpreter interpreter) {
+	try {
+		const integer newNumberOfNodes = my checkAndDefaultNodeRange (& fromNode, & toNode);
+		autoMatrix thee = Matrix_create (0.5, newNumberOfNodes + 0.5, newNumberOfNodes, 1.0, 1.0,
+			1.0, 1.0, 1, 1.0, 1.0);
+		Formula_compile (interpreter, thee.get(), expression, kFormula_EXPRESSION_TYPE_NUMERIC, true);
+		Formula_Result result;
+		for (integer icol = 1; icol <= thy nx; icol ++) {
+			Formula_run (1, icol, & result);
+			my nodes [fromNode - 1 + icol]. activity = thy z [1] [icol] = result. numericResult;
+		}
+	} catch (MelderError) {
+		Melder_throw (me, U": activities not set from formula.");
+	}
+}
+
 double Network_getWeight (Network me, integer connectionNumber) {
 	try {
-		if (connectionNumber <= 0 || connectionNumber > my numberOfConnections)
-			Melder_throw (me, U": connection number (", connectionNumber, U") out of the range 1..", my numberOfConnections, U".");
+		Melder_require (connectionNumber >= 1 && connectionNumber <= my numberOfConnections,
+			me, U": connection number (", connectionNumber, U") out of the range 1..", my numberOfConnections, U".");
 		return my connections [connectionNumber]. weight;
 	} catch (MelderError) {
 		Melder_throw (me, U": weight not gotten.");
@@ -145,8 +173,8 @@ double Network_getWeight (Network me, integer connectionNumber) {
 
 void Network_setWeight (Network me, integer connectionNumber, double weight) {
 	try {
-		if (connectionNumber <= 0 || connectionNumber > my numberOfConnections)
-			Melder_throw (me, U": connection number (", connectionNumber, U") out of the range 1..", my numberOfConnections, U".");
+		Melder_require (connectionNumber >= 1 && connectionNumber <= my numberOfConnections,
+			me, U": connection number (", connectionNumber, U") out of the range 1..", my numberOfConnections, U".");
 		my connections [connectionNumber]. weight = weight;
 	} catch (MelderError) {
 		Melder_throw (me, U": weight not set.");
@@ -155,8 +183,7 @@ void Network_setWeight (Network me, integer connectionNumber, double weight) {
 
 void Network_setClamping (Network me, integer nodeNumber, bool clamped) {
 	try {
-		if (nodeNumber <= 0 || nodeNumber > my numberOfNodes)
-			Melder_throw (me, U": node number (", nodeNumber, U") out of the range 1..", my numberOfNodes, U".");
+		my checkNodeNumber (nodeNumber);
 		my nodes [nodeNumber]. clamped = clamped;
 	} catch (MelderError) {
 		Melder_throw (me, U": clamping not set.");
@@ -174,11 +201,13 @@ void Network_spreadActivities (Network me, integer numberOfSteps) {
 			NetworkConnection connection = & my connections [iconn];
 			NetworkNode nodeFrom = & my nodes [connection -> nodeFrom];
 			NetworkNode nodeTo = & my nodes [connection -> nodeTo];
-			double shunting = my connections [iconn]. weight >= 0.0 ? my shunting : 0.0;   // only for excitatory connections
+			const double shunting = ( my connections [iconn]. weight >= 0.0 ? my shunting : 0.0 );   // only for excitatory connections
 			if (! nodeFrom -> clamped)
-				nodeFrom -> excitation += my spreadingRate * nodeTo -> activity * (my connections [iconn]. weight - shunting * nodeFrom -> excitation);
+				nodeFrom -> excitation += my spreadingRate * nodeTo -> activity *
+						(my connections [iconn]. weight - shunting * nodeFrom -> excitation);
 			if (! nodeTo -> clamped)
-				nodeTo -> excitation += my spreadingRate * nodeFrom -> activity * (my connections [iconn]. weight - shunting * nodeTo -> excitation);
+				nodeTo -> excitation += my spreadingRate * nodeFrom -> activity *
+						(my connections [iconn]. weight - shunting * nodeTo -> excitation);
 		}
 		for (integer inode = 1; inode <= my numberOfNodes; inode ++) {
 			NetworkNode node = & my nodes [inode];
@@ -206,36 +235,32 @@ void Network_spreadActivities (Network me, integer numberOfSteps) {
 							trace (U"excitation ", node -> excitation, U", activity ", node -> activity);
 						}
 					break;
+					case kNetwork_activityClippingRule::UNDEFINED:
+					break;
 				}
 			}
 		}
 	}
 }
 
-void Network_zeroActivities (Network me, integer nodeMin, integer nodeMax) {
-	if (my numberOfNodes < 1) return;
-	if (nodeMax == 0) { nodeMin = 1; nodeMax = my numberOfNodes; }
-	if (nodeMin < 1) nodeMin = 1;
-	if (nodeMax > my numberOfNodes) nodeMax = my numberOfNodes;
-	for (integer inode = nodeMin; inode <= nodeMax; inode ++) {
+void Network_zeroActivities (Network me, integer fromNode, integer toNode) {
+	if (my numberOfNodes < 1)
+		return;   // it is OK to zero zero activities
+	my checkAndDefaultNodeRange (& fromNode, & toNode);
+	for (integer inode = fromNode; inode <= toNode; inode ++)
 		my nodes [inode]. activity = my nodes [inode]. excitation = 0.0;
-	}
 }
 
-void Network_normalizeActivities (Network me, integer nodeMin, integer nodeMax) {
-	if (my numberOfNodes < 1) return;
-	if (nodeMax == 0) { nodeMin = 1; nodeMax = my numberOfNodes; }
-	if (nodeMin < 1) nodeMin = 1;
-	if (nodeMax > my numberOfNodes) nodeMax = my numberOfNodes;
-	if (nodeMax < nodeMin) return;
+void Network_normalizeActivities (Network me, integer fromNode, integer toNode) {
+	const integer newNumberOfNodes = my checkAndDefaultNodeRange (& fromNode, & toNode);
+	if (newNumberOfNodes < 1)
+		return;
 	longdouble sum = 0.0;
-	for (integer inode = nodeMin; inode <= nodeMax; inode ++) {
+	for (integer inode = fromNode; inode <= toNode; inode ++)
 		sum += my nodes [inode]. activity;
-	}
-	double average = (double) sum / (nodeMax - nodeMin + 1);
-	for (integer inode = nodeMin; inode <= nodeMax; inode ++) {
+	const double average = double (sum) / newNumberOfNodes;
+	for (integer inode = fromNode; inode <= toNode; inode ++)
 		my nodes [inode]. activity -= average;
-	}	
 }
 
 void Network_updateWeights (Network me) {
@@ -244,33 +269,29 @@ void Network_updateWeights (Network me) {
 		NetworkNode nodeFrom = & my nodes [connection -> nodeFrom];
 		NetworkNode nodeTo = & my nodes [connection -> nodeTo];
 		connection -> weight += connection -> plasticity * my learningRate *
-			(nodeFrom -> activity * nodeTo -> activity - (my instar * nodeTo -> activity + my outstar * nodeFrom -> activity + my weightLeak) * connection -> weight);
-		if (connection -> weight < my minimumWeight) connection -> weight = my minimumWeight;
-		else if (connection -> weight > my maximumWeight) connection -> weight = my maximumWeight;
+				(nodeFrom -> activity * nodeTo -> activity -
+				 (my instar * nodeTo -> activity + my outstar * nodeFrom -> activity + my weightLeak) * connection -> weight);
+		Melder_clip (my minimumWeight, & connection -> weight, my maximumWeight);
 	}
 }
 
-void Network_normalizeWeights (Network me, integer nodeMin, integer nodeMax, integer nodeFromMin, integer nodeFromMax, double newSum) {
-	if (my numberOfNodes < 1) return;
-	if (nodeMax == 0) { nodeMin = 1; nodeMax = my numberOfNodes; }
-	if (nodeMin < 1) nodeMin = 1;
-	if (nodeMax > my numberOfNodes) nodeMax = my numberOfNodes;
-	if (nodeMax < nodeMin) return;
-	for (integer inode = nodeMin; inode <= nodeMax; inode ++) {
+void Network_normalizeWeights (Network me, integer fromNode, integer toNode, integer nodeFromMin, integer nodeFromMax, double newSum) {
+	const integer newNumberOfNodes = my checkAndDefaultNodeRange (& fromNode, & toNode);
+	if (newNumberOfNodes < 1)
+		return;
+	for (integer inode = fromNode; inode <= toNode; inode ++) {
 		longdouble sum = 0.0;
 		for (integer iconn = 1; iconn <= my numberOfConnections; iconn ++) {
 			NetworkConnection connection = & my connections [iconn];
-			if (connection -> nodeTo == inode && connection -> nodeFrom >= nodeFromMin && connection -> nodeFrom <= nodeFromMax) {
+			if (connection -> nodeTo == inode && connection -> nodeFrom >= nodeFromMin && connection -> nodeFrom <= nodeFromMax)
 				sum += connection -> weight;
-			}
 		}
 		if (sum != 0.0) {
-			double factor = newSum / (double) sum;
+			const double factor = newSum / (double) sum;
 			for (integer iconn = 1; iconn <= my numberOfConnections; iconn ++) {
 				NetworkConnection connection = & my connections [iconn];
-				if (connection -> nodeTo == inode && connection -> nodeFrom >= nodeFromMin && connection -> nodeFrom <= nodeFromMax) {
+				if (connection -> nodeTo == inode && connection -> nodeFrom >= nodeFromMin && connection -> nodeFrom <= nodeFromMax)
 					connection -> weight *= factor;
-				}
 			}
 		}
 	}
@@ -284,12 +305,12 @@ autoNetwork Network_create_rectangle (double spreadingRate, kNetwork_activityCli
 {
 	try {
 		autoNetwork me = Network_create (spreadingRate, activityClippingRule, minimumActivity, maximumActivity, activityLeak,
-			learningRate, minimumWeight, maximumWeight, weightLeak,
-			0.0, numberOfColumns, 0.0, numberOfRows, numberOfRows * numberOfColumns,
-			numberOfRows * (numberOfColumns - 1) + numberOfColumns * (numberOfRows - 1));
+				learningRate, minimumWeight, maximumWeight, weightLeak,
+				0.0, numberOfColumns, 0.0, numberOfRows, numberOfRows * numberOfColumns,
+				numberOfRows * (numberOfColumns - 1) + numberOfColumns * (numberOfRows - 1));
 		/*
-		 * Define nodes.
-		 */
+			Define nodes.
+		*/
 		for (integer inode = 1; inode <= my numberOfNodes; inode ++) {
 			NetworkNode node = & my nodes [inode];
 			node -> x = (inode - 1) % numberOfColumns + 0.5;
@@ -298,8 +319,8 @@ autoNetwork Network_create_rectangle (double spreadingRate, kNetwork_activityCli
 			node -> activity = NUMrandomUniform (my minimumActivity, my maximumActivity);
 		}
 		/*
-		 * Define connections.
-		 */
+			Define connections.
+		*/
 		integer iconn = 0;
 		for (integer irow = 1; irow <= numberOfRows; irow ++) {
 			for (integer icol = 1; icol <= numberOfColumns - 1; icol ++) {
@@ -334,12 +355,12 @@ autoNetwork Network_create_rectangle_vertical (double spreadingRate, kNetwork_ac
 {
 	try {
 		autoNetwork me = Network_create (spreadingRate, activityClippingRule, minimumActivity, maximumActivity, activityLeak,
-			learningRate, minimumWeight, maximumWeight, weightLeak,
-			0.0, numberOfColumns, 0.0, numberOfRows, numberOfRows * numberOfColumns,
-			numberOfColumns * numberOfColumns * (numberOfRows - 1));
+				learningRate, minimumWeight, maximumWeight, weightLeak,
+				0.0, numberOfColumns, 0.0, numberOfRows, numberOfRows * numberOfColumns,
+				numberOfColumns * numberOfColumns * (numberOfRows - 1));
 		/*
-		 * Define nodes.
-		 */
+			Define nodes.
+		*/
 		for (integer inode = 1; inode <= my numberOfNodes; inode ++) {
 			NetworkNode node = & my nodes [inode];
 			node -> x = (inode - 1) % numberOfColumns + 0.5;
@@ -348,8 +369,8 @@ autoNetwork Network_create_rectangle_vertical (double spreadingRate, kNetwork_ac
 			node -> activity = NUMrandomUniform (my minimumActivity, my maximumActivity);
 		}
 		/*
-		 * Define connections.
-		 */
+			Define connections.
+		*/
 		integer iconn = 0;
 		for (integer icol = 1; icol <= numberOfColumns; icol ++) {
 			for (integer jcol = 1; jcol <= numberOfColumns; jcol ++) {
@@ -374,35 +395,35 @@ void Network_draw (Network me, Graphics graphics, bool useColour) {
 	Graphics_setInner (graphics);
 	Graphics_setWindow (graphics, my xmin, my xmax, my ymin, my ymax);
 	if (useColour) {
-		Graphics_setColour (graphics, Graphics_SILVER);
+		Graphics_setColour (graphics, Melder_SILVER);
 		Graphics_fillRectangle (graphics, my xmin, my xmax, my ymin, my ymax);
 	}
 	/*
-	 * Draw connections.
-	 */
+		Draw connections.
+	*/
 	for (integer iconn = 1; iconn <= my numberOfConnections; iconn ++) {
 		NetworkConnection conn = & my connections [iconn];
 		if (fabs (conn -> weight) >= 0.01) {
 			NetworkNode nodeFrom = & my nodes [conn -> nodeFrom];
 			NetworkNode nodeTo = & my nodes [conn -> nodeTo];
 			Graphics_setLineWidth (graphics, fabs (conn -> weight) * 6.0);
-			Graphics_setColour (graphics, conn -> weight < 0.0 ? ( useColour ? Graphics_WHITE : Graphics_SILVER ) : Graphics_BLACK);
+			Graphics_setColour (graphics, conn -> weight < 0.0 ? ( useColour ? Melder_WHITE : Melder_SILVER ) : Melder_BLACK);
 			Graphics_line (graphics, nodeFrom -> x, nodeFrom -> y, nodeTo -> x, nodeTo -> y);
 		}
 	}
 	Graphics_setLineWidth (graphics, 1.0);
 	/*
-	 * Draw the backgrounds of the nodes.
-	 */
+		Draw the backgrounds of the nodes.
+	*/
 	for (integer inode = 1; inode <= my numberOfNodes; inode ++) {
 		NetworkNode node = & my nodes [inode];
-		Graphics_setColour (graphics, useColour ? Graphics_SILVER : Graphics_WHITE);
+		Graphics_setColour (graphics, useColour ? Melder_SILVER : Melder_WHITE);
 		Graphics_fillCircle_mm (graphics, node -> x, node -> y, 5.0);
 	}
 	/*
-	 * Draw the edges of the nodes.
-	 */
-	Graphics_setColour (graphics, Graphics_BLACK);
+		Draw the edges of the nodes.
+	*/
+	Graphics_setColour (graphics, Melder_BLACK);
 	Graphics_setLineWidth (graphics, 2.0);
 	for (integer inode = 1; inode <= my numberOfNodes; inode ++) {
 		NetworkNode node = & my nodes [inode];
@@ -410,21 +431,22 @@ void Network_draw (Network me, Graphics graphics, bool useColour) {
 		Graphics_circle_mm (graphics, node -> x, node -> y, 5.2);
 	}
 	/*
-	 * Draw the activities of the nodes.
-	 */
+		Draw the activities of the nodes.
+	*/
 	for (integer inode = 1; inode <= my numberOfNodes; inode ++) {
 		NetworkNode node = & my nodes [inode];
 		double activity = fabs (node -> activity);
-		if (activity >= 1.0) activity = sqrt (activity);
+		if (activity >= 1.0)
+			activity = sqrt (activity);
 		double diameter = activity * 5.0;
 		if (diameter != 0.0) {
 			Graphics_setColour (graphics,
-				useColour ? ( node -> activity < 0.0 ? Graphics_BLUE : Graphics_RED )
-				: ( node -> activity < 0.0 ? Graphics_SILVER : Graphics_BLACK));
+					useColour ? ( node -> activity < 0.0 ? Melder_BLUE : Melder_RED )
+					: ( node -> activity < 0.0 ? Melder_SILVER : Melder_BLACK));
 			Graphics_fillCircle_mm (graphics, node -> x, node -> y, diameter);
 		}
 	}
-	Graphics_setColour (graphics, Graphics_BLACK);
+	Graphics_setColour (graphics, Melder_BLACK);
 	Graphics_setLineWidth (graphics, saveLineWidth);
 	Graphics_setLineType (graphics, Graphics_DRAWN);
 	Graphics_unsetInner (graphics);
@@ -432,13 +454,14 @@ void Network_draw (Network me, Graphics graphics, bool useColour) {
 
 void Network_addNode (Network me, double x, double y, double activity, bool clamped) {
 	try {
-		integer numberOfNodes = my numberOfNodes;
-		NUMvector_append (& my nodes, 1, & numberOfNodes);
-		my numberOfNodes = numberOfNodes;
-		my nodes [my numberOfNodes]. x = x;
-		my nodes [my numberOfNodes]. y = y;
-		my nodes [my numberOfNodes]. activity = my nodes [my numberOfNodes]. excitation = activity;
-		my nodes [my numberOfNodes]. clamped = clamped;
+		Melder_assert (my nodes.size == my numberOfNodes);
+		NetworkNode node = my nodes. append ();
+		my numberOfNodes += 1;   // maintain invariant
+		Melder_assert (my numberOfNodes == my nodes.size);
+		node -> x = x;
+		node -> y = y;
+		node -> activity = node -> excitation = activity;
+		node -> clamped = clamped;
 	} catch (MelderError) {
 		Melder_throw (me, U": node not added.");
 	}
@@ -446,13 +469,14 @@ void Network_addNode (Network me, double x, double y, double activity, bool clam
 
 void Network_addConnection (Network me, integer nodeFrom, integer nodeTo, double weight, double plasticity) {
 	try {
-		integer numberOfConnections = my numberOfConnections;
-		NUMvector_append (& my connections, 1, & numberOfConnections);
-		my numberOfConnections = numberOfConnections;
-		my connections [my numberOfConnections]. nodeFrom = nodeFrom;
-		my connections [my numberOfConnections]. nodeTo = nodeTo;
-		my connections [my numberOfConnections]. weight = weight;
-		my connections [my numberOfConnections]. plasticity = plasticity;
+		Melder_assert (my connections.size == my numberOfConnections);
+		NetworkConnection connection = my connections. append ();
+		my numberOfConnections += 1;   // maintain invariant
+		Melder_assert (my numberOfConnections == my connections.size);
+		connection -> nodeFrom = nodeFrom;
+		connection -> nodeTo = nodeTo;
+		connection -> weight = weight;
+		connection -> plasticity = plasticity;
 	} catch (MelderError) {
 		Melder_throw (me, U": connection not added.");
 	}
@@ -487,19 +511,21 @@ void Network_setActivityClippingRule (Network me, kNetwork_activityClippingRule 
 
 autoTable Network_nodes_downto_Table (Network me, integer fromNodeNumber, integer toNodeNumber,
 	bool includeNodeNumbers,
-	bool includeX, bool includeY, int positionDecimals,
+	bool includeX, bool includeY, integer positionDecimals,
 	bool includeClamped,
-	bool includeActivity, bool includeExcitation, int activityDecimals)
+	bool includeActivity, bool includeExcitation, integer activityDecimals)
 {
 	try {
-		if (fromNodeNumber < 1) fromNodeNumber = 1;
-		if (toNodeNumber > my numberOfNodes) toNodeNumber = my numberOfNodes;
-		if (fromNodeNumber > toNodeNumber)
-			fromNodeNumber = 1, toNodeNumber = my numberOfNodes;
+		Melder_clipLeft (1_integer, & fromNodeNumber);
+		Melder_clipRight (& toNodeNumber, my numberOfNodes);
+		if (fromNodeNumber > toNodeNumber) {
+			fromNodeNumber = 1;
+			toNodeNumber = my numberOfNodes;
+		}
 		integer numberOfNodes = toNodeNumber - fromNodeNumber + 1;
 		Melder_assert (numberOfNodes >= 1);
 		autoTable thee = Table_createWithoutColumnNames (numberOfNodes,
-			includeNodeNumbers + includeX + includeY + includeClamped + includeActivity + includeExcitation);
+				includeNodeNumbers + includeX + includeY + includeClamped + includeActivity + includeExcitation);
 		integer icol = 0;
 		if (includeNodeNumbers) Table_setColumnLabel (thee.get(), ++ icol, U"node");
 		if (includeX)           Table_setColumnLabel (thee.get(), ++ icol, U"x");
@@ -525,13 +551,13 @@ autoTable Network_nodes_downto_Table (Network me, integer fromNodeNumber, intege
 
 void Network_listNodes (Network me, integer fromNodeNumber, integer toNodeNumber,
 	bool includeNodeNumbers,
-	bool includeX, bool includeY, int positionDecimals,
+	bool includeX, bool includeY, integer positionDecimals,
 	bool includeClamped,
-	bool includeActivity, bool includeExcitation, int activityDecimals)
+	bool includeActivity, bool includeExcitation, integer activityDecimals)
 {
 	try {
 		autoTable table = Network_nodes_downto_Table (me, fromNodeNumber, toNodeNumber, includeNodeNumbers,
-			includeX, includeY, positionDecimals, includeClamped, includeActivity, includeExcitation, activityDecimals);
+				includeX, includeY, positionDecimals, includeClamped, includeActivity, includeExcitation, activityDecimals);
 		Table_list (table.get(), false);
 	} catch (MelderError) {
 		Melder_throw (me, U": not listed.");

@@ -87,9 +87,7 @@ void Spectrum_draw (Spectrum me, Graphics g, double fmin, double fmax, double mi
 */
 void Spectrum_drawLogFreq (Spectrum me, Graphics g, double fmin, double fmax, double minimum, double maximum, int garnish);
 
-autoTable Spectrum_downto_Table (Spectrum me, bool includeBinNumbers, bool includeFrequency,
-	bool includeRealPart, bool includeImaginaryPart, bool includeEnergyDensity, bool includePowerDensity);
-void Spectrum_list (Spectrum me, bool includeBinNumbers, bool includeFrequency,
+autoTable Spectrum_tabulate (Spectrum me, bool includeBinNumbers, bool includeFrequency,
 	bool includeRealPart, bool includeImaginaryPart, bool includeEnergyDensity, bool includePowerDensity);
 
 autoSpectrum Matrix_to_Spectrum (Matrix me);
@@ -101,7 +99,7 @@ autoSpectrum Spectrum_cepstralSmoothing (Spectrum me, double bandWidth);
 void Spectrum_passHannBand (Spectrum me, double fmin, double fmax, double smooth);
 void Spectrum_stopHannBand (Spectrum me, double fmin, double fmax, double smooth);
 
-void Spectrum_getNearestMaximum (Spectrum me, double frequency, double *frequencyOfMaximum, double *heightOfMaximum);
+MelderPoint Spectrum_getNearestMaximum (Spectrum me, double frequency);
 
 /* End of file Spectrum.h */
 #endif

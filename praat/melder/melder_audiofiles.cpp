@@ -1,6 +1,6 @@
 /* melder_audiofiles.cpp
  *
- * Copyright (C) 1992-2008,2010-2018 Paul Boersma & David Weenink, 2007 Erez Volk (for FLAC)
+ * Copyright (C) 1992-2008,2010-2019 Paul Boersma & David Weenink, 2007 Erez Volk (for FLAC)
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 #define WAVE_FORMAT_DVI_ADPCM  0x0011
 #define WAVE_FORMAT_EXTENSIBLE 0xFFFE
 
-void MelderFile_writeAudioFileHeader (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint) {
+void MelderFile_writeAudioFileHeader (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, integer numberOfChannels, int numberOfBitsPerSamplePoint) {
 	try {
 		FILE *f = file -> filePointer;
 		if (! f) return;
@@ -212,7 +212,7 @@ void MelderFile_writeAudioFileHeader (MelderFile file, int audioFileType, intege
 	}
 }
 
-void MelderFile_writeAudioFileTrailer (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint) {
+void MelderFile_writeAudioFileTrailer (MelderFile file, int audioFileType, integer sampleRate, integer numberOfSamples, integer numberOfChannels, int numberOfBitsPerSamplePoint) {
 	(void) sampleRate;
 	bool shouldPadTheDataToAnEvenNumberOfBytes = audioFileType == Melder_WAV;
 	bool numberOfSamplesIsOdd = (numberOfSamples & 1) != 0;
@@ -249,7 +249,7 @@ int Melder_defaultAudioFileEncoding (int audioFileType, int numberOfBitsPerSampl
 		defaultAudioFileEncoding32 [audioFileType];
 }
 
-void MelderFile_writeAudioFile (MelderFile file, int audioFileType, const short *buffer, integer sampleRate, integer numberOfSamples, int numberOfChannels, int numberOfBitsPerSamplePoint) {
+void MelderFile_writeAudioFile (MelderFile file, int audioFileType, const short *buffer, integer sampleRate, integer numberOfSamples, integer numberOfChannels, int numberOfBitsPerSamplePoint) {
 	try {
 		autoMelderFile mfile = MelderFile_create (file);
 		MelderFile_writeAudioFileHeader (file, audioFileType, sampleRate, numberOfSamples, numberOfChannels, numberOfBitsPerSamplePoint);
@@ -269,6 +269,7 @@ int Melder_bytesPerSamplePoint (int encoding) {
 		encoding == Melder_LINEAR_24_BIG_ENDIAN || encoding == Melder_LINEAR_24_LITTLE_ENDIAN ? 3 :
 		encoding == Melder_LINEAR_32_BIG_ENDIAN || encoding == Melder_LINEAR_32_LITTLE_ENDIAN ||
 		encoding == Melder_IEEE_FLOAT_32_BIG_ENDIAN || encoding == Melder_IEEE_FLOAT_32_LITTLE_ENDIAN ? 4 :
+		encoding == Melder_IEEE_FLOAT_64_BIG_ENDIAN || encoding == Melder_IEEE_FLOAT_64_LITTLE_ENDIAN ? 8 :
 		1;
 }
 
@@ -438,15 +439,20 @@ static void Melder_checkWavFile (FILE *f, integer *numberOfChannels, int *encodi
 	int numberOfBitsPerSamplePoint = -1;
 	uint32 dataChunkSize = 0xffffffff;
 
-	if (fread (data, 1, 4, f) < 4)   Melder_throw (U"File too small: no RIFF statement.");
-	if (! strnequ (data, "RIFF", 4)) Melder_throw (U"Not a WAV file (RIFF statement expected).");
-	if (fread (data, 1, 4, f) < 4)   Melder_throw (U"File too small: no size of RIFF chunk.");
-	if (fread (data, 1, 4, f) < 4)   Melder_throw (U"File too small: no file type info (expected WAVE statement).");
-	if (! strnequ (data, "WAVE", 4) && ! strnequ (data, "CDDA", 4))
-	                                 Melder_throw (U"Not a WAVE or CD audio file (wrong file type info).");
+	Melder_require (fread (data, 1, 4, f) == 4,
+		U"File too small: no RIFF statement.");
+	Melder_require (strnequ (data, "RIFF", 4),
+		U"Not a WAV file (RIFF statement expected).");
+	Melder_require (fread (data, 1, 4, f) == 4,
+		U"File too small: no size of RIFF chunk.");
+	Melder_require (fread (data, 1, 4, f) == 4,
+		U"File too small: no file type info (expected WAVE statement).");
+	Melder_require (strnequ (data, "WAVE", 4) || strnequ (data, "CDDA", 4),
+		U"Not a WAVE or CD audio file (wrong file type info).");
 
-	/* Search for Format Chunk and Data Chunk. */
-
+	/*
+		Search for Format Chunk and Data Chunk.
+	*/
 	while (fread (chunkID, 1, 4, f) == 4) {
 		uint32 chunkSize = bingetu32LE (f);
 		if (Melder_debug == 23) {
@@ -455,23 +461,25 @@ static void Melder_checkWavFile (FILE *f, integer *numberOfChannels, int *encodi
 		}
 		if (strnequ (chunkID, "fmt ", 4)) {
 			/*
-			 * Found a Format Chunk.
-			 */
+				Found a Format Chunk.
+			*/
 			uint16 winEncoding = bingetu16LE (f);
 			formatChunkPresent = true;			
 			*numberOfChannels = bingeti16LE (f);
-			if (*numberOfChannels < 1) Melder_throw (U"Too few sound channels (", *numberOfChannels, U").");
+			Melder_require (*numberOfChannels >= 1,
+				U"Too few sound channels (", *numberOfChannels, U").");
 			*sampleRate = (double) bingeti32LE (f);
-			if (*sampleRate <= 0.0) Melder_throw (U"Wrong sampling frequency (", *sampleRate, U" Hz).");
+			Melder_require (*sampleRate > 0.0,
+				U"Wrong sampling frequency (", *sampleRate, U" Hz).");
 			(void) bingeti32LE (f);   // avgBytesPerSec
 			(void) bingeti16LE (f);   // blockAlign
 			numberOfBitsPerSamplePoint = bingeti16LE (f);
 			if (numberOfBitsPerSamplePoint == 0)
 				numberOfBitsPerSamplePoint = 16;   // the default
-			else if (numberOfBitsPerSamplePoint < 4)
-				Melder_throw (U"Too few bits per sample (", numberOfBitsPerSamplePoint, U"; the minimum is 4).");
-			else if (numberOfBitsPerSamplePoint > 32)
-				Melder_throw (U"Too few bits per sample (", numberOfBitsPerSamplePoint, U"; the maximum is 32).");
+			Melder_require (numberOfBitsPerSamplePoint >= 4,
+				U"Too few bits per sample (", numberOfBitsPerSamplePoint, U"; the minimum is 4).");
+			Melder_require (numberOfBitsPerSamplePoint <= 64,
+				U"Too many bits per sample (", numberOfBitsPerSamplePoint, U"; the maximum is 64).");
 			switch (winEncoding) {
 				case WAVE_FORMAT_PCM:
 					*encoding =
@@ -481,7 +489,9 @@ static void Melder_checkWavFile (FILE *f, integer *numberOfChannels, int *encodi
 						Melder_LINEAR_8_UNSIGNED;
 					break;
 				case WAVE_FORMAT_IEEE_FLOAT:
-					*encoding = Melder_IEEE_FLOAT_32_LITTLE_ENDIAN;
+					*encoding =
+						numberOfBitsPerSamplePoint == 64 ? Melder_IEEE_FLOAT_64_LITTLE_ENDIAN :
+						Melder_IEEE_FLOAT_32_LITTLE_ENDIAN;
 					break;
 				case WAVE_FORMAT_ALAW:
 					*encoding = Melder_ALAW;
@@ -495,8 +505,8 @@ static void Melder_checkWavFile (FILE *f, integer *numberOfChannels, int *encodi
 						U"please use an audio converter program to convert it first to normal (PCM) WAV format\n"
 						U"(Praat may have difficulty analysing the poor recording, though).");
 				case WAVE_FORMAT_EXTENSIBLE: {
-					if (chunkSize < 40)
-						Melder_throw (U"Not enough format data in extensible WAV format");
+					Melder_require (chunkSize >= 40,
+						U"Not enough format data in extensible WAV format");
 					(void) bingeti16LE (f);   // extensionSize
 					(void) bingeti16LE (f);   // validBitsPerSample
 					(void) bingeti32LE (f);   // channelMask
@@ -510,7 +520,9 @@ static void Melder_checkWavFile (FILE *f, integer *numberOfChannels, int *encodi
 								Melder_LINEAR_8_UNSIGNED;
 							break;
 						case WAVE_FORMAT_IEEE_FLOAT:
-							*encoding = Melder_IEEE_FLOAT_32_LITTLE_ENDIAN;
+							*encoding =
+								numberOfBitsPerSamplePoint == 64 ? Melder_IEEE_FLOAT_64_LITTLE_ENDIAN :
+								Melder_IEEE_FLOAT_32_LITTLE_ENDIAN;
 							break;
 						case WAVE_FORMAT_ALAW:
 							*encoding = Melder_ALAW;
@@ -526,46 +538,63 @@ static void Melder_checkWavFile (FILE *f, integer *numberOfChannels, int *encodi
 						default:
 							Melder_throw (U"Unsupported Windows audio encoding ", winEncoding2, U".");
 					}
-					if (fread (data, 1, 14, f) < 14)   Melder_throw (U"File too small: no SubFormat data.");
+					Melder_require (fread (data, 1, 14, f) == 14,
+						U"File too small: no SubFormat data.");
 					continue;   // next chunk
 				}
 				default:
 					Melder_throw (U"Unsupported Windows audio encoding ", winEncoding, U".");
 			}
-			if (chunkSize & 1) chunkSize ++;
+			if (chunkSize & 1)
+				chunkSize += 1;
 			for (integer i = 17; i <= chunkSize; i ++)
-				if (fread (data, 1, 1, f) < 1) Melder_throw (U"File too small: expected ", chunkSize, U" bytes in fmt chunk, but found ", i, U".");
+				Melder_require (fread (data, 1, 1, f) == 1,
+					U"File too small: expected ", chunkSize, U" bytes in fmt chunk, but found ", i, U".");
 		} else if (strnequ (chunkID, "data", 4)) {
 			/*
-			 * Found a Data Chunk.
-			 */
+				Found a Data Chunk.
+			*/
 			dataChunkPresent = true;
 			dataChunkSize = chunkSize;
 			*startOfData = ftell (f);
-			if (chunkSize & 1) chunkSize ++;
-			if (chunkSize > UINT32_MAX - 100) {   // incorrect data chunk (sometimes -44); assume that the data run till the end of the file
+			if (chunkSize > UINT32_MAX - 100) {   // incorrect data chunk (sometimes -1 or -44); assume that the data run till the end of the file
 				fseeko (f, 0LL, SEEK_END);
 				off_t endOfData = ftello (f);
 				dataChunkSize = chunkSize = endOfData - *startOfData;
 				fseeko (f, *startOfData, SEEK_SET);
 			}
+			/*
+				ppgb 20191211:
+				The following check had to be moved here (from six lines up),
+				because the original chunkSize could have been 0xffffffff,
+				leading to it becoming 0 here and skipping the above block,
+				thus violating the assert on dataChunkSize below.
+			*/
+			if (chunkSize & 1)
+				chunkSize += 1;
 			if (Melder_debug == 23) {
 				for (integer i = 1; i <= chunkSize; i ++)
-					if (fread (data, 1, 1, f) < 1) Melder_throw (U"File too small: expected ", chunkSize, U" bytes of data, but found ", i, U".");
+					Melder_require (fread (data, 1, 1, f) == 1,
+						U"File too small: expected ", chunkSize, U" bytes of data, but found ", i, U".");
 			} else {
-				if (formatChunkPresent) break;   // OPTIMIZATION: do not read the whole data chunk if we have already read the format chunk
+				if (formatChunkPresent)
+					break;   // OPTIMIZATION: do not read the whole data chunk if we have already read the format chunk
 			}
 		} else {   // ignore other chunks
-			if (chunkSize & 1) chunkSize ++;
+			if (chunkSize & 1)
+				chunkSize += 1;
 			for (integer i = 1; i <= chunkSize; i ++)
-				if (fread (data, 1, 1, f) < 1)
-					Melder_throw (U"File too small: expected ", chunkSize, U" bytes, but found ", i, U".");
+				Melder_require (fread (data, 1, 1, f) == 1,
+					U"File too small: expected ", chunkSize, U" bytes, but found ", i, U".");
 		}
 	}
 
-	if (! formatChunkPresent) Melder_throw (U"Found no Format Chunk.");
-	if (! dataChunkPresent) Melder_throw (U"Found no Data Chunk.");
-	Melder_assert (numberOfBitsPerSamplePoint != -1 && dataChunkSize != 0xffffffff);
+	Melder_require (formatChunkPresent,
+		U"Found no Format Chunk.");
+	Melder_require (dataChunkPresent,
+		U"Found no Data Chunk.");
+	Melder_assert (numberOfBitsPerSamplePoint != -1);
+	Melder_assert (dataChunkSize != 0xffffffff);
 	*numberOfSamples = dataChunkSize / *numberOfChannels / ((numberOfBitsPerSamplePoint + 7) / 8);
 }
 
@@ -807,15 +836,15 @@ static void Melder_DecodeFlac_error (const FLAC__StreamDecoder *decoder, FLAC__S
 	Melder_warning (U"FLAC decoder error: ", Melder_peek8to32 (FLAC__StreamDecoderErrorStatusString [status]));
 }
 
-static void Melder_readFlacFile (FILE *f, integer numberOfChannels, double **buffer, integer numberOfSamples) {
+static void Melder_readFlacFile (FILE *f, MAT buffer) {
 	int result = 0;
 
 	MelderDecodeFlacContext c;
 	c.file = f;
-	c.numberOfChannels = numberOfChannels;
-	for (int ichan = 1; ichan <= numberOfChannels; ichan ++)
+	c.numberOfChannels = buffer.nrow;
+	for (int ichan = 1; ichan <= buffer.nrow; ichan ++)
 		c.channels [ichan - 1] = & buffer [ichan] [1];
-	c.numberOfSamples = numberOfSamples;
+	c.numberOfSamples = buffer.ncol;
 
 	FLAC__StreamDecoder *decoder = FLAC__stream_decoder_new ();
 	if (! decoder)
@@ -835,24 +864,26 @@ end:
 		Melder_throw (U"Error decoding FLAC file.");
 }
 
-static void Melder_readMp3File (FILE *f, integer numberOfChannels, double **buffer, integer numberOfSamples) {
+static void Melder_readMp3File (FILE *f, MAT buffer) {
 	int result = 0;
 	MelderDecodeMp3Context c;
-	c.numberOfChannels = numberOfChannels;
-	for (int ichan = 1; ichan <= numberOfChannels; ichan ++)
+	c.numberOfChannels = buffer.nrow;
+	for (int ichan = 1; ichan <= buffer.nrow; ichan ++)
 		c.channels [ichan - 1] = & buffer [ichan] [1];
-	c.numberOfSamples = numberOfSamples;
+	c.numberOfSamples = buffer.ncol;
 	MP3_FILE mp3f = mp3f_new ();
 	mp3f_set_file (mp3f, f);
 	mp3f_set_callback (mp3f, Melder_DecodeMp3_convert, &c);
-	result = mp3f_read (mp3f, numberOfSamples);
+	result = mp3f_read (mp3f, buffer.ncol);
 	mp3f_delete (mp3f);
 	if (result == 0)
 		Melder_throw (U"Error decoding MP3 file.");
 }
 
-void Melder_readAudioToFloat (FILE *f, integer numberOfChannels, int encoding, double **buffer, integer numberOfSamples) {
+void Melder_readAudioToFloat (FILE *f, int encoding, MAT buffer) {
 	try {
+		integer numberOfChannels = buffer.nrow;
+		integer numberOfSamples = buffer.ncol;
 		switch (encoding) {
 			case Melder_LINEAR_8_SIGNED: {
 				try {
@@ -1174,6 +1205,30 @@ void Melder_readAudioToFloat (FILE *f, integer numberOfChannels, int encoding, d
 					Melder_warning (U"File too small (", numberOfChannels, U"-channel 32-bit floating point).\nMissing samples set to zero.");
 				}
 				break;
+			case Melder_IEEE_FLOAT_64_BIG_ENDIAN:
+				try {
+					for (integer isamp = 1; isamp <= numberOfSamples; isamp ++) {
+						for (integer ichan = 1; ichan <= numberOfChannels; ichan ++) {
+							buffer [ichan] [isamp] = bingetr64 (f);
+						}
+					}
+				} catch (MelderError) {
+					Melder_clearError ();
+					Melder_warning (U"File too small (", numberOfChannels, U"-channel 64-bit floating point).\nMissing samples set to zero.");
+				}
+				break;
+			case Melder_IEEE_FLOAT_64_LITTLE_ENDIAN:
+				try {
+					for (integer isamp = 1; isamp <= numberOfSamples; isamp ++) {
+						for (integer ichan = 1; ichan <= numberOfChannels; ichan ++) {
+							buffer [ichan] [isamp] = bingetr64LE (f);
+						}
+					}
+				} catch (MelderError) {
+					Melder_clearError ();
+					Melder_warning (U"File too small (", numberOfChannels, U"-channel 64-bit floating point).\nMissing samples set to zero.");
+				}
+				break;
 			case Melder_MULAW:
 				try {
 					for (integer isamp = 1; isamp <= numberOfSamples; isamp ++) {
@@ -1201,12 +1256,12 @@ void Melder_readAudioToFloat (FILE *f, integer numberOfChannels, int encoding, d
 			case Melder_FLAC_COMPRESSION_16:
 			case Melder_FLAC_COMPRESSION_24:
 			case Melder_FLAC_COMPRESSION_32:
-				Melder_readFlacFile (f, numberOfChannels, buffer, numberOfSamples);
+				Melder_readFlacFile (f, buffer);
 				break;
 			case Melder_MPEG_COMPRESSION_16:
 			case Melder_MPEG_COMPRESSION_24:
 			case Melder_MPEG_COMPRESSION_32:
-				Melder_readMp3File (f, numberOfChannels, buffer, numberOfSamples);
+				Melder_readMp3File (f, buffer);
 				break;
 			default:
 				Melder_throw (U"Unknown encoding ", encoding, U".");
@@ -1281,6 +1336,16 @@ void Melder_readAudioToShort (FILE *f, integer numberOfChannels, int encoding, s
 					buffer [i] = bingetr32LE (f) * 32768;   // BUG: truncation; not ideal
 				}
 				break;
+			case Melder_IEEE_FLOAT_64_BIG_ENDIAN:
+				for (i = 0; i < n; i ++) {
+					buffer [i] = bingetr64 (f) * 32768;   // BUG: truncation; not ideal
+				}
+				break;
+			case Melder_IEEE_FLOAT_64_LITTLE_ENDIAN:
+				for (i = 0; i < n; i ++) {
+					buffer [i] = bingetr64LE (f) * 32768;   // BUG: truncation; not ideal
+				}
+				break;
 			case Melder_MULAW:
 				for (i = 0; i < n; i ++) {
 					buffer [i] = ulaw2linear [bingetu8 (f)];
@@ -1307,7 +1372,7 @@ void MelderFile_writeShortToAudio (MelderFile file, integer numberOfChannels, in
 		integer n = numberOfSamples * numberOfChannels, start = 0, step = 1, i;
 		if (numberOfChannels < 0) {
 			n = numberOfSamples * 2;   // stereo
-			step = 2;   // only one channel will be  written
+			step = 2;   // only one channel will be written
 			if (numberOfChannels == -2) {
 				start = 1;   // right channel
 			}
@@ -1344,6 +1409,12 @@ void MelderFile_writeShortToAudio (MelderFile file, integer numberOfChannels, in
 			break; case Melder_IEEE_FLOAT_32_LITTLE_ENDIAN:
 				for (i = start; i < n; i += step)
 					binputr32LE (buffer [i] / 32768.0, f);
+			break; case Melder_IEEE_FLOAT_64_BIG_ENDIAN:
+				for (i = start; i < n; i += step)
+					binputr64 (buffer [i] / 32768.0, f);
+			break; case Melder_IEEE_FLOAT_64_LITTLE_ENDIAN:
+				for (i = start; i < n; i += step)
+					binputr64LE (buffer [i] / 32768.0, f);
 			break;
 			case Melder_FLAC_COMPRESSION_16:
 			case Melder_FLAC_COMPRESSION_24:
@@ -1365,10 +1436,11 @@ void MelderFile_writeShortToAudio (MelderFile file, integer numberOfChannels, in
 	}
 }
 
-void MelderFile_writeFloatToAudio (MelderFile file, integer numberOfChannels, int encoding, double **buffer, integer numberOfSamples, int warnIfClipped) {
+void MelderFile_writeFloatToAudio (MelderFile file, constMATVU const& buffer, int encoding, bool warnIfClipped) {
 	try {
 		FILE *f = file -> filePointer;
 		if (! f) Melder_throw (U"File not open.");
+		const integer numberOfSamples = buffer.ncol, numberOfChannels = buffer.nrow;
 		integer nclipped = 0;
 		switch (encoding) {
 			case Melder_LINEAR_8_SIGNED:
@@ -1464,6 +1536,22 @@ void MelderFile_writeFloatToAudio (MelderFile file, integer numberOfChannels, in
 					for (integer ichan = 1; ichan <= numberOfChannels; ichan ++) {
 						double value = buffer [ichan] [isamp];
 						binputr32LE (value, f);
+					}
+				}
+				break;
+			case Melder_IEEE_FLOAT_64_BIG_ENDIAN:
+				for (integer isamp = 1; isamp <= numberOfSamples; isamp ++) {
+					for (integer ichan = 1; ichan <= numberOfChannels; ichan ++) {
+						double value = buffer [ichan] [isamp];
+						binputr64 (value, f);
+					}
+				}
+				break;
+			case Melder_IEEE_FLOAT_64_LITTLE_ENDIAN:
+				for (integer isamp = 1; isamp <= numberOfSamples; isamp ++) {
+					for (integer ichan = 1; ichan <= numberOfChannels; ichan ++) {
+						double value = buffer [ichan] [isamp];
+						binputr64LE (value, f);
 					}
 				}
 				break;

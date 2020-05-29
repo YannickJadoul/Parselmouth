@@ -1,6 +1,6 @@
 /* praat_gram.cpp
  *
- * Copyright (C) 1997-2018 Paul Boersma
+ * Copyright (C) 1997-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,8 @@
 #define UiForm_addNetworkFields  \
 	LABEL (U"Activity spreading settings:") \
 	REAL (spreadingRate, U"Spreading rate", U"0.01") \
-	OPTIONMENU_ENUM (activityClippingRule, U"Activity clipping rule", kNetwork_activityClippingRule, DEFAULT) \
+	OPTIONMENU_ENUM (kNetwork_activityClippingRule, activityClippingRule, \
+			U"Activity clipping rule", kNetwork_activityClippingRule::DEFAULT) \
 	REAL (minimumActivity, U"left Activity range", U"0.0") \
 	REAL (maximumActivity, U"right Activity range", U"1.0") \
 	REAL (activityLeak, U"Activity leak", U"1.0") \
@@ -57,8 +58,7 @@ FORM (NEW1_Create_empty_Network, U"Create empty Network", nullptr) {
 	OK
 DO
 	CREATE_ONE
-		autoNetwork result = Network_create (spreadingRate,
-			(kNetwork_activityClippingRule) activityClippingRule,
+		autoNetwork result = Network_create (spreadingRate, activityClippingRule,
 			minimumActivity, maximumActivity, activityLeak, learningRate, minimumWeight, maximumWeight, weightLeak,
 			fromX, toX, fromY, toY, 0, 0
 		);
@@ -77,8 +77,7 @@ FORM (NEW1_Create_rectangular_Network, U"Create rectangular Network", nullptr) {
 	OK
 DO
 	CREATE_ONE
-		autoNetwork result = Network_create_rectangle (spreadingRate,
-			(kNetwork_activityClippingRule) activityClippingRule,
+		autoNetwork result = Network_create_rectangle (spreadingRate, activityClippingRule,
 			minimumActivity, maximumActivity, activityLeak, learningRate, minimumWeight, maximumWeight, weightLeak,
 			numberOfRows, numberOfColumns, bottomRowClamped, minimumInitialWeight, maximumInitialWeight
 		);
@@ -167,8 +166,18 @@ FORM (REAL_Network_getActivity, U"Network: Get activity", nullptr) {
 	OK
 DO
 	NUMBER_ONE (Network)
-		double result = Network_getActivity (me, node);
+		const double result = Network_getActivity (me, node);
 	NUMBER_ONE_END (U" (activity of node ", node, U")")
+}
+
+FORM (NUMVEC_Network_getActivities, U"Network: Get activities", nullptr) {
+	NATURAL (fromNode, U"From node", U"1")
+	NATURAL (toNode, U"To node", U"0 (= all)")
+	OK
+DO
+	NUMVEC_ONE (Network)
+		autoVEC result = Network_getActivities (me, fromNode, toNode);
+	NUMVEC_ONE_END
 }
 
 FORM (REAL_Network_getWeight, U"Network: Get weight", nullptr) {
@@ -176,7 +185,7 @@ FORM (REAL_Network_getWeight, U"Network: Get weight", nullptr) {
 	OK
 DO
 	NUMBER_ONE (Network)
-		double result = Network_getWeight (me, connection);
+		const double result = Network_getWeight (me, connection);
 	NUMBER_ONE_END (U" (weight of connection ", connection, U")")
 }
 
@@ -239,8 +248,22 @@ DO
 	MODIFY_EACH_END
 }
 
+FORM (MODIFY_Network_formula_activities, U"Network: Formula (activities)", nullptr) {
+	INTEGER (fromNode, U"From node", U"1")
+	INTEGER (toNode, U"To node", U"0 (= all)")
+	LABEL (U"`col` is the node number, `self` is the current activity")
+	LABEL (U"for col := 1 to ncol do { self [col] := `formula' }")
+	TEXTFIELD (formula, U"Formula:", U"0")
+	OK
+DO
+	MODIFY_EACH_WEAK (Network)
+		Network_formula_activities (me, fromNode, toNode, formula, interpreter);
+	MODIFY_EACH_WEAK_END
+}
+
 FORM (MODIFY_Network_setActivityClippingRule, U"Network: Set activity clipping rule", nullptr) {
-	RADIO_ENUM (activityClippingRule, U"Activity clipping rule", kNetwork_activityClippingRule, DEFAULT)
+	RADIO_ENUM (kNetwork_activityClippingRule, activityClippingRule,
+			U"Activity clipping rule", kNetwork_activityClippingRule::DEFAULT)
 	OK
 DO
 	MODIFY_EACH (Network)
@@ -365,8 +388,10 @@ DIRECT (NEW1_Create_NPA_distribution) {
 }
 
 FORM (NEW1_Create_tongue_root_grammar, U"Create tongue-root grammar", U"Create tongue-root grammar...") {
-	RADIO_ENUM (constraintSet, U"Constraint set", kOTGrammar_createTongueRootGrammar_constraintSet, DEFAULT)
-	RADIO_ENUM (ranking, U"Ranking", kOTGrammar_createTongueRootGrammar_ranking, DEFAULT)
+	RADIO_ENUM (kOTGrammar_createTongueRootGrammar_constraintSet, constraintSet,
+			U"Constraint set", kOTGrammar_createTongueRootGrammar_constraintSet::DEFAULT)
+	RADIO_ENUM (kOTGrammar_createTongueRootGrammar_ranking, ranking,
+			U"Ranking", kOTGrammar_createTongueRootGrammar_ranking::DEFAULT)
 	OK
 DO
 	CREATE_ONE
@@ -375,7 +400,8 @@ DO
 }
 
 FORM (NEW1_Create_metrics_grammar, U"Create metrics grammar", nullptr) {
-	OPTIONMENU_ENUM (initialRanking, U"Initial ranking", kOTGrammar_createMetricsGrammar_initialRanking, DEFAULT)
+	OPTIONMENU_ENUM (kOTGrammar_createMetricsGrammar_initialRanking, initialRanking,
+			U"Initial ranking", kOTGrammar_createMetricsGrammar_initialRanking::DEFAULT)
 	OPTIONMENU (trochaicityConstraint, U"Trochaicity constraint", 1)
 		OPTION (U"FtNonfinal")
 		OPTION (U"Trochaic")
@@ -469,7 +495,7 @@ DO
 	NUMBER_ONE (OTGrammar)
 		if (constraintNumber > my numberOfConstraints)
 			Melder_throw (U"The specified constraint number should not exceed the number of constraints.");
-		double result = my constraints [constraintNumber]. ranking;
+		const double result = my constraints [constraintNumber]. ranking;
 	NUMBER_ONE_END (U" (ranking of constraint ", constraintNumber, U")")
 }
 
@@ -480,13 +506,13 @@ DO
 	NUMBER_ONE (OTGrammar)
 		if (constraintNumber > my numberOfConstraints)
 			Melder_throw (U"The specified constraint number should not exceed the number of constraints.");
-		double result = my constraints [constraintNumber]. disharmony;
+		const double result = my constraints [constraintNumber]. disharmony;
 	NUMBER_ONE_END (U" (disharmony of constraint ", constraintNumber, U")")
 }
 
 DIRECT (INTEGER_OTGrammar_getNumberOfTableaus) {
 	INTEGER_ONE (OTGrammar)
-		integer result = my numberOfTableaus;
+		const integer result = my numberOfTableaus;
 	INTEGER_ONE_END (U" tableaus")
 }
 
@@ -508,7 +534,7 @@ DO
 	NUMBER_ONE (OTGrammar)
 		if (tableauNumber > my numberOfTableaus)
 			Melder_throw (U"The specified tableau number should not exceed the number of tableaus.");
-		integer result = my tableaus [tableauNumber]. numberOfCandidates;
+		const integer result = my tableaus [tableauNumber]. numberOfCandidates;
 	NUMBER_ONE_END (U" candidates in tableau ", tableauNumber)
 }
 
@@ -540,7 +566,7 @@ DO
 			Melder_throw (U"The specified candidate should not exceed the number of candidates.");
 		if (constraintNumber > my numberOfConstraints)
 			Melder_throw (U"The specified constraint number should not exceed the number of constraints.");
-		integer result = my tableaus [tableauNumber]. candidates [candidateNumber]. marks [constraintNumber];
+		const integer result = my tableaus [tableauNumber]. candidates [candidateNumber]. marks [constraintNumber];
 	NUMBER_ONE_END (U" violations")
 }
 
@@ -553,7 +579,7 @@ DO
 	NUMBER_ONE (OTGrammar)
 		if (tableauNumber > my numberOfTableaus)
 			Melder_throw (U"The specified tableau number should not exceed the number of tableaus.");
-		integer result = OTGrammar_getWinner (me, tableauNumber);
+		const integer result = OTGrammar_getWinner (me, tableauNumber);
 	NUMBER_ONE_END (U" (winner in tableau ", tableauNumber, U")")
 }
 
@@ -573,7 +599,7 @@ DO
 			Melder_throw (U"The specified tableau (number 2) should not exceed the number of tableaus.");
 		if (candidateNumber2 > my tableaus [tableauNumber2]. numberOfCandidates)
 			Melder_throw (U"The specified candidate (number 2) should not exceed the number of candidates for this tableau.");
-		integer result = OTGrammar_compareCandidates (me, tableauNumber1, candidateNumber1, tableauNumber2, candidateNumber2);
+		const integer result = OTGrammar_compareCandidates (me, tableauNumber1, candidateNumber1, tableauNumber2, candidateNumber2);
 	NUMBER_ONE_END (result == -1 ? U" (candidate 1 is better)" :
 					result == +1 ? U" (candidate 2 is better)" : U" (candidates are equally good)")
 }
@@ -585,7 +611,7 @@ DO
 	NUMBER_ONE (OTGrammar)
 		if (tableauNumber > my numberOfTableaus)
 			Melder_throw (U"The specified tableau number should not exceed the number of tableaus.");
-		integer result = OTGrammar_getNumberOfOptimalCandidates (me, tableauNumber);
+		const integer result = OTGrammar_getNumberOfOptimalCandidates (me, tableauNumber);
 	NUMBER_ONE_END (U" optimal candidates in tableau ", tableauNumber)
 }
 
@@ -599,7 +625,7 @@ DO
 			Melder_throw (U"The specified tableau number should not exceed the number of tableaus.");
 		if (candidateNumber > my tableaus [tableauNumber]. numberOfCandidates)
 			Melder_throw (U"The specified candidate should not exceed the number of candidates.");
-		integer result = OTGrammar_isCandidateGrammatical (me, tableauNumber, candidateNumber);
+		const integer result = OTGrammar_isCandidateGrammatical (me, tableauNumber, candidateNumber);
 	NUMBER_ONE_END (result ? U" (grammatical)" : U" (ungrammatical)")
 }
 
@@ -613,7 +639,7 @@ DO
 			Melder_throw (U"The specified tableau number should not exceed the number of tableaus.");
 		if (candidateNumber > my tableaus [tableauNumber]. numberOfCandidates)
 			Melder_throw (U"The specified candidate should not exceed the number of candidates.");
-		integer result = OTGrammar_isCandidateSinglyGrammatical (me, tableauNumber, candidateNumber);
+		const integer result = OTGrammar_isCandidateSinglyGrammatical (me, tableauNumber, candidateNumber);
 	NUMBER_ONE_END (result ? U" (singly grammatical)" : U" (not singly grammatical)")
 }
 
@@ -634,7 +660,7 @@ FORM (BOOLEAN_OTGrammar_isPartialOutputGrammatical, U"Is partial output grammati
 	OK
 DO
 	NUMBER_ONE (OTGrammar)
-		integer result = OTGrammar_isPartialOutputGrammatical (me, partialOutput);
+		const integer result = OTGrammar_isPartialOutputGrammatical (me, partialOutput);
 	NUMBER_ONE_END (result ? U" (grammatical)" : U" (ungrammatical)")
 }
 
@@ -643,7 +669,7 @@ FORM (BOOLEAN_OTGrammar_isPartialOutputSinglyGrammatical, U"Is partial output si
 	OK
 DO
 	NUMBER_ONE (OTGrammar)
-		integer result = OTGrammar_isPartialOutputSinglyGrammatical (me, partialOutput);
+		const integer result = OTGrammar_isPartialOutputSinglyGrammatical (me, partialOutput);
 	NUMBER_ONE_END (result ? U" (singly grammatical)" : U" (not singly grammatical)")
 }
 
@@ -792,15 +818,15 @@ FORM (MODIFY_OTGrammar_learnOne, U"OTGrammar: Learn one", U"OTGrammar: Learn one
 	SENTENCE (inputString, U"Input string", U"")
 	SENTENCE (outputString, U"Output string", U"")
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	REAL (plasticity, U"Plasticity", U"0.1")
 	REAL (relativePlasticitySpreading, U"Rel. plasticity spreading", U"0.1")
 	BOOLEAN (honourLocalRankings, U"Honour local rankings", 1)
 	OK
 DO
 	MODIFY_EACH_WEAK (OTGrammar)
-		OTGrammar_learnOne (me, inputString, outputString, evaluationNoise,
-			(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+		OTGrammar_learnOne (me, inputString, outputString, evaluationNoise, updateRule, honourLocalRankings,
 			plasticity, relativePlasticitySpreading, true, true, nullptr);
 	MODIFY_EACH_WEAK_END
 }
@@ -809,7 +835,8 @@ FORM (MODIFY_OTGrammar_learnOneFromPartialOutput, U"OTGrammar: Learn one from pa
 	LABEL (U"Partial adult surface form (e.g. overt form):")
 	SENTENCE (partialOutput, U"Partial output", U"")
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	REAL (plasticity, U"Plasticity", U"0.1")
 	REAL (relativePlasticitySpreading, U"Rel. plasticity spreading", U"0.1")
 	BOOLEAN (honourLocalRankings, U"Honour local rankings", 1)
@@ -817,8 +844,7 @@ FORM (MODIFY_OTGrammar_learnOneFromPartialOutput, U"OTGrammar: Learn one from pa
 	OK
 DO
 	MODIFY_EACH_WEAK (OTGrammar)
-		OTGrammar_learnOneFromPartialOutput (me, partialOutput, evaluationNoise,
-			(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+		OTGrammar_learnOneFromPartialOutput (me, partialOutput, evaluationNoise, updateRule, honourLocalRankings,
 			plasticity, relativePlasticitySpreading, numberOfChews, true);
 	MODIFY_EACH_WEAK_END
 }
@@ -826,7 +852,8 @@ DO
 // MARK: Modify behaviour
 
 FORM (MODIFY_OTGrammar_setDecisionStrategy, U"OTGrammar: Set decision strategy", nullptr) {
-	RADIO_ENUM (decisionStrategy, U"Decision strategy", kOTGrammar_decisionStrategy, DEFAULT)
+	RADIO_ENUM (kOTGrammar_decisionStrategy, decisionStrategy,
+			U"Decision strategy", kOTGrammar_decisionStrategy::DEFAULT)
 OK
 	FIND_ONE (OTGrammar)
 		SET_ENUM (decisionStrategy, kOTGrammar_decisionStrategy, my decisionStrategy);
@@ -904,7 +931,8 @@ DIRECT (BOOLEAN_OTGrammar_Strings_areAllPartialOutputsSinglyGrammatical) {
 
 FORM (MODIFY_OTGrammar_Stringses_learn, U"OTGrammar: Learn", U"OTGrammar & 2 Strings: Learn...") {
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	REAL (plasticity, U"Plasticity", U"0.1")
 	REAL (relativePlasticitySpreading, U"Rel. plasticity spreading", U"0.1")
 	BOOLEAN (honourLocalRankings, U"Honour local rankings", 1)
@@ -912,14 +940,15 @@ FORM (MODIFY_OTGrammar_Stringses_learn, U"OTGrammar: Learn", U"OTGrammar & 2 Str
 	OK
 DO
 	MODIFY_FIRST_OF_ONE_AND_COUPLE_WEAK (OTGrammar, Strings)
-		OTGrammar_learn (me, you, him, evaluationNoise, (kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+		OTGrammar_learn (me, you, him, evaluationNoise, updateRule, honourLocalRankings,
 			plasticity, relativePlasticitySpreading, numberOfChews);
 	MODIFY_FIRST_OF_ONE_AND_COUPLE_WEAK_END
 }
 
 FORM (MODIFY_OTGrammar_Strings_learnFromPartialOutputs, U"OTGrammar: Learn from partial adult outputs", nullptr) {
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	REAL (plasticity, U"Plasticity", U"0.1")
 	REAL (relativePlasticitySpreading, U"Rel. plasticity spreading", U"0.1")
 	BOOLEAN (honourLocalRankings, U"Honour local rankings", 1)
@@ -930,8 +959,7 @@ DO
 	FIND_TWO (OTGrammar, Strings)
 		autoOTHistory history;
 		try {
-			OTGrammar_learnFromPartialOutputs (me, you, evaluationNoise,
-				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+			OTGrammar_learnFromPartialOutputs (me, you, evaluationNoise, updateRule, honourLocalRankings,
 				plasticity, relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history);
 			praat_dataChanged (me);
 		} catch (MelderError) {
@@ -952,7 +980,7 @@ FORM (REAL_MODIFY_OTGrammar_Distributions_getFractionCorrect, U"OTGrammar & Dist
 	OK
 DO
 	FIND_TWO (OTGrammar, Distributions)
-		double result = OTGrammar_Distributions_getFractionCorrect (me, you, columnNumber,
+		const double result = OTGrammar_Distributions_getFractionCorrect (me, you, columnNumber,
 			evaluationNoise, replications);
 		praat_dataChanged (me);
 		Melder_informationReal (result, nullptr);
@@ -962,7 +990,8 @@ DO
 FORM (MODIFY_OTGrammar_Distributions_learnFromPartialOutputs, U"OTGrammar & Distributions: Learn from partial outputs", U"OT learning 6. Shortcut to grammar learning") {
 	NATURAL (columnNumber, U"Column number", U"1")
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	REAL (initialPlasticity, U"Initial plasticity", U"1.0")
 	NATURAL (replicationsPerPlasticity, U"Replications per plasticity", U"100000")
 	REAL (plasticityDecrement, U"Plasticity decrement", U"0.1")
@@ -977,7 +1006,7 @@ DO
 		autoOTHistory history;
 		try {
 			OTGrammar_Distributions_learnFromPartialOutputs (me, you, columnNumber, evaluationNoise,
-				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+				updateRule, honourLocalRankings,
 				initialPlasticity, replicationsPerPlasticity, plasticityDecrement, numberOfPlasticities,
 				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, false, false, 0
 			);
@@ -994,7 +1023,8 @@ DO
 FORM (MODIFY_OTGrammar_Distributions_learnFromPartialOutputs_rrip, U"OTGrammar & Distributions: Learn from partial outputs (rrip)", U"OT learning 6. Shortcut to grammar learning") {
 	NATURAL (columnNumber, U"Column number", U"1")
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	REAL (initialPlasticity, U"Initial plasticity", U"1.0")
 	NATURAL (replicationsPerPlasticity, U"Replications per plasticity", U"100000")
 	REAL (plasticityDecrement, U"Plasticity decrement", U"0.1")
@@ -1009,7 +1039,7 @@ DO
 		autoOTHistory history;
 		try {
 			OTGrammar_Distributions_learnFromPartialOutputs (me, you, columnNumber, evaluationNoise,
-				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+				updateRule, honourLocalRankings,
 				initialPlasticity, replicationsPerPlasticity, plasticityDecrement, numberOfPlasticities,
 				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 0
 			);
@@ -1026,7 +1056,8 @@ DO
 FORM (MODIFY_OTGrammar_Distributions_learnFromPartialOutputs_eip, U"OTGrammar & Distributions: Learn from partial outputs (eip)", U"OT learning 6. Shortcut to grammar learning") {
 	NATURAL (columnNumber, U"Column number", U"1")
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	REAL (initialPlasticity, U"Initial plasticity", U"1.0")
 	NATURAL (replicationsPerPlasticity, U"Replications per plasticity", U"100000")
 	REAL (plasticityDecrement, U"Plasticity decrement", U"0.1")
@@ -1041,7 +1072,7 @@ DO
 		autoOTHistory history;
 		try {
 			OTGrammar_Distributions_learnFromPartialOutputs (me, you, columnNumber, evaluationNoise,
-				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+				updateRule, honourLocalRankings,
 				initialPlasticity, replicationsPerPlasticity, plasticityDecrement, numberOfPlasticities,
 				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 1000
 			);
@@ -1058,7 +1089,8 @@ DO
 FORM (MODIFY_OTGrammar_Distributions_learnFromPartialOutputs_wrip, U"OTGrammar & Distributions: Learn from partial outputs (wrip)", U"OT learning 6. Shortcut to grammar learning") {
 	NATURAL (columnNumber, U"Column number", U"1")
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	REAL (initialPlasticity, U"Initial plasticity", U"1.0")
 	NATURAL (replicationsPerPlasticity, U"Replications per plasticity", U"100000")
 	REAL (plasticityDecrement, U"Plasticity decrement", U"0.1")
@@ -1073,7 +1105,7 @@ DO
 		autoOTHistory history;
 		try {
 			OTGrammar_Distributions_learnFromPartialOutputs (me, you, columnNumber, evaluationNoise,
-				(kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+				updateRule, honourLocalRankings,
 				initialPlasticity, replicationsPerPlasticity, plasticityDecrement, numberOfPlasticities,
 				relativePlasticitySpreading, numberOfChews, storeHistoryEvery, & history, true, true, 1
 			);
@@ -1147,7 +1179,8 @@ DO
 
 FORM (MODIFY_OTGrammar_PairDistribution_learn, U"OTGrammar & PairDistribution: Learn", U"OT learning 6. Shortcut to grammar learning") {
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	POSITIVE (initialPlasticity, U"Initial plasticity", U"1.0")
 	NATURAL (replicationsPerPlasticity, U"Replications per plasticity", U"100000")
 	REAL (plasticityDecrement, U"Plasticity decrement", U"0.1")
@@ -1159,7 +1192,7 @@ FORM (MODIFY_OTGrammar_PairDistribution_learn, U"OTGrammar & PairDistribution: L
 DO
 	MODIFY_FIRST_OF_TWO_WEAK (OTGrammar, PairDistribution)
 		OTGrammar_PairDistribution_learn (me, you,
-			evaluationNoise, (kOTGrammar_rerankingStrategy) updateRule, honourLocalRankings,
+			evaluationNoise, updateRule, honourLocalRankings,
 			initialPlasticity, replicationsPerPlasticity,
 			plasticityDecrement, numberOfPlasticities, relativePlasticitySpreading, numberOfChews);
 	MODIFY_FIRST_OF_TWO_WEAK_END
@@ -1176,7 +1209,8 @@ DIRECT (LIST_OTGrammar_PairDistribution_listObligatoryRankings) {
 // MARK: New
 
 FORM (NEW1_Create_multi_level_metrics_grammar, U"Create multi-level metrics grammar", nullptr) {
-	OPTIONMENU_ENUM (initialRanking, U"Initial ranking", kOTGrammar_createMetricsGrammar_initialRanking, DEFAULT)
+	OPTIONMENU_ENUM (kOTGrammar_createMetricsGrammar_initialRanking, initialRanking,
+			U"Initial ranking", kOTGrammar_createMetricsGrammar_initialRanking::DEFAULT)
 	OPTIONMENU (trochaicityConstraint, U"Trochaicity constraint", 1)
 		OPTION (U"FtNonfinal")
 		OPTION (U"Trochaic")
@@ -1238,7 +1272,7 @@ DIRECT (WINDOW_OTMulti_viewAndEdit) {
 
 DIRECT (INTEGER_OTMulti_getNumberOfConstraints) {
 	NUMBER_ONE (OTMulti)
-		integer result = my numberOfConstraints;
+		const integer result = my numberOfConstraints;
 	NUMBER_ONE_END (U" constraints")
 }
 
@@ -1258,7 +1292,7 @@ FORM (INTEGER_OTMulti_getConstraintIndexFromName, U"OTMulti: Get constraint numb
 	OK
 DO
 	NUMBER_ONE (OTMulti)
-		integer result = OTMulti_getConstraintIndexFromName (me, constraintName);
+		const integer result = OTMulti_getConstraintIndexFromName (me, constraintName);
 	NUMBER_ONE_END (U" (index of constraint ", constraintName, U")")
 }
 
@@ -1269,7 +1303,7 @@ DO
 	NUMBER_ONE (OTMulti)
 		if (constraintNumber > my numberOfConstraints)
 			Melder_throw (U"Your constraint number should not exceed the number of constraints.");
-		double result = my constraints [constraintNumber]. ranking;
+		const double result = my constraints [constraintNumber]. ranking;
 	NUMBER_ONE_END (U" (ranking of constraint ", constraintNumber, U")")
 }
 
@@ -1280,7 +1314,7 @@ DO
 	NUMBER_ONE (OTMulti)
 		if (constraintNumber > my numberOfConstraints)
 			Melder_throw (U"Your constraint number should not exceed the number of constraints.");
-		double result = my constraints [constraintNumber]. disharmony;
+		const double result = my constraints [constraintNumber]. disharmony;
 	NUMBER_ONE_END (U" (disharmony of constraint ", constraintNumber, U")")
 }
 
@@ -1410,7 +1444,8 @@ DO
 FORM (MODIFY_OTMulti_learnOne, U"OTMulti: Learn one", nullptr) {
 	SENTENCE (partialForm1, U"Partial form 1", U"")
 	SENTENCE (partialForm2, U"Partial form 2", U"")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	OPTIONMENU (direction, U"Direction", 3)
 		OPTION (U"forward")
 		OPTION (U"backward")
@@ -1428,7 +1463,8 @@ DO
 // MARK: Modify behaviour
 
 FORM (MODIFY_OTMulti_setDecisionStrategy, U"OTMulti: Set decision strategy", nullptr) {
-	RADIO_ENUM (decisionStrategy, U"Decision strategy", kOTGrammar_decisionStrategy, DEFAULT)
+	RADIO_ENUM (kOTGrammar_decisionStrategy, decisionStrategy,
+			U"Decision strategy", kOTGrammar_decisionStrategy::DEFAULT)
 OK
 	FIND_ONE (OTMulti)
 		SET_ENUM (decisionStrategy, kOTGrammar_decisionStrategy, my decisionStrategy);
@@ -1474,7 +1510,8 @@ DO
 
 FORM (DANGEROUS_MODIFY_OTMulti_PairDistribution_learn, U"OTMulti & PairDistribution: Learn", nullptr) {
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
-	OPTIONMENU_ENUM (updateRule, U"Update rule", kOTGrammar_rerankingStrategy, SYMMETRIC_ALL)
+	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
+			U"Update rule", kOTGrammar_rerankingStrategy::SYMMETRIC_ALL)
 	OPTIONMENU (direction, U"Direction", 3)
 		OPTION (U"forward")
 		OPTION (U"backward")
@@ -1535,7 +1572,8 @@ DO
 // MARK: Modify
 
 FORM (MODIFY_Net_spreadUp, U"Net: Spread up", nullptr) {
-	RADIO_ENUM (activationType, U"Activation type", kLayer_activationType, STOCHASTIC)
+	RADIO_ENUM (kLayer_activationType, activationType,
+			U"Activation type", kLayer_activationType::STOCHASTIC)
 	OK
 DO
 	MODIFY_EACH (Net)
@@ -1544,7 +1582,8 @@ DO
 }
 
 FORM (MODIFY_Net_spreadDown, U"Net: Spread down", nullptr) {
-	RADIO_ENUM (activationType, U"Activation type", kLayer_activationType, DETERMINISTIC)
+	RADIO_ENUM (kLayer_activationType, activationType,
+			U"Activation type", kLayer_activationType::DETERMINISTIC)
 	OK
 DO
 	MODIFY_EACH (Net)
@@ -1685,8 +1724,18 @@ DO
 	MODIFY_FIRST_OF_TWO_END
 }
 
+FORM (MODIFY_Net_PatternList_learn_twoPhases, U"Net & PatternList: Learn (two phases)", nullptr) {
+	POSITIVE (learningRate, U"Learning rate", U"0.001")
+	OK
+DO
+	MODIFY_FIRST_OF_TWO (Net, PatternList)
+		Net_PatternList_learn_twoPhases (me, you, learningRate);
+	MODIFY_FIRST_OF_TWO_END
+}
+
 FORM (NEW1_Net_PatternList_to_ActivationList, U"Net & PatternList: To ActivationList", nullptr) {
-	RADIO_ENUM (activationType, U"Activation type", kLayer_activationType, DETERMINISTIC)
+	RADIO_ENUM (kLayer_activationType, activationType,
+			U"Activation type", kLayer_activationType::DETERMINISTIC)
 	OK
 DO
 	CONVERT_TWO (Net, PatternList)
@@ -1848,6 +1897,7 @@ void praat_uvafon_gram_init () {
 		praat_addAction1 (classNetwork, 1, U"Nodes down to table...", nullptr, 1, NEW_Network_nodes_downto_Table);
 	praat_addAction1 (classNetwork, 0, U"Query -", nullptr, 0, nullptr);
 		praat_addAction1 (classNetwork, 1, U"Get activity...", nullptr, 1, REAL_Network_getActivity);
+		praat_addAction1 (classNetwork, 1, U"Get activities...", nullptr, 1, NUMVEC_Network_getActivities);
 		praat_addAction1 (classNetwork, 1, U"Get weight...", nullptr, 1, REAL_Network_getWeight);
 	praat_addAction1 (classNetwork, 0, U"Modify -", nullptr, 0, nullptr);
 		praat_addAction1 (classNetwork, 0, U"Add node...", nullptr, 1, MODIFY_Network_addNode);
@@ -1857,6 +1907,7 @@ void praat_uvafon_gram_init () {
 		praat_addAction1 (classNetwork, 0, U"Set clamping...", nullptr, 1, MODIFY_Network_setClamping);
 		praat_addAction1 (classNetwork, 0, U"Zero activities...", nullptr, 1, MODIFY_Network_zeroActivities);
 		praat_addAction1 (classNetwork, 0, U"Normalize activities...", nullptr, 1, MODIFY_Network_normalizeActivities);
+		praat_addAction1 (classNetwork, 0, U"Formula (activities)...", nullptr, 1, MODIFY_Network_formula_activities);
 		praat_addAction1 (classNetwork, 0, U"Spread activities...", nullptr, 1, MODIFY_Network_spreadActivities);
 		praat_addAction1 (classNetwork, 0, U"Set activity clipping rule...", nullptr, 1, MODIFY_Network_setActivityClippingRule);
 		praat_addAction1 (classNetwork, 0, U"Set activity leak...", nullptr, 1, MODIFY_Network_setActivityLeak);
@@ -1892,6 +1943,7 @@ void praat_uvafon_gram_init () {
 	praat_addAction2 (classNet, 1, classPatternList, 1, U"Apply to output...", nullptr, 0, MODIFY_Net_PatternList_applyToOutput);
 	praat_addAction2 (classNet, 1, classPatternList, 1, U"Learn...", nullptr, 0, MODIFY_Net_PatternList_learn);
 	praat_addAction2 (classNet, 1, classPatternList, 1, U"Learn by layer...", nullptr, 0, MODIFY_Net_PatternList_learnByLayer);
+	praat_addAction2 (classNet, 1, classPatternList, 1, U"Learn (two phases)...", nullptr, 0, MODIFY_Net_PatternList_learn_twoPhases);
 	praat_addAction2 (classNet, 1, classPatternList, 1, U"To ActivationList", nullptr, 0, NEW1_Net_PatternList_to_ActivationList);
 
 	praat_addAction1 (classNoulliGrid, 1, U"View & Edit", nullptr, praat_ATTRACTIVE, WINDOW_NoulliGrid_viewAndEdit);

@@ -1,7 +1,7 @@
 #pragma once
 /* MAT_numerics.h
  *
- * Copyright (C) 2018 David Weenink
+ * Copyright (C) 2018-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,10 +17,7 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-bool MAT_isSymmetric (constMAT x);
-/*
-	Returns true if the matrix is symmetric else false.
-*/
+#include "melder.h"
 
 void MAT_getEigenSystemFromSymmetricMatrix (constMAT a, autoMAT *out_eigenvectors, autoVEC *out_eigenvalues, bool sortAscending);
 /*
@@ -30,54 +27,47 @@ void MAT_getEigenSystemFromSymmetricMatrix (constMAT a, autoMAT *out_eigenvector
 		   only the upper-half of the matrix is used in the calculation
 		sortAscending if true eigenvalues (and corresponding eigenvectors) are sorted ascending
 	Output:
-		if(out_eigenvalues) eigenvalues sorted
-		if(out_eigenvectors) eigenvectors corresponding to the eigenvalues, stored as row-wise vectors.
+		if (out_eigenvalues) eigenvalues sorted
+		if (out_eigenvectors) eigenvectors corresponding to the eigenvalues, stored as row-wise vectors.
 */
 
-void MAT_getEigenSystemFromSymmetricMatrix_inplace (MAT inout_a, bool wantEigenvectors, VEC inout_eigenvalues, bool sortAscending);
+void MAT_getEigenSystemFromSymmetricMatrix_preallocated (MAT eigenvectors, VEC eigenvalues, constMATVU const& a, bool sortAscending);
 /*
 	Input:
-		inout_a, a symmetric a.ncol x a.ncol matrix
+		a, a symmetric a.ncol x a.ncol matrix
 		   only the upper-half of the matrix is used in the calculation
-		inout_eigenvalues, a vector of size ncol
-		wantEigenvectors, true if you want eigenvectors calculated
-		sortAscending if true eigenvalues (and corresponding eigenvectors) are sorted ascending
+		eigenvalues, a vector of size ncol
+		eigenvectors, a matrix a.ncol x a.ncol
+		sortAscending if true eigenvalues (and corresponding eigenvectors) will be sorted ascending
 	Output:
-		inout_a, if (wantEigenvectors) eigenvectors, stored row-wise
-		inout_eigenvalues, eigenvalues sorted from large to small
+		eigenvectors, stored row-wise
+		eigenvalues, eigenvalues sorted according to sortAscending
 */
 
-void MAT_getPrincipalComponentsOfSymmetricMatrix_inplace (constMAT a, integer nComponents, MAT inout_pc);
-/*
-	Input:
-		a, a symmetric nrow x nrow matrix
-		   only the upper-half of the matrix is used in the calculation
-		nComponents, the number of components to determine (1 <= nComponents <= a.nrow)
-		inout_pc, a a.nrow x nComponents matrix
-	Output:
-		inout_pc, the principal components stored column-wise
-*/
-
-void MAT_getEigenSystemFromGeneralMatrix (constMAT a, autoMAT *out_lefteigenvectors, autoMAT *out_righteigenvectors, autoVEC *out_eigenvalues_re, autoVEC *out_eigenvalues_im);
+void MAT_getEigenSystemFromGeneralSquareMatrix (constMAT const& inout_a, autoCOMPVEC *out_eigenvalues, automatrix<dcomplex> *out_eigenvectors);
 /* no standard sorting with complex numbers.
-	Compute eigenvalues of general nxn matrix with optionally the left/right eigenvectors.
+	Compute eigenvalues of general nxn matrix with right eigenvectors.
 	There is no standard sorting with complex numbers.
 	Input:
 	Output:
-		out_eigenvalues_re, out_eigenvalues_im
-			the real and imaginary parts of the eigenvalues.
+		inout_a has been overwriten
+		out_eigenvalues
+			the eigenvalues.
 			Complex conjugate pairs of eigenvalues appear consecutively
             with the eigenvalue having the positive imaginary part first.
-		out_righteigenvectors, out_lefteigenvectors:
-			the left and right eigenvectors (stored row-wise!, compressed)
-			if the j-th eigenvalue is real the eigenvector is real and in row j.
-			if j and j+1 form a complex conjugate pair, the two eigenvectors are 
-			complex conjugates, whose real part is in j and its imaginary part in j+1.
+		out_eigenvectors
+			the eigenvectors (stored row-wise!)
 */
 
-void MAT_eigenvectors_decompress (constMAT eigenvectors, constVEC eigenvalues_re, constVEC eigenvalues_im, autoMAT *out_eigenvectors_reim);
+void MAT_asPrincipalComponents_preallocated (MATVU pc, constMATVU const& m, integer numberOfComponents);
+autoMAT MAT_asPrincipalComponents (constMATVU m, integer numberOfComponents);
+
+void MATpseudoInverse (MATVU const& target, constMATVU const& mat, double tolerance);
+autoMAT newMATpseudoInverse (constMATVU const& mat, double tolerance);
 /*
-	Decompresses each eigenvector row into two consecutive columns (real and imaginary part)
+	Determines the pseudo-inverse Y^-1 of Y[1..nrow][1..ncol] via s.v.d.
+	Alternative notation for pseudo-inverse: (Y'.Y)^-1.Y'
+	Returns a [1..ncol][1..nrow] matrix
 */
 
 /* End of file MAT_numerics.h */

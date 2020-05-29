@@ -1,6 +1,6 @@
 /* melder_atof.cpp
  *
- * Copyright (C) 2003-2008,2011,2015-2018 Paul Boersma
+ * Copyright (C) 2003-2008,2011,2015-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,7 +81,8 @@ static const T *findEndOfNumericString (const T *string) noexcept {
 	/*
 		Then we accept any number of decimal digits.
 	*/
-	while (Melder_isAsciiDecimalNumber (*p)) p ++;
+	while (Melder_isAsciiDecimalNumber (*p))
+		p ++;
 	/*
 		Next we accept an optional decimal point.
 	*/
@@ -90,7 +91,8 @@ static const T *findEndOfNumericString (const T *string) noexcept {
 		/*
 			We accept any number of (even zero) decimal digits after the decimal point.
 		*/
-		while (Melder_isAsciiDecimalNumber (*p)) p ++;
+		while (Melder_isAsciiDecimalNumber (*p))
+			p ++;
 	}
 	// Next we accept an optional exponential E or e.
 	if (*p == 'e' || *p == 'E') {
@@ -110,7 +112,8 @@ static const T *findEndOfNumericString (const T *string) noexcept {
 		/*
 			Then we accept any number of decimal digits.
 		*/
-		while (Melder_isAsciiDecimalNumber (*p)) p ++;
+		while (Melder_isAsciiDecimalNumber (*p))
+			p ++;
 	}
 	/*
 		Next we accept an optional percent sign.
@@ -127,14 +130,14 @@ bool Melder_isStringNumeric (conststring32 string) noexcept {
 	if (! string)
 		return false;
 	const char32 *p = findEndOfNumericString (string);
-	if (! p)
+	bool weFoundANumber = !! p;
+	if (! weFoundANumber)
 		return false;
-	/*
-		After the numeric string, we accept only white space.
-	*/
-	while (Melder_isAsciiHorizontalOrVerticalSpace (*p))
-		p ++;   // not Unicode-savvy
-	return *p == U'\0';
+	Melder_skipHorizontalOrVerticalSpace (& p);
+	bool contentFollowsTheNumber = ( *p != U'\0' );
+	if (contentFollowsTheNumber)
+		return false;
+	return true;
 }
 
 double Melder8_strtod(const char *str, char **end_str /*= nullptr*/) noexcept {
@@ -147,7 +150,8 @@ double Melder_a8tof (conststring8 string) noexcept {
 	if (! string)
 		return undefined;
 	const char *p = findEndOfNumericString (string);
-	if (! p)
+	bool weFoundANumber = !! p;
+	if (! weFoundANumber)
 		return undefined;
 	Melder_assert (p - & string [0] > 0);
 	return p [-1] == '%' ? 0.01 * strtod_c (string, p, nullptr) : strtod_c (string, p, nullptr);

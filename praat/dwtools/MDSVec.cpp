@@ -1,6 +1,6 @@
 /* MDSVec.cpp
  *
- * Copyright (C) 2018 David Weenink
+ * Copyright (C) 2018-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,9 +51,9 @@ autoMDSVec MDSVec_create (integer numberOfPoints) {
 		autoMDSVec me = Thing_new (MDSVec);
 		my numberOfPoints = numberOfPoints;
 		my numberOfProximities = numberOfPoints * (numberOfPoints - 1) / 2;
-		my proximity = NUMvector<double> (1, my numberOfProximities);
-		my rowIndex = NUMvector<integer> (1, my numberOfProximities);
-		my columnIndex = NUMvector<integer> (1, my numberOfProximities);
+		my proximity = newVECzero (my numberOfProximities);
+		my rowIndex = newINTVECzero (my numberOfProximities);
+		my columnIndex = newINTVECzero (my numberOfProximities);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"MDSVec not created.");
@@ -67,7 +67,7 @@ autoMDSVec Dissimilarity_to_MDSVec (Dissimilarity me) {
 		integer n = 0;
 		for (integer irow = 1; irow <= my numberOfRows - 1; irow ++) {
 			for (integer icol = irow + 1; icol <= my numberOfColumns; icol ++) {
-				double f = 0.5 * (my data [irow] [icol] + my data [icol] [irow]);
+				const double f = 0.5 * (my data [irow] [icol] + my data [icol] [irow]);
 				if (f > 0.0) {
 					n ++;
 					thy proximity [n] = f;
@@ -77,7 +77,7 @@ autoMDSVec Dissimilarity_to_MDSVec (Dissimilarity me) {
 			}
 		}
 		thy numberOfProximities = n;
-		NUMsort3 ({thy proximity, n}, {thy rowIndex, n}, {thy columnIndex, n}, false);
+		VECsort3_inplace (thy proximity.get(), thy rowIndex.get(), thy columnIndex.get(), false);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": no MDSVec created.");

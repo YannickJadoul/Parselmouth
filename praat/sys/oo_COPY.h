@@ -1,6 +1,6 @@
 /* oo_COPY.h
  *
- * Copyright (C) 1994-2007,2009,2011-2018 Paul Boersma
+ * Copyright (C) 1994-2007,2009,2011-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,35 +26,20 @@
 		thy x [_i] = our x [_i]; \
 	}
 
-#define oo_VECTOR(type, storage, x, min, max)  \
-	{ \
-		integer _min = (min), _max = (max); \
-		if (our x) thy x = NUMvector_copy (our x, _min, _max); \
-	}
-
 #define oo_ANYVEC(type, storage, x, sizeExpression)  \
-	thy x = vectorcopy (our x.get());
-
-#define oo_MATRIX(type, storage, x, row1, row2, col1, col2)  \
-	{ \
-		integer _row1 = (row1), _row2 = (row2), _col1 = (col1), _col2 = (col2); \
-		if (our x) thy x = NUMmatrix_copy (our x, _row1, _row2, _col1, _col2); \
-	}
+	thy x = newvectorcopy (our x.all());
 
 #define oo_ANYMAT(type, storage, x, nrowExpression, ncolExpression)  \
-	thy x = matrixcopy (our x.get());
+	thy x = newmatrixcopy (our x.all());
+
+#define oo_ANYTEN3(type, storage, x, ndim1Expression, ndim2Expression, ndim3Expression)  \
+	thy x = newtensor3copy (our x.get());
 
 #define oo_ENUMx(kType, storage, x)  \
 	thy x = our x;
 
 //#define oo_ENUMx_SET(kType, storage, x, setType)  \
 //	for (int _i = 0; _i <= (int) setType::MAX; _i ++) thy x [_i] = our x [_i];
-
-//#define oo_ENUMx_VECTOR(kType, storage, x, min, max)  \
-//	{ \
-//		integer _min = (min), _max = (max); \
-//		if (our x) thy x = NUMvector_copy (our x, _min, _max); \
-//	}
 
 #define oo_STRINGx(storage, x)  \
 	if (our x) thy x = Melder_dup (our x.get());
@@ -69,7 +54,7 @@
 		integer _size = (n); \
 		Melder_assert (_size == our x.size); \
 		if (our x) { \
-			thy x = autostring32vector (_size); \
+			thy x = autoSTRVEC (_size); \
 			for (integer _i = 1; _i <= _size; _i ++) { \
 				if (our x [_i]) thy x [_i] = Melder_dup (our x [_i].get()); \
 			} \
@@ -84,29 +69,17 @@
 		our x [_i]. copy (& thy x [_i]); \
 	}
 
-#define oo_STRUCT_VECTOR_FROM(Type, x, min, max)  \
-	{ \
-		integer _min = (min), _max = (max); \
-		if (our x) { \
-			thy x = NUMvector <struct##Type> (_min, _max); \
-			for (integer _i = _min; _i <= _max; _i ++) { \
-				our x [_i]. copy (& thy x [_i]); \
-			} \
+#define oo_STRUCTVEC(Type, x, n)  \
+{ \
+	integer _size = (n); \
+	Melder_assert (_size == our x.size); \
+	if (_size > 0) { \
+		thy x = newvectorzero <struct##Type> (_size); \
+		for (integer _i = 1; _i <= _size; _i ++) { \
+			our x [_i]. copy (& thy x [_i]); \
 		} \
-	}
-
-#define oo_STRUCT_MATRIX_FROM(Type, x, row1, row2, col1, col2)  \
-	{ \
-		integer _row1 = (row1), _row2 = (row2), _col1 = (col1), _col2 = (col2); \
-		if (our x) { \
-			thy x = NUMmatrix <struct##Type> (_row1, _row2, _col1, _col2); \
-			for (integer _irow = _row1; _irow <= _row2; _irow ++) { \
-				for (integer _icol = _col1; _icol <= _col2; _icol ++) { \
-					our x [_irow] [_icol]. copy (& thy x [_irow] [_icol]); \
-				} \
-			} \
-		} \
-	}
+	} \
+}
 
 #define oo_OBJECT(Class, version, x)  \
 	if (our x) thy x = Data_copy (our x.get());

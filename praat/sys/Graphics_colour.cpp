@@ -1,6 +1,6 @@
 /* Graphics_colour.cpp
  *
- * Copyright (C) 1992-2005,2007-2018 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2005,2007-2019 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,74 +17,6 @@
  */
 
 #include "GraphicsP.h"
-#include <stdint.h>
-
-Graphics_Colour
-	Graphics_BLACK = { 0.0, 0.0, 0.0 },
-	Graphics_WHITE = { 1.0, 1.0, 1.0 },
-	Graphics_RED = { 0.865, 0.034, 0.026 },
-	Graphics_GREEN = { 0.000, 0.500, 0.069 },
-	Graphics_BLUE = { 0.000, 0.000, 0.828 },
-	Graphics_CYAN = { 0.009, 0.669, 0.918 },
-	Graphics_MAGENTA = { 0.949, 0.033, 0.519 },
-	Graphics_YELLOW = { 0.984, 0.951, 0.020 },
-	Graphics_MAROON = { 0.5, 0.0, 0.0 },
-	Graphics_LIME = { 0.0, 1.0, 0.0 },
-	Graphics_NAVY = { 0.0, 0.0, 0.5 },
-	Graphics_TEAL = { 0.0, 0.5, 0.5 },
-	Graphics_PURPLE = { 0.5, 0.0, 0.5 },
-	Graphics_OLIVE = { 0.5, 0.5, 0.0 },
-	Graphics_PINK = { 1.0, 0.75, 0.75 },
-	Graphics_SILVER = { 0.75, 0.75, 0.75 },
-	Graphics_GREY = { 0.5, 0.5, 0.5 },
-	Graphics_WINDOW_BACKGROUND_COLOUR = { 0.90, 0.90, 0.85 };
-
-inline static conststring32 rgbColourName (Graphics_Colour colour) {
-	static MelderString buffer { };
-	MelderString_copy (& buffer,
-		U"{", Melder_fixed (colour. red, 6),
-		U",", Melder_fixed (colour. green, 6),
-		U",", Melder_fixed (colour. blue, 6),
-		U"}"
-	);
-	return buffer.string;
-}
-conststring32 Graphics_Colour_name (Graphics_Colour colour) {
-	return
-		Graphics_Colour_equal (colour, Graphics_BLACK) ? U"black" :
-		Graphics_Colour_equal (colour, Graphics_WHITE) ? U"white" :
-		Graphics_Colour_equal (colour, Graphics_RED) ? U"red" :
-		Graphics_Colour_equal (colour, Graphics_GREEN) ? U"green" :
-		Graphics_Colour_equal (colour, Graphics_BLUE) ? U"blue" :
-		Graphics_Colour_equal (colour, Graphics_CYAN) ? U"cyan" :
-		Graphics_Colour_equal (colour, Graphics_MAGENTA) ? U"magenta" :
-		Graphics_Colour_equal (colour, Graphics_YELLOW) ? U"yellow" :
-		Graphics_Colour_equal (colour, Graphics_MAROON) ? U"maroon" :
-		Graphics_Colour_equal (colour, Graphics_LIME) ? U"lime" :
-		Graphics_Colour_equal (colour, Graphics_NAVY) ? U"navy" :
-		Graphics_Colour_equal (colour, Graphics_TEAL) ? U"teal" :
-		Graphics_Colour_equal (colour, Graphics_PURPLE) ? U"purple" :
-		Graphics_Colour_equal (colour, Graphics_OLIVE) ? U"olive" :
-		Graphics_Colour_equal (colour, Graphics_SILVER) ? U"silver" :
-		Graphics_Colour_equal (colour, Graphics_GREY) ? U"grey" :
-		rgbColourName (colour);
-}
-
-constexpr int theNumberOfCyclingColours = 10;
-static Graphics_Colour theCyclingBackgroundColours [theNumberOfCyclingColours] = {
-	Graphics_GREEN, Graphics_SILVER, Graphics_BLUE, Graphics_YELLOW, Graphics_RED,
-	Graphics_CYAN, Graphics_MAROON, Graphics_LIME, Graphics_TEAL, Graphics_MAGENTA
-};
-static Graphics_Colour theCyclingTextColours [theNumberOfCyclingColours] = {
-	Graphics_WHITE, Graphics_BLACK, Graphics_WHITE, Graphics_BLACK, Graphics_WHITE,
-	Graphics_BLACK, Graphics_WHITE, Graphics_BLACK, Graphics_WHITE, Graphics_BLACK
-};
-Graphics_Colour Graphics_cyclingBackgroundColour (integer category) {
-	return theCyclingBackgroundColours [(category - 1) % theNumberOfCyclingColours];
-}
-Graphics_Colour Graphics_cyclingTextColour (integer category) {
-	return theCyclingTextColours [(category - 1) % theNumberOfCyclingColours];
-}
 
 #if quartz
 	#include "macport_on.h"
@@ -93,11 +25,12 @@ Graphics_Colour Graphics_cyclingTextColour (integer category) {
 #define wdx(x)  ((x) * my scaleX + my deltaX)
 #define wdy(y)  ((y) * my scaleY + my deltaY)
 
-void _Graphics_setColour (Graphics graphics, Graphics_Colour colour) {
+void _Graphics_setColour (Graphics graphics, MelderColour colour) {
 	if (graphics -> screen) {
 		GraphicsScreen me = static_cast <GraphicsScreen> (graphics);
 		#if cairo
-			if (! my d_cairoGraphicsContext) return;
+			if (! my d_cairoGraphicsContext)
+				return;
 			cairo_set_source_rgb (my d_cairoGraphicsContext, colour. red, colour. green, colour. blue);
 		#elif gdi
 			my d_winForegroundColour = RGB (colour. red * 255, colour. green * 255, colour. blue * 255);
@@ -119,7 +52,7 @@ void _Graphics_setColour (Graphics graphics, Graphics_Colour colour) {
 	}
 }
 
-void Graphics_setColour (Graphics me, Graphics_Colour colour) {
+void Graphics_setColour (Graphics me, MelderColour colour) {
 	my colour = colour;
 	_Graphics_setColour (me, colour);
 	if (my recording) { op (SET_RGB_COLOUR, 3); put (colour. red); put (colour. green); put (colour. blue); }
@@ -134,11 +67,15 @@ void _Graphics_setGrey (Graphics graphics, double fgrey) {
 	if (graphics -> screen) {
 		GraphicsScreen me = static_cast <GraphicsScreen> (graphics);
 		#if cairo
-			if (! my d_cairoGraphicsContext) return;
-			if (fgrey < 0.0) fgrey = 0.0; else if (fgrey > 1.0) fgrey = 1.0;
+			if (! my d_cairoGraphicsContext)
+				return;
+			if (fgrey < 0.0)
+				fgrey = 0.0;
+			else if (fgrey > 1.0)
+				fgrey = 1.0;
 			cairo_set_source_rgb (my d_cairoGraphicsContext, fgrey, fgrey, fgrey);
 		#elif gdi
-			int lightness = fgrey <= 0 ? 0 : fgrey >= 1.0 ? 255 : fgrey * 255;
+			int lightness = ( fgrey <= 0.0 ? 0 : fgrey >= 1.0 ? 255 : fgrey * 255 );
 			my d_winForegroundColour = RGB (lightness, lightness, lightness);
 			SelectPen (my d_gdiGraphicsContext, GetStockPen (BLACK_PEN));
 			DeleteObject (my d_winPen);
@@ -147,13 +84,19 @@ void _Graphics_setGrey (Graphics graphics, double fgrey) {
 			DeleteObject (my d_winBrush);
 			my d_winBrush = CreateSolidBrush (my d_winForegroundColour);
 		#elif quartz
-			if (fgrey < 0.0) fgrey = 0.0; else if (fgrey > 1.0) fgrey = 1.0;
+			if (fgrey < 0.0)
+				fgrey = 0.0;
+			else if (fgrey > 1.0)
+				fgrey = 1.0;
 			my d_macColour. red = my d_macColour. green = my d_macColour. blue = fgrey * 65535;
 		#endif
 	} else if (graphics -> postScript) {
 		GraphicsPostscript me = static_cast <GraphicsPostscript> (graphics);
-		if (fgrey < 0.0) fgrey = 0.0; else if (fgrey > 1.0) fgrey = 1.0;
-		my d_printf (my d_file, "%s setgray\n", Melder8_double(fgrey, 6));
+		if (fgrey < 0.0)
+			fgrey = 0.0;
+		else if (fgrey > 1.0)
+			fgrey = 1.0;
+		my d_printf (my d_file, "%s setgray\n", Melder8_double(fgrey, 6)); // my d_printf (my d_file, "%.6g setgray\n", fgrey);
 	}
 }
 
@@ -163,13 +106,34 @@ void Graphics_setGrey (Graphics me, double grey) {
 	if (my recording) { op (SET_GREY, 1); put (grey); }
 }
 
+#if quartz
+static GuiDrawingArea_ExposeCallback saveExposeCallback;
+static Thing saveExposeBoss;
+static NSRect theRect;
+static void highlightExposeCallback (Graphics me, GuiDrawingArea_ExposeEvent event) {
+	CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+	Melder_assert (context);
+	CGContextSaveGState (context);
+	//CGContextSetBlendMode (context, kCGBlendModeDifference);
+	CGContextSetBlendMode (context, kCGBlendModeDarken);
+	CGContextSetShouldAntialias (context, false);
+	NSColor *colour = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+	double red = 0.5 + 0.5 * colour.redComponent, green = 0.5 + 0.5 * colour.greenComponent, blue = 0.5 + 0.5 * colour.blueComponent;
+	//CGContextSetRGBFillColor (context, 1.0 - red, 1.0 - green, 1.0 - blue, 1.0);
+	CGContextSetRGBFillColor (context, red, green, blue, 1.0);
+	CGContextFillRect (context, theRect);
+	CGContextRestoreGState (context);
+}
+#endif
+
 static void highlight (Graphics graphics, integer x1DC, integer x2DC, integer y1DC, integer y2DC, int direction) {
 	if (graphics -> screen) {
 		GraphicsScreen me = static_cast <GraphicsScreen> (graphics);
 		#if cairo
 			if (! my d_cairoGraphicsContext) return;
 			int width = x2DC - x1DC, height = y1DC - y2DC;
-			if (width <= 0 || height <= 0) return;
+			if (width <= 0 || height <= 0)
+				return;
 			#if ALLOW_GDK_DRAWING
 				gdk_gc_set_function (my d_gdkGraphicsContext, GDK_XOR);
 				GdkColor pinkXorWhite = { 0, 0x0000, 0x4000, 0x4000 }, black = { 0, 0x0000, 0x0000, 0x0000 };
@@ -194,7 +158,8 @@ static void highlight (Graphics graphics, integer x1DC, integer x2DC, integer y1
 			SelectBrush (my d_gdiGraphicsContext, GetStockBrush (NULL_BRUSH));   // superfluous?
 		#elif quartz
 			int width = x2DC - x1DC, height = y1DC - y2DC;
-			if (width <= 0 || height <= 0) return;
+			if (width <= 0 || height <= 0)
+				return;
 			GuiCocoaDrawingArea *drawingArea = (GuiCocoaDrawingArea *) my d_drawingArea -> d_widget;
 			if (drawingArea) {
 				bool cacheImageInRectWillWork = ( Melder_systemVersion < 101100 || Melder_systemVersion > 101106 );
@@ -208,52 +173,87 @@ static void highlight (Graphics graphics, integer x1DC, integer x2DC, integer y1
 						//windowRect.origin.x += 1;
 						//windowRect.size.width -= 2;
 						[[nsView window] cacheImageInRect: windowRect];
-						[drawingArea lockFocus];
-						CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
-						CGContextSaveGState (context);
-						//CGContextSetBlendMode (context, kCGBlendModeDifference);
-						CGContextSetBlendMode (context, kCGBlendModeDarken);
-						CGContextSetShouldAntialias (context, false);
-						NSColor *colour = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-						double red = 0.5 + 0.5 * colour.redComponent, green = 0.5 + 0.5 * colour.greenComponent, blue = 0.5 + 0.5 * colour.blueComponent;
-						//CGContextSetRGBFillColor (context, 1.0 - red, 1.0 - green, 1.0 - blue, 1.0);
-						CGContextSetRGBFillColor (context, red, green, blue, 1.0);
-						CGContextFillRect (context, rect);
-						CGContextRestoreGState (context);
-						[drawingArea unlockFocus];
-						//GuiShell_drain (nullptr);
+						if (SUPPORT_DIRECT_DRAWING) {
+							[drawingArea lockFocus];
+							CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+							if (context) {
+								CGContextSaveGState (context);
+								//CGContextSetBlendMode (context, kCGBlendModeDifference);
+								CGContextSetBlendMode (context, kCGBlendModeDarken);
+								CGContextSetShouldAntialias (context, false);
+								NSColor *colour = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+								double red = 0.5 + 0.5 * colour.redComponent, green = 0.5 + 0.5 * colour.greenComponent, blue = 0.5 + 0.5 * colour.blueComponent;
+								//CGContextSetRGBFillColor (context, 1.0 - red, 1.0 - green, 1.0 - blue, 1.0);
+								CGContextSetRGBFillColor (context, red, green, blue, 1.0);
+								CGContextFillRect (context, rect);
+								CGContextRestoreGState (context);
+							}
+							[drawingArea unlockFocus];
+							//GuiShell_drain (nullptr);
+						} else {
+							CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+							if (context) {
+								CGContextSaveGState (context);
+								//CGContextSetBlendMode (context, kCGBlendModeDifference);
+								CGContextSetBlendMode (context, kCGBlendModeDarken);
+								CGContextSetShouldAntialias (context, false);
+								NSColor *colour = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+								double red = 0.5 + 0.5 * colour.redComponent, green = 0.5 + 0.5 * colour.greenComponent, blue = 0.5 + 0.5 * colour.blueComponent;
+								//CGContextSetRGBFillColor (context, 1.0 - red, 1.0 - green, 1.0 - blue, 1.0);
+								CGContextSetRGBFillColor (context, red, green, blue, 1.0);
+								CGContextFillRect (context, rect);
+								CGContextRestoreGState (context);
+							} else {
+								theRect = rect;
+								saveExposeCallback = my d_drawingArea -> d_exposeCallback;
+								saveExposeBoss = my d_drawingArea -> d_exposeBoss;
+								//[drawingArea displayRect: rect];
+								GuiDrawingArea_setExposeCallback (my d_drawingArea, highlightExposeCallback, graphics);
+								[drawingArea display];
+								GuiDrawingArea_setExposeCallback (my d_drawingArea, saveExposeCallback, saveExposeBoss);
+								//[drawingArea setNeedsDisplayInRect: rect];
+								Graphics_updateWs (graphics);
+							}
+						}
 					} else {   // backward
 						//[drawingArea lockFocus];
 						[[nsView window] restoreCachedImage];
+						if (! SUPPORT_DIRECT_DRAWING) {
+							//CGContextFlush ((CGContextRef) [[NSGraphicsContext currentContext] graphicsPort]);
+							//[[nsView window] flushWindow];
+						}
 						//[[nsView window] discardCachedImage];
 						//[drawingArea unlockFocus];
 						//[[nsView window] flushWindow];
 						//[[nsView window] flushWindowIfNeeded];
 					}
 				} else {
-					[drawingArea lockFocus];
-					CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
-					CGContextSaveGState (context);
-					NSCAssert (context, @"nil context");
-					//CGContextTranslateCTM (context, 0, drawingArea. bounds. size. height);
-					//CGContextScaleCTM (context, 1.0, -1.0);
-					NSRect rect = NSMakeRect (x1DC,  y2DC, width, height);
-					CGContextSetBlendMode (context, kCGBlendModeDifference);
-					CGContextSetShouldAntialias (context, false);
-					NSColor *colour = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
-					double red = 0.5 + 0.5 * colour.redComponent, green = 0.5 + 0.5 * colour.greenComponent, blue = 0.5 + 0.5 * colour.blueComponent;
-					if (direction == 1) {   // forward
-						CGContextSetRGBFillColor (context, 1.0 - red, 1.0 - green, 1.0 - blue, 1.0);
-						CGContextFillRect (context, rect);
-					} else {   // backward
-						CGContextSetRGBFillColor (context, red, green, blue, 1.0);
-						CGContextFillRect (context, rect);
-						CGContextSetRGBFillColor (context, 1.0, 1.0, 1.0, 1.0);
-						CGContextFillRect (context, rect);
+					if (SUPPORT_DIRECT_DRAWING) {
+						[drawingArea lockFocus];
+						CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+						CGContextSaveGState (context);
+						NSCAssert (context, @"nil context");
+						//CGContextTranslateCTM (context, 0, drawingArea. bounds. size. height);
+						//CGContextScaleCTM (context, 1.0, -1.0);
+						NSRect rect = NSMakeRect (x1DC,  y2DC, width, height);
+						CGContextSetBlendMode (context, kCGBlendModeDifference);
+						CGContextSetShouldAntialias (context, false);
+						NSColor *colour = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
+						double red = 0.5 + 0.5 * colour.redComponent, green = 0.5 + 0.5 * colour.greenComponent, blue = 0.5 + 0.5 * colour.blueComponent;
+						if (direction == 1) {   // forward
+							CGContextSetRGBFillColor (context, 1.0 - red, 1.0 - green, 1.0 - blue, 1.0);
+							CGContextFillRect (context, rect);
+						} else {   // backward
+							CGContextSetRGBFillColor (context, red, green, blue, 1.0);
+							CGContextFillRect (context, rect);
+							CGContextSetRGBFillColor (context, 1.0, 1.0, 1.0, 1.0);
+							CGContextFillRect (context, rect);
+						}
+						CGContextRestoreGState (context);
+						//CGContextSynchronize (context);
+						[drawingArea unlockFocus];
+					} else {
 					}
-					CGContextRestoreGState (context);
-					//CGContextSynchronize (context);
-					[drawingArea unlockFocus];
 				}
 			}
 		#endif
@@ -328,58 +328,61 @@ static void highlight2 (Graphics graphics, integer x1DC, integer x2DC, integer y
 						return;
 					}
 				}
-				[drawingArea lockFocus];
-				my d_macGraphicsContext = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
-				CGContextSaveGState (my d_macGraphicsContext);
-				NSRect upperRect = NSMakeRect (x1DC, y2DC, x2DC - x1DC, y2DC_inner - y2DC);
-				NSRect leftRect  = NSMakeRect (x1DC, y2DC_inner, x1DC_inner - x1DC, y1DC_inner - y2DC_inner);
-				NSRect rightRect = NSMakeRect (x2DC_inner, y2DC_inner, x2DC - x2DC_inner, y1DC_inner - y2DC_inner);
-				NSRect lowerRect = NSMakeRect (x1DC, y1DC_inner, x2DC - x1DC, y1DC - y1DC_inner);
-				NSColor *colour = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
-				double red = 0.5 + 0.5 * colour.redComponent, green = 0.5 + 0.5 * colour.greenComponent, blue = 0.5 + 0.5 * colour.blueComponent;
-				if (cacheImageInRectWillWork) {
-					CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeDarken);
-					CGContextSetRGBFillColor (my d_macGraphicsContext, red, green, blue, 1.0);
-					CGContextFillRect (my d_macGraphicsContext, upperRect);
-					CGContextFillRect (my d_macGraphicsContext, leftRect);
-					CGContextFillRect (my d_macGraphicsContext, rightRect);
-					CGContextFillRect (my d_macGraphicsContext, lowerRect);
-				} else if (1) {
-					/*
-						An older, suboptimal method.
-					 */
-					CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeDifference);
-					if (direction == 1) {
-						CGContextSetRGBFillColor (my d_macGraphicsContext, 1.0 - red, 1.0 - green, 1.0 - blue, 1.0);
-						CGContextFillRect (my d_macGraphicsContext, upperRect);
-						CGContextFillRect (my d_macGraphicsContext, leftRect);
-						CGContextFillRect (my d_macGraphicsContext, rightRect);
-						CGContextFillRect (my d_macGraphicsContext, lowerRect);
-					} else {
+				if (SUPPORT_DIRECT_DRAWING) {
+					[drawingArea lockFocus];
+					my d_macGraphicsContext = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+					CGContextSaveGState (my d_macGraphicsContext);
+					NSRect upperRect = NSMakeRect (x1DC, y2DC, x2DC - x1DC, y2DC_inner - y2DC);
+					NSRect leftRect  = NSMakeRect (x1DC, y2DC_inner, x1DC_inner - x1DC, y1DC_inner - y2DC_inner);
+					NSRect rightRect = NSMakeRect (x2DC_inner, y2DC_inner, x2DC - x2DC_inner, y1DC_inner - y2DC_inner);
+					NSRect lowerRect = NSMakeRect (x1DC, y1DC_inner, x2DC - x1DC, y1DC - y1DC_inner);
+					NSColor *colour = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
+					double red = 0.5 + 0.5 * colour.redComponent, green = 0.5 + 0.5 * colour.greenComponent, blue = 0.5 + 0.5 * colour.blueComponent;
+					if (cacheImageInRectWillWork) {
+						CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeDarken);
 						CGContextSetRGBFillColor (my d_macGraphicsContext, red, green, blue, 1.0);
 						CGContextFillRect (my d_macGraphicsContext, upperRect);
 						CGContextFillRect (my d_macGraphicsContext, leftRect);
 						CGContextFillRect (my d_macGraphicsContext, rightRect);
 						CGContextFillRect (my d_macGraphicsContext, lowerRect);
+					} else if (1) {
+						/*
+							An older, suboptimal method.
+						 */
+						CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeDifference);
+						if (direction == 1) {
+							CGContextSetRGBFillColor (my d_macGraphicsContext, 1.0 - red, 1.0 - green, 1.0 - blue, 1.0);
+							CGContextFillRect (my d_macGraphicsContext, upperRect);
+							CGContextFillRect (my d_macGraphicsContext, leftRect);
+							CGContextFillRect (my d_macGraphicsContext, rightRect);
+							CGContextFillRect (my d_macGraphicsContext, lowerRect);
+						} else {
+							CGContextSetRGBFillColor (my d_macGraphicsContext, red, green, blue, 1.0);
+							CGContextFillRect (my d_macGraphicsContext, upperRect);
+							CGContextFillRect (my d_macGraphicsContext, leftRect);
+							CGContextFillRect (my d_macGraphicsContext, rightRect);
+							CGContextFillRect (my d_macGraphicsContext, lowerRect);
+							CGContextSetRGBFillColor (my d_macGraphicsContext, 1.0, 1.0, 1.0, 1.0);
+							CGContextFillRect (my d_macGraphicsContext, upperRect);
+							CGContextFillRect (my d_macGraphicsContext, leftRect);
+							CGContextFillRect (my d_macGraphicsContext, rightRect);
+							CGContextFillRect (my d_macGraphicsContext, lowerRect);
+						}
+					} else if (1) {
+						/*
+							This is true XOR.
+						*/
+						CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeDifference);
 						CGContextSetRGBFillColor (my d_macGraphicsContext, 1.0, 1.0, 1.0, 1.0);
 						CGContextFillRect (my d_macGraphicsContext, upperRect);
 						CGContextFillRect (my d_macGraphicsContext, leftRect);
 						CGContextFillRect (my d_macGraphicsContext, rightRect);
 						CGContextFillRect (my d_macGraphicsContext, lowerRect);
 					}
-				} else if (1) {
-					/*
-						This is true XOR.
-					*/
-					CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeDifference);
-					CGContextSetRGBFillColor (my d_macGraphicsContext, 1.0, 1.0, 1.0, 1.0);
-					CGContextFillRect (my d_macGraphicsContext, upperRect);
-					CGContextFillRect (my d_macGraphicsContext, leftRect);
-					CGContextFillRect (my d_macGraphicsContext, rightRect);
-					CGContextFillRect (my d_macGraphicsContext, lowerRect);
+					CGContextRestoreGState (my d_macGraphicsContext);
+					[drawingArea unlockFocus];
+				} else {
 				}
-				CGContextRestoreGState (my d_macGraphicsContext);
-				[drawingArea unlockFocus];
 			}
 		#endif
 	}
@@ -401,7 +404,7 @@ void Graphics_unhighlight2 (Graphics me, double x1WC, double x2WC, double y1WC, 
 		{ op (UNHIGHLIGHT2, 8); put (x1WC); put (x2WC); put (y1WC); put (y2WC); put (x1WC_inner); put (x2WC_inner); put (y1WC_inner); put (y2WC_inner); }
 }
 
-void Graphics_xorOn (Graphics graphics, Graphics_Colour colour) {
+void Graphics_xorOn (Graphics graphics, MelderColour colour) {
 	if (graphics -> screen) {
 		GraphicsScreen me = static_cast <GraphicsScreen> (graphics);
 		#if cairo
@@ -454,7 +457,7 @@ void Graphics_xorOff (Graphics graphics) {
 	}
 }
 
-Graphics_Colour Graphics_inqColour (Graphics me) {
+MelderColour Graphics_inqColour (Graphics me) {
 	return my colour;
 }
 

@@ -1,6 +1,6 @@
 /* ContingencyTable.cpp
  *
- * Copyright (C) 1993-2018 David Weenink
+ * Copyright (C) 1993-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,46 +61,43 @@ autoContingencyTable ContingencyTable_create (integer numberOfRows, integer numb
 double ContingencyTable_chisqProbability (ContingencyTable me) {
 	double chisq, df;
 	ContingencyTable_chisq (me, & chisq, & df);
-	if (chisq == 0.0 && df == 0.0) {
+	if (chisq == 0.0 && df == 0.0)
 		return 0.0;
-	}
 	return NUMchiSquareQ (chisq, df);
 }
 
 double ContingencyTable_cramersStatistic (ContingencyTable me) {
-	if (my numberOfRows == 1 || my numberOfColumns == 1) {
+	if (my numberOfRows == 1 || my numberOfColumns == 1)
 		return 0.0;
-	}
 
-	double sum = NUMsum ({my data, my numberOfRows, my numberOfColumns});
+	const double sum = NUMsum (my data.all());
 
-	integer nmin = my numberOfColumns < my numberOfRows ? my numberOfColumns : my numberOfRows;
+	integer nmin = std::min (my numberOfColumns, my numberOfRows);
 
 	nmin --;
 	
 	double chisq, df;
 	ContingencyTable_chisq (me, & chisq, & df);
-	if (chisq == 0.0 && df == 0.0) {
+	if (chisq == 0.0 && df == 0.0)
 		return 0.0;
-	}
 	return sqrt (chisq / (sum * nmin));
 }
 
 double ContingencyTable_contingencyCoefficient (ContingencyTable me) {
-	
-	double chisq, df, sum = NUMsum ({my data, my numberOfRows, my numberOfColumns});
+	const double sum = NUMsum (my data.all());
+	double chisq, df;
 	ContingencyTable_chisq (me, & chisq, & df);
-	if (chisq == 0.0 && df == 0.0) {
+	if (chisq == 0.0 && df == 0.0)
 		return 0.0;
-	}
+
 	return sqrt (chisq / (chisq + (double) sum));
 }
 
 void ContingencyTable_chisq (ContingencyTable me, double *out_chisq, double *out_df) {
 	
-	autoVEC rowSums = VECsumPerRow ({ my data, my numberOfRows, my numberOfColumns });
-	autoVEC columnSums = VECsumPerColumn ({ my data, my numberOfRows, my numberOfColumns });
-	double totalSum = NUMsum ({ my data, my numberOfRows, my numberOfColumns });
+	autoVEC rowSums = newVECrowSums (my data.get());
+	autoVEC columnSums = newVECcolumnSums (my data.get());
+	const double totalSum = NUMsum (my data.all());
 	
 	integer nrow = my numberOfRows, ncol = my numberOfColumns;
 	
@@ -109,8 +106,10 @@ void ContingencyTable_chisq (ContingencyTable me, double *out_chisq, double *out
 			nrow --;
 
 	if (nrow == 0) {
-		if (out_chisq) *out_chisq = undefined;
-		if (out_df) *out_df = undefined;
+		if (out_chisq)
+			*out_chisq = undefined;
+		if (out_df)
+			*out_df = undefined;
 		return;
 	}
 	
@@ -126,8 +125,8 @@ void ContingencyTable_chisq (ContingencyTable me, double *out_chisq, double *out
 			if (rowSums [irow] > 0.0) {
 				for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
 					if (columnSums [icol] > 0.0) {
-						longdouble expected = rowSums [irow] * columnSums [icol] / totalSum;
-						longdouble difference = my data [irow] [icol] - expected;
+						const longdouble expected = rowSums [irow] * columnSums [icol] / totalSum;
+						const longdouble difference = my data [irow] [icol] - expected;
 						chisq += difference * difference / expected;
 					}
 				}
@@ -138,8 +137,8 @@ void ContingencyTable_chisq (ContingencyTable me, double *out_chisq, double *out
 }
 
 void ContingencyTable_getEntropies (ContingencyTable me, double *out_h, double *out_hx, double *out_hy, double *out_hygx, double *out_hxgy, double *out_uygx, double *out_uxgy, double *out_uxy) {	
-	MAT_getEntropies ( {my data, my numberOfRows, my numberOfColumns}, out_h, out_hx, 
-	out_hy,	out_hygx, out_hxgy, out_uygx, out_uxgy, out_uxy);	
+	NUMgetEntropies (my data.get(), out_h, out_hx,
+			out_hy,	out_hygx, out_hxgy, out_uygx, out_uxgy, out_uxy);	
 }
 
 autoContingencyTable Confusion_to_ContingencyTable (Confusion me) {
@@ -154,7 +153,8 @@ autoContingencyTable Confusion_to_ContingencyTable (Confusion me) {
 
 autoContingencyTable TableOfReal_to_ContingencyTable (TableOfReal me) {
 	try {
-		Melder_require (TableOfReal_checkNonNegativity (me), U"All values in the table should be positive.");
+		Melder_require (TableOfReal_isNonNegative (me),
+			U"No cell in the table should be negative.");
 		autoContingencyTable thee = Thing_new (ContingencyTable);
 		my structTableOfReal :: v_copy (thee.get());
 		return thee;

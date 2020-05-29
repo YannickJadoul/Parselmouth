@@ -2,7 +2,7 @@
 #define _Polygon_extensions_h_
 /* Polygon_extensions.h
  *
- * Copyright (C) 1993-2012, 2014, 2015-2016 David Weenink
+ * Copyright (C) 1993-2019 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
 #define Polygon_EDGE 3
 #define Polygon_VERTEX 5
 
-void Polygon_getExtrema (Polygon me, double *xmin, double *xmax, double *ymin, double *ymax);
+void Polygon_getExtrema (Polygon me, double *out_xmin, double *out_xmax, double *out_ymin, double *out_ymax);
 
 autoPolygon Polygon_createSimple (conststring32 xystring);
 
@@ -58,12 +58,12 @@ autoPolygon Polygon_circularPermutation (Polygon me, integer nshift);
 // Is point (x,y) Inside, Outside, Boundary (Edge or Vertex) ?
 int Polygon_getLocationOfPoint (Polygon me, double x0, double y0, double eps);
 
-void Polygon_Categories_draw (Polygon me, Categories thee, Graphics graphics, double xmin, double xmax, double ymin, double ymax, int garnish);
+void Polygon_Categories_draw (Polygon me, Categories thee, Graphics graphics, double xmin, double xmax, double ymin, double ymax, bool garnish);
 /* reverse axis when min > max */
 
 void Polygon_drawMarks (Polygon me, Graphics g, double xmin, double xmax, double ymin, double ymax, double size_mm, conststring32 mark);
 
-autoPolygon Sound_to_Polygon (Sound me, int channel, double tmin, double tmax, double ymin, double ymax, double level);
+autoPolygon Sound_to_Polygon (Sound me, integer channel, double tmin, double tmax, double ymin, double ymax, double level);
 /*
 	Post-conditions:
 
@@ -89,7 +89,7 @@ autoPolygon Sound_to_Polygon (Sound me, int channel, double tmin, double tmax, d
 	where clip(y) = y < ymin ? ymin : y > ymax ? ymax ; y;
 */
 
-autoPolygon Sounds_to_Polygon_enclosed (Sound me, Sound thee, int channel, double tmin, double tmax, double ymin, double ymax);
+autoPolygon Sounds_to_Polygon_enclosed (Sound me, Sound thee, integer channel, double tmin, double tmax, double ymin, double ymax);
 /* Area enclosed by the sounds */
 
 autoPolygon Polygons_union (Polygon me, Polygon thee);

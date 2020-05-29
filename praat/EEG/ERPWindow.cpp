@@ -1,6 +1,6 @@
 /* ERPWindow.cpp
  *
- * Copyright (C) 2012-2018 Paul Boersma
+ * Copyright (C) 2012-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -151,14 +151,14 @@ static BiosemiLocationData biosemiCapCoordinates32 [1+32] =
 
 void ERP_drawScalp_garnish (Graphics graphics, double vmin, double vmax, kGraphics_colourScale colourScale) {
 	integer n = 201;
-	autoMAT legend (n, 2, kTensorInitializationType::RAW);
+	autoMAT legend = newMATraw (n, 2);
 	for (integer irow = 1; irow <= n; irow ++) {
 		for (integer icol = 1; icol <= 2; icol ++) {
 			legend [irow] [icol] = (irow - 1) / (n - 1.0);
 		}
 	}
 	Graphics_setColourScale (graphics, colourScale);
-	Graphics_image (graphics, legend.at, 1, 2, 0.85, 0.98, 1, n, -0.8, +0.8, 0.0, 1.0);
+	Graphics_image (graphics, legend.all(), 0.85, 0.98, -0.8, +0.8, 0.0, 1.0);
 	Graphics_setColourScale (graphics, kGraphics_colourScale::GREY);
 	Graphics_rectangle (graphics, 0.85, 0.98, -0.8, +0.8);
 	Graphics_setTextAlignment (graphics, Graphics_RIGHT, Graphics_TOP);
@@ -172,7 +172,7 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 	Graphics_setWindow (graphics, -1.0, 1.0, -1.0, 1.0);
 	//Graphics_setGrey (graphics, 1.0);
 	//Graphics_fillRectangle (graphics, -1.1, 1.1, -1.01, 1.19);
-	//Graphics_setColour (graphics, Graphics_BLACK);
+	//Graphics_setColour (graphics, Melder_BLACK);
 	integer numberOfDrawableChannels =
 			my ny >= 64 && Melder_equ (my channelNames [64].get(), U"O2") ? 64 :
 			my ny >= 32 && Melder_equ (my channelNames [32].get(), U"Cz") ? 32 :
@@ -189,13 +189,13 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 	}
 	integer n = 201;
 	double d = 2.0 / (n - 1);
-	autoVEC mean (numberOfDrawableChannels, kTensorInitializationType::RAW);
+	autoVEC mean = newVECraw (numberOfDrawableChannels);
 	for (integer ichan = 1; ichan <= numberOfDrawableChannels; ichan ++) {
 		mean [ichan] = tmin == tmax ?
 				Sampled_getValueAtX (me, tmin, ichan, 0, true) :
 				Vector_getMean (me, tmin, tmax, ichan);
 	}
-	autoMAT image (n, n, kTensorInitializationType::RAW);
+	autoMAT image = newMATraw (n, n);
 	for (integer irow = 1; irow <= n; irow ++) {
 		double y = -1.0 + (irow - 1) * d;
 		for (integer icol = 1; icol <= n; icol ++) {
@@ -232,7 +232,7 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 			}
 		}
 	}
-	Graphics_image (graphics, image.at, 1, n, -1.0-0.5/n, 1.0+0.5/n, 1, n, -1.0-0.5/n, 1.0+0.5/n, vmin, vmax);
+	Graphics_image (graphics, image.all(), -1.0-0.5/n, 1.0+0.5/n, -1.0-0.5/n, 1.0+0.5/n, vmin, vmax);
 	Graphics_setColourScale (graphics, kGraphics_colourScale::GREY);
 	Graphics_setLineWidth (graphics, 2.0);
 	/*
@@ -243,7 +243,7 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 		double x [3] = { -0.08, 0.0, 0.08 }, y [3] = { 0.99, 1.18, 0.99 };
 		Graphics_fillArea (graphics, 3, x, y);
 	}
-	Graphics_setColour (graphics, Graphics_BLACK);
+	Graphics_setColour (graphics, Melder_BLACK);
 	Graphics_line (graphics, -0.08, 0.99, 0.0, 1.18);
 	Graphics_line (graphics, 0.08, 0.99, 0.0, 1.18);
 	/*
@@ -252,7 +252,7 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 	Graphics_setGrey (graphics, colourScale == kGraphics_colourScale::BLUE_TO_RED ? 1.0 : 0.5);
 	Graphics_fillRectangle (graphics, -1.09, -1.00, -0.08, 0.08);
 	Graphics_fillRectangle (graphics, 1.09, 1.00, -0.08, 0.08);
-	Graphics_setColour (graphics, Graphics_BLACK);
+	Graphics_setColour (graphics, Melder_BLACK);
 	Graphics_line (graphics, -0.99, 0.08, -1.09, 0.08);
 	Graphics_line (graphics, -1.09, 0.08, -1.09, -0.08);
 	Graphics_line (graphics, -1.09, -0.08, -0.99, -0.08);
@@ -273,9 +273,9 @@ void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double 
 void structERPWindow :: v_drawSelectionViewer () {
 	ERP erp = (ERP) our data;
 	Graphics_setWindow (our graphics.get(), -1.1, 1.1, -1.01, 1.19);
-	Graphics_setColour (our graphics.get(), Graphics_WINDOW_BACKGROUND_COLOUR);
+	Graphics_setColour (our graphics.get(), Melder_WINDOW_BACKGROUND_COLOUR);
 	Graphics_fillRectangle (our graphics.get(), -1.1, 1.1, -1.01, 1.19);
-	Graphics_setColour (our graphics.get(), Graphics_BLACK);
+	Graphics_setColour (our graphics.get(), Melder_BLACK);
 	integer numberOfDrawableChannels =
 			erp -> ny >= 64 && Melder_equ (erp -> channelNames [64].get(), U"O2") ? 64 :
 			erp -> ny >= 32 && Melder_equ (erp -> channelNames [32].get(), U"Cz") ? 32 :
@@ -292,14 +292,14 @@ void structERPWindow :: v_drawSelectionViewer () {
 	}
 	integer n = 201;
 	double d = 2.0 / (n - 1);
-	autoVEC means (numberOfDrawableChannels, kTensorInitializationType::RAW);
+	autoVEC means = newVECraw (numberOfDrawableChannels);
 	for (integer ichan = 1; ichan <= numberOfDrawableChannels; ichan ++) {
 		means [ichan] =
 			our startSelection == our endSelection ?
 				Sampled_getValueAtX (erp, our startSelection, ichan, 0, true) :
 				Vector_getMean (erp, our startSelection, our endSelection, ichan);
 	}
-	autoMAT image (n, n, kTensorInitializationType::RAW);
+	autoMAT image = newMATraw (n, n);
 	for (integer irow = 1; irow <= n; irow ++) {
 		double y = -1.0 + (irow - 1) * d;
 		for (integer icol = 1; icol <= n; icol ++) {
@@ -357,7 +357,7 @@ void structERPWindow :: v_drawSelectionViewer () {
 		}
 	}
 	Graphics_setColourScale (our graphics.get(), our p_scalp_colourScale);
-	Graphics_image (our graphics.get(), image.at, 1, n, -1.0-0.5/n, 1.0+0.5/n, 1, n, -1.0-0.5/n, 1.0+0.5/n, minimum, maximum);
+	Graphics_image (our graphics.get(), image.all(), -1.0-0.5/n, 1.0+0.5/n, -1.0-0.5/n, 1.0+0.5/n, minimum, maximum);
 	Graphics_setColourScale (our graphics.get(), kGraphics_colourScale::GREY);
 	Graphics_setLineWidth (our graphics.get(), 2.0);
 	/*
@@ -368,7 +368,7 @@ void structERPWindow :: v_drawSelectionViewer () {
 		double x [3] = { -0.08, 0.0, 0.08 }, y [3] = { 0.99, 1.18, 0.99 };
 		Graphics_fillArea (our graphics.get(), 3, x, y);
 	}
-	Graphics_setColour (our graphics.get(), Graphics_BLACK);
+	Graphics_setColour (our graphics.get(), Melder_BLACK);
 	Graphics_line (our graphics.get(), -0.08, 0.99, 0.0, 1.18);
 	Graphics_line (our graphics.get(), 0.08, 0.99, 0.0, 1.18);
 	/*
@@ -377,7 +377,7 @@ void structERPWindow :: v_drawSelectionViewer () {
 	Graphics_setGrey (our graphics.get(), our p_scalp_colourScale == kGraphics_colourScale::BLUE_TO_RED ? 1.0 : 0.5);
 	Graphics_fillRectangle (our graphics.get(), -1.09, -1.00, -0.08, 0.08);
 	Graphics_fillRectangle (our graphics.get(), 1.09, 1.00, -0.08, 0.08);
-	Graphics_setColour (our graphics.get(), Graphics_BLACK);
+	Graphics_setColour (our graphics.get(), Melder_BLACK);
 	Graphics_line (our graphics.get(), -0.99, 0.08, -1.09, 0.08);
 	Graphics_line (our graphics.get(), -1.09, 0.08, -1.09, -0.08);
 	Graphics_line (our graphics.get(), -1.09, -0.08, -0.99, -0.08);
@@ -393,7 +393,8 @@ void structERPWindow :: v_drawSelectionViewer () {
 
 OPTIONMENU_ENUM_VARIABLE (kGraphics_colourScale, v_prefs_scalpColourSpace)
 void structERPWindow :: v_prefs_addFields (EditorCommand cmd) {
-	OPTIONMENU_ENUM_FIELD (v_prefs_scalpColourSpace, U"Scalp colour space", kGraphics_colourScale, kGraphics_colourScale::BLUE_TO_RED)
+	OPTIONMENU_ENUM_FIELD (kGraphics_colourScale, v_prefs_scalpColourSpace,
+			U"Scalp colour space", kGraphics_colourScale::BLUE_TO_RED)
 }
 void structERPWindow :: v_prefs_setValues (EditorCommand cmd) {
 	SET_ENUM (v_prefs_scalpColourSpace, kGraphics_colourScale, p_scalp_colourScale)

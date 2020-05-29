@@ -1,6 +1,6 @@
 /* Graphics_text.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma, 2013 Tom Naughton, 2017 David Weenink
+ * Copyright (C) 1992-2020 Paul Boersma, 2013 Tom Naughton, 2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
 #include "../kar/UnicodeData.h"
 #include "GraphicsP.h"
 #include "../kar/longchar.h"
@@ -578,7 +577,7 @@ static void charDraw (void *void_me, int xDC, int yDC, _Graphics_widechar *lc,
 			}
 			if (! my d_cairoGraphicsContext) return;
 			// TODO!
-			if (lc -> link) _Graphics_setColour (me, Graphics_BLUE);
+			if (lc -> link) _Graphics_setColour (me, Melder_BLUE);
 			int font = lc -> font.integer_;
 			cairo_save (my d_cairoGraphicsContext);
 			cairo_translate (my d_cairoGraphicsContext, xDC, yDC);
@@ -768,8 +767,10 @@ static void charDraw (void *void_me, int xDC, int yDC, _Graphics_widechar *lc,
             CFRelease (color);
 
 			if (my d_macView) {
-				[my d_macView   lockFocus];
-				my d_macGraphicsContext = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+				if (SUPPORT_DIRECT_DRAWING) {
+					[my d_macView   lockFocus];
+					my d_macGraphicsContext = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+				}
 			}
             CGContextSaveGState (my d_macGraphicsContext);
             CGContextTranslateCTM (my d_macGraphicsContext, xDC, yDC);
@@ -795,7 +796,8 @@ static void charDraw (void *void_me, int xDC, int yDC, _Graphics_widechar *lc,
 			CFRelease (s);
 			//CFRelease (ctFont);
 			if (my d_macView) {
-				[my d_macView   unlockFocus];
+				if (SUPPORT_DIRECT_DRAWING)
+					[my d_macView   unlockFocus];
 				if (! my duringXor) {
 					//[my d_macView   setNeedsDisplay: YES];   // otherwise, CoreText text may not be drawn
 				}
@@ -849,7 +851,7 @@ static int numberOfLinks = 0;
 static Graphics_Link links [100];    // a maximum of 100 links per string
 
 static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEachCharacterSeparately) {
-	if (my postScript || (cairo && my duringXor)) {
+	if (my postScript || (cairo && my duringXor) || (cairo && ! my screen)) {   // TODO: use Pango measurements even without Cairo context (if no screen)
 		for (_Graphics_widechar *character = string; character -> kar > U'\t'; character ++)
 			charSize (me, character);
 	} else {
@@ -952,6 +954,7 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 						Fortunately, a PangoLayout is 1.5 to 2 times faster than the two low-level methods
 						(measured 20170527).
 					*/
+					Melder_assert (my screen);
 					PangoLayout *layout = pango_cairo_create_layout (((GraphicsScreen) me) -> d_cairoGraphicsContext);
 					pango_layout_set_font_description (layout, fontDescription);
 					pango_layout_set_text (layout, codes8, -1);
@@ -1060,15 +1063,15 @@ static void drawOneCell (Graphics me, int xDC, int yDC, _Graphics_widechar lc []
 	_Graphics_widechar *plc, *lastlc;
 	bool inLink = false;
 	switch (my horizontalTextAlignment) {
-		case (int) Graphics_LEFT:      dx = 1 + (0.1/72) * my fontSize * my resolution; break;
+		case (int) Graphics_LEFT:      dx = 1 + (0.1/72.0) * my fontSize * my resolution; break;
 		case (int) Graphics_CENTRE:    dx = - width / 2; break;
-		case (int) Graphics_RIGHT:     dx = width != 0.0 ? - width - (0.1/72) * my fontSize * my resolution : 0; break;   // if width is zero, do not step left
-		default:                 dx = 1 + (0.1/72) * my fontSize * my resolution; break;
+		case (int) Graphics_RIGHT:     dx = width != 0.0 ? - width - (0.1/72.0) * my fontSize * my resolution : 0; break;   // if width is zero, do not step left
+		default:                 dx = 1 + (0.1/72.0) * my fontSize * my resolution; break;
 	}
 	switch (my verticalTextAlignment) {
-		case Graphics_BOTTOM:    dy = (0.4/72) * my fontSize * my resolution; break;
-		case Graphics_HALF:      dy = (-0.3/72) * my fontSize * my resolution; break;
-		case Graphics_TOP:       dy = (-1.0/72) * my fontSize * my resolution; break;
+		case Graphics_BOTTOM:    dy = (0.4/72.0) * my fontSize * my resolution; break;
+		case Graphics_HALF:      dy = (-0.3/72.0) * my fontSize * my resolution; break;
+		case Graphics_TOP:       dy = (-1.0/72.0) * my fontSize * my resolution; break;
 		case Graphics_BASELINE:  dy = 0; break;
 		default:                 dy = 0; break;
 	}
@@ -1332,10 +1335,11 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 				const char32 *from = in;   // start with first character after "@"
 				if (! links [++ numberOfLinks]. name)   // make room for saving link info
 					links [numberOfLinks]. name = Melder_calloc_f (char32, MAX_LINK_LENGTH + 1);
-				to = links [numberOfLinks]. name, max = to + MAX_LINK_LENGTH;
-				while (*from && (Melder_isAlphanumeric (*from) || *from == U'_') && to < max)   // until end-of-word...
+				to = links [numberOfLinks]. name;
+				max = to + MAX_LINK_LENGTH;
+				while (*from && (Melder_isWordCharacter (*from) || *from == U'_') && to < max)   // until end-of-word...
 					*to ++ = *from++;   // ... copy one character
-				*to = '\0';   // close saved link info
+				*to = U'\0';   // close saved link info
 				/*
 				 * Second step: collect the link text that is to be drawn.
 				 * Its characters will be collected during the normal cycles of the loop.
@@ -1399,7 +1403,7 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 			kar = U' ';
 		}
 		if (wordItalic | wordBold | wordCode | wordLink) {
-			if (! Melder_isAlphanumeric (kar) && kar != U'_')   // FIXME: this test could be more precise.
+			if (! Melder_isWordCharacter (kar) && kar != U'_')
 				wordItalic = wordBold = wordCode = wordLink = false;
 		}
 		out -> style =
@@ -1408,11 +1412,11 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 			((my fontStyle & Graphics_BOLD) | charBold | wordBold | globalBold ? Graphics_BOLD : 0);
 		out -> font.string = nullptr;
 		out -> font.integer_ = my fontStyle == Graphics_CODE || wordCode || globalCode ||
-			kar == U'/' || kar == U'|' ? (int) kGraphics_font::COURIER : (int) my font;
+			(kar == U'/' || kar == U'|') && my font != kGraphics_font::PALATINO ? (int) kGraphics_font::COURIER : (int) my font;
 		out -> link = wordLink | globalLink;
 		out -> baseline = charSuperscript | globalSuperscript ? 34 : charSubscript | globalSubscript ? -25 : 0;
 		out -> size = globalSmall || out -> baseline != 0 ? 80 : 100;
-		if (kar == U'/') {
+		if (kar == U'/' && my font != kGraphics_font::PALATINO) {
 			out -> baseline -= out -> size / 12;
 			out -> size += out -> size / 10;
 			if (my screen) out -> font.integer_ = (int) kGraphics_font::PALATINO;
@@ -1727,7 +1731,7 @@ void Graphics_setFont (Graphics me, kGraphics_font font) {
 	if (my recording) { op (SET_FONT, 1); put (font); }
 }
 
-void Graphics_setFontSize (Graphics me, int size) {
+void Graphics_setFontSize (Graphics me, double size) {
 	my fontSize = size;
 	if (my recording) { op (SET_FONT_SIZE, 1); put (size); }
 }
@@ -1797,7 +1801,7 @@ void Graphics_setAtSignIsLink (Graphics me, bool isLink) {
 /* Inquiries. */
 
 kGraphics_font Graphics_inqFont (Graphics me) { return my font; }
-int Graphics_inqFontSize (Graphics me) { return my fontSize; }
+double Graphics_inqFontSize (Graphics me) { return my fontSize; }
 int Graphics_inqFontStyle (Graphics me) { return my fontStyle; }
 
 /* End of file Graphics_text.cpp */

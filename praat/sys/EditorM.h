@@ -2,7 +2,7 @@
 #define _EditorM_h_
 /* EditorM.h
  *
- * Copyright (C) 1992-2013,2015-2018 Paul Boersma
+ * Copyright (C) 1992-2013,2015-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -154,7 +154,7 @@ _form_inited_: \
 
 
 #define COLOUR_VARIABLE(colourVariable) \
-	static Graphics_Colour colourVariable;
+	static MelderColour colourVariable;
 
 #define COLOUR_FIELD(colourVariable, labelText, defaultStringValue) \
 	UiForm_addColour (cmd -> d_uiform.get(), & colourVariable, nullptr, labelText, defaultStringValue);
@@ -256,10 +256,11 @@ _form_inited_: \
 #define RADIO_ENUM_VARIABLE(EnumeratedType, enumeratedVariable) \
 	static EnumeratedType enumeratedVariable; \
 
-#define RADIO_ENUM_FIELD(enumeratedVariable, labelText, EnumeratedType, defaultValue) \
+#define RADIO_ENUM_FIELD(EnumeratedType, enumeratedVariable, labelText, defaultValue) \
 	{/* type checks */ \
 		EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 		_compilerTypeCheckDummy = enumeratedVariable; \
+		(void) _compilerTypeCheckDummy; \
 	} \
 	{/* scope */ \
 		UiField _radio = UiForm_addRadio (cmd -> d_uiform.get(), (int *) & enumeratedVariable, nullptr, nullptr, labelText, \
@@ -268,18 +269,19 @@ _form_inited_: \
 			UiRadio_addButton (_radio, EnumeratedType##_getText ((EnumeratedType) _ienum)); \
 	}
 
-#define RADIO_ENUM(enumeratedVariable, labelText, EnumeratedType, defaultValue) \
+#define RADIO_ENUM(EnumeratedType, enumeratedVariable, labelText, defaultValue) \
 	RADIO_ENUM_VARIABLE (EnumeratedType, enumeratedVariable) \
-	RADIO_ENUM_FIELD (enumeratedVariable, labelText, EnumeratedType, defaultValue)
+	RADIO_ENUM_FIELD (EnumeratedType, enumeratedVariable, labelText, defaultValue)
 
 
 #define OPTIONMENU_ENUM_VARIABLE(EnumeratedType, enumeratedVariable) \
 	static EnumeratedType enumeratedVariable; \
 
-#define OPTIONMENU_ENUM_FIELD(enumeratedVariable, labelText, EnumeratedType, defaultValue) \
+#define OPTIONMENU_ENUM_FIELD(EnumeratedType, enumeratedVariable, labelText, defaultValue) \
 	{/* type checks */ \
 		EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 		_compilerTypeCheckDummy = enumeratedVariable; \
+		(void) _compilerTypeCheckDummy; \
 	} \
 	{/* scope */ \
 		UiField _radio = UiForm_addOptionMenu (cmd -> d_uiform.get(), (int *) & enumeratedVariable, nullptr, nullptr, labelText, \
@@ -288,9 +290,9 @@ _form_inited_: \
 			UiOptionMenu_addButton (_radio, EnumeratedType##_getText ((EnumeratedType) _ienum)); \
 	}
 
-#define OPTIONMENU_ENUM(enumeratedVariable, labelText, EnumeratedType, defaultValue) \
+#define OPTIONMENU_ENUM(EnumeratedType, enumeratedVariable, labelText, defaultValue) \
 	OPTIONMENU_ENUM_VARIABLE (EnumeratedType, enumeratedVariable) \
-	OPTIONMENU_ENUM_FIELD (enumeratedVariable, labelText, EnumeratedType, defaultValue)
+	OPTIONMENU_ENUM_FIELD (EnumeratedType, enumeratedVariable, labelText, defaultValue)
 
 
 #define LIST(integerVariable, labelText, strings, defaultValue) \

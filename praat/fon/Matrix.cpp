@@ -1,6 +1,6 @@
 /* Matrix.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,41 +73,37 @@ void structMatrix :: v_readText (MelderReadText text, int formatVersion) {
 	} else {
 		Matrix_Parent :: v_readText (text, formatVersion);
 	}
-	if (our xmin > our xmax)
-		Melder_throw (U"xmin should be less than or equal to xmax.");
-	if (our ymin > our ymax)
-		Melder_throw (U"ymin should be less than or equal to ymax.");
-	if (our nx < 1)
-		Melder_throw (U"nx should be at least 1.");
-	if (our ny < 1)
-		Melder_throw (U"ny should be at least 1.");
-	if (our dx <= 0.0)
-		Melder_throw (U"dx should be greater than 0.0.");
-	if (our dy <= 0.0)
-		Melder_throw (U"dy should be greater than 0.0.");
-	our z = NUMmatrix_readText_r64 (1, our ny, 1, our nx, text, "z");
+	Melder_require (our xmin <= our xmax, U"xmin should be less than or equal to xmax.");
+	Melder_require (our ymin <= our ymax, U"ymin should be less than or equal to ymax.");
+	Melder_require (our nx >= 1, U"nx should be at least 1.");
+	Melder_require (our ny >= 1, U"ny should be at least 1.");
+	Melder_require (our dx > 0.0, U"dx should be greater than 0.0.");
+	Melder_require (our dy > 0.0, U"dy should be greater than 0.0.");
+	our z = matrix_readText_r64 (our ny, our nx, text, "z");
 }
 
 double structMatrix :: v_getValueAtSample (integer isamp, integer ilevel, int unit) {
-	double value = our z [ilevel] [isamp];
+	const double value = our z [ilevel] [isamp];
 	return ( isdefined (value) ? our v_convertStandardToSpecialUnit (value, ilevel, unit) : undefined );
 }
 
 double structMatrix :: v_getMatrix (integer irow, integer icol) {
-	if (irow < 1 || irow > our ny) return 0.0;
-	if (icol < 1 || icol > our nx) return 0.0;
+	if (irow < 1 || irow > our ny)
+		return 0.0;
+	if (icol < 1 || icol > our nx)
+		return 0.0;
 	return z [irow] [icol];
 }
 
 double structMatrix :: v_getFunction2 (double x, double y) {
-	double rrow = (y - our y1) / our dy + 1.0;
-	double rcol = (x - our x1) / our dx + 1.0;
-	integer irow = Melder_ifloor (rrow), icol = Melder_ifloor (rcol);
-	double drow = rrow - irow, dcol = rcol - icol;
-	double z1 = irow < 1 || irow >  our ny || icol < 1 || icol >  our nx ? 0.0 : z [irow]     [icol];
-	double z2 = irow < 0 || irow >= our ny || icol < 1 || icol >  our nx ? 0.0 : z [irow + 1] [icol];
-	double z3 = irow < 1 || irow >  our ny || icol < 0 || icol >= our nx ? 0.0 : z [irow]     [icol + 1];
-	double z4 = irow < 0 || irow >= our ny || icol < 0 || icol >= our nx ? 0.0 : z [irow + 1] [icol + 1];
+	const double rrow = (y - our y1) / our dy + 1.0;
+	const double rcol = (x - our x1) / our dx + 1.0;
+	const integer irow = Melder_ifloor (rrow), icol = Melder_ifloor (rcol);
+	const double drow = rrow - irow, dcol = rcol - icol;
+	const double z1 = irow < 1 || irow >  our ny || icol < 1 || icol >  our nx ? 0.0 : z [irow]     [icol];
+	const double z2 = irow < 0 || irow >= our ny || icol < 1 || icol >  our nx ? 0.0 : z [irow + 1] [icol];
+	const double z3 = irow < 1 || irow >  our ny || icol < 0 || icol >= our nx ? 0.0 : z [irow]     [icol + 1];
+	const double z4 = irow < 0 || irow >= our ny || icol < 0 || icol >= our nx ? 0.0 : z [irow + 1] [icol + 1];
 	return (1.0 - drow) * (1.0 - dcol) * z1 + drow * (1.0 - dcol) * z2 + (1.0 - drow) * dcol * z3 + drow * dcol * z4;
 }
 
@@ -121,7 +117,7 @@ void Matrix_init
 	my ny = ny;
 	my dy = dy;
 	my y1 = y1;
-	my z = NUMmatrix <double> (1, my ny, 1, my nx);
+	my z = newMATzero (my ny, my nx);
 }
 
 autoMatrix Matrix_create
@@ -140,8 +136,9 @@ autoMatrix Matrix_create
 autoMatrix Matrix_createSimple (integer numberOfRows, integer numberOfColumns) {
 	try {
 		autoMatrix me = Thing_new (Matrix);
-		Matrix_init (me.get(), 0.5, numberOfColumns + 0.5, numberOfColumns, 1, 1,
-			0.5, numberOfRows + 0.5, numberOfRows, 1, 1);
+		Matrix_init (me.get(),
+				0.5, numberOfColumns + 0.5, numberOfColumns, 1, 1,
+				0.5, numberOfRows    + 0.5, numberOfRows   , 1, 1);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Matrix object not created.");
@@ -171,48 +168,60 @@ integer Matrix_yToNearestRow (Matrix me, double y) { return Melder_iround (Matri
 integer Matrix_getWindowSamplesX (Matrix me, double xmin, double xmax, integer *ixmin, integer *ixmax) {
 	*ixmin = 1 + Melder_iceiling ((xmin - my x1) / my dx);
 	*ixmax = 1 + Melder_ifloor   ((xmax - my x1) / my dx);
-	if (*ixmin < 1) *ixmin = 1;
-	if (*ixmax > my nx) *ixmax = my nx;
-	if (*ixmin > *ixmax) return 0;
+	if (*ixmin < 1)
+		*ixmin = 1;
+	if (*ixmax > my nx)
+		*ixmax = my nx;
+	if (*ixmin > *ixmax)
+		return 0;
 	return *ixmax - *ixmin + 1;
 }
 
 integer Matrix_getWindowSamplesY (Matrix me, double ymin, double ymax, integer *iymin, integer *iymax) {
 	*iymin = 1 + Melder_iceiling ((ymin - my y1) / my dy);
 	*iymax = 1 + Melder_ifloor   ((ymax - my y1) / my dy);
-	if (*iymin < 1) *iymin = 1;
-	if (*iymax > my ny) *iymax = my ny;
-	if (*iymin > *iymax) return 0;
+	if (*iymin < 1)
+		*iymin = 1;
+	if (*iymax > my ny)
+		*iymax = my ny;
+	if (*iymin > *iymax)
+		return 0;
 	return *iymax - *iymin + 1;
 }
 
 integer Matrix_getWindowExtrema (Matrix me, integer ixmin, integer ixmax, integer iymin, integer iymax,
 	double *minimum, double *maximum)
 {
-	if (ixmin == 0) ixmin = 1;
-	if (ixmax == 0) ixmax = my nx;
-	if (iymin == 0) iymin = 1;
-	if (iymax == 0) iymax = my ny;
-	if (ixmin > ixmax || iymin > iymax) return 0;
-	*minimum = *maximum = my z [iymin] [ixmin];
-	for (integer iy = iymin; iy <= iymax; iy ++) {
-		for (integer ix = ixmin; ix <= ixmax; ix ++) {
-			if (my z [iy] [ix] < *minimum) *minimum = my z [iy] [ix];
-			if (my z [iy] [ix] > *maximum) *maximum = my z [iy] [ix];
-		}
-	}
+	if (ixmin == 0)
+		ixmin = 1;
+	if (ixmax == 0)
+		ixmax = my nx;
+	if (iymin == 0)
+		iymin = 1;
+	if (iymax == 0)
+		iymax = my ny;
+	if (ixmin > ixmax || iymin > iymax)
+		return 0;
+	MelderExtremaWithInit extrema;
+	for (integer iy = iymin; iy <= iymax; iy ++)
+		for (integer ix = ixmin; ix <= ixmax; ix ++)
+			extrema.update (my z [iy] [ix]);
+	*minimum = extrema.min;
+	*maximum = extrema.max;
 	return (ixmax - ixmin + 1) * (iymax - iymin + 1);
 }
 
 double Matrix_getValueAtXY (Matrix me, double x, double y) {
-	double row_real = (y - my y1) / my dy + 1.0;
-	double col_real = (x - my x1) / my dx + 1.0;
+	const double row_real = (y - my y1) / my dy + 1.0;
+	const double col_real = (x - my x1) / my dx + 1.0;
 	/*
 	 * We imagine a unit square around every (xi, yi) point in the matrix.
 	 * For (x, y) values outside the union of these squares, the z value is undefined.
 	 */
-	if (row_real < 0.5 || row_real > my ny + 0.5) return undefined;
-	if (col_real < 0.5 || col_real > my nx + 0.5) return undefined;
+	if (row_real < 0.5 || row_real > my ny + 0.5)
+		return undefined;
+	if (col_real < 0.5 || col_real > my nx + 0.5)
+		return undefined;
 	/*
 	 * Determine the four nearest (xi, yi) points.
 	 */
@@ -230,10 +239,14 @@ double Matrix_getValueAtXY (Matrix me, double x, double y) {
 	 * If not, we do constant extrapolation,
 	 * which can be simulated by an interpolation between equal z values.
 	 */
-	if (bottomRow < 1) bottomRow = 1;         // 1 <= bottomRow <= my ny
-	if (topRow > my ny) topRow = my ny;       // 1 <= topRow <= my ny
-	if (leftCol < 1) leftCol = 1;             // 1 <= leftCol <= my nx
-	if (rightCol > my nx) rightCol = my nx;   // 1 <= rightCol <= my nx
+	if (bottomRow < 1)
+		bottomRow = 1;         // 1 <= bottomRow <= my ny
+	if (topRow > my ny)
+		topRow = my ny;        // 1 <= topRow <= my ny
+	if (leftCol < 1)
+		leftCol = 1;           // 1 <= leftCol <= my nx
+	if (rightCol > my nx)
+		rightCol = my nx;      // 1 <= rightCol <= my nx
 	return (1.0 - drow) * (1.0 - dcol) * my z [bottomRow] [leftCol] +
 		drow * (1.0 - dcol) * my z [topRow] [leftCol] +
 		(1.0 - drow) * dcol * my z [bottomRow] [rightCol] +
@@ -241,40 +254,39 @@ double Matrix_getValueAtXY (Matrix me, double x, double y) {
 }
 
 double Matrix_getSum (Matrix me) {
-	longdouble sum = 0.0;
-	for (integer irow = 1; irow <= my ny; irow ++)
-		for (integer icol = 1; icol <= my nx; icol ++)
-			sum += my z [irow] [icol];
-	return (double) sum;
+	return NUMsum (my z.all());
 }
 
 double Matrix_getNorm (Matrix me) {
-	longdouble sum = 0.0;
-	for (integer irow = 1; irow <= my ny; irow ++)
-		for (integer icol = 1; icol <= my nx; icol ++)
-			sum += my z [irow] [icol] * my z [irow] [icol];
-	return sqrt ((double) sum);
+	return NUMnorm (my z.get(), 2.0);
 }
 
 void Matrix_drawRows (Matrix me, Graphics g, double xmin, double xmax, double ymin, double ymax,
 	double minimum, double maximum)
 {
-	if (xmax <= xmin) { xmin = my xmin; xmax = my xmax; }
-	if (ymax <= ymin) { ymin = my ymin; ymax = my ymax; }
+	Function_unidirectionalAutowindow (me, & xmin, & xmax);
+	if (ymax <= ymin) {
+		ymin = my ymin;
+		ymax = my ymax;
+	}
 	integer ixmin, ixmax, iymin, iymax;
 	(void) Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax);
 	(void) Matrix_getWindowSamplesY (me, ymin, ymax, & iymin, & iymax);
 	if (maximum <= minimum)
 		(void) Matrix_getWindowExtrema (me, ixmin, ixmax, iymin, iymax, & minimum, & maximum);
-	if (maximum <= minimum) { minimum -= 1.0; maximum += 1.0; }
-	if (xmin >= xmax) return;
+	if (maximum <= minimum) {
+		minimum -= 1.0;
+		maximum += 1.0;
+	}
+	if (xmin >= xmax)
+		return;
 	Graphics_setInner (g);
 	for (integer iy = iymin; iy <= iymax; iy ++) {
 		Graphics_setWindow (g, xmin, xmax,
-			minimum - (iy - iymin) * (maximum - minimum),
-			maximum + (iymax - iy) * (maximum - minimum));
-		Graphics_function (g, my z [iy], ixmin, ixmax,
-			Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax));
+				minimum - (iy - iymin) * (maximum - minimum),
+				maximum + (iymax - iy) * (maximum - minimum));
+		Graphics_function (g, & my z [iy] [0], ixmin, ixmax,
+				Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax));
 	}
 	Graphics_unsetInner (g);
 	if (iymin < iymax)
@@ -295,9 +307,9 @@ void Matrix_drawOneContour (Matrix me, Graphics g, double xmin, double xmax, dou
 	if (xmin == xmax || ymin == ymax) return;
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xreversed ? xmax : xmin, xreversed ? xmin : xmax, yreversed ? ymax : ymin, yreversed ? ymin : ymax);
-	Graphics_contour (g, my z,
-		ixmin, ixmax, Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax),
-		iymin, iymax, Matrix_rowToY (me, iymin), Matrix_rowToY (me, iymax),
+	Graphics_contour (g, my z.part (iymin, iymax, ixmin, ixmax),
+		Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax),
+		Matrix_rowToY (me, iymin), Matrix_rowToY (me, iymax),
 		height);
 	Graphics_rectangle (g, xmin, xmax, ymin, ymax);
 	Graphics_unsetInner (g);
@@ -320,9 +332,9 @@ void Matrix_drawContours (Matrix me, Graphics g, double xmin, double xmax, doubl
 	if (xmin == xmax || ymin == ymax) return;
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
-	Graphics_altitude (g, my z,
-		ixmin, ixmax, Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax),
-		iymin, iymax, Matrix_rowToY (me, iymin), Matrix_rowToY (me, iymax),
+	Graphics_altitude (g, my z.part (iymin, iymax, ixmin, ixmax),
+		Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax),
+		Matrix_rowToY (me, iymin), Matrix_rowToY (me, iymax),
 		8, border);
 	Graphics_rectangle (g, xmin, xmax, ymin, ymax);
 	Graphics_unsetInner (g);
@@ -332,7 +344,7 @@ void Matrix_paintContours (Matrix me, Graphics g, double xmin, double xmax, doub
 	double minimum, double maximum)
 {
 	double border [1 + 30];
-	if (xmax <= xmin) { xmin = my xmin; xmax = my xmax; }
+	Function_unidirectionalAutowindow (me, & xmin, & xmax);
 	if (ymax <= ymin) { ymin = my ymin; ymax = my ymax; }
 	integer ixmin, ixmax, iymin, iymax;
 	(void) Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax);
@@ -345,9 +357,9 @@ void Matrix_paintContours (Matrix me, Graphics g, double xmin, double xmax, doub
 	if (xmin >= xmax || ymin >= ymax) return;
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
-	Graphics_grey (g, my z,
-		ixmin, ixmax, Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax),
-		iymin, iymax, Matrix_rowToY (me, iymin), Matrix_rowToY (me, iymax),
+	Graphics_grey (g, my z.part (iymin, iymax, ixmin, ixmax),
+		Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax),
+		Matrix_rowToY (me, iymin), Matrix_rowToY (me, iymax),
 		30, border);
 	Graphics_rectangle (g, xmin, xmax, ymin, ymax);
 	Graphics_unsetInner (g);
@@ -356,7 +368,7 @@ void Matrix_paintContours (Matrix me, Graphics g, double xmin, double xmax, doub
 static void cellArrayOrImage (Matrix me, Graphics g, double xmin, double xmax, double ymin, double ymax,
 	double minimum, double maximum, bool interpolate)
 {
-	if (xmax <= xmin) { xmin = my xmin; xmax = my xmax; }
+	Function_unidirectionalAutowindow (me, & xmin, & xmax);
 	if (ymax <= ymin) { ymin = my ymin; ymax = my ymax; }
 	integer ixmin, ixmax, iymin, iymax;
 	(void) Matrix_getWindowSamplesX (me, xmin - 0.49999 * my dx, xmax + 0.49999 * my dx,
@@ -370,14 +382,14 @@ static void cellArrayOrImage (Matrix me, Graphics g, double xmin, double xmax, d
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 	if (interpolate)
-		Graphics_image (g, my z,
-			ixmin, ixmax, Sampled_indexToX   (me, ixmin - 0.5), Sampled_indexToX   (me, ixmax + 0.5),
-			iymin, iymax, SampledXY_indexToY (me, iymin - 0.5), SampledXY_indexToY (me, iymax + 0.5),
+		Graphics_image (g, my z.part (iymin, iymax, ixmin, ixmax),
+			Sampled_indexToX   (me, ixmin - 0.5), Sampled_indexToX   (me, ixmax + 0.5),
+			SampledXY_indexToY (me, iymin - 0.5), SampledXY_indexToY (me, iymax + 0.5),
 			minimum, maximum);
 	else
-		Graphics_cellArray (g, my z,
-			ixmin, ixmax, Sampled_indexToX   (me, ixmin - 0.5), Sampled_indexToX   (me, ixmax + 0.5),
-			iymin, iymax, SampledXY_indexToY (me, iymin - 0.5), SampledXY_indexToY (me, iymax + 0.5),
+		Graphics_cellArray (g, my z.part (iymin, iymax, ixmin, ixmax),
+			Sampled_indexToX   (me, ixmin - 0.5), Sampled_indexToX   (me, ixmax + 0.5),
+			SampledXY_indexToY (me, iymin - 0.5), SampledXY_indexToY (me, iymax + 0.5),
 			minimum, maximum);
 	Graphics_rectangle (g, xmin, xmax, ymin, ymax);
 	Graphics_unsetInner (g);
@@ -398,7 +410,7 @@ void Matrix_paintCells (Matrix me, Graphics g, double xmin, double xmax, double 
 void Matrix_paintSurface (Matrix me, Graphics g, double xmin, double xmax, double ymin, double ymax,
 	double minimum, double maximum, double elevation, double azimuth)
 {
-	if (xmax <= xmin) { xmin = my xmin; xmax = my xmax; }
+	Function_unidirectionalAutowindow (me, & xmin, & xmax);
 	if (ymax <= ymin) { ymin = my ymin; ymax = my ymax; }
 	integer ixmin, ixmax, iymin, iymax;
 	(void) Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax);
@@ -408,24 +420,28 @@ void Matrix_paintSurface (Matrix me, Graphics g, double xmin, double xmax, doubl
 	if (maximum <= minimum) { minimum -= 1.0; maximum += 1.0; }
 	Graphics_setInner (g);
 	Graphics_setWindow (g, -1.0, 1.0, minimum, maximum);
-	Graphics_surface (g, my z,
-		ixmin, ixmax, Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax),
-		iymin, iymax, Matrix_rowToY (me, iymin), Matrix_rowToY (me, iymax),
+	Graphics_surface (g, my z.part (iymin, iymax, ixmin, ixmax),
+		Matrix_columnToX (me, ixmin), Matrix_columnToX (me, ixmax),
+		Matrix_rowToY (me, iymin), Matrix_rowToY (me, iymax),
 		minimum, maximum, elevation, azimuth);
 	Graphics_unsetInner (g);
 }
 
-void Matrix_movie (Matrix me, Graphics g) {
-	autoNUMvector <double> column (1, my ny);
+void Matrix_playMovie (Matrix me, Graphics g) {
+	Melder_require (my ny >= 2,
+		me, U": cannot play a movie for a Matrix with less than 2 rows.");
+	autoVEC column = newVECraw (my ny);
 	double minimum = 0.0, maximum = 1.0;
 	Matrix_getWindowExtrema (me, 1, my nx, 1, my ny, & minimum, & maximum);
+	if (minimum == maximum) {
+		minimum -= 0.5;
+		maximum += 0.5;
+	}
 	for (integer icol = 1; icol <= my nx; icol ++) {
-		for (integer irow = 1; irow <= my ny; irow ++) {
-			column [irow] = my z [irow] [icol];
-		}
-		Graphics_beginMovieFrame (g, & Graphics_WHITE);
+		column.all() <<= my z.column (icol);
+		Graphics_beginMovieFrame (g, & Melder_WHITE);
 		Graphics_setWindow (g, my ymin, my ymax, minimum, maximum);
-		Graphics_function (g, column.peek(), 1, my ny, my ymin, my ymax);
+		Graphics_function (g, column.asArgumentToFunctionThatExpectsOneBasedArray(), 1, my ny, my ymin, my ymax);
 		Graphics_endMovieFrame (g, 0.03);
 	}
 }
@@ -436,24 +452,22 @@ autoMatrix Matrix_readAP (MelderFile file) {
 		int16 header [256];
 		for (integer i = 0; i < 256; i ++)
 			header [i] = bingeti16LE (f);
-		double samplingFrequency = header [100];   // converting up (from 16 to 54 bytes)
+		const integer numberOfFrames = header [34];
+		const integer numberOfWordsPerFrame = header [35];
+		const double samplingFrequency = double (header [100]);   // converting up (from 16 to 54 bits)
+		//const integer numberOfSamplesPerFrame = header [110];
 		Melder_casual (U"Sampling frequency ", samplingFrequency);
-		autoMatrix me = Matrix_create (0.0, (double) header [34], header [34] /* Number of frames. */, 1.0, 0.5,
-			0.0, (double) header [35], header [35] /* Number of words per frame. */, 1.0, 0.5);
-			/*Mat := MATRIX_create (Buffer.I2 [36], (* Number of words per frame. *)
-							   Buffer.I2 [35], (* Number of frames. *)
-							   1.0,
-							   Buffer.I2 [111] / (* Samples per frame. *)
-							   Buffer.I2 [101]); (* Sampling frequency. *)*/
-		Melder_casual (U"... Loading ", header [34], U" frames",
-			U" of ", header [35], U" words ...");
+		autoMatrix me = Matrix_create (0.0, (double) numberOfFrames, numberOfFrames, 1.0, 0.5,
+				0.0, (double) numberOfWordsPerFrame, numberOfWordsPerFrame, 1.0, 0.5);
+		Melder_casual (U"... Loading ", numberOfFrames, U" frames",
+			U" of ", numberOfWordsPerFrame, U" words each ...");
 		for (integer i = 1; i <= my nx; i ++)
 			for (integer j = 1; j <= my ny; j ++)
-				my z [j] [i] = bingeti16LE (f);   // converting up (from 16 to 54 bytes)
+				my z [j] [i] = bingeti16LE (f);   // converting up (from 16 to 54 bits)
 
 		/*
-		 * Get pitch frequencies.
-		 */
+			Get pitch frequencies.
+		*/
 		for (integer i = 1; i <= my nx; i ++)
 			if (my z [1] [i] != 0.0)
 				my z [1] [i] = - samplingFrequency / my z [1] [i];
@@ -468,10 +482,14 @@ autoMatrix Matrix_readAP (MelderFile file) {
 autoMatrix Matrix_appendRows (Matrix me, Matrix thee, ClassInfo klas) {
 	try {
 		autoMatrix him = Thing_newFromClass (klas).static_cast_move<structMatrix>();
-		Matrix_init (him.get(), my xmin < thy xmin ? my xmin : thy xmin,
-			my xmax > thy xmax ? my xmax : thy xmax,
-			my nx > thy nx ? my nx : thy nx, my dx, my x1 < thy x1 ? my x1 : thy x1,
-			my ymin, my ymax + (thy ymax - thy ymin), my ny + thy ny, my dy, my y1);
+		Matrix_init (him.get(),
+			std::min (my xmin, thy xmin),
+			std::max (my xmax, thy xmax),
+			std::max (my nx, thy nx),
+			my dx,
+			std::min (my x1, thy x1),
+			my ymin, my ymax + (thy ymax - thy ymin), my ny + thy ny, my dy, my y1
+		);
 		for (integer irow = 1; irow <= my ny; irow ++)
 			for (integer icol = 1; icol <= my nx; icol ++)
 				his z [irow] [icol] = my z [irow] [icol];
@@ -502,7 +520,8 @@ autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-
 			do {
 				kar = fgetc (f);
 			} while (kar != EOF && ! Melder_isHorizontalOrVerticalSpace ((char32) kar));
-			if (kar == EOF || Melder_isVerticalSpace ((char32) kar)) break;
+			if (kar == EOF || Melder_isVerticalSpace ((char32) kar))
+				break;
 		}
 		if (numberOfColumns == 0)
 			Melder_throw (U"File empty");
@@ -535,10 +554,9 @@ autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-
 			Read elements.
 		*/
 		rewind (f);
-		for (integer irow = 1; irow <= numberOfRows; irow ++) {
+		for (integer irow = 1; irow <= numberOfRows; irow ++)
 			for (integer icol = 1; icol <= numberOfColumns; icol ++)
 				fscanf (f, "%lf", & my z [irow] [icol]);
-		}
 
 		f.close (file);
 		return me;
@@ -547,14 +565,22 @@ autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-
 	}
 }
 
+static bool isSymmetric (Matrix me) {
+	for (integer irow = 1; irow <= my ny - 1; irow ++)
+		for (integer icol = irow + 1; icol <= my nx; icol ++)
+			if (my z [irow] [icol] != my z [icol][irow])
+				return false;
+	return true;
+}
+
 void Matrix_eigen (Matrix me, autoMatrix *out_eigenvectors, autoMatrix *out_eigenvalues) {
 	try {
 		Melder_require (my nx == my ny, 
-			U"The number of rows and the number of columns must be equal.");
-		
-		MAT a (my z, my nx, my nx);
+			U"The number of rows (here ", my ny, U") should be equal to the number of columns (here ", my nx, U").");
+		Melder_require (isSymmetric (me),
+			U"The matrix should be symmetric.");
 		autoEigen eigen = Thing_new (Eigen);
-		Eigen_initFromSymmetricMatrix (eigen.get(), a);
+		Eigen_initFromSymmetricMatrix (eigen.get(), my z.get());
 		autoMatrix eigenvectors = Data_copy (me);
 		autoMatrix eigenvalues = Matrix_create (1.0, 1.0, 1, 1.0, 1.0, my ymin, my ymax, my ny, my dy, my y1);
 		for (integer i = 1; i <= my nx; i ++) {
@@ -571,12 +597,12 @@ void Matrix_eigen (Matrix me, autoMatrix *out_eigenvectors, autoMatrix *out_eige
 
 autoMatrix Matrix_power (Matrix me, integer power) {
 	try {
-		if (my nx != my ny)
-			Melder_throw (U"Matrix not square.");
+		Melder_require (my nx == my ny,
+			U"The number of rows (here ", my ny, U") should be equal to the number of columns (here ", my nx, U").");
 		autoMatrix thee = Data_copy (me);
 		autoMatrix him = Data_copy (me);
 		for (integer ipow = 2; ipow <= power; ipow ++) {
-			double **tmp = his z; his z = thy z; thy z = tmp;
+			std::swap (his z, thy z);
 			for (integer irow = 1; irow <= my ny; irow ++) {
 				for (integer icol = 1; icol <= my nx; icol ++) {
 					thy z [irow] [icol] = 0.0;
@@ -651,10 +677,7 @@ void Matrix_formula_part (Matrix me, double xmin, double xmax, double ymin, doub
 	conststring32 expression, Interpreter interpreter, Matrix target)
 {
 	try {
-		if (xmax <= xmin) {
-			xmin = my xmin;
-			xmax = my xmax;
-		}
+		Function_unidirectionalAutowindow (me, & xmin, & xmax);
 		if (ymax <= ymin) {
 			ymin = my ymin;
 			ymax = my ymax;
@@ -679,20 +702,15 @@ void Matrix_formula_part (Matrix me, double xmin, double xmax, double ymin, doub
 
 void Matrix_scaleAbsoluteExtremum (Matrix me, double scale) {
 	double extremum = 0.0;
-	for (integer i = 1; i <= my ny; i ++) {
-		for (integer j = 1; j <= my nx; j ++) {
-			if (fabs (my z [i] [j]) > extremum) {
+	for (integer i = 1; i <= my ny; i ++)
+		for (integer j = 1; j <= my nx; j ++)
+			if (fabs (my z [i] [j]) > extremum)
 				extremum = fabs (my z [i] [j]);
-			}
-		}
-	}
 	if (extremum != 0.0) {
 		double factor = scale / extremum;
-		for (integer i = 1; i <= my ny; i ++) {
-			for (integer j = 1; j <= my nx; j ++) {
+		for (integer i = 1; i <= my ny; i ++)
+			for (integer j = 1; j <= my nx; j ++)
 				my z [i] [j] *= factor;
-			}
-		}
 	}
 }
 
@@ -723,14 +741,12 @@ autoTableOfReal Matrix_to_TableOfReal (Matrix me) {
 autoMatrix Table_to_Matrix (Table me) {
 	try {
 		autoMatrix thee = Matrix_createSimple (my rows.size, my numberOfColumns);
-		for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
+		for (integer icol = 1; icol <= my numberOfColumns; icol ++)
 			Table_numericize_Assert (me, icol);
-		}
 		for (integer irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
-			for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
+			for (integer icol = 1; icol <= my numberOfColumns; icol ++)
 				thy z [irow] [icol] = row -> cells [icol]. number;
-			}
 		}
 		return thee;
 	} catch (MelderError) {

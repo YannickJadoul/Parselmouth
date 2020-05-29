@@ -2,7 +2,7 @@
 #define _TextGridEditor_h_
 /* TextGridEditor.h
  *
- * Copyright (C) 1992-2011,2012,2014,2015,2017 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,6 +74,8 @@ Thing_define (TextGridEditor, TimeSoundAnalysisEditor) {
 		override;
 	void v_prefs_getValues (EditorCommand cmd)
 		override;
+	conststring32 v_selectionViewerName ()
+		override { return U"IPA chart"; }
 	void v_createMenuItems_view_timeDomain (EditorMenu menu)
 		override;
 	void v_highlightSelection (double left, double right, double bottom, double top)
@@ -92,13 +94,13 @@ Thing_define (TextGridEditor, TimeSoundAnalysisEditor) {
 	#include "TextGridEditor_prefs.h"
 };
 
-void TextGridEditor_init (TextGridEditor me, conststring32 title, TextGrid grid, Sampled sound, bool ownSound, SpellingChecker spellingChecker, const char *callbackSocket);
+void TextGridEditor_init (TextGridEditor me, conststring32 title, TextGrid grid, Sampled sound, bool ownSound, SpellingChecker spellingChecker, conststring32 callbackSocket);
 
 autoTextGridEditor TextGridEditor_create (conststring32 title, TextGrid grid,
 	Sampled sound,   // either a Sound or a LongSound, or null
 	bool ownSound,
 	SpellingChecker spellingChecker,
-	const char *callbackSocket);
+	conststring32 callbackSocket);
 
 /* End of file TextGridEditor.h */
 #endif

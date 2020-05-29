@@ -1,6 +1,6 @@
 /* melder_ftoa.cpp
  *
- * Copyright (C) 1992-2008,2010-2012,2014-2018 Paul Boersma
+ * Copyright (C) 1992-2008,2010-2012,2014-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -172,6 +172,20 @@ conststring32 Melder_boolean (bool value) noexcept {
 	return value ? U"yes" : U"no";
 }
 
+const char * Melder8_onoff (bool value) noexcept {
+	return value ? "on" : "off";
+}
+conststring32 Melder_onoff (bool value) noexcept {
+	return value ? U"on" : U"off";
+}
+
+const char * Melder8_kleenean (kleenean valueK) noexcept {
+	return valueK ? "yes" : ! valueK ? "no": "unknown";
+}
+conststring32 Melder_kleenean (kleenean valueK) noexcept {
+	return valueK ? U"yes" : ! valueK ? U"no": U"unknown";
+}
+
 /*@praat
 	assert string$ (1000000000000) = "1000000000000"
 	assert string$ (undefined) = "--undefined--"
@@ -219,7 +233,8 @@ conststring32 Melder_double (double value, integer precision, char format /*= 'g
 }
 
 const char * Melder8_single (double value) noexcept {
-	if (isundef (value)) return "--undefined--";
+	if (isundef (value))
+		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS) ibuffer = 0;
 	sftoa_c(buffers8 [ibuffer], value, 9); // sprintf (buffers8 [ibuffer], "%.9g", value);
 	return buffers8 [ibuffer];
@@ -345,26 +360,26 @@ conststring32 Melder_hexadecimal (integer value, integer precision) noexcept {
 }
 
 const char * Melder8_dcomplex (dcomplex value) noexcept {
-	if (isundef (value.re) || isundef (value.im))
+	if (isundef (value.real()) || isundef (value.imag()))
 		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS)
 		ibuffer = 0;
-	sftoa_c(buffers8 [ibuffer], value.re, 15); // sprintf (buffers8 [ibuffer], "%.15g", value.re);
-	if (Melder8_strtod (buffers8 [ibuffer], nullptr) != value.re) {
-		sftoa_c(buffers8 [ibuffer], value.re, 16); // sprintf (buffers8 [ibuffer], "%.16g", value.re);
-		if (Melder8_strtod (buffers8 [ibuffer], nullptr) != value.re)
-			sftoa_c(buffers8 [ibuffer], value.re, 17); // sprintf (buffers8 [ibuffer], "%.17g", value.re);
+	sftoa_c(buffers8 [ibuffer], value.real(), 15); // sprintf (buffers8 [ibuffer], "%.15g", value.real());
+	if (Melder8_strtod (buffers8 [ibuffer], nullptr) != value.real()) {
+		sftoa_c(buffers8 [ibuffer], value.real(), 16); // sprintf (buffers8 [ibuffer], "%.16g", value.real());
+		if (Melder8_strtod (buffers8 [ibuffer], nullptr) != value.real())
+			sftoa_c(buffers8 [ibuffer], value.real(), 17); // sprintf (buffers8 [ibuffer], "%.17g", value.real());
 	}
 	char *p = buffers8 [ibuffer] + strlen (buffers8 [ibuffer]);
-	*p = value.im < 0.0 ? '-' : '+';
-	value.im = fabs (value.im);
+	*p = ( value.imag() < 0.0 ? '-' : '+' );
+	value. imag (fabs (value.imag()));
 	++ p;
 	auto s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
-	sftoa_c(p, s, value.im, 15); // sprintf (p, "%.15g", value.im);
-	if (Melder8_strtod (p, nullptr) != value.im) {
-		sftoa_c(p, s, value.im, 16); // sprintf (p, "%.16g", value.im);
-		if (Melder8_strtod (p, nullptr) != value.im)
-			sftoa_c(p, s, value.im, 17); // sprintf (p, "%.17g", value.im);
+	sftoa_c(p, s, value.imag(), 15); // sprintf (p, "%.15g", value.imag());
+	if (Melder8_strtod (p, nullptr) != value.imag()) {
+		sftoa_c(p, s, value.imag(), 16); // sprintf (p, "%.16g", value.imag());
+		if (Melder8_strtod (p, nullptr) != value.imag())
+			sftoa_c(p, s, value.imag(), 17); // sprintf (p, "%.17g", value.imag());
 	}
 	strcat (buffers8 [ibuffer], "i");
 	return buffers8 [ibuffer];
@@ -375,16 +390,16 @@ conststring32 Melder_dcomplex (dcomplex value) noexcept {
 }
 
 const char * Melder8_scomplex (dcomplex value) noexcept {
-	if (isundef (value.re) || isundef (value.im))
+	if (isundef (value.real()) || isundef (value.imag()))
 		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS)
 		ibuffer = 0;
-	sftoa_c(buffers8 [ibuffer], value.re, 9); // sprintf (buffers8 [ibuffer], "%.9g", value.re);
+	sftoa_c(buffers8 [ibuffer], value.real(), 9); // sprintf (buffers8 [ibuffer], "%.9g", value.real());
 	char *p = buffers8 [ibuffer] + strlen (buffers8 [ibuffer]);
-	*p = value.im < 0.0 ? '-' : '+';
+	*p = ( value.imag() < 0.0 ? '-' : '+' );
 	++p;
 	auto s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
-	sftoa_c(p, s, fabs (value.im), 9); // sprintf (++ p, "%.9g", fabs (value.im));
+	sftoa_c(p, s, fabs (value.imag()), 9); // sprintf (++ p, "%.9g", fabs (value.imag()));
 	strcat (buffers8 [ibuffer], "i");
 	return buffers8 [ibuffer];
 }
@@ -459,12 +474,12 @@ conststring32 Melder_naturalLogarithm (double lnNumber) noexcept {
 	CONVERT_BUFFER_TO_CHAR32
 }
 
-const char * Melder8_pointer (void *pointer) noexcept {
+const char * Melder8_pointer (const void *pointer) noexcept {
 	if (++ ibuffer == NUMBER_OF_BUFFERS) ibuffer = 0;
 	sprintf (buffers8 [ibuffer], "%p", pointer);
 	return buffers8 [ibuffer];
 }
-conststring32 Melder_pointer (void *pointer) noexcept {
+conststring32 Melder_pointer (const void *pointer) noexcept {
 	const char *p = Melder8_pointer (pointer);
 	CONVERT_BUFFER_TO_CHAR32
 }
@@ -476,29 +491,69 @@ conststring32 Melder_character (char32 kar) noexcept {
 	return buffers32 [ibuffer];
 }
 
+const char * Melder8_colour (MelderColour colour) noexcept {
+	if (isundef (colour.red) || isundef (colour.green) || isundef (colour.blue))
+		return "{--undefined--,--undefined--,--undefined--}";
+	if (++ ibuffer == NUMBER_OF_BUFFERS)
+		ibuffer = 0;
+	char *p = & buffers8 [ibuffer] [0];
+	strcpy (p, "{");
+	p ++;
+	sprintf (p, "%.15g", colour.red);
+	if (strtod (p, nullptr) != colour.red) {
+		sprintf (p, "%.16g", colour.red);
+		if (strtod (p, nullptr) != colour.red)
+			sprintf (p, "%.17g", colour.red);
+	}
+	p += strlen (p);
+	strcpy (p, ",");
+	p ++;
+	sprintf (p, "%.15g", colour.green);
+	if (strtod (p, nullptr) != colour.green) {
+		sprintf (p, "%.16g", colour.green);
+		if (strtod (p, nullptr) != colour.green)
+			sprintf (p, "%.17g", colour.green);
+	}
+	p += strlen (p);
+	strcpy (p, ",");
+	p ++;
+	sprintf (p, "%.15g", colour.blue);
+	if (strtod (p, nullptr) != colour.blue) {
+		sprintf (p, "%.16g", colour.blue);
+		if (strtod (p, nullptr) != colour.blue)
+			sprintf (p, "%.17g", colour.blue);
+	}
+	p += strlen (p);
+	strcpy (p, "}");
+	return buffers8 [ibuffer];
+}
+conststring32 Melder_colour (MelderColour colour) noexcept {
+	const char *p = Melder8_colour (colour);
+	CONVERT_BUFFER_TO_CHAR32
+}
+
 /********** TENSOR TO STRING CONVERSION **********/
 
 #define NUMBER_OF_TENSOR_BUFFERS  3
-static MelderString theTensorBuffers [NUMBER_OF_TENSOR_BUFFERS] { };
+static MelderString theTensorBuffers [NUMBER_OF_TENSOR_BUFFERS];
 static int iTensorBuffer { 0 };
 
-conststring32 Melder_VEC (constVEC value) {
+conststring32 Melder_VEC (constVECVU const& value) {
 	if (++ iTensorBuffer == NUMBER_OF_TENSOR_BUFFERS)
 		iTensorBuffer = 0;
 	MelderString *string = & theTensorBuffers [iTensorBuffer];
 	MelderString_empty (string);
-	if (value.at) {
+	if (! NUMisEmpty (value))
 		for (integer i = 1; i <= value.size; i ++)
 			MelderString_append (string, value [i], U'\n');
-	}
 	return string -> string;
 }
-conststring32 Melder_MAT (constMAT value) {
+conststring32 Melder_MAT (constMATVU const& value) {
 	if (++ iTensorBuffer == NUMBER_OF_TENSOR_BUFFERS)
 		iTensorBuffer = 0;
 	MelderString *string = & theTensorBuffers [iTensorBuffer];
 	MelderString_empty (string);
-	if (value.at) {
+	if (! NUMisEmpty (value)) {
 		for (integer irow = 1; irow <= value.nrow; irow ++) {
 			for (integer icol = 1; icol <= value.ncol; icol ++) {
 				MelderString_append (string, value [irow] [icol]);
@@ -522,7 +577,8 @@ conststring32 Melder_pad (int64 width, conststring32 string) {
 		iPadBuffer = 0;
 	int64 length = str32len (string);
 	int64 tooShort = width - length;
-	if (tooShort <= 0) return string;
+	if (tooShort <= 0)
+		return string;
 	MelderString_empty (& thePadBuffers [iPadBuffer]);
 	for (int64 i = 0; i < tooShort; i ++)
 		MelderString_appendCharacter (& thePadBuffers [iPadBuffer], U' ');
@@ -535,7 +591,8 @@ conststring32 Melder_pad (conststring32 string, int64 width) {
 		iPadBuffer = 0;
 	int64 length = str32len (string);
 	int64 tooShort = width - length;
-	if (tooShort <= 0) return string;
+	if (tooShort <= 0)
+		return string;
 	MelderString_copy (& thePadBuffers [iPadBuffer], string);
 	for (int64 i = 0; i < tooShort; i ++)
 		MelderString_appendCharacter (& thePadBuffers [iPadBuffer], U' ');
@@ -547,7 +604,8 @@ conststring32 Melder_truncate (int64 width, conststring32 string) {
 		iPadBuffer = 0;
 	int64 length = str32len (string);
 	int64 tooLong = length - width;
-	if (tooLong <= 0) return string;
+	if (tooLong <= 0)
+		return string;
 	MelderString_ncopy (& thePadBuffers [iPadBuffer], string + tooLong, width);
 	return thePadBuffers [iPadBuffer]. string;
 }
@@ -557,7 +615,8 @@ conststring32 Melder_truncate (conststring32 string, int64 width) {
 		iPadBuffer = 0;
 	int64 length = str32len (string);
 	int64 tooLong = length - width;
-	if (tooLong <= 0) return string;
+	if (tooLong <= 0)
+		return string;
 	MelderString_ncopy (& thePadBuffers [iPadBuffer], string, width);
 	return thePadBuffers [iPadBuffer]. string;
 }
@@ -567,7 +626,8 @@ conststring32 Melder_padOrTruncate (int64 width, conststring32 string) {
 		iPadBuffer = 0;
 	int64 length = str32len (string);
 	int64 tooLong = length - width;
-	if (tooLong == 0) return string;
+	if (tooLong == 0)
+		return string;
 	if (tooLong < 0) {
 		int64 tooShort = - tooLong;
 		MelderString_empty (& thePadBuffers [iPadBuffer]);
@@ -585,7 +645,8 @@ conststring32 Melder_padOrTruncate (conststring32 string, int64 width) {
 		iPadBuffer = 0;
 	int64 length = str32len (string);
 	int64 tooLong = length - width;
-	if (tooLong == 0) return string;
+	if (tooLong == 0)
+		return string;
 	if (tooLong < 0) {
 		int64 tooShort = - tooLong;
 		MelderString_copy (& thePadBuffers [iPadBuffer], string);

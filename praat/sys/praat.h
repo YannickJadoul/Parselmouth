@@ -2,7 +2,7 @@
 #define _praat_h_
 /* praat.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2019 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,11 +79,11 @@ void praat_addAction4_ (ClassInfo class1, integer n1, ClassInfo class2, integer 
 /*
 	'title' is the name that will appear in the dynamic menu,
 		and also the command that is used in command files;
-		this title is reference-copied.
+		this title is deep-copied.
 	'callback' refers to a function prototyped like this:
-		static int DO_Class_action (UiForm sendingForm, int narg, Stackel args, conststring32 sendingString, Interpreter interpreter, void *closure);
-		this function should throw an exception if the command failed,
-		and return 1 if the command was executed successfully;
+		static void DO_Class_action (UiForm sendingForm, int narg, Stackel args, conststring32 sendingString,
+				Interpreter interpreter, conststring32 invokingButtonTitle, bool modified, void *closure);
+		this function should throw an exception if the command failed;
 		this function will be called by 'praat' when the user clicks a menu command,
 		in which case 'sendingForm', 'args' and 'sendingString' and 'closure' will be null;
 		it is also called by scripts,
@@ -134,6 +134,10 @@ void praat_addAction4_ (ClassInfo class1, integer n1, ClassInfo class2, integer 
 #define praat_DEPRECATED_2015  (0x0F20'0000 | praat_HIDDEN)
 #define praat_DEPRECATED_2016  (0x1020'0000 | praat_HIDDEN)
 #define praat_DEPRECATED_2017  (0x1120'0000 | praat_HIDDEN)
+#define praat_DEPRECATED_2018  (0x1220'0000 | praat_HIDDEN)
+#define praat_DEPRECATED_2019  (0x1320'0000 | praat_HIDDEN)
+#define praat_DEPRECATED_2020  (0x1420'0000 | praat_HIDDEN)
+#define praat_DEPRECATED_2021  (0x1520'0000 | praat_HIDDEN)
 /*
 	The following three can also be used, but not for deprecated commands.
 */
@@ -178,10 +182,11 @@ typedef struct {   /* Readonly */
 	int totalBeingCreated;
 	integer uniqueId;
 } structPraatObjects, *PraatObjects;
-typedef struct {   // readonly
+typedef struct {   // read-only
 	Graphics graphics;   /* The Graphics associated with the Picture window or HyperPage window or Demo window. */
-	int font, fontSize, lineType;
-	Graphics_Colour colour;
+	int font, lineType;
+	double fontSize;
+	MelderColour colour;
 	double lineWidth, arrowSize, speckleSize, x1NDC, x2NDC, y1NDC, y2NDC;
 } structPraatPicture, *PraatPicture;
 extern structPraatApplication theForegroundPraatApplication;
@@ -352,24 +357,39 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 #define OPTION(labelText)  \
 		UiOptionMenu_addButton (_radio_, labelText);
 
-#define RADIO_ENUM(enumeratedVariable, labelText, EnumeratedType, defaultEnumeratedSubvalue)  \
+#define RADIO_ENUM(EnumeratedType, enumeratedVariable, labelText, defaultValue)  \
 		static EnumeratedType enumeratedVariable; \
+		{/* type checks */ \
+			enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
+			_compilerTypeCheckDummy = enumeratedVariable; \
+			(void) _compilerTypeCheckDummy; \
+		} \
 		_radio_ = UiForm_addRadio (_dia_.get(), (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, labelText, \
-			(int) EnumeratedType::defaultEnumeratedSubvalue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
+			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
 			UiRadio_addButton (_radio_, EnumeratedType##_getText ((EnumeratedType) ienum));
 
-#define OPTIONMENU_ENUM(enumeratedVariable, labelText, EnumeratedType, defaultEnumeratedSubvalue)  \
+#define OPTIONMENU_ENUM(EnumeratedType, enumeratedVariable, labelText, defaultValue)  \
 		static EnumeratedType enumeratedVariable; \
+		{/* type checks */ \
+			enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
+			_compilerTypeCheckDummy = enumeratedVariable; \
+			(void) _compilerTypeCheckDummy; \
+		} \
 		_radio_ = UiForm_addOptionMenu (_dia_.get(), (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, labelText, \
-			(int) EnumeratedType::defaultEnumeratedSubvalue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
+			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
 			UiOptionMenu_addButton (_radio_, EnumeratedType##_getText ((EnumeratedType) ienum));
 
-#define OPTIONMENU_ENUMSTR(enumeratedVariableAsString, labelText, EnumeratedType, defaultEnumeratedSubvalue)  \
+#define OPTIONMENU_ENUMSTR(EnumeratedType, enumeratedVariableAsString, labelText, defaultValue)  \
 		static char32 *enumeratedVariableAsString; \
+		{/* type checks */ \
+			enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
+			_compilerTypeCheckDummy = enumeratedVariable; \
+			(void) _compilerTypeCheckDummy; \
+		} \
 		_radio_ = UiForm_addOptionMenu (_dia_.get(), nullptr, & enumeratedVariableAsString, U"" #enumeratedVariableAsString, labelText, \
-			(int) EnumeratedType::defaultEnumeratedSubvalue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
+			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
 			UiOptionMenu_addButton (_radio_, EnumeratedType##_getText ((EnumeratedType) ienum));
 
@@ -388,7 +408,7 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 		UiForm_addFileOut (_dia_.get(), labelText, defaultStringValue);
 
 #define COLOUR(colourVariable, labelText, defaultStringValue)  \
-		static Graphics_Colour colourVariable; \
+		static MelderColour colourVariable; \
 		UiForm_addColour (_dia_.get(), & colourVariable, U"" #colourVariable, labelText, defaultStringValue);
 
 #define CHANNEL(integerVariable, labelText, defaultStringValue)  \
@@ -702,10 +722,10 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 #define STRING_ONE_END  Melder_information (result); END_NO_NEW_DATA
 
 #define NUMVEC_ONE(klas)  FIND_ONE (klas)
-#define NUMVEC_ONE_END  if (interpreter) theInterpreterNumvec = result.move(); else Melder_information (result.get()); END_NO_NEW_DATA
+#define NUMVEC_ONE_END  if (interpreter) theInterpreterNumvec = result.move(); else Melder_information (constVECVU (result.all())); END_NO_NEW_DATA
 
 #define NUMMAT_ONE(klas)  FIND_ONE (klas)
-#define NUMMAT_ONE_END  if (interpreter) theInterpreterNummat = result.move(); else Melder_information (result.get()); END_NO_NEW_DATA
+#define NUMMAT_ONE_END  if (interpreter) theInterpreterNummat = result.move(); else Melder_information (constMATVU (result.all())); END_NO_NEW_DATA
 
 #define MODIFY_EACH(klas)  LOOP { iam_LOOP (klas);
 #define MODIFY_EACH_END  praat_dataChanged (me); } END_NO_NEW_DATA
@@ -774,7 +794,7 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 #define SAVE_TYPED_LIST_END  END_NO_NEW_DATA
 
 /* Used by praat_Sybil.cpp, if you put an Editor on the screen: */
-int praat_installEditor (Editor editor, int iobject);
+void praat_installEditor (Editor editor, int iobject);
 /* This routine adds a reference to a new editor (unless it is null) to the screen object
    which is in the list at position 'iobject'.
    It sets the destroyCallback and dataChangedCallback as appropriate for Praat:
@@ -791,9 +811,9 @@ int praat_installEditor (Editor editor, int iobject);
 				(SpectrogramEditor_create (praat.topShell, ID_AND_FULL_NAME, OBJECT), IOBJECT);
 	END }
 */
-int praat_installEditor2 (Editor editor, int iobject1, int iobject2);
-int praat_installEditor3 (Editor editor, int iobject1, int iobject2, int iobject3);
-int praat_installEditorN (Editor editor, DaataList objects);
+void praat_installEditor2 (Editor editor, int iobject1, int iobject2);
+void praat_installEditor3 (Editor editor, int iobject1, int iobject2, int iobject3);
+void praat_installEditorN (Editor editor, DaataList objects);
 
 void praat_dataChanged (Daata object);
 /* Call this after changing a screen object. */

@@ -1,6 +1,6 @@
 /* melder_progress.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,12 +38,13 @@ void MelderProgress::_doProgress (double progress, conststring32 message) {
 		MelderProgress::_p_progressProc (progress, message);
 }
 
-MelderString MelderProgress::_buffer = { 0, 0, nullptr };
+MelderString MelderProgress::_buffer;
 
 void * MelderProgress::_doMonitor (double progress, conststring32 message) {
 	if (! Melder_batch && MelderProgress::_depth >= 0) {
 		void *result = MelderProgress::_p_monitorProc (progress, message);
-		if (result) return result;
+		if (result)
+			return result;
 	}
 	return progress <= 0.0 ? nullptr /* no Graphics */ : (void *) -1 /* any non-null pointer */;
 }
