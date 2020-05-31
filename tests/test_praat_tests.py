@@ -33,7 +33,7 @@ PRAAT_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..",  
 PRAAT_TEST_BASE_DIR = os.path.join(PRAAT_BASE_DIR, "test")
 PRAAT_DWTEST_BASE_DIR = os.path.join(PRAAT_BASE_DIR, "dwtest")
 
-PRAAT_TEST_IGNORE_SUBDIRS = ["manually", "speed", "fon ExperimentMFC"]
+PRAAT_TEST_IGNORE_SUBDIRS = ["manually", "speed"]
 
 
 def find_praat_test_files():
@@ -41,12 +41,16 @@ def find_praat_test_files():
 		if os.path.basename(os.path.dirname(dir)) in PRAAT_TEST_IGNORE_SUBDIRS:
 			continue
 		for fn in glob.iglob(os.path.join(dir, "**", "*.praat"), recursive=True):
+			if "_GUI_" in fn:
+				continue
 			rel_fn = os.path.relpath(fn, PRAAT_TEST_BASE_DIR)
 			yield pytest.param(fn, id=rel_fn)
 
 
 def find_praat_dwtest_files():
 	for fn in glob.iglob(os.path.join(PRAAT_DWTEST_BASE_DIR, "test_*.praat")):
+		if "_GUI_" in fn:
+			continue
 		rel_fn = os.path.relpath(fn, PRAAT_DWTEST_BASE_DIR)
 		marks = []
 		if rel_fn in ["test_SpeechSynthesizer.praat",
@@ -59,6 +63,13 @@ def find_praat_dwtest_files():
 
 PRAAT_TEST_FILES = sorted(find_praat_test_files())
 PRAAT_DWTEST_FILES = sorted(find_praat_dwtest_files())
+
+
+@pytest.fixture(scope='function', autouse=True)
+def praat_random_seed():
+	parselmouth.praat.run("random_initializeWithSeedUnsafelyButPredictably(5489)")
+	yield
+	parselmouth.praat.run("random_initializeSafelyAndUnpredictably()")
 
 
 @pytest.mark.parametrize('test_file', PRAAT_TEST_FILES)
