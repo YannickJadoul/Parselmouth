@@ -41,7 +41,7 @@ def test_call_with_extra_objects(sound):
 	parselmouth.praat.call(new, "Formula", "self [col] + Sound_the_sound [col]", extra_objects=[sound])
 	assert sound == new
 
-	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with lower case\)"):
+	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with nonupper case\)"):
 		parselmouth.praat.call(new, "Formula", "self [col] + Sound_the_sound [col]")
 
 
@@ -53,9 +53,8 @@ def test_call_parameters(sound):
 		assert parselmouth.praat.call(sound, "Override sampling frequency", -10.0) is None
 
 	assert parselmouth.praat.call(sound, "Get time from sample number", 1) == sound.get_time_from_index(1)
-	assert tuple(map(int, parselmouth.PRAAT_VERSION.split("."))) < (6, 0, 47)  # Replace with commented assert underneath once Praat version gets updated
-	# with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a whole number"):
-	# 	assert parselmouth.praat.call(sound, "Get time from sample number", 0.5) != sound.get_time_from_index(1)
+	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a whole number"):
+		assert parselmouth.praat.call(sound, "Get time from sample number", 0.5) != sound.get_time_from_index(1)
 	assert parselmouth.praat.call(sound, "Set value at sample number", 1, 0.0) is None
 	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a positive whole number"):
 		assert parselmouth.praat.call(sound, "Set value at sample number", 0, -1, 0.0) is None
@@ -127,7 +126,7 @@ def test_run_with_extra_objects(sound):
 	parselmouth.praat.run(new, "Formula: ~ self [col] + Sound_the_sound [col]", extra_objects=[sound])
 	assert sound == new
 
-	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with lower case\)"):
+	with pytest.raises(parselmouth.PraatError, match=r"No such object \(note: variables start with nonupper case\)"):
 		parselmouth.praat.run(new, "Formula: ~ self [col] + Sound_the_sound [col]")
 
 
@@ -236,7 +235,7 @@ def test_praat_callback_prefixes():
 	info = {'HINT', 'INFO', 'LIST'}
 	nothing = {'HELP', 'MODIFY', 'PRAAT', 'PREFS', 'SAVE', 'GRAPHICS'}
 	exception = {'PLAY', 'RECORD1', 'WINDOW', 'MOVIE'}
-	weird = {'BUG', 'DANGEROUS'}
+	weird = {'DANGEROUS'}
 
 	prefixes = set(action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
 	assert prefixes == separators | values | objects | info | nothing | exception | weird

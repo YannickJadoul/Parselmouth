@@ -1,6 +1,6 @@
-add_sources(melder.cpp complex.cpp melder_alloc.cpp
+add_sources(melder.cpp complex.cpp melder_alloc.cpp melder_colour.cpp
             melder_ftoa.cpp melder_console.cpp melder_textencoding.cpp melder_atof.cpp melder_files.cpp
-            melder_tensor.cpp melder_sort.cpp melder_debug.cpp MelderFile.cpp melder_strings.cpp
+            melder_sort.cpp melder_debug.cpp MelderFile.cpp melder_strings.cpp
             melder_search.cpp
             melder_info.cpp melder_error.cpp melder_warning.cpp melder_fatal.cpp melder_progress.cpp
             melder_play.cpp melder_help.cpp melder_time.cpp

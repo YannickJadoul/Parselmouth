@@ -1,7 +1,7 @@
 add_sources(Transition.cpp Distributions_and_Transition.cpp
             Function.cpp Sampled.cpp SampledXY.cpp Matrix.cpp Vector.cpp Polygon.cpp PointProcess.cpp
             Matrix_and_PointProcess.cpp Matrix_and_Polygon.cpp AnyTier.cpp RealTier.cpp
-            Sound.cpp LongSound.cpp Sound_files.cpp Sound_audio.cpp PointProcess_and_Sound.cpp Sound_PointProcess.cpp ParamCurve.cpp
+            Sound.cpp LongSound.cpp SoundSet.cpp Sound_files.cpp Sound_audio.cpp PointProcess_and_Sound.cpp Sound_PointProcess.cpp ParamCurve.cpp
             Pitch.cpp Harmonicity.cpp Intensity.cpp Matrix_and_Pitch.cpp Sound_to_Pitch.cpp
             Sound_to_Intensity.cpp Sound_to_Harmonicity.cpp Sound_to_Harmonicity_GNE.cpp Sound_to_PointProcess.cpp
             Pitch_to_PointProcess.cpp Pitch_to_Sound.cpp Pitch_Intensity.cpp

@@ -65,21 +65,21 @@ inline void checkUnkownKwargs(const py::kwargs &kwargs) {
 }
 
 py::object autoVECToArray(autoVEC &&vector) {
-	if (!vector.at)
+	if (!vector.cells)
 		return py::none();
 
-	auto [size, at] = std::tuple(vector.size, vector.at); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
+	auto [size, cells] = std::tuple(vector.size, vector.cells); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
 	auto capsule = make_capsule(std::make_unique<autoVEC>(std::move(vector)));
-	return py::array_t<double>(static_cast<size_t>(size), &at[1], capsule);
+	return py::array_t<double>(static_cast<size_t>(size), cells, capsule);
 }
 
 py::object autoMATToArray(autoMAT &&matrix) {
-	if (!matrix.at)
+	if (!matrix.cells)
 		return py::none();
 
-	auto [nrow, ncol, at] = std::tuple(matrix.nrow, matrix.ncol, matrix.at); // Because of undefined order of evaluation of arguments, we need to make sure to save nrow, ncol, and at before moving
+	auto [nrow, ncol, cells] = std::tuple(matrix.nrow, matrix.ncol, matrix.cells); // Because of undefined order of evaluation of arguments, we need to make sure to save nrow, ncol, and at before moving
 	auto capsule = make_capsule(std::make_unique<autoMAT>(std::move(matrix)));
-	return py::array_t<double, py::array::c_style>({static_cast<size_t>(nrow), static_cast<size_t>(ncol)}, &at[1][1], capsule);
+	return py::array_t<double, py::array::c_style>({static_cast<size_t>(nrow), static_cast<size_t>(ncol)}, cells, capsule);
 }
 
 class PraatEnvironment {
@@ -155,18 +155,10 @@ public:
 				variables.emplace(name, py::cast(value->stringValue.get()));
 			}
 			else if (name.length() > 1 && name.substr(name.length() - 2) == U"##") {
-				// Steal matrix value, so clear out old variable to stop Praat from deleting when cleaning up the interpreter
-				autoMAT matrix;
-				matrix.adoptFromAmbiguousOwner(value->numericMatrixValue);
-				value->numericMatrixValue = emptyMAT;
-				variables.emplace(name, autoMATToArray(std::move(matrix)));
+				variables.emplace(name, autoMATToArray(std::move(value->numericMatrixValue)));
 			}
 			else if (name.length() > 0 && name.back() == U'#') {
-				// Steal vector value, so clear out old variable to stop Praat from deleting when cleaning up the interpreter
-				autoVEC vector;
-				vector.adoptFromAmbiguousOwner(value->numericVectorValue);
-				value->numericVectorValue = emptyVEC;
-				variables.emplace(name, autoVECToArray(std::move(vector)));
+				variables.emplace(name, autoVECToArray(std::move(value->numericVectorValue)));
 			}
 			else {
 				variables.emplace(name, py::cast(value->numericValue));
@@ -215,6 +207,7 @@ void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg)
 		return fillStackel(stackel, py::cast<std::u32string>(arg));
 
 	try {
+		// py::array::c_style should make sure the array is C-style ánd contiguous.
 		// Let's not 'squeeze' the array, or we might interpret a 2D matrix as 1D vector!
 		auto array = py::array_t<double, py::array::c_style>::ensure(arg);
 
@@ -222,22 +215,15 @@ void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg)
 			if (array.ndim() == 1) {
 				// Keep the object alive until the PraatEnvironment goes out of scope, and avoid a copy
 				m_keepAliveObjects.push_back(array);
-
-				return fillStackel(stackel, VEC(array.mutable_data(0) - 1, array.shape(0)), false); // Remember Praat is 1-based
+				return fillStackel(stackel, VEC(array.mutable_data(0), array.shape(0)), false); // Remember Praat is 1-based
 				// NOTE: If Praat ever contains commands/actions that modify the vector,
 				//       we're in trouble since this will not consistently be reflected in the original NumPy array.
 				//       However, since we're indicating the vector is not owned, at least the interpreter can know.
 			} else if (array.ndim() == 2) {
-				auto rows = std::make_unique<double*[]>(array.shape(0));
-				for (ssize_t i = 0; i < array.shape(0); ++i) {
-					rows[i] = array.mutable_data(i, 0) - 1;
-				}
-
-				auto rows_ptr = rows.get();
+				// Keep the object alive until the PraatEnvironment goes out of scope, and avoid a copy
 				m_keepAliveObjects.push_back(array);
-				m_keepAliveObjects.push_back(make_capsule(std::move(rows)));
-
-				return fillStackel(stackel, MAT(rows_ptr - 1, array.shape(0), array.shape(1)), false);
+				return fillStackel(stackel, MAT(array.mutable_data(0), array.shape(0), array.shape(1)), false);
+				// NOTE: Same as above for matrices, now that here we also have contiguous memory in Praat and don't need to copy anymore.
 			}
 
 			throw py::value_error("Cannot convert " + std::to_string(array.ndim()) + "-dimensional NumPy array argument\"" + py::cast<std::string>(py::repr(arg)) + "\" to a Praat vector or matrix");
@@ -303,7 +289,7 @@ py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName,
 	// U"HELP_", U"MODIFY_", U"PRAAT_", U"PREFS_", U"SAVE_"
 	return py::none();
 
-	// Weird: U"BUG_", U"DANGEROUS_"
+	// Weird: U"DANGEROUS_"
 	// Impossible: U"PLAY_", U"RECORD1_", U"WINDOW_"
 	// Does nothing: U"GRAPHICS_"
 	// Throws exception: U"MOVIE_"

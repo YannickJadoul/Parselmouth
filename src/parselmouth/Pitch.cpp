@@ -66,24 +66,24 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 	def_readonly("intensity", &structPitch_Frame::intensity);
 
 	def_property("selected",
-	             [](Pitch_Frame self) { return &self->candidate[1]; },
+	             [](Pitch_Frame self) { return &self->candidates[1]; },
 	             [](Pitch_Frame self, Pitch_Candidate candidate) {
 		             for (long j = 1; j <= self->nCandidates; j++) {
-			             if (&self->candidate[j] == candidate) {
-				             std::swap(self->candidate[1], self->candidate[j]);
+			             if (&self->candidates[j] == candidate) {
+				             std::swap(self->candidates[1], self->candidates[j]);
 				             return;
 			             }
 		             }
 		             throw py::value_error("'candidate' is not a Pitch Candidate of this frame");
 	             });
 
-	def_property_readonly("candidates", [](Pitch_Frame self) { return std::vector<structPitch_Candidate>(&self->candidate[1], &self->candidate[self->nCandidates + 1]); });
+	def_property_readonly("candidates", [](Pitch_Frame self) { return std::vector<structPitch_Candidate>(&self->candidates[1], &self->candidates[self->nCandidates + 1]); });
 
 	def("unvoice",
 	    [](Pitch_Frame self) {
 		    for (long j = 1; j <= self->nCandidates; j++) {
-			    if (self->candidate[j].frequency == 0.0) {
-				    std::swap(self->candidate[1], self->candidate[j]);
+			    if (self->candidates[j].frequency == 0.0) {
+				    std::swap(self->candidates[1], self->candidates[j]);
 				    break;
 			    }
 		    }
@@ -92,8 +92,8 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 	def("select",
 	    [](Pitch_Frame self, Pitch_Candidate candidate) {
 		    for (long j = 1; j <= self->nCandidates; j++) {
-			    if (self->candidate[j].frequency == candidate->frequency && self->candidate[j].strength == candidate->strength) {
-				    std::swap(self->candidate[1], self->candidate[j]);
+			    if (self->candidates[j].frequency == candidate->frequency && self->candidates[j].strength == candidate->strength) {
+				    std::swap(self->candidates[1], self->candidates[j]);
 				    return;
 			    }
 		    }
@@ -105,7 +105,7 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 	    [](Pitch_Frame self, long i) {
 		    if (i < 0) i += self->nCandidates; // Python-style negative indexing
 		    if (i < 0 || i >= self->nCandidates) throw py::index_error("Pitch Frame index out of range");
-		    return std::swap(self->candidate[1], self->candidate[i+1]);
+		    return std::swap(self->candidates[1], self->candidates[i+1]);
 	    },
 	    "i"_a);
 
@@ -113,14 +113,14 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 	    [](Pitch_Frame self, long i) {
 		    if (i < 0) i += self->nCandidates; // Python-style negative indexing
 		    if (i < 0 || i >= self->nCandidates) throw py::index_error("Pitch Frame index out of range");
-		    return self->candidate[i+1]; // Not a(n) (internal) reference, because unvoice and select would then change the value of a returned Pitch_Candidate
+		    return self->candidates[i+1]; // Not a(n) (internal) reference, because unvoice and select would then change the value of a returned Pitch_Candidate
 	    },
 	    "i"_a);
 
 	def("__len__",
 	    [](Pitch_Frame self) { return self->nCandidates; });
 
-	def("as_array", [](Pitch_Frame self) { return py::array(self->nCandidates, &self->candidate[1], py::cast(self)); });
+	def("as_array", [](Pitch_Frame self) { return py::array(self->nCandidates, &self->candidates[1], py::cast(self)); });
 
 	// TODO __setitem__ ?
 	// TODO Make number of candidates changeable?
@@ -250,7 +250,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 	def("get_frame",
 	    [](Pitch self, Positive<integer> frameNumber) {
 		    if (frameNumber > self->nx) Melder_throw(U"Frame number out of range");
-		    return &self->frame[frameNumber];
+		    return &self->frames[frameNumber];
 	    },
 	    "frame_number"_a, py::return_value_policy::reference_internal);
 
@@ -258,7 +258,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    [](Pitch self, long i) {
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("Pitch index out of range");
-		    return &self->frame[i+1];
+		    return &self->frames[i+1];
 	    },
 	    "i"_a, py::return_value_policy::reference_internal);
 
@@ -267,17 +267,17 @@ PRAAT_CLASS_BINDING(Pitch) {
 		    long i, j; std::tie(i, j) = ij;
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("Pitch index out of range");
-		    auto &frame = self->frame[i+1];
+		    auto &frame = self->frames[i+1];
 		    if (j < 0) j += frame.nCandidates; // Python-style negative indexing
 		    if (j < 0 || j >= frame.nCandidates) throw py::index_error("Pitch Frame index out of range");
-		    return frame.candidate[j+1];
+		    return frame.candidates[j+1];
 	    },
 	    "ij"_a);
 
 	// TODO __setitem__
 
 	def("__iter__",
-	    [](Pitch self) { return py::make_iterator(&self->frame[1], &self->frame[self->nx+1]); },
+	    [](Pitch self) { return py::make_iterator(&self->frames[1], &self->frames[self->nx+1]); },
 	    py::keep_alive<0, 1>());
 
 	def("to_array",
@@ -287,9 +287,9 @@ PRAAT_CLASS_BINDING(Pitch) {
 
 		    auto unchecked = array.mutable_unchecked<2>();
 		    for (auto i = 0; i < self->nx; ++i) {
-			    auto &frame = self->frame[i+1];
+			    auto &frame = self->frames[i+1];
 			    for (auto j = 0; j < maxCandidates; ++j) {
-				    unchecked(j, i) = (j < frame.nCandidates) ? frame.candidate[j+1] : structPitch_Candidate{std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
+				    unchecked(j, i) = (j < frame.nCandidates) ? frame.candidates[j+1] : structPitch_Candidate{std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 			    }
 		    }
 
@@ -300,7 +300,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 	                      [](Pitch self) {
 		                      std::vector<structPitch_Candidate> vector;
 		                      vector.reserve(self->nx);
-		                      std::transform(&self->frame[1], &self->frame[self->nx + 1], std::back_inserter(vector), [](auto &frame) { return frame.candidate[1]; });
+		                      std::transform(&self->frames[1], &self->frames[self->nx + 1], std::back_inserter(vector), [](auto &frame) { return frame.candidates[1]; });
 		                      return vector;
 	                      });
 
@@ -310,7 +310,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 
 		                      auto unchecked = array.mutable_unchecked<1>();
 		                      for (auto i = 0; i < self->nx; ++i) {
-			                      unchecked(i) = self->frame[i+1].candidate[1];
+			                      unchecked(i) = self->frames[i+1].candidates[1];
 		                      }
 
 		                      return array;
@@ -357,10 +357,10 @@ PRAAT_CLASS_BINDING(Pitch) {
 		    if (iright > self->nx) iright = self-> nx;
 
 		    for (auto i = ileft; i <= iright; i ++) {
-			    auto &frame = self->frame[i];
+			    auto &frame = self->frames[i];
 			    for (long j = 1; j <= frame.nCandidates; j++) {
-				    if (frame.candidate[j].frequency == 0.0) {
-					    std::swap(frame.candidate[1], frame.candidate[j]);
+				    if (frame.candidates[j].frequency == 0.0) {
+					    std::swap(frame.candidates[1], frame.candidates[j]);
 					    break;
 				    }
 			    }

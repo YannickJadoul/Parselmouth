@@ -176,7 +176,6 @@ void initializePraat() {
 	if (!initialized) {
 		praatlib_init();
 		INCLUDE_LIBRARY(praat_uvafon_init)
-		INCLUDE_LIBRARY(praat_contrib_Ola_KNN_init)
 		initialized = true;
 	}
 

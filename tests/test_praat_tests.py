@@ -42,10 +42,7 @@ def find_praat_test_files():
 			continue
 		for fn in glob.iglob(os.path.join(dir, "**", "*.praat"), recursive=True):
 			rel_fn = os.path.relpath(fn, PRAAT_TEST_BASE_DIR)
-			marks = []
-			if rel_fn == os.path.join("num", "mean.praat"):
-				marks.append(pytest.mark.xfail(sys.platform == 'win32', reason="`long double` is only double precision when compiling with MSVC, causing `assert mean ({ -1e18, 3, 1e18 }) = 1` to fail"))
-			yield pytest.param(fn, id=rel_fn, marks=marks)
+			yield pytest.param(fn, id=rel_fn)
 
 
 def find_praat_dwtest_files():

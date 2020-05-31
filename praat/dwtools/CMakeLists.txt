@@ -1,19 +1,19 @@
 add_sources(ActivationList.cpp AffineTransform.cpp
             Categories.cpp CategoriesEditor.cpp
             Categories_and_Strings.cpp CCA.cpp CCA_and_Correlation.cpp
-            CC.cpp CCs_to_DTW.cpp
+            Correlation.cpp Covariance.cpp CC.cpp CCs_to_DTW.cpp
             ClassificationTable.cpp Confusion.cpp
             ComplexSpectrogram.cpp Configuration.cpp ContingencyTable.cpp
             Configuration_AffineTransform.cpp
             Configuration_and_Procrustes.cpp DataModeler.cpp Distance.cpp
             DTW.cpp DTW_and_TextGrid.cpp
             Discriminant.cpp Discriminant_PatternList_Categories.cpp
-            EditDistanceTable.cpp EEG_extensions.cpp
+            Electroglottogram.cpp EditDistanceTable.cpp EEG_extensions.cpp
             Eigen_and_Matrix.cpp Eigen_and_Procrustes.cpp
             Eigen_and_TableOfReal.cpp
             Eigen_and_SSCP.cpp Excitations.cpp
             espeakdata_FileInMemory.cpp
-            FilterBank.cpp FormantGrid_extensions.cpp
+            FilterBank.cpp FormantGrid_extensions.cpp FormantModeler.cpp
             GaussianMixture.cpp
             HMM.cpp
             ICA.cpp Intensity_extensions.cpp
@@ -24,14 +24,14 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             manual_DataModeler.cpp manual_dwtools.cpp manual_BSS.cpp manual_HMM.cpp
             manual_KlattGrid.cpp manual_MDS.cpp manual_Permutation.cpp
             Minimizers.cpp MixingMatrix.cpp
-            Matrix_extensions.cpp
+            Matrix_and_NMF.cpp Matrix_extensions.cpp
             Matrix_Categories.cpp MDS.cpp
             OptimalCeilingTier.cpp OptimalCeilingTierEditor.cpp
             PatternList.cpp PCA.cpp
-            Pitch_extensions.cpp Polynomial.cpp
+            Pitch_extensions.cpp Polynomial_to_Spectrum.cpp
             Polygon_extensions.cpp Procrustes.cpp
             Proximity.cpp Proximity_and_Distance.cpp
-            Resonator.cpp
+            Resonator.cpp Roots_to_Spectrum.cpp
             Sound_and_MixingMatrix.cpp
             Sound_and_Spectrogram_extensions.cpp Sound_and_PCA.cpp Sound_extensions.cpp
             Sound_to_MFCC.cpp Sounds_to_DTW.cpp

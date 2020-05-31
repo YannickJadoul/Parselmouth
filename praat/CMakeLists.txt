@@ -17,7 +17,8 @@
 
 include(add_sources)
 
-set(PRAAT_SUBDIRECTORIES external/gsl
+set(PRAAT_SUBDIRECTORIES external/clapack
+                         external/gsl
                          external/glpk
                          external/mp3
                          external/flac
@@ -34,8 +35,7 @@ set(PRAAT_SUBDIRECTORIES external/gsl
                          EEG
                          gram
                          FFNet
-                         artsynth
-                         contrib/ola)
+                         artsynth)
 
 set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES})
 
@@ -77,4 +77,4 @@ target_compile_definitions(praat PUBLIC ${PRAAT_DEFINITIONS} PRIVATE ${PRAAT_DEF
 target_compile_options(praat PUBLIC ${PRAAT_FLAGS} PRIVATE ${PRAAT_FLAGS_PRIVATE})
 export(TARGETS praat FILE exports.cmake)
 
-set_target_properties(praat PROPERTIES C_STANDARD 99 CXX_STANDARD 14 CXX_STANDARD_REQUIRED TRUE)
+set_target_properties(praat PROPERTIES C_STANDARD 99 CXX_STANDARD 17 CXX_STANDARD_REQUIRED TRUE)
