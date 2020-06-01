@@ -22,6 +22,10 @@
 #include "Gui.h"
 
 #if defined (_WIN32)
+	// Workaround after defining NOMINMAX
+	// See https://stackoverflow.com/questions/4913922/possible-problems-with-nominmax-on-visual-c/4914108#4914108
+	#include <algorithm>
+	namespace Gdiplus { using std::min; using std::max; }
 	#include <windowsx.h>
 	#include <gdiplus.h>
 #endif

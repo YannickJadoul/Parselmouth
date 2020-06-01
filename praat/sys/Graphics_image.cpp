@@ -21,6 +21,10 @@
 #include "../fon/Photo.h"
 
 #if gdi
+	// Workaround after defining NOMINMAX
+	// See https://stackoverflow.com/questions/4913922/possible-problems-with-nominmax-on-visual-c/4914108#4914108
+	#include <algorithm>
+	namespace Gdiplus { using std::min; using std::max; }
 	#include <GdiPlus.h>
 #elif quartz
 	#include <time.h>

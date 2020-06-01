@@ -59,7 +59,7 @@ if (UNIX)
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} linux)
 	endif()
 elseif (WIN32)
-	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} _CRT_SECURE_NO_WARNINGS UNICODE) # Windows no "safe alternatives" warning, and Windows unicode API by default
+	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} _CRT_SECURE_NO_WARNINGS UNICODE NOMINMAX) # Windows no "safe alternatives" warning, Windows unicode API by default, and no <windows.h> 'min' and 'max' macros
 	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} FLAC__NO_DLL) # flac
 	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_WINDOWS) # eSpeak
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /wd4068) # "warning C4068: unknown pragma": #pragma mark
