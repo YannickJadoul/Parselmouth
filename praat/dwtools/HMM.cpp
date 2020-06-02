@@ -50,10 +50,6 @@
 #include "enums_getValue.h"
 #include "HMM_enums.h"
 
-
-#include <ciso646>
-
-
 Thing_implement (HMM, Daata, 2);
 Thing_implement (HMMState, Daata, 0);
 Thing_implement (HMMStateList, Ordered, 0);

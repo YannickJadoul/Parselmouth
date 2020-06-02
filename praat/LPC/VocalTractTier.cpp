@@ -39,8 +39,6 @@
 #include "oo_DESCRIPTION.h"
 #include "VocalTractTier_def.h"
 
-#include <ciso646>
-
 Thing_implement (VocalTractPoint, AnyPoint, 0);
 
 autoVocalTractPoint VocalTractPoint_create (VocalTract me, double time) {

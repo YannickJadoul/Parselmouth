@@ -33,8 +33,6 @@
 #include "TextGrid_extensions.h"
 #include "NUM2.h"
 
-#include <ciso646>
-
 const struct TIMIT_key {
 	const char *timitLabel, *ipaLabel;
 } TIMIT_toIpaTable[] = {

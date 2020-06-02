@@ -53,18 +53,16 @@ if (UNIX)
 	endif()
 	
 	set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} UNIX)
-	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_POSIX HAVE_MKSTEMP) # eSpeak
+	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_POSIX) # eSpeak
 	
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} linux)
 	endif()
 elseif (WIN32)
-	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} _CRT_SECURE_NO_WARNINGS UNICODE NOMINMAX) # Windows no "safe alternatives" warning, Windows unicode API by default, and no <windows.h> 'min' and 'max' macros
 	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} FLAC__NO_DLL) # flac
 	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_WINDOWS) # eSpeak
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /wd4068) # "warning C4068: unknown pragma": #pragma mark
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /EHs) # Some 'extern "C"' functions throw exceptions: make sure they're caught
-	set(PRAAT_FLAGS ${PRAAT_FLAGS} /utf-8) # Because Praat contains source files with unicode chars encoded as UTF-8, and because UTF-8 is not default enough for MSVC to read and compile these files correctly
 endif ()
 
 foreach(SUBDIR ${PRAAT_SUBDIRECTORIES})

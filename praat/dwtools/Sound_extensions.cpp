@@ -72,8 +72,6 @@
 #include "enums_getValue.h"
 #include "Sound_extensions_enums.h"
 
-#include <ciso646>
-
 #define MAX_T  0.02000000001   /* Maximum interval between two voice pulses (otherwise voiceless). */
 
 static void PitchTier_modifyExcursionRange (PitchTier me, double tmin, double tmax, double multiplier, double fref_Hz) {

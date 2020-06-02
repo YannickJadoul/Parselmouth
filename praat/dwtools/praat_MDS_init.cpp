@@ -43,8 +43,6 @@
 #include "Confusion.h"
 #include "Formula.h"
 
-#include <ciso646>
-
 void praat_TableOfReal_init2 (ClassInfo klas);
 
 static const conststring32 QUERY_BUTTON   = U"Query -";

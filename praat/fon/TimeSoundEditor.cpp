@@ -35,8 +35,6 @@ Thing_implement (TimeSoundEditor, FunctionEditor, 0);
 #include "prefs_copyToInstance.h"
 #include "TimeSoundEditor_prefs.h"
 
-#include <ciso646>
-
 /********** Thing methods **********/
 
 void structTimeSoundEditor :: v_destroy () noexcept {

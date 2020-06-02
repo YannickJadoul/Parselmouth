@@ -68,9 +68,6 @@
 #include "enums_getValue.h"
 #include "KlattGrid_enums.h"
 
-
-#include <ciso646>
-
 /*
  * A KlattGrid consists of a great many tiers that can be independently modified.
  * 
