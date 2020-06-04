@@ -27,7 +27,7 @@ numberOfDirectories = Get number of strings
 for directory to numberOfDirectories
 	selectObject: directories
 	directory$ = Get string: directory
-	if directory$ <> "manually" and directory$ <> "speed" and directory$ <> "fon ExperimentMFC"
+	if directory$ <> "manually" and directory$ <> "speed"
 		files = Create Strings as file list: "files", directory$ + "/*.praat"
 		numberOfFiles = Get number of strings
 		for file to numberOfFiles
@@ -47,7 +47,7 @@ numberOfDirectories1 = Get number of strings
 for directory1 to numberOfDirectories1
 	selectObject: directories1
 	directory1$ = Get string: directory1
-	if directory1$ <> "manually" and directory1$ <> "speed" and directory1$ <> "fon ExperimentMFC"
+	if directory1$ <> "manually" and directory1$ <> "speed"
 		directories2 = Create Strings as directory list: "directories2", directory1$ + "/*"
 		numberOfDirectories2 = Get number of strings
 		for directory2 to numberOfDirectories2
