@@ -96,7 +96,7 @@ autoSound MFCC_to_Sound (MFCC me) {
 	}
 }
 
-autoSound MFCCs_crossCorrelate (MFCC me, MFCC thee, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
+autoSound MFCCs_crossCorrelate (MFCC me, MFCC thee, enum kSounds_convolve_scaling scaling, enum kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
 	try {
 		Melder_require (my dx == thy dx,
 			U"The samplings of the two MFCC's should be equal.");
@@ -111,7 +111,7 @@ autoSound MFCCs_crossCorrelate (MFCC me, MFCC thee, kSounds_convolve_scaling sca
 	}
 }
 
-autoSound MFCCs_convolve (MFCC me, MFCC thee, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
+autoSound MFCCs_convolve (MFCC me, MFCC thee, enum kSounds_convolve_scaling scaling, enum kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
 	try {
 		Melder_require (my dx == thy dx,
 			U"The samplings of the two MFCC's should be equal.");

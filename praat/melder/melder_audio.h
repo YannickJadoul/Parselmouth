@@ -18,11 +18,11 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-void MelderAudio_setInputSoundSystem (kMelder_inputSoundSystem inputSoundSystem);
-kMelder_inputSoundSystem MelderAudio_getInputSoundSystem ();
+void MelderAudio_setInputSoundSystem (enum kMelder_inputSoundSystem inputSoundSystem);
+enum kMelder_inputSoundSystem MelderAudio_getInputSoundSystem ();
 
-void MelderAudio_setOutputSoundSystem (kMelder_outputSoundSystem outputSoundSystem);
-kMelder_outputSoundSystem MelderAudio_getOutputSoundSystem ();
+void MelderAudio_setOutputSoundSystem (enum kMelder_outputSoundSystem outputSoundSystem);
+enum kMelder_outputSoundSystem MelderAudio_getOutputSoundSystem ();
 
 #if defined (_WIN32)
 	#define kMelderAudio_outputSilenceBefore_DEFAULT  0.0
@@ -65,12 +65,12 @@ void Melder_audio_prefs ();   // in init file
 
 #pragma mark - ASYNCHRONICITY
 
-void MelderAudio_setOutputMaximumAsynchronicity (kMelder_asynchronicityLevel maximumAsynchronicity);
-kMelder_asynchronicityLevel MelderAudio_getOutputMaximumAsynchronicity ();
+void MelderAudio_setOutputMaximumAsynchronicity (enum kMelder_asynchronicityLevel maximumAsynchronicity);
+enum kMelder_asynchronicityLevel MelderAudio_getOutputMaximumAsynchronicity ();;
 
 class autoMelderAudioSaveMaximumAsynchronicity {
 	bool _disowned;
-	kMelder_asynchronicityLevel _savedAsynchronicity;
+	enum kMelder_asynchronicityLevel _savedAsynchronicity;
 public:
 	autoMelderAudioSaveMaximumAsynchronicity () {
 		our _savedAsynchronicity = MelderAudio_getOutputMaximumAsynchronicity ();

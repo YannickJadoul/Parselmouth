@@ -30,18 +30,18 @@ void Network_init (Network me,
 	double learningRate, double minimumWeight, double maximumWeight, double weightLeak,
 	double xmin, double xmax, double ymin, double ymax, integer numberOfNodes, integer numberOfConnections);
 
-autoNetwork Network_create (double spreadingRate, kNetwork_activityClippingRule activityClippingRule,
+autoNetwork Network_create (double spreadingRate, enum kNetwork_activityClippingRule activityClippingRule,
 	double minimumActivity, double maximumActivity, double activityLeak,
 	double learningRate, double minimumWeight, double maximumWeight, double weightLeak,
 	double xmin, double xmax, double ymin, double ymax, integer numberOfNodes, integer numberOfConnections);
 
-autoNetwork Network_create_rectangle (double spreadingRate, kNetwork_activityClippingRule activityClippingRule,
+autoNetwork Network_create_rectangle (double spreadingRate, enum kNetwork_activityClippingRule activityClippingRule,
 	double minimumActivity, double maximumActivity, double activityLeak,
 	double learningRate, double minimumWeight, double maximumWeight, double weightLeak,
 	integer numberOfRows, integer numberOfColumns, bool bottomRowClamped,
 	double initialMinimumWeight, double initialMaximumWeight);
 
-autoNetwork Network_create_rectangle_vertical (double spreadingRate, kNetwork_activityClippingRule activityClippingRule,
+autoNetwork Network_create_rectangle_vertical (double spreadingRate, enum kNetwork_activityClippingRule activityClippingRule,
 	double minimumActivity, double maximumActivity, double activityLeak,
 	double learningRate, double minimumWeight, double maximumWeight, double weightLeak,
 	integer numberOfRows, integer numberOfColumns, bool bottomRowClamped,
@@ -67,7 +67,7 @@ void Network_setOutstar (Network me, double outstar);
 void Network_setWeightLeak (Network me, double weightLeak);
 void Network_setActivityLeak (Network me, double activityLeak);
 void Network_setShunting (Network me, double shunting);
-void Network_setActivityClippingRule (Network me, kNetwork_activityClippingRule activityClippingRule);
+void Network_setActivityClippingRule (Network me, enum kNetwork_activityClippingRule activityClippingRule);
 autoTable Network_nodes_downto_Table (Network me, integer fromNodeNumber, integer toNodeNumber,
 	bool includeNodeNumbers,
 	bool includeX, bool includeY, integer positionDecimals,

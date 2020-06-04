@@ -74,12 +74,12 @@
 	conststring32 struct##Klas :: sdefault_##name = default;
 
 #define prefs_add_enum(Klas,name,version,enumerated,default) \
-	enumerated struct##Klas :: s_##name; \
-	enumerated struct##Klas :: sdefault_##name = enumerated :: default;
+	enum enumerated struct##Klas :: s_##name; \
+	enum enumerated struct##Klas :: sdefault_##name = enumerated :: default;
 #define prefs_add_enum_with_data(Klas,name,version,enumerated,default)  prefs_add_enum (Klas, name, version, enumerated, default)
 #define prefs_override_enum(Klas,name,version,enumerated,default) \
-	enumerated struct##Klas :: s_##name; \
-	enumerated struct##Klas :: sdefault_##name = enumerated :: default;
+	enum enumerated struct##Klas :: s_##name; \
+	enum enumerated struct##Klas :: sdefault_##name = enumerated :: default;
 
 #define prefs_add_string(Klas,name,version,default) \
 	char32 struct##Klas :: s_##name [Preferences_STRING_BUFFER_SIZE]; \

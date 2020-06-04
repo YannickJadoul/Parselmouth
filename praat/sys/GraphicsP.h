@@ -230,7 +230,7 @@ bool _GraphicsLin_tryToInitializeFonts ();
 	void GraphicsQuartz_exitDraw (GraphicsScreen me);
 #endif
 
-extern kGraphics_cjkFontStyle theGraphicsCjkFontStyle;
+extern enum kGraphics_cjkFontStyle theGraphicsCjkFontStyle;
 
 /* End of file GraphicsP.h */
 #endif

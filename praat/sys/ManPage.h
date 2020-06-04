@@ -23,7 +23,7 @@
 #include "ManPage_enums.h"
 
 typedef struct structManPage_Paragraph {
-	kManPage_type type;
+	enum kManPage_type type;
 	conststring32 text;   // not an autostring32, because it could be a string literal (if not dynamic)
 	double width, height;
 	void (*draw) (Graphics g);

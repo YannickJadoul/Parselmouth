@@ -412,7 +412,7 @@ static void menu_cb_setPitchUnits (ManipulationEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_OK
 		SET_ENUM (pitchUnits, kManipulationEditor_pitchUnits, my p_pitch_units)
 	EDITOR_DO
-		kManipulationEditor_pitchUnits oldPitchUnits = my p_pitch_units;
+		enum kManipulationEditor_pitchUnits oldPitchUnits = my p_pitch_units;
 		my pref_pitch_units () = my p_pitch_units = pitchUnits;
 		if (my p_pitch_units == oldPitchUnits) return;
 		if (my p_pitch_units == kManipulationEditor_pitchUnits::HERTZ) {

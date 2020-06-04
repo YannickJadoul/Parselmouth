@@ -358,7 +358,7 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 		UiOptionMenu_addButton (_radio_, labelText);
 
 #define RADIO_ENUM(EnumeratedType, enumeratedVariable, labelText, defaultValue)  \
-		static EnumeratedType enumeratedVariable; \
+		static enum EnumeratedType enumeratedVariable; \
 		{/* type checks */ \
 			enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 			_compilerTypeCheckDummy = enumeratedVariable; \
@@ -367,7 +367,7 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 		_radio_ = UiForm_addRadio (_dia_.get(), (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, labelText, \
 			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
-			UiRadio_addButton (_radio_, EnumeratedType##_getText ((EnumeratedType) ienum));
+			UiRadio_addButton (_radio_, EnumeratedType##_getText ((enum EnumeratedType) ienum));
 
 #define OPTIONMENU_ENUM(EnumeratedType, enumeratedVariable, labelText, defaultValue)  \
 		static EnumeratedType enumeratedVariable; \
@@ -391,7 +391,7 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 		_radio_ = UiForm_addOptionMenu (_dia_.get(), nullptr, & enumeratedVariableAsString, U"" #enumeratedVariableAsString, labelText, \
 			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
-			UiOptionMenu_addButton (_radio_, EnumeratedType##_getText ((EnumeratedType) ienum));
+			UiOptionMenu_addButton (_radio_, EnumeratedType##_getText ((enum EnumeratedType) ienum));
 
 #define LIST(integerVariable, labelText, strings, defaultOptionNumber)  \
 		static integer integerVariable; \

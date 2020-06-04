@@ -34,8 +34,8 @@ integer ERP_getChannelNumber (ERP me, conststring32 channelName);
  */
 void ERP_drawScalp (ERP me,
 	Graphics graphics, double tmin, double tmax, double vmin, double vmax,
-	kGraphics_colourScale colourScale, bool garnish);
-void ERP_drawScalp_garnish (Graphics graphics, double vmin, double vmax, kGraphics_colourScale colourScale);
+	enum kGraphics_colourScale colourScale, bool garnish);
+void ERP_drawScalp_garnish (Graphics graphics, double vmin, double vmax, enum kGraphics_colourScale colourScale);
 
 void ERP_drawChannel_number (ERP me, Graphics graphics, integer channelNumber, double tmin, double tmax, double vmin, double vmax, bool garnish);
 void ERP_drawChannel_name (ERP me, Graphics graphics, conststring32 channelName, double tmin, double tmax, double vmin, double vmax, bool garnish);

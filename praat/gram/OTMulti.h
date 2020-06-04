@@ -46,9 +46,9 @@ integer OTMulti_getWinner (OTMulti me, conststring32 form1, conststring32 form2)
 #define OTMulti_LEARN_BACKWARD  2
 #define OTMulti_LEARN_BIDIRECTIONALLY  3
 int OTMulti_learnOne (OTMulti me, conststring32 form1, conststring32 form2,
-	kOTGrammar_rerankingStrategy updateRule, int direction, double plasticity, double relativePlasticityNoise);
+	enum kOTGrammar_rerankingStrategy updateRule, int direction, double plasticity, double relativePlasticityNoise);
 void OTMulti_PairDistribution_learn (OTMulti me, PairDistribution thee,
-	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, int direction,
+	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, int direction,
 	double initialPlasticity, integer replicationsPerPlasticity, double plasticityDecrement,
 	integer numberOfPlasticities, double relativePlasticityNoise, integer storeHistoryEvery, autoTable *history_out);
 

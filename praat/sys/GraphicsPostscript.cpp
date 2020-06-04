@@ -188,7 +188,7 @@ static int Eps_postScript_printf (void *stream, const char *format, ... ) {
 }
 #endif
 
-autoGraphics Graphics_create_epsfile (MelderFile file, int resolution, kGraphicsPostscript_spots spots,
+autoGraphics Graphics_create_epsfile (MelderFile file, int resolution, enum kGraphicsPostscript_spots spots,
 	double x1inches, double x2inches, double y1inches, double y2inches, bool includeFonts, bool useSilipaPS)
 {
 	autoGraphicsPostscript me = Thing_new (GraphicsPostscript);

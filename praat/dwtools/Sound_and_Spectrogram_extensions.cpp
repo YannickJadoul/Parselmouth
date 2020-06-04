@@ -359,7 +359,7 @@ autoSound BandFilterSpectrogram_as_Sound (BandFilterSpectrogram me, int unit) {
 	}
 }
 
-autoSound BandFilterSpectrograms_crossCorrelate (BandFilterSpectrogram me, BandFilterSpectrogram thee, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
+autoSound BandFilterSpectrograms_crossCorrelate (BandFilterSpectrogram me, BandFilterSpectrogram thee, enum kSounds_convolve_scaling scaling, enum kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
 	try {
 		autoSound sme = BandFilterSpectrogram_as_Sound (me, 1);   // to dB
 		autoSound sthee = BandFilterSpectrogram_as_Sound (thee, 1);
@@ -370,7 +370,7 @@ autoSound BandFilterSpectrograms_crossCorrelate (BandFilterSpectrogram me, BandF
 	}
 }
 
-autoSound BandFilterSpectrograms_convolve (BandFilterSpectrogram me, BandFilterSpectrogram thee, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
+autoSound BandFilterSpectrograms_convolve (BandFilterSpectrogram me, BandFilterSpectrogram thee, enum kSounds_convolve_scaling scaling, enum kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain) {
 	try {
 		autoSound sme = BandFilterSpectrogram_as_Sound (me, 1);   // to dB
 		autoSound sthee = BandFilterSpectrogram_as_Sound (thee, 1);

@@ -1511,7 +1511,7 @@ void structTextGridEditor :: v_draw () {
 	const TextGrid grid = (TextGrid) data;
 	Graphics_Viewport vp1, vp2;
 	const integer ntier = grid -> tiers->size;
-	const kGraphics_font oldFont = Graphics_inqFont (our graphics.get());
+	const enum kGraphics_font oldFont = Graphics_inqFont (our graphics.get());
 	const double oldFontSize = Graphics_inqFontSize (our graphics.get());
 	const bool showAnalysis = v_hasAnalysis () &&
 			(p_spectrogram_show || p_pitch_show || p_intensity_show || p_formant_show) &&

@@ -1726,7 +1726,7 @@ void Graphics_setTextAlignment (Graphics me, kGraphics_horizontalAlignment hor, 
 	if (my recording) { op (SET_TEXT_ALIGNMENT, 2); put (hor); put (vert); }
 }
 
-void Graphics_setFont (Graphics me, kGraphics_font font) {
+void Graphics_setFont (Graphics me, enum kGraphics_font font) {
 	my font = font;
 	if (my recording) { op (SET_FONT, 1); put (font); }
 }
@@ -1800,7 +1800,7 @@ void Graphics_setAtSignIsLink (Graphics me, bool isLink) {
 
 /* Inquiries. */
 
-kGraphics_font Graphics_inqFont (Graphics me) { return my font; }
+enum kGraphics_font Graphics_inqFont (Graphics me) { return my font; }
 double Graphics_inqFontSize (Graphics me) { return my fontSize; }
 int Graphics_inqFontStyle (Graphics me) { return my fontStyle; }
 

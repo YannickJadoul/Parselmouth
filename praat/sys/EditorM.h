@@ -254,11 +254,11 @@ _form_inited_: \
 
 
 #define RADIO_ENUM_VARIABLE(EnumeratedType, enumeratedVariable) \
-	static EnumeratedType enumeratedVariable; \
+	static enum EnumeratedType enumeratedVariable; \
 
 #define RADIO_ENUM_FIELD(EnumeratedType, enumeratedVariable, labelText, defaultValue) \
 	{/* type checks */ \
-		EnumeratedType _compilerTypeCheckDummy = defaultValue; \
+		enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 		_compilerTypeCheckDummy = enumeratedVariable; \
 		(void) _compilerTypeCheckDummy; \
 	} \
@@ -266,7 +266,7 @@ _form_inited_: \
 		UiField _radio = UiForm_addRadio (cmd -> d_uiform.get(), (int *) & enumeratedVariable, nullptr, nullptr, labelText, \
 			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int _ienum = (int) EnumeratedType::MIN; _ienum <= (int) EnumeratedType::MAX; _ienum ++) \
-			UiRadio_addButton (_radio, EnumeratedType##_getText ((EnumeratedType) _ienum)); \
+			UiRadio_addButton (_radio, EnumeratedType##_getText ((enum EnumeratedType) _ienum)); \
 	}
 
 #define RADIO_ENUM(EnumeratedType, enumeratedVariable, labelText, defaultValue) \
@@ -275,11 +275,11 @@ _form_inited_: \
 
 
 #define OPTIONMENU_ENUM_VARIABLE(EnumeratedType, enumeratedVariable) \
-	static EnumeratedType enumeratedVariable; \
+	static enum EnumeratedType enumeratedVariable; \
 
 #define OPTIONMENU_ENUM_FIELD(EnumeratedType, enumeratedVariable, labelText, defaultValue) \
 	{/* type checks */ \
-		EnumeratedType _compilerTypeCheckDummy = defaultValue; \
+		enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 		_compilerTypeCheckDummy = enumeratedVariable; \
 		(void) _compilerTypeCheckDummy; \
 	} \
@@ -287,7 +287,7 @@ _form_inited_: \
 		UiField _radio = UiForm_addOptionMenu (cmd -> d_uiform.get(), (int *) & enumeratedVariable, nullptr, nullptr, labelText, \
 			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
 		for (int _ienum = (int) EnumeratedType::MIN; _ienum <= (int) EnumeratedType::MAX; _ienum ++) \
-			UiOptionMenu_addButton (_radio, EnumeratedType##_getText ((EnumeratedType) _ienum)); \
+			UiOptionMenu_addButton (_radio, EnumeratedType##_getText ((enum EnumeratedType) _ienum)); \
 	}
 
 #define OPTIONMENU_ENUM(EnumeratedType, enumeratedVariable, labelText, defaultValue) \

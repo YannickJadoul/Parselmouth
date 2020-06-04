@@ -55,7 +55,7 @@ Thing_define (Graphics, Thing) {
 		/* Also used as a boolean. */
 	int resolution;
 		/* Dots per inch. */
-	kGraphics_resolution resolutionNumber;
+	enum kGraphics_resolution resolutionNumber;
 	integer d_x1DCmin, d_x2DCmax, d_y1DCmin, d_y2DCmax;
 		/* Maximum dimensions of the output device. */
 		/* x1DCmin < x2DCmax; y1DCmin < y2DCmax; */
@@ -142,7 +142,7 @@ Thing_define (Graphics, Thing) {
 autoGraphics Graphics_create (int resolution);
 autoGraphics Graphics_create_postscriptjob (MelderFile file, int resolution, kGraphicsPostscript_spots spots,
 	kGraphicsPostscript_paperSize paperSize, kGraphicsPostscript_orientation rotation, double magnification);
-autoGraphics Graphics_create_epsfile (MelderFile file, int resolution, kGraphicsPostscript_spots spots,
+autoGraphics Graphics_create_epsfile (MelderFile file, int resolution, enum kGraphicsPostscript_spots spots,
 	double xmin, double xmax, double ymin, double ymax, bool includeFonts, bool useSilipaPS);
 autoGraphics Graphics_create_pdffile (MelderFile file, int resolution,
 	double x1inches, double x2inches, double y1inches, double y2inches);
@@ -252,9 +252,9 @@ void Graphics_unhighlight2 (Graphics me, double x1, double x2, double y1, double
 #define Graphics_HALF  1
 #define Graphics_TOP  2
 #define Graphics_BASELINE  3
-void Graphics_setTextAlignment (Graphics me, kGraphics_horizontalAlignment horizontal, int vertical);
+void Graphics_setTextAlignment (Graphics me, enum kGraphics_horizontalAlignment horizontal, int vertical);
 
-void Graphics_setFont (Graphics me, kGraphics_font font);
+void Graphics_setFont (Graphics me, enum kGraphics_font font);
 void Graphics_setFontSize (Graphics me, double height);
 
 #define Graphics_NORMAL  0
@@ -292,11 +292,11 @@ void Graphics_setLineWidth (Graphics me, double lineWidth);
 void Graphics_setArrowSize (Graphics me, double arrowSize);
 void Graphics_setSpeckleSize (Graphics me, double speckleSize);
 
-void Graphics_setColourScale (Graphics me, kGraphics_colourScale colourScale);
+void Graphics_setColourScale (Graphics me, enum kGraphics_colourScale colourScale);
 
 void Graphics_inqViewport (Graphics me, double *x1NDC, double *x2NDC, double *y1NDC, double *y2NDC);
 void Graphics_inqWindow (Graphics me, double *x1WC, double *x2WC, double *y1WC, double *y2WC);
-kGraphics_font Graphics_inqFont (Graphics me);
+enum kGraphics_font Graphics_inqFont (Graphics me);
 double Graphics_inqFontSize (Graphics me);
 int Graphics_inqFontStyle (Graphics me);
 int Graphics_inqLineType (Graphics me);
@@ -304,7 +304,7 @@ double Graphics_inqLineWidth (Graphics me);
 double Graphics_inqArrowSize (Graphics me);
 double Graphics_inqSpeckleSize (Graphics me);
 MelderColour Graphics_inqColour (Graphics me);
-kGraphics_colourScale Graphics_inqColourScale (Graphics me);
+enum kGraphics_colourScale Graphics_inqColourScale (Graphics me);
 
 void Graphics_contour (Graphics me, constMATVU const& z,
 	double x1WC, double x2WC, double y1WC, double y2WC, double height);

@@ -58,7 +58,7 @@ void Graphics_setColour (Graphics me, MelderColour colour) {
 	if (my recording) { op (SET_RGB_COLOUR, 3); put (colour. red); put (colour. green); put (colour. blue); }
 }
 
-void Graphics_setColourScale (Graphics me, kGraphics_colourScale colourScale) {
+void Graphics_setColourScale (Graphics me, enum kGraphics_colourScale colourScale) {
 	my colourScale = colourScale;
 	if (my recording) { op (SET_COLOUR_SCALE, 1); put (colourScale); }
 }
@@ -461,7 +461,7 @@ MelderColour Graphics_inqColour (Graphics me) {
 	return my colour;
 }
 
-kGraphics_colourScale Graphics_inqColourScale (Graphics me) {
+enum kGraphics_colourScale Graphics_inqColourScale (Graphics me) {
 	return my colourScale;
 }
 

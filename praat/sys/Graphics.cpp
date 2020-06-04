@@ -31,7 +31,7 @@
 
 Thing_implement (Graphics, Thing, 0);
 
-kGraphics_cjkFontStyle theGraphicsCjkFontStyle;
+enum kGraphics_cjkFontStyle theGraphicsCjkFontStyle;
 
 void Graphics_prefs () {
 	Preferences_addEnum (U"Graphics.cjkFontStyle", & theGraphicsCjkFontStyle, kGraphics_cjkFontStyle, (int) kGraphics_cjkFontStyle::DEFAULT);

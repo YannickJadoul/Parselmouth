@@ -67,9 +67,9 @@ autoTableOfReal MFCC_to_TableOfReal (MFCC me, bool includeC0);
 
 autoSound MFCC_to_Sound (MFCC me);
 
-autoSound MFCCs_crossCorrelate (MFCC me, MFCC thee, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain);
+autoSound MFCCs_crossCorrelate (MFCC me, MFCC thee, enum kSounds_convolve_scaling scaling, enum kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain);
 
-autoSound MFCCs_convolve (MFCC me, MFCC thee, kSounds_convolve_scaling scaling, kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain);
+autoSound MFCCs_convolve (MFCC me, MFCC thee, enum kSounds_convolve_scaling scaling, enum kSounds_convolve_signalOutsideTimeDomain signalOutsideTimeDomain);
 
 autoMatrix MFCC_to_Matrix_features (MFCC me, double windowLength, bool includeEnergy);
 

@@ -149,7 +149,7 @@ static BiosemiLocationData biosemiCapCoordinates32 [1+32] =
 	{   0,   0, 0.0, 0.0 },   // 32 Cz
 };
 
-void ERP_drawScalp_garnish (Graphics graphics, double vmin, double vmax, kGraphics_colourScale colourScale) {
+void ERP_drawScalp_garnish (Graphics graphics, double vmin, double vmax, enum kGraphics_colourScale colourScale) {
 	integer n = 201;
 	autoMAT legend = newMATraw (n, 2);
 	for (integer irow = 1; irow <= n; irow ++) {
@@ -167,7 +167,7 @@ void ERP_drawScalp_garnish (Graphics graphics, double vmin, double vmax, kGraphi
 	Graphics_text (graphics, 1.0, +0.8,   vmax * 1e6, U" μV");
 }
 
-void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double vmin, double vmax, kGraphics_colourScale colourScale, bool garnish) {
+void ERP_drawScalp (ERP me, Graphics graphics, double tmin, double tmax, double vmin, double vmax, enum kGraphics_colourScale colourScale, bool garnish) {
 	Graphics_setInner (graphics);
 	Graphics_setWindow (graphics, -1.0, 1.0, -1.0, 1.0);
 	//Graphics_setGrey (graphics, 1.0);

@@ -57,12 +57,12 @@
 	private: static conststring32 sdefault_##name; public: conststring32 default_##name () override { return sdefault_##name; }
 
 #define prefs_add_enum(Klas,name,version,enumerated,default) \
-	private: static enumerated s_##name; public: virtual enumerated & pref_##name () { return s_##name; } \
-	private: static enumerated sdefault_##name; public: virtual enumerated default_##name () { return sdefault_##name; }
+	private: static enum enumerated s_##name; public: virtual enum enumerated & pref_##name () { return s_##name; } \
+	private: static enum enumerated sdefault_##name; public: virtual enum enumerated default_##name () { return sdefault_##name; }
 #define prefs_add_enum_with_data(Klas,name,version,enumerated,default)  public: enumerated p_##name; prefs_add_enum (Klas, name, version, enumerated, default)
 #define prefs_override_enum(Klas,name,version,enumerated,default) \
-	private: static enumerated s_##name; public: enumerated & pref_##name () override { return s_##name; } \
-	private: static enumerated sdefault_##name; public: enumerated default_##name () override { return sdefault_##name; }
+	private: static enum enumerated s_##name; public: enum enumerated & pref_##name () override { return s_##name; } \
+	private: static enum enumerated sdefault_##name; public: enum enumerated default_##name () override { return sdefault_##name; }
 
 #define prefs_add_string(Klas,name,version,default) \
 	private: static char32 s_##name [Preferences_STRING_BUFFER_SIZE]; public: virtual char32 * pref_##name () { return & s_##name [0]; } \

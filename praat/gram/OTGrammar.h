@@ -90,25 +90,25 @@ autoPairDistribution OTGrammar_to_PairDistribution (OTGrammar me, integer trials
 autoDistributions OTGrammar_measureTypology_WEAK (OTGrammar me);   // WEAK because it has a progress bar
 
 void OTGrammar_learnOne (OTGrammar me, conststring32 input, conststring32 adultOutput,
-	double rankingSpreading, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double rankingSpreading, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double demotionMean, double relativeDemotionSpreading, bool newDisharmonies,
 	bool warnIfStalled, bool *grammarHasChanged);
 void OTGrammar_learn (OTGrammar me, Strings inputs, Strings outputs,
-	double rankingSpreading, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double rankingSpreading, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double demotionMean, double relativeDemotionSpreading, integer numberOfChews);
 void OTGrammar_PairDistribution_learn (OTGrammar me, PairDistribution thee,
-	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double initialPlasticity, integer replicationsPerPlasticity, double plasticityDecrement,
 	integer numberOfPlasticities, double relativePlasticityNoise, integer numberOfChews);
 bool OTGrammar_PairDistribution_findPositiveWeights (OTGrammar me, PairDistribution thee, double weightFloor, double marginOfSeparation);
 void OTGrammar_learnOneFromPartialOutput (OTGrammar me, conststring32 partialAdultOutput,
-	double rankingSpreading, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double rankingSpreading, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double demotionMean, double relativeDemotionSpreading, integer numberOfChews, bool warnIfStalled);
 void OTGrammar_learnFromPartialOutputs (OTGrammar me, Strings partialOutputs,
-	double rankingSpreading, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double rankingSpreading, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double demotionMean, double relativeDemotionSpreading, integer numberOfChews, integer storeHistoryEvery, autoOTHistory *history);
 void OTGrammar_Distributions_learnFromPartialOutputs (OTGrammar me, Distributions thee, integer columnNumber,
-	double evaluationNoise, kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
+	double evaluationNoise, enum kOTGrammar_rerankingStrategy updateRule, bool honourLocalRankings,
 	double initialPlasticity, integer replicationsPerPlasticity, double plasticityDecrement,
 	integer numberOfPlasticities, double relativePlasticityNoise, integer numberOfChews,
 	integer storeHistoryEvery, autoOTHistory *history_out,
