@@ -119,7 +119,7 @@ PRAAT_CLASS_BINDING(CC) {
 
 	def("__getitem__",
 	    [](CC self, std::tuple<long, long> ij) {
-		    long i, j; std::tie(i, j) = ij;
+		    auto &[i, j] = ij;
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("CC index out of range");
 		    auto &frame = self->frame[i+1];
@@ -131,7 +131,7 @@ PRAAT_CLASS_BINDING(CC) {
 
 	def("__setitem__",
 	    [](CC self, std::tuple<long, long> ij, double value) {
-		    long i, j; std::tie(i, j) = ij;
+		    auto &[i, j] = ij;
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("CC index out of range");
 		    auto &frame = self->frame[i+1];
