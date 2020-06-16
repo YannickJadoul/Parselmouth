@@ -499,29 +499,32 @@ const char * Melder8_colour (MelderColour colour) noexcept {
 	char *p = & buffers8 [ibuffer] [0];
 	strcpy (p, "{");
 	p ++;
-	sprintf (p, "%.15g", colour.red);
-	if (strtod (p, nullptr) != colour.red) {
-		sprintf (p, "%.16g", colour.red);
-		if (strtod (p, nullptr) != colour.red)
-			sprintf (p, "%.17g", colour.red);
+	auto s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
+	sftoa_c(p, s, colour.red, 15); // sprintf (p, "%.15g", colour.red);
+	if (Melder8_strtod (p, nullptr) != colour.red) {
+		sftoa_c(p, s, colour.red, 16); // sprintf (p, "%.16g", colour.red);
+		if (Melder8_strtod (p, nullptr) != colour.red)
+			sftoa_c(p, s, colour.red, 17); // sprintf (p, "%.17g", colour.red);
 	}
 	p += strlen (p);
 	strcpy (p, ",");
 	p ++;
-	sprintf (p, "%.15g", colour.green);
-	if (strtod (p, nullptr) != colour.green) {
-		sprintf (p, "%.16g", colour.green);
-		if (strtod (p, nullptr) != colour.green)
-			sprintf (p, "%.17g", colour.green);
+	s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
+	sftoa_c(p, s, colour.green, 15); // sprintf (p, "%.15g", colour.green);
+	if (Melder8_strtod (p, nullptr) != colour.green) {
+		sftoa_c(p, s, colour.green, 16); // sprintf (p, "%.16g", colour.green);
+		if (Melder8_strtod (p, nullptr) != colour.green)
+			sftoa_c(p, s, colour.green, 17); // sprintf (p, "%.17g", colour.green);
 	}
 	p += strlen (p);
 	strcpy (p, ",");
 	p ++;
-	sprintf (p, "%.15g", colour.blue);
-	if (strtod (p, nullptr) != colour.blue) {
-		sprintf (p, "%.16g", colour.blue);
-		if (strtod (p, nullptr) != colour.blue)
-			sprintf (p, "%.17g", colour.blue);
+	s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
+	sftoa_c(p, s, colour.blue, 15); // sprintf (p, "%.15g", colour.blue);
+	if (Melder8_strtod (p, nullptr) != colour.blue) {
+		sftoa_c(p, s, colour.blue, 16); // sprintf (p, "%.16g", colour.blue);
+		if (Melder8_strtod (p, nullptr) != colour.blue)
+			sftoa_c(p, s, colour.blue, 17); // sprintf (p, "%.17g", colour.blue);
 	}
 	p += strlen (p);
 	strcpy (p, "}");
