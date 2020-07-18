@@ -37,7 +37,7 @@ struct TimeFrameSampled : public structSampled {};
 template <typename Mixin>
 void addMixinBase(py::handle &binding) {
 	auto typeHandle = py::detail::get_type_handle(typeid(Mixin), true);
-	binding.attr("__bases__") = py::make_tuple(typeHandle).attr("__add__")(binding.attr("__bases__"));
+	binding.attr("__bases__") = py::make_tuple(typeHandle) + binding.attr("__bases__");
 }
 
 template <typename Class, typename... Extra>
