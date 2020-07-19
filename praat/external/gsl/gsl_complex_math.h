@@ -1,6 +1,6 @@
 /* complex/gsl_complex_math.h
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2004, 2007 Jorma Olavi Tähtinen, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2004, 2007 Jorma Olavi TÃ¤htinen, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
