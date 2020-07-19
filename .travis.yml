@@ -137,7 +137,7 @@ matrix:
       services:
         - docker
       install:
-        - pip install --user cibuildwheel==1.5.2 twine
+        - pip install --user cibuildwheel twine
         - mkdir ccache && wget -q https://www.samba.org/ftp/ccache/ccache-3.6.tar.bz2 -O - | tar xj -C ccache --strip-components=1
       script:
         - export CIBW_ENVIRONMENT='ARCH=`uname -i` CC="ccache cc" CXX="ccache c++" CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"` CCACHE_DIR=/host'$HOME'/.ccache PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build_$ARCH/praat\"" PIP_ONLY_BINARY="numpy"'
