@@ -147,7 +147,8 @@ matrix:
                                    CCACHE_DIR=/host'$HOME'/.ccache
                                    PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build_$ARCH/praat\""
                                    PIP_ONLY_BINARY="numpy"'
-        - export CIBW_BEFORE_ALL='(unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) &&
+        - export CIBW_BEFORE_ALL='cd {project} &&
+                                  (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) &&
                                   (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
         - export CIBW_BEFORE_BUILD='pip install cmake'
         - export CIBW_SKIP='pp*-*'
