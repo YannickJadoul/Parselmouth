@@ -148,9 +148,9 @@ matrix:
                                    PARSELMOUTH_EXTRA_CMAKE_ARGS="-DPREBUILT_PRAAT_DIR=\"`pwd`/praat_build_$ARCH/praat\""
                                    PIP_ONLY_BINARY="numpy"'
         - export CIBW_BEFORE_ALL='cd {project} &&
+                                  (PY37_BIN=/opt/python/cp37-cp37m/bin && $PY37_BIN/pip install cmake && ln -s $PY37_BIN/cmake /usr/local/bin/cmake) &&
                                   (unset CC CXX CXXFLAGS && mkdir ccache/$ARCH && cd ccache/$ARCH && ../configure && make install) &&
                                   (mkdir praat_build_$ARCH && cd praat_build_$ARCH && cmake -DCMAKE_BUILD_TYPE=Release .. && make praat -j 2)'
-        - export CIBW_BEFORE_BUILD='pip install cmake'
         - export CIBW_SKIP='pp*-*'
         - if [ "$TRAVIS_BRANCH" == "docs" ]; then export CIBW_BUILD='cp37-manylinux_x86_64'; fi
         - cibuildwheel
