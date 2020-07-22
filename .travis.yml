@@ -32,11 +32,13 @@ matrix:
           packages: [g++-7, python3.6-dev, python3.6-venv]
 
     - env: PYTHON=3.7 GCC=7
-      addons: *gcc7
+      addons:
+        apt:
+          sources: [ubuntu-toolchain-r-test, deadsnakes]
+          packages: [g++-7, python3.7-dev, python3.7-venv]
 
     - env: PYTHON=3.8 GCC=7 RUN_PRAAT_TESTS=1
-      dist: xenial
-      addons:
+      addons: &gcc7-py38
         apt:
           sources: [ubuntu-toolchain-r-test, deadsnakes]
           packages: [g++-7, python3.8-dev, python3.8-venv]
@@ -44,28 +46,34 @@ matrix:
     - env: PYTHON=2.7 GCC=7 BUILD_TYPE=Release
       addons: *gcc7
 
-    - env: PYTHON=3.7 GCC=7 BUILD_TYPE=Release
-      addons: *gcc7
+    - env: PYTHON=3.8 GCC=7 BUILD_TYPE=Release
+      addons: *gcc7-py38
 
     - env: PYTHON=2.7 GCC=9
-      addons: &gcc9
+      addons:
         apt:
           sources: [ubuntu-toolchain-r-test]
           packages: [g++-9]
 
-    - env: PYTHON=3.7 GCC=9
-      addons: *gcc9
+    - env: PYTHON=3.8 GCC=9
+      addons: &gcc9-py38
+        apt:
+          sources: [ubuntu-toolchain-r-test, deadsnakes]
+          packages: [g++-9, python3.8-dev, python3.8-venv]
 
     - env: PYTHON=2.7 CLANG=8
       compiler: clang
-      addons: &clang8
+      addons:
         apt:
           sources: [llvm-toolchain-xenial-8]
           packages: [clang-8, libc++-8-dev, libc++abi-8-dev]
 
-    - env: PYTHON=3.7 CLANG=8
+    - env: PYTHON=3.8 CLANG=8
       compiler: clang
-      addons: *clang8
+      addons:
+        apt:
+          sources: [llvm-toolchain-xenial-8, deadsnakes]
+          packages: [clang-8, libc++-8-dev, libc++abi-8-dev, python3.8-dev, python3.8-venv]
 
     - env: PYTHON=2.7
       os: osx
@@ -79,7 +87,7 @@ matrix:
 
     - stage: wheels
       if: branch != docs
-      addons: *gcc9
+      addons: *gcc9-py38
       install:
         - pip install --user check-manifest twine
         - export CCACHE_BASEDIR=`python -c "import tempfile; import os; print(os.path.realpath(tempfile.gettempdir()))"`
@@ -136,6 +144,7 @@ matrix:
       sudo: required
       services:
         - docker
+      addons: *gcc9-py38
       install:
         - pip install --user cibuildwheel twine
         - mkdir ccache && wget -q https://www.samba.org/ftp/ccache/ccache-3.6.tar.bz2 -O - | tar xj -C ccache --strip-components=1
@@ -196,7 +205,7 @@ before_install:
   - set -e
   - | # Use the latest version of Python (that is easily available on Travis CI) to create source distributions and to run cibuildwheel
     if [ "$TRAVIS_BUILD_STAGE_NAME" == "wheels" ]; then
-      PYTHON=3.7
+      PYTHON=3.8
       if [ "$TRAVIS_OS_NAME" == "linux" ]; then
         GCC=9
       fi
@@ -214,10 +223,9 @@ before_install:
         export CCACHE_CPP2=true
         # CCACHE_CPP2: https://petereisentraut.blogspot.com/2011/05/ccache-and-clang.html
       fi
-      if [ "$PYTHON" == "3.6" ] || [ "$PYTHON" == "3.8" ]; then
+      if [ "$PYTHON" != "2.7" ] && [ "$PYTHON" != "3.5" ]; then
+        # Not for 2.7 and 3.5, since "ensurepip is disabled in Debian/Ubuntu for the system python."
         python$PYTHON -m ensurepip --user
-      elif [ "$PYTHON" = "3.7" ]; then
-        pyenv global system $PYTHON # https://github.com/travis-ci/travis-ci/issues/8363
       fi
       PYTHON_CMD=python$PYTHON
     elif [ "$TRAVIS_OS_NAME" == "osx" ]; then
