@@ -27,6 +27,7 @@ branches:
   except:
     - travis
     - docs
+    - actions
 
 install:
   - ps: |

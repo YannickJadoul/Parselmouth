@@ -195,6 +195,7 @@ matrix:
 branches:
   except:
     - appveyor
+    - actions
 
 stages:
   - name: test

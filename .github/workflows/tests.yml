@@ -1,0 +1,32 @@
+name: Tests
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  basic:
+    name: Basic
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+          architecture: 'x64'
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v1.3
+
+      - name: Install requirements
+        run: pip install --user --upgrade -r tests/requirements.txt
+
+      - name: Compile
+        run: |
+          cmake -S . -B build
+          cmake --build build -j 2
+
+      - name: Run tests
+        run: cmake --build build --target tests
