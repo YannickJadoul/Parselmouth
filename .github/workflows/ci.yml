@@ -3,14 +3,63 @@ name: CI
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  basic:
+  tests:
     strategy:
-      matrix:
-        runs-on: [ubuntu-latest, macos-latest, windows-latest]
-        python: [2.7, 3.5, 3.6, 3.7, 3.8]
       fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            python: 2.7
+            arch: x64
+          - runs-on: ubuntu-latest
+            python: 3.5
+            arch: x64
+          - runs-on: ubuntu-latest
+            python: 3.6
+            arch: x64
+          - runs-on: ubuntu-latest
+            python: 3.7
+            arch: x64
+          - runs-on: ubuntu-latest
+            python: 3.8
+            arch: x64
+            run-praat-tests: true
+          - runs-on: ubuntu-latest
+            python: 3.9-dev
+            arch: x64
 
-    name: Basic
+          - runs-on: ubuntu-latest
+            python: 2.7
+            arch: x64
+            clang: 9
+          - runs-on: ubuntu-latest
+            python: 3.8
+            arch: x64
+            clang: 9
+
+          - runs-on: macos-latest
+            python: 2.7
+            arch: x64
+          - runs-on: macos-latest
+            python: 3.8
+            arch: x64
+            run-praat-tests: true
+
+          - runs-on: windows-latest
+            python: 2.7
+            arch: x64
+          - runs-on: windows-latest
+            python: 3.8
+            arch: x64
+            run-praat-tests: true
+          - runs-on: windows-latest
+            python: 2.7
+            arch: x86
+          - runs-on: windows-latest
+            python: 3.8
+            arch: x86
+
+    name: Python ${{ matrix.python }} • ${{ matrix.runs-on }} (${{ matrix.arch }})
     runs-on: ${{ matrix.runs-on }}
 
     steps:
@@ -21,7 +70,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-          architecture: 'x64'
+          architecture: ${{ matrix.arch }}
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.3
@@ -31,8 +80,19 @@ jobs:
           pip install --user --upgrade pip setuptools wheel
           pip install --user --upgrade -r tests/requirements.txt
 
+      - name: Select Clang
+        run: |
+          echo "::set-env name=CC::clang-${{ matrix.clang }}"
+          echo "::set-env name=CXX::clang++-${{ matrix.clang }}"
+        if: matrix.clang
+
+      - name: Set Visual Studio architecture
+        run: |
+          echo "::set-env name=CMAKE_ARCH_FLAGS::-A Win32"
+        if: runner.os == 'Windows' && matrix.arch == 'x86'
+
       - name: Configure
-        run: cmake -S . -B build -DPYTHON_EXECUTABLE="$(which python)"
+        run: cmake -S . -B build -DPYTHON_EXECUTABLE="$(which python)" $CMAKE_ARCH_FLAGS
         shell: bash
 
       - name: Compile
