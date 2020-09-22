@@ -143,5 +143,10 @@ jobs:
       - name: Compile
         run: cmake --build build -j 2
 
+      - name: Select Praat tests to run
+        run: |
+          echo "::set-env name=PYTEST_ADDOPTS::--run-praat-tests -v"
+        if: matrix.run-praat-tests
+
       - name: Run tests
         run: cmake --build build --target tests
