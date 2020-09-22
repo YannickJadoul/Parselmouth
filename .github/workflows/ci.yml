@@ -24,18 +24,32 @@ jobs:
             python: 3.8
             arch: x64
             run-praat-tests: true
+            name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
             python: 3.9-dev
             arch: x64
 
           - runs-on: ubuntu-latest
-            python: 2.7
+            python: 3.8
             arch: x64
-            clang: 9
+            gcc: 9
+            name-extra: ' (GCC 9)'
           - runs-on: ubuntu-latest
             python: 3.8
             arch: x64
             clang: 9
+            name-extra: ' (Clang 9)'
+
+          - runs-on: ubuntu-latest
+            python: 2.7
+            arch: x64
+            release: true
+            name-extra: ' (Release)'
+          - runs-on: ubuntu-latest
+            python: 3.8
+            arch: x64
+            release: true
+            name-extra: ' (Release)'
 
           - runs-on: macos-latest
             python: 2.7
@@ -44,6 +58,12 @@ jobs:
             python: 3.8
             arch: x64
             run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          - runs-on: macos-latest
+            python: 3.8
+            arch: x64
+            release: true
+            name-extra: ' (Release)'
 
           - runs-on: windows-latest
             python: 2.7
@@ -52,14 +72,22 @@ jobs:
             python: 3.8
             arch: x64
             run-praat-tests: true
+            name-extra: ' (with Praat tests)'
           - runs-on: windows-latest
             python: 2.7
             arch: x86
+            name-extra: ' (32-bit)'
           - runs-on: windows-latest
             python: 3.8
             arch: x86
+            name-extra: ' (32-bit)'
+          - runs-on: windows-latest
+            python: 3.8
+            arch: x64
+            release: true
+            name-extra: ' (Release)'
 
-    name: Python ${{ matrix.python }} • ${{ matrix.runs-on }} (${{ matrix.arch }})
+    name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
 
     steps:
@@ -80,19 +108,36 @@ jobs:
           pip install --user --upgrade pip setuptools wheel
           pip install --user --upgrade -r tests/requirements.txt
 
+      - name: Select GCC
+        run: |
+          echo "::set-env name=CC::gcc-${{ matrix.gcc }}"
+          echo "::set-env name=CXX::g++-${{ matrix.gcc }}"
+        if: matrix.clang
+
       - name: Select Clang
         run: |
           echo "::set-env name=CC::clang-${{ matrix.clang }}"
           echo "::set-env name=CXX::clang++-${{ matrix.clang }}"
         if: matrix.clang
 
-      - name: Set Visual Studio architecture
+      - name: Select 32-bit Visual Studio
         run: |
-          echo "::set-env name=CMAKE_ARCH_FLAGS::-A Win32"
+          echo "::set-env name=CMAKE_ARCH::-A Win32"
         if: runner.os == 'Windows' && matrix.arch == 'x86'
 
+      - name: Select Debug build
+        run: |
+          echo "::set-env name=CMAKE_BUILD_TYPE::Debug"
+        if: matrix.release != true
+
+      - name: Select Release build
+        run: |
+          echo "::set-env name=CMAKE_BUILD_TYPE::Release"
+        if: matrix.release
+
       - name: Configure
-        run: cmake -S . -B build -DPYTHON_EXECUTABLE="$(which python)" $CMAKE_ARCH_FLAGS
+        run: |
+          cmake -S . -B build $CMAKE_ARCH -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DPYTHON_EXECUTABLE="$(which python)"
         shell: bash
 
       - name: Compile
