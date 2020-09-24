@@ -10,6 +10,44 @@ on:
   workflow_dispatch:
 
 jobs:
+  sdist:
+    name: Source distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install requirements
+        run: pip install --user check-manifest twine
+
+      - name: Run check-manifest
+        run: |
+          python -m check_manifest
+
+      - name: Build sdist
+        run: |
+          python setup.py sdist -d wheelhouse
+
+      - name: Install from sdist
+        run: |
+          pip install --user wheelhouse/*.tar.gz
+
+      - name: Check sdist
+        run: |
+          python -m twine check wheelhouse/*
+
+      - name: Upload built wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: wheelhouse/*.tar.gz
+
   wheels:
     strategy:
       fail-fast: false
@@ -53,4 +91,13 @@ jobs:
       - name: Upload built wheels
         uses: actions/upload-artifact@v2
         with:
+          name: wheels
           path: wheelhouse/*.whl
+
+      - name: Upload wheel for ReadTheDocs
+        uses: actions/upload-artifact@v2
+        with:
+          name: rtd-wheel
+          path: wheelhouse/praat_parselmouth-*-cp37-cp37m-manylinux2010_x86_64.whl
+          if-no-files-found: error
+        if: runner.os == 'Linux'
