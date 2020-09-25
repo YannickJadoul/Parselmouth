@@ -42,7 +42,7 @@ jobs:
         run: |
           python -m twine check wheelhouse/*
 
-      - name: Upload built wheels
+      - name: Upload sdist
         uses: actions/upload-artifact@v2
         with:
           name: wheels
@@ -52,9 +52,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - runs-on: ubuntu-latest
+            cibw-arch: manylinux_x86_64
+          - runs-on: ubuntu-latest
+            cibw-arch: manylinux_i686
+          - runs-on: macos-latest
+            cibw-arch: macosx_x86_64
+          - runs-on: windows-latest
+            cibw-arch: win_amd64
+          - runs-on: windows-latest
+            cibw-arch: win32
 
-    name: Wheels • ${{ matrix.runs-on }}
+    name: Wheels • ${{ matrix.cibw-arch }}
     runs-on: ${{ matrix.runs-on }}
 
     steps:
@@ -72,6 +82,7 @@ jobs:
 
       - name: Configure cibuildwheel
         run: |
+          echo "::set-env name=CIBW_BUILD::*-${{ matrix.cibw-arch }}"
           echo "::set-env name=CIBW_SKIP::pp*-*"
 
       - name: Configure cibuildwheel for manylinux
@@ -100,4 +111,4 @@ jobs:
           name: rtd-wheel
           path: wheelhouse/praat_parselmouth-*-cp37-cp37m-manylinux2010_x86_64.whl
           if-no-files-found: error
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.cibw-arch == 'manylinux_x86_64'
