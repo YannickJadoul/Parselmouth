@@ -63,6 +63,7 @@ jobs:
             cibw-arch: win_amd64
           - runs-on: windows-latest
             cibw-arch: win32
+            cmake-arch: -A Win32
 
     name: Wheels • ${{ matrix.cibw-arch }}
     runs-on: ${{ matrix.runs-on }}
@@ -84,12 +85,10 @@ jobs:
         run: |
           echo "::set-env name=CIBW_BUILD::*-${{ matrix.cibw-arch }}"
           echo "::set-env name=CIBW_SKIP::pp*-*"
-
-      - name: Configure cibuildwheel for manylinux
-        run: |
-          echo "::set-env name=CIBW_BEFORE_ALL::PY37_BIN=/opt/python/cp37-cp37m/bin && \$PY37_BIN/pip install cmake && ln -s \$PY37_BIN/cmake /usr/local/bin/cmake"
-          echo "::set-env name=CIBW_ENVIRONMENT::PIP_ONLY_BINARY='numpy'"
-        if: runner.os == 'Linux'
+          echo "::set-env name=CIBW_ENVIRONMENT::PARSELMOUTH_EXTRA_CMAKE_ARGS='-DPREBUILT_PRAAT_DIR=$(pwd)/praat_build/praat'"
+          echo "::set-env name=CIBW_ENVIRONMENT_LINUX::$CIBW_ENVIRONMENT PIP_ONLY_BINARY='numpy'"
+          echo "::set-env name=CIBW_BEFORE_ALL::cmake -S . -B praat_build ${{ matrix.cmake-arch }} && cmake --build praat_build -j 2"
+          echo "::set-env name=CIBW_BEFORE_ALL_LINUX::\(PY37_BIN=/opt/python/cp37-cp37m/bin && \$PY37_BIN/pip install cmake && ln -s \$PY37_BIN/cmake /usr/local/bin/cmake\) && \($CIBW_BEFORE_ALL\)"
 
       - name: Run cibuildwheel
         run: |
