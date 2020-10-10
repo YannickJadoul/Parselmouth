@@ -63,6 +63,7 @@ jobs:
             cibw-arch: win_amd64
           - runs-on: windows-latest
             cibw-arch: win32
+            python-arch: x86
             cmake-arch: -A Win32
 
     name: Wheels • ${{ matrix.cibw-arch }}
@@ -76,6 +77,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
+          architecture: ${{ matrix.python-arch }}
 
       - name: Install requirements
         run: |
@@ -86,12 +88,13 @@ jobs:
         run: |
           echo "CIBW_BUILD=*-${{ matrix.cibw-arch }}" >> $GITHUB_ENV
           echo "CIBW_SKIP=pp*-*" >> $GITHUB_ENV
-          CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_PRAAT_DIR=\$(pwd)/praat_build/praat\""
+          CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_PRAAT_DIR=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/praat_build/praat\""
           echo "CIBW_ENVIRONMENT=$CIBW_ENVIRONMENT_COMMON" >> $GITHUB_ENV
           echo "CIBW_ENVIRONMENT_LINUX=$CIBW_ENVIRONMENT_COMMON PIP_ONLY_BINARY='numpy'" >> $GITHUB_ENV
           CIBW_BEFORE_ALL_COMMON="cmake -S . -B praat_build ${{ matrix.cmake-arch }} && cmake --build praat_build --target praat -j 2"
           echo "CIBW_BEFORE_ALL=$CIBW_BEFORE_ALL_COMMON" >> $GITHUB_ENV
           echo "CIBW_BEFORE_ALL_LINUX=(PY37_BIN=/opt/python/cp37-cp37m/bin && \$PY37_BIN/pip install cmake && ln -s \$PY37_BIN/cmake /usr/local/bin/cmake) && ( $CIBW_BEFORE_ALL_COMMON )" >> $GITHUB_ENV
+          echo "CIBW_BEFORE_ALL_WINDOWS=$CIBW_BEFORE_ALL_COMMON --config Release" >> $GITHUB_ENV
 
       - name: Run cibuildwheel
         run: |
