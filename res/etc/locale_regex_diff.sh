@@ -21,8 +21,10 @@
 
 trap "exit" INT
 
+locale_regexes="$(dirname "$(readlink -f "$0")")/locale_regexes"
+
 TMP_DIR=$(mktemp -d)
-git diff "$@" | grepdiff -f "$(dirname "$(readlink -f "$0")")/locale_regexes" -E --output=hunk > "$TMP_DIR/diff"
+git diff "$@" | grepdiff -f "$locale_regexes" -E --output=hunk > "$TMP_DIR/diff"
 splitdiff -p 1 -a "$TMP_DIR/diff"
 for part in $TMP_DIR/*.patch
 do
@@ -30,4 +32,4 @@ do
 done
 rm -r "$TMP_DIR"
 
-git diff "$@" | grepdiff -f "$(dirname "$(readlink -f "$0")")/locale_regexes" -E --output=hunk | grep --color=always -f locale_regexes -e '' | ydiff -s -w 0 --wrap
+git diff "$@" | grepdiff -f "$locale_regexes" -E --output=hunk | grep --color=always -f "$locale_regexes" -e '' | ydiff -s -w 0 --wrap
