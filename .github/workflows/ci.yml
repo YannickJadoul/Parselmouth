@@ -89,6 +89,7 @@ jobs:
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
+    if: startsWith(github.ref, 'refs/heads/docs') != true
 
     steps:
       - name: Checkout code
@@ -109,36 +110,36 @@ jobs:
           pip install --user --upgrade -r tests/requirements.txt
 
       - name: Select GCC
+        if: matrix.clang
         shell: bash
         run: |
           echo "CC=gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
           echo "CXX=g++-${{ matrix.gcc }}" >> $GITHUB_ENV
-        if: matrix.clang
 
       - name: Select Clang
+        if: matrix.clang
         shell: bash
         run: |
           echo "CC=clang-${{ matrix.clang }}" >> $GITHUB_ENV
           echo "CXX=clang++-${{ matrix.clang }}" >> $GITHUB_ENV
-        if: matrix.clang
 
       - name: Select 32-bit Visual Studio
+        if: runner.os == 'Windows' && matrix.arch == 'x86'
         shell: bash
         run: |
           echo "CMAKE_ARCH=-A Win32" >> $GITHUB_ENV
-        if: runner.os == 'Windows' && matrix.arch == 'x86'
 
       - name: Select Debug build
+        if: matrix.release != true
         shell: bash
         run: |
           echo "CMAKE_BUILD_TYPE=Debug" >> $GITHUB_ENV
-        if: matrix.release != true
 
       - name: Select Release build
+        if: matrix.release
         shell: bash
         run: |
           echo "CMAKE_BUILD_TYPE=Release" >> $GITHUB_ENV
-        if: matrix.release
 
       - name: Configure
         shell: bash
@@ -149,9 +150,9 @@ jobs:
         run: cmake --build build -j 2
 
       - name: Select Praat tests to run
+        if: matrix.run-praat-tests
         run: |
           echo "PYTEST_ADDOPTS=--run-praat-tests -v" >> $GITHUB_ENV
-        if: matrix.run-praat-tests
 
       - name: Run tests
         run: cmake --build build --target tests
