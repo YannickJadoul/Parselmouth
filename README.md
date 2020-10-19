@@ -3,8 +3,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/praat-parselmouth.svg)](https://pypi.org/project/praat-parselmouth/)
 [![Gitter chat](https://img.shields.io/gitter/room/PraatParselmouth/Lobby.svg?logo=gitter&logoColor=fff&colorB=51bb9b)](https://gitter.im/PraatParselmouth/Lobby)
-[![Travis CI status](https://img.shields.io/travis/YannickJadoul/Parselmouth/master.svg?logo=travis)](https://travis-ci.org/YannickJadoul/Parselmouth/)
-[![AppVeyor status](https://img.shields.io/appveyor/ci/YannickJadoul/Parselmouth/master.svg?logo=appveyor&logoColor=ccc)](https://ci.appveyor.com/project/YannickJadoul/parselmouth)
+[![GitHub Actions status](https://img.shields.io/github/workflow/status/YannickJadoul/Parselmouth/CI/master?logo=github)](https://github.com/YannickJadoul/Parselmouth/actions?query=workflow:CI+branch:master)
 [![ReadTheDocs status](https://img.shields.io/readthedocs/parselmouth.svg?logo=read-the-docs&logoColor=fff)](https://parselmouth.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/pypi/l/praat-parselmouth.svg)](https://github.com/YannickJadoul/Parselmouth/blob/master/LICENSE)
 [![Launch Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=lab%2Ftree%2Fdocs%2Fexamples)
