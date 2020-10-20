@@ -32,8 +32,8 @@ jobs:
           - runs-on: ubuntu-latest
             python: 3.8
             arch: x64
-            gcc: 9
-            name-extra: ' (GCC 9)'
+            gcc: 10
+            name-extra: ' (GCC 10)'
           - runs-on: ubuntu-latest
             python: 3.8
             arch: x64
