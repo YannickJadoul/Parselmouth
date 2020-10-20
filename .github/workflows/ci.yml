@@ -110,7 +110,7 @@ jobs:
           pip install --user --upgrade -r tests/requirements.txt
 
       - name: Select GCC
-        if: matrix.clang
+        if: matrix.gcc
         shell: bash
         run: |
           echo "CC=gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
