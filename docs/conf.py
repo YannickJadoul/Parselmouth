@@ -21,9 +21,16 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import git
+import github
+import requests
+
+import io
 import os
 import subprocess
 import sys
+import tempfile
+import zipfile
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
@@ -67,23 +74,21 @@ author = 'Yannick Jadoul'
 
 if on_rtd:
     rtd_version = os.environ.get('READTHEDOCS_VERSION')
-    setup_py_version = subprocess.check_output([sys.executable, os.path.abspath(os.path.join('..', 'setup.py')), '--version']).decode('ascii').strip()
+    branch = 'master' if rtd_version == 'latest' else rtd_version
 
-    if rtd_version == 'stable':
-        branch = None
-        try:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', 'praat-parselmouth=={}'.format(setup_py_version)])
-        except subprocess.CalledProcessError:
-            branch = 'stable'
-    else:
-        branch = 'master' if rtd_version == 'latest' else rtd_version
+    github_token = os.environ['GITHUB_TOKEN']
+    head_sha = git.Repo(search_parent_directories=True).head.commit.hexsha
+    g = github.Github()
+    runs = g.get_repo('YannickJadoul/Parselmouth').get_workflow("wheels.yml").get_runs(branch=branch)
+    artifacts_url = next(r for r in runs if r.head_sha == head_sha).artifacts_url
 
-    if branch is not None:
-        # PEP 425 tags
-        rtd_impl_tag = 'cp{}{}'.format(sys.version_info.major, sys.version_info.minor)
-        rtd_abi_tag = rtd_impl_tag + 'm'
-        rtd_platform_tag = 'manylinux2010_x86_64'
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', 'https://dl.bintray.com/yannickjadoul/Parselmouth/{}/praat_parselmouth-{}-{}-{}-{}.whl'.format(branch, setup_py_version, rtd_impl_tag, rtd_abi_tag, rtd_platform_tag)])
+    archive_download_url = next(artifact for artifact in requests.get(artifacts_url).json()['artifacts'] if artifact['name'] == 'rtd-wheel')['archive_download_url']
+    artifact_bin = io.BytesIO(requests.get(archive_download_url, headers={'Authorization': f'token {github_token}'}, stream=True).content)
+
+    with zipfile.ZipFile(artifact_bin) as zf, tempfile.TemporaryDirectory() as tmpdir:
+        assert len(zf.namelist()) == 1
+        zf.extractall(tmpdir)
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', tmpdir + '/' + zf.namelist()[0]])
 else:
     sys.path.insert(0, os.path.abspath(os.path.join('..', 'installed')))
 

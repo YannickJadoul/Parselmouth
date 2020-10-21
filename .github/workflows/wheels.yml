@@ -131,6 +131,22 @@ jobs:
           path: wheelhouse/praat_parselmouth-*-cp37-cp37m-manylinux2010_x86_64.whl
           if-no-files-found: error
 
+  trigger_rtd:
+    name: Trigger ReadTheDocs build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
+    needs: [wheels]
+
+    steps:
+      - name: Get branch name
+        id: get_branch
+        run: |
+          echo "::set-output name=branch::${GITHUB_REF##refs/heads/}"
+
+      - name: Trigger ReadTheDocs webhook
+        run: |
+          curl -X POST -d "branches=${{ steps.get_branch.outputs.branch }}" -d "token=${{ secrets.READTHEDOCS_WEBHOOK_TOKEN }}" https://readthedocs.org/api/v2/webhook/parselmouth/15985/
+
   create_release:
     name: Create release
     runs-on: ubuntu-latest
