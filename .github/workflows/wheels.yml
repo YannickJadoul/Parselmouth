@@ -111,6 +111,7 @@ jobs:
           cibuildwheel
 
       - name: Check built wheels
+        if: github.ref != 'refs/heads/docs' || matrix.cibw-arch == 'manylinux_x86_64'
         run: |
           twine check wheelhouse/*
 
