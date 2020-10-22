@@ -1,0 +1,174 @@
+name: Wheels
+
+on:
+  push:
+    branches:
+      - master
+      - stable
+      - docs
+      - actions*
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+  sdist:
+    name: Source distribution
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/docs'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install requirements
+        run: pip install --user check-manifest twine
+
+      - name: Run check-manifest
+        run: |
+          python -m check_manifest
+
+      - name: Build sdist
+        run: |
+          python setup.py sdist -d wheelhouse
+
+      - name: Install from sdist
+        run: |
+          pip install --user wheelhouse/*.tar.gz
+
+      - name: Check sdist
+        run: |
+          python -m twine check wheelhouse/*
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: wheelhouse/*.tar.gz
+
+  wheels:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            cibw-arch: manylinux_x86_64
+          - runs-on: ubuntu-latest
+            cibw-arch: manylinux_i686
+          - runs-on: macos-latest
+            cibw-arch: macosx_x86_64
+          - runs-on: windows-latest
+            cibw-arch: win_amd64
+          - runs-on: windows-latest
+            cibw-arch: win32
+            python-arch: x86
+            cmake-arch: -A Win32
+
+    name: Wheels • ${{ matrix.cibw-arch }}
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: ${{ matrix.python-arch }}
+
+      - name: Install requirements
+        run: |
+          python -m pip install cibuildwheel twine
+
+      - name: Configure cibuildwheel
+        shell: bash
+        run: |
+          echo "CIBW_BUILD=*-${{ matrix.cibw-arch }}" >> $GITHUB_ENV
+          echo "CIBW_SKIP=pp*-*" >> $GITHUB_ENV
+          CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_PRAAT_DIR=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/praat_build/praat\""
+          echo "CIBW_ENVIRONMENT=$CIBW_ENVIRONMENT_COMMON" >> $GITHUB_ENV
+          echo "CIBW_ENVIRONMENT_LINUX=$CIBW_ENVIRONMENT_COMMON PIP_ONLY_BINARY='numpy'" >> $GITHUB_ENV
+          CIBW_BEFORE_ALL_COMMON="cmake -S . -B praat_build ${{ matrix.cmake-arch }} && cmake --build praat_build --target praat -j 2"
+          echo "CIBW_BEFORE_ALL=$CIBW_BEFORE_ALL_COMMON" >> $GITHUB_ENV
+          echo "CIBW_BEFORE_ALL_LINUX=(PY37_BIN=/opt/python/cp37-cp37m/bin && \$PY37_BIN/pip install cmake && ln -s \$PY37_BIN/cmake /usr/local/bin/cmake) && ( $CIBW_BEFORE_ALL_COMMON )" >> $GITHUB_ENV
+          echo "CIBW_BEFORE_ALL_WINDOWS=$CIBW_BEFORE_ALL_COMMON --config Release" >> $GITHUB_ENV
+
+      - name: Only build ReadTheDocs wheel
+        if: github.ref == 'refs/heads/docs'
+        shell: bash
+        run: |
+          echo "CIBW_BUILD=cp37-manylinux_x86_64" >> $GITHUB_ENV
+
+      - name: Run cibuildwheel
+        if: github.ref != 'refs/heads/docs' || matrix.cibw-arch == 'manylinux_x86_64'
+        run: |
+          cibuildwheel
+
+      - name: Check built wheels
+        if: github.ref != 'refs/heads/docs' || matrix.cibw-arch == 'manylinux_x86_64'
+        run: |
+          twine check wheelhouse/*
+
+      - name: Upload built wheels
+        if: github.ref != 'refs/heads/docs'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: wheelhouse/praat_parselmouth-*.whl
+          if-no-files-found: error
+
+      - name: Upload wheel for ReadTheDocs
+        if: runner.os == 'Linux' && matrix.cibw-arch == 'manylinux_x86_64'
+        uses: actions/upload-artifact@v2
+        with:
+          name: rtd-wheel
+          path: wheelhouse/praat_parselmouth-*-cp37-cp37m-manylinux2010_x86_64.whl
+          if-no-files-found: error
+
+  trigger_rtd:
+    name: Trigger ReadTheDocs build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
+    needs: [wheels]
+
+    steps:
+      - name: Get branch name
+        id: get_branch
+        run: |
+          echo "::set-output name=branch::${GITHUB_REF##refs/heads/}"
+
+      - name: Trigger ReadTheDocs webhook
+        run: |
+          curl -X POST -d "branches=${{ steps.get_branch.outputs.branch }}" -d "token=${{ secrets.READTHEDOCS_WEBHOOK_TOKEN }}" https://readthedocs.org/api/v2/webhook/parselmouth/15985/
+
+  create_release:
+    name: Create release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [sdist, wheels]
+
+    steps:
+      - name: Collect sdist and wheels
+        uses: actions/download-artifact@v2
+        with:
+          name: wheels
+          path: wheelhouse
+
+      - name: Get release name
+        id: get_version
+        run: |
+          echo "::set-output name=version::${GITHUB_REF##refs/tags/v}"
+
+      - name: Upload sdist and wheels to release
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ steps.get_version.outputs.version }}
+          draft: true
+          artifacts: wheelhouse/*
+          token: ${{ secrets.GITHUB_TOKEN }}
