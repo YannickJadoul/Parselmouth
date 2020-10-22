@@ -1523,7 +1523,7 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_CompileDictionary(const char *dsource, 
 	FILE *f_out;
 	int offset_rules = 0;
 	int value;
-	char fname_in[sizeof(path_home)+45];
+	char fname_in[sizeof(path_home)+48];
 	char fname_out[sizeof(path_home)+15];
 	char fname_temp[sizeof(path_home)+15];
 	char path[sizeof(path_home)+40];       // path_dsource+20

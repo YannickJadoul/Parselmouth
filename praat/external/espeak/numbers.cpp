@@ -683,7 +683,7 @@ int TranslateLetter(Translator *tr, char *word, char *phonemes, int control)
 	int speak_letter_number;
 	char capital[30];
 	char ph_buf[80];
-	char ph_buf2[80];
+	char ph_buf2[189];
 	char ph_alphabet[80];
 	char hexbuf[12];
 	static char pause_string[] = { phonPAUSE, 0 };
@@ -1532,7 +1532,7 @@ static int LookupNum3(Translator *tr, int value, char *ph_out, int suppress_null
 	char ph_100[20];
 	char ph_10T[20];
 	char ph_digits[50];
-	char ph_thousands[50];
+	char ph_thousands[71];
 	char ph_hundred_and[12];
 	char ph_thousand_and[12];
 
