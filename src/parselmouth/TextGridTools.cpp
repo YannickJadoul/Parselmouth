@@ -27,9 +27,9 @@ using namespace std::string_literals;
 namespace parselmouth {
 namespace {
 
-py::module importTgt() {
+py::module_ importTgt() {
 	try {
-		return py::module::import("tgt");
+		return py::module_::import("tgt");
 	}
 	catch (py::error_already_set &e) {
 		if (e.matches(PyExc_ImportError))
@@ -40,22 +40,22 @@ py::module importTgt() {
 	}
 }
 
-py::object toTgtPoint(const py::module &tgt, TextPoint point) {
+py::object toTgtPoint(const py::module_ &tgt, TextPoint point) {
 	return tgt.attr("Point")(point->number, point->mark.get());
 }
 
-py::object toTgtPointTier(const py::module &tgt, TextTier tier) {
+py::object toTgtPointTier(const py::module_ &tgt, TextTier tier) {
 	auto tgtTier = tgt.attr("PointTier")(tier->xmin, tier->xmax, tier->name.get());
 	for (auto i = 1; i <= tier->points.size; ++i)
 		tgtTier.attr("add_point")(toTgtPoint(tgt, tier->points.at[i]));
 	return tgtTier;
 }
 
-py::object toTgtInterval(const py::module &tgt, TextInterval interval) {
+py::object toTgtInterval(const py::module_ &tgt, TextInterval interval) {
 	return tgt.attr("Interval")(interval->xmin, interval->xmax, interval->text.get());
 }
 
-py::object toTgtIntervalTier(const py::module &tgt, IntervalTier tier) {
+py::object toTgtIntervalTier(const py::module_ &tgt, IntervalTier tier) {
 	auto tgtTier = tgt.attr("IntervalTier")(tier->xmin, tier->xmax, tier->name.get());
 	for (auto i = 1; i <= tier->intervals.size; ++i)
 		tgtTier.attr("add_interval")(toTgtInterval(tgt, tier->intervals.at[i]));
@@ -125,7 +125,7 @@ autoTextGrid fromTgtTextGrid(TgtTextGrid tgtTextGrid) {
 		else if (py::isinstance(tgtTier, tgtIntervalTierType))
 			textGrid->tiers->addItem_move(fromTgtIntervalTier(tgtTier));
 		else
-			throw std::runtime_error("Tier type not supported by TextGridTools: "s + py::cast<std::string>(py::str(tgtTier.get_type())));
+			throw std::runtime_error("Tier type not supported by TextGridTools: "s + py::cast<std::string>(py::str(py::type::of(tgtTier))));
 	}
 
 	return textGrid;

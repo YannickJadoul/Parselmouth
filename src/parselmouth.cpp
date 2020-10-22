@@ -100,7 +100,7 @@ PRAAT_EXCEPTION_BINDING(PraatFatal, PyExc_BaseException) {
 
 void redirectMelderInfo() {
 	Melder_setInformationProc([](const char32 *message, size_t i) {
-		auto sys = py::module::import("sys");
+		auto sys = py::module_::import("sys");
 		auto sys_stdout = sys.attr("stdout");
 		sys_stdout.attr("write")(&message[i]);
 		sys_stdout.attr("flush")();
@@ -109,7 +109,7 @@ void redirectMelderInfo() {
 
 void redirectMelderError() {
 	Melder_setErrorProc([](const char32 *message) {
-		auto sys = py::module::import("sys");
+		auto sys = py::module_::import("sys");
 		auto sys_stderr = sys.attr("stderr");
 		sys_stderr.attr("write")(message);
 		sys_stderr.attr("flush")();
@@ -153,7 +153,7 @@ using PraatBindings = Bindings<PraatError,
 
 namespace {
 
-inline std::string attr_doc(const py::module &m, const char *name, const char *doc) {
+inline std::string attr_doc(const py::module_ &m, const char *name, const char *doc) {
 	auto attr = m.attr(name);
 	return ".. data:: "s + name + "\n    :annotation: = "s + py::cast<std::string>(py::repr(attr)) + "\n\n    "s + doc + "\n\n"s;
 }
