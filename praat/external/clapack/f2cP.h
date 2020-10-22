@@ -157,7 +157,7 @@ static inline double pow_di (double *ap, integer *bp) {
 			n = -n;
 			x = 1.0 / x;
 		}
-		for(unsigned long u = n; ; ) {
+		for(uinteger u = n; ; ) {
 			if (u & 01)
 				pow *= x;
 			if (u >>= 1)
@@ -179,7 +179,7 @@ static inline integer pow_ii (integer *ap, integer *bp) {
 			return x == 0 ? 1/x : 0;
 		n = -n;
 	}
-	unsigned long u = n;
+	uinteger u = n;
 	for (pow = 1; ; ) {
 		if(u & 01)
 			pow *= x;
@@ -199,7 +199,7 @@ static inline double pow_ri (float *ap, integer *bp) {
 			n = -n;
 			x = 1/x;
 		}
-		for (unsigned long u = n; ; ) {
+		for (uinteger u = n; ; ) {
 			if(u & 01)
 				pow *= x;
 			if(u >>= 1)
