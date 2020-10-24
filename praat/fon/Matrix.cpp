@@ -38,6 +38,8 @@
 #include "oo_DESCRIPTION.h"
 #include "Matrix_def.h"
 
+#include <vector>
+
 Thing_implement (Matrix, SampledXY, 2);
 
 void structMatrix :: v_info () {
@@ -530,11 +532,29 @@ autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-
 			Count elements.
 		*/
 		rewind (f);
+		std::vector<char> buffer;
+		std::vector<double> elements;
 		integer numberOfElements = 0;
-		for (;;) {
-			double element;
-			if (fscanf (f, "%lf", & element) < 1)
+		int kar = fgetc (f);
+		while (kar != EOF) {
+			while (Melder_isHorizontalOrVerticalSpace ((char32) kar))
+				kar = fgetc (f);
+
+			while (kar != EOF && !Melder_isHorizontalOrVerticalSpace ((char32) kar)) {
+				buffer.push_back((char) kar);
+				kar = fgetc (f);
+			}
+			if (buffer.empty())
+				break;
+			buffer.push_back('\0');
+
+			// if (fscanf (f, "%lf", & element) < 1)
+			char *end;
+			double element = Melder8_strtod(buffer.data(), &end);
+			if (end != &buffer.back())
 				break;   // zero or end-of-file
+			buffer.clear();
+			elements.push_back(element);
 			numberOfElements ++;
 		}
 
@@ -553,10 +573,10 @@ autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-
 		/*
 			Read elements.
 		*/
-		rewind (f);
+		size_t i = 0;
 		for (integer irow = 1; irow <= numberOfRows; irow ++)
 			for (integer icol = 1; icol <= numberOfColumns; icol ++)
-				fscanf (f, "%lf", & my z [irow] [icol]);
+				my z [irow] [icol] = elements[i++];
 
 		f.close (file);
 		return me;
