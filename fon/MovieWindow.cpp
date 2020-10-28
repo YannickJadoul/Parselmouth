@@ -1,6 +1,6 @@
 /* MovieWindow.cpp
  *
- * Copyright (C) 2011-2012,2013,2014,2016,2017 Paul Boersma
+ * Copyright (C) 2011-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,20 +105,13 @@ void structMovieWindow :: v_highlightSelection (double left, double right, doubl
 		Graphics_highlight (our graphics.get(), left, right, 0.7 * bottom + 0.3 * top, top);
 }
 
-void structMovieWindow :: v_unhighlightSelection (double left, double right, double bottom, double top) {
-	if (our p_spectrogram_show)
-		Graphics_highlight (our graphics.get(), left, right, 0.3 * bottom + 0.7 * top, top);
-	else
-		Graphics_highlight (our graphics.get(), left, right, 0.7 * bottom + 0.3 * top, top);
+bool structMovieWindow :: v_mouseInWideDataView (GuiDrawingArea_MouseEvent event, double x_world, double y_fraction) {
+	return our MovieWindow_Parent :: v_mouseInWideDataView(event, x_world, y_fraction);
 }
 
-bool structMovieWindow :: v_click (double xWC, double yWC, bool shiftKeyPressed) {
-	return our MovieWindow_Parent :: v_click (xWC, yWC, shiftKeyPressed);
-}
-
-void structMovieWindow :: v_play (double tmin, double tmax) {
+void structMovieWindow :: v_play (double startTime, double endTime) {
 	Movie movie = (Movie) data;
-	Movie_play (movie, our graphics.get(), tmin, tmax, theFunctionEditor_playCallback, this);
+	Movie_play (movie, our graphics.get(), startTime, endTime, theFunctionEditor_playCallback, this);
 }
 
 void MovieWindow_init (MovieWindow me, conststring32 title, Movie movie) {

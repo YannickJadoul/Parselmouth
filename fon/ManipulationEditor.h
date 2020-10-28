@@ -2,7 +2,7 @@
 #define _ManipulationEditor_h_
 /* ManipulationEditor.h
  *
- * Copyright (C) 1992-2011,2012,2013,2015 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2009-2013,2015,2016,2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +19,25 @@
  */
 
 #include "FunctionEditor.h"
+#include "PitchTierEditor.h"
+#include "DurationTierEditor.h"
 #include "Manipulation.h"
 
 #include "ManipulationEditor_enums.h"
 
 Thing_define (ManipulationEditor, FunctionEditor) {
+	/*
+		Access inherited attributes by their derived types.
+	*/
+	Manipulation & manipulation() { return * reinterpret_cast <Manipulation *> (& our data); }
+	/*
+		Quick access to internal objects.
+	*/
+	autoSound & sound() { return our manipulation() -> sound; }
+	autoPointProcess & pulses() { return our manipulation() -> pulses; }
+	autoPitchTier & pitch() { return our manipulation() -> pitch; }
+	autoDurationTier & duration() { return our manipulation() -> duration; }
+
 	autoPointProcess previousPulses;
 	autoPitchTier previousPitch;
 	autoDurationTier previousDuration;
@@ -35,8 +49,10 @@ Thing_define (ManipulationEditor, FunctionEditor) {
 	GuiMenuItem synthPulsesPitchButton, synthPulsesPitchHumButton;
 	GuiMenuItem synthOverlapAddNodurButton, synthOverlapAddButton;
 	GuiMenuItem synthPitchLpcButton;
-	struct { double minPeriodic, cursor; } pitchTier;
-	struct { double cursor;  } duration;
+	autoPitchTierArea pitchTierArea;
+	autoDurationTierArea durationTierArea;
+
+	struct { double minPeriodic; } pitchTier;
 	Graphics_Viewport inset;
 
 	void v_createMenus ()
@@ -49,7 +65,7 @@ Thing_define (ManipulationEditor, FunctionEditor) {
 		override;
 	void v_draw ()
 		override;
-	bool v_click (double xWC, double yWC, bool shiftKeyPressed)
+	bool v_mouseInWideDataView (GuiDrawingArea_MouseEvent event, double x_world, double y_fraction)
 		override;
 	void v_play (double tmin, double tmax)
 		override;

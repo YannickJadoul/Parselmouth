@@ -362,8 +362,8 @@ DO
 FORM (NEW_Confusion_to_Similarity, U"Confusion: To Similarity", U"Confusion: To Similarity...") {
 	BOOLEAN (normalize, U"Normalize", true)
 	RADIO (symmetrizeMethod, U"Symmetrization", 1)
-		RADIOBUTTON (U"No symmetrization")
-		RADIOBUTTON (U"Average (s[i][j] = (c[i][j]+c[j][i])/2)")
+		RADIOBUTTON (U"no symmetrization")
+		RADIOBUTTON (U"average (s[i][j] = (c[i][j]+c[j][i])/2)")
 		RADIOBUTTON (U"Houtgast (s[i][j]= sum (min(c[i][k],c[j][k])))")
 	OK
 DO
@@ -390,9 +390,9 @@ DIRECT (NEW_Confusion_to_ContingencyTable) {
 FORM (NEW_ContingencyTable_to_Configuration_ca, U"ContingencyTable: To Configuration (ca)", U"ContingencyTable: To Configuration (ca)...") {
 	NATURAL (numberOfDimensions, U"Number of dimensions", U"2")
 	RADIO (scalingType, U"Scaling of final configuration", 3)
-		RADIOBUTTON (U"Row points in centre of gravity of column points")
-		RADIOBUTTON (U"Column points in centre of gravity of row points")
-		RADIOBUTTON (U"Row points and column points symmetric")
+		RADIOBUTTON (U"row points in centre of gravity of column points")
+		RADIOBUTTON (U"column points in centre of gravity of row points")
+		RADIOBUTTON (U"row points and column points symmetric")
 	OK
 DO
 	CONVERT_EACH (ContingencyTable)
@@ -1337,7 +1337,7 @@ void praat_uvafon_MDS_init () {
 	praat_addAction1 (classConfiguration, 2, U"To Procrustes...", nullptr, 1, NEW1_Configurations_to_Procrustes);
 	praat_addAction1 (classConfiguration, 2, U"To AffineTransform (congruence)...", nullptr, 1, NEW1_Configurations_to_AffineTransform_congruence);
 
-	praat_addAction1 (classConfusion, 0, U"To ContingencyTable", U"To Matrix", 0, NEW_Confusion_to_ContingencyTable);
+	praat_addAction1 (classConfusion, 0, U"To ContingencyTable", U"To Matrix", 1, NEW_Confusion_to_ContingencyTable);
 	praat_addAction1 (classConfusion, 0, U"To Proximity -", U"Analyse", 0, nullptr);
 	praat_addAction1 (classConfusion, 0, U"To Dissimilarity (pdf)...", U"To Proximity -", 1, NEW_Confusion_to_Dissimilarity_pdf);
 	praat_addAction1 (classConfusion, 0, U"To Similarity...", U"To Proximity -", 1, NEW_Confusion_to_Similarity);
@@ -1419,8 +1419,8 @@ void praat_uvafon_MDS_init () {
 	praat_addAction1 (classTableOfReal, 0, U"To Salience", nullptr, 1, NEW_TableOfReal_to_Salience);
 	praat_addAction1 (classTableOfReal, 0, U"To Weight", nullptr, 1, NEW_TableOfReal_to_Weight);
 	praat_addAction1 (classTableOfReal, 0, U"To ScalarProduct", nullptr, 1, NEW_TableOfReal_to_ScalarProduct);
-	praat_addAction1 (classTableOfReal, 0, U"To Configuration", nullptr, 1, NEW_TableOfReal_to_Configuration);
 	praat_addAction1 (classTableOfReal, 0, U"To ContingencyTable", nullptr, 1, NEW_TableOfReal_to_ContingencyTable);
+	praat_addAction1 (classTableOfReal, 0, U"To Configuration", nullptr, 1, NEW_TableOfReal_to_Configuration);
 
 	praat_TableOfReal_init2 (classWeight);
 

@@ -1,6 +1,6 @@
 /* ScriptEditor.cpp
  *
- * Copyright (C) 1997-2005,2007-2018 Paul Boersma
+ * Copyright (C) 1997-2005,2007-2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,8 @@ static CollectionOf <structScriptEditor> theReferencesToAllOpenScriptEditors;
 bool ScriptEditors_dirty () {
 	for (integer i = 1; i <= theReferencesToAllOpenScriptEditors.size; i ++) {
 		ScriptEditor me = theReferencesToAllOpenScriptEditors.at [i];
-		if (my dirty) return true;
+		if (my dirty)
+			return true;
 	}
 	return false;
 }
@@ -75,7 +76,8 @@ static void args_ok (UiForm sendingForm, integer /* narg */, Stackel /* args */,
 	Interpreter_getArgumentsFromDialog (my interpreter.get(), sendingForm);
 
 	autoPraatBackground background;
-	if (my name [0]) MelderFile_setDefaultDir (& file);
+	if (my name [0])
+		MelderFile_setDefaultDir (& file);
 	Interpreter_run (my interpreter.get(), text.get());
 }
 
@@ -101,6 +103,7 @@ static void args_ok_selectionOnly (UiForm sendingForm, integer /* narg */, Stack
 }
 
 static void menu_cb_run (ScriptEditor me, EDITOR_ARGS_DIRECT) {
+	bool isObscured = false;
 	if (my interpreter -> running)
 		Melder_throw (U"The script is already running (paused). Please close or continue the pause or demo window.");
 	autostring32 text = GuiText_getString (my textWidget);
@@ -110,19 +113,53 @@ static void menu_cb_run (ScriptEditor me, EDITOR_ARGS_DIRECT) {
 		Melder_pathToFile (my name.get(), & file);
 		MelderFile_setDefaultDir (& file);
 	}
+	const conststring32 obscuredLabel = U"#!praatObscured";
+	if (Melder_stringMatchesCriterion (text.get(), kMelder_string::STARTS_WITH, obscuredLabel, true)) {
+		const integer obscuredLabelLength = str32len (obscuredLabel);
+		const double fileKey_real = Melder_atof (MelderFile_name (& file));
+		const uint64 fileKey = ( isdefined (fileKey_real) ? uint64 (fileKey_real) : 0 );
+		char32 *restOfText = & text [obscuredLabelLength];
+		uint64 passwordHash = 0;
+		if (*restOfText == U'\n') {
+			restOfText += 1;   // skip newline
+		} else if (*restOfText == U' ') {
+			restOfText ++;
+			char32 *endOfFirstLine = str32chr (restOfText, U'\n');
+			if (! endOfFirstLine)
+				Melder_throw (U"Incomplete script.");
+			*endOfFirstLine = U'\0';
+			passwordHash = NUMhashString (restOfText);
+			restOfText = endOfFirstLine + 1;
+		} else {
+			Melder_throw (U"Unexpected nonspace after #!praatObscured.");
+		}
+		static uint64 nonsecret = UINT64_C (529857089);
+		text = newSTRunhex (restOfText, fileKey + nonsecret + passwordHash);
+		isObscured = true;
+	}
 	Melder_includeIncludeFiles (& text);
-	integer npar = Interpreter_readParameters (my interpreter.get(), text.get());
-	if (npar) {
-		/*
-		 * Pop up a dialog box for querying the arguments.
-		 */
-		my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, nullptr, args_ok, me, false);
-		UiForm_do (my argsDialog.get(), false);
-	} else {
-		autoPraatBackground background;
-		if (my name [0]) MelderFile_setDefaultDir (& file);
-		trace (U"Running the following script (2):\n", text.get());
-		Interpreter_run (my interpreter.get(), text.get());
+	const integer npar = Interpreter_readParameters (my interpreter.get(), text.get());
+	try {
+		if (npar) {
+			/*
+				Pop up a dialog box for querying the arguments.
+			*/
+			my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, nullptr, args_ok, me, false);
+			UiForm_do (my argsDialog.get(), false);
+		} else {
+			autoPraatBackground background;
+			if (my name [0])
+				MelderFile_setDefaultDir (& file);
+			trace (U"Running the following script (2):\n", text.get());
+			Interpreter_run (my interpreter.get(), text.get());
+		}
+	} catch (MelderError) {
+		if (isObscured) {
+			Melder_clearError ();
+			Melder_throw (U"Undisclosed error in obscured Praat script.");
+		} else {
+			throw;
+		}
 	}
 }
 
@@ -141,13 +178,14 @@ static void menu_cb_runSelection (ScriptEditor me, EDITOR_ARGS_DIRECT) {
 	integer npar = Interpreter_readParameters (my interpreter.get(), text.get());
 	if (npar) {
 		/*
-		 * Pop up a dialog box for querying the arguments.
-		 */
+			Pop up a dialog box for querying the arguments.
+		*/
 		my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, nullptr, args_ok_selectionOnly, me, true);
 		UiForm_do (my argsDialog.get(), false);
 	} else {
 		autoPraatBackground background;
-		if (my name [0]) MelderFile_setDefaultDir (& file);
+		if (my name [0])
+			MelderFile_setDefaultDir (& file);
 		Interpreter_run (my interpreter.get(), text.get());
 	}
 }
@@ -161,7 +199,8 @@ static void menu_cb_addToMenu (ScriptEditor me, EDITOR_ARGS_FORM) {
 		INTEGER (depth, U"Depth", U"0")
 		TEXTFIELD (scriptFile, U"Script file:", U"")
 	EDITOR_OK
-		if (my editorClass) SET_STRING (window, my editorClass -> className)
+		if (my editorClass)
+			SET_STRING (window, my editorClass -> className)
 		if (my name [0])
 			SET_STRING (scriptFile, my name.get())
 		else

@@ -2,7 +2,7 @@
 #define _Graphics_h_
 /* Graphics.h
  *
- * Copyright (C) 1992-2005,2007-2019 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -104,8 +104,8 @@ Thing_define (Graphics, Thing) {
 	kGraphics_font font;
 	double fontSize;
 	int fontStyle;
-	int percentSignIsItalic, numberSignIsBold, circumflexIsSuperscript, underscoreIsSubscript;
-	int dollarSignIsCode, atSignIsLink;
+	bool percentSignIsItalic, numberSignIsBold, circumflexIsSuperscript, underscoreIsSubscript;
+	bool dollarSignIsCode, atSignIsLink;
 	bool recording, duringXor;
 	integer irecord, nrecord;
 	double *record;
@@ -132,8 +132,6 @@ Thing_define (Graphics, Thing) {
 	virtual void v_roundedRectangle (double x1DC, double x2DC, double y1DC, double y2DC, double r);
 	virtual void v_fillRoundedRectangle (double x1DC, double x2DC, double y1DC, double y2DC, double r);
 	virtual void v_arrowHead (double xDC, double yDC, double angle);
-	virtual bool v_mouseStillDown () { return false; }
-	virtual void v_getMouseLocation (double *xWC, double *yWC) { *xWC = *yWC = undefined; }
 	virtual void v_flushWs () { }
 	virtual void v_clearWs () { }
 	virtual void v_updateWs () { }
@@ -157,11 +155,6 @@ autoGraphics Graphics_create_xmdrawingarea (GuiDrawingArea drawingArea);
 
 int Graphics_getResolution (Graphics me);
 
-#if defined (macintosh)
-	#define SUPPORT_DIRECT_DRAWING  1
-#else
-	#define SUPPORT_DIRECT_DRAWING  1
-#endif
 void Graphics_setWsViewport (Graphics me, integer x1DC, integer x2DC, integer y1DC, integer y2DC);
 void Graphics_resetWsViewport (Graphics me, integer x1DC, integer x2DC, integer y1DC, integer y2DC);
 void Graphics_setWsWindow (Graphics me, double x1NDC, double x2NDC, double y1NDC, double y2NDC);
@@ -180,8 +173,8 @@ Graphics_Viewport Graphics_insetViewport (Graphics me, double x1rel, double x2re
 void Graphics_resetViewport (Graphics me, Graphics_Viewport viewport);
 void Graphics_setWindow (Graphics me, double x1, double x2, double y1, double y2);
 
-void Graphics_polyline (Graphics me, integer numberOfPoints, double *x, double *y);
-void Graphics_polyline_closed (Graphics me, integer numberOfPoints, double *x, double *y);
+void Graphics_polyline (Graphics me, integer numberOfPoints, const double *x, const double *y);
+void Graphics_polyline_closed (Graphics me, integer numberOfPoints, const double *x, const double *y);
 
 void Graphics_text (Graphics me, double xWC, double yWC, conststring32 txt);
 template <typename... Args>
@@ -238,10 +231,7 @@ void Graphics_setGrey (Graphics me, double grey);
 void Graphics_xorOn (Graphics me, MelderColour colour);
 void Graphics_xorOff (Graphics me);
 void Graphics_highlight (Graphics me, double x1, double x2, double y1, double y2);
-void Graphics_unhighlight (Graphics me, double x1, double x2, double y1, double y2);
 void Graphics_highlight2 (Graphics me, double x1, double x2, double y1, double y2,
-	double innerX1, double innerX2, double innerY1, double innerY2);
-void Graphics_unhighlight2 (Graphics me, double x1, double x2, double y1, double y2,
 	double innerX1, double innerX2, double innerY1, double innerY2);
 
 #define Graphics_NOCHANGE  -1
@@ -365,13 +355,14 @@ double Graphics_distanceWCtoMM (Graphics me, double x1WC, double y1WC, double x2
 double Graphics_dxWCtoMM (Graphics me, double dxWC);
 double Graphics_dyWCtoMM (Graphics me, double dyWC);
 
-bool Graphics_mouseStillDown (Graphics me);
-void Graphics_waitMouseUp (Graphics me);
-void Graphics_getMouseLocation (Graphics me, double *xWC, double *yWC);
-
 void Graphics_nextSheetOfPaper (Graphics me);
 
 void Graphics_prefs ();
+
+#ifdef macintosh
+	void GraphicsQuartz_initDraw (Graphics me);
+	void GraphicsQuartz_exitDraw (Graphics me);
+#endif
 
 /* End of file Graphics.h */
 #endif

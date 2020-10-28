@@ -2,7 +2,7 @@
 #define _TimeSoundAnalysisEditor_h_
 /* TimeSoundAnalysisEditor.h
  *
- * Copyright (C) 1992-2011,2012,2013,2014 Paul Boersma
+ * Copyright (C) 1992-2007,2009-2016,2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ Thing_define (TimeSoundAnalysisEditor, TimeSoundEditor) {
 		override;
 	void v_createMenuItems_query (EditorMenu menu)
 		override;
-	bool v_click (double xWC, double yWC, bool shiftKeyPressed)
+	bool v_mouseInWideDataView (GuiDrawingArea_MouseEvent event, double x_world, double y_fraction)
 		override;
 	void v_createMenuItems_view_sound (EditorMenu menu)
 		override;
@@ -66,8 +66,10 @@ Thing_define (TimeSoundAnalysisEditor, TimeSoundEditor) {
 	virtual void v_createMenuItems_pulses_picture (EditorMenu menu);
 	virtual void v_draw_analysis ();
 	virtual void v_draw_analysis_pulses ();
+	virtual void v_draw_analysis_formants ();
 	virtual void v_createMenuItems_query_log (EditorMenu menu);
 	virtual void v_createMenus_analysis ();
+	virtual void v_createMenuItems_formant (EditorMenu menu);
 	virtual void v_createMenuItems_view_sound_analysis (EditorMenu menu);
 
 	#include "TimeSoundAnalysisEditor_prefs.h"

@@ -2,7 +2,7 @@
 #define _Picture_h_
 /* Picture.h
  *
- * Copyright (C) 1992-2005,2007-2016,2018 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2016,2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,25 +24,17 @@
 	the user can select the viewport by dragging the mouse across the drawing area.
 	If the viewport is smaller than the entire drawing area, it is highlighted.
 	Usage:
-		You should put highlighting off during drawing.
 		Do not use the workstation Graphics routines,
 		like clearWs, flushWs, closeWs, updateWs, setWsViewport.
 	Example:
-		Picture p = Picture_create (myDrawingArea);
-		Graphics g = Picture_peekGraphics (p);
-		Picture_unhighlight (p);
+		autoPicture p = Picture_create (myDrawingArea);
+		Graphics g = Picture_peekGraphics (p.get());
 		Graphics_setTextAlignment (g, Graphics_CENTRE, Graphics_HALF);
 		Graphics_text (g, 0.5, 0.7, U"Hello");
 		Graphics_text (g, 0.5, 0.6, U"there");
-		Picture_highlight (p);
-		... (event handling)
-		Picture_unhighlight (p);
 		Graphics_text (g, 0.5, 0.3, U"Goodbye");
-		Picture_highlight (p);
-		... (event handling)
-		Picture_writeToEpsFile (p, U"HelloGoodbye.eps", false, false);
-		Picture_print (p, GraphicsPostscript_FINE);
-		Picture_remove (& p);
+		Picture_writeToPngFile_300 (p, U"HelloGoodbye.png");
+		Picture_print (p.get());
 */
 
 #include "Gui.h"
@@ -54,7 +46,7 @@ Thing_define (Picture, Thing) {
 	double selx1, selx2, sely1, sely2;   // selection in NDC co-ordinates
 	void (*selectionChangedCallback) (Picture, void *, double, double, double, double);
 	void *selectionChangedClosure;
-	bool backgrounding, mouseSelectsInnerViewport;
+	bool mouseSelectsInnerViewport;
 
 	void v_destroy () noexcept
 		override;
@@ -79,22 +71,6 @@ Graphics Picture_peekGraphics (Picture me);
 	Usage:
 		send the graphics output that you want to be in the picture to this Graphics,
 		bracketed by calls to Picture_startRecording and Picture_stopRecording.
-*/
-
-void Picture_unhighlight (Picture me);
-/*
-	Function:
-		hide the viewport.
-	Usage:
-		call just before sending graphics output.
-*/
-
-void Picture_highlight (Picture me);
-/*
-	Function:
-		visualize the viewport.
-	Usage:
-		call just after sending graphics output.
 */
 
 void Picture_setSelectionChangedCallback (Picture me,
@@ -125,15 +101,12 @@ void Picture_printToPostScriptPrinter (Picture me, int spots, int paperSize, int
 #endif
 
 void Picture_setSelection
-	(Picture me, double x1NDC, double x2NDC, double y1NDC, double y2NDC, bool notify);
+	(Picture me, double x1NDC, double x2NDC, double y1NDC, double y2NDC);
 /*
 	Preconditions:
 		0.0 <= x1NDC < x2NDC <= 1.0;
 		0.0 <= y1NDC < y2NDC <= 1.0;
 */
-
-void Picture_background (Picture me);
-void Picture_foreground (Picture me);
 
 /* End of file Picture.h */
 #endif

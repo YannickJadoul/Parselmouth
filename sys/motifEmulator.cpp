@@ -505,17 +505,19 @@ static void NativeMenuItem_setText (GuiObject me) {
 /*
  * We now create the native objects associated with this widget,
  * but do not show them on the screen yet (ideally).
- * A reference must be made from widget to native object and back.
- * On Mac, we normally use the RefCon fields of the windows and controls.
- * On Win, we use SetWindowLongPtr (window, GWLP_USERDATA, (LONG_PTR) widget).
+ * A reference must be made from widget to native object and back,
+ * with SetWindowLongPtr (window, GWLP_USERDATA, (LONG_PTR) widget).
  */
 
 static void _GuiNativizeWidget (GuiObject me) {
-	if (my nativized) return;
+	if (my nativized)
+		return;
 	if (my inMenu) {
 		if (MEMBER (me, PulldownMenu)) {
 			int id;
-			for (id = 1; id <= MAXIMUM_NUMBER_OF_MENUS; id ++) if (! theMenus [id]) break;
+			for (id = 1; id <= MAXIMUM_NUMBER_OF_MENUS; id ++)
+				if (! theMenus [id])
+					break;
 			my nat.menu.id = id;
 			theMenus [my nat.menu.id] = me;   // instead of UserData fields
 			/*
@@ -536,7 +538,9 @@ static void _GuiNativizeWidget (GuiObject me) {
 				 * In our implementation, item IDs are application-unique.
 				 */
 				int id;
-				for (id = MINIMUM_MENU_ITEM_ID; id <= MAXIMUM_MENU_ITEM_ID; id ++) if (! theMenuItems [id]) break;
+				for (id = MINIMUM_MENU_ITEM_ID; id <= MAXIMUM_MENU_ITEM_ID; id ++)
+					if (! theMenuItems [id])
+						break;
 				my nat.entry.id = id;   // install unique ID
 				theMenuItems [id] = true;
 			}
@@ -2105,7 +2109,8 @@ static GuiObject _motif_getNextTextWidget (GuiObject shell, GuiObject text, bool
 }
 
 static void on_scroll (GuiObject me, UINT part, int pos) {
-	if (my maximum == my minimum) return;
+	if (my maximum == my minimum)
+		return;
 	switch (part) {
 		case SB_LINEUP: my value -= my increment; break;
 		case SB_LINEDOWN: my value += my increment; break;
@@ -2119,8 +2124,7 @@ static void on_scroll (GuiObject me, UINT part, int pos) {
 		#endif
 		default: break;
 	}
-	if (my value < my minimum) my value = my minimum;
-	if (my value > my maximum - my sliderSize) my value = my maximum - my sliderSize;
+	Melder_clip (my minimum, & my value, my maximum - my sliderSize);
 	NativeScrollBar_set (me);
 	if (part == SB_THUMBTRACK || part == SB_THUMBPOSITION)
 		_Gui_callCallbacks (me, & my motiff.scrollBar.dragCallbacks, (XtPointer) (ULONG_PTR) part);
@@ -2133,14 +2137,12 @@ void XtNextEvent (XEvent *xevent) {
 }
 
 static void processWorkProcsAndTimeOuts () {
-	if (theNumberOfWorkProcs) {
-		for (integer i = 9; i >= 1; i --) {
-			if (theWorkProcs [i]) {
-				if (theWorkProcs [i] (theWorkProcClosures [i])) XtRemoveWorkProc (i);
-			}
-		}
-	}
-	if (theNumberOfTimeOuts) {
+	if (theNumberOfWorkProcs != 0)
+		for (integer i = 9; i >= 1; i --)
+			if (theWorkProcs [i])
+				if (theWorkProcs [i] (theWorkProcClosures [i]))
+					XtRemoveWorkProc (i);
+	if (theNumberOfTimeOuts != 0) {
 		clock_t now = clock ();
 		for (integer i = 1; i < 10; i ++) if (theTimeOutProcs [i]) {
 			static volatile clock_t timeElapsed;   // careful: use 32-bit integers circularly; prevent optimization
@@ -2508,9 +2510,27 @@ static void on_lbuttonDown (HWND window, BOOL doubleClick, int x, int y, UINT fl
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me) {
 		if (MEMBER (me, DrawingArea)) {
-			_GuiWinDrawingArea_handleClick (me, x, y);
+			SetCapture (window);
+			_GuiWinDrawingArea_handleMouse (me, structGuiDrawingArea_MouseEvent::Phase::CLICK, x, y);
 		} else FORWARD_WM_LBUTTONDOWN (window, doubleClick, x, y, flags, DefWindowProc);
 	} else FORWARD_WM_LBUTTONDOWN (window, doubleClick, x, y, flags, DefWindowProc);
+}
+static void on_mouseMove (HWND window, int x, int y, UINT flags) {
+	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
+	if (me) {
+		if (MEMBER (me, DrawingArea) && (flags & MK_LBUTTON)) {
+			_GuiWinDrawingArea_handleMouse (me, structGuiDrawingArea_MouseEvent::Phase::DRAG, x, y);
+		} else FORWARD_WM_MOUSEMOVE (window, x, y, flags, DefWindowProc);
+	} else FORWARD_WM_MOUSEMOVE (window, x, y, flags, DefWindowProc);
+}
+static void on_lbuttonUp (HWND window, int x, int y, UINT flags) {
+	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
+	if (me) {
+		if (MEMBER (me, DrawingArea)) {
+			ReleaseCapture ();
+			_GuiWinDrawingArea_handleMouse (me, structGuiDrawingArea_MouseEvent::Phase::DROP, x, y);
+		} else FORWARD_WM_LBUTTONUP (window, x, y, flags, DefWindowProc);
+	} else FORWARD_WM_LBUTTONUP (window, x, y, flags, DefWindowProc);
 }
 static void on_paint (HWND window) {
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
@@ -2537,6 +2557,24 @@ static void on_vscroll (HWND window, HWND controlWindow, UINT code, int pos) {
 			on_scroll (control, code, pos);
 		} else FORWARD_WM_VSCROLL (window, controlWindow, code, pos, DefWindowProc);
 	} else FORWARD_WM_VSCROLL (window, controlWindow, code, pos, DefWindowProc);
+}
+#undef FORWARD_WM_MOUSEWHEEL   // bug in our windowsx.h
+#define FORWARD_WM_MOUSEWHEEL(hwnd,xPos,yPos,zDelta,fwKeys,fn) \
+	(void)(fn)((hwnd),WM_MOUSEWHEEL,MAKEWPARAM((fwKeys),(zDelta)),MAKELPARAM((xPos),(yPos)))
+//#define HANDLE_WM_MOUSEWHEEL(hwnd,wParam,lParam,fn) \
+	((fn)((hwnd),(int)(short)LOWORD(lParam),(int)(short)HIWORD(lParam),(int)(short)HIWORD(wParam),(UINT)(short)LOWORD(wParam)),(LRESULT)0)
+static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int fwKeys) {
+	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
+	if (me) {
+		if (my widgetClass == xmDrawingAreaWidgetClass) {
+			if (my parent -> widgetClass == xmScrolledWindowWidgetClass)
+				on_scroll (my parent -> motiff.scrolledWindow.verticalBar, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
+			else
+				for (GuiObject child = my parent -> firstChild; child; child = child -> nextSibling)
+					if (child -> widgetClass == xmScrollBarWidgetClass && child -> orientation == XmVERTICAL)
+						on_scroll (child, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
+		} else FORWARD_WM_MOUSEWHEEL (window, xPos, yPos, zDelta, fwKeys, DefWindowProc);
+	} else FORWARD_WM_MOUSEWHEEL (window, xPos, yPos, zDelta, fwKeys, DefWindowProc);
 }
 static void on_size (HWND window, UINT state, int cx, int cy) {
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
@@ -2640,9 +2678,13 @@ static LRESULT CALLBACK windowProc (HWND window, UINT message, WPARAM wParam, LP
 		HANDLE_MSG (window, WM_COMMAND, on_command);
 		HANDLE_MSG (window, WM_DESTROY, on_destroy);
 		HANDLE_MSG (window, WM_LBUTTONDOWN, on_lbuttonDown);
+		HANDLE_MSG (window, WM_LBUTTONUP, on_lbuttonUp);
+		HANDLE_MSG (window, WM_MOUSEMOVE, on_mouseMove);
 		HANDLE_MSG (window, WM_PAINT, on_paint);
 		HANDLE_MSG (window, WM_HSCROLL, on_hscroll);
 		HANDLE_MSG (window, WM_VSCROLL, on_vscroll);
+		HANDLE_MSG (window, WM_MOUSEWHEEL, on_verticalWheel);
+		//HANDLE_MSG (window, WM_MOUSEHWHEEL, on_horizontalWheel);
 		HANDLE_MSG (window, WM_SIZE, on_size);
 		HANDLE_MSG (window, WM_KEYDOWN, on_key);
 		HANDLE_MSG (window, WM_CHAR, on_char);
@@ -2657,18 +2699,6 @@ static LRESULT CALLBACK windowProc (HWND window, UINT message, WPARAM wParam, LP
 		}
 		default: return DefWindowProc (window, message, wParam, lParam);
 	}
-}
-bool motif_win_mouseStillDown () {
-	XEvent event;
-	if (! GetCapture ()) SetCapture (theApplicationShell -> window);
-	if (PeekMessage (& event, 0, 0, 0, PM_REMOVE)) {
-		if (event. message == WM_LBUTTONUP) {
-			DispatchMessage (& event);
-			ReleaseCapture ();
-			return false;
-		}
-	}
-	return true;
 }
 void motif_win_setUserMessageCallback (int (*userMessageCallback) (void)) {
 	theUserMessageCallback = userMessageCallback;

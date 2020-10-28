@@ -1,6 +1,6 @@
 /* praat_picture.cpp
  *
- * Copyright (C) 1992-2019 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -123,7 +123,7 @@ END }
 		autoPraatPicture picture;
 		Graphics_setFontSize (GRAPHICS, praat_size = fontSize);
 	}
-	Picture_setSelection (praat_picture, x1NDC, x2NDC, y1NDC, y2NDC, False);
+	Picture_setSelection (praat_picture, x1NDC, x2NDC, y1NDC, y2NDC);
 	updateSizeMenu ();
 }*/
 
@@ -206,7 +206,7 @@ DO
 		if (top > bottom) { double temp; temp = top; top = bottom; bottom = temp; }
 		theCurrentPraatPicture -> y1NDC = 12-bottom - ymargin;
 		theCurrentPraatPicture -> y2NDC = 12-top + ymargin;
-		Picture_setSelection (praat_picture.get(), theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC, false);
+		Picture_setSelection (praat_picture.get(), theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);
 		Graphics_updateWs (GRAPHICS);
 	} else if (theCurrentPraatObjects != & theForegroundPraatObjects) {   // in manual?
 		if (top > bottom) { double temp; temp = top; top = bottom; bottom = temp; }
@@ -261,8 +261,8 @@ DO
 			std::swap (top, bottom);
 		theCurrentPraatPicture -> y1NDC = 12-bottom;
 		theCurrentPraatPicture -> y2NDC = 12-top;
-		Picture_setSelection (praat_picture.get(), theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC, false);
-		Graphics_updateWs (GRAPHICS);   // BUG: needed on Cocoa, but why?
+		Picture_setSelection (praat_picture.get(), theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);
+		Graphics_updateWs (GRAPHICS);
 	} else if (theCurrentPraatObjects != & theForegroundPraatObjects) {   // in manual?
 		if (top > bottom)
 			std::swap (top, bottom);
@@ -284,13 +284,13 @@ END }
 
 FORM (GRAPHICS_ViewportText, U"Praat picture: Viewport text", U"Viewport text...") {
 	RADIOx (horizontalAlignment, U"Horizontal alignment", 2, 0)
-		RADIOBUTTON (U"Left")
-		RADIOBUTTON (U"Centre")
-		RADIOBUTTON (U"Right")
+		RADIOBUTTON (U"left")
+		RADIOBUTTON (U"centre")
+		RADIOBUTTON (U"right")
 	RADIOx (verticalAlignment, U"Vertical alignment", 2, 0)
-		RADIOBUTTON (U"Bottom")
-		RADIOBUTTON (U"Half")
-		RADIOBUTTON (U"Top")
+		RADIOBUTTON (U"bottom")
+		RADIOBUTTON (U"half")
+		RADIOBUTTON (U"top")
 	REAL (rotation, U"Rotation (degrees)", U"0")
 	TEXTFIELD (text, U"Text:", U"")
 OK
@@ -578,9 +578,8 @@ END }
 
 DIRECT (GRAPHICS_Undo) {
 	Graphics_undoGroup (GRAPHICS);
-	if (theCurrentPraatPicture != & theForegroundPraatPicture) {
-		Graphics_play (GRAPHICS, GRAPHICS);
-	}
+	if (theCurrentPraatPicture != & theForegroundPraatPicture)
+		Graphics_play (GRAPHICS, GRAPHICS);   // TODO: understand this
 	Graphics_updateWs (GRAPHICS);
 END }
 
@@ -590,18 +589,6 @@ DIRECT (GRAPHICS_Erase_all) {
 	} else {
 		Graphics_clearRecording (GRAPHICS);
 		Graphics_clearWs (GRAPHICS);
-		#if 1
-		autoPraatPicture picture;
-		MelderColour colour = GRAPHICS -> colour;
-		Graphics_setColour (GRAPHICS, Melder_WHITE);
-		double x1, y1, x2, y2;
-		//Melder_casual (GRAPHICS -> d_x1DC, U" ", GRAPHICS -> d_y1DC, U" ", GRAPHICS -> d_x2DC, U" ", GRAPHICS -> d_y2DC);
-		Graphics_DCtoWC (GRAPHICS, GRAPHICS -> d_x1DC, GRAPHICS -> d_y1DC, & x1, & y1);
-		Graphics_DCtoWC (GRAPHICS, GRAPHICS -> d_x2DC, GRAPHICS -> d_y2DC, & x2, & y2);
-		//Melder_casual (x1, U" ", y1, U" ", x2, U" ", y2);
-		Graphics_fillRectangle (GRAPHICS, x1, x2, y1, y2);
-		Graphics_setColour (GRAPHICS, colour);
-		#endif
 	}
 END }
 
@@ -613,9 +600,9 @@ FORM (GRAPHICS_Text, U"Praat picture: Text", U"Text...") {
 			U"Horizontal alignment", kGraphics_horizontalAlignment::LEFT)
 	REAL (verticalPosition, U"Vertical position", U"0.0")
 	OPTIONMENUx (verticalAlignment, U"Vertical alignment", 2, 0)
-		OPTION (U"Bottom")
-		OPTION (U"Half")
-		OPTION (U"Top")
+		OPTION (U"bottom")
+		OPTION (U"half")
+		OPTION (U"top")
 	TEXTFIELD (text, U"Text:", U"")
 	OK
 DO
@@ -629,15 +616,13 @@ DO
 
 FORM (GRAPHICS_TextSpecial, U"Praat picture: Text special", nullptr) {
 	REAL (horizontalPosition, U"Horizontal position", U"0.0")
-	OPTIONMENUx (horizontalAlignment, U"Horizontal alignment", 2, 0)
-		OPTION (U"Left")
-		OPTION (U"Centre")
-		OPTION (U"Right")
+	OPTIONMENU_ENUM (kGraphics_horizontalAlignment, horizontalAlignment,
+			U"Horizontal alignment", kGraphics_horizontalAlignment::LEFT)
 	REAL (verticalPosition, U"Vertical position", U"0.0")
 	OPTIONMENUx (verticalAlignment, U"Vertical alignment", 2, 0)
-		OPTION (U"Bottom")
-		OPTION (U"Half")
-		OPTION (U"Top")
+		OPTION (U"bottom")
+		OPTION (U"half")
+		OPTION (U"top")
 	OPTIONMENU_ENUM (kGraphics_font, font, U"Font", kGraphics_font::DEFAULT)
 	POSITIVE (fontSize, U"Font size", U"10")
 	SENTENCE (rotation, U"Rotation (degrees or dx;dy)", U"0")
@@ -647,7 +632,7 @@ DO
 	kGraphics_font currentFont = Graphics_inqFont (GRAPHICS);
 	const double currentSize = Graphics_inqFontSize (GRAPHICS);
 	GRAPHICS_NONE
-		Graphics_setTextAlignment (GRAPHICS, (kGraphics_horizontalAlignment) horizontalAlignment, verticalAlignment);
+		Graphics_setTextAlignment (GRAPHICS, horizontalAlignment, verticalAlignment);
 		Graphics_setInner (GRAPHICS);
 		Graphics_setFont (GRAPHICS, (kGraphics_font) font);
 		Graphics_setFontSize (GRAPHICS, fontSize);
@@ -1433,7 +1418,7 @@ DIRECT (HELP_AboutTextStyles) { HELP (U"Text styles") }
 DIRECT (HELP_PhoneticSymbols) { HELP (U"Phonetic symbols") }
 DIRECT (GRAPHICS_Picture_settings_report) {
 	MelderInfo_open ();
-	const conststring32 units = theCurrentPraatPicture == & theForegroundPraatPicture ? U" inches" : U"";
+	const conststring32 units = ( theCurrentPraatPicture == & theForegroundPraatPicture ? U" inches" : U"" );
 	MelderInfo_writeLine (U"Outer viewport left: ", theCurrentPraatPicture -> x1NDC, units);
 	MelderInfo_writeLine (U"Outer viewport right: ", theCurrentPraatPicture -> x2NDC, units);
 	MelderInfo_writeLine (U"Outer viewport top: ",
@@ -1445,7 +1430,8 @@ DIRECT (GRAPHICS_Picture_settings_report) {
 			theCurrentPraatPicture -> y2NDC :
 			12 - theCurrentPraatPicture -> y1NDC, units);
 	MelderInfo_writeLine (U"Font size: ", theCurrentPraatPicture -> fontSize, U" points");
-	double xmargin = theCurrentPraatPicture -> fontSize * 4.2 / 72.0, ymargin = theCurrentPraatPicture -> fontSize * 2.8 / 72.0;
+	double xmargin = theCurrentPraatPicture -> fontSize * 4.2 / 72.0;
+	double ymargin = theCurrentPraatPicture -> fontSize * 2.8 / 72.0;
 	if (theCurrentPraatPicture != & theForegroundPraatPicture) {
 		integer x1DC, x2DC, y1DC, y2DC;
 		Graphics_inqWsViewport (GRAPHICS, & x1DC, & x2DC, & y1DC, & y2DC);
@@ -1564,7 +1550,6 @@ void praat_picture_open () {
 		#elif cocoa
 			GuiThing_show (dialog);
 		#endif
-		Picture_unhighlight (praat_picture.get());
 	}
 	/* Foregoing drawing routines may have changed some of the output attributes */
 	/* that can be set by the user. */
@@ -1588,17 +1573,15 @@ void praat_picture_open () {
 }
 
 void praat_picture_close () {
-	if (theCurrentPraatPicture != & theForegroundPraatPicture) return;
-	if (! theCurrentPraatApplication -> batch) {
-		Picture_highlight (praat_picture.get());
-		#ifdef macintosh
-			//dialog -> f_drain ();
-		#endif
-	}
+	if (theCurrentPraatPicture != & theForegroundPraatPicture)
+		return;
+	if (! theCurrentPraatApplication -> batch)
+		Graphics_updateWs (GRAPHICS);
 }
 
 Graphics praat_picture_editor_open (bool eraseFirst) {
-	if (eraseFirst) Picture_erase (praat_picture.get());
+	if (eraseFirst)
+		Picture_erase (praat_picture.get());
 	praat_picture_open ();
 	return GRAPHICS;
 }
@@ -1608,7 +1591,8 @@ void praat_picture_editor_close () {
 }
 
 static autoDaata pictureRecognizer (integer nread, const char *header, MelderFile file) {
-	if (nread < 2) return autoDaata ();
+	if (nread < 2)
+		return autoDaata ();
 	if (strnequ (header, "PraatPictureFile", 16)) {
 		Picture_readFromPraatPictureFile (praat_picture.get(), file);
 		return Thing_new (Daata);   // a dummy
@@ -1851,7 +1835,8 @@ void praat_picture_init () {
 	if (! theCurrentPraatApplication -> batch) {
 		width = height = resolution * 12;
 		scrollWindow = GuiScrolledWindow_createShown (dialog, margin, 0, Machine_getMenuBarHeight () + margin, 0, 1, 1, 0);
-		drawingArea = GuiDrawingArea_createShown (scrollWindow, width, height, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
+		drawingArea = GuiDrawingArea_createShown (scrollWindow, width, height,
+				nullptr, nullptr, nullptr, nullptr, nullptr, 0);
 		GuiThing_show (dialog);
 	}
 
@@ -1873,26 +1858,6 @@ void praat_picture_prefsChanged () {
 	updateViewportMenu ();
 	Graphics_setFontSize (theCurrentPraatPicture -> graphics, theCurrentPraatPicture -> fontSize);   // so that the thickness of the selection rectangle is correct
 	Picture_setMouseSelectsInnerViewport (praat_picture.get(), praat_mouseSelectsInnerViewport);
-}
-
-void praat_picture_background () {
-	if (theCurrentPraatPicture != & theForegroundPraatPicture) return;   // Demo window and pictures ignore this
-	if (! theCurrentPraatApplication -> batch) {
-		//Picture_unhighlight (praat_picture.get());
-		#if cocoa
-			Picture_background (praat_picture.get());   // prevent Cocoa's very slow highlighting until woken up by Picture_foreground()
-		#endif
-	}
-}
-
-void praat_picture_foreground () {
-	if (theCurrentPraatPicture != & theForegroundPraatPicture) return;   // Demo window and pictures ignore this
-	if (! theCurrentPraatApplication -> batch) {
-		#if cocoa
-			Picture_foreground (praat_picture.get());   // wake up from the highlighting sleep caused by Picture_background()
-		#endif
-		//Picture_highlight (praat_picture.get());
-	}
 }
 
 /* End of file praat_picture.cpp */

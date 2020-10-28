@@ -33,6 +33,9 @@
 #include "DTW.h"
 #include "FilterBank.h"
 #include "Formant_extensions.h"
+#include "FormantPath.h"
+#include "FormantPathEditor.h"
+#include "IntervalTierNavigator.h"
 #include "LPC.h"
 #include "MFCC.h"
 #include "LFCC.h"
@@ -66,6 +69,174 @@ static const conststring32 MODIFY_BUTTON   = U"Modify -";
 
 void praat_CC_init (ClassInfo klas);
 void praat_TimeFrameSampled_query_init (ClassInfo klas);
+
+static void cb_FormantPathEditor_publication (Editor /* editor */, autoDaata publication) {
+	/*
+	 * Keep the gate for error handling.
+	 */
+	try {
+		praat_new (publication.move());
+		praat_updateSelection ();
+	} catch (MelderError) {
+		Melder_flushError ();
+	}
+}
+
+DIRECT (WINDOW_FormantPath_viewAndEditAlone) {
+	if (theCurrentPraatApplication -> batch)
+		Melder_throw (U"Cannot view or edit a Formant from batch.");
+	FIND_ONE_WITH_IOBJECT (FormantPath)
+		autoFormantPathEditor editor = FormantPathEditor_create (ID_AND_FULL_NAME, me, nullptr, nullptr);
+		Editor_setPublicationCallback (editor.get(), cb_FormantPathEditor_publication);
+		praat_installEditor (editor.get(), IOBJECT);
+		editor.releaseToUser();
+	END
+}
+
+DIRECT (HINT_FormantPath_Sound_viewAndEdit) {
+	INFO_NONE
+		Melder_information (U"To include a Sound in your FormantPath window:\n"
+			"select a FormantPath and a Sound, and click \"View & Edit\".");
+	INFO_NONE_END
+}
+
+FORM (GRAPHICS_FormantPath_drawAsGrid, U"FormantPath: Draw as grid", nullptr) {
+	REAL (tmin, U"left Time range (s)", U"0.0")
+	REAL (tmax, U"right Time range (s)", U"0.1")
+	POSITIVE (fmax, U"Maximum frequency", U"6200.0")
+	NATURAL (fromFormant, U"left Formant range", U"1")
+	NATURAL (toFormant, U"right Formant range", U"5")
+	BOOLEAN (showBandwidths, U"Show bandwidths", true)
+	COLOUR (odd, U"Colour of F1, F3, F5", U"red")
+	COLOUR (even, U"Colour of F2, F4", U"purple")
+	INTEGER (numberOfRows, U"Number of rows", U"0")
+	INTEGER (numberOfColumns, U"Number of columns", U"0")
+	POSITIVE (xSpaceFraction, U"X space fraction", U"0.1")
+	POSITIVE (ySpaceFraction, U"Y space fraction", U"0.1")
+	POSITIVE (lineEvery_Hz, U"Horizontal line every (Hz)", U"1000.0")
+	REAL (xCursor, U"X cursor line at (s)", U"-0.1 (=no line)")
+	REAL (yCursor, U"Y cursor at (Hz)", U"-100.0 (=no line)")
+	INTEGER (special, U"Index of special", U"0 (=no)")
+	COLOUR (specialColour, U"Colour for special", U"pink")
+	SENTENCE (parameters_string, U"Coefficients by track", U"7 7 7 7")
+	BOOLEAN (markWithinPath, U"Mark within path", false)
+	BOOLEAN (showStress, U"Show stress", true)
+	POSITIVE (powerf, U"Power", U"1.25")
+	BOOLEAN (showEstimatedModels, U"Show estimated models", true)
+	BOOLEAN (garnish, U"Garnish", true)
+	OK
+DO
+	GRAPHICS_EACH (FormantPath)
+		autoINTVEC parameters = newINTVECfromString (parameters_string);
+		FormantPath_drawAsGrid (me, GRAPHICS, tmin, tmax, fmax, fromFormant, toFormant, showBandwidths, odd, even, numberOfRows, numberOfColumns, xSpaceFraction, ySpaceFraction, lineEvery_Hz, xCursor, yCursor, special, specialColour, parameters.get(), markWithinPath, showStress, powerf, showEstimatedModels, garnish);
+	GRAPHICS_EACH_END
+}
+
+FORM (NEW_FormantPath_to_Matrix_stress, U"FormantPath: To Matrix (stress)", nullptr) {
+	POSITIVE (windowLength, U"Window length", U"0.025")
+	SENTENCE (parameters_string, U"Coefficients by track", U"3 3 3 3")
+	POSITIVE (powerf, U"Power", U"1.25")
+	OK
+DO
+	CONVERT_EACH (FormantPath)
+		autoINTVEC parameters = newINTVECfromString (parameters_string);
+		autoMatrix result = FormantPath_to_Matrix_stress (me, windowLength, parameters.get (), powerf);
+	CONVERT_EACH_END (my name.get())
+}
+
+DIRECT (NEW_FormantPath_to_Matrix_qsum) {
+	CONVERT_EACH (FormantPath)
+		autoMatrix result = FormantPath_to_Matrix_qSums (me, 0.0);
+	CONVERT_EACH_END (my name.get())
+}
+
+FORM (NEW_FormantPath_to_Matrix_transition,  U"FormantPath: To Matrix (transition)", nullptr) {
+	BOOLEAN (maximumCosts, U"Maximum costs", false)
+	OK
+DO
+	CONVERT_EACH (FormantPath)
+		autoMatrix result = FormantPath_to_Matrix_transition (me, maximumCosts);
+	CONVERT_EACH_END (my name.get())
+}
+
+FORM (NEW_FormantPath_to_Matrix_deltas,  U"FormantPath: To Matrix (deltas)", nullptr) {
+	LABEL (U"Within frame:")
+	REAL (qWeight, U"F/B weight (0-1)", U"1.0")
+	LABEL (U"Between frames:")
+	REAL (frequencyChangeWeight, U"Frequency change weight (0-1)", U"1.0")
+	REAL (stressWeight, U"Stress weight (0-1)", U"1.0")
+	REAL (ceilingChangeWeight, U"Ceiling change weight (0-1)", U"1.0")
+	POSITIVE (intensityModulationStepSize, U"Intensity modulation step size (dB)", U"5.0")
+	LABEL (U"Global stress parameters:")
+	POSITIVE (windowLength, U"Window length", U"0.035")
+	SENTENCE (parameters_string, U"Coefficients by track", U"3 3 3 3")
+	POSITIVE (powerf, U"Power", U"1.25")
+	OK
+DO
+	CONVERT_EACH (FormantPath)
+		autoMatrix result;
+		Melder_require (qWeight >= 0 && qWeight <= 1.0 &&
+			frequencyChangeWeight >= 0 && frequencyChangeWeight <= 1.0 &&
+			stressWeight >= 0 && stressWeight <= 1.0 &&
+			ceilingChangeWeight >= 0 && ceilingChangeWeight <= 1.0,
+			U"A weight should greater or equal 0.0 and smaller or equal 1.0.");
+		autoINTVEC parameters = newINTVECfromString (parameters_string);
+		autoINTVEC path = FormantPath_getOptimumPath (me, qWeight, frequencyChangeWeight, stressWeight, ceilingChangeWeight, windowLength, intensityModulationStepSize, parameters.get(), powerf, & result);	
+	CONVERT_EACH_END (my name.get())
+}
+
+FORM (MODIFY_FormantPath_pathFinder,  U"FormantPath: Path finder", nullptr) {
+	LABEL (U"Within frame:")
+	REAL (qWeight, U"F/B weight (0-1)", U"1.0")
+	LABEL (U"Between frames:")
+	REAL (frequencyChangeWeight, U"Frequency change weight (0-1)", U"1.0")
+	REAL (stressWeight, U"Stress weight (0-1)", U"1.0")
+	REAL (ceilingChangeWeight, U"Ceiling change weight (0-1)", U"1.0")
+	POSITIVE (intensityModulationStepSize, U"Intensity modulation step size (dB)", U"5.0")
+	LABEL (U"Global stress parameters:")
+	POSITIVE (windowLength, U"Window length", U"0.035")
+	SENTENCE (parameters_string, U"Coefficients by track", U"3 3 3 3")
+	POSITIVE (powerf, U"Power", U"1.25")
+	OK
+DO
+	MODIFY_EACH (FormantPath)
+		Melder_require (qWeight >= 0 && qWeight <= 1.0 &&
+			frequencyChangeWeight >= 0 && frequencyChangeWeight <= 1.0 &&
+			stressWeight >= 0 && stressWeight <= 1.0 &&
+			ceilingChangeWeight >= 0 && ceilingChangeWeight <= 1.0,
+			U"A weight should be greater than or equal to 0.0 and smaller than or equal to 1.0.");
+		autoINTVEC parameters = newINTVECfromString (parameters_string);
+		FormantPath_pathFinder (me, qWeight, frequencyChangeWeight, stressWeight, ceilingChangeWeight, intensityModulationStepSize, windowLength, parameters.get(), powerf);
+	MODIFY_EACH_END
+}
+
+DIRECT (NEW_FormantPath_extractFormant) {
+	CONVERT_EACH (FormantPath)
+		autoFormant result = FormantPath_extractFormant (me);
+	CONVERT_EACH_END (my name.get())
+}
+
+DIRECT (WINDOW_Sound_TextGrid_FormantPath_createFormantPathEditor) {
+	if (theCurrentPraatApplication -> batch)
+		Melder_throw (U"Cannot view or edit a Formant from batch.");
+	FIND_THREE_WITH_IOBJECT (FormantPath, Sound, TextGrid)
+		autoFormantPathEditor editor = FormantPathEditor_create (ID_AND_FULL_NAME, me, you, him);
+		Editor_setPublicationCallback (editor.get(), cb_FormantPathEditor_publication);
+		praat_installEditor (editor.get(), IOBJECT);
+		editor.releaseToUser();
+	END
+}
+
+DIRECT (WINDOW_Sound_FormantPath_createFormantPathEditor) {
+	if (theCurrentPraatApplication -> batch)
+		Melder_throw (U"Cannot view or edit a Formant from batch.");
+	FIND_TWO_WITH_IOBJECT (FormantPath, Sound)
+		autoFormantPathEditor editor = FormantPathEditor_create (ID_AND_FULL_NAME, me, you, nullptr);
+		Editor_setPublicationCallback (editor.get(), cb_FormantPathEditor_publication);
+		praat_installEditor (editor.get(), IOBJECT);
+		editor.releaseToUser();
+	END
+}
 
 /********************** Cepstrum  ****************************************/
 
@@ -133,32 +304,26 @@ DO
 FORM (REAL_PowerCepstrum_getPeak, U"PowerCepstrum: Get peak", U"PowerCepstrum: Get peak...") {
 	REAL (fromPitch, U"left Search peak in pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Search peak in pitch range (Hz)", U"333.3")
-	RADIO (interpolationMethod, U"Interpolation", 2)
-		RADIOBUTTON (U"None")
-		RADIOBUTTON (U"Parabolic")
-		RADIOBUTTON (U"Cubic")
-		RADIOBUTTON (U"Sinc70")
+	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	OK
 DO
 	NUMBER_ONE (PowerCepstrum)
 		double result;
-		PowerCepstrum_getMaximumAndQuefrency (me, fromPitch, toPitch, interpolationMethod - 1, & result, nullptr);
+		PowerCepstrum_getMaximumAndQuefrency (me, fromPitch, toPitch, peakInterpolationType, & result, nullptr);
 	NUMBER_ONE_END (U" dB")
 }
 
 FORM (REAL_PowerCepstrum_getQuefrencyOfPeak, U"PowerCepstrum: Get quefrency of peak", U"PowerCepstrum: Get quefrency of peak...") {
 	REAL (fromPitch, U"left Search peak in pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Search peak in pitch range (Hz)", U"333.3")
-	RADIO (interpolationMethod, U"Interpolation", 2)
-		RADIOBUTTON (U"None")
-		RADIOBUTTON (U"Parabolic")
-		RADIOBUTTON (U"Cubic")
-		RADIOBUTTON (U"Sinc70")
+	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	OK
 DO
 	NUMBER_ONE (PowerCepstrum)
 		double result;
-		PowerCepstrum_getMaximumAndQuefrency (me, fromPitch, toPitch, interpolationMethod - 1, nullptr, & result);
+		PowerCepstrum_getMaximumAndQuefrency (me, fromPitch, toPitch, peakInterpolationType, nullptr, & result);
 		double f = 1.0 / result;
 	NUMBER_ONE_END (U" s (f =", f, U" Hz)")
 }
@@ -214,11 +379,8 @@ DO
 FORM (REAL_PowerCepstrum_getPeakProminence, U"PowerCepstrum: Get peak prominence", U"PowerCepstrum: Get peak prominence...") {
 	REAL (fromPitch, U"left Search peak in pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Search peak in pitch range (Hz)", U"333.3")
-	RADIO (interpolationMethod, U"Interpolation", 2)
-		RADIOBUTTON (U"None")
-		RADIOBUTTON (U"Parabolic")
-		RADIOBUTTON (U"Cubic")
-		RADIOBUTTON (U"Sinc70")
+	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	REAL (fromQuefrency_trendLine, U"left Trend line quefrency range (s)", U"0.001")
 	REAL (toQuefrency_trendLine, U"right Trend line quefrency range (s)", U"0.05")
 	OPTIONMENU_ENUM (kCepstrumTrendType, lineType, U"Trend type", kCepstrumTrendType::DEFAULT)
@@ -227,7 +389,7 @@ FORM (REAL_PowerCepstrum_getPeakProminence, U"PowerCepstrum: Get peak prominence
 DO
 	NUMBER_ONE (PowerCepstrum)
 		double qpeak;
-		const double result = PowerCepstrum_getPeakProminence (me, fromPitch, toPitch, interpolationMethod - 1, fromQuefrency_trendLine, toQuefrency_trendLine, lineType, fitMethod, & qpeak);
+		const double result = PowerCepstrum_getPeakProminence (me, fromPitch, toPitch, peakInterpolationType, fromQuefrency_trendLine, toQuefrency_trendLine, lineType, fitMethod, & qpeak);
 	NUMBER_ONE_END (U" dB; quefrency=", qpeak, U" s (f=", 1.0 / qpeak, U" Hz).");
 }
 
@@ -403,11 +565,8 @@ FORM (REAL_PowerCepstrogram_getCPPS, U"PowerCepstrogram: Get CPPS", U"PowerCepst
 	REAL (fromPitch, U"left Peak search pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Peak search pitch range (Hz)", U"330.0")
 	POSITIVE (tolerance, U"Tolerance (0-1)", U"0.05")
-	RADIO (interpolationMethod, U"Interpolation", 2)
-		RADIOBUTTON (U"None")
-		RADIOBUTTON (U"Parabolic")
-		RADIOBUTTON (U"Cubic")
-		RADIOBUTTON (U"Sinc70")
+	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	LABEL (U"Trend line:")
 	REAL (fromQuefrency_trendLine, U"left Trend line quefrency range (s)", U"0.001")
 	REAL (toQuefrency_trendLine, U"right Trend line quefrency range (s)", U"0.05")
@@ -416,7 +575,7 @@ FORM (REAL_PowerCepstrogram_getCPPS, U"PowerCepstrogram: Get CPPS", U"PowerCepst
 	OK
 DO
 	NUMBER_ONE (PowerCepstrogram)
-		const double result = PowerCepstrogram_getCPPS (me, subtractTrendBeforeSmoothing, smoothingWindowDuration, quefrencySmoothingWindowDuration, fromPitch, toPitch, tolerance, interpolationMethod - 1, fromQuefrency_trendLine, toQuefrency_trendLine, lineType, fitMethod);
+		const double result = PowerCepstrogram_getCPPS (me, subtractTrendBeforeSmoothing, smoothingWindowDuration, quefrencySmoothingWindowDuration, fromPitch, toPitch, tolerance, peakInterpolationType, fromQuefrency_trendLine, toQuefrency_trendLine, lineType, fitMethod);
 	NUMBER_ONE_END (U" dB");
 }
 
@@ -446,11 +605,8 @@ FORM (NEW_PowerCepstrogram_to_Table_cpp, U"PowerCepstrogram: To Table (peak prom
 	REAL (fromPitch, U"left Peak search pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Peak search pitch range (Hz)", U"330.0")
 	POSITIVE (tolerance, U"Tolerance (0-1)", U"0.05")
-	RADIO (interpolationMethod, U"Interpolation", 2)
-		RADIOBUTTON (U"None")
-		RADIOBUTTON (U"Parabolic")
-		RADIOBUTTON (U"Cubic")
-		RADIOBUTTON (U"Sinc70")
+	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	REAL (fromQuefrency_trendLine, U"left Trend line quefrency range (s)", U"0.001")
 	REAL (toQuefrency_trendLine, U"right Trend line quefrency range (s)", U"0.05)")
 	OPTIONMENU_ENUM (kCepstrumTrendType, lineType, U"Trend type", kCepstrumTrendType::DEFAULT)
@@ -458,7 +614,7 @@ FORM (NEW_PowerCepstrogram_to_Table_cpp, U"PowerCepstrogram: To Table (peak prom
 	OK
 DO
 	CONVERT_EACH (PowerCepstrogram)
-		autoTable result = PowerCepstrogram_to_Table_cpp (me, fromPitch, toPitch, tolerance, interpolationMethod - 1, fromQuefrency_trendLine, toQuefrency_trendLine, lineType, fitMethod);
+		autoTable result = PowerCepstrogram_to_Table_cpp (me, fromPitch, toPitch, tolerance, peakInterpolationType, fromQuefrency_trendLine, toQuefrency_trendLine, lineType, fitMethod);
 	CONVERT_EACH_END (my name.get(), U"_cpp");
 }
 
@@ -822,7 +978,7 @@ DO
 FORM (NEW_Sound_to_Formant_robust, U"Sound: To Formant (robust)", U"Sound: To Formant (robust)...") {
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
 	POSITIVE (maximumNumberOfFormants, U"Max. number of formants", U"5.0")
-	REAL (maximumFormantFrequency, U"Maximum formant (Hz)", U"5500.0 (= adult female)")
+	REAL (middleCeiling, U"Formant ceiling (Hz)", U"5500.0 (= adult female)")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
 	POSITIVE (preEmphasisFrequency, U"Pre-emphasis from (Hz)", U"50.0")
 	POSITIVE (numberOfStandardDeviations, U"Number of std. dev.", U"1.5")
@@ -831,8 +987,55 @@ FORM (NEW_Sound_to_Formant_robust, U"Sound: To Formant (robust)", U"Sound: To Fo
 	OK
 DO
 	CONVERT_EACH (Sound)
-		autoFormant result = Sound_to_Formant_robust (me, timeStep, maximumNumberOfFormants, maximumFormantFrequency, windowLength, preEmphasisFrequency, 50.0, numberOfStandardDeviations, maximumNumberOfIterations, tolerance, 1);
+		autoFormant result = Sound_to_Formant_robust (me, timeStep, maximumNumberOfFormants, middleCeiling, windowLength, preEmphasisFrequency, 50.0, numberOfStandardDeviations, maximumNumberOfIterations, tolerance, 1);
 	CONVERT_EACH_END (my name.get())
+}
+
+FORM (NEW_Sound_to_FormantPath, U"Sound: To FormantPath", nullptr) {
+	REAL (timeStep, U"Time step (s)", U"0.005")
+	POSITIVE (maximumNumberOfFormants, U"Max. number of formants", U"5.0")
+	REAL (middleFormantCeiling, U"Middle formant ceiling (Hz)", U"5500.0 (= adult female)")
+	POSITIVE (windowLength, U"Window length (s)", U"0.025")
+	POSITIVE (preEmphasisFrequency, U"Pre-emphasis from (Hz)", U"50.0")
+	OPTIONMENU_ENUM (kLPC_Analysis, lpcModel, U"LPC model", kLPC_Analysis::DEFAULT)
+	LABEL (U"The maximum and minimum ceilings are determined as:")
+	LABEL (U" middleFormantCeiling * exp(+/- ceilingStepSize * numberOfStepsToACeiling).")
+	POSITIVE (ceilingStepSize, U"Ceiling step size", U"0.05")
+	NATURAL (numberOfStepsToACeiling, U"Number of steps up / down", U"4")
+	LABEL (U"For Marple analysis:")
+	POSITIVE (marple_tol1, U"Tolerance 1", U"1e-6")
+	POSITIVE (marple_tol2, U"Tolerance 2", U"1e-6")
+	LABEL (U"For Robust analysis:")
+	POSITIVE (huber_numberOfStdDev, U"Number of std. dev.", U"1.5")
+	NATURAL (huber_maximumNumberOfIterations, U"Maximum number of iterations", U"5")
+	REAL (huber_tolerance, U"Tolerance", U"0.000001")
+	BOOLEAN (sourcesAsMultichannel, U"Get sources as multi channel sound", false)
+	OK
+DO
+	CONVERT_EACH (Sound)
+		autoSound multichannel;
+		autoFormantPath result = Sound_to_FormantPath_any (me, lpcModel, timeStep, maximumNumberOfFormants, middleFormantCeiling, windowLength, preEmphasisFrequency, ceilingStepSize, numberOfStepsToACeiling, marple_tol1, marple_tol2, huber_numberOfStdDev, huber_tolerance, huber_maximumNumberOfIterations,
+			( sourcesAsMultichannel ? & multichannel : nullptr ));
+		if (sourcesAsMultichannel)
+			praat_new (multichannel.move(), my name.get(), U"_sources");
+	CONVERT_EACH_END (my name.get())
+}
+
+FORM (NEW_Sound_to_FormantPath_burg, U"Sound: To FormantPath (Burg method)", U"Sound: To FormantPath (burg)...") {
+	REAL (timeStep, U"Time step (s)", U"0.005")
+	POSITIVE (maximumNumberOfFormants, U"Max. number of formants", U"5.0")
+	REAL (middleFormantCeiling, U"Middle formant ceiling (Hz)", U"5500.0 (= adult female)")
+	POSITIVE (windowLength, U"Window length (s)", U"0.025")
+	POSITIVE (preEmphasisFrequency, U"Pre-emphasis from (Hz)", U"50.0")
+	LABEL (U"The maximum and minimum ceilings are determined as:")
+	LABEL (U" middleCeiling * exp(+/- ceilingStepSize * numberOfStepsToACeiling).")
+	POSITIVE (ceilingStepSize, U"Ceiling step size", U"0.05")
+	NATURAL (numberOfStepsToACeiling, U"Number of steps up / down", U"4")
+	OK
+DO
+	CONVERT_EACH (Sound)
+		autoFormantPath result = Sound_to_FormantPath_burg (me, timeStep, maximumNumberOfFormants, middleFormantCeiling, windowLength, preEmphasisFrequency, ceilingStepSize, numberOfStepsToACeiling);
+	CONVERT_EACH_END (my name.get())	
 }
 
 #define Sound_to_LPC_addWarning \
@@ -851,7 +1054,7 @@ FORM (NEW_Sound_to_LPC_autocorrelation, U"Sound: To LPC (autocorrelation)", U"So
 DO
 	preEmphasisFrequency = preEmphasisFrequency < 0.0 ? 0.0 : preEmphasisFrequency;
 	CONVERT_EACH (Sound)
-		autoLPC result = Sound_to_LPC_auto (me, predictionOrder, windowLength, timeStep, preEmphasisFrequency);
+		autoLPC result = Sound_to_LPC_autocorrelation (me, predictionOrder, windowLength, timeStep, preEmphasisFrequency);
 	CONVERT_EACH_END (my name.get())
 }
 
@@ -865,7 +1068,7 @@ FORM (NEW_Sound_to_LPC_covariance, U"Sound: To LPC (covariance)", U"Sound: To LP
 DO
 	preEmphasisFrequency = preEmphasisFrequency < 0.0 ? 0.0 : preEmphasisFrequency;
 	CONVERT_EACH (Sound)
-		autoLPC result = Sound_to_LPC_covar (me, predictionOrder, windowLength, timeStep, preEmphasisFrequency);
+		autoLPC result = Sound_to_LPC_covariance (me, predictionOrder, windowLength, timeStep, preEmphasisFrequency);
 	CONVERT_EACH_END (my name.get())
 }
 
@@ -1047,8 +1250,10 @@ extern void praat_TimeTier_query_init (ClassInfo klas);
 extern void praat_TimeTier_modify_init (ClassInfo klas);
 void praat_uvafon_LPC_init ();
 void praat_uvafon_LPC_init () {
-	Thing_recognizeClassesByName (classCepstrumc, classPowerCepstrum, classCepstrogram, classPowerCepstrogram, classLPC, classLFCC, classLineSpectralFrequencies, classMFCC, classVocalTractTier, nullptr);
-
+	Thing_recognizeClassesByName (classCepstrumc, classPowerCepstrum, classCepstrogram, classFormantPath, classFormantPathEditor, classPowerCepstrogram, classLPC, classLFCC, classLineSpectralFrequencies, classMFCC, classVocalTractTier, nullptr);
+	
+	structFormantPathEditor  :: f_preferences ();
+	
 	praat_addAction1 (classPowerCepstrum, 0, U"PowerCepstrum help", 0, 0, HELP_PowerCepstrum_help);
 	praat_addAction1 (classPowerCepstrum, 0, U"Draw...", 0, 0, GRAPHICS_PowerCepstrum_draw);
 	praat_addAction1 (classPowerCepstrum, 0, U"Draw trend line...", 0, 0, GRAPHICS_PowerCepstrum_drawTrendLine);
@@ -1115,9 +1320,18 @@ void praat_uvafon_LPC_init () {
 	praat_addAction1 (classFormant, 0, U"To LPC...", 0, 0, NEW_Formant_to_LPC);
 	praat_addAction1 (classFormant, 0, U"Formula...", U"Formula (bandwidths)...", 1, MODIFY_Formant_formula);
 	praat_addAction2 (classFormant, 1, classSpectrogram, 1, U"To IntensityTier...", 0, 0, NEW1_Formant_Spectrogram_to_IntensityTier);
+	
+	praat_addAction1 (classFormantPath, 1, U"View & Edit alone", 0, 0, WINDOW_FormantPath_viewAndEditAlone);
+	praat_addAction1 (classFormantPath, 1, U"View & Edit with Sound?", 0, 0, HINT_FormantPath_Sound_viewAndEdit);
+	praat_addAction1 (classFormantPath, 1, U"Draw as grid...", 0, 0, GRAPHICS_FormantPath_drawAsGrid);	
+	praat_addAction1 (classFormantPath, 0, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (classFormantPath, 0, U"Extract Formant", 0, 0, NEW_FormantPath_extractFormant);
+	praat_addAction1 (classFormantPath, 0, U"To Matrix (stress)...", 0, 0, NEW_FormantPath_to_Matrix_stress);
+	praat_addAction1 (classFormantPath, 0, U"To Matrix (qsum)...", 0, 0, NEW_FormantPath_to_Matrix_qsum);
+	praat_addAction1 (classFormantPath, 0, U"To Matrix (transition)...", 0, 0, NEW_FormantPath_to_Matrix_transition);
+	praat_addAction1 (classFormantPath, 0, U"To Matrix (deltas)...", 0, 0, NEW_FormantPath_to_Matrix_deltas);
+	praat_addAction1 (classFormantPath, 0, U"Path finder...", 0, 0, MODIFY_FormantPath_pathFinder);
 
-	
-	
 	praat_addAction1 (classLFCC, 0, U"LFCC help", 0, 0, HELP_LFCC_help);
 	praat_CC_init (classLFCC);
 	praat_addAction1 (classLFCC, 0, U"To LPC...", 0, 0, NEW_LFCC_to_LPC);
@@ -1163,7 +1377,7 @@ void praat_uvafon_LPC_init () {
 	praat_addAction1 (classLPC, 0, U"To LFCC...", 0, 0, NEW_LPC_to_LFCC);
 	praat_addAction1 (classLPC, 0, U"To Spectrogram...", 0, 0, NEW_LPC_to_Spectrogram);
 	praat_addAction1 (classLPC, 0, U"To LineSpectralFrequencies...", 0, 0, NEW_LPC_to_LineSpectralFrequencies);
-
+	
 	praat_addAction2 (classLPC, 1, classSound, 1, U"Analyse", 0, 0, 0);
 	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter...", 0, 0, NEW1_LPC_Sound_filter);
 	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter (inverse)", 0, 0, NEW1_LPC_Sound_filterInverse);
@@ -1171,15 +1385,19 @@ void praat_uvafon_LPC_init () {
 	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter with filter at time...", 0, 0, NEW1_LPC_Sound_filterWithFilterAtTime);
 	praat_addAction2 (classLPC, 1, classSound, 1, U"Filter (inverse) with filter at time...", 0, 0, NEW1_LPC_Sound_filterInverseWithFilterAtTime);
 
-
-	praat_addAction1 (classSound, 0, U"To LPC (autocorrelation)...", U"To Formant (sl)...", 1, NEW_Sound_to_LPC_autocorrelation);
-	praat_addAction1 (classSound, 0, U"To LPC (covariance)...", U"To LPC (autocorrelation)...", 1, NEW_Sound_to_LPC_covariance);
-	praat_addAction1 (classSound, 0, U"To LPC (burg)...", U"To LPC (covariance)...", 1, NEW_Sound_to_LPC_burg);
-	praat_addAction1 (classSound, 0, U"To LPC (marple)...", U"To LPC (burg)...", 1, NEW_Sound_to_LPC_marple);
-	praat_addAction1 (classSound, 0, U"To MFCC...", U"To LPC (marple)...", 1, NEW_Sound_to_MFCC);
-	praat_addAction1 (classSound, 0, U"To Formant (robust)...", U"To Formant (sl)...", 2, NEW_Sound_to_Formant_robust);
 	praat_addAction1 (classSound, 0, U"To PowerCepstrogram...", U"To Harmonicity (gne)...", 1, NEW_Sound_to_PowerCepstrogram);
 	praat_addAction1 (classSound, 0, U"To PowerCepstrogram (hillenbrand)...", U"To Harmonicity (gne)...", praat_HIDDEN + praat_DEPTH_1, NEW_Sound_to_PowerCepstrogram_hillenbrand);
+	praat_addAction1 (classSound, 0, U"To Formant (robust)...", U"To Formant (sl)...", 2, NEW_Sound_to_Formant_robust);
+	praat_addAction1 (classSound, 0, U"To FormantPath...", U"To Formant (robust)...", 2, NEW_Sound_to_FormantPath);
+	praat_addAction1 (classSound, 0, U"To FormantPath (burg)...", U"To FormantPath...", 1, NEW_Sound_to_FormantPath_burg);
+	praat_addAction1 (classSound, 0, U"To LPC", U"To FormantPath...", 1, nullptr);
+	praat_addAction1 (classSound, 0, U"To LPC (autocorrelation)...", U"To LPC", 2, NEW_Sound_to_LPC_autocorrelation);
+	praat_addAction1 (classSound, 0, U"To LPC (covariance)...", U"To LPC (autocorrelation)...", 2, NEW_Sound_to_LPC_covariance);
+	praat_addAction1 (classSound, 0, U"To LPC (burg)...", U"To LPC (covariance)...", 2, NEW_Sound_to_LPC_burg);
+	praat_addAction1 (classSound, 0, U"To LPC (marple)...", U"To LPC (burg)...", 2, NEW_Sound_to_LPC_marple);
+	praat_addAction1 (classSound, 0, U"To MFCC...", U"To LPC (marple)...", 1, NEW_Sound_to_MFCC);
+	praat_addAction2 (classSound, 1, classFormantPath, 1, U"View & Edit", 0, 0, WINDOW_Sound_FormantPath_createFormantPathEditor);
+	praat_addAction3 (classSound, 1, classTextGrid, 1, classFormantPath, 1, U"View & Edit", 0, 0, WINDOW_Sound_TextGrid_FormantPath_createFormantPathEditor);
 	
 	praat_addAction1 (classVocalTract, 0, U"Draw segments...", U"Draw", 0, GRAPHICS_VocalTract_drawSegments);
 	praat_addAction1 (classVocalTract, 1, U"Get length", U"Draw segments...", 0, REAL_VocalTract_getLength);

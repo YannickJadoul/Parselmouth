@@ -2,7 +2,7 @@
 #define _Ui_h_
 /* Ui.h
  *
- * Copyright (C) 1992-2011,2012,2013,2015,2017,2018 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -132,13 +132,14 @@ Thing_define (UiField, Thing) {
 	constMAT *numericMatrixVariable;
 
 	int subtract;
+	integer numberOfLines;
 
 	void v_destroy () noexcept
 		override;
 };
 
 #define UiCallback_ARGS \
-	UiForm _sendingForm, integer _narg, Stackel _args, conststring32 _sendingString, Interpreter interpreter, conststring32 _invokingButtonTitle, bool _modified, void *_closure
+	UiForm _sendingForm, integer _narg, Stackel _args, conststring32 _sendingString, Interpreter interpreter, conststring32 _invokingButtonTitle, bool _isModified, void *_closure
 typedef void (*UiCallback) (UiCallback_ARGS);
 
 #define MAXIMUM_NUMBER_OF_FIELDS  50
@@ -194,7 +195,7 @@ UiField UiForm_addWord (UiForm me, conststring32 *variable, conststring32 variab
 UiField UiForm_addSentence (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 label, conststring32 defaultValue);
 UiField UiForm_addLabel (UiForm me, conststring32 *variable, conststring32 label);
 UiField UiForm_addBoolean (UiForm me, bool *variable, conststring32 variableName, conststring32 label, bool defaultValue);
-UiField UiForm_addText (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
+UiField UiForm_addText (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue, integer numberOfLines = 1);
 UiField UiForm_addNumvec (UiForm me, constVEC *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
 UiField UiForm_addNummat (UiForm me, constMAT *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
 UiField UiForm_addRadio (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName, conststring32 label, int defaultValue, int base);

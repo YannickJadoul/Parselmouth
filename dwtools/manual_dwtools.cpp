@@ -25,6 +25,7 @@
 #include "ManPagesM.h"
 #include "Sound_extensions.h"
 #include "TableOfReal_extensions.h"
+#include "TableOfReal_and_Discriminant.h"
 #include "Table_extensions.h"
 #include "Configuration.h"
 #include "Discriminant.h"
@@ -1346,7 +1347,7 @@ DEFINITION (U"the initial phase of the cosine wave.")
 TAG (U"##Addition factor# (standard value: 0)")
 DEFINITION (U"determines the degree of asymmetry in the spectrum of the gammatone. "
 	"The zero default value gives a gammatone. A value unequal to zero results in a "
-	"so called %gammachirp. A negative value is used in auditory filter modeling to "
+	"so called %gammachirp. A negative value is used in auditory filter modelling to "
 	"guarantee the usual direction of filter asymmetry, which corresponds to an upward "
 	"glide in instantaneous frequency.")
 TAG (U"##Scale amplitudes")
@@ -2533,7 +2534,7 @@ NORMAL (U"The gammatone function has a monotone carrier (the tone) with an "
 	"envelope that is a gamma distribution function. The amplitude spectrum is essentially "
 	"symmetric on a linear frequency scale. This function is used in some time-domain "
 	"auditory models to simulate the spectral analysis performed by the basilar membrane. "
-	"It was popularized in auditory modeling by @@Johannesma (1972)@. @@Flanagan (1960)@ "
+	"It was popularized in auditory modelling by @@Johannesma (1972)@. @@Flanagan (1960)@ "
 	"already used it to model basilar membrane motion.")
 MAN_END
 
@@ -4054,7 +4055,7 @@ DEFINITION (U"denoising takes place in (overlapping) windows of this length.")
 TAG (U"##Filter frequency range (Hz)")
 DEFINITION (U"before denoising the sound will be @@Sound: Filter (pass Hann band)...|band-pass filtered@. ")
 TAG (U"##Noise reduction method")
-DEFINITION (U"The method of %%spectral subtraction% was defined in @@Boll (1979)@. The variant implemented is modeled "
+DEFINITION (U"The method of %%spectral subtraction% was defined in @@Boll (1979)@. The variant implemented is modelled "
 	"after a script by Ton Wempe.")
 MAN_END
 
@@ -4924,7 +4925,7 @@ SCRIPT (5,3, U"pb = Create formant table (Peterson & Barney 1952)\n"
 )
 MAN_END
 
-MAN_BEGIN (U"Table: Line graph where...", U"djmw", 20170829)
+MAN_BEGIN (U"Table: Line graph where...", U"djmw", 20200629)
 INTRO (U"Draws a line graph from the data in a column of the selected @Table. In a line plot the horizontal axis can have a nominal scale or a numeric scale. The data point are connected by line segments.")
 ENTRY (U"Settings")
 SCRIPT (7, Manual_SETTINGS_WINDOW_HEIGHT (8), U""
@@ -4967,47 +4968,47 @@ CODE (U"  7.5   0.12      0.02")
 CODE (U" 17.5   0.10      0.02")
 NORMAL (U"We can reproduce fig. 3 from Ganong (1980) with the following script, where we labeled the word - nonword curve with \"wn\" and the nonword - word curve with \"nw\". We deselect \"Garnish\" because we want to put special marks at the bottom.")
 CODE (U"Dotted line\n")
-CODE (U"Line graph where: \"dash-tash\", 0, 1, \"VOT\", -20, 20, \"wn\", 0, 0, \"1\"")
+CODE (U"Line graph where: \"dash-tash\", 0, 1, \"VOT\", -20, 20, \"wn\", 0, \"no\", \"1\"")
 CODE (U"Dashed line\n")
-CODE (U"Line graph where: \"dask-task\", 0, 1, \"VOT\", -20, 20, \"nw\", 0, 0, \"1\"")
+CODE (U"Line graph where: \"dask-task\", 0, 1, \"VOT\", -20, 20, \"nw\", 0, \"no\", \"1\"")
 CODE (U"Draw inner box")
-CODE (U"One mark bottom: 2.5, 0, 1, 0, \"+2.5\"")
-CODE (U"One mark bottom: -2.5, 1, 1, 0, \"\"")
-CODE (U"One mark bottom: -7.5,1, 1, 0, \"\"")
-CODE (U"One mark bottom: 7.5, 0, 1, 0, \"+7.5\"")
-CODE (U"One mark bottom: 2.5, 0, 0, 0, \"+2.5\"")
-CODE (U"One mark bottom: -20, 0, 0, 0, \"Short VOT\"")
-CODE (U"One mark bottom: 20, 0, 0, 0, \"Long VOT\"")
+CODE (U"One mark bottom: 2.5, \"no\", \"yes\", \"no\", \"+2.5\"")
+CODE (U"One mark bottom: -2.5, \"yes\", \"yes\", \"no\", \"\"")
+CODE (U"One mark bottom: -7.5, \"yes\", \"yes\", \"no\", \"\"")
+CODE (U"One mark bottom: 7.5, \"no\", \"yes\", \"no\", \"+7.5\"")
+CODE (U"One mark bottom: 2.5, \"no\", \"no\", \"no\", \"+2.5\"")
+CODE (U"One mark bottom: -20, \"no\", \"no\", \"no\", \"Short VOT\"")
+CODE (U"One mark bottom: 20, \"no\", \"no\", \"no\", \"Long VOT\"")
 CODE (U"Text bottom: 1, \"VOT (ms)\"")
-CODE (U"Marks left every: 1, 0.2, 1, 1, 0")
+CODE (U"Marks left every: 1, 0.2, \"yes\", \"yes\", \"no\"")
 CODE (U"Text left: 1, \"Prop. of voiced responses\"")
 
 SCRIPT (5,3, U"ganong = Create Table (Ganong 1980)\n"
 	"Dotted line\n"
-	"Line graph where: \"dash-tash\", 0, 1, \"VOT\", -20, 20, \"wn\", 0, 0, ~1\n"
+	"Line graph where: \"dash-tash\", 0, 1, \"VOT\", -20, 20, \"wn\", 0, \"no\", ~1\n"
 	"Dashed line\n"
-	"Line graph where: \"dask-task\", 0, 1, \"VOT\", -20, 20, \"nw\", 0, 0, ~1\n"
+	"Line graph where: \"dask-task\", 0, 1, \"VOT\", -20, 20, \"nw\", 0, \"no\", ~1\n"
 	"Draw inner box\n"
-	"One mark bottom: 2.5, 0, 1, 0, \"+2.5\"\n"
-	"One mark bottom: -2.5, 1, 1, 0, \"\"\n"
-	"One mark bottom: -7.5,1, 1, 0, \"\"\n"
-	"One mark bottom: 7.5, 0, 1, 0, \"+7.5\"\n"
-	"One mark bottom: 2.5, 0, 0, 0, \"+2.5\"\n"
-	"One mark bottom: -20, 0, 0, 0, \"Short VOT\"\n"
-	"One mark bottom: 20, 0, 0, 0, \"Long VOT\"\n"
+	"One mark bottom: 2.5, 0, \"yes\", \"no\", \"+2.5\"\n"
+	"One mark bottom: -2.5, \"yes\", \"yes\", \"no\", \"\"\n"
+	"One mark bottom: -7.5, \"yes\", \"yes\", \"no\", \"\"\n"
+	"One mark bottom: 7.5, \"no\", \"yes\", \"no\", \"+7.5\"\n"
+	"One mark bottom: 2.5, \"no\", \"no\", \"no\", \"+2.5\"\n"
+	"One mark bottom: -20, \"no\", \"no\", \"no\", \"Short VOT\"\n"
+	"One mark bottom: 20, \"no\", \"no\", \"no\", \"Long VOT\"\n"
 	"Text bottom: 1, \"VOT (ms)\"\n"
-	"Marks left every: 1, 0.2, 1, 1, 0\n"
+	"Marks left every: 1, 0.2, \"yes\", \"yes\", \"no\"\n"
 	"Text left: 1, \"Prop. of voiced responses\"\n"
 	"removeObject: ganong\n"
 )
 NORMAL (U"As an example of what happens if you don't supply an argument for the \"Horizontal column\" we will use the same table as for the previous plot. However the resulting plot may not be as meaningful (note that the horizontal nominal scale makes all points equidistant in the horizontal direction.)")
-CODE (U"Dotted line\")\n")
-CODE (U"Line graph where: \"dash-tash\", 0, 1, \"\", 0, 0, \"wn\", 0, 1, ~ 1")
-CODE (U"One mark bottom: 1, 0, 1, 0, \"Short VOT\"")
+CODE (U"Dotted line\n")
+CODE (U"Line graph where: \"dash-tash\", 0, 1, \"\", 0, 0, \"wn\", 0, \"yes\", ~ 1")
+CODE (U"One mark bottom: 1, \"no\", \"yes\", \"no\", \"Short VOT\"")
 SCRIPT (5,3, U"ganong = Create Table (Ganong 1980)\n"
 	"Dotted line\n"
-	"Line graph where: \"dash-tash\", 0, 1, \"\", 0, 0, \"wn\", 0, 1, ~1\n"
-	"One mark bottom: 1, 0, 1, 0, \"Short VOT\"\n"
+	"Line graph where: \"dash-tash\", 0, 1, \"\", 0, 0, \"wn\", 0, \"yes\", ~1\n"
+	"One mark bottom: 1, \"no\", \"yes\", \"no\", \"Short VOT\"\n"
 	"removeObject: ganong\n"
 )
 MAN_END
