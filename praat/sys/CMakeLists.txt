@@ -1,6 +1,6 @@
 add_sources(Thing.cpp Data.cpp Simple.cpp Collection.cpp Strings.cpp
             Graphics.cpp Graphics_linesAndAreas.cpp Graphics_text.cpp Graphics_colour.cpp
-            Graphics_image.cpp Graphics_mouse.cpp Graphics_record.cpp
+            Graphics_image.cpp Graphics_record.cpp
             Graphics_utils.cpp Graphics_grey.cpp Graphics_altitude.cpp
             GraphicsPostscript.cpp Graphics_surface.cpp
             ManPage.cpp ManPages.cpp Script.cpp machine.cpp

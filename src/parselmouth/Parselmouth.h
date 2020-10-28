@@ -33,6 +33,7 @@ enum class kSound_to_Spectrogram_windowShape;
 enum class kSound_windowShape;
 enum class kSounds_convolve_scaling;
 enum class kSounds_convolve_signalOutsideTimeDomain;
+enum class kVector_valueInterpolation;
 
 namespace parselmouth::detail {
 
@@ -72,9 +73,9 @@ class type_caster<autoSomeThing<T>> : public type_caster<parselmouth::detail::Pr
 
 namespace parselmouth {
 
-enum class Interpolation;
 enum class SoundFileFormat;
 
+using ValueInterpolation = kVector_valueInterpolation;
 using WindowShape = kSound_windowShape;
 using AmplitudeScaling = kSounds_convolve_scaling;
 using SignalOutsideTimeDomain = kSounds_convolve_signalOutsideTimeDomain;

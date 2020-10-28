@@ -13,10 +13,10 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             Eigen_and_TableOfReal.cpp
             Eigen_and_SSCP.cpp Excitations.cpp
             espeakdata_FileInMemory.cpp
-            FilterBank.cpp FormantGrid_extensions.cpp FormantModeler.cpp
+            FilterBank.cpp FormantGrid_extensions.cpp
             GaussianMixture.cpp
             HMM.cpp
-            ICA.cpp Intensity_extensions.cpp
+            ICA.cpp Intensity_extensions.cpp IntervalTierNavigator.cpp
             LFCC.cpp LongSound_extensions.cpp
             KlattGrid.cpp KlattGridEditors.cpp KlattTable.cpp
             Ltas_extensions.cpp
@@ -26,6 +26,7 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             Minimizers.cpp MixingMatrix.cpp
             Matrix_and_NMF.cpp Matrix_extensions.cpp
             Matrix_Categories.cpp MDS.cpp
+            NavigationContext.cpp
             OptimalCeilingTier.cpp OptimalCeilingTierEditor.cpp
             PatternList.cpp PCA.cpp
             Pitch_extensions.cpp Polynomial_to_Spectrum.cpp
@@ -40,8 +41,8 @@ add_sources(ActivationList.cpp AffineTransform.cpp
             SpeechSynthesizer.cpp SpeechSynthesizer_and_TextGrid.cpp
             Table_and_Strings.cpp Table_extensions.cpp TableOfReal_and_SVD.cpp
             TableOfReal_extensions.cpp
-            TableOfReal_and_Permutation.cpp
+            TableOfReal_and_Discriminant.cpp TableOfReal_and_Permutation.cpp
             TextGrid_and_DurationTier.cpp TextGrid_and_PitchTier.cpp TextGrid_extensions.cpp
-            VowelEditor.cpp
+            TextGridNavigator.cpp TextGridView.cpp VowelEditor.cpp
             praat_MDS_init.cpp praat_BSS_init.cpp praat_HMM_init.cpp
             praat_KlattGrid_init.cpp praat_DataModeler_init.cpp praat_David_init.cpp)

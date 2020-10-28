@@ -120,7 +120,7 @@ void redirectMelderError() {
 using PraatBindings = Bindings<PraatError,
                                PraatWarning,
                                PraatFatal,
-                               Interpolation,
+                               ValueInterpolation,
                                WindowShape,
                                AmplitudeScaling,
                                SignalOutsideTimeDomain,
@@ -202,4 +202,7 @@ PYBIND11_MODULE(parselmouth, m) {
 	bindings.init();
 
 	m.attr("read") = bindings.get<Data>().get().attr("read");
+
+	// TODO Remove/deprecate?
+	m.attr("Interpolation") = bindings.get<parselmouth::ValueInterpolation>().get();
 }

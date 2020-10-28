@@ -1,6 +1,9 @@
 add_sources(Cepstrum.cpp Cepstrumc.cpp Cepstrum_and_Spectrum.cpp
             Cepstrogram.cpp
-            Formant_extensions.cpp LineSpectralFrequencies.cpp
+            Formant_extensions.cpp
+            FormantModeler.cpp FormantModelerList.cpp
+            FormantPath.cpp FormantPathEditor.cpp
+            LineSpectralFrequencies.cpp
             LPC.cpp LPC_and_Cepstrumc.cpp LPC_and_Formant.cpp LPC_and_LFCC.cpp
             LPC_and_LineSpectralFrequencies.cpp LPC_and_Polynomial.cpp
             LPC_to_Spectrum.cpp LPC_to_Spectrogram.cpp

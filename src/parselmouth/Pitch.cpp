@@ -19,7 +19,6 @@
 
 #include "Parselmouth.h"
 
-#include "Interpolation.h"
 #include "TimeClassAspects.h"
 
 #include "utils/praat/MelderUtils.h"
@@ -152,13 +151,13 @@ PRAAT_CLASS_BINDING(Pitch) {
 		&Pitch_countVoicedFrames);
 
 	def("get_value_at_time",
-	    [](Pitch self, double time, kPitch_unit unit, Interpolation interpolation) {
-		    if (interpolation != Interpolation::NEAREST && interpolation != Interpolation::LINEAR)
+	    [](Pitch self, double time, kPitch_unit unit, kVector_valueInterpolation interpolation) {
+		    if (interpolation != kVector_valueInterpolation::NEAREST && interpolation != kVector_valueInterpolation::LINEAR)
 			    Melder_throw(U"Pitch values can only be queried using NEAREST or LINEAR interpolation");
-		    auto value = Sampled_getValueAtX(self, time, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit), interpolation == Interpolation::LINEAR);
+		    auto value = Sampled_getValueAtX(self, time, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit), interpolation == kVector_valueInterpolation::LINEAR);
 		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
 	    },
-	    "time"_a, "unit"_a = kPitch_unit::HERTZ, "interpolation"_a = Interpolation::LINEAR);
+	    "time"_a, "unit"_a = kPitch_unit::HERTZ, "interpolation"_a = kVector_valueInterpolation::LINEAR);
 
 	// TODO get_strength_at_time ? -> Pitch strength unit enum
 

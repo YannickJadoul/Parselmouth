@@ -1,6 +1,6 @@
 add_sources(pa_front.c pa_debugprint.c pa_cpuload.c
             pa_allocation.c pa_process.c pa_converters.c pa_dither.c
-            pa_stream.c)
+            pa_stream.c patest_record.c)
 
 if (UNIX)
 	add_sources(pa_unix_hostapis.c pa_unix_util.c)

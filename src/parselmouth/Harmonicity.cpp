@@ -19,7 +19,6 @@
 
 #include "Parselmouth.h"
 
-#include "Interpolation.h"
 #include "TimeClassAspects.h"
 
 #include <praat/fon/Harmonicity.h>
@@ -37,8 +36,8 @@ PRAAT_CLASS_BINDING(Harmonicity) {
 	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
 
 	def("get_value", // TODO Should be part of Vector class
-	    [](Harmonicity self, double time, Interpolation interpolation) { return Vector_getValueAtX(self, time, 1, static_cast<int>(interpolation)); },
-	    "time"_a, "interpolation"_a = Interpolation::CUBIC);
+	    [](Harmonicity self, double time, kVector_valueInterpolation interpolation) { return Vector_getValueAtX(self, time, 1, interpolation); },
+	    "time"_a, "interpolation"_a = kVector_valueInterpolation::CUBIC);
 }
 
 } // namespace parselmouth

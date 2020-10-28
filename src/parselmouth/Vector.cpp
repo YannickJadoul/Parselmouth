@@ -19,8 +19,6 @@
 
 #include "Parselmouth.h"
 
-#include "Interpolation.h"
-
 #include "utils/SignatureCast.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
@@ -34,12 +32,12 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-PRAAT_ENUM_BINDING(Interpolation) {
-	value("NEAREST", Interpolation::NEAREST);
-	value("LINEAR", Interpolation::LINEAR);
-	value("CUBIC", Interpolation::CUBIC);
-	value("SINC70", Interpolation::SINC70);
-	value("SINC700", Interpolation::SINC700);
+PRAAT_ENUM_BINDING(ValueInterpolation) {
+	value("NEAREST", kVector_valueInterpolation::NEAREST);
+	value("LINEAR", kVector_valueInterpolation::LINEAR);
+	value("CUBIC", kVector_valueInterpolation::CUBIC);
+	value("SINC70", kVector_valueInterpolation::SINC70);
+	value("SINC700", kVector_valueInterpolation::SINC700);
 
 	make_implicitly_convertible_from_string(*this);
 }
@@ -126,8 +124,8 @@ PRAAT_CLASS_BINDING(Vector) {
 	    "new_peak"_a = 0.99);
 
 	def("get_value", // TODO Default for interpolation? Different for Sound (SINC70), Harmonicity/Intensity/Formants (CUBIC) and Ltas (LINEAR); take praat_TimeFunction.h into account
-	    [](Vector self, double x, std::optional<long> channel, Interpolation interpolation) { return Vector_getValueAtX (self, x, channel.value_or(Vector_CHANNEL_AVERAGE), static_cast<int>(interpolation)); },
-	    "x"_a, "channel"_a = std::nullopt, "interpolation"_a = Interpolation::CUBIC);
+	    [](Vector self, double x, std::optional<long> channel, kVector_valueInterpolation interpolation) { return Vector_getValueAtX (self, x, channel.value_or(Vector_CHANNEL_AVERAGE), interpolation); },
+	    "x"_a, "channel"_a = std::nullopt, "interpolation"_a = kVector_valueInterpolation::CUBIC);
 }
 
 } // namespace parselmouth

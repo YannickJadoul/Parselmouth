@@ -15,10 +15,10 @@ add_sources(Transition.cpp Distributions_and_Transition.cpp
             Sound_to_Cochleagram.cpp Spectrum_to_Excitation.cpp
             VocalTract.cpp VocalTract_to_Spectrum.cpp
             SoundRecorder.cpp Sound_enhance.cpp VoiceAnalysis.cpp
-            FunctionEditor.cpp TimeSoundEditor.cpp TimeSoundAnalysisEditor.cpp
+            FunctionArea.cpp FunctionEditor.cpp TimeSoundEditor.cpp TimeSoundAnalysisEditor.cpp
             PitchEditor.cpp SoundEditor.cpp SpectrumEditor.cpp SpectrogramEditor.cpp PointEditor.cpp
-            RealTierEditor.cpp PitchTierEditor.cpp IntensityTierEditor.cpp
-            DurationTierEditor.cpp AmplitudeTierEditor.cpp
+            RealTierArea.cpp RealTierEditor.cpp PitchTierArea.cpp PitchTierEditor.cpp IntensityTierEditor.cpp
+            DurationTierArea.cpp DurationTierEditor.cpp AmplitudeTierEditor.cpp
             ManipulationEditor.cpp TextGridEditor.cpp FormantGridEditor.cpp
             WordList.cpp SpellingChecker.cpp
             FujisakiPitch.cpp
