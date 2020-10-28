@@ -1,6 +1,6 @@
 /* ManipulationEditor.cpp
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,10 +51,6 @@ static const conststring32 units_strings [] = { 0, U"Hz", U"st" };
 
 static int prefs_synthesisMethod = Manipulation_OVERLAPADD;   /* Remembered across editor creations, not across Praat sessions. */
 
-/* BUG: 25 should be fmin */
-#define YLIN(freq)  (my p_pitch_units == kManipulationEditor_pitchUnits::HERTZ ? ((freq) < 25 ? 25 : (freq)) : NUMhertzToSemitones ((freq) < 25 ? 25 : (freq)))
-#define YLININV(freq)  (my p_pitch_units == kManipulationEditor_pitchUnits::HERTZ ? (freq) : NUMsemitonesToHertz (freq))
-
 static void updateMenus (ManipulationEditor me) {
 	Melder_assert (my synthPulsesButton);
 	GuiMenuItem_check (my synthPulsesButton, my synthesisMethod == Manipulation_PULSES);
@@ -77,29 +73,12 @@ static void updateMenus (ManipulationEditor me) {
 }
 
 /*
- * The "sound area" contains the original sound and the pulses.
+	The "sound area" contains the original sound and the pulses.
  */
 static bool getSoundArea (ManipulationEditor me, double *ymin, double *ymax) {
-	Manipulation ana = (Manipulation) my data;
-	*ymin = 0.66;
+	*ymin = 0.67;
 	*ymax = 1.00;
-	return ana -> sound || ana -> pulses;
-}
-/*
- * The "pitch area" contains the grey pitch analysis based on the pulses, and the blue pitch tier.
- */
-static bool getPitchArea (ManipulationEditor me, double *ymin, double *ymax) {
-	Manipulation ana = (Manipulation) my data;
-	*ymin = ana -> duration ? 0.16 : 0.00;
-	*ymax = 0.65;
-	return ana -> pulses || ana -> pitch;
-}
-static bool getDurationArea (ManipulationEditor me, double *ymin, double *ymax) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> duration) return false;
-	*ymin = 0.00;
-	*ymax = 0.15;
-	return true;
+	return my sound() || my pulses();
 }
 
 /********** MENU COMMANDS **********/
@@ -107,74 +86,70 @@ static bool getDurationArea (ManipulationEditor me, double *ymin, double *ymax) 
 /***** FILE MENU *****/
 
 static void menu_cb_extractOriginalSound (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> sound) return;
-	autoSound publish = Data_copy (ana -> sound.get());
+	if (! my sound())
+		return;
+	autoSound publish = Data_copy (my sound().get());
 	Editor_broadcastPublication (me, publish.move());
 }
 
 static void menu_cb_extractPulses (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> pulses) return;
-	autoPointProcess publish = Data_copy (ana -> pulses.get());
+	if (! my pulses())
+		return;
+	autoPointProcess publish = Data_copy (my pulses().get());
 	Editor_broadcastPublication (me, publish.move());
 }
 
 static void menu_cb_extractPitchTier (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> pitch) return;
-	autoPitchTier publish = Data_copy (ana -> pitch.get());
+	if (! my pitch())
+		return;
+	autoPitchTier publish = Data_copy (my pitch().get());
 	Editor_broadcastPublication (me, publish.move());
 }
 
 static void menu_cb_extractDurationTier (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> duration) return;
-	autoDurationTier publish = Data_copy (ana -> duration.get());
+	if (! my duration())
+		return;
+	autoDurationTier publish = Data_copy (my duration().get());
 	Editor_broadcastPublication (me, publish.move());
 }
 
 static void menu_cb_extractManipulatedSound (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	autoSound publish = Manipulation_to_Sound (ana, my synthesisMethod);
+	autoSound publish = Manipulation_to_Sound (my manipulation(), my synthesisMethod);
 	Editor_broadcastPublication (me, publish.move());
 }
 
 /***** EDIT MENU *****/
 
 void structManipulationEditor :: v_saveData () {
-	Manipulation ana = (Manipulation) our data;
-	if (ana -> pulses)   our previousPulses   = Data_copy (ana -> pulses.get());
-	if (ana -> pitch)    our previousPitch    = Data_copy (ana -> pitch.get());
-	if (ana -> duration) our previousDuration = Data_copy (ana -> duration.get());
+	our previousPulses   = Data_copy (our pulses().get());     // could be null
+	our previousPitch    = Data_copy (our pitch().get());      // could be null
+	our previousDuration = Data_copy (our duration().get());   // could be null
 }
 
 void structManipulationEditor :: v_restoreData () {
-	Manipulation ana = (Manipulation) our data;
-	autoPointProcess dummy1 = ana -> pulses.move();   ana -> pulses   = our previousPulses.move();   our previousPulses   = dummy1.move();
-	autoPitchTier    dummy2 = ana -> pitch.move();    ana -> pitch    = our previousPitch.move();    our previousPitch    = dummy2.move();
-	autoDurationTier dummy3 = ana -> duration.move(); ana -> duration = our previousDuration.move(); our previousDuration = dummy3.move();
+	std::swap (our pulses(),   our previousPulses);     // could be null
+	std::swap (our pitch(),    our previousPitch);      // could be null
+	std::swap (our duration(), our previousDuration);   // could be null
 }
 
 /***** PULSES MENU *****/
 
 static void menu_cb_removePulses (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> pulses) return;
+	if (! my pulses())
+		return;
 	Editor_save (me, U"Remove pulse(s)");
 	if (my startSelection == my endSelection)
-		PointProcess_removePointNear (ana -> pulses.get(), my startSelection);
+		PointProcess_removePointNear (my pulses().get(), my startSelection);
 	else
-		PointProcess_removePointsBetween (ana -> pulses.get(), my startSelection, my endSelection);
+		PointProcess_removePointsBetween (my pulses().get(), my startSelection, my endSelection);
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
 
 static void menu_cb_addPulseAtCursor (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> pulses) return;
+	if (! my pulses()) return;
 	Editor_save (me, U"Add pulse");
-	PointProcess_addPoint (ana -> pulses.get(), 0.5 * (my startSelection + my endSelection));
+	PointProcess_addPoint (my pulses().get(), 0.5 * (my startSelection + my endSelection));
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
@@ -185,10 +160,10 @@ static void menu_cb_addPulseAt (ManipulationEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_OK
 		SET_REAL (position, 0.5 * (my startSelection + my endSelection))
 	EDITOR_DO
-		Manipulation ana = (Manipulation) my data;
-		if (! ana -> pulses) return;
+		if (! my pulses())
+			return;
 		Editor_save (me, U"Add pulse");
-		PointProcess_addPoint (ana -> pulses.get(), position);
+		PointProcess_addPoint (my pulses().get(), position);
 		FunctionEditor_redraw (me);
 		Editor_broadcastDataChanged (me);
 	EDITOR_END
@@ -197,47 +172,47 @@ static void menu_cb_addPulseAt (ManipulationEditor me, EDITOR_ARGS_FORM) {
 /***** PITCH MENU *****/
 
 static void menu_cb_removePitchPoints (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> pitch) return;
+	if (! my pitch())
+		return;
 	Editor_save (me, U"Remove pitch point(s)");
 	if (my startSelection == my endSelection)
-		AnyTier_removePointNear (ana -> pitch.get()->asAnyTier(), my startSelection);
+		AnyTier_removePointNear (my pitch()->asAnyTier(), my startSelection);
 	else
-		AnyTier_removePointsBetween (ana -> pitch.get()->asAnyTier(), my startSelection, my endSelection);
+		AnyTier_removePointsBetween (my pitch()->asAnyTier(), my startSelection, my endSelection);
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
 
 static void menu_cb_addPitchPointAtCursor (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> pitch) return;
+	if (! my pitch())
+		return;
 	Editor_save (me, U"Add pitch point");
-	RealTier_addPoint (ana -> pitch.get(), 0.5 * (my startSelection + my endSelection), YLININV (my pitchTier.cursor));
+	RealTier_addPoint (my pitch().get(), 0.5 * (my startSelection + my endSelection),
+			my pitchTierArea -> v_yToValue (my pitchTierArea -> ycursor));
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
 
 static void menu_cb_addPitchPointAtSlice (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	PointProcess pulses = ana -> pulses.get();
-	if (! pulses)
+	if (! my pulses())
 		Melder_throw (U"There are no pulses.");
-	if (! ana -> pitch)
+	if (! my pitch())
 		return;
-	integer ileft = PointProcess_getLowIndex (pulses, 0.5 * (my startSelection + my endSelection)), iright = ileft + 1, nt = pulses -> nt;
-	constVEC t = pulses -> t.get();
-	double f = my pitchTier.cursor;   // default
+	const integer ileft = PointProcess_getLowIndex (my pulses().get(), 0.5 * (my startSelection + my endSelection));
+	const integer iright = ileft + 1, nt = my pulses() -> nt;
+	constVEC t = my pulses() -> t.get();
+	double desiredY = my pitchTierArea -> ycursor;   // default
 	Editor_save (me, U"Add pitch point");
 	if (nt <= 1) {
 		/* Ignore. */
 	} else if (ileft <= 0) {
 		double tright = t [2] - t [1];
 		if (tright > 0.0 && tright <= 0.02)
-			f = YLIN (1.0 / tright);
+			desiredY = my pitchTierArea -> v_valueToY (1.0 / tright);
 	} else if (iright > nt) {
 		double tleft = t [nt] - t [nt - 1];
 		if (tleft > 0.0 && tleft <= 0.02)
-			f = YLIN (1.0 / tleft);
+			desiredY = my pitchTierArea -> v_valueToY (1.0 / tleft);
 	} else {   /* Three-period median. */
 		double tmid = t [iright] - t [ileft], tleft = 0.0, tright = 0.0;
 		if (ileft > 1)
@@ -258,13 +233,13 @@ static void menu_cb_addPitchPointAtSlice (ManipulationEditor me, EDITOR_ARGS_DIR
 		if (tright < tmid)
 			std::swap (tright, tmid);
 		if (tleft != 0.0)
-			f = YLIN (1 / tmid);   // median of 3
+			desiredY = my pitchTierArea -> v_valueToY (1 / tmid);   // median of 3
 		else if (tmid != 0.0)
-			f = YLIN (2 / (tmid + tright));   // median of 2
+			desiredY = my pitchTierArea -> v_valueToY (2 / (tmid + tright));   // median of 2
 		else if (tright != 0.0)
-			f = YLIN (1 / tright);   // median of 1
+			desiredY = my pitchTierArea -> v_valueToY (1 / tright);   // median of 1
 	}
-	RealTier_addPoint (ana -> pitch.get(), 0.5 * (my startSelection + my endSelection), YLININV (f));
+	RealTierArea_addPointAt (my pitchTierArea.get(), my pitch().get(), 0.5 * (my startSelection + my endSelection), desiredY);
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }	
@@ -275,12 +250,12 @@ static void menu_cb_addPitchPointAt (ManipulationEditor me, EDITOR_ARGS_FORM) {
 		REAL (frequency, U"Frequency (Hz or st)", U"100.0")
 	EDITOR_OK
 		SET_REAL (time, 0.5 * (my startSelection + my endSelection))
-		SET_REAL (frequency, my pitchTier.cursor)
+		SET_REAL (frequency, my pitchTierArea -> ycursor)
 	EDITOR_DO
-		Manipulation ana = (Manipulation) my data;
-		if (! ana -> pitch) return;
+		if (! my pitch())
+			return;
 		Editor_save (me, U"Add pitch point");
-		RealTier_addPoint (ana -> pitch.get(), time, YLININV (frequency));
+		RealTierArea_addPointAt (my pitchTierArea.get(), my pitch().get(), time, frequency);
 		FunctionEditor_redraw (me);
 		Editor_broadcastDataChanged (me);
 	EDITOR_END
@@ -296,10 +271,10 @@ static void menu_cb_stylizePitch (ManipulationEditor me, EDITOR_ARGS_FORM) {
 		SET_REAL   (frequencyResolution, my p_pitch_stylize_frequencyResolution)
 		SET_OPTION (units,               my p_pitch_stylize_useSemitones + 1)
 	EDITOR_DO
-		Manipulation ana = (Manipulation) my data;
-		if (! ana -> pitch) return;
+		if (! my pitch())
+			return;
 		Editor_save (me, U"Stylize pitch");
-		PitchTier_stylize (ana -> pitch.get(),
+		PitchTier_stylize (my pitch().get(),
 			my pref_pitch_stylize_frequencyResolution () = my p_pitch_stylize_frequencyResolution = frequencyResolution,
 			my pref_pitch_stylize_useSemitones        () = my p_pitch_stylize_useSemitones        = units - 1);
 		FunctionEditor_redraw (me);
@@ -308,10 +283,10 @@ static void menu_cb_stylizePitch (ManipulationEditor me, EDITOR_ARGS_FORM) {
 }
 
 static void menu_cb_stylizePitch_2st (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> pitch) return;
+	if (! my pitch())
+		return;
 	Editor_save (me, U"Stylize pitch");
-	PitchTier_stylize (ana -> pitch.get(), 2.0, true);
+	PitchTier_stylize (my pitch().get(), 2.0, true);
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
@@ -322,22 +297,22 @@ static void menu_cb_interpolateQuadratically (ManipulationEditor me, EDITOR_ARGS
 	EDITOR_OK
 		SET_INTEGER (numberOfPointsPerParabola, my p_pitch_interpolateQuadratically_numberOfPointsPerParabola)
 	EDITOR_DO
-		Manipulation ana = (Manipulation) my data;
-		if (! ana -> pitch) return;
+		if (! my pitch())
+			return;
 		Editor_save (me, U"Interpolate quadratically");
-		RealTier_interpolateQuadratically (ana -> pitch.get(),
+		RealTier_interpolateQuadratically (my pitch().get(),
 			my pref_pitch_interpolateQuadratically_numberOfPointsPerParabola () = my p_pitch_interpolateQuadratically_numberOfPointsPerParabola = numberOfPointsPerParabola,
-			my p_pitch_units == kManipulationEditor_pitchUnits::SEMITONES);
+			my pitchTierArea -> p_units == kPitchTierArea_units::SEMITONES);
 		FunctionEditor_redraw (me);
 		Editor_broadcastDataChanged (me);
 	EDITOR_END
 }
 
 static void menu_cb_interpolateQuadratically_4pts (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> pitch) return;
+	if (! my pitch())
+		return;
 	Editor_save (me, U"Interpolate quadratically");
-	RealTier_interpolateQuadratically (ana -> pitch.get(), 4, my p_pitch_units == kManipulationEditor_pitchUnits::SEMITONES);
+	RealTier_interpolateQuadratically (my pitch().get(), 4, my pitchTierArea -> p_units == kPitchTierArea_units::SEMITONES);
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
@@ -353,17 +328,17 @@ static void menu_cb_shiftPitchFrequencies (ManipulationEditor me, EDITOR_ARGS_FO
 			OPTION (U"ERB")
 	EDITOR_OK
 	EDITOR_DO
-		Manipulation ana = (Manipulation) my data;
 		kPitch_unit unit =
 			unit_i == 1 ? kPitch_unit::HERTZ :
 			unit_i == 2 ? kPitch_unit::MEL :
 			unit_i == 3 ? kPitch_unit::LOG_HERTZ :
 			unit_i == 4 ? kPitch_unit::SEMITONES_1 :
 			kPitch_unit::ERB;
-		if (! ana -> pitch) return;
+		if (! my pitch())
+			return;
 		Editor_save (me, U"Shift pitch frequencies");
 		try {
-			PitchTier_shiftFrequencies (ana -> pitch.get(), my startSelection, my endSelection, frequencyShift, unit);
+			PitchTier_shiftFrequencies (my pitch().get(), my startSelection, my endSelection, frequencyShift, unit);
 			FunctionEditor_redraw (me);
 			Editor_broadcastDataChanged (me);
 		} catch (MelderError) {
@@ -381,10 +356,10 @@ static void menu_cb_multiplyPitchFrequencies (ManipulationEditor me, EDITOR_ARGS
 		LABEL (U"The multiplication is always done in hertz.")
 	EDITOR_OK
 	EDITOR_DO
-		Manipulation ana = (Manipulation) my data;
-		if (! ana -> pitch) return;
+		if (! my pitch())
+			return;
 		Editor_save (me, U"Multiply pitch frequencies");
-		PitchTier_multiplyFrequencies (ana -> pitch.get(), my startSelection, my endSelection, factor);
+		PitchTier_multiplyFrequencies (my pitch().get(), my startSelection, my endSelection, factor);
 		FunctionEditor_redraw (me);
 		Editor_broadcastDataChanged (me);
 	EDITOR_END
@@ -393,38 +368,38 @@ static void menu_cb_multiplyPitchFrequencies (ManipulationEditor me, EDITOR_ARGS
 static void menu_cb_setPitchRange (ManipulationEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Set pitch range", nullptr)
 		/* BUG: should include Minimum */
-		REAL (maximum, U"Maximum (Hz or st)", my default_pitch_maximum ())
+		REAL (maximum, U"Maximum (Hz or st)", my pitchTierArea -> default_maximum ())
 	EDITOR_OK
-		SET_REAL (maximum, my p_pitch_maximum)
+		SET_REAL (maximum, my pitchTierArea -> p_maximum)
 	EDITOR_DO
 		if (maximum <= my pitchTier.minPeriodic)
-			Melder_throw (U"Maximum pitch must be greater than ",
-				Melder_half (my pitchTier.minPeriodic), U" ", units_strings [(int) my p_pitch_units], U".");
-		my pref_pitch_maximum () = my p_pitch_maximum = maximum;
+			Melder_throw (U"Maximum pitch should be greater than ",
+				Melder_half (my pitchTier.minPeriodic), U" ", units_strings [(int) my pitchTierArea -> p_units], U".");
+		my pitchTierArea -> ymax = my pitchTierArea -> pref_maximum () = my pitchTierArea -> p_maximum = maximum;
 		FunctionEditor_redraw (me);
 	EDITOR_END
 }
 
 static void menu_cb_setPitchUnits (ManipulationEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Set pitch units", nullptr)
-		RADIO_ENUM (kManipulationEditor_pitchUnits, pitchUnits,
-				U"Pitch units", my default_pitch_units ())
+		RADIO_ENUM (kPitchTierArea_units, pitchUnits,
+				U"Pitch units", my pitchTierArea -> default_units ())
 	EDITOR_OK
-		SET_ENUM (pitchUnits, kManipulationEditor_pitchUnits, my p_pitch_units)
+		SET_ENUM (pitchUnits, kPitchTierArea_units, my pitchTierArea -> p_units)
 	EDITOR_DO
-		enum kManipulationEditor_pitchUnits oldPitchUnits = my p_pitch_units;
-		my pref_pitch_units () = my p_pitch_units = pitchUnits;
-		if (my p_pitch_units == oldPitchUnits) return;
-		if (my p_pitch_units == kManipulationEditor_pitchUnits::HERTZ) {
-			my p_pitch_minimum = 25.0;
+		enum kPitchTierArea_units oldPitchUnits = my pitchTierArea -> p_units;
+		my pitchTierArea -> pref_units () = my pitchTierArea -> p_units = pitchUnits;
+		if (my pitchTierArea -> p_units == oldPitchUnits) return;
+		if (my pitchTierArea -> p_units == kPitchTierArea_units::HERTZ) {
+			my pitchTierArea -> p_minimum = 25.0;
 			my pitchTier.minPeriodic = 50.0;
-			my pref_pitch_maximum () = my p_pitch_maximum = NUMsemitonesToHertz (my p_pitch_maximum);
-			my pitchTier.cursor = NUMsemitonesToHertz (my pitchTier.cursor);
+			my pitchTierArea -> ymax = my pitchTierArea -> pref_maximum () = my pitchTierArea -> p_maximum = NUMsemitonesToHertz (my pitchTierArea -> p_maximum);
+			my pitchTierArea -> ycursor = NUMsemitonesToHertz (my pitchTierArea -> ycursor);
 		} else {
-			my p_pitch_minimum = -24.0;
+			my pitchTierArea -> p_minimum = -24.0;
 			my pitchTier.minPeriodic = -12.0;
-			my pref_pitch_maximum () = my p_pitch_maximum = NUMhertzToSemitones (my p_pitch_maximum);
-			my pitchTier.cursor = NUMhertzToSemitones (my pitchTier.cursor);
+			my pitchTierArea -> ymax = my pitchTierArea -> pref_maximum () = my pitchTierArea -> p_maximum = NUMhertzToSemitones (my pitchTierArea -> p_maximum);
+			my pitchTierArea -> ycursor = NUMhertzToSemitones (my pitchTierArea -> ycursor);
 		}
 		FunctionEditor_redraw (me);
 	EDITOR_END
@@ -434,26 +409,28 @@ static void menu_cb_setPitchUnits (ManipulationEditor me, EDITOR_ARGS_FORM) {
 
 static void menu_cb_setDurationRange (ManipulationEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_FORM (U"Set duration range", nullptr)
-		REAL (minimum, U"Minimum", my default_duration_minimum ())
-		REAL (maximum, U"Maximum", my default_duration_maximum ())
+		REAL (minimum, U"Minimum", my durationTierArea -> default_minimum ())
+		REAL (maximum, U"Maximum", my durationTierArea -> default_maximum ())
 	EDITOR_OK
-		SET_REAL (minimum, my p_duration_minimum)
-		SET_REAL (maximum, my p_duration_maximum)
+		SET_REAL (minimum, my durationTierArea -> p_minimum)
+		SET_REAL (maximum, my durationTierArea -> p_maximum)
 	EDITOR_DO
-		Manipulation ana = (Manipulation) my data;
-		double minimumValue = ana -> duration ? RealTier_getMinimumValue (ana -> duration.get()) : undefined;
-		double maximumValue = ana -> duration ? RealTier_getMaximumValue (ana -> duration.get()) : undefined;
-		if (minimum > 1) Melder_throw (U"Minimum relative duration must not be greater than 1.");
-		if (maximum < 1) Melder_throw (U"Maximum relative duration must not be less than 1.");
-		if (minimum >= maximum) Melder_throw (U"Maximum relative duration must be greater than minimum.");
+		double minimumValue = ( my duration() ? RealTier_getMinimumValue (my duration().get()) : undefined );
+		double maximumValue = ( my duration() ? RealTier_getMaximumValue (my duration().get()) : undefined );
+		if (minimum > 1.0)
+			Melder_throw (U"Minimum relative duration should not be greater than 1.");
+		if (maximum < 1.0)
+			Melder_throw (U"Maximum relative duration should not be less than 1.");
+		if (minimum >= maximum)
+			Melder_throw (U"Maximum relative duration should be greater than minimum.");
 		if (isdefined (minimumValue) && minimum > minimumValue)
-			Melder_throw (U"Minimum relative duration must not be greater than the minimum value present, "
+			Melder_throw (U"Minimum relative duration should not be greater than the minimum value present, "
 				U"which is ", Melder_half (minimumValue), U".");
 		if (isdefined (maximumValue) && maximum < maximumValue)
-			Melder_throw (U"Maximum relative duration must not be less than the maximum value present, "
+			Melder_throw (U"Maximum relative duration should not be less than the maximum value present, "
 				U"which is ", Melder_half (maximumValue), U".");
-		my pref_duration_minimum () = my p_duration_minimum = minimum;
-		my pref_duration_maximum () = my p_duration_maximum = maximum;
+		my durationTierArea -> ymin = my durationTierArea -> pref_minimum () = my durationTierArea -> p_minimum = minimum;
+		my durationTierArea -> ymax = my durationTierArea -> pref_maximum () = my durationTierArea -> p_maximum = maximum;
 		FunctionEditor_redraw (me);
 	EDITOR_END
 }
@@ -470,22 +447,22 @@ static void menu_cb_setDraggingStrategy (ManipulationEditor me, EDITOR_ARGS_FORM
 }
 
 static void menu_cb_removeDurationPoints (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> duration) return;
+	if (! my duration())
+		return;
 	Editor_save (me, U"Remove duration point(s)");
 	if (my startSelection == my endSelection)
-		AnyTier_removePointNear (ana -> duration.get()->asAnyTier(), 0.5 * (my startSelection + my endSelection));
+		AnyTier_removePointNear (my duration()->asAnyTier(), 0.5 * (my startSelection + my endSelection));
 	else
-		AnyTier_removePointsBetween (ana -> duration.get()->asAnyTier(), my startSelection, my endSelection);
+		AnyTier_removePointsBetween (my duration()->asAnyTier(), my startSelection, my endSelection);
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
 
 static void menu_cb_addDurationPointAtCursor (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	if (! ana -> duration) return;
+	if (! my duration())
+		return;
 	Editor_save (me, U"Add duration point");
-	RealTier_addPoint (ana -> duration.get(), 0.5 * (my startSelection + my endSelection), my duration.cursor);
+	RealTier_addPoint (my duration().get(), 0.5 * (my startSelection + my endSelection), my durationTierArea -> ycursor);
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
@@ -497,26 +474,25 @@ static void menu_cb_addDurationPointAt (ManipulationEditor me, EDITOR_ARGS_FORM)
 	EDITOR_OK
 		SET_REAL (time, 0.5 * (my startSelection + my endSelection))
 	EDITOR_DO
-		Manipulation ana = (Manipulation) my data;
-		if (! ana -> duration) return;
+		if (! my duration())
+			return;
 		Editor_save (me, U"Add duration point");
-		RealTier_addPoint (ana -> duration.get(), time, relativeDuration);
+		RealTier_addPoint (my duration().get(), time, relativeDuration);
 		FunctionEditor_redraw (me);
 		Editor_broadcastDataChanged (me);
 	EDITOR_END
 }
 
 static void menu_cb_newDuration (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
 	Editor_save (me, U"New duration");
-	ana -> duration = DurationTier_create (ana -> xmin, ana -> xmax);
+	my duration() = DurationTier_create (my manipulation() -> xmin, my manipulation() -> xmax);
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
 
 static void menu_cb_forgetDuration (ManipulationEditor me, EDITOR_ARGS_DIRECT) {
-	Manipulation ana = (Manipulation) my data;
-	ana -> duration = autoDurationTier();
+	Editor_save (me, U"Forget duration");
+	my duration() = autoDurationTier();
 	FunctionEditor_redraw (me);
 	Editor_broadcastDataChanged (me);
 }
@@ -610,9 +586,6 @@ void structManipulationEditor :: v_createHelpMenuItems (EditorMenu menu) {
 /********** DRAWING AREA **********/
 
 static void drawSoundArea (ManipulationEditor me, double ymin, double ymax) {
-	Manipulation ana = (Manipulation) my data;
-	Sound sound = ana -> sound.get();
-	PointProcess pulses = ana -> pulses.get();
 	Graphics_Viewport viewport = Graphics_insetViewport (my graphics.get(), 0.0, 1.0, ymin, ymax);
 	Graphics_setWindow (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
 	Graphics_setColour (my graphics.get(), Melder_WHITE);
@@ -627,77 +600,73 @@ static void drawSoundArea (ManipulationEditor me, double ymin, double ymax) {
 	Graphics_setFont (my graphics.get(), kGraphics_font::HELVETICA);
 
 	/*
-	 * Draw blue pulses.
-	 */
-	if (pulses) {
+		Draw blue pulses.
+	*/
+	if (my pulses()) {
 		Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, 0.0, 1.0);
 		Graphics_setColour (my graphics.get(), Melder_BLUE);
-		for (integer i = 1; i <= pulses -> nt; i ++) {
-			double t = pulses -> t [i];
+		for (integer i = 1; i <= my pulses() -> nt; i ++) {
+			double t = my pulses() -> t [i];
 			if (t >= my startWindow && t <= my endWindow)
 				Graphics_line (my graphics.get(), t, 0.05, t, 0.95);
 		}
 	}
 
 	/*
-	 * Draw sound.
-	 */
+		Draw sound.
+	*/
 	integer first, last;
-	if (sound && Sampled_getWindowSamples (sound, my startWindow, my endWindow, & first, & last) > 1) {
+	if (my sound() && Sampled_getWindowSamples (my sound().get(), my startWindow, my endWindow, & first, & last) > 1) {
 		double minimum, maximum, scaleMin, scaleMax;
-		Matrix_getWindowExtrema (sound, first, last, 1, 1, & minimum, & maximum);
-		if (minimum == maximum) minimum = -0.5, maximum = +0.5;
-
+		Matrix_getWindowExtrema (my sound().get(), first, last, 1, 1, & minimum, & maximum);
+		if (minimum == maximum) {
+			minimum = -0.5;
+			maximum = +0.5;
+		}
 		/*
-		 * Scaling.
-		 */
+			Scaling.
+		*/
 		scaleMin = 0.83 * minimum + 0.17 * my soundmin;
 		scaleMax = 0.83 * maximum + 0.17 * my soundmax;
 		Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, scaleMin, scaleMax);
 		FunctionEditor_drawRangeMark (me, scaleMin, Melder_float (Melder_half (scaleMin)), U"", Graphics_BOTTOM);
 		FunctionEditor_drawRangeMark (me, scaleMax, Melder_float (Melder_half (scaleMax)), U"", Graphics_TOP);
-
 		/*
-		 * Draw dotted zero line.
-		 */
+			Draw dotted zero line.
+		*/
 		if (minimum < 0.0 && maximum > 0.0) {
 			Graphics_setColour (my graphics.get(), Melder_CYAN);
 			Graphics_setLineType (my graphics.get(), Graphics_DOTTED);
 			Graphics_line (my graphics.get(), my startWindow, 0.0, my endWindow, 0.0);
 			Graphics_setLineType (my graphics.get(), Graphics_DRAWN);
-		} 
-
+		}
 		/*
-		 * Draw samples.
-		 */    
+			Draw samples.
+		*/
 		Graphics_setColour (my graphics.get(), Melder_BLACK);
-		Graphics_function (my graphics.get(), & sound -> z [1] [0], first, last,
-			Sampled_indexToX (sound, first), Sampled_indexToX (sound, last));
+		Graphics_function (my graphics.get(), & my sound() -> z [1] [0], first, last,
+				Sampled_indexToX (my sound().get(), first), Sampled_indexToX (my sound().get(), last));
 	}
 
 	Graphics_resetViewport (my graphics.get(), viewport);
 }
 
-static void drawPitchArea (ManipulationEditor me, double ymin, double ymax) {
-	Manipulation ana = (Manipulation) my data;
-	PointProcess pulses = ana -> pulses.get();
-	PitchTier pitch = ana -> pitch.get();
-	integer ifirstSelected, ilastSelected, n = pitch ? pitch -> points.size : 0, imin, imax, i;
-	int cursorVisible = my startSelection == my endSelection && my startSelection >= my startWindow && my startSelection <= my endWindow;
-	double minimumFrequency = YLIN (50);
-	int rangePrecisions [] = { 0, 1, 2 };
+static void drawPitchArea (ManipulationEditor me) {
+	const integer n = ( my pitch() ? my pitch() -> points.size : 0 );
+	const bool cursorVisible = ( my startSelection == my endSelection && my startSelection >= my startWindow && my startSelection <= my endWindow );
+	const double minimumFrequency = my pitchTierArea -> v_valueToY (50.0);
+	const int rangePrecisions [] = { 0, 1, 2 };
 	static const conststring32 rangeUnits [] = { U"", U" Hz", U" st" };
 
-	/*
-	 * Pitch contours.
-	 */
-	Graphics_Viewport viewport = Graphics_insetViewport (my graphics.get(), 0, 1, ymin, ymax);
+	my pitchTierArea -> setViewport();
+
 	Graphics_setWindow (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
 	Graphics_setColour (my graphics.get(), Melder_WHITE);
 	Graphics_fillRectangle (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
 	Graphics_setColour (my graphics.get(), Melder_BLACK);
 	Graphics_rectangle (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
-	Graphics_setColour (my graphics.get(), Melder_GREEN);
+
+	Graphics_setColour (my graphics.get(), Melder_BLUE);
 	Graphics_setFont (my graphics.get(), kGraphics_font::TIMES);
 	Graphics_setTextAlignment (my graphics.get(), Graphics_RIGHT, Graphics_TOP);
 	Graphics_text (my graphics.get(), 1.0, 1.0, U"%%Pitch manip");
@@ -705,577 +674,190 @@ static void drawPitchArea (ManipulationEditor me, double ymin, double ymax) {
 	Graphics_text (my graphics.get(), 1.0, 1.0 - Graphics_dyMMtoWC (my graphics.get(), 3), U"%%Pitch from pulses");
 	Graphics_setFont (my graphics.get(), kGraphics_font::HELVETICA);
 
-	Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, my p_pitch_minimum, my p_pitch_maximum);
+	Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, my pitchTierArea -> p_minimum, my pitchTierArea -> p_maximum);
 
 	/*
-	 * Draw pitch contour based on pulses.
-	 */
+		Draw pitch contour based on pulses.
+	*/
 	Graphics_setGrey (my graphics.get(), 0.7);
-	if (pulses) for (i = 1; i < pulses -> nt; i ++) {
-		double tleft = pulses -> t [i], tright = pulses -> t [i + 1], t = 0.5 * (tleft + tright);
+	if (my pulses()) for (integer i = 1; i < my pulses() -> nt; i ++) {
+		const double tleft = my pulses() -> t [i], tright = my pulses() -> t [i + 1], t = 0.5 * (tleft + tright);
 		if (t >= my startWindow && t <= my endWindow) {
 			if (tleft != tright) {
-				double f = YLIN (1 / (tright - tleft));
-				if (f >= my pitchTier.minPeriodic && f <= my p_pitch_maximum) {
+				const double f = my pitchTierArea -> v_valueToY (1 / (tright - tleft));
+				if (f >= my pitchTier.minPeriodic && f <= my pitchTierArea -> p_maximum)
 					Graphics_fillCircle_mm (my graphics.get(), t, f, 1);
-				}
 			}
 		}
 	}
 	Graphics_setGrey (my graphics.get(), 0.0);
 
 	FunctionEditor_drawGridLine (me, minimumFrequency);
-	FunctionEditor_drawRangeMark (me, my p_pitch_maximum,
-		Melder_fixed (my p_pitch_maximum, rangePrecisions [(int) my p_pitch_units]), rangeUnits [(int) my p_pitch_units], Graphics_TOP);
-	FunctionEditor_drawRangeMark (me, my p_pitch_minimum,
-		Melder_fixed (my p_pitch_minimum, rangePrecisions [(int) my p_pitch_units]), rangeUnits [(int) my p_pitch_units], Graphics_BOTTOM);
-	if (my startSelection == my endSelection && my pitchTier.cursor >= my p_pitch_minimum && my pitchTier.cursor <= my p_pitch_maximum)
-		FunctionEditor_drawHorizontalHair (me, my pitchTier.cursor,
-			Melder_fixed (my pitchTier.cursor, rangePrecisions [(int) my p_pitch_units]), rangeUnits [(int) my p_pitch_units]);
 	if (cursorVisible && n > 0) {
-		double y = YLIN (RealTier_getValueAtTime (pitch, my startSelection));
+		const double y = my pitchTierArea -> v_valueToY (RealTier_getValueAtTime (my pitch().get(), my startSelection));
 		FunctionEditor_insertCursorFunctionValue (me, y,
-			Melder_fixed (y, rangePrecisions [(int) my p_pitch_units]), rangeUnits [(int) my p_pitch_units],
-			my p_pitch_minimum, my p_pitch_maximum);
+			Melder_fixed (y, rangePrecisions [(int) my pitchTierArea -> p_units]), rangeUnits [(int) my pitchTierArea -> p_units],
+			my pitchTierArea -> p_minimum, my pitchTierArea -> p_maximum);
 	}
-	if (pitch) {
-		ifirstSelected = AnyTier_timeToHighIndex (pitch->asAnyTier(), my startSelection);
-		ilastSelected = AnyTier_timeToLowIndex (pitch->asAnyTier(), my endSelection);
-		imin = AnyTier_timeToHighIndex (pitch->asAnyTier(), my startWindow);
-		imax = AnyTier_timeToLowIndex (pitch->asAnyTier(), my endWindow);
-	}
-	Graphics_setLineWidth (my graphics.get(), 2.0);
-	if (n == 0) {
-		Graphics_setTextAlignment (my graphics.get(), Graphics_CENTRE, Graphics_HALF);
-		Graphics_setColour (my graphics.get(), Melder_BLACK);
-		Graphics_text (my graphics.get(), 0.5 * (my startWindow + my endWindow), 0.5 * (my p_pitch_minimum + my p_pitch_maximum), U"(no pitch points)");
-	} else if (imax < imin) {
-		double fleft = YLIN (RealTier_getValueAtTime (pitch, my startWindow));
-		double fright = YLIN (RealTier_getValueAtTime (pitch, my endWindow));
-		Graphics_setColour (my graphics.get(), Melder_GREEN);
-		Graphics_line (my graphics.get(), my startWindow, fleft, my endWindow, fright);
-	} else {
-		for (i = imin; i <= imax; i ++) {
-			RealPoint point = pitch -> points.at [i];
-			double t = point -> number, f = YLIN (point -> value);
-			Graphics_setColour (my graphics.get(), Melder_GREEN);
-			if (i == 1)
-				Graphics_line (my graphics.get(), my startWindow, f, t, f);
-			else if (i == imin)
-				Graphics_line (my graphics.get(), t, f, my startWindow, YLIN (RealTier_getValueAtTime (pitch, my startWindow)));
-			if (i == n)
-				Graphics_line (my graphics.get(), t, f, my endWindow, f);
-			else if (i == imax)
-				Graphics_line (my graphics.get(), t, f, my endWindow, YLIN (RealTier_getValueAtTime (pitch, my endWindow)));
-			else {
-				RealPoint pointRight = pitch -> points.at [i + 1];
-				Graphics_line (my graphics.get(), t, f, pointRight -> number, YLIN (pointRight -> value));
-			}
-		}
-		for (i = imin; i <= imax; i ++) {
-			RealPoint point = pitch -> points.at [i];
-			double t = point -> number, f = YLIN (point -> value);
-			if (i >= ifirstSelected && i <= ilastSelected)
-				Graphics_setColour (my graphics.get(), Melder_RED);
-			else
-				Graphics_setColour (my graphics.get(), Melder_GREEN);
-			Graphics_fillCircle_mm (my graphics.get(), t, f, 3.0);
-		}
-	}
-	Graphics_setLineWidth (my graphics.get(), 1.0);
+	RealTierArea_draw (my pitchTierArea.get(), my pitch().get());
+	if (isdefined (my pitchTierArea -> anchorTime))
+		RealTierArea_drawWhileDragging (my pitchTierArea.get(), my pitch().get());
 
 	Graphics_setColour (my graphics.get(), Melder_BLACK);
-	Graphics_resetViewport (my graphics.get(), viewport);
 }
 
-static void drawDurationArea (ManipulationEditor me, double ymin, double ymax) {
-	Manipulation ana = (Manipulation) my data;
-	DurationTier duration = ana -> duration.get();
-	integer ifirstSelected, ilastSelected, n = duration ? duration -> points.size : 0, imin, imax, i;
-	int cursorVisible = my startSelection == my endSelection && my startSelection >= my startWindow && my startSelection <= my endWindow;
+static void drawDurationArea (ManipulationEditor me) {
+	DurationTier duration = my manipulation() -> duration.get();
+	const bool cursorVisible = ( my startSelection == my endSelection && my startSelection >= my startWindow && my startSelection <= my endWindow );
 
-	/*
-	 * Duration contours.
-	 */
-	Graphics_Viewport viewport = Graphics_insetViewport (my graphics.get(), 0.0, 1.0, ymin, ymax);
+	my durationTierArea -> setViewport();
+
 	Graphics_setWindow (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
 	Graphics_setColour (my graphics.get(), Melder_WHITE);
 	Graphics_fillRectangle (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
 	Graphics_setColour (my graphics.get(), Melder_BLACK);
 	Graphics_rectangle (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
-	Graphics_setColour (my graphics.get(), Melder_GREEN);
+
+	Graphics_setColour (my graphics.get(), Melder_BLUE);
 	Graphics_setFont (my graphics.get(), kGraphics_font::TIMES);
 	Graphics_setTextAlignment (my graphics.get(), Graphics_RIGHT, Graphics_TOP);
 	Graphics_text (my graphics.get(), 1.0, 1.0, U"%%Duration manip");
 	Graphics_setFont (my graphics.get(), kGraphics_font::HELVETICA);
 
-	Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, my p_duration_minimum, my p_duration_maximum);
+	Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, my durationTierArea -> p_minimum, my durationTierArea -> p_maximum);
 	FunctionEditor_drawGridLine (me, 1.0);
-	FunctionEditor_drawRangeMark (me, my p_duration_maximum, Melder_fixed (my p_duration_maximum, 3), U"", Graphics_TOP);
-	FunctionEditor_drawRangeMark (me, my p_duration_minimum, Melder_fixed (my p_duration_minimum, 3), U"", Graphics_BOTTOM);
-	if (my startSelection == my endSelection && my duration.cursor >= my p_duration_minimum && my duration.cursor <= my p_duration_maximum)
-		FunctionEditor_drawHorizontalHair (me, my duration.cursor, Melder_fixed (my duration.cursor, 3), U"");
-	if (cursorVisible && n > 0) {
-		double y = RealTier_getValueAtTime (duration, my startSelection);
-		FunctionEditor_insertCursorFunctionValue (me, y, Melder_fixed (y, 3), U"", my p_duration_minimum, my p_duration_maximum);
+	//FunctionEditor_drawRangeMark (me, my durationTierArea -> p_maximum, Melder_fixed (my durationTierArea -> p_maximum, 3), U"", Graphics_HALF);
+	//FunctionEditor_drawRangeMark (me, my durationTierArea -> p_minimum, Melder_fixed (my durationTierArea -> p_minimum, 3), U"", Graphics_HALF);
+	//if (my startSelection == my endSelection && my durationTierArea -> ycursor >= my durationTierArea -> p_minimum && my durationTierArea -> ycursor <= my durationTierArea -> p_maximum)
+	//	FunctionEditor_drawHorizontalHair (me, my durationTierArea -> ycursor, Melder_fixed (my durationTierArea -> ycursor, 3), U"");
+	if (cursorVisible && duration -> points.size > 0) {
+		const double y = RealTier_getValueAtTime (duration, my startSelection);
+		FunctionEditor_insertCursorFunctionValue (me, y, Melder_fixed (y, 3), U"", my durationTierArea -> p_minimum, my durationTierArea -> p_maximum);
 	}
 
-	/*
-	 * Draw duration tier.
-	 */
-	if (duration) {
-		ifirstSelected = AnyTier_timeToHighIndex (duration->asAnyTier(), my startSelection);
-		ilastSelected = AnyTier_timeToLowIndex (duration->asAnyTier(), my endSelection);
-		imin = AnyTier_timeToHighIndex (duration->asAnyTier(), my startWindow);
-		imax = AnyTier_timeToLowIndex (duration->asAnyTier(), my endWindow);
-	}
-	Graphics_setLineWidth (my graphics.get(), 2.0);
-	if (n == 0) {
-		Graphics_setColour (my graphics.get(), Melder_BLACK);
-		Graphics_setTextAlignment (my graphics.get(), Graphics_CENTRE, Graphics_HALF);
-		Graphics_text (my graphics.get(), 0.5 * (my startWindow + my endWindow),
-			0.5 * (my p_duration_minimum + my p_duration_maximum), U"(no duration points)");
-	} else if (imax < imin) {
-		double fleft = RealTier_getValueAtTime (duration, my startWindow);
-		double fright = RealTier_getValueAtTime (duration, my endWindow);
-		Graphics_setColour (my graphics.get(), Melder_GREEN);
-		Graphics_line (my graphics.get(), my startWindow, fleft, my endWindow, fright);
-	} else {
-		for (i = imin; i <= imax; i ++) {
-			RealPoint point = duration -> points.at [i];
-			double t = point -> number, dur = point -> value;
-			Graphics_setColour (my graphics.get(), Melder_GREEN);
-			if (i == 1)
-				Graphics_line (my graphics.get(), my startWindow, dur, t, dur);
-			else if (i == imin)
-				Graphics_line (my graphics.get(), t, dur, my startWindow, RealTier_getValueAtTime (duration, my startWindow));
-			if (i == n)
-				Graphics_line (my graphics.get(), t, dur, my endWindow, dur);
-			else if (i == imax)
-				Graphics_line (my graphics.get(), t, dur, my endWindow, RealTier_getValueAtTime (duration, my endWindow));
-			else {
-				RealPoint pointRight = duration -> points.at [i + 1];
-				Graphics_line (my graphics.get(), t, dur, pointRight -> number, pointRight -> value);
-			}
-		}
-		for (i = imin; i <= imax; i ++) {
-			RealPoint point = duration -> points.at [i];
-			double t = point -> number, dur = point -> value;
-			if (i >= ifirstSelected && i <= ilastSelected)
-				Graphics_setColour (my graphics.get(), Melder_RED);
-			else
-				Graphics_setColour (my graphics.get(), Melder_GREEN);
-			Graphics_fillCircle_mm (my graphics.get(), t, dur, 3.0);
-		}
-	}
+	Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, my durationTierArea -> p_minimum, my durationTierArea -> p_maximum);
+	RealTierArea_draw (my durationTierArea.get(), duration);
+	if (isdefined (my durationTierArea -> anchorTime))
+		RealTierArea_drawWhileDragging (my durationTierArea.get(), duration);
 
 	Graphics_setLineWidth (my graphics.get(), 1.0);
 	Graphics_setColour (my graphics.get(), Melder_BLACK);
-	Graphics_resetViewport (my graphics.get(), viewport);
 }
 
 void structManipulationEditor :: v_draw () {
 	double ysoundmin, ysoundmax;
-	double ypitchmin, ypitchmax, ydurationmin, ydurationmax;
-	int hasSoundArea = getSoundArea (this, & ysoundmin, & ysoundmax);
-	int hasPitchArea = getPitchArea (this, & ypitchmin, & ypitchmax);
-	int hasDurationArea = getDurationArea (this, & ydurationmin, & ydurationmax);
-
-	if (hasSoundArea) drawSoundArea (this, ysoundmin, ysoundmax);
-	if (hasPitchArea) drawPitchArea (this, ypitchmin, ypitchmax);
-	if (hasDurationArea) drawDurationArea (this, ydurationmin, ydurationmax);
-
-	Graphics_setWindow (our graphics.get(), 0.0, 1.0, 0.0, 1.0);
-	Graphics_setGrey (our graphics.get(), 0.85);
-	Graphics_fillRectangle (our graphics.get(), -0.001, 1.001, ypitchmax, ysoundmin);
-	Graphics_setGrey (our graphics.get(), 0.00);
-	Graphics_line (our graphics.get(), 0.0, ysoundmin, 1.0, ysoundmin);
-	Graphics_line (our graphics.get(), 0.0, ypitchmax, 1.0, ypitchmax);
-	if (hasDurationArea) {
-		Graphics_setGrey (our graphics.get(), 0.85);
-		Graphics_fillRectangle (our graphics.get(), -0.001, 1.001, ydurationmax, ypitchmin);
-		Graphics_setGrey (our graphics.get(), 0.00);
-		Graphics_line (our graphics.get(), 0, ypitchmin, 1, ypitchmin);
-		Graphics_line (our graphics.get(), 0, ydurationmax, 1, ydurationmax);
-	}
+	(void) getSoundArea (this, & ysoundmin, & ysoundmax);
+	if (our sound())
+		drawSoundArea (this, ysoundmin, ysoundmax);
+	if (our pitch())
+		drawPitchArea (this);
+	if (our duration())
+		drawDurationArea (this);
 	updateMenus (this);
 }
 
-static void drawWhileDragging (ManipulationEditor me, double xWC, double yWC, integer first, integer last, double dt, double df) {
-	Manipulation ana = (Manipulation) my data;
-	PitchTier pitch = ana -> pitch.get();
-	(void) xWC;
-	(void) yWC;
-
-	/*
-	 * Draw all selected pitch points as magenta empty circles, if inside the window.
-	 */
-	for (integer i = first; i <= last; i ++) {
-		RealPoint point = pitch -> points.at [i];
-		double t = point -> number + dt, f = YLIN (point -> value) + df;
-		if (t >= my startWindow && t <= my endWindow)
-			Graphics_circle_mm (my graphics.get(), t,
-				f < my pitchTier.minPeriodic ? my pitchTier.minPeriodic : f > my p_pitch_maximum ? my p_pitch_maximum : f, 3.0);
+bool structManipulationEditor :: v_mouseInWideDataView (GuiDrawingArea_MouseEvent event, double x_world, double globalY_fraction) {
+	static bool clickedInWidePitchArea = false;
+	static bool clickedInWideDurationArea = false;
+	if (event -> isClick()) {
+		clickedInWidePitchArea = our pitchTierArea -> y_fraction_globalIsInside (globalY_fraction);
+		clickedInWideDurationArea = our durationTierArea -> y_fraction_globalIsInside (globalY_fraction);
 	}
-
-	if (last == first) {
-		/*
-		 * Draw a crosshair with time and frequency.
-		 */
-		RealPoint point = pitch -> points.at [first];
-		double t = point -> number + dt, fWC = YLIN (point -> value) + df;
-		Graphics_line (my graphics.get(), t, my p_pitch_minimum, t, my p_pitch_maximum - Graphics_dyMMtoWC (my graphics.get(), 4.0));
-		Graphics_setTextAlignment (my graphics.get(), Graphics_CENTRE, Graphics_TOP);
-		Graphics_text (my graphics.get(), t, my p_pitch_maximum, Melder_fixed (t, 6));
-		Graphics_line (my graphics.get(), my startWindow, fWC, my endWindow, fWC);
-		Graphics_setTextAlignment (my graphics.get(), Graphics_LEFT, Graphics_BOTTOM);
-		Graphics_text (my graphics.get(), my startWindow, fWC, Melder_fixed (fWC, 5));
-	}
-}
-
-static bool clickPitch (ManipulationEditor me, double xWC, double yWC, bool shiftKeyPressed) {
-	Manipulation ana = (Manipulation) my data;
-	PitchTier pitch = ana -> pitch.get();
-	integer inearestPoint, ifirstSelected, ilastSelected, i;
-	RealPoint nearestPoint;
-	double dt = 0, df = 0;
-	int draggingSelection, dragHorizontal, dragVertical;
-
-	my pitchTier.cursor = my p_pitch_minimum + yWC * (my p_pitch_maximum - my p_pitch_minimum);
-	if (! pitch) {
-		Graphics_resetViewport (my graphics.get(), my inset);
-		return my ManipulationEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);
-	}
-	Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, my p_pitch_minimum, my p_pitch_maximum);
-	yWC = my pitchTier.cursor;
-
-	/*
-	 * Clicked on a pitch point?
-	 */
-	inearestPoint = AnyTier_timeToNearestIndex (pitch->asAnyTier(), xWC);
-	if (inearestPoint == 0) {
-		Graphics_resetViewport (my graphics.get(), my inset);
-		return my ManipulationEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);
-	}
-	nearestPoint = pitch -> points.at [inearestPoint];
-	if (Graphics_distanceWCtoMM (my graphics.get(), xWC, yWC, nearestPoint -> number, YLIN (nearestPoint -> value)) > 1.5) {
-		Graphics_resetViewport (my graphics.get(), my inset);
-		return my ManipulationEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);
-	}
-
-	/*
-	 * Clicked on a selected pitch point?
-	 */
-	draggingSelection = shiftKeyPressed &&
-		nearestPoint -> number > my startSelection && nearestPoint -> number < my endSelection;
-	if (draggingSelection) {
-		ifirstSelected = AnyTier_timeToHighIndex (pitch->asAnyTier(), my startSelection);
-		ilastSelected = AnyTier_timeToLowIndex (pitch->asAnyTier(), my endSelection);
-		Editor_save (me, U"Drag pitch points");
+	bool result = false;
+	if (clickedInWidePitchArea) {
+		our pitchTierArea -> setViewport ();
+		result = RealTierArea_mouse (our pitchTierArea.get(), our manipulation() -> pitch.get(), event, x_world, globalY_fraction);
+		our pitchTierArea -> p_minimum = our pitchTierArea -> ymin;
+		our pitchTierArea -> p_maximum = our pitchTierArea -> ymax;
+	} else if (clickedInWideDurationArea) {
+		our durationTierArea -> setViewport ();
+		result = RealTierArea_mouse (our durationTierArea.get(), our manipulation() -> duration.get(), event, x_world, globalY_fraction);
+		our durationTierArea -> p_minimum = our durationTierArea -> ymin;
+		our durationTierArea -> p_maximum = our durationTierArea -> ymax;
 	} else {
-		ifirstSelected = ilastSelected = inearestPoint;
-		Editor_save (me, U"Drag pitch point");
+		result = our ManipulationEditor_Parent :: v_mouseInWideDataView (event, x_world, globalY_fraction);
 	}
-
-	/*
-	 * Drag.
-	 */
-	 /*
-	  * Draw at the old location once.
-	  * Since some systems do double buffering,
-	  * the undrawing at the old position and redrawing at the new have to be bracketed by Graphics_mouseStillDown ().
-	  */
-	Graphics_xorOn (my graphics.get(), Melder_MAROON);
-	drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
-	dragHorizontal = my p_pitch_draggingStrategy != kManipulationEditor_draggingStrategy::VERTICAL &&
-		(! shiftKeyPressed || my p_pitch_draggingStrategy != kManipulationEditor_draggingStrategy::HYBRID);
-	dragVertical = my p_pitch_draggingStrategy != kManipulationEditor_draggingStrategy::HORIZONTAL;
-	while (Graphics_mouseStillDown (my graphics.get())) {
-		double xWC_new, yWC_new;
-		Graphics_getMouseLocation (my graphics.get(), & xWC_new, & yWC_new);
-		if (xWC_new != xWC || yWC_new != yWC) {
-			drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
-			if (dragHorizontal)
-				dt += xWC_new - xWC;
-			if (dragVertical)
-				df += yWC_new - yWC;
-			xWC = xWC_new;
-			yWC = yWC_new;
-			drawWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
-		}
+	if (event -> isDrop()) {
+		clickedInWidePitchArea = false;
+		clickedInWideDurationArea = false;
 	}
-	Graphics_xorOff (my graphics.get());
-
-	/*
-	 * Dragged inside window?
-	 */
-	if (xWC < my startWindow || xWC > my endWindow)
-		return 1;
-
-	/*
-	 * Points not dragged past neighbours?
-	 */
-	{
-		double newTime = pitch -> points.at [ifirstSelected] -> number + dt;
-		if (newTime < my tmin) return 1;   // outside domain
-		if (ifirstSelected > 1 && newTime <= pitch -> points.at [ifirstSelected - 1] -> number)
-			return 1;   /* Past left neighbour. */
-		newTime = pitch -> points.at [ilastSelected] -> number + dt;
-		if (newTime > my tmax) return 1;   // outside domain
-		if (ilastSelected < pitch -> points.size && newTime >= pitch -> points.at [ilastSelected + 1] -> number)
-			return FunctionEditor_UPDATE_NEEDED;   // past right neighbour
-	}
-
-	/*
-	 * Drop.
-	 */
-	for (i = ifirstSelected; i <= ilastSelected; i ++) {
-		RealPoint point = pitch -> points.at [i];
-		point -> number += dt;
-		point -> value = YLININV (YLIN (point -> value) + df);
-		if (point -> value < 50.0)
-			point -> value = 50.0;
-		if (point -> value > YLININV (my p_pitch_maximum))
-			point -> value = YLININV (my p_pitch_maximum);
-	}
-
-	/*
-	 * Make sure that the same pitch points are still selected (a problem with Undo...).
-	 */
-
-	if (draggingSelection) {
-		my startSelection += dt;
-		my endSelection += dt;
-	}
-	if (my startSelection == my endSelection) {
-		RealPoint point = pitch -> points.at [ifirstSelected];
-		my startSelection = my endSelection = point -> number;
-		my pitchTier.cursor = YLIN (point -> value);
-	}
-
-	Editor_broadcastDataChanged (me);
-	return FunctionEditor_UPDATE_NEEDED;
+	return result;
 }
 
-static void drawDurationWhileDragging (ManipulationEditor me, double /* xWC */, double /* yWC */, integer first, integer last, double dt, double df) {
-	Manipulation ana = (Manipulation) my data;
-	DurationTier duration = ana -> duration.get();
-
-	/*
-	 * Draw all selected duration points as magenta empty circles, if inside the window.
-	 */
-	for (integer i = first; i <= last; i ++) {
-		RealPoint point = duration -> points.at [i];
-		double t = point -> number + dt, dur = point -> value + df;
-		if (t >= my startWindow && t <= my endWindow)
-			Graphics_circle_mm (my graphics.get(), t, dur < my p_duration_minimum ? my p_duration_minimum :
-				dur > my p_duration_maximum ? my p_duration_maximum : dur, 3.0);
-	}
-
-	if (last == first) {
-		/*
-		 * Draw a crosshair with time and duration.
-		 */
-		RealPoint point = duration -> points.at [first];
-		double t = point -> number + dt, durWC = point -> value + df;
-		Graphics_line (my graphics.get(), t, my p_duration_minimum, t, my p_duration_maximum - Graphics_dyMMtoWC (my graphics.get(), 4.0));
-		Graphics_setTextAlignment (my graphics.get(), Graphics_CENTRE, Graphics_TOP);
-		Graphics_text (my graphics.get(), t, my p_duration_maximum, Melder_fixed (t, 6));
-		Graphics_line (my graphics.get(), my startWindow, durWC, my endWindow, durWC);
-		Graphics_setTextAlignment (my graphics.get(), Graphics_LEFT, Graphics_BOTTOM);
-		Graphics_text (my graphics.get(), my startWindow, durWC, Melder_fixed (durWC, 2));
-	}
-}
-
-static bool clickDuration (ManipulationEditor me, double xWC, double yWC, int shiftKeyPressed) {
-	Manipulation ana = (Manipulation) my data;
-	DurationTier duration = ana -> duration.get();
-	integer inearestPoint, ifirstSelected, ilastSelected;
-	RealPoint nearestPoint;
-	double dt = 0, df = 0;
-	int draggingSelection;
-
-	/*
-	 * Convert from FunctionEditor's [0, 1] coordinates to world coordinates.
-	 */
-	yWC = my p_duration_minimum + yWC * (my p_duration_maximum - my p_duration_minimum);
-
-	/*
-	 * Move horizontal hair to clicked position.
-	 */
-	my duration.cursor = yWC;
-
-	if (! duration) {
-		Graphics_resetViewport (my graphics.get(), my inset);
-		return my ManipulationEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);
-	}
-	Graphics_setWindow (my graphics.get(), my startWindow, my endWindow, my p_duration_minimum, my p_duration_maximum);
-
-	/*
-	 * Clicked on a duration point?
-	 */
-	inearestPoint = AnyTier_timeToNearestIndex (duration->asAnyTier(), xWC);
-	if (inearestPoint == 0) {
-		Graphics_resetViewport (my graphics.get(), my inset);
-		return my ManipulationEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);
-	}
-	nearestPoint = duration -> points.at [inearestPoint];
-	if (Graphics_distanceWCtoMM (my graphics.get(), xWC, yWC, nearestPoint -> number, nearestPoint -> value) > 1.5) {
-		Graphics_resetViewport (my graphics.get(), my inset);
-		return my ManipulationEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);
-	}
-
-	/*
-	 * Clicked on a selected duration point?
-	 */
-	draggingSelection = shiftKeyPressed &&
-		nearestPoint -> number > my startSelection && nearestPoint -> number < my endSelection;
-	if (draggingSelection) {
-		ifirstSelected = AnyTier_timeToHighIndex (duration->asAnyTier(), my startSelection);
-		ilastSelected = AnyTier_timeToLowIndex (duration->asAnyTier(), my endSelection);
-		Editor_save (me, U"Drag duration points");
+void structManipulationEditor :: v_play (double startTime, double endTime) {
+	if (our clickWasModifiedByShiftKey) {
+		if (our manipulation() -> sound)
+			Sound_playPart (our manipulation() -> sound.get(), startTime, endTime, theFunctionEditor_playCallback, this);
 	} else {
-		ifirstSelected = ilastSelected = inearestPoint;
-		Editor_save (me, U"Drag duration point");
-	}
-
-	/*
-	 * Drag.
-	 */
-	Graphics_xorOn (my graphics.get(), Melder_MAROON);
-	drawDurationWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
-	while (Graphics_mouseStillDown (my graphics.get())) {
-		double xWC_new, yWC_new;
-		Graphics_getMouseLocation (my graphics.get(), & xWC_new, & yWC_new);
-		if (xWC_new != xWC || yWC_new != yWC) {
-			drawDurationWhileDragging (me, xWC, yWC, ifirstSelected, ilastSelected, dt, df);
-			dt += xWC_new - xWC, xWC = xWC_new;
-			df += yWC_new - yWC, yWC = yWC_new;
-			drawDurationWhileDragging (me, xWC_new, yWC_new, ifirstSelected, ilastSelected, dt, df);
-		}
-	}
-	Graphics_xorOff (my graphics.get());
-
-	/*
-	 * Dragged inside window?
-	 */
-	if (xWC < my startWindow || xWC > my endWindow) return 1;
-
-	/*
-	 * Points not dragged past neighbours?
-	 */
-	{
-		double newTime = duration -> points.at [ifirstSelected] -> number + dt;
-		if (newTime < my tmin) return 1;   // outside domain
-		if (ifirstSelected > 1 && newTime <= duration -> points.at [ifirstSelected - 1] -> number)
-			return 1;   /* Past left neighbour. */
-		newTime = duration -> points.at [ilastSelected] -> number + dt;
-		if (newTime > my tmax) return 1;   // outside domain
-		if (ilastSelected < duration -> points.size && newTime >= duration -> points.at [ilastSelected + 1] -> number)
-			return 1;   // past right neighbour
-	}
-
-	/*
-	 * Drop.
-	 */
-	for (integer i = ifirstSelected; i <= ilastSelected; i ++) {
-		RealPoint point = duration -> points.at [i];
-		point -> number += dt;
-		point -> value += df;
-		if (point -> value < my p_duration_minimum) point -> value = my p_duration_minimum;
-		if (point -> value > my p_duration_maximum) point -> value = my p_duration_maximum;
-	}
-
-	/*
-	 * Make sure that the same duration points are still selected (a problem with Undo...).
-	 */
-
-	if (draggingSelection) my startSelection += dt, my endSelection += dt;
-	if (my startSelection == my endSelection) {
-		RealPoint point = duration -> points.at [ifirstSelected];
-		my startSelection = my endSelection = point -> number;
-		my duration.cursor = point -> value;
-	}
-
-	Editor_broadcastDataChanged (me);
-	return FunctionEditor_UPDATE_NEEDED;
-}
-
-bool structManipulationEditor :: v_click (double xWC, double yWC, bool shiftKeyPressed) {
-	double ypitchmin, ypitchmax, ydurationmin, ydurationmax;
-	int hasPitchArea = getPitchArea (this, & ypitchmin, & ypitchmax);
-	int hasDurationArea = getDurationArea (this, & ydurationmin, & ydurationmax);
-
-	/*
-	 * Dispatch click to clicked area.
-	 */
-	if (hasPitchArea && yWC > ypitchmin && yWC < ypitchmax) {   // clicked in pitch area?
-		inset = Graphics_insetViewport (our graphics.get(), 0.0, 1.0, ypitchmin, ypitchmax);
-		return clickPitch (this, xWC, (yWC - ypitchmin) / (ypitchmax - ypitchmin), shiftKeyPressed);
-	} else if (hasDurationArea && yWC > ydurationmin && yWC < ydurationmax) {   // clicked in duration area?
-		inset = Graphics_insetViewport (our graphics.get(), 0.0, 1.0, ydurationmin, ydurationmax);
-		return clickDuration (this, xWC, (yWC - ydurationmin) / (ydurationmax - ydurationmin), shiftKeyPressed);
-	}
-	/*
-	 * Perform the default action: move cursor or drag selection.
-	 */
-	return our ManipulationEditor_Parent :: v_click (xWC, yWC, shiftKeyPressed);
-}
-
-void structManipulationEditor :: v_play (double a_tmin, double a_tmax) {
-	Manipulation ana = (Manipulation) our data;
-	if (our shiftKeyPressed) {
-		if (ana -> sound)
-			Sound_playPart (ana -> sound.get(), a_tmin, a_tmax, theFunctionEditor_playCallback, this);
-	} else {
-		Manipulation_playPart (ana, a_tmin, a_tmax, our synthesisMethod);
+		Manipulation_playPart (our manipulation(), startTime, endTime, our synthesisMethod);
 	}
 }
 
-autoManipulationEditor ManipulationEditor_create (conststring32 title, Manipulation ana) {
+autoManipulationEditor ManipulationEditor_create (conststring32 title, Manipulation manipulation) {
 	try {
 		autoManipulationEditor me = Thing_new (ManipulationEditor);
-		FunctionEditor_init (me.get(), title, ana);
+		FunctionEditor_init (me.get(), title, manipulation);
+		my pitchTierArea = PitchTierArea_create (me.get(), ( manipulation -> duration ? 0.17 : 0.0 ), 0.67);
+		if (manipulation -> duration) {
+			my durationTierArea = DurationTierArea_create (me.get(), 0.0, 0.17);
+		}
 
-		double maximumPitchValue = RealTier_getMaximumValue (ana -> pitch.get());
-		if (my p_pitch_units == kManipulationEditor_pitchUnits::HERTZ) {
-			my p_pitch_minimum = 25.0;
+		const double maximumPitchValue = RealTier_getMaximumValue (manipulation -> pitch.get());
+		if (my pitchTierArea -> p_units == kPitchTierArea_units::HERTZ) {
+			my pitchTierArea -> ymin = my pitchTierArea -> p_minimum = 25.0;
 			my pitchTier.minPeriodic = 50.0;
-			my p_pitch_maximum = maximumPitchValue;
-			my pitchTier.cursor = my p_pitch_maximum * 0.8;
-			my p_pitch_maximum *= 1.2;
-		} else {
-			my p_pitch_minimum = -24.0;
+			my pitchTierArea -> p_maximum = maximumPitchValue;
+			my pitchTierArea -> ycursor = my pitchTierArea -> p_maximum * 0.8;
+			my pitchTierArea -> ymax = my pitchTierArea -> p_maximum *= 1.2;
+		} else if (my pitchTierArea -> p_units == kPitchTierArea_units::SEMITONES) {
+			my pitchTierArea -> ymin = my pitchTierArea -> p_minimum = -24.0;
 			my pitchTier.minPeriodic = -12.0;
-			my p_pitch_maximum = ( isdefined (maximumPitchValue) ? NUMhertzToSemitones (maximumPitchValue) : undefined );
-			my pitchTier.cursor = my p_pitch_maximum - 4.0;
-			my p_pitch_maximum += 3.0;
-		}
-		if (isundef (my p_pitch_maximum) || my p_pitch_maximum < my pref_pitch_maximum ())
-			my p_pitch_maximum = my pref_pitch_maximum ();
+			my pitchTierArea -> p_maximum = ( isdefined (maximumPitchValue) ? NUMhertzToSemitones (maximumPitchValue) : undefined );
+			my pitchTierArea -> ycursor = my pitchTierArea -> p_maximum - 4.0;
+			my pitchTierArea -> ymax = my pitchTierArea -> p_maximum *= 3.0;
+		} else
+			Melder_fatal (U"ManipulationEditor_create: Unknown pitch units: ", (int) my pitchTierArea -> p_units);
+		if (isundef (my pitchTierArea -> p_maximum) || my pitchTierArea -> p_maximum < my pitchTierArea -> pref_maximum())
+			my pitchTierArea -> ymax = my pitchTierArea -> p_maximum = my pitchTierArea -> pref_maximum();
 
-		double minimumDurationValue = ( ana -> duration ? RealTier_getMinimumValue (ana -> duration.get()) : undefined );
-		my p_duration_minimum = ( isdefined (minimumDurationValue) ? minimumDurationValue : 1.0 );
-		if (my pref_duration_minimum () > 1)
-			my pref_duration_minimum () = Melder_atof (my default_duration_minimum ());
-		if (my p_duration_minimum > my pref_duration_minimum ())
-			my p_duration_minimum = my pref_duration_minimum ();
-		double maximumDurationValue = ( ana -> duration ? RealTier_getMaximumValue (ana -> duration.get()) : undefined );
-		my p_duration_maximum = ( isdefined (maximumDurationValue) ? maximumDurationValue : 1.0 );
-		if (my pref_duration_maximum () < 1)
-			my pref_duration_maximum () = Melder_atof (my default_duration_maximum ());
-		if (my pref_duration_maximum () <= my pref_duration_minimum ()) {
-			my pref_duration_minimum () = Melder_atof (my default_duration_minimum ());
-			my pref_duration_maximum () = Melder_atof (my default_duration_maximum ());
-		}
-		if (my p_duration_maximum < my pref_duration_maximum ())
-			my p_duration_maximum = my pref_duration_maximum ();
-		my duration.cursor = 1.0;
+		/*
+			If needed, fix preferences to sane values.
+		*/
+		if (my durationTierArea -> pref_minimum() > 1.0)
+			my durationTierArea -> pref_minimum() = Melder_atof (my durationTierArea -> default_minimum());   // sanity
+		if (my durationTierArea -> pref_maximum() < 1.0)
+			my durationTierArea -> pref_maximum() = Melder_atof (my durationTierArea -> default_maximum());
+		Melder_assert (my durationTierArea -> pref_minimum() < my durationTierArea -> pref_maximum());
+		/*
+			Honour preferences.
+		*/
+		my durationTierArea -> ymin = my durationTierArea -> p_minimum = my durationTierArea -> pref_minimum();
+		my durationTierArea -> ymax = my durationTierArea -> p_maximum = my durationTierArea -> pref_maximum();
+		/*
+			If needed, widen on the basis of the data.
+		*/
+		const double minimumDurationValue = ( manipulation -> duration ? RealTier_getMinimumValue (manipulation -> duration.get()) : undefined );
+		const double maximumDurationValue = ( manipulation -> duration ? RealTier_getMaximumValue (manipulation -> duration.get()) : undefined );
+		if (minimumDurationValue < my durationTierArea -> p_minimum)   // NaN-safe
+			my durationTierArea -> ymin = my durationTierArea -> p_minimum = minimumDurationValue / 1.25;
+		if (maximumDurationValue > my durationTierArea -> p_maximum)   // NaN-safe
+			my durationTierArea -> ymax = my durationTierArea -> p_maximum = minimumDurationValue * 1.25;
+
+		my durationTierArea -> ycursor = 1.0;
 
 		my synthesisMethod = prefs_synthesisMethod;
-		if (ana -> sound)
-			Matrix_getWindowExtrema (ana -> sound.get(), 0, 0, 0, 0, & my soundmin, & my soundmax);
-		if (my soundmin == my soundmax) my soundmin = -1.0, my soundmax = +1.0;
+		if (manipulation -> sound)
+			Matrix_getWindowExtrema (manipulation -> sound.get(), 0, 0, 0, 0, & my soundmin, & my soundmax);
+		if (my soundmin == my soundmax) {
+			my soundmin = -1.0;
+			my soundmax = +1.0;
+		}
+		RealTierArea_updateScaling (my pitchTierArea.get(), manipulation -> pitch.get());
+		if (manipulation -> duration) {
+			RealTierArea_updateScaling (my durationTierArea.get(), manipulation -> duration.get());
+			my durationTierArea -> p_minimum = my durationTierArea -> ymin;
+			my durationTierArea -> p_maximum = my durationTierArea -> ymax;
+		}
 		updateMenus (me.get());
 		return me;
 	} catch (MelderError) {

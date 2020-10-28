@@ -148,7 +148,7 @@ enum { NO_SYMBOL_,
 		CHOOSE_READ_FILESTR_, CHOOSE_WRITE_FILESTR_, CHOOSE_DIRECTORYSTR_,
 		DEMO_WINDOW_TITLE_, DEMO_SHOW_, DEMO_WAIT_FOR_INPUT_, DEMO_PEEK_INPUT_, DEMO_INPUT_, DEMO_CLICKED_IN_,
 		DEMO_CLICKED_, DEMO_X_, DEMO_Y_, DEMO_KEY_PRESSED_, DEMO_KEY_,
-		DEMO_SHIFT_KEY_PRESSED_, DEMO_COMMAND_KEY_PRESSED_, DEMO_OPTION_KEY_PRESSED_, DEMO_EXTRA_CONTROL_KEY_PRESSED_,
+		DEMO_SHIFT_KEY_PRESSED_, DEMO_COMMAND_KEY_PRESSED_, DEMO_OPTION_KEY_PRESSED_,
 		VEC_ZERO_, MAT_ZERO_,
 		VEC_LINEAR_, MAT_LINEAR_, VEC_TO_, VEC_FROM_TO_, VEC_FROM_TO_BY_, VEC_BETWEEN_BY_,
 		VEC_RANDOM_UNIFORM_, MAT_RANDOM_UNIFORM_,
@@ -159,8 +159,8 @@ enum { NO_SYMBOL_,
 		MAT_PEAKS_,
 		SIZE_, NUMBER_OF_ROWS_, NUMBER_OF_COLUMNS_, EDITOR_,
 		RANDOM__INITIALIZE_WITH_SEED_UNSAFELY_BUT_PREDICTABLY_, RANDOM__INITIALIZE_SAFELY_AND_UNPREDICTABLY_,
-		HASH_,
-	#define HIGH_FUNCTION_N  HASH_
+		HASH_, HEXSTR_, UNHEXSTR_,
+	#define HIGH_FUNCTION_N  UNHEXSTR_
 
 	/* String functions. */
 	#define LOW_STRING_FUNCTION  LOW_FUNCTION_STR1
@@ -274,7 +274,7 @@ static const conststring32 Formula_instructionNames [1 + highestSymbol] = { U"",
 	U"chooseReadFile$", U"chooseWriteFile$", U"chooseDirectory$",
 	U"demoWindowTitle", U"demoShow", U"demoWaitForInput", U"demoPeekInput", U"demoInput", U"demoClickedIn",
 	U"demoClicked", U"demoX", U"demoY", U"demoKeyPressed", U"demoKey$",
-	U"demoShiftKeyPressed", U"demoCommandKeyPressed", U"demoOptionKeyPressed", U"demoExtraControlKeyPressed",
+	U"demoShiftKeyPressed", U"demoCommandKeyPressed", U"demoOptionKeyPressed",
 	U"zero#", U"zero##",
 	U"linear#", U"linear##", U"to#", U"from_to#", U"from_to_by#", U"between_by#",
 	U"randomUniform#", U"randomUniform##",
@@ -284,7 +284,7 @@ static const conststring32 Formula_instructionNames [1 + highestSymbol] = { U"",
 	U"peaks##",
 	U"size", U"numberOfRows", U"numberOfColumns", U"editor",
 	U"random_initializeWithSeedUnsafelyButPredictably", U"random_initializeSafelyAndUnpredictably",
-	U"hash",
+	U"hash", U"hex$", U"unhex$",
 
 	U"length", U"number", U"fileReadable",	U"deleteFile", U"createDirectory", U"variableExists",
 	U"readFile", U"readFile$", U"unicodeToBackslashTrigraphs$", U"backslashTrigraphsToUnicode$", U"environment$",
@@ -4562,6 +4562,54 @@ static void do_hash () {
 	}
 }
 
+static void do_hexStr () {
+	Stackel n = pop;
+	Melder_assert (n->which == Stackel_NUMBER);
+	if (n->number == 1) {
+		Stackel s = pop;
+		if (s->which == Stackel_STRING) {
+			autostring32 result = newSTRhex (s->getString());
+			pushString (result.move());
+		} else {
+			Melder_throw (U"The function \"hex$\" requires a string, not ", s->whichText(), U".");
+		}
+	} else if (n->number == 2) {
+		Stackel k = pop, s = pop;
+		if (s->which == Stackel_STRING && k->which == Stackel_NUMBER) {
+			autostring32 result = newSTRhex (s->getString(), uint64 (round (k->number)));
+			pushString (result.move());
+		} else {
+			Melder_throw (U"The function \"hex$\" requires a string and a number, not ", s->whichText(), U".");
+		}
+	} else {
+		Melder_throw (U"The function \"hex$\" requires 1 or 2 arguments, not ", n->number, U".");
+	}
+}
+
+static void do_unhexStr () {
+	Stackel n = pop;
+	Melder_assert (n->which == Stackel_NUMBER);
+	if (n->number == 1) {
+		Stackel s = pop;
+		if (s->which == Stackel_STRING) {
+			autostring32 result = newSTRunhex (s->getString());
+			pushString (result.move());
+		} else {
+			Melder_throw (U"The function \"unhex$\" requires a string, not ", s->whichText(), U".");
+		}
+	} else if (n->number == 2) {
+		Stackel k = pop, s = pop;
+		if (s->which == Stackel_STRING && k->which == Stackel_NUMBER) {
+			autostring32 result = newSTRunhex (s->getString(), uint64 (round (k->number)));
+			pushString (result.move());
+		} else {
+			Melder_throw (U"The function \"unhex$\" requires a string and a number, not ", s->whichText(), U".");
+		}
+	} else {
+		Melder_throw (U"The function \"unhex$\" requires 1 or 2 arguments, not ", n->number, U".");
+	}
+}
+
 static void do_numericVectorElement () {
 	InterpreterVariable vector = parse [programPointer]. content.variable;
 	integer element = 1;   // default
@@ -5992,19 +6040,22 @@ static void do_pauseFormAddText () {
 	if (theCurrentPraatObjects != & theForegroundPraatObjects)
 		Melder_throw (U"The function \"text\" is not available inside manuals.");
 	Stackel n = pop;
-	if (n->number == 2) {
-		Stackel defaultValue = pop;
-		Melder_require (defaultValue->which == Stackel_STRING,
-			U"The second argument of \"text\" (the default value) should be a string, not ", defaultValue->whichText(), U".");
-		Stackel label = pop;
-		if (label->which == Stackel_STRING) {
-			UiPause_text (label->getString(), defaultValue->getString());
-		} else {
-			Melder_throw (U"The first argument of \"text\" (the label) should be a string, not ", label->whichText(), U".");
-		}
-	} else {
-		Melder_throw (U"The function \"text\" requires 2 arguments (a label and a default value), not ", n->number, U".");
+	Melder_require (n->number >= 2 && n->number <= 3,
+		U"The function \"text\" requires 2 or 3 arguments (a label, a default value, and an optional number of lines), not ", n->number, U".");
+	integer numberOfLines = 1;
+	if (n->number == 3) {
+		Stackel _numberOfLines = pop;
+		Melder_require (_numberOfLines->which == Stackel_NUMBER,
+			U"The third argument of \"text\" (the number of lines) should be a number, not ", _numberOfLines->whichText(), U".");
+		numberOfLines = Melder_iround (_numberOfLines->number);
 	}
+	Stackel defaultValue = pop;
+	Melder_require (defaultValue->which == Stackel_STRING,
+		U"The second argument of \"text\" (the default value) should be a string, not ", defaultValue->whichText(), U".");
+	Stackel label = pop;
+	Melder_require (label->which == Stackel_STRING,
+		U"The first argument of \"text\" (the label) should be a string, not ", label->whichText(), U".");
+	UiPause_text (label->getString(), defaultValue->getString(), numberOfLines);
 	pushNumber (1);
 }
 static void do_pauseFormAddBoolean () {
@@ -6113,14 +6164,16 @@ static void do_endPauseForm () {
 	if (ca->which == Stackel_NUMBER) {
 		cancelContinueButton = defaultContinueButton;
 		defaultContinueButton = Melder_iround (ca->number);
-		numberOfContinueButtons --;
-		if (cancelContinueButton < 1 || cancelContinueButton > numberOfContinueButtons)
+		numberOfContinueButtons -= 1;
+		if (cancelContinueButton < 0 || cancelContinueButton > numberOfContinueButtons)
 			Melder_throw (U"Your last argument of \"endPause\" is the number of the cancel button; it cannot be ", cancelContinueButton,
-				U" but should lie between 1 and ", numberOfContinueButtons, U".");
+				U" but should be 0 (no cancel or stop button) or lie between 1 and ", numberOfContinueButtons, U".");
+		if (cancelContinueButton == 0)
+			cancelContinueButton = -1;
 	}
 	Stackel co [1+10] = { 0 };
 	for (integer i = numberOfContinueButtons; i >= 1; i --) {
-		co [i] = cancelContinueButton != 0 || i != numberOfContinueButtons ? pop : ca;
+		co [i] = ( cancelContinueButton != 0 || i != numberOfContinueButtons ? pop : ca );
 		if (co[i]->which != Stackel_STRING)
 			Melder_throw (U"Each of the first ", numberOfContinueButtons,
 				U" argument(s) of \"endPause\" should be a string (a button text), not ", co[i]->whichText(), U".");
@@ -6304,13 +6357,6 @@ static void do_demoOptionKeyPressed () {
 	if (n->number != 0)
 		Melder_throw (U"The function \"demoOptionKeyPressed\" requires 0 arguments, not ", n->number, U".");
 	bool result = Demo_optionKeyPressed ();
-	pushNumber (result);
-}
-static void do_demoExtraControlKeyPressed () {
-	Stackel n = pop;
-	if (n->number != 0)
-		Melder_throw (U"The function \"demoControlKeyPressed\" requires 0 arguments, not ", n->number, U".");
-	bool result = Demo_extraControlKeyPressed ();
 	pushNumber (result);
 }
 static integer Stackel_getRowNumber (Stackel row, Daata thee) {
@@ -7055,6 +7101,8 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case RANDOM__INITIALIZE_WITH_SEED_UNSAFELY_BUT_PREDICTABLY_: { do_random_initializeWithSeedUnsafelyButPredictably ();
 } break; case RANDOM__INITIALIZE_SAFELY_AND_UNPREDICTABLY_: { do_random_initializeSafelyAndUnpredictably ();
 } break; case HASH_: { do_hash ();
+} break; case HEXSTR_: { do_hexStr ();
+} break; case UNHEXSTR_: { do_unhexStr ();
 /********** String functions: **********/
 } break; case LENGTH_: { do_length ();
 } break; case STRING_TO_NUMBER_: { do_number ();
@@ -7158,7 +7206,6 @@ case NUMBER_: { pushNumber (f [programPointer]. content.number);
 } break; case DEMO_SHIFT_KEY_PRESSED_: { do_demoShiftKeyPressed ();
 } break; case DEMO_COMMAND_KEY_PRESSED_: { do_demoCommandKeyPressed ();
 } break; case DEMO_OPTION_KEY_PRESSED_: { do_demoOptionKeyPressed ();
-} break; case DEMO_EXTRA_CONTROL_KEY_PRESSED_: { do_demoExtraControlKeyPressed ();
 /********** **********/
 } break; case TRUE_: {
 	pushNumber (1.0);

@@ -1,6 +1,6 @@
 /* Graphics_linesAndAreas.cpp
  *
- * Copyright (C) 1992-2005,2007-2019 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2005,2007-2020 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,17 +46,6 @@ static void psRevertLine (GraphicsPostscript me) {
 }
 
 #if cairo
-	#if ALLOW_GDK_DRAWING
-		static void gdkPrepareLine (GraphicsScreen me) {
-			gdk_gc_set_line_attributes (my d_gdkGraphicsContext, my lineWidth,
-				my lineType >= Graphics_DOTTED ? GDK_LINE_ON_OFF_DASH : GDK_LINE_SOLID, GDK_CAP_ROUND, GDK_JOIN_ROUND);
-		}
-		static void gdkRevertLine (GraphicsScreen me) {
-			if (my lineType >= Graphics_DOTTED) {
-				gdk_gc_set_line_attributes (my d_gdkGraphicsContext, my lineWidth, GDK_LINE_SOLID, GDK_CAP_ROUND, GDK_JOIN_ROUND);
-			}
-		}
-	#endif
 	static void cairoPrepareLine (GraphicsScreen me) {
 		if (! my d_cairoGraphicsContext) return;
 		double dotted_line [] { 2.0, 2.0 };
@@ -77,10 +66,10 @@ static void psRevertLine (GraphicsPostscript me) {
 		cairo_set_line_width (my d_cairoGraphicsContext, my lineWidth);
 	}
 	static void cairoRevertLine (GraphicsScreen me) {
-		if (! my d_cairoGraphicsContext) return;
-		if (my lineType >= Graphics_DOTTED) {
+		if (! my d_cairoGraphicsContext)
+			return;
+		if (my lineType >= Graphics_DOTTED)
 			cairo_set_dash (my d_cairoGraphicsContext, nullptr, 0, 0);
-		}
 		cairo_restore (my d_cairoGraphicsContext);
 	}
 #elif gdi
@@ -88,8 +77,7 @@ static void psRevertLine (GraphicsPostscript me) {
 	#define DEFAULT  SelectPen (d_gdiGraphicsContext, GetStockPen (BLACK_PEN)), SelectBrush (d_gdiGraphicsContext, GetStockBrush (NULL_BRUSH));
 	static void winPrepareLine (GraphicsScreen me) {
 		HPEN newPen;
-		int lineWidth_pixels = LINE_WIDTH_IN_PIXELS (me) + 0.5;
-		if (! lineWidth_pixels) lineWidth_pixels = 1;
+		const int lineWidth_pixels = Melder_clippedLeft (1, int (LINE_WIDTH_IN_PIXELS (me) + 0.5));
 		my d_fatNonSolid = my lineType != Graphics_DRAWN && lineWidth_pixels > 1;
 		if (Melder_debug == 10) {
 			LOGBRUSH brush;
@@ -120,13 +108,7 @@ static void psRevertLine (GraphicsPostscript me) {
 #elif quartz
 	static void quartzPrepareLine (GraphicsScreen me) {
 		CGContextSetLineJoin (my d_macGraphicsContext, kCGLineJoinBevel);   // much faster than kCGLineJoinRound
-		if (my duringXor) {
-			CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeDifference);
-			CGContextSetAllowsAntialiasing (my d_macGraphicsContext, false);
-			CGContextSetRGBStrokeColor (my d_macGraphicsContext, 1.0, 1.0, 1.0, 1.0);
-		} else {
-			CGContextSetRGBStrokeColor (my d_macGraphicsContext, my d_macColour.red / 65536.0, my d_macColour.green / 65536.0, my d_macColour.blue / 65536.0, 1.0);
-		}
+		CGContextSetRGBStrokeColor (my d_macGraphicsContext, my colour.red, my colour.green, my colour.blue, 1.0);
 		double lineWidth_pixels = LINE_WIDTH_IN_PIXELS (me);
 		CGContextSetLineWidth (my d_macGraphicsContext, lineWidth_pixels);
 
@@ -147,15 +129,10 @@ static void psRevertLine (GraphicsPostscript me) {
 				my lineType == 0 ? 0 : my lineType == Graphics_DASHED_DOTTED ? 4 : 2);
 	}
 	static void quartzRevertLine (GraphicsScreen me) {
-		if (my duringXor) {
-			CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeNormal);
-			CGContextSetAllowsAntialiasing (my d_macGraphicsContext, true);
-		}
 	}
 	static void quartzPrepareFill (GraphicsScreen me) {
 		CGContextSetAlpha (my d_macGraphicsContext, 1.0);
-		CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeNormal);
-		CGContextSetRGBFillColor (my d_macGraphicsContext, my d_macColour.red / 65536.0, my d_macColour.green / 65536.0, my d_macColour.blue / 65536.0, 1.0);
+		CGContextSetRGBFillColor (my d_macGraphicsContext, my colour.red, my colour.green, my colour.blue, 1.0);
 	}
 #endif
 
@@ -163,28 +140,17 @@ static void psRevertLine (GraphicsPostscript me) {
 
 void structGraphicsScreen :: v_polyline (integer numberOfPoints, double *xyDC, bool close) {
 	#if cairo
-		if (duringXor) {
-			#if ALLOW_GDK_DRAWING
-				gdkPrepareLine (this);
-				for (integer i = 0; i < numberOfPoints - 1; i ++) {
-					gdk_draw_line (our d_window, our d_gdkGraphicsContext,
-						xyDC [i + i], xyDC [i + i + 1], xyDC [i + i + 2], xyDC [i + i + 3]);
-				}
-				gdkRevertLine (this);
-				gdk_flush ();
-			#endif
-		} else {
-			if (our d_cairoGraphicsContext == nullptr) return;
-			cairoPrepareLine (this);
-			// cairo_new_path (d_cairoGraphicsContext); // move_to() automatically creates a new path
-			cairo_move_to (our d_cairoGraphicsContext, xyDC [0], xyDC [1]);
-			for (integer i = 1; i < numberOfPoints; i ++) {
-				cairo_line_to (our d_cairoGraphicsContext, xyDC [i + i], xyDC [i + i + 1]);
-			}
-			if (close) cairo_close_path (our d_cairoGraphicsContext);
-			cairo_stroke (our d_cairoGraphicsContext);
-			cairoRevertLine (this);
-		}
+		if (our d_cairoGraphicsContext == nullptr)
+			return;
+		cairoPrepareLine (this);
+		// cairo_new_path (d_cairoGraphicsContext); // move_to() automatically creates a new path
+		cairo_move_to (our d_cairoGraphicsContext, xyDC [0], xyDC [1]);
+		for (integer i = 1; i < numberOfPoints; i ++)
+			cairo_line_to (our d_cairoGraphicsContext, xyDC [i + i], xyDC [i + i + 1]);
+		if (close)
+			cairo_close_path (our d_cairoGraphicsContext);
+		cairo_stroke (our d_cairoGraphicsContext);
+		cairoRevertLine (this);
 	#elif gdi
 		if (our d_useGdiplus && 0) {
 			Gdiplus::Graphics dcplus (our d_gdiGraphicsContext);
@@ -245,29 +211,26 @@ void structGraphicsScreen :: v_polyline (integer numberOfPoints, double *xyDC, b
 			DEFAULT
 		}
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareLine (this);
 		CGContextBeginPath (our d_macGraphicsContext);
 		trace (U"starting point ", xyDC [0], U" ", xyDC [1]);
 		CGContextMoveToPoint (our d_macGraphicsContext, xyDC [0], xyDC [1]);   // starts a new subpath
-		for (integer i = 1; i < numberOfPoints; i ++) {
+		for (integer i = 1; i < numberOfPoints; i ++)
 			CGContextAddLineToPoint (our d_macGraphicsContext, xyDC [i + i], xyDC [i + i + 1]);
-		}
 		if (close)
 			CGContextClosePath (our d_macGraphicsContext);   // closes only the subpath
 		CGContextStrokePath (our d_macGraphicsContext);
 		quartzRevertLine (this);
-		GraphicsQuartz_exitDraw (this);
 	#endif
 }
 
 void structGraphicsPostscript :: v_polyline (integer numberOfPoints, double *xyDC, bool close) {
-	integer nn = 2 * numberOfPoints;
+	const integer nn = 2 * numberOfPoints;
 	psPrepareLine (this);
-	our d_printf (our d_file, "N %s %s moveto\n", Melder8_double(xyDC [0], 7), Melder8_double(xyDC [1], 7));
+	our d_printf (our d_file, "N %s %s moveto\n", Melder8_double(xyDC [0], 7), Melder8_double(xyDC [1], 7)); // our d_printf (our d_file, "N %.7g %.7g moveto\n", xyDC [0], xyDC [1]);
 	for (integer i = 2; i < nn; i += 2) {
-		double dx = xyDC [i] - xyDC [i - 2], dy = xyDC [i + 1] - xyDC [i - 1];
-		our d_printf (our d_file, "%s %s L\n", Melder8_double(dx, 7), Melder8_double(dy, 7));
+		const double dx = xyDC [i] - xyDC [i - 2], dy = xyDC [i + 1] - xyDC [i - 1];
+		our d_printf (our d_file, "%s %s L\n", Melder8_double(dx, 7), Melder8_double(dy, 7)); // our d_printf (our d_file, "%.7g %.7g L\n", dx, dy);
 	}
 	if (close)
 		our d_printf (our d_file, "closepath ");
@@ -277,7 +240,8 @@ void structGraphicsPostscript :: v_polyline (integer numberOfPoints, double *xyD
 
 void structGraphicsScreen :: v_fillArea (integer numberOfPoints, double *xyDC) {
 	#if cairo
-		if (our d_cairoGraphicsContext == nullptr) return;
+		if (our d_cairoGraphicsContext == nullptr)
+			return;
 		// cairo_new_path (our d_cairoGraphicsContext); // move_to() automatically creates a new path
 		cairo_move_to (our d_cairoGraphicsContext, xyDC [0], xyDC [1]);
 		for (integer i = 1; i < numberOfPoints; i ++)
@@ -294,24 +258,20 @@ void structGraphicsScreen :: v_fillArea (integer numberOfPoints, double *xyDC) {
 		FillPath (our d_gdiGraphicsContext);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareFill (this);
 		CGContextBeginPath (our d_macGraphicsContext);
 		CGContextMoveToPoint (our d_macGraphicsContext, xyDC [0], xyDC [1]);
-		for (integer i = 1; i < numberOfPoints; i ++) {
+		for (integer i = 1; i < numberOfPoints; i ++)
 			CGContextAddLineToPoint (our d_macGraphicsContext, xyDC [i + i], xyDC [i + i + 1]);
-		}
 		CGContextFillPath (our d_macGraphicsContext);
-		GraphicsQuartz_exitDraw (this);
 	#endif
 }
 
 void structGraphicsPostscript :: v_fillArea (integer numberOfPoints, double *xyDC) {
 	integer nn = numberOfPoints + numberOfPoints;
-	d_printf (d_file, "N %s %s M\n", Melder8_double(xyDC [0], 7), Melder8_double(xyDC [1], 7));
-	for (integer i = 2; i < nn; i += 2) {
-		d_printf (d_file, "%s %s L\n", Melder8_double(xyDC [i] - xyDC [i - 2], 7), Melder8_double(xyDC [i + 1] - xyDC [i - 1], 7));
-	}
+	d_printf (d_file, "N %s %s M\n", Melder8_double(xyDC [0], 7), Melder8_double(xyDC [1], 7)); // d_printf (d_file, "N %.7g %.7g M\n", xyDC [0], xyDC [1]);
+	for (integer i = 2; i < nn; i += 2)
+		d_printf (d_file, "%s %s L\n", Melder8_double(xyDC [i] - xyDC [i - 2], 7), Melder8_double(xyDC [i + 1] - xyDC [i - 1], 7)); // d_printf (d_file, "%.7g %.7g L\n", xyDC [i] - xyDC [i - 2], xyDC [i + 1] - xyDC [i - 1]);
 	d_printf (d_file, "closepath fill\n");
 }
 
@@ -320,9 +280,11 @@ void structGraphicsPostscript :: v_fillArea (integer numberOfPoints, double *xyD
 void structGraphicsScreen :: v_rectangle (double x1DC, double x2DC, double y1DC, double y2DC) {
 	ORDER_DC
 	#if cairo
-		if (! d_cairoGraphicsContext) return;
-		double width = x2DC - x1DC, height = y1DC - y2DC;
-		if (width <= 0.0 || height <= 0.0) return;
+		if (! d_cairoGraphicsContext)
+			return;
+		const double width = x2DC - x1DC, height = y1DC - y2DC;
+		if (width <= 0.0 || height <= 0.0)
+			return;
 		cairoPrepareLine (this);
 		cairo_rectangle (d_cairoGraphicsContext, x1DC, y2DC, width, height);
 		cairo_stroke (d_cairoGraphicsContext);
@@ -332,11 +294,9 @@ void structGraphicsScreen :: v_rectangle (double x1DC, double x2DC, double y1DC,
 		Rectangle (our d_gdiGraphicsContext, x1DC, y2DC, x2DC + 1.0, y1DC + 1.0);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareLine (this);
 		CGContextStrokeRect (d_macGraphicsContext, CGRectMake (x1DC, y2DC, x2DC - x1DC, y1DC - y2DC));
 		quartzRevertLine (this);
-		GraphicsQuartz_exitDraw (this);
 	#else
 		double xyDC [8];
 		xyDC [0] = x1DC;	xyDC [1] = y1DC;
@@ -349,17 +309,21 @@ void structGraphicsScreen :: v_rectangle (double x1DC, double x2DC, double y1DC,
 
 void structGraphicsPostscript :: v_rectangle (double x1DC, double x2DC, double y1DC, double y2DC) {
 	psPrepareLine (this);
+	//d_printf (d_file, "N %.7g %.7g M %.7g %.7g lineto %.7g %.7g lineto %.7g %.7g lineto closepath stroke\n",
+	//		x1DC, y1DC, x2DC, y1DC, x2DC, y2DC, x1DC, y2DC);
 	d_printf (d_file, "N %s %s M %s %s lineto %s %s lineto %s %s lineto closepath stroke\n",
-		Melder8_double(x1DC, 7), Melder8_double(y1DC, 7), Melder8_double(x2DC, 7), Melder8_double(y1DC, 7), Melder8_double(x2DC, 7), Melder8_double(y2DC, 7), Melder8_double(x1DC, 7), Melder8_double(y2DC, 7));
+			Melder8_double(x1DC, 7), Melder8_double(y1DC, 7), Melder8_double(x2DC, 7), Melder8_double(y1DC, 7), Melder8_double(x2DC, 7), Melder8_double(y2DC, 7), Melder8_double(x1DC, 7), Melder8_double(y2DC, 7));
 	psRevertLine (this);
 }
 
 void structGraphicsScreen :: v_fillRectangle (double x1DC, double x2DC, double y1DC, double y2DC) {
 	ORDER_DC
 	#if cairo
-		if (! d_cairoGraphicsContext) return;
-		double width = x2DC - x1DC + 1.0, height = y1DC - y2DC + 1.0;
-		if (width <= 0.0 || height <= 0.0) return;
+		if (! d_cairoGraphicsContext)
+			return;
+		const double width = x2DC - x1DC + 1.0, height = y1DC - y2DC + 1.0;
+		if (width <= 0.0 || height <= 0.0)
+			return;
 		trace (U"x1DC ", x1DC, U", x2DC ", x2DC, U", y1DC ", y1DC, U", y2DC ", y2DC);
 		cairo_rectangle (d_cairoGraphicsContext, round (x1DC), round (y2DC), round (width), round (height));
 		cairo_fill (d_cairoGraphicsContext);
@@ -370,10 +334,8 @@ void structGraphicsScreen :: v_fillRectangle (double x1DC, double x2DC, double y
 		Rectangle (d_gdiGraphicsContext, x1DC, y2DC, x2DC + 1.0, y1DC + 1.0);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareFill (this);
 		CGContextFillRect (d_macGraphicsContext, CGRectMake (x1DC, y2DC, x2DC - x1DC, y1DC - y2DC));
-		GraphicsQuartz_exitDraw (this);
 	#else
 		double xyDC [10];
 		xyDC [0] = x1DC;	xyDC [1] = y1DC;
@@ -393,33 +355,23 @@ void structGraphicsPostscript :: v_fillRectangle (double x1DC, double x2DC, doub
 
 void structGraphicsScreen :: v_circle (double xDC, double yDC, double rDC) {
 	#if cairo
-		if (duringXor) {
-			#if ALLOW_GDK_DRAWING
-				gdkPrepareLine (this);
-				gdk_draw_arc (d_window, d_gdkGraphicsContext, false, xDC - rDC, yDC - rDC, rDC + rDC, rDC + rDC, 0, 360 * 64);
-				gdkRevertLine (this);
-				gdk_flush ();
-			#endif
-		} else {
-			if (! d_cairoGraphicsContext) return;
-			cairoPrepareLine (this);
-			cairo_new_path (d_cairoGraphicsContext);
-			cairo_arc (d_cairoGraphicsContext, xDC, yDC, rDC, 0.0, 2.0 * M_PI);
-			cairo_stroke (d_cairoGraphicsContext);
-			cairoRevertLine (this);
-		}
+		if (! d_cairoGraphicsContext)
+			return;
+		cairoPrepareLine (this);
+		cairo_new_path (d_cairoGraphicsContext);
+		cairo_arc (d_cairoGraphicsContext, xDC, yDC, rDC, 0.0, 2.0 * M_PI);
+		cairo_stroke (d_cairoGraphicsContext);
+		cairoRevertLine (this);
 	#elif gdi
 		winPrepareLine (this);
 		Ellipse (d_gdiGraphicsContext, xDC - rDC, yDC - rDC, xDC + rDC + 1.0, yDC + rDC + 1.0);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareLine (this);
 		CGContextBeginPath (d_macGraphicsContext);
 		CGContextAddArc (d_macGraphicsContext, xDC, yDC, rDC, 0.0, NUM2pi, 0);
 		CGContextStrokePath (d_macGraphicsContext);
 		quartzRevertLine (this);
-		GraphicsQuartz_exitDraw (this);
 	#endif
 }
 
@@ -432,7 +384,8 @@ void structGraphicsPostscript :: v_circle (double xDC, double yDC, double rDC) {
 void structGraphicsScreen :: v_ellipse (double x1DC, double x2DC, double y1DC, double y2DC) {
 	ORDER_DC
 	#if cairo
-		if (! d_cairoGraphicsContext) return;
+		if (! d_cairoGraphicsContext)
+			return;
 		cairoPrepareLine (this);
 		cairo_new_path (d_cairoGraphicsContext);
 		cairo_save (d_cairoGraphicsContext);
@@ -447,9 +400,8 @@ void structGraphicsScreen :: v_ellipse (double x1DC, double x2DC, double y1DC, d
 		Ellipse (d_gdiGraphicsContext, x1DC, y2DC, x2DC + 1, y1DC + 1);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareLine (this);
-        NSCAssert (d_macGraphicsContext, @"nil context");
+        //NSCAssert (d_macGraphicsContext, @"nil context");
 		CGContextBeginPath (d_macGraphicsContext);
 		CGContextSaveGState (d_macGraphicsContext);
 		CGContextTranslateCTM (d_macGraphicsContext, 0.5 * (x2DC + x1DC), 0.5 * (y2DC + y1DC));
@@ -459,7 +411,6 @@ void structGraphicsScreen :: v_ellipse (double x1DC, double x2DC, double y1DC, d
 		CGContextStrokePath (d_macGraphicsContext);
 		CGContextRestoreGState (d_macGraphicsContext);
 		quartzRevertLine (this);
-		GraphicsQuartz_exitDraw (this);
 	#endif
 }
 
@@ -470,17 +421,24 @@ void structGraphicsPostscript :: v_ellipse (double x1DC, double x2DC, double y1D
 		/* However, we have to scale back before the actual 'stroke', */
 		/* because we want the normal line thickness; */
 		/* So we cannot use 'gsave' and 'grestore', which clear the path (Cookbook 3). */
+		//d_printf (d_file, "gsave %.7g %.7g translate %.7g %.7g scale N 0 0 1 0 360 arc\n"
+		//	" %.7g %.7g scale stroke grestore\n",
+		//	0.5 * (x2DC + x1DC), 0.5 * (y2DC + y1DC), 0.5 * (x2DC - x1DC), 0.5 * (y2DC - y1DC),
+		//	2.0 / (x2DC - x1DC), 2.0 / (y2DC - y1DC)
+		//);
 		d_printf (d_file, "gsave %s %s translate %s %s scale N 0 0 1 0 360 arc\n"
 			" %s %s scale stroke grestore\n",
 			Melder8_double(0.5 * (x2DC + x1DC), 7), Melder8_double(0.5 * (y2DC + y1DC), 7), Melder8_double(0.5 * (x2DC - x1DC), 7), Melder8_double(0.5 * (y2DC - y1DC), 7),
-			Melder8_double(2.0 / (x2DC - x1DC), 7), Melder8_double(2.0 / (y2DC - y1DC), 7));
+			Melder8_double(2.0 / (x2DC - x1DC), 7), Melder8_double(2.0 / (y2DC - y1DC), 7)
+		);
 		psRevertLine (this);
 	}
 }
 
 void structGraphicsScreen :: v_arc (double xDC, double yDC, double rDC, double fromAngle, double toAngle) {
 	#if cairo
-		if (! d_cairoGraphicsContext) return;
+		if (! d_cairoGraphicsContext)
+			return;
 		cairoPrepareLine (this);
 		cairo_new_path (d_cairoGraphicsContext);
 		cairo_arc (d_cairoGraphicsContext, xDC, yDC, rDC, -toAngle * (M_PI / 180.0), -fromAngle * (M_PI / 180.0));
@@ -489,19 +447,18 @@ void structGraphicsScreen :: v_arc (double xDC, double yDC, double rDC, double f
 	#elif gdi
 		int arcAngle = (int) toAngle - (int) fromAngle;
 		POINT pt;
-		if (arcAngle < 0.0) arcAngle += 360;
+		if (arcAngle < 0.0)
+			arcAngle += 360;
 		winPrepareLine (this);
 		MoveToEx (d_gdiGraphicsContext, xDC + rDC * cos (NUMpi / 180 * fromAngle), yDC - rDC * sin (NUMpi / 180 * fromAngle), & pt);
 		AngleArc (d_gdiGraphicsContext, xDC, yDC, rDC, fromAngle, arcAngle);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareLine (this);
 		CGContextBeginPath (d_macGraphicsContext);
 		CGContextAddArc (d_macGraphicsContext, xDC, yDC, rDC, NUM2pi - NUMpi / 180 * toAngle, NUM2pi - NUMpi / 180 * fromAngle, 0);
 		CGContextStrokePath (d_macGraphicsContext);
 		quartzRevertLine (this);
-		GraphicsQuartz_exitDraw (this);
 	#endif
 }
 
@@ -515,7 +472,8 @@ void structGraphicsPostscript :: v_arc (double xDC, double yDC, double rDC, doub
 
 void structGraphicsScreen :: v_fillCircle (double xDC, double yDC, double rDC) {
 	#if cairo
-		if (! d_cairoGraphicsContext) return;
+		if (! d_cairoGraphicsContext)
+			return;
 		cairo_new_path (d_cairoGraphicsContext);
 		cairo_arc (d_cairoGraphicsContext, xDC, yDC, rDC, 0, 2 * M_PI);
 		cairo_fill (d_cairoGraphicsContext);
@@ -527,12 +485,10 @@ void structGraphicsScreen :: v_fillCircle (double xDC, double yDC, double rDC) {
 		Ellipse (d_gdiGraphicsContext, xDC - rDC - 1.0, yDC - rDC - 1.0, xDC + rDC + 1.0, yDC + rDC + 1.0);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareFill (this);
 		CGContextBeginPath (d_macGraphicsContext);
 		CGContextAddArc (d_macGraphicsContext, xDC, yDC, rDC, 0.0, NUM2pi, 0);
 		CGContextFillPath (d_macGraphicsContext);
-		GraphicsQuartz_exitDraw (this);
 	#else
 		v_circle (xDC, yDC, rDC);
 	#endif
@@ -545,7 +501,8 @@ void structGraphicsPostscript :: v_fillCircle (double xDC, double yDC, double rD
 void structGraphicsScreen :: v_fillEllipse (double x1DC, double x2DC, double y1DC, double y2DC) {
 	ORDER_DC
 	#if cairo
-		if (! d_cairoGraphicsContext) return;
+		if (! d_cairoGraphicsContext)
+			return;
 		cairo_new_path (d_cairoGraphicsContext);
 		cairo_save (d_cairoGraphicsContext);
 		cairo_translate (d_cairoGraphicsContext, 0.5 * (x2DC + x1DC), 0.5 * (y2DC + y1DC));
@@ -558,9 +515,8 @@ void structGraphicsScreen :: v_fillEllipse (double x1DC, double x2DC, double y1D
 		Ellipse (d_gdiGraphicsContext, x1DC, y2DC, x2DC + 1.0, y1DC + 1.0);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareFill (this);
-        NSCAssert (d_macGraphicsContext, @"nil context");
+        //NSCAssert (d_macGraphicsContext, @"nil context");
 		CGContextBeginPath (d_macGraphicsContext);
 		CGContextSaveGState (d_macGraphicsContext);
 		CGContextTranslateCTM (d_macGraphicsContext, 0.5 * (x2DC + x1DC), 0.5 * (y2DC + y1DC));
@@ -569,22 +525,23 @@ void structGraphicsScreen :: v_fillEllipse (double x1DC, double x2DC, double y1D
 		CGContextScaleCTM (d_macGraphicsContext, 2.0 / (x2DC - x1DC), 2.0 / (y2DC - y1DC));
 		CGContextFillPath (d_macGraphicsContext);
 		CGContextRestoreGState (d_macGraphicsContext);
-		GraphicsQuartz_exitDraw (this);
 	#else
 		v_ellipse (x1DC, x2DC, y1DC, y2DC);
 	#endif
 }
 
 void structGraphicsPostscript :: v_fillEllipse (double x1DC, double x2DC, double y1DC, double y2DC) {
+	//d_printf (d_file, "gsave %.7g %.7g translate %.7g %.7g scale N 0 0 1 FC grestore\n",
+	//		(x2DC + x1DC) / 2.0, (y2DC + y1DC) / 2.0, (x2DC - x1DC) / 2.0, (y2DC - y1DC) / 2.0);
 	d_printf (d_file, "gsave %s %s translate %s %s scale N 0 0 1 FC grestore\n",
-		Melder8_double((x2DC + x1DC) / 2.0, 7), Melder8_double((y2DC + y1DC) / 2.0, 7), Melder8_double((x2DC - x1DC) / 2.0, 7), Melder8_double((y2DC - y1DC) / 2.0, 7));
+			Melder8_double((x2DC + x1DC) / 2.0, 7), Melder8_double((y2DC + y1DC) / 2.0, 7), Melder8_double((x2DC - x1DC) / 2.0, 7), Melder8_double((y2DC - y1DC) / 2.0, 7));
 }
 
 void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, double y2DC) {
 	ORDER_DC
 	#if cairo
-		if (x2DC <= x1DC || y1DC <= y2DC) return;
-		
+		if (x2DC <= x1DC || y1DC <= y2DC)
+			return;
 		cairo_save (d_cairoGraphicsContext);
 		#if 0
 			if (d_drawingArea) {
@@ -607,8 +564,13 @@ void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, do
 		cairo_rectangle (d_cairoGraphicsContext, left, top, width, height);
 		cairo_stroke (d_cairoGraphicsContext);
 		
-		left ++, right --, top ++, bottom --, width -= 2, height -= 2;
-		if (width > 0 && height > 0) {
+		left += 1.0;
+		right -= 1.0;
+		top += 1.0;
+		bottom -= 1.0;
+		width -= 2.0;
+		height -= 2.0;
+		if (width > 0.0 && height > 0.0) {
 			cairo_set_source_rgb (d_cairoGraphicsContext, 0.3, 0.3, 0.3);
 			cairo_move_to (d_cairoGraphicsContext, left + 1, bottom);
 			cairo_line_to (d_cairoGraphicsContext, right, bottom);
@@ -620,8 +582,13 @@ void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, do
 			cairo_line_to (d_cairoGraphicsContext, left, top);
 			cairo_line_to (d_cairoGraphicsContext, right, top);
 			cairo_stroke (d_cairoGraphicsContext);
-			left += 0.5, right -= 0.5, top += 0.5, bottom -= 0.5, width -= 1, height -= 1;
-			if (width > 0 && height > 0) {
+			left += 0.5;
+			right -= 0.5;
+			top += 0.5;
+			bottom -= 0.5;
+			width -= 1.0;
+			height -= 1.0;
+			if (width > 0.0 && height > 0.0) {
 				cairo_set_source_rgb (d_cairoGraphicsContext, 0.65, 0.65, 0.65);
 				cairo_rectangle (d_cairoGraphicsContext, left, top, width, height);
 				cairo_fill (d_cairoGraphicsContext);
@@ -630,29 +597,39 @@ void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, do
 		cairo_restore (d_cairoGraphicsContext);
 	#elif quartz
         double width = x2DC - x1DC, height = y1DC - y2DC;
-		if (width <= 0 || height <= 0) return;
+		if (width <= 0.0 || height <= 0.0)
+			return;
 		/*
-		 * This is pixel-precise drawing, and may therefore be different on retina displays than on 100 dpi displays.
-		 */
+			This is pixel-precise drawing, and may therefore be different on retina displays than on 100 dpi displays.
+		*/
 		#if 1
-			bool isRetinaDisplay = [[d_macView window] backingScaleFactor] == 2.0;
+			const bool isRetinaDisplay = [[d_macView window] backingScaleFactor] == 2.0;
 		#else
-			bool isRetinaDisplay = false;
+			const bool isRetinaDisplay = false;
 		#endif
 
-		GraphicsQuartz_initDraw (this);
 		CGContextSetLineWidth (d_macGraphicsContext, 1.0);
 		CGContextSetAllowsAntialiasing (d_macGraphicsContext, false);   // because we want to draw by pixel
         CGFloat red = 0.3, green = 0.3, blue = 0.2;
         CGContextSetRGBStrokeColor (d_macGraphicsContext, red, green, blue, 1.0);
 		if (! isRetinaDisplay)
-			x1DC --;
-		x1DC += 0.5, x2DC -= 0.5, y1DC -= 0.5, y2DC += 0.5, width = x2DC - x1DC, height = y1DC - y2DC;
+			x1DC -= 1.0;
+		x1DC += 0.5;
+		x2DC -= 0.5;
+		y1DC -= 0.5;
+		y2DC += 0.5;
+		width = x2DC - x1DC;
+		height = y1DC - y2DC;
         CGRect rect = CGRectMake (x1DC, y2DC, width, height);
         CGContextAddRect (d_macGraphicsContext, rect);
         CGContextStrokePath (d_macGraphicsContext);
-		x1DC ++, x2DC --, y1DC --, y2DC ++, width = x2DC - x1DC, height = y1DC - y2DC;
-		if (width > 0 && height > 0) {
+		x1DC += 1.0;
+		x2DC -= 1.0;
+		y1DC -= 1.0;
+		y2DC += 1.0;
+		width = x2DC - x1DC;
+		height = y1DC - y2DC;
+		if (width > 0.0 && height > 0.0) {
 			red = 0.5, green = 0.5, blue = 0.4;
 			CGContextSetRGBStrokeColor (d_macGraphicsContext, red, green, blue, 1.0);
 			CGContextMoveToPoint (d_macGraphicsContext, x1DC, y1DC);
@@ -667,8 +644,12 @@ void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, do
 			CGContextMoveToPoint (d_macGraphicsContext, x1DC, y2DC);
             CGContextAddLineToPoint (d_macGraphicsContext, x2DC, y2DC);
             CGContextStrokePath (d_macGraphicsContext);
-			if (width > 2 && height > 2) {
-				if (! isRetinaDisplay) x1DC ++, width = x2DC - x1DC, height = y1DC - y2DC;
+			if (width > 2.0 && height > 2.0) {
+				if (! isRetinaDisplay) {
+					x1DC += 1.0;
+					width = x2DC - x1DC;
+					height = y1DC - y2DC;
+				}
 				red = 0.75, green = 0.75, blue = 0.65;
 				CGContextSetRGBFillColor (d_macGraphicsContext, red, green, blue, 1.0);
 				rect = CGRectMake (x1DC, y2DC, width, height);
@@ -677,7 +658,6 @@ void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, do
         }
 		CGContextSetAllowsAntialiasing (d_macGraphicsContext, true);
 		CGContextSetLineDash (d_macGraphicsContext, 0, nullptr, 0);
-		GraphicsQuartz_exitDraw (this);
     #elif gdi
         RECT rect;
         rect. left = x1DC, rect. right = x2DC, rect. top = y2DC, rect. bottom = y1DC;
@@ -691,7 +671,7 @@ void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, do
 }
 
 void structGraphics :: v_roundedRectangle (double x1DC, double x2DC, double y1DC, double y2DC, double r) {
-	double dy = yIsZeroAtTheTop ? - r : r;
+	const double dy = ( yIsZeroAtTheTop ? - r : r );
 	double xyDC [4];
 	ORDER_DC
 	xyDC [0] = x1DC + r;
@@ -722,7 +702,8 @@ void structGraphics :: v_roundedRectangle (double x1DC, double x2DC, double y1DC
 
 void structGraphicsScreen :: v_roundedRectangle (double x1DC, double x2DC, double y1DC, double y2DC, double r) {
 	#if gdi
-		double dy = yIsZeroAtTheTop ? - r : r, xyDC [4];
+		const double dy = ( yIsZeroAtTheTop ? - r : r );
+		double xyDC [4];
 		ORDER_DC
 		winPrepareLine (this);
 		RoundRect (d_gdiGraphicsContext, x1DC, y2DC, x2DC + 1.0, y1DC + 1.0, r + r, r + r);
@@ -736,7 +717,7 @@ void structGraphicsScreen :: v_roundedRectangle (double x1DC, double x2DC, doubl
 /* Fourth level. */
 
 void structGraphics :: v_fillRoundedRectangle (double x1DC, double x2DC, double y1DC, double y2DC, double r) {
-	double dy = yIsZeroAtTheTop ? - r : r;
+	const double dy = ( yIsZeroAtTheTop ? - r : r );
 	ORDER_DC
 	v_fillCircle (x2DC - r, y1DC + dy, r);
 	v_fillCircle (x2DC - r, y2DC - dy, r);
@@ -751,102 +732,110 @@ void structGraphics :: v_fillRoundedRectangle (double x1DC, double x2DC, double 
 #define wdx(x)  ((x) * my scaleX + my deltaX)
 #define wdy(y)  ((y) * my scaleY + my deltaY)
 
-void Graphics_polyline (Graphics me, integer numberOfPoints, double *xWC, double *yWC) {   // base 0
-	if (numberOfPoints < 2) return;
-	double *xyDC;
-	try {
-		xyDC = Melder_malloc (double, 2 * numberOfPoints);
-	} catch (MelderError) {
-		/*
-		 * Out of memory: silently refuse to draw.
-		 */
-		Melder_clearError ();
-		return;
-	}
-	for (integer i = 0; i < numberOfPoints; i ++) {
-		xyDC [i + i] = wdx (xWC [i]);
-		xyDC [i + i + 1] = wdy (yWC [i]);
-	}
-	my v_polyline (numberOfPoints, xyDC, false);
-	Melder_free (xyDC);
+void Graphics_polyline (Graphics me, integer numberOfPoints, const double *xWC, const double *yWC) {   // base 0
 	if (my recording) {
 		op (POLYLINE, 1 + 2 * numberOfPoints);
 		put (numberOfPoints);
 		mput (numberOfPoints, & xWC [0])
 		mput (numberOfPoints, & yWC [0])
+	} else {
+		if (numberOfPoints < 2)
+			return;
+		double *xyDC;
+		try {
+			xyDC = Melder_malloc (double, 2 * numberOfPoints);
+		} catch (MelderError) {
+			/*
+				Out of memory: silently refuse to draw.
+			 */
+			Melder_clearError ();
+			return;
+		}
+		for (integer i = 0; i < numberOfPoints; i ++) {
+			xyDC [i + i] = wdx (xWC [i]);
+			xyDC [i + i + 1] = wdy (yWC [i]);
+		}
+		my v_polyline (numberOfPoints, xyDC, false);
+		Melder_free (xyDC);
 	}
 }
 
-void Graphics_polyline_closed (Graphics me, integer numberOfPoints, double *xWC, double *yWC) {   // base 0
-	if (numberOfPoints < 1) return;
-	double *xyDC;
-	try {
-		xyDC = Melder_malloc (double, 2 * numberOfPoints);
-	} catch (MelderError) {
-		/*
-		 * Out of memory: silently refuse to draw.
-		 */
-		Melder_clearError ();
-		return;
-	}
-	for (integer i = 0; i < numberOfPoints; i ++) {
-		xyDC [i + i] = wdx (xWC [i]);
-		xyDC [i + i + 1] = wdy (yWC [i]);
-	}
-	my v_polyline (numberOfPoints, xyDC, true);
-	Melder_free (xyDC);
+void Graphics_polyline_closed (Graphics me, integer numberOfPoints, const double *xWC, const double *yWC) {   // base 0
 	if (my recording) {
 		op (POLYLINE_CLOSED, 1 + 2 * numberOfPoints);
 		put (numberOfPoints);
 		mput (numberOfPoints, & xWC [0])
 		mput (numberOfPoints, & yWC [0])
+	} else {
+		if (numberOfPoints < 1)
+			return;
+		double *xyDC;
+		try {
+			xyDC = Melder_malloc (double, 2 * numberOfPoints);
+		} catch (MelderError) {
+			/*
+				Out of memory: silently refuse to draw.
+			*/
+			Melder_clearError ();
+			return;
+		}
+		for (integer i = 0; i < numberOfPoints; i ++) {
+			xyDC [i + i] = wdx (xWC [i]);
+			xyDC [i + i + 1] = wdy (yWC [i]);
+		}
+		my v_polyline (numberOfPoints, xyDC, true);
+		Melder_free (xyDC);
 	}
 }
 
 void Graphics_line (Graphics me, double x1WC, double y1WC, double x2WC, double y2WC) {
-	double xyDC [4];
-	trace (x1WC, U" ", y1WC, U" ", x2WC, U" ", y2WC);
-	xyDC [0] = wdx (x1WC);
-	xyDC [1] = wdy (y1WC);
-	xyDC [2] = wdx (x2WC);
-	xyDC [3] = wdy (y2WC);
-	my v_polyline (2, xyDC, false);
-	if (my recording) { op (LINE, 4); put (x1WC); put (y1WC); put (x2WC); put (y2WC); }
+	if (my recording) {
+		op (LINE, 4); put (x1WC); put (y1WC); put (x2WC); put (y2WC);
+	} else {
+		double xyDC [4];
+		trace (x1WC, U" ", y1WC, U" ", x2WC, U" ", y2WC);
+		xyDC [0] = wdx (x1WC);
+		xyDC [1] = wdy (y1WC);
+		xyDC [2] = wdx (x2WC);
+		xyDC [3] = wdy (y2WC);
+		my v_polyline (2, xyDC, false);
+	}
 }
 
 void Graphics_fillArea (Graphics me, integer numberOfPoints, double const *xWC, double const *yWC) {
-	if (numberOfPoints < 3) return;
-	double *xyDC;
-	try {
-		xyDC = Melder_malloc (double, 2 * numberOfPoints);
-	} catch (MelderError) {
-		/*
-		 * Out of memory: silently refuse to draw.
-		 */
-		Melder_clearError ();
-		return;
-	}
-	for (integer i = 0; i < numberOfPoints; i ++) {
-		xyDC [i + i] = wdx (xWC [i]);
-		xyDC [i + i + 1] = wdy (yWC [i]);
-	}
-	my v_fillArea (numberOfPoints, xyDC);
-	Melder_free (xyDC);
 	if (my recording) {
 		op (FILL_AREA, 1 + 2 * numberOfPoints);
 		put (numberOfPoints);
 		mput (numberOfPoints, & xWC [0])
 		mput (numberOfPoints, & yWC [0])
+	} else {
+		if (numberOfPoints < 3)
+			return;
+		double *xyDC;
+		try {
+			xyDC = Melder_malloc (double, 2 * numberOfPoints);
+		} catch (MelderError) {
+			/*
+				Out of memory: silently refuse to draw.
+			*/
+			Melder_clearError ();
+			return;
+		}
+		for (integer i = 0; i < numberOfPoints; i ++) {
+			xyDC [i + i] = wdx (xWC [i]);
+			xyDC [i + i + 1] = wdy (yWC [i]);
+		}
+		my v_fillArea (numberOfPoints, xyDC);
+		Melder_free (xyDC);
 	}
 }
 
 template <typename TYPE>
-integer Graphics_function_ (Graphics me, const TYPE yWC [], integer stride, integer ix1, integer ix2, double x1WC, double x2WC) {
+void Graphics_function_ (Graphics me, const TYPE yWC [], integer stride, integer ix1, integer ix2, double x1WC, double x2WC) {
 	const integer clipy1 = wdy (my d_y1WC), clipy2 = wdy (my d_y2WC);
 	const integer n = ix2 - ix1 + 1;
-
-	if (n <= 1 || my scaleX == 0.0) return n;
-
+	if (n <= 1 || my scaleX == 0.0)
+		return;
 	const double dx = (x2WC - x1WC) / (n - 1);
 	const double offsetX = x1WC - ix1 * dx;
 	/* xDC = wdx (offsetX + i * dx) */
@@ -859,7 +848,8 @@ integer Graphics_function_ (Graphics me, const TYPE yWC [], integer stride, inte
 		integer k = 0;
 		const integer numberOfPointsActuallyDrawn = numberOfPixels * 2;
 		TYPE lastMini;
-		if (numberOfPointsActuallyDrawn < 1) return n;
+		if (numberOfPointsActuallyDrawn < 1)
+			return;
 		double *xyDC = Melder_malloc_f (double, 2 * numberOfPointsActuallyDrawn);
 		for (integer i = 0; i < numberOfPixels; i ++) {
 			integer jmin = ix1 + i / scale, jmax = ix1 + (i + 1) / scale;
@@ -915,7 +905,8 @@ integer Graphics_function_ (Graphics me, const TYPE yWC [], integer stride, inte
 			}
 			lastMini = mini;
 		}
-		if (k > 1) my v_polyline (k / 2, xyDC, false);
+		if (k > 1)
+			my v_polyline (k / 2, xyDC, false);
 		Melder_free (xyDC);
 	} else {   // normal
 		double *xyDC = Melder_malloc_f (double, 2 * n);
@@ -935,116 +926,164 @@ integer Graphics_function_ (Graphics me, const TYPE yWC [], integer stride, inte
 		my v_polyline (n, xyDC, false);
 		Melder_free (xyDC);
 	}
-	return n;
 }
 
 void Graphics_function (Graphics me, const double yWC [], integer ix1, integer ix2, double x1WC, double x2WC) {
-	integer n = Graphics_function_ <double> (me, yWC, 1, ix1, ix2, x1WC, x2WC);
-	if (my recording && n >= 2) { op (FUNCTION, 3 + n); put (n); put (x1WC); put (x2WC); mput (n, & yWC [ix1]) }
+	if (my recording) {
+		const integer n = ix2 - ix1 + 1;
+		if (n >= 2) {
+			op (FUNCTION, 3 + n);
+			put (n);
+			put (x1WC);
+			put (x2WC);
+			mput (n, & yWC [ix1])
+		}
+	} else
+		Graphics_function_ <double> (me, yWC, 1, ix1, ix2, x1WC, x2WC);
 }
 
 void Graphics_function16 (Graphics me, const int16 yWC [], integer stride, integer ix1, integer ix2, double x1WC, double x2WC) {
-	(void) Graphics_function_ <int16> (me, yWC, stride, ix1, ix2, x1WC, x2WC);
+	if (my recording) {
+		Melder_fatal (U"Graphics_function16: cannot be used during graphics recording.");
+	} else
+		Graphics_function_ <int16> (me, yWC, stride, ix1, ix2, x1WC, x2WC);
 }
 
 void Graphics_rectangle (Graphics me, double x1WC, double x2WC, double y1WC, double y2WC) {
-	my v_rectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC));
-	if (my recording) { op (RECTANGLE, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC); }
+	if (my recording) {
+		op (RECTANGLE, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC);
+	} else
+		my v_rectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC));
 }
 
 void Graphics_fillRectangle (Graphics me, double x1WC, double x2WC, double y1WC, double y2WC) {
-	my v_fillRectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC));
-	if (my recording) { op (FILL_RECTANGLE, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC); }
+	if (my recording) {
+		op (FILL_RECTANGLE, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC);
+	} else
+		my v_fillRectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC));
 }
 
 void Graphics_roundedRectangle (Graphics me, double x1WC, double x2WC, double y1WC, double y2WC, double r_mm) {
-	my v_roundedRectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC), Melder_iceiling (r_mm * my resolution / 25.4));
-	if (my recording) { op (ROUNDED_RECTANGLE, 5); put (x1WC); put (x2WC); put (y1WC); put (y2WC); put (r_mm); }
+	if (my recording) {
+		op (ROUNDED_RECTANGLE, 5); put (x1WC); put (x2WC); put (y1WC); put (y2WC); put (r_mm);
+	} else
+		my v_roundedRectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC), r_mm * my resolution / 25.4);
 }
 
 void Graphics_fillRoundedRectangle (Graphics me, double x1WC, double x2WC, double y1WC, double y2WC, double r_mm) {
-	my v_fillRoundedRectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC), Melder_iceiling (r_mm * my resolution / 25.4));
-	if (my recording) { op (FILL_ROUNDED_RECTANGLE, 5); put (x1WC); put (x2WC); put (y1WC); put (y2WC); put (r_mm); }
+	if (my recording) {
+		op (FILL_ROUNDED_RECTANGLE, 5); put (x1WC); put (x2WC); put (y1WC); put (y2WC); put (r_mm);
+	} else
+		my v_fillRoundedRectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC), r_mm * my resolution / 25.4);
 }
 
 void Graphics_button (Graphics me, double x1WC, double x2WC, double y1WC, double y2WC) {
-	my v_button (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC));
-	if (my recording) { op (BUTTON, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC); }
+	if (my recording) {
+		op (BUTTON, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC);
+	} else
+		my v_button (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC));
 }
 
 void Graphics_innerRectangle (Graphics me, double x1WC, double x2WC, double y1WC, double y2WC) {
-	int dy = my yIsZeroAtTheTop ? -1 : 1;
-	my v_rectangle (wdx (x1WC) + 1, wdx (x2WC) - 1, wdy (y1WC) + dy, wdy (y2WC) - dy);
-	if (my recording) { op (INNER_RECTANGLE, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC); }
+	if (my recording) {
+		op (INNER_RECTANGLE, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC);
+	} else {
+		const double dy = ( my yIsZeroAtTheTop ? -1.0 : 1.0 );
+		my v_rectangle (wdx (x1WC) + 1.0, wdx (x2WC) - 1.0, wdy (y1WC) + dy, wdy (y2WC) - dy);
+	}
 }
 
 void Graphics_circle (Graphics me, double xWC, double yWC, double rWC) {
-	my v_circle (wdx (xWC), wdy (yWC), my scaleX * rWC);
-	if (my recording) { op (CIRCLE, 3); put (xWC); put (yWC); put (rWC); }
+	if (my recording) {
+		op (CIRCLE, 3); put (xWC); put (yWC); put (rWC);
+	} else
+		my v_circle (wdx (xWC), wdy (yWC), my scaleX * rWC);
 }
 
 void Graphics_circle_mm (Graphics me, double xWC, double yWC, double diameter) {
-	my v_circle (wdx (xWC), wdy (yWC), 0.5 * diameter * my resolution / 25.4);
-	if (my recording) { op (CIRCLE_MM, 3); put (xWC); put (yWC); put (diameter); }
+	if (my recording) {
+		op (CIRCLE_MM, 3); put (xWC); put (yWC); put (diameter);
+	} else
+		my v_circle (wdx (xWC), wdy (yWC), 0.5 * diameter * my resolution / 25.4);
 }
 
 void Graphics_fillCircle (Graphics me, double xWC, double yWC, double rWC) {
-	my v_fillCircle (wdx (xWC), wdy (yWC), Melder_iceiling (my scaleX * rWC));
-	if (my recording) { op (FILL_CIRCLE, 3); put (xWC); put (yWC); put (rWC); }
+	if (my recording) {
+		op (FILL_CIRCLE, 3); put (xWC); put (yWC); put (rWC);
+	} else
+		my v_fillCircle (wdx (xWC), wdy (yWC), my scaleX * rWC);
 }
 
 void Graphics_fillCircle_mm (Graphics me, double xWC, double yWC, double diameter) {
-	my v_fillCircle (wdx (xWC), wdy (yWC), Melder_iceiling (0.5 * diameter * my resolution / 25.4));
-	if (my recording) { op (FILL_CIRCLE_MM, 3); put (xWC); put (yWC); put (diameter); }
+	if (my recording) {
+		op (FILL_CIRCLE_MM, 3); put (xWC); put (yWC); put (diameter);
+	} else
+		my v_fillCircle (wdx (xWC), wdy (yWC), 0.5 * diameter * my resolution / 25.4);
 }
 
 void Graphics_speckle (Graphics me, double xWC, double yWC) {
-	my v_fillCircle (wdx (xWC), wdy (yWC), Melder_iceiling (0.5 * my speckleSize * my resolution / 25.4));
-	if (my recording) { op (SPECKLE, 2); put (xWC); put (yWC); }
+	if (my recording) {
+		op (SPECKLE, 2); put (xWC); put (yWC);
+	} else
+		my v_fillCircle (wdx (xWC), wdy (yWC), 0.5 * my speckleSize * my resolution / 25.4);
 }
 
 void Graphics_rectangle_mm (Graphics me, double xWC, double yWC, double horSide, double vertSide) {
-	integer xDC = wdx (xWC), yDC = wdy (yWC);
-	integer halfHorSide = Melder_iceiling (0.5 * horSide * my resolution / 25.4);
-	integer halfVertSide = Melder_iceiling (0.5 * vertSide * my resolution / 25.4);
-	if (my yIsZeroAtTheTop) {
-		my v_rectangle (xDC - halfHorSide, xDC + halfHorSide, yDC + halfVertSide, yDC - halfVertSide);
+	if (my recording) {
+		op (RECTANGLE_MM, 4); put (xWC); put (yWC); put (horSide); put (vertSide);
 	} else {
-		my v_rectangle (xDC - halfHorSide, xDC + halfHorSide, yDC - halfVertSide, yDC + halfVertSide);
+		const double xDC = wdx (xWC), yDC = wdy (yWC);
+		const double halfHorSide = 0.5 * horSide * my resolution / 25.4;
+		const double halfVertSide = 0.5 * vertSide * my resolution / 25.4;
+		if (my yIsZeroAtTheTop) {
+			my v_rectangle (xDC - halfHorSide, xDC + halfHorSide, yDC + halfVertSide, yDC - halfVertSide);
+		} else {
+			my v_rectangle (xDC - halfHorSide, xDC + halfHorSide, yDC - halfVertSide, yDC + halfVertSide);
+		}
 	}
-	if (my recording) { op (RECTANGLE_MM, 4); put (xWC); put (yWC); put (horSide); put (vertSide); }
 }
 
 void Graphics_fillRectangle_mm (Graphics me, double xWC, double yWC, double horSide, double vertSide) {
-	integer xDC = wdx (xWC), yDC = wdy (yWC);
-	integer halfHorSide = Melder_iceiling (0.5 * horSide * my resolution / 25.4);
-	integer halfVertSide = Melder_iceiling (0.5 * vertSide * my resolution / 25.4);
-	if (my yIsZeroAtTheTop) {
-		my v_fillRectangle (xDC - halfHorSide, xDC + halfHorSide, yDC + halfVertSide, yDC - halfVertSide);
+	if (my recording) {
+		op (FILL_RECTANGLE_MM, 4); put (xWC); put (yWC); put (horSide); put (vertSide);
 	} else {
-		my v_fillRectangle (xDC - halfHorSide, xDC + halfHorSide, yDC - halfVertSide, yDC + halfVertSide);
+		const double xDC = wdx (xWC), yDC = wdy (yWC);
+		const double halfHorSide = 0.5 * horSide * my resolution / 25.4;
+		const double halfVertSide = 0.5 * vertSide * my resolution / 25.4;
+		if (my yIsZeroAtTheTop) {
+			my v_fillRectangle (xDC - halfHorSide, xDC + halfHorSide, yDC + halfVertSide, yDC - halfVertSide);
+		} else {
+			my v_fillRectangle (xDC - halfHorSide, xDC + halfHorSide, yDC - halfVertSide, yDC + halfVertSide);
+		}
 	}
-	if (my recording) { op (FILL_RECTANGLE_MM, 4); put (xWC); put (yWC); put (horSide); put (vertSide); }
 }
 
 void Graphics_ellipse (Graphics me, double x1, double x2, double y1, double y2) {
-	my v_ellipse (wdx (x1), wdx (x2), wdy (y1), wdy (y2));
-	if (my recording) { op (ELLIPSE, 4); put (x1); put (x2); put (y1); put (y2); }
+	if (my recording) {
+		op (ELLIPSE, 4); put (x1); put (x2); put (y1); put (y2);
+	} else
+		my v_ellipse (wdx (x1), wdx (x2), wdy (y1), wdy (y2));
 }
 
 void Graphics_fillEllipse (Graphics me, double x1, double x2, double y1, double y2) {
-	my v_fillEllipse (wdx (x1), wdx (x2), wdy (y1), wdy (y2));
-	if (my recording) { op (FILL_ELLIPSE, 4); put (x1); put (x2); put (y1); put (y2); }
+	if (my recording) {
+		op (FILL_ELLIPSE, 4); put (x1); put (x2); put (y1); put (y2);
+	} else
+		my v_fillEllipse (wdx (x1), wdx (x2), wdy (y1), wdy (y2));
 }
 
 void Graphics_arc (Graphics me, double xWC, double yWC, double rWC, double fromAngle, double toAngle) {
-	my v_arc (wdx (xWC), wdy (yWC), my scaleX * rWC, fromAngle, toAngle);
-	if (my recording) { op (ARC, 5); put (xWC); put (yWC); put (rWC); put (fromAngle); put (toAngle); }
+	if (my recording) {
+		op (ARC, 5); put (xWC); put (yWC); put (rWC); put (fromAngle); put (toAngle);
+	} else
+		my v_arc (wdx (xWC), wdy (yWC), my scaleX * rWC, fromAngle, toAngle);
 }
 
 void Graphics_fillArc (Graphics me, double xWC, double yWC, double rWC, double fromAngle, double toAngle) {
-	my v_arc (wdx (xWC), wdy (yWC), my scaleX * rWC, fromAngle, toAngle);   // NYI v_fillArc
-	if (my recording) { op (FILL_ARC, 5); put (xWC); put (yWC); put (rWC); put (fromAngle); put (toAngle); }
+	if (my recording) {
+		op (FILL_ARC, 5); put (xWC); put (yWC); put (rWC); put (fromAngle); put (toAngle);
+	} else
+		my v_arc (wdx (xWC), wdy (yWC), my scaleX * rWC, fromAngle, toAngle);   // NYI v_fillArc
 }
 
 /* Arrows. */
@@ -1076,9 +1115,8 @@ void structGraphicsScreen :: v_arrowHead (double xDC, double yDC, double angle) 
 		FillPath (our d_gdiGraphicsContext);
 		DEFAULT
 	#elif quartz
-		GraphicsQuartz_initDraw (this);
 		quartzPrepareFill (this);
-		NSCAssert (our d_macGraphicsContext, @"nil context");
+		//NSCAssert (our d_macGraphicsContext, @"nil context");
 		CGContextSaveGState (our d_macGraphicsContext);
 		CGContextBeginPath (our d_macGraphicsContext);
 		CGContextTranslateCTM (our d_macGraphicsContext, xDC, yDC);
@@ -1090,7 +1128,6 @@ void structGraphicsScreen :: v_arrowHead (double xDC, double yDC, double angle) 
 		CGContextAddLineToPoint (our d_macGraphicsContext, 0.0, 0.0);
 		CGContextFillPath (our d_macGraphicsContext);
 		CGContextRestoreGState (our d_macGraphicsContext);
-		GraphicsQuartz_exitDraw (this);
 	#endif
 }
 
@@ -1101,46 +1138,58 @@ void structGraphicsPostscript :: v_arrowHead (double xDC, double yDC, double ang
 }
 
 void Graphics_arrow (Graphics me, double x1WC, double y1WC, double x2WC, double y2WC) {
-	double angle = (180.0 / NUMpi) * atan2 ((wdy (y2WC) - wdy (y1WC)) * (my yIsZeroAtTheTop ? -1.0 : 1.0), wdx (x2WC) - wdx (x1WC));
-	double size = my screen ? 10.0 * my resolution * my arrowSize / 72.0 : my resolution * my arrowSize / 10;
-	double xyDC [4];
-	xyDC [0] = wdx (x1WC);
-	xyDC [1] = wdy (y1WC);
-	xyDC [2] = wdx (x2WC) + (my screen ? 0.7 : 0.6) * cos ((angle - 180.0) * NUMpi / 180.0) * size;
-	xyDC [3] = wdy (y2WC) + (my yIsZeroAtTheTop ? -1.0 : 1.0) * (my screen ? 0.7 : 0.6) * sin ((angle - 180.0) * NUMpi / 180.0) * size;
-	my v_polyline (2, xyDC, false);
-	my v_arrowHead (wdx (x2WC), wdy (y2WC), angle);
-	if (my recording) { op (ARROW, 4); put (x1WC); put (y1WC); put (x2WC); put (y2WC); }
+	if (my recording) {
+		op (ARROW, 4); put (x1WC); put (y1WC); put (x2WC); put (y2WC);
+	} else {
+		const double angle = (180.0 / NUMpi) * atan2 ((wdy (y2WC) - wdy (y1WC)) * (my yIsZeroAtTheTop ? -1.0 : 1.0), wdx (x2WC) - wdx (x1WC));
+		const double size = my screen ? 10.0 * my resolution * my arrowSize / 72.0 : my resolution * my arrowSize / 10;
+		double xyDC [4];
+		xyDC [0] = wdx (x1WC);
+		xyDC [1] = wdy (y1WC);
+		xyDC [2] = wdx (x2WC) + (my screen ? 0.7 : 0.6) * cos ((angle - 180.0) * NUMpi / 180.0) * size;
+		xyDC [3] = wdy (y2WC) + (my yIsZeroAtTheTop ? -1.0 : 1.0) * (my screen ? 0.7 : 0.6) * sin ((angle - 180.0) * NUMpi / 180.0) * size;
+		my v_polyline (2, xyDC, false);
+		my v_arrowHead (wdx (x2WC), wdy (y2WC), angle);
+	}
 }
 
 void Graphics_doubleArrow (Graphics me, double x1WC, double y1WC, double x2WC, double y2WC) {
-	double angle = (180.0 / NUMpi) * atan2 ((wdy (y2WC) - wdy (y1WC)) * (my yIsZeroAtTheTop ? -1.0 : 1.0), wdx (x2WC) - wdx (x1WC));
-	double size = my screen ? 10.0 * my resolution * my arrowSize / 72.0 : my resolution * my arrowSize / 10.0;
-	double xyDC [4];
-	xyDC [0] = wdx (x1WC) + (my screen ? 0.7 : 0.6) * cos (angle * NUMpi / 180.0) * size;
-	xyDC [1] = wdy (y1WC) + (my yIsZeroAtTheTop ? -1.0 : 1.0) * (my screen ? 0.7 : 0.6) * sin (angle * NUMpi / 180.0) * size;
-	xyDC [2] = wdx (x2WC) + (my screen ? 0.7 : 0.6) * cos ((angle - 180) * NUMpi / 180.0) * size;
-	xyDC [3] = wdy (y2WC) + (my yIsZeroAtTheTop ? -1.0 : 1.0) * (my screen ? 0.7 : 0.6) * sin ((angle - 180.0) * NUMpi / 180.0) * size;
-	my v_polyline (2, xyDC, false);
-	my v_arrowHead (wdx (x1WC), wdy (y1WC), angle + 180.0);
-	//my v_polyline (2, xyDC);
-	my v_arrowHead (wdx (x2WC), wdy (y2WC), angle);
-	if (my recording) { op (DOUBLE_ARROW, 4); put (x1WC); put (y1WC); put (x2WC); put (y2WC); }
+	if (my recording) {
+		op (DOUBLE_ARROW, 4); put (x1WC); put (y1WC); put (x2WC); put (y2WC);
+	} else {
+		const double angle = (180.0 / NUMpi) * atan2 ((wdy (y2WC) - wdy (y1WC)) * (my yIsZeroAtTheTop ? -1.0 : 1.0), wdx (x2WC) - wdx (x1WC));
+		const double size = my screen ? 10.0 * my resolution * my arrowSize / 72.0 : my resolution * my arrowSize / 10.0;
+		double xyDC [4];
+		xyDC [0] = wdx (x1WC) + (my screen ? 0.7 : 0.6) * cos (angle * NUMpi / 180.0) * size;
+		xyDC [1] = wdy (y1WC) + (my yIsZeroAtTheTop ? -1.0 : 1.0) * (my screen ? 0.7 : 0.6) * sin (angle * NUMpi / 180.0) * size;
+		xyDC [2] = wdx (x2WC) + (my screen ? 0.7 : 0.6) * cos ((angle - 180) * NUMpi / 180.0) * size;
+		xyDC [3] = wdy (y2WC) + (my yIsZeroAtTheTop ? -1.0 : 1.0) * (my screen ? 0.7 : 0.6) * sin ((angle - 180.0) * NUMpi / 180.0) * size;
+		my v_polyline (2, xyDC, false);
+		my v_arrowHead (wdx (x1WC), wdy (y1WC), angle + 180.0);
+		//my v_polyline (2, xyDC);
+		my v_arrowHead (wdx (x2WC), wdy (y2WC), angle);
+	}
 }
 
 void Graphics_arcArrow (Graphics me, double xWC, double yWC, double rWC,
 	double fromAngle, double toAngle, int arrowAtStart, int arrowAtEnd)
 {
-	my v_arc (wdx (xWC), wdy (yWC), my scaleX * rWC, fromAngle, toAngle);
-	if (arrowAtStart) my v_arrowHead (
-		wdx (xWC + rWC * cos (fromAngle * (NUMpi / 180.0))),
-		wdy (yWC + rWC * sin (fromAngle * (NUMpi / 180.0))), fromAngle - 90.0);
-	if (arrowAtEnd) my v_arrowHead (
-		wdx (xWC + rWC * cos (toAngle * (NUMpi / 180.0))),
-		wdy (yWC + rWC * sin (toAngle * (NUMpi / 180.0))), toAngle + 90.0);
-	if (my recording)
-		{ op (ARC_ARROW, 7); put (xWC); put (yWC); put (rWC);
-		  put (fromAngle); put (toAngle); put (arrowAtStart); put (arrowAtEnd); }
+	if (my recording) {
+		op (ARC_ARROW, 7); put (xWC); put (yWC); put (rWC);
+		put (fromAngle); put (toAngle); put (arrowAtStart); put (arrowAtEnd);
+	} else {
+		my v_arc (wdx (xWC), wdy (yWC), my scaleX * rWC, fromAngle, toAngle);
+		if (arrowAtStart)
+			my v_arrowHead (
+				wdx (xWC + rWC * cos (fromAngle * (NUMpi / 180.0))),
+				wdy (yWC + rWC * sin (fromAngle * (NUMpi / 180.0))), fromAngle - 90.0
+			);
+		if (arrowAtEnd)
+			my v_arrowHead (
+				wdx (xWC + rWC * cos (toAngle * (NUMpi / 180.0))),
+				wdy (yWC + rWC * sin (toAngle * (NUMpi / 180.0))), toAngle + 90.0
+			);
+	}
 }
 
 /* Output attributes. */

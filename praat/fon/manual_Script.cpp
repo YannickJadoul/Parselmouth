@@ -789,7 +789,7 @@ TAG (U"##undefined")
 DEFINITION (U"a special value, see @undefined")
 MAN_END
 
-MAN_BEGIN (U"Formulas 5. Mathematical functions", U"ppgb", 20200405)
+MAN_BEGIN (U"Formulas 5. Mathematical functions", U"ppgb", 20200801)
 TAG (U"##abs (%x)")
 DEFINITION (U"absolute value")
 TAG (U"##round (%x)")
@@ -870,7 +870,7 @@ DEFINITION (U"a random number drawn from a Gamma distribution with shape paramet
 TAG (U"##random\\_ initializeWithSeedUnsafelyButPredictably (%seed)")
 DEFINITION (U"can be used in a script to create a reproducible sequence of random numbers "
 	"(warning: this exceptional situation will continue to exist throughout Praat until you call the following function)")
-TAG (U"##random\\_ initializeSafelyAndPredictably ()")
+TAG (U"##random\\_ initializeSafelyAndUnpredictably ()")
 DEFINITION (U"undoes the exceptional situation caused by the previous function")
 TAG (U"##lnGamma (%x)")
 DEFINITION (U"logarithm of the \\Ga function")
@@ -3349,7 +3349,7 @@ CODE (U"time = stopwatch")
 CODE (U"writeInfoLine: a, \" \", fixed\\$  (time, 3)")
 MAN_END
 
-MAN_BEGIN (U"Scripting 6.6. Controlling the user", U"ppgb", 20190827)
+MAN_BEGIN (U"Scripting 6.6. Controlling the user", U"ppgb", 20201020)
 INTRO (U"You can temporarily halt a Praat script:")
 TAG (U"#pauseScript: %message")
 DEFINITION (U"suspends execution of the script, and allows the user to interrupt it. "
@@ -3372,7 +3372,8 @@ CODE (U"for i to 5")
 		CODE2 (U"#positive: \"Sampling frequency (Hz)\", \"44100.0 (= CD quality)\"")
 		CODE2 (U"#word: \"hi\", \"hhh\"")
 		CODE2 (U"#sentence: \"lo\", \"two words\"")
-		CODE2 (U"#text: \"ko\", \"jkgkjhkj g gdfg dfg\"")
+		CODE2 (U"#text: \"shortText\", \"some one-line text here\"")
+		CODE2 (U"#text: \"longText\", \"some scrollable text here, within a height of 7 lines\", 7")
 		CODE2 (U"#boolean: \"You like it?\", 1")
 		CODE2 (U"if worth < 6")
 			CODE3 (U"#choice: \"Compression\", compression")
@@ -3389,6 +3390,8 @@ CODE (U"for i to 5")
 	CODE1 (U"appendInfoLine: number_of_people, \" \", worth, \" \", sampling_frequency, \" \", clicked")
 	CODE1 (U"appendInfoLine: \"Compression: \", compression, \" (\", compression\\$ , \")\"")
 	CODE1 (U"appendInfoLine: \"Number of channels: \", number_of_channels\\$ ")
+	CODE1 (U"appendInfoLine: \"Short text: \", shortText\\$ ")
+	CODE1 (U"appendInfoLine: \"Long text: \", longText\\$ ")
 CODE (U"endfor")
 NORMAL (U"This example uses several tricks. A useful one is seen with %number_of_channels: "
 	"this is at the same time the value that is passed to #optionMenu (and therefore determines the setting of "
@@ -4165,7 +4168,7 @@ NORMAL (U"If you want to see this in a text file, you can copy and paste from th
 CODE (U"appendFile: \"out.txt\", info\\$ ( )")
 MAN_END
 
-MAN_BEGIN (U"Script for listing time\\--F0\\--intensity", U"ppgb", 20140112)
+MAN_BEGIN (U"Script for listing time\\--F0\\--intensity", U"ppgb", 20200912)
 INTRO (U"\"I want a list of pitch and intensity values at the same times.\"")
 NORMAL (U"Since @@Sound: To Pitch...@ and @@Sound: To Intensity...@ do not give values at the same times, "
 	"you create separate pitch and intensity contours with high time resolution, then interpolate. "
@@ -4183,9 +4186,9 @@ CODE (U"writeInfoLine: \"Here are the results:\"")
 CODE (U"for i to (tmax-tmin)/0.01")
 	CODE1 (U"time = tmin + i * 0.01")
 	CODE1 (U"selectObject: \"Pitch pitch\"")
-	CODE1 (U"pitch = Get value at time: time, \"Hertz\", \"Linear\"")
+	CODE1 (U"pitch = Get value at time: time, \"Hertz\", \"linear\"")
 	CODE1 (U"selectObject: \"Intensity intensity\"")
-	CODE1 (U"intensity = Get value at time: time, \"Cubic\"")
+	CODE1 (U"intensity = Get value at time: time, \"cubic\"")
 	CODE1 (U"appendInfoLine: fixed\\$  (time, 2), \" \", fixed\\$  (pitch, 3), \" \", fixed\\$  (intensity, 3)")
 CODE (U"endfor")
 MAN_END
@@ -4291,7 +4294,7 @@ CODE (U"endfor")
 CODE (U"selectObject: sound, textgrid")
 MAN_END
 
-MAN_BEGIN (U"Demo window", U"ppgb", 20170327)
+MAN_BEGIN (U"Demo window", U"ppgb", 20200707)
 INTRO (U"The Demo window is a window in which you can draw and ask for user input. "
 	"You can use it for demonstrations, presentations, simulations, adaptive listening experiments, "
 	"and stand-alone programs (see @@Scripting 9.1. Turning a script into a stand-alone program@).")
@@ -4468,8 +4471,7 @@ NORMAL (U"which returns immediately without waiting and will tell you (via e.g. 
 	"whether a mouse or key event happened during drawing or sleeping.")
 ENTRY (U"Miscellaneous")
 NORMAL (U"To see whether any function keys are pressed (during a mouse click or key press), "
-	"you can use ##demoShiftKeyPressed ( )#, ##demoCommandKeyPressed ( )#, ##demoOptionKeyPressed ( )#, and "
-	"##demoExtraControlKeyPressed ( )#.")
+	"you can use ##demoShiftKeyPressed ( )#, ##demoCommandKeyPressed ( )#, and ##demoOptionKeyPressed ( )#.")
 NORMAL (U"To put some text in the title bar of the Demo window, try")
 CODE (U"#demoWindowTitle: \"This is the title of my presentation\"")
 ENTRY (U"Tips and Tricks")

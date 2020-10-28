@@ -1,6 +1,6 @@
 /* praat_DataModeler_init.cpp
  *
- * Copyright (C) 2014-2017 David Weenink
+ * Copyright (C) 2014-2020 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "OptimalCeilingTierEditor.h"
 #include "Pitch.h"
 #include "Table_extensions.h"
+#include "TextGrid.h"
 
 #undef iam
 #define iam iam_LOOP
@@ -50,14 +51,13 @@ FORM (GRAPHICS_DataModeler_speckle, U"DataModeler: Speckle", nullptr) {
 	REAL (ymin, U"left Y range", U"0.0")
 	REAL (ymax, U"right Y range", U"0.0")
 	BOOLEAN (errorBars, U"Draw error bars", 1)
-	REAL (barWidth_mm, U"Bar width (mm)", U"1.0")
-	REAL (xOffset_mm, U"Horizontal offset (mm)", U"0.0")
+	REAL (barWidth_wc, U"Bar width (wc)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	integer order = 6;
 	GRAPHICS_EACH (DataModeler)
-		DataModeler_speckle (me, GRAPHICS, xmin, xmax,ymin, ymax, 0, order + 1, errorBars, barWidth_mm, xOffset_mm, garnish);
+		DataModeler_speckle (me, GRAPHICS, xmin, xmax,ymin, ymax, 0, order + 1, errorBars, barWidth_wc, garnish);
 	GRAPHICS_EACH_END
 }
 
@@ -68,13 +68,12 @@ FORM (GRAPHICS_DataModeler_drawEstimatedTrack, U"DataModeler: Draw estimated tra
 	REAL (ymin, U"left Y range", U"0.0")
 	REAL (ymax, U"right Y range", U"0.0")
 	INTEGER (order, U"Order of polynomials for estimation", U"3")
-	REAL (xOffset, U"Horizontal offset (mm)", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	Melder_require (order >= 0, U"The order should be at least zero.");
 	GRAPHICS_EACH (DataModeler)
-		DataModeler_drawTrack (me, GRAPHICS, xmin, xmax, ymin, ymax, 1, order + 1, xOffset, garnish);
+		DataModeler_drawTrack (me, GRAPHICS, xmin, xmax, ymin, ymax, 1, order + 1, garnish);
 	GRAPHICS_EACH_END
 }
 
@@ -120,8 +119,8 @@ DO
 }
 
 FORM (REAL_DataModeler_getVarianceOfParameters, U"DataModeler: Get variance of parameters", nullptr) {
-	INTEGER (fromParameter, U"left Parameter range", U"0")
-	INTEGER (toParameter, U"right Parameter range", U"0")
+	NATURAL (fromParameter, U"left Parameter range", U"1")
+	INTEGER (toParameter, U"right Parameter range", U"0 (=all)")
 	OK
 DO
 	integer nofp;
@@ -276,8 +275,8 @@ DO
 FORM (MODIFY_DataModeler_setDataPointStatus, U"DataModeler: Set data point status", nullptr) {
 	NATURAL (index, U"Index", U"1")
 	OPTIONMENU (dataStatus, U"Status", 1)
-		OPTION (U"Valid")
-		OPTION (U"Invalid")
+		OPTION (U"valid")
+		OPTION (U"invalid")
 	OK
 DO
 	kDataModelerData status = dataStatus == 2 ? kDataModelerData::INVALID : kDataModelerData::VALID;
@@ -438,13 +437,12 @@ FORM (GRAPHICS_FormantModeler_drawEstimatedTracks, U"FormantModeler: Draw estima
 	NATURAL (fromFormant, U"left Formant range", U"1")
 	NATURAL (toFormant, U"right Formant range", U"3")
 	INTEGER (order, U"Order of polynomials for estimation", U"3")
-	REAL (xOffset_mm, U"Horizontal offset (mm)", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	Melder_require (order >= 0, U"The order should be at least zero.");
 	GRAPHICS_EACH (FormantModeler)
-		FormantModeler_drawTracks (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, 1, order + 1, xOffset_mm, garnish);
+		FormantModeler_drawTracks (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, true, order + 1, Melder_BLACK, Melder_BLACK, garnish);
 	GRAPHICS_EACH_END
 }
 
@@ -454,13 +452,12 @@ FORM (GRAPHICS_FormantModeler_drawTracks, U"FormantModeler: Draw tracks", nullpt
 	REAL (maximumFrequency, U"Maximum frequency (Hz)", U"5500.0")
 	NATURAL (fromFormant, U"left Formant range", U"1")
 	NATURAL (toFormant, U"right Formant range", U"3")
-	REAL (xOffset_mm, U"Horizontal offset (mm)", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	integer order = 6;
 	GRAPHICS_EACH (FormantModeler)
-		FormantModeler_drawTracks (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, 0, order + 1, xOffset_mm, garnish);
+		FormantModeler_drawTracks (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, false, order + 1, Melder_BLACK, Melder_BLACK, garnish);
 	GRAPHICS_EACH_END
 }
 
@@ -471,14 +468,12 @@ FORM (GRAPHICS_FormantModeler_speckle, U"FormantModeler: Speckle", nullptr) {
 	NATURAL (fromFormant, U"left Formant range", U"1")
 	NATURAL (toFormant, U"right Formant range", U"3")
 	BOOLEAN (errorBars, U"Draw error bars", true)
-	REAL (barWidth_mm, U"Bar width (mm)", U"1.0")
-	REAL (xOffset_mm, U"Horizontal offset (mm)", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	integer order = 6;
 	GRAPHICS_EACH (FormantModeler)
-		FormantModeler_speckle (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, 0, order + 1, errorBars, barWidth_mm, xOffset_mm, garnish);
+		FormantModeler_speckle (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, 0, order + 1, errorBars, Melder_BLACK, Melder_BLACK, garnish);
 	GRAPHICS_EACH_END
 }
 
@@ -491,12 +486,11 @@ FORM (GRAPHICS_FormantModeler_drawOutliersMarked, U"FormantModeler: Draw outlier
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"3.0")
 	WORD (mark_string, U"Mark", U"o")
 	POSITIVE (fontSize, U"Mark font size", U"12")
-	REAL (xOffset_mm, U"Horizontal offset (mm)", U"0.0")
 	BOOLEAN (garnish, U"Garnish", false)
 	OK
 DO
 	GRAPHICS_EACH (FormantModeler)
-		FormantModeler_drawOutliersMarked (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, numberOfSigmas, mark_string, fontSize, xOffset_mm, garnish);
+		FormantModeler_drawOutliersMarked (me, GRAPHICS, fromTime, toTime, maximumFrequency, fromFormant, toFormant, numberOfSigmas, mark_string, fontSize, Melder_BLACK, Melder_BLACK, garnish);
 	GRAPHICS_EACH_END
 }
 
@@ -740,7 +734,7 @@ DO
 	NUMBER_ONE_END (U" (= degrees of freedom of F", formantNumber, U")")
 }
 
-FORM (REAL_FormantModeler_getSmoothnessValue, U"FormantModeler: Get smoothness value", nullptr) {
+FORM (REAL_FormantModeler_getStress, U"FormantModeler: Get stress", nullptr) {
 	INTEGER (fromFormant, U"left Formant range", U"0")
 	INTEGER (toFormant, U"right Formant range", U"0")
 	INTEGER (order, U"Order of polynomials", U"3")
@@ -748,16 +742,16 @@ FORM (REAL_FormantModeler_getSmoothnessValue, U"FormantModeler: Get smoothness v
 	OK
 DO
 	NUMBER_ONE (FormantModeler)
-		double result = FormantModeler_getSmoothnessValue (me, fromFormant, toFormant, order, power);
-	NUMBER_ONE_END (U" (= smoothness)")
+		double result = FormantModeler_getStress (me, fromFormant, toFormant, order, power);
+	NUMBER_ONE_END (U" (= roughness)")
 }
 
 FORM (REAL_FormantModeler_getAverageDistanceBetweenTracks, U"FormantModeler: Get average distance between tracks", nullptr) {
 	NATURAL (track1, U"Track 1", U"2")
 	NATURAL (track2, U"Track 2", U"3")
 	OPTIONMENU (typeOfData, U"Type of data", 1)
-		OPTION (U"Data points")
-		OPTION (U"Modeled")
+		OPTION (U"data points")
+		OPTION (U"modelled")
 	OK
 DO
 	NUMBER_ONE (FormantModeler)
@@ -1089,7 +1083,7 @@ DO
 void praat_DataModeler_init ();
 void praat_DataModeler_init () {
 	Thing_recognizeClassesByName (classDataModeler, classFormantModeler, classOptimalCeilingTier, classOptimalCeilingTierEditor, nullptr);
-
+	
 	praat_addMenuCommand (U"Objects", U"New", U"Create simple DataModeler...", U"Create ISpline...", praat_HIDDEN + praat_DEPTH_1, NEW1_DataModeler_createSimple);
 
 	praat_addAction1 (classDataModeler, 0, U"Speckle...", 0, 0, GRAPHICS_DataModeler_speckle);
@@ -1173,7 +1167,7 @@ void praat_DataModeler_init () {
 		praat_addAction1 (classFormantModeler, 0, U"Get coefficient of determination...", 0, 1, REAL_FormantModeler_getCoefficientOfDetermination);
 		praat_addAction1 (classFormantModeler, 0, U"Report chi squared", 0, 1, INFO_FormantModeler_reportChiSquared);
 		praat_addAction1 (classFormantModeler, 0, U"Get degrees of freedom...", 0, 1, REAL_FormantModeler_getDegreesOfFreedom);
-		praat_addAction1 (classFormantModeler, 0, U"Get smoothness value...", 0, 1, REAL_FormantModeler_getSmoothnessValue);
+		praat_addAction1 (classFormantModeler, 0, U"Get stress...", 0, 1, REAL_FormantModeler_getStress);
 		praat_addAction1 (classFormantModeler, 0, U"Get average distance between tracks...", 0, 1, REAL_FormantModeler_getAverageDistanceBetweenTracks);
 		praat_addAction1 (classFormantModeler, 0, U"Get formants constraints factor...", 0, 1, REAL_FormantModeler_getFormantsConstraintsFactor);
 

@@ -2,7 +2,7 @@
 #define _GraphicsP_h_
 /* GraphicsP.h
  *
- * Copyright (C) 1992-2019 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2020 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,7 +87,6 @@ Thing_define (GraphicsScreen, Graphics) {
 			GdkDisplay *d_display;
 			#if ALLOW_GDK_DRAWING
 				GdkDrawable *d_window;
-				GdkGC *d_gdkGraphicsContext;
 			#else
 				GdkWindow *d_window;
 			#endif
@@ -108,7 +107,6 @@ Thing_define (GraphicsScreen, Graphics) {
 		NSView *d_macView;
 		int d_macFont, d_macStyle;
 		int d_depth;
-		RGBColor d_macColour;
 		uint8 *d_bits;
 		CGContextRef d_macGraphicsContext;
 	#endif
@@ -138,10 +136,6 @@ Thing_define (GraphicsScreen, Graphics) {
 	void v_roundedRectangle (double x1DC, double x2DC, double y1DC, double y2DC, double r)
 		override;
 	void v_arrowHead (double xDC, double yDC, double angle)
-		override;
-	bool v_mouseStillDown ()
-		override;
-	void v_getMouseLocation (double *xWC, double *yWC)
 		override;
 	void v_flushWs ()
 		override;
@@ -214,7 +208,7 @@ enum opcode { SET_VIEWPORT = 101, SET_INNER, UNSET_INNER, SET_WINDOW,
 	/* 152 */ INNER_RECTANGLE, CELL_ARRAY8, IMAGE, HIGHLIGHT2, UNHIGHLIGHT2,
 	/* 157 */ SET_ARROW_SIZE, DOUBLE_ARROW, SET_RGB_COLOUR, IMAGE_FROM_FILE,
 	/* 161 */ POLYLINE_CLOSED, CELL_ARRAY_COLOUR, IMAGE_COLOUR, SET_COLOUR_SCALE,
-	/* 165 */ SET_SPECKLE_SIZE, SPECKLE
+	/* 165 */ SET_SPECKLE_SIZE, SPECKLE, CLEAR_WS
 };
 
 void _GraphicsScreen_text_init (GraphicsScreen me);
@@ -224,11 +218,6 @@ void _Graphics_setGrey (Graphics me, double grey);
 void _Graphics_colour_init (Graphics me);
 bool _GraphicsMac_tryToInitializeFonts ();
 bool _GraphicsLin_tryToInitializeFonts ();
-
-#if quartz
-	void GraphicsQuartz_initDraw (GraphicsScreen me);
-	void GraphicsQuartz_exitDraw (GraphicsScreen me);
-#endif
 
 extern enum kGraphics_cjkFontStyle theGraphicsCjkFontStyle;
 

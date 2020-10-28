@@ -22,8 +22,58 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"What's new?", U"ppgb", 20200520)
+MAN_BEGIN (U"What's new?", U"ppgb", 20201027)
 INTRO (U"Latest changes in Praat.")
+NORMAL (U"##6.1.29# (27 October 2020)")
+LIST_ITEM (U"• Mac: corrected a bug revealed by Xcode 12 since 6.1.22 that could cause Praat to crash when using empty vectors, "
+	"such as when querying a Harmonicity for its mean in regions without frames.")
+NORMAL (U"##6.1.28# (20 October 2020)")
+LIST_ITEM (U"• Pause forms: text fields can be multi-line.")
+LIST_ITEM (U"• Removed a bug that caused Praat to crash when editing a PitchTier.")
+LIST_ITEM (U"• Script window: got rid of too many history entries after dragging in the Picture window.")
+NORMAL (U"##6.1.27# (13 October 2020)")
+LIST_ITEM (U"• Demo window: make sure that the contents of the window become visible "
+	"more often without calling demoShow() or demoWaitForInput().")
+NORMAL (U"##6.1.26# (5 October 2020)")
+LIST_ITEM (U"• Windows: removed a bug that caused Praat to crash if you clicked in the Sound window, "
+	"then dragged the mouse out of that window, then released the mouse button, and then clicked in the Sound window again.")
+LIST_ITEM (U"• Linux: removed a bug that caused Praat to crash when clicking Change in the Inspect window.")
+NORMAL (U"##6.1.25# (4 October 2020)")
+LIST_ITEM (U"• @FormantPath and @FormantPathEditor.")
+LIST_ITEM (U"• Windows: implemented vertical scrolling with the mouse wheel in the manual and in the Picture window.")
+LIST_ITEM (U"• Linux: removed a bug that caused Praat to crash when double-clicking in the Sound window.")
+LIST_ITEM (U"• Linux: removed a bug that caused Praat to crash when raising the About window twice.")
+LIST_ITEM (U"• Removed a bug that caused Praat to crash when zooming in "
+	"to a region in the Sound window without samples, when a pitch curve was visible.")
+LIST_ITEM (U"• Removed a bug that caused Praat to crash when pasting in "
+	"a region in the Sound window without samples.")
+NORMAL (U"##6.1.24# (29 September 2020)")
+LIST_ITEM (U"• Linux: got rid of flashing during a running cursor or "
+	"when making a selection in the Sound window or the Picture window.")
+NORMAL (U"##6.1.23# (28 September 2020)")
+LIST_ITEM (U"• Windows: got rid of flashing during a running cursor or "
+	"when making a selection in the Sound window or the Picture window.")
+LIST_ITEM (U"• Linux: corrected a bug that caused the buttons at the top of a manual window "
+	"to be overwritten with text when scrolling.")
+NORMAL (U"##6.1.22# (24 September 2020)")
+LIST_ITEM (U"• Windows: made the running cursor visible again.")
+LIST_ITEM (U"• Corrected a bug introduced in 6.1.17alpha that could cause incorrect line spacing in the Picture window, "
+	"such as in ##TableOfReal: Draw as numbers#.")
+NORMAL (U"##6.1.21# (20 September 2020)")
+LIST_ITEM (U"• First fully functional version for BigSur.")
+LIST_ITEM (U"• Removed a decades-old bug by which an extremum allegedly computed by cubic interpolation "
+	"would actually have been computed by sinc700.")
+NORMAL (U"##6.1.20beta# (10 September 2020)")
+LIST_ITEM (U"• Second beta version for macOS Big Sur.")
+NORMAL (U"##6.1.19beta# (7 September 2020)")
+LIST_ITEM (U"• First beta version for macOS Big Sur.")
+NORMAL (U"##6.1.18alpha# (1 September 2020)")
+LIST_ITEM (U"• Second alpha version for macOS Big Sur.")
+NORMAL (U"##6.1.17alpha# (16 August 2020)")
+LIST_ITEM (U"• Alpha version for macOS Big Sur.")
+NORMAL (U"##6.1.16# (6 June 2020)")
+LIST_ITEM (U"• ##Record fixed time...#: more reliable choice of input device.")
+LIST_ITEM (U"• Mac: notice plugging and unplugging of headphones.")
 NORMAL (U"##6.1.15# (20 May 2020)")
 LIST_ITEM (U"• Repaired a bug introduced in 6.0.44 that could cause an incorrect (namely, totally constant) ClassificationTable.")
 NORMAL (U"##6.1.14# (2 May 2020)")
@@ -3120,15 +3170,15 @@ LIST_ITEM (U"@@Intro 8.2. Manipulation of duration")
 LIST_ITEM (U"@@Intro 8.3. Manipulation of intensity")
 MAN_END
 
-MAN_BEGIN (U"Intro 8.1. Manipulation of pitch", U"ppgb", 20110128)
+MAN_BEGIN (U"Intro 8.1. Manipulation of pitch", U"ppgb", 20200901)
 INTRO (U"To modify the pitch contour of an existing @Sound object, "
 	"you select this @Sound and click ##To Manipulation#. "
 	"A @Manipulation object will then appear in the list. "
 	"You can then click @@View & Edit@ to raise a @ManipulationEditor, "
-	"which will show the pitch contour (@PitchTier) as a series of thick dots. "
+	"which will show the pitch contour (@PitchTier) as a series of thick blue dots. "
 	"To reduce the number of dots, choose ##Stylize pitch (2 st)# "
 	"from the #Pitch menu; it will then be easy to drag the dots "
-	"about the time-pitch area.")
+	"around the time–pitch area.")
 NORMAL (U"If you click any of the rectangles "
 	"(or choose any of the #Play commands from the #View menu), "
 	"you will hear the modified sound. By shift-clicking, you will hear "
@@ -3153,15 +3203,15 @@ NORMAL (U"For instance, suppose you want to have a pitch that falls from 350 to 
 	"You can put this PitchTier into a Manipulation object in the way described above.")
 MAN_END
 
-MAN_BEGIN (U"Intro 8.2. Manipulation of duration", U"ppgb", 20140421)
+MAN_BEGIN (U"Intro 8.2. Manipulation of duration", U"ppgb", 20200901)
 INTRO (U"You can use Praat to modify the relative durations in an existing sound.")
 NORMAL (U"First, you select a @Sound object and click \"To Manipulation\". "
 	"A @Manipulation object will then appear in the list. "
 	"You can then click @@View & Edit@ to raise a @ManipulationEditor, "
 	"which will show an empty @DurationTier. "
 	"You can add targets to this tier by choosing \"Add duration point at cursor\" "
-	"from the \"Dur\" menu. The targets will show up as green dots, which you can easily drag "
-	"about the duration area.")
+	"from the \"Dur\" menu. The targets will show up as blue dots, which you can easily drag "
+	"around the duration area.")
 NORMAL (U"If you click any of the rectangles "
 	"(or choose any of the @Play commands from the @View menu), "
 	"you will hear the modified sound. By shift-clicking, you will hear "
@@ -3179,7 +3229,7 @@ NORMAL (U"In your first 85 ms, your relative duration should be 70/85, "
 	"The DurationTier does linear interpolation, so it can only be approximate these precise times, "
 	"but fortunately to any precision you like:")
 CODE (U"Create DurationTier: \"shorten\", 0, 0.085 + 0.270")
-CODE (U"Add point: 0.000 70/85")
+CODE (U"Add point: 0.000, 70/85")
 CODE (U"Add point: 0.084999, 70/85")
 CODE (U"Add point: 0.085001, 200/270")
 CODE (U"Add point: 0.355, 200/270")

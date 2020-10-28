@@ -27,134 +27,156 @@
 
 #include "melder.h"
 #include "../dwsys/NUM2.h"
-#define SIGN(x,s) ((s) < 0 ? -fabs (x) : fabs(x))
 
-#define NUM_interpolate_simple_cases \
-	if (y.size < 1) return undefined; \
-	if (x > y.size) return y [y.size]; \
-	if (x < 1) return y [1]; \
-	if (x == midleft) return y [midleft]; \
-	/* 1 < x < y.size && x not integer: interpolate. */ \
-	if (maxDepth > midright - 1) maxDepth = midright - 1; \
-	if (maxDepth > y.size - midleft) maxDepth = y.size - midleft; \
-	if (maxDepth <= NUM_VALUE_INTERPOLATE_NEAREST) return y [(integer) floor (x + 0.5)]; \
-	if (maxDepth == NUM_VALUE_INTERPOLATE_LINEAR) return y [midleft] + (x - midleft) * (y [midright] - y [midleft]); \
-	if (maxDepth == NUM_VALUE_INTERPOLATE_CUBIC) { \
-		double yl = y [midleft], yr = y [midright]; \
-		double dyl = 0.5 * (yr - y [midleft - 1]), dyr = 0.5 * (y [midright + 1] - yl); \
-		double fil = x - midleft, fir = midright - x; \
-		return yl * fir + yr * fil - fil * fir * (0.5 * (dyr - dyl) + (fil - 0.5) * (dyl + dyr - 2 * (yr - yl))); \
-	}
-
-#if defined (__POWERPC__)
-double NUM_interpolate_sinc (constVEC const& y, double x, integer maxDepth) {
-	integer ix, midleft = (integer) floor (x), midright = midleft + 1, left, right;
-	double result = 0.0, a, halfsina, aa, daa, cosaa, sinaa, cosdaa, sindaa;
-	NUM_interpolate_simple_cases
-	left = midright - maxDepth, right = midleft + maxDepth;
-	a = NUMpi * (x - midleft);
-	halfsina = 0.5 * sin (a);
-	aa = a / (x - left + 1); cosaa = cos (aa); sinaa = sin (aa);
-	daa = NUMpi / (x - left + 1); cosdaa = cos (daa); sindaa = sin (daa);
-	for (ix = midleft; ix >= left; ix --) {
-		double d = halfsina / a * (1.0 + cosaa), help;
-		result += y [ix] * d;
-		a += NUMpi;
-		help = cosaa * cosdaa - sinaa * sindaa;
-		sinaa = cosaa * sindaa + sinaa * cosdaa;
-		cosaa = help;
-		halfsina = - halfsina;
-	}
-	a = NUMpi * (midright - x);
-	halfsina = 0.5 * sin (a);
-	aa = a / (right - x + 1); cosaa = cos (aa); sinaa = sin (aa);
-	daa = NUMpi / (right - x + 1); cosdaa = cos (daa); sindaa = sin (daa);
-	for (ix = midright; ix <= right; ix ++) {
-		double d = halfsina / a * (1.0 + cosaa), help;
-		result += y [ix] * d;
-		a += NUMpi;
-		help = cosaa * cosdaa - sinaa * sindaa;
-		sinaa = cosaa * sindaa + sinaa * cosdaa;
-		cosaa = help;
-		halfsina = - halfsina;
-	}
-	return result;
-}
+#if defined (__POWERPC__)||1
+	#define RECOMPUTE_SINES  0
 #else
+	#define RECOMPUTE_SINES  1
+#endif
 double NUM_interpolate_sinc (constVEC const& y, double x, integer maxDepth) {
-	integer ix, midleft = (integer) floor (x), midright = midleft + 1, left, right;
-	double result = 0.0, a, halfsina, aa, daa;
-	NUM_interpolate_simple_cases
-	left = midright - maxDepth;
-	right = midleft + maxDepth;
-	a = NUMpi * (x - midleft);
-	halfsina = 0.5 * sin (a);
-	aa = a / (x - left + 1);
-	daa = NUMpi / (x - left + 1);
-	for (ix = midleft; ix >= left; ix --) {
-		double d = halfsina / a * (1.0 + cos (aa));
+	const integer midleft = (integer) floor (x), midright = midleft + 1;
+	double result = 0.0;
+	if (y.size < 1)
+		return undefined;   // there exists no best guess
+	if (x < 1)
+		return y [1];   // offleft: constant extrapolation
+	if (x > y.size)
+		return y [y.size];   // offright: constant extrapolation
+	if (x == midleft)
+		return y [midleft];   // the interpolated curve goes through the points
+	/*
+		1 < x < y.size && x not integer: interpolate.
+	*/
+	Melder_clipRight (& maxDepth, midright - 1);
+	Melder_clipRight (& maxDepth, y.size - midleft);
+	if (maxDepth <= NUM_VALUE_INTERPOLATE_NEAREST)
+		return y [(integer) floor (x + 0.5)];
+	if (maxDepth == NUM_VALUE_INTERPOLATE_LINEAR)
+		return y [midleft] + (x - midleft) * (y [midright] - y [midleft]);
+	if (maxDepth == NUM_VALUE_INTERPOLATE_CUBIC) {
+		const double yl = y [midleft], yr = y [midright];
+		const double dyl = 0.5 * (yr - y [midleft - 1]), dyr = 0.5 * (y [midright + 1] - yl);
+		const double fil = x - midleft, fir = midright - x;
+		return yl * fir + yr * fil - fil * fir * (0.5 * (dyr - dyl) + (fil - 0.5) * (dyl + dyr - 2 * (yr - yl)));
+	}
+	/*
+		maxDepth >= 3: sinc interpolation
+	*/
+	const integer left = midright - maxDepth;
+	const integer right = midleft + maxDepth;
+	double a = NUMpi * (x - midleft);
+	double halfsina = 0.5 * sin (a);
+	double aa = a / (x - left + 1.0);
+	double daa = NUMpi / (x - left + 1.0);
+	#if ! RECOMPUTE_SINES
+		double cosaa = cos (aa);
+		double sinaa = sin (aa);
+		double cosdaa = cos (daa);
+		double sindaa = sin (daa);
+	#endif
+	for (integer ix = midleft; ix >= left; ix --) {
+		#if RECOMPUTE_SINES
+			const double d = halfsina / a * (1.0 + cos (aa));
+		#else
+			const double d = halfsina / a * (1.0 + cosaa);
+		#endif
 		result += y [ix] * d;
 		a += NUMpi;
-		aa += daa;
+		#if RECOMPUTE_SINES
+			aa += daa;
+		#else
+			const double help = cosaa * cosdaa - sinaa * sindaa;
+			sinaa = cosaa * sindaa + sinaa * cosdaa;
+			cosaa = help;
+		#endif
 		halfsina = - halfsina;
 	}
 	a = NUMpi * (midright - x);
 	halfsina = 0.5 * sin (a);
-	aa = a / (right - x + 1);
-	daa = NUMpi / (right - x + 1); \
-	for (ix = midright; ix <= right; ix ++) {
-		double d = halfsina / a * (1.0 + cos (aa));
+	aa = a / (right - x + 1.0);
+	daa = NUMpi / (right - x + 1.0);
+	#if ! RECOMPUTE_SINES
+		cosaa = cos (aa);
+		sinaa = sin (aa);
+		cosdaa = cos (daa);
+		sindaa = sin (daa);
+	#endif
+	for (integer ix = midright; ix <= right; ix ++) {
+		#if RECOMPUTE_SINES
+			const double d = halfsina / a * (1.0 + cos (aa));
+		#else
+			const double d = halfsina / a * (1.0 + cosaa);
+		#endif
 		result += y [ix] * d;
 		a += NUMpi;
-		aa += daa;
+		#if RECOMPUTE_SINES
+			aa += daa;
+		#else
+			const double help = cosaa * cosdaa - sinaa * sindaa;
+			sinaa = cosaa * sindaa + sinaa * cosdaa;
+			cosaa = help;
+		#endif
 		halfsina = - halfsina;
 	}
 	return result;
 }
-#endif
 
 /********** Improving extrema **********/
 #pragma mark Improving extrema
 
 struct improve_params {
-	int depth;
+	integer depth;
 	constVEC y;
-	int isMaximum;
+	bool isMaximum;
 };
 
 static double improve_evaluate (double x, void *closure) {
 	struct improve_params *me = (struct improve_params *) closure;
-	double y = NUM_interpolate_sinc (my y, x, my depth);
+	const double y = NUM_interpolate_sinc (my y, x, my depth);
 	return my isMaximum ? - y : y;
 }
 
-double NUMimproveExtremum (constVEC const& y, integer ixmid, int interpolation, double *ixmid_real, bool isMaximum) {
+double NUMimproveExtremum (constVEC const& y, integer ixmid, integer interpolationDepth, double *ixmid_real, bool isMaximum) {
 	struct improve_params params;
 	double result;
-	if (ixmid <= 1) { *ixmid_real = 1; return y [1]; }
-	if (ixmid >= y.size) { *ixmid_real = y.size; return y [y.size]; }
-	if (interpolation <= NUM_PEAK_INTERPOLATE_NONE) { *ixmid_real = ixmid; return y [ixmid]; }
-	if (interpolation == NUM_PEAK_INTERPOLATE_PARABOLIC) {
-		double dy = 0.5 * (y [ixmid + 1] - y [ixmid - 1]);
-		double d2y = 2 * y [ixmid] - y [ixmid - 1] - y [ixmid + 1];
+	if (ixmid <= 1) {
+		*ixmid_real = double (1);
+		return y [1];
+	}
+	if (ixmid >= y.size) {
+		*ixmid_real = double (y.size);
+		return y [y.size];
+	}
+	if (interpolationDepth <= NUM_PEAK_INTERPOLATE_NONE) {
+		*ixmid_real = double (ixmid);
+		return y [ixmid];
+	}
+	if (interpolationDepth == NUM_PEAK_INTERPOLATE_PARABOLIC) {
+		const double dy = 0.5 * (y [ixmid + 1] - y [ixmid - 1]);
+		const double d2y = 2 * y [ixmid] - y [ixmid - 1] - y [ixmid + 1];
 		*ixmid_real = ixmid + dy / d2y;
 		return y [ixmid] + 0.5 * dy * dy / d2y;
 	}
-	/* Sinc interpolation. */
-	params. depth = interpolation == NUM_PEAK_INTERPOLATE_SINC70 ? 70 : 700;
+	/*
+		Cubic or sinc interpolation.
+	*/
+	params. depth = (
+		interpolationDepth == NUM_PEAK_INTERPOLATE_CUBIC ? NUM_VALUE_INTERPOLATE_CUBIC :
+		interpolationDepth == NUM_PEAK_INTERPOLATE_SINC70 ? NUM_VALUE_INTERPOLATE_SINC70 :
+		NUM_VALUE_INTERPOLATE_SINC700
+	);
 	params. y = y;
 	params. isMaximum = isMaximum;
-	/*return isMaximum ?
-		- NUM_minimize (ixmid - 1, ixmid, ixmid + 1, improve_evaluate, & params, 1e-10, 1e-11, ixmid_real) :
-		NUM_minimize (ixmid - 1, ixmid, ixmid + 1, improve_evaluate, & params, 1e-10, 1e-11, ixmid_real);*/
 	*ixmid_real = NUMminimize_brent (improve_evaluate, ixmid - 1, ixmid + 1, & params, 1e-10, & result);
 	return isMaximum ? - result : result;
 }
 
-double NUMimproveMaximum (constVEC const& y, integer ixmid, int interpolation, double *ixmid_real)
-	{ return NUMimproveExtremum (y, ixmid, interpolation, ixmid_real, true); }
-double NUMimproveMinimum (constVEC const& y, integer ixmid, int interpolation, double *ixmid_real)
-	{ return NUMimproveExtremum (y, ixmid, interpolation, ixmid_real, false); }
+double NUMimproveMinimum (constVEC const& y, integer ixmid, integer interpolationDepth, double *ixmid_real) {
+	return NUMimproveExtremum (y, ixmid, interpolationDepth, ixmid_real, false);
+}
+double NUMimproveMaximum (constVEC const& y, integer ixmid, integer interpolationDepth, double *ixmid_real) {
+	return NUMimproveExtremum (y, ixmid, interpolationDepth, ixmid_real, true);
+}
 
 /********** Viterbi **********/
 
@@ -179,9 +201,12 @@ void NUM_viterbi (
 			double maximum = -1e308;
 			integer place = 0;
 			for (integer icand1 = 1; icand1 <= numberOfCandidates [iframe - 1]; icand1 ++) {
-				double value = delta [iframe - 1] [icand1] + delta [iframe] [icand2]
+				const double value = delta [iframe - 1] [icand1] + delta [iframe] [icand2]
 						- getTransitionCost (iframe, icand1, icand2, closure);
-				if (value > maximum) { maximum = value; place = icand1; }
+				if (value > maximum) {
+					maximum = value;
+					place = icand1;
+				}
 			}
 			if (place == 0)
 				Melder_throw (U"Viterbi algorithm cannot compute a track because of weird values.");
@@ -256,7 +281,7 @@ void NUM_viterbi_multi (
 
 	if (ntrack > ncand) Melder_throw (U"(NUM_viterbi_multi:) "
 		U"Number of tracks (", ntrack, U") should not exceed number of candidates (", ncand, U").");
-	integer ncomb = Melder_iround (NUMcombinations (ncand, ntrack));
+	const integer ncomb = Melder_iround (NUMcombinations (ncand, ntrack));
 	if (ncomb > 10'000'000) Melder_throw (U"(NUM_viterbi_multi:) "
 		U"Unrealistically high number of combinations (", ncomb, U").");
 	parm. ntrack = ntrack;

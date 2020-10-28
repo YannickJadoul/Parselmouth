@@ -1,6 +1,6 @@
 /* praatP.h
  *
- * Copyright (C) 1992-2007,2009-2018 Paul Boersma
+ * Copyright (C) 1992-2007,2009-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,9 +111,6 @@ void praat_picture_prefsChanged ();
    Picture window will update the font menu.
 */
 GuiMenu praat_picture_resolveMenu (conststring32 menu);
-void praat_picture_background ();
-void praat_picture_foreground ();
-
 
 /* The following routines are a bit private (used by praat_script.cpp). */
 /* If you must call them, follow them by praat_show (). */
@@ -129,7 +126,7 @@ void praat_foreground ();
 Editor praat_findEditorFromString (conststring32 string);
 Editor praat_findEditorById (integer id);
 
-void praat_showLogo (bool autoPopDown);
+void praat_showLogo ();
 
 /* Communication with praat_menuCommands.cpp: */
 void praat_menuCommands_init ();
@@ -161,6 +158,7 @@ void praat_reportSystemProperties ();
 void praat_reportGraphicalProperties ();
 void praat_reportIntegerProperties ();
 void praat_reportTextProperties ();
+void praat_reportFontProperties ();
 
 /* Communication with praat_objectMenus.cpp: */
 GuiMenu praat_objects_resolveMenu (conststring32 menu);

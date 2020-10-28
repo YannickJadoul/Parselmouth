@@ -1,6 +1,6 @@
 /* Sound_to_Harmonicity_GNE.cpp
  *
- * Copyright (C) 1999-2011,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1999-2012,2015-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ autoMatrix Sound_to_Harmonicity_GNE (Sound me,
 		 * in the LPC object of the high frequencies, so that inverse
 		 * filtering would yield weakened high frequencies.
 		 */
-		autoLPC lpc = Sound_to_LPC_auto (original10k.get(), 13, 30e-3, 10e-3, 1e9);
+		autoLPC lpc = Sound_to_LPC_autocorrelation (original10k.get(), 13, 30e-3, 10e-3, 1e9);
 		autoSound flat = LPC_Sound_filterInverse (lpc.get(), original10k.get());
 		autoSpectrum flatSpectrum = Sound_to_Spectrum (flat.get(), true);
 		autoSpectrum hilbertSpectrum = Data_copy (flatSpectrum.get());
@@ -138,7 +138,7 @@ autoMatrix Sound_to_Harmonicity_GNE (Sound me,
 				/*
 				 * Step 5: the maximum of each correlation function
 				 */
-				double ccmax = Vector_getMaximum (crossCorrelation.get(), 0.0, 0.0, 0);
+				double ccmax = Vector_getMaximum (crossCorrelation.get(), 0.0, 0.0, kVector_peakInterpolation :: NONE);
 				cc -> z [row] [col] = ccmax;
 			}
 		}

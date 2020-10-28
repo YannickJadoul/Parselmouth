@@ -2,7 +2,7 @@
 #define _praat_h_
 /* praat.h
  *
- * Copyright (C) 1992-2019 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -183,7 +183,7 @@ typedef struct {   /* Readonly */
 	integer uniqueId;
 } structPraatObjects, *PraatObjects;
 typedef struct {   // read-only
-	Graphics graphics;   /* The Graphics associated with the Picture window or HyperPage window or Demo window. */
+	Graphics graphics;   // the Graphics associated with the Picture window
 	int font, lineType;
 	double fontSize;
 	MelderColour colour;
@@ -261,8 +261,8 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 #ifndef _EditorM_h_
 
 #define FORM(proc,name,helpTitle)  \
-	extern "C" void proc (UiForm sendingForm, integer narg, Stackel args, conststring32 sendingString, Interpreter interpreter, conststring32 invokingButtonTitle, bool modified, void *buttonClosure); \
-	void proc (UiForm _sendingForm_, integer _narg_, Stackel _args_, conststring32 _sendingString_, Interpreter interpreter, conststring32 _invokingButtonTitle_, bool _modified_, void *_buttonClosure_) { \
+	extern "C" void proc (UiForm sendingForm, integer narg, Stackel args, conststring32 sendingString, Interpreter interpreter, conststring32 invokingButtonTitle, bool isModified, void *buttonClosure); \
+	void proc (UiForm _sendingForm_, integer _narg_, Stackel _args_, conststring32 _sendingString_, Interpreter interpreter, conststring32 _invokingButtonTitle_, bool _isModified_, void *_buttonClosure_) { \
 		int IOBJECT = 0; \
 		(void) IOBJECT; \
 		UiField _radio_ = nullptr; \
@@ -437,7 +437,7 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 			UiForm_setOption (_dia_.get(), (int *) & enumeratedVariable, (int) enumeratedValue - (int) EnumeratedType::MIN + 1);
 
 #define DO  \
-			UiForm_do (_dia_.get(), _modified_); \
+			UiForm_do (_dia_.get(), _isModified_); \
 		} else if (! _sendingForm_) { \
 			trace (U"args ", Melder_pointer (_args_)); \
 			if (_args_) { \
@@ -450,7 +450,7 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 				{
 
 #define DO_ALTERNATIVE(alternative)  \
-			UiForm_do (_dia_.get(), _modified_); \
+			UiForm_do (_dia_.get(), _isModified_); \
 		} else if (! _sendingForm_) { \
 			trace (U"alternative args ", Melder_pointer (_args_)); \
 			try { \
@@ -463,7 +463,7 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 				autostring32 _parkedError = Melder_dup_f (Melder_getError ()); \
 				Melder_clearError (); \
 				try { \
-					alternative (nullptr, _narg_, _args_, _sendingString_, interpreter, _invokingButtonTitle_, _modified_, _buttonClosure_); \
+					alternative (nullptr, _narg_, _args_, _sendingString_, interpreter, _invokingButtonTitle_, _isModified_, _buttonClosure_); \
 				} catch (MelderError) { \
 					Melder_clearError (); \
 					Melder_appendError (_parkedError.get()); \
@@ -613,12 +613,25 @@ void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2);
 	klas1 me = nullptr; klas2 you = nullptr; klas3 him = nullptr; \
 	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT; else if (CLASS == class##klas2) you = (klas2) OBJECT; \
 	else if (CLASS == class##klas3) him = (klas3) OBJECT; if (me && you && him) break; }
+	
+#define FIND_THREE_WITH_IOBJECT(klas1,klas2,klas3)  \
+	klas1 me = nullptr; klas2 you = nullptr; klas3 him = nullptr; int _klas1_position = 0;\
+	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT, _klas1_position = IOBJECT; else if (CLASS == class##klas2) you = (klas2) OBJECT; \
+	else if (CLASS == class##klas3) him = (klas3) OBJECT; if (me && you && him) break; } \
+	IOBJECT = _klas1_position;
 
 #define FIND_FOUR(klas1,klas2,klas3,klas4)  \
 	klas1 me = nullptr; klas2 you = nullptr; klas3 him = nullptr; klas4 she = nullptr; \
 	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT; else if (CLASS == class##klas2) you = (klas2) OBJECT; \
 	else if (CLASS == class##klas3) him = (klas3) OBJECT; else if (CLASS == class##klas4) she = (klas4) OBJECT; \
 	if (me && you && him && she) break; }
+
+#define FIND_FOUR_WITH_IOBJECT(klas1,klas2,klas3,klas4)  \
+	klas1 me = nullptr; klas2 you = nullptr; klas3 him = nullptr; klas4 she = nullptr;  int _klas1_position = 0; \
+	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT, _klas1_position = IOBJECT; else if (CLASS == class##klas2) you = (klas2) OBJECT; \
+	else if (CLASS == class##klas3) him = (klas3) OBJECT; else if (CLASS == class##klas4) she = (klas4) OBJECT; \
+	if (me && you && him && she) break; } \
+	IOBJECT = _klas1_position;
 
 #define FIND_LIST(klas)  \
 	OrderedOf<struct##klas> list; \

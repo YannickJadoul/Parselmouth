@@ -23,7 +23,6 @@
 #include "DataEditor.h"
 #include "site.h"
 #include "GraphicsP.h"
-//#include <string>
 
 #undef iam
 #define iam iam_LOOP
@@ -129,7 +128,7 @@ GuiMenu praat_objects_resolveMenu (conststring32 menu) {
 
 DIRECT (WINDOW_About) {
 	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot show 'About' window from batch.");
-	praat_showLogo (false);
+	praat_showLogo ();
 END }
 
 DIRECT (WINDOW_praat_newScript) {
@@ -292,46 +291,45 @@ DO
 END }
 
 FORM (INFO_reportDifferenceOfTwoProportions, U"Report difference of two proportions", U"Difference of two proportions") {
-	INTEGER (a, U"left Row 1", U"71")
-	INTEGER (b, U"right Row 1", U"39")
-	INTEGER (c, U"left Row 2", U"93")
-	INTEGER (d, U"right Row 2", U"27")
+	INTEGER (a_int, U"left Row 1", U"71")
+	INTEGER (b_int, U"right Row 1", U"39")
+	INTEGER (c_int, U"left Row 2", U"93")
+	INTEGER (d_int, U"right Row 2", U"27")
 	OK
 DO
+	double a = a_int, b = b_int, c = c_int, d = d_int;
 	double n = a + b + c + d;
-	double aexp, bexp, cexp, dexp, crossDifference, x2;
-	if (a < 0 || b < 0 || c < 0 || d < 0) Melder_throw (U"The numbers should not be negative.");
-	if (a + b <= 0 || c + d <= 0) Melder_throw (U"The row totals should be positive.");
-	if (a + c <= 0 || b + d <= 0) Melder_throw (U"The column totals should be positive.");
+	if (a < 0 || b < 0 || c < 0 || d < 0)
+		Melder_throw (U"The numbers should not be negative.");
+	if (a + b <= 0 || c + d <= 0)
+		Melder_throw (U"The row totals should be positive.");
+	if (a + c <= 0 || b + d <= 0)
+		Melder_throw (U"The column totals should be positive.");
 	MelderInfo_open ();
 	MelderInfo_writeLine (U"Observed row 1 =    ", Melder_iround (a), U"    ", Melder_iround (b));
 	MelderInfo_writeLine (U"Observed row 2 =    ", Melder_iround (c), U"    ", Melder_iround (d));
-	aexp = (a + b) * (a + c) / n;
-	bexp = (a + b) * (b + d) / n;
-	cexp = (a + c) * (c + d) / n;
-	dexp = (b + d) * (c + d) / n;
+	double aexp = (a + b) * (a + c) / n;
+	double bexp = (a + b) * (b + d) / n;
+	double cexp = (a + c) * (c + d) / n;
+	double dexp = (b + d) * (c + d) / n;
 	MelderInfo_writeLine (U"");
 	MelderInfo_writeLine (U"Expected row 1 =    ", aexp, U"    ", bexp);
 	MelderInfo_writeLine (U"Expected row 2 =    ", cexp, U"    ", dexp);
 	/*
-	 * Continuity correction:
-	 * bring the observed numbers closer to the expected numbers by 0.5 (if possible).
-	 */
-	if (a < aexp) { a += 0.5; if (a > aexp) a = aexp; }
-	else if (a > aexp) { a -= 0.5; if (a < aexp) a = aexp; }
-	if (b < bexp) { b += 0.5; if (b > bexp) b = bexp; }
-	else if (b > bexp) { b -= 0.5; if (b < bexp) b = bexp; }
-	if (c < cexp) { c += 0.5; if (c > cexp) c = cexp; }
-	else if (c > cexp) { c -= 0.5; if (c < cexp) c = cexp; }
-	if (d < dexp) { d += 0.5; if (d > dexp) d = dexp; }
-	else if (d > dexp) { d -= 0.5; if (d < dexp) d = dexp; }
+		Continuity correction:
+		bring the observed numbers closer to the expected numbers by 0.5 (if possible).
+	*/
+	Melder_moveCloserToBy (& a, aexp, 0.5);
+	Melder_moveCloserToBy (& b, bexp, 0.5);
+	Melder_moveCloserToBy (& c, cexp, 0.5);
+	Melder_moveCloserToBy (& d, dexp, 0.5);
 	MelderInfo_writeLine (U"");
 	MelderInfo_writeLine (U"Corrected observed row 1 =    ", a, U"    ", b);
 	MelderInfo_writeLine (U"Corrected observed row 2 =    ", c, U"    ", d);
 	
 	n = a + b + c + d;
-	crossDifference = a * d - b * c;
-	x2 = n * crossDifference * crossDifference / (a + b) / (c + d) / (a + c) / (b + d);
+	double crossDifference = a * d - b * c;
+	double x2 = n * crossDifference * crossDifference / (a + b) / (c + d) / (a + c) / (b + d);
 	MelderInfo_writeLine (U"");
 	MelderInfo_writeLine (U"Chi-square =    ", x2);
 	MelderInfo_writeLine (U"Two-tailed p =    ", NUMchiSquareQ (x2, 1));
@@ -408,6 +406,10 @@ END }
 
 DIRECT (INFO_reportTextProperties) {
 	praat_reportTextProperties ();
+END }
+
+DIRECT (INFO_reportFontProperties) {
+	praat_reportFontProperties ();
 END }
 
 /********** Callbacks of the Open menu. **********/
@@ -547,8 +549,8 @@ END }
 
 void praat_show () {
 	/*
-	 * (De)sensitivize the fixed buttons as appropriate for the current selection.
-	 */
+		(De)sensitivize the fixed buttons as appropriate for the current selection.
+	*/
 	praat_sensitivizeFixedButtonCommand (U"Remove", theCurrentPraatObjects -> totalSelection != 0);
 	praat_sensitivizeFixedButtonCommand (U"Rename...", theCurrentPraatObjects -> totalSelection == 1);
 	praat_sensitivizeFixedButtonCommand (U"Copy...", theCurrentPraatObjects -> totalSelection == 1);
@@ -577,10 +579,12 @@ static MelderString itemTitle_about;
 
 static autoDaata scriptRecognizer (integer nread, const char *header, MelderFile file) {
 	conststring32 name = MelderFile_name (file);
-	if (nread < 2) return autoDaata ();
-	if ((header [0] == '#' && header [1] == '!') || str32str (name, U".praat") == name + str32len (name) - 6
-	    || str32str (name, U".html") == name + str32len (name) - 5)
-	{
+	if (nread < 2)
+		return autoDaata ();
+	if ((header [0] == '#' && header [1] == '!')
+		|| Melder_stringMatchesCriterion (name, kMelder_string::ENDS_WITH, U".praat", false)
+	    || Melder_stringMatchesCriterion (name, kMelder_string::ENDS_WITH, U".html", false)
+	) {
 		return Script_createFromFile (file);
 	}
 	return autoDaata ();
@@ -628,8 +632,8 @@ void praat_addMenus (GuiWindow window) {
 	Data_recognizeFileType (scriptRecognizer);
 
 	/*
-	 * Create the menu titles in the bar.
-	 */
+		Create the menu titles in the bar.
+	*/
 	if (! theCurrentPraatApplication -> batch) {
 		#ifdef macintosh
 			praatMenu = GuiMenu_createInWindow (nullptr, U"\024", 0);
@@ -649,15 +653,15 @@ void praat_addMenus (GuiWindow window) {
 		helpMenu = GuiMenu_createInWindow (window, U"Help", 0);
 	}
 	
-	MelderString_append (& itemTitle_about, U"About ", praatP.title.get(), U"...");
+	MelderString_append (& itemTitle_about, U"About ", praatP.title.get());
 	praat_addMenuCommand (U"Objects", U"Praat", itemTitle_about.string, nullptr, praat_UNHIDABLE, WINDOW_About);
 	#ifdef macintosh
 		#if cocoa
 			/*
-			 * HACK: give the following command weird names,
-			 * because otherwise they may be called from a script.
-			 * (we add three alt-spaces)
-			 */
+				HACK: give the following commands weird names,
+				because otherwise they may be called from a script.
+				(we add three alt-spaces)
+			*/
 			praat_addMenuCommand (U"Objects", U"Edit", U"Cut   ", nullptr, praat_UNHIDABLE | 'X' | praat_NO_API, PRAAT_cut);
 			praat_addMenuCommand (U"Objects", U"Edit", U"Copy   ", nullptr, praat_UNHIDABLE | 'C' | praat_NO_API, PRAAT_copy);
 			praat_addMenuCommand (U"Objects", U"Edit", U"Paste   ", nullptr, praat_UNHIDABLE | 'V' | praat_NO_API, PRAAT_paste);
@@ -694,9 +698,10 @@ void praat_addMenus (GuiWindow window) {
 	technicalMenu = menuItem ? menuItem -> d_menu : nullptr;
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report memory use", nullptr, 0, INFO_reportMemoryUse);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report integer properties", nullptr, 0, INFO_reportIntegerProperties);
-	praat_addMenuCommand (U"Objects", U"Technical", U"Report text properties", nullptr, 0, INFO_reportTextProperties);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report system properties", nullptr, 0, INFO_reportSystemProperties);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report graphical properties", nullptr, 0, INFO_reportGraphicalProperties);
+	praat_addMenuCommand (U"Objects", U"Technical", U"Report text properties", nullptr, 0, INFO_reportTextProperties);
+	praat_addMenuCommand (U"Objects", U"Technical", U"Report font properties", nullptr, 0, INFO_reportFontProperties);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Debug...", nullptr, 0, PRAAT_debug);
 	praat_addMenuCommand (U"Objects", U"Technical", U"-- api --", nullptr, 0, nullptr);
 	praat_addMenuCommand (U"Objects", U"Technical", U"List readable types of objects", nullptr, 0, INFO_listReadableTypesOfObjects);

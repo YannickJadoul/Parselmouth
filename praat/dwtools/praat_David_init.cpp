@@ -76,6 +76,7 @@
 #include "ComplexSpectrogram.h"
 #include "Confusion.h"
 #include "Covariance.h"
+#include "DataModeler.h"
 #include "Discriminant.h"
 #include "EditDistanceTable.h"
 #include "Editor.h"
@@ -91,10 +92,10 @@
 #include "FilterBank.h"
 #include "Formula.h"
 #include "FormantGridEditor.h"
-#include "DataModeler.h"
 #include "FormantGrid_extensions.h"
 #include "Intensity_extensions.h"
 #include "IntensityTierEditor.h"
+#include "IntervalTierNavigator.h"
 #include "Matrix_Categories.h"
 #include "Matrix_extensions.h"
 #include "LongSound_extensions.h"
@@ -103,6 +104,7 @@
 #include "LegendreSeries.h"
 #include "Ltas_extensions.h"
 #include "Minimizers.h"
+#include "NavigationContext.h"
 #include "PatternList.h"
 #include "PCA.h"
 #include "PitchTierEditor.h"
@@ -119,8 +121,10 @@
 #include "Strings_extensions.h"
 #include "SVD.h"
 #include "Table_extensions.h"
+#include "TableOfReal_and_Discriminant.h"
 #include "TableOfReal_and_Permutation.h"
 #include "TextGrid_extensions.h"
+#include "TextGridNavigator.h"
 
 #include "Categories_and_Strings.h"
 #include "CCA_and_Correlation.h"
@@ -624,7 +628,7 @@ DO
 	CONVERT_TWO_END (your name.get(), U"_", my name.get())
 }
 
-FORM (NEW_CCA_extractEigen, U"CCA: Exxtract Eigen", nullptr) {
+FORM (NEW_CCA_extractEigen, U"CCA: Extract Eigen", nullptr) {
 	OPTIONMENU (choice, U"variablesType", 1)
 		OPTION (U"Dependent")
 		OPTION (U"Independent")
@@ -786,7 +790,7 @@ FORM (NEW_Confusion_condense, U"Confusion: Condense", U"Confusion: Condense...")
 	SENTENCE (replace_string, U"Replace", U"high")
 	INTEGER (replaceLimit, U"Replace limit", U"0 (= unlimited)")
 	RADIOx (matchType, U"Search and replace are", 2, 0)
-		RADIOBUTTON (U"Literals")
+		RADIOBUTTON (U"literals")
 		RADIOBUTTON (U"Regular Expressions")
 	OK
 DO
@@ -1216,6 +1220,16 @@ DO
 		Melder_require (group > 0, U"Your group label \"", groupLabel, U"\" does not exist.");
 		autoTableOfReal result = Discriminant_TableOfReal_mahalanobis (me, you, group, poolCovariances);
 	CONVERT_TWO_END (U"mahalanobis")
+}
+
+FORM (NEW1_Discriminant_TableOfReal_mahalanobis_all, U"Discriminant & TableOfReal: Mahalanobis all", nullptr) {
+	BOOLEAN (poolCovariances, U"Pool covariance matrices", false)
+	OK
+DO
+	CONVERT_TWO (Discriminant, TableOfReal)
+		autoTableOfReal result = Discriminant_TableOfReal_mahalanobis_all (me, you, poolCovariances);
+	CONVERT_TWO_END (U"mahalanobis")
+	
 }
 
 DIRECT (INTEGER_Discriminant_getNumberOfEigenvalues) {
@@ -1826,7 +1840,7 @@ FORM (INTEGER_DTW_getMaximumConsecutiveSteps, U"DTW: Get maximum consecutive ste
 	OPTIONMENU (direction, U"Direction", 1)
 		OPTION (U"X")
 		OPTION (U"Y")
-		OPTION (U"Diagonaal")
+		OPTION (U"Diagonal")
 	OK
 DO
 	int direction_code [] = { DTW_START, DTW_X, DTW_Y, DTW_XANDY };
@@ -2110,10 +2124,10 @@ DO
 
 FORM (REAL_EditCostsTable_getCosts_others, U"EditCostsTable: Get cost (others)", nullptr) {
 	RADIO (costTypes, U"Others cost type", 1)
-		RADIOBUTTON (U"Insertion")
-		RADIOBUTTON (U"Deletion")
-		RADIOBUTTON (U"Equality")
-		RADIOBUTTON (U"Inequality")
+		RADIOBUTTON (U"insertion")
+		RADIOBUTTON (U"deletion")
+		RADIOBUTTON (U"equality")
+		RADIOBUTTON (U"inequality")
 	OK
 DO
 	NUMBER_ONE (EditCostsTable)
@@ -3279,23 +3293,23 @@ DIRECT (NEW1_KlattTable_createExample) {
 FORM (NEW_KlattTable_to_Sound, U"KlattTable: To Sound", U"KlattTable: To Sound...") {
 	POSITIVE (samplingFrequency, U"Sampling frequency (Hz)", U"16000")
 	RADIO (synthesisModel, U"Synthesis model", 1)
-		RADIOBUTTON (U"Cascade")
-		RADIOBUTTON (U"Parallel")
+		RADIOBUTTON (U"cascade")
+		RADIOBUTTON (U"parallel")
 	NATURAL (numberOfFormants, U"Number of formants", U"5")
 	POSITIVE (frameDuration, U"Frame duration (s)", U"0.005")
 	REAL (flutter_percentage, U"Flutter percentage (%)", U"0.0")   // ppgb: foutgevoelig
 	OPTIONMENU (voicingSource, U"Voicing source", 1)
-		OPTION (U"Impulsive")
-		OPTION (U"Natural")
+		OPTION (U"impulsive")
+		OPTION (U"natural")
 	OPTIONMENU (soundOutputType, U"Output type", 1)
-		OPTION (U"Sound")
-		OPTION (U"Voicing")
-		OPTION (U"Aspiration")
-		OPTION (U"Frication")
-		OPTION (U"Cascade-glottal-output")
-		OPTION (U"Parallel-glottal-output")
-		OPTION (U"Bypass-output")
-		OPTION (U"All-excitations")
+		OPTION (U"sound")
+		OPTION (U"voicing")
+		OPTION (U"aspiration")
+		OPTION (U"frication")
+		OPTION (U"cascade-glottal-output")
+		OPTION (U"parallel-glottal-output")
+		OPTION (U"bypass-output")
+		OPTION (U"all-excitations")
 	OK
 DO
 	if (flutter_percentage < 0.0 || flutter_percentage > 100.0) {
@@ -3647,9 +3661,9 @@ DIRECT (COMPVEC_Matrix_listEigenvalues) {
 FORM (MODIFY_Matrix_scale, U"Matrix: Scale", nullptr) {
 	LABEL (U"self[row, col] := self[row, col] / `Scale factor'")
 	RADIO (scaleMethod, U"Scale factor", 1)
-		RADIOBUTTON (U"Extremum in matrix")
-		RADIOBUTTON (U"Extremum in each row")
-		RADIOBUTTON (U"Extremum in each column")
+		RADIOBUTTON (U"extremum in matrix")
+		RADIOBUTTON (U"extremum in each row")
+		RADIOBUTTON (U"extremum in each column")
 	OK
 DO
 	MODIFY_EACH (Matrix)
@@ -4022,7 +4036,7 @@ FORM (GRAPHICS_MelFilter_drawFilterFunctions, U"MelFilter: Draw filter functions
 	RADIO (frequencyScale, U"Frequency scale", 1)
 	RADIOBUTTON (U"Hertz")
 	RADIOBUTTON (U"Bark")
-	RADIOBUTTON (U"Mel")
+	RADIOBUTTON (U"mel")
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
 	BOOLEAN (dBScale, U"Amplitude scale in dB", false)
@@ -4040,7 +4054,7 @@ FORM (GRAPHICS_MelSpectrogram_drawTriangularFilterFunctions, U"MelSpectrogram: D
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
 	RADIO (frequencyScale, U"Frequency scale", 1)
-	RADIOBUTTON (U"Mel")
+	RADIOBUTTON (U"mel")
 	RADIOBUTTON (U"Hertz")
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
@@ -4136,11 +4150,11 @@ FORM (INFO_Ltas_reportSpectralTrend, U"Ltas: Report spectral trend", nullptr) {
 	POSITIVE (fromFrequency, U"left Frequency range (Hz)", U"100.0")
 	POSITIVE (toFrequency, U"right Frequency range (Hz)", U"5000.0")
 	OPTIONMENU (frequencyScale, U"Frequency scale", 1)
-		OPTION (U"Linear")
-		OPTION (U"Logarithmic")
+		OPTION (U"linear")
+		OPTION (U"logarithmic")
 	OPTIONMENU (fitMethod, U"Fit method", 2)
-		OPTION (U"Least squares")
-		OPTION (U"Robust")
+		OPTION (U"least squares")
+		OPTION (U"robust")
 	OK
 DO
 	bool logScale = frequencyScale == 2;
@@ -4255,6 +4269,53 @@ DO
 
 DIRECT (HELP_MSpline_help) {
 	HELP (U"MSpline")
+}
+
+
+FORM (MODIFY_NavigationContext_modifyContextCombination, U"NavigationContext: Modify context combination", nullptr) {
+	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"How to combine the contexts", kContext_combination::DEFAULT)
+	BOOLEAN (contextOnly, U"Use context only", false)
+	OK
+DO
+	MODIFY_EACH (NavigationContext)
+		NavigationContext_modifyContextCombination (me, combinationCriterion, contextOnly);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_NavigationContext_modifyNavigationLabels, U"NavigationContext: Modify navigation labels", nullptr) {
+	OPTIONMENU_ENUM (kMelder_string, navigationCriterion, U"Navigation criterion", kMelder_string::DEFAULT)
+	OK
+DO
+	MODIFY_FIRST_OF_TWO (NavigationContext, Strings)
+		NavigationContext_modifyNavigationLabels (me, you, navigationCriterion);
+	MODIFY_FIRST_OF_TWO_END
+}
+
+FORM (MODIFY_NavigationContext_modifyLeftContextLabels, U"NavigationContext: Modify left context labels", nullptr) {
+	OPTIONMENU_ENUM (kMelder_string, leftContextCriterion, U"Left context criterion", kMelder_string::DEFAULT)
+	OK
+DO
+	MODIFY_FIRST_OF_TWO (NavigationContext, Strings)
+		NavigationContext_modifyLeftContextLabels (me, you, leftContextCriterion);
+	MODIFY_FIRST_OF_TWO_END
+}
+
+FORM (MODIFY_NavigationContext_modifyRightContextLabels, U"NavigationContext: modify right context labels", nullptr) {
+	OPTIONMENU_ENUM (kMelder_string, rightContextCriterion, U"Right context criterion", kMelder_string::DEFAULT)
+	OK
+DO
+	MODIFY_FIRST_OF_TWO (NavigationContext, Strings)
+		NavigationContext_modifyRightContextLabels (me, you, rightContextCriterion);
+	MODIFY_FIRST_OF_TWO_END
+}
+
+FORM (NEW_TextGrid_and_NavigationContext_to_TextGridNavigator, U"TextGrid & NavigationContext: To TextGridNavigator", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OK
+DO
+	CONVERT_TWO (TextGrid, NavigationContext)
+		autoTextGridNavigator result = TextGridNavigator_create (me, you, tierNumber);
+	CONVERT_TWO_END (U"tgn", tierNumber)
 }
 
 DIRECT (HELP_NMF_help) {
@@ -5485,10 +5546,10 @@ FORM (GRAPHICS_Sound_drawWhere, U"Sound: Draw where", U"Sound: Draw where...") {
 	BOOLEAN (garnish, U"Garnish", true)
 	LABEL (U"")
 	OPTIONMENUSTR (drawingMethod, U"Drawing method", 1)
-		OPTION (U"Curve")
-		OPTION (U"Bars")
-		OPTION (U"Poles")
-		OPTION (U"Speckles")
+		OPTION (U"curve")
+		OPTION (U"bars")
+		OPTION (U"poles")
+		OPTION (U"speckles")
 	TEXTFIELD (formula, U"Draw only those parts where the following condition holds:", U"x < xmin + (xmax - xmin) / 2; first half")
 	OK
 DO
@@ -5738,7 +5799,7 @@ FORM (MODIFY_Sound_fadeIn, U"Sound: Fade in", U"Sound: Fade in...") {
 	OK
 DO
 	MODIFY_EACH (Sound)
-		Sound_fade (me, channel, time, fadeTime, -1.0, silentFromStart);
+		Sound_fade (me, channel, time, fadeTime, false, silentFromStart);
 	MODIFY_EACH_END
 }
 
@@ -5750,7 +5811,7 @@ FORM (MODIFY_Sound_fadeOut, U"Sound: Fade out", U"Sound: Fade out...") {
 	OK
 DO
 	MODIFY_EACH (Sound)
-		Sound_fade (me, channel, time, fadeTime, 1, silentToEnd);
+		Sound_fade (me, channel, time, fadeTime, true, silentToEnd);
 	MODIFY_EACH_END
 }
 
@@ -5758,7 +5819,7 @@ FORM (NEW_Sound_to_KlattGrid_simple, U"Sound: To KlattGrid (simple)", U"Sound: T
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Formant determination")
 	NATURAL (numberOfFormants, U"Max. number of formants", U"5")
-	POSITIVE (maximumFormant, U"Maximum formant (Hz)", U"5500 (= adult female)")
+	POSITIVE (formantCeiling, U"Formant ceiling (Hz)", U"5500 (= adult female)")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
 	POSITIVE (preEmphasisFrequency, U"Pre-emphasis from (Hz)", U"50.0")
 	LABEL (U"Pitch determination")
@@ -5770,7 +5831,7 @@ FORM (NEW_Sound_to_KlattGrid_simple, U"Sound: To KlattGrid (simple)", U"Sound: T
 	OK
 DO
 	CONVERT_EACH (Sound)
-		autoKlattGrid result = Sound_to_KlattGrid_simple (me, timeStep, numberOfFormants, maximumFormant, windowLength, preEmphasisFrequency, pitchFloor, pitchCeiling, minimumPitch, subtractMean);
+		autoKlattGrid result = Sound_to_KlattGrid_simple (me, timeStep, numberOfFormants, formantCeiling, windowLength, preEmphasisFrequency, pitchFloor, pitchCeiling, minimumPitch, subtractMean);
 	CONVERT_EACH_END (my name.get())
 }
 
@@ -6035,8 +6096,8 @@ FORM (NEW_Spectrum_compressFrequencyDomain, U"Spectrum: Compress frequency domai
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"5000.0")
 	INTEGER (interpolationDepth, U"Interpolation depth", U"50")
 	RADIO (scale, U"Interpolation scale", 1)
-		RADIOBUTTON (U"Linear")
-		RADIOBUTTON (U"Logarithmic")
+		RADIOBUTTON (U"linear")
+		RADIOBUTTON (U"logarithmic")
 	OK
 DO
 	CONVERT_EACH (Spectrum)
@@ -6070,8 +6131,8 @@ DIRECT (HELP_SpeechSynthesizer_help) {
 
 FORM (NEW1_ExtractEspeakData, U"SpeechSynthesizer: Extract espeak data", nullptr) {
 	OPTIONMENU (which, U"Data", 1)
-		OPTION (U"Language properties")
-		OPTION (U"Voices properties")
+		OPTION (U"language properties")
+		OPTION (U"voices properties")
 	OK
 DO
 	CREATE_ONE
@@ -6176,9 +6237,9 @@ DIRECT (INFO_SpeechSynthesizer_getPhonemeSetName) {
 
 FORM (MODIFY_SpeechSynthesizer_setTextInputSettings, U"SpeechSynthesizer: Set text input settings", U"SpeechSynthesizer: Set text input settings...") {
 	OPTIONMENU (inputTextFormat, U"Input text format is", 1)
-		OPTION (U"Text only")
-		OPTION (U"Phoneme codes only")
-		OPTION (U"Mixed with tags")
+		OPTION (U"text only")
+		OPTION (U"phoneme codes only")
+		OPTION (U"mixed with tags")
 	OPTIONMENU (inputPhonemeCoding, U"Input phoneme codes are", 1)
 		OPTION (U"Kirshenbaum_espeak")
 	OK
@@ -6483,6 +6544,26 @@ DO
 	CREATE_ONE_END (U"chars")
 }
 
+FORM (NEW1_Create_NavigationContext, U"Create NavigationContext", nullptr) {
+	WORD (name, U"Name: ", U"plosive_vowel_nasal")
+	WORD (navigationName, U"Name of navigation labels", U"vowels")
+	TEXTFIELD (navigation_string, U"Navigation labels", U"i u e o \\as ")
+	OPTIONMENU_ENUM (kMelder_string, navigationCriterion, U"navigation criterion", kMelder_string::DEFAULT)
+	WORD (leftContextName, U"Name of left context labels", U"plosives")
+	TEXTFIELD (leftContext_string, U"Left context labels", U"p b t d k g")
+	OPTIONMENU_ENUM (kMelder_string, leftContextCriterion, U"Left context criterion", kMelder_string::DEFAULT)
+	WORD (rightContextName, U"Name of right context labels", U"nasals")
+	TEXTFIELD (rightContext_string, U"Right context labels", U"m n")
+	OPTIONMENU_ENUM (kMelder_string, rightContextCriterion, U"right context criterion", kMelder_string::DEFAULT)
+	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"How to combine the contexts", kContext_combination::LEFT_AND_RIGHT)
+	BOOLEAN (contextOnly, U"Use context only", false)
+	OK
+DO
+	CREATE_ONE
+		autoNavigationContext result = NavigationContext_create (name, navigationName, navigation_string, navigationCriterion, leftContextName, leftContext_string, leftContextCriterion, rightContextName, rightContext_string, rightContextCriterion, combinationCriterion, contextOnly);
+	CREATE_ONE_END (name)
+}
+
 FORM (NEW1_old_Strings_createAsTokens, U"Strings: Create as tokens", nullptr) {
 	TEXTFIELD (text, U"Text:", U"There are seven tokens in this text")
 	OK
@@ -6490,6 +6571,17 @@ DO
 	CREATE_ONE
 		autoStrings result = Strings_createAsTokens (text, U" ");
 	CREATE_ONE_END (U"tokens")
+}
+
+FORM (NEW1_Strings_createFromTokens, U"Strings: Create as tokens", U"Create Strings as tokens...") {
+	WORD (name, U"Name", U"tokens")
+	TEXTFIELD (text, U"Text:", U"There are seven tokens in this text")
+	SENTENCE (separators, U"Separators", U" ,")
+	OK
+DO
+	CREATE_ONE
+		autoStrings result = Strings_createAsTokens (text, separators);
+	CREATE_ONE_END (name)
 }
 
 FORM (NEW1_Strings_createAsTokens, U"Strings: Create as tokens", U"Create Strings as tokens...") {
@@ -6519,7 +6611,7 @@ FORM (NEW_Strings_change, U"Strings: Change", U"Strings: Change") {
 	SENTENCE (replace_string, U"Replace", U"a")
 	INTEGER (replaceLimit, U"Replace limit", U"0 (= unlimited)")
 	RADIO (stringType, U"Search and replace are:", 1)
-	RADIOBUTTON (U"Literals")
+	RADIOBUTTON (U"literals")
 	RADIOBUTTON (U"Regular Expressions")
 	OK
 DO
@@ -6551,6 +6643,15 @@ FORM (NEW_Strings_to_Permutation, U"Strings: To Permutation", U"Strings: To Perm
 DO
 	CONVERT_EACH (Strings)
 		autoPermutation result = Strings_to_Permutation (me, sort);
+	CONVERT_EACH_END (my name.get())
+}
+
+FORM (NEW_Strings_to_NavigationContext, U"Strings: To NavigationContext", nullptr) {
+	OPTIONMENU_ENUM (kMelder_string, navigationCriterion, U"Navigation criterion", kMelder_string::DEFAULT)
+	OK
+DO
+	CONVERT_EACH (Strings)
+		autoNavigationContext result = Strings_to_NavigationContext (me, navigationCriterion);
 	CONVERT_EACH_END (my name.get())
 }
 
@@ -6795,10 +6896,10 @@ DO
 }
 
 FORM (GRAPHICS_Table_drawEllipseWhere, U"Draw ellipse (standard deviation)", nullptr) {
-	WORD (xColumn_string, U"Horizontal column", U"")
+	SENTENCE (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
-	WORD (yColumn_string, U"Vertical column", U"")
+	SENTENCE (yColumn_string, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"2.0")
@@ -6815,15 +6916,15 @@ DO
 }
 
 FORM (GRAPHICS_Table_drawEllipses, U"Table: Draw ellipses", nullptr) {
-	WORD (xColumn_string, U"Horizontal column", U"F2")
+	SENTENCE (xColumn_string, U"Horizontal column", U"F2")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
-	WORD (yColumn_string, U"Vertical column", U"F1")
+	SENTENCE (yColumn_string, U"Vertical column", U"F1")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
-	WORD (factorColumn_string, U"Factor column", U"Vowel")
+	SENTENCE (factorColumn_string, U"Factor column", U"Vowel")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
-	REAL (fontSize, U"Font size", U"12 (0 = no label)")
+	REAL (fontSize, U"Font size", U"12.0 (0 = no label)")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
@@ -6836,13 +6937,13 @@ DO
 }
 
 FORM (GRAPHICS_Table_drawEllipsesWhere, U"Table: Draw ellipses where", nullptr) {
-	WORD (xColumn_string, U"Horizontal column", U"F2")
+	SENTENCE (xColumn_string, U"Horizontal column", U"F2")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
-	WORD (yColumn_string, U"Vertical column", U"F1")
+	SENTENCE (yColumn_string, U"Vertical column", U"F1")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
-	WORD (factorColumn_string, U"Factor column", U"Vowel")
+	SENTENCE (factorColumn_string, U"Factor column", U"Vowel")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (fontSize, U"Font size", U"12 (0 = no label)")
 	BOOLEAN (garnish, U"Garnish", true)
@@ -6859,11 +6960,11 @@ DO
 
 
 FORM (GRAPHICS_Table_normalProbabilityPlot, U"Table: Normal probability plot", U"Table: Normal probability plot...") {
-	WORD (column_string, U"Column", U"F1")
+	SENTENCE (column_string, U"Column", U"F1")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (numberOfSigmas, U"Number of sigmas", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
-	WORD (label, U"Label", U"+")
+	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
 DO
@@ -6874,11 +6975,11 @@ DO
 }
 
 FORM (GRAPHICS_Table_normalProbabilityPlotWhere, U"Table: Normal probability plot where", U"Table: Normal probability plot...") {
-	WORD (column_string, U"Column", U"F0")
+	SENTENCE (column_string, U"Column", U"F0")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (numberOfSigmas, U"Number of sigmas", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
-	WORD (label, U"Label", U"+")
+	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
 	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
 	OK
@@ -6891,15 +6992,15 @@ DO
 }
 
 FORM (GRAPHICS_Table_quantileQuantilePlot, U"Table: Quantile-quantile plot", U"Table: Quantile-quantile plot...") {
-	WORD (xColumn_string, U"Horizontal axis column", U"")
-	WORD (yColumn_string, U"Vertical axis column", U"")
+	SENTENCE (xColumn_string, U"Horizontal axis column", U"")
+	SENTENCE (yColumn_string, U"Vertical axis column", U"")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
-	WORD (label, U"Label", U"+")
+	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
 DO
@@ -6911,17 +7012,17 @@ DO
 }
 
 FORM (GRAPHICS_Table_quantileQuantilePlot_betweenLevels, U"Table: Quantile-quantile plot (between levels)", U"Table: Quantile-quantile plot...") {
-	WORD (dataColumn_string, U"Data column", U"F0")
-	WORD (factorColumn_string, U"Factor column", U"Sex")
-	WORD (xLevel_string, U"Horizontal factor level", U"")
-	WORD (yLevelString, U"Vertical factor level", U"")
+	SENTENCE (dataColumn_string, U"Data column", U"F0")
+	SENTENCE (factorColumn_string, U"Factor column", U"Sex")
+	SENTENCE (xLevel_string, U"Horizontal factor level", U"")
+	SENTENCE (yLevelString, U"Vertical factor level", U"")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
-	WORD (label, U"Label", U"+")
+	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
 DO
@@ -6933,12 +7034,12 @@ DO
 }
 
 FORM (GRAPHICS_Table_lagPlot, U"Table: lag plot", nullptr) {
-	WORD (dataColumn_string, U"Data column", U"errors")
+	SENTENCE (dataColumn_string, U"Data column", U"errors")
 	NATURAL (lag, U"Lag", U"1")
 	REAL (fromXY, U"left Horizontal and vertical range", U"0.0")
 	REAL (toXY, U"right Horizontal and vertical range", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
-	WORD (label, U"Label", U"+")
+	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
 DO
@@ -6950,12 +7051,12 @@ DO
 
 
 FORM (GRAPHICS_Table_lagPlotWhere, U"Table: lag plot where", nullptr) {
-	WORD (dataColumn_string, U"Data column", U"errors")
+	SENTENCE (dataColumn_string, U"Data column", U"errors")
 	NATURAL (lag, U"Lag", U"1")
 	REAL (fromXY, U"left Horizontal and vertical range", U"0.0")
 	REAL (toXY, U"right Horizontal and vertical range", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
-	WORD (label, U"Label", U"+")
+	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
 	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
 	OK
@@ -6967,7 +7068,7 @@ DO
 }
 
 FORM (GRAPHICS_Table_distributionPlot, U"Table: Distribution plot", nullptr) {
-	WORD (dataColumn_string, U"Data column", U"data")
+	SENTENCE (dataColumn_string, U"Data column", U"data")
 	REAL (minimumValue, U"Minimum value", U"0.0")
 	REAL (maximumValue, U"Maximum value", U"0.0")
 	LABEL (U"Display of the distribution")
@@ -6984,7 +7085,7 @@ DO
 }
 
 FORM (GRAPHICS_Table_distributionPlotWhere, U"Table: Distribution plot where", nullptr) {
-	WORD (dataColumn_string, U"Data column", U"data")
+	SENTENCE (dataColumn_string, U"Data column", U"data")
 	REAL (minimumValue, U"Minimum value", U"0.0")
 	REAL (maximumValue, U"Maximum value", U"0.0")
 	LABEL (U"Display of the distribution")
@@ -7002,14 +7103,14 @@ DO
 }
 
 FORM (GRAPHICS_Table_horizontalErrorBarsPlot, U"Table: Horizontal error bars plot", U"Table: Horizontal error bars plot...") {
-	WORD (xColumn_string, U"Horizontal column", U"x")
+	SENTENCE (xColumn_string, U"Horizontal column", U"x")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
-	WORD (yColumn_string, U"Vertical column", U"y")
+	SENTENCE (yColumn_string, U"Vertical column", U"y")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	WORD (lowerErrorColumn_string, U"Lower error value column", U"error1")
-	WORD (upperErrorColumn_string, U"Upper error value column", U"error2")
+	SENTENCE (lowerErrorColumn_string, U"Lower error value column", U"error1")
+	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
@@ -7024,14 +7125,14 @@ DO
 }
 
 FORM (GRAPHICS_Table_horizontalErrorBarsPlotWhere, U"Table: Horizontal error bars plot where", U"Table: Horizontal error bars plot where...") {
-	WORD (xColumn_string, U"Horizontal column", U"")
+	SENTENCE (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
-	WORD (yColumn_string, U"Vertical column", U"")
+	SENTENCE (yColumn_string, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	WORD (lowerErrorColumn_string, U"Lower error value column", U"error1")
-	WORD (upperErrorColumn_string, U"Upper error value column", U"error2")
+	SENTENCE (lowerErrorColumn_string, U"Lower error value column", U"error1")
+	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
 	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
@@ -7047,14 +7148,14 @@ DO
 }
 
 FORM (GRAPHICS_Table_verticalErrorBarsPlot, U"Table: Vertical error bars plot", U"Table: Vertical error bars plot...") {
-	WORD (xColumn_string, U"Horizontal column", U"")
+	SENTENCE (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
-	WORD (yColumn_string, U"Vertical column", U"")
+	SENTENCE (yColumn_string, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	WORD (lowerErrorColumn_string, U"Lower error value column", U"error1")
-	WORD (upperErrorColumn_string, U"Upper error value column", U"error2")
+	SENTENCE (lowerErrorColumn_string, U"Lower error value column", U"error1")
+	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
@@ -7069,14 +7170,14 @@ DO
 }
 
 FORM (GRAPHICS_Table_verticalErrorBarsPlotWhere, U"Table: Vertical error bars plot where", U"Table: Vertical error bars plot where...") {
-	WORD (xColumn_string, U"Horizontal column", U"")
+	SENTENCE (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
-	WORD (yColumn_string, U"Vertical column", U"")
+	SENTENCE (yColumn_string, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	WORD (lowerErrorColumn_string, U"Lower error value column", U"error1")
-	WORD (upperErrorColumn_string, U"Upper error value column", U"error2")
+	SENTENCE (lowerErrorColumn_string, U"Lower error value column", U"error1")
+	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
 	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
@@ -7105,7 +7206,7 @@ FORM (NEW_Table_extractRowsMahalanobisWhere, U"Table: Extract rows where (mahala
 	RADIO_ENUM (kMelder_number, haveAMahalanobisDistance,
 			U"...have a mahalanobis distance...", kMelder_number::GREATER_THAN)
 	REAL (numberOfSigmas, U"...the number", U"2.0")
-	WORD (factorColumn_string, U"Factor column", U"")
+	SENTENCE (factorColumn_string, U"Factor column", U"")
 	TEXTFIELD (formula, U"Process only rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
@@ -7205,9 +7306,9 @@ DO
 
 FORM (NEW_TableOfReal_create_weenink1983, U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Weenink 1985)...") {
 	RADIO (speakerGroup, U"Speakers group", 1)
-		RADIOBUTTON (U"Men")
-		RADIOBUTTON (U"Women")
-		RADIOBUTTON (U"Children")
+		RADIOBUTTON (U"men")
+		RADIOBUTTON (U"women")
+		RADIOBUTTON (U"children")
 	OK
 DO
 	CREATE_ONE
@@ -7301,9 +7402,9 @@ FORM (GRAPHICS_TableOfReal_drawVectors, U"Draw vectors", U"TableOfReal: Draw vec
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	RADIO (vectorType, U"Vector type", 1)
-		RADIOBUTTON (U"Arrow")
-		RADIOBUTTON (U"Double arrow")
-		RADIOBUTTON (U"Line")
+		RADIOBUTTON (U"arrow")
+		RADIOBUTTON (U"double arrow")
+		RADIOBUTTON (U"line")
 	INTEGER (labelSize, U"Label size", U"10")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
@@ -7488,8 +7589,8 @@ DIRECT (NEW1_TablesOfReal_to_Eigen_gsvd) {
 
 FORM (NEW1_TableOfReal_TableOfReal_crossCorrelations, U"TableOfReal & TableOfReal: Cross-correlations", nullptr) {
 	OPTIONMENU (between, U"Correlations between", 1)
-		OPTION (U"Rows")
-		OPTION (U"Columns")
+		OPTION (U"rows")
+		OPTION (U"columns")
 	BOOLEAN (center, U"Center", false)
 	BOOLEAN (normalize, U"Normalize", false)
 	OK
@@ -7606,8 +7707,8 @@ DO
 FORM (MODIFY_TextGrid_extendTime, U"TextGrid: Extend time", U"TextGrid: Extend time...") {
 	POSITIVE (extendDomainBy, U"Extend domain by (s)", U"1.0")
 	RADIO (position, U"At", 1)
-		RADIOBUTTON (U"End")
-		RADIOBUTTON (U"Start")
+		RADIOBUTTON (U"end")
+		RADIOBUTTON (U"start")
 	OK
 DO
 	MODIFY_EACH (TextGrid)
@@ -7622,7 +7723,7 @@ FORM (MODIFY_TextGrid_replaceIntervalTexts, U"TextGrid: Replace interval texts",
 	SENTENCE (search_string, U"Search", U"a")
 	SENTENCE (replace_string, U"Replace", U"b")
 	RADIO (searchType, U"Search and replace strings are:", 1)
-		RADIOBUTTON (U"Literals")
+		RADIOBUTTON (U"literals")
 		RADIOBUTTON (U"Regular Expressions")
 	OK
 DO
@@ -7639,7 +7740,7 @@ FORM (MODIFY_TextGrid_replacePointTexts, U"TextGrid: Replace point texts", U"Tex
 	SENTENCE (search_string, U"Search", U"a")
 	SENTENCE (replace_string, U"Replace", U"b")
 	RADIO (searchType, U"Search and replace strings are:", 1)
-		RADIOBUTTON (U"Literals")
+		RADIOBUTTON (U"literals")
 		RADIOBUTTON (U"Regular Expressions")
 	OK
 DO
@@ -7689,6 +7790,73 @@ DO
 	CONVERT_COUPLE_AND_ONE (TextGrid, EditCostsTable)
 		autoTable result = TextGrids_to_Table_textAlignment (me, targetTierNumber, you, sourceTierNumber, him);
 	CONVERT_COUPLE_AND_ONE_END (my name.get(), U"_", your name.get())
+}
+
+FORM (NEW_TextGrid_NavigationContext_to_TextGridNavigator, U"TextGrid & NavigationContext: To TextGridNavigator", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OK
+DO
+	CONVERT_TWO (TextGrid, NavigationContext)
+		autoTextGridNavigator result = TextGridNavigator_create (me, you, tierNumber);
+	CONVERT_TWO_END (my name.get())
+}
+
+FORM (INTEGER_TextGridNavigator_getNextMatchAfterTime, U"", nullptr) {
+	REAL (time, U"Time (s)", U"-1.0")
+	OK
+DO
+	INTEGER_ONE (TextGridNavigator)
+		integer result = TextGridNavigator_getNextMatchAfterTime (me, time);
+	INTEGER_ONE_END (U"")
+}
+
+FORM (INTEGER_TextGridNavigator_getPreviousMatchBeforeTime, U"", nullptr) {
+	REAL (time, U"Time (s)", U"10.0")
+	OK
+DO
+	INTEGER_ONE (TextGridNavigator)
+		integer result = TextGridNavigator_getPreviousMatchBeforeTime (me, time);
+	INTEGER_ONE_END (U"")
+}
+
+DIRECT (INTEGER_TextGridNavigator_getFirstMatch) {
+	INTEGER_ONE (TextGridNavigator)
+		double  result = TextGridNavigator_getFirstMatch (me);
+	INTEGER_ONE_END (U"")
+}
+
+DIRECT (INTEGER_TextGridNavigator_getLastMatch) {
+	INTEGER_ONE (TextGridNavigator)
+		double  result = TextGridNavigator_getLastMatch (me);
+	INTEGER_ONE_END (U"")
+}
+
+DIRECT (REAL_TextGridNavigator_getCurrentStartTime) {
+	NUMBER_ONE (TextGridNavigator)
+		double  result = TextGridNavigator_getCurrentStartTime (me);
+	NUMBER_ONE_END (U" s (start time)")
+}
+
+DIRECT (REAL_TextGridNavigator_getCurrentEndTime) {
+	NUMBER_ONE (TextGridNavigator)
+		double  result = TextGridNavigator_getCurrentEndTime (me);
+	NUMBER_ONE_END (U" s (end time)")
+}
+
+DIRECT (INFO_TextGridNavigator_getCurrentLabel) {
+	STRING_ONE (TextGridNavigator)
+		conststring32 result = TextGridNavigator_getCurrentLabel (me);
+	STRING_ONE_END
+}
+
+FORM (MODIFY_TextGridNavigator_addNavigationContext, U"TextGrid & NavigationContext: Add navigation context", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kNavigatableTier_match, matchCriterion, U"Timing relation with navigation match", kNavigatableTier_match::DEFAULT)
+	OK
+DO
+	MODIFY_FIRST_OF_TWO (TextGridNavigator, NavigationContext)
+		TextGridNavigator_addNavigationContext (me, you, tierNumber, matchCriterion);
+	MODIFY_FIRST_OF_TWO_END
 }
 
 FORM (MODIFY_TextGrid_setTierName, U"TextGrid: Set tier name", U"TextGrid: Set tier name...") {
@@ -7954,19 +8122,21 @@ void praat_uvafon_David_init () {
 		classCorrelation, classCovariance, classDiscriminant, classDTW,
 		classEigen, classExcitationList, classEditCostsTable, classEditDistanceTable,
 		classElectroglottogram,
-		classFileInMemory, classFileInMemorySet, classFileInMemoryManager, classFormantFilter,
-		classIndex, classKlattTable, classNMF,
+		classFileInMemory, classFileInMemorySet, classFileInMemoryManager, 
+		classFormantFilter,
+		classIndex, classIntervalTierNavigator, classKlattTable, classNMF,
 		classPermutation, classISpline, classLegendreSeries,
-		classMelFilter, classMelSpectrogram, classMSpline, classPatternList, classPCA, classPolynomial, classRoots,
+		classMelFilter, classMelSpectrogram, classMSpline, classNavigationContext,
+		classPatternList, classPCA, classPolynomial, classRoots,
 		classSimpleString, classStringsIndex, classSpeechSynthesizer, classSPINET, classSSCP,
-		classSVD, nullptr);
+		classSVD, classTextGridNavigator, nullptr);
 	Thing_recognizeClassByOtherName (classExcitationList, U"Excitations");
 	Thing_recognizeClassByOtherName (classActivationList, U"Activation");
 	Thing_recognizeClassByOtherName (classPatternList, U"Pattern");
 	Thing_recognizeClassByOtherName (classFileInMemorySet, U"FilesInMemory");
 
 	structVowelEditor  :: f_preferences ();
-
+	
 	espeakdata_praat_init ();
 
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report floating point properties", U"Report integer properties", 0, INFO_Praat_ReportFloatingPointProperties);
@@ -7974,7 +8144,6 @@ void praat_uvafon_David_init () {
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Get invTukeyQ...", 0, praat_HIDDEN, REAL_Praat_getInvTukeyQ);
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Get incomplete gamma...", 0, praat_HIDDEN, COMPLEX_Praat_getIncompleteGamma);
 //	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as espeak voices", U"Create Strings as directory list...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsEspeakVoices);
-	praat_addMenuCommand (U"Objects", U"New", U"Create iris data set", U"Create TableOfReal...", 1, NEW1_CreateIrisDataset);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Permutation...", nullptr, 0, NEW_Permutation_create);
 	praat_addMenuCommand (U"Objects", U"New", U"Polynomial", nullptr, 0, nullptr);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Polynomial...", nullptr, 1, NEW1_Polynomial_create);
@@ -7990,23 +8159,29 @@ void praat_uvafon_David_init () {
 	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from Shepard tone...", U"*Create Sound as Shepard tone...", praat_DEPTH_1 | praat_DEPRECATED_2016, NEW_Sound_createAsShepardTone);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from VowelEditor...", U"Create Sound as Shepard tone...", praat_DEPTH_1 | praat_NO_API, WINDOW_VowelEditor_create);
 	praat_addMenuCommand (U"Objects", U"New", U"Create SpeechSynthesizer...", U"Create Sound from VowelEditor...", praat_DEPTH_1, NEW1_SpeechSynthesizer_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Pols & Van Nierop 1973)", U"Create Table...", 1, NEW1_Table_create_polsVanNierop1973);
-	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Peterson & Barney 1952)", U"Create Table...", 1, NEW1_Table_create_petersonBarney1952);
-	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Weenink 1985)", U"Create formant table (Peterson & Barney 1952)", 1, NEW1_Table_create_weenink1983);
-	praat_addMenuCommand (U"Objects", U"New", U"Create H1H2 table (Esposito 2006)", U"Create formant table (Weenink 1985)", praat_DEPTH_1+ praat_HIDDEN, NEW_Table_create_esposito2006);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Table (Ganong 1980)", U"Create H1H2 table (Esposito 2006)", praat_DEPTH_1+ praat_HIDDEN, NEW_Table_create_ganong1980);
-	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Pols 1973)...", U"Create TableOfReal...", 1, NEW1_TableOfReal_create_pols1973);
-	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Van Nierop 1973)...", U"Create TableOfReal (Pols 1973)...", 1, NEW_TableOfReal_create_vanNierop1973);
-	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Van Nierop 1973)...", 1, NEW_TableOfReal_create_weenink1983);
-	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Sandwell 1987)", U"Create TableOfReal (Weenink 1985)...", praat_DEPTH_1+ praat_HIDDEN, NEW_Table_create_sandwell1987);
+	praat_addMenuCommand (U"Objects", U"New", U"Data sets from the literature", U"Create Table without column names...", 1, nullptr);
+	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Peterson & Barney 1952)", U"Data sets from the literature", 2, NEW1_Table_create_petersonBarney1952);
+	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Pols & Van Nierop 1973)", U"Create formant table (Peterson & Barney 1952)", 2, NEW1_Table_create_polsVanNierop1973);
+	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Weenink 1985)", U"Create formant table (Pols & Van Nierop 1973)", 2, NEW1_Table_create_weenink1983);
+	praat_addMenuCommand (U"Objects", U"New", U"Create H1H2 table (Esposito 2006)", U"Create formant table (Weenink 1985)", 2, NEW_Table_create_esposito2006);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Table (Ganong 1980)", U"Create H1H2 table (Esposito 2006)", 2, NEW_Table_create_ganong1980);
+	praat_addMenuCommand (U"Objects", U"New", U"-- TableOfReals --", U"Create Table (Ganong 1980)", 2, nullptr);
+	praat_addMenuCommand (U"Objects", U"New", U"Create iris data set", U"-- TableOfReals --" , 2, NEW1_CreateIrisDataset);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Pols 1973)...", U"Create iris data set", 2, NEW1_TableOfReal_create_pols1973);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Van Nierop 1973)...", U"Create TableOfReal (Pols 1973)...", 2, NEW_TableOfReal_create_vanNierop1973);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Van Nierop 1973)...", 2, NEW_TableOfReal_create_weenink1983);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Sandwell 1987)", U"Create TableOfReal (Weenink 1985)...", 2, NEW_Table_create_sandwell1987);
 		praat_addMenuCommand (U"Objects", U"New", U"Create simple Confusion...", U"Create TableOfReal (Weenink 1985)...", 1, NEW1_Confusion_createSimple);
 	praat_addMenuCommand (U"Objects", U"New", U"Create simple Covariance...", U"Create simple Confusion...", 1, NEW1_Covariance_createSimple);
 	praat_addMenuCommand (U"Objects", U"New", U"Create simple Correlation...", U"Create simple Covariance...", 1, NEW1_Correlation_createSimple);
 	praat_addMenuCommand (U"Objects", U"New", U"Create empty EditCostsTable...", U"Create simple Covariance...", 1, NEW_EditCostsTable_createEmpty);
 
 	praat_addMenuCommand (U"Objects", U"New", U"Create KlattTable example", U"Create TableOfReal (Weenink 1985)...", praat_DEPTH_1 + praat_HIDDEN, NEW1_KlattTable_createExample);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as tokens...", U"Create Strings as directory list...", 1, NEW1_Strings_createAsTokens);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as characters...", U"Create Strings as tokens...",  praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsCharacters);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Strings from tokens...", U"Create Strings as directory list...", 1, NEW1_Strings_createFromTokens);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as tokens...", U"Create Strings from tokens...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsTokens);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as characters...", U"Create Strings from tokens...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsCharacters);
+	praat_addMenuCommand (U"Objects", U"New", U"Create NavigationContext...", U"Create Strings as tokens...",  praat_DEPTH_1 + praat_HIDDEN, NEW1_Create_NavigationContext);
+	
 
 	praat_addMenuCommand (U"Objects", U"New", U"Create simple Polygon...", nullptr, praat_HIDDEN, NEW1_Polygon_createSimple);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Polygon (random vertices)...", nullptr, praat_DEPRECATED_2016, NEW1_Polygon_createFromRandomPoints);
@@ -8235,6 +8410,7 @@ void praat_uvafon_David_init () {
 	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To Configuration...", nullptr, 0, NEW1_Discriminant_TableOfReal_to_Configuration);
 	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To ClassificationTable...", nullptr, 0, NEW1_Discriminant_TableOfReal_to_ClassificationTable);
 	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis)...", nullptr, 0, NEW1_Discriminant_TableOfReal_mahalanobis);
+	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis, all)...", nullptr, 0, NEW1_Discriminant_TableOfReal_mahalanobis_all);
 
 	praat_addAction1 (classDTW, 0, U"DTW help", nullptr, 0, HELP_DTW_help);
 	praat_addAction1 (classDTW, 0, DRAW_BUTTON, nullptr, 0, 0);
@@ -8501,6 +8677,11 @@ void praat_uvafon_David_init () {
 
 	praat_addAction1 (classMSpline, 0, U"MSpline help", nullptr, 0, HELP_MSpline_help);
 	praat_Spline_init (classMSpline);
+	
+	praat_addAction1 (classNavigationContext, 0, U"Modify context combination...", nullptr, 0, MODIFY_NavigationContext_modifyContextCombination);
+	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Modify navigation labels...", nullptr, 0, MODIFY_NavigationContext_modifyNavigationLabels);
+	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Modify left context labels...", nullptr, 0, MODIFY_NavigationContext_modifyLeftContextLabels);
+	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Modify right context labels...", nullptr, 0, MODIFY_NavigationContext_modifyRightContextLabels);
 
 	praat_addAction1 (classNMF, 0, U"NMF help", nullptr, 0, HELP_NMF_help);
 	praat_addAction1 (classNMF, 0, U"Paint features...", nullptr, 0, GRAPHICS_NMF_paintFeatures);
@@ -8754,6 +8935,7 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classStrings, 0, U"Change...", U"Replace all...", praat_HIDDEN, NEW_Strings_change);
 	praat_addAction1 (classStrings, 0, U"Extract part...", U"Replace all...", 0, NEW_Strings_extractPart);
 	praat_addAction1 (classStrings, 0, U"To Permutation...", U"To Distributions", 0, NEW_Strings_to_Permutation);
+	praat_addAction1 (classStrings, 0, U"To NavigationContext...", U"To Distributions", 0, NEW_Strings_to_NavigationContext);
 	praat_addAction1 (classStrings, 2, U"To EditDistanceTable", U"To Distributions", 0, NEW_Strings_to_EditDistanceTable);
 
 	praat_addAction1 (classSVD, 0, U"SVD help", nullptr, 0, HELP_SVD_help);
@@ -8866,6 +9048,18 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classTextGrid, 0, U"To DurationTier...", U"Concatenate", 0, NEW_TextGrid_to_DurationTier);
 	praat_addAction2 (classTextGrid, 1, classDurationTier, 1, U"To TextGrid (scale times)", nullptr, 0, NEW_TextGrid_DurationTier_to_TextGrid);
 	praat_addAction2 (classTextGrid, 2, classEditCostsTable, 1, U"To Table (text alignment)...", nullptr, 0, NEW1_TextGrids_EditCostsTable_to_Table_textAlignment);
+	praat_addAction2 (classTextGrid, 1, classNavigationContext, 1, U"To TextGridNavigator...", nullptr, 0, NEW_TextGrid_NavigationContext_to_TextGridNavigator);
+	
+	praat_addAction1 (classTextGridNavigator, 1, U"Get first match", nullptr, 0, INTEGER_TextGridNavigator_getFirstMatch);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get last match", nullptr, 0, INTEGER_TextGridNavigator_getLastMatch);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get next match after time...", nullptr, 0, INTEGER_TextGridNavigator_getNextMatchAfterTime);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get previous match before time...", nullptr, 0, INTEGER_TextGridNavigator_getPreviousMatchBeforeTime);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get current start time", nullptr, 0, REAL_TextGridNavigator_getCurrentStartTime);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get current end time", nullptr, 0, REAL_TextGridNavigator_getCurrentEndTime);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get current label", nullptr, 0, INFO_TextGridNavigator_getCurrentLabel);
+	
+	praat_addAction2 (classTextGridNavigator, 1, classNavigationContext, 1, U"Add navigation context...", nullptr, 0, MODIFY_TextGridNavigator_addNavigationContext);
+	
 
 	INCLUDE_MANPAGES (manual_dwtools_init)
 	INCLUDE_MANPAGES (manual_Permutation_init)

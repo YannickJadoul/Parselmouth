@@ -84,7 +84,6 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me,
 					for (int igrey = 0; igrey <= 255; igrey ++)
 						greyBrush [igrey] = CreateSolidBrush (RGB (igrey, igrey, igrey));   // once
 			#elif quartz
-				GraphicsQuartz_initDraw (me);
 				CGContextSetAlpha (my d_macGraphicsContext, 1.0);
 				CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeNormal);
 			#endif
@@ -149,7 +148,6 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me,
 					cairo_pattern_destroy (grey [igrey]);
 			#elif quartz
 				CGContextSetRGBFillColor (my d_macGraphicsContext, 0.0, 0.0, 0.0, 1.0);
-				GraphicsQuartz_exitDraw (me);
 			#endif
 		} catch (MelderError) { }
 	} else {
@@ -443,9 +441,7 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me,
 				// release bitmap?
 			}
 			Melder_assert (image != nullptr);
-			GraphicsQuartz_initDraw (me);
 			CGContextDrawImage (my d_macGraphicsContext, CGRectMake (clipx1, clipy2, clipx2 - clipx1, clipy1 - clipy2), image);
-			GraphicsQuartz_exitDraw (me);
 			//CGColorSpaceRelease (colourSpace);
 			CGImageRelease (image);
 		#endif
@@ -668,10 +664,8 @@ static void _cellArrayOrImage (Graphics me,
 void Graphics_cellArray (Graphics me, constMATVU const& z,
 	double x1WC, double x2WC, double y1WC, double y2WC, double minimum, double maximum)
 {
-	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum) return;
-	_cellArrayOrImage (me, z, constmatrixview<MelderColour>(), constmatrixview<unsigned char>(),
-		1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
-		wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), false);
+	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum)
+		return;
 	if (my recording) {
 		op (CELL_ARRAY, 8 + z.nrow * z.ncol);
 		put (x1WC); put (x2WC); put (y1WC); put (y2WC);
@@ -680,16 +674,18 @@ void Graphics_cellArray (Graphics me, constMATVU const& z,
 		for (integer irow = 1; irow <= z.nrow; irow ++)
 			for (integer icol = 1; icol <= z.ncol; icol ++)
 				put (z [irow] [icol]);
-	}
+	} else
+		_cellArrayOrImage (me, z, constmatrixview<MelderColour>(), constmatrixview<unsigned char>(),
+			1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
+			wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), false
+		);
 }
 
 void Graphics_cellArray_colour (Graphics me, constmatrixview <MelderColour> const& z,
 	double x1WC, double x2WC, double y1WC, double y2WC, double minimum, double maximum)
 {
-	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum) return;
-	_cellArrayOrImage (me, constMATVU(), z, constmatrixview<unsigned char>(),
-		1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
-		wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), false);
+	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum)
+		return;
 	if (my recording) {
 		op (CELL_ARRAY_COLOUR, 8 + z.nrow * z.ncol * 4);
 		put (x1WC); put (x2WC); put (y1WC); put (y2WC);
@@ -704,16 +700,18 @@ void Graphics_cellArray_colour (Graphics me, constmatrixview <MelderColour> cons
 				put (row [icol]. transparency);
 			}
 		}
-	}
+	} else
+		_cellArrayOrImage (me, constMATVU(), z, constmatrixview<unsigned char>(),
+			1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
+			wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), false
+		);
 }
 
 void Graphics_cellArray8 (Graphics me, constmatrixview<unsigned char> const& z,
 	double x1WC, double x2WC, double y1WC, double y2WC, unsigned char minimum, unsigned char maximum)
 {
-	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum) return;
-	_cellArrayOrImage (me, constMATVU(), constmatrixview<MelderColour>(), z,
-		1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
-		wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), false);
+	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum)
+		return;
 	if (my recording) {
 		op (CELL_ARRAY8, 8 + z.nrow * z.ncol);
 		put (x1WC); put (x2WC); put (y1WC); put (y2WC);
@@ -722,16 +720,18 @@ void Graphics_cellArray8 (Graphics me, constmatrixview<unsigned char> const& z,
 		for (integer irow = 1; irow <= z.nrow; irow ++)
 			for (integer icol = 1; icol <= z.ncol; icol ++)
 				put (z [irow] [icol]);
-	}
+	} else
+		_cellArrayOrImage (me, constMATVU(), constmatrixview<MelderColour>(), z,
+			1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
+			wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), false
+		);
 }
 
 void Graphics_image (Graphics me, constMATVU const& z,
 	double x1WC, double x2WC, double y1WC, double y2WC, double minimum, double maximum)
 {
-	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum) return;
-	_cellArrayOrImage (me, z, constmatrixview<MelderColour>(), constmatrixview<unsigned char>(),
-		1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
-		wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), true);
+	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum)
+		return;
 	if (my recording) {
 		op (IMAGE, 8 + z.nrow * z.ncol);
 		put (x1WC); put (x2WC); put (y1WC); put (y2WC);
@@ -740,16 +740,18 @@ void Graphics_image (Graphics me, constMATVU const& z,
 		for (integer irow = 1; irow <= z.nrow; irow ++)
 			for (integer icol = 1; icol <= z.ncol; icol ++)
 				put (z [irow] [icol]);
-	}
+	} else
+		_cellArrayOrImage (me, z, constmatrixview<MelderColour>(), constmatrixview<unsigned char>(),
+			1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
+			wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), true
+		);
 }
 
 void Graphics_image_colour (Graphics me, constmatrixview <MelderColour> const& z,
 	double x1WC, double x2WC, double y1WC, double y2WC, double minimum, double maximum)
 {
-	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum) return;
-	_cellArrayOrImage (me, constMATVU(), z, constmatrixview<unsigned char>(),
-		1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
-		wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), true);
+	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum)
+		return;
 	if (my recording) {
 		op (IMAGE_COLOUR, 8 + z.nrow * z.ncol * 4);
 		put (x1WC); put (x2WC); put (y1WC); put (y2WC);
@@ -764,16 +766,18 @@ void Graphics_image_colour (Graphics me, constmatrixview <MelderColour> const& z
 				put (row [icol]. transparency);
 			}
 		}
-	}
+	} else
+		_cellArrayOrImage (me, constMATVU(), z, constmatrixview<unsigned char>(),
+			1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
+			wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), true
+		);
 }
 
 void Graphics_image8 (Graphics me, constmatrixview <unsigned char> const& z,
 	double x1WC, double x2WC, double y1WC, double y2WC, uint8 minimum, uint8 maximum)
 {
-	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum) return;
-	_cellArrayOrImage (me, constMATVU(), constmatrixview<MelderColour>(), z,
-		1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
-		wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), true);
+	if (z.nrow < 1 || z.ncol < 1 || minimum == maximum)
+		return;
 	if (my recording) {
 		op (IMAGE8, 8 + z.nrow * z.ncol);
 		put (x1WC); put (x2WC); put (y1WC); put (y2WC);
@@ -782,7 +786,11 @@ void Graphics_image8 (Graphics me, constmatrixview <unsigned char> const& z,
 		for (integer irow = 1; irow <= z.nrow; irow ++)
 			for (integer icol = 1; icol <= z.ncol; icol ++)
 				put (z [irow] [icol]);
-	}
+	} else
+		_cellArrayOrImage (me, constMATVU(), constmatrixview<MelderColour>(), z,
+			1, z.ncol, wdx (x1WC), wdx (x2WC), 1, z.nrow, wdy (y1WC), wdy (y2WC), minimum, maximum,
+			wdx (my d_x1WC), wdx (my d_x2WC), wdy (my d_y1WC), wdy (my d_y2WC), true
+		);
 }
 
 static void _GraphicsScreen_imageFromFile (GraphicsScreen me, conststring32 relativeFileName, double x1, double x2, double y1, double y2) {
@@ -863,16 +871,14 @@ static void _GraphicsScreen_imageFromFile (GraphicsScreen me, conststring32 rela
 					height = width * (double) CGImageGetHeight (image) / (double) CGImageGetWidth (image);
 					y2DC -= height / 2, y1DC = y2DC + height;
 				}
-				GraphicsQuartz_initDraw (me);
 				CGContextSaveGState (my d_macGraphicsContext);
                 
-                NSCAssert(my d_macGraphicsContext, @"nil context");
+                //NSCAssert(my d_macGraphicsContext, @"nil context");
 
 				CGContextTranslateCTM (my d_macGraphicsContext, 0, y1DC);
 				CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
 				CGContextDrawImage (my d_macGraphicsContext, CGRectMake (x1DC, 0, width, height), image);
 				CGContextRestoreGState (my d_macGraphicsContext);
-				GraphicsQuartz_exitDraw (me);
 				CGImageRelease (image);
 			}
 		}

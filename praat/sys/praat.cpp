@@ -1102,6 +1102,7 @@ void praat_init (conststring32 title, int argc, char **argv)
 	while (praatP.argumentNumber < argc && argv [praatP.argumentNumber] [0] == '-') {
 		if (strequ (argv [praatP.argumentNumber], "-")) {
 			praatP.hasCommandLineInput = true;
+			praatP.argumentNumber += 1;
 		} else if (strequ (argv [praatP.argumentNumber], "--open")) {
 			foundTheOpenOption = true;
 			praatP.argumentNumber += 1;
@@ -1714,6 +1715,12 @@ void praat_testPlatformAssumptions() {
 	Melder_assert (Melder_isHorizontalOrVerticalSpace ('\t'));
 	Melder_assert (Melder_isHorizontalOrVerticalSpace ('\f'));
 	Melder_assert (Melder_isHorizontalOrVerticalSpace ('\v'));
+
+	{
+		double *a = nullptr;
+		double *b = & a [0];
+		Melder_assert (! b);
+	}
 
 	/*
 		According to ISO 30112, a non-breaking space is not a space.

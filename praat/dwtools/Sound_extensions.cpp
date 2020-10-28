@@ -1062,13 +1062,11 @@ double Sound_getNearestLevelCrossing (Sound me, integer channel, double position
 	if (leftSample > my nx)
 		return undefined;
 	const integer rightSample = leftSample + 1;
-	integer ileft, iright;
-	double leftCrossing, rightCrossing;
 	/*
 		Are we already at a level crossing?
 	*/
 	if (leftSample >= 1 && rightSample <= my nx &&
-			(amplitude [leftSample] >= level) != (amplitude [rightSample] >= level))
+			(amplitude [leftSample] >= level) != (amplitude [rightSample] >= level)) 
 	{
 		const double crossing = interpolate (me, leftSample, channel, level);
 		return searchDirection == kSoundSearchDirection::LEFT ?
@@ -1076,34 +1074,36 @@ double Sound_getNearestLevelCrossing (Sound me, integer channel, double position
 			( crossing >= position ? crossing : undefined );
 	}
 	
-	if (searchDirection == kSoundSearchDirection::LEFT ||
-		searchDirection == kSoundSearchDirection::NEAREST) {
-		for (ileft = leftSample - 1; ileft >= 1; ileft --)
+	double leftCrossing = undefined;
+	if (searchDirection == kSoundSearchDirection::LEFT || searchDirection == kSoundSearchDirection::NEAREST) {
+		for (integer ileft = leftSample - 1; ileft >= 1; ileft --)
 			if ((amplitude [ileft] >= level) != (amplitude [ileft + 1] >= level)) {
 				leftCrossing = interpolate (me, ileft, channel, level);
 				break;
 			}
 		if (searchDirection == kSoundSearchDirection::LEFT)
-			return ileft < 1 ? undefined: leftCrossing;
+			return leftCrossing;
 	}
 	
 	if (rightSample < 1)
 		return undefined;
-	if (searchDirection == kSoundSearchDirection::RIGHT ||
-		searchDirection == kSoundSearchDirection::NEAREST) {
-		for (iright = rightSample + 1; iright <= my nx; iright ++)
+	double rightCrossing = undefined;
+	if (searchDirection == kSoundSearchDirection::RIGHT || searchDirection == kSoundSearchDirection::NEAREST) {
+		for (integer iright = rightSample + 1; iright <= my nx; iright ++)
 			if ((amplitude [iright] >= level) != (amplitude [iright - 1] >= level)) {
 				rightCrossing = interpolate (me, iright - 1, channel, level);
 				break;
 			}
 		if (searchDirection == kSoundSearchDirection::RIGHT)
-			return iright > my nx ? undefined : rightCrossing;
+			return rightCrossing;
 	}
-	
-	if (ileft < 1 && iright > my nx)
-		return undefined;
-	return ileft < 1 ? rightCrossing : ( iright > my nx ? leftCrossing :
-		( position - leftCrossing < rightCrossing - position ? leftCrossing : rightCrossing ) );
+
+	return
+		isdefined (leftCrossing) && isdefined (rightCrossing) ?
+				( position - leftCrossing < rightCrossing - position ? leftCrossing : rightCrossing )
+		: isdefined (leftCrossing) ? leftCrossing
+		: isdefined (rightCrossing) ? rightCrossing
+		: undefined;
 }
 
 double Sound_localPeak (Sound me, double fromTime, double toTime, double reference) {
@@ -1129,7 +1129,7 @@ void Sound_into_Sound (Sound me, Sound to, double startTime) {
 	const integer index = Sampled_xToNearestIndex (me, startTime);
 	for (integer i = 1; i <= to -> nx; i ++) {
 		const integer j = index - 1 + i;
-		to -> z [1] [i] = j < 1 || j > my nx ? 0.0 : my z [1] [j];
+		to -> z [1] [i] = (j < 1 || j > my nx ? 0.0 : my z [1] [j]);
 	}
 }
 
@@ -1654,23 +1654,24 @@ static void Sound_fadeOut_general (Sound me, int channel, double time, double fa
 	}
 }
 
-void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, bool fadeGlobal) {
+void Sound_fade (Sound me, int channel, double t, double fadeTime, bool fadeOut, bool fadeGlobal) {
 	integer numberOfSamples = Melder_ifloor (fabs (fadeTime) / my dx);
 	double t1 = t, t2 = t1 + fadeTime;
-	const conststring32 fade_inout = inout > 0 ? U"out" : U"in";
+	bool fadeIn = ! fadeOut;
+	const conststring32 fade_string = ( fadeOut ? U"out" : U"in" );
 	
 	Melder_require (channel >= 0 && channel <= my ny,
 		U"Invalid channel number: ", channel, U".");
 	
 	if (t > my xmax) {
 		t = my xmax;
-		if (inout <= 0) { // fade in
+		if (fadeIn) {
 			Melder_warning (U"The start time of the fade-in is after the end time of the sound. The fade-in will not happen.");
 			return;
 		}
 	} else if (t < my xmin) {
 		t = my xmin;
-		if (inout > 0) { // fade out
+		if (fadeOut) {
 			Melder_warning (U"The start time of the fade-out is before the start time of the sound. The fade-out will not happen.");
 			return;
 		}
@@ -1682,7 +1683,7 @@ void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, bo
 		t1 = t;
 		t2 = t + fadeTime;
 	} else {
-		Melder_warning (U"You have given a \"Fade time\" of zero seconds. The fade-", fade_inout, U" will not happen.");
+		Melder_warning (U"You have given a \"Fade time\" of zero seconds. The fade-", fade_string, U" will not happen.");
 		return;
 	}
 	integer i0 = 0, iystart, iyend;
@@ -1697,12 +1698,12 @@ void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, bo
 	if (istart < 1)
 		istart = 1;
 	if (istart >= my nx) {
-		Melder_warning (U"The part to fade ", fade_inout, U" lies after the end time of the sound. The fade-",  fade_inout, U" will not happen.");
+		Melder_warning (U"The part to fade ", fade_string, U" lies after the end time of the sound. The fade-", fade_string, U" will not happen.");
 		return;
 	}
 	integer iend = Sampled_xToNearestIndex (me, t2);
 	if (iend <= 1) {
-		Melder_warning (U"The part to fade ", fade_inout, U" lies before the start time of the sound. Fade-", fade_inout, U" will be incomplete.");
+		Melder_warning (U"The part to fade ", fade_string, U" lies before the start time of the sound. Fade-", fade_string, U" will be incomplete.");
 		return;
 	}
 	if (iend > my nx)
@@ -1716,17 +1717,17 @@ void Sound_fade (Sound me, int channel, double t, double fadeTime, int inout, bo
 		*/
 		if (fadeTime < 0)
 			i0 = numberOfSamples - (iend - istart + 1);
-		Melder_warning (U"The fade time is larger than the part of the sound to fade ", fade_inout, U". Fade-", fade_inout, U" will be incomplete.");
+		Melder_warning (U"The fade time is larger than the part of the sound to fade ", fade_string, U". Fade-", fade_string, U" will be incomplete.");
 	}
 	for (integer ichannel = iystart; ichannel <= iyend; ichannel ++) {
 		for (integer i = istart; i <= iend; i ++) {
 			double cosp = cos (NUMpi * (i0 + i - istart) / (numberOfSamples - 1));
-			if (inout <= 0)
+			if (fadeIn)
 				cosp = -cosp;    // fade-in
 			my z [ichannel] [i] *= 0.5 * (1.0 + cosp);
 		}
 		if (fadeGlobal) {
-			if (inout <= 0) {
+			if (fadeIn) {
 				if (istart > 1)
 					my z [ichannel].part (1, istart - 1) <<= 0.0;
 			} else {
@@ -1888,7 +1889,7 @@ static void Sound_findIntermediatePoint_bs (Sound me, integer ichannel, integer 
 		xmid = 0.5 * (xleft + xright); // the bisection
 
 		for (integer channel = 1; channel <= my ny; channel ++)
-			thy z [channel] [2] = Vector_getValueAtX (me, xmid, channel, Vector_VALUE_INTERPOLATION_LINEAR);
+			thy z [channel] [2] = Vector_getValueAtX (me, xmid, channel, kVector_valueInterpolation :: LINEAR);
 		Formula_compile (interpreter, thee.get(), formula, kFormula_EXPRESSION_TYPE_NUMERIC, true);
 		Formula_Result result;
 		Formula_run (ichannel, 2, & result);
@@ -2199,7 +2200,7 @@ static void Sound_findNoise (Sound me, double minimumNoiseDuration, double *nois
 		*noiseStart = undefined;
 		*noiseEnd = undefined;
 		autoIntensity const intensity = Sound_to_Intensity (me, 20.0, 0.005, true);
-		double tmin = Vector_getXOfMinimum (intensity.get(), intensity -> xmin, intensity ->  xmax, 1) - minimumNoiseDuration / 2.0;
+		double tmin = Vector_getXOfMinimum (intensity.get(), intensity -> xmin, intensity ->  xmax, kVector_peakInterpolation :: PARABOLIC) - minimumNoiseDuration / 2.0;
 		double tmax = tmin + minimumNoiseDuration;
 		if (tmin < my xmin) {
 			tmin = my xmin;

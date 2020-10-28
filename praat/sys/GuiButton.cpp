@@ -1,6 +1,6 @@
 /* GuiButton.cpp
  *
- * Copyright (C) 1993-2008,2010-2018 Paul Boersma,
+ * Copyright (C) 1993-2008,2010-2020 Paul Boersma,
  *               2007-2008 Stefan de Konink, 2010 Franz Brausse, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
@@ -37,12 +37,12 @@ Thing_implement (GuiButton, GuiControl, 0);
 	}
 	static void _GuiGtkButton_activateCallback (GuiObject widget, gpointer userData) {
 		GuiButton me = (GuiButton) userData;
-		struct structGuiButtonEvent event { me, false, false, false, false };
+		structGuiButtonEvent event { me, false, false, false };
 		if (my d_activateCallback) {
 			try {
 				my d_activateCallback (my d_activateBoss, & event);
 			} catch (MelderError) {
-				Melder_flushError (U"Your click on button \"", Melder_peek8to32 (GTK_WIDGET (widget) -> name), U"\" was not completely handled.");
+				Melder_flushError (U"Your click on button \"", Melder_peek8to32 (gtk_widget_get_name (GTK_WIDGET (widget))), U"\" was not completely handled.");
 			}
 		}
 	}
@@ -59,7 +59,7 @@ Thing_implement (GuiButton, GuiControl, 0);
 	void _GuiWinButton_handleClick (GuiObject widget) {
 		iam_button;
 		if (my d_activateCallback) {
-			struct structGuiButtonEvent event { me, false, false, false, false };
+			structGuiButtonEvent event { me, false, false, false };
 			try {
 				my d_activateCallback (my d_activateBoss, & event);
 			} catch (MelderError) {
@@ -70,7 +70,7 @@ Thing_implement (GuiButton, GuiControl, 0);
 	bool _GuiWinButton_tryToHandleShortcutKey (GuiObject widget) {
 		iam_button;
 		if (my d_activateCallback) {
-			struct structGuiButtonEvent event { me, false, false, false, false };
+			structGuiButtonEvent event { me, false, false, false };
 			try {
 				my d_activateCallback (my d_activateBoss, & event);
 			} catch (MelderError) {
@@ -101,7 +101,7 @@ Thing_implement (GuiButton, GuiControl, 0);
 		Melder_assert (self == widget);   // sender (widget) and receiver (self) happen to be the same object
 		GuiButton me = d_userData;
 		if (my d_activateCallback) {
-			struct structGuiButtonEvent event { me, false, false, false, false };
+			structGuiButtonEvent event { me, false, false, false };
 			try {
 				my d_activateCallback (my d_activateBoss, & event);
 			} catch (MelderError) {
@@ -122,17 +122,29 @@ GuiButton GuiButton_create (GuiForm parent, int left, int right, int top, int bo
 	my d_activateBoss = activateBoss;
 	#if gtk
 		my d_widget = gtk_button_new_with_label (Melder_peek32to8 (buttonText));
-		gtk_button_set_relief (GTK_BUTTON (my d_widget), GTK_RELIEF_HALF);
+		#if ALLOW_GDK_DRAWING
+			gtk_button_set_relief (GTK_BUTTON (my d_widget), GTK_RELIEF_HALF);
+		#else
+			gtk_button_set_relief (GTK_BUTTON (my d_widget), GTK_RELIEF_NORMAL);
+		#endif
 		_GuiObject_setUserData (my d_widget, me.get());
 		my v_positionInForm (my d_widget, left, right, top, bottom, parent);
 		if (flags & GuiButton_DEFAULT || flags & GuiButton_ATTRACTIVE) {
-			GTK_WIDGET_SET_FLAGS (my d_widget, GTK_CAN_DEFAULT);
+			#if ALLOW_GDK_DRAWING
+				GTK_WIDGET_SET_FLAGS (my d_widget, GTK_CAN_DEFAULT);
+			#else
+				gtk_widget_set_can_default (GTK_WIDGET (my d_widget), TRUE);
+			#endif
 			GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (my d_widget));
 			Melder_assert (shell);
 			gtk_window_set_default (GTK_WINDOW (shell), GTK_WIDGET (my d_widget));
 		} else if (1) {
 			gtk_button_set_focus_on_click (GTK_BUTTON (my d_widget), false);
-			GTK_WIDGET_UNSET_FLAGS (my d_widget, GTK_CAN_DEFAULT);
+			#if ALLOW_GDK_DRAWING
+				GTK_WIDGET_UNSET_FLAGS (my d_widget, GTK_CAN_DEFAULT);
+			#else
+				gtk_widget_set_can_default (GTK_WIDGET (my d_widget), FALSE);
+			#endif
 		}
 		g_signal_connect (G_OBJECT (my d_widget), "destroy", G_CALLBACK (_GuiGtkButton_destroyCallback), me.get());
 		g_signal_connect (GTK_BUTTON (my d_widget), "clicked", G_CALLBACK (_GuiGtkButton_activateCallback), me.get());

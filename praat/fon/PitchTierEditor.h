@@ -2,7 +2,7 @@
 #define _PitchTierEditor_h_
 /* PitchTierEditor.h
  *
- * Copyright (C) 1992-2011,2012,2015,2017 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2009-2012,2015-2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,24 +19,22 @@
  */
 
 #include "RealTierEditor.h"
-#include "PitchTier.h"
+#include "PitchTierArea.h"
 #include "Sound.h"
 
 Thing_define (PitchTierEditor, RealTierEditor) {
+	/*
+		Access inherited attributes by their derived type.
+	*/
+	PitchTier & pitchTier() { return * reinterpret_cast <PitchTier *> (& our data); }
+	autoPitchTierArea & pitchTierArea() { return * reinterpret_cast <autoPitchTierArea *> (& our realTierArea); }
+
 	void v_createHelpMenuItems (EditorMenu menu)
 		override;
 	void v_play (double tmin, double tmax)
 		override;
-	double v_minimumLegalValue ()
-		override { return 0.0; }
 	conststring32 v_quantityText ()
 		override { return U"Frequency (Hz)"; }
-	conststring32 v_rightTickUnits ()
-		override { return U" Hz"; }
-	double v_defaultYmin ()
-		override { return 50.0; }
-	double v_defaultYmax ()
-		override { return 600.0; }
 	conststring32 v_setRangeTitle ()
 		override { return U"Set frequency range..."; }
 	conststring32 v_defaultYminText ()
