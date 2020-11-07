@@ -347,7 +347,9 @@ auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objec
 	auto praatArgs = environment.toPraatArgs(args);
 
 	// Prepare to maybe intercept the output of the script
-	auto interceptor = captureOutput ? std::make_unique<MelderInfoInterceptor>() : nullptr;
+	std::optional<MelderInfoInterceptor> interceptor = std::nullopt;
+	if (captureOutput)
+		interceptor.emplace();
 
 	try {
 		Interpreter_readParameters(environment.interpreter(), script);
