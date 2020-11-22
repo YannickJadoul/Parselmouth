@@ -15,22 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
-add_sources(CC.cpp
-            Data.cpp
-            Formant.cpp
-            Function.cpp
-            Harmonicity.cpp
-            Intensity.cpp
-            Matrix.cpp
-            MFCC.cpp
-            Pitch.cpp
-            Sampled.cpp
-            SampledXY.cpp
-            Sound.cpp
-            Spectrogram.cpp
-            Spectrum.cpp
-            TextGrid.cpp
-            TextGridTools.cpp
-            Thing.cpp
-            Vector.cpp
-            praat.cpp)
+target_sources(parselmouth PRIVATE
+    CC.cpp
+    Data.cpp
+    Formant.cpp
+    Function.cpp
+    Harmonicity.cpp
+    Intensity.cpp
+    Matrix.cpp
+    MFCC.cpp
+    Pitch.cpp
+    Sampled.cpp
+    SampledXY.cpp
+    Sound.cpp
+    Spectrogram.cpp
+    Spectrum.cpp
+    TextGrid.cpp
+    TextGridTools.cpp
+    Thing.cpp
+    Vector.cpp
+    praat.cpp
+)

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.15)
 project(Parselmouth)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/res/cmake ${CMAKE_MODULE_PATH})
@@ -37,13 +37,12 @@ if (MSVC)
 	endif ()
 endif ()
 
-set(PYBIND11_CPP_STANDARD "") # We'll set it ourselves, in the subdirectory, because we want C++17
+set(PYBIND11_FINDPYTHON ON CACHE STRING "")  # Remove again once this is the default
 add_subdirectory(pybind11)
 
 if (PREBUILT_PRAAT_DIR)
 	file(TO_CMAKE_PATH ${PREBUILT_PRAAT_DIR} PREBUILT_PRAAT_DIR_CMAKE)
 	include(${PREBUILT_PRAAT_DIR_CMAKE}/exports.cmake)
-	set(CMAKE_NO_SYSTEM_FROM_IMPORTED 1) # Get -I instead of -isystem, when importing an already-built praat lib
 else ()
 	add_subdirectory(praat)
 endif ()

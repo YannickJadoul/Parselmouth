@@ -15,27 +15,27 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
-include(add_sources)
-
-set(PRAAT_SUBDIRECTORIES external/clapack
-                         external/gsl
-                         external/glpk
-                         external/mp3
-                         external/flac
-                         external/portaudio
-                         external/espeak
-                         kar
-                         melder
-                         sys
-                         dwsys
-                         stat
-                         fon
-                         dwtools
-                         LPC
-                         EEG
-                         gram
-                         FFNet
-                         artsynth)
+set(PRAAT_SUBDIRECTORIES
+	external/clapack
+	external/gsl
+	external/glpk
+	external/mp3
+	external/flac
+	external/portaudio
+	external/espeak
+	kar
+	melder
+	sys
+	dwsys
+	stat
+	fon
+	dwtools
+	LPC
+	EEG
+	gram
+	FFNet
+	artsynth
+)
 
 set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES})
 
@@ -68,11 +68,11 @@ elseif (WIN32)
 	set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} /wd4554) # "warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence"
 endif ()
 
+add_library(praat)
 foreach(SUBDIR ${PRAAT_SUBDIRECTORIES})
 	add_subdirectory(${SUBDIR})
 endforeach()
 
-add_library(praat ${SRC})
 target_include_directories(praat PUBLIC ${PRAAT_INCLUDE_DIRS})
 target_compile_definitions(praat PUBLIC ${PRAAT_DEFINITIONS} PRIVATE ${PRAAT_DEFINITIONS_PRIVATE})
 target_compile_options(praat PUBLIC ${PRAAT_FLAGS} PRIVATE ${PRAAT_FLAGS_PRIVATE})

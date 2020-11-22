@@ -1,1 +1,3 @@
-add_sources(ipaSerifRegularPS.cpp longchar.cpp)
+target_sources(praat PRIVATE
+	ipaSerifRegularPS.cpp longchar.cpp
+)
