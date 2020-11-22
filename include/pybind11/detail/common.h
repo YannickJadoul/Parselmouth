@@ -11,7 +11,7 @@
 
 #define PYBIND11_VERSION_MAJOR 2
 #define PYBIND11_VERSION_MINOR 6
-#define PYBIND11_VERSION_PATCH 0
+#define PYBIND11_VERSION_PATCH 1
 
 #define PYBIND11_NAMESPACE_BEGIN(name) namespace name {
 #define PYBIND11_NAMESPACE_END(name) }
@@ -311,7 +311,7 @@ extern "C" {
 \endrst */
 #define PYBIND11_MODULE(name, variable)                                        \
     static ::pybind11::module_::module_def                                     \
-        PYBIND11_CONCAT(pybind11_module_def_, name);                           \
+        PYBIND11_CONCAT(pybind11_module_def_, name) PYBIND11_MAYBE_UNUSED;     \
     PYBIND11_MAYBE_UNUSED                                                      \
     static void PYBIND11_CONCAT(pybind11_init_, name)(::pybind11::module_ &);  \
     PYBIND11_PLUGIN_IMPL(name) {                                               \
@@ -494,7 +494,7 @@ using std::make_index_sequence;
 #else
 template<size_t ...> struct index_sequence  { };
 template<size_t N, size_t ...S> struct make_index_sequence_impl : make_index_sequence_impl <N - 1, N - 1, S...> { };
-template<size_t ...S> struct make_index_sequence_impl <0, S...> { typedef index_sequence<S...> type; };
+template<size_t ...S> struct make_index_sequence_impl <0, S...> { using type = index_sequence<S...>; };
 template<size_t N> using make_index_sequence = typename make_index_sequence_impl<N>::type;
 #endif
 

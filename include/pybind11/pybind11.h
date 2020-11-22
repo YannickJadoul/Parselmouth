@@ -1315,7 +1315,8 @@ public:
         return *this;
     }
 
-    template <typename Func> class_& def_buffer(Func &&func) {
+    template <typename Func>
+    class_& def_buffer(Func &&func) {
         struct capture { Func func; };
         auto *ptr = new capture { std::forward<Func>(func) };
         install_buffer_funcs([](PyObject *obj, void *ptr) -> buffer_info* {
@@ -1324,6 +1325,10 @@ public:
                 return nullptr;
             return new buffer_info(((capture *) ptr)->func(caster));
         }, ptr);
+        weakref(m_ptr, cpp_function([ptr](handle wr) {
+            delete ptr;
+            wr.dec_ref();
+        })).release();
         return *this;
     }
 
@@ -1623,7 +1628,7 @@ struct enum_base {
                         strict_behavior;                                               \
                     return expr;                                                       \
                 },                                                                     \
-                name(op), is_method(m_base))
+                name(op), is_method(m_base), arg("other"))
 
         #define PYBIND11_ENUM_OP_CONV(op, expr)                                        \
             m_base.attr(op) = cpp_function(                                            \
@@ -1631,7 +1636,7 @@ struct enum_base {
                     int_ a(a_), b(b_);                                                 \
                     return expr;                                                       \
                 },                                                                     \
-                name(op), is_method(m_base))
+                name(op), is_method(m_base), arg("other"))
 
         #define PYBIND11_ENUM_OP_CONV_LHS(op, expr)                                    \
             m_base.attr(op) = cpp_function(                                            \
@@ -1639,7 +1644,7 @@ struct enum_base {
                     int_ a(a_);                                                        \
                     return expr;                                                       \
                 },                                                                     \
-                name(op), is_method(m_base))
+                name(op), is_method(m_base), arg("other"))
 
         if (is_convertible) {
             PYBIND11_ENUM_OP_CONV_LHS("__eq__", !b.is_none() &&  a.equal(b));
@@ -1725,7 +1730,7 @@ public:
         constexpr bool is_convertible = std::is_convertible<Type, Scalar>::value;
         m_base.init(is_arithmetic, is_convertible);
 
-        def(init([](Scalar i) { return static_cast<Type>(i); }));
+        def(init([](Scalar i) { return static_cast<Type>(i); }), arg("value"));
         def("__int__", [](Type value) { return (Scalar) value; });
         #if PY_MAJOR_VERSION < 3
             def("__long__", [](Type value) { return (Scalar) value; });
@@ -1739,7 +1744,7 @@ public:
                 detail::initimpl::setstate<Base>(v_h, static_cast<Type>(arg),
                         Py_TYPE(v_h.inst) != v_h.type->type); },
             detail::is_new_style_constructor(),
-            pybind11::name("__setstate__"), is_method(*this));
+            pybind11::name("__setstate__"), is_method(*this), arg("state"));
     }
 
     /// Export enumeration entries into the parent scope
@@ -1837,7 +1842,7 @@ template <return_value_policy Policy = return_value_policy::reference_internal,
           typename ValueType = decltype(*std::declval<Iterator>()),
           typename... Extra>
 iterator make_iterator(Iterator first, Sentinel last, Extra &&... extra) {
-    typedef detail::iterator_state<Iterator, Sentinel, false, Policy> state;
+    using state = detail::iterator_state<Iterator, Sentinel, false, Policy>;
 
     if (!detail::get_type_info(typeid(state), false)) {
         class_<state>(handle(), "iterator", pybind11::module_local())

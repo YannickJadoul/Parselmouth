@@ -1,6 +1,7 @@
 name: Labeler
 on:
   pull_request_target:
+    types: [closed]
 
 jobs:
   label:
@@ -9,13 +10,7 @@ jobs:
     steps:
 
     - uses: actions/labeler@main
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        sync-labels: true
-
-    - uses: actions/labeler@main
-      if: "github.event.action == 'closed' && github.event.pull_request.merged == true"
+      if: github.event.pull_request.merged == true
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         configuration-path: .github/labeler_merged.yml
-        sync-labels: true
