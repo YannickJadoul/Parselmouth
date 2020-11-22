@@ -21,11 +21,10 @@ add_subdirectory(parselmouth)
 target_include_directories(parselmouth PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (UNIX)
-	target_compile_options(parselmouth
-		PRIVATE
-			-Wall
-			-Wextra
-			-Wno-unknown-pragmas  # Praat's `#pragma mark`s
+	target_compile_options(parselmouth PRIVATE
+		-Wall
+		-Wextra
+		-Wno-unknown-pragmas  # Praat's `#pragma mark`s
 	)
 endif ()
 

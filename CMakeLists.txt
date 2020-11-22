@@ -37,7 +37,6 @@ if (MSVC)
 	endif ()
 endif ()
 
-set(PYBIND11_FINDPYTHON ON CACHE STRING "")  # Remove again once this is the default
 add_subdirectory(pybind11)
 
 if (PREBUILT_PRAAT_DIR)
