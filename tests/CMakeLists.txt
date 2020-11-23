@@ -15,12 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
-if(DEFINED Python_EXECUTABLE)
-    set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
-endif()
-
 add_custom_target(pytest
-    COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=$<TARGET_FILE_DIR:parselmouth> ${PYTHON_EXECUTABLE} -m pytest
+    COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=$<TARGET_FILE_DIR:parselmouth> ${Python_EXECUTABLE} -m pytest
     DEPENDS parselmouth
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_custom_target(tests DEPENDS pytest)

@@ -37,6 +37,8 @@ if (MSVC)
 	endif ()
 endif ()
 
+set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 add_subdirectory(pybind11)
 
 if (PREBUILT_PRAAT_DIR)
