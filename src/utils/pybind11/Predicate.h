@@ -72,8 +72,7 @@ struct ReplaceSignatureCastPlaceholderImpl<Predicate<signature_cast_placeholder:
 
 } // namespace parselmouth
 
-namespace pybind11 {
-namespace detail {
+namespace pybind11::detail {
 
 template <typename T, typename Impl>
 class type_caster<parselmouth::Predicate<T, Impl>> {
@@ -103,7 +102,6 @@ public:
 	PYBIND11_TYPE_CASTER(PredicateT, _(Impl::name()) + _("[") + TCaster::name + _("]")); // TODO Python implementation of what Positive[T]/NonNegative[T]/... is, to get typecheckers happy?
 };
 
-} // namespace detail
-} // namespace pybind11
+} // namespace pybind11::detail
 
 #endif // INC_PARSELMOUTH_PREDICATE_H
