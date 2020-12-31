@@ -28,11 +28,14 @@ size_t sftoa_c(char *s, size_t n, double value, unsigned char precision, char fo
 	switch (format) {
 	case 'e':
 		written = fmt::format_to_n(s, n, "{:.{}e}", value, precision, format).size;
+		break;
 	case 'f':
 		written = fmt::format_to_n(s, n, "{:.{}f}", value, precision, format).size;
+		break;
 	case 'g':
 	default:
 		written = fmt::format_to_n(s, n, "{:.{}g}", value, precision, format).size;
+		break;
 	}
 	if (written < n)
 		s[written] = '\0';
@@ -304,7 +307,7 @@ const char * Melder8_percent (double value, integer precision) noexcept {
 	value *= 100.0;
 	int minimumPrecision = - (int) floor (log10 (fabs (value)));
 
-	auto partlen = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, std::ios_base::fixed);
+	auto partlen = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, 'f');
 	Melder_assert(partlen > 0);
 	Melder_assert (partlen < MAXIMUM_NUMERIC_STRING_LENGTH);
 	if (partlen < MAXIMUM_NUMERIC_STRING_LENGTH) {
