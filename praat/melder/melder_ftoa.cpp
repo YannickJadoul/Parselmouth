@@ -18,37 +18,32 @@
 
 #include "melder.h"
 
-#include <iostream>
-#include <locale>
+#include <fmt/core.h>
+#include <fmt/format.h>
 
 namespace {
 
-struct array_ostreambuf : public std::streambuf {
-	array_ostreambuf(char *out, size_t n) {
-		setp(out, out + n);
+size_t sftoa_c(char *s, size_t n, double value, unsigned char precision, char format = 'g') {
+	size_t written;
+	switch (format) {
+	case 'e':
+		written = fmt::format_to_n(s, n, "{:.{}e}", value, precision, format).size;
+	case 'f':
+		written = fmt::format_to_n(s, n, "{:.{}f}", value, precision, format).size;
+	case 'g':
+	default:
+		written = fmt::format_to_n(s, n, "{:.{}g}", value, precision, format).size;
 	}
-};
-
-bool sftoa_c(char *s, size_t n, double value, unsigned char precision, std::ios_base::fmtflags floatflags = std::ios_base::fmtflags(0)) {
-	static auto cLocale = std::locale::classic();
-	static auto &cNumput = std::use_facet<std::num_put<char>>(cLocale);
-	static std::ios format(nullptr);  // Wake me up when Praat gets thread-safe. But I'd hope that that global array of buffers will also have changed by then.
-
-	array_ostreambuf buffer(s, n);
-	format.precision(precision);
-	format.setf(floatflags, std::ios_base::floatfield);
-	cNumput.put(&buffer, format, ' ', value);
-
-	if (buffer.sputc('\0') == array_ostreambuf::traits_type::eof()) {
-		s[n-1] = '\0';
-		return false;
-	}
-	return true;
+	if (written < n)
+		s[written] = '\0';
+	else
+		s[n - 1] = '\0';
+	return written;
 }
 
 template <size_t N>
-inline bool sftoa_c(char (&s)[N], double value, unsigned char precision, std::ios_base::fmtflags floatflags = std::ios_base::fmtflags(0)) {
-	return sftoa_c(s, N, value, precision, floatflags);
+inline size_t sftoa_c(char (&s)[N], double value, unsigned char precision, char format = 'g') {
+	return sftoa_c(s, N, value, precision, format);
 }
 
 }
@@ -212,19 +207,8 @@ const char * Melder8_double (double value, integer precision, char format /*= 'g
 		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS)
 		ibuffer = 0;
-	switch (format) {
-		case 'e':
-			sftoa_c(buffers8 [ibuffer], value, precision, std::ios::scientific);
-			break;
-		case 'f':
-			sftoa_c(buffers8 [ibuffer], value, precision, std::ios::fixed);
-			break;
-		case 'g':
-		default:
-			Melder_assert(format == 'g');
-			sftoa_c(buffers8 [ibuffer], value, precision);
-			break;
-	}
+	Melder_assert(format == 'e' || format == 'f' || format == 'g');
+	sftoa_c(buffers8 [ibuffer], value, precision, format);
 	return buffers8 [ibuffer];
 }
 conststring32 Melder_double (double value, integer precision, char format /*= 'g'*/) noexcept {
@@ -268,7 +252,7 @@ const char * Melder8_fixed (double value, integer precision) noexcept {
 		precision = 60;
 	int minimumPrecision = - (int) floor (log10 (fabs (value)));
 
-	auto res = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, std::ios_base::fixed);
+	auto res = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, 'f');
 	Melder_assert(res);
 	// int n = snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*f",
 	// 	(int) (value, minimumPrecision > precision ? minimumPrecision : precision), value);
@@ -294,9 +278,8 @@ const char * Melder8_fixedExponent (double value, integer exponent, integer prec
 	value /= factor;
 	int minimumPrecision = - (int) floor (log10 (fabs (value)));
 
-	auto res = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, std::ios_base::fixed);
-	Melder_assert(res);
-	auto partlen = strlen(buffers8 [ibuffer]);
+	auto partlen = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, 'f');
+	Melder_assert(partlen > 0);
 	int n = partlen + snprintf (buffers8 [ibuffer] + partlen, MAXIMUM_NUMERIC_STRING_LENGTH + 1 - partlen, "E%d", (int) exponent);
 	// int n = snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*fE%d",
 	// 	(int) (minimumPrecision > precision ? minimumPrecision : precision), value, (int) exponent);
@@ -321,9 +304,8 @@ const char * Melder8_percent (double value, integer precision) noexcept {
 	value *= 100.0;
 	int minimumPrecision = - (int) floor (log10 (fabs (value)));
 
-	auto res = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, std::ios_base::fixed);
-	Melder_assert(res);
-	auto partlen = strlen(buffers8 [ibuffer]);
+	auto partlen = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, std::ios_base::fixed);
+	Melder_assert(partlen > 0);
 	Melder_assert (partlen < MAXIMUM_NUMERIC_STRING_LENGTH);
 	if (partlen < MAXIMUM_NUMERIC_STRING_LENGTH) {
 		buffers8[ibuffer][partlen] = '%';
