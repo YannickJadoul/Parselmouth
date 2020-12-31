@@ -97,7 +97,7 @@ jobs:
           CMAKE_ARCH="${{ matrix.cibw-arch == 'win32' && '-A Win32' || '' }}"
           echo "CIBW_BUILD=*-${{ matrix.cibw-arch }}" >> $GITHUB_ENV
           echo "CIBW_SKIP=pp*-*" >> $GITHUB_ENV
-          CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_PRAAT_DIR=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/praat_build/praat\""
+          CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_PRAAT_DIR=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/praat_build/praat\" CMAKE_BUILD_PARALLEL_LEVEL=2"
           echo "CIBW_ENVIRONMENT=$CIBW_ENVIRONMENT_COMMON" >> $GITHUB_ENV
           echo "CIBW_ENVIRONMENT_LINUX=$CIBW_ENVIRONMENT_COMMON PIP_ONLY_BINARY='numpy'" >> $GITHUB_ENV
           CIBW_BEFORE_ALL_COMMON="cmake -S . -B praat_build $CMAKE_ARCH && cmake --build praat_build --target praat -j 2"
