@@ -564,7 +564,7 @@ PRAAT_CLASS_BINDING(Sound) {
 	    "scaling"_a = kSounds_convolve_scaling::PEAK_099, "signal_outside_time_domain"_a = kSounds_convolve_signalOutsideTimeDomain::ZERO);
 
 	def("to_spectrum",
-	    args_cast<_, bool>(Sound_to_Spectrum),
+	    &Sound_to_Spectrum,
 	    "fast"_a = true);
 
 	def("to_spectrogram",
