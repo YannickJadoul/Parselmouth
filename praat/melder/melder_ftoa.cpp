@@ -24,23 +24,10 @@
 namespace {
 
 size_t sftoa_c(char *s, size_t n, double value, unsigned char precision, char format = 'g') {
-	size_t written;
-	switch (format) {
-	case 'e':
-		written = fmt::format_to_n(s, n, "{:.{}e}", value, precision, format).size;
-		break;
-	case 'f':
-		written = fmt::format_to_n(s, n, "{:.{}f}", value, precision, format).size;
-		break;
-	case 'g':
-	default:
-		written = fmt::format_to_n(s, n, "{:.{}g}", value, precision, format).size;
-		break;
-	}
-	if (written < n)
-		s[written] = '\0';
-	else
-		s[n - 1] = '\0';
+	char format_str[] = "{:.{}x}";
+	format_str[5] = format;
+	auto [out, written] = fmt::format_to_n(s, n - 1, format_str, value, precision);
+	*out = '\0';
 	return written;
 }
 
