@@ -64,84 +64,19 @@ class CMakeBuild(build_ext):
 		subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 
-def read(*args):
-	with io.open(os.path.join(os.path.dirname(__file__), *args), encoding='utf8') as f:
-		return f.read()
 
 
 def find_version(*file_paths):
-	version_file = read(*file_paths)
+	with io.open(os.path.join(os.path.dirname(__file__), "src", "version.h"), encoding='utf8') as f:
+		version_file = f.read()
 	version_match = re.search(r"^#define PARSELMOUTH_VERSION ([0-9a-z.]+)$", version_file, re.M)
 	if version_match:
 		return version_match.group(1)
 	raise RuntimeError("Unable to find version string.")
 
 
-long_description="""\
-# Parselmouth - Praat in Python, the Pythonic way
-
-**Parselmouth** is a Python library for the [Praat](http://www.praat.org)
-software.
-
-Though other attempts have been made at porting functionality from Praat to
-Python, Parselmouth is unique in its aim to provide a complete and Pythonic
-interface to the internal Praat code. While other projects either wrap Praat's
-scripting language or reimplementing parts of Praat's functionality in Python,
-Parselmouth directly accesses Praat's C/C++ code (which means the algorithms
-and their output are exactly the same as in Praat) and provides efficient
-access to the program's data, but *also* provides an interface that looks
-no different from any other Python library.
-
-Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) or
-post a message to our
-[Google discussion group](https://groups.google.com/d/forum/parselmouth) if
-you have any question, remarks, or requests!
-
-More information on the **installation** and some basic **examples**
-can be found on Parselmouth's GitHub repository:
-https://github.com/YannickJadoul/Parselmouth"""
-
 setup(
-	name='praat-parselmouth',
-	version=find_version("src", "version.h"),
-	description="Praat in Python, the Pythonic way",
-	long_description=long_description,
-	long_description_content_type='text/markdown',
-	url="https://github.com/YannickJadoul/Parselmouth",
-	project_urls={
-		"Bug Tracker": "https://github.com/YannickJadoul/Parselmouth/issues",
-		"Documentation": "https://parselmouth.readthedocs.io/",
-		"Source Code": "https://github.com/YannickJadoul/Parselmouth",
-	},
-	author="Yannick Jadoul",
-	author_email="Yannick.Jadoul@ai.vub.ac.be",
-	license='GPLv3',
-	classifiers=[
-		'Development Status :: 5 - Production/Stable',
-		'Intended Audience :: Developers',
-		'Intended Audience :: Science/Research',
-		'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-		'Operating System :: MacOS :: MacOS X',
-		'Operating System :: Microsoft :: Windows',
-		'Operating System :: POSIX :: Linux',
-		'Operating System :: Unix',
-		'Programming Language :: C++',
-		'Programming Language :: Python :: 2',
-		'Programming Language :: Python :: 2.7',
-		'Programming Language :: Python :: 3',
-		'Programming Language :: Python :: 3.5',
-		'Programming Language :: Python :: 3.6',
-		'Programming Language :: Python :: 3.7',
-		'Programming Language :: Python :: 3.8',
-		'Topic :: Scientific/Engineering',
-		'Topic :: Software Development :: Libraries :: Python Modules',
-	],
-	keywords=["praat", "speech", "signal processing", "phonetics"],
-	python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
-	install_requires=[
-		'numpy>=1.7.0',
-	],
+	version=find_version(),
 	ext_modules=[CMakeExtension('parselmouth')],
 	cmdclass=dict(build_ext=CMakeBuild),
-	zip_safe=False,
 )
