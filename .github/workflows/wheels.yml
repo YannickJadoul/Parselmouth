@@ -30,7 +30,8 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.5
 
       - name: Install requirements
-        run: pip install --user check-manifest twine
+        run: |
+          pip install --user check-manifest twine scikit-build
 
       - name: Run check-manifest
         run: |
