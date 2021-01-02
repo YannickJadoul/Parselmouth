@@ -1,6 +1,11 @@
 include *.md
 include LICENSE
 
+include MANIFEST.in
+include pyproject.toml
+include setup.cfg
+include setup.py
+
 include CMakeLists.txt
 include requirements.txt
 graft src

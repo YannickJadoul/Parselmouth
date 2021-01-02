@@ -42,13 +42,14 @@ def patched_WindowsPlatform_init(self):
 		  https://visualstudio.microsoft.com/vs/
 		""").strip()
 
-	vs_year, vs_toolset = "2017", "v141"
-	self.default_generators.extend([
-		CMakeVisualStudioCommandLineGenerator("Ninja", vs_year, vs_toolset),
-		CMakeVisualStudioIDEGenerator(vs_year, vs_toolset),
-		CMakeVisualStudioCommandLineGenerator("NMake Makefiles", vs_year, vs_toolset),
-		CMakeVisualStudioCommandLineGenerator("NMake Makefiles JOM", vs_year, vs_toolset)
-	])
+	supported_vs_years = [("2017", "v141"), ("2019", "v141")]
+	for vs_year, vs_toolset in supported_vs_years:
+		self.default_generators.extend([
+			CMakeVisualStudioCommandLineGenerator("Ninja", vs_year, vs_toolset),
+			CMakeVisualStudioIDEGenerator(vs_year, vs_toolset),
+			CMakeVisualStudioCommandLineGenerator("NMake Makefiles", vs_year, vs_toolset),
+			CMakeVisualStudioCommandLineGenerator("NMake Makefiles JOM", vs_year, vs_toolset)
+		])
 
 import skbuild.platform_specifics.windows
 skbuild.platform_specifics.windows.WindowsPlatform.__init__ = patched_WindowsPlatform_init
