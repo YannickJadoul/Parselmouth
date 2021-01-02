@@ -41,5 +41,3 @@ set_target_properties(praat PROPERTIES
 )
 target_include_directories(praat SYSTEM INTERFACE ${CMAKE_SOURCE_DIR})
 target_link_libraries(parselmouth PRIVATE praat)
-
-install(TARGETS parselmouth DESTINATION ${CMAKE_INSTALL_PREFIX})  # TODO Remove

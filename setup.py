@@ -15,55 +15,43 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
+from __future__ import print_function
+
 import io
 import os
-import platform
 import re
 import shlex
-import subprocess
 import sys
 
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
-
-# setuptools to CMake solution based on https://github.com/pybind/cmake_example/
-
-class CMakeExtension(Extension):
-	def __init__(self, name, sourcedir=""):
-		Extension.__init__(self, name, sources=[])
-		self.sourcedir = os.path.abspath(sourcedir)
+try:
+	from skbuild import setup
+except ImportError:
+	print("Please update pip to pip 10 or greater, or a manually install the PEP 518 requirements in pyproject.toml", file=sys.stderr)
+	raise
 
 
-class CMakeBuild(build_ext):
-	def build_extension(self, ext):
-		extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
-		if not extdir.endswith(os.path.sep):
-			extdir += os.path.sep
+def patched_WindowsPlatform_init(self):
+	import textwrap
+	from skbuild.platform_specifics.windows import WindowsPlatform, CMakeVisualStudioCommandLineGenerator, CMakeVisualStudioIDEGenerator
 
-		cfg = 'Debug' if self.debug else 'Release'
+	super(WindowsPlatform, self).__init__()
 
-		cmake_args = [
-			'-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}'.format(extdir),
-			'-DPython_EXECUTABLE={}'.format(sys.executable),
-			'-DCMAKE_BUILD_TYPE={}'.format(cfg),
-		]
-		build_args = []
+	self._vs_help = textwrap.dedent("""
+		Building Windows wheels for requires Microsoft Visual Studio 2017:
 
-		if self.compiler.compiler_type == 'msvc':
-			cmake_args += ['-A', 'Win32' if self.plat_name == 'win32' else 'x64']
-			cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
-			build_args += ['--config', cfg]
+		  https://visualstudio.microsoft.com/vs/
+		""").strip()
 
-		cmake_args += shlex.split(os.environ.get('PARSELMOUTH_EXTRA_CMAKE_ARGS', ''))
-		build_args += shlex.split(os.environ.get('PARSELMOUTH_EXTRA_BUILD_ARGS', ''))
+	vs_year, vs_toolset = "2017", "v141"
+	self.default_generators.extend([
+		CMakeVisualStudioCommandLineGenerator("Ninja", vs_year, vs_toolset),
+		CMakeVisualStudioIDEGenerator(vs_year, vs_toolset),
+		CMakeVisualStudioCommandLineGenerator("NMake Makefiles", vs_year, vs_toolset),
+		CMakeVisualStudioCommandLineGenerator("NMake Makefiles JOM", vs_year, vs_toolset)
+	])
 
-		if not os.path.exists(self.build_temp):
-			os.makedirs(self.build_temp)
-
-		subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp)
-		subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
-
-
+import skbuild.platform_specifics.windows
+skbuild.platform_specifics.windows.WindowsPlatform.__init__ = patched_WindowsPlatform_init
 
 
 def find_version(*file_paths):
@@ -77,6 +65,8 @@ def find_version(*file_paths):
 
 setup(
 	version=find_version(),
-	ext_modules=[CMakeExtension('parselmouth')],
-	cmdclass=dict(build_ext=CMakeBuild),
+	packages=[''],
+	package_dir={'': "src"},
+	cmake_args=shlex.split(os.environ.get('PARSELMOUTH_EXTRA_CMAKE_ARGS', '')),
+	cmake_install_dir="src",
 )

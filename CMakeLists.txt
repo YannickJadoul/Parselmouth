@@ -24,10 +24,6 @@ if (NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif ()
 
-if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-	set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/installed CACHE STRING "Install path prefix, prepended onto install directories." FORCE)
-endif ()
-
 if (MSVC)
 	add_compile_options(/permissive- /Zc:inline) # Please follow the standard more closely, MSVC (e.g. adds ciso646 alternative tokens for logical operators)
 	add_compile_options(/utf-8) # Because Praat contains source files with unicode chars encoded as UTF-8, and because UTF-8 is not default enough for MSVC to read and compile these files correctly (also, because it's 2020 by now)
@@ -36,6 +32,16 @@ if (MSVC)
 		add_compile_options(/d2FH4-) # Because we don't want to link against VCRUNTIME140_1.dll (see https://cibuildwheel.readthedocs.io/en/stable/faq/#importerror-dll-load-failed-the-specific-module-could-not-be-found-error-on-windows)
 	endif ()
 endif ()
+
+# Currently, scikit-build does not support FindPython.
+if(SKBUILD)
+	set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
+	set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
+	unset(PYTHON_EXECUTABLE)
+	unset(PYTHON_INCLUDE_DIR)
+	unset(PYTHON_LIBRARY)
+	unset(PYTHON_VERSION_STRING)
+endif()
 
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
@@ -50,3 +56,7 @@ endif ()
 
 add_subdirectory(src)
 add_subdirectory(tests)
+
+if(SKBUILD)
+	install(TARGETS parselmouth LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX})
+endif()
