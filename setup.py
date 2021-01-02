@@ -53,6 +53,7 @@ def patched_WindowsPlatform_init(self):
 
 import skbuild.platform_specifics.windows
 skbuild.platform_specifics.windows.WindowsPlatform.__init__ = patched_WindowsPlatform_init
+skbuild.platform_specifics.windows.VS_YEAR_TO_VERSION["2019"] = 16
 
 
 def find_version(*file_paths):
