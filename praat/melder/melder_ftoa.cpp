@@ -18,48 +18,6 @@
 
 #include "melder.h"
 
-#include <fmt/core.h>
-#include <fmt/printf.h>
-
-namespace {
-
-inline auto fmt_vsnprintf(char *out, size_t n, fmt::string_view format_str, fmt::basic_format_args<fmt::printf_context> args) {
-	fmt::detail::iterator_buffer<char *, char, fmt::detail::fixed_buffer_traits> buf(out, n-1);
-	fmt::vprintf(buf, format_str, args);
-	*buf.out() = '\0';
-	return buf.count();
-}
-
-template <typename S, typename... Args>
-inline auto fmt_snprintf(char *out, size_t n, const S &format_str, const Args &... args) {
-	return static_cast<int>(fmt_vsnprintf(out, n, fmt::to_string_view(format_str), fmt::make_printf_args(args...)));
-}
-
-inline auto fmt_vsprintf(char *out, fmt::string_view format_str, fmt::basic_format_args<fmt::printf_context> args) {
-	fmt::detail::iterator_buffer<char *, char> buf(out);
-	fmt::vprintf(buf, format_str, args);
-	*buf.out() = '\0';
-	return buf.out() - out;
-}
-
-template <typename S, typename... Args>
-inline int fmt_sprintf(char *out, const S &format_str, const Args &... args) {
-	return static_cast<int>(fmt_vsprintf(out, fmt::to_string_view(format_str), fmt::make_printf_args(args...)));
-}
-
-size_t sftoa_c(char *s, size_t n, double value, unsigned char precision, char format = 'g') {
-	char format_str[] = "%.*x";
-	format_str[3] = format;
-	return fmt_snprintf(s, n, format_str, precision, value);
-}
-
-template <size_t N>
-inline size_t sftoa_c(char (&s)[N], double value, unsigned char precision, char format = 'g') {
-	return sftoa_c(s, N, value, precision, format);
-}
-
-}
-
 /********** NUMBER TO STRING CONVERSION **********/
 
 #define NUMBER_OF_BUFFERS  32
@@ -212,19 +170,6 @@ const char * Melder8_double (double value) noexcept {
 }
 conststring32 Melder_double (double value) noexcept {
 	const char *p = Melder8_double (value);
-	CONVERT_BUFFER_TO_CHAR32
-}
-const char * Melder8_double (double value, integer precision, char format /*= 'g'*/) noexcept {
-	if (isundef (value))
-		return "--undefined--";
-	if (++ ibuffer == NUMBER_OF_BUFFERS)
-		ibuffer = 0;
-	Melder_assert(format == 'e' || format == 'f' || format == 'g');
-	sftoa_c(buffers8 [ibuffer], value, precision, format);
-	return buffers8 [ibuffer];
-}
-conststring32 Melder_double (double value, integer precision, char format /*= 'g'*/) noexcept {
-	const char *p = Melder8_double (value, precision, format);
 	CONVERT_BUFFER_TO_CHAR32
 }
 

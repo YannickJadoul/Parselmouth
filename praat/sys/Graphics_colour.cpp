@@ -45,7 +45,7 @@ void _Graphics_setColour (Graphics graphics, MelderColour colour) {
 		#endif
 	} else if (graphics -> postScript) {
 		GraphicsPostscript me = static_cast <GraphicsPostscript> (graphics);
-		my d_printf (my d_file, "%s %s %s setrgbcolor\n", Melder8_double(colour. red, 6), Melder8_double(colour. green, 6), Melder8_double(colour. blue, 6));
+		my d_printf (my d_file, "%s", fmt::sprintf("%.6g %.6g %.6g setrgbcolor\n", colour. red, colour. green, colour. blue).c_str());
 	}
 }
 
@@ -81,7 +81,7 @@ void _Graphics_setGrey (Graphics graphics, double fgrey) {
 		#endif
 	} else if (graphics -> postScript) {
 		GraphicsPostscript me = static_cast <GraphicsPostscript> (graphics);
-		my d_printf (my d_file, "%s setgray\n", Melder8_double(fgrey, 6)); // my d_printf (my d_file, "%.6g setgray\n", fgrey);
+		my d_printf (my d_file, "%s", fmt::sprintf("%.6g setgray\n", fgrey).c_str());
 	}
 }
 

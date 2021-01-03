@@ -43,22 +43,22 @@ Thing_define (SpectrumEditor, FunctionEditor) {
 		override { return U"frequency"; }
 	conststring32 v_format_domain ()
 		override { return U"Frequency domain:"; }
-	void v_format_short (char *s, size_t n, double value, double)
-		override { snprintf(s, n, "%s", Melder8_double(value, 0, 'f')); /*return "%.0f";*/ }
-	void v_format_long (char *s, size_t n, double value, double)
-		override { snprintf(s, n, "%s", Melder8_double(value, 2, 'f')); /*return "%.2f";*/ }
+	const char * v_format_short ()
+		override { return "%.0f"; }
+	const char * v_format_long ()
+		override { return "%.2f"; }
 	int v_fixedPrecision_long ()
 		override { return 2; }
 	conststring32 v_format_units_long ()
 		override { return U"hertz"; }
 	conststring32 v_format_units_short ()
 		override { return U"Hz"; }
-	void v_format_totalDuration (char *s, size_t n, double value, double)
-		override { snprintf(s, n, u8"Total bandwidth %s hertz", Melder8_double(value, 2, 'f')); /* return u8"Total bandwidth %.2f hertz"; */ }
-	void v_format_window (char *s, size_t n, double value, double)
-		override { snprintf(s, n, u8"Visible part %s hertz", Melder8_double(value, 2, 'f')); /* return u8"Visible part %.2f hertz"; */ }
-	void v_format_selection (char *s, size_t n, double value, double)
-		override { snprintf(s, n, u8"%s Hz", Melder8_double(value, 2, 'f'));/* return u8"%.2f Hz"; */ }
+	const char * v_format_totalDuration ()
+		override { return u8"Total bandwidth %.2f hertz"; }
+	const char * v_format_window ()
+		override { return u8"Visible part %.2f hertz"; }
+	const char * v_format_selection ()
+		override { return u8"%.2f Hz"; }
 
 	#include "SpectrumEditor_prefs.h"
 };

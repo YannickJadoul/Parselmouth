@@ -82,12 +82,12 @@ static void initPage (GraphicsPostscript me) {
 		/*my d_printf (my d_file, "save\n");*/
 		my d_printf (my d_file, "%%%%BeginPageSetup\n");
 	}
-	my d_printf (my d_file, "%s setlinewidth 2 setlinejoin\n", Melder8_double(my resolution / 192.0, 6 /* %g has default precision 6, according to printf docs */));   /* 0.375 point */
+	my d_printf (my d_file, "%s", fmt::sprintf("%g setlinewidth 2 setlinejoin\n", my resolution / 192.0).c_str());   /* 0.375 point */
 	if (my job || my printer) {
 		if (my landscape)
 			my d_printf (my d_file, "%d 0 translate 90 rotate ", (int) (my paperHeight * 72 * my magnification));
 	}
-	my d_printf (my d_file, "%s dup scale\n", Melder8_double(72.0 * my magnification / my resolution, 6));
+	my d_printf (my d_file, "%s", fmt::sprintf("%.6g dup scale\n", 72.0 * my magnification / my resolution).c_str());
 	if (my job) my d_printf (my d_file, "%%%%EndPageSetup\n");
 	my lastFid = nullptr;
 }

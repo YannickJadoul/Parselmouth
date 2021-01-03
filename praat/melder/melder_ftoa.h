@@ -18,6 +18,35 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Provide some locale-insensitive sprintf and snprintf versions, thanks to {fmt}
+
+#include <fmt/core.h>
+#include <fmt/printf.h>
+
+inline auto fmt_vsnprintf(char *out, size_t n, fmt::string_view format_str, fmt::basic_format_args<fmt::printf_context> args) {
+	fmt::detail::iterator_buffer<char *, char, fmt::detail::fixed_buffer_traits> buf(out, n-1);
+	fmt::vprintf(buf, format_str, args);
+	*buf.out() = '\0';
+	return buf.count();
+}
+
+template <typename S, typename... Args>
+inline auto fmt_snprintf(char *out, size_t n, const S &format_str, const Args &... args) {
+	return static_cast<int>(fmt_vsnprintf(out, n, fmt::to_string_view(format_str), fmt::make_printf_args(args...)));
+}
+
+inline auto fmt_vsprintf(char *out, fmt::string_view format_str, fmt::basic_format_args<fmt::printf_context> args) {
+	fmt::detail::iterator_buffer<char *, char> buf(out);
+	fmt::vprintf(buf, format_str, args);
+	*buf.out() = '\0';
+	return buf.out() - out;
+}
+
+template <typename S, typename... Args>
+inline int fmt_sprintf(char *out, const S &format_str, const Args &... args) {
+	return static_cast<int>(fmt_vsprintf(out, fmt::to_string_view(format_str), fmt::make_printf_args(args...)));
+}
+
 /*
 	The following functions return a static string, chosen from a circularly used set of 32 buffers.
 	You can call at most 32 of them in one Melder_casual call, for instance.
@@ -45,8 +74,6 @@ conststring8 Melder8_kleenean (kleenean value) noexcept;
 */
 conststring32 Melder_double (double value) noexcept;
 conststring8 Melder8_double (double value) noexcept;
-conststring32 Melder_double (double value, integer precision, char format = 'g') noexcept;
-conststring8 Melder8_double (double value, integer precision, char format = 'g') noexcept;
 
 /**
 	Format a double value as "--undefined--" or something in the "%.9g" format.

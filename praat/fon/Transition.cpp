@@ -103,11 +103,10 @@ static void print4 (char *buffer, double value, int iformat, int width, int prec
 		else if (denominator > 1)
 			snprintf (buffer, 40, "%s/%s", Melder8_integer (numerator), Melder8_integer (denominator));
 		else
-			snprintf (buffer, 40, "%s", Melder8_double(value, 7));
+			fmt_snprintf (buffer, 40, "%.7g", value);
 	} else {
-		snprintf(buffer, 40, "%*s", width, Melder8_double(value, precision, iformat == 1 ? 'f' : iformat == 2 ? 'e' : 'g'));
-		// snprintf (formatString, 40, "%%%d.%d%c", width, precision, iformat == 1 ? 'f' : iformat == 2 ? 'e' : 'g');
-		// snprintf (buffer, 40, formatString, value);
+		fmt_snprintf (formatString, 40, "%%%d.%d%c", width, precision, iformat == 1 ? 'f' : iformat == 2 ? 'e' : 'g');
+		fmt_snprintf (buffer, 40, formatString, value);
 	}
 }
 

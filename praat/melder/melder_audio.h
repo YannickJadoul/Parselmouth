@@ -66,7 +66,7 @@ void Melder_audio_prefs ();   // in init file
 #pragma mark - ASYNCHRONICITY
 
 void MelderAudio_setOutputMaximumAsynchronicity (enum kMelder_asynchronicityLevel maximumAsynchronicity);
-enum kMelder_asynchronicityLevel MelderAudio_getOutputMaximumAsynchronicity ();;
+enum kMelder_asynchronicityLevel MelderAudio_getOutputMaximumAsynchronicity ();
 
 class autoMelderAudioSaveMaximumAsynchronicity {
 	bool _disowned;
