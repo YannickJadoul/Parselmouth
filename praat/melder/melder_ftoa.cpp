@@ -19,16 +19,38 @@
 #include "melder.h"
 
 #include <fmt/core.h>
-#include <fmt/format.h>
+#include <fmt/printf.h>
 
 namespace {
 
+inline auto fmt_vsnprintf(char *out, size_t n, fmt::string_view format_str, fmt::basic_format_args<fmt::printf_context> args) {
+	fmt::detail::iterator_buffer<char *, char, fmt::detail::fixed_buffer_traits> buf(out, n-1);
+	fmt::vprintf(buf, format_str, args);
+	*buf.out() = '\0';
+	return buf.count();
+}
+
+template <typename S, typename... Args>
+inline auto fmt_snprintf(char *out, size_t n, const S &format_str, const Args &... args) {
+	return static_cast<int>(fmt_vsnprintf(out, n, fmt::to_string_view(format_str), fmt::make_printf_args(args...)));
+}
+
+inline auto fmt_vsprintf(char *out, fmt::string_view format_str, fmt::basic_format_args<fmt::printf_context> args) {
+	fmt::detail::iterator_buffer<char *, char> buf(out);
+	fmt::vprintf(buf, format_str, args);
+	*buf.out() = '\0';
+	return buf.out() - out;
+}
+
+template <typename S, typename... Args>
+inline int fmt_sprintf(char *out, const S &format_str, const Args &... args) {
+	return static_cast<int>(fmt_vsprintf(out, fmt::to_string_view(format_str), fmt::make_printf_args(args...)));
+}
+
 size_t sftoa_c(char *s, size_t n, double value, unsigned char precision, char format = 'g') {
-	char format_str[] = "{:.{}x}";
-	format_str[5] = format;
-	auto [out, written] = fmt::format_to_n(s, n - 1, format_str, value, precision);
-	*out = '\0';
-	return written;
+	char format_str[] = "%.*x";
+	format_str[3] = format;
+	return fmt_snprintf(s, n, format_str, precision, value);
 }
 
 template <size_t N>
@@ -180,11 +202,11 @@ const char * Melder8_double (double value) noexcept {
 		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS)
 		ibuffer = 0;
-	sftoa_c(buffers8[ibuffer], value, 15); // sprintf (buffers8 [ibuffer], "%.15g", value);
+	fmt_sprintf (buffers8 [ibuffer], "%.15g", value);
 	if (Melder8_strtod (buffers8 [ibuffer], nullptr) != value) {
-		sftoa_c(buffers8[ibuffer], value, 16); // sprintf (buffers8 [ibuffer], "%.16g", value);
+		fmt_sprintf (buffers8 [ibuffer], "%.16g", value);
 		if (Melder8_strtod (buffers8 [ibuffer], nullptr) != value)
-			sftoa_c(buffers8[ibuffer], value, 17); // sprintf (buffers8 [ibuffer], "%.17g", value);
+			fmt_sprintf (buffers8 [ibuffer], "%.17g", value);
 	}
 	return buffers8 [ibuffer];
 }
@@ -210,7 +232,7 @@ const char * Melder8_single (double value) noexcept {
 	if (isundef (value))
 		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS) ibuffer = 0;
-	sftoa_c(buffers8 [ibuffer], value, 9); // sprintf (buffers8 [ibuffer], "%.9g", value);
+	fmt_sprintf (buffers8 [ibuffer], "%.9g", value);
 	return buffers8 [ibuffer];
 }
 conststring32 Melder_single (double value) noexcept {
@@ -223,7 +245,7 @@ const char * Melder8_half (double value) noexcept {
 		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS)
 		ibuffer = 0;
-	sftoa_c(buffers8 [ibuffer], value, 4); // sprintf (buffers8 [ibuffer], "%.4g", value);
+	fmt_sprintf (buffers8 [ibuffer], "%.4g", value);
 	return buffers8 [ibuffer];
 }
 conststring32 Melder_half (double value) noexcept {
@@ -242,12 +264,10 @@ const char * Melder8_fixed (double value, integer precision) noexcept {
 		precision = 60;
 	int minimumPrecision = - (int) floor (log10 (fabs (value)));
 
-	auto res = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, 'f');
-	Melder_assert(res);
-	// int n = snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*f",
-	// 	(int) (value, minimumPrecision > precision ? minimumPrecision : precision), value);
-	// Melder_assert (n > 0);
-	// Melder_assert (n <= MAXIMUM_NUMERIC_STRING_LENGTH);
+	int n = fmt_snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*f",
+		(int) (minimumPrecision > precision ? minimumPrecision : precision), value);
+	Melder_assert (n > 0);
+	Melder_assert (n <= MAXIMUM_NUMERIC_STRING_LENGTH);
 	return buffers8 [ibuffer];
 }
 conststring32 Melder_fixed (double value, integer precision) noexcept {
@@ -268,13 +288,10 @@ const char * Melder8_fixedExponent (double value, integer exponent, integer prec
 	value /= factor;
 	int minimumPrecision = - (int) floor (log10 (fabs (value)));
 
-	auto partlen = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, 'f');
-	Melder_assert(partlen > 0);
-	int n = partlen + snprintf (buffers8 [ibuffer] + partlen, MAXIMUM_NUMERIC_STRING_LENGTH + 1 - partlen, "E%d", (int) exponent);
-	// int n = snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*fE%d",
-	// 	(int) (minimumPrecision > precision ? minimumPrecision : precision), value, (int) exponent);
+	int n = fmt_snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*fE%d",
+		(int) (minimumPrecision > precision ? minimumPrecision : precision), value, (int) exponent);
 	Melder_assert (n > 0);
-	Melder_assert (n <= MAXIMUM_NUMERIC_STRING_LENGTH + 1);
+	Melder_assert (n <= MAXIMUM_NUMERIC_STRING_LENGTH);
 	return buffers8 [ibuffer];
 }
 conststring32 Melder_fixedExponent (double value, integer exponent, integer precision) noexcept {
@@ -293,18 +310,10 @@ const char * Melder8_percent (double value, integer precision) noexcept {
 		precision = 60;
 	value *= 100.0;
 	int minimumPrecision = - (int) floor (log10 (fabs (value)));
-
-	auto partlen = sftoa_c(buffers8 [ibuffer], value, minimumPrecision > precision ? minimumPrecision : precision, 'f');
-	Melder_assert(partlen > 0);
-	Melder_assert (partlen < MAXIMUM_NUMERIC_STRING_LENGTH);
-	if (partlen < MAXIMUM_NUMERIC_STRING_LENGTH) {
-		buffers8[ibuffer][partlen] = '%';
-		buffers8[ibuffer][partlen + 1] = '\0';
-	}
-	// int n = snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*f%%",
-	// 	(int) (minimumPrecision > precision ? minimumPrecision : precision), value);
-	// Melder_assert (n > 0);
-	// Melder_assert (n <= MAXIMUM_NUMERIC_STRING_LENGTH);
+	int n = fmt_snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*f%%",
+		(int) (minimumPrecision > precision ? minimumPrecision : precision), value);
+	Melder_assert (n > 0);
+	Melder_assert (n <= MAXIMUM_NUMERIC_STRING_LENGTH);
 	return buffers8 [ibuffer];
 }
 conststring32 Melder_percent (double value, integer precision) noexcept {
@@ -320,7 +329,7 @@ const char * Melder8_hexadecimal (integer value, integer precision) noexcept {
 	if (precision > 60)
 		precision = 60;
 	integer integerValue = Melder_iround (value);
-	int n = snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*llX",
+	int n = fmt_snprintf (buffers8 [ibuffer], MAXIMUM_NUMERIC_STRING_LENGTH + 1, "%.*llX",
 		(int) precision, (unsigned long long) integerValue);
 	Melder_assert (n > 0);
 	Melder_assert (n <= MAXIMUM_NUMERIC_STRING_LENGTH);
@@ -336,22 +345,21 @@ const char * Melder8_dcomplex (dcomplex value) noexcept {
 		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS)
 		ibuffer = 0;
-	sftoa_c(buffers8 [ibuffer], value.real(), 15); // sprintf (buffers8 [ibuffer], "%.15g", value.real());
+	fmt_sprintf (buffers8 [ibuffer], "%.15g", value.real());
 	if (Melder8_strtod (buffers8 [ibuffer], nullptr) != value.real()) {
-		sftoa_c(buffers8 [ibuffer], value.real(), 16); // sprintf (buffers8 [ibuffer], "%.16g", value.real());
+		fmt_sprintf (buffers8 [ibuffer], "%.16g", value.real());
 		if (Melder8_strtod (buffers8 [ibuffer], nullptr) != value.real())
-			sftoa_c(buffers8 [ibuffer], value.real(), 17); // sprintf (buffers8 [ibuffer], "%.17g", value.real());
+			fmt_sprintf (buffers8 [ibuffer], "%.17g", value.real());
 	}
 	char *p = buffers8 [ibuffer] + strlen (buffers8 [ibuffer]);
 	*p = ( value.imag() < 0.0 ? '-' : '+' );
 	value. imag (fabs (value.imag()));
 	++ p;
-	auto s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
-	sftoa_c(p, s, value.imag(), 15); // sprintf (p, "%.15g", value.imag());
+	fmt_sprintf (p, "%.15g", value.imag());
 	if (Melder8_strtod (p, nullptr) != value.imag()) {
-		sftoa_c(p, s, value.imag(), 16); // sprintf (p, "%.16g", value.imag());
+		fmt_sprintf (p, "%.16g", value.imag());
 		if (Melder8_strtod (p, nullptr) != value.imag())
-			sftoa_c(p, s, value.imag(), 17); // sprintf (p, "%.17g", value.imag());
+			fmt_sprintf (p, "%.17g", value.imag());
 	}
 	strcat (buffers8 [ibuffer], "i");
 	return buffers8 [ibuffer];
@@ -366,12 +374,10 @@ const char * Melder8_scomplex (dcomplex value) noexcept {
 		return "--undefined--";
 	if (++ ibuffer == NUMBER_OF_BUFFERS)
 		ibuffer = 0;
-	sftoa_c(buffers8 [ibuffer], value.real(), 9); // sprintf (buffers8 [ibuffer], "%.9g", value.real());
+	fmt_sprintf (buffers8 [ibuffer], "%.9g", value.real());
 	char *p = buffers8 [ibuffer] + strlen (buffers8 [ibuffer]);
 	*p = ( value.imag() < 0.0 ? '-' : '+' );
-	++p;
-	auto s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
-	sftoa_c(p, s, fabs (value.imag()), 9); // sprintf (++ p, "%.9g", fabs (value.imag()));
+	fmt_sprintf (++ p, "%.9g", fabs (value.imag()));
 	strcat (buffers8 [ibuffer], "i");
 	return buffers8 [ibuffer];
 }
@@ -429,11 +435,11 @@ const char * Melder8_naturalLogarithm (double lnNumber) noexcept {
 			remainder10 *= 10.0;
 			ceiling --;
 		}
-		sftoa_c(buffers8 [ibuffer], remainder10, 15); // sprintf (buffers8 [ibuffer], "%.15g", remainder10);
+		fmt_sprintf (buffers8 [ibuffer], "%.15g", remainder10);
 		if (Melder8_strtod (buffers8 [ibuffer], nullptr) != remainder10) {
-			sftoa_c(buffers8 [ibuffer], remainder10, 16); // sprintf (buffers8 [ibuffer], "%.16g", remainder10);
+			fmt_sprintf (buffers8 [ibuffer], "%.16g", remainder10);
 			if (Melder8_strtod (buffers8 [ibuffer], nullptr) != remainder10)
-				sftoa_c(buffers8 [ibuffer], remainder10, 17); // sprintf (buffers8 [ibuffer], "%.17g", remainder10);
+				fmt_sprintf (buffers8 [ibuffer], "%.17g", remainder10);
 		}
 		sprintf (buffers8 [ibuffer] + strlen (buffers8 [ibuffer]), "e-%ld", (long_not_integer) ceiling);
 	} else {
@@ -471,32 +477,29 @@ const char * Melder8_colour (MelderColour colour) noexcept {
 	char *p = & buffers8 [ibuffer] [0];
 	strcpy (p, "{");
 	p ++;
-	auto s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
-	sftoa_c(p, s, colour.red, 15); // sprintf (p, "%.15g", colour.red);
+	fmt_sprintf (p, "%.15g", colour.red);
 	if (Melder8_strtod (p, nullptr) != colour.red) {
-		sftoa_c(p, s, colour.red, 16); // sprintf (p, "%.16g", colour.red);
+		fmt_sprintf (p, "%.16g", colour.red);
 		if (Melder8_strtod (p, nullptr) != colour.red)
-			sftoa_c(p, s, colour.red, 17); // sprintf (p, "%.17g", colour.red);
+			fmt_sprintf (p, "%.17g", colour.red);
 	}
 	p += strlen (p);
 	strcpy (p, ",");
 	p ++;
-	s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
-	sftoa_c(p, s, colour.green, 15); // sprintf (p, "%.15g", colour.green);
+	fmt_sprintf (p, "%.15g", colour.green);
 	if (Melder8_strtod (p, nullptr) != colour.green) {
-		sftoa_c(p, s, colour.green, 16); // sprintf (p, "%.16g", colour.green);
+		fmt_sprintf (p, "%.16g", colour.green);
 		if (Melder8_strtod (p, nullptr) != colour.green)
-			sftoa_c(p, s, colour.green, 17); // sprintf (p, "%.17g", colour.green);
+			fmt_sprintf (p, "%.17g", colour.green);
 	}
 	p += strlen (p);
 	strcpy (p, ",");
 	p ++;
-	s = MAXIMUM_NUMERIC_STRING_LENGTH + 1 - (p - buffers8 [ibuffer]);
-	sftoa_c(p, s, colour.blue, 15); // sprintf (p, "%.15g", colour.blue);
+	fmt_sprintf (p, "%.15g", colour.blue);
 	if (Melder8_strtod (p, nullptr) != colour.blue) {
-		sftoa_c(p, s, colour.blue, 16); // sprintf (p, "%.16g", colour.blue);
+		fmt_sprintf (p, "%.16g", colour.blue);
 		if (Melder8_strtod (p, nullptr) != colour.blue)
-			sftoa_c(p, s, colour.blue, 17); // sprintf (p, "%.17g", colour.blue);
+			fmt_sprintf (p, "%.17g", colour.blue);
 	}
 	p += strlen (p);
 	strcpy (p, "}");
