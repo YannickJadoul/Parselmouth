@@ -36,13 +36,13 @@ static void psPrepareLine (GraphicsPostscript me) {
 			(long_not_integer) (my resolution / 100), (long_not_integer) (my resolution / 60 + lineWidth_pixels),
 			(long_not_integer) (my resolution / 25), (long_not_integer) (my resolution / 60 + lineWidth_pixels));
 	if (my lineWidth != 1.0)
-		my d_printf (my d_file, "%s", fmt::sprintf("%g setlinewidth\n", lineWidth_pixels).c_str());
+		my d_printf (my d_file, "%g setlinewidth\n", lineWidth_pixels);
 }
 static void psRevertLine (GraphicsPostscript me) {
 	if (my lineType != Graphics_DRAWN)
 		my d_printf (my d_file, "[] 0 setdash\n");
 	if (my lineWidth != 1.0)
-		my d_printf (my d_file, "%s", fmt::sprintf("%g setlinewidth\n", my resolution > 192 ? my resolution / 192.0 : 1.0).c_str());   // 0.375 point
+		my d_printf (my d_file, "%g setlinewidth\n", my resolution > 192 ? my resolution / 192.0 : 1.0);   // 0.375 point
 }
 
 #if cairo
@@ -227,10 +227,10 @@ void structGraphicsScreen :: v_polyline (integer numberOfPoints, double *xyDC, b
 void structGraphicsPostscript :: v_polyline (integer numberOfPoints, double *xyDC, bool close) {
 	const integer nn = 2 * numberOfPoints;
 	psPrepareLine (this);
-	our d_printf (our d_file, "%s", fmt::sprintf("N %.7g %.7g moveto\n", xyDC [0], xyDC [1]).c_str());
+	our d_printf (our d_file, "N %.7g %.7g moveto\n", xyDC [0], xyDC [1]);
 	for (integer i = 2; i < nn; i += 2) {
 		const double dx = xyDC [i] - xyDC [i - 2], dy = xyDC [i + 1] - xyDC [i - 1];
-		our d_printf (our d_file, "%s", fmt::sprintf("%.7g %.7g L\n", dx, dy).c_str());
+		our d_printf (our d_file, "%.7g %.7g L\n", dx, dy);
 	}
 	if (close)
 		our d_printf (our d_file, "closepath ");
@@ -269,9 +269,9 @@ void structGraphicsScreen :: v_fillArea (integer numberOfPoints, double *xyDC) {
 
 void structGraphicsPostscript :: v_fillArea (integer numberOfPoints, double *xyDC) {
 	integer nn = numberOfPoints + numberOfPoints;
-	d_printf (d_file, "%s", fmt::sprintf("N %.7g %.7g M\n", xyDC [0], xyDC [1]).c_str());
+	d_printf (d_file, "N %.7g %.7g M\n", xyDC [0], xyDC [1]);
 	for (integer i = 2; i < nn; i += 2)
-		d_printf (d_file, fmt::sprintf("%.7g %.7g L\n", xyDC [i] - xyDC [i - 2], xyDC [i + 1] - xyDC [i - 1]).c_str());
+		d_printf (d_file, "%.7g %.7g L\n", xyDC [i] - xyDC [i - 2], xyDC [i + 1] - xyDC [i - 1]);
 	d_printf (d_file, "closepath fill\n");
 }
 
@@ -309,8 +309,8 @@ void structGraphicsScreen :: v_rectangle (double x1DC, double x2DC, double y1DC,
 
 void structGraphicsPostscript :: v_rectangle (double x1DC, double x2DC, double y1DC, double y2DC) {
 	psPrepareLine (this);
-	d_printf (d_file, "%s", fmt::sprintf("N %.7g %.7g M %.7g %.7g lineto %.7g %.7g lineto %.7g %.7g lineto closepath stroke\n",
-			x1DC, y1DC, x2DC, y1DC, x2DC, y2DC, x1DC, y2DC).c_str());
+	d_printf (d_file, "N %.7g %.7g M %.7g %.7g lineto %.7g %.7g lineto %.7g %.7g lineto closepath stroke\n",
+			x1DC, y1DC, x2DC, y1DC, x2DC, y2DC, x1DC, y2DC);
 	psRevertLine (this);
 }
 
@@ -347,8 +347,8 @@ void structGraphicsScreen :: v_fillRectangle (double x1DC, double x2DC, double y
 
 void structGraphicsPostscript :: v_fillRectangle (double x1DC, double x2DC, double y1DC, double y2DC) {
 	d_printf (d_file,
-		"%s", fmt::sprintf("N %.7g %.7g M %.7g %.7g lineto %.7g %.7g lineto %.7g %.7g lineto closepath fill\n",
-		x1DC, y1DC, x2DC, y1DC, x2DC, y2DC, x1DC, y2DC).c_str());
+		"N %.7g %.7g M %.7g %.7g lineto %.7g %.7g lineto %.7g %.7g lineto closepath fill\n",
+		x1DC, y1DC, x2DC, y1DC, x2DC, y2DC, x1DC, y2DC);
 }
 
 void structGraphicsScreen :: v_circle (double xDC, double yDC, double rDC) {
@@ -419,11 +419,11 @@ void structGraphicsPostscript :: v_ellipse (double x1DC, double x2DC, double y1D
 		/* However, we have to scale back before the actual 'stroke', */
 		/* because we want the normal line thickness; */
 		/* So we cannot use 'gsave' and 'grestore', which clear the path (Cookbook 3). */
-		d_printf (d_file, "%s", fmt::sprintf("gsave %.7g %.7g translate %.7g %.7g scale N 0 0 1 0 360 arc\n"
+		d_printf (d_file, "gsave %.7g %.7g translate %.7g %.7g scale N 0 0 1 0 360 arc\n"
 			" %.7g %.7g scale stroke grestore\n",
 			0.5 * (x2DC + x1DC), 0.5 * (y2DC + y1DC), 0.5 * (x2DC - x1DC), 0.5 * (y2DC - y1DC),
 			2.0 / (x2DC - x1DC), 2.0 / (y2DC - y1DC)
-		).c_str());
+		);
 		psRevertLine (this);
 	}
 }
@@ -457,7 +457,7 @@ void structGraphicsScreen :: v_arc (double xDC, double yDC, double rDC, double f
 
 void structGraphicsPostscript :: v_arc (double xDC, double yDC, double rDC, double fromAngle, double toAngle) {
 	psPrepareLine (this);
-	d_printf (d_file, "%s", fmt::sprintf("N %.7g %.7g %.7g %.7g %.7g arc stroke\n", xDC, yDC, rDC, fromAngle, toAngle).c_str());
+	d_printf (d_file, "N %.7g %.7g %.7g %.7g %.7g arc stroke\n", xDC, yDC, rDC, fromAngle, toAngle);
 	psRevertLine (this);
 }
 
@@ -488,7 +488,7 @@ void structGraphicsScreen :: v_fillCircle (double xDC, double yDC, double rDC) {
 }
 
 void structGraphicsPostscript :: v_fillCircle (double xDC, double yDC, double rDC) {
-	d_printf (d_file, "%s", fmt::sprintf("N %.7g %.7g %.7g FC\n", xDC, yDC, rDC).c_str());
+	d_printf (d_file, "N %.7g %.7g %.7g FC\n", xDC, yDC, rDC);
 }
 
 void structGraphicsScreen :: v_fillEllipse (double x1DC, double x2DC, double y1DC, double y2DC) {
@@ -524,8 +524,8 @@ void structGraphicsScreen :: v_fillEllipse (double x1DC, double x2DC, double y1D
 }
 
 void structGraphicsPostscript :: v_fillEllipse (double x1DC, double x2DC, double y1DC, double y2DC) {
-	d_printf (d_file, "%s", fmt::sprintf("gsave %.7g %.7g translate %.7g %.7g scale N 0 0 1 FC grestore\n",
-			(x2DC + x1DC) / 2.0, (y2DC + y1DC) / 2.0, (x2DC - x1DC) / 2.0, (y2DC - y1DC) / 2.0).c_str());
+	d_printf (d_file, "gsave %.7g %.7g translate %.7g %.7g scale N 0 0 1 FC grestore\n",
+			(x2DC + x1DC) / 2.0, (y2DC + y1DC) / 2.0, (x2DC - x1DC) / 2.0, (y2DC - y1DC) / 2.0);
 }
 
 void structGraphicsScreen :: v_button (double x1DC, double x2DC, double y1DC, double y2DC) {
@@ -1124,8 +1124,8 @@ void structGraphicsScreen :: v_arrowHead (double xDC, double yDC, double angle) 
 
 void structGraphicsPostscript :: v_arrowHead (double xDC, double yDC, double angle) {
 	double length = resolution * arrowSize / 10.0, radius = resolution * arrowSize / 30.0;
-	d_printf (d_file, "%s", fmt::sprintf("gsave %.7g %.7g translate %.7g rotate\n"
-		"N 0 0 M %.7g 0 %.7g -60 60 arc closepath fill grestore\n", xDC, yDC, angle, - length, radius).c_str());
+	d_printf (d_file, "gsave %.7g %.7g translate %.7g rotate\n"
+		"N 0 0 M %.7g 0 %.7g -60 60 arc closepath fill grestore\n", xDC, yDC, angle, - length, radius);
 }
 
 void Graphics_arrow (Graphics me, double x1WC, double y1WC, double x2WC, double y2WC) {

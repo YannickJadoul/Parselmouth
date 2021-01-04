@@ -66,25 +66,37 @@ void Printer_prefs () {
 #endif
 
 #if defined (_WIN32)
-	int Printer_postScript_printf (void *stream, const char *format, ... ) {
-		static union { char chars [3002]; short shorts [1501]; } theLine;
-		int length;
-		va_list args;
-		va_start (args, format);
-		(void) stream;
-		vsprintf (theLine.chars + 2, format, args);
-		length = strlen (theLine.chars + 2);
-		theLine.shorts [0] = length;
-		if (length > 0 && theLine.chars [length + 1] == '\n') {
-			theLine.chars [length + 1] = '\r';
-			theLine.chars [length + 2] = '\n';
-			theLine.chars [length + 3] = '\0';
-			length ++;
-		}
-		Escape (theWinDC, POSTSCRIPT_PASSTHROUGH, length + 2, theLine.chars, nullptr);
-		va_end (args);
-		return 1;
+//	int Printer_postScript_printf (void *stream, const char *format, ... ) {
+//		static union { char chars [3002]; short shorts [1501]; } theLine;
+//		int length;
+//		va_list args;
+//		va_start (args, format);
+//		(void) stream;
+//		vsprintf (theLine.chars + 2, format, args);
+//		length = strlen (theLine.chars + 2);
+//		theLine.shorts [0] = length;
+//		if (length > 0 && theLine.chars [length + 1] == '\n') {
+//			theLine.chars [length + 1] = '\r';
+//			theLine.chars [length + 2] = '\n';
+//			theLine.chars [length + 3] = '\0';
+//			length ++;
+//		}
+//		Escape (theWinDC, POSTSCRIPT_PASSTHROUGH, length + 2, theLine.chars, nullptr);
+//		va_end (args);
+//		return 1;
+//	}
+
+int Printer_postScript_printf (FILE *stream, const char *format, fmt::printf_args args) {
+	auto s = fmt::vsprintf(format, args);
+	auto length = s.size();
+	if (length > 0 && s[length - 1] == '\n') {
+		s[length - 1] = '\r';
+		s += "\n";
 	}
+	s = fmt::sprintf("%c%c%s", ((short) length) >> 8, ((short) length) & 0xFF, s.c_str());
+	Escape (theWinDC, POSTSCRIPT_PASSTHROUGH, s.size(), s.c_str(), nullptr);
+	return 1;
+}
 #endif
 
 #if defined (_WIN32)
@@ -92,7 +104,7 @@ void Printer_prefs () {
 		/*
 		 * Save the driver's state.
 		 */
-		Printer_postScript_printf (nullptr, "/PraatPictureSaveObject save def\n");
+		Printer_postScript_printf (nullptr, "/PraatPictureSaveObject save def\n", fmt::make_printf_args());
 		/*
 		 * The LaserWriter driver puts the coordinates upside down.
 		 * According to the PostScript Reference Manual,
@@ -104,13 +116,13 @@ void Printer_prefs () {
 		 or whatever it is.
 		 */
 		#if 1
-		Printer_postScript_printf (nullptr, "initmatrix initclip\n");
+		Printer_postScript_printf (nullptr, "initmatrix initclip\n", fmt::make_printf_args());
 		#else
-Printer_postScript_printf (nullptr, "8 8 scale initclip\n");
+Printer_postScript_printf (nullptr, "8 8 scale initclip\n", fmt::make_printf_args());
 		#endif
 	}
 	static void exitPostScriptPage () {
-		Printer_postScript_printf (nullptr, "PraatPictureSaveObject restore\n");
+		Printer_postScript_printf (nullptr, "PraatPictureSaveObject restore\n", fmt::make_printf_args());
 	}
 #endif
 
