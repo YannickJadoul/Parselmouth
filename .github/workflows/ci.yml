@@ -145,10 +145,12 @@ jobs:
           cmake -S . -B build $CMAKE_ARCH -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DPython_EXECUTABLE="$(which python)"
 
       - name: Compile
-        run: cmake --build build -j 2
+        run: |
+          cmake --build build -j 2
 
       - name: Select Praat tests to run
         if: matrix.run-praat-tests
+        shell: bash
         run: |
           echo "PYTEST_ADDOPTS=--run-praat-tests -v" >> $GITHUB_ENV
 
