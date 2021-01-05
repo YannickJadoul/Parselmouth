@@ -407,23 +407,18 @@ protected:
         int index = 0;
         /* Create a nice pydoc rec including all signatures and
            docstrings of the functions in the overload chain */
-        if (chain && options::show_function_signatures()) {
+        if (options::show_function_signatures()) {
             // First a generic signature
-            signatures += rec->name;
-            signatures += "(*args, **kwargs)\n";
-            signatures += "Overloaded function.\n\n";
+	        for (auto it = chain_start; it != nullptr; it = it->next) {
+		        if (it != chain_start) signatures += "\\\n";
+		        signatures += rec->name;
+		        signatures += it->signature;
+	        }
+	        signatures += "\n\n";
         }
         // Then specific overload signatures
         bool first_user_def = true;
         for (auto it = chain_start; it != nullptr; it = it->next) {
-            if (options::show_function_signatures()) {
-                if (index > 0) signatures += "\n";
-                if (chain)
-                    signatures += std::to_string(++index) + ". ";
-                signatures += rec->name;
-                signatures += it->signature;
-                signatures += "\n";
-            }
             if (it->doc && strlen(it->doc) > 0 && options::show_user_defined_docstrings()) {
                 // If we're appending another docstring, and aren't printing function signatures, we
                 // need to append a newline first:

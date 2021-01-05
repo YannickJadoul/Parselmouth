@@ -1,6 +1,5 @@
 import re
 
-
 RE_ARGS_KWARGS = re.compile(r'(?<![*\\])\*args|(?<!\\)\*\*kwargs')
 
 

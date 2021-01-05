@@ -164,7 +164,7 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	    },
 	    "bin_number"_a, "value"_a);
 
-	def("get_imaginary_value_in_bin",
+	def("set_imaginary_value_in_bin",
 	    [](Spectrum self, Positive<integer> binNumber, double value) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");
@@ -172,7 +172,7 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	    },
 	    "bin_number"_a, "value"_a);
 
-	def("get_value_in_bin",
+	def("set_value_in_bin",
 	    [](Spectrum self, Positive<integer> binNumber, std::complex<double> value) {
 		    if (binNumber > self->nx)
 			    Melder_throw (U"Bin number must not exceed number of bins.");

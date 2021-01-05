@@ -134,6 +134,7 @@ nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
                   ('py:class', 'Positive'),
                   ('py:class', 'NonNegative'),
                   ('py:class', 'numpy.float64'),
+                  ('py:class', 'numpy.complex128'),
                   ('py:obj', 'List')]
 
 
