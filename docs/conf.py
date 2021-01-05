@@ -126,13 +126,16 @@ autodoc_member_order = 'groupwise'
 
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
-                       'tgt': ('https://textgridtools.readthedocs.io/en/stable', None)}
+                       'numpy': ('https://numpy.org/doc/stable/', None),
+                       'tgt': ('https://textgridtools.readthedocs.io/en/stable/', None)}
 
 default_role = 'py:obj'
 nitpicky = True
 nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
                   ('py:class', 'List'),
+                  ('py:class', 'Positive'),
+                  ('py:class', 'NonNegative'),
+                  ('py:class', 'numpy.float64'),
                   ('py:obj', 'List')]
 
 
@@ -148,7 +151,7 @@ rst_epilog = """
 """.format(branch_or_tag=branch_or_tag)
 
 nbsphinx_prolog = """
-{{% set docname = env.doc2path(env.docname, base='docs') %}}
+{{% set docname = 'docs/' + env.doc2path(env.docname, base=False) %}}
 
 .. only:: html
 
@@ -162,7 +165,7 @@ nbsphinx_prolog = """
 
 
 def setup(app):
-    app.add_stylesheet('css/custom.css')
+    app.add_css_file('css/custom.css')
 
 
 # -- Options for HTML output ----------------------------------------------

@@ -56,6 +56,7 @@ endif ()
 
 add_subdirectory(src)
 add_subdirectory(tests)
+add_subdirectory(docs)
 
 if(SKBUILD)
 	install(TARGETS parselmouth LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX})

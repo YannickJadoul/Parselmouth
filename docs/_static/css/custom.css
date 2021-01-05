@@ -1,7 +1,7 @@
-.field li p {
+dl.field-list dd li p {
     display: inline;
 }
 
-.field p:empty {
+dl.field-list dd p:empty {
    display: none;
 }
