@@ -89,8 +89,6 @@ if on_rtd:
         assert len(zf.namelist()) == 1
         zf.extractall(tmpdir)
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', tmpdir + '/' + zf.namelist()[0]])
-else:
-    sys.path.insert(0, os.path.abspath(os.path.join('..', 'installed')))
 
 import parselmouth
 
