@@ -176,6 +176,7 @@ jobs:
       - name: Install requirements
         run: |
           pip install --user -r docs/requirements.txt
+          sudo apt install pandoc
 
       - name: Configure
         shell: bash
