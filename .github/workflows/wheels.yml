@@ -15,7 +15,7 @@ jobs:
   sdist:
     name: Source distribution
     runs-on: ubuntu-latest
-    if: github.ref != 'refs/heads/docs'
+    if: startsWith(github.ref, 'refs/heads/docs') != true
 
     steps:
       - name: Checkout code
@@ -107,23 +107,23 @@ jobs:
           echo "CIBW_BEFORE_ALL_WINDOWS=$CIBW_BEFORE_ALL_COMMON --config Release" >> $GITHUB_ENV
 
       - name: Only build ReadTheDocs wheel
-        if: github.ref == 'refs/heads/docs'
+        if: startsWith(github.ref, 'refs/heads/docs')
         shell: bash
         run: |
           echo "CIBW_BUILD=cp37-manylinux_x86_64" >> $GITHUB_ENV
 
       - name: Run cibuildwheel
-        if: github.ref != 'refs/heads/docs' || matrix.cibw-arch == 'manylinux_x86_64'
+        if: startsWith(github.ref, 'refs/heads/docs') != true || matrix.cibw-arch == 'manylinux_x86_64'
         run: |
           cibuildwheel
 
       - name: Check built wheels
-        if: github.ref != 'refs/heads/docs' || matrix.cibw-arch == 'manylinux_x86_64'
+        if: startsWith(github.ref, 'refs/heads/docs') != true || matrix.cibw-arch == 'manylinux_x86_64'
         run: |
           twine check wheelhouse/*
 
       - name: Upload built wheels
-        if: github.ref != 'refs/heads/docs'
+        if: startsWith(github.ref, 'refs/heads/docs') != true
         uses: actions/upload-artifact@v2
         with:
           name: wheels

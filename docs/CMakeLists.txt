@@ -16,7 +16,13 @@
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
 add_custom_target(docs
-        COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=$<TARGET_FILE_DIR:parselmouth> ${Python_EXECUTABLE} -m sphinx -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-        BYPRODUCTS doctrees html
+        COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=$<TARGET_FILE_DIR:parselmouth> ${Python_EXECUTABLE} -m sphinx -M html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+        BYPRODUCTS doctrees/ html/
+        DEPENDS parselmouth
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_custom_target(docs_linkcheck
+        COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=$<TARGET_FILE_DIR:parselmouth> ${Python_EXECUTABLE} -m sphinx -M linkcheck ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+        BYPRODUCTS doctrees/ linkcheck/
         DEPENDS parselmouth
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

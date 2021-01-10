@@ -28,7 +28,7 @@ The following projects provide larger, real-life examples and demonstrate the us
 - David R. Feinberg (`@drfeinberg <https://github.com/drfeinberg>`_) has written multiple Python scripts and programs with Parselmouth to analyse properties of speech recordings:
 
     - `Praat Scripts <https://osf.io/huz7d/>`_ is a collection of Praat scripts used in research, translated into Python.
-    - `Voice Lab Software <https://osf.io/3ymwq/>`_ is a GUI application to measure and manipulate voices.
+    - `Voice Lab Software <https://osf.io/3wr6k/>`_ is a GUI application to measure and manipulate voices.
 
 .. note::
 
