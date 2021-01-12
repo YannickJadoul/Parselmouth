@@ -43,7 +43,7 @@ public:
 	PYBIND11_OBJECT_DEFAULT(TgtTextGrid, pybind11::object, isTgtTextGrid)
 };
 
-TgtTextGrid toTgtTextGrid(TextGrid textGrid);
+TgtTextGrid toTgtTextGrid(TextGrid textGrid, bool includeEmptyIntervals = false);
 autoTextGrid fromTgtTextGrid(TgtTextGrid textGrid);
 
 } // namespace parselmouth

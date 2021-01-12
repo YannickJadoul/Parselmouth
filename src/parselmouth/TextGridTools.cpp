@@ -55,10 +55,13 @@ py::object toTgtInterval(const py::module_ &tgt, TextInterval interval) {
 	return tgt.attr("Interval")(interval->xmin, interval->xmax, interval->text.get());
 }
 
-py::object toTgtIntervalTier(const py::module_ &tgt, IntervalTier tier) {
+py::object toTgtIntervalTier(const py::module_ &tgt, IntervalTier tier, bool includeEmptyIntervals) {
 	auto tgtTier = tgt.attr("IntervalTier")(tier->xmin, tier->xmax, tier->name.get());
-	for (auto i = 1; i <= tier->intervals.size; ++i)
-		tgtTier.attr("add_interval")(toTgtInterval(tgt, tier->intervals.at[i]));
+	for (auto i = 1; i <= tier->intervals.size; ++i) {
+		auto interval = tier->intervals.at[i];
+		if (includeEmptyIntervals || (interval->text.get() && interval->text[0] != U'\0'))
+			tgtTier.attr("add_interval")(toTgtInterval(tgt, interval));
+	}
 	return tgtTier;
 }
 
@@ -94,9 +97,8 @@ autoIntervalTier fromTgtIntervalTier(const py::handle &tgtIntervalTier) {
 
 } // namespace
 
-// TODO Empty intervals, correct_start_end_times_and_fill_gaps?
-
-TgtTextGrid toTgtTextGrid(TextGrid textGrid) {
+// TODO More elaborate `includeEmptyIntervals`, like tgt (True, string, or list of strings)
+TgtTextGrid toTgtTextGrid(TextGrid textGrid, bool includeEmptyIntervals /* = false */) {
 	auto tgt = importTgt();
 
 	auto tgtTextGrid = tgt.attr("TextGrid")();
@@ -105,7 +107,7 @@ TgtTextGrid toTgtTextGrid(TextGrid textGrid) {
 		if (tier->classInfo == classTextTier)
 			tgtTextGrid.attr("add_tier")(toTgtPointTier(tgt, static_cast<TextTier>(tier)));
 		else if (tier->classInfo == classIntervalTier)
-			tgtTextGrid.attr("add_tier")(toTgtIntervalTier(tgt, static_cast<IntervalTier>(tier)));
+			tgtTextGrid.attr("add_tier")(toTgtIntervalTier(tgt, static_cast<IntervalTier>(tier), includeEmptyIntervals));
 		else
 			throw std::runtime_error("Tier type not supported by TextGridTools: "s + Melder_peek32to8(tier->classInfo->className));
 	}
@@ -117,6 +119,8 @@ autoTextGrid fromTgtTextGrid(TgtTextGrid tgtTextGrid) {
 	auto tgt = importTgt();
 	auto tgtPointTierType = tgt.attr("PointTier");
 	auto tgtIntervalTierType = tgt.attr("IntervalTier");
+
+	tgtTextGrid = tgt.attr("io").attr("correct_start_end_times_and_fill_gaps")(tgtTextGrid);
 
 	auto textGrid = TextGrid_createWithoutTiers(py::cast<double>(tgtTextGrid.attr("start_time")), py::cast<double>(tgtTextGrid.attr("end_time")));
 	for (const auto &tgtTier : tgtTextGrid.attr("tiers")) {

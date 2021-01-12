@@ -80,7 +80,8 @@ PRAAT_CLASS_BINDING(TextGrid) {
 	    "tgt_text_grid"_a);
 
 	def("to_tgt",
-	    toTgtTextGrid);
+	    toTgtTextGrid,
+	    py::kw_only(), "include_empty_intervals"_a = false);
 
 	def_static("from_tgt",
 	           fromTgtTextGrid,

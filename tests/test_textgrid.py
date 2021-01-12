@@ -33,11 +33,12 @@ def test_create(text_grid_path):
 		parselmouth.TextGrid(0.0, 1.0, ["a", "b"], ["a", "c", "d"])
 
 
-def test_tgt(text_grid_path):
+@pytest.mark.parametrize('include_empty_intervals', [True, False])
+def test_tgt(text_grid_path, include_empty_intervals):
 	tgt = pytest.importorskip('tgt')
 
 	text_grid = parselmouth.read(text_grid_path)  # TODO Replace with TextGrid constructor taking filename?
-	assert [t.annotations for t in text_grid.to_tgt().tiers] == [t.annotations for t in tgt.read_textgrid(text_grid_path, 'utf-8', include_empty_intervals=True)]
+	assert [t.annotations for t in text_grid.to_tgt(include_empty_intervals=include_empty_intervals).tiers] == [t.annotations for t in tgt.read_textgrid(text_grid_path, 'utf-8', include_empty_intervals=include_empty_intervals)]
 	assert parselmouth.TextGrid.from_tgt(text_grid.to_tgt()) == text_grid
 
 
@@ -60,5 +61,5 @@ def test_tgt_exceptions(text_grid_path, monkeypatch):
 
 	with pytest.raises(AttributeError, match=r"'MockTextGrid' object has no attribute '.*'|MockTextGrid instance has no attribute '.*'"):  # Python 2 compatibility
 		parselmouth.read(text_grid_path).to_tgt()
-	with pytest.raises(AttributeError, match=r"'MockTextGrid' object has no attribute '.*'|MockTextGrid instance has no attribute '.*'"):  # Python 2 compatibility
+	with pytest.raises(TypeError, match="'MockTextGrid' object is not iterable"):
 		parselmouth.TextGrid.from_tgt(MockTextGrid())
