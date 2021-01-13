@@ -54,7 +54,7 @@ def test_tgt_missing(text_grid_path, monkeypatch):
 def test_tgt_exceptions(text_grid_path, monkeypatch):
 	tgt = pytest.importorskip('tgt')
 
-	class MockTextGrid:
+	class MockTextGrid(object):  # Python 2 compatibility
 		def __init__(self, *args, **kwargs):
 			pass
 	monkeypatch.setattr(tgt, "TextGrid", MockTextGrid)
