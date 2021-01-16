@@ -105,7 +105,7 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.5
+        uses: jwlawson/actions-setup-cmake@v1.6
 
       - name: Install requirements
         run: |
@@ -171,7 +171,7 @@ jobs:
           python-version: '3.8'
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.5
+        uses: jwlawson/actions-setup-cmake@v1.6
 
       - name: Install requirements
         run: |
