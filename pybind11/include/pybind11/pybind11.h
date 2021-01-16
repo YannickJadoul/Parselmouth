@@ -410,7 +410,7 @@ protected:
         if (options::show_function_signatures()) {
             // First a generic signature
 	        for (auto it = chain_start; it != nullptr; it = it->next) {
-		        if (it != chain_start) signatures += "\\\n";
+		        if (it != chain_start) signatures += " \\\n";
 		        signatures += rec->name;
 		        signatures += it->signature;
 	        }
