@@ -50,7 +50,7 @@ A `manuscript introducing Parselmouth <https://ai.vub.ac.be/~yajadoul/jadoul_int
         doi = "https://doi.org/10.1016/j.wocn.2018.07.001"
     }
 
-Since Parselmouth exposes existing Praat functionality and algorithm implementations, we suggest also `citing Praat <http://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html>`_ when using Parselmouth in scientific research:
+Since Parselmouth exposes existing Praat functionality and algorithm implementations, we suggest also `citing Praat <https://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html>`_ when using Parselmouth in scientific research:
 
     Boersma, P., & Weenink, D. (2018). Praat: doing phonetics by computer [Computer program]. Version 6.0.43, retrieved 8 September 2018 from http://www.praat.org/
 

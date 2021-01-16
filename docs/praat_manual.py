@@ -4,7 +4,7 @@ import sphinx
 import re
 
 
-PRAAT_DOCS_URL = "http://www.fon.hum.uva.nl/praat/manual/{}.html"
+PRAAT_DOCS_URL = "https://www.fon.hum.uva.nl/praat/manual/{}.html"
 
 
 def praat_manual_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
