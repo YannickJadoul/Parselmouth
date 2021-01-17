@@ -14,7 +14,7 @@ graft praat
 
 include .gitmodules
 graft extern
-prune extern/fmt/.git
+exclude extern/fmt/.git
 
 graft res
 
