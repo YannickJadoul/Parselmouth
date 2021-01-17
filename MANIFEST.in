@@ -11,6 +11,7 @@ include requirements.txt
 graft src
 graft pybind11
 graft praat
+graft extern
 
 graft res
 
