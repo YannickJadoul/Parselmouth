@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020  Yannick Jadoul
+# Copyright (C) 2018-2021  Yannick Jadoul
 #
 # This file is part of Parselmouth.
 #
