@@ -31,16 +31,14 @@ endif ()
 set_target_properties(parselmouth PROPERTIES
 	CXX_STANDARD 17
 	CXX_STANDARD_REQUIRED TRUE
+	CXX_EXTENSIONS FALSE
 )
-set_target_properties(praat PROPERTIES
+set_target_properties(praat fmt PROPERTIES
 	POSITION_INDEPENDENT_CODE TRUE
 	# Fixing "ld: warning: direct access in function '...' from file '...' to global weak symbol '...' from file '...' means the weak symbol cannot
 	# be overridden at runtime. This was likely caused by different translation units being compiled with different visibility settings."
 	C_VISIBILITY_PRESET hidden
 	CXX_VISIBILITY_PRESET hidden
-)
-set_target_properties(fmt PROPERTIES
-	POSITION_INDEPENDENT_CODE TRUE
 )
 target_include_directories(praat SYSTEM INTERFACE ${CMAKE_SOURCE_DIR})
 target_link_libraries(parselmouth PRIVATE praat)

@@ -102,10 +102,10 @@ jobs:
           CMAKE_ARCH="${{ matrix.cibw-arch == 'win32' && '-A Win32' || '' }}"
           echo "CIBW_BUILD=*-${{ matrix.cibw-arch }}" >> $GITHUB_ENV
           echo "CIBW_SKIP=pp*-*" >> $GITHUB_ENV
-          CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_PRAAT_DIR=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/praat_build/praat\" CMAKE_BUILD_PARALLEL_LEVEL=2"
+          CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_DEPENDENCIES=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/build_dependencies\" CMAKE_BUILD_PARALLEL_LEVEL=2"
           echo "CIBW_ENVIRONMENT=$CIBW_ENVIRONMENT_COMMON" >> $GITHUB_ENV
           echo "CIBW_ENVIRONMENT_LINUX=$CIBW_ENVIRONMENT_COMMON PIP_ONLY_BINARY='numpy'" >> $GITHUB_ENV
-          CIBW_BEFORE_ALL_COMMON="cmake -S . -B praat_build $CMAKE_ARCH && cmake --build praat_build --target praat -j 2"
+          CIBW_BEFORE_ALL_COMMON="cmake -S . -B build_dependencies $CMAKE_ARCH && cmake --build build_dependencies --target praat -j 2"
           echo "CIBW_BEFORE_ALL=$CIBW_BEFORE_ALL_COMMON" >> $GITHUB_ENV
           echo "CIBW_BEFORE_ALL_LINUX=pip install cmake && ln -s \$(which cmake) /usr/local/bin/cmake && $CIBW_BEFORE_ALL_COMMON" >> $GITHUB_ENV
           echo "CIBW_BEFORE_ALL_WINDOWS=$CIBW_BEFORE_ALL_COMMON --config Release" >> $GITHUB_ENV
