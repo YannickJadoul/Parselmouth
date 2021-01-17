@@ -11,7 +11,10 @@ include requirements.txt
 graft src
 graft pybind11
 graft praat
+
+include .gitmodules
 graft extern
+prune extern/fmt/.git
 
 graft res
 
