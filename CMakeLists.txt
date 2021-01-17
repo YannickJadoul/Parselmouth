@@ -33,6 +33,8 @@ if (MSVC)
 	endif ()
 endif ()
 
+add_subdirectory(extern)
+
 # Currently, scikit-build does not support FindPython.
 if(SKBUILD)
 	set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")

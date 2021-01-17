@@ -207,14 +207,14 @@ void structFunctionEditor :: draw () {
 		const double left = our rect [i]. left, right = our rect [i]. right;
 		const double bottom = our rect [i]. bottom, top = our rect [i]. top;
 		if (left < right) {
-			decltype(&structFunctionEditor::v_format_long) format = nullptr; // const char *format = my v_format_long ();
+			conststring8 format = our v_format_long ();
 			double value = undefined, inverseValue = 0.0;
 			switch (i) {
 				case 0: {
-					format = &structFunctionEditor::v_format_totalDuration;
+					format = our v_format_totalDuration ();
 					value = our tmax - our tmin;
 				} break; case 1: {
-					format = &structFunctionEditor::v_format_window;
+					format = our v_format_window ();
 					value = our endWindow - our startWindow;
 					/*
 						Window domain text.
@@ -239,28 +239,28 @@ void structFunctionEditor :: draw () {
 				} break; case 6: {
 					value = our marker [3] - our marker [2];
 				} break; case 7: {
-					format = &structFunctionEditor::v_format_selection;
+					format = our v_format_selection ();
 					value = our endSelection - our startSelection;
 					inverseValue = 1.0 / value;
 				}
 			}
 			char text8 [100];
-			(this->*(format ? format : &structFunctionEditor::v_format_long)) (text8, 100, value, inverseValue);
+			fmt_snprintf (text8, 100, format, value, inverseValue);
 			autostring32 text = Melder_8to32 (text8);
 			if (Graphics_textWidth (our graphics.get(), text.get()) < right - left) {
 				Graphics_text (our graphics.get(), 0.5 * (left + right), 0.5 * (bottom + top) - verticalCorrection, text.get());
-			} else if (!format /* format == my v_format_long () */) {
-				our v_format_short (text8, 100, value, 0.0);
+			} else if (format == our v_format_long()) {
+				fmt_snprintf (text8, 100, our v_format_short(), value);
 				text = Melder_8to32 (text8);
 				if (Graphics_textWidth (our graphics.get(), text.get()) < right - left)
 					Graphics_text (our graphics.get(), 0.5 * (left + right), 0.5 * (bottom + top) - verticalCorrection, text.get());
 			} else {
-				our v_format_long (text8, 100, value, 0.0);
+				fmt_snprintf (text8, 100, our v_format_long(), value);
 				text = Melder_8to32 (text8);
 				if (Graphics_textWidth (our graphics.get(), text.get()) < right - left) {
 					Graphics_text (our graphics.get(), 0.5 * (left + right), 0.5 * (bottom + top) - verticalCorrection, text.get());
 				} else {
-					our v_format_short (text8, 100, value, 0.0);
+					fmt_snprintf (text8, 100, our v_format_short(), our endSelection - our startSelection);
 					text = Melder_8to32 (text8);
 					if (Graphics_textWidth (our graphics.get(), text.get()) < right - left)
 						Graphics_text (our graphics.get(), 0.5 * (left + right), 0.5 * (bottom + top) - verticalCorrection, text.get());

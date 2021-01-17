@@ -39,5 +39,8 @@ set_target_properties(praat PROPERTIES
 	C_VISIBILITY_PRESET hidden
 	CXX_VISIBILITY_PRESET hidden
 )
+set_target_properties(fmt PROPERTIES
+	POSITION_INDEPENDENT_CODE TRUE
+)
 target_include_directories(praat SYSTEM INTERFACE ${CMAKE_SOURCE_DIR})
 target_link_libraries(parselmouth PRIVATE praat)

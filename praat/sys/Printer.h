@@ -34,7 +34,8 @@ struct Printer {
 extern struct Printer thePrinter;
 
 #if defined (macintosh) || defined (_WIN32)
-	int Printer_postScript_printf (void *stream, const char *format, ... );
+	// int Printer_postScript_printf (void *stream, const char *format, ... );
+	int Printer_postScript_printf (FILE *stream, const char *format, fmt::printf_args);
 #endif
 #ifdef _WIN32
 	HDC Printer_getDC ();

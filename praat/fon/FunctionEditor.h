@@ -156,13 +156,13 @@ public:
 	virtual conststring32 v_domainName () { return U"time"; }
 	virtual conststring32 v_selectionViewerName () { return U"selection viewer"; }
 	virtual conststring32 v_format_domain () { return U"Time domain:"; }
-	virtual void v_format_short (char *s, size_t n, double value, double) { snprintf(s, n, u8"%s", Melder8_double(value, 3, 'f')); /* return u8"%.3f"; */ }
-	virtual void v_format_long (char *s, size_t n, double value, double) { snprintf(s, n, u8"%s", Melder8_double(value, 6, 'f')); /* return u8"%f"; */ }
+	virtual const char *v_format_short () { return u8"%.3f"; }
+	virtual const char *v_format_long () { return u8"%f"; }
 	virtual conststring32 v_format_units_long () { return U"seconds"; }
 	virtual conststring32 v_format_units_short () { return U"s"; }
-	virtual void v_format_totalDuration (char *s, size_t n, double value, double) { snprintf(s, n, u8"Total duration %s seconds", Melder8_double(value, 6, 'f')); /* return u8"Total duration %f seconds"; */ }
-	virtual void v_format_window (char *s, size_t n,double value, double) { snprintf(s, n, u8"Visible part %s seconds", Melder8_double(value, 6, 'f')); /* return u8"Visible part %f seconds"; */ }
-	virtual void v_format_selection (char *s, size_t n, double value, double inverseValue) { snprintf(s, n, u8"%s (%s / s)", Melder8_double(value, 6, 'f'), Melder8_double(inverseValue, 3, 'f')); /* return u8"%f (%.3f / s)"; */ }
+	virtual const char *v_format_totalDuration () { return u8"Total duration %f seconds"; }
+	virtual const char *v_format_window () { return u8"Visible part %f seconds"; }
+	virtual const char *v_format_selection () { return u8"%f (%.3f / s)"; }
 	virtual int v_fixedPrecision_long () { return 6; }
 	virtual bool v_hasText () { return false; }
 	virtual void v_play (double /* startTime */, double /* endTime */) { }
