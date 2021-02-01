@@ -126,13 +126,25 @@ cmake --build build --target check
 `--target` can be spelled `-t` in CMake 3.15+. You can also run individual
 tests with these targets:
 
-* `pytest`: Python tests only
+* `pytest`: Python tests only, using the
+[pytest](https://docs.pytest.org/en/stable/) framework
 * `cpptest`: C++ tests only
 * `test_cmake_build`: Install / subdirectory tests
 
 If you want to build just a subset of tests, use
 `-DPYBIND11_TEST_OVERRIDE="test_callbacks.cpp;test_pickling.cpp"`. If this is
 empty, all tests will be built.
+
+You may also pass flags to the `pytest` target by editing `tests/pytest.ini` or
+by using the `PYTEST_ADDOPTS` environment variable
+(see [`pytest` docs](https://docs.pytest.org/en/2.7.3/customize.html#adding-default-options)). As an example:
+
+```bash
+env PYTEST_ADDOPTS="--capture=no --exitfirst" \
+    cmake --build build --target pytest
+# Or using abbreviated flags
+env PYTEST_ADDOPTS="-s -x" cmake --build build --target pytest
+```
 
 ### Formatting
 
@@ -164,10 +176,35 @@ name, pre-commit):
 pre-commit install
 ```
 
+### Clang-Format
+
+As of v2.6.2, pybind11 ships with a [`clang-format`][clang-format]
+configuration file at the top level of the repo (the filename is
+`.clang-format`). Currently, formatting is NOT applied automatically, but
+manually using `clang-format` for newly developed files is highly encouraged.
+To check if a file needs formatting:
+
+```bash
+clang-format -style=file --dry-run some.cpp
+```
+
+The output will show things to be fixed, if any. To actually format the file:
+
+```bash
+clang-format -style=file -i some.cpp
+```
+
+Note that the `-style-file` option searches the parent directories for the
+`.clang-format` file, i.e. the commands above can be run in any subdirectory
+of the pybind11 repo.
+
 ### Clang-Tidy
 
-To run Clang tidy, the following recipe should work. Files will be modified in
-place, so you can use git to monitor the changes.
+[`clang-tidy`][clang-tidy] performs deeper static code analyses and is
+more complex to run, compared to `clang-format`, but support for `clang-tidy`
+is built into the pybind11 CMake configuration. To run `clang-tidy`, the
+following recipe should work. Files will be modified in place, so you can
+use git to monitor the changes.
 
 ```bash
 docker run --rm -v $PWD:/pybind11 -it silkeh/clang:10
@@ -186,7 +223,7 @@ cmake -S . -B build-iwyu -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE=$(which include-what-y
 cmake --build build
 ```
 
-The report is sent to stderr; you can pip it into a file if you wish.
+The report is sent to stderr; you can pipe it into a file if you wish.
 
 ### Build recipes
 
@@ -313,6 +350,8 @@ if you really want to.
 
 
 [pre-commit]: https://pre-commit.com
+[clang-format]: https://clang.llvm.org/docs/ClangFormat.html
+[clang-tidy]: https://clang.llvm.org/extra/clang-tidy/
 [pybind11.readthedocs.org]: http://pybind11.readthedocs.org/en/latest
 [issue tracker]: https://github.com/pybind/pybind11/issues
 [gitter]: https://gitter.im/pybind/Lobby
