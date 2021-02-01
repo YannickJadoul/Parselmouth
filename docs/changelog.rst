@@ -6,6 +6,127 @@ Changelog
 Starting with version 1.8.0, pybind11 releases use a `semantic versioning
 <http://semver.org>`_ policy.
 
+
+v2.6.2 (Jan 26, 2021)
+---------------------
+
+Minor missing functionality added:
+
+* enum: add missing Enum.value property.
+  `#2739 <https://github.com/pybind/pybind11/pull/2739>`_
+
+* Allow thread termination to be avoided during shutdown for CPython 3.7+ via
+  ``.disarm`` for ``gil_scoped_acquire``/``gil_scoped_release``.
+  `#2657 <https://github.com/pybind/pybind11/pull/2657>`_
+
+Fixed or improved behavior in a few special cases:
+
+* Fix bug where the constructor of ``object`` subclasses would not throw on
+  being passed a Python object of the wrong type.
+  `#2701 <https://github.com/pybind/pybind11/pull/2701>`_
+
+* The ``type_caster`` for integers does not convert Python objects with
+  ``__int__`` anymore with ``noconvert`` or during the first round of trying
+  overloads.
+  `#2698 <https://github.com/pybind/pybind11/pull/2698>`_
+
+* When casting to a C++ integer, ``__index__`` is always called and not
+  considered as conversion, consistent with Python 3.8+.
+  `#2801 <https://github.com/pybind/pybind11/pull/2801>`_
+
+Build improvements:
+
+* Setup helpers: ``extra_compile_args`` and ``extra_link_args`` automatically set by
+  Pybind11Extension are now prepended, which allows them to be overridden
+  by user-set ``extra_compile_args`` and ``extra_link_args``.
+  `#2808 <https://github.com/pybind/pybind11/pull/2808>`_
+
+* Setup helpers: Don't trigger unused parameter warning.
+  `#2735 <https://github.com/pybind/pybind11/pull/2735>`_
+
+* CMake: Support running with ``--warn-uninitialized`` active.
+  `#2806 <https://github.com/pybind/pybind11/pull/2806>`_
+
+* CMake: Avoid error if included from two submodule directories.
+  `#2804 <https://github.com/pybind/pybind11/pull/2804>`_
+
+* CMake: Fix ``STATIC`` / ``SHARED`` being ignored in FindPython mode.
+  `#2796 <https://github.com/pybind/pybind11/pull/2796>`_
+
+* CMake: Respect the setting for ``CMAKE_CXX_VISIBILITY_PRESET`` if defined.
+  `#2793 <https://github.com/pybind/pybind11/pull/2793>`_
+
+* CMake: Fix issue with FindPython2/FindPython3 not working with ``pybind11::embed``.
+  `#2662 <https://github.com/pybind/pybind11/pull/2662>`_
+
+* CMake: mixing local and installed pybind11's would prioritize the installed
+  one over the local one (regression in 2.6.0).
+  `#2716 <https://github.com/pybind/pybind11/pull/2716>`_
+
+
+Bug fixes:
+
+* Fixed segfault in multithreaded environments when using
+  ``scoped_ostream_redirect``.
+  `#2675 <https://github.com/pybind/pybind11/pull/2675>`_
+
+* Leave docstring unset when all docstring-related options are disabled, rather
+  than set an empty string.
+  `#2745 <https://github.com/pybind/pybind11/pull/2745>`_
+
+* The module key in builtins that pybind11 uses to store its internals changed
+  from std::string to a python str type (more natural on Python 2, no change on
+  Python 3).
+  `#2814 <https://github.com/pybind/pybind11/pull/2814>`_
+
+* Fixed assertion error related to unhandled (later overwritten) exception in
+  CPython 3.8 and 3.9 debug builds.
+  `#2685 <https://github.com/pybind/pybind11/pull/2685>`_
+
+* Fix ``py::gil_scoped_acquire`` assert with CPython 3.9 debug build.
+  `#2683 <https://github.com/pybind/pybind11/pull/2683>`_
+
+* Fix issue with a test failing on PyTest 6.2.
+  `#2741 <https://github.com/pybind/pybind11/pull/2741>`_
+
+Warning fixes:
+
+* Fix warning modifying constructor parameter 'flag' that shadows a field of
+  'set_flag' ``[-Wshadow-field-in-constructor-modified]``.
+  `#2780 <https://github.com/pybind/pybind11/pull/2780>`_
+
+* Suppressed some deprecation warnings about old-style
+  ``__init__``/``__setstate__`` in the tests.
+  `#2759 <https://github.com/pybind/pybind11/pull/2759>`_
+
+Valgrind work:
+
+* Fix invalid access when calling a pybind11 ``__init__`` on a non-pybind11
+  class instance.
+  `#2755 <https://github.com/pybind/pybind11/pull/2755>`_
+
+* Fixed various minor memory leaks in pybind11's test suite.
+  `#2758 <https://github.com/pybind/pybind11/pull/2758>`_
+
+* Resolved memory leak in cpp_function initialization when exceptions occurred.
+  `#2756 <https://github.com/pybind/pybind11/pull/2756>`_
+
+* Added a Valgrind build, checking for leaks and memory-related UB, to CI.
+  `#2746 <https://github.com/pybind/pybind11/pull/2746>`_
+
+Compiler support:
+
+* Intel compiler was not activating C++14 support due to a broken define.
+  `#2679 <https://github.com/pybind/pybind11/pull/2679>`_
+
+* Support ICC and NVIDIA HPC SDK in C++17 mode.
+  `#2729 <https://github.com/pybind/pybind11/pull/2729>`_
+
+* Support Intel OneAPI compiler (ICC 20.2) and add to CI.
+  `#2573 <https://github.com/pybind/pybind11/pull/2573>`_
+
+
+
 v2.6.1 (Nov 11, 2020)
 ---------------------
 
@@ -14,7 +135,7 @@ v2.6.1 (Nov 11, 2020)
   and ``eval`` in pure Python.
   `#2616 <https://github.com/pybind/pybind11/pull/2616>`_
 
-* ``setup_helpers`` will no longer set a minimum macOS version lower than the
+* ``setup_helpers`` will no longer set a minimum macOS version higher than the
   current version.
   `#2622 <https://github.com/pybind/pybind11/pull/2622>`_
 
