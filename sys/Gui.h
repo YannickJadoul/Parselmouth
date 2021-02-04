@@ -510,6 +510,9 @@ Thing_define (GuiDrawingArea, GuiControl) {
 	integer numberOfGraphicses;
 	constexpr static integer MAXIMUM_NUMBER_OF_GRAPHICSES = 10;
 	Graphics graphicses [1+MAXIMUM_NUMBER_OF_GRAPHICSES];
+
+	void v_destroy () noexcept
+		override;
 };
 
 /* GuiDrawingArea creation flags: */
@@ -548,7 +551,7 @@ void GuiDrawingArea_setResizeCallback (GuiDrawingArea me, GuiDrawingArea_ResizeC
 
 autoStringSet GuiFileSelect_getInfileNames (GuiWindow parent, conststring32 title, bool allowMultipleFiles);
 autostring32 GuiFileSelect_getOutfileName (GuiWindow parent, conststring32 title, conststring32 defaultName);
-autostring32 GuiFileSelect_getDirectoryName (GuiWindow parent, conststring32 title);
+autostring32 GuiFileSelect_getFolderName (GuiWindow parent, conststring32 title);
 
 /********** GuiForm **********/
 

@@ -26,6 +26,8 @@ Thing_implement (GuiShell, GuiForm, 0);
 		GuiShell d_userData;
 	}
 	- (void) dealloc {   // override
+		if (Melder_debug == 55)
+			Melder_casual (U"\t\tGuiCocoaShell-", Melder_pointer (self), U" dealloc");
 		GuiShell me = d_userData;
 		my d_cocoaShell = nullptr;   // this is already under destruction, so undangle
 		forget (me);
@@ -60,6 +62,8 @@ Thing_implement (GuiShell, GuiForm, 0);
 
 void structGuiShell :: v_destroy () noexcept {
 	#if cocoa
+		if (Melder_debug == 55)
+			Melder_casual (U"\t", Thing_messageNameAndAddress (this), U" v_destroy: cocoaShell ", Melder_pointer (our d_cocoaShell));
 		if (our d_cocoaShell) {
 			[our d_cocoaShell setUserData: nullptr];   // undangle reference to this
 			Melder_fatal (U"ordering out?");   // TODO: how can this never be reached?
@@ -76,7 +80,7 @@ int GuiShell_getShellWidth (GuiShell me) {
 	int width = 0;
 	#if gtk
 		GtkAllocation allocation;
-		gtk_widget_get_allocation (GTK_WIDGET (my d_gtkWindow), & allocation);
+		gtk_widget_get_allocation (GTK_WIDGET (my d_gtkWindow), & allocation);   // TODO: replace with gtk_window_get_size()
 		width = allocation.width;
 	#elif motif
 		width = my d_xmShell -> width;
@@ -90,7 +94,7 @@ int GuiShell_getShellHeight (GuiShell me) {
 	int height = 0;
 	#if gtk
 		GtkAllocation allocation;
-		gtk_widget_get_allocation (GTK_WIDGET (my d_gtkWindow), & allocation);
+		gtk_widget_get_allocation (GTK_WIDGET (my d_gtkWindow), & allocation);   // TODO: replace with gtk_window_get_size()
 		height = allocation.height;
 	#elif motif
 		height = my d_xmShell -> height;

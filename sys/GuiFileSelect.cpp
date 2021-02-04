@@ -91,7 +91,7 @@ autoStringSet GuiFileSelect_getInfileNames (GuiWindow parent, conststring32 titl
 			} else {
 				/*
 				 * The user selected multiple files.
-				 * 'fullFileNameW' is a directory name; the file names follow.
+				 * 'fullFileNameW' is a folder name; the file names follow.
 				 */
 				structMelderDir dir { };
 				Melder_pathToDir (Melder_peekWto32 (fullFileNameW), & dir);
@@ -167,7 +167,7 @@ autostring32 GuiFileSelect_getOutfileName (GuiWindow parent, conststring32 title
 		setlocale (LC_ALL, "C");
 	#elif cocoa
 		(void) parent;
-		NSSavePanel	*savePanel = [NSSavePanel savePanel];
+		NSSavePanel	*savePanel = [NSSavePanel savePanel];   // will be autoreleased (release will crash; 2020-11-12)
 		[savePanel setTitle: [NSString stringWithUTF8String: Melder_peek32to8 (title)]];
 		[savePanel setNameFieldStringValue: [NSString stringWithUTF8String: Melder_peek32to8 (defaultName)]];
 		if ([savePanel runModal] == NSFileHandlingPanelOKButton) {
@@ -187,7 +187,7 @@ autostring32 GuiFileSelect_getOutfileName (GuiWindow parent, conststring32 title
 	return outfileName;
 }
 
-autostring32 GuiFileSelect_getDirectoryName (GuiWindow parent, conststring32 title) {
+autostring32 GuiFileSelect_getFolderName (GuiWindow parent, conststring32 title) {
 	structMelderDir saveDir { };
 	Melder_getDefaultDir (& saveDir);
 	autostring32 directoryName;
@@ -218,7 +218,7 @@ autostring32 GuiFileSelect_getDirectoryName (GuiWindow parent, conststring32 tit
 		info. hwndOwner = parent && parent -> d_xmShell ? (HWND) XtWindow (parent -> d_xmShell) : nullptr;
 		info. ulFlags = BIF_USENEWUI;
 		info. pidlRoot = nullptr;   // everything on the computer should be browsable
-		info. pszDisplayName = nullptr;   // this would only give the bare directory name, not the full path
+		info. pszDisplayName = nullptr;   // this would only give the bare folder name, not the full path
 		info. lpszTitle = Melder_peek32toW_fileSystem (title);
 		LPITEMIDLIST idList = SHBrowseForFolder (& info);
 		SHGetPathFromIDList (idList, fullFileNameW);

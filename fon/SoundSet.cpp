@@ -1,6 +1,6 @@
 /* SoundSet.cpp
  *
- * Copyright (C) 2019 Paul Boersma
+ * Copyright (C) 2019,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ autoMAT SoundSet_getRandomizedPatterns (SoundSet me, integer numberOfPatterns, i
 		integer minimumNumberOfSamples = SoundSet_getMinimumNumberOfSamples (me);
 		Melder_require (patternSize <= minimumNumberOfSamples,
 			U"The pattern size cannot be ", patternSize, U", because there is a Sound that is only ", minimumNumberOfSamples, U" samples long.");
-		autoMAT result = newMATzero (numberOfPatterns, patternSize);
+		autoMAT result = zero_MAT (numberOfPatterns, patternSize);
 		for (integer ipattern = 1; ipattern <= numberOfPatterns; ipattern ++) {
 			integer soundNumber = NUMrandomInteger (1, my size);
 			Sound sound = my at [soundNumber];
@@ -42,7 +42,7 @@ autoMAT SoundSet_getRandomizedPatterns (SoundSet me, integer numberOfPatterns, i
 			integer startSample = endSample - (patternSize - 1);
 			Melder_assert (startSample >= 1);
 			constVEC const samples = sound -> z.row (1);
-			result.row (ipattern) <<= samples. part (startSample, endSample);
+			result.row (ipattern)  <<=  samples. part (startSample, endSample);
 		}
 		return result;
 	} catch (MelderError) {
@@ -71,7 +71,7 @@ void SoundSet_Table_getRandomizedPatterns (SoundSet me, Table thee, conststring3
 			integer startSample = endSample - (inputSize - 1);
 			Melder_assert (startSample >= 1);
 			constVEC const samples = sound -> z.row (1);
-			inputs -> z.row (ipattern) <<= samples. part (startSample, endSample);
+			inputs -> z.row (ipattern)  <<=  samples. part (startSample, endSample);
 			integer classNumber = Melder_iround (thy rows.at [soundNumber] -> cells [columnNumber]. number);
 			Melder_require (classNumber >= 1 && classNumber <= outputSize,
 				U"The class number should be between 1 and ", outputSize, U", not ", classNumber, U".");

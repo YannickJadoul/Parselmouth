@@ -74,12 +74,12 @@ using conststring8vector  = _conststringvector <char>;
 template <typename T>
 class _autostringvectorview {
 public:
-	_autostring <T> * _elements = nullptr;
+	_autostring <T> * elements = nullptr;
 	integer size = 0;
 	_autostringvectorview<T> () = default;
-	_autostringvectorview<T> (_autostring <T> * givenElements, integer givenSize): _elements (givenElements), size (givenSize) { }
+	_autostringvectorview<T> (_autostring <T> * givenElements, integer givenSize): elements (givenElements), size (givenSize) { }
 	_autostring <T> & operator[] (integer i) const {
-		return our _elements [i - 1];
+		return our elements [i - 1];
 	}
 };
 
@@ -92,59 +92,80 @@ void operator<<= (_autostringvectorview <T> const& target, _autostringvectorview
 
 template <typename T>
 class _autostringautovector {
-	_autostring <T> * _elements;
+	integer _capacity = 0;
 public:
+	_autostring <T> * elements;
 	integer size;
 	_autostringautovector () {
-		our _elements = nullptr;
+		our elements = nullptr;
 		our size = 0;
 	}
-	_autostringautovector<T> (integer initialSize) {
-		our _elements = MelderArray:: _alloc <_autostring <T>> (initialSize, MelderArray::kInitializationType :: ZERO);
-		our size = initialSize;
+	explicit _autostringautovector (integer givenSize) {
+		our elements = MelderArray:: _alloc <_autostring <T>> (givenSize, MelderArray::kInitializationType :: ZERO);
+		our size = givenSize;
+		our _capacity = givenSize;
 	}
-	_autostringautovector (const _autostringautovector &) = delete;
-	_autostringautovector (_autostringautovector&& other) {
-		our _elements = other. _elements;
-		our size = other. size;
-		other. _elements = nullptr;
-		other. size = 0;
-	}
-	_autostringautovector& operator= (const _autostringautovector &) = delete;   // disable copy assignment
-	_autostringautovector& operator= (_autostringautovector&& other) noexcept {   // enable move assignment
-		if (& other != this) {
-			our reset ();
-			our _elements = other. _elements;
-			our size = other. size;
-			other. _elements = nullptr;
-			other. size = 0;
+	void reset () {
+		if (our elements) {
+			for (integer i = 1; i <= our size; i ++)
+				our elements [i - 1]. reset ();
+			MelderArray:: _free (our elements, our size);
+			our elements = nullptr;
 		}
-		return *this;
+		our size = 0;
+		our _capacity = 0;
 	}
 	~ _autostringautovector<T> () {
 		our reset ();
 	}
-	explicit operator bool () const noexcept { return !! our _elements; }
-	_autostring <T> & operator[] (integer i) {
-		return our _elements [i - 1];
-	}
 	_stringvector<T> get () const {
-		return _stringvector<T> { (T**) our _elements, our size };
+		return _stringvector<T> (reinterpret_cast <T**> (our elements), our size);
 	}
 	_autostringvectorview<T> all () const {
-		return _autostringvectorview<T> (our _elements, our size);
+		return _autostringvectorview<T> (our elements, our size);
+	}
+	void adoptFromAmbiguousOwner (_stringvector<T> const& given) {   // buy the payload from a non-autostring
+		our reset();
+		our elements = reinterpret_cast <_autostring <T> *> (given.elements);
+		our size = given.size;
+		our _capacity = given.size;
+	}
+	_stringvector<T> releaseToAmbiguousOwner () {   // sell the payload to a non-autostring
+		_autostring<T> * oldElements = our elements;
+		our elements = nullptr;   // disown ourselves, preventing automatic destruction of the payload
+		integer oldSize = our size;
+		our size = 0;
+		our _capacity = 0;
+		return _stringvector<T> (reinterpret_cast <T**> (oldElements), oldSize);
+	}
+	_autostringautovector (const _autostringautovector &) = delete;   // disable copy construction
+	_autostringautovector& operator= (const _autostringautovector &) = delete;   // disable copy assignment
+	_autostringautovector (_autostringautovector&& other) {   // enable move construction
+		our elements = other.elements;
+		our size = other.size;
+		our _capacity = other._capacity;
+		other.elements = nullptr;   // disown source
+		other.size = 0;   // to keep the source in a valid state
+		other._capacity = 0;
+	}
+	_autostringautovector& operator= (_autostringautovector&& other) noexcept {   // enable move assignment
+		if (other.elements != our elements) {
+			our reset ();
+			our elements = other.elements;
+			our size = other.size;
+			our _capacity = other._capacity;
+			other.elements = nullptr;   // disown source
+			other.size = 0;   // to keep the source in a valid state
+			other._capacity = 0;
+		}
+		return *this;
+	}
+	explicit operator bool () const noexcept { return !! our elements; }
+	_autostring <T> & operator[] (integer i) {
+		return our elements [i - 1];
 	}
 	T** peek2 () const {   // can be assigned to a [const] mutablestring32* and to a const conststring32*, but not to a conststring32*
-		return (T**) our _elements - 1;
-	}
-	void reset () {
-		if (our _elements) {
-			for (integer i = 1; i <= our size; i ++)
-				our _elements [i - 1]. reset ();
-			MelderArray:: _free (our _elements, our size);
-			our _elements = nullptr;
-			our size = 0;
-		}
+		return (T**) our elements - 1;
 	}
 	_autostringvectorview<T> part (integer firstPosition, integer lastPosition) {
 		Melder_assert (firstPosition >= 1 && firstPosition <= our size);
@@ -152,7 +173,67 @@ public:
 		integer newSize = lastPosition - (firstPosition - 1);
 		if (newSize <= 0)
 			return _autostringvectorview<T> ();
-		return _autostringvectorview<T> (our _elements + (firstPosition - 1), newSize);
+		return _autostringvectorview<T> (our elements + (firstPosition - 1), newSize);
+	}
+	_autostringautovector&& move () noexcept { return static_cast <_autostringautovector&&> (*this); }   // enable construction and assignment for l-values (variables) via explicit move()
+	void initWithCapacity (integer capacity) {
+		if (capacity > 0)
+			our cells = MelderArray:: _alloc <_autostring <T>> (capacity, MelderArray::kInitializationType::ZERO);
+		our size = 0;
+		our _capacity = capacity;
+	}
+	void resize (integer newSize) {
+		if (newSize > our _capacity) {
+			/*
+				The new capacity is at least twice the old capacity.
+				When starting at a capacity of 0, and continually upsizing by one,
+				the capacity sequence will be: 0, 11, 33, 77, 165, 341, 693, 1397,
+				2805, 5621, 11253, 22517, 45045, 90101, 180213, 360437, 720885...
+			*/
+			integer newCapacity = newSize + our size + 10;
+			/*
+				Create without change.
+			*/
+			_autostring <T> * newElements = MelderArray:: _alloc <_autostring <T>> (newCapacity, MelderArray::kInitializationType::ZERO);
+			/*
+				Change without error.
+			*/
+			for (integer i = 1; i <= our size; i ++)
+				newElements [i - 1] = our elements [i - 1]. move();
+			if (our elements)
+				MelderArray:: _free (our elements, our _capacity);
+			our elements = newElements;
+			our _capacity = newCapacity;
+		}
+		our size = newSize;
+	}
+	void insert (integer position, conststring32 value) {
+		if (position == 0)
+			position = our size + 1;
+		/*
+			Create without change.
+		*/
+		autostring32 newValue = Melder_dup (value);
+		/*
+			Pivot.
+		*/
+		our resize (our size + 1);
+		/*
+			Change without error.
+		*/
+		Melder_assert (position >= 1 && position <= our size);
+		for (integer i = our size; i > position; i --)
+			our elements [i - 1] = our elements [i - 2]. move();
+		our elements [position - 1] = newValue. move();
+	}
+	void append (conststring32 value) {
+		our insert (0, value);
+	}
+	void remove (integer position) noexcept {
+		Melder_assert (position >= 1 && position <= our size);
+		for (integer i = position; i < our size; i ++)
+			our elements [i - 1] = std::move (our elements [i]);
+		our resize (our size - 1);   // change without error
 	}
 };
 
@@ -163,17 +244,24 @@ using STRVEC = _stringvector <char32>;
 using constSTRVEC = _conststringvector <char32>;
 using autoSTRVEC = _autostringautovector <char32>;
 
-inline static autoSTRVEC newSTRVECcopy (constSTRVEC strvec) {
+inline autoSTRVEC newSTRVECcopy (constSTRVEC strvec) {
 	autoSTRVEC result (strvec.size);
 	for (integer i = 1; i <= result.size; i ++)
 		result [i] = Melder_dup (strvec [i]);
 	return result;
 }
 
+conststring32 Melder_STRVEC (constSTRVEC const& value);
+
 inline void operator<<= (_autostringvectorview <char32> const& target, _autostringvectorview <char32> const& source) {
 	Melder_assert (target.size == source.size);
 	for (integer i = 1; i <= target.size; i ++)
 		target [i] = Melder_dup (source [i].get());
+}
+inline void operator<<= (_autostringvectorview <char32> const& target, _stringvector <char32> const& source) {
+	Melder_assert (target.size == source.size);
+	for (integer i = 1; i <= target.size; i ++)
+		target [i] = Melder_dup (source [i]);
 }
 
 /* End of file melder_strvec.h */

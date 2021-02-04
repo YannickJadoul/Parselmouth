@@ -32,7 +32,7 @@ static int ibuffer = 0;
 #define CONVERT_BUFFER_TO_CHAR32 \
 	char32 *q = buffers32 [ibuffer]; \
 	while (*p != '\0') \
-		* q ++ = (char32) (char8) * p ++; /* change sign before extending (should be unnecessary, because all characters should be below 128) */ \
+		* q ++ = (char32) (char8) * p ++; /* change signedness before extending (should be unnecessary, because all characters should be below 128) */ \
 	*q = U'\0'; \
 	return buffers32 [ibuffer];
 
@@ -485,6 +485,16 @@ conststring32 Melder_MAT (constMATVU const& value) {
 				MelderString_appendCharacter (string, U'\n');
 		}
 	}
+	return string -> string;
+}
+conststring32 Melder_STRVEC (constSTRVEC const& value) {
+	if (++ iTensorBuffer == NUMBER_OF_TENSOR_BUFFERS)
+		iTensorBuffer = 0;
+	MelderString *string = & theTensorBuffers [iTensorBuffer];
+	MelderString_empty (string);
+	if (! NUMisEmpty (value))
+		for (integer i = 1; i <= value.size; i ++)
+			MelderString_append (string, value [i], U'\n');
 	return string -> string;
 }
 

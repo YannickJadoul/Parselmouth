@@ -88,7 +88,7 @@ autoConfusion Confusion_create (integer numberOfStimuli, integer numberOfRespons
 
 autoConfusion Confusion_createSimple (conststring32 labels_string) {
 	try {
-		autoSTRVEC labels = newSTRVECtokenize (labels_string);
+		autoSTRVEC labels = splitByWhitespace_STRVEC (labels_string);
 		Melder_require (labels.size > 0, U"There should be at least one label.");
 		
 		autoConfusion me = Confusion_create (labels.size, labels.size);
@@ -306,7 +306,7 @@ autoMatrix Confusion_difference (Confusion me, Confusion thee) {
 
 		autoMatrix him = Matrix_create (0.5, my numberOfColumns + 0.5, my numberOfColumns, 1.0, 1.0, 0.5, my numberOfRows + 0.5, my numberOfRows, 1.0, 1.0);
 
-		his z.get() <<= my data.get()  -  thy data.get();
+		his z.all()  <<=  my data.all()  -  thy data.all();
 		
 		return him;
 	} catch (MelderError) {
@@ -320,7 +320,7 @@ integer Confusion_getNumberOfEntries (Confusion me) {
 }
 
 static autoINTVEC create_index (constSTRVEC const& s, constSTRVEC const& ref) {
-	autoINTVEC index = newINTVECraw (s.size);
+	autoINTVEC index = raw_INTVEC (s.size);
 	for (integer i = 1; i <= s.size; i ++) {
 		integer indxj = 0;
 		for (integer j = 1; j <= ref.size; j ++) {
@@ -403,12 +403,10 @@ autoConfusion Confusion_group (Confusion me, conststring32 labels, conststring32
 
 autoConfusion Confusion_groupStimuli (Confusion me, conststring32 labels_string, conststring32 newLabel, integer newpos) {
 	try {
-		autoSTRVEC labels = newSTRVECtokenize (labels_string);
+		autoSTRVEC labels = splitByWhitespace_STRVEC (labels_string);
 		const integer ncondense = labels.size;
-		autoINTVEC irow = newINTVECraw (my numberOfRows);
+		autoINTVEC irow = to_INTVEC (my numberOfRows);
 
-		for (integer i = 1; i <= my numberOfRows; i ++)
-			irow [i] = i;
 		for (integer itoken = 1; itoken <= labels.size; itoken ++) {
 			conststring32 token = labels [itoken].get();
 			for (integer i = 1; i <= my numberOfRows; i ++) {
@@ -457,12 +455,10 @@ autoConfusion Confusion_groupStimuli (Confusion me, conststring32 labels_string,
 
 autoConfusion Confusion_groupResponses (Confusion me, conststring32 labels_string, conststring32 newLabel, integer newpos) {
 	try {
-		autoSTRVEC labels = newSTRVECtokenize (labels_string);
+		autoSTRVEC labels = splitByWhitespace_STRVEC (labels_string);
 		const integer ncondense = labels.size;
-		autoINTVEC icol = newINTVECraw (my numberOfColumns);
+		autoINTVEC icol = to_INTVEC (my numberOfColumns);
 
-		for (integer i = 1; i <= my numberOfColumns; i ++)
-			icol [i] = i;
 		for (integer itoken = 1; itoken <= labels.size; itoken ++) {
 			const conststring32 token = labels [itoken].get();
 			for (integer i = 1; i <= my numberOfColumns; i ++) {
@@ -513,9 +509,9 @@ autoTableOfReal Confusion_to_TableOfReal_marginals (Confusion me) {
 		autoTableOfReal thee = TableOfReal_create (my numberOfRows + 1, my numberOfColumns + 1);
 
 		thy data.part(1, my numberOfRows, 1, my numberOfColumns) <<= my data.get();
-		autoVEC columnSums = newVECcolumnSums (my data.get());
+		autoVEC columnSums = columnSums_VEC (my data.get());
 		thy data.row (my numberOfRows + 1).part (1, my numberOfColumns) <<= columnSums.get();
-		autoVEC rowSums = newVECrowSums (my data.get());
+		autoVEC rowSums = rowSums_VEC (my data.get());
 		thy data.column (my numberOfColumns + 1).part (1, my numberOfRows) <<= rowSums.get();
 		
 		thy data [my numberOfRows + 1] [my numberOfColumns + 1] = NUMsum (rowSums.get());

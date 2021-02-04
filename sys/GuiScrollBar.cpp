@@ -37,6 +37,7 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 	static void _GuiGtkScrollBar_valueChangedCallback (GuiObject widget, gpointer void_me) {
 		iam (GuiScrollBar);
 		trace (U"enter: blocked ", my d_blockValueChangedCallbacks);
+		trace (U"_GuiGtkScrollBar_valueChangedCallback: ", GuiScrollBar_getValue (me));
 		if (my d_blockValueChangedCallbacks) {
 			my d_blockValueChangedCallbacks = false;
 		} else if (my d_valueChangedCallback) {
@@ -208,14 +209,10 @@ GuiScrollBar GuiScrollBar_create (GuiForm parent, int left, int right, int top, 
 	my d_valueChangedCallback = valueChangedCallback;
 	my d_valueChangedBoss = valueChangedBoss;
 	#if gtk
-		#if ALLOW_GDK_DRAWING
-			GtkObject *adj = gtk_adjustment_new (value, minimum, maximum, increment, pageIncrement, sliderSize);
-			my d_widget = flags & GuiScrollBar_HORIZONTAL ? gtk_hscrollbar_new (GTK_ADJUSTMENT (adj)) : gtk_vscrollbar_new (GTK_ADJUSTMENT (adj));
-		#else
-			GtkAdjustment *adjustment = gtk_adjustment_new (value, minimum, maximum, increment, pageIncrement, sliderSize);
-			GtkOrientation orientation = ( flags & GuiScrollBar_HORIZONTAL ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL );
-			my d_widget = gtk_scrollbar_new (orientation, adjustment);
-		#endif
+		GtkAdjustment *adjustment = gtk_adjustment_new (value, minimum, maximum, increment, pageIncrement, sliderSize);
+		GtkOrientation orientation = ( flags & GuiScrollBar_HORIZONTAL ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL );
+		my d_widget = gtk_scrollbar_new (orientation, adjustment);
+		// TODO: figure out whether we have to delete the adjustment
 		_GuiObject_setUserData (my d_widget, me.get());
 		my v_positionInForm (my d_widget, left, right, top, bottom, parent);
 		g_signal_connect (G_OBJECT (my d_widget), "value-changed", G_CALLBACK (_GuiGtkScrollBar_valueChangedCallback), me.get());

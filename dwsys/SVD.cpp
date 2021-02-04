@@ -82,9 +82,9 @@ void SVD_init (SVD me, integer numberOfRows, integer numberOfColumns) {
 	if (! NUMfpp)
 		NUMmachar ();
 	my tolerance = NUMfpp -> eps * numberOfRows;
-	my u = newMATzero (numberOfRows,  numberOfColumns);
-	my v = newMATzero (numberOfColumns, numberOfColumns);
-	my d = newVECzero (numberOfColumns);
+	my u = zero_MAT (numberOfRows,  numberOfColumns);
+	my v = zero_MAT (numberOfColumns, numberOfColumns);
+	my d = zero_VEC (numberOfColumns);
 }
 
 autoSVD SVD_create (integer numberOfRows, integer numberOfColumns) {
@@ -100,7 +100,7 @@ autoSVD SVD_create (integer numberOfRows, integer numberOfColumns) {
 autoSVD SVD_createFromGeneralMatrix (constMATVU const& m) {
 	try {
 		autoSVD me = SVD_create (m.nrow, m.ncol);
-		my u.get() <<= ( my isTransposed ? m.transpose() : m );
+		my u.all()  <<=  ( my isTransposed ? m.transpose() : m );
 		SVD_compute (me.get());
 		return me;
 	} catch (MelderError) {
@@ -112,7 +112,7 @@ autoSVD SVD_createFromGeneralMatrix (constMATVU const& m) {
 void SVD_update (SVD me, constMATVU const& m) {
 	Melder_assert ((! my isTransposed && my numberOfRows == m.nrow && my numberOfColumns == m.ncol) ||
 		(my isTransposed && my numberOfRows == m.ncol && my numberOfColumns == m.nrow));
-	my u.get() <<= ( my isTransposed ? m.transpose() : m );
+	my u.all()  <<=  ( my isTransposed ? m.transpose() : m );
 	SVD_compute (me);
 }
 
@@ -126,7 +126,7 @@ double SVD_getTolerance (SVD me) {
 
 void SVD_compute (SVD me) {
 	try {
-		autoMAT a = newMATcopy (my u.get());
+		autoMAT a = copy_MAT (my u.get());
 		integer m = my numberOfColumns; // number of rows of input matrix
 		integer n = my numberOfRows; // number of columns of input matrix
 		double wtmp;
@@ -136,14 +136,14 @@ void SVD_compute (SVD me) {
 			U"NUMlapack_dgesvd_ query returns error ", info, U".");
 		
 		lwork =  Melder_roundUp (wtmp);
-		autoVEC work = newVECraw (lwork);
+		autoVEC work = raw_VEC (lwork);
 		NUMlapack_dgesvd_ ("S", "O", m, n, & my u [1] [1], m, & my d [1], & my v [1] [1], m, nullptr, m, & work [1], lwork, & info);		
 		Melder_require (info == 0,
 			U"NUMlapack_dgesvd_ returns error ", info, U".");
 		/*
 			Because we store the eigenvectors row-wise, they must be transposed
 		*/
-		MATtranspose_inplace_mustBeSquare (my v.get());
+		transpose_mustBeSquare_MAT_inout (my v.get());
 	} catch (MelderError) {
 		Melder_throw (me, U": SVD could not be computed.");
 	}
@@ -168,7 +168,7 @@ void SVD_getSquared_preallocated (SVD me, bool inverse, MAT const& m) {
 }
 
 autoMAT SVD_getSquared (SVD me, bool inverse) {
-	autoMAT result = newMATraw (my numberOfColumns, my numberOfColumns);
+	autoMAT result = raw_MAT (my numberOfColumns, my numberOfColumns);
 	SVD_getSquared_preallocated (me, inverse, result.get());
 	return result;
 }
@@ -179,14 +179,14 @@ void SVD_solve_preallocated (SVD me, constVECVU const& b, VECVU const& result) {
 			Solve UDV' x = b.
 			Solution: x = V D^-1 U' b
 		*/
-		autoVEC t = newVECzero (my numberOfColumns);
+		autoVEC t = zero_VEC (my numberOfColumns);
 		if (! my isTransposed) {
 			Melder_assert (my numberOfRows == b.size);
 			Melder_assert (result.size == my numberOfColumns);
 			for (integer j = 1; j <= my numberOfColumns; j ++)
 				if (my d [j] > 0.0)
 					t [j] = NUMinner (my u.column (j), b) / my d [j];
-			VECmul (result, my v.get(), t.get());
+			mul_VEC_out (result, my v.get(), t.get());
 		} else {
 			/*
 				Solve (UDV')' x = b or VDU' x = b.
@@ -210,7 +210,7 @@ autoVEC SVD_solve (SVD me, constVECVU const& b) {
 	if (my isTransposed)
 		std::swap (numberOfRows, numberOfColumns);
 	Melder_assert (numberOfRows == b.size);
-	autoVEC result = newVECzero (numberOfColumns);
+	autoVEC result = zero_VEC (numberOfColumns);
 	SVD_solve_preallocated (me, b, result.get());
 	return result;
 }
@@ -221,10 +221,10 @@ autoVEC SVD_solve (SVD me, constVECVU const& b) {
 void SVD_solve_preallocated (SVD me, constMATVU const& b, MATVU const& result) {
 	Melder_assert (b.nrow == my numberOfRows && b.ncol == result.ncol);
 	Melder_assert (result.nrow == my numberOfColumns);
-	autoVEC bcol = newVECraw (b.nrow);
-	autoVEC resultcol = newVECraw (result.nrow);
+	autoVEC bcol = raw_VEC (b.nrow);
+	autoVEC resultcol = raw_VEC (result.nrow);
 	for (integer icol = 1; icol <= b.ncol; icol ++) {
-		bcol.get() <<= b.column (icol);
+		bcol.all()  <<=  b.column (icol);
 		SVD_solve_preallocated (me, bcol.get(), resultcol.get());
 		result.column (icol) <<= resultcol.get();
 	}
@@ -317,14 +317,14 @@ autoMAT SVD_synthesize (SVD me, integer sv_from, integer sv_to) {
 		long ncol = my numberOfColumns;
 		if (my isTransposed)
 			std::swap (nrow, ncol);
-		autoMAT result = newMATzero (nrow, ncol);
-		autoMAT outer = newMATzero (nrow, ncol);
+		autoMAT result = zero_MAT (nrow, ncol);
+		autoMAT outer = zero_MAT (nrow, ncol);
 
 		for (integer k = sv_from; k <= sv_to; k ++) {
 			if (my isTransposed)
-				MATouter (outer.get(), my v.column(k), my u.column(k));
+				outer_MAT_out (outer.get(), my v.column(k), my u.column(k));
 			else
-				MATouter (outer.get(), my u.column(k), my v.row(k)); // because the transposed of v is in the svd!
+				outer_MAT_out (outer.get(), my u.column(k), my v.row(k)); // because the transposed of v is in the svd!
 			result.get()  +=  outer.get()  *  my d [k];
 		}
 		return result;
@@ -344,10 +344,10 @@ autoGSVD GSVD_create (integer numberOfColumns) {
 		autoGSVD me = Thing_new (GSVD);
 		my numberOfColumns = numberOfColumns;
 
-		my q = newMATzero (numberOfColumns, numberOfColumns);
-		my r = newMATzero (numberOfColumns, numberOfColumns);
-		my d1 = newVECzero (numberOfColumns);
-		my d2 = newVECzero (numberOfColumns);
+		my q = zero_MAT (numberOfColumns, numberOfColumns);
+		my r = zero_MAT (numberOfColumns, numberOfColumns);
+		my d1 = zero_VEC (numberOfColumns);
+		my d2 = zero_VEC (numberOfColumns);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"GSVD not created.");
@@ -359,14 +359,14 @@ autoGSVD GSVD_create (constMATVU const& m1, constMATVU const& m2) {
 		const integer m = m1.nrow, n = m1.ncol, p = m2.nrow;
 
 		// Store the matrices a and b as column major!
-		autoMAT a = newMATtranspose (m1);
-		autoMAT b = newMATtranspose (m2);
-		autoMAT q = newMATraw (n, n);
-		autoVEC alpha = newVECraw (n);
-		autoVEC beta = newVECraw (n);
+		autoMAT a = transpose_MAT (m1);
+		autoMAT b = transpose_MAT (m2);
+		autoMAT q = raw_MAT (n, n);
+		autoVEC alpha = raw_VEC (n);
+		autoVEC beta = raw_VEC (n);
 		integer lwork = std::max (std::max (3 * n, m), p) + n;		
-		autoVEC work = newVECraw (lwork);
-		autoINTVEC iwork = newINTVECraw (n);
+		autoVEC work = raw_VEC (lwork);
+		autoINTVEC iwork = raw_INTVEC (n);
 
 		integer k, l, info;
 		NUMlapack_dggsvd_ ("N", "N", "Q", m, n, p, & k, & l,
@@ -383,7 +383,7 @@ autoGSVD GSVD_create (constMATVU const& m1, constMATVU const& m2) {
 			my d2 [i] = beta [i];
 		}
 
-		MATtranspose (my q.get(), q.get());
+		transpose_MAT_out (my q.get(), q.get());
 		/*
 			Get R from a(1:k+l,n-k-l+1:n)
 		*/

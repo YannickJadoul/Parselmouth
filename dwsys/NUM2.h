@@ -168,7 +168,7 @@ inline void NUMextrema (constVECVU const& x, double *out_minimum, double *out_ma
 	Clip array values.
 	c[i] = c[i] < min ? min : (c[i] > max ? max : c[i])
 */
-inline void VECclip_inplace (VEC x, double min, double max) {
+inline void VECclip_inplace (double min, VECVU const& x, double max) {
 	for (integer i = 1; i <= x.size; i ++)
 		Melder_clip (min, & x [i], max);
 }
@@ -180,7 +180,7 @@ inline void VECabs (VECVU const& result, constVECVU const& v) {
 }
 
 inline autoVEC newVECabs (constVECVU const& v) {
-	autoVEC result = newVECraw (v.size);
+	autoVEC result = raw_VEC (v.size);
 	VECabs (result.get(), v);
 	return result;
 }
@@ -188,17 +188,6 @@ inline autoVEC newVECabs (constVECVU const& v) {
 inline void VECabs_inplace (VECVU const& v) {
 	for (integer i = 1; i <= v.size; i ++)
 		v [i] = fabs (v [i]);
-}
-
-inline void INTVEClinear (INTVEC const& v, integer start, integer step) {
-	for (integer i = 1; i <= v.size; i ++)
-		v [i] = start + (i - 1) * step;
-}
-
-inline autoINTVEC newINTVEClinear (integer size, integer start, integer step) {
-	autoINTVEC result = newINTVECraw (size);
-	INTVEClinear (result, start, step);
-	return result;
 }
 
 inline bool NUMhasZeroElement (constMATVU const m) {
@@ -227,7 +216,7 @@ inline double NUMmul (constVECVU const& x, constMATVU const& m, constVECVU const
 }	
 
 inline autoVEC VECnorm_rows (constMATVU const& x, double power) {
-	autoVEC norm = newVECraw (x.nrow);
+	autoVEC norm = raw_VEC (x.nrow);
 	for (integer irow = 1; irow <= norm.size; irow ++)
 		norm [irow] = NUMnorm (x.row (irow), power);
 	return norm;
@@ -272,7 +261,7 @@ autoMAT MATcovarianceFromColumnCentredMatrix (constMATVU const& x, integer ndf);
 void MATmtm_weighRows (MATVU const& result, constMATVU const& data, constVECVU const& rowWeights);
 
 inline autoMAT newMATmtm_weighRows (constMATVU const& data, constVECVU const& rowWeights) {
-	autoMAT result = newMATraw (data.ncol, data.ncol);
+	autoMAT result = raw_MAT (data.ncol, data.ncol);
 	MATmtm_weighRows (result.get(), data, rowWeights);
 	return result;
 }
@@ -415,13 +404,13 @@ void INTVECindex (INTVEC const& target, constVEC const& a);
 void INTVECindex (INTVEC const& target, constSTRVEC const& s);
 
 inline autoINTVEC newINTVECindex (constVEC const& a) {
-	autoINTVEC result = newINTVECraw (a.size);
+	autoINTVEC result = raw_INTVEC (a.size);
 	INTVECindex (result.get(), a);
 	return result;
 }
 
 inline autoINTVEC newINTVECindex (constSTRVEC const& s) {
-	autoINTVEC result = newINTVECraw (s.size);
+	autoINTVEC result = raw_INTVEC (s.size);
 	INTVECindex (result.get(), s);
 	return result;
 }
@@ -456,7 +445,7 @@ autoMAT newMATlowerCholesky (constMATVU const& a, double *out_lnd);
 void MATlowerCholeskyInverse_inplace (MAT a, double *out_lnd);
 
 inline autoMAT newMATlowerCholeskyInverse (constMAT const& a) {
-	autoMAT result = newMATcopy (a);
+	autoMAT result = copy_MAT (a);
 	MATlowerCholeskyInverse_inplace (result.get(), nullptr);
 	return result;
 }
@@ -557,7 +546,7 @@ autoVEC newVECsolveSparse_IHT (constMATVU const& d, constVECVU const& y, integer
 void VECsolveNonnegativeLeastSquaresRegression (VECVU const& result, constMATVU const& m, constVECVU const& y, integer itermax, double tol, integer infoLevel);
 
 inline autoVEC newVECsolveNonnegativeLeastSquaresRegression (constMATVU const& a, constVECVU const& y, integer itermax, double tol, integer infoLevel) {
-	autoVEC result = newVECzero (a.ncol);
+	autoVEC result = zero_VEC (a.ncol);
 	VECsolveNonnegativeLeastSquaresRegression (result.get(), a, y, itermax, tol, infoLevel);
 	return result;
 }
@@ -1112,7 +1101,7 @@ void NUMfft_backward (NUMfft_Table table, VEC data);
 		data [2..n-1] even index : real part; odd index: imaginary part of DFT.
 		data [n] contains real valued last component (Nyquist frequency)
 
-		table must have been initialised with NUMfft_Table_init_f/d
+		table must have been initialised with NUMfft_Table_init
 
 	Output parameters
 
@@ -1165,6 +1154,16 @@ void NUMreverseRealFastFourierTransform (VEC data);
 		data [3..n] odd index : real part; even index: imaginary part of DFT.
 */
 void NUMrealft (VEC data, integer direction);
+
+void VECsmooth_gaussian_inplace (VECVU const& in_out, double sigma);
+void VECsmooth_gaussian_inplace (VECVU const& in_out, double sigma, NUMfft_Table fftTable);
+void VECsmooth_gaussian (VECVU const& out, constVECVU const& in, double sigma, NUMfft_Table fftTable);
+/*
+	Smooth the vector 'in/in_out' by convolving with a Gaussian, i.e. convolve with gaussian by
+	using the Fourier Transform. Normally an FFT is used unless otherwise specified in 'fftTable"
+	If fftTable == nullptr the FFT of size 2^k is used, where 2^(k-1) < n <= 2^k.
+	For a given fftTable we require that fftTable->n >= n.
+*/
 
 integer NUMgetIndexFromProbability (constVEC probs, double p); //TODO HMM zero start matrices
 integer NUMgetIndexFromProbability (double *probs, integer nprobs, double p);
@@ -1294,7 +1293,7 @@ inline void VECchainRows_preallocated (VECVU const& v, constMATVU const& m) {
 }
 
 inline autoVEC VECchainRows (constMATVU const& m) {
-	autoVEC result = newVECraw (m.nrow * m.ncol);
+	autoVEC result = raw_VEC (m.nrow * m.ncol);
 	VECchainRows_preallocated (result.get(), m);
 	return result;
 }
@@ -1308,7 +1307,7 @@ inline void VECchainColumns_preallocated (VEC const& v, constMATVU const& m) {
 }
 
 inline autoVEC VECchainColumns (constMATVU const& m) {
-	autoVEC result = newVECraw (m.nrow * m.ncol);
+	autoVEC result = raw_VEC (m.nrow * m.ncol);
 	VECchainColumns_preallocated (result.get(), m);
 	return result;
 }
@@ -1339,13 +1338,6 @@ inline void MATfromUpperTriangularVector_preallocated (MAT m, constVEC v) {
 		m [irow] [icol] = m [icol] [irow] = v [inum];
 		if (icol == m.ncol) irow ++;
 	}
-}
-
-inline autoINTVEC INTVECto (integer to) {
-	autoINTVEC result = newINTVECraw (to);
-	for (integer i = 1; i <= to; i ++)
-		result [i] = i;
-	return result;
 }
 
 void NUMeigencmp22 (double a, double b, double c, double *out_rt1, double *out_rt2, double *out_cs1, double *out_sn1 );

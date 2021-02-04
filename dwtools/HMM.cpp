@@ -243,17 +243,17 @@ autoHMMBaumWelch HMMBaumWelch_create (integer nstates, integer nsymbols, integer
 		my numberOfTimes = my capacity = capacity;
 		my numberOfStates = nstates;
 		my numberOfSymbols = nsymbols;
-		my alpha = newMATzero (nstates, capacity);
-		my beta = newMATzero (nstates, capacity);
-		my scale = newVECzero (capacity);
-		my xi = newTEN3zero (capacity, nstates, nstates); // TEN3
-		my aij_num_p0 = newVECzero (nstates + 1);
-		my aij_num = newMATzero (nstates, nstates + 1);
-		my aij_denom_p0 = newVECzero (nstates + 1);
-		my aij_denom =  newMATzero (nstates, nstates + 1);
-		my bik_num = newMATzero (nstates, nsymbols);
-		my bik_denom = newMATzero (nstates, nsymbols);
-		my gamma = newMATzero (nstates, capacity);
+		my alpha = zero_MAT (nstates, capacity);
+		my beta = zero_MAT (nstates, capacity);
+		my scale = zero_VEC (capacity);
+		my xi = zero_TEN3 (capacity, nstates, nstates); // TEN3
+		my aij_num_p0 = zero_VEC (nstates + 1);
+		my aij_num = zero_MAT (nstates, nstates + 1);
+		my aij_denom_p0 = zero_VEC (nstates + 1);
+		my aij_denom =  zero_MAT (nstates, nstates + 1);
+		my bik_num = zero_MAT (nstates, nsymbols);
+		my bik_denom = zero_MAT (nstates, nsymbols);
+		my gamma = zero_MAT (nstates, capacity);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"HMMBaumWelch not created.");
@@ -274,9 +274,9 @@ autoHMMViterbi HMMViterbi_create (integer nstates, integer ntimes) {
 		autoHMMViterbi me = Thing_new (HMMViterbi);
 		my numberOfTimes = ntimes;
 		my numberOfStates = nstates;
-		my viterbi = newMATzero (nstates, ntimes);
-		my bp = newINTMATzero (nstates, ntimes);
-		my path = newINTVECzero (ntimes);
+		my viterbi = zero_MAT (nstates, ntimes);
+		my bp = zero_INTMAT (nstates, ntimes);
+		my path = zero_INTVEC (ntimes);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"HMMViterbi not created.");
@@ -399,9 +399,9 @@ static void HMM_init (HMM me, integer numberOfStates, integer numberOfObservatio
 	my leftToRight = leftToRight;
 	my states = HMMStateList_create ();
 	my observationSymbols = HMMObservationList_create ();
-	my initialStateProbs = newVECzero (numberOfStates);
-	my transitionProbs = newMATzero (numberOfStates, numberOfStates + 1);
-	my emissionProbs = newMATzero (numberOfStates, numberOfObservationSymbols);
+	my initialStateProbs = zero_VEC (numberOfStates);
+	my transitionProbs = zero_MAT (numberOfStates, numberOfStates + 1);
+	my emissionProbs = zero_MAT (numberOfStates, numberOfObservationSymbols);
 	HMM_setDefaultInitialStateProbs (me);
 	HMM_setDefaultTransitionProbs (me);
 	HMM_setDefaultEmissionProbs (me);
@@ -460,8 +460,8 @@ autoHMM HMM_createContinuousModel (int leftToRight, integer numberOfStates, inte
 // for a simple non-hidden model leave either states empty or symbols empty !!!
 autoHMM HMM_createSimple (int leftToRight, conststring32 states_string, conststring32 symbols_string) {
 	try {
-		autoSTRVEC states = newSTRVECtokenize (states_string);
-		autoSTRVEC symbols = newSTRVECtokenize (symbols_string);
+		autoSTRVEC states = splitByWhitespace_STRVEC (states_string);
+		autoSTRVEC symbols = splitByWhitespace_STRVEC (symbols_string);
 		autoHMM me = Thing_new (HMM);
 
 		Melder_require (states.size > 0 || symbols.size > 0,
@@ -531,7 +531,7 @@ void HMM_setDefaultMixingProbabilities (HMM me) {
 	const double mp = 1.0 / my numberOfMixtureComponents;
 	for (integer is = 1; is <= my numberOfObservationSymbols; is ++) {
 		HMMObservation hmmo = my observationSymbols->at [is];
-		hmmo -> gm -> mixingProbabilities.get() <<= mp;
+		hmmo -> gm -> mixingProbabilities.all()  <<=  mp;
 	}
 }
 
@@ -659,8 +659,8 @@ void HMM_draw (HMM me, Graphics g, bool garnish) {
 	const double rstate = 0.3 / xwidth, r = xwidth / 3.0;
 	const double xmax = 1.2 * xwidth / 2.0, xmin = -xmax, ymin = xmin, ymax = xmax;
 
-	autoVEC xs = newVECraw (my numberOfStates);
-	autoVEC ys = newVECraw (my numberOfStates);
+	autoVEC xs = raw_VEC (my numberOfStates);
+	autoVEC ys = raw_VEC (my numberOfStates);
 
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 	// heuristic: all states on a circle until we have a better graph drawing algorithm.
@@ -739,8 +739,8 @@ autoHMMObservationSequence HMM_to_HMMObservationSequence (HMM me, integer startS
 		autoHMMObservationSequence thee = HMMObservationSequence_create (numberOfItems, my componentDimension);
 		integer istate = ( startState == 0 ? NUMgetIndexFromProbability (my initialStateProbs.get(), NUMrandomUniform (0.0, 1.0)) : startState );
 		if (my componentDimension > 0) {
-			autoVEC obs = newVECraw (my componentDimension);
-			autoVEC buf = newVECraw (my componentDimension);
+			autoVEC obs = raw_VEC (my componentDimension);
+			autoVEC buf = raw_VEC (my componentDimension);
 			for (integer i = 1; i <= numberOfItems; i ++) {
 				// Emit a symbol from istate
 
@@ -819,12 +819,12 @@ void HMMBaumWelch_reInit (HMMBaumWelch me) {
 		The elements of alpha, beta, scale, gamma & xi are always calculated directly and need not be
 		initialised.
 	*/
-	my aij_num_p0.get () <<= 0.0;
-	my aij_num.get () <<= 0.0;
-	my aij_denom_p0.get () <<= 0.0;
-	my aij_denom.get () <<= 0.0;
-	my bik_num.get() <<= 0.0;
-	my bik_denom.get() <<= 0.0;
+	my aij_num_p0.all()  <<=  0.0;
+	my aij_num.all()  <<=  0.0;
+	my aij_denom_p0.all()  <<=  0.0;
+	my aij_denom.all()  <<=  0.0;
+	my bik_num.all()  <<=  0.0;
+	my bik_denom.all()  <<=  0.0;
 }
 
 static integer HMM_getState_notHidden (HMM me, conststring32 stateLabel) {
@@ -850,7 +850,7 @@ static autoINTVEC HMM_HMMObservationSequenceBag_getStateSequences (HMM me, HMMOb
 	/*
 		Get state sequence numbers.
 	*/
-	autoINTVEC stateSequenceNumbers = newINTVECraw (numberOfElements);
+	autoINTVEC stateSequenceNumbers = raw_INTVEC (numberOfElements);
 	integer numberOfElements2 = 0;
 	for (integer iseq = 1; iseq <= thy size; iseq ++) {
 		const HMMObservationSequence hmm_os = thy at [iseq];
@@ -904,7 +904,7 @@ static void HMM_HMMObservationSequenceBag_learn_notHidden (HMM me, HMMObservatio
 	autoINTVEC stateSequenceNumbers = HMM_HMMObservationSequenceBag_getStateSequences (me, thee);
 	if (stateSequenceNumbers.size < 2)
 		return;
-	my transitionProbs.get() <<= 0.0;
+	my transitionProbs.all()  <<=  0.0;
 	integer inum = 2;
 	integer stateNumber = stateSequenceNumbers [1];
 	while (inum < stateSequenceNumbers.size) {
@@ -1436,18 +1436,18 @@ double HMM_getProbabilityAtTimeBeingInState (HMM me, integer itime, integer ista
 	if (istate < 1 || istate > my numberOfStates)
 		return undefined;
 
-	autoVEC scale = newVECzero (itime);
-	autoVEC alpha_t = newVECraw (my numberOfStates);
-	autoVEC alpha_tm1 = newVECzero (my numberOfStates);
+	autoVEC scale = zero_VEC (itime);
+	autoVEC alpha_t = raw_VEC (my numberOfStates);
+	autoVEC alpha_tm1 = zero_VEC (my numberOfStates);
 
-	alpha_t. all() <<= my initialStateProbs.get();
+	alpha_t.all() <<= my initialStateProbs.all();
 	scale [1] = NUMsum (alpha_t.all());
 
 	alpha_t. all() /= scale [1];
 	
 	// recursion
 	for (integer it = 2; it <= itime; it ++) {
-		alpha_tm1.get() <<= alpha_t.get();
+		alpha_tm1.all()  <<=  alpha_t.all();
 
 		for (integer js = 1; js <= my numberOfStates; js ++) {
 			longdouble sum = 0.0; // NUMinner (alpha_tm1.get(), my transitionProbs.column (js));
@@ -1478,9 +1478,9 @@ double HMM_getProbabilityAtTimeBeingInStateEmittingSymbol (HMM me, integer itime
 double HMM_getProbabilityOfObservations (HMM me, constINTVEC obs) {
 	Melder_assert (obs.size > 0);
 	const integer numberOfTimes = obs.size;
-	autoVEC scale = newVECzero (numberOfTimes);
-	autoVEC alpha_t = newVECzero (my numberOfStates);
-	autoVEC alpha_tm1 = newVECzero (my numberOfStates);
+	autoVEC scale = zero_VEC (numberOfTimes);
+	autoVEC alpha_t = zero_VEC (my numberOfStates);
+	autoVEC alpha_tm1 = zero_VEC (my numberOfStates);
 
 	// initialise
 	for (integer js = 1; js <= my numberOfStates; js ++) {
@@ -1490,11 +1490,11 @@ double HMM_getProbabilityOfObservations (HMM me, constINTVEC obs) {
 	Melder_require (scale [1] > 0.0,
 		U"The observation sequence should not start with a symbol whose state has zero starting probability.");
 	
-	alpha_t.get()  /=  scale [1];
+	alpha_t.all()  /=  scale [1];
 
 	// recursion
 	for (integer it = 2; it <= numberOfTimes; it ++) {
-		alpha_tm1.get() <<= alpha_t.get();
+		alpha_tm1.all()  <<=  alpha_t.all();
 
 		for (integer js = 1; js <= my numberOfStates; js ++) {
 			longdouble sum = 0.0;

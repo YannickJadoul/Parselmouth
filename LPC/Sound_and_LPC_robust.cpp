@@ -49,7 +49,7 @@ struct huber_struct {
 
 static void huber_struct_init (struct huber_struct *me, integer numberOfSamples, integer maximumPredictionOrder, double location, bool wantlocation) {
 	my numberOfSamples = numberOfSamples;
-	my error = newVECzero (numberOfSamples);
+	my error = zero_VEC (numberOfSamples);
 	my k_stdev = my tol = my tol_svd = my scale = 0.0;
 	my iter = my itermax = 1;
 	my wantlocation = wantlocation;
@@ -57,11 +57,11 @@ static void huber_struct_init (struct huber_struct *me, integer numberOfSamples,
 		my location = location;
 	my wantscale = true;
 	my predictionOrder = my maximumPredictionOrder = maximumPredictionOrder;
-	my weights = newVECzero (numberOfSamples);
-	my workSpace = newVECraw (numberOfSamples);
-	my coefficients = newVECraw (maximumPredictionOrder);
-	my covariancesw = newVECzero (maximumPredictionOrder);
-	my covarmatrixw = newMATzero (maximumPredictionOrder, maximumPredictionOrder);
+	my weights = zero_VEC (numberOfSamples);
+	my workSpace = raw_VEC (numberOfSamples);
+	my coefficients = raw_VEC (maximumPredictionOrder);
+	my covariancesw = zero_VEC (maximumPredictionOrder);
+	my covarmatrixw = zero_MAT (maximumPredictionOrder, maximumPredictionOrder);
 	//my covarmatrixw = matrixview(my covarmatrixstaticAllocation.get(), 1, my predictionOrder, 1, my predictionOrder);
 	my svd = SVD_create (maximumPredictionOrder, maximumPredictionOrder);
 }
@@ -111,7 +111,7 @@ static void huber_struct_solvelpc (struct huber_struct *me) {
 		my covarmatrixw. part (1, my predictionOrder, my predictionOrder + 1, my maximumPredictionOrder) <<= 0.0;
 		my coefficients.resize (my maximumPredictionOrder);
 	}
-	my svd -> u.get() <<= my covarmatrixw.get();
+	my svd -> u.all()  <<=  my covarmatrixw.all();
 	SVD_setTolerance (my svd.get(), my tol_svd);
 	SVD_compute (my svd.get());
 	SVD_solve_preallocated (my svd.get(), my covariancesw.get(), my coefficients.get());
@@ -128,7 +128,7 @@ void huber_struct_minimize (struct huber_struct *me, constVEC const& sound, cons
 	bool farFromScale = true;
 	do {
 		const double previousScale = my scale;
-		my error.get() <<= sound;
+		my error.all()  <<=  sound;
 		VECfilterInverse_inplace (my error.get(), lpcTo, my workSpace); // lpcTo has alreay a copy of lpcFrom
 		NUMstatistics_huber (my error.get(), & my location, my wantlocation, & my scale, my wantscale, my k_stdev, my tol, my huber_iterations, my workSpace);
 
@@ -140,10 +140,10 @@ void huber_struct_minimize (struct huber_struct *me, constVEC const& sound, cons
 		try {
 			huber_struct_solvelpc (me);
 		} catch (MelderError) {
-			lpcTo <<= lpcFrom; // No change could be made
+			lpcTo  <<=  lpcFrom; // No change could be made
 			throw MelderError();
 		}
-		lpcTo <<= my coefficients.get();
+		lpcTo  <<=  my coefficients.all();
 		farFromScale = ( fabs (my scale - previousScale) > std::max (my tol * fabs (my scale), NUMeps) );
 	} while (++ my iter < my itermax && farFromScale);
 }

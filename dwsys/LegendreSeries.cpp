@@ -48,7 +48,7 @@ double structLegendreSeries :: v_evaluate (double x) {
 void structLegendreSeries :: v_evaluateTerms (double x, VEC terms) {
 	Melder_assert (terms.size == numberOfCoefficients);
 	if (x < our xmin || x > our xmax) {
-		terms <<= undefined;
+		terms  <<=  undefined;
 		return;
 	}
 
@@ -128,9 +128,9 @@ autoPolynomial LegendreSeries_to_Polynomial (LegendreSeries me) {
 
 		thy coefficients [2] = my coefficients [2];   /* * p [2] */
 		if (my numberOfCoefficients > 2) {
-			autoVEC pn = newVECzero (my numberOfCoefficients);
-			autoVEC pnm1 = newVECzero (my numberOfCoefficients);
-			autoVEC pnm2 = newVECzero (my numberOfCoefficients);
+			autoVEC pn = zero_VEC (my numberOfCoefficients);
+			autoVEC pnm1 = zero_VEC (my numberOfCoefficients);
+			autoVEC pnm2 = zero_VEC (my numberOfCoefficients);
 
 			// Start the recursion: P [1] = x; P [0] = 1;
 

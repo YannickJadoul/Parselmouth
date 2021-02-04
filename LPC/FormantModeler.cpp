@@ -83,7 +83,7 @@ static void checkTrackAutoRange (FormantModeler me, integer *fromTrack, integer 
 }
 
 static autoINTVEC newINTVECasNumbers (integer size, integer number) {
-	autoINTVEC target = newINTVECraw (size);
+	autoINTVEC target = raw_INTVEC (size);
 	for (integer i = 1; i <= size; i++)
 		target [i] = number;
 	return target;
@@ -279,7 +279,7 @@ static autoVEC FormantModeler_getSumOfVariancesBetweenShiftedAndEstimatedTracks 
 			*toTrack = ( *toTrack == numberOfTracks ? numberOfTracks - 1 : *toTrack );
 		}
 		const integer numberOfDataPoints = FormantModeler_getNumberOfDataPoints (me);
-		autoVEC sumOfVariances = newVECzero (numberOfDataPoints);
+		autoVEC sumOfVariances = zero_VEC (numberOfDataPoints);
 		for (integer itrack = *fromTrack; itrack <= *toTrack; itrack ++) {
 			autoVEC vari = FormantModeler_getVariancesBetweenTrackAndEstimatedTrack (me, formantTrack, estimatedTrack);
 			for (integer ipoint = 1; ipoint <= numberOfDataPoints; ipoint ++) {
@@ -347,7 +347,7 @@ void FormantModeler_drawCumulativeChiScores (FormantModeler me, Graphics g, doub
 		Melder_require (FormantModeler_drawingSpecifiers_x (me, & xmin, & xmax, & ixmin, & ixmax) > 0,
 			U"Not enough data points in drawing range.");
 		const integer numberOfDataPoints = FormantModeler_getNumberOfDataPoints (me);
-		autoVEC chisq = newVECzero (numberOfDataPoints);
+		autoVEC chisq = zero_VEC (numberOfDataPoints);
 		FormantModeler_getCumulativeChiScores (me, chisq.get());
 		if (ymax <= ymin)
 			NUMextrema (chisq.part (ixmin, ixmax), & ymin, & ymax);
@@ -712,7 +712,7 @@ autoFormant FormantModeler_to_Formant (FormantModeler me, bool useEstimates, boo
 		const integer numberOfFrames = ff -> numberOfDataPoints;
 		const double t1 = ff -> data [1] .x, dt = ff -> data [2] .x - t1;
 		autoFormant thee = Formant_create (my xmin, my xmax, numberOfFrames, dt, t1, numberOfFormants);
-		autoVEC sigma = newVECraw (numberOfFormants);
+		autoVEC sigma = raw_VEC (numberOfFormants);
 		if (useEstimates || estimateUndefineds) {
 			for (integer itrack = 1; itrack <= numberOfFormants; itrack ++)
 				sigma [itrack] = FormantModeler_getStandardDeviation (me, itrack);
@@ -746,9 +746,9 @@ autoFormant FormantModeler_to_Formant (FormantModeler me, bool useEstimates, boo
 }
 
 double FormantModeler_getChiSquaredQ (FormantModeler me, integer fromTrack, integer toTrack, double *out_probability, double *out_ndf) {
-	double chisq = undefined, ndfTotal = 0.0;
+	double ndfTotal = 0.0;
 	checkTrackAutoRange (me, & fromTrack, & toTrack);
-	chisq = 0.0;
+	double chisq = 0.0;
 	integer numberOfDefined = 0;
 	for (integer itrack = fromTrack; itrack <= toTrack; itrack ++) {
 		const DataModeler ffi = my trackmodelers.at [itrack];
@@ -766,7 +766,8 @@ double FormantModeler_getChiSquaredQ (FormantModeler me, integer fromTrack, inte
 			*out_ndf = ndfTotal;
 		if (out_probability)
 			*out_probability = NUMchiSquareQ (chisq, ndfTotal);
-	}
+	} else
+		chisq = undefined;
 	return chisq;
 }
 
@@ -813,8 +814,8 @@ autoFormantModeler FormantModeler_processOutliers (FormantModeler me, double num
 			U"We need at least three formants to process outliers.");
 		
 		const integer numberOfDataPoints = FormantModeler_getNumberOfDataPoints (me);
-		autoVEC x = newVECraw (numberOfDataPoints); // also store x-values
-		autoMAT z = newMATraw (numberOfFormants, numberOfDataPoints);
+		autoVEC x = raw_VEC (numberOfDataPoints); // also store x-values
+		autoMAT z = raw_MAT (numberOfFormants, numberOfDataPoints);
 		// maybe some of the formants had NUMundefind's.
 
 		// 1. calculate z-scores for each formant and sort them in descending order
@@ -856,7 +857,7 @@ double FormantModeler_getStress (FormantModeler me, integer fromTrack, integer t
 	const double var = FormantModeler_getVarianceOfParameters (me, fromTrack, toTrack, 1, numberOfParametersPerTrack, & numberOfFreeParameters);
 	double degreesOfFreedom;
 	const double chisq = FormantModeler_getChiSquaredQ (me, fromTrack, toTrack, nullptr, & degreesOfFreedom);
-	return ( isdefined (var) && isdefined (chisq) && numberOfFreeParameters > 0 ? 
+	return ( isdefined (var) && isdefined (chisq) && numberOfFreeParameters > 0 && degreesOfFreedom >= 0.0 ? 
 		( sqrt (pow (var / numberOfFreeParameters, power) * (chisq / degreesOfFreedom))) :
 		undefined );
 }
@@ -931,8 +932,8 @@ integer Formants_getSmoothestInInterval (CollectionOf<structFormant>* me, double
 		integer minNumberOfFormants = 1000000;
 		if (numberOfFormantObjects == 1)
 			return 1;
-		autoINTVEC numberOfFormants = newINTVECraw (numberOfFormantObjects);
-		autoINTVEC invalid = newINTVECzero (numberOfFormantObjects);
+		autoINTVEC numberOfFormants = raw_INTVEC (numberOfFormantObjects);
+		autoINTVEC invalid = zero_INTVEC (numberOfFormantObjects);
 		double tminf = 0.0, tmaxf = 0.0;
 		for (integer iobject = 1; iobject <= numberOfFormantObjects; iobject ++) {
 			// Check that all Formants have the same domain

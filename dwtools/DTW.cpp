@@ -325,7 +325,7 @@ autoDTW DTW_swapAxes (DTW me) {
 	try {
 		autoDTW thee = DTW_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
 		
-		MATtranspose (thy z.get(), my z.get());
+		transpose_MAT_out (thy z.get(), my z.get());
 		
 		thy pathLength = my pathLength;
 		for (integer i = 1; i <= my pathLength; i ++) {
@@ -743,7 +743,7 @@ void DTW_drawDistancesAlongPath (DTW me, Graphics g, double xmin, double xmax, d
 	ixmax = ii;
 
 	const integer numberOfSelected = ixmax - ixmin + 1;
-	autoVEC d = newVECraw (numberOfSelected);
+	autoVEC d = raw_VEC (numberOfSelected);
 
 	for (integer i = ixmin; i <= ixmax; i ++)
 		d [i - ixmin + 1] = my z [my path [i]. y] [i];
@@ -751,7 +751,7 @@ void DTW_drawDistancesAlongPath (DTW me, Graphics g, double xmin, double xmax, d
 	if (dmin >= dmax)
 		NUMextrema (d.get(), & dmin, & dmax);
 	else
-		VECclip_inplace (d.get(), dmin, dmax);
+		VECclip_inplace (dmin, d.get(), dmax);
 
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, dmin, dmax);
@@ -867,7 +867,7 @@ autoDTW Pitches_to_DTW_sgc (Pitch me, Pitch thee, double vuv_costs, double time_
 			by making the other cell's distances very large.
 		*/
 		autoDTW him = DTW_create (my xmin, my xmax, my nx, my dx, my x1, thy xmin, thy xmax, thy nx, thy dx, thy x1);
-		autoVEC pitchx = newVECraw (thy nx);
+		autoVEC pitchx = raw_VEC (thy nx);
 		kPitch_unit unit = kPitch_unit::SEMITONES_100;
 		for (integer j = 1; j <= thy nx; j ++)
 			pitchx [j] = Sampled_getValueAtSample (thee, j, Pitch_LEVEL_FREQUENCY, (int) unit);
@@ -905,7 +905,7 @@ autoDTW Pitches_to_DTW (Pitch me, Pitch thee, double vuv_costs, double time_weig
 			U"Time costs weight should not be negative.");
 
 		autoDTW him = DTW_create (my xmin, my xmax, my nx, my dx, my x1, thy xmin, thy xmax, thy nx, thy dx, thy x1);
-		autoVEC pitchx = newVECraw (thy nx);
+		autoVEC pitchx = raw_VEC (thy nx);
 		kPitch_unit unit = kPitch_unit::SEMITONES_100;
 		for (integer j = 1; j <= thy nx; j ++)
 			pitchx [j] = Sampled_getValueAtSample (thee, j, Pitch_LEVEL_FREQUENCY, (int) unit);
@@ -950,7 +950,7 @@ void DTW_Matrix_replace (DTW me, Matrix thee) {
 		Matrix_getWindowExtrema (me, 0, 0, 0, 0, & minimum, & maximum);
 		Melder_require (minimum >= 0.0,
 			U"Distances should not be negative.");
-		my z.get() <<= thy z.get();
+		my z.all()  <<=  thy z.all();
 	} catch (MelderError) {
 		Melder_throw (me, U": distances not replaced.");
 	}
@@ -1207,8 +1207,8 @@ void DTW_Polygon_findPathInside (DTW me, Polygon thee, int localSlope, autoMatri
 		Melder_require (localSlope > 0 && localSlope < 5,
 			U"Local slope parameter ", localSlope, U" not supported.");
 
-		autoMAT delta = newMATcopy (my z.get());
-		autoINTMAT psi = newINTMATzero (my ny, my nx);
+		autoMAT delta = copy_MAT (my z.get());
+		autoINTMAT psi = zero_INTMAT (my ny, my nx);
 		/*
 			Start by making the outside unreachable.
 		*/

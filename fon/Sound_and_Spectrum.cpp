@@ -1,6 +1,6 @@
 /* Sound_and_Spectrum.cpp
  *
- * Copyright (C) 1992-2005,2011,2012,2015-2019 Paul Boersma
+ * Copyright (C) 1992-2005,2011,2012,2015-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ autoSpectrum Sound_to_Spectrum (Sound me, bool fast) {
 		}
 		integer numberOfFrequencies = numberOfSamples / 2 + 1;   // 4 samples -> cos0 cos1 sin1 cos2; 5 samples -> cos0 cos1 sin1 cos2 sin2
 
-		autoVEC data = newVECzero (numberOfSamples);
+		autoVEC data = zero_VEC (numberOfSamples);
 		if (numberOfChannels == 1) {
 			const double *channel = & my z [1] [0];
 			for (integer i = 1; i <= my nx; i ++) {
@@ -133,7 +133,7 @@ autoSpectrum Spectrum_lpcSmoothing (Spectrum me, int numberOfPeaks, double preem
 
 		autoSound sound = Spectrum_to_Sound (me);
 		VECpreemphasize_f_inplace (sound -> z.row (1), sound -> dx, preemphasisFrequency);
-		autoVEC a = newVECraw (numberOfCoefficients);
+		autoVEC a = raw_VEC (numberOfCoefficients);
 		const double gain = VECburg (a.get(), sound -> z.row(1));
 		for (integer i = 1; i <= numberOfCoefficients; i ++)
 			a [i] = - a [i];
@@ -142,7 +142,7 @@ autoSpectrum Spectrum_lpcSmoothing (Spectrum me, int numberOfPeaks, double preem
 		const integer nfft = 2 * (thy nx - 1);
 		const integer ndata = Melder_clippedRight (numberOfCoefficients, nfft - 1);
 		const double scale = 10.0 * (gain > 0.0 ? sqrt (gain) : 1.0) / numberOfCoefficients;
-		autoVEC data = newVECzero (nfft);
+		autoVEC data = zero_VEC (nfft);
 		data [1] = 1.0;
 		for (integer i = 1; i <= ndata; i ++)
 			data [i + 1] = a [i];
@@ -172,14 +172,14 @@ autoSound Sound_filter_formula (Sound me, conststring32 formula, Interpreter int
 			autoSpectrum spec = Sound_to_Spectrum (me, true);
 			Matrix_formula (spec.get(), formula, interpreter, nullptr);
 			autoSound him = Spectrum_to_Sound (spec.get());
-			thy z.row (1) <<= his z.row (1).part (1, thy nx);
+			thy z.row (1)  <<=  his z.row (1).part (1, thy nx);
 		} else {
 			for (integer ichan = 1; ichan <= my ny; ichan ++) {
 				autoSound channel = Sound_extractChannel (me, ichan);
 				autoSpectrum spec = Sound_to_Spectrum (channel.get(), true);
 				Matrix_formula (spec.get(), formula, interpreter, nullptr);
 				autoSound him = Spectrum_to_Sound (spec.get());
-				thy z.row (ichan) <<= his z.row (1).part (1, thy nx);
+				thy z.row (ichan)  <<=  his z.row (1).part (1, thy nx);
 			}
 		}
 		return thee;
@@ -195,14 +195,14 @@ autoSound Sound_filter_passHannBand (Sound me, double fmin, double fmax, double 
 			autoSpectrum spec = Sound_to_Spectrum (me, true);
 			Spectrum_passHannBand (spec.get(), fmin, fmax, smooth);
 			autoSound him = Spectrum_to_Sound (spec.get());
-			thy z.row (1) <<= his z.row (1).part (1, thy nx);
+			thy z.row (1)  <<=  his z.row (1).part (1, thy nx);
 		} else {
 			for (integer ichan = 1; ichan <= my ny; ichan ++) {
 				autoSound channel = Sound_extractChannel (me, ichan);
 				autoSpectrum spec = Sound_to_Spectrum (channel.get(), true);
 				Spectrum_passHannBand (spec.get(), fmin, fmax, smooth);
 				autoSound him = Spectrum_to_Sound (spec.get());
-				thy z.row (ichan) <<= his z.row (1).part (1, thy nx);
+				thy z.row (ichan)  <<=  his z.row (1).part (1, thy nx);
 			}
 		}
 		return thee;
@@ -218,14 +218,14 @@ autoSound Sound_filter_stopHannBand (Sound me, double fmin, double fmax, double 
 			autoSpectrum spec = Sound_to_Spectrum (me, true);
 			Spectrum_stopHannBand (spec.get(), fmin, fmax, smooth);
 			autoSound him = Spectrum_to_Sound (spec.get());
-			thy z.row (1) <<= his z.row (1).part (1, thy nx);
+			thy z.row (1)  <<=  his z.row (1).part (1, thy nx);
 		} else {
 			for (integer ichan = 1; ichan <= my ny; ichan ++) {
 				autoSound channel = Sound_extractChannel (me, ichan);
 				autoSpectrum spec = Sound_to_Spectrum (channel.get(), true);
 				Spectrum_stopHannBand (spec.get(), fmin, fmax, smooth);
 				autoSound him = Spectrum_to_Sound (spec.get());
-				thy z.row (ichan) <<= his z.row (1).part (1, thy nx);
+				thy z.row (ichan)  <<=  his z.row (1).part (1, thy nx);
 			}
 		}
 		return thee;

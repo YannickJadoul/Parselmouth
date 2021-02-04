@@ -37,7 +37,7 @@ static void classMinimizer_afterHook (Minimizer me, Thing /* boss */) {
 
 void Minimizer_init (Minimizer me, integer numberOfParameters, Daata object) {
 	my numberOfParameters = numberOfParameters;
-	my p = newVECzero (numberOfParameters);
+	my p = zero_VEC (numberOfParameters);
 	my object = object;
 	my minimum = 1e308;
 	my afterHook = classMinimizer_afterHook;
@@ -78,7 +78,7 @@ void Minimizer_minimizeManyTimes (Minimizer me, integer maxIterationsPerTime, in
 	double fopt = my minimum;
 	int monitorSingle = numberOfTimes == 1;
 
-	autoVEC popt = newVECraw (my numberOfParameters);
+	autoVEC popt = raw_VEC (my numberOfParameters);
 	popt.get () <<= my p.get();
 
 	if (! monitorSingle)
@@ -111,7 +111,7 @@ void Minimizer_minimizeManyTimes (Minimizer me, integer maxIterationsPerTime, in
 void Minimizer_reset (Minimizer me, constVEC const& guess) {
 	Melder_assert (guess.size == 0 || guess.size >= my numberOfParameters);
 	if (guess.size > 0)
-		my p.get() <<= guess;
+		my p.all()  <<=  guess;
 	else
 		for (integer i = 1; i <= my numberOfParameters; i ++)
 			my p [i] = NUMrandomUniform (-1.0, 1.0);
@@ -160,8 +160,8 @@ double Minimizer_getMinimum (Minimizer me) {
 Thing_implement	(SteepestDescentMinimizer, Minimizer, 0);
 
 void structSteepestDescentMinimizer :: v_minimize () {
-	autoVEC dp = newVECraw (numberOfParameters);
-	autoVEC dpp = newVECraw (numberOfParameters);
+	autoVEC dp = raw_VEC (numberOfParameters);
+	autoVEC dpp = raw_VEC (numberOfParameters);
 	double fret = func (object, p.get());
 	while (iteration < maximumNumberOfIterations) {
 		dfunc (object, p.get(), dp.get());
@@ -387,13 +387,13 @@ autoVDSmagtMinimizer VDSmagtMinimizer_create (integer numberOfParameters, Daata 
 	try {
 		autoVDSmagtMinimizer me = Thing_new (VDSmagtMinimizer);
 		Minimizer_init (me.get(), numberOfParameters, object);
-		my dp = newVECzero (numberOfParameters);
-		my pc = newVECzero (numberOfParameters);
-		my gc = newVECzero (numberOfParameters);
-		my g0 = newVECzero (numberOfParameters);
-		my s = newVECzero (numberOfParameters);
-		my srst = newVECzero (numberOfParameters);
-		my grst = newVECzero (numberOfParameters);
+		my dp = zero_VEC (numberOfParameters);
+		my pc = zero_VEC (numberOfParameters);
+		my gc = zero_VEC (numberOfParameters);
+		my g0 = zero_VEC (numberOfParameters);
+		my s = zero_VEC (numberOfParameters);
+		my srst = zero_VEC (numberOfParameters);
+		my grst = zero_VEC (numberOfParameters);
 		my func = func;
 		my dfunc = dfunc;
 		my lineSearchGradient = 0.9;
@@ -410,8 +410,8 @@ Thing_implement (LineMinimizer, Minimizer, 0);
 
 void LineMinimizer_init (LineMinimizer me, integer numberOfParameters, Daata object, double (*func) (Daata, VEC const& p)) {
 	Minimizer_init (me, numberOfParameters, object);
-	my direction = newVECzero (numberOfParameters);
-	my ptry = newVECzero (numberOfParameters);
+	my direction = zero_VEC (numberOfParameters);
+	my ptry = zero_VEC (numberOfParameters);
 	my func = func;
 	my maxLineStep = 100;
 }

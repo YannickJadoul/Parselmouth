@@ -52,7 +52,7 @@ autoRoots Roots_create (integer numberOfRoots) {
 	try {
 		autoRoots me = Thing_new (Roots);
 		my numberOfRoots = numberOfRoots;
-		my roots = newCOMPVECzero (numberOfRoots);
+		my roots = zero_COMPVEC (numberOfRoots);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Roots not created.");
@@ -165,9 +165,9 @@ autoRoots Polynomial_to_Roots (Polynomial me) {
 			"Polynomial zero finders based on Szegö polynomials.",
 			Journal of Computational and Applied Mathematics 127: 1-–16.
 		*/
-		autoVEC wr = newVECraw (n);
-		autoVEC wi = newVECraw (n);
-		autoMAT upperHessenberg = newMATzero (n, n);
+		autoVEC wr = raw_VEC (n);
+		autoVEC wi = raw_VEC (n);
+		autoMAT upperHessenberg = zero_MAT (n, n);
 		MATVU uh_CM (upperHessenberg.get());
 		uh_CM.rowStride = 1; uh_CM.colStride = n;
 
@@ -183,7 +183,7 @@ autoRoots Polynomial_to_Roots (Polynomial me) {
 		integer lwork = -1, info;
 		NUMlapack_dhseqr_ ("E", "N", n, 1, n, & upperHessenberg [1] [1], n, & wr [1], & wi [1], nullptr, n, & wtmp, lwork, & info);
 		lwork = Melder_roundUp (wtmp);
-		autoVEC work = newVECraw (lwork);
+		autoVEC work = raw_VEC (lwork);
 		/*
 			Find eigenvalues/roots.
 		*/
@@ -233,7 +233,7 @@ void Polynomial_into_Roots (Polynomial me, Roots r, VEC const& workspace) {
 	*/
 	
 	MAT upperHessenberg = MAT (& workspace [1], n, n);
-	upperHessenberg <<= 0.0;
+	upperHessenberg  <<=  0.0;
 	MATVU uh_CM (upperHessenberg);
 	uh_CM.rowStride = 1; uh_CM.colStride = n;
 	uh_CM [1] [n] = - (my coefficients [1] / my coefficients [np1]);

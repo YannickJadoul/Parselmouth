@@ -34,12 +34,12 @@
 
 Thing_implement (Cepstrum, Matrix, 2);
 
-double structCepstrum :: v_getValueAtSample (integer isamp, integer which, int /* units */) {
-	if (which == 0) {
-		return z [1] [isamp];
-	} else {
-		// dB's
-		return 20.0 * log10 (fabs (z [1] [isamp]) + 1e-30);
+double structCepstrum :: v_getValueAtSample (integer isamp, integer which, int units) {
+	if (which == 1) {
+		if (units == 0)
+			return z [1] [isamp];
+		else
+			return 20.0 * log10 (fabs (z [1] [isamp]) + 1e-30); // dB's
 	}
 	return undefined;
 }
@@ -68,16 +68,18 @@ void Cepstrum_draw (Cepstrum me, Graphics g, double qmin, double qmax, double mi
 	integer numberOfSelected = Matrix_getWindowSamplesX (me, qmin, qmax, & imin, & imax);
 	if (numberOfSelected == 0)
 		return;
-	autoVEC y = newVECraw (numberOfSelected);
-
+	autoVEC y = raw_VEC (numberOfSelected);
 	for (integer i = 1; i <= numberOfSelected; i ++)
-		y [i] = my v_getValueAtSample (imin + i - 1, (power ? 1 : 0), 0);
+		y [i] = my v_getValueAtSample (imin + i - 1, 1, (power ? 1 : 0));
 
 	if (minimum >= maximum) // autoscaling
 		NUMextrema (y.get(), & minimum, & maximum);
 	else
-		VECclip_inplace (y.get(), minimum, maximum);
-
+		VECclip_inplace (minimum, y.get(), maximum);
+	if (maximum == minimum) {
+		maximum += 1.0;
+		minimum -= 1.0;
+	}
 	Graphics_setWindow (g, qmin, qmax, minimum, maximum);
 	Graphics_function (g, y.asArgumentToFunctionThatExpectsOneBasedArray(), 1, numberOfSelected, Matrix_columnToX (me, imin), Matrix_columnToX (me, imax));
 

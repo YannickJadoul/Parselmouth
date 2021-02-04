@@ -116,10 +116,9 @@ FORM (GRAPHICS_FormantPath_drawAsGrid, U"FormantPath: Draw as grid", nullptr) {
 	POSITIVE (lineEvery_Hz, U"Horizontal line every (Hz)", U"1000.0")
 	REAL (xCursor, U"X cursor line at (s)", U"-0.1 (=no line)")
 	REAL (yCursor, U"Y cursor at (Hz)", U"-100.0 (=no line)")
-	INTEGER (special, U"Index of special", U"0 (=no)")
-	COLOUR (specialColour, U"Colour for special", U"pink")
 	SENTENCE (parameters_string, U"Coefficients by track", U"7 7 7 7")
-	BOOLEAN (markWithinPath, U"Mark within path", false)
+	BOOLEAN (markCandidatesWithinPath, U"Mark candidates within path", false)
+	COLOUR (markColour, U"Mark colour", U"{0.984,0.984, 0.7}")
 	BOOLEAN (showStress, U"Show stress", true)
 	POSITIVE (powerf, U"Power", U"1.25")
 	BOOLEAN (showEstimatedModels, U"Show estimated models", true)
@@ -128,7 +127,7 @@ FORM (GRAPHICS_FormantPath_drawAsGrid, U"FormantPath: Draw as grid", nullptr) {
 DO
 	GRAPHICS_EACH (FormantPath)
 		autoINTVEC parameters = newINTVECfromString (parameters_string);
-		FormantPath_drawAsGrid (me, GRAPHICS, tmin, tmax, fmax, fromFormant, toFormant, showBandwidths, odd, even, numberOfRows, numberOfColumns, xSpaceFraction, ySpaceFraction, lineEvery_Hz, xCursor, yCursor, special, specialColour, parameters.get(), markWithinPath, showStress, powerf, showEstimatedModels, garnish);
+		FormantPath_drawAsGrid (me, GRAPHICS, tmin, tmax, fmax, fromFormant, toFormant, showBandwidths, odd, even, numberOfRows, numberOfColumns, xSpaceFraction, ySpaceFraction, lineEvery_Hz, xCursor, yCursor, markColour, parameters.get(), markCandidatesWithinPath, showStress, powerf, showEstimatedModels, garnish);
 	GRAPHICS_EACH_END
 }
 
@@ -144,18 +143,22 @@ DO
 	CONVERT_EACH_END (my name.get())
 }
 
-DIRECT (NEW_FormantPath_to_Matrix_qsum) {
+FORM (NEW_FormantPath_to_Matrix_qsums, U"FormantPath: To Matrix (qsums)", nullptr) {
+	INTEGER (numberOfTracks, U"Number of tracks", U"4")
+	OK
+DO
 	CONVERT_EACH (FormantPath)
-		autoMatrix result = FormantPath_to_Matrix_qSums (me, 0.0);
+		autoMatrix result = FormantPath_to_Matrix_qSums (me, numberOfTracks);
 	CONVERT_EACH_END (my name.get())
 }
 
 FORM (NEW_FormantPath_to_Matrix_transition,  U"FormantPath: To Matrix (transition)", nullptr) {
+	INTEGER (numberOfTracks, U"Number of tracks", U"4")
 	BOOLEAN (maximumCosts, U"Maximum costs", false)
 	OK
 DO
 	CONVERT_EACH (FormantPath)
-		autoMatrix result = FormantPath_to_Matrix_transition (me, maximumCosts);
+		autoMatrix result = FormantPath_to_Matrix_transition (me, numberOfTracks, maximumCosts);
 	CONVERT_EACH_END (my name.get())
 }
 
@@ -1327,7 +1330,7 @@ void praat_uvafon_LPC_init () {
 	praat_addAction1 (classFormantPath, 0, U"Query -", nullptr, 0, nullptr);
 	praat_addAction1 (classFormantPath, 0, U"Extract Formant", 0, 0, NEW_FormantPath_extractFormant);
 	praat_addAction1 (classFormantPath, 0, U"To Matrix (stress)...", 0, 0, NEW_FormantPath_to_Matrix_stress);
-	praat_addAction1 (classFormantPath, 0, U"To Matrix (qsum)...", 0, 0, NEW_FormantPath_to_Matrix_qsum);
+	praat_addAction1 (classFormantPath, 0, U"To Matrix (qsums)...", 0, 0, NEW_FormantPath_to_Matrix_qsums);
 	praat_addAction1 (classFormantPath, 0, U"To Matrix (transition)...", 0, 0, NEW_FormantPath_to_Matrix_transition);
 	praat_addAction1 (classFormantPath, 0, U"To Matrix (deltas)...", 0, 0, NEW_FormantPath_to_Matrix_deltas);
 	praat_addAction1 (classFormantPath, 0, U"Path finder...", 0, 0, MODIFY_FormantPath_pathFinder);

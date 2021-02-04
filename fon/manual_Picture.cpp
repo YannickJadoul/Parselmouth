@@ -704,7 +704,7 @@ TAG (U"@@Pen menu")
 TAG (U"@@Font menu")
 MAN_END
 
-MAN_BEGIN (U"PostScript settings...", U"ppgb", 20120430)
+MAN_BEGIN (U"PostScript settings...", U"ppgb", 20201229)
 INTRO (U"One of the commands in the File menus of many windows. "
 	"The PostScript settings influence @Printing and saving to @@Encapsulated PostScript@ files.")
 ENTRY (U"Settings")
@@ -739,7 +739,7 @@ DEFINITION (U"the relative size with which your picture will be printed; normall
 	"This choice applies to Unix only; on Windows, you choose the scaling in the ##Print...# window; "
 	"on Macintosh, you choose the scaling in the ##Page setup...# window.")
 TAG (U"##Print command# (Unix only)")
-DEFINITION (U"When printing on Unix, a temporary PostScript^\\re file is created in the \"/tmp\" directory; "
+DEFINITION (U"When printing on Unix, a temporary PostScript^\\re file is created in the \"/tmp\" folder; "
 	"it will have a name like \"picXXXXXX\", and is automatically removed after printing. "
 	"This file is sent to the printer with the print command, which will often look like $$lp -c \\% s$, "
 	"where $$\\% s$ stands for the file name.")
@@ -879,13 +879,8 @@ INTRO (U"One of the commands in the #Select menu of the @@Picture window@.")
 ENTRY (U"Purpose")
 NORMAL (U"To determine where your next drawing will occur.")
 ENTRY (U"The viewport")
-#ifdef macintosh
-NORMAL (U"The \"viewport\" is the part of the Picture window where your next drawing will occur. "
-	"You can set the colour of its margins with ##System Preferences \\-> Appearance \\-> Highlight Colour#. ")
-#else
 NORMAL (U"The \"viewport\" is the part of the Picture window where your next drawing will occur. "
 	"Its margins are pink.")
-#endif
 NORMAL (U"The %inner viewport does not include the margins, the %outer viewport does (see @@Select outer viewport...@).")
 NORMAL (U"Normally, you select the viewport by dragging your mouse across the Picture window. "
 	"However, you would use this explicit command:")
@@ -898,13 +893,8 @@ INTRO (U"One of the commands in the #Select menu of the @@Picture window@.")
 ENTRY (U"Purpose")
 NORMAL (U"To determine where your next drawing will occur.")
 ENTRY (U"The viewport")
-#ifdef macintosh
-NORMAL (U"The \"viewport\" is the part of the Picture window where your next drawing will occur. "
-	"You can set the colour of its margins with ##System Preferences \\-> Appearance \\-> Highlight Colour#. ")
-#else
 NORMAL (U"The \"viewport\" is the part of the Picture window where your next drawing will occur. "
 	"Its margins are pink.")
-#endif
 NORMAL (U"The %outer viewport includes the margins, the %inner viewport does not (see @@Select inner viewport...@).")
 NORMAL (U"Normally, you select the viewport by dragging your mouse across the Picture window. "
 	"However, you would use this explicit command:")

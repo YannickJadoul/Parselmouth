@@ -210,7 +210,7 @@ void FilterBank_drawFrequencyScales (FilterBank me, Graphics g, int horizontalSc
 	}
 
 	const integer n = 2000;
-	autoVEC a = newVECzero (n);
+	autoVEC a = zero_VEC (n);
 
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
@@ -281,7 +281,7 @@ void BarkFilter_drawSekeyHansonFilterFunctions (BarkFilter me, Graphics g, int t
 	if (! checkLimits (me, FilterBank_BARK, toFreqScale, & fromFilter, & toFilter, & zmin, & zmax, dbScale, & ymin, & ymax))
 		return;
 	const integer n = 1000;
-	autoVEC a = newVECzero (n);
+	autoVEC a = zero_VEC (n);
 
 	Graphics_setInner (g);
 	Graphics_setWindow (g, zmin, zmax, ymin, ymax);
@@ -365,7 +365,7 @@ void MelFilter_drawFilterFunctions (MelFilter me, Graphics g, int toFreqScale, i
 	if (! checkLimits (me, FilterBank_MEL, toFreqScale, & fromFilter, & toFilter, & zmin, & zmax, dbScale, & ymin, & ymax))
 		return;
 	const integer n = 1000;
-	autoVEC a = newVECzero (n);
+	autoVEC a = zero_VEC (n);
 
 	Graphics_setInner (g);
 	Graphics_setWindow (g, zmin, zmax, ymin, ymax);
@@ -464,7 +464,7 @@ void FormantFilter_drawFilterFunctions (FormantFilter me, Graphics g, double ban
 		Melder_warning (U"Bandwidth should be greater than zero.");
 
 	const integer n = 1000;
-	autoVEC a = newVECzero (n);
+	autoVEC a = zero_VEC (n);
 
 	Graphics_setInner (g);
 	Graphics_setWindow (g, zmin, zmax, ymin, ymax);
@@ -638,8 +638,8 @@ autoSpectrogram FormantFilter_to_Spectrogram (FormantFilter me) {
 autoMFCC MelFilter_to_MFCC (MelFilter me, integer numberOfCoefficients) {
 	try {
 		autoMAT cosinesTable = MATcosinesTable (my ny);
-		autoVEC x = newVECraw (my ny);
-		autoVEC y = newVECraw (my ny);
+		autoVEC x = raw_VEC (my ny);
+		autoVEC y = raw_VEC (my ny);
 		
 		//double fmax_mel = my y1 + (my ny - 1) * my dy;
 		numberOfCoefficients = ( numberOfCoefficients > my ny - 1 ? my ny - 1 : numberOfCoefficients );
@@ -665,8 +665,8 @@ autoMelFilter MFCC_to_MelFilter (MFCC me, integer first, integer last) {
 	try {
 		const integer nf = my maximumNumberOfCoefficients + 1;
 		autoMAT cosinesTable = MATcosinesTable (nf);
-		autoVEC x = newVECraw (nf);
-		autoVEC y = newVECraw (nf);
+		autoVEC x = raw_VEC (nf);
+		autoVEC y = raw_VEC (nf);
 
 		if (first >= last) {
 			first = 0;
@@ -748,7 +748,7 @@ static int Sound_into_BarkFilter_frame (Sound me, BarkFilter thee, integer frame
 	autoMatrix pv = Sound_to_spectralpower (me);
 	const integer nf = pv -> nx;
 
-	autoVEC z = newVECraw (nf);
+	autoVEC z = raw_VEC (nf);
 	for (integer j = 1; j <= nf; j ++)
 		z [j] = HZTOBARK (pv -> x1 + (j - 1) * pv -> dx);
 

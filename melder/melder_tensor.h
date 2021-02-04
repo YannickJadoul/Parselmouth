@@ -28,8 +28,8 @@
 		VEC x3 { a, 100 };   // initializes x to 100 values from a base-1 array
 
 		autoVEC y;                     // initializes y.cells to nullptr and y.size to 0
-		autoVEC y2 = newVECzero (100); // initializes y to 100 zeroes, having ownership
-		autoVEC y1 = newVECraw (100);  // initializes y to 100 uninitialized values (caution!), having ownership
+		autoVEC y2 = zero_VEC (100);   // initializes y to 100 zeroes, having ownership
+		autoVEC y1 = raw_VEC (100);  // initializes y to 100 uninitialized values (caution!), having ownership
 		y.adoptFromAmbiguousOwner (x); // initializes y to the content of x, taking ownership (explicit, so not "y = x")
 		VEC z = y.releaseToAmbiguousOwner();   // releases ownership, y.cells becoming nullptr
 		"}"                            // end of scope destroys y.cells if not nullptr
@@ -85,8 +85,8 @@ public:
 		= default;
 	/*
 		Letting an autovector convert to a vector would lead to errors such as in
-			VEC vec = newVECzero (10);
-		where newVECzero produces a temporary that is deleted immediately
+			VEC vec = zero_VEC (10);
+		where zero_VEC produces a temporary that is deleted immediately
 		after the initialization of vec.
 		So we rule out this initialization.
 	*/
@@ -94,7 +94,7 @@ public:
 		= delete;
 	/*
 		Likewise, an assignment like
-			autoVEC x = newVECzero (10);
+			autoVEC x = zero_VEC (10);
 			VEC y;
 			y = x;
 		should be ruled out. Instead, one should do
@@ -186,8 +186,8 @@ public:
 	//constvector& operator= (constvector const& other) = default;
 	/*
 		Letting an autovector convert to a constvector would lead to errors such as in
-			constVEC vec = newVECzero (10);
-		where newVECzero produces a temporary that is deleted immediately
+			constVEC vec = zero_VEC (10);
+		where zero_VEC produces a temporary that is deleted immediately
 		after the initialization of vec.
 		So we rule out this initialization.
 	*/
@@ -267,13 +267,20 @@ public:
 		: vector<T> (nullptr, 0) { }
 	explicit autovector (integer givenSize, MelderArray::kInitializationType initializationType) {   // come into existence and manufacture a payload
 		Melder_assert (givenSize >= 0);
-		our cells = ( givenSize == 0 ? nullptr : MelderArray:: _alloc <T> (givenSize, initializationType) );
+		our cells = MelderArray:: _alloc <T> (givenSize, initializationType);
 		our size = givenSize;
 		our _capacity = givenSize;
 	}
+	void reset () noexcept {   // on behalf of ambiguous owners (otherwise this could be in autovector<>)
+		if (our cells) {
+			MelderArray:: _free (our cells, our _capacity);
+			our cells = nullptr;
+		}
+		our size = 0;
+		our _capacity = 0;
+	}
 	~autovector () {   // destroy the payload (if any)
 		our reset ();
-		our _capacity = 0;
 	}
 	vector<T> get () const { return vector<T> (our cells, our size); }   // let the public use the payload (they may change the values of the elements but not the at-pointer or the size)
 	vectorview<T> all () const { return vectorview<T> (our cells, our size, 1); }
@@ -287,19 +294,20 @@ public:
 		T *oldCells = our cells;
 		our cells = nullptr;   // disown ourselves, preventing automatic destruction of the payload
 		integer oldSize = our size;
+		our size = 0;
 		our _capacity = 0;
 		return vector<T> (oldCells, oldSize);
 	}
 	/*
 		Disable copying via construction or assignment (which would violate unique ownership of the payload).
 	*/
-	autovector (autovector const& other) = delete;   // disable copy constructor
+	autovector (autovector const& other) = delete;   // disable copy construction
 	autovector& operator= (autovector const& other) = delete;   // disable copy assignment
 	/*
 		Enable moving of r-values (temporaries, implicitly) or l-values (for variables, via an explicit move()).
 		This implements buying a payload from another autovector (which involves destroying our current payload).
 	*/
-	autovector (autovector&& other) noexcept : vector<T> { other.get() } {   // enable move constructor
+	autovector (autovector&& other) noexcept : vector<T> { other.get() } {   // enable move construction
 		other.cells = nullptr;   // disown source
 		other.size = 0;   // to keep the source in a valid state
 		other._capacity = 0;
@@ -316,15 +324,7 @@ public:
 		}
 		return *this;
 	}
-	void reset () noexcept {   // on behalf of ambiguous owners (otherwise this could be in autovector<>)
-		if (our cells) {
-			MelderArray:: _free (our cells, our _capacity);
-			our cells = nullptr;
-			our _capacity = 0;
-		}
-		our size = 0;
-	}
-	autovector&& move () noexcept { return static_cast <autovector&&> (*this); }   // enable constriction and assignment for l-values (variables) via explicit move()
+	autovector&& move () noexcept { return static_cast <autovector&&> (*this); }   // enable construction and assignment for l-values (variables) via explicit move()
 	/*
 		Some of the following functions are capable of keeping a valid `cells` pointer
 		while `size` can at the same time be zero.
@@ -737,8 +737,7 @@ public:
 	explicit automatrix (integer givenNrow, integer givenNcol, MelderArray::kInitializationType initializationType) {   // come into existence and manufacture a payload
 		Melder_assert (givenNrow >= 0);
 		Melder_assert (givenNcol >= 0);
-		our cells = ( givenNrow == 0 || givenNcol == 0 ? nullptr
-				: MelderArray:: _alloc <T> (givenNrow * givenNcol, initializationType) );
+		our cells = MelderArray:: _alloc <T> (givenNrow * givenNcol, initializationType);
 		our nrow = givenNrow;
 		our ncol = givenNcol;
 	}
@@ -1128,8 +1127,7 @@ public:
 		Melder_assert (givenNdim1 >= 0);
 		Melder_assert (givenNdim2 >= 0);
 		Melder_assert (givenNdim3 >= 0);
-		our cells = ( givenNdim1 == 0 || givenNdim2 == 0 || givenNdim3 == 0 ? nullptr
-				: MelderArray:: _alloc <T> (givenNdim3 * givenNdim2 * givenNdim1, initializationType) );
+		our cells = MelderArray:: _alloc <T> (givenNdim3 * givenNdim2 * givenNdim1, initializationType);
 		our ndim1 = givenNdim1;
 		our ndim2 = givenNdim2;
 		our ndim3 = givenNdim3;
@@ -1280,20 +1278,20 @@ autotensor3<T> newtensor3part (tensor3<T> const& x,
 /*
 	instead of vector<double> we say VEC, because we want to have a one-to-one
 	relation between VEC functions and the scripting language.
-	For instance, we have newVECraw and newVECzero because Praat scripting has raw# and zero#.
+	For instance, we have raw_VEC and zero_VEC because Praat scripting has raw# and zero#.
 */
 using VEC = vector <double>;
 using VECVU = vectorview <double>;
 using constVEC = constvector <double>;
 using constVECVU = constvectorview <double>;
 using autoVEC = autovector <double>;
-inline autoVEC newVECraw (integer size) {
+inline autoVEC raw_VEC (integer size) {
 	return newvectorraw <double> (size);
 }
-inline autoVEC newVECzero (integer size) {
+inline autoVEC zero_VEC (integer size) {
 	return newvectorzero <double> (size);
 }
-inline autoVEC newVECcopy (constVECVU const& source) {
+inline autoVEC copy_VEC (constVECVU const& source) {
 	return newvectorcopy (source);
 }
 
@@ -1310,13 +1308,13 @@ using INTVECVU = vectorview <integer>;
 using constINTVEC = constvector <integer>;
 using constINTVECVU = constvectorview <integer>;
 using autoINTVEC = autovector <integer>;
-inline autoINTVEC newINTVECraw (integer size) {
+inline autoINTVEC raw_INTVEC (integer size) {
 	return newvectorraw <integer> (size);
 }
-inline autoINTVEC newINTVECzero (integer size) {
+inline autoINTVEC zero_INTVEC (integer size) {
 	return newvectorzero <integer> (size);
 }
-inline autoINTVEC newINTVECcopy (constINTVECVU const& source) {
+inline autoINTVEC copy_INTVEC (constINTVECVU const& source) {
 	return newvectorcopy (source);
 }
 
@@ -1325,13 +1323,13 @@ using BOOLVECVU = vectorview <bool>;
 using constBOOLVEC = constvector <bool>;
 using constBOOLVECVU = constvectorview <bool>;
 using autoBOOLVEC = autovector <bool>;
-inline autoBOOLVEC newBOOLVECraw (integer size) {
+inline autoBOOLVEC raw_BOOLVEC (integer size) {
 	return newvectorraw <bool> (size);
 }
-inline autoBOOLVEC newBOOLVECzero (integer size) {
+inline autoBOOLVEC zero_BOOLVEC (integer size) {
 	return newvectorzero <bool> (size);
 }
-inline autoBOOLVEC newBOOLVECcopy (constBOOLVECVU const& source) {
+inline autoBOOLVEC copy_BOOLVEC (constBOOLVECVU const& source) {
 	return newvectorcopy (source);
 }
 
@@ -1340,13 +1338,13 @@ using BYTEVECVU = vectorview <byte>;
 using constBYTEVEC = constvector <byte>;
 using constBYTEVECVU = constvectorview <byte>;
 using autoBYTEVEC = autovector <byte>;
-inline autoBYTEVEC newBYTEVECraw (integer size) {
+inline autoBYTEVEC raw_BYTEVEC (integer size) {
 	return newvectorraw <byte> (size);
 }
-inline autoBYTEVEC newBYTEVECzero (integer size) {
+inline autoBYTEVEC zero_BYTEVEC (integer size) {
 	return newvectorzero <byte> (size);
 }
-inline autoBYTEVEC newBYTEVECcopy (constBYTEVECVU const& source) {
+inline autoBYTEVEC copy_BYTEVEC (constBYTEVECVU const& source) {
 	return newvectorcopy (source);
 }
 
@@ -1355,13 +1353,13 @@ using COMPVECVU = vectorview <dcomplex>;
 using constCOMPVEC = constvector <dcomplex>;
 using constCOMPVECVU = constvectorview <dcomplex>;
 using autoCOMPVEC = autovector <dcomplex>;
-inline autoCOMPVEC newCOMPVECraw (integer size) {
+inline autoCOMPVEC raw_COMPVEC (integer size) {
 	return newvectorraw <dcomplex> (size);
 }
-inline autoCOMPVEC newCOMPVECzero (integer size) {
+inline autoCOMPVEC zero_COMPVEC (integer size) {
 	return newvectorzero <dcomplex> (size);
 }
-inline autoCOMPVEC newCOMPVECcopy (constCOMPVECVU const& source) {
+inline autoCOMPVEC copy_COMPVEC (constCOMPVECVU const& source) {
 	return newvectorcopy (source);
 }
 
@@ -1370,16 +1368,16 @@ using MATVU = matrixview <double>;
 using constMAT = constmatrix <double>;
 using constMATVU = constmatrixview <double>;
 using autoMAT = automatrix <double>;
-inline autoMAT newMATraw (integer nrow, integer ncol) {
+inline autoMAT raw_MAT (integer nrow, integer ncol) {
 	return newmatrixraw <double> (nrow, ncol);
 }
-inline autoMAT newMATzero (integer nrow, integer ncol) {
+inline autoMAT zero_MAT (integer nrow, integer ncol) {
 	return newmatrixzero <double> (nrow, ncol);
 }
-inline autoMAT newMATcopy (constMATVU source) {
+inline autoMAT copy_MAT (constMATVU source) {
 	return newmatrixcopy (source);
 }
-inline autoMAT newMATpart (const constMAT& source,
+inline autoMAT part_MAT (const constMAT& source,
 	integer firstRow, integer lastRow,
 	integer firstColumn, integer lastColumn
 ) {
@@ -1389,16 +1387,16 @@ inline autoMAT newMATpart (const constMAT& source,
 using TEN3 = tensor3 <double>;
 using constTEN3 = consttensor3 <double>;
 using autoTEN3 = autotensor3 <double>;
-inline autoTEN3 newTEN3raw (integer ndim1, integer ndim2, integer ndim3) {
+inline autoTEN3 raw_TEN3 (integer ndim1, integer ndim2, integer ndim3) {
 	return newtensor3raw <double> (ndim1, ndim2, ndim3);
 }
-inline autoTEN3 newTEN3zero (integer ndim1, integer ndim2, integer ndim3) {
+inline autoTEN3 zero_TEN3 (integer ndim1, integer ndim2, integer ndim3) {
 	return newtensor3zero <double> (ndim1, ndim2, ndim3);
 }
-inline autoTEN3 newTEN3copy (constTEN3 source) {
+inline autoTEN3 copy_TEN3 (constTEN3 source) {
 	return newtensor3copy (source);
 }
-inline autoTEN3 newTEN3part (const constTEN3& source,
+inline autoTEN3 part_TEN3 (const constTEN3& source,
 	integer firstDim1, integer lastDim1,
 	integer firstDim2, integer lastDim2,
 	integer firstDim3, integer lastDim3
@@ -1411,13 +1409,13 @@ using INTMATVU = matrixview <integer>;
 using constINTMAT = constmatrix <integer>;
 using constINTMATVU = constmatrixview <integer>;
 using autoINTMAT = automatrix <integer>;
-inline autoINTMAT newINTMATraw (integer nrow, integer ncol) {
+inline autoINTMAT raw_INTMAT (integer nrow, integer ncol) {
 	return newmatrixraw <integer> (nrow, ncol);
 }
-inline autoINTMAT newINTMATzero (integer nrow, integer ncol) {
+inline autoINTMAT zero_INTMAT (integer nrow, integer ncol) {
 	return newmatrixzero <integer> (nrow, ncol);
 }
-inline autoINTMAT newINTMATcopy (constINTMATVU source) {
+inline autoINTMAT copy_INTMAT (constINTMATVU source) {
 	return newmatrixcopy (source);
 }
 
@@ -1426,13 +1424,13 @@ using BOOLMATVU = matrixview <bool>;
 using constBOOLMAT = constmatrix <bool>;
 using constBOOLMATVU = constmatrixview <bool>;
 using autoBOOLMAT = automatrix <bool>;
-inline autoBOOLMAT newBOOLMATraw (integer nrow, integer ncol) {
+inline autoBOOLMAT raw_BOOLMAT (integer nrow, integer ncol) {
 	return newmatrixraw <bool> (nrow, ncol);
 }
-inline autoBOOLMAT newBOOLMATzero (integer nrow, integer ncol) {
+inline autoBOOLMAT zero_BOOLMAT (integer nrow, integer ncol) {
 	return newmatrixzero <bool> (nrow, ncol);
 }
-inline autoBOOLMAT newBOOLMATcopy (constBOOLMATVU source) {
+inline autoBOOLMAT copy_BOOLMAT (constBOOLMATVU source) {
 	return newmatrixcopy (source);
 }
 
@@ -1441,13 +1439,13 @@ using BYTEMATVU = matrixview <byte>;
 using constBYTEMAT = constmatrix <byte>;
 using constBYTEMATVU = constmatrixview <byte>;
 using autoBYTEMAT = automatrix <byte>;
-inline autoBYTEMAT newBYTEMATraw (integer nrow, integer ncol) {
+inline autoBYTEMAT raw_BYTEMAT (integer nrow, integer ncol) {
 	return newmatrixraw <byte> (nrow, ncol);
 }
-inline autoBYTEMAT newBYTEMATzero (integer nrow, integer ncol) {
+inline autoBYTEMAT zero_BYTEMAT (integer nrow, integer ncol) {
 	return newmatrixzero <byte> (nrow, ncol);
 }
-inline autoBYTEMAT newBYTEMATcopy (constBYTEMATVU source) {
+inline autoBYTEMAT copy_BYTEMAT (constBYTEMATVU source) {
 	return newmatrixcopy (source);
 }
 

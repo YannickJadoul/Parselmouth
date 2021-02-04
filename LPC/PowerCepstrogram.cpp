@@ -29,6 +29,17 @@
 
 Thing_implement (PowerCepstrogram, Matrix, 2); // derives from Matrix -> also version 2
 
+double structPowerCepstrogram :: v_getValueAtSample (integer sampleNumber, integer row, int unit) {
+	double result = undefined;
+	if (row >= 1 && row <= ny) {
+		if (unit == 0)
+			result = z [row] [sampleNumber];
+		else
+			result = 10.0 * log10 (z [row] [sampleNumber] + 1e-30); // always positive
+	}
+	return result;
+}
+
 autoPowerCepstrogram PowerCepstrogram_create (double tmin, double tmax, integer nt, double dt, double t1,
 	double qmin, double qmax, integer nq, double dq, double q1) {
 	try {
@@ -138,17 +149,17 @@ autoTable PowerCepstrogram_to_Table_cpp (PowerCepstrogram me, double pitchFloor,
 	try {
 		autoTable thee = Table_createWithColumnNames (my nx, U"time quefrency cpp f0 rnr");
 		autoPowerCepstrum him = PowerCepstrum_create (my ymax, my ny);
-		for (integer icol = 1; icol <= my nx; icol ++) {
-			his z.row (1) <<= my z.column (icol);
+		for (integer iframe = 1; iframe <= my nx; iframe ++) {
+			his z.row (1) <<= my z.column (iframe);
 			double qpeak, cpp = PowerCepstrum_getPeakProminence (him.get(), pitchFloor, pitchCeiling, peakInterpolationType,
 				qstartFit, qendFit, lineType, fitMethod, & qpeak);
 			double rnr = PowerCepstrum_getRNR (him.get(), pitchFloor, pitchCeiling, deltaF0);
-			double time = Sampled_indexToX (me, icol);
-			Table_setNumericValue (thee.get(), icol, 1, time);
-			Table_setNumericValue (thee.get(), icol, 2, qpeak);
-			Table_setNumericValue (thee.get(), icol, 3, cpp); // Cepstrogram_getCPPS depends on this index!!
-			Table_setNumericValue (thee.get(), icol, 4, 1.0 / qpeak);
-			Table_setNumericValue (thee.get(), icol, 5, rnr);
+			double time = Sampled_indexToX (me, iframe);
+			Table_setNumericValue (thee.get(), iframe, 1, time);
+			Table_setNumericValue (thee.get(), iframe, 2, qpeak);
+			Table_setNumericValue (thee.get(), iframe, 3, cpp); // Cepstrogram_getCPPS depends on this index!!
+			Table_setNumericValue (thee.get(), iframe, 4, 1.0 / qpeak);
+			Table_setNumericValue (thee.get(), iframe, 5, rnr);
 		}
 		return thee;
 	} catch (MelderError) {
@@ -156,7 +167,43 @@ autoTable PowerCepstrogram_to_Table_cpp (PowerCepstrogram me, double pitchFloor,
 	}
 }
 
-autoPowerCepstrogram PowerCepstrogram_smooth (PowerCepstrogram me, double timeAveragingWindow, double quefrencyAveragingWindow) {
+static autoPowerCepstrogram PowerCepstrogram_smoothRectangular (PowerCepstrogram me, double timeAveragingWindow, double quefrencyAveragingWindow) {
+	try {
+		autoPowerCepstrogram thee = Data_copy (me);
+		/*
+			1. average across time
+		*/
+		integer numberOfFrames = Melder_ifloor (timeAveragingWindow / my dx);
+		if (numberOfFrames > 1) {
+			const double halfWindwow = 0.5 * timeAveragingWindow;
+			autoVEC qout = raw_VEC (my nx);
+			for (integer iq = 1; iq <= my ny; iq ++) {
+				for (integer iframe = 1; iframe <= my nx; iframe ++) {
+					const double xmid = Sampled_indexToX (me, iframe);
+					qout [iframe] = Sampled_getMean (me, xmid - halfWindwow, xmid + halfWindwow, iq, 0, true);
+				}
+				thy z.row (iq)  <<=  qout.all();
+			}
+		}
+		/*
+			2. average across quefrencies
+		*/
+		integer numberOfQuefrencyBins = Melder_ifloor (quefrencyAveragingWindow / my dy);
+		if (numberOfQuefrencyBins > 1) {
+			autoPowerCepstrum smooth = PowerCepstrum_create (thy ymax, thy ny);
+			for (integer iframe = 1; iframe <= thy nx; iframe ++) {
+				smooth -> z.row (1)  <<=  thy z.column (iframe);
+				PowerCepstrum_smooth_inplace (smooth.get(), quefrencyAveragingWindow, 1);
+				thy z.column (iframe)  <<=  smooth -> z.row (1);
+			}
+		}
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (me, U": not smoothed.");
+	}
+}
+
+static autoPowerCepstrogram PowerCepstrogram_smoothRectangular_old (PowerCepstrogram me, double timeAveragingWindow, double quefrencyAveragingWindow) {
 	try {
 		autoPowerCepstrogram thee = Data_copy (me);
 		/*
@@ -171,7 +218,7 @@ autoPowerCepstrogram PowerCepstrogram_smooth (PowerCepstrogram me, double timeAv
 		*/
 		integer numberOfQuefrencyBins = Melder_ifloor (quefrencyAveragingWindow / my dy);
 		if (numberOfQuefrencyBins > 1) {
-			autoVEC qin = newVECraw (thy ny);
+			autoVEC qin = raw_VEC (thy ny);
 			for (integer iframe = 1; iframe <= my nx; iframe ++) {
 				qin.all() <<= thy z.column (iframe);
 				VECsmoothByMovingAverage_preallocated (thy z.column (iframe), qin.all(), numberOfQuefrencyBins);
@@ -181,6 +228,57 @@ autoPowerCepstrogram PowerCepstrogram_smooth (PowerCepstrogram me, double timeAv
 	} catch (MelderError) {
 		Melder_throw (me, U": not smoothed.");
 	}
+}
+
+static autoPowerCepstrogram PowerCepstrogram_smoothGaussian (PowerCepstrogram me, double timeAveragingWindow, double quefrencyAveragingWindow) {
+	try {
+		autoPowerCepstrogram thee = Data_copy (me);		
+		/*
+			1. average across time
+		*/
+		const double numberOfSigmasInWindow = 4.0;
+		const double numberOfFrames = timeAveragingWindow / my dx;
+		if (numberOfFrames > 1.0) {
+			const double sigma = numberOfFrames / numberOfSigmasInWindow;  // 2sigma -> 95.4%, 3sigma -> 99.7 % of the data
+			integer nfft = 2;
+			while (nfft < my nx) 
+				nfft *= 2;
+			autoNUMfft_Table fourierTable;
+			NUMfft_Table_init (& fourierTable, nfft);
+			for (integer iq = 1; iq <= my ny; iq ++) {
+				VECsmooth_gaussian (thy z .row (iq), my z.row (iq), sigma, & fourierTable);
+				VECabs_inplace (thy z .row (iq));
+			}
+		}
+		/*
+			2. average across quefrencies
+		*/
+		const double numberOfQuefrencyBins = quefrencyAveragingWindow / my dy;
+		if (numberOfQuefrencyBins > 1.0) {
+			integer nfft = 2;
+			while (nfft < my ny)
+				nfft *= 2;
+			autoNUMfft_Table fourierTable;
+			NUMfft_Table_init (& fourierTable, nfft);
+			const double sigma = numberOfQuefrencyBins / numberOfSigmasInWindow;  // 2sigma -> 95.4%, 3sigma -> 99.7 % of the data
+			for (integer iframe = 1; iframe <= my nx; iframe ++) {
+				VECsmooth_gaussian_inplace (thy z.column (iframe), sigma, & fourierTable);
+				VECabs_inplace (thy z.column (iframe));
+			}
+		}
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (me, U": not smoothed.");
+	}
+}
+
+autoPowerCepstrogram PowerCepstrogram_smooth (PowerCepstrogram me, double timeAveragingWindow, double quefrencyAveragingWindow) {
+	if (Melder_debug == -4)
+		return PowerCepstrogram_smoothRectangular_old (me, timeAveragingWindow, quefrencyAveragingWindow);
+	else if (Melder_debug == -5)
+		return PowerCepstrogram_smoothGaussian (me, timeAveragingWindow, quefrencyAveragingWindow);
+	else
+		return PowerCepstrogram_smoothRectangular (me, timeAveragingWindow, quefrencyAveragingWindow);
 }
 
 autoMatrix PowerCepstrogram_to_Matrix (PowerCepstrogram me) {
@@ -198,7 +296,7 @@ autoPowerCepstrum PowerCepstrogram_to_PowerCepstrum_slice (PowerCepstrogram me, 
 		integer iframe = Sampled_xToNearestIndex (me, time);
 		iframe = iframe < 1 ? 1 : iframe > my nx ? my nx : iframe;
 		autoPowerCepstrum thee = PowerCepstrum_create (my ymax, my ny);
-		thy z.row (1) <<= my z.column (iframe);
+		thy z.row (1)  <<=  my z.column (iframe);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": Cepstrum not extracted.");
@@ -311,7 +409,7 @@ autoPowerCepstrogram Sound_to_PowerCepstrogram_hillenbrand (Sound me, double pit
 		double t1;
 		integer numberOfFrames;
 		Sampled_shortTermAnalysis (thee.get(), analysisWidth, dt, & numberOfFrames, & t1);
-		autoVEC hamming = newVECraw (nosInWindow);
+		autoVEC hamming = raw_VEC (nosInWindow);
 		for (integer i = 1; i <= nosInWindow; i ++)
 			hamming [i] = 0.54 - 0.46 * cos (NUM2pi * (i - 1) / (nosInWindow - 1));
 
@@ -319,8 +417,8 @@ autoPowerCepstrogram Sound_to_PowerCepstrogram_hillenbrand (Sound me, double pit
 		while (nfft < nosInWindow)
 			nfft *= 2;
 		const integer nfftdiv2 = nfft / 2;
-		autoVEC fftbuf = newVECzero (nfft); // "complex" array
-		autoVEC spectrum = newVECzero (nfftdiv2 + 1); // +1 needed 
+		autoVEC fftbuf = zero_VEC (nfft); // "complex" array
+		autoVEC spectrum = zero_VEC (nfftdiv2 + 1); // +1 needed 
 		autoNUMfft_Table fftTable;
 		NUMfft_Table_init (& fftTable, nfft); // sound to spectrum
 		
@@ -341,7 +439,7 @@ autoPowerCepstrogram Sound_to_PowerCepstrogram_hillenbrand (Sound me, double pit
 			NUMfft_forward (& fftTable, fftbuf.get());
 			complexfftoutput_to_power (fftbuf.get(), spectrum.get(), true); // log10(|fft|^2)
 		
-			VECcentre_inplace (spectrum.get()); // subtract average
+			centre_VEC_inout (spectrum.get()); // subtract average
 			/*
 			 * Here we diverge from Hillenbrand as he takes the fft of half of the spectral values.
 			 * H. forgets that the actual spectrum has nfft/2+1 values. Thefore, we take the inverse

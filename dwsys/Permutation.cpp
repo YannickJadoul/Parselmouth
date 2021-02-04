@@ -60,7 +60,7 @@ static integer Permutation_checkRange (Permutation me, integer *from, integer *t
 }
 
 void Permutation_checkInvariant (Permutation me) {
-	autoINTVEC p = newINTVECsort (my p.all());
+	autoINTVEC p = sort_INTVEC (my p.all());
 	for (integer i = 1; i <= my numberOfElements; i ++)
 		Melder_require (p [i] == i,
 			me, U": is not a valid permutation.");
@@ -81,13 +81,13 @@ void structPermutation :: v_readText (MelderReadText text, int /*formatVersion*/
 
 void Permutation_init (Permutation me, integer numberOfElements) {
 	my numberOfElements = numberOfElements;
-	my p = newINTVEClinear (numberOfElements, 1, 1);
+	my p = to_INTVEC (numberOfElements);
 }
 
 void Permutation_tableJump_inline (Permutation me, integer jumpSize, integer first) {
 	if (jumpSize >= my numberOfElements || first > my numberOfElements)
 		return;
-	autoINTVEC p_copy = newINTVECcopy (my p.get());
+	autoINTVEC p_copy = copy_INTVEC (my p.get());
 
 	integer index = first, column = 1;
 	if (first > 1)
@@ -114,7 +114,7 @@ autoPermutation Permutation_create (integer numberOfElements) {
 }
 
 void Permutation_sort (Permutation me) {
-	INTVEClinear (my p.get(), 1, 1);
+	to_INTVEC_out (my p.get());
 }
 
 void Permutation_swapPositions (Permutation me, integer i1, integer i2) {
@@ -282,7 +282,7 @@ autoPermutation Permutation_interleave (Permutation me, integer from, integer to
 		autoPermutation thee = Data_copy (me);
 
 		if (nblocks > 1) {
-			autoBOOLVEC occupied = newBOOLVECzero (blockSize);
+			autoBOOLVEC occupied = zero_BOOLVEC (blockSize);
 
 			integer posinblock = 1 - offset;
 			for (integer i = 1; i <= n; i ++) {

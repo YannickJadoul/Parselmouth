@@ -132,7 +132,7 @@ autoINTVEC FormantModelerList_getBest3 (FormantModelerList me) {
 		2 The least (summed) stress F1 & F2 score
 		1 the least (summed) stress F1 & F2 & F3 score
 	*/
-	autoINTVEC best = newINTVECraw (3);
+	autoINTVEC best = raw_INTVEC (3);
 	double stressF1, stressF1F2, stressF1F2F3;
 	stressF1 = stressF1F2 = stressF1F2F3 = std::numeric_limits<double>::max();
 	for (integer imodel = 1; imodel <= my numberOfModelers; imodel ++) {
@@ -175,7 +175,7 @@ void FormantModelerList_getMatrixGridLayout (FormantModelerList me, integer *out
 
 void FormantModelerListDrawingSpecification_showAll (FormantModelerListDrawingSpecification me) {
 	my numberOfModelersToDraw = my numberOfModelers;
-	INTVEClinear (my drawingOrder.get(), 1, 1);
+	to_INTVEC_out (my drawingOrder.get());
 }
 
 integer FormantModelerListDrawingSpecification_getNumberOfShown (FormantModelerListDrawingSpecification me) {
@@ -192,7 +192,7 @@ autoFormantModelerListDrawingSpecification FormantModelerList_to_FormantModelerL
 	try {
 		autoFormantModelerListDrawingSpecification thee = Thing_new (FormantModelerListDrawingSpecification);
 		thy numberOfModelers = my numberOfModelers;
-		thy drawingOrder = newINTVEClinear (my numberOfModelers, 1, 1);
+		thy drawingOrder = to_INTVEC (my numberOfModelers);
 		thy numberOfModelersToDraw = my numberOfModelers;
 		thy boxLineWidth = 4.0;
 		thy oddFormantColour = Melder_RED;

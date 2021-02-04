@@ -59,7 +59,7 @@ void structCepstrumc :: v_info () {
 }
 
 void Cepstrumc_Frame_init (Cepstrumc_Frame me, integer nCoefficients) {
-	my c = newVECzero (nCoefficients);
+	my c = zero_VEC (nCoefficients);
 	my nCoefficients = my c.size; // maintain invariant
 }
 
@@ -82,7 +82,7 @@ autoCepstrumc Cepstrumc_create (double tmin, double tmax, integer nt, double dt,
 
 static void regression (VEC const& r, Cepstrumc me, integer frameNumber, integer numberOfRegressionFrames) {
 	Melder_assert (r.size == my maxnCoefficients + 1);
-	r <<= 0.0;
+	r  <<=  0.0;
 
 	if (frameNumber <= numberOfRegressionFrames / 2 || frameNumber > my nx - numberOfRegressionFrames / 2)
 		return;
@@ -114,8 +114,8 @@ autoDTW Cepstrumc_to_DTW (Cepstrumc me, Cepstrumc thee, double wc, double wle, d
 		if (wr != 0.0)
 			Melder_casual (U"Number of frames used for regression coefficients ", numberOfRegressionFrames);
 		autoDTW him = DTW_create (my xmin, my xmax, my nx, my dx, my x1, thy xmin, thy xmax, thy nx, thy dx, thy x1);
-		autoVEC ri = newVECraw (my maxnCoefficients + 1);
-		autoVEC rj = newVECraw (my maxnCoefficients + 1);
+		autoVEC ri = raw_VEC (my maxnCoefficients + 1);
+		autoVEC rj = raw_VEC (my maxnCoefficients + 1);
 		/*
 			Calculate distance matrix.
 		*/
@@ -129,7 +129,7 @@ autoDTW Cepstrumc_to_DTW (Cepstrumc me, Cepstrumc thee, double wc, double wle, d
 				/*
 					Cepstral distance.
 				*/
-				if (wc != 0) {
+				if (wc != 0.0) {
 					for (integer k = 1; k <= fj -> nCoefficients; k ++) {
 						const double dci = fi -> c [k] - fj -> c [k];
 						dist += dci * dci;
@@ -144,7 +144,7 @@ autoDTW Cepstrumc_to_DTW (Cepstrumc me, Cepstrumc thee, double wc, double wle, d
 				/*
 					Regression distance.
 				*/
-				if (wr != 0) {
+				if (wr != 0.0) {
 					regression (rj.get(), thee, jframe, numberOfRegressionFrames);
 					for (integer k = 1; k <= fj -> nCoefficients; k ++) {
 						const double drci = ri [k + 1] - rj [k + 1];
@@ -155,8 +155,8 @@ autoDTW Cepstrumc_to_DTW (Cepstrumc me, Cepstrumc thee, double wc, double wle, d
 				/*
 					Regression on c [0]: log(energy)
 				*/
-				if (wer != 0) {
-					if (wr == 0)
+				if (wer != 0.0) {
+					if (wr == 0.0)
 						regression (rj.get(), thee, jframe, numberOfRegressionFrames);
 					const double drc0 = ri [1] - rj [1];
 					dist += wer * drc0 * drc0;

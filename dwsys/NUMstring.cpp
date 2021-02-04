@@ -24,20 +24,20 @@
 #include "NUM2.h"
 
 autoVEC newVECfromString (conststring32 s) {
-	autoSTRVEC tokens = newSTRVECtokenize (s);
+	autoSTRVEC tokens = splitByWhitespace_STRVEC (s);
 	if (tokens.size < 1)
 		Melder_throw (U"Empty string.");
-	autoVEC numbers = newVECraw (tokens.size);
+	autoVEC numbers = raw_VEC (tokens.size);
 	for (integer inum = 1; inum <= tokens.size; inum ++)
 		Interpreter_numericExpression (nullptr, tokens [inum].get(), & numbers [inum]);
 	return numbers;
 }
 
 autoINTVEC newINTVECfromString (conststring32 s) {
-	autoSTRVEC tokens = newSTRVECtokenize (s);
+	autoSTRVEC tokens = splitByWhitespace_STRVEC (s);
 	if (tokens.size < 1)
 		Melder_throw (U"Empty string.");
-	autoINTVEC numbers = newINTVECraw (tokens.size);
+	autoINTVEC numbers = raw_INTVEC (tokens.size);
 	for (integer inum = 1; inum <= tokens.size; inum ++)
 		numbers [inum] = Melder_atoi (tokens [inum].get());
 	return numbers;
@@ -71,7 +71,7 @@ static autoSTRVEC string32vector_searchAndReplace_literal (constSTRVEC me,
 
 	integer nmatches_sub = 0, nmatches = 0, nstringmatches = 0;
 	for (integer i = 1; i <= me.size; i ++) {
-		result [i] = newSTRreplace (me [i], search, replace, maximumNumberOfReplaces, & nmatches_sub);
+		result [i] = replace_STR (me [i], search, replace, maximumNumberOfReplaces, & nmatches_sub);
 		if (nmatches_sub > 0) {
 			nmatches += nmatches_sub;
 			nstringmatches ++;
@@ -104,7 +104,7 @@ static autoSTRVEC string32vector_searchAndReplace_regexp (constSTRVEC me,
 
 	integer nmatches = 0, nstringmatches = 0;
 	for (integer i = 1; i <= me.size; i ++) {
-		result [i] = newSTRreplace_regex (me [i], compiledRE, replaceRE, maximumNumberOfReplaces, & nmatches_sub);
+		result [i] = replace_regex_STR (me [i], compiledRE, replaceRE, maximumNumberOfReplaces, & nmatches_sub);
 		if (nmatches_sub > 0) {
 			nmatches += nmatches_sub;
 			nstringmatches ++;
@@ -187,7 +187,7 @@ static autoINTVEC getElementsOfRanges (conststring32 ranges, integer maximumElem
 	*/
 	Melder_require (numberOfElements > 0,
 		U"No element(s) found");
-	autoINTVEC elements = newINTVECraw (numberOfElements);
+	autoINTVEC elements = raw_INTVEC (numberOfElements);
 	/*
 		Store the elements.
 	*/
@@ -227,7 +227,7 @@ static autoINTVEC getElementsOfRanges (conststring32 ranges, integer maximumElem
 }
 
 static autoINTVEC INTVEC_getUniqueNumbers (constINTVEC const& numbers) {
-	autoINTVEC sorted = newINTVECsort (numbers);
+	autoINTVEC sorted = sort_INTVEC (numbers);
 	integer numberOfUniques = 1;
 	for (integer i = 2; i <= numbers.size; i ++)
 		if (sorted [i] != sorted [i - 1])

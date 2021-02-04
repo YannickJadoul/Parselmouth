@@ -76,7 +76,7 @@ void Matrix_scatterPlot (Matrix me, Graphics g, integer icx, integer icy,
 
 static autoVEC nummat_vectorize (constMATVU const& m, integer rowmin, integer rowmax, integer colmin, integer colmax) {
 	const integer numberOfElements = (rowmax - rowmin + 1) * (colmax - colmin + 1);
-	autoVEC result = newVECraw (numberOfElements);
+	autoVEC result = raw_VEC (numberOfElements);
 	for (integer irow = rowmin, index = 1; irow <= rowmax; irow ++)
 		for (integer icol = colmin; icol <= colmax; icol ++)
 			result [index ++] = m [irow] [icol];
@@ -237,7 +237,7 @@ void Matrix_drawDistribution (Matrix me, Graphics g, double xmin, double xmax, d
 	*/
 	if (nBins < 1)
 		nBins = 10;
-	autoVEC freq = newVECzero (nBins);
+	autoVEC freq = zero_VEC (nBins);
 	const double binWidth = (maximum - minimum) / nBins;
 	integer nxy = 0;
 	for (integer i = iymin; i <= iymax; i ++) {
@@ -305,7 +305,7 @@ void Matrix_drawSliceY (Matrix me, Graphics g, double x, double ymin, double yma
 		max += 0.5;
 	}
 	const integer ysize = iymax - iymin + 1;
-	autoVEC y = newVECraw (ysize);
+	autoVEC y = raw_VEC (ysize);
 
 	Graphics_setWindow (g, ymin, ymax, min, max);
 	Graphics_setInner (g);
@@ -325,12 +325,12 @@ autoMatrix Matrix_solveEquation (Matrix me, double tolerance) {
 		if (nr < nc)
 			Melder_warning (U"Solution is not unique (there are fewer equations than unknowns).");
 
-		autoMAT u = newMATraw (nr, nc);
-		autoVEC b = newVECraw (nr);
+		autoMAT u = raw_MAT (nr, nc);
+		autoVEC b = raw_VEC (nr);
 		autoMatrix thee = Matrix_create (0.5, 0.5 + nc, nc, 1, 1, 0.5, 1.5, 1, 1, 1);
 
-		u.get() <<= my z.part (1, nr, 1, nc);
-		b.get() <<= my z.column (my nx);
+		u.all()  <<=  my z.part (1, nr, 1, nc);
+		b.all()  <<=  my z.column (my nx);
 
 		autoVEC x = newVECsolve (u.get(), b.get(), tolerance);
 		thy z.row (1) <<= x.all();
@@ -616,7 +616,7 @@ autoMatrix SVD_to_Matrix (SVD me, integer from, integer to) {
 		autoMAT synthesis = SVD_synthesize (me, from, to);
 		autoMatrix thee = Matrix_create (0.5, 0.5 + synthesis.ncol, synthesis.ncol, 1.0, 1.0,
 										 0.5, 0.5 + synthesis.nrow, synthesis.nrow, 1.0, 1.0);
-		thy z.get() <<= synthesis.get();
+		thy z.all()  <<=  synthesis.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": no Matrix synthesized.");

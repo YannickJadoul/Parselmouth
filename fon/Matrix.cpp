@@ -117,7 +117,7 @@ void Matrix_init
 	my ny = ny;
 	my dy = dy;
 	my y1 = y1;
-	my z = newMATzero (my ny, my nx);
+	my z = zero_MAT (my ny, my nx);
 }
 
 autoMatrix Matrix_create
@@ -369,7 +369,10 @@ static void cellArrayOrImage (Matrix me, Graphics g, double xmin, double xmax, d
 	double minimum, double maximum, bool interpolate)
 {
 	Function_unidirectionalAutowindow (me, & xmin, & xmax);
-	if (ymax <= ymin) { ymin = my ymin; ymax = my ymax; }
+	if (ymax <= ymin) {
+		ymin = my ymin;
+		ymax = my ymax;
+	}
 	integer ixmin, ixmax, iymin, iymax;
 	(void) Matrix_getWindowSamplesX (me, xmin - 0.49999 * my dx, xmax + 0.49999 * my dx,
 		& ixmin, & ixmax);
@@ -377,8 +380,12 @@ static void cellArrayOrImage (Matrix me, Graphics g, double xmin, double xmax, d
 		& iymin, & iymax);
 	if (maximum <= minimum)
 		(void) Matrix_getWindowExtrema (me, ixmin, ixmax, iymin, iymax, & minimum, & maximum);
-	if (maximum <= minimum) { minimum -= 1.0; maximum += 1.0; }
-	if (xmin >= xmax || ymin >= ymax) return;
+	if (maximum <= minimum) {
+		minimum -= 1.0;
+		maximum += 1.0;
+	}
+	if (xmin >= xmax || ymin >= ymax)
+		return;
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 	if (interpolate)
@@ -430,7 +437,9 @@ void Matrix_paintSurface (Matrix me, Graphics g, double xmin, double xmax, doubl
 void Matrix_playMovie (Matrix me, Graphics g) {
 	Melder_require (my ny >= 2,
 		me, U": cannot play a movie for a Matrix with less than 2 rows.");
-	autoVEC column = newVECraw (my ny);
+	if (my xmin == my xmax || my ymin == my ymax)
+		return;
+	autoVEC column = raw_VEC (my ny);
 	double minimum = 0.0, maximum = 1.0;
 	Matrix_getWindowExtrema (me, 1, my nx, 1, my ny, & minimum, & maximum);
 	if (minimum == maximum) {

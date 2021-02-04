@@ -211,10 +211,15 @@ void structEditor :: v_destroy () noexcept {
 				XtDestroyWidget (our windowForm -> d_xmShell);
 			}
 		#elif cocoa
+			if (our windowForm -> drawingArea) {
+				GuiCocoaDrawingArea *cocoaDrawingArea = (GuiCocoaDrawingArea *) our windowForm -> drawingArea -> d_widget;
+				if (cocoaDrawingArea)
+					[cocoaDrawingArea   setUserData: nullptr];
+			}
 			if (our windowForm -> d_cocoaShell) {
 				NSWindow *cocoaWindow = our windowForm -> d_cocoaShell;
 				//our windowForm -> d_cocoaShell = nullptr;
-				[cocoaWindow close];
+				[cocoaWindow close];   // this should *release* the window as well, because `releasedWhenClosed` is on by default for NSWindows
 			}
 		#endif
 	}
@@ -316,7 +321,8 @@ static void menu_cb_settingsReport (Editor me, EDITOR_ARGS_DIRECT) {
 }
 
 static void menu_cb_info (Editor me, EDITOR_ARGS_DIRECT) {
-	if (my data) Thing_info (my data);
+	if (my data)
+		Thing_info (my data);
 }
 
 void structEditor :: v_createMenuItems_query (EditorMenu menu) {
@@ -444,7 +450,7 @@ void Editor_init (Editor me, int x, int y, int width, int height, conststring32 
 		top += Machine_getTitleBarHeight ();
 		bottom += Machine_getTitleBarHeight ();
 	#endif
-	my windowForm = GuiWindow_create (left, top, width, height, 450, 250, title, gui_window_cb_goAway, me, my v_canFullScreen () ? GuiWindow_FULLSCREEN : 0);
+	my windowForm = GuiWindow_create (left, top, width, height, 450, 350, title, gui_window_cb_goAway, me, my v_canFullScreen () ? GuiWindow_FULLSCREEN : 0);
 	Thing_setName (me, title);
 	my data = data;
 	my v_copyPreferencesToInstance ();

@@ -1,6 +1,6 @@
 /* manual_programming.cpp
  *
- * Copyright (C) 1992-2010,2011,2013,2015-2018 Paul Boersma
+ * Copyright (C) 1992-2010,2011,2013,2015-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -387,7 +387,7 @@ NORMAL (U"Besides the TextGrid text file format described above, TextGrid object
 	"and save the resulting TextGrid object as a text file with @@Save as text file...@.")
 MAN_END
 
-MAN_BEGIN (U"Programming with Praat", U"ppgb", 20200924)
+MAN_BEGIN (U"Programming with Praat", U"ppgb", 20201230)
 INTRO (U"You can extend the functionality of the Praat program "
 	"by adding modules written in C or C++ to it. All of Praat's source code "
 	"is available under the General Public Licence.")
@@ -399,11 +399,11 @@ NORMAL (U"Before trying the task of learning how to write Praat extensions in C 
 	"If you have a set of scripts, you can distribute them as a @@plug-ins|plug-in@.")
 ENTRY (U"2. Getting the existing source code")
 NORMAL (U"You obtain the Praat source code from GitHub (https://github.com/praat), in a file with a name like "
-	"##praat6121_sources.zip# or ##praat6121_sources.tar.gz# (depending on the Praat version), and unpack this by double-clicking. "
+	"##praat6199_sources.zip# or ##praat6199_sources.tar.gz# (depending on the Praat version), and unpack this by double-clicking. "
 	"The result will be a set of directories "
-	"called #kar, #melder, #external (with #clapack, #gsl, #glpk, #flac, #mp3, #portaudio and #espeak in it), "
-	"#sys, #dwsys, #stat, #fon, #dwtools, #LPC, #FFNet, #gram, #artsynth, #EEG, #main, #makefiles, #test, #dwtest, and #generate,"
-	"plus a makefile and Xcode project for MacOS X and a README.md file.")
+	"called #kar, #melder, #external (with #clapack, #gsl, #glpk, #flac, #mp3, #portaudio, #espeak and #vorbis in it), "
+	"#sys, #dwsys, #stat, #fon, #dwtools, #LPC, #FFNet, #gram, #artsynth, #EEG, #main, #makefiles, #test, #dwtest, and #generate, "
+	"plus a makefile and Xcode project for macOS and a README.md file.")
 ENTRY (U"3. Building Praat")
 NORMAL (U"Consult the README file on GitHub for directions to compile and link Praat for your platform.")
 ENTRY (U"4. Extending Praat")
@@ -425,8 +425,8 @@ CODE (U"int main (int argc, char **argv) {")
 CODE (U"}")
 ENTRY (U"5. Learning how to program")
 NORMAL (U"To see how objects are defined, take a look at ##sys/Thing.h#, ##sys/Daata.h#, "
-	"##sys/oo.h#, the ##XXX_def.h# files in the #fon directory, and the corresponding "
-	"##XXX.cpp# files in the #fon directory. To see how commands show up on the buttons "
+	"##sys/oo.h#, the ##XXX_def.h# files in the #fon folder, and the corresponding "
+	"##XXX.cpp# files in the #fon folder. To see how commands show up on the buttons "
 	"in the fixed and dynamic menus, take a look at the large interface description file "
 	"##fon/praat_Fon.cpp#.")
 ENTRY (U"6. Using the Praat shell only")

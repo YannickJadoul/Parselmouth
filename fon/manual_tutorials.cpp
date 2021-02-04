@@ -22,8 +22,38 @@
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"What's new?", U"ppgb", 20201027)
+MAN_BEGIN (U"What's new?", U"ppgb", 20210102)
 INTRO (U"Latest changes in Praat.")
+NORMAL (U"##6.1.38# (2 January 2021)")
+LIST_ITEM (U"• Scripting: string vectors, empty\\$ \\#  (), readLinesFromFile\\$ \\#  (), fileNames\\$ \\#  (), folderNames\\$ \\#  (), splitByWhitespace\\$ \\#  ().")
+LIST_ITEM (U"• Sound files: open Ogg Vorbis files and Opus files.")
+NORMAL (U"##6.1.37# (16 December 2020)")
+LIST_ITEM (U"• TextGrid window: removed a bug that caused Praat to crash when option-clicking or command-clicking a boundary when another boundary was selected on a point tier.")
+LIST_ITEM (U"• Record Sound (fixed time): removed a bug that caused Praat to crash with certain combinations of duration and sampling frequency on Windows.")
+LIST_ITEM (U"• PowerCepstrogram: more precise integration, so that the cepstral peak prominence is now a continuous function of time.")
+LIST_ITEM (U"• TextGrid: Get points (preceded): removed a bug that caused Praat to crash under some edge conditions.")
+LIST_ITEM (U"• Scripting: tryToWriteFile () and tryToAppendFile () should not be available in manuals.")
+NORMAL (U"##6.1.36# (6 December 2020)")
+LIST_ITEM (U"• Scripting: tryToWriteFile (), tryToAppendFile (); formulas can have a size of 1 million.")
+LIST_ITEM (U"• Obscured scripts: error messages always disclosed.")
+LIST_ITEM (U"• IPA chart: sacrifice laminality symbol for breathiness symbol.")
+NORMAL (U"##6.1.35# (29 November 2020)")
+LIST_ITEM (U"• Scripting: sort\\#  (), shuffle\\#  (), to\\#  (), from_to\\#  (), from_to_by\\#  (), from_to_count\\#  (), between_by\\#  (), between_count\\#  ().")
+LIST_ITEM (U"• Mac: repaired a bug existing since 6.1.04 that caused incorrect line counts in text files with high Unicode characters.")
+NORMAL (U"##6.1.34# (25 November 2020)")
+LIST_ITEM (U"• Mac: got bold and italic to work on Praat versions compiled with the BigSur API.")
+LIST_ITEM (U"• SoundRecorder always a white background, instead of a different background on each platform.")
+NORMAL (U"##6.1.33# (19 November 2020)")
+LIST_ITEM (U"• Mac: got audio to work on Praat versions compiled with the BigSur API (6.1.32 did not have audio on BigSur).")
+NORMAL (U"##6.1.32# (16 November 2020)")
+LIST_ITEM (U"• First version for Macs with Apple Silicon chip.")
+LIST_ITEM (U"• Mac: corrected a bug that could cause Praat to crash when a Sound window was closed from a script.")
+LIST_ITEM (U"• Windows and Linux: made ##Text width...# work correctly from batch.")
+LIST_ITEM (U"• Linux: reinstalled Tab shortcut in Sound window.")
+NORMAL (U"##6.1.31# (10 November 2020)")
+LIST_ITEM (U"• Linux: first GTK-3 version.")
+NORMAL (U"##6.1.30# (3 November 2020)")
+LIST_ITEM (U"• Windows: prevented a crash that could occur in the Sound window when clicking with the touchpad while dragging with the mouse (or the reverse).")
 NORMAL (U"##6.1.29# (27 October 2020)")
 LIST_ITEM (U"• Mac: corrected a bug revealed by Xcode 12 since 6.1.22 that could cause Praat to crash when using empty vectors, "
 	"such as when querying a Harmonicity for its mean in regions without frames.")
@@ -121,6 +151,32 @@ LIST_ITEM (U"• Repaired ##Sound: Concatenate with overlap...#.")
 LIST_ITEM (U"• Mac: Info and script windows: prevent line breaks caused by tab stops.")
 NORMAL (U"##6.1.01# (14 August 2019)")
 LIST_ITEM (U"• Repaired ##TextGrid: Replace interval texts...#.")
+ENTRY (U"What used to be new?")
+LIST_ITEM (U"• @@What was new in 6.1?")
+LIST_ITEM (U"• @@What was new in 6.0?")
+LIST_ITEM (U"• @@What was new in 5.4?")
+LIST_ITEM (U"• @@What was new in 5.3?")
+LIST_ITEM (U"• @@What was new in 5.2?")
+LIST_ITEM (U"• @@What was new in 5.1?")
+LIST_ITEM (U"• @@What was new in 5.0?")
+LIST_ITEM (U"• @@What was new in 4.6?")
+LIST_ITEM (U"• @@What was new in 4.5?")
+LIST_ITEM (U"• @@What was new in 4.4?")
+LIST_ITEM (U"• @@What was new in 4.3?")
+LIST_ITEM (U"• @@What was new in 4.2?")
+LIST_ITEM (U"• @@What was new in 4.1?")
+LIST_ITEM (U"• @@What was new in 4.0?")
+LIST_ITEM (U"• @@What was new in 3.9?")
+LIST_ITEM (U"• @@What was new in 3.8?")
+LIST_ITEM (U"• @@What was new in 3.7?")
+LIST_ITEM (U"• @@What was new in 3.6?")
+LIST_ITEM (U"• @@What was new in 3.5?")
+LIST_ITEM (U"• @@What was new in 3.3?")
+LIST_ITEM (U"• @@What was new in 3.2?")
+LIST_ITEM (U"• @@What was new in 3.1?")
+MAN_END
+
+MAN_BEGIN (U"What was new in 6.1?", U"ppgb", 20190713)
 NORMAL (U"##6.1# (13 July 2019)")
 NORMAL (U"##6.0.57# (1 July 2019)")
 LIST_ITEM (U"• Repaired a crash when an editor window zoomed in to a zero time range.")
@@ -182,7 +238,7 @@ LIST_ITEM (U"• Scripting: @@Scripting 4.3. Querying objects|selected\\#  ()@."
 LIST_ITEM (U"• Table window: cell selection.")
 LIST_ITEM (U"• Unicode-savvy regular expressions.")
 NORMAL (U"##6.0.39# (3 April 2018)")
-LIST_ITEM (U"• More string matching (case-insensive, word-level).")
+LIST_ITEM (U"• More string matching (case-insensitive, word-level).")
 NORMAL (U"##6.0.38# (29 March 2018)")
 LIST_ITEM (U"• Concordance: ##TextGrid: Tabulate occurrences...#.")
 LIST_ITEM (U"• Some @@Independent Component Analysis on EEG@.")
@@ -306,28 +362,6 @@ NORMAL (U"##6.0.02# (30 October 2015)")
 LIST_ITEM (U"• Corrected the redrawing of analyses in the Sound window after a change in the sound.")
 NORMAL (U"##6.0.01# (29 October 2015)")
 LIST_ITEM (U"• Windows: fixed a bug that caused Praat to crash at start-up in some Windows versions.")
-ENTRY (U"What used to be new?")
-LIST_ITEM (U"• @@What was new in 6.0?")
-LIST_ITEM (U"• @@What was new in 5.4?")
-LIST_ITEM (U"• @@What was new in 5.3?")
-LIST_ITEM (U"• @@What was new in 5.2?")
-LIST_ITEM (U"• @@What was new in 5.1?")
-LIST_ITEM (U"• @@What was new in 5.0?")
-LIST_ITEM (U"• @@What was new in 4.6?")
-LIST_ITEM (U"• @@What was new in 4.5?")
-LIST_ITEM (U"• @@What was new in 4.4?")
-LIST_ITEM (U"• @@What was new in 4.3?")
-LIST_ITEM (U"• @@What was new in 4.2?")
-LIST_ITEM (U"• @@What was new in 4.1?")
-LIST_ITEM (U"• @@What was new in 4.0?")
-LIST_ITEM (U"• @@What was new in 3.9?")
-LIST_ITEM (U"• @@What was new in 3.8?")
-LIST_ITEM (U"• @@What was new in 3.7?")
-LIST_ITEM (U"• @@What was new in 3.6?")
-LIST_ITEM (U"• @@What was new in 3.5?")
-LIST_ITEM (U"• @@What was new in 3.3?")
-LIST_ITEM (U"• @@What was new in 3.2?")
-LIST_ITEM (U"• @@What was new in 3.1?")
 MAN_END
 
 MAN_BEGIN (U"What was new in 6.0?", U"ppgb", 20151028)
@@ -896,7 +930,7 @@ NORMAL (U"##5.1.31# (4 April 2010)")
 LIST_ITEM (U"• @@Sounds: Convolve...@, @@Sounds: Cross-correlate...@, @@Sound: Autocorrelate...@, with full documentation.")
 LIST_ITEM (U"• More query commands for IntensityTier.")
 NORMAL (U"##5.1.30# (25 March 2010)")
-LIST_ITEM (U"• Scripting: $$createDirectory ()$ can now work with absolute paths.")
+LIST_ITEM (U"• Scripting: $$createFolder ()$ can now work with absolute paths.")
 LIST_ITEM (U"• PointProcess: made it impossible to add a point where there is already a point.")
 NORMAL (U"##5.1.29# (11 March 2010)")
 LIST_ITEM (U"• Full support for unicode values above 0xFFFF on Macintosh.")
@@ -1355,7 +1389,7 @@ LIST_ITEM (U"• Scripting: more techniques for @@Scripting 4. Object selection|
 LIST_ITEM (U"• Scripting: more support for putting the results of the #Info command into a string variable.")
 NORMAL (U"##4.4.31# (23 September 2006)")
 LIST_ITEM (U"• Support for @@plug-ins@.")
-LIST_ITEM (U"• Split between @@Create Strings as file list...@ and @@Create Strings as directory list...@.")
+LIST_ITEM (U"• Split between @@Create Strings as file list...@ and @@Create Strings as folder list...@.")
 NORMAL (U"##4.4.30# (28 August 2006)")
 LIST_ITEM (U"• Table: Draw ellipse (standard deviation)...")
 NORMAL (U"##4.4.29# (21 August 2006)")
@@ -1419,7 +1453,7 @@ LIST_ITEM (U"• MacOS X: correct visibility of Praat icon.")
 LIST_ITEM (U"• MacOS X: correct dropping of Praat files on Praat icon.")
 NORMAL (U"##4.4.09# (19 February 2006)")
 LIST_ITEM (U"• Macintosh: first Intel Macintosh version.")
-LIST_ITEM (U"• Windows: Create Strings from directory list...")
+LIST_ITEM (U"• Windows: Create Strings from folder list...")
 NORMAL (U"##4.4.08# (6 February 2006)")
 LIST_ITEM (U"• Much improved cepstral smoothing.")
 NORMAL (U"##4.4.07# (2 February 2006)")
@@ -2037,8 +2071,142 @@ ENTRY (U"To do")
 ENTRY (U"Known bugs in the Windows version")
 	LIST_ITEM (U"• Cannot stand infinitesimal zooming in SpectrogramEditor.")
 */
- 
-MAN_BEGIN (U"Acknowledgments", U"ppgb", 20161227)
+
+MAN_BEGIN (U"FLAC BSD 3-clause license", U"ppgb", 20201227)
+NORMAL (U"The Praat source code contains a copy of the FLAC software (see @Acknowledgments). "
+	"Here is the FLAC license text:")
+CODE (U"libFLAC - Free Lossless Audio Codec library")
+CODE (U"Copyright (C) 2000,2001,2002,2003,2004,2005,2006,2007  Josh Coalson")
+CODE (U"")
+CODE (U"Redistribution and use in source and binary forms, with or without "
+	"modification, are permitted provided that the following conditions "
+	"are met:")
+CODE (U"")
+CODE (U"- Redistributions of source code must retain the above copyright "
+	"notice, this list of conditions and the following disclaimer.")
+CODE (U"")
+CODE (U"- Redistributions in binary form must reproduce the above copyright "
+	"notice, this list of conditions and the following disclaimer in the "
+	"documentation and/or other materials provided with the distribution.")
+CODE (U"")
+CODE (U"- Neither the name of the Xiph.org Foundation nor the names of its "
+	"contributors may be used to endorse or promote products derived from "
+	"this software without specific prior written permission.")
+CODE (U"")
+CODE (U"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "
+	"``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT "
+	"LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR "
+	"A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR "
+	"CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, "
+	"EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, "
+	"PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR "
+	"PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF "
+	"LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING "
+	"NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS "
+	"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.")
+MAN_END
+
+MAN_BEGIN (U"Ogg Vorbis BSD 3-clause license", U"ppgb", 20201227)
+NORMAL (U"The Praat source code contains a copy of the Ogg Vorbis software (see @Acknowledgments). "
+	"Here is the Ogg Vorbis license text:")
+CODE (U"Copyright (c) 2002-2020 Xiph.org Foundation")
+CODE (U"")
+CODE (U"Redistribution and use in source and binary forms, with or without "
+	"modification, are permitted provided that the following conditions "
+	"are met:")
+CODE (U"")
+CODE (U"- Redistributions of source code must retain the above copyright "
+	"notice, this list of conditions and the following disclaimer.")
+CODE (U"")
+CODE (U"- Redistributions in binary form must reproduce the above copyright "
+	"notice, this list of conditions and the following disclaimer in the "
+	"documentation and/or other materials provided with the distribution.")
+CODE (U"")
+CODE (U"- Neither the name of the Xiph.org Foundation nor the names of its "
+	"contributors may be used to endorse or promote products derived from "
+	"this software without specific prior written permission.")
+CODE (U"")
+CODE (U"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "
+	"``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT "
+	"LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR "
+	"A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR "
+	"CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, "
+	"EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, "
+	"PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR "
+	"PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF "
+	"LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING "
+	"NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS "
+	"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.")
+MAN_END
+
+MAN_BEGIN (U"Opus BSD 2-clause license", U"ppgb", 20210102)
+NORMAL (U"The Praat source code contains a copy of the Opus software (see @Acknowledgments). "
+	"Here is the Opus license text (the stuff at the top varies:")
+CODE (U"Copyright (c) 2002-2008 Jean-Marc Valin")
+CODE (U"Copyright (c) 2008 Gregory Maxwell")
+CODE (U"Copyright (c) 2001-2011 Timothy B. Terriberry")
+CODE (U"Copyright (c) 2007-2008 CSIRO")
+CODE (U"Copyright (c) 2007-2009 Xiph.Org Foundation")
+CODE (U"Copyright (c) 2017 Google Inc., Written by Andrew Allen")
+CODE (U"")
+CODE (U"Redistribution and use in source and binary forms, with or without "
+	"modification, are permitted provided that the following conditions "
+	"are met:")
+CODE (U"")
+CODE (U"- Redistributions of source code must retain the above copyright "
+	"notice, this list of conditions and the following disclaimer.")
+CODE (U"")
+CODE (U"- Redistributions in binary form must reproduce the above copyright "
+	"notice, this list of conditions and the following disclaimer in the "
+	"documentation and/or other materials provided with the distribution.")
+CODE (U"")
+CODE (U"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "
+	"``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT "
+	"LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR "
+	"A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR "
+	"CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, "
+	"EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, "
+	"PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR "
+	"PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF "
+	"LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING "
+	"NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS "
+	"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.")
+MAN_END
+
+MAN_BEGIN (U"Skype Limited BSD 3-clause license", U"ppgb", 20220102)
+NORMAL (U"The Praat source code contains a copy of the SILK software (see @Acknowledgments). "
+	"Here is the Skype Limited license text:")
+CODE (U"Copyright (c) 2006-2011 Skype Limited. All rights reserved.")
+CODE (U"")
+CODE (U"Redistribution and use in source and binary forms, with or without "
+	"modification, are permitted provided that the following conditions "
+	"are met:")
+CODE (U"")
+CODE (U"- Redistributions of source code must retain the above copyright "
+	"notice, this list of conditions and the following disclaimer.")
+CODE (U"")
+CODE (U"- Redistributions in binary form must reproduce the above copyright "
+	"notice, this list of conditions and the following disclaimer in the "
+	"documentation and/or other materials provided with the distribution.")
+CODE (U"")
+CODE (U"- Neither the name of Internet Society, IETF or IETF Trust, nor the names of specific "
+	"contributors, may be used to endorse or promote products derived from "
+	"this software without specific prior written permission.")
+CODE (U"")
+CODE (U"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "
+	"``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT "
+	"LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR "
+	"A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR "
+	"CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, "
+	"EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, "
+	"PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR "
+	"PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF "
+	"LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING "
+	"NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS "
+	"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.")
+MAN_END
+
+MAN_BEGIN (U"Acknowledgments", U"ppgb", 20201227)
 NORMAL (U"The following people contributed source code to Praat:")
 LIST_ITEM (U"Paul Boersma: user interface, graphics, @printing, @@Intro|sound@, "
 	"@@Intro 3. Spectral analysis|spectral analysis@, @@Intro 4. Pitch analysis|pitch analysis@, "
@@ -2046,11 +2214,11 @@ LIST_ITEM (U"Paul Boersma: user interface, graphics, @printing, @@Intro|sound@, 
 	"@@Intro 7. Annotation|annotation@, @@Intro 8. Manipulation|speech manipulation@, @@voice|voice report@, "
 	"@@ExperimentMFC|listening experiments@, "
 	"@@articulatory synthesis@, @@OT learning|optimality-theoretic learning@, "
-	"tables, @formulas, @scripting, and adaptation of PortAudio, GLPK, and regular expressions.")
+	"tables, @formulas, @scripting, and adaptation of PortAudio, GLPK, regular expressions, and Opus.")
 LIST_ITEM (U"David Weenink: "
 	"@@feedforward neural networks@, @@principal component analysis@, @@multidimensional scaling@, @@discriminant analysis@, @LPC, "
 	"@VowelEditor, "
-	"and adaptation of GSL, LAPACK, fftpack, regular expressions, and Espeak.")
+	"and adaptation of GSL, LAPACK, fftpack, regular expressions, Espeak, Ogg Vorbis, and Opus.")
 LIST_ITEM (U"Stefan de Konink and Franz Brauße: major help in port to GTK.")
 LIST_ITEM (U"Tom Naughton: major help in port to Cocoa.")
 LIST_ITEM (U"Erez Volk: adaptation of FLAC and MAD.")
@@ -2066,8 +2234,12 @@ LIST_ITEM (U"PortAudio: Portable Audio Library by Ross Bencina, Phil Burk, Bjorn
 	"(CC-BY-like license).")
 LIST_ITEM (U"Espeak: text-to-speech synthesizer by Jonathan Duddington and Reece Dunn (GPL 3 or later).")
 LIST_ITEM (U"MAD: MPEG Audio Decoder by Underbit Technologies (GPL 2 or later).")
-LIST_ITEM (U"FLAC: Free Lossless Audio Codec by Josh Coalson (BSD 3-clause license).")
-LIST_ITEM (U"fftpack: public domain Fourier transforms by Paul Swarztrauber and Christopher Montgomery.")
+LIST_ITEM (U"FLAC: Free Lossless Audio Codec by Josh Coalson (@@FLAC BSD 3-clause license@).")
+LIST_ITEM (U"Ogg Vorbis: audio compression by Christopher Montgomery (@@Ogg Vorbis BSD 3-clause license@).")
+LIST_ITEM (U"Opus: audio compression by Jean-Marc Valin, Gregory Maxwell, Christopher Montgomery, Timothy Terriberry, "
+	"Koen Vos, Andrew Allen and others (@@Opus BSD 2-clause license@).")
+LIST_ITEM (U"SILK: audio compression by Skype Limited (@@Skype Limited BSD 3-clause license@).")
+LIST_ITEM (U"fftpack: public domain Fourier transforms by Paul Swarztrauber, translated to C by Christopher Montgomery.")
 LIST_ITEM (U"@LAPACK: public domain numeric algorithms by Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd., "
 	"Courant Institute, Argonne National Lab, and Rice University.")
 LIST_ITEM (U"Regular expressions by Henry Spencer, Mark Edel, Christopher Conrad, Eddy De Greef (GPL 2 or later).")
@@ -2092,9 +2264,9 @@ LIST_ITEM (U"Linguistics & Cognitive Science, Dartmouth College, Hanover NH.")
 LIST_ITEM (U"Cornell Phonetics Lab, Ithaca NY.")
 NORMAL (U"Finally we thank:")
 LIST_ITEM (U"Ton Wempe and Dirk Jan Vet, for technical support and advice.")
-LIST_ITEM (U"Daniel Hirst, for managing the Praat Discussion list.")
+LIST_ITEM (U"Daniel Hirst and Daniel McCloy, for managing the Praat Users List.")
 LIST_ITEM (U"Rafael Laboissière and Andreas Tille, for maintaining the Debian package.")
-LIST_ITEM (U"Jason Bacon, for maintaining the FreeBSD port.")
+LIST_ITEM (U"Jason Bacon and Adriaan de Groot, for maintaining the FreeBSD port.")
 LIST_ITEM (U"José Joaquín Atria and Ingmar Steiner, for setting up the source-code repository on GitHub.")
 LIST_ITEM (U"Hundreds of Praat users, for sending suggestions and notifying us of problems and thus helping us to improve Praat.")
 MAN_END
@@ -2489,36 +2661,14 @@ LIST_ITEM (U"@@Intro 1.2. Reading a sound from disk")
 LIST_ITEM (U"@@Intro 1.3. Creating a sound from a formula")
 MAN_END
 
-MAN_BEGIN (U"Intro 1.1. Recording a sound", U"ppgb", 20110128)
-#ifdef macintosh
-	INTRO (U"To record a speech sound into Praat, you need a computer with a microphone.")
-	NORMAL (U"To record from the microphone, perform the following steps:")
-#else
-	INTRO (U"To record a speech sound into Praat, you need a computer with a microphone. "
-		"If you do not have a microphone, try to record from an audio CD instead.")
-	NORMAL (U"To record from the microphone (or the CD), perform the following steps:")
-#endif
+MAN_BEGIN (U"Intro 1.1. Recording a sound", U"ppgb", 20201120)
+INTRO (U"To record a speech sound into Praat, you need a computer with a microphone.")
+NORMAL (U"To record from the microphone, perform the following steps:")
 LIST_ITEM (U"1. Choose @@Record mono Sound...@ from the @@New menu@ in the @@Object window@. "
 	"A @SoundRecorder window will appear on your screen.")
-#if defined (_WIN32)
-	LIST_ITEM (U"2. Choose the appropriate input device, namely the microphone, by the following steps. "
-		"If there is a small loudspeaker symbol in the Windows Start bar, double click it and you will see the %playing mixer. "
-		"If there is no loudspeaker symbol, go to ##Control Panels#, then ##Sounds and Audio Devices#, then #Volume, then #Advanced, "
-		"and you will finally see the playing mixer. "
-		"Once you see the Windows playing mixer, choose #Properties from the #Option menu, "
-		"then click #Recording, then #OK. You now see the %recording mixer, where you can select the microphone "
-		"(if you do not like this complicated operation, try Praat on Macintosh or Linux instead of Windows).")
-#elif defined (macintosh)
-	LIST_ITEM (U"2. In the SoundRecorder window, choose the appropriate input device, e.g. choose ##Internal microphone#.")
-#else
-	LIST_ITEM (U"2. In the SoundRecorder window, choose the appropriate input device, i.e. choose #Microphone (or #CD, or #Line).")
-#endif
-#ifdef macintosh
-	LIST_ITEM (U"3. Use the #Record and #Stop buttons to record a few seconds of your speech.")
-#else
-	LIST_ITEM (U"3. Use the #Record and #Stop buttons to record a few seconds of your speech "
-		"(or a few seconds of music from your playing CD).")
-#endif
+LIST_ITEM (U"2. On the left in the SoundRecorder window, choose the appropriate input device, e.g. choose ##Internal microphone#. "
+	"(On Windows, instead right-click the loudspeaker symbol in the Start bar; see @SoundRecorder for more details.)")
+LIST_ITEM (U"3. Use the #Record and #Stop buttons to record a few seconds of your speech.")
 LIST_ITEM (U"4. Use the #Play button to hear what you have recorded.")
 LIST_ITEM (U"5. Repeat steps 3 and 4 until you are satisfied with your recording.")
 LIST_ITEM (U"6. Click the ##Save to list# button. Your recording will now appear in the Object window, "

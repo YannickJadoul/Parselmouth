@@ -70,7 +70,7 @@ autoConfiguration Configuration_create (integer numberOfPoints, integer numberOf
 	try {
 		autoConfiguration me = Thing_new (Configuration);
 		TableOfReal_init (me.get(), numberOfPoints, numberOfDimensions);
-		my w = newVECraw (numberOfDimensions);
+		my w = raw_VEC (numberOfDimensions);
 		TableOfReal_setSequentialRowLabels (me.get(), 0, 0, nullptr, 1, 1);
 		TableOfReal_setSequentialColumnLabels (me.get(), 0, 0, U"dimension ", 1, 1);
 
@@ -88,7 +88,7 @@ void Configuration_setMetric (Configuration me, integer metric) {
 }
 
 void Configuration_setDefaultWeights (Configuration me) {
-	my w.get() <<= 1.0;
+	my w.all()  <<=  1.0;
 }
 
 void Configuration_setSqWeights (Configuration me, const double weight[]) {
@@ -165,16 +165,16 @@ static double NUMsquaredVariance (MAT a, bool rawPowers) {
 static void NUMvarimax (MAT xm, MAT ym, bool normalizeRows, bool quartimax, integer maximumNumberOfIterations, double tolerance) {
 	Melder_assert (xm.ncol == ym.ncol && xm.nrow == ym.nrow);
 
-	ym <<= xm;
+	ym  <<=  xm;
 
 	if (xm.ncol == 1)
 		return;
 	if (xm.ncol == 2)
 		maximumNumberOfIterations = 1;
 
-	autoVEC u = newVECraw (xm.nrow);
-	autoVEC v = newVECraw (xm.nrow);
-	autoVEC norm = newVECraw (xm.nrow);
+	autoVEC u = raw_VEC (xm.nrow);
+	autoVEC v = raw_VEC (xm.nrow);
+	autoVEC norm = raw_VEC (xm.nrow);
 
 	/*
 		Normalize sum of squares of each row to one.
@@ -210,8 +210,8 @@ static void NUMvarimax (MAT xm, MAT ym, bool normalizeRows, bool quartimax, inte
 				}
 				
 				if (! quartimax && xm.nrow != 1) {
-					VECcentre_inplace (u.get());
-					VECcentre_inplace (v.get());
+					centre_VEC_inout (u.get());
+					centre_VEC_inout (v.get());
 				}
 
 				const double a = 2.0 * NUMinner (u.get(), v.get());
@@ -301,8 +301,8 @@ void Configuration_draw (Configuration me, Graphics g, int xCoordinate, int yCoo
 	int noLabel = 0;
 	if (labelSize == 0)
 		labelSize = fontSize;
-	autoVEC x = newVECraw (nPoints);
-	autoVEC y = newVECraw (nPoints);
+	autoVEC x = raw_VEC (nPoints);
+	autoVEC y = raw_VEC (nPoints);
 	for (integer i = 1; i <= nPoints; i ++) {
 		x [i] = my data [i] [xCoordinate] * my w [xCoordinate];
 		y [i] = ( numberOfDimensions > 1 ? my data [i] [yCoordinate] * my w [yCoordinate] : 0.0 );
@@ -368,7 +368,7 @@ void Configuration_drawConcentrationEllipses (Configuration me, Graphics g, doub
 autoConfiguration TableOfReal_to_Configuration (TableOfReal me) {
 	try {
 		autoConfiguration thee = Configuration_create (my numberOfRows, my numberOfColumns);
-		thy data.get() <<= my data.get();
+		thy data.all()  <<=  my data.get();
 		TableOfReal_copyLabels (me, thee.get(), 1, 1);
 		return thee;
 	} catch (MelderError) {

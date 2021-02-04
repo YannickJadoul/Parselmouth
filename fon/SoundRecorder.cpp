@@ -294,6 +294,7 @@ static void showMaximum (SoundRecorder me, int channel, double maximum) {
 
 static void showMeter (SoundRecorder me, const short *buffertje, integer nsamp) {
 	Melder_assert (my graphics);
+	Graphics_clearWs (my graphics.get());
 	if (nsamp < 1) {
 		Graphics_setWindow (my graphics.get(), 0.0, 1.0, 0.0, 1.0);
 		#if defined (macintosh)
@@ -389,10 +390,6 @@ static WORKPROC_RETURN workProc (WORKPROC_ARGS) {
 	try {
 		short buffertje [step*2];
 		int stepje = 0;
-
-		#if defined (linux)
-			#define min(a,b) a > b ? b : a
-		#endif
 
 		/*
 			Determine global audio parameters (may have been changed by an external control panel):
