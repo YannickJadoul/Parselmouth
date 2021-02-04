@@ -19,6 +19,8 @@ for SUBDIR in $(find . -mindepth 3 -name 'Makefile' | xargs dirname)
 do
 	if [ -f "$SUBDIR/CMakeLists.txt" ]
 	then
-		(cd $SUBDIR && CONTENTS=$(egrep -o '([[:graph:]]+\.o *)+' Makefile | sed -E 's/([[:graph:]]+)\.o/ls \1.c* | tr "\n" " " ;/ge' | sed '1!s/^/\t/g' | sed 's/ $//' | sed '1s/^/target_sources(praat PRIVATE\n\t/' | sed '$s/$/\n)/') && cmp -s CMakeLists.txt <<< "$CONTENTS" || meld CMakeLists.txt <(echo "$CONTENTS"))
+	  pushd "$SUBDIR" > /dev/null
+		CONTENTS=$(egrep -o '([[:graph:]]+\.o *)+' Makefile | sed 's|$(CELT)|opus/celt/|g' | sed 's|$(SILK)|opus/silk/|g' | sed 's|$(SILKFLOAT)|opus/silk/float/|g' | sed -E 's/([[:graph:]]+)\.o/ls \1.c* | tr "\n" " " ;/ge' | sed '1!s/^/\t/g' | sed 's/ $//' | sed '1s/^/target_sources(praat PRIVATE\n\t/' | sed '$s/$/\n)/') && cmp -s CMakeLists.txt <<< "$CONTENTS" || meld CMakeLists.txt <(echo "$CONTENTS")
+		popd > /dev/null
 	fi
 done

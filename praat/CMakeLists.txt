@@ -23,6 +23,8 @@ set(PRAAT_SUBDIRECTORIES
 	external/flac
 	external/portaudio
 	external/espeak
+	external/vorbis
+	external/opusfile
 	kar
 	melder
 	sys
@@ -37,7 +39,13 @@ set(PRAAT_SUBDIRECTORIES
 	artsynth
 )
 
-set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES})
+set(PRAAT_INCLUDE_DIRS
+	${PRAAT_SUBDIRECTORIES}
+	external/opusfile/opus
+	external/opusfile/opus/celt
+	external/opusfile/opus/silk
+	external/opusfile/opus/silk/float
+)
 
 set(PRAAT_FLAGS)
 set(PRAAT_FLAGS_PRIVATE)

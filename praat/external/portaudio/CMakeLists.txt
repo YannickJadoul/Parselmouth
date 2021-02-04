@@ -1,7 +1,7 @@
 target_sources(praat PRIVATE
 	pa_front.c pa_debugprint.c pa_cpuload.c
 	pa_allocation.c pa_process.c pa_converters.c pa_dither.c
-	pa_stream.c patest_record.c
+	pa_stream.c
 )
 
 if (UNIX)
