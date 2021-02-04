@@ -42,9 +42,9 @@ autoDiscriminant TableOfReal_to_Discriminant (TableOfReal me) {
 
 		// Overall centroid and apriori probabilities and costs.
 
-		autoVEC centroid = newVECzero (dimension);
-		autoMAT between = newMATzero (thy numberOfGroups, dimension);
-		thy aprioriProbabilities = newVECraw (thy numberOfGroups);
+		autoVEC centroid = zero_VEC (dimension);
+		autoMAT between = zero_MAT (thy numberOfGroups, dimension);
+		thy aprioriProbabilities = raw_VEC (thy numberOfGroups);
 
 		longdouble sum = 0.0;
 		for (integer k = 1; k <= thy numberOfGroups; k ++) {
@@ -73,10 +73,10 @@ autoDiscriminant TableOfReal_to_Discriminant (TableOfReal me) {
 		/*
 			Costs.
 		*/
-		thy costs = newMATraw (thy numberOfGroups, thy numberOfGroups);
+		thy costs = raw_MAT (thy numberOfGroups, thy numberOfGroups);
 		
-		thy costs.get() <<= 1.0;
-		thy costs.diagonal() <<= 0.0;
+		thy costs.all()  <<=  1.0;
+		thy costs.diagonal()  <<=  0.0;
 		
 		return thee;
 	} catch (MelderError) {
@@ -138,10 +138,10 @@ autoClassificationTable Discriminant_TableOfReal_to_ClassificationTable (Discrim
 		Melder_require (dimension == thy numberOfColumns,
 			U"The number of columns should agree with the dimension of the discriminant.");
 		
-		autoVEC log_p = newVECraw (numberOfGroups);
-		autoVEC log_apriori = newVECraw (numberOfGroups);
-		autoVEC ln_determinant = newVECraw (numberOfGroups);
-		autoVEC buf = newVECraw (dimension);
+		autoVEC log_p = raw_VEC (numberOfGroups);
+		autoVEC log_apriori = raw_VEC (numberOfGroups);
+		autoVEC ln_determinant = raw_VEC (numberOfGroups);
+		autoVEC buf = raw_VEC (dimension);
 		
 		autovector <SSCP> sscpvec = newvectorzero <SSCP> (numberOfGroups);
 		autoSSCP pool = SSCPList_to_SSCP_pool (my groups.get());
@@ -264,12 +264,12 @@ autoClassificationTable Discriminant_TableOfReal_to_ClassificationTable_dw (Disc
 		Melder_require (p == thy numberOfColumns,
 			U"The number of columns does not agree with the dimension of the discriminant.");
 
-		autoVEC log_p = newVECraw (g);
-		autoVEC log_apriori = newVECraw (g);
-		autoVEC ln_determinant = newVECraw (g);
-		autoVEC buf = newVECraw (p);
-		autoVEC displacement = newVECraw (p);
-		autoVEC x = newVECzero (p);
+		autoVEC log_p = raw_VEC (g);
+		autoVEC log_apriori = raw_VEC (g);
+		autoVEC ln_determinant = raw_VEC (g);
+		autoVEC buf = raw_VEC (p);
+		autoVEC displacement = raw_VEC (p);
+		autoVEC x = zero_VEC (p);
 		autovector <SSCP> sscpvec = newvectorzero <SSCP> (g);
 		autoSSCP pool = SSCPList_to_SSCP_pool (my groups.get());
 		autoClassificationTable him = ClassificationTable_create (m, g);
@@ -416,7 +416,7 @@ autoConfiguration Discriminant_TableOfReal_to_Configuration (Discriminant me, Ta
 		Melder_require (numberOfDimensions <= my eigen -> numberOfEigenvalues,
 			U"The number of dimensions should not exceed the number of eigenvectors in the Discriminant (", my eigen -> numberOfEigenvalues, U").");
 		autoConfiguration him = Configuration_create (thy numberOfRows, numberOfDimensions);
-		MATmul (his data.get(), thy data.get(), my eigen -> eigenvectors.horizontalBand (1, numberOfDimensions).transpose ());
+		mul_MAT_out (his data.get(), thy data.get(), my eigen -> eigenvectors.horizontalBand (1, numberOfDimensions).transpose ());
 		TableOfReal_copyLabels (thee, him.get(), 1, 0);
 		TableOfReal_setSequentialColumnLabels (him.get(), 0, 0, U"Eigenvector ", 1, 1);
 		return him;

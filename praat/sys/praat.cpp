@@ -46,7 +46,8 @@
 #include "InfoEditor.h"
 
 #if gtk
-	#include <gdk/gdkx.h>
+	#include <gdk/gdkx.h>   // for GDK_WINDOW_XID
+	//#include <X11/Xlib.h>
 #endif
 
 Thing_implement (Praat_Command, Thing, 0);
@@ -116,66 +117,72 @@ static GuiList praatList_objects;
 
 integer praat_idOfSelected (ClassInfo klas, integer inplace) {
 	integer place = inplace, IOBJECT;
-	if (place == 0) place = 1;
+	if (place == 0)
+		place = 1;
 	if (place > 0) {
 		WHERE (SELECTED && (! klas || CLASS == klas)) {
-			if (place == 1) return ID;
+			if (place == 1)
+				return ID;
 			place --;
 		}
 	} else {
 		WHERE_DOWN (SELECTED && (! klas || CLASS == klas)) {
-			if (place == -1) return ID;
+			if (place == -1)
+				return ID;
 			place ++;
 		}
 	}
-	if (inplace) {
+	if (inplace)
 		Melder_throw (U"No ", klas ? klas -> className : U"object", U" #", inplace, U" selected.");
-	} else {
+	else
 		Melder_throw (U"No ", klas ? klas -> className : U"object", U" selected.");
-	}
 	return 0;
 }
 
 autoVEC praat_idsOfAllSelected (ClassInfo klas) {
-	autoVEC result = newVECraw (praat_numberOfSelected (klas));
+	autoVEC result = raw_VEC (praat_numberOfSelected (klas));
 	integer selectedObjectNumber = 0, IOBJECT;
-	WHERE (SELECTED && (! klas || CLASS == klas)) {
+	WHERE (SELECTED && (! klas || CLASS == klas))
 		result [++ selectedObjectNumber] = ID;
-	}
 	return result;
 }
 
 char32 * praat_nameOfSelected (ClassInfo klas, integer inplace) {
 	integer place = inplace, IOBJECT;
-	if (place == 0) place = 1;
+	if (place == 0)
+		place = 1;
 	if (place > 0) {
 		WHERE (SELECTED && (! klas || CLASS == klas)) {
-			if (place == 1) return klas ? NAME : FULL_NAME;
+			if (place == 1)
+				return klas ? NAME : FULL_NAME;
 			place --;
 		}
 	} else {
 		WHERE_DOWN (SELECTED && (! klas || CLASS == klas)) {
-			if (place == -1) return klas ? NAME : FULL_NAME;
+			if (place == -1)
+				return klas ? NAME : FULL_NAME;
 			place ++;
 		}
 	}
-	if (inplace) {
+	if (inplace)
 		Melder_throw (U"No ", klas ? klas -> className : U"object", U" #", inplace, U" selected.");
-	} else {
+	else
 		Melder_throw (U"No ", klas ? klas -> className : U"object", U" selected.");
-	}
 	return 0;   // failure
 }
 
 integer praat_numberOfSelected (ClassInfo klas) {
-	if (! klas) return theCurrentPraatObjects -> totalSelection;
+	if (! klas)
+		return theCurrentPraatObjects -> totalSelection;
 	integer readableClassId = klas -> sequentialUniqueIdOfReadableClass;
-	if (readableClassId == 0) Melder_fatal (U"No sequential unique ID for class ", klas -> className, U".");
+	if (readableClassId == 0)
+		Melder_fatal (U"No sequential unique ID for class ", klas -> className, U".");
 	return theCurrentPraatObjects -> numberOfSelected [readableClassId];
 }
 
 void praat_deselect (int IOBJECT) {
-	if (! SELECTED) return;
+	if (! SELECTED)
+		return;
 	SELECTED = false;
 	theCurrentPraatObjects -> totalSelection -= 1;
 	integer readableClassId = theCurrentPraatObjects -> list [IOBJECT]. object -> classInfo -> sequentialUniqueIdOfReadableClass;
@@ -188,10 +195,15 @@ void praat_deselect (int IOBJECT) {
 	}
 }
 
-void praat_deselectAll () { int IOBJECT; WHERE (1) praat_deselect (IOBJECT); }
+void praat_deselectAll () {
+	int IOBJECT;
+	WHERE (1)
+		praat_deselect (IOBJECT);
+}
 
 void praat_select (int IOBJECT) {
-	if (SELECTED) return;
+	if (SELECTED)
+		return;
 	SELECTED = true;
 	theCurrentPraatObjects -> totalSelection += 1;
 	Thing object = theCurrentPraatObjects -> list [IOBJECT]. object;
@@ -204,7 +216,11 @@ void praat_select (int IOBJECT) {
 		GuiList_selectItem (praatList_objects, IOBJECT);
 }
 
-void praat_selectAll () { int IOBJECT; WHERE (1) praat_select (IOBJECT); }
+void praat_selectAll () {
+	int IOBJECT;
+	WHERE (true)
+		praat_select (IOBJECT);
+}
 
 void praat_list_background () {
 	int IOBJECT;
@@ -268,15 +284,13 @@ void praat_write_do (UiForm dia, conststring32 extension) {
 
 static void removeAllReferencesToMoribundEditor (Editor editor) {
 	/*
-	 * Remove all references to this editor.
-	 * It may be editing multiple objects.
-	 */
-	for (int iobject = 1; iobject <= theCurrentPraatObjects -> n; iobject ++) {
-		for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
+		Remove all references to this editor.
+		It may be editing multiple objects.
+	*/
+	for (int iobject = 1; iobject <= theCurrentPraatObjects -> n; iobject ++)
+		for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++)
 			if (theCurrentPraatObjects -> list [iobject]. editors [ieditor] == editor)
 				theCurrentPraatObjects -> list [iobject]. editors [ieditor] = nullptr;
-		}
-	}
 	if (praatP. editor == editor)
 		praatP. editor = nullptr;
 }
@@ -286,7 +300,6 @@ static void removeAllReferencesToMoribundEditor (Editor editor) {
 	killing everything that has to do with the selection.
 */
 static void praat_remove (int iobject, bool removeVisibly) {
-
 	Melder_assert (iobject >= 1 && iobject <= theCurrentPraatObjects -> n);
 	if (theCurrentPraatObjects -> list [iobject]. isBeingCreated) {
 		theCurrentPraatObjects -> list [iobject]. isBeingCreated = false;
@@ -298,8 +311,8 @@ static void praat_remove (int iobject, bool removeVisibly) {
 	trace (U"deselected object ", iobject);
 
 	/*
-	 * To prevent synchronization problems, kill editors before killing the data.
-	 */
+		To prevent synchronization problems, kill editors before killing the data.
+	*/
 	for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
 		Editor editor = theCurrentPraatObjects -> list [iobject]. editors [ieditor];   // save this one reference
 		if (editor) {
@@ -308,7 +321,7 @@ static void praat_remove (int iobject, bool removeVisibly) {
 			trace (U"forget editor ", ieditor);
 			if (removeVisibly)
 				forget (editor);   // TODO: doesn't this call removeAllReferencesToMoribundEditor() again?
-			trace (U"forgeotten editor ", ieditor);
+			trace (U"forgotten editor ", ieditor);
 		}
 	}
 	MelderFile_setToNull (& theCurrentPraatObjects -> list [iobject]. file);
@@ -322,13 +335,12 @@ static void praat_remove (int iobject, bool removeVisibly) {
 }
 
 void praat_cleanUpName (char32 *name) {
-	/*
-	 * Replaces spaces and special characters by underscores.
-	 */
-	for (; *name; name ++) {
+/*
+	Replaces spaces and special characters by underscores.
+*/
+	for (; *name; name ++)
 		if (str32chr (U" ,.:;\\/()[]{}~`\'<>*&^%#@!?$\"|", *name))
 			*name = U'_';
-	}
 }
 
 /***** objects + commands *****/
@@ -339,7 +351,7 @@ static void praat_new_unpackCollection (Collection me, bool owned, const char32*
 		Daata object = (Daata) my at [idata];
 		if (owned)
 			my at [idata] = nullptr;   // disown
-		conststring32 name = object -> name ? object -> name.get() : myName;
+		conststring32 name = ( object -> name ? object -> name.get() : myName );
 		Melder_assert (name);
 		praat_newWithFile (object, owned, nullptr, name);   // recurse
 	}
@@ -363,7 +375,8 @@ void praat_newWithFile (Daata me, bool owned, MelderFile file, conststring32 myN
 		 * Remove extension.
 		 */
 		char32 *p = str32rchr (givenName.string, U'.');
-		if (p) *p = U'\0';
+		if (p)
+			*p = U'\0';
 	} else {
 		MelderString_copy (& givenName, my name && my name [0] ? my name.get() : U"untitled");
 	}
@@ -380,22 +393,22 @@ void praat_newWithFile (Daata me, bool owned, MelderFile file, conststring32 myN
 	theCurrentPraatObjects -> list [IOBJECT]. name = Melder_dup_f (name.string);   // all right to crash if out of memory
 	++ theCurrentPraatObjects -> uniqueId;
 
-	if (! theCurrentPraatApplication -> batch) {   // put a new object on the screen, at the bottom of the list
-		GuiList_insertItem (praatList_objects,
+	if (! theCurrentPraatApplication -> batch)   // put a new object on the screen, at the bottom of the list
+		GuiList_insertItem (
+			praatList_objects,
 			Melder_cat (theCurrentPraatObjects -> uniqueId, U". ", name.string),
-			theCurrentPraatObjects -> n);
-	}
+			theCurrentPraatObjects -> n
+		);
 	CLASS = my classInfo;
 	OBJECT = me;
 	theCurrentPraatObjects -> list [IOBJECT]. owned = owned;
 	SELECTED = false;
 	for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++)
 		EDITOR [ieditor] = nullptr;
-	if (file) {
+	if (file)
 		MelderFile_copy (file, & theCurrentPraatObjects -> list [IOBJECT]. file);
-	} else {
+	else
 		MelderFile_setToNull (& theCurrentPraatObjects -> list [IOBJECT]. file);
-	}
 	ID = theCurrentPraatObjects -> uniqueId;
 	theCurrentPraatObjects -> list [IOBJECT]. isBeingCreated = true;
 	Thing_setName (OBJECT, givenName.string);
@@ -477,9 +490,11 @@ void praat_list_renameAndSelect (int position, conststring32 name) {
 
 void praat_name2 (char32 *name, ClassInfo klas1, ClassInfo klas2) {
 	int i1 = 1;
-	while (theCurrentPraatObjects -> list [i1]. isSelected == 0 || theCurrentPraatObjects -> list [i1]. klas != klas1) i1 ++;
+	while (theCurrentPraatObjects -> list [i1]. isSelected == 0 || theCurrentPraatObjects -> list [i1]. klas != klas1)
+		i1 ++;
 	int i2 = 1;
-	while (theCurrentPraatObjects -> list [i2]. isSelected == 0 || theCurrentPraatObjects -> list [i2]. klas != klas2) i2 ++;
+	while (theCurrentPraatObjects -> list [i2]. isSelected == 0 || theCurrentPraatObjects -> list [i2]. klas != klas2)
+		i2 ++;
 	char32 *name1 = str32chr (theCurrentPraatObjects -> list [i1]. name.get(), U' ') + 1;
 	char32 *name2 = str32chr (theCurrentPraatObjects -> list [i2]. name.get(), U' ') + 1;
 	if (str32equ (name1, name2))
@@ -499,9 +514,8 @@ void praat_removeObject (int i) {
 		theCurrentPraatObjects -> list [theCurrentPraatObjects -> n]. editors [ieditor] = nullptr;   // undangle or remove second reference
 	MelderFile_setToNull (& theCurrentPraatObjects -> list [theCurrentPraatObjects -> n]. file);   // undangle or remove second reference
 	-- theCurrentPraatObjects -> n;
-	if (! theCurrentPraatApplication -> batch) {
+	if (! theCurrentPraatApplication -> batch)
 		GuiList_deleteItem (praatList_objects, i);
-	}
 }
 
 static void praat_exit (int exit_code) {
@@ -528,11 +542,11 @@ static void praat_exit (int exit_code) {
 					 */
 					autofile f = Melder_fopen (& pidFile, "r");
 					long_not_integer pid;
-					if (fscanf (f, "%ld", & pid) < 1) throw MelderError ();
+					if (fscanf (f, "%ld", & pid) < 1)
+						throw MelderError ();
 					f.close (& pidFile);
-					if (pid == getpid ()) {   // is the pid in the pid file equal to our pid?
+					if (pid == getpid ())   // is the pid in the pid file equal to our pid?
 						MelderFile_delete (& pidFile);   // ...then we own the pid file and can delete it
-					}
 				} catch (MelderError) {
 					Melder_clearError ();   // if the pid file is somehow missing or corrupted, we just ignore that
 				}
@@ -634,24 +648,20 @@ static void cb_Editor_destruction (Editor me) {
 
 static void cb_Editor_dataChanged (Editor me) {
 	for (int iobject = 1; iobject <= theCurrentPraatObjects -> n; iobject ++) {
-		bool editingThisObject = false;
 		/*
-		 * Am I editing this object?
-		 */
-		for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
-			if (theCurrentPraatObjects -> list [iobject]. editors [ieditor] == me) {
-				editingThisObject = true;
-			}
-		}
+			Am I editing this object?
+		*/
+		bool editingThisObject = false;
+		for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++)
+			editingThisObject |= ( theCurrentPraatObjects -> list [iobject]. editors [ieditor] == me );
 		if (editingThisObject) {
 			/*
-			 * Notify all other editors associated with this object.
-			 */
+				Notify all other editors associated with this object.
+			*/
 			for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
 				Editor otherEditor = theCurrentPraatObjects -> list [iobject]. editors [ieditor];
-				if (otherEditor && otherEditor != me) {
+				if (otherEditor && otherEditor != me)
 					Editor_dataChanged (otherEditor);
-				}
 			}
 		}
 	}
@@ -864,31 +874,80 @@ void praat_dontUsePictureWindow () { praatP.dontUsePictureWindow = true; }
 
 /********** INITIALIZATION OF THE PRAAT SHELL **********/
 
-#if defined (UNIX)
+#if defined (UNIX) && ! defined (NO_GUI)
+	/*
+		sendpraat messages can enter in two ways: via SIGUSR1 and via XSendEvent().
+	*/
+	/*
+		SIGUSR1 comes in at interrupt time.
+		We generate an event that should enter the main event loop at loop time.
+	*/
 	static void cb_sigusr1 (int signum) {
 		Melder_assert (signum == SIGUSR1);
-		#if 0
-			gboolean retval;
-			g_signal_emit_by_name (GTK_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event", nullptr, & retval);
-		#else
-			#if ALLOW_GDK_DRAWING && ! defined (NO_GRAPHICS)
-				GdkEventClient gevent;
-				gevent. type = GDK_CLIENT_EVENT;
-				gevent. window = GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow) -> window;
-				gevent. send_event = 1;
-				gevent. message_type = gdk_atom_intern_static_string ("SENDPRAAT");
-				gevent. data_format = 8;
-				// Melder_casual (U"event put");
-				gdk_event_put ((GdkEvent *) & gevent);
-			#endif
-		#endif
+		signal (SIGUSR1, cb_sigusr1);   // keep this handler in the air
+		GdkEventProperty gevent;   // or GdkEventSetting, once we can find its signal name
+		gevent. type = GDK_PROPERTY_NOTIFY;   // or GDK_SETTING
+		gevent. window = gtk_widget_get_window (GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow));
+		gevent. send_event = 1;
+		gevent. atom = gdk_atom_intern_static_string ("SENDPRAAT");
+		gevent. time = 0;
+		gevent. state = GDK_PROPERTY_NEW_VALUE;
+		// Melder_casual (U"event put");
+		gdk_event_put ((GdkEvent *) & gevent);   // this is safe only if gdk_event_put is reentrant, which is unlikely because the event queue is global
+	}
+	#if 0
+		/*
+			This would have been the route via Xt, which may not be available.
+		*/
+		int haveMessage = FALSE;
+		static void timerProc_userMessage (XtPointer dummy, XtIntervalId *id) {
+			FILE *f;
+			if ((f = Melder_fopen (& messageFile, "r")) != NULL) {
+				long pid;
+				int narg = fscanf (f, "#%ld", & pid);
+				fclose (f);
+				if (! praat_executeFromFile (Melder_fileToPath (& messageFile)))
+					Melder_flushError ("%s: message not completely handled.", praatP.title);
+				if (narg) kill (pid, SIGUSR2);
+			} else {
+				Melder_clearError ();
+			}
+		}
+		static void cb_sigusr1 (int signum) {
+			Melder_assert (signum == SIGUSR1);
+			signal (SIGUSR1, handleMessage);   /* Keep this handler in the air. */
+			haveMessage = TRUE;
+			/* Trial: */
+			haveMessage = FALSE;
+			XtAppAddTimeOut (praat.context, 100, timerProc_userMessage, 0);
+		}
+	#endif
+	/*
+		The route via XSendEvent() from the sendpraat program.
+	*/
+	static GdkFilterReturn sendpraatEventFilter (GdkXEvent *xevent, GdkEvent *event, gpointer data)
+	{
+		//Melder_casual (U"sendpraatEventFilter 1");
+		if (((XEvent *) xevent) -> type != ClientMessage)
+			return GDK_FILTER_CONTINUE;
+		//Melder_casual (U"sendpraatEventFilter 2");
+		XClientMessageEvent *evt = (XClientMessageEvent *) xevent;
+		Atom message_type = XInternAtom (evt -> display, "SENDPRAAT", FALSE);   // TODO: make static
+		//Melder_casual (U"sendpraatEventFilter 3");
+		if (evt -> message_type != message_type)
+			return GDK_FILTER_CONTINUE;
+		/*
+			TODO: call script
+		*/
+		Melder_casual (U"sendpraatEventFilter 9");
+		return GDK_FILTER_CONTINUE;   // TODO: check when to return something else than GDK_FILTER_CONTINUE
 	}
 #endif
 
 #if defined (UNIX)
-	#if ALLOW_GDK_DRAWING && ! defined (NO_GRAPHICS)
-		static gboolean cb_userMessage (GtkWidget /* widget */, GdkEventClient * /* event */, gpointer /* userData */) {
-			//Melder_casual (U"client event called");
+	#if ! defined (NO_GUI)
+		static gboolean cb_userMessage (GtkWidget /* widget */, GdkEventProperty * /* event */, gpointer /* userData */) {
+			Melder_casual (U"client event called");
 			autofile f;
 			try {
 				f.reset (Melder_fopen (& messageFile, "r"));
@@ -1424,11 +1483,7 @@ void praat_init (conststring32 title, int argc, char **argv)
 		#if defined (UNIX) && ! defined (NO_GUI)
 			try {
 				autofile f = Melder_fopen (& pidFile, "a");
-				#if ALLOW_GDK_DRAWING
-					fprintf (f, " %ld", (long_not_integer) GDK_WINDOW_XID (GDK_DRAWABLE (GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow) -> window)));
-				#else
-					fprintf (f, " %ld", (long_not_integer) GDK_WINDOW_XID (gtk_widget_get_window (GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow))));
-				#endif
+				fprintf (f, " %ld", (long_not_integer) GDK_WINDOW_XID (gtk_widget_get_window (GTK_WIDGET (theCurrentPraatApplication -> topShell -> d_gtkWindow))));
 				f.close (& pidFile);
 			} catch (MelderError) {
 				Melder_clearError ();
@@ -1475,45 +1530,44 @@ static void executeStartUpFile (MelderDir startUpDirectory, conststring32 fileNa
 
 #if gtk
 	#include <gdk/gdkkeysyms.h>
-	#if ALLOW_GDK_DRAWING
-		static gint theKeySnooper (GtkWidget *widget, GdkEventKey *event, gpointer data) {
-			trace (U"keyval ", event -> keyval, U", type ", event -> type);
-			if ((event -> keyval == GDK_Tab || event -> keyval == GDK_ISO_Left_Tab) && event -> type == GDK_KEY_PRESS) {
-				trace (U"tab key pressed in window ", Melder_pointer (widget));
-				constexpr bool theTabKeyShouldWorkEvenIfNumLockIsOn = true;
-				constexpr uint32 theProbableNumLockModifierMask = GDK_MOD2_MASK;
-				constexpr uint32 modifiersToIgnore = ( theTabKeyShouldWorkEvenIfNumLockIsOn ? theProbableNumLockModifierMask : 0 );
-				constexpr uint32 modifiersNotToIgnore = GDK_MODIFIER_MASK & ~ modifiersToIgnore;
-				if ((event -> state & modifiersNotToIgnore) == 0) {
-					if (GTK_IS_WINDOW (widget)) {
-						GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
-						trace (U"tab pressed in GTK window ", Melder_pointer (shell));
-						void (*tabCallback) (GuiObject, gpointer) = (void (*) (GuiObject, gpointer)) g_object_get_data (G_OBJECT (widget), "tabCallback");
-						if (tabCallback) {
-							trace (U"a tab callback exists");
-							void *tabClosure = g_object_get_data (G_OBJECT (widget), "tabClosure");
-							tabCallback (widget, tabClosure);
-							return true;
-						}
+	static gint theKeySnooper (GtkWidget *widget, GdkEventKey *event, gpointer data) {
+		trace (U"keyval ", event -> keyval, U", type ", event -> type);
+		if ((event -> keyval == GDK_KEY_Tab || event -> keyval == GDK_KEY_ISO_Left_Tab) && event -> type == GDK_KEY_PRESS) {
+			using TabCallback = void (*) (GuiObject, gpointer);
+			trace (U"tab key pressed in window ", Melder_pointer (widget));
+			constexpr bool theTabKeyShouldWorkEvenIfNumLockIsOn = true;
+			constexpr uint32 theProbableNumLockModifierMask = GDK_MOD2_MASK;
+			constexpr uint32 modifiersToIgnore = ( theTabKeyShouldWorkEvenIfNumLockIsOn ? theProbableNumLockModifierMask : 0 );
+			constexpr uint32 modifiersNotToIgnore = GDK_MODIFIER_MASK & ~ modifiersToIgnore;
+			if ((event -> state & modifiersNotToIgnore) == 0) {
+				if (GTK_IS_WINDOW (widget)) {
+					GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
+					trace (U"tab pressed in GTK window ", Melder_pointer (shell));
+					TabCallback tabCallback = (TabCallback) g_object_get_data (G_OBJECT (widget), "tabCallback");
+					if (tabCallback) {
+						trace (U"a tab callback exists");
+						void *tabClosure = g_object_get_data (G_OBJECT (widget), "tabClosure");
+						tabCallback (widget, tabClosure);
+						return true;
 					}
-				} else if ((event -> state & modifiersNotToIgnore) == GDK_SHIFT_MASK) {
-					if (GTK_IS_WINDOW (widget)) {
-						GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
-						trace (U"shift-tab pressed in GTK window ", Melder_pointer (shell));
-						void (*tabCallback) (GuiObject, gpointer) = (void (*) (GuiObject, gpointer)) g_object_get_data (G_OBJECT (widget), "shiftTabCallback");
-						if (tabCallback) {
-							trace (U"a shift tab callback exists");
-							void *tabClosure = g_object_get_data (G_OBJECT (widget), "shiftTabClosure");
-							tabCallback (widget, tabClosure);
-							return true;
-						}
+				}
+			} else if ((event -> state & modifiersNotToIgnore) == GDK_SHIFT_MASK) {
+				if (GTK_IS_WINDOW (widget)) {
+					GtkWidget *shell = gtk_widget_get_toplevel (GTK_WIDGET (widget));
+					trace (U"shift-tab pressed in GTK window ", Melder_pointer (shell));
+					TabCallback tabCallback = (TabCallback) g_object_get_data (G_OBJECT (widget), "shiftTabCallback");
+					if (tabCallback) {
+						trace (U"a shift tab callback exists");
+						void *tabClosure = g_object_get_data (G_OBJECT (widget), "shiftTabClosure");
+						tabCallback (widget, tabClosure);
+						return true;
 					}
 				}
 			}
-			trace (U"end");
-			return false;   // pass event on
 		}
-	#endif
+		trace (U"end");
+		return false;   // pass event on
+	}
 #endif
 
 void praat_run () {
@@ -1564,22 +1618,20 @@ void praat_run () {
 		structMelderFile searchPattern { };
 		MelderDir_getFile (& praatDir, U"plugin_*", & searchPattern);
 		try {
-			autoStrings directoryNames = Strings_createAsDirectoryList (Melder_fileToPath (& searchPattern));
-			if (directoryNames -> numberOfStrings > 0) {
-				for (integer i = 1; i <= directoryNames -> numberOfStrings; i ++) {
-					structMelderDir pluginDir { };
-					structMelderFile plugin { };
-					MelderDir_getSubdir (& praatDir, directoryNames -> strings [i].get(), & pluginDir);
-					MelderDir_getFile (& pluginDir, U"setup.praat", & plugin);
-					if (MelderFile_readable (& plugin)) {
-						Melder_backgrounding = true;
-						try {
-							praat_executeScriptFromFile (& plugin, nullptr);
-						} catch (MelderError) {
-							Melder_flushError (praatP.title.get(), U": plugin ", & plugin, U" contains an error.");
-						}
-						Melder_backgrounding = false;
+			autoSTRVEC folderNames = folderNames_STRVEC (Melder_fileToPath (& searchPattern));
+			for (integer i = 1; i <= folderNames.size; i ++) {
+				structMelderDir pluginDir { };
+				structMelderFile plugin { };
+				MelderDir_getSubdir (& praatDir, folderNames [i].get(), & pluginDir);
+				MelderDir_getFile (& pluginDir, U"setup.praat", & plugin);
+				if (MelderFile_readable (& plugin)) {
+					Melder_backgrounding = true;
+					try {
+						praat_executeScriptFromFile (& plugin, nullptr);
+					} catch (MelderError) {
+						Melder_flushError (praatP.title.get(), U": plugin ", & plugin, U" contains an error.");
 					}
+					Melder_backgrounding = false;
 				}
 			}
 		} catch (MelderError) {
@@ -1677,14 +1729,12 @@ void praat_run () {
 			//gtk_widget_add_events (G_OBJECT (theCurrentPraatApplication -> topShell), GDK_ALL_EVENTS_MASK);
 			trace (U"install GTK key snooper");
 			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-			#if ALLOW_GDK_DRAWING
-				g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "client-event",
+			//g_signal_newv ("SENDPRAAT", G_TYPE_FROM_CLASS (gobject_class), G_SIGNAL_RUN_LAST, NULL, NULL, NULL, NULL, G_TYPE_NONE, 0, NULL);
+			g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "property-notify-event",
 					G_CALLBACK (cb_userMessage), nullptr);
-			#endif
 			signal (SIGUSR1, cb_sigusr1);
-			#if ALLOW_GDK_DRAWING
-				gtk_key_snooper_install (theKeySnooper, 0);
-			#endif
+			gdk_window_add_filter (NULL, sendpraatEventFilter, NULL);
+			gtk_key_snooper_install (theKeySnooper, 0);
 			trace (U"start the GTK event loop");
 			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 			gtk_main ();

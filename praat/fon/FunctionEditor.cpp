@@ -83,6 +83,8 @@ static void updateGroup (FunctionEditor me) {
 }
 
 void structFunctionEditor :: draw () {
+	if (Melder_debug == 55)
+		Melder_casual (Thing_messageNameAndAddress (this), U" draw");
 	const bool leftFromWindow = ( our startWindow > our tmin );
 	const bool rightFromWindow = ( our endWindow < our tmax );
 	const bool cursorIsVisible = ( our startSelection == our endSelection && our startSelection >= our startWindow && our startSelection <= our endWindow );
@@ -103,7 +105,7 @@ void structFunctionEditor :: draw () {
 	if (endIsVisible && our endSelection != our startSelection)
 		our marker [++ our numberOfMarkers] = our endSelection;
 	our marker [++ our numberOfMarkers] = our endWindow;
-	VECsort_inplace (VEC (& our marker [1], our numberOfMarkers));
+	sort_VEC_inout (VEC (& our marker [1], our numberOfMarkers));
 
 	/*
 		Update rectangles.
@@ -192,6 +194,8 @@ void structFunctionEditor :: draw () {
 	Graphics_setColour (our graphics.get(), Melder_BLACK);
 
 	our viewFunctionViewerAsPixelettes ();
+	Graphics_setFont (our graphics.get(), kGraphics_font :: HELVETICA);
+	Graphics_setFontSize (our graphics.get(), 12.0);
 	Graphics_setTextAlignment (our graphics.get(), Graphics_CENTRE, Graphics_HALF);
 	for (integer i = 0; i < 8; i ++) {
 		const double left = our rect [i]. left, right = our rect [i]. right;
@@ -367,6 +371,8 @@ void structFunctionEditor :: v_destroy () noexcept {
 		theGroupMembers [i] = nullptr;
 		theGroupSize --;
 	}
+	if (Melder_debug == 55)
+		Melder_casual (Thing_messageNameAndAddress (this), U" v_destroy");
 	FunctionEditor_Parent :: v_destroy ();
 }
 
@@ -881,7 +887,7 @@ static void gui_cb_scroll (FunctionEditor me, GuiScrollBarEvent event) {
 	}
 	if (shifted || zoomed) {
 		my v_updateText ();
-		updateScrollBar (me);
+		//updateScrollBar (me);
 		Graphics_updateWs (my graphics.get());
 		if (! my group || ! my pref_synchronizedZoomAndScroll())
 			return;
@@ -1061,10 +1067,13 @@ bool structFunctionEditor :: v_mouseInWideDataView (GuiDrawingArea_MouseEvent ev
 	Melder_assert (our startSelection <= our endSelection);
 	Melder_clip (our startWindow, & mouseTime, our endWindow);   // WYSIWYG
 	static double anchorTime = undefined;
-	static bool hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = false;
 	if (event -> isClick()) {
-		Melder_assert (isundef (anchorTime));   // sanity check for the fixed order click-drag-drop
-		Melder_assert (! hasBeenDraggedBeyondVicinityRadiusAtLeastOnce);   // sanity check for the fixed order click-drag-drop
+		/*
+			Ignore any click that occurs during a drag,
+			such as might occur when the user has both a mouse and a trackpad.
+		*/
+		if (isdefined (anchorTime))
+			return false;
 		const double selectedMiddleTime = 0.5 * (our startSelection + our endSelection);
 		const bool theyWantToExtendTheCurrentSelectionAtTheLeft =
 				(event -> shiftKeyPressed && mouseTime < selectedMiddleTime) || event -> isLeftBottomFunctionKeyPressed();
@@ -1084,21 +1093,25 @@ bool structFunctionEditor :: v_mouseInWideDataView (GuiDrawingArea_MouseEvent ev
 		Melder_sort (& our startSelection, & our endSelection);
 		Melder_assert (isdefined (anchorTime));
 	} else if (event -> isDrag() || event -> isDrop()) {
-		if (isdefined (anchorTime)) {   // `false` if a descendant preempted the above click handling
-			if (! hasBeenDraggedBeyondVicinityRadiusAtLeastOnce) {
-				const double distanceToAnchor_mm = fabs (Graphics_dxWCtoMM (our graphics.get(), mouseTime - anchorTime));
-				constexpr double vicinityRadius_mm = 1.0;
-				if (distanceToAnchor_mm > vicinityRadius_mm)
-					hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = true;
-			}
-			if (hasBeenDraggedBeyondVicinityRadiusAtLeastOnce) {
-				our startSelection = std::min (anchorTime, mouseTime);
-				our endSelection = std::max (anchorTime, mouseTime);
-			}
-			if (event -> isDrop()) {
-				anchorTime = undefined;
-				hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = false;
-			}
+		/*
+			Ignore any drag or drop that happens after a descendant preempted the above click handling.
+		*/
+		if (isundef (anchorTime))
+			return false;
+		static bool hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = false;
+		if (! hasBeenDraggedBeyondVicinityRadiusAtLeastOnce) {
+			const double distanceToAnchor_mm = fabs (Graphics_dxWCtoMM (our graphics.get(), mouseTime - anchorTime));
+			constexpr double vicinityRadius_mm = 1.0;
+			if (distanceToAnchor_mm > vicinityRadius_mm)
+				hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = true;
+		}
+		if (hasBeenDraggedBeyondVicinityRadiusAtLeastOnce) {
+			our startSelection = std::min (anchorTime, mouseTime);
+			our endSelection = std::max (anchorTime, mouseTime);
+		}
+		if (event -> isDrop()) {
+			anchorTime = undefined;
+			hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = false;
 		}
 	}
 	return true;
@@ -1276,6 +1289,8 @@ void structFunctionEditor :: v_highlightSelection (double left, double right, do
 }
 
 void FunctionEditor_init (FunctionEditor me, conststring32 title, Function function) {
+	if (Melder_debug == 55)
+		Melder_casual (Thing_messageNameAndAddress (me), U" init");
 	my tmin = function -> xmin;   // set before adding children (see group button)
 	my tmax = function -> xmax;
 	Editor_init (me, 0, 0, my pref_shellWidth(), my pref_shellHeight(), title, function);

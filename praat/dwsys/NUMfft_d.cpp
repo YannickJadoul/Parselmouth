@@ -81,8 +81,8 @@ void NUMfft_backward (NUMfft_Table me, VEC data) {
 
 void NUMfft_Table_init (NUMfft_Table me, integer n) {
 	my n = n;
-	my trigcache = newVECzero (3 * n);
-	my splitcache = newINTVECzero (32);
+	my trigcache = zero_VEC (3 * n);
+	my splitcache = zero_INTVEC (32);
 	NUMrffti (n, my trigcache.asArgumentToFunctionThatExpectsZeroBasedArray(),
 		my splitcache.asArgumentToFunctionThatExpectsZeroBasedArray()
 	);

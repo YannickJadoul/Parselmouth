@@ -184,7 +184,7 @@ autoIntervalTier IntervalTier_IntervalTier_cutPartsMatchingLabel (IntervalTier m
     try {
         Melder_require (my xmin == thy xmin && my xmax != thy xmax,
             U"Domains should be identical.");
-        autoVEC durations = newVECraw (my intervals.size);
+        autoVEC durations = raw_VEC (my intervals.size);
         for (integer i = 1; i <= my intervals.size; i ++) {
             const TextInterval ti = my intervals.at [i];
             durations [i] = ti -> xmax - ti -> xmin;
@@ -291,7 +291,7 @@ autoTextGrid TextGrid_IntervalTier_cutPartsMatchingLabel (TextGrid me, IntervalT
 // The resulting IntervalTier has thy xmin as starting time and thy xmax as end time
 autoIntervalTier IntervalTiers_patch_noBoundaries (IntervalTier me, IntervalTier thee, conststring32 patchLabel, double precision) {
     try {
-		autoVEC durations = newVECzero (my intervals.size + 1);
+		autoVEC durations = zero_VEC (my intervals.size + 1);
 		for (integer i = 1; i <= my intervals.size; i ++) {
 			const TextInterval myti = my intervals.at [i];
 			durations [i] = myti -> xmax - myti -> xmin;
@@ -481,7 +481,7 @@ autoTextGrid SpeechSynthesizer_Sound_TextInterval_align (SpeechSynthesizer me, S
 		Melder_require (fabs (1.0 / thy dx - my d_samplingFrequency) < 1e-9, 
 			U"The sampling frequencies of the SpeechSynthesizer and the Sound should be equal.");
 
-		autoSTRVEC tokens = newSTRVECtokenize (his text.get());
+		autoSTRVEC tokens = splitByWhitespace_STRVEC (his text.get());
 		const integer numberOfTokens = tokens.size;
 		Melder_require (numberOfTokens > 0,
 			U"The interval should contain text.");
@@ -708,8 +708,8 @@ autoTable IntervalTiers_to_Table_textAlignmentment (IntervalTier target, Interva
 	try {
 		const integer numberOfTargetIntervals = target -> intervals.size;
 		const integer numberOfSourceIntervals = source -> intervals.size;
-		autoINTVEC targetOrigin = newINTVECzero (numberOfTargetIntervals);
-		autoINTVEC sourceOrigin = newINTVECzero (numberOfSourceIntervals);
+		autoINTVEC targetOrigin = zero_INTVEC (numberOfTargetIntervals);
+		autoINTVEC sourceOrigin = zero_INTVEC (numberOfSourceIntervals);
 		autoStrings targets = IntervalTier_to_Strings_withOriginData (target, targetOrigin.get());
 		autoStrings sources = IntervalTier_to_Strings_withOriginData (source, sourceOrigin.get());
 		autoEditDistanceTable edit = EditDistanceTable_create (targets.get(), sources.get());

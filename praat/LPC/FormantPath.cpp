@@ -8,7 +8,7 @@
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * WITHOUT ANY WARRANTY; without d the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
@@ -17,6 +17,7 @@
  */
 
 #include "FormantPath.h"
+#include "FormantPath_to_IntervalTier.h"
 #include "FormantModeler.h"
 #include "Graphics_extensions.h"
 #include "LPC_and_Formant.h"
@@ -67,8 +68,8 @@ Thing_implement (FormantPath, Sampled, 0);
 autoFormantPath FormantPath_create (double xmin, double xmax, integer nx, double dx, double x1, integer numberOfCeilings) {
 	autoFormantPath me = Thing_new (FormantPath);
 	Sampled_init (me.get (), xmin, xmax, nx, dx, x1);
-	my ceilings = newVECzero (numberOfCeilings);
-	my path = newINTVECzero (nx);
+	my ceilings = zero_VEC (numberOfCeilings);
+	my path = zero_INTVEC (nx);
 	return me;
 }
 
@@ -79,16 +80,22 @@ void FormantPath_pathFinder (FormantPath me, double qWeight, double frequencyCha
 
 autoINTVEC FormantPath_getOptimumPath (FormantPath me, double qWeight, double frequencyChangeWeight, double stressWeight, double ceilingChangeWeight, double intensityModulationStepSize, double windowLength, constINTVEC const& parameters, double powerf, autoMatrix *out_delta) {
 	constexpr double qCutoff = 20.0;
-	constexpr double stressCutoff = 200.0;
-	constexpr double frequencyChangeCutoff = 100.0;
+	constexpr double stressCutoff = 100.0;
 	try {
+		integer transtionCostType = 1;
+		double transitionCostCuttoff = 100.0;
+		if (Melder_debug == -3) {
+			transtionCostType = 2;
+			transitionCostCuttoff = 0.3;
+		}
 		autoMatrix stresses, qsums;
 		MelderExtremaWithInit intensities;
-		const double ceilingsRange = NUMmax (my ceilings.get()) - NUMmin (my ceilings.get());
 		const integer midformant = (my formants.size + 1) / 2;
-		for (integer iframe = 1; iframe <= my nx; iframe ++) {
-			const Formant_Frame frame = & my formants.at [midformant] -> frames [iframe];
-			intensities.update (frame -> intensity);
+		if (intensityModulationStepSize > 0.0) {
+			for (integer iframe = 1; iframe <= my nx; iframe ++) {
+				const Formant_Frame frame = & my formants.at [midformant] -> frames [iframe];
+				intensities.update (frame -> intensity);
+			}
 		}
 		const bool hasIntensityDifference = ( intensities.max - intensities.min > 0.0 );
 		const double dbMid = 0.5 * 10.0 * log10 (intensities.max * intensities.min);
@@ -98,81 +105,94 @@ autoINTVEC FormantPath_getOptimumPath (FormantPath me, double qWeight, double fr
 			qsums = FormantPath_to_Matrix_qSums (me, numberOfTracks);
 		if (stressWeight > 0.0)
 			stresses = FormantPath_to_Matrix_stress (me, windowLength, parameters, powerf);
-
+		
+		autoINTMAT psi = zero_INTMAT (my formants.size, my nx);
+		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, my formants.size + 0.5, my formants.size, 1.0, 1.0);
 		/*
-			Some options for assigning costs/benefits to states and state transitions:
-			We have states s[i], where i = 1..  S (= my formants.size)
-			Whithin each state i we can have j=1..F formant frequencies f[i][j] and bandwidths b[i][j].
-			Benefits of a state could be expressed as:
-			1. sum (j=1..F, 0.1*f[j]/b[j])/F, this has the advantage that states with large Q values (sharp peaks) have larger benefits
-			(2?). -|log(min(max(f1-f2, 100),300)|, keep sufficient distance between f1 and f2
-			Costs between successive states:
-			3. -sum(j=1..F, ( (2|f[i][j]-f[i+1][j]|/(f[i][j]+f[i+1][j]))
-			Global:
-			4. -global measure like w ?
-			We try to find the path that maximizes the benefits
+			delta [i][j] = minimum cost to reach state i at time j
 		*/
-		autoINTMAT psi = newINTMATzero (my formants.size, my nx);
-		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 1.0, my formants.size, my formants.size, 1.0, 1.0);
-		MAT deltas (& thy z [1] [1], thy ny, thy nx);
-		autoINTVEC path = newINTVECzero (my nx);
-		autoVEC intensity = newVECraw (my nx);
+		MAT delta (& thy z[1][1], thy ny, thy nx);
+		autoINTVEC path = zero_INTVEC (my nx);
+		autoVEC intensity = raw_VEC (my nx);
+		/*
+			We have a trellis of size S x T, where S is the number of states, i.e. the number of formant objects,
+			and T the number of frames (S= formants.size and T=nx).
+			Evaluate the static costs for state s[i] at times t=1..T
+			There are two components at each t: 
+				1. (+) the local stress at s[i][t], which is evaluated from an interval around time t
+				2. (-) the local qsums at s[i][t], evaluated from the frequencies/bandwidths in s[i][t]
+			The sum of these components might be modulated by the local intensity
+		*/
 		for (integer itime = 1; itime <= my nx; itime ++) {
 			for (integer iformant = 1; iformant <= my formants.size; iformant ++) {
 				const Formant_Frame frame = & my formants.at [iformant] -> frames [itime];
-				double wIntensity = 1.0, delta = 0.0;
-				if (hasIntensityDifference) {
+				double wIntensity = 1.0, costs = 0.0;
+				if (hasIntensityDifference && intensityModulationStepSize > 0.0) {
 					if (frame -> intensity > 0.0) {
 						const double dbi = 10.0 * log10 (frame -> intensity / 2e-5);
 						wIntensity = NUMsigmoid ((dbi - dbMid) / intensityModulationStepSize);
 					} else
 						wIntensity = 0.0;
 				}
-				if (qWeight > 0.0)
-					delta += qWeight * std::min (qsums -> z [iformant] [itime] / qCutoff, 1.0);
-				double stress = 1.0;
 				if (stressWeight > 0.0 && isdefined (stresses -> z [iformant] [itime]))
-					stress = std::min (stresses -> z [iformant] [itime] / stressCutoff, 1.0);
-				delta -= stressWeight * stress;
-
-				deltas [iformant] [itime] += wIntensity * delta;
+					costs += stressWeight * std::min (stresses -> z [iformant] [itime] / stressCutoff, 1.0);
+				if (qWeight > 0.0)
+					costs -= qWeight * std::min (qsums -> z [iformant] [itime] / qCutoff, 1.0);
+				delta [iformant] [itime] += wIntensity * costs;
 			}
 		}
+		/*
+			Evaluate the costs delta[j][t] going from s[i][t-1] to s[j][t]
+			delta[j][t] = min_over_i { delta[i][t-1] + transition_costs (s[i][t-1], s[j][t] },
+			where the transition_costs consists of two parts:
+				3. (+) costs involving the sum of the distances between the formant frequencies in state s[i][t-1] and s[j][t]
+				4. (+) costs involving the difference in ceiling[i][t-1] and ceiling[j][t]
+				       (or should we measure the costs w.r.t the middle frequency?)
+		*/
+		const double ceilingsRange = my ceilings [my formants.size] - my ceilings [1];
 		for (integer itime = 2; itime <= my nx; itime ++) {
 			for (integer iformant = 1; iformant <= my formants.size; iformant++) {
 				const Formant_Frame ffi = & my formants.at [iformant] -> frames [itime];
-				double deltamax = -1e100;
-				integer maxPos = 0;
+				const integer numberOfTracks_i = std::min (numberOfTracks, ffi -> numberOfFormants);
+				double deltamin = 1e100;
+				integer minPos = 0;
 				for (integer jformant = 1; jformant <= my formants.size; jformant++) {
 					const Formant_Frame ffj = & my formants.at [jformant] -> frames [itime - 1];
-					double transitionCosts = 0.0;
+					const integer ntracks = std::min (ffj -> numberOfFormants, numberOfTracks_i);
+					double transitionCosts = delta [jformant][itime - 1];
 					if (frequencyChangeWeight > 0.0) {
-						const integer ntracks = std::min (numberOfTracks, ffi -> numberOfFormants);
-						double frequencyChangeCosts = 0.0;
-						for (integer itrack = 1; itrack <= std::min (ntracks, ffj -> numberOfFormants); itrack ++) {
-							const double dif = fabs (ffi -> formant [itrack] . frequency - ffj -> formant [itrack] . frequency);
-							const double sum = ffi -> formant [itrack] . frequency + ffj -> formant [itrack] . frequency;
-							const double bw = sqrt (ffi -> formant [itrack] . bandwidth * ffj -> formant [itrack] . bandwidth);
-							frequencyChangeCosts += bw * dif / sum;
+						double fcost = 0.0;
+						for (integer itrack = 1; itrack <= ntracks; itrack ++) {
+							const double fi = ffi -> formant [itrack].frequency, fj = ffj -> formant [itrack] . frequency;
+							if (transtionCostType == 1) {
+								const double dif = fabs (fi  - fj);
+								const double sum = fi  + fj;
+								const double bw = sqrt (ffi -> formant [itrack] . bandwidth * ffj -> formant [itrack] . bandwidth);
+								fcost += bw * dif / sum;
+							} else
+								fcost += fabs (NUMlog2 (fi / fj));
 						}
-						frequencyChangeCosts = std::min (frequencyChangeCosts / frequencyChangeCutoff, 1.0);
-						transitionCosts += frequencyChangeWeight * frequencyChangeCosts;
+						fcost /= ntracks;
+						transitionCosts += frequencyChangeWeight * std::min (fcost / transitionCostCuttoff, 1.0);
 					}
 					if (ceilingChangeWeight > 0.0) {
 						const double ceilingChangeCosts = fabs (my ceilings [iformant] - my ceilings [jformant]) / ceilingsRange;
-						transitionCosts += ceilingChangeCosts * ceilingChangeWeight;
-					}
-					const double deltaj = deltas [jformant] [itime - 1] - transitionCosts;
-					if (deltaj > deltamax) {
-						deltamax = deltaj;
-						maxPos = jformant;
+						transitionCosts += ceilingChangeWeight * ceilingChangeCosts;
+					}				
+					if (transitionCosts < deltamin) {
+						deltamin = transitionCosts;
+						minPos = jformant;
 					}
 				}
-				deltas [iformant] [itime] += deltamax;
-				psi [iformant] [itime] = maxPos;
+				if (stressWeight > 0.0 && isdefined (stresses -> z [iformant] [itime]))
+					deltamin += stressWeight * std::min (stresses -> z [iformant] [itime] / stressCutoff, 1.0);
+				if (qWeight > 0.0)
+					deltamin -= qWeight * std::min (qsums -> z [iformant] [itime] / qCutoff, 1.0);	
+				delta [iformant] [itime] += deltamin;
+				psi [iformant] [itime] = minPos;
 			}
 		}
-		path [my nx] = NUMmaxPos (deltas.column (my nx));
+		path [my nx] = NUMmaxPos (delta.column (my nx));
 		/*
 			Backtrack
 		*/
@@ -263,7 +283,7 @@ autoFormantPath Sound_to_FormantPath_any (Sound me, kLPC_Analysis lpcType, doubl
 			Maintain invariants
 		*/
 		Melder_assert (thy formants . size == numberOfCeilings);
-		thy path = newINTVECraw (thy nx);
+		thy path = raw_INTVEC (thy nx);
 		for (integer i = 1; i <= thy path.size; i++)
 			thy path [i] = numberOfStepsToACeiling + 1;
 		if (out_sourcesMultiChannel)
@@ -283,36 +303,45 @@ autoMatrix FormantPath_to_Matrix_qSums (FormantPath me, integer numberOfTracks) 
 		for (integer itime = 1; itime <= my nx; itime ++) {
 			for (integer iformant = 1; iformant <= my formants.size; iformant ++) {
 				const Formant_Frame frame = & my formants.at [iformant] -> frames [itime];
+				const integer currentNumberOfFormants = std::min (numberOfTracks, frame -> numberOfFormants);
 				double qsum = 0.0;
-				for (integer itrack = 1; itrack <= std::min (numberOfTracks, frame -> numberOfFormants); itrack ++)
+				for (integer itrack = 1; itrack <= currentNumberOfFormants; itrack ++)
 					qsum += frame -> formant [itrack] . frequency / frame-> formant [itrack]. bandwidth;
-				qsum /= frame -> numberOfFormants;
-				thy z [iformant] [itime] = qsum;
+				thy z [iformant] [itime] = (currentNumberOfFormants > 0 ? qsum /= currentNumberOfFormants : 0.0 );
 			}
 		}
 		return thee;
 	} catch (MelderError) {
-		Melder_throw (me, U": cannot calculate qsum.");
+		Melder_throw (me, U": cannot calculate qsums.");
 	}
 }
 
-autoMatrix FormantPath_to_Matrix_transition (FormantPath me, bool maximumCosts) {
+autoMatrix FormantPath_to_Matrix_transition (FormantPath me, integer numberOfTracks, bool maximumCosts) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, my formants.size + 0.5, my formants.size, 1.0, 1.0);
+		const integer maxnFormants = my formants.at [1] -> maxnFormants;
+		if (numberOfTracks == 0)
+			numberOfTracks = maxnFormants;
 		for (integer itime = 2; itime <= my nx; itime ++) {
 			for (integer iformant = 1; iformant <= my formants.size; iformant++) {
 				const Formant_Frame ffi = & my formants.at [iformant] -> frames [itime];
+				const integer numberOfTracks_i = std::min (numberOfTracks, ffi -> numberOfFormants);
 				MelderExtremaWithInit costs;
 				for (integer jformant = 1; jformant <= my formants.size; jformant++) {
 					const Formant_Frame ffj = & my formants.at [jformant] -> frames [itime - 1];
+					const integer ntracks = std::min (ffj -> numberOfFormants, numberOfTracks_i);
 					long double transitionCosts = 0.0;
-					const integer ntracks = std::min (ffj -> numberOfFormants, ffi -> numberOfFormants);
 					for (integer itrack = 1; itrack <= ntracks; itrack ++) {
-						const double dif = fabs (ffi -> formant [itrack] . frequency - ffj -> formant [itrack] . frequency);
-						const double sum = ffi -> formant [itrack] . frequency + ffj -> formant [itrack] . frequency;
+						const double fi = ffi -> formant [itrack].frequency, fj = ffj -> formant [itrack] . frequency;
+						const double dif = fabs (fi  - fj);
+						const double sum = fi  + fj;
 						const double bw = sqrt (ffi -> formant [itrack] . bandwidth * ffj -> formant [itrack] . bandwidth);
-						transitionCosts += bw * dif / sum;
+						double cost = bw * dif / sum;
+						if (Melder_debug == -3)
+							cost = fabs (NUMlog2 (fi / fj));
+						transitionCosts += cost;
 					}
+					transitionCosts /= ntracks;
 					costs.update ((double) transitionCosts);
 				}
 				thy z [iformant] [itime] = ( maximumCosts ? costs.max : costs.min );
@@ -327,21 +356,22 @@ autoMatrix FormantPath_to_Matrix_transition (FormantPath me, bool maximumCosts) 
 autoMatrix FormantPath_to_Matrix_stress (FormantPath me, double windowLength, constINTVEC const& parameters, double powerf) {
 	try {
 		const integer numberOfFormants = my formants.size;
-		Melder_require (parameters.size > 0 && parameters.size <= numberOfFormants,
-			U"The number of parameters should be between 1 and ", numberOfFormants, U".");
+		const integer maxnFormants = my formants.at [1] -> maxnFormants;
+		Melder_require (parameters.size > 0 && parameters.size <= maxnFormants,
+			U"The number of parameters should be between 1 and ", maxnFormants, U".");
 		integer fromFormant = 1;
-		const integer maximum = NUMmax (parameters);
+		const integer maximumNumberOfCoefficients = NUMmax (parameters);
 		const integer numberOfDataPoints = (windowLength + 0.5 * my dx) / my dx;
-		Melder_require (numberOfDataPoints >= maximum,
+		Melder_require (numberOfDataPoints >= maximumNumberOfCoefficients,
 			U"The window length is too short for the number of coefficients you use in the stress determination (",
-			maximum, U"). Either increase your window length or decrease the number of coefficents per track.");
+			maximumNumberOfCoefficients, U"). Either increase your window length or decrease the number of coefficents per track.");
 		while (fromFormant <= parameters.size && parameters [fromFormant] <= 0)
 			fromFormant ++;
-		integer toFormant = std::min (numberOfFormants, parameters.size);
+		integer toFormant = parameters.size;
 		while (toFormant > 0 && parameters [toFormant] <= 0)
 			toFormant --;
 		Melder_require (fromFormant <= toFormant,
-			U"Not all the parameter values should equal zero.");
+			U"Not all parameter values should equal zero.");
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, numberOfFormants + 0.5, numberOfFormants, 1.0, 1.0);
 		for (integer iformant = 1; iformant <= numberOfFormants; iformant ++) {
 			const Formant formanti = (Formant) my formants . at [iformant];
@@ -359,8 +389,8 @@ autoMatrix FormantPath_to_Matrix_stress (FormantPath me, double windowLength, co
 	}
 }
 
-autoVEC FormantPath_getSmootness (FormantPath me, double tmin, double tmax, integer fromFormant, integer toFormant, constINTVEC const& parameters, double powerf) {
-	autoVEC stress = newVECraw (my formants.size);
+autoVEC FormantPath_getStress (FormantPath me, double tmin, double tmax, integer fromFormant, integer toFormant, constINTVEC const& parameters, double powerf) {
+	autoVEC stress = raw_VEC (my formants.size);
 	for (integer iformant = 1; iformant <= my formants.size; iformant ++) {
 		const Formant formanti = (Formant) my formants . at [iformant];
 		autoFormantModeler fm = Formant_to_FormantModeler (formanti, tmin, tmax,  parameters);
@@ -369,7 +399,7 @@ autoVEC FormantPath_getSmootness (FormantPath me, double tmin, double tmax, inte
 	return stress;
 }
 
-static void Formant_speckles_inside (Formant me, Graphics g, double tmin, double tmax, double fmin, double fmax, integer fromFormant, integer toFormant, double suppress_dB, bool drawBandWidths, MelderColour odd, MelderColour even)
+static void Formant_speckles_inside (Formant me, Graphics g, double tmin, double tmax, double fmin, double fmax, integer fromFormant, integer toFormant, double suppress_dB, bool drawBandWidths, MelderColour oddNumberedFormants, MelderColour evenNumberedFormants)
 {
 	double maximumIntensity = 0.0, minimumIntensity;
 	Function_unidirectionalAutowindow (me, & tmin, & tmax);
@@ -402,7 +432,7 @@ static void Formant_speckles_inside (Formant me, Graphics g, double tmin, double
 		*/
 		for (integer iformant = std::min (frame -> numberOfFormants, toFormant); iformant >= fromFormant; iformant --) {
 			const double frequency = frame -> formant [iformant]. frequency;
-			Graphics_setColour (g, iformant % 2 == 1 ? odd : even );
+			Graphics_setColour (g, iformant % 2 == 1 ? oddNumberedFormants : evenNumberedFormants );
 			if (frequency >= fmin && frequency <= fmax) {
 				Graphics_speckle (g, x, frequency);
 				if (drawBandWidths) {
@@ -417,13 +447,11 @@ static void Formant_speckles_inside (Formant me, Graphics g, double tmin, double
 }
 
 void FormantPath_drawAsGrid_inside (FormantPath me, Graphics g, double tmin, double tmax, double fmax,
-	integer fromFormant, integer toFormant, bool showBandwidths, MelderColour odd, MelderColour even,
+	integer fromFormant, integer toFormant, bool showBandwidths, MelderColour oddNumberedFormants, MelderColour evenNumberedFormants,
 	integer nrow, integer ncol, double spaceBetweenFraction_x, double spaceBetweenFraction_y, double yGridLineEvery_Hz,
-	double xCursor, double yCursor, integer iselected, MelderColour selected, constINTVEC const & parameters,
-	bool markWithinPath, bool showStress, double powerf, bool showEstimatedModels, bool garnish)
+	double xCursor, double yCursor, MelderColour selectedCeilingsColour, constINTVEC const & parameters,
+	bool markCandidatesWithinPath, bool showStress, double powerf, bool showEstimatedModels, bool garnish)
 {
-	MelderColour singleSelectionColour = MelderColour (0.984,0.984, 0.7);
-	MelderColour multipleSelectionsColour = MelderColour (0.984,0.984, 0.9);
 	constexpr double fmin = 0.0;
 	if (nrow <= 0 || ncol <= 0)
 		NUMgetGridDimensions (my formants.size, & nrow, & ncol);
@@ -433,23 +461,9 @@ void FormantPath_drawAsGrid_inside (FormantPath me, Graphics g, double tmin, dou
 	const double vp_width = x2NDC - x1NDC, vp_height = y2NDC - y1NDC;
 	const double vpi_width = vp_width / (ncol + (ncol - 1) * spaceBetweenFraction_x);
 	const double vpi_height = vp_height / (nrow + (nrow - 1) * spaceBetweenFraction_y);
-	integer numberOfCeilingInInterval = 1;
+	autoIntervalTier intervalTier = FormantPath_to_IntervalTier (me, tmin, tmax);
 	integer itmin, itmax;
-	autoBOOLVEC ceilingInInterval = newBOOLVECzero (my formants.size);
-	if (markWithinPath && Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax)) {
-		/*
-			If the path in the interval (tmin, tmax) is constant, then we have only one of
-			the candidates chosen in the whole interval.
-		*/
-		numberOfCeilingInInterval = 0;
-		for (integer iformant = 1; iformant <= my formants.size; iformant ++)
-			for (integer i = itmin; i <= itmax; i ++)
-				if (my path [i] == iformant) {
-					ceilingInInterval [iformant] = true;
-					numberOfCeilingInInterval ++;
-					break;
-				}
-	}
+	const integer numberOfSamples = Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax);
 	
 	for (integer iformant = 1; iformant <= my formants.size; iformant ++) {
 		const integer irow = 1 + (iformant - 1) / ncol; // left-to-right + top-to-bottom
@@ -459,21 +473,25 @@ void FormantPath_drawAsGrid_inside (FormantPath me, Graphics g, double tmin, dou
 		const double vpi_y2 = y2NDC - (irow - 1) * vpi_height * (1.0 + spaceBetweenFraction_y);
 		const double vpi_y1 = vpi_y2 - vpi_height;
 		const Formant formant = my formants.at [iformant];
-		autoFormantModeler fm = Formant_to_FormantModeler (formant, tmin, tmax, parameters);
+		autoFormantModeler fm;
+		if (numberOfSamples > 0)
+			fm = Formant_to_FormantModeler (formant, tmin, tmax, parameters);
 		Graphics_setViewport (g, vpi_x1, vpi_x2, vpi_y1, vpi_y2);
 		Graphics_setWindow (g, tmin, tmax, fmin, fmax);
-		if (garnish && markWithinPath) {
-			if (ceilingInInterval [iformant]) {
-				MelderColour colour = Graphics_inqColour (g);
-				MelderColour fillColour = (numberOfCeilingInInterval == 1 ? singleSelectionColour : multipleSelectionsColour);
-				Graphics_setColour (g, fillColour);
-				Graphics_fillRectangle (g, tmin, tmax, 0.0, fmax);
-				Graphics_setColour (g, colour);
+		if (garnish && markCandidatesWithinPath) {
+			MelderColour colourCopy = Graphics_inqColour (g);
+			Graphics_setColour (g, selectedCeilingsColour);
+			for (integer interval = 1; interval <= intervalTier -> intervals.size; interval ++) {
+				TextInterval textInterval = intervalTier -> intervals.at [interval];
+				const integer candidate = ( textInterval -> text.get() ? Melder_atoi (textInterval -> text.get()) : 0);
+				if (candidate == iformant)
+					Graphics_fillRectangle (g, textInterval -> xmin, textInterval -> xmax, 0, fmax);
 			}
+			Graphics_setColour (g, colourCopy);
 		}
-		Formant_speckles_inside (formant, g, tmin, tmax, fmin, fmax, fromFormant, toFormant, 100.0, showBandwidths, odd, even);
-		if (showEstimatedModels)
-			FormantModeler_drawModel_inside (fm.get(), g, tmin, tmax, fmax, fromFormant, toFormant, odd, even, 100_integer);
+		Formant_speckles_inside (formant, g, tmin, tmax, fmin, fmax, fromFormant, toFormant, 100.0, showBandwidths, oddNumberedFormants, evenNumberedFormants);
+		if (showEstimatedModels && numberOfSamples > 0)
+			FormantModeler_drawModel_inside (fm.get(), g, tmin, tmax, fmax, fromFormant, toFormant, oddNumberedFormants, evenNumberedFormants, 100_integer);
 		Graphics_setColour (g, Melder_BLACK);
 		if (garnish)
 			Graphics_rectangle (g, tmin, tmax, fmin, fmax);
@@ -486,7 +504,7 @@ void FormantPath_drawAsGrid_inside (FormantPath me, Graphics g, double tmin, dou
 		autoMelderString info;
 		const double tLeftPos = tmin - 0.01 * (tmax - tmin), tRightPos = tmax + 0.01 * (tmax - tmin);
 		if (garnish) {
-			if (showStress) {
+			if (showStress && numberOfSamples > 0) {
 				const double stress = FormantModeler_getStress (fm.get(), fromFormant, toFormant, 0, powerf);
 				MelderString_append (& info, U"Fit=", Melder_fixed (stress, 2));
 				Graphics_setTextAlignment (g, kGraphics_horizontalAlignment::LEFT, Graphics_BOTTOM);
@@ -566,17 +584,15 @@ void FormantPath_drawAsGrid_inside (FormantPath me, Graphics g, double tmin, dou
 }
 
 void FormantPath_drawAsGrid (FormantPath me, Graphics g, double tmin, double tmax, double fmax, 
-	integer fromFormant, integer toFormant, bool showBandwidths, MelderColour odd, MelderColour even, 
+	integer fromFormant, integer toFormant, bool showBandwidths, MelderColour oddNumberedFormants, MelderColour evenNumberedFormants, 
 	integer nrow, integer ncol, double spaceBetweenFraction_x, double spaceBetweenFraction_y, double yGridLineEvery_Hz,
-	double xCursor, double yCursor, integer iselected, MelderColour selected, constINTVEC const & parameters,
-	bool markWithinPath, bool showStress, double powerf, bool showEstimatedModels, bool garnish)
+	double xCursor, double yCursor, MelderColour selected, constINTVEC const & parameters,
+	bool markCandidatesWithinPath, bool showStress, double powerf, bool showEstimatedModels, bool garnish)
 {
 	Function_bidirectionalAutowindow (me, & tmin, & tmax);
 	Graphics_setInner (g);
-	FormantPath_drawAsGrid_inside (me, g, tmin, tmax, fmax, fromFormant, toFormant, showBandwidths, odd, even, nrow, ncol, spaceBetweenFraction_x, spaceBetweenFraction_y, yGridLineEvery_Hz, xCursor, yCursor, iselected, selected, parameters, markWithinPath, showStress, powerf, showEstimatedModels, garnish);
+	FormantPath_drawAsGrid_inside (me, g, tmin, tmax, fmax, fromFormant, toFormant, showBandwidths, oddNumberedFormants, evenNumberedFormants, nrow, ncol, spaceBetweenFraction_x, spaceBetweenFraction_y, yGridLineEvery_Hz, xCursor, yCursor, selected, parameters, markCandidatesWithinPath, showStress, powerf, showEstimatedModels, garnish);
 	Graphics_unsetInner (g);
 }	
-	
-	
-	
+
 /* End of file FormantPath.cpp */

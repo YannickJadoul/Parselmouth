@@ -50,7 +50,7 @@ dcomplex structFunctionSeries :: v_evaluate_z (dcomplex /* z */) {
 
 void structFunctionSeries :: v_evaluateTerms (double /* x */, VEC terms) {
 	Melder_assert (terms.size == numberOfCoefficients);
-	terms <<= undefined;
+	terms  <<=  undefined;
 }
 
 integer structFunctionSeries :: v_getDegree () {
@@ -87,7 +87,7 @@ void structFunctionSeries :: v_getExtrema (double x1, double x2, double *out_xmi
 }
 
 void FunctionSeries_init (FunctionSeries me, double xmin, double xmax, integer numberOfCoefficients) {
-	my coefficients = newVECzero (numberOfCoefficients);
+	my coefficients = zero_VEC (numberOfCoefficients);
 	my numberOfCoefficients = numberOfCoefficients;
 	my _capacity = numberOfCoefficients;
 	my xmin = xmin;
@@ -254,8 +254,8 @@ static void Graphics_polyline_clipTopBottom (Graphics g, VEC x, VEC y, double ym
 void FunctionSeries_draw (FunctionSeries me, Graphics g, double xmin, double xmax, double ymin, double ymax, int extrapolate, bool garnish) {
 	integer numberOfPoints = 1000;
 
-	autoVEC x = newVECraw (numberOfPoints);
-	autoVEC y = newVECraw (numberOfPoints);
+	autoVEC x = raw_VEC (numberOfPoints);
+	autoVEC y = raw_VEC (numberOfPoints);
 
 	Function_unidirectionalAutowindow (me, & xmin, & xmax);
 	double fxmin = xmin, fxmax = xmax;

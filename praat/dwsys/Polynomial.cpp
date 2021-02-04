@@ -54,7 +54,7 @@ autoVEC Polynomial_evaluateDerivatives (Polynomial me, double x, long numberOfDe
 		in derivatives in derivatives [2..numberOfDerivatives+1].
 	*/
 	const integer degree = my numberOfCoefficients - 1;
-	autoVEC derivatives = newVECzero (numberOfDerivatives + 1);
+	autoVEC derivatives = zero_VEC (numberOfDerivatives + 1);
 	numberOfDerivatives = numberOfDerivatives > degree ? degree : numberOfDerivatives;
 	
 	derivatives [1] = my coefficients [my numberOfCoefficients];
@@ -92,14 +92,17 @@ autoVEC Polynomial_evaluateDerivatives (Polynomial me, double x, long numberOfDe
 */
 static void VECpolynomial_divide (constVEC u, constVEC v, VEC q, VEC r) {
 	Melder_assert (q.size == u.size && r.size == u.size);
-	r <<= u;
-	q <<= 0.0;
+	r  <<=  u;
+	q  <<=  0.0;
 	for (integer k = u.size - v.size + 1; k > 0; k --) { /* D1 */
 		q [k] = r [v.size + k - 1] / v [v.size]; /* D2 with u -> r*/
 		for (integer j = v.size + k - 1; j >= k; j --)
 			r [j] -= q [k] * v [j - k + 1];
 	}
 }
+
+
+Thing_implement (Polynomial, FunctionSeries, 1);
 
 
 /*
@@ -112,46 +115,6 @@ static void VECpolynomial_divide (constVEC u, constVEC v, VEC q, VEC r) {
 		pnm1 : polynomial of degree n - 1
 		pnm2 : polynomial of degree n - 2
 */
-
-/* frozen [1..ma] */
-static void svdcvm (MAT const & cvm, constMAT const & v, integer mfit, constINTVEC const & frozen, constVEC const & w) {
-	autoVEC wti = newVECzero (mfit);
-
-	for (integer i = 1; i <= mfit; i ++) {
-		if (w [i] != 0.0)
-			wti [i] = 1.0 / (w [i] * w [i]);
-		else 
-			;   // TODO: write up an explanation for why it is not necessary to do anything if w [i] is zero
-
-	}
-	for (integer i = 1; i <= mfit; i ++)
-		for (integer j = 1; j <= i; j ++) {
-			longdouble sum = 0.0;
-			for (integer k = 1; k <= mfit; k ++)
-				sum += v [i] [k] * v [j] [k] * wti [k];
-			cvm [j] [i] = cvm [i] [j] = (double) sum;
-		}
-
-	for (integer i = mfit + 1; i <= frozen.size; i ++) {
-		for (integer j = 1; j <= i; j ++)
-			cvm [j] [i] = cvm [i] [j] = 0.0;
-	}
-
-	integer k = mfit;
-	for (integer j = frozen.size; j > 0; j --) {
-		//	only change parameters that are not frozen
-		if (frozen.size == 0 || ! frozen [j]) {
-			for (integer i = 1; i <= frozen.size; i ++)
-				std::swap (cvm [i] [k], cvm [i] [j]);
-			for (integer i = 1; i <= frozen.size; i ++)
-				std:: swap (cvm [k] [i], cvm [j] [i]);
-			k --;
-		}
-	}
-}
-
-Thing_implement (Polynomial, FunctionSeries, 1);
-
 double structPolynomial :: v_evaluate (double x) {
 	longdouble p = coefficients [numberOfCoefficients];
 	for (integer i = numberOfCoefficients - 1; i > 0; i --)
@@ -277,9 +240,9 @@ autoPolynomial Polynomial_scaleX (Polynomial me, double xmin, double xmax) {
 		thy coefficients [1] += my coefficients [2] * b;
 		if (my numberOfCoefficients == 2)
 			return thee;
-		autoVEC pn = newVECzero (my numberOfCoefficients);
-		autoVEC pnm1 = newVECzero (my numberOfCoefficients);
-		autoVEC pnm2 = newVECzero (my numberOfCoefficients);
+		autoVEC pn = zero_VEC (my numberOfCoefficients);
+		autoVEC pnm1 = zero_VEC (my numberOfCoefficients);
+		autoVEC pnm2 = zero_VEC (my numberOfCoefficients);
 
 		// Start the recursion: P [2] = a x + b; P [1] = 1;
 
@@ -459,8 +422,8 @@ autoPolynomial Polynomials_multiply (Polynomial me, Polynomial thee) {
 void Polynomials_divide (Polynomial me, Polynomial thee, autoPolynomial *out_q, autoPolynomial *out_r) {
 	if (! out_q  && ! out_r)
 		return;
-	autoVEC qc = newVECzero (my numberOfCoefficients);
-	autoVEC rc = newVECzero (my numberOfCoefficients);
+	autoVEC qc = zero_VEC (my numberOfCoefficients);
+	autoVEC rc = zero_VEC (my numberOfCoefficients);
 	autoPolynomial aq, ar;
 	VECpolynomial_divide (my coefficients.get (), thy coefficients.get (), qc.get (), rc.get ());
 	if (out_q) {
@@ -479,7 +442,7 @@ void Polynomials_divide (Polynomial me, Polynomial thee, autoPolynomial *out_q, 
 		while (degree > 1 && rc [degree] == 0.0)
 			degree --;
 		ar = Polynomial_create (my xmin, my xmax, degree);
-		ar -> coefficients.get() <<= rc.part (1, degree + 1);
+		ar -> coefficients.all()  <<=  rc.part (1, degree + 1);
 		*out_r = ar.move();
 	}
 }

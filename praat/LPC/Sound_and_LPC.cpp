@@ -74,7 +74,7 @@ static integer getLPCAnalysisWorkspaceSize (integer numberOfSamples, integer num
 
 static autoVEC getLPCAnalysisWorkspace (integer numberOfSamples, integer numberOfCoefficients, kLPC_Analysis method) {
 	integer size = getLPCAnalysisWorkspaceSize (numberOfSamples, numberOfCoefficients, method);
-	autoVEC result = newVECraw (size);
+	autoVEC result = raw_VEC (size);
 	return result;
 }
 
@@ -82,10 +82,10 @@ static int Sound_into_LPC_Frame_auto (Sound me, LPC_Frame thee, VEC const& works
 	Melder_assert (thy nCoefficients == thy a.size); // check invariant
 	const integer numberOfCoefficients = thy nCoefficients, np1 = numberOfCoefficients + 1;
 
-	//workspace <<= 0.0; not necessary !
-	VEC r = workspace. part (1, np1); // autoVEC r = newVECzero (numberOfCoefficients + 1);
-	VEC a = workspace. part (np1 + 1, 2 * np1); // autoVEC a = newVECzero (numberOfCoefficients + 1);
-	VEC rc = workspace. part (2 * np1 + 1, 2 * np1 + numberOfCoefficients); // autoVEC rc = newVECzero (numberOfCoefficients);
+	//workspace  <<=  0.0; not necessary !
+	VEC r = workspace. part (1, np1); // autoVEC r = zero_VEC (numberOfCoefficients + 1);
+	VEC a = workspace. part (np1 + 1, 2 * np1); // autoVEC a = zero_VEC (numberOfCoefficients + 1);
+	VEC rc = workspace. part (2 * np1 + 1, 2 * np1 + numberOfCoefficients); // autoVEC rc = zero_VEC (numberOfCoefficients);
 	const VECVU x = my z.row (1);
 	integer i = 1; // For error condition at end
 	for (i = 1; i <= numberOfCoefficients + 1; i ++)
@@ -132,17 +132,17 @@ static int Sound_into_LPC_Frame_covar (Sound me, LPC_Frame thee, VEC const& work
 	const integer n = my nx, m = thy nCoefficients;
 	constVEC x = my z.row (1);
 	
-	workspace <<= 0.0;
+	workspace  <<=  0.0;
 	integer start = 1, end = m * (m + 1) / 2;
-	VEC b = workspace. part (start, end); // autoVEC b = newVECzero (m * (m + 1) / 2);
+	VEC b = workspace. part (start, end); // autoVEC b = zero_VEC (m * (m + 1) / 2);
 	start = end + 1; end += m;
-	VEC grc = workspace. part (start, end); //autoVEC grc = newVECzero (m);
+	VEC grc = workspace. part (start, end); //autoVEC grc = zero_VEC (m);
 	start = end + 1; end += m;
-	VEC beta = workspace. part (start, end); // autoVEC beta = newVECzero (m);
+	VEC beta = workspace. part (start, end); // autoVEC beta = zero_VEC (m);
 	start = end + 1; end += m + 1;
-	VEC a = workspace. part (start, end); // autoVEC a = newVECzero (m + 1);
+	VEC a = workspace. part (start, end); // autoVEC a = zero_VEC (m + 1);
 	start = end + 1; end += m + 1;
-	VEC cc = workspace. part (start, end); // autoVEC cc = newVECzero (m + 1);
+	VEC cc = workspace. part (start, end); // autoVEC cc = zero_VEC (m + 1);
 
 	thy gain = 0.0;
 	integer i;
@@ -222,9 +222,9 @@ static double VECburg_buffered (VEC const& a, constVEC const& x, VEC const& work
 	for (integer j = 1; j <= m; j ++)
 		a [j] = 0.0;
 
-	VEC b1 = workspace. part (1, n); // autoVEC b1 = newVECzero (n);
-	VEC b2 = workspace. part (n + 1, 2 * n); // autoVEC b2 = newVECzero (n);
-	VEC aa = workspace. part (2 * n + 1, 2 * n + m); // autoVEC aa = newVECzero (m);
+	VEC b1 = workspace. part (1, n); // autoVEC b1 = zero_VEC (n);
+	VEC b2 = workspace. part (n + 1, 2 * n); // autoVEC b2 = zero_VEC (n);
+	VEC aa = workspace. part (2 * n + 1, 2 * n + m); // autoVEC aa = zero_VEC (m);
 
 	// (3)
 
@@ -300,9 +300,9 @@ static int Sound_into_LPC_Frame_marple (Sound me, LPC_Frame thee, double tol1, d
 	int status = 1;
 	// workspace.all () << 0.0 not necessary
 	constVEC x = my z.row (1);
-	VEC c = workspace .part (1, mmaxp1); // autoVEC c = newVECzero (mmax + 1);
-	VEC d = workspace .part (mmaxp1 + 1, 2 * mmaxp1); // autoVEC d = newVECzero (mmax + 1);
-	VEC r = workspace .part (2 * mmaxp1 + 1, 3 * mmaxp1); // autoVEC r = newVECzero (mmax + 1);
+	VEC c = workspace .part (1, mmaxp1); // autoVEC c = zero_VEC (mmax + 1);
+	VEC d = workspace .part (mmaxp1 + 1, 2 * mmaxp1); // autoVEC d = zero_VEC (mmax + 1);
+	VEC r = workspace .part (2 * mmaxp1 + 1, 3 * mmaxp1); // autoVEC r = zero_VEC (mmax + 1);
 	double e0 = 2.0 * NUMsum2 (x);
 	integer m = 1;
 	if (e0 == 0.0) {
@@ -486,15 +486,6 @@ static void Sound_into_LPC_noThreads (Sound me, LPC thee, double analysisWidth, 
 	}
 }
 
-static autoLPC Sound_to_LPC_noThreads (Sound me, int predictionOrder, double analysisWidth, double dt, double preEmphasisFrequency, kLPC_Analysis method, double tol1, double tol2) {
-	double t1;
-	integer numberOfFrames;
-	Sampled_shortTermAnalysis (me, 2.0 * analysisWidth, dt, & numberOfFrames, & t1); // Gaussian window
-	autoLPC thee = LPC_create (my xmin, my xmax, numberOfFrames, dt, t1, predictionOrder, my dx);
-	Sound_into_LPC_noThreads (me, thee.get(), analysisWidth, preEmphasisFrequency, method, tol1, tol2);
-	return thee;
-}
-
 void Sound_into_LPC (Sound me, LPC thee, double analysisWidth, double preEmphasisFrequency, kLPC_Analysis method, double tol1, double tol2) {
 	const integer numberOfProcessors = std::thread::hardware_concurrency ();
 	if (numberOfProcessors <= 1) {
@@ -544,7 +535,7 @@ void Sound_into_LPC (Sound me, LPC thee, double analysisWidth, double preEmphasi
 	const integer workspaceSize = getLPCAnalysisWorkspaceSize (sframe [1] -> nx, predictionOrder, method);
 	Melder_require (workspaceSize > 0,
 		U"The workspace size is not properly defined.");
-	autoMAT workspace = newMATraw (numberOfThreads, workspaceSize);
+	autoMAT workspace = raw_MAT (numberOfThreads, workspaceSize);
 
 	std::vector <std::thread> thread (numberOfThreads);
 	std::atomic<integer> frameErrorCount (0);
@@ -777,7 +768,7 @@ void LPC_Sound_filterInverseWithFilterAtTime_inplace (LPC me, Sound thee, intege
 		if (channel > thy ny)
 			channel = 1;
 		LPC_Frame lpc = & my d_frames [frameIndex];
-		autoVEC work = newVECraw (lpc -> nCoefficients);
+		autoVEC work = raw_VEC (lpc -> nCoefficients);
 		if (channel > 0)
 			VECfilterInverse_inplace (thy z.row (channel), lpc -> a.get(), work);
 		else

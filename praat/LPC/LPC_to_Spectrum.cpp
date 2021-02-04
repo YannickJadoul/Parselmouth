@@ -36,7 +36,7 @@
 void LPC_Frame_into_Spectrum (LPC_Frame me, Spectrum thee, double bandwidthReduction, double deEmphasisFrequency) {
 	Melder_assert (my nCoefficients == my a.size); // check invariant
 	if (my nCoefficients == 0) {
-		thy z.get() <<= 0.0;
+		thy z.all()  <<=  0.0;
 		return;
 	}
 	/*
@@ -48,7 +48,7 @@ void LPC_Frame_into_Spectrum (LPC_Frame me, Spectrum thee, double bandwidthReduc
 	if (ndata >= nfft - 1 && (deEmphasisFrequency < thy xmax || ndata > nfft))
 		Melder_throw (U"Spectrum size not large enough.");
 
-	autoVEC fftbuffer = newVECzero (nfft);
+	autoVEC fftbuffer = zero_VEC (nfft);
 	/*
 		Copy 1.0, a [1], ... a [p] into fftbuffer
 	*/

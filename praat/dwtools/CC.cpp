@@ -69,7 +69,7 @@ void structCC :: v_info () {
 }
 
 void CC_Frame_init (CC_Frame me, integer numberOfCoefficients) {
-	my c = newVECzero (numberOfCoefficients);
+	my c = zero_VEC (numberOfCoefficients);
 	my numberOfCoefficients = numberOfCoefficients;
 }
 
@@ -127,7 +127,7 @@ void CC_drawC0 (CC me, Graphics g, double xmin, double xmax, double ymin, double
 	integer numberOfSelected = Sampled_getWindowSamples (me, xmin, xmax, & bframe, & eframe);
 	if (numberOfSelected <= 0)
 		return;
-	autoVEC c = newVECraw (numberOfSelected);
+	autoVEC c = raw_VEC (numberOfSelected);
 	for (integer i = 1; i <= numberOfSelected; i ++) {
 		const CC_Frame cf = & my frame [bframe + i - 1];
 		c [i] = cf -> c0;
@@ -139,7 +139,7 @@ void CC_drawC0 (CC me, Graphics g, double xmin, double xmax, double ymin, double
 			ymax += 1.0;
 		}
 	} else
-		VECclip_inplace (c.get(), ymin, ymax);
+		VECclip_inplace (ymin, c.get(), ymax);
 
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);

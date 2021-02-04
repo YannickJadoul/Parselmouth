@@ -97,6 +97,11 @@ struct structThing {
 		 * derived::v_info often calls base::v_info at start and then writes information on the new data,
 		 * but a few ancestors can be skipped if their data have new meanings.
 		 */
+	virtual void v_assertInvariants () { };
+		/*
+		 * derived::v_assertInvariants typically calls base::v_assertInvariants at start
+		 */
+	void assertInvariants () { our v_assertInvariants (); }
 	virtual void v_checkConstraints () { };
 		/*
 		 * derived::v_checkConstraints typically calls base::v_checkConstraints at start
@@ -185,6 +190,7 @@ Thing _Thing_dummyObject (ClassInfo classInfo);
 conststring32 Thing_getName (Thing me);
 /* Return a pointer to your internal name (which can be null). */
 conststring32 Thing_messageName (Thing me);
+conststring32 Thing_messageNameAndAddress (Thing me);   // for debugging
 
 void Thing_setName (Thing me, conststring32 name /* cattable */);
 /*

@@ -138,19 +138,19 @@ static void bookkeeping (FFNet me) {
 		The following test is essential because when an FFNet is read from file the w array already exists
 	*/
 	if (NUMisEmpty (my w))
-		my w = newVECzero (my numberOfWeights);
+		my w = zero_VEC (my numberOfWeights);
 
-	my activity = newVECzero (my numberOfNodes);
-	my isbias = newINTVECzero (my numberOfNodes);
-	my nodeFirst = newINTVECzero (my numberOfNodes);
-	my nodeLast = newINTVECzero (my numberOfNodes);
-	my wFirst = newINTVECzero (my numberOfNodes);
-	my wLast = newINTVECzero (my numberOfNodes);
-	my wSelected = newINTVECzero (my numberOfWeights);
-	my error = newVECzero (my numberOfNodes);
-	my deriv = newVECzero (my numberOfNodes);
-	my dwi = newVECzero (my numberOfWeights);
-	my dw = newVECzero (my numberOfWeights);
+	my activity = zero_VEC (my numberOfNodes);
+	my isbias = zero_INTVEC (my numberOfNodes);
+	my nodeFirst = zero_INTVEC (my numberOfNodes);
+	my nodeLast = zero_INTVEC (my numberOfNodes);
+	my wFirst = zero_INTVEC (my numberOfNodes);
+	my wLast = zero_INTVEC (my numberOfNodes);
+	my wSelected = zero_INTVEC (my numberOfWeights);
+	my error = zero_VEC (my numberOfNodes);
+	my deriv = zero_VEC (my numberOfNodes);
+	my dwi = zero_VEC (my numberOfWeights);
+	my dw = zero_VEC (my numberOfWeights);
 	my numberOfOutputs = my numberOfUnitsInLayer [my numberOfLayers];
 	my isbias [my numberOfInputs + 1] = 1;
 	my activity [my numberOfInputs + 1] = 1.0;
@@ -205,7 +205,7 @@ void FFNet_init (FFNet me, integer numberOfInputs, integer nodesInLayer1, intege
 	if (nodesInLayer2 < 1)
 		numberOfLayers --;
 	my numberOfLayers = numberOfLayers;
-	my numberOfUnitsInLayer = newINTVECzero (numberOfLayers);
+	my numberOfUnitsInLayer = zero_INTVEC (numberOfLayers);
 
 	my numberOfUnitsInLayer [numberOfLayers --] = numberOfOutputs;
 	if (nodesInLayer2 > 0)

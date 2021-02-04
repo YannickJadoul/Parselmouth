@@ -85,11 +85,7 @@ Thing_define (GraphicsScreen, Graphics) {
 	#elif cairo
 		#if gtk
 			GdkDisplay *d_display;
-			#if ALLOW_GDK_DRAWING
-				GdkDrawable *d_window;
-			#else
-				GdkWindow *d_window;
-			#endif
+			GdkWindow *d_window;
 		#endif
 		cairo_surface_t *d_cairoSurface;
 		cairo_t *d_cairoGraphicsContext;
@@ -136,8 +132,6 @@ Thing_define (GraphicsScreen, Graphics) {
 	void v_roundedRectangle (double x1DC, double x2DC, double y1DC, double y2DC, double r)
 		override;
 	void v_arrowHead (double xDC, double yDC, double angle)
-		override;
-	void v_flushWs ()
 		override;
 	void v_clearWs ()
 		override;

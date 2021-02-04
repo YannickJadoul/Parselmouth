@@ -55,7 +55,7 @@ void structLineSpectralFrequencies :: v_info () {
 }
 
 void LineSpectralFrequencies_Frame_init (LineSpectralFrequencies_Frame me, integer numberOfFrequencies) {
-	my frequencies = newVECzero (numberOfFrequencies);
+	my frequencies = zero_VEC (numberOfFrequencies);
 	my numberOfFrequencies = numberOfFrequencies;
 }
 
@@ -83,8 +83,8 @@ void LineSpectralFrequencies_drawFrequencies (LineSpectralFrequencies me, Graphi
 		return;
 	if (fmax <= fmin) {
 		const integer numberOfSelected = itmax - itmin + 1;
-		autoVEC f1 = newVECraw (numberOfSelected);
-		autoVEC f2 = newVECraw (numberOfSelected);
+		autoVEC f1 = raw_VEC (numberOfSelected);
+		autoVEC f2 = raw_VEC (numberOfSelected);
 		for (integer iframe = itmin; iframe <= itmax; iframe ++) {
 			f1 [iframe - itmin + 1] = my d_frames [iframe]. frequencies [1];
 			f2 [iframe - itmin + 1] = my d_frames [iframe]. frequencies [my d_frames [iframe] . numberOfFrequencies];

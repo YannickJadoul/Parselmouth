@@ -134,32 +134,23 @@ static void menu_cb_run (ScriptEditor me, EDITOR_ARGS_DIRECT) {
 			Melder_throw (U"Unexpected nonspace after #!praatObscured.");
 		}
 		static uint64 nonsecret = UINT64_C (529857089);
-		text = newSTRunhex (restOfText, fileKey + nonsecret + passwordHash);
+		text = unhex_STR (restOfText, fileKey + nonsecret + passwordHash);
 		isObscured = true;
 	}
 	Melder_includeIncludeFiles (& text);
 	const integer npar = Interpreter_readParameters (my interpreter.get(), text.get());
-	try {
-		if (npar) {
-			/*
-				Pop up a dialog box for querying the arguments.
-			*/
-			my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, nullptr, args_ok, me, false);
-			UiForm_do (my argsDialog.get(), false);
-		} else {
-			autoPraatBackground background;
-			if (my name [0])
-				MelderFile_setDefaultDir (& file);
-			trace (U"Running the following script (2):\n", text.get());
-			Interpreter_run (my interpreter.get(), text.get());
-		}
-	} catch (MelderError) {
-		if (isObscured) {
-			Melder_clearError ();
-			Melder_throw (U"Undisclosed error in obscured Praat script.");
-		} else {
-			throw;
-		}
+	if (npar) {
+		/*
+			Pop up a dialog box for querying the arguments.
+		*/
+		my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, nullptr, args_ok, me, false);
+		UiForm_do (my argsDialog.get(), false);
+	} else {
+		autoPraatBackground background;
+		if (my name [0])
+			MelderFile_setDefaultDir (& file);
+		trace (U"Running the following script (2):\n", text.get());
+		Interpreter_run (my interpreter.get(), text.get());
 	}
 }
 

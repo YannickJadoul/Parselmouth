@@ -1,18 +1,18 @@
 /* sendpraat.c */
 /* by Paul Boersma */
-/* 22 December 2019 */
+/* 10 November 2020 */
 
 /*
- * The sendpraat subroutine (Unix with GTK; Windows; Macintosh) sends a message
+ * The sendpraat subroutine (Unix; Windows; Macintosh) sends a message
  * to a running Praat (or another program that uses the Praat shell).
  * The sendpraat program behaves identically from a Unix command shell,
- * from a Windows console, or from a MacOS X terminal window.
+ * from a Windows console, or from a macOS terminal window.
  *
  * Newer versions of sendpraat may be found at http://www.praat.org or http://www.fon.hum.uva.nl/praat/sendpraat.html
  *
  * On Windows, this version works only with Praat version 4.3.28 (November 2005) or newer.
  * On Macintosh, this version works only with Praat version 3.8.75 (October 2000) or newer.
- * On Unix with GTK, this version works only with Praat version 5.1.33 (May 2010) or newer.
+ * On Unix, this version works only with Praat version 6.1.31 (November 2020) or newer.
  * Newer versions of Praat may respond faster or more reliably.
  */
 
@@ -28,13 +28,13 @@
 	#include <windows.h>
 	#include <stdio.h>
 	#include <wchar.h>
-	#define gtk 0
+	#define unix 0
 	#define win 1
 	#define mac 0
 #elif (defined (macintosh) || defined (__MACH__))
     #include <Carbon/Carbon.h>
     #include <wchar.h>
-	#define gtk 0
+	#define unix 0
 	#define win 0
 	#define mac 1
 #elif defined (UNIX)
@@ -46,17 +46,18 @@
 	#include <unistd.h>
 	#include <ctype.h>
 	#include <wchar.h>
+	#include <X11/Xlib.h>
+	#define unix 1
 	#if defined (NO_GRAPHICS) || defined (NO_GUI)   /* for use inside Praat */
-		#define gtk 0
+		#define xwin 0
 	#else
-		#include <gtk/gtk.h>
-		#define gtk 1
+		#define xwin 1
 	#endif
 	#define win 0
 	#define mac 0
 #else
 	#include <wchar.h>
-	#define gtk 0
+	#define unix 0
 	#define win 0
 	#define mac 0
 #endif
@@ -67,25 +68,25 @@
 char *sendpraat (void *display, const char *programName, long timeOut, const char *text);
 /*
  * Parameters:
- * 'display' is the Display or GdkDisplay pointer, which will be available if you call sendpraat from an X11 or GTK program.
- *    If 'display' is NULL, sendpraat will open the display by itself, and close it after use.
- *    On Windows and Macintosh, sendpraat ignores the 'display' parameter.
- * 'programName' is the name of the program that receives the message.
+ * `display` is the Display pointer, which will be available if you call sendpraat from an X11 program.
+ *    If `display` is NULL, sendpraat will open the display by itself, and close it after use.
+ *    On Windows and Macintosh, sendpraat ignores the `display` parameter.
+ * `programName` is the name of the program that receives the message.
  *    This program must have been built with the Praat shell (the most common such programs are Praat and ALS).
  *    On Unix, the program name is usually all lower case, e.g. "praat" or "als", or the name of any other program.
  *    On Windows, you can use either "Praat", "praat", or the name of any other program.
- *    On Macintosh, 'programName' must be "Praat", "praat", "ALS", or the Macintosh signature of any other program.
- * 'timeOut' is the time (in seconds) after which sendpraat will return with a time-out error message
+ *    On Macintosh, `programName` must be "Praat", "praat", "ALS", or the Macintosh signature of any other program.
+ * `timeOut` is the time (in seconds) after which sendpraat will return with a time-out error message
  *    if the receiving program sends no notification of completion.
- *    On Unix and Macintosh, the message is sent asynchronously if 'timeOut' is 0;
+ *    On Unix and Macintosh, the message is sent asynchronously if `timeOut` is 0;
  *    this means that sendpraat will return OK (NULL) without waiting for the receiving program
  *    to handle the message.
  *    On Windows, the time out is ignored.
- * 'text' contains the contents of the Praat script to be sent to the receiving program, encoded as UTF-8.
+ * `text` contains the contents of the Praat script to be sent to the receiving program, encoded as UTF-8.
  */
 
 static char errorMessage [1000];
-#if gtk
+#if unix
 	static long theTimeOut;
 	static void handleCompletion (int message) { (void) message; }
 	static void handleTimeOut (int message) { (void) message; sprintf (errorMessage, "Timed out after %ld seconds.", theTimeOut); }
@@ -93,7 +94,7 @@ static char errorMessage [1000];
 
 char *sendpraat (void *display, const char *programName, long timeOut, const char *text) {
 	char nativeProgramName [100];
-	#if gtk
+	#if unix
 		char *home, pidFileName [256], messageFileName [256];
 		FILE *pidFile;
 		long pid, wid = 0;
@@ -119,7 +120,7 @@ char *sendpraat (void *display, const char *programName, long timeOut, const cha
 	 * Handle case differences.
 	 */
 	strcpy (nativeProgramName, programName);
-	#if gtk
+	#if unix
 		nativeProgramName [0] = (char) tolower (nativeProgramName [0]);
 	#else
 		nativeProgramName [0] = (char) toupper (nativeProgramName [0]);
@@ -127,13 +128,13 @@ char *sendpraat (void *display, const char *programName, long timeOut, const cha
 
 	/*
 	 * If the text is going to be sent in a file, create its name.
-	 * The file is going to be written into the preferences directory of the receiving program.
+	 * The file is going to be written into the preferences folder of the receiving program.
 	 * On Unix, the name will be something like /home/jane/.praat-dir/message.
 	 * On Windows, the name will be something like C:\Users\Jane\Praat\Message.txt,
 	 * or C:\Windows\Praat\Message.txt on older systems.
 	 * On Macintosh, the text is NOT going to be sent in a file.
 	 */
-	#if gtk
+	#if unix
 		if ((home = getenv ("HOME")) == NULL) {
 			sprintf (errorMessage, "HOME environment variable not set.");
 			return errorMessage;
@@ -153,15 +154,15 @@ char *sendpraat (void *display, const char *programName, long timeOut, const cha
 	/*
 	 * Save the message file (Unix and Windows only).
 	 */
-	#if gtk || win
+	#if unix || win
 	{
 		FILE *messageFile;
 		if ((messageFile = fopen (messageFileName, "w")) == NULL) {
 			sprintf (errorMessage, "Cannot create message file \"%s\" "
-				"(no privilege to write to directory, or disk full, or program is not called %s).\n", messageFileName, programName);
+				"(no privilege to write to folder, or disk full, or program is not called %s).\n", messageFileName, programName);
 			return errorMessage;
 		}
-		#if gtk
+		#if unix
 			if (timeOut)
 				fprintf (messageFile, "#%ld\n", (long) getpid ());   /* Write own process ID for callback. */
 		#endif
@@ -173,7 +174,7 @@ char *sendpraat (void *display, const char *programName, long timeOut, const cha
 	/*
 	 * Where shall we send the message?
 	 */
-	#if gtk
+	#if unix
 		/*
 		 * Get the process ID and the window ID of a running Praat-shell program.
 		 */
@@ -215,7 +216,7 @@ char *sendpraat (void *display, const char *programName, long timeOut, const cha
 	/*
 	 * Send the message.
 	 */
-	#if gtk
+	#if unix
 		/*
 		 * Be ready to receive notification of completion.
 		 */
@@ -224,37 +225,50 @@ char *sendpraat (void *display, const char *programName, long timeOut, const cha
 		/*
 		 * Notify running program.
 		 */
-		if (wid != 0) {   /* Praat shell version October 21, 1998 or later? Send event to window. */
+		#if xwin
+		if (wid != 0) {   /* Send event to window. */
 			/*
 			 * Notify main window.
 			 */
-#if ALLOW_GDK_DRAWING
-			GdkEventClient gevent;
-#if !GLIB_CHECK_VERSION(2,35,0)
-			g_type_init ();
-#endif
-			int displaySupplied = display != NULL;
+			XEvent event;
+			int displaySupplied = ( display != NULL );
 			if (! displaySupplied) {
-				display = gdk_display_open (getenv ("DISPLAY"));   /* GdkDisplay* */
+				display = XOpenDisplay (NULL);
 				if (display == NULL) {
-					sprintf (errorMessage, "Cannot open display %s", getenv ("DISPLAY"));
+					sprintf (errorMessage, "Cannot open display %s.", XDisplayName (NULL));
 					return errorMessage;
 				}
 			}
-			gevent. type = GDK_CLIENT_EVENT;
-			gevent. window = 0;
-			gevent. send_event = 1;
-			gevent. message_type = gdk_atom_intern_static_string ("SENDPRAAT");
-			gevent. data_format = 8;
-			if (! gdk_event_send_client_message_for_display (display, (GdkEvent *) & gevent, wid)) {
-				if (! displaySupplied) gdk_display_close (display);
+			event. type = ClientMessage;
+			event. xclient. serial = 0;
+			event. xclient. send_event = True;
+			event. xclient. display = display;
+			event. xclient. window = (Window) wid;
+			event. xclient. message_type = XInternAtom (display, "SENDPRAAT", False);
+			event. xclient. format = 8;   /* No byte swaps. */
+			strcpy (& event. xclient.data.b [0], "SENDPRAAT");
+			if (! XSendEvent (display, (Window) wid, True, KeyPressMask, & event)) {
+				if (! displaySupplied)
+					XCloseDisplay (display);
 				sprintf (errorMessage, "Cannot send message to %s (window %ld). "
 					"The program %s may have been started by a different user, "
 					"or may have crashed.", programName, wid, programName);
 				return errorMessage;
 			}
-			if (! displaySupplied) gdk_display_close (display);
-#endif
+			if (! displaySupplied)
+				XCloseDisplay (display);
+		} else
+		#endif
+		{
+			/*
+				No window ID given by Praat its pid file: use interrupt mechanism instead.
+			*/
+			if (kill (pid, SIGUSR1)) {
+				sprintf (errorMessage, "Cannot send message to %s (process %ld). "
+					"The program %s may have been started by a different user, "
+					"or may have crashed.", programName, pid, programName);
+				return errorMessage;
+			}
 		}
 		/*
 		 * Wait for the running program to notify us of completion,
@@ -266,7 +280,8 @@ char *sendpraat (void *display, const char *programName, long timeOut, const cha
 			theTimeOut = timeOut;   // hand an argument to handleTimeOut () in a static variable
 			errorMessage [0] = '\0';
 			pause ();
-			if (errorMessage [0] != '\0') return errorMessage;
+			if (errorMessage [0] != '\0')
+				return errorMessage;
 		}
 	#elif win
 		/*
@@ -317,11 +332,13 @@ char *sendpraat (void *display, const char *programName, long timeOut, const cha
  */
 #ifdef STAND_ALONE
 /*
- * To compile on MacOS X:
-cc -o sendpraat -DSTAND_ALONE -framework CoreServices -I/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/AE.framework/Versions/A/Headers -I/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Headers sendpraat.c -Dmacintosh
- *
- * To compile on Linux:
-cc -std=gnu99 -o sendpraat -DSTAND_ALONE -DUNIX `pkg-config --cflags --libs gtk+-2.0` sendpraat.c
+	To compile on MacOS X:
+		cc -o sendpraat -DSTAND_ALONE -framework CoreServices -I/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/AE.framework/Versions/A/Headers -I/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Headers sendpraat.c -Dmacintosh
+
+	To compile on Linux without X:
+		gcc -std=gnu99 sendpraat.c -o sendpraat-signal -DSTAND_ALONE -DUNIX -DNO_GRAPHICS
+	To compile on Linux with X:
+		gcc -std=gnu99 sendpraat.c -o sendpraat-x -DSTAND_ALONE -DUNIX -L /usr/lib/x86_64-linux-gnu -lX11
 */
 int main (int argc, char **argv) {
 	int iarg, line, length = 0;

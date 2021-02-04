@@ -207,69 +207,6 @@ void structGraphicsScreen :: v_destroy () noexcept {
 	trace (U"exit");
 }
 
-void structGraphicsScreen :: v_flushWs () {
-	#if cairo && gtk
-		// Ik weet niet of dit is wat het zou moeten zijn ;)
-		//gdk_window_process_updates (d_window, true);   // this "works" but is incorrect because it's not the expose events that have to be carried out
-		//gdk_window_flush (d_window);
-		//gdk_flush ();
-		// TODO: een aanroep die de eventuele grafische buffer ledigt,
-		// zodat de gebruiker de grafica ziet ook al blijft Praat in hetzelfde event zitten
-		if (our d_drawingArea && our d_drawingArea -> d_exposeCallback) {
-			GdkRectangle rect;
-			if (our d_x1DC < our d_x2DC) {
-				rect.x = our d_x1DC;
-				rect.width = our d_x2DC - our d_x1DC;
-			} else {
-				rect.x = our d_x2DC;
-				rect.width = our d_x1DC - our d_x2DC;
-			}
-			if (our d_y1DC < our d_y2DC) {
-				rect.y = our d_y1DC;
-				rect.height = our d_y2DC - our d_y1DC;
-			} else {
-				rect.y = our d_y2DC;
-				rect.height = our d_y1DC - our d_y2DC;
-			}
-			structGuiDrawingArea_ExposeEvent event { our d_drawingArea, 0 };
-			event. x = rect. x;
-			event. y = rect. y;
-			event. width = rect. width;
-			event. height = rect. height;
-			try {
-				//Melder_casual (U"_GuiGtkDrawingArea_exposeCallback: ", event. x, U" ", event. y, U" ", event. width, U" ", event. height);
-				trace (U"send the expose callback");
-				trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-				our d_drawingArea -> d_exposeCallback (our d_drawingArea -> d_exposeBoss, & event);
-				trace (U"the expose callback finished");
-				trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-			} catch (MelderError) {
-				Melder_flushError (U"Redrawing not completed");
-			}
-			trace (U"the expose callback handled drawing");
-		}
-	#elif gdi
-		/*GdiFlush ();*/
-	#elif quartz
-		if (our d_drawingArea) {
-			GuiShell shell = our d_drawingArea -> d_shell;
-			Melder_assert (shell);
-			Melder_assert (shell -> d_cocoaShell);
-			[shell -> d_cocoaShell   flushWindow];
-			NSEvent *nsEvent = [[d_macView window]
-				nextEventMatchingMask: NSAnyEventMask
-				untilDate: [NSDate distantPast]
-				inMode: NSDefaultRunLoopMode
-				dequeue: NO
-				];
-		}
-	#endif
-}
-
-void Graphics_flushWs (Graphics me) {
-	my v_flushWs ();
-}
-
 void structGraphicsScreen :: v_clearWs () {
 	#if cairo && gtk
 		GdkRectangle rect;
@@ -327,6 +264,8 @@ void structGraphicsScreen :: v_updateWs () {
 		respond by redrawing its contents from the (changed) data.
 		(last checked 2020-07-12)
 	*/
+	if (! our d_drawingArea)
+		return;
 	#if cairo && gtk
 		//GdkWindow *window = gtk_widget_get_parent_window (GTK_WIDGET (our d_drawingArea -> d_widget));
 		GdkRectangle rect;
@@ -346,23 +285,10 @@ void structGraphicsScreen :: v_updateWs () {
 			rect.y = our d_y2DC;
 			rect.height = our d_y1DC - our d_y2DC;
 		}
-
-		if (Melder_debug == 54) {
-			// ignore gdk_cairo_reset_clip
-		} else {
-			if (our d_cairoGraphicsContext && our d_drawingArea) {  // update clipping rectangle to new graphics size
-				cairo_reset_clip (our d_cairoGraphicsContext);
-				cairo_rectangle (our d_cairoGraphicsContext, rect.x, rect.y, rect.width, rect.height);
-				cairo_clip (our d_cairoGraphicsContext);
-			}
-		}
-		#if ALLOW_GDK_DRAWING
-			//gdk_window_clear (our d_window);
-		#endif
 		//gdk_window_invalidate_rect (our d_window, & rect, true);
 		gtk_widget_queue_draw_area (GTK_WIDGET (our d_drawingArea -> d_widget), rect.x, rect.y, rect.width, rect.height);
 		//gdk_window_invalidate_rect (our d_window, nullptr, true);
-		//gdk_window_process_updates (our d_window, true);
+		//gdk_window_process_updates (our d_window, true);   // TODO: this one seems to be for draining instead
 	#elif gdi
 		//clear (this); // lll
 		if (our d_winWindow)
@@ -427,14 +353,9 @@ static int GraphicsScreen_init (GraphicsScreen me, void *voidDisplay, void *void
 	#if cairo && gtk
 		my d_display = (GdkDisplay *) gdk_display_get_default ();
 		_GraphicsScreen_text_init (me);
-		#if ALLOW_GDK_DRAWING
-			trace (U"retrieving window");
-			my d_window = GDK_DRAWABLE (GTK_WIDGET (voidDisplay) -> window);
-			trace (U"retrieved window");
-		#else
+		if (voidDisplay)
 			my d_window = gtk_widget_get_window (GTK_WIDGET (voidDisplay));
-		#endif
-		my d_cairoGraphicsContext = nullptr;   // will be created and destroyed at expose time
+		my d_cairoGraphicsContext = nullptr;   // will be created and destroyed at expose time or during Graphics_textWidth(); 2020-11-11
 	#elif gdi
 		if (my printer) {
 			my d_gdiGraphicsContext = (HDC) voidWindow;
@@ -464,15 +385,6 @@ static int GraphicsScreen_init (GraphicsScreen me, void *voidDisplay, void *void
 			my d_macView = (NSView *) voidWindow;
 			my d_macGraphicsContext = nullptr;   // will be retrieved and nullified at expose time
 		}
-		/*
-			The following is what we would like to do.
-			However, if we do this outside of an expose event, d_macGraphicsContext will be null,
-			so we defer this to GraphicsQuartz_initDraw().
-			(last checked 2020-07-26)
-		*/
-		//my d_macGraphicsContext = Melder_systemVersion < 101400 ?
-		//		(CGContextRef) [[NSGraphicsContext currentContext] graphicsPort] :
-		//		[[NSGraphicsContext currentContext] CGContext];
 		my d_depth = ( my resolution > 150 ? 1 : 8 );   // BUG: replace by true depth (1=black/white)
 		_GraphicsScreen_text_init (me);
 	#endif
@@ -765,23 +677,6 @@ autoGraphics Graphics_create_pdf (void *context, int resolution,
 	}
 	void Graphics_x_setCR (Graphics me, void *cairoGraphicsContext) {
 		((GraphicsScreen) me) -> d_cairoGraphicsContext = (cairo_t *) cairoGraphicsContext;
-	}
-#endif
-
-#if quartz
-	void GraphicsQuartz_initDraw (Graphics me_generic) {
-		GraphicsScreen me = static_cast <GraphicsScreen> (me_generic);
-		if (my d_macView) {
-			my d_macGraphicsContext = Melder_systemVersion < 101400 ?
-					(CGContextRef) [[NSGraphicsContext currentContext] graphicsPort] :
-					[[NSGraphicsContext currentContext] CGContext];
-			Melder_assert (!! my d_macGraphicsContext);
-		}
-	}
-	void GraphicsQuartz_exitDraw (Graphics me_generic) {
-		GraphicsScreen me = static_cast <GraphicsScreen> (me_generic);
-		if (my d_macView)
-			my d_macGraphicsContext = nullptr;
 	}
 #endif
 

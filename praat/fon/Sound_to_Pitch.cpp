@@ -520,16 +520,16 @@ autoPitch Sound_to_Pitch_any (Sound me,
 			arg -> isMainThread = ( ithread == numberOfThreads );
 			arg -> cancelled = & cancelled;
 			if (method >= FCC_NORMAL) {   // cross-correlation
-				arg -> frame = newMATzero (my ny, nsamp_window);
+				arg -> frame = zero_MAT (my ny, nsamp_window);
 			} else {   // autocorrelation
 				NUMfft_Table_init (& arg -> fftTable, nsampFFT);
-				arg -> frame = newMATzero (my ny, nsampFFT);
-				arg -> ac = newVECzero (nsampFFT);
+				arg -> frame = zero_MAT (my ny, nsampFFT);
+				arg -> ac = zero_VEC (nsampFFT);
 			}
-			arg -> rbuffer = newVECzero (2 * nsamp_window + 1);
+			arg -> rbuffer = zero_VEC (2 * nsamp_window + 1);
 			arg -> r = & arg -> rbuffer [1 + nsamp_window];
-			arg -> imax = newINTVECzero (maxnCandidates);
-			arg -> localMean = newVECzero (my ny);
+			arg -> imax = zero_INTVEC (maxnCandidates);
+			arg -> localMean = zero_VEC (my ny);
 			args [ithread - 1] = std::move (arg);
 			firstFrame = lastFrame + 1;
 			lastFrame += numberOfFramesPerThread;

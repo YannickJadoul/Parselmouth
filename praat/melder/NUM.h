@@ -1,7 +1,7 @@
 #pragma once
 /* NUM.h
  *
- * Copyright (C) 2017-2019 Paul Boersma
+ * Copyright (C) 1992-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,14 +60,20 @@ bool NUMisEmpty (constmatrixview<T> const& x) noexcept {
 	return numberOfCells == 0;   // note: a matrix with 0 rows and 6 columns is a valid empty matrix, to which e.g. a row can be added
 }
 
+inline bool NUMisEmpty (constSTRVEC const& x) noexcept {
+	return x.size == 0;
+}
+
 inline MelderRealRange NUMextrema (const constVECVU& vec) {
 	if (NUMisEmpty (vec))
 		return { undefined, undefined };
 	double minimum = vec [1], maximum = minimum;
 	for (integer i = 2; i <= vec.size; i ++) {
 		const double value = vec [i];
-		if (value < minimum) minimum = value;
-		if (value > maximum) maximum = value;
+		if (value < minimum)
+			minimum = value;
+		if (value > maximum)
+			maximum = value;
 	}
 	return { minimum, maximum };
 }
@@ -209,7 +215,24 @@ inline double NUMextremum (constMATVU const& mat) {
 	return std::max (fabs (range.min), fabs (range.max));
 }
 
+inline integer NUMfindFirst (constSTRVEC const& strvec, conststring32 str) {
+	for (integer i = 1; i <= strvec.size; i ++)
+		if (Melder_equ (strvec [i], str))
+			return i;
+	return 0;
+}
+inline integer NUMfindLast (constSTRVEC const& strvec, conststring32 str) {
+	for (integer i = strvec.size; i >= 1; i --)
+		if (Melder_equ (strvec [i], str))
+			return i;
+	return 0;
+}
+
 extern double NUMinner (constVECVU const& x, constVECVU const& y) noexcept;
+
+inline bool NUMisSquare (constMATVU const& x) noexcept {
+	return x.nrow == x.ncol;
+}
 
 inline bool NUMisSymmetric (constMATVU const& x) noexcept {
 	if (x.nrow != x.ncol)
@@ -222,8 +245,8 @@ inline bool NUMisSymmetric (constMATVU const& x) noexcept {
 	return true;
 }
 
-inline integer NUMlength (conststring32 str) {
-	return str ? str32len (str) : 0;
+inline double NUMlength (conststring32 str) {
+	return str ? double (str32len (str)) : 0.0;
 }
 
 inline double NUMlog2 (double x) {
@@ -263,6 +286,9 @@ inline double NUMmax (constMATVU const& mat) {
 	}
 	return maximum;
 }
+
+extern double NUMminimumLength (constSTRVEC const& x);
+extern double NUMmaximumLength (constSTRVEC const& x);
 
 extern double NUMmean (constVECVU const& vec);
 extern double NUMmean (constMATVU const& mat) noexcept;
@@ -333,6 +359,8 @@ extern double NUMsum2 (constVECVU const& vec);
 extern double NUMsum2 (constMATVU const& mat);
 
 extern double NUMsumOfSquaredDifferences (constVECVU const& vec, double mean);
+
+extern double NUMtotalLength (constSTRVEC const& x);
 
 extern double NUMvariance (constVECVU const& vec) noexcept;
 extern double NUMvariance (constMATVU const& mat) noexcept;

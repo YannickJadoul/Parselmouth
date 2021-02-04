@@ -1,6 +1,6 @@
 /* OTGrammar_def.h
  *
- * Copyright (C) 1997-2011,2015-2019 Paul Boersma
+ * Copyright (C) 1997-2011,2015-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ oo_DEFINE_STRUCT (OTGrammarCandidate)
 		oo_DOUBLE (harmony)
 		oo_DOUBLE (probability)
 		oo_INTEGER (numberOfPotentialPartialOutputsMatching)
-		oo_BOOLVEC (partialOutputMatches___, numberOfPotentialPartialOutputsMatching)
+		oo_BOOLVEC (partialOutputMatches, numberOfPotentialPartialOutputsMatching)
 	#endif
 
 oo_END_STRUCT (OTGrammarCandidate)
@@ -105,6 +105,32 @@ oo_DEFINE_CLASS (OTGrammar, Daata)
 	#if oo_DECLARING
 		void v_info ()
 			override;
+		void checkConstraintNumber (integer constraintNumber) {
+			Melder_require (constraintNumber >= 1,
+				U"The specified constraint number (", constraintNumber, U") should not be less than 1.");
+			Melder_require (constraintNumber <= our numberOfConstraints,
+				U"The specified constraint number (", constraintNumber,
+				U") should not exceed the number of constraints (", our numberOfConstraints, U")."
+			);
+		}
+		void checkTableauNumber (integer tableauNumber) {
+			Melder_require (tableauNumber >= 1,
+				U"The specified tableau number (", tableauNumber, U") should not be less than 1.");
+			Melder_require (tableauNumber <= our numberOfTableaus,
+				U"The specified tableau number (", tableauNumber,
+				U") should not exceed the number of tableaus (", our numberOfTableaus, U")."
+			);
+		}
+		void checkTableauAndCandidateNumber (integer tableauNumber, integer candidateNumber) {
+			our checkTableauNumber (tableauNumber);
+			Melder_require (candidateNumber >= 1,
+				U"The specified candidate number (", candidateNumber, U") should not be less than 1.");
+			Melder_require (candidateNumber <= our tableaus [tableauNumber]. numberOfCandidates,
+				U"The specified candidate number (", candidateNumber,
+				U") should not exceed the number of candidates in tableau ", tableauNumber,
+				U" (", our tableaus [tableauNumber]. numberOfCandidates, U")."
+			);
+		}
 	#endif
 
 oo_END_CLASS (OTGrammar)

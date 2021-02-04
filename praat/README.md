@@ -20,6 +20,8 @@ The meaning of the names of binary files available on GitHub is as follows:
 - `praatXXXX_win98sit.exe`: self-extracting StuffIt archive with executable for Windows 98
 
 ### 1.2. Mac binaries
+- `praatXXXX_mac.dmg`: disk image with universal executable for (64-bit) Intel and Apple Silicon Macs (Cocoa)
+- `praatXXXX_xcodeproj.zip`: zipped Xcode project file for the universal (64-bit) edition (Cocoa)
 - `praatXXXX_mac64.dmg`: disk image with executable for 64-bit Intel Macs (Cocoa)
 - `praatXXXX_xcodeproj64.zip`: zipped Xcode project file for the 64-bit edition (Cocoa)
 - `praatXXXX_mac32.dmg`: disk image with executable for 32-bit Intel Macs (Carbon)
@@ -33,10 +35,12 @@ The meaning of the names of binary files available on GitHub is as follows:
 - `praatXXXX_mac7.sit`: StuffIt archive with executable for MacOS 7
 
 ### 1.3. Unix binaries
-- `praatXXXX_rpi_armv7.tar.gz`: gzipped tarred executable for 32-bit Linux on the Raspberry Pi 4B (GTK)
-- `praatXXXX_chrome64.tar.gz`: gzipped tarred executable for 64-bit Linux on Chromebooks (GTK)
-- `praatXXXX_linux64.tar.gz`: gzipped tarred executable for 64-bit Linux (GTK)
-- `praatXXXX_linux32.tar.gz`: gzipped tarred executable for 32-bit Linux (GTK)
+- `praatXXXX_rpi_armv7.tar.gz`: gzipped tarred executable for 32-bit Linux on the Raspberry Pi 4B (GTK 2 or 3)
+- `praatXXXX_chrome64.tar.gz`: gzipped tarred executable for 64-bit Linux on Chromebooks (GTK 2 or 3)
+- `praatXXXX_linux64barren.tar.gz`: gzipped tarred executable for 64-bit Linux, without GUI or graphics
+- `praatXXXX_linux64nogui.tar.gz`: gzipped tarred executable for 64-bit Linux, without GUI but with graphics (Cairo and Pango)
+- `praatXXXX_linux64.tar.gz`: gzipped tarred executable for 64-bit Linux (GTK 2 or 3)
+- `praatXXXX_linux32.tar.gz`: gzipped tarred executable for 32-bit Linux (GTK 2)
 - `praatXXXX_linux_motif64.tar.gz`: gzipped tarred executable for 64-bit Linux (Motif)
 - `praatXXXX_linux_motif32.tar.gz`: gzipped tarred executable for 32-bit Linux (Motif)
 - `praatXXXX_solaris.tar.gz`: gzipped tarred executable for Solaris
@@ -102,15 +106,13 @@ Then type `make` to build `Praat.exe`
 
 ### 3.2. Compiling for Macintosh
 
-Extract the *praatXXXX_xcodeproj64.zip* file from the [latest release](https://github.com/praat/praat/releases)
-into the directory that contains
-`sys`, `fon`, `dwtools` and so on. Then open the project `praat64.xcodeproj` in Xcode
-and choose Build or Run for the target `praat_mac64`.
-Note that on Mojave or Catalina you may have to copy the 10.13 SDK into your Xcode app,
-because Praat will have problems with the Dark Mode if you compile with the 10.15 SDK.
+Extract the *praatXXXX_xcodeproj.zip* file from the [latest release](https://github.com/praat/praat/releases)
+into the directory that contains `sys`, `fon`, `dwtools` and so on.
+Then open the project `praat.xcodeproj` in Xcode 12 and choose Build or Run for the target `praat_mac`.
+You can compile with the 11.0 SDK, which will work as far back as macOS 10.7, which is our deployment target.
 
 If you get an error message like “Code Signing Identity xxx does not match any valid, non-expired,
-code-signing certificate in your keychain”, then select the target `praat_mac64`, go to Info → Build,
+code-signing certificate in your keychain”, then select the target `praat_mac`, go to Info → Build,
 and switch “Code Signing Identity” to “Don’t Code Sign”,
 or sign with your own certificate if you have one as a registered Apple developer.
 
@@ -139,7 +141,7 @@ you may then also have to go to App Store Connect, log in, then Agreements, Tax,
 
 To set up the required system libraries, install some graphics and sound packages:
 
-    sudo apt-get install libgtk2.0-dev
+    sudo apt-get install libgtk-3-dev
     sudo apt-get install libasound2-dev
     sudo apt-get install libpulse-dev
     sudo apt-get install libjack-dev
@@ -161,17 +163,17 @@ and type one of the four following commands:
 
 To build the Praat executable, type `make` or `make -j12`.
 If your Unix isn’t Linux, you may have to edit the library names in the makefile
-(you may need pthread, gtk-x11-2.0, gdk-x11-2.0, atk-1.0, pangoft2-1.0, gdk_pixbuf-2.0, m, pangocairo-1.0,
-cairo, gio-2.0, pango-1.0, freetype, fontconfig, gobject-2.0, gmodule-2.0, gthread-2.0, rt, glib-2.0, asound, jack).
+(you may need pthread, gtk-3, gdk-3, atk-1.0, pangoft2-1.0, gdk_pixbuf-2.0, m, pangocairo-1.0,
+cairo-gobject, cairo, gio-2.0, pango-1.0, freetype, fontconfig, gobject-2.0, gmodule-2.0, gthread-2.0, rt, glib-2.0, asound, jack).
 
 When compiling Praat on an external supercomputer or so, you will not have sound.
-If you do have `libgtk2.0-dev` (and its dependencies), do
+If you do have `libgtk-3-dev` (and its dependencies), do
 
     cp makefiles/makefile.defs.linux.silent ./makefile.defs
 
 Then type `make` or `make -j12` to build the program. If your Unix isn’t Linux,
-you may have to edit the library names in the makefile (you may need pthread, gtk-x11-2.0, gdk-x11-2.0, atk-1.0,
-pangoft2-1.0, gdk_pixbuf-2.0, m, pangocairo-1.0, cairo, gio-2.0, pango-1.0, freetype, fontconfig, gobject-2.0,
+you may have to edit the library names in the makefile (you may need pthread, gtk-3, gdk-3, atk-1.0,
+pangoft2-1.0, gdk_pixbuf-2.0, m, pangocairo-1.0, cairo-gobject, cairo, gio-2.0, pango-1.0, freetype, fontconfig, gobject-2.0,
 gmodule-2.0, gthread-2.0, rt, glib-2.0).
 
 When compiling Praat for use as a server for commands from your web pages, you may not need sound or a GUI. Do
@@ -200,9 +202,10 @@ or `praat-build` into a Windows or Linux terminal (or `praat-run` to build and r
 ### 4.1. MacOS development set-up
 
 Your source code folders, such as `fon` and `sys`, will reside in a folder like `/Users/yourname/Praats/src`,
-where you also put `praat64.xcodeproj`, as described above in 3.2.
-On Paul’s 2018 MacBook Pro with Xcode 11.2, building Praat with Command-B or Command-R,
-after cleaning the build folder with Shift-Command-K, takes 1 minute and 30 seconds (optimization level O3).
+where you also put `praat.xcodeproj`, as described above in 3.2.
+On Paul’s 2018 MacBook Pro with Xcode 12.2, building Praat with Command-B or Command-R,
+after cleaning the build folder with Shift-Command-K,
+takes 120 seconds for the x86_64 part and 110 seconds for the ARM64 part (optimization level O3).
 
 ### 4.2. Windows development set-up
 
@@ -466,16 +469,16 @@ you include the executable in a `.dmg` disk image, with the following commands:
     PRAAT_WWW=~/Praats/www
     PRAAT_VERSION=9999
     cd ~/builds/mac_products/Configuration64
-    hdiutil create -fs HFS+ -ov -srcfolder Praat.app -volname Praat64_${PRAAT_VERSION} praat64_${PRAAT_VERSION}.dmg
-    hdiutil convert -ov -format UDZO -o ${PRAAT_WWW}/praat${PRAAT_VERSION}_mac64.dmg praat64_${PRAAT_VERSION}.dmg
-    rm praat64_${PRAAT_VERSION}.dmg
+    hdiutil create -fs HFS+ -ov -srcfolder Praat.app -volname Praat_${PRAAT_VERSION} praat_${PRAAT_VERSION}.dmg
+    hdiutil convert -ov -format UDZO -o ${PRAAT_WWW}/praat${PRAAT_VERSION}_mac.dmg praat_${PRAAT_VERSION}.dmg
+    rm praat_${PRAAT_VERSION}.dmg
 
 You also need to distribute the `.xcodeproj` file, which is actually a folder, so that you have to zip it:
 
     # on Mac command line
     PRAAT_SOURCES="~/Praats/src
     cd $PRAAT_SOURCES
-    zip -r $PRAAT_WWW/praat$(PRAAT_VERSION)_xcodeproj64.zip praat64.xcodeproj
+    zip -r $PRAAT_WWW/praat$(PRAAT_VERSION)_xcodeproj.zip praat.xcodeproj
 
 The Windows executables have to be sent from your Cygwin terminal to your Mac.
 It is easiest to do this without a version number (so that you have to supply the number only once),

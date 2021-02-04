@@ -73,10 +73,10 @@ static int portaudioStreamCallback (
 	integer samplesLeft = info -> numberOfSamples - info -> numberOfSamplesRead;
 	if (samplesLeft > 0) {
 		integer dsamples = std::min (samplesLeft, uinteger_to_integer (frameCount));
-		memcpy (info -> buffer + 1 + info -> numberOfSamplesRead, input, integer_to_uinteger (2 * dsamples));
+		memcpy (info -> buffer + info -> numberOfSamplesRead, input, integer_to_uinteger (2 * dsamples));
 		info -> numberOfSamplesRead += dsamples;
 		const short *input2 = (const short *) input;
-		Melder_casual (U"read ", dsamples, U" samples: ", input2 [0], U", ", input2 [1], U", ", input2 [3], U"...");
+		//Melder_casual (U"read ", dsamples, U" samples: ", input2 [0], U", ", input2 [1], U", ", input2 [3], U"...");
 		if (info -> numberOfSamplesRead >= info -> numberOfSamples)
 			return paComplete;
 	} else /*if (info -> numberOfSamplesRead >= info -> numberOfSamples)*/ {
@@ -125,7 +125,6 @@ autoSound Sound_record_fixedTime (int inputSource, double gain, double balance, 
 			(void) balance;
 		#elif defined (linux)
 			int dev_mask;
-			int fd_mixer = -1;
 			int val;
 		#endif
 
@@ -348,7 +347,7 @@ autoSound Sound_record_fixedTime (int inputSource, double gain, double balance, 
 			#endif
 			info. numberOfSamples = numberOfSamples;
 			info. numberOfSamplesRead = 0;
-			info. buffer = buffer.begin();
+			info. buffer = buffer.asArgumentToFunctionThatExpectsZeroBasedArray();
 			PaError err = Pa_OpenStream (& portaudioStream, & streamParameters, nullptr,
 				sampleRate,
 				0,   // this gives the default of 64 samples per buffer on Paul's 2018 MacBook Pro (checked 20200813)
@@ -376,14 +375,14 @@ for (i = 1; i <= numberOfSamples; i ++) trace (U"Started ", buffer [i]);
 			// The callback will do this. Just wait.
 			while (/*getNumberOfSamplesRead (& info)*/ info. numberOfSamplesRead < numberOfSamples) {
 				//Pa_Sleep (1);
-				//Melder_casual ("filled %ld/%ld", getNumberOfSamplesRead (& info), numberOfSamples);
+				trace (U"filled ", getNumberOfSamplesRead (& info), U"/", numberOfSamples);
 			}
 for (i = 1; i <= numberOfSamples; i ++) trace (U"Recorded ", buffer [i]);
 		} else {
 			#if defined (macintosh)
 			#elif defined (_WIN32)
 				waveHeader. dwFlags = 0;
-				waveHeader. lpData = (char *) & buffer [1];
+				waveHeader. lpData = (char *) buffer.asArgumentToFunctionThatExpectsZeroBasedArray();
 				waveHeader. dwBufferLength = numberOfSamples * 2;
 				waveHeader. dwLoops = 0;
 				waveHeader. lpNext = nullptr;
@@ -404,7 +403,7 @@ for (i = 1; i <= numberOfSamples; i ++) trace (U"Recorded ", buffer [i]);
 			#else
 				integer bytesLeft = 2 * numberOfSamples, dbytes, bytesRead = 0;
 				while (bytesLeft) {
-					dbytes = read (fd, (char *) & buffer [2 + bytesRead], std::min (bytesLeft, 4000_integer));
+					dbytes = read (fd, (char *) buffer.asArgumentToFunctionThatExpectsZeroBasedArray() + bytesRead, std::min (bytesLeft, 4000_integer));
 					if (dbytes <= 0)
 						break;
 					bytesLeft -= dbytes;

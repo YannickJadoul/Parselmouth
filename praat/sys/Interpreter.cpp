@@ -44,6 +44,7 @@ extern structMelderDir praatDir;
 
 autoVEC theInterpreterNumvec;
 autoMAT theInterpreterNummat;
+autoSTRVEC theInterpreterStrvec;
 
 Thing_implement (InterpreterVariable, SimpleString, 0);
 
@@ -170,7 +171,8 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 				break;
 			}
 			Melder_skipToEndOfLine (& p);
-			if (*p == U'\0') break;
+			if (*p == U'\0')
+				break;
 			p ++;   // skip newline symbol
 		}
 	}
@@ -262,7 +264,8 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 					Melder_throw (U"Missing parameter:\n\"", startOfLine, U"\".");
 				}
 				char32 *q = my parameters [++ my numberOfParameters];
-				while (Melder_staysWithinInk (*parameterLocation)) * (q ++) = * (parameterLocation ++);
+				while (Melder_staysWithinInk (*parameterLocation))
+					* (q ++) = * (parameterLocation ++);
 				*q = U'\0';
 				npar ++;
 			} else {
@@ -295,11 +298,15 @@ autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, conststring
 		UiForm_addText (form.get(), nullptr, nullptr, U"$file", path);
 	for (int ipar = 1; ipar <= my numberOfParameters; ipar ++) {
 		/*
-		 * Convert underscores to spaces.
-		 */
+			Convert underscores to spaces.
+		*/
 		char32 parameter [100], *p = & parameter [0];
 		str32cpy (parameter, my parameters [ipar]);
-		while (*p) { if (*p == U'_') *p = U' '; p ++; }
+		while (*p) {
+			if (*p == U'_')
+				*p = U' ';
+			p ++;
+		}
 		switch (my types [ipar]) {
 			case Interpreter_WORD:
 				UiForm_addWord (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
@@ -337,14 +344,16 @@ autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, conststring
 				UiForm_addWord (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
 		}
 		/*
-		 * Strip parentheses and colon off parameter name.
-		 */
+			Strip parentheses and colon off parameter name.
+		*/
 		if ((p = str32chr (my parameters [ipar], U'(')) != nullptr) {
 			*p = U'\0';
-			if (p - my parameters [ipar] > 0 && p [-1] == U'_') p [-1] = U'\0';
+			if (p - my parameters [ipar] > 0 && p [-1] == U'_')
+				p [-1] = U'\0';
 		}
 		p = my parameters [ipar];
-		if (*p != U'\0' && p [str32len (p) - 1] == U':') p [str32len (p) - 1] = U'\0';
+		if (*p != U'\0' && p [str32len (p) - 1] == U':')
+			p [str32len (p) - 1] = U'\0';
 	}
 	UiForm_finish (form.get());
 	return form;
@@ -354,19 +363,26 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 	for (int ipar = 1; ipar <= my numberOfParameters; ipar ++) {
 		char32 parameter [100], *p;
 		/*
-		 * Strip parentheses and colon off parameter name.
-		 */
+			Strip parentheses and colon off parameter name.
+		*/
 		if ((p = str32chr (my parameters [ipar], U'(')) != nullptr) {
 			*p = U'\0';
-			if (p - my parameters [ipar] > 0 && p [-1] == U'_') p [-1] = U'\0';
+			if (p - my parameters [ipar] > 0 && p [-1] == U'_')
+				p [-1] = U'\0';
 		}
 		p = my parameters [ipar];
-		if (*p != U'\0' && p [str32len (p) - 1] == U':') p [str32len (p) - 1] = U'\0';
+		if (*p != U'\0' && p [str32len (p) - 1] == U':')
+			p [str32len (p) - 1] = U'\0';
 		/*
-		 * Convert underscores to spaces.
-		 */
+			Convert underscores to spaces.
+		*/
 		str32cpy (parameter, my parameters [ipar]);
-		p = & parameter [0]; while (*p) { if (*p == U'_') *p = U' '; p ++; }
+		p = & parameter [0];
+		while (*p) {
+			if (*p == U'_')
+				*p = U' ';
+			p ++;
+		}
 		switch (my types [ipar]) {
 			case Interpreter_REAL:
 			case Interpreter_POSITIVE: {
@@ -718,13 +734,39 @@ inline static void NumericVectorVariable_move (InterpreterVariable variable, VEC
 			/*
 				Statement like: a# = b#   // with matching sizes
 			*/
-			variable -> numericVectorValue.all() <<= movedVector;
+			variable -> numericVectorValue.all()  <<=  movedVector;
 		}
 	} else {
 		/*
 			Statement like: a# = b#   // with non-matching sizes
 		*/
-		variable -> numericVectorValue = newVECcopy (movedVector);
+		variable -> numericVectorValue = copy_VEC (movedVector);
+	}
+}
+
+inline static void StringArrayVariable_move (InterpreterVariable variable, STRVEC movedVector, bool rightHandSideOwned) {
+	if (rightHandSideOwned) {
+		/*
+			Statement like: a$# = b$# + c$#
+		*/
+		variable -> stringArrayValue. adoptFromAmbiguousOwner (movedVector);
+	} else if (variable -> stringArrayValue.size == movedVector.size) {
+		if ((char32 **) variable -> stringArrayValue.elements == movedVector.elements) {
+			/*
+				Statement like: a$# = a$#
+			*/
+			(void) 0;   // assigning a variable to itself: do nothing
+		} else {
+			/*
+				Statement like: a$# = b$#   // with matching sizes
+			*/
+			variable -> stringArrayValue.all()  <<=  movedVector;
+		}
+	} else {
+		/*
+			Statement like: a$# = b$#   // with non-matching sizes
+		*/
+		variable -> stringArrayValue = newSTRVECcopy (movedVector);
 	}
 }
 
@@ -744,13 +786,13 @@ inline static void NumericMatrixVariable_move (InterpreterVariable variable, MAT
 			/*
 				Statement like: a## = b##   // with matching sizes
 			*/
-			variable -> numericMatrixValue.all() <<= movedMatrix;
+			variable -> numericMatrixValue.all()  <<=  movedMatrix;
 		}
 	} else {
 		/*
 			Statement like: a## = b##   // with non-matching sizes
 		*/
-		variable -> numericMatrixValue = newMATcopy (movedMatrix);
+		variable -> numericMatrixValue = copy_MAT (movedMatrix);
 	}
 }
 
@@ -993,6 +1035,17 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 						InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName);
 						*q = save;
 						NumericMatrixVariable_move (var, value, owned);
+					} else if (q [-2] == U'$') {
+						STRVEC value;
+						bool owned;
+						my callDepth --;
+						Interpreter_stringArrayExpression (me, argument.string, & value, & owned);
+						my callDepth ++;
+						char32 save = *q;
+						*q = U'\0';
+						InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName);
+						*q = save;
+						StringArrayVariable_move (var, value, owned);
 					} else {
 						VEC value;
 						bool owned;
@@ -1327,6 +1380,69 @@ static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const cha
 		Melder_throw (U"A column number cannot be greater than the number of columns (here ",
 			var -> numericMatrixValue. ncol, U"). The column number you supplied is ", columnNumber, U".");
 	var -> numericMatrixValue [rowNumber] [columnNumber] = value;
+}
+
+static void assignToStringArrayElement (Interpreter me, char32 *& p, const char32* vectorName, MelderString& valueString) {
+	integer indexValue = 0;
+	static MelderString index;
+	MelderString_empty (& index);
+	int depth = 0;
+	bool inString = false;
+	while ((depth > 0 || *p != U']' || inString) && Melder_staysWithinLine (*p)) {
+		MelderString_appendCharacter (& index, *p);
+		if (*p == U'[') {
+			if (! inString)
+				depth ++;
+		} else if (*p == U']') {
+			if (! inString)
+				depth --;
+		}
+		if (*p == U'"') inString = ! inString;
+		p ++;
+	}
+	if (! Melder_staysWithinLine (*p))
+		Melder_throw (U"Missing closing bracket (]) in array element.");
+	Formula_Result result;
+	Interpreter_anyExpression (me, index.string, & result);
+	if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
+		indexValue = Melder_iround (result. numericResult);
+	} else {
+		Melder_throw (U"Element index should be numeric.");
+	}
+	p ++;   // step over closing bracket
+	while (Melder_isHorizontalSpace (*p))
+		p ++;
+	if (*p != U'=')
+		Melder_throw (U"Missing '=' after string vector element ", vectorName, U" [", index.string, U"].");
+	p ++;   // step over equals sign
+	while (Melder_isHorizontalSpace (*p))
+		p ++;   // go to first token after assignment
+	if (*p == U'\0')
+		Melder_throw (U"Missing expression after string vector element ", vectorName, U" [", index.string, U"].");
+	autostring32 value;
+	if (isCommand (p)) {
+		/*
+			Get the value of the query.
+		*/
+		MelderString_empty (& valueString);
+		autoMelderDivertInfo divert (& valueString);
+		int status = praat_executeCommand (me, p);
+		value = ( status == 0 ? autostring32 () : Melder_dup (valueString.string) );
+	} else {
+		/*
+			Get the value of the formula.
+		*/
+		value = Interpreter_stringExpression (me, p);
+	}
+	InterpreterVariable var = Interpreter_hasVariable (me, vectorName);
+	if (! var)
+		Melder_throw (U"String vector ", vectorName, U" does not exist.");
+	if (indexValue < 1)
+		Melder_throw (U"A vector index cannot be less than 1 (the index you supplied is ", indexValue, U").");
+	if (indexValue > var -> stringArrayValue.size)
+		Melder_throw (U"A vector index cannot be greater than the number of elements (here ",
+			var -> stringArrayValue.size, U"). The index you supplied is ", indexValue, U".");
+	var -> stringArrayValue [indexValue] = value. move();
 }
 
 void Interpreter_run (Interpreter me, char32 *text) {
@@ -2066,140 +2182,180 @@ void Interpreter_run (Interpreter me, char32 *text) {
 					while (Melder_isWordCharacter (*p) || *p == U'.')
 						p ++;
 					if (*p == U'$') {
-						/*
-							Assign to a string variable.
-						*/
-						trace (U"detected an assignment to a string variable");
-						char32 *endOfVariable = ++ p;
-						char32 *variableName = command2.string;
-						while (Melder_isHorizontalSpace (*p))
-							p ++;   // go to first token after variable name
-						if (*p == U'[') {
+						if (p [1] == U'#') {
 							/*
-								This must be an assignment to an indexed string variable.
+								Assign to a string vector variable or a string vector element.
 							*/
-							*endOfVariable = U'\0';
-							static MelderString indexedVariableName;
-							MelderString_copy (& indexedVariableName, command2.string, U"[");
-							for (;;) {
-								p ++;   // skip opening bracket or comma
-								static MelderString index;
-								MelderString_empty (& index);
-								int depth = 0;
-								bool inString = false;
-								while ((depth > 0 || (*p != U',' && *p != U']') || inString) && Melder_staysWithinLine (*p)) {
-									MelderString_appendCharacter (& index, *p);
-									if (*p == U'[') {
-										if (! inString)
-											depth ++;
-									} else if (*p == U']') {
-										if (! inString)
-											depth --;
-									}
-									if (*p == U'"')
-										inString = ! inString;
-									p ++;
+							static MelderString vectorName;
+							p ++;
+							*p = U'\0';   // erase the number sign temporarily
+							MelderString_copy (& vectorName, command2.string, U"#");
+							*p = U'#';   // put the number sign back
+							p ++;   // step over number sign
+							while (Melder_isHorizontalSpace (*p))
+								p ++;   // go to first token after array name
+							if (*p == U'=') {
+								/*
+									This must be an assignment to a string vector variable.
+								*/
+								p ++;   // step over equals sign
+								while (Melder_isHorizontalSpace (*p))
+									p ++;   // go to first token after assignment
+								if (*p == U'\0')
+									Melder_throw (U"Missing right-hand expression in assignment to string vector ", vectorName.string, U".");
+								if (isCommand (p)) {
+									/*
+										Statement like: lines$# = Get all strings
+									*/
+									praat_executeCommand (me, p);
+									InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);
+									var -> stringArrayValue = std::move (theInterpreterStrvec);
+								} else {
+									STRVEC value;
+									bool owned;
+									Interpreter_stringArrayExpression (me, p, & value, & owned);
+									InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);
+									StringArrayVariable_move (var, value, owned);
 								}
-								if (! Melder_staysWithinLine (*p))
-									Melder_throw (U"Missing closing bracket (]) in indexed variable.");
-								Formula_Result result;
-								Interpreter_anyExpression (me, index.string, & result);
-								if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
-									double numericIndexValue = result. numericResult;
-									MelderString_append (& indexedVariableName, numericIndexValue);
-								} else if (result.expressionType == kFormula_EXPRESSION_TYPE_STRING) {
-									MelderString_append (& indexedVariableName, U"\"", result. stringResult.get(), U"\"");
-								}
-								MelderString_appendCharacter (& indexedVariableName, *p);
-								if (*p == U']') {
-									break;
-								}
-							}
-							variableName = indexedVariableName.string;
-							p ++;   // skip closing bracket
-						}
-						while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after (perhaps indexed) variable name
-						int typeOfAssignment;   // 0, 1, 2, 3 or 4
-						if (*p == U'=') {
-							typeOfAssignment = 0;   // assignment
-						} else if (*p == U'+') {
-							if (p [1] == U'=') {
-								typeOfAssignment = 1;   // adding assignment
-								p ++;
-							} else {
-								Melder_throw (U"Missing \"=\", \"+=\", \"<\", or \">\" after variable ", variableName, U".");
-							}
-						} else if (*p == U'<') {
-							typeOfAssignment = 2;   // read from file
-						} else if (*p == U'>') {
-							if (p [1] == U'>') {
-								typeOfAssignment = 3;   // append to file
-								p ++;
-							} else {
-								typeOfAssignment = 4;   // save to file
-							}
-						} else Melder_throw (U"Missing \"=\", \"+=\", \"<\", or \">\" after variable ", variableName, U".");
-						*endOfVariable = U'\0';
-						p ++;
-						while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment or I/O symbol
-						if (*p == U'\0') {
-							if (typeOfAssignment >= 2)
-								Melder_throw (U"Missing file name after variable ", variableName, U".");
-							else
-								Melder_throw (U"Missing expression after variable ", variableName, U".");
-						}
-						if (typeOfAssignment >= 2) {
-							structMelderFile file { };
-							Melder_relativePathToFile (p, & file);
-							if (typeOfAssignment == 2) {
-								autostring32 stringValue = MelderFile_readText (& file);
-								InterpreterVariable var = Interpreter_lookUpVariable (me, variableName);
-								var -> stringValue = stringValue.move();
-							} else if (typeOfAssignment == 3) {
-								if (theCurrentPraatObjects != & theForegroundPraatObjects) Melder_throw (U"Commands that write to a file are not available inside pictures.");
-								InterpreterVariable var = Interpreter_hasVariable (me, variableName);
-								if (! var) Melder_throw (U"Variable ", variableName, U" undefined.");
-								MelderFile_appendText (& file, var -> stringValue.get());
-							} else {
-								if (theCurrentPraatObjects != & theForegroundPraatObjects) Melder_throw (U"Commands that write to a file are not available inside pictures.");
-								InterpreterVariable var = Interpreter_hasVariable (me, variableName);
-								if (! var) Melder_throw (U"Variable ", variableName, U" undefined.");
-								MelderFile_writeText (& file, var -> stringValue.get(), Melder_getOutputEncoding ());
-							}
-						} else if (isCommand (p)) {
-							/*
-								Statement like: name$ = Get name
-							*/
-							MelderString_empty (& valueString);   // empty because command may print nothing; also makes sure that valueString.string exists
-							autoMelderDivertInfo divert (& valueString);
-							int status = praat_executeCommand (me, p);
-							InterpreterVariable var = Interpreter_lookUpVariable (me, variableName);
-							var -> stringValue = Melder_dup (status ? valueString.string : U"");
+							} else if (*p == U'[') {
+								assignToStringArrayElement (me, ++ p, vectorName.string, valueString);
+							} else Melder_throw (U"Missing '=' or '[' after string vector variable ", vectorName.string, U".");
 						} else {
 							/*
-								Evaluate a string expression and assign the result to the variable.
-								Statements like:
-									sentence$ = subject$ + verb$ + object$
-									extension$ = if index (file$, ".") <> 0
-									... then right$ (file$, length (file$) - rindex (file$, "."))
-									... else "" fi
+								Assign to a string variable.
 							*/
-							trace (U"evaluating string expression");
-							autostring32 stringValue = Interpreter_stringExpression (me, p);
-							trace (U"assigning to string variable ", variableName);
-							if (typeOfAssignment == 1) {
-								InterpreterVariable var = Interpreter_hasVariable (me, variableName);
-								if (! var)
-									Melder_throw (U"The string ", variableName, U" does not exist.\n"
-									              U"You can increment (+=) only existing strings.");
-								integer oldLength = str32len (var -> stringValue.get()), extraLength = str32len (stringValue.get());
-								autostring32 newString = autostring32 (oldLength + extraLength, false);
-								str32cpy (newString.get(), var -> stringValue.get());
-								str32cpy (newString.get() + oldLength, stringValue.get());
-								var -> stringValue = newString.move();
-							} else {
+							trace (U"detected an assignment to a string variable");
+							char32 *endOfVariable = ++ p;
+							char32 *variableName = command2.string;
+							while (Melder_isHorizontalSpace (*p))
+								p ++;   // go to first token after variable name
+							if (*p == U'[') {
+								/*
+									This must be an assignment to an indexed string variable.
+								*/
+								*endOfVariable = U'\0';
+								static MelderString indexedVariableName;
+								MelderString_copy (& indexedVariableName, command2.string, U"[");
+								for (;;) {
+									p ++;   // skip opening bracket or comma
+									static MelderString index;
+									MelderString_empty (& index);
+									int depth = 0;
+									bool inString = false;
+									while ((depth > 0 || (*p != U',' && *p != U']') || inString) && Melder_staysWithinLine (*p)) {
+										MelderString_appendCharacter (& index, *p);
+										if (*p == U'[') {
+											if (! inString)
+												depth ++;
+										} else if (*p == U']') {
+											if (! inString)
+												depth --;
+										}
+										if (*p == U'"')
+											inString = ! inString;
+										p ++;
+									}
+									if (! Melder_staysWithinLine (*p))
+										Melder_throw (U"Missing closing bracket (]) in indexed variable.");
+									Formula_Result result;
+									Interpreter_anyExpression (me, index.string, & result);
+									if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
+										double numericIndexValue = result. numericResult;
+										MelderString_append (& indexedVariableName, numericIndexValue);
+									} else if (result.expressionType == kFormula_EXPRESSION_TYPE_STRING) {
+										MelderString_append (& indexedVariableName, U"\"", result. stringResult.get(), U"\"");
+									}
+									MelderString_appendCharacter (& indexedVariableName, *p);
+									if (*p == U']') {
+										break;
+									}
+								}
+								variableName = indexedVariableName.string;
+								p ++;   // skip closing bracket
+							}
+							while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after (perhaps indexed) variable name
+							int typeOfAssignment;   // 0, 1, 2, 3 or 4
+							if (*p == U'=') {
+								typeOfAssignment = 0;   // assignment
+							} else if (*p == U'+') {
+								if (p [1] == U'=') {
+									typeOfAssignment = 1;   // adding assignment
+									p ++;
+								} else {
+									Melder_throw (U"Missing \"=\", \"+=\", \"<\", or \">\" after variable ", variableName, U".");
+								}
+							} else if (*p == U'<') {
+								typeOfAssignment = 2;   // read from file
+							} else if (*p == U'>') {
+								if (p [1] == U'>') {
+									typeOfAssignment = 3;   // append to file
+									p ++;
+								} else {
+									typeOfAssignment = 4;   // save to file
+								}
+							} else Melder_throw (U"Missing \"=\", \"+=\", \"<\", or \">\" after variable ", variableName, U".");
+							*endOfVariable = U'\0';
+							p ++;
+							while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment or I/O symbol
+							if (*p == U'\0') {
+								if (typeOfAssignment >= 2)
+									Melder_throw (U"Missing file name after variable ", variableName, U".");
+								else
+									Melder_throw (U"Missing expression after variable ", variableName, U".");
+							}
+							if (typeOfAssignment >= 2) {
+								structMelderFile file { };
+								Melder_relativePathToFile (p, & file);
+								if (typeOfAssignment == 2) {
+									autostring32 stringValue = MelderFile_readText (& file);
+									InterpreterVariable var = Interpreter_lookUpVariable (me, variableName);
+									var -> stringValue = stringValue.move();
+								} else if (typeOfAssignment == 3) {
+									if (theCurrentPraatObjects != & theForegroundPraatObjects) Melder_throw (U"Commands that write to a file are not available inside pictures.");
+									InterpreterVariable var = Interpreter_hasVariable (me, variableName);
+									if (! var) Melder_throw (U"Variable ", variableName, U" undefined.");
+									MelderFile_appendText (& file, var -> stringValue.get());
+								} else {
+									if (theCurrentPraatObjects != & theForegroundPraatObjects) Melder_throw (U"Commands that write to a file are not available inside pictures.");
+									InterpreterVariable var = Interpreter_hasVariable (me, variableName);
+									if (! var) Melder_throw (U"Variable ", variableName, U" undefined.");
+									MelderFile_writeText (& file, var -> stringValue.get(), Melder_getOutputEncoding ());
+								}
+							} else if (isCommand (p)) {
+								/*
+									Statement like: name$ = Get name
+								*/
+								MelderString_empty (& valueString);   // empty because command may print nothing; also makes sure that valueString.string exists
+								autoMelderDivertInfo divert (& valueString);
+								int status = praat_executeCommand (me, p);
 								InterpreterVariable var = Interpreter_lookUpVariable (me, variableName);
-								var -> stringValue = stringValue.move();
+								var -> stringValue = Melder_dup (status ? valueString.string : U"");
+							} else {
+								/*
+									Evaluate a string expression and assign the result to the variable.
+									Statements like:
+										sentence$ = subject$ + verb$ + object$
+										extension$ = if index (file$, ".") <> 0
+										... then right$ (file$, length (file$) - rindex (file$, "."))
+										... else "" fi
+								*/
+								trace (U"evaluating string expression");
+								autostring32 stringValue = Interpreter_stringExpression (me, p);
+								trace (U"assigning to string variable ", variableName);
+								if (typeOfAssignment == 1) {
+									InterpreterVariable var = Interpreter_hasVariable (me, variableName);
+									if (! var)
+										Melder_throw (U"The string ", variableName, U" does not exist.\n"
+													  U"You can increment (+=) only existing strings.");
+									integer oldLength = str32len (var -> stringValue.get()), extraLength = str32len (stringValue.get());
+									autostring32 newString = autostring32 (oldLength + extraLength, false);
+									str32cpy (newString.get(), var -> stringValue.get());
+									str32cpy (newString.get() + oldLength, stringValue.get());
+									var -> stringValue = newString.move();
+								} else {
+									InterpreterVariable var = Interpreter_lookUpVariable (me, variableName);
+									var -> stringValue = stringValue.move();
+								}
 							}
 						}
 					} else if (*p == U'#') {
@@ -2691,6 +2847,15 @@ autostring32 Interpreter_stringExpression (Interpreter me, conststring32 express
 	Formula_Result result;
 	Formula_run (0, 0, & result);
 	return result. stringResult.move();
+}
+
+void Interpreter_stringArrayExpression (Interpreter me, conststring32 expression, STRVEC *out_value, bool *out_owned) {
+	Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_STRING_ARRAY, false);
+	Formula_Result result;
+	Formula_run (0, 0, & result);
+	*out_value = result. stringArrayResult;
+	*out_owned = result. owned;
+	result. owned = false;
 }
 
 void Interpreter_anyExpression (Interpreter me, conststring32 expression, Formula_Result *out_result) {

@@ -1,6 +1,6 @@
 /* ExperimentMFC.cpp
  *
- * Copyright (C) 2001-2009,2011-2013,2015-2019 Paul Boersma
+ * Copyright (C) 2001-2009,2011-2013,2015-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,7 +105,7 @@ static void readSound (ExperimentMFC me, conststring32 fileNameHead, conststring
 		*/
 		Melder_sprint (pathName,kMelder_MAXPATH+1, fileNameHead, fileNames, fileNameTail);
 		/*
-			Make sure we are in the correct directory.
+			Make sure we are in the correct folder.
 		*/
 		if (MelderDir_isNull (& my rootDirectory)) {
 			/*
@@ -120,7 +120,7 @@ static void readSound (ExperimentMFC me, conststring32 fileNameHead, conststring
 			if (Melder_debug == 32) {
 				MelderInfo_open ();
 				MelderInfo_writeLine (U"Path name <", pathName, U">");
-				MelderInfo_writeLine (U"Root directory <", my rootDirectory.path, U">");
+				MelderInfo_writeLine (U"Root folder <", my rootDirectory.path, U">");
 				MelderInfo_writeLine (U"Full path name <", file.path, U">");
 				MelderInfo_close ();
 			}
@@ -183,10 +183,10 @@ void ExperimentMFC_start (ExperimentMFC me) {
 		my playBuffer.reset();   // is this needed?
 		my pausing = false;
 		my numberOfTrials = my numberOfDifferentStimuli * my numberOfReplicationsPerStimulus;
-		my stimuli = newINTVECzero (my numberOfTrials);
-		my responses = newINTVECzero (my numberOfTrials);
-		my goodnesses = newVECzero (my numberOfTrials);
-		my reactionTimes = newVECzero (my numberOfTrials);
+		my stimuli = zero_INTVEC (my numberOfTrials);
+		my responses = zero_INTVEC (my numberOfTrials);
+		my goodnesses = zero_VEC (my numberOfTrials);
+		my reactionTimes = zero_VEC (my numberOfTrials);
 		/*
 			Read all the sounds. They must all have the same sampling frequency and number of channels.
 		*/

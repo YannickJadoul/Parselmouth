@@ -1,6 +1,6 @@
 /* Sound_to_Intensity.cpp
  *
- * Copyright (C) 1992-2011,2014,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1992-2012,2014-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,8 +64,8 @@ static autoIntensity Sound_to_Intensity_ (Sound me, double minimumPitch, double 
 		const double halfWindowDuration = 0.5 * physicalWindowDuration;
 		const integer halfWindowSamples = Melder_ifloor (halfWindowDuration / my dx);
 		const integer windowNumberOfSamples = 2 * halfWindowSamples + 1;
-		autoVEC amplitude = newVECzero (windowNumberOfSamples);
-		autoVEC window = newVECzero (windowNumberOfSamples);
+		autoVEC amplitude = zero_VEC (windowNumberOfSamples);
+		autoVEC window = zero_VEC (windowNumberOfSamples);
 		const integer windowCentreSampleNumber = halfWindowSamples + 1;
 
 		for (integer i = 1; i <= windowNumberOfSamples; i ++) {
@@ -104,9 +104,9 @@ static autoIntensity Sound_to_Intensity_ (Sound me, double minimumPitch, double 
 			constVEC windowPart = window.part (windowFromSoundOffset + leftSample, windowFromSoundOffset + rightSample);
 			longdouble sumxw = 0.0, sumw = 0.0;
 			for (integer ichan = 1; ichan <= my ny; ichan ++) {
-				amplitudePart <<= my z [ichan].part (leftSample, rightSample);
+				amplitudePart  <<=  my z [ichan].part (leftSample, rightSample);
 				if (subtractMeanPressure)
-					VECcentre_inplace (amplitudePart);
+					centre_VEC_inout (amplitudePart);
 				for (integer isamp = 1; isamp <= amplitudePart.size; isamp ++) {
 					sumxw += sqr (amplitudePart [isamp]) * windowPart [isamp];
 					sumw += windowPart [isamp];

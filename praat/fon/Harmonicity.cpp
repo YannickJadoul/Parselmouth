@@ -1,6 +1,6 @@
 /* Harmonicity.cpp
  *
- * Copyright (C) 1992-2008,2011,2012,2015-2019 Paul Boersma
+ * Copyright (C) 1992-2008,2011,2012,2015-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ static autoVEC Harmonicity_getSoundingValues (Harmonicity me, double tmin, doubl
 	integer numberOfFrames = Sampled_getWindowSamples (me, tmin, tmax, & imin, & imax);
 	if (numberOfFrames < 1)
 		return autoVEC();
-	autoVEC soundingValues = newVECraw (numberOfFrames);
+	autoVEC soundingValues = raw_VEC (numberOfFrames);
 	integer numberOfSoundingFrames = 0;
 	for (integer iframe = imin; iframe <= imax; iframe ++)
 		if (my z [1] [iframe] != -200.0)
@@ -50,7 +50,7 @@ double Harmonicity_getStandardDeviation (Harmonicity me, double tmin, double tma
 
 double Harmonicity_getQuantile (Harmonicity me, double quantile) {
 	autoVEC soundingValues = Harmonicity_getSoundingValues (me, 0.0, 0.0);
-	VECsort_inplace (soundingValues.get());
+	sort_VEC_inout (soundingValues.get());
 	return NUMquantile (soundingValues.get(), quantile);
 }
 
@@ -67,7 +67,7 @@ void structHarmonicity :: v_info () {
 	MelderInfo_writeLine (U"   First frame centred at: ", our x1, U" seconds");
 	if (soundingValues.size > 0) {
 		MelderInfo_writeLine (U"Periodicity-to-noise ratios of sounding frames:");
-		VECsort_inplace (soundingValues.get());
+		sort_VEC_inout (soundingValues.get());
 		MelderInfo_writeLine (U"   Median ", Melder_single (NUMquantile (soundingValues.get(), 0.50)), U" dB");
 		MelderInfo_writeLine (U"   10 % = ", Melder_single (NUMquantile (soundingValues.get(), 0.10)), U" dB   90 %% = ",
 				Melder_single (NUMquantile (soundingValues.get(), 0.90)), U" dB");
@@ -97,7 +97,7 @@ autoHarmonicity Harmonicity_create (double tmin, double tmax, integer nt, double
 autoMatrix Harmonicity_to_Matrix (Harmonicity me) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U"not converted to Matrix.");
@@ -107,7 +107,7 @@ autoMatrix Harmonicity_to_Matrix (Harmonicity me) {
 autoHarmonicity Matrix_to_Harmonicity (Matrix me) {
 	try {
 		autoHarmonicity thee = Harmonicity_create (my xmin, my xmax, my nx, my dx, my x1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U"not converted to Harmonicity.");

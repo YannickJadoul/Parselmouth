@@ -57,7 +57,7 @@ double structChebyshevSeries :: v_evaluate (double x) {
 void structChebyshevSeries :: v_evaluateTerms (double x, VEC terms) {
 	Melder_assert (terms.size == numberOfCoefficients);
 	if (x < our xmin || x > our xmax) {
-		terms <<= undefined;
+		terms  <<=  undefined;
 		return;
 	}
 	terms [1] = 1.0;
@@ -113,9 +113,9 @@ autoPolynomial ChebyshevSeries_to_Polynomial (ChebyshevSeries me) {
 
 		thy coefficients [2] = my coefficients [2];
 		if (my numberOfCoefficients > 2) {
-			autoVEC pn = newVECzero (my numberOfCoefficients);
-			autoVEC pnm1 = newVECzero (my numberOfCoefficients);
-			autoVEC pnm2 = newVECzero (my numberOfCoefficients);
+			autoVEC pn = zero_VEC (my numberOfCoefficients);
+			autoVEC pnm1 = zero_VEC (my numberOfCoefficients);
+			autoVEC pnm2 = zero_VEC (my numberOfCoefficients);
 
 			// Start the recursion: T [2] = x; T [1] = 1;
 

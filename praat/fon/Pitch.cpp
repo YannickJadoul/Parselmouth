@@ -231,7 +231,7 @@ static integer Pitch_getMeanAbsoluteSlope (Pitch me,
 	double *out_hertz, double *out_mel, double *out_semitones, double *out_erb, double *out_withoutOctaveJumps)
 {
 	integer firstVoicedFrame = 0, lastVoicedFrame = 0, numberOfVoicedFrames = 0;
-	autoVEC frequencies = newVECraw (my nx);
+	autoVEC frequencies = raw_VEC (my nx);
 	for (integer i = 1; i <= my nx; i ++) {
 		const double frequency = my frames [i]. candidates [1]. frequency;
 		if (Pitch_util_frequencyIsVoiced (frequency, my ceiling)) {
@@ -503,7 +503,7 @@ integer Pitch_getMaxnCandidates (Pitch me) {
 
 autoMAT Pitch_Frame_getAllCandidates (Pitch_Frame me) {
 	integer numberOfCandidates = my nCandidates;
-	autoMAT candidates = newMATraw (2, numberOfCandidates);
+	autoMAT candidates = raw_MAT (2, numberOfCandidates);
 	for (integer icand = 1; icand <= numberOfCandidates; icand ++) {
 		candidates [1] [icand] = my candidates [icand]. frequency;
 		candidates [2] [icand] = my candidates [icand]. strength;
@@ -545,8 +545,8 @@ void Pitch_pathFinder (Pitch me, double silenceThreshold, double voicingThreshol
 		voicedUnvoicedCost *= timeStepCorrection;
 
 		my ceiling = ceiling;
-		autoMAT delta = newMATzero (my nx, maxnCandidates);
-		autoINTMAT psi = newINTMATzero (my nx, maxnCandidates);
+		autoMAT delta = zero_MAT (my nx, maxnCandidates);
+		autoINTMAT psi = zero_INTMAT (my nx, maxnCandidates);
 
 		for (integer iframe = 1; iframe <= my nx; iframe ++) {
 			const Pitch_Frame frame = & my frames [iframe];

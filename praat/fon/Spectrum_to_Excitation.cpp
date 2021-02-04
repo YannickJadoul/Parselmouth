@@ -1,6 +1,6 @@
 /* Spectrum_to_Excitation.cpp
  *
- * Copyright (C) 1992-2005,2011,2014-2018 Paul Boersma
+ * Copyright (C) 1992-2005,2011,2014-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,20 +22,20 @@ autoExcitation Spectrum_to_Excitation (Spectrum me, double dbark) {
 	try {
 		const integer nbark = Melder_iround (25.6 / dbark);
 		const constVEC re = my z.row (1), im = my z.row (2);
-		const autoVEC auditoryFilter = newVECraw (nbark);
+		const autoVEC auditoryFilter = raw_VEC (nbark);
 		for (integer i = 1; i <= nbark; i ++) {
 			const double bark = dbark * (i - nbark/2) + 0.474;
 			auditoryFilter [i] = pow (10, (1.581 + 0.75 * bark - 1.75 * sqrt (1 + bark * bark)));
 		}
 		/*const double filterArea = NUMsum (auditoryFilter.get());
 			auditoryFilter.all() /= filterArea;*/
-		const autoVEC rFreqs = newVECraw (nbark + 1);
-		const autoINTVEC iFreqs = newINTVECraw (nbark + 1);
+		const autoVEC rFreqs = raw_VEC (nbark + 1);
+		const autoINTVEC iFreqs = raw_INTVEC (nbark + 1);
 		for (integer i = 1; i <= nbark + 1; i ++) {
 			rFreqs [i] = Excitation_barkToHertz (dbark * (i - 1));
 			iFreqs [i] = Sampled_xToNearestIndex (me, rFreqs [i]);
 		}
-		const autoVEC inSig = newVECzero (nbark);
+		const autoVEC inSig = zero_VEC (nbark);
 		for (integer i = 1; i <= nbark; i ++) {
 			const integer low = std::max (1_integer, iFreqs [i]);
 			const integer high = std::min (iFreqs [i + 1] - 1, my nx);
@@ -49,7 +49,7 @@ autoExcitation Spectrum_to_Excitation (Spectrum me, double dbark) {
 
 		/* Convolution with auditory (masking) filter. */
 
-		const autoVEC outSig = newVECzero (2 * nbark);
+		const autoVEC outSig = zero_VEC (2 * nbark);
 		for (integer i = 1; i <= nbark; i ++)
 			for (integer j = 1; j <= nbark; j ++)
 				outSig [i + j] += inSig [i] * auditoryFilter [j];

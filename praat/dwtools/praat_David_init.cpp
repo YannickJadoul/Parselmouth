@@ -4405,7 +4405,7 @@ DO
 
 DIRECT (NUMMAT_PatternList_getAllValues) {
 	NUMMAT_ONE (PatternList)
-		autoMAT result = newMATcopy (my z.all());
+		autoMAT result = copy_MAT (my z.all());
 	NUMMAT_ONE_END
 }
 
@@ -7225,6 +7225,18 @@ DO
 	CONVERT_EACH_END (my name.get(), U"_columns")
 }
 
+FORM (NUMVEC_Table_listRowNumbersWhere, U"Table: List rows where", U"") {
+	SENTENCE (formula, U"The following condition holds true", U"self [row,\"F1\"] > 800.0")
+	OK
+DO
+	NUMVEC_ONE (Table)
+		autoINTVEC resulti = Table_listRowNumbersWhere (me, formula, interpreter);
+		autoVEC result = raw_VEC (resulti.size);
+		for (integer i = 1; i <= resulti.size; i ++)
+			result [i] = resulti [i];
+	NUMVEC_ONE_END
+}
+
 /******************* TableOfReal ****************************/
 
 DIRECT (NEW1_CreateIrisDataset) {
@@ -7891,6 +7903,33 @@ static autoDaata cmuAudioFileRecognizer (integer nread, const char *header, Meld
 	       autoSound () : Sound_readFromCmuAudioFile (file);
 }
 
+static autoDaata oggFileRecognizer (integer nread, const char *header, MelderFile file) {
+	if (nread < 27 ) // each page header is 27 bytes
+		return autoDaata ();
+	if (! strnequ (header, "OggS", 4)) // Capture pattern 32 bits
+		return autoDaata ();
+	unsigned char version = header [4];
+	if (version != 0) // Currently mandated to be zero
+		return autoDaata ();
+	unsigned int headerType = header [5];
+	if (headerType != 0x02) // Beginning of stream
+		return autoDaata ();
+	if (header [6] == '\0' && header [7] == '\0' && header [8] == '\0' && header [9] == '\0' &&
+		header [10] == '\0' && header [11] == '\0' && header [12] == '\0' && header [13] == '\0' &&
+		strnequ (& header [28], "OpusHead", 8)) {
+		#ifndef _WIN32   // HAVE_OPUS
+			return Sound_readFromOggOpusFile (file);
+		#else
+			Melder_throw (U"For now, Ogg Opus audio files can be read natively only on Mac and Linux. You should first convert an Ogg Opus file "
+				"to WAV format. You could try to obtain a converter from https://opus-codec.org/downloads/.");
+		#endif
+	}
+	/*
+		Leave rest of checking to libVorbis
+	*/
+	return Sound_readFromOggVorbisFile (file);
+}
+
 void praat_CC_init (ClassInfo klas) {
 	praat_addAction1 (klas, 1, U"Paint...", nullptr, 1, GRAPHICS_CC_paint);
 	praat_addAction1 (klas, 1, U"Draw...", nullptr, 1, GRAPHICS_CC_drawC0);
@@ -8115,6 +8154,7 @@ void praat_uvafon_David_init ();
 void praat_uvafon_David_init () {
 	Data_recognizeFileType (TextGrid_TIMITLabelFileRecognizer);
 	Data_recognizeFileType (cmuAudioFileRecognizer);
+	Data_recognizeFileType (oggFileRecognizer);
 
 	Thing_recognizeClassesByName (classActivationList, classBarkFilter, classBarkSpectrogram,
 		classCategories, classCepstrum, classCCA,
@@ -8143,7 +8183,7 @@ void praat_uvafon_David_init () {
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Get TukeyQ...", 0, praat_HIDDEN, REAL_Praat_getTukeyQ);
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Get invTukeyQ...", 0, praat_HIDDEN, REAL_Praat_getInvTukeyQ);
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Get incomplete gamma...", 0, praat_HIDDEN, COMPLEX_Praat_getIncompleteGamma);
-//	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as espeak voices", U"Create Strings as directory list...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsEspeakVoices);
+//	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as espeak voices", U"Create Strings as folder list...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsEspeakVoices);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Permutation...", nullptr, 0, NEW_Permutation_create);
 	praat_addMenuCommand (U"Objects", U"New", U"Polynomial", nullptr, 0, nullptr);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Polynomial...", nullptr, 1, NEW1_Polynomial_create);
@@ -8177,7 +8217,7 @@ void praat_uvafon_David_init () {
 	praat_addMenuCommand (U"Objects", U"New", U"Create empty EditCostsTable...", U"Create simple Covariance...", 1, NEW_EditCostsTable_createEmpty);
 
 	praat_addMenuCommand (U"Objects", U"New", U"Create KlattTable example", U"Create TableOfReal (Weenink 1985)...", praat_DEPTH_1 + praat_HIDDEN, NEW1_KlattTable_createExample);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Strings from tokens...", U"Create Strings as directory list...", 1, NEW1_Strings_createFromTokens);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Strings from tokens...", U"Create Strings as folder list...", 1, NEW1_Strings_createFromTokens);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as tokens...", U"Create Strings from tokens...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsTokens);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as characters...", U"Create Strings from tokens...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsCharacters);
 	praat_addMenuCommand (U"Objects", U"New", U"Create NavigationContext...", U"Create Strings as tokens...",  praat_DEPTH_1 + praat_HIDDEN, NEW1_Create_NavigationContext);
@@ -8977,6 +9017,7 @@ void praat_uvafon_David_init () {
 			praat_addAction1 (classTable, 0, U"Lag plot where...", U"Line graph where...", 2, GRAPHICS_Table_lagPlotWhere);
 			praat_addAction1 (classTable, 0, U"Draw ellipses where...", U"Lag plot where...", 2, GRAPHICS_Table_drawEllipsesWhere);
 
+	praat_addAction1 (classTable, 1, U"List row numbers where...", U"Get number of rows", praat_DEPTH_1,	NUMVEC_Table_listRowNumbersWhere);
 	praat_addAction1 (classTable, 1, U"Get number of rows where...", U"Get number of rows", praat_DEPTH_1 | praat_HIDDEN,	INTEGER_Table_getNumberOfRowsWhere);
 	praat_addAction1 (classTable, 1, U"Report one-way anova...", U"Report group difference (Wilcoxon rank sum)...", praat_DEPTH_1 | praat_HIDDEN,	INFO_Table_reportOneWayAnova);
 	praat_addAction1 (classTable, 1, U"Report one-way Kruskal-Wallis...", U"Report one-way anova...", praat_DEPTH_1 | praat_HIDDEN, INFO_Table_reportOneWayKruskalWallis);

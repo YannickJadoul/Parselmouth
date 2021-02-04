@@ -1,6 +1,6 @@
 /* VEC.cpp
  *
- * Copyright (C) 2017,2018 Paul Boersma
+ * Copyright (C) 2017-2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #endif
 
 #if defined (macintosh)
-void VECadd_macfast_ (const VECVU& target, const constVECVU& x, const constVECVU& y) noexcept {
+void _add_macfast_VEC_out (const VECVU& target, const constVECVU& x, const constVECVU& y) noexcept {
 	integer n = target.size;
 	vDSP_vaddD (& x [1], x.stride, & y [1], y.stride, & target [1], target.stride, integer_to_uinteger (n));
 	/*
@@ -40,17 +40,78 @@ void VECadd_macfast_ (const VECVU& target, const constVECVU& x, const constVECVU
 }
 #endif
 
-autoVEC newVECfrom_to (double from, double to) {
+autoVEC from_to_VEC (double from, double to) {
 	const integer numberOfElements = Melder_ifloor (to - from + 1.0);
 	if (numberOfElements < 1)
 		return autoVEC ();
-	autoVEC result = newVECraw (numberOfElements);
+	autoVEC result = raw_VEC (numberOfElements);
 	for (integer i = 1; i <= numberOfElements; i ++)
 		result [i] = from + (double) (i - 1);
 	return result;
 }
+autoINTVEC from_to_INTVEC (integer from, integer to) {
+	const integer numberOfElements = to - from + 1;
+	if (numberOfElements < 1)
+		return autoINTVEC ();
+	autoINTVEC result = raw_INTVEC (numberOfElements);
+	for (integer i = 1; i <= numberOfElements; i ++)
+		result [i] = from + (i - 1);
+	return result;
+}
 
-autoVEC newVECbetween_by (double from, double to, double by) {
+autoVEC from_to_by_VEC (double from, double to, double by) {
+	Melder_require (by != 0.0,
+		U"from_to_by#: cannot have a step (“by”) of zero.");
+	/*
+		The following algorithm works for both positive and negative `by`.
+	*/
+	const integer numberOfElements = Melder_ifloor ((to - from) / by + 1.0);
+	if (numberOfElements < 1)
+		return autoVEC ();
+	autoVEC result = raw_VEC (numberOfElements);
+	for (integer i = 1; i <= numberOfElements; i ++)
+		result [i] = from + (double) (i - 1) * by;
+	return result;
+}
+autoINTVEC from_to_by_INTVEC (integer from, integer to, integer by) {
+	Melder_require (by != 0,
+		U"from_to_by#: cannot have a step (“by”) of zero.");
+	/*
+		The following algorithm works for both positive and negative `by`.
+	*/
+	const integer numberOfElements = (to - from) / by + 1;
+	if (numberOfElements < 1)
+		return autoINTVEC ();
+	autoINTVEC result = raw_INTVEC (numberOfElements);
+	for (integer i = 1; i <= numberOfElements; i ++)
+		result [i] = from + (i - 1) * by;
+	return result;
+}
+/*@praat
+	assert from_to_count# (0, 10, 5) = { 0, 2.5, 5, 7.5, 10 }
+@*/
+autoVEC from_to_count_VEC (double from, double to, integer count) {
+	Melder_require (count >= 2,
+		U"from_to_count#: cannot have fewer than two elements.");
+	autoVEC result = raw_VEC (count);
+	const double by = (to - from) / (count - 1);
+	for (integer i = 1; i < count; i ++)
+		result [i] = from + (double) (i - 1) * by;
+	result [count] = to;
+	return result;
+}
+autoINTVEC from_to_count_INTVEC (integer from, integer to, integer count) {
+	Melder_require (count >= 2,
+		U"from_to_count#: cannot have fewer than two elements.");
+	autoINTVEC result = raw_INTVEC (count);
+	const integer by = (to - from) / (count - 1);
+	for (integer i = 1; i < count; i ++)
+		result [i] = from + (i - 1) * by;
+	result [count] = to;
+	return result;
+}
+
+autoVEC between_by_VEC (double from, double to, double by) {
 	Melder_require (by != 0.0,
 		U"between_by#: cannot have a step (“by”) of zero.");
 	/*
@@ -62,28 +123,28 @@ autoVEC newVECbetween_by (double from, double to, double by) {
 	const double spaceNeeded = (numberOfElements - 1) * by;
 	const double spaceOnEdges = (to - from) - spaceNeeded;
 	const double first = from + 0.5 * spaceOnEdges;
-	autoVEC result = newVECraw (numberOfElements);
+	autoVEC result = raw_VEC (numberOfElements);
 	for (integer i = 1; i <= numberOfElements; i ++)
 		result [i] = first + (double) (i - 1) * by;
 	return result;
 }
 
-autoVEC newVECfrom_to_by (double from, double to, double by) {
-	Melder_require (by != 0.0,
-		U"from_to_by#: cannot have a step (“by”) of zero.");
-	/*
-		The following algorithm works for both positive and negative `by`.
-	*/
-	const integer numberOfElements = Melder_ifloor ((to - from) / by + 1.0);
-	if (numberOfElements < 1)
+/*@praat
+	assert between_count# (0, 10, 5) = { 1, 3, 5, 7, 9 }
+@*/
+autoVEC between_count_VEC (double from, double to, integer count) {
+	Melder_require (count >= 0,
+		U"between_count#: cannot have fewer than zero elements.");
+	if (count < 1)
 		return autoVEC ();
-	autoVEC result = newVECraw (numberOfElements);
-	for (integer i = 1; i <= numberOfElements; i ++)
-		result [i] = from + (double) (i - 1) * by;
+	const double by = (to - from) / count;
+	autoVEC result = raw_VEC (count);
+	for (integer i = 1; i <= count; i ++)
+		result [i] = from + (double) (i - 0.5) * by;
 	return result;
 }
 
-void VECmul (VECVU const& target, constVECVU const& vec, constMATVU const& mat) noexcept {
+void mul_VEC_out (VECVU const& target, constVECVU const& vec, constMATVU const& mat) noexcept {
 	Melder_assert (mat.nrow == vec.size);
 	Melder_assert (target.size == mat.ncol);
 	if ((true)) {
@@ -105,13 +166,13 @@ void VECmul (VECVU const& target, constVECVU const& vec, constMATVU const& mat) 
 	}
 }
 
-autoVEC newVECmul (constVECVU const& vec, constMATVU const& mat) {
-	autoVEC result = newVECraw (mat.ncol);
-	VECmul (result.get(), vec, mat);
+autoVEC mul_VEC (constVECVU const& vec, constMATVU const& mat) {
+	autoVEC result = raw_VEC (mat.ncol);
+	mul_VEC_out (result.get(), vec, mat);
 	return result;
 }
 
-void VECmul (VECVU const& target, constMATVU const& mat, constVECVU const& vec) noexcept {
+void mul_VEC_out (VECVU const& target, constMATVU const& mat, constVECVU const& vec) noexcept {
 	Melder_assert (vec.size == mat.ncol);
 	Melder_assert (target.size == mat.nrow);
 	for (integer i = 1; i <= mat.nrow; i ++) {
@@ -125,13 +186,13 @@ void VECmul (VECVU const& target, constMATVU const& mat, constVECVU const& vec) 
 	}
 }
 
-autoVEC newVECmul (constMATVU const& mat, constVECVU const& vec) {
-	autoVEC result = newVECraw (mat.nrow);
-	VECmul (result.all(), mat, vec);
+autoVEC mul_VEC (constMATVU const& mat, constVECVU const& vec) {
+	autoVEC result = raw_VEC (mat.nrow);
+	mul_VEC_out (result.all(), mat, vec);
 	return result;
 }
 
-void VECpower (VECVU const& target, constVECVU const& vec, double power) {
+void power_VEC_out (VECVU const& target, constVECVU const& vec, double power) {
 	if (power == 2.0) {
 		for (integer i = 1; i <= target.size; i ++)
 			target [i] = vec [i] * vec [i];
@@ -161,11 +222,23 @@ void VECpower (VECVU const& target, constVECVU const& vec, double power) {
 	}
 }
 
-autoVEC newVECto (double to) {
+void to_INTVEC_out (INTVECVU const& x) noexcept {
+	for (integer i = 1; i <= x.size; i ++)
+		x [i] = i;
+}
+
+autoVEC to_VEC (double to) {
 	const integer numberOfElements = Melder_ifloor (to);
-	autoVEC result = newVECraw (numberOfElements);
+	autoVEC result = raw_VEC (numberOfElements);
 	for (integer i = 1; i <= numberOfElements; i ++)
 		result [i] = (double) i;
+	return result;
+}
+autoINTVEC to_INTVEC (integer to) {
+	const integer numberOfElements = to;
+	autoINTVEC result = raw_INTVEC (numberOfElements);
+	for (integer i = 1; i <= numberOfElements; i ++)
+		result [i] = i;
 	return result;
 }
 

@@ -1,6 +1,6 @@
 /* NUMinterpol.cpp
  *
- * Copyright (C) 1992-2008,2011,2012,2014,2015,2017,2018 Paul Boersma
+ * Copyright (C) 1992-2008,2011,2012,2014,2015,2017,2018,2020 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -188,9 +188,9 @@ void NUM_viterbi (
 	void (*putResult) (integer iframe, integer place, void *closure),
 	void *closure)
 {
-	autoMAT delta = newMATraw (numberOfFrames, maxnCandidates);
-	autoINTMAT psi = newINTMATraw (numberOfFrames, maxnCandidates);
-	autoINTVEC numberOfCandidates = newINTVECraw (numberOfFrames);
+	autoMAT delta = raw_MAT (numberOfFrames, maxnCandidates);
+	autoINTMAT psi = raw_INTMAT (numberOfFrames, maxnCandidates);
+	autoINTVEC numberOfCandidates = raw_INTVEC (numberOfFrames);
 	for (integer iframe = 1; iframe <= numberOfFrames; iframe ++) {
 		numberOfCandidates [iframe] = getNumberOfCandidates (iframe, closure);
 		for (integer icand = 1; icand <= numberOfCandidates [iframe]; icand ++)
@@ -300,10 +300,8 @@ void NUM_viterbi_multi (
 			2 4 5
 			3 4 5
 	*/
-	autoINTMAT indices = newINTMATzero (ncomb, ntrack);
-	autoINTVEC icand = newINTVECraw (ntrack);
-	for (integer itrack = 1; itrack <= ntrack; itrack ++)
-		icand [itrack] = itrack;   // start out with "1 2 3"
+	autoINTMAT indices = zero_INTMAT (ncomb, ntrack);
+	autoINTVEC icand = to_INTVEC (ntrack);   // start out with "1 2 3"
 	integer jcomb = 0;
 	for (;;) {
 		jcomb ++;

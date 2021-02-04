@@ -53,8 +53,8 @@ void structPolygon :: v_readText (MelderReadText text, int /*formatVersion*/) {
 	our numberOfPoints = texgeti32 (text);
 	if (our numberOfPoints < 1)
 		Melder_throw (U"Cannot read a Polygon with only ", our numberOfPoints, U" points.");
-	our x = newVECraw (our numberOfPoints);
-	our y = newVECraw (our numberOfPoints);
+	our x = raw_VEC (our numberOfPoints);
+	our y = raw_VEC (our numberOfPoints);
 	for (integer i = 1; i <= our numberOfPoints; i ++) {
 		our x [i] = texgetr64 (text);
 		our y [i] = texgetr64 (text);
@@ -65,8 +65,8 @@ autoPolygon Polygon_create (integer numberOfPoints) {
 	try {
 		autoPolygon me = Thing_new (Polygon);
 		my numberOfPoints = numberOfPoints;
-		my x = newVECzero (numberOfPoints);
-		my y = newVECzero (numberOfPoints);
+		my x = zero_VEC (numberOfPoints);
+		my y = zero_VEC (numberOfPoints);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Polygon not created.");
@@ -158,7 +158,7 @@ static bool tryExchange (constINTMATVU const& distance, INTVECVU const& path, in
 
 static bool tryAdoption (constINTMATVU const& distance, INTVECVU const& path, integer *totalDistance)
 {
-	autoINTVEC help = newINTVECzero (path.size);
+	autoINTVEC help = zero_INTVEC (path.size);
 	bool result = false;
 
 	/*
@@ -227,13 +227,13 @@ void Polygon_salesperson (Polygon me, integer numberOfIterations) {
 		integer numberOfCities = my numberOfPoints;
 		if (numberOfCities < 1)
 			Melder_throw (U"No points.");
-		autoINTMAT distance = newINTMATzero (numberOfCities, numberOfCities);
+		autoINTMAT distance = zero_INTMAT (numberOfCities, numberOfCities);
 		computeDistanceTable (me, distance.get());
-		autoINTVEC path = newINTVECzero (numberOfCities + 1);
+		autoINTVEC path = zero_INTVEC (numberOfCities + 1);
 		for (integer i = 1; i <= numberOfCities; i ++)
 			path [i] = i;
 		path [numberOfCities + 1] = 1;   // close path
-		autoINTVEC shortestPath = newINTVECcopy (path.all());
+		autoINTVEC shortestPath = copy_INTVEC (path.all());
 		for (integer iteration = 1; iteration <= numberOfIterations; iteration ++) {
 			if (iteration > 1)
 				shuffle (path.all());
@@ -246,7 +246,7 @@ void Polygon_salesperson (Polygon me, integer numberOfIterations) {
 			} while (tryAdoption (distance.get(), path.all(), & totalDistance));
 			if (totalDistance < shortestDistance) {   // new shortest path
 				numberOfShortest = 1;
-				shortestPath.all() <<= path.all();
+				shortestPath.all()  <<=  path.all();
 				shortestDistance = totalDistance;
 			}
 			else if (totalDistance == shortestDistance)   // shortest path confirmed

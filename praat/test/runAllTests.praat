@@ -1,5 +1,5 @@
 # Praat script runAllTests.praat
-# Paul Boersma 2020-04-09
+# Paul Boersma 2020-12-28
 #
 # This script runs all Praat scripts in its subdirectories.
 
@@ -22,52 +22,31 @@ arrays_before  = extractNumber (memoryReport$, "Arrays:")
 things_before  = extractNumber (memoryReport$, "Things:")
 other_before   = extractNumber (memoryReport$, "Other:")
 
-directories = Create Strings as directory list: "directories", "."
-numberOfDirectories = Get number of strings
-for directory to numberOfDirectories
-	selectObject: directories
-	directory$ = Get string: directory
-	if directory$ <> "manually" and directory$ <> "speed"
-		files = Create Strings as file list: "files", directory$ + "/*.praat"
-		numberOfFiles = Get number of strings
-		for file to numberOfFiles
-			selectObject: files
-			file$ = Get string: file
-			path$ = directory$ + "/" + file$
-			appendInfoLine: "### executing ", path$, ":"
-			runScript: path$
+topPath$ = "."
+topFolderNames$# = folderNames$# (topPath$)
+for topFolder to size (topFolderNames$#)
+	topFolderName$ = topFolderNames$# [topFolder]
+	if topFolderName$ <> "manually" and topFolderName$ <> "speed"
+		topFolderPath$ = topPath$ + "/" + topFolderName$
+		@runFilesInFolder: topFolderPath$
+		subfolderNames$# = folderNames$# (topFolderPath$ + "/*")
+		for subfolder to size (subfolderNames$#)
+			subFolderPath$ = topFolderPath$ + "/" + subfolderNames$# [subfolder]
+			@runFilesInFolder: subFolderPath$
 		endfor
-		removeObject: files
 	endif
 endfor
-removeObject: directories
 
-directories1 = Create Strings as directory list: "directories1", "."
-numberOfDirectories1 = Get number of strings
-for directory1 to numberOfDirectories1
-	selectObject: directories1
-	directory1$ = Get string: directory1
-	if directory1$ <> "manually" and directory1$ <> "speed"
-		directories2 = Create Strings as directory list: "directories2", directory1$ + "/*"
-		numberOfDirectories2 = Get number of strings
-		for directory2 to numberOfDirectories2
-			selectObject: directories2
-			directory2$ = Get string: directory2
-			files = Create Strings as file list: "files", directory1$ + "/" + directory2$ + "/*.praat"
-			numberOfFiles = Get number of strings
-			for file to numberOfFiles
-				selectObject: files
-				file$ = Get string: file
-				path$ = directory1$ + "/" + directory2$ + "/" + file$
-				appendInfoLine: "### executing ", path$, ":"
-				runScript: path$
-			endfor
-			removeObject: files
-		endfor
-		removeObject: directories2
-	endif
-endfor
-removeObject: directories1
+procedure runFilesInFolder: .folderPath$
+	.fileNames$# = fileNames$# (.folderPath$ + "/*.praat")
+	for .file to size (.fileNames$#)
+		.filePath$ = .folderPath$ + "/" + .fileNames$# [.file]
+		appendInfoLine: "### executing ", .filePath$, ":"
+		random_initializeWithSeedUnsafelyButPredictably (5489)
+		runScript: .filePath$
+		random_initializeSafelyAndUnpredictably()
+	endfor
+endproc
 
 writeInfoLine: "                 ALL PRAAT TESTS WENT OK"
 appendInfoLine: ""

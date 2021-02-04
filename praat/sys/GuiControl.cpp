@@ -31,13 +31,16 @@ void structGuiControl :: v_positionInForm (GuiObject widget, int left, int right
 		d_bottom = bottom;
 		/*
 		 */
-		if (! parent) return;
+		if (! parent)
+			return;
 		Melder_assert (parent -> d_widget);
 		Melder_assert (GTK_IS_FIXED (parent -> d_widget));
 		gint parentWidth, parentHeight;
 		gtk_widget_get_size_request (GTK_WIDGET (parent -> d_widget), & parentWidth, & parentHeight);
-		//parentWidth  = GTK_WIDGET (parent -> d_widget) -> allocation.width;
-		//parentHeight = GTK_WIDGET (parent -> d_widget) -> allocation.height;
+		//parentWidth  = gtk_widget_get_allocated_width (GTK_WIDGET (parent -> d_widget));
+		//parentHeight = gtk_widget_get_allocated_height (GTK_WIDGET (parent -> d_widget));
+		//parentWidth = parent -> d_right;
+		//parentHeight = parent -> d_top;
 		if (left   <  0) left   += parentWidth;
 		if (right  <= 0) right  += parentWidth;
         if (top    <  0) top    += parentHeight;
@@ -123,7 +126,8 @@ void structGuiControl :: v_positionInForm (GuiObject widget, int left, int right
 
 void structGuiControl :: v_positionInScrolledWindow (GuiObject widget, int width, int height, GuiScrolledWindow parent) {
 	#if gtk
-		if (! parent) return;
+		if (! parent)
+			return;
 		Melder_assert (GTK_IS_SCROLLED_WINDOW (parent -> d_widget));
 		gtk_widget_set_size_request (GTK_WIDGET (widget), width, height);
 		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (parent -> d_widget), GTK_WIDGET (widget));

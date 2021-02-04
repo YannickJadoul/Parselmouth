@@ -168,9 +168,7 @@ void structOTGrammar :: v_writeText (MelderFile file) {
 
 void OTGrammar_checkIndex (OTGrammar me) {
 	if (my index.size != 0) return;
-	my index = newINTVECraw (my numberOfConstraints);
-	for (integer icons = 1; icons <= my numberOfConstraints; icons ++)
-		my index [icons] = icons;
+	my index = to_INTVEC (my numberOfConstraints);
 	OTGrammar_sort (me);
 }
 
@@ -284,7 +282,7 @@ void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
 					U" (input: ", tableau -> input.get(), U") in line ", MelderReadText_getLineNumber (text), U".");
 			}
 			candidate -> numberOfConstraints = numberOfConstraints;   // redundancy, needed for writing binary
-			candidate -> marks = newINTVECzero (candidate -> numberOfConstraints);
+			candidate -> marks = zero_INTVEC (candidate -> numberOfConstraints);
 			for (integer icons = 1; icons <= candidate -> numberOfConstraints; icons ++) {
 				try {
 					candidate -> marks [icons] = texgeti16 (text);
@@ -618,7 +616,7 @@ static void OTGrammar_getInterpretiveParse_opt (OTGrammar me, integer ipartialOu
 			OTGrammarTableau tableau = & my tableaus [itab];
 			for (integer icand = 1; icand <= tableau -> numberOfCandidates; icand ++) {
 				OTGrammarCandidate cand = & tableau -> candidates [icand];
-				if (cand -> partialOutputMatches___ [ipartialOutput]) {   // T&S' idea of surface->overt mapping
+				if (cand -> partialOutputMatches [ipartialOutput]) {   // T&S' idea of surface->overt mapping
 					if (itab_best == 0) {
 						itab_best = itab;   // the first compatible input/output pair found is the first guess for the best candidate
 						icand_best = icand;
@@ -1851,7 +1849,7 @@ bool OTGrammar_PairDistribution_findPositiveWeights (OTGrammar me, PairDistribut
 		{
 			Melder_throw (U"To find positive weights, the decision strategy should be HarmonicGrammar, LinearOT, PositiveHG, or ExponentialHG.");
 		}
-		autoINTVEC optimalCandidates = newINTVECraw (my numberOfTableaus);
+		autoINTVEC optimalCandidates = raw_INTVEC (my numberOfTableaus);
 		/*
 			Check that there is exactly one optimal output for each input.
 		*/
@@ -1972,11 +1970,11 @@ autoVEC theSaveRankings, theSaveDisharmonies;
 autoBOOLVEC theSaveTiedToTheLeft, theSaveTiedToTheRight;
 static void OTGrammar_save (OTGrammar me) {
 	if (my numberOfConstraints != theSaveNumberOfConstraints) {
-		theSaveIndex = newINTVECraw (my numberOfConstraints);
-		theSaveRankings = newVECraw (my numberOfConstraints);
-		theSaveDisharmonies = newVECraw (my numberOfConstraints);
-		theSaveTiedToTheLeft = newBOOLVECraw (my numberOfConstraints);
-		theSaveTiedToTheRight = newBOOLVECraw (my numberOfConstraints);
+		theSaveIndex = raw_INTVEC (my numberOfConstraints);
+		theSaveRankings = raw_VEC (my numberOfConstraints);
+		theSaveDisharmonies = raw_VEC (my numberOfConstraints);
+		theSaveTiedToTheLeft = raw_BOOLVEC (my numberOfConstraints);
+		theSaveTiedToTheRight = raw_BOOLVEC (my numberOfConstraints);
 		theSaveNumberOfConstraints = my numberOfConstraints;
 	}
 	for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
@@ -2221,7 +2219,7 @@ static void OTGrammar_opt_deleteOutputMatching (OTGrammar me) {
 		for (integer icand = 1; icand <= tab -> numberOfCandidates; icand ++) {
 			OTGrammarCandidate cand = & tab -> candidates [icand];
 			cand -> numberOfPotentialPartialOutputsMatching = 0;
-			cand -> partialOutputMatches___.reset();
+			cand -> partialOutputMatches.reset();
 		}
 	}
 }
@@ -2237,7 +2235,7 @@ static void OTGrammar_Distributions_opt_createOutputMatching (OTGrammar me, Dist
 			for (integer icand = 1; icand <= tab -> numberOfCandidates; icand ++) {
 				OTGrammarCandidate cand = & tab -> candidates [icand];
 				cand -> numberOfPotentialPartialOutputsMatching = thy numberOfRows;
-				cand -> partialOutputMatches___ = newBOOLVECzero (thy numberOfRows);
+				cand -> partialOutputMatches = zero_BOOLVEC (thy numberOfRows);
 			}
 		}
 		for (integer ipartialOutput = 1; ipartialOutput <= thy numberOfRows; ipartialOutput ++) {
@@ -2250,7 +2248,7 @@ static void OTGrammar_Distributions_opt_createOutputMatching (OTGrammar me, Dist
 						OTGrammarCandidate cand = & tab -> candidates [icand];
 						if (str32str (cand -> output.get(), partialOutput)) {
 							foundPartialOutput = true;
-							cand -> partialOutputMatches___ [ipartialOutput] = true;
+							cand -> partialOutputMatches [ipartialOutput] = true;
 						}
 					}
 				}
@@ -2590,7 +2588,7 @@ void OTGrammar_PairDistribution_listObligatoryRankings (OTGrammar me, PairDistri
 		Save.
 	*/
 	integer savedNumberOfFixedRankings = my numberOfFixedRankings;
-	autovector <structOTGrammarFixedRanking> savedFixedRankings = my fixedRankings.move();
+	autovector <structOTGrammarFixedRanking> savedFixedRankings = my fixedRankings.move();   // BUG: is not restored upon throw
 	OTGrammar_save (me);
 	try {
 		integer ipair = 0, npair = my numberOfConstraints * (my numberOfConstraints - 1);
@@ -2636,7 +2634,7 @@ void OTGrammar_PairDistribution_listObligatoryRankings (OTGrammar me, PairDistri
 			Test learnability of every possible ranked pair.
 		*/
 		my numberOfFixedRankings ++;
-		autoBOOLMAT obligatory = newBOOLMATzero (my numberOfConstraints, my numberOfConstraints);
+		autoBOOLMAT obligatory = zero_BOOLMAT (my numberOfConstraints, my numberOfConstraints);
 		MelderInfo_open ();
 		autoMelderProgress progress (U"Finding obligatory rankings.");
 		for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {

@@ -87,7 +87,7 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me,
 				CGContextSetAlpha (my d_macGraphicsContext, 1.0);
 				CGContextSetBlendMode (my d_macGraphicsContext, kCGBlendModeNormal);
 			#endif
-			autoINTVEC leftsBuffer = newINTVECzero (ix2 - ix1 + 2);
+			autoINTVEC leftsBuffer = zero_INTVEC (ix2 - ix1 + 2);
 			integer *lefts = & leftsBuffer [1 - ix1];
 			for (ix = ix1; ix <= ix2 + 1; ix ++)
 				lefts [ix] = x1DC + (integer) ((ix - ix1) * dx);
@@ -273,10 +273,10 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me,
 		#endif
 		if (interpolate) {
 			try {
-				autoINTVEC ileftBuffer = newINTVECzero (clipx2 - clipx1 + 1);
-				autoINTVEC irightBuffer = newINTVECzero (clipx2 - clipx1 + 1);
-				autoVEC leftWeightBuffer = newVECzero (clipx2 - clipx1 + 1);
-				autoVEC rightWeightBuffer = newVECzero (clipx2 - clipx1 + 1);
+				autoINTVEC ileftBuffer = zero_INTVEC (clipx2 - clipx1 + 1);
+				autoINTVEC irightBuffer = zero_INTVEC (clipx2 - clipx1 + 1);
+				autoVEC leftWeightBuffer = zero_VEC (clipx2 - clipx1 + 1);
+				autoVEC rightWeightBuffer = zero_VEC (clipx2 - clipx1 + 1);
 				integer *ileft  = & ileftBuffer  [1 - clipx1];
 				integer *iright = & irightBuffer [1 - clipx1];
 				double *leftWeight  = & leftWeightBuffer  [1 - clipx1];
@@ -362,7 +362,7 @@ static void _GraphicsScreen_cellArrayOrImage (GraphicsScreen me,
 			} catch (MelderError) { Melder_clearError (); }
 		} else {
 			try {
-				autoINTVEC ixBuffer = newINTVECzero (clipx2 - clipx1 + 1);
+				autoINTVEC ixBuffer = zero_INTVEC (clipx2 - clipx1 + 1);
 				integer *ix = & ixBuffer [1 - clipx1];
 				for (xDC = clipx1; xDC < clipx2; xDC += undersampling)
 					ix [xDC] = Melder_ifloor (ix1 + (nx * (xDC - x1DC)) / (x2DC - x1DC));
@@ -886,13 +886,12 @@ static void _GraphicsScreen_imageFromFile (GraphicsScreen me, conststring32 rela
 }
 
 void Graphics_imageFromFile (Graphics me, conststring32 relativeFileName, double x1, double x2, double y1, double y2) {
-	if (my screen) {
-		_GraphicsScreen_imageFromFile (static_cast <GraphicsScreen> (me), relativeFileName, x1, x2, y1, y2);
-	}
 	if (my recording) {
 		conststring8 txt_utf8 = Melder_peek32to8 (relativeFileName);
 		int length = strlen (txt_utf8) / sizeof (double) + 1;
 		op (IMAGE_FROM_FILE, 5 + length); put (x1); put (x2); put (y1); put (y2); sput (txt_utf8, length)
+	} else if (my screen) {
+		_GraphicsScreen_imageFromFile (static_cast <GraphicsScreen> (me), relativeFileName, x1, x2, y1, y2);
 	}
 }
 

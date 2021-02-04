@@ -96,8 +96,8 @@ static void Graphics_ticks (Graphics g, double min, double max, bool hasNumber, 
 void Eigen_init (Eigen me, integer numberOfEigenvalues, integer dimension) {
 	my numberOfEigenvalues = numberOfEigenvalues;
 	my dimension = dimension;
-	my eigenvalues = newVECzero (numberOfEigenvalues);
-	my eigenvectors = newMATzero (numberOfEigenvalues, dimension);
+	my eigenvalues = zero_VEC (numberOfEigenvalues);
+	my eigenvectors = zero_MAT (numberOfEigenvalues, dimension);
 }
 
 /*
@@ -149,13 +149,13 @@ void Eigen_initFromSquareRootPair (Eigen me, constMAT a, constMAT b) {
 
 	my dimension = a.ncol;
 
-	autoVEC alpha = newVECraw (n);
-	autoVEC beta = newVECraw (n);
-	autoVEC work = newVECraw (lwork);
-	autoINTVEC iwork = newINTVECzero (n);
-	autoMAT q = newMATraw (n, n);
-	autoMAT ac = newMATtranspose (a);
-	autoMAT bc = newMATtranspose (b);
+	autoVEC alpha = raw_VEC (n);
+	autoVEC beta = raw_VEC (n);
+	autoVEC work = raw_VEC (lwork);
+	autoINTVEC iwork = zero_INTVEC (n);
+	autoMAT q = raw_MAT (n, n);
+	autoMAT ac = transpose_MAT (a);
+	autoMAT bc = transpose_MAT (b);
 
 	(void) NUMlapack_dggsvd_ ("N", "N", "Q", m, n, p, & k, & ll,
 		& ac [1][1], m, & bc [1][1], p, & alpha [1], & beta [1], nullptr, m,
@@ -428,9 +428,9 @@ static autoVEC Eigens_getAnglesBetweenSubspaces (Eigen me, Eigen thee, integer i
 			the columns in the Q's are the eigenvectors.
 		Compute C.
 	*/
-	autoVEC angles_degrees = newVECraw (numberOfVectors);
+	autoVEC angles_degrees = raw_VEC (numberOfVectors);
 
-	autoMAT c = newMATmul (my eigenvectors.horizontalBand (ivec_from, ivec_to),
+	autoMAT c = mul_MAT (my eigenvectors.horizontalBand (ivec_from, ivec_to),
 			thy eigenvectors. horizontalBand (ivec_from, ivec_to). transpose());
 	autoSVD svd = SVD_createFromGeneralMatrix (c.get());
 	for (integer i = 1; i <= numberOfVectors; i ++)

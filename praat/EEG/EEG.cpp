@@ -159,25 +159,25 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 			fread (buffer, 1, 8, f);
 			buffer [8] = '\0';   // physical dimension of channels
 		}
-		autoVEC physicalMinimum = newVECraw (numberOfChannels);
+		autoVEC physicalMinimum = raw_VEC (numberOfChannels);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 8, f);
 			buffer [8] = '\0';
 			physicalMinimum [ichannel] = atof (buffer);
 		}
-		autoVEC physicalMaximum = newVECraw (numberOfChannels);
+		autoVEC physicalMaximum = raw_VEC (numberOfChannels);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 8, f);
 			buffer [8] = '\0';
 			physicalMaximum [ichannel] = atof (buffer);
 		}
-		autoVEC digitalMinimum = newVECraw (numberOfChannels);
+		autoVEC digitalMinimum = raw_VEC (numberOfChannels);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 8, f);
 			buffer [8] = '\0';
 			digitalMinimum [ichannel] = atof (buffer);
 		}
-		autoVEC digitalMaximum = newVECraw (numberOfChannels);
+		autoVEC digitalMaximum = raw_VEC (numberOfChannels);
 		for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 			fread (buffer, 1, 8, f);
 			buffer [8] = '\0';
@@ -210,7 +210,7 @@ autoEEG EEG_readFromBdfFile (MelderFile file) {
 		his numberOfChannels = numberOfChannels;
 		autoSound me = Sound_createSimple (numberOfChannels, duration, samplingFrequency);
 		Melder_assert (my nx == numberOfSamplesPerDataRecord * numberOfDataRecords);
-		autoBYTEVEC dataBuffer = newBYTEVECzero (3 * numberOfSamplesPerDataRecord);
+		autoBYTEVEC dataBuffer = zero_BYTEVEC (3 * numberOfSamplesPerDataRecord);
 		for (integer record = 1; record <= numberOfDataRecords; record ++) {
 			for (integer channel = 1; channel <= numberOfChannels; channel ++) {
 				double factor = ( channel == numberOfChannels ? 1.0 : physicalMinimum [channel] / digitalMinimum [channel] );

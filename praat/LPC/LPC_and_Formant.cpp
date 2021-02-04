@@ -112,7 +112,7 @@ autoFormant LPC_to_Formant_noThreads (LPC me, double margin) {
 		autoFormant thee = Formant_create (my xmin, my xmax, my nx, my dx, my x1, maximumNumberOfFormants);
 		autoPolynomial polynomial = Polynomial_create (-1.0, 1.0, my maxnCoefficients);
 		autoRoots roots = Roots_create (my maxnCoefficients);
-		autoVEC workspace = newVECraw (maximumNumberOfPolynomialCoefficients * (maximumNumberOfPolynomialCoefficients + 9));
+		autoVEC workspace = raw_VEC (maximumNumberOfPolynomialCoefficients * (maximumNumberOfPolynomialCoefficients + 9));
 		autoMelderProgress progress (U"LPC to Formant");
 		for (integer iframe = 1; iframe <= my nx; iframe ++) {
 			const LPC_Frame lpcFrame = & my d_frames [iframe];
@@ -181,7 +181,7 @@ autoFormant LPC_to_Formant (LPC me, double margin) {
 			polynomials [ithread] = Polynomial_create (-1.0, 1.0, my maxnCoefficients);
 			roots [ithread] = Roots_create (my maxnCoefficients);
 		}
-		autoMAT workspaces = newMATraw (numberOfThreads, maximumNumberOfPolynomialCoefficients * (maximumNumberOfPolynomialCoefficients + 9));
+		autoMAT workspaces = raw_MAT (numberOfThreads, maximumNumberOfPolynomialCoefficients * (maximumNumberOfPolynomialCoefficients + 9));
 		std::vector <std::thread> thread (numberOfThreads);
 		std::atomic<integer> numberOfSuspectFrames (0);
 		
@@ -232,7 +232,7 @@ void Formant_Frame_into_LPC_Frame (Formant_Frame me, LPC_Frame thee, double samp
 		return;
 	const double nyquistFrequency = 0.5 / samplingPeriod;
 	integer numberOfPoles = 2 * my numberOfFormants;
-	autoVEC lpc = newVECzero (numberOfPoles + 2);   // all odd coefficients have to be initialized to zero
+	autoVEC lpc = zero_VEC (numberOfPoles + 2);   // all odd coefficients have to be initialized to zero
 	lpc [2] = 1.0;
 	integer m = 2;
 	for (integer iformant = 1; iformant <= my numberOfFormants; iformant ++) {

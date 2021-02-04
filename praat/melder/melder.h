@@ -67,12 +67,6 @@
 #include "enums.h"
 #include "melder_enums.h"
 
-/*
- * Operating system version control.
- */
-#define ALLOW_GDK_DRAWING  (gtk && 1)   /* change to (gtk && 0) if you want to try out GTK 3 */
-/* */
-
 #include "melder_tensor.h"   // VEC, autoMAT, Melder_VEC
 #include "melder_colour.h"   // MelderColour (requires VEC)
 #include "melder_ftoa.h"   // Melder_double, Melder_pad (require dcomplex, conststring32, MelderColour)
@@ -81,7 +75,7 @@
 #include "melder_atof.h"
 #include "melder_files.h"   // Melder_fopen, MelderFile, MelderDir
 #include "melder_strvec.h"   // STRVEC, autoSTRVEC (requires MelderArray)
-#include "melder_sort.h"   // VECsort_inplace (requires VEC), STRVECsort_inplace (requires STRVEC)
+#include "melder_sort.h"   // sort_VEC_inout (requires VEC), sort_STRVEC_inout (requires STRVEC)
 
 #include "MelderArg.h"   // MelderArg (requires Melder_double, MelderFile, Melder_VEC)
 #include "melder_debug.h"   // trace (requires MelderFile, MelderArg), Melder_debug
@@ -111,9 +105,8 @@
 
 /*
 	For MacOS, this is set in Melder_init.
-	TODO: change to inline variable once C++17 is implemented completely on all platforms.
 */
-extern int32 Melder_systemVersion;
+inline int32 Melder_systemVersion;
 
 /********** ENFORCE INTERACTIVE BEHAVIOUR **********/
 
@@ -122,15 +115,13 @@ extern int32 Melder_systemVersion;
 /*
 	Set in praat_init.
 	True if run from the batch or from an interactive command-line interface.
-	TODO: change to inline variable once C++17 is implemented completely on all platforms.
 */
-extern bool Melder_batch;
+inline bool Melder_batch;
 
 /*
 	True if running a script.
-	TODO: change to inline variable once C++17 is implemented completely on all platforms.
 */
-extern bool Melder_backgrounding;
+inline bool Melder_backgrounding;
 
 void Melder_init ();   // inits NUmrandom, alloc, message, Melder_systemVersion
 

@@ -112,7 +112,7 @@ conststring32 Table_messageColumn (Table me, integer column) {
 }
 
 void Table_initWithColumnNames (Table me, integer numberOfRows, conststring32 columnNames_string) {
-	autoSTRVEC columnNames = newSTRVECtokenize (columnNames_string);
+	autoSTRVEC columnNames = splitByWhitespace_STRVEC (columnNames_string);
 	Table_initWithoutColumnNames (me, numberOfRows, columnNames.size);
 	for (integer icol = 1; icol <= columnNames.size; icol ++)
 		Table_setColumnLabel (me, icol, columnNames [icol].get());
@@ -294,10 +294,10 @@ integer Table_getColumnIndexFromColumnLabel (Table me, conststring32 columnLabel
 }
 
 autoINTVEC Table_getColumnIndicesFromColumnLabelString (Table me, conststring32 columnLabels_string) {
-	autoSTRVEC columnLabels = newSTRVECtokenize (columnLabels_string);
+	autoSTRVEC columnLabels = splitByWhitespace_STRVEC (columnLabels_string);
 	if (columnLabels.size < 1)
 		Melder_throw (me, U": you specified an empty list of columns.");
-	autoINTVEC columns = newINTVECraw (columnLabels.size);
+	autoINTVEC columns = raw_INTVEC (columnLabels.size);
 	for (integer icol = 1; icol <= columnLabels.size; icol ++)
 		columns [icol] = Table_getColumnIndexFromColumnLabel (me, columnLabels [icol].get());
 	return columns;
@@ -559,12 +559,12 @@ double Table_getQuantile (Table me, integer columnNumber, double quantile) {
 		Table_numericize_checkDefined (me, columnNumber);
 		if (my rows.size < 1)
 			return undefined;
-		autoVEC sortingColumn = newVECraw (my rows.size);
+		autoVEC sortingColumn = raw_VEC (my rows.size);
 		for (integer irow = 1; irow <= my rows.size; irow ++) {
 			const TableRow row = my rows.at [irow];
 			sortingColumn [irow] = row -> cells [columnNumber]. number;
 		}
-		VECsort_inplace (sortingColumn.get());
+		sort_VEC_inout (sortingColumn.get());
 		return NUMquantile (sortingColumn.get(), quantile);
 	} catch (MelderError) {
 		Melder_throw (me, U": cannot compute the ", quantile, U" quantile of column ", columnNumber, U".");
@@ -686,28 +686,28 @@ autoTable Table_collapseRows (Table me, conststring32 factors_string, conststrin
 		/*
 			Parse the six strings of tokens.
 		*/
-		autoSTRVEC factors = newSTRVECtokenize (factors_string);
+		autoSTRVEC factors = splitByWhitespace_STRVEC (factors_string);
 		if (factors.size < 1)
 			Melder_throw (U"In order to pool table data, you must supply at least one independent variable.");
 		Table_columns_checkExist (me, factors.get());
 
-		autoSTRVEC columnsToSum = newSTRVECtokenize (columnsToSum_string);
+		autoSTRVEC columnsToSum = splitByWhitespace_STRVEC (columnsToSum_string);
 		Table_columns_checkExist (me, columnsToSum.get());
 		Table_columns_checkCrossSectionEmpty (factors.get(), columnsToSum.get());
 
-		autoSTRVEC columnsToAverage = newSTRVECtokenize (columnsToAverage_string);
+		autoSTRVEC columnsToAverage = splitByWhitespace_STRVEC (columnsToAverage_string);
 		Table_columns_checkExist (me, columnsToAverage.get());
 		Table_columns_checkCrossSectionEmpty (factors.get(), columnsToAverage.get());
 
-		autoSTRVEC columnsToMedianize = newSTRVECtokenize (columnsToMedianize_string);
+		autoSTRVEC columnsToMedianize = splitByWhitespace_STRVEC (columnsToMedianize_string);
 		Table_columns_checkExist (me, columnsToMedianize.get());
 		Table_columns_checkCrossSectionEmpty (factors.get(), columnsToMedianize.get());
 
-		autoSTRVEC columnsToAverageLogarithmically = newSTRVECtokenize (columnsToAverageLogarithmically_string);
+		autoSTRVEC columnsToAverageLogarithmically = splitByWhitespace_STRVEC (columnsToAverageLogarithmically_string);
 		Table_columns_checkExist (me, columnsToAverageLogarithmically.get());
 		Table_columns_checkCrossSectionEmpty (factors.get(), columnsToAverageLogarithmically.get());
 
-		autoSTRVEC columnsToMedianizeLogarithmically = newSTRVECtokenize (columnsToMedianizeLogarithmically_string);
+		autoSTRVEC columnsToMedianizeLogarithmically = splitByWhitespace_STRVEC (columnsToMedianizeLogarithmically_string);
 		Table_columns_checkExist (me, columnsToMedianizeLogarithmically.get());
 		Table_columns_checkCrossSectionEmpty (factors.get(), columnsToMedianizeLogarithmically.get());
 
@@ -718,11 +718,11 @@ autoTable Table_collapseRows (Table me, conststring32 factors_string, conststrin
 
 		autoVEC sortingColumn;
 		if (columnsToMedianize.size > 0 || columnsToMedianizeLogarithmically.size > 0)
-			sortingColumn = newVECzero (my rows.size);
+			sortingColumn = zero_VEC (my rows.size);
 		/*
 			Set the column names. Within the dependent variables, the same name may occur more than once.
 		*/
-		autoINTVEC columns = newINTVECzero (thy numberOfColumns);
+		autoINTVEC columns = zero_INTVEC (thy numberOfColumns);
 		{
 			integer icol = 0;
 			for (integer i = 1; i <= factors.size; i ++) {
@@ -822,7 +822,7 @@ autoTable Table_collapseRows (Table me, conststring32 factors_string, conststrin
 					for (integer jrow = rowmin; jrow <= rowmax; jrow ++)
 						sortingColumn [jrow] = my rows.at [jrow] -> cells [columns [icol]]. number;
 					const VEC part = sortingColumn.part (rowmin, rowmax);
-					VECsort_inplace (part);
+					sort_VEC_inout (part);
 					const double median = NUMquantile (part, 0.5);
 					Table_setNumericValue (thee.get(), thy rows.size, icol, median);
 				}
@@ -856,7 +856,7 @@ autoTable Table_collapseRows (Table me, conststring32 factors_string, conststrin
 						sortingColumn [jrow] = log (value);
 					}
 					const VEC part = sortingColumn.part (rowmin, rowmax);
-					VECsort_inplace (part);
+					sort_VEC_inout (part);
 					const double median = NUMquantile (part, 0.5);
 					Table_setNumericValue (thee.get(), thy rows.size, icol, exp (median));
 				}
@@ -916,12 +916,12 @@ autoTable Table_rowsToColumns (Table me, conststring32 factors_string, integer c
 		/*
 			Parse the two strings of tokens.
 		*/
-		autoSTRVEC factors_names = newSTRVECtokenize (factors_string);
+		autoSTRVEC factors_names = splitByWhitespace_STRVEC (factors_string);
 		const integer numberOfFactors = factors_names.size;
 		if (numberOfFactors < 1)
 			Melder_throw (U"In order to nest table data, you should supply at least one independent variable.");
 		Table_columns_checkExist (me, factors_names.get());
-		autoSTRVEC columnsToExpand_names = newSTRVECtokenize (columnsToExpand_string);
+		autoSTRVEC columnsToExpand_names = splitByWhitespace_STRVEC (columnsToExpand_string);
 		const integer numberToExpand = columnsToExpand_names.size;
 		if (numberToExpand < 1)
 			Melder_throw (U"In order to nest table data, you should supply at least one dependent variable (to expand).");
@@ -932,7 +932,7 @@ autoTable Table_rowsToColumns (Table me, conststring32 factors_string, integer c
 		/*
 			Get the column numbers for the factors.
 		*/
-		autoINTVEC factorColumns = newINTVECzero (numberOfFactors);
+		autoINTVEC factorColumns = zero_INTVEC (numberOfFactors);
 		for (integer ifactor = 1; ifactor <= numberOfFactors; ifactor ++) {
 			factorColumns [ifactor] = Table_findColumnIndexFromColumnLabel (me, factors_names [ifactor].get());
 			/*
@@ -943,7 +943,7 @@ autoTable Table_rowsToColumns (Table me, conststring32 factors_string, integer c
 		/*
 			Get the column numbers for the expandable variables.
 		*/
-		autoINTVEC columnsToExpand = newINTVECzero (numberToExpand);
+		autoINTVEC columnsToExpand = zero_INTVEC (numberToExpand);
 		for (integer iexpand = 1; iexpand <= numberToExpand; iexpand ++) {
 			columnsToExpand [iexpand] = Table_findColumnIndexFromColumnLabel (me, columnsToExpand_names [iexpand].get());
 			Table_numericize_checkDefined (me, columnsToExpand [iexpand]);
@@ -1077,11 +1077,11 @@ void Table_sortRows_Assert (Table me, constINTVEC columns) {
 
 void Table_sortRows_string (Table me, conststring32 columns_string) {
 	try {
-		autoSTRVEC columns_tokens = newSTRVECtokenize (columns_string);
+		autoSTRVEC columns_tokens = splitByWhitespace_STRVEC (columns_string);
 		integer numberOfColumns = columns_tokens.size;
 		if (numberOfColumns < 1)
 			Melder_throw (me, U": you specified an empty list of columns.");
-		autoINTVEC columns = newINTVECraw (numberOfColumns);
+		autoINTVEC columns = raw_INTVEC (numberOfColumns);
 		for (integer icol = 1; icol <= numberOfColumns; icol ++) {
 			columns [icol] = Table_findColumnIndexFromColumnLabel (me, columns_tokens [icol].get());
 			if (columns [icol] == 0)

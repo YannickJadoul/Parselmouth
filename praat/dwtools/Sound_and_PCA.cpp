@@ -71,7 +71,7 @@ autoSound Sound_PCA_to_Sound_pc_selectedChannels (Sound me, PCA thee, integer nu
 }
 
 autoSound Sound_PCA_principalComponents (Sound me, PCA thee, integer numberOfComponents) {
-	autoINTVEC channels = INTVECto (my ny);
+	autoINTVEC channels = to_INTVEC (my ny);
 	return Sound_PCA_to_Sound_pc_selectedChannels (me, thee, numberOfComponents, channels.get());
 }
 
@@ -82,7 +82,7 @@ autoSound Sound_PCA_whitenSelectedChannels (Sound me, PCA thee, integer numberOf
 
 		checkChannelsWithinRange (channels, 1, my ny);
 		
-        autoMAT whiten = newMATraw (thy dimension, thy dimension);
+        autoMAT whiten = raw_MAT (thy dimension, thy dimension);
 		// W = E D^(-1/2) E' from http://cis.legacy.ics.tkk.fi/aapo/papers/IJCNN99_tutorialweb/node26.html
         for (integer i = 1; i <= thy dimension; i ++) {
             for (integer j = i; j <= thy dimension; j ++) {
@@ -107,7 +107,7 @@ autoSound Sound_PCA_whitenSelectedChannels (Sound me, PCA thee, integer numberOf
 }
 
 autoSound Sound_PCA_whitenChannels (Sound me, PCA thee, integer numberOfComponents) {
-	autoINTVEC channels = INTVECto (my ny);
+	autoINTVEC channels = to_INTVEC (my ny);
 	return Sound_PCA_whitenSelectedChannels (me, thee, numberOfComponents, channels.get());
 }
 
