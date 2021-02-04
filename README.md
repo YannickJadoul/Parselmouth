@@ -143,7 +143,7 @@ Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Ne
 
   Parselmouth only exposes Praat's existing functionality and implementation of algorithms. If you use Parselmouth in your research and plan to cite it in a scientific publication, please do not forget to [*cite Praat*](https://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html).
 
-  > Boersma, P., & Weenink, D. (2018). Praat: doing phonetics by computer [Computer program]. Version 6.0.43, retrieved 8 September 2018 from [http://www.praat.org/](http://www.praat.org/)
+  > Boersma, P., & Weenink, D. (2018). Praat: doing phonetics by computer [Computer program]. Version 6.1.29, retrieved 2 January 2021 from [http://www.praat.org/](http://www.praat.org/)
 
 * [pybind11](https://github.com/pybind/pybind11) is released under [a BSD-style license](pybind11/LICENSE).
 
