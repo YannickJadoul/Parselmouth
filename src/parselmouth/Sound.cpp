@@ -189,7 +189,10 @@ PRAAT_CLASS_BINDING(Sound) {
 
 	using signature_cast_placeholder::_;
 
-	def(py::init([](py::array_t<double, 0> values, Positive<double> samplingFrequency, double startTime) { // TODO py::array::c_style to be able to memcpy / NUMmatrix_copyElements ?
+	def(py::init(&Data_copy<structSound>),
+	    "other"_a);
+
+	def(py::init([](const py::array_t<double, py::array::c_style> &values, Positive<double> samplingFrequency, double startTime) {
 		    auto ndim = values.ndim();
 
 		    if (ndim == 0)
@@ -197,22 +200,12 @@ PRAAT_CLASS_BINDING(Sound) {
 		    if (ndim > 2)
 			    throw py::value_error("Cannot create Sound from an array with more than 2 dimensions");
 
-		    auto nx = values.shape(ndim-1);
+		    auto nx = values.shape(ndim - 1);
 		    auto ny = ndim == 2 ? values.shape(0) : 1;
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
 
-		    if (ndim == 2) {
-			    auto unchecked = values.unchecked<2>();
-			    for (ssize_t i = 0; i < ny; ++i)
-				    for (ssize_t j = 0; j < nx; ++j)
-					    result->z[i+1][j+1] = unchecked(i, j);
-		    }
-		    else {
-			    auto unchecked = values.unchecked<1>();
-			    for (ssize_t j = 0; j < nx; ++j)
-				    result->z[1][j+1] = unchecked(j);
-		    }
-
+		    // We can copy_n because of py::array::c_style making sure things are contiguous
+		    std::copy_n(values.data(), static_cast<size_t>(nx) * static_cast<size_t>(ny), result->z.cells);
 		    return result;
 	    }),
 	    "values"_a, "sampling_frequency"_a = 44100.0, "start_time"_a = 0.0);
