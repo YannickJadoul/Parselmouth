@@ -107,7 +107,7 @@ jobs:
             name-extra: ' (Release)'
           - runs-on: windows-latest
             python: pypy-3.6
-            arch: x64
+            arch: x86
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
