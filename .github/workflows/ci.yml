@@ -126,6 +126,12 @@ jobs:
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.6
 
+      - name: Install OpenBLAS on macOS for NumPy
+        if: runner.os == 'macOS' && startsWith(matrix.python, 'pypy')
+        run: |
+          brew install openblas
+          echo "OPENBLAS=$(brew --prefix openblas)" >> $GITHUB_ENV
+
       - name: Install requirements
         run: |
           pip install --user --upgrade pip setuptools wheel
