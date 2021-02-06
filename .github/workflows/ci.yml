@@ -31,6 +31,17 @@ jobs:
           - runs-on: ubuntu-latest
             python: 3.9
             arch: x64
+          - runs-on: ubuntu-latest
+            python: pypy-2.7
+            arch: x64
+          - runs-on: ubuntu-latest
+            python: pypy-3.6
+            arch: x64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          - runs-on: ubuntu-latest
+            python: pypy-3.7
+            arch: x64
 
           - runs-on: ubuntu-latest
             python: 3.8
@@ -67,6 +78,9 @@ jobs:
             arch: x64
             release: true
             name-extra: ' (Release)'
+          - runs-on: macos-latest
+            python: pypy-3.6
+            arch: x64
 
           - runs-on: windows-latest
             python: 2.7
@@ -89,6 +103,9 @@ jobs:
             arch: x64
             release: true
             name-extra: ' (Release)'
+          - runs-on: windows-latest
+            python: pypy-3.6
+            arch: x64
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
