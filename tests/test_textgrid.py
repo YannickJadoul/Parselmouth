@@ -54,12 +54,12 @@ def test_tgt_missing(text_grid_path, monkeypatch):
 def test_tgt_exceptions(text_grid_path, monkeypatch):
 	tgt = pytest.importorskip('tgt')
 
-	class MockTextGrid(object):  # Python 2 compatibility
+	class MockTextGrid:
 		def __init__(self, *args, **kwargs):
 			pass
 	monkeypatch.setattr(tgt, "TextGrid", MockTextGrid)
 
-	with pytest.raises(AttributeError, match=r"'MockTextGrid' object has no attribute '.*'|MockTextGrid instance has no attribute '.*'"):  # Python 2 compatibility
+	with pytest.raises(AttributeError, match=r"'MockTextGrid' object has no attribute '.*'"):
 		parselmouth.read(text_grid_path).to_tgt()
 	with pytest.raises(TypeError, match="'MockTextGrid' object is not iterable"):
 		parselmouth.TextGrid.from_tgt(MockTextGrid())

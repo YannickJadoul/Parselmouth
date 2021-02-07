@@ -68,8 +68,7 @@ PRAAT_EXCEPTION_BINDING(PraatError, PyExc_RuntimeError) {
 				if (p) std::rethrow_exception(p);
 			}
 			catch (const MelderError &) {
-				// Python 2: Seems exception strings should be encoded in UTF-8
-				// Python 3: PyErr_SetString (in py::exception<type>::operator()) decodes from UTF-8
+				// PyErr_SetString (in py::exception<type>::operator()) decodes from UTF-8
 				std::string message(Melder_peek32to8(Melder_getError()));
 				message.erase(message.length() - 1); // Remove closing newline
 				Melder_clearError();
@@ -187,7 +186,7 @@ PYBIND11_MODULE(parselmouth, m) {
 
 	parselmouth::PraatBindings bindings(m);
 
-	m.attr("__version__") = PYBIND11_STR_TYPE(XSTR(PARSELMOUTH_VERSION));
+	m.attr("__version__") = py::str(XSTR(PARSELMOUTH_VERSION));
 	m.attr("VERSION") = py::str(XSTR(PARSELMOUTH_VERSION));
 	m.attr("PRAAT_VERSION") = py::str(XSTR(PRAAT_VERSION_STR));
 	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));

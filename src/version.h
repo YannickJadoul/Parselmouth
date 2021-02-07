@@ -17,4 +17,4 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#define PARSELMOUTH_VERSION 0.4.0
+#define PARSELMOUTH_VERSION 0.5.0.dev0

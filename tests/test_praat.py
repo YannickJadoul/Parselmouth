@@ -24,8 +24,6 @@ import numpy as np
 import os
 import textwrap
 
-from builtins import str  # Python 2 compatibility
-
 
 def test_call_return_many(sound):
 	stereo_sound = sound.convert_to_stereo()
@@ -196,7 +194,7 @@ def test_run_file_keep_cwd(sound_path, script_path):
 	rel_sound_path = os.path.relpath(sound_path, os.path.dirname(script_path))
 	rel_to_cwd_sound_path = os.path.relpath(sound_path, os.getcwd())
 	assert parselmouth.praat.run_file(script_path, rel_to_cwd_sound_path, keep_cwd=True)[0] == parselmouth.Sound(sound_path)
-	with pytest.raises(parselmouth.PraatError, match=r"Cannot open file .*{}.*".format(rel_sound_path)):
+	with pytest.raises(parselmouth.PraatError, match=fr"Cannot open file .*{rel_sound_path}.*"):
 		parselmouth.praat.run_file(script_path, rel_sound_path, keep_cwd=True)
 
 
@@ -237,7 +235,7 @@ def test_praat_callback_prefixes():
 	exception = {'PLAY', 'RECORD1', 'WINDOW', 'MOVIE'}
 	weird = {'DANGEROUS'}
 
-	prefixes = set(action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands()))
+	prefixes = {action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands())}
 	assert prefixes == separators | values | objects | info | nothing | exception | weird
 
 

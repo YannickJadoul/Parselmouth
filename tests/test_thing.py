@@ -19,8 +19,6 @@ import pytest
 
 import re
 
-from builtins import str  # Python 2 compatibility
-
 
 def test_name(thing):
 	assert thing.name is None

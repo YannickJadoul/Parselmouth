@@ -11,10 +11,6 @@ Please note that Parselmouth is currently in premature state and in active devel
 
 Drop by our `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_ or post a message to our `Google discussion group <https://groups.google.com/d/forum/parselmouth>`_ if you have any question, remarks, or requests!
 
-.. warning::
-
-    Parselmouth 0.4.0 is the *last version* supporting Python 2. Python 2 has reached End Of Life on January 1, 2020, and is officially not supported anymore: see https://python3statement.org/. Please `move to Python 3 <https://docs.python.org/3/howto/pyporting.html>`_, to be able to keep using new Parselmouth functionality.
-
 .. only:: html
 
     .. note::

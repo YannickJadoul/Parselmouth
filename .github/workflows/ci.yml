@@ -14,12 +14,6 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-latest
-            python: 2.7
-            arch: x64
-          - runs-on: ubuntu-latest
-            python: 3.5
-            arch: x64
-          - runs-on: ubuntu-latest
             python: 3.6
             arch: x64
           - runs-on: ubuntu-latest
@@ -34,9 +28,6 @@ jobs:
             python: 3.9
             arch: x64
           - runs-on: ubuntu-latest
-            python: pypy-2.7
-            arch: x64
-          - runs-on: ubuntu-latest
             python: pypy-3.6
             arch: x64
             run-praat-tests: true
@@ -46,37 +37,37 @@ jobs:
             arch: x64
 
           - runs-on: ubuntu-latest
-            python: 3.8
+            python: 3.9
             arch: x64
             gcc: 10
             name-extra: ' (GCC 10)'
           - runs-on: ubuntu-latest
-            python: 3.8
+            python: 3.9
             arch: x64
             clang: 9
             name-extra: ' (Clang 9)'
 
           - runs-on: ubuntu-latest
-            python: 2.7
+            python: 3.6
             arch: x64
             release: true
             name-extra: ' (Release)'
           - runs-on: ubuntu-latest
-            python: 3.8
+            python: 3.9
             arch: x64
             release: true
             name-extra: ' (Release)'
 
           - runs-on: macos-latest
-            python: 2.7
+            python: 3.6
             arch: x64
           - runs-on: macos-latest
-            python: 3.8
+            python: 3.9
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: macos-latest
-            python: 3.8
+            python: 3.9
             arch: x64
             release: true
             name-extra: ' (Release)'
@@ -85,23 +76,23 @@ jobs:
             arch: x64
 
           - runs-on: windows-latest
-            python: 2.7
+            python: 3.6
             arch: x64
           - runs-on: windows-latest
-            python: 3.8
+            python: 3.9
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: windows-latest
-            python: 2.7
+            python: 3.6
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: 3.8
+            python: 3.9
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: 3.8
+            python: 3.6
             arch: x64
             release: true
             name-extra: ' (Release)'
