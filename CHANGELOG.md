@@ -4,13 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.4.0] - 2021-02-07
+### Added
+- Added `extra_objects` and `return_variables` keyword arguments to `praat.run` and `praat.run_file`.
+- Added `keep_cwd` keyword argument to `praat.run_file`.
+- Updated API reference with links to Praat and to other objects.
+- Added `TextGrid` Python objects, and conversion from/to the TextGridTools (`tgt`) library.
+- Praat's tests are run as part of Parselmouth's test suite in CI (enabled by the `--run-praat-tests` flag).
+- Added support for Python 3.9, for PyPy 2.7, 3.6, and 3.7, and for Python 3.9 on macOS 11.0 Apple Silicon machines.
+### Fixed
+- Fixed a memory leak in `PraatEnvironment::retrieveSelectedObjects` (see #33).
+- Changed default value of the `very_accurate` parameter of `Sound.to_pitch_ac` and `Sound.to_pitch_cc` to `False`, matching Praat's default.
+- Added a `Sound` copy constructor from another `Sound` object, making sure `sampling_frequency` also gets copied. 
+### Changed
+- Updated Praat to version 6.1.38.
+- Updated pybind11 to version v2.6.2.
 ### Removed
 - Removed support for Python 3.4.
 
 ## [0.3.3] - 2019-05-19
 ### Added
 - Added support for Python 3.8 (2019-12-23).
-
 ### Fixed
 - Fixed crash in `praat.call` and `praat.run` when returning already existing Praat objects.
 - Fixed bug/crash in `praat.call` and `praat.run` when passing empty list of objects.
@@ -90,7 +105,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - Main functionality of `Thing`, `Data`, `Matrix`, `Vector`, `Sound`, `Spectrum`, `Spectrogram`, and `Intensity` classes. Preliminary implementations of `Pitch`, `Harmonicity`, `Formant`, and `MFCC`.
 - Basic Travis CI configuration.
 
-[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.0...v0.3.1
