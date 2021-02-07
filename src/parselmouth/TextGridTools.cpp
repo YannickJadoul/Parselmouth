@@ -72,7 +72,7 @@ autoTextPoint fromTgtPoint(const py::handle &tgtPoint) {
 autoTextTier fromTgtPointTier(const py::handle &tgtPointTier) {
 	auto tier = TextTier_create(py::cast<double>(tgtPointTier.attr("start_time")), py::cast<double>(tgtPointTier.attr("end_time")));
 	Thing_setName(tier.get(), py::cast<std::u32string>(tgtPointTier.attr("name")).c_str());
-	for (const auto &tgtPoint : tgtPointTier.attr("points")) {
+	for (auto tgtPoint : tgtPointTier.attr("points")) {
 		tier->points.addItem_move(fromTgtPoint(tgtPoint));
 	}
 	return tier;
@@ -123,7 +123,7 @@ autoTextGrid fromTgtTextGrid(TgtTextGrid tgtTextGrid) {
 	tgtTextGrid = tgt.attr("io").attr("correct_start_end_times_and_fill_gaps")(tgtTextGrid);
 
 	auto textGrid = TextGrid_createWithoutTiers(py::cast<double>(tgtTextGrid.attr("start_time")), py::cast<double>(tgtTextGrid.attr("end_time")));
-	for (const auto &tgtTier : tgtTextGrid.attr("tiers")) {
+	for (auto tgtTier : tgtTextGrid.attr("tiers")) {
 		if (py::isinstance(tgtTier, tgtPointTierType))
 			textGrid->tiers->addItem_move(fromTgtPointTier(tgtTier));
 		else if (py::isinstance(tgtTier, tgtIntervalTierType))
