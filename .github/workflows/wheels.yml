@@ -33,7 +33,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --user check-manifest twine scikit-build
+          pip install --user check-manifest twine
 
       - name: Run check-manifest
         run: |
@@ -41,7 +41,7 @@ jobs:
 
       - name: Build sdist
         run: |
-          python setup.py sdist -d wheelhouse
+          python -m build --sdist --outdir wheelhouse
 
       - name: Install from sdist
         run: |
