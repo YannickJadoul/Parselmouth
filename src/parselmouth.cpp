@@ -40,6 +40,7 @@ Thing_declare(Intensity);
 Thing_declare(Matrix);
 Thing_declare(MFCC);
 Thing_declare(Pitch);
+Thing_declare(PointProcess);
 Thing_declare(Sampled);
 Thing_declare(SampledXY);
 Thing_declare(TextGrid);
@@ -140,6 +141,7 @@ using PraatBindings = Bindings<PraatError,
                                Spectrum,
                                Spectrogram,
                                Pitch,
+							   PointProcess,
                                Intensity,
                                Harmonicity,
                                Formant,
