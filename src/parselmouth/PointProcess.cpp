@@ -287,7 +287,7 @@ namespace parselmouth
 		def_property_readonly("_t", [](PointProcess self) { 
 			// NOTE: this makes a copy
 			auto &t = self->t;
-			return std::vector(t.cells, t.cells+t.size); });
+			return std::vector<double>(t.cells, t.cells+t.size); });
 
 		def(
 			"get_count_and_fraction_of_voice_breaks", [](PointProcess self, double tmin, double tmax, double maximumPeriod) {
