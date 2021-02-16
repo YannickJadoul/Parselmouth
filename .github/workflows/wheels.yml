@@ -30,6 +30,8 @@ jobs:
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.7
+        with:
+          cmake-version: 3.19.5
 
       - name: Install requirements
         run: |
@@ -95,6 +97,8 @@ jobs:
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.7
+        with:
+          cmake-version: 3.19.5
 
       - name: Install requirements
         run: |
