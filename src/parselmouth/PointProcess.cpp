@@ -139,21 +139,21 @@ namespace parselmouth
 
 		// -jitters
 		def("get_jitter_local", &PointProcess_getJitter_local, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between consecutive periods, divided by the average period \
-			(MDVP Jitt: 1.040% as a threshold for pathology)");
+			"Get the average absolute difference between consecutive periods, divided by the average period "
+			"(MDVP Jitt: 1.040% as a threshold for pathology)");
 
 		def("get_jitter_local_absolute", &PointProcess_getJitter_local_absolute, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between consecutive periods, in seconds \
-			(MDVP Jita: 83.200 μs as a threshold for pathology)");
+			"Get the average absolute difference between consecutive periods, in seconds "
+			"(MDVP Jita: 83.200 μs as a threshold for pathology)");
 
 		def("get_jitter_rap", &PointProcess_getJitter_rap, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the Relative Average Perturbation, the average absolute difference between a period and \
-			the average of it and its two neighbours, divided by the average period (MDVP: 0.680% as a threshold for pathology)");
+			"Get the Relative Average Perturbation, the average absolute difference between a period and "
+			"the average of it and its two neighbours, divided by the average period (MDVP: 0.680% as a threshold for pathology)");
 
 		def("get_jitter_ppq5", &PointProcess_getJitter_ppq5, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the five-point Period Perturbation Quotient, the average absolute difference \
-			between a period and the average of it and its four closest neighbours, divided by the \
-			average period (MDVP PPQ, and gives 0.840% as a threshold for pathology)");
+			"Get the five-point Period Perturbation Quotient, the average absolute difference "
+			"between a period and the average of it and its four closest neighbours, divided by the "
+			"average period (MDVP PPQ, and gives 0.840% as a threshold for pathology)");
 
 		def("get_jitter_ddp", &PointProcess_getJitter_ddp, GET_RANGE_DEFAULT_PROPERTIES,
 			"Get the average absolute difference between consecutive differences between consecutive periods, divided by the average period");
@@ -169,37 +169,37 @@ namespace parselmouth
 		// -shimmers
 		def("get_shimmer_local", &PointProcess_Sound_getShimmer_local,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between the amplitudes of consecutive periods, \
-			divided by the average amplitude (MDVP Shim: 3.810% as a threshold for pathology)");
+			"Get the average absolute difference between the amplitudes of consecutive periods, "
+			"divided by the average amplitude (MDVP Shim: 3.810% as a threshold for pathology)");
 
 		def("get_shimmer_local_dB", &PointProcess_Sound_getShimmer_local_dB,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute base-10 logarithm of the difference between the amplitudes of \
-			consecutive periods, multiplied by 20 (MDVP ShdB: 0.350 dB as a threshold for pathology)");
+			"Get the average absolute base-10 logarithm of the difference between the amplitudes of "
+			"consecutive periods, multiplied by 20 (MDVP ShdB: 0.350 dB as a threshold for pathology)");
 
 		def("get_shimmer_local_apq3", &PointProcess_Sound_getShimmer_apq3,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the three-point Amplitude Perturbation Quotient, the average absolute difference \
-			between the amplitude of a period and the average of the amplitudes of its neighbours, \
-			divided by the average amplitude");
+			"Get the three-point Amplitude Perturbation Quotient, the average absolute difference "
+			"between the amplitude of a period and the average of the amplitudes of its neighbours, "
+			"divided by the average amplitude");
 
 		def("get_shimmer_local_apq5", &PointProcess_Sound_getShimmer_apq5,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the five-point Amplitude Perturbation Quotient, the average absolute difference \
-			between the amplitude of a period and the average of the amplitudes of it and its four \
-			closest neighbours, divided by the average amplitude");
+			"Get the five-point Amplitude Perturbation Quotient, the average absolute difference "
+			"between the amplitude of a period and the average of the amplitudes of it and its four "
+			"closest neighbours, divided by the average amplitude");
 
 		def("get_shimmer_local_apq11", &PointProcess_Sound_getShimmer_apq11,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the 11-point Amplitude Perturbation Quotient, the average absolute difference \
-			between the amplitude of a period and the average of the amplitudes of it and its ten \
-			closest neighbours, divided by the average amplitude (MDVP APQ: 3.070% as a threshold \
-			for pathology)");
+			"Get the 11-point Amplitude Perturbation Quotient, the average absolute difference "
+			"between the amplitude of a period and the average of the amplitudes of it and its ten "
+			"closest neighbours, divided by the average amplitude (MDVP APQ: 3.070% as a threshold "
+			"for pathology)");
 
 		def("get_shimmer_local_dda", &PointProcess_Sound_getShimmer_dda,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between consecutive differences between the \
-			amplitudes of consecutive periods (three times APQ3)");
+			"Get the average absolute difference between consecutive differences between the "
+			"amplitudes of consecutive periods (three times APQ3)");
 
 		// -nearst point index
 		def("get_low_index", PointProcess_getLowIndex, "time"_a,
@@ -232,16 +232,16 @@ namespace parselmouth
 
 		// SET CALCULATIONS
 		def("union", &PointProcesses_union, "other"_a,
-			"Create new PointProcess instance containing all the points of the two original point \
-			processes, sorted by time");
+			"Create new PointProcess instance containing all the points of the two original point "
+			"processes, sorted by time");
 
 		def("intersection", &PointProcesses_intersection, "other"_a,
-			"Create new PointProcess instance containing only those points that occur in both \
-			original point processes");
+			"Create new PointProcess instance containing only those points that occur in both "
+			"original point processes");
 
 		def("difference", &PointProcesses_difference, "other"_a.none(false),
-			"Create new PointProcess instance containing only those points of the first selected \
-			original point process that do not occur in the second");
+			"Create new PointProcess instance containing only those points of the first selected "
+			"original point process that do not occur in the second");
 
 		// MODIFICATION
 		def("add_point", &PointProcess_addPoint, "time"_a, "Add a time point");
@@ -268,8 +268,8 @@ namespace parselmouth
 			"Add equispaced time points between the specified time range separated by the specified period");
 
 		def("voice", &PointProcess_voice, "period"_a = 0.01, "maximum_voiced_period"_a = 0.02000000001,
-			"Add equispaced time points separated by the specified period over any existing period \
-			longer than maximum_voiced_period");
+			"Add equispaced time points separated by the specified period over any existing period "
+			"longer than maximum_voiced_period");
 
 		// DIRECT (MODIFY_Point_Sound_transplantDomain) {
 		// 	MODIFY_FIRST_OF_TWO (PointProcess, Sound)
