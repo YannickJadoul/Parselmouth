@@ -249,8 +249,9 @@ from_time : double
     (default: 0.0)
 
 end_time : double
-    The end time of the part of the PointProcess to be measured in seconds. 
-    If 0.0, all the points to `end_time` are included. (default: 0.0)
+    The end time of the part of the PointProcess to be measured in
+    seconds. If 0.0, all the points to `end_time` are included. 
+    (default: 0.0)
 
 period_ceiling : double
     The longest possible interval that to be used in the computation in 
