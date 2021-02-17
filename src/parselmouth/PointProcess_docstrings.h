@@ -1,3 +1,5 @@
+namespace parselmouth
+{
 
 #define GET_RANGE_PARAMETER_DOCSTRING R"(from_time : double
     The start time of the part of the PointProcess to be measured in 
@@ -40,7 +42,7 @@ See Also
 :praat:`Voice 3. Shimmer`
 )"
 
-constexpr auto CREATE_POISSON_PROCESS_DOCSTRING = R"(Create a PointProcess instance with Poisson-distributed random time points.
+    constexpr auto CREATE_POISSON_PROCESS_DOCSTRING = R"(Create a PointProcess instance with Poisson-distributed random time points.
 
 Returns a new PointProcess instance that represents a Poisson process. 
 A Poisson process is a stationary point process with a fixed density $λ$, 
@@ -60,7 +62,7 @@ See Also
 :praat:`PointProcess: Create Poisson process...`
 )";
 
-constexpr auto FROM_PITCH_DOCSTRING = R"(Create PointProcess from Pitch object.
+    constexpr auto FROM_PITCH_DOCSTRING = R"(Create PointProcess from Pitch object.
 
 Returns a new PointProcess instance which is generated from the specified 
 Pitch object. The acoustic periodicity contour stored in the Pitch object 
@@ -77,7 +79,7 @@ See Also
 :praat:`Pitch: To PointProcess`
 )";
 
-constexpr auto FROM_SOUND_PITCH_CC_DOCSTRING = R"(Create PointProcess from Sound and Pitch objects using crosscorrelation.
+    constexpr auto FROM_SOUND_PITCH_CC_DOCSTRING = R"(Create PointProcess from Sound and Pitch objects using crosscorrelation.
 
 Returns a new PointProcess instance, generated from the specified Sound 
 and Pitch instances using the cross-correlation method. The resulting 
@@ -98,7 +100,7 @@ See Also
 :praat:`Sound & Pitch: To PointProcess (cc)`
 )";
 
-constexpr auto FROM_SOUND_PITCH_PEAKS_DOCSTRING = R"(Create PointProcess from Sound and Pitch objects using peak-picking.
+    constexpr auto FROM_SOUND_PITCH_PEAKS_DOCSTRING = R"(Create PointProcess from Sound and Pitch objects using peak-picking.
 
 Returns a new PointProcess instance, generated from the specified Sound 
 and Pitch instances using the peak-picking method. The resulting 
@@ -123,12 +125,12 @@ See Also
 :praat:`Sound & Pitch: To PointProcess (peaks)...`
 )";
 
-constexpr auto GET_NUMBER_OF_POINTS_DOCSTRING = R"(Get the number of time points.
+    constexpr auto GET_NUMBER_OF_POINTS_DOCSTRING = R"(Get the number of time points.
 
 Returns the total number of time points defined in the PointProcess 
 instance)";
 
-constexpr auto GET_NUMBER_OF_PERIODS_DOCSTRING = R"(Get the number of periods.
+    constexpr auto GET_NUMBER_OF_PERIODS_DOCSTRING = R"(Get the number of periods.
 
 Get the number of periods within the specified time range
 
@@ -136,7 +138,7 @@ Parameters
 ----------
 )" GET_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto GET_TIME_FROM_INDEX_DOCSTRING = R"(Get time associated with the point number.
+    constexpr auto GET_TIME_FROM_INDEX_DOCSTRING = R"(Get time associated with the point number.
 
 Returns a time, specified by the time point number. If the number is not a 
 valid, it returns None.
@@ -147,13 +149,13 @@ point_number : int
     Index (1-based) of the requested time point.
 )";
 
-constexpr auto GET_TIME_POINTS_DOCSTRING = R"(Get all the defined time points as numpy double array.
+    constexpr auto GET_TIME_POINTS_DOCSTRING = R"(Get all the defined time points as numpy double array.
 
 Returns a double NumPy array containing the PointProcess'' time points. 
 The returned array is a copy.
 )";
 
-constexpr auto GET_JITTER_LOCAL_DOCSTRING = R"(Get jitter measure
+    constexpr auto GET_JITTER_LOCAL_DOCSTRING = R"(Get jitter measure
 
 Returns the average absolute difference between consecutive periods, 
 divided by the average period. (MDVP Jitt: 1.040% as a threshold for 
@@ -168,7 +170,7 @@ See Also
 :praat:`PointProcess: Get jitter (local)...`
 )";
 
-constexpr auto GET_JITTER_LOCAL_ABSOLUTE_DOCSTRING = R"(Get absolute jitter measure
+    constexpr auto GET_JITTER_LOCAL_ABSOLUTE_DOCSTRING = R"(Get absolute jitter measure
 
 Get the average absolute difference between consecutive periods, in 
 seconds (MDVP Jita: 83.200 μs as a threshold for pathology)
@@ -182,7 +184,7 @@ See Also
 :praat:`PointProcess: Get jitter (local, absolute)...`
 )";
 
-constexpr auto GET_JITTER_RAP_DOCSTRING = R"(Get Relative Average Perturbation measure.
+    constexpr auto GET_JITTER_RAP_DOCSTRING = R"(Get Relative Average Perturbation measure.
 
 Get the Relative Average Perturbation, the average absolute difference 
 between a period and the average of it and its two neighbours, divided by 
@@ -197,7 +199,7 @@ See Also
 :praat:`PointProcess: Get jitter (rap)...`
 )";
 
-constexpr auto GET_JITTER_PPQ5_DOCSTRING = R"(Get 5-point PPQ measure
+    constexpr auto GET_JITTER_PPQ5_DOCSTRING = R"(Get 5-point PPQ measure
 
 Get the five-point Period Perturbation Quotient, the average absolute 
 difference between a period and the average of it and its four closest 
@@ -213,7 +215,7 @@ See Also
 :praat:`PointProcess: Get jitter (local, absolute)...`
 )";
 
-constexpr auto GET_JITTER_DDP_DOCSTRING = R"(Get Praat jitter measure
+    constexpr auto GET_JITTER_DDP_DOCSTRING = R"(Get Praat jitter measure
 
 Get the average absolute difference between consecutive differences 
 between consecutive periods, divided by the average period
@@ -227,8 +229,8 @@ See Also
 :praat:`PointProcess: Get jitter (local, absolute)...`
 )";
 
-constexpr auto GET_COUNT_AND_FRACTION_OF_VOICE_BREAKS_DOCSTRING =
-    R"(Get voice break analysis outputs
+    constexpr auto GET_COUNT_AND_FRACTION_OF_VOICE_BREAKS_DOCSTRING =
+        R"(Get voice break analysis outputs
 
 Returns a tuple, containing the outputs of the Praat voice break analysis:
 
@@ -261,7 +263,7 @@ See Also
 :praat:`Voice 1. Voice breaks`
 )";
 
-constexpr auto GET_SHIMMER_LOCAL_DOCSTRING = R"(Get shimmer measure
+    constexpr auto GET_SHIMMER_LOCAL_DOCSTRING = R"(Get shimmer measure
 
 Returns the average absolute difference between the amplitudes of 
 consecutive periods, divided by the average amplitude (MDVP Shim: 3.810% 
@@ -271,7 +273,7 @@ Parameters
 ----------
 )" GET_SHIMMER_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto GET_SHIMMER_LOCAL_DB_DOCSTRING = R"(Get shimmer measure in dB
+    constexpr auto GET_SHIMMER_LOCAL_DB_DOCSTRING = R"(Get shimmer measure in dB
 
 Returns the average absolute base-10 logarithm of the difference between 
 the amplitudes of consecutive periods, multiplied by 20 (MDVP ShdB: 
@@ -281,7 +283,7 @@ Parameters
 ----------
 )" GET_SHIMMER_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto GET_SHIMMER_LOCAL_APQ3_DOCSTRING = R"(Get 3-point APQ
+    constexpr auto GET_SHIMMER_LOCAL_APQ3_DOCSTRING = R"(Get 3-point APQ
 
 Returns the three-point Amplitude Perturbation Quotient, the average 
 absolute difference between the amplitude of a period and the average of 
@@ -291,7 +293,7 @@ Parameters
 ----------
 )" GET_SHIMMER_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto GET_SHIMMER_LOCAL_APQ5_DOCSTRING = R"(Get 5-point APQ
+    constexpr auto GET_SHIMMER_LOCAL_APQ5_DOCSTRING = R"(Get 5-point APQ
 
 Returns the five-point Amplitude Perturbation Quotient, the average  
 absolute difference between the amplitude of a period and the average of 
@@ -302,7 +304,7 @@ Parameters
 ----------
 )" GET_SHIMMER_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto GET_SHIMMER_LOCAL_APQ11_DOCSTRING = R"(Get shimmer measure
+    constexpr auto GET_SHIMMER_LOCAL_APQ11_DOCSTRING = R"(Get shimmer measure
 
 Returns the 11-point Amplitude Perturbation Quotient, the average absolute 
 difference between the amplitude of a period and the average of the 
@@ -313,7 +315,7 @@ Parameters
 ----------
 )" GET_SHIMMER_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto GET_SHIMMER_LOCAL_DDA_DOCSTRING = R"(Get Praat shimmer measure
+    constexpr auto GET_SHIMMER_LOCAL_DDA_DOCSTRING = R"(Get Praat shimmer measure
 
 Returns the average absolute difference between consecutive differences 
 between the amplitudes of consecutive periods (three times APQ3)
@@ -322,7 +324,7 @@ Parameters
 ----------
 )" GET_SHIMMER_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto GET_LOW_INDEX_DOCSTRING = R"(Get nearest point below
+    constexpr auto GET_LOW_INDEX_DOCSTRING = R"(Get nearest point below
 
 Returns the 1-base index of the nearest point before or at the specified 
 time. If the point process contains no points or the specified time is 
@@ -338,7 +340,7 @@ See Also
 :praat:`PointProcess: Get low index...`
 )";
 
-constexpr auto GET_HIGH_INDEX_DOCSTRING = R"(Get nearest point above
+    constexpr auto GET_HIGH_INDEX_DOCSTRING = R"(Get nearest point above
 
 Returns the 1-base index of the nearest point at or after the specified 
 time. If the point process contains no points or the specified time is 
@@ -354,7 +356,7 @@ See Also
 :praat:`PointProcess: Get high index...`
 )";
 
-constexpr auto GET_NEAREST_INDEX_DOCSTRING = R"(Get nearest point
+    constexpr auto GET_NEAREST_INDEX_DOCSTRING = R"(Get nearest point
 
 Returns the 1-base index of the point nearest to the specified time. If 
 the point process contains no points or the specified time is before the 
@@ -370,7 +372,7 @@ See Also
 :praat:`PointProcess: Get nearest index...`
 )";
 
-constexpr auto GET_WINDOW_POINTS_DOCSTRING = R"(Get included point range
+    constexpr auto GET_WINDOW_POINTS_DOCSTRING = R"(Get included point range
 
 Returns the 1-base starting and ending indices of the time points inside
 the specified time range.
@@ -384,7 +386,7 @@ to_time : double
     The ending time in seconds
 )";
 
-constexpr auto GET_INTERVAL_DOCSTRING = R"(Get period duration
+    constexpr auto GET_INTERVAL_DOCSTRING = R"(Get period duration
 
 Returns the duration of the period interval around a specified time.
 
@@ -398,7 +400,7 @@ See Also
 :praat:`PointProcess: Get interval...`
 )";
 
-constexpr auto GET_MEAN_PERIOD_DOCSTRING = R"(Get mean period
+    constexpr auto GET_MEAN_PERIOD_DOCSTRING = R"(Get mean period
 
 Returns the average period in the specified time range.
 
@@ -406,7 +408,7 @@ Parameters
 ----------
 )" GET_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto GET_STDEV_PERIOD_DOCSTRING = R"(Get SD of periods
+    constexpr auto GET_STDEV_PERIOD_DOCSTRING = R"(Get SD of periods
 
 Returns the standard deviation of the periods in the specified time range.
 
@@ -414,7 +416,7 @@ Parameters
 ----------
 )" GET_RANGE_PARAMETER_DOCSTRING;
 
-constexpr auto UNION_DOCSTRING = R"(Combine with another time process
+    constexpr auto UNION_DOCSTRING = R"(Combine with another time process
 
 Returns a new PointProcess instance containing all the points of the two 
 original point processes, sorted by time.
@@ -429,7 +431,7 @@ See Also
 :praat:`PointProcesses: Union`
 )";
 
-constexpr auto INTERSECTION_DOCSTRING = R"(Intersect with another time process
+    constexpr auto INTERSECTION_DOCSTRING = R"(Intersect with another time process
 
 Returns a new PointProcess instance containing only those points that occur
 in both `self` and `other` PointProcess objects
@@ -444,7 +446,7 @@ See Also
 :praat:`PointProcesses: Intersection`
 )";
 
-constexpr auto DIFFERENCE_DOCSTRING = R"(Subtract another time process
+    constexpr auto DIFFERENCE_DOCSTRING = R"(Subtract another time process
 
 Returns a new PointProcess instance containing only those points of the 
 `self` point process that do not occur in the `other` point process
@@ -459,7 +461,7 @@ See Also
 :praat:`PointProcesses: Difference`
 )";
 
-constexpr auto ADD_POINT_DOCSTRING = R"(Add time point
+    constexpr auto ADD_POINT_DOCSTRING = R"(Add time point
 
 Add the specified time point. If the point already exists in the point
 process, nothing happens.
@@ -474,7 +476,7 @@ See Also
 :praat:`PointProcess: Add point...`
 )";
 
-constexpr auto ADD_POINTS_DOCSTRING = R"(Add time points
+    constexpr auto ADD_POINTS_DOCSTRING = R"(Add time points
 
 Add the specified time points. If any of the points already exists in the 
 point process, nothing happens for that point.
@@ -485,7 +487,7 @@ times : numpy.ndarray<double>
     Array of times to be added
 )";
 
-constexpr auto REMOVE_POINT_DOCSTRING = R"(Remove time point
+    constexpr auto REMOVE_POINT_DOCSTRING = R"(Remove time point
 
 "Remove a time point specified by (1-base index) point_number"
 
@@ -503,7 +505,7 @@ See Also
 :praat:`PointProcess: Remove point...`
 )";
 
-constexpr auto REMOVE_POINT_NEAR_DOCSTRING = R"(Remove nearest time point
+    constexpr auto REMOVE_POINT_NEAR_DOCSTRING = R"(Remove nearest time point
 
 Remove a time point nearest to the specified time. It does nothing if 
 there are no points in the point process.
@@ -518,7 +520,7 @@ See Also
 :praat:`PointProcess: Remove point near...`
 )";
 
-constexpr auto REMOVE_POINTS_DOCSTRING = R"(Remove a range of time points
+    constexpr auto REMOVE_POINTS_DOCSTRING = R"(Remove a range of time points
 
 Remove all the time point that originally fell in the range 
 [from_point_number, to_point_number].
@@ -536,7 +538,7 @@ See Also
 :praat:`PointProcess: Remove points...`
 )";
 
-constexpr auto REMOVE_POINTS_BETWEEN_DOCSTRING = R"(Remove time points in a time range
+    constexpr auto REMOVE_POINTS_BETWEEN_DOCSTRING = R"(Remove time points in a time range
 
 Remove all points that originally fell in the domain [from_time, to_time],
 including the edges.
@@ -554,7 +556,7 @@ See Also
 :praat:`PointProcess: Remove points between...`
 )";
 
-constexpr auto FILL_DOCSTRING = R"(Add equispaced time points
+    constexpr auto FILL_DOCSTRING = R"(Add equispaced time points
 
 Add equispaced time points between the specified time range separated by 
 the specified period.
@@ -571,7 +573,7 @@ period : double
     Time interval in seconds (default: 0.01)
 )";
 
-constexpr auto VOICE_DOCSTRING = R"(Add equispaced time points in unvoiced intervals
+    constexpr auto VOICE_DOCSTRING = R"(Add equispaced time points in unvoiced intervals
 
 Add equispaced time points separated by the specified period over all
 existing periods longer than maximum_voiced_period
@@ -591,3 +593,4 @@ maximum_voiced_period : double
     Time period longer than this is considered unvoiced, in seconds 
     (default: 0.02000000001)
 )";
+}
