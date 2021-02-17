@@ -1,46 +1,48 @@
 namespace parselmouth
 {
 
-#define GET_RANGE_PARAMETER_DOCSTRING R"(from_time : double
-    The start time of the part of the PointProcess to be measured in 
-    seconds. If 0.0, all the points to `start_time` are included.
-    (default: 0.0)
+#define GET_RANGE_PARAMETER_DOCSTRING                                              \
+    "from_time : double \n"                                                        \
+    "    The start time of the part of the PointProcess to be measured in\n"       \
+    "    seconds. If 0.0, all the points to `start_time` are included.\n"          \
+    "    (default: 0.0)\n"                                                         \
+    "\n"                                                                           \
+    "end_time : double \n"                                                         \
+    "    The end time of the part of the PointProcess to be measured in \n"        \
+    "    seconds. If 0.0, all the points to `end_time` are included. \n"           \
+    "    (default: 0.0) \n"                                                        \
+    "\n"                                                                           \
+    "period_floor : double \n"                                                     \
+    "    The shortest possible interval to be used in the computation in \n"       \
+    "    seconds. If an interval is shorter than this, it will be ignored (and \n" \
+    "    the previous and next intervals will not be regarded as consecutive). \n" \
+    "    This setting will normally be very small. (default: 0.0001). \n"          \
+    "\n"                                                                           \
+    "period_ceiling : double \n"                                                   \
+    "    The longest possible interval that to be used in the computation in \n"   \
+    "    seconds. If an interval is longer than this, it will be ignored (and \n"  \
+    "    the previous and next intervals will not be regarded as consecutive). \n" \
+    "    For example, if the minimum frequency of periodicity is 50 Hz, set \n"    \
+    "    this setting to 0.02 seconds; intervals longer than that could be \n"     \
+    "    regarded as voiceless stretches and will be ignored. (default: 0.02) \n"  \
+    "\n"                                                                           \
+    "maximum_period_factor : double \n"                                            \
+    "    The largest possible difference between consecutive intervals that to \n" \
+    "    be used in the computation. If the ratio of the durations of two  \n"     \
+    "    consecutive intervals is greater than this, this pair of intervals \n"    \
+    "    will be ignored (each of the intervals could still take part in the \n"   \
+    "    computation in a comparison with its neighbour on the other side). \n"    \
+    "    (default: 1.3)"
 
-end_time : double
-    The end time of the part of the PointProcess to be measured in seconds. 
-    If 0.0, all the points to `end_time` are included. (default: 0.0)
-
-period_floor : double
-    The shortest possible interval to be used in the computation in 
-    seconds. If an interval is shorter than this, it will be ignored (and 
-    the previous and next intervals will not be regarded as consecutive). 
-    This setting will normally be very small. (default: 0.0001).
-
-period_ceiling : double
-    The longest possible interval that to be used in the computation in 
-    seconds. If an interval is longer than this, it will be ignored (and 
-    the previous and next intervals will not be regarded as consecutive). 
-    For example, if the minimum frequency of periodicity is 50 Hz, set 
-    this setting to 0.02 seconds; intervals longer than that could be 
-    regarded as voiceless stretches and will be ignored. (default: 0.02)
-
-maximum_period_factor : double
-    The largest possible difference between consecutive intervals that to 
-    be used in the computation. If the ratio of the durations of two 
-    consecutive intervals is greater than this, this pair of intervals 
-    will be ignored (each of the intervals could still take part in the 
-    computation in a comparison with its neighbour on the other side). 
-    (default: 1.3))"
-
-#define GET_SHIMMER_RANGE_PARAMETER_DOCSTRING R"(sound : Parselmouth.Sound
-    Sound object containing the samples to evaluate the amplitude
-)" GET_RANGE_PARAMETER_DOCSTRING R"(maximum_amplitude_factor : double
-    Maximum amplitude factor
-
-See Also
---------
-:praat:`Voice 3. Shimmer`
-)"
+#define GET_SHIMMER_RANGE_PARAMETER_DOCSTRING                                                            \
+    "sound : Parselmouth.Sound \n"                                                                       \
+    "    Sound object containing the samples to evaluate the amplitude \n" GET_RANGE_PARAMETER_DOCSTRING \
+    "maximum_amplitude_factor : double \n"                                                               \
+    "    Maximum amplitude factor \n"                                                                    \
+    "\n"                                                                                                 \
+    "See Also \n"                                                                                        \
+    "-------- \n"                                                                                        \
+    ":praat:`Voice 3. Shimmer` \n"
 
     constexpr auto CREATE_POISSON_PROCESS_DOCSTRING = R"(Create a PointProcess instance with Poisson-distributed random time points.
 
