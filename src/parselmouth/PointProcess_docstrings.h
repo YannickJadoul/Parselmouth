@@ -61,7 +61,7 @@ double : density
 
 See Also
 --------
-:praat:`PointProcess: Create Poisson process...`
+:praat:`Create Poisson process...`
 )";
 
     constexpr auto FROM_PITCH_DOCSTRING = R"(Create PointProcess from Pitch object.
