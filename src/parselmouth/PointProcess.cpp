@@ -25,12 +25,13 @@
 #include <praat/fon/PointProcess.h>
 #include <praat/fon/Pitch_to_PointProcess.h>
 #include <praat/fon/VoiceAnalysis.h>
-#include <praat/melder/melder_alloc.h>
 
 #include <vector>
 #include <tuple>
 
 #include <pybind11/stl.h>
+
+#include "PointProcess_docstrings.h"
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -85,21 +86,21 @@ namespace parselmouth
 		def_static("create_poisson_process",
 				   &PointProcess_createPoissonProcess,
 				   "start_time"_a = 0.0, "end_time"_a = 1.0, "density"_a = 100.0,
-				   "Create a PointProcess instance with randomly drawn time points from a Poisson distribution");
+				   CREATE_POISSON_PROCESS_DOCSTRING);
 
 		def_static("from_pitch",
 				   &Pitch_to_PointProcess,
-				   "pitch"_a, "Create a PointProcess instance from a Pitch instance");
+				   "pitch"_a, FROM_PITCH_DOCSTRING);
 
 		def_static("from_sound_pitch_cc",
 				   &Sound_Pitch_to_PointProcess_cc,
 				   "sound"_a, "pitch"_a,
-				   "Create a PointProcess instance from Sound and Pitch instances using the cross-correlation method");
+				   FROM_SOUND_PITCH_CC_DOCSTRING);
 
 		def_static("from_sound_pitch_peaks",
 				   &Sound_Pitch_to_PointProcess_peaks,
 				   "sound"_a, "pitch"_a, "include_maxima"_a = true, "include_minima"_a = false,
-				   "Create a PointProcess instance from Sound and Pitch instances using the peak-picking method");
+				   FROM_SOUND_PITCH_PEAKS_DOCSTRING);
 
 		// HEARING:
 		// DIRECT(PLAY_PointProcess_play)
@@ -112,164 +113,148 @@ namespace parselmouth
  * Standard arguments for many of the query methods
  */
 #define GET_RANGE_DEFAULT_PROPERTIES \
-	"from_time"_a = 0.0, "to_time"_a = 0.0, "shortest_period"_a = 0.0001, "longest_period"_a = 0.02, "maximum_period_factor"_a = 1.3
+	"from_time"_a = 0.0, "to_time"_a = 0.0, "period_floor"_a = 0.0001, "period_ceiling"_a = 0.02, "maximum_period_factor"_a = 1.3
 #define GET_SHIMMER_RANGE_DEFAULT_PROPERTIES \
 	"sound"_a, GET_RANGE_DEFAULT_PROPERTIES, "maximum_amplitude_factor"_a = 1.6
 
 		// QUERIES:
 		// -basic info
 		def(
-			"get_number_of_points", [](PointProcess self) { return self->nt; }, "Get the number of defined points");
+			"get_number_of_points", [](PointProcess self) { return self->nt; }, GET_NUMBER_OF_POINTS_DOCSTRING);
 
 		def("get_number_of_periods", PointProcess_getNumberOfPeriods, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the number of periods within the specified time range");
+			GET_NUMBER_OF_PERIODS_DOCSTRING);
 
 		def(
 			"get_time_from_index", [](PointProcess self, int pointNumber) {
 				return (pointNumber <= 0 || pointNumber > self->nt) ? py::none() : py::cast(self->t[pointNumber]);
 			},
-			"point_number"_a, "Get time associated with the point number (1-based index)");
+			GET_TIME_FROM_INDEX_DOCSTRING);
 
 		def(
 			"get_time_points", [](PointProcess self) {
 			// NOTE: this makes a copy
 			auto &t = self->t;
 			return std::vector<double>(t.cells, t.cells + t.size); },
-			"Get all the defined time points as numpy double array");
+			GET_TIME_POINTS_DOCSTRING);
 
 		// -jitters
 		def("get_jitter_local", &PointProcess_getJitter_local, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between consecutive periods, divided by the average period "
-			"(MDVP Jitt: 1.040% as a threshold for pathology)");
+			GET_JITTER_LOCAL_DOCSTRING);
 
 		def("get_jitter_local_absolute", &PointProcess_getJitter_local_absolute, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between consecutive periods, in seconds "
-			"(MDVP Jita: 83.200 μs as a threshold for pathology)");
+			GET_JITTER_LOCAL_ABSOLUTE_DOCSTRING);
 
 		def("get_jitter_rap", &PointProcess_getJitter_rap, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the Relative Average Perturbation, the average absolute difference between a period and "
-			"the average of it and its two neighbours, divided by the average period (MDVP: 0.680% as a threshold for pathology)");
+			GET_JITTER_RAP_DOCSTRING);
 
 		def("get_jitter_ppq5", &PointProcess_getJitter_ppq5, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the five-point Period Perturbation Quotient, the average absolute difference "
-			"between a period and the average of it and its four closest neighbours, divided by the "
-			"average period (MDVP PPQ, and gives 0.840% as a threshold for pathology)");
+			GET_JITTER_PPQ5_DOCSTRING);
 
 		def("get_jitter_ddp", &PointProcess_getJitter_ddp, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between consecutive differences between consecutive periods, divided by the average period");
+			GET_JITTER_DDP_DOCSTRING);
 
 		// -voice breaks
 		def(
 			"get_count_and_fraction_of_voice_breaks", [](PointProcess self, double tmin, double tmax, double maximumPeriod) {
 				MelderCountAndFraction out = PointProcess_getCountAndFractionOfVoiceBreaks(self, tmin, tmax, maximumPeriod);
-				return std::make_tuple(out.count, out.numerator / out.denominator);
+
+				return std::make_tuple(out.count, out.numerator / out.denominator, out.numerator, out.denominator);
 			},
-			"from_time"_a=0.0, "to_time"_a=0.0, "longest_period"_a = 0.02, "Get tuple (number of voice breaks, time fraction of voice breaks,)");
+			"from_time"_a = 0.0, "to_time"_a = 0.0, "period_ceiling"_a = 0.02, GET_COUNT_AND_FRACTION_OF_VOICE_BREAKS_DOCSTRING);
 
 		// -shimmers
 		def("get_shimmer_local", &PointProcess_Sound_getShimmer_local,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between the amplitudes of consecutive periods, "
-			"divided by the average amplitude (MDVP Shim: 3.810% as a threshold for pathology)");
+			GET_SHIMMER_LOCAL_DOCSTRING);
 
 		def("get_shimmer_local_dB", &PointProcess_Sound_getShimmer_local_dB,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute base-10 logarithm of the difference between the amplitudes of "
-			"consecutive periods, multiplied by 20 (MDVP ShdB: 0.350 dB as a threshold for pathology)");
+			GET_SHIMMER_LOCAL_DB_DOCSTRING);
 
 		def("get_shimmer_local_apq3", &PointProcess_Sound_getShimmer_apq3,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the three-point Amplitude Perturbation Quotient, the average absolute difference "
-			"between the amplitude of a period and the average of the amplitudes of its neighbours, "
-			"divided by the average amplitude");
+			GET_SHIMMER_LOCAL_APQ3_DOCSTRING);
 
 		def("get_shimmer_local_apq5", &PointProcess_Sound_getShimmer_apq5,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the five-point Amplitude Perturbation Quotient, the average absolute difference "
-			"between the amplitude of a period and the average of the amplitudes of it and its four "
-			"closest neighbours, divided by the average amplitude");
+			GET_SHIMMER_LOCAL_APQ5_DOCSTRING);
 
 		def("get_shimmer_local_apq11", &PointProcess_Sound_getShimmer_apq11,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the 11-point Amplitude Perturbation Quotient, the average absolute difference "
-			"between the amplitude of a period and the average of the amplitudes of it and its ten "
-			"closest neighbours, divided by the average amplitude (MDVP APQ: 3.070% as a threshold "
-			"for pathology)");
+			GET_SHIMMER_LOCAL_APQ11_DOCSTRING);
 
 		def("get_shimmer_local_dda", &PointProcess_Sound_getShimmer_dda,
 			GET_SHIMMER_RANGE_DEFAULT_PROPERTIES,
-			"Get the average absolute difference between consecutive differences between the "
-			"amplitudes of consecutive periods (three times APQ3)");
+			GET_SHIMMER_LOCAL_DDA_DOCSTRING);
 
 		// -nearst point index
 		def("get_low_index", PointProcess_getLowIndex, "time"_a,
-			"Get the 1-base index of the nearest point before or at the specified time (0 if none found)");
+			GET_LOW_INDEX_DOCSTRING);
 
 		def("get_high_index", PointProcess_getHighIndex, "time"_a,
-			"Get the 1-base the index of the nearest point at or after the specified time (0 if none found)");
+			GET_HIGH_INDEX_DOCSTRING);
 
 		def("get_nearest_index", PointProcess_getNearestIndex, "time"_a,
-			"Get the 1-base index of the point nearest to the specified time (0 if none found)");
+			GET_NEAREST_INDEX_DOCSTRING);
 
 		def(
-			"get_window_points", [](PointProcess self, double tmin, double tmax) {
+			"get_window_points",
+			[](PointProcess self, double tmin, double tmax) {
 				const MelderIntegerRange points = PointProcess_getWindowPoints(self, tmin, tmax);
 				return std::make_tuple(points.first, points.last);
 			},
-			"tmin"_a, "tmax"_a,
-			"Get starting and ending (1-based) indices included in the specified time range");
-			
+			"from_time"_a, "to_time"_a, GET_WINDOW_POINTS_DOCSTRING);
+
 		// -period duration
 		def("get_interval", &PointProcess_getInterval, "time"_a,
-			"Get the duration of the interval around a specified time");
+			GET_INTERVAL_DOCSTRING);
 
 		// -statistics
 		def("get_mean_period", PointProcess_getMeanPeriod, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the average period");
+			GET_MEAN_PERIOD_DOCSTRING);
 
 		def("get_stdev_period", PointProcess_getStdevPeriod, GET_RANGE_DEFAULT_PROPERTIES,
-			"Get the standard deviation of the periods");
+			GET_STDEV_PERIOD_DOCSTRING);
 
 		// SET CALCULATIONS
 		def("union", &PointProcesses_union, "other"_a,
-			"Create new PointProcess instance containing all the points of the two original point "
-			"processes, sorted by time");
+			UNION_DOCSTRING);
 
 		def("intersection", &PointProcesses_intersection, "other"_a,
-			"Create new PointProcess instance containing only those points that occur in both "
-			"original point processes");
+			INTERSECTION_DOCSTRING);
 
 		def("difference", &PointProcesses_difference, "other"_a.none(false),
-			"Create new PointProcess instance containing only those points of the first selected "
-			"original point process that do not occur in the second");
+			DIFFERENCE_DOCSTRING);
 
 		// MODIFICATION
-		def("add_point", &PointProcess_addPoint, "time"_a, "Add a time point");
+		def("add_point", &PointProcess_addPoint, "time"_a, ADD_POINT_DOCSTRING);
 
 		def(
 			"add_points", [](PointProcess self, std::vector<double> times) {
 				PointProcess_addPoints(self, constVEC(times.data(), times.size()));
 			},
-			"times"_a, "Add multiple time points from a numpy double array, times");
+			"times"_a, ADD_POINTS_DOCSTRING);
 
 		def("remove_point", &PointProcess_removePoint, "point_number"_a,
-			"Remove a time point specified by (1-base index) point_number");
+			REMOVE_POINT_DOCSTRING);
 
 		def("remove_point_near", &PointProcess_removePointNear, "time"_a,
-			"Remove a time point nearest to the specified time in seconds");
+			REMOVE_POINT_NEAR_DOCSTRING);
 
-		def("remove_points", &PointProcess_removePoints, "from_point_number"_a, "to_point_number"_a,
-			"Remove time points between the specified (1-based) index range, including the edge points");
+		def("remove_points", &PointProcess_removePoints,
+			"from_point_number"_a, "to_point_number"_a,
+			REMOVE_POINTS_DOCSTRING);
 
-		def("remove_points_between", &PointProcess_removePointsBetween, "from_time"_a, "to_time"_a,
-			"Remove time points between the specified time range");
+		def("remove_points_between", &PointProcess_removePointsBetween,
+			"from_time"_a, "to_time"_a,
+			REMOVE_POINTS_BETWEEN_DOCSTRING);
 
 		def("fill", &PointProcess_fill, "from_time"_a, "to_time"_a, "period"_a = 0.01,
-			"Add equispaced time points between the specified time range separated by the specified period");
+			FILL_DOCSTRING);
 
 		def("voice", &PointProcess_voice, "period"_a = 0.01, "maximum_voiced_period"_a = 0.02000000001,
-			"Add equispaced time points separated by the specified period over any existing period "
-			"longer than maximum_voiced_period");
+			VOICE_DOCSTRING);
 
 		// DIRECT (MODIFY_Point_Sound_transplantDomain) {
 		// 	MODIFY_FIRST_OF_TWO (PointProcess, Sound)
