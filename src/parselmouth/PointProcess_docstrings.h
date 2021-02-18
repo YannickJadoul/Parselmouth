@@ -151,12 +151,6 @@ point_number : int
     Index (1-based) of the requested time point.
 )";
 
-    constexpr auto GET_TIME_POINTS_DOCSTRING = R"(Get all the defined time points as numpy double array.
-
-Returns a double NumPy array containing the PointProcess'' time points. 
-The returned array is a copy.
-)";
-
     constexpr auto GET_JITTER_LOCAL_DOCSTRING = R"(Get jitter measure
 
 Returns the average absolute difference between consecutive periods, 

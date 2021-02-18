@@ -17,6 +17,8 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
+#include <stdexcept>
+
 #include "Parselmouth.h"
 
 #include "TimeClassAspects.h"
@@ -102,12 +104,25 @@ namespace parselmouth
 				   "sound"_a, "pitch"_a, "include_maxima"_a = true, "include_minima"_a = false,
 				   FROM_SOUND_PITCH_PEAKS_DOCSTRING);
 
-		// HEARING:
-		// DIRECT(PLAY_PointProcess_play)
-		// DIRECT(PLAY_PointProcess_hum)
+		// Make PointProcess class a s sequence-like Python class
+		def(
+			"__getitem__",
+			[](PointProcess self, long i) {
+				if (i < 0)
+					i += self->nt;
+				if (i < 0 || i >= self->nt)
+					throw std::out_of_range("time point index out of range");
+				return self->t[i + 1]; // Not a(n) (internal) reference, because unvoice and select would then change the value of a returned Pitch_Candidate
+			},
+			"i"_a);
 
-		// DRAWING:
-		// FORM(GRAPHICS_PointProcess_draw, U"PointProcess: Draw", nullptr)
+		def("__len__",
+			[](PointProcess self) { return self->nt; });
+
+		def(
+			"__iter__",
+			[](PointProcess self) { return py::make_iterator(&self->t[1], &self->t[self->nt + 1]); },
+			py::keep_alive<0, 1>());
 
 /**
  * Standard arguments for many of the query methods
@@ -129,14 +144,7 @@ namespace parselmouth
 			"get_time_from_index", [](PointProcess self, int pointNumber) {
 				return (pointNumber <= 0 || pointNumber > self->nt) ? py::none() : py::cast(self->t[pointNumber]);
 			},
-			GET_TIME_FROM_INDEX_DOCSTRING);
-
-		def(
-			"get_time_points", [](PointProcess self) {
-			// NOTE: this makes a copy
-			auto &t = self->t;
-			return std::vector<double>(t.cells, t.cells + t.size); },
-			GET_TIME_POINTS_DOCSTRING);
+			"point_number"_a, GET_TIME_FROM_INDEX_DOCSTRING);
 
 		// -jitters
 		def("get_jitter_local", &PointProcess_getJitter_local, GET_RANGE_DEFAULT_PROPERTIES,
