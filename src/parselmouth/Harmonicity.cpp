@@ -20,24 +20,107 @@
 #include "Parselmouth.h"
 
 #include "TimeClassAspects.h"
+#include "Harmonicity_docstrings.h"
 
 #include <praat/fon/Harmonicity.h>
 
 namespace py = pybind11;
 using namespace py::literals;
 
-namespace parselmouth {
+namespace parselmouth
+{
 
-PRAAT_CLASS_BINDING(Harmonicity) {
-	addTimeFrameSampledMixin(*this);
+	PRAAT_CLASS_BINDING(Harmonicity)
+	{
+		addTimeFrameSampledMixin(*this);
 
-	// TODO Get value in frame
+		// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
 
-	// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
+		// Harmonicity: Get value at time...
+		def(
+			"get_value", // TODO Should be part of Vector class
+			[](Harmonicity self, double time, kVector_valueInterpolation interpolation) {
+				return Vector_getValueAtX(self, time, 1, interpolation);
+			},
+			"time"_a, "interpolation"_a = kVector_valueInterpolation::CUBIC,
+			GET_VALUE_DOCSTRING);
 
-	def("get_value", // TODO Should be part of Vector class
-	    [](Harmonicity self, double time, kVector_valueInterpolation interpolation) { return Vector_getValueAtX(self, time, 1, interpolation); },
-	    "time"_a, "interpolation"_a = kVector_valueInterpolation::CUBIC);
-}
+		// Harmonicity: Get value in frame...
+		def(
+			"get_value_in_frame",
+			[](Harmonicity self, int frameNumber) {
+				return (frameNumber < 1 || frameNumber > self->nx ? undefined : self->z[1][frameNumber]);
+			},
+			"frame_number"_a, GET_VALUE_IN_FRAME_DOCSTRING);
+
+		// Harmonicity: Formula...
+		// def(
+		// 	"formula",
+		// 	[](Harmonicity self, conststring32 formula) {
+		// 		Interpreter interpreter;
+		// 		return Matrix_formula(self, formula, interpreter, nullptr);
+		// 	},
+		// 	"formula"_a);
+
+		// Harmonicity: Get maximum...
+		def(
+			"get_maximum",
+			[](Harmonicity self, double fromTime, double toTime, kVector_peakInterpolation interpolation) {
+				return Vector_getMaximum(self, fromTime, toTime, interpolation);
+			},
+			"from_time"_a = 0.0, "to_time"_a = 0.0, "interpolation"_a = kVector_peakInterpolation::PARABOLIC,
+			GET_MAXIMUM_DOCSTRING);
+
+		// Harmonicity: Get mean...
+		def(
+			"get_mean",
+			[](Harmonicity self, double fromTime, double toTime) {
+				return Harmonicity_getMean(self, fromTime, toTime);
+			},
+			"from_time"_a = 0.0, "to_time"_a = 0.0, GET_MEAN_DOCSTRING);
+
+		// Harmonicity: Get minimum...
+		def(
+			"get_minimum",
+			[](Harmonicity self, double fromTime, double toTime, kVector_peakInterpolation interpolation) {
+				return Vector_getMinimum(self, fromTime, toTime, interpolation);
+			},
+			"from_time"_a = 0.0, "to_time"_a = 0.0, "interpolation"_a = kVector_peakInterpolation::PARABOLIC,
+			GET_MINIMUM_DOCSTRING);
+
+		// Harmonicity: Get standard deviation...
+		def(
+			"get_standard_deviation",
+			[](Harmonicity self, double fromTime, double toTime) {
+				return Harmonicity_getStandardDeviation(self, fromTime, toTime);
+			},
+			"from_time"_a = 0.0, "to_time"_a = 0.0, GET_STANDARD_DEVIATION_DOCSTRING);
+
+		// Harmonicity: Get time of maximum...
+		def(
+			"get_time_of_maximum",
+			[](Harmonicity self, double fromTime, double toTime, kVector_peakInterpolation interpolation) {
+				return Vector_getXOfMaximum(self, fromTime, toTime, interpolation);
+			},
+			"from_time"_a = 0.0, "to_time"_a = 0.0, "interpolation"_a = kVector_peakInterpolation::PARABOLIC,
+			GET_TIME_OF_MAXIMUM_DOCSTRING);
+
+		// Harmonicity: Get time of minimum...
+		def(
+			"get_time_of_minimum",
+			[](Harmonicity self, double fromTime, double toTime, kVector_peakInterpolation interpolation) {
+				return Vector_getXOfMinimum(self, fromTime, toTime, interpolation);
+			},
+			"from_time"_a = 0.0, "to_time"_a = 0.0, "interpolation"_a = kVector_peakInterpolation::PARABOLIC,
+			GET_TIME_OF_MINIMUM_DOCSTRING);
+
+		// double Harmonicity_getQuantile (Harmonicity me, double quantile) {
+		def(
+			"get_quantile",
+			[](Harmonicity self, double quantile) {
+				return Harmonicity_getQuantile(self, quantile);
+			},
+			"quantile"_a, GET_QUANTILE_DOCSTRING);
+	}
 
 } // namespace parselmouth
