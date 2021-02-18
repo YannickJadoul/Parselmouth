@@ -17,6 +17,8 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
+#include <stdexcept>
+
 #include "Parselmouth.h"
 
 #include "TimeClassAspects.h"
@@ -35,6 +37,28 @@ namespace parselmouth
 		addTimeFrameSampledMixin(*this);
 
 		// TODO Mixins (or something else?) for TimeFrameSampled, TimeFunction, and TimeVector functionality
+
+
+		// Make PointProcess class a s sequence-like Python class
+		def(
+			"__getitem__",
+			[](Harmonicity self, long i) {
+				if (i < 0)
+					i += self->nx;
+				if (i < 0 || i >= self->nx)
+					throw std::out_of_range("time point index out of range");
+				return self->z[1][i + 1];
+			},
+			"i"_a);
+
+		def("__len__",
+			[](Harmonicity self) { return self->nx; });
+
+		def(
+			"__iter__",
+			[](Harmonicity self) { return py::make_iterator(&self->z[1][1], &self->z[1][self->nx + 1]); },
+			py::keep_alive<0, 1>());
+
 
 		// Harmonicity: Get value at time...
 		def(
