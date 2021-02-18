@@ -1,4 +1,4 @@
-import numpy as np
+import pytest
 
 if __name__ == "__main__":
     from os import path
@@ -26,12 +26,23 @@ def test_pointprocess(resources):
     pulses = parselmouth.PointProcess.from_sound_pitch_cc(vowel, pitch)
     print(pulses)
 
+    # test sequence operations
+    nt = pulses.get_number_of_points()
+    assert len(pulses) == nt
+    pulses[nt - 1]
+    assert pulses[-1] == pulses[nt - 1]
+
+    def iterate(P):
+        for p in P:
+            pass
+        return True
+
+    assert iterate(pulses)
+
     # various get functions
     print(f"get_number_of_points={pulses.get_number_of_points()}")
     print(f"get_number_of_periods={pulses.get_number_of_periods()}")
-    print(f"get_time_points={pulses.get_time_points()}")
 
-    nt = pulses.get_number_of_points()
     i = max(nt // 2, 1)  # point number (1-based index of target time point)
     t = (pulses.get_time_from_index(i) + pulses.get_time_from_index(i + 1)) / 2
     print(f"get_time_from_index({i})={pulses.get_time_from_index(i)}")
