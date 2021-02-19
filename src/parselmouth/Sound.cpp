@@ -202,6 +202,9 @@ PRAAT_CLASS_BINDING(Sound) {
 
 		    auto nx = values.shape(ndim - 1);
 		    auto ny = ndim == 2 ? values.shape(0) : 1;
+		    if (ndim == 2 && ny > nx)
+				PyErr_WarnEx(PyExc_RuntimeWarning, ("Number of channels (" + std::to_string(ny) + ") is greater than number of samples (" + std::to_string(nx) + "); note that the shape of the `values` array is interpreted as (n_channels, n_samples).").c_str(), 1);
+
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
 
 		    // We can copy_n because of py::array::c_style making sure things are contiguous
