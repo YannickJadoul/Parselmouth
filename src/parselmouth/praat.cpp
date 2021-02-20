@@ -203,7 +203,7 @@ void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg)
 		return fillStackel(stackel, py::cast<double>(arg));
 	else if (py::isinstance<py::bool_>(arg))
 		return fillStackel(stackel, py::cast<bool>(arg));
-	else if (py::isinstance<py::str>(arg) && (PY_MAJOR_VERSION < 3 || !py::isinstance<py::bytes>(arg)))
+	else if (py::isinstance<py::str>(arg) && !py::isinstance<py::bytes>(arg))
 		return fillStackel(stackel, py::cast<std::u32string>(arg));
 
 	try {
