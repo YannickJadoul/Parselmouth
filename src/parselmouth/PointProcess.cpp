@@ -30,6 +30,8 @@
 
 #include <vector>
 #include <tuple>
+#include <algorithm>
+#include <execution>
 
 #include <pybind11/stl.h>
 
@@ -54,6 +56,19 @@ namespace parselmouth
 				return PointProcess_create(startTime, endTime, 0);
 			}),
 			"start_time"_a = 0.0, "end_time"_a = 1.0, "Construct a new empty PointProcess instance");
+
+		def(py::init([](std::vector<double> times, std::optional<double> startTime, std::optional<double> endTime) {
+				double t0 = startTime.has_value() ? startTime.value() : *std::min_element(std::execution::par, times.cbegin(), times.cend()),
+					   t1 = endTime.has_value() ? endTime.value() : *std::max_element(std::execution::par, times.cbegin(), times.cend());
+
+				if (t1 <= t0)
+					throw std::invalid_argument("The end time should be greater than the start time.");
+				auto self = PointProcess_create(t0, t1, times.size());
+				
+				PointProcess_addPoints(self.get(), constVEC(times.data(), times.size()));
+				return self;
+			}),
+			"time_points"_a, "start_time"_a = py::none(), "end_time"_a = py::none(), "Construct a new PointProcess instance");
 
 		def(py::init([](Pitch pitch) {
 				return Pitch_to_PointProcess(pitch);
