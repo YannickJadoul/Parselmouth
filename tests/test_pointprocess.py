@@ -72,12 +72,29 @@ def process_set(processA, processB):
 # def(py::init([](double startTime, double endTime) { }), "start_time"_a = 0.0, "end_time"_a = 1.0);
 # def(py::init([](Sound sound, Pitch pitch, py::kwargs kwargs) { }), "sound"_a, "pitch"_a);
 
+
 def test_create_empty_process(empty_process):
     # empty constructor test
     assert type(empty_process) == parselmouth.PointProcess
     with pytest.raises(parselmouth.PraatError):
         parselmouth.PointProcess(1.2)
-    parselmouth.PointProcess(0.1,end_time=1.2)
+    parselmouth.PointProcess(0.1, end_time=1.2)
+
+
+def test_create_process():
+    # create a new process with prefilled values
+    t = [0.1, 0.4, 1.2, 2.4, 0.5]
+    process = parselmouth.PointProcess(t)
+    assert process.xmin == min(t)
+    assert process.xmax == max(t)
+    assert np.array_equal(process, np.sort(t))
+
+    # create another process but explicitly set the time domain
+    process = parselmouth.PointProcess(t, start_time=0.0, end_time=1.0)
+    assert process.xmin == 0.0
+    assert process.xmax == 1.0
+    assert np.array_equal(process, np.sort(t))
+
 
 def test_create_poisson_process(poisson_process):
     assert type(poisson_process) == parselmouth.PointProcess
@@ -88,14 +105,15 @@ def test_from_pitch(voice_pitch):
     parselmouth.PointProcess(voice_pitch)
     parselmouth.PointProcess.from_pitch(voice_pitch)
 
+
 def test_from_sound_pitch(voice, voice_pitch):
     # constructor from sound & pitch
     parselmouth.PointProcess(voice, voice_pitch)
-    parselmouth.PointProcess(voice, voice_pitch, method='cc')
-    parselmouth.PointProcess(voice, voice_pitch, method='peaks')
+    parselmouth.PointProcess(voice, voice_pitch, method="cc")
+    parselmouth.PointProcess(voice, voice_pitch, method="peaks")
     with pytest.raises(ValueError):
-        parselmouth.PointProcess(voice, voice_pitch, method='invalid')
-    
+        parselmouth.PointProcess(voice, voice_pitch, method="invalid")
+
 
 def test_from_sound_pitch_cc(voice, voice_pitch):
     parselmouth.PointProcess.from_sound_pitch_cc(voice, voice_pitch)
