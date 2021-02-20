@@ -60,30 +60,18 @@ namespace parselmouth
 			}),
 			"pitch"_a, "Construct a new PointProcess instance from a Pitch instance");
 
-		def(py::init([](Sound sound, Pitch pitch, py::kwargs kwargs) { //-> py::object {
-				// process the keyword arguments
-				std::string method = "cc";
-				bool include_maxima = true, include_minima = false;
-				for (auto item : kwargs)
-				{
-					std::string key = std::string(py::str(item.first));
-					if (key == "method")
-						method = py::str(item.second);
-					else if (key == "include_maxima")
-						include_maxima = bool(item.second);
-					else if (key == "include_minima")
-						include_minima = bool(item.second);
-				}
-
+		def(py::init([](Sound sound, Pitch pitch, std::string method,
+						bool include_maxima, bool include_minima) {
 				// run the method
 				if (method == "cc")
 					return Sound_Pitch_to_PointProcess_cc(sound, pitch);
 				else if (method == "peaks")
 					return Sound_Pitch_to_PointProcess_peaks(sound, pitch, include_maxima, include_minima);
-
-				Melder_throw(U"Unknown method specified.");
+				else
+					throw std::invalid_argument("Unknown method specified.");
 			}),
-			"sound"_a, "pitch"_a, "Construct a new PointProcess instance from Sound and Pitch instance");
+			"sound"_a, "pitch"_a, "method"_a = "cc", "include_maxima"_a = true, "include_minima"_a = false,
+			"Construct a new PointProcess instance from Sound and Pitch instance");
 
 		def_static("create_poisson_process",
 				   &PointProcess_createPoissonProcess,
@@ -137,7 +125,7 @@ namespace parselmouth
 		def(
 			"get_number_of_points", [](PointProcess self) { return self->nt; }, GET_NUMBER_OF_POINTS_DOCSTRING);
 
-		def("get_number_of_periods", PointProcess_getNumberOfPeriods, GET_RANGE_DEFAULT_PROPERTIES,
+		def("get_number_of_periods", &PointProcess_getNumberOfPeriods, GET_RANGE_DEFAULT_PROPERTIES,
 			GET_NUMBER_OF_PERIODS_DOCSTRING);
 
 		def(
