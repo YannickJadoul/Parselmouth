@@ -6,7 +6,7 @@ constexpr auto HARMONICITY_CLASS_DOCSTRING = R"(Praat Harmonicity.
 A sequence object contain measures of the degree of acoustic periodicity,
 also called Harmonics-to-Noise Ratio (HNR). Harmonicity is expressed in dB.
 
-In the most use cases, `parselmouth.Harmonicity` objects are generated from 
+In the most use cases, `parselmouth.Harmonicity` objects are generated from
 `parselmouth.Sound` objects with the `parselmouth.Sound.to_harmonicity()`
 method. To constuct manually, use the following parameters.
 
