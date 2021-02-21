@@ -19,6 +19,8 @@
 
 #include "Parselmouth.h"
 
+#include "Pitch_docstrings.h"
+
 #include "TimeClassAspects.h"
 
 #include "utils/praat/MelderUtils.h"
@@ -27,6 +29,7 @@
 
 #include <praat/fon/Matrix_and_Pitch.h>
 #include <praat/fon/Pitch.h>
+#include <praat/fon/Pitch_to_PointProcess.h>
 #include <praat/fon/Pitch_to_Sound.h>
 
 #include <pybind11/numpy.h>
@@ -65,16 +68,16 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 	def_readonly("intensity", &structPitch_Frame::intensity);
 
 	def_property("selected",
-	             [](Pitch_Frame self) { return &self->candidates[1]; },
-	             [](Pitch_Frame self, Pitch_Candidate candidate) {
-		             for (long j = 1; j <= self->nCandidates; j++) {
-			             if (&self->candidates[j] == candidate) {
-				             std::swap(self->candidates[1], self->candidates[j]);
-				             return;
-			             }
-		             }
-		             throw py::value_error("'candidate' is not a Pitch Candidate of this frame");
-	             });
+	        [](Pitch_Frame self) { return &self->candidates[1]; },
+	        [](Pitch_Frame self, Pitch_Candidate candidate) {
+		        for (long j = 1; j <= self->nCandidates; j++) {
+			        if (&self->candidates[j] == candidate) {
+				        std::swap(self->candidates[1], self->candidates[j]);
+				        return;
+			        }
+		        }
+		        throw py::value_error("'candidate' is not a Pitch Candidate of this frame");
+	        });
 
 	def_property_readonly("candidates", [](Pitch_Frame self) { return std::vector<structPitch_Candidate>(&self->candidates[1], &self->candidates[self->nCandidates + 1]); });
 
@@ -89,19 +92,19 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 	    });
 
 	def("select",
-	    [](Pitch_Frame self, Pitch_Candidate candidate) {
-		    for (long j = 1; j <= self->nCandidates; j++) {
-			    if (self->candidates[j].frequency == candidate->frequency && self->candidates[j].strength == candidate->strength) {
-				    std::swap(self->candidates[1], self->candidates[j]);
-				    return;
-			    }
-		    }
-		    throw py::value_error("'candidate' is not a Pitch Candidate of this frame");
-	    },
-	    "candidate"_a.none(false));
+	        [](Pitch_Frame self, Pitch_Candidate candidate) {
+		        for (long j = 1; j <= self->nCandidates; j++) {
+			        if (self->candidates[j].frequency == candidate->frequency && self->candidates[j].strength == candidate->strength) {
+				        std::swap(self->candidates[1], self->candidates[j]);
+				        return;
+			        }
+		        }
+		        throw py::value_error("'candidate' is not a Pitch Candidate of this frame");
+	        },
+	        "candidate"_a.none(false));
 
 	def("select",
-	    [](Pitch_Frame self, long i) {
+	        [](Pitch_Frame self, long i) {
 		    if (i < 0) i += self->nCandidates; // Python-style negative indexing
 		    if (i < 0 || i >= self->nCandidates) throw py::index_error("Pitch Frame index out of range");
 		    return std::swap(self->candidates[1], self->candidates[i + 1]);
@@ -109,7 +112,7 @@ PRAAT_STRUCT_BINDING(Frame, Pitch_Frame) {
 	    "i"_a);
 
 	def("__getitem__",
-	    [](Pitch_Frame self, long i) {
+	        [](Pitch_Frame self, long i) {
 		    if (i < 0) i += self->nCandidates; // Python-style negative indexing
 		    if (i < 0 || i >= self->nCandidates) throw py::index_error("Pitch Frame index out of range");
 		    return self->candidates[i + 1]; // Not a(n) (internal) reference, because unvoice and select would then change the value of a returned Pitch_Candidate
@@ -140,33 +143,33 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("to_sound_hum",
-	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) { return Pitch_to_Sound(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), true); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) { return Pitch_to_Sound(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), true); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("to_sound_sine",
-	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime, Positive<double> samplingFrequency, double roundToNearestZeroCrossing) { return Pitch_to_Sound_sine(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), samplingFrequency, roundToNearestZeroCrossing); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "sampling_frequency"_a = 44100.0, "round_to_nearest_zero_crossing"_a = true);
+	        [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime, Positive<double> samplingFrequency, double roundToNearestZeroCrossing) { return Pitch_to_Sound_sine(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), samplingFrequency, roundToNearestZeroCrossing); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "sampling_frequency"_a = 44100.0, "round_to_nearest_zero_crossing"_a = true);
 
 	def("count_voiced_frames",
 	    &Pitch_countVoicedFrames);
 
 	def("get_value_at_time",
-	    [](Pitch self, double time, kPitch_unit unit, kVector_valueInterpolation interpolation) {
-		    if (interpolation != kVector_valueInterpolation::NEAREST && interpolation != kVector_valueInterpolation::LINEAR)
-			    Melder_throw(U"Pitch values can only be queried using NEAREST or LINEAR interpolation");
-		    auto value = Sampled_getValueAtX(self, time, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit), interpolation == kVector_valueInterpolation::LINEAR);
-		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
-	    },
-	    "time"_a, "unit"_a = kPitch_unit::HERTZ, "interpolation"_a = kVector_valueInterpolation::LINEAR);
+	        [](Pitch self, double time, kPitch_unit unit, kVector_valueInterpolation interpolation) {
+		        if (interpolation != kVector_valueInterpolation::NEAREST && interpolation != kVector_valueInterpolation::LINEAR)
+			        Melder_throw(U"Pitch values can only be queried using NEAREST or LINEAR interpolation");
+		        auto value = Sampled_getValueAtX(self, time, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit), interpolation == kVector_valueInterpolation::LINEAR);
+		        return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
+	        },
+	        "time"_a, "unit"_a = kPitch_unit::HERTZ, "interpolation"_a = kVector_valueInterpolation::LINEAR);
 
 	// TODO get_strength_at_time ? -> Pitch strength unit enum
 
 	def("get_value_in_frame",
-	    [](Pitch self, long frameNumber, kPitch_unit unit) {
-		    auto value = Sampled_getValueAtSample(self, frameNumber, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
-		    return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
-	    },
-	    "frame_number"_a, "unit"_a = kPitch_unit::HERTZ);
+	        [](Pitch self, long frameNumber, kPitch_unit unit) {
+		        auto value = Sampled_getValueAtSample(self, frameNumber, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
+		        return Function_convertToNonlogarithmic(self, value, Pitch_LEVEL_FREQUENCY, static_cast<int>(unit));
+	        },
+	        "frame_number"_a, "unit"_a = kPitch_unit::HERTZ);
 
 	// TODO Minimum, Time of minimum, Maximum, Time of maximum, ...
 
@@ -210,16 +213,16 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    });
 
 	def("count_differences",
-	    [](Pitch self, Pitch other) {
-		    MelderInfoInterceptor info;
-		    Pitch_difference(self, other);
-		    return info.get();
-	    },
-	    "other"_a.none(false));
+	        [](Pitch self, Pitch other) {
+		        MelderInfoInterceptor info;
+		        Pitch_difference(self, other);
+		        return info.get();
+	        },
+	        "other"_a.none(false));
 
 	def("formula",
-	    [](Pitch self, const std::u32string &formula) { Pitch_formula(self, formula.c_str(), nullptr); },
-	    "formula"_a);
+	        [](Pitch self, const std::u32string &formula) { Pitch_formula(self, formula.c_str(), nullptr); },
+	        "formula"_a);
 
 	// TODO To TextGrid..., To TextTier, To IntervalTier: depends TextGrid and Tiers
 	// TODO To PointProcess: depends on PointProcess
@@ -240,6 +243,37 @@ PRAAT_CLASS_BINDING(Pitch) {
 
 	// TODO To PitchTier: depends on PitchTier
 
+	def(
+	        "to_point_process",
+	        [](Pitch self, Sound sound, std::string method, bool include_maxima, bool include_minima) {
+		        if (sound) {
+			        if (method == "cc")
+				        return Sound_Pitch_to_PointProcess_cc(sound, self);
+			        else if (method == "peaks")
+				        return Sound_Pitch_to_PointProcess_peaks(sound, self, include_maxima, include_minima);
+			        else
+				        throw std::invalid_argument("Unknown method specified.");
+		        } else {
+			        return Pitch_to_PointProcess(self);
+		        }
+	        },
+	        "sound"_a = nullptr, "method"_a = "cc", "include_maxima"_a = true, "include_minima"_a = false,
+	        TO_POINT_PROCESS_DOCSTRING);
+
+	def(
+	        "to_point_process_cc",
+	        [](Pitch self, Sound sound) { return Sound_Pitch_to_PointProcess_cc(sound, self); },
+	        "sound"_a, TO_POINT_PROCESS_CC_DOCSTRING);
+
+	def(
+	        "to_point_process_peaks",
+	        [](Pitch self, Sound sound, bool include_maxima, bool include_minima) {
+		        return Sound_Pitch_to_PointProcess_peaks(sound, self, include_maxima, include_minima);
+	        },
+	        "sound"_a, "include_maxima"_a = true, "include_minima"_a = false,
+	        TO_POINT_PROCESS_PEAKS_DOCSTRING);
+
+
 	def("to_matrix",
 	    &Pitch_to_Matrix);
 
@@ -248,14 +282,14 @@ PRAAT_CLASS_BINDING(Pitch) {
 	def_readonly("max_n_candidates", &structPitch::maxnCandidates);
 
 	def("get_frame",
-	    [](Pitch self, Positive<integer> frameNumber) {
-		    if (frameNumber > self->nx) Melder_throw(U"Frame number out of range");
-		    return &self->frames[frameNumber];
-	    },
-	    "frame_number"_a, py::return_value_policy::reference_internal);
+	        [](Pitch self, Positive<integer> frameNumber) {
+		        if (frameNumber > self->nx) Melder_throw(U"Frame number out of range");
+		        return &self->frames[frameNumber];
+	        },
+	        "frame_number"_a, py::return_value_policy::reference_internal);
 
 	def("__getitem__",
-	    [](Pitch self, long i) {
+	        [](Pitch self, long i) {
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("Pitch index out of range");
 		    return &self->frames[i + 1];
@@ -263,8 +297,8 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    "i"_a, py::return_value_policy::reference_internal);
 
 	def("__getitem__",
-	    [](Pitch self, std::tuple<long, long> ij) {
-		    auto &[i, j] = ij;
+	        [](Pitch self, std::tuple<long, long> ij) {
+		        auto &[i, j] = ij;
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("Pitch index out of range");
 		    auto &frame = self->frames[i + 1];
@@ -321,37 +355,37 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "ceiling"_a = 600.0, "pull_formants"_a = false);
 
 	def("step",
-	    [](Pitch self, double step, Positive<double> precision, std::optional<double> fromTime, std::optional<double> toTime) { Pitch_step(self, step, precision, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "step"_a, "precision"_a = 0.1, "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Pitch self, double step, Positive<double> precision, std::optional<double> fromTime, std::optional<double> toTime) { Pitch_step(self, step, precision, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	        "step"_a, "precision"_a = 0.1, "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("octave_up",
-	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
-		    Pitch_step(self, 2.0, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
-	    },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
+		        Pitch_step(self, 2.0, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
+	        },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("fifth_up",
-	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
-		    Pitch_step(self, 1.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
-	    },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
+		        Pitch_step(self, 1.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
+	        },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("fifth_down",
-	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
-		    Pitch_step(self, 1 / 1.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
-	    },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
+		        Pitch_step(self, 1 / 1.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
+	        },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("octave_down",
-	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
-		    Pitch_step(self, 0.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
-	    },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
+		        Pitch_step(self, 0.5, 0.1, fromTime.value_or(self->xmin), toTime.value_or(self->xmax));
+	        },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("unvoice",
-	    [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
-		    long ileft = Sampled_xToHighIndex(self, fromTime.value_or(self->xmin));
-		    long iright = Sampled_xToLowIndex(self, toTime.value_or(self->xmax));
+	        [](Pitch self, std::optional<double> fromTime, std::optional<double> toTime) {
+		        long ileft = Sampled_xToHighIndex(self, fromTime.value_or(self->xmin));
+		        long iright = Sampled_xToLowIndex(self, toTime.value_or(self->xmax));
 
 		    if (ileft < 1) ileft = 1;
 		    if (iright > self->nx) iright = self->nx;

@@ -73,3 +73,8 @@ def text_grid(text_grid_path):
 @pytest.fixture
 def script_path(resources):
 	yield resources["script.praat"]
+
+
+@pytest.fixture
+def point_process(pitch):
+	yield pitch.to_point_process()
