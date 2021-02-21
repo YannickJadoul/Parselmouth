@@ -35,7 +35,6 @@
 #include <praat/fon/VoiceAnalysis.h>
 
 #include <algorithm>
-#include <execution>
 #include <tuple>
 #include <vector>
 
@@ -45,307 +44,303 @@ namespace py = pybind11;
 using namespace py::literals;
 using namespace std::string_literals;
 
-namespace parselmouth
-{
+namespace parselmouth {
 
-PRAAT_CLASS_BINDING(PointProcess)
-{
-  addTimeFunctionMixin(*this);
+PRAAT_CLASS_BINDING(PointProcess) {
+	addTimeFunctionMixin(*this);
 
-  doc() = CREATE_CLASS_DOCSTRING;
+	doc() = CREATE_CLASS_DOCSTRING;
 
-  // CREATIONS: Constructors & from_xxx static methods
+	// CREATIONS: Constructors & from_xxx static methods
 
-  def(py::init([](double startTime, double endTime) {
-        if (endTime <= startTime)
-          Melder_throw(U"The end time should be greater than the start time.");
-        return PointProcess_create(startTime, endTime, 0);
-      }),
-      "start_time"_a = 0.0, "end_time"_a = 1.0, CONSTRUCTOR_EMPTY_DOCSTRING);
+	def(py::init([](double startTime, double endTime) {
+		    if (endTime <= startTime)
+			    Melder_throw(U"The end time should be greater than the start time.");
+		    return PointProcess_create(startTime, endTime, 0);
+	    }),
+	    "start_time"_a = 0.0, "end_time"_a = 1.0, CONSTRUCTOR_EMPTY_DOCSTRING);
 
-  def(py::init([](std::vector<double> times, std::optional<double> startTime,
-                  std::optional<double> endTime) {
-        double t0 = startTime.has_value()
-                        ? startTime.value()
-                        : *std::min_element(std::execution::par, times.cbegin(),
-                                            times.cend()),
-               t1 = endTime.has_value()
-                        ? endTime.value()
-                        : *std::max_element(std::execution::par, times.cbegin(),
-                                            times.cend());
+	def(py::init([](std::vector<double> times, std::optional<double> startTime,
+	                std::optional<double> endTime) {
+		    double t0 = startTime.has_value()
+		                        ? startTime.value()
+		                        : *std::min_element(times.cbegin(), times.cend()),
+		           t1 = endTime.has_value()
+		                        ? endTime.value()
+		                        : *std::max_element(times.cbegin(), times.cend());
 
-        if (t1 <= t0)
-          throw std::invalid_argument(
-              "The end time should be greater than the start time.");
-        auto self = PointProcess_create(t0, t1, times.size());
+		    if (t1 <= t0)
+			    throw std::invalid_argument(
+			            "The end time should be greater than the start time.");
+		    auto self = PointProcess_create(t0, t1, times.size());
 
-        PointProcess_addPoints(self.get(),
-                               constVEC(times.data(), times.size()));
-        return self;
-      }),
-      "time_points"_a, "start_time"_a = py::none(), "end_time"_a = py::none(),
-      CONSTRUCTOR_FILLED_DOCSTRING);
+		    PointProcess_addPoints(self.get(),
+		                           constVEC(times.data(), times.size()));
+		    return self;
+	    }),
+	    "time_points"_a, "start_time"_a = py::none(), "end_time"_a = py::none(),
+	    CONSTRUCTOR_FILLED_DOCSTRING);
 
-  def_static("create_poisson_process", &PointProcess_createPoissonProcess,
-             "start_time"_a = 0.0, "end_time"_a = 1.0, "density"_a = 100.0,
-             CREATE_POISSON_PROCESS_DOCSTRING);
+	def_static("create_poisson_process", &PointProcess_createPoissonProcess,
+	           "start_time"_a = 0.0, "end_time"_a = 1.0, "density"_a = 100.0,
+	           CREATE_POISSON_PROCESS_DOCSTRING);
 
-  // Make PointProcess class a s sequence-like Python class
-  def(
-      "__getitem__",
-      [](PointProcess self, long i) {
-        if (i < 0) i += self->nt;
-        if (i < 0 || i >= self->nt)
-          throw std::out_of_range("time point index out of range");
-        return self->t[i + 1]; // Not a(n) (internal) reference, because unvoice
-                               // and select would then change the value of a
-                               // returned Pitch_Candidate
-      },
-      "i"_a);
+	// Make PointProcess class a s sequence-like Python class
+	def(
+	        "__getitem__",
+	        [](PointProcess self, long i) {
+		        if (i < 0) i += self->nt;
+		        if (i < 0 || i >= self->nt)
+			        throw std::out_of_range("time point index out of range");
+		        return self->t[i + 1];// Not a(n) (internal) reference, because unvoice
+		                              // and select would then change the value of a
+		                              // returned Pitch_Candidate
+	        },
+	        "i"_a);
 
-  def("__len__", [](PointProcess self) { return self->nt; });
+	def("__len__", [](PointProcess self) { return self->nt; });
 
-  def(
-      "__iter__",
-      [](PointProcess self) {
-        return py::make_iterator(&self->t[1], &self->t[self->nt + 1]);
-      },
-      py::keep_alive<0, 1>());
+	def(
+	        "__iter__",
+	        [](PointProcess self) {
+		        return py::make_iterator(&self->t[1], &self->t[self->nt + 1]);
+	        },
+	        py::keep_alive<0, 1>());
 
 /**
  * Standard arguments for many of the query methods
  */
-#define GET_RANGE_DEFAULT_PROPERTIES                                           \
-  "from_time"_a = 0.0, "to_time"_a = 0.0, "period_floor"_a = 0.0001,           \
-  "period_ceiling"_a = 0.02, "maximum_period_factor"_a = 1.3
-#define GET_SHIMMER_RANGE_DEFAULT_PROPERTIES                                   \
-  "sound"_a, GET_RANGE_DEFAULT_PROPERTIES, "maximum_amplitude_factor"_a = 1.6
+#define GET_RANGE_DEFAULT_PROPERTIES                                   \
+	"from_time"_a = 0.0, "to_time"_a = 0.0, "period_floor"_a = 0.0001, \
+	"period_ceiling"_a = 0.02, "maximum_period_factor"_a = 1.3
+#define GET_SHIMMER_RANGE_DEFAULT_PROPERTIES \
+	"sound"_a, GET_RANGE_DEFAULT_PROPERTIES, "maximum_amplitude_factor"_a = 1.6
 
-  // QUERIES:
-  // -basic info
-  def(
-      "get_number_of_points", [](PointProcess self) { return self->nt; },
-      GET_NUMBER_OF_POINTS_DOCSTRING);
+	// QUERIES:
+	// -basic info
+	def(
+	        "get_number_of_points", [](PointProcess self) { return self->nt; },
+	        GET_NUMBER_OF_POINTS_DOCSTRING);
 
-  def("get_number_of_periods", &PointProcess_getNumberOfPeriods,
-      GET_RANGE_DEFAULT_PROPERTIES, GET_NUMBER_OF_PERIODS_DOCSTRING);
+	def("get_number_of_periods", &PointProcess_getNumberOfPeriods,
+	    GET_RANGE_DEFAULT_PROPERTIES, GET_NUMBER_OF_PERIODS_DOCSTRING);
 
-  def(
-      "get_time_from_index",
-      [](PointProcess self, int pointNumber) {
-        return (pointNumber <= 0 || pointNumber > self->nt)
-                   ? py::none()
-                   : py::cast(self->t[pointNumber]);
-      },
-      "point_number"_a, GET_TIME_FROM_INDEX_DOCSTRING);
+	def(
+	        "get_time_from_index",
+	        [](PointProcess self, int pointNumber) {
+		        return (pointNumber <= 0 || pointNumber > self->nt)
+		                       ? py::none()
+		                       : py::cast(self->t[pointNumber]);
+	        },
+	        "point_number"_a, GET_TIME_FROM_INDEX_DOCSTRING);
 
-  // -jitters
-  def("get_jitter_local", &PointProcess_getJitter_local,
-      GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_LOCAL_DOCSTRING);
+	// -jitters
+	def("get_jitter_local", &PointProcess_getJitter_local,
+	    GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_LOCAL_DOCSTRING);
 
-  def("get_jitter_local_absolute", &PointProcess_getJitter_local_absolute,
-      GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_LOCAL_ABSOLUTE_DOCSTRING);
+	def("get_jitter_local_absolute", &PointProcess_getJitter_local_absolute,
+	    GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_LOCAL_ABSOLUTE_DOCSTRING);
 
-  def("get_jitter_rap", &PointProcess_getJitter_rap,
-      GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_RAP_DOCSTRING);
+	def("get_jitter_rap", &PointProcess_getJitter_rap,
+	    GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_RAP_DOCSTRING);
 
-  def("get_jitter_ppq5", &PointProcess_getJitter_ppq5,
-      GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_PPQ5_DOCSTRING);
+	def("get_jitter_ppq5", &PointProcess_getJitter_ppq5,
+	    GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_PPQ5_DOCSTRING);
 
-  def("get_jitter_ddp", &PointProcess_getJitter_ddp,
-      GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_DDP_DOCSTRING);
+	def("get_jitter_ddp", &PointProcess_getJitter_ddp,
+	    GET_RANGE_DEFAULT_PROPERTIES, GET_JITTER_DDP_DOCSTRING);
 
-  // -voice breaks
-  def(
-      "get_count_and_fraction_of_voice_breaks",
-      [](PointProcess self, double tmin, double tmax, double maximumPeriod) {
-        MelderCountAndFraction out =
-            PointProcess_getCountAndFractionOfVoiceBreaks(self, tmin, tmax,
-                                                          maximumPeriod);
+	// -voice breaks
+	def(
+	        "get_count_and_fraction_of_voice_breaks",
+	        [](PointProcess self, double tmin, double tmax, double maximumPeriod) {
+		        MelderCountAndFraction out =
+		                PointProcess_getCountAndFractionOfVoiceBreaks(self, tmin, tmax,
+		                                                              maximumPeriod);
 
-        return std::make_tuple(out.count, out.numerator / out.denominator,
-                               out.numerator, out.denominator);
-      },
-      "from_time"_a = 0.0, "to_time"_a = 0.0, "period_ceiling"_a = 0.02,
-      GET_COUNT_AND_FRACTION_OF_VOICE_BREAKS_DOCSTRING);
+		        return std::make_tuple(out.count, out.numerator / out.denominator,
+		                               out.numerator, out.denominator);
+	        },
+	        "from_time"_a = 0.0, "to_time"_a = 0.0, "period_ceiling"_a = 0.02,
+	        GET_COUNT_AND_FRACTION_OF_VOICE_BREAKS_DOCSTRING);
 
-  // -shimmers
-  def("get_shimmer_local", &PointProcess_Sound_getShimmer_local,
-      GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_DOCSTRING);
+	// -shimmers
+	def("get_shimmer_local", &PointProcess_Sound_getShimmer_local,
+	    GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_DOCSTRING);
 
-  def("get_shimmer_local_dB", &PointProcess_Sound_getShimmer_local_dB,
-      GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_DB_DOCSTRING);
+	def("get_shimmer_local_dB", &PointProcess_Sound_getShimmer_local_dB,
+	    GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_DB_DOCSTRING);
 
-  def("get_shimmer_local_apq3", &PointProcess_Sound_getShimmer_apq3,
-      GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_APQ3_DOCSTRING);
+	def("get_shimmer_local_apq3", &PointProcess_Sound_getShimmer_apq3,
+	    GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_APQ3_DOCSTRING);
 
-  def("get_shimmer_local_apq5", &PointProcess_Sound_getShimmer_apq5,
-      GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_APQ5_DOCSTRING);
+	def("get_shimmer_local_apq5", &PointProcess_Sound_getShimmer_apq5,
+	    GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_APQ5_DOCSTRING);
 
-  def("get_shimmer_local_apq11", &PointProcess_Sound_getShimmer_apq11,
-      GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_APQ11_DOCSTRING);
+	def("get_shimmer_local_apq11", &PointProcess_Sound_getShimmer_apq11,
+	    GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_APQ11_DOCSTRING);
 
-  def("get_shimmer_local_dda", &PointProcess_Sound_getShimmer_dda,
-      GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_DDA_DOCSTRING);
+	def("get_shimmer_local_dda", &PointProcess_Sound_getShimmer_dda,
+	    GET_SHIMMER_RANGE_DEFAULT_PROPERTIES, GET_SHIMMER_LOCAL_DDA_DOCSTRING);
 
-  // -nearst point index
-  def("get_low_index", PointProcess_getLowIndex, "time"_a,
-      GET_LOW_INDEX_DOCSTRING);
+	// -nearst point index
+	def("get_low_index", PointProcess_getLowIndex, "time"_a,
+	    GET_LOW_INDEX_DOCSTRING);
 
-  def("get_high_index", PointProcess_getHighIndex, "time"_a,
-      GET_HIGH_INDEX_DOCSTRING);
+	def("get_high_index", PointProcess_getHighIndex, "time"_a,
+	    GET_HIGH_INDEX_DOCSTRING);
 
-  def("get_nearest_index", PointProcess_getNearestIndex, "time"_a,
-      GET_NEAREST_INDEX_DOCSTRING);
+	def("get_nearest_index", PointProcess_getNearestIndex, "time"_a,
+	    GET_NEAREST_INDEX_DOCSTRING);
 
-  def(
-      "get_window_points",
-      [](PointProcess self, double tmin, double tmax) {
-        const MelderIntegerRange points =
-            PointProcess_getWindowPoints(self, tmin, tmax);
-        return std::make_tuple(points.first, points.last);
-      },
-      "from_time"_a, "to_time"_a, GET_WINDOW_POINTS_DOCSTRING);
+	def(
+	        "get_window_points",
+	        [](PointProcess self, double tmin, double tmax) {
+		        const MelderIntegerRange points =
+		                PointProcess_getWindowPoints(self, tmin, tmax);
+		        return std::make_tuple(points.first, points.last);
+	        },
+	        "from_time"_a, "to_time"_a, GET_WINDOW_POINTS_DOCSTRING);
 
-  // -period duration
-  def("get_interval", &PointProcess_getInterval, "time"_a,
-      GET_INTERVAL_DOCSTRING);
+	// -period duration
+	def("get_interval", &PointProcess_getInterval, "time"_a,
+	    GET_INTERVAL_DOCSTRING);
 
-  // -statistics
-  def("get_mean_period", PointProcess_getMeanPeriod,
-      GET_RANGE_DEFAULT_PROPERTIES, GET_MEAN_PERIOD_DOCSTRING);
+	// -statistics
+	def("get_mean_period", PointProcess_getMeanPeriod,
+	    GET_RANGE_DEFAULT_PROPERTIES, GET_MEAN_PERIOD_DOCSTRING);
 
-  def("get_stdev_period", PointProcess_getStdevPeriod,
-      GET_RANGE_DEFAULT_PROPERTIES, GET_STDEV_PERIOD_DOCSTRING);
+	def("get_stdev_period", PointProcess_getStdevPeriod,
+	    GET_RANGE_DEFAULT_PROPERTIES, GET_STDEV_PERIOD_DOCSTRING);
 
-  // SET CALCULATIONS
-  def("union", &PointProcesses_union, "other"_a, UNION_DOCSTRING);
+	// SET CALCULATIONS
+	def("union", &PointProcesses_union, "other"_a, UNION_DOCSTRING);
 
-  def("intersection", &PointProcesses_intersection, "other"_a,
-      INTERSECTION_DOCSTRING);
+	def("intersection", &PointProcesses_intersection, "other"_a,
+	    INTERSECTION_DOCSTRING);
 
-  def("difference", &PointProcesses_difference, "other"_a.none(false),
-      DIFFERENCE_DOCSTRING);
+	def("difference", &PointProcesses_difference, "other"_a.none(false),
+	    DIFFERENCE_DOCSTRING);
 
-  // MODIFICATION
-  def("add_point", &PointProcess_addPoint, "time"_a, ADD_POINT_DOCSTRING);
+	// MODIFICATION
+	def("add_point", &PointProcess_addPoint, "time"_a, ADD_POINT_DOCSTRING);
 
-  def(
-      "add_points",
-      [](PointProcess self, std::vector<double> times) {
-        PointProcess_addPoints(self, constVEC(times.data(), times.size()));
-      },
-      "times"_a, ADD_POINTS_DOCSTRING);
+	def(
+	        "add_points",
+	        [](PointProcess self, std::vector<double> times) {
+		        PointProcess_addPoints(self, constVEC(times.data(), times.size()));
+	        },
+	        "times"_a, ADD_POINTS_DOCSTRING);
 
-  def("remove_point", &PointProcess_removePoint, "point_number"_a,
-      REMOVE_POINT_DOCSTRING);
+	def("remove_point", &PointProcess_removePoint, "point_number"_a,
+	    REMOVE_POINT_DOCSTRING);
 
-  def("remove_point_near", &PointProcess_removePointNear, "time"_a,
-      REMOVE_POINT_NEAR_DOCSTRING);
+	def("remove_point_near", &PointProcess_removePointNear, "time"_a,
+	    REMOVE_POINT_NEAR_DOCSTRING);
 
-  def("remove_points", &PointProcess_removePoints, "from_point_number"_a,
-      "to_point_number"_a, REMOVE_POINTS_DOCSTRING);
+	def("remove_points", &PointProcess_removePoints, "from_point_number"_a,
+	    "to_point_number"_a, REMOVE_POINTS_DOCSTRING);
 
-  def("remove_points_between", &PointProcess_removePointsBetween, "from_time"_a,
-      "to_time"_a, REMOVE_POINTS_BETWEEN_DOCSTRING);
+	def("remove_points_between", &PointProcess_removePointsBetween, "from_time"_a,
+	    "to_time"_a, REMOVE_POINTS_BETWEEN_DOCSTRING);
 
-  def("fill", &PointProcess_fill, "from_time"_a, "to_time"_a, "period"_a = 0.01,
-      FILL_DOCSTRING);
+	def("fill", &PointProcess_fill, "from_time"_a, "to_time"_a, "period"_a = 0.01,
+	    FILL_DOCSTRING);
 
-  def("voice", &PointProcess_voice, "period"_a = 0.01,
-      "maximum_voiced_period"_a = 0.02000000001, VOICE_DOCSTRING);
+	def("voice", &PointProcess_voice, "period"_a = 0.01,
+	    "maximum_voiced_period"_a = 0.02000000001, VOICE_DOCSTRING);
 
-  def(
-      "transplant_domain",
-      [](PointProcess self, Sound src) {
-        self->xmin = src->xmin;
-        self->xmax = src->xmax;
-      },
-      "sound"_a, TRANSPLANT_DOMAIN_DOCSTRING);
+	def(
+	        "transplant_domain",
+	        [](PointProcess self, Sound src) {
+		        self->xmin = src->xmin;
+		        self->xmax = src->xmax;
+	        },
+	        "sound"_a, TRANSPLANT_DOMAIN_DOCSTRING);
 
-  // DIRECT(NEW_PointProcess_to_IntervalTier)
-  // 	autoIntervalTier result = IntervalTier_create(my xmin, my xmax);
-  // }
+	// DIRECT(NEW_PointProcess_to_IntervalTier)
+	// 	autoIntervalTier result = IntervalTier_create(my xmin, my xmax);
+	// }
 
-  def("to_matrix", &PointProcess_to_Matrix);
+	def("to_matrix", &PointProcess_to_Matrix);
 
-  // FORM(NEW_PointProcess_to_PitchTier, U"PointProcess: To PitchTier",
-  // U"PointProcess: To PitchTier...") 	POSITIVE(maximumInterval, U"Maximum
-  // interval (s)", U"0.02") 				autoPitchTier result =
-  // PointProcess_to_PitchTier(me, maximumInterval);
+	// FORM(NEW_PointProcess_to_PitchTier, U"PointProcess: To PitchTier",
+	// U"PointProcess: To PitchTier...") 	POSITIVE(maximumInterval, U"Maximum
+	// interval (s)", U"0.02") 				autoPitchTier result =
+	// PointProcess_to_PitchTier(me, maximumInterval);
 
-  def(
-      "to_text_grid",
-      [](PointProcess self, const std::u32string tierNames,
-         const std::u32string pointTiers) {
-        return TextGrid_create(self->xmin, self->xmax, tierNames.c_str(),
-                               pointTiers.c_str());
-      },
-      "tier_names"_a, "point_tiers"_a, TO_TEXT_GRID_DOCSTRING);
+	def(
+	        "to_text_grid",
+	        [](PointProcess self, const std::u32string tierNames,
+	           const std::u32string pointTiers) {
+		        return TextGrid_create(self->xmin, self->xmax, tierNames.c_str(),
+		                               pointTiers.c_str());
+	        },
+	        "tier_names"_a, "point_tiers"_a, TO_TEXT_GRID_DOCSTRING);
 
-  def("to_text_grid_vuv", &PointProcess_to_TextGrid_vuv,
-      "maximum_period"_a = 0.02, "mean_period"_a = 0.01,
-      TO_TEXT_GRID_VUV_DOCSTRING);
+	def("to_text_grid_vuv", &PointProcess_to_TextGrid_vuv,
+	    "maximum_period"_a = 0.02, "mean_period"_a = 0.01,
+	    TO_TEXT_GRID_VUV_DOCSTRING);
 
-  // DIRECT(NEW_PointProcess_to_TextTier)
-  // 	autoTextTier result = TextTier_create(my xmin, my xmax);
-  // }
+	// DIRECT(NEW_PointProcess_to_TextTier)
+	// 	autoTextTier result = TextTier_create(my xmin, my xmax);
+	// }
 
-  def("to_sound_phonation", &PointProcess_to_Sound_phonation,
-      "sampling_frequency"_a = 44100.0, "adaptation_factor"_a = 1.0,
-      "maximum_period"_a = 0.05, "open_phase"_a = 0.7,
-      "collision_phase"_a = 0.03, "power1"_a = 3.0, "power2"_a = 4.0,
-      TO_SOUND_PHONATION_DOCSTRING);
+	def("to_sound_phonation", &PointProcess_to_Sound_phonation,
+	    "sampling_frequency"_a = 44100.0, "adaptation_factor"_a = 1.0,
+	    "maximum_period"_a = 0.05, "open_phase"_a = 0.7,
+	    "collision_phase"_a = 0.03, "power1"_a = 3.0, "power2"_a = 4.0,
+	    TO_SOUND_PHONATION_DOCSTRING);
 
-  def("to_sound_pulse_train", &PointProcess_to_Sound_pulseTrain,
-      "sampling_frequency"_a = 44100.0, "adaptation_factor"_a = 1.0,
-      "adaptation_time"_a = 0.05, "interpolation_depth"_a = 2000,
-      TO_SOUND_PULSE_TRAIN_DOCSTRING);
+	def("to_sound_pulse_train", &PointProcess_to_Sound_pulseTrain,
+	    "sampling_frequency"_a = 44100.0, "adaptation_factor"_a = 1.0,
+	    "adaptation_time"_a = 0.05, "interpolation_depth"_a = 2000,
+	    TO_SOUND_PULSE_TRAIN_DOCSTRING);
 
-  def("to_sound_hum", &PointProcess_to_Sound_hum, TO_SOUND_HUM_DOCSTRING);
+	def("to_sound_hum", &PointProcess_to_Sound_hum, TO_SOUND_HUM_DOCSTRING);
 
-  // FORM(NEW_PointProcess_upto_IntensityTier, U"PointProcess: Up to
-  // IntensityTier", U"PointProcess: Up to IntensityTier...")
-  // 	POSITIVE(intensity, U"Intensity (dB)", U"70.0")
-  // 				autoIntensityTier result = PointProcess_upto_IntensityTier(me,
-  // intensity);
+	// FORM(NEW_PointProcess_upto_IntensityTier, U"PointProcess: Up to
+	// IntensityTier", U"PointProcess: Up to IntensityTier...")
+	// 	POSITIVE(intensity, U"Intensity (dB)", U"70.0")
+	// 				autoIntensityTier result = PointProcess_upto_IntensityTier(me,
+	// intensity);
 
-  // FORM(NEW_PointProcess_upto_PitchTier, U"PointProcess: Up to PitchTier",
-  // U"PointProcess: Up to PitchTier...") 	POSITIVE(frequency, U"Frequency
-  // (Hz)", U"190.0") 				autoPitchTier result =
-  // PointProcess_upto_PitchTier(me, frequency);
+	// FORM(NEW_PointProcess_upto_PitchTier, U"PointProcess: Up to PitchTier",
+	// U"PointProcess: Up to PitchTier...") 	POSITIVE(frequency, U"Frequency
+	// (Hz)", U"190.0") 				autoPitchTier result =
+	// PointProcess_upto_PitchTier(me, frequency);
 
-  // FORM(NEW_PointProcess_upto_TextTier, U"PointProcess: Up to TextTier",
-  // U"PointProcess: Up to TextTier...") 	SENTENCE(text, U"Text", U"")
-  // 				autoTextTier result = PointProcess_upto_TextTier(me, text);
+	// FORM(NEW_PointProcess_upto_TextTier, U"PointProcess: Up to TextTier",
+	// U"PointProcess: Up to TextTier...") 	SENTENCE(text, U"Text", U"")
+	// 				autoTextTier result = PointProcess_upto_TextTier(me, text);
 
-  // FORM (NEW1_PointProcess_Sound_to_AmplitudeTier_period, U"PointProcess &
-  // Sound: To AmplitudeTier (period)", nullptr) {
-  // 	dia_PointProcess_getRangeProperty (fromTime, toTime, shortestPeriod,
-  // longestPeriod, maximumPeriodfactor) 		autoAmplitudeTier result =
-  // PointProcess_Sound_to_AmplitudeTier_period (me, you, fromTime, toTime,
-  // 			shortestPeriod, longestPeriod, maximumPeriodFactor);
+	// FORM (NEW1_PointProcess_Sound_to_AmplitudeTier_period, U"PointProcess &
+	// Sound: To AmplitudeTier (period)", nullptr) {
+	// 	dia_PointProcess_getRangeProperty (fromTime, toTime, shortestPeriod,
+	// longestPeriod, maximumPeriodfactor) 		autoAmplitudeTier result =
+	// PointProcess_Sound_to_AmplitudeTier_period (me, you, fromTime, toTime,
+	// 			shortestPeriod, longestPeriod, maximumPeriodFactor);
 
-  // DIRECT (NEW1_PointProcess_Sound_to_AmplitudeTier_point) {
-  // 		autoAmplitudeTier result = PointProcess_Sound_to_AmplitudeTier_point
-  // (me, you);
+	// DIRECT (NEW1_PointProcess_Sound_to_AmplitudeTier_point) {
+	// 		autoAmplitudeTier result = PointProcess_Sound_to_AmplitudeTier_point
+	// (me, you);
 
-  // FORM (NEW1_PointProcess_Sound_to_Ltas, U"PointProcess & Sound: To Ltas",
-  // nullptr) { 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)",
-  // U"5000.0") 	POSITIVE (bandwidth, U"Band width (Hz)", U"100.0") 	REAL
-  // (shortestPeriod, U"Shortest period (s)", U"0.0001") 	REAL (longestPeriod,
-  // U"Longest period (s)", U"0.02") 	POSITIVE (maximumPeriodFactor, U"Maximum
-  // period factor", U"1.3") 		autoLtas result = PointProcess_Sound_to_Ltas
-  // (me, you, 			maximumFrequency, bandwidth, shortestPeriod, longestPeriod,
-  // maximumPeriodFactor);
+	// FORM (NEW1_PointProcess_Sound_to_Ltas, U"PointProcess & Sound: To Ltas",
+	// nullptr) { 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)",
+	// U"5000.0") 	POSITIVE (bandwidth, U"Band width (Hz)", U"100.0") 	REAL
+	// (shortestPeriod, U"Shortest period (s)", U"0.0001") 	REAL (longestPeriod,
+	// U"Longest period (s)", U"0.02") 	POSITIVE (maximumPeriodFactor, U"Maximum
+	// period factor", U"1.3") 		autoLtas result = PointProcess_Sound_to_Ltas
+	// (me, you, 			maximumFrequency, bandwidth, shortestPeriod, longestPeriod,
+	// maximumPeriodFactor);
 
-  // FORM (NEW1_PointProcess_Sound_to_Ltas_harmonics, U"PointProcess & Sound: To
-  // Ltas (harmonics", nullptr) { 	NATURAL (maximumHarmonic, U"Maximum
-  // harmonic", U"20") 	REAL (shortestPeriod, U"Shortest period (s)", U"0.0001")
-  // REAL (longestPeriod, U"Longest period (s)", U"0.02") 	POSITIVE
-  // (maximumPeriodFactor, U"Maximum period factor", U"1.3") 		autoLtas result
-  // = PointProcess_Sound_to_Ltas_harmonics (me, you, 			maximumHarmonic,
-  // shortestPeriod, longestPeriod, maximumPeriodFactor);
+	// FORM (NEW1_PointProcess_Sound_to_Ltas_harmonics, U"PointProcess & Sound: To
+	// Ltas (harmonics", nullptr) { 	NATURAL (maximumHarmonic, U"Maximum
+	// harmonic", U"20") 	REAL (shortestPeriod, U"Shortest period (s)", U"0.0001")
+	// REAL (longestPeriod, U"Longest period (s)", U"0.02") 	POSITIVE
+	// (maximumPeriodFactor, U"Maximum period factor", U"1.3") 		autoLtas result
+	// = PointProcess_Sound_to_Ltas_harmonics (me, you, 			maximumHarmonic,
+	// shortestPeriod, longestPeriod, maximumPeriodFactor);
 }
 
-} // namespace parselmouth
+}// namespace parselmouth
