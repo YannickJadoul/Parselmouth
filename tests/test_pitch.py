@@ -21,3 +21,5 @@ def test_get_maximum(pitch):
 def test_get_quantile(pitch):
     print(f"10% Quantile={pitch.get_quantile(0.1)}")
 
+def test_get_fraction_of_locally_unvoiced_frames(pitch):
+    print(pitch.get_fraction_of_locally_unvoiced_frames())

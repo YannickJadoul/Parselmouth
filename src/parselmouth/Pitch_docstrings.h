@@ -156,4 +156,32 @@ See Also
 :praat:`Voice report`
 )";
 
+constexpr auto GET_FRACTION_OF_LOCALLY_UNVOICED_FRAMES_DOCSTRING = R"(Get unvoiced statistics
+
+Returns the statistics related to the unvoiced periods
+
+Parameters
+----------
+from_time : double=0.0
+    The starting time of the analysis time domain.
+
+to_time : double=0.0
+    The ending time of the analysis time domain. Values outside this domain
+    are ignored. If `to_time` is not greater than `from_time`, the entire
+    time domain of the Pitch object is considered. 
+
+to_pitch : double=600.0
+    The maximum voice frequency
+
+silence_threshold : double=0.03
+    The upper pitch strength limit of silent period
+
+voicing_threshold : double 0.45
+    The lower pitch strength limit of voicing period
+
+See Also
+--------
+:praat:`Voice report`
+)";
+
 }// namespace parselmouth

@@ -411,6 +411,18 @@ PRAAT_CLASS_BINDING(Pitch) {
 	        "get_maximum", &Pitch_getMaximum, "from_time"_a = 0.0, "to_time"_a = 0.0, "unit"_a = "HERTZ", "interpolate"_a = true,
 	        GET_MAXIMUM_DOCSTRING);
 
+	def(
+	        "get_fraction_of_locally_unvoiced_frames",
+	        [](Pitch self, double tmin, double tmax, double ceiling,
+	           double silenceThreshold, double voicingThreshold) {
+		        MelderFraction out = Pitch_getFractionOfLocallyUnvoicedFrames(self, tmin, tmax, ceiling, 
+		                                                                      silenceThreshold, voicingThreshold);
+
+		        return std::make_tuple(out.numerator / out.denominator, out.numerator, out.denominator);
+	        },
+	        "from_time"_a = 0.0, "to_time"_a = 0.0, "to_pitch"_a = 600.0, "silence_threshold"_a = 0.03,
+	        "voicing_threshold"_a = 0.45, GET_FRACTION_OF_LOCALLY_UNVOICED_FRAMES_DOCSTRING);
+
 	// End added by @hokiedsp on 2/17/21
 
 	// TODO Pitch_Intensity_getMean & Pitch_Intensity_getMeanAbsoluteSlope ? (cfr. Intensity)
