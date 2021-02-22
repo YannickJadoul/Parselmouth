@@ -379,7 +379,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 	        GET_MEAN_DOCSTRING);
 
 	def(
-	        "get_mean_strength", [](Pitch self, double tmin, double tmax, std::string type) {
+	        "get_mean_strength", [](Pitch self, std::string type, double tmin, double tmax) {
 		        const int strengthUnit =
 					(type == "ac") ? Pitch_STRENGTH_UNIT_AUTOCORRELATION : 
 					(type == "nhr")	? Pitch_STRENGTH_UNIT_NOISE_HARMONICS_RATIO : 
@@ -390,7 +390,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 
 		        return Pitch_getMeanStrength(self, tmin, tmax, strengthUnit);
 	        },
-			"from_time"_a = 0.0, "to_time"_a = 0.0, "type"_a = "hnr_db", 
+			"type"_a = "hnr_db", "from_time"_a = 0.0, "to_time"_a = 0.0, 
 			GET_MEAN_STRENGTH_DOCSTRING);
 
 	def(
