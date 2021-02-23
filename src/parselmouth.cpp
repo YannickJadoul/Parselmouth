@@ -35,8 +35,8 @@ Thing_declare(Daata);
 Thing_declare(Formant);
 Thing_declare(Function);
 Thing_declare(Harmonicity);
-Thing_declare(Harmonicity);
 Thing_declare(Intensity);
+Thing_declare(LPC);
 Thing_declare(Matrix);
 Thing_declare(MFCC);
 Thing_declare(Pitch);
@@ -146,6 +146,7 @@ using PraatBindings = Bindings<PraatError,
                                CC,
                                MFCC,
                                TextGrid,
+							   LPC,
                                PraatModule>;
 
 } // namespace parselmouth

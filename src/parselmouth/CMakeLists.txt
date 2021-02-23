@@ -22,6 +22,7 @@ target_sources(parselmouth PRIVATE
     Function.cpp
     Harmonicity.cpp
     Intensity.cpp
+    LPC.cpp
     Matrix.cpp
     MFCC.cpp
     Pitch.cpp

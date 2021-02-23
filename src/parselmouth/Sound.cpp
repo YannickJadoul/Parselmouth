@@ -25,6 +25,7 @@
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
 
+#include <praat/LPC/Sound_and_LPC.h>
 #include <praat/dwtools/Sound_extensions.h>
 #include <praat/dwtools/Sound_to_MFCC.h>
 #include <praat/dwtools/Sound_to_Pitch2.h>
@@ -203,7 +204,7 @@ PRAAT_CLASS_BINDING(Sound) {
 		    auto nx = values.shape(ndim - 1);
 		    auto ny = ndim == 2 ? values.shape(0) : 1;
 		    if (ndim == 2 && ny > nx)
-				PyErr_WarnEx(PyExc_RuntimeWarning, ("Number of channels (" + std::to_string(ny) + ") is greater than number of samples (" + std::to_string(nx) + "); note that the shape of the `values` array is interpreted as (n_channels, n_samples).").c_str(), 1);
+			    PyErr_WarnEx(PyExc_RuntimeWarning, ("Number of channels (" + std::to_string(ny) + ") is greater than number of samples (" + std::to_string(nx) + "); note that the shape of the `values` array is interpreted as (n_channels, n_samples).").c_str(), 1);
 
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
 
@@ -226,83 +227,83 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO Empty constructor?
 
 	def("save",
-	    [](Sound self, const std::u32string &filePath, SoundFileFormat format) {
-		    auto file = pathToMelderFile(filePath);
+	        [](Sound self, const std::u32string &filePath, SoundFileFormat format) {
+		        auto file = pathToMelderFile(filePath);
 		    switch(format) {
-		    case SoundFileFormat::WAV:
-			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
-			    break;
+			        case SoundFileFormat::WAV:
+				        Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
+				        break;
 
-		    case SoundFileFormat::AIFF:
-			    Sound_saveAsAudioFile(self, &file, Melder_AIFF, 16);
-			    break;
+			        case SoundFileFormat::AIFF:
+				        Sound_saveAsAudioFile(self, &file, Melder_AIFF, 16);
+				        break;
 
-		    case SoundFileFormat::AIFC:
-			    Sound_saveAsAudioFile(self, &file, Melder_AIFC, 16);
-			    break;
+			        case SoundFileFormat::AIFC:
+				        Sound_saveAsAudioFile(self, &file, Melder_AIFC, 16);
+				        break;
 
-		    case SoundFileFormat::NEXT_SUN:
-			    Sound_saveAsAudioFile(self, &file, Melder_NEXT_SUN, 16);
-			    break;
+			        case SoundFileFormat::NEXT_SUN:
+				        Sound_saveAsAudioFile(self, &file, Melder_NEXT_SUN, 16);
+				        break;
 
-		    case SoundFileFormat::NIST:
-			    Sound_saveAsAudioFile(self, &file, Melder_NIST, 16);
-			    break;
+			        case SoundFileFormat::NIST:
+				        Sound_saveAsAudioFile(self, &file, Melder_NIST, 16);
+				        break;
 
-		    case SoundFileFormat::FLAC:
-			    Sound_saveAsAudioFile(self, &file, Melder_FLAC, 16);
-			    break;
+			        case SoundFileFormat::FLAC:
+				        Sound_saveAsAudioFile(self, &file, Melder_FLAC, 16);
+				        break;
 
-		    case SoundFileFormat::KAY:
+			        case SoundFileFormat::KAY:
 			    Sound_saveAsKayFile (self, &file);
-			    break;
+				        break;
 
-		    case SoundFileFormat::SESAM:
+			        case SoundFileFormat::SESAM:
 			    Sound_saveAsSesamFile (self, &file);
-			    break;
+				        break;
 
-		    case SoundFileFormat::WAV_24:
-			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 24);
-			    break;
+			        case SoundFileFormat::WAV_24:
+				        Sound_saveAsAudioFile(self, &file, Melder_WAV, 24);
+				        break;
 
-		    case SoundFileFormat::WAV_32:
-			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 32);
-			    break;
+			        case SoundFileFormat::WAV_32:
+				        Sound_saveAsAudioFile(self, &file, Melder_WAV, 32);
+				        break;
 
-		    case SoundFileFormat::RAW_8_SIGNED:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_SIGNED);
-			    break;
+			        case SoundFileFormat::RAW_8_SIGNED:
+				        Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_SIGNED);
+				        break;
 
-		    case SoundFileFormat::RAW_8_UNSIGNED:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_UNSIGNED);
-			    break;
+			        case SoundFileFormat::RAW_8_UNSIGNED:
+				        Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_UNSIGNED);
+				        break;
 
-		    case SoundFileFormat::RAW_16_BE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_BIG_ENDIAN);
-			    break;
+			        case SoundFileFormat::RAW_16_BE:
+				        Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_BIG_ENDIAN);
+				        break;
 
-		    case SoundFileFormat::RAW_16_LE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_LITTLE_ENDIAN);
-			    break;
+			        case SoundFileFormat::RAW_16_LE:
+				        Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_LITTLE_ENDIAN);
+				        break;
 
-		    case SoundFileFormat::RAW_24_BE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_BIG_ENDIAN);
-			    break;
+			        case SoundFileFormat::RAW_24_BE:
+				        Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_BIG_ENDIAN);
+				        break;
 
-		    case SoundFileFormat::RAW_24_LE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_LITTLE_ENDIAN);
-			    break;
+			        case SoundFileFormat::RAW_24_LE:
+				        Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_LITTLE_ENDIAN);
+				        break;
 
-		    case SoundFileFormat::RAW_32_BE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_BIG_ENDIAN);
-			    break;
+			        case SoundFileFormat::RAW_32_BE:
+				        Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_BIG_ENDIAN);
+				        break;
 
-		    case SoundFileFormat::RAW_32_LE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_LITTLE_ENDIAN);
-			    break;
-		    }
-	    },
-	    "file_path"_a, "format"_a);
+			        case SoundFileFormat::RAW_32_LE:
+				        Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_LITTLE_ENDIAN);
+				        break;
+		        }
+	        },
+	        "file_path"_a, "format"_a);
 	// TODO Determine file format based on extension, and make format optional
 	// TODO Coordinate this save function with the (future) save in Data
 
@@ -317,14 +318,14 @@ PRAAT_CLASS_BINDING(Sound) {
 	def("get_sampling_period", [](Sound self) { return self->dx; });
 
 	def_property("sampling_period",
-	             [](Sound self) { return self->dx; },
-	             [](Sound self, double period) { Sound_overrideSamplingFrequency(self, 1 / period); });
+	        [](Sound self) { return self->dx; },
+	        [](Sound self, double period) { Sound_overrideSamplingFrequency(self, 1 / period); });
 
 	def("get_sampling_frequency", [](Sound self) { return 1 / self->dx; });
 
 	def_property("sampling_frequency",
-	             [](Sound self) { return 1 / self->dx; },
-	             [](Sound self, double frequency) { Sound_overrideSamplingFrequency(self, frequency); });
+	        [](Sound self) { return 1 / self->dx; },
+	        [](Sound self, double frequency) { Sound_overrideSamplingFrequency(self, frequency); });
 
 	def("get_time_from_index", // TODO PraatIndex to distinguish 1-based silliness? // TODO Get time from sample number...
 	    args_cast<Sound, _>(&Sampled_indexToX<integer>),
@@ -339,31 +340,31 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO Minimum & maximum (Vector?)
 
 	def("get_nearest_zero_crossing", // TODO Channel is CHANNEL
-	    [](Sound self, double time, long channel) {
-		    if (channel > self->ny) channel = 1;
+	        [](Sound self, double time, long channel) {
+		        if (channel > self->ny) channel = 1;
 		    return Sound_getNearestZeroCrossing (self, time, channel);
-	    },
-	    "time"_a, "channel"_a = 1);
+	        },
+	        "time"_a, "channel"_a = 1);
 
 	// TODO Get mean (Vector?)
 
 	def("get_root_mean_square",
-	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	// TODO Get standard deviation
 
 	def("get_rms",
-	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getRootMeanSquare(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("get_energy",
-	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getEnergy(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getEnergy(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("get_power",
-	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getPower(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { return Sound_getPower(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	def("get_energy_in_air",
 	    &Sound_getEnergyInAir);
@@ -375,8 +376,8 @@ PRAAT_CLASS_BINDING(Sound) {
 	    &Sound_getIntensity_dB);
 
 	def("reverse",
-	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { Sound_reverse(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+	        [](Sound self, std::optional<double> fromTime, std::optional<double> toTime) { Sound_reverse(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax)); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
 
 	// TODO Formula and Formula (part) (reimplement from Vector/Matrix because of different parameters, i.e. channels?)
 
@@ -391,8 +392,8 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO Set value at sample number
 
 	def("set_to_zero", // TODO Set part to zero ?
-	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, bool roundToNearestZeroCrossing) { Sound_setZero(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), roundToNearestZeroCrossing); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "round_to_nearest_zero_crossing"_a = true);
+	        [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, bool roundToNearestZeroCrossing) { Sound_setZero(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), roundToNearestZeroCrossing); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "round_to_nearest_zero_crossing"_a = true);
 
 	def("override_sampling_frequency",
 	    args_cast<_, Positive<_>>(Sound_overrideSamplingFrequency),
@@ -401,21 +402,21 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO Filter with one formant (in-line)...
 
 	def("pre_emphasize",
-	    [](Sound self, double fromFrequency, bool normalize) {
-		    Sound_preEmphasis(self, fromFrequency);
-		    if (normalize) {
-			    Vector_scale(self, 0.99);
-		    }
-	    },
+	        [](Sound self, double fromFrequency, bool normalize) {
+		        Sound_preEmphasis(self, fromFrequency);
+		        if (normalize) {
+			        Vector_scale(self, 0.99);
+		        }
+	        },
 	    "from_frequency"_a = 50.0, "normalize"_a = true); // TODO Not POSITIVE now!?
 
 	def("de_emphasize",
-	    [](Sound self, double fromFrequency, bool normalize) {
+	        [](Sound self, double fromFrequency, bool normalize) {
 		    Sound_deEmphasis (self, fromFrequency);
-		    if (normalize) {
-			    Vector_scale(self, 0.99);
-		    }
-	    },
+		        if (normalize) {
+			        Vector_scale(self, 0.99);
+		        }
+	        },
 	    "from_frequency"_a = 50.0, "normalize"_a = true); // TODO Not POSITIVE now!?
 
 	def("convert_to_mono",
@@ -455,24 +456,24 @@ PRAAT_CLASS_BINDING(Sound) {
 	    [](Sound self) { return Sound_extractChannel(self, 2); });
 
 	def("extract_part", // TODO Something for std::optional<double> for from and to in Sounds?
-	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "window_shape"_a = kSound_windowShape::RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
+	        [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "window_shape"_a = kSound_windowShape::RECTANGULAR, "relative_width"_a = 1.0, "preserve_times"_a = false);
 
 	def("extract_part_for_overlap",
-	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, Positive<double> overlap) { return Sound_extractPartForOverlap(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), overlap); },
-	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "overlap"_a);
+	        [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, Positive<double> overlap) { return Sound_extractPartForOverlap(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), overlap); },
+	        "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "overlap"_a);
 
 	def("resample",
 	    &Sound_resample,
 	    "new_frequency"_a, "precision"_a = 50);
 
 	def("lengthen", // TODO Lengthen (Overlap-add) ?
-	    [](Sound self, Positive<double> minimumPitch, Positive<double> maximumPitch, Positive<double> factor) {
-		    if (minimumPitch >= maximumPitch)
+	        [](Sound self, Positive<double> minimumPitch, Positive<double> maximumPitch, Positive<double> factor) {
+		        if (minimumPitch >= maximumPitch)
 			    Melder_throw (U"Maximum pitch should be greater than minimum pitch.");
-		    return Sound_lengthen_overlapAdd(self, minimumPitch, maximumPitch, factor);
-	    },
-	    "minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0, "factor"_a);
+		        return Sound_lengthen_overlapAdd(self, minimumPitch, maximumPitch, factor);
+	        },
+	        "minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0, "factor"_a);
 
 	def("deepen_band_modulation",
 	    args_cast<_, Positive<_>, Positive<_>, Positive<_>, Positive<_>, Positive<_>, Positive<_>>(Sound_deepenBandModulation),
@@ -480,68 +481,68 @@ PRAAT_CLASS_BINDING(Sound) {
 
 	// TODO Args cast for std::optional and std::optional ranges!
 	def("to_pitch",
-	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
-	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
+	        [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<double> pitchCeiling) { return Sound_to_Pitch(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling); },
+	        "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch",
-	    [](Sound self, ToPitchMethod method, py::args args, py::kwargs kwargs) -> py::object {
-		    auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
-		    switch (method) {
-		    case ToPitchMethod::AC:
-			    return callMethod("to_pitch_ac");
-		    case ToPitchMethod::CC:
-			    return callMethod("to_pitch_cc");
-		    case ToPitchMethod::SPINET:
-			    return callMethod("to_pitch_spinet");
-		    case ToPitchMethod::SHS:
-			    return callMethod("to_pitch_shs");
-		    }
+	        [](Sound self, ToPitchMethod method, py::args args, py::kwargs kwargs) -> py::object {
+		        auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
+		        switch (method) {
+			        case ToPitchMethod::AC:
+				        return callMethod("to_pitch_ac");
+			        case ToPitchMethod::CC:
+				        return callMethod("to_pitch_cc");
+			        case ToPitchMethod::SPINET:
+				        return callMethod("to_pitch_spinet");
+			        case ToPitchMethod::SHS:
+				        return callMethod("to_pitch_shs");
+		        }
 		    return py::none(); // Unreachable
-	    },
-	    "method"_a);
+	        },
+	        "method"_a);
 
 	def("to_pitch_ac",
-	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
+	        [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
-		    return Sound_to_Pitch_ac(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 3.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
-	    },
-	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = false, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
+		        return Sound_to_Pitch_ac(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 3.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
+	        },
+	        "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = false, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch_cc",
-	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
+	        [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
-		    return Sound_to_Pitch_cc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 1.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
-	    },
-	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = false, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
+		        return Sound_to_Pitch_cc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 1.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
+	        },
+	        "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = false, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch_spinet",
-	    [](Sound self, Positive<double> timeStep, Positive<double> windowLength, Positive<double> minimumFilterFrequency, Positive<double> maximumFilterFrequency, Positive<long> numberOfFilters, Positive<double> ceiling, Positive<int> maxNumberOfCandidates) {
-		    if (minimumFilterFrequency >= maximumFilterFrequency) Melder_throw(U"Maximum frequency must be larger than minimum frequency.");
-		    return Sound_to_Pitch_SPINET(self, timeStep, windowLength, minimumFilterFrequency, maximumFilterFrequency, numberOfFilters, ceiling, maxNumberOfCandidates);
-	    },
-	    "time_step"_a = 0.005, "window_length"_a = 0.04, "minimum_filter_frequency"_a = 70.0, "maximum_filter_frequency"_a = 5000.0, "number_of_filters"_a = 250, "ceiling"_a = 500.0, "max_number_of_candidates"_a = 15);
+	        [](Sound self, Positive<double> timeStep, Positive<double> windowLength, Positive<double> minimumFilterFrequency, Positive<double> maximumFilterFrequency, Positive<long> numberOfFilters, Positive<double> ceiling, Positive<int> maxNumberOfCandidates) {
+		        if (minimumFilterFrequency >= maximumFilterFrequency) Melder_throw(U"Maximum frequency must be larger than minimum frequency.");
+		        return Sound_to_Pitch_SPINET(self, timeStep, windowLength, minimumFilterFrequency, maximumFilterFrequency, numberOfFilters, ceiling, maxNumberOfCandidates);
+	        },
+	        "time_step"_a = 0.005, "window_length"_a = 0.04, "minimum_filter_frequency"_a = 70.0, "maximum_filter_frequency"_a = 5000.0, "number_of_filters"_a = 250, "ceiling"_a = 500.0, "max_number_of_candidates"_a = 15);
 
 	def("to_pitch_shs",
-	    [](Sound self, Positive<double> timeStep, Positive<double> minimumPitch, Positive<long> maxNumberOfCandidates, Positive<double> maximumFrequencyComponent, Positive<long> maxNumberOfSubharmonics, Positive<double> compressionFactor, Positive<double> ceiling, Positive<long> numberOfPointsPerOctave) {
-		    if (minimumPitch >= ceiling) Melder_throw(U"Minimum pitch should be smaller than ceiling.");
-		    if (ceiling > maximumFrequencyComponent) Melder_throw(U"Maximum frequency must be greater than or equal to ceiling.");
-		    return Sound_to_Pitch_shs(self, timeStep, minimumPitch, maximumFrequencyComponent, ceiling, maxNumberOfSubharmonics, maxNumberOfCandidates, compressionFactor, numberOfPointsPerOctave);
+	        [](Sound self, Positive<double> timeStep, Positive<double> minimumPitch, Positive<long> maxNumberOfCandidates, Positive<double> maximumFrequencyComponent, Positive<long> maxNumberOfSubharmonics, Positive<double> compressionFactor, Positive<double> ceiling, Positive<long> numberOfPointsPerOctave) {
+		        if (minimumPitch >= ceiling) Melder_throw(U"Minimum pitch should be smaller than ceiling.");
+		        if (ceiling > maximumFrequencyComponent) Melder_throw(U"Maximum frequency must be greater than or equal to ceiling.");
+		        return Sound_to_Pitch_shs(self, timeStep, minimumPitch, maximumFrequencyComponent, ceiling, maxNumberOfSubharmonics, maxNumberOfCandidates, compressionFactor, numberOfPointsPerOctave);
 	    }, "time_step"_a = 0.01, "minimum_pitch"_a = 50.0, "max_number_of_candidates"_a = 15, "maximum_frequency_component"_a = 1250.0, "max_number_of_subharmonics"_a = 15, "compression_factor"_a = 0.84, "ceiling"_a = 600.0, "number_of_points_per_octave"_a = 48);
 
 	def("to_harmonicity",
-	    [](Sound self, ToHarmonicityMethod method, py::args args, py::kwargs kwargs) -> py::object {
-		    auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
-		    switch (method) {
-		    case ToHarmonicityMethod::AC:
-			    return callMethod("to_harmonicity_ac");
-		    case ToHarmonicityMethod::CC:
-			    return callMethod("to_harmonicity_cc");
-		    case ToHarmonicityMethod::GNE:
-			    return callMethod("to_harmonicity_gne");
-		    }
+	        [](Sound self, ToHarmonicityMethod method, py::args args, py::kwargs kwargs) -> py::object {
+		        auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
+		        switch (method) {
+			        case ToHarmonicityMethod::AC:
+				        return callMethod("to_harmonicity_ac");
+			        case ToHarmonicityMethod::CC:
+				        return callMethod("to_harmonicity_cc");
+			        case ToHarmonicityMethod::GNE:
+				        return callMethod("to_harmonicity_gne");
+		        }
 		    return py::none(); // Unreachable
-	    },
-	    "method"_a = ToHarmonicityMethod::CC);
+	        },
+	        "method"_a = ToHarmonicityMethod::CC);
 
 	def("to_harmonicity_cc",
 	    args_cast<_, Positive<_>, Positive<_>, _, Positive<_>>(Sound_to_Harmonicity_cc),
@@ -564,34 +565,34 @@ PRAAT_CLASS_BINDING(Sound) {
 	    "fast"_a = true);
 
 	def("to_spectrogram",
-	    [](Sound self, Positive<double> windowLength, Positive<double> maximumFrequency, Positive<double> timeStep, Positive<double> frequencyStep, kSound_to_Spectrogram_windowShape windowShape) { return Sound_to_Spectrogram(self, windowLength, maximumFrequency, timeStep, frequencyStep, windowShape, 8.0, 8.0); },
-	    "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape::GAUSSIAN);
+	        [](Sound self, Positive<double> windowLength, Positive<double> maximumFrequency, Positive<double> timeStep, Positive<double> frequencyStep, kSound_to_Spectrogram_windowShape windowShape) { return Sound_to_Spectrogram(self, windowLength, maximumFrequency, timeStep, frequencyStep, windowShape, 8.0, 8.0); },
+	        "window_length"_a = 0.005, "maximum_frequency"_a = 5000.0, "time_step"_a = 0.002, "frequency_step"_a = 20.0, "window_shape"_a = kSound_to_Spectrogram_windowShape::GAUSSIAN);
 
 	def("to_formant_burg", // TODO Praat has Max. number of formants as REAL? What the hell? "Pi formants for me, please."? (I know, I know; see Praat documentation)
-	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> maxNumberOfFormants, double maximumFormant, Positive<double> windowLength, Positive<double> preEmphasisFrom) { return Sound_to_Formant_burg(self, timeStep ? static_cast<double>(*timeStep) : 0.0, maxNumberOfFormants, maximumFormant, windowLength, preEmphasisFrom); },
-	    "time_step"_a = std::nullopt, "max_number_of_formants"_a = 5.0, "maximum_formant"_a = 5500.0, "window_length"_a = 0.025, "pre_emphasis_from"_a = 50.0);
+	        [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> maxNumberOfFormants, double maximumFormant, Positive<double> windowLength, Positive<double> preEmphasisFrom) { return Sound_to_Formant_burg(self, timeStep ? static_cast<double>(*timeStep) : 0.0, maxNumberOfFormants, maximumFormant, windowLength, preEmphasisFrom); },
+	        "time_step"_a = std::nullopt, "max_number_of_formants"_a = 5.0, "maximum_formant"_a = 5500.0, "window_length"_a = 0.025, "pre_emphasis_from"_a = 50.0);
 	// TODO To Formant...
 
 	def("to_intensity",
-	    [](Sound self, Positive<double> minimumPitch, std::optional<Positive<double>> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep ? static_cast<double>(*timeStep) : 0.0, subtractMean); },
-	    "minimum_pitch"_a = 100.0, "time_step"_a = std::nullopt, "subtract_mean"_a = true);
+	        [](Sound self, Positive<double> minimumPitch, std::optional<Positive<double>> timeStep, bool subtractMean) { return Sound_to_Intensity(self, minimumPitch, timeStep ? static_cast<double>(*timeStep) : 0.0, subtractMean); },
+	        "minimum_pitch"_a = 100.0, "time_step"_a = std::nullopt, "subtract_mean"_a = true);
 
 	// TODO Filters
 	// TODO Group different filters into enum/class/...?
 
 	def_static("combine_to_stereo",
-	           [](const std::vector<std::reference_wrapper<structSound>> &sounds) {
-		           auto ordered = referencesToOrderedOf<structSound>(sounds);
-		           return Sounds_combineToStereo(&ordered);
-	           },
-	           "sounds"_a);
+	        [](const std::vector<std::reference_wrapper<structSound>> &sounds) {
+		        auto ordered = referencesToOrderedOf<structSound>(sounds);
+		        return Sounds_combineToStereo(&ordered);
+	        },
+	        "sounds"_a);
 
 	def_static("concatenate",
-	           [](const std::vector<std::reference_wrapper<structSound>> &sounds, NonNegative<double> overlap) {
-		           auto ordered = referencesToOrderedOf<structSound>(sounds);
-		           return Sounds_concatenate(ordered, overlap);
-	           },
-	           "sounds"_a, "overlap"_a = 0.0);
+	        [](const std::vector<std::reference_wrapper<structSound>> &sounds, NonNegative<double> overlap) {
+		        auto ordered = referencesToOrderedOf<structSound>(sounds);
+		        return Sounds_concatenate(ordered, overlap);
+	        },
+	        "sounds"_a, "overlap"_a = 0.0);
 	// TODO concatenate recoverably (dependends on having TextGrid)
 	// TODO concatenate as member function?
 
@@ -605,13 +606,45 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO Cross-correlate (short)?
 
 	def("to_mfcc", // Watch out for different order of arguments in interface than in Sound_to_MFCC // TODO REQUIRE (numberOfCoefficients < 25, U"The number of coefficients should be less than 25.")
-	    [](Sound self, Positive<long> numberOfCoefficients, Positive<double> windowLength, Positive<double> timeStep, Positive<double> firstFilterFrequency, Positive<double> distanceBetweenFilters, std::optional<Positive<double>> maximumFrequency) {
-		    // if (numberOfCoefficients >= 25) Melder_throw(U"The number of coefficients should be less than 25."); // Might be wrong, but I see no reason to enforce this, in the actual code
-		    return Sound_to_MFCC(self, numberOfCoefficients, windowLength, timeStep, firstFilterFrequency, maximumFrequency ? static_cast<double>(*maximumFrequency) : 0.0, distanceBetweenFilters);
-	    },
-	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
+	        [](Sound self, Positive<long> numberOfCoefficients, Positive<double> windowLength, Positive<double> timeStep, Positive<double> firstFilterFrequency, Positive<double> distanceBetweenFilters, std::optional<Positive<double>> maximumFrequency) {
+		        // if (numberOfCoefficients >= 25) Melder_throw(U"The number of coefficients should be less than 25."); // Might be wrong, but I see no reason to enforce this, in the actual code
+		        return Sound_to_MFCC(self, numberOfCoefficients, windowLength, timeStep, firstFilterFrequency, maximumFrequency ? static_cast<double>(*maximumFrequency) : 0.0, distanceBetweenFilters);
+	        },
+	        "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
 
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
+
+	// MAYBE-TODO (used internally by Sound_to_FormantPath_any() in praat/LPC/FormantPath.cpp)
+	/*
+	def("to_lpc" [](Sound self) {
+		
+		autoLPC lpc = LPC_create (my xmin, my xmax, numberOfFrames, timeStep, t1, predictionOrder, resampled -> dx);
+			if (lpcType != kLPC_Analysis::ROBUST) {
+				Sound_into_LPC (resampled.get(), lpc.get(), analysisWidth, preemphasisFrequency, lpcType, marple_tol1, marple_tol2);
+			} else {
+				Sound_into_LPC (resampled.get(), lpc.get(), analysisWidth, preemphasisFrequency, kLPC_Analysis::AUTOCORRELATION, marple_tol1, marple_tol2);
+				lpc = LPC_Sound_to_LPC_robust (lpc.get(), resampled.get(), analysisWidth, preemphasisFrequency, huber_numberOfStdDev, huber_maximumNumberOfIterations, huber_tol, true);
+			}
+			return lpc;
+	});
+	*/
+
+	def("to_lpc_autocorrelation", &Sound_to_LPC_autocorrelation,
+	    "prediction_order"_a = 16, "window_length"_a = 0.025, "time_step"_a = 0.005,
+	    "preemphasis_frequency"_a = 50.0);
+
+	def("to_lpc_covariance", &Sound_to_LPC_covariance,
+	    "prediction_order"_a = 16, "window_length"_a = 0.025, "time_step"_a = 0.005,
+	    "preemphasis_frequency"_a = 50.0);
+
+	def("to_lpc_burg", &Sound_to_LPC_burg,
+	    "prediction_order"_a = 16, "window_length"_a = 0.025, "time_step"_a = 0.005,
+	    "preemphasis_frequency"_a = 50.0);
+
+	def("to_lpc_marple", &Sound_to_LPC_marple,
+	    "prediction_order"_a = 16, "window_length"_a = 0.025, "time_step"_a = 0.005,
+	    "preemphasis_frequency"_a = 50.0, "tolerance1"_a = 1e-6, "tolerance2"_a = 1e-6);
+
 	// TODO Still a bunch of Sound in praat_LPC_init.cpp
 }
 
