@@ -1,6 +1,7 @@
 namespace parselmouth {
 
-constexpr auto TO_POINT_PROCESS_DOCSTRING = R"(Create PointProcess from Pitch object.
+constexpr auto TO_POINT_PROCESS_DOCSTRING = 
+R"(Create PointProcess from Pitch object.
 
 Returns a new PointProcess instance which is generated from the specified 
 Pitch object. The acoustic periodicity contour stored in the Pitch object 
@@ -59,7 +60,8 @@ See Also
 :praat:`Sound & Pitch: To PointProcess (peaks)...`
 )";
 
-constexpr auto TO_POINT_PROCESS_CC_DOCSTRING = R"(Create PointProcess from Sound and Pitch objects using crosscorrelation.
+constexpr auto TO_POINT_PROCESS_CC_DOCSTRING =
+R"(Create PointProcess from Sound and Pitch objects using crosscorrelation.
 
 Returns a new PointProcess instance, generated from the specified Sound 
 and Pitch instances using the cross-correlation method. The resulting 
@@ -80,7 +82,8 @@ See Also
 :praat:`Sound & Pitch: To PointProcess (cc)`
 )";
 
-constexpr auto TO_POINT_PROCESS_PEAKS_DOCSTRING = R"(Create PointProcess from Sound and Pitch objects using peak-picking.
+constexpr auto TO_POINT_PROCESS_PEAKS_DOCSTRING =
+R"(Create PointProcess from Sound and Pitch objects using peak-picking.
 
 Returns a new PointProcess instance, generated from the specified Sound 
 and Pitch instances using the peak-picking method. The resulting 
