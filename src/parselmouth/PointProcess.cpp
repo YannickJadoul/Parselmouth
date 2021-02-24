@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021  Yannick Jadoul
+ * Copyright (C) 2021  Yannick Jadoul
  *
  * This file is part of Parselmouth.
  *
@@ -17,8 +17,6 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <stdexcept>
-
 #include "Parselmouth.h"
 
 #include "PointProcess_docstrings.h"
@@ -35,6 +33,7 @@
 #include <praat/fon/VoiceAnalysis.h>
 
 #include <algorithm>
+#include <stdexcept>
 #include <tuple>
 #include <vector>
 
