@@ -2,66 +2,18 @@ import pytest
 import numpy as np
 
 import parselmouth
+from parselmouth.praat import call
 
 
-@pytest.fixture
-def empty_process():
-    return parselmouth.PointProcess()
+def test_create_empty_process():
+    assert parselmouth.PointProcess(0, 1) == parselmouth.PointProcess(0.0, 1.0)
+    assert parselmouth.PointProcess(0, 1) != parselmouth.PointProcess(0, 2)
+    with pytest.raises(parselmouth.PraatError, match=r'Your end time \(0\) should not be less than your start time \(1\).'):
+        parselmouth.PointProcess(1.0, 0)
+    assert parselmouth.PointProcess(end_time=1, start_time=0) == parselmouth.PointProcess(0, 1)
 
 
-@pytest.fixture
-def poisson_process():
-    return parselmouth.PointProcess.create_poisson_process()
-
-
-@pytest.fixture
-def seqA():
-    return [0.5, 0.6]
-
-
-@pytest.fixture
-def processA(seqA):
-    """Returns PointProcess A=[0.5,0.6]"""
-    processA = parselmouth.PointProcess()
-    for t in seqA:
-        processA.add_point(t)
-    return processA
-
-
-@pytest.fixture
-def seqB():
-    return [0.4, 0.6]
-
-
-@pytest.fixture
-def processB(seqB):
-    """Returns PointProcesses B=[0.4,0.6]"""
-    processB = parselmouth.PointProcess()
-    processB.add_points(seqB)
-    return processB
-
-
-@pytest.fixture
-def process_set(processA, processB):
-    """Returns PointProcesses A=[0.5,0.6] and B=[0.4,0.6]"""
-    return processA, processB
-
-
-# def(py::init([](Pitch pitch) {}), "pitch"_a);
-
-# def(py::init([](double startTime, double endTime) { }), "start_time"_a = 0.0, "end_time"_a = 1.0);
-# def(py::init([](Sound sound, Pitch pitch, py::kwargs kwargs) { }), "sound"_a, "pitch"_a);
-
-
-def test_create_empty_process(empty_process):
-    # empty constructor test
-    assert type(empty_process) == parselmouth.PointProcess
-    with pytest.raises(parselmouth.PraatError):
-        parselmouth.PointProcess(1.2)
-    parselmouth.PointProcess(0.1, end_time=1.2)
-
-
-def test_create_process():
+def test_create_process_from_array():
     # create a new process with prefilled values
     t = [0.1, 0.4, 1.2, 2.4, 0.5]
     process = parselmouth.PointProcess(t)
@@ -76,8 +28,10 @@ def test_create_process():
     assert np.array_equal(process, np.sort(t))
 
 
-def test_create_poisson_process(poisson_process):
-    assert type(poisson_process) == parselmouth.PointProcess
+def test_create_poisson_process():
+    poisson_process = parselmouth.PointProcess.create_poisson_process(0, 1, 100)
+    assert isinstance(poisson_process, parselmouth.PointProcess)
+    assert poisson_process != parselmouth.PointProcess.create_poisson_process(0, 1, 100)
 
 
 def test_from_pitch(pitch, sound):
@@ -89,184 +43,135 @@ def test_from_pitch(pitch, sound):
     with pytest.raises(ValueError):
         pitch.to_point_process(sound, method="invalid")
 
-
-def test_from_sound_pitch_cc(sound, pitch):
     pitch.to_point_process_cc(sound)
-
-
-def test_from_sound_pitch_peaks(sound, pitch):
     pitch.to_point_process_peaks(sound, False, True)
 
 
-def test_get_number_of_periods(point_process):
-    point_process.get_number_of_periods()
+def test_points(point_process):
+    n = call(point_process, "Get number of points")
+    assert point_process.get_number_of_points() == n
+    assert point_process.n_points == n
 
 
-def test_sequence(seqA, processA):
-    """test compatibility with various sequence operations"""
+def test_periods(point_process):
+    # TODO PointProcess.get_periods() ?
+    default_argument_values = (0.0, 0.0, 0.0001, 0.02, 1.3)
+    assert point_process.get_number_of_periods() == call(point_process, "Get number of periods", *default_argument_values)
+    assert point_process.get_mean_period() == call(point_process, "Get mean period", *default_argument_values)
+    assert point_process.get_stdev_period() == call(point_process, "Get stdev period", *default_argument_values)
 
-    N = len(processA)
-    assert N == 2
-    for i in range(N):
-        assert processA[i] == seqA[i]
-    assert np.intersect1d([t for t in processA], seqA).size == N
+
+def test_sequence():
+    sequence = sorted(np.random.random(10))
+    point_process = parselmouth.PointProcess(sequence)
+    assert len(point_process) == len(sequence)
+    for i in range(len(sequence)):
+        assert point_process[i] == sequence[i]
+    assert set(point_process) == set(sequence)
 
 
 def test_get_time_from_index(point_process):
-    x = np.array(point_process)
+    x = np.array(point_process)  # TODO PointProcess.values
     index = x.size // 3
     xi = point_process.get_time_from_index(index + 1)
     assert x[index] == xi
 
 
-def test_get_jitter_local(point_process):
-    point_process.get_jitter_local()
+def test_get_jitters(point_process):
+    def call_jitter(which):
+        return call(point_process, f"Get jitter ({which})", 0, 0, 0.0001, 0.02, 1.3)
+
+    assert point_process.get_jitter_local() == call_jitter("local")
+    assert point_process.get_jitter_local_absolute() == call_jitter("local, absolute")
+    assert point_process.get_jitter_rap() == call_jitter("rap")
+    assert point_process.get_jitter_ppq5() == call_jitter("ppq5")
+    assert point_process.get_jitter_ddp() == call_jitter("ddp")
 
 
-def test_get_jitter_local_absolute(point_process):
-    point_process.get_jitter_local_absolute()
+def test_get_shimmers(sound, point_process):
+    def call_shimmer(which):
+        return call([point_process, sound], f"Get shimmer ({which})", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
-
-def test_get_jitter_rap(point_process):
-    point_process.get_jitter_rap()
-
-
-def test_get_jitter_ppq5(point_process):
-    point_process.get_jitter_ppq5()
-
-
-def test_get_jitter_ddp(point_process):
-    point_process.get_jitter_ddp()
-
-
-def test_get_shimmer_local(sound, point_process):
-    point_process.get_shimmer_local(sound)
-
-
-def test_get_shimmer_local_dB(sound, point_process):
-    point_process.get_shimmer_local_dB(sound)
-
-
-def test_get_shimmer_local_apq3(sound, point_process):
-    point_process.get_shimmer_local_apq3(sound)
-
-
-def test_get_shimmer_local_apq5(sound, point_process):
-    point_process.get_shimmer_local_apq5(sound)
-
-
-def test_get_shimmer_local_apq11(sound, point_process):
-    point_process.get_shimmer_local_apq11(sound)
-
-
-def test_get_shimmer_local_dda(sound, point_process):
-    point_process.get_shimmer_local_dda(sound)
+    assert point_process.get_shimmer_local(sound) == call_shimmer("local")
+    assert point_process.get_shimmer_local_dB(sound) == call_shimmer("local_dB")
+    assert point_process.get_shimmer_apq3(sound) == call_shimmer("apq3")
+    assert point_process.get_shimmer_apq5(sound) == call_shimmer("apq5")
+    assert point_process.get_shimmer_apq11(sound) == call_shimmer("apq11")
+    assert point_process.get_shimmer_dda(sound) == call_shimmer("dda")
 
 
 def test_get_count_and_fraction_of_voice_breaks(point_process):
     assert len(point_process.get_count_and_fraction_of_voice_breaks()) == 4
 
 
-def test_get_window_points(point_process):
-    t = np.array(point_process)
-    N = t.size
-    i0 = N // 3
-    i1 = N * 2 // 3
-    t0 = (t[i0] + t[i0 - 1]) / 2.0
-    t1 = (t[i1] + t[i1 + 1]) / 2.0
-    x0, x1 = point_process.get_window_points(t0, t1)
-    assert i0 + 1 == x0 and i1 + 1 == x1
+def test_indexes(point_process):
+    t, n = np.array(point_process), len(point_process)
+    i0, i1 = n // 3, (2 * n) // 3
+    t0, t1 = (t[i0] + t[i0 - 1]) / 2, (t[i1] + t[i1 + 1]) / 2
+    j0, j1 = point_process.get_window_points(t0, t1)
+    assert i0 + 1 == j0 and i1 + 1 == j1
+
+    low, high = point_process.get_low_index(0.5), point_process.get_high_index(0.5)
+    assert point_process.get_nearest_index(0.5) in [low, high]
+    assert point_process.get_interval(0.5) == point_process[high-1] - point_process[low-1]
 
 
-def test_get_low_index(point_process):
-    point_process.get_low_index(0.5)
+def test_modifications(point_process):
+    n = len(point_process)
+    point_process.add_point(np.random.uniform(point_process.tmin, point_process.tmax))
+    assert len(point_process) == n + 1
+
+    point_process.add_points(np.random.uniform(point_process.tmin, point_process.tmax, 9))
+    assert len(point_process) == n + 10
+
+    p = point_process[0]
+    point_process.remove_point(1)
+    assert len(point_process) == n + 9
+    assert point_process[0] != p
+
+    n = np.random.randint(1, len(point_process) - 1)
+    p = point_process[n]
+    point_process.remove_point_near((point_process[n-1] + 2 * p) / 3)
+    assert not np.any(np.array(point_process) == p)
+
+    n = len(point_process)
+    i, j = n // 3, (2 * n) // 3
+    remaining = np.delete(point_process, slice(i, j))
+    point_process.remove_points(i + 1, j)
+    assert set(point_process) == set(remaining)
+
+    point_process.remove_points_between(point_process.centre_time, point_process.tmax)
+    assert not np.any(np.array(point_process) > point_process.centre_time)
 
 
-def test_get_high_index(point_process):
-    point_process.get_high_index(0.5)
+def test_combinations():
+    a = np.arange(0.1, 0.9, 0.2)
+    b = np.arange(0.1, 0.5, 0.1)
+    point_process_a = parselmouth.PointProcess(a)
+    point_process_b = parselmouth.PointProcess(b)
+
+    union = point_process_a.union(point_process_b)
+    assert np.array_equal(np.array(union), np.union1d(a, b))
+    assert union.xmin == min(point_process_a.xmin, point_process_b.xmin)
+    assert union.xmax == max(point_process_a.xmax, point_process_b.xmax)
+
+    intersection = point_process_a.intersection(point_process_b)
+    assert np.array_equal(np.array(intersection), np.intersect1d(a, b))
+    assert intersection.xmin == max(point_process_a.xmin, point_process_b.xmin)
+    assert intersection.xmax == min(point_process_a.xmax, point_process_b.xmax)
+
+    difference = point_process_a.difference(point_process_b)
+    assert np.array_equal(np.array(difference), np.setdiff1d(a, b))
+    assert difference.xmin == point_process_a.xmin
+    assert difference.xmax == point_process_a.xmax
 
 
-def test_get_nearest_index(point_process):
-    point_process.get_nearest_index(0.5)
+def test_voice(point_process):
+    new_point_process = parselmouth.PointProcess(0.0, 2.0)
+    new_point_process.fill(0.5, 1.5, 0.01)
+    assert len(new_point_process) == 100
+    assert np.array_equal(np.array(new_point_process), np.arange(0.5, 1.5, 0.01))
 
-
-def test_get_interval(point_process):
-    point_process.get_interval(0.5)
-
-
-def test_get_mean_period(point_process):
-    point_process.get_mean_period()
-
-
-def test_get_stdev_period(point_process):
-    point_process.get_stdev_period()
-
-
-def test_add_point(processA):
-    print(processA)  # fixture uses add_point in computing A
-
-
-def test_add_points(processB):
-    print(processB)  # fixture uses add_points in computing B
-
-
-def test_remove_point(processA):
-    processA.remove_point(1)
-    assert np.all(np.isin(processA, [0.6]))
-
-
-def test_remove_point_near(processA):
-    processA.remove_point_near(0.49)
-    assert np.all(np.isin(processA, [0.6]))
-
-
-def test_remove_points(point_process):
-    x = np.array(point_process)
-    N = x.size
-    range = np.array([N // 3, N * 2 // 3])
-    mask = np.ones(N, bool)
-    mask[range[0] : range[1]] = False
-    y = x[mask]
-    point_process.remove_points(range[0] + 1, range[1])
-    assert np.intersect1d(point_process, y).size == y.size
-
-
-def test_remove_points_between(point_process):
-    x = np.array(point_process)
-    N = x.size
-    range = np.array([N // 3, N * 2 // 3])
-    mask = np.ones(N, bool)
-    mask[range[0] : range[1]] = False
-    y = x[mask]
-    point_process.remove_points_between(x[range[0]], x[range[1] - 1])
-    assert np.intersect1d(point_process, y).size == y.size
-
-
-def test_union(process_set):
-    A, B = process_set
-    C = A.union(B)
-    assert np.all(np.isin(C, [0.4, 0.5, 0.6]))
-
-
-def test_intersection(process_set):
-    A, B = process_set
-    C = A.intersection(B)
-    assert np.all(np.isin(C, [0.6]))
-
-
-def test_difference(process_set):
-    A, B = process_set
-    C = A.difference(B)
-    assert np.all(np.isin(C, [0.5]))
-
-
-def test_fill(empty_process):
-    empty_process.fill(0.0, 1.0)
-
-
-def test_voice(empty_process):
-    empty_process.voice()
-
-
-def test_get_number_of_points(processA):
-    assert processA.get_number_of_points() == 2
+    point_process.voice()
+    _, voice_breaks_fraction, _, _ = point_process.get_count_and_fraction_of_voice_breaks()
+    assert voice_breaks_fraction == 0
