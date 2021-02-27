@@ -34,6 +34,13 @@ def test_create_poisson_process():
     assert poisson_process != parselmouth.PointProcess.create_poisson_process(0, 1, 100)
 
 
+def test_from_sound(sound):
+    # tests both constructor and static from_pitch()
+    sound.to_point_process_extrema("LEFT", True, False, "SINC70")
+    sound.to_point_process_periodic(75.0, 600.0)
+    sound.to_point_process_periodic_peaks(75.0, 600.0, True, False)
+
+
 def test_from_pitch(pitch, sound):
     # tests both constructor and static from_pitch()
     pitch.to_point_process()
