@@ -37,6 +37,7 @@
 #include <praat/fon/Sound_to_Harmonicity.h>
 #include <praat/fon/Sound_to_Intensity.h>
 #include <praat/fon/Sound_to_Pitch.h>
+#include <praat/fon/Sound_to_PointProcess.h>
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
@@ -180,11 +181,24 @@ PRAAT_ENUM_BINDING(ToHarmonicityMethod) {
 	make_implicitly_convertible_from_string(*this);
 }
 
-PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
+enum Channel {
+	LEFT = 1,
+	RIGHT = 2
+};
+
+PRAAT_ENUM_BINDING(Channel) {
+	value("LEFT", Channel::LEFT);
+	value("RIGHT", Channel::RIGHT);
+
+	make_implicitly_convertible_from_string(*this);
+}
+
+PRAAT_CLASS_BINDING(Sound) {
 	addTimeFrameSampledMixin(*this);
 
 	NESTED_BINDINGS(ToPitchMethod,
-	                ToHarmonicityMethod)
+	                ToHarmonicityMethod,
+					Channel)
 
 	using signature_cast_placeholder::_;
 
@@ -598,6 +612,60 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 		    return Sound_to_MFCC(self, numberOfCoefficients, windowLength, timeStep, firstFilterFrequency, maximumFrequency ? static_cast<double>(*maximumFrequency) : 0.0, distanceBetweenFilters);
 	    },
 	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
+
+	// FORM (NEW_Sound_to_PointProcess_extrema, U"Sound: To PointProcess
+	// (extrema)", nullptr)
+	def(
+		"to_point_process_extrema",
+		[](Sound self, Channel channel, bool includeMaxima, bool includeMinima,
+			kVector_peakInterpolation peakInterpolationType) {
+			int ch = static_cast<int>(channel);
+			return Sound_to_PointProcess_extrema(self, ch > self->ny ? 1 : ch,
+												peakInterpolationType,
+												includeMaxima, includeMinima);
+		},
+		"channel"_a = Channel::LEFT, "include_maxima"_a = true, "include_minima"_a = false,
+		"interpolation"_a = kVector_peakInterpolation::SINC70);
+
+	// FORM (NEW_Sound_to_PointProcess_periodic_cc, U"Sound: To PointProcess
+	// (periodic, cc)", U"Sound: To PointProcess (periodic, cc)...") {
+	def(
+		"to_point_process_periodic",
+		[](Sound self, float minimumPitch, float maximumPitch) {
+			if (maximumPitch <= minimumPitch)
+			Melder_throw(
+				U"Your maximum pitch should be greater than your minimum pitch.");
+			return Sound_to_PointProcess_periodic_cc(self, minimumPitch,
+													maximumPitch);
+		},
+		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0);
+
+	// FORM (NEW_Sound_to_PointProcess_periodic_peaks, U"Sound: To PointProcess
+	// (periodic, peaks)", U"Sound: To PointProcess (periodic, peaks)...") {
+	def(
+		"to_point_process_periodic_peaks",
+		[](Sound self, float minimumPitch, float maximumPitch, bool includeMaxima,
+			bool includeMinima) {
+			if (maximumPitch <= minimumPitch)
+			Melder_throw(
+				U"Your maximum pitch should be greater than your minimum pitch.");
+			return Sound_to_PointProcess_periodic_peaks(
+				self, minimumPitch, maximumPitch, includeMaxima, includeMinima);
+		},
+		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0,
+		"include_maxima"_a = true, "include_minima"_a = false);
+
+	// FORM (NEW_Sound_to_PointProcess_zeroes, U"Get zeroes", nullptr) {
+	def(
+		"to_point_process_zeros",
+		[](Sound self, Channel ch, bool includeRaisers, bool includeFallers) {
+			int channel = static_cast<int>(ch);
+			return Sound_to_PointProcess_zeroes(self,
+												channel > self->ny ? 1 : channel,
+												includeRaisers, includeFallers);
+		},
+		"channel"_a = Channel::LEFT, "include_raisers"_a = true,
+		"include_fallers"_a = false);
 
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 	// TODO Still a bunch of Sound in praat_LPC_init.cpp
