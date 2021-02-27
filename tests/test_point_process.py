@@ -100,7 +100,7 @@ def test_get_shimmers(sound, point_process):
         return call([point_process, sound], f"Get shimmer ({which})", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
     assert point_process.get_shimmer_local(sound) == call_shimmer("local")
-    assert point_process.get_shimmer_local_dB(sound) == call_shimmer("local_dB")
+    assert point_process.get_shimmer_local_db(sound) == call_shimmer("local_dB")
     assert point_process.get_shimmer_apq3(sound) == call_shimmer("apq3")
     assert point_process.get_shimmer_apq5(sound) == call_shimmer("apq5")
     assert point_process.get_shimmer_apq11(sound) == call_shimmer("apq11")
