@@ -1,3 +1,5 @@
+#pragma once
+
 namespace parselmouth {
 
 constexpr auto TO_POINT_PROCESS_DOCSTRING = 

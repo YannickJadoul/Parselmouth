@@ -1,3 +1,5 @@
+#include once
+
 namespace parselmouth {
 
 constexpr auto CREATE_CLASS_DOCSTRING = R"(Praat PointProcess.
