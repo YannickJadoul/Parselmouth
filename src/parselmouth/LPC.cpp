@@ -26,7 +26,7 @@
 // #include <praat/LPC/LPC_and_Cepstrumc.h>
 // #include <praat/LPC/LPC_and_Formant.h>
 // #include <praat/LPC/LPC_and_LFCC.h>
-// #include <praat/LPC/LPC_and_LineSpectralFrequencies.h>
+#include <praat/LPC/LPC_and_LineSpectralFrequencies.h>
 // #include <praat/LPC/LPC_and_Polynomial.h>
 // #include <praat/LPC/LPC_and_Tube.h>
 #include <praat/LPC/LPC_to_Spectrogram.h>
@@ -99,6 +99,10 @@ PRAAT_CLASS_BINDING(LPC)
   def("to_spectrogram", &LPC_to_Spectrogram,
       "minimum_frequency_resolution"_a = 20.0, "bandwidth_reduction"_a = 0.0,
       "deemphasis_frequency"_a = 50.0, TO_SPECTROGRAM_DOCSTRING);
+
+  // FORM (NEW_LPC_to_LineSpectralFrequencies)
+  def("to_line_spectral_frequencies", &LPC_to_LineSpectralFrequencies,
+      "grid_size"_a = 0.0, TO_LINE_SPECTRAL_FREQUENCIES);
 }
 
 } // namespace parselmouth

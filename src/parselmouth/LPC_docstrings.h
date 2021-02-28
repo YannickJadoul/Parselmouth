@@ -40,7 +40,8 @@ samples, x′n = ∑ ak xn-k then {a1, a2, ..., ap} can be chosen to minimize
 the prediction power Qp where Qp = E[ |xn - x′n|2 ].
 
 This class is not intended to be instantiated by user, instead from a
-:func`~parselmouth.Sound` object using one of its `to_lpc_xxx()` methods.
+:object:`~parselmouth.Sound` object using one of its to_lpc_xxx()
+methods.
 
 See Also
 --------
@@ -54,6 +55,22 @@ See Also
 
 constexpr auto SAMPLING_PERIOD_DOCSTRING = R"(Sampling rate of the audio data)";
 constexpr auto MAX_N_COEFFICIENTS_DOCSTRING = R"(Largest number of coefficients over all frames)";
+
+constexpr auto TO_LINE_SPECTRAL_FREQUENCIES=R"(Convert to line spectra.
+
+Returns :object:`parselmouth.LineSpectralFrequencies` object with the 
+line frequencies found in the LPC models.
+
+Parameter
+----------
+grid_size : float, default=0.0
+    TBD
+    
+See also
+--------
+:object:`parselmouth.LineSpectralFrequencies`
+)";
+
 
 constexpr auto TO_SPECTRUM_SLICE_DOCSTRING=R"(Convert to spectrogram.
 
