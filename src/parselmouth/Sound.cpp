@@ -21,6 +21,7 @@
 
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
+#include "Sound_docstrings.h"
 
 #include "utils/SignatureCast.h"
 #include "utils/praat/MelderUtils.h"
@@ -613,8 +614,7 @@ PRAAT_CLASS_BINDING(Sound) {
 	    },
 	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
 
-	// FORM (NEW_Sound_to_PointProcess_extrema, U"Sound: To PointProcess
-	// (extrema)", nullptr)
+	// FORM (NEW_Sound_to_PointProcess_extrema
 	def(
 		"to_point_process_extrema",
 		[](Sound self, Channel channel, bool includeMaxima, bool includeMinima,
@@ -625,10 +625,10 @@ PRAAT_CLASS_BINDING(Sound) {
 												includeMaxima, includeMinima);
 		},
 		"channel"_a = Channel::LEFT, "include_maxima"_a = true, "include_minima"_a = false,
-		"interpolation"_a = kVector_peakInterpolation::SINC70);
+		"interpolation"_a = kVector_peakInterpolation::SINC70,
+		TO_POINT_PROCESS_EXTREMA_DOCSTRING);
 
-	// FORM (NEW_Sound_to_PointProcess_periodic_cc, U"Sound: To PointProcess
-	// (periodic, cc)", U"Sound: To PointProcess (periodic, cc)...") {
+	// FORM (NEW_Sound_to_PointProcess_periodic_cc
 	def(
 		"to_point_process_periodic",
 		[](Sound self, float minimumPitch, float maximumPitch) {
@@ -638,10 +638,10 @@ PRAAT_CLASS_BINDING(Sound) {
 			return Sound_to_PointProcess_periodic_cc(self, minimumPitch,
 													maximumPitch);
 		},
-		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0);
+		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0,
+		TO_POINT_PROCESS_PERIODIC_DOCSTRING);
 
-	// FORM (NEW_Sound_to_PointProcess_periodic_peaks, U"Sound: To PointProcess
-	// (periodic, peaks)", U"Sound: To PointProcess (periodic, peaks)...") {
+	// FORM (NEW_Sound_to_PointProcess_periodic_peaks
 	def(
 		"to_point_process_periodic_peaks",
 		[](Sound self, float minimumPitch, float maximumPitch, bool includeMaxima,
@@ -653,9 +653,10 @@ PRAAT_CLASS_BINDING(Sound) {
 				self, minimumPitch, maximumPitch, includeMaxima, includeMinima);
 		},
 		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0,
-		"include_maxima"_a = true, "include_minima"_a = false);
+		"include_maxima"_a = true, "include_minima"_a = false,
+		TO_POINT_PROCESS_PERIODIC_PEAKS_DOCSTRING);
 
-	// FORM (NEW_Sound_to_PointProcess_zeroes, U"Get zeroes", nullptr) {
+	// FORM (NEW_Sound_to_PointProcess_zeroes
 	def(
 		"to_point_process_zeros",
 		[](Sound self, Channel ch, bool includeRaisers, bool includeFallers) {
@@ -665,7 +666,7 @@ PRAAT_CLASS_BINDING(Sound) {
 												includeRaisers, includeFallers);
 		},
 		"channel"_a = Channel::LEFT, "include_raisers"_a = true,
-		"include_fallers"_a = false);
+		"include_fallers"_a = false, TO_POINT_PROCESS_ZEROS_DOCSTRING);
 
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 	// TODO Still a bunch of Sound in praat_LPC_init.cpp
