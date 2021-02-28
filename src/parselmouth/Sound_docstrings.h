@@ -128,7 +128,7 @@ maximum_pitch : float, default=600.0
 
 See Also
 --------
-:praat:`To PointProcess (periodic, cc)...`
+:praat:`Sound: To PointProcess (periodic, cc)...`
 :object:`parselmouth.PointProcess`
 :func:`parselmouth.Sound.to_pitch_cc`
 :func:`parselmouth.Pitch.to_point_process_peaks`
@@ -157,7 +157,7 @@ include_minima : bool, default=False
 
 See Also
 --------
-:praat:`To PointProcess (periodic, peaks)...`
+:praat:`Sound: To PointProcess (periodic, peaks)...`
 :object:`parselmouth.PointProcess`
 :func:`parselmouth.Sound.to_pitch_cc`
 :func:`parselmouth.Pitch.to_point_process_peaks`
