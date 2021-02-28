@@ -20,6 +20,7 @@
 #include "Parselmouth.h"
 
 #include "TimeClassAspects.h"
+#include "LPC_docstrings.h"
 
 // #include "utils/praat/MelderUtils.h"
 // #include "utils/pybind11/ImplicitStringToEnumConversion.h"
@@ -44,16 +45,17 @@ using namespace py::literals;
 namespace parselmouth {
 
 PRAAT_STRUCT_BINDING(Frame, LPC_Frame) {
-	def_readonly("n_coefficients", &structLPC_Frame::nCoefficients);
-	def_readonly("gain", &structLPC_Frame::gain);
-	// def_property_readonly("a", [](LPC_Frame self) { return std::vector<double>(self->a.cells, self->a.cells + self->nCoefficients); });
+
+	doc()=FRAME_CLASS_DOCSTRING;
+
+	def_readonly("n_coefficients", &structLPC_Frame::nCoefficients, FRAME_N_COEFFICIENTS);
+	def_readonly("gain", &structLPC_Frame::gain, FRAME_GAIN);
 	def_property_readonly("a",
 	                      [](LPC_Frame self) {
-		                    //   return std::vector<double>(, self->a.cells + self->nCoefficients);
-		                      return py::array_t<double>(
+		                      return py::array(
 		                              {self->nCoefficients},
 		                              self->a.cells);
-	                      });
+	                      }, py::return_value_policy::reference_internal, FRAME_A);
 }
 
 PRAAT_CLASS_BINDING(LPC) {
@@ -61,29 +63,24 @@ PRAAT_CLASS_BINDING(LPC) {
 
 	NESTED_BINDINGS(LPC_Frame)
 
-	// using signature_cast_placeholder::_;
+	doc()=CLASS_DOCSTRING;
 
+	def_readonly("sampling_period", &structLPC::samplingPeriod,SAMPLING_PERIOD_DOCSTRING);
+	def_readonly("max_n_coefficients", &structLPC::maxnCoefficients, MAX_N_COEFFICIENTS_DOCSTRING);
 
-	// oo_DOUBLE (samplingPeriod)   // from Sound
-	// oo_INT (maxnCoefficients)
-	// oo_STRUCTVEC (LPC_Frame, d_frames, nx)
-
-	def_readonly("sampling_period", &structLPC::samplingPeriod);
-	def_readonly("max_n_coefficients", &structLPC::maxnCoefficients);
-
-	def("__len__", [](LPC self) { return self->nx; });
+	def("__len__", [](LPC self) { return self->nx; }, LEN_DOCSTRING);
 	def(
 	        "__getitem__", [](LPC self, int i) {
 		        if (i < 0) i += self->nx;// Python-style negative indexing
 		        if (i < 0 || i >= self->nx) throw py::index_error("LPC index out of range");
 		        return &self->d_frames.cells[i];
 	        },
-	        "i"_a, py::return_value_policy::reference_internal);
+	        "i"_a, py::return_value_policy::reference_internal, GETITEM_DOCSTRING);
 
 	def(
 	        "__iter__",
 	        [](LPC self) { return py::make_iterator(self->d_frames.cells, self->d_frames.cells + self->nx); },
-	        py::keep_alive<0, 1>());
+	        py::keep_alive<0, 1>(), ITER_DOCSTRING);
 }
 
 }// namespace parselmouth

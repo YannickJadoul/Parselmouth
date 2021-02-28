@@ -19,6 +19,7 @@
 
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
+#include "Sound_docstring.h"
 
 #include "utils/SignatureCast.h"
 #include "utils/praat/MelderUtils.h"
@@ -615,6 +616,7 @@ PRAAT_CLASS_BINDING(Sound) {
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 
 	// MAYBE-TODO (used internally by Sound_to_FormantPath_any() in praat/LPC/FormantPath.cpp)
+
 	/*
 	def("to_lpc" [](Sound self) {
 		
@@ -631,19 +633,20 @@ PRAAT_CLASS_BINDING(Sound) {
 
 	def("to_lpc_autocorrelation", &Sound_to_LPC_autocorrelation,
 	    "prediction_order"_a = 16, "window_length"_a = 0.025, "time_step"_a = 0.005,
-	    "preemphasis_frequency"_a = 50.0);
+	    "preemphasis_frequency"_a = 50.0, TO_LPC_AUTOCORRELATION_DOCSTRING);
 
 	def("to_lpc_covariance", &Sound_to_LPC_covariance,
 	    "prediction_order"_a = 16, "window_length"_a = 0.025, "time_step"_a = 0.005,
-	    "preemphasis_frequency"_a = 50.0);
+	    "preemphasis_frequency"_a = 50.0, TO_LPC_COVARIANCE_DOCSTRING);
 
 	def("to_lpc_burg", &Sound_to_LPC_burg,
 	    "prediction_order"_a = 16, "window_length"_a = 0.025, "time_step"_a = 0.005,
-	    "preemphasis_frequency"_a = 50.0);
+	    "preemphasis_frequency"_a = 50.0, TO_LPC_BURG_DOCSTRING);
 
 	def("to_lpc_marple", &Sound_to_LPC_marple,
 	    "prediction_order"_a = 16, "window_length"_a = 0.025, "time_step"_a = 0.005,
-	    "preemphasis_frequency"_a = 50.0, "tolerance1"_a = 1e-6, "tolerance2"_a = 1e-6);
+	    "preemphasis_frequency"_a = 50.0, "tolerance1"_a = 1e-6, "tolerance2"_a = 1e-6,
+		TO_LPC_MARPLE_DOCSTRING);
 
 	// TODO Still a bunch of Sound in praat_LPC_init.cpp
 }
