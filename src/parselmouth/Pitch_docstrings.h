@@ -26,19 +26,6 @@ namespace parselmouth {
 constexpr auto TO_POINT_PROCESS_DOCSTRING =
 	R"(Create PointProcess from Pitch object.
 
-Returns a new PointProcess instance which is generated from the specified
-Pitch object. The acoustic periodicity contour stored in the Pitch object
-is used as the frequency of an underlying point process (such as the
-sequence of glottal closures in vocal-fold vibration).
-
-See Also
---------
-:praat:`Pitch: To PointProcess`
-)";
-
-constexpr auto TO_POINT_PROCESS_SOUND_DOCSTRING =
-	R"(Create PointProcess.
-
 Returns a new PointProcess instance by interpreting the acoustic
 periodicity contour in the `Pitch` object as the frequency of an
 underlying point process (such as the sequence of glottal closures in
