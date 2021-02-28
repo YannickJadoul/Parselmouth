@@ -37,13 +37,13 @@ phonation cycles.
 
 Parameters
 ----------
-sound : parselmouth.Sound or None, default=None
+sound : parselmouth.Sound or None, default: None
     Sound object containing the target sound waveform. If omitted,
     `PointProcess` is created only from the pitch contour. Analyzing the
     samples in `sound` object improves the accuracy of the resulting point
     process.
 
-method : {"cc", "peaks"}, default="cc"
+method : {"cc", "peaks"}, default: "cc"
     Specify the Sound-assited generation method:
 
     "cc"    - Cross-correlation method. The fundamental periods of voice
@@ -53,10 +53,10 @@ method : {"cc", "peaks"}, default="cc"
               identified by peak-picking the sound samples. Typically, less
               accurate than the cross-correlation method.
 
-include_maxima : bool, default=True
+include_maxima : bool, default: True
     True to include the absolute maximum (for `method="peaks" only)
 
-include_minima : bool, default=False
+include_minima : bool, default: False
     True to include the absolute minimum (for `method="peaks" only)
 
 See Also
