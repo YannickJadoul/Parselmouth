@@ -91,13 +91,13 @@ without pitch estimation.
 
 Parameters
 ----------
-channel : {"LEFT", "RIGHT"}, default: "LEFT" (first channel)
+channel : {"LEFT", "RIGHT"}, default "LEFT" (first channel)
     Sound channel to process.
 
-include_maxima : bool, default: True
+include_maxima : bool, default True
     True to include the absolute maximum.
 
-include_minima : bool, default: False
+include_minima : bool, default False
     True to include the absolute minimum.
 
 interpolation : {"NONE", "PARABOLIC", "CUBIC", "SINC70", "SINC700"},
@@ -119,10 +119,10 @@ algorithm in :func:`~parselmouth.Pitch.to_point_process_cc`.
 
 Parameters
 ----------
-minimum_pitch : float, default: 75.0
+minimum_pitch : float, default 75.0
     Minimum fundamental frequency to be considered.
 
-maximum_pitch : float, default: 600.0
+maximum_pitch : float, default 600.0
     Maximum fundamental frequency to be considered.
 
 See Also
@@ -141,16 +141,16 @@ in `Sound.to_pitch_cc` and the voice cycle detection algorithm in
 
 Parameters
 ----------
-minimum_pitch : float, default: 75.0
+minimum_pitch : float, default 75.0
     Minimum fundamental frequency to be considered
 
-maximum_pitch : float, default: 600.0
+maximum_pitch : float, default 600.0
     Maximum fundamental frequency to be considered
 
-include_maxima : bool, default: True
+include_maxima : bool, default True
     True to include the absolute maximum
 
-include_minima : bool, default: False
+include_minima : bool, default False
     True to include the absolute minimum
 
 See Also
@@ -169,13 +169,13 @@ of the crossing.
 
 Parameters
 ----------
-channel : {"LEFT", "RIGHT"}, default: "LEFT" (first channel)
+channel : {"LEFT", "RIGHT"}, default "LEFT" (first channel)
     Sound channel to process
 
-include_raisers : bool, default: True
+include_raisers : bool, default True
     True to detect the rising edges
 
-include_fallers : bool, default: False
+include_fallers : bool, default False
     True to detect the falling edges
 
 See Also
