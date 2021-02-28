@@ -30,119 +30,104 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-namespace parselmouth
+namespace parselmouth {
+
+PRAAT_ENUM_BINDING(ValueInterpolation) {
+	value("NEAREST", kVector_valueInterpolation::NEAREST);
+	value("LINEAR", kVector_valueInterpolation::LINEAR);
+	value("CUBIC", kVector_valueInterpolation::CUBIC);
+	value("SINC70", kVector_valueInterpolation::SINC70);
+	value("SINC700", kVector_valueInterpolation::SINC700);
+
+	make_implicitly_convertible_from_string(*this);
+}
+
+
+PRAAT_ENUM_BINDING(PeakInterpolation)
 {
+	value("NONE", kVector_peakInterpolation::NONE);
+	value("PARABOLIC", kVector_peakInterpolation::PARABOLIC);
+	value("CUBIC", kVector_peakInterpolation::CUBIC);
+	value("SINC70", kVector_peakInterpolation::SINC70);
+	value("SINC700", kVector_peakInterpolation::SINC700);
 
-	PRAAT_ENUM_BINDING(ValueInterpolation)
-	{
-		value("NEAREST", kVector_valueInterpolation::NEAREST);
-		value("LINEAR", kVector_valueInterpolation::LINEAR);
-		value("CUBIC", kVector_valueInterpolation::CUBIC);
-		value("SINC70", kVector_valueInterpolation::SINC70);
-		value("SINC700", kVector_valueInterpolation::SINC700);
+	make_implicitly_convertible_from_string(*this);
+}
 
-		make_implicitly_convertible_from_string(*this);
-	}
+PRAAT_CLASS_BINDING(Vector) {
+	using signature_cast_placeholder::_;
 
-	PRAAT_ENUM_BINDING(PeakInterpolation)
-	{
-		value("NONE", kVector_peakInterpolation::NONE);
-		value("PARABOLIC", kVector_peakInterpolation::PARABOLIC);
-		value("CUBIC", kVector_peakInterpolation::CUBIC);
-		value("SINC70", kVector_peakInterpolation::SINC70);
-		value("SINC700", kVector_peakInterpolation::SINC700);
+	// TODO Something to get rid of duplicate functions with different names?
+	def("add",
+	    &Vector_addScalar,
+	    "number"_a);
 
-		make_implicitly_convertible_from_string(*this);
-	}
+	def("__iadd__",
+	    [](Vector self, double number) { Vector_addScalar(self, number); return self; },
+	    "number"_a, py::is_operator());
 
-	PRAAT_CLASS_BINDING(Vector)
-	{
-		using signature_cast_placeholder::_;
+	def("__add__",
+	    [](Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), number); return result; },
+	    "number"_a, py::is_operator());
 
-		// TODO Something to get rid of duplicate functions with different names?
-		def("add",
-			&Vector_addScalar,
-			"number"_a);
+	def("__radd__",
+	    [](Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), number); return result; },
+	    "number"_a, py::is_operator());
 
-		def(
-			"__iadd__",
-			[](Vector self, double number) { Vector_addScalar(self, number); return self; },
-			"number"_a, py::is_operator());
+	def("subtract",
+	    [](Vector self, double number) { Vector_addScalar(self, -number); },
+	    "number"_a);
 
-		def(
-			"__add__",
-			[](Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), number); return result; },
-			"number"_a, py::is_operator());
+	def("__isub__",
+	    [](Vector self, double number) { Vector_addScalar(self, -number); return self; },
+	    "number"_a, py::is_operator());
 
-		def(
-			"__radd__",
-			[](Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), number); return result; },
-			"number"_a, py::is_operator());
+	def("__sub__",
+	    [](Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), -number); return result; },
+	    "number"_a, py::is_operator());
 
-		def(
-			"subtract",
-			[](Vector self, double number) { Vector_addScalar(self, -number); },
-			"number"_a);
+	def("subtract_mean",
+	    &Vector_subtractMean);
 
-		def(
-			"__isub__",
-			[](Vector self, double number) { Vector_addScalar(self, -number); return self; },
-			"number"_a, py::is_operator());
+	def("multiply",
+	    &Vector_multiplyByScalar,
+	    "factor"_a);
 
-		def(
-			"__sub__",
-			[](Vector self, double number) { auto result = Data_copy(self); Vector_addScalar(result.get(), -number); return result; },
-			"number"_a, py::is_operator());
+	def("__imul__",
+	    [](Vector self, double factor) { Vector_multiplyByScalar(self, factor); return self; },
+	    "factor"_a, py::is_operator());
 
-		def("subtract_mean",
-			&Vector_subtractMean);
+	def("__mul__",
+	    [](Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), factor); return result; },
+	    "factor"_a, py::is_operator());
 
-		def("multiply",
-			&Vector_multiplyByScalar,
-			"factor"_a);
+	def("__rmul__",
+	    [](Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), factor); return result; },
+	    "factor"_a, py::is_operator());
 
-		def(
-			"__imul__",
-			[](Vector self, double factor) { Vector_multiplyByScalar(self, factor); return self; },
-			"factor"_a, py::is_operator());
+	def("divide", // TODO Not zero?
+	    [](Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); },
+	    "factor"_a);
 
-		def(
-			"__mul__",
-			[](Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), factor); return result; },
-			"factor"_a, py::is_operator());
+	def("__itruediv__",
+	    [](Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); return self; },
+	    "factor"_a, py::is_operator());
 
-		def(
-			"__rmul__",
-			[](Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), factor); return result; },
-			"factor"_a, py::is_operator());
-
-		def(
-			"divide", // TODO Not zero?
-			[](Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); },
-			"factor"_a);
-
-		def(
-			"__itruediv__",
-			[](Vector self, double factor) { Vector_multiplyByScalar(self, 1 / factor); return self; },
-			"factor"_a, py::is_operator());
-
-		def(
-			"__truediv__",
-			[](Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), 1 / factor); return result; },
-			"factor"_a, py::is_operator());
+	def("__truediv__",
+	    [](Vector self, double factor) { auto result = Data_copy(self); Vector_multiplyByScalar(result.get(), 1 / factor); return result; },
+	    "factor"_a, py::is_operator());
 
 	def("scale",
 	    args_cast<_, Positive<_>>(Vector_scale),
 	    "scale"_a);
 
-		def("scale_peak",
-			args_cast<_, Positive<_>>(Vector_scale),
-			"new_peak"_a = 0.99);
+	def("scale_peak",
+	    args_cast<_, Positive<_>>(Vector_scale),
+	    "new_peak"_a = 0.99);
 
-		def(
-			"get_value", // TODO Default for interpolation? Different for Sound (SINC70), Harmonicity/Intensity/Formants (CUBIC) and Ltas (LINEAR); take praat_TimeFunction.h into account
-			[](Vector self, double x, std::optional<long> channel, kVector_valueInterpolation interpolation) { return Vector_getValueAtX(self, x, channel.value_or(Vector_CHANNEL_AVERAGE), interpolation); },
-			"x"_a, "channel"_a = std::nullopt, "interpolation"_a = kVector_valueInterpolation::CUBIC);
-	}
+	def("get_value", // TODO Default for interpolation? Different for Sound (SINC70), Harmonicity/Intensity/Formants (CUBIC) and Ltas (LINEAR); take praat_TimeFunction.h into account
+	    [](Vector self, double x, std::optional<long> channel, kVector_valueInterpolation interpolation) { return Vector_getValueAtX (self, x, channel.value_or(Vector_CHANNEL_AVERAGE), interpolation); },
+	    "x"_a, "channel"_a = std::nullopt, "interpolation"_a = kVector_valueInterpolation::CUBIC);
+}
 
 } // namespace parselmouth
