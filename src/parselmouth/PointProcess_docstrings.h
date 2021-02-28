@@ -25,9 +25,9 @@ namespace parselmouth {
 
 constexpr auto CREATE_CLASS_DOCSTRING = R"(Praat PointProcess.
 
-A sequence object contain a sequence of points $t_i$ in time, defined
-on a domain [`xmin`, `xmax`]. The points are sorted in time, i.e., 
-$t_i+1 > t_i$.
+A sequence object contain a sequence of points :math:`t_i` in time, defined
+on a domain [``xmin``, ``xmax``]. The points are sorted in time, i.e.,
+:math:`t_i+1 > t_i`.
 
 Attributes
 ----------
@@ -45,27 +45,27 @@ See Also
 
 #define GET_RANGE_PARAMETER_DOCSTRING                                          \
   "from_time : float, optional\n"                                              \
-  "    The start time of the part of the PointProcess to be measured in\n"     \
-  "    seconds. If `None`, all the points to `start_time` are included.\n"     \
+  "    The start time of the part of the `PointProcess` to be measured in\n"   \
+  "    seconds. If `None`, all the points from ``tmin`` are included.\n"       \
   "    (default: None)\n"                                                      \
   "\n"                                                                         \
   "end_time : float, optional\n"                                               \
-  "    The end time of the part of the PointProcess to be measured in\n"       \
-  "    seconds. If `None`, all the points to `end_time` are included.\n"       \
+  "    The end time of the part of the `PointProcess` to be measured in\n"     \
+  "    seconds. If `None`, all the points to ``tmax`` are included.\n"         \
   "    (default: None)\n"                                                      \
   "\n"                                                                         \
   "period_floor : float\n"                                                     \
   "    The shortest possible interval to be used in the computation in\n"      \
   "    seconds. If an interval is shorter than this, it will be ignored (and\n"\
   "    the previous and next intervals will not be regarded as consecutive).\n"\
-  "    This setting will normally be very small. (default: 0.0001). \n"        \
+  "    This setting will normally be very small. (default: 0.0001).\n"         \
   "\n"                                                                         \
   "period_ceiling : float\n"                                                   \
-  "    The longest possible interval that to be used in the computation in \n" \
-  "    seconds. If an interval is longer than this, it will be ignored (and \n"\
+  "    The longest possible interval that to be used in the computation in\n"  \
+  "    seconds. If an interval is longer than this, it will be ignored (and\n" \
   "    the previous and next intervals will not be regarded as consecutive).\n"\
-  "    For example, if the minimum frequency of periodicity is 50 Hz, set \n"  \
-  "    this setting to 0.02 seconds; intervals longer than that could be \n"   \
+  "    For example, if the minimum frequency of periodicity is 50 Hz, set\n"   \
+  "    this setting to 0.02 seconds; intervals longer than that could be\n"    \
   "    regarded as voiceless stretches and will be ignored. (default: 0.02)\n" \
   "\n"                                                                         \
   "maximum_period_factor : float, positive\n"                                  \
@@ -77,11 +77,11 @@ See Also
   "    (default: 1.3)"
 
 #define GET_SHIMMER_RANGE_PARAMETER_DOCSTRING                                  \
-  "sound : Parselmouth.Sound\n"                                                \
+  "sound : parselmouth.Sound\n"                                                \
   "    Sound object containing the samples to evaluate the amplitude.\n"       \
   GET_RANGE_PARAMETER_DOCSTRING                                                \
   "maximum_amplitude_factor : float, positive\n"                               \
-  "    Maximum amplitude factor. (default: 1.6)\n"                              \
+  "    Maximum amplitude factor. (default: 1.6)\n"                             \
   "\n"                                                                         \
   "See Also\n"                                                                 \
   "--------\n"                                                                 \
@@ -95,9 +95,9 @@ Returns an empty PointProcess instance.
 Parameters
 ----------
 start_time : float
-    $t_{min}$, the beginning of the time domain, in seconds.
+    :math:`t_{min}`, the beginning of the time domain, in seconds.
 end_time : float
-    $t_{max}$, the end of the time domain, in seconds.
+    :math:`t_{max}`, the end of the time domain, in seconds.
 
 See Also
 --------
@@ -107,7 +107,7 @@ See Also
 constexpr auto CONSTRUCTOR_FILLED_DOCSTRING =
 	R"(Create a PointProcess filled with time points.
 
-Returns a new PointProcess instance that contains the time points 
+Returns a new PointProcess instance that contains the time points
 specified.
 
 Parameters
@@ -115,28 +115,28 @@ Parameters
 times : sequence-like of float
     A sequence of time points in seconds to be added to the PointProcess.
 start_time : float, optional
-    $t_{min}$, the beginning of the time domain, in seconds. If `None`, the
-    smallest value from `times` is used.
+    :math:`t_{min}`, the beginning of the time domain, in seconds. If
+    `None`, the smallest value from ``times`` is used.
 end_time : float, optional
-    $t_{max}$, the end of the time domain, in seconds. If `None`, the
-    largest value from `times` is used.
+    :math:`t_{max}`, the end of the time domain, in seconds. If `None`,
+    the largest value from ``times`` is used.
 )";
 
 constexpr auto CREATE_POISSON_PROCESS_DOCSTRING =
 	R"(Create a PointProcess instance with Poisson-distributed random time points.
 
-Returns a new PointProcess instance that represents a Poisson process. 
-A Poisson process is a stationary point process with a fixed density $λ$, 
-which means that there are, on the average, $λ$ events per second.
+Returns a new PointProcess instance that represents a Poisson process.
+A Poisson process is a stationary point process with a fixed density :math:`\lambda`,
+which means that there are, on the average, :math:`\lambda` events per second.
 
 Parameters
 ----------
-start_time : float
-    $t_{min}$, the beginning of the time domain, in seconds. (default: 0.0)
-end_time : float
-    $t_{max}$, the end of the time domain, in seconds. (default: 1.0)
-float : density
-    The average number of points per second. (default: 100.0)
+start_time : float, default: 0.0
+    :math:`t_{min}`, the beginning of the time domain, in seconds.
+end_time : float, default: 1.0
+    :math:`t_{max}`, the end of the time domain, in seconds.
+density : float, default: 100.0
+    The average number of points per second.
 
 See Also
 --------
@@ -146,14 +146,14 @@ See Also
 constexpr auto FROM_PITCH_DOCSTRING =
 	R"(Create PointProcess from Pitch object.
 
-Returns a new PointProcess instance which is generated from the specified 
-Pitch object. The acoustic periodicity contour stored in the Pitch object 
-is used as the frequency of an underlying point process (such as the 
+Returns a new PointProcess instance which is generated from the specified
+Pitch object. The acoustic periodicity contour stored in the Pitch object
+is used as the frequency of an underlying point process (such as the
 sequence of glottal closures in vocal-fold vibration).
 
 Parameters
 ----------
-pitch : Parselmouth.Pitch
+pitch : parselmouth.Pitch
     Pitch object defining the periodicity contour.
 
 See Also
@@ -164,7 +164,7 @@ See Also
 constexpr auto GET_NUMBER_OF_POINTS_DOCSTRING =
 	R"(Get the number of time points.
 
-Returns the total number of time points defined in the PointProcess 
+Returns the total number of time points defined in the PointProcess
 instance.
 )";
 
@@ -179,7 +179,7 @@ Parameters
 constexpr auto GET_TIME_FROM_INDEX_DOCSTRING =
 	R"(Get time associated with the point number.
 
-Returns a time, specified by the time point number. If the number is not a 
+Returns a time, specified by the time point number. If the number is not a
 valid, it returns None.
 
 Parameters
@@ -191,8 +191,8 @@ point_number : int
 constexpr auto GET_JITTER_LOCAL_DOCSTRING =
 	R"(Get jitter measure (MDVP Jitt).
 
-Returns the average absolute difference between consecutive periods, 
-divided by the average period. (MDVP Jitt: 1.040% as a threshold for 
+Returns the average absolute difference between consecutive periods,
+divided by the average period. (MDVP Jitt: 1.040% as a threshold for
 pathology).
 
 Parameters
@@ -207,7 +207,7 @@ See Also
 constexpr auto GET_JITTER_LOCAL_ABSOLUTE_DOCSTRING =
 	R"(Get absolute jitter measure (MDVP Jita).
 
-Get the average absolute difference between consecutive periods, in 
+Get the average absolute difference between consecutive periods, in
 seconds (MDVP Jita: 83.200 μs as a threshold for pathology).
 
 Parameters
@@ -222,8 +222,8 @@ See Also
 constexpr auto GET_JITTER_RAP_DOCSTRING =
 	R"(Get Relative Average Perturbation measure (MDVP RAP).
 
-Get the Relative Average Perturbation, the average absolute difference 
-between a period and the average of it and its two neighbours, divided by 
+Get the Relative Average Perturbation, the average absolute difference
+between a period and the average of it and its two neighbours, divided by
 the average period (MDVP: 0.680% as a threshold for pathology).
 
 Parameters
@@ -238,8 +238,8 @@ See Also
 constexpr auto GET_JITTER_PPQ5_DOCSTRING =
 	R"(Get 5-point PPQ measure (MDVP PPQ).
 
-Get the five-point Period Perturbation Quotient, the average absolute 
-difference between a period and the average of it and its four closest 
+Get the five-point Period Perturbation Quotient, the average absolute
+difference between a period and the average of it and its four closest
 neighbours, divided by the average period (MDVP PPQ, and gives 0.840% as a
 threshold for pathology).
 
@@ -254,7 +254,7 @@ See Also
 
 constexpr auto GET_JITTER_DDP_DOCSTRING = R"(Get Praat jitter measure.
 
-Get the average absolute difference between consecutive differences 
+Get the average absolute difference between consecutive differences
 between consecutive periods, divided by the average period.
 
 Parameters
@@ -279,21 +279,21 @@ Returns a tuple, containing the outputs of the Praat voice break analysis:
 Parameters
 ----------
 from_time : float, optional
-    The start time of the part of the PointProcess to be measured in 
-    seconds. If `None`, all the points to `start_time` are included.
+    The start time of the part of the PointProcess to be measured in
+    seconds. If `None`, all the points from ``tmin`` are included.
     (default: None)
 
 end_time : float, optional
     The end time of the part of the PointProcess to be measured in
-    seconds. If `None`, all the points to `end_time` are included.
+    seconds. If `None`, all the points to ``tmax`` are included.
     (default: None)
 
 period_ceiling : float
-    The longest possible interval that to be used in the computation in 
-    seconds. If an interval is longer than this, it will be ignored (and 
-    the previous and next intervals will not be regarded as consecutive). 
-    For example, if the minimum frequency of periodicity is 50 Hz, set 
-    this setting to 0.02 seconds; intervals longer than that could be 
+    The longest possible interval that to be used in the computation in
+    seconds. If an interval is longer than this, it will be ignored (and
+    the previous and next intervals will not be regarded as consecutive).
+    For example, if the minimum frequency of periodicity is 50 Hz, set
+    this setting to 0.02 seconds; intervals longer than that could be
     regarded as voiceless stretches and will be ignored. (default: 0.02)
 
 See Also
@@ -304,8 +304,8 @@ See Also
 constexpr auto GET_SHIMMER_LOCAL_DOCSTRING =
 	R"(Get shimmer measure (MDVP Shim).
 
-Returns the average absolute difference between the amplitudes of 
-consecutive periods, divided by the average amplitude (MDVP Shim: 3.810% 
+Returns the average absolute difference between the amplitudes of
+consecutive periods, divided by the average amplitude (MDVP Shim: 3.810%
 as a threshold for pathology).
 
 Parameters
@@ -315,8 +315,8 @@ Parameters
 constexpr auto GET_SHIMMER_LOCAL_DB_DOCSTRING =
 	R"(Get shimmer measure in dB (MDVP ShdB).
 
-Returns the average absolute base-10 logarithm of the difference between 
-the amplitudes of consecutive periods, multiplied by 20 (MDVP ShdB: 
+Returns the average absolute base-10 logarithm of the difference between
+the amplitudes of consecutive periods, multiplied by 20 (MDVP ShdB:
 0.350 dB as a threshold for pathology).
 
 Parameters
@@ -326,8 +326,8 @@ Parameters
 constexpr auto GET_SHIMMER_APQ3_DOCSTRING =
 	R"(Get 3-point APQ.
 
-Returns the three-point Amplitude Perturbation Quotient, the average 
-absolute difference between the amplitude of a period and the average of 
+Returns the three-point Amplitude Perturbation Quotient, the average
+absolute difference between the amplitude of a period and the average of
 the amplitudes of its neighbours, divided by the average amplitude.
 
 Parameters
@@ -337,9 +337,9 @@ Parameters
 constexpr auto GET_SHIMMER_APQ5_DOCSTRING =
 	R"(Get 5-point APQ.
 
-Returns the five-point Amplitude Perturbation Quotient, the average  
-absolute difference between the amplitude of a period and the average of 
-the amplitudes of it and its four closest neighbours, divided by the 
+Returns the five-point Amplitude Perturbation Quotient, the average
+absolute difference between the amplitude of a period and the average of
+the amplitudes of it and its four closest neighbours, divided by the
 average amplitude.
 
 Parameters
@@ -349,9 +349,9 @@ Parameters
 constexpr auto GET_SHIMMER_APQ11_DOCSTRING =
 	R"(Get 11-point APQ (MDVP APQ).
 
-Returns the 11-point Amplitude Perturbation Quotient, the average absolute 
-difference between the amplitude of a period and the average of the 
-amplitudes of it and its ten closest neighbours, divided by the average 
+Returns the 11-point Amplitude Perturbation Quotient, the average absolute
+difference between the amplitude of a period and the average of the
+amplitudes of it and its ten closest neighbours, divided by the average
 amplitude (MDVP APQ: 3.070% as a threshold for pathology).
 
 Parameters
@@ -361,7 +361,7 @@ Parameters
 constexpr auto GET_SHIMMER_DDA_DOCSTRING =
 	R"(Get Praat shimmer measure.
 
-Returns the average absolute difference between consecutive differences 
+Returns the average absolute difference between consecutive differences
 between the amplitudes of consecutive periods (three times APQ3).
 
 Parameters
@@ -371,8 +371,8 @@ Parameters
 constexpr auto GET_LOW_INDEX_DOCSTRING =
 	R"(Get nearest point below.
 
-Returns the 1-base index of the nearest point before or at the specified 
-time. If the point process contains no points or the specified time is 
+Returns the 1-base index of the nearest point before or at the specified
+time. If the point process contains no points or the specified time is
 before the first point, returns 0.
 
 Parameters
@@ -388,8 +388,8 @@ See Also
 constexpr auto GET_HIGH_INDEX_DOCSTRING =
 	R"(Get nearest point above.
 
-Returns the 1-base index of the nearest point at or after the specified 
-time. If the point process contains no points or the specified time is 
+Returns the 1-base index of the nearest point at or after the specified
+time. If the point process contains no points or the specified time is
 after the last point, returns 0.
 
 Parameters
@@ -405,8 +405,8 @@ See Also
 constexpr auto GET_NEAREST_INDEX_DOCSTRING =
 	R"(Get nearest point.
 
-Returns the 1-base index of the point nearest to the specified time. If 
-the point process contains no points or the specified time is before the 
+Returns the 1-base index of the point nearest to the specified time. If
+the point process contains no points or the specified time is before the
 first point or after the last point, returns 0.
 
 Parameters
@@ -436,7 +436,7 @@ to_time : float
 Returns
 -------
 tuple of float
-    (start, end) 
+    (start, end)
 )";
 
 constexpr auto GET_INTERVAL_DOCSTRING =
@@ -475,13 +475,13 @@ Parameters
 constexpr auto UNION_DOCSTRING =
 	R"(Combine with another time process.
 
-Returns a new PointProcess instance containing all the points of the two 
+Returns a new `PointProcess` instance containing all the points of the two
 original point processes, sorted by time.
 
 Parameters
 ----------
-other : Parselmouth.PointProcess
-    The other PointProcess object to combine with `self`
+other : parselmouth.PointProcess
+    The other PointProcess object to combine with ``self``.
 
 See Also
 --------
@@ -491,13 +491,13 @@ See Also
 constexpr auto INTERSECTION_DOCSTRING =
 	R"(Intersect with another time process.
 
-Returns a new PointProcess instance containing only those points that occur
-in both `self` and `other` PointProcess objects
+Returns a new `PointProcess` instance containing only those points that
+occur in both ``self`` and ``other`` `PointProcess` objects.
 
 Parameters
 ----------
-other : Parselmouth.PointProcess
-    The other PointProcess object to intersect with `self`
+other : parselmouth.PointProcess
+    The other PointProcess object to intersect with ``self``.
 
 See Also
 --------
@@ -507,13 +507,13 @@ See Also
 constexpr auto DIFFERENCE_DOCSTRING =
 	R"(Subtract another time process.
 
-Returns a new PointProcess instance containing only those points of the 
-`self` point process that do not occur in the `other` point process
+Returns a new `PointProcess` instance containing only those points of the
+``self`` point process that do not occur in the ``other`` point process.
 
 Parameters
 ----------
-other : Parselmouth.PointProcess
-    The other PointProcess object to subtract from `self`
+other : parselmouth.PointProcess
+    The other `PointProcess` object to subtract from ``self``.
 
 See Also
 --------
@@ -539,7 +539,7 @@ See Also
 constexpr auto ADD_POINTS_DOCSTRING =
 	R"(Add time points.
 
-Add the specified time points. If any of the points already exists in the 
+Add the specified time points. If any of the points already exists in the
 point process, nothing happens for that point.
 
 Parameters
@@ -551,9 +551,9 @@ times : numpy.ndarray[float]
 constexpr auto REMOVE_POINT_DOCSTRING =
 	R"(Remove time point.
 
-Remove the specified time point. (e.g., if `point_number` is 3, the third 
-point is removed) It does nothing if index is less than 1 or greater than 
-the number of points in the point process. 
+Remove the specified time point. (e.g., if ``point_number`` is 3, the third
+point is removed) It does nothing if index is less than 1 or greater than
+the number of points in the point process.
 
 Parameters
 ----------
@@ -568,7 +568,7 @@ See Also
 constexpr auto REMOVE_POINT_NEAR_DOCSTRING =
 	R"(Remove nearest time point.
 
-Remove a time point nearest to the specified time. It does nothing if 
+Remove a time point nearest to the specified time. It does nothing if
 there are no points in the point process.
 
 Parameters
@@ -584,7 +584,7 @@ See Also
 constexpr auto REMOVE_POINTS_DOCSTRING =
 	R"(Remove a range of time points.
 
-Remove all the time point that originally fell in the range 
+Remove all the time point that originally fell in the range
 [from_point_number, to_point_number].
 
 Parameters
@@ -622,7 +622,7 @@ See Also
 constexpr auto FILL_DOCSTRING =
 	R"(Add equispaced time points.
 
-Add equispaced time points between the specified time range separated by 
+Add equispaced time points between the specified time range separated by
 the specified period.
 
 Parameters
@@ -641,7 +641,7 @@ constexpr auto VOICE_DOCSTRING =
 	R"(Add equispaced time points in unvoiced intervals.
 
 Add equispaced time points separated by the specified period over all
-existing periods longer than `maximum_voiced_period`.
+existing periods longer than ``maximum_voiced_period``.
 
 Parameters
 ----------
@@ -656,11 +656,11 @@ maximum_voiced_period : float
 constexpr auto TRANSPLANT_DOMAIN_DOCSTRING =
 	R"(Copy time domain.
 
-Copy the time domain of the specified `sound` object.
+Copy the time domain of the specified `Sound` object.
 
 Parameters
 ----------
-sound : Parselmouth.Sound
+sound : parselmouth.Sound
     Source sound object.
 )";
 
@@ -675,11 +675,11 @@ function.
 Parameters
 ----------
 tier_names : str
-    A list of the names of the tiers that you want to create, separated by 
-    spaces. 
+    A list of the names of the tiers that you want to create, separated by
+    spaces.
 
 point_tiers : str
-    A list of the names of the tiers that you want to be point tiers; the 
+    A list of the names of the tiers that you want to be point tiers; the
     rest of the tiers will be interval tiers.
 
 See also
@@ -721,23 +721,23 @@ sampled sinc function.
 Parameters
 ----------
 sampling_frequency : float
-    The sampling frequency of the resulting Sound object.
+    The sampling frequency of the resulting `Sound` object.
     (default: 44100.0)
 
 adaptation_factor : float
     The factor by which a pulse height will be multiplied if the pulse time
-    is not within `adaptation_time` from the pre-previous pulse, and by
+    is not within ``adaptation_time`` from the pre-previous pulse, and by
     which a pulse height will again be multiplied if the pulse time is not
-    within `adaptation_time` from the previous pulse. This factor is
-    against abrupt starts of the pulse train after silences, and is 1.0 if 
+    within ``adaptation_time`` from the previous pulse. This factor is
+    against abrupt starts of the pulse train after silences, and is 1.0 if
     you do want abrupt starts after silences. (default: 1.0)
-    
+
 adaptation_time : float
     The minimal period that will be considered a silence. (default: 0.05)
 
 interpolation_depth : int
-    The extent of the sinc function to the left and to the right of the 
-    peak. (default: 2000)
+    The extent of the :math:`sinc` function to the left and to the right of
+    the peak. (default: 2000)
 
 See also
 --------
@@ -745,28 +745,29 @@ See also
 )";
 
 constexpr auto TO_SOUND_PHONATION_DOCSTRING =
-	R"(Convert into a glottal waveform Sound object.
+	R"(Convert into a glottal waveform `Sound` object.
 
 PointProcess object is converted to a sound object containing glottal
 waveform at every point in the point process. Its shape depends on the
-settings `power1` and `power2` according to the formula
+settings ``power1`` and ``power2`` according to the formula.
 
-$U\(x\) = x^{power1} - x^{power2}$
+.. math:: U\(x\) = x^{power1} - x^{power2}
 
-where $x$ is a normalized time that runs from 0 to 1 and $U(x)$ is the
-normalized glottal flow in arbitrary units (the real unit is m^3/s).
+where :math:`x` is a normalized time that runs from 0 to 1 and :math:`U(x)`
+is the normalized glottal flow in arbitrary units (the real unit is
+:math:`m^3/s`).
 
 Parameters
 ----------
 sampling_frequency : float
-    The sampling frequency of the resulting Sound object.
+    The sampling frequency of the resulting `Sound` object.
     (default: 44100.0)
 
 adaptation_factor : float,
     The factor by which a pulse height will be multiplied if the pulse time
     is not within Maximum period from the previous pulse, and by which a
     pulse height will again be multiplied if the previous pulse time is not
-    within `maximum_period` from the pre-previous pulse. This factor is
+    within ``maximum_period`` from the pre-previous pulse. This factor is
     against abrupt starts of the pulse train after silences, and is 1.0 if
     you do want abrupt starts after silences. (default: 1.0)
 
