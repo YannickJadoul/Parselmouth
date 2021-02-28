@@ -28,11 +28,11 @@ constexpr auto MAXIMUM_NUMBER_OF_FREQUENCIES_DOCSTRING = R"(int, readonly : Larg
 
 constexpr auto TO_LPC_DOCSTRING=R"(Convert to LPC object.
 
-Returns :object:`parselmouth.LPC` object with equivalent AR models.
+Returns :obj:`parselmouth.LPC` object with equivalent AR models.
 
 See also
 --------
-:object:`parselmouth.LPC`
+:obj:`parselmouth.LPC`
 :func:`parselmouth.LPC.to_line_spectral_frequencies`
 )";
 

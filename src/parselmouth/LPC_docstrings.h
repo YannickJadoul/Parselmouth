@@ -11,13 +11,13 @@ a frame of acoustic data samples.
 
 Note that the $a_0=1$ coefficient is omitted in a.
 
-This class is instantiated in :object:`~parselmouth.LPC` object and not 
+This class is instantiated in :obj:`~parselmouth.LPC` object and not 
 intended to be instantiated by user.
 
 See also
 --------
 :praat:`Sound: LPC analysis`
-:object:`~parselmouth.LPC`
+:obj:`~parselmouth.LPC`
 )";
 
 constexpr auto FRAME_N_COEFFICIENTS = R"(int : Number of AR coefficients a used to model the frame)";
@@ -40,13 +40,13 @@ samples, x′n = ∑ ak xn-k then {a1, a2, ..., ap} can be chosen to minimize
 the prediction power Qp where Qp = E[ |xn - x′n|2 ].
 
 This class is not intended to be instantiated by user, instead from a
-:object:`~parselmouth.Sound` object using one of its to_lpc_xxx()
+:obj:`~parselmouth.Sound` object using one of its to_lpc_xxx()
 methods.
 
 See Also
 --------
 :praat:`Sound: LPC analysis`
-:object:`parselmouth.LPC.Frame`
+:obj:`parselmouth.LPC.Frame`
 :func:`parselmouth.Sound.to_lpc_autocorrelation`
 :func:`parselmouth.Sound.to_lpc_covariance`
 :func:`parselmouth.Sound.to_lpc_burg`
@@ -58,7 +58,7 @@ constexpr auto MAX_N_COEFFICIENTS_DOCSTRING = R"(Largest number of coefficients 
 
 constexpr auto TO_LINE_SPECTRAL_FREQUENCIES=R"(Convert to line spectra.
 
-Returns :object:`parselmouth.LineSpectralFrequencies` object with the 
+Returns :obj:`parselmouth.LineSpectralFrequencies` object with the 
 line frequencies found in the LPC models.
 
 Parameter
@@ -68,17 +68,17 @@ grid_size : float, default=0.0
     
 See also
 --------
-:object:`parselmouth.LineSpectralFrequencies`
+:obj:`parselmouth.LineSpectralFrequencies`
 )";
 
 
 constexpr auto TO_SPECTRUM_SLICE_DOCSTRING=R"(Convert to spectrogram.
 
-Returns :object:`parselmouth.Spectrum` object with the spectral
+Returns :obj:`parselmouth.Spectrum` object with the spectral
 representation of the LPC model found at specified time t.
 
 The Spectrum at t will be calculated from the nearest 
-:object:`~parselmouth.LPC.Frame`. See :praat:`LPC: To Spectrum (slice)...`
+:obj:`~parselmouth.LPC.Frame`. See :praat:`LPC: To Spectrum (slice)...`
 for dedailed algorithm description.
 
 Parameters
@@ -111,7 +111,7 @@ See also
 
 constexpr auto TO_SPECTROGRAM_DOCSTRING=R"(Convert to spectrogram.
 
-Returns :object:`parselmouth.Spectrogram` object with the spectral
+Returns :obj:`parselmouth.Spectrogram` object with the spectral
 representation of the LPC models.
 
 For each LPC_Frame the corresponding Spectrum will be calculated according 
