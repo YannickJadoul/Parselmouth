@@ -47,41 +47,38 @@ See Also
   "from_time : float, optional\n"                                              \
   "    The start time of the part of the `PointProcess` to be measured in\n"   \
   "    seconds. If `None`, all the points from ``tmin`` are included.\n"       \
-  "    (default: None)\n"                                                      \
   "\n"                                                                         \
   "end_time : float, optional\n"                                               \
   "    The end time of the part of the `PointProcess` to be measured in\n"     \
   "    seconds. If `None`, all the points to ``tmax`` are included.\n"         \
-  "    (default: None)\n"                                                      \
   "\n"                                                                         \
-  "period_floor : float\n"                                                     \
+  "period_floor : float, default: 0.0001\n"                                    \
   "    The shortest possible interval to be used in the computation in\n"      \
   "    seconds. If an interval is shorter than this, it will be ignored (and\n"\
   "    the previous and next intervals will not be regarded as consecutive).\n"\
-  "    This setting will normally be very small. (default: 0.0001).\n"         \
+  "    This setting will normally be very small.\n"                            \
   "\n"                                                                         \
-  "period_ceiling : float\n"                                                   \
+  "period_ceiling : float, default: 0.02\n"                                    \
   "    The longest possible interval that to be used in the computation in\n"  \
   "    seconds. If an interval is longer than this, it will be ignored (and\n" \
   "    the previous and next intervals will not be regarded as consecutive).\n"\
   "    For example, if the minimum frequency of periodicity is 50 Hz, set\n"   \
   "    this setting to 0.02 seconds; intervals longer than that could be\n"    \
-  "    regarded as voiceless stretches and will be ignored. (default: 0.02)\n" \
+  "    regarded as voiceless stretches and will be ignored.\n"                 \
   "\n"                                                                         \
-  "maximum_period_factor : float, positive\n"                                  \
+  "maximum_period_factor : float, positive, default: 1.3\n"                    \
   "    The largest possible difference between consecutive intervals to\n"     \
   "    be used in the computation. If the ratio of the durations of two\n"     \
   "    consecutive intervals is greater than this, this pair of intervals\n"   \
   "    will be ignored (each of the intervals could still take part in the\n"  \
-  "    computation in a comparison with its neighbour on the other side).\n"   \
-  "    (default: 1.3)"
+  "    computation in a comparison with its neighbour on the other side)."
 
 #define GET_SHIMMER_RANGE_PARAMETER_DOCSTRING                                  \
   "sound : parselmouth.Sound\n"                                                \
   "    Sound object containing the samples to evaluate the amplitude.\n"       \
   GET_RANGE_PARAMETER_DOCSTRING                                                \
-  "maximum_amplitude_factor : float, positive\n"                               \
-  "    Maximum amplitude factor. (default: 1.6)\n"                             \
+  "maximum_amplitude_factor : float, positive, default: 1.6\n"                 \
+  "    Maximum amplitude factor.\n"                                            \
   "\n"                                                                         \
   "See Also\n"                                                                 \
   "--------\n"                                                                 \
@@ -281,20 +278,18 @@ Parameters
 from_time : float, optional
     The start time of the part of the PointProcess to be measured in
     seconds. If `None`, all the points from ``tmin`` are included.
-    (default: None)
 
 end_time : float, optional
     The end time of the part of the PointProcess to be measured in
     seconds. If `None`, all the points to ``tmax`` are included.
-    (default: None)
 
-period_ceiling : float
+period_ceiling : float, default: 0.02
     The longest possible interval that to be used in the computation in
     seconds. If an interval is longer than this, it will be ignored (and
     the previous and next intervals will not be regarded as consecutive).
     For example, if the minimum frequency of periodicity is 50 Hz, set
     this setting to 0.02 seconds; intervals longer than that could be
-    regarded as voiceless stretches and will be ignored. (default: 0.02)
+    regarded as voiceless stretches and will be ignored.
 
 See Also
 --------
@@ -633,8 +628,8 @@ from_time : float, optional
 to_time : float, optional
     Ending time in seconds.
 
-period : float
-    Time interval in seconds. (default: 0.01)
+period : float, default: 0.01
+    Time interval in seconds.
 )";
 
 constexpr auto VOICE_DOCSTRING =
@@ -645,12 +640,11 @@ existing periods longer than ``maximum_voiced_period``.
 
 Parameters
 ----------
-period : float
-    Time interval in seconds. (default: 0.01)
+period : float, default: 0.01
+    Time interval in seconds.
 
-maximum_voiced_period : float
+maximum_voiced_period : float, default: 0.02000000001
     Time period longer than this is considered unvoiced, in seconds.
-    (default: 0.02000000001)
 )";
 
 constexpr auto TRANSPLANT_DOMAIN_DOCSTRING =
@@ -695,15 +689,15 @@ information.
 
 Parameters
 ----------
-maximum_period : float
+maximum_period : float, default: 0.02
     The maximum interval that will be consider part of a larger voiced
-    interval. (default: 0.02)
+    interval.
 
-mean_period : float
+mean_period : float, default: 0.01
     Half of this value will be taken to be the amount to which a voiced
     interval will extend beyond its initial and final points. Mean period
     should be less than Maximum period, or you may get intervals with
-    negative durations. (default: 0.01)
+    negative durations.
 
 See also
 --------
@@ -720,24 +714,23 @@ sampled sinc function.
 
 Parameters
 ----------
-sampling_frequency : float
+sampling_frequency : float, default: 44100.0
     The sampling frequency of the resulting `Sound` object.
-    (default: 44100.0)
 
-adaptation_factor : float
+adaptation_factor : float, default: 1.0
     The factor by which a pulse height will be multiplied if the pulse time
     is not within ``adaptation_time`` from the pre-previous pulse, and by
     which a pulse height will again be multiplied if the pulse time is not
     within ``adaptation_time`` from the previous pulse. This factor is
     against abrupt starts of the pulse train after silences, and is 1.0 if
-    you do want abrupt starts after silences. (default: 1.0)
+    you do want abrupt starts after silences.
 
-adaptation_time : float
-    The minimal period that will be considered a silence. (default: 0.05)
+adaptation_time : float, default: 0.05
+    The minimal period that will be considered a silence.
 
-interpolation_depth : int
+interpolation_depth : int, default: 2000
     The extent of the :math:`sinc` function to the left and to the right of
-    the peak. (default: 2000)
+    the peak.
 
 See also
 --------
@@ -751,7 +744,7 @@ PointProcess object is converted to a sound object containing glottal
 waveform at every point in the point process. Its shape depends on the
 settings ``power1`` and ``power2`` according to the formula.
 
-.. math:: U\(x\) = x^{power1} - x^{power2}
+.. math:: U(x) = x^{power1} - x^{power2}
 
 where :math:`x` is a normalized time that runs from 0 to 1 and :math:`U(x)`
 is the normalized glottal flow in arbitrary units (the real unit is
@@ -759,33 +752,31 @@ is the normalized glottal flow in arbitrary units (the real unit is
 
 Parameters
 ----------
-sampling_frequency : float
+sampling_frequency : float, default: 44100.0
     The sampling frequency of the resulting `Sound` object.
-    (default: 44100.0)
 
-adaptation_factor : float,
+adaptation_factor : float, default: 1.0
     The factor by which a pulse height will be multiplied if the pulse time
     is not within Maximum period from the previous pulse, and by which a
     pulse height will again be multiplied if the previous pulse time is not
     within ``maximum_period`` from the pre-previous pulse. This factor is
     against abrupt starts of the pulse train after silences, and is 1.0 if
-    you do want abrupt starts after silences. (default: 1.0)
+    you do want abrupt starts after silences.
 
-maximum_period : float
+maximum_period : float, default: 0.05
     The minimal period that will be considered a silence in seconds.
-    (default: 0.05)
 
-open_phase: float
-    Fraction of a period when the glottis is open. (default: 0.7)
+open_phase: float, default: 0.7
+    Fraction of a period when the glottis is open.
 
-collision_phase : float
-    Decay factor to ease the abrupt collision at closure. (default: 0.03)
+collision_phase : float, default: 0.03
+    Decay factor to ease the abrupt collision at closure.
 
-power1 : float
-    First glottal flow shape coefficient. (default: 3.0)
+power1 : float, default: 3.0
+    First glottal flow shape coefficient.
 
-power2 : float
-    Second glottal flow shape coefficient. (default: 4.0)
+power2 : float, default: 4.0
+    Second glottal flow shape coefficient.
 
 See also
 --------
