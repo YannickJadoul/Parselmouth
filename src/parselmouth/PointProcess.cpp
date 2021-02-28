@@ -125,7 +125,9 @@ PRAAT_CLASS_BINDING(PointProcess) {
 	    [](PointProcess self) { return self->nt; },
 	    GET_NUMBER_OF_POINTS_DOCSTRING);
 
-	def_readonly("n_points", &structPointProcess::nt);
+	def_readonly("n_points",
+	             &structPointProcess::nt,
+	             N_POINTS_DOCSTRING);
 
 	// INTEGER_PointProcess_getNumberOfPeriods
 	def("get_number_of_periods",

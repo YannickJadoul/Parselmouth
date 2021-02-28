@@ -31,8 +31,6 @@ on a domain [``xmin``, ``xmax``]. The points are sorted in time, i.e.,
 
 Attributes
 ----------
-n_points : float, readonly
-    The number of time points
 tmin : float, readonly
     Starting time of the analysis domain in seconds
 tmax : float, readonly
@@ -52,13 +50,13 @@ See Also
   "    The end time of the part of the `PointProcess` to be measured in\n"     \
   "    seconds. If `None`, all the points to ``tmax`` are included.\n"         \
   "\n"                                                                         \
-  "period_floor : float, default: 0.0001\n"                                    \
+  "period_floor : float, default 0.0001\n"                                    \
   "    The shortest possible interval to be used in the computation in\n"      \
   "    seconds. If an interval is shorter than this, it will be ignored (and\n"\
   "    the previous and next intervals will not be regarded as consecutive).\n"\
   "    This setting will normally be very small.\n"                            \
   "\n"                                                                         \
-  "period_ceiling : float, default: 0.02\n"                                    \
+  "period_ceiling : float, default 0.02\n"                                    \
   "    The longest possible interval that to be used in the computation in\n"  \
   "    seconds. If an interval is longer than this, it will be ignored (and\n" \
   "    the previous and next intervals will not be regarded as consecutive).\n"\
@@ -66,18 +64,18 @@ See Also
   "    this setting to 0.02 seconds; intervals longer than that could be\n"    \
   "    regarded as voiceless stretches and will be ignored.\n"                 \
   "\n"                                                                         \
-  "maximum_period_factor : float, positive, default: 1.3\n"                    \
+  "maximum_period_factor : float, positive, default 1.3\n"                    \
   "    The largest possible difference between consecutive intervals to\n"     \
   "    be used in the computation. If the ratio of the durations of two\n"     \
   "    consecutive intervals is greater than this, this pair of intervals\n"   \
   "    will be ignored (each of the intervals could still take part in the\n"  \
-  "    computation in a comparison with its neighbour on the other side)."
+  "    computation in a comparison with its neighbour on the other side).\n"
 
 #define GET_SHIMMER_RANGE_PARAMETER_DOCSTRING                                  \
   "sound : parselmouth.Sound\n"                                                \
   "    Sound object containing the samples to evaluate the amplitude.\n"       \
   GET_RANGE_PARAMETER_DOCSTRING                                                \
-  "maximum_amplitude_factor : float, positive, default: 1.6\n"                 \
+  "maximum_amplitude_factor : float, positive, default 1.6\n"                 \
   "    Maximum amplitude factor.\n"                                            \
   "\n"                                                                         \
   "See Also\n"                                                                 \
@@ -128,11 +126,11 @@ which means that there are, on the average, :math:`\lambda` events per second.
 
 Parameters
 ----------
-start_time : float, default: 0.0
+start_time : float, default 0.0
     :math:`t_{min}`, the beginning of the time domain, in seconds.
-end_time : float, default: 1.0
+end_time : float, default 1.0
     :math:`t_{max}`, the end of the time domain, in seconds.
-density : float, default: 100.0
+density : float, default 100.0
     The average number of points per second.
 
 See Also
@@ -161,8 +159,12 @@ See Also
 constexpr auto GET_NUMBER_OF_POINTS_DOCSTRING =
 	R"(Get the number of time points.
 
-Returns the total number of time points defined in the PointProcess
+Returns the total number of time points defined in the `PointProcess`
 instance.
+)";
+
+constexpr auto N_POINTS_DOCSTRING =
+	R"(The total number of time points defined in the `PointProcess`.
 )";
 
 constexpr auto GET_NUMBER_OF_PERIODS_DOCSTRING = R"(Get the number of periods.
@@ -283,7 +285,7 @@ end_time : float, optional
     The end time of the part of the PointProcess to be measured in
     seconds. If `None`, all the points to ``tmax`` are included.
 
-period_ceiling : float, default: 0.02
+period_ceiling : float, default 0.02
     The longest possible interval that to be used in the computation in
     seconds. If an interval is longer than this, it will be ignored (and
     the previous and next intervals will not be regarded as consecutive).
@@ -539,7 +541,7 @@ point process, nothing happens for that point.
 
 Parameters
 ----------
-times : numpy.ndarray[float]
+times : numpy.ndarray of float
     Array of time points to be added.
 )";
 
@@ -628,7 +630,7 @@ from_time : float, optional
 to_time : float, optional
     Ending time in seconds.
 
-period : float, default: 0.01
+period : float, default 0.01
     Time interval in seconds.
 )";
 
@@ -640,10 +642,10 @@ existing periods longer than ``maximum_voiced_period``.
 
 Parameters
 ----------
-period : float, default: 0.01
+period : float, default 0.01
     Time interval in seconds.
 
-maximum_voiced_period : float, default: 0.02000000001
+maximum_voiced_period : float, default 0.02000000001
     Time period longer than this is considered unvoiced, in seconds.
 )";
 
@@ -689,11 +691,11 @@ information.
 
 Parameters
 ----------
-maximum_period : float, default: 0.02
+maximum_period : float, default 0.02
     The maximum interval that will be consider part of a larger voiced
     interval.
 
-mean_period : float, default: 0.01
+mean_period : float, default 0.01
     Half of this value will be taken to be the amount to which a voiced
     interval will extend beyond its initial and final points. Mean period
     should be less than Maximum period, or you may get intervals with
@@ -714,10 +716,10 @@ sampled sinc function.
 
 Parameters
 ----------
-sampling_frequency : float, default: 44100.0
+sampling_frequency : float, default 44100.0
     The sampling frequency of the resulting `Sound` object.
 
-adaptation_factor : float, default: 1.0
+adaptation_factor : float, default 1.0
     The factor by which a pulse height will be multiplied if the pulse time
     is not within ``adaptation_time`` from the pre-previous pulse, and by
     which a pulse height will again be multiplied if the pulse time is not
@@ -725,10 +727,10 @@ adaptation_factor : float, default: 1.0
     against abrupt starts of the pulse train after silences, and is 1.0 if
     you do want abrupt starts after silences.
 
-adaptation_time : float, default: 0.05
+adaptation_time : float, default 0.05
     The minimal period that will be considered a silence.
 
-interpolation_depth : int, default: 2000
+interpolation_depth : int, default 2000
     The extent of the :math:`sinc` function to the left and to the right of
     the peak.
 
@@ -752,10 +754,10 @@ is the normalized glottal flow in arbitrary units (the real unit is
 
 Parameters
 ----------
-sampling_frequency : float, default: 44100.0
+sampling_frequency : float, default 44100.0
     The sampling frequency of the resulting `Sound` object.
 
-adaptation_factor : float, default: 1.0
+adaptation_factor : float, default 1.0
     The factor by which a pulse height will be multiplied if the pulse time
     is not within Maximum period from the previous pulse, and by which a
     pulse height will again be multiplied if the previous pulse time is not
@@ -763,19 +765,19 @@ adaptation_factor : float, default: 1.0
     against abrupt starts of the pulse train after silences, and is 1.0 if
     you do want abrupt starts after silences.
 
-maximum_period : float, default: 0.05
+maximum_period : float, default 0.05
     The minimal period that will be considered a silence in seconds.
 
-open_phase: float, default: 0.7
+open_phase: float, default 0.7
     Fraction of a period when the glottis is open.
 
-collision_phase : float, default: 0.03
+collision_phase : float, default 0.03
     Decay factor to ease the abrupt collision at closure.
 
-power1 : float, default: 3.0
+power1 : float, default 3.0
     First glottal flow shape coefficient.
 
-power2 : float, default: 4.0
+power2 : float, default 4.0
     Second glottal flow shape coefficient.
 
 See also
