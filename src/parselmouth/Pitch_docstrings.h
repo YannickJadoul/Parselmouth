@@ -31,11 +31,6 @@ Pitch object. The acoustic periodicity contour stored in the Pitch object
 is used as the frequency of an underlying point process (such as the 
 sequence of glottal closures in vocal-fold vibration).
 
-Parameters
-----------
-pitch : Parselmouth.Pitch
-    Pitch object defining the periodicity contour
-
 See Also
 --------
 :praat:`Pitch: To PointProcess`
@@ -97,9 +92,6 @@ Parameters
 sound : Parselmouth.Sound
     Sound object containing the target sound waveform
 
-pitch : Parselmouth.Pitch
-    Pitch object defining the periodicity contour of `sound`
-
 See Also
 --------
 :praat:`Sound & Pitch: To PointProcess (cc)`
@@ -122,9 +114,6 @@ Parameters
 ----------
 sound : Parselmouth.Sound
     Sound object containing the target sound waveform
-
-pitch : Parselmouth.Pitch
-    Pitch object defining the periodicity contour of `sound`
 
 See Also
 --------
