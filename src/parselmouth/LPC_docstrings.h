@@ -55,4 +55,76 @@ See Also
 constexpr auto SAMPLING_PERIOD_DOCSTRING = R"(Sampling rate of the audio data)";
 constexpr auto MAX_N_COEFFICIENTS_DOCSTRING = R"(Largest number of coefficients over all frames)";
 
+constexpr auto TO_SPECTRUM_SLICE_DOCSTRING=R"(Convert to spectrogram.
+
+Returns :object:`parselmouth.Spectrum` object with the spectral
+representation of the LPC model found at specified time t.
+
+The Spectrum at t will be calculated from the nearest 
+:object:`~parselmouth.LPC.Frame`. See :praat:`LPC: To Spectrum (slice)...`
+for dedailed algorithm description.
+
+Parameters
+----------
+time : float
+    Time at which the spectrum should be calculated.
+    
+minimum_frequency_resolution : float, default=20.0
+    Maximum distance separation of successive frequencies in the Spectrum,
+    in Hz
+
+bandwidth_reduction : float, default=0.0
+    Reduces the bandwidth of each zero by this factor (<=0.0 for no 
+    reduction). Formants with small bandwidths show up very well as darker 
+    regions in the spectrogram because the poles lie close to the contour 
+    along which a spectrum is computed (the unit circle in the z-plane). 
+    Peak enhancement can be realized by computing a spectrum in the z-plane
+    along a contour of radius:
+
+        r = exp (– pi x bandwidthReduction / samplingFrequency). 
+
+deemphasis_frequency : float, default=50.0
+    Performs de-emphasis when value is in this interval, specified in Hz.
+    (0, Nyquist frequency) 
+
+See also
+--------
+:praat:`LPC: To Spectrum (slice)...`
+)";
+
+constexpr auto TO_SPECTROGRAM_DOCSTRING=R"(Convert to spectrogram.
+
+Returns :object:`parselmouth.Spectrogram` object with the spectral
+representation of the LPC models.
+
+For each LPC_Frame the corresponding Spectrum will be calculated according 
+to the algorithm explained in :func:`parselmouth.LPC.to_spectrum`. For each
+frequency the power, i.e., the square of the complex values, will be stored
+in the corresponding area in the Spectrogram.
+
+Parameters
+----------
+minimum_frequency_resolution : float, default=20.0
+    Maximum distance separation of successive frequencies in the Spectrum,
+    in Hz
+
+bandwidth_reduction : float, default=0.0
+    Reduces the bandwidth of each zero by this factor (<=0.0 for no 
+    reduction). Formants with small bandwidths show up very well as darker 
+    regions in the spectrogram because the poles lie close to the contour 
+    along which a spectrum is computed (the unit circle in the z-plane). 
+    Peak enhancement can be realized by computing a spectrum in the z-plane
+    along a contour of radius:
+
+        r = exp (– pi x bandwidthReduction / samplingFrequency). 
+
+deemphasis_frequency : float, default=50.0
+    Performs de-emphasis when value is in this interval, specified in Hz.
+    (0, Nyquist frequency) 
+
+See also
+--------
+:praat:`LPC: To Spectrogram...`
+)";
+
 }// namespace parselmouth
