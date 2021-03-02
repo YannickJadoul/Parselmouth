@@ -7,7 +7,7 @@ namespace parselmouth {
 constexpr auto CLASS_DOCSTRING = R"(Praat LineSpectralFrequencies Class.
 
 A sequence object contains a set of frequencies of line spectral contents,
-found in the linear predictive coding (LPC) analysis. It contains 
+found in the linear predictive coding (LPC) analysis. It contains
 frequencies associated with each of LPC analysis frames, which are offset
 by :attr:`LineSpectralFrequencies.dt<parselmouth.LPC.dt>` seconds.
 
