@@ -21,6 +21,7 @@
 
 #include "LPC_docstrings.h"
 #include "TimeClassAspects.h"
+#include "utils/pybind11/NumericPredicates.h"
 
 #include <praat/LPC/LPC.h>
 // #include <praat/LPC/LPC_and_Cepstrumc.h>
@@ -31,6 +32,8 @@
 // #include <praat/LPC/LPC_and_Tube.h>
 #include <praat/LPC/LPC_to_Spectrogram.h>
 #include <praat/LPC/LPC_to_Spectrum.h>
+#include <praat/LPC/Sound_and_LPC_robust.h>
+#include <praat/fon/Sound.h>
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
@@ -103,6 +106,13 @@ PRAAT_CLASS_BINDING(LPC)
   // FORM (NEW_LPC_to_LineSpectralFrequencies)
   def("to_line_spectral_frequencies", &LPC_to_LineSpectralFrequencies,
       "grid_size"_a = 0.0, TO_LINE_SPECTRAL_FREQUENCIES);
+
+  // FORM (NEW1_LPC_Sound_to_LPC_robust
+  def(
+      "to_lpc_robust", [](LPC self, Sound sound, Positive<double> windowLength, Positive<double> preEmphasisFrequency, Positive<double> numberOfStandardDeviations, Positive<int> maximumNumberOfIterations, double tolerance, bool locationVariable) {
+        return LPC_Sound_to_LPC_robust(self, sound, windowLength, preEmphasisFrequency, numberOfStandardDeviations, maximumNumberOfIterations, tolerance, locationVariable);
+      },
+      "sound"_a.none(false), "window_length"_a = 0.025, "preemphasis_frequency"_a = 50.0, "number_of_std_dev"_a = 1.5, "maximum_number_of_iterations"_a = 5, "tolerance"_a = 0.000001, "variable_location"_a = false);
 }
 
 } // namespace parselmouth

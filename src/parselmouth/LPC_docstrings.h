@@ -147,4 +147,34 @@ See also
 :praat:`LPC: To Spectrogram...`
 )";
 
+constexpr auto TO_LPC_ROBUST_DOCSTRING = R"(
+Modify LPC coefficients using Huber's M-estimation approach.
+
+Parameters
+----------
+sound : parselmouth.Sound
+    Sound object originally used to generate this LPC object
+
+window_length : float, default 0.025
+    LPC frame size in seconds used to generate this LPC object
+
+preemphasis_frequency : float, default 50.0
+    +6dB / octave filtering will be applied above this frequency. If you do
+    not want pre-emphasis, choose a frequency greater than the Nyquist 
+    frequency. 
+
+number_of_std_dev : float, default 1.5
+    TBD
+
+maximum_number_of_iterations : int, default 5
+    Maximum number of iterations for Newton's algorithm 
+
+tolerance : float, default 0.000001
+    Newton's algorithm termination criterion on change in coefficients
+
+variable_location : bool, default False
+    TBD
+
+)";
+
 }// namespace parselmouth
