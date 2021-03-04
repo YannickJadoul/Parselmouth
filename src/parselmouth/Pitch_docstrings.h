@@ -24,7 +24,7 @@
 namespace parselmouth {
 
 constexpr auto TO_POINT_PROCESS_DOCSTRING =
-	R"(Create PointProcess from Pitch object.
+	R"(Create a `PointProcess` from a `Pitch` object.
 
 Returns a new PointProcess instance by interpreting the acoustic
 periodicity contour in the `Pitch` object as the frequency of an
@@ -69,10 +69,10 @@ See Also
 )";
 
 constexpr auto TO_POINT_PROCESS_CC_DOCSTRING =
-R"(Create PointProcess from Sound and Pitch objects using crosscorrelation.
+R"(Create a `PointProcess` using cross-correlation.
 
-Returns a new PointProcess instance, generated from the specified Sound
-and Pitch instances using the cross-correlation method. The resulting
+Returns a new `PointProcess` instance, generated from the specified `Sound`
+and `Pitch` instances using the cross-correlation method. The resulting
 instance contains voiced and unvoiced intervals according to ``pitch``
 object, and the voiced intervals are further divided into fundamental
 periods of voice, identified by cross-correlating the sound samples.
@@ -80,7 +80,7 @@ periods of voice, identified by cross-correlating the sound samples.
 Parameters
 ----------
 sound : parselmouth.Sound
-    Sound object containing the target sound waveform
+    Sound object containing the target sound waveform.
 
 See Also
 --------
@@ -88,7 +88,7 @@ See Also
 )";
 
 constexpr auto TO_POINT_PROCESS_PEAKS_DOCSTRING =
-R"(Create PointProcess from Sound and Pitch objects using peak-picking.
+R"(Create a `PointProcess` using peak-picking.
 
 Returns a new PointProcess instance, generated from the specified `Sound`
 and `Pitch` instances using the peak-picking method. The resulting
@@ -103,7 +103,7 @@ analysis and subsequent overlap-add synthesis.
 Parameters
 ----------
 sound : parselmouth.Sound
-    Sound object containing the target sound waveform
+    Sound object containing the target sound waveform.
 
 See Also
 --------

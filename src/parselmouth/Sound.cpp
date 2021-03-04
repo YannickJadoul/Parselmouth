@@ -496,7 +496,7 @@ PRAAT_CLASS_BINDING(Sound) {
 			    case ToPitchMethod::SHS:
 				    return callMethod("to_pitch_shs");
 		    }
-		    return py::none(); // Unreachable
+		    throw py::value_error("Invalid ToPitchMethod value");
 	    },
 	    "method"_a);
 
@@ -542,7 +542,7 @@ PRAAT_CLASS_BINDING(Sound) {
 			    case ToHarmonicityMethod::GNE:
 				    return callMethod("to_harmonicity_gne");
 		    }
-		    return py::none(); // Unreachable
+		    throw py::value_error("Invalid ToPitchMethod value");
 	    },
 	    "method"_a = ToHarmonicityMethod::CC);
 
@@ -614,7 +614,7 @@ PRAAT_CLASS_BINDING(Sound) {
 	    },
 	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
 
-	// FORM (NEW_Sound_to_PointProcess_extrema
+	// NEW_Sound_to_PointProcess_extrema
 	def(
 		"to_point_process_extrema",
 		[](Sound self, Channel channel, bool includeMaxima, bool includeMinima,
@@ -628,7 +628,7 @@ PRAAT_CLASS_BINDING(Sound) {
 		"interpolation"_a = kVector_peakInterpolation::SINC70,
 		TO_POINT_PROCESS_EXTREMA_DOCSTRING);
 
-	// FORM (NEW_Sound_to_PointProcess_periodic_cc
+	// NEW_Sound_to_PointProcess_periodic_cc
 	def(
 		"to_point_process_periodic",
 		[](Sound self, float minimumPitch, float maximumPitch) {
@@ -641,7 +641,7 @@ PRAAT_CLASS_BINDING(Sound) {
 		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0,
 		TO_POINT_PROCESS_PERIODIC_DOCSTRING);
 
-	// FORM (NEW_Sound_to_PointProcess_periodic_peaks
+	// NEW_Sound_to_PointProcess_periodic_peaks
 	def(
 		"to_point_process_periodic_peaks",
 		[](Sound self, float minimumPitch, float maximumPitch, bool includeMaxima,
@@ -656,7 +656,7 @@ PRAAT_CLASS_BINDING(Sound) {
 		"include_maxima"_a = true, "include_minima"_a = false,
 		TO_POINT_PROCESS_PERIODIC_PEAKS_DOCSTRING);
 
-	// FORM (NEW_Sound_to_PointProcess_zeroes
+	// NEW_Sound_to_PointProcess_zeroes
 	def(
 		"to_point_process_zeros",
 		[](Sound self, Channel ch, bool includeRaisers, bool includeFallers) {
