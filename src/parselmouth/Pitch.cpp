@@ -243,36 +243,34 @@ PRAAT_CLASS_BINDING(Pitch) {
 
 	// TODO To PitchTier: depends on PitchTier
 
-	def(
-	        "to_point_process",
-	        [](Pitch self, Sound sound, std::string method, bool include_maxima, bool include_minima) {
-		        if (sound) {
-			        if (method == "cc")
-				        return Sound_Pitch_to_PointProcess_cc(sound, self);
-			        else if (method == "peaks")
-				        return Sound_Pitch_to_PointProcess_peaks(sound, self, include_maxima, include_minima);
-			        else
-				        throw std::invalid_argument("Unknown method specified.");
-		        } else {
-			        return Pitch_to_PointProcess(self);
-		        }
-	        },
-	        "sound"_a = nullptr, "method"_a = "cc", "include_maxima"_a = true, "include_minima"_a = false,
-	        TO_POINT_PROCESS_DOCSTRING);
+	// TODO Not sure what to do with this, yet
+	def("to_point_process",
+	    [](Pitch self, Sound sound, std::string method, bool include_maxima, bool include_minima) {
+		    if (sound) {
+			    if (method == "cc")
+				    return Sound_Pitch_to_PointProcess_cc(sound, self);
+			    else if (method == "peaks")
+				    return Sound_Pitch_to_PointProcess_peaks(sound, self, include_maxima, include_minima);
+			    else
+				    throw std::invalid_argument("Unknown method specified.");
+		    } else {
+			    return Pitch_to_PointProcess(self);
+		    }
+	    },
+	    "sound"_a = nullptr, "method"_a = "cc", "include_maxima"_a = true, "include_minima"_a = false,
+	    TO_POINT_PROCESS_DOCSTRING);
 
-	def(
-	        "to_point_process_cc",
-	        [](Pitch self, Sound sound) { return Sound_Pitch_to_PointProcess_cc(sound, self); },
-	        "sound"_a, TO_POINT_PROCESS_CC_DOCSTRING);
+	// NEW1_Sound_Pitch_to_PointProcess_cc
+	def("to_point_process_cc",
+	    [](Pitch self, Sound sound) { return Sound_Pitch_to_PointProcess_cc(sound, self); },
+	    "sound"_a.none(false),
+	    TO_POINT_PROCESS_CC_DOCSTRING);
 
-	def(
-	        "to_point_process_peaks",
-	        [](Pitch self, Sound sound, bool include_maxima, bool include_minima) {
-		        return Sound_Pitch_to_PointProcess_peaks(sound, self, include_maxima, include_minima);
-	        },
-	        "sound"_a, "include_maxima"_a = true, "include_minima"_a = false,
-	        TO_POINT_PROCESS_PEAKS_DOCSTRING);
-
+	// NEW1_Sound_Pitch_to_PointProcess_peaks
+	def("to_point_process_peaks",
+	    [](Pitch self, Sound sound, bool include_maxima, bool include_minima) { return Sound_Pitch_to_PointProcess_peaks(sound, self, include_maxima, include_minima); },
+	    "sound"_a.none(false), "include_maxima"_a = true, "include_minima"_a = false,
+	    TO_POINT_PROCESS_PEAKS_DOCSTRING);
 
 	def("to_matrix",
 	    &Pitch_to_Matrix);

@@ -27,6 +27,12 @@ def test_create_process_from_array():
     assert process.xmax == 1.0
     assert np.array_equal(process, np.sort(t))
 
+    process = parselmouth.PointProcess(np.array(t))
+    assert np.array_equal(process, np.sort(t))
+
+    process = parselmouth.PointProcess(np.array(t)[::2])
+    assert np.array_equal(process, np.sort(t[::2]))
+
 
 def test_create_poisson_process():
     poisson_process = parselmouth.PointProcess.create_poisson_process(0, 1, 100)
@@ -88,23 +94,23 @@ def test_get_jitters(point_process):
     def call_jitter(which):
         return call(point_process, f"Get jitter ({which})", 0, 0, 0.0001, 0.02, 1.3)
 
-    assert point_process.get_jitter_local() == call_jitter("local")
-    assert point_process.get_jitter_local_absolute() == call_jitter("local, absolute")
-    assert point_process.get_jitter_rap() == call_jitter("rap")
-    assert point_process.get_jitter_ppq5() == call_jitter("ppq5")
-    assert point_process.get_jitter_ddp() == call_jitter("ddp")
+    assert point_process.get_jitter_local() == point_process.get_jitter('LOCAL') == call_jitter("local")
+    assert point_process.get_jitter_local_absolute() == point_process.get_jitter('LOCAL_ABSOLUTE') == call_jitter("local, absolute")
+    assert point_process.get_jitter_rap() == point_process.get_jitter('RAP') == call_jitter("rap")
+    assert point_process.get_jitter_ppq5() == point_process.get_jitter('PPQ5') == call_jitter("ppq5")
+    assert point_process.get_jitter_ddp() == point_process.get_jitter('DDP') == call_jitter("ddp")
 
 
 def test_get_shimmers(sound, point_process):
     def call_shimmer(which):
         return call([point_process, sound], f"Get shimmer ({which})", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
-    assert point_process.get_shimmer_local(sound) == call_shimmer("local")
-    assert point_process.get_shimmer_local_db(sound) == call_shimmer("local_dB")
-    assert point_process.get_shimmer_apq3(sound) == call_shimmer("apq3")
-    assert point_process.get_shimmer_apq5(sound) == call_shimmer("apq5")
-    assert point_process.get_shimmer_apq11(sound) == call_shimmer("apq11")
-    assert point_process.get_shimmer_dda(sound) == call_shimmer("dda")
+    assert point_process.get_shimmer_local(sound) == point_process.get_shimmer(sound, 'LOCAL') == call_shimmer("local")
+    assert point_process.get_shimmer_local_db(sound) == point_process.get_shimmer(sound, 'LOCAL_DB') == call_shimmer("local_dB")
+    assert point_process.get_shimmer_apq3(sound) == point_process.get_shimmer(sound, 'APQ3') == call_shimmer("apq3")
+    assert point_process.get_shimmer_apq5(sound) == point_process.get_shimmer(sound, 'APQ5') == call_shimmer("apq5")
+    assert point_process.get_shimmer_apq11(sound) == point_process.get_shimmer(sound, 'APQ11') == call_shimmer("apq11")
+    assert point_process.get_shimmer_dda(sound) == point_process.get_shimmer(sound, 'DDA') == call_shimmer("dda")
 
 
 def test_get_count_and_fraction_of_voice_breaks(point_process):
@@ -128,7 +134,8 @@ def test_modifications(point_process):
     point_process.add_point(np.random.uniform(point_process.tmin, point_process.tmax))
     assert len(point_process) == n + 1
 
-    point_process.add_points(np.random.uniform(point_process.tmin, point_process.tmax, 9))
+    point_process.add_points(np.random.uniform(point_process.tmin, point_process.tmax, 7))
+    point_process.add_points(np.random.uniform(point_process.tmin, point_process.tmax, 6)[::3])
     assert len(point_process) == n + 10
 
     p = point_process[0]
