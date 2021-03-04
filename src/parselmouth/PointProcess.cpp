@@ -37,6 +37,7 @@
 #include <tuple>
 #include <vector>
 
+#include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -45,7 +46,48 @@ using namespace std::string_literals;
 
 namespace parselmouth {
 
+enum class JitterMeasurement {
+	LOCAL,
+	LOCAL_ABSOLUTE,
+	RAP,
+	PPQ5,
+	DDP,
+};
+
+enum class ShimmerMeasurement {
+	LOCAL,
+	LOCAL_DB,
+	APQ3,
+	APQ5,
+	APQ11,
+	DDA,
+};
+
+PRAAT_ENUM_BINDING(JitterMeasurement) {
+	value("LOCAL", JitterMeasurement::LOCAL);
+	value("LOCAL_ABSOLUTE", JitterMeasurement::LOCAL_ABSOLUTE);
+	value("RAP", JitterMeasurement::RAP);
+	value("PPQ5", JitterMeasurement::PPQ5);
+	value("DDP", JitterMeasurement::DDP);
+
+	make_implicitly_convertible_from_string(*this);
+}
+
+PRAAT_ENUM_BINDING(ShimmerMeasurement) {
+	value("LOCAL", ShimmerMeasurement::LOCAL);
+	value("LOCAL_DB", ShimmerMeasurement::LOCAL_DB);
+	value("APQ3", ShimmerMeasurement::APQ3);
+	value("APQ5", ShimmerMeasurement::APQ5);
+	value("APQ11", ShimmerMeasurement::APQ11);
+	value("DDA", ShimmerMeasurement::DDA);
+
+	make_implicitly_convertible_from_string(*this);
+}
+
 PRAAT_CLASS_BINDING(PointProcess) {
+	NESTED_BINDINGS(JitterMeasurement,
+	                ShimmerMeasurement)
+
 	using signature_cast_placeholder::_;
 
 	addTimeFunctionMixin(*this);
@@ -60,18 +102,23 @@ PRAAT_CLASS_BINDING(PointProcess) {
 	    "start_time"_a, "end_time"_a,
 	    CONSTRUCTOR_EMPTY_DOCSTRING);
 
-	// TODO Use py::array_t
-	def(py::init([](std::vector<double> times, std::optional<double> startTime, std::optional<double> endTime) {
-			if (times.empty())
-				throw py::value_error("Cannot create a PointProcess from an empty list of time points.");
+	def(py::init([](py::array_t<double, py::array::c_style> times, std::optional<double> startTime, std::optional<double> endTime) {
+			// TODO Should we `times.squeeze();` ?
+			if (times.ndim() != 1)
+				throw py::value_error("Can only create a PointProcess from a one-dimensional array.");
+		    auto n = times.shape(0);
+		    if (n == 0)
+			    throw py::value_error("Cannot create a PointProcess from an empty array of time points.");
 
-		    double t0 = startTime ? *startTime : *std::min_element(times.cbegin(), times.cend());
-		    double t1 = endTime ? *endTime : *std::max_element(times.cbegin(), times.cend());
+		    auto data = times.data();
+		    auto [it0, it1] = !(startTime && endTime) ? std::minmax_element(data, data + n) : std::pair(data, data);
+		    double t0 = startTime.value_or(*it0);
+		    double t1 = endTime.value_or(*it1);
 
 		    Melder_require (endTime >= startTime, U"Your end time (", t0, U") should not be less than your start time (", t1, U").");
 		    auto result = PointProcess_create(t0, t1, times.size());
 
-		    PointProcess_addPoints(result.get(), constVEC(times.data(), times.size()));
+		    PointProcess_addPoints(result.get(), constVEC(data, n));
 		    return result;
 	    }),
 	    "time_points"_a, "start_time"_a = std::nullopt, "end_time"_a = std::nullopt,
@@ -185,7 +232,24 @@ PRAAT_CLASS_BINDING(PointProcess) {
 	    RANGE_ARGS,
 	    GET_JITTER_DDP_DOCSTRING);
 
-	// TODO get_jitter(JitterMeasure) ?
+	def("get_jitter",
+	    [](PointProcess self, JitterMeasurement measurement, std::optional<double> fromTime, std::optional<double> toTime, double periodFloor, double periodCeiling, Positive<double> maximumPeriodFactor) {
+			auto call = [&](auto f) { return f(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), periodFloor, periodCeiling, maximumPeriodFactor); };
+		    switch (measurement) {
+			    case JitterMeasurement::LOCAL:
+			    	return call(PointProcess_getJitter_local);
+			    case JitterMeasurement::LOCAL_ABSOLUTE:
+				    return call(PointProcess_getJitter_local_absolute);
+			    case JitterMeasurement::RAP:
+				    return call(PointProcess_getJitter_rap);
+			    case JitterMeasurement::PPQ5:
+				    return call(PointProcess_getJitter_ppq5);
+			    case JitterMeasurement::DDP:
+				    return call(PointProcess_getJitter_ddp);
+		    }
+		    throw py::value_error("Invalid JitterMeasurement value");
+	    },
+	    "measurement"_a, RANGE_ARGS);
 
 	def("get_count_and_fraction_of_voice_breaks",
 	    [](PointProcess self, std::optional<double> fromTime, std::optional<double> toTime, double maximumPeriod) {
@@ -229,6 +293,27 @@ PRAAT_CLASS_BINDING(PointProcess) {
 	    SHIMMER_RANGE_FUNCTION(PointProcess_Sound_getShimmer_dda),
 	    SHIMMER_RANGE_ARGS,
 	    GET_SHIMMER_DDA_DOCSTRING);
+
+	def("get_shimmer",
+	    [](PointProcess self, Sound sound, ShimmerMeasurement measurement, std::optional<double> fromTime, std::optional<double> toTime, double periodFloor, double periodCeiling, Positive<double> maximumPeriodFactor, Positive<double> maximumAmplitudeFactor) {
+		    auto call = [&](auto f) { return f(self, sound, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), periodFloor, periodCeiling, maximumPeriodFactor, maximumAmplitudeFactor); };
+		    switch (measurement) {
+			    case ShimmerMeasurement::LOCAL:
+				    return call(PointProcess_Sound_getShimmer_local);
+			    case ShimmerMeasurement::LOCAL_DB:
+				    return call(PointProcess_Sound_getShimmer_local_dB);
+			    case ShimmerMeasurement::APQ3:
+				    return call(PointProcess_Sound_getShimmer_apq3);
+			    case ShimmerMeasurement::APQ5:
+				    return call(PointProcess_Sound_getShimmer_apq5);
+			    case ShimmerMeasurement::APQ11:
+				    return call(PointProcess_Sound_getShimmer_apq11);
+			    case ShimmerMeasurement::DDA:
+				    return call(PointProcess_Sound_getShimmer_dda);
+		    }
+		    throw py::value_error("Invalid ShimmerMeasurement value");
+	    },
+	    "sound"_a.none(false), "measurement"_a, RANGE_ARGS, "maximum_amplitude_factor"_a = 1.6);
 
 	// INTEGER_PointProcess_getLowIndex
 	def("get_low_index",
@@ -288,9 +373,12 @@ PRAAT_CLASS_BINDING(PointProcess) {
 
 	// MODIFY_PointProcess_addPoints
 	def("add_points",
-	    // TODO py::array_t ? Caster for constVEC?
-	    [](PointProcess self, std::vector<double> times) {
-			PointProcess_addPoints(self, constVEC(times.data(), times.size()));
+	    // TODO Caster for constVEC?
+	    [](PointProcess self, py::array_t<double, py::array::c_style> times) {
+		    // TODO Should we `times.squeeze();` ?
+		    if (times.ndim() != 1)
+			    throw py::value_error("Expected a one-dimensional array.");
+			PointProcess_addPoints(self, constVEC(times.data(), times.shape(0)));
 		},
 	    "times"_a,
 	    ADD_POINTS_DOCSTRING);
