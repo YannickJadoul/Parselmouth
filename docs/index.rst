@@ -52,14 +52,14 @@ A `manuscript introducing Parselmouth <https://ai.vub.ac.be/~yajadoul/jadoul_int
 
 Since Parselmouth exposes existing Praat functionality and algorithm implementations, we suggest also `citing Praat <https://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html>`_ when using Parselmouth in scientific research:
 
-    Boersma, P., & Weenink, D. (2018). Praat: doing phonetics by computer [Computer program]. Version 6.1.29, retrieved 2 January 2021 from http://www.praat.org/
+    Boersma, P., & Weenink, D. (2021). Praat: doing phonetics by computer [Computer program]. Version 6.1.38, retrieved 2 January 2021 from http://www.praat.org/
 
 .. code-block:: bibtex
 
     @misc{praat,
         author = "Paul Boersma and David Weenink",
         title = "{P}raat: doing phonetics by computer [{C}omputer program]",
-        howpublished = "Version 6.1.29, retrieved 2 January 2021 \url{http://www.praat.org/}",
+        howpublished = "Version 6.1.38, retrieved 2 January 2021 \url{http://www.praat.org/}",
         year = "2021"
     }
 
