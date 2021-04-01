@@ -234,10 +234,10 @@ PRAAT_CLASS_BINDING(PointProcess) {
 
 	def("get_jitter",
 	    [](PointProcess self, JitterMeasurement measurement, std::optional<double> fromTime, std::optional<double> toTime, double periodFloor, double periodCeiling, Positive<double> maximumPeriodFactor) {
-			auto call = [&](auto f) { return f(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), periodFloor, periodCeiling, maximumPeriodFactor); };
+		    auto call = [&](auto f) { return f(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), periodFloor, periodCeiling, maximumPeriodFactor); };
 		    switch (measurement) {
 			    case JitterMeasurement::LOCAL:
-			    	return call(PointProcess_getJitter_local);
+				    return call(PointProcess_getJitter_local);
 			    case JitterMeasurement::LOCAL_ABSOLUTE:
 				    return call(PointProcess_getJitter_local_absolute);
 			    case JitterMeasurement::RAP:

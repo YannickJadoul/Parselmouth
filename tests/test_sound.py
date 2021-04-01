@@ -52,7 +52,7 @@ def test_from_numpy_array_stereo(sampling_frequency):
 	sound = parselmouth.Sound(np.vstack((sine_values, cosine_values))[::-1,1::3], sampling_frequency=sampling_frequency)
 	assert np.all(sound.values == [cosine_values[1::3], sine_values[1::3]])
 
-	with pytest.warns(RuntimeWarning, match=r'Number of channels \([0-9]+\) is greater than number of samples \([0-9]+\)'):
+	with pytest.warns(RuntimeWarning, match=r"Number of channels \([0-9]+\) is greater than number of samples \([0-9]+\)"):
 		parselmouth.Sound(np.vstack((sine_values, cosine_values)).T, sampling_frequency=sampling_frequency)
 
 
@@ -62,3 +62,27 @@ def test_from_scalar(sampling_frequency):
 
 	with pytest.raises(ValueError, match="Cannot create Sound from a single 0-dimensional number"):
 		parselmouth.Sound(3.14159, sampling_frequency=sampling_frequency)
+
+@pytest.mark.filterwarnings('ignore:Number of channels .* is greater than number of samples')
+def test_channel_type():
+	n_channels = 10
+	sound = parselmouth.Sound(np.arange(n_channels)[:,None])
+	assert sound.n_channels == n_channels
+	for i in range(n_channels):
+		assert np.array_equal(sound.extract_channel(parselmouth.Sound.Channel(i + 1)).values, [[i]])
+		assert np.array_equal(sound.extract_channel(i + 1).values, [[i]])
+	with pytest.raises(TypeError, match=r"extract_channel\(\): incompatible function arguments"):
+		sound.extract_channel(-1)
+	assert np.isnan(sound.get_nearest_zero_crossing(0, channel=1))
+	with pytest.raises(ValueError, match=r"Channel number (.*) is larger than number of available channels (.*)\."):
+		assert sound.get_nearest_zero_crossing(0, channel=n_channels + 1)
+	assert np.array_equal(sound.extract_channel('LEFT').values, [[0]])
+	assert np.array_equal(sound.extract_channel('right').values, [[1]])
+	with pytest.raises(TypeError, match=r"extract_channel\(\): incompatible function arguments"):
+		sound.extract_channel('MIDDLE')
+
+	assert parselmouth.Sound.Channel(42).value == 42
+	with pytest.raises(ValueError, match=r"Channel number should be positive or zero\."):
+		parselmouth.Sound.Channel(-1)
+	with pytest.raises(ValueError, match=r"Channel string can only be 'left' or 'right'\."):
+		parselmouth.Sound.Channel('MIDDLE, I said')

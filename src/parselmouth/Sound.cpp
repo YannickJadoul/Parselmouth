@@ -58,6 +58,20 @@ PraatCollection referencesToPraatCollection(const Container &container) { // TOD
 	return collection;
 }
 
+struct Channel {
+	integer getValue(integer nChannels) {
+		if (value > nChannels)
+			throw py::value_error(fmt::format("Channel number ({}) is larger than number of available channels ({}).", value, nChannels));
+		return value;
+	}
+	integer value;
+	static const Channel LEFT;
+	static const Channel RIGHT;
+};
+
+constexpr Channel Channel::LEFT = Channel{1};
+constexpr Channel Channel::RIGHT = Channel{2};
+
 } // namespace
 
 enum class SoundFileFormat { // TODO Nest within Sound?
@@ -182,16 +196,35 @@ PRAAT_ENUM_BINDING(ToHarmonicityMethod) {
 	make_implicitly_convertible_from_string(*this);
 }
 
-enum Channel {
-	LEFT = 1,
-	RIGHT = 2
-};
+CLASS_BINDING(Channel, Channel)
+BINDING_CONSTRUCTOR(Channel, "Channel")
+BINDING_INIT(Channel) {
+	def(py::init([](integer value) {
+		if (value < 0)
+			throw py::value_error("Channel number should be positive or zero.");
+		return Channel{value};
+	}));
 
-PRAAT_ENUM_BINDING(Channel) {
-	value("LEFT", Channel::LEFT);
-	value("RIGHT", Channel::RIGHT);
+	def(py::init([](std::string value) {
+		for (auto &c : value)
+			c = std::toupper(c);
+		if (value == "LEFT")
+			return Channel{Channel::LEFT};
+		else if (value == "RIGHT")
+			return Channel{Channel::RIGHT};
+		else
+			throw py::value_error("Channel string can only be 'left' or 'right'.");
+	}));
 
-	make_implicitly_convertible_from_string(*this);
+	def("__repr__", [](const Channel &self) { return fmt::format("Channel({})", self.value); });
+
+	def_readonly("value", &Channel::value);
+
+	attr("LEFT") = Channel::LEFT;
+	attr("RIGHT") = Channel::RIGHT;
+
+	py::implicitly_convertible<py::int_, Channel>();
+	py::implicitly_convertible<py::str, Channel>();
 }
 
 PRAAT_CLASS_BINDING(Sound) {
@@ -217,7 +250,7 @@ PRAAT_CLASS_BINDING(Sound) {
 		    auto nx = values.shape(ndim - 1);
 		    auto ny = ndim == 2 ? values.shape(0) : 1;
 		    if (ndim == 2 && ny > nx)
-			    PyErr_WarnEx(PyExc_RuntimeWarning, ("Number of channels (" + std::to_string(ny) + ") is greater than number of samples (" + std::to_string(nx) + "); note that the shape of the `values` array is interpreted as (n_channels, n_samples).").c_str(), 1);
+				PyErr_WarnEx(PyExc_RuntimeWarning, fmt::format("Number of channels ({}) is greater than number of samples ({}); note that the shape of the `values` array is interpreted as (n_channels, n_samples).", ny, nx).c_str(), 1);
 
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
 
@@ -337,12 +370,11 @@ PRAAT_CLASS_BINDING(Sound) {
 
 	// TODO Minimum & maximum (Vector?)
 
-	def("get_nearest_zero_crossing", // TODO Channel is CHANNEL
-	    [](Sound self, double time, long channel) {
-		    if (channel > self->ny) channel = 1;
-		    return Sound_getNearestZeroCrossing(self, time, channel);
+	def("get_nearest_zero_crossing",
+	    [](Sound self, double time, Channel channel) {
+		    return Sound_getNearestZeroCrossing (self, time, channel.getValue(self->ny));
 	    },
-	    "time"_a, "channel"_a = 1);
+	    "time"_a, "channel"_a = Channel::LEFT);
 
 	// TODO Get mean (Vector?)
 
@@ -424,6 +456,7 @@ PRAAT_CLASS_BINDING(Sound) {
 	def("convert_to_stereo",
 	    &Sound_convertToStereo);
 
+	// NEWMANY_Sound_extractAllChannels
 	def("extract_all_channels",
 	    [](Sound self) {
 		    std::vector<autoSound> result;
@@ -434,25 +467,16 @@ PRAAT_CLASS_BINDING(Sound) {
 		    return result;
 	    });
 
-	def("extract_channel", // TODO Channel POSITIVE? (Actually CHANNEL; >= 1, but does not always have intended result (e.g., Set value at sample...))
-	    &Sound_extractChannel,
-	    "channel"_a);
-
-	def("extract_channel", // TODO Channel enum type?
-	    [](Sound self, std::string channel) {
-		    std::transform(channel.begin(), channel.end(), channel.begin(), tolower);
-		    if (channel == "left")
-			    return Sound_extractChannel(self, 1);
-		    if (channel == "right")
-			    return Sound_extractChannel(self, 2);
-		    Melder_throw(U"'channel' can only be 'left' or 'right'"); // TODO Melder_throw or throw PraatError ?
+	def("extract_channel",
+	    [](Sound self, Channel channel) {
+			return Sound_extractChannel(self, channel.value);  // Will check the range of the channel itself.
 	    });
 
 	def("extract_left_channel",
-	    [](Sound self) { return Sound_extractChannel(self, 1); });
+	    [](Sound self) { return Sound_extractChannel(self, Channel::LEFT.value); });
 
 	def("extract_right_channel",
-	    [](Sound self) { return Sound_extractChannel(self, 2); });
+	    [](Sound self) { return Sound_extractChannel(self, Channel::RIGHT.value); });
 
 	def("extract_part", // TODO Something for std::optional<double> for from and to in Sounds?
 	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
@@ -615,55 +639,39 @@ PRAAT_CLASS_BINDING(Sound) {
 	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
 
 	// NEW_Sound_to_PointProcess_extrema
-	def(
-		"to_point_process_extrema",
-		[](Sound self, Channel channel, bool includeMaxima, bool includeMinima,
-			kVector_peakInterpolation peakInterpolationType) {
-			int ch = static_cast<int>(channel);
-			return Sound_to_PointProcess_extrema(self, ch > self->ny ? 1 : ch,
-												peakInterpolationType,
-												includeMaxima, includeMinima);
+	def("to_point_process_extrema",
+		[](Sound self, Channel channel, bool includeMaxima, bool includeMinima, kVector_peakInterpolation peakInterpolationType) {
+			return Sound_to_PointProcess_extrema(self, channel.getValue(self->ny), peakInterpolationType, includeMaxima, includeMinima);
 		},
 		"channel"_a = Channel::LEFT, "include_maxima"_a = true, "include_minima"_a = false,
 		"interpolation"_a = kVector_peakInterpolation::SINC70,
 		TO_POINT_PROCESS_EXTREMA_DOCSTRING);
 
 	// NEW_Sound_to_PointProcess_periodic_cc
-	def(
-		"to_point_process_periodic",
+	def("to_point_process_periodic",
 		[](Sound self, float minimumPitch, float maximumPitch) {
 			if (maximumPitch <= minimumPitch)
-			Melder_throw(
-				U"Your maximum pitch should be greater than your minimum pitch.");
-			return Sound_to_PointProcess_periodic_cc(self, minimumPitch,
-													maximumPitch);
+				Melder_throw(U"Your maximum pitch should be greater than your minimum pitch.");
+			return Sound_to_PointProcess_periodic_cc(self, minimumPitch, maximumPitch);
 		},
 		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0,
 		TO_POINT_PROCESS_PERIODIC_DOCSTRING);
 
 	// NEW_Sound_to_PointProcess_periodic_peaks
-	def(
-		"to_point_process_periodic_peaks",
-		[](Sound self, float minimumPitch, float maximumPitch, bool includeMaxima,
-			bool includeMinima) {
+	def("to_point_process_periodic_peaks",
+		[](Sound self, float minimumPitch, float maximumPitch, bool includeMaxima, bool includeMinima) {
 			if (maximumPitch <= minimumPitch)
-			Melder_throw(
-				U"Your maximum pitch should be greater than your minimum pitch.");
-			return Sound_to_PointProcess_periodic_peaks(
-				self, minimumPitch, maximumPitch, includeMaxima, includeMinima);
+				Melder_throw(U"Your maximum pitch should be greater than your minimum pitch.");
+			return Sound_to_PointProcess_periodic_peaks(self, minimumPitch, maximumPitch, includeMaxima, includeMinima);
 		},
 		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0,
 		"include_maxima"_a = true, "include_minima"_a = false,
 		TO_POINT_PROCESS_PERIODIC_PEAKS_DOCSTRING);
 
 	// NEW_Sound_to_PointProcess_zeroes
-	def(
-		"to_point_process_zeros",
-		[](Sound self, Channel ch, bool includeRaisers, bool includeFallers) {
-			int channel = static_cast<int>(ch);
-			return Sound_to_PointProcess_zeroes(self,
-												channel > self->ny ? 1 : channel,
-												includeRaisers, includeFallers);
+	def("to_point_process_zeros",
+		[](Sound self, Channel channel, bool includeRaisers, bool includeFallers) {
+			return Sound_to_PointProcess_zeroes(self, channel.getValue(self->ny), includeRaisers, includeFallers);
 		},
 		"channel"_a = Channel::LEFT, "include_raisers"_a = true,
 		"include_fallers"_a = false, TO_POINT_PROCESS_ZEROS_DOCSTRING);
