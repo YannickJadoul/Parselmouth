@@ -6,6 +6,11 @@ on:
       - 'dependabot/**'
   pull_request:
   workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run the build with tmate debugging enabled'
+        required: false
+        default: false
 
 jobs:
   tests:
@@ -174,6 +179,12 @@ jobs:
       - name: Run tests
         run: |
           cmake --build build --target tests
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
+        with:
+          limit-access-to-actor: true
 
   docs:
     name: Documentation
