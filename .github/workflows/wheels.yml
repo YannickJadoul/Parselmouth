@@ -183,7 +183,7 @@ jobs:
           echo "::set-output name=version::${GITHUB_REF##refs/tags/v}"
 
       - name: Upload sdist and wheels to release
-        uses: ncipollo/release-action@v1.8.5
+        uses: ncipollo/release-action@v1.8.6
         with:
           name: ${{ steps.get_version.outputs.version }}
           draft: true
