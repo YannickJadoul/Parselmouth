@@ -49,8 +49,8 @@ jobs:
           - runs-on: ubuntu-latest
             python: 3.9
             arch: x64
-            clang: 9
-            name-extra: ' (Clang 9)'
+            clang: 12
+            name-extra: ' (Clang 12)'
 
           - runs-on: ubuntu-latest
             python: 3.6
