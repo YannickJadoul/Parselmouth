@@ -144,7 +144,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: rtd-wheel
-          path: wheelhouse/praat_parselmouth-*-cp37-cp37m-manylinux2010_x86_64.whl
+          path: wheelhouse/praat_parselmouth-*-cp37-cp37m-*manylinux2010_x86_64*.whl
           if-no-files-found: error
 
   trigger_rtd:
