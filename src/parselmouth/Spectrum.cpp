@@ -52,14 +52,14 @@ PRAAT_CLASS_BINDING(Spectrum) {
 
 		    if (ndim == 2) {
 			    auto unchecked = values.unchecked<2>();
-			    for (ssize_t i = 0; i < n; ++i) {
+			    for (py::ssize_t i = 0; i < n; ++i) {
 				    result->z[1][i+1] = unchecked(0, i);
 				    result->z[2][i+1] = values.shape(1) == 2 ? unchecked(1, i) : 0.0;
 			    }
 		    }
 		    else {
 			    auto unchecked = values.unchecked<1>();
-			    for (ssize_t i = 0; i < n; ++i) {
+			    for (py::ssize_t i = 0; i < n; ++i) {
 				    result->z[1][i+1] = unchecked(i);
 				    result->z[2][i+1] = 0;
 			    }
@@ -79,7 +79,7 @@ PRAAT_CLASS_BINDING(Spectrum) {
 		    auto result = Spectrum_create(maximumFrequency, n);
 
 		    auto unchecked = values.unchecked<1>();
-		    for (ssize_t i = 0; i < n; ++i) {
+		    for (py::ssize_t i = 0; i < n; ++i) {
 			    result->z[1][i+1] = unchecked(i).real();
 			    result->z[2][i+1] = unchecked(i).imag();
 		    }
