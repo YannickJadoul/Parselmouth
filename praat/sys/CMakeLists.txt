@@ -8,7 +8,7 @@ target_sources(praat PRIVATE
 	GraphicsScreen.cpp Printer.cpp
 	Preferences.cpp site.cpp
 	Picture.cpp Ui.cpp UiFile.cpp UiPause.cpp Editor.cpp DataEditor.cpp HyperPage.cpp Manual.cpp TextEditor.cpp
-	praat.cpp praat_actions.cpp praat_menuCommands.cpp praat_picture.cpp sendpraat.c sendsocket.c
+	praat.cpp praat_actions.cpp praat_menuCommands.cpp praat_picture.cpp sendsocket.c # sendpraat.c
 	praat_script.cpp praat_statistics.cpp praat_logo.cpp praat_library.cpp
 	praat_objectMenus.cpp InfoEditor.cpp ScriptEditor.cpp ButtonEditor.cpp Interpreter.cpp Formula.cpp
 	StringsEditor.cpp DemoEditor.cpp
