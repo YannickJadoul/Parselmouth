@@ -456,7 +456,7 @@ Parameters
 object : parselmouth.Data
     A single object to add to the Praat object list, which will be selected
     when the Praat command is called.
-objects : List[parselmouth.Data]
+objects : list of parselmouth.Data
     Multiple objects to be added to the Praat object list, which will be
     selected when the Praat command is called.
 command : str
@@ -475,12 +475,12 @@ command : str
 
 Keyword Arguments
 -----------------
-extra_objects : List[parselmouth.Data]
+extra_objects : list of parselmouth.Data, default ``[]``
     Extra objects added to the Praat object list that will not be selected
-    when the command is called (default value: ``[]``).
-return_string : bool
+    when the command is called.
+return_string : bool, default False
     Return the raw string written in the Praat info window instead of the
-    converted Python object (default value: ``False``).
+    converted Python object.
 
 Returns
 -------
@@ -555,7 +555,7 @@ Arguments
 object : parselmouth.Data
     A single object to add to the Praat object list, which will be selected
     when the Praat script is run.
-objects : List[parselmouth.Data]
+objects : list of parselmouth.Data
     Multiple objects to be added to the Praat object list, which will be
     selected when the Praat script is run.
 script : str
@@ -566,16 +566,15 @@ script : str
 
 Keyword arguments
 -----------------
-extra_objects : List[parselmouth.Data]
+extra_objects : list of parselmouth.Data, default ``[]``
     Extra objects added to the Praat object list that will not be selected
-    when the command is called (default value: ``[]``).
-capture_output : bool
+    when the command is called.
+capture_output : bool, default False
     Intercept and also return the output written to the Praat info window,
-    instead of forwarding it to the Python standard output; see below
-    (default value: ``False``).
-return_variables : bool
+    instead of forwarding it to the Python standard output; see below.
+return_variables : bool, default False
     Also return a `dict` of the Praat variables and their values at the
-    end of the script's execution; see below (default value: ``False``).
+    end of the script's execution; see below.
 
 Returns
 -------
@@ -588,7 +587,7 @@ object
     - A `str` containing the intercepted output if ``capture_output=True``
       was passed.
     - A `dict` mapping variable names (`str`) to their values (`object`)
-      if ``return_variables`` is ``True``. The values of Praat's variables
+      if ``return_variables`` is `True`. The values of Praat's variables
       get converted to Python values:
 
       - A Praat string variable, with a name ending in ``$``, is returned
@@ -632,7 +631,7 @@ Arguments
 object : parselmouth.Data
     A single object to add to the Praat object list, which will be selected
     when the Praat script is run.
-objects : List[parselmouth.Data]
+objects : list of parselmouth.Data
     Multiple objects to be added to the Praat object list, which will be
     selected when the Praat script is run.
 path : str
@@ -643,12 +642,12 @@ path : str
 
 Keyword arguments
 -----------------
-keep_cwd : bool
+keep_cwd : bool, default False
     Keep the current working directory (see `os.getcwd`) when running the
     script, rather than changing it to the script's parent directory, as
-    Praat does by default (default value: ``False``). Note that even when
-    set to ``True``, the filenames in the Praat script's include statements
-    will be resolved relatively to the directory containing the script.
+    Praat does by default. Note that even when set to `True`, the
+    filenames in the Praat script's include statements will be resolved
+    relatively to the directory containing the script.
 **kwargs
     See `parselmouth.praat.run`.
 

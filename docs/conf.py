@@ -52,7 +52,6 @@ extensions = ['sphinx.ext.napoleon',
               'sphinx.ext.todo',
               'sphinx.ext.coverage',
               'nbsphinx',
-              'pybind11_docstrings',
               'praat_manual']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -127,6 +126,9 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'numpy': ('https://numpy.org/doc/stable/', None),
                        'tgt': ('https://textgridtools.readthedocs.io/en/stable/', None)}
 
+# Napoleon configuration
+napoleon_preprocess_types = True
+
 default_role = 'py:obj'
 nitpicky = True
 nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
@@ -135,6 +137,8 @@ nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
                   ('py:class', 'NonNegative'),
                   ('py:class', 'numpy.float64'),
                   ('py:class', 'numpy.complex128'),
+                  ('py:class', 'positive'),
+                  ('py:class', 'readonly'),
                   ('py:obj', 'List')]
 
 
