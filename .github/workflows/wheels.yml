@@ -116,6 +116,7 @@ jobs:
           CIBW_BEFORE_ALL_COMMON="cmake -S . -B build_dependencies $CMAKE_ARCH && cmake --build build_dependencies --target praat -j 2"
           echo "CIBW_BEFORE_ALL=$CIBW_BEFORE_ALL_COMMON" >> $GITHUB_ENV
           echo "CIBW_BEFORE_ALL_WINDOWS=$CIBW_BEFORE_ALL_COMMON --config Release" >> $GITHUB_ENV
+          echo "CIBW_BEFORE_BUILD=rm -rf _skbuild" >> $GITHUB_ENV
 
       - name: Only build ReadTheDocs wheel
         if: startsWith(github.ref, 'refs/heads/docs')
