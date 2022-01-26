@@ -3,6 +3,6 @@ requires = [
     "setuptools>=42",
     "wheel",
     "cmake>=3.18",
-    "scikit-build @ git+https://github.com/YannickJadoul/scikit-build@vs2019-apple-silicon",
+    "scikit-build==0.12.0",
 ]
 build-backend = "setuptools.build_meta"
