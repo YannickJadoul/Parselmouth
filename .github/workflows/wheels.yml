@@ -122,7 +122,7 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/docs')
         shell: bash
         run: |
-          echo "CIBW_BUILD=cp37-manylinux_x86_64" >> $GITHUB_ENV
+          echo "CIBW_BUILD=cp39-manylinux_x86_64" >> $GITHUB_ENV
 
       - name: Run cibuildwheel
         if: startsWith(github.ref, 'refs/heads/docs') != true || matrix.cibw-arch == 'manylinux_x86_64'
@@ -143,11 +143,11 @@ jobs:
           if-no-files-found: error
 
       - name: Upload wheel for ReadTheDocs
-        if: runner.os == 'Linux' && matrix.cibw-arch == 'manylinux_x86_64' && startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
+        if: matrix.cibw-arch == 'manylinux_x86_64' && startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
         uses: actions/upload-artifact@v2
         with:
           name: rtd-wheel
-          path: wheelhouse/praat_parselmouth-*-cp37-cp37m-*manylinux2010_x86_64*.whl
+          path: wheelhouse/praat_parselmouth-*-cp39-cp39-*manylinux2010_x86_64*.whl
           if-no-files-found: error
 
   trigger_rtd:
