@@ -150,6 +150,79 @@ jobs:
           path: wheelhouse/praat_parselmouth-*-cp39-cp39-*manylinux2010_x86_64*.whl
           if-no-files-found: error
 
+  legacy-wheels:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            cibw-arch: manylinux_x86_64
+          - runs-on: ubuntu-latest
+            cibw-arch: manylinux_i686
+          - runs-on: macos-10.15
+            cibw-arch: macosx_x86_64
+          - runs-on: windows-latest
+            cibw-arch: win_amd64
+          - runs-on: windows-latest
+            cibw-arch: win32
+            python-arch: x86
+
+    name: Wheels (legacy) • ${{ matrix.cibw-arch }}
+    runs-on: ${{ matrix.runs-on }}
+    if: startsWith(github.ref, 'refs/heads/docs') != true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: ${{ matrix.python-arch }}
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v1.12
+
+      - name: Install requirements
+        run: |
+          python -m pip install "cibuildwheel<2" twine
+
+      - name: Configure cibuildwheel
+        shell: bash
+        run: |
+          CMAKE_ARCH="${{ matrix.cibw-arch == 'win32' && '-A Win32' || '' }}"
+          echo "DISTUTILS_USE_SDK=1" >> $GITHUB_ENV
+          echo "MSSdk=1" >> $GITHUB_ENV
+          echo "CIBW_BUILD=cp27-${{ matrix.cibw-arch }} cp35-${{ matrix.cibw-arch }} pp27-${{ matrix.cibw-arch }} pp36-${{ matrix.cibw-arch }} ${{ matrix.cibw-arch == 'win32' && 'pp37-win32' || '' }}" >> $GITHUB_ENV
+          echo "CIBW_MANYLINUX_X86_64_IMAGE=manylinux2010" >> $GITHUB_ENV
+          echo "CIBW_MANYLINUX_I686_IMAGE=manylinux2010" >> $GITHUB_ENV
+          CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_DEPENDENCIES=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/build_dependencies\" CMAKE_BUILD_PARALLEL_LEVEL=2"
+          echo "CIBW_ENVIRONMENT=$CIBW_ENVIRONMENT_COMMON" >> $GITHUB_ENV
+          echo "CIBW_ENVIRONMENT_LINUX=$CIBW_ENVIRONMENT_COMMON PIP_ONLY_BINARY='numpy'" >> $GITHUB_ENV
+          echo "CIBW_ENVIRONMENT_MACOS=$CIBW_ENVIRONMENT_COMMON MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
+          CIBW_BEFORE_ALL_COMMON="pip install cmake && cmake -S . -B build_dependencies $CMAKE_ARCH && cmake --build build_dependencies --target praat -j 2"
+          echo "CIBW_BEFORE_ALL=$CIBW_BEFORE_ALL_COMMON" >> $GITHUB_ENV
+          echo "CIBW_BEFORE_ALL_WINDOWS=$CIBW_BEFORE_ALL_COMMON --config Release" >> $GITHUB_ENV
+          echo "CIBW_BEFORE_BUILD=python -m pip install -U pip && rm -rf _skbuild" >> $GITHUB_ENV
+
+      - name: Run cibuildwheel
+        run: |
+          cibuildwheel
+
+      - name: Check built wheels
+        run: |
+          twine check wheelhouse/*
+
+      - name: Upload built wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: wheelhouse/praat_parselmouth-*.whl
+          if-no-files-found: error
+
   trigger_rtd:
     name: Trigger ReadTheDocs build
     runs-on: ubuntu-latest
@@ -170,7 +243,7 @@ jobs:
     name: Create release
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [sdist, wheels]
+    needs: [sdist, wheels, legacy-wheels]
 
     steps:
       - name: Collect sdist and wheels
