@@ -6,11 +6,6 @@ on:
       - 'dependabot/**'
   pull_request:
   workflow_dispatch:
-    inputs:
-      debug_enabled:
-        description: 'Run the build with tmate debugging enabled'
-        required: false
-        default: false
 
 jobs:
   tests:
@@ -19,91 +14,92 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-latest
-            python: 3.6
+            python: '3.6'
             arch: x64
           - runs-on: ubuntu-latest
-            python: 3.7
+            python: '3.7'
             arch: x64
           - runs-on: ubuntu-latest
-            python: 3.8
-            arch: x64
-            run-praat-tests: true
-            name-extra: ' (with Praat tests)'
-          - runs-on: ubuntu-latest
-            python: 3.9
+            python: '3.8'
             arch: x64
           - runs-on: ubuntu-latest
-            python: pypy-3.6
+            python: '3.9'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: pypy-3.7
+            python: '3.10'
+            arch: x64
+          - runs-on: ubuntu-latest
+            python: 'pypy-3.7'
+            arch: x64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          - runs-on: ubuntu-latest
+            python: 'pypy-3.8'
             arch: x64
 
           - runs-on: ubuntu-latest
-            python: 3.9
+            python: '3.9'
             arch: x64
             gcc: 10
             name-extra: ' (GCC 10)'
           - runs-on: ubuntu-latest
-            python: 3.9
+            python: '3.9'
             arch: x64
             clang: 12
             name-extra: ' (Clang 12)'
 
           - runs-on: ubuntu-latest
-            python: 3.6
-            arch: x64
-            release: true
-            name-extra: ' (Release)'
-          - runs-on: ubuntu-latest
-            python: 3.9
+            python: '3.9'
             arch: x64
             release: true
             name-extra: ' (Release)'
 
           - runs-on: macos-latest
-            python: 3.6
+            python: '3.6'
             arch: x64
           - runs-on: macos-latest
-            python: 3.9
+            python: '3.9'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: macos-latest
-            python: 3.9
+            python: '3.9'
             arch: x64
             release: true
             name-extra: ' (Release)'
           - runs-on: macos-latest
-            python: pypy-3.6
+            python: 'pypy-3.7'
+            arch: x64
+          - runs-on: macos-10.15
+            python: '3.9'
             arch: x64
 
           - runs-on: windows-latest
-            python: 3.6
+            python: '3.6'
             arch: x64
           - runs-on: windows-latest
-            python: 3.9
+            python: '3.9'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: windows-latest
-            python: 3.6
+            python: '3.6'
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: 3.9
+            python: '3.9'
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: 3.6
+            python: '3.9'
             arch: x64
             release: true
             name-extra: ' (Release)'
           - runs-on: windows-latest
-            python: pypy-3.6
-            arch: x86
+            python: 'pypy-3.7'
+            arch: x64
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
@@ -180,12 +176,6 @@ jobs:
         run: |
           cmake --build build --target tests
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
-        with:
-          limit-access-to-actor: true
-
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -199,7 +189,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.12
