@@ -5,7 +5,7 @@ authors:
     given-names: "Yannick"
     orcid: "https://orcid.org/0000-0003-0540-3135"
 title: "Parselmouth"
-version: 0.4.0
+version: 0.4.1
 date-released: 2021-02-07
 url: "https://github.com/YannickJadoul/Parselmouth"
 license: GPL-3.0-or-later
