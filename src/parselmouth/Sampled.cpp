@@ -33,8 +33,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-PRAAT_CLASS_BINDING(Sampled)
-{
+PRAAT_CLASS_BINDING(Sampled) {
 	// TODO Unit handling
 
 	// TODO What about setting these properties? Any desired effect
@@ -47,14 +46,14 @@ PRAAT_CLASS_BINDING(Sampled)
 	def_readonly("dx", &structSampled::dx);
 
 	def("xs",
-		[](Sampled self) { // TODO This or rather use Python call to numpy?
-			py::array_t<double> xs(static_cast<size_t>(self->nx));
-			auto unchecked = xs.mutable_unchecked<1>();
-			for (auto i = 0; i < self->nx; ++i) {
-				unchecked(i) = self->x1 + i * self->dx;
-			}
-			return xs;
-		});
+	    [](Sampled self) { // TODO This or rather use Python call to numpy?
+		    py::array_t<double> xs(static_cast<size_t>(self->nx));
+		    auto unchecked = xs.mutable_unchecked<1>();
+		    for (auto i = 0; i < self->nx; ++i) {
+			    unchecked(i) = self->x1 + i * self->dx;
+		    }
+		    return xs;
+	    });
 
 	def("x_grid",
 	    [](Sampled self) {

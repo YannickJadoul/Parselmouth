@@ -67,7 +67,7 @@ PRAAT_CLASS_BINDING(Function) {
 	def("scale_x_to",
 	    [](Function self, double newXmin, double newXmax) {
 		    if (newXmin >= newXmax)
-			    Melder_throw (U"New xmin should be greater than new xmax.");
+			    Melder_throw(U"New xmin should be greater than new xmax.");
 		    Function_scaleXTo(self, newXmin, newXmax);
 	    },
 	    "new_xmin"_a, "new_xmax"_a);
@@ -142,7 +142,7 @@ BINDING_INIT(TimeFunction) {
 	def("scale_times_to",
 	    [](Function self, double newStartTime, double newEndTime) {
 		    if (newStartTime >= newEndTime)
-			    Melder_throw (U"New end time should be greater than new start time.");
+			    Melder_throw(U"New end time should be greater than new start time.");
 		    Function_scaleXTo(self, newStartTime, newEndTime);
 	    },
 	    "new_start_time"_a, "new_end_time"_a);

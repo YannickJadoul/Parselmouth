@@ -126,13 +126,13 @@ See also
 
 	def("__deepcopy__",
 	    [](Data self, py::dict) { return Data_copy<structData>(self); },
-		"memo"_a);
+	    "memo"_a);
 
 	// TODO Pickling?
 
 	def("__eq__",
-		&Data_equal,
-		"other"_a.none(false), py::is_operator());
+	    &Data_equal,
+	    "other"_a.none(false), py::is_operator());
 
 	def("__ne__",
 	    [](Data self, Data other) { return !Data_equal(self, other); },

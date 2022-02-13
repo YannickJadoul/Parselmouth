@@ -33,8 +33,7 @@ py::module_ importTgt() {
 	}
 	catch (py::error_already_set &e) {
 		if (e.matches(PyExc_ImportError))
-			throw std::runtime_error(
-					"Could not import 'tgt' (TextGridTools).\nMake sure the 'tgt' package is installed, e.g. by running `pip install tgt`");
+			throw std::runtime_error("Could not import 'tgt' (TextGridTools).\nMake sure the 'tgt' package is installed, e.g. by running `pip install tgt`");
 		else
 			throw;
 	}

@@ -105,7 +105,7 @@ public:
 
 	void addObjects(const std::vector<std::reference_wrapper<structData>> &objects, bool select) {
 		// Add references to the passed objects to the Praat object list
-		for (auto &data: objects) {
+		for (auto &data : objects) {
 			praat_newReference(&data.get()); // Since we're registering this is just a reference, running a command like "Remove" should normally be OK; through hack/workaround: a PraatObject now contains a boolean 'owned' to know if the data should be deleted
 			// praat_newReference could add multiple new objects if it unpacks a Collection object, but normally, it shouldn't be possible to create a Collection object
 			m_objects->list[m_objects->n].isBeingCreated = false;
@@ -173,7 +173,7 @@ public:
 	std::vector<structStackel> toPraatArgs(const py::args &args) {
 		std::vector<structStackel> praatArgs(1 + args.size()); // Cause ... Praat, and 1-based indexing, and ... grmbl ... well, at least the .data() pointer of the std::vector cannot be a nullptr now
 		for (size_t i = 1; i < praatArgs.size(); ++i) {
-			toPraatArg(praatArgs[i], args[i-1]);
+			toPraatArg(praatArgs[i], args[i - 1]);
 		}
 		return praatArgs;
 	}
@@ -219,7 +219,8 @@ void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg)
 				// NOTE: If Praat ever contains commands/actions that modify the vector,
 				//       we're in trouble since this will not consistently be reflected in the original NumPy array.
 				//       However, since we're indicating the vector is not owned, at least the interpreter can know.
-			} else if (array.ndim() == 2) {
+			}
+			else if (array.ndim() == 2) {
 				// Keep the object alive until the PraatEnvironment goes out of scope, and avoid a copy
 				m_keepAliveObjects.push_back(array);
 				return fillStackel(stackel, MAT(array.mutable_data(0), array.shape(0), array.shape(1)), false);
@@ -353,9 +354,10 @@ auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objec
 
 	try {
 		Interpreter_readParameters(environment.interpreter(), script);
-		Interpreter_getArgumentsFromArgs (environment.interpreter(), static_cast<int>(praatArgs.size() - 1), praatArgs.data());
+		Interpreter_getArgumentsFromArgs(environment.interpreter(), static_cast<int>(praatArgs.size() - 1), praatArgs.data());
 		Interpreter_run(environment.interpreter(), script);
-	} catch (MelderError) {
+	}
+	catch (MelderError) {
 		Melder_throw(U"Script not completed.");
 	}
 
@@ -412,7 +414,7 @@ auto castPraatCommand(const structPraat_Command &command) {
 	return std::tuple(command.title.get(), std::move(classes), command.nameOfCallback);
 }
 
-using CastedPraatCommand = decltype(castPraatCommand(std::declval<structPraat_Command&>()));
+using CastedPraatCommand = decltype(castPraatCommand(std::declval<structPraat_Command &>()));
 
 } // namespace
 
@@ -676,7 +678,7 @@ parselmouth.praat.run, parselmouth.praat.call
 	    []() {
 		    std::vector<CastedPraatCommand> menuCommands;
 		    for (integer i = 1; i <= praat_getNumberOfMenuCommands(); ++i)
-				menuCommands.emplace_back(castPraatCommand(*praat_getMenuCommand(i)));
+			    menuCommands.emplace_back(castPraatCommand(*praat_getMenuCommand(i)));
 		    return menuCommands;
 	    });
 }

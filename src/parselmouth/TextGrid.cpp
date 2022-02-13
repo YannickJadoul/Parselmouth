@@ -46,29 +46,29 @@ namespace parselmouth {
 
 PRAAT_CLASS_BINDING(TextGrid) {
 	// Note: this overload should come before the `std::vector` overload, since strings can be converted into vectors of characters
-	def(py::init([] (double startTime, double endTime, const std::u32string &allTierNames, const std::u32string &pointTierNames) {
+	def(py::init([](double startTime, double endTime, const std::u32string &allTierNames, const std::u32string &pointTierNames) {
 		    if (endTime <= startTime) Melder_throw(U"The end time should be greater than the start time.");
 		    return TextGrid_create(startTime, endTime, allTierNames.c_str(), pointTierNames.c_str());
 	    }),
 	    "start_time"_a, "end_time"_a, "tier_names"_a, "point_tier_names"_a);
 
-	def(py::init([] (double startTime, double endTime, const std::vector<std::u32string> &allTierNames, const std::vector<std::u32string> &pointTierNames) {
+	def(py::init([](double startTime, double endTime, const std::vector<std::u32string> &allTierNames, const std::vector<std::u32string> &pointTierNames) {
 		    if (endTime <= startTime) Melder_throw(U"The end time should be greater than the start time.");
 
 		    std::unordered_set<std::u32string> allTierNamesSet(allTierNames.begin(), allTierNames.end());
 		    for (auto &pointTierName : pointTierNames) {
-		    	if (!allTierNamesSet.count(pointTierName))
-		    		Melder_throw(U"Point tier name '", pointTierName.c_str(), U"' is not in list of all tier names.");
+			    if (!allTierNamesSet.count(pointTierName))
+				    Melder_throw(U"Point tier name '", pointTierName.c_str(), U"' is not in list of all tier names.");
 		    }
 
 		    std::unordered_set<std::u32string> pointTierNamesSet(pointTierNames.begin(), pointTierNames.end());
 		    auto textGrid = TextGrid_createWithoutTiers(startTime, endTime);
 		    for (auto &tierName : allTierNames) {
-		    	autoFunction tier;
-		    	if (pointTierNamesSet.count(tierName))
-		    	    tier = TextTier_create(startTime, endTime);
+			    autoFunction tier;
+			    if (pointTierNamesSet.count(tierName))
+				    tier = TextTier_create(startTime, endTime);
 			    else
-			    	tier = IntervalTier_create(startTime, endTime);
+				    tier = IntervalTier_create(startTime, endTime);
 			    Thing_setName(tier.get(), tierName.c_str());
 			    textGrid->tiers->addItem_move(tier.move());
 		    }

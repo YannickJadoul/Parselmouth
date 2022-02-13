@@ -53,68 +53,76 @@ template <typename Functor>
 struct RemoveClass;
 
 template <typename R, typename C, typename... A>
-struct RemoveClass<R C::*(A...)> { using Type = R (A...); };
+struct RemoveClass<R C::*(A...)> { using Type = R(A...); };
 
 template <typename R, typename C, typename... A>
-struct RemoveClass<R C::*(A...) const> { using Type = R (A...); };
+struct RemoveClass<R C::*(A...) const> { using Type = R(A...); };
 
-template<typename Functor>
+template <typename Functor>
 using RemoveClassT = typename RemoveClass<Functor>::Type;
 
 
-template<typename Signature, typename Function>
+template <typename Signature, typename Function>
 struct CompleteSignatureImpl;
 
-template<typename Return, typename... Args, typename R, typename... A>
-struct CompleteSignatureImpl<Return (Args...), R (A...)> {
-	using Type = ReplaceSignatureCastPlaceholder<Return, R> (ReplaceSignatureCastPlaceholder<Args, A>...);
+template <typename Return, typename... Args, typename R, typename... A>
+struct CompleteSignatureImpl<Return(Args...), R(A...)> {
+	using Type = ReplaceSignatureCastPlaceholder<Return, R>(ReplaceSignatureCastPlaceholder<Args, A>...);
 };
 
 
-template<typename Signature, typename Function>
+template <typename Signature, typename Function>
 struct CompleteSignature : CompleteSignatureImpl<Signature, RemoveClassT<decltype(&Function::operator())>> {};
 
-template<typename Signature, typename R, typename... A>
-struct CompleteSignature<Signature, R (&)(A...)> : CompleteSignatureImpl<Signature, R (A...)> {};
+template <typename Signature, typename R, typename... A>
+struct CompleteSignature<Signature, R (&)(A...)> : CompleteSignatureImpl<Signature, R(A...)> {};
 
-template<typename Signature, typename R, typename... A>
-struct CompleteSignature<Signature, R (*)(A...)> : CompleteSignatureImpl<Signature, R (A...)> {};
+template <typename Signature, typename R, typename... A>
+struct CompleteSignature<Signature, R (*)(A...)> : CompleteSignatureImpl<Signature, R(A...)> {};
 
-template<typename Signature, typename R, typename C, typename... A>
-struct CompleteSignature<Signature, R (C::*)(A...)> : CompleteSignatureImpl<Signature, R (C &, A...)> {};
+template <typename Signature, typename R, typename C, typename... A>
+struct CompleteSignature<Signature, R (C::*)(A...)> : CompleteSignatureImpl<Signature, R(C &, A...)> {};
 
-template<typename Signature, typename R, typename C, typename... A>
-struct CompleteSignature<Signature, R (C::*)(A...) const> : CompleteSignatureImpl<Signature, R (const C &, A...)> {};
+template <typename Signature, typename R, typename C, typename... A>
+struct CompleteSignature<Signature, R (C::*)(A...) const> : CompleteSignatureImpl<Signature, R(const C &, A...)> {};
 
 
-template<typename Signature>
+template <typename Signature>
 struct SignatureCastImpl;
 
-template<typename Return, typename... Args>
-struct SignatureCastImpl<Return (Args...)> {
-	template<typename Function>
-	static auto exec(Function &&f) { return [f = std::forward<Function>(f)](Args... args) -> Return { return f(std::forward<Args>(args)...); }; }
+template <typename Return, typename... Args>
+struct SignatureCastImpl<Return(Args...)> {
+	template <typename Function>
+	static auto exec(Function &&f) {
+		return [f = std::forward<Function>(f)](Args... args) -> Return { return f(std::forward<Args>(args)...); };
+	}
 
-	template<typename R, typename... A>
-	static auto exec(R (*f)(A...)) { return [f](Args... args) -> Return { return f(std::forward<Args>(args)...); }; }
+	template <typename R, typename... A>
+	static auto exec(R (*f)(A...)) {
+		return [f](Args... args) -> Return { return f(std::forward<Args>(args)...); };
+	}
 
-	template<typename R, typename C, typename... A>
-	static auto exec(R (C::*f)(A...)) { return [f](C &c, Args... args) -> Return { return c.*f(std::forward<Args>(args)...); }; }
+	template <typename R, typename C, typename... A>
+	static auto exec(R (C::*f)(A...)) {
+		return [f](C &c, Args... args) -> Return { return c.*f(std::forward<Args>(args)...); };
+	}
 
-	template<typename R, typename C, typename... A>
-	static auto exec(R (C::*f)(A...) const) { return [f](const C &c, Args... args) -> Return { return c.*f(std::forward<Args>(args)...); };	}
+	template <typename R, typename C, typename... A>
+	static auto exec(R (C::*f)(A...) const) {
+		return [f](const C &c, Args... args) -> Return { return c.*f(std::forward<Args>(args)...); };
+	}
 };
 
 } // namespace detail
 
-template<typename Signature, typename Function>
+template <typename Signature, typename Function>
 auto signature_cast(Function &&f) {
 	return detail::SignatureCastImpl<typename detail::CompleteSignature<Signature, Function>::Type>::exec(std::forward<Function>(f));
 }
 
-template<typename... Args, typename Function>
+template <typename... Args, typename Function>
 auto args_cast(Function &&f) {
-	return signature_cast<signature_cast_placeholder::_ (Args...)>(std::forward<Function>(f));
+	return signature_cast<signature_cast_placeholder::_(Args...)>(std::forward<Function>(f));
 }
 
 } // namespace parselmouth
