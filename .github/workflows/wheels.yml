@@ -72,9 +72,9 @@ jobs:
             cibw-arch: macosx_arm64
           - runs-on: macos-latest
             cibw-arch: macosx_universal2
-          - runs-on: windows-latest
+          - runs-on: windows-2019
             cibw-arch: win_amd64
-          - runs-on: windows-latest
+          - runs-on: windows-2019
             cibw-arch: win32
             python-arch: x86
 
@@ -161,9 +161,9 @@ jobs:
             cibw-arch: manylinux_i686
           - runs-on: macos-10.15
             cibw-arch: macosx_x86_64
-          - runs-on: windows-latest
+          - runs-on: windows-2019
             cibw-arch: win_amd64
-          - runs-on: windows-latest
+          - runs-on: windows-2019
             cibw-arch: win32
             python-arch: x86
 
