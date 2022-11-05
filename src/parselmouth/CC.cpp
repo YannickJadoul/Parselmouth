@@ -42,10 +42,10 @@ PRAAT_STRUCT_BINDING(Frame, CC_Frame) {
 	def("__getitem__",
 	    [](CC_Frame self, long i) {
 		    if (i < 0) i += self->numberOfCoefficients; // Python-style negative indexing // TODO Index type?
-			if (i < 0 || i >= self->numberOfCoefficients) throw py::index_error("CC Frame index out of range");
+		    if (i < 0 || i >= self->numberOfCoefficients) throw py::index_error("CC Frame index out of range");
 		    return i == 0 ? self->c0 : self->c[i];
 	    },
-		"i"_a);
+	    "i"_a);
 
 	def("__setitem__",
 	    [](CC_Frame self, long i, double value) {
@@ -64,7 +64,7 @@ PRAAT_STRUCT_BINDING(Frame, CC_Frame) {
 		    auto unchecked = array.mutable_unchecked<1>();
 		    unchecked(0) = self->c0;
 		    for (long i = 0; i < self->numberOfCoefficients; ++i) {
-			    unchecked(i+1) = self->c[i+1];
+			    unchecked(i + 1) = self->c[i + 1];
 		    }
 		    return array;
 	    });
@@ -103,17 +103,17 @@ PRAAT_CLASS_BINDING(CC) {
 	def_readonly("max_n_coefficients", &structCC::maximumNumberOfCoefficients);
 
 	def("get_frame",
-		[](CC self, Positive<integer> frameNumber) {
-			if (frameNumber > self->nx) Melder_throw(U"Frame number out of range");
-			return &self->frame[frameNumber];
-		},
-		"frame_number"_a, py::return_value_policy::reference_internal);
+	    [](CC self, Positive<integer> frameNumber) {
+		    if (frameNumber > self->nx) Melder_throw(U"Frame number out of range");
+		    return &self->frame[frameNumber];
+	    },
+	    "frame_number"_a, py::return_value_policy::reference_internal);
 
 	def("__getitem__",
 	    [](CC self, long i) {
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("CC index out of range");
-		    return &self->frame[i+1];
+		    return &self->frame[i + 1];
 	    },
 	    "i"_a, py::return_value_policy::reference_internal);
 
@@ -122,7 +122,7 @@ PRAAT_CLASS_BINDING(CC) {
 		    auto &[i, j] = ij;
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("CC index out of range");
-		    auto &frame = self->frame[i+1];
+		    auto &frame = self->frame[i + 1];
 		    if (j < 0) j += frame.numberOfCoefficients; // Python-style negative indexing
 		    if (j < 0 || j > frame.numberOfCoefficients) throw py::index_error("CC Frame index out of range");
 		    return j == 0 ? frame.c0 : frame.c[j];
@@ -134,7 +134,7 @@ PRAAT_CLASS_BINDING(CC) {
 		    auto &[i, j] = ij;
 		    if (i < 0) i += self->nx; // Python-style negative indexing
 		    if (i < 0 || i >= self->nx) throw py::index_error("CC index out of range");
-		    auto &frame = self->frame[i+1];
+		    auto &frame = self->frame[i + 1];
 		    if (j < 0) j += frame.numberOfCoefficients; // Python-style negative indexing
 		    if (j < 0 || j > frame.numberOfCoefficients) throw py::index_error("CC Frame index out of range");
 		    (j == 0 ? frame.c0 : frame.c[j]) = value;
@@ -142,7 +142,7 @@ PRAAT_CLASS_BINDING(CC) {
 	    "ij"_a, "value"_a);
 
 	def("__iter__",
-	    [](CC self) { return py::make_iterator(&self->frame[1], &self->frame[self->nx+1]); },
+	    [](CC self) { return py::make_iterator(&self->frame[1], &self->frame[self->nx + 1]); },
 	    py::keep_alive<0, 1>());
 
 	def("to_array",
@@ -152,10 +152,10 @@ PRAAT_CLASS_BINDING(CC) {
 
 		    auto unchecked = array.mutable_unchecked<2>();
 		    for (auto i = 0; i < self->nx; ++i) {
-			    auto &frame = self->frame[i+1];
+			    auto &frame = self->frame[i + 1];
 			    unchecked(0, i) = frame.c0;
 			    for (auto j = 0; j < maxCoefficients; ++j) {
-				    unchecked(j+1, i) = (j < frame.numberOfCoefficients) ? frame.c[j+1] : std::numeric_limits<double>::quiet_NaN();
+				    unchecked(j + 1, i) = (j < frame.numberOfCoefficients) ? frame.c[j + 1] : std::numeric_limits<double>::quiet_NaN();
 			    }
 		    }
 

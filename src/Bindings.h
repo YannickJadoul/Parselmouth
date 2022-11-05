@@ -33,8 +33,7 @@ template <typename Type>
 class BindingType;
 
 template <typename Type>
-class Binding
-{
+class Binding {
 public:
 	explicit Binding(pybind11::handle &scope);
 	~Binding();
@@ -74,7 +73,7 @@ public:
 #endif
 
 	template <typename... Args>
-	explicit Bindings(Args &&... args) : m_first{args...}, m_rest{std::forward<Args>(args)...} {}
+	explicit Bindings(Args &&...args) : m_first{args...}, m_rest{std::forward<Args>(args)...} {}
 
 	void init() {
 		m_first.init();
@@ -95,11 +94,18 @@ private:
 	Bindings<Rest...> m_rest;
 };
 
-#define BINDING(Type, Kind, ...) \
-	template <> class BindingType<Type> : public Kind<__VA_ARGS__> { using Base = Kind<__VA_ARGS__>; public: explicit BindingType(pybind11::handle &); void init(); }; \
+#define BINDING(Type, Kind, ...)                                                                               \
+	template <>                                                                                                \
+	class BindingType<Type> : public Kind<__VA_ARGS__> {                                                       \
+		using Base = Kind<__VA_ARGS__>;                                                                        \
+                                                                                                               \
+	public:                                                                                                    \
+		explicit BindingType(pybind11::handle &);                                                              \
+		void init();                                                                                           \
+	};                                                                                                         \
 	template <> Binding<Type>::Binding(pybind11::handle &scope) : m_binding(std::make_unique<BindingType<Type>>(scope)) {} \
-	template <> Binding<Type>::~Binding() {} \
-	template <> void Binding<Type>::init() { m_binding->init(); } \
+	template <> Binding<Type>::~Binding() {}                                                                               \
+	template <> void Binding<Type>::init() { m_binding->init(); }                                                          \
 	template <> pybind11::handle Binding<Type>::get() { return *m_binding; }
 
 #define CLASS_BINDING(Type, ...) BINDING(Type, pybind11::class_, __VA_ARGS__)
@@ -110,7 +116,11 @@ private:
 #define BINDING_CONSTRUCTOR(Type, ...) BindingType<Type>::BindingType(pybind11::handle &scope) : Base{scope, __VA_ARGS__} {}
 #define BINDING_INIT(Type) void BindingType<Type>::init()
 #define NO_BINDING_INIT(Type) BINDING_INIT(Type) {}
-#define NESTED_BINDINGS(...) { Bindings<__VA_ARGS__> nestedBindings(*this); nestedBindings.init(); }
+#define NESTED_BINDINGS(...)                         \
+	{                                                \
+		Bindings<__VA_ARGS__> nestedBindings(*this); \
+		nestedBindings.init();                       \
+	}
 
 } // namespace parselmouth
 

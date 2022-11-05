@@ -52,6 +52,9 @@ def test_from_numpy_array_stereo(sampling_frequency):
 	sound = parselmouth.Sound(np.vstack((sine_values, cosine_values))[::-1,1::3], sampling_frequency=sampling_frequency)
 	assert np.all(sound.values == [cosine_values[1::3], sine_values[1::3]])
 
+	with pytest.warns(RuntimeWarning, match=r'Number of channels \([0-9]+\) is greater than number of samples \([0-9]+\)'):
+		parselmouth.Sound(np.vstack((sine_values, cosine_values)).T, sampling_frequency=sampling_frequency)
+
 
 def test_from_scalar(sampling_frequency):
 	with pytest.raises(ValueError, match="Cannot create Sound from a single 0-dimensional number"):

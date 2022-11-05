@@ -46,7 +46,7 @@ PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 			             throw py::value_error("Cannot set Matrix values with an array with more than two dimensions");
 		             }
 
-		             auto nx = values.shape(ndim-1);
+		             auto nx = values.shape(ndim - 1);
 		             auto ny = ndim == 2 ? values.shape(0) : 1;
 
 		             if (ndim == 2 && values.data(0, 0) == &self->z[1][1] && nx == self->nx && ny == self->ny && values.strides(0) == sizeof(double) && values.strides(1) == py::ssize_t{sizeof(double)} * nx) {
@@ -61,12 +61,12 @@ PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 				             auto unchecked = values.unchecked<2>();
 				             for (py::ssize_t i = 0; i < ny; ++i)
 					             for (py::ssize_t j = 0; j < nx; ++j)
-						             self->z[i+1][j+1] = unchecked(i, j);
+						             self->z[i + 1][j + 1] = unchecked(i, j);
 			             }
 			             else {
 				             auto unchecked = values.unchecked<1>();
 				             for (py::ssize_t j = 0; j < nx; ++j)
-					             self->z[1][j+1] = unchecked(j);
+					             self->z[1][j + 1] = unchecked(j);
 			             }
 		             }
 	             });
@@ -134,12 +134,12 @@ PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 	    "x"_a, "y"_a);
 
 	def("get_minimum",
-		[](Matrix self) {
-			double minimum = undefined;
-			double maximum = undefined;
-			Matrix_getWindowExtrema(self, 0, 0, 0, 0, &minimum, &maximum);
-			return minimum;
-		});
+	    [](Matrix self) {
+		    double minimum = undefined;
+		    double maximum = undefined;
+		    Matrix_getWindowExtrema(self, 0, 0, 0, 0, &minimum, &maximum);
+		    return minimum;
+	    });
 
 	def("get_maximum",
 	    [](Matrix self) {
@@ -171,8 +171,8 @@ PRAAT_CLASS_BINDING(Matrix, py::buffer_protocol()) {
 
 	def("set_value",
 	    [](Matrix self, Positive<integer> rowNumber, Positive<integer> columnNumber, double newValue) {
-		    if (rowNumber > self->ny) Melder_throw (U"Your row number should not be greater than your number of rows.");
-		    if (columnNumber > self->nx) Melder_throw (U"Your column number should not be greater than your number of columns.");
+		    if (rowNumber > self->ny) Melder_throw(U"Your row number should not be greater than your number of rows.");
+		    if (columnNumber > self->nx) Melder_throw(U"Your column number should not be greater than your number of columns.");
 		    self->z[rowNumber][columnNumber] = newValue;
 	    },
 	    "row_number"_a, "column_number"_a, "new_value"_a);

@@ -28,8 +28,7 @@ using namespace py::literals;
 
 namespace parselmouth {
 
-PRAAT_CLASS_BINDING(SampledXY)
-{
+PRAAT_CLASS_BINDING(SampledXY) {
 	def_readonly("ymin", &structSampledXY::ymin);
 
 	def_readonly("ymax", &structSampledXY::ymax);

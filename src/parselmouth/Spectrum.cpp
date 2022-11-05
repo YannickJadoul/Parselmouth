@@ -23,9 +23,9 @@
 #include "utils/pybind11/NumericPredicates.h"
 
 #include <praat/dwtools/Spectrum_extensions.h>
+#include <praat/fon/Sound_and_Spectrum.h>
 #include <praat/fon/Spectrum.h>
 #include <praat/fon/Spectrum_and_Spectrogram.h>
-#include <praat/fon/Sound_and_Spectrum.h>
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
@@ -47,21 +47,21 @@ PRAAT_CLASS_BINDING(Spectrum) {
 			    throw py::value_error("Cannot create Spectrum from 2-dimensional array where the first dimension is greater than 2");
 		    }
 
-		    auto n = values.shape(ndim-1);
+		    auto n = values.shape(ndim - 1);
 		    auto result = Spectrum_create(maximumFrequency, n);
 
 		    if (ndim == 2) {
 			    auto unchecked = values.unchecked<2>();
 			    for (py::ssize_t i = 0; i < n; ++i) {
-				    result->z[1][i+1] = unchecked(0, i);
-				    result->z[2][i+1] = values.shape(1) == 2 ? unchecked(1, i) : 0.0;
+				    result->z[1][i + 1] = unchecked(0, i);
+				    result->z[2][i + 1] = values.shape(1) == 2 ? unchecked(1, i) : 0.0;
 			    }
 		    }
 		    else {
 			    auto unchecked = values.unchecked<1>();
 			    for (py::ssize_t i = 0; i < n; ++i) {
-				    result->z[1][i+1] = unchecked(i);
-				    result->z[2][i+1] = 0;
+				    result->z[1][i + 1] = unchecked(i);
+				    result->z[2][i + 1] = 0;
 			    }
 		    }
 
@@ -80,8 +80,8 @@ PRAAT_CLASS_BINDING(Spectrum) {
 
 		    auto unchecked = values.unchecked<1>();
 		    for (py::ssize_t i = 0; i < n; ++i) {
-			    result->z[1][i+1] = unchecked(i).real();
-			    result->z[2][i+1] = unchecked(i).imag();
+			    result->z[1][i + 1] = unchecked(i).real();
+			    result->z[2][i + 1] = unchecked(i).imag();
 		    }
 
 		    return result;
@@ -127,7 +127,7 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	def("get_real_value_in_bin",
 	    [](Spectrum self, Positive<integer> binNumber) {
 		    if (binNumber > self->nx)
-			    Melder_throw (U"Bin number must not exceed number of bins.");
+			    Melder_throw(U"Bin number must not exceed number of bins.");
 		    return self->z[1][binNumber];
 	    },
 	    "bin_number"_a);
@@ -135,7 +135,7 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	def("get_imaginary_value_in_bin",
 	    [](Spectrum self, Positive<integer> binNumber) {
 		    if (binNumber > self->nx)
-			    Melder_throw (U"Bin number must not exceed number of bins.");
+			    Melder_throw(U"Bin number must not exceed number of bins.");
 		    return self->z[2][binNumber];
 	    },
 	    "bin_number"_a);
@@ -143,7 +143,7 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	def("get_value_in_bin",
 	    [](Spectrum self, Positive<integer> binNumber) {
 		    if (binNumber > self->nx)
-			    Melder_throw (U"Bin number must not exceed number of bins.");
+			    Melder_throw(U"Bin number must not exceed number of bins.");
 		    return std::complex<double>(self->z[1][binNumber], self->z[2][binNumber]);
 	    },
 	    "bin_number"_a);
@@ -152,14 +152,14 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	    [](Spectrum self, integer index) {
 		    if (index < 0 || index >= self->nx)
 			    throw py::index_error("bin index out of range");
-		    return std::complex<double>(self->z[1][index+1], self->z[2][index+1]);
+		    return std::complex<double>(self->z[1][index + 1], self->z[2][index + 1]);
 	    },
 	    "index"_a);
 
 	def("set_real_value_in_bin",
 	    [](Spectrum self, Positive<integer> binNumber, double value) {
 		    if (binNumber > self->nx)
-			    Melder_throw (U"Bin number must not exceed number of bins.");
+			    Melder_throw(U"Bin number must not exceed number of bins.");
 		    self->z[1][binNumber] = value;
 	    },
 	    "bin_number"_a, "value"_a);
@@ -167,7 +167,7 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	def("set_imaginary_value_in_bin",
 	    [](Spectrum self, Positive<integer> binNumber, double value) {
 		    if (binNumber > self->nx)
-			    Melder_throw (U"Bin number must not exceed number of bins.");
+			    Melder_throw(U"Bin number must not exceed number of bins.");
 		    self->z[2][binNumber] = value;
 	    },
 	    "bin_number"_a, "value"_a);
@@ -175,7 +175,7 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	def("set_value_in_bin",
 	    [](Spectrum self, Positive<integer> binNumber, std::complex<double> value) {
 		    if (binNumber > self->nx)
-			    Melder_throw (U"Bin number must not exceed number of bins.");
+			    Melder_throw(U"Bin number must not exceed number of bins.");
 		    self->z[1][binNumber] = value.real();
 		    self->z[2][binNumber] = value.imag();
 	    },
@@ -185,8 +185,8 @@ PRAAT_CLASS_BINDING(Spectrum) {
 	    [](Spectrum self, integer index, std::complex<double> value) {
 		    if (index < 0 || index >= self->nx)
 			    throw py::index_error("bin index out of range");
-		    self->z[1][index+1] = value.real();
-		    self->z[2][index+1] = value.imag();
+		    self->z[1][index + 1] = value.real();
+		    self->z[2][index + 1] = value.imag();
 	    },
 	    "index"_a, "value"_a);
 

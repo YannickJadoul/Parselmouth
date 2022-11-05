@@ -26,10 +26,8 @@
 namespace parselmouth {
 
 template <typename Type>
-void make_implicitly_convertible_from_string(pybind11::enum_<Type> &enumType)
-{
-	enumType.def(pybind11::init([enumType](pybind11::str value)
-	                            {
+void make_implicitly_convertible_from_string(pybind11::enum_<Type> &enumType) {
+	enumType.def(pybind11::init([enumType](pybind11::str value) {
 		                            auto values = pybind11::dict(enumType.attr("__members__"));
 		                            if (values.contains(value)) {
 			                            return pybind11::cast<Type>(values[value]);
@@ -41,6 +39,6 @@ void make_implicitly_convertible_from_string(pybind11::enum_<Type> &enumType)
 	pybind11::implicitly_convertible<std::string, Type>();
 };
 
-}
+} // namespace parselmouth
 
 #endif // INC_PARSELMOUTH_IMPLICITSTRINGTOENUMCONVERSION_H

@@ -31,16 +31,8 @@ namespace parselmouth {
 CLASS_BINDING(Thing, structThing, detail::PraatHolder<structThing>)
 BINDING_CONSTRUCTOR(Thing, "Thing")
 BINDING_INIT(Thing) {
-#if PY_MAJOR_VERSION >= 3
 	def("__str__",
 	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return info.get(); });
-#else
-	def("__unicode__",
-	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return info.get(); });
-
-	def("__str__",
-	    [](Thing self) { MelderInfoInterceptor info; Thing_info(self); return info.get(); });
-#endif
 
 	def_property("name", &Thing_getName, [](Thing self, char32 *name) { if (name) praat_cleanUpName(name); Thing_setName(self, name); });
 

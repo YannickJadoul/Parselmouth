@@ -19,10 +19,7 @@ import pytest
 
 import parselmouth
 
-try:
-	import glob2 as glob  # Python 2 compatibility
-except ImportError:
-	import glob
+import glob
 import os
 import sys
 

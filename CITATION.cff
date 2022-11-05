@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from 'preferred-citation', as well as Praat."
+authors:
+  - family-names: "Jadoul"
+    given-names: "Yannick"
+    orcid: "https://orcid.org/0000-0003-0540-3135"
+title: "Parselmouth"
+version: 0.4.1
+date-released: 2021-02-07
+url: "https://github.com/YannickJadoul/Parselmouth"
+license: GPL-3.0-or-later
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Jadoul"
+      given-names: "Yannick"
+      orcid: "https://orcid.org/0000-0003-0540-3135"
+    - family-names: "Thompson"
+      given-names: "Bill"
+      orcid: "http://orcid.org/0000-0001-7348-3531"
+    - family-names: "de Boer"
+      given-names: "Bart"
+      orcid: "https://orcid.org/0000-0001-9429-6129"
+  doi: 10.1016/j.wocn.2018.07.001
+  journal: "Journal of Phonetics"
+  month: 7
+  start: 1
+  end: 15
+  title: "Introducing Parselmouth: A Python interface to Praat"
+  volume: 71
+  year: 2018
+references:
+  - type: software
+    authors:
+      - family-names: "Boersma"
+        given-names: "Paul"
+      - family-names: "Weenink"
+        given-names: "David"
+    title: "Praat: doing phonetics by computer [Computer program]"
+    version: 6.1.38
+    date-released: 2021-01-02
+    url: "http://www.praat.org/"

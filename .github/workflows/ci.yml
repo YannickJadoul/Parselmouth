@@ -14,103 +14,92 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-latest
-            python: 2.7
+            python: '3.6'
             arch: x64
           - runs-on: ubuntu-latest
-            python: 3.5
+            python: '3.7'
             arch: x64
           - runs-on: ubuntu-latest
-            python: 3.6
+            python: '3.8'
             arch: x64
           - runs-on: ubuntu-latest
-            python: 3.7
-            arch: x64
-          - runs-on: ubuntu-latest
-            python: 3.8
+            python: '3.9'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: ubuntu-latest
-            python: 3.9
-            arch: x64
           - runs-on: ubuntu-latest
             python: '3.10'
             arch: x64
           - runs-on: ubuntu-latest
-            python: pypy-2.7
-            arch: x64
-          - runs-on: ubuntu-latest
-            python: pypy-3.6
+            python: 'pypy-3.7'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: pypy-3.7
+            python: 'pypy-3.8'
             arch: x64
 
           - runs-on: ubuntu-latest
-            python: 3.8
+            python: '3.9'
             arch: x64
             gcc: 10
             name-extra: ' (GCC 10)'
           - runs-on: ubuntu-latest
-            python: 3.8
+            python: '3.9'
             arch: x64
             clang: 12
             name-extra: ' (Clang 12)'
 
           - runs-on: ubuntu-latest
-            python: 2.7
-            arch: x64
-            release: true
-            name-extra: ' (Release)'
-          - runs-on: ubuntu-latest
-            python: 3.8
+            python: '3.9'
             arch: x64
             release: true
             name-extra: ' (Release)'
 
-          - runs-on: macos-10.15
-            python: 2.7
+          - runs-on: macos-latest
+            python: '3.6'
             arch: x64
-          - runs-on: macos-10.15
-            python: 3.8
+          - runs-on: macos-latest
+            python: '3.9'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: macos-10.15
-            python: 3.8
+          - runs-on: macos-latest
+            python: '3.9'
             arch: x64
             release: true
             name-extra: ' (Release)'
+          - runs-on: macos-latest
+            python: 'pypy-3.7'
+            arch: x64
           - runs-on: macos-10.15
-            python: pypy-3.6
+            python: '3.9'
             arch: x64
 
-          - runs-on: windows-2019
-            python: 2.7
+          - runs-on: windows-latest
+            python: '3.6'
             arch: x64
-          - runs-on: windows-2019
-            python: 3.8
+          - runs-on: windows-latest
+            python: '3.9'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: windows-2019
-            python: 2.7
+          - runs-on: windows-latest
+            python: '3.6'
             arch: x86
             name-extra: ' (32-bit)'
-          - runs-on: windows-2019
-            python: 3.8
+          - runs-on: windows-latest
+            python: '3.9'
             arch: x86
             name-extra: ' (32-bit)'
-          - runs-on: windows-2019
-            python: 3.8
+          - runs-on: windows-latest
+            python: '3.9'
             arch: x64
             release: true
             name-extra: ' (Release)'
-          - runs-on: windows-2019
-            python: pypy-3.6
-            arch: x86
+          - runs-on: windows-latest
+            python: 'pypy-3.7'
+            arch: x64
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
@@ -129,7 +118,7 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.12
+        uses: jwlawson/actions-setup-cmake@v1.13
 
       - name: Install OpenBLAS on macOS for NumPy
         if: runner.os == 'macOS' && startsWith(matrix.python, 'pypy')
@@ -200,10 +189,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.12
+        uses: jwlawson/actions-setup-cmake@v1.13
 
       - name: Install requirements
         run: |

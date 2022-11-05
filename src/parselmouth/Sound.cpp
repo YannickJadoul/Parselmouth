@@ -47,17 +47,15 @@ namespace parselmouth {
 namespace {
 
 template <typename T, typename Container>
-OrderedOf<T> referencesToOrderedOf(const Container &container) // TODO type_caster?
-{
+OrderedOf<T> referencesToOrderedOf(const Container &container) { // TODO type_caster?
 	OrderedOf<T> orderedOf;
-	std::for_each(begin(container), end(container), [&orderedOf] (T &item) { orderedOf.addItem_ref(&item); });
+	std::for_each(begin(container), end(container), [&orderedOf](T &item) { orderedOf.addItem_ref(&item); });
 	return orderedOf;
 }
 
 } // namespace
 
-enum class SoundFileFormat // TODO Nest within Sound?
-{
+enum class SoundFileFormat { // TODO Nest within Sound?
 	WAV,
 	AIFF,
 	AIFC,
@@ -78,16 +76,14 @@ enum class SoundFileFormat // TODO Nest within Sound?
 	RAW_32_LE
 };
 
-enum class ToPitchMethod
-{
+enum class ToPitchMethod {
 	AC,
 	CC,
 	SPINET,
 	SHS
 };
 
-enum class ToHarmonicityMethod
-{
+enum class ToHarmonicityMethod {
 	CC,
 	AC,
 	GNE
@@ -202,6 +198,9 @@ PRAAT_CLASS_BINDING(Sound) {
 
 		    auto nx = values.shape(ndim - 1);
 		    auto ny = ndim == 2 ? values.shape(0) : 1;
+		    if (ndim == 2 && ny > nx)
+			    PyErr_WarnEx(PyExc_RuntimeWarning, ("Number of channels (" + std::to_string(ny) + ") is greater than number of samples (" + std::to_string(nx) + "); note that the shape of the `values` array is interpreted as (n_channels, n_samples).").c_str(), 1);
+
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
 
 		    // We can copy_n because of py::array::c_style making sure things are contiguous
@@ -225,78 +224,61 @@ PRAAT_CLASS_BINDING(Sound) {
 	def("save",
 	    [](Sound self, const std::u32string &filePath, SoundFileFormat format) {
 		    auto file = pathToMelderFile(filePath);
-		    switch(format) {
-		    case SoundFileFormat::WAV:
-			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
-			    break;
-
-		    case SoundFileFormat::AIFF:
-			    Sound_saveAsAudioFile(self, &file, Melder_AIFF, 16);
-			    break;
-
-		    case SoundFileFormat::AIFC:
-			    Sound_saveAsAudioFile(self, &file, Melder_AIFC, 16);
-			    break;
-
-		    case SoundFileFormat::NEXT_SUN:
-			    Sound_saveAsAudioFile(self, &file, Melder_NEXT_SUN, 16);
-			    break;
-
-		    case SoundFileFormat::NIST:
-			    Sound_saveAsAudioFile(self, &file, Melder_NIST, 16);
-			    break;
-
-		    case SoundFileFormat::FLAC:
-			    Sound_saveAsAudioFile(self, &file, Melder_FLAC, 16);
-			    break;
-
-		    case SoundFileFormat::KAY:
-			    Sound_saveAsKayFile (self, &file);
-			    break;
-
-		    case SoundFileFormat::SESAM:
-			    Sound_saveAsSesamFile (self, &file);
-			    break;
-
-		    case SoundFileFormat::WAV_24:
-			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 24);
-			    break;
-
-		    case SoundFileFormat::WAV_32:
-			    Sound_saveAsAudioFile(self, &file, Melder_WAV, 32);
-			    break;
-
-		    case SoundFileFormat::RAW_8_SIGNED:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_SIGNED);
-			    break;
-
-		    case SoundFileFormat::RAW_8_UNSIGNED:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_UNSIGNED);
-			    break;
-
-		    case SoundFileFormat::RAW_16_BE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_BIG_ENDIAN);
-			    break;
-
-		    case SoundFileFormat::RAW_16_LE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_LITTLE_ENDIAN);
-			    break;
-
-		    case SoundFileFormat::RAW_24_BE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_BIG_ENDIAN);
-			    break;
-
-		    case SoundFileFormat::RAW_24_LE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_LITTLE_ENDIAN);
-			    break;
-
-		    case SoundFileFormat::RAW_32_BE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_BIG_ENDIAN);
-			    break;
-
-		    case SoundFileFormat::RAW_32_LE:
-			    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_LITTLE_ENDIAN);
-			    break;
+		    switch (format) {
+			    case SoundFileFormat::WAV:
+				    Sound_saveAsAudioFile(self, &file, Melder_WAV, 16);
+				    break;
+			    case SoundFileFormat::AIFF:
+				    Sound_saveAsAudioFile(self, &file, Melder_AIFF, 16);
+				    break;
+			    case SoundFileFormat::AIFC:
+				    Sound_saveAsAudioFile(self, &file, Melder_AIFC, 16);
+				    break;
+			    case SoundFileFormat::NEXT_SUN:
+				    Sound_saveAsAudioFile(self, &file, Melder_NEXT_SUN, 16);
+				    break;
+			    case SoundFileFormat::NIST:
+				    Sound_saveAsAudioFile(self, &file, Melder_NIST, 16);
+				    break;
+			    case SoundFileFormat::FLAC:
+				    Sound_saveAsAudioFile(self, &file, Melder_FLAC, 16);
+				    break;
+			    case SoundFileFormat::KAY:
+				    Sound_saveAsKayFile(self, &file);
+				    break;
+			    case SoundFileFormat::SESAM:
+				    Sound_saveAsSesamFile(self, &file);
+				    break;
+			    case SoundFileFormat::WAV_24:
+				    Sound_saveAsAudioFile(self, &file, Melder_WAV, 24);
+				    break;
+			    case SoundFileFormat::WAV_32:
+				    Sound_saveAsAudioFile(self, &file, Melder_WAV, 32);
+				    break;
+			    case SoundFileFormat::RAW_8_SIGNED:
+				    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_SIGNED);
+				    break;
+			    case SoundFileFormat::RAW_8_UNSIGNED:
+				    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_8_UNSIGNED);
+				    break;
+			    case SoundFileFormat::RAW_16_BE:
+				    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_BIG_ENDIAN);
+				    break;
+			    case SoundFileFormat::RAW_16_LE:
+				    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_16_LITTLE_ENDIAN);
+				    break;
+			    case SoundFileFormat::RAW_24_BE:
+				    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_BIG_ENDIAN);
+				    break;
+			    case SoundFileFormat::RAW_24_LE:
+				    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_24_LITTLE_ENDIAN);
+				    break;
+			    case SoundFileFormat::RAW_32_BE:
+				    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_BIG_ENDIAN);
+				    break;
+			    case SoundFileFormat::RAW_32_LE:
+				    Sound_saveAsRawSoundFile(self, &file, Melder_LINEAR_32_LITTLE_ENDIAN);
+				    break;
 		    }
 	    },
 	    "file_path"_a, "format"_a);
@@ -338,7 +320,7 @@ PRAAT_CLASS_BINDING(Sound) {
 	def("get_nearest_zero_crossing", // TODO Channel is CHANNEL
 	    [](Sound self, double time, long channel) {
 		    if (channel > self->ny) channel = 1;
-		    return Sound_getNearestZeroCrossing (self, time, channel);
+		    return Sound_getNearestZeroCrossing(self, time, channel);
 	    },
 	    "time"_a, "channel"_a = 1);
 
@@ -408,7 +390,7 @@ PRAAT_CLASS_BINDING(Sound) {
 
 	def("de_emphasize",
 	    [](Sound self, double fromFrequency, bool normalize) {
-		    Sound_deEmphasis (self, fromFrequency);
+		    Sound_deEmphasis(self, fromFrequency);
 		    if (normalize) {
 			    Vector_scale(self, 0.99);
 		    }
@@ -466,7 +448,7 @@ PRAAT_CLASS_BINDING(Sound) {
 	def("lengthen", // TODO Lengthen (Overlap-add) ?
 	    [](Sound self, Positive<double> minimumPitch, Positive<double> maximumPitch, Positive<double> factor) {
 		    if (minimumPitch >= maximumPitch)
-			    Melder_throw (U"Maximum pitch should be greater than minimum pitch.");
+			    Melder_throw(U"Maximum pitch should be greater than minimum pitch.");
 		    return Sound_lengthen_overlapAdd(self, minimumPitch, maximumPitch, factor);
 	    },
 	    "minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0, "factor"_a);
@@ -484,14 +466,14 @@ PRAAT_CLASS_BINDING(Sound) {
 	    [](Sound self, ToPitchMethod method, py::args args, py::kwargs kwargs) -> py::object {
 		    auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
 		    switch (method) {
-		    case ToPitchMethod::AC:
-			    return callMethod("to_pitch_ac");
-		    case ToPitchMethod::CC:
-			    return callMethod("to_pitch_cc");
-		    case ToPitchMethod::SPINET:
-			    return callMethod("to_pitch_spinet");
-		    case ToPitchMethod::SHS:
-			    return callMethod("to_pitch_shs");
+			    case ToPitchMethod::AC:
+				    return callMethod("to_pitch_ac");
+			    case ToPitchMethod::CC:
+				    return callMethod("to_pitch_cc");
+			    case ToPitchMethod::SPINET:
+				    return callMethod("to_pitch_spinet");
+			    case ToPitchMethod::SHS:
+				    return callMethod("to_pitch_shs");
 		    }
 		    return py::none(); // Unreachable
 	    },
@@ -499,14 +481,14 @@ PRAAT_CLASS_BINDING(Sound) {
 
 	def("to_pitch_ac",
 	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
-		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		    if (maxNumberOfCandidates <= 1) Melder_throw(U"Your maximum number of candidates should be greater than 1.");
 		    return Sound_to_Pitch_ac(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 3.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
 	    },
 	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = false, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
 	def("to_pitch_cc",
 	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
-		    if (maxNumberOfCandidates <= 1) Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		    if (maxNumberOfCandidates <= 1) Melder_throw(U"Your maximum number of candidates should be greater than 1.");
 		    return Sound_to_Pitch_cc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 1.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
 	    },
 	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = false, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
@@ -523,18 +505,19 @@ PRAAT_CLASS_BINDING(Sound) {
 		    if (minimumPitch >= ceiling) Melder_throw(U"Minimum pitch should be smaller than ceiling.");
 		    if (ceiling > maximumFrequencyComponent) Melder_throw(U"Maximum frequency must be greater than or equal to ceiling.");
 		    return Sound_to_Pitch_shs(self, timeStep, minimumPitch, maximumFrequencyComponent, ceiling, maxNumberOfSubharmonics, maxNumberOfCandidates, compressionFactor, numberOfPointsPerOctave);
-	    }, "time_step"_a = 0.01, "minimum_pitch"_a = 50.0, "max_number_of_candidates"_a = 15, "maximum_frequency_component"_a = 1250.0, "max_number_of_subharmonics"_a = 15, "compression_factor"_a = 0.84, "ceiling"_a = 600.0, "number_of_points_per_octave"_a = 48);
+	    },
+	    "time_step"_a = 0.01, "minimum_pitch"_a = 50.0, "max_number_of_candidates"_a = 15, "maximum_frequency_component"_a = 1250.0, "max_number_of_subharmonics"_a = 15, "compression_factor"_a = 0.84, "ceiling"_a = 600.0, "number_of_points_per_octave"_a = 48);
 
 	def("to_harmonicity",
 	    [](Sound self, ToHarmonicityMethod method, py::args args, py::kwargs kwargs) -> py::object {
 		    auto callMethod = [&](auto which) { return py::cast(self).attr(which)(*args, **kwargs); };
 		    switch (method) {
-		    case ToHarmonicityMethod::AC:
-			    return callMethod("to_harmonicity_ac");
-		    case ToHarmonicityMethod::CC:
-			    return callMethod("to_harmonicity_cc");
-		    case ToHarmonicityMethod::GNE:
-			    return callMethod("to_harmonicity_gne");
+			    case ToHarmonicityMethod::AC:
+				    return callMethod("to_harmonicity_ac");
+			    case ToHarmonicityMethod::CC:
+				    return callMethod("to_harmonicity_cc");
+			    case ToHarmonicityMethod::GNE:
+				    return callMethod("to_harmonicity_gne");
 		    }
 		    return py::none(); // Unreachable
 	    },

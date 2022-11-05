@@ -30,11 +30,10 @@ def dict_members(obj, predicate=None):
 
 
 def all_members(obj):
-	for member in dict_members(obj, inspect.isroutine): yield member  # Python 2 compatibility; Python 3: use 'yield from'
-
+	yield from dict_members(obj, inspect.isroutine)
 	for member in dict_members(obj, lambda m: inspect.isclass(m) or inspect.ismodule(m)):
 		yield member
-		for x in all_members(member): yield x  # Python 2 compatibility; Python 3: use 'yield from'
+		yield from all_members(member)
 
 
 def all_docstrings(obj):
@@ -45,7 +44,7 @@ def all_docstrings(obj):
 
 
 def is_signature(line, name):
-	return bool(re.match(r'^(?:\d+\. )?{}\(.*\)(?: -> .+)?$'.format(name), line))  # Python 2 compatibility; Python 3: re.fullmatch
+	return re.fullmatch(fr'(?:\d+\. )?{name}\(.*\)(?: -> .+)?', line)
 
 
 def test_docstring_formatting():

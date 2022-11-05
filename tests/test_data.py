@@ -15,13 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
-from __future__ import unicode_literals  # Python 2 compatibility
-
 import pytest
 
 import parselmouth
-
-from future.utils import text_to_native_str  # Python 2 compatibility
 
 
 def test_read():
@@ -29,7 +25,7 @@ def test_read():
 
 
 def test_read_nonexistent():
-	with pytest.raises(parselmouth.PraatError, match=text_to_native_str(r'Cannot open file \u201c.*nonexistent.wav\u201d\.', encoding='utf-8')):
+	with pytest.raises(parselmouth.PraatError, match=r'Cannot open file \u201c.*nonexistent.wav\u201d\.'):
 		parselmouth.read("nonexistent.wav")
 
 

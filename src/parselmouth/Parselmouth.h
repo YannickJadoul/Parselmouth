@@ -40,7 +40,7 @@ namespace parselmouth::detail {
 // Because Praat's autoSomeThing doesn't have a constructor from the raw pointer anymore (not sure why?), but only the
 // non-static member function "adoptFromAmbiguousOwner", we create a zero-overhead wrapper to be used as holder.
 // This seems cleaner/safer/less risky/more future-proof than adding this as extra constructor in the Praat class.
-template<typename T>
+template <typename T>
 class PraatHolder {
 public:
 	PraatHolder(autoSomeThing<T> &&thing) : m_thing(std::move(thing)) {}
@@ -53,7 +53,7 @@ private:
 	autoSomeThing<T> m_thing;
 };
 
-}
+} // namespace parselmouth::detail
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, parselmouth::detail::PraatHolder<T>);
 
@@ -62,14 +62,32 @@ namespace pybind11::detail {
 template <typename T>
 class type_caster<autoSomeThing<T>> : public type_caster<parselmouth::detail::PraatHolder<T>> {};
 
-}
+} // namespace pybind11::detail
 
-#define PRAAT_CLASS_BINDING(Type, ...) CLASS_BINDING(Type, struct##Type, parselmouth::detail::PraatHolder<struct##Type>, Type##_Parent) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) BINDING_INIT(Type)
-#define PRAAT_CLASS_BINDING_BASE(Type, Base, ...) CLASS_BINDING(Type, struct##Type, parselmouth::detail::PraatHolder<struct##Type>, struct##Base) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) BINDING_INIT(Type)
-#define PRAAT_ENUM_BINDING(Type, ...) ENUM_BINDING(Type, Type) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) BINDING_INIT(Type)
-#define PRAAT_STRUCT_BINDING(Name, Type, ...) CLASS_BINDING(Type, struct##Type) BINDING_CONSTRUCTOR(Type, #Name, __VA_ARGS__) BINDING_INIT(Type)
-#define PRAAT_MODULE_BINDING(Name, Type, ...) MODULE_BINDING(Type) BINDING_CONSTRUCTOR(Type, #Name, __VA_ARGS__) BINDING_INIT(Type)
-#define PRAAT_EXCEPTION_BINDING(Type, ...) EXCEPTION_BINDING(Type, Type) BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) BINDING_INIT(Type)
+#define PRAAT_CLASS_BINDING(Type, ...)                                                               \
+	CLASS_BINDING(Type, struct##Type, parselmouth::detail::PraatHolder<struct##Type>, Type##_Parent) \
+	BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__)                                                    \
+	BINDING_INIT(Type)
+#define PRAAT_CLASS_BINDING_BASE(Type, Base, ...)                                                   \
+	CLASS_BINDING(Type, struct##Type, parselmouth::detail::PraatHolder<struct##Type>, struct##Base) \
+	BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__)                                                   \
+	BINDING_INIT(Type)
+#define PRAAT_ENUM_BINDING(Type, ...)             \
+	ENUM_BINDING(Type, Type)                      \
+	BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) \
+	BINDING_INIT(Type)
+#define PRAAT_STRUCT_BINDING(Name, Type, ...)     \
+	CLASS_BINDING(Type, struct##Type)             \
+	BINDING_CONSTRUCTOR(Type, #Name, __VA_ARGS__) \
+	BINDING_INIT(Type)
+#define PRAAT_MODULE_BINDING(Name, Type, ...)     \
+	MODULE_BINDING(Type)                          \
+	BINDING_CONSTRUCTOR(Type, #Name, __VA_ARGS__) \
+	BINDING_INIT(Type)
+#define PRAAT_EXCEPTION_BINDING(Type, ...)        \
+	EXCEPTION_BINDING(Type, Type)                 \
+	BINDING_CONSTRUCTOR(Type, #Type, __VA_ARGS__) \
+	BINDING_INIT(Type)
 
 namespace parselmouth {
 
@@ -83,6 +101,6 @@ using SpectralAnalysisWindowShape = kSound_to_Spectrogram_windowShape;
 using FormantUnit = kFormant_unit;
 using PitchUnit = kPitch_unit;
 
-} // parselmouth
+} // namespace parselmouth
 
 #endif // INC_PARSELMOUTH_PARSELMOUTH_H

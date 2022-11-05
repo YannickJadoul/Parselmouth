@@ -28,8 +28,7 @@
 
 namespace parselmouth {
 
-class MelderInfoInterceptor
-{
+class MelderInfoInterceptor {
 public:
 	MelderInfoInterceptor() : m_string(), m_divertInfo(&m_string) {}
 
@@ -51,6 +50,6 @@ inline structMelderFile pathToMelderFile(const std::u32string &filePath) { // TO
 	return file;
 }
 
-}
+} // namespace parselmouth
 
 #endif // INC_PARSELMOUTH_MELDERUTILS_H

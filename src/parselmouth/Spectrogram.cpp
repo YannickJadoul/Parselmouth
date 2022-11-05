@@ -41,7 +41,7 @@ PRAAT_CLASS_BINDING(Spectrogram) {
 
 	def("get_power_at",
 	    [](Spectrogram self, double time, double frequency) { return Matrix_getValueAtXY(self, time, frequency); },
-		"time"_a, "frequency"_a);
+	    "time"_a, "frequency"_a);
 
 	def("to_spectrum_slice", // TODO Pythonic alias?
 	    &Spectrogram_to_Spectrum,
@@ -49,7 +49,7 @@ PRAAT_CLASS_BINDING(Spectrogram) {
 
 	def("synthesize_sound",
 	    args_cast<_, Positive<_>>(Spectrogram_to_Sound),
-		"sampling_frequency"_a = 44100.0);
+	    "sampling_frequency"_a = 44100.0);
 
 	def("to_sound",
 	    args_cast<_, Positive<_>>(Spectrogram_to_Sound),
