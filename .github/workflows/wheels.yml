@@ -64,8 +64,20 @@ jobs:
         include:
           - runs-on: ubuntu-latest
             cibw-arch: manylinux_x86_64
+            manylinux: manylinux2010
+            cibw-skip: pp39-manylinux_* cp311-*
           - runs-on: ubuntu-latest
             cibw-arch: manylinux_i686
+            manylinux: manylinux2010
+            cibw-skip: pp39-manylinux_* cp311-*
+          - runs-on: ubuntu-latest
+            cibw-arch: manylinux_x86_64
+            manylinux: manylinux2014
+            cibw-skip: cp36-* cp37-* cp38-* cp39-* cp310-* pp37-* pp38-*
+          - runs-on: ubuntu-latest
+            cibw-arch: manylinux_i686
+            manylinux: manylinux2014
+            cibw-skip: cp36-* cp37-* cp38-* cp39-* cp310-* pp37-* pp38-*
           - runs-on: macos-latest
             cibw-arch: macosx_x86_64
           - runs-on: macos-latest
@@ -107,9 +119,9 @@ jobs:
           CMAKE_OSX_ARCHITECTURES=${{ matrix.cibw-arch == 'macosx_x86_64' && 'x86_64' || matrix.cibw-arch == 'macosx_arm64' && 'arm64' || matrix.cibw-arch == 'macosx_universal2' && '"arm64;x86_64"' || '' }}
           echo "CIBW_ARCHS_MACOS=x86_64 arm64 universal2" >> $GITHUB_ENV
           echo "CIBW_BUILD=*-${{ matrix.cibw-arch }}" >> $GITHUB_ENV
-          echo "CIBW_SKIP=pp39-manylinux_*" >> $GITHUB_ENV
-          echo "CIBW_MANYLINUX_X86_64_IMAGE=manylinux2010" >> $GITHUB_ENV
-          echo "CIBW_MANYLINUX_I686_IMAGE=manylinux2010" >> $GITHUB_ENV
+          echo "CIBW_SKIP=${{ matrix.cibw-skip }}" >> $GITHUB_ENV
+          echo "CIBW_MANYLINUX_X86_64_IMAGE=${{ matrix.manylinux }}" >> $GITHUB_ENV
+          echo "CIBW_MANYLINUX_I686_IMAGE=${{ matrix.manylinux }}" >> $GITHUB_ENV
           CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_DEPENDENCIES=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/build_dependencies\" CMAKE_BUILD_PARALLEL_LEVEL=2"
           echo "CIBW_ENVIRONMENT=$CIBW_ENVIRONMENT_COMMON" >> $GITHUB_ENV
           echo "CIBW_ENVIRONMENT_LINUX=$CIBW_ENVIRONMENT_COMMON PIP_ONLY_BINARY='numpy'" >> $GITHUB_ENV
@@ -144,7 +156,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload wheel for ReadTheDocs
-        if: matrix.cibw-arch == 'manylinux_x86_64' && startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
+        if: matrix.cibw-arch == 'manylinux_x86_64' && matrix.manylinux == 'manylinux2010' && startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
         uses: actions/upload-artifact@v2
         with:
           name: rtd-wheel
