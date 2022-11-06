@@ -15,7 +15,7 @@ jobs:
   sdist:
     name: Source distribution
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/heads/docs') != true
+    if: startsWith(github.ref_name, 'docs') != true
 
     steps:
       - name: Checkout code
@@ -132,23 +132,23 @@ jobs:
           echo "CIBW_BEFORE_BUILD=rm -rf _skbuild" >> $GITHUB_ENV
 
       - name: Only build ReadTheDocs wheel
-        if: startsWith(github.ref, 'refs/heads/docs')
+        if: startsWith(github.ref_name, 'docs')
         shell: bash
         run: |
           echo "CIBW_BUILD=cp39-manylinux_x86_64" >> $GITHUB_ENV
 
       - name: Run cibuildwheel
-        if: startsWith(github.ref, 'refs/heads/docs') != true || matrix.cibw-arch == 'manylinux_x86_64'
+        if: startsWith(github.ref_name, 'docs') != true || matrix.cibw-arch == 'manylinux_x86_64'
         run: |
           cibuildwheel
 
       - name: Check built wheels
-        if: startsWith(github.ref, 'refs/heads/docs') != true || matrix.cibw-arch == 'manylinux_x86_64'
+        if: startsWith(github.ref_name, 'docs') != true || matrix.cibw-arch == 'manylinux_x86_64'
         run: |
           twine check wheelhouse/*
 
       - name: Upload built wheels
-        if: startsWith(github.ref, 'refs/heads/docs') != true
+        if: startsWith(github.ref_name, 'docs') != true
         uses: actions/upload-artifact@v3
         with:
           name: wheels
@@ -156,7 +156,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload wheel for ReadTheDocs
-        if: matrix.cibw-arch == 'manylinux_x86_64' && matrix.manylinux == 'manylinux2010' && startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
+        if: matrix.cibw-arch == 'manylinux_x86_64' && matrix.manylinux == 'manylinux2010' && github.ref_type == 'branch' && !startsWith(github.ref_name, 'actions')
         uses: actions/upload-artifact@v3
         with:
           name: rtd-wheel
@@ -182,16 +182,16 @@ jobs:
 
     name: Wheels (legacy) • ${{ matrix.cibw-arch }}
     runs-on: ${{ matrix.runs-on }}
-    if: startsWith(github.ref, 'refs/heads/docs') != true
+    if: startsWith(github.ref_name, 'docs') != true
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.8'
           architecture: ${{ matrix.python-arch }}
@@ -230,7 +230,7 @@ jobs:
           twine check wheelhouse/*
 
       - name: Upload built wheels
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: wheelhouse/praat_parselmouth-*.whl
@@ -239,23 +239,18 @@ jobs:
   trigger_rtd:
     name: Trigger ReadTheDocs build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
+    if: github.ref_type == 'branch' && !startsWith(github.ref_name, 'actions')
     needs: [wheels]
 
     steps:
-      - name: Get branch name
-        id: get_branch
-        run: |
-          echo "::set-output name=branch::${GITHUB_REF##refs/heads/}"
-
       - name: Trigger ReadTheDocs webhook
         run: |
-          curl -X POST -d "branches=${{ steps.get_branch.outputs.branch }}" -d "token=${{ secrets.READTHEDOCS_WEBHOOK_TOKEN }}" https://readthedocs.org/api/v2/webhook/parselmouth/15985/
+          curl -X POST -d "branches=${{ github.ref_name }}" -d "token=${{ secrets.READTHEDOCS_WEBHOOK_TOKEN }}" https://readthedocs.org/api/v2/webhook/parselmouth/15985/
 
   create_release:
     name: Create release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
     needs: [sdist, wheels, legacy-wheels]
 
     steps:
@@ -265,15 +260,10 @@ jobs:
           name: wheels
           path: wheelhouse
 
-      - name: Get release name
-        id: get_version
-        run: |
-          echo "::set-output name=version::${GITHUB_REF##refs/tags/v}"
-
       - name: Upload sdist and wheels to release
         uses: ncipollo/release-action@v1.11.1
         with:
-          name: ${{ steps.get_version.outputs.version }}
+          name: ${{ github.ref_name }}
           draft: true
           artifacts: wheelhouse/*
           token: ${{ secrets.GITHUB_TOKEN }}
