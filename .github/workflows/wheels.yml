@@ -52,7 +52,7 @@ jobs:
           python -m twine check wheelhouse/*
 
       - name: Upload sdist
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: wheelhouse/*.tar.gz
@@ -137,7 +137,7 @@ jobs:
 
       - name: Upload built wheels
         if: startsWith(github.ref, 'refs/heads/docs') != true
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: wheelhouse/praat_parselmouth-*.whl
@@ -145,7 +145,7 @@ jobs:
 
       - name: Upload wheel for ReadTheDocs
         if: matrix.cibw-arch == 'manylinux_x86_64' && startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: rtd-wheel
           path: wheelhouse/praat_parselmouth-*-cp39-cp39-*manylinux2014_x86_64*.whl
