@@ -19,12 +19,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.8'
 
@@ -52,7 +52,7 @@ jobs:
           python -m twine check wheelhouse/*
 
       - name: Upload sdist
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: wheelhouse/*.tar.gz
@@ -95,12 +95,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.8'
           architecture: ${{ matrix.python-arch }}
@@ -149,7 +149,7 @@ jobs:
 
       - name: Upload built wheels
         if: startsWith(github.ref, 'refs/heads/docs') != true
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: wheelhouse/praat_parselmouth-*.whl
@@ -157,7 +157,7 @@ jobs:
 
       - name: Upload wheel for ReadTheDocs
         if: matrix.cibw-arch == 'manylinux_x86_64' && matrix.manylinux == 'manylinux2010' && startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/actions')
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: rtd-wheel
           path: wheelhouse/praat_parselmouth-*-cp39-cp39-*manylinux2010_x86_64*.whl
@@ -260,7 +260,7 @@ jobs:
 
     steps:
       - name: Collect sdist and wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: wheels
           path: wheelhouse
