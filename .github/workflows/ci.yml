@@ -38,6 +38,7 @@ jobs:
           - runs-on: ubuntu-latest
             python: 'pypy-3.8'
             arch: x64
+            name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
             python: 'pypy-3.9'
             arch: x64
@@ -75,7 +76,7 @@ jobs:
             release: true
             name-extra: ' (Release)'
           - runs-on: macos-latest
-            python: 'pypy-3.9'
+            python: 'pypy-3.8'
             arch: x64
           - runs-on: macos-10.15
             python: '3.10'
@@ -103,7 +104,7 @@ jobs:
             release: true
             name-extra: ' (Release)'
           - runs-on: windows-latest
-            python: 'pypy-3.9'
+            python: 'pypy-3.8'
             arch: x64
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
