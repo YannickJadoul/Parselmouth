@@ -175,7 +175,7 @@ jobs:
 
     steps:
       - name: Collect sdist and wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: wheels
           path: wheelhouse
