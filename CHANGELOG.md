@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+_Nothing yet_
+
+## [0.4.2] - 2022-11-06
+### Added
+- Added support for Python 3.11 and PyPy 3.9.
+
 ## [0.4.1] - 2022-02-01
 ### Added
 - Added support for Python 3.10 and PyPy 3.8.
@@ -109,7 +115,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - Main functionality of `Thing`, `Data`, `Matrix`, `Vector`, `Sound`, `Spectrum`, `Spectrogram`, and `Intensity` classes. Preliminary implementations of `Pitch`, `Harmonicity`, `Formant`, and `MFCC`.
 - Basic Travis CI configuration.
 
-[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.2...v0.3.3
