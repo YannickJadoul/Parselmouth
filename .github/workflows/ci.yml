@@ -109,7 +109,7 @@ jobs:
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
-    if: startsWith(github.ref, 'refs/heads/docs') != true
+    if: startsWith(github.ref_name, 'docs') != true
 
     steps:
       - name: Checkout code
