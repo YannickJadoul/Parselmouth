@@ -123,7 +123,7 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.12
+        uses: jwlawson/actions-setup-cmake@v1.13
 
       - name: Install OpenBLAS on macOS for NumPy
         if: runner.os == 'macOS' && startsWith(matrix.python, 'pypy')
@@ -197,7 +197,7 @@ jobs:
           python-version: '3.9'
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.12
+        uses: jwlawson/actions-setup-cmake@v1.13
 
       - name: Install requirements
         run: |

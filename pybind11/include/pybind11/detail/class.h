@@ -98,14 +98,14 @@ inline PyTypeObject *make_static_property_type() {
 inline PyTypeObject *make_static_property_type() {
     auto d = dict();
     PyObject *result = PyRun_String(R"(\
-        class pybind11_static_property(property):
-            def __get__(self, obj, cls):
-                return property.__get__(self, cls, cls)
+class pybind11_static_property(property):
+    def __get__(self, obj, cls):
+        return property.__get__(self, cls, cls)
 
-            def __set__(self, obj, value):
-                cls = obj if isinstance(obj, type) else type(obj)
-                property.__set__(self, cls, value)
-        )", Py_file_input, d.ptr(), d.ptr()
+    def __set__(self, obj, value):
+        cls = obj if isinstance(obj, type) else type(obj)
+        property.__set__(self, cls, value)
+    )", Py_file_input, d.ptr(), d.ptr()
     );
     if (result == nullptr)
         throw error_already_set();
