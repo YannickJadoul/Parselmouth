@@ -1,6 +1,6 @@
 /* Matrix_extensions.cpp
  *
- * Copyright (C) 1993-2020 David Weenink
+ * Copyright (C) 1993-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ void Matrix_drawAsSquares_inside (Matrix me, Graphics g, double xmin, double xma
 	const integer numberOfRows = Matrix_getWindowSamplesY (me, ymin, ymax, & rowmin, & rowmax);
 
 	const integer numberOfCells = numberOfRows * numberOfColumns;
-	autoPermutation p = Permutation_create (numberOfCells);
+	autoPermutation p = Permutation_create (numberOfCells, true);
 	
 	if (drawingOrder == kGraphicsMatrixCellDrawingOrder::ROWS) {
 		// identity permutation
@@ -205,7 +205,7 @@ void Matrix_scale (Matrix me, int choice) {
 autoMatrix Matrix_transpose (Matrix me) {
 	try {
 		autoMatrix thee = Matrix_create (my ymin, my ymax, my ny, my dy, my y1, my xmin, my xmax, my nx, my dx, my x1);
-		thy z.all() <<= my z.transpose();
+		thy z.all()  <<=  my z.transpose();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not transposed.");
@@ -333,7 +333,7 @@ autoMatrix Matrix_solveEquation (Matrix me, double tolerance) {
 		b.all()  <<=  my z.column (my nx);
 
 		autoVEC x = newVECsolve (u.get(), b.get(), tolerance);
-		thy z.row (1) <<= x.all();
+		thy z.row (1)  <<=  x.all();
 		
 		return thee;
 	} catch (MelderError) {

@@ -65,8 +65,8 @@ Thing_implement (DTW, Matrix, 2);
 
 #define DTW_BIG 1e308
 
-void structDTW :: v_info () {
-	structDaata :: v_info ();
+void structDTW :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Domain of prototype: ", ymin, U" to ", ymax, U" (s).");   // ppgb: Wat is een domain prototype?
 	MelderInfo_writeLine (U"Domain of candidate: ", xmin, U" to ", xmax, U" (s).");   // ppgb: Wat is een domain candidate?
 	MelderInfo_writeLine (U"Number of frames in prototype: ", ny);
@@ -719,7 +719,7 @@ void DTW_Sounds_drawWarpX (DTW me, Sound yy, Sound xx, Graphics g, double xmin, 
 autoMatrix DTW_to_Matrix_distances (DTW me) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": distances not converted to Matrix.");
@@ -972,10 +972,10 @@ autoMatrix DTW_to_Matrix_cumulativeDistances (DTW me, double sakoeChibaBand, int
     }
 }
 
-static void DTW_relaxConstraints (DTW me, double band, int slope, double *relaxedBand, int *relaxedSlope) {
-	(void) slope;
-	double dtw_slope = (my ymax - my ymin - band) / (my xmax - my xmin - band);
-	dtw_slope = dtw_slope+1.0; // fake instruction to avoid compiler warning
+static void DTW_relaxConstraints (DTW me, double band, int /* slope */, double *relaxedBand, int *relaxedSlope) {
+
+	//double dtw_slope = (my ymax - my ymin - band) / (my xmax - my xmin - band);
+	//dtw_slope = dtw_slope+1.0; // fake instruction to avoid compiler warning
 	*relaxedBand = 0.0;
 	*relaxedSlope = 1;
 }
@@ -1282,8 +1282,13 @@ void DTW_Polygon_findPathInside (DTW me, Polygon thee, int localSlope, autoMatri
                 }
                 break;
 
-                // P = 1/2
-
+                /*
+					Sakoe & Chiba (1978) define the slope constraint measure as P = n / m, 
+						where n is the number of steps in the diagonal and 
+						m the number of steps in one of the other directions.
+						
+					P = 1/2
+				*/
                 case 2: {   // P = 1/2
                     if (j >= 4 && DTW_ISREACHABLE (i - 1, j - 3) && psi [i] [j - 1] == DTW_X && psi [i] [j - 2] == DTW_XANDY &&
                         (g = delta [i-1] [j-3] + 2.0 * my z [i] [j-2] + my z [i] [j-1] + my z [i] [j]) < gmin) {
@@ -1400,7 +1405,7 @@ void DTW_Polygon_findPathInside (DTW me, Polygon thee, int localSlope, autoMatri
         if (cumulativeDists) {
             autoMatrix him = Matrix_create (my xmin, my xmax, my nx, my dx, my x1,
                 my ymin, my ymax, my ny, my dy, my y1);
-			his z.all() <<= delta.all();
+			his z.all()  <<=  delta.all();
             *cumulativeDists = him.move();
         }
     } catch (MelderError) {

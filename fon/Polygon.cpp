@@ -1,6 +1,6 @@
 /* Polygon.cpp
  *
- * Copyright (C) 1992-2012,2014-2020 Paul Boersma
+ * Copyright (C) 1992-2012,2014-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,13 +35,13 @@
 
 Thing_implement (Polygon, Daata, 1);
 
-void structPolygon :: v_info () {
-	our structDaata :: v_info ();
+void structPolygon :: v1_info () {
+	our structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of points: ", our numberOfPoints);
 	MelderInfo_writeLine (U"Perimeter: ", Melder_single (Polygon_perimeter (this)));
 }
   
-void structPolygon :: v_writeText (MelderFile file) {
+void structPolygon :: v1_writeText (MelderFile file) {
 	texputi32 (file, our numberOfPoints, U"numberOfPoints");
 	for (integer i = 1; i <= our numberOfPoints; i ++) {
 		texputr64 (file, our x [i], U"x [", Melder_integer (i), U"]");
@@ -49,7 +49,7 @@ void structPolygon :: v_writeText (MelderFile file) {
 	}
 }
 
-void structPolygon :: v_readText (MelderReadText text, int /*formatVersion*/) {
+void structPolygon :: v1_readText (MelderReadText text, int /*formatVersion*/) {
 	our numberOfPoints = texgeti32 (text);
 	if (our numberOfPoints < 1)
 		Melder_throw (U"Cannot read a Polygon with only ", our numberOfPoints, U" points.");
@@ -88,11 +88,11 @@ void Polygon_randomize (Polygon me) {
 double Polygon_perimeter (Polygon me) {
 	if (my numberOfPoints < 1) return 0.0;
 	double dx = my x [1] - my x [my numberOfPoints], dy = my y [1] - my y [my numberOfPoints];
-	double result = sqrt (dx * dx + dy * dy);
+	double result = hypot (dx, dy);
 	for (integer i = 1; i <= my numberOfPoints - 1; i ++) {
 		dx = my x [i] - my x [i + 1];
 		dy = my y [i] - my y [i + 1];
-		result += sqrt (dx * dx + dy * dy);
+		result += hypot (dx, dy);
 	}
 	return result;
 }
@@ -102,7 +102,7 @@ static void computeDistanceTable (Polygon me, INTMAT const& table) {
 		for (integer j = i + 1; j <= my numberOfPoints; j ++) {
 			double dx = my x [i] - my x [j], dy = my y [i] - my y [j];
 			table [i] [j] = table [j] [i] =
-				Melder_ifloor (sqrt (dx * dx + dy * dy));   // round to zero
+				Melder_ifloor (hypot (dx, dy));   // round to zero
 		}
 }
 

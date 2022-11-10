@@ -2,7 +2,7 @@
 #define _Sound_h_
 /* Sound.h
  *
- * Copyright (C) 1992-2005,2006-2008,2010-2019 Paul Boersma
+ * Copyright (C) 1992-2005,2006-2008,2010-2019,2021,2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include "Sound_enums.h"
 
 Thing_define (Sound, Vector) {
-	void v_info ()
+	void v1_info ()
 		override;
 	bool v_hasGetMatrix ()
 		override { return true; }
@@ -100,7 +100,7 @@ autoSound Sound_createSimple (integer numberOfChannels, double duration, double 
 autoSound Sound_convertToMono (Sound me);
 autoSound Sound_convertToStereo (Sound me);
 autoSound Sound_extractChannel (Sound me, integer ichannel);
-autoSound Sound_extractChannels (Sound me, constVECVU const& channelNumbers);
+autoSound Sound_extractChannels (Sound me, constINTVECVU const& channelNumbers);
 autoSound Sounds_combineToStereo (OrderedOf<structSound>* me);
 
 /* Levels for Sampled_getValueAtSample (me, index, level, unit) */
@@ -218,7 +218,7 @@ autoSound Matrix_to_Sound_mono (Matrix me, integer row);
 		thy z [1] [...] == my z [row] [...];
 */
 
-extern autoSound Sound_clipboard;
+inline autoSound Sound_clipboard;
 
 /********** Sound_audio.cpp **********/
 

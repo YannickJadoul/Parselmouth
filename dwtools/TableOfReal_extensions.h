@@ -2,7 +2,7 @@
 #define _TableOfReal_extensions_h_
 /* TableOfReal_extensions.h
  *
- * Copyright (C) 1993-2020 David Weenink
+ * Copyright (C) 1993-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ autoTableOfReal TableOfReal_sortOnlyByRowLabels (TableOfReal me);
 autoINTVEC TableOfReal_getSortedIndexFromRowLabels (TableOfReal me);
 
 autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, constINTVEC index, bool reverse);
-// thy data[reverse ? i : index[i]][j] = my data[reverse ? index[i] : i]
+// thy data [reverse ? i : index [i]] [j] = my data [reverse ? index [i] : i]
 
 autoTableOfReal TableOfReal_createIrisDataset ();
 
@@ -61,13 +61,15 @@ integer TableOfReal_getColumnIndexAtMaximumInRow (TableOfReal me, integer rowNum
 
 conststring32 TableOfReal_getColumnLabelAtMaximumInRow (TableOfReal me, integer rowNumber);
 
-void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, conststring32 rows, integer colb, integer cole,
+void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, constINTVECVU const& rowNumbers, integer colb, integer cole,
 	double ymin, double ymax, double xoffsetFraction, double interbarFraction,
-	double interbarsFraction, conststring32 greys, bool garnish);
+	double interbarsFraction, constVECVU const& greys, bool garnish
+);
 
 void TableOfReal_drawScatterPlot (TableOfReal me, Graphics g, integer icx, integer icy, integer rowb,
 	integer rowe, double xmin, double xmax, double ymin, double ymax,
-	integer labelSize, bool useRowLabels, conststring32 label, bool garnish);
+	integer labelSize, bool useRowLabels, conststring32 label, bool garnish
+);
 
 void TableOfReal_drawAsScalableSquares (TableOfReal me, Graphics g, integer rowmin, integer rowmax, integer colmin, integer colmax, kGraphicsMatrixOrigin origin, double cellSizeFactor, kGraphicsMatrixCellDrawingOrder fillOrder, bool garnish);
 
@@ -190,8 +192,49 @@ autoTableOfReal TableOfReal_appendColumns (TableOfReal me, TableOfReal thee);
 
 void TableOfReal_copyOneRowWithLabel (TableOfReal me, TableOfReal thee, integer myrow, integer thyrow);
 
-/* Henze & Wagner (1997), A new approach to the BHEP tests for multivariate normality, Journal of Multivariate Analysis 62, 1-23. */
 double TableOfReal_normalityTest_BHEP (TableOfReal me, double *h, double *out_tnb, double *out_lnmu, double *out_lnvar, bool *out_singularCovariance);
+/*
+	Henze & Wagner (1997), A new approach to the BHEP tests for multivariate normality, Journal of Multivariate Analysis 62, 1-23.
+*/
+
+double TableOfReal_testSphericityOfCovariance (TableOfReal me, integer numberOfPermutations, bool useCorrelation);
+/*
+	Sphericity test of covariance (correlation) matrix
+	This test is a combinaation of two tests:
+	1. H0: Sigma = sigma^2 I vs. H1: Sigma = diag (sigma[1]^2, sigma-2[^2, ... sigma[p]^2)
+	2. H0: Sigma = diag (sigma[1]^2, sigma-2[^2, ... sigma[p]^2) vs. H1: Sigma != diag (sigma[1]^2, sigma-2[^2, ... sigma[p]^2)
+	This is test 1 in:
+	L. Wu, C. Weng, X. Wang, K. Wang & X. Liu (2018): Test of covariance and correlation matrices,
+	arXiv: 1812.01172v1 [start.ME] 4 Dec 2018.
+*/
+
+double TableOfReal_testCovarianceEqualsIdentityMatrix (TableOfReal me, integer numberOfPermutations, bool useCorrelation);
+/*
+	Test if the covariance or correlation equals the identity matrix I.
+	H0: Sigma = I vs H1: Sigma != I
+	This is test2 in:
+		L. Wu, C. Weng, X. Wang, K. Wang & X. Liu (2018): Test of covariance and correlation matrices,
+		arXiv: 1812.01172v1 [start.ME] 4 Dec 2018.
+*/	
+
+double TableOfReal_testCovarianceCompoundSymmetry (TableOfReal me, integer numberOfPermutations, bool useCorrelation);
+/*
+	H0: Sigma = sigma^2 (1-rho) * I + rho * J,
+	where I is identity matrix and J is sqaure matrix of ones znd rho > 0 (intra-class correlation coefficient
+	This is test3 in:
+		L. Wu, C. Weng, X. Wang, K. Wang & X. Liu (2018): Test of covariance and correlation matrices,
+		arXiv: 1812.01172v1 [start.ME] 4 Dec 2018.
+
+*/
+
+double TableOfReal_testEqualityOfCovariances (TableOfReal me, TableOfReal thee, integer numberOfPermutations, bool useCorrelation);
+/*
+	Test the equality of two covariance or correlation matrices.
+	H0: Sigma[1] = Sigma[2] vs H1: Sigma[1] != Sigma[2]
+	This is test4 in:
+		L. Wu, C. Weng, X. Wang, K. Wang & X. Liu (2018): Test of covariance and correlation matrices,
+		arXiv: 1812.01172v1 [start.ME] 4 Dec 2018.
+*/	
 
 autoTableOfReal TableOfReal_TableOfReal_crossCorrelations (TableOfReal me, TableOfReal thee, bool by_columns, bool center, bool normalize);
 
@@ -204,6 +247,6 @@ bool TableOfRealList_haveIdenticalDimensions (TableOfRealList me);
 
 autoTableOfReal TableOfRealList_appendColumnsMany (TableOfRealList me);
 
-autoMatrix TableOfReal_to_Matrix_interpolateOnRectangularGrid (TableOfReal me, double xmin, double xmax, double nx, double ymin, double ymax, integer ny, int /* method */);
+autoMatrix TableOfReal_to_Matrix_interpolateOnRectangularGrid (TableOfReal me, double xmin, double xmax, double nx, double ymin, double ymax, integer ny, int method);
 
 #endif /* _TableOfReal_extensions_h_ */

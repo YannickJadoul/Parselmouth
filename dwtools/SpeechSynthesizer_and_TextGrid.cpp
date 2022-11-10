@@ -311,7 +311,7 @@ autoIntervalTier IntervalTiers_patch_noBoundaries (IntervalTier me, IntervalTier
 						const double tixmin = ti -> xmin + xShift;
 						const double tixmax = ti -> xmax + xShift;
 						if ((patch -> xmin > tixmin - precision) && (patch -> xmin < tixmax + precision)) {
-							durations[myInterval] += patch -> xmax - patch -> xmin;
+							durations [myInterval] += patch -> xmax - patch -> xmin;
 							break;
 						}
 						myInterval++;
@@ -718,7 +718,12 @@ autoTable IntervalTiers_to_Table_textAlignmentment (IntervalTier target, Interva
 			EditDistanceTable_findPath (edit.get(), nullptr);
 		}
 		const integer pathLength = edit -> warpingPath -> pathLength;
-		autoTable thee = Table_createWithColumnNames (pathLength - 1, U"targetInterval targetText targetStart targetEnd sourceInterval sourceText sourceStart sourceEnd operation");
+		const conststring32 columnNames [] = {
+			U"targetInterval", U"targetText", U"targetStart", U"targetEnd",
+			U"sourceInterval", U"sourceText", U"sourceStart", U"sourceEnd",
+			U"operation"
+		};
+		autoTable thee = Table_createWithColumnNames (pathLength - 1, ARRAY_TO_STRVEC (columnNames));
 		for (integer i = 2; i <= pathLength; i++) {
 			const structPairOfInteger p = edit -> warpingPath -> path [i];
 			const structPairOfInteger p1 = edit -> warpingPath -> path [i - 1];

@@ -1,6 +1,6 @@
 /* praat_David_init.cpp
  *
- * Copyright (C) 1993-2020 David Weenink, 2015 Paul Boersma
+ * Copyright (C) 1993-2022 David Weenink, 2015 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -95,7 +95,6 @@
 #include "FormantGrid_extensions.h"
 #include "Intensity_extensions.h"
 #include "IntensityTierEditor.h"
-#include "IntervalTierNavigator.h"
 #include "Matrix_Categories.h"
 #include "Matrix_extensions.h"
 #include "LongSound_extensions.h"
@@ -111,7 +110,9 @@
 #include "Polygon_extensions.h"
 #include "Polynomial_to_Spectrum.h"
 #include "Roots_to_Spectrum.h"
+#include "Sound_and_Spectrum_dft.h"
 #include "Sound_extensions.h"
+#include "Sound_and_TextGrid_extensions.h"
 #include "Sounds_to_DTW.h"
 #include "Spectrum_extensions.h"
 #include "Spectrogram.h"
@@ -124,7 +125,9 @@
 #include "TableOfReal_and_Discriminant.h"
 #include "TableOfReal_and_Permutation.h"
 #include "TextGrid_extensions.h"
+#include "TextGridTierNavigator.h"
 #include "TextGridNavigator.h"
+#include "Vector_extensions.h"
 
 #include "Categories_and_Strings.h"
 #include "CCA_and_Correlation.h"
@@ -148,14 +151,6 @@
 #include "praat_TableOfReal.h"
 #include "praat_uvafon.h"
 
-#undef iam
-#define iam iam_LOOP
-
-static const conststring32 QUERY_BUTTON   = U"Query -";
-static const conststring32 DRAW_BUTTON    = U"Draw -";
-static const conststring32 MODIFY_BUTTON  = U"Modify -";
-static const conststring32 EXTRACT_BUTTON = U"Extract -";
-
 void praat_TableOfReal_init2 (ClassInfo klas);
 void praat_SSCP_as_TableOfReal_init (ClassInfo klas);
 
@@ -175,62 +170,52 @@ void praat_EditDistanceTable_as_TableOfReal_init (ClassInfo klas);
 
 #undef INCLUDE_DTW_SLOPES
 
-#define FIND_ONE_AND_GENERIC(klas1,klas2) \
-	klas1 me = nullptr; klas2 you = nullptr; \
-	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT; \
-	else if (Thing_isSubclass (CLASS, class##klas2)) { you = (klas2) OBJECT; } } \
-	Melder_assert (me && you);
-
-#define CONVERT_ONE_AND_GENERIC(klas1,klas2) FIND_ONE_AND_GENERIC(klas1,klas2)
-#define CONVERT_ONE_AND_GENERIC_END(...)  praat_new (result.move(), __VA_ARGS__); END
-
-
 /********************** Activation *******************************************/
 
 FORM (MODIFY_ActivationList_formula, U"ActivationList: Formula", nullptr) {
 	LABEL (U"for col := 1 to ncol do { self [row, col] := `formula' ; x := x + dx } y := y + dy }}")
-	TEXTFIELD (formula, U"Formula:", U"self")
+	FORMULA (formula, U"Formula", U"self")
 	OK
 DO
-	MODIFY_EACH (ActivationList)
+	MODIFY_EACH_WEAK (ActivationList)
 		Matrix_formula (me, formula, interpreter, nullptr);
-	MODIFY_EACH_END
+	MODIFY_EACH_WEAK_END
 }
 
-DIRECT (NEW_ActivationList_to_Matrix) {
-	CONVERT_EACH (ActivationList)
+DIRECT (CONVERT_EACH_TO_ONE__ActivationList_to_Matrix) {
+	CONVERT_EACH_TO_ONE (ActivationList)
 		autoMatrix result = ActivationList_to_Matrix (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_ActivationList_to_PatternList) {
-	CONVERT_EACH (ActivationList)
+DIRECT (CONVERT_EACH_TO_ONE__ActivationList_to_PatternList) {
+	CONVERT_EACH_TO_ONE (ActivationList)
 		autoPatternList result = ActivationList_to_PatternList (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (REAL_AmplitudeTier_getValueAtTime, U"AmplitudeTier: Get value at time", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__AmplitudeTier_getValueAtTime, U"AmplitudeTier: Get value at time", nullptr) {
 	REAL (time, U"Time (s)", U"0.5")
 	OK
 DO
-	NUMBER_ONE (AmplitudeTier)
-		double result = RealTier_getValueAtTime (me, time);
-	NUMBER_ONE_END (U" Hz")
+	QUERY_ONE_FOR_REAL (AmplitudeTier)
+		const double result = RealTier_getValueAtTime (me, time);
+	QUERY_ONE_FOR_REAL_END (U" Hz")
 }
 	
-FORM (REAL_AmplitudeTier_getValueAtIndex, U"AmplitudeTier: Get value at index", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__AmplitudeTier_getValueAtIndex, U"AmplitudeTier: Get value at index", nullptr) {
 	INTEGER (pointNumber, U"Point number", U"10")
 	OK
 DO
-	NUMBER_ONE (AmplitudeTier)
-		double result = RealTier_getValueAtIndex (me, pointNumber);
-	NUMBER_ONE_END (U" Hz")
+	QUERY_ONE_FOR_REAL (AmplitudeTier)
+		const double result = RealTier_getValueAtIndex (me, pointNumber);
+	QUERY_ONE_FOR_REAL_END (U" Hz")
 }
 
 
 /********************** BandFilterSpectrogram *******************************************/
 
-FORM (GRAPHICS_BandFilterSpectrogram_drawFrequencyScale, U"", U"") {
+FORM (GRAPHICS_EACH__BandFilterSpectrogram_drawFrequencyScale, U"", U"") {
 	REAL (fromFrequency, U"left Horizontal frequency range (Hz)", U"0.0")
 	REAL (toFrequency, U"right Horizontal frequency range (Hz)", U"0.0")
 	REAL (yFromFrequency, U"left Vertical frequency range (mel)", U"0.0")
@@ -245,15 +230,15 @@ DO
 
 /********************** BarkFilter *******************************************/
 
-DIRECT (HELP_BarkFilter_help) {
+DIRECT (HELP__BarkFilter_help) {
 	HELP (U"BarkFilter")
 }
 
-DIRECT (HELP_BarkSpectrogram_help) {
+DIRECT (HELP__BarkSpectrogram_help) {
 	HELP (U"BarkSpectrogram")
 }
 
-FORM (GRAPHICS_BarkFilter_drawSpectrum, U"BarkFilter: Draw spectrum (slice)", U"FilterBank: Draw spectrum (slice)...") {
+FORM (GRAPHICS_EACH__BarkFilter_drawSpectrum, U"BarkFilter: Draw spectrum (slice)", U"FilterBank: Draw spectrum (slice)...") {
 	REAL (time, U"Time (s)", U"0.1")
 	REAL (fromFrequency, U"left Frequency range (Bark)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (Bark)", U"0.0")
@@ -267,7 +252,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_BarkFilter_drawSekeyHansonFilterFunctions, U"BarkFilter: Draw filter functions", U"FilterBank: Draw filter functions...") {
+FORM (GRAPHICS_EACH__BarkFilter_drawSekeyHansonFilterFunctions, U"BarkFilter: Draw filter functions", U"FilterBank: Draw filter functions...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
 	RADIO (frequencyScale, U"Frequency scale", 1)
@@ -283,11 +268,13 @@ FORM (GRAPHICS_BarkFilter_drawSekeyHansonFilterFunctions, U"BarkFilter: Draw fil
 	OK
 DO
 	GRAPHICS_EACH (BarkFilter)
-		BarkFilter_drawSekeyHansonFilterFunctions (me, GRAPHICS, frequencyScale, fromFilter, toFilter, fromFrequency, toFrequency, amplitudeScale_dB, fromAmplitude, toAmplitude, garnish);
+		BarkFilter_drawSekeyHansonFilterFunctions (me, GRAPHICS, frequencyScale, fromFilter, toFilter, 
+			fromFrequency, toFrequency, amplitudeScale_dB, fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_BarkSpectrogram_drawSekeyHansonAuditoryFilters, U"BarkSpectrogram: Draw Sekey-Hanson auditory filters", U"BarkSpectrogram: Draw Sekey-Hanson auditory filters...") {
+FORM (GRAPHICS_EACH__BarkSpectrogram_drawSekeyHansonAuditoryFilters, U"BarkSpectrogram: Draw Sekey-Hanson auditory filters", U"BarkSpectrogram: Draw Sekey-Hanson auditory filters...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
 	RADIO (frequencyScale, U"Frequency scale", 2)
@@ -303,11 +290,13 @@ FORM (GRAPHICS_BarkSpectrogram_drawSekeyHansonAuditoryFilters, U"BarkSpectrogram
 DO
 	GRAPHICS_EACH (BarkSpectrogram)
 		bool xIsHertz = (frequencyScale == 1);
-		BarkSpectrogram_drawSekeyHansonFilterFunctions (me, GRAPHICS, xIsHertz, fromFilter, toFilter, fromFrequency, toFrequency, amplitudeScale_dB, fromAmplitude, toAmplitude, garnish);
+		BarkSpectrogram_drawSekeyHansonFilterFunctions (me, GRAPHICS, xIsHertz, fromFilter, toFilter, 
+			fromFrequency, toFrequency, amplitudeScale_dB, fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_BarkFilter_paint, U"FilterBank: Paint", nullptr) {
+FORM (GRAPHICS_EACH__BarkFilter_paint, U"FilterBank: Paint", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range (bark)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (bark)", U"0.0")
@@ -317,26 +306,28 @@ FORM (GRAPHICS_BarkFilter_paint, U"FilterBank: Paint", nullptr) {
 	OK
 DO
 	GRAPHICS_EACH (BarkFilter)
-		FilterBank_paint ((FilterBank) me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish);
+		FilterBank_paint (me, GRAPHICS, 
+			fromTime, toTime, fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-DIRECT (NEW_BarkFilter_to_BarkSpectrogram) {
-	CONVERT_EACH (BarkFilter)
+DIRECT (CONVERT_EACH_TO_ONE__BarkFilter_to_BarkSpectrogram) {
+	CONVERT_EACH_TO_ONE (BarkFilter)
 		autoBarkSpectrogram result = BarkFilter_to_BarkSpectrogram (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_MelFilter_to_MelSpectrogram) {
-	CONVERT_EACH (MelFilter)
+DIRECT (CONVERT_EACH_TO_ONE__MelFilter_to_MelSpectrogram) {
+	CONVERT_EACH_TO_ONE (MelFilter)
 		autoMelSpectrogram result = MelFilter_to_MelSpectrogram (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_FormantFilter_to_Spectrogram) {
-	CONVERT_EACH (FormantFilter);
+DIRECT (CONVERT_EACH_TO_ONE__FormantFilter_to_Spectrogram) {
+	CONVERT_EACH_TO_ONE (FormantFilter);
 		autoSpectrogram result = FormantFilter_to_Spectrogram (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /********************** Categories  ****************************************/
@@ -350,108 +341,107 @@ DO
 	MODIFY_EACH_END
 }
 
-DIRECT (WINDOW_Categories_edit) {
-	if (theCurrentPraatApplication -> batch) {
-		Melder_throw (U"Cannot edit a Categories from batch.");
-	} else {
-		LOOP {
-			iam (Categories);
-			autoCategoriesEditor editor = CategoriesEditor_create (my name.get(), me);
-			praat_installEditor (editor.get(), IOBJECT);
-			editor.releaseToUser();
-		}
-	}
-END }
-
-DIRECT (INTEGER_Categories_getNumberOfCategories) {
-	INTEGER_ONE (Categories)
-		integer result = my size;
-	INTEGER_ONE_END (U" categories")
+DIRECT (EDITOR_ONE_Categories_edit) {
+	EDITOR_ONE (a,Categories)
+		autoCategoriesEditor editor = CategoriesEditor_create (ID_AND_FULL_NAME, me);
+	EDITOR_ONE_END
 }
 
-DIRECT (INTEGER_Categories_getNumberOfDifferences) {
-	NUMBER_COUPLE (Categories)
-		integer result = OrderedOfString_getNumberOfDifferences (me, you);
-	NUMBER_COUPLE_END (U" differences")
+DIRECT (QUERY_ONE_FOR_INTEGER__Categories_getNumberOfCategories) {
+	QUERY_ONE_FOR_INTEGER (Categories)
+		const integer result = my size;
+	QUERY_ONE_FOR_INTEGER_END (U" categories")
 }
 
-DIRECT (REAL_Categories_getFractionDifferent) {
-	NUMBER_COUPLE (Categories)
-		double result = OrderedOfString_getFractionDifferent (me, you);
-	NUMBER_COUPLE_END (U" (fraction different)")
+DIRECT (QUERY_TWO_FOR_REAL__Categories_getNumberOfDifferences) {
+	QUERY_TWO_FOR_REAL (Categories)
+		const integer result = OrderedOfString_getNumberOfDifferences (me, you);
+	QUERY_TWO_FOR_REAL_END (U" differences")
 }
 
-DIRECT (NEW_Categories_selectUniqueItems) {
-	CONVERT_EACH (Categories)
+DIRECT (QUERY_TWO_FOR_REAL__Categories_getFractionDifferent) {
+	QUERY_TWO_FOR_REAL (Categories)
+		const double result = OrderedOfString_getFractionDifferent (me, you);
+	QUERY_TWO_FOR_REAL_END (U" (fraction different)")
+}
+
+DIRECT (CONVERT_EACH_TO_ONE__Categories_selectUniqueItems) {
+	CONVERT_EACH_TO_ONE (Categories)
 		autoCategories result = Categories_selectUniqueItems (me);
-	CONVERT_EACH_END (my name.get(), U"_uniq")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_uniq")
 }
 
-DIRECT (NEW_Categories_to_Confusion) {
-	CONVERT_COUPLE (Categories)
+DIRECT (CONVERT_TWO_TO_ONE__Categories_to_Confusion) {
+	CONVERT_TWO_TO_ONE (Categories)
 		autoConfusion result = Categories_to_Confusion (me, you);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-DIRECT (NEW_Categories_to_Strings) {
-	CONVERT_EACH (Categories)
+DIRECT (CONVERT_EACH_TO_ONE__Categories_to_Strings) {
+	CONVERT_EACH_TO_ONE (Categories)
 		autoStrings result = Categories_to_Strings (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW1_Categories_join) {
-	CONVERT_COUPLE (Categories)
+DIRECT (CONVERT_TWO_TO_ONE__Categories_join) {
+	CONVERT_TWO_TO_ONE (Categories)
 		autoStringList result = OrderedOfString_joinItems (me, you);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-DIRECT (NEW_Categories_permuteItems) {
-	CONVERT_EACH (Collection)
-		autoCollection result = Collection_permuteItems (me);
-	CONVERT_EACH_END (my name.get(), U"_perm")
+DIRECT (CONVERT_EACH_TO_ONE__Categories_permuteItems) {
+	CONVERT_EACH_TO_ONE (Categories)
+		autoCollection result = Collection_permuteItems (reinterpret_cast<Collection> (me));
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_perm")
+}
+
+DIRECT (MODIFY_EACH__Categories_permuteItems_inplace) {
+	MODIFY_EACH (Categories)
+		Collection_permuteItems_inplace (reinterpret_cast<Collection> (me));
+	MODIFY_EACH_END
 }
 
 /***************** CC ****************************************/
 
-FORM (INTEGER_CC_getNumberOfCoefficients, U"Get number of coefficients", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__CC_getNumberOfCoefficients, U"Get number of coefficients", nullptr) {
 	NATURAL (frameNumber, U"Frame number", U"1")
 	OK
 DO
-	INTEGER_ONE (CC)
-		integer result = CC_getNumberOfCoefficients (me, frameNumber);
-	INTEGER_ONE_END (U" (number of coefficients)")
+	QUERY_ONE_FOR_INTEGER (CC)
+		const integer result = CC_getNumberOfCoefficients (me, frameNumber);
+	QUERY_ONE_FOR_INTEGER_END (U" (number of coefficients)")
 }
 
-FORM (REAL_CC_getValue, U"CC: Get value", U"CC: Get value...") {
+FORM (QUERY_ONE_FOR_REAL__CC_getValue, U"CC: Get value", U"CC: Get value...") {
 	REAL (time, U"Time (s)", U"0.1")
 	NATURAL (index, U"Index", U"1")
 	OK
 DO
-	NUMBER_ONE (CC)
-		double result = CC_getValue (me, time, index);
-	NUMBER_ONE_END (U" value")
+	QUERY_ONE_FOR_REAL (CC)
+		const double result = CC_getValue (me, time, index);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_CC_getValueInFrame, U"CC: Get value in frame", U"CC: Get value in frame...") {
+FORM (QUERY_ONE_FOR_REAL__CC_getValueInFrame, U"CC: Get value in frame", U"CC: Get value in frame...") {
 	NATURAL (frameNumber, U"Frame number", U"1")
 	NATURAL (index, U"Index", U"1")
 	OK
 DO
-	NUMBER_ONE (CC)
-		double result = CC_getValueInFrame (me, frameNumber, index);
-	NUMBER_ONE_END (U" value")
+	QUERY_ONE_FOR_REAL (CC)
+		const double result = CC_getValueInFrame (me, frameNumber, index);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_CC_getC0ValueInFrame, U"CC: Get c0 value in frame", U"CC: Get c0 value in frame...") {
+FORM (QUERY_ONE_FOR_REAL__CC_getC0ValueInFrame, U"CC: Get c0 value in frame", U"CC: Get c0 value in frame...") {
 	NATURAL (frameNumber, U"Frame number", U"1")
 	OK
 DO
-	NUMBER_ONE (CC)
-		double result = CC_getC0ValueInFrame (me, frameNumber);
-	NUMBER_ONE_END (U" value")
+	QUERY_ONE_FOR_REAL (CC)
+		const double result = CC_getC0ValueInFrame (me, frameNumber);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (GRAPHICS_CC_paint, U"CC: Paint", U"CC: Paint...") {
+FORM (GRAPHICS_EACH__CC_paint, U"CC: Paint", U"CC: Paint...") {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	INTEGER (fromCoefficient, U"From coefficient", U"0")
 	INTEGER (toCoefficient, U"To coefficient", U"0")
@@ -465,7 +455,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_CC_drawC0, U"CC: Draw c0", U"CC: Draw c0...") {
+FORM (GRAPHICS_EACH__CC_drawC0, U"CC: Draw c0", U"CC: Draw c0...") {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromAmplitude, U"left Amplitude range", U"0.0")
 	REAL (toAmplitude, U"right Amplitude range", U"0.0")
@@ -477,7 +467,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (NEW1_CCs_to_DTW, U"CC: To DTW", U"CC: To DTW...") {
+FORM (CONVERT_TWO_TO_ONE__CCs_to_DTW, U"CC: To DTW", U"CC: To DTW...") {
 	LABEL (U"Distance  between cepstral coefficients")
 	REAL (cepstralWeight, U"Cepstral weight", U"1.0")
 	REAL (logEnergyWeight, U"Log energy weight", U"0.0")
@@ -487,25 +477,27 @@ FORM (NEW1_CCs_to_DTW, U"CC: To DTW", U"CC: To DTW...") {
 	DTW_constraints_addCommonFields (matchStart, matchEnd, slopeConstraint)
 	OK
 DO
-	CONVERT_COUPLE (CC)
-		autoDTW result = CCs_to_DTW (me, you, cepstralWeight, logEnergyWeight, regressionWeight, regressionLogEnergyWeight, regressionWindowLength);
+	CONVERT_TWO_TO_ONE (CC)
+		autoDTW result = CCs_to_DTW (me, you, cepstralWeight, logEnergyWeight, regressionWeight, 
+			regressionLogEnergyWeight, regressionWindowLength
+		);
 		DTW_findPath (result.get(), matchStart, matchEnd, slopeConstraint);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get());
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get());
 }
 
-DIRECT (NEW_CC_to_Matrix) {
-	CONVERT_EACH (CC)
+DIRECT (CONVERT_EACH_TO_ONE__CC_to_Matrix) {
+	CONVERT_EACH_TO_ONE (CC)
 		autoMatrix result = CC_to_Matrix (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /******************* class CCA ********************************/
 
-DIRECT (HELP_CCA_help) {
+DIRECT (HELP__CCA_help) {
 	HELP (U"CCA")
 }
 
-FORM (GRAPHICS_CCA_drawEigenvector, U"CCA: Draw eigenvector", U"Eigen: Draw eigenvector...") {
+FORM (GRAPHICS_EACH__CCA_drawEigenvector, U"CCA: Draw eigenvector", U"Eigen: Draw eigenvector...") {
 	OPTIONMENU (xOrY, U"X or Y", 1)
 		OPTION (U"y")
 		OPTION (U"x")
@@ -524,26 +516,28 @@ FORM (GRAPHICS_CCA_drawEigenvector, U"CCA: Draw eigenvector", U"Eigen: Draw eige
 	OK
 DO
 	GRAPHICS_EACH (CCA)
-		CCA_drawEigenvector (me, GRAPHICS, xOrY, eigenVectorNumber, fromElement, toElement, fromAmplitude, toAmplitude, useComponentLoadings, markSize_mm, mark_string, connectPoints, garnish);
+		CCA_drawEigenvector (me, GRAPHICS, xOrY, eigenVectorNumber, fromElement, toElement, 
+			fromAmplitude, toAmplitude, useComponentLoadings, markSize_mm, mark_string, connectPoints, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-DIRECT (INTEGER_CCA_getNumberOfCorrelations) {
-	INTEGER_ONE (CCA)
-		integer result = my numberOfCoefficients;
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__CCA_getNumberOfCorrelations) {
+	QUERY_ONE_FOR_INTEGER (CCA)
+		const integer result = my numberOfCoefficients;
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-FORM (REAL_CCA_getCorrelation, U"CCA: Get canonical correlation coefficient", U"CCA: Get canonical correlation coefficient") {
+FORM (QUERY_ONE_FOR_REAL__CCA_getCorrelation, U"CCA: Get canonical correlation coefficient", U"CCA: Get canonical correlation coefficient") {
 	NATURAL (coefficientNuber, U"Coefficient number", U"1")
 	OK
 DO
-	NUMBER_ONE (CCA)
-		double result = CCA_getCorrelationCoefficient (me, coefficientNuber);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (CCA)
+		const double result = CCA_getCorrelationCoefficient (me, coefficientNuber);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_CCA_getEigenvectorElement, U"CCA: Get eigenvector element", U"Eigen: Get eigenvector element...") {
+FORM (QUERY_ONE_FOR_REAL__CCA_getEigenvectorElement, U"CCA: Get eigenvector element", U"Eigen: Get eigenvector element...") {
 	OPTIONMENU (xOrY, U"X or Y", 1)
 		OPTION (U"y")
 		OPTION (U"x")
@@ -551,28 +545,28 @@ FORM (REAL_CCA_getEigenvectorElement, U"CCA: Get eigenvector element", U"Eigen: 
 	NATURAL (elementNumber, U"Element number", U"1")
 	OK
 DO
-	NUMBER_ONE (CCA)
-		double result = CCA_getEigenvectorElement (me, xOrY, eigenvectorNumber, elementNumber);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (CCA)
+		const double result = CCA_getEigenvectorElement (me, xOrY, eigenvectorNumber, elementNumber);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_CCA_getZeroCorrelationProbability, U"CCA: Get zero correlation probability", U"CCA: Get zero correlation probability...") {
+FORM (QUERY_ONE_FOR_REAL__CCA_getZeroCorrelationProbability, U"CCA: Get zero correlation probability", U"CCA: Get zero correlation probability...") {
 	NATURAL (coefficientNumber, U"Coefficient number", U"1")
 	OK
 DO
-	NUMBER_ONE (CCA)
-		double result, chisq, df;
-		CCA_getZeroCorrelationProbability (me, coefficientNumber, & result, & chisq, & df);
-	NUMBER_ONE_END (U" (= probability for chisq = ", chisq, U" and ndf = ", df, U")");
+	QUERY_ONE_FOR_REAL (CCA)
+		double result, chisq, ndof;
+		CCA_getZeroCorrelationProbability (me, coefficientNumber, & result, & chisq, & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability for chisq = ", chisq, U" and ndf = ", ndof, U")");
 }
 
-DIRECT (NEW1_CCA_Correlation_to_TableOfReal_loadings) {
-	CONVERT_TWO (CCA, Correlation)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__CCA_Correlation_to_TableOfReal_loadings) {
+	CONVERT_ONE_AND_ONE_TO_ONE (CCA, Correlation)
 		autoTableOfReal result = CCA_Correlation_factorLoadings (me, you);
-	CONVERT_TWO_END (my name.get(), U"_loadings")
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_loadings")
 }
 
-FORM (REAL_CCA_Correlation_getVarianceFraction, U"CCA & Correlation: Get variance fraction", U"CCA & Correlation: Get variance fraction...") {
+FORM (QUERY_ONE_AND_ONE_FOR_REAL__CCA_Correlation_getVarianceFraction, U"CCA & Correlation: Get variance fraction", U"CCA & Correlation: Get variance fraction...") {
 	LABEL (U"Get the fraction of variance from the data in set...")
 	OPTIONMENU (xOrY, U"X or Y", 1)
 		OPTION (U"y")
@@ -582,12 +576,13 @@ FORM (REAL_CCA_Correlation_getVarianceFraction, U"CCA & Correlation: Get varianc
 	NATURAL (toCanonicalVariate, U"right Canonical variate range", U"1")
 	OK
 DO
-	NUMBER_TWO (CCA, Correlation)
-		double result = CCA_Correlation_getVarianceFraction (me, you, xOrY, fromCanonicalVariate, toCanonicalVariate);
-	NUMBER_TWO_END (U" (fraction variance from ", (xOrY == 1 ? U"y" : U"x"), U", extracted by canonical variates ", fromCanonicalVariate, U" to ", toCanonicalVariate, U")")
+	QUERY_ONE_AND_ONE_FOR_REAL (CCA, Correlation)
+		const double result = CCA_Correlation_getVarianceFraction (me, you, xOrY, fromCanonicalVariate, toCanonicalVariate);
+	QUERY_ONE_AND_ONE_FOR_REAL_END (U" (fraction variance from ", (xOrY == 1 ? U"y" : U"x"), 
+		U", extracted by canonical variates ", fromCanonicalVariate, U" to ", toCanonicalVariate, U")")
 }
 
-FORM (REAL_CCA_Correlation_getRedundancy_sl, U"CCA & Correlation: Get Stewart-Love redundancy", U"CCA & Correlation: Get redundancy (sl)...") {
+FORM (QUERY_ONE_AND_ONE_FOR_REAL__CCA_Correlation_getRedundancy_sl, U"CCA & Correlation: Get Stewart-Love redundancy", U"CCA & Correlation: Get redundancy (sl)...") {
 	LABEL (U"Get the redundancy of the data in set...")
 	OPTIONMENU (xOrY, U"X or Y", 1)
 		OPTION (U"y")
@@ -598,134 +593,135 @@ FORM (REAL_CCA_Correlation_getRedundancy_sl, U"CCA & Correlation: Get Stewart-Lo
 	LABEL (U"...given the availability of the data in the other set.")
 	OK
 DO
-	NUMBER_TWO (CCA, Correlation)
-		double result = CCA_Correlation_getRedundancy_sl (me, you, xOrY, fromCanonicalVariate, toCanonicalVariate);
-	NUMBER_TWO_END (U" (redundancy from ", (xOrY == 1 ? U"y" : U"x"), U" extracted by canonical variates ", fromCanonicalVariate, U" to ", toCanonicalVariate, U")")
+	QUERY_ONE_AND_ONE_FOR_REAL (CCA, Correlation)
+		const double result = CCA_Correlation_getRedundancy_sl (me, you, xOrY, fromCanonicalVariate, toCanonicalVariate);
+	QUERY_ONE_AND_ONE_FOR_REAL_END (U" (redundancy from ", (xOrY == 1 ? U"y" : U"x"), 
+		U" extracted by canonical variates ", fromCanonicalVariate, U" to ", toCanonicalVariate, U")")
 }
 
-DIRECT (NEW_CCA_TableOfReal_to_TableOfReal_loadings) {
-	CONVERT_TWO (CCA, TableOfReal)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__CCA_TableOfReal_to_TableOfReal_loadings) {
+	CONVERT_ONE_AND_ONE_TO_ONE (CCA, TableOfReal)
 		autoTableOfReal result = CCA_TableOfReal_factorLoadings (me, you);
-	CONVERT_TWO_END (my name.get(), U"_loadings")
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_loadings")
 }
 
-FORM (NEW_CCA_TableOfReal_to_TableOfReal_scores, U"CCA & TableOfReal: To TableOfReal (scores)", U"CCA & TableOfReal: To TableOfReal (scores)...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__CCA_TableOfReal_to_TableOfReal_scores, U"CCA & TableOfReal: To TableOfReal (scores)", U"CCA & TableOfReal: To TableOfReal (scores)...") {
 	INTEGER (numberOfCanonicalVariates, U"Number of canonical correlations", U"0 (= all)")
 	OK
 DO
-	CONVERT_TWO (CCA, TableOfReal)
+	CONVERT_ONE_AND_ONE_TO_ONE (CCA, TableOfReal)
 		autoTableOfReal result = CCA_TableOfReal_scores (me, you, numberOfCanonicalVariates);
-	CONVERT_TWO_END (my name.get(), U"_scores");
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_scores");
 }
 
-FORM (NEW1_CCA_TableOfReal_predict, U"CCA & TableOfReal: Predict", U"CCA & TableOfReal: Predict...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__CCA_TableOfReal_predict, U"CCA & TableOfReal: Predict", U"CCA & TableOfReal: Predict...") {
 	LABEL (U"The data set from which to predict starts at...")
 	INTEGER (columnNumber, U"Column number", U"1")
 	OK
 DO
-	CONVERT_TWO (CCA, TableOfReal)
+	CONVERT_ONE_AND_ONE_TO_ONE (CCA, TableOfReal)
 		autoTableOfReal result = CCA_TableOfReal_predict (me, you, columnNumber);
-	CONVERT_TWO_END (your name.get(), U"_", my name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (your name.get(), U"_", my name.get())
 }
 
-FORM (NEW_CCA_extractEigen, U"CCA: Extract Eigen", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__CCA_extractEigen, U"CCA: Extract Eigen", nullptr) {
 	OPTIONMENU (choice, U"variablesType", 1)
 		OPTION (U"Dependent")
 		OPTION (U"Independent")
 	OK
 DO
-	CONVERT_EACH (CCA)
+	CONVERT_EACH_TO_ONE (CCA)
 		autoEigen result = choice == 1 ? Data_copy (my y.get()) : Data_copy (my x.get());
-	CONVERT_EACH_END (my name.get(), ( choice == 1 ? U"_y" : U"_x" ))
+	CONVERT_EACH_TO_ONE_END (my name.get(), ( choice == 1 ? U"_y" : U"_x" ))
 }
 
 /***************** ChebyshevSeries ****************************************/
 
-DIRECT (HELP_ChebyshevSeries_help) {
+DIRECT (HELP__ChebyshevSeries_help) {
 	HELP (U"ChebyshevSeries")
 }
 
-FORM (NEW1_ChebyshevSeries_create, U"Create ChebyshevSeries", U"Create ChebyshevSeries...") {
+FORM (CREATE_ONE__ChebyshevSeries_create, U"Create ChebyshevSeries", U"Create ChebyshevSeries...") {
 	WORD (name, U"Name", U"cs")
 	LABEL (U"Domain")
 	REAL (xmin, U"Xmin", U"-1")
 	REAL (xmax, U"Xmax", U"1")
 	LABEL (U"ChebyshevSeries(x) = c[1] T[0](x) + c[2] T[1](x) + ... c[n+1] T[n](x)")
 	LABEL (U"T[k] is a Chebyshev polynomial of degree k")
-	SENTENCE (coefficients_string, U"Coefficients (c[k])", U"0 0 1.0")
+	REALVECTOR (coefficients, U"Coefficients (c[k])", WHITESPACE_SEPARATED_, U"0 0 1.0")
 	OK
 DO
 	Melder_require (xmin < xmax, U"Xmin should be smaller than Xmax.");
 	CREATE_ONE
-		autoChebyshevSeries result = ChebyshevSeries_createFromString (xmin, xmax, coefficients_string);
+		autoChebyshevSeries result = ChebyshevSeries_createWithCoefficients (xmin, xmax, coefficients);
 	CREATE_ONE_END (name)
 }
 
-DIRECT (NEW_ChebyshevSeries_to_Polynomial) {
-	CONVERT_EACH (ChebyshevSeries)
+DIRECT (CONVERT_EACH_TO_ONE__ChebyshevSeries_to_Polynomial) {
+	CONVERT_EACH_TO_ONE (ChebyshevSeries)
 		autoPolynomial result = ChebyshevSeries_to_Polynomial (me);
-	CONVERT_EACH_END (my name.get());
+	CONVERT_EACH_TO_ONE_END (my name.get());
 }
 
 /***************** ClassificationTable ****************************************/
 
-DIRECT (HELP_ClassificationTable_help) {
+DIRECT (HELP__ClassificationTable_help) {
 	HELP (U"ClassificationTable")
 }
 
-FORM (INTEGER_ClassificationTable_getClassIndexAtMaximumInRow, U"ClassificationTable: Get class index at maximum in row", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__ClassificationTable_getClassIndexAtMaximumInRow, U"ClassificationTable: Get class index at maximum in row", nullptr) {
 	NATURAL (rowNumber, U"Row number", U"1")
 	OK
 DO
-	INTEGER_ONE (ClassificationTable)
-		integer result = TableOfReal_getColumnIndexAtMaximumInRow (me, rowNumber);
-	INTEGER_ONE_END (U" (class index at maximum in row)")
+	QUERY_ONE_FOR_INTEGER (ClassificationTable)
+		const integer result = TableOfReal_getColumnIndexAtMaximumInRow (me, rowNumber);
+	QUERY_ONE_FOR_INTEGER_END (U" (class index at maximum in row)")
 }
 
-FORM (INTEGER_ClassificationTable_getClassLabelAtMaximumInRow, U"ClassificationTable: Get class label at maximum in row", nullptr) {
+FORM (QUERY_ONE_FOR_STRING__ClassificationTable_getClassLabelAtMaximumInRow, U"ClassificationTable: Get class label at maximum in row", nullptr) {
 	NATURAL (rowNumber, U"Row number", U"1")
 	OK
 DO
-	STRING_ONE (ClassificationTable)
+	QUERY_ONE_FOR_STRING (ClassificationTable)
 		conststring32 result = TableOfReal_getColumnLabelAtMaximumInRow (me, rowNumber);
-	STRING_ONE_END
+	QUERY_ONE_FOR_STRING_END
 }
 
 // deprecated 2014
-DIRECT (NEW_ClassificationTable_to_Confusion_old) {
-	CONVERT_EACH (ClassificationTable)
+DIRECT (CONVERT_EACH_TO_ONE__ClassificationTable_to_Confusion_old) {
+	CONVERT_EACH_TO_ONE (ClassificationTable)
 		autoConfusion result = ClassificationTable_to_Confusion (me, false);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_ClassificationTable_to_Confusion, U"ClassificationTable: To Confusion", U"ClassificationTable: To Confusion...") {
+FORM (CONVERT_EACH_TO_ONE__ClassificationTable_to_Confusion, U"ClassificationTable: To Confusion", U"ClassificationTable: To Confusion...") {
 	BOOLEAN (onlyClassLabels, U"Only class labels", true)
 	OK
 DO
-	CONVERT_EACH (ClassificationTable)
+	CONVERT_EACH_TO_ONE (ClassificationTable)
 		autoConfusion result = ClassificationTable_to_Confusion (me, onlyClassLabels);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_ClassificationTable_to_Correlation_columns) {
-	CONVERT_EACH (ClassificationTable)
+DIRECT (CONVERT_EACH_TO_ONE__ClassificationTable_to_Correlation_columns) {
+	CONVERT_EACH_TO_ONE (ClassificationTable)
 		autoCorrelation result = ClassificationTable_to_Correlation_columns (me);
-	CONVERT_EACH_END (my name.get(), U"_col")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_col")
 }
 
-DIRECT (NEW_ClassificationTable_to_Strings_maximumProbability) {
-	CONVERT_EACH (ClassificationTable)
+DIRECT (CONVERT_EACH_TO_ONE__ClassificationTable_to_Strings_maximumProbability) {
+	CONVERT_EACH_TO_ONE (ClassificationTable)
 		autoStrings result = ClassificationTable_to_Strings_maximumProbability (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /********************** Confusion *******************************************/
 
-DIRECT (HELP_Confusion_help) {
+DIRECT (HELP__Confusion_help) {
 	HELP (U"Confusion")
 }
 
-FORM (NEW1_Confusion_createSimple, U"Create simple Confusion", U"Create simple Confusion...") {
+FORM (CREATE_ONE__Confusion_createSimple, U"Create simple Confusion", U"Create simple Confusion...") {
 	WORD (name, U"Name", U"simple")
 	SENTENCE (labels, U"Labels", U"u i a")
 	OK
@@ -745,47 +741,47 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (REAL_Confusion_getValue_labels, U"Confusion: Get value", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Confusion_getValue_labels, U"Confusion: Get value", nullptr) {
 	WORD (stimulus, U"Stimulus", U"u")
 	WORD (response, U"Response", U"i")
 	OK
 DO
-	NUMBER_ONE (Confusion)
-		double result = Confusion_getValue (me, stimulus, response);
-	NUMBER_ONE_END (U" ([\"", stimulus, U"\", \"",  response, U"\"])")
+	QUERY_ONE_FOR_REAL (Confusion)
+		const double result = Confusion_getValue (me, stimulus, response);
+	QUERY_ONE_FOR_REAL_END (U" ([\"", stimulus, U"\", \"",  response, U"\"])")
 }
 
-FORM (REAL_Confusion_getResponseSum, U"Confusion: Get response sum", U"Confusion: Get response sum...") {
+FORM (QUERY_ONE_FOR_REAL__Confusion_getResponseSum, U"Confusion: Get response sum", U"Confusion: Get response sum...") {
 	WORD (response, U"Response", U"u")
 	OK
 DO
-	NUMBER_ONE (TableOfReal)
-		double result = TableOfReal_getColumnSumByLabel (me, response);
-	NUMBER_ONE_END (U" (response sum)")
+	QUERY_ONE_FOR_REAL (TableOfReal)
+		const double result = TableOfReal_getColumnSumByLabel (me, response);
+	QUERY_ONE_FOR_REAL_END (U" (response sum)")
 }
 
-FORM (REAL_Confusion_getStimulusSum, U"Confusion: Get stimulus sum", U"Confusion: Get stimulus sum...") {
+FORM (QUERY_ONE_FOR_REAL__Confusion_getStimulusSum, U"Confusion: Get stimulus sum", U"Confusion: Get stimulus sum...") {
 	WORD (stimulus, U"Stimulus", U"u")
 	OK
 DO
-	NUMBER_ONE (TableOfReal)
-		double result = TableOfReal_getRowSumByLabel (me, stimulus);
-	NUMBER_ONE_END (U" (stimulus sum)")
+	QUERY_ONE_FOR_REAL (TableOfReal)
+		const double result = TableOfReal_getRowSumByLabel (me, stimulus);
+	QUERY_ONE_FOR_REAL_END (U" (stimulus sum)")
 }
 
-DIRECT (NEW_Confusion_to_TableOfReal_marginals) {
-	CONVERT_EACH (Confusion)
+DIRECT (CONVERT_EACH_TO_ONE__Confusion_to_TableOfReal_marginals) {
+	CONVERT_EACH_TO_ONE (Confusion)
 		autoTableOfReal result = Confusion_to_TableOfReal_marginals (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW1_Confusion_difference) {
-	CONVERT_COUPLE (Confusion)
+DIRECT (CONVERT_TWO_TO_ONE__Confusion_difference) {
+	CONVERT_TWO_TO_ONE (Confusion)
 		autoMatrix result = Confusion_difference (me, you);
-	CONVERT_COUPLE_END (U"diffs")
+	CONVERT_TWO_TO_ONE_END (U"diffs")
 }
 
-FORM (NEW_Confusion_condense, U"Confusion: Condense", U"Confusion: Condense...") {
+FORM (CONVERT_EACH_TO_ONE__Confusion_condense, U"Confusion: Condense", U"Confusion: Condense...") {
 	SENTENCE (search_string, U"Search", U"^(u|i)$")
 	SENTENCE (replace_string, U"Replace", U"high")
 	INTEGER (replaceLimit, U"Replace limit", U"0 (= unlimited)")
@@ -794,45 +790,45 @@ FORM (NEW_Confusion_condense, U"Confusion: Condense", U"Confusion: Condense...")
 		RADIOBUTTON (U"Regular Expressions")
 	OK
 DO
-	CONVERT_EACH (Confusion)
+	CONVERT_EACH_TO_ONE (Confusion)
 		autoConfusion result = Confusion_condense (me, search_string, replace_string, replaceLimit, matchType == 2);
-	CONVERT_EACH_END (my name.get(), U"_cnd")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_cnd")
 }
 
-FORM (NEW_Confusion_group, U"Confusion: Group stimuli & responses", U"Confusion: Group...") {
+FORM (CONVERT_EACH_TO_ONE__Confusion_group, U"Confusion: Group stimuli & responses", U"Confusion: Group...") {
 	SENTENCE (labels, U"Stimuli & Responses", U"u i")
 	SENTENCE (newLabel, U"New label", U"high")
 	INTEGER (newPosition, U"New label position", U"0 (= at start)")
 	OK
 DO
-	CONVERT_EACH (Confusion)
+	CONVERT_EACH_TO_ONE (Confusion)
 		autoConfusion result = Confusion_group (me, labels, newLabel, newPosition);
-	CONVERT_EACH_END (my name.get(), U"_sr", newLabel)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_sr", newLabel)
 }
 
-FORM (NEW_Confusion_groupStimuli, U"Confusion: Group stimuli", U"Confusion: Group stimuli...") {
+FORM (CONVERT_EACH_TO_ONE__Confusion_groupStimuli, U"Confusion: Group stimuli", U"Confusion: Group stimuli...") {
 	SENTENCE (stimuli_string, U"Stimuli", U"u i")
 	SENTENCE (newLabel, U"New label", U"high")
 	INTEGER (newPosition, U"New label position", U"0")
 	OK
 DO
-	CONVERT_EACH (Confusion)
+	CONVERT_EACH_TO_ONE (Confusion)
 		autoConfusion result = Confusion_groupStimuli (me,stimuli_string, newLabel, newPosition);
-	CONVERT_EACH_END (my name.get(), U"_s", newLabel);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_s", newLabel);
 }
 
-FORM (NEW_Confusion_groupResponses, U"Confusion: Group responses", U"Confusion: Group responses...") {
+FORM (CONVERT_EACH_TO_ONE__Confusion_groupResponses, U"Confusion: Group responses", U"Confusion: Group responses...") {
 	SENTENCE (responses_string, U"Responses", U"a i")
 	SENTENCE (newLabel, U"New label", U"front")
 	INTEGER (newPosition, U"New label position", U"0")
 	OK
 DO
-	CONVERT_EACH (Confusion)
+	CONVERT_EACH_TO_ONE (Confusion)
 		autoConfusion result = Confusion_groupResponses (me, responses_string, newLabel, newPosition);
-	CONVERT_EACH_END (my name.get(), U"_s", newLabel);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_s", newLabel);
 }
 
-FORM (GRAPHICS_Confusion_drawAsNumbers, U"Confusion: Draw as numbers", nullptr) {
+FORM (GRAPHICS_EACH__Confusion_drawAsNumbers, U"Confusion: Draw as numbers", nullptr) {
 	BOOLEAN (drawMarginals, U"Draw marginals", true)
 	RADIO (format, U"Format", 3)
 		RADIOBUTTON (U"decimal")
@@ -847,22 +843,22 @@ DO
 	GRAPHICS_EACH_END
 }
 
-DIRECT (REAL_Confusion_getFractionCorrect) {
-	NUMBER_ONE (Confusion)
+DIRECT (QUERY_ONE_FOR_REAL__Confusion_getFractionCorrect) {
+	QUERY_ONE_FOR_REAL (Confusion)
 		double result;
 		Confusion_getFractionCorrect (me, & result, nullptr);
-	NUMBER_ONE_END (U" (fraction correct)")
+	QUERY_ONE_FOR_REAL_END (U" (fraction correct)")
 }
 
 DIRECT (MODIFY_Confusion_ClassificationTable_increaseConfusionCount) {
-	MODIFY_FIRST_OF_TWO (Confusion, ClassificationTable)
+	MODIFY_FIRST_OF_ONE_AND_ONE (Confusion, ClassificationTable)
 		Confusion_ClassificationTable_increase (me, you);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
 /******************* Confusion & Matrix *************************************/
 
-FORM (GRAPHICS_Confusion_Matrix_draw, U"Confusion & Matrix: Draw confusions with arrows", nullptr) {
+FORM (GRAPHICS_ONE_AND_ONE__Confusion_Matrix_draw, U"Confusion & Matrix: Draw confusions with arrows", nullptr) {
 	INTEGER (categoryPosition, U"Category position", U"0 (= all)")
 	REAL (lowerLevel, U"Lower level (%)", U"0")
 	REAL (xmin, U"left Horizontal range", U"0.0")
@@ -873,66 +869,66 @@ FORM (GRAPHICS_Confusion_Matrix_draw, U"Confusion & Matrix: Draw confusions with
 	OK
 DO
 	Melder_require (categoryPosition >= 0, U"Your category position should be at least 0.");
-	GRAPHICS_TWO (Confusion, Matrix)
+	GRAPHICS_ONE_AND_ONE (Confusion, Matrix)
 		Confusion_Matrix_draw (me, you, GRAPHICS, categoryPosition, lowerLevel, xmin, xmax, ymin, ymax, garnish);
-	GRAPHICS_TWO_END
+	GRAPHICS_ONE_AND_ONE_END
 }
 
 /********************** ComplexSpectrogram *******************************************/
 
-DIRECT (HELP_ComplexSpectrogram_help) {
+DIRECT (HELP__ComplexSpectrogram_help) {
 	HELP (U"ComplexSpectrogram_help")
 }
 
-FORM (NEW_ComplexSpectrogram_to_Sound, U"ComplexSpectrogram: To Sound", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__ComplexSpectrogram_to_Sound, U"ComplexSpectrogram: To Sound", nullptr) {
 	POSITIVE (durationFactor, U"Duration factor", U"1.0")
 	OK
 DO
-	CONVERT_EACH (ComplexSpectrogram)
+	CONVERT_EACH_TO_ONE (ComplexSpectrogram)
 		autoSound result = ComplexSpectrogram_to_Sound (me, durationFactor);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_ComplexSpectrogram_downto_Spectrogram) {
-	CONVERT_EACH (ComplexSpectrogram)
+DIRECT (CONVERT_EACH_TO_ONE__ComplexSpectrogram_downto_Spectrogram) {
+	CONVERT_EACH_TO_ONE (ComplexSpectrogram)
 		autoSpectrogram result = ComplexSpectrogram_to_Spectrogram (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_ComplexSpectrogram_to_Spectrum_slice, U"ComplexSpectrogram: To Spectrum (slice)", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__ComplexSpectrogram_to_Spectrum_slice, U"ComplexSpectrogram: To Spectrum (slice)", nullptr) {
 	REAL (time, U"Time (s)", U"0.0")
 	OK
 DO
-	CONVERT_EACH (ComplexSpectrogram)
+	CONVERT_EACH_TO_ONE (ComplexSpectrogram)
 		autoSpectrum result = ComplexSpectrogram_to_Spectrum (me, time);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 DIRECT (MODIFY_ComplexSpectrogram_Spectrogram_replaceAmplitudes) {
-	MODIFY_FIRST_OF_TWO (ComplexSpectrogram, Spectrogram)
+	MODIFY_FIRST_OF_ONE_AND_ONE (ComplexSpectrogram, Spectrogram)
 		ComplexSpectrogram_Spectrogram_replaceAmplitudes (me, you);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
 /********************** Correlation *******************************************/
 
-FORM (NEW1_Correlation_createSimple, U"Create simple Correlation", U"Create simple Correlation...") {
+FORM (CREATE_ONE__Correlation_createSimple, U"Create simple Correlation", U"Create simple Correlation...") {
 	WORD (name, U"Name", U"correlation")
-	SENTENCE (correlations_string, U"Correlations", U"1.0 0.5 1.0")
-	SENTENCE (centroid_string, U"Centroid", U"0.0 0.0")
+	REALVECTOR (correlations, U"Correlations", WHITESPACE_SEPARATED_, U"1.0 0.5 1.0")
+	REALVECTOR (centroid, U"Centroid", WHITESPACE_SEPARATED_, U"0.0 0.0")
 	NATURAL (numberOfObservations, U"Number of observations", U"100")
 	OK
 DO
 	CREATE_ONE
-		autoCorrelation result = Correlation_createSimple (correlations_string, centroid_string, numberOfObservations);
+		autoCorrelation result = Correlation_createSimple (correlations, centroid, numberOfObservations);
 	CREATE_ONE_END (name)
 }
 
-DIRECT (HELP_Correlation_help) {
+DIRECT (HELP__Correlation_help) {
 	HELP (U"Correlation")
 }
 
-FORM (NEW_Correlation_confidenceIntervals, U"Correlation: Confidence intervals...", U"Correlation: Confidence intervals...") {
+FORM (CONVERT_EACH_TO_ONE__Correlation_confidenceIntervals, U"Correlation: Confidence intervals...", U"Correlation: Confidence intervals...") {
 	POSITIVE (confidenceLevel, U"Confidence level (0-1)", U"0.95")
 	INTEGER (numberOfTests, U"Number of tests (Bonferroni correction)", U"0")
 	RADIO (approximation, U"Approximation", 1)
@@ -940,55 +936,55 @@ FORM (NEW_Correlation_confidenceIntervals, U"Correlation: Confidence intervals..
 		RADIOBUTTON (U"Fisher")
 	OK
 DO
-	CONVERT_EACH (Correlation)
+	CONVERT_EACH_TO_ONE (Correlation)
 		autoTableOfReal result = Correlation_confidenceIntervals (me, confidenceLevel, numberOfTests, approximation);
-	CONVERT_EACH_END (my name.get(), U"_conf_intervals")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_conf_intervals")
 }
 
-FORM (REAL_Correlation_getDiagonality_bartlett, U"Correlation: Get diagonality (bartlett)", U"SSCP: Get diagonality (bartlett)...") {
+FORM (QUERY_ONE_FOR_REAL__Correlation_getDiagonality_bartlett, U"Correlation: Get diagonality (bartlett)", U"SSCP: Get diagonality (bartlett)...") {
 	NATURAL (numberOfConstraints, U"Number of constraints", U"1")
 	OK
 DO
-	NUMBER_ONE (Correlation)
-		double chisq, result, df;
-		Correlation_testDiagonality_bartlett (me, numberOfConstraints, & chisq, & result, & df);
-	NUMBER_ONE_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", df, U")")
+	QUERY_ONE_FOR_REAL (Correlation)
+		double chisq, result, ndof;
+		Correlation_testDiagonality_bartlett (me, numberOfConstraints, & chisq, & result, & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", ndof, U")")
 }
 
-DIRECT (NEW_Correlation_to_PCA) {
-	CONVERT_EACH (Correlation)
+DIRECT (CONVERT_EACH_TO_ONE__Correlation_to_PCA) {
+	CONVERT_EACH_TO_ONE (Correlation)
 		autoPCA result = SSCP_to_PCA (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /********************** Covariance *******************************************/
 
-DIRECT (HELP_Covariance_help) {
+DIRECT (HELP__Covariance_help) {
 	HELP (U"Covariance")
 }
 
-FORM (NEW1_Covariance_createSimple, U"Create simple Covariance", U"Create simple Covariance...") {
+FORM (CREATE_ONE__Covariance_createSimple, U"Create simple Covariance", U"Create simple Covariance...") {
 	WORD (name, U"Name", U"c")
-	SENTENCE (covariances_string, U"Covariances", U"1.0 0.0 1.0")
-	SENTENCE (centroid_string, U"Centroid", U"0.0 0.0")
+	REALVECTOR (covariances, U"Covariances", WHITESPACE_SEPARATED_, U"1.0 0.0 1.0")
+	REALVECTOR (centroid, U"Centroid", WHITESPACE_SEPARATED_, U"0.0 0.0")
 	NATURAL (numberOfObservations, U"Number of observations", U"100")
 	OK
 DO
 	CREATE_ONE
-		autoCovariance result = Covariance_createSimple (covariances_string, centroid_string, numberOfObservations);
+		autoCovariance result = Covariance_createSimple (covariances, centroid, numberOfObservations);
 	CREATE_ONE_END (name)
 }
 
-FORM (REAL_Covariance_getProbabilityAtPosition, U"Covariance: Get probability at position", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Covariance_getProbabilityAtPosition, U"Covariance: Get probability at position", nullptr) {
 	SENTENCE (position_string, U"Position", U"10.0 20.0")
 	OK
 DO
-	NUMBER_ONE (Covariance)
-		double result = Covariance_getProbabilityAtPosition_string (me, position_string);
-	NUMBER_ONE_END (U" (= probability at position ", position_string, U")")
+	QUERY_ONE_FOR_REAL (Covariance)
+		const double result = Covariance_getProbabilityAtPosition_string (me, position_string);
+	QUERY_ONE_FOR_REAL_END (U" (= probability at position ", position_string, U")")
 }
 
-FORM (REAL_Covariance_getSignificanceOfOneMean, U"Covariance: Get significance of one mean", U"Covariance: Get significance of one mean...") {
+FORM (QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfOneMean, U"Covariance: Get significance of one mean", U"Covariance: Get significance of one mean...") {
 	LABEL (U"Get probability that the estimated mean for")
 	NATURAL (index, U"Index", U"1")
 	LABEL (U"(or an estimated mean even further away)")
@@ -996,13 +992,13 @@ FORM (REAL_Covariance_getSignificanceOfOneMean, U"Covariance: Get significance o
 	REAL (value, U"Value", U"0.0")
 	OK
 DO
-	NUMBER_ONE (Covariance)
-		double result, t, ndf;
-		Covariance_getSignificanceOfOneMean (me, index, value, & result, & t, & ndf);
-	NUMBER_ONE_END (U" (= probability, based on t = ", t, U" and ndf = ", ndf)
+	QUERY_ONE_FOR_REAL (Covariance)
+		double result, t, ndof;
+		Covariance_getSignificanceOfOneMean (me, index, value, & result, & t, & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability, based on t = ", t, U" and ndf = ", ndof)
 }
 
-FORM (REAL_Covariance_getSignificanceOfMeansDifference, U"Covariance: Get significance of means difference", U"Covariance: Get significance of means difference...") {
+FORM (QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfMeansDifference, U"Covariance: Get significance of means difference", U"Covariance: Get significance of means difference...") {
 	LABEL (U"Get probability that the estimated difference between the means for")
 	NATURAL (index1, U"Index1", U"1")
 	NATURAL (index2, U"Index2", U"2")
@@ -1014,13 +1010,13 @@ FORM (REAL_Covariance_getSignificanceOfMeansDifference, U"Covariance: Get signif
 	BOOLEAN (equalVariances, U"Equal variances", true)
 	OK
 DO
-	NUMBER_ONE (Covariance)
-		double result, t, ndf;
-		Covariance_getSignificanceOfMeansDifference (me, index1, index2, value, paired, equalVariances, & result, & t, & ndf);
-	NUMBER_ONE_END (U" (= probability, based on t = ", t, U"and ndf = ", ndf, U")")
+	QUERY_ONE_FOR_REAL (Covariance)
+		double result, t, ndof;
+		Covariance_getSignificanceOfMeansDifference (me, index1, index2, value, paired, equalVariances, & result, & t, & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability, based on t = ", t, U" and ndf = ", ndof, U")")
 }
 
-FORM (REAL_Covariance_getSignificanceOfOneVariance, U"Covariance: Get significance of one variance", U"Covariance: Get significance of one variance...") {
+FORM (QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfOneVariance, U"Covariance: Get significance of one variance", U"Covariance: Get significance of one variance...") {
 	LABEL (U"Get the probability that the estimated variance for")
 	NATURAL (index, U"Index", U"1")
 	LABEL (U"(or an even larger estimated variance)")
@@ -1028,13 +1024,13 @@ FORM (REAL_Covariance_getSignificanceOfOneVariance, U"Covariance: Get significan
 	REAL (value, U"Value", U"0.0")
 	OK
 DO
-	NUMBER_ONE (Covariance)
-		double result, chisq, ndf;
-		Covariance_getSignificanceOfOneVariance (me, index, value, & result, & chisq, & ndf);
-	NUMBER_ONE_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", ndf, U")")
+	QUERY_ONE_FOR_REAL (Covariance)
+		double result, chisq, ndof;
+		Covariance_getSignificanceOfOneVariance (me, index, value, & result, & chisq, & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", ndof, U")")
 }
 
-FORM (REAL_Covariance_getSignificanceOfVariancesRatio, U"Covariance: Get significance of variances ratio", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfVariancesRatio, U"Covariance: Get significance of variances ratio", nullptr) {
 	LABEL (U"Get the probability that the estimated variance ratio observed for")
 	NATURAL (index1, U"Index1", U"1")
 	NATURAL (index2, U"Index2", U"2")
@@ -1043,23 +1039,23 @@ FORM (REAL_Covariance_getSignificanceOfVariancesRatio, U"Covariance: Get signifi
 	REAL (value, U"Value", U"1.0")
 	OK
 DO
-	NUMBER_ONE (Covariance)
-		double result, f, df;
-		Covariance_getSignificanceOfVariancesRatio (me, index1, index2, value, & result, & f , & df);
-	NUMBER_ONE_END (U" (= probability, based on F = ", f, U" and ndf1 = ", df, U" and ndf2 = ", df, U")")
+	QUERY_ONE_FOR_REAL (Covariance)
+		double result, f, ndof;
+		Covariance_getSignificanceOfVariancesRatio (me, index1, index2, value, & result, & f , & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability, based on F = ", f, U" and ndf1 = ", ndof, U" and ndf2 = ", ndof, U")")
 }
 
-FORM (REAL_Covariance_getFractionVariance, U"Covariance: Get fraction variance", U"Covariance: Get fraction variance...") {
+FORM (QUERY_ONE_FOR_REAL__Covariance_getFractionVariance, U"Covariance: Get fraction variance", U"Covariance: Get fraction variance...") {
 	NATURAL (fromDimension, U"From dimension", U"1")
 	NATURAL (toDimension, U"To dimension", U"1")
 	OK
 DO
-	NUMBER_ONE (Covariance)
-		double result = SSCP_getFractionVariation (me, fromDimension, toDimension);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (Covariance)
+		const double result = SSCP_getFractionVariation (me, fromDimension, toDimension);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (INFO_Covariances_reportMultivariateMeanDifference, U"Covariances: Report multivariate mean difference", U"Covariances: Report multivariate mean difference...") {
+FORM (INFO_TWO__Covariances_reportMultivariateMeanDifference, U"Covariances: Report multivariate mean difference", U"Covariances: Report multivariate mean difference...") {
 	LABEL (U"Get probability that the estimated multivariate means difference could arise ")
 	LABEL (U"if the actual means were equal.")
 	LABEL (U"")
@@ -1067,281 +1063,287 @@ FORM (INFO_Covariances_reportMultivariateMeanDifference, U"Covariances: Report m
 	BOOLEAN (covariancesAreEqual, U"Equal covariances", true)
 	OK
 DO
-	INFO_COUPLE (Covariance)
-		double prob, fisher, df1, df2, difference;
+	INFO_TWO (Covariance)
+		double prob, fisher, ndof1, ndof2, difference;
 		MelderInfo_open ();
-		difference = Covariances_getMultivariateCentroidDifference (me, you, covariancesAreEqual, & prob, & fisher, & df1, & df2);
+		difference = Covariances_getMultivariateCentroidDifference (me, you, covariancesAreEqual, & prob, & fisher, & ndof1, & ndof2);
 		MelderInfo_writeLine (U"Under the assumption that the two covariances are", (covariancesAreEqual ? U" " : U" not "), U"equal:");
 		MelderInfo_writeLine (U"Difference between multivariate means: ", difference);
 		MelderInfo_writeLine (U"Fisher's F: ", fisher);
 		MelderInfo_writeLine (U"Significance from zero: ", prob);
-		MelderInfo_writeLine (U"Degrees of freedom 1: ", df1);
-		MelderInfo_writeLine (U"Degrees of freedom 2: ", df2);
+		MelderInfo_writeLine (U"Degrees of freedom 1: ", ndof1);
+		MelderInfo_writeLine (U"Degrees of freedom 2: ", ndof2);
 		MelderInfo_writeLine (U"Number of observations 1: ", me -> numberOfObservations);
 		MelderInfo_writeLine (U"Number of observations 2: ", you -> numberOfObservations);
 		MelderInfo_writeLine (U"Number of variables: ", me -> numberOfRows);
 		MelderInfo_close ();
-	INFO_COUPLE_END
+	INFO_TWO_END
 }
 
-FORM (NEW_Covariance_to_TableOfReal_randomSampling, U"Covariance: To TableOfReal (random sampling)", U"Covariance: To TableOfReal (random sampling)...") {
+FORM (CONVERT_EACH_TO_ONE__Covariance_to_TableOfReal_randomSampling, U"Covariance: To TableOfReal (random sampling)", U"Covariance: To TableOfReal (random sampling)...") {
 	INTEGER (numberOfDataPoints, U"Number of data points", U"0")
 	OK
 DO
-	CONVERT_EACH (Covariance)
+	CONVERT_EACH_TO_ONE (Covariance)
 		autoTableOfReal result = Covariance_to_TableOfReal_randomSampling (me, numberOfDataPoints);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (INFO_Covariances_reportEquality) {
-	autoCovarianceList covariances = CovarianceList_create ();
-	LOOP {
-		iam (Covariance);
-		covariances -> addItem_ref (me);
-	}
-	MelderInfo_open ();
-	double p, chisq, df;
-	Covariances_equality (covariances.get(), 1, & p, & chisq, & df);
-	MelderInfo_writeLine (U"Difference between covariance matrices:");
-	MelderInfo_writeLine (U"Significance of difference (bartlett) = ", p);
-	MelderInfo_writeLine (U"Chi-squared (bartlett) = ", chisq);
-	MelderInfo_writeLine (U"Degrees of freedom (bartlett) = ", df);
+DIRECT (INFO_NONE__Covariances_reportEquality) { //TODO 20210510 is this ok
+	INFO_NONE
+		autoCovarianceList covariances = CovarianceList_create ();
+		LOOP {
+			iam_LOOP (Covariance);
+			covariances -> addItem_ref (me);
+		}
+		MelderInfo_open ();
+		double p, chisq, ndof;
+		Covariances_equality (covariances.get(), 1, & p, & chisq, & ndof);
+		MelderInfo_writeLine (U"Difference between covariance matrices:");
+		MelderInfo_writeLine (U"Significance of difference (bartlett) = ", p);
+		MelderInfo_writeLine (U"Chi-squared (bartlett) = ", chisq);
+		MelderInfo_writeLine (U"Degrees of freedom (bartlett) = ", ndof);
 
-	Covariances_equality (covariances.get(), 2, &p, &chisq, &df);
-	MelderInfo_writeLine (U"Significance of difference (wald) = ", p);
-	MelderInfo_writeLine (U"Chi-squared (wald) = ", chisq);
-	MelderInfo_writeLine (U"Degrees of freedom (wald) = ", df);
-	MelderInfo_close ();
-END }
+		Covariances_equality (covariances.get(), 2, & p, & chisq, & ndof);
+		MelderInfo_writeLine (U"Significance of difference (wald) = ", p);
+		MelderInfo_writeLine (U"Chi-squared (wald) = ", chisq);
+		MelderInfo_writeLine (U"Degrees of freedom (wald) = ", ndof);
+		MelderInfo_close ();
+	INFO_NONE_END
+}
 
-DIRECT (NEW_Covariance_to_Correlation) {
-	CONVERT_EACH (Covariance)
+DIRECT (CONVERT_EACH_TO_ONE__Covariance_to_Correlation) {
+	CONVERT_EACH_TO_ONE (Covariance)
 		autoCorrelation result = SSCP_to_Correlation (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_Covariance_to_PCA) {
-	CONVERT_EACH (Covariance)
+DIRECT (CONVERT_EACH_TO_ONE__Covariance_to_PCA) {
+	CONVERT_EACH_TO_ONE (Covariance)
 		autoPCA result = SSCP_to_PCA (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW1_Covariances_pool) {
-	CONVERT_TYPED_LIST (Covariance, CovarianceList)
+DIRECT (COMBINE_ALL_LISTED_TO_ONE__Covariances_pool) {
+	COMBINE_ALL_LISTED_TO_ONE (Covariance, CovarianceList)
 		autoCovariance result = CovarianceList_to_Covariance_pool (list.get());
-	CONVERT_TYPED_LIST_END (U"pool")
+	COMBINE_ALL_LISTED_TO_ONE_END (U"pool")
 }
 
-DIRECT (NEW1_Covariances_to_Covariance_between) {
-	CONVERT_TYPED_LIST (Covariance, CovarianceList)
+DIRECT (COMBINE_ALL_LISTED_TO_ONE__Covariances_to_Covariance_between) {
+	COMBINE_ALL_LISTED_TO_ONE (Covariance, CovarianceList)
 		autoCovariance result = CovarianceList_to_Covariance_between (list.get());
-	CONVERT_TYPED_LIST_END (U"between")	
+	COMBINE_ALL_LISTED_TO_ONE_END (U"between")
 }
 
-DIRECT (NEW1_Covariances_to_Covariance_within) {
-	CONVERT_TYPED_LIST (Covariance, CovarianceList)
+DIRECT (COMBINE_ALL_LISTED_TO_ONE__Covariances_to_Covariance_within) {
+	COMBINE_ALL_LISTED_TO_ONE (Covariance, CovarianceList)
 		autoCovariance result = CovarianceList_to_Covariance_within (list.get());
-	CONVERT_TYPED_LIST_END (U"within")
+	COMBINE_ALL_LISTED_TO_ONE_END (U"within")
 }
 
-DIRECT (NEW1_Covariances_to_CovarianceList) {
+DIRECT (CREATE_ONE__Covariances_to_CovarianceList) {
 	autoCovarianceList result = CovarianceList_create ();
 	CREATE_ONE
-	LOOP {
-		iam (Covariance);
-		autoCovariance cov = Data_copy (me);
-		result -> addItem_move (cov.move());
-	}
+		LOOP {
+			iam_LOOP (Covariance);
+			autoCovariance cov = Data_copy (me);
+			result -> addItem_move (cov.move());
+		}
 	CREATE_ONE_END (U"List_of_", Melder_integer (result -> size))
 }
 
-FORM (NEW1_Covariance_TableOfReal_mahalanobis, U"Covariance & TableOfReal: To TableOfReal (mahalanobis)", U"Covariance & TableOfReal: To TableOfReal (mahalanobis)...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Covariance_TableOfReal_mahalanobis, U"Covariance & TableOfReal: To TableOfReal (mahalanobis)", U"Covariance & TableOfReal: To TableOfReal (mahalanobis)...") {
 	BOOLEAN (centroidFromTable, U"Centroid from table", false)
 	OK
 DO
-	CONVERT_TWO (Covariance, TableOfReal)
+	CONVERT_ONE_AND_ONE_TO_ONE (Covariance, TableOfReal)
 		autoTableOfReal result = Covariance_TableOfReal_mahalanobis (me, you, centroidFromTable);
-	CONVERT_TWO_END (U"mahalanobis")
+	CONVERT_ONE_AND_ONE_TO_ONE_END (U"mahalanobis")
 }
 
 /********************** Discriminant **********************************/
 
-DIRECT (HELP_Discriminant_help) {
+DIRECT (HELP__Discriminant_help) {
 	HELP (U"Discriminant")
 }
 
-DIRECT (MODIFY_Discriminant_setGroupLabels) {
-	MODIFY_FIRST_OF_TWO (Discriminant, Strings)
+DIRECT (MODIFY_FIRST_OF_ONE_AND_ONE__Discriminant_setGroupLabels) {
+	MODIFY_FIRST_OF_ONE_AND_ONE (Discriminant, Strings)
 		Discriminant_setGroupLabels (me, you);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
-FORM (NEW1_Discriminant_PatternList_to_Categories, U"Discriminant & PatternList: To Categories", U"Discriminant & PatternList: To Categories...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_PatternList_to_Categories, U"Discriminant & PatternList: To Categories", U"Discriminant & PatternList: To Categories...") {
 	BOOLEAN (poolCovariances, U"Pool covariance matrices", true)
 	BOOLEAN (useAPrioriProbabilities, U"Use apriori probabilities", true)
 	OK
 DO
-	CONVERT_TWO (Discriminant, PatternList)
+	CONVERT_ONE_AND_ONE_TO_ONE (Discriminant, PatternList)
 		autoCategories result = Discriminant_PatternList_to_Categories (me, you, poolCovariances, useAPrioriProbabilities);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_Discriminant_TableOfReal_to_Configuration, U"Discriminant & TableOfReal: To Configuration", U"Discriminant & TableOfReal: To Configuration...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_TableOfReal_to_Configuration, U"Discriminant & TableOfReal: To Configuration", U"Discriminant & TableOfReal: To Configuration...") {
 	INTEGER (numberOfDimensions, U"Number of dimensions", U"0 (=all)")
 	OK
 DO
-	Melder_require (numberOfDimensions >= 0, U"\"Number of dimensions\" should not be less than zero.");
-	CONVERT_TWO (Discriminant, TableOfReal)
+	Melder_require (numberOfDimensions >= 0, 
+		U"\"Number of dimensions\" should not be less than zero.");
+	CONVERT_ONE_AND_ONE_TO_ONE (Discriminant, TableOfReal)
 		autoConfiguration result = Discriminant_TableOfReal_to_Configuration (me, you, numberOfDimensions);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-DIRECT (hint_Discriminant_TableOfReal_to_ClassificationTable) {
-	Melder_information (U"You can use the Discriminant as a classifier by \nselecting a Discriminant and a TableOfReal object together.");
-END }
+DIRECT (HINT__Discriminant_TableOfReal_to_ClassificationTable) {
+	INFO_NONE
+		Melder_information (U"You can use the Discriminant as a classifier by \nselecting a Discriminant and a TableOfReal object together.");
+	INFO_NONE_END
+}
 
-FORM (NEW1_Discriminant_TableOfReal_to_ClassificationTable, U"Discriminant & TableOfReal: To ClassificationTable", U"Discriminant & TableOfReal: To ClassificationTable...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_TableOfReal_to_ClassificationTable, U"Discriminant & TableOfReal: To ClassificationTable", U"Discriminant & TableOfReal: To ClassificationTable...") {
 	BOOLEAN (poolCovariances, U"Pool covariance matrices", true)
 	BOOLEAN (useAPrioriProbabilities, U"Use apriori probabilities", true)
 	OK
 DO
-	CONVERT_TWO (Discriminant, TableOfReal)
-		autoClassificationTable result = Discriminant_TableOfReal_to_ClassificationTable (me, you, poolCovariances, useAPrioriProbabilities);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE (Discriminant, TableOfReal)
+		autoClassificationTable result = Discriminant_TableOfReal_to_ClassificationTable (me, you, 
+			poolCovariances, useAPrioriProbabilities
+		);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_Discriminant_TableOfReal_mahalanobis, U"Discriminant & TableOfReal: To TableOfReal (mahalanobis)", U"Discriminant & TableOfReal: To TableOfReal (mahalanobis)...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_TableOfReal_mahalanobis, U"Discriminant & TableOfReal: To TableOfReal (mahalanobis)", U"Discriminant & TableOfReal: To TableOfReal (mahalanobis)...") {
 	SENTENCE (groupLabel, U"Group label", U"")
 	BOOLEAN (poolCovariances, U"Pool covariance matrices", false)
 	OK
 DO
-	CONVERT_TWO (Discriminant, TableOfReal)
-		integer group = Discriminant_groupLabelToIndex (me, groupLabel);
-		Melder_require (group > 0, U"Your group label \"", groupLabel, U"\" does not exist.");
+	CONVERT_ONE_AND_ONE_TO_ONE (Discriminant, TableOfReal)
+		const integer group = Discriminant_groupLabelToIndex (me, groupLabel);
+		Melder_require (group > 0, 
+			U"Your group label \"", groupLabel, U"\" does not exist.");
 		autoTableOfReal result = Discriminant_TableOfReal_mahalanobis (me, you, group, poolCovariances);
-	CONVERT_TWO_END (U"mahalanobis")
+	CONVERT_ONE_AND_ONE_TO_ONE_END (U"mahalanobis")
 }
 
-FORM (NEW1_Discriminant_TableOfReal_mahalanobis_all, U"Discriminant & TableOfReal: Mahalanobis all", nullptr) {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_TableOfReal_mahalanobis_all, U"Discriminant & TableOfReal: Mahalanobis all", nullptr) {
 	BOOLEAN (poolCovariances, U"Pool covariance matrices", false)
 	OK
 DO
-	CONVERT_TWO (Discriminant, TableOfReal)
+	CONVERT_ONE_AND_ONE_TO_ONE (Discriminant, TableOfReal)
 		autoTableOfReal result = Discriminant_TableOfReal_mahalanobis_all (me, you, poolCovariances);
-	CONVERT_TWO_END (U"mahalanobis")
-	
+	CONVERT_ONE_AND_ONE_TO_ONE_END (U"mahalanobis")
 }
 
-DIRECT (INTEGER_Discriminant_getNumberOfEigenvalues) {
-	INTEGER_ONE (Discriminant)
-		integer result = my eigen -> numberOfEigenvalues;
-	INTEGER_ONE_END (U" (number of eigenvalues)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfEigenvalues) {
+	QUERY_ONE_FOR_INTEGER (Discriminant)
+		const integer result = my eigen -> numberOfEigenvalues;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of eigenvalues)")
 }
 
-DIRECT (INTEGER_Discriminant_getNumberOfEigenvectors) {
-	INTEGER_ONE (Discriminant)
-		integer result = my eigen -> numberOfEigenvalues;
-	INTEGER_ONE_END (U" (number of eigenvectors)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfEigenvectors) {
+	QUERY_ONE_FOR_INTEGER (Discriminant)
+		const integer result = my eigen -> numberOfEigenvalues;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of eigenvectors)")
 }
 
-DIRECT (INTEGER_Discriminant_getEigenvectorDimension) {
-	INTEGER_ONE (Discriminant)
-		integer result = my eigen -> dimension;
-	INTEGER_ONE_END (U" (dimension)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Discriminant_getEigenvectorDimension) {
+	QUERY_ONE_FOR_INTEGER (Discriminant)
+		const integer result = my eigen -> dimension;
+	QUERY_ONE_FOR_INTEGER_END (U" (dimension)")
 }
 
-FORM (REAL_Discriminant_getEigenvalue, U"Discriminant: Get eigenvalue", U"Eigen: Get eigenvalue...") {
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getEigenvalue, U"Discriminant: Get eigenvalue", U"Eigen: Get eigenvalue...") {
 	NATURAL (eigenvalueNumber, U"Eigenvalue number", U"1")
 	OK
 DO
-	NUMBER_ONE (Discriminant)
+	QUERY_ONE_FOR_REAL (Discriminant)
 		Melder_require (eigenvalueNumber <= my eigen -> numberOfEigenvalues, 
 			U"Eigenvalue number should be smaller than ", my eigen -> numberOfEigenvalues + 1);
-		double result = my eigen -> eigenvalues[eigenvalueNumber];
-	NUMBER_ONE_END (U" (eigenvalue [)", eigenvalueNumber, U"])")
+		const double result = my eigen -> eigenvalues [eigenvalueNumber];
+	QUERY_ONE_FOR_REAL_END (U" (eigenvalue [)", eigenvalueNumber, U"])")
 }
 
-FORM (REAL_Discriminant_getSumOfEigenvalues, U"Discriminant:Get sum of eigenvalues", U"Eigen: Get sum of eigenvalues...") {
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getSumOfEigenvalues, U"Discriminant:Get sum of eigenvalues", U"Eigen: Get sum of eigenvalues...") {
 	INTEGER (fromEigenvalue, U"left Eigenvalue range",  U"0")
 	INTEGER (toEigenvalue, U"right Eigenvalue range", U"0")
 	OK
 DO
-	NUMBER_ONE (Discriminant)
-		double result = Eigen_getSumOfEigenvalues (my eigen.get(), fromEigenvalue, toEigenvalue);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (Discriminant)
+		const double result = Eigen_getSumOfEigenvalues (my eigen.get(), fromEigenvalue, toEigenvalue);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_Discriminant_getEigenvectorElement, U"Discriminant: Get eigenvector element", U"Eigen: Get eigenvector element...") {
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getEigenvectorElement, U"Discriminant: Get eigenvector element", U"Eigen: Get eigenvector element...") {
 	NATURAL (eigenvectorNumber, U"Eigenvector number", U"1")
 	NATURAL (elementNumber, U"Element number", U"1")
 	OK
 DO
-	NUMBER_ONE (Discriminant)
-		double result = Eigen_getEigenvectorElement (my eigen.get(), eigenvectorNumber, elementNumber);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (Discriminant)
+		const double result = Eigen_getEigenvectorElement (my eigen.get(), eigenvectorNumber, elementNumber);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_Discriminant_getWilksLambda, U"Discriminant: Get Wilks' lambda", U"Discriminant: Get Wilks' lambda...") {
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getWilksLambda, U"Discriminant: Get Wilks' lambda", U"Discriminant: Get Wilks' lambda...") {
 	LABEL (U"Product (i=from..numberOfEigenvalues, 1 / (1 + eigenvalue[i]))")
 	NATURAL (from, U"From", U"1") //TODO better name
 	OK
 DO
-	NUMBER_ONE (Discriminant)
-		double result = Discriminant_getWilksLambda (me, from);
-	NUMBER_ONE_END (U" (wilks lambda)")
+	QUERY_ONE_FOR_REAL (Discriminant)
+		const double result = Discriminant_getWilksLambda (me, from);
+	QUERY_ONE_FOR_REAL_END (U" (wilks lambda)")
 }
 
-FORM (REAL_Discriminant_getCumulativeContributionOfComponents, U"Discriminant: Get cumulative contribution of components", U"Eigen: Get cumulative contribution of components...") {
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getCumulativeContributionOfComponents, U"Discriminant: Get cumulative contribution of components", U"Eigen: Get cumulative contribution of components...") {
 	NATURAL (fromComponent, U"From component", U"1")
 	NATURAL (toComponent, U"To component", U"1")
 	OK
 DO
-	NUMBER_ONE (Discriminant)
-		double result = Eigen_getCumulativeContributionOfComponents (my eigen.get(), fromComponent, toComponent);
-	NUMBER_ONE_END (U" (cumulative contribution)")
+	QUERY_ONE_FOR_REAL (Discriminant)
+		const double result = Eigen_getCumulativeContributionOfComponents (my eigen.get(), fromComponent, toComponent);
+	QUERY_ONE_FOR_REAL_END (U" (cumulative contribution)")
 }
 
-
-FORM (REAL_Discriminant_getPartialDiscriminationProbability, U"Discriminant: Get partial discrimination probability", U"Discriminant: Get partial discrimination probability...") {
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getPartialDiscriminationProbability, U"Discriminant: Get partial discrimination probability", U"Discriminant: Get partial discrimination probability...") {
 	INTEGER (numberOfDimensions, U"Number of dimensions", U"1")
 	OK
 DO
-	Melder_require (numberOfDimensions >= 0, U"The number of dimensions should be at least zero.");
-	NUMBER_ONE (Discriminant)
-		double result, chisq, df;
-		Discriminant_getPartialDiscriminationProbability (me, numberOfDimensions, & result, & chisq, & df);
-	NUMBER_ONE_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", df, U")");
+	Melder_require (numberOfDimensions >= 0, 
+		U"The number of dimensions should be at least zero.");
+	QUERY_ONE_FOR_REAL (Discriminant)
+		double result, chisq, ndof;
+		Discriminant_getPartialDiscriminationProbability (me, numberOfDimensions, & result, & chisq, & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", ndof, U")");
 }
 
-DIRECT (REAL_Discriminant_getHomegeneityOfCovariances_box) {
-	NUMBER_ONE (Discriminant)
-		double chisq, result, ndf;
-		SSCPList_getHomegeneityOfCovariances_box (my groups.get(), & result, & chisq, & ndf);
-	NUMBER_ONE_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", ndf, U")")
+DIRECT (QUERY_ONE_FOR_REAL__Discriminant_getHomegeneityOfCovariances_box) {
+	QUERY_ONE_FOR_REAL (Discriminant)
+		double chisq, result, ndof;
+		SSCPList_getHomegeneityOfCovariances_box (my groups.get(), & result, & chisq, & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", ndof, U")")
 }
 
-DIRECT (INFO_Discriminant_reportEqualityOfCovarianceMatrices) {
-	MelderInfo_open ();
-	LOOP {
-		iam (Discriminant);
+DIRECT (INFO_ONE__Discriminant_reportEqualityOfCovarianceMatrices) {
+	INFO_ONE (Discriminant)
+		MelderInfo_open ();
 		structCovarianceList list;
 		for (integer i = 1; i <= my groups->size; i ++) {
 			SSCP sscp = my groups->at [i];
 			autoCovariance covariance = SSCP_to_Covariance (sscp, 1);   // FIXME numberOfConstraints shouldn't be 1, should it?
 			list. addItem_move (covariance.move());
 		}
-		double chisq, prob, df;
-		Covariances_equality (& list, 2, & prob, & chisq, & df);
+		double chisq, prob, ndof;
+		Covariances_equality (& list, 2, & prob, & chisq, & ndof);
 		MelderInfo_writeLine (U"Wald test for equality of covariance matrices:");
 		MelderInfo_writeLine (U"Chi squared: ", chisq);
 		MelderInfo_writeLine (U"Significance: ", prob);
-		MelderInfo_writeLine (U"Degrees of freedom: ", df);
+		MelderInfo_writeLine (U"Degrees of freedom: ", ndof);
 		MelderInfo_writeLine (U"Number of matrices: ", list.size);
-	}
-	MelderInfo_close ();
-END }
+		MelderInfo_close ();
+	INFO_NONE_END
+}
 
-FORM (REAL_Discriminant_getSigmaEllipseArea, U"Discriminant: Get concentration ellipse area", U"Discriminant: Get concentration ellipse area...") {
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getSigmaEllipseArea, U"Discriminant: Get concentration ellipse area", U"Discriminant: Get concentration ellipse area...") {
 	SENTENCE (groupLabel, U"Group label", U"")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
 	BOOLEAN (discriminatPlane, U"Discriminant plane", true)
@@ -1349,14 +1351,17 @@ FORM (REAL_Discriminant_getSigmaEllipseArea, U"Discriminant: Get concentration e
 	INTEGER (yDimension, U"Y-dimension", U"2")
 	OK
 DO
-	NUMBER_ONE (Discriminant)
-		integer group = Discriminant_groupLabelToIndex (me, groupLabel);
-		Melder_require (group > 0, U"The group label \"", groupLabel, U"\" does not exist.");
-		double result = Discriminant_getConcentrationEllipseArea (me, group, numberOfSigmas, false, discriminatPlane, xDimension, yDimension);
-	NUMBER_ONE_END (U" (concentration ellipse area)")
+	QUERY_ONE_FOR_REAL (Discriminant)
+		const integer group = Discriminant_groupLabelToIndex (me, groupLabel);
+		Melder_require (group > 0, 
+			U"The group label \"", groupLabel, U"\" does not exist.");
+		const double result = Discriminant_getConcentrationEllipseArea (me, group, numberOfSigmas, false, 
+			discriminatPlane, xDimension, yDimension
+		);
+	QUERY_ONE_FOR_REAL_END (U" (concentration ellipse area)")
 }
 
-FORM (REAL_Discriminant_getConfidenceEllipseArea, U"Discriminant: Get confidence ellipse area", U"Discriminant: Get confidence ellipse area...") {
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getConfidenceEllipseArea, U"Discriminant: Get confidence ellipse area", U"Discriminant: Get confidence ellipse area...") {
 	SENTENCE (groupLabel, U"Group label", U"")
 	POSITIVE (confidenceLevel, U"Confidence level (0-1)", U"0.95")
 	BOOLEAN (discriminatPlane, U"Discriminant plane", true)
@@ -1364,28 +1369,32 @@ FORM (REAL_Discriminant_getConfidenceEllipseArea, U"Discriminant: Get confidence
 	INTEGER (yDimension, U"Y-dimension", U"2")
 	OK
 DO
-	NUMBER_ONE (Discriminant)
-		integer group = Discriminant_groupLabelToIndex (me, groupLabel);
-		Melder_require (group > 0, U"The group label \"", groupLabel, U"\" does not exist.");
-		double result = Discriminant_getConcentrationEllipseArea (me, group, confidenceLevel, true, discriminatPlane, xDimension, yDimension);
-	NUMBER_ONE_END (U" (confidence ellipse area)")
+	QUERY_ONE_FOR_REAL (Discriminant)
+		const integer group = Discriminant_groupLabelToIndex (me, groupLabel);
+		Melder_require (group > 0,
+			U"The group label \"", groupLabel, U"\" does not exist.");
+		const double result = Discriminant_getConcentrationEllipseArea (me, group, confidenceLevel, true,
+			discriminatPlane, xDimension, yDimension
+		);
+	QUERY_ONE_FOR_REAL_END (U" (confidence ellipse area)")
 }
 
-FORM (REAL_Discriminant_getLnDeterminant_group, U"Discriminant: Get determinant (group)", U"Discriminant: Get determinant (group)...")
+FORM (QUERY_ONE_FOR_REAL__Discriminant_getLnDeterminant_group, U"Discriminant: Get determinant (group)", U"Discriminant: Get determinant (group)...")
 	SENTENCE (groupLabel, U"Group label", U"") {
 	OK
 DO
-	NUMBER_ONE (Discriminant)
-		integer group = Discriminant_groupLabelToIndex (me, groupLabel);
-		Melder_require (group > 0, U"The group label \"", groupLabel, U"\" does not exist.");
-		double result = Discriminant_getLnDeterminant_group (me, group);
-	NUMBER_ONE_END (U" (ln(determinant) group")
+	QUERY_ONE_FOR_REAL (Discriminant)
+		const integer group = Discriminant_groupLabelToIndex (me, groupLabel);
+		Melder_require (group > 0, 
+			U"The group label \"", groupLabel, U"\" does not exist.");
+		const double result = Discriminant_getLnDeterminant_group (me, group);
+	QUERY_ONE_FOR_REAL_END (U" (ln(determinant) group")
 }
 
-DIRECT (REAL_Discriminant_getLnDeterminant_total) {
-	NUMBER_ONE (Discriminant)
-		double result = Discriminant_getLnDeterminant_total (me);
-	NUMBER_ONE_END (U" (ln(determinant) total")
+DIRECT (QUERY_ONE_FOR_REAL__Discriminant_getLnDeterminant_total) {
+	QUERY_ONE_FOR_REAL (Discriminant)
+		const double result = Discriminant_getLnDeterminant_total (me);
+	QUERY_ONE_FOR_REAL_END (U" (ln(determinant) total")
 }
 
 FORM (MODIFY_Discriminant_invertEigenvector, U"Discriminant: Invert eigenvector", nullptr) {
@@ -1397,7 +1406,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (GRAPHICS_Discriminant_drawEigenvalues, U"Discriminant: Draw eigenvalues", U"Eigen: Draw eigenvalues...") {
+FORM (GRAPHICS_EACH__Discriminant_drawEigenvalues, U"Discriminant: Draw eigenvalues", U"Eigen: Draw eigenvalues...") {
 	INTEGER (fromEigenvalue, U"left Eigenvalue range", U"0")
 	INTEGER (toEigenvalue, U"right Eigenvalue range", U"0")
 	REAL (fromAmplitude, U"left Amplitude range", U"0.0")
@@ -1410,11 +1419,13 @@ FORM (GRAPHICS_Discriminant_drawEigenvalues, U"Discriminant: Draw eigenvalues", 
 	OK
 DO
 	GRAPHICS_EACH (Discriminant)
-		Eigen_drawEigenvalues (my eigen.get(), GRAPHICS, fromEigenvalue, toEigenvalue, fromAmplitude, toAmplitude, showFractions, showCumulativeValues, markSize_mm, mark_string, garnish);
+		Eigen_drawEigenvalues (my eigen.get(), GRAPHICS, fromEigenvalue, toEigenvalue, fromAmplitude, toAmplitude, 
+			showFractions, showCumulativeValues, markSize_mm, mark_string, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Discriminant_drawEigenvector, U"Discriminant: Draw eigenvector", U"Eigen: Draw eigenvector...") {
+FORM (GRAPHICS_EACH__Discriminant_drawEigenvector, U"Discriminant: Draw eigenvector", U"Eigen: Draw eigenvector...") {
 	INTEGER (eigenvectorNumber, U"Eigenvector number", U"1")
 	BOOLEAN (componentLoadings, U"Component loadings", false)
 	INTEGER (fromElement, U"left Element range", U"0")
@@ -1428,12 +1439,14 @@ FORM (GRAPHICS_Discriminant_drawEigenvector, U"Discriminant: Draw eigenvector", 
 	OK
 DO
 	GRAPHICS_EACH (Discriminant)
-		Eigen_drawEigenvector (my eigen.get(), GRAPHICS, eigenvectorNumber, fromElement, toElement, fromAmplitude, toAmplitude, componentLoadings, markSize_mm, mark_string, connectPoints, nullptr,  garnish);
+		Eigen_drawEigenvector (my eigen.get(), GRAPHICS, eigenvectorNumber, fromElement, toElement, 
+			fromAmplitude, toAmplitude, componentLoadings, markSize_mm, mark_string, connectPoints,
+			nullptr,  garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-
-FORM (GRAPHICS_Discriminant_drawSigmaEllipses, U"Discriminant: Draw sigma ellipses", U"Discriminant: Draw sigma ellipses...") {
+FORM (GRAPHICS_EACH__Discriminant_drawSigmaEllipses, U"Discriminant: Draw sigma ellipses", U"Discriminant: Draw sigma ellipses...") {
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
 	BOOLEAN (discriminantPlane, U"Discriminant plane", true)
 	INTEGER (xDimension, U"X-dimension", U"1")
@@ -1447,11 +1460,13 @@ FORM (GRAPHICS_Discriminant_drawSigmaEllipses, U"Discriminant: Draw sigma ellips
 	OK
 DO
 	GRAPHICS_EACH (Discriminant)
-		Discriminant_drawConcentrationEllipses (me, GRAPHICS, numberOfSigmas, false, nullptr, discriminantPlane, xDimension, yDimension,xmin, xmax, ymin, ymax, labelSize, garnish);
+		Discriminant_drawConcentrationEllipses (me, GRAPHICS, numberOfSigmas, false, nullptr, discriminantPlane, 
+			xDimension, yDimension,xmin, xmax, ymin, ymax, labelSize, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Discriminant_drawOneSigmaEllipse, U"Discriminant: Draw one sigma ellipse", U"Discriminant: Draw one sigma ellipse...") {
+FORM (GRAPHICS_EACH__Discriminant_drawOneSigmaEllipse, U"Discriminant: Draw one sigma ellipse", U"Discriminant: Draw one sigma ellipse...") {
 	SENTENCE (label, U"Label", U"")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
 	BOOLEAN (discriminatPlane, U"Discriminant plane", true)
@@ -1466,11 +1481,13 @@ FORM (GRAPHICS_Discriminant_drawOneSigmaEllipse, U"Discriminant: Draw one sigma 
 	OK
 DO
 	GRAPHICS_EACH (Discriminant)
-		Discriminant_drawConcentrationEllipses (me, GRAPHICS, numberOfSigmas, false,  label, discriminatPlane, xDimension, yDimension, xmin, xmax, ymin, ymax, labelSize, garnish);
+		Discriminant_drawConcentrationEllipses (me, GRAPHICS, numberOfSigmas, false,  label, discriminatPlane, 
+			xDimension, yDimension, xmin, xmax, ymin, ymax, labelSize, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Discriminant_drawConfidenceEllipses, U"Discriminant: Draw confidence ellipses", nullptr) {
+FORM (GRAPHICS_EACH__Discriminant_drawConfidenceEllipses, U"Discriminant: Draw confidence ellipses", nullptr) {
 	POSITIVE (confidenceLevel, U"Confidence level (0-1)", U"0.95")
 	BOOLEAN (discriminatPlane, U"Discriminant plane", true)
 	INTEGER (xDimension, U"X-dimension", U"1")
@@ -1484,11 +1501,13 @@ FORM (GRAPHICS_Discriminant_drawConfidenceEllipses, U"Discriminant: Draw confide
 	OK
 DO
 	GRAPHICS_EACH (Discriminant)
-		Discriminant_drawConcentrationEllipses (me, GRAPHICS, confidenceLevel, true, nullptr, discriminatPlane, xDimension, yDimension, xmin, xmax, ymin, ymax, labelSize, garnish);
+		Discriminant_drawConcentrationEllipses (me, GRAPHICS, confidenceLevel, true, nullptr, discriminatPlane, 
+			xDimension, yDimension, xmin, xmax, ymin, ymax, labelSize, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Discriminant_drawOneConfidenceEllipse, U"Discriminant: Draw one confidence ellipse", nullptr) {
+FORM (GRAPHICS_EACH__Discriminant_drawOneConfidenceEllipse, U"Discriminant: Draw one confidence ellipse", nullptr) {
 	SENTENCE (label, U"Label", U"")
 	POSITIVE (confidenceLevel, U"Confidence level (0-1)", U"0.95")
 	BOOLEAN (discriminatPlane, U"Discriminant plane", true)
@@ -1503,80 +1522,82 @@ FORM (GRAPHICS_Discriminant_drawOneConfidenceEllipse, U"Discriminant: Draw one c
 	OK
 DO
 	GRAPHICS_EACH (Discriminant)
-		Discriminant_drawConcentrationEllipses (me, GRAPHICS, confidenceLevel, true, label, discriminatPlane, xDimension, yDimension, xmin, xmax, ymin, ymax, labelSize, garnish);
+		Discriminant_drawConcentrationEllipses (me, GRAPHICS, confidenceLevel, true, label, discriminatPlane, 
+			xDimension, yDimension, xmin, xmax, ymin, ymax, labelSize, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-DIRECT (NEW_Discriminant_extractBetweenGroupsSSCP) {
-	CONVERT_EACH (Discriminant)
+DIRECT (CONVERT_EACH_TO_ONE__Discriminant_extractBetweenGroupsSSCP) {
+	CONVERT_EACH_TO_ONE (Discriminant)
 		autoSSCP result = Discriminant_extractBetweenGroupsSSCP (me);
-	CONVERT_EACH_END (my name.get(), U"_between")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_between")
 }
 
-DIRECT (NEW_Discriminant_extractGroupCentroids) {
-	CONVERT_EACH (Discriminant)
+DIRECT (CONVERT_EACH_TO_ONE__Discriminant_extractGroupCentroids) {
+	CONVERT_EACH_TO_ONE (Discriminant)
 		autoTableOfReal result = Discriminant_extractGroupCentroids (me);
-	CONVERT_EACH_END (my name.get(), U"_centroids")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_centroids")
 }
 
-DIRECT (NEW_Discriminant_extractGroupStandardDeviations) {
-	CONVERT_EACH (Discriminant)
+DIRECT (CONVERT_EACH_TO_ONE__Discriminant_extractGroupStandardDeviations) {
+	CONVERT_EACH_TO_ONE (Discriminant)
 		autoTableOfReal result = Discriminant_extractGroupStandardDeviations (me);
-	CONVERT_EACH_END (U"group_stddevs")
+	CONVERT_EACH_TO_ONE_END (U"group_stddevs")
 }
 
-DIRECT (NEW_Discriminant_extractGroupLabels) {
-	CONVERT_EACH (Discriminant)
+DIRECT (CONVERT_EACH_TO_ONE__Discriminant_extractGroupLabels) {
+	CONVERT_EACH_TO_ONE (Discriminant)
 		autoStrings result = Discriminant_extractGroupLabels (me);
-	CONVERT_EACH_END (U"group_labels")
+	CONVERT_EACH_TO_ONE_END (U"group_labels")
 }
 
-DIRECT (NEW_Discriminant_extractEigen) {
-	CONVERT_EACH (Discriminant)
+DIRECT (CONVERT_EACH_TO_ONE__Discriminant_extractEigen) {
+	CONVERT_EACH_TO_ONE (Discriminant)
 		autoEigen result = Data_copy (my eigen.get());
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_Discriminant_extractPooledWithinGroupsSSCP) {
-	CONVERT_EACH (Discriminant)
+DIRECT (CONVERT_EACH_TO_ONE__Discriminant_extractPooledWithinGroupsSSCP) {
+	CONVERT_EACH_TO_ONE (Discriminant)
 		autoSSCP result = Discriminant_extractPooledWithinGroupsSSCP (me);
-	CONVERT_EACH_END (U"pooled_within")
+	CONVERT_EACH_TO_ONE_END (U"pooled_within")
 }
 
-FORM (NEW_Discriminant_extractWithinGroupSSCP, U"Discriminant: Extract within-group SSCP", U"Discriminant: Extract within-group SSCP...") {
+FORM (CONVERT_EACH_TO_ONE__Discriminant_extractWithinGroupSSCP, U"Discriminant: Extract within-group SSCP", U"Discriminant: Extract within-group SSCP...") {
 	NATURAL (groupIndex, U"Group index", U"1")
 	OK
 DO
-	CONVERT_EACH (Discriminant)
+	CONVERT_EACH_TO_ONE (Discriminant)
 		autoSSCP result = Discriminant_extractWithinGroupSSCP (me, groupIndex);
-	CONVERT_EACH_END (my name.get(), U"_g", groupIndex)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_g", groupIndex)
 }
 
-DIRECT (INTEGER_Discriminant_getNumberOfFunctions) {
-	INTEGER_ONE (Discriminant)
-		integer result = Discriminant_getNumberOfFunctions (me);
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfFunctions) {
+	QUERY_ONE_FOR_INTEGER (Discriminant)
+		const integer result = Discriminant_getNumberOfFunctions (me);
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-DIRECT (INTEGER_Discriminant_getDimensionOfFunctions) {
-	INTEGER_ONE (Discriminant)
-		integer result = Eigen_getDimensionOfComponents (my eigen.get());
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__Discriminant_getDimensionOfFunctions) {
+	QUERY_ONE_FOR_INTEGER (Discriminant)
+		const integer result = Eigen_getDimensionOfComponents (my eigen.get());
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-DIRECT (INTEGER_Discriminant_getNumberOfGroups) {
-	INTEGER_ONE (Discriminant)
-		integer result = Discriminant_getNumberOfGroups (me);
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfGroups) {
+	QUERY_ONE_FOR_INTEGER (Discriminant)
+		const integer result = Discriminant_getNumberOfGroups (me);
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-FORM (INTEGER_Discriminant_getNumberOfObservations, U"Discriminant: Get number of observations", U"Discriminant: Get number of observations...") {
+FORM (QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfObservations, U"Discriminant: Get number of observations", U"Discriminant: Get number of observations...") {
 	INTEGER (group, U"Group", U"0 (= total)")
 	OK
 DO
-	INTEGER_ONE (Discriminant)
-		integer result = Discriminant_getNumberOfObservations (me, group);
-	INTEGER_ONE_END (U"")
+	QUERY_ONE_FOR_INTEGER (Discriminant)
+		const integer result = Discriminant_getNumberOfObservations (me, group);
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
 
@@ -1590,12 +1611,12 @@ FORM (MODIFY_DTW_Polygon_findPathInside, U"DTW & Polygon: Find path inside", nul
 		RADIOBUTTON (U"2/3 < slope < 3/2")
     OK
 DO
-	MODIFY_FIRST_OF_TWO (DTW, Polygon)
-		DTW_Polygon_findPathInside (me, you, slopeConstraint, 0);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE (DTW, Polygon)
+		DTW_Polygon_findPathInside (me, you, slopeConstraint, nullptr);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
-FORM (NEW1_DTW_Polygon_to_Matrix_cumulativeDistances, U"DTW & Polygon: To Matrix (cum. distances)", nullptr) {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__DTW_Polygon_to_Matrix_cumulativeDistances, U"DTW & Polygon: To Matrix (cum. distances)", nullptr) {
     RADIO (slopeConstraint, U"Slope constraint", 1)
 		RADIOBUTTON (U"no restriction")
 		RADIOBUTTON (U"1/3 < slope < 3")
@@ -1603,12 +1624,12 @@ FORM (NEW1_DTW_Polygon_to_Matrix_cumulativeDistances, U"DTW & Polygon: To Matrix
 		RADIOBUTTON (U"2/3 < slope < 3/2")
     OK
 DO
-    CONVERT_TWO (DTW, Polygon)
+    CONVERT_ONE_AND_ONE_TO_ONE (DTW, Polygon)
 		autoMatrix result = DTW_Polygon_to_Matrix_cumulativeDistances (me, you, slopeConstraint);
-     CONVERT_TWO_END (my name.get(), U"_", slopeConstraint);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", slopeConstraint);
 }
 
-FORM (GRAPHICS_DTW_Sounds_draw, U"DTW & Sounds: Draw", U"DTW & Sounds: Draw...") {
+FORM (GRAPHICS_TWO_AND_ONE__DTW_Sounds_draw, U"DTW & Sounds: Draw", U"DTW & Sounds: Draw...") {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -1616,12 +1637,12 @@ FORM (GRAPHICS_DTW_Sounds_draw, U"DTW & Sounds: Draw", U"DTW & Sounds: Draw...")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
-	GRAPHICS_COUPLE_AND_ONE (Sound, DTW)
+	GRAPHICS_TWO_AND_ONE (Sound, DTW)
 		DTW_Sounds_draw (him, you, me, GRAPHICS, xmin, xmax, ymin, ymax, garnish);
-	GRAPHICS_COUPLE_AND_ONE_END
+	GRAPHICS_TWO_AND_ONE_END
 }
 
-FORM (GRAPHICS_DTW_Sounds_drawWarp_x, U"DTW & Sounds: Draw warp (x)", U"DTW & Sounds: Draw warp (x)...") {
+FORM (GRAPHICS_TWO_AND_ONE__DTW_Sounds_drawWarp_x, U"DTW & Sounds: Draw warp (x)", U"DTW & Sounds: Draw warp (x)...") {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -1630,16 +1651,16 @@ FORM (GRAPHICS_DTW_Sounds_drawWarp_x, U"DTW & Sounds: Draw warp (x)", U"DTW & So
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
-	GRAPHICS_COUPLE_AND_ONE (Sound, DTW)
+	GRAPHICS_TWO_AND_ONE (Sound, DTW)
 		DTW_Sounds_drawWarpX (him, you, me, GRAPHICS, xmin, xmax, ymin, ymax, time, garnish);
-	GRAPHICS_COUPLE_AND_ONE_END
+	GRAPHICS_TWO_AND_ONE_END
 }
 
-DIRECT (HELP_DTW_help) {
+DIRECT (HELP__DTW_help) {
 	HELP (U"DTW")
 }
 
-FORM (GRAPHICS_DTW_drawPath, U"DTW: Draw path", nullptr) {
+FORM (GRAPHICS_EACH__DTW_drawPath, U"DTW: Draw path", nullptr) {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -1652,7 +1673,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_DTW_drawDistancesAlongPath, U"DTW: Draw distances along path", nullptr) {
+FORM (GRAPHICS_EACH__DTW_drawDistancesAlongPath, U"DTW: Draw distances along path", nullptr) {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -1665,7 +1686,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_DTW_paintDistances, U"DTW: Paint distances", nullptr) {
+FORM (GRAPHICS_EACH__DTW_paintDistances, U"DTW: Paint distances", nullptr) {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -1680,7 +1701,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_DTW_drawWarp_x, U"DTW: Draw warp (x)", U"DTW: Draw warp (x)...") {
+FORM (GRAPHICS_EACH__DTW_drawWarp_x, U"DTW: Draw warp (x)", U"DTW: Draw warp (x)...") {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -1695,7 +1716,7 @@ DO
 }
 
 
-FORM (GRAPHICS_DTW_drawWarp_y, U"DTW: Draw warp (y)", U"DTW: Draw warp (y)...") {
+FORM (GRAPHICS_EACH__DTW_drawWarp_y, U"DTW: Draw warp (y)", U"DTW: Draw warp (y)...") {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -1709,134 +1730,135 @@ DO
 	GRAPHICS_EACH_END
 }
 
-DIRECT (REAL_DTW_getStartTime_x) {
-	NUMBER_ONE (DTW)
-		double result = my xmin;
-	NUMBER_ONE_END (U" s (= start time along x)")
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getStartTime_x) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my xmin;
+	QUERY_ONE_FOR_REAL_END (U" seconds (= start time along x)")
 }
 
-DIRECT (REAL_DTW_getEndTime_x) {
-	NUMBER_ONE (DTW)
-		double result = my xmax;
-	NUMBER_ONE_END (U" s (= end time along x)");
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getEndTime_x) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my xmax;
+	QUERY_ONE_FOR_REAL_END (U" seconds (= end time along x)");
 }
 
-DIRECT (REAL_DTW_getTotalDuration_x) {
-	NUMBER_ONE (DTW)
-		double result = my xmax - my xmin;
-	NUMBER_ONE_END (U" s (= total duration along x)");
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getTotalDuration_x) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my xmax - my xmin;
+	QUERY_ONE_FOR_REAL_END (U" seconds (= total duration along x)");
 }
 
-DIRECT (REAL_DTW_getStartTime_y) {
-	NUMBER_ONE (DTW)
-		double result = my ymin;
-	NUMBER_ONE_END (U" s (= start time along y)");
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getStartTime_y) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my ymin;
+	QUERY_ONE_FOR_REAL_END (U" seconds (= start time along y)");
 }
 
-DIRECT (REAL_DTW_getEndTime_y) {
-	NUMBER_ONE (DTW)
-		double result = my ymax;
-	NUMBER_ONE_END (U" s (= end time along y)");
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getEndTime_y) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my ymax;
+	QUERY_ONE_FOR_REAL_END (U" seconds (= end time along y)");
 }
 
-DIRECT (REAL_DTW_getTotalDuration_y) {
-	NUMBER_ONE (DTW)
-		double result = my ymax - my ymin;
-	NUMBER_ONE_END (U" s (= total duration along y)")
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getTotalDuration_y) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my ymax - my ymin;
+	QUERY_ONE_FOR_REAL_END (U" seconds (= total duration along y)")
 }
 
-DIRECT (INTEGER_DTW_getNumberOfFrames_x) {
-	INTEGER_ONE (DTW)
-		integer result = my nx;
-	INTEGER_ONE_END (U" (= number of frames along x)")
+DIRECT (QUERY_ONE_FOR_INTEGER__DTW_getNumberOfFrames_x) {
+	QUERY_ONE_FOR_INTEGER (DTW)
+		const integer result = my nx;
+	QUERY_ONE_FOR_INTEGER_END (U" frames along x")
 }
 
-
-DIRECT (REAL_DTW_getTimeStep_x) {
-	NUMBER_ONE (DTW)
-		double result = my dx;
-	NUMBER_ONE_END (U" s (= time step along x)")
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getTimeStep_x) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my dx;
+	QUERY_ONE_FOR_REAL_END (U" seconds (= time step along x)")
 }
 
-FORM (REAL_DTW_getTimeFromFrameNumber_x, U"DTW: Get time from frame number (x)", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__DTW_getTimeFromFrameNumber_x, U"DTW: Get time from frame number (x)", nullptr) {
 	NATURAL (frameNumber, U"Frame number (x)", U"1")
 	OK
 DO
-	NUMBER_ONE (DTW)
-		double result = Matrix_columnToX (me, frameNumber);
-	NUMBER_ONE_END (U" s (= y time at x frame ", frameNumber, U")")
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = Matrix_columnToX (me, frameNumber);
+	QUERY_ONE_FOR_REAL_END (U" seconds (= y time at x frame ", frameNumber, U")")
 }
 
-FORM (INTEGER_DTW_getFrameNumberFromTime_x, U"DTW: Get frame number from time (x)", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__DTW_getFrameNumberFromTime_x, U"DTW: Get frame number from time (x)", nullptr) {
 	REAL (xTime, U"Time along x (s)", U"0.1")
 	OK
 DO
-	INTEGER_ONE (DTW)
-		Melder_require (xTime >= my xmin && xTime <= my xmax, U"Time outside x domain.");
-		integer result = Melder_iround (Matrix_xToColumn (me, xTime));
-	INTEGER_ONE_END (U" (= x frame at y time ", xTime, U")")
+	QUERY_ONE_FOR_INTEGER (DTW)
+		Melder_require (xTime >= my xmin && xTime <= my xmax, 
+			U"Time outside x domain.");
+		const integer result = Melder_iround (Matrix_xToColumn (me, xTime));
+	QUERY_ONE_FOR_INTEGER_END (U" (= x frame at y time ", xTime, U")")
 }
 
-DIRECT (INTEGER_DTW_getNumberOfFrames_y) {
-	INTEGER_ONE (DTW)
-		integer result = my ny;
-	INTEGER_ONE_END (U" (= number of frames along y)")
+DIRECT (QUERY_ONE_FOR_INTEGER__DTW_getNumberOfFrames_y) {
+	QUERY_ONE_FOR_INTEGER (DTW)
+		const integer result = my ny;
+	QUERY_ONE_FOR_INTEGER_END (U" (= number of frames along y)")
 }
 
-DIRECT (REAL_DTW_getTimeStep_y) {
-	NUMBER_ONE (DTW)
-		double result = my dy;
-	NUMBER_ONE_END (U" s (= time step along y)")
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getTimeStep_y) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my dy;
+	QUERY_ONE_FOR_REAL_END (U" seconds (= time step along y)")
 }
 
 
-FORM (REAL_DTW_getTimeFromFrameNumber_y, U"DTW: Get time from frame number (y)", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__DTW_getTimeFromFrameNumber_y, U"DTW: Get time from frame number (y)", nullptr) {
 	NATURAL (frameNumber, U"Frame number (y)", U"1")
 	OK
 DO
-	NUMBER_ONE (DTW)
-		double result = Matrix_rowToY (me, frameNumber);
-	NUMBER_ONE_END (U" s (= x time at y frame ", frameNumber, U")")
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = Matrix_rowToY (me, frameNumber);
+	QUERY_ONE_FOR_REAL_END (U" seconds (= x time at y frame ", frameNumber, U")")
 }
 
-FORM (INTEGER_DTW_getFrameNumberFromTime_y, U"DTW: Get frame number from time (y)", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__DTW_getFrameNumberFromTime_y, U"DTW: Get frame number from time (y)", nullptr) {
 	REAL (yTime, U"Time along y (s)", U"0.1")
 	OK
 DO
-	INTEGER_ONE (DTW)
-		Melder_require (yTime >= my ymin && yTime <= my ymax, U"Time outside y domain.");
-		integer result = Melder_iround (Matrix_yToRow (me, yTime));
-	INTEGER_ONE_END (U" (= y frame at x time ", yTime, U")")
+	QUERY_ONE_FOR_INTEGER (DTW)
+		Melder_require (yTime >= my ymin && yTime <= my ymax, 
+			U"Time outside y domain.");
+		const integer result = Melder_iround (Matrix_yToRow (me, yTime));
+	QUERY_ONE_FOR_INTEGER_END (U" (= y frame at x time ", yTime, U")")
 }
 
-FORM (REAL_DTW_getPathY, U"DTW: Get time along path", U"DTW: Get time along path...") {
+FORM (QUERY_ONE_FOR_REAL__DTW_getPathY, U"DTW: Get time along path", U"DTW: Get time along path...") {
 	REAL (xTime, U"Time (s)", U"0.0")
 	OK
 DO
-	NUMBER_ONE (DTW)
-		double result = DTW_getYTimeFromXTime (me, xTime);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = DTW_getYTimeFromXTime (me, xTime);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_DTW_getYTimeFromXTime, U"DTW: Get y time from x time", U"DTW: Get y time from x time...") {
+FORM (QUERY_ONE_FOR_REAL__DTW_getYTimeFromXTime, U"DTW: Get y time from x time", U"DTW: Get y time from x time...") {
 	REAL (xTime, U"Time at x (s)", U"0.0")
 	OK
 DO
-	NUMBER_ONE (DTW)
-		double result = DTW_getYTimeFromXTime (me, xTime);
-	NUMBER_ONE_END (U" s (= y time at x time ", xTime, U")")
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = DTW_getYTimeFromXTime (me, xTime);
+	QUERY_ONE_FOR_REAL_END (U" seconds (= y time at x time ", xTime, U")")
 }
 
-FORM (REAL_DTW_getXTimeFromYTime, U"DTW: Get x time from y time", U"DTW: Get x time from y time...") {
+FORM (QUERY_ONE_FOR_REAL__DTW_getXTimeFromYTime, U"DTW: Get x time from y time", U"DTW: Get x time from y time...") {
 	REAL (yTime, U"Time at y (s)", U"0.0")
 	OK
 DO
-	NUMBER_ONE (DTW)
-		double result = DTW_getXTimeFromYTime (me, yTime);
-	NUMBER_ONE_END (U" s (= x time at y time ", yTime, U")")
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = DTW_getXTimeFromYTime (me, yTime);
+	QUERY_ONE_FOR_REAL_END (U" seconds (= x time at y time ", yTime, U")")
 }
 
-FORM (INTEGER_DTW_getMaximumConsecutiveSteps, U"DTW: Get maximum consecutive steps", U"DTW: Get maximum consecutive steps...") {
+FORM (QUERY_ONE_FOR_INTEGER__DTW_getMaximumConsecutiveSteps, U"DTW: Get maximum consecutive steps", U"DTW: Get maximum consecutive steps...") {
 	OPTIONMENU (direction, U"Direction", 1)
 		OPTION (U"X")
 		OPTION (U"Y")
@@ -1845,70 +1867,60 @@ FORM (INTEGER_DTW_getMaximumConsecutiveSteps, U"DTW: Get maximum consecutive ste
 DO
 	int direction_code [] = { DTW_START, DTW_X, DTW_Y, DTW_XANDY };
 	conststring32 direction_string [] = { U"", U"x", U"y", U"diagonal" };
-	INTEGER_ONE (DTW)
+	QUERY_ONE_FOR_INTEGER (DTW)
 		integer result = DTW_getMaximumConsecutiveSteps (me, direction_code [direction]);
-	INTEGER_ONE_END (U" (= maximum number of consecutive steps in ", direction_string [direction], U" direction)")
+	QUERY_ONE_FOR_INTEGER_END (U" (= maximum number of consecutive steps in ", direction_string [direction], U" direction)")
 }
 
-DIRECT (REAL_DTW_getDistance_weighted) {
-	NUMBER_ONE (DTW)
-		double result = my weightedDistance;
-	NUMBER_ONE_END (U" (weighted distance)")
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getDistance_weighted) {
+	QUERY_ONE_FOR_REAL (DTW)
+		const double result = my weightedDistance;
+	QUERY_ONE_FOR_REAL_END (U" (weighted distance)")
 }
 
-FORM (REAL_DTW_getDistanceValue, U"DTW: Get distance value", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__DTW_getDistanceValue, U"DTW: Get distance value", nullptr) {
 	REAL (xTime, U"Time at x (s)", U"0.1")
 	REAL (yTime, U"Time at y (s)", U"0.1")
 	OK
 DO
-	NUMBER_ONE (DTW)
+	QUERY_ONE_FOR_REAL (DTW)
 		double result = undefined;
 		if ((xTime >= my xmin && xTime <= my xmax) && (yTime >= my ymin && yTime <= my ymax)) {
 			integer irow = Matrix_yToNearestRow (me, yTime);
 			integer icol = Matrix_xToNearestColumn (me, xTime);
-			result = my z[irow][icol];
+			result = my z [irow] [icol];
 		}
-	NUMBER_ONE_END (U" (= distance at (", xTime, U", ", yTime, U"))")
+	QUERY_ONE_FOR_REAL_END (U" (= distance at (", xTime, U", ", yTime, U"))")
 }
 
-DIRECT (REAL_DTW_getMinimumDistance) {
-	NUMBER_ONE (DTW)
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getMinimumDistance) {
+	QUERY_ONE_FOR_REAL (DTW)
 		double result, maximum;
 		Matrix_getWindowExtrema (me, 0, 0, 0, 0, & result, & maximum);
-	NUMBER_ONE_END (U" (minimum)")
+	QUERY_ONE_FOR_REAL_END (U" (minimum)")
 }
 
-DIRECT (REAL_DTW_getMaximumDistance) {
-	NUMBER_ONE (DTW)
+DIRECT (QUERY_ONE_FOR_REAL__DTW_getMaximumDistance) {
+	QUERY_ONE_FOR_REAL (DTW)
 		double minimum, result;
 		Matrix_getWindowExtrema (me, 0, 0, 0, 0, & minimum, & result);
-	NUMBER_ONE_END (U" (maximum)")
+	QUERY_ONE_FOR_REAL_END (U" (maximum)")
 }
 
 FORM (MODIFY_DTW_formula_distances, U"DTW: Formula (distances)", nullptr) {
 	LABEL (U"y := y1; for row := 1 to nrow do { x := x1; "
 		"for col := 1 to ncol do { self [row, col] := `formula' ; x := x + dx } y := y + dy }")
-	TEXTFIELD (formula, U"Formula:", U"self")
+	FORMULA (formula, U"Formula", U"self")
 	OK
 DO
-	LOOP {
-		iam (DTW);
-		autoMatrix cp = DTW_to_Matrix_distances (me);
-		try {
-			Matrix_formula (me, formula, interpreter, 0);
-			double minimum, maximum;
-			Matrix_getWindowExtrema (me, 0, 0, 0, 0, & minimum, & maximum);
-			if (minimum < 0) {
-				DTW_Matrix_replace (me, cp.get()); // restore original
-				Melder_throw (U"Execution of the formula has made some distance(s) negative which is not allowed.");
-			}
-			praat_dataChanged (me);
-		} catch (MelderError) {
-			praat_dataChanged (me);
-			throw;
-		}
-	}
-END }
+	MODIFY_EACH_WEAK (DTW)
+		Matrix_formula (me, formula, interpreter, 0);
+		double minimum, maximum;
+		Matrix_getWindowExtrema (me, 0, 0, 0, 0, & minimum, & maximum);
+		if (minimum < 0.0)
+			Melder_throw (U"Execution of the formula has made some distance(s) negative.");
+	MODIFY_EACH_WEAK_END
+}
 
 FORM (MODIFY_DTW_setDistanceValue, U"DTW: Set distance value", nullptr) {
 	REAL (xTime, U"Time at x (s)", U"0.1")
@@ -1916,19 +1928,16 @@ FORM (MODIFY_DTW_setDistanceValue, U"DTW: Set distance value", nullptr) {
 	REAL (newDistance, U"New value", U"0.0")
 	OK
 DO
-	if (newDistance < 0) {
+	if (newDistance < 0)
 		Melder_throw (U"Distances cannot be negative.");
-	}
 	MODIFY_EACH (DTW)
-		if (xTime < my xmin || xTime > my xmax) {
+		if (xTime < my xmin || xTime > my xmax)
 			Melder_throw (U"Time at x outside domain.");
-		}
-		if (yTime < my ymin || yTime > my ymax) {
+		if (yTime < my ymin || yTime > my ymax)
 			Melder_throw (U"Time at y outside domain.");
-		}
-		integer irow = Matrix_yToNearestRow (me, yTime);
-		integer icol = Matrix_xToNearestColumn (me, xTime);
-		my z[irow][icol] = newDistance;
+		const integer irow = Matrix_yToNearestRow (me, yTime);
+		const integer icol = Matrix_xToNearestColumn (me, xTime);
+		my z [irow] [icol] = newDistance;
 	MODIFY_EACH_END
 }
 
@@ -1955,7 +1964,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (NEW_DTW_to_Matrix_cumulativeDistances, U"DTW: To Matrix", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__DTW_to_Matrix_cumulativeDistances, U"DTW: To Matrix", nullptr) {
     REAL (sakoeChibaBand, U"Sakoe-Chiba band (s)", U"0.05")
     RADIO (slopeConstraint, U"Slope constraint", 1)
 		RADIOBUTTON (U"no restriction")
@@ -1964,12 +1973,12 @@ FORM (NEW_DTW_to_Matrix_cumulativeDistances, U"DTW: To Matrix", nullptr) {
 		RADIOBUTTON (U"2/3 < slope < 3/2")
     OK
 DO
-    CONVERT_EACH (DTW)
+    CONVERT_EACH_TO_ONE (DTW)
         autoMatrix result = DTW_to_Matrix_cumulativeDistances (me, sakoeChibaBand, slopeConstraint);
-	CONVERT_EACH_END (my name.get(), U"_cd")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_cd")
 }
 
-FORM (NEW_DTW_to_Polygon, U"DTW: To Polygon...", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__DTW_to_Polygon, U"DTW: To Polygon...", nullptr) {
     REAL (sakoeChibaBand, U"Sakoe-Chiba band (s)", U"0.1")
     RADIO (slopeConstraint, U"Slope constraint", 1)
 		RADIOBUTTON (U"no restriction")
@@ -1978,80 +1987,72 @@ FORM (NEW_DTW_to_Polygon, U"DTW: To Polygon...", nullptr) {
 		RADIOBUTTON (U"2/3 < slope < 3/2")
     OK
 DO
-    CONVERT_EACH (DTW)
+    CONVERT_EACH_TO_ONE (DTW)
         autoPolygon result = DTW_to_Polygon (me, sakoeChibaBand, slopeConstraint);
-    CONVERT_EACH_END (my name.get())
+    CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_DTW_to_Matrix_distances) {
-	CONVERT_EACH (DTW)
+DIRECT (CONVERT_EACH_TO_ONE__DTW_to_Matrix_distances) {
+	CONVERT_EACH_TO_ONE (DTW)
 		autoMatrix result = DTW_to_Matrix_distances (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_DTW_swapAxes) {
-	CONVERT_EACH (DTW)
+DIRECT (CONVERT_EACH_TO_ONE__DTW_swapAxes) {
+	CONVERT_EACH_TO_ONE (DTW)
 		autoDTW result = DTW_swapAxes (me);
-	CONVERT_EACH_END (my name.get(), U"_axesSwapped")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_axesSwapped")
 }
 
 DIRECT (MODIFY_DTW_Matrix_replace) {
-	MODIFY_FIRST_OF_TWO (DTW, Matrix)
+	MODIFY_FIRST_OF_ONE_AND_ONE (DTW, Matrix)
 		DTW_Matrix_replace (me, you);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
-DIRECT (NEW1_DTW_TextGrid_to_TextGrid) {
-	CONVERT_TWO (DTW, TextGrid)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__DTW_TextGrid_to_TextGrid) {
+	CONVERT_ONE_AND_ONE_TO_ONE (DTW, TextGrid)
 		autoTextGrid result = DTW_TextGrid_to_TextGrid (me, you, 0);
-	CONVERT_TWO_END (your name.get(), U"_", my name.get())
+		// in result use the name of the textgrid and append the name of the DTW object
+	CONVERT_ONE_AND_ONE_TO_ONE_END (your name.get(), U"_", my name.get())
 }
 
-DIRECT (NEW1_DTW_IntervalTier_to_Table) {
-	CONVERT_TWO (DTW, IntervalTier)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__DTW_IntervalTier_to_Table) {
+	CONVERT_ONE_AND_ONE_TO_ONE (DTW, IntervalTier)
 		autoTable result = DTW_IntervalTier_to_Table (me, you, 1.0/44100);
-	CONVERT_TWO_END (my name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get())
 }
 
 /******************** EditDistanceTable & EditCostsTable ********************************************/
 
-DIRECT (HELP_EditDistanceTable_help) {
+DIRECT (HELP__EditDistanceTable_help) {
 	HELP (U"EditDistanceTable")
 }
 
-DIRECT (NEW_EditDistanceTable_to_TableOfReal_directions) {
-	CONVERT_EACH (EditDistanceTable)
+DIRECT (CONVERT_EACH_TO_ONE__EditDistanceTable_to_TableOfReal_directions) {
+	CONVERT_EACH_TO_ONE (EditDistanceTable)
 		autoTableOfReal result = EditDistanceTable_to_TableOfReal_directions (me);
-	CONVERT_EACH_END (my name.get());
+	CONVERT_EACH_TO_ONE_END (my name.get());
 }
 
 DIRECT (MODIFY_EditDistanceTable_setEditCosts) {
-	MODIFY_FIRST_OF_TWO (EditDistanceTable, EditCostsTable)
+	MODIFY_FIRST_OF_ONE_AND_ONE (EditDistanceTable, EditCostsTable)
 		EditDistanceTable_setEditCosts (me, you);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
 FORM (MODIFY_EditDistanceTable_setDefaultCosts, U"", nullptr) {
-	REAL (insertionCosts, U"Insertion costs", U"1.0")
-	REAL (deletionCosts, U"Deletion costs", U"1.0")
-	REAL (substitutionCosts, U"Substitution costs", U"2.0")
+	POSITIVE (insertionCosts, U"Insertion costs", U"1.0")
+	POSITIVE (deletionCosts, U"Deletion costs", U"1.0")
+	POSITIVE (substitutionCosts, U"Substitution costs", U"2.0")
 	OK
 DO
-	if (insertionCosts < 0) {
-		Melder_throw (U"Insertion costs cannot be negative.");
-	}
-	if (deletionCosts < 0) {
-		Melder_throw (U"Deletion costs cannot be negative.");
-	}
-	if (substitutionCosts < 0) {
-		Melder_throw (U"Substitution costs cannot be negative.");
-	}
 	MODIFY_EACH (EditDistanceTable)
 		EditDistanceTable_setDefaultCosts (me, insertionCosts, deletionCosts, substitutionCosts);
 	MODIFY_EACH_END
 }
 
-FORM (GRAPHICS_EditDistanceTable_draw, U"EditDistanceTable_draw", nullptr) {
+FORM (GRAPHICS_EACH__EditDistanceTable_draw, U"EditDistanceTable_draw", nullptr) {
 	RADIO (format, U"Format", 3)
 		RADIOBUTTON (U"decimal")
 		RADIOBUTTON (U"exponential")
@@ -2066,63 +2067,63 @@ DO
 	GRAPHICS_EACH_END
 }
 
-DIRECT (GRAPHICS_EditDistanceTable_drawEditOperations) {
+DIRECT (GRAPHICS_EACH__EditDistanceTable_drawEditOperations) {
 	GRAPHICS_EACH (EditDistanceTable)
 		EditDistanceTable_drawEditOperations (me, GRAPHICS);
 	GRAPHICS_EACH_END
 }
 
-DIRECT (HELP_EditCostsTable_help) {
+DIRECT (HELP__EditCostsTable_help) {
 	HELP (U"EditCostsTable")
 }
 
-FORM (INTEGER_EditCostsTable_getTargetIndex, U"EditCostsTable: Get target index", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__EditCostsTable_getTargetIndex, U"EditCostsTable: Get target index", nullptr) {
 	SENTENCE (target, U"Target", U"")
 	OK
 DO
-	INTEGER_ONE (EditCostsTable)
-		integer result = EditCostsTable_getTargetIndex (me, target);
-	INTEGER_ONE_END (U" (target index)")
+	QUERY_ONE_FOR_INTEGER (EditCostsTable)
+		const integer result = EditCostsTable_getTargetIndex (me, target);
+	QUERY_ONE_FOR_INTEGER_END (U" (target index)")
 }
 
-FORM (INTEGER_EditCostsTable_getSourceIndex, U"EditCostsTable: Get source index", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__EditCostsTable_getSourceIndex, U"EditCostsTable: Get source index", nullptr) {
 	SENTENCE (source, U"Source", U"")
 	OK
 DO
-	INTEGER_ONE (EditCostsTable)
-		integer result = EditCostsTable_getSourceIndex (me, source);
-	INTEGER_ONE_END (U" (source index)")
+	QUERY_ONE_FOR_INTEGER (EditCostsTable)
+		const integer result = EditCostsTable_getSourceIndex (me, source);
+	QUERY_ONE_FOR_INTEGER_END (U" (source index)")
 }
 
-FORM (REAL_EditCostsTable_getInsertionCosts, U"EditCostsTable: Get insertion cost", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__EditCostsTable_getInsertionCosts, U"EditCostsTable: Get insertion cost", nullptr) {
 	SENTENCE (target, U"Target", U"")
 	OK
 DO
-	NUMBER_ONE (EditCostsTable)
-		double result = EditCostsTable_getInsertionCost (me, target);
-	NUMBER_ONE_END (U" (insertion cost)")
+	QUERY_ONE_FOR_REAL (EditCostsTable)
+		const double result = EditCostsTable_getInsertionCost (me, target);
+	QUERY_ONE_FOR_REAL_END (U" (insertion cost)")
 }
 
-FORM (REAL_EditCostsTable_getDeletionCost, U"EditCostsTable: Get deletion cost", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__EditCostsTable_getDeletionCost, U"EditCostsTable: Get deletion cost", nullptr) {
 	SENTENCE (source, U"Source", U"")
 	OK
 DO
-	NUMBER_ONE (EditCostsTable)
-		double result = EditCostsTable_getDeletionCost (me, source);
-	NUMBER_ONE_END (U" (deletion cost)")
+	QUERY_ONE_FOR_REAL (EditCostsTable)
+		const double result = EditCostsTable_getDeletionCost (me, source);
+	QUERY_ONE_FOR_REAL_END (U" (deletion cost)")
 }
 
-FORM (REAL_EditCostsTable_getSubstitutionCost, U"EditCostsTable: Get substitution cost", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__EditCostsTable_getSubstitutionCost, U"EditCostsTable: Get substitution cost", nullptr) {
 	SENTENCE (target, U"Target", U"")
 	SENTENCE (source, U"Source", U"")
 	OK
 DO
-	NUMBER_ONE (EditCostsTable)
-		double result = EditCostsTable_getSubstitutionCost (me, target, source);
-	NUMBER_ONE_END (U" (substitution cost)")
+	QUERY_ONE_FOR_REAL (EditCostsTable)
+		const double result = EditCostsTable_getSubstitutionCost (me, target, source);
+	QUERY_ONE_FOR_REAL_END (U" (substitution cost)")
 }
 
-FORM (REAL_EditCostsTable_getCosts_others, U"EditCostsTable: Get cost (others)", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__EditCostsTable_getCosts_others, U"EditCostsTable: Get cost (others)", nullptr) {
 	RADIO (costTypes, U"Others cost type", 1)
 		RADIOBUTTON (U"insertion")
 		RADIOBUTTON (U"deletion")
@@ -2130,9 +2131,9 @@ FORM (REAL_EditCostsTable_getCosts_others, U"EditCostsTable: Get cost (others)",
 		RADIOBUTTON (U"inequality")
 	OK
 DO
-	NUMBER_ONE (EditCostsTable)
-		double result = EditCostsTable_getOthersCost (me,costTypes);
-	NUMBER_ONE_END (U" (cost)")
+	QUERY_ONE_FOR_REAL (EditCostsTable)
+		const double result = EditCostsTable_getOthersCost (me,costTypes);
+	QUERY_ONE_FOR_REAL_END (U" (cost)")
 }
 
 FORM (MODIFY_EditCostsTable_setTargetSymbol_index, U"EditCostsTable: Set target symbol (index)", nullptr) {
@@ -2200,39 +2201,41 @@ DO
 	MODIFY_EACH_END
 }
 
-DIRECT (NEW_EditCostsTable_to_TableOfReal) {
-	CONVERT_EACH (EditCostsTable)
+DIRECT (CONVERT_EACH_TO_ONE__EditCostsTable_to_TableOfReal) {
+	CONVERT_EACH_TO_ONE (EditCostsTable)
 		autoTableOfReal result = EditCostsTable_to_TableOfReal (me);
-	CONVERT_EACH_END (my name.get());
+	CONVERT_EACH_TO_ONE_END (my name.get());
 }
 
-FORM (NEW_EditCostsTable_createEmpty, U"Create empty EditCostsTable", U"Create empty EditCostsTable...") {
+FORM (CREATE_ONE__EditCostsTable_createEmpty, U"Create empty EditCostsTable", U"Create empty EditCostsTable...") {
 	SENTENCE (name, U"Name", U"editCosts")
 	INTEGER (numberOfTargetSymbols, U"Number of target symbols", U"0")
 	INTEGER (numberOfSourceSymbols, U"Number of source symbols", U"0")
 	OK
 DO
 	CREATE_ONE
-		numberOfTargetSymbols = numberOfTargetSymbols < 0 ? 0 : numberOfTargetSymbols;
-		numberOfSourceSymbols = numberOfSourceSymbols < 0 ? 0 : numberOfSourceSymbols;
+		numberOfTargetSymbols = std::max (0_integer, numberOfTargetSymbols);
+		numberOfSourceSymbols = std::max (0_integer, numberOfSourceSymbols );
 		autoEditCostsTable result = EditCostsTable_create (numberOfTargetSymbols, numberOfSourceSymbols);
 	CREATE_ONE_END (name)
 }
 
 /******************** Eigen ********************************************/
 
-DIRECT (HELP_Eigen_help) {
+DIRECT (HELP__Eigen_help) {
 	HELP (U"Eigen")
 }
 
-DIRECT (GRAPHICS_Eigen_drawEigenvalues_scree) {
-	Melder_warning (U"The command \"Draw eigenvalues (scree)...\" has been "
-		"removed.\n To get a scree plot use \"Draw eigenvalues...\" with the "
-		"arguments\n 'Fraction of eigenvalues summed' and 'Cumulative' unchecked.");
-	END
+DIRECT (WARNING__Eigen_drawEigenvalues_scree) {
+	WARNING
+		Melder_warning (U"The command \"Draw eigenvalues (scree)...\" has been "
+			"removed.\n To get a scree plot, use \"Draw eigenvalues...\" with the "
+			"arguments\n 'Fraction of eigenvalues summed' and 'Cumulative' unchecked."
+		);
+	WARNING_END
 }
 
-FORM (GRAPHICS_Eigen_drawEigenvalues, U"Eigen: Draw eigenvalues", U"Eigen: Draw eigenvalues...") {
+FORM (GRAPHICS_EACH__Eigen_drawEigenvalues, U"Eigen: Draw eigenvalues", U"Eigen: Draw eigenvalues...") {
 	INTEGER (fromEigenvalue, U"left Eigenvalue range", U"0")
 	INTEGER (toEigenvalue, U"right Eigenvalue range", U"0")
 	REAL (fromAmplitude, U"left Amplitude range", U"0.0")
@@ -2245,11 +2248,13 @@ FORM (GRAPHICS_Eigen_drawEigenvalues, U"Eigen: Draw eigenvalues", U"Eigen: Draw 
 	OK
 DO
 	GRAPHICS_EACH (Eigen)
-		Eigen_drawEigenvalues (me, GRAPHICS, fromEigenvalue, toEigenvalue, fromAmplitude, toAmplitude, fractionSummed, cumulative, markSize_mm, mark_string, garnish);
+		Eigen_drawEigenvalues (me, GRAPHICS, fromEigenvalue, toEigenvalue, fromAmplitude, toAmplitude, 
+			fractionSummed, cumulative, markSize_mm, mark_string, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Eigen_drawEigenvector, U"Eigen: Draw eigenvector", U"Eigen: Draw eigenvector...") {
+FORM (GRAPHICS_EACH__Eigen_drawEigenvector, U"Eigen: Draw eigenvector", U"Eigen: Draw eigenvector...") {
 	INTEGER (eigenvectorNumber, U"Eigenvector number", U"1")
 	BOOLEAN (loadings, U"Component loadings", false)
 	INTEGER (fromElement, U"left Element range", U"0")
@@ -2263,58 +2268,60 @@ FORM (GRAPHICS_Eigen_drawEigenvector, U"Eigen: Draw eigenvector", U"Eigen: Draw 
 	OK
 DO
 	GRAPHICS_EACH (Eigen)
-		Eigen_drawEigenvector (me, GRAPHICS, eigenvectorNumber, fromElement, toElement, fromAmplitude, toAmplitude, loadings, markSize_mm, mark_string, connectPoints, nullptr,  garnish);
+		Eigen_drawEigenvector (me, GRAPHICS, eigenvectorNumber, fromElement, toElement, fromAmplitude, 
+			toAmplitude, loadings, markSize_mm, mark_string, connectPoints, nullptr,  garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-DIRECT (INTEGER_Eigen_getNumberOfEigenvalues) {
-	INTEGER_ONE (Eigen)
-		integer result = my numberOfEigenvalues;
-	INTEGER_ONE_END (U" (number of eigenvalues)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Eigen_getNumberOfEigenvalues) {
+	QUERY_ONE_FOR_INTEGER (Eigen)
+		const integer result = my numberOfEigenvalues;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of eigenvalues)")
 }
 
-DIRECT (INTEGER_Eigen_getNumberOfEigenvectors) {
-	INTEGER_ONE (Eigen)
-		integer result = my numberOfEigenvalues;
-	INTEGER_ONE_END (U" (number of eigenvectors)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Eigen_getNumberOfEigenvectors) {
+	QUERY_ONE_FOR_INTEGER (Eigen)
+		const integer result = my numberOfEigenvalues;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of eigenvectors)")
 }
 
-DIRECT (INTEGER_Eigen_getEigenvectorDimension) {
-	INTEGER_ONE (Eigen)
-		integer result = my dimension;
-	INTEGER_ONE_END (U" (dimension)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Eigen_getEigenvectorDimension) {
+	QUERY_ONE_FOR_INTEGER (Eigen)
+		const integer result = my dimension;
+	QUERY_ONE_FOR_INTEGER_END (U" (dimension)")
 }
 
-FORM (REAL_Eigen_getEigenvalue, U"Eigen: Get eigenvalue", U"Eigen: Get eigenvalue...") {
+FORM (QUERY_ONE_FOR_REAL__Eigen_getEigenvalue, U"Eigen: Get eigenvalue", U"Eigen: Get eigenvalue...") {
 	NATURAL (eigenvalueNumber, U"Eigenvalue number", U"1")
 	OK
 DO
-	NUMBER_ONE (Eigen)
+	QUERY_ONE_FOR_REAL (Eigen)
 		double result = undefined;
 		if (eigenvalueNumber > 0 && eigenvalueNumber <= my numberOfEigenvalues) {
 			result = my eigenvalues [eigenvalueNumber];
 		}
-	NUMBER_ONE_END (U" (eigenvalue [", eigenvalueNumber, U"])")
+	QUERY_ONE_FOR_REAL_END (U" (eigenvalue [", eigenvalueNumber, U"])")
 }
 
-FORM (REAL_Eigen_getSumOfEigenvalues, U"Eigen:Get sum of eigenvalues", U"Eigen: Get sum of eigenvalues...") {
+FORM (QUERY_ONE_FOR_REAL__Eigen_getSumOfEigenvalues, U"Eigen:Get sum of eigenvalues", U"Eigen: Get sum of eigenvalues...") {
 	INTEGER (fromEigenvalue, U"left Eigenvalue range",  U"0")
 	INTEGER (toEigenvalue, U"right Eigenvalue range", U"0")
 	OK
 DO
-	NUMBER_ONE (Eigen)
-		double result = Eigen_getSumOfEigenvalues (me, fromEigenvalue, toEigenvalue);
-	NUMBER_ONE_END (U" (sum of eigenvalues [", fromEigenvalue, U"..", toEigenvalue, U"])")
+	QUERY_ONE_FOR_REAL (Eigen)
+		const double result = Eigen_getSumOfEigenvalues (me, fromEigenvalue, toEigenvalue);
+	QUERY_ONE_FOR_REAL_END (U" (sum of eigenvalues [", fromEigenvalue, U"..", toEigenvalue, U"])")
 }
 
-FORM (REAL_Eigen_getEigenvectorElement, U"Eigen: Get eigenvector element", U"Eigen: Get eigenvector element...") {
+FORM (QUERY_ONE_FOR_REAL__Eigen_getEigenvectorElement, U"Eigen: Get eigenvector element", U"Eigen: Get eigenvector element...") {
 	NATURAL (eigenvectorNumber, U"Eigenvector number", U"1")
 	NATURAL (elementNumber, U"Element number", U"1")
 	OK
 DO
-	NUMBER_ONE (Eigen)
-		double result = Eigen_getEigenvectorElement (me, eigenvectorNumber, elementNumber);
-	NUMBER_ONE_END (U" (eigenvector [", eigenvectorNumber, U"] element [", elementNumber, U"])")
+	QUERY_ONE_FOR_REAL (Eigen)
+		const double result = Eigen_getEigenvectorElement (me, eigenvectorNumber, elementNumber);
+	QUERY_ONE_FOR_REAL_END (U" (eigenvector [", eigenvectorNumber, U"] element [", elementNumber, U"])")
 }
 
 FORM (MODIFY_Eigen_invertEigenvector, U"Eigen: Invert eigenvector", nullptr) {
@@ -2326,46 +2333,46 @@ DO
 	MODIFY_EACH_END
 }
 
-DIRECT (MODIFY_Eigens_alignEigenvectors) {
-	FIND_LIST (Eigen)
+DIRECT (MODIFY_ALL_Eigens_alignEigenvectors) {
+	MODIFY_ALL (Eigen)
 		Eigens_alignEigenvectors (& list);
-	END
+	MODIFY_ALL_END
 }
 
-FORM (NEW1_Eigen_Matrix_projectColumns, U"Eigen & Matrix: Project columns", U"Eigen & Matrix: Project...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Eigen_Matrix_projectColumns, U"Eigen & Matrix: Project columns", U"Eigen & Matrix: Project...") {
 	INTEGER (numberOfDimensions, U"Number of dimensions", U"0")
 	OK
 DO
-	CONVERT_TWO (Eigen, Matrix)
+	CONVERT_ONE_AND_ONE_TO_ONE (Eigen, Matrix)
 		autoMatrix result = Eigen_Matrix_to_Matrix_projectColumns (me, you, numberOfDimensions);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-DIRECT (NEW1_Eigen_SSCP_project) {
-	CONVERT_TWO (Eigen, SSCP)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__Eigen_SSCP_project) {
+	CONVERT_ONE_AND_ONE_TO_ONE (Eigen, SSCP)
 		autoSSCP result = Eigen_SSCP_project (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-DIRECT (NEW1_Eigen_Covariance_project) {
-	CONVERT_TWO (Eigen, Covariance)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__Eigen_Covariance_project) {
+	CONVERT_ONE_AND_ONE_TO_ONE (Eigen, Covariance)
 		autoCovariance result = Eigen_Covariance_project (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
 /******************** Electroglottogram ********************************************/
 
-FORM (NEW_Electroglottogram_highPassFilter, U"Electroglottogram: High-pass filter", U"Electroglottogram: High-pass filter...") {
+FORM (CONVERT_EACH_TO_ONE__Electroglottogram_highPassFilter, U"Electroglottogram: High-pass filter", U"Electroglottogram: High-pass filter...") {
 	REAL (fromFrequency, U"From frequency (Hz)", U"100.0")
 	POSITIVE (smoothing, U"Smoothing (Hz)", U"100.0")
 	OK
 DO
-	CONVERT_EACH (Electroglottogram)
+	CONVERT_EACH_TO_ONE (Electroglottogram)
 		autoElectroglottogram result = Electroglottogram_highPassFilter (me, fromFrequency, smoothing);
-	CONVERT_EACH_END (my name.get(), U"_filtered")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_filtered")
 }
 
-FORM (NEW_Electroglottogram_getClosedGlottisIntervals, U"Electroglottogram: To IntervalTier", U"") {
+FORM (CONVERT_EACH_TO_ONE__Electroglottogram_getClosedGlottisIntervals, U"Electroglottogram: To IntervalTier", U"") {
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"500.0")
 	POSITIVE (closingThreshold, U"Closing threshold", U"0.30")
@@ -2374,12 +2381,14 @@ FORM (NEW_Electroglottogram_getClosedGlottisIntervals, U"Electroglottogram: To I
 DO
 	Melder_require (closingThreshold < 1.0,
 		U"The closing threshold should be smaller than 1.");
-	CONVERT_EACH (Electroglottogram)
-		autoIntervalTier result = Electroglottogram_getClosedGlottisIntervals (me, pitchFloor, pitchCeiling, closingThreshold, peakThresholdFraction);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (Electroglottogram)
+		autoIntervalTier result = Electroglottogram_getClosedGlottisIntervals (me, pitchFloor, pitchCeiling, 
+			closingThreshold, peakThresholdFraction
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Electroglottogram_to_AmplitudeTier_levels, U"Electroglottogram: To AmplitudeTier (levels)", U"") {
+FORM (CONVERT_EACH_TO_ONE__Electroglottogram_to_AmplitudeTier_levels, U"Electroglottogram: To AmplitudeTier (levels)", U"") {
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"500.0")
 	POSITIVE (closingThreshold, U"Closing threshold", U"0.30")
@@ -2387,194 +2396,196 @@ FORM (NEW_Electroglottogram_to_AmplitudeTier_levels, U"Electroglottogram: To Amp
 	BOOLEAN (wantValleys, U"Valleys", 0)
 	OK
 DO
-	CONVERT_EACH (Electroglottogram)
+	CONVERT_EACH_TO_ONE (Electroglottogram)
 		autoAmplitudeTier peaks, valleys;
-		autoAmplitudeTier result = Electroglottogram_to_AmplitudeTier_levels (me, pitchFloor, pitchCeiling, closingThreshold, & peaks, & valleys);
+		autoAmplitudeTier result = Electroglottogram_to_AmplitudeTier_levels (me, pitchFloor, pitchCeiling, 
+			closingThreshold, & peaks, & valleys
+		);
 		if (wantPeaks)
 			praat_new (peaks.move(), my name.get(), U"_peaks");
 		if (wantValleys)
 			praat_new (valleys.move(), my name.get(), U"_valleys");
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 
 }
 
-FORM (NEW_Electroglottogram_derivative, U"Electroglottogram: Derivative", U"Electroglottogram: Derivative...") {
+FORM (CONVERT_EACH_TO_ONE__Electroglottogram_derivative, U"Electroglottogram: Derivative", U"Electroglottogram: Derivative...") {
 	POSITIVE (lowPassFrequency, U"Low-pass frequency (Hz)", U"5000.0")
 	POSITIVE (smoothing, U"Smoothing (Hz)", U"100.0")
 	BOOLEAN (peak99, U"Scale absolute peak at 0.99", 1)
 	OK
 DO
-	CONVERT_EACH (Electroglottogram)
+	CONVERT_EACH_TO_ONE (Electroglottogram)
 		autoSound result = Electroglottogram_derivative (me, lowPassFrequency, smoothing, peak99);
-	CONVERT_EACH_END (my name.get(), U"_derivative")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_derivative")
 }
 
-FORM (NEW_Electroglottogram_firstCentralDifference, U"Electroglottogram: First central difference", U"Electroglottogram: First central difference...") {
+FORM (CONVERT_EACH_TO_ONE__Electroglottogram_firstCentralDifference, U"Electroglottogram: First central difference", U"Electroglottogram: First central difference...") {
 	BOOLEAN (peak99, U"Scale absolute peak at 0.99", 1)
 	OK
 DO
-	CONVERT_EACH (Electroglottogram)
+	CONVERT_EACH_TO_ONE (Electroglottogram)
 		autoSound result = Electroglottogram_firstCentralDifference (me, peak99);
-	CONVERT_EACH_END (my name.get(), U"_cdiff")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_cdiff")
 }
 
-DIRECT (NEW_Electroglottogram_to_Sound) {
-	CONVERT_EACH (Electroglottogram)
+DIRECT (CONVERT_EACH_TO_ONE__Electroglottogram_to_Sound) {
+	CONVERT_EACH_TO_ONE (Electroglottogram)
 		autoSound result = Electroglottogram_to_Sound (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /******************** Index ********************************************/
 
-DIRECT (HELP_Index_help) {
+DIRECT (HELP__Index_help) {
 	HELP (U"Index")
 }
 
-DIRECT (INTEGER_Index_getNumberOfClasses) {
-	INTEGER_ONE (Index)
-		integer result = my classes -> size;
-	INTEGER_ONE_END (U" (number of classes)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Index_getNumberOfClasses) {
+	QUERY_ONE_FOR_INTEGER (Index)
+		const integer result = my classes -> size;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of classes)")
 }
 
-FORM (INFO_StringsIndex_getClassLabelFromClassIndex, U"StringsIndex: Get class label", U"StringsIndex: Get class label...") {
+FORM (QUERY_ONE_FOR_STRING__StringsIndex_getClassLabelFromClassIndex, U"StringsIndex: Get class label", U"StringsIndex: Get class label...") {
 	NATURAL (index, U"Class index", U"1")
 	OK
 DO
-	STRING_ONE (StringsIndex)
-		const char32* result = StringsIndex_getClassLabelFromClassIndex (me, index);
-	STRING_ONE_END
+	QUERY_ONE_FOR_STRING (StringsIndex)
+		conststring32 result = StringsIndex_getClassLabelFromClassIndex (me, index);
+	QUERY_ONE_FOR_STRING_END
 }
 
-FORM (INFO_StringsIndex_getItemLabelFromItemIndex, U"StringsIndex: Get item label", nullptr) {
+FORM (QUERY_ONE_FOR_STRING__StringsIndex_getItemLabelFromItemIndex, U"StringsIndex: Get item label", nullptr) {
 	NATURAL (itemIndex, U"Item index", U"1")
 	OK
 DO
-	STRING_ONE (StringsIndex)
+	QUERY_ONE_FOR_STRING (StringsIndex)
 		conststring32 result = StringsIndex_getItemLabelFromItemIndex (me, itemIndex);
-	STRING_ONE_END
+	QUERY_ONE_FOR_STRING_END
 }
 
-FORM (INTEGER_StringsIndex_getClassIndexFromItemIndex, U"StringsIndex: Get item index", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndexFromItemIndex, U"StringsIndex: Get item index", nullptr) {
 	NATURAL (itemIndex, U"Item index", U"1")
 	OK
 DO
-	INTEGER_ONE (Index)
-		integer result = Index_getClassIndexFromItemIndex (me, itemIndex);
-	INTEGER_ONE_END (U" (class index)")
+	QUERY_ONE_FOR_INTEGER (Index)
+		const integer result = Index_getClassIndexFromItemIndex (me, itemIndex);
+	QUERY_ONE_FOR_INTEGER_END (U" (class index)")
 }
 
-FORM (INTEGER_Index_getIndex, U"Index: Get item index", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__Index_getIndex, U"Index: Get item index", nullptr) {
 	NATURAL (itemIndex, U"Item index", U"1")
 	OK
 DO
-	INTEGER_ONE (Index)
-		integer result = Index_getClassIndexFromItemIndex (me, itemIndex);
-	INTEGER_ONE_END (U" (class index)")
+	QUERY_ONE_FOR_INTEGER (Index)
+		const integer result = Index_getClassIndexFromItemIndex (me, itemIndex);
+	QUERY_ONE_FOR_INTEGER_END (U" (class index)")
 }
 
-FORM (INTEGER_StringsIndex_getClassIndex, U"StringsIndex: Get class index from calss label", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndex, U"StringsIndex: Get class index from calss label", nullptr) {
 	WORD (klasLabel, U"Class label", U"label")
 	OK
 DO
-	INTEGER_ONE (StringsIndex)
-		integer result = StringsIndex_getClassIndexFromClassLabel (me, klasLabel);
-	INTEGER_ONE_END (U" (class index)")
+	QUERY_ONE_FOR_INTEGER (StringsIndex)
+		const integer result = StringsIndex_getClassIndexFromClassLabel (me, klasLabel);
+	QUERY_ONE_FOR_INTEGER_END (U" (class index)")
 }
 
-FORM (NEW_Index_extractPart, U"Index: Extract part", U"Index: Extract part...") {
+FORM (CONVERT_EACH_TO_ONE__Index_extractPart, U"Index: Extract part", U"Index: Extract part...") {
 	INTEGER (fromItem, U"left Item range", U"0")
 	INTEGER (toItem, U"right Item range", U"0")
 	OK
 DO
-	CONVERT_EACH (Index)
+	CONVERT_EACH_TO_ONE (Index)
 		autoIndex result = Index_extractPart (me, fromItem, toItem);
-	CONVERT_EACH_END (my name.get(), U"_part")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_part")
 }
 
-FORM (NEW_Index_to_Permutation, U"Index: To Permutation", U"Index: To Permutation...") {
+FORM (CONVERT_EACH_TO_ONE__Index_to_Permutation, U"Index: To Permutation", U"Index: To Permutation...") {
 	BOOLEAN (permuteWithinClasses, U"Permute within classes", true)
 	OK
 DO
-	CONVERT_EACH (Index)
+	CONVERT_EACH_TO_ONE (Index)
 		autoPermutation result = Index_to_Permutation_permuteRandomly (me, permuteWithinClasses);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_StringsIndex_to_Strings) {
-	CONVERT_EACH (StringsIndex)
+DIRECT (CONVERT_EACH_TO_ONE__StringsIndex_to_Strings) {
+	CONVERT_EACH_TO_ONE (StringsIndex)
 		autoStrings result = StringsIndex_to_Strings (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /******************** Excitation ********************************************/
 
-DIRECT (NEW1_Excitations_to_ExcitationList) {
-	CONVERT_LIST (Excitation)
+DIRECT (COMBINE_ALL_TO_ONE__Excitations_to_ExcitationList) {
+	COMBINE_ALL_TO_ONE (Excitation)
 		autoExcitationList result = Excitations_to_ExcitationList (& list);
-	CONVERT_LIST_END (U"appended")
+	COMBINE_ALL_TO_ONE_END (U"appended")
 }
 
 /******************** ExcitationList ********************************************/
 
 FORM (MODIFY_ExcitationList_formula, U"ExcitationList: Formula", nullptr) {
 	LABEL (U"for all objects in ExcitationList do { for col := 1 to ncol do { self [col] := `formula' ; x := x + dx } }")
-	TEXTFIELD (formula, U"Formula:", U"self")
+	FORMULA (formula, U"Formula", U"self")
 	OK
 DO
-	MODIFY_EACH (ExcitationList)
-		for (integer j = 1; j <= my size; j ++) {
+	MODIFY_EACH_WEAK (ExcitationList)
+		for (integer j = 1; j <= my size; j ++)
 			Matrix_formula (my at [j], formula, interpreter, nullptr);
-		}
-	MODIFY_EACH_END
+	MODIFY_EACH_WEAK_END
 }
 
 DIRECT (MODIFY_ExcitationList_addItem) {
-	MODIFY_FIRST_OF_ONE_AND_LIST (ExcitationList, Excitation)
+	MODIFY_FIRST_OF_ONE_AND_ALL (ExcitationList, Excitation)
 		ExcitationList_addItems (me, & list);
-	MODIFY_FIRST_OF_ONE_AND_LIST_END
+	MODIFY_FIRST_OF_ONE_AND_ALL_END
 }
 
-FORM (NEW_ExcitationList_extractItem, U"ExcitationList: Extract item", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__ExcitationList_extractItem, U"ExcitationList: Extract item", nullptr) {
 	NATURAL (itemIndex, U"Item index", U"1")
 	OK
 DO
-	CONVERT_EACH (ExcitationList)
+	CONVERT_EACH_TO_ONE (ExcitationList)
 		autoExcitation result = ExcitationList_extractItem (me, itemIndex);
-	CONVERT_EACH_END (my name.get(), U"_", itemIndex)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_", itemIndex)
 }
 
-DIRECT (NEW1_ExcitationList_append) {
-	CONVERT_COUPLE (ExcitationList)
+DIRECT (CONVERT_TWO_TO_ONE__ExcitationList_append) {
+	CONVERT_TWO_TO_ONE (ExcitationList)
 		autoExcitationList result = Data_copy (me);
 		result -> merge (you);
-	CONVERT_COUPLE_END (U"appended")
+	CONVERT_TWO_TO_ONE_END (U"appended")
 }
 
-FORM (NEW_ExcitationList_to_PatternList, U"Excitations: To PatternList", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__ExcitationList_to_PatternList, U"Excitations: To PatternList", nullptr) {
 	NATURAL (join, U"Join", U"1")
 	OK
 DO
-	CONVERT_EACH (ExcitationList)
+	CONVERT_EACH_TO_ONE (ExcitationList)
 		autoPatternList result = ExcitationList_to_PatternList (me, join);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_ExcitationList_to_TableOfReal) {
-	CONVERT_EACH (ExcitationList)
+DIRECT (CONVERT_EACH_TO_ONE__ExcitationList_to_TableOfReal) {
+	CONVERT_EACH_TO_ONE (ExcitationList)
 		autoTableOfReal result = ExcitationList_to_TableOfReal (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 
 /************************* FileInMemory ***********************************/
 
 
-FORM_READ (READ1_FileInMemory_create, U"Create file in memory", nullptr, true) {
-	autoFileInMemory me = FileInMemory_create (file);
-	praat_new (me.move(), MelderFile_name (file));
-END }
+FORM_READ (READ_ONE__FileInMemory_create, U"Create file in memory", nullptr, true) {
+	READ_ONE
+		autoFileInMemory result = FileInMemory_create (file);
+	READ_ONE_END
+}
 
-FORM (MODIFY_FileInMemory_setId, U"FileInMemory: Set id", nullptr) {
+FORM (MODIFY_EACH__FileInMemory_setId, U"FileInMemory: Set id", nullptr) {
 	SENTENCE (newId, U"New id", U"New id")
 	OK
 DO
@@ -2583,7 +2594,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (INFO_FileInMemory_showAsCode, U"FileInMemory: Show as code", nullptr) {
+FORM (INFO_ONE__FileInMemory_showAsCode, U"FileInMemory: Show as code", nullptr) {
 	WORD (name, U"Name", U"example")
 	INTEGER (numberOfByterPerLine, U"Number of bytes per line", U"20")
 	OK
@@ -2597,74 +2608,75 @@ DO
 
 /************************* FileInMemorySet ***********************************/
 
-DIRECT (INFO_FileInMemorySet_getNumberOfFiles) {
-	NUMBER_ONE (FileInMemorySet)
-		integer result = my size;
-	NUMBER_ONE_END (U" (number of files)")
+DIRECT (QUERY_ONE_FOR_INTEGER__FileInMemorySet_getNumberOfFiles) {
+	QUERY_ONE_FOR_INTEGER (FileInMemorySet)
+		const integer result = my size;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of files)")
 }
 
-FORM (INFO_FileInMemorySet_hasDirectory, U"FileInMemorySet: Has directory?", nullptr) {
+FORM (QUERY_ONE_FOR_BOOLEAN__FileInMemorySet_hasDirectory, U"FileInMemorySet: Has directory?", nullptr) {
 	WORD (name, U"Name", U"aav")
 	OK
 DO
-	NUMBER_ONE (FileInMemorySet)
-		bool result = FileInMemorySet_hasDirectory (me, name);
-	NUMBER_ONE_END (U" (has directory?)")
+	QUERY_ONE_FOR_BOOLEAN (FileInMemorySet)
+		const bool result = FileInMemorySet_hasDirectory (me, name);
+	QUERY_ONE_FOR_BOOLEAN_END (U" (has directory?)")
 }
 
 
 
 /************************* FileInMemoryManager ***********************************/
 
-DIRECT (NEW1_FileInMemoryManager_create) {
+DIRECT (CREATE_ONE__FileInMemoryManager_create) {
 	CREATE_ONE
 		autoFileInMemoryManager result = Data_copy (espeak_ng_FileInMemoryManager.get());
 	CREATE_ONE_END (U"filesInMemory")
 }
 
-DIRECT (INFO_FileInMemoryManager_getNumberOfFiles) {
-	NUMBER_ONE (FileInMemoryManager)
-		integer result = my files -> size;
-	NUMBER_ONE_END (U" (number of files)")
-}
-DIRECT (INFO_FileInMemoryManager_getNumberOfOpenFiles) {
-	NUMBER_ONE (FileInMemoryManager)
-		integer result = my openFiles -> size;
-	NUMBER_ONE_END (U" (number of open files)")
+DIRECT (QUERY_ONE_FOR_INTEGER__FileInMemoryManager_getNumberOfFiles) {
+	QUERY_ONE_FOR_INTEGER (FileInMemoryManager)
+		const integer result = my files -> size;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of files)")
 }
 
-FORM (INFO_FileInMemoryManager_hasDirectory, U"FileInMemoryManager: Has directory?", nullptr) {
+DIRECT (QUERY_ONE_FOR_INTEGER__FileInMemoryManager_getNumberOfOpenFiles) {
+	QUERY_ONE_FOR_INTEGER (FileInMemoryManager)
+		const integer result = my openFiles -> size;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of open files)")
+}
+
+FORM (QUERY_ONE_FOR_INTEGER__FileInMemoryManager_hasDirectory, U"FileInMemoryManager: Has directory?", nullptr) {
 	WORD (name, U"Name", U"aav")
 	OK
 DO
-	NUMBER_ONE (FileInMemoryManager)
-		bool result = FileInMemoryManager_hasDirectory (me, name);
-	NUMBER_ONE_END (U" (has directory?)")
+	QUERY_ONE_FOR_INTEGER (FileInMemoryManager)
+		const bool result = FileInMemoryManager_hasDirectory (me, name);
+	QUERY_ONE_FOR_INTEGER_END (U" (has directory?)")
 }
 
-FORM (NEW1_FileInMemoryManager_extractFiles, U"FileInMemoryManager: Extract files", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__FileInMemoryManager_extractFiles, U"FileInMemoryManager: Extract files", nullptr) {
 	LABEL (U"Extract all files where the file name ")
 	OPTIONMENU_ENUM (kMelder_string, which, U"...", kMelder_string::CONTAINS)
 	SENTENCE (criterion, U"...the text", U"/voices/")
 	OK
 DO
-	CONVERT_EACH (FileInMemoryManager)
+	CONVERT_EACH_TO_ONE (FileInMemoryManager)
 		autoFileInMemorySet result = FileInMemoryManager_extractFiles (me, which, criterion);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW1_FileInMemoryManager_downto_Table, U"FileInMemoryManager: Down to Table", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__FileInMemoryManager_downto_Table, U"FileInMemoryManager: Down to Table", nullptr) {
 	BOOLEAN (openFilesOnly, U"Open files only?", false)
 	OK
 DO
-	CONVERT_EACH (FileInMemoryManager)
+	CONVERT_EACH_TO_ONE (FileInMemoryManager)
 		autoTable result = FileInMemoryManager_downto_Table (me, openFilesOnly);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_FileInMemorySet_createFromDirectoryContents, U"Create files in memory from directory contents", nullptr) {
+FORM (CREATE_ONE__FileInMemorySet_createFromDirectoryContents, U"Create files in memory from directory contents", nullptr) {
 	SENTENCE (name, U"Name", U"list")
-	TEXTFIELD (directory, U"Directory:", U"/home/david/projects/espeak-ng/espeak-ng-data/voices/!v")
+	FOLDER (directory, U"Directory", U"/home/david/projects/espeak-ng/espeak-ng-data/voices/!v")
 	WORD (fileGlobber, U"Only files that match pattern", U"*")
 	OK
 DO
@@ -2673,18 +2685,18 @@ DO
 	CREATE_ONE_END (name)
 }
 
-FORM (NEW1_FileInMemorySet_extractFiles, U"FileInMemorySet: Extract files", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__FileInMemorySet_extractFiles, U"FileInMemorySet: Extract files", nullptr) {
 	LABEL (U"Extract all files where the file name ")
 	OPTIONMENU_ENUM (kMelder_string, which, U"...", kMelder_string::CONTAINS)
 	SENTENCE (criterion, U"...the text", U"/voices/")
 	OK
 DO
-	CONVERT_EACH (FileInMemorySet)
+	CONVERT_EACH_TO_ONE (FileInMemorySet)
 		autoFileInMemorySet result = FileInMemorySet_extractFiles (me, which, criterion);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (INFO_FileInMemorySet_showAsCode, U"FileInMemorySet: Show as code", nullptr) {
+FORM (INFO_ONE__FileInMemorySet_showAsCode, U"FileInMemorySet: Show as code", nullptr) {
 	WORD (name, U"Name", U"example")
 	INTEGER (numberOfBytesPerLine, U"Number of bytes per line", U"20")
 	OK
@@ -2696,7 +2708,7 @@ DO
 	INFO_ONE_END
 }
 
-FORM (INFO_FileInMemorySet_showOneFileAsCode, U"FileInMemorySet: Show one file as code", nullptr) {
+FORM (INFO_ONE__FileInMemorySet_showOneFileAsCode, U"FileInMemorySet: Show one file as code", nullptr) {
 	NATURAL (index, U"Index", U"1")
 	WORD (name, U"Name", U"example")
 	INTEGER (numberOfBytesPerLine, U"Number of bytes per line", U"20")
@@ -2709,34 +2721,34 @@ DO
 	INFO_ONE_END
 }
 
-DIRECT (NEW1_FilesInMemory_to_FileInMemorySet) {
-	CONVERT_LIST (FileInMemory)
+DIRECT (COMBINE_ALL_TO_ONE__FilesInMemory_to_FileInMemorySet) {
+	COMBINE_ALL_TO_ONE (FileInMemory)
 		autoFileInMemorySet result = FilesInMemory_to_FileInMemorySet (list);
-	CONVERT_LIST_END (U"merged");
+	COMBINE_ALL_TO_ONE_END (U"merged");
 }
 
-DIRECT (MODIFY_FileInMemorySet_addItemsToSet) {
-	MODIFY_FIRST_OF_TWO (FileInMemorySet, FileInMemory)
+DIRECT (MODIFY_FIRST_OF_ONE_AND_ONE__FileInMemorySet_addItemsToSet) {
+	MODIFY_FIRST_OF_ONE_AND_ONE (FileInMemorySet, FileInMemory)
 		autoFileInMemory him = Data_copy (you);
 		my addItem_move (him.move());
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
-DIRECT (NEW1_FileInMemorySets_merge) {
-	CONVERT_LIST (FileInMemorySet)
+DIRECT (COMBINE_ALL_TO_ONE__FileInMemorySets_merge) {
+	COMBINE_ALL_TO_ONE (FileInMemorySet)
 		autoFileInMemorySet result = FileInMemorySets_merge (list);
-	CONVERT_LIST_END (U"merge");
+	COMBINE_ALL_TO_ONE_END (U"merge");
 }
 
-DIRECT (NEW_FileInMemorySet_to_Strings_id) {
-	CONVERT_EACH (FileInMemorySet)
+DIRECT (CONVERT_EACH_TO_ONE__FileInMemorySet_to_Strings_id) {
+	CONVERT_EACH_TO_ONE (FileInMemorySet)
 		autoStrings result = FileInMemorySet_to_Strings_id (me);
-	CONVERT_EACH_END (my name.get());
+	CONVERT_EACH_TO_ONE_END (my name.get());
 }
 
 /************************* FilterBank ***********************************/
 
-FORM (GRAPHICS_FilterBank_drawFilters, U"FilterBank: Draw filters", nullptr) {
+FORM (GRAPHICS_EACH__FilterBank_drawFilters, U"FilterBank: Draw filters", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
@@ -2749,7 +2761,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FilterBank_drawOneContour, U"FilterBank: Draw one contour", nullptr) {
+FORM (GRAPHICS_EACH__FilterBank_drawOneContour, U"FilterBank: Draw one contour", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
@@ -2761,7 +2773,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FilterBank_drawContours, U"FilterBank: Draw contours", nullptr) {
+FORM (GRAPHICS_EACH__FilterBank_drawContours, U"FilterBank: Draw contours", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
@@ -2774,7 +2786,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FilterBank_drawFrequencyScales, U"FilterBank: Draw frequency scales", U"FilterBank: Draw frequency scales...") {
+FORM (GRAPHICS_EACH__FilterBank_drawFrequencyScales, U"FilterBank: Draw frequency scales", U"FilterBank: Draw frequency scales...") {
 	RADIO (xFrequencyScale, U"Horizontal frequency scale", 1)
 		RADIOBUTTON (U"Hertz")
 		RADIOBUTTON (U"Bark")
@@ -2791,11 +2803,13 @@ FORM (GRAPHICS_FilterBank_drawFrequencyScales, U"FilterBank: Draw frequency scal
 	OK
 DO
 	GRAPHICS_EACH (FilterBank)
-		FilterBank_drawFrequencyScales (me, GRAPHICS, xFrequencyScale, xFromFrequency, xToFrequency, yFrequencyScale, yFromFrequency, yToFrequency, garnish);
+		FilterBank_drawFrequencyScales (me, GRAPHICS, xFrequencyScale, xFromFrequency, xToFrequency, yFrequencyScale,
+			yFromFrequency, yToFrequency, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_MelSpectrogram_paintImage, U"MelSpectrogram: Paint image", U"MelSpectrogram: Paint image...") {
+FORM (GRAPHICS_EACH__MelSpectrogram_paintImage, U"MelSpectrogram: Paint image", U"MelSpectrogram: Paint image...") {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range (mel)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (mel)", U"0.0")
@@ -2805,11 +2819,13 @@ FORM (GRAPHICS_MelSpectrogram_paintImage, U"MelSpectrogram: Paint image", U"MelS
 	OK
 DO
 	GRAPHICS_EACH (BandFilterSpectrogram)
-		BandFilterSpectrogram_paintImage (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish);
+		BandFilterSpectrogram_paintImage (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, 
+			fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_BarkSpectrogram_paintImage, U"BarkSpectrogram: Paint image", U"BarkSpectrogram: Paint image...") {
+FORM (GRAPHICS_EACH__BarkSpectrogram_paintImage, U"BarkSpectrogram: Paint image", U"BarkSpectrogram: Paint image...") {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range (bark)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (bark)", U"0.0")
@@ -2819,11 +2835,13 @@ FORM (GRAPHICS_BarkSpectrogram_paintImage, U"BarkSpectrogram: Paint image", U"Ba
 	OK
 DO
 	GRAPHICS_EACH (BandFilterSpectrogram)
-		BandFilterSpectrogram_paintImage (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish);
+		BandFilterSpectrogram_paintImage (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, 
+			fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FilterBank_paintImage, U"FilterBank: Paint image", nullptr) {
+FORM (GRAPHICS_EACH__FilterBank_paintImage, U"FilterBank: Paint image", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
@@ -2836,7 +2854,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FilterBank_paintContours, U"FilterBank: Paint contours", nullptr) {
+FORM (GRAPHICS_EACH__FilterBank_paintContours, U"FilterBank: Paint contours", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
@@ -2850,7 +2868,7 @@ DO
 }
 
 
-FORM (GRAPHICS_FilterBank_paintCells, U"FilterBank: Paint cells", nullptr) {
+FORM (GRAPHICS_EACH__FilterBank_paintCells, U"FilterBank: Paint cells", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
@@ -2863,7 +2881,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FilterBank_paintSurface, U"FilterBank: Paint surface", nullptr) {
+FORM (GRAPHICS_EACH__FilterBank_paintSurface, U"FilterBank: Paint surface", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
@@ -2872,11 +2890,11 @@ FORM (GRAPHICS_FilterBank_paintSurface, U"FilterBank: Paint surface", nullptr) {
 	OK
 DO
 	GRAPHICS_EACH (Matrix)
-		Matrix_paintSurface (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, fromAmplitude, toAmplitude,30, 45);
+		Matrix_paintSurface (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, fromAmplitude, toAmplitude, 30, 45);
 	GRAPHICS_EACH_END
 }
 
-FORM (REAL_FilterBank_getFrequencyInHertz, U"FilterBank: Get frequency in Hertz", U"FilterBank: Get frequency in Hertz...") {
+FORM (QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInHertz, U"FilterBank: Get frequency in Hertz", U"FilterBank: Get frequency in Hertz...") {
 	REAL (frequency, U"Frequency", U"10.0")
 	RADIO (frequencyUnit, U"Unit", 2)
 		RADIOBUTTON (U"Hertz")
@@ -2884,12 +2902,12 @@ FORM (REAL_FilterBank_getFrequencyInHertz, U"FilterBank: Get frequency in Hertz"
 		RADIOBUTTON (U"mel")
 	OK
 DO
-	NUMBER_ONE (FilterBank)
-		double result = FilterBank_getFrequencyInHertz (me, frequency, frequencyUnit);
-	NUMBER_ONE_END (U" hertz")
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = FilterBank_getFrequencyInHertz (me, frequency, frequencyUnit);
+	QUERY_ONE_FOR_REAL_END (U" hertz")
 }
 
-FORM (REAL_FilterBank_getFrequencyInBark, U"FilterBank: Get frequency in Bark", U"FilterBank: Get frequency in Bark...") {
+FORM (QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInBark, U"FilterBank: Get frequency in Bark", U"FilterBank: Get frequency in Bark...") {
 	REAL (frequency, U"Frequency", U"93.17")
 	RADIO (frequencyUnit, U"Unit", 1)
 		RADIOBUTTON (U"Hertz")
@@ -2897,12 +2915,12 @@ FORM (REAL_FilterBank_getFrequencyInBark, U"FilterBank: Get frequency in Bark", 
 		RADIOBUTTON (U"mel")
 	OK
 DO
-	NUMBER_ONE (FilterBank)
-		double result = FilterBank_getFrequencyInBark (me, frequency, frequencyUnit);
-	NUMBER_ONE_END (U" bark")
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = FilterBank_getFrequencyInBark (me, frequency, frequencyUnit);
+	QUERY_ONE_FOR_REAL_END (U" bark")
 }
 
-FORM (REAL_FilterBank_getFrequencyInMel, U"FilterBank: Get frequency in mel", U"FilterBank: Get frequency in mel...") {
+FORM (QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInMel, U"FilterBank: Get frequency in mel", U"FilterBank: Get frequency in mel...") {
 	REAL (frequency, U"Frequency", U"1000.0")
 	RADIO (frequencyUnit, U"Unit", 1)
 		RADIOBUTTON (U"Hertz")
@@ -2910,12 +2928,12 @@ FORM (REAL_FilterBank_getFrequencyInMel, U"FilterBank: Get frequency in mel", U"
 		RADIOBUTTON (U"mel")
 	OK
 DO
-	NUMBER_ONE (FilterBank)
-		double result = FilterBank_getFrequencyInMel (me, frequency, frequencyUnit);
-	NUMBER_ONE_END (U" mel")
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = FilterBank_getFrequencyInMel (me, frequency, frequencyUnit);
+	QUERY_ONE_FOR_REAL_END (U" mel")
 }
 
-FORM (MODIFY_FilterBank_equalizeIntensities, U"FilterBank: Equalize intensities", nullptr) {
+FORM (MODIFY_EACH__FilterBank_equalizeIntensities, U"FilterBank: Equalize intensities", nullptr) {
 	REAL (intensity_dB, U"Intensity (dB)", U"80.0")
 	OK
 DO
@@ -2924,7 +2942,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_BandFilterSpectrogram_equalizeIntensities, U"BandFilterSpectrogram: Equalize intensities", nullptr) {
+FORM (MODIFY_EACH__BandFilterSpectrogram_equalizeIntensities, U"BandFilterSpectrogram: Equalize intensities", nullptr) {
 	REAL (intensity_dB, U"Intensity (dB)", U"80.0")
 	OK
 DO
@@ -2933,88 +2951,88 @@ DO
 	MODIFY_EACH_END
 }
 
-DIRECT (NEW_FilterBank_to_Matrix) {
-	CONVERT_EACH (FilterBank)
+DIRECT (CONVERT_EACH_TO_ONE__FilterBank_to_Matrix) {
+	CONVERT_EACH_TO_ONE (FilterBank)
 		autoMatrix result = FilterBank_to_Matrix (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_BandFilterSpectrogram_to_Matrix, U"BandFilterSpectrogram: To Matrix", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__BandFilterSpectrogram_to_Matrix, U"BandFilterSpectrogram: To Matrix", nullptr) {
 	BOOLEAN (convertToDB, U"Convert to dB values", 1)
 	OK
 DO
-	CONVERT_EACH (BandFilterSpectrogram)
+	CONVERT_EACH_TO_ONE (BandFilterSpectrogram)
 		autoMatrix result = BandFilterSpectrogram_to_Matrix (me, convertToDB);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW1_FilterBanks_crossCorrelate, U"FilterBanks: Cross-correlate", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__FilterBanks_crossCorrelate, U"FilterBanks: Cross-correlate", nullptr) {
 	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
 	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
-	CONVERT_COUPLE (FilterBank)
+	CONVERT_TWO_TO_ONE (FilterBank)
 		autoSound result = FilterBanks_crossCorrelate (me, you, amplitudeScaling, signalOutsideTimeDomainIs);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_BandFilterSpectrograms_crossCorrelate, U"BandFilterSpectrograms: Cross-correlate", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__BandFilterSpectrograms_crossCorrelate, U"BandFilterSpectrograms: Cross-correlate", nullptr) {
 	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
 	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
-	CONVERT_COUPLE (BandFilterSpectrogram)
+	CONVERT_TWO_TO_ONE (BandFilterSpectrogram)
 		autoSound result = BandFilterSpectrograms_crossCorrelate (me, you, amplitudeScaling, signalOutsideTimeDomainIs);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_FilterBanks_convolve, U"FilterBanks: Convolve", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__FilterBanks_convolve, U"FilterBanks: Convolve", nullptr) {
 	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
 	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
-	CONVERT_COUPLE (FilterBank)
+	CONVERT_TWO_TO_ONE (FilterBank)
 		autoSound result = FilterBanks_convolve (me, you, amplitudeScaling, signalOutsideTimeDomainIs);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_BandFilterSpectrograms_convolve, U"BandFilterSpectrograms: Convolve", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__BandFilterSpectrograms_convolve, U"BandFilterSpectrograms: Convolve", nullptr) {
 	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
 	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
-	CONVERT_COUPLE (BandFilterSpectrogram)
+	CONVERT_TWO_TO_ONE (BandFilterSpectrogram)
 		autoSound result = BandFilterSpectrograms_convolve (me, you, amplitudeScaling, signalOutsideTimeDomainIs);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-DIRECT (NEW_FilterBank_to_Intensity) {
-	CONVERT_EACH (FilterBank)
+DIRECT (CONVERT_EACH_TO_ONE__FilterBank_to_Intensity) {
+	CONVERT_EACH_TO_ONE (FilterBank)
 		autoIntensity result = FilterBank_to_Intensity (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_BandFilterSpectrogram_to_Intensity) {
-	CONVERT_EACH (BandFilterSpectrogram)
+DIRECT (CONVERT_EACH_TO_ONE__BandFilterSpectrogram_to_Intensity) {
+	CONVERT_EACH_TO_ONE (BandFilterSpectrogram)
 		autoIntensity result = BandFilterSpectrogram_to_Intensity (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /*********** FormantFilter *******************************************/
 
-DIRECT (HELP_FormantFilter_help) {
+DIRECT (HELP__FormantFilter_help) {
 	HELP (U"FormantFilter")
 }
 
-FORM (GRAPHICS_FormantFilter_drawFilterFunctions, U"FormantFilter: Draw filter functions", U"FilterBank: Draw filter functions...") {
+FORM (GRAPHICS_EACH__FormantFilter_drawFilterFunctions, U"FormantFilter: Draw filter functions", U"FilterBank: Draw filter functions...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
 	POSITIVE (bandwidth, U"Bandwidth (Hz)", U"100.0")
@@ -3031,11 +3049,13 @@ FORM (GRAPHICS_FormantFilter_drawFilterFunctions, U"FormantFilter: Draw filter f
 	OK
 DO
 	GRAPHICS_EACH (FormantFilter)
-		FormantFilter_drawFilterFunctions (me, GRAPHICS, bandwidth, frequencyScale, fromFilter, toFilter, fromFrequency, toFrequency, dBScale, fromAmplitude, toAmplitude, garnish);
+		FormantFilter_drawFilterFunctions (me, GRAPHICS, bandwidth, frequencyScale, fromFilter, toFilter, 
+			fromFrequency, toFrequency, dBScale, fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FormantFilter_drawSpectrum_slice, U"FormantFilter: Draw spectrum (slice)", U"FilterBank: Draw spectrum (slice)...") {
+FORM (GRAPHICS_EACH__FormantFilter_drawSpectrum_slice, U"FormantFilter: Draw spectrum (slice)", U"FilterBank: Draw spectrum (slice)...") {
 	REAL (time, U"Time (s)", U"0.1")
 	REAL (fromFrequency, U"left Frequency range (Hz)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (Hz)", U"0.0")
@@ -3051,7 +3071,7 @@ DO
 
 /****************** FormantGrid  *********************************/
 
-FORM (GRAPHICS_old_FormantGrid_draw, U"FormantGrid: Draw", nullptr) {
+FORM (GRAPHICS_EACH__old_FormantGrid_draw, U"FormantGrid: Draw", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range (Hz)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (Hz)", U"0.0 (= auto)")
@@ -3064,7 +3084,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FormantGrid_draw, U"FormantGrid: Draw", nullptr) {
+FORM (GRAPHICS_EACH__FormantGrid_draw, U"FormantGrid: Draw", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range (Hz)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (Hz)", U"0.0 (= auto)")
@@ -3076,7 +3096,7 @@ FORM (GRAPHICS_FormantGrid_draw, U"FormantGrid: Draw", nullptr) {
 		OPTION (U"speckles")
 		OPTION (U"lines and speckles")
 	OK
-DO_ALTERNATIVE (GRAPHICS_old_FormantGrid_draw)
+DO_ALTERNATIVE (GRAPHICS_EACH__old_FormantGrid_draw)
 	GRAPHICS_EACH (FormantGrid)
 		FormantGrid_draw (me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, bandwidths, garnish, drawingMethod);
 	GRAPHICS_EACH_END
@@ -3084,7 +3104,7 @@ DO_ALTERNATIVE (GRAPHICS_old_FormantGrid_draw)
 
 /****************** FunctionSeries  *********************************/
 
-FORM (GRAPHICS_FunctionSeries_draw, U"FunctionSeries: Draw", nullptr) {
+FORM (GRAPHICS_EACH__FunctionSeries_draw, U"FunctionSeries: Draw", nullptr) {
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -3098,7 +3118,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_FunctionSeries_drawBasisFunction, U"FunctionSeries: Draw basis function", nullptr) {
+FORM (GRAPHICS_EACH__FunctionSeries_drawBasisFunction, U"FunctionSeries: Draw basis function", nullptr) {
 	NATURAL (index, U"Index", U"1")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
@@ -3113,82 +3133,82 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (REAL_FunctionSeries_getValue, U"FunctionSeries: Evaluate", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getValue, U"FunctionSeries: Evaluate", nullptr) {
 	REAL (x, U"X", U"0.0")
 	OK
 DO
-	NUMBER_ONE (FunctionSeries)
-		double result = FunctionSeries_evaluate (me, x);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (FunctionSeries)
+		const double result = FunctionSeries_evaluate (me, x);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-DIRECT (INTEGER_FunctionSeries_getNumberOfCoefficients) {
-	INTEGER_ONE (FunctionSeries)
-		integer result = my numberOfCoefficients;
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__FunctionSeries_getNumberOfCoefficients) {
+	QUERY_ONE_FOR_INTEGER (FunctionSeries)
+		const integer result = my numberOfCoefficients;
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-FORM (REAL_FunctionSeries_getCoefficient, U"FunctionSeries: Get coefficient", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getCoefficient, U"FunctionSeries: Get coefficient", nullptr) {
 	LABEL (U"p(x) = c[1] + c[2] x + ... c[n+1] x^n")
 	NATURAL (index, U"Index", U"1")
 	OK
 DO
-	NUMBER_ONE (FunctionSeries)
-		double result = ( index > 0 && index <= my numberOfCoefficients ? my coefficients [index] : undefined );
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (FunctionSeries)
+		const double result = ( index > 0 && index <= my numberOfCoefficients ? my coefficients [index] : undefined );
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-DIRECT (INTEGER_FunctionSeries_getDegree) {
-	INTEGER_ONE (FunctionSeries)
-		integer result = FunctionSeries_getDegree (me);
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__FunctionSeries_getDegree) {
+	QUERY_ONE_FOR_INTEGER (FunctionSeries)
+		const integer result = FunctionSeries_getDegree (me);
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-FORM (REAL_FunctionSeries_getMaximum, U"FunctionSeries: Get maximum", U"Polynomial: Get maximum...") {
+FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getMaximum, U"FunctionSeries: Get maximum", U"Polynomial: Get maximum...") {
 	LABEL (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
 DO
-	NUMBER_ONE (FunctionSeries)
-		double result = FunctionSeries_getMaximum (me, xmin, xmax);
-	NUMBER_ONE_END (U" (maximum)")
+	QUERY_ONE_FOR_REAL (FunctionSeries)
+		const double result = FunctionSeries_getMaximum (me, xmin, xmax);
+	QUERY_ONE_FOR_REAL_END (U" (maximum)")
 }
 
-FORM (REAL_FunctionSeries_getMinimum, U"FunctionSeries: Get minimum", U"Polynomial: Get minimum...") {
+FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getMinimum, U"FunctionSeries: Get minimum", U"Polynomial: Get minimum...") {
 	LABEL (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
 DO
-	NUMBER_ONE (FunctionSeries)
-		double result = FunctionSeries_getMinimum (me, xmin, xmax);
-	NUMBER_ONE_END (U" (minimum)")
+	QUERY_ONE_FOR_REAL (FunctionSeries)
+		const double result = FunctionSeries_getMinimum (me, xmin, xmax);
+	QUERY_ONE_FOR_REAL_END (U" (minimum)")
 }
 
-FORM (REAL_FunctionSeries_getXOfMaximum, U"FunctionSeries: Get x of maximum", U"Polynomial: Get x of maximum...") {
+FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getXOfMaximum, U"FunctionSeries: Get x of maximum", U"Polynomial: Get x of maximum...") {
 	LABEL (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
 DO
-	NUMBER_ONE (FunctionSeries)
-		double result = FunctionSeries_getXOfMaximum (me, xmin, xmax);
-	NUMBER_ONE_END (U" (x of maximum)")
+	QUERY_ONE_FOR_REAL (FunctionSeries)
+		const double result = FunctionSeries_getXOfMaximum (me, xmin, xmax);
+	QUERY_ONE_FOR_REAL_END (U" (x of maximum)")
 }
 
-FORM (REAL_FunctionSeries_getXOfMinimum, U"FunctionSeries: Get x of minimum", U"Polynomial: Get x of minimum...") {
+FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getXOfMinimum, U"FunctionSeries: Get x of minimum", U"Polynomial: Get x of minimum...") {
 	LABEL (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
 DO
-	NUMBER_ONE (FunctionSeries)
-		double result = FunctionSeries_getXOfMinimum (me, xmin, xmax);
-	NUMBER_ONE_END (U" (x of minimum)")
+	QUERY_ONE_FOR_REAL (FunctionSeries)
+		const double result = FunctionSeries_getXOfMinimum (me, xmin, xmax);
+	QUERY_ONE_FOR_REAL_END (U" (x of minimum)")
 }
 
-FORM (MODIFY_FunctionSeries_setCoefficient, U"FunctionSeries: Set coefficient", nullptr) {
+FORM (MODIFY_EACH__FunctionSeries_setCoefficient, U"FunctionSeries: Set coefficient", nullptr) {
 	LABEL (U"p(x) = c[1]F[0] + c[2]F[1] + ... c[n+1]F[n]")
 	LABEL (U"F[k] is of degree k")
 	NATURAL (index, U"Index", U"1")
@@ -3200,21 +3220,21 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_FunctionSeries_setDomain, U"FunctionSeries: Set domain", nullptr) {
+FORM (MODIFY_EACH__FunctionSeries_setDomain, U"FunctionSeries: Set domain", nullptr) {
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"2.0")
 	OK
 DO
 	MODIFY_EACH (FunctionSeries)
-		if (xmax <= xmin)
-			Melder_throw (U"Xmax should be larger than Xmin.");
+		Melder_require (xmin < xmax,
+			U"\"Xmin\" should be smaller than \"Xmax\"");
 		FunctionSeries_setDomain (me, xmin, xmax);
 	MODIFY_EACH_END
 }
 
 /***************** Intensity ***************************************************/
 
-FORM (NEW_Intensity_to_TextGrid_silences, U"Intensity: To TextGrid (silences)", U"Intensity: To TextGrid (silences)...") {
+FORM (CONVERT_EACH_TO_ONE__Intensity_to_TextGrid_silences, U"Intensity: To TextGrid (silences)", U"Intensity: To TextGrid (silences)...") {
 	REAL (silenceThreshold, U"Silence threshold (dB)", U"-25.0")
 	POSITIVE (minimumSilenceDuration, U"Minimum silent interval duration (s)", U"0.1")
 	POSITIVE (minimumSoundingDuration, U"Minimum sounding interval duration (s)", U"0.05")
@@ -3222,14 +3242,27 @@ FORM (NEW_Intensity_to_TextGrid_silences, U"Intensity: To TextGrid (silences)", 
 	WORD (soundingLabel, U"Sounding interval label", U"sounding")
 	OK
 DO
-	CONVERT_EACH (Intensity)
-		autoTextGrid result = Intensity_to_TextGrid_detectSilences (me, silenceThreshold, minimumSilenceDuration, minimumSoundingDuration, silenceLabel, soundingLabel);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (Intensity)
+		autoTextGrid result = Intensity_to_TextGrid_detectSilences (me, silenceThreshold, minimumSilenceDuration,
+			minimumSoundingDuration, silenceLabel, soundingLabel
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (QUERY_ONE_FOR_REAL__Intensity_getNearestLevelCrossing, U"Intensity: Get nearest level crossing", U"") {
+	REAL (time, U"Time (s)", U"0.1")
+	REAL (level, U"Level (dB)", U"60")
+	OPTIONMENU_ENUM (kVectorSearchDirection, searchDirection, U"Search direction", kVectorSearchDirection::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_REAL (Intensity)
+		const double result = Vector_getNearestLevelCrossing (me, 1, time, level, searchDirection);
+	QUERY_ONE_FOR_REAL_END (U" seconds")
 }
 
 /***************** IntensityTier ***************************************************/
 
-FORM (NEW_IntensityTier_to_TextGrid_silences, U"IntensityTier: To TextGrid (silences)", U"Intensity: To TextGrid (silences)...") {
+FORM (CONVERT_EACH_TO_ONE__IntensityTier_to_TextGrid_silences, U"IntensityTier: To TextGrid (silences)", U"Intensity: To TextGrid (silences)...") {
 	REAL (silenceThreshold, U"Silence threshold (dB)", U"-25.0")
 	POSITIVE (minimumSilenceDuration, U"Minimum silent interval duration (s)", U"0.1")
 	POSITIVE (minimumSoundingDuration, U"Minimum sounding interval duration (s)", U"0.05")
@@ -3238,27 +3271,29 @@ FORM (NEW_IntensityTier_to_TextGrid_silences, U"IntensityTier: To TextGrid (sile
 	POSITIVE (timeStep, U"Time step (s)", U"0.001")
 	OK
 DO
-	CONVERT_EACH (IntensityTier)
-		autoTextGrid result = IntensityTier_to_TextGrid_detectSilences (me, timeStep, silenceThreshold, minimumSilenceDuration, minimumSoundingDuration, silenceLabel, soundingLabel);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (IntensityTier)
+		autoTextGrid result = IntensityTier_to_TextGrid_detectSilences (me, timeStep, silenceThreshold,
+			minimumSilenceDuration, minimumSoundingDuration, silenceLabel, soundingLabel
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_IntensityTier_to_Intensity, U"", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__IntensityTier_to_Intensity, U"", nullptr) {
 	POSITIVE (timeStep, U"Time step (s)", U"0.001")
 	OK
 DO
-	CONVERT_EACH (IntensityTier)
+	CONVERT_EACH_TO_ONE (IntensityTier)
 		autoIntensity result = IntensityTier_to_Intensity (me, timeStep);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /***************** ISpline ***************************************************/
 
-DIRECT (HELP_ISpline_help) {
+DIRECT (HELP__ISpline_help) {
 	HELP (U"ISpline")
 }
 
-FORM (NEW1_ISpline_create, U"Create ISpline", U"Create ISpline...") {
+FORM (CREATE_ONE__ISpline_create, U"Create ISpline", U"Create ISpline...") {
 	WORD (name, U"Name", U"ispline")
 	LABEL (U"Domain")
 	REAL (xmin, U"Xmin", U"0")
@@ -3267,30 +3302,30 @@ FORM (NEW1_ISpline_create, U"Create ISpline", U"Create ISpline...") {
 	LABEL (U"all I[k] are polynomials of degree \"Degree\"")
 	LABEL (U"Relation: numberOfCoefficients == numberOfInteriorKnots + degree")
 	INTEGER (degree, U"Degree", U"3")
-	SENTENCE (coefficients_string, U"Coefficients (c[k])", U"1.2 2.0 1.2 1.2 3.0 0.0")
-	SENTENCE (knots_string, U"Interior knots" , U"0.3 0.5 0.6")
+	REALVECTOR (coefficients, U"Coefficients (c[k])", WHITESPACE_SEPARATED_, U"1.2 2.0 1.2 1.2 3.0 0.0")
+	REALVECTOR (interiorKnots, U"Interior knots", WHITESPACE_SEPARATED_, U"0.3 0.5 0.6")
 	OK
 DO
 	CREATE_ONE
-		if (xmax <= xmin)
-			Melder_throw (U"Xmin should be smaller than Xmax.");
-		autoISpline result = ISpline_createFromStrings (xmin, xmax, degree, coefficients_string, knots_string);
+		Melder_require (xmin < xmax,
+			U"Xmin should be smaller than Xmax.");
+		autoISpline result = ISpline_createWithCoefficients (xmin, xmax, degree, coefficients, interiorKnots);
 	CREATE_ONE_END (name)
 }
 
 /******************* KlattTable  *********************************/
 
-DIRECT (HELP_KlattTable_help) {
+DIRECT (HELP__KlattTable_help) {
 	HELP (U"KlattTable")
 }
 
-DIRECT (NEW1_KlattTable_createExample) {
+DIRECT (CREATE_ONE__KlattTable_createExample) {
 	CREATE_ONE
 		autoKlattTable result = KlattTable_createExample ();
 	CREATE_ONE_END (U"example")
 }
 
-FORM (NEW_KlattTable_to_Sound, U"KlattTable: To Sound", U"KlattTable: To Sound...") {
+FORM (CONVERT_EACH_TO_ONE__KlattTable_to_Sound, U"KlattTable: To Sound", U"KlattTable: To Sound...") {
 	POSITIVE (samplingFrequency, U"Sampling frequency (Hz)", U"16000")
 	RADIO (synthesisModel, U"Synthesis model", 1)
 		RADIOBUTTON (U"cascade")
@@ -3312,46 +3347,47 @@ FORM (NEW_KlattTable_to_Sound, U"KlattTable: To Sound", U"KlattTable: To Sound..
 		OPTION (U"all-excitations")
 	OK
 DO
-	if (flutter_percentage < 0.0 || flutter_percentage > 100.0) {
-		Melder_throw (U"Flutter should be between 0 and 100%.");
-	}
-	CONVERT_EACH (KlattTable)
-		autoSound result = KlattTable_to_Sound (me, samplingFrequency, synthesisModel, numberOfFormants, frameDuration, voicingSource, flutter_percentage, soundOutputType);
-	CONVERT_EACH_END (my name.get())
+	Melder_require (flutter_percentage >= 0.0 && flutter_percentage <= 0.0,
+		U"\"Flutter percentage\" should be between 0 and 100%.");
+	CONVERT_EACH_TO_ONE (KlattTable)
+		autoSound result = KlattTable_to_Sound (me, samplingFrequency, synthesisModel, numberOfFormants, 
+			frameDuration, voicingSource, flutter_percentage, soundOutputType
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_KlattTable_to_KlattGrid, U"KlattTable: To KlattGrid", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__KlattTable_to_KlattGrid, U"KlattTable: To KlattGrid", nullptr) {
 	POSITIVE (frameDuration, U"Frame duration (s)", U"0.002")
 	OK
 DO
-	CONVERT_EACH (KlattTable)
+	CONVERT_EACH_TO_ONE (KlattTable)
 		autoKlattGrid result = KlattTable_to_KlattGrid (me, frameDuration);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_KlattTable_to_Table) {
-	CONVERT_EACH (KlattTable)
+DIRECT (CONVERT_EACH_TO_ONE__KlattTable_to_Table) {
+	CONVERT_EACH_TO_ONE (KlattTable)
 		autoTable result = KlattTable_to_Table (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_Table_to_KlattTable) {
-	CONVERT_EACH (Table)
+DIRECT (CONVERT_EACH_TO_ONE__Table_to_KlattTable) {
+	CONVERT_EACH_TO_ONE (Table)
 		autoKlattTable result = Table_to_KlattTable (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (REAL_Table_getMedianAbsoluteDeviation, U"Table: Get median absolute deviation", U"Table: Get median absolute deviation...") {
+FORM (QUERY_ONE_FOR_REAL__Table_getMedianAbsoluteDeviation, U"Table: Get median absolute deviation", U"Table: Get median absolute deviation...") {
 	SENTENCE (columnLabel, U"Column label", U"")
 	OK
 DO
-	NUMBER_ONE (Table)
-		integer columnNumber = Table_getColumnIndexFromColumnLabel (me, columnLabel);
-		double result = Table_getMedianAbsoluteDeviation (me, columnNumber);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (Table)
+		const integer columnNumber = Table_getColumnIndexFromColumnLabel (me, columnLabel);
+		const double result = Table_getMedianAbsoluteDeviation (me, columnNumber);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (INFO_Table_reportRobustStatistics, U"Table: Report robust statistics", U"Table: Report robust statistics...") {
+FORM (INFO_ONE__Table_reportRobustStatistics, U"Table: Report robust statistics", U"Table: Report robust statistics...") {
 	SENTENCE (columnLabel, U"Column label", U"F1")
 	POSITIVE (k_stdev, U"Number of standard deviations", U"1.5")
 	POSITIVE (tolerance, U"Tolerance", U"1e-6")
@@ -3383,7 +3419,7 @@ static void print_means (Table me) {
 		Melder_padOrTruncate (15, my columnHeaders [3]. label.get())
 	);
 	for (integer irow = 1; irow <= my rows.size; irow ++) {
-		TableRow row = my rows.at [irow];
+		const TableRow row = my rows.at [irow];
 		MelderInfo_writeLine (
 			Melder_padOrTruncate (15, row -> cells [1]. string.get()), U"\t",
 			Melder_padOrTruncate (15, Melder_double (row -> cells [2]. number)), U"\t",
@@ -3392,16 +3428,16 @@ static void print_means (Table me) {
 	}
 }
 
-FORM (INTEGER_Table_getNumberOfRowsWhere, U"", nullptr) {
-	TEXTFIELD (formula, U"Count only rows where the following condition holds:", U"1; self$[\"gender\"]=\"M\"")
+FORM (QUERY_ONE_FOR_INTEGER__Table_getNumberOfRowsWhere, U"", nullptr) {
+	FORMULA (formula, U"Count only rows where the following condition holds", U"1; self$[\"gender\"]=\"M\"")
 	OK
 DO
-	INTEGER_ONE (Table)
-		integer result = Table_getNumberOfRowsWhere (me, formula, interpreter);
-	INTEGER_ONE_END (U"")
+	QUERY_ONE_FOR_INTEGER (Table)
+		const integer result = Table_getNumberOfRowsWhere (me, formula, interpreter);
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-FORM (INFO_Table_reportOneWayAnova, U"Table: Report one-way anova",  U"Table: Report one-way anova...") {
+FORM (INFO_ONE__Table_reportOneWayAnova, U"Table: Report one-way anova",  U"Table: Report one-way anova...") {
 	SENTENCE (dataColumn_string, U"Column with data", U"F0")
 	SENTENCE (factor_string, U"Factor", U"Vowel")
 	BOOLEAN (wantMeans, U"Table with means", false);
@@ -3410,8 +3446,8 @@ FORM (INFO_Table_reportOneWayAnova, U"Table: Report one-way anova",  U"Table: Re
 	OK
 DO
 	INFO_ONE (Table)
-		integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factor_string);
-		integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factor_string);
+		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
 		autoTable means, meansDiff, meansDiffProbabilities;
 		autoTable anova = Table_getOneWayAnalysisOfVarianceF (me, dataColumn, factorColumn, &means, &meansDiff, & meansDiffProbabilities);
 		MelderInfo_open ();
@@ -3420,19 +3456,16 @@ DO
 		MelderInfo_writeLine (U"\nMeans:\n");
 		print_means (means.get());
 		MelderInfo_close ();
-		if (wantMeans) {
+		if (wantMeans)
 			praat_new (means.move(), my name.get(), U"_groupMeans");
-		}
-		if (wantDifferencesBetweenMeans) {
+		if (wantDifferencesBetweenMeans)
 			praat_new (meansDiff.move(), my name.get(), U"_meansDiff");
-		}
-		if (wantTukeyPostHoc) {
+		if (wantTukeyPostHoc)
 			praat_new (meansDiffProbabilities.move(), my name.get(), U"_meansDiffP");
-		}
 	INFO_ONE_END
 }
 
-FORM (INFO_Table_reportTwoWayAnova, U"Table: Report two-way anova", U"Table: Report two-way anova...") {
+FORM (INFO_ONE__Table_reportTwoWayAnova, U"Table: Report two-way anova", U"Table: Report two-way anova...") {
 	SENTENCE (dataColumn_string, U"Column with data", U"Data")
 	SENTENCE (firstFactor_string, U"First factor", U"A")
 	SENTENCE (secondFactor_string, U"Second factor", U"B")
@@ -3440,9 +3473,9 @@ FORM (INFO_Table_reportTwoWayAnova, U"Table: Report two-way anova", U"Table: Rep
 	OK
 DO
 	INFO_ONE (Table)
-		integer firstFactorColumn = Table_getColumnIndexFromColumnLabel (me, firstFactor_string);
-		integer secondFactorColumn = Table_getColumnIndexFromColumnLabel (me, secondFactor_string);
-		integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		const integer firstFactorColumn = Table_getColumnIndexFromColumnLabel (me, firstFactor_string);
+		const integer secondFactorColumn = Table_getColumnIndexFromColumnLabel (me, secondFactor_string);
+		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
 		autoTable means, sizes;
 		autoTable anova = Table_getTwoWayAnalysisOfVarianceF (me, dataColumn, firstFactorColumn, secondFactorColumn, &means, &sizes);
 		MelderInfo_open ();
@@ -3453,26 +3486,25 @@ DO
 			MelderInfo_writeLine (U"\nCell sizes:\n");
 			Table_printAsMeansTable (sizes.get());
 		MelderInfo_close ();
-		if (wantMeans) {
+		if (wantMeans)
 			praat_new (means.move(), my name.get(), U"_groupMeans");
-		}
 	INFO_ONE_END
 }
 
-FORM (INFO_Table_reportOneWayKruskalWallis, U"Table: Report one-way Kruskal-Wallis", U"Table: Report one-way Kruskal-Wallis...") {
+FORM (INFO_ONE__Table_reportOneWayKruskalWallis, U"Table: Report one-way Kruskal-Wallis", U"Table: Report one-way Kruskal-Wallis...") {
 	SENTENCE (dataColumn_string, U"Column with data", U"Data")
 	SENTENCE (factor_string, U"Factor", U"Group")
 	OK
 DO
 	INFO_ONE (Table)
-		integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factor_string);
-		integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		double df, kruskalWallis, prob;
-		autoTable result = Table_getOneWayKruskalWallis (me, dataColumn, factorColumn, & prob, & kruskalWallis, & df);
+		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factor_string);
+		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		double ndof, kruskalWallis, prob;
+		autoTable result = Table_getOneWayKruskalWallis (me, dataColumn, factorColumn, & prob, & kruskalWallis, & ndof);
 		MelderInfo_open ();
 			MelderInfo_writeLine (U"One-way Kruskal-Wallis of \"", dataColumn_string, U"\" by \"", factor_string, U"\".\n");
 			MelderInfo_writeLine (U"Chi squared: ", kruskalWallis);
-			MelderInfo_writeLine (U"Degrees of freedom: ", df);
+			MelderInfo_writeLine (U"Degrees of freedom: ", ndof);
 			MelderInfo_writeLine (U"Probability: ", prob);
 			MelderInfo_writeLine (U"\nMeans:\n");
 			print_means (result.get());
@@ -3480,90 +3512,86 @@ DO
 	INFO_ONE_END
 }
 
-FORM (NEW_Table_to_StringsIndex_column, U"Table: To StringsIndex (column)", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Table_to_StringsIndex_column, U"Table: To StringsIndex (column)", nullptr) {
 	SENTENCE (columnLabel, U"Column label", U"")
 	OK
 DO
-	CONVERT_EACH (Table)
-		integer icol = Table_getColumnIndexFromColumnLabel (me, columnLabel);
+	CONVERT_EACH_TO_ONE (Table)
+		const integer icol = Table_getColumnIndexFromColumnLabel (me, columnLabel);
 		autoStringsIndex result = Table_to_StringsIndex_column (me, icol);
-	CONVERT_EACH_END (my name.get(), U"_", columnLabel)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_", columnLabel)
 }
 
 /******************* LegendreSeries *********************************/
 
-FORM (NEW1_LegendreSeries_create, U"Create LegendreSeries", U"Create LegendreSeries...") {
+FORM (CREATE_ONE__LegendreSeries_create, U"Create LegendreSeries", U"Create LegendreSeries...") {
 	WORD (name, U"Name", U"ls")
 	LABEL (U"Domain")
 	REAL (xmin, U"Xmin", U"-1")
 	REAL (xmax, U"Xmax", U"1")
 	LABEL (U"LegendreSeries(x) = c[1] P[0](x) + c[2] P[1](x) + ... c[n+1] P[n](x)")
 	LABEL (U"P[k] is a Legendre polynomial of degree k")
-	SENTENCE (coefficients_string, U"Coefficients", U"0 0 1.0")
+	REALVECTOR (coefficients, U"Coefficients", WHITESPACE_SEPARATED_, U"0 0 1.0")
 	OK
 DO
-	Melder_require (xmin < xmax, U"Xmin should be smaller than Xmax.");
+	Melder_require (xmin < xmax, 
+		U"Xmin should be smaller than Xmax.");
 	CREATE_ONE
-		autoLegendreSeries result = LegendreSeries_createFromString (xmin, xmax, coefficients_string);
+		autoLegendreSeries result = LegendreSeries_createWithCoefficients (xmin, xmax, coefficients);
 	CREATE_ONE_END (name)
 }
 
-DIRECT (HELP_LegendreSeries_help) {
+DIRECT (HELP__LegendreSeries_help) {
 	HELP (U"LegendreSeries")
 }
 
-DIRECT (NEW_LegendreSeries_to_Polynomial) {
-	CONVERT_EACH (LegendreSeries)
+DIRECT (CONVERT_EACH_TO_ONE__LegendreSeries_to_Polynomial) {
+	CONVERT_EACH_TO_ONE (LegendreSeries)
 		autoPolynomial result = LegendreSeries_to_Polynomial (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
-
 
 /********************* LongSound **************************************/
 
-FORM_READ (READ1_LongSounds_appendToExistingSoundFile, U"LongSound: Append to existing sound file", 0, false) {
-	OrderedOf<structSampled> list;
-	LOOP {
-		iam (Sampled);
-		list. addItem_ref (me);
-	}
-	LongSounds_appendToExistingSoundFile (& list, file);
-END }
+FORM_READ (APPEND_ALL__LongSounds_appendToExistingSoundFile, U"LongSound: Append to existing sound file", 0, false) {
+	APPEND_ALL (Sampled)
+		LongSounds_appendToExistingSoundFile (& list, file);
+	APPEND_ALL_END
+}
 
-FORM_SAVE (SAVE_LongSounds_saveAsStereoAIFFFile, U"LongSound: Save as AIFF file", 0, U"aiff") {
-	FIND_COUPLE (LongSound)
+FORM_SAVE (SAVE_TWO__LongSounds_saveAsStereoAiffFile, U"LongSound: Save as AIFF file", 0, U"aiff") {
+	SAVE_TWO (LongSound)
 		LongSounds_writeToStereoAudioFile16 (me, you, Melder_AIFF, file);
-	END
+	SAVE_TWO_END
 }
 
-FORM_SAVE (SAVE_LongSounds_saveAsStereoAIFCFile, U"LongSound: Save as AIFC file", 0, U"aifc") {
-	FIND_COUPLE (LongSound)
+FORM_SAVE (SAVE_TWO__LongSounds_saveAsStereoAifcFile, U"LongSound: Save as AIFC file", 0, U"aifc") {
+	SAVE_TWO (LongSound)
 		LongSounds_writeToStereoAudioFile16 (me, you, Melder_AIFC, file);
-	END
+	SAVE_TWO_END
 }
 
-
-FORM_SAVE (SAVE_LongSounds_saveAsStereoWAVFile, U"LongSound: Save as WAV file", 0, U"wav") {
-	FIND_COUPLE (LongSound)
+FORM_SAVE (SAVE_TWO__LongSounds_saveAsStereoWavFile, U"LongSound: Save as WAV file", 0, U"wav") {
+	SAVE_TWO (LongSound)
 		LongSounds_writeToStereoAudioFile16 (me, you, Melder_WAV, file);
-	END
+	SAVE_TWO_END
 }
 
-FORM_SAVE (SAVE_LongSounds_saveAsStereoNeXtSunFile, U"LongSound: Save as NeXT/Sun file", 0, U"au") {
-	FIND_COUPLE (LongSound)
+FORM_SAVE (SAVE_TWO__LongSounds_saveAsStereoNextSunFile, U"LongSound: Save as NeXT/Sun file", 0, U"au") {
+	SAVE_TWO (LongSound)
 		LongSounds_writeToStereoAudioFile16 (me, you, Melder_NEXT_SUN, file);
-	END
+	SAVE_TWO_END
 }
 
-FORM_SAVE (SAVE_LongSounds_saveAsStereoNISTFile, U"LongSound: Save as NIST file", 0, U"nist") {
-	FIND_COUPLE (LongSound)
+FORM_SAVE (SAVE_TWO__LongSounds_saveAsStereoNistFile, U"LongSound: Save as NIST file", 0, U"nist") {
+	SAVE_TWO (LongSound)
 		LongSounds_writeToStereoAudioFile16 (me, you, Melder_NIST, file);
-	END
+	SAVE_TWO_END
 }
 
 /******************* Matrix **************************************************/
 
-FORM (GRAPHICS_Matrix_drawAsSquares, U"Matrix: Draw as squares", U"Matrix: Draw as squares...") {
+FORM (GRAPHICS_EACH__Matrix_drawAsSquares, U"Matrix: Draw as squares", U"Matrix: Draw as squares...") {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -3576,7 +3604,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Matrix_drawDistribution, U"Matrix: Draw distribution", U"Matrix: Draw distribution...") {
+FORM (GRAPHICS_EACH__Matrix_drawDistribution, U"Matrix: Draw distribution", U"Matrix: Draw distribution...") {
 	LABEL (U"Selection of (part of) Matrix")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -3593,11 +3621,13 @@ FORM (GRAPHICS_Matrix_drawDistribution, U"Matrix: Draw distribution", U"Matrix: 
 	OK
 DO
 	GRAPHICS_EACH (Matrix)
-		Matrix_drawDistribution (me, GRAPHICS, xmin, xmax, ymin, ymax, minimumValue, maximumValue, numberOfBins, minimumFrequency, maximumFrequency, false, garnish);
+		Matrix_drawDistribution (me, GRAPHICS, xmin, xmax, ymin, ymax, minimumValue, maximumValue, 
+			numberOfBins, minimumFrequency, maximumFrequency, false, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Matrix_drawCumulativeDistribution, U"Matrix: Draw cumulative distribution", nullptr) {
+FORM (GRAPHICS_EACH__Matrix_drawCumulativeDistribution, U"Matrix: Draw cumulative distribution", nullptr) {
 	LABEL (U"Selection of (part of) Matrix")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -3614,41 +3644,43 @@ FORM (GRAPHICS_Matrix_drawCumulativeDistribution, U"Matrix: Draw cumulative dist
 	OK
 DO
 	GRAPHICS_EACH (Matrix)
-		Matrix_drawDistribution (me, GRAPHICS, xmin, xmax, ymin, ymax, minimumValue, maximumValue, numberOfBins, minimum, maximum, true, garnish);
+		Matrix_drawDistribution (me, GRAPHICS, xmin, xmax, ymin, ymax, minimumValue, maximumValue, 
+			numberOfBins, minimum, maximum, true, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (REAL_Matrix_getMean, U"Matrix: Get mean", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Matrix_getMean, U"Matrix: Get mean", nullptr) {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	OK
 DO
-	NUMBER_ONE (Matrix)
-		double result = Matrix_getMean (me, xmin, xmax, ymin, ymax);
-	NUMBER_ONE_END (U" (mean)")
+	QUERY_ONE_FOR_REAL (Matrix)
+		const double result = Matrix_getMean (me, xmin, xmax, ymin, ymax);
+	QUERY_ONE_FOR_REAL_END (U" (mean)")
 }
 
-FORM (REAL_Matrix_getStandardDeviation, U"Matrix: Get standard deviation", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Matrix_getStandardDeviation, U"Matrix: Get standard deviation", nullptr) {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	OK
 DO
-	NUMBER_ONE (Matrix)
-		double result = Matrix_getStandardDeviation (me, xmin, xmax, ymin, ymax);
-	NUMBER_ONE_END (U" (std dev)")
+	QUERY_ONE_FOR_REAL (Matrix)
+		const double result = Matrix_getStandardDeviation (me, xmin, xmax, ymin, ymax);
+	QUERY_ONE_FOR_REAL_END (U" (std dev)")
 }
 
-FORM (REAL_Matrix_getNorm, U"Matrix: Get norm", U"Matrix: Get norm...") {
+FORM (QUERY_ONE_FOR_REAL__Matrix_getNorm, U"Matrix: Get norm", U"Matrix: Get norm...") {
 	REAL (power, U"Power", U"2.0")
 	OK
 DO
-	NUMBER_ONE (Matrix)
-		double result = NUMnorm (my z.all(), power);
-	NUMBER_ONE_END (U" (norm with power = ", power, U")")
+	QUERY_ONE_FOR_REAL (Matrix)
+		const double result = NUMnorm (my z.all(), power);
+	QUERY_ONE_FOR_REAL_END (U" (norm with power = ", power, U")")
 }
 
 /*
@@ -3671,55 +3703,55 @@ DO
 	MODIFY_EACH_END
 }
 
-DIRECT (NEW_Matrix_transpose) {
-	CONVERT_EACH (Matrix)
+DIRECT (CONVERT_EACH_TO_ONE__Matrix_transpose) {
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoMatrix result = Matrix_transpose (me);
-	CONVERT_EACH_END (my name.get(), U"_transposed")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_transposed")
 }
 
-DIRECT (NEW_Matrix_to_PCA_byColumns) {
-	CONVERT_EACH (Matrix)
+DIRECT (CONVERT_EACH_TO_ONE__Matrix_to_PCA_byColumns) {
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoPCA result = Matrix_to_PCA_byColumns (me);
-	CONVERT_EACH_END (my name.get(), U"_columns");
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_columns");
 }
 
-DIRECT (NEW_Matrix_to_PCA_byRows) {
-	CONVERT_EACH (Matrix)
+DIRECT (CONVERT_EACH_TO_ONE__Matrix_to_PCA_byRows) {
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoPCA result = Matrix_to_PCA_byRows (me);
-	CONVERT_EACH_END (my name.get(), U"_rows")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_rows")
 }
 
-FORM (NEW_Matrix_solveEquation, U"Matrix: Solve equation", U"Matrix: Solve equation...") {
+FORM (CONVERT_EACH_TO_ONE__Matrix_solveEquation, U"Matrix: Solve equation", U"Matrix: Solve equation...") {
 	REAL (tolerance, U"Tolerance", U"1.0e-7")
 	OK
 DO
-	CONVERT_EACH (Matrix)
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoMatrix result = Matrix_solveEquation (me, tolerance);
-	CONVERT_EACH_END (my name.get(), U"_solution")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_solution")
 }
 
-FORM (NEW_Matrix_solveMatrixEquation, U"Matrix: Solve matrix equation", U"Matrix: Solve matrix equation...") {
+FORM (CONVERT_TWO_TO_ONE__Matrix_solveMatrixEquation, U"Matrix: Solve matrix equation", U"Matrix: Solve matrix equation...") {
 	REAL (tolerance, U"Tolerance", U"1.0e-7")
 	OK
 DO
-	CONVERT_COUPLE (Matrix)
+	CONVERT_TWO_TO_ONE (Matrix)
 		autoMatrix result = Matrix_solveEquation (me, you, tolerance);
-	CONVERT_COUPLE_END (U"solution")
+	CONVERT_TWO_TO_ONE_END (U"solution")
 }
 
-DIRECT (NEW1_Matrix_Categories_to_TableOfReal) {
-	CONVERT_ONE_AND_GENERIC (Categories, Matrix)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__Matrix_Categories_to_TableOfReal) {
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE (Categories, Matrix)
 		autoTableOfReal result = Matrix_Categories_to_TableOfReal (you, me);
-	CONVERT_ONE_AND_GENERIC_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-DIRECT (NEW1_ActivationList_Categories_to_TableOfReal) {
-	CONVERT_TWO (ActivationList, Categories)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__ActivationList_Categories_to_TableOfReal) {
+	CONVERT_ONE_AND_ONE_TO_ONE (ActivationList, Categories)
 		autoTableOfReal result = Matrix_Categories_to_TableOfReal (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (GRAPHICS_Matrix_scatterPlot, U"Matrix: Scatter plot", nullptr) {
+FORM (GRAPHICS_EACH__Matrix_scatterPlot, U"Matrix: Scatter plot", nullptr) {
 	NATURAL (xColumn, U"Column for X-axis", U"1")
 	NATURAL (yColumn, U"Column for Y-axis", U"2")
 	REAL (xmin, U"left Horizontal range", U"0.0")
@@ -3737,35 +3769,34 @@ DO
 	GRAPHICS_EACH_END
 }
 
-DIRECT (NEW_Matrix_to_ActivationList) {
-	CONVERT_EACH (Matrix)
+DIRECT (CONVERT_EACH_TO_ONE__Matrix_to_ActivationList) {
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoActivationList result = Matrix_to_ActivationList (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_Matrix_to_Eigen) {
-	CONVERT_EACH (Matrix)
+DIRECT (CONVERT_EACH_TO_ONE__Matrix_to_Eigen) {
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoEigen result = Matrix_to_Eigen (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_Matrix_to_SVD) {
-	CONVERT_EACH (Matrix)
+DIRECT (CONVERT_EACH_TO_ONE__Matrix_to_SVD) {
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoSVD result = SVD_createFromGeneralMatrix (my z.get());
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEWTIMES2_Matrix_eigen_complex) {
-	LOOP {
-		iam_LOOP (Matrix);
+DIRECT (CONVERT_EACH_TO_MULTIPLE_Matrix_eigen_complex) {
+	CONVERT_EACH_TO_MULTIPLE (Matrix)
 		autoMatrix vectors, values;
 		Matrix_Eigen_complex (me, & vectors, & values);
 		praat_new (vectors.move(), U"eigenvectors");
 		praat_new (values.move(), U"eigenvalues");
-	}
-END }
+	CONVERT_EACH_TO_MULTIPLE_END
+}
 
-FORM (NEW_Matrix_to_NMF_mu, U"Matrix: To NMF (m.u.)", U"Matrix: To NMF (m.u.)...") {
+FORM (CONVERT_EACH_TO_ONE__Matrix_to_NMF_mu, U"Matrix: To NMF (m.u.)", U"Matrix: To NMF (m.u.)...") {
 	NATURAL (numberOfFeatures, U"Number of features", U"2")
 	INTEGER (maximumNumberOfIterations, U"Maximum number of iterations", U"400")
 	REAL (tolx, U"Change tolerance", U"1e-9")
@@ -3774,13 +3805,14 @@ FORM (NEW_Matrix_to_NMF_mu, U"Matrix: To NMF (m.u.)", U"Matrix: To NMF (m.u.)...
 	BOOLEAN (info, U"Info", 0)
 	OK
 DO
-	Melder_require (maximumNumberOfIterations >= 0, U"The maximum number of iterations should not e negative.");
-	CONVERT_EACH (Matrix)
+	Melder_require (maximumNumberOfIterations >= 0,
+		U"The maximum number of iterations should not be negative.");
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoNMF result = Matrix_to_NMF_mu (me, numberOfFeatures, maximumNumberOfIterations, tolx, told, initializationMethod, info);
-	CONVERT_EACH_END (my name.get(), U"_mu")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_mu")
 }
 
-FORM (NEW_Matrix_to_NMF_als, U"Matrix: To NMF (ALS)", U"Matrix: To NMF (ALS)...") {
+FORM (CONVERT_EACH_TO_ONE__Matrix_to_NMF_als, U"Matrix: To NMF (ALS)", U"Matrix: To NMF (ALS)...") {
 	NATURAL (numberOfFeatures, U"Number of features", U"2")
 	INTEGER (maximumNumberOfIterations, U"Maximum number of iterations", U"20")
 	REAL (tolx, U"Change tolerance", U"1e-9")
@@ -3789,13 +3821,14 @@ FORM (NEW_Matrix_to_NMF_als, U"Matrix: To NMF (ALS)", U"Matrix: To NMF (ALS)..."
 	BOOLEAN (info, U"Info", 0)
 	OK
 DO
-	Melder_require (maximumNumberOfIterations >= 0, U"The maximum number of iterations should not e negative.");
-	CONVERT_EACH (Matrix)
+	Melder_require (maximumNumberOfIterations >= 0,
+		U"The maximum number of iterations should not be negative.");
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoNMF result = Matrix_to_NMF_als (me, numberOfFeatures, maximumNumberOfIterations, tolx, told, initializationMethod, info);
-	CONVERT_EACH_END (my name.get(), U"_als")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_als")
 }
 
-FORM (NEW_Matrix_to_NMF_is, U"Matrix: To NMF (IS)", U"Matrix: To NMF (IS)...") {
+FORM (CONVERT_EACH_TO_ONE__Matrix_to_NMF_is, U"Matrix: To NMF (IS)", U"Matrix: To NMF (IS)...") {
 	NATURAL (numberOfFeatures, U"Number of features", U"2")
 	INTEGER (maximumNumberOfIterations, U"Maximum number of iterations", U"20")
 	REAL (tolx, U"Change tolerance", U"1e-9")
@@ -3804,233 +3837,214 @@ FORM (NEW_Matrix_to_NMF_is, U"Matrix: To NMF (IS)", U"Matrix: To NMF (IS)...") {
 	BOOLEAN (info, U"Info", 0)
 	OK
 DO
-	Melder_require (maximumNumberOfIterations >= 0, U"The maximum number of iterations should not e negative.");
-	CONVERT_EACH (Matrix)
+	Melder_require (maximumNumberOfIterations >= 0,
+		U"The maximum number of iterations should not be negative.");
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoNMF result = Matrix_to_NMF_is (me, numberOfFeatures, maximumNumberOfIterations, tolx, told, initializationMethod, info);
-	CONVERT_EACH_END (my name.get(), U"_als")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_als")
 }
 
-DIRECT (REAL_NMF_Matrix_getEuclideanDistance) {
-	NUMBER_TWO (NMF, Matrix)
-		double result = NMF_getEuclideanDistance (me, your z.get());
-	NUMBER_TWO_END (U" (= ", result / (your ny * your nx), U" * nrow * ncol)")
+DIRECT (QUERY_ONE_AND_ONE_FOR_REAL__NMF_Matrix_getEuclideanDistance) {
+	QUERY_ONE_AND_ONE_FOR_REAL (NMF, Matrix)
+		const double result = NMF_getEuclideanDistance (me, your z.get());
+	QUERY_ONE_AND_ONE_FOR_REAL_END (U" (= ", result / (your ny * your nx), U" * nrow * ncol)")
 }
 
-DIRECT (REAL_NMF_Matrix_getItakuraSaitoDivergence) {
-	NUMBER_TWO (NMF, Matrix)
-		double result = NMF_getItakuraSaitoDivergence (me, your z.get());
-	NUMBER_TWO_END (U" (= ", result / (your ny * your nx), U" * nrow * ncol)")
+DIRECT (QUERY_ONE_AND_ONE_FOR_REAL__NMF_Matrix_getItakuraSaitoDivergence) {
+	QUERY_ONE_AND_ONE_FOR_REAL (NMF, Matrix)
+		const double result = NMF_getItakuraSaitoDivergence (me, your z.get());
+	QUERY_ONE_AND_ONE_FOR_REAL_END (U" (= ", result / (your ny * your nx), U" * nrow * ncol)")
 }
 
-FORM (MODIFY_NMF_Matrix_improveFactorization_mu, U"NMF & Matrix: Improve factorization (m.u.)", nullptr) {
+FORM (MODIFY_FIRST_OF_ONE_AND_ONE__NMF_Matrix_improveFactorization_mu, U"NMF & Matrix: Improve factorization (m.u.)", nullptr) {
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"100")
 	REAL (tolx, U"Change tolerance", U"1e-9")
 	REAL (told, U"Approximation tolerance", U"1e-9")
 	BOOLEAN (info, U"Info", 0)
 	OK
 DO
-	MODIFY_FIRST_OF_TWO (NMF, Matrix)
+	MODIFY_FIRST_OF_ONE_AND_ONE (NMF, Matrix)
 		NMF_improveFactorization_mu (me, your z.get(), maximumNumberOfIterations, tolx, told, info);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
-FORM (MODIFY_NMF_Matrix_improveFactorization_als, U"NMF & Matrix: Improve factorization (ALS)", nullptr) {
+FORM (MODIFY_FIRST_OF_ONE_AND_ONE__NMF_Matrix_improveFactorization_als, U"NMF & Matrix: Improve factorization (ALS)", nullptr) {
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"10")
 	REAL (tolx, U"Change tolerance", U"1e-9")
 	REAL (told, U"Approximation tolerance", U"1e-9")
 	BOOLEAN (info, U"Info", 0)
 	OK
 DO
-	MODIFY_FIRST_OF_TWO (NMF, Matrix)
+	MODIFY_FIRST_OF_ONE_AND_ONE (NMF, Matrix)
 		NMF_improveFactorization_als (me, your z.get(), maximumNumberOfIterations, tolx, told, info);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
-FORM (MODIFY_NMF_Matrix_improveFactorization_is, U"NMF & Matrix: Improve factorization (IS)", nullptr) {
+FORM (MODIFY_FIRST_OF_ONE_AND_ONE__NMF_Matrix_improveFactorization_is, U"NMF & Matrix: Improve factorization (IS)", nullptr) {
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"10")
 	REAL (tolx, U"Change tolerance", U"1e-9")
 	REAL (told, U"Approximation tolerance", U"1e-9")
 	BOOLEAN (info, U"Info", 0)
 	OK
 DO
-	MODIFY_FIRST_OF_TWO (NMF, Matrix)
+	MODIFY_FIRST_OF_ONE_AND_ONE (NMF, Matrix)
 		NMF_improveFactorization_is (me, your z.get(), maximumNumberOfIterations, tolx, told, info);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
-FORM (NEW1_Matrices_to_DTW, U"Matrices: To DTW", U"Matrix: To DTW...") {
+FORM (CONVERT_TWO_TO_ONE__Matrices_to_DTW, U"Matrices: To DTW", U"Matrix: To DTW...") {
 	LABEL (U"Distance  between cepstral coefficients")
 	REAL (distanceMetric, U"Distance metric", U"2.0")
 	DTW_constraints_addCommonFields (matchStart, matchEnd, slopeConstraint)
 	OK
 DO
-	CONVERT_COUPLE (Matrix)
+	CONVERT_TWO_TO_ONE (Matrix)
 		autoDTW result = Matrices_to_DTW (me, you, matchStart, matchEnd, slopeConstraint, distanceMetric);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW_Matrix_to_PatternList, U"Matrix: To PatternList", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Matrix_to_PatternList, U"Matrix: To PatternList", nullptr) {
 	NATURAL (join, U"Join", U"1")
 	OK
 DO
-	CONVERT_EACH (Matrix)
+	CONVERT_EACH_TO_ONE (Matrix)
 		autoPatternList result = Matrix_to_PatternList (me, join);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /**** Filterbank (deprecated) *******/
 
-DIRECT (REAL_FilterBank_getHighestFrequency) {
-	NUMBER_ONE (FilterBank)
-		double result = my ymax;
-	NUMBER_ONE_END (U" ", my v_getFrequencyUnit ())
+DIRECT (QUERY_ONE_FOR_REAL__FilterBank_getHighestFrequency) {
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = my ymax;
+	QUERY_ONE_FOR_REAL_END (U" ", my v_getFrequencyUnit ())
 }
 
-DIRECT (REAL_FilterBank_getLowestFrequency) {
-	NUMBER_ONE (FilterBank)
-		double result = my ymin;
-	NUMBER_ONE_END (U" ", my v_getFrequencyUnit ())
+DIRECT (QUERY_ONE_FOR_REAL__FilterBank_getLowestFrequency) {
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = my ymin;
+	QUERY_ONE_FOR_REAL_END (U" ", my v_getFrequencyUnit ())
 }
 
-DIRECT (INTEGER_FilterBank_getNumberOfFrequencies) {
-	INTEGER_ONE (FilterBank)
-		integer result = my ny;
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__FilterBank_getNumberOfFrequencies) {
+	QUERY_ONE_FOR_INTEGER (FilterBank)
+		const integer result = my ny;
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-DIRECT (REAL_FilterBank_getFrequencyDistance) {
-	NUMBER_ONE (FilterBank)
-		double result = my dy;
-	NUMBER_ONE_END (U" ", my v_getFrequencyUnit ())
+DIRECT (QUERY_ONE_FOR_REAL__FilterBank_getFrequencyDistance) {
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = my dy;
+	QUERY_ONE_FOR_REAL_END (U" ", my v_getFrequencyUnit ())
 }
 
-FORM (REAL_FilterBank_getTimeFromColumn, U"Get time of column", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__FilterBank_getTimeFromColumn, U"Get time of column", nullptr) {
 	NATURAL (columnNumber, U"Column number", U"1")
 	OK
 DO
-	NUMBER_ONE (FilterBank)
-		double result = Matrix_columnToX (me, columnNumber);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = Matrix_columnToX (me, columnNumber);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_FilterBank_getFrequencyFromRow, U"Get frequency of row", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__FilterBank_getFrequencyFromRow, U"Get frequency of row", nullptr) {
 	NATURAL (rowNumber, U"Row number", U"1")
 	OK
 DO
-	NUMBER_ONE (FilterBank)
-		double result = Matrix_rowToY (me, rowNumber);
-	NUMBER_ONE_END (U" ", my v_getFrequencyUnit ())
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = Matrix_rowToY (me, rowNumber);
+	QUERY_ONE_FOR_REAL_END (U" ", my v_getFrequencyUnit ())
 }
 
-FORM (REAL_FilterBank_getValueInCell, U"Get value in cell", nullptr) {
+static double Matrix_getValueAtNearestColRow (Matrix me, double x, double y) {
+	/*
+		Compatibility with old behaviour. Having real values as arguments would suggest interpolation which is not done.
+	*/
+	if ((y >= my ymin && y <= my ymax) && (x >= my xmin && x <= my xmax)) {
+		integer icol = Matrix_xToNearestColumn (me, x);
+		Melder_clip (1_integer, & icol, my nx);
+		integer irow = Matrix_yToNearestRow (me, y);
+		Melder_clip (1_integer, & irow, my ny);
+		return my z [irow] [icol];
+	} else
+		return undefined;	
+}
+
+FORM (QUERY_ONE_FOR_REAL__FilterBank_getValueInCell, U"Get value in cell", nullptr) {
 	REAL (time, U"Time (s)", U"0.5")
 	POSITIVE (frequency, U"Frequency", U"1.0")
 	OK
 DO
-	NUMBER_ONE (FilterBank)
-		double result = undefined;
-		if ((frequency >= my ymin && frequency <= my ymax) && (time >+ my xmin && time <= my ymin)) {
-			integer col = Matrix_xToNearestColumn (me, time);
-			if (col < 1) {
-				col = 1;
-			}
-			if (col > my nx) {
-				col = my nx;
-			}
-			integer row = Matrix_yToNearestRow (me, frequency);
-			if (row < 1) {
-				row = 1;
-			}
-			if (row > my ny) {
-				row = my ny;
-			}
-			result = my z[row][col];
-		}
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (FilterBank)
+		const double result = Matrix_getValueAtNearestColRow (me, time, frequency);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
 /***** MATRIXFT *************/
 
-DIRECT (REAL_BandFilterSpectrogram_getHighestFrequency) {
-	NUMBER_ONE (BandFilterSpectrogram)
-		double result = my ymax;
-	NUMBER_ONE_END (U" ", my v_getFrequencyUnit ())
+DIRECT (QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getHighestFrequency) {
+	QUERY_ONE_FOR_REAL (BandFilterSpectrogram)
+		const double result = my ymax;
+	QUERY_ONE_FOR_REAL_END (U" ", my v_getFrequencyUnit ())
 }
 
-DIRECT (REAL_BandFilterSpectrogram_getLowestFrequency) {
-	NUMBER_ONE (BandFilterSpectrogram)
-		double result = my ymin;
-	NUMBER_ONE_END (U" ", my v_getFrequencyUnit ())
+DIRECT (QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getLowestFrequency) {
+	QUERY_ONE_FOR_REAL (BandFilterSpectrogram)
+		const double result = my ymin;
+	QUERY_ONE_FOR_REAL_END (U" ", my v_getFrequencyUnit ())
 }
 
-DIRECT (INTEGER_BandFilterSpectrogram_getNumberOfFrequencies) {
-	INTEGER_ONE (BandFilterSpectrogram)
-		integer result = my ny;
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__BandFilterSpectrogram_getNumberOfFrequencies) {
+	QUERY_ONE_FOR_INTEGER (BandFilterSpectrogram)
+		const integer result = my ny;
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
-DIRECT (REAL_BandFilterSpectrogram_getFrequencyDistance) {
-	NUMBER_ONE (BandFilterSpectrogram)
-		double result = my dy;
-	NUMBER_ONE_END (U" ", my v_getFrequencyUnit ())
+DIRECT (QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getFrequencyDistance) {
+	QUERY_ONE_FOR_REAL (BandFilterSpectrogram)
+		const double result = my dy;
+	QUERY_ONE_FOR_REAL_END (U" ", my v_getFrequencyUnit ())
 }
 
-FORM (REAL_BandFilterSpectrogram_getFrequencyFromRow, U"Get frequency of row", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getFrequencyFromRow, U"Get frequency of row", nullptr) {
 	NATURAL (rowNumber, U"Row number", U"1")
 	OK
 DO
-	NUMBER_ONE (BandFilterSpectrogram)
-		double result = Matrix_rowToY (me, rowNumber);
-	NUMBER_ONE_END (U" ", my v_getFrequencyUnit ())
+	QUERY_ONE_FOR_REAL (BandFilterSpectrogram)
+		const double result = Matrix_rowToY (me, rowNumber);
+	QUERY_ONE_FOR_REAL_END (U" ", my v_getFrequencyUnit ())
 }
 
-FORM (REAL_BandFilterSpectrogram_getTimeFromColumn, U"Get time of column", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getTimeFromColumn, U"Get time of column", nullptr) {
 	NATURAL (columnNumber, U"Column number", U"1")
 	OK
 DO
-	NUMBER_ONE (BandFilterSpectrogram)
-		double result = Matrix_columnToX (me, columnNumber);
-	NUMBER_ONE_END (U" s")
+	QUERY_ONE_FOR_REAL (BandFilterSpectrogram)
+		const double result = Matrix_columnToX (me, columnNumber);
+	QUERY_ONE_FOR_REAL_END (U" s")
 }
 
-FORM (REAL_BandFilterSpectrogram_getValueInCell, U"Get value in cell", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getValueInCell, U"Get value in cell", nullptr) {
 	REAL (time, U"Time (s)", U"0.5")
 	POSITIVE (frequency, U"Frequency", U"1")
 	OK
 DO
-	NUMBER_ONE (BandFilterSpectrogram)
-		double result = undefined;
-		if ((frequency >= my ymin && frequency <= my ymax) && (time >+ my xmin && time <= my ymin)) {
-			integer col = Matrix_xToNearestColumn (me, time);
-			if (col < 1) {
-				col = 1;
-			}
-			if (col > my nx) {
-				col = my nx;
-			}
-			integer row = Matrix_yToNearestRow (me, frequency);
-			if (row < 1) {
-				row = 1;
-			}
-			if (row > my ny) {
-				row = my ny;
-			}
-			result = my z[row][col];
-		}
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (BandFilterSpectrogram)
+		const double result = Matrix_getValueAtNearestColRow (me, time, frequency);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
 /**************** MelFilter *******************************************/
 
-DIRECT (HELP_MelFilter_help) {
+DIRECT (HELP__MelFilter_help) {
 	HELP (U"MelFilter")
 }
 
-DIRECT (HELP_MelSpectrogram_help) {
+DIRECT (HELP__MelSpectrogram_help) {
 	HELP (U"MelSpectrogram")
 }
 
-FORM (GRAPHICS_MelFilter_drawFilterFunctions, U"MelFilter: Draw filter functions", U"FilterBank: Draw filter functions...") {
+FORM (GRAPHICS_EACH__MelFilter_drawFilterFunctions, U"MelFilter: Draw filter functions", U"FilterBank: Draw filter functions...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
 	RADIO (frequencyScale, U"Frequency scale", 1)
@@ -4046,11 +4060,13 @@ FORM (GRAPHICS_MelFilter_drawFilterFunctions, U"MelFilter: Draw filter functions
 	OK
 DO
 	GRAPHICS_EACH (MelFilter)
-		MelFilter_drawFilterFunctions (me, GRAPHICS, frequencyScale, fromFilter, toFilter, fromFrequency, toFrequency, dBScale, fromAmplitude, toAmplitude, garnish);
+		MelFilter_drawFilterFunctions (me, GRAPHICS, frequencyScale, fromFilter, toFilter, 
+			fromFrequency, toFrequency, dBScale, fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_MelSpectrogram_drawTriangularFilterFunctions, U"MelSpectrogram: Draw triangulat filter functions", U"MelSpectrogram: Draw filter functions...") {
+FORM (GRAPHICS_EACH__MelSpectrogram_drawTriangularFilterFunctions, U"MelSpectrogram: Draw triangulat filter functions", U"MelSpectrogram: Draw filter functions...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
 	RADIO (frequencyScale, U"Frequency scale", 1)
@@ -4065,11 +4081,13 @@ FORM (GRAPHICS_MelSpectrogram_drawTriangularFilterFunctions, U"MelSpectrogram: D
 	OK
 DO
 	GRAPHICS_EACH (MelSpectrogram)
-		MelSpectrogram_drawTriangularFilterFunctions (me, GRAPHICS, frequencyScale - 1, fromFilter, toFilter, fromFrequency, toFrequency, dBScale, fromAmplitude, toAmplitude, garnish);
+		MelSpectrogram_drawTriangularFilterFunctions (me, GRAPHICS, frequencyScale - 1, fromFilter, toFilter, 
+			fromFrequency, toFrequency, dBScale, fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_MelFilter_drawSpectrum, U"MelFilter: Draw spectrum (slice)", U"FilterBank: Draw spectrum (slice)...") {
+FORM (GRAPHICS_EACH__MelFilter_drawSpectrum, U"MelFilter: Draw spectrum (slice)", U"FilterBank: Draw spectrum (slice)...") {
 	REAL (time, U"Time (s)", U"0.1")
 	REAL (fromFrequency, U"left Frequency range (mel)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (mel)", U"0.0")
@@ -4083,7 +4101,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_MelSpectrogram_drawSpectrumAtNearestTimeSlice, U"MelSpectrogram: Draw spectrum at nearest time slice", U"BandFilterSpectrogram: Draw spectrum at nearest time slice...") {
+FORM (GRAPHICS_EACH__MelSpectrogram_drawSpectrumAtNearestTimeSlice, U"MelSpectrogram: Draw spectrum at nearest time slice", U"BandFilterSpectrogram: Draw spectrum at nearest time slice...") {
 	REAL (time, U"Time (s)", U"0.1")
 	REAL (fromFrequency, U"left Frequency range (mel)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (mel)", U"0.0")
@@ -4093,11 +4111,13 @@ FORM (GRAPHICS_MelSpectrogram_drawSpectrumAtNearestTimeSlice, U"MelSpectrogram: 
 	OK
 DO
 	GRAPHICS_EACH (MelSpectrogram)
-		BandFilterSpectrogram_drawSpectrumAtNearestTimeSlice (me, GRAPHICS, time, fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish);
+		BandFilterSpectrogram_drawSpectrumAtNearestTimeSlice (me, GRAPHICS, time, fromFrequency, toFrequency, 
+			fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_BarkSpectrogram_drawSpectrumAtNearestTimeSlice, U"BarkSpectrogram: Draw spectrum at nearest time slice", U"BandFilterSpectrogram: Draw spectrum at nearest time slice...") {
+FORM (GRAPHICS_EACH__BarkSpectrogram_drawSpectrumAtNearestTimeSlice, U"BarkSpectrogram: Draw spectrum at nearest time slice", U"BandFilterSpectrogram: Draw spectrum at nearest time slice...") {
 	REAL (time, U"Time (s)", U"0.1")
 	REAL (fromFrequency, U"left Frequency range (bark)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (bark)", U"0.0")
@@ -4107,11 +4127,13 @@ FORM (GRAPHICS_BarkSpectrogram_drawSpectrumAtNearestTimeSlice, U"BarkSpectrogram
 	OK
 DO
 	GRAPHICS_EACH (MelSpectrogram)
-		BandFilterSpectrogram_drawSpectrumAtNearestTimeSlice (me, GRAPHICS, time, fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish);
+		BandFilterSpectrogram_drawSpectrumAtNearestTimeSlice (me, GRAPHICS, time, 
+			fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_MelFilter_paint, U"FilterBank: Paint", nullptr) {
+FORM (GRAPHICS_EACH__MelFilter_paint, U"FilterBank: Paint", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (fromFrequency, U"left Frequency range (mel)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (mel)", U"0.0")
@@ -4120,33 +4142,35 @@ FORM (GRAPHICS_MelFilter_paint, U"FilterBank: Paint", nullptr) {
 	BOOLEAN (garnish, U"Garnish", false)
 	OK
 DO
-	GRAPHICS_EACH (Matrix)
-		FilterBank_paint ((FilterBank) me, GRAPHICS, fromTime, toTime, fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish);
+	GRAPHICS_EACH (MelFilter)
+		FilterBank_paint (me, GRAPHICS, 
+			fromTime, toTime, fromFrequency, toFrequency, fromAmplitude, toAmplitude, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (NEW_MelFilter_to_MFCC, U"MelFilter: To MFCC", U"MelSpectrogram: To MFCC...") {
+FORM (CONVERT_EACH_TO_ONE__MelFilter_to_MFCC, U"MelFilter: To MFCC", U"MelSpectrogram: To MFCC...") {
 	NATURAL (numberOfCoefficients, U"Number of coefficients", U"12")
 	OK
 DO
-	CONVERT_EACH (MelFilter)
+	CONVERT_EACH_TO_ONE (MelFilter)
 		autoMFCC result = MelFilter_to_MFCC (me, numberOfCoefficients);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_MelSpectrogram_to_MFCC, U"MelSpectrogram: To MFCC", U"MelSpectrogram: To MFCC...") {
+FORM (CONVERT_EACH_TO_ONE__MelSpectrogram_to_MFCC, U"MelSpectrogram: To MFCC", U"MelSpectrogram: To MFCC...") {
 	NATURAL (numberOfCoefficients, U"Number of coefficients", U"12")
 	OK
 DO
-	CONVERT_EACH (MelSpectrogram)
+	CONVERT_EACH_TO_ONE (MelSpectrogram)
 		autoMFCC result = MelSpectrogram_to_MFCC (me, numberOfCoefficients);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /**************** Ltas *******************************************/
 
 #include "../kar/UnicodeData.h"
-FORM (INFO_Ltas_reportSpectralTrend, U"Ltas: Report spectral trend", nullptr) {
+FORM (INFO_ONE__Ltas_reportSpectralTrend, U"Ltas: Report spectral trend", nullptr) {
 	POSITIVE (fromFrequency, U"left Frequency range (Hz)", U"100.0")
 	POSITIVE (toFrequency, U"right Frequency range (Hz)", U"5000.0")
 	OPTIONMENU (frequencyScale, U"Frequency scale", 1)
@@ -4172,83 +4196,83 @@ DO
 
 /**************** MFCC *******************************************/
 
-DIRECT (HELP_MFCC_help) {
+DIRECT (HELP__MFCC_help) {
 	HELP (U"MFCC")
 }
 
-FORM (NEW_MFCC_to_MelFilter, U"MFCC: To MelFilter", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__MFCC_to_MelFilter, U"MFCC: To MelFilter", nullptr) {
 	INTEGER (fromCoefficient, U"From coefficient", U"0")
 	INTEGER (toCoefficient, U"To coefficient", U"0")
 	OK
 DO
-	CONVERT_EACH (MFCC)
+	CONVERT_EACH_TO_ONE (MFCC)
 		autoMelFilter result = MFCC_to_MelFilter (me, fromCoefficient, toCoefficient);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_MFCC_to_MelSpectrogram, U"MFCC: MelSpectrogram", U"MFCC: To MelSpectrogram...") {
+FORM (CONVERT_EACH_TO_ONE__MFCC_to_MelSpectrogram, U"MFCC: MelSpectrogram", U"MFCC: To MelSpectrogram...") {
 	INTEGER (fromCoefficient, U"From coefficient", U"0")
 	INTEGER (toCoefficient, U"To coefficient", U"0")
 	BOOLEAN (includeConstant, U"Include constant term", true)
 	OK
 DO
-	CONVERT_EACH (MFCC)
+	CONVERT_EACH_TO_ONE (MFCC)
 		autoMelSpectrogram result = MFCC_to_MelSpectrogram (me, fromCoefficient, toCoefficient, includeConstant);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_MFCC_to_TableOfReal, U"MFCC: To TableOfReal", U"MFCC: To TableOfReal...") {
+FORM (CONVERT_EACH_TO_ONE__MFCC_to_TableOfReal, U"MFCC: To TableOfReal", U"MFCC: To TableOfReal...") {
 	BOOLEAN (includeEnergy, U"Include energy", false)
 	OK
 DO
-	CONVERT_EACH (MFCC)
+	CONVERT_EACH_TO_ONE (MFCC)
 		autoTableOfReal result = MFCC_to_TableOfReal (me, includeEnergy);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_MFCC_to_Matrix_features, U"MFCC: To Matrix (features)", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__MFCC_to_Matrix_features, U"MFCC: To Matrix (features)", nullptr) {
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
 	BOOLEAN (includeEnergy, U"Include energy", false)
 	OK
 DO
-	CONVERT_EACH (MFCC)
+	CONVERT_EACH_TO_ONE (MFCC)
 		autoMatrix result = MFCC_to_Matrix_features (me, windowLength, includeEnergy);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW1_MFCCs_crossCorrelate, U"MFCC & MFCC: Cross-correlate", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__MFCCs_crossCorrelate, U"MFCC & MFCC: Cross-correlate", nullptr) {
 	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
 	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
-	CONVERT_COUPLE (MFCC)
+	CONVERT_TWO_TO_ONE (MFCC)
 		autoSound result = MFCCs_crossCorrelate (me, you, amplitudeScaling, signalOutsideTimeDomainIs);
-	CONVERT_COUPLE_END (my name.get(), U"_",your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_",your name.get())
 }
 
-FORM (NEW1_MFCCs_convolve, U"MFCC & MFCC: Convolve", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__MFCCs_convolve, U"MFCC & MFCC: Convolve", nullptr) {
 	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
 	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
-	CONVERT_COUPLE (MFCC)
+	CONVERT_TWO_TO_ONE (MFCC)
 		autoSound result = MFCCs_convolve (me, you, amplitudeScaling, signalOutsideTimeDomainIs);
-	CONVERT_COUPLE_END (my name.get(), U"_",your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_",your name.get())
 }
 
-DIRECT (NEW_MFCC_to_Sound) {
-	CONVERT_EACH (MFCC)
+DIRECT (CONVERT_EACH_TO_ONE__MFCC_to_Sound) {
+	CONVERT_EACH_TO_ONE (MFCC)
 		autoSound result = MFCC_to_Sound (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /**************** MSpline *******************************************/
 
-FORM (NEW_MSpline_create, U"Create MSpline", U"Create MSpline...") {
+FORM (CREATE_ONE__MSpline_create, U"Create MSpline", U"Create MSpline...") {
 	WORD (name, U"Name", U"mspline")
 	LABEL (U"Domain")
 	REAL (xmin, U"Xmin", U"0")
@@ -4257,72 +4281,105 @@ FORM (NEW_MSpline_create, U"Create MSpline", U"Create MSpline...") {
 	LABEL (U"all M[k] are polynomials of degree \"Degree\"")
 	LABEL (U"Relation: numberOfCoefficients == numberOfInteriorKnots + degree + 1")
 	INTEGER (degree, U"Degree", U"2")
-	SENTENCE (coefficients_string, U"Coefficients (c[k])", U"1.2 2.0 1.2 1.2 3.0 0.0")
-	SENTENCE (knots_string, U"Interior knots" , U"0.3 0.5 0.6")
+	REALVECTOR (coefficients, U"Coefficients (c[k])", WHITESPACE_SEPARATED_, U"1.2 2.0 1.2 1.2 3.0 0.0")
+	REALVECTOR (interiorKnots, U"Interior knots", WHITESPACE_SEPARATED_, U"0.3 0.5 0.6")
 	OK
 DO
-	Melder_require (xmin < xmax, U"Xmin should be smaller than Xmax.");
+	Melder_require (xmin < xmax, 
+		U"\"Xmin\" should be smaller than \"Xmax\".");
 	CREATE_ONE
-		autoMSpline result = MSpline_createFromStrings (xmin, xmax, degree, coefficients_string, knots_string);
+		autoMSpline result = MSpline_createWithCoefficients (xmin, xmax, degree, coefficients, interiorKnots);
 	CREATE_ONE_END (name)
 }
 
-DIRECT (HELP_MSpline_help) {
+DIRECT (HELP__MSpline_help) {
 	HELP (U"MSpline")
 }
 
-
-FORM (MODIFY_NavigationContext_modifyContextCombination, U"NavigationContext: Modify context combination", nullptr) {
-	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"How to combine the contexts", kContext_combination::DEFAULT)
-	BOOLEAN (contextOnly, U"Use context only", false)
+FORM (MODIFY_EACH__NavigationContext_modifyUseCriterion, U"NavigationContext: Modify use criterion", nullptr) {
+	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"Use criterion", kContext_combination::DEFAULT)
+	BOOLEAN (excludeTopic, U"Exclude topic", false)
 	OK
 DO
 	MODIFY_EACH (NavigationContext)
-		NavigationContext_modifyContextCombination (me, combinationCriterion, contextOnly);
+		NavigationContext_modifyUseCriterion (me, combinationCriterion, excludeTopic);
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_NavigationContext_modifyNavigationLabels, U"NavigationContext: Modify navigation labels", nullptr) {
-	OPTIONMENU_ENUM (kMelder_string, navigationCriterion, U"Navigation criterion", kMelder_string::DEFAULT)
+FORM (MODIFY_EACH__NavigationContext_modifyTopicCriterion, U"NavigationContext: Modify Topic match criterion", nullptr) {
+	OPTIONMENU_ENUM (kMelder_string, criterion, U"Match criterion", kMelder_string::DEFAULT)
+	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
 	OK
 DO
-	MODIFY_FIRST_OF_TWO (NavigationContext, Strings)
-		NavigationContext_modifyNavigationLabels (me, you, navigationCriterion);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_EACH (NavigationContext)
+		NavigationContext_modifyTopicCriterion (me, criterion, topicMatchBoolean);
+	MODIFY_EACH_END
 }
 
-FORM (MODIFY_NavigationContext_modifyLeftContextLabels, U"NavigationContext: Modify left context labels", nullptr) {
-	OPTIONMENU_ENUM (kMelder_string, leftContextCriterion, U"Left context criterion", kMelder_string::DEFAULT)
+FORM (MODIFY_EACH__NavigationContext_modifyBeforeCriterion, U"NavigationContext: Modify Before match criterion", nullptr) {
+	OPTIONMENU_ENUM (kMelder_string, criterion, U"Match criterion", kMelder_string::DEFAULT)
+	OPTIONMENU_ENUM (kMatchBoolean, beforeMatchBoolean, U"Combine before matches with", kMatchBoolean::OR_)
 	OK
 DO
-	MODIFY_FIRST_OF_TWO (NavigationContext, Strings)
-		NavigationContext_modifyLeftContextLabels (me, you, leftContextCriterion);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_EACH (NavigationContext)
+		NavigationContext_modifyBeforeCriterion (me, criterion, beforeMatchBoolean);
+	MODIFY_EACH_END
 }
 
-FORM (MODIFY_NavigationContext_modifyRightContextLabels, U"NavigationContext: modify right context labels", nullptr) {
-	OPTIONMENU_ENUM (kMelder_string, rightContextCriterion, U"Right context criterion", kMelder_string::DEFAULT)
+FORM (MODIFY_EACH__NavigationContext_modifyAfterCriterion, U"NavigationContext: Modify After match criterion", nullptr) {
+	OPTIONMENU_ENUM (kMelder_string, criterion, U"Match criterion", kMelder_string::DEFAULT)
+	OPTIONMENU_ENUM (kMatchBoolean, afterMatchBoolean, U"Combine after matches with", kMatchBoolean::OR_)
 	OK
 DO
-	MODIFY_FIRST_OF_TWO (NavigationContext, Strings)
-		NavigationContext_modifyRightContextLabels (me, you, rightContextCriterion);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_EACH (NavigationContext)
+		NavigationContext_modifyAfterCriterion (me, criterion, afterMatchBoolean);
+	MODIFY_EACH_END
 }
 
-FORM (NEW_TextGrid_and_NavigationContext_to_TextGridNavigator, U"TextGrid & NavigationContext: To TextGridNavigator", nullptr) {
+DIRECT (MODIFY_FIRST_OF_ONE_AND_ONE__NavigationContext_replaceTopicLabels) {
+	MODIFY_FIRST_OF_ONE_AND_ONE (NavigationContext, Strings)
+		NavigationContext_replaceTopicLabels (me, you);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
+DIRECT (MODIFY_FIRST_OF_ONE_AND_ONE__NavigationContext_replaceBeforeLabels) {
+	MODIFY_FIRST_OF_ONE_AND_ONE (NavigationContext, Strings)
+		NavigationContext_replaceBeforeLabels (me, you);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
+DIRECT (MODIFY_FIRST_OF_ONE_AND_ONE__NavigationContext_replaceAfterLabels) {
+	MODIFY_FIRST_OF_ONE_AND_ONE (NavigationContext, Strings)
+		NavigationContext_replaceAfterLabels (me, you);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
+
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__TextGrid_and_NavigationContext_to_TextGridNavigator, U"TextGrid & NavigationContext: To TextGridNavigator", nullptr) {
 	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
 	OK
 DO
-	CONVERT_TWO (TextGrid, NavigationContext)
-		autoTextGridNavigator result = TextGridNavigator_create (me, you, tierNumber);
-	CONVERT_TWO_END (U"tgn", tierNumber)
+	CONVERT_ONE_AND_ONE_TO_ONE (TextGrid, NavigationContext)
+		autoTextGridNavigator result = TextGrid_and_NavigationContext_to_TextGridNavigator (me, you, tierNumber, matchDomain);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (U"tgn")
 }
 
-DIRECT (HELP_NMF_help) {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__TextGrid_and_NavigationContext_to_TextGridTierNavigator, U"TextGrid & NavigationContext: To TextGridTierNavigator", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
+	OK
+DO
+	CONVERT_ONE_AND_ONE_TO_ONE (TextGrid, NavigationContext)
+		autoTextGridTierNavigator result = TextGrid_and_NavigationContext_to_TextGridTierNavigator (me, you, tierNumber, matchDomain);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (U"ttgn_", tierNumber)
+}
+
+DIRECT (HELP__NMF_help) {
 	HELP (U"NMF")
 }
 
-FORM (GRAPHICS_NMF_paintFeatures, U"NMF: Paint features", U"") {
+FORM (GRAPHICS_EACH__NMF_paintFeatures, U"NMF: Paint features", U"") {
 	NATURAL (fromFeature, U"From feature", U"1")
 	INTEGER (toFeature, U"To feature", U"0 (=all)")
 	NATURAL (fromRow, U"From row", U"1")
@@ -4333,41 +4390,40 @@ FORM (GRAPHICS_NMF_paintFeatures, U"NMF: Paint features", U"") {
 	OK
 DO
 	GRAPHICS_EACH (NMF)
-	NMF_paintFeatures (me, GRAPHICS, fromFeature, toFeature, fromRow, toRow, minimum,  maximum, 0, 0, garnish);
+		NMF_paintFeatures (me, GRAPHICS, fromFeature, toFeature, fromRow, toRow, minimum,  maximum, 0, 0, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_NMF_paintWeights, U"NMF: Paint weights", U"") {
+FORM (GRAPHICS_EACH__NMF_paintWeights, U"NMF: Paint weights", U"") {
 	NATURAL (fromWeight, U"From weight", U"1")
 	INTEGER (toWeight, U"To weight", U"0 (=all)")
 	NATURAL (fromRow, U"From row", U"1")
 	INTEGER (toRow, U"To row", U"0 (=all)")
 	REAL (minimum, U"Minimum", U"0.0")
-	REAL (maximum, U"maximum", U"0.0")
-	
+	REAL (maximum, U"maximum", U"0.0")	
 	BOOLEAN (garnish, U"Garnish", 1)
 	OK
 DO
 	GRAPHICS_EACH (NMF)
-	NMF_paintWeights (me, GRAPHICS, fromWeight, toWeight, fromRow, toRow, minimum,  maximum, 0, 0, garnish);
+		NMF_paintWeights (me, GRAPHICS, fromWeight, toWeight, fromRow, toRow, minimum,  maximum, 0, 0, garnish);
 	GRAPHICS_EACH_END
 }
 
-
-DIRECT (NEW_NMF_to_Matrix) {
-	CONVERT_EACH (NMF)
+DIRECT (CONVERT_EACH_TO_ONE__NMF_to_Matrix) {
+	CONVERT_EACH_TO_ONE (NMF)
 		autoMatrix result = NMF_to_Matrix (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
+
 /********************** PatternList *******************************************/
 
-DIRECT (NEW1_PatternList_Categories_to_Discriminant) {
-	CONVERT_TWO (PatternList, Categories)
+DIRECT (CONVERT_ONE_AND_ONE__TO_ONE_PatternList_Categories_to_Discriminant) {
+	CONVERT_ONE_AND_ONE_TO_ONE (PatternList, Categories)
 		autoDiscriminant result = PatternList_Categories_to_Discriminant (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (GRAPHICS_PatternList_draw, U"PatternList: Draw", nullptr) {
+FORM (GRAPHICS_EACH__PatternList_draw, U"PatternList: Draw", nullptr) {
 	NATURAL (patternNumber, U"Pattern number", U"1")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -4381,32 +4437,32 @@ DO
 	GRAPHICS_EACH_END
 }
 
-DIRECT (INTEGER_PatternList_getNumberOfPatterns) {
-	INTEGER_ONE (PatternList)
-		integer result = my ny;
-	INTEGER_ONE_END (U" (number of patterns)")
+DIRECT (QUERY_ONE_FOR_INTEGER__PatternList_getNumberOfPatterns) {
+	QUERY_ONE_FOR_INTEGER (PatternList)
+		const integer result = my ny;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of patterns)")
 }
 
-DIRECT (INTEGER_PatternList_getPatternSize) {
-	INTEGER_ONE (PatternList)
-		integer result = my nx;
-	INTEGER_ONE_END (U" (pattern size)")
+DIRECT (QUERY_ONE_FOR_INTEGER__PatternList_getPatternSize) {
+	QUERY_ONE_FOR_INTEGER (PatternList)
+		const integer result = my nx;
+	QUERY_ONE_FOR_INTEGER_END (U" (pattern size)")
 }
 
-FORM (REAL_PatternList_getValue, U"", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__PatternList_getValue, U"", nullptr) {
 	NATURAL (patternNumber, U"Pattern number", U"1")
 	NATURAL (nodeNumber, U"Node number", U"2")
 	OK
 DO
-	NUMBER_ONE (PatternList)
-		double result = ( patternNumber <= my ny && nodeNumber <= my nx ? my z [patternNumber] [nodeNumber] : undefined );
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (PatternList)
+		const double result = ( patternNumber <= my ny && nodeNumber <= my nx ? my z [patternNumber] [nodeNumber] : undefined );
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
 DIRECT (NUMMAT_PatternList_getAllValues) {
-	NUMMAT_ONE (PatternList)
+	QUERY_ONE_FOR_MATRIX (PatternList)
 		autoMAT result = copy_MAT (my z.all());
-	NUMMAT_ONE_END
+	QUERY_ONE_FOR_MATRIX_END
 }
 
 FORM (MODIFY_PatternList_formula, U"PatternList: Formula", nullptr) {
@@ -4414,14 +4470,14 @@ FORM (MODIFY_PatternList_formula, U"PatternList: Formula", nullptr) {
 	LABEL (U"for row from 1 to nrow   ; for all patterns")
 	LABEL (U"   for col from 1 to ncol   ; for all nodes")
 	LABEL (U"      self [row, col] =")
-	TEXTFIELD (formula, nullptr, U"5 * exp (-0.5 * ((col - 10 - row/100) / 1.5) ^ 2) - 0.5   ; sliding peak")
+	FORMULA (formula, U"Formula", U"5 * exp (-0.5 * ((col - 10 - row/100) / 1.5) ^ 2) - 0.5   ; sliding peak")
 	LABEL (U"   endfor")
 	LABEL (U"endfor")
 	OK
 DO
-	MODIFY_EACH (PatternList)
+	MODIFY_EACH_WEAK (PatternList)
 		Matrix_formula (me, formula, interpreter, nullptr);
-	MODIFY_EACH_END
+	MODIFY_EACH_WEAK_END
 }
 
 FORM (MODIFY_PatternList_setValue, U"PatternList: Set value", U"PatternList: Set value...") {
@@ -4431,148 +4487,163 @@ FORM (MODIFY_PatternList_setValue, U"PatternList: Set value", U"PatternList: Set
 	OK
 DO
 	MODIFY_EACH (PatternList)
-		Melder_require (rowNumber <= my ny, U"The row number should not be greater than the number of rows.");
-		Melder_require (columnNumber <= my nx, U"The column number should not be greater than the number of columns.");
+		Melder_require (rowNumber <= my ny, 
+			U"The row number should not be greater than the number of rows.");
+		Melder_require (columnNumber <= my nx, 
+			U"The column number should not be greater than the number of columns.");
 		my z [rowNumber] [columnNumber] = newValue;
 	MODIFY_EACH_END
 }
 
-DIRECT (NEW_PatternList_to_Matrix) {
-	CONVERT_EACH (PatternList)
+DIRECT (CONVERT_EACH_TO_ONE__PatternList_to_Matrix) {
+	CONVERT_EACH_TO_ONE (PatternList)
 		autoMatrix result = PatternList_to_Matrix (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
-
 
 /******************* PCA ******************************/
 
-DIRECT (HELP_PCA_help) {
+DIRECT (HELP__PCA_help) {
 	HELP (U"PCA")
 }
 
-DIRECT (HINT_hint_PCA_TableOfReal_to_Configuration) {
-	Melder_information (U"You can get principal components by selecting a PCA and a TableOfReal\n"
-		"together and choosing \"To Configuration...\".");
-END }
+DIRECT (HINT__hint_PCA_TableOfReal_to_Configuration) {
+	INFO_NONE
+		Melder_information (U"You can get principal components by selecting a PCA and a TableOfReal\n"
+			"together and choosing \"To Configuration...\".");
+	INFO_NONE_END
+}
 
-DIRECT (HINT_hint_PCA_Covariance_Project) {
-	Melder_information (U"You can get a new Covariance object rotated to the directions of the direction vectors\n"
-		" in the PCA object by selecting a PCA and a Covariance object together.");
-END }
+DIRECT (HINT_hint__PCA_Covariance_Project) {
+	INFO_NONE
+		Melder_information (U"You can get a new Covariance object rotated to the directions of the direction vectors\n"
+			" in the PCA object by selecting a PCA and a Covariance object together.");
+	INFO_NONE_END
+}
 
-DIRECT (HINT_hint_PCA_Configuration_to_TableOfReal_reconstruct) {
-	Melder_information (U"You can reconstruct the original TableOfReal as well as possible from\n"
-		" the principal components in the Configuration and the direction vectors in the PCA object.");
-END }
+DIRECT (HINT_hint__PCA_Configuration_to_TableOfReal_reconstruct) {
+	INFO_NONE
+		Melder_information (U"You can reconstruct the original TableOfReal as well as possible from\n"
+			" the principal components in the Configuration and the direction vectors in the PCA object.");
+	INFO_NONE_END
+}
 
-FORM (REAL_PCA_TableOfReal_getFractionVariance, U"PCA & TableOfReal: Get fraction variance", U"PCA & TableOfReal: Get fraction variance...") {
+FORM (QUERY_ONE_AND_ONE_FOR_REAL__PCA_TableOfReal_getFractionVariance, U"PCA & TableOfReal: Get fraction variance", U"PCA & TableOfReal: Get fraction variance...") {
 	NATURAL (fromPrincipalComponent, U"left Principal component range", U"1")
 	NATURAL (toPrincipalComponent, U"right Principal component range", U"1")
 	OK
 DO
-	NUMBER_TWO (PCA, TableOfReal)
-		double result = PCA_TableOfReal_getFractionVariance (me, you, fromPrincipalComponent, toPrincipalComponent);
-	NUMBER_TWO_END (U"")
+	QUERY_ONE_AND_ONE_FOR_REAL (PCA, TableOfReal)
+		const double result = PCA_TableOfReal_getFractionVariance (me, you, fromPrincipalComponent, toPrincipalComponent);
+	QUERY_ONE_AND_ONE_FOR_REAL_END (U"")
 }
 
-DIRECT (NEW_PCA_Configuration_to_TableOfReal_reconstruct) {
-	CONVERT_TWO (PCA, Configuration)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__PCA_Configuration_to_TableOfReal_reconstruct) {
+	CONVERT_ONE_AND_ONE_TO_ONE (PCA, Configuration)
 		autoTableOfReal result = PCA_Configuration_to_TableOfReal_reconstruct (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_PCA_TableOfReal_to_TableOfReal_projectRows, U"PCA & TableOfReal: To TableOfReal (project rows)", U"PCA & TableOfReal: To Configuration...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__PCA_TableOfReal_to_TableOfReal_projectRows, U"PCA & TableOfReal: To TableOfReal (project rows)", U"PCA & TableOfReal: To Configuration...") {
 	INTEGER (numberOfDimensionsToKeep, U"Number of dimensions to keep", U"0 (= all)")
 	OK
 DO
 	Melder_require (numberOfDimensionsToKeep >= 0, U"The number of dimensions to keep should be at least zero.");
-	CONVERT_ONE_AND_GENERIC (PCA, TableOfReal)
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE (PCA, TableOfReal)
 		autoTableOfReal result = PCA_TableOfReal_to_TableOfReal_projectRows (me, you, numberOfDimensionsToKeep);
-	CONVERT_ONE_AND_GENERIC_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_PCA_TableOfReal_to_Configuration, U"PCA & TableOfReal: To Configuration", U"PCA & TableOfReal: To Configuration...") {
+FORM (CONVERT_ONE_AND_ONE_GENERIC_TO_ONE__PCA_TableOfReal_to_Configuration, U"PCA & TableOfReal: To Configuration", U"PCA & TableOfReal: To Configuration...") {
 	INTEGER (numberOfDimensions, U"Number of dimensions", U"0 (= all)")
 	OK
 DO
-	Melder_require (numberOfDimensions >= 0, U"The number of dimensions should be at least zero.");
-	CONVERT_ONE_AND_GENERIC (PCA, TableOfReal)
+	Melder_require (numberOfDimensions >= 0, 
+		U"The number of dimensions should be at least zero.");
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE (PCA, TableOfReal)
 		autoConfiguration result = PCA_TableOfReal_to_Configuration (me, you, numberOfDimensions);
-	CONVERT_ONE_AND_GENERIC_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_PCA_TableOfReal_to_TableOfReal_zscores, U"PCA & TableOfReal: To TableOfReal (z-scores)", U"PCA & TableOfReal: To TableOfReal (z-scores)...") {
+FORM (CONVERT_ONE_AND_ONE_GENERIC_TO_ONE__PCA_TableOfReal_to_TableOfReal_zscores, U"PCA & TableOfReal: To TableOfReal (z-scores)", U"PCA & TableOfReal: To TableOfReal (z-scores)...") {
 	INTEGER (numberOfDimensions, U"Number of dimensions", U"0 (= all)")
 	OK
 DO
-	Melder_require (numberOfDimensions >= 0, U"The number of dimensions should be at least zero.");
-	CONVERT_ONE_AND_GENERIC (PCA, TableOfReal)
+	Melder_require (numberOfDimensions >= 0, 
+		U"The number of dimensions should be at least zero.");
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE (PCA, TableOfReal)
 		autoTableOfReal result = PCA_TableOfReal_to_TableOfReal_zscores (me, you, numberOfDimensions);
-	CONVERT_ONE_AND_GENERIC_END (my name.get(), U"_", your name.get(), U"_zscores")
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE_END (my name.get(), U"_", your name.get(), U"_zscores")
 }
 
-FORM (NEW1_PCA_Matrix_to_Matrix_projectRows, U"PCA & Matrix: To Matrix (project rows)", nullptr) {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__PCA_Matrix_to_Matrix_projectRows, U"PCA & Matrix: To Matrix (project rows)", nullptr) {
 	INTEGER (numberOfDimensions, U"Number of dimensions", U"0 (= all)")
 	OK
 DO
-	Melder_require (numberOfDimensions >= 0, U"The number of dimensions should be at least zero.");
-	CONVERT_TWO (PCA, Matrix)
+	Melder_require (numberOfDimensions >= 0,
+		U"The number of dimensions should be at least zero.");
+	CONVERT_ONE_AND_ONE_TO_ONE (PCA, Matrix)
 		autoMatrix result = Eigen_Matrix_to_Matrix_projectRows (me, you, numberOfDimensions);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_PCA_Matrix_to_Matrix_projectColumns, U"PCA & Matrix: To Matrix (project columns)", nullptr) {
+FORM (CONVERT_ONE_AND_ONE_GENERIC_TO_ONE__Matrix_to_Matrix_projectColumns, U"PCA & Matrix: To Matrix (project columns)", nullptr) {
 	INTEGER (numberOfDimensions, U"Number of dimensions", U"0 (= all)")
 	OK
 DO
-	Melder_require (numberOfDimensions >= 0, U"The number of dimensions should be at least zero.");
-	CONVERT_ONE_AND_GENERIC (PCA, Matrix)
+	Melder_require (numberOfDimensions >= 0, 
+		U"The number of dimensions should be at least zero.");
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE (PCA, Matrix)
 		autoMatrix result = Eigen_Matrix_to_Matrix_projectColumns (me, you, numberOfDimensions);
-	CONVERT_ONE_AND_GENERIC_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_GENERIC_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (REAL_PCA_getCentroidElement, U"PCA: Get centroid element...", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__PCA_getCentroidElement, U"PCA: Get centroid element...", nullptr) {
 	NATURAL (number, U"Number", U"1")
 	OK
 DO
-	NUMBER_ONE (PCA)
-		Melder_require (number <= my dimension, U"Number should not be greater than ", my dimension, U".");
-		double result = my centroid [number];
-	NUMBER_ONE_END (U" (element ", number, U")")
+	QUERY_ONE_FOR_REAL (PCA)
+		Melder_require (number <= my dimension,
+			U"Number should not be greater than ", my dimension, U".");
+		const double result = my centroid [number];
+	QUERY_ONE_FOR_REAL_END (U" (element ", number, U")")
 }
 
-FORM (REAL_PCA_getEqualityOfEigenvalues, U"PCA: Get equality of eigenvalues", U"PCA: Get equality of eigenvalues...") {
+FORM (QUERY_ONE_FOR_REAL__PCA_getEqualityOfEigenvalues, U"PCA: Get equality of eigenvalues", U"PCA: Get equality of eigenvalues...") {
 	INTEGER (fromEigenvalue, U"left Eigenvalue range", U"0")
 	INTEGER (toEigenvalue, U"right Eigenvalue range", U"0")
 	BOOLEAN (conservativeTest, U"Conservative test", false)
 	OK
 DO
-	NUMBER_ONE (PCA)
+	QUERY_ONE_FOR_REAL (PCA)
 		double result, chisq, df;
 		PCA_getEqualityOfEigenvalues (me, fromEigenvalue, toEigenvalue,
-				conservativeTest, & result, & chisq, & df);
-	NUMBER_ONE_END (U" (= probability, based on chisq = ", chisq, U" and df = ", df)
+			conservativeTest, & result, & chisq, & df
+		);
+	QUERY_ONE_FOR_REAL_END (U" (= probability, based on chisq = ", chisq, U" and df = ", df)
 }
 
-FORM (INTEGER_PCA_getNumberOfComponents_VAF, U"PCA: Get number of components (VAF)", U"PCA: Get number of components (VAF)...") {
+FORM (QUERY_ONE_FOR_INTEGER__PCA_getNumberOfComponents_VAF, U"PCA: Get number of components (VAF)", U"PCA: Get number of components (VAF)...") {
 	POSITIVE (varianceFraction, U"Variance fraction (0-1)", U"0.95")
 	OK
 DO
-	Melder_require (varianceFraction >= 0.0 && varianceFraction <= 1.0, U"The variance fraction should be in interval [0-1].");
-	NUMBER_ONE (PCA)
-		double result = Eigen_getDimensionOfFraction (me, varianceFraction);
-	NUMBER_ONE_END (U" (variance fraction)")
+	Melder_require (varianceFraction >= 0.0 && varianceFraction <= 1.0, 
+		U"The variance fraction should be in interval [0-1].");
+	QUERY_ONE_FOR_INTEGER (PCA)
+		const integer result = Eigen_getDimensionOfFraction (me, varianceFraction);
+	QUERY_ONE_FOR_INTEGER_END (U" (for variance fraction)")
 }
 
-FORM (REAL_PCA_getFractionVAF, U"PCA: Get fraction variance accounted for", U"PCA: Get fraction variance accounted for...") {
+FORM (QUERY_ONE_FOR_REAL__PCA_getFractionVAF, U"PCA: Get fraction variance accounted for", U"PCA: Get fraction variance accounted for...") {
 	NATURAL (fromPrincipalComponent, U"left Principal component range", U"1")
 	NATURAL (toPrincipalComponent, U"right Principal component range", U"1")
 	OK
 DO
-	Melder_require (fromPrincipalComponent <= toPrincipalComponent, U"The second component should be greater than or equal to the first component.");
-	NUMBER_ONE (PCA)
-		double result = Eigen_getCumulativeContributionOfComponents (me, fromPrincipalComponent, toPrincipalComponent);
-	NUMBER_ONE_END (U"")
+	Melder_require (fromPrincipalComponent <= toPrincipalComponent, 
+		U"The second component should be greater than or equal to the first component.");
+	QUERY_ONE_FOR_REAL (PCA)
+		const double result = Eigen_getCumulativeContributionOfComponents (me, fromPrincipalComponent, toPrincipalComponent);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
 FORM (MODIFY_PCA_invertEigenvector, U"PCA: Invert eigenvector", nullptr) {
@@ -4584,102 +4655,110 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (NEW_PCA_extractEigenvector, U"PCA: Extract eigenvector", U"Eigen: Extract eigenvector...") {
+FORM (CONVERT_EACH_TO_ONE__PCA_extractEigenvector, U"PCA: Extract eigenvector", U"Eigen: Extract eigenvector...") {
 	NATURAL (eigenvectorNumber, U"Eigenvector number", U"1")
 	LABEL (U"Reshape as")
 	INTEGER (numberOfRows, U"Number of rows", U"0")
 	INTEGER (numberOfColumns, U"Number of columns", U"0")
 	OK
 DO
-	Melder_require (numberOfRows >= 0, U"The number of rows should be at least 0.");
-	Melder_require (numberOfColumns >= 0, U"The number of columns should be at least 0.");
-	CONVERT_EACH (PCA);
+	Melder_require (numberOfRows >= 0, 
+		U"The number of rows should be at least 0.");
+	Melder_require (numberOfColumns >= 0, 
+		U"The number of columns should be at least 0.");
+	CONVERT_EACH_TO_ONE (PCA);
 		autoMatrix result = Eigen_extractEigenvector (me, eigenvectorNumber, numberOfRows, numberOfColumns);
-	CONVERT_EACH_END (my name.get(), U"_ev", eigenvectorNumber)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_ev", eigenvectorNumber)
 }
 
-DIRECT (NEW_PCA_extractEigen) {
-	CONVERT_EACH (PCA)
+DIRECT (CONVERT_EACH_TO_ONE__PCA_extractEigen) {
+	CONVERT_EACH_TO_ONE (PCA)
 		autoEigen result = PCA_to_Eigen (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_PCA_to_TableOfReal_reconstruct1, U"PCA: To TableOfReal (reconstruct)", U"PCA: To TableOfReal (reconstruct 1)...") {
-	SENTENCE (coefficients_string, U"Coefficients", U"1.0 1.0")
+FORM (CONVERT_EACH_TO_ONE__PCA_to_TableOfReal_reconstruct1, U"PCA: To TableOfReal (reconstruct)", U"PCA: To TableOfReal (reconstruct 1)...") {
+	REALVECTOR (coefficients, U"Coefficients", WHITESPACE_SEPARATED_, U"1.0 1.0")
 	OK
 DO
-	CONVERT_EACH (PCA)
-		autoTableOfReal result = PCA_to_TableOfReal_reconstruct1 (me, coefficients_string);
-	CONVERT_EACH_END (my name.get(), U"_reconstructed")
+	CONVERT_EACH_TO_ONE (PCA)
+		autoTableOfReal result = PCA_to_TableOfReal_reconstruct1 (me, coefficients);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_reconstructed")
 }
 
-FORM (NEW1_PCAs_to_Procrustes, U"PCA & PCA: To Procrustes", U"PCA & PCA: To Procrustes...") {
+FORM (CONVERT_TWO_TO_ONE__PCAs_to_Procrustes, U"PCA & PCA: To Procrustes", U"PCA & PCA: To Procrustes...") {
 	NATURAL (fromEigenvector, U"left Eigenvector range", U"1")
 	NATURAL (toEigenvector, U"right Eigenvector range", U"2")
 	OK
 DO
-	CONVERT_COUPLE (PCA)
+	CONVERT_TWO_TO_ONE (PCA)
 		autoProcrustes result = Eigens_to_Procrustes (me, you, fromEigenvector, toEigenvector);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-
-DIRECT (REAL_PCAs_getAngleBetweenPc1Pc2Plane_degrees) {
-	NUMBER_COUPLE (PCA)
-		Melder_require (my numberOfEigenvalues > 1, U"There must be at least two eigenvectors in the first PCA.");
-		Melder_require (your numberOfEigenvalues > 1, U"There must be at least two eigenvectors in the second PCA.");
-		double result = Eigens_getAngleBetweenEigenplanes_degrees (me, you);
-	NUMBER_COUPLE_END (U" degrees (= angle of intersection between the two pc1-pc2 eigenplanes)")
+DIRECT (QUERY_TWO_FOR_REAL__PCAs_getAngleBetweenPc1Pc2Plane_degrees) {
+	QUERY_TWO_FOR_REAL (PCA)
+		Melder_require (my numberOfEigenvalues > 1, 
+			U"There must be at least two eigenvectors in the first PCA.");
+		Melder_require (your numberOfEigenvalues > 1, 
+			U"There must be at least two eigenvectors in the second PCA.");
+		const double result = Eigens_getAngleBetweenEigenplanes_degrees (me, you);
+	QUERY_TWO_FOR_REAL_END (U" degrees (= angle of intersection between the two pc1-pc2 eigenplanes)")
 }
 
-DIRECT (NEW1_PCA_SSCP_project) {
-	CONVERT_TWO (PCA, SSCP)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__PCA_SSCP_project) {
+	CONVERT_ONE_AND_ONE_TO_ONE (PCA, SSCP)
 		autoSSCP result = Eigen_SSCP_project (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
 /******************* Permutation **************************************/
 
-DIRECT (HELP_Permutation_help) {
+DIRECT (HELP__Permutation_help) {
 	HELP (U"Permutation")
 }
 
-FORM (NEW_Permutation_create, U"Create Permutation", U"Create Permutation...") {
+FORM (CREATE_ONE__Permutation_create, U"Create Permutation", U"Create Permutation...") {
 	WORD (name, U"Name", U"p")
 	NATURAL (numberOfElements, U"Number of elements", U"10")
-	BOOLEAN (identity, U"Identity Permutation", true)
+	BOOLEAN (identity, U"Identity Permutation", false)
 	OK
 DO
 	CREATE_ONE
-		autoPermutation result = Permutation_create (numberOfElements);
-		if (! identity) {
-			Permutation_permuteRandomly_inplace (result.get(), 0, 0);
-		}
+		autoPermutation result = Permutation_create (numberOfElements, identity);
 	CREATE_ONE_END (name)
 }
 
-DIRECT (INTEGER_Permutation_getNumberOfElements) {
-	INTEGER_ONE (Permutation)
-		integer result = my numberOfElements;
-	INTEGER_ONE_END (U" (number of elements)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Permutation_getNumberOfElements) {
+	QUERY_ONE_FOR_INTEGER (Permutation)
+		const integer result = my numberOfElements;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of elements)")
 }
 
-FORM (INTEGER_Permutation_getValueAtIndex, U"Permutation: Get value", U"Permutation: Get value...") {
+FORM (QUERY_ONE_FOR_INTEGER__Permutation_getValueAtIndex, U"Permutation: Get value", U"Permutation: Get value...") {
 	NATURAL (index, U"Index", U"1")
 	OK
 DO
-	INTEGER_ONE (Permutation)
-		integer result = Permutation_getValueAtIndex (me, index);
-	INTEGER_ONE_END (U" (value, at index = ", index, U")")
+	QUERY_ONE_FOR_INTEGER (Permutation)
+		const integer result = Permutation_getValueAtIndex (me, index);
+	QUERY_ONE_FOR_INTEGER_END (U" (value, at index = ", index, U")")
 }
 
-FORM (INTEGER_Permutation_getIndexAtValue, U"Permutation: Get index", U"Permutation: Get index...") {
+DIRECT (QUERY_ONE_FOR_REAL_VECTOR__Permutation_listValues) {
+	QUERY_ONE_FOR_REAL_VECTOR (Permutation)
+		autoVEC result = raw_VEC (my numberOfElements);
+		for (integer i = 1; i <= my numberOfElements; i++)
+			result [i] = my p [i];
+	QUERY_ONE_FOR_REAL_VECTOR_END
+}
+
+FORM (QUERY_ONE_FOR_INTEGER__Permutation_getIndexAtValue, U"Permutation: Get index", U"Permutation: Get index...") {
 	NATURAL (value, U"Value", U"1")
 	OK
 DO
-	INTEGER_ONE (Permutation)
-		integer result = Permutation_getIndexAtValue (me, value);
-	INTEGER_ONE_END (U" (index, at value = ", value, U")")
+	QUERY_ONE_FOR_INTEGER (Permutation)
+		const integer result = Permutation_getIndexAtValue (me, value);
+	QUERY_ONE_FOR_INTEGER_END (U" (index, at value = ", value, U")")
 }
 
 FORM (MODIFY_Permutation_tableJump, U"Permutation: Table jump", U"Permutation: Table jump...") {
@@ -4714,12 +4793,10 @@ FORM (MODIFY_Permutation_swapPositions, U"Permutation: Swap positions", U"Permut
 	NATURAL (secondIndex, U"Second index", U"2")
 	OK
 DO
-	LOOP {
-		iam (Permutation);
+	MODIFY_EACH (Permutation)
 		Permutation_swapPositions (me, firstIndex, secondIndex);
-		praat_dataChanged (me);
-	}
-END }
+	MODIFY_EACH_END
+}
 
 FORM (MODIFY_Permutation_swapNumbers, U"Permutation: Swap numbers", U"Permutation: Swap numbers...") {
 	NATURAL (firstNumber, U"First number", U"1")
@@ -4745,38 +4822,38 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (NEW_Permutation_permuteRandomly, U"Permutation: Permute randomly", U"Permutation: Permute randomly...") {
+FORM (CONVERT_EACH_TO_ONE__Permutation_permuteRandomly, U"Permutation: Permute randomly", U"Permutation: Permute randomly...") {
 	INTEGER (fromIndex, U"left Index range", U"0")
 	INTEGER (toIndex, U"right Index range", U"0")
 	OK
 DO
-	CONVERT_EACH (Permutation)
+	CONVERT_EACH_TO_ONE (Permutation)
 		autoPermutation result = Permutation_permuteRandomly (me, fromIndex, toIndex);
-	CONVERT_EACH_END (my name.get(), U"_rdm")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_rdm")
 }
 
-FORM (NEW_Permutation_rotate, U"Permutation: Rotate", U"Permutation: Rotate...") {
+FORM (CONVERT_EACH_TO_ONE__Permutation_rotate, U"Permutation: Rotate", U"Permutation: Rotate...") {
 	INTEGER (fromIndex, U"left Index range", U"0")
 	INTEGER (toIndex, U"right Index range", U"0")
 	INTEGER (step, U"Step size", U"1")
 	OK
 DO
-	CONVERT_EACH (Permutation)
+	CONVERT_EACH_TO_ONE (Permutation)
 		autoPermutation result = Permutation_rotate (me, fromIndex, toIndex, step);
-	CONVERT_EACH_END (my name.get(), U"_rot", step)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_rot", step)
 }
 
-FORM (NEW_Permutation_reverse, U"Permutation: Reverse", U"Permutation: Reverse...") {
+FORM (CONVERT_EACH_TO_ONE__Permutation_reverse, U"Permutation: Reverse", U"Permutation: Reverse...") {
 	INTEGER (fromIndex, U"left Index range", U"0")
 	INTEGER (toIndex, U"right Index range", U"0")
 	OK
 DO
-	CONVERT_EACH (Permutation)
+	CONVERT_EACH_TO_ONE (Permutation)
 		autoPermutation result = Permutation_reverse (me, fromIndex, toIndex);
-	CONVERT_EACH_END (my name.get(), U"_rev")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_rev")
 }
 
-FORM (NEW_Permutation_permuteBlocksRandomly, U"Permutation: Permute blocks randomly", U"Permutation: Permute randomly (blocks)...") {
+FORM (CONVERT_EACH_TO_ONE__Permutation_permuteBlocksRandomly, U"Permutation: Permute blocks randomly", U"Permutation: Permute randomly (blocks)...") {
 	INTEGER (fromIndex, U"left Index range", U"0")
 	INTEGER (toIndex, U"right Index range", U"0")
 	NATURAL (blockSize, U"Block size", U"12")
@@ -4784,33 +4861,35 @@ FORM (NEW_Permutation_permuteBlocksRandomly, U"Permutation: Permute blocks rando
 	BOOLEAN (noDoublets, U"No doublets", false)
 	OK
 DO
-	CONVERT_EACH (Permutation)
-		autoPermutation result = Permutation_permuteBlocksRandomly (me, fromIndex, toIndex, blockSize, permuteWithinBlocks, noDoublets);
-	CONVERT_EACH_END (my name.get(), U"_pbr", blockSize)
+	CONVERT_EACH_TO_ONE (Permutation)
+		autoPermutation result = Permutation_permuteBlocksRandomly (me, fromIndex, toIndex, 
+			blockSize, permuteWithinBlocks, noDoublets
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_pbr", blockSize)
 }
 
-FORM (NEW_Permutation_interleave, U"Permutation: Interleave", U"Permutation: Interleave...") {
+FORM (CONVERT_EACH_TO_ONE__Permutation_interleave, U"Permutation: Interleave", U"Permutation: Interleave...") {
 	INTEGER (fromIndex, U"left Index range", U"0")
 	INTEGER (toIndex, U"right Index range", U"0")
 	NATURAL (blockSize, U"Block size", U"12")
 	INTEGER (offset, U"Offset", U"0")
 	OK
 DO
-	CONVERT_EACH (Permutation)
+	CONVERT_EACH_TO_ONE (Permutation)
 		autoPermutation result = Permutation_interleave (me, fromIndex, toIndex, blockSize, offset);
-	CONVERT_EACH_END (my name.get(), U"_itl")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_itl")
 }
 
-DIRECT (NEW_Permutation_invert) {
-	CONVERT_EACH (Permutation)
+DIRECT (CONVERT_EACH_TO_ONE__Permutation_invert) {
+	CONVERT_EACH_TO_ONE (Permutation)
 		autoPermutation result = Permutation_invert (me);
-	CONVERT_EACH_END (my name.get(), U"_inv")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_inv")
 }
 
-DIRECT (NEW1_Permutations_multiply) {
-	CONVERT_LIST (Permutation)
+DIRECT (COMBINE_ALL_TO_ONE__Permutations_multiply) {
+	COMBINE_ALL_TO_ONE (Permutation)
 		autoPermutation result = Permutations_multiply (& list);
-	CONVERT_LIST_END (U"mul_", list.size);
+	COMBINE_ALL_TO_ONE_END (U"mul_", list.size);
 }
 
 DIRECT (MODIFY_Permutations_next) {
@@ -4825,33 +4904,43 @@ DIRECT (MODIFY_Permutations_previous) {
 	MODIFY_EACH_END
 }
 
-FORM (NEW1_Pitches_to_DTW, U"Pitches: To DTW", U"Pitches: To DTW...") {
+FORM (MODIFY__Permutation_permuteRandomlyInplace, U"Permutation: Permute randomly (in-place)", nullptr) {
+	INTEGER (fromIndex, U"left Index range", U"0")
+	INTEGER (toIndex, U"right Index range", U"0")
+	OK
+DO
+	MODIFY_EACH (Permutation)
+		Permutation_permuteRandomly_inplace (me, fromIndex, toIndex);
+	MODIFY_EACH_END
+}
+
+FORM (CONVERT_TWO_TO_ONE__Pitches_to_DTW, U"Pitches: To DTW", U"Pitches: To DTW...") {
 	REAL (vuvCosts, U"Voiced-unvoiced costs", U"24.0")
 	REAL (weight, U"Time costs weight", U"10.0")
 	DTW_constraints_addCommonFields (matchStart, matchEnd, slopeConstraint)
 	OK
 DO
-	CONVERT_COUPLE (Pitch)
+	CONVERT_TWO_TO_ONE (Pitch)
 		autoDTW result = Pitches_to_DTW (me, you, vuvCosts, weight, matchStart, matchEnd, slopeConstraint);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW_PitchTier_to_Pitch, U"PitchTier: To Pitch", U"PitchTier: To Pitch...") {
+FORM (CONVERT_EACH_TO_ONE__PitchTier_to_Pitch, U"PitchTier: To Pitch", U"PitchTier: To Pitch...") {
 	POSITIVE (stepSize, U"Step size", U"0.02")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"60.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"400.0")
 	OK
 DO
-	CONVERT_EACH (PitchTier)
+	CONVERT_EACH_TO_ONE (PitchTier)
 		autoPitch result = PitchTier_to_Pitch (me, stepSize, pitchFloor, pitchCeiling);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 FORM (MODIFY_PitchTier_modifyInterval, U"PitchTier: Modify interval", U"PitchTier: Modify interval...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range", U"0.0 (= all)")
 	LABEL (U"")
-	SENTENCE (timesString, U"Relative times", U"0.0 0.5 1.0")
+	REALVECTOR (relativeTimes, U"Relative times", WHITESPACE_SEPARATED_, U"0.0 0.5 1.0")
 	OPTIONMENU (timeOffset, U"...are...", 1)
 		OPTION (U"fractions")
 		OPTION (U"percentages")
@@ -4884,10 +4973,9 @@ FORM (MODIFY_PitchTier_modifyInterval, U"PitchTier: Modify interval", U"PitchTie
 	OK
 DO
 	MODIFY_EACH (PitchTier)
-		PitchTier_modifyInterval (me, fromTime, toTime, timesString, timeOffset, pitches_string, pitch_unit, pitch_as, pitch_is);
+		PitchTier_modifyInterval (me, fromTime, toTime, relativeTimes, timeOffset, pitches_string, pitch_unit, pitch_as, pitch_is);
 	MODIFY_EACH_END
 }
-
 
 FORM (MODIFY_PitchTier_modifyInterval_toneLevels, U"PitchTier: Modify interval (tone levels)", U"PitchTier: Modify interval (tone levels)...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
@@ -4896,34 +4984,36 @@ FORM (MODIFY_PitchTier_modifyInterval_toneLevels, U"PitchTier: Modify interval (
 	REAL (fmax, U"right Pitch range", U"200.0")
 	NATURAL (numberOfToneLevels, U"Number of tone levels", U"5")
 	LABEL (U"")
-	SENTENCE (times_string, U"Relative times", U"0.0 0.5 1.0")
+	REALVECTOR (relativeTimes, U"Relative times", WHITESPACE_SEPARATED_, U"0.0 0.5 1.0")
 	OPTIONMENU (time_offset, U"...are...", 1)
 		OPTION (U"fractions")
 		OPTION (U"percentages")
 		OPTION (U"independent")
 	LABEL (U"...of the interval duration which will be added...")
 	LABEL (U"...to the start time of the interval.")
-	SENTENCE (pitches_string, U"Tone levels", U"2.1 2.1 5.0")
+	REALVECTOR (pitchesAsToneLevels, U"Pitches as tone levels", WHITESPACE_SEPARATED_, U"2.1 2.1 5.0")
 	OK
 DO
 	MODIFY_EACH (PitchTier)
-		PitchTier_modifyInterval_toneLevels (me, fromTime, toTime, fmin, fmax, numberOfToneLevels, times_string, time_offset, pitches_string);
+		PitchTier_modifyInterval_toneLevels (me, fromTime, toTime, fmin, fmax, numberOfToneLevels,
+			relativeTimes, time_offset, pitchesAsToneLevels
+		);
 	MODIFY_EACH_END
 }
 
 /******************* Polygon & Categories *************************************/
 
-FORM (NEW1_Polygon_createSimple, U"Create simple Polygon", U"Create simple Polygon...") {
+FORM (CREATE_ONE__Polygon_createSimple, U"Create simple Polygon", U"Create simple Polygon...") {
 	WORD (name, U"Name", U"p")
-	SENTENCE (vertices_string, U"Vertices as X-Y pairs", U"0.0 0.0  0.0 1.0  1.0 0.0")
+	REALVECTOR (vertices_asXYPairs, U"Vertices as X-Y pairs", WHITESPACE_SEPARATED_, U"0.0 0.0  0.0 1.0  1.0 0.0")
 	OK
 DO
 	CREATE_ONE
-		autoPolygon result = Polygon_createSimple (vertices_string);
+		autoPolygon result = Polygon_createSimple (vertices_asXYPairs);
 	CREATE_ONE_END (name)
 }
 
-FORM (NEW1_Polygon_createFromRandomPoints, U"Polygon: Create from random points", nullptr) {
+FORM (CREATE_ONE__Polygon_createFromRandomPoints, U"Polygon: Create from random points", nullptr) {
 	WORD (name, U"Name", U"p")
 	NATURAL (numberOfPoints, U"Number of points", U"10")
 	REAL (xmin, U"left X range", U"0.0")
@@ -4937,74 +5027,75 @@ DO
 	CREATE_ONE_END (name)
 }
 
-DIRECT (INTEGER_Polygon_getNumberOfPoints) {
-	INTEGER_ONE (Polygon)
-		integer result = my numberOfPoints;
-	INTEGER_ONE_END (U" (number of points)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Polygon_getNumberOfPoints) {
+	QUERY_ONE_FOR_INTEGER (Polygon)
+		const integer result = my numberOfPoints;
+	QUERY_ONE_FOR_INTEGER_END (U" (number of points)")
 }
 
-FORM (REAL_Polygon_getPointX, U"Polygon: Get point (x)", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Polygon_getPointX, U"Polygon: Get point (x)", nullptr) {
 	NATURAL (pointNumber, U"Point number", U"1")
 	OK
 DO
-	NUMBER_ONE (Polygon)
-		double result = ( pointNumber <= my numberOfPoints ? my x [pointNumber] : undefined );
-	NUMBER_ONE_END (U" (x [", pointNumber, U"])")
+	QUERY_ONE_FOR_REAL (Polygon)
+		const double result = ( pointNumber <= my numberOfPoints ? my x [pointNumber] : undefined );
+	QUERY_ONE_FOR_REAL_END (U" (x [", pointNumber, U"])")
 }
 
-FORM (REAL_Polygon_getPointY, U"Polygon: Get point (y)", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Polygon_getPointY, U"Polygon: Get point (y)", nullptr) {
 	NATURAL (pointNumber, U"Point number", U"1")
 	OK
 DO
-	NUMBER_ONE (Polygon)
-		double result = ( pointNumber <= my numberOfPoints ? my y [pointNumber] : undefined );
-	NUMBER_ONE_END (U" (y [", pointNumber, U"])")
+	QUERY_ONE_FOR_REAL (Polygon)
+		const double result = ( pointNumber <= my numberOfPoints ? my y [pointNumber] : undefined );
+	QUERY_ONE_FOR_REAL_END (U" (y [", pointNumber, U"])")
 }
 
-FORM (INFO_Polygon_getLocationOfPoint, U"Get location of point", U"Polygon: Get location of point...") {
+FORM (QUERY_ONE_FOR_STRING__Polygon_getLocationOfPoint, U"Get location of point", U"Polygon: Get location of point...") {
 	LABEL (U"Point is (I)n, (O)ut, (E)dge or (V)ertex?")
 	REAL (x, U"X", U"0.0")
 	REAL (y, U"Y", U"0.0")
 	REAL (eps, U"Precision", U"1.64e-15")
 	OK
 DO
-	Melder_require (eps >= 0.0, U"The precision cannot be negative.");
-	STRING_ONE (Polygon)
-		int loc = Polygon_getLocationOfPoint (me, x, y, eps);
+	Melder_require (eps >= 0.0, 
+		U"The precision cannot be negative.");
+	QUERY_ONE_FOR_STRING (Polygon)
+		const int loc = Polygon_getLocationOfPoint (me, x, y, eps);
 		conststring32 result = ( loc == Polygon_INSIDE ? U"I" : loc == Polygon_OUTSIDE ? U"O" :
-			loc == Polygon_EDGE ? U"E" : U"V" );
-	STRING_ONE_END
+				loc == Polygon_EDGE ? U"E" : U"V" );
+	QUERY_ONE_FOR_STRING_END
 }
 
-DIRECT (REAL_Polygon_getAreaOfConvexHull) {
-	NUMBER_ONE (Polygon)
-		double result = Polygon_getAreaOfConvexHull (me);
-	NUMBER_ONE_END (U" (area convex hull)")
+DIRECT (QUERY_ONE_FOR_REAL__Polygon_getAreaOfConvexHull) {
+	QUERY_ONE_FOR_REAL (Polygon)
+		const double result = Polygon_getAreaOfConvexHull (me);
+	QUERY_ONE_FOR_REAL_END (U" (area convex hull)")
 }
 
-FORM (NEW_Polygon_circularPermutation, U"Polygon: Circular permutation", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Polygon_circularPermutation, U"Polygon: Circular permutation", nullptr) {
 	INTEGER (shift, U"Shift", U"1")
 	OK
 DO
-	CONVERT_EACH (Polygon)
+	CONVERT_EACH_TO_ONE (Polygon)
 		autoPolygon result = Polygon_circularPermutation (me, shift);
-	CONVERT_EACH_END (my name.get(), U"_", shift)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_", shift)
 }
 
 
-DIRECT (NEW_Polygon_simplify) {
-	CONVERT_EACH (Polygon)
+DIRECT (CONVERT_EACH_TO_ONE__Polygon_simplify) {
+	CONVERT_EACH_TO_ONE (Polygon)
 		autoPolygon result = Polygon_simplify (me);
-	CONVERT_EACH_END (my name.get(), U"_s")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_s")
 }
 
-DIRECT (NEW_Polygon_convexHull) {
-	CONVERT_EACH (Polygon)
+DIRECT (CONVERT_EACH_TO_ONE__Polygon_convexHull) {
+	CONVERT_EACH_TO_ONE (Polygon)
 		autoPolygon result = Polygon_convexHull (me);
-	CONVERT_EACH_END (my name.get(), U"_hull")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_hull")
 }
 
-FORM (MODIFY_Polygon_translate, U"Polygon: Translate", U"Polygon: Translate...") {
+FORM (MODIFY_EACH__Polygon_translate, U"Polygon: Translate", U"Polygon: Translate...") {
 	REAL (xDistance, U"X distance", U"0.0")
 	REAL (yDistance, U"Y distance", U"0.0")
 	OK
@@ -5014,7 +5105,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_Polygon_rotate, U"Polygon: Rotate", U"Polygon: Rotate...") {
+FORM (MODIFY_EACH__Polygon_rotate, U"Polygon: Rotate", U"Polygon: Rotate...") {
 	LABEL (U"Rotate counterclockwise over the")
 	REAL (angle_degrees, U"Angle (degrees)", U"0.0")
 	LABEL (U"With respect to the point")
@@ -5027,7 +5118,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_Polygon_scale, U"Polygon: Scale polygon", nullptr) {
+FORM (MODIFY_EACH__Polygon_scale, U"Polygon: Scale polygon", nullptr) {
 	REAL (x, U"X", U"0.0")
 	REAL (y, U"Y", U"0.0")
 	OK
@@ -5037,7 +5128,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (GRAPHICS_Polygon_Categories_draw, U"Polygon & Categories: Draw", nullptr) {
+FORM (GRAPHICS_ONE_AND_ONE__Polygon_Categories_draw, U"Polygon & Categories: Draw", nullptr) {
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -5045,18 +5136,18 @@ FORM (GRAPHICS_Polygon_Categories_draw, U"Polygon & Categories: Draw", nullptr) 
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
-	GRAPHICS_TWO (Polygon, Categories)
+	GRAPHICS_ONE_AND_ONE (Polygon, Categories)
 		Polygon_Categories_draw (me, you, GRAPHICS, xmin, xmax, ymin, ymax, garnish);
-	GRAPHICS_TWO_END
+	GRAPHICS_ONE_AND_ONE_END
 }
 
-DIRECT (MODIFY_Polygon_reverseX) {
+DIRECT (MODIFY_EACH__Polygon_reverseX) {
 	MODIFY_EACH (Polygon)
 		Polygon_reverseX (me);
 	MODIFY_EACH_END
 }
 
-DIRECT (MODIFY_Polygon_reverseY) {
+DIRECT (MODIFY_EACH__Polygon_reverseY) {
 	MODIFY_EACH (Polygon)
 		Polygon_reverseY (me);
 	MODIFY_EACH_END
@@ -5064,56 +5155,56 @@ DIRECT (MODIFY_Polygon_reverseY) {
 
 /***************** Polynomial *******************/
 
-DIRECT (HELP_Polynomial_help) {
+DIRECT (HELP__Polynomial_help) {
 	HELP (U"Polynomial")
 }
 
-FORM (NEW1_Polynomial_create, U"Create Polynomial from coefficients", U"Create Polynomial...") {
+FORM (CREATE_ONE__Polynomial_create, U"Create Polynomial from coefficients", U"Create Polynomial...") {
 	WORD (name, U"Name", U"p")
 	LABEL (U"Domain of polynomial")
 	REAL (xmin, U"Xmin", U"-3.0")
 	REAL (xmax, U"Xmax", U"4.0")
 	LABEL (U"p(x) = c[1] + c[2] x + ... c[n+1] x^n")
-	SENTENCE (coefficients_string, U"Coefficients", U"2.0 -1.0 -2.0 1.0")
+	REALVECTOR (coefficients, U"Coefficients", WHITESPACE_SEPARATED_, U"2.0 -1.0 -2.0 1.0")
 	OK
 DO
 	Melder_require (xmin < xmax, U"Xmin should be less than Xmax.");
 	CREATE_ONE
-		autoPolynomial result = Polynomial_createFromString (xmin, xmax, coefficients_string);
+		autoPolynomial result = Polynomial_createWithCoefficients (xmin, xmax, coefficients);
 	CREATE_ONE_END (name)
 }
 
-FORM (NEW1_Polynomial_createFromProductTerms, U"Create Polynomial from second order products", nullptr) {
+FORM (CREATE_ONE__Polynomial_createFromProductTerms, U"Create Polynomial from second order products", nullptr) {
 	WORD (name, U"Name", U"p")
 	LABEL (U"Domain of polynomial")
 	REAL (xmin, U"Xmin", U"-2.0")
 	REAL (xmax, U"Xmax", U"2.0")
 	LABEL (U"(1+a[1]*x+x^2)*(1+a[2]*x+x^2)*...*(1+a[n]*x+x^2)")
-	SENTENCE (coefficients_string, U"The a's", U"1.0 2.0")
+	REALVECTOR (coefficients, U"The a's", WHITESPACE_SEPARATED_, U"1.0 2.0")
 	OK
 DO
 	Melder_require (xmin < xmax, U"Xmin should be less than Xmax.");
 	CREATE_ONE
-		autoPolynomial result = Polynomial_createFromProductOfSecondOrderTermsString (xmin, xmax, coefficients_string);
+		autoPolynomial result = Polynomial_createFromProductOfSecondOrderTerms (xmin, xmax, coefficients);
 	CREATE_ONE_END (name)
 }
 
-FORM (NEW1_Polynomial_createFromRealZeros, U"Create Polynomial from first order products", nullptr) {
+FORM (CREATE_ONE__Polynomial_createFromRealZeros, U"Create Polynomial from first order products", nullptr) {
 	WORD (name, U"Name", U"p")
 	LABEL (U"Domain of polynomial")
 	REAL (xmin, U"Xmin", U"-3.0")
 	REAL (xmax, U"Xmax", U"3.0")
 	LABEL (U"(P(x) = (x-zero[1])*(1-zero[2])*...*(x-zero[n])")
-	SENTENCE (zeros_string, U"The zero's", U"1.0 2.0")
+	REALVECTOR (zeroes, U"The zeroes", WHITESPACE_SEPARATED_, U"1.0 2.0")
 	OK
 DO
 	Melder_require (xmin < xmax, U"Xmin should be less than Xmax.");
 	CREATE_ONE
-		autoPolynomial result = Polynomial_createFromRealRootsString (xmin, xmax, zeros_string);
+		autoPolynomial result = Polynomial_createFromRealRoots (xmin, xmax, zeroes);
 	CREATE_ONE_END (name)
 }
 
-FORM (MODIFY_Polynomial_divide_secondOrderFactor, U"Polynomial: Divide second order factor", nullptr) {
+FORM (MODIFY_EACH__Polynomial_divide_secondOrderFactor, U"Polynomial: Divide second order factor", nullptr) {
 	LABEL (U"P(x) / (x^2 - factor)")
 	REAL (factor, U"Factor", U"1.0")
 	OK
@@ -5123,30 +5214,30 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (REAL_Polynomial_getArea, U"Polynomial: Get area", U"Polynomial: Get area...") {
+FORM (QUERY_ONE_FOR_REAL__Polynomial_getArea, U"Polynomial: Get area", U"Polynomial: Get area...") {
 	LABEL (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
 DO
-	NUMBER_ONE (Polynomial)
-		double result = Polynomial_getArea (me, xmin, xmax);
-	NUMBER_ONE_END (U" (area)")
+	QUERY_ONE_FOR_REAL (Polynomial)
+		const double result = Polynomial_getArea (me, xmin, xmax);
+	QUERY_ONE_FOR_REAL_END (U" (area)")
 }
 
-FORM (REAL_Polynomial_getRemainderAfterDivision, U"Polynomial: Get remainder after division", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Polynomial_getRemainderAfterDivision, U"Polynomial: Get remainder after division", nullptr) {
 	LABEL (U"P(x) / (x - factor)")
 	REAL (factor, U"Monomial factor", U"1.0")
 	OK
 DO
-	NUMBER_ONE (Polynomial)
+	QUERY_ONE_FOR_REAL (Polynomial)
 		double result;
 		autoPolynomial p = Data_copy (me);
 		Polynomial_divide_firstOrderFactor (p.get(), factor, & result);
-	NUMBER_ONE_END (U" (remainder)")
+	QUERY_ONE_FOR_REAL_END (U" (remainder)")
 }
 
-FORM (INFO_Polynomial_getDerivativesAtX, U"Polynomial: Get derivatives at X", nullptr) {
+FORM (INFO_ONE__Polynomial_getDerivativesAtX, U"Polynomial: Get derivatives at X", nullptr) {
 	REAL (x, U"X", U"0.5")
 	INTEGER (numberOfDerivatives, U"Number of derivatives", U"2")
 	OK
@@ -5162,42 +5253,42 @@ DO
 	INFO_ONE_END
 }
 
-FORM (REAL_Polynomial_getOneRealRoot, U"Polynomial: Get one real root", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Polynomial_getOneRealRoot, U"Polynomial: Get one real root", nullptr) {
 	LABEL (U"Interval: ")
 	REAL (xmin, U"left X Range", U"-1.0")
 	REAL (xmax, U"right X Range", U"1.0")
 	OK
 DO
-	NUMBER_ONE (Polynomial)
-		double result = Polynomial_findOneSimpleRealRoot_nr (me, xmin, xmax);
-	NUMBER_ONE_END (U" (root)")
+	QUERY_ONE_FOR_REAL (Polynomial)
+		const double result = Polynomial_findOneSimpleRealRoot_nr (me, xmin, xmax);
+	QUERY_ONE_FOR_REAL_END (U" (root)")
 }
 
-DIRECT (NEW_Polynomial_getDerivative) {
-	CONVERT_EACH (Polynomial)
+DIRECT (CONVERT_EACH_TO_ONE__Polynomial_getDerivative) {
+	CONVERT_EACH_TO_ONE (Polynomial)
 		autoPolynomial result = Polynomial_getDerivative (me);
-	CONVERT_EACH_END (my name.get(), U"_derivative")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_derivative")
 }
 
-FORM (NEW_Polynomial_getPrimitive, U"Polynomial: Get primitive", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Polynomial_getPrimitive, U"Polynomial: Get primitive", nullptr) {
 	REAL (constant, U"Constant", U"0.0")
 	OK
 DO
-	CONVERT_EACH (Polynomial)
+	CONVERT_EACH_TO_ONE (Polynomial)
 		autoPolynomial result = Polynomial_getPrimitive (me,constant);
-	CONVERT_EACH_END (my name.get(), U"_primitive")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_primitive")
 }
 
-FORM (NEW_Polynomial_scaleX, U"Polynomial: Scale x", U"Polynomial: Scale x...") {
+FORM (CONVERT_EACH_TO_ONE__Polynomial_scaleX, U"Polynomial: Scale x", U"Polynomial: Scale x...") {
 	LABEL (U"New domain")
 	REAL (xmin, U"Xmin", U"-1.0")
 	REAL (xmax, U"Xmax", U"1.0")
 	OK
 DO
 	Melder_require (xmin < xmax, U"Xmin should be less than Xmax.");
-	CONVERT_EACH (Polynomial)
+	CONVERT_EACH_TO_ONE (Polynomial)
 		autoPolynomial result = Polynomial_scaleX (me, xmin, xmax);
-	CONVERT_EACH_END (my name.get(), U"_scaleX")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_scaleX")
 }
 
 DIRECT (MODIFY_Polynomial_scaleCoefficients_monic) {
@@ -5206,67 +5297,66 @@ DIRECT (MODIFY_Polynomial_scaleCoefficients_monic) {
 	MODIFY_EACH_END
 }
 
-DIRECT (NEW_Polynomial_to_Roots) {
-	CONVERT_EACH (Polynomial)
+DIRECT (CONVERT_EACH_TO_ONE__Polynomial_to_Roots) {
+	CONVERT_EACH_TO_ONE (Polynomial)
 		autoRoots result = Polynomial_to_Roots (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (INFO_Polynomial_evaluate_z, U"Polynomial: Get value (complex)", U"Polynomial: Get value (complex)...") {
+FORM (INFO_ONE__Polynomial_evaluate_z, U"Polynomial: Get value (complex)", U"Polynomial: Get value (complex)...") {
 	REAL (x, U"Real part", U"0.0")
 	REAL (y, U"Imaginary part", U"0.0")
 	OK
 DO
 	dcomplex z { x, y };
 	INFO_ONE (Polynomial)
-		dcomplex result = Polynomial_evaluate_z (me, z);
+		const dcomplex result = Polynomial_evaluate_z (me, z);
 		MelderInfo_open ();
 		MelderInfo_writeLine (result);
 		MelderInfo_close ();
 	INFO_ONE_END
 }
 
-FORM (NEW_Polynomial_to_Spectrum, U"Polynomial: To Spectrum", U"Polynomial: To Spectrum...") {
+FORM (CONVERT_EACH_TO_ONE__Polynomial_to_Spectrum, U"Polynomial: To Spectrum", U"Polynomial: To Spectrum...") {
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"5000.0")
 	NATURAL (numberOfFrequencies, U"Number of frequencies (>1)", U"1025")
 	OK
 DO
-	CONVERT_EACH (Polynomial)
+	CONVERT_EACH_TO_ONE (Polynomial)
 		autoSpectrum result = Polynomial_to_Spectrum (me, maximumFrequency, numberOfFrequencies, 1.0);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_Polynomials_multiply) {
-	CONVERT_COUPLE (Polynomial)
+DIRECT (CONVERT_EACH_TO_ONE__Polynomials_multiply) {
+	CONVERT_TWO_TO_ONE (Polynomial)
 		autoPolynomial result = Polynomials_multiply (me, you);
-	CONVERT_COUPLE_END (my name.get(), U"_x_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_x_", your name.get())
 }
 
-FORM (NEWMANY_Polynomials_divide, U"Polynomials: Divide", U"Polynomials: Divide...") {
+FORM (CONVERT_TWO_TO_MULTIPLE__Polynomials_divide, U"Polynomials: Divide", U"Polynomials: Divide...") {
 	BOOLEAN (wantQuotient, U"Want quotient", true)
 	BOOLEAN (wantRemainder, U"Want remainder", true)
 	OK
 DO
-	Melder_require (wantQuotient || wantRemainder, U"You should select \"Want quotient\", \"Want remainder\", or both.");
-	FIND_COUPLE (Polynomial)
-		autoPolynomial aq, ar;
-		Polynomials_divide (me, you, wantQuotient ? & aq : nullptr, wantRemainder ? & ar : nullptr);
-		if (wantQuotient) {
-			praat_new (aq.move(), my name.get(), U"_q");
-		}
-		if (wantRemainder) {
-			praat_new (ar.move(), my name.get(), U"_r");
-		}
-	END
+	Melder_require (wantQuotient || wantRemainder,
+		U"You should select \"Want quotient\", \"Want remainder\", or both.");
+	CONVERT_TWO_TO_MULTIPLE (Polynomial)
+		autoPolynomial quotient, remainder;
+		Polynomials_divide (me, you, wantQuotient ? & quotient : nullptr, wantRemainder ? & remainder : nullptr);
+		if (wantQuotient)
+			praat_new (quotient.move(), my name.get(), U"_q");
+		if (wantRemainder)
+			praat_new (remainder.move(), my name.get(), U"_r");
+	CONVERT_TWO_TO_MULTIPLE_END
 }
 
 /********************* Roots ******************************/
 
-DIRECT (HELP_Roots_help) {
+DIRECT (HELP__Roots_help) {
 	HELP (U"Roots")
 }
 
-FORM (GRAPHICS_Roots_draw, U"Roots: Draw", nullptr) {
+FORM (GRAPHICS_EACH__Roots_draw, U"Roots: Draw", nullptr) {
 	REAL (xmin, U"Minimum of real axis", U"0.0")
 	REAL (xmax, U"Maximum of real axis", U"0.0")
 	REAL (ymin, U"Minimum of imaginary axis", U"0.0")
@@ -5281,42 +5371,42 @@ DO
 	GRAPHICS_EACH_END
 }
 
-DIRECT (INTEGER_Roots_getNumberOfRoots) {
-	INTEGER_ONE (Roots)
-		integer result = Roots_getNumberOfRoots (me);
-	INTEGER_ONE_END (U"")
+DIRECT (QUERY_ONE_FOR_INTEGER__Roots_getNumberOfRoots) {
+	QUERY_ONE_FOR_INTEGER (Roots)
+		const integer result = Roots_getNumberOfRoots (me);
+	QUERY_ONE_FOR_INTEGER_END (U"")
 }
 
 FORM (COMPLEX_Roots_getRoot, U"Roots: Get root", nullptr) {
 	NATURAL (rootNumber, U"Root number", U"1")
 	OK
 DO
-	NUMBER_ONE (Roots)
-		dcomplex result = Roots_getRoot (me, rootNumber);
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_COMPLEX (Roots)
+		const dcomplex result = Roots_getRoot (me, rootNumber);
+	QUERY_ONE_FOR_COMPLEX_END (U"")
 }
 
-FORM (REAL_Roots_getRealPartOfRoot, U"Roots: Get real part", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Roots_getRealPartOfRoot, U"Roots: Get real part", nullptr) {
 	NATURAL (rootNumber, U"Root number", U"1")
 	OK
 DO
-	NUMBER_ONE (Roots)
-		dcomplex z = Roots_getRoot (me, rootNumber);
-		double result = z.real();
-	NUMBER_ONE_END (U"")
+	QUERY_ONE_FOR_REAL (Roots)
+		const dcomplex z = Roots_getRoot (me, rootNumber);
+		const double result = z.real();
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
-FORM (REAL_Roots_getImaginaryPartOfRoot, U"Roots: Get imaginary part", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__Roots_getImaginaryPartOfRoot, U"Roots: Get imaginary part", nullptr) {
 	NATURAL (rootNumber, U"Root number", U"1")
 	OK
 DO
-	NUMBER_ONE (Roots)
-		dcomplex z = Roots_getRoot (me, rootNumber);
-		double result = z.imag();
-	NUMBER_ONE_END (U" i")
+	QUERY_ONE_FOR_REAL (Roots)
+		const dcomplex z = Roots_getRoot (me, rootNumber);
+		const double result = z.imag();
+	QUERY_ONE_FOR_REAL_END (U" i")
 }
 
-FORM (MODIFY_Roots_setRoot, U"Roots: Set root", nullptr) {
+FORM (MODIFY_EACH__Roots_setRoot, U"Roots: Set root", nullptr) {
 	NATURAL (rootNumber, U"Root number", U"1")
 	REAL (x, U"Real part", U"1.0/sqrt(2)")
 	REAL (y, U"Imaginary part", U"1.0/sqrt(2)")
@@ -5327,78 +5417,84 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (NEW_Roots_to_Spectrum, U"Roots: To Spectrum", U"Roots: To Spectrum...") {
+FORM (CONVERT_EACH_TO_ONE__Roots_to_Spectrum, U"Roots: To Spectrum", U"Roots: To Spectrum...") {
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"5000.0")
 	NATURAL (numberOfFrequencies, U"Number of frequencies (>1)", U"1025")
 	OK
 DO
-	CONVERT_EACH (Roots)
+	CONVERT_EACH_TO_ONE (Roots)
 		autoSpectrum result = Roots_to_Spectrum (me, maximumFrequency, numberOfFrequencies, 1.0);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (MODIFY_Roots_Polynomial_polish) {
-	MODIFY_FIRST_OF_TWO (Roots, Polynomial)
+DIRECT (MODIFY_FIRST_OF_ONE_AND_ONE__Roots_Polynomial_polish) {
+	MODIFY_FIRST_OF_ONE_AND_ONE (Roots, Polynomial)
 		Roots_Polynomial_polish (me, you);
-	MODIFY_FIRST_OF_TWO_END
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
 }
 
 /*****************************************************************************/
 
-DIRECT (INFO_Praat_ReportFloatingPointProperties) {
-	if (! NUMfpp) {
-		NUMmachar ();
-	}
-	MelderInfo_open ();
-	MelderInfo_writeLine (U"Double precision floating point properties of this machine,");
-	MelderInfo_writeLine (U"as calculated by algorithms from the Binary Linear Algebra System (BLAS)");
-	MelderInfo_writeLine (U"Radix: ", NUMfpp -> base);
-	MelderInfo_writeLine (U"Number of digits in mantissa: ", NUMfpp -> t);
-	MelderInfo_writeLine (U"Smallest exponent before (gradual) underflow (expmin): ", NUMfpp -> emin);
-	MelderInfo_writeLine (U"Largest exponent before overflow (expmax): ", NUMfpp -> emax);
-	MelderInfo_writeLine (U"Does rounding occur in addition: ", (NUMfpp -> rnd == 1 ? U"yes" : U"no"));
-	MelderInfo_writeLine (U"Quantization step (d): ", NUMfpp -> prec);
-	MelderInfo_writeLine (U"Quantization error (eps = d/2): ", NUMfpp -> eps);
-	MelderInfo_writeLine (U"Underflow threshold (= radix ^ (expmin - 1)): ", NUMfpp -> rmin);
-	MelderInfo_writeLine (U"Safe minimum (such that its inverse does not overflow): ", NUMfpp -> sfmin);
-	MelderInfo_writeLine (U"Overflow threshold (= (1 - eps) * radix ^ expmax): ", NUMfpp -> rmax);
-	MelderInfo_writeLine (U"\nA long double is ", sizeof (long double), U" bytes");
-	MelderInfo_close ();
-END }
+DIRECT (INFO_NONE__Praat_ReportFloatingPointProperties) {
+	INFO_NONE
+		if (! NUMfpp)
+			NUMmachar ();
 
-FORM (REAL_Praat_getTukeyQ, U"Get TukeyQ", nullptr) {
+		MelderInfo_open ();
+		MelderInfo_writeLine (U"Double precision floating point properties of this machine,");
+		MelderInfo_writeLine (U"as calculated by algorithms from the Binary Linear Algebra System (BLAS)");
+		MelderInfo_writeLine (U"Radix: ", NUMfpp -> base);
+		MelderInfo_writeLine (U"Number of digits in mantissa: ", NUMfpp -> t);
+		MelderInfo_writeLine (U"Smallest exponent before (gradual) underflow (expmin): ", NUMfpp -> emin);
+		MelderInfo_writeLine (U"Largest exponent before overflow (expmax): ", NUMfpp -> emax);
+		MelderInfo_writeLine (U"Does rounding occur in addition: ", (NUMfpp -> rnd == 1 ? U"yes" : U"no"));
+		MelderInfo_writeLine (U"Quantization step (d): ", NUMfpp -> prec);
+		MelderInfo_writeLine (U"Quantization error (eps = d/2): ", NUMfpp -> eps);
+		MelderInfo_writeLine (U"Underflow threshold (= radix ^ (expmin - 1)): ", NUMfpp -> rmin);
+		MelderInfo_writeLine (U"Safe minimum (such that its inverse does not overflow): ", NUMfpp -> sfmin);
+		MelderInfo_writeLine (U"Overflow threshold (= (1 - eps) * radix ^ expmax): ", NUMfpp -> rmax);
+		MelderInfo_writeLine (U"\nA long double is ", sizeof (longdouble), U" bytes");
+		MelderInfo_close ();
+	INFO_NONE_END
+}
+
+FORM (QUERY_NONE_FOR_REAL__Praat_getTukeyQ, U"Get TukeyQ", nullptr) {
 	POSITIVE (criticalValue, U"Critical value", U"2.0")
 	NATURAL (numberOfMeans, U"Number of means", U"3")
 	POSITIVE (degreesOfFreedon, U"Degrees of freedom", U"10.0")
 	NATURAL (numberOfRows, U"Number of rows", U"1")
 	OK
 DO
-	double result = NUMtukeyQ (criticalValue, numberOfMeans, degreesOfFreedon, numberOfRows);
-	Melder_information (result, U" (tukeyQ)");
-END }
+	QUERY_NONE_FOR_REAL
+		const double result = NUMtukeyQ (criticalValue, numberOfMeans, degreesOfFreedon, numberOfRows);
+	QUERY_NONE_FOR_REAL_END (U" (tukeyQ)")
+}
 
-FORM (REAL_Praat_getInvTukeyQ, U"Get invTukeyQ", nullptr) {
+FORM (QUERY_NONE_FOR_REAL__Praat_getInvTukeyQ, U"Get invTukeyQ", nullptr) {
 	REAL (probability, U"Probability", U"0.05")
 	NATURAL (numberOfMeans, U"Number of means", U"3")
 	POSITIVE (degreesOfFreedon, U"Degrees of freedom", U"10.0")
 	NATURAL (numberOfRows, U"Number of rows", U"1")
 	OK
 DO
-	Melder_require (probability >= 0.0 && probability <= 1.0, U"The probability should be in the interval [0, 1].");
-	double result = NUMinvTukeyQ (probability, numberOfMeans, degreesOfFreedon, numberOfRows);
-	Melder_information (result, U" (inv tukeyQ)");
-END }
+	QUERY_NONE_FOR_REAL
+		Melder_require (probability >= 0.0 && probability <= 1.0, 
+			U"The probability should be in the interval [0, 1].");
+		const double result = NUMinvTukeyQ (probability, numberOfMeans, degreesOfFreedon, numberOfRows);
+	QUERY_NONE_FOR_REAL_END (U" (inv tukeyQ)")
+}
 
-FORM (COMPLEX_Praat_getIncompleteGamma, U"Get incomplete gamma", U"Get incomplete gamma...") {
+FORM (QUERY_NONE_FOR_COMPLEX__Praat_getIncompleteGamma, U"Get incomplete gamma", U"Get incomplete gamma...") {
 	POSITIVE (reAlpha, U"Real part of alpha", U"4.0")
 	REAL (imAlpha, U"Imaginary part of alpha", U"0.0")
 	REAL (reX, U"Real part of X", U"4.0")
 	REAL (imX, U"Imaginary part of X", U"0.0")
 	OK
 DO
-	dcomplex result = NUMincompleteGammaFunction (dcomplex {reAlpha, imAlpha}, dcomplex {reX, imX});
-	Melder_information (result);
-END }
+	QUERY_NONE_FOR_COMPLEX
+		const dcomplex result = NUMincompleteGammaFunction (dcomplex {reAlpha, imAlpha}, dcomplex {reX, imX});
+	QUERY_NONE_FOR_COMPLEX_END (U"")
+}
 
 /******************** Sound ****************************************/
 
@@ -5410,18 +5506,16 @@ END }
 
 static void Sound_create_checkCommonFields (double startTime, double endTime, double samplingFrequency) {
 	double numberOfSamples_real;
-	numberOfSamples_real = round ( (endTime - startTime) * samplingFrequency);
+	numberOfSamples_real = round ((endTime - startTime) * samplingFrequency);
 	if (endTime <= startTime) {
-		if (endTime == startTime) {
+		if (endTime == startTime)
 			Melder_throw (U"A Sound cannot have a duration of zero.");
-		} else {
+		else
 			Melder_throw (U"A Sound cannot have a duration less than zero.");
-		}
-		if (startTime == 0.0) {
+		if (startTime == 0.0)
 			Melder_throw (U"Please set the finishing time to something greater than 0 seconds.");
-		} else {
+		else
 			Melder_throw (U"Please lower the starting time or raise the finishing time.");
-		}
 	}
 	if (samplingFrequency <= 0.0)
 		Melder_throw (U"A Sound cannot have a negative sampling frequency.\n"
@@ -5435,12 +5529,15 @@ static void Sound_create_checkCommonFields (double startTime, double endTime, do
 			Melder_throw (U"Please lower the starting time or raise the finishing time.");
 		}
 	}
-	if (numberOfSamples_real > LONG_MAX) {   // ppgb: kan niet in een 64-bit-omgeving
-		Melder_throw (U"A Sound cannot have ", Melder_bigInteger ((integer) numberOfSamples_real), U" samples; the maximum is ", Melder_bigInteger (LONG_MAX), U" samples.\n");
-	}
+	if (numberOfSamples_real > INT54_MAX)
+		Melder_throw (U"A Sound cannot have ", numberOfSamples_real,
+				U" samples; the maximum is ", Melder_bigInteger (INT54_MAX), U" samples.");
+	if (numberOfSamples_real > INTEGER_MAX)
+		Melder_throw (U"A Sound cannot have ", Melder_bigInteger (int64 (numberOfSamples_real)),
+				U" samples; the maximum is ", Melder_bigInteger (INTEGER_MAX), U" samples.");
 }
 
-FORM (NEW1_Sound_Pitch_to_FormantFilter, U"Sound & Pitch: To FormantFilter", U"Sound & Pitch: To Spectrogram...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_to_FormantFilter, U"Sound & Pitch: To FormantFilter", U"Sound & Pitch: To Spectrogram...") {
 	POSITIVE (windowLength, U"Analysis window duration (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Filter bank parameters")
@@ -5450,12 +5547,14 @@ FORM (NEW1_Sound_Pitch_to_FormantFilter, U"Sound & Pitch: To FormantFilter", U"S
 	POSITIVE (relativeBandwidth, U"Relative bandwidth", U"1.1")
 	OK
 DO
-	CONVERT_TWO (Sound, Pitch)
-		autoFormantFilter result = Sound_Pitch_to_FormantFilter (me, you, windowLength, timeStep, firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE (Sound, Pitch)
+		autoFormantFilter result = Sound_Pitch_to_FormantFilter (me, you, windowLength, timeStep, 
+			firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth
+		);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_Sound_Pitch_to_Spectrogram, U"Sound & Pitch: To Spectrogram", U"Sound & Pitch: To Spectrogram...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_to_Spectrogram, U"Sound & Pitch: To Spectrogram", U"Sound & Pitch: To Spectrogram...") {
 	POSITIVE (windowLength, U"Analysis window duration (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Filter bank parameters")
@@ -5465,45 +5564,51 @@ FORM (NEW1_Sound_Pitch_to_Spectrogram, U"Sound & Pitch: To Spectrogram", U"Sound
 	POSITIVE (relativeBandwidth, U"Relative bandwidth", U"1.1")
 	OK
 DO
-	CONVERT_TWO (Sound, Pitch)
-		autoSpectrogram result = Sound_Pitch_to_Spectrogram (me, you, windowLength, timeStep, firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE (Sound, Pitch)
+		autoSpectrogram result = Sound_Pitch_to_Spectrogram (me, you, windowLength, timeStep, 
+			firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth
+		);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_Sound_Pitch_changeGender, U"Sound & Pitch: Change gender", U"Sound & Pitch: Change gender...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_changeGender, U"Sound & Pitch: Change gender", U"Sound & Pitch: Change gender...") {
 	POSITIVE (formantShiftRatio, U"Formant shift ratio", U"1.2")
 	REAL (newPitchMedian, U"New pitch median (Hz)", U"0.0 (= no change)")
 	POSITIVE (pitchRangeFactor, U"Pitch range factor", U"1.0 (= no change)")
 	POSITIVE (durationFactor, U"Duration factor", U"1.0")
 	OK
 DO
-	CONVERT_TWO (Sound, Pitch)
-		autoSound result = Sound_Pitch_changeGender_old (me, you, formantShiftRatio, newPitchMedian, pitchRangeFactor, durationFactor);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE (Sound, Pitch)
+		autoSound result = Sound_Pitch_changeGender_old (me, you, formantShiftRatio, 
+			newPitchMedian, pitchRangeFactor, durationFactor
+		);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_Sound_Pitch_changeSpeaker, U"Sound & Pitch: Change speaker", U"Sound & Pitch: Change speaker...") {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_changeSpeaker, U"Sound & Pitch: Change speaker", U"Sound & Pitch: Change speaker...") {
 	POSITIVE (formantFrequencyMultiplicationFactor, U"Multiply formants by", U"1.1 (male->female)")
 	POSITIVE (pitchMultiplicationFactor, U"Multiply pitch by", U"1.8 (male->female")
 	REAL (pitchRangeMultiplicationFactor, U"Multiply pitch range by", U"1.0 (= no change)")
 	POSITIVE (durationMultiplicationFactor, U"Multiply duration by", U"1.0")
 	OK
 DO
-	CONVERT_TWO (Sound, Pitch)
-		autoSound result = Sound_Pitch_changeSpeaker (me, you, formantFrequencyMultiplicationFactor, pitchMultiplicationFactor, pitchRangeMultiplicationFactor, durationMultiplicationFactor);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE (Sound, Pitch)
+		autoSound result = Sound_Pitch_changeSpeaker (me, you, formantFrequencyMultiplicationFactor,
+			pitchMultiplicationFactor, pitchRangeMultiplicationFactor, durationMultiplicationFactor
+		);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_Sound_IntervalTier_cutPartsMatchingLabel, U"Sound & IntervalTier: Cut parts matching label", nullptr) {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__Sound_IntervalTier_cutPartsMatchingLabel, U"Sound & IntervalTier: Cut parts matching label", nullptr) {
 	SENTENCE (label, U"Label", U"cut")
 	OK
 DO
-	CONVERT_TWO (Sound, IntervalTier)
+	CONVERT_ONE_AND_ONE_TO_ONE (Sound, IntervalTier)
 		autoSound result = Sound_IntervalTier_cutPartsMatchingLabel (me, you, label);
-	CONVERT_TWO_END (my name.get(), U"_cut")
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_cut")
 }
 
-FORM (NEW1_Sound_createAsGammaTone, U"Create a gammatone", U"Create Sound as gammatone...") {
+FORM (CREATE_ONE__Sound_createAsGammaTone, U"Create a gammatone", U"Create Sound as gammatone...") {
 	WORD (name, U"Name", U"gammatone")
 	Sound_create_addCommonFields (startTime, endTime, samplingFrequency)
 	INTEGER (gamma, U"Gamma", U"4")
@@ -5518,12 +5623,15 @@ DO
 		Sound_create_checkCommonFields (startTime, endTime, samplingFrequency);
 		Melder_require (frequency < 0.5 * samplingFrequency,
 			U"Your frequency should not be greater than half the sampling frequency. Use a frequency less than ", 0.5 * samplingFrequency, U".");
-		Melder_require (gamma >= 0, U"Gamma should not be negative. Use a positive or zero gamma.");
-		autoSound result = Sound_createGammaTone (startTime, endTime, samplingFrequency, gamma, frequency, bandwidth, initialPhase, additionFactor, scaleAmplitudes);
+		Melder_require (gamma >= 0, 
+			U"Gamma should not be negative.");
+		autoSound result = Sound_createGammaTone (startTime, endTime, samplingFrequency, gamma, 
+			frequency, bandwidth, initialPhase, additionFactor, scaleAmplitudes
+		);
 	CREATE_ONE_END (name)
 }
 
-FORM (NEW_Sound_createAsShepardTone, U"Create a Shepard tone", U"Create Sound as Shepard tone...") {
+FORM (CREATE_ONE__Sound_createAsShepardTone, U"Create a Shepard tone", U"Create Sound as Shepard tone...") {
 	WORD (name, U"Name", U"shepardTone")
 	Sound_create_addCommonFields (startTime, endTime, samplingFrequency)
 	POSITIVE (minimumFrequency, U"Lowest frequency (Hz)", U"4.863")
@@ -5535,11 +5643,13 @@ FORM (NEW_Sound_createAsShepardTone, U"Create a Shepard tone", U"Create Sound as
 DO
 	CREATE_ONE
 		Sound_create_checkCommonFields (startTime, endTime, samplingFrequency);
-		autoSound result = Sound_createShepardToneComplex (startTime, endTime, samplingFrequency, minimumFrequency, numberOfComponents, frequencyChange, amplitudeRange_dB, octaveShiftFraction);
+		autoSound result = Sound_createShepardToneComplex (startTime, endTime, samplingFrequency, minimumFrequency,
+			numberOfComponents, frequencyChange, amplitudeRange_dB, octaveShiftFraction
+		);
 	CREATE_ONE_END (name)
 }
 
-FORM (GRAPHICS_Sound_drawWhere, U"Sound: Draw where", U"Sound: Draw where...") {
+FORM (GRAPHICS_EACH__Sound_drawWhere, U"Sound: Draw where", U"Sound: Draw where...") {
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
@@ -5550,56 +5660,56 @@ FORM (GRAPHICS_Sound_drawWhere, U"Sound: Draw where", U"Sound: Draw where...") {
 		OPTION (U"bars")
 		OPTION (U"poles")
 		OPTION (U"speckles")
-	TEXTFIELD (formula, U"Draw only those parts where the following condition holds:", U"x < xmin + (xmax - xmin) / 2; first half")
+	FORMULA (formula, U"Draw only those parts where the following condition holds", U"x < xmin + (xmax - xmin) / 2; first half")
 	OK
 DO
-	integer numberOfBisections = 10;
+	const integer numberOfBisections = 10;
 	GRAPHICS_EACH (Sound)
-		Sound_drawWhere (me, GRAPHICS, fromTime, toTime, ymin, ymax, garnish, drawingMethod, numberOfBisections, formula, interpreter);
+		Sound_drawWhere (me, GRAPHICS, fromTime, toTime, ymin, ymax, garnish, drawingMethod, 
+			numberOfBisections, formula, interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (PLAY_Sound_playOneChannel, U"Sound: Play one channel", nullptr) {
+FORM (PLAY_EACH__Sound_playOneChannel, U"Sound: Play one channel", nullptr) {
     NATURAL (channel, U"Channel", U"1")
     OK
 DO
-    LOOP {
-        iam (Sound);
-		if (channel > my ny) {
-			Melder_throw (me, U": there is no channel ", channel, U". Sound has only ", my ny, U" channel",
-				  (my ny > 1 ? U"s." : U"."));
-        }
+    PLAY_EACH (Sound)
+		Melder_require (channel <= my ny,
+			me, U": there is no channel ", channel, U". Sound has only ", my ny, U" channel",
+				(my ny > 1 ? U"s." : U"."));
         autoSound thee = Sound_extractChannel (me, channel);
-        Sound_play (thee.get(), 0, 0);
-    }
-END }
+        Sound_play (thee.get(), nullptr, nullptr);
+    PLAY_EACH_END
+}
 
-FORM (PLAY_Sound_playAsFrequencyShifted, U"Sound: Play as frequency shifted", U"Sound: Play as frequency shifted...") {
+FORM (PLAY_EACH__Sound_playAsFrequencyShifted, U"Sound: Play as frequency shifted", U"Sound: Play as frequency shifted...") {
 	REAL (frequencyShift, U"Shift by (Hz)", U"1000.0")
 	POSITIVE (samplingFrequency, U"New sampling frequency (Hz)", U"44100.0")
 	NATURAL (samplePrecision, U"Precision (samples)", U"50")
 	OK
 DO
-	LOOP {
-		iam (Sound);
+    PLAY_EACH (Sound)
 		Sound_playAsFrequencyShifted (me, frequencyShift, samplingFrequency, samplePrecision);
-	}
-END }
+    PLAY_EACH_END
+}
 
-FORM (REAL_Sound_getNearestLevelCrossing, U"Sound: Get nearest level crossing", U"Sound: Get nearest level crossing...") {
+FORM (QUERY_ONE_FOR_REAL__Sound_getNearestLevelCrossing, U"Sound: Get nearest level crossing", U"Sound: Get nearest level crossing...") {
 	CHANNEL (channel, U"Channel (number, Left, or Right)", U"1")
 	REAL (time, U"Time (s)", U"0.1")
 	REAL (level, U"Level", U"0.1")
-	OPTIONMENU_ENUM (kSoundSearchDirection, searchDirection, U"Search direction", kSoundSearchDirection::DEFAULT)
+	OPTIONMENU_ENUM (kVectorSearchDirection, searchDirection, U"Search direction", kVectorSearchDirection::DEFAULT)
 	OK
 DO
-	NUMBER_ONE (Sound)
-		if (channel > my ny) channel = 1;
-		double result = Sound_getNearestLevelCrossing (me, channel, time, level, searchDirection);
-	NUMBER_ONE_END (U" seconds")
+	QUERY_ONE_FOR_REAL (Sound)
+		Melder_require (channel > 0 && channel <= my ny,
+			U"The channel number should be between 1 and ", my ny, U".");
+		const double result = Vector_getNearestLevelCrossing (me, channel, time, level, searchDirection);
+	QUERY_ONE_FOR_REAL_END (U" seconds")
 }
 
-FORM (NEW1_Sounds_to_DTW, U"Sounds: To DTW", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__Sounds_to_DTW, U"Sounds: To DTW", nullptr) {
     POSITIVE (windowLength, U"Window length (s)", U"0.015")
     POSITIVE (timeStep, U"Time step (s)", U"0.005")
     LABEL (U"")
@@ -5611,39 +5721,72 @@ FORM (NEW1_Sounds_to_DTW, U"Sounds: To DTW", nullptr) {
 		RADIOBUTTON (U"2/3 < slope < 3/2")
     OK
 DO
-    CONVERT_COUPLE (Sound)
+    CONVERT_TWO_TO_ONE (Sound)
 		autoDTW result = Sounds_to_DTW (me, you, windowLength, timeStep, sakoeChibaBand, slopeConstraint);
-   CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW_Sound_to_TextGrid_detectSilences, U"Sound: To TextGrid (silences)", U"Sound: To TextGrid (silences)...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_TextGrid_detectSilences, U"Sound: To TextGrid (silences)", U"Sound: To TextGrid (silences)...") {
 	LABEL (U"Parameters for the intensity analysis")
 	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"100")
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
 	LABEL (U"Silent intervals detection")
 	REAL (silenceThreshold, U"Silence threshold (dB)", U"-25.0")
-	POSITIVE (minimumSilenceDuration, U"Minimum silent interval duration (s)", U"0.1")
-	POSITIVE (minimumSoundingDuration, U"Minimum sounding interval duration (s)", U"0.1")
+	POSITIVE (minimumSilenceDuration, U"Minimum silent interval (s)", U"0.1")
+	POSITIVE (minimumSoundingDuration, U"Minimum sounding interval (s)", U"0.1")
 	WORD (silenceLabel, U"Silent interval label", U"silent")
 	WORD (soundingLabel, U"Sounding interval label", U"sounding")
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoTextGrid result = Sound_to_TextGrid_detectSilences (me, minimumPitch, timeStep, silenceThreshold, minimumSilenceDuration, minimumSoundingDuration, silenceLabel, soundingLabel);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (Sound)
+		autoTextGrid result = Sound_to_TextGrid_detectSilences (me, minimumPitch, timeStep, silenceThreshold, 
+			minimumSilenceDuration, minimumSoundingDuration, silenceLabel, soundingLabel
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Sound_copyChannelRanges, U"Sound: Copy channel ranges", nullptr) {
-	TEXTFIELD (channels, U"Create a new Sound from the following channels:", U"1:64")
-	LABEL (U"To supply rising or falling ranges, use e.g. 2:6 or 5:3.")
+FORM (CONVERT_EACH_TO_ONE__Sound_to_TextGrid_voiceActivity, U"Sound_to_TextGrid_voiceActivity", nullptr) {
+	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
+	POSITIVE (longtermWindow, U"Long term window (s)", U"0.3")
+	POSITIVE (shorttermWindow, U"Short term window (s)", U"0.1")
+	POSITIVE (fmin, U"left Frequency range (Hz)", U"70.0")
+	POSITIVE (fmax,  U"right Frequency range (Hz)", U"6000.0")
+	REAL (flatnessThreshold, U"Flatness threshold", U"-10.0")
+	REAL (silenceThreshold_dB, U"Silence threshold (dB)", U"-35.0")
+	POSITIVE (minimumSilenceDuration, U"Minimum silent interval (s)", U"0.1")
+	POSITIVE (minimumSpeechDuration, U"Minimum speech interval (s)", U"0.1")
+	WORD (silenceLabel, U"Silent interval label", U"silent")
+	WORD (speechLabel, U"Sounding interval label", U"sounding")
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoSound result = Sound_copyChannelRanges (me, channels);
-	CONVERT_EACH_END (my name.get(), U"_channels")
+	CONVERT_EACH_TO_ONE (Sound)
+		autoTextGrid result = Sound_to_TextGrid_detectVoiceActivity_lsfm (me, timeStep, longtermWindow, shorttermWindow,
+			fmin, fmax, flatnessThreshold, silenceThreshold_dB, minimumSilenceDuration, minimumSpeechDuration, 
+			silenceLabel, speechLabel
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEWMANY_Sound_trimSilences, U"Sound: Trim silences", U"Sound: Trim silences...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_TextGrid_highMidLowIntervals, U"Sound: To TextGrid (high, mid, low)", nullptr) {
+	REAL (maxLevel, U"Maximum level", U"0.5")
+	REAL (minLevel, U"Minimum level", U"-0.5")
+	OK
+DO
+	CONVERT_EACH_TO_ONE (Sound)
+		autoTextGrid result = Sound_to_TextGrid_highMidLowIntervals (me, minLevel, maxLevel);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__Sound_copyChannelRanges, U"Sound: Copy channel ranges", nullptr) {
+	NATURALVECTOR (channels, U"Create a new Sound from the following channels", RANGES_, U"1:64")
+	OK
+DO
+	CONVERT_EACH_TO_ONE (Sound)
+		autoSound result = Sound_extractChannels (me, sortedSet_INTVEC (channels).get());   // TODO: why sorting? (ppgb 20210711)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_channels")
+}
+
+FORM (CONVERT_EACH_TO_ONE__Sound_trimSilences, U"Sound: Trim silences", U"Sound: Trim silences...") {
     REAL (trimDuration, U"Trim duration (s)", U"0.08")
 	BOOLEAN (onlyAtStartAndEnd, U"Only at start and end", true);
 	LABEL (U"Parameters for the intensity analysis")
@@ -5658,17 +5801,19 @@ FORM (NEWMANY_Sound_trimSilences, U"Sound: Trim silences", U"Sound: Trim silence
 	OK
 DO
     trimDuration = ( trimDuration < 0.0 ? 0.0 : trimDuration );
-	CONVERT_EACH (Sound)
+	CONVERT_EACH_TO_ONE (Sound)
         autoTextGrid tg;
-		autoSound result = Sound_trimSilences (me, trimDuration, onlyAtStartAndEnd, minimumPitch, timeStep, silenceThreshold, minimumSilenceDuration, minimumSoundingDuration, (saveTextGrid ? &tg : nullptr ), trim_string);
-		if (saveTextGrid) {
+		autoSound result = Sound_trimSilences (me, trimDuration, onlyAtStartAndEnd, minimumPitch, timeStep, 
+			silenceThreshold, minimumSilenceDuration, minimumSoundingDuration, 
+			( saveTextGrid ? & tg : nullptr ), trim_string
+		);
+		if (saveTextGrid)
             praat_new (tg.move(), my name.get(), U"_trimmed");
-        }
-	CONVERT_EACH_END (my name.get(), U"_trimmed")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_trimmed")
 }
 
 // deprecated
-FORM (NEW_Sound_to_BarkFilter, U"Sound: To BarkFilter", U"Sound: To BarkSpectrogram...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_BarkFilter, U"Sound: To BarkFilter", U"Sound: To BarkSpectrogram...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Filter bank parameters")
@@ -5677,12 +5822,12 @@ FORM (NEW_Sound_to_BarkFilter, U"Sound: To BarkFilter", U"Sound: To BarkSpectrog
 	REAL (maximumFrequency, U"Maximum frequency (bark)", U"0.0");
 	OK
 DO
-	CONVERT_EACH (Sound)
+	CONVERT_EACH_TO_ONE (Sound)
 		autoBarkFilter result = Sound_to_BarkFilter (me, windowLength, timeStep, firstFrequency, maximumFrequency, deltaFrequency);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Sound_to_BarkSpectrogram, U"Sound: To BarkSpectrogram", U"Sound: To BarkSpectrogram...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_BarkSpectrogram, U"Sound: To BarkSpectrogram", U"Sound: To BarkSpectrogram...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Filter bank parameters")
@@ -5691,13 +5836,26 @@ FORM (NEW_Sound_to_BarkSpectrogram, U"Sound: To BarkSpectrogram", U"Sound: To Ba
 	REAL (maximumFrequency, U"Maximum frequency (bark)", U"0.0");
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoBarkSpectrogram result = Sound_to_BarkSpectrogram (me, windowLength, timeStep, firstFrequency, maximumFrequency, deltaFrequency);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (Sound)
+		autoBarkSpectrogram result = Sound_to_BarkSpectrogram (me, windowLength, timeStep, 
+			firstFrequency, maximumFrequency, deltaFrequency
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Spectrum_resampled, U"Sound To Spectrum (resampled)", 
+	U"Sound: To Spectrum (resampled)...")
+{
+	NATURAL (precision, U"Precision (samples)", U"50")
+	OK
+DO
+	CONVERT_EACH_TO_ONE (Sound)
+		autoSpectrum result = Sound_to_Spectrum_resampled (me, precision);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 // deprecated
-FORM (NEW_Sound_to_FormantFilter, U"Sound: To FormantFilter", U"Sound: To FormantFilter...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_FormantFilter, U"Sound: To FormantFilter", U"Sound: To FormantFilter...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Filter bank parameters")
@@ -5710,12 +5868,14 @@ FORM (NEW_Sound_to_FormantFilter, U"Sound: To FormantFilter", U"Sound: To Forman
 	REAL (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoFormantFilter result = Sound_to_FormantFilter (me, windowLength, timeStep, firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth, minimumPitch, maximumPitch);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (Sound)
+		autoFormantFilter result = Sound_to_FormantFilter (me, windowLength, timeStep, 
+			firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth, minimumPitch, maximumPitch
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Sound_to_Spectrogram_pitchDependent, U"Sound: To Spectrogram (pitch-dependent)", U"Sound: To Spectrogram (pitch-dependent)...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Spectrogram_pitchDependent, U"Sound: To Spectrogram (pitch-dependent)", U"Sound: To Spectrogram (pitch-dependent)...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Filter bank parameters")
@@ -5728,13 +5888,15 @@ FORM (NEW_Sound_to_Spectrogram_pitchDependent, U"Sound: To Spectrogram (pitch-de
 	REAL (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoSpectrogram result = Sound_to_Spectrogram_pitchDependent (me, windowLength, timeStep, firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth, minimumPitch, maximumPitch);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (Sound)
+		autoSpectrogram result = Sound_to_Spectrogram_pitchDependent (me, windowLength, timeStep, firstFrequency, 
+			maximumFrequency, deltaFrequency, relativeBandwidth, minimumPitch, maximumPitch
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 // deprecated
-FORM (NEW_Sound_to_MelFilter, U"Sound: To MelFilter", U"Sound: To MelFilter...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_MelFilter, U"Sound: To MelFilter", U"Sound: To MelFilter...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Filter bank parameters")
@@ -5743,12 +5905,12 @@ FORM (NEW_Sound_to_MelFilter, U"Sound: To MelFilter", U"Sound: To MelFilter...")
 	REAL (maximumFrequency, U"Maximum frequency (mel)", U"0.0");
 	OK
 DO
-	CONVERT_EACH (Sound)
+	CONVERT_EACH_TO_ONE (Sound)
 		autoMelFilter result = Sound_to_MelFilter (me, windowLength, timeStep, firstFrequency, maximumFrequency, deltaFrequency);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Sound_to_MelSpectrogram, U"Sound: To MelSpectrogram", U"Sound: To MelSpectrogram...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_MelSpectrogram, U"Sound: To MelSpectrogram", U"Sound: To MelSpectrogram...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Filter bank parameters")
@@ -5757,22 +5919,24 @@ FORM (NEW_Sound_to_MelSpectrogram, U"Sound: To MelSpectrogram", U"Sound: To MelS
 	REAL (maximumFrequency, U"Maximum frequency (mel)", U"0.0");
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoMelSpectrogram result = Sound_to_MelSpectrogram (me, windowLength, timeStep,  firstFrequency, maximumFrequency, deltaFrequency);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (Sound)
+		autoMelSpectrogram result = Sound_to_MelSpectrogram (me, windowLength, timeStep,
+			firstFrequency, maximumFrequency, deltaFrequency
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Sound_to_ComplexSpectrogram, U"Sound: To ComplexSpectrogram", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_ComplexSpectrogram, U"Sound: To ComplexSpectrogram", nullptr) {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"8000.0")
 	OK
 DO
-	CONVERT_EACH (Sound)
+	CONVERT_EACH_TO_ONE (Sound)
 		autoComplexSpectrogram result = Sound_to_ComplexSpectrogram (me, windowLength, maximumFrequency);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Sound_to_Pitch_shs, U"Sound: To Pitch (shs)", U"Sound: To Pitch (shs)...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_shs, U"Sound: To Pitch (shs)", U"Sound: To Pitch (shs)...") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.01")
 	POSITIVE (pitchFloor, U"Minimum pitch (Hz)", U"50.0")
 	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates (Hz)", U"15")
@@ -5784,14 +5948,18 @@ FORM (NEW_Sound_to_Pitch_shs, U"Sound: To Pitch (shs)", U"Sound: To Pitch (shs).
 	NATURAL (numberOfPointsPerOctave, U"Number of points per octave", U"48");
 	OK
 DO
-	Melder_require (pitchFloor < pitchCeiling, U"The minimum pitch should be less than the ceiling.");
-	Melder_require (pitchCeiling < maximumFrequency, U"The maximum frequency should be greater than or equal to the ceiling.");
-	CONVERT_EACH (Sound)
-		autoPitch result = Sound_to_Pitch_shs (me, timeStep, pitchFloor, maximumFrequency, pitchCeiling, maximumNumberOfSubharmonics, maximumNumberOfCandidates, compressionFactor, numberOfPointsPerOctave);
-	CONVERT_EACH_END (my name.get())
+	Melder_require (pitchFloor < pitchCeiling,
+		U"The minimum pitch should be less than the ceiling.");
+	Melder_require (pitchCeiling < maximumFrequency, 
+		U"The maximum frequency should be greater than or equal to the ceiling.");
+	CONVERT_EACH_TO_ONE (Sound)
+		autoPitch result = Sound_to_Pitch_shs (me, timeStep, pitchFloor, maximumFrequency, pitchCeiling, 
+			maximumNumberOfSubharmonics, maximumNumberOfCandidates, compressionFactor, numberOfPointsPerOctave
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (MODIFY_Sound_fadeIn, U"Sound: Fade in", U"Sound: Fade in...") {
+FORM (MODIFY_EACH__Sound_fadeIn, U"Sound: Fade in", U"Sound: Fade in...") {
 	CHANNEL (channel, U"Channel (number; 0 = all)", U"1")
 	REAL (time, U"Time (s)", U"-10000.0")
 	REAL (fadeTime, U"Fade time (s)", U"0.005")
@@ -5815,7 +5983,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (NEW_Sound_to_KlattGrid_simple, U"Sound: To KlattGrid (simple)", U"Sound: To KlattGrid (simple)...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_KlattGrid_simple, U"Sound: To KlattGrid (simple)", U"Sound: To KlattGrid (simple)...") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	LABEL (U"Formant determination")
 	NATURAL (numberOfFormants, U"Max. number of formants", U"5")
@@ -5830,12 +5998,14 @@ FORM (NEW_Sound_to_KlattGrid_simple, U"Sound: To KlattGrid (simple)", U"Sound: T
 	BOOLEAN (subtractMean, U"Subtract mean", true)
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoKlattGrid result = Sound_to_KlattGrid_simple (me, timeStep, numberOfFormants, formantCeiling, windowLength, preEmphasisFrequency, pitchFloor, pitchCeiling, minimumPitch, subtractMean);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE (Sound)
+		autoKlattGrid result = Sound_to_KlattGrid_simple (me, timeStep, numberOfFormants, formantCeiling, windowLength,
+			preEmphasisFrequency, pitchFloor, pitchCeiling, minimumPitch, subtractMean
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Sound_to_Pitch_SPINET, U"Sound: To SPINET", U"Sound: To SPINET...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_SPINET, U"Sound: To SPINET", U"Sound: To SPINET...") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	POSITIVE (windowLength, U"Window length (s)", U"0.040")
 	LABEL (U"Gammatone filter bank")
@@ -5846,23 +6016,26 @@ FORM (NEW_Sound_to_Pitch_SPINET, U"Sound: To SPINET", U"Sound: To SPINET...") {
 	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", U"15")
 	OK
 DO
-	Melder_require (minimumFrequency < maximumFrequency, U"The maximum frequency should be greater than the minimum frequency.");
-	CONVERT_EACH (Sound)
-		autoPitch result = Sound_to_Pitch_SPINET (me, timeStep, windowLength, minimumFrequency, maximumFrequency, numberOfFilters, pitchCeiling, maximumNumberOfCandidates);
-	CONVERT_EACH_END (my name.get())
+	Melder_require (minimumFrequency < maximumFrequency, 
+		U"The maximum frequency should be greater than the minimum frequency.");
+	CONVERT_EACH_TO_ONE (Sound)
+		autoPitch result = Sound_to_Pitch_SPINET (me, timeStep, windowLength, minimumFrequency, maximumFrequency,
+			numberOfFilters, pitchCeiling, maximumNumberOfCandidates
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Sound_extractElectroglottogram, U"Sound: Extract Electroglottogram", U"Sound: Extract Electroglottogram...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_extractElectroglottogram, U"Sound: Extract Electroglottogram", U"Sound: Extract Electroglottogram...") {
 	NATURAL (channelNumber, U"Channel number", U"1")
 	BOOLEAN (invert, U"Invert", 0)
 	OK
 DO
-	CONVERT_EACH (Sound)
+	CONVERT_EACH_TO_ONE (Sound)
 		autoElectroglottogram result = Sound_extractElectroglottogram (me, channelNumber, invert);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 	
-FORM (NEW_Sound_to_Polygon, U"Sound: To Polygon", U"Sound: To Polygon...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Polygon, U"Sound: To Polygon", U"Sound: To Polygon...") {
 	CHANNEL (channel, U"Channel (number, Left, or Right)", U"1")
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -5870,35 +6043,36 @@ FORM (NEW_Sound_to_Polygon, U"Sound: To Polygon", U"Sound: To Polygon...") {
 	REAL (connectionY, U"Connection y-value", U"0.0")
 	OK
 DO
-	CONVERT_EACH (Sound)
-		channel = channel > my ny ? 1 : channel;
+	CONVERT_EACH_TO_ONE (Sound)
+		Melder_require (channel > 0 && channel <= my ny,
+			U"The channel number should be bewteen 1 and ", my ny, U".");
 		autoPolygon result = Sound_to_Polygon (me, channel, fromTime, toTime, ymin, ymax, connectionY);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW1_Sounds_to_Polygon_enclosed, U"Sounds: To Polygon (enclosed)", U"Sounds: To Polygon (enclosed)...") {
+FORM (CONVERT_TWO_TO_ONE__Sounds_to_Polygon_enclosed, U"Sounds: To Polygon (enclosed)", U"Sounds: To Polygon (enclosed)...") {
 	CHANNEL (channel, U"Channel (number, Left, or Right)", U"1")
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	OK
 DO
-	CONVERT_COUPLE (Sound)
+	CONVERT_TWO_TO_ONE (Sound)
 		autoPolygon result = Sounds_to_Polygon_enclosed (me, you, channel, fromTime, toTime, ymin, ymax);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW_Sound_filterByGammaToneFilter4, U"Sound: Filter (gammatone)", U"Sound: Filter (gammatone)...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_filterByGammaToneFilter4, U"Sound: Filter (gammatone)", U"Sound: Filter (gammatone)...") {
 	POSITIVE (centreFrequency, U"Centre frequency (Hz)", U"1000.0")
 	POSITIVE (bandwidth, U"Bandwidth (Hz)", U"150.0")
 	OK
 DO
-	CONVERT_EACH (Sound)
+	CONVERT_EACH_TO_ONE (Sound)
 		autoSound result = Sound_filterByGammaToneFilter4 (me, centreFrequency, bandwidth);
-	CONVERT_EACH_END (my name.get(), U"_filtered")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_filtered")
 }
 
-FORM (NEW_Sound_reduceNoise, U"Sound: Reduce noise", U"Sound: Reduce noise...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_reduceNoise, U"Sound: Reduce noise", U"Sound: Reduce noise...") {
 	REAL (fromTime, U"left Noise time range (s)", U"0.0")
 	REAL (toTime, U"right Noise time range (s)", U"0.0")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
@@ -5910,12 +6084,14 @@ FORM (NEW_Sound_reduceNoise, U"Sound: Reduce noise", U"Sound: Reduce noise...") 
 	OPTIONMENU_ENUM (kSoundNoiseReductionMethod, noiseReductionMethod, U"Noise reduction method", kSoundNoiseReductionMethod::DEFAULT)
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoSound result = Sound_reduceNoise (me, fromTime, toTime, windowLength, fromFrequency, toFrequency, smoothingBandwidth, noiseReduction_dB, noiseReductionMethod);
-	CONVERT_EACH_END (my name.get(), U"_denoised")
+	CONVERT_EACH_TO_ONE (Sound)
+		autoSound result = Sound_reduceNoise (me, fromTime, toTime, windowLength, fromFrequency, toFrequency,
+			smoothingBandwidth, noiseReduction_dB, noiseReductionMethod
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_denoised")
 }
 
-FORM (NEW_Sound_removeNoise, U"Sound: Remove noise", U"Sound: Reduce noise...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_removeNoise, U"Sound: Remove noise", U"Sound: Reduce noise...") {
 	REAL (fromTime, U"left Noise time range (s)", U"0.0")
 	REAL (toTime, U"right Noise time range (s)", U"0.0")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
@@ -5926,12 +6102,14 @@ FORM (NEW_Sound_removeNoise, U"Sound: Remove noise", U"Sound: Reduce noise...") 
 	OPTIONMENU_ENUM (kSoundNoiseReductionMethod, noiseReductionMethod, U"Noise reduction method", kSoundNoiseReductionMethod::DEFAULT)
 	OK
 DO
-	CONVERT_EACH (Sound)
-		autoSound result = Sound_removeNoise (me, fromTime, toTime, windowLength, fromFrequency, toFrequency, smoothingBandwidth, noiseReductionMethod);
-	CONVERT_EACH_END (my name.get(), U"_denoised")
+	CONVERT_EACH_TO_ONE (Sound)
+		autoSound result = Sound_removeNoise (me, fromTime, toTime, windowLength, fromFrequency, toFrequency, 
+			smoothingBandwidth, noiseReductionMethod
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_denoised")
 }
 
-FORM (NEW_Sound_changeSpeaker, U"Sound: Change speaker", U"Sound: Change speaker...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_changeSpeaker, U"Sound: Change speaker", U"Sound: Change speaker...") {
 	LABEL (U"Pitch measurement parameters")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
@@ -5942,13 +6120,16 @@ FORM (NEW_Sound_changeSpeaker, U"Sound: Change speaker", U"Sound: Change speaker
 	POSITIVE (durationMultiplicationFactor, U"Multiply duration by", U"1.0")
 	OK
 DO
-	Melder_require (pitchFloor < pitchCeiling, U"The maximum pitch should be greater than the minimum pitch.");
-	CONVERT_EACH (Sound)
-		autoSound result = Sound_changeSpeaker (me, pitchFloor, pitchCeiling, formantMultiplicationFactor, pitchMultiplicationFactor, pitchRangeMultiplicationFactor, durationMultiplicationFactor);
-	CONVERT_EACH_END (my name.get(), U"_changeSpeaker")
+	Melder_require (pitchFloor < pitchCeiling, 
+		U"The \"Pitch floor\" should be smaller than the \"Pitch ceiling\".");
+	CONVERT_EACH_TO_ONE (Sound)
+		autoSound result = Sound_changeSpeaker (me, pitchFloor, pitchCeiling, formantMultiplicationFactor,
+			pitchMultiplicationFactor, pitchRangeMultiplicationFactor, durationMultiplicationFactor
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_changeSpeaker")
 }
 
-FORM (NEW_Sound_changeGender, U"Sound: Change gender", U"Sound: Change gender...") {
+FORM (CONVERT_EACH_TO_ONE__Sound_changeGender, U"Sound: Change gender", U"Sound: Change gender...") {
 	LABEL (U"Pitch measurement parameters")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
@@ -5959,30 +6140,34 @@ FORM (NEW_Sound_changeGender, U"Sound: Change gender", U"Sound: Change gender...
 	POSITIVE (durationMultiplicationFactor, U"Duration factor", U"1.0")
 	OK
 DO
-	Melder_require (pitchFloor < pitchCeiling, U"The maximum pitch should be greater than the minimum pitch.");
-	CONVERT_EACH (Sound)
-		autoSound result = Sound_changeGender_old (me, pitchFloor, pitchCeiling, formantShiftRatio, pitchMedian, pitchRangeMultiplicationFactor, durationMultiplicationFactor);
-	CONVERT_EACH_END (my name.get(), U"_changeGender");
+	Melder_require (pitchFloor < pitchCeiling, 
+		U"The \"Pitch floor\" should be smaller than the \"Pitch ceiling\".");
+	CONVERT_EACH_TO_ONE (Sound)
+		autoSound result = Sound_changeGender_old (me, pitchFloor, pitchCeiling, formantShiftRatio, pitchMedian,
+			pitchRangeMultiplicationFactor, durationMultiplicationFactor
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_changeGender");
 }
 
-FORM (GRAPHICS_Sound_paintWhere, U"Sound paint where", U"Sound: Paint where...") {
+FORM (GRAPHICS_EACH__Sound_paintWhere, U"Sound paint where", U"Sound: Paint where...") {
 	COLOUR (colour, U"Colour (0-1, name, or {r,g,b})", U"0.5")
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	REAL (level, U"Fill from level", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true)
-	TEXTFIELD (formula, U"Paint only those parts where the following condition holds:", U"1; always")
+	FORMULA (formula, U"Paint only those parts where the following condition holds", U"1; always")
 	OK
 DO
-	integer numberOfBisections = 10;
+	const integer numberOfBisections = 10;
 	GRAPHICS_EACH (Sound)
-		Sound_paintWhere (me, GRAPHICS, colour, fromTime, toTime, ymin, ymax, level, garnish, numberOfBisections, formula,
-			interpreter);
+		Sound_paintWhere (me, GRAPHICS, colour, fromTime, toTime, ymin, ymax, level, garnish, 
+			numberOfBisections, formula, interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Sounds_paintEnclosed, U"Sounds paint enclosed", U"Sounds: Paint enclosed...") {
+FORM (GRAPHICS_TWO__Sounds_paintEnclosed, U"Sounds paint enclosed", U"Sounds: Paint enclosed...") {
 	COLOUR (colour, U"Colour (0-1, name, or {r,g,b})", U"0.5")
 	REAL (xFromTime, U"left Horizontal time range (s)", U"0.0")
 	REAL (xToTime, U"right Horizontal time range (s)", U"0.0")
@@ -5991,40 +6176,63 @@ FORM (GRAPHICS_Sounds_paintEnclosed, U"Sounds paint enclosed", U"Sounds: Paint e
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
-	GRAPHICS_COUPLE (Sound)
+	GRAPHICS_TWO (Sound)
 		Sounds_paintEnclosed (me, you, GRAPHICS, colour, xFromTime, xToTime, yFromTime, yToTime, garnish);
-	GRAPHICS_COUPLE_END
+	GRAPHICS_TWO_END
 }
 
-FORM_READ (READ1_Sound_readFromRawFileLE, U"Read Sound from raw Little Endian file", nullptr, true) {
-	autoSound thee = Sound_readFromRawFile (file, nullptr, 16, 1, 0, 0, 16000.0);
-	praat_new (thee.move(), MelderFile_name (file));
-END }
+FORM_READ (READ_ONE__Sound_readFromRawFileLE, U"Read Sound from raw Little Endian file", nullptr, true) {
+	READ_ONE
+		autoSound result = Sound_readFromRawFile (file, nullptr, 16, 1, 0, 0, 16000.0);
+	READ_ONE_END
+}
 
-FORM_READ (READ1_Sound_readFromRawFileBE, U"Read Sound from raw 16-bit Little Endian file", nullptr, true) {
-	autoSound thee = Sound_readFromRawFile (file, nullptr, 16, 0, 0, 0, 16000.0);
-	praat_new (thee.move(), MelderFile_name (file));
-END }
+FORM_READ (READ_ONE__Sound_readFromRawFileBE, U"Read Sound from raw 16-bit Little Endian file", nullptr, true) {
+	READ_ONE
+		autoSound result = Sound_readFromRawFile (file, nullptr, 16, 0, 0, 0, 16000.0);
+	READ_ONE_END
+}
 
-FORM_READ (READ1_KlattTable_readFromRawTextFile, U"KlattTable_readFromRawTextFile", nullptr, true) {
-	autoKlattTable thee = KlattTable_readFromRawTextFile (file);
-	praat_new (thee.move(), MelderFile_name (file));
-END }
+FORM_READ (READ_ONE__KlattTable_readFromRawTextFile, U"KlattTable_readFromRawTextFile", nullptr, true) {
+	READ_ONE
+		autoKlattTable result = KlattTable_readFromRawTextFile (file);
+	READ_ONE_END
+}
 
 /************ Spectrograms *********************************************/
 
-FORM (NEW1_Spectrograms_to_DTW, U"Spectrograms: To DTW", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__Spectrograms_to_DTW, U"Spectrograms: To DTW", nullptr) {
 	DTW_constraints_addCommonFields (matchStart, matchEnd, slopeConstraint)
 	OK
 DO
-	CONVERT_COUPLE (Spectrogram)
+	CONVERT_TWO_TO_ONE (Spectrogram)
 		autoDTW result = Spectrograms_to_DTW (me, you, matchStart, matchEnd, slopeConstraint, 1.0);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
+FORM (CONVERT_EACH_TO_ONE__Spectrogram_getLongtermSpectralFlatnessMeasure, U"Spectrogram_getLongtermSpectralFlatness", nullptr) {
+	POSITIVE (longtimeWindow, U"Long time window", U"0.2")
+	POSITIVE (shorttimeWindow, U"Short time window", U"0.04")
+	POSITIVE (fmin, U"left Frequency range_(Hz)", U"400.0")
+	POSITIVE (fmax, U"right Frequency range_(Hz)", U"4000.0")
+	OK
+DO
+	CONVERT_EACH_TO_ONE (Spectrogram)
+		autoMatrix result = Spectrogram_getLongtermSpectralFlatnessMeasure (me, longtimeWindow, shorttimeWindow, fmin, fmax);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
 /**************** Spectrum *******************************************/
 
-FORM (GRAPHICS_Spectrum_drawPhases, U"Spectrum: Draw phases", U"Spectrum: Draw phases...") {
+FORM (CONVERT_EACH_TO_ONE__Spectrum_to_Sound_resampled, U"Spectrum: To Sound (resampled)", U"Spectrum: To Sound (resampled)...") {
+	INTEGER (interpolationDepth, U"Precision (samples)", U"50")
+	OK
+DO
+	CONVERT_EACH_TO_ONE (Spectrum)
+		autoSound result = Spectrum_to_Sound_resampled (me, interpolationDepth);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (GRAPHICS_EACH__Spectrum_drawPhases, U"Spectrum: Draw phases", U"Spectrum: Draw phases...") {
 	REAL (fromFrequency, U"left Frequency range (Hz)", U"0.0")
 	REAL (toFrequency, U"right Frequency range (Hz)", U"0.0")
 	REAL (fromPhase, U"Minimum phase (dB/Hz)", U"0.0 (= auto)")
@@ -6038,61 +6246,63 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (MODIFY_Spectrum_setRealValueInBin, U"Spectrum: Set real value in bin", nullptr) {
+FORM (MODIFY_EACH__Spectrum_setRealValueInBin, U"Spectrum: Set real value in bin", nullptr) {
 	NATURAL (binNumber, U"Bin number", U"100")
 	REAL (value, U"Value", U"0.0")
 	OK
 DO
 	MODIFY_EACH (Spectrum)
-		Melder_require (binNumber <= my nx, U"Your bin number should not exceed the number of bins (", my nx, U").");
-		my z[1][binNumber]= value;
+		Melder_require (binNumber <= my nx, 
+			U"Your bin number should not exceed the number of bins (", my nx, U").");
+		my z [1] [binNumber] = value;
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_Spectrum_setImaginaryValueInBin, U"Spectrum: Set imaginary value in bin", nullptr) {
+FORM (MODIFY_EACH__Spectrum_setImaginaryValueInBin, U"Spectrum: Set imaginary value in bin", nullptr) {
 	NATURAL (binNumber, U"Bin number", U"100")
 	REAL (value, U"Value", U"0.0")
 	OK
 DO
 	MODIFY_EACH (Spectrum)
-		Melder_require (binNumber <= my nx, U"Your bin number should not exceed the number of bins (", my nx, U").");
-		my z[2][binNumber]= value;
+		Melder_require (binNumber <= my nx, 
+			U"Your bin number should not exceed the number of bins (", my nx, U").");
+		my z [2] [binNumber] = value;
 	MODIFY_EACH_END
 }
 
-DIRECT (MODIFY_Spectrum_conjugate) {
+DIRECT (MODIFY_EACH__Spectrum_conjugate) {
 	MODIFY_EACH (Spectrum)
 		Spectrum_conjugate (me);
 	MODIFY_EACH_END
 }
 
-FORM (NEW_Spectrum_shiftFrequencies, U"Spectrum: Shift frequencies", U"Spectrum: Shift frequencies...") {
+FORM (CONVERT_EACH_TO_ONE__Spectrum_shiftFrequencies, U"Spectrum: Shift frequencies", U"Spectrum: Shift frequencies...") {
 	REAL (frequencyShift, U"Shift by (Hz)", U"1000.0")
 	POSITIVE (maximumFrequency, U"New maximum frequency (Hz)", U"22050")
 	NATURAL (interpolationDepth, U"Interpolation depth", U"50")
 	OK
 DO
-	CONVERT_EACH (Spectrum)
+	CONVERT_EACH_TO_ONE (Spectrum)
 		autoSpectrum result = Spectrum_shiftFrequencies (me, frequencyShift, maximumFrequency, interpolationDepth);
-	CONVERT_EACH_END (my name.get(), ( frequencyShift < 0.0 ? U"_m" : U"_" ), Melder_ifloor (fabs (frequencyShift)))
+	CONVERT_EACH_TO_ONE_END (my name.get(), ( frequencyShift < 0.0 ? U"_m" : U"_" ), Melder_ifloor (fabs (frequencyShift)))
 }
 
-DIRECT (NEW_Spectra_multiply) {
-	CONVERT_COUPLE (Spectrum)
+DIRECT (CONVERT_TWO_TO_ONE__Spectra_multiply) {
+	CONVERT_TWO_TO_ONE (Spectrum)
 		autoSpectrum result = Spectra_multiply (me, you);
-	CONVERT_COUPLE_END (my name.get(), U"_x_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_x_", your name.get())
 }
 
-FORM (NEW_Spectrum_resample, U"Spectrum: Resample", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Spectrum_resample, U"Spectrum: Resample", nullptr) {
 	NATURAL (numberOfFrequencies, U"New number of frequencies", U"256")
 	OK
 DO
-	CONVERT_EACH (Spectrum)
+	CONVERT_EACH_TO_ONE (Spectrum)
 		autoSpectrum result = Spectrum_resample (me, numberOfFrequencies);
-	CONVERT_EACH_END (my name.get(), U"_", numberOfFrequencies)
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_", numberOfFrequencies)
 }
 
-FORM (NEW_Spectrum_compressFrequencyDomain, U"Spectrum: Compress frequency domain", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Spectrum_compressFrequencyDomain, U"Spectrum: Compress frequency domain", nullptr) {
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"5000.0")
 	INTEGER (interpolationDepth, U"Interpolation depth", U"50")
 	RADIO (scale, U"Interpolation scale", 1)
@@ -6100,36 +6310,36 @@ FORM (NEW_Spectrum_compressFrequencyDomain, U"Spectrum: Compress frequency domai
 		RADIOBUTTON (U"logarithmic")
 	OK
 DO
-	CONVERT_EACH (Spectrum)
+	CONVERT_EACH_TO_ONE (Spectrum)
 		autoSpectrum result = Spectrum_compressFrequencyDomain (me, maximumFrequency, interpolationDepth, scale, 1);
-	CONVERT_EACH_END (my name.get(), U"_", Melder_ifloor (maximumFrequency))
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_", Melder_ifloor (maximumFrequency))
 }
 
-DIRECT (NEW_Spectrum_unwrap) {
-	CONVERT_EACH (Spectrum)
+DIRECT (CONVERT_EACH_TO_ONE__Spectrum_unwrap) {
+	CONVERT_EACH_TO_ONE (Spectrum)
 		autoMatrix result = Spectrum_unwrap (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_Spectrum_to_PowerCepstrum) {
-	CONVERT_EACH (Spectrum)
+DIRECT (CONVERT_EACH_TO_ONE__Spectrum_to_PowerCepstrum) {
+	CONVERT_EACH_TO_ONE (Spectrum)
 		autoPowerCepstrum result = Spectrum_to_PowerCepstrum (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_Spectrum_to_Cepstrum) {
-	CONVERT_EACH (Spectrum)
+DIRECT (CONVERT_EACH_TO_ONE__Spectrum_to_Cepstrum) {
+	CONVERT_EACH_TO_ONE (Spectrum)
 		autoCepstrum result = Spectrum_to_Cepstrum (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /************* SpeechSynthesizer *************************************************/
 
-DIRECT (HELP_SpeechSynthesizer_help) {
+DIRECT (HELP__SpeechSynthesizer_help) {
 	HELP (U"SpeechSynthesizer")
 }
 
-FORM (NEW1_ExtractEspeakData, U"SpeechSynthesizer: Extract espeak data", nullptr) {
+FORM (CREATE_ONE__SpeechSynthesizer_extractEspeakData, U"SpeechSynthesizer: Extract espeak data", nullptr) {
 	OPTIONMENU (which, U"Data", 1)
 		OPTION (U"language properties")
 		OPTION (U"voices properties")
@@ -6147,7 +6357,7 @@ DO
 	CREATE_ONE_END (name)
 }
 
-FORM (NEW1_SpeechSynthesizer_create, U"Create SpeechSynthesizer", U"Create SpeechSynthesizer...") {
+FORM (CREATE_ONE__SpeechSynthesizer_create, U"Create SpeechSynthesizer", U"Create SpeechSynthesizer...") {
 	OPTIONMENUSTR (language_string, U"Language", (int) Strings_findString (espeakdata_languages_names.get(), U"English (Great Britain)"))
 	for (integer i = 1; i <= espeakdata_languages_names -> numberOfStrings; i ++) {
 		OPTION (espeakdata_languages_names -> strings [i].get());
@@ -6168,7 +6378,7 @@ DO
     CREATE_ONE_END (espeakdata_languages_names -> strings [languageIndex].get(), U"_", espeakdata_voices_names -> strings [voiceIndex].get())
 }
 
-FORM (MODIFY_SpeechSynthesizer_modifyPhonemeSet, U"SpeechSynthesizer: Modify phoneme set", nullptr) {
+FORM (MODIFY_EACH__SpeechSynthesizer_modifyPhonemeSet, U"SpeechSynthesizer: Modify phoneme set", nullptr) {
 	OPTIONMENU (phoneneSetIndex, U"Language", (int) Strings_findString (espeakdata_languages_names.get(), U"English (Great Britain)"))
 	for (integer i = 1; i <= espeakdata_languages_names -> numberOfStrings; i ++) {
 			OPTION (espeakdata_languages_names -> strings [i].get());
@@ -6186,56 +6396,53 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (PLAY_SpeechSynthesizer_playText, U"SpeechSynthesizer: Play text", U"SpeechSynthesizer: Play text...") {
-	TEXTFIELD (text, U"Text:", U"This is some text.")
+FORM (PLAY_EACH__SpeechSynthesizer_playText, U"SpeechSynthesizer: Play text", U"SpeechSynthesizer: Play text...") {
+	TEXTFIELD (text, U"Text", U"This is some text.", 10)
 	OK
 DO
-	MelderAudio_setOutputMaximumAsynchronicity (kMelder_asynchronicityLevel::INTERRUPTABLE);
-	LOOP {
-		iam (SpeechSynthesizer);
+	PLAY_EACH (SpeechSynthesizer)
 		SpeechSynthesizer_playText (me, text);
-	}
-	MelderAudio_setOutputMaximumAsynchronicity (kMelder_asynchronicityLevel::ASYNCHRONOUS);
+	PLAY_EACH_END
+}
 
-END }
-
-FORM (NEWMANY_SpeechSynthesizer_to_Sound, U"SpeechSynthesizer: To Sound", U"SpeechSynthesizer: To Sound...") {
-	TEXTFIELD (text, U"Text:", U"This is some text.")
+FORM (CONVERT_EACH_TO_ONE__SpeechSynthesizer_to_Sound, U"SpeechSynthesizer: To Sound", U"SpeechSynthesizer: To Sound...") {
+	TEXTFIELD (text, U"Text", U"This is some text.", 10)
 	BOOLEAN (wantTextGrid, U"Create TextGrid with annotations", false);
 	OK
 DO
-	CONVERT_EACH (SpeechSynthesizer)
+	CONVERT_EACH_TO_MULTIPLE (SpeechSynthesizer)
 		autoTextGrid tg;
 		autoTable t;
-		autoSound result = SpeechSynthesizer_to_Sound (me, text, (wantTextGrid ? & tg : nullptr), (Melder_debug == -2 ? & t : nullptr ));
-		if (wantTextGrid) {
+		autoSound result = SpeechSynthesizer_to_Sound (
+			me, text, (wantTextGrid ? & tg : nullptr), (Melder_debug == -2 ? & t : nullptr )
+		);
+		if (wantTextGrid)
 			praat_new (tg.move(), my name.get());
-		}
-		if (Melder_debug == -2) {
+		if (Melder_debug == -2)
 			praat_new (t.move(), my name.get());
-		}
-	CONVERT_EACH_END (my name.get())
+		praat_new (result.move(), my name.get());
+	CONVERT_EACH_TO_MULTIPLE_END
 }
 
-DIRECT (INFO_SpeechSynthesizer_getLanguageName) {
-	STRING_ONE (SpeechSynthesizer)
+DIRECT (QUERY_ONE_FOR_STRING__SpeechSynthesizer_getLanguageName) {
+	QUERY_ONE_FOR_STRING (SpeechSynthesizer)
 		conststring32 result = my d_languageName.get();
-	STRING_ONE_END
+	QUERY_ONE_FOR_STRING_END
 }
 
-DIRECT (INFO_SpeechSynthesizer_getVoiceName) {
-	STRING_ONE (SpeechSynthesizer)
+DIRECT (QUERY_ONE_FOR_STRING__SpeechSynthesizer_getVoiceName) {
+	QUERY_ONE_FOR_STRING (SpeechSynthesizer)
 		conststring32 result = my d_voiceName.get();
-	STRING_ONE_END
+	QUERY_ONE_FOR_STRING_END
 }
 
-DIRECT (INFO_SpeechSynthesizer_getPhonemeSetName) {
-	STRING_ONE (SpeechSynthesizer)
+DIRECT (QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemeSetName) {
+	QUERY_ONE_FOR_STRING (SpeechSynthesizer)
 		conststring32 result = my d_phonemeSet.get();
-	STRING_ONE_END
+	QUERY_ONE_FOR_STRING_END
 }
 
-FORM (MODIFY_SpeechSynthesizer_setTextInputSettings, U"SpeechSynthesizer: Set text input settings", U"SpeechSynthesizer: Set text input settings...") {
+FORM (MODIFY_EACH__SpeechSynthesizer_setTextInputSettings, U"SpeechSynthesizer: Set text input settings", U"SpeechSynthesizer: Set text input settings...") {
 	OPTIONMENU (inputTextFormat, U"Input text format is", 1)
 		OPTION (U"text only")
 		OPTION (U"phoneme codes only")
@@ -6244,13 +6451,13 @@ FORM (MODIFY_SpeechSynthesizer_setTextInputSettings, U"SpeechSynthesizer: Set te
 		OPTION (U"Kirshenbaum_espeak")
 	OK
 DO
-	int inputPhonemeCoding_always = SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM;
+	const int inputPhonemeCoding_always = SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM;
 	MODIFY_EACH (SpeechSynthesizer)
 		SpeechSynthesizer_setTextInputSettings (me, inputTextFormat, inputPhonemeCoding_always);
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_SpeechSynthesizer_estimateSpeechRateFromSpeech, U"SpeechSynthesizer: Estimate speech rate from speech", U"SpeechSynthesizer: Estimate speech rate from speech...") {
+FORM (MODIFY_EACH__SpeechSynthesizer_estimateSpeechRateFromSpeech, U"SpeechSynthesizer: Estimate speech rate from speech", U"SpeechSynthesizer: Estimate speech rate from speech...") {
 	BOOLEAN (estimate, U"Estimate speech rate from speech", true);
 	OK
 DO
@@ -6259,7 +6466,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_SpeechSynthesizer_speechOutputSettings, U"SpeechSynthesizer: Speech output settings", U"SpeechSynthesizer: Speech output settings...") {
+FORM (MODIFY_EACH__SpeechSynthesizer_speechOutputSettings, U"SpeechSynthesizer: Speech output settings", U"SpeechSynthesizer: Speech output settings...") {
 	POSITIVE (samplingFrequency, U"Sampling frequency (Hz)", U"44100.0")
 	REAL (wordGap, U"Gap between words (s)", U"0.01")
 	POSITIVE (pitchAdjustment, U"Pitch multiplier (0.5-2.0)", U"1.0")
@@ -6276,11 +6483,13 @@ DO
 	Melder_require (pitchRange >= 0.0 && pitchRange <= 2.0,
 		U"The pitch range multiplier should be between 0.0 and 2.0.");
 	MODIFY_EACH (SpeechSynthesizer)
-		SpeechSynthesizer_setSpeechOutputSettings (me, samplingFrequency, wordGap, pitchAdjustment, pitchRange, wordsPerMinute, outputPhonemeCodes);
+		SpeechSynthesizer_setSpeechOutputSettings (
+			me, samplingFrequency, wordGap, pitchAdjustment, pitchRange, wordsPerMinute, outputPhonemeCodes
+		);
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_SpeechSynthesizer_setSpeechOutputSettings, U"SpeechSynthesizer: Set speech output settings", U"SpeechSynthesizer: Speech output settings...") {
+FORM (MODIFY_EACH__SpeechSynthesizer_setSpeechOutputSettings, U"SpeechSynthesizer: Set speech output settings", U"SpeechSynthesizer: Speech output settings...") {
 	POSITIVE (samplingFrequency, U"Sampling frequency (Hz)", U"44100.0")
 	REAL (wordGap, U"Gap between words (s)", U"0.01")
 	INTEGER (pitchAdjustment_0_99, U"Pitch adjustment (0-99)", U"50")
@@ -6292,36 +6501,38 @@ FORM (MODIFY_SpeechSynthesizer_setSpeechOutputSettings, U"SpeechSynthesizer: Set
 		OPTION (U"IPA")
 	OK
 DO
-	if (wordGap < 0.0) wordGap = 0.0;
-	if (pitchAdjustment_0_99 < 0) pitchAdjustment_0_99 = 0;
-	if (pitchAdjustment_0_99 > 99) pitchAdjustment_0_99 = 99;
-	if (pitchRange_0_99 < 0) pitchRange_0_99 = 0;
-	if (pitchRange_0_99 > 99) pitchRange_0_99 = 99;
-	double pitchAdjustment = (1.5/99.0 * pitchAdjustment_0_99 + 0.5);
-	double pitchRange = (pitchRange_0_99 / 49.5);
+	Melder_clipLeft (0.0, & wordGap);
+	Melder_clip (0_integer, & pitchAdjustment_0_99, 99_integer);
+	Melder_clip (0_integer, & pitchRange_0_99, 99_integer);
+	const double pitchAdjustment = (1.5 / 99.0 * pitchAdjustment_0_99 + 0.5);
+	const double pitchRange = pitchRange_0_99 / 49.5;
 	MODIFY_EACH (SpeechSynthesizer)
-		SpeechSynthesizer_setSpeechOutputSettings (me, samplingFrequency, wordGap, pitchAdjustment, pitchRange, wordsPerMinute, outputPhonemeCodes);
+		SpeechSynthesizer_setSpeechOutputSettings (
+			me, samplingFrequency, wordGap, pitchAdjustment, pitchRange, wordsPerMinute, outputPhonemeCodes
+		);
 		SpeechSynthesizer_setEstimateSpeechRateFromSpeech (me, estimateWordsPerMinute);
 	MODIFY_EACH_END
 }
 
 /************* SpeechSynthesizer and TextGrid ************************/
 
-FORM (NEWMANY_SpeechSynthesizer_TextGrid_to_Sound, U"SpeechSynthesizer & TextGrid: To Sound", nullptr) {
+FORM (CONVERT_ONE_AND_ONE_TO_ONE__SpeechSynthesizer_TextGrid_to_Sound, U"SpeechSynthesizer & TextGrid: To Sound", nullptr) {
 	NATURAL (tierNumber, U"Tier number", U"1")
 	NATURAL (intervalNumber, U"Interval number", U"1")
 	BOOLEAN (createAnnotations, U"Create TextGrid with annotations", false);
 	OK
 DO
-	CONVERT_TWO (SpeechSynthesizer, TextGrid)
+	CONVERT_ONE_AND_ONE_TO_ONE (SpeechSynthesizer, TextGrid)
 		autoTextGrid annotations;
-		autoSound result = SpeechSynthesizer_TextGrid_to_Sound (me, you, tierNumber, intervalNumber, (createAnnotations ? & annotations : nullptr ));
+		autoSound result = SpeechSynthesizer_TextGrid_to_Sound (
+			me, you, tierNumber, intervalNumber, (createAnnotations ? & annotations : nullptr)
+		);
 		if (createAnnotations)
 			praat_new (annotations.move(), my name.get());
-	CONVERT_TWO_END (my name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get())
 }
 
-FORM (NEW1_SpeechSynthesizer_Sound_TextGrid_align, U"SpeechSynthesizer & Sound & TextGrid: To TextGrid (align)", nullptr) {
+FORM (CONVERT_ONE_AND_ONE_AND_ONE_TO_ONE__SpeechSynthesizer_Sound_TextGrid_align, U"SpeechSynthesizer & Sound & TextGrid: To TextGrid (align)", nullptr) {
 	NATURAL (tierNumber, U"Tier number", U"1")
 	NATURAL (fromInterval, U"From interval number", U"1")
 	NATURAL (toInterval, U"To interval number", U"1")
@@ -6330,12 +6541,15 @@ FORM (NEW1_SpeechSynthesizer_Sound_TextGrid_align, U"SpeechSynthesizer & Sound &
 	POSITIVE (minimumSoundingDuration, U"Minimum sounding interval duration (s)", U"0.1")
 	OK
 DO
-	CONVERT_THREE (SpeechSynthesizer, Sound, TextGrid)
-		autoTextGrid result = SpeechSynthesizer_Sound_TextGrid_align (me, you, him, tierNumber, fromInterval, toInterval, silenceThreshold_dB, minimumSilenceDuration, minimumSoundingDuration);
-	CONVERT_THREE_END (your name.get(), U"_aligned")
+	CONVERT_ONE_AND_ONE_AND_ONE_TO_ONE (SpeechSynthesizer, Sound, TextGrid)
+		autoTextGrid result = SpeechSynthesizer_Sound_TextGrid_align (
+			me, you, him, tierNumber, fromInterval, toInterval, silenceThreshold_dB, 
+			minimumSilenceDuration, minimumSoundingDuration
+		);
+	CONVERT_ONE_AND_ONE_AND_ONE_TO_ONE_END (your name.get(), U"_aligned")
 }
 
-FORM (NEW1_SpeechSynthesizer_Sound_TextGrid_align2, U"SpeechSynthesizer & Sound & TextGrid: To TextGrid (align, trim)", nullptr) {
+FORM (CONVERT_ONE_AND_ONE_AND_ONE_TO_ONE__SpeechSynthesizer_Sound_TextGrid_align2, U"SpeechSynthesizer & Sound & TextGrid: To TextGrid (align, trim)", nullptr) {
     NATURAL (tierNumber, U"Tier number", U"1")
     NATURAL (fromInterval, U"From interval number", U"1")
     NATURAL (toInterval, U"To interval number", U"1")
@@ -6345,16 +6559,19 @@ FORM (NEW1_SpeechSynthesizer_Sound_TextGrid_align2, U"SpeechSynthesizer & Sound 
     REAL (trimDuration, U"Silence trim duration (s)", U"0.08")
     OK
 DO
-	if (trimDuration < 0.0)
-		trimDuration = 0.0;
-    CONVERT_THREE (SpeechSynthesizer, Sound, TextGrid)
-		autoTextGrid result = SpeechSynthesizer_Sound_TextGrid_align2 (me, you, him, tierNumber, fromInterval, toInterval, silenceThreshold_dB, minimumSilenceDuration, minimumSoundingDuration, trimDuration);
-    CONVERT_THREE_END (his name.get(), U"_aligned")
+	Melder_require (trimDuration >= 0.0,
+		U"The \"Silence trim duration\" should not be negative."); 
+    CONVERT_ONE_AND_ONE_AND_ONE_TO_ONE (SpeechSynthesizer, Sound, TextGrid)
+		autoTextGrid result = SpeechSynthesizer_Sound_TextGrid_align2 (
+			me, you, him, tierNumber, fromInterval, toInterval, silenceThreshold_dB, minimumSilenceDuration,
+			minimumSoundingDuration, trimDuration
+		);
+    CONVERT_ONE_AND_ONE_AND_ONE_TO_ONE_END (his name.get(), U"_aligned")
 }
 
 /************* Spline *************************************************/
 
-FORM (GRAPHICS_Spline_drawKnots, U"Spline: Draw knots", nullptr) {
+FORM (GRAPHICS_EACH__Spline_drawKnots, U"Spline: Draw knots", nullptr) {
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -6367,31 +6584,32 @@ DO
 	GRAPHICS_EACH_END
 }
 
-DIRECT (INTEGER_Spline_getOrder) {
-	INTEGER_ONE (Spline)
-		integer result = Spline_getOrder (me);
-	INTEGER_ONE_END (U" (order)")
+DIRECT (QUERY_ONE_FOR_INTEGER__Spline_getOrder) {
+	QUERY_ONE_FOR_INTEGER (Spline)
+		const integer result = Spline_getOrder (me);
+	QUERY_ONE_FOR_INTEGER_END (U" (order)")
 }
 
-FORM (NEW_Spline_scaleX, U"Spline: Scale x", U"Spline: Scale x...") {
+FORM (CONVERT_EACH_TO_ONE__Spline_scaleX, U"Spline: Scale x", U"Spline: Scale x...") {
 	LABEL (U"New domain")
 	REAL (xmin, U"Xmin", U"-1.0")
 	REAL (xmax, U"Xmax", U"1.0")
 	OK
 DO
-	Melder_require (xmin < xmax, U"Xmin should be less than Xmax.");
-	CONVERT_EACH (Spline)
+	Melder_require (xmin < xmax, 
+		U"\"Xmin\" should be smaller than \"Xmax\".");
+	CONVERT_EACH_TO_ONE (Spline)
 		autoSpline result = Spline_scaleX (me, xmin, xmax);
-	CONVERT_EACH_END (my name.get(), U"_scaleX")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_scaleX")
 }
 
 /************ SSCP ***************************************************/
 
-DIRECT (HELP_SSCP_help) {
+DIRECT (HELP__SSCP_help) {
 	HELP (U"SSCP")
 }
 
-FORM (GRAPHICS_SSCP_drawConfidenceEllipse, U"SSCP: Draw confidence ellipse", nullptr) {
+FORM (GRAPHICS_EACH__SSCP_drawConfidenceEllipse, U"SSCP: Draw confidence ellipse", nullptr) {
 	POSITIVE (confidenceLevel, U"Confidence level", U"0.95")
 	NATURAL (xIndex, U"Index for X-axis", U"1")
 	NATURAL (yIndex, U"Index for Y-axis", U"2")
@@ -6407,7 +6625,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_SSCP_drawSigmaEllipse, U"SSCP: Draw sigma ellipse", U"SSCP: Draw sigma ellipse...") {
+FORM (GRAPHICS_EACH__SSCP_drawSigmaEllipse, U"SSCP: Draw sigma ellipse", U"SSCP: Draw sigma ellipse...") {
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
 	NATURAL (xIndex, U"Index for X-axis", U"1")
 	NATURAL (yIndex, U"Index for Y-axis", U"2")
@@ -6423,119 +6641,115 @@ DO
 	GRAPHICS_EACH_END
 }
 
-DIRECT (NEW_SSCP_extractCentroid) {
-	CONVERT_EACH (SSCP)
+DIRECT (CONVERT_EACH_TO_ONE__SSCP_extractCentroid) {
+	CONVERT_EACH_TO_ONE (SSCP)
 		autoTableOfReal result = SSCP_extractCentroid (me);
-	CONVERT_EACH_END (my name.get(), U"_centroid")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_centroid")
 }
 
-FORM (REAL_SSCP_getConfidenceEllipseArea, U"SSCP: Get confidence ellipse area", U"SSCP: Get confidence ellipse area...") {
+FORM (QUERY_ONE_FOR_REAL__SSCP_getConfidenceEllipseArea, U"SSCP: Get confidence ellipse area", U"SSCP: Get confidence ellipse area...") {
 	POSITIVE (confidenceLevel, U"Confidence level", U"0.95")
 	NATURAL (xIndex, U"Index for X-axis", U"1")
 	NATURAL (yIndex, U"Index for Y-axis", U"2")
 	OK
 DO
-	NUMBER_ONE (SSCP)
-		double result = SSCP_getConcentrationEllipseArea (me, confidenceLevel, 1, xIndex, yIndex);
-	NUMBER_ONE_END (U" (confidence ellipse area)")
+	QUERY_ONE_FOR_REAL (SSCP)
+		const double result = SSCP_getConcentrationEllipseArea (me, confidenceLevel, 1, xIndex, yIndex);
+	QUERY_ONE_FOR_REAL_END (U" (confidence ellipse area)")
 }
 
-FORM (REAL_SSCP_getFractionVariation, U"SSCP: Get fraction variation", U"SSCP: Get fraction variation...") {
+FORM (QUERY_ONE_FOR_REAL__SSCP_getFractionVariation, U"SSCP: Get fraction variation", U"SSCP: Get fraction variation...") {
 	NATURAL (fromDimension, U"From dimension", U"1")
 	NATURAL (toDimension, U"To dimension", U"1")
 	OK
 DO
-	NUMBER_ONE (SSCP)
-		double result = SSCP_getFractionVariation (me, fromDimension, toDimension);
-	NUMBER_ONE_END (U" (fraction)")
+	QUERY_ONE_FOR_REAL (SSCP)
+		const double result = SSCP_getFractionVariation (me, fromDimension, toDimension);
+	QUERY_ONE_FOR_REAL_END (U" (fraction)")
 }
 
 
-FORM (REAL_SSCP_getConcentrationEllipseArea, U"SSCP: Get sigma ellipse area", U"SSCP: Get sigma ellipse area...") {
+FORM (QUERY_ONE_FOR_REAL__SSCP_getConcentrationEllipseArea, U"SSCP: Get sigma ellipse area", U"SSCP: Get sigma ellipse area...") {
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
 	NATURAL (xIndex, U"Index for X-axis", U"1")
 	NATURAL (yIndex, U"Index for Y-axis", U"2")
 	OK
 DO
-	NUMBER_ONE (SSCP)
-		double result = SSCP_getConcentrationEllipseArea (me, numberOfSigmas, 0, xIndex, yIndex);
-	NUMBER_ONE_END (U" (concentation ellipse area)")
+	QUERY_ONE_FOR_REAL (SSCP)
+		const double result = SSCP_getConcentrationEllipseArea (me, numberOfSigmas, 0, xIndex, yIndex);
+	QUERY_ONE_FOR_REAL_END (U" (concentation ellipse area)")
 }
 
-DIRECT (NUMBER_SSCP_getDegreesOfFreedom) {
-	NUMBER_ONE (SSCP)
-		double result = SSCP_getDegreesOfFreedom (me);
-	NUMBER_ONE_END (U" (degrees of freedom)")
+DIRECT (QUERY_ONE_FOR_REAL__SSCP_getDegreesOfFreedom) {
+	QUERY_ONE_FOR_REAL (SSCP)
+		const double result = SSCP_getDegreesOfFreedom (me);
+	QUERY_ONE_FOR_REAL_END (U" (degrees of freedom)")
 }
 
-DIRECT (INTEGER_SSCP_getNumberOfObservations) {
-	INTEGER_ONE (SSCP)
-		integer result = Melder_ifloor (my numberOfObservations);   // ppgb: blijf ik raar vinden
-	INTEGER_ONE_END (U" (number of observations)")
+DIRECT (QUERY_ONE_FOR_INTEGER__SSCP_getNumberOfObservations) {
+	QUERY_ONE_FOR_INTEGER (SSCP)
+		const integer result = Melder_ifloor (my numberOfObservations);   // ppgb: blijf ik raar vinden
+	QUERY_ONE_FOR_INTEGER_END (U" (number of observations)")
 }
 
-DIRECT (REAL_SSCP_getTotalVariance) {
-	NUMBER_ONE (SSCP)
-		double result = SSCP_getTotalVariance (me);
-	NUMBER_ONE_END (U" (total variance)")
+DIRECT (QUERY_ONE_FOR_REAL__SSCP_getTotalVariance) {
+	QUERY_ONE_FOR_REAL (SSCP)
+		const double result = SSCP_getTotalVariance (me);
+	QUERY_ONE_FOR_REAL_END (U" (total variance)")
 }
 
-FORM (REAL_SSCP_getCentroidElement, U"SSCP: Get centroid element", U"SSCP: Get centroid element") {
+FORM (QUERY_ONE_FOR_REAL__SSCP_getCentroidElement, U"SSCP: Get centroid element", U"SSCP: Get centroid element") {
 	NATURAL (number, U"Number", U"1")
 	OK
 DO
-	NUMBER_ONE (SSCP)
+	QUERY_ONE_FOR_REAL (SSCP)
 		double result = undefined;
 		if (number > 0 && number <= my numberOfColumns) {
 			result = my centroid [number];
 		}
-	NUMBER_ONE_END (U" (centroid [", number, U"])")
+	QUERY_ONE_FOR_REAL_END (U" (centroid [", number, U"])")
 }
 
-DIRECT (REAL_SSCP_getLnDeterminant) {
-	NUMBER_ONE (SSCP)
-		double result = SSCP_getLnDeterminant (me);
-	NUMBER_ONE_END (U" (ln (determinant))")
+DIRECT (QUERY_ONE_FOR_REAL__SSCP_getLnDeterminant) {
+	QUERY_ONE_FOR_REAL (SSCP)
+		const double result = SSCP_getLnDeterminant (me);
+	QUERY_ONE_FOR_REAL_END (U" (ln (determinant))")
 }
 
-FORM (REAL_SSCP_getDiagonality_bartlett, U"SSCP: Get diagonality (bartlett)", U"SSCP: Get diagonality (bartlett)...") {
+FORM (QUERY_ONE_FOR_REAL__SSCP_getDiagonality_bartlett, U"SSCP: Get diagonality (bartlett)", U"SSCP: Get diagonality (bartlett)...") {
 	NATURAL (numberOfConstraints, U"Number of constraints", U"1")
 	OK
 DO
-	NUMBER_ONE (SSCP)
-		double chisq, result, df;
-		SSCP_getDiagonality_bartlett (me, numberOfConstraints, & chisq, & result, & df);
-	NUMBER_ONE_END (U" (= probability for chisq = ", chisq, U" and ndf = ", df, U")")
+	QUERY_ONE_FOR_REAL (SSCP)
+		double chisq, result, ndof;
+		SSCP_getDiagonality_bartlett (me, numberOfConstraints, & chisq, & result, & ndof);
+	QUERY_ONE_FOR_REAL_END (U" (= probability for chisq = ", chisq, U" and ndf = ", ndof, U")")
 }
 
-DIRECT (NEW_SSCP_to_Correlation) {
-	CONVERT_EACH (SSCP)
+DIRECT (CONVERT_EACH_TO_ONE__SSCP_to_Correlation) {
+	CONVERT_EACH_TO_ONE (SSCP)
 		autoCorrelation result = SSCP_to_Correlation (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_SSCP_to_Covariance, U"SSCP: To Covariance", U"SSCP: To Covariance...") {
+FORM (CONVERT_EACH_TO_ONE__SSCP_to_Covariance, U"SSCP: To Covariance", U"SSCP: To Covariance...") {
 	NATURAL (numberOfConstraints, U"Number of constraints", U"1")
 	OK
 DO
-	CONVERT_EACH (SSCP)
+	CONVERT_EACH_TO_ONE (SSCP)
 		autoCovariance result = SSCP_to_Covariance (me, numberOfConstraints);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_SSCP_to_PCA) {
-	CONVERT_EACH (SSCP)
+DIRECT (CONVERT_EACH_TO_ONE__SSCP_to_PCA) {
+	CONVERT_EACH_TO_ONE (SSCP)
 		autoPCA result = SSCP_to_PCA (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /******************* Strings ****************************/
 
-//DIRECT (NEW1_Strings_createAsEspeakVoices) {
-//	//praat_new (nullptr, U"voices"); // TODO ??
-//END }
-
-FORM (NEW1_Strings_createAsCharacters, U"Strings: Create as characters", nullptr) {
+FORM (CREATE_ONE__Strings_createAsCharacters, U"Strings: Create as characters", nullptr) {
 	SENTENCE (text, U"Text", U"intention")
 	OK
 DO
@@ -6544,28 +6758,8 @@ DO
 	CREATE_ONE_END (U"chars")
 }
 
-FORM (NEW1_Create_NavigationContext, U"Create NavigationContext", nullptr) {
-	WORD (name, U"Name: ", U"plosive_vowel_nasal")
-	WORD (navigationName, U"Name of navigation labels", U"vowels")
-	TEXTFIELD (navigation_string, U"Navigation labels", U"i u e o \\as ")
-	OPTIONMENU_ENUM (kMelder_string, navigationCriterion, U"navigation criterion", kMelder_string::DEFAULT)
-	WORD (leftContextName, U"Name of left context labels", U"plosives")
-	TEXTFIELD (leftContext_string, U"Left context labels", U"p b t d k g")
-	OPTIONMENU_ENUM (kMelder_string, leftContextCriterion, U"Left context criterion", kMelder_string::DEFAULT)
-	WORD (rightContextName, U"Name of right context labels", U"nasals")
-	TEXTFIELD (rightContext_string, U"Right context labels", U"m n")
-	OPTIONMENU_ENUM (kMelder_string, rightContextCriterion, U"right context criterion", kMelder_string::DEFAULT)
-	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"How to combine the contexts", kContext_combination::LEFT_AND_RIGHT)
-	BOOLEAN (contextOnly, U"Use context only", false)
-	OK
-DO
-	CREATE_ONE
-		autoNavigationContext result = NavigationContext_create (name, navigationName, navigation_string, navigationCriterion, leftContextName, leftContext_string, leftContextCriterion, rightContextName, rightContext_string, rightContextCriterion, combinationCriterion, contextOnly);
-	CREATE_ONE_END (name)
-}
-
-FORM (NEW1_old_Strings_createAsTokens, U"Strings: Create as tokens", nullptr) {
-	TEXTFIELD (text, U"Text:", U"There are seven tokens in this text")
+FORM (CREATE_ONE__old_Strings_createAsTokens, U"Strings: Create as tokens", nullptr) {
+	TEXTFIELD (text, U"Text", U"There are seven tokens in this text", 10)
 	OK
 DO
 	CREATE_ONE
@@ -6573,9 +6767,9 @@ DO
 	CREATE_ONE_END (U"tokens")
 }
 
-FORM (NEW1_Strings_createFromTokens, U"Strings: Create as tokens", U"Create Strings as tokens...") {
+FORM (CREATE_ONE__Strings_createFromTokens, U"Strings: Create as tokens", U"Create Strings as tokens...") {
 	WORD (name, U"Name", U"tokens")
-	TEXTFIELD (text, U"Text:", U"There are seven tokens in this text")
+	TEXTFIELD (text, U"Text", U"There are seven tokens in this text", 10)
 	SENTENCE (separators, U"Separators", U" ,")
 	OK
 DO
@@ -6584,29 +6778,29 @@ DO
 	CREATE_ONE_END (name)
 }
 
-FORM (NEW1_Strings_createAsTokens, U"Strings: Create as tokens", U"Create Strings as tokens...") {
-	TEXTFIELD (text, U"Text:", U"There are seven tokens in this text")
+FORM (CREATE_ONE__Strings_createAsTokens, U"Strings: Create as tokens", U"Create Strings as tokens...") {
+	TEXTFIELD (text, U"Text", U"There are seven tokens in this text", 10)
 	SENTENCE (separators, U"Separators", U" ,")
 	OK
-DO_ALTERNATIVE (NEW1_old_Strings_createAsTokens)
+DO_ALTERNATIVE (CREATE_ONE__old_Strings_createAsTokens)
 	CREATE_ONE
 		autoStrings result = Strings_createAsTokens (text, separators);
 	CREATE_ONE_END (U"tokens")
 }
 
-DIRECT (NEW1_Strings_append) {
-	CONVERT_LIST (Strings)
+DIRECT (COMBINE_ALL_TO_ONE__Strings_append) {
+	COMBINE_ALL_TO_ONE (Strings)
 		autoStrings result = Strings_append (& list);
-	CONVERT_LIST_END (U"appended")
+	COMBINE_ALL_TO_ONE_END (U"appended")
 }
 
-DIRECT (NEW_Strings_to_Categories) {
-	CONVERT_EACH (Strings)
+DIRECT (CONVERT_EACH_TO_ONE__Strings_to_Categories) {
+	CONVERT_EACH_TO_ONE (Strings)
 		autoCategories result = Strings_to_Categories (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Strings_change, U"Strings: Change", U"Strings: Change") {
+FORM (CONVERT_EACH_TO_ONE__Strings_change, U"Strings: Change", U"Strings: Change") {
 	SENTENCE (search_string, U"Search", U"a")
 	SENTENCE (replace_string, U"Replace", U"a")
 	INTEGER (replaceLimit, U"Replace limit", U"0 (= unlimited)")
@@ -6615,176 +6809,194 @@ FORM (NEW_Strings_change, U"Strings: Change", U"Strings: Change") {
 	RADIOBUTTON (U"Regular Expressions")
 	OK
 DO
-	CONVERT_EACH (Strings)
+	CONVERT_EACH_TO_ONE (Strings)
 		integer nmatches, nstringmatches;
-		autoStrings result = Strings_change (me, search_string, replace_string, replaceLimit, &nmatches, &nstringmatches, stringType - 1);
-	CONVERT_EACH_END (my name.get())
+		autoStrings result = Strings_change (
+			me, search_string, replace_string, replaceLimit, &nmatches, &nstringmatches, stringType - 1
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Strings_extractPart, U"Strings: Extract part", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Strings_extractPart, U"Strings: Extract part", nullptr) {
 	NATURAL (fromIndex, U"From index", U"1")
 	NATURAL (toIndex, U"To index", U"1")
 	OK
 DO
-	CONVERT_EACH (Strings)
+	CONVERT_EACH_TO_ONE (Strings)
 		autoStrings result = Strings_extractPart (me, fromIndex, toIndex);
-	CONVERT_EACH_END (my name.get(), U"_part");
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_part");
 }
 
-DIRECT (NEW_Strings_to_EditDistanceTable) {
-	CONVERT_COUPLE (Strings)
+DIRECT (CONVERT_TWO_TO_ONE__Strings_to_EditDistanceTable) {
+	CONVERT_TWO_TO_ONE (Strings)
 		autoEditDistanceTable result = EditDistanceTable_create (me, you);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW_Strings_to_Permutation, U"Strings: To Permutation", U"Strings: To Permutation...") {
+FORM (CONVERT_EACH_TO_ONE__Strings_to_Permutation, U"Strings: To Permutation", U"Strings: To Permutation...") {
 	BOOLEAN (sort, U"Sort", true)
 	OK
 DO
-	CONVERT_EACH (Strings)
+	CONVERT_EACH_TO_ONE (Strings)
 		autoPermutation result = Strings_to_Permutation (me, sort);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_Strings_to_NavigationContext, U"Strings: To NavigationContext", nullptr) {
-	OPTIONMENU_ENUM (kMelder_string, navigationCriterion, U"Navigation criterion", kMelder_string::DEFAULT)
-	OK
-DO
-	CONVERT_EACH (Strings)
-		autoNavigationContext result = Strings_to_NavigationContext (me, navigationCriterion);
-	CONVERT_EACH_END (my name.get())
-}
-
-DIRECT (NEW1_Strings_Permutation_permuteStrings) {
-	CONVERT_TWO (Strings, Permutation)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__Strings_Permutation_permuteStrings) {
+	CONVERT_ONE_AND_ONE_TO_ONE (Strings, Permutation)
 		autoStrings result = Strings_Permutation_permuteStrings (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
 /****************************** SVD *****************************************/
 
-DIRECT (HELP_SVD_help) {
+DIRECT (HELP__SVD_help) {
 	HELP (U"singular value decomposition")
 }
 
-DIRECT (INTEGER_SVD_getNumberOfRows) {
-	INTEGER_ONE (SVD)
-		integer result = my isTransposed ? my numberOfColumns : my numberOfRows;
-	INTEGER_ONE_END (U" (number of rows)")	
+DIRECT (QUERY_ONE_FOR_INTEGER__SVD_getNumberOfRows) {
+	QUERY_ONE_FOR_INTEGER (SVD)
+		const integer result = ( my isTransposed ? my numberOfColumns : my numberOfRows );
+	QUERY_ONE_FOR_INTEGER_END (U" (number of rows)")	
 }
 
-DIRECT (INTEGER_SVD_getNumberOfColumns) {
-	INTEGER_ONE (SVD)
-		integer result = my isTransposed ? my numberOfRows : my numberOfColumns;
-	INTEGER_ONE_END (U" (= number of columns)")	
+DIRECT (QUERY_ONE_FOR_INTEGER__SVD_getNumberOfColumns) {
+	QUERY_ONE_FOR_INTEGER (SVD)
+		const integer result = ( my isTransposed ? my numberOfRows : my numberOfColumns );
+	QUERY_ONE_FOR_INTEGER_END (U" (= number of columns)")	
 }
 
-DIRECT (REAL_SVD_getConditionNumber) {
-	NUMBER_ONE (SVD)
-		double result = SVD_getConditionNumber (me);
-	NUMBER_ONE_END (U" (= condition number)")
+DIRECT (QUERY_ONE_FOR_REAL__SVD_getRank) {
+	QUERY_ONE_FOR_REAL (SVD)
+		const double result = SVD_getRank (me);
+	QUERY_ONE_FOR_REAL_END (U" (= rank)")
 }
 
-FORM (REAL_SVD_getSingularValue, U"SVD: Get singular values", nullptr) {
+DIRECT (QUERY_ONE_FOR_REAL__SVD_getConditionNumber) {
+	QUERY_ONE_FOR_REAL (SVD)
+		const double result = SVD_getConditionNumber (me);
+	QUERY_ONE_FOR_REAL_END (U" (= condition number)")
+}
+
+FORM (QUERY_ONE_FOR_REAL__SVD_getSingularValue, U"SVD: Get singular values", nullptr) {
 	NATURAL (index, U"Index", U"1")
 	OK
 DO
-	NUMBER_ONE (SVD)
-		Melder_require (index <= my numberOfColumns, U"Index must be in the range [1,", my numberOfColumns, U"].");
-		double result = my d [index];
-	NUMBER_ONE_END (U" (= singular value [", index, U"])")
+	QUERY_ONE_FOR_REAL (SVD)
+		Melder_require (index <= my numberOfColumns, 
+			U"Index must be in the range [1,", my numberOfColumns, U"].");
+		const double result = my d [index];
+	QUERY_ONE_FOR_REAL_END (U" (= singular value [", index, U"])")
 }
 
-FORM (REAL_SVD_getSumOfSingularValues, U"SVD: Get sum of singular values", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__SVD_getSumOfSingularValues, U"SVD: Get sum of singular values", nullptr) {
 	NATURAL (from, U"From", U"1")
 	INTEGER (to, U"To", U"0 (=last)")
 	OK
 DO
-	NUMBER_ONE (SVD)
-		double result = SVD_getSumOfSingularValues (me, from, to);
-	NUMBER_ONE_END (U" (sum of singular values)")
+	QUERY_ONE_FOR_REAL (SVD)
+		const double result = SVD_getSumOfSingularValues (me, from, to);
+	QUERY_ONE_FOR_REAL_END (U" (sum of singular values)")
 }
 
-FORM (REAL_SVD_getSumOfSingularValuesAsFractionOfTotal, U"SVD: Get sum of singular values as fraction of total", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__SVD_getSumOfSingularValuesAsFractionOfTotal, U"SVD: Get sum of singular values as fraction of total", nullptr) {
 	NATURAL (from, U"From", U"1")
 	INTEGER (to, U"To", U"0 (=last)")
 	OK
 DO
-	NUMBER_ONE (SVD)
-		double result = SVD_getSumOfSingularValuesAsFractionOfTotal (me, from, to);
-	NUMBER_ONE_END (U" (= fraction of total sum of singular values)")
+	QUERY_ONE_FOR_REAL (SVD)
+		const double result = SVD_getSumOfSingularValuesAsFractionOfTotal (me, from, to);
+	QUERY_ONE_FOR_REAL_END (U" (= fraction of total sum of singular values)")
 }
 
-FORM (INTEGER_SVD_getMinimumNumberOfSingularValues, U"SVD: Get minimum number of singular values", U"SVD: Get minimum number of singular values...") {
+FORM (QUERY_ONE_FOR_INTEGER__SVD_getMinimumNumberOfSingularValues, U"SVD: Get minimum number of singular values", U"SVD: Get minimum number of singular values...") {
 	POSITIVE (fraction, U"Fraction of total sum", U"0.95")
 	OK
 DO
-	Melder_require (fraction <= 1.0, U"Fraction must be a number in (0,1).");
-	INTEGER_ONE (SVD)
-		integer result = SVD_getMinimumNumberOfSingularValues (me, fraction);
-	INTEGER_ONE_END (U" (= number of singular values needed)")
+	Melder_require (fraction <= 1.0, 
+		U"Fraction must be a number in (0,1).");
+	QUERY_ONE_FOR_INTEGER (SVD)
+		const integer result = SVD_getMinimumNumberOfSingularValues (me, fraction);
+	QUERY_ONE_FOR_INTEGER_END (U" (= number of singular values needed)")
 }
 
-FORM (NEW_SVD_to_Matrix, U"SVD: To Matrix", U"SVD: To Matrix...") {
+FORM (QUERY_ONE_FOR_REAL__SVD_getShrinkageParameter, U"SVD: Get shrinkage parameter", nullptr) {
+	POSITIVE (edf, U"Effective degrees of freedom", U"3.0")
+	OK
+DO
+	QUERY_ONE_FOR_REAL (SVD)
+		const double result = SVD_getShrinkageParameter (me, edf);
+	QUERY_ONE_FOR_REAL_END (U" (= shrinkage parameter for ridge regression with ", edf, U" effective degrees of freedom)")
+}
+
+FORM (QUERY_ONE_FOR_REAL__SVD_getEffectiveDegreesOfFreedom, U"SVD: Get effective degrees of freedom", nullptr) {
+	POSITIVE (lambda, U"Shrinkage parameter", U"0.0")
+	OK
+DO
+	QUERY_ONE_FOR_REAL (SVD)
+		const double result = SVD_getEffectiveDegreesOfFreedom (me, lambda);
+	QUERY_ONE_FOR_REAL_END (U" (= effective degrees of freedom for ridge regression with ", lambda, U" shrinkage factor)")
+}
+
+FORM (CONVERT_EACH_TO_ONE__SVD_to_Matrix, U"SVD: To Matrix", U"SVD: To Matrix...") {
 	NATURAL (fromComponent, U"First component", U"1")
 	INTEGER (toComponent, U"Last component", U"0 (= all)")
 	OK
 DO
-	CONVERT_EACH (SVD)
+	CONVERT_EACH_TO_ONE (SVD)
 		autoMatrix result = SVD_to_Matrix (me, fromComponent, toComponent);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_SVD_to_TableOfReal, U"SVD: To TableOfReal", U"SVD: To TableOfReal...") {
+FORM (CONVERT_EACH_TO_ONE__SVD_to_TableOfReal, U"SVD: To TableOfReal", U"SVD: To TableOfReal...") {
 	NATURAL (fromComponent, U"First component", U"1")
 	INTEGER (toComponent, U"Last component", U"0 (= all)")
 	OK
 DO
-	CONVERT_EACH (SVD)
+	CONVERT_EACH_TO_ONE (SVD)
 		autoTableOfReal result = SVD_to_TableOfReal (me, fromComponent, toComponent);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_SVD_extractLeftSingularVectors) {
-	LOOP {
-		iam (SVD);
+DIRECT (CONVERT_EACH_TO_ONE__SVD_extractLeftSingularVectors) {
+	CONVERT_EACH_TO_ONE (SVD)
 		autoTableOfReal result = SVD_extractLeftSingularVectors (me);
-	CONVERT_EACH_END (my name.get(), U"_lsv")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_lsv")
 }
 
-DIRECT (NEW_SVD_extractRightSingularVectors) {
-	CONVERT_EACH (SVD)
+DIRECT (CONVERT_EACH_TO_ONE__SVD_extractRightSingularVectors) {
+	CONVERT_EACH_TO_ONE (SVD)
 		autoTableOfReal result = SVD_extractRightSingularVectors (me);
-	CONVERT_EACH_END (my name.get(), U"_rsv")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_rsv")
 }
 
-DIRECT (NEW_SVD_extractSingularValues) {
-	CONVERT_EACH (SVD)
+DIRECT (CONVERT_EACH_TO_ONE__SVD_extractSingularValues) {
+	CONVERT_EACH_TO_ONE (SVD)
 		autoTableOfReal result = SVD_extractSingularValues (me);
-	CONVERT_EACH_END (my name.get(), U"_sv");
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_sv");
 }
 
 /******************* Table ****************************/
 
-DIRECT (NEW1_Table_create_petersonBarney1952) {
+DIRECT (CREATE_ONE__Table_create_petersonBarney1952) {
 	CREATE_ONE
 		autoTable result = Table_create_petersonBarney1952 ();
 	CREATE_ONE_END (U"pb")
 }
 
-DIRECT (NEW1_Table_create_polsVanNierop1973) {
+DIRECT (CREATE_ONE__Table_create_polsVanNierop1973) {
 	CREATE_ONE
 		autoTable result = Table_create_polsVanNierop1973 ();
 	CREATE_ONE_END (U"pvn")
 }
 
-DIRECT (NEW1_Table_create_weenink1983) {
+DIRECT (CREATE_ONE__Table_create_weenink1983) {
 	CREATE_ONE
 		autoTable result = Table_create_weenink1983 ();
 	CREATE_ONE_END (U"m10w10c10")
 }
 
-FORM (GRAPHICS_Table_scatterPlotWhere, U"Table: Scatter plot where", nullptr) {
+FORM (GRAPHICS_EACH__Table_scatterPlotWhere, U"Table: Scatter plot where", nullptr) {
 	WORD (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
@@ -6794,19 +7006,20 @@ FORM (GRAPHICS_Table_scatterPlotWhere, U"Table: Scatter plot where", nullptr) {
 	WORD (markColumn_string, U"Column with marks", U"")
 	POSITIVE (fontSize, U"Font size", U"12")
 	BOOLEAN (garnish, U"Garnish", true)
-	TEXTFIELD (formula, U"Use only data from rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only from rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		integer markColumn = Table_getColumnIndexFromColumnLabel (me, markColumn_string);
-		autoTable part = Table_extractRowsWhere (me, formula, interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		const integer markColumn = Table_getColumnIndexFromColumnLabel (me, markColumn_string);
+		autoTable part = Table_extractRowsWhere (me, condition, interpreter);
 		Table_scatterPlot (part.get(), GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, markColumn, fontSize, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_scatterPlotMarkWhere, U"Scatter plot where (marks)", nullptr) {
+FORM (GRAPHICS_EACH__Table_scatterPlotMarkWhere, U"Scatter plot where (marks)", nullptr) {
 	WORD (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
@@ -6816,18 +7029,19 @@ FORM (GRAPHICS_Table_scatterPlotMarkWhere, U"Scatter plot where (marks)", nullpt
 	POSITIVE (markSize_mm, U"Mark size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true)
 	SENTENCE (mark_string, U"Mark string (+xo.)", U"+")
-	TEXTFIELD (formula, U"Use only data from rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only from rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		autoTable part = Table_extractRowsWhere (me, formula, interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		autoTable part = Table_extractRowsWhere (me, condition, interpreter);
 		Table_scatterPlot_mark (part.get(), GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, markSize_mm, mark_string, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_barPlotWhere, U"Table: Bar plot where", U"Table: Bar plot where...") {
+FORM (GRAPHICS_EACH__Table_barPlotWhere, U"Table: Bar plot where", U"Table: Bar plot where...") {
 	SENTENCE (yColumns_string, U"Vertical column(s)", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
@@ -6839,15 +7053,18 @@ FORM (GRAPHICS_Table_barPlotWhere, U"Table: Bar plot where", U"Table: Bar plot w
 	SENTENCE (colours, U"Colours", U"Grey")
 	REAL (angle, U"Label text angle (degrees)", U"0.0");
 	BOOLEAN (garnish, U"Garnish", true)
-	TEXTFIELD (formula, U"Use only data from rows where the following condition holds:", U"row >= 1 and row <= 8")
+	LABEL (U"Use data only from rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"row >= 1 and row <= 8")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		Table_barPlotWhere (me, GRAPHICS, yColumns_string, ymin, ymax, markColumn_string, distanceFromBorder, distanceWithinGroup, distanceBetweenGroups, colours, angle, garnish, formula, interpreter);
+		Table_barPlotWhere (me, GRAPHICS, yColumns_string, ymin, ymax, markColumn_string, distanceFromBorder, 
+			distanceWithinGroup, distanceBetweenGroups, colours, angle, garnish, condition, interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_LineGraphWhere, U"Table: Line graph where", U"Table: Line graph where...") {
+FORM (GRAPHICS_EACH__Table_LineGraphWhere, U"Table: Line graph where", U"Table: Line graph where...") {
 	SENTENCE (yColumn_string, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
@@ -6857,17 +7074,18 @@ FORM (GRAPHICS_Table_LineGraphWhere, U"Table: Line graph where", U"Table: Line g
 	WORD (text, U"Text", U"+")
 	REAL (angle, U"Label text angle (degrees)", U"0.0");
 	BOOLEAN (garnish, U"Garnish", true)
-	TEXTFIELD (formula, U"Use only data from rows where the following condition holds:", U"1; (= everything)")
+	LABEL (U"Use data only from rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; (= everything)")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		integer xcolumn = Table_findColumnIndexFromColumnLabel (me, xColumn_string);
-		Table_lineGraphWhere (me, GRAPHICS, xcolumn, xmin, xmax,ycolumn, ymin, ymax, text, angle, garnish, formula, interpreter);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		const integer xcolumn = Table_findColumnIndexFromColumnLabel (me, xColumn_string);
+		Table_lineGraphWhere (me, GRAPHICS, xcolumn, xmin, xmax, ycolumn, ymin, ymax, text, angle, garnish, condition, interpreter);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_boxPlots, U"Table: Box plots", nullptr) {
+FORM (GRAPHICS_EACH__Table_boxPlots, U"Table: Box plots", nullptr) {
 	SENTENCE (dataColumns_string, U"Data columns", U"F1 F2")
 	WORD (factorColumn_string, U"Factor column", U"Sex")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -6876,27 +7094,28 @@ FORM (GRAPHICS_Table_boxPlots, U"Table: Box plots", nullptr) {
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
+		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
 		Table_boxPlotsWhere (me, GRAPHICS, dataColumns_string, factorColumn, ymin, ymax, garnish, U"1", interpreter);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_boxPlotsWhere, U"Table: Box plots where", U"Table: Box plots where...") {
+FORM (GRAPHICS_EACH__Table_boxPlotsWhere, U"Table: Box plots where", U"Table: Box plots where...") {
 	SENTENCE (dataColumns_string, U"Data columns", U"F1 F2")
 	WORD (factorColumn_string, U"Factor column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true);
-	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only in rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_boxPlotsWhere (me, GRAPHICS, dataColumns_string, factorColumn, ymin, ymax, garnish, formula, interpreter);
+		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
+		Table_boxPlotsWhere (me, GRAPHICS, dataColumns_string, factorColumn, ymin, ymax, garnish, condition, interpreter);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_drawEllipseWhere, U"Draw ellipse (standard deviation)", nullptr) {
+FORM (GRAPHICS_EACH__Table_drawEllipseWhere, U"Draw ellipse (standard deviation)", nullptr) {
 	SENTENCE (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
@@ -6905,18 +7124,19 @@ FORM (GRAPHICS_Table_drawEllipseWhere, U"Draw ellipse (standard deviation)", nul
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"2.0")
 	BOOLEAN (garnish, U"Garnish", true)
-	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only in rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		autoTable thee = Table_extractRowsWhere (me, formula, interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		autoTable thee = Table_extractRowsWhere (me, condition, interpreter);
 		Table_drawEllipse_e (thee.get(), GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, numberOfSigmas, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_drawEllipses, U"Table: Draw ellipses", nullptr) {
+FORM (GRAPHICS_EACH__Table_drawEllipses, U"Table: Draw ellipses", nullptr) {
 	SENTENCE (xColumn_string, U"Horizontal column", U"F2")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
@@ -6925,19 +7145,21 @@ FORM (GRAPHICS_Table_drawEllipses, U"Table: Draw ellipses", nullptr) {
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
 	SENTENCE (factorColumn_string, U"Factor column", U"Vowel")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
-	REAL (fontSize, U"Font size", U"12.0 (0 = no label)")
+	REAL (fontSize, U"Label font size", U"12.0 ; (0 = no label)")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		integer factorcolumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_drawEllipsesWhere (me, GRAPHICS, xcolumn, ycolumn, factorcolumn, xmin, xmax, ymin, ymax, numberOfSigmas, fontSize, garnish, U"1", interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		const integer factorcolumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
+		Table_drawEllipsesWhere (me, GRAPHICS, xcolumn, ycolumn, factorcolumn, xmin, xmax, 
+			ymin, ymax, numberOfSigmas, fontSize, garnish, U"1", interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_drawEllipsesWhere, U"Table: Draw ellipses where", nullptr) {
+FORM (GRAPHICS_EACH__Table_drawEllipsesWhere, U"Table: Draw ellipses where", nullptr) {
 	SENTENCE (xColumn_string, U"Horizontal column", U"F2")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
@@ -6946,21 +7168,23 @@ FORM (GRAPHICS_Table_drawEllipsesWhere, U"Table: Draw ellipses where", nullptr) 
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
 	SENTENCE (factorColumn_string, U"Factor column", U"Vowel")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
-	REAL (fontSize, U"Font size", U"12 (0 = no label)")
+	REAL (fontSize, U"Label font size", U"12.0 ; (0 = no label)")
 	BOOLEAN (garnish, U"Garnish", true)
-	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only in rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		integer factorcolumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_drawEllipsesWhere (me, GRAPHICS, xcolumn, ycolumn, factorcolumn, xmin,  xmax, ymin, ymax,  numberOfSigmas, fontSize, garnish, formula, interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		const integer factorcolumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
+		Table_drawEllipsesWhere (me, GRAPHICS, xcolumn, ycolumn, factorcolumn, xmin,  xmax, 
+			ymin, ymax, numberOfSigmas, fontSize, garnish, condition, interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-
-FORM (GRAPHICS_Table_normalProbabilityPlot, U"Table: Normal probability plot", U"Table: Normal probability plot...") {
+FORM (GRAPHICS_EACH__Table_normalProbabilityPlot, U"Table: Normal probability plot", U"Table: Normal probability plot...") {
 	SENTENCE (column_string, U"Column", U"F1")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (numberOfSigmas, U"Number of sigmas", U"0.0")
@@ -6970,29 +7194,30 @@ FORM (GRAPHICS_Table_normalProbabilityPlot, U"Table: Normal probability plot", U
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer column = Table_getColumnIndexFromColumnLabel (me, column_string);
+		const integer column = Table_getColumnIndexFromColumnLabel (me, column_string);
 		Table_normalProbabilityPlot (me, GRAPHICS, column, numberOfQuantiles, numberOfSigmas, labelSize, label, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_normalProbabilityPlotWhere, U"Table: Normal probability plot where", U"Table: Normal probability plot...") {
+FORM (GRAPHICS_EACH__Table_normalProbabilityPlotWhere, U"Table: Normal probability plot where", U"Table: Normal probability plot...") {
 	SENTENCE (column_string, U"Column", U"F0")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (numberOfSigmas, U"Number of sigmas", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
 	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
-	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only in rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer column = Table_getColumnIndexFromColumnLabel (me, column_string);
-		autoTable thee = Table_extractRowsWhere (me, formula, interpreter);
+		const integer column = Table_getColumnIndexFromColumnLabel (me, column_string);
+		const autoTable thee = Table_extractRowsWhere (me, condition, interpreter);
 		Table_normalProbabilityPlot (thee.get(), GRAPHICS, column, numberOfQuantiles, numberOfSigmas, labelSize, label, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_quantileQuantilePlot, U"Table: Quantile-quantile plot", U"Table: Quantile-quantile plot...") {
+FORM (GRAPHICS_EACH__Table_quantileQuantilePlot, U"Table: Quantile-quantile plot", U"Table: Quantile-quantile plot...") {
 	SENTENCE (xColumn_string, U"Horizontal axis column", U"")
 	SENTENCE (yColumn_string, U"Vertical axis column", U"")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
@@ -7006,13 +7231,15 @@ FORM (GRAPHICS_Table_quantileQuantilePlot, U"Table: Quantile-quantile plot", U"T
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		Table_quantileQuantilePlot (me, GRAPHICS, xcolumn, ycolumn, numberOfQuantiles, xmin, xmax, ymin, ymax, labelSize, label, garnish);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		Table_quantileQuantilePlot (me, GRAPHICS, xcolumn, ycolumn, numberOfQuantiles, xmin, xmax, 
+			ymin, ymax, labelSize, label, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_quantileQuantilePlot_betweenLevels, U"Table: Quantile-quantile plot (between levels)", U"Table: Quantile-quantile plot...") {
+FORM (GRAPHICS_EACH__Table_quantileQuantilePlot_betweenLevels, U"Table: Quantile-quantile plot (between levels)", U"Table: Quantile-quantile plot...") {
 	SENTENCE (dataColumn_string, U"Data column", U"F0")
 	SENTENCE (factorColumn_string, U"Factor column", U"Sex")
 	SENTENCE (xLevel_string, U"Horizontal factor level", U"")
@@ -7028,13 +7255,15 @@ FORM (GRAPHICS_Table_quantileQuantilePlot_betweenLevels, U"Table: Quantile-quant
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_quantileQuantilePlot_betweenLevels (me, GRAPHICS, dataColumn, factorColumn, xLevel_string, yLevelString, numberOfQuantiles, xmin, xmax, ymin, ymax, labelSize, label, garnish);
+		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
+		Table_quantileQuantilePlot_betweenLevels (me, GRAPHICS, dataColumn, factorColumn, xLevel_string, yLevelString,
+			numberOfQuantiles, xmin, xmax, ymin, ymax, labelSize, label, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_lagPlot, U"Table: lag plot", nullptr) {
+FORM (GRAPHICS_EACH__Table_lagPlot, U"Table: lag plot", nullptr) {
 	SENTENCE (dataColumn_string, U"Data column", U"errors")
 	NATURAL (lag, U"Lag", U"1")
 	REAL (fromXY, U"left Horizontal and vertical range", U"0.0")
@@ -7045,13 +7274,13 @@ FORM (GRAPHICS_Table_lagPlot, U"Table: lag plot", nullptr) {
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
 		Table_lagPlotWhere (me, GRAPHICS, dataColumn, lag, fromXY, toXY, label, labelSize, garnish, U"1", interpreter);
 	GRAPHICS_EACH_END
 }
 
 
-FORM (GRAPHICS_Table_lagPlotWhere, U"Table: lag plot where", nullptr) {
+FORM (GRAPHICS_EACH__Table_lagPlotWhere, U"Table: lag plot where", nullptr) {
 	SENTENCE (dataColumn_string, U"Data column", U"errors")
 	NATURAL (lag, U"Lag", U"1")
 	REAL (fromXY, U"left Horizontal and vertical range", U"0.0")
@@ -7059,16 +7288,17 @@ FORM (GRAPHICS_Table_lagPlotWhere, U"Table: lag plot where", nullptr) {
 	NATURAL (labelSize, U"Label size", U"12")
 	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
-	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only in rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		Table_lagPlotWhere (me, GRAPHICS, dataColumn, lag, fromXY, toXY, label, labelSize, garnish, formula, interpreter);
+		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		Table_lagPlotWhere (me, GRAPHICS, dataColumn, lag, fromXY, toXY, label, labelSize, garnish, condition, interpreter);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_distributionPlot, U"Table: Distribution plot", nullptr) {
+FORM (GRAPHICS_EACH__Table_distributionPlot, U"Table: Distribution plot", nullptr) {
 	SENTENCE (dataColumn_string, U"Data column", U"data")
 	REAL (minimumValue, U"Minimum value", U"0.0")
 	REAL (maximumValue, U"Maximum value", U"0.0")
@@ -7080,12 +7310,14 @@ FORM (GRAPHICS_Table_distributionPlot, U"Table: Distribution plot", nullptr) {
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		Table_distributionPlotWhere (me, GRAPHICS, dataColumn, minimumValue, maximumValue, numberOfBins, minimumFrequency, maximumFrequency, garnish, U"1", interpreter);
+		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		Table_distributionPlotWhere (me, GRAPHICS, dataColumn, minimumValue, maximumValue, 
+			numberOfBins, minimumFrequency, maximumFrequency, garnish, U"1", interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_distributionPlotWhere, U"Table: Distribution plot where", nullptr) {
+FORM (GRAPHICS_EACH__Table_distributionPlotWhere, U"Table: Distribution plot where", nullptr) {
 	SENTENCE (dataColumn_string, U"Data column", U"data")
 	REAL (minimumValue, U"Minimum value", U"0.0")
 	REAL (maximumValue, U"Maximum value", U"0.0")
@@ -7094,16 +7326,19 @@ FORM (GRAPHICS_Table_distributionPlotWhere, U"Table: Distribution plot where", n
 	REAL (minimumFrequency, U"Minimum frequency", U"0.0")
 	REAL (maximumFrequency, U"Maximum frequency", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true)
-	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only in rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		Table_distributionPlotWhere (me, GRAPHICS, dataColumn, minimumValue, maximumValue, numberOfBins, minimumFrequency, maximumFrequency, garnish, formula, interpreter);
+		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		Table_distributionPlotWhere (me, GRAPHICS, dataColumn, minimumValue, maximumValue, numberOfBins, 
+			minimumFrequency, maximumFrequency, garnish, condition, interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_horizontalErrorBarsPlot, U"Table: Horizontal error bars plot", U"Table: Horizontal error bars plot...") {
+FORM (GRAPHICS_EACH__Table_horizontalErrorBarsPlot, U"Table: Horizontal error bars plot", U"Table: Horizontal error bars plot...") {
 	SENTENCE (xColumn_string, U"Horizontal column", U"x")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -7117,15 +7352,17 @@ FORM (GRAPHICS_Table_horizontalErrorBarsPlot, U"Table: Horizontal error bars plo
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		integer xl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
-		integer xu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
-		Table_horizontalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, xl, xu, barSize_mm, garnish, U"1", interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		const integer xl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
+		const integer xu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
+		Table_horizontalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax,
+			xl, xu, barSize_mm, garnish, U"1", interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_horizontalErrorBarsPlotWhere, U"Table: Horizontal error bars plot where", U"Table: Horizontal error bars plot where...") {
+FORM (GRAPHICS_EACH__Table_horizontalErrorBarsPlotWhere, U"Table: Horizontal error bars plot where", U"Table: Horizontal error bars plot where...") {
 	SENTENCE (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -7136,19 +7373,22 @@ FORM (GRAPHICS_Table_horizontalErrorBarsPlotWhere, U"Table: Horizontal error bar
 	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
-	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only in rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		integer xl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
-		integer xu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
-		Table_horizontalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, xl, xu, barSize_mm, garnish, formula, interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		const integer xl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
+		const integer xu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
+		Table_horizontalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax,
+			xl, xu, barSize_mm, garnish, condition, interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_verticalErrorBarsPlot, U"Table: Vertical error bars plot", U"Table: Vertical error bars plot...") {
+FORM (GRAPHICS_EACH__Table_verticalErrorBarsPlot, U"Table: Vertical error bars plot", U"Table: Vertical error bars plot...") {
 	SENTENCE (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -7162,15 +7402,17 @@ FORM (GRAPHICS_Table_verticalErrorBarsPlot, U"Table: Vertical error bars plot", 
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		integer yl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
-		integer yu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
-		Table_verticalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, yl, yu, barSize_mm, garnish, U"1", interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		const integer yl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
+		const integer yu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
+		Table_verticalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, 
+			yl, yu, barSize_mm, garnish, U"1", interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_Table_verticalErrorBarsPlotWhere, U"Table: Vertical error bars plot where", U"Table: Vertical error bars plot where...") {
+FORM (GRAPHICS_EACH__Table_verticalErrorBarsPlotWhere, U"Table: Vertical error bars plot where", U"Table: Vertical error bars plot where...") {
 	SENTENCE (xColumn_string, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -7181,79 +7423,87 @@ FORM (GRAPHICS_Table_verticalErrorBarsPlotWhere, U"Table: Vertical error bars pl
 	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
-	TEXTFIELD (formula, U"Use only data in rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Use data only in rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		integer yl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
-		integer yu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
-		Table_verticalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, yl, yu, barSize_mm, garnish, formula, interpreter);
+		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
+		const integer yl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
+		const integer yu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
+		Table_verticalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, 
+			yl, yu, barSize_mm, garnish, condition, interpreter
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (NEW_Table_extractRowsWhere, U"Table: Extract rows where", nullptr) {
-	TEXTFIELD (formula, U"Extract rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+FORM (CONVERT_EACH_TO_ONE__Table_extractRowsWhere, U"Table: Extract rows where", nullptr) {
+	LABEL (U"Extract rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
-	CONVERT_EACH (Table)
-		autoTable result = Table_extractRowsWhere (me, formula, interpreter);
-	CONVERT_EACH_END (my name.get(), U"_formula")
+	CONVERT_EACH_TO_ONE (Table)
+		autoTable result = Table_extractRowsWhere (me, condition, interpreter);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_formula")
 }
 
-FORM (NEW_Table_extractRowsMahalanobisWhere, U"Table: Extract rows where (mahalanobis)", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Table_extractRowsMahalanobisWhere, U"Table: Extract rows where (mahalanobis)", nullptr) {
 	SENTENCE (dataColumns_string, U"Extract all rows where columns...", U"F1 F2 F3")
 	RADIO_ENUM (kMelder_number, haveAMahalanobisDistance,
 			U"...have a mahalanobis distance...", kMelder_number::GREATER_THAN)
 	REAL (numberOfSigmas, U"...the number", U"2.0")
 	SENTENCE (factorColumn_string, U"Factor column", U"")
-	TEXTFIELD (formula, U"Process only rows where the following condition holds:", U"1; self$[\"gender\"]=\"male\"")
+	LABEL (U"Process only rows where the following condition holds.")
+	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
-	CONVERT_EACH (Table)
-		autoTable result = Table_extractMahalanobisWhere (me, dataColumns_string, factorColumn_string, numberOfSigmas, haveAMahalanobisDistance, formula, interpreter);
-	CONVERT_EACH_END (my name.get(), U"_mahalanobis")
+	CONVERT_EACH_TO_ONE (Table)
+		autoTable result = Table_extractMahalanobisWhere (me, dataColumns_string, factorColumn_string, 
+			numberOfSigmas, haveAMahalanobisDistance, condition, interpreter
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_mahalanobis")
 }
 
-FORM (NEW_Table_extractColumnRanges, U"Table: Extract column ranges", nullptr) {
-	TEXTFIELD (columnRanges, U"Create a new Table from the following columns:", U"1 2")
-	LABEL (U"To supply rising or falling ranges, use e.g. 2:6 or 5:3.")
+FORM (CONVERT_EACH_TO_ONE__Table_extractColumnsByNumber, U"Table: Extract columns by number", nullptr) {
+	LABEL (U"Create a new Table from the columns with the following numbers.")
+	NATURALVECTOR (columnNumbers, U"Column numbers", RANGES_, U"1 2")
 	OK
 DO
-	CONVERT_EACH (Table)
-		autoTable result = Table_extractColumnRanges (me, columnRanges);
-	CONVERT_EACH_END (my name.get(), U"_columns")
+	CONVERT_EACH_TO_ONE (Table)
+		autoTable result = Table_extractColumnsByNumber (me, columnNumbers);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_columns")
 }
 
-FORM (NUMVEC_Table_listRowNumbersWhere, U"Table: List rows where", U"") {
-	SENTENCE (formula, U"The following condition holds true", U"self [row,\"F1\"] > 800.0")
+FORM (QUERY_ONE_FOR_REAL_VECTOR__Table_listRowNumbersWhere, U"Table: List rows where", U"") {
+	LABEL (U"List rows where the following condition holds true.")
+	FORMULA (condition, U"Condition", U"self [row,\"F1\"] > 800.0")
 	OK
 DO
-	NUMVEC_ONE (Table)
-		autoINTVEC resulti = Table_listRowNumbersWhere (me, formula, interpreter);
+	QUERY_ONE_FOR_REAL_VECTOR (Table)
+		autoINTVEC resulti = Table_listRowNumbersWhere (me, condition, interpreter);
 		autoVEC result = raw_VEC (resulti.size);
 		for (integer i = 1; i <= resulti.size; i ++)
 			result [i] = resulti [i];
-	NUMVEC_ONE_END
+	QUERY_ONE_FOR_REAL_VECTOR_END
 }
 
 /******************* TableOfReal ****************************/
 
-DIRECT (NEW1_CreateIrisDataset) {
+DIRECT (CREATE_ONE__CreateIrisDataset) {
 	CREATE_ONE
 		autoTableOfReal result = TableOfReal_createIrisDataset ();
 	CREATE_ONE_END (U"iris")
 }
 
-FORM (INFO_TableOfReal_reportMultivariateNormality, U"TableOfReal: Report multivariate normality (BHEP)", U"TableOfReal: Report multivariate normality (BHEP)...") {
+FORM (INFO_ONE__TableOfReal_reportMultivariateNormality, U"TableOfReal: Report multivariate normality (BHEP)", U"TableOfReal: Report multivariate normality (BHEP)...") {
 	REAL (smoothing, U"Smoothing parameter", U"0.0")
 	OK
 DO
 	INFO_ONE (TableOfReal)
 		bool singular;
 		double tnb, lnmu, lnvar;
-		double prob = TableOfReal_normalityTest_BHEP (me, & smoothing, & tnb, & lnmu, & lnvar, & singular);
+		const double prob = TableOfReal_normalityTest_BHEP (me, & smoothing, & tnb, & lnmu, & lnvar, & singular);
 		MelderInfo_open ();
 		MelderInfo_writeLine (U"Baringhaus–Henze–Epps–Pulley normality test:");
 		MelderInfo_writeLine (U"Significance of normality: ", prob);
@@ -7269,25 +7519,83 @@ DO
 	INFO_ONE_END
 }
 
-DIRECT (NEW1_TableOfReal_Permutation_permuteRows) {
-	CONVERT_TWO (TableOfReal, Permutation)
+FORM (INFO_ONE__TableOfReal_reportSphericityOfCovariance, U"TableOfReal: Report covariance sphericity", nullptr) {
+	NATURAL (numberOfPermutations, U"Number of permutations", U"100");
+	BOOLEAN (useCorrelation, U"Use correlation instead", false);
+	OK
+DO
+	INFO_ONE (TableOfReal)
+		const double p = TableOfReal_testSphericityOfCovariance (me, numberOfPermutations, useCorrelation);
+		MelderInfo_open ();
+		MelderInfo_writeLine (p, U" (=probability from ", numberOfPermutations, U" permutations.");
+		MelderInfo_close ();
+	INFO_ONE_END
+}
+
+FORM (INFO_ONE__TableOfReal_reportCompoundSymmetryOfCovariance, U"TableOfReal: Report covariance compound symmetry", nullptr) {
+	NATURAL (numberOfPermutations, U"Number of permutations", U"100");
+	BOOLEAN (useCorrelation, U"Use correlation instead", false);
+	OK
+DO
+	INFO_ONE (TableOfReal)
+		const double p = TableOfReal_testCovarianceCompoundSymmetry (me, numberOfPermutations, useCorrelation);
+		MelderInfo_open ();
+		MelderInfo_writeLine (p, U" (=probability from ", numberOfPermutations, U" permutations.");
+		MelderInfo_close ();
+	INFO_ONE_END	
+}
+
+FORM (INFO_ONE__TableOfReal_reportCovarianceIdentity, U"", nullptr) {
+	NATURAL (numberOfPermutations, U"Number of permutations", U"100");
+	BOOLEAN (useCorrelation, U"Use correlation instead", false);
+	OK
+DO
+	INFO_ONE (TableOfReal)
+		const double p = TableOfReal_testCovarianceEqualsIdentityMatrix (me, numberOfPermutations, useCorrelation);
+		MelderInfo_open ();
+		MelderInfo_writeLine (p, U" (=probability from ", numberOfPermutations, U" permutations.");
+		MelderInfo_close ();
+	INFO_ONE_END	
+}
+
+FORM (INFO_TWO__TableOfReal_reportEqualityOfCovariances, U"TableOfReal: Report equality of covariances", nullptr) {
+	NATURAL (numberOfPermutations, U"Number of permutations", U"100");
+	BOOLEAN (useCorrelation, U"Use correlation instead", false);
+	OK
+DO
+	INFO_TWO (TableOfReal)
+		const double p = TableOfReal_testEqualityOfCovariances (me, you, numberOfPermutations, useCorrelation);
+		MelderInfo_open ();
+		MelderInfo_writeLine (p, U" (=probability from ", numberOfPermutations, U" permutations.");
+		MelderInfo_close ();
+	INFO_ONE_END	
+}
+
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__TableOfReal_Permutation_permuteRows) {
+	CONVERT_ONE_AND_ONE_TO_ONE (TableOfReal, Permutation)
 		autoTableOfReal result = TableOfReal_Permutation_permuteRows (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-DIRECT (NEW_TableOfReal_to_Permutation_sortRowlabels) {
-	CONVERT_EACH (TableOfReal)
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__TableOfReal_Permutation_permuteColumns) {
+	CONVERT_ONE_AND_ONE_TO_ONE (TableOfReal, Permutation)
+		autoTableOfReal result = TableOfReal_Permutation_permuteColumns (me, you);
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
+}
+
+DIRECT (CONVERT_EACH_TO_ONE__TableOfReal_to_Permutation_sortRowlabels) {
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoPermutation result = TableOfReal_to_Permutation_sortRowLabels (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW1_TableOfReal_appendColumns) {
-	CONVERT_TYPED_LIST (TableOfReal, TableOfRealList)
+DIRECT (COMBINE_ALL_LISTED_TO_ONE__TableOfReal_appendColumns) {
+	COMBINE_ALL_LISTED_TO_ONE (TableOfReal, TableOfRealList)
 		autoTableOfReal result = TableOfRealList_appendColumnsMany (list.get());
-	CONVERT_TYPED_LIST_END (U"columns_appended");
+	COMBINE_ALL_LISTED_TO_ONE_END (U"columns_appended");
 }
 
-FORM (NEW1_TableOfReal_create_pols1973, U"Create TableOfReal (Pols 1973)", U"Create TableOfReal (Pols 1973)...") {
+FORM (CREATE_ONE__TableOfReal_create_pols1973, U"Create TableOfReal (Pols 1973)", U"Create TableOfReal (Pols 1973)...") {
 	BOOLEAN (includeFormantAmplitudeLevels, U"Include formant levels", false)
 	OK
 DO
@@ -7296,19 +7604,19 @@ DO
 	CREATE_ONE_END (U"pols1973")
 }
 
-DIRECT (NEW_Table_create_esposito2006) {
+DIRECT (CREATE_ONE__Table_create_esposito2006) {
 	CREATE_ONE
 		autoTable result = Table_create_esposito2006 ();
 	CREATE_ONE_END (U"esposito2006")
 }
 
-DIRECT (NEW_Table_create_ganong1980) {
+DIRECT (CREATE_ONE__Table_create_ganong1980) {
 	CREATE_ONE
 		autoTable result = Table_create_ganong1980 ();
 	CREATE_ONE_END (U"ganong")
 }
 
-FORM (NEW_TableOfReal_create_vanNierop1973, U"Create TableOfReal (Van Nierop 1973)...", U"Create TableOfReal (Van Nierop 1973)...") {
+FORM (CREATE_ONE__TableOfReal_create_vanNierop1973, U"Create TableOfReal (Van Nierop 1973)...", U"Create TableOfReal (Van Nierop 1973)...") {
 	BOOLEAN (includeFormantAmplitudeLevels, U"Include formant levels", false)
 	OK
 DO
@@ -7317,7 +7625,7 @@ DO
 	CREATE_ONE_END (U"vanNierop1973")
 }
 
-FORM (NEW_TableOfReal_create_weenink1983, U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Weenink 1985)...") {
+FORM (CREATE_ONE__TableOfReal_create_weenink1983, U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Weenink 1985)...") {
 	RADIO (speakerGroup, U"Speakers group", 1)
 		RADIOBUTTON (U"men")
 		RADIOBUTTON (U"women")
@@ -7329,13 +7637,13 @@ DO
 	CREATE_ONE_END ((speakerGroup == 1 ? U"m10" : speakerGroup == 2 ? U"w10" : U"c10"));
 }
 
-DIRECT (NEW_Table_create_sandwell1987) {
+DIRECT (CREATE_ONE__Table_create_sandwell1987) {
 	CREATE_ONE
 		autoTableOfReal result = TableOfReal_create_sandwell1987 ();
 	CREATE_ONE_END (U"Sandwell1987");
 }
 
-FORM (GRAPHICS_TableOfReal_drawAsScalableSquares, U"TableOfReal: Draw as scalable squares", U"TableOfReal: Draw as scalable squares...") {
+FORM (GRAPHICS_EACH__TableOfReal_drawAsScalableSquares, U"TableOfReal: Draw as scalable squares", U"TableOfReal: Draw as scalable squares...") {
 	NATURAL (rowmin, U"From row", U"1");
 	INTEGER (rowmax, U"To row", U"0 (=all)");
 	NATURAL (colmin, U"From column", U"1");
@@ -7350,11 +7658,12 @@ FORM (GRAPHICS_TableOfReal_drawAsScalableSquares, U"TableOfReal: Draw as scalabl
 DO
 	GRAPHICS_EACH (TableOfReal)
 		TableOfReal_drawAsScalableSquares (me, GRAPHICS, rowmin, rowmax, colmin, colmax,
-				origin, scaleFactor, drawingOrder, garnish);
+			origin, scaleFactor, drawingOrder, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_TableOfReal_drawScatterPlot, U"TableOfReal: Draw scatter plot", U"TableOfReal: Draw scatter plot...") {
+FORM (GRAPHICS_EACH__TableOfReal_drawScatterPlot, U"TableOfReal: Draw scatter plot", U"TableOfReal: Draw scatter plot...") {
 	LABEL (U"Select the part of the table")
 	NATURAL (xColumn, U"Horizontal axis column number", U"1")
 	NATURAL (yColumn, U"Vertical axis column number", U"2")
@@ -7372,11 +7681,13 @@ FORM (GRAPHICS_TableOfReal_drawScatterPlot, U"TableOfReal: Draw scatter plot", U
 	OK
 DO
 	GRAPHICS_EACH (TableOfReal)
-		TableOfReal_drawScatterPlot (me, GRAPHICS, xColumn, yColumn, fromRow, toRow, xmin, xmax, ymin, ymax, labelSize, useRowLabels, label, garnish);
+		TableOfReal_drawScatterPlot (me, GRAPHICS, xColumn, yColumn, fromRow, toRow, xmin, xmax, 
+			ymin, ymax, labelSize, useRowLabels, label, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_TableOfReal_drawScatterPlotMatrix, U"TableOfReal: Draw scatter plots matrix", nullptr) {
+FORM (GRAPHICS_EACH__TableOfReal_drawScatterPlotMatrix, U"TableOfReal: Draw scatter plots matrix", nullptr) {
 	INTEGER (fromColumn, U"From column", U"0")
 	INTEGER (toColumn, U"To column", U"0")
 	POSITIVE (fractionWhite, U"Fraction white", U"0.1")
@@ -7387,7 +7698,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_TableOfReal_drawBiplot, U"TableOfReal: Draw biplot", U"TableOfReal: Draw biplot...") {
+FORM (GRAPHICS_EACH__TableOfReal_drawBiplot, U"TableOfReal: Draw biplot", U"TableOfReal: Draw biplot...") {
 	LABEL (U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -7403,7 +7714,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_TableOfReal_drawVectors, U"Draw vectors", U"TableOfReal: Draw vectors...") {
+FORM (GRAPHICS_EACH__TableOfReal_drawVectors, U"Draw vectors", U"TableOfReal: Draw vectors...") {
 	LABEL (U"From (x1, y1) to (x2, y2)")
 	NATURAL (x1Column, U"X1 column", U"1")
 	NATURAL (y1Column, U"Y1 column", U"2")
@@ -7423,13 +7734,15 @@ FORM (GRAPHICS_TableOfReal_drawVectors, U"Draw vectors", U"TableOfReal: Draw vec
 	OK
 DO
 	GRAPHICS_EACH (TableOfReal)
-		TableOfReal_drawVectors (me, GRAPHICS, x1Column, y1Column, x2Column, y2Column, xmin, xmax, ymin, ymax, vectorType, labelSize, garnish);
+		TableOfReal_drawVectors (me, GRAPHICS, x1Column, y1Column, x2Column, y2Column, xmin, xmax, 
+			ymin, ymax, vectorType, labelSize, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_TableOfReal_drawRowAsHistogram, U"Draw row as histogram", U"TableOfReal: Draw rows as histogram...") {
+FORM (GRAPHICS_EACH__TableOfReal_drawRowAsHistogram, U"Draw row as histogram", U"TableOfReal: Draw rows as histogram...") {
 	LABEL (U"Select from the table")
-	WORD (rowNumber, U"Row number", U"1")
+	NATURAL (rowNumber, U"Row number", U"1")
 	INTEGER (fromColumn, U"left Column range", U"0")
 	INTEGER (toColumn, U"right Column range", U"0")
 	LABEL (U"Vertical drawing range")
@@ -7438,20 +7751,22 @@ FORM (GRAPHICS_TableOfReal_drawRowAsHistogram, U"Draw row as histogram", U"Table
 	LABEL (U"Offset and distance in units of 'bar width'")
 	REAL (xOffset, U"Horizontal offset", U"0.5")
 	REAL (distanceBetweenBars, U"Distance between bars", U"1.0")
-	WORD (greys, U"Grey value (1=white)", U"0.7")
+	REAL (greyValue, U"Grey value (1.0=white)", U"0.7")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	GRAPHICS_EACH (TableOfReal)
-		TableOfReal_drawRowsAsHistogram (me, GRAPHICS, rowNumber, fromColumn, toColumn, ymin, ymax, xOffset, 0, distanceBetweenBars, greys, garnish);
+		TableOfReal_drawRowsAsHistogram (me, GRAPHICS, autoINTVEC ({ rowNumber }).get(), fromColumn, toColumn, ymin, ymax,
+			xOffset, 0, distanceBetweenBars, autoVEC ({ greyValue }).get(), garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_TableOfReal_drawRowsAsHistogram, U"Draw rows as histogram", U"TableOfReal: Draw rows as histogram...") {
+FORM (GRAPHICS_EACH__TableOfReal_drawRowsAsHistogram, U"Draw rows as histogram", U"TableOfReal: Draw rows as histogram...") {
 	LABEL (U"Select from the table")
-	SENTENCE (rowNumbers_string, U"Row numbers", U"1 2")
-	INTEGER (fromColumn, U"left Column range", U"0")
-	INTEGER (toColumn, U"right Column range", U"0")
+	NATURALVECTOR (rowNumbers, U"Row numbers", WHITESPACE_SEPARATED_, U"1 2")
+	INTEGER (fromColumn, U"left Column range", U"0 (= all)")
+	INTEGER (toColumn, U"right Column range", U"0 (= all)")
 	LABEL (U"Vertical drawing range")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
@@ -7459,16 +7774,18 @@ FORM (GRAPHICS_TableOfReal_drawRowsAsHistogram, U"Draw rows as histogram", U"Tab
 	REAL (xOffset, U"Horizontal offset", U"1.0")
 	REAL (distanceBetweenBarGroups, U"Distance between bar groups", U"1.0")
 	REAL (distanceBetweenBars, U"Distance between bars", U"0.0")
-	SENTENCE (greys_string, U"Grey values (1=white)", U"1 1")
+	REALVECTOR (greys, U"Grey values (1.0=white)", WHITESPACE_SEPARATED_, U"1.0 1.0")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	GRAPHICS_EACH (TableOfReal)
-		TableOfReal_drawRowsAsHistogram (me, GRAPHICS, rowNumbers_string, fromColumn, toColumn, ymin, ymax,xOffset, distanceBetweenBars,distanceBetweenBarGroups, greys_string, garnish);
+		TableOfReal_drawRowsAsHistogram (me, GRAPHICS, rowNumbers, fromColumn, toColumn, ymin, ymax,
+			xOffset, distanceBetweenBars, distanceBetweenBarGroups, greys, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_TableOfReal_drawBoxPlots, U"TableOfReal: Draw box plots", U"TableOfReal: Draw box plots...") {
+FORM (GRAPHICS_EACH__TableOfReal_drawBoxPlots, U"TableOfReal: Draw box plots", U"TableOfReal: Draw box plots...") {
 	INTEGER (fromRow, U"From row", U"0")
 	INTEGER (toRow, U"To row", U"0")
 	INTEGER (fromColumn, U"From column", U"0")
@@ -7483,7 +7800,7 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_TableOfReal_drawColumnAsDistribution, U"TableOfReal: Draw column as distribution", U"TableOfReal: Draw column as distribution...") {
+FORM (GRAPHICS_EACH__TableOfReal_drawColumnAsDistribution, U"TableOfReal: Draw column as distribution", U"TableOfReal: Draw column as distribution...") {
 	NATURAL (columnNumber, U"Column number", U"1")
 	REAL (fromValue, U"left Value range", U"0.0")
 	REAL (toValue, U"right Value range", U"0.0")
@@ -7494,63 +7811,66 @@ FORM (GRAPHICS_TableOfReal_drawColumnAsDistribution, U"TableOfReal: Draw column 
 	OK
 DO
 	GRAPHICS_EACH (TableOfReal)
-		TableOfReal_drawColumnAsDistribution (me, GRAPHICS, columnNumber, fromValue, toValue, numberOfBins, fromFrequency, toFrequency, false, garnish);
+		TableOfReal_drawColumnAsDistribution (me, GRAPHICS, columnNumber, fromValue, toValue, numberOfBins, 
+			fromFrequency, toFrequency, false, garnish
+		);
 	GRAPHICS_EACH_END
 }
 
-FORM (NEW_TableOfReal_to_Configuration_lda, U"TableOfReal: To Configuration (lda)", U"TableOfReal: To Configuration (lda)...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_Configuration_lda, U"TableOfReal: To Configuration (lda)", U"TableOfReal: To Configuration (lda)...") {
 	INTEGER (numberOfDimensions, U"Number of dimensions", U"0 (= all)")
 	OK
 DO
-	Melder_require (numberOfDimensions >= 0, U"The number of dimensions should be at least zero.");
-	CONVERT_EACH (TableOfReal)
+	Melder_require (numberOfDimensions >= 0, 
+		U"The number of dimensions should be at least zero.");
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoConfiguration result = TableOfReal_to_Configuration_lda (me, numberOfDimensions);
-	CONVERT_EACH_END (my name.get(), U"_lda")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_lda")
 }
 
-FORM (NEW_TableOfReal_to_CCA, U"TableOfReal: To CCA", U"TableOfReal: To CCA...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_CCA, U"TableOfReal: To CCA", U"TableOfReal: To CCA...") {
 	NATURAL (dimensionOfDependentVariate, U"Dimension of dependent variate", U"2")
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoCCA result = TableOfReal_to_CCA (me, dimensionOfDependentVariate);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_TableOfReal_to_Configuration_pca, U"TableOfReal: To Configuration (pca)", U"TableOfReal: To Configuration (pca)...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_Configuration_pca, U"TableOfReal: To Configuration (pca)", U"TableOfReal: To Configuration (pca)...") {
 	NATURAL (numberOfDimensions, U"Number of dimensions", U"2")
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoConfiguration result = TableOfReal_to_Configuration_pca (me, numberOfDimensions);
-	CONVERT_EACH_END (my name.get(), U"_pca")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_pca")
 }
 
-DIRECT (NEW_TableOfReal_to_Discriminant) {
-	CONVERT_EACH (TableOfReal)
+DIRECT (CONVERT_EACH_TO_ONE__TableOfReal_to_Discriminant) {
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoDiscriminant result = TableOfReal_to_Discriminant (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_TableOfReal_to_PCA_byRows) {
-	CONVERT_EACH (TableOfReal)
+DIRECT (CONVERT_EACH_TO_ONE__TableOfReal_to_PCA_byRows) {
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoPCA result = TableOfReal_to_PCA_byRows (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_TableOfReal_to_SSCP, U"TableOfReal: To SSCP", U"TableOfReal: To SSCP...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_SSCP, U"TableOfReal: To SSCP", U"TableOfReal: To SSCP...") {
 	INTEGER (fromRow, U"Begin row", U"0")
 	INTEGER (toRow, U"End row", U"0")
 	INTEGER (fromColumn, U"Begin column", U"0")
 	INTEGER (toColumn, U"End column", U"0")
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoSSCP result = TableOfReal_to_SSCP (me, fromRow, toRow, fromColumn, toColumn);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEW_TableOfReal_to_SSCP_rowWeights, U"TableOfReal: To SSCP (row weights)", U"TableOfReal: To SSCP (row weights)...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_SSCP_rowWeights, U"TableOfReal: To SSCP (row weights)", U"TableOfReal: To SSCP (row weights)...") {
 	INTEGER (fromRow, U"Begin row", U"0")
 	INTEGER (toRow, U"End row", U"0")
 	INTEGER (fromColumn, U"Begin column", U"0")
@@ -7558,49 +7878,49 @@ FORM (NEW_TableOfReal_to_SSCP_rowWeights, U"TableOfReal: To SSCP (row weights)",
 	INTEGER (rowWeights, U"Weights column number", U"0")
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoSSCP result = TableOfReal_to_SSCP_rowWeights (me, fromRow, toRow, fromColumn, toColumn, rowWeights);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 /* For the inheritors */
-DIRECT (NEW_TableOfReal_to_TableOfReal) {
-	CONVERT_EACH (TableOfReal)
+DIRECT (CONVERT_EACH_TO_ONE__TableOfReal_to_TableOfReal) {
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoTableOfReal result = TableOfReal_to_TableOfReal (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_TableOfReal_to_Correlation) {
-	CONVERT_EACH (TableOfReal)
+DIRECT (CONVERT_EACH_TO_ONE__TableOfReal_to_Correlation) {
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoCorrelation result = TableOfReal_to_Correlation (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_TableOfReal_to_Correlation_rank) {
-	CONVERT_EACH (TableOfReal)
+DIRECT (CONVERT_EACH_TO_ONE__TableOfReal_to_Correlation_rank) {
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoCorrelation result = TableOfReal_to_Correlation_rank (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_TableOfReal_to_Covariance) {
-	CONVERT_EACH (TableOfReal)
+DIRECT (CONVERT_EACH_TO_ONE__TableOfReal_to_Covariance) {
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoCovariance result = TableOfReal_to_Covariance (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_TableOfReal_to_SVD) {
-	CONVERT_EACH (TableOfReal)
+DIRECT (CONVERT_EACH_TO_ONE__TableOfReal_to_SVD) {
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoSVD result = TableOfReal_to_SVD (me);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW1_TablesOfReal_to_Eigen_gsvd) {
-	CONVERT_COUPLE (TableOfReal)
+DIRECT (CONVERT_TWO_TO_ONE__TablesOfReal_to_Eigen_gsvd) {
+	CONVERT_TWO_TO_ONE (TableOfReal)
 		autoEigen result = TablesOfReal_to_Eigen_gsvd (me, you);
-	CONVERT_COUPLE_END (U"gsvd");
+	CONVERT_TWO_TO_ONE_END (U"gsvd");
 }
 
-FORM (NEW1_TableOfReal_TableOfReal_crossCorrelations, U"TableOfReal & TableOfReal: Cross-correlations", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__TableOfReal_TableOfReal_crossCorrelations, U"TableOfReal & TableOfReal: Cross-correlations", nullptr) {
 	OPTIONMENU (between, U"Correlations between", 1)
 		OPTION (U"rows")
 		OPTION (U"columns")
@@ -7608,113 +7928,114 @@ FORM (NEW1_TableOfReal_TableOfReal_crossCorrelations, U"TableOfReal & TableOfRea
 	BOOLEAN (normalize, U"Normalize", false)
 	OK
 DO
-	int by_columns = between - 1;
-	CONVERT_COUPLE (TableOfReal)
+	const bool by_columns = ( between == 2 );
+	CONVERT_TWO_TO_ONE (TableOfReal)
 		autoTableOfReal result = TableOfReal_TableOfReal_crossCorrelations (me, you, by_columns, center, normalize);
-	CONVERT_COUPLE_END (U"cc_", by_columns ? U"by_cols" : U"by_rows")
+	CONVERT_TWO_TO_ONE_END (U"cc_", by_columns ? U"by_cols" : U"by_rows")
 }
 
 void praat_TableOfReal_init3 (ClassInfo klas);
 void praat_TableOfReal_init3 (ClassInfo klas) {
 	praat_TableOfReal_init (klas);
-	praat_addAction1 (klas, 2, U"To TableOfReal (cross-correlations)...", 0, 0, NEW1_TableOfReal_TableOfReal_crossCorrelations);
+	praat_addAction1 (klas, 2, U"To TableOfReal (cross-correlations)...", 0, 0, 
+			CONVERT_TWO_TO_ONE__TableOfReal_TableOfReal_crossCorrelations);
 }
 
-DIRECT (NEW1_TablesOfReal_to_GSVD) {
-	CONVERT_COUPLE (TableOfReal)
+DIRECT (CONVERT_TWO_TO_ONE__TablesOfReal_to_GSVD) {
+	CONVERT_TWO_TO_ONE (TableOfReal)
 		autoGSVD result = TablesOfReal_to_GSVD (me, you);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW_TableOfReal_choleskyDecomposition, U"TableOfReal: Cholesky decomposition", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_choleskyDecomposition, U"TableOfReal: Cholesky decomposition", nullptr) {
 	BOOLEAN (wantUpper, U"Upper (else L)", false)
 	BOOLEAN (wantInverse, U"Inverse", false)
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoTableOfReal result = TableOfReal_choleskyDecomposition (me, wantUpper, wantInverse);
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (NEWMANY_TableOfReal_to_PatternList_and_Categories, U"TableOfReal: To PatternList and Categories", U"TableOfReal: To PatternList and Categories...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_PatternList_and_Categories, U"TableOfReal: To PatternList and Categories", U"TableOfReal: To PatternList and Categories...") {
 	INTEGER (fromRow, U"left Row range", U"0")
 	INTEGER (toRow, U"right Row range", U"0 (= all)")
 	INTEGER (fromColumn, U"left Column range", U"0")
 	INTEGER (toColumn, U"right Column range", U"0 (= all)")
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoPatternList ap;
 		autoCategories result;
 		TableOfReal_to_PatternList_and_Categories (me, fromRow, toRow, fromColumn, toColumn, & ap, & result);
 		praat_new (ap.move(), my name.get());
-	CONVERT_EACH_END (my name.get())
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (REAL_TableOfReal_getColumnSum, U"TableOfReal: Get column sum", U"") {
+FORM (QUERY_ONE_FOR_REAL__TableOfReal_getColumnSum, U"TableOfReal: Get column sum", U"") {
 	INTEGER (columnNumber, U"Column", U"1")
 	OK
 DO
-	NUMBER_ONE (TableOfReal)
-		double result = TableOfReal_getColumnSum (me, columnNumber);
-	NUMBER_ONE_END (U"(column sum)")
+	QUERY_ONE_FOR_REAL (TableOfReal)
+		const double result = TableOfReal_getColumnSum (me, columnNumber);
+	QUERY_ONE_FOR_REAL_END (U"(column sum)")
 }
 
-FORM (REAL_TableOfReal_getRowSum, U"TableOfReal: Get row sum", U"") {
+FORM (QUERY_ONE_FOR_REAL__TableOfReal_getRowSum, U"TableOfReal: Get row sum", U"") {
 	INTEGER (rowNumber, U"Row", U"1")
 	OK
 DO
-	NUMBER_ONE (TableOfReal)
-		double result = TableOfReal_getRowSum (me, rowNumber);
-	NUMBER_ONE_END (U"(row sum)")
+	QUERY_ONE_FOR_REAL (TableOfReal)
+		const double result = TableOfReal_getRowSum (me, rowNumber);
+	QUERY_ONE_FOR_REAL_END (U"(row sum)")
 }
 
-DIRECT (REAL_TableOfReal_getGrandSum) {
-	NUMBER_ONE (TableOfReal)
-		double result = TableOfReal_getGrandSum (me);
-	NUMBER_ONE_END (U"(grand sum)")
+DIRECT (QUERY_ONE_FOR_REAL__TableOfReal_getGrandSum) {
+	QUERY_ONE_FOR_REAL (TableOfReal)
+		const double result = TableOfReal_getGrandSum (me);
+	QUERY_ONE_FOR_REAL_END (U"(grand sum)")
 }
 
-FORM (NEW_TableOfReal_meansByRowLabels, U"TableOfReal: Means by row labels", U"TableOfReal: To TableOfReal (means by row labels)...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_meansByRowLabels, U"TableOfReal: Means by row labels", U"TableOfReal: To TableOfReal (means by row labels)...") {
 	BOOLEAN (expand, U"Expand", false)
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoTableOfReal result = TableOfReal_meansByRowLabels (me, expand, 0);
-	CONVERT_EACH_END (my name.get(), U"_byrowlabels")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_byrowlabels")
 }
 
-FORM (NEW_TableOfReal_mediansByRowLabels, U"TableOfReal: Medians by row labels", U"TableOfReal: To TableOfReal (medians by row labels)...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_mediansByRowLabels, U"TableOfReal: Medians by row labels", U"TableOfReal: To TableOfReal (medians by row labels)...") {
 	BOOLEAN (expand, U"Expand", false)
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoTableOfReal result = TableOfReal_meansByRowLabels (me, expand, 1);
-	CONVERT_EACH_END (my name.get(), U"_byrowlabels")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_byrowlabels")
 }
 
-FORM (NEW_TableOfReal_to_TableOfReal_rankColumns, U"TableOfReal: Rank columns", U"TableOfReal: To TableOfReal (rank columns)...") {
+FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_TableOfReal_rankColumns, U"TableOfReal: Rank columns", U"TableOfReal: To TableOfReal (rank columns)...") {
 	INTEGER (fromColumn, U"left Column range", U"0")
 	INTEGER (toColumn, U"right Column range", U"0 (=all)")
 	OK
 DO
-	CONVERT_EACH (TableOfReal)
+	CONVERT_EACH_TO_ONE (TableOfReal)
 		autoTableOfReal result = TableOfReal_rankColumns (me, fromColumn, toColumn);
-	CONVERT_EACH_END (my name.get(), U"_byrowlabels")
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_byrowlabels")
 }
 
 /***** TableOfReal and FilterBank  *****/
 
-FORM (REAL_TextGrid_getTotalDurationOfIntervalsWhere, U"Total duration of intervals where", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__TextGrid_getTotalDurationOfIntervalsWhere, U"Total duration of intervals where", nullptr) {
 	INTEGER (tierNumber, U"Tier number", U"1")
 	OPTIONMENU_ENUM (kMelder_string, countIntervalsWhoseLabel___,
 			U"Intervals whose label...", kMelder_string::DEFAULT)
 	SENTENCE (___theText, U"...the text", U"hi")
 	OK
 DO
-	NUMBER_ONE (TextGrid)
-		double result = TextGrid_getTotalDurationOfIntervalsWhere (me, tierNumber, countIntervalsWhoseLabel___, ___theText);
-	NUMBER_ONE_END (U" s (duration of intervals containing \"", ___theText, U"\")");
+	QUERY_ONE_FOR_REAL (TextGrid)
+		const double result = TextGrid_getTotalDurationOfIntervalsWhere (me, tierNumber, countIntervalsWhoseLabel___, ___theText);
+	QUERY_ONE_FOR_REAL_END (U" s (duration of intervals containing \"", ___theText, U"\")");
 }
 
 FORM (MODIFY_TextGrid_extendTime, U"TextGrid: Extend time", U"TextGrid: Extend time...") {
@@ -7735,14 +8056,16 @@ FORM (MODIFY_TextGrid_replaceIntervalTexts, U"TextGrid: Replace interval texts",
 	INTEGER (toInterval, U"right Interval range", U"0 (= all)")
 	SENTENCE (search_string, U"Search", U"a")
 	SENTENCE (replace_string, U"Replace", U"b")
-	RADIO (searchType, U"Search and replace strings are:", 1)
+	RADIO (searchType, U"Search and replace strings are", 1)
 		RADIOBUTTON (U"literals")
 		RADIOBUTTON (U"Regular Expressions")
 	OK
 DO
 	MODIFY_EACH (TextGrid)
 		integer nmatches, nstringmatches;
-		TextGrid_changeLabels (me, tierNumber, fromInterval, toInterval, search_string, replace_string, searchType - 1, &nmatches, &nstringmatches);
+		TextGrid_changeLabels (me, tierNumber, fromInterval, toInterval, search_string, replace_string, 
+			searchType - 1, &nmatches, &nstringmatches
+		);
 	MODIFY_EACH_END
 }
 
@@ -7752,28 +8075,30 @@ FORM (MODIFY_TextGrid_replacePointTexts, U"TextGrid: Replace point texts", U"Tex
 	INTEGER (toInterval, U"right Interval range", U"0 (= all)")
 	SENTENCE (search_string, U"Search", U"a")
 	SENTENCE (replace_string, U"Replace", U"b")
-	RADIO (searchType, U"Search and replace strings are:", 1)
+	RADIO (searchType, U"Search and replace strings are", 1)
 		RADIOBUTTON (U"literals")
 		RADIOBUTTON (U"Regular Expressions")
 	OK
 DO
 	MODIFY_EACH (TextGrid)
 		integer nmatches, nstringmatches;
-		TextGrid_changeLabels (me, tierNumber, fromInterval, toInterval, search_string, replace_string, searchType - 1, &nmatches, &nstringmatches);
+		TextGrid_changeLabels (me, tierNumber, fromInterval, toInterval, search_string, replace_string,
+			searchType - 1, &nmatches, &nstringmatches
+		);
 	MODIFY_EACH_END
 }
 
-FORM (NEW1_TextGrids_to_Table_textAlignment, U"TextGrids: To Table (text alignment)", nullptr) {
+FORM (CONVERT_TWO_TO_ONE__TextGrids_to_Table_textAlignment, U"TextGrids: To Table (text alignment)", nullptr) {
 	NATURAL (targetTierNumber, U"Target tier", U"1")
 	NATURAL (sourceTierNumber, U"Source tier", U"1")
 	OK
 DO
-	CONVERT_COUPLE (TextGrid)
+	CONVERT_TWO_TO_ONE (TextGrid)
  		autoTable result = TextGrids_to_Table_textAlignment (me, targetTierNumber, you, sourceTierNumber, nullptr);
-	CONVERT_COUPLE_END (my name.get(), U"_", your name.get());
+	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get());
 }
 
-FORM (NEW_TextGrid_to_DurationTier, U"TextGrid: To DurationTier", U"TextGrid: To DurationTier...") {
+FORM (CONVERT_EACH_TO_ONE__TextGrid_to_DurationTier, U"TextGrid: To DurationTier", U"TextGrid: To DurationTier...") {
 	NATURAL (tierNumber, U"Tier number", U"1")
 	POSITIVE (timeScaleFactor, U"Time scale factor", U"2.0")
 	POSITIVE (leftTransitionDuration, U"Left transition duration (s)", U"1e-10")
@@ -7783,97 +8108,412 @@ FORM (NEW_TextGrid_to_DurationTier, U"TextGrid: To DurationTier", U"TextGrid: To
 	SENTENCE (___theText, U"...the text", U"hi")
 	OK
 DO
-	CONVERT_EACH (TextGrid)
+	CONVERT_EACH_TO_ONE (TextGrid)
 		autoDurationTier result = TextGrid_to_DurationTier (me,tierNumber, timeScaleFactor,
-			leftTransitionDuration, rightTransitionDuration, scaleIntervalsWhoseLabel___, ___theText);
-	CONVERT_EACH_END (my name.get())
+			leftTransitionDuration, rightTransitionDuration, scaleIntervalsWhoseLabel___, ___theText
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (NEW_TextGrid_DurationTier_to_TextGrid) {
-	CONVERT_TWO (TextGrid, DurationTier)
+FORM (CONVERT_EACH_TO_ONE__TextGrid_to_TextGridNavigator_topicSearch, U"TextGrid: To TextGridNavigator (topic search)", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	STRINGARRAY_LINES (4, topicLabels, U"Topic labels", { U"i", U"u", U"e", U"o", U"\\as" })
+	OPTIONMENU_ENUM (kMelder_string, topicCriterion, U"Topic match criterion", kMelder_string::DEFAULT)
+	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
+	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
+	OK
+DO
+	CONVERT_EACH_TO_ONE (TextGrid)
+		autoTextGridNavigator result = TextGrid_to_TextGridNavigator_topicSearch (me, tierNumber, 
+			topicLabels, topicCriterion, topicMatchBoolean, matchDomain
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__TextGrid_to_TextGridNavigator, U"TextGrid: To TextGridNavigator", U"TextGrid: To TextGridNavigator...") {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	STRINGARRAY_LINES (4, topicLabels, U"Topic labels", { U"i", U"u", U"e", U"o", U"\\as" })
+	OPTIONMENU_ENUM (kMelder_string, topicCriterion, U"Topic match criterion", kMelder_string::EQUAL_TO)
+	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
+	LABEL (U"")
+	STRINGARRAY_LINES (4, beforeLabels, U"Before labels", { U"p", U"b", U"t", U"d", U"k", U"g" })
+	OPTIONMENU_ENUM (kMelder_string, beforeCriterion, U"Before match criterion", kMelder_string::EQUAL_TO)
+	OPTIONMENU_ENUM (kMatchBoolean, beforeMatchBoolean, U"Combine before matches with", kMatchBoolean::OR_)
+	LABEL (U"")
+	STRINGARRAY_LINES (4, afterLabels, U"After labels", { U"m", U"n" })
+	OPTIONMENU_ENUM (kMelder_string, afterCriterion, U"After match criterion", kMelder_string::EQUAL_TO)
+	OPTIONMENU_ENUM (kMatchBoolean, afterMatchBoolean, U"Combine after matches with", kMatchBoolean::OR_)
+	LABEL (U"")
+	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"Combination criterion", kContext_combination::BEFORE_AND_AFTER)
+	BOOLEAN (excludeTopic, U"Exclude topic labels", false)
+	LABEL (U"")
+	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
+	OK
+DO
+	CONVERT_EACH_TO_ONE (TextGrid)
+		autoTextGridNavigator result = TextGrid_to_TextGridNavigator (me, tierNumber, 
+			topicLabels, topicCriterion, topicMatchBoolean,
+			beforeLabels, beforeCriterion, beforeMatchBoolean,
+			afterLabels, afterCriterion, afterMatchBoolean,
+			combinationCriterion, excludeTopic, matchDomain
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__TextGrid_DurationTier_to_TextGrid) {
+	CONVERT_ONE_AND_ONE_TO_ONE (TextGrid, DurationTier)
 		autoTextGrid result = TextGrid_DurationTier_scaleTimes (me, you);
-	CONVERT_TWO_END (my name.get(), U"_", your name.get())
+	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW1_TextGrids_EditCostsTable_to_Table_textAlignment, U"TextGrids & EditCostsTable: To Table (text alignment)", nullptr) {
+FORM (CONVERT_TWO_AND_ONE_TO_ONE__TextGrids_EditCostsTable_to_Table_textAlignment, U"TextGrids & EditCostsTable: To Table (text alignment)", nullptr) {
 	NATURAL (targetTierNumber, U"Target tier", U"1")
 	NATURAL (sourceTierNumber, U"Source tier", U"1")
 	OK
 DO
-	CONVERT_COUPLE_AND_ONE (TextGrid, EditCostsTable)
+	CONVERT_TWO_AND_ONE_TO_ONE (TextGrid, EditCostsTable)
 		autoTable result = TextGrids_to_Table_textAlignment (me, targetTierNumber, you, sourceTierNumber, him);
-	CONVERT_COUPLE_AND_ONE_END (my name.get(), U"_", your name.get())
+	CONVERT_TWO_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (NEW_TextGrid_NavigationContext_to_TextGridNavigator, U"TextGrid & NavigationContext: To TextGridNavigator", nullptr) {
-	NATURAL (tierNumber, U"Tier number", U"1")
-	OK
-DO
-	CONVERT_TWO (TextGrid, NavigationContext)
-		autoTextGridNavigator result = TextGridNavigator_create (me, you, tierNumber);
-	CONVERT_TWO_END (my name.get())
+
+DIRECT (HELP__TextGridNavigator_help) {
+	HELP (U"TextGridNavigator")
 }
 
-FORM (INTEGER_TextGridNavigator_getNextMatchAfterTime, U"", nullptr) {
+FORM (MODIFY_EACH__TextGridNavigator_findNextAfterTime, U"TextGridNavigator: Find next after time", nullptr) {
 	REAL (time, U"Time (s)", U"-1.0")
 	OK
 DO
-	INTEGER_ONE (TextGridNavigator)
-		integer result = TextGridNavigator_getNextMatchAfterTime (me, time);
-	INTEGER_ONE_END (U"")
+	MODIFY_EACH (TextGridNavigator)
+		(void) TextGridNavigator_findNextAfterTime (me, time);
+	MODIFY_EACH_END
 }
 
-FORM (INTEGER_TextGridNavigator_getPreviousMatchBeforeTime, U"", nullptr) {
+FORM (MODIFY_EACH__TextGridNavigator_findPreviousBeforeTime, U"TextGridNavigator: Find previous before time", nullptr) {
 	REAL (time, U"Time (s)", U"10.0")
 	OK
 DO
-	INTEGER_ONE (TextGridNavigator)
-		integer result = TextGridNavigator_getPreviousMatchBeforeTime (me, time);
-	INTEGER_ONE_END (U"")
+	MODIFY_EACH (TextGridNavigator)
+		(void) TextGridNavigator_findPreviousBeforeTime (me, time);
+	MODIFY_EACH_END
 }
 
-DIRECT (INTEGER_TextGridNavigator_getFirstMatch) {
-	INTEGER_ONE (TextGridNavigator)
-		double  result = TextGridNavigator_getFirstMatch (me);
-	INTEGER_ONE_END (U"")
+DIRECT (MODIFY_EACH__TextGridNavigator_findFirst) {
+	MODIFY_EACH (TextGridNavigator)
+		(void) TextGridNavigator_findFirst (me);
+	MODIFY_EACH_END
 }
 
-DIRECT (INTEGER_TextGridNavigator_getLastMatch) {
-	INTEGER_ONE (TextGridNavigator)
-		double  result = TextGridNavigator_getLastMatch (me);
-	INTEGER_ONE_END (U"")
+DIRECT (MODIFY_EACH__TextGridNavigator_findLast) {
+	MODIFY_EACH (TextGridNavigator)
+		(void) TextGridNavigator_findLast (me);
+	MODIFY_EACH_END
 }
 
-DIRECT (REAL_TextGridNavigator_getCurrentStartTime) {
-	NUMBER_ONE (TextGridNavigator)
-		double  result = TextGridNavigator_getCurrentStartTime (me);
-	NUMBER_ONE_END (U" s (start time)")
+DIRECT (MODIFY_EACH__TextGridNavigator_findNext) {
+	MODIFY_EACH (TextGridNavigator)
+		(void) TextGridNavigator_findNext (me);
+	MODIFY_EACH_END
 }
 
-DIRECT (REAL_TextGridNavigator_getCurrentEndTime) {
-	NUMBER_ONE (TextGridNavigator)
-		double  result = TextGridNavigator_getCurrentEndTime (me);
-	NUMBER_ONE_END (U" s (end time)")
+DIRECT (MODIFY_EACH__TextGridNavigator_findPrevious) {
+	MODIFY_EACH (TextGridNavigator)
+		(void) TextGridNavigator_findPrevious (me);
+	MODIFY_EACH_END
 }
 
-DIRECT (INFO_TextGridNavigator_getCurrentLabel) {
-	STRING_ONE (TextGridNavigator)
-		conststring32 result = TextGridNavigator_getCurrentLabel (me);
-	STRING_ONE_END
-}
-
-FORM (MODIFY_TextGridNavigator_addNavigationContext, U"TextGrid & NavigationContext: Add navigation context", nullptr) {
+FORM (QUERY_ONE_FOR_REAL__TextGridNavigator_getStartTime, U"TextGridNavigator: Get start time", nullptr) {
 	NATURAL (tierNumber, U"Tier number", U"1")
-	OPTIONMENU_ENUM (kNavigatableTier_match, matchCriterion, U"Timing relation with navigation match", kNavigatableTier_match::DEFAULT)
+	OPTIONMENU_ENUM (kContext_where, where, U"Where", kContext_where::DEFAULT)
 	OK
 DO
-	MODIFY_FIRST_OF_TWO (TextGridNavigator, NavigationContext)
-		TextGridNavigator_addNavigationContext (me, you, tierNumber, matchCriterion);
-	MODIFY_FIRST_OF_TWO_END
+	QUERY_ONE_FOR_REAL (TextGridNavigator)
+		const double result = TextGridNavigator_getStartTime (me, tierNumber, where);
+	QUERY_ONE_FOR_REAL_END (U" s (start time)")
 }
 
-FORM (MODIFY_TextGrid_setTierName, U"TextGrid: Set tier name", U"TextGrid: Set tier name...") {
-	NATURAL (tierNUmber, U"Tier number:", U"1")
+FORM (QUERY_ONE_FOR_REAL__TextGridNavigator_getEndTime, U"TextGridNavigator: Get end time", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kContext_where, where, U"Where", kContext_where::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_REAL (TextGridNavigator)
+		const double result = TextGridNavigator_getEndTime (me, tierNumber, where);
+	QUERY_ONE_FOR_REAL_END (U" s (end time)")
+}
+
+FORM (QUERY_ONE_FOR_INTEGER__TextGridNavigator_getIndex, U"TextGridNavigator: Get index", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kContext_where, where, U"Where", kContext_where::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_INTEGER (TextGridNavigator)
+		const integer result = TextGridNavigator_getIndex (me, tierNumber, where);
+	QUERY_ONE_FOR_INTEGER_END (U"")
+}
+
+FORM (QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listIndices, U"TextGridNavigator: List indices", nullptr) {
+	OPTIONMENU_ENUM (kContext_where, where, U"Where", kContext_where::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_REAL_VECTOR (TextGridNavigator)
+		autoINTVEC resulti = TextGridNavigator_listIndices (me, where);
+		autoVEC result = raw_VEC (resulti.size);
+		for (integer i = 1; i <= result.size; i++)
+			result [i] = resulti [i];
+	QUERY_ONE_FOR_REAL_VECTOR_END
+}
+
+FORM (QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listStartTimes, U"TextGridNavigator: List start times", nullptr) {
+	OPTIONMENU_ENUM (kContext_where, where, U"Where", kContext_where::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_REAL_VECTOR (TextGridNavigator)
+		autoVEC result = TextGridNavigator_listStartTimes (me, where);
+	QUERY_ONE_FOR_REAL_VECTOR_END
+}
+
+FORM (QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listEndTimes, U"TextGridNavigator: List end times", nullptr) {
+	OPTIONMENU_ENUM (kContext_where, where, U"Where", kContext_where::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_REAL_VECTOR (TextGridNavigator)
+		autoVEC result = TextGridNavigator_listEndTimes (me, where);
+	QUERY_ONE_FOR_REAL_VECTOR_END
+}
+
+FORM (QUERY_ONE_FOR_STRING_ARRAY__TextGridNavigator_listLabels, U"TextGridNavigator: List labels", nullptr) {
+	OPTIONMENU_ENUM (kContext_where, where, U"Where", kContext_where::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_STRING_ARRAY (TextGridNavigator)
+		autoSTRVEC result = TextGridNavigator_listLabels (me, where);
+	QUERY_ONE_FOR_STRING_ARRAY_END
+}
+
+FORM (QUERY_ONE_FOR_MATRIX__TextGridNavigator_listDomains, U"", nullptr) {
+	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_MATRIX (TextGridNavigator)
+		autoMAT result = TextGridNavigator_listDomains (me, matchDomain);
+	QUERY_ONE_FOR_MATRIX_END
+}
+
+FORM (QUERY_ONE_FOR_STRING__TextGridNavigator_getLabel, U"TextGridNavigator: Get label", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kContext_where, where, U"Where", kContext_where::DEFAULT)
+	OK
+DO
+	QUERY_ONE_FOR_STRING (TextGridNavigator)
+		conststring32 result = TextGridNavigator_getLabel (me, tierNumber, where);
+	QUERY_ONE_FOR_STRING_END
+}
+
+DIRECT (QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfMatches) {
+	QUERY_ONE_FOR_INTEGER (TextGridNavigator)
+		const integer result = TextGridNavigator_getNumberOfMatches (me);
+	QUERY_ONE_FOR_INTEGER_END (U" (number of matches)")	
+}
+
+FORM (QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfTopicMatches, U"TextGridNavigator: Get number of Topic only matches", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OK
+DO
+	QUERY_ONE_FOR_INTEGER (TextGridNavigator)
+		const integer result = TextGridNavigator_getNumberOfTopicMatches (me, tierNumber);
+	QUERY_ONE_FOR_INTEGER_END (U" (number of Topic only matches in tier number ", tierNumber, U")")	
+}
+
+FORM (QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfBeforeMatches, U"TextGridNavigator: Get number of Before only matches", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OK
+DO
+	QUERY_ONE_FOR_INTEGER (TextGridNavigator)
+		const integer result = TextGridNavigator_getNumberOfBeforeMatches (me, tierNumber);
+	QUERY_ONE_FOR_INTEGER_END (U" (number of Before only matches in tier number ", tierNumber, U")")	
+}
+
+FORM (QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfAfterMatches, U"TextGridNavigator: Get number of After only matches", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OK
+DO
+	QUERY_ONE_FOR_INTEGER (TextGridNavigator)
+		const integer result = TextGridNavigator_getNumberOfAfterMatches (me, tierNumber);
+	QUERY_ONE_FOR_INTEGER_END (U" (number of After only matches in tier number ", tierNumber, U")")	
+}
+
+FORM (MODIFY_EACH__TextGridNavigator_modifyCombinationCriterion, U"TextGridNavigator: Modify combination criterion", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"Use criterion", kContext_combination::DEFAULT)
+	BOOLEAN (excludeTopic, U"Exclude topic", false)
+	OK
+DO
+	MODIFY_EACH (TextGridNavigator)
+		TextGridNavigator_modifyCombinationCriterion (me, tierNumber, combinationCriterion, excludeTopic);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EACH__TextGridNavigator_modifyTopicCriterion, U"TextGridNavigator: Modify Topic match criterion", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kMelder_string, topicCriterion, U"Topic match criterion", kMelder_string::DEFAULT)
+	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
+	OK
+DO
+	MODIFY_EACH (TextGridNavigator)
+		TextGridNavigator_modifyTopicCriterion (me, tierNumber, topicCriterion, topicMatchBoolean);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EACH__TextGridNavigator_modifyBeforeCriterion, U"TextGridNavigator: Modify Before match criterion", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kMelder_string, beforeCriterion, U"Before match criterion", kMelder_string::DEFAULT)
+	OPTIONMENU_ENUM (kMatchBoolean, beforeMatchBoolean, U"Combine before matches with", kMatchBoolean::OR_)
+	OK
+DO
+	MODIFY_EACH (TextGridNavigator)
+		TextGridNavigator_modifyBeforeCriterion (me, tierNumber, beforeCriterion, beforeMatchBoolean);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EACH__TextGridNavigator_modifyAfterCriterion, U"TextGridNavigator: Modify After match criterion", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kMelder_string, afterCriterion, U"After match criterion", kMelder_string::DEFAULT)
+	OPTIONMENU_ENUM (kMatchBoolean, afterMatchBoolean, U"Combine after matches with", kMatchBoolean::OR_)
+	OK
+DO
+	MODIFY_EACH (TextGridNavigator)
+		TextGridNavigator_modifyAfterCriterion (me, tierNumber, afterCriterion, afterMatchBoolean);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EACH__TextGridNavigator_modifyMatchDomainAlignment, U"TextGridNavigator: Modify match domain alignment", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kMatchDomainAlignment, matchDomainAlignment, U"Match domain alignment", kMatchDomainAlignment::DEFAULT)
+	OK
+DO
+	MODIFY_EACH (TextGridNavigator)
+		TextGridNavigator_modifyMatchDomainAlignment (me, tierNumber, matchDomainAlignment);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EACH__TextGridNavigator_modifyMatchDomain, U"TextGridNavigator: Modify match domain", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
+	OK
+DO
+	MODIFY_EACH (TextGridNavigator)
+		TextGridNavigator_modifyMatchDomain (me, tierNumber, matchDomain);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EACH__TextGridNavigator_modifyBeforeRange, U"TextGridNavigator: Modify Before range", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	NATURAL (from, U"From", U"1")
+	NATURAL (to, U"To", U"1")
+	OK
+DO
+	MODIFY_EACH (TextGridNavigator)
+		TextGridNavigator_modifyBeforeRange (me, tierNumber, from, to);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EACH__TextGridNavigator_modifyAfterRange, U"TextGridNavigator: Modify After range", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	NATURAL (from, U"From", U"1")
+	NATURAL (to, U"To", U"1")
+	OK
+DO
+	MODIFY_EACH (TextGridNavigator)
+		TextGridNavigator_modifyAfterRange (me, tierNumber, from, to);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_replaceNavigationContext, U"TextGridNavigator: Replace NavigationContext", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	OK
+DO
+	MODIFY_FIRST_OF_ONE_AND_ONE (TextGridNavigator, NavigationContext)
+		TextGridNavigator_replaceNavigationContext (me, you, tierNumber);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
+FORM (MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_addTextGridTierNavigator, U"TextGridNavigator: Add TextGridTierNavigator", nullptr) {
+	OPTIONMENU_ENUM (kMatchDomainAlignment, matchDomainAlignment, U"Match domain alignment", kMatchDomainAlignment::DEFAULT)
+	OK
+DO
+	MODIFY_FIRST_OF_ONE_AND_ONE (TextGridNavigator, TextGridTierNavigator)
+		TextGridNavigator_addTextGridTierNavigator (me, you, matchDomainAlignment);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
+DIRECT (MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_replaceSearchTiers) {
+	MODIFY_FIRST_OF_ONE_AND_ONE (TextGridNavigator, TextGrid)
+		TextGridNavigator_replaceTiers (me, you);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
+FORM (MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_addSearchTier_topicOnly, 
+	U"TextGridNavigator & TextGrid: Add search tier (topic only)", U"TextGridNavigator & TextGrid: Add search tier...")
+{
+	NATURAL (tierNumber, U"Tier number", U"1")
+	STRINGARRAY_LINES (4, topicLabels, U"Topic labels", { U"i", U"u", U"e", U"o", U"\\as" })
+	OPTIONMENU_ENUM (kMelder_string, topicCriterion, U"Topic match criterion", kMelder_string::EQUAL_TO)
+	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
+	LABEL (U"")
+	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
+	OPTIONMENU_ENUM (kMatchDomainAlignment, matchDomainAlignment, U"Match domain alignment", kMatchDomainAlignment::DEFAULT)
+	OK
+DO
+	MODIFY_FIRST_OF_ONE_AND_ONE (TextGridNavigator, TextGrid)
+		TextGridNavigator_and_TextGrid_addSearchTier_topicOnly (
+			me, you, tierNumber, topicLabels, topicCriterion, topicMatchBoolean, matchDomain, matchDomainAlignment
+		);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
+FORM (MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_addSearchTier, U"TextGridNavigator & TextGrid: Add search tier",
+	U"TextGridNavigator & TextGrid: Add search tier...")
+{
+	NATURAL (tierNumber, U"Tier number", U"1")
+	STRINGARRAY_LINES (4, topicLabels, U"Topic labels", { U"i", U"u", U"e", U"o", U"\\as" })
+	OPTIONMENU_ENUM (kMelder_string, topicCriterion, U"Topic match criterion", kMelder_string::EQUAL_TO)
+	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
+	LABEL (U"")
+	STRINGARRAY_LINES (4, beforeLabels, U"Before labels", { U"p", U"b", U"t", U"d", U"k", U"g" })
+	OPTIONMENU_ENUM (kMelder_string, beforeCriterion, U"Before match criterion", kMelder_string::EQUAL_TO)
+	OPTIONMENU_ENUM (kMatchBoolean, beforeMatchBoolean, U"Combine before matches with", kMatchBoolean::OR_)
+	LABEL (U"")
+	STRINGARRAY_LINES (4, afterLabels, U"After labels", { U"m", U"n" })
+	OPTIONMENU_ENUM (kMelder_string, afterCriterion, U"After match criterion", kMelder_string::EQUAL_TO)
+	OPTIONMENU_ENUM (kMatchBoolean, afterMatchBoolean, U"Combine after matches with", kMatchBoolean::OR_)
+	LABEL (U"")
+	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"Combination criterion", kContext_combination::BEFORE_AND_AFTER)
+	BOOLEAN (excludeTopic, U"Exclude topic labels", false)
+	LABEL (U"")
+	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
+	OPTIONMENU_ENUM (kMatchDomainAlignment, matchDomainAlignment, U"Match domain alignment", kMatchDomainAlignment::DEFAULT)
+	OK
+DO
+	MODIFY_FIRST_OF_ONE_AND_ONE (TextGridNavigator, TextGrid)
+		TextGridNavigator_and_TextGrid_addSearchTier (me, you, tierNumber, 
+			topicLabels, topicCriterion, topicMatchBoolean,
+			beforeLabels, beforeCriterion, beforeMatchBoolean,
+			afterLabels, afterCriterion, afterMatchBoolean,
+			combinationCriterion, excludeTopic, matchDomain, matchDomainAlignment
+		);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
+DIRECT (CONVERT_EACH_TO_ONE__TextGridTierNavigator_to_TextGridNavigator) {
+	CONVERT_EACH_TO_ONE (TextGridTierNavigator)
+		autoTextGridNavigator result = TextGridTierNavigator_to_TextGridNavigator (me);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (MODIFY_EACH__TextGrid_setTierName, U"TextGrid: Set tier name", U"TextGrid: Set tier name...") {
+	NATURAL (tierNUmber, U"Tier number", U"1")
 	SENTENCE (name, U"Name", U"");
 	OK
 DO
@@ -7891,13 +8531,12 @@ static void cb_publish (Editor /*editor*/, autoDaata publish) {
 	}
 }
 
-DIRECT (WINDOW_VowelEditor_create) {
-	if (theCurrentPraatApplication -> batch)
-		Melder_throw (U"Cannot edit from batch.");
-	autoVowelEditor vowelEditor = VowelEditor_create (U"VowelEditor", nullptr);
-	Editor_setPublicationCallback (vowelEditor.get(), cb_publish);
-	vowelEditor.releaseToUser();
-END }
+DIRECT (CREATION_WINDOW__VowelEditor_create) {
+	CREATION_WINDOW (a,Sound)
+		autoVowelEditor creationWindow = VowelEditor_create (U"VowelEditor");
+		Editor_setPublicationCallback (creationWindow.get(), cb_publish);
+	CREATION_WINDOW_END
+}
 
 static autoDaata cmuAudioFileRecognizer (integer nread, const char *header, MelderFile file) {
 	return nread < 12 || header [0] != 6 || header [1] != 0 ?
@@ -7917,13 +8556,9 @@ static autoDaata oggFileRecognizer (integer nread, const char *header, MelderFil
 		return autoDaata ();
 	if (header [6] == '\0' && header [7] == '\0' && header [8] == '\0' && header [9] == '\0' &&
 		header [10] == '\0' && header [11] == '\0' && header [12] == '\0' && header [13] == '\0' &&
-		strnequ (& header [28], "OpusHead", 8)) {
-		#ifndef _WIN32   // HAVE_OPUS
-			return Sound_readFromOggOpusFile (file);
-		#else
-			Melder_throw (U"For now, Ogg Opus audio files can be read natively only on Mac and Linux. You should first convert an Ogg Opus file "
-				"to WAV format. You could try to obtain a converter from https://opus-codec.org/downloads/.");
-		#endif
+		strnequ (& header [28], "OpusHead", 8))
+	{
+		return Sound_readFromOggOpusFile (file);
 	}
 	/*
 		Leave rest of checking to libVorbis
@@ -7932,53 +8567,76 @@ static autoDaata oggFileRecognizer (integer nread, const char *header, MelderFil
 }
 
 void praat_CC_init (ClassInfo klas) {
-	praat_addAction1 (klas, 1, U"Paint...", nullptr, 1, GRAPHICS_CC_paint);
-	praat_addAction1 (klas, 1, U"Draw...", nullptr, 1, GRAPHICS_CC_drawC0);
-	praat_addAction1 (klas, 1, QUERY_BUTTON, nullptr, 0, 0);
+	praat_addAction1 (klas, 1, U"Paint...", nullptr, 1,
+			GRAPHICS_EACH__CC_paint);
+	praat_addAction1 (klas, 1, U"Draw...", nullptr, 1, 
+			GRAPHICS_EACH__CC_drawC0);
+	praat_addAction1 (klas, 1, U"Query -", nullptr, 0, nullptr);
 	praat_TimeFrameSampled_query_init (klas);
-	praat_addAction1 (klas, 1, U"Get number of coefficients...", nullptr, 1, INTEGER_CC_getNumberOfCoefficients);
-	praat_addAction1 (klas, 1, U"Get value in frame...", nullptr, 1, REAL_CC_getValueInFrame);
-	praat_addAction1 (klas, 1, U"Get c0 value in frame...", nullptr, 1, REAL_CC_getC0ValueInFrame);
-	praat_addAction1 (klas, 1, U"Get value...", nullptr, praat_HIDDEN + praat_DEPTH_1, REAL_CC_getValue);
-	praat_addAction1 (klas, 0, U"To Matrix", nullptr, 0, NEW_CC_to_Matrix);
-	praat_addAction1 (klas, 2, U"To DTW...", nullptr, 0, NEW1_CCs_to_DTW);
+	praat_addAction1 (klas, 1, U"Get number of coefficients...", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__CC_getNumberOfCoefficients);
+	praat_addAction1 (klas, 1, U"Get value in frame...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__CC_getValueInFrame);
+	praat_addAction1 (klas, 1, U"Get c0 value in frame...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__CC_getC0ValueInFrame);
+	praat_addAction1 (klas, 1, U"Get value...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__CC_getValue);
+	praat_addAction1 (klas, 0, U"To Matrix", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__CC_to_Matrix);
+	praat_addAction1 (klas, 2, U"To DTW...", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__CCs_to_DTW);
 }
 
 static void praat_Eigen_Matrix_project (ClassInfo klase, ClassInfo klasm); // deprecated 2014
 static void praat_Eigen_Matrix_project (ClassInfo klase, ClassInfo klasm) {
-	praat_addAction2 (klase, 1, klasm, 1, U"Project...", nullptr, praat_HIDDEN, NEW1_Eigen_Matrix_projectColumns);
-	praat_addAction2 (klase, 1, klasm, 1, U"To Matrix (project columns)...", nullptr, praat_HIDDEN, NEW1_Eigen_Matrix_projectColumns);
+	praat_addAction2 (klase, 1, klasm, 1, U"Project...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_ONE_AND_ONE_TO_ONE__Eigen_Matrix_projectColumns);
+	praat_addAction2 (klase, 1, klasm, 1, U"To Matrix (project columns)...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_ONE_AND_ONE_TO_ONE__Eigen_Matrix_projectColumns);
 }
 
 static void praat_Eigen_Spectrogram_project (ClassInfo klase, ClassInfo klasm);
 static void praat_Eigen_Spectrogram_project (ClassInfo klase, ClassInfo klasm) {
-	praat_addAction2 (klase, 1, klasm, 1, U"Project...", nullptr, praat_HIDDEN, NEW1_Eigen_Matrix_projectColumns);
-	praat_addAction2 (klase, 1, klasm, 1, U"To Matrix (project columns)...", nullptr, 0, NEW1_Eigen_Matrix_projectColumns);
+	praat_addAction2 (klase, 1, klasm, 1, U"Project...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_ONE_AND_ONE_TO_ONE__Eigen_Matrix_projectColumns);
+	praat_addAction2 (klase, 1, klasm, 1, U"To Matrix (project columns)...", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__Eigen_Matrix_projectColumns);
 }
 
 static void praat_Eigen_query_init (ClassInfo klas) {
-	praat_addAction1 (klas, 1, U"Get eigenvalue...", nullptr, 1, REAL_Eigen_getEigenvalue);
-	praat_addAction1 (klas, 1, U"Get sum of eigenvalues...", nullptr, 1, REAL_Eigen_getSumOfEigenvalues);
-	praat_addAction1 (klas, 1, U"Get number of eigenvectors", nullptr, 1, INTEGER_Eigen_getNumberOfEigenvectors);
-	praat_addAction1 (klas, 1, U"Get eigenvector dimension", nullptr, 1, INTEGER_Eigen_getEigenvectorDimension);
-	praat_addAction1 (klas, 1, U"Get eigenvector element...", nullptr, 1, REAL_Eigen_getEigenvectorElement);
+	praat_addAction1 (klas, 1, U"Get eigenvalue...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__Eigen_getEigenvalue);
+	praat_addAction1 (klas, 1, U"Get sum of eigenvalues...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__Eigen_getSumOfEigenvalues);
+	praat_addAction1 (klas, 1, U"Get number of eigenvectors", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__Eigen_getNumberOfEigenvectors);
+	praat_addAction1 (klas, 1, U"Get eigenvector dimension", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__Eigen_getEigenvectorDimension);
+	praat_addAction1 (klas, 1, U"Get eigenvector element...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__Eigen_getEigenvectorElement);
 }
 
 static void praat_Eigen_draw_init (ClassInfo klas) {
-	praat_addAction1 (klas, 0, U"Draw eigenvalues...", nullptr, 1,GRAPHICS_Eigen_drawEigenvalues);
-	praat_addAction1 (klas, 0, U"Draw eigenvalues (scree)...", U"*Draw eigenvalues...", praat_DEPRECATED_2010 | praat_DEPTH_1, GRAPHICS_Eigen_drawEigenvalues_scree);
-	praat_addAction1 (klas, 0, U"Draw eigenvector...", nullptr, 1, GRAPHICS_Eigen_drawEigenvector);
+	praat_addAction1 (klas, 0, U"Draw eigenvalues...", nullptr, 1,
+			GRAPHICS_EACH__Eigen_drawEigenvalues);
+	praat_addAction1 (klas, 0, U"Draw eigenvalues (scree)...", U"*Draw eigenvalues...", GuiMenu_DEPRECATED_2010 | GuiMenu_DEPTH_1,
+			WARNING__Eigen_drawEigenvalues_scree);
+	praat_addAction1 (klas, 0, U"Draw eigenvector...", nullptr, 1,
+			GRAPHICS_EACH__Eigen_drawEigenvector);
 }
 
 static void praat_Index_init (ClassInfo klas) {
-	praat_addAction1 (klas, 1, U"Get number of classes", nullptr, 0, INTEGER_Index_getNumberOfClasses);
-	praat_addAction1 (klas, 1, U"To Permutation...", nullptr, 0, NEW_Index_to_Permutation);
-	praat_addAction1 (klas, 1, U"Extract part...", nullptr, 0, NEW_Index_extractPart);
+	praat_addAction1 (klas, 1, U"Get number of classes", nullptr, 0,
+		QUERY_ONE_FOR_INTEGER__Index_getNumberOfClasses);
+	praat_addAction1 (klas, 1, U"To Permutation...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Index_to_Permutation);
+	praat_addAction1 (klas, 1, U"Extract part...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Index_extractPart);
 }
 
 static void praat_BandFilterSpectrogram_draw_init (ClassInfo klas);
 static void praat_BandFilterSpectrogram_draw_init (ClassInfo klas) {
-	praat_addAction1 (klas, 0, DRAW_BUTTON, nullptr, 0, nullptr);
+	praat_addAction1 (klas, 0, U"Draw -", nullptr, 0, nullptr);
 //	praat_addAction1 (klas, 0, U"Paint image...", nullptr, praat_DEPTH_1, DO_BandFilterSpectrogram_paintImage);
 //	praat_addAction1 (klas, 0, U"Draw filters...", nullptr, 1, DO_FilterBank_drawFilters);
 //	praat_addAction1 (klas, 0, U"Draw one contour...", nullptr, 1, DO_FilterBank_drawOneContour);
@@ -7987,46 +8645,65 @@ static void praat_BandFilterSpectrogram_draw_init (ClassInfo klas) {
 //	praat_addAction1 (klas, 0, U"Paint cells...", nullptr, 1, DO_FilterBank_paintCells);
 //	praat_addAction1 (klas, 0, U"Paint surface...", nullptr, 1, DO_FilterBank_paintSurface);
 	praat_addAction1 (klas, 0, U"-- frequency scales --", nullptr, 1, nullptr);
-	praat_addAction1 (klas, 0, U"Draw frequency scale...", nullptr, 1, GRAPHICS_BandFilterSpectrogram_drawFrequencyScale);
+	praat_addAction1 (klas, 0, U"Draw frequency scale...", nullptr, 1, 
+			GRAPHICS_EACH__BandFilterSpectrogram_drawFrequencyScale);
 }
 
 static void praat_FilterBank_query_init (ClassInfo klas);
 static void praat_FilterBank_query_init (ClassInfo klas) {
-	praat_addAction1 (klas, 0, QUERY_BUTTON, nullptr, 0, 0);
+	praat_addAction1 (klas, 0, U"Query -", nullptr, 0, nullptr);
 	praat_TimeFrameSampled_query_init (klas);
-	praat_addAction1 (klas, 1, U"Get time from column...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getTimeFromColumn);
-	praat_addAction1 (klas, 1, U"-- frequencies --", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, 0);
-	praat_addAction1 (klas, 1, U"Get lowest frequency", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getLowestFrequency);
-	praat_addAction1 (klas, 1, U"Get highest frequency", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getHighestFrequency);
-	praat_addAction1 (klas, 1, U"Get number of frequencies", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, INTEGER_FilterBank_getNumberOfFrequencies);
-	praat_addAction1 (klas, 1, U"Get frequency distance", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getFrequencyDistance);
-	praat_addAction1 (klas, 1, U"Get frequency from row...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getFrequencyFromRow);
-	praat_addAction1 (klas, 1, U"-- get value --", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, 0);
-	praat_addAction1 (klas, 1, U"Get value in cell...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getValueInCell);
-	praat_addAction1 (klas, 0, U"-- frequency scales --", nullptr, praat_DEPTH_1, 0);
-	praat_addAction1 (klas, 1, U"Get frequency in Hertz...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getFrequencyInHertz);
-	praat_addAction1 (klas, 1, U"Get frequency in Bark...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getFrequencyInBark);
-	praat_addAction1 (klas, 1, U"Get frequency in mel...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, REAL_FilterBank_getFrequencyInMel);
+	praat_addAction1 (klas, 1, U"Get time from column...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getTimeFromColumn);
+	praat_addAction1 (klas, 1, U"-- frequencies --", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1, 0);
+	praat_addAction1 (klas, 1, U"Get lowest frequency", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getLowestFrequency);
+	praat_addAction1 (klas, 1, U"Get highest frequency", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getHighestFrequency);
+	praat_addAction1 (klas, 1, U"Get number of frequencies", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_INTEGER__FilterBank_getNumberOfFrequencies);
+	praat_addAction1 (klas, 1, U"Get frequency distance", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getFrequencyDistance);
+	praat_addAction1 (klas, 1, U"Get frequency from row...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getFrequencyFromRow);
+	praat_addAction1 (klas, 1, U"-- get value --", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1, 0);
+	praat_addAction1 (klas, 1, U"Get value in cell...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getValueInCell);
+	praat_addAction1 (klas, 0, U"-- frequency scales --", nullptr, GuiMenu_DEPTH_1, 0);
+	praat_addAction1 (klas, 1, U"Get frequency in Hertz...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInHertz);
+	praat_addAction1 (klas, 1, U"Get frequency in Bark...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInBark);
+	praat_addAction1 (klas, 1, U"Get frequency in mel...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInMel);
 }
 
 static void praat_FilterBank_modify_init (ClassInfo klas);
 static void praat_FilterBank_modify_init (ClassInfo klas) {
-	// praat_addAction1 (klas, 0, MODIFY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (klas, 0, U"Equalize intensities...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, MODIFY_FilterBank_equalizeIntensities);
+	// praat_addAction1 (klas, 0, U"Modify -", nullptr, 0, nullptr);
+	praat_addAction1 (klas, 0, U"Equalize intensities...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1, MODIFY_EACH__FilterBank_equalizeIntensities);
 }
 
 static void praat_FilterBank_draw_init (ClassInfo klas);
 static void praat_FilterBank_draw_init (ClassInfo klas) {
-	// praat_addAction1 (klas, 0, DRAW_BUTTON, 0, 0, 0);
-	praat_addAction1 (klas, 0, U"Draw filters...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, GRAPHICS_FilterBank_drawFilters);
-	praat_addAction1 (klas, 0, U"Draw one contour...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, GRAPHICS_FilterBank_drawOneContour);
-	praat_addAction1 (klas, 0, U"Draw contours...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, GRAPHICS_FilterBank_drawContours);
-	praat_addAction1 (klas, 0, U"Paint image...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, GRAPHICS_FilterBank_paintImage);
-	praat_addAction1 (klas, 0, U"Paint contours...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, GRAPHICS_FilterBank_paintContours);
-	praat_addAction1 (klas, 0, U"Paint cells...", nullptr,praat_DEPRECATED_2014 |  praat_DEPTH_1, GRAPHICS_FilterBank_paintCells);
-	praat_addAction1 (klas, 0, U"Paint surface...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, GRAPHICS_FilterBank_paintSurface);
-	praat_addAction1 (klas, 0, U"-- frequency scales --", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, 0);
-	praat_addAction1 (klas, 0, U"Draw frequency scales...", nullptr, praat_DEPRECATED_2014 | praat_DEPTH_1, GRAPHICS_FilterBank_drawFrequencyScales);
+	// praat_addAction1 (klas, 0, U"Draw -", nullptr, 0, nullptr);
+	praat_addAction1 (klas, 0, U"Draw filters...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__FilterBank_drawFilters);
+	praat_addAction1 (klas, 0, U"Draw one contour...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__FilterBank_drawOneContour);
+	praat_addAction1 (klas, 0, U"Draw contours...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__FilterBank_drawContours);
+	praat_addAction1 (klas, 0, U"Paint image...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__FilterBank_paintImage);
+	praat_addAction1 (klas, 0, U"Paint contours...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__FilterBank_paintContours);
+	praat_addAction1 (klas, 0, U"Paint cells...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__FilterBank_paintCells);
+	praat_addAction1 (klas, 0, U"Paint surface...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__FilterBank_paintSurface);
+	praat_addAction1 (klas, 0, U"-- frequency scales --", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1, 0);
+	praat_addAction1 (klas, 0, U"Draw frequency scales...", nullptr, GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__FilterBank_drawFrequencyScales);
 }
 
 static void praat_FilterBank_all_init (ClassInfo klas);
@@ -8034,29 +8711,45 @@ static void praat_FilterBank_all_init (ClassInfo klas) {
 	praat_FilterBank_draw_init (klas);
 	praat_FilterBank_query_init (klas);
 	praat_FilterBank_modify_init (klas);
-	praat_addAction1 (klas, 0, U"To Intensity", nullptr, praat_DEPRECATED_2014, NEW_FilterBank_to_Intensity);
-	praat_addAction1 (klas, 0, U"To Matrix", nullptr, praat_DEPRECATED_2014, NEW_FilterBank_to_Matrix);
-	praat_addAction1 (klas, 2, U"Cross-correlate...", nullptr, praat_DEPRECATED_2014, NEW1_FilterBanks_crossCorrelate);
-	praat_addAction1 (klas, 2, U"Convolve...", nullptr, praat_DEPRECATED_2014, NEW1_FilterBanks_convolve);
+	praat_addAction1 (klas, 0, U"To Intensity", nullptr, GuiMenu_DEPRECATED_2014,
+			CONVERT_EACH_TO_ONE__FilterBank_to_Intensity);
+	praat_addAction1 (klas, 0, U"To Matrix", nullptr, GuiMenu_DEPRECATED_2014,
+			CONVERT_EACH_TO_ONE__FilterBank_to_Matrix);
+	praat_addAction1 (klas, 2, U"Cross-correlate...", nullptr, GuiMenu_DEPRECATED_2014,
+			CONVERT_TWO_TO_ONE__FilterBanks_crossCorrelate);
+	praat_addAction1 (klas, 2, U"Convolve...", nullptr, GuiMenu_DEPRECATED_2014,
+			CONVERT_TWO_TO_ONE__FilterBanks_convolve);
 }
 
 static void praat_FunctionSeries_init (ClassInfo klas) {
-	praat_addAction1 (klas, 0, DRAW_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (klas, 0, U"Draw...", nullptr, 1, GRAPHICS_FunctionSeries_draw);
-	praat_addAction1 (klas, 0, U"Draw basis function...", nullptr, 1, GRAPHICS_FunctionSeries_drawBasisFunction);
-	praat_addAction1 (klas, 0, QUERY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (klas, 1, U"Get number of coefficients", nullptr, 1, INTEGER_FunctionSeries_getNumberOfCoefficients);
-	praat_addAction1 (klas, 1, U"Get coefficient...", nullptr, 1, REAL_FunctionSeries_getCoefficient);
-	praat_addAction1 (klas, 1, U"Get degree", nullptr, 1, INTEGER_FunctionSeries_getDegree);
+	praat_addAction1 (klas, 0, U"Draw -", nullptr, 0, nullptr);
+	praat_addAction1 (klas, 0, U"Draw...", nullptr, 1, 
+			GRAPHICS_EACH__FunctionSeries_draw);
+	praat_addAction1 (klas, 0, U"Draw basis function...", nullptr, 1, 
+			GRAPHICS_EACH__FunctionSeries_drawBasisFunction);
+	praat_addAction1 (klas, 0, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (klas, 1, U"Get number of coefficients", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__FunctionSeries_getNumberOfCoefficients);
+	praat_addAction1 (klas, 1, U"Get coefficient...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__FunctionSeries_getCoefficient);
+	praat_addAction1 (klas, 1, U"Get degree", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__FunctionSeries_getDegree);
 	praat_addAction1 (klas, 0, U"-- function specifics --", nullptr, 1, 0);
-	praat_addAction1 (klas, 1, U"Get value...", nullptr, 1, REAL_FunctionSeries_getValue);
-	praat_addAction1 (klas, 1, U"Get minimum...", nullptr, 1, REAL_FunctionSeries_getMinimum);
-	praat_addAction1 (klas, 1, U"Get x of minimum...", nullptr, 1, REAL_FunctionSeries_getXOfMinimum);
-	praat_addAction1 (klas, 1, U"Get maximum...", nullptr, 1, REAL_FunctionSeries_getMaximum);
-	praat_addAction1 (klas, 1, U"Get x of maximum...", nullptr, 1, REAL_FunctionSeries_getXOfMaximum);
+	praat_addAction1 (klas, 1, U"Get value...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__FunctionSeries_getValue);
+	praat_addAction1 (klas, 1, U"Get minimum...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__FunctionSeries_getMinimum);
+	praat_addAction1 (klas, 1, U"Get x of minimum...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__FunctionSeries_getXOfMinimum);
+	praat_addAction1 (klas, 1, U"Get maximum...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__FunctionSeries_getMaximum);
+	praat_addAction1 (klas, 1, U"Get x of maximum...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__FunctionSeries_getXOfMaximum);
 	praat_addAction1 (klas, 0, U"Modify -", nullptr, 0, 0);
-	praat_addAction1 (klas, 1, U"Set domain...", nullptr, 1, MODIFY_FunctionSeries_setDomain);
-	praat_addAction1 (klas, 1, U"Set coefficient...", nullptr, 1, MODIFY_FunctionSeries_setCoefficient);
+	praat_addAction1 (klas, 1, U"Set domain...", nullptr, 1, 
+			MODIFY_EACH__FunctionSeries_setDomain);
+	praat_addAction1 (klas, 1, U"Set coefficient...", nullptr, 1,
+			MODIFY_EACH__FunctionSeries_setCoefficient);
 	praat_addAction1 (klas, 0, U"Analyse", nullptr, 0, 0);
 }
 
@@ -8064,42 +8757,60 @@ static void praat_FunctionSeries_init (ClassInfo klas) {
 
 void praat_BandFilterSpectrogram_query_init (ClassInfo klas) {
 	praat_TimeFrameSampled_query_init (klas);
-	praat_addAction1 (klas, 1, U"Get time from column...", nullptr, 1, REAL_BandFilterSpectrogram_getTimeFromColumn);
+	praat_addAction1 (klas, 1, U"Get time from column...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getTimeFromColumn);
 	praat_addAction1 (klas, 1, U"-- frequencies --", nullptr, 1, 0);
-	praat_addAction1 (klas, 1, U"Get lowest frequency", nullptr, 1, REAL_BandFilterSpectrogram_getLowestFrequency);
-	praat_addAction1 (klas, 1, U"Get highest frequency", nullptr, 1, REAL_BandFilterSpectrogram_getHighestFrequency);
-	praat_addAction1 (klas, 1, U"Get number of frequencies", nullptr, 1, INTEGER_BandFilterSpectrogram_getNumberOfFrequencies);
-	praat_addAction1 (klas, 1, U"Get frequency distance", nullptr, 1, REAL_BandFilterSpectrogram_getFrequencyDistance);
-	praat_addAction1 (klas, 1, U"Get frequency from row...", nullptr, 1, REAL_BandFilterSpectrogram_getFrequencyFromRow);
+	praat_addAction1 (klas, 1, U"Get lowest frequency", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getLowestFrequency);
+	praat_addAction1 (klas, 1, U"Get highest frequency", nullptr, 1,
+			QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getHighestFrequency);
+	praat_addAction1 (klas, 1, U"Get number of frequencies", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__BandFilterSpectrogram_getNumberOfFrequencies);
+	praat_addAction1 (klas, 1, U"Get frequency distance", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getFrequencyDistance);
+	praat_addAction1 (klas, 1, U"Get frequency from row...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getFrequencyFromRow);
 	praat_addAction1 (klas, 1, U"-- get value --", nullptr, 1, 0);
-	praat_addAction1 (klas, 1, U"Get value in cell...", nullptr, 1, REAL_BandFilterSpectrogram_getValueInCell);
+	praat_addAction1 (klas, 1, U"Get value in cell...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__BandFilterSpectrogram_getValueInCell);
 }
 
 static void praat_PatternList_query_init (ClassInfo klas) {
-	praat_addAction1 (klas, 0, QUERY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (klas, 1, U"Get number of patterns", nullptr, 1, INTEGER_PatternList_getNumberOfPatterns);
-	praat_addAction1 (klas, 1, U"Get pattern size", nullptr, 1, INTEGER_PatternList_getPatternSize);
-	praat_addAction1 (klas, 1, U"Get value...", nullptr, 1, REAL_PatternList_getValue);
+	praat_addAction1 (klas, 0, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (klas, 1, U"Get number of patterns", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__PatternList_getNumberOfPatterns);
+	praat_addAction1 (klas, 1, U"Get pattern size", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__PatternList_getPatternSize);
+	praat_addAction1 (klas, 1, U"Get value...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__PatternList_getValue);
 
 }
 
 static void praat_Spline_init (ClassInfo klas) {
 	praat_FunctionSeries_init (klas);
-	praat_addAction1 (klas, 0, U"Draw knots...", U"Draw basis function...", 1, GRAPHICS_Spline_drawKnots);
-	praat_addAction1 (klas, 1, U"Get order", U"Get degree", 1, INTEGER_Spline_getOrder);
-	praat_addAction1 (klas, 1, U"Scale x...", U"Analyse",	0, NEW_Spline_scaleX);
+	praat_addAction1 (klas, 0, U"Draw knots...", U"Draw basis function...", 1, 
+			GRAPHICS_EACH__Spline_drawKnots);
+	praat_addAction1 (klas, 1, U"Get order", U"Get degree", 1, 
+		QUERY_ONE_FOR_INTEGER__Spline_getOrder);
+	praat_addAction1 (klas, 1, U"Scale x...", U"Analyse", 0, 
+			CONVERT_EACH_TO_ONE__Spline_scaleX);
 }
 
 static void praat_SSCP_query_init (ClassInfo klas) {
 	praat_addAction1 (klas, 1, U"-- statistics --", U"Get value...", 1, 0);
-	praat_addAction1 (klas, 1, U"Get number of observations", U"-- statistics --", 1, INTEGER_SSCP_getNumberOfObservations);
-	praat_addAction1 (klas, 1, U"Get degrees of freedom", U"Get number of observations", 1, NUMBER_SSCP_getDegreesOfFreedom);
-	praat_addAction1 (klas, 1, U"Get centroid element...", U"Get degrees of freedom", 1, REAL_SSCP_getCentroidElement);
-	praat_addAction1 (klas, 1, U"Get ln(determinant)", U"Get centroid element...", 1, REAL_SSCP_getLnDeterminant);
+	praat_addAction1 (klas, 1, U"Get number of observations", U"-- statistics --", 1, 
+		QUERY_ONE_FOR_INTEGER__SSCP_getNumberOfObservations);
+	praat_addAction1 (klas, 1, U"Get degrees of freedom", U"Get number of observations", 1, 
+			QUERY_ONE_FOR_REAL__SSCP_getDegreesOfFreedom);
+	praat_addAction1 (klas, 1, U"Get centroid element...", U"Get degrees of freedom", 1, 
+			QUERY_ONE_FOR_REAL__SSCP_getCentroidElement);
+	praat_addAction1 (klas, 1, U"Get ln(determinant)", U"Get centroid element...", 1, 
+			QUERY_ONE_FOR_REAL__SSCP_getLnDeterminant);
 }
 
 static void praat_SSCP_extract_init (ClassInfo klas) {
-	praat_addAction1 (klas, 1, U"Extract centroid", EXTRACT_BUTTON, 1, NEW_SSCP_extractCentroid);
+	praat_addAction1 (klas, 1, U"Extract centroid", U"Extract -", 1, 
+			CONVERT_EACH_TO_ONE__SSCP_extractCentroid);
 }
 
 FORM (MODIFY_SSCP_setValue, U"Covariance: Set value", U"Covariance: Set value...") {
@@ -8126,22 +8837,30 @@ DO
 void praat_SSCP_as_TableOfReal_init (ClassInfo klas) {
 	praat_TableOfReal_init (klas);
 	praat_removeAction (klas, nullptr, nullptr, U"Set value...");
-	praat_addAction1 (klas, 1, U"Set centroid...", U"Formula...", 1, MODIFY_SSCP_setCentroid);
-	praat_addAction1 (klas, 1, U"Set value...", U"Formula...", 1, MODIFY_SSCP_setValue);
-	praat_addAction1 (klas, 0, U"To TableOfReal", U"To Matrix", 1, NEW_TableOfReal_to_TableOfReal);
+	praat_addAction1 (klas, 1, U"Set centroid...", U"Formula...", 1, 
+			MODIFY_SSCP_setCentroid);
+	praat_addAction1 (klas, 1, U"Set value...", U"Formula...", 1, 
+			MODIFY_SSCP_setValue);
+	praat_addAction1 (klas, 0, U"To TableOfReal", U"To Matrix", 1,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_TableOfReal);
 }
+
 
 void praat_TableOfReal_init2 (ClassInfo klas) {
 	praat_TableOfReal_init (klas);
-	praat_addAction1 (klas, 0, U"To TableOfReal", U"To Matrix", 1, NEW_TableOfReal_to_TableOfReal);
+	praat_addAction1 (klas, 0, U"To TableOfReal", U"To Matrix", 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_TableOfReal);
 }
 
 void praat_EditDistanceTable_as_TableOfReal_init (ClassInfo klas) {
 	praat_TableOfReal_init (klas);
-	praat_addAction1 (klas, 0, U"Set default costs...", U"Formula...", 1, MODIFY_EditDistanceTable_setDefaultCosts);
+	praat_addAction1 (klas, 0, U"Set default costs...", U"Formula...", 1, 
+			MODIFY_EditDistanceTable_setDefaultCosts);
 	praat_removeAction (klas, nullptr, nullptr, U"Draw as numbers...");
-	praat_addAction1 (klas, 0, U"Draw...", U"Draw -", 1, GRAPHICS_EditDistanceTable_draw);
-	praat_addAction1 (klas, 0, U"Draw edit operations", U"Draw...", 1, GRAPHICS_EditDistanceTable_drawEditOperations);
+	praat_addAction1 (klas, 0, U"Draw...", U"Draw -", 1, 
+			GRAPHICS_EACH__EditDistanceTable_draw);
+	praat_addAction1 (klas, 0, U"Draw edit operations", U"Draw...", 1, 
+			GRAPHICS_EACH__EditDistanceTable_drawEditOperations);
 	praat_removeAction (klas, nullptr, nullptr, U"Draw as numbers if...");
 	praat_removeAction (klas, nullptr, nullptr, U"Draw as squares...");
 	praat_removeAction (klas, nullptr, nullptr, U"Draw vertical lines...");
@@ -8151,26 +8870,55 @@ void praat_EditDistanceTable_as_TableOfReal_init (ClassInfo klas) {
 	praat_removeAction (klas, nullptr, nullptr, U"-- draw lines --");
 }
 
-void praat_uvafon_David_init ();
-void praat_uvafon_David_init () {
+void praat_David_generics_new_init ();
+void praat_David_generics_new_init () {
+
+	Thing_recognizeClassesByName (
+		classPermutation,
+		classPolynomial, classLegendreSeries, classChebyshevSeries, classMSpline, classISpline,
+		nullptr
+	);
+
+	praat_addMenuCommand (U"Objects", U"New", U"Create Permutation...", nullptr, 1,
+			CREATE_ONE__Permutation_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Polynomial", nullptr, 1, nullptr);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Polynomial...", nullptr, 2,
+			CREATE_ONE__Polynomial_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Polynomial from product terms...", nullptr, 2,
+			CREATE_ONE__Polynomial_createFromProductTerms);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Polynomial from real zeros...", nullptr, 2,
+			CREATE_ONE__Polynomial_createFromRealZeros);
+	praat_addMenuCommand (U"Objects", U"New", U"Create LegendreSeries...", nullptr, 2,
+			CREATE_ONE__LegendreSeries_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Create ChebyshevSeries...", nullptr, 2,
+			CREATE_ONE__ChebyshevSeries_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Create MSpline...", nullptr, 2,
+			CREATE_ONE__MSpline_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Create ISpline...", nullptr, 2,
+			CREATE_ONE__ISpline_create);
+}
+
+void praat_David_init ();
+void praat_David_init () {
+	
 	Data_recognizeFileType (TextGrid_TIMITLabelFileRecognizer);
 	Data_recognizeFileType (cmuAudioFileRecognizer);
 	Data_recognizeFileType (oggFileRecognizer);
-
+	
 	Thing_recognizeClassesByName (classActivationList, classBarkFilter, classBarkSpectrogram,
 		classCategories, classCepstrum, classCCA,
-		classChebyshevSeries, classClassificationTable, classComplexSpectrogram, classConfusion,
+		classClassificationTable, classComplexSpectrogram, classConfusion,
 		classCorrelation, classCovariance, classDiscriminant, classDTW,
 		classEigen, classExcitationList, classEditCostsTable, classEditDistanceTable,
 		classElectroglottogram,
 		classFileInMemory, classFileInMemorySet, classFileInMemoryManager, 
 		classFormantFilter,
-		classIndex, classIntervalTierNavigator, classKlattTable, classNMF,
-		classPermutation, classISpline, classLegendreSeries,
-		classMelFilter, classMelSpectrogram, classMSpline, classNavigationContext,
-		classPatternList, classPCA, classPolynomial, classRoots,
+		classIndex, classKlattTable, classNMF,
+		classMelFilter, classMelSpectrogram, classNavigationContext,
+		classPatternList, classPCA, classRoots,
 		classSimpleString, classStringsIndex, classSpeechSynthesizer, classSPINET, classSSCP,
-		classSVD, classTextGridNavigator, nullptr);
+		classSVD, classTextGridNavigator, classTextGridTierNavigator, nullptr);
+	
 	Thing_recognizeClassByOtherName (classExcitationList, U"Excitations");
 	Thing_recognizeClassByOtherName (classActivationList, U"Activation");
 	Thing_recognizeClassByOtherName (classPatternList, U"Pattern");
@@ -8180,260 +8928,416 @@ void praat_uvafon_David_init () {
 	
 	espeakdata_praat_init ();
 
-	praat_addMenuCommand (U"Objects", U"Technical", U"Report floating point properties", U"Report integer properties", 0, INFO_Praat_ReportFloatingPointProperties);
-	praat_addMenuCommand (U"Objects", U"Goodies", U"Get TukeyQ...", 0, praat_HIDDEN, REAL_Praat_getTukeyQ);
-	praat_addMenuCommand (U"Objects", U"Goodies", U"Get invTukeyQ...", 0, praat_HIDDEN, REAL_Praat_getInvTukeyQ);
-	praat_addMenuCommand (U"Objects", U"Goodies", U"Get incomplete gamma...", 0, praat_HIDDEN, COMPLEX_Praat_getIncompleteGamma);
-//	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as espeak voices", U"Create Strings as folder list...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsEspeakVoices);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Permutation...", nullptr, 0, NEW_Permutation_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Polynomial", nullptr, 0, nullptr);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Polynomial...", nullptr, 1, NEW1_Polynomial_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Polynomial from product terms...", nullptr, 1, NEW1_Polynomial_createFromProductTerms);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Polynomial from real zeros...", nullptr, 1, NEW1_Polynomial_createFromRealZeros);
-	praat_addMenuCommand (U"Objects", U"New", U"Create LegendreSeries...", nullptr, 1, NEW1_LegendreSeries_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create ChebyshevSeries...", nullptr, 1, NEW1_ChebyshevSeries_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create MSpline...", nullptr, 1, NEW_MSpline_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create ISpline...", nullptr, 1, NEW1_ISpline_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound as gammatone...", U"Create Sound as tone complex...", 1, NEW1_Sound_createAsGammaTone);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from gammatone...", U"*Create Sound as gammatone...", praat_DEPTH_1 | praat_DEPRECATED_2016, NEW1_Sound_createAsGammaTone);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound as Shepard tone...", U"Create Sound as gammatone...", praat_DEPTH_1, NEW_Sound_createAsShepardTone);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from Shepard tone...", U"*Create Sound as Shepard tone...", praat_DEPTH_1 | praat_DEPRECATED_2016, NEW_Sound_createAsShepardTone);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from VowelEditor...", U"Create Sound as Shepard tone...", praat_DEPTH_1 | praat_NO_API, WINDOW_VowelEditor_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create SpeechSynthesizer...", U"Create Sound from VowelEditor...", praat_DEPTH_1, NEW1_SpeechSynthesizer_create);
+	praat_addMenuCommand (U"Objects", U"Technical", U"Report floating point properties", U"Report integer properties", 0,
+			INFO_NONE__Praat_ReportFloatingPointProperties);
+	praat_addMenuCommand (U"Objects", U"Goodies", U"Get TukeyQ...", 0, GuiMenu_HIDDEN,
+			QUERY_NONE_FOR_REAL__Praat_getTukeyQ);
+	praat_addMenuCommand (U"Objects", U"Goodies", U"Get invTukeyQ...", 0, GuiMenu_HIDDEN,
+			QUERY_NONE_FOR_REAL__Praat_getInvTukeyQ);
+	praat_addMenuCommand (U"Objects", U"Goodies", U"Get incomplete gamma...", 0, GuiMenu_HIDDEN,
+			QUERY_NONE_FOR_COMPLEX__Praat_getIncompleteGamma);
+
+	praat_addMenuCommand (U"Objects", U"New", U"Create Sound as gammatone...", U"Create Sound as tone complex...", 1,
+			CREATE_ONE__Sound_createAsGammaTone);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from gammatone...", U"*Create Sound as gammatone...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2016,
+			CREATE_ONE__Sound_createAsGammaTone);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Sound as Shepard tone...", U"Create Sound as gammatone...", GuiMenu_DEPTH_1,
+			CREATE_ONE__Sound_createAsShepardTone);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from Shepard tone...", U"*Create Sound as Shepard tone...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2016,
+			CREATE_ONE__Sound_createAsShepardTone);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from VowelEditor...", U"Create Sound as Shepard tone...", GuiMenu_DEPTH_1 | GuiMenu_NO_API,
+			CREATION_WINDOW__VowelEditor_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Text-to-speech synthesis", U"Create Vocal Tract from phone...", 0, nullptr);
+	praat_addMenuCommand (U"Objects", U"New", U"Create SpeechSynthesizer...", U"Text-to-speech synthesis", 1,
+			CREATE_ONE__SpeechSynthesizer_create);
 	praat_addMenuCommand (U"Objects", U"New", U"Data sets from the literature", U"Create Table without column names...", 1, nullptr);
-	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Peterson & Barney 1952)", U"Data sets from the literature", 2, NEW1_Table_create_petersonBarney1952);
-	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Pols & Van Nierop 1973)", U"Create formant table (Peterson & Barney 1952)", 2, NEW1_Table_create_polsVanNierop1973);
-	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Weenink 1985)", U"Create formant table (Pols & Van Nierop 1973)", 2, NEW1_Table_create_weenink1983);
-	praat_addMenuCommand (U"Objects", U"New", U"Create H1H2 table (Esposito 2006)", U"Create formant table (Weenink 1985)", 2, NEW_Table_create_esposito2006);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Table (Ganong 1980)", U"Create H1H2 table (Esposito 2006)", 2, NEW_Table_create_ganong1980);
-	praat_addMenuCommand (U"Objects", U"New", U"-- TableOfReals --", U"Create Table (Ganong 1980)", 2, nullptr);
-	praat_addMenuCommand (U"Objects", U"New", U"Create iris data set", U"-- TableOfReals --" , 2, NEW1_CreateIrisDataset);
-	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Pols 1973)...", U"Create iris data set", 2, NEW1_TableOfReal_create_pols1973);
-	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Van Nierop 1973)...", U"Create TableOfReal (Pols 1973)...", 2, NEW_TableOfReal_create_vanNierop1973);
-	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Van Nierop 1973)...", 2, NEW_TableOfReal_create_weenink1983);
-	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Sandwell 1987)", U"Create TableOfReal (Weenink 1985)...", 2, NEW_Table_create_sandwell1987);
-		praat_addMenuCommand (U"Objects", U"New", U"Create simple Confusion...", U"Create TableOfReal (Weenink 1985)...", 1, NEW1_Confusion_createSimple);
-	praat_addMenuCommand (U"Objects", U"New", U"Create simple Covariance...", U"Create simple Confusion...", 1, NEW1_Covariance_createSimple);
-	praat_addMenuCommand (U"Objects", U"New", U"Create simple Correlation...", U"Create simple Covariance...", 1, NEW1_Correlation_createSimple);
-	praat_addMenuCommand (U"Objects", U"New", U"Create empty EditCostsTable...", U"Create simple Covariance...", 1, NEW_EditCostsTable_createEmpty);
+	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Peterson & Barney 1952)", U"Data sets from the literature", 2,
+			CREATE_ONE__Table_create_petersonBarney1952);
+	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Pols & Van Nierop 1973)", U"Create formant table (Peterson & Barney 1952)", 2,
+			CREATE_ONE__Table_create_polsVanNierop1973);
+	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Weenink 1985)", U"Create formant table (Pols & Van Nierop 1973)", 2,
+			CREATE_ONE__Table_create_weenink1983);
+	praat_addMenuCommand (U"Objects", U"New", U"Create H1H2 table (Esposito 2006)", U"Create formant table (Weenink 1985)", 2,
+			CREATE_ONE__Table_create_esposito2006);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Table (Ganong 1980)", U"Create H1H2 table (Esposito 2006)", 2, 
+			CREATE_ONE__Table_create_ganong1980);
+	praat_addMenuCommand (U"Objects", U"New", U"-- new TableOfReal --", U"Create Table (Ganong 1980)", 2, nullptr);
+	praat_addMenuCommand (U"Objects", U"New", U"Create iris data set", U"-- new TableOfReal --" , 2,
+			CREATE_ONE__CreateIrisDataset);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Pols 1973)...", U"Create iris data set", 2, 
+			CREATE_ONE__TableOfReal_create_pols1973);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Van Nierop 1973)...", U"Create TableOfReal (Pols 1973)...", 2, 
+			CREATE_ONE__TableOfReal_create_vanNierop1973);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Van Nierop 1973)...", 2,
+			CREATE_ONE__TableOfReal_create_weenink1983);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TableOfReal (Sandwell 1987)", U"Create TableOfReal (Weenink 1985)...", 2,
+			CREATE_ONE__Table_create_sandwell1987);
+	praat_addMenuCommand (U"Objects", U"New", U"-- new TableOfReal children --", U"Create TableOfReal (Weenink 1985)...", 1,
+			CREATE_ONE__Confusion_createSimple);
+	praat_addMenuCommand (U"Objects", U"New", U"Create simple Confusion...", U"-- new TableOfReal children --", 1,
+			CREATE_ONE__Confusion_createSimple);
+	praat_addMenuCommand (U"Objects", U"New", U"Create simple Covariance...", U"Create simple Confusion...", 1,
+			CREATE_ONE__Covariance_createSimple);
+	praat_addMenuCommand (U"Objects", U"New", U"Create simple Correlation...", U"Create simple Covariance...", 1, 
+			CREATE_ONE__Correlation_createSimple);
+	praat_addMenuCommand (U"Objects", U"New", U"Create empty EditCostsTable...", U"Create simple Covariance...", 1, 
+			CREATE_ONE__EditCostsTable_createEmpty);
+	praat_addMenuCommand (U"Objects", U"New", U"Create KlattTable example", U"Create TableOfReal (Weenink 1985)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CREATE_ONE__KlattTable_createExample);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Strings from tokens...", U"Create Strings as folder list...", 2,
+			CREATE_ONE__Strings_createFromTokens);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as tokens...", U"Create Strings from tokens...", GuiMenu_DEPTH_2 | GuiMenu_HIDDEN,
+			CREATE_ONE__Strings_createAsTokens);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as characters...", U"Create Strings from tokens...", GuiMenu_DEPTH_2 | GuiMenu_HIDDEN,
+			CREATE_ONE__Strings_createAsCharacters);
 
-	praat_addMenuCommand (U"Objects", U"New", U"Create KlattTable example", U"Create TableOfReal (Weenink 1985)...", praat_DEPTH_1 + praat_HIDDEN, NEW1_KlattTable_createExample);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Strings from tokens...", U"Create Strings as folder list...", 1, NEW1_Strings_createFromTokens);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as tokens...", U"Create Strings from tokens...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsTokens);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Strings as characters...", U"Create Strings from tokens...", praat_DEPTH_1 + praat_HIDDEN, NEW1_Strings_createAsCharacters);
-	praat_addMenuCommand (U"Objects", U"New", U"Create NavigationContext...", U"Create Strings as tokens...",  praat_DEPTH_1 + praat_HIDDEN, NEW1_Create_NavigationContext);
-	
+	praat_addMenuCommand (U"Objects", U"New", U"Create simple Polygon...", nullptr, GuiMenu_HIDDEN,
+			CREATE_ONE__Polygon_createSimple);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Polygon (random vertices)...", nullptr, GuiMenu_DEPRECATED_2016,
+			CREATE_ONE__Polygon_createFromRandomPoints);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Polygon (random points)...", nullptr, GuiMenu_HIDDEN,
+			CREATE_ONE__Polygon_createFromRandomPoints);
+	praat_addMenuCommand (U"Objects", U"New", U"FileInMemoryManager", nullptr, GuiMenu_HIDDEN, nullptr);
+	praat_addMenuCommand (U"Objects", U"New", U"Create FileInMemoryManager", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			CREATE_ONE__FileInMemoryManager_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Create FileInMemory...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			READ_ONE__FileInMemory_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Create FileInMemorySet from directory contents...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			CREATE_ONE__FileInMemorySet_createFromDirectoryContents);
+	praat_addMenuCommand (U"Objects", U"New", U"Extract espeak data...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			CREATE_ONE__SpeechSynthesizer_extractEspeakData);
 
-	praat_addMenuCommand (U"Objects", U"New", U"Create simple Polygon...", nullptr, praat_HIDDEN, NEW1_Polygon_createSimple);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Polygon (random vertices)...", nullptr, praat_DEPRECATED_2016, NEW1_Polygon_createFromRandomPoints);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Polygon (random points)...", nullptr, praat_HIDDEN, NEW1_Polygon_createFromRandomPoints);
-	praat_addMenuCommand (U"Objects", U"New", U"FileInMemoryManager", nullptr, praat_HIDDEN, nullptr);
-	praat_addMenuCommand (U"Objects", U"New", U"Create FileInMemoryManager", nullptr, praat_HIDDEN + praat_DEPTH_1, NEW1_FileInMemoryManager_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create FileInMemory...", nullptr, praat_HIDDEN + praat_DEPTH_1, READ1_FileInMemory_create);
-	praat_addMenuCommand (U"Objects", U"New", U"Create FileInMemorySet from directory contents...", nullptr, praat_HIDDEN + praat_DEPTH_1, NEW_FileInMemorySet_createFromDirectoryContents);
-	praat_addMenuCommand (U"Objects", U"New", U"Extract espeak data...", nullptr, praat_HIDDEN + praat_DEPTH_1, NEW1_ExtractEspeakData);
-
-	praat_addMenuCommand (U"Objects", U"Open", U"Read Sound from raw 16-bit Little Endian file...", U"Read from special sound file", 1, READ1_Sound_readFromRawFileLE);
-	praat_addMenuCommand (U"Objects", U"Open", U"Read Sound from raw 16-bit Big Endian file...", U"Read Sound from raw 16-bit Little Endian file...", 1, READ1_Sound_readFromRawFileBE);
-	praat_addMenuCommand (U"Objects", U"Open", U"Read KlattTable from raw text file...", U"Read Matrix from raw text file...", praat_HIDDEN, READ1_KlattTable_readFromRawTextFile);
+	praat_addMenuCommand (U"Objects", U"Open", U"Read Sound from raw 16-bit Little Endian file...", U"Read from special sound file", 1, 
+			READ_ONE__Sound_readFromRawFileLE);
+	praat_addMenuCommand (U"Objects", U"Open", U"Read Sound from raw 16-bit Big Endian file...", U"Read Sound from raw 16-bit Little Endian file...", 1,
+			READ_ONE__Sound_readFromRawFileBE);
+	praat_addMenuCommand (U"Objects", U"Open", U"Read KlattTable from raw text file...", U"Read Matrix from raw text file...", GuiMenu_HIDDEN,
+			READ_ONE__KlattTable_readFromRawTextFile);
 
 	praat_addAction1 (classActivationList, 0, U"Modify", nullptr, 0, nullptr);
-	praat_addAction1 (classActivationList, 0, U"Formula...", nullptr, 0, MODIFY_ActivationList_formula);
+	praat_addAction1 (classActivationList, 0, U"Formula...", nullptr, 0, 
+			MODIFY_ActivationList_formula);
 	praat_addAction1 (classActivationList, 0, U"Hack", nullptr, 0, nullptr);
-	praat_addAction1 (classActivationList, 0, U"To Matrix", nullptr, 0, NEW_ActivationList_to_Matrix);
-	praat_addAction1 (classActivationList, 0, U"To PatternList", nullptr, 0, NEW_ActivationList_to_PatternList);
+	praat_addAction1 (classActivationList, 0, U"To Matrix", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ActivationList_to_Matrix);
+	praat_addAction1 (classActivationList, 0, U"To PatternList", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ActivationList_to_PatternList);
 
-	praat_addAction2 (classActivationList, 1, classCategories, 1, U"To TableOfReal", nullptr, 0, NEW1_ActivationList_Categories_to_TableOfReal);
+	praat_addAction2 (classActivationList, 1, classCategories, 1, U"To TableOfReal", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__ActivationList_Categories_to_TableOfReal);
 	
-	praat_addAction1 (classAmplitudeTier, 0, U"Get value at time...", U"Get time from index...", 1, REAL_AmplitudeTier_getValueAtTime);
-	praat_addAction1 (classAmplitudeTier, 0, U"Get value at index...", U"Get value at time...", 1, REAL_AmplitudeTier_getValueAtIndex);
+	praat_addAction1 (classAmplitudeTier, 0, U"Get value at time...", U"Get time from index...", 1, 
+			QUERY_ONE_FOR_REAL__AmplitudeTier_getValueAtTime);
+	praat_addAction1 (classAmplitudeTier, 0, U"Get value at index...", U"Get value at time...", 1, 
+			QUERY_ONE_FOR_REAL__AmplitudeTier_getValueAtIndex);
 
-	praat_addAction1 (classBarkFilter, 0, U"BarkFilter help", nullptr, 0, HELP_BarkFilter_help);
+	praat_addAction1 (classBarkFilter, 0, U"BarkFilter help", nullptr, 0, HELP__BarkFilter_help);
 	praat_FilterBank_all_init (classBarkFilter);	// deprecated 2014
-	praat_addAction1 (classBarkFilter, 0, U"Draw spectrum (slice)...", U"Draw filters...", praat_DEPRECATED_2014, GRAPHICS_BarkFilter_drawSpectrum);	// deprecated 2014
-	praat_addAction1 (classBarkFilter, 1, U"Draw filter functions...", U"Draw filters...", praat_DEPRECATED_2014, GRAPHICS_BarkFilter_drawSekeyHansonFilterFunctions);	// deprecated 2014
-	praat_addAction1 (classBarkFilter, 0, U"Paint...", U"Draw filters...", praat_DEPTH_1, GRAPHICS_BarkFilter_paint);	// deprecated 2014
-	praat_addAction1 (classBarkFilter, 0, U"To BarkSpectrogram", nullptr, 0, NEW_BarkFilter_to_BarkSpectrogram);
+	praat_addAction1 (classBarkFilter, 0, U"Draw spectrum (slice)...", U"Draw filters...", GuiMenu_DEPRECATED_2014,
+			GRAPHICS_EACH__BarkFilter_drawSpectrum);
+	praat_addAction1 (classBarkFilter, 1, U"Draw filter functions...", U"Draw filters...", GuiMenu_DEPRECATED_2014,
+			GRAPHICS_EACH__BarkFilter_drawSekeyHansonFilterFunctions);
+	praat_addAction1 (classBarkFilter, 0, U"Paint...", U"Draw filters...", GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__BarkFilter_paint);	// deprecated 2014
+	praat_addAction1 (classBarkFilter, 0, U"To BarkSpectrogram", nullptr, 0,
+			CONVERT_EACH_TO_ONE__BarkFilter_to_BarkSpectrogram);
 
-	praat_addAction1 (classBarkSpectrogram, 0, U"BarkSpectrogram help", nullptr, 0, HELP_BarkSpectrogram_help);
+	praat_addAction1 (classBarkSpectrogram, 0, U"BarkSpectrogram help", nullptr, 0, 
+			HELP__BarkSpectrogram_help);
 	praat_BandFilterSpectrogram_draw_init (classBarkSpectrogram);
-	praat_addAction1 (classBarkSpectrogram, 0, U"Paint image...", nullptr, 1, GRAPHICS_BarkSpectrogram_paintImage);
-	praat_addAction1 (classBarkSpectrogram, 0, U"Draw Sekey-Hanson auditory filters...", nullptr, 1, GRAPHICS_BarkSpectrogram_drawSekeyHansonAuditoryFilters);
-	praat_addAction1 (classBarkSpectrogram, 0, U"Draw spectrum at nearest time slice...", nullptr, 1, GRAPHICS_BarkSpectrogram_drawSpectrumAtNearestTimeSlice);
-	praat_addAction1 (classBarkSpectrogram, 0, QUERY_BUTTON, nullptr, 0, nullptr);
+	praat_addAction1 (classBarkSpectrogram, 0, U"Paint image...", nullptr, 1, 
+			GRAPHICS_EACH__BarkSpectrogram_paintImage);
+	praat_addAction1 (classBarkSpectrogram, 0, U"Draw Sekey-Hanson auditory filters...", nullptr, 1,
+			GRAPHICS_EACH__BarkSpectrogram_drawSekeyHansonAuditoryFilters);
+	praat_addAction1 (classBarkSpectrogram, 0, U"Draw spectrum at nearest time slice...", nullptr, 1,
+			GRAPHICS_EACH__BarkSpectrogram_drawSpectrumAtNearestTimeSlice);
+	praat_addAction1 (classBarkSpectrogram, 0, U"Query -", nullptr, 0, nullptr);
 	praat_BandFilterSpectrogram_query_init (classBarkSpectrogram);
-	praat_addAction1 (classBarkSpectrogram, 0, U"Equalize intensities...", nullptr, 0, MODIFY_BandFilterSpectrogram_equalizeIntensities);
-	praat_addAction1 (classBarkSpectrogram, 0, U"To Intensity", nullptr, 0, NEW_BandFilterSpectrogram_to_Intensity);
-	praat_addAction1 (classBarkSpectrogram, 0, U"To Matrix...", nullptr, 0, NEW_BandFilterSpectrogram_to_Matrix);
-	praat_addAction1 (classBarkSpectrogram, 2, U"Cross-correlate...", nullptr, 0, NEW1_BandFilterSpectrograms_crossCorrelate);
-	praat_addAction1 (classBarkSpectrogram, 2, U"Convolve...", nullptr, 0, NEW1_BandFilterSpectrograms_convolve);
+	praat_addAction1 (classBarkSpectrogram, 0, U"Equalize intensities...", nullptr, 0, 
+			MODIFY_EACH__BandFilterSpectrogram_equalizeIntensities);
+	praat_addAction1 (classBarkSpectrogram, 0, U"To Intensity", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__BandFilterSpectrogram_to_Intensity);
+	praat_addAction1 (classBarkSpectrogram, 0, U"To Matrix...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__BandFilterSpectrogram_to_Matrix);
+	praat_addAction1 (classBarkSpectrogram, 2, U"Cross-correlate...", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__BandFilterSpectrograms_crossCorrelate);
+	praat_addAction1 (classBarkSpectrogram, 2, U"Convolve...", nullptr, 0,
+			CONVERT_TWO_TO_ONE__BandFilterSpectrograms_convolve);
 
-	praat_addAction1 (classCategories, 0, U"View & Edit", nullptr, praat_NO_API, WINDOW_Categories_edit);
-	praat_addAction1 (classCategories, 0,   U"Edit", U"*View & Edit", praat_DEPRECATED_2015 | praat_NO_API, WINDOW_Categories_edit);
-	praat_addAction1 (classCategories, 0, QUERY_BUTTON, nullptr, 0, nullptr);
-	praat_addAction1 (classCategories, 1, U"Get number of categories", QUERY_BUTTON, 1, INTEGER_Categories_getNumberOfCategories);
-	praat_addAction1 (classCategories, 2, U"Get number of differences", QUERY_BUTTON, 1, INTEGER_Categories_getNumberOfDifferences);
-	praat_addAction1 (classCategories, 2, U"Get fraction different", QUERY_BUTTON, 1, REAL_Categories_getFractionDifferent);
-	praat_addAction1 (classCategories, 0, MODIFY_BUTTON, nullptr, 0, nullptr);
-	praat_addAction1 (classCategories, 1, U"Append category...", MODIFY_BUTTON, 1, MODIFY_Categories_appendCategory);
-	praat_addAction1 (classCategories, 1, U"Append 1 category...", U"Append category...", praat_HIDDEN | praat_DEPTH_1, MODIFY_Categories_appendCategory);
+	praat_addAction1 (classCategories, 0, U"View & Edit || Edit", nullptr, GuiMenu_NO_API,
+			EDITOR_ONE_Categories_edit);
+	praat_addAction1 (classCategories, 0, U"Query -", nullptr, 0, nullptr);
+		praat_addAction1 (classCategories, 1, U"Get number of categories", nullptr, 1,
+			QUERY_ONE_FOR_INTEGER__Categories_getNumberOfCategories);
+		praat_addAction1 (classCategories, 2, U"Get number of differences", nullptr, 1,
+			QUERY_TWO_FOR_REAL__Categories_getNumberOfDifferences);
+		praat_addAction1 (classCategories, 2, U"Get fraction different", nullptr, 1,
+			QUERY_TWO_FOR_REAL__Categories_getFractionDifferent);
+	praat_addAction1 (classCategories, 0, U"Modify -", nullptr, 0, nullptr);
+		praat_addAction1 (classCategories, 1, U"Append category... || Append 1 category...",
+			nullptr, 1, MODIFY_Categories_appendCategory);
+		praat_addAction1 (classCategories, 0, U"Permute items (in-place)", nullptr, 1, 
+			MODIFY_EACH__Categories_permuteItems_inplace);	
 	praat_addAction1 (classCategories, 0, U"Extract", nullptr, 0, nullptr);
-	praat_addAction1 (classCategories, 0, U"To unique Categories", nullptr, 0, NEW_Categories_selectUniqueItems);
+	praat_addAction1 (classCategories, 0, U"To unique Categories", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Categories_selectUniqueItems);
 	praat_addAction1 (classCategories, 0, U"Analyse", nullptr, 0, nullptr); // TODO name
-	praat_addAction1 (classCategories, 2, U"To Confusion", nullptr, 0, NEW_Categories_to_Confusion);
+	praat_addAction1 (classCategories, 2, U"To Confusion", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__Categories_to_Confusion);
 	praat_addAction1 (classCategories, 0, U"Synthesize", nullptr, 0, nullptr);
-	praat_addAction1 (classCategories, 2, U"Join", nullptr, 0, NEW1_Categories_join);
-	praat_addAction1 (classCategories, 0, U"Permute items", nullptr, 0, NEW_Categories_permuteItems);
-	praat_addAction1 (classCategories, 0, U"To Strings", nullptr, 0, NEW_Categories_to_Strings);
+	praat_addAction1 (classCategories, 2, U"Join", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__Categories_join);
+	praat_addAction1 (classCategories, 0, U"Permute items", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Categories_permuteItems);
+	praat_addAction1 (classCategories, 0, U"To Strings", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Categories_to_Strings);
 
-	praat_addAction1 (classChebyshevSeries, 0, U"ChebyshevSeries help", nullptr, 0, HELP_ChebyshevSeries_help);
+	praat_addAction1 (classChebyshevSeries, 0, U"ChebyshevSeries help", nullptr, 0, 
+			HELP__ChebyshevSeries_help);
 	praat_FunctionSeries_init (classChebyshevSeries);
-	praat_addAction1 (classChebyshevSeries, 0, U"To Polynomial", U"Analyse", 0, NEW_ChebyshevSeries_to_Polynomial);
+	praat_addAction1 (classChebyshevSeries, 0, U"To Polynomial", U"Analyse", 0, 
+			CONVERT_EACH_TO_ONE__ChebyshevSeries_to_Polynomial);
 
-	praat_addAction1 (classCCA, 1, U"CCA help", nullptr, 0, HELP_CCA_help);
-	praat_addAction1 (classCCA, 1, U"Draw eigenvector...", nullptr, 0, GRAPHICS_CCA_drawEigenvector);
-	praat_addAction1 (classCCA, 1, U"Get number of correlations", nullptr, 0, INTEGER_CCA_getNumberOfCorrelations);
-	praat_addAction1 (classCCA, 1, U"Get correlation...", nullptr, 0, REAL_CCA_getCorrelation);
-	praat_addAction1 (classCCA, 1, U"Get eigenvector element...", nullptr, 0, REAL_CCA_getEigenvectorElement);
-	praat_addAction1 (classCCA, 1, U"Get zero correlation probability...", nullptr, 0, REAL_CCA_getZeroCorrelationProbability);
-	praat_addAction1 (classCCA, 1, U"Extract Eigen...", nullptr, 0, NEW_CCA_extractEigen);
+	praat_addAction1 (classCCA, 1, U"CCA help", nullptr, 0, 
+			HELP__CCA_help);
+	praat_addAction1 (classCCA, 1, U"Draw eigenvector...", nullptr, 0, 
+			GRAPHICS_EACH__CCA_drawEigenvector);
+	praat_addAction1 (classCCA, 1, U"Get number of correlations", nullptr, 0, 
+		QUERY_ONE_FOR_INTEGER__CCA_getNumberOfCorrelations);
+	praat_addAction1 (classCCA, 1, U"Get correlation...", nullptr, 0, 
+			QUERY_ONE_FOR_REAL__CCA_getCorrelation);
+	praat_addAction1 (classCCA, 1, U"Get eigenvector element...", nullptr, 0, 
+			QUERY_ONE_FOR_REAL__CCA_getEigenvectorElement);
+	praat_addAction1 (classCCA, 1, U"Get zero correlation probability...", nullptr, 0, 
+			QUERY_ONE_FOR_REAL__CCA_getZeroCorrelationProbability);
+	praat_addAction1 (classCCA, 1, U"Extract Eigen...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__CCA_extractEigen);
 
-	praat_addAction2 (classCCA, 1, classTableOfReal, 1, U"To TableOfReal (scores)...", nullptr, 0, NEW_CCA_TableOfReal_to_TableOfReal_scores);
-	praat_addAction2 (classCCA, 1, classTableOfReal, 1, U"To TableOfReal (loadings)", nullptr, 0, NEW_CCA_TableOfReal_to_TableOfReal_loadings);
-	praat_addAction2 (classCCA, 1, classTableOfReal, 1, U"Predict...", nullptr, 0, NEW1_CCA_TableOfReal_predict);
-	praat_addAction2 (classCCA, 1, classCorrelation, 1, U"To TableOfReal (loadings)", nullptr, 0, NEW1_CCA_Correlation_to_TableOfReal_loadings);
-	praat_addAction2 (classCCA, 1, classCorrelation, 1, U"Get variance fraction...", nullptr, 0, REAL_CCA_Correlation_getVarianceFraction);
-	praat_addAction2 (classCCA, 1, classCorrelation, 1, U"Get redundancy (sl)...", nullptr, 0, REAL_CCA_Correlation_getRedundancy_sl);
+	praat_addAction2 (classCCA, 1, classTableOfReal, 1, U"To TableOfReal (scores)...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__CCA_TableOfReal_to_TableOfReal_scores);
+	praat_addAction2 (classCCA, 1, classTableOfReal, 1, U"To TableOfReal (loadings)", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__CCA_TableOfReal_to_TableOfReal_loadings);
+	praat_addAction2 (classCCA, 1, classTableOfReal, 1, U"Predict...", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__CCA_TableOfReal_predict);
+	praat_addAction2 (classCCA, 1, classCorrelation, 1, U"To TableOfReal (loadings)", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__CCA_Correlation_to_TableOfReal_loadings);
+	praat_addAction2 (classCCA, 1, classCorrelation, 1, U"Get variance fraction...", nullptr, 0,
+			QUERY_ONE_AND_ONE_FOR_REAL__CCA_Correlation_getVarianceFraction);
+	praat_addAction2 (classCCA, 1, classCorrelation, 1, U"Get redundancy (sl)...", nullptr, 0,
+			QUERY_ONE_AND_ONE_FOR_REAL__CCA_Correlation_getRedundancy_sl);
 
-	praat_addAction1 (classComplexSpectrogram, 0, U"ComplexSpectrogram help", nullptr, 0, HELP_ComplexSpectrogram_help);
-	praat_addAction1 (classComplexSpectrogram, 0, DRAW_BUTTON, nullptr, 0, nullptr);
-	praat_addAction1 (classComplexSpectrogram, 0, U"To Sound...", nullptr, 0, NEW_ComplexSpectrogram_to_Sound);
-	praat_addAction1 (classComplexSpectrogram, 0, U"Down to Spectrogram", nullptr, 0, NEW_ComplexSpectrogram_downto_Spectrogram);
-	praat_addAction1 (classComplexSpectrogram, 0, U"To Spectrum (slice)...", nullptr, 0, NEW_ComplexSpectrogram_to_Spectrum_slice);
-	//praat_addAction1 (classComplexSpectrogram, 0, U"Paint...", 0, 1, DO_Spectrogram_paint);
-	praat_addAction2 (classComplexSpectrogram, 1, classSpectrogram, 1, U"Replace amplitudes", nullptr, 0, MODIFY_ComplexSpectrogram_Spectrogram_replaceAmplitudes);
+	praat_addAction1 (classComplexSpectrogram, 0, U"ComplexSpectrogram help", nullptr, 0, 
+			HELP__ComplexSpectrogram_help);
+	praat_addAction1 (classComplexSpectrogram, 0, U"Draw -", nullptr, 0, nullptr);
+	praat_addAction1 (classComplexSpectrogram, 0, U"To Sound...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ComplexSpectrogram_to_Sound);
+	praat_addAction1 (classComplexSpectrogram, 0, U"Down to Spectrogram", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ComplexSpectrogram_downto_Spectrogram);
+	praat_addAction1 (classComplexSpectrogram, 0, U"To Spectrum (slice)...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ComplexSpectrogram_to_Spectrum_slice);
+	praat_addAction2 (classComplexSpectrogram, 1, classSpectrogram, 1, U"Replace amplitudes", nullptr, 0,
+			MODIFY_ComplexSpectrogram_Spectrogram_replaceAmplitudes);
 
-	praat_addAction1 (classConfusion, 0, U"Confusion help", nullptr, 0, HELP_Confusion_help);
+	praat_addAction1 (classConfusion, 0, U"Confusion help", nullptr, 0, 
+			HELP__Confusion_help);
 	praat_TableOfReal_init2 (classConfusion);
 	praat_removeAction (classConfusion, nullptr, nullptr, U"Draw as numbers...");
 	praat_removeAction (classConfusion, nullptr, nullptr, U"Sort by label...");
 	praat_removeAction (classConfusion, nullptr, nullptr, U"Sort by column...");
-	praat_addAction1 (classConfusion, 0, U"Draw as numbers...", U"Draw -", 1, GRAPHICS_Confusion_drawAsNumbers);
-	praat_addAction1 (classConfusion, 1, U"Get value (labels)...", U"Get value...", 1, REAL_Confusion_getValue_labels);
+	praat_addAction1 (classConfusion, 0, U"Draw as numbers...", U"Draw -", 1, 
+			GRAPHICS_EACH__Confusion_drawAsNumbers);
+	praat_addAction1 (classConfusion, 1, U"Get value (labels)...", U"Get value...", 1, 
+			QUERY_ONE_FOR_REAL__Confusion_getValue_labels);
 	praat_addAction1 (classConfusion, 0, U"-- confusion statistics --", U"Get value (labels)...", 1, nullptr);
-	praat_addAction1 (classConfusion, 1, U"Get fraction correct", U"-- confusion statistics --", 1, REAL_Confusion_getFractionCorrect);
-	praat_addAction1 (classConfusion, 1, U"Get stimulus sum...", U"Get fraction correct", 1, REAL_Confusion_getStimulusSum);
-	praat_addAction1 (classConfusion, 1, U"Get row sum...", U"Get fraction correct", praat_DEPTH_1 | praat_HIDDEN, REAL_TableOfReal_getRowSum);
-	praat_addAction1 (classConfusion, 1, U"Get response sum...", U"Get stimulus sum...", 1, REAL_Confusion_getResponseSum);
-	praat_addAction1 (classConfusion, 1, U"Get column sum...", U"Get row sum...", praat_DEPTH_1 | praat_HIDDEN, REAL_TableOfReal_getColumnSum);
-	praat_addAction1 (classConfusion, 1, U"Get grand sum", U"Get response sum...", 1, REAL_TableOfReal_getGrandSum);
-	praat_addAction1 (classConfusion, 0, U"Increase...", U"Formula...", 1, MODIFY_Confusion_increase);
-	praat_addAction1 (classConfusion, 0, U"To TableOfReal (marginals)", U"To TableOfReal", 0, NEW_Confusion_to_TableOfReal_marginals);
+	praat_addAction1 (classConfusion, 1, U"Get fraction correct", U"-- confusion statistics --", 1, 
+			QUERY_ONE_FOR_REAL__Confusion_getFractionCorrect);
+	praat_addAction1 (classConfusion, 1, U"Get stimulus sum...", U"Get fraction correct", 1, 
+			QUERY_ONE_FOR_REAL__Confusion_getStimulusSum);
+	praat_addAction1 (classConfusion, 1, U"Get row sum...", U"Get fraction correct", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			QUERY_ONE_FOR_REAL__TableOfReal_getRowSum);
+	praat_addAction1 (classConfusion, 1, U"Get response sum...", U"Get stimulus sum...", 1, 
+			QUERY_ONE_FOR_REAL__Confusion_getResponseSum);
+	praat_addAction1 (classConfusion, 1, U"Get column sum...", U"Get row sum...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			QUERY_ONE_FOR_REAL__TableOfReal_getColumnSum);
+	praat_addAction1 (classConfusion, 1, U"Get grand sum", U"Get response sum...", 1, 
+			QUERY_ONE_FOR_REAL__TableOfReal_getGrandSum);
+	praat_addAction1 (classConfusion, 0, U"Increase...", U"Formula...", 1, 
+			MODIFY_Confusion_increase);
+	praat_addAction1 (classConfusion, 0, U"To TableOfReal (marginals)", U"To TableOfReal", 0, 
+			CONVERT_EACH_TO_ONE__Confusion_to_TableOfReal_marginals);
 	praat_addAction1 (classConfusion, 0, U"Analyse", nullptr, 0, nullptr);
-	praat_addAction1 (classConfusion, 0, U"Condense...", nullptr, praat_HIDDEN, NEW_Confusion_condense);
-	praat_addAction1 (classConfusion, 0, U"Group...", nullptr, 0, NEW_Confusion_group);
-	praat_addAction1 (classConfusion, 0, U"Group stimuli...", nullptr, 0, NEW_Confusion_groupStimuli);
-	praat_addAction1 (classConfusion, 0, U"Group responses...", nullptr, 0, NEW_Confusion_groupResponses);
-	praat_addAction1 (classConfusion, 2, U"To difference matrix", nullptr, 0, NEW1_Confusion_difference); // TODO to_Matrix_difference ?
+	praat_addAction1 (classConfusion, 0, U"Condense...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Confusion_condense);
+	praat_addAction1 (classConfusion, 0, U"Group...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Confusion_group);
+	praat_addAction1 (classConfusion, 0, U"Group stimuli...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Confusion_groupStimuli);
+	praat_addAction1 (classConfusion, 0, U"Group responses...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Confusion_groupResponses);
+	praat_addAction1 (classConfusion, 2, U"To difference matrix", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__Confusion_difference); // TODO to_Matrix_difference ?
 
-	praat_addAction2 (classConfusion, 1, classClassificationTable, 1, U"Increase confusion count", nullptr, 0, MODIFY_Confusion_ClassificationTable_increaseConfusionCount);
+	praat_addAction2 (classConfusion, 1, classClassificationTable, 1, U"Increase confusion count", nullptr, 0,
+			MODIFY_Confusion_ClassificationTable_increaseConfusionCount);
 
 	praat_addAction2 (classConfusion, 1, classMatrix, 1, U"Draw", nullptr, 0, nullptr);
-	praat_addAction2 (classConfusion, 1, classMatrix, 1, U"Draw confusion...", nullptr, 0, GRAPHICS_Confusion_Matrix_draw);
+	praat_addAction2 (classConfusion, 1, classMatrix, 1, U"Draw confusion...", nullptr, 0, 
+			GRAPHICS_ONE_AND_ONE__Confusion_Matrix_draw);
 
-	praat_addAction1 (classCovariance, 0, U"Covariance help", nullptr, 0, HELP_Covariance_help);
+	praat_addAction1 (classCovariance, 0, U"Covariance help", nullptr, 0, 
+			HELP__Covariance_help);
 	praat_SSCP_as_TableOfReal_init (classCovariance);
 	praat_SSCP_query_init (classCovariance);
 	praat_SSCP_extract_init (classCovariance);
-	praat_addAction1 (classCovariance, 1, U"Get probability at position...", U"Get value...", 1, REAL_Covariance_getProbabilityAtPosition);
-	praat_addAction1 (classCovariance, 1, U"Get diagonality (bartlett)...", U"Get ln(determinant)", 1, REAL_SSCP_getDiagonality_bartlett);
-	praat_addAction1 (classCovariance, 1, U"Get significance of one mean...", U"Get diagonality (bartlett)...", 1, REAL_Covariance_getSignificanceOfOneMean);
-	praat_addAction1 (classCovariance, 1, U"Get significance of means difference...", U"Get significance of one mean...", 1, REAL_Covariance_getSignificanceOfMeansDifference);
-	praat_addAction1 (classCovariance, 1, U"Get significance of one variance...", U"Get significance of means difference...", 1, REAL_Covariance_getSignificanceOfOneVariance);
-	praat_addAction1 (classCovariance, 1, U"Get significance of variances ratio...", U"Get significance of one variance...", 1, REAL_Covariance_getSignificanceOfVariancesRatio);
-	praat_addAction1 (classCovariance, 1, U"Get fraction variance...", U"Get significance of variances ratio...", 1, REAL_Covariance_getFractionVariance);
-	praat_addAction1 (classCovariance, 2, U"Report multivariate mean difference...", U"Get fraction variance...", 1, INFO_Covariances_reportMultivariateMeanDifference);
-	praat_addAction1 (classCovariance, 2, U"Difference", U"Report multivariate mean difference...", praat_DEPTH_1 | praat_HIDDEN, INFO_Covariances_reportEquality);
-	praat_addAction1 (classCovariance, 0, U"Report equality of covariances", U"Report multivariate mean difference...", praat_DEPTH_1 | praat_HIDDEN, INFO_Covariances_reportEquality);
-	praat_addAction1 (classCovariance, 0, U"To TableOfReal (random sampling)...", nullptr, 0, NEW_Covariance_to_TableOfReal_randomSampling);
-	praat_addAction1 (classCovariance, 0, U"To Correlation", nullptr, 0, NEW_Covariance_to_Correlation);
-	praat_addAction1 (classCovariance, 0, U"To PCA", nullptr, 0, NEW_Covariance_to_PCA);
-	praat_addAction1 (classCovariance, 0, U"Pool", nullptr, 0, NEW1_Covariances_pool);
-	praat_addAction1 (classCovariance, 0, U"To Covariance (between)", nullptr, 0, NEW1_Covariances_to_Covariance_between);
-	praat_addAction1 (classCovariance, 0, U"To Covariance (within)", nullptr, 0, NEW1_Covariances_to_Covariance_within);
+	praat_addAction1 (classCovariance, 1, U"Get probability at position...", U"Get value...", 1, 
+			QUERY_ONE_FOR_REAL__Covariance_getProbabilityAtPosition);
+	praat_addAction1 (classCovariance, 1, U"Get diagonality (bartlett)...", U"Get ln(determinant)", 1, 
+			QUERY_ONE_FOR_REAL__SSCP_getDiagonality_bartlett);
+	praat_addAction1 (classCovariance, 1, U"Get significance of one mean...", U"Get diagonality (bartlett)...", 1, 
+			QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfOneMean);
+	praat_addAction1 (classCovariance, 1, U"Get significance of means difference...", U"Get significance of one mean...", 1, 
+			QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfMeansDifference);
+	praat_addAction1 (classCovariance, 1, U"Get significance of one variance...", U"Get significance of means difference...", 1,
+			QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfOneVariance);
+	praat_addAction1 (classCovariance, 1, U"Get significance of variances ratio...", U"Get significance of one variance...", 1,
+			QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfVariancesRatio);
+	praat_addAction1 (classCovariance, 1, U"Get fraction variance...", U"Get significance of variances ratio...", 1, 
+			QUERY_ONE_FOR_REAL__Covariance_getFractionVariance);
+	praat_addAction1 (classCovariance, 2, U"Report multivariate mean difference...", U"Get fraction variance...", 1,
+			INFO_TWO__Covariances_reportMultivariateMeanDifference);
+	praat_addAction1 (classCovariance, 2, U"Difference", U"Report multivariate mean difference...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			INFO_NONE__Covariances_reportEquality);
+	praat_addAction1 (classCovariance, 0, U"Report equality of covariances", U"Report multivariate mean difference...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			INFO_NONE__Covariances_reportEquality);
+	praat_addAction1 (classCovariance, 0, U"To TableOfReal (random sampling)...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Covariance_to_TableOfReal_randomSampling);
+	praat_addAction1 (classCovariance, 0, U"To Correlation", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Covariance_to_Correlation);
+	praat_addAction1 (classCovariance, 0, U"To PCA", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Covariance_to_PCA);
+	praat_addAction1 (classCovariance, 0, U"Pool", nullptr, 0, 
+			COMBINE_ALL_LISTED_TO_ONE__Covariances_pool);
+	praat_addAction1 (classCovariance, 0, U"To Covariance (between)", nullptr, 0, 
+			COMBINE_ALL_LISTED_TO_ONE__Covariances_to_Covariance_between);
+	praat_addAction1 (classCovariance, 0, U"To Covariance (within)", nullptr, 0, 
+			COMBINE_ALL_LISTED_TO_ONE__Covariances_to_Covariance_within);
 
-	praat_addAction2 (classCovariance, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis)...", nullptr, 0, NEW1_Covariance_TableOfReal_mahalanobis);
-	praat_addAction1 (classClassificationTable, 0, U"ClassificationTable help", nullptr, 0, HELP_ClassificationTable_help);
+	praat_addAction2 (classCovariance, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis)...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__Covariance_TableOfReal_mahalanobis);
+	
+	praat_addAction1 (classClassificationTable, 0, U"ClassificationTable help", nullptr, 0, 
+			HELP__ClassificationTable_help);
 	praat_TableOfReal_init (classClassificationTable);
-	praat_addAction1 (classClassificationTable, 0, U"Get class index at maximum in row...", U"Get column index...", 1, INTEGER_ClassificationTable_getClassIndexAtMaximumInRow);
-	praat_addAction1 (classClassificationTable, 0, U"Get class label at maximum in row...", U"Get class index at maximum in row...", 1, INTEGER_ClassificationTable_getClassLabelAtMaximumInRow);
-	praat_addAction1 (classClassificationTable, 0, U"To Confusion", U"*To Confusion...", praat_DEPRECATED_2014, NEW_ClassificationTable_to_Confusion_old); // deprecated 2014
-	praat_addAction1 (classClassificationTable, 0, U"To Confusion...", nullptr, 0, NEW_ClassificationTable_to_Confusion);
-	praat_addAction1 (classClassificationTable, 0, U"To Correlation (columns)", nullptr, 0, NEW_ClassificationTable_to_Correlation_columns);
-	praat_addAction1 (classClassificationTable, 0, U"To Strings (max. prob.)", nullptr, 0, NEW_ClassificationTable_to_Strings_maximumProbability); // TODO name?
+	praat_addAction1 (classClassificationTable, 0, U"Get class index at maximum in row...", U"Get column index...", 1,
+		QUERY_ONE_FOR_INTEGER__ClassificationTable_getClassIndexAtMaximumInRow);
+	praat_addAction1 (classClassificationTable, 0, U"Get class label at maximum in row...", U"Get class index at maximum in row...", 1,
+		QUERY_ONE_FOR_STRING__ClassificationTable_getClassLabelAtMaximumInRow);
+	praat_addAction1 (classClassificationTable, 0, U"To Confusion", U"*To Confusion...", GuiMenu_DEPRECATED_2014,
+			CONVERT_EACH_TO_ONE__ClassificationTable_to_Confusion_old); // deprecated 2014
+	praat_addAction1 (classClassificationTable, 0, U"To Confusion...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ClassificationTable_to_Confusion);
+	praat_addAction1 (classClassificationTable, 0, U"To Correlation (columns)", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ClassificationTable_to_Correlation_columns);
+	praat_addAction1 (classClassificationTable, 0, U"To Strings (max. prob.)", nullptr, 0,
+			CONVERT_EACH_TO_ONE__ClassificationTable_to_Strings_maximumProbability); // TODO name?
 
-	praat_addAction1 (classCorrelation, 0, U"Correlation help", nullptr, 0, HELP_Correlation_help);
+	praat_addAction1 (classCorrelation, 0, U"Correlation help", nullptr, 0, 
+			HELP__Correlation_help);
 	praat_TableOfReal_init2 (classCorrelation);
 	praat_SSCP_query_init (classCorrelation);
 	praat_SSCP_extract_init (classCorrelation);
-	praat_addAction1 (classCorrelation, 1, U"Get diagonality (bartlett)...", U"Get ln(determinant)", 1, REAL_Correlation_getDiagonality_bartlett);
-	praat_addAction1 (classCorrelation, 0, U"Confidence intervals...", nullptr, 0, NEW_Correlation_confidenceIntervals);
-	praat_addAction1 (classCorrelation, 0, U"To PCA", nullptr, 0, NEW_Correlation_to_PCA);
+	praat_addAction1 (classCorrelation, 1, U"Get diagonality (bartlett)...", U"Get ln(determinant)", 1, 
+			QUERY_ONE_FOR_REAL__Correlation_getDiagonality_bartlett);
+	praat_addAction1 (classCorrelation, 0, U"Confidence intervals...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Correlation_confidenceIntervals);
+	praat_addAction1 (classCorrelation, 0, U"To PCA", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Correlation_to_PCA);
 
-	praat_addAction1 (classDiscriminant, 0, U"Discriminant help", 0, 0, HELP_Discriminant_help);
-	praat_addAction1 (classDiscriminant, 0, DRAW_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classDiscriminant, 0, U"Draw eigenvalues...", nullptr, 1, GRAPHICS_Discriminant_drawEigenvalues);
-	praat_addAction1 (classDiscriminant, 0, U"Draw eigenvalues (scree)...", nullptr, praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_Eigen_drawEigenvalues_scree);
-	praat_addAction1 (classDiscriminant, 0, U"Draw eigenvector...", nullptr, 1, GRAPHICS_Discriminant_drawEigenvector);
+	praat_addAction1 (classDiscriminant, 0, U"Discriminant help", 0, 0,
+			HELP__Discriminant_help);
+	praat_addAction1 (classDiscriminant, 0, U"Draw -", nullptr, 0, nullptr);
+	praat_addAction1 (classDiscriminant, 0, U"Draw eigenvalues...", nullptr, 1,
+			GRAPHICS_EACH__Discriminant_drawEigenvalues);
+	praat_addAction1 (classDiscriminant, 0, U"Draw eigenvalues (scree)...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			WARNING__Eigen_drawEigenvalues_scree);
+	praat_addAction1 (classDiscriminant, 0, U"Draw eigenvector...", nullptr, 1,
+			GRAPHICS_EACH__Discriminant_drawEigenvector);
 
 	praat_addAction1 (classDiscriminant, 0, U"-- sscps --", 0, 1, 0);
-	praat_addAction1 (classDiscriminant, 0, U"Draw sigma ellipses...", 0, 1, GRAPHICS_Discriminant_drawSigmaEllipses);
-	praat_addAction1 (classDiscriminant, 0, U"Draw one sigma ellipse...", 0, 1, GRAPHICS_Discriminant_drawOneSigmaEllipse);
-	praat_addAction1 (classDiscriminant, 0, U"Draw confidence ellipses...", 0, 1, GRAPHICS_Discriminant_drawConfidenceEllipses);
+	praat_addAction1 (classDiscriminant, 0, U"Draw sigma ellipses...", 0, 1, 
+			GRAPHICS_EACH__Discriminant_drawSigmaEllipses);
+	praat_addAction1 (classDiscriminant, 0, U"Draw one sigma ellipse...", 0, 1, 
+			GRAPHICS_EACH__Discriminant_drawOneSigmaEllipse);
+	praat_addAction1 (classDiscriminant, 0, U"Draw confidence ellipses...", 0, 1, 
+			GRAPHICS_EACH__Discriminant_drawConfidenceEllipses);
 
-	praat_addAction1 (classDiscriminant, 1, QUERY_BUTTON, nullptr, 0, 0);
+	praat_addAction1 (classDiscriminant, 1, U"Query -", nullptr, 0, nullptr);
 	praat_addAction1 (classDiscriminant, 1, U"-- eigen structure --", nullptr, 1, 0);
-	praat_addAction1 (classDiscriminant, 1, U"Get eigenvalue...", nullptr, 1, REAL_Discriminant_getEigenvalue);
-	praat_addAction1 (classDiscriminant, 1, U"Get sum of eigenvalues...", nullptr, 1, REAL_Discriminant_getSumOfEigenvalues);
-	praat_addAction1 (classDiscriminant, 1, U"Get number of eigenvectors", nullptr, 1, INTEGER_Discriminant_getNumberOfEigenvectors);
-	praat_addAction1 (classDiscriminant, 1, U"Get eigenvector dimension", nullptr, 1, INTEGER_Discriminant_getEigenvectorDimension);
-	praat_addAction1 (classDiscriminant, 1, U"Get eigenvector element...", nullptr, 1, REAL_Discriminant_getEigenvectorElement);
+	praat_addAction1 (classDiscriminant, 1, U"Get eigenvalue...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__Discriminant_getEigenvalue);
+	praat_addAction1 (classDiscriminant, 1, U"Get sum of eigenvalues...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__Discriminant_getSumOfEigenvalues);
+	praat_addAction1 (classDiscriminant, 1, U"Get number of eigenvectors", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfEigenvectors);
+	praat_addAction1 (classDiscriminant, 1, U"Get eigenvector dimension", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__Discriminant_getEigenvectorDimension);
+	praat_addAction1 (classDiscriminant, 1, U"Get eigenvector element...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__Discriminant_getEigenvectorElement);
 
 	praat_addAction1 (classDiscriminant, 1, U"-- discriminant --", 0, 1, 0);
-	praat_addAction1 (classDiscriminant, 1, U"Get number of functions", 0, 1, INTEGER_Discriminant_getNumberOfFunctions);
-	praat_addAction1 (classDiscriminant, 1, U"Get dimension of functions", 0, 1, INTEGER_Discriminant_getDimensionOfFunctions);
-	praat_addAction1 (classDiscriminant, 1, U"Get number of groups", 0, 1, INTEGER_Discriminant_getNumberOfGroups);
-	praat_addAction1 (classDiscriminant, 1, U"Get number of observations...", 0, 1, INTEGER_Discriminant_getNumberOfObservations);
+	praat_addAction1 (classDiscriminant, 1, U"Get number of functions", 0, 1, 
+		QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfFunctions);
+	praat_addAction1 (classDiscriminant, 1, U"Get dimension of functions", 0, 1, 
+		QUERY_ONE_FOR_INTEGER__Discriminant_getDimensionOfFunctions);
+	praat_addAction1 (classDiscriminant, 1, U"Get number of groups", 0, 1, 
+		QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfGroups);
+	praat_addAction1 (classDiscriminant, 1, U"Get number of observations...", 0, 1, 
+		QUERY_ONE_FOR_INTEGER__Discriminant_getNumberOfObservations);
 	praat_addAction1 (classDiscriminant, 1, U"-- tests --", 0, 1, 0);
-	praat_addAction1 (classDiscriminant, 1, U"Get Wilks lambda...", 0, 1, REAL_Discriminant_getWilksLambda);
-	praat_addAction1 (classDiscriminant, 1, U"Get cumulative contribution of components...", 0, 1, REAL_Discriminant_getCumulativeContributionOfComponents);
-	praat_addAction1 (classDiscriminant, 1, U"Get partial discrimination probability...", 0, 1, REAL_Discriminant_getPartialDiscriminationProbability);
-	praat_addAction1 (classDiscriminant, 1, U"Get homogeneity of covariances (box)", 0, praat_DEPTH_1 | praat_HIDDEN, REAL_Discriminant_getHomegeneityOfCovariances_box);
-	praat_addAction1 (classDiscriminant, 1, U"Report equality of covariance matrices", 0, 1, INFO_Discriminant_reportEqualityOfCovarianceMatrices);
+	praat_addAction1 (classDiscriminant, 1, U"Get Wilks lambda...", 0, 1, 
+			QUERY_ONE_FOR_REAL__Discriminant_getWilksLambda);
+	praat_addAction1 (classDiscriminant, 1, U"Get cumulative contribution of components...", 0, 1,
+			QUERY_ONE_FOR_REAL__Discriminant_getCumulativeContributionOfComponents);
+	praat_addAction1 (classDiscriminant, 1, U"Get partial discrimination probability...", 0, 1,
+			QUERY_ONE_FOR_REAL__Discriminant_getPartialDiscriminationProbability);
+	praat_addAction1 (classDiscriminant, 1, U"Get homogeneity of covariances (box)", 0, GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			QUERY_ONE_FOR_REAL__Discriminant_getHomegeneityOfCovariances_box);
+	praat_addAction1 (classDiscriminant, 1, U"Report equality of covariance matrices", 0, 1, 
+			INFO_ONE__Discriminant_reportEqualityOfCovarianceMatrices);
 	praat_addAction1 (classDiscriminant, 1, U"-- ellipses --", 0, 1, 0);
-	praat_addAction1 (classDiscriminant, 1, U"Get sigma ellipse area...", 0, 1, REAL_Discriminant_getSigmaEllipseArea);
-	praat_addAction1 (classDiscriminant, 1, U"Get confidence ellipse area...", 0, 1, REAL_Discriminant_getConfidenceEllipseArea);
-	praat_addAction1 (classDiscriminant, 1, U"Get ln(determinant_group)...", 0, 1, REAL_Discriminant_getLnDeterminant_group);
-	praat_addAction1 (classDiscriminant, 1, U"Get ln(determinant_total)", 0, 1, REAL_Discriminant_getLnDeterminant_total);
+	praat_addAction1 (classDiscriminant, 1, U"Get sigma ellipse area...", 0, 1, 
+			QUERY_ONE_FOR_REAL__Discriminant_getSigmaEllipseArea);
+	praat_addAction1 (classDiscriminant, 1, U"Get confidence ellipse area...", 0, 1, 
+			QUERY_ONE_FOR_REAL__Discriminant_getConfidenceEllipseArea);
+	praat_addAction1 (classDiscriminant, 1, U"Get ln(determinant_group)...", 0, 1, 
+			QUERY_ONE_FOR_REAL__Discriminant_getLnDeterminant_group);
+	praat_addAction1 (classDiscriminant, 1, U"Get ln(determinant_total)", 0, 1, 
+			QUERY_ONE_FOR_REAL__Discriminant_getLnDeterminant_total);
 
-	praat_addAction1 (classDiscriminant, 0, MODIFY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classDiscriminant, 1, U"Invert eigenvector...", nullptr, 1, MODIFY_Discriminant_invertEigenvector);
-	praat_addAction1 (classDiscriminant, 0, U"Align eigenvectors", nullptr, 1, MODIFY_Eigens_alignEigenvectors);
+	praat_addAction1 (classDiscriminant, 0, U"Modify -", nullptr, 0, nullptr);
+	praat_addAction1 (classDiscriminant, 1, U"Invert eigenvector...", nullptr, 1, 
+			MODIFY_Discriminant_invertEigenvector);
+	praat_addAction1 (classDiscriminant, 0, U"Align eigenvectors", nullptr, 1, 
+			MODIFY_ALL_Eigens_alignEigenvectors);
 
 	praat_addAction1 (classDiscriminant, 0, U"Extract -", nullptr, 0, 0);
-		praat_addAction1 (classDiscriminant, 0, U"Extract pooled within-groups SSCP", nullptr, 1, NEW_Discriminant_extractPooledWithinGroupsSSCP);
-		praat_addAction1 (classDiscriminant, 0, U"Extract within-group SSCP...", nullptr, 1, NEW_Discriminant_extractWithinGroupSSCP);
-		praat_addAction1 (classDiscriminant, 0, U"Extract between-groups SSCP", nullptr, 1, NEW_Discriminant_extractBetweenGroupsSSCP);
-		praat_addAction1 (classDiscriminant, 0, U"Extract group centroids", nullptr, 1, NEW_Discriminant_extractGroupCentroids);
-		praat_addAction1 (classDiscriminant, 0, U"Extract group standard deviations", nullptr, 1, NEW_Discriminant_extractGroupStandardDeviations);
-		praat_addAction1 (classDiscriminant, 0, U"Extract group labels", nullptr, 1, NEW_Discriminant_extractGroupLabels);
-		praat_addAction1 (classDiscriminant, 0, U"Extract Eigen", nullptr, 1, NEW_Discriminant_extractEigen);
+		praat_addAction1 (classDiscriminant, 0, U"Extract pooled within-groups SSCP", nullptr, 1, 
+				CONVERT_EACH_TO_ONE__Discriminant_extractPooledWithinGroupsSSCP);
+		praat_addAction1 (classDiscriminant, 0, U"Extract within-group SSCP...", nullptr, 1, 
+				CONVERT_EACH_TO_ONE__Discriminant_extractWithinGroupSSCP);
+		praat_addAction1 (classDiscriminant, 0, U"Extract between-groups SSCP", nullptr, 1,
+				CONVERT_EACH_TO_ONE__Discriminant_extractBetweenGroupsSSCP);
+		praat_addAction1 (classDiscriminant, 0, U"Extract group centroids", nullptr, 1,
+				CONVERT_EACH_TO_ONE__Discriminant_extractGroupCentroids);
+		praat_addAction1 (classDiscriminant, 0, U"Extract group standard deviations", nullptr, 1,
+				CONVERT_EACH_TO_ONE__Discriminant_extractGroupStandardDeviations);
+		praat_addAction1 (classDiscriminant, 0, U"Extract group labels", nullptr, 1, 
+				CONVERT_EACH_TO_ONE__Discriminant_extractGroupLabels);
+		praat_addAction1 (classDiscriminant, 0, U"Extract Eigen", nullptr, 1, 
+				CONVERT_EACH_TO_ONE__Discriminant_extractEigen);
 
-	praat_addAction1 (classDiscriminant , 0, U"& TableOfReal: To ClassificationTable?", nullptr, 0, hint_Discriminant_TableOfReal_to_ClassificationTable);
-
-	/*		praat_addAction1 (classDiscriminant, 1, U"Extract coefficients...", nullptr, 1, DO_Discriminant_extractCoefficients);*/
-
-	//praat_addAction2 (classDiscriminant, 1, classMatrix, 1, U"To Matrix (pc)...", nullptr, 0, DO_Discriminant_Matrix_to_Matrix_pc);
+	praat_addAction1 (classDiscriminant , 0, U"& TableOfReal: To ClassificationTable?", nullptr, 0,
+				HINT__Discriminant_TableOfReal_to_ClassificationTable);
 
 	praat_Eigen_Spectrogram_project (classDiscriminant, classSpectrogram);
 	praat_Eigen_Spectrogram_project (classDiscriminant, classBarkSpectrogram);
@@ -8443,345 +9347,587 @@ void praat_uvafon_David_init () {
 	praat_Eigen_Matrix_project (classDiscriminant, classBarkFilter); // deprecated 2014
 	praat_Eigen_Matrix_project (classDiscriminant, classMelFilter); // deprecated 2014
 
-	praat_addAction2 (classDiscriminant, 1, classPatternList, 1, U"To Categories...", nullptr, 0, NEW1_Discriminant_PatternList_to_Categories);
-	praat_addAction2 (classDiscriminant, 1, classSSCP, 1, U"Project", nullptr, 0, NEW1_Eigen_SSCP_project);
+	praat_addAction2 (classDiscriminant, 1, classPatternList, 1, U"To Categories...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_PatternList_to_Categories);
+	praat_addAction2 (classDiscriminant, 1, classSSCP, 1, U"Project", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__Eigen_SSCP_project);
 	praat_addAction2 (classDiscriminant, 1, classStrings, 1, U"Modify Discriminant", nullptr, 0, 0);
-	praat_addAction2 (classDiscriminant, 1, classStrings, 1, U"Set group labels", nullptr, 0, MODIFY_Discriminant_setGroupLabels);
+	praat_addAction2 (classDiscriminant, 1, classStrings, 1, U"Set group labels", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__Discriminant_setGroupLabels);
 
-	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To Configuration...", nullptr, 0, NEW1_Discriminant_TableOfReal_to_Configuration);
-	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To ClassificationTable...", nullptr, 0, NEW1_Discriminant_TableOfReal_to_ClassificationTable);
-	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis)...", nullptr, 0, NEW1_Discriminant_TableOfReal_mahalanobis);
-	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis, all)...", nullptr, 0, NEW1_Discriminant_TableOfReal_mahalanobis_all);
+	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To Configuration...", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_TableOfReal_to_Configuration);
+	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To ClassificationTable...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_TableOfReal_to_ClassificationTable);
+	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis)...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_TableOfReal_mahalanobis);
+	praat_addAction2 (classDiscriminant, 1, classTableOfReal, 1, U"To TableOfReal (mahalanobis, all)...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__Discriminant_TableOfReal_mahalanobis_all);
 
-	praat_addAction1 (classDTW, 0, U"DTW help", nullptr, 0, HELP_DTW_help);
-	praat_addAction1 (classDTW, 0, DRAW_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classDTW, 0, U"Draw path...", nullptr, 1, GRAPHICS_DTW_drawPath);
-	praat_addAction1 (classDTW, 0, U"Paint distances...", nullptr, 1, GRAPHICS_DTW_paintDistances);
-	praat_addAction1 (classDTW, 0, U"Draw warp (x)...", nullptr, 1, GRAPHICS_DTW_drawWarp_x);
-	praat_addAction1 (classDTW, 0, U"Draw warp (y)...", nullptr, 1, GRAPHICS_DTW_drawWarp_y);
-	praat_addAction1 (classDTW, 0, QUERY_BUTTON, nullptr, 0, 0);
+	praat_addAction1 (classDTW, 0, U"DTW help", nullptr, 0, 
+			HELP__DTW_help);
+	praat_addAction1 (classDTW, 0, U"Draw -", nullptr, 0, nullptr);
+	praat_addAction1 (classDTW, 0, U"Draw path...", nullptr, 1, 
+			GRAPHICS_EACH__DTW_drawPath);
+	praat_addAction1 (classDTW, 0, U"Paint distances...", nullptr, 1, 
+			GRAPHICS_EACH__DTW_paintDistances);
+	praat_addAction1 (classDTW, 0, U"Draw warp (x)...", nullptr, 1, 
+			GRAPHICS_EACH__DTW_drawWarp_x);
+	praat_addAction1 (classDTW, 0, U"Draw warp (y)...", nullptr, 1, 
+			GRAPHICS_EACH__DTW_drawWarp_y);
+	praat_addAction1 (classDTW, 0, U"Query -", nullptr, 0, nullptr);
 	praat_addAction1 (classDTW, 1, U"Query time domains", nullptr, 1, 0);
-	praat_addAction1 (classDTW, 1, U"Get start time (x)", nullptr, 2, REAL_DTW_getStartTime_x);
-	praat_addAction1 (classDTW, 1, U"Get end time (x)", nullptr, 2, REAL_DTW_getEndTime_x);
-	praat_addAction1 (classDTW, 1, U"Get total duration (x)", nullptr, 2, REAL_DTW_getTotalDuration_x);
+	praat_addAction1 (classDTW, 1, U"Get start time (x)", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getStartTime_x);
+	praat_addAction1 (classDTW, 1, U"Get end time (x)", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getEndTime_x);
+	praat_addAction1 (classDTW, 1, U"Get total duration (x)", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getTotalDuration_x);
 	praat_addAction1 (classDTW, 1, U"-- time domain x from y separator --", nullptr, 2, 0);
-	praat_addAction1 (classDTW, 1, U"Get start time (y)", nullptr, 2, REAL_DTW_getStartTime_y);
-	praat_addAction1 (classDTW, 1, U"Get end time (y)", nullptr, 2, REAL_DTW_getEndTime_y);
-	praat_addAction1 (classDTW, 1, U"Get total duration (y)", nullptr, 2, REAL_DTW_getTotalDuration_y);
+	praat_addAction1 (classDTW, 1, U"Get start time (y)", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getStartTime_y);
+	praat_addAction1 (classDTW, 1, U"Get end time (y)", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getEndTime_y);
+	praat_addAction1 (classDTW, 1, U"Get total duration (y)", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getTotalDuration_y);
 	praat_addAction1 (classDTW, 1, U"Query time samplings", nullptr, 1, 0);
-	praat_addAction1 (classDTW, 1, U"Get number of frames (x)", nullptr, 2, INTEGER_DTW_getNumberOfFrames_x);
-	praat_addAction1 (classDTW, 1, U"Get time step (x)", nullptr, 2, REAL_DTW_getTimeStep_x);
-	praat_addAction1 (classDTW, 1, U"Get time from frame number (x)...", nullptr, 2, REAL_DTW_getTimeFromFrameNumber_x);
-	praat_addAction1 (classDTW, 1, U"Get frame number from time (x)...", nullptr, 2, INTEGER_DTW_getFrameNumberFromTime_x);
+	praat_addAction1 (classDTW, 1, U"Get number of frames (x)", nullptr, 2, 
+		QUERY_ONE_FOR_INTEGER__DTW_getNumberOfFrames_x);
+	praat_addAction1 (classDTW, 1, U"Get time step (x)", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getTimeStep_x);
+	praat_addAction1 (classDTW, 1, U"Get time from frame number (x)...", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getTimeFromFrameNumber_x);
+	praat_addAction1 (classDTW, 1, U"Get frame number from time (x)...", nullptr, 2, 
+		QUERY_ONE_FOR_INTEGER__DTW_getFrameNumberFromTime_x);
 	praat_addAction1 (classDTW, 1, U"-- time sampling x from y separator --", nullptr, 2, 0);
-	praat_addAction1 (classDTW, 1, U"Get number of frames (y)", nullptr, 2, INTEGER_DTW_getNumberOfFrames_y);
-	praat_addAction1 (classDTW, 1, U"Get time step (y)", nullptr, 2, REAL_DTW_getTimeStep_y);
-	praat_addAction1 (classDTW, 1, U"Get time from frame number (y)...", nullptr, 2, REAL_DTW_getTimeFromFrameNumber_y);
-	praat_addAction1 (classDTW, 1, U"Get frame number from time (y)...", nullptr, 2, INTEGER_DTW_getFrameNumberFromTime_y);
+	praat_addAction1 (classDTW, 1, U"Get number of frames (y)", nullptr, 2, 
+		QUERY_ONE_FOR_INTEGER__DTW_getNumberOfFrames_y);
+	praat_addAction1 (classDTW, 1, U"Get time step (y)", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getTimeStep_y);
+	praat_addAction1 (classDTW, 1, U"Get time from frame number (y)...", nullptr, 2, 
+			QUERY_ONE_FOR_REAL__DTW_getTimeFromFrameNumber_y);
+	praat_addAction1 (classDTW, 1, U"Get frame number from time (y)...", nullptr, 2, 
+		QUERY_ONE_FOR_INTEGER__DTW_getFrameNumberFromTime_y);
 
-	praat_addAction1 (classDTW, 1, U"Get y time from x time...", nullptr, 1, REAL_DTW_getYTimeFromXTime);
-	praat_addAction1 (classDTW, 1, U"Get x time from y time...", nullptr, 1, REAL_DTW_getXTimeFromYTime);
-	praat_addAction1 (classDTW, 1, U"Get y time...", nullptr, praat_HIDDEN + praat_DEPTH_1, REAL_DTW_getYTimeFromXTime);
-	praat_addAction1 (classDTW, 1, U"Get x time...", nullptr, praat_HIDDEN + praat_DEPTH_1, REAL_DTW_getXTimeFromYTime);
-	praat_addAction1 (classDTW, 1, U"Get maximum consecutive steps...", nullptr, 1, INTEGER_DTW_getMaximumConsecutiveSteps);
-	praat_addAction1 (classDTW, 1, U"Get time along path...", nullptr, praat_DEPTH_1 | praat_HIDDEN, REAL_DTW_getPathY);
+	praat_addAction1 (classDTW, 1, U"Get y time from x time...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__DTW_getYTimeFromXTime);
+	praat_addAction1 (classDTW, 1, U"Get x time from y time...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__DTW_getXTimeFromYTime);
+	praat_addAction1 (classDTW, 1, U"Get y time...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__DTW_getYTimeFromXTime);
+	praat_addAction1 (classDTW, 1, U"Get x time...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL__DTW_getXTimeFromYTime);
+	praat_addAction1 (classDTW, 1, U"Get maximum consecutive steps...", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__DTW_getMaximumConsecutiveSteps);
+	praat_addAction1 (classDTW, 1, U"Get time along path...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			QUERY_ONE_FOR_REAL__DTW_getPathY);
 	praat_addAction1 (classDTW, 1, U"-- distance queries --", nullptr, 1, 0);
-	praat_addAction1 (classDTW, 1, U"Get distance value...", nullptr, 1, REAL_DTW_getDistanceValue);
-	praat_addAction1 (classDTW, 1, U"Get minimum distance", nullptr, 1, REAL_DTW_getMinimumDistance);
-	praat_addAction1 (classDTW, 1, U"Get maximum distance", nullptr, 1, REAL_DTW_getMaximumDistance);
-	praat_addAction1 (classDTW, 1, U"Get distance (weighted)", nullptr, 1, REAL_DTW_getDistance_weighted);
-	praat_addAction1 (classDTW, 0, MODIFY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classDTW, 0, U"Formula (distances)...", nullptr, 1, MODIFY_DTW_formula_distances);
-	praat_addAction1 (classDTW, 0, U"Set distance value...", nullptr, 1, MODIFY_DTW_setDistanceValue);
+	praat_addAction1 (classDTW, 1, U"Get distance value...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__DTW_getDistanceValue);
+	praat_addAction1 (classDTW, 1, U"Get minimum distance", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__DTW_getMinimumDistance);
+	praat_addAction1 (classDTW, 1, U"Get maximum distance", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__DTW_getMaximumDistance);
+	praat_addAction1 (classDTW, 1, U"Get distance (weighted)", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__DTW_getDistance_weighted);
+	praat_addAction1 (classDTW, 0, U"Modify -", nullptr, 0, nullptr);
+	praat_addAction1 (classDTW, 0, U"Formula (distances)...", nullptr, 1,
+			MODIFY_DTW_formula_distances);
+	praat_addAction1 (classDTW, 0, U"Set distance value...", nullptr, 1, 
+			MODIFY_DTW_setDistanceValue);
 
 	praat_addAction1 (classDTW, 0, U"Analyse", nullptr, 0, 0);
-    praat_addAction1 (classDTW, 0, U"Find path...", nullptr, praat_HIDDEN, MODIFY_DTW_findPath);
-    praat_addAction1 (classDTW, 0, U"Find path (band & slope)...", nullptr, 0, MODIFY_DTW_findPath_bandAndSlope);
-    praat_addAction1 (classDTW, 0, U"To Polygon...", nullptr, 1, NEW_DTW_to_Polygon);
-	praat_addAction1 (classDTW, 0, U"To Matrix (distances)", nullptr, 0, NEW_DTW_to_Matrix_distances);
-    praat_addAction1 (classDTW, 0, U"To Matrix (cum. distances)...", nullptr, 0, NEW_DTW_to_Matrix_cumulativeDistances);
-	praat_addAction1 (classDTW, 0, U"Swap axes", nullptr, 0, NEW_DTW_swapAxes);
+    praat_addAction1 (classDTW, 0, U"Find path...", nullptr, GuiMenu_HIDDEN,
+			MODIFY_DTW_findPath);
+    praat_addAction1 (classDTW, 0, U"Find path (band & slope)...", nullptr, 0, 
+			MODIFY_DTW_findPath_bandAndSlope);
+    praat_addAction1 (classDTW, 0, U"To Polygon...", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__DTW_to_Polygon);
+	praat_addAction1 (classDTW, 0, U"To Matrix (distances)", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__DTW_to_Matrix_distances);
+    praat_addAction1 (classDTW, 0, U"To Matrix (cum. distances)...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__DTW_to_Matrix_cumulativeDistances);
+	praat_addAction1 (classDTW, 0, U"Swap axes", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__DTW_swapAxes);
 
-	praat_addAction2 (classDTW, 1, classMatrix, 1, U"Replace matrix", nullptr, 0, MODIFY_DTW_Matrix_replace);
-	praat_addAction2 (classDTW, 1, classTextGrid, 1, U"To TextGrid (warp times)", nullptr, 0, NEW1_DTW_TextGrid_to_TextGrid);
-	praat_addAction2 (classDTW, 1, classIntervalTier, 1, U"To Table (distances)", nullptr, 0, NEW1_DTW_IntervalTier_to_Table);
+	praat_addAction2 (classDTW, 1, classMatrix, 1, U"Replace matrix", nullptr, 0, 
+			MODIFY_DTW_Matrix_replace);
+	praat_addAction2 (classDTW, 1, classTextGrid, 1, U"To TextGrid (warp times)", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__DTW_TextGrid_to_TextGrid);
+	praat_addAction2 (classDTW, 1, classIntervalTier, 1, U"To Table (distances)", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__DTW_IntervalTier_to_Table);
 
-    praat_addAction2 (classDTW, 1, classPolygon, 1, U"Find path inside...", nullptr, 0, MODIFY_DTW_Polygon_findPathInside);
-    praat_addAction2 (classDTW, 1, classPolygon, 1, U"To Matrix (cum. distances)...", nullptr, 0, NEW1_DTW_Polygon_to_Matrix_cumulativeDistances);
-	praat_addAction2 (classDTW, 1, classSound, 2, U"Draw...", nullptr, 0, GRAPHICS_DTW_Sounds_draw);
-	praat_addAction2 (classDTW, 1, classSound, 2, U"Draw warp (x)...", nullptr, 0, GRAPHICS_DTW_Sounds_drawWarp_x);
+    praat_addAction2 (classDTW, 1, classPolygon, 1, U"Find path inside...", nullptr, 0, 
+			MODIFY_DTW_Polygon_findPathInside);
+    praat_addAction2 (classDTW, 1, classPolygon, 1, U"To Matrix (cum. distances)...", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__DTW_Polygon_to_Matrix_cumulativeDistances);
+	praat_addAction2 (classDTW, 1, classSound, 2, U"Draw...", nullptr, 0, 
+			GRAPHICS_TWO_AND_ONE__DTW_Sounds_draw);
+	praat_addAction2 (classDTW, 1, classSound, 2, U"Draw warp (x)...", nullptr, 0, 
+			GRAPHICS_TWO_AND_ONE__DTW_Sounds_drawWarp_x);
 
-	praat_addAction1 (classEditDistanceTable, 1, U"EditDistanceTable help", nullptr, 0, HELP_EditDistanceTable_help);
+	praat_addAction1 (classEditDistanceTable, 1, U"EditDistanceTable help", nullptr, 0, 
+			HELP__EditDistanceTable_help);
 	praat_EditDistanceTable_as_TableOfReal_init (classEditDistanceTable);
-	praat_addAction1 (classEditDistanceTable, 1, U"To TableOfReal (directions)...", nullptr, praat_HIDDEN, NEW_EditDistanceTable_to_TableOfReal_directions);
-	praat_addAction2 (classEditDistanceTable, 1, classEditCostsTable, 1, U"Set edit costs", nullptr, 0, MODIFY_EditDistanceTable_setEditCosts);
-	praat_addAction2 (classEditDistanceTable, 1, classEditCostsTable, 1, U"Set new edit costs", nullptr, praat_DEPRECATED_2017, MODIFY_EditDistanceTable_setEditCosts);
+	praat_addAction1 (classEditDistanceTable, 1, U"To TableOfReal (directions)...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__EditDistanceTable_to_TableOfReal_directions);
+	praat_addAction2 (classEditDistanceTable, 1, classEditCostsTable, 1, U"Set edit costs", nullptr, 0, 
+			MODIFY_EditDistanceTable_setEditCosts);
+	praat_addAction2 (classEditDistanceTable, 1, classEditCostsTable, 1, U"Set new edit costs", nullptr, GuiMenu_DEPRECATED_2017,
+			MODIFY_EditDistanceTable_setEditCosts);
 
-	praat_addAction1 (classEditCostsTable, 1, U"EditCostsTable help", nullptr, 0, HELP_EditCostsTable_help);
-	praat_addAction1 (classEditCostsTable, 0, QUERY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classEditCostsTable, 1, U"Get target index...", nullptr, 1, INTEGER_EditCostsTable_getTargetIndex);
-	praat_addAction1 (classEditCostsTable, 1, U"Get source index...", nullptr, 1, INTEGER_EditCostsTable_getSourceIndex);
-	praat_addAction1 (classEditCostsTable, 1, U"Get insertion costs...", nullptr, 1, REAL_EditCostsTable_getInsertionCosts);
-	praat_addAction1 (classEditCostsTable, 1, U"Get insertion cost...", nullptr, praat_DEPRECATED_2017, REAL_EditCostsTable_getInsertionCosts);
-	praat_addAction1 (classEditCostsTable, 1, U"Get deletion costs...", nullptr, 1, REAL_EditCostsTable_getDeletionCost);
-	praat_addAction1 (classEditCostsTable, 1, U"Get deletion cost...", nullptr, praat_DEPRECATED_2017, REAL_EditCostsTable_getDeletionCost);
-	praat_addAction1 (classEditCostsTable, 1, U"Get substitution costs...", nullptr, 1, REAL_EditCostsTable_getSubstitutionCost);
-	praat_addAction1 (classEditCostsTable, 1, U"Get substitution cost...", nullptr, praat_DEPRECATED_2017, REAL_EditCostsTable_getSubstitutionCost);
-	praat_addAction1 (classEditCostsTable, 1, U"Get costs (others)...", nullptr, 1, REAL_EditCostsTable_getCosts_others);
-	praat_addAction1 (classEditCostsTable, 1, U"Get cost (others)...", nullptr, praat_DEPRECATED_2017, REAL_EditCostsTable_getCosts_others);
-	praat_addAction1 (classEditCostsTable, 0, MODIFY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classEditCostsTable, 1, U"Set target symbol (index)...", nullptr, 1, MODIFY_EditCostsTable_setTargetSymbol_index);
-	praat_addAction1 (classEditCostsTable, 1, U"Set source symbol (index)...", nullptr, 1, MODIFY_EditCostsTable_setSourceSymbol_index);
-	praat_addAction1 (classEditCostsTable, 1, U"Set insertion costs...", nullptr, 1, MODIFY_EditCostsTable_setInsertionCosts);
-	praat_addAction1 (classEditCostsTable, 1, U"Set insertion cost...", nullptr, praat_DEPRECATED_2017, MODIFY_EditCostsTable_setInsertionCosts);
-	praat_addAction1 (classEditCostsTable, 1, U"Set deletion costs...", nullptr, 1, MODIFY_EditCostsTable_setDeletionCosts);
-	praat_addAction1 (classEditCostsTable, 1, U"Set substitution costs...", nullptr, 1, MODIFY_EditCostsTable_setSubstitutionCosts);
-	praat_addAction1 (classEditCostsTable, 1, U"Set costs (others)...", nullptr, 1, MODIFY_EditCostsTable_setCosts_others);
-	praat_addAction1 (classEditCostsTable, 1, U"To TableOfReal", nullptr, 0, NEW_EditCostsTable_to_TableOfReal);
+	praat_addAction1 (classEditCostsTable, 1, U"EditCostsTable help", nullptr, 0, 
+			HELP__EditCostsTable_help);
+	praat_addAction1 (classEditCostsTable, 0, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (classEditCostsTable, 1, U"Get target index...", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__EditCostsTable_getTargetIndex);
+	praat_addAction1 (classEditCostsTable, 1, U"Get source index...", nullptr, 1,
+		QUERY_ONE_FOR_INTEGER__EditCostsTable_getSourceIndex);
+	praat_addAction1 (classEditCostsTable, 1, U"Get insertion costs...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__EditCostsTable_getInsertionCosts);
+	praat_addAction1 (classEditCostsTable, 1, U"Get insertion cost...", nullptr, GuiMenu_DEPRECATED_2017,
+			QUERY_ONE_FOR_REAL__EditCostsTable_getInsertionCosts);
+	praat_addAction1 (classEditCostsTable, 1, U"Get deletion costs...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__EditCostsTable_getDeletionCost);
+	praat_addAction1 (classEditCostsTable, 1, U"Get deletion cost...", nullptr, GuiMenu_DEPRECATED_2017,
+			QUERY_ONE_FOR_REAL__EditCostsTable_getDeletionCost);
+	praat_addAction1 (classEditCostsTable, 1, U"Get substitution costs...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__EditCostsTable_getSubstitutionCost);
+	praat_addAction1 (classEditCostsTable, 1, U"Get substitution cost...", nullptr, GuiMenu_DEPRECATED_2017,
+			QUERY_ONE_FOR_REAL__EditCostsTable_getSubstitutionCost);
+	praat_addAction1 (classEditCostsTable, 1, U"Get costs (others)...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__EditCostsTable_getCosts_others);
+	praat_addAction1 (classEditCostsTable, 1, U"Get cost (others)...", nullptr, GuiMenu_DEPRECATED_2017,
+			QUERY_ONE_FOR_REAL__EditCostsTable_getCosts_others);
+	praat_addAction1 (classEditCostsTable, 0, U"Modify -", nullptr, 0, nullptr);
+	praat_addAction1 (classEditCostsTable, 1, U"Set target symbol (index)...", nullptr, 1,
+			MODIFY_EditCostsTable_setTargetSymbol_index);
+	praat_addAction1 (classEditCostsTable, 1, U"Set source symbol (index)...", nullptr, 1, 
+			MODIFY_EditCostsTable_setSourceSymbol_index);
+	praat_addAction1 (classEditCostsTable, 1, U"Set insertion costs...", nullptr, 1, 
+			MODIFY_EditCostsTable_setInsertionCosts);
+	praat_addAction1 (classEditCostsTable, 1, U"Set insertion cost...", nullptr, GuiMenu_DEPRECATED_2017,
+			MODIFY_EditCostsTable_setInsertionCosts);
+	praat_addAction1 (classEditCostsTable, 1, U"Set deletion costs...", nullptr, 1,
+			MODIFY_EditCostsTable_setDeletionCosts);
+	praat_addAction1 (classEditCostsTable, 1, U"Set substitution costs...", nullptr, 1, 
+			MODIFY_EditCostsTable_setSubstitutionCosts);
+	praat_addAction1 (classEditCostsTable, 1, U"Set costs (others)...", nullptr, 1, 
+			MODIFY_EditCostsTable_setCosts_others);
+	praat_addAction1 (classEditCostsTable, 1, U"To TableOfReal", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__EditCostsTable_to_TableOfReal);
 
-	praat_addAction1 (classElectroglottogram, 1, U"High-pass filter...", nullptr, 0, NEW_Electroglottogram_highPassFilter);
-	praat_addAction1 (classElectroglottogram, 1, U"Get closed glottis intervals...", nullptr, 0, NEW_Electroglottogram_getClosedGlottisIntervals);
-	praat_addAction1 (classElectroglottogram, 1, U"To AmplitudeTier (levels)...", nullptr, 0, NEW_Electroglottogram_to_AmplitudeTier_levels);
-	praat_addAction1 (classElectroglottogram, 1, U"Derivative...", nullptr, 0, NEW_Electroglottogram_derivative);
-	praat_addAction1 (classElectroglottogram, 1, U"First central difference...", nullptr, 0, NEW_Electroglottogram_firstCentralDifference);
-	praat_addAction1 (classElectroglottogram, 1, U"To Sound", nullptr, 0, NEW_Electroglottogram_to_Sound);
+	praat_addAction1 (classElectroglottogram, 0, U"High-pass filter...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Electroglottogram_highPassFilter);
+	praat_addAction1 (classElectroglottogram, 0, U"Get closed glottis intervals...", nullptr, 0,
+			CONVERT_EACH_TO_ONE__Electroglottogram_getClosedGlottisIntervals);
+	praat_addAction1 (classElectroglottogram, 0, U"To AmplitudeTier (levels)...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Electroglottogram_to_AmplitudeTier_levels);
+	praat_addAction1 (classElectroglottogram, 0, U"Derivative...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Electroglottogram_derivative);
+	praat_addAction1 (classElectroglottogram, 0, U"First central difference...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Electroglottogram_firstCentralDifference);
+	praat_addAction1 (classElectroglottogram, 0, U"To Sound", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Electroglottogram_to_Sound);
 	
 	praat_Index_init (classStringsIndex);
-	praat_addAction1 (classIndex, 0, U"Index help", nullptr, 0, HELP_Index_help);
-	praat_addAction1 (classStringsIndex, 1, U"Get class label...", nullptr, 0, INFO_StringsIndex_getClassLabelFromClassIndex);
-	praat_addAction1 (classStringsIndex, 1, U"Get class index...", nullptr, 0, INTEGER_StringsIndex_getClassIndex);
-	praat_addAction1 (classStringsIndex, 1, U"Get label...", nullptr, 0, INFO_StringsIndex_getItemLabelFromItemIndex);
-	praat_addAction1 (classStringsIndex, 1, U"Get class index from item index...", nullptr, 0, INTEGER_StringsIndex_getClassIndexFromItemIndex);
-	praat_addAction1 (classIndex, 1, U"Get index...", nullptr, 0, INTEGER_Index_getIndex);
-	praat_addAction1 (classStringsIndex, 1, U"To Strings", nullptr, 0, NEW_StringsIndex_to_Strings);
+	praat_addAction1 (classIndex, 0, U"Index help", nullptr, 0, HELP__Index_help);
+	praat_addAction1 (classStringsIndex, 1, U"Get class label...", nullptr, 0, 
+			QUERY_ONE_FOR_STRING__StringsIndex_getClassLabelFromClassIndex);
+	praat_addAction1 (classStringsIndex, 1, U"Get class index...", nullptr, 0, 
+		QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndex);
+	praat_addAction1 (classStringsIndex, 1, U"Get label...", nullptr, 0, 
+			QUERY_ONE_FOR_STRING__StringsIndex_getItemLabelFromItemIndex);
+	praat_addAction1 (classStringsIndex, 1, U"Get class index from item index...", nullptr, 0,
+		QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndexFromItemIndex);
+	praat_addAction1 (classIndex, 1, U"Get index...", nullptr, 0, 
+		QUERY_ONE_FOR_INTEGER__Index_getIndex);
+	praat_addAction1 (classStringsIndex, 1, U"To Strings", nullptr, 0,
+			CONVERT_EACH_TO_ONE__StringsIndex_to_Strings);
 
-	praat_addAction1 (classEigen, 0, U"Eigen help", nullptr, 0, HELP_Eigen_help);
+	praat_addAction1 (classEigen, 0, U"Eigen help", nullptr, 0,
+			HELP__Eigen_help);
 	praat_addAction1 (classEigen, 0, U"Draw -", nullptr, 0, nullptr);
-		praat_addAction1 (classEigen, 0, U"Draw eigenvalues (scree)...", nullptr, praat_DEPTH_1 | praat_DEPRECATED_2010, GRAPHICS_Eigen_drawEigenvalues_scree);
-		praat_addAction1 (classEigen, 0, U"Draw eigenvalues...", nullptr, 1, GRAPHICS_Eigen_drawEigenvalues);
-		praat_addAction1 (classEigen, 0, U"Draw eigenvector...", nullptr, 1, GRAPHICS_Eigen_drawEigenvector);
-	praat_addAction1 (classEigen, 0, QUERY_BUTTON, nullptr, 0, nullptr);
-		praat_addAction1 (classEigen, 1, U"Get number of eigenvalues", nullptr, 1, INTEGER_Eigen_getNumberOfEigenvalues);
-		praat_addAction1 (classEigen, 1, U"Get eigenvalue...", nullptr, 1, REAL_Eigen_getEigenvalue);
-		praat_addAction1 (classEigen, 1, U"Get sum of eigenvalues...", nullptr, 1, REAL_Eigen_getSumOfEigenvalues);
+		praat_Eigen_draw_init (classEigen);
+	praat_addAction1 (classEigen, 0, U"Query -", nullptr, 0, nullptr);
+		praat_addAction1 (classEigen, 1, U"Get number of eigenvalues", nullptr, 1,
+			QUERY_ONE_FOR_INTEGER__Eigen_getNumberOfEigenvalues);
+		praat_addAction1 (classEigen, 1, U"Get eigenvalue...", nullptr, 1, 
+				QUERY_ONE_FOR_REAL__Eigen_getEigenvalue);
+		praat_addAction1 (classEigen, 1, U"Get sum of eigenvalues...", nullptr, 1, 
+				QUERY_ONE_FOR_REAL__Eigen_getSumOfEigenvalues);
 	praat_addAction1 (classEigen, 1, U"-- eigenvectors --", nullptr, 1, 0);
-		praat_addAction1 (classEigen, 1, U"Get number of eigenvectors", nullptr, 1, INTEGER_Eigen_getNumberOfEigenvectors);
-		praat_addAction1 (classEigen, 1, U"Get eigenvector dimension", nullptr, 1, INTEGER_Eigen_getEigenvectorDimension);
-		praat_addAction1 (classEigen, 1, U"Get eigenvector element...", nullptr, 1, REAL_Eigen_getEigenvectorElement);
+		praat_addAction1 (classEigen, 1, U"Get number of eigenvectors", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__Eigen_getNumberOfEigenvectors);
+		praat_addAction1 (classEigen, 1, U"Get eigenvector dimension", nullptr, 1,
+			QUERY_ONE_FOR_INTEGER__Eigen_getEigenvectorDimension);
+		praat_addAction1 (classEigen, 1, U"Get eigenvector element...", nullptr, 1, 
+				QUERY_ONE_FOR_REAL__Eigen_getEigenvectorElement);
 	praat_addAction1 (classEigen, 0, U"Modify -", nullptr, 0, nullptr);
-		praat_addAction1 (classEigen, 1, U"Invert eigenvector...", nullptr, 1, MODIFY_Eigen_invertEigenvector);
+		praat_addAction1 (classEigen, 1, U"Invert eigenvector...", nullptr, 1, 
+				MODIFY_Eigen_invertEigenvector);
 	praat_addAction1 (classExcitation, 0, U"Synthesize", U"To Formant...", 0, 0);
-	praat_addAction1 (classExcitation, 0, U"To ExcitationList", U"Synthesize", 0, NEW1_Excitations_to_ExcitationList);
-	praat_addAction1 (classExcitation, 0, U"To Excitations", U"Synthesize", praat_DEPRECATED_2015, NEW1_Excitations_to_ExcitationList);
+	praat_addAction1 (classExcitation, 0, U"To ExcitationList", U"Synthesize", 0, 
+			COMBINE_ALL_TO_ONE__Excitations_to_ExcitationList);
+	praat_addAction1 (classExcitation, 0, U"To Excitations", U"Synthesize", GuiMenu_DEPRECATED_2015,
+			COMBINE_ALL_TO_ONE__Excitations_to_ExcitationList);
 
 	praat_addAction1 (classExcitationList, 0, U"Modify", nullptr, 0, 0);
-	praat_addAction1 (classExcitationList, 0, U"Formula...", nullptr, 0, MODIFY_ExcitationList_formula);
+	praat_addAction1 (classExcitationList, 0, U"Formula...", nullptr, 0, 
+			MODIFY_ExcitationList_formula);
 	praat_addAction1 (classExcitationList, 0, U"Extract", nullptr, 0, 0);
-		praat_addAction1 (classExcitationList, 0, U"Extract Excitation...", nullptr, 0, NEW_ExcitationList_extractItem);
+		praat_addAction1 (classExcitationList, 0, U"Extract Excitation...", nullptr, 0, 
+				CONVERT_EACH_TO_ONE__ExcitationList_extractItem);
 	praat_addAction1 (classExcitationList, 0, U"Synthesize", nullptr, 0, 0);
-	praat_addAction1 (classExcitationList, 2, U"Append", nullptr, 0, NEW1_ExcitationList_append);
+	praat_addAction1 (classExcitationList, 2, U"Append", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__ExcitationList_append);
 	praat_addAction1 (classExcitationList, 0, U"Convert", nullptr, 0, 0);
-	praat_addAction1 (classExcitationList, 0, U"To PatternList...", nullptr, 0, NEW_ExcitationList_to_PatternList);
-	praat_addAction1 (classExcitationList, 0, U"To Pattern...", nullptr, praat_HIDDEN, NEW_ExcitationList_to_PatternList);
-	praat_addAction1 (classExcitationList, 0, U"To TableOfReal", nullptr, 0, NEW_ExcitationList_to_TableOfReal);
+	praat_addAction1 (classExcitationList, 0, U"To PatternList...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ExcitationList_to_PatternList);
+	praat_addAction1 (classExcitationList, 0, U"To Pattern...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__ExcitationList_to_PatternList);
+	praat_addAction1 (classExcitationList, 0, U"To TableOfReal", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__ExcitationList_to_TableOfReal);
 
-	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to ExcitationList", nullptr, 0, MODIFY_ExcitationList_addItem);
-	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to Excitations", nullptr, praat_HIDDEN, MODIFY_ExcitationList_addItem);
+	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to ExcitationList", nullptr, 0, 
+			MODIFY_ExcitationList_addItem);
+	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to Excitations", nullptr, GuiMenu_HIDDEN,
+			MODIFY_ExcitationList_addItem);
 
-	praat_addAction1 (classFileInMemory, 1, U"Show as code...", nullptr, 0, INFO_FileInMemory_showAsCode);
-	praat_addAction1 (classFileInMemory, 1, U"Set id...", nullptr, 0, MODIFY_FileInMemory_setId);
-	praat_addAction1 (classFileInMemory, 0, U"To FileInMemorySet", nullptr, 0, NEW1_FilesInMemory_to_FileInMemorySet);
-	praat_addAction1 (classFileInMemory, 0, U"To FilesInMemory", nullptr, praat_DEPRECATED_2015, NEW1_FilesInMemory_to_FileInMemorySet);
+	praat_addAction1 (classFileInMemory, 1, U"Show as code...", nullptr, 0, 
+			INFO_ONE__FileInMemory_showAsCode);
+	praat_addAction1 (classFileInMemory, 1, U"Set id...", nullptr, 0, 
+			MODIFY_EACH__FileInMemory_setId);
+	praat_addAction1 (classFileInMemory, 0, U"To FileInMemorySet", nullptr, 0, 
+			COMBINE_ALL_TO_ONE__FilesInMemory_to_FileInMemorySet);
+	praat_addAction1 (classFileInMemory, 0, U"To FilesInMemory", nullptr, GuiMenu_DEPRECATED_2015,
+			COMBINE_ALL_TO_ONE__FilesInMemory_to_FileInMemorySet);
 
-	praat_addAction1 (classFileInMemorySet, 1, QUERY_BUTTON, nullptr, 0, nullptr);
-	praat_addAction1 (classFileInMemorySet, 1, U"Get number of files", nullptr, 1, INFO_FileInMemorySet_getNumberOfFiles);
-	praat_addAction1 (classFileInMemorySet, 1, U"Has directory?", nullptr, 1, INFO_FileInMemorySet_hasDirectory);
+	praat_addAction1 (classFileInMemorySet, 1, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (classFileInMemorySet, 1, U"Get number of files", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__FileInMemorySet_getNumberOfFiles);
+	praat_addAction1 (classFileInMemorySet, 1, U"Has directory?", nullptr, 1, 
+			QUERY_ONE_FOR_BOOLEAN__FileInMemorySet_hasDirectory);
 
-	praat_addAction1 (classFileInMemorySet, 1, U"Show as code...", nullptr, 0, INFO_FileInMemorySet_showAsCode);
-	praat_addAction1 (classFileInMemorySet, 1, U"Show one file as code...", nullptr, 0, INFO_FileInMemorySet_showOneFileAsCode);
-	praat_addAction1 (classFileInMemorySet, 0, U"Merge", nullptr, 0, NEW1_FileInMemorySets_merge);
-	praat_addAction1 (classFileInMemorySet, 0, U"To Strings (id)", nullptr, 0, NEW_FileInMemorySet_to_Strings_id);
-	praat_addAction1 (classFileInMemorySet, 0, U"Extract files...", nullptr, 0, NEW1_FileInMemorySet_extractFiles);
-	praat_addAction2 (classFileInMemorySet, 1, classFileInMemory, 0, U"Add items to set", nullptr, 0, MODIFY_FileInMemorySet_addItemsToSet);
+	praat_addAction1 (classFileInMemorySet, 1, U"Show as code...", nullptr, 0, 
+			INFO_ONE__FileInMemorySet_showAsCode);
+	praat_addAction1 (classFileInMemorySet, 1, U"Show one file as code...", nullptr, 0, 
+			INFO_ONE__FileInMemorySet_showOneFileAsCode);
+	praat_addAction1 (classFileInMemorySet, 0, U"Merge", nullptr, 0, 
+			COMBINE_ALL_TO_ONE__FileInMemorySets_merge);
+	praat_addAction1 (classFileInMemorySet, 0, U"To Strings (id)", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__FileInMemorySet_to_Strings_id);
+	praat_addAction1 (classFileInMemorySet, 0, U"Extract files...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__FileInMemorySet_extractFiles);
+	praat_addAction2 (classFileInMemorySet, 1, classFileInMemory, 0, U"Add items to set", nullptr, 0, 
+			MODIFY_FIRST_OF_ONE_AND_ONE__FileInMemorySet_addItemsToSet);
 
-	praat_addAction1 (classFileInMemoryManager, 1, QUERY_BUTTON, nullptr, 0, nullptr);
-	praat_addAction1 (classFileInMemoryManager, 1, U"Get number of files", nullptr, 1, INFO_FileInMemoryManager_getNumberOfFiles);
-	praat_addAction1 (classFileInMemoryManager, 1, U"Get number of open files", nullptr, 1, INFO_FileInMemoryManager_getNumberOfOpenFiles);
-	praat_addAction1 (classFileInMemoryManager, 1, U"Has directory?", nullptr, 1, INFO_FileInMemoryManager_hasDirectory);
+	praat_addAction1 (classFileInMemoryManager, 1, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (classFileInMemoryManager, 1, U"Get number of files", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__FileInMemoryManager_getNumberOfFiles);
+	praat_addAction1 (classFileInMemoryManager, 1, U"Get number of open files", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__FileInMemoryManager_getNumberOfOpenFiles);
+	praat_addAction1 (classFileInMemoryManager, 1, U"Has directory?", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__FileInMemoryManager_hasDirectory);
 	
-	praat_addAction1 (classFileInMemoryManager, 0, U"Extract files...", nullptr, 0, NEW1_FileInMemoryManager_extractFiles);
-	praat_addAction1 (classFileInMemoryManager, 0, U"Down to Table...", nullptr, 0, NEW1_FileInMemoryManager_downto_Table);
+	praat_addAction1 (classFileInMemoryManager, 0, U"Extract files...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__FileInMemoryManager_extractFiles);
+	praat_addAction1 (classFileInMemoryManager, 0, U"Down to Table...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__FileInMemoryManager_downto_Table);
 	
-	praat_addAction1 (classFormantFilter, 0, U"FormantFilter help", nullptr, praat_DEPRECATED_2015, HELP_FormantFilter_help);
+	praat_addAction1 (classFormantFilter, 0, U"FormantFilter help", nullptr, GuiMenu_DEPRECATED_2015,
+			HELP__FormantFilter_help);
 	praat_FilterBank_all_init (classFormantFilter);
-	praat_addAction1 (classFormantFilter, 0, U"Draw spectrum (slice)...", U"Draw filters...", praat_DEPTH_1 | praat_DEPRECATED_2014, GRAPHICS_FormantFilter_drawSpectrum_slice);
-	praat_addAction1 (classFormantFilter, 0, U"Draw filter functions...", U"Draw filters...",  praat_DEPTH_1  | praat_DEPRECATED_2014, GRAPHICS_FormantFilter_drawFilterFunctions);
-	praat_addAction1 (classFormantFilter, 0, U"To Spectrogram", nullptr, 0, NEW_FormantFilter_to_Spectrogram);
+	praat_addAction1 (classFormantFilter, 0, U"Draw spectrum (slice)...", U"Draw filters...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2014,
+			GRAPHICS_EACH__FormantFilter_drawSpectrum_slice);
+	praat_addAction1 (classFormantFilter, 0, U"Draw filter functions...", U"Draw filters...", GuiMenu_DEPTH_1  | GuiMenu_DEPRECATED_2014,
+			GRAPHICS_EACH__FormantFilter_drawFilterFunctions);
+	praat_addAction1 (classFormantFilter, 0, U"To Spectrogram", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__FormantFilter_to_Spectrogram);
 
-	praat_addAction1 (classFormantGrid, 0, U"Draw...", U"Edit", praat_DEPTH_1 + praat_HIDDEN, GRAPHICS_FormantGrid_draw);
+	praat_addAction1 (classFormantGrid, 0, U"Draw...", U"Edit", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			GRAPHICS_EACH__FormantGrid_draw);
 
-	praat_addAction1 (classIntensity, 0, U"To TextGrid (silences)...", U"To IntensityTier (valleys)", 0, NEW_Intensity_to_TextGrid_silences);
-	praat_addAction1 (classIntensityTier, 0, U"To TextGrid (silences)...", nullptr, 0, NEW_IntensityTier_to_TextGrid_silences);
-	praat_addAction1 (classIntensityTier, 0, U"To Intensity...", nullptr, praat_HIDDEN, NEW_IntensityTier_to_Intensity);
+	praat_addAction1 (classIntensity, 0, U"To TextGrid (silences)...", U"To IntensityTier (valleys)", 0,
+			CONVERT_EACH_TO_ONE__Intensity_to_TextGrid_silences);
+	praat_addAction1 (classIntensity, 0, U"Get nearest level crossing...", U"Get time of maximum...", 1,
+			QUERY_ONE_FOR_REAL__Intensity_getNearestLevelCrossing);
+	praat_addAction1 (classIntensityTier, 0, U"To TextGrid (silences)...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__IntensityTier_to_TextGrid_silences);
+	praat_addAction1 (classIntensityTier, 0, U"To Intensity...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__IntensityTier_to_Intensity);
 
-	praat_addAction1 (classISpline, 0, U"ISpline help", nullptr, 0, HELP_ISpline_help);
+	praat_addAction1 (classISpline, 0, U"ISpline help", nullptr, 0, 
+			HELP__ISpline_help);
 	praat_Spline_init (classISpline);
 
-	praat_addAction1 (classKlattTable, 0, U"KlattTable help", nullptr, 0, HELP_KlattTable_help);
-	praat_addAction1 (classKlattTable, 0, U"To Sound...", nullptr, 0, NEW_KlattTable_to_Sound);
-	praat_addAction1 (classKlattTable, 0, U"To KlattGrid...", nullptr, 0, NEW_KlattTable_to_KlattGrid);
-	praat_addAction1 (classKlattTable, 0, U"To Table", nullptr, 0, NEW_KlattTable_to_Table);
+	praat_addAction1 (classKlattTable, 0, U"KlattTable help", nullptr, 0, 
+			HELP__KlattTable_help);
+	praat_addAction1 (classKlattTable, 0, U"To Sound...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__KlattTable_to_Sound);
+	praat_addAction1 (classKlattTable, 0, U"To KlattGrid...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__KlattTable_to_KlattGrid);
+	praat_addAction1 (classKlattTable, 0, U"To Table", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__KlattTable_to_Table);
 
-	praat_addAction1 (classLegendreSeries, 0, U"LegendreSeries help", nullptr, 0, HELP_LegendreSeries_help);
+	praat_addAction1 (classLegendreSeries, 0, U"LegendreSeries help", nullptr, 0, 
+			HELP__LegendreSeries_help);
 	praat_FunctionSeries_init (classLegendreSeries);
-	praat_addAction1 (classLegendreSeries, 0, U"To Polynomial", U"Analyse", 0, NEW_LegendreSeries_to_Polynomial);
-
-	praat_addAction1 (classLongSound, 0, U"Append to existing sound file...", nullptr, 0, READ1_LongSounds_appendToExistingSoundFile);
-	praat_addAction1 (classSound, 0, U"Append to existing sound file...", nullptr, 0, READ1_LongSounds_appendToExistingSoundFile);
-	praat_addAction2 (classLongSound, 0, classSound, 0, U"Append to existing sound file...", nullptr, 0, READ1_LongSounds_appendToExistingSoundFile);
-
-	praat_addAction1 (classLongSound, 2, U"Save as stereo AIFF file...", U"Save as NIST file...", 1, SAVE_LongSounds_saveAsStereoAIFFFile);
-	praat_addAction1 (classLongSound, 2, U"Write to stereo AIFF file...", U"Write to NIST file...", praat_HIDDEN + praat_DEPTH_1, SAVE_LongSounds_saveAsStereoAIFFFile);
-	praat_addAction1 (classLongSound, 2, U"Save as stereo AIFC file...", U"Save as stereo AIFF file...", 1, SAVE_LongSounds_saveAsStereoAIFCFile);
-	praat_addAction1 (classLongSound, 2, U"Write to stereo AIFC file...", U"Write to stereo AIFF file...", praat_HIDDEN + praat_DEPTH_1, SAVE_LongSounds_saveAsStereoAIFCFile);
-	praat_addAction1 (classLongSound, 2, U"Save as stereo WAV file...", U"Save as stereo AIFC file...", 1, SAVE_LongSounds_saveAsStereoWAVFile);
-	praat_addAction1 (classLongSound, 2, U"Write to stereo WAV file...", U"Write to stereo AIFC file...", praat_HIDDEN + praat_DEPTH_1, SAVE_LongSounds_saveAsStereoWAVFile);
-	praat_addAction1 (classLongSound, 2, U"Save as stereo NeXt/Sun file...", U"Save as stereo WAV file...", 1, SAVE_LongSounds_saveAsStereoNeXtSunFile);
-	praat_addAction1 (classLongSound, 2, U"Write to stereo NeXt/Sun file...", U"Write to stereo WAV file...", praat_HIDDEN + praat_DEPTH_1, SAVE_LongSounds_saveAsStereoNeXtSunFile);
-	praat_addAction1 (classLongSound, 2, U"Save as stereo NIST file...", U"Save as stereo NeXt/Sun file...", 1, SAVE_LongSounds_saveAsStereoNISTFile);
-	praat_addAction1 (classLongSound, 2, U"Write to stereo NIST file...", U"Write to stereo NeXt/Sun file...", praat_HIDDEN + praat_DEPTH_1, SAVE_LongSounds_saveAsStereoNISTFile);
-
-	praat_addAction1 (classLtas, 0, U"Report spectral trend...", U"Get slope...", 1, INFO_Ltas_reportSpectralTrend);
-	praat_addAction1 (classLtas, 0, U"Report spectral tilt...", U"Get slope...", praat_DEPTH_1 + praat_HIDDEN, INFO_Ltas_reportSpectralTrend);
-
-	praat_addAction1 (classMatrix, 0, U"Scatter plot...", U"Paint cells...", 1, GRAPHICS_Matrix_scatterPlot);
-	praat_addAction1 (classMatrix, 0, U"Draw as squares...", U"Scatter plot...", 1, GRAPHICS_Matrix_drawAsSquares);
-	praat_addAction1 (classMatrix, 0, U"Draw distribution...", U"Draw as squares...", 1, GRAPHICS_Matrix_drawDistribution);
-	praat_addAction1 (classMatrix, 0, U"Draw cumulative distribution...", U"Draw distribution...", 1, GRAPHICS_Matrix_drawCumulativeDistribution);
-	praat_addAction1 (classMatrix, 0, U"Get mean...", U"Get sum", 1, REAL_Matrix_getMean);
-	praat_addAction1 (classMatrix, 0, U"Get standard deviation...", U"Get mean...", 1, REAL_Matrix_getStandardDeviation);
-	praat_addAction1 (classMatrix, 0, U"Mathematical -", U"Get standard deviation...", 1, nullptr);
-	praat_addAction1 (classMatrix, 0, U"Get norm...", U"Mathematical -", 2, REAL_Matrix_getNorm);
-	//praat_addAction1 (classMatrix, 0, U"List eigenvalues", U"Get norm...", 2, COMPVEC_Matrix_listEigenvalues);
+	praat_addAction1 (classLegendreSeries, 0, U"To Polynomial", U"Analyse", 0, 
+			CONVERT_EACH_TO_ONE__LegendreSeries_to_Polynomial);
 	
-	praat_addAction1 (classMatrix, 0, U"Transpose", U"Synthesize", 0, NEW_Matrix_transpose);
-	praat_addAction1 (classMatrix, 0, U"Solve equation...", U"Analyse", 0, NEW_Matrix_solveEquation);
-	praat_addAction1 (classMatrix, 2, U"Solve matrix equation...", U"Solve equation...", 0, NEW_Matrix_solveMatrixEquation);
-	praat_addAction1 (classMatrix, 0, U"To PCA (by rows)", U"Solve matrix equation...", 0, NEW_Matrix_to_PCA_byRows);
-	praat_addAction1 (classMatrix, 0, U"To PCA (by columns)", U"To PCA (by rows)", 0, NEW_Matrix_to_PCA_byColumns);
-	praat_addAction1 (classMatrix, 0, U"To PatternList...", U"To VocalTract", 1, NEW_Matrix_to_PatternList);
-	praat_addAction1 (classMatrix, 0, U"To Pattern...", U"*To PatternList...", praat_DEPRECATED_2016, NEW_Matrix_to_PatternList);
-	praat_addAction1 (classMatrix, 0, U"To ActivationList", U"To PatternList...", 1, NEW_Matrix_to_ActivationList);
-	praat_addAction1 (classMatrix, 0, U"To Activation", U"*To ActivationList", praat_DEPRECATED_2016, NEW_Matrix_to_ActivationList);
-	praat_addAction1 (classMatrix, 0, U"To Eigen", U"Eigen", praat_HIDDEN, NEW_Matrix_to_Eigen);
-	praat_addAction1 (classMatrix, 0, U"To SVD", U"To Eigen", praat_HIDDEN, NEW_Matrix_to_SVD);
-	praat_addAction1 (classMatrix, 0, U"To NMF (m.u.)...", U"To SVD", praat_HIDDEN, NEW_Matrix_to_NMF_mu);
-	praat_addAction1 (classMatrix, 0, U"To NMF (ALS)...", U"To SVD", praat_HIDDEN, NEW_Matrix_to_NMF_als);
-	praat_addAction1 (classMatrix, 0, U"To NMF (IS)...", U"To SVD", praat_HIDDEN, NEW_Matrix_to_NMF_is);
-	praat_addAction1 (classMatrix, 0, U"Eigen (complex)", U"Eigen", praat_HIDDEN, NEWTIMES2_Matrix_eigen_complex);
-	praat_addAction1 (classMatrix, 2, U"To DTW...", U"To ParamCurve", 1, NEW1_Matrices_to_DTW);
+	praat_addAction1 (classLongSound, 0, U"Append to existing sound file...", nullptr, 0,
+			APPEND_ALL__LongSounds_appendToExistingSoundFile);
+	praat_addAction1 (classSound, 0, U"Append to existing sound file...", nullptr, 0,
+			APPEND_ALL__LongSounds_appendToExistingSoundFile);
+	praat_addAction2 (classLongSound, 0, classSound, 0, U"Append to existing sound file...", nullptr, 0,
+			APPEND_ALL__LongSounds_appendToExistingSoundFile);
 
-	praat_addAction2 (classMatrix, 1, classCategories, 1, U"To TableOfReal", nullptr, 0, NEW1_Matrix_Categories_to_TableOfReal);
+	praat_addAction1 (classLongSound, 2, U"Save as stereo AIFF file...", U"Save as NIST file...", 1,
+			SAVE_TWO__LongSounds_saveAsStereoAiffFile);
+	praat_addAction1 (classLongSound, 2, U"Write to stereo AIFF file...", U"Write to NIST file...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			SAVE_TWO__LongSounds_saveAsStereoAiffFile);
+	praat_addAction1 (classLongSound, 2, U"Save as stereo AIFC file...", U"Save as stereo AIFF file...", 1,
+			SAVE_TWO__LongSounds_saveAsStereoAifcFile);
+	praat_addAction1 (classLongSound, 2, U"Write to stereo AIFC file...", U"Write to stereo AIFF file...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			SAVE_TWO__LongSounds_saveAsStereoAifcFile);
+	praat_addAction1 (classLongSound, 2, U"Save as stereo WAV file...", U"Save as stereo AIFC file...", 1,
+			SAVE_TWO__LongSounds_saveAsStereoWavFile);
+	praat_addAction1 (classLongSound, 2, U"Write to stereo WAV file...", U"Write to stereo AIFC file...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			SAVE_TWO__LongSounds_saveAsStereoWavFile);
+	praat_addAction1 (classLongSound, 2, U"Save as stereo NeXT/Sun file...", U"Save as stereo WAV file...", 1,
+			SAVE_TWO__LongSounds_saveAsStereoNextSunFile);
+	praat_addAction1 (classLongSound, 2, U"Write to stereo NeXT/Sun file...", U"Write to stereo WAV file...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			SAVE_TWO__LongSounds_saveAsStereoNextSunFile);
+	praat_addAction1 (classLongSound, 2, U"Save as stereo NIST file...", U"Save as stereo NeXT/Sun file...", 1,
+			SAVE_TWO__LongSounds_saveAsStereoNistFile);
+	praat_addAction1 (classLongSound, 2, U"Write to stereo NIST file...", U"Write to stereo NeXT/Sun file...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			SAVE_TWO__LongSounds_saveAsStereoNistFile);
 
-	praat_addAction1 (classMelSpectrogram, 0, U"MelSpectrogram help", nullptr, 0, HELP_MelSpectrogram_help);
+	praat_addAction1 (classLtas, 0, U"Report spectral trend...", U"Get slope...", 1, INFO_ONE__Ltas_reportSpectralTrend);
+	praat_addAction1 (classLtas, 0, U"Report spectral tilt...", U"Get slope...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			INFO_ONE__Ltas_reportSpectralTrend);
+
+	praat_addAction1 (classMatrix, 0, U"Scatter plot...", U"Paint cells...", 1,
+			GRAPHICS_EACH__Matrix_scatterPlot);
+	praat_addAction1 (classMatrix, 0, U"Draw as squares...", U"Scatter plot...", 1,
+			GRAPHICS_EACH__Matrix_drawAsSquares);
+	praat_addAction1 (classMatrix, 0, U"Draw distribution...", U"Draw as squares...", 1,
+			GRAPHICS_EACH__Matrix_drawDistribution);
+	praat_addAction1 (classMatrix, 0, U"Draw cumulative distribution...", U"Draw distribution...", 1,
+			GRAPHICS_EACH__Matrix_drawCumulativeDistribution);
+	praat_addAction1 (classMatrix, 0, U"Get mean...", U"Get sum", 1,
+			QUERY_ONE_FOR_REAL__Matrix_getMean);
+	praat_addAction1 (classMatrix, 0, U"Get standard deviation...", U"Get mean...", 1, 
+			QUERY_ONE_FOR_REAL__Matrix_getStandardDeviation);
+	praat_addAction1 (classMatrix, 0, U"Mathematical -", U"Get standard deviation...", 1, nullptr);
+	praat_addAction1 (classMatrix, 0, U"Get norm...", U"Mathematical -", 2,
+			QUERY_ONE_FOR_REAL__Matrix_getNorm);
+	
+	praat_addAction1 (classMatrix, 0, U"Transpose", U"Synthesize", 0, 
+			CONVERT_EACH_TO_ONE__Matrix_transpose);
+	praat_addAction1 (classMatrix, 0, U"Solve equation...", U"Analyse", 0, 
+			CONVERT_EACH_TO_ONE__Matrix_solveEquation);
+	praat_addAction1 (classMatrix, 2, U"Solve matrix equation...", U"Solve equation...", 0, 
+			CONVERT_TWO_TO_ONE__Matrix_solveMatrixEquation);
+	praat_addAction1 (classMatrix, 0, U"To PCA (by rows)", U"Solve matrix equation...", 0, 
+			CONVERT_EACH_TO_ONE__Matrix_to_PCA_byRows);
+	praat_addAction1 (classMatrix, 0, U"To PCA (by columns)", U"To PCA (by rows)", 0, 
+			CONVERT_EACH_TO_ONE__Matrix_to_PCA_byColumns);
+	praat_addAction1 (classMatrix, 0, U"To PatternList... || To Pattern...",
+			U"To VocalTract", 1, CONVERT_EACH_TO_ONE__Matrix_to_PatternList);
+	praat_addAction1 (classMatrix, 0, U"To ActivationList || To Activation",
+			U"To PatternList...", 1, CONVERT_EACH_TO_ONE__Matrix_to_ActivationList);
+	praat_addAction1 (classMatrix, 0, U"To Eigen", U"Eigen", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Matrix_to_Eigen);
+	praat_addAction1 (classMatrix, 0, U"To SVD", U"To Eigen", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Matrix_to_SVD);
+	praat_addAction1 (classMatrix, 0, U"To NMF (m.u.)...", U"To SVD", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Matrix_to_NMF_mu);
+	praat_addAction1 (classMatrix, 0, U"To NMF (ALS)...", U"To SVD", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Matrix_to_NMF_als);
+	praat_addAction1 (classMatrix, 0, U"To NMF (IS)...", U"To SVD", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Matrix_to_NMF_is);
+	praat_addAction1 (classMatrix, 0, U"Eigen (complex)", U"Eigen", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_MULTIPLE_Matrix_eigen_complex);
+	praat_addAction1 (classMatrix, 2, U"To DTW...", U"To ParamCurve", 1, 
+			CONVERT_TWO_TO_ONE__Matrices_to_DTW);
+
+	praat_addAction2 (classMatrix, 1, classCategories, 1, U"To TableOfReal", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__Matrix_Categories_to_TableOfReal);
+
+	praat_addAction1 (classMelSpectrogram, 0, U"MelSpectrogram help", nullptr, 0, 
+			HELP__MelSpectrogram_help);
 	praat_BandFilterSpectrogram_draw_init (classMelSpectrogram);
-	praat_addAction1 (classMelSpectrogram, 0, U"Paint image...", nullptr, 1, GRAPHICS_MelSpectrogram_paintImage);
-	praat_addAction1 (classMelSpectrogram, 0, U"Draw triangular filter functions...", nullptr, 1, GRAPHICS_MelSpectrogram_drawTriangularFilterFunctions);
-	praat_addAction1 (classMelSpectrogram, 0, U"Draw spectrum at nearest time slice...", nullptr, 1, GRAPHICS_MelSpectrogram_drawSpectrumAtNearestTimeSlice);
-	praat_addAction1 (classMelSpectrogram, 0, QUERY_BUTTON, nullptr, 0, 0);
+	praat_addAction1 (classMelSpectrogram, 0, U"Paint image...", nullptr, 1,
+			GRAPHICS_EACH__MelSpectrogram_paintImage);
+	praat_addAction1 (classMelSpectrogram, 0, U"Draw triangular filter functions...", nullptr, 1,
+			GRAPHICS_EACH__MelSpectrogram_drawTriangularFilterFunctions);
+	praat_addAction1 (classMelSpectrogram, 0, U"Draw spectrum at nearest time slice...", nullptr, 1,
+			GRAPHICS_EACH__MelSpectrogram_drawSpectrumAtNearestTimeSlice);
+	praat_addAction1 (classMelSpectrogram, 0, U"Query -", nullptr, 0, nullptr);
 	praat_BandFilterSpectrogram_query_init (classMelSpectrogram);
 
-	praat_addAction1 (classMelSpectrogram, 0, U"Equalize intensities...", nullptr, 0, MODIFY_BandFilterSpectrogram_equalizeIntensities);
-	praat_addAction1 (classMelSpectrogram, 0, U"To MFCC...", nullptr, 0, NEW_MelSpectrogram_to_MFCC);
-	praat_addAction1 (classMelSpectrogram, 0, U"To Intensity", nullptr, 0, NEW_BandFilterSpectrogram_to_Intensity);
-	praat_addAction1 (classMelSpectrogram, 0, U"To Matrix...", nullptr, 0, NEW_BandFilterSpectrogram_to_Matrix);
-	praat_addAction1 (classMelSpectrogram, 2, U"Cross-correlate...", nullptr, 0, NEW1_BandFilterSpectrograms_crossCorrelate);
-	praat_addAction1 (classMelSpectrogram, 2, U"Convolve...", nullptr, 0, NEW1_BandFilterSpectrograms_convolve);
+	praat_addAction1 (classMelSpectrogram, 0, U"Equalize intensities...", nullptr, 0, 
+			MODIFY_EACH__BandFilterSpectrogram_equalizeIntensities);
+	praat_addAction1 (classMelSpectrogram, 0, U"To MFCC...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__MelSpectrogram_to_MFCC);
+	praat_addAction1 (classMelSpectrogram, 0, U"To Intensity", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__BandFilterSpectrogram_to_Intensity);
+	praat_addAction1 (classMelSpectrogram, 0, U"To Matrix...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__BandFilterSpectrogram_to_Matrix);
+	praat_addAction1 (classMelSpectrogram, 2, U"Cross-correlate...", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__BandFilterSpectrograms_crossCorrelate);
+	praat_addAction1 (classMelSpectrogram, 2, U"Convolve...", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__BandFilterSpectrograms_convolve);
 
-	praat_addAction1 (classMelFilter, 0, U"MelFilter help", U"*MelSpectrogram help", 0, HELP_MelFilter_help);
+	praat_addAction1 (classMelFilter, 0, U"MelFilter help", U"*MelSpectrogram help", 0, 
+			HELP__MelFilter_help);
 	praat_FilterBank_all_init (classMelFilter); // deprecated 2014
-	praat_addAction1 (classMelFilter, 0, U"Draw spectrum (slice)...", U"Draw filters...", praat_DEPTH_1 | praat_DEPRECATED_2014, GRAPHICS_MelFilter_drawSpectrum);
-	praat_addAction1 (classMelFilter, 0, U"Draw filter functions...", U"Draw filters...", praat_DEPTH_1 | praat_DEPRECATED_2014, GRAPHICS_MelFilter_drawFilterFunctions);
-	praat_addAction1 (classMelFilter, 0, U"Paint...", U"Draw filter functions...", praat_DEPTH_1 | praat_DEPRECATED_2014, GRAPHICS_MelFilter_paint);
-	praat_addAction1 (classMelFilter, 0, U"To MFCC...", nullptr, praat_DEPRECATED_2014, NEW_MelFilter_to_MFCC); // deprecated 2014
-	praat_addAction1 (classMelFilter, 0, U"To MelSpectrogram", nullptr, 0, NEW_MelFilter_to_MelSpectrogram);
+	praat_addAction1 (classMelFilter, 0, U"Draw spectrum (slice)...", U"Draw filters...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2014,
+			GRAPHICS_EACH__MelFilter_drawSpectrum);
+	praat_addAction1 (classMelFilter, 0, U"Draw filter functions...", U"Draw filters...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2014,
+			GRAPHICS_EACH__MelFilter_drawFilterFunctions);
+	praat_addAction1 (classMelFilter, 0, U"Paint...", U"Draw filter functions...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2014,
+			GRAPHICS_EACH__MelFilter_paint);
+	praat_addAction1 (classMelFilter, 0, U"To MFCC...", nullptr, GuiMenu_DEPRECATED_2014,
+			CONVERT_EACH_TO_ONE__MelFilter_to_MFCC);
+	praat_addAction1 (classMelFilter, 0, U"To MelSpectrogram", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__MelFilter_to_MelSpectrogram);
 
-	praat_addAction1 (classMFCC, 0, U"MFCC help", nullptr, 0, HELP_MFCC_help);
+	praat_addAction1 (classMFCC, 0, U"MFCC help", nullptr, 0, HELP__MFCC_help);
 	praat_CC_init (classMFCC);
-	praat_addAction1 (classMFCC, 0, U"To MelFilter...", nullptr, praat_DEPRECATED_2014, NEW_MFCC_to_MelFilter);
-	praat_addAction1 (classMFCC, 0, U"To MelSpectrogram...", nullptr, 0, NEW_MFCC_to_MelSpectrogram);
-	praat_addAction1 (classMFCC, 0, U"To TableOfReal...", nullptr, 0, NEW_MFCC_to_TableOfReal);
-	praat_addAction1 (classMFCC, 0, U"To Matrix (features)...", nullptr, praat_HIDDEN, NEW_MFCC_to_Matrix_features);
-	praat_addAction1 (classMFCC, 0, U"To Sound", nullptr, praat_HIDDEN, NEW_MFCC_to_Sound);
-	praat_addAction1 (classMFCC, 2, U"Cross-correlate...", nullptr, 0, NEW1_MFCCs_crossCorrelate);
-	praat_addAction1 (classMFCC, 2, U"Convolve...", nullptr, 0, NEW1_MFCCs_convolve);
+	praat_addAction1 (classMFCC, 0, U"To MelFilter...", nullptr, GuiMenu_DEPRECATED_2014,
+			CONVERT_EACH_TO_ONE__MFCC_to_MelFilter);
+	praat_addAction1 (classMFCC, 0, U"To MelSpectrogram...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__MFCC_to_MelSpectrogram);
+	praat_addAction1 (classMFCC, 0, U"To TableOfReal...", nullptr, 0,
+			CONVERT_EACH_TO_ONE__MFCC_to_TableOfReal);
+	praat_addAction1 (classMFCC, 0, U"To Matrix (features)...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__MFCC_to_Matrix_features);
+	praat_addAction1 (classMFCC, 0, U"To Sound", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__MFCC_to_Sound);
+	praat_addAction1 (classMFCC, 2, U"Cross-correlate...", nullptr, 0,
+			CONVERT_TWO_TO_ONE__MFCCs_crossCorrelate);
+	praat_addAction1 (classMFCC, 2, U"Convolve...", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__MFCCs_convolve);
 
-	praat_addAction1 (classMSpline, 0, U"MSpline help", nullptr, 0, HELP_MSpline_help);
+	praat_addAction1 (classMSpline, 0, U"MSpline help", nullptr, 0,
+			HELP__MSpline_help);
 	praat_Spline_init (classMSpline);
 	
-	praat_addAction1 (classNavigationContext, 0, U"Modify context combination...", nullptr, 0, MODIFY_NavigationContext_modifyContextCombination);
-	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Modify navigation labels...", nullptr, 0, MODIFY_NavigationContext_modifyNavigationLabels);
-	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Modify left context labels...", nullptr, 0, MODIFY_NavigationContext_modifyLeftContextLabels);
-	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Modify right context labels...", nullptr, 0, MODIFY_NavigationContext_modifyRightContextLabels);
+	praat_addAction1 (classNavigationContext, 0, U"Modify use criterion...", nullptr, 0, 
+			MODIFY_EACH__NavigationContext_modifyUseCriterion);
+	praat_addAction1 (classNavigationContext, 0, U"Modify Topic match criterion...", nullptr, 0, 
+			MODIFY_EACH__NavigationContext_modifyTopicCriterion);
+	praat_addAction1 (classNavigationContext, 0, U"Modify Before match criterion...", nullptr, 0, 
+			MODIFY_EACH__NavigationContext_modifyBeforeCriterion);
+	praat_addAction1 (classNavigationContext, 0, U"Modify After match criterion...", nullptr, 0, 
+			MODIFY_EACH__NavigationContext_modifyAfterCriterion);
+	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Replace Topic labels", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__NavigationContext_replaceTopicLabels);
+	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Replace Before labels", nullptr, 0, 
+			MODIFY_FIRST_OF_ONE_AND_ONE__NavigationContext_replaceBeforeLabels);
+	praat_addAction2 (classNavigationContext, 1, classStrings, 1, U"Replace After labels", nullptr, 0, 
+			MODIFY_FIRST_OF_ONE_AND_ONE__NavigationContext_replaceAfterLabels);
 
-	praat_addAction1 (classNMF, 0, U"NMF help", nullptr, 0, HELP_NMF_help);
-	praat_addAction1 (classNMF, 0, U"Paint features...", nullptr, 0, GRAPHICS_NMF_paintFeatures);
-	praat_addAction1 (classNMF, 0, U"Paint weights...", nullptr, 0, GRAPHICS_NMF_paintWeights);
-	praat_addAction1 (classNMF, 0, U"To Matrix", nullptr, 0, NEW_NMF_to_Matrix);
+	praat_addAction1 (classNMF, 0, U"NMF help", nullptr, 0, 
+			HELP__NMF_help);
+	praat_addAction1 (classNMF, 0, U"Paint features...", nullptr, 0, 
+			GRAPHICS_EACH__NMF_paintFeatures);
+	praat_addAction1 (classNMF, 0, U"Paint weights...", nullptr, 0, 
+			GRAPHICS_EACH__NMF_paintWeights);
+	praat_addAction1 (classNMF, 0, U"To Matrix", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__NMF_to_Matrix);
 	
-	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Get Euclidean distance", nullptr, 0, REAL_NMF_Matrix_getEuclideanDistance);
-	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Get Itakura-Saito distance", nullptr, 0, REAL_NMF_Matrix_getItakuraSaitoDivergence);
-	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Improve factorization (ALS)...", nullptr, 0, MODIFY_NMF_Matrix_improveFactorization_als);
-	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Improve factorization (m.u.)...", nullptr, 0, MODIFY_NMF_Matrix_improveFactorization_mu);
-	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Improve factorization (IS)...", nullptr, 0, MODIFY_NMF_Matrix_improveFactorization_is);
+	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Get Euclidean distance", nullptr, 0, 
+			QUERY_ONE_AND_ONE_FOR_REAL__NMF_Matrix_getEuclideanDistance);
+	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Get Itakura-Saito distance", nullptr, 0, 
+			QUERY_ONE_AND_ONE_FOR_REAL__NMF_Matrix_getItakuraSaitoDivergence);
+	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Improve factorization (ALS)...", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__NMF_Matrix_improveFactorization_als);
+	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Improve factorization (m.u.)...", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__NMF_Matrix_improveFactorization_mu);
+	praat_addAction2 (classNMF, 1, classMatrix, 1, U"Improve factorization (IS)...", nullptr, 0, 
+			MODIFY_FIRST_OF_ONE_AND_ONE__NMF_Matrix_improveFactorization_is);
 	
 	praat_addAction1 (classPatternList, 0, U"Draw", nullptr, 0, 0);
-	praat_addAction1 (classPatternList, 0, U"Draw...", nullptr, 0, GRAPHICS_PatternList_draw);
+	praat_addAction1 (classPatternList, 0, U"Draw...", nullptr, 0,
+			GRAPHICS_EACH__PatternList_draw);
 	praat_PatternList_query_init (classPatternList);
-	praat_addAction1 (classPatternList, 0, MODIFY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classPatternList, 0, U"Formula...", nullptr, 1, MODIFY_PatternList_formula);
-	praat_addAction1 (classPatternList, 0, U"Set value...", nullptr, 1, MODIFY_PatternList_setValue);
-	praat_addAction1 (classPatternList, 0, U"Get all values", nullptr, 0, NUMMAT_PatternList_getAllValues);
-	praat_addAction1 (classPatternList, 0, U"To Matrix", nullptr, 0, NEW_PatternList_to_Matrix);
+	praat_addAction1 (classPatternList, 0, U"Modify -", nullptr, 0, nullptr);
+	praat_addAction1 (classPatternList, 0, U"Formula...", nullptr, 1, 
+			MODIFY_PatternList_formula);
+	praat_addAction1 (classPatternList, 0, U"Set value...", nullptr, 1, 
+			MODIFY_PatternList_setValue);
+	praat_addAction1 (classPatternList, 0, U"Get all values", nullptr, 0, 
+			NUMMAT_PatternList_getAllValues);
+	praat_addAction1 (classPatternList, 0, U"To Matrix", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__PatternList_to_Matrix);
 
-	praat_addAction2 (classPatternList, 1, classCategories, 1, U"To TableOfReal", nullptr, 0, NEW1_Matrix_Categories_to_TableOfReal);
-	praat_addAction2 (classPatternList, 1, classCategories, 1, U"To Discriminant", nullptr, 0, NEW1_PatternList_Categories_to_Discriminant);
+	praat_addAction2 (classPatternList, 1, classCategories, 1, U"To TableOfReal", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__Matrix_Categories_to_TableOfReal);
+	praat_addAction2 (classPatternList, 1, classCategories, 1, U"To Discriminant", nullptr, 0,
+			CONVERT_ONE_AND_ONE__TO_ONE_PatternList_Categories_to_Discriminant);
 
-	praat_addAction1 (classPCA, 0, U"PCA help", nullptr, 0, HELP_PCA_help);
-	praat_addAction1 (classPCA, 0, DRAW_BUTTON, nullptr, 0, 0);
+	praat_addAction1 (classPCA, 0, U"PCA help", nullptr, 0, 
+			HELP__PCA_help);
+	praat_addAction1 (classPCA, 0, U"Draw -", nullptr, 0, nullptr);
 	praat_Eigen_draw_init (classPCA);
-	praat_addAction1 (classPCA, 0, QUERY_BUTTON, nullptr, 0, 0);
+	praat_addAction1 (classPCA, 0, U"Query -", nullptr, 0, nullptr);
 	praat_Eigen_query_init (classPCA);
 	praat_addAction1 (classPCA, 1, U"-- pca --", nullptr, 1, 0);
-	praat_addAction1 (classPCA, 1, U"Get centroid element...", nullptr, 1, REAL_PCA_getCentroidElement);
-	praat_addAction1 (classPCA, 1, U"Get equality of eigenvalues...", nullptr, 1, REAL_PCA_getEqualityOfEigenvalues);
-	praat_addAction1 (classPCA, 1, U"Get fraction variance accounted for...", nullptr, 1, REAL_PCA_getFractionVAF);
-	praat_addAction1 (classPCA, 1, U"Get number of components (VAF)...", nullptr, 1, INTEGER_PCA_getNumberOfComponents_VAF);
-	praat_addAction1 (classPCA, 2, U"Get angle between pc1-pc2 planes", nullptr, 1, REAL_PCAs_getAngleBetweenPc1Pc2Plane_degrees);
-	praat_addAction1 (classPCA, 0, MODIFY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classPCA, 1, U"Invert eigenvector...", nullptr, 1, MODIFY_PCA_invertEigenvector);
-	praat_addAction1 (classPCA, 0, U"Align eigenvectors", nullptr, 1, MODIFY_Eigens_alignEigenvectors);
+	praat_addAction1 (classPCA, 1, U"Get centroid element...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__PCA_getCentroidElement);
+	praat_addAction1 (classPCA, 1, U"Get equality of eigenvalues...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__PCA_getEqualityOfEigenvalues);
+	praat_addAction1 (classPCA, 1, U"Get fraction variance accounted for...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__PCA_getFractionVAF);
+	praat_addAction1 (classPCA, 1, U"Get number of components (VAF)...", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__PCA_getNumberOfComponents_VAF);
+	praat_addAction1 (classPCA, 2, U"Get angle between pc1-pc2 planes", nullptr, 1,
+			QUERY_TWO_FOR_REAL__PCAs_getAngleBetweenPc1Pc2Plane_degrees);
+	praat_addAction1 (classPCA, 0, U"Modify -", nullptr, 0, nullptr);
+	praat_addAction1 (classPCA, 1, U"Invert eigenvector...", nullptr, 1, 
+			MODIFY_PCA_invertEigenvector);
+	praat_addAction1 (classPCA, 0, U"Align eigenvectors", nullptr, 1, 
+			MODIFY_ALL_Eigens_alignEigenvectors);
 	praat_addAction1 (classPCA, 0, U"Extract -", nullptr, 0, 0);
-		praat_addAction1 (classPCA, 0, U"Extract eigenvector...", nullptr, 1, NEW_PCA_extractEigenvector);
-		praat_addAction1 (classPCA, 0, U"Extract Eigen", nullptr, 1, NEW_PCA_extractEigen);
-	praat_addAction1 (classPCA, 2, U"To Procrustes...", nullptr, 0, NEW1_PCAs_to_Procrustes);
-	praat_addAction1 (classPCA, 0, U"To TableOfReal (reconstruct 1)...", nullptr, 0, NEW_PCA_to_TableOfReal_reconstruct1);
+		praat_addAction1 (classPCA, 0, U"Extract eigenvector...", nullptr, 1, 
+				CONVERT_EACH_TO_ONE__PCA_extractEigenvector);
+		praat_addAction1 (classPCA, 0, U"Extract Eigen", nullptr, 1, 
+				CONVERT_EACH_TO_ONE__PCA_extractEigen);
+	praat_addAction1 (classPCA, 2, U"To Procrustes...", nullptr, 0, 
+			CONVERT_TWO_TO_ONE__PCAs_to_Procrustes);
+	praat_addAction1 (classPCA, 0, U"To TableOfReal (reconstruct 1)...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__PCA_to_TableOfReal_reconstruct1);
 
-	praat_addAction1 (classPCA, 0, U"& TableOfReal: To Configuration?", nullptr, praat_NO_API, HINT_hint_PCA_TableOfReal_to_Configuration);
-	praat_addAction1 (classPCA, 0, U"& Configuration (reconstruct)?", nullptr, praat_NO_API, HINT_hint_PCA_Configuration_to_TableOfReal_reconstruct);
-	praat_addAction1 (classPCA, 0, U"& Covariance: Project?", nullptr, praat_NO_API, HINT_hint_PCA_Covariance_Project);
-	praat_addAction2 (classPCA, 1, classConfiguration, 1, U"To TableOfReal (reconstruct)", nullptr, 0, NEW_PCA_Configuration_to_TableOfReal_reconstruct);
-	praat_addAction2 (classPCA, 1, classMatrix, 1, U"To Matrix (pc)...", nullptr, praat_HIDDEN, NEW1_PCA_Matrix_to_Matrix_projectColumns);
-	praat_addAction2 (classPCA, 1, classMatrix, 1, U"To Matrix (project rows)...", nullptr, 0, NEW1_PCA_Matrix_to_Matrix_projectRows);
-	praat_addAction2 (classPCA, 1, classMatrix, 1, U"To Matrix (project columns)...", nullptr, 0, NEW1_PCA_Matrix_to_Matrix_projectColumns);
-	praat_addAction2 (classPCA, 1, classPatternList, 1, U"To Matrix (project rows)...", nullptr, 0, NEW1_PCA_Matrix_to_Matrix_projectRows);
-	praat_addAction2 (classPCA, 1, classSSCP, 1, U"Project", nullptr, 0, NEW1_PCA_SSCP_project);
-	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"To TableOfReal (project rows)...", nullptr, 0, NEW1_PCA_TableOfReal_to_TableOfReal_projectRows);
-	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"To TableOfReal...", U"*To TableOfReal (project rows)...", praat_DEPRECATED_2016, NEW1_PCA_TableOfReal_to_TableOfReal_projectRows);
-	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"To Configuration...", nullptr, 0, NEW1_PCA_TableOfReal_to_Configuration);
-	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"To TableOfReal (z-scores)...", nullptr, 0, NEW1_PCA_TableOfReal_to_TableOfReal_zscores);
-	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"Get fraction variance...", nullptr, 0, REAL_PCA_TableOfReal_getFractionVariance);
-	praat_addAction2 (classPCA, 1, classCovariance, 1, U"Project", nullptr, 0, NEW1_Eigen_Covariance_project);
+	praat_addAction1 (classPCA, 0, U"& TableOfReal: To Configuration?",
+			nullptr, GuiMenu_NO_API, HINT__hint_PCA_TableOfReal_to_Configuration);
+	praat_addAction1 (classPCA, 0, U"& Configuration (reconstruct)?",
+			nullptr, GuiMenu_NO_API, HINT_hint__PCA_Configuration_to_TableOfReal_reconstruct);
+	praat_addAction1 (classPCA, 0, U"& Covariance: Project?",
+			nullptr, GuiMenu_NO_API, HINT_hint__PCA_Covariance_Project);
+	praat_addAction2 (classPCA, 1, classConfiguration, 1, U"To TableOfReal (reconstruct)",
+			nullptr, 0, CONVERT_ONE_AND_ONE_TO_ONE__PCA_Configuration_to_TableOfReal_reconstruct);
+	praat_addAction2 (classPCA, 1, classMatrix, 1, U"To Matrix (project rows)...",
+			nullptr, 0, CONVERT_ONE_AND_ONE_TO_ONE__PCA_Matrix_to_Matrix_projectRows);
+	praat_addAction2 (classPCA, 1, classMatrix, 1, U"To Matrix (project columns)... || To Matrix (pc)...",
+			nullptr, 0, CONVERT_ONE_AND_ONE_GENERIC_TO_ONE__Matrix_to_Matrix_projectColumns);
+	praat_addAction2 (classPCA, 1, classPatternList, 1, U"To Matrix (project rows)...",
+			nullptr, 0, CONVERT_ONE_AND_ONE_TO_ONE__PCA_Matrix_to_Matrix_projectRows);
+	praat_addAction2 (classPCA, 1, classSSCP, 1, U"Project",
+			nullptr, 0, CONVERT_ONE_AND_ONE_TO_ONE__PCA_SSCP_project);
+	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"To TableOfReal (project rows)... || To TableOfReal...",
+			nullptr, 0, CONVERT_ONE_AND_ONE_TO_ONE__PCA_TableOfReal_to_TableOfReal_projectRows);   // alternative GuiMenu_DEPRECATED_2016
+	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"To Configuration...",
+			nullptr, 0, CONVERT_ONE_AND_ONE_GENERIC_TO_ONE__PCA_TableOfReal_to_Configuration);
+	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"To TableOfReal (z-scores)...",
+			nullptr, 0, CONVERT_ONE_AND_ONE_GENERIC_TO_ONE__PCA_TableOfReal_to_TableOfReal_zscores);
+	praat_addAction2 (classPCA, 1, classTableOfReal, 1, U"Get fraction variance...",
+			nullptr, 0, QUERY_ONE_AND_ONE_FOR_REAL__PCA_TableOfReal_getFractionVariance);
+	praat_addAction2 (classPCA, 1, classCovariance, 1, U"Project",
+			nullptr, 0, CONVERT_ONE_AND_ONE_TO_ONE__Eigen_Covariance_project);
 
 	praat_Eigen_Spectrogram_project (classPCA, classSpectrogram);
 	praat_Eigen_Spectrogram_project (classPCA, classBarkSpectrogram);
@@ -8791,323 +9937,661 @@ void praat_uvafon_David_init () {
 	praat_Eigen_Matrix_project (classPCA, classBarkFilter); // deprecated 2014
 	praat_Eigen_Matrix_project (classPCA, classMelFilter); // deprecated 2014
 
-	praat_addAction1 (classPermutation, 0, U"Permutation help", nullptr, 0, HELP_Permutation_help);
-	praat_addAction1 (classPermutation, 0, QUERY_BUTTON, 0, 0, 0);
-	praat_addAction1 (classPermutation, 1, U"Get number of elements", nullptr, 1, INTEGER_Permutation_getNumberOfElements);
-	praat_addAction1 (classPermutation, 1, U"Get value...", nullptr, 1, INTEGER_Permutation_getValueAtIndex);
-	praat_addAction1 (classPermutation, 1, U"Get index...", nullptr, 1, INTEGER_Permutation_getIndexAtValue);
-	praat_addAction1 (classPermutation, 0, MODIFY_BUTTON, 0, 0, 0);
-	praat_addAction1 (classPermutation, 1, U"Jump...", nullptr, 1, MODIFY_Permutation_tableJump);
-	praat_addAction1 (classPermutation, 1, U"Sort", nullptr, 1, MODIFY_Permutation_sort);
-	praat_addAction1 (classPermutation, 1, U"Swap blocks...", nullptr, 1, MODIFY_Permutation_swapBlocks);
-	praat_addAction1 (classPermutation, 1, U"Swap numbers...", nullptr, 1, MODIFY_Permutation_swapNumbers);
-	praat_addAction1 (classPermutation, 1, U"Swap positions...", nullptr, 1, MODIFY_Permutation_swapPositions);
-	praat_addAction1 (classPermutation, 1, U"Swap one from range...", nullptr, 1, MODIFY_Permutation_swapOneFromRange);
-	praat_addAction1 (classPermutation, 0, U"-- sequential permutations --", nullptr, 1, 0);
-	praat_addAction1 (classPermutation, 0, U"Next", nullptr, 1, MODIFY_Permutations_next);
-	praat_addAction1 (classPermutation, 0, U"Previous", nullptr, 1, MODIFY_Permutations_previous);
-	praat_addAction1 (classPermutation, 1, U"Permute randomly...", nullptr, 0, NEW_Permutation_permuteRandomly);
-	praat_addAction1 (classPermutation, 1, U"Permute randomly (blocks)...", nullptr, 0, NEW_Permutation_permuteBlocksRandomly);
-	praat_addAction1 (classPermutation, 1, U"Interleave...", nullptr, 0, NEW_Permutation_interleave);
-	praat_addAction1 (classPermutation, 1, U"Rotate...", nullptr, 0, NEW_Permutation_rotate);
-	praat_addAction1 (classPermutation, 1, U"Reverse...", nullptr, 0, NEW_Permutation_reverse);
-	praat_addAction1 (classPermutation, 1, U"Invert", nullptr, 0, NEW_Permutation_invert);
-	praat_addAction1 (classPermutation, 0, U"Multiply", nullptr, 0, NEW1_Permutations_multiply);
+	praat_addAction1 (classPermutation, 0, U"Permutation help",
+			nullptr, 0, HELP__Permutation_help);
+	praat_addAction1 (classPermutation, 0, U"Query -", nullptr, 0, nullptr);
+		praat_addAction1 (classPermutation, 1, U"Get number of elements",
+				nullptr, 1, QUERY_ONE_FOR_INTEGER__Permutation_getNumberOfElements);
+		praat_addAction1 (classPermutation, 1, U"Get value...",
+				nullptr, 1, QUERY_ONE_FOR_INTEGER__Permutation_getValueAtIndex);
+		praat_addAction1 (classPermutation, 1, U"List values",
+				nullptr, 1, QUERY_ONE_FOR_REAL_VECTOR__Permutation_listValues);
+		praat_addAction1 (classPermutation, 1, U"Get index...",
+				nullptr, 1, QUERY_ONE_FOR_INTEGER__Permutation_getIndexAtValue);
+	praat_addAction1 (classPermutation, 0, U"Modify -", nullptr, 0, nullptr);
+		praat_addAction1 (classPermutation, 0, U"Permute randomly (in-place)...",
+				nullptr, 1, MODIFY__Permutation_permuteRandomlyInplace);
+		praat_addAction1 (classPermutation, 1, U"Sort",
+				nullptr, 1, MODIFY_Permutation_sort);
+		praat_addAction1 (classPermutation, 1, U"Swap blocks...",
+				nullptr, 1, MODIFY_Permutation_swapBlocks);
+		praat_addAction1 (classPermutation, 1, U"Swap numbers...",
+				nullptr, 1, MODIFY_Permutation_swapNumbers);
+		praat_addAction1 (classPermutation, 1, U"Swap positions...",
+				nullptr, 1, MODIFY_Permutation_swapPositions);
+		praat_addAction1 (classPermutation, 1, U"Swap one from range...",
+				nullptr, 1, MODIFY_Permutation_swapOneFromRange);
+		praat_addAction1 (classPermutation, 1, U"Jump...",
+				nullptr, 1, MODIFY_Permutation_tableJump);
+		praat_addAction1 (classPermutation, 0, U"-- sequential permutations --",
+				nullptr, 1, nullptr);
+		praat_addAction1 (classPermutation, 0, U"Next",
+				nullptr, 1, MODIFY_Permutations_next);
+		praat_addAction1 (classPermutation, 0, U"Previous",
+				nullptr, 1, MODIFY_Permutations_previous);
+	
+	praat_addAction1 (classPermutation, 1, U"Permute randomly...",
+			nullptr, 0, CONVERT_EACH_TO_ONE__Permutation_permuteRandomly);
+	praat_addAction1 (classPermutation, 1, U"Permute randomly (blocks)...",
+			nullptr, 0, CONVERT_EACH_TO_ONE__Permutation_permuteBlocksRandomly);
+	praat_addAction1 (classPermutation, 1, U"Interleave...",
+			nullptr, 0, CONVERT_EACH_TO_ONE__Permutation_interleave);
+	praat_addAction1 (classPermutation, 1, U"Rotate...",
+			nullptr, 0, CONVERT_EACH_TO_ONE__Permutation_rotate);
+	praat_addAction1 (classPermutation, 1, U"Reverse...",
+			nullptr, 0, CONVERT_EACH_TO_ONE__Permutation_reverse);
+	praat_addAction1 (classPermutation, 1, U"Invert",
+			nullptr, 0, CONVERT_EACH_TO_ONE__Permutation_invert);
+	praat_addAction1 (classPermutation, 0, U"Multiply",
+			nullptr, 0, COMBINE_ALL_TO_ONE__Permutations_multiply);
 
-	praat_addAction1 (classPitch, 2, U"To DTW...", U"To PointProcess", praat_HIDDEN, NEW1_Pitches_to_DTW);
+	praat_addAction1 (classPitch, 2, U"To DTW...", U"To PointProcess",
+			GuiMenu_HIDDEN, CONVERT_TWO_TO_ONE__Pitches_to_DTW);
 
-	praat_addAction1 (classPitchTier, 0, U"To Pitch...", U"To Sound (sine)...", 1, NEW_PitchTier_to_Pitch);
-	praat_addAction1 (classPitchTier, 0, U"Modify interval...", U"Add point...", 1, MODIFY_PitchTier_modifyInterval);
-	praat_addAction1 (classPitchTier, 0, U"Modify interval (tone levels)...", U"Modify interval...", 1, MODIFY_PitchTier_modifyInterval_toneLevels);
-	praat_addAction1 (classPolygon, 0, QUERY_BUTTON, U"Paint circles...", 0, 0);
-	praat_addAction1 (classPolygon, 0, U"Get number of points", QUERY_BUTTON, 1, INTEGER_Polygon_getNumberOfPoints);
-	praat_addAction1 (classPolygon, 0, U"Get point (x)...", U"Get number of points", 1, REAL_Polygon_getPointX);
-	praat_addAction1 (classPolygon, 0, U"Get point (y)...",  U"Get point (x)...", 1, REAL_Polygon_getPointY);
+	praat_addAction1 (classPitchTier, 0, U"To Pitch...",
+			U"To Sound (sine)...", 1, CONVERT_EACH_TO_ONE__PitchTier_to_Pitch);
+	praat_addAction1 (classPitchTier, 0, U"Modify interval...",
+			U"Add point...", 1, MODIFY_PitchTier_modifyInterval);
+	praat_addAction1 (classPitchTier, 0, U"Modify interval (tone levels)...",
+			U"Modify interval...", 1, MODIFY_PitchTier_modifyInterval_toneLevels);
+	praat_addAction1 (classPolygon, 0, U"Query -", U"Paint circles...", 0, nullptr);
+	praat_addAction1 (classPolygon, 0, U"Get number of points",
+			U"Query -", 1, QUERY_ONE_FOR_INTEGER__Polygon_getNumberOfPoints);
+	praat_addAction1 (classPolygon, 0, U"Get point (x)...",
+			U"Get number of points", 1, QUERY_ONE_FOR_REAL__Polygon_getPointX);
+	praat_addAction1 (classPolygon, 0, U"Get point (y)...",  U"Get point (x)...", 1, 
+			QUERY_ONE_FOR_REAL__Polygon_getPointY);
 	praat_addAction1 (classPolygon, 0, U"-- other queries --",  U"Get point (y)...", 1, 0);
-	praat_addAction1 (classPolygon, 0, U"Get location of point...", U"-- other queries --", 1, INFO_Polygon_getLocationOfPoint);
-	praat_addAction1 (classPolygon, 0, U"Get area of convex hull...", U"Get location of point...", praat_DEPTH_1 + praat_HIDDEN, REAL_Polygon_getAreaOfConvexHull);
+	praat_addAction1 (classPolygon, 0, U"Get location of point...", U"-- other queries --", 1, 
+			QUERY_ONE_FOR_STRING__Polygon_getLocationOfPoint);
+	praat_addAction1 (classPolygon, 0, U"Get area of convex hull...", U"Get location of point...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			QUERY_ONE_FOR_REAL__Polygon_getAreaOfConvexHull);
 
-	praat_addAction1 (classPolygon, 0, U"Translate...", MODIFY_BUTTON, 1, MODIFY_Polygon_translate);
-	praat_addAction1 (classPolygon, 0, U"Rotate...", U"Translate...", 1, MODIFY_Polygon_rotate);
-	praat_addAction1 (classPolygon, 0, U"Scale...", U"Rotate...", 1, MODIFY_Polygon_scale);
-	praat_addAction1 (classPolygon, 0, U"Reverse X", U"Scale...", 1, MODIFY_Polygon_reverseX);
-	praat_addAction1 (classPolygon, 0, U"Reverse Y", U"Reverse X", 1, MODIFY_Polygon_reverseY);
-	praat_addAction1 (classPolygon, 0, U"Simplify", nullptr, praat_HIDDEN, NEW_Polygon_simplify);
-	praat_addAction1 (classPolygon, 0, U"Convex hull", nullptr, 0, NEW_Polygon_convexHull);
-	praat_addAction1 (classPolygon, 0, U"Circular permutation...", nullptr, praat_HIDDEN, NEW_Polygon_circularPermutation);
+	praat_addAction1 (classPolygon, 0, U"Translate...", U"Modify -", 1,
+			MODIFY_EACH__Polygon_translate);
+	praat_addAction1 (classPolygon, 0, U"Rotate...", U"Translate...", 1, 
+			MODIFY_EACH__Polygon_rotate);
+	praat_addAction1 (classPolygon, 0, U"Scale...", U"Rotate...", 1,
+			MODIFY_EACH__Polygon_scale);
+	praat_addAction1 (classPolygon, 0, U"Reverse X", U"Scale...", 1, 
+			MODIFY_EACH__Polygon_reverseX);
+	praat_addAction1 (classPolygon, 0, U"Reverse Y", U"Reverse X", 1, 
+			MODIFY_EACH__Polygon_reverseY);
+	praat_addAction1 (classPolygon, 0, U"Simplify", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Polygon_simplify);
+	praat_addAction1 (classPolygon, 0, U"Convex hull", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Polygon_convexHull);
+	praat_addAction1 (classPolygon, 0, U"Circular permutation...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Polygon_circularPermutation);
 
-	praat_addAction2 (classPolygon, 1, classCategories, 1, U"Draw...", nullptr, 0, GRAPHICS_Polygon_Categories_draw);
+	praat_addAction2 (classPolygon, 1, classCategories, 1, U"Draw...", nullptr, 0,
+			GRAPHICS_ONE_AND_ONE__Polygon_Categories_draw);
 
-	praat_addAction1 (classPolynomial, 0, U"Polynomial help", nullptr, 0, HELP_Polynomial_help);
+	praat_addAction1 (classPolynomial, 0, U"Polynomial help", nullptr, 0, 
+			HELP__Polynomial_help);
 	praat_FunctionSeries_init (classPolynomial);
 	praat_addAction1 (classPolynomial, 0, U"-- area --", U"Get x of maximum...", 1, 0);
-	praat_addAction1 (classPolynomial, 1, U"Get area...", U"-- area --", 1, REAL_Polynomial_getArea);
-	praat_addAction1 (classPolynomial, 1, U"Get remainder after division...", U"Get area...", 1, REAL_Polynomial_getRemainderAfterDivision);
-	praat_addAction1 (classPolynomial, 1, U"Get remainder...", U"*Get remainder after division...", praat_DEPRECATED_2016, REAL_Polynomial_getRemainderAfterDivision);
+	praat_addAction1 (classPolynomial, 1, U"Get area...", U"-- area --", 1,
+			QUERY_ONE_FOR_REAL__Polynomial_getArea);
+	praat_addAction1 (classPolynomial, 1, U"Get remainder after division...", U"Get area...", 1, 
+			QUERY_ONE_FOR_REAL__Polynomial_getRemainderAfterDivision);
+	praat_addAction1 (classPolynomial, 1, U"Get remainder...", U"*Get remainder after division...", GuiMenu_DEPRECATED_2016,
+			QUERY_ONE_FOR_REAL__Polynomial_getRemainderAfterDivision);
 	praat_addAction1 (classPolynomial, 0, U"-- monic --", U"Set coefficient...", 1, 0);
-	praat_addAction1 (classPolynomial, 0, U"Scale coefficients (monic)", U"-- monic --", 1, MODIFY_Polynomial_scaleCoefficients_monic);
-	praat_addAction1 (classPolynomial, 1, U"Divide (second order factor)...", U"Scale coefficients (monic)", 1, MODIFY_Polynomial_divide_secondOrderFactor);
+	praat_addAction1 (classPolynomial, 0, U"Scale coefficients (monic)", U"-- monic --", 1, 
+			MODIFY_Polynomial_scaleCoefficients_monic);
+	praat_addAction1 (classPolynomial, 1, U"Divide (second order factor)...", U"Scale coefficients (monic)", 1, 
+			MODIFY_EACH__Polynomial_divide_secondOrderFactor);
 
-	praat_addAction1 (classPolynomial, 1, U"Get value (complex)...", U"Get value...", 1, INFO_Polynomial_evaluate_z);
-	praat_addAction1 (classPolynomial, 1, U"Get derivatives at X...", U"Get value (complex)...", 1, INFO_Polynomial_getDerivativesAtX);
-	praat_addAction1 (classPolynomial, 1, U"Get one real root...", U"Get derivatives at X...", 1, REAL_Polynomial_getOneRealRoot);
-	praat_addAction1 (classPolynomial, 0, U"To Spectrum...", U"Analyse", 0, NEW_Polynomial_to_Spectrum);
-	praat_addAction1 (classPolynomial, 0, U"To Roots", nullptr, 0, NEW_Polynomial_to_Roots);
-	praat_addAction1 (classPolynomial, 0, U"To Polynomial (derivative)", nullptr, 0, NEW_Polynomial_getDerivative);
-	praat_addAction1 (classPolynomial, 0, U"To Polynomial (primitive)...", nullptr, 0, NEW_Polynomial_getPrimitive);
-	praat_addAction1 (classPolynomial, 0, U"Scale x...", nullptr, 0, NEW_Polynomial_scaleX);
-	praat_addAction1 (classPolynomial, 2, U"Multiply", nullptr, 0, NEW_Polynomials_multiply);
-	praat_addAction1 (classPolynomial, 2, U"Divide...", nullptr, 0, NEWMANY_Polynomials_divide);
+	praat_addAction1 (classPolynomial, 1, U"Get value (complex)...", U"Get value...", 1, 
+			INFO_ONE__Polynomial_evaluate_z);
+	praat_addAction1 (classPolynomial, 1, U"Get derivatives at X...", U"Get value (complex)...", 1, 
+			INFO_ONE__Polynomial_getDerivativesAtX);
+	praat_addAction1 (classPolynomial, 1, U"Get one real root...", U"Get derivatives at X...", 1,
+			QUERY_ONE_FOR_REAL__Polynomial_getOneRealRoot);
+	praat_addAction1 (classPolynomial, 0, U"To Spectrum...", U"Analyse", 0, 
+			CONVERT_EACH_TO_ONE__Polynomial_to_Spectrum);
+	praat_addAction1 (classPolynomial, 0, U"To Roots", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Polynomial_to_Roots);
+	praat_addAction1 (classPolynomial, 0, U"To Polynomial (derivative)", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Polynomial_getDerivative);
+	praat_addAction1 (classPolynomial, 0, U"To Polynomial (primitive)...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Polynomial_getPrimitive);
+	praat_addAction1 (classPolynomial, 0, U"Scale x...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Polynomial_scaleX);
+	praat_addAction1 (classPolynomial, 2, U"Multiply", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Polynomials_multiply);
+	praat_addAction1 (classPolynomial, 2, U"Divide...", nullptr, 0, 
+			CONVERT_TWO_TO_MULTIPLE__Polynomials_divide);
 
-	praat_addAction1 (classRoots, 1, U"Roots help", nullptr, 0, HELP_Roots_help);
-	praat_addAction1 (classRoots, 1, U"Draw...", nullptr, 0, GRAPHICS_Roots_draw);
-	praat_addAction1 (classRoots, 1, QUERY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classRoots, 1, U"Get number of roots", nullptr, 1, INTEGER_Roots_getNumberOfRoots);
+	praat_addAction1 (classRoots, 1, U"Roots help", nullptr, 0, 
+			HELP__Roots_help);
+	praat_addAction1 (classRoots, 1, U"Draw...", nullptr, 0, 
+			GRAPHICS_EACH__Roots_draw);
+	praat_addAction1 (classRoots, 1, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (classRoots, 1, U"Get number of roots", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__Roots_getNumberOfRoots);
 	praat_addAction1 (classRoots, 1, U"-- roots --", nullptr, 1, 0);
-	praat_addAction1 (classRoots, 1, U"Get root...", nullptr, 1, COMPLEX_Roots_getRoot);
-	praat_addAction1 (classRoots, 1, U"Get real part of root...", nullptr, 1, REAL_Roots_getRealPartOfRoot);
-	praat_addAction1 (classRoots, 1, U"Get imaginary part of root...", nullptr, 1, REAL_Roots_getImaginaryPartOfRoot);
-	praat_addAction1 (classRoots, 1, MODIFY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classRoots, 1, U"Set root...", nullptr, 1, MODIFY_Roots_setRoot);
+	praat_addAction1 (classRoots, 1, U"Get root...", nullptr, 1, 
+			COMPLEX_Roots_getRoot);
+	praat_addAction1 (classRoots, 1, U"Get real part of root...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__Roots_getRealPartOfRoot);
+	praat_addAction1 (classRoots, 1, U"Get imaginary part of root...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__Roots_getImaginaryPartOfRoot);
+	praat_addAction1 (classRoots, 1, U"Modify -", nullptr, 0, 0);
+	praat_addAction1 (classRoots, 1, U"Set root...", nullptr, 1, 
+			MODIFY_EACH__Roots_setRoot);
 	praat_addAction1 (classRoots, 0, U"Analyse", nullptr, 0, 0);
-	praat_addAction1 (classRoots, 0, U"To Spectrum...", nullptr, 0, NEW_Roots_to_Spectrum);
+	praat_addAction1 (classRoots, 0, U"To Spectrum...", nullptr, 0,
+			CONVERT_EACH_TO_ONE__Roots_to_Spectrum);
 
-	praat_addAction2 (classRoots, 1, classPolynomial, 1, U"Polish roots", nullptr, 0, MODIFY_Roots_Polynomial_polish);
+	praat_addAction2 (classRoots, 1, classPolynomial, 1, U"Polish roots", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__Roots_Polynomial_polish);
 
-	praat_addAction1 (classSound, 0, U"To TextGrid (silences)...", U"To IntervalTier", 1, NEW_Sound_to_TextGrid_detectSilences);
-    praat_addAction1 (classSound, 0, U"Play one channel...", U"Play", praat_HIDDEN, PLAY_Sound_playOneChannel);
-    praat_addAction1 (classSound, 0, U"Play as frequency shifted...", U"Play", praat_HIDDEN, PLAY_Sound_playAsFrequencyShifted);
-	praat_addAction1 (classSound, 0, U"Draw where...", U"Draw...", 1, GRAPHICS_Sound_drawWhere);
-	//	praat_addAction1 (classSound, 0, U"Paint where...", U"Draw where...", praat_DEPTH_1 | praat_HIDDEN, DO_Sound_paintWhere);
-	praat_addAction1 (classSound, 0, U"Paint where...", U"Draw where...", 1, GRAPHICS_Sound_paintWhere);
-	//	praat_addAction1 (classSound, 2, U"Paint enclosed...", U"Paint where...", praat_DEPTH_1 | praat_HIDDEN, DO_Sounds_paintEnclosed);
-	praat_addAction1 (classSound, 2, U"Paint enclosed...", U"Paint where...", 1, GRAPHICS_Sounds_paintEnclosed);
+	praat_addAction1 (classSound, 0, U"To TextGrid (silences)...", U"To IntervalTier", 1, 
+			CONVERT_EACH_TO_ONE__Sound_to_TextGrid_detectSilences);
+	praat_addAction1 (classSound, 0, U"To TextGrid (voice activity)...", U"To IntervalTier", 1,
+			CONVERT_EACH_TO_ONE__Sound_to_TextGrid_voiceActivity);
+	praat_addAction1 (classSound, 0, U"To TextGrid (high, mid, low)...", U"To IntervalTier", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_to_TextGrid_highMidLowIntervals);
+    praat_addAction1 (classSound, 0, U"Play one channel...", U"Play", GuiMenu_HIDDEN,
+			PLAY_EACH__Sound_playOneChannel);
+    praat_addAction1 (classSound, 0, U"Play as frequency shifted...", U"Play", GuiMenu_HIDDEN,
+			PLAY_EACH__Sound_playAsFrequencyShifted);
+	praat_addAction1 (classSound, 0, U"Draw where...", U"Draw...", 1,
+			GRAPHICS_EACH__Sound_drawWhere);
+	praat_addAction1 (classSound, 0, U"Paint where...", U"Draw where...", 1, 
+			GRAPHICS_EACH__Sound_paintWhere);
+	praat_addAction1 (classSound, 2, U"Paint enclosed...", U"Paint where...", 1, 
+			GRAPHICS_TWO__Sounds_paintEnclosed);
 
-	praat_addAction1 (classSound, 1, U"Get nearest level crossing...", U"Get nearest zero crossing...", 1, REAL_Sound_getNearestLevelCrossing);
+	praat_addAction1 (classSound, 1, U"Get nearest level crossing...", U"Get nearest zero crossing...", 1, 
+			QUERY_ONE_FOR_REAL__Sound_getNearestLevelCrossing);
 
-	praat_addAction1 (classSound, 0, U"To Pitch (shs)...", U"To Pitch (cc)...", 1, NEW_Sound_to_Pitch_shs);
-	praat_addAction1 (classSound, 0, U"Fade in...", U"Multiply by window...", praat_HIDDEN + praat_DEPTH_1, MODIFY_Sound_fadeIn);
-	praat_addAction1 (classSound, 0, U"Fade out...", U"Fade in...", praat_HIDDEN + praat_DEPTH_1, MODIFY_Sound_fadeOut);
-	praat_addAction1 (classSound, 0, U"To Pitch (SPINET)...", U"To Pitch (cc)...", 1, NEW_Sound_to_Pitch_SPINET);
+	praat_addAction1 (classSound, 0, U"To Pitch (shs)...", U"To Pitch (cc)...", 1,
+			CONVERT_EACH_TO_ONE__Sound_to_Pitch_shs);
+	praat_addAction1 (classSound, 0, U"Fade in...", U"Multiply by window...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			MODIFY_EACH__Sound_fadeIn);
+	praat_addAction1 (classSound, 0, U"Fade out...", U"Fade in...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			MODIFY_Sound_fadeOut);
+	praat_addAction1 (classSound, 0, U"To Pitch (SPINET)...", U"To Pitch (cc)...", 1,
+			CONVERT_EACH_TO_ONE__Sound_to_Pitch_SPINET);
 
-	praat_addAction1 (classSound, 0, U"To FormantFilter...", U"To Cochleagram (edb)...", praat_DEPRECATED_2014 | praat_DEPTH_1, NEW_Sound_to_FormantFilter);
-	praat_addAction1 (classSound, 0, U"To Spectrogram (pitch-dependent)...", U"To Cochleagram (edb)...", 1, NEW_Sound_to_Spectrogram_pitchDependent);
+	praat_addAction1 (classSound, 0, U"To Spectrum (resampled)...", U"To Spectrum...", GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_to_Spectrum_resampled);
+	praat_addAction1 (classSound, 0, U"To FormantFilter...", U"To Cochleagram (edb)...", GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_to_FormantFilter);
+	praat_addAction1 (classSound, 0, U"To Spectrogram (pitch-dependent)...", U"To Cochleagram (edb)...", 1,
+			CONVERT_EACH_TO_ONE__Sound_to_Spectrogram_pitchDependent);
 
-	praat_addAction1 (classSound, 0, U"To BarkFilter...", U"To FormantFilter...", praat_DEPRECATED_2014 | praat_DEPTH_1, NEW_Sound_to_BarkFilter);
-	praat_addAction1 (classSound, 0, U"To BarkSpectrogram...", U"To FormantFilter...", praat_DEPTH_1, NEW_Sound_to_BarkSpectrogram);
+	praat_addAction1 (classSound, 0, U"To BarkFilter...", U"To FormantFilter...", GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_to_BarkFilter);
+	praat_addAction1 (classSound, 0, U"To BarkSpectrogram...", U"To FormantFilter...", GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_to_BarkSpectrogram);
 
-	praat_addAction1 (classSound, 0, U"To MelFilter...", U"To BarkFilter...", praat_DEPRECATED_2014 | praat_DEPTH_1, NEW_Sound_to_MelFilter);
-	praat_addAction1 (classSound, 0, U"To MelSpectrogram...", U"To BarkSpectrogram...", praat_DEPTH_1, NEW_Sound_to_MelSpectrogram);
-	praat_addAction1 (classSound, 0, U"To ComplexSpectrogram...", U"To MelSpectrogram...", praat_DEPTH_1 + praat_HIDDEN, NEW_Sound_to_ComplexSpectrogram);
-    praat_addAction1 (classSound, 0, U"Extract Electroglottogram...", U"Extract part for overlap...", 1, NEW_Sound_extractElectroglottogram);
+	praat_addAction1 (classSound, 0, U"To MelFilter...", U"To BarkFilter...", GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_to_MelFilter);
+	praat_addAction1 (classSound, 0, U"To MelSpectrogram...", U"To BarkSpectrogram...", GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_to_MelSpectrogram);
+	praat_addAction1 (classSound, 0, U"To ComplexSpectrogram...", U"To MelSpectrogram...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Sound_to_ComplexSpectrogram);
+    praat_addAction1 (classSound, 0, U"Extract Electroglottogram...", U"Extract part for overlap...", 1,
+			CONVERT_EACH_TO_ONE__Sound_extractElectroglottogram);
 
-	praat_addAction1 (classSound, 0, U"To Polygon...", U"Down to Matrix", praat_DEPTH_1 | praat_HIDDEN, NEW_Sound_to_Polygon);
-    praat_addAction1 (classSound, 2, U"To Polygon (enclosed)...", U"Cross-correlate...", praat_DEPTH_1 | praat_HIDDEN, NEW1_Sounds_to_Polygon_enclosed);
-    praat_addAction1 (classSound, 2, U"To DTW...", U"Cross-correlate...", praat_DEPTH_1, NEW1_Sounds_to_DTW);
+	praat_addAction1 (classSound, 0, U"To Polygon...", U"Down to Matrix", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Sound_to_Polygon);
+    praat_addAction1 (classSound, 2, U"To Polygon (enclosed)...", U"Cross-correlate...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_TWO_TO_ONE__Sounds_to_Polygon_enclosed);
+    praat_addAction1 (classSound, 2, U"To DTW...", U"Cross-correlate...", GuiMenu_DEPTH_1,
+			CONVERT_TWO_TO_ONE__Sounds_to_DTW);
 
-	praat_addAction1 (classSound, 1, U"Filter (gammatone)...", U"Filter (de-emphasis)...", 1, NEW_Sound_filterByGammaToneFilter4);
-	praat_addAction1 (classSound, 0, U"Remove noise...", U"Filter (formula)...", praat_DEPTH_1 | praat_HIDDEN, NEW_Sound_removeNoise);
-	praat_addAction1 (classSound, 0, U"Reduce noise...", U"Filter (formula)...", praat_DEPTH_1, NEW_Sound_reduceNoise);
+	praat_addAction1 (classSound, 1, U"Filter (gammatone)...", U"Filter (de-emphasis)...", 1, 
+			CONVERT_EACH_TO_ONE__Sound_filterByGammaToneFilter4);
+	praat_addAction1 (classSound, 0, U"Remove noise...", U"Filter (formula)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Sound_removeNoise);
+	praat_addAction1 (classSound, 0, U"Reduce noise...", U"Filter (formula)...", GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_reduceNoise);
 
-	praat_addAction1 (classSound, 0, U"Change gender...", U"Deepen band modulation...", 1, NEW_Sound_changeGender);
+	praat_addAction1 (classSound, 0, U"Change gender...", U"Deepen band modulation...", 1, 
+			CONVERT_EACH_TO_ONE__Sound_changeGender);
 
-	praat_addAction1 (classSound, 0, U"Change speaker...", U"Deepen band modulation...", praat_DEPTH_1 | praat_HIDDEN, NEW_Sound_changeSpeaker);
-	praat_addAction1 (classSound, 0, U"Copy channel ranges...", U"Extract all channels", praat_DEPTH_1 | praat_HIDDEN, NEW_Sound_copyChannelRanges);
-	praat_addAction1 (classSound, 0 /* TODO produces 2N objects */, U"Trim silences...", U"Resample...", praat_DEPTH_1 | praat_HIDDEN, NEWMANY_Sound_trimSilences);
-	praat_addAction1 (classSound, 0, U"To KlattGrid (simple)...", U"To Manipulation...", 1, NEW_Sound_to_KlattGrid_simple);
-	praat_addAction2 (classSound, 1, classPitch, 1, U"To FormantFilter...", nullptr, praat_DEPRECATED_2014, NEW1_Sound_Pitch_to_FormantFilter);
-	praat_addAction2 (classSound, 1, classPitch, 1, U"To Spectrogram (pitch-dependent)...", nullptr, 0,NEW1_Sound_Pitch_to_Spectrogram);
+	praat_addAction1 (classSound, 0, U"Change speaker...", U"Deepen band modulation...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Sound_changeSpeaker);
+	praat_addAction1 (classSound, 0, U"Copy channel ranges...", U"Extract all channels", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Sound_copyChannelRanges);
+	praat_addAction1 (classSound, 0 /* TODO produces 2N objects */, U"Trim silences...", U"Resample...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Sound_trimSilences);
+	praat_addAction1 (classSound, 0, U"To KlattGrid (simple)...", U"To Manipulation...", 1, 
+			CONVERT_EACH_TO_ONE__Sound_to_KlattGrid_simple);
+	praat_addAction2 (classSound, 1, classPitch, 1, U"To FormantFilter...", nullptr, GuiMenu_DEPRECATED_2014,
+			CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_to_FormantFilter);
+	praat_addAction2 (classSound, 1, classPitch, 1, U"To Spectrogram (pitch-dependent)...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_to_Spectrogram);
 
-	praat_addAction2 (classSound, 1, classPitch, 1, U"Change gender...", nullptr, 0, NEW1_Sound_Pitch_changeGender);
-	praat_addAction2 (classSound, 1, classPitch, 1, U"Change speaker...", nullptr, praat_HIDDEN, NEW1_Sound_Pitch_changeSpeaker);
-	praat_addAction2 (classSound, 1, classIntervalTier, 1, U"Cut parts matching label...", nullptr, 0, NEW1_Sound_IntervalTier_cutPartsMatchingLabel);
+	praat_addAction2 (classSound, 1, classPitch, 1, U"Change gender...", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_changeGender);
+	praat_addAction2 (classSound, 1, classPitch, 1, U"Change speaker...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_changeSpeaker);
+	praat_addAction2 (classSound, 1, classIntervalTier, 1, U"Cut parts matching label...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__Sound_IntervalTier_cutPartsMatchingLabel);
 
-	praat_addAction1 (classSpectrogram, 2, U"To DTW...", U"To Spectrum (slice)...", 1, NEW1_Spectrograms_to_DTW);
+	praat_addAction1 (classSpectrogram, 2, U"To DTW...", U"To Spectrum (slice)...", 1, 
+			CONVERT_TWO_TO_ONE__Spectrograms_to_DTW);
+	praat_addAction1 (classSpectrogram, 0, U"Get longterm spectral flatness...", U"To DTW...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Spectrogram_getLongtermSpectralFlatnessMeasure);
 
-	praat_addAction1 (classSpectrum, 0, U"Draw phases...", U"Draw (log freq)...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_Spectrum_drawPhases);
-	praat_addAction1 (classSpectrum, 0, U"Set real value in bin...", U"Formula...", praat_HIDDEN | praat_DEPTH_1, MODIFY_Spectrum_setRealValueInBin);
-	praat_addAction1 (classSpectrum, 0, U"Set imaginary value in bin...", U"Formula...", praat_HIDDEN | praat_DEPTH_1, MODIFY_Spectrum_setImaginaryValueInBin);
-	praat_addAction1 (classSpectrum, 0, U"Conjugate", U"Formula...", praat_HIDDEN | praat_DEPTH_1, MODIFY_Spectrum_conjugate);
-	praat_addAction1 (classSpectrum, 2, U"Multiply", U"To Sound (fft)", praat_HIDDEN, NEW_Spectra_multiply);
-	praat_addAction1 (classSpectrum, 0, U"To Matrix (unwrap)", U"To Matrix", praat_HIDDEN, NEW_Spectrum_unwrap);
-	praat_addAction1 (classSpectrum, 0, U"Shift frequencies...", U"To Matrix", praat_HIDDEN, NEW_Spectrum_shiftFrequencies);
-	praat_addAction1 (classSpectrum, 0, U"Compress frequency domain...", U"Shift frequencies...", praat_HIDDEN, NEW_Spectrum_compressFrequencyDomain);
-	praat_addAction1 (classSpectrum, 0, U"Resample...", U"Compress frequency domain...", praat_HIDDEN, NEW_Spectrum_resample);
-	praat_addAction1 (classSpectrum, 0, U"To Cepstrum", U"To Spectrogram", 1, NEW_Spectrum_to_Cepstrum);
-	praat_addAction1 (classSpectrum, 0, U"To PowerCepstrum", U"To Cepstrum", 1, NEW_Spectrum_to_PowerCepstrum);
+	praat_addAction1 (classSpectrum, 0, U"To Sound (resampled)...", U"To Sound", GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Spectrum_to_Sound_resampled);
+	praat_addAction1 (classSpectrum, 0, U"Draw phases...", U"Draw (log freq)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			GRAPHICS_EACH__Spectrum_drawPhases);
+	praat_addAction1 (classSpectrum, 0, U"Set real value in bin...", U"Formula...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			MODIFY_EACH__Spectrum_setRealValueInBin);
+	praat_addAction1 (classSpectrum, 0, U"Set imaginary value in bin...", U"Formula...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			MODIFY_EACH__Spectrum_setImaginaryValueInBin);
+	praat_addAction1 (classSpectrum, 0, U"Conjugate", U"Formula...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			MODIFY_EACH__Spectrum_conjugate);
+	praat_addAction1 (classSpectrum, 2, U"Multiply", U"To Sound (fft)", GuiMenu_HIDDEN,
+			CONVERT_TWO_TO_ONE__Spectra_multiply);
+	praat_addAction1 (classSpectrum, 0, U"To Matrix (unwrap)", U"To Matrix", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Spectrum_unwrap);
+	praat_addAction1 (classSpectrum, 0, U"Shift frequencies...", U"To Matrix", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Spectrum_shiftFrequencies);
+	praat_addAction1 (classSpectrum, 0, U"Compress frequency domain...", U"Shift frequencies...", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Spectrum_compressFrequencyDomain);
+	praat_addAction1 (classSpectrum, 0, U"Resample...", U"Compress frequency domain...", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Spectrum_resample);
+	praat_addAction1 (classSpectrum, 0, U"To Cepstrum", U"To Spectrogram", 1, 
+			CONVERT_EACH_TO_ONE__Spectrum_to_Cepstrum);
+	praat_addAction1 (classSpectrum, 0, U"To PowerCepstrum", U"To Cepstrum", 1,
+			CONVERT_EACH_TO_ONE__Spectrum_to_PowerCepstrum);
 
-	praat_addAction1 (classSpeechSynthesizer, 0, U"SpeechSynthesizer help", nullptr, 0, HELP_SpeechSynthesizer_help);
-	praat_addAction1 (classSpeechSynthesizer, 0, U"Play text...", nullptr, 0, PLAY_SpeechSynthesizer_playText);
-	praat_addAction1 (classSpeechSynthesizer, 0, U"To Sound...", nullptr, 0, NEWMANY_SpeechSynthesizer_to_Sound);
-	praat_addAction1 (classSpeechSynthesizer, 0, QUERY_BUTTON, nullptr, 0, 0);
-		praat_addAction1 (classSpeechSynthesizer, 1, U"Get language name", nullptr, 1, INFO_SpeechSynthesizer_getLanguageName);
-		praat_addAction1 (classSpeechSynthesizer, 1, U"Get voice name", nullptr, 1, INFO_SpeechSynthesizer_getVoiceName);
-		praat_addAction1 (classSpeechSynthesizer, 1, U"Get phoneme set name", nullptr, 1, INFO_SpeechSynthesizer_getPhonemeSetName);
-		praat_addAction1 (classSpeechSynthesizer, 1, U"Get voice variant", nullptr, praat_DEPRECATED_2017, INFO_SpeechSynthesizer_getVoiceName);
-	praat_addAction1 (classSpeechSynthesizer, 0, MODIFY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classSpeechSynthesizer, 0, U"Modify phoneme set...", nullptr, praat_DEPTH_1, MODIFY_SpeechSynthesizer_modifyPhonemeSet);
-		praat_addAction1 (classSpeechSynthesizer, 0, U"Set text input settings...", nullptr, 1, MODIFY_SpeechSynthesizer_setTextInputSettings);
-		praat_addAction1 (classSpeechSynthesizer, 0, U"Speech output settings...", nullptr, 1, MODIFY_SpeechSynthesizer_speechOutputSettings);
-		praat_addAction1 (classSpeechSynthesizer, 0, U"Estimate speech rate from speech...", nullptr, 1, MODIFY_SpeechSynthesizer_estimateSpeechRateFromSpeech);
-		praat_addAction1 (classSpeechSynthesizer, 0, U"Set speech output settings...", nullptr, praat_DEPTH_1 |praat_DEPRECATED_2017, MODIFY_SpeechSynthesizer_setSpeechOutputSettings);
+	praat_addAction1 (classSpeechSynthesizer, 0, U"SpeechSynthesizer help", nullptr, 0,
+			HELP__SpeechSynthesizer_help);
+	praat_addAction1 (classSpeechSynthesizer, 0, U"Play text...", nullptr, 0, 
+			PLAY_EACH__SpeechSynthesizer_playText);
+	praat_addAction1 (classSpeechSynthesizer, 0, U"To Sound...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SpeechSynthesizer_to_Sound);
+	praat_addAction1 (classSpeechSynthesizer, 0, U"Query -", nullptr, 0, nullptr);
+		praat_addAction1 (classSpeechSynthesizer, 1, U"Get language name", nullptr, 1, 
+				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getLanguageName);
+		praat_addAction1 (classSpeechSynthesizer, 1, U"Get voice name", nullptr, 1, 
+				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getVoiceName);
+		praat_addAction1 (classSpeechSynthesizer, 1, U"Get phoneme set name", nullptr, 1,
+				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemeSetName);
+		praat_addAction1 (classSpeechSynthesizer, 1, U"Get voice variant", nullptr, GuiMenu_DEPRECATED_2017,
+				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getVoiceName);
+	praat_addAction1 (classSpeechSynthesizer, 0, U"Modify -", nullptr, 0, nullptr);
+		praat_addAction1 (classSpeechSynthesizer, 0, U"Modify phoneme set...", nullptr, GuiMenu_DEPTH_1,
+				MODIFY_EACH__SpeechSynthesizer_modifyPhonemeSet);
+		praat_addAction1 (classSpeechSynthesizer, 0, U"Set text input settings...", nullptr, 1,
+				MODIFY_EACH__SpeechSynthesizer_setTextInputSettings);
+		praat_addAction1 (classSpeechSynthesizer, 0, U"Speech output settings...", nullptr, 1,
+				MODIFY_EACH__SpeechSynthesizer_speechOutputSettings);
+		praat_addAction1 (classSpeechSynthesizer, 0, U"Estimate speech rate from speech...", nullptr, 1,
+				MODIFY_EACH__SpeechSynthesizer_estimateSpeechRateFromSpeech);
+		praat_addAction1 (classSpeechSynthesizer, 0, U"Set speech output settings...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2017,
+				MODIFY_EACH__SpeechSynthesizer_setSpeechOutputSettings);
 
-	praat_addAction2 (classSpeechSynthesizer, 1, classTextGrid, 1, U"To Sound...", nullptr, 0, NEWMANY_SpeechSynthesizer_TextGrid_to_Sound);
-	praat_addAction3 (classSpeechSynthesizer, 1, classSound, 1, classTextGrid, 1, U"To TextGrid (align)...", nullptr, 0, NEW1_SpeechSynthesizer_Sound_TextGrid_align);
-    praat_addAction3 (classSpeechSynthesizer, 1, classSound, 1, classTextGrid, 1, U"To TextGrid (align,trim)...", nullptr, 0, NEW1_SpeechSynthesizer_Sound_TextGrid_align2);
+	praat_addAction2 (classSpeechSynthesizer, 1, classTextGrid, 1, U"To Sound...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__SpeechSynthesizer_TextGrid_to_Sound);
+	praat_addAction3 (classSpeechSynthesizer, 1, classSound, 1, classTextGrid, 1, U"To TextGrid (align)...", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_AND_ONE_TO_ONE__SpeechSynthesizer_Sound_TextGrid_align);
+    praat_addAction3 (classSpeechSynthesizer, 1, classSound, 1, classTextGrid, 1, U"To TextGrid (align,trim)...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_AND_ONE_TO_ONE__SpeechSynthesizer_Sound_TextGrid_align2);
 
-	praat_addAction1 (classSSCP, 0, U"SSCP help", nullptr, 0, HELP_SSCP_help);
+	praat_addAction1 (classSSCP, 0, U"SSCP help", nullptr, 0,
+			HELP__SSCP_help);
 	praat_TableOfReal_init2 (classSSCP);
 	praat_removeAction (classSSCP, nullptr, nullptr, U"Append");
-	praat_addAction1 (classSSCP, 0, U"Draw sigma ellipse...", DRAW_BUTTON, 1, GRAPHICS_SSCP_drawSigmaEllipse);
-	praat_addAction1 (classSSCP, 0, U"Draw confidence ellipse...", DRAW_BUTTON, 1, GRAPHICS_SSCP_drawConfidenceEllipse);
+	praat_addAction1 (classSSCP, 0, U"Draw sigma ellipse...", U"Draw -", 1,
+			GRAPHICS_EACH__SSCP_drawSigmaEllipse);
+	praat_addAction1 (classSSCP, 0, U"Draw confidence ellipse...", U"Draw -", 1, 
+			GRAPHICS_EACH__SSCP_drawConfidenceEllipse);
 	praat_SSCP_query_init (classSSCP);
-	praat_addAction1 (classSSCP, 1, U"Get diagonality (bartlett)...", U"Get ln(determinant)", 1, REAL_SSCP_getDiagonality_bartlett);
-	praat_addAction1 (classSSCP, 1, U"Get total variance", U"Get diagonality (bartlett)...", 1, REAL_SSCP_getTotalVariance);
-	praat_addAction1 (classSSCP, 1, U"Get sigma ellipse area...", U"Get total variance", 1, REAL_SSCP_getConcentrationEllipseArea);
-	praat_addAction1 (classSSCP, 1, U"Get confidence ellipse area...", U"Get sigma ellipse area...", 1, REAL_SSCP_getConfidenceEllipseArea);
-	praat_addAction1 (classSSCP, 1, U"Get fraction variation...", U"Get confidence ellipse area...", 1, REAL_SSCP_getFractionVariation);
+	praat_addAction1 (classSSCP, 1, U"Get diagonality (bartlett)...", U"Get ln(determinant)", 1, 
+			QUERY_ONE_FOR_REAL__SSCP_getDiagonality_bartlett);
+	praat_addAction1 (classSSCP, 1, U"Get total variance", U"Get diagonality (bartlett)...", 1, 
+			QUERY_ONE_FOR_REAL__SSCP_getTotalVariance);
+	praat_addAction1 (classSSCP, 1, U"Get sigma ellipse area...", U"Get total variance", 1,
+			QUERY_ONE_FOR_REAL__SSCP_getConcentrationEllipseArea);
+	praat_addAction1 (classSSCP, 1, U"Get confidence ellipse area...", U"Get sigma ellipse area...", 1, 
+			QUERY_ONE_FOR_REAL__SSCP_getConfidenceEllipseArea);
+	praat_addAction1 (classSSCP, 1, U"Get fraction variation...", U"Get confidence ellipse area...", 1,
+			QUERY_ONE_FOR_REAL__SSCP_getFractionVariation);
 	praat_SSCP_extract_init (classSSCP);
-	praat_addAction1 (classSSCP, 0, U"To PCA", nullptr, 0, NEW_SSCP_to_PCA);
-	praat_addAction1 (classSSCP, 0, U"To Correlation", nullptr, 0, NEW_SSCP_to_Correlation);
-	praat_addAction1 (classSSCP, 0, U"To Covariance...", nullptr, 0, NEW_SSCP_to_Covariance);
+	praat_addAction1 (classSSCP, 0, U"To PCA", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SSCP_to_PCA);
+	praat_addAction1 (classSSCP, 0, U"To Correlation", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SSCP_to_Correlation);
+	praat_addAction1 (classSSCP, 0, U"To Covariance...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SSCP_to_Covariance);
 
-	praat_addAction1 (classStrings, 0, U"To Categories", nullptr, 0, NEW_Strings_to_Categories);
-	praat_addAction1 (classStrings, 0, U"Append", nullptr, 0, NEW1_Strings_append);
-	praat_addAction1 (classStrings, 0, U"Change...", U"Replace all...", praat_HIDDEN, NEW_Strings_change);
-	praat_addAction1 (classStrings, 0, U"Extract part...", U"Replace all...", 0, NEW_Strings_extractPart);
-	praat_addAction1 (classStrings, 0, U"To Permutation...", U"To Distributions", 0, NEW_Strings_to_Permutation);
-	praat_addAction1 (classStrings, 0, U"To NavigationContext...", U"To Distributions", 0, NEW_Strings_to_NavigationContext);
-	praat_addAction1 (classStrings, 2, U"To EditDistanceTable", U"To Distributions", 0, NEW_Strings_to_EditDistanceTable);
+	praat_addAction1 (classStrings, 0, U"To Categories", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Strings_to_Categories);
+	praat_addAction1 (classStrings, 0, U"Append", nullptr, 0, 
+			COMBINE_ALL_TO_ONE__Strings_append);
+	praat_addAction1 (classStrings, 0, U"Change...", U"Replace all...", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Strings_change);
+	praat_addAction1 (classStrings, 0, U"Extract part...", U"Replace all...", 0, 
+			CONVERT_EACH_TO_ONE__Strings_extractPart);
+	praat_addAction1 (classStrings, 0, U"To Permutation...", U"To Distributions", 0, 
+			CONVERT_EACH_TO_ONE__Strings_to_Permutation);
+	praat_addAction1 (classStrings, 2, U"To EditDistanceTable", U"To Distributions", 0, 
+			CONVERT_TWO_TO_ONE__Strings_to_EditDistanceTable);
 
-	praat_addAction1 (classSVD, 0, U"SVD help", nullptr, 0, HELP_SVD_help);
-	praat_addAction1 (classSVD, 0, QUERY_BUTTON, nullptr, 0, 0);
-	praat_addAction1 (classSVD, 1, U"Get number of rows", nullptr, 1, INTEGER_SVD_getNumberOfRows);
-	praat_addAction1 (classSVD, 1, U"Get number of columns", nullptr, 1, INTEGER_SVD_getNumberOfColumns);
-	praat_addAction1 (classSVD, 1, U"Get condition number", nullptr, 1, REAL_SVD_getConditionNumber);
+	praat_addAction1 (classSVD, 0, U"SVD help", nullptr, 0, 
+			HELP__SVD_help);
+	praat_addAction1 (classSVD, 0, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (classSVD, 1, U"Get number of rows", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__SVD_getNumberOfRows);
+	praat_addAction1 (classSVD, 1, U"Get number of columns", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__SVD_getNumberOfColumns);
+	praat_addAction1 (classSVD, 1, U"Get rank", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__SVD_getRank);
+	praat_addAction1 (classSVD, 1, U"Get condition number", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__SVD_getConditionNumber);
 	praat_addAction1 (classSVD, 0, U"-- singular values ---", nullptr, 1, nullptr);
-	praat_addAction1 (classSVD, 1, U"Get singular value...", nullptr, 1, REAL_SVD_getSingularValue);
-	praat_addAction1 (classSVD, 1, U"Get sum of singular values...", nullptr, 1, REAL_SVD_getSumOfSingularValues);
-	praat_addAction1 (classSVD, 1, U"Get sum of singular values (fraction)...", nullptr, 1, REAL_SVD_getSumOfSingularValuesAsFractionOfTotal);
-	praat_addAction1 (classSVD, 1, U"Get minimum number of singular values...", nullptr, 1, INTEGER_SVD_getMinimumNumberOfSingularValues);
+	praat_addAction1 (classSVD, 1, U"Get singular value...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__SVD_getSingularValue);
+	praat_addAction1 (classSVD, 1, U"Get sum of singular values...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__SVD_getSumOfSingularValues);
+	praat_addAction1 (classSVD, 1, U"Get sum of singular values (fraction)...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__SVD_getSumOfSingularValuesAsFractionOfTotal);
+	praat_addAction1 (classSVD, 1, U"Get minimum number of singular values...", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__SVD_getMinimumNumberOfSingularValues);
+	praat_addAction1 (classSVD, 1, U"Get shrinkage parameter...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__SVD_getShrinkageParameter);	
+	praat_addAction1 (classSVD, 1, U"Get effective degrees of freedom...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__SVD_getEffectiveDegreesOfFreedom);
 	
-	praat_addAction1 (classSVD, 0, U"To TableOfReal...", nullptr, 0, NEW_SVD_to_TableOfReal);
-	praat_addAction1 (classSVD, 0, U"To Matrix...", nullptr, 0, NEW_SVD_to_Matrix);
-	praat_addAction1 (classSVD, 0, U"Extract left singular vectors", nullptr, 0, NEW_SVD_extractLeftSingularVectors);
-	praat_addAction1 (classSVD, 0, U"Extract right singular vectors", nullptr, 0, NEW_SVD_extractRightSingularVectors);
-	praat_addAction1 (classSVD, 0, U"Extract singular values", nullptr, 0, NEW_SVD_extractSingularValues);
-		praat_addAction1 (classTable, 0, U"Draw ellipses...", U"Draw ellipse (standard deviation)...", praat_DEPTH_1, GRAPHICS_Table_drawEllipses);
-		praat_addAction1 (classTable, 0, U"Box plots...", U"Draw ellipses...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_Table_boxPlots);
-		praat_addAction1 (classTable, 0, U"Normal probability plot...", U"Box plots...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_Table_normalProbabilityPlot);
-		praat_addAction1 (classTable, 0, U"Quantile-quantile plot...", U"Normal probability plot...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_Table_quantileQuantilePlot);
-		praat_addAction1 (classTable, 0, U"Quantile-quantile plot (between levels)...", U"Quantile-quantile plot...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_Table_quantileQuantilePlot_betweenLevels);
-		praat_addAction1 (classTable, 0, U"Lag plot...", U"Quantile-quantile plot (between levels)...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_Table_lagPlot);
-		praat_addAction1 (classTable, 0, U"Horizontal error bars plot...", U"Scatter plot (mark)...", praat_DEPTH_1, GRAPHICS_Table_horizontalErrorBarsPlot);
-		praat_addAction1 (classTable, 0, U"Vertical error bars plot...", U"Scatter plot (mark)...", praat_DEPTH_1, GRAPHICS_Table_verticalErrorBarsPlot);
-		praat_addAction1 (classTable, 0, U"Distribution plot...", U"Quantile-quantile plot...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_Table_distributionPlot);
+	praat_addAction1 (classSVD, 0, U"To TableOfReal...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SVD_to_TableOfReal);
+	praat_addAction1 (classSVD, 0, U"To Matrix...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SVD_to_Matrix);
+	praat_addAction1 (classSVD, 0, U"Extract left singular vectors", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SVD_extractLeftSingularVectors);
+	praat_addAction1 (classSVD, 0, U"Extract right singular vectors", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SVD_extractRightSingularVectors);
+	praat_addAction1 (classSVD, 0, U"Extract singular values", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__SVD_extractSingularValues);
+		praat_addAction1 (classTable, 0, U"Draw ellipses...", U"Draw ellipse (standard deviation)...", GuiMenu_DEPTH_1,
+				GRAPHICS_EACH__Table_drawEllipses);
+		praat_addAction1 (classTable, 0, U"Box plots...", U"Draw ellipses...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+				GRAPHICS_EACH__Table_boxPlots);
+		praat_addAction1 (classTable, 0, U"Normal probability plot...", U"Box plots...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+				GRAPHICS_EACH__Table_normalProbabilityPlot);
+		praat_addAction1 (classTable, 0, U"Quantile-quantile plot...", U"Normal probability plot...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+				GRAPHICS_EACH__Table_quantileQuantilePlot);
+		praat_addAction1 (classTable, 0, U"Quantile-quantile plot (between levels)...", U"Quantile-quantile plot...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+				GRAPHICS_EACH__Table_quantileQuantilePlot_betweenLevels);
+		praat_addAction1 (classTable, 0, U"Lag plot...", U"Quantile-quantile plot (between levels)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+				GRAPHICS_EACH__Table_lagPlot);
+		praat_addAction1 (classTable, 0, U"Horizontal error bars plot...", U"Scatter plot (mark)...", GuiMenu_DEPTH_1,
+				GRAPHICS_EACH__Table_horizontalErrorBarsPlot);
+		praat_addAction1 (classTable, 0, U"Vertical error bars plot...", U"Scatter plot (mark)...", GuiMenu_DEPTH_1,
+				GRAPHICS_EACH__Table_verticalErrorBarsPlot);
+		praat_addAction1 (classTable, 0, U"Distribution plot...", U"Quantile-quantile plot...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+				GRAPHICS_EACH__Table_distributionPlot);
 		praat_addAction1 (classTable, 1, U"Draw where",  U"Lag plot...", 1 , 0);
-			praat_addAction1 (classTable, 0, U"Scatter plot where...", U"Draw where", 2, GRAPHICS_Table_scatterPlotWhere);
-			praat_addAction1 (classTable, 0, U"Scatter plot where (mark)...", U"Scatter plot where...", 2, GRAPHICS_Table_scatterPlotMarkWhere);
-			praat_addAction1 (classTable, 0, U"Horizontal error bars plot where...", U"Scatter plot where (mark)...", praat_DEPTH_2, GRAPHICS_Table_horizontalErrorBarsPlotWhere);
-			praat_addAction1 (classTable, 0, U"Vertical error bars plot where...", U"Scatter plot where (mark)...", praat_DEPTH_2, GRAPHICS_Table_verticalErrorBarsPlotWhere);
-			praat_addAction1 (classTable, 0, U"Distribution plot where...", U"Scatter plot where (mark)...", 2, GRAPHICS_Table_distributionPlotWhere);
-			praat_addAction1 (classTable, 0, U"Draw ellipse where (standard deviation)...", U"Distribution plot where...", 2, GRAPHICS_Table_drawEllipseWhere);
-			praat_addAction1 (classTable, 0, U"Box plots where...", U"Draw ellipse where (standard deviation)...", 2, GRAPHICS_Table_boxPlotsWhere);
-			praat_addAction1 (classTable, 0, U"Normal probability plot where...", U"Box plots where...", 2, GRAPHICS_Table_normalProbabilityPlotWhere);
-			praat_addAction1 (classTable, 0, U"Bar plot where...", U"Normal probability plot where...", 2, GRAPHICS_Table_barPlotWhere);
-			praat_addAction1 (classTable, 0, U"Line graph where...", U"Bar plot where...", 2, GRAPHICS_Table_LineGraphWhere);
-			praat_addAction1 (classTable, 0, U"Lag plot where...", U"Line graph where...", 2, GRAPHICS_Table_lagPlotWhere);
-			praat_addAction1 (classTable, 0, U"Draw ellipses where...", U"Lag plot where...", 2, GRAPHICS_Table_drawEllipsesWhere);
+			praat_addAction1 (classTable, 0, U"Scatter plot where...", U"Draw where", 2, 
+					GRAPHICS_EACH__Table_scatterPlotWhere);
+			praat_addAction1 (classTable, 0, U"Scatter plot where (mark)...", U"Scatter plot where...", 2, 
+					GRAPHICS_EACH__Table_scatterPlotMarkWhere);
+			praat_addAction1 (classTable, 0, U"Horizontal error bars plot where...", U"Scatter plot where (mark)...", GuiMenu_DEPTH_2,
+					GRAPHICS_EACH__Table_horizontalErrorBarsPlotWhere);
+			praat_addAction1 (classTable, 0, U"Vertical error bars plot where...", U"Scatter plot where (mark)...", GuiMenu_DEPTH_2,
+					GRAPHICS_EACH__Table_verticalErrorBarsPlotWhere);
+			praat_addAction1 (classTable, 0, U"Distribution plot where...", U"Scatter plot where (mark)...", 2, 
+					GRAPHICS_EACH__Table_distributionPlotWhere);
+			praat_addAction1 (classTable, 0, U"Draw ellipse where (standard deviation)...", U"Distribution plot where...", 2,
+					GRAPHICS_EACH__Table_drawEllipseWhere);
+			praat_addAction1 (classTable, 0, U"Box plots where...", U"Draw ellipse where (standard deviation)...", 2, 
+					GRAPHICS_EACH__Table_boxPlotsWhere);
+			praat_addAction1 (classTable, 0, U"Normal probability plot where...", U"Box plots where...", 2,
+					GRAPHICS_EACH__Table_normalProbabilityPlotWhere);
+			praat_addAction1 (classTable, 0, U"Bar plot where...", U"Normal probability plot where...", 2, 
+					GRAPHICS_EACH__Table_barPlotWhere);
+			praat_addAction1 (classTable, 0, U"Line graph where...", U"Bar plot where...", 2, 
+					GRAPHICS_EACH__Table_LineGraphWhere);
+			praat_addAction1 (classTable, 0, U"Lag plot where...", U"Line graph where...", 2, 
+					GRAPHICS_EACH__Table_lagPlotWhere);
+			praat_addAction1 (classTable, 0, U"Draw ellipses where...", U"Lag plot where...", 2, 
+					GRAPHICS_EACH__Table_drawEllipsesWhere);
 
-	praat_addAction1 (classTable, 1, U"List row numbers where...", U"Get number of rows", praat_DEPTH_1,	NUMVEC_Table_listRowNumbersWhere);
-	praat_addAction1 (classTable, 1, U"Get number of rows where...", U"Get number of rows", praat_DEPTH_1 | praat_HIDDEN,	INTEGER_Table_getNumberOfRowsWhere);
-	praat_addAction1 (classTable, 1, U"Report one-way anova...", U"Report group difference (Wilcoxon rank sum)...", praat_DEPTH_1 | praat_HIDDEN,	INFO_Table_reportOneWayAnova);
-	praat_addAction1 (classTable, 1, U"Report one-way Kruskal-Wallis...", U"Report one-way anova...", praat_DEPTH_1 | praat_HIDDEN, INFO_Table_reportOneWayKruskalWallis);
-	praat_addAction1 (classTable, 1, U"Report two-way anova...", U"Report one-way Kruskal-Wallis...", praat_DEPTH_1 | praat_HIDDEN, INFO_Table_reportTwoWayAnova);
-	praat_addAction1 (classTable, 1, U"Report robust statistics...", U"Report two-way anova...", praat_DEPTH_1 | praat_HIDDEN, INFO_Table_reportRobustStatistics);
-	praat_addAction1 (classTable, 0, U"Extract rows where...", U"Extract rows where column (text)...", praat_DEPTH_1, NEW_Table_extractRowsWhere);
-	praat_addAction1 (classTable, 0, U"Extract rows where (mahalanobis)...", U"Extract rows where...", praat_DEPTH_1| praat_HIDDEN, NEW_Table_extractRowsMahalanobisWhere);
-	praat_addAction1 (classTable, 0, U"-- Extract columns ----", U"Extract rows where (mahalanobis)...", praat_DEPTH_1| praat_HIDDEN, 0);
-	praat_addAction1 (classTable, 0, U"Extract column ranges...", U"-- Extract columns ----", praat_DEPTH_1| praat_HIDDEN, NEW_Table_extractColumnRanges);
+	praat_addAction1 (classTable, 1, U"List row numbers where...", U"Get number of rows", GuiMenu_DEPTH_1,
+			QUERY_ONE_FOR_REAL_VECTOR__Table_listRowNumbersWhere);
+	praat_addAction1 (classTable, 1, U"Get number of rows where...", U"Get number of rows", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+		QUERY_ONE_FOR_INTEGER__Table_getNumberOfRowsWhere);
+	praat_addAction1 (classTable, 1, U"Report one-way anova...", U"Report group difference (Wilcoxon rank sum)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			INFO_ONE__Table_reportOneWayAnova);
+	praat_addAction1 (classTable, 1, U"Report one-way Kruskal-Wallis...", U"Report one-way anova...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			INFO_ONE__Table_reportOneWayKruskalWallis);
+	praat_addAction1 (classTable, 1, U"Report two-way anova...", U"Report one-way Kruskal-Wallis...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			INFO_ONE__Table_reportTwoWayAnova);
+	praat_addAction1 (classTable, 1, U"Report robust statistics...", U"Report two-way anova...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			INFO_ONE__Table_reportRobustStatistics);
+	praat_addAction1 (classTable, 0, U"Extract rows where...", U"Extract rows where column (text)...", GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Table_extractRowsWhere);
+	praat_addAction1 (classTable, 0, U"Extract rows where (mahalanobis)...", U"Extract rows where...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Table_extractRowsMahalanobisWhere);
+	praat_addAction1 (classTable, 0, U"-- Extract columns ----", U"Extract rows where (mahalanobis)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN, 0);
+	praat_addAction1 (classTable, 0, U"Extract columns by number...", U"-- Extract columns ----", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Table_extractColumnsByNumber);
+	praat_addAction1 (classTable, 0, U"Extract column ranges...", U"*Extract columns by number...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Table_extractColumnsByNumber);
 
-	praat_addAction1 (classTable, 0, U"To KlattTable", nullptr, praat_HIDDEN, NEW_Table_to_KlattTable);
-	praat_addAction1 (classTable, 1, U"Get median absolute deviation...", U"Get standard deviation...", 1, REAL_Table_getMedianAbsoluteDeviation);
-	praat_addAction1 (classTable, 0, U"To StringsIndex (column)...", nullptr, praat_HIDDEN, NEW_Table_to_StringsIndex_column);
-
-	praat_addAction1 (classTableOfReal, 1, U"Report multivariate normality...", U"Get column stdev (label)...", praat_DEPTH_1 | praat_HIDDEN, INFO_TableOfReal_reportMultivariateNormality);
-	praat_addAction1 (classTableOfReal, 0, U"Append columns", U"Append", 1, NEW1_TableOfReal_appendColumns);
+	praat_addAction1 (classTable, 0, U"To KlattTable", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Table_to_KlattTable);
+	praat_addAction1 (classTable, 1, U"Get median absolute deviation...", U"Get standard deviation...", 1, 
+			QUERY_ONE_FOR_REAL__Table_getMedianAbsoluteDeviation);
+	praat_addAction1 (classTable, 0, U"To StringsIndex (column)...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__Table_to_StringsIndex_column);
+	praat_addAction1 (classTableOfReal, 0, U"Multivariate tests -", U"Get column stdev (label)...", 1,
+		nullptr);
+		praat_addAction1 (classTableOfReal, 1, U"Report multivariate normality...", U"Multivariate tests -", 
+			GuiMenu_DEPTH_2, INFO_ONE__TableOfReal_reportMultivariateNormality);
+		praat_addAction1 (classTableOfReal, 1, U"Report covariance sphericity...", U"Report multivariate normality...",
+			GuiMenu_DEPTH_2, INFO_ONE__TableOfReal_reportSphericityOfCovariance);
+		praat_addAction1 (classTableOfReal, 1, U"Report covariance compound symmetry...",  U"Report covariance sphericity...",
+			GuiMenu_DEPTH_2, INFO_ONE__TableOfReal_reportCompoundSymmetryOfCovariance);
+		praat_addAction1 (classTableOfReal, 1, U"Report covariance identity...",  U"Report covariance compound symmetry...",
+			GuiMenu_DEPTH_2, INFO_ONE__TableOfReal_reportCovarianceIdentity);
+		praat_addAction1 (classTableOfReal, 2, U"Report equality of covariances...",  U"Report covariance identity...",
+			GuiMenu_DEPTH_2, INFO_TWO__TableOfReal_reportEqualityOfCovariances);
+	praat_addAction1 (classTableOfReal, 0, U"Append columns", U"Append", 1, 
+			COMBINE_ALL_LISTED_TO_ONE__TableOfReal_appendColumns);
 	praat_addAction1 (classTableOfReal, 0, U"Multivariate statistics -", nullptr, 0, 0);
-	praat_addAction1 (classTableOfReal, 0, U"To Discriminant", nullptr, 1, NEW_TableOfReal_to_Discriminant);
-	praat_addAction1 (classTableOfReal, 0, U"To PCA", nullptr, 1, NEW_TableOfReal_to_PCA_byRows);
-	praat_addAction1 (classTableOfReal, 0, U"To SSCP...", nullptr, 1, NEW_TableOfReal_to_SSCP);
-	praat_addAction1 (classTableOfReal, 0, U"To SSCP (row weights)...", nullptr, 1, NEW_TableOfReal_to_SSCP_rowWeights);
-	praat_addAction1 (classTableOfReal, 0, U"To Covariance", nullptr, 1, NEW_TableOfReal_to_Covariance);
-	praat_addAction1 (classTableOfReal, 0, U"To Correlation", nullptr, 1, NEW_TableOfReal_to_Correlation);
-	praat_addAction1 (classTableOfReal, 0, U"To Correlation (rank)", nullptr, 1, NEW_TableOfReal_to_Correlation_rank);
-	praat_addAction1 (classTableOfReal, 0, U"To CCA...", nullptr, 1, NEW_TableOfReal_to_CCA);
-	praat_addAction1 (classTableOfReal, 0, U"To TableOfReal (means by row labels)...", nullptr, 1, NEW_TableOfReal_meansByRowLabels);
-	praat_addAction1 (classTableOfReal, 0, U"To TableOfReal (medians by row labels)...", nullptr, 1, NEW_TableOfReal_mediansByRowLabels);
-	praat_addAction1 (classTableOfReal, 0, U"To TableOfReal (rank columns)...", nullptr, praat_HIDDEN + praat_DEPTH_1, NEW_TableOfReal_to_TableOfReal_rankColumns);
+	praat_addAction1 (classTableOfReal, 0, U"To Discriminant", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_Discriminant);
+	praat_addAction1 (classTableOfReal, 0, U"To PCA", nullptr, 1,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_PCA_byRows);
+	praat_addAction1 (classTableOfReal, 0, U"To SSCP...", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_SSCP);
+	praat_addAction1 (classTableOfReal, 0, U"To SSCP (row weights)...", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_SSCP_rowWeights);
+	praat_addAction1 (classTableOfReal, 0, U"To Covariance", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_Covariance);
+	praat_addAction1 (classTableOfReal, 0, U"To Correlation", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_Correlation);
+	praat_addAction1 (classTableOfReal, 0, U"To Correlation (rank)", nullptr, 1,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_Correlation_rank);
+	praat_addAction1 (classTableOfReal, 0, U"To CCA...", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_CCA);
+	praat_addAction1 (classTableOfReal, 0, U"To TableOfReal (means by row labels)...", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_meansByRowLabels);
+	praat_addAction1 (classTableOfReal, 0, U"To TableOfReal (medians by row labels)...", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_mediansByRowLabels);
+	praat_addAction1 (classTableOfReal, 0, U"To TableOfReal (rank columns)...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_TableOfReal_rankColumns);
 	praat_addAction1 (classTableOfReal, 0, U"-- configurations --", nullptr, 1, 0);
-	praat_addAction1 (classTableOfReal, 0, U"To Configuration (pca)...", nullptr, 1, NEW_TableOfReal_to_Configuration_pca);
-	praat_addAction1 (classTableOfReal, 0, U"To Configuration (lda)...", nullptr, 1, NEW_TableOfReal_to_Configuration_lda);
+	praat_addAction1 (classTableOfReal, 0, U"To Configuration (pca)...", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_Configuration_pca);
+	praat_addAction1 (classTableOfReal, 0, U"To Configuration (lda)...", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TableOfReal_to_Configuration_lda);
 	praat_addAction1 (classTableOfReal, 2, U"-- between tables --", nullptr, 1, 0);
-	praat_addAction1 (classTableOfReal, 2, U"To TableOfReal (cross-correlations)...", nullptr, praat_HIDDEN + praat_DEPTH_1, NEW1_TableOfReal_TableOfReal_crossCorrelations);
+	praat_addAction1 (classTableOfReal, 2, U"To TableOfReal (cross-correlations)...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			CONVERT_TWO_TO_ONE__TableOfReal_TableOfReal_crossCorrelations);
 
-	praat_addAction1 (classTableOfReal, 1, U"To PatternList and Categories...", U"To Matrix", 1, NEWMANY_TableOfReal_to_PatternList_and_Categories);
-	praat_addAction1 (classTableOfReal, 1, U"To Pattern and Categories...", U"*To PatternList and Categories...", praat_DEPTH_1 | praat_DEPRECATED_2015, NEWMANY_TableOfReal_to_PatternList_and_Categories);
-	praat_addAction1 (classTableOfReal, 1, U"Split into Pattern and Categories...", U"*To PatternList and Categories...", praat_DEPTH_1 | praat_DEPRECATED_2015, NEWMANY_TableOfReal_to_PatternList_and_Categories);
-	praat_addAction1 (classTableOfReal, 0, U"To Permutation (sort row labels)", U"To Matrix", 1, NEW_TableOfReal_to_Permutation_sortRowlabels);
+	praat_addAction1 (classTableOfReal, 1, U"To PatternList and Categories...", U"To Matrix", 1,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_PatternList_and_Categories);
+	praat_addAction1 (classTableOfReal, 1, U"To Pattern and Categories...", U"*To PatternList and Categories...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2015,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_PatternList_and_Categories);
+	praat_addAction1 (classTableOfReal, 1, U"Split into Pattern and Categories...", U"*To PatternList and Categories...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2015,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_PatternList_and_Categories);
+	praat_addAction1 (classTableOfReal, 0, U"To Permutation (sort row labels)", U"To Matrix", 1,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_Permutation_sortRowlabels);
 
-	praat_addAction1 (classTableOfReal, 1, U"To SVD", nullptr, praat_HIDDEN, NEW_TableOfReal_to_SVD);
-	praat_addAction1 (classTableOfReal, 2, U"To GSVD", nullptr, praat_HIDDEN, NEW1_TablesOfReal_to_GSVD);
-	praat_addAction1 (classTableOfReal, 2, U"To Eigen (gsvd)", nullptr, praat_HIDDEN, NEW1_TablesOfReal_to_Eigen_gsvd);
+	praat_addAction1 (classTableOfReal, 1, U"To SVD", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_SVD);
+	praat_addAction1 (classTableOfReal, 2, U"To GSVD", nullptr, GuiMenu_HIDDEN,
+			CONVERT_TWO_TO_ONE__TablesOfReal_to_GSVD);
+	praat_addAction1 (classTableOfReal, 2, U"To Eigen (gsvd)", nullptr, GuiMenu_HIDDEN,
+			CONVERT_TWO_TO_ONE__TablesOfReal_to_Eigen_gsvd);
 
-	praat_addAction1 (classTableOfReal, 0, U"To TableOfReal (cholesky)...", nullptr, praat_HIDDEN, NEW_TableOfReal_choleskyDecomposition);
+	praat_addAction1 (classTableOfReal, 0, U"To TableOfReal (cholesky)...", nullptr, GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__TableOfReal_choleskyDecomposition);
 
-	praat_addAction1 (classTableOfReal, 0, U"Draw as scalable squares...", U"Draw as squares...", 1, GRAPHICS_TableOfReal_drawAsScalableSquares);
+	praat_addAction1 (classTableOfReal, 0, U"Draw as scalable squares...", U"Draw as squares...", 1, 
+			GRAPHICS_EACH__TableOfReal_drawAsScalableSquares);
 	praat_addAction1 (classTableOfReal, 0, U"-- scatter plots --", U"Draw top and bottom lines...", 1, 0);
-	praat_addAction1 (classTableOfReal, 0, U"Draw scatter plot...", U"-- scatter plots --", 1, GRAPHICS_TableOfReal_drawScatterPlot);
-	praat_addAction1 (classTableOfReal, 0, U"Draw scatter plot matrix...", U"Draw scatter plot...", 1, GRAPHICS_TableOfReal_drawScatterPlotMatrix);
-	praat_addAction1 (classTableOfReal, 0, U"Draw box plots...", U"Draw scatter plot matrix...", 1, GRAPHICS_TableOfReal_drawBoxPlots);
-	praat_addAction1 (classTableOfReal, 0, U"Draw biplot...", U"Draw box plots...", 1, GRAPHICS_TableOfReal_drawBiplot);
-	praat_addAction1 (classTableOfReal, 0, U"Draw vectors...", U"Draw box plots...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_TableOfReal_drawVectors);
-	praat_addAction1 (classTableOfReal, 1, U"Draw row as histogram...", U"Draw biplot...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_TableOfReal_drawRowAsHistogram);
-	praat_addAction1 (classTableOfReal, 1, U"Draw rows as histogram...", U"Draw row as histogram...", praat_DEPTH_1 | praat_HIDDEN, GRAPHICS_TableOfReal_drawRowsAsHistogram);
-	praat_addAction1 (classTableOfReal, 1, U"Draw column as distribution...", U"Draw rows as histogram...", praat_DEPTH_1, GRAPHICS_TableOfReal_drawColumnAsDistribution);
+	praat_addAction1 (classTableOfReal, 0, U"Draw scatter plot...", U"-- scatter plots --", 1,
+			GRAPHICS_EACH__TableOfReal_drawScatterPlot);
+	praat_addAction1 (classTableOfReal, 0, U"Draw scatter plot matrix...", U"Draw scatter plot...", 1, 
+			GRAPHICS_EACH__TableOfReal_drawScatterPlotMatrix);
+	praat_addAction1 (classTableOfReal, 0, U"Draw box plots...", U"Draw scatter plot matrix...", 1, 
+			GRAPHICS_EACH__TableOfReal_drawBoxPlots);
+	praat_addAction1 (classTableOfReal, 0, U"Draw biplot...", U"Draw box plots...", 1,
+			GRAPHICS_EACH__TableOfReal_drawBiplot);
+	praat_addAction1 (classTableOfReal, 0, U"Draw vectors...", U"Draw box plots...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			GRAPHICS_EACH__TableOfReal_drawVectors);
+	praat_addAction1 (classTableOfReal, 1, U"Draw row as histogram...", U"Draw biplot...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			GRAPHICS_EACH__TableOfReal_drawRowAsHistogram);
+	praat_addAction1 (classTableOfReal, 1, U"Draw rows as histogram...", U"Draw row as histogram...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+			GRAPHICS_EACH__TableOfReal_drawRowsAsHistogram);
+	praat_addAction1 (classTableOfReal, 1, U"Draw column as distribution...", U"Draw rows as histogram...", GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__TableOfReal_drawColumnAsDistribution);
 
-	praat_addAction2 (classStrings, 1, classPermutation, 1, U"Permute strings", nullptr, 0, NEW1_Strings_Permutation_permuteStrings);
+	praat_addAction2 (classStrings, 1, classPermutation, 1, U"Permute strings", nullptr, 0, 
+			CONVERT_ONE_AND_ONE_TO_ONE__Strings_Permutation_permuteStrings);
 
-	praat_addAction2 (classTableOfReal, 1, classPermutation, 1, U"Permute rows", nullptr, 0, NEW1_TableOfReal_Permutation_permuteRows);
+	praat_addAction2 (classTableOfReal, 1, classPermutation, 1, U"Permute rows", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__TableOfReal_Permutation_permuteRows);
+	praat_addAction2 (classTableOfReal, 1, classPermutation, 1, U"Permute columns", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__TableOfReal_Permutation_permuteColumns);
 
-	praat_addAction1 (classTextGrid, 1, U"Get total duration of intervals where...", U"Count intervals where...", 2, REAL_TextGrid_getTotalDurationOfIntervalsWhere);
-	praat_addAction1 (classTextGrid, 0, U"Extend time...", U"Scale times...", 2, MODIFY_TextGrid_extendTime);
-	praat_addAction1 (classTextGrid, 1, U"Set tier name...", U"Remove tier...", 1, MODIFY_TextGrid_setTierName);
-	praat_addAction1 (classTextGrid, 0, U"Replace interval texts...", U"Set interval text...", 2, MODIFY_TextGrid_replaceIntervalTexts);
-	praat_addAction1 (classTextGrid, 0, U"Replace interval text...", U"*Replace interval texts...", praat_DEPTH_2 | praat_DEPRECATED_2018, MODIFY_TextGrid_replaceIntervalTexts);
-	praat_addAction1 (classTextGrid, 0, U"Replace point texts...", U"Set point text...", 2, MODIFY_TextGrid_replacePointTexts);
-	praat_addAction1 (classTextGrid, 0, U"Replace point text...", U"*Replace point texts...", praat_DEPTH_2 | praat_DEPRECATED_2018, MODIFY_TextGrid_replacePointTexts);
-	praat_addAction1 (classTextGrid, 2, U"To Table (text alignment)...", U"Extract part...", 0, NEW1_TextGrids_to_Table_textAlignment);
-	praat_addAction1 (classTextGrid, 0, U"To DurationTier...", U"Concatenate", 0, NEW_TextGrid_to_DurationTier);
-	praat_addAction2 (classTextGrid, 1, classDurationTier, 1, U"To TextGrid (scale times)", nullptr, 0, NEW_TextGrid_DurationTier_to_TextGrid);
-	praat_addAction2 (classTextGrid, 2, classEditCostsTable, 1, U"To Table (text alignment)...", nullptr, 0, NEW1_TextGrids_EditCostsTable_to_Table_textAlignment);
-	praat_addAction2 (classTextGrid, 1, classNavigationContext, 1, U"To TextGridNavigator...", nullptr, 0, NEW_TextGrid_NavigationContext_to_TextGridNavigator);
+	praat_addAction1 (classTextGrid, 1, U"Get total duration of intervals where...", U"Count intervals where...", 2,
+			QUERY_ONE_FOR_REAL__TextGrid_getTotalDurationOfIntervalsWhere);
+	praat_addAction1 (classTextGrid, 0, U"Extend time...", U"Scale times...", 2, 
+			MODIFY_TextGrid_extendTime);
+	praat_addAction1 (classTextGrid, 1, U"Set tier name...", U"Remove tier...", 1,
+			MODIFY_EACH__TextGrid_setTierName);
+	praat_addAction1 (classTextGrid, 0, U"Replace interval texts...", U"Set interval text...", 2, 
+			MODIFY_TextGrid_replaceIntervalTexts);
+	praat_addAction1 (classTextGrid, 0, U"Replace interval text...", U"*Replace interval texts...", GuiMenu_DEPTH_2 | GuiMenu_DEPRECATED_2018,
+			MODIFY_TextGrid_replaceIntervalTexts);
+	praat_addAction1 (classTextGrid, 0, U"Replace point texts...", U"Set point text...", 2, 
+			MODIFY_TextGrid_replacePointTexts);
+	praat_addAction1 (classTextGrid, 0, U"Replace point text...", U"*Replace point texts...", GuiMenu_DEPTH_2 | GuiMenu_DEPRECATED_2018,
+			MODIFY_TextGrid_replacePointTexts);
+	praat_addAction1 (classTextGrid, 2, U"To Table (text alignment)...", U"Extract part...", 0, 
+			CONVERT_TWO_TO_ONE__TextGrids_to_Table_textAlignment);
+	praat_addAction1 (classTextGrid, 0, U"To DurationTier...", U"Concatenate", 0, 
+			CONVERT_EACH_TO_ONE__TextGrid_to_DurationTier);
+	praat_addAction1 (classTextGrid, 0, U"To TextGridNavigator (topic only)...", U"To DurationTier...", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__TextGrid_to_TextGridNavigator_topicSearch);
+	praat_addAction1 (classTextGrid, 0, U"To TextGridNavigator...", U"To DurationTier...", GuiMenu_HIDDEN,
+			CONVERT_EACH_TO_ONE__TextGrid_to_TextGridNavigator);
+	praat_addAction2 (classTextGrid, 1, classDurationTier, 1, U"To TextGrid (scale times)", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__TextGrid_DurationTier_to_TextGrid);
 	
-	praat_addAction1 (classTextGridNavigator, 1, U"Get first match", nullptr, 0, INTEGER_TextGridNavigator_getFirstMatch);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get last match", nullptr, 0, INTEGER_TextGridNavigator_getLastMatch);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get next match after time...", nullptr, 0, INTEGER_TextGridNavigator_getNextMatchAfterTime);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get previous match before time...", nullptr, 0, INTEGER_TextGridNavigator_getPreviousMatchBeforeTime);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get current start time", nullptr, 0, REAL_TextGridNavigator_getCurrentStartTime);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get current end time", nullptr, 0, REAL_TextGridNavigator_getCurrentEndTime);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get current label", nullptr, 0, INFO_TextGridNavigator_getCurrentLabel);
+	praat_addAction2 (classTextGrid, 2, classEditCostsTable, 1, U"To Table (text alignment)...", nullptr, 0,
+			CONVERT_TWO_AND_ONE_TO_ONE__TextGrids_EditCostsTable_to_Table_textAlignment);
+	praat_addAction2 (classTextGrid, 1, classNavigationContext, 1, U"To TextGridNavigator...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__TextGrid_and_NavigationContext_to_TextGridNavigator);
+	praat_addAction2 (classTextGrid, 1, classNavigationContext, 1, U"To TextGridTierNavigator...", nullptr, 0,
+			CONVERT_ONE_AND_ONE_TO_ONE__TextGrid_and_NavigationContext_to_TextGridTierNavigator);
 	
-	praat_addAction2 (classTextGridNavigator, 1, classNavigationContext, 1, U"Add navigation context...", nullptr, 0, MODIFY_TextGridNavigator_addNavigationContext);
+	praat_addAction1 (classTextGridNavigator, 0, U"TextGridNavigator help", nullptr, 0, 
+			HELP__TextGridNavigator_help);
+	praat_addAction1 (classTextGridNavigator, 0, U"Find first", nullptr, 0, 
+			MODIFY_EACH__TextGridNavigator_findFirst);
+	praat_addAction1 (classTextGridNavigator, 0, U"Find last", nullptr, 0,
+			MODIFY_EACH__TextGridNavigator_findLast);
+	praat_addAction1 (classTextGridNavigator, 0, U"Find next", nullptr, 0, 
+			MODIFY_EACH__TextGridNavigator_findNext);
+	praat_addAction1 (classTextGridNavigator, 0, U"Find next after time...", nullptr, 0, 
+			MODIFY_EACH__TextGridNavigator_findNextAfterTime);
+	praat_addAction1 (classTextGridNavigator, 0, U"Find previous", nullptr, 0, 
+			MODIFY_EACH__TextGridNavigator_findPrevious);
+	praat_addAction1 (classTextGridNavigator, 0, U"Find previous before time...", nullptr, 0, 
+			MODIFY_EACH__TextGridNavigator_findPreviousBeforeTime);
 	
-
+	praat_addAction1 (classTextGridNavigator, 0, U"Query -", nullptr, 0, nullptr);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get start time...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__TextGridNavigator_getStartTime);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get label...", nullptr, 1, 
+			QUERY_ONE_FOR_STRING__TextGridNavigator_getLabel);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get end time...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL__TextGridNavigator_getEndTime);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get index...", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getIndex);
+	praat_addAction1 (classTextGridNavigator, 1, U"-- number of matches --", nullptr, 1, nullptr);
+	praat_addAction1 (classTextGridNavigator, 1, U"List indices...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listIndices);
+	praat_addAction1 (classTextGridNavigator, 1, U"List start times...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listStartTimes);
+	praat_addAction1 (classTextGridNavigator, 1, U"List labels...", nullptr, 1, 
+			QUERY_ONE_FOR_STRING_ARRAY__TextGridNavigator_listLabels);
+	praat_addAction1 (classTextGridNavigator, 1, U"List end times...", nullptr, 1, 
+			QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listEndTimes);
+	praat_addAction1 (classTextGridNavigator, 1, U"List domains...", nullptr, 1, 
+			QUERY_ONE_FOR_MATRIX__TextGridNavigator_listDomains);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get number of matches", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfMatches);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get number of Topic matches...", nullptr, 1, 
+		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfTopicMatches);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get number of Before matches...", nullptr, 1,
+		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfBeforeMatches);
+	praat_addAction1 (classTextGridNavigator, 1, U"Get number of After matches...", nullptr, 1,
+		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfAfterMatches);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify -", nullptr, 0, nullptr);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify Topic match criterion...", nullptr, 1,
+			MODIFY_EACH__TextGridNavigator_modifyTopicCriterion);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify Before match criterion...", nullptr, 1,
+			MODIFY_EACH__TextGridNavigator_modifyBeforeCriterion);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify After match criterion...", nullptr, 1, 
+			MODIFY_EACH__TextGridNavigator_modifyAfterCriterion);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify combination criterion...", nullptr, 1, 
+			MODIFY_EACH__TextGridNavigator_modifyCombinationCriterion);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify match domain...", nullptr, 1, 
+			MODIFY_EACH__TextGridNavigator_modifyMatchDomain);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify match domain alignment...", nullptr, 1,
+			MODIFY_EACH__TextGridNavigator_modifyMatchDomainAlignment);
+	praat_addAction1 (classTextGridNavigator, 0, U"-- search range extensions --", nullptr, 1, nullptr);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify Before range...", nullptr, 1, 
+			MODIFY_EACH__TextGridNavigator_modifyBeforeRange);
+	praat_addAction1 (classTextGridNavigator, 0, U"Modify After range...", nullptr, 1, 
+			MODIFY_EACH__TextGridNavigator_modifyAfterRange);
+	
+	praat_addAction2 (classTextGridNavigator, 1, classNavigationContext, 1, U"Replace navigation context...", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_replaceNavigationContext);
+	praat_addAction2 (classTextGridNavigator, 1, classTextGridTierNavigator, 1, U"Add TextGridTierNavigator...", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_addTextGridTierNavigator);
+	praat_addAction2 (classTextGridNavigator, 1, classTextGrid, 1, U"Replace search tiers", nullptr, 0, 
+			MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_replaceSearchTiers);
+	praat_addAction2 (classTextGridNavigator, 1, classTextGrid, 1, U"Add search tier (topic only)...", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_addSearchTier_topicOnly);
+	praat_addAction2 (classTextGridNavigator, 1, classTextGrid, 1, U"Add search tier...", nullptr, 0,
+			MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_addSearchTier);
+	
+	praat_addAction1 (classTextGridTierNavigator, 0, U"To TextGridNavigator", nullptr, 1, 
+			CONVERT_EACH_TO_ONE__TextGridTierNavigator_to_TextGridNavigator);
+	
 	INCLUDE_MANPAGES (manual_dwtools_init)
 	INCLUDE_MANPAGES (manual_Permutation_init)
 
-	INCLUDE_LIBRARY (praat_uvafon_MDS_init)
-	INCLUDE_LIBRARY (praat_KlattGrid_init)
+	INCLUDE_LIBRARY (praat_MultiSampledSpectrogram_init)
+	INCLUDE_LIBRARY (praat_MDS_actions_init)
 	INCLUDE_LIBRARY (praat_HMM_init)
 	INCLUDE_LIBRARY (praat_BSS_init)
 }

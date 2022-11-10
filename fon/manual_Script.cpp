@@ -1,6 +1,6 @@
 /* manual_Script.cpp
  *
- * Copyright (C) 1992-2019 Paul Boersma
+ * Copyright (C) 1992-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -250,15 +250,15 @@ NORMAL (U"On Linux it is called #buttons5, "
 	"for instance ##/home/miep/.praat-dir/buttons5#.")
 MAN_END
 
-MAN_BEGIN (U"Calculator", U"ppgb", 20021201)
+MAN_BEGIN (U"Calculator", U"ppgb", 20210228)
 INTRO (U"A window that allows you to calculate all kinds of simple or complicated mathematical and string expressions. "
-	"To show the calculator, type Command-U or choose the @@Calculator...@ command. "
-	"The result will be written to the Info window.")
+	"To show the calculator, type @@Keyboard shortcuts|Command-U@ or choose the @@Calculator...@ command. "
+	"The result will appear in the Info window.")
 NORMAL (U"See the @Formulas tutorial for all the things that you can calculate with this command.")
 MAN_END
 
 MAN_BEGIN (U"Calculator...", U"ppgb", 20050822)
-INTRO (U"A command in the @Goodies submenu of the @@Praat menu@ of the @@Object window@. Shortcut: Command-U. "
+INTRO (U"A command in the @Goodies submenu of the @@Praat menu@ of the @@Object window@. Shortcut: @@Keyboard shortcuts|Command-U@. "
 	"Choosing this command brings up Praat's @calculator.")
 MAN_END
 
@@ -271,7 +271,7 @@ MAN_BEGIN (U"differenceLimensToPhon", U"ppgb", 20021215)
 INTRO (U"A routine for converting intensity difference limens into sensation level, "
 	"the inverse of @phonToDifferenceLimens.")
 ENTRY (U"Formula")
-FORMULA (U"differenceLimensToPhon (%ndli) = ln (1 + %ndli / 30) / ln (61 / 60)")
+EQUATION (U"differenceLimensToPhon (%ndli) = ln (1 + %ndli / 30) / ln (61 / 60)")
 MAN_END
 
 MAN_BEGIN (U"Fixed menu commands", U"ppgb", 20120915)
@@ -324,7 +324,7 @@ MAN_END
 
 MAN_BEGIN (U"Formulas 1.1. Formulas in the calculator", U"ppgb", 20170916)
 INTRO (U"To use the Praat @calculator, go to the @@Praat menu@ "
-	"and choose @@Calculator...@ from the @Goodies submenu. Or simply type Command-U anywhere in Praat.")
+	"and choose @@Calculator...@ from the @Goodies submenu. Or simply type @@Keyboard shortcuts|Command-U@ anywhere in Praat.")
 ENTRY (U"Calculating numbers")
 NORMAL (U"You can do arithmetic computations. Type the formula")
 CODE (U"8*17")
@@ -536,7 +536,7 @@ CODE (U"x2 = x * x")
 CODE (U"writeInfoLine: \"The square of \", x, \" is \", x2, \".\"")
 NORMAL (U"This is an example of a simple @@Praat script@; it assigns the results of the numeric formulas $$99$ and $$x * x$ "
 	"to the numeric variables %x and %x2. Note that the formula $$x * x$ itself refers to the variable %x. "
-	"To run (execute) this script, type Command-R or choose #Run from the #Run menu. "
+	"To run (execute) this script, type @@Keyboard shortcuts|Command-R@ or choose #Run from the #Run menu. "
 	"Praat will then write the following text into the Info window:")
 CODE (U"The square of 99 is 9801.")
 NORMAL (U"For more information on scripts, see the @Scripting tutorial.")
@@ -1276,25 +1276,234 @@ CODE (U"writeInfoLine: \"The sum of the cells along the diagonal is \", sumDiago
 NORMAL (U"The first version, which accesses the contents directly, is not only two lines shorter, but also three times faster.")
 MAN_END
 
-MAN_BEGIN (U"Functions", U"ppgb", 20210102)
+MAN_BEGIN (U"Functions", U"ppgb", 20220527)
 NORMAL (U"A growing list of functions that you can use in @formulas and @scripting...")
-LIST_ITEM (U"##abs (%x)# \\-- absolute value")
+LIST_ITEM (U"##abs (%x)#  \\-- absolute value")
+LIST_ITEM (U"##abs\\#  (%%vector\\# %)#  \\-- absolute value of each element of %%vector\\# %")
+LIST_ITEM (U"##abs\\# \\#  (%%matrix\\# \\# %)#  \\-- absolute value of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##appendFile (%%filePath\\$ %, ...)# \\-- write texts, numbers, vectors and so on at the end of an existing file (create such a file if it does not exist yet)")
+LIST_ITEM (U"##appendFileLine (%%filePath\\$ %, ...)# \\-- write texts, numbers, vectors and so on, followed by a newline, at the end of an existing file (create such a file if it does not exist yet)")
 LIST_ITEM (U"##arccos (%x)# \\-- inverse cosine")
+LIST_ITEM (U"##arccos\\#  (%%vector\\# %)#  \\-- inverse cosine of each element of %%vector\\# %")
+LIST_ITEM (U"##arccos\\# \\#  (%%matrix\\# \\# %)#  \\-- inverse cosine of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##arccosh (%x)# \\-- inverse hyperbolic cosine")
+LIST_ITEM (U"##arccosh\\#  (%%vector\\# %)#  \\-- inverse hyperbolic cosine of each element of %%vector\\# %")
+LIST_ITEM (U"##arccosh\\# \\#  (%%matrix\\# \\# %)#  \\-- inverse hyperbolic cosine of each cell of %%matrix\\# \\# %")
 LIST_ITEM (U"##arcsin (%x)# \\-- inverse sine")
+LIST_ITEM (U"##arcsin\\#  (%%vector\\# %)#  \\-- inverse sine of each element of %%vector\\# %")
+LIST_ITEM (U"##arcsin\\# \\#  (%%matrix\\# \\# %)#  \\-- inverse sine of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##arcsinh (%x)# \\-- inverse hyperbolic sine")
+LIST_ITEM (U"##arcsinh\\#  (%%vector\\# %)#  \\-- inverse hyperbolic sine of each element of %%vector\\# %")
+LIST_ITEM (U"##arcsinh\\# \\#  (%%matrix\\# \\# %)#  \\-- inverse hyperbolic sine of each cell of %%matrix\\# \\# %")
 LIST_ITEM (U"##arctan (%x)# \\-- inverse tangent")
+LIST_ITEM (U"##arctan\\#  (%%vector\\# %)#  \\-- inverse tangent of each element of %%vector\\# %")
+LIST_ITEM (U"##arctan\\# \\#  (%%matrix\\# \\# %)#  \\-- inverse tangent of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##arctanh (%x)# \\-- inverse hyperbolic tangent")
+LIST_ITEM (U"##arctanh\\#  (%%vector\\# %)#  \\-- inverse hyperbolic tangent of each element of %%vector\\# %")
+LIST_ITEM (U"##arctanh\\# \\#  (%%matrix\\# \\# %)#  \\-- inverse hyperbolic tangent of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##backslashTrigraphsToUnicode\\$  (%%string\\$ %)# \\-- convert e.g. \\bsct to \\ct")
+LIST_ITEM (U"##barkToHertz (%x)# \\-- from Bark-rate to acoustic frequency")
+LIST_ITEM (U"##besselI (%n, %x)# \\-- modified Bessel function of the first kind, %I__%n_")
+LIST_ITEM (U"##besselK (%n, %x)# \\-- modified Bessel function of the second kind, %K__%n_")
+LIST_ITEM (U"##beta (%x, %y)# \\-- \\be function")
+LIST_ITEM (U"##between_by\\#  (%low, %high, %step)# \\-- symmetrically dispersed numbers between %low and %high, in steps of %step")
+LIST_ITEM (U"##between_count\\#  (%low, %high, %n)# \\-- %n symmetrically dispersed numbers between %low and %high (bin centres)")
+LIST_ITEM (U"##binomialP (%p, %k, %n)# \\-- probability of Bernoulli event occurring at most %k in %n times")
+LIST_ITEM (U"##binomialQ (%p, %k, %n)# \\-- probability of Bernoulli event occurring at least %k in %n times")
+LIST_ITEM (U"##ceiling (%x)# \\-- round up to integer")
+LIST_ITEM (U"##ceiling\\#  (%%vector\\# %)#  \\-- round up each element of %%vector\\# %")
+LIST_ITEM (U"##ceiling\\# \\#  (%%matrix\\# \\# %)#  \\-- round up each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##center (%%v\\# %)# \\-- center (or centre) of gravity")
+LIST_ITEM (U"##chiSquareP (%chiSquare, %df)# \\-- area under the %\\ci^2 curve up to %chiSquare")
+LIST_ITEM (U"##chiSquareQ (%chiSquare, %df)# \\-- area under the %\\ci^2 curve after %chiSquare")
+LIST_ITEM (U"##chooseFolder\\$  (%%title\\$ %)# \\-- pops up a folder selection window")
+LIST_ITEM (U"##chooseReadFile\\$  (%%title\\$ %)# \\-- pops up a file selection window for opening (or appending to) an existing file")
+LIST_ITEM (U"##chooseWriteFile\\$  (%%title\\$ %, %%defaultFilename\\$ %)# \\-- pops up a file selection window for saving to a new file")
+LIST_ITEM (U"##columnSums\\#  (%%matrix\\# \\# %)#")
 LIST_ITEM (U"##cos (%x)# \\-- cosine")
+LIST_ITEM (U"##cos\\#  (%%vector\\# %)#  \\-- cosine of each element of %%vector\\# %")
+LIST_ITEM (U"##cos\\# \\#  (%%matrix\\# \\# %)#  \\-- cosine of each cell of %%matrix\\# \\# %")
 LIST_ITEM (U"##cosh (%x)# \\-- hyperbolic cosine")
-LIST_ITEM (U"##exp (%x)# \\-- exponentiation")
-LIST_ITEM (U"##index (%%string$%, %%part$%)# \\-- look up a substring, or 0 if not found")
-LIST_ITEM (U"##index (%%strings$#%, %%s$%)# \\-- look up whether %%s$% occurs in %%strings$#%")
+LIST_ITEM (U"##cosh\\#  (%%vector\\# %)#  \\-- hyperbolic cosine of each element of %%vector\\# %")
+LIST_ITEM (U"##cosh\\# \\#  (%%matrix\\# \\# %)#  \\-- hyperbolic cosine of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##createFolder (%%folderPath\\$ %)# \\-- create a new folder, or do nothing if it already exists")
+LIST_ITEM (U"##date\\$  ( )# \\-- current local date and time in the form \"Mon Nov  8 16:32:42 2021\"")
+LIST_ITEM (U"##date\\#  ( )# \\-- current local date and time in the form { 2021, 11, 8, 16, 32, 42 }")
+LIST_ITEM (U"##date_utc\\$  ( )# \\-- current standard date and time in the form \"Mon Nov  8 15:32:42 2021\"")
+LIST_ITEM (U"##date_utc\\#  ( )# \\-- current standard date and time in the form { 2021, 11, 8, 15, 32, 42 }")
+LIST_ITEM (U"##deleteFile (%%filePath\\$ %)# \\-- delete a file, or do nothing if it does not exist")
+LIST_ITEM (U"##differenceLimensToPhon (%x)# \\-- from jnd-scale to perceptual loudness")
+LIST_ITEM (U"##endsWith (%%string\\$ %, %%part\\$ %)# \\-- determine whether %%string\\$ % ends in %%part\\$ %")
+LIST_ITEM (U"##erb (%f)# \\-- equivalent rectangular bandwidth for frequency %f")
+LIST_ITEM (U"##erbToHertz (%x)# \\-- from ERB-rate to acoustic frequency")
+LIST_ITEM (U"##erf (%x)# \\-- error function, the integral of the Gaussian")
+LIST_ITEM (U"##erfc (%x)# \\-- complement of the error function, i.e. 1 - erf (%x); "
+	"this is a separate function because erf (%x) can be close to 1")
+LIST_ITEM (U"##exp (%x)# \\-- exponentiation, i.e. %e^%x")
+LIST_ITEM (U"##exp\\#  (%%vector\\# %)#  \\-- exponentiate each element of %%vector\\# %")
+LIST_ITEM (U"##exp\\# \\#  (%%matrix\\# \\# %)#  \\-- exponentiate each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##extractLine\\$  (%%string\\$ %, %%part\\$ %)# \\-- everything that comes after the first occurrence of %%part\\$ % in %%string\\$ %")
+LIST_ITEM (U"##extractNumber (%%string\\$ %, %%part\\$ %)# \\-- the first number after the first occurrence of %%part\\$ % in %%string\\$ %")
+LIST_ITEM (U"##extractWord\\$  (%%string\\$ %, %%part\\$ %)# \\-- the first \"word\" after the first occurrence of %%part\\$ % in %%string\\$ %")
+LIST_ITEM (U"##fileNames\\$ \\#  (%%folderNameOrPattern\\$ %)# \\-- get the names (not the whole paths) of the files in a folder or that match a pattern with an asterisk")
+LIST_ITEM (U"##fileReadable (%%filePath\\$ %)# \\-- 1 if the file exists and can be read, 0 otherwise")
+LIST_ITEM (U"##fisherP (%f, %df1, %df2)# \\-- area under the Fisher %F curve up to %f")
+LIST_ITEM (U"##fisherQ (%f, %df1, %df2)# \\-- area under the Fisher %F curve after %f")
+LIST_ITEM (U"##fixed\\$  (%number, %precision)# \\-- format a number as a string, with %precision digits after the decimal point")
+LIST_ITEM (U"##floor (%x)# \\-- round down to integer")
+LIST_ITEM (U"##floor\\#  (%%vector\\# %)#  \\-- round down each element of %%vector\\# %")
+LIST_ITEM (U"##floor\\# \\#  (%%matrix\\# \\# %)#  \\-- round down each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##folderNames\\$ \\#  (%%folderNameOrPattern\\$ %)# \\-- get the names (not the whole paths) of the subfolders in a folder or that match a pattern with an asterisk")
+LIST_ITEM (U"##from_to\\#  (%m, %n)# \\-- the integers from %m through %n")
+LIST_ITEM (U"##from_to_by\\#  (%m, %n, %step)# \\-- numbers from %m through %n, in steps of %step")
+LIST_ITEM (U"##from_to_count\\#  (%start, %end, %n)# \\-- %n numbers from %start through %end")
+LIST_ITEM (U"##gaussP (%z)# \\-- area under the normal curve up to %z")
+LIST_ITEM (U"##gaussQ (%z)# \\-- area under the normal curve after %z")
+LIST_ITEM (U"##hertzToBark (%x)# \\-- from acoustic frequency to Bark-rate")
+LIST_ITEM (U"##hertzToErb (%x)# \\-- from acoustic frequency to ERB-rate")
+LIST_ITEM (U"##hertzToMel (%x)# \\-- from acoustic frequency to mel")
+LIST_ITEM (U"##hertzToSemitones (%x)# \\-- from acoustic frequency to logarithmic scale %re 100 Hz")
+LIST_ITEM (U"##imax (%x, ...)# \\-- location of the maximum")
+LIST_ITEM (U"##imin (%x, ...)# \\-- location of the minimum")
+LIST_ITEM (U"##index (%%string\\$ %, %%part\\$ %)# \\-- look up a substring, or 0 if not found")
+LIST_ITEM (U"##index (%%strings\\$ \\# %, %%s\\$ %)# \\-- look up whether and where %%s\\$ % first occurs in %%strings\\$ \\# %")
+LIST_ITEM (U"##index_regex (%%string\\$ %, %%regex\\$ %)# \\-- determine whether and where %%string\\$ % first matches %%regex\\$ %")
+LIST_ITEM (U"##inner (%%a\\# , %%b\\# )# \\-- inner product")
+LIST_ITEM (U"##invBinomialP (%P, %k, %n)# \\-- inverse of binomialP")
+LIST_ITEM (U"##invBinomialQ (%Q, %k, %n)# \\-- inverse of binomialQ")
+LIST_ITEM (U"##invChiSquareQ (%q, %df)# \\-- inverse of chiSquareQ")
+LIST_ITEM (U"##invFisherQ (%q, %df1, %df2)# \\-- inverse of fisherQ")
+LIST_ITEM (U"##invGaussQ (%z)# \\-- inverse of gaussQ")
+LIST_ITEM (U"##invSigmoid (%x)# \\-- inverse sigmoid")
+LIST_ITEM (U"##invSigmoid\\#  (%%vector\\# %)# \\-- inverse sigmoid of each element of %%vector\\# %")
+LIST_ITEM (U"##invSigmoid\\# \\#  (%%matrix\\# \\# %)# \\-- inverse sigmoid of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##invStudentQ (%q, %df)# \\-- inverse studentQ")
+LIST_ITEM (U"##left\\$  (%%string\\$ %, %n)# \\-- the %n first characters in %%string\\$ %")
+LIST_ITEM (U"##length (%%string\\$ %)# \\-- number of Unicode characters in %%string\\$ %")
+LIST_ITEM (U"##ln (%x)# \\-- natural logarithm, base %e")
+LIST_ITEM (U"##ln\\#  (%%vector\\# %)#  \\-- natural logarithm of each element of %%vector\\# %")
+LIST_ITEM (U"##ln\\# \\#  (%%matrix\\# \\# %)#  \\-- natural logarithm of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##lnGamma (%x)# \\-- logarithm of the \\Ga function")
+LIST_ITEM (U"##log2 (%x)# \\-- logarithm, base 2")
+LIST_ITEM (U"##log2\\#  (%%vector\\# %)#  \\-- base-2 logarithm of each element of %%vector\\# %")
+LIST_ITEM (U"##log2\\# \\#  (%%matrix\\# \\# %)#  \\-- base-2 logarithm of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##log10 (%x)# \\-- logarithm, base 10")
+LIST_ITEM (U"##log10\\#  (%%vector\\# %)#  \\-- base-10 logarithm of each element of %%vector\\# %")
+LIST_ITEM (U"##log10\\# \\#  (%%matrix\\# \\# %)#  \\-- base-10 logarithm of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##max (%x, ...)# \\-- maximum")
+LIST_ITEM (U"##mean (%%v\\# %)# \\-- average of the elements of a vector")
+LIST_ITEM (U"##melToHertz (%x)# \\-- from mel to acoustic frequency")
+LIST_ITEM (U"##mid\\$  (%%string\\$ %, %from, %n)# \\-- the %n characters in %%string\\$ % starting at position %from")
+LIST_ITEM (U"##min (%x, ...)# \\-- minimum")
 LIST_ITEM (U"##mul\\# \\#  (%%a\\# \\# %, %%b\\# \\# %)# \\-- matrix multiplication")
+LIST_ITEM (U"##number (%%a\\$ %)# \\-- interpret a string as a number")
+LIST_ITEM (U"##number\\#  (%%a\\$ \\# %)# \\-- interpret strings as numbers")
+LIST_ITEM (U"##numberOfColumns (%%matrix\\# \\# %)#")
+LIST_ITEM (U"##numberOfRows (%%matrix\\# \\# %)#")
+LIST_ITEM (U"##outer\\# \\#  (%%a\\# %, %%b\\# %)# \\-- outer product, i.e. %%result__ij_% = %%a__i_%%%b__j_%")
+LIST_ITEM (U"##percent\\$  (%number, %precision)# \\-- format a number as a string, "
+	"with a trailing percent sign and %precision digits after the decimal point")
+LIST_ITEM (U"##phonToDifferenceLimens (%x)# \\-- from perceptual loudness to jnd-scale")
+LIST_ITEM (U"##randomBernoulli (%p)# \\-- Bernoulli-distributed random deviate (0 or 1)")
+LIST_ITEM (U"##randomBernoulli\\#  (%n, %p)# \\-- %n independent Bernoulli-distributed zeroes and ones")
+LIST_ITEM (U"##randomGamma (%shape, %rate)# \\-- gamma-distributed random deviate")
+LIST_ITEM (U"##randomGamma\\#  (%n, %shape, %rate)# \\-- %n independent gamma-distributed random numbers")
+LIST_ITEM (U"##randomGamma\\#  (%%vector\\# %, %shape, %rate)# \\-- duplicate %%vector\\# %, "
+	"and replace all elements with independent gamma-distributed random numbers")
+LIST_ITEM (U"##randomGamma\\# \\#  (%nrow, %ncol, %shape, %rate)# \\-- %nrow \\xx %ncol independent gamma-distributed random numbers")
+LIST_ITEM (U"##randomGamma\\#  (%%matrix\\# \\# %, %shape, %rate)# \\-- duplicate %%matrix\\# %, "
+	"and replace all cells with independent gamma-distributed random numbers")
+LIST_ITEM (U"##randomGauss (%\\mu, %\\si)# \\-- normally distributed random deviate")
+LIST_ITEM (U"##randomGauss\\#  (%n, %\\mu, %\\si)# \\-- %n independent normally distributed random numbers")
+LIST_ITEM (U"##randomGauss\\#  (%%vector\\# %, %\\mu, %\\si)# \\-- duplicate %%vector\\# %, "
+	"and replace all elements with independent normally distributed random numbers")
+LIST_ITEM (U"##randomGauss\\# \\#  (%nrow, %ncol, %\\mu, %\\si)# \\-- %nrow \\xx %ncol independent normally distributed random numbers")
+LIST_ITEM (U"##randomGauss\\#  (%%matrix\\# \\# %, %\\mu, %\\si)# \\-- duplicate %%matrix\\# %, "
+	"and replace all cells with independent normally distributed random numbers")
+LIST_ITEM (U"##randomInteger (%min, %max)# \\-- uniformly distributed integer random deviate")
+LIST_ITEM (U"##randomInteger\\#  (%n, %min, %max)# \\-- %n independent uniformly distributed random integers")
+LIST_ITEM (U"##randomInteger\\#  (%%vector\\# %, %min, %max)# \\-- duplicate %%vector\\# %, "
+	"and replace all elements with independent uniformly distributed random integers")
+LIST_ITEM (U"##randomInteger\\# \\#  (%nrow, %ncol, %min, %max)# \\-- %nrow \\xx %ncol independent uniformly distributed random integers")
+//LIST_ITEM (U"##randomInteger\\#  (%%matrix\\# \\# %, %min, %max)# \\-- duplicate %%matrix\\# %, "
+//	"and replace all cells with independent uniformly distributed random integers")
+LIST_ITEM (U"##randomPoisson (%mean)# \\-- Poisson-distributed random deviate")
+LIST_ITEM (U"##randomPoisson\\#  (%n, %mean)# \\-- %n independent Poisson-distributed random numbers")
+LIST_ITEM (U"##randomPoisson\\#  (%%vector\\# %, %mean)# \\-- duplicate %%vector\\# %, "
+	"and replace all elements with independent Poisson-distributed random numbers")
+LIST_ITEM (U"##randomPoisson\\# \\#  (%nrow, %ncol, %mean)# \\-- %nrow \\xx %ncol independent Poisson-distributed random numbers")
+LIST_ITEM (U"##randomPoisson\\#  (%%matrix\\# \\# %, %mean)# \\-- duplicate %%matrix\\# %, "
+	"and replace all cells with independent Poisson-distributed random numbers")
+LIST_ITEM (U"##randomUniform (%min, %max)# \\-- uniformly distributed random deviate")
+LIST_ITEM (U"##randomUniform\\#  (%n, %min, %max)# \\-- %n independent uniformly distributed random numbers")
+LIST_ITEM (U"##randomUniform\\#  (%%vector\\# %, %min, %max)# \\-- duplicate %%vector\\# %, "
+	"and replace all elements with independent uniformly distributed random numbers")
+LIST_ITEM (U"##randomUniform\\# \\#  (%nrow, %ncol, %min, %max)# \\-- %nrow \\xx %ncol independent uniformly distributed random numbers")
+LIST_ITEM (U"##randomUniform\\#  (%%matrix\\# \\# %, %min, %max)# \\-- duplicate %%matrix\\# %, "
+	"and replace all cells with independent uniformly distributed random numbers")
+LIST_ITEM (U"##random_initializeSafelyAndUnpredictably ( )# \\-- undoes the effects of the following function")
+LIST_ITEM (U"##random_initializeWithSeedUnsafelyButPredictably (%seed)# \\-- reproducible sequence of random numbers")
+LIST_ITEM (U"##readFile (%%filePath\\$ %)# \\-- read a number from a text file")
 LIST_ITEM (U"##readFile\\$  (%%filePath\\$ %)# \\-- read a whole text file into a string")
 LIST_ITEM (U"##readLinesFromFile\\$ \\#  (%%filePath\\$ %)# \\-- read all lines from a text file")
+LIST_ITEM (U"##rectify (%x)# \\-- set to zero if negative (no change if positive)")
+LIST_ITEM (U"##rectify\\#  (%%vector\\# %)#  \\-- rectify each element of %%vector\\# %")
+LIST_ITEM (U"##rectify\\# \\#  (%%matrix\\# \\# %)#  \\-- rectify each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##repeat\\#  (%%v\\# %, %n)# \\-- repeat the whole sequence of elements of %%v\\# % %n times")
+LIST_ITEM (U"##replace\\$  (%%a\\$ %, %%b\\$ %, %%c\\$ %, %n)# \\-- within %%a\\$ %, replace the first %n occurrences of %%b\\$ % with %%c\\$ %, or all if %n = 0")
+LIST_ITEM (U"##replace_regex\\$  (%%a\\$ %, %%b\\$ %, %%c\\$ %, %n)# \\-- within %%a\\$ %, "
+	"replace the first %n matches of regular expression %%b\\$ % with the regular expression %%c\\$ %, or all if %n = 0")
+LIST_ITEM (U"##right\\$  (%%string\\$ %, %n)# \\-- the %n last characters in %%string\\$ %")
+LIST_ITEM (U"##rindex (%%string\\$ %, %%part\\$ %)# \\-- look up a substring from the end, or 0 if not found")
+//LIST_ITEM (U"##rindex (%%strings\\$ \\# %, %%s\\$ %)# \\-- look up whether and where %%s\\$ % last occurs in %%strings\\$ \\# %")
+LIST_ITEM (U"##rindex_regex (%%string\\$ %, %%regex\\$ %)# \\-- determine whether and where %%string\\$ % last matches %%regex\\$ %")
+LIST_ITEM (U"##round (%x)# \\-- nearest integer")
+LIST_ITEM (U"##round\\#  (%%vector\\# %)#  \\-- nearest integer of each element of %%vector\\# %")
+LIST_ITEM (U"##round\\# \\#  (%%matrix\\# \\# %)#  \\-- nearest integer of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##rowSums\\#  (%%matrix\\# \\# %)#")
+LIST_ITEM (U"##semitonesToHertz (%x)# \\-- from logarithmic scale %re 100 Hz to acoustic frequency")
+LIST_ITEM (U"##sigmoid (%x)# \\-- 1 / (1 + %e^^-%x^)")
+LIST_ITEM (U"##sigmoid\\#  (%%vector\\# %)# \\-- sigmoid of each element of %%vector\\# %")
+LIST_ITEM (U"##sigmoid\\# \\#  (%%matrix\\# \\# %)# \\-- sigmoid of each cell of %%matrix\\# \\# %")
 LIST_ITEM (U"##sin (%x)# \\-- sine")
+LIST_ITEM (U"##sin\\#  (%%vector\\# %)#  \\-- sine of each element of %%vector\\# %")
+LIST_ITEM (U"##sin\\# \\#  (%%matrix\\# \\# %)#  \\-- sine of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##sinc (%x)# \\-- sinus cardinalis: sin (%x) / %x")
+LIST_ITEM (U"##sincpi (%x)# \\-- sin (%\\pi%x) / (%\\pi%x)")
 LIST_ITEM (U"##sinh (%x)# \\-- hyperbolic sine")
+LIST_ITEM (U"##sinh\\#  (%%vector\\# %)#  \\-- hyperbolic sine of each element of %%vector\\# %")
+LIST_ITEM (U"##sinh\\# \\#  (%%matrix\\# \\# %)#  \\-- hyperbolic sine of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##size (%%v\\# %)# \\-- number of elements")
+LIST_ITEM (U"##shuffle\\#  (%%vector\\# %)# \\-- randomize order")
+LIST_ITEM (U"##softmax\\#  (%%vector\\# %)#")
+LIST_ITEM (U"##softmaxPerRow\\# \\#  (%%matrix\\# \\# %)#")
+LIST_ITEM (U"##sort\\#  (%%vector\\# %)# \\-- reshuffle in increasing order")
 LIST_ITEM (U"##splitByWhitespace\\$ \\#  (%%string\\$ %)# \\-- split a string into inks")
+LIST_ITEM (U"##sqrt (%x)# \\-- square root")
+LIST_ITEM (U"##sqrt\\#  (%%vector\\# %)#  \\-- square root of each element of %%vector\\# %")
+LIST_ITEM (U"##sqrt\\# \\#  (%%matrix\\# \\# %)#  \\-- square root of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##startsWith (%%string\\$ %, %%part\\$ %)# \\-- determine whether %%string\\$ % starts with %%part\\$ %")
+LIST_ITEM (U"##stdev (%%v\\# %)# \\-- standard deviation of the elements of a vector")
+LIST_ITEM (U"#stopwatch \\-- give the current value of the timer, which is then immediately reset to zero (note: no parentheses)")
+LIST_ITEM (U"##string\\$  (%number)# \\-- format a number as a string")
+LIST_ITEM (U"##studentP (%t, %df)# \\-- area under the Student %T curve up to %t")
+LIST_ITEM (U"##studentQ (%t, %df)# \\-- area under the Student %T curve after %t")
+LIST_ITEM (U"##sum (%%v\\# %)# \\-- sum the elements")
+LIST_ITEM (U"##sumOver (%loopVariable to %n, %numericExpressionOptionallyUsingLoopVariable)# \\-- \\Si")
 LIST_ITEM (U"##tan (%x)# \\-- tangent")
+LIST_ITEM (U"##tan\\#  (%%vector\\# %)#  \\-- tangent of each element of %%vector\\# %")
+LIST_ITEM (U"##tan\\# \\#  (%%matrix\\# \\# %)#  \\-- tangent of each cell of %%matrix\\# \\# %")
 LIST_ITEM (U"##tanh (%x)# \\-- hyperbolic tangent")
+LIST_ITEM (U"##tanh\\#  (%%vector\\# %)#  \\-- hyperbolic tangent of each element of %%vector\\# %")
+LIST_ITEM (U"##tanh\\# \\#  (%%matrix\\# \\# %)#  \\-- hyperbolic tangent of each cell of %%matrix\\# \\# %")
+LIST_ITEM (U"##to\\#  (%n)# \\-- the integers 1 through %n")
+LIST_ITEM (U"##transpose\\# \\#  (%%matrix\\# \\# %)#")
+LIST_ITEM (U"##unicode (%%c\\$ %)# \\-- the Unicode codepoint number that corresponds to character %%c\\$ %")
+LIST_ITEM (U"##unicode\\$  (%n)# \\-- the character that corresponds to Unicode codepoint %n")
+LIST_ITEM (U"##unicodeToBackslashTrigraphs\\$  (%%string\\$ %)# \\-- convert e.g. \\ct to \\bsct")
+LIST_ITEM (U"##writeFile (%%filePath\\$ %, ...)# \\-- create a new text file, and write texts, numbers, vectors and so on into it")
+LIST_ITEM (U"##writeFileLine (%%filePath\\$ %, ...)# \\-- create a new text file, write texts, numbers, vectors and so on into it, followed by a newline")
+LIST_ITEM (U"##zero\\#  (%n)# \\-- vector with %n elements that are all 0")
 MAN_END
 
 MAN_BEGIN (U"Hidden commands", U"ppgb", 20110129)
@@ -1400,7 +1609,7 @@ MAN_BEGIN (U"phonToDifferenceLimens", U"ppgb", 20021215)
 INTRO (U"A routine for converting sensation level in phons into intensity difference limen level, "
 	"the inverse of @differenceLimensToPhon.")
 ENTRY (U"Formula")
-FORMULA (U"phonToDifferenceLimens (%phon) = 30 \\.c ((61/60)^^ %phon^ \\-- 1)")
+EQUATION (U"phonToDifferenceLimens (%phon) = 30 \\.c ((61/60)^^ %phon^ \\-- 1)")
 ENTRY (U"Derivation")
 NORMAL (U"In first approximation, humans can detect an intensity difference of 1 phon, i.e. "
 	"if two sounds that differ only in intensity are played a short time after each other, "
@@ -1408,18 +1617,18 @@ NORMAL (U"In first approximation, humans can detect an intensity difference of 1
 NORMAL (U"But the sensitivity is somewhat better for louder sounds. "
 	"According to @@Jesteadt, Wier & Green (1977)@, the relative difference limen "
 	"of intensity is given by")
-FORMULA (U"DLI = \\De%I / %I = 0.463 \\.c (%I / %I__0_)^^ \\--0.072^")
+EQUATION (U"DLI = \\De%I / %I = 0.463 \\.c (%I / %I__0_)^^ \\--0.072^")
 NORMAL (U"In this formula, %I is the intensity of the sound in Watt/m^2, %I__0_ is the intensity of "
 	"the auditory threshold (i.e. 10^^\\--12^ Watt/m^2 at 1000 Hz), and \\De%I is the just noticeable difference.")
 NORMAL (U"@@Boersma (1998)|Boersma (1998: 109)@ calculates a difference-limen scale from this. "
 	"Given an intensity %I, the number of difference limens above threshold is ")
-FORMULA (U"\\in__%I0_^%I %dx \\De%I(%x) "
+EQUATION (U"\\in__%I0_^%I %dx \\De%I(%x) "
 	"= (1 / 0.463) \\in__%I0_^%I %dx %I__0_^^\\--0.072^ %x^^0.072\\--1^")
-FORMULA (U"= (1 / (0.463\\.c0.072)) ((%I/%I__0_)^^0.072^ \\-- 1)")
+EQUATION (U"= (1 / (0.463\\.c0.072)) ((%I/%I__0_)^^0.072^ \\-- 1)")
 NORMAL (U"The sensation level in phon is defined as")
-FORMULA (U"SL = 10 log__10_ (%I/%I__0_)")
+EQUATION (U"SL = 10 log__10_ (%I/%I__0_)")
 NORMAL (U"so that the number of difference limens above threshold is")
-FORMULA (U"(1 / (0.463\\.c0.072)) (10^^(0.072/10)(10log(%I/%I__0_))^ \\-- 1) "
+EQUATION (U"(1 / (0.463\\.c0.072)) (10^^(0.072/10)(10log(%I/%I__0_))^ \\-- 1) "
 	"= 30 \\.c (1.0167^^SL^ \\-- 1)")
 MAN_END
 
@@ -1564,7 +1773,6 @@ LIST_ITEM1 (U"@@Scripting 7.2. Scripting an editor from within")
 LIST_ITEM (U"@@Scripting 8. Controlling Praat from another program")
 LIST_ITEM1 (U"@@Scripting 8.1. The sendpraat subroutine")
 LIST_ITEM1 (U"@@Scripting 8.2. The sendpraat program")
-LIST_ITEM1 (U"@@Scripting 8.3. The sendpraat directive")
 // 9. Hiding your script
 // 9.1 Incorporating your script into Praat
 // 9.2 Incorporating many scripts into Praat (plug-ins)
@@ -2507,11 +2715,9 @@ CODE (U"The jitter is 0.00002\\% .")
 ENTRY (U"Predefined variables")
 NORMAL (U"All of the variables you saw earlier in this tutorial were defined at the first moment a value was assigned to them. "
 	"Some variables, however, are already defined implicitly at the start of your script.")
-#define xstr(s) str(s)
-#define str(s) #s
 NORMAL (U"Some predefined ##numeric variables# are $macintosh, $windows, and $unix, which are 1 if the script "
 	"is running on a Macintosh, Windows, or Unix platform (respectively), and which are otherwise zero. "
-	"Another one is $praatVersion, which is e.g. " xstr(PRAAT_VERSION_NUM) " for the current version of Praat.")
+	"Another one is $praatVersion, which is e.g. " stringize(PRAAT_VERSION_NUM) " for the current version of Praat.")
 NORMAL (U"Some ##predefined string variables# are $$newline\\$ $,  $$tab\\$ $, and $$shellDirectory\\$ $. "
 	"The last one specifies the folder that was the default folder when Praat started up; "
 	"you can use it in scripts that run from the Unix or Windows command line. "
@@ -2520,7 +2726,7 @@ NORMAL (U"Some ##predefined string variables# are $$newline\\$ $,  $$tab\\$ $, a
 	"(which is where you log in), the Praat @@preferences folder@, and a folder for saving temporary files; "
 	"if you want to know what they are on your computer, try to write them into a script window. "
 	"The variable $$defaultDirectory\\$ $ is available for formulas in scripts; it is the folder that contains the script file. "
-	"Finally, we have $$praatVersion\\$ $, which is \"" xstr(PRAAT_VERSION_STR) "\" for the current version of Praat.")
+	"Finally, we have $$praatVersion\\$ $, which is \"" stringize(PRAAT_VERSION_STR) "\" for the current version of Praat.")
 ENTRY (U"Functions that handle variables")
 NORMAL (U"To check whether a variable exists, you can use the function")
 CODE (U"%variableExists (%%variableName\\$ %)")
@@ -2857,7 +3063,8 @@ CODE (U"#endproc")
 CODE (U"\\@ texts: \\\" \\\" \\\" hello\\\" \\\"  at the top\\\" , \\\" \\\" \\\" goodbye\\\" \\\"  at the bottom\\\" ")
 ENTRY (U"Functions")
 NORMAL (U"The Praat scripting language does not have the concept of a \"function\" like some other scripting languages do. "
-	"A function is a procedure that returns a number or a string. For instance, you can imagine the function $$squareNumber$ "
+	"A function is a procedure that returns a number, a string, a vector, a matrix, or a string array. "
+	"For instance, you can imagine the function $$squareNumber$, "
 	"which takes a number (e.g. 5) as an argument and returns the square of that number (e.g. 25). "
 	"Here is an example of how you can do that, using the global availability of local variables:")
 CODE (U"\\@ squareNumber: 5")
@@ -2962,7 +3169,7 @@ CODE (U"between_count\\#  (0, 10, 5)")
 NORMAL (U"To sort the numbers in a vector (e.g. { 7.4, 1.3, 3.6 }), you use")
 CODE (U"sort\\#  ({ 7.4, 1.3, 3.6 })")
 NORMAL (U"which yields { 1.3, 3.6, 7.4 }.")
-NORMAL (U"To randomnly shuffle the numbers in a vector (e.g. { 7.4, 1.3, 3.6 }), you use")
+NORMAL (U"To randomly shuffle the numbers in a vector (e.g. { 7.4, 1.3, 3.6 }), you use")
 CODE (U"shuffle\\#  ({ 7.4, 1.3, 3.6 })")
 NORMAL (U"which can yield { 1.3, 7.4, 3.6 } or any of the five other orders of the elements.")
 NORMAL (U"Vectors can also be created by some menu commands. For instance, to get vectors representing "
@@ -3012,7 +3219,8 @@ CODE (U"confusion\\# \\#  = {{ 3, 6, 2 }, { 8, 2, 1 }}")
 NORMAL (U"After this, the variable %%confusion\\# \\# % contains the value {{ 3, 6, 2 }, { 8, 2, 1 }}. "
 	"We say that the matrix %%confusion\\# % has two %rows and three %columns, i.e. it contains six numbers.")
 NORMAL (U"Whereas a numeric vector with five dimensions could be seen (see above) as a street that contains five houses, "
-	"the matrix %%confusion\\# \\# % can be seen as a city district with two avenues crossed by three streets.")
+	"the matrix %%confusion\\# \\# % can be seen as a city district with two avenues crossed by three streets, "
+	"where everybody lives on an intersection (the analogies start to get less realistic).")
 ENTRY (U"6. Creating a matrix")
 NORMAL (U"You can create a matrix in many ways. The first way we saw was with a ##matrix literal#, "
 	"i.e. a series of series of numbers (or numeric formulas) between nested braces.")
@@ -3037,7 +3245,7 @@ CODE (U"#for irow #to size (u\\# )")
 	CODE1 (U"#endfor")
 CODE (U"#endfor")
 NORMAL (U"or in mathematical notation")
-FORMULA (U"%m__%ij_ = %u__%i_ %v__%j_   (%i = 1..%M, %j = 1..%N)")
+EQUATION (U"%m__%ij_ = %u__%i_ %v__%j_   (%i = 1..%M, %j = 1..%N)")
 NORMAL (U"where %M is the number of rows and %N is the number of columns.")
 ENTRY (U"7. Computations with matrices")
 NORMAL (U"You can add matrices:")
@@ -3045,22 +3253,22 @@ CODE (U"c\\# \\#  = a\\# \\#  + b\\# \\# ")
 NORMAL (U"Elementwise multiplication:")
 CODE (U"c\\# \\#  = a\\# \\#  * b\\# \\# ")
 NORMAL (U"which does")
-FORMULA (U"%c__%ij_ = %a__%ij_ %b__%ij_   (%i = 1..%M, %j = 1..%N)")
+EQUATION (U"%c__%ij_ = %a__%ij_ %b__%ij_   (%i = 1..%M, %j = 1..%N)")
 NORMAL (U"Matrix multiplication:")
 CODE (U"c\\# \\#  = mul\\# \\#  (a\\# \\# , b\\# \\# )")
 NORMAL (U"which does")
-FORMULA (U"%m__%ij_ = \\su__%k=1_^K  %a__%ik_ %b__%kj_   (%i = 1..%M, %j = 1..%N)")
+EQUATION (U"%m__%ij_ = \\su__%k=1_^K  %a__%ik_ %b__%kj_   (%i = 1..%M, %j = 1..%N)")
 NORMAL (U"where %M is the number of rows of %a, %N is the number of columns of %b, "
 	"and %K is the number of columns of %a, which has to be equal to the number if rows of %b.")
 NORMAL (U"Matrix-by-vector multiplication:")
 CODE (U"v\\#  = mul\\#  (m\\# \\# , u\\# )")
 NORMAL (U"which does")
-FORMULA (U"%v__%i_ = \\su__%j=1_^N  %m__%ij_ %u__%j_   (%i = 1..%M)")
+EQUATION (U"%v__%i_ = \\su__%j=1_^N  %m__%ij_ %u__%j_   (%i = 1..%M)")
 NORMAL (U"where %M is the number of rows of %m, and %N is the number of columns of %m, "
 	"which has to be equal to the dimension of %u. Also")
 CODE (U"v\\#  = mul\\#  (u\\# , m\\# \\# )")
 NORMAL (U"which does")
-FORMULA (U"%v__%j_ = \\su__%i=1_^M  %u__%i_ %m__%ij_   (%j = 1..%N)")
+EQUATION (U"%v__%j_ = \\su__%i=1_^M  %u__%i_ %m__%ij_   (%j = 1..%N)")
 NORMAL (U"where %M is the number of rows of %m, which has to be equal to the dimension of %u, "
 	"and %N is the number of columns of %m.")
 ENTRY (U"8. String vectors")
@@ -3126,7 +3334,7 @@ LIST_ITEM (U"@@Scripting 6.8. Messages to the user@ (exitScript, assert, nowarn,
 LIST_ITEM (U"@@Scripting 6.9. Calling from the command line")
 MAN_END
 
-MAN_BEGIN (U"Scripting 6.1. Arguments to the script", U"ppgb", 20140212)
+MAN_BEGIN (U"Scripting 6.1. Arguments to the script", U"ppgb", 20211214)
 NORMAL (U"You can cause a Praat script to prompt for arguments. The file $$playSine.praat$ may contain the following:")
 CODE (U"#form Play a sine wave")
 	CODE1 (U"#positive Sine_frequency_(Hz) 377")
@@ -3172,6 +3380,12 @@ TAG (U"#button %text")
 DEFINITION (U"a button in a radio box.")
 TAG (U"#comment %text")
 DEFINITION (U"a line with any text.")
+TAG (U"#infile %variable %initialValue")
+DEFINITION (U"for a full path to an existing file, usually for reading.")
+TAG (U"#outfile %variable %initialValue")
+DEFINITION (U"for a full path to a new file, usually for saving.")
+TAG (U"#folder %variable %initialValue")
+DEFINITION (U"for a full path to a folder.")
 NORMAL (U"Inside the script, strings are known as string variables, numbers as numeric variables. Consider the following form:")
 CODE (U"#form Sink it")
 	CODE1 (U"#sentence Name_of_the_ship Titanic")
@@ -3223,6 +3437,20 @@ CODE (U"#form Fill attributes")
 CODE (U"#endform")
 CODE (U"#writeInfoLine: \"You chose the colour \", colour\\$ , \" and the texture \", texture\\$ , \".\"")
 NORMAL (U"You can combine two short fields into one by using %left and %right:")
+NORMAL (U"The field types #infile, #outfile and #folder always yield a full path. "
+	"Consider the script $$playFile.praat$, which contains the following:")
+CODE (U"#form Play file")
+	CODE1 (U"#infile File_to_play hello.wav")
+CODE (U"#endform")
+CODE (U"#writeInfoLine: \"You chose the file \", file_to_play\\$ , \".\"")
+CODE (U"Read from file: file_to_play\\$ ")
+CODE (U"Play")
+CODE (U"Remove")
+NORMAL (U"If you just click OK and $$playFile.praat$ is in the folder $$/Users/miep/research/usefulScripts$, "
+	"then this will print")
+CODE (U"You chose the file /Users/miep/research/usefulScripts/hello.wav.")
+NORMAL (U"into the Info window, and play the sound in that file.")
+NORMAL (U"You can combine two short fields into one by using %left and %right:")
 CODE (U"#form Get duration")
 	CODE1 (U"#natural left_Year_range 1940")
 	CODE1 (U"#natural right_Year_range 1945")
@@ -3240,6 +3468,12 @@ NORMAL (U"With #runScript, Praat will not display a form window, but simply exec
 NORMAL (U"Values for #choice must be passed as strings:")
 CODE (U"#runScript: \"fill attributes.praat\", \"Navy blue\", \"With holes\"")
 NORMAL (U"You can pass values for #boolean either as \"yes\" and \"no\" or as 1 and 0.")
+NORMAL (U"In #runScript, the path to the external script, as well as the paths to #infile, #outfile and #folder parameters "
+	"are taken relative to the folder of the current script. For instance, suppose that the current script is "
+	"$$/Users/miep/research/project19/analyse.praat$ and contains:")
+CODE (U"#runScript: \"../usefulScripts/playFile.praat\", \"sounds/sound3.wav\"")
+NORMAL (U"then running the current script will run the above-mentioned script $$/Users/miep/research/usefulScripts/playFile.praat$, "
+	"which will play the file $$/Users/miep/research/project19/sounds/sound3.wav$.")
 MAN_END
 
 MAN_BEGIN (U"Scripting 6.2. Writing to the Info window", U"ppgb", 20140111)
@@ -3457,7 +3691,7 @@ NORMAL (U"This example uses several tricks. A useful one is seen with %number_of
 	"this is at the same time the value that is passed to #optionMenu (and therefore determines the setting of "
 	"the \"Number of channels\" menu when the window appears) and the name of the variable in which the user's "
 	"chosen value of \"Number of channels\" is stored (because \"number_of_channels\" is what you get "
-	"by replacing the spaces in \"Number of channels\" with underscores and turning its first letter to lower case.")
+	"by replacing the spaces in \"Number of channels\" with underscores and turning its first letter to lower case).")
 NORMAL (U"Your own pause windows are not likely to be as rich as the above example. "
 	"For instance, the example has three continuation buttons (the second of these is the default button, "
 	"i.e. the button that you can \"click\" by pressing the Enter or Return key). "
@@ -3579,7 +3813,7 @@ NORMAL (U"In this example, $$fonsg19.hum.uva.nl$ is the computer on which MovieE
 NORMAL (U"The number 6667 is the port number on which MovieEdit is listening. Other programs will use different port numbers.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 6.8. Messages to the user", U"ppgb", 20170718)
+MAN_BEGIN (U"Scripting 6.8. Messages to the user", U"ppgb", 20210711)
 NORMAL (U"If the user makes a mistake (e.g. types conflicting settings into your form window), "
 	"you can use the #exitScript function (@@Scripting 5.9. Quitting|\\SS5.8@) "
 	"to stop the execution of the script with an error message:")
@@ -3604,7 +3838,7 @@ NORMAL (U"You can prevent Praat from issuing warning messages:")
 CODE (U"nowarn Save as WAV file: \"hello.wav\"")
 NORMAL (U"This prevents warning messages about clipped samples, for instance.")
 NORMAL (U"You can also prevent Praat from showing a progress window:")
-CODE (U"noprogress To Pitch: 0, 75, 500")
+CODE (U"pitch = noprogress To Pitch: 0, 75, 500")
 NORMAL (U"This prevents the progress window from popping up during lengthy operations. "
 	"Use this only if you want to prevent the user from stopping the execution of the script.")
 NORMAL (U"Finally, you can make Praat ignore error messages:")
@@ -3612,7 +3846,7 @@ CODE (U"nocheck Remove")
 NORMAL (U"This would cause the script to continue even if there is nothing to remove.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 6.9. Calling from the command line", U"ppgb", 20151031)
+MAN_BEGIN (U"Scripting 6.9. Calling from the command line", U"ppgb", 20220101)
 INTRO (U"Previous sections of this tutorial have shown you how to run a Praat script from the Script window. "
 	"However, you can also call a Praat script from the command line (text console) instead. "
 	"Information that would normally show up in the Info window, then goes to %stdout, "
@@ -3649,6 +3883,12 @@ NORMAL (U"On the Mac, you do")
 CODE (U"/Applications/Praat.app/Contents/MacOS/Praat --open data/hello.wav data/hello.TextGrid")
 NORMAL (U"and on Linux")
 CODE (U"/usr/bin/praat --open data/hello.wav data/hello.TextGrid")
+NORMAL (U"Again, if Praat was already running when you typed the command, "
+	"the two files are added as objects to the existing list in Praat.")
+NORMAL (U"Note that if you want to send messages or files to a running Praat, "
+	"the best way (on all platforms) is to use $$praat --send$ (see below) "
+	"or %sendpraat (see @@Scripting 8. Controlling Praat from another program@).")
+NORMAL (U"To always start up a new instance of Praat, use $$--new-open$ instead of $$--open$.")
 
 ENTRY (U"3. Calling Praat to open a script")
 NORMAL (U"On Windows, when you type")
@@ -3665,7 +3905,7 @@ NORMAL (U"Note that on all three platforms, you have to supply quotes around the
 	"or above between $$Program$ and $$Files$. This is because the script languages of "
 	"the Console or Terminal use spaces for separating commands and arguments.")
 
-ENTRY (U"4. Calling Praat to run a script")
+ENTRY (U"4. Calling Praat to run a script in the background")
 NORMAL (U"Now we are ready to discuss how to run Praat without a GUI.")
 NORMAL (U"On Windows, when you type")
 CODE (U"\"C:\\bsProgram Files\\bsPraat.exe\" --run \"my script.praat\"")
@@ -3714,11 +3954,28 @@ CODE (U"/usr/bin/praat --run testCommandLineCalls.praat \"I love you\" 0.4 \"Me 
 NORMAL (U"Note that each argument that contains one or more spaces has to be put within quotes, "
 	"on all three platforms. As with #runScript, Praat will not present a form window, "
 	"but simply run the script with the arguments given on the command line "
-	"(see @@Scripting 6.1. Arguments to the script@).")
-NORMAL (U"What then happens on all three platforms is that a console instantiation of Praat writes "
+	"(see @@Scripting 6.1. Arguments to the script@). What then happens on all three platforms is that a console instantiation of Praat writes "
 	"the two lines to the Console window and plays the three sounds.")
+NORMAL (U"The path to the script file as well as to #infile, #outfile and #folder "
+	"arguments will be taken relative to the current working directory of the terminal window. For instance, "
+	"the following example from @@Scripting 6.1. Arguments to the script@ will run the script "
+	"$$/Users/miep/research/usefulScripts/playFile.praat$, which will play the sound file "
+	"$$/Users/miep/research/project19/sounds/sound3.wav$:")
+CODE (U"cd /Users/miep/research/project19")
+CODE (U"/usr/bin/praat --run ../usefulScripts/playFile.praat sounds/sound3.wav")
 
-ENTRY (U"6. Calling Praat from other programs such as Python")
+ENTRY (U"6. Calling Praat to run a script in the GUI")
+NORMAL (U"You can send a script to a running Praat. Praat will then execute it:")
+CODE (U"\"C:\\bsProgram Files\\bsPraat.exe\" --send testCommandLineCalls.praat \"I love you\" 0.4 \"Me too\"")
+CODE (U"/Applications/Praat.app/Contents/MacOS/Praat --send testCommandLineCalls.praat \"I love you\" 0.4 \"Me too\"")
+CODE (U"/usr/bin/praat --send testCommandLineCalls.praat \"I love you\" 0.4 \"Me too\"")
+NORMAL (U"This works the same way as $$--run$, except that $$--send$ runs in Praat’s Graphical User Interface. "
+	"If Praat is already running, then that instance of Praat will execute your script. "
+	"If Praat is not running yet, then a new GUI instance of Praat will start up and execute your script. "
+	"To always start up a new instance of Praat, use $$--new-send$ instead of $$--send$.")
+NORMAL (U"See also %sendpraat (see @@Scripting 8. Controlling Praat from another program@).")
+
+ENTRY (U"7. Calling Praat from other programs such as Python")
 NORMAL (U"You can run the above script from several programming languages, not just from a Console or Terminal. "
 	"In Python, for instance, you can do it using the same syntax as you would use in the Console or Terminal:")
 CODE (U"import os")
@@ -3737,8 +3994,8 @@ CODE (U"subprocess.call(['C:\\bs\\bsProgram Files\\bs\\bsPraat.exe', '--run', 't
 NORMAL (U"Many other programs beside Python have a $$system$-like command, so that you can run a command like")
 CODE (U"system ('\"C:\\bs\\bsProgram Files\\bs\\bsPraat.exe\" --run testCommandLineCalls.praat \"I love you\" 0.4 \"Me too\"')")
 
-ENTRY (U"7. What happens if I specify neither --open nor --run?")
-NORMAL (U"If you specify neither $$--open$ nor $$--run$, Praat's behaviour is not guaranteed. "
+ENTRY (U"8. What happens if I specify neither --open nor --run nor --send?")
+NORMAL (U"If you specify neither $$--open$ nor $$--run$ nor $$--send$, Praat's behaviour is not guaranteed. "
 	"If you type something like")
 CODE (U"praat testCommandLineCalls.praat \"I love you\" 0.4 \"Me too\"")
 NORMAL (U"into a Console or Terminal window by hand, Praat will typically run the script. "
@@ -3746,25 +4003,37 @@ NORMAL (U"into a Console or Terminal window by hand, Praat will typically run th
 	"However, if you redirect the output of Praat to a file or pipe, you cannot typically leave out the $$--run$ option; "
 	"if you do, Praat may start its GUI and %open the file rather than run it.")
 
-ENTRY (U"8. Running Praat interactively from the command line")
+ENTRY (U"9. Running Praat interactively from the command line")
 NORMAL (U"On the Mac and Linux, you have the possibility of running the program interactively from the command line:")
 CODE (U"> /usr/bin/praat -")
 NORMAL (U"You can then type in any of the fixed and dynamic commands, and commands that handle object selection, "
 	"such as #selectObject. This method also works in pipes:")
 CODE (U"> echo \"Report memory use\" | /usr/bin/praat -")
 
-ENTRY (U"9. Calling Praat from a web server")
+ENTRY (U"10. Calling Praat from a web server")
 NORMAL (U"If you call Praat from a web server, you typically do not want to read and write its preferences and buttons files. "
 	"To achieve this, you use the ##--no-pref-files# command line option before the script name:")
 CODE (U"system ('/users/apache/praat --run --no-pref-files /user/apache/scripts/computeAnalysis.praat 1234 blibla')")
 NORMAL (U"On Windows, you will often want to specify ##--utf8# as well, because otherwise "
 	"Praat will write its output to BOM-less UTF-16 files, which many programs do not understand.")
 
-ENTRY (U"10. All command line options")
+ENTRY (U"11. All command line switches and options")
+NORMAL (U"Switches:")
 TAG (U"##--open")
-DEFINITION (U"Interpret the command line arguments as files to be opened in the GUI.")
+DEFINITION (U"Interpret the command line arguments as files to be opened in an existing or new GUI.")
+TAG (U"##--new-open")
+DEFINITION (U"Start a new GUI and interpret the command line arguments as files to be opened.")
 TAG (U"##--run")
-DEFINITION (U"Interpret the command line arguments as a script file name and its arguments.")
+DEFINITION (U"Interpret the command line arguments as a script file name and its arguments, to run without a GUI.")
+TAG (U"##--send")
+DEFINITION (U"Interpret the command line arguments as a script file name and its arguments, to run in an existing or new GUI.")
+TAG (U"##--new-send")
+DEFINITION (U"Start a new GUI and interpret the command line arguments as a script file name and its arguments.")
+TAG (U"##--version")
+DEFINITION (U"Print the Praat version.")
+TAG (U"##--help")
+DEFINITION (U"Print this list of command line options.")
+NORMAL (U"Options:")
 TAG (U"##--no-pref-files#")
 DEFINITION (U"Ignore the preferences file and the buttons file at start-up, and don't write them when quitting (see above).")
 TAG (U"##--no-plugins#")
@@ -3772,10 +4041,6 @@ DEFINITION (U"Don't activate the plugins at start-up.")
 TAG (U"##--pref-dir=#/var/www/praat_plugins")
 DEFINITION (U"Set the preferences folder to /var/www/praat_plugins (for instance). "
 	"This can come in handy if you require access to preference files and/or plugins that are not in your home folder.")
-TAG (U"##--version")
-DEFINITION (U"Print the Praat version.")
-TAG (U"##--help")
-DEFINITION (U"Print this list of command line options.")
 TAG (U"##-8#, ##--utf8#")
 DEFINITION (U"Write the output (e.g. of $writeInfo$) in UTF-8 encoding. This is the default encoding on MacOS and Linux, "
 	"but on Windows the default is the Console's native UTF-16 Little Endian (i.e. the Console understands UTF-16 always, "
@@ -3792,6 +4057,10 @@ TAG (U"##-u#, ##--utf16#")
 DEFINITION (U"Write the output (e.g. of $writeInfo$) in UTF-16 Little Endian encoding, without Byte Order Mark. "
 	"This format is the default on Windows, "
 	"but you can use it to write the output to a UTF-16LE-encoded file on any platform.")
+TAG (U"##--trace#")
+DEFINITION (U"Switch tracing on at start-up.")
+TAG (U"##--hide-picture#")
+DEFINITION (U"Hide the Picture window at start-up.")
 MAN_END
 
 MAN_BEGIN (U"Scripting 7. Scripting the editors", U"ppgb", 20040222)
@@ -3853,7 +4122,7 @@ LIST_ITEM (U"6. Since you will want this script to be available in all future So
 	"instead of the preset value (\"File\"). For the name of the %Command, you type something like \"Show spectrum at cursor\" "
 	"(instead of \"Do it...\"). Then you click #OK.")
 NORMAL (U"The command will be visible in every SoundEditor that you create from now on. "
-	"To see this, close the one visible SoundEditor, select the original Sound, choose ##View & Edit# again, and inspect the #Spectrum menu. "
+	"To see this, close the one visible SoundEditor, select the original Sound, choose ##View & Edit# again, and inspect the #Spectrogram menu. "
 	"You can now view the spectrum around the cursor just by choosing this menu command.")
 NORMAL (U"After you leave Praat and start it again, the command will continue to appear in the SoundEditor. "
 	"If you don't like the command any longer, you can remove it with the @ButtonEditor, which you can start "
@@ -3911,22 +4180,22 @@ MAN_BEGIN (U"sendpraat", U"ppgb", 20000927)
 NORMAL (U"See @@Scripting 8. Controlling Praat from another program@.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 8. Controlling Praat from another program", U"ppgb", 20021218)
+MAN_BEGIN (U"Scripting 8. Controlling Praat from another program", U"ppgb", 20220514)
+INTRO (U"Sendpraat is a function for sending messages to a %running Praat. "
+	"It is also a Windows, MacOS, or Linux console program with the same purpose.")
+NORMAL (U"As sendpraat cannot start up a new instance of Praat, you may often want to use "
+	"$$praat --send$ instead (see @@Scripting 6.9. Calling from the command line@).")
 LIST_ITEM (U"@@Scripting 8.1. The sendpraat subroutine")
 LIST_ITEM (U"@@Scripting 8.2. The sendpraat program")
-LIST_ITEM (U"@@Scripting 8.3. The sendpraat directive")
 MAN_END
 
-MAN_BEGIN (U"Scripting 8.1. The sendpraat subroutine", U"ppgb", 20151020)
-INTRO (U"A subroutine for sending messages to a %running Praat. "
-	"Also a Windows console, MacOS, or Linux console program with the same purpose.")
+MAN_BEGIN (U"Scripting 8.1. The sendpraat subroutine", U"ppgb", 20211207)
+INTRO (U"Sendpraat can be a subroutine for sending messages to a %running Praat program.")
 ENTRY (U"Syntax")
 LIST_ITEM (U"##sendpraat (void *#%display##, const char *#%program##, long #%timeOut##, char *#%text##);")
 ENTRY (U"Arguments")
 TAG (U"%display")
-DEFINITION (U"the display pointer if the subroutine is called from a running X program; "
-	"if null, sendpraat will open the display by itself. On Windows and Macintosh, "
-	"this argument is ignored.")
+DEFINITION (U"this argument is ignored; you can supply NULL.")
 TAG (U"%program")
 DEFINITION (U"the name of a running program that uses the Praat shell, e.g. \"Praat\" or \"ALS\". "
 	"The first letter may be specified as lower or upper case; it will be converted "
@@ -3954,10 +4223,10 @@ NORMAL (U"Suppose you have a sound file whose name is in the variable $fileName,
 	"to play this sound backwards.")
 CODE (U"char message [1000], *errorMessage;")
 CODE (U"sprintf (message, \"Read from file... \\% s\\bsnPlay reverse\\bsnRemove\", fileName);")
-CODE (U"errorMessage = #sendpraat (NULL, \"praat\", 1000, message);")
+CODE (U"errorMessage = #sendpraat (NULL, \"praat\", 3000, message);")
 NORMAL (U"This will work because ##Play reverse# is an action command "
 	"that becomes available in the dynamic menu when a Sound is selected. "
-	"On Linux, sendpraat will allow #Praat at most 1000 seconds to perform this.")
+	"On Linux, sendpraat will allow #Praat at most 3000 seconds to perform this.")
 ENTRY (U"Example 3: executing a large script file")
 NORMAL (U"Sometimes, it may be unpractical to send a large script directly to #sendpraat. "
 	"Fortunately, the receiving program knows #runScript:")
@@ -3966,7 +4235,7 @@ CODE (U"strcpy (message, \"runScript: \\bs\"doAll.praat\\bs\", 20\");")
 CODE (U"errorMessage = #sendpraat (NULL, \"praat\", 0, message);")
 NORMAL (U"This causes the program #Praat to run the script ##doAll.praat# with an argument of \"20\".")
 ENTRY (U"How to download")
-NORMAL (U"You can download the source code of the sendpraat subroutine and program "
+NORMAL (U"You can download the source code of the sendpraat subroutine "
 	"via ##www.praat.org# or from ##http://www.fon.hum.uva.nl/praat/sendpraat.html#.")
 ENTRY (U"Instead")
 NORMAL (U"Instead of using sendpraat, you can also just take the following simple steps in your program:")
@@ -3974,15 +4243,17 @@ LIST_ITEM (U"1. on Linux, write the Praat script that you want to run, and save 
 LIST_ITEM (U"2. get Praat's process id from ##~/.praat-dir/pid#;")
 LIST_ITEM (U"3. if Praat's process id is e.g. 1178, send it a SIGUSR1 signal: $$kill -USR1 1178")
 NORMAL (U"If the first line of your script is the comment \"\\#  999\", where 999 stands for the process id of your program, "
-	"Praat will send your program a SIGUSR2 signal back when it finishes handling the script.")
+	"Praat will send your program a SIGUSR2 signal back when it finishes handling the script. "
+	"If you do not want to receive such a message (if your program has no handler for it, the SIGUSR2 signal will kill your program), "
+	"then do not include such a line.")
 ENTRY (U"See also")
 NORMAL (U"To start a program from the command line instead and sending it a message, "
 	"you would not use #sendpraat, but instead run the program with a script file as an argument. "
 	"See @@Scripting 6.9. Calling from the command line@.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 8.2. The sendpraat program", U"ppgb", 20151020)
-INTRO (U"A Windows console or Unix (MacOS, Linux) terminal program for sending messages to a %running Praat program.")
+MAN_BEGIN (U"Scripting 8.2. The sendpraat program", U"ppgb", 20211207)
+INTRO (U"Sendpraat can be a Windows console or Unix (MacOS, Linux) terminal program for sending messages to a %running Praat program.")
 ENTRY (U"Syntax")
 CODE (U"#sendpraat [%timeOut] %program %message...")
 NORMAL (U"For the meaning of the arguments, see @@Scripting 8.1. The sendpraat subroutine|the sendpraat subroutine@.")
@@ -4002,38 +4273,9 @@ NORMAL (U"This causes the program #Als to draw five concentric circles into the 
 ENTRY (U"Example 4: running a large script")
 CODE (U"sendpraat praat \"runScript: \\bs\"doAll.praat\\bs\", 20\"")
 NORMAL (U"This causes the program #Praat to execute the script ##doAll.praat# with an argument of \"20\".")
-MAN_END
-
-MAN_BEGIN (U"Scripting 8.3. The sendpraat directive", U"ppgb", 20140112)
-INTRO (U"Besides being a subroutine (@@Scripting 8.1. The sendpraat subroutine@) "
-	"and a program (@@Scripting 8.2. The sendpraat program@), @sendpraat "
-	"can also be called from within a Praat script.")
-ENTRY (U"Example 1: killing a program")
-NORMAL (U"Suppose we are in the Praat-shell program #Als, which is a browser for dictionaries, "
-	"and we want to kill the Praat-shell program #Praat, which is a program for phonetics research:")
-CODE (U"beginSendpraat: \"Praat\"")
-CODE1 (U"Quit")
-CODE (U"endSendpraat")
-ENTRY (U"Example 2: playing a sound")
-NORMAL (U"Suppose we are in the Praat-shell program #Als, which is a browser for dictionaries, "
-	"and has no idea of what a %sound is. From this program, we can play a sound file "
-	"by sending a message to the Praat-shell program #Praat, which does know about sounds:")
-CODE (U"fileName\\$  = chooseReadFile\\$ : \"Play a sound file\"")
-CODE (U"beginSendpraat: \"Praat\", \"fileName\\$ \"")
-CODE1 (U"Read from file: fileName\\$ ")
-CODE1 (U"Play")
-CODE1 (U"Remove")
-CODE (U"endSendpraat")
-NORMAL (U"After #beginSendpraat, you first mention the name of the receiving program (here \"Praat\"), "
-        "then the names of the variables you want the receiving program to know about.")
-NORMAL (U"To have the receiving program return information to you, specify the variables that are to be handed back:")
-CODE (U"fileName\\$  = chooseReadFile\\$ : \"Measure a sound file\"")
-CODE (U"beginSendpraat: \"Praat\", \"fileName\\$ \"")
-CODE1 (U"Read from file: fileName\\$ ")
-CODE1 (U"duration = Get total duration")
-CODE1 (U"Remove")
-CODE (U"endSendpraat: \"duration\"")
-CODE (U"writeInfoLine: \"That sound file lasts \", duration, \" seconds.\"")
+ENTRY (U"How to download")
+NORMAL (U"You can download the sendpraat program "
+	"via ##www.praat.org# or from ##http://www.fon.hum.uva.nl/praat/sendpraat.html#.")
 MAN_END
 
 /*
@@ -4111,12 +4353,12 @@ NORMAL (U"First, we create a ScriptEditor by choosing @@New Praat script@ from t
 LIST_ITEM (U"1. Choose ##Create Sound as pure tone...# from the @@New menu@ and click OK.")
 LIST_ITEM (U"2. Click #Play in the dynamic menu.")
 LIST_ITEM (U"3. Click the fixed #Remove button.")
-NORMAL (U"We then choose @@Paste history@ from the #Edit menu in the ScriptEditor (or type Command-H). "
+NORMAL (U"We then choose @@Paste history@ from the #Edit menu in the ScriptEditor (or type @@Keyboard shortcuts|Command-H@). "
 	"The text will now contain at least the following lines (delete any other lines):")
 CODE (U"Create Sound as pure tone: \"tone\", 1, 0, 0.4, 44100, 440, 0.2, 0.01, 0.01")
 CODE (U"Play")
 CODE (U"Remove")
-NORMAL (U"We can run this script again by choosing #Run from the #Run menu (or typing Command-R). "
+NORMAL (U"We can run this script again by choosing #Run from the #Run menu (or typing @@Keyboard shortcuts|Command-R@). "
 	"However, this always plays a sine with a frequency of 440 Hz, so we will add the variable \"Frequency\" "
 	"to the script, which then looks like:")
 CODE (U"#form Play a sine wave")
@@ -4295,9 +4537,9 @@ NORMAL (U"The absolute amplitude in volts cannot be handled, of course, but line
 CODE (U"Create Sound from formula: \"sweep\", 1, 0, 60, 44100,")
 CODE (U"... ~ 0.05 * (1 + 11 * x/60) * sin (2*pi * (1000 + 11000/2 * x/60) * x)")
 NORMAL (U"Note the \"/2\" in this formula. Here is the derivation of the formula:")
-FORMULA (U"%frequency (%t) = 1000 + 11000 %t / 60")
-FORMULA (U"%phase (%t) = \\in %frequency (%t) %dt = 1000 %t + 11000 (%t^2/2) / 60")
-FORMULA (U"%signal (%t) = sin (%phase (%t))")
+EQUATION (U"%frequency (%t) = 1000 + 11000 %t / 60")
+EQUATION (U"%phase (%t) = \\in %frequency (%t) %dt = 1000 %t + 11000 (%t^2/2) / 60")
+EQUATION (U"%signal (%t) = sin (%phase (%t))")
 MAN_END
 
 MAN_BEGIN (U"Script for onset detection", U"ppgb", 20140112)

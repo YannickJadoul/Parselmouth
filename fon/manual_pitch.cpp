@@ -1,6 +1,6 @@
 /* manual_pitch.cpp
  *
- * Copyright (C) 1992-2007,2010,2011,2015-2017 Paul Boersma
+ * Copyright (C) 1992-2007,2010,2011,2015-2017,2020,2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ DEFINITION (U"the time range (%t__1_, %t__2_). Values outside this range are ign
 	"If %t__1_ is not less than %t__2_, the entire time domain of the Harmonicity is considered.")
 ENTRY (U"Algorithm")
 NORMAL (U"The mean harmonicity between the times %t__1_ and %t__2_ is defined as")
-FORMULA (U"1/(%t__2_ - %t__1_)  \\in__%%t%1_^^%%t%2^ %dt %x(%t)")
+EQUATION (U"1/(%t__2_ - %t__1_)  \\in__%%t%1_^^%%t%2^ %dt %x(%t)")
 NORMAL (U"where %x(%t) is the harmonicity (in dB) as a function of time. "
 	"Frames in which the value is undefined (i.e. in silent intervals) "
 	"are ignored. If all the frames are silent, the returned value is @undefined.")
@@ -111,10 +111,10 @@ DEFINITION (U"the time range (%t__1_, %t__2_). Values outside this range are ign
 	"If %t__1_ is not less than %t__2_, the entire time domain of the Harmonicity is considered.")
 ENTRY (U"Algorithm")
 NORMAL (U"The standard deviation between the times %t__1_ and %t__2_ is defined as")
-FORMULA (U"1/(%t__2_ - %t__1_)  \\in__%%t%1_^^%%t%2^ %dt (%x(%t) - %\\mu)^2")
+EQUATION (U"1/(%t__2_ - %t__1_)  \\in__%%t%1_^^%%t%2^ %dt (%x(%t) - %\\mu)^2")
 NORMAL (U"where %x(%t) is the harmonicity (in dB) as a function of time, and %\\mu its mean. "
 	"For our discrete Harmonicity object, the standard deviation is approximated by")
-FORMULA (U"1/(%n-1) \\su__%i=%m..%m+%n-1_ (%x__%i_ - %\\mu)^2")
+EQUATION (U"1/(%n-1) \\su__%i=%m..%m+%n-1_ (%x__%i_ - %\\mu)^2")
 NORMAL (U"where %n is the number of frame centres between %t__1_ and %t__2_. Note the \"minus 1\".")
 MAN_END
 
@@ -359,7 +359,7 @@ NORMAL (U"The time domain of the resulting PitchTier is a union of the domains o
 	"and PointProcess functions.")
 MAN_END
 
-MAN_BEGIN (U"PitchEditor", U"ppgb", 20110808)
+MAN_BEGIN (U"PitchEditor", U"ppgb", /*20110808*/ 20220814)
 INTRO (U"One of the @Editors in Praat, for viewing and modifying a @Pitch object.")
 ENTRY (U"What the Pitch editor shows")
 NORMAL (U"In the window of the PitchEditor, you will see the following features:")
@@ -393,7 +393,7 @@ NORMAL (U"To change the path automatically, choose ##Path finder...# from the #E
 	"but is much faster because the candidates do not have to be determined again.")
 ENTRY (U"Resynthesis")
 NORMAL (U"To hum any part of the pitch contour, click on one of the buttons "
-	"below or above the data area (there can be 1 to 8 of these buttons), or use a #Play command from the #View menu.")
+	"below or above the data area (there can be 1 to 8 of these buttons), or use a command from the #Play menu.")
 ENTRY (U"Changing the ceiling")
 NORMAL (U"To change the ceiling, but not the path, choose ##Change ceiling...# from the #Edit menu; "
 	"if the new ceiling is lower than the old ceiling, some formerly voiced frames may become unvoiced; "
@@ -484,7 +484,7 @@ DEFINITION (U"the time window, in seconds. Values outside this window are ignore
 ENTRY (U"Algorithm")
 NORMAL (U"The curve consists of a sequence of line segments. The contribution of the line segment from "
 	"(%t__1_, %f__1_) to (%t__2_, %f__2_) to the area under the curve is")
-FORMULA (U"1/2 (%f__1_ + %f__2_) (%t__2_ \\-- %t__1_)")
+EQUATION (U"1/2 (%f__1_ + %f__2_) (%t__2_ \\-- %t__1_)")
 NORMAL (U"The mean is the sum of these values divided by %toTime \\-- %fromTime.")
 NORMAL (U"For a PitchTier that was created from a @Pitch object, this command gives the same result as "
 	"##Get mean....# for the original Pitch object (but remember that the median, "
@@ -518,7 +518,7 @@ DEFINITION (U"the selected time domain. Values outside this domain are ignored. 
 ENTRY (U"Algorithm")
 NORMAL (U"The curve consists of a sequence of line segments. The contribution of the line segment from "
 	"(%t__1_, %f__1_) to (%t__2_, %f__2_) to the variance-multiplied-by-time is")
-FORMULA (U"[ 1/4 (%f__1_ + %f__2_)^2 + 1/12 (%f__1_ \\-- %f__2_)^2 ] (%t__2_ \\-- %t__1_)")
+EQUATION (U"[ 1/4 (%f__1_ + %f__2_)^2 + 1/12 (%f__1_ \\-- %f__2_)^2 ] (%t__2_ \\-- %t__1_)")
 NORMAL (U"The standard deviation is the square root of: the sum of these values divided by %toTime \\-- %fromTime.")
 NORMAL (U"To get the standard deviation in the points only, i.e. not weighted by the durations of the line pieces, "
 	"Use @@PitchTier: Get standard deviation (points)...@ instead.")
@@ -569,7 +569,7 @@ NORMAL (U"Points are generated along the entire time domain of the #PitchTier, "
 	"under the linearly interpolated pitch contour, is always 1.")
 MAN_END
 
-MAN_BEGIN (U"PitchTierEditor", U"ppgb", 20110128)
+MAN_BEGIN (U"PitchTierEditor", U"ppgb", /*20110128*/ 20220814)
 INTRO (U"One of the @Editors in Praat, for viewing and manipulating a @PitchTier object, "
 	"which is optionally shown together with a @Sound object.")
 ENTRY (U"Objects")
@@ -579,10 +579,10 @@ LIST_ITEM (U"\\bu The @Sound, if you selected a Sound object together with the P
 LIST_ITEM (U"\\bu The @PitchTier: blue points connected with blue lines.")
 ENTRY (U"Playing")
 NORMAL (U"To play (a part of) the %resynthesized sound: "
-	"@click on any of the 8 buttons below and above the drawing area, or choose a Play command from the View menu.")
+	"@click on any of the 8 buttons below and above the drawing area, or choose a command from the Play menu.")
 NORMAL (U"To play the %original sound instead, use @@Shift-click@.")
 ENTRY (U"Adding a point")
-NORMAL (U"@Click at the desired time location, and choose ##Add point at cursor# or type ##Command-P#.")
+NORMAL (U"@Click at the desired time location, and choose ##Add point at cursor# or type @@Keyboard shortcuts|Command-P@.")
 ENTRY (U"Removing points")
 NORMAL (U"To remove one or more pitch points, "
 	"make a @@time selection@ and choose ##Remove point(s)# from the ##Point# menu. "
@@ -661,7 +661,7 @@ NORMAL (U"This is the algorithm described at @@Sound: To Pitch (ac)...@, "
 	"with all the parameters not mentioned above set to their standard values.")
 MAN_END
 
-MAN_BEGIN (U"Sound: To Pitch (ac)...", U"ppgb", 20030916)
+MAN_BEGIN (U"Sound: To Pitch (ac)...", U"ppgb", 20220924)
 INTRO (U"A command that creates a @Pitch object from every selected @Sound object.")
 ENTRY (U"Purpose")
 NORMAL (U"to perform a pitch analysis based on an autocorrelation method.")
@@ -705,7 +705,9 @@ DEFINITION (U"frames that do not contain amplitudes above this threshold (relati
 	"are probably silent.")
 TAG (U"##Voicing threshold# (standard value: 0.45)")
 DEFINITION (U"the strength of the unvoiced candidate, relative to the maximum possible autocorrelation. "
-	"To increase the number of unvoiced decisions, increase this value.")
+	"If the amount of periodic energy in a frame is more than this fraction of the total energy (the remainder being noise), "
+	"then Praat will prefer to regard this frame as voiced; otherwise as unvoiced. "
+	"To increase the number of unvoiced decisions, increase the voicing threshold.")
 TAG (U"##Octave cost# (standard value: 0.01 per octave)")
 DEFINITION (U"degree of favouring of high-frequency candidates, relative to the maximum possible autocorrelation. "
 	"This is necessary because even (or: especially) in the case of a perfectly periodic signal, "

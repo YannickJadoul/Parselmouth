@@ -1,6 +1,6 @@
 /* TableOfReal_extensions.cpp
  *
- * Copyright (C) 1993-2020 David Weenink, 2017 Paul Boersma
+ * Copyright (C) 1993-2022 David Weenink, 2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@
  djmw 20111123 Always use Melder_wcscmp
 */
 
+#include "Correlation.h"
 #include "Covariance.h"
 #include "Graphics_extensions.h"
 #include "Matrix_extensions.h"
@@ -87,7 +88,7 @@ void TableOfReal_copyOneRowWithLabel (TableOfReal me, TableOfReal thee, integer 
 			U"The dimensions do not fit.");
 		
 		thy rowLabels [thyrow] = Melder_dup (my rowLabels [myrow].get());
-		thy data.row (thyrow) <<= my data.row (myrow); 
+		thy data.row (thyrow)  <<=  my data.row (myrow);
 	} catch (MelderError) {
 		Melder_throw (me, U": row ", myrow, U" not copied to ", thee);
 	}
@@ -206,9 +207,9 @@ autoStrings TableOfReal_extractColumnLabels (TableOfReal me) {
 autoTableOfReal TableOfReal_transpose (TableOfReal me) {
 	try {
 		autoTableOfReal thee = TableOfReal_create (my numberOfColumns, my numberOfRows);
-		thy data.all() <<= my data.transpose();
-		thy columnLabels.all() <<= my rowLabels.all();
-		thy rowLabels.all() <<= my columnLabels.all();
+		thy data.all()  <<=  my data.transpose();
+		thy columnLabels.all()  <<=  my rowLabels.all();
+		thy rowLabels.all()  <<=  my columnLabels.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not transposed.");
@@ -262,22 +263,24 @@ void TableOfReal_getColumnExtrema (TableOfReal me, integer col, double *out_min,
 		*out_max = NUMmax (my data.column (col));
 }
 
-void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, conststring32 rows, integer colb, integer cole, double ymin,
-	double ymax, double xoffsetFraction, double interbarFraction, double interbarsFraction, conststring32 greys, bool garnish) {
-	colb = colb == 0 ? 1 : colb;
-	cole = cole == 0 ? my numberOfColumns : cole;
+void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, constINTVECVU const& rowNumbers, integer colb, integer cole, double ymin,
+	double ymax, double xoffsetFraction, double interbarFraction, double interbarsFraction, constVECVU const& greys, bool garnish)
+{
+	if (colb == 0)   // undefined?
+		colb = 1;   // sensible default: all
+	if (cole == 0)   // undefined?
+		cole = my numberOfColumns;   // sensible default: all
 
-	Melder_require (colb > 0 && colb <= cole && cole <= my numberOfColumns,
-		U"Invalid columns");
+	Melder_require (NUMisSorted4 (1_integer, colb, cole, my numberOfColumns),
+		U"Invalid column numbers");
 
-	autoVEC irows = newVECfromString (rows);
-	for (integer i = 1; i <= irows.size; i ++) {
-		const integer irow = Melder_ifloor (irows [i]);
-		Melder_require (irow > 0 && irow <= my numberOfRows,
-			U"Invalid row (", irow, U").");
+	for (integer i = 1; i <= rowNumbers.size; i ++) {
+		const integer rowNumber = rowNumbers [i];
+		Melder_require (rowNumber > 0 && rowNumber <= my numberOfRows,
+			U"Invalid row (", rowNumber, U").");
 		if (ymin >= ymax) {
 			double min, max;
-			NUMextrema (my data.row (irow).part (colb, cole), & min, & max);
+			NUMextrema (my data.row (rowNumber).part (colb, cole), & min, & max);
 			if (i > 1) {
 				if (min < ymin)
 					ymin = min;
@@ -290,24 +293,22 @@ void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, conststring32 
 		}
 	}
 
-	autoVEC igreys = newVECfromString (greys);
-
 	Graphics_setWindow (g, 0.0, 1.0, ymin, ymax);
 	Graphics_setInner (g);
 
-	const integer ncols = cole - colb + 1, nrows = irows.size;
+	const integer ncols = cole - colb + 1, nrows = rowNumbers.size;
 	const double bar_width = 1.0 / (ncols * nrows + 2.0 * xoffsetFraction + (ncols - 1) * interbarsFraction + ncols * (nrows - 1) * interbarFraction);
 	const double dx = (interbarsFraction + nrows + (nrows - 1) * interbarFraction) * bar_width;
 
 	for (integer i = 1; i <= nrows; i ++) {
-		const integer irow = Melder_ifloor (irows [i]);
+		const integer rowNumber = rowNumbers [i];
 		const double xb = xoffsetFraction * bar_width + (i - 1) * (1.0 + interbarFraction) * bar_width;
 
-		const double grey = i <= igreys.size ? igreys [i] : igreys [igreys.size];
+		const double grey = greys [1 + (i - 1) % greys.size];   // cycle through the colours
 		double x1 = xb;
 		for (integer j = colb; j <= cole; j ++) {
 			const double x2 = x1 + bar_width;
-			double y2 = my data [irow] [j];
+			double y2 = my data [rowNumber] [j];
 			if (y2 > ymin) {
 				if (y2 > ymax)
 					y2 = ymax;
@@ -340,7 +341,7 @@ void TableOfReal_drawBiplot (TableOfReal me, Graphics g, double xmin, double xma
 
 	autoSVD svd = SVD_create (nr, nc);
 
-	svd -> u.all() <<= my data.all();
+	svd -> u.all()  <<=  my data.all();
 	centreEachColumn_MAT_inout (svd -> u.get());
 
 	SVD_compute (svd.get());
@@ -355,13 +356,13 @@ void TableOfReal_drawBiplot (TableOfReal me, Graphics g, double xmin, double xma
 
 	const double lambda1 = pow (svd -> d [1], sv_splitfactor);
 	const double lambda2 = pow (svd -> d [2], sv_splitfactor);
-	x.part (1, nr) <<= svd -> u.column (1)  *  lambda1;
-	y.part (1, nr) <<= svd -> u.column (2)  *  lambda2;
+	x.part (1, nr)  <<=  svd -> u.column (1)  *  lambda1;
+	y.part (1, nr)  <<=  svd -> u.column (2)  *  lambda2;
 	
 	const double lambda3 = svd -> d [1] / lambda1;
 	const double lambda4 = svd -> d [2] / lambda2;
-	x.part (nr + 1, nPoints) <<= svd -> v.column (1)  *  lambda3;
-	y.part (nr + 1, nPoints) <<= svd -> v.column (2)  *  lambda4;
+	x.part (nr + 1, nPoints)  <<=  svd -> v.column (1)  *  lambda3;
+	y.part (nr + 1, nPoints)  <<=  svd -> v.column (2)  *  lambda4;
 	
 	if (xmax <= xmin)
 		NUMextrema (x.get(), & xmin, & xmax);
@@ -464,20 +465,20 @@ void TableOfReal_copyLabels (TableOfReal me, TableOfReal thee, int rowOrigin, in
 	if (rowOrigin == 1) {
 		Melder_require (my numberOfRows == thy numberOfRows,
 			U"Both tables must have the same number of rows.");
-		thy rowLabels.all() <<= my rowLabels.all();
+		thy rowLabels.all()  <<=  my rowLabels.all();
 	} else if (rowOrigin == -1) {
 		Melder_require (my numberOfColumns == thy numberOfRows,
 			U"Both tables must have the same number of columns.");
-		thy rowLabels.all() <<= my columnLabels.all();
+		thy rowLabels.all()  <<=  my columnLabels.all();
 	}
 	if (columnOrigin == 1) {
 		Melder_require (my numberOfColumns == thy numberOfColumns,
 			U"Both tables must have the same number of columns.");
-		thy columnLabels.all() <<= my columnLabels.all();
+		thy columnLabels.all()  <<=  my columnLabels.all();
 	} else if (columnOrigin == -1) {
 		Melder_require (my numberOfRows == thy numberOfColumns,
 			U"Both tables must have the same number of rows.");
-		thy columnLabels.all() <<= my rowLabels.all();
+		thy columnLabels.all()  <<=  my rowLabels.all();
 	}
 }
 
@@ -914,8 +915,7 @@ autoTableOfReal TableOfReal_create_weenink1983 (int option) {
 
 autoTableOfReal TableOfReal_randomizeRows (TableOfReal me) {
 	try {
-		autoPermutation p = Permutation_create (my numberOfRows);
-		Permutation_permuteRandomly_inplace (p.get(), 0, 0);
+		autoPermutation p = Permutation_create (my numberOfRows, false);
 		autoTableOfReal thee = TableOfReal_Permutation_permuteRows (me, p.get());
 		return thee;
 	} catch (MelderError) {
@@ -935,7 +935,7 @@ autoTableOfReal TableOfReal_bootstrap (TableOfReal me) {
 		*/
 		for (integer thyRow = 1; thyRow <= thy numberOfRows; thyRow ++) {
 			const integer myRow = NUMrandomInteger (1, my numberOfRows);
-			thy data.row (thyRow) <<= my data.row (myRow);
+			thy data.row (thyRow)  <<=  my data.row (myRow);
 			TableOfReal_setRowLabel (thee.get(), thyRow, my rowLabels [myRow].get());
 		}
 		return thee;
@@ -1087,9 +1087,9 @@ autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, constINTVEC index, 
 			const integer myindex = reverse ? i : index [i];
 			const integer thyindex = reverse ? index [i] : i;
 			thy rowLabels [thyindex] = Melder_dup (my rowLabels [myindex].get());
-			thy data.row (thyindex) <<= my data.row (myindex);
+			thy data.row (thyindex)  <<=  my data.row (myindex);
 		}
-		thy columnLabels.all() <<= my columnLabels.all();
+		thy columnLabels.all()  <<=  my columnLabels.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not sorted by row index.");
@@ -1173,7 +1173,7 @@ autoTableOfReal TableOfReal_meansByRowLabels (TableOfReal me, bool expand, bool 
 			thee = TableOfReal_create (indexr, my numberOfColumns);
 			for (integer i = 1; i <= indexr; i ++)
 				TableOfReal_copyOneRowWithLabel (sorted.get(), thee.get(), i, i);
-			thy columnLabels.all() <<= sorted -> columnLabels.all();
+			thy columnLabels.all()  <<=  sorted -> columnLabels.all();
 		}
 		return thee;
 	} catch (MelderError) {
@@ -1193,10 +1193,10 @@ autoTableOfReal TableOfReal_rankColumns (TableOfReal me, integer fromColumn, int
 }
 
 /*
-	s[lo]   = precursor<number>
-	s[lo+1] = precursor<number+1>
+	s [lo]   = precursor<number>
+	s [lo+1] = precursor<number+1>
 	...
-	s[hi]   = precursor<number+hi-lo>
+	s [hi]   = precursor<number+hi-lo>
 */
 void TableOfReal_setSequentialColumnLabels (TableOfReal me, integer from, integer to, conststring32 precursor, integer number, integer increment) {
 	from = ( from == 0 ? 1 : from );
@@ -1220,7 +1220,7 @@ void TableOfReal_setSequentialRowLabels (TableOfReal me, integer from, integer t
 autoTableOfReal TableOfReal_to_TableOfReal (TableOfReal me) {
 	try {
 		autoTableOfReal thee = TableOfReal_create (my numberOfRows, my numberOfColumns);
-		thy data.all() <<= my data.all();
+		thy data.all()  <<=  my data.all();
 		TableOfReal_copyLabels (me, thee.get(), 1, 1);
 		return thee;
 	} catch (MelderError) {
@@ -1276,11 +1276,11 @@ autoTableOfReal TableOfReal_appendColumns (TableOfReal me, TableOfReal thee) {
 			'empty':  nullptr or \w*
 		*/
 		autoTableOfReal him = TableOfReal_create (my numberOfRows, ncols);
-		his rowLabels.all() <<= my rowLabels.all();
-		his columnLabels.part (1, my numberOfColumns) <<= my columnLabels.all();
-		his columnLabels.part (my numberOfColumns + 1, ncols) <<= thy columnLabels.all();
-		his data.verticalBand (1, my numberOfColumns) <<= my data.all();
-		his data.verticalBand (my numberOfColumns + 1, ncols) <<= thy data.all();
+		his rowLabels.all()  <<=  my rowLabels.all();
+		his columnLabels.part (1, my numberOfColumns)  <<=  my columnLabels.all();
+		his columnLabels.part (my numberOfColumns + 1, ncols)  <<=  thy columnLabels.all();
+		his data.verticalBand (1, my numberOfColumns)  <<=  my data.all();
+		his data.verticalBand (my numberOfColumns + 1, ncols)  <<=  thy data.all();
 
 		integer labeldiffs = 0;
 		for (integer i = 1; i <= my numberOfRows; i ++)
@@ -1309,7 +1309,7 @@ autoTableOfReal TableOfRealList_appendColumnsMany (TableOfRealList me) {
 		}
 		autoTableOfReal him = TableOfReal_create (nrows, ncols);
 		/* Unsafe: new attributes not initialized. */
-		his rowLabels.all() <<= first -> rowLabels.all();
+		his rowLabels.all()  <<=  first -> rowLabels.all();
 		
 		integer hisColumnIndex = 0;
 		for (integer itab = 1; itab <= my size; itab ++) {
@@ -1317,7 +1317,7 @@ autoTableOfReal TableOfRealList_appendColumnsMany (TableOfRealList me) {
 			for (integer icol = 1; icol <= table -> numberOfColumns; icol ++) {
 				hisColumnIndex ++;
 				TableOfReal_setColumnLabel (him.get(), hisColumnIndex, table -> columnLabels [icol].get());
-				his data.column (hisColumnIndex) <<= table -> data.column (icol);
+				his data.column (hisColumnIndex)  <<=  table -> data.column (icol);
 			}
 		}
 		Melder_assert (hisColumnIndex == his numberOfColumns);
@@ -1362,8 +1362,8 @@ autoTableOfReal TableOfReal_TableOfReal_rowCorrelations (TableOfReal me, TableOf
 			MATnormalizeRows_inplace (my_data.get(), 2.0, 1.0);
 			MATnormalizeRows_inplace (thy_data.get(), 2.0, 1.0);
 		}
-		his rowLabels.all() <<= my rowLabels.all();
-		his columnLabels.all() <<= thy rowLabels.all();
+		his rowLabels.all()  <<=  my rowLabels.all();
+		his columnLabels.all()  <<=  thy rowLabels.all();
 		mul_MAT_out (his data.get(), my_data.get(), thy_data.transpose());
 		return him;
 	} catch (MelderError) {
@@ -1386,8 +1386,8 @@ autoTableOfReal TableOfReal_TableOfReal_columnCorrelations (TableOfReal me, Tabl
 			MATnormalizeColumns_inplace (my_data.get(), 2.0, 1.0);
 			MATnormalizeColumns_inplace (thy_data.get(), 2.0, 1.0);
 		}
-		his rowLabels.all() <<= my columnLabels.all();
-		his columnLabels.all() <<= thy columnLabels.all();
+		his rowLabels.all()  <<=  my columnLabels.all();
+		his columnLabels.all()  <<=  thy columnLabels.all();
 		mul_MAT_out (his data.get(), my_data.transpose(), thy_data.get()); 
 		return him;
 	} catch (MelderError) {
@@ -1413,6 +1413,206 @@ autoMatrix TableOfReal_to_Matrix_interpolateOnRectangularGrid (TableOfReal me, d
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": interpolation not finished.");
+	}
+}
+
+static void TableOfReal_permuteRowElements_inplace (TableOfReal me, integer fromRow, integer toRow) {
+	if (fromRow == 0 && toRow == 0) {
+		fromRow = 1;
+		toRow = my numberOfRows;
+	}
+	Melder_require (fromRow <= toRow && fromRow >= 1 && toRow <= my numberOfRows,
+		U"The row range should be larger than 0 and smaller than ", my numberOfRows + 1);
+	autoPermutation permutation = Permutation_create (my numberOfColumns, true);
+	autoVEC rowData = raw_VEC (my numberOfColumns);
+	for (integer irow = fromRow; irow <= toRow; irow ++) {
+		Permutation_permuteRandomly_inplace (permutation.get(), 0, 0);
+		rowData.get()  <<=  my data.row (irow);
+		for (integer icol = 1; icol <= my numberOfColumns; icol ++)
+			my data [irow][icol] = rowData [Permutation_getValueAtIndex (permutation.get(), icol)];
+	}
+}
+
+static void TableOfReal_permuteColumnElements_inplace (TableOfReal me, integer fromColumn, integer toColumn) {
+	if (fromColumn == 0 && toColumn == 0) {
+		fromColumn = 1;
+		toColumn = my numberOfColumns;
+	}
+	Melder_require (fromColumn <= toColumn && fromColumn >= 1 && toColumn <= my numberOfColumns,
+		U"The column range should be larger than 0 and smaller than ", my numberOfColumns + 1);
+	autoPermutation permutation = Permutation_create (my numberOfRows, true);
+	autoVEC columnData = raw_VEC (my numberOfRows);
+	for (integer icol = fromColumn; icol <= toColumn; icol ++) {
+		Permutation_permuteRandomly_inplace (permutation.get(), 0, 0);
+		columnData.get()  <<=  my data.column (icol);
+		for (integer irow = 1; irow <= my numberOfRows; irow ++)
+			my data [irow] [icol] = columnData [Permutation_getValueAtIndex (permutation.get(), irow)];
+	}
+}
+
+static void TableOfReal_shuffleCombinedRows (TableOfReal xShuffled, TableOfReal yShuffled, TableOfReal x, TableOfReal y) {
+	Melder_require (x -> numberOfColumns == y -> numberOfColumns && 
+		xShuffled -> numberOfColumns == yShuffled -> numberOfColumns &&
+		x -> numberOfColumns == yShuffled -> numberOfColumns,
+		U"All TableOfReals should have the same number of columns.");
+	Melder_require (x -> numberOfRows == xShuffled -> numberOfRows && y -> numberOfRows == yShuffled -> numberOfRows,
+		U"The number of rows of the first and the third TableOfReal should be equal and the number of rows of the "
+		"second and forth TableOfReal should also be equal.");
+	const integer numberOfRowsCombined = x -> numberOfRows + y -> numberOfRows;
+	autoPermutation permutation = Permutation_create (numberOfRowsCombined, false);
+	for (integer irow = 1; irow <= numberOfRowsCombined; irow ++) {
+		const integer rowIndex = Permutation_getValueAtIndex (permutation.get(), irow);
+		constVEC fromRow = ( rowIndex > x -> numberOfRows ? y -> data.row (rowIndex - x -> numberOfRows) : 
+			x -> data.row (rowIndex) );
+		VEC toRow = ( irow > xShuffled -> numberOfRows ? yShuffled -> data.row (irow - xShuffled -> numberOfRows) :
+			xShuffled -> data.row (irow) );
+		toRow  <<=  fromRow;
+	}
+}
+
+static autoVEC vectorizeLowerMinusDiagonal_VEC (constMATVU m) {
+	Melder_assert (m.nrow == m.ncol);
+	integer index = 0;
+	const integer size = m.nrow * (m.nrow - 1) / 2;
+	autoVEC vech = raw_VEC (size);
+	for (integer irow = 2; irow <= m.nrow; irow ++)
+		for (integer icol = 1; icol < irow; icol ++)
+			vech [++ index] = m [irow] [icol];
+	Melder_assert (index == size);
+	return vech;
+}
+
+static autoVEC vectorizeLowerPlusDiagonal_VEC (constMATVU m) {
+	Melder_assert (m.nrow == m.ncol);
+	integer index = 0;
+	const integer size = m.nrow * (m.nrow + 1) / 2;
+	autoVEC vech = raw_VEC (size);
+	for (integer irow = 1; irow <= m.nrow; irow ++)
+		for (integer icol = 1; icol <= irow; icol ++)
+			vech [++ index] = m [irow] [icol];
+	Melder_assert (index == size);
+	return vech;	
+}
+
+static double TableOfReal_computeTestStatistic_WuEtAl1215 (TableOfReal me, bool useCorrelation) {
+	autoCovariance thee = TableOfReal_to_Covariance (me);
+	double testStatistic;
+	if (useCorrelation) {
+		autoCorrelation him = SSCP_to_Correlation (thee.get());
+		autoVEC vech = vectorizeLowerMinusDiagonal_VEC (his data.get());
+		testStatistic = 1.0 - sqrt (my numberOfColumns) / NUMnorm (vech.get(), 2.0);
+	} else {
+		autoVEC vech = vectorizeLowerPlusDiagonal_VEC (thy data.get());
+		testStatistic = 1.0 - NUMtrace (thy data.get()) / (sqrt (my numberOfColumns) * NUMnorm (vech.get(), 2.0));
+	}
+	return testStatistic;	
+}
+
+static double TableOfReal_computeTestStatistic_WuEtAl16 (TableOfReal me, bool useCorrelation) {
+	autoCovariance thee = TableOfReal_to_Covariance (me);
+	autoCorrelation him;
+	constMATVU data = thy data.get();
+	if (useCorrelation) {
+		him = SSCP_to_Correlation (thee.get());
+		data = his data.get();
+	}
+	autoVEC vech = vectorizeLowerMinusDiagonal_VEC (data);
+	const double testStatistic = 1.0 - NUMsum (vech.get()) / (NUMnorm (vech.get(), 2.0) * sqrt (vech.size));
+	return testStatistic;	
+}
+
+static double TableOfReal_computeTestStatistic_WuEtAl17 (TableOfReal me, TableOfReal thee, bool useCorrelation) {
+	autoCovariance mycov = TableOfReal_to_Covariance (me);
+	autoCovariance thycov = TableOfReal_to_Covariance (thee);
+	autoVEC myvech,thyvech;
+	if (useCorrelation) {
+		autoCorrelation mycor = SSCP_to_Correlation (mycov.get());
+		myvech = vectorizeLowerMinusDiagonal_VEC (mycor -> data.get());
+		autoCorrelation thycor = SSCP_to_Correlation (thycov.get());
+		thyvech = vectorizeLowerMinusDiagonal_VEC (thycor -> data.get());
+	} else {
+		myvech = vectorizeLowerPlusDiagonal_VEC (mycov -> data.get());
+		thyvech = vectorizeLowerPlusDiagonal_VEC (thycov -> data.get());
+	}
+	const double testStatistic = 1.0 - NUMinner (myvech.get(), thyvech.get()) / (NUMnorm (myvech.get(), 2.0) * NUMnorm (thyvech.get(), 2.0));
+	return testStatistic;
+}
+
+double TableOfReal_testSphericityOfCovariance (TableOfReal me, integer numberOfPermutations, bool useCorrelation) {
+	try {
+		autoTableOfReal thee = Data_copy (me);	
+		double testStatistic0 = TableOfReal_computeTestStatistic_WuEtAl1215 (me, useCorrelation);
+		integer countLargerOrEqual = 0;
+		for (integer iperm = 1; iperm <= numberOfPermutations; iperm ++) {
+			TableOfReal_permuteRowElements_inplace (thee.get(), 0, 0);
+			TableOfReal_permuteColumnElements_inplace (thee.get(), 0, 0);
+			const double testStatistic = TableOfReal_computeTestStatistic_WuEtAl1215 (thee.get(), useCorrelation);
+			if (testStatistic >= testStatistic0)
+				countLargerOrEqual ++;
+		}
+		return (1.0 + countLargerOrEqual) / (1.0 + numberOfPermutations);
+	} catch (MelderError) {
+		Melder_throw (me, U": could not determine probability for sphericity.");
+	}
+}
+
+double TableOfReal_testCovarianceEqualsIdentityMatrix (TableOfReal me, integer numberOfPermutations, bool useCorrelation) {
+	try {
+		autoTableOfReal mycopy = Data_copy (me);		
+		double testStatistic0 = TableOfReal_computeTestStatistic_WuEtAl1215 (me, useCorrelation);
+		integer countLargerOrEqual = 0;
+		for (integer iperm = 1; iperm <= numberOfPermutations; iperm ++) {
+			TableOfReal_permuteColumnElements_inplace (mycopy.get(), 0, 0);
+			const double testStatistic = TableOfReal_computeTestStatistic_WuEtAl1215 (mycopy.get(), useCorrelation);
+			if (testStatistic >= testStatistic0)
+				countLargerOrEqual ++;
+		}
+		return (1.0 + countLargerOrEqual) / (1.0 + numberOfPermutations);
+	} catch (MelderError) {
+		Melder_throw (me, U": cannot determine probability for identity.");
+	}
+}
+
+double TableOfReal_testCovarianceCompoundSymmetry (TableOfReal me, integer numberOfPermutations, bool useCorrelation) {
+	try {
+		autoTableOfReal mycopy = Data_copy (me);		
+		double testStatistic0 = TableOfReal_computeTestStatistic_WuEtAl16 (me, useCorrelation);
+		integer countLargerOrEqual = 0;
+		for (integer iperm = 1; iperm <= numberOfPermutations; iperm ++) {
+			TableOfReal_permuteRowElements_inplace (mycopy.get(), 0, 0);
+			const double testStatistic = TableOfReal_computeTestStatistic_WuEtAl16 (mycopy.get(), useCorrelation);
+			if (testStatistic >= testStatistic0)
+				countLargerOrEqual ++;
+		}
+		return (1.0 + countLargerOrEqual) / (1.0 + numberOfPermutations);
+	} catch (MelderError) {
+		Melder_throw (me, U": cannot determine compound symmetry.");
+	}
+}
+
+double TableOfReal_testEqualityOfCovariances (TableOfReal me, TableOfReal thee, integer numberOfPermutations, bool useCorrelation) {
+	try {
+		Melder_require (my numberOfColumns == thy numberOfColumns,
+			U"The number of columns of both TableOfReal should be equal.");
+		autoTableOfReal myCopy = Data_copy (me);
+		autoTableOfReal thyCopy = Data_copy (thee);
+		double testStatistic0 = TableOfReal_computeTestStatistic_WuEtAl17 (me, thee, useCorrelation);
+		integer countLargerOrEqual = 0;
+		for (integer iperm = 1; iperm <= numberOfPermutations; iperm ++) {
+			double testStatistic;
+			if (iperm % 2 == 1) {
+				TableOfReal_shuffleCombinedRows (myCopy.get(), thyCopy.get(), me, thee);
+				testStatistic = TableOfReal_computeTestStatistic_WuEtAl17 (myCopy.get(), thyCopy.get(), useCorrelation);
+			} else {
+				TableOfReal_shuffleCombinedRows (me, thee, myCopy.get(), thyCopy.get());
+				testStatistic = TableOfReal_computeTestStatistic_WuEtAl17 (me, thee, useCorrelation);
+			}
+			if (testStatistic >= testStatistic0)
+				countLargerOrEqual ++;
+		}
+		return (1.0 + countLargerOrEqual) / (1.0 + numberOfPermutations);
+	} catch (MelderError) {
+		Melder_throw (me, U" & ", thee, U": could not determine probability for equality.");
 	}
 }
 

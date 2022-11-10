@@ -1,6 +1,6 @@
 /* Graphics_text.cpp
  *
- * Copyright (C) 1992-2020 Paul Boersma, 2013 Tom Naughton, 2017 David Weenink
+ * Copyright (C) 1992-2022 Paul Boersma, 2013 Tom Naughton, 2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,14 +37,14 @@ extern const char * ipaSerifRegularPS [];
 #if cairo
 	PangoFontMap *thePangoFontMap;
 	PangoContext *thePangoContext;
-	static bool hasTimes, hasHelvetica, hasCourier, hasSymbol, hasPalatino, hasDoulos, hasCharis, hasIpaSerif;
+	static bool hasTimes, hasHelvetica, hasCourier, hasPalatino, hasDoulos, hasCharis, hasIpaSerif;
 #elif gdi
 	#define win_MAXIMUM_FONT_SIZE  500
 	static HFONT fonts [1 + (int) kGraphics_resolution::MAX] [1 + kGraphics_font_JAPANESE] [1+win_MAXIMUM_FONT_SIZE] [1 + Graphics_BOLD_ITALIC];
 	static int win_size2isize (int size) { return size > win_MAXIMUM_FONT_SIZE ? win_MAXIMUM_FONT_SIZE : size; }
 	static int win_isize2size (int isize) { return isize; }
 #elif quartz
-	static bool hasTimes, hasHelvetica, hasCourier, hasSymbol, hasPalatino, hasDoulos, hasCharis, hasIpaSerif;
+	static bool hasTimes, hasHelvetica, hasCourier, hasPalatino, hasDoulos, hasCharis, hasIpaSerif;
 	#define mac_MAXIMUM_FONT_SIZE  500
 	static CTFontRef theScreenFonts [1 + kGraphics_font_DINGBATS] [1+mac_MAXIMUM_FONT_SIZE] [1 + Graphics_BOLD_ITALIC];
 #endif
@@ -103,7 +103,11 @@ extern const char * ipaSerifRegularPS [];
 			ipaInited = true;
 			if (! charisAvailable && ! doulosAvailable) {
 				/* BUG: The next warning may cause reentry of drawing (on window exposure) and lead to crash. Some code must be non-reentrant !! */
-				Melder_warning (U"The phonetic font is not available.\nSeveral characters may not look correct.\nSee www.praat.org");
+				Melder_warning (U"The phonetic font is not available.\n"
+					"Several characters may not look correct.\n"
+					"You can download phonetics fonts via www.praat.org "
+					"(go to the download page for Windows)."
+				);
 			}
 		}
 		wcscpy (spec. lfFaceName,
@@ -279,10 +283,9 @@ inline static int chooseFont (Graphics me, _Graphics_widechar *lc) {
 
 static void charSize (Graphics anyGraphics, _Graphics_widechar *lc) {
 	if (anyGraphics -> screen) {
-		GraphicsScreen me = static_cast <GraphicsScreen> (anyGraphics);
 		#if cairo
+			GraphicsScreen me = static_cast <GraphicsScreen> (anyGraphics);
 			Melder_assert (my duringXor);
-			const Longchar_Info info = lc -> karInfo;
 			const int normalSize = my fontSize * my resolution / 72.0;
 			const int smallSize = (3 * normalSize + 2) / 4;
 			const int size = ( lc -> size < 100 ? smallSize : normalSize );
@@ -293,6 +296,7 @@ static void charSize (Graphics anyGraphics, _Graphics_widechar *lc) {
 			lc -> font.integer_ = 0;
 			lc -> size = size;
 		#elif gdi
+			GraphicsScreen me = static_cast <GraphicsScreen> (anyGraphics);
 			Longchar_Info info = lc -> karInfo;
 			const int normalSize = win_size2isize (my fontSize);
 			const int smallSize = (3 * normalSize + 2) / 4;
@@ -866,7 +870,8 @@ static _Graphics_widechar *theWidechar;
 static char32 *charCodes;
 static int initBuffer (conststring32 txt) {
 	try {
-		integer sizeNeeded = str32len (txt) + 1;
+		constexpr integer maximumNumberOfReplacementCharactersPerCharacter = 2;
+		integer sizeNeeded = maximumNumberOfReplacementCharactersPerCharacter * str32len (txt) + 1;
 		if (sizeNeeded > bufferSize) {
 			sizeNeeded += sizeNeeded / 2 + 100;
 			Melder_free (theWidechar);
@@ -960,7 +965,7 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 				charCodes [nchars] = U'\0';
 				#if cairo
 					const char *codes8 = Melder_peek32to8 (charCodes);
-					int length = strlen (codes8);
+					int length = strlen (codes8);   // TODO: integer overflow
 					PangoFontDescription *fontDescription = PangoFontDescription_create (lc -> font.integer_, lc);
 
 					/*
@@ -1444,6 +1449,87 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 		}
 		out -> code = U'?';   // does this have any meaning?
 		Melder_assert (kar != U'\0');
+		if (my postScript) {
+			if (kar == UNICODE_LATIN_SMALL_LETTER_TS_DIGRAPH) {
+				kar = U't';
+				out -> kar = kar;
+				out -> karInfo = Longchar_getInfoFromNative (kar);
+				Melder_assert (out -> karInfo);
+				out -> rightToLeft = false;
+				kar = U's';
+				out ++;
+				* out = out [-1];
+			} else if (kar == UNICODE_LATIN_SMALL_LETTER_TESH_DIGRAPH) {
+				kar = U't';
+				out -> kar = kar;
+				out -> karInfo = Longchar_getInfoFromNative (kar);
+				Melder_assert (out -> karInfo);
+				out -> rightToLeft = false;
+				kar = UNICODE_LATIN_SMALL_LETTER_ESH;
+				out ++;
+				* out = out [-1];
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_H) {
+				kar = U'h';
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_H_WITH_HOOK) {
+				kar = UNICODE_LATIN_SMALL_LETTER_H_WITH_HOOK;
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_GAMMA) {
+				kar = UNICODE_LATIN_SMALL_LETTER_GAMMA;
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_W) {
+				kar = U'w';
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_TURNED_H) {
+				kar = UNICODE_LATIN_SMALL_LETTER_TURNED_H;
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_GLOTTAL_STOP) {
+				kar = UNICODE_LATIN_LETTER_GLOTTAL_STOP;
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_REVERSED_GLOTTAL_STOP) {
+				kar = UNICODE_LATIN_LETTER_PHARYNGEAL_VOICED_FRICATIVE;
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_L) {
+				kar = U'l';
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_SUPERSCRIPT_LATIN_SMALL_LETTER_N) {
+				kar = U'n';
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_M) {
+				kar = U'm';
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_ENG) {
+				kar = UNICODE_LATIN_SMALL_LETTER_ENG;
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_S) {
+				kar = U's';
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_X) {
+				kar = U'x';
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_F) {
+				kar = U'f';
+				out -> baseline = 34;
+				out -> size = 80;
+			} else if (kar == UNICODE_MODIFIER_LETTER_SMALL_Y) {
+				kar = U'y';
+				out -> baseline = 34;
+				out -> size = 80;
+			}
+		}
 		out -> kar = kar;
 		out -> karInfo = Longchar_getInfoFromNative (kar);
 		Melder_assert (out -> karInfo);
@@ -1576,7 +1662,7 @@ void Graphics_textRect (Graphics me, double x1, double x2, double y1, double y2,
 void Graphics_text (Graphics me, double xWC, double yWC, conststring32 txt) {
 	if (my recording) {
 		const conststring8 txt_utf8 = Melder_peek32to8 (txt);
-		const int length = strlen (txt_utf8) / sizeof (double) + 1;
+		const int length = strlen (txt_utf8) / sizeof (double) + 1;   // TODO: integer overflow
 		op (TEXT, 3 + length); put (xWC); put (yWC); sput (txt_utf8, length)
 	} else {
 		if (my wrapWidth == 0.0 && str32chr (txt, U'\n') && my textRotation == 0.0) {
@@ -1747,7 +1833,6 @@ double Graphics_textWidth_ps (Graphics me, conststring32 txt, bool useSilipaPS) 
 		hasCourier = [fontNames containsObject: @"Courier"];
 		if (! hasCourier)
 			hasCourier = [fontNames containsObject: @"Courier New"];
-		hasSymbol = [fontNames containsObject: @"Symbol"];
 		hasPalatino = [fontNames containsObject: @"Palatino"];
 		if (! hasPalatino)
 			hasPalatino = [fontNames containsObject: @"Book Antiqua"];
@@ -1835,7 +1920,7 @@ void Graphics_setTextAlignment (Graphics me, kGraphics_horizontalAlignment hor, 
 	if (my recording) { op (SET_TEXT_ALIGNMENT, 2); put (hor); put (vert); }
 }
 
-void Graphics_setFont (Graphics me, enum kGraphics_font font) {
+void Graphics_setFont (Graphics me, kGraphics_font font) {
 	my font = font;
 	if (my recording) { op (SET_FONT, 1); put (font); }
 }

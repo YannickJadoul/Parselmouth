@@ -139,7 +139,7 @@ INTRO (U"When drawing text into the @@Picture window@ or into the @@TextGridEdit
 	"You can usually also type the characters themselves, if your computer has an input method for them.")
 
 ENTRY (U"European symbols")
-NORMAL (U"To get the symbol \"\\a^\" (a-circumflex), you type \"\\bsa\\^ \", i.e., "
+NORMAL (U"To get the symbol “\\a^” (a-circumflex), you type “\\bsa\\^ ”, i.e., "
 	"a sequence of backslash + a + circumflex. In this way, you can get a hundred "
 	"non-ASCII symbols that are used in the alphabets of many European languages.")
 LIST_ITEM (U"\\a\" \\bsa\\\"   \\e\" \\bse\\\"   \\i\" \\bsi\\\"   \\o\" \\bso\\\"   "
@@ -313,10 +313,11 @@ NORMAL (U"For most of the codes, the first letter tells you the most similar let
 	"The code for \\fh is an abbreviation for %fishhook.")
 MAN_END
 
-MAN_BEGIN (U"Phonetic symbols: diacritics", U"ppgb", 20130327)
+MAN_BEGIN (U"Phonetic symbols: diacritics", U"ppgb", 20211027)
 NORMAL (U"To draw phonetic diacritical symbols in the @@Picture window@ or in the @TextGridEditor, "
 	"make sure that you have installed the Charis SIL and/or Doulos SIL font, for instance from www.sil.org or from www.praat.org. "
-	"You can either type the symbols directly (if your computer has an input method for them), or use the backslash sequences in the following list.")
+	"You can either type the symbols directly (if your computer has an input method for them), "
+	"or use the backslash sequences in the following list.")
 NORMAL (U"Understrikes:")
 LIST_ITEM (U"n\\|v n\\bs|v (%%combining vertical line below%): syllabic consonant")
 LIST_ITEM (U"b\\0v b\\bs0v (%%combining ring below%): voiceless (e.g. lenis voiceless plosive, voiceless nasal or approximant)")
@@ -343,8 +344,10 @@ LIST_ITEM (U"\\ef\\~^ \\bsef\\bs~\\^  (%%combining tilde%): nasalized")
 LIST_ITEM (U"\\ef\\v^ \\bsef\\bsv\\^  (%%combining caron%, %%háček%, %wedge): rising tone")   // UNITEXT_LATIN_SMALL_LETTER_C_WITH_CARON
 LIST_ITEM (U"\\ef\\^^ \\bsef\\bs\\^ \\^  (%%combining circumflex accent%): falling tone")
 LIST_ITEM (U"o\\:^ o\\bs:\\^  (%%combining diaeresis%): centralized")
+LIST_ITEM (U"e\\x^ e\\bsx\\^  (%%combining x above%): mid-centralized")
 LIST_ITEM (U"\\ef\\N^ \\bsef\\bsN\\^  (%%combining breve%): short")
-LIST_ITEM (U"k\\lip t\\lis k\\bslip (%%combining double inverted breve%, %ligature): simultaneous articulation, or single segment")
+LIST_ITEM (U"k\\lip t\\lis k\\bslip t\\bslis (%%combining double inverted breve%, %ligature): simultaneous articulation, or single segment")
+LIST_ITEM (U"a\\_ub a\\bs\\_ ub undertie (liaison, if spaces don't mean breaks in your transcription)")
 NORMAL (U"In line:")
 LIST_ITEM (U"\\:f \\bs:f the phonetic length sign")
 LIST_ITEM (U"\\.f \\bs.f half length")
@@ -353,7 +356,8 @@ LIST_ITEM (U"\\\'2 \\bs\'2 secondary stress")
 LIST_ITEM (U"\\|f \\bs|f the phonetic stroke")
 LIST_ITEM (U"t\\cn t\\bscn (%%combining left angle above%, %corner): unreleased plosive")
 LIST_ITEM (U"\\er\\hr \\bser\\bshr (%%combining rhotic hook%): rhotacized vowel")
-NORMAL (U"Not available in EPS files (i.e. only publishable with copy-paste or with PDF files):")
+LIST_ITEM (U"p\\ap p\\bsap apostrophe (for ejectives)")
+NORMAL (U"Superscripts:")
 LIST_ITEM (U"t\\^h t\\bs\\^ h aspiration")
 LIST_ITEM (U"b\\^H b\\bs\\^ H voiced aspiration (breathiness)")
 LIST_ITEM (U"t\\^j t\\bs\\^ j palatalization")
@@ -365,11 +369,10 @@ LIST_ITEM (U"t\\^9 t\\bs\\^ 9 pharyngealization")
 LIST_ITEM (U"t\\^l t\\bs\\^ l lateral release")
 LIST_ITEM (U"t\\^n t\\bs\\^ n, p\\^m p\\bs\\^ m, k\\^N k\\bs\\^ N nasal release")
 LIST_ITEM (U"t\\^s t\\bs\\^ s, k\\^x k\\bs\\^ x, p\\^f p\\bs\\^ f affrication")
-LIST_ITEM (U"\\^y \\bs\\^ y (palatalization in a deprecated American notation)")
-LIST_ITEM (U"a\\_ub a\\bs\\_ ub undertie (liaison, if spaces don't mean breaks in your transcription)")
+LIST_ITEM (U"t\\^y t\\bs\\^ y (palatalization in a deprecated American notation)")
+NORMAL (U"Digraphs:")
 LIST_ITEM (U"\\ts \\bsts t\\--s ligature")
 LIST_ITEM (U"\\tS \\bstS tesh ligature")
-LIST_ITEM (U"p\\ap p\\bsap apostrophe (for ejectives)")
 MAN_END
 
 MAN_BEGIN (U"Phonetic symbols: vowels", U"ppgb", 20090804)
@@ -715,7 +718,7 @@ DEFINITION (U"this determines whether Praat prints explicit PostScript commands 
 	"(e.g. scaling, printing two-up...), you may switch this off; Praat will then send native "
 	"Windows drawing commands, which the printer driver will try to translate "
 	"to PostScript. If your printer does not support PostScript, this switch is ignored. "
-	"On Macintosh, this switch is ignored, because all printingis done in PDF. "
+	"On Macintosh, this switch is ignored, because all printing is done in PDF. "
 	"On Unix, this switch is superfluous, because all printing is done directly in PostScript.")
 TAG (U"##Grey resolution")
 DEFINITION (U"you can choose from two image qualities:")
@@ -739,8 +742,8 @@ DEFINITION (U"the relative size with which your picture will be printed; normall
 	"This choice applies to Unix only; on Windows, you choose the scaling in the ##Print...# window; "
 	"on Macintosh, you choose the scaling in the ##Page setup...# window.")
 TAG (U"##Print command# (Unix only)")
-DEFINITION (U"When printing on Unix, a temporary PostScript^\\re file is created in the \"/tmp\" folder; "
-	"it will have a name like \"picXXXXXX\", and is automatically removed after printing. "
+DEFINITION (U"When printing on Unix, a temporary PostScript^\\re file is created in the “/tmp” folder; "
+	"it will have a name like “picXXXXXX”, and is automatically removed after printing. "
 	"This file is sent to the printer with the print command, which will often look like $$lp -c \\% s$, "
 	"where $$\\% s$ stands for the file name.")
 MAN_END
@@ -968,7 +971,7 @@ MAN_END
 
 MAN_BEGIN (U"Save as PNG file...", U"ppgb", 20140325)
 INTRO (U"A command in the File menu of the @@Picture window@, on all platforms.")
-NORMAL (U"It saves the picture to a PNG (\"ping\") image file, "
+NORMAL (U"It saves the picture to a PNG (“ping”) image file, "
 	"which can be imported by several other programs, such as Microsoft^\\re Word\\tm. "
 	"For the resolution you can choose between 600 dots per inch (very good quality even when printed) "
 	"and 300 dpi (enough for all web sites, even on retina displays).")
@@ -998,7 +1001,7 @@ MAN_END
 
 MAN_BEGIN (U"Save as Windows metafile...", U"ppgb", 20140325)
 INTRO (U"A command in the File menu of the @@Picture window@, if you are on Windows.")
-NORMAL (U"It saves the selected part of the picture in an \"enhanced metafile\" (.EMF) format, "
+NORMAL (U"It saves the selected part of the picture in an “enhanced metafile” (.EMF) format, "
 	"which can be imported by many Windows programs, like Adobe^\\re Illustrator^\\tm or Microsoft^\\re Word^\\tm.")
 ENTRY (U"Behaviour")
 NORMAL (U"Though all the picture data will be written to the file, "
@@ -1006,7 +1009,7 @@ NORMAL (U"Though all the picture data will be written to the file, "
 ENTRY (U"Usage")
 NORMAL (U"You will not use this command very often, "
 	"because it is usually easier to copy the selection to the clipboard with the @@Copy to clipboard@ command, "
-	"and `Paste' it into the other program. You may use a metafile instead of the clipboard if the clipboard is too large "
+	"and ‘Paste’ it into the other program. You may use a metafile instead of the clipboard if the clipboard is too large "
 	"for the other program to read, or if you want to transfer the picture to another computer.")
 MAN_END
 

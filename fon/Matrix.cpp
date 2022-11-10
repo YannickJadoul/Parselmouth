@@ -1,6 +1,6 @@
 /* Matrix.cpp
  *
- * Copyright (C) 1992-2020 Paul Boersma
+ * Copyright (C) 1992-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@
 
 Thing_implement (Matrix, SampledXY, 2);
 
-void structMatrix :: v_info () {
-	structDaata :: v_info ();
+void structMatrix :: v1_info () {
+	structDaata :: v1_info ();
 	double minimum = 0.0, maximum = 0.0;
 	Matrix_getWindowExtrema (this, 1, our nx, 1, our ny, & minimum, & maximum);
 	MelderInfo_writeLine (U"xmin: ", our xmin);
@@ -58,7 +58,7 @@ void structMatrix :: v_info () {
 	MelderInfo_writeLine (U"Maximum value: ", maximum);
 }
 
-void structMatrix :: v_readText (MelderReadText text, int formatVersion) {
+void structMatrix :: v1_readText (MelderReadText text, int formatVersion) {
 	if (formatVersion < 0) {
 		our xmin = texgetr64 (text);
 		our xmax = texgetr64 (text);
@@ -71,7 +71,7 @@ void structMatrix :: v_readText (MelderReadText text, int formatVersion) {
 		our x1 = texgetr64 (text);
 		our y1 = texgetr64 (text);
 	} else {
-		Matrix_Parent :: v_readText (text, formatVersion);
+		Matrix_Parent :: v1_readText (text, formatVersion);
 	}
 	Melder_require (our xmin <= our xmax, U"xmin should be less than or equal to xmax.");
 	Melder_require (our ymin <= our ymax, U"ymin should be less than or equal to ymax.");
@@ -137,8 +137,8 @@ autoMatrix Matrix_createSimple (integer numberOfRows, integer numberOfColumns) {
 	try {
 		autoMatrix me = Thing_new (Matrix);
 		Matrix_init (me.get(),
-				0.5, numberOfColumns + 0.5, numberOfColumns, 1, 1,
-				0.5, numberOfRows    + 0.5, numberOfRows   , 1, 1);
+				0.5, numberOfColumns + 0.5, numberOfColumns, 1.0, 1.0,
+				0.5, numberOfRows    + 0.5, numberOfRows   , 1.0, 1.0);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Matrix object not created.");
@@ -192,13 +192,13 @@ integer Matrix_getWindowSamplesY (Matrix me, double ymin, double ymax, integer *
 integer Matrix_getWindowExtrema (Matrix me, integer ixmin, integer ixmax, integer iymin, integer iymax,
 	double *minimum, double *maximum)
 {
-	if (ixmin == 0)
+	if (ixmin == 0)   // default = all
 		ixmin = 1;
-	if (ixmax == 0)
+	if (ixmax == 0)   // default = all
 		ixmax = my nx;
-	if (iymin == 0)
+	if (iymin == 0)   // default = all
 		iymin = 1;
-	if (iymax == 0)
+	if (iymax == 0)   // default = all
 		iymax = my ny;
 	if (ixmin > ixmax || iymin > iymax)
 		return 0;
@@ -577,7 +577,7 @@ autoMatrix Matrix_readFromRawTextFile (MelderFile file) {   // BUG: not Unicode-
 static bool isSymmetric (Matrix me) {
 	for (integer irow = 1; irow <= my ny - 1; irow ++)
 		for (integer icol = irow + 1; icol <= my nx; icol ++)
-			if (my z [irow] [icol] != my z [icol][irow])
+			if (my z [irow] [icol] != my z [icol] [irow])
 				return false;
 	return true;
 }

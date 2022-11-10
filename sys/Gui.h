@@ -2,7 +2,7 @@
 #define _Gui_h_
 /* Gui.h
  *
- * Copyright (C) 1993-2020 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2022 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,7 +84,11 @@ constexpr bool theCommandKeyIsToTheLeftOfTheOptionKey =
 
 #define Gui_LEFT_DIALOG_SPACING  20
 #define Gui_RIGHT_DIALOG_SPACING  20
-#define Gui_TOP_DIALOG_SPACING  14
+#if defined (chrome)
+	#define Gui_TOP_DIALOG_SPACING  34
+#else
+	#define Gui_TOP_DIALOG_SPACING  14
+#endif
 #define Gui_BOTTOM_DIALOG_SPACING  20
 #define Gui_HORIZONTAL_DIALOG_SPACING  12
 #define Gui_VERTICAL_DIALOG_SPACING_SAME  12
@@ -104,11 +108,6 @@ constexpr bool theCommandKeyIsToTheLeftOfTheOptionKey =
 #define Gui_HOMOGENEOUS  1
 
 #if gtk
-	typedef GMainContext *AppContext;
-	typedef gint Dimension;
-	typedef gboolean Boolean;
-	#define True 1
-	#define False 0
 	typedef void *GuiObject;
 #elif cocoa
 	Thing_declare (GuiThing);
@@ -122,10 +121,7 @@ constexpr bool theCommandKeyIsToTheLeftOfTheOptionKey =
 	@interface GuiCocoaCheckButton : NSButton <GuiCocoaAny> @end
 	@interface GuiCocoaDrawingArea : NSView <GuiCocoaAny> @end
 	@interface GuiCocoaLabel : NSTextField <GuiCocoaAny> @end
-	@interface GuiCocoaList : NSView <GuiCocoaAny, NSTableViewDataSource, NSTableViewDelegate>
-		@property (nonatomic, retain) NSMutableArray *contents;
-		@property (nonatomic, retain) NSTableView *tableView;
-	@end
+	@interface GuiCocoaList : NSView <GuiCocoaAny, NSTableViewDataSource, NSTableViewDelegate> @end
 	@interface GuiCocoaMenu : NSMenu <GuiCocoaAny> @end
 	@interface GuiCocoaMenuButton : NSPopUpButton <GuiCocoaAny> @end
 	@interface GuiCocoaMenuItem : NSMenuItem <GuiCocoaAny> @end
@@ -206,7 +202,8 @@ constexpr bool theCommandKeyIsToTheLeftOfTheOptionKey =
 	void XtSetSensitive (GuiObject w, Boolean value);
 	void XtUnmanageChild (GuiObject self);
 	void XtUnmanageChildren (GuiObjectList children, Cardinal num_children);
-	void GuiAppInitialize (const char *name, unsigned int argc, char **argv);
+	void * GuiWin_initialize1 (conststring32 name);
+	void GuiWin_initialize2 (unsigned int argc, char **argv);
 	void GuiApp_setApplicationShell (GuiObject shell);
 	GuiObject XtVaCreateWidget (const char *name, int widgetClass, GuiObject parent, ...);
 	GuiObject XtVaCreateManagedWidget (const char *name, int widgetClass, GuiObject parent, ...);
@@ -316,9 +313,6 @@ Thing_define (GuiThing, Thing) {
 	GuiThing d_parent;
 	GuiObject d_widget;
 
-	void v_destroy () noexcept
-		override;
-
 	virtual void v_show ();
 	virtual void v_hide ();
 	virtual void v_setSensitive (bool sensitive);
@@ -346,12 +340,15 @@ void GuiControl_setSize (GuiControl me, int width, int height);
 Thing_define (GuiForm, GuiControl) {
 };
 
-typedef MelderCallback <void, structThing /* boss */> GuiShell_GoAwayCallback;
+using GuiShell_GoAwayCallback = MelderCallback <void, structThing /* boss */>;
 
 Thing_define (GuiShell, GuiForm) {
 	int d_width, d_height;
 	#if gtk
 		GtkWindow *d_gtkWindow;
+		#if defined (chrome)
+			GtkWidget *chrome_surrogateShellTitleLabelWidget;
+		#endif
 	#elif cocoa
 		GuiCocoaShell *d_cocoaShell;
 	#elif motif
@@ -361,7 +358,7 @@ Thing_define (GuiShell, GuiForm) {
 	Thing d_goAwayBoss;
 	GuiDrawingArea drawingArea;
 
-	void v_destroy () noexcept
+	void v9_destroy () noexcept
 		override;
 };
 
@@ -379,7 +376,7 @@ typedef struct structGuiButtonEvent {
 	bool shiftKeyPressed, commandKeyPressed, optionKeyPressed;
 } *GuiButtonEvent;
 
-typedef MelderCallback <void, structThing /* boss */, GuiButtonEvent> GuiButton_ActivateCallback;
+using GuiButton_ActivateCallback = MelderCallback <void, structThing /* boss */, GuiButtonEvent>;
 
 Thing_define (GuiButton, GuiControl) {
 	GuiButton_ActivateCallback d_activateCallback;
@@ -415,7 +412,7 @@ typedef struct structGuiCheckButtonEvent {
 	GuiCheckButton toggle;
 } *GuiCheckButtonEvent;
 
-typedef MelderCallback <void, structThing /* boss */, GuiCheckButtonEvent> GuiCheckButton_ValueChangedCallback;
+using GuiCheckButton_ValueChangedCallback = MelderCallback <void, structThing /* boss */, GuiCheckButtonEvent>;
 
 Thing_define (GuiCheckButton, GuiControl) {
 	GuiCheckButton_ValueChangedCallback d_valueChangedCallback;
@@ -443,7 +440,11 @@ void GuiCheckButton_setValue (GuiCheckButton me, bool value);
 
 /********** GuiDialog **********/
 
+using GuiDialog_DefaultCallback = MelderCallback <void, structThing /* boss */>;
+
 Thing_define (GuiDialog, GuiShell) {
+	GuiDialog_DefaultCallback d_defaultCallback;
+	Thing d_defaultBoss;
 };
 
 /* GuiDialog creation flags: */
@@ -454,6 +455,8 @@ GuiDialog GuiDialog_create (GuiWindow parent,
 	GuiShell_GoAwayCallback goAwayCallback, Thing goAwayBoss,
 	uint32 flags
 );
+
+void GuiDialog_setDefaultCallback (GuiDialog me, GuiDialog_DefaultCallback callback, Thing boss);
 
 /********** GuiDrawingArea **********/
 
@@ -492,10 +495,10 @@ typedef struct structGuiDrawingArea_ResizeEvent {
 	int width, height;
 } *GuiDrawingArea_ResizeEvent;
 
-typedef MelderCallback <void, structThing /* boss */, GuiDrawingArea_ExposeEvent> GuiDrawingArea_ExposeCallback;
-typedef MelderCallback <void, structThing /* boss */, GuiDrawingArea_MouseEvent > GuiDrawingArea_MouseCallback;
-typedef MelderCallback <void, structThing /* boss */, GuiDrawingArea_KeyEvent   > GuiDrawingArea_KeyCallback;
-typedef MelderCallback <void, structThing /* boss */, GuiDrawingArea_ResizeEvent> GuiDrawingArea_ResizeCallback;
+using GuiDrawingArea_ExposeCallback = MelderCallback <void, structThing /* boss */, GuiDrawingArea_ExposeEvent>;
+using GuiDrawingArea_MouseCallback  = MelderCallback <void, structThing /* boss */, GuiDrawingArea_MouseEvent >;
+using GuiDrawingArea_KeyCallback    = MelderCallback <void, structThing /* boss */, GuiDrawingArea_KeyEvent   >;
+using GuiDrawingArea_ResizeCallback = MelderCallback <void, structThing /* boss */, GuiDrawingArea_ResizeEvent>;
 
 Thing_define (GuiDrawingArea, GuiControl) {
 	GuiScrollBar d_horizontalScrollBar, d_verticalScrollBar;   // for swiping
@@ -511,7 +514,7 @@ Thing_define (GuiDrawingArea, GuiControl) {
 	constexpr static integer MAXIMUM_NUMBER_OF_GRAPHICSES = 10;
 	Graphics graphicses [1+MAXIMUM_NUMBER_OF_GRAPHICSES];
 
-	void v_destroy () noexcept
+	void v9_destroy () noexcept
 		override;
 };
 
@@ -582,17 +585,17 @@ Thing_declare (GuiScrolledWindow);
 typedef struct structGuiList_SelectionChangedEvent {
 	GuiList list;
 } *GuiList_SelectionChangedEvent;
-typedef MelderCallback <void, structThing /* boss */, GuiList_SelectionChangedEvent> GuiList_SelectionChangedCallback;
+using GuiList_SelectionChangedCallback = MelderCallback <void, structThing /* boss */, GuiList_SelectionChangedEvent>;
 
 typedef struct structGuiList_DoubleClickEvent {
 	GuiList list;
 } *GuiList_DoubleClickEvent;
-typedef MelderCallback <void, structThing /* boss */, GuiList_DoubleClickEvent> GuiList_DoubleClickCallback;
+using GuiList_DoubleClickCallback = MelderCallback <void, structThing /* boss */, GuiList_DoubleClickEvent>;
 
 typedef struct structGuiList_ScrollEvent {
 	GuiList list;
 } *GuiList_ScrollEvent;
-typedef MelderCallback <void, structThing /* boss */, GuiList_ScrollEvent> GuiList_ScrollCallback;
+using GuiList_ScrollCallback = MelderCallback <void, structThing /* boss */, GuiList_ScrollEvent>;
 
 Thing_define (GuiList, GuiControl) {
 	bool d_allowMultipleSelection;
@@ -657,8 +660,6 @@ Thing_define (GuiMenu, GuiThing) {
 		GuiObject d_xmMenuBar;   // in case the menu is in a form
 	#endif
 
-	void v_destroy () noexcept
-		override;
 	void v_show ()
 		override;
 	void v_hide ()
@@ -682,7 +683,12 @@ typedef struct structGuiMenuItemEvent {
 	bool shiftKeyPressed, commandKeyPressed, optionKeyPressed;
 } *GuiMenuItemEvent;
 
-typedef MelderCallback <void, structThing /* boss */, GuiMenuItemEvent> GuiMenuItemCallback;
+using GuiMenuItemCallback = MelderCallback <void, structThing /* boss */, GuiMenuItemEvent>;
+
+#if cocoa
+	extern GuiMenuItemCallback theGuiEscapeMenuItemCallback;
+	extern Thing theGuiEscapeMenuItemBoss;
+#endif
 
 Thing_define (GuiMenuItem, GuiThing) {
 	GuiMenu d_menu;
@@ -693,48 +699,129 @@ Thing_define (GuiMenuItem, GuiThing) {
 	#endif
 };
 
-/* Button layout and state: */
+/* Accelerators understood by GuiMenuItem: */
+#define GuiMenu_OPTION  (1 << 24)
+#define GuiMenu_SHIFT  (1 << 25)
+#define GuiMenu_COMMAND  (1 << 26)
+// 1 is the short form of GuiMenu_DEPTH_1
+// 2 is the short form of GuiMenu_DEPTH_2
+// 3 is the short form of GuiMenu_DEPTH_3
+#define GuiMenu_LEFT_ARROW  4
+#define GuiMenu_RIGHT_ARROW  5
+#define GuiMenu_UP_ARROW  6
+#define GuiMenu_DOWN_ARROW  7
+#define GuiMenu_PAUSE  8
+#define GuiMenu_DELETE  9
+#define GuiMenu_INSERT  10
+#define GuiMenu_BACKSPACE  11
+#define GuiMenu_TAB  12
+#define GuiMenu_LINEFEED  13
+#define GuiMenu_HOME  14
+#define GuiMenu_END  15
+#define GuiMenu_ENTER  16
+#define GuiMenu_PAGE_UP  17
+#define GuiMenu_PAGE_DOWN  18
+#define GuiMenu_ESCAPE  19
+#define GuiMenu_F1  20
+#define GuiMenu_F2  21
+#define GuiMenu_F3  22
+#define GuiMenu_F4  23
+#define GuiMenu_F5  24
+#define GuiMenu_F6  25
+#define GuiMenu_F7  26
+#define GuiMenu_F8  27
+#define GuiMenu_F9  28
+#define GuiMenu_F10  29
+#define GuiMenu_F11  30
+#define GuiMenu_F12  31
+// or any ASCII character (preferably a letter or digit) between 32 and 126
+
+/* Button layout and state understood by GuiMenuItem: */
 #define GuiMenu_INSENSITIVE  (1 << 8)
 #define GuiMenu_CHECKBUTTON  (1 << 9)
 #define GuiMenu_TOGGLE_ON  (1 << 10)
 #define GuiMenu_ATTRACTIVE  (1 << 11)
-#define GuiMenu_RADIO_FIRST  (1 << 12)
-#define GuiMenu_RADIO_NEXT  (1 << 13)
-#define GuiMenu_BUTTON_STATE_MASK  (GuiMenu_INSENSITIVE|GuiMenu_CHECKBUTTON|GuiMenu_TOGGLE_ON|GuiMenu_ATTRACTIVE|GuiMenu_RADIO_FIRST|GuiMenu_RADIO_NEXT)
+#define GuiMenu_UNDERLINED  (1 << 12)
+#define GuiMenu_RADIO_FIRST  (1 << 13)
+#define GuiMenu_RADIO_NEXT  (1 << 14)
+#define GuiMenu_BUTTON_STATE_MASK  (GuiMenu_INSENSITIVE|GuiMenu_CHECKBUTTON|GuiMenu_TOGGLE_ON|GuiMenu_ATTRACTIVE|GuiMenu_UNDERLINED|GuiMenu_RADIO_FIRST|GuiMenu_RADIO_NEXT)
 
-/* Accelerators: */
-#define GuiMenu_OPTION  (1 << 24)
-#define GuiMenu_SHIFT  (1 << 25)
-#define GuiMenu_COMMAND  (1 << 26)
-#define GuiMenu_LEFT_ARROW  1
-#define GuiMenu_RIGHT_ARROW  2
-#define GuiMenu_UP_ARROW  3
-#define GuiMenu_DOWN_ARROW  4
-#define GuiMenu_PAUSE  5
-#define GuiMenu_DELETE  6
-#define GuiMenu_INSERT  7
-#define GuiMenu_BACKSPACE  8
-#define GuiMenu_TAB  9
-#define GuiMenu_LINEFEED  10
-#define GuiMenu_HOME  11
-#define GuiMenu_END  12
-#define GuiMenu_ENTER  13
-#define GuiMenu_PAGE_UP  14
-#define GuiMenu_PAGE_DOWN  15
-#define GuiMenu_ESCAPE  16
-#define GuiMenu_F1  17
-#define GuiMenu_F2  18
-#define GuiMenu_F3  19
-#define GuiMenu_F4  20
-#define GuiMenu_F5  21
-#define GuiMenu_F6  22
-#define GuiMenu_F7  23
-#define GuiMenu_F8  24
-#define GuiMenu_F9  25
-#define GuiMenu_F10  26
-#define GuiMenu_F11  27
-#define GuiMenu_F12  28
-// or any ASCII character (preferably a letter or digit) between 32 and 126
+/* These are ingored by GuiMenu_addItem, but can be used by higher-level command logic: */
+#define GuiMenu_DEPTH_1  0x0001'0000   /* 1<<16 */
+#define GuiMenu_DEPTH_2  0x0002'0000   /* 1<<17 */
+#define GuiMenu_DEPTH_3  0x0003'0000
+#define GuiMenu_DEPTH_4  0x0004'0000   /* 1<<18 */
+#define GuiMenu_DEPTH_5  0x0005'0000
+#define GuiMenu_DEPTH_6  0x0006'0000
+#define GuiMenu_DEPTH_7  0x0007'0000
+#define GuiMenu_HIDDEN  0x0008'0000   /* 1<<19 */
+#define GuiMenu_UNHIDABLE  0x0010'0000   /* 1<<20 */
+#define GuiMenu_NO_API  0x0020'0000   /* 1<<21 */
+#define GuiMenu_FORCE_API  0x0040'0000   /* 1<<22 */
+#define GuiMenu_DEPRECATED  (0x0080'0000 /* 1<<23 */ | GuiMenu_HIDDEN)
+#define GuiMenu_DEPRECATED_2004  (0x0400'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2005  (0x0500'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2006  (0x0600'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2007  (0x0700'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2008  (0x0800'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2009  (0x0900'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2010  (0x0A00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2011  (0x0B00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2012  (0x0C00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2013  (0x0D00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2014  (0x0E00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2015  (0x0F00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2016  (0x1000'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2017  (0x1100'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2018  (0x1200'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2019  (0x1300'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2020  (0x1400'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2021  (0x1500'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2022  (0x1600'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2023  (0x1700'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2024  (0x1800'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2025  (0x1900'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2026  (0x1A00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2027  (0x1B00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2028  (0x1C00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2029  (0x1D00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2030  (0x1E00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2031  (0x1F00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2032  (0x2000'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2033  (0x2100'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2034  (0x2200'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2035  (0x2300'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2036  (0x2400'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2037  (0x2500'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2038  (0x2600'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2039  (0x2700'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2040  (0x2800'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2041  (0x2900'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2042  (0x2A00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2043  (0x2B00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2044  (0x2C00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2045  (0x2D00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2046  (0x2E00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2047  (0x2F00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2048  (0x3000'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2049  (0x3100'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2050  (0x3200'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2051  (0x3300'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2052  (0x3400'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2053  (0x3500'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2054  (0x3600'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2055  (0x3700'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2056  (0x3800'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2057  (0x3900'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2058  (0x3A00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2059  (0x3B00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2060  (0x3C00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2061  (0x3D00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2062  (0x3E00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2063  (0x3F00'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2064  (0x4000'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2065  (0x4100'0000 | GuiMenu_DEPRECATED)
+#define GuiMenu_DEPRECATED_2066  (0x4200'0000 | GuiMenu_DEPRECATED)
 
 GuiMenuItem GuiMenu_addItem (GuiMenu menu, conststring32 title, uint32 flags,
 	GuiMenuItemCallback callback, Thing boss);
@@ -791,7 +878,7 @@ typedef struct structGuiRadioButtonEvent {
 	int position;
 } *GuiRadioButtonEvent;
 
-typedef MelderCallback <void, structThing /* boss */, GuiRadioButtonEvent> GuiRadioButtonCallback;
+using GuiRadioButtonCallback = MelderCallback <void, structThing /* boss */, GuiRadioButtonEvent>;
 
 Thing_define (GuiRadioButton, GuiControl) {
 	GuiRadioButton d_previous, d_next;   // there's a linked list of grouped radio buttons
@@ -842,7 +929,7 @@ typedef struct structGuiScrollBarEvent {
 	GuiScrollBar scrollBar;
 } *GuiScrollBarEvent;
 
-typedef MelderCallback <void, structThing /* boss */, GuiScrollBarEvent> GuiScrollBarCallback;
+using GuiScrollBarCallback = MelderCallback <void, structThing /* boss */, GuiScrollBarEvent>;
 
 Thing_define (GuiScrollBar, GuiControl) {
 	GuiScrollBarCallback d_valueChangedCallback;
@@ -883,7 +970,7 @@ typedef struct structGuiTextEvent {
 	GuiText text;
 } *GuiTextEvent;
 
-typedef MelderCallback <void, structThing /* boss */, GuiTextEvent> GuiText_ChangedCallback;
+using GuiText_ChangedCallback = MelderCallback <void, structThing /* boss */, GuiTextEvent>;
 
 #if gtk
 	typedef gchar * history_data;
@@ -902,9 +989,11 @@ struct _history_entry_s {
 Thing_define (GuiText, GuiControl) {
 	GuiText_ChangedCallback d_changedCallback;
 	Thing d_changedBoss;
+	uint32 flags;
 	#if cocoa
 		GuiCocoaScrolledWindow *d_cocoaScrollView;
 		GuiCocoaTextView *d_cocoaTextView;
+		double d_macFontSize;
 	#elif defined (macintosh)
 		TXNObject d_macMlteObject;
 		TXNFrameID d_macMlteFrameId;
@@ -920,8 +1009,9 @@ Thing_define (GuiText, GuiControl) {
 
 /* GuiText creation flags: */
 #define GuiText_SCROLLED  1
-#define GuiText_MULTILINE  2
-#define GuiText_WORDWRAP  4
+#define GuiText_CHARWRAP  2
+#define GuiText_INKWRAP  4
+#define GuiText_ANYWRAP  (GuiText_CHARWRAP | GuiText_INKWRAP)
 #define GuiText_NONEDITABLE  8
 GuiText GuiText_create      (GuiForm parent, int left, int right, int top, int bottom, uint32 flags);
 GuiText GuiText_createShown (GuiForm parent, int left, int right, int top, int bottom, uint32 flags);
@@ -955,8 +1045,12 @@ Thing_define (GuiWindow, GuiShell) {
 		Thing d_tabBoss;
 		GuiMenuItemCallback d_shiftTabCallback;
 		Thing d_shiftTabBoss;
+		GuiMenuItemCallback d_enterCallback;
+		Thing d_enterBoss;
 		GuiMenuItemCallback d_optionBackspaceCallback;
 		Thing d_optionBackspaceBoss;
+		GuiMenuItemCallback d_escapeCallback;
+		Thing d_escapeBoss;
 	#elif motif
 		GuiObject d_xmMenuBar;
 	#endif
@@ -987,13 +1081,18 @@ void GuiObject_destroy (GuiObject me);
 
 /********** EVENTS **********/
 
+#if defined (macintosh)
 void Gui_setOpenDocumentCallback (void (*openDocumentCallback) (MelderFile file), void (*finishedOpeningDocumentsCallback) ());
+#endif
+
+#if defined (macintosh)
 void Gui_setQuitApplicationCallback (int (*quitApplicationCallback) (void));
+#endif
 
 extern uinteger theGuiTopLowAccelerators [8];
 
 /*
-	'parent' is the top-level widget returned by GuiAppInitialize.
+	'parent' is the top-level widget.
 */
 void Gui_injectMessageProcs (GuiWindow parent);
 

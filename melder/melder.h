@@ -2,7 +2,7 @@
 #define _melder_h_
 /* melder.h
  *
- * Copyright (C) 1992-2020 Paul Boersma
+ * Copyright (C) 1992-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <memory>   // unique_ptr
 #include <new>   // placement new
 #include <algorithm>   // std::min
+#include <limits>   // std::numeric_limits<double>::max(), std::numeric_limits<double>::lowest()
 
 /*
 	Law of Demeter for class functions defined outside class definition.
@@ -45,6 +46,9 @@
 #define his  him ->
 #define her  she ->
 #define iam(klas)  klas me = (klas) void_me
+
+#define stringize(s)  stringize_helper(s)
+#define stringize_helper(s)  #s
 
 #include "melder_assert.h"   // Melder_assert
 #include "melder_int.h"   // <stdint.h>, int64, integer_to_uinteger (requires Melder_assert)
@@ -80,10 +84,9 @@
 #include "melder_search.h"
 #include "melder_casual.h"
 #include "melder_info.h"
-#include "melder_error.h"   // Melder_throw (requires MelderArg)
+#include "melder_error.h"   // Melder_throw (requires MelderArg), Melder_crash
 #include "melder_require.h"
 #include "melder_warning.h"
-#include "melder_fatal.h"
 #include "melder_progress.h"
 #include "melder_play.h"   // Melder_record, Melder_play, Melder_beep
 #include "melder_help.h"

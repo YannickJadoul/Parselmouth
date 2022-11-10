@@ -46,16 +46,15 @@ autoCorrelation TableOfReal_to_Correlation_rank (TableOfReal me) {
 	}
 }
 
-autoCorrelation Correlation_createSimple (conststring32 s_correlations, conststring32 s_centroid, integer numberOfObservations) {
+autoCorrelation Correlation_createSimple (constVECVU const& correlations, constVECVU const& centroid, integer numberOfObservations) {
 	try {
-		autoVEC centroids = newVECfromString (s_centroid);
-		autoVEC correlations = newVECfromString (s_correlations);
-		integer numberOfCorrelations_wanted = centroids.size * (centroids.size + 1) / 2;
+		integer numberOfCorrelations_wanted = centroid.size * (centroid.size + 1) / 2;
 		Melder_require (correlations.size == numberOfCorrelations_wanted,
 			U"The number of correlation matrix elements and the number of centroid elements should agree. "
-			"There should be d(d+1)/2 correlation values and d centroid values.");
+			"If there are d centroid values, there should be d(d+1)/2 correlation values, "
+			"so if there are ", centroid.size, U" centroid values, there should be ", numberOfCorrelations_wanted, U" correlation values.");
 
-		autoCorrelation me = Correlation_create (centroids.size);
+		autoCorrelation me = Correlation_create (centroid.size);
 		/*
 			Construct the full correlation matrix from the upper-diagonal elements
 		*/
@@ -63,25 +62,24 @@ autoCorrelation Correlation_createSimple (conststring32 s_correlations, conststr
 		for (integer inum = 1; inum <= correlations.size; inum ++) {
 			const integer nmissing = (rowNumber - 1) * rowNumber / 2;
 			const integer inumc = inum + nmissing;
-			rowNumber = (inumc - 1) / centroids.size + 1;
-			const integer icol = ( (inumc - 1) % centroids.size) + 1;
+			rowNumber = (inumc - 1) / centroid.size + 1;
+			const integer icol = ( (inumc - 1) % centroid.size) + 1;
 			my data [rowNumber] [icol] = my data [icol] [rowNumber] = correlations [inum];
-			if (icol == centroids.size)
+			if (icol == centroid.size)
 				rowNumber ++;
 		}
 		/*
 			Check if a valid correlations, first check diagonal then off-diagonals
 		*/
-		for (integer irow = 1; irow <= centroids.size; irow ++)
+		for (integer irow = 1; irow <= centroid.size; irow ++)
 			Melder_require (my data [irow] [irow] == 1.0,
 				U"The diagonal matrix elements should all equal 1.0.");
-		for (integer irow = 1; irow <= centroids.size; irow ++)
-			for (integer icol = irow + 1; icol <= centroids.size; icol ++)
+		for (integer irow = 1; irow <= centroid.size; irow ++)
+			for (integer icol = irow + 1; icol <= centroid.size; icol ++)
 				Melder_require (fabs (my data [irow] [icol]) <= 1.0,
 					U"The correlation in cell [", irow, U",", icol, U"], i.e. input item ",
-					(irow - 1) * centroids.size + icol - (irow - 1) * irow / 2, U" should not exceed 1.0.");
-		for (integer inum = 1; inum <= centroids.size; inum ++)
-			my centroid [inum] = centroids [inum];
+					(irow - 1) * centroid.size + icol - (irow - 1) * irow / 2, U" should not exceed 1.0.");
+		my centroid.all()  <<=  centroid;
 		my numberOfObservations = numberOfObservations;
 		return me;
 	} catch (MelderError) {
@@ -102,10 +100,10 @@ autoCorrelation Correlation_create (integer dimension) {
 autoCorrelation SSCP_to_Correlation (SSCP me) {
 	try {
 		autoCorrelation thee = Thing_new (Correlation);
-		my structSSCP :: v_copy (thee.get());
-		for (integer i = 1; i <= my numberOfRows; i ++)
-			for (integer j = i; j <= my numberOfColumns; j ++)
-				thy data [j] [i] = thy data [i] [j] /= sqrt (my data [i] [i] * my data [j] [j]);
+		my structSSCP :: v1_copy (thee.get());
+		for (integer irow = 1; irow <= my numberOfRows; irow ++)
+			for (integer icol = irow; icol <= my numberOfColumns; icol ++)
+				thy data [icol] [irow] = thy data [irow] [icol] /= sqrt (my data [irow] [irow] * my data [icol] [icol]);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": Correlation not created.");
@@ -140,9 +138,9 @@ autoTableOfReal Correlation_confidenceIntervals (Correlation me, double confiden
 		const double zf = z / sqrt (my numberOfObservations - 3.0);
 		const double two_n = 2.0 * my numberOfObservations;
 
-		for (integer i = 1; i <= my numberOfRows; i ++) {
-			for (integer j = i + 1; j <= my numberOfRows; j ++) {
-				const double rij = my data [i] [j];
+		for (integer irow = 1; irow <= my numberOfRows; irow ++) {
+			for (integer icol = irow + 1; icol <= my numberOfRows; icol ++) {
+				const double rij = my data [irow] [icol];
 				double rmin, rmax;
 				if (method == 2) {
 					/*
@@ -167,23 +165,20 @@ autoTableOfReal Correlation_confidenceIntervals (Correlation me, double confiden
 					double d = sqrt (b * b - a * c);
 					if (b > 0)
 						d = - d;
-					double q = b - d;
+					const double q = b - d;
 					rmin = q / a;
 					rmin /= sqrt (1.0 + rmin * rmin);
 					rmax = c / q; 
 					rmax /= sqrt (1.0 + rmax * rmax);
-					if (rmin > rmax) {
-						double t = rmin;
-						rmin = rmax;
-						rmax = t;
-					}
+					if (rmin > rmax)
+						std::swap (rmin, rmax);
 				} else {
-					rmax = rmin = 0;
+					rmax = rmin = 0.0;
 				}
-				thy data [i] [j] = rmax;
-				thy data [j] [i] = rmin;
+				thy data [irow] [icol] = rmax;
+				thy data [icol] [irow] = rmin;
 			}
-			thy data [i] [i] = 1;
+			thy data [irow] [irow] = 1;
 		}
 		return thee;
 	} catch (MelderError) {

@@ -1,6 +1,6 @@
 /* DataEditor.cpp
  *
- * Copyright (C) 1995-2020 Paul Boersma
+ * Copyright (C) 1995-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #define BUTTON_X  250
 #define LIST_Y  (2 * Gui_TOP_DIALOG_SPACING + Gui_PUSHBUTTON_HEIGHT)
 #define EDITOR_WIDTH  820
-#define EDITOR_HEIGHT  (LIST_Y + kDataSubEditor_MAXNUM_ROWS * ROW_HEIGHT + 29 + Machine_getMenuBarHeight ())
+#define EDITOR_HEIGHT  (Machine_getMenuBarBottom () + LIST_Y + kDataSubEditor_MAXNUM_ROWS * ROW_HEIGHT + 29)
 #define ROW_HEIGHT  31
 
 #define SCROLL_BAR_WIDTH  Machine_getScrollBarWidth ()
@@ -53,14 +53,14 @@ static inline conststring32 strip_d (conststring32 s) {
 
 Thing_implement (DataSubEditor, Editor, 0);
 
-void structDataSubEditor :: v_destroy () noexcept {
+void structDataSubEditor :: v9_destroy () noexcept {
 	//for (int i = 1; i <= kDataSubEditor_MAXNUM_ROWS; i ++)
 	//	Melder_free (d_fieldData [i]. history);
 	if (our root)
 		for (integer i = our root -> children.size; i > 0; i --)
 			if (our root -> children.at [i] == this)
 				our root -> children.subtractItem_ref (i);
-	DataSubEditor_Parent :: v_destroy ();
+	DataSubEditor_Parent :: v9_destroy ();
 }
 
 static void update (DataSubEditor me) {
@@ -82,17 +82,21 @@ static void update (DataSubEditor me) {
 static Data_Description DataSubEditor_findNumberUse (DataSubEditor me, conststring32 number) {
 	Data_Description structDescription, result;
 	char32 string [100];
-	if (my classInfo == classMatrixEditor) return nullptr;   // no structs inside
+	if (my classInfo == classMatrixEditor)
+		return nullptr;   // no structs inside
 	if (my classInfo == classVectorEditor) {
-		if (my d_description -> type != structwa) return nullptr;   // no structs inside
+		if (my d_description -> type != structwa)
+			return nullptr;   // no structs inside
 		structDescription = * (Data_Description *) my d_description -> tagType;
 	} else { /* StructEditor or ClassEditor or DataEditor. */
 		structDescription = my d_description;
 	}
 	Melder_sprint (string,100, number);
-	if ((result = Data_Description_findNumberUse (structDescription, string)) != nullptr) return result;
+	if ((result = Data_Description_findNumberUse (structDescription, string)) != nullptr)
+		return result;
 	Melder_sprint (string,100, number, U" - 1");
-	if ((result = Data_Description_findNumberUse (structDescription, string)) != nullptr) return result;
+	if ((result = Data_Description_findNumberUse (structDescription, string)) != nullptr)
+		return result;
 	return nullptr;
 }
 
@@ -144,7 +148,7 @@ static void gui_button_cb_change (DataSubEditor me, GuiButtonEvent /* event */) 
 					}
 				} break;
 				case intwa: {
-					int oldValue = * (int *) my d_fieldData [irow]. address, newValue = Melder_atoi (text.get());
+					int oldValue = * (int *) my d_fieldData [irow]. address, newValue = (int) Melder_atoi (text.get());
 					if (newValue != oldValue) {
 						Data_Description numberUse = DataSubEditor_findNumberUse (me, my d_fieldData [irow]. description -> name);
 						if (numberUse) {
@@ -168,7 +172,7 @@ static void gui_button_cb_change (DataSubEditor me, GuiButtonEvent /* event */) 
 					}
 				} break;
 				case ubytewa: { * (unsigned char *) my d_fieldData [irow]. address = (uint8) Melder_atoi (text.get()); } break;
-				case uintwa: { * (unsigned int *) my d_fieldData [irow]. address = Melder_atoi (text.get()); } break;
+				case uintwa: { * (unsigned int *) my d_fieldData [irow]. address = (uint32) Melder_atoi (text.get()); } break;
 				case uintegerwa: { * (uinteger *) my d_fieldData [irow]. address = (uinteger) Melder_atoi (text.get()); } break;
 				case floatwa: { * (double *) my d_fieldData [irow]. address = Melder_atof (text.get()); } break;
 				case doublewa: { * (double *) my d_fieldData [irow]. address = Melder_atof (text.get()); } break;
@@ -229,11 +233,15 @@ static void gui_button_cb_change (DataSubEditor me, GuiButtonEvent /* event */) 
 		1. The owner (creator) of our root DataEditor: so that she can notify other editors, if any.
 		2. All our sibling DataSubEditors.
 	*/
+	Melder_assert (my root);
 	Editor_broadcastDataChanged (my root);
+	Melder_assert (my root);
 	update (me);
+	Melder_assert (my root);
 	for (int isub = 1; isub <= my root -> children.size; isub ++) {
 		DataSubEditor subeditor = my root -> children.at [isub];
-		if (subeditor != me) update (subeditor);
+		if (subeditor != me)
+			update (subeditor);
 	}
 	return;
 error:
@@ -306,7 +314,7 @@ static void gui_button_cb_open (DataSubEditor me, GuiButtonEvent event) {
 }
 
 void structDataSubEditor :: v_createChildren () {
-	int x = Gui_LEFT_DIALOG_SPACING, y = Gui_TOP_DIALOG_SPACING + Machine_getMenuBarHeight (), buttonWidth = 120;
+	int x = Gui_LEFT_DIALOG_SPACING, y = Gui_TOP_DIALOG_SPACING + Machine_getMenuBarBottom (), buttonWidth = 120;
 
 	GuiButton_createShown (our windowForm, x, x + buttonWidth, y, y + Gui_PUSHBUTTON_HEIGHT,
 			U"Change", gui_button_cb_change, this, 0);
@@ -314,7 +322,7 @@ void structDataSubEditor :: v_createChildren () {
 	GuiButton_createShown (our windowForm, x, x + buttonWidth, y, y + Gui_PUSHBUTTON_HEIGHT,
 			U"Cancel", gui_button_cb_cancel, this, 0);
 
-	y = LIST_Y + Machine_getMenuBarHeight ();
+	y = Machine_getMenuBarBottom () + LIST_Y;
 	d_scrollBar = GuiScrollBar_createShown (our windowForm,
 		- SCROLL_BAR_WIDTH, 0, y, 0,
 		0, d_numberOfFields, 0, d_numberOfFields < kDataSubEditor_MAXNUM_ROWS ? d_numberOfFields : kDataSubEditor_MAXNUM_ROWS, 1, kDataSubEditor_MAXNUM_ROWS - 1,
@@ -334,8 +342,8 @@ void structDataSubEditor :: v_createChildren () {
 
 static void menu_cb_help (DataSubEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"Inspect"); }
 
-void structDataSubEditor :: v_createHelpMenuItems (EditorMenu menu) {
-	DataSubEditor_Parent :: v_createHelpMenuItems (menu);
+void structDataSubEditor :: v_createMenuItems_help (EditorMenu menu) {
+	DataSubEditor_Parent :: v_createMenuItems_help (menu);
 	EditorMenu_addCommand (menu, U"DataEditor help", '?', menu_cb_help);
 }
 
@@ -822,9 +830,9 @@ static void DataEditor_destroyAllChildren (DataEditor me) {
 			that is linear in the number of children. So we would end up with quadratic complexity,
 			whereas the procedure that we use above has linear complexity.
 			
-			This linear complexity makes this procedure good enough for `v_destroy()`
+			This linear complexity makes this procedure good enough for `v9_destroy()`
 			(where obtaining linear complexity would have been easy anyway),
-			and nice enough for `v_dataChanged()`.
+			and nice enough for `v1_dataChanged()`.
 			
 			Something to note is that this procedure doesn't care whether the autoCollection
 			`children` owns its items or not.
@@ -832,14 +840,16 @@ static void DataEditor_destroyAllChildren (DataEditor me) {
 	}
 }
 
-void structDataEditor :: v_destroy () noexcept {
+void structDataEditor :: v9_destroy () noexcept {
 	DataEditor_destroyAllChildren (this);
-	DataEditor_Parent :: v_destroy ();
+	DataEditor_Parent :: v9_destroy ();
 }
 
-void structDataEditor :: v_dataChanged () {
+void structDataEditor :: v1_dataChanged (Editor sender) {
+	if (this == sender)
+		return;
 	/*
-		Someone else changed our data.
+		Someone *else* changed our data.
 		We know that the top-level data is still accessible,
 		so we update the top-level window to show the change:
 	*/

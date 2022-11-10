@@ -1,5 +1,5 @@
 # test_Permutation.praat
-# djmw 20050710, 20070820, 20100525, 20100819, 20110418
+# djmw 20050710, 20070820, 20100525, 20100819, 20110418, 20220825
 
 appendInfoLine: "test_Permutation.praat"
 
@@ -10,6 +10,7 @@ appendInfoLine: "test_Permutation.praat"
 @invertp
 @multiply
 @jump
+@distributionTest: 10, 10000
 
 appendInfoLine: "test_Permutation OK"
 
@@ -146,35 +147,69 @@ procedure jump
 	appendInfo: tab$, "Jump"
 	.p1 = Create Permutation: "id", 10, "yes"
 	Jump: 3, 1
-	for .i to 10
-		.p [.i] = Get value: .i
-	endfor
-	assert .p [1] = 1
-	assert .p [2] = 4
-	assert .p [3] = 7
-	assert .p [4] = 10
-	assert .p [5] = 2
-	assert .p [6] = 5
-	assert .p [7] = 8
-	assert .p [8] = 3
-	assert .p [9] = 6
-	assert .p [10] = 9
+	.p# = List values
+	assert .p# [1] = 1
+	assert .p# [2] = 4
+	assert .p# [3] = 7
+	assert .p# [4] = 10
+	assert .p# [5] = 2
+	assert .p# [6] = 5
+	assert .p# [7] = 8
+	assert .p# [8] = 3
+	assert .p# [9] = 6
+	assert .p# [10] = 9
 	appendInfo: "." 
 	.p2 = Create Permutation: "id", 10, "yes"
 	Jump: 3, 2
-	for .i to 10
-		.p [.i] = Get value: .i
-	endfor
-	assert .p [1] = 2
-	assert .p [2] = 5
-	assert .p [3] = 8
-	assert .p [4] = 3
-	assert .p [5] = 6
-	assert .p [6] = 9
-	assert .p [7] = 1
-	assert .p [8] = 4
-	assert .p [9] = 7
-	assert .p [10] = 10
+	.p# = List values
+	assert .p# [1] = 2
+	assert .p# [2] = 5
+	assert .p# [3] = 8
+	assert .p# [4] = 3
+	assert .p# [5] = 6
+	assert .p# [6] = 9
+	assert .p# [7] = 1
+	assert .p# [8] = 4
+	assert .p# [9] = 7
+	assert .p# [10] = 10
 	removeObject: .p1, .p2
 	appendInfoLine: ".o.k." 
 endproc
+
+procedure distributionTest: .size, .numberOfRepetitions
+	.permutation = Create Permutation: "p", .size, "yes"
+	.distribution## = zero## (.size, .size)
+	for .iperm to .numberOfRepetitions
+		Permute randomly (in-place): 0, 0
+		.values# = List values
+		for .ipos to .size
+			.distribution## [.ipos, .values# [.ipos]] += 1
+		endfor
+	endfor
+	# the table is created but not used. Just in case you want to have a look at the distribution
+	# of the numbers over the index positions.
+	.tor = Create TableOfReal: "distribution", .size, .size
+	for .irow to .size
+		Set row label (index): .irow, string$ (.irow)
+		Set column label (index): .irow, "#" + string$ (.irow)
+		for .icol to .size
+			Set value: .irow, .icol, .distribution## [.irow, .icol]
+		endfor
+	endfor
+	.expected = .numberOfRepetitions / .size
+	.diff## = .distribution## - .expected
+	.chiSq = sum (.diff## * .diff##) / .expected^2
+	.df = (.size - 1)^2 ; last value in each row and whole last row are completely determined
+	.p = chiSquareQ (.chiSq, .df)
+	assert .p > 0.999
+	appendInfoLine: tab$, "p = ", .p, " for chiSquare = ",
+	...  .chiSq, " with ", .df, " degrees of freedom."
+	removeObject: .permutation, .tor
+	appendInfoLine: "Realized## - expected (=", fixed$ (.expected, 0), "):", 
+	... newline$, .diff##
+endproc
+
+
+
+
+

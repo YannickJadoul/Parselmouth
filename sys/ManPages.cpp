@@ -1,6 +1,6 @@
 /* ManPages.cpp
  *
- * Copyright (C) 1996-2020 Paul Boersma
+ * Copyright (C) 1996-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ static bool isSingleWordCharacter (char32 c) {
 
 static integer lookUp_unsorted (ManPages me, conststring32 title);
 
-void structManPages :: v_destroy () noexcept {
+void structManPages :: v9_destroy () noexcept {
 	for (integer ipage = 1; ipage <= our pages.size; ipage ++) {
 		ManPage page = our pages.at [ipage];
 		for (integer ipar = 1; ipar <= page -> paragraphs.size; ipar ++) {
@@ -44,7 +44,7 @@ void structManPages :: v_destroy () noexcept {
 		page -> linksHither. reset();   // TODO automate
 		page -> linksThither. reset();
 	}
-	ManPages_Parent :: v_destroy ();
+	ManPages_Parent :: v9_destroy ();
 }
 
 static conststring32 extractLink (conststring32 text, const char32 *p, char32 *link) {
@@ -220,7 +220,7 @@ static void readOnePage (ManPages me, MelderReadText text) {
 		}
 	}
 }
-void structManPages :: v_readText (MelderReadText text, int /*formatVersion*/) {
+void structManPages :: v1_readText (MelderReadText text, int /*formatVersion*/) {
 	our dynamic = true;
 	MelderDir_copy (& Data_directoryBeingRead, & our rootDirectory);
 	readOnePage (this, text);
@@ -249,21 +249,20 @@ void ManPages_addPage (ManPages me, conststring32 title, conststring32 author, i
 	my pages. addItem_move (page.move());
 }
 
-static int pageCompare (const void *first, const void *second) {
-	ManPage me = * (ManPage *) first, thee = * (ManPage *) second;
+static bool pageCompare (ManPage me, ManPage thee) {
 	const char32 *p = & my title [0], *q = & thy title [0];
 	for (;;) {
 		const char32 plower = Melder_toLowerCase (*p), qlower = Melder_toLowerCase (*q);
 		if (plower < qlower)
-			return -1;
+			return true;
 		if (plower > qlower)
-			return 1;
+			return false;
 		if (plower == U'\0')
-			return str32cmp (my title.get(), thy title.get());
+			return str32cmp (my title.get(), thy title.get()) < 0;
 		p ++;
 		q ++;
 	}
-	return 0;   // should not occur
+	return false;   // should not occur
 }
 
 static integer lookUp_unsorted (ManPages me, conststring32 title) {
@@ -296,23 +295,23 @@ static integer lookUp_sorted (ManPages me, conststring32 title) {
 	if (! dummy)
 		dummy = Thing_new (ManPage);
 	dummy -> title = Melder_dup (title);
-	ManPage *page = (ManPage *) bsearch (& dummy, & my pages.at [1], integer_to_uinteger (my pages.size), sizeof (ManPage), pageCompare);   // noexcept
-	if (page)
-		return (page - & my pages.at [1]) + 1;
+	ManPage *page = std::lower_bound (my pages.begin(), my pages.end(), dummy.get(), pageCompare);   // noexcept
+	if (page != my pages.end() && Melder_equ ((*page) -> title.get(), dummy -> title.get()))
+		return (page - my pages.begin()) + 1;
 	if (Melder_isLowerCaseLetter (title [0]) || Melder_isUpperCaseLetter (title [0])) {
 		char32 caseSwitchedTitle [300];
 		Melder_sprint (caseSwitchedTitle,300, title);
 		caseSwitchedTitle [0] = Melder_isLowerCaseLetter (title [0]) ? Melder_toUpperCase (caseSwitchedTitle [0]) : Melder_toLowerCase (caseSwitchedTitle [0]);
 		dummy -> title = Melder_dup (caseSwitchedTitle);
-		page = (ManPage *) bsearch (& dummy, & my pages.at [1], integer_to_uinteger (my pages.size), sizeof (ManPage), pageCompare);   // noexcept
-		if (page)
-			return (page - & my pages.at [1]) + 1;
+		page = std::lower_bound (my pages.begin(), my pages.end(), dummy.get(), pageCompare);   // noexcept
+		if (page != my pages.end() && Melder_equ ((*page) -> title.get(), dummy -> title.get()))
+			return (page - my pages.begin()) + 1;
 	}
 	return 0;
 }
 
 static void grind (ManPages me) {
-	qsort (& my pages.at [1], integer_to_uinteger (my pages.size), sizeof (ManPage), pageCompare);
+	std::sort (my pages.begin(), my pages.end(), pageCompare);
 	for (integer ipage = 1; ipage <= my pages.size; ipage ++) {
 		ManPage page = my pages.at [ipage];
 		page -> linksHither = zero_INTVEC (0);   // superfluous if not ground twice
@@ -416,7 +415,7 @@ static const struct stylesInfo {
 /* DEFINITION: */ { U"<dd>", U"" },
 /* CODE: */ { U"<code>", U"<br></code>" },
 /* PROTOTYPE: */ { U"<p>", U"</p>" },
-/* FORMULA: */ { U"<table width=\"100%\"><tr><td align=middle>", U"</table>" },
+/* EQUATION: */ { U"<table width=\"100%\"><tr><td align=middle>", U"</table>" },
 /* PICTURE: */ { U"<p>", U"</p>" },
 /* SCRIPT: */ { U"<p>", U"</p>" },
 /* LIST_ITEM1: */ { U"<dd>&nbsp;&nbsp;&nbsp;", U"" },
@@ -496,7 +495,7 @@ static void writeParagraphsAsHtml (ManPages me, MelderFile file, constvector <st
 				theCurrentPraatObjects = (PraatObjects) & praatObjects;
 				theCurrentPraatPicture = (PraatPicture) & praatPicture;
 				theCurrentPraatPicture -> graphics = graphics.get();   // FIXME: should be move()?
-				theCurrentPraatPicture -> font = (int) kGraphics_font::TIMES;
+				theCurrentPraatPicture -> font = kGraphics_font::TIMES;
 				theCurrentPraatPicture -> fontSize = 12.0;
 				theCurrentPraatPicture -> lineType = Graphics_DRAWN;
 				theCurrentPraatPicture -> colour = Melder_BLACK;
@@ -656,6 +655,13 @@ static void writeParagraphsAsHtml (ManPages me, MelderFile file, constvector <st
 					while (isSingleWordCharacter (*p) && *p != U'\0') MelderString_append (& link, *p++);
 					MelderString_copy (& linkText, link.string);
 				}
+				/*
+					The first character of the link text can have the wrong case.
+				*/
+				integer linkPageNumber = ManPages_lookUp (me, link.string);
+				if (linkPageNumber == 0)
+					Melder_throw (U"No such manual page: ", link.string);
+				link.string [0] = my pages.at [linkPageNumber] -> title [0];
 				/*
 				 * We write the link in the following format:
 				 *     <a href="link.html">linkText</a>

@@ -50,13 +50,13 @@ autoDaata TextGrid_TIMITLabelFileRecognizer (integer nread, const char *header, 
 	both files are text files and always have three items on each line: two numbers
 	followed by a string. The numbers increase in a monotone way.
 	The recognizer only checks the first two lines and it tests whether
-		0 <= number[1] < number[2] <= number[3] < number[4]
+		0 <= number 1] < number [2] <= number [3] < number [4]
 	(A number of .wrd files do not obey the monotonocity constraint for
-	 number[4] and number[5] !)
+	 number [4] and number [5] !)
 	The decision whether it is a .phn or .wrd file is:
-		.phn if string[1] == 'h#' AND string[2] is a TIMIT phonetic label
-		.wrd if (string[1] == 'h#' AND string[2] is a valid word) OR
-			string[1] and string[2] are both valid words.
+		.phn if string [1] == 'h#' AND string [2] is a TIMIT phonetic label
+		.wrd if (string [1] == 'h#' AND string [2] is a valid word) OR
+			string [1] and string [2] are both valid words.
 		A valid word is a string with contains the lowercase characters [a-z] and ['].
 */
 
@@ -84,7 +84,7 @@ void IntervalTier_changeLabels (IntervalTier me, integer from, integer to, const
 
 void IntervalTier_removeBoundariesBetweenIdenticallyLabeledIntervals (IntervalTier me, conststring32 label);
 
-void IntervalTier_cutIntervalsOnLabelMatch (IntervalTier me, conststring32 label);
+void IntervalTier_combineIntervalsOnLabelMatch (IntervalTier me, conststring32 label);
 
 void IntervalTier_cutIntervals_minimumDuration (IntervalTier me, conststring32 label, double minimumDuration);
 

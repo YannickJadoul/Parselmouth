@@ -1,6 +1,6 @@
 /* SVD.cpp
  *
- * Copyright (C) 1994-2020 David Weenink
+ * Copyright (C) 1994-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,7 +60,8 @@
 #include "oo_DESCRIPTION.h"
 #include "SVD_def.h"
 
-void structSVD :: v_info () {
+void structSVD :: v1_info () {
+	// skipping parent classes
 	MelderInfo_writeLine (U"Number of rows: ", numberOfRows);
 	MelderInfo_writeLine (U"Number of columns: ", numberOfColumns);
 	MelderInfo_writeLine (U"This matrix is", (isTransposed ? U"" : U" not "), U" transposed.");
@@ -226,7 +227,7 @@ void SVD_solve_preallocated (SVD me, constMATVU const& b, MATVU const& result) {
 	for (integer icol = 1; icol <= b.ncol; icol ++) {
 		bcol.all()  <<=  b.column (icol);
 		SVD_solve_preallocated (me, bcol.get(), resultcol.get());
-		result.column (icol) <<= resultcol.get();
+		result.column (icol)  <<=  resultcol.get();
 	}
 }
 
@@ -260,7 +261,7 @@ void SVD_sort (SVD me) { // Superfluous??, SVD is always sorted
 }
 
 double SVD_getConditionNumber (SVD me) {
-	return my d[my numberOfColumns] > 0.0 ? my d[1] / my d[my numberOfColumns] : undefined;
+	return my d [my numberOfColumns] > 0.0 ? my d [1] / my d [my numberOfColumns] : undefined;
 }
 
 double SVD_getSumOfSingularValuesAsFractionOfTotal (SVD me, integer from, integer to) {
@@ -281,10 +282,10 @@ integer SVD_zeroSmallSingularValues (SVD me, double tolerance) {
 	if (tolerance == 0.0)
 		tolerance = my tolerance;
 
-	const double dmax = NUMmax (my d.all());
+	const double dmax = my d [1]; // invariant
 
 	integer numberOfZeroed = 0;
-	for (integer i = 1; i <= my numberOfColumns; i ++)
+	for (integer i = 2; i <= my numberOfColumns; i ++)
 		if (my d [i] < dmax * tolerance) {
 			my d [i] = 0.0;
 			numberOfZeroed ++;
@@ -294,18 +295,19 @@ integer SVD_zeroSmallSingularValues (SVD me, double tolerance) {
 
 
 integer SVD_getRank (SVD me) {
-	integer rank = 0;
-	for (integer i = 1; i <= my numberOfColumns; i ++)
-		if (my d [i] > 0.0)
+	integer rank = 1;
+	const double dmax = my d [1];
+	for (integer i = 2; i <= my numberOfColumns; i ++)
+		if (my d [i] >= dmax * my tolerance)
 			rank ++;
 	return rank;
 }
 
 /*
 	SVD of A = U D V'.
-	This can be written as A = sum_{r=1}^n d[i] u[i]v[i]', where u[i] and [v[i] are columnvectors
+	This can be written as A = sum_{r=1}^n d [i] u [i] v [i]', where u [i] and v [i] are columnvectors
 	(Golub & van Loan, 3rd ed, p 71).
-	If (internally) the matrix was transposed we can rewrite this as A=sum_{r=1}^n d[i] u[i]'v[i].
+	If (internally) the matrix was transposed we can rewrite this as A=sum_{r=1}^n d [i] u [i]' v [i].
 */
 autoMAT SVD_synthesize (SVD me, integer sv_from, integer sv_to) {
 	if (sv_to == 0)
@@ -322,9 +324,9 @@ autoMAT SVD_synthesize (SVD me, integer sv_from, integer sv_to) {
 
 		for (integer k = sv_from; k <= sv_to; k ++) {
 			if (my isTransposed)
-				outer_MAT_out (outer.get(), my v.column(k), my u.column(k));
+				outer_MAT_out (outer.get(), my v.column (k), my u.column (k));
 			else
-				outer_MAT_out (outer.get(), my u.column(k), my v.row(k)); // because the transposed of v is in the svd!
+				outer_MAT_out (outer.get(), my u.column (k), my v.row (k)); // because the transposed of v is in the svd!
 			result.get()  +=  outer.get()  *  my d [k];
 		}
 		return result;
@@ -333,9 +335,60 @@ autoMAT SVD_synthesize (SVD me, integer sv_from, integer sv_to) {
 	}
 }
 
+/*
+	The effective degrees of freedom df(lambda) is defined as:
+		df(lambda) = sum (i=1, p, d[i]^2 / (d[i]^2 + lambda)),
+	where p is the number of singular values.
+	df(0) == p and df(infinity) == 0. 
+	The equation to solve for lambda is
+		f(lambda) = sum(i=1, p, d[i]^2 / (d[i]^2 + lambda)) - df = 0,
+	with derivative df/dlambda = - sum(i=1, p, d[i]^2 / (d[i]^2 + lambda)^2).
+	Taylor series around lambda[0] gives
+		f(lambda)=f[lambda [0])+(lambda -lambda [0]) df/dlambda (lambda [0])
+	Solving for lambda gives:
+		lambda = lambda [0] - 1 / {df/dlambda (lambda [0])} * f(lambda [0])
+	This gives iteration
+		lambda [j+1] = lambda [j] +  1 / {df/dlambda (lambda [j])} * f(lambda [j]).
+		As starting value for lambda [0] we choose (p - df)/df.
+*/
+double SVD_getShrinkageParameter (SVD me, double effectiveDegreesOfFreedom) {
+	const integer rank = SVD_getRank (me);
+	if (effectiveDegreesOfFreedom >= rank)
+		return 0.0;
+	if (effectiveDegreesOfFreedom <= 0.0)
+		return 1.0e38; // infinity or a very big number
+	if (my isTransposed)
+		return undefined;
+	const double eps = 1e-6; // a little bit ad hoc number.
+	double lambda = (my numberOfColumns - effectiveDegreesOfFreedom) / effectiveDegreesOfFreedom;
+	double diff = 1.0e38;
+	do {
+		longdouble f = -effectiveDegreesOfFreedom, df = 0.0;
+		for (integer i = 1; i <= my numberOfColumns; i ++) {
+			const longdouble dsq = my d [i] *  my d [i];
+			const longdouble dsqpl = dsq + lambda;
+			f += dsq / dsqpl;
+			df += dsq / (dsqpl * dsqpl);   // always > 0
+		}
+		const double lambda_new = lambda + double (f / df);
+		diff = abs (lambda - lambda_new);
+		lambda = lambda_new;
+	} while (diff > eps);
+	return lambda;
+}
+
+double SVD_getEffectiveDegreesOfFreedom (SVD me, double shrinkageParameter) {
+	longdouble edf = 0.0;
+	for (integer i = 1; i <= my numberOfColumns; i ++) {
+		longdouble dsq = my d [i] * my d [i];
+		edf += dsq / (dsq + shrinkageParameter);
+	}
+	return (double) edf;	
+}
+
 Thing_implement (GSVD, Daata, 0);
 
-void structGSVD :: v_info () {
+void structGSVD :: v1_info () {
 	MelderInfo_writeLine (U"Number of columns: ", numberOfColumns);
 }
 

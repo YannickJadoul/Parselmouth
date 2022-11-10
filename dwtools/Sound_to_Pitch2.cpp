@@ -30,6 +30,12 @@
 #include "SPINET_to_Pitch.h"
 #include "NUM2.h"
 
+static double Sound_approximateLocalSampleMean (Sound me, double fromTime, double toTime) {
+	const integer n1 = Melder_clippedLeft (1_integer, Sampled_xToNearestIndex (me, fromTime));
+	const integer n2 = Melder_clippedRight (Sampled_xToNearestIndex (me, toTime), my nx);
+	return n1 <= n2 ? NUMmean (my z [1].part (n1, n2)) : undefined;
+}
+
 static void spec_enhance_SHS (VEC const & a) {
 	Melder_assert (a.size >= 2);
 
@@ -46,11 +52,11 @@ static void spec_enhance_SHS (VEC const & a) {
 		posmax [++ nmax] = a.size;
 
 	if (nmax == 1) {
-		a.part (1, posmax [1] - 3) <<= 0.0;
-		a.part (posmax [1] + 3, a.size) <<= 0.0;
+		a.part (1, posmax [1] - 3)  <<=  0.0;
+		a.part (posmax [1] + 3, a.size)  <<=  0.0;
 	} else {
 		for (integer i = 2; i <= nmax; i ++)
-			a.part (posmax [i - 1] + 3, posmax [i] - 3) <<= 0.0;
+			a.part (posmax [i - 1] + 3, posmax [i] - 3)  <<=  0.0;
 	}
 }
 
@@ -61,8 +67,8 @@ static void spec_smoooth_SHS (VEC const& a) {
 		The basic equation for an output element a_new [i] is:
 			a_new [i] := 0.25 * (a [i - 1] + 2.0 * a [i] + a [i + 1])
 
-		The procedure is performed in place, i.e., the vector a_new[]
-		appears as the new version of the vector a[], so that care has
+		The procedure is performed in place, i.e., the vector a_new []
+		appears as the new version of the vector a [], so that care has
 		to be taken to timely save elements that will be overwritten.
 		At the edges we perform "same" convolution, meaning that
 		the output vector has the same number of elements as the
@@ -93,9 +99,7 @@ autoPitch Sound_to_Pitch_shs (Sound me, double timeStep, double minimumPitch, do
 		const integer numberOfSamples = Melder_iround (windowDuration * newSamplingFrequency);
 		const double frameDuration = numberOfSamples / newSamplingFrequency;
 		
-		integer nfft = 256; // the minimum number of points for the FFT
-		while (nfft < numberOfSamples)
-			nfft *= 2;
+		const integer nfft = Melder_clippedLeft (256_integer /* the minimum number of points for the FFT */, Melder_iroundUpToPowerOfTwo (numberOfSamples));
 		const integer nfft2 = nfft / 2 + 1;
 		const double fftframeDuration = nfft / newSamplingFrequency;
 		const double df = newSamplingFrequency / nfft;
@@ -127,7 +131,7 @@ autoPitch Sound_to_Pitch_shs (Sound me, double timeStep, double minimumPitch, do
 		/*
 			Compute the absolute value of the globally largest amplitude w.r.t. the global mean.
 		*/
-		const double globalMean = Sound_localMean (sound.get(), sound -> xmin, sound -> xmax);
+		const double globalMean = Sound_approximateLocalSampleMean (sound.get(), sound -> xmin, sound -> xmax);
 		const double globalPeak = Sound_localPeak (sound.get(), sound -> xmin, sound -> xmax, globalMean);
 		/*
 			For the cubic spline interpolation we need the frequencies on an octave
@@ -154,13 +158,13 @@ autoPitch Sound_to_Pitch_shs (Sound me, double timeStep, double minimumPitch, do
 			*/
 			Sound_into_Sound (sound.get(), analysisframe.get(), tmid - halfWindow);
 			Sounds_multiply (analysisframe.get(), hamming.get());
-			const double localMean = Sound_localMean (sound.get(), tmid - 3.0 * halfWindow, tmid + 3.0 * halfWindow);
+			const double localMean = Sound_approximateLocalSampleMean (sound.get(), tmid - 3.0 * halfWindow, tmid + 3.0 * halfWindow);
 			const double localPeak = Sound_localPeak (sound.get(), tmid - halfWindow, tmid + halfWindow, localMean);
 			pitchFrame -> intensity = localPeak > globalPeak ? 1.0 : localPeak / globalPeak;
 			/*
 				Get the Fourier spectrum.
 			*/
-			fftframe -> z[1].part (1, analysisframe -> nx) <<= analysisframe -> z [1]; // 
+			fftframe -> z [1].part (1, analysisframe -> nx)  <<=  analysisframe -> z [1]; // 
 			autoSpectrum spec = Sound_to_Spectrum (fftframe.get(), true);
 			Melder_assert (spec -> nx == nfft2);
 			/*
@@ -168,7 +172,7 @@ autoPitch Sound_to_Pitch_shs (Sound me, double timeStep, double minimumPitch, do
 			*/
 			for (integer j = 1; j <= nfft2; j ++) {
 				const double rs = spec -> z [1] [j], is = spec -> z [2] [j];
-				specAmp [j] = sqrt (rs * rs + is * is);
+				specAmp [j] = hypot (rs, is);
 			}
 			/*
 				Enhance the peaks in the spectrum.

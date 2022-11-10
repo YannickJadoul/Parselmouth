@@ -39,7 +39,7 @@ struct MelderColour {
 
 extern MelderColour Melder_BLACK, Melder_WHITE, Melder_RED, Melder_GREEN, Melder_BLUE,
 	Melder_CYAN, Melder_MAGENTA, Melder_YELLOW, Melder_MAROON, Melder_LIME, Melder_NAVY, Melder_TEAL,
-	Melder_PURPLE, Melder_OLIVE, Melder_PINK, Melder_SILVER, Melder_GREY, Melder_WINDOW_BACKGROUND_COLOUR;
+	Melder_PURPLE, Melder_OLIVE, Melder_PINK, Melder_SILVER, Melder_GREY;
 
 MelderColour MelderColour_fromColourName (conststring32 colourName);
 /*
@@ -68,6 +68,20 @@ static inline bool MelderColour_equal (MelderColour colour1, MelderColour colour
 }
 MelderColour Melder_cyclingBackgroundColour (integer category);
 MelderColour Melder_cyclingTextColour (integer category);
+
+static inline MelderColour operator* (double multiplier, MelderColour me) {
+	return
+		multiplier <= 1.0 ?
+			MelderColour (me.red * multiplier, me.green * multiplier, me.blue * multiplier, me.transparency)
+		:
+			MelderColour (
+				1.0 - (1.0 - me.red) / multiplier,
+				1.0 - (1.0 - me.green) / multiplier,
+				1.0 - (1.0 - me.blue) / multiplier,
+				me.transparency
+			)
+		;
+}
 
 /* End of file melder_colour.h */
 #endif

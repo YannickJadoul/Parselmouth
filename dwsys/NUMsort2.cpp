@@ -1,6 +1,6 @@
 /* NUMsort.cpp
  *
- * Copyright (C) 1993-2019 David Weenink
+ * Copyright (C) 1993-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ void MATrankColumns (MAT m, integer cb, integer ce) {
 	autoINTVEC index = raw_INTVEC (m.nrow);
 
 	for (integer j = cb; j <= ce; j ++) {
-		v.all() <<= m.column (j);
+		v.all()  <<=  m.column (j);
 		for (integer i = 1; i <= m.nrow; i ++)
 			index [i] = i;
 		NUMsortTogether (v.get(), index.get());
@@ -54,7 +54,7 @@ void MATrankColumns (MAT m, integer cb, integer ce) {
 }
 
 template <class T>
-void NUMindexx (const T a[], integer n, integer index[], int (*compare) (void *, void *)) {
+void NUMindexx (const T a [], integer n, integer index [], int (*compare) (void *, void *)) {
 	T min;
 	for (integer j = 1; j <= n; j ++)
 		index [j] = j;
@@ -73,7 +73,7 @@ void NUMindexx (const T a[], integer n, integer index[], int (*compare) (void *,
 			integer imin = i;
 			min = a [index [imin]];
 			for (integer j = i + 1; j <= n; j ++) {
-				if (COMPARELT (a[index [j]], min)) {
+				if (COMPARELT (a [index [j]], min)) {
 					imin = j;
 					min = a [index [j]];
 				}
@@ -122,7 +122,7 @@ void NUMindexx (const T a[], integer n, integer index[], int (*compare) (void *,
 				index [j] = k;
 				break;
 			}
-			index[j] = index[i];
+			index [j] = index [i];
 		}
 	}
 }
@@ -191,7 +191,7 @@ void NUMindexx (const T a[], integer n, integer index[], int (*compare) (void *,
 			j = i; \
 			i = j >> 1; \
 			/* H9' */ \
-			if (j == l || COMPARELT (v [k], v[index [i]])) { \
+			if (j == l || COMPARELT (v [k], v [index [i]])) { \
 				index [j] = k; \
 				break; \
 			} \
@@ -205,13 +205,12 @@ void NUMindexx (const T a[], integer n, integer index[], int (*compare) (void *,
 void INTVECindex (INTVEC const& index, constVEC const& v)
 MACRO_NUMindex (double)
 
-//void NUMindexx (const double a[], integer n, integer index[])
-//MACRO_NUMindex (double, n)
-
+void INTVECindex (INTVEC const& index, constINTVEC const& v)
+MACRO_NUMindex (integer)
 
 #undef COMPARELT
 #define COMPARELT(x,y) (Melder_cmp (x,y) <  0)
-//void NUMindexx_s (char32 **a, integer n, integer index[])
+
 void INTVECindex (INTVEC const& index, constSTRVEC const& v)
 MACRO_NUMindex (const char32_t *)
 
@@ -232,12 +231,27 @@ void VECsort3_inplace (VEC const& a, INTVEC const& iv1, INTVEC const& iv2, bool 
 	for (integer j = 1; j <= a.size; j ++)
 		a [j] = atmp [index [j]];
 	autoINTVEC itmp = raw_INTVEC (a.size);
-	itmp.all() <<= iv1;
+	itmp.all()  <<=  iv1;
 	for (integer j = 1; j <= a.size; j ++)
 		iv1 [j] = itmp [index [j]];
-	itmp.all() <<= iv2;
+	itmp.all()  <<=  iv2;
 	for (integer j = 1; j <= a.size; j ++)
 		iv2 [j] = itmp [index [j]];
 }
 
+autoINTMAT sortRows_INTMAT (constINTMAT mat, integer icol) { // TODO test me
+	try {
+		Melder_require (icol > 0 && icol <= mat.ncol,
+			U"The column index is not valid.");
+		autoINTVEC colvals = raw_INTVEC (mat.nrow);
+		for (integer irow = 1; irow <= mat.nrow; irow ++)
+			colvals [irow] = mat [irow] [icol];
+		autoINTVEC index = newINTVECindex (colvals.get());
+		autoINTMAT result = raw_INTMAT (mat.nrow, mat.ncol);
+		for (integer irow = 1; irow <= mat.nrow; irow ++)
+			result [index [irow]]  <<= mat [irow];
+	} catch (MelderError) {
+		Melder_throw (U"Matrix not sorted.");
+	}
+}
 /* End of file NUMsort.cpp */

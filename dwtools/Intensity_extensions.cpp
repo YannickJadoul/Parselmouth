@@ -65,7 +65,7 @@ autoTextGrid Intensity_to_TextGrid_detectSilences (Intensity me,
 		double intensity_max_db, intensity_min_db, xOfMaximum, xOfMinimum;
 		Vector_getMaximumAndX (me, 0.0, 0.0, 1, kVector_peakInterpolation :: PARABOLIC, & intensity_max_db, & xOfMaximum);
 		Vector_getMinimumAndX (me, 0.0, 0.0, 1, kVector_peakInterpolation :: PARABOLIC, & intensity_min_db, & xOfMinimum);
-		double intensity_dbRange = intensity_max_db - intensity_min_db;
+		const double intensity_dbRange = intensity_max_db - intensity_min_db;
 
 		if (intensity_dbRange < 10.0)
 			Melder_warning (U"The loudest and softest part in your sound differ by only ", intensity_dbRange, U" dB.");
@@ -113,10 +113,14 @@ autoTextGrid Intensity_to_TextGrid_detectSilences (Intensity me,
 			This works much better than first removing short silence intervals and
 			then short non-silence intervals.
 		*/
-		IntervalTier_cutIntervals_minimumDuration (it, soundingLabel, minSoundingDuration);
-		IntervalTier_cutIntervalsOnLabelMatch (it, silenceLabel);
-		IntervalTier_cutIntervals_minimumDuration (it, silenceLabel, minSilenceDuration);
-		IntervalTier_cutIntervalsOnLabelMatch (it, soundingLabel);
+		if (minSoundingDuration > 0.0) {
+			IntervalTier_cutIntervals_minimumDuration (it, soundingLabel, minSoundingDuration);
+			IntervalTier_combineIntervalsOnLabelMatch (it, silenceLabel);
+		}
+		if (minSilenceDuration > 0.0) {
+			IntervalTier_cutIntervals_minimumDuration (it, silenceLabel, minSilenceDuration);
+			IntervalTier_combineIntervalsOnLabelMatch (it, soundingLabel);
+		}
 
 		return thee;
 	} catch (MelderError) {

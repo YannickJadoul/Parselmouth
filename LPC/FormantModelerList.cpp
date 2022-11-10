@@ -1,4 +1,4 @@
-/*FormantModelerList.cpp
+/* FormantModelerList.cpp
  *
  * Copyright (C) 2020 David Weenink
  *
@@ -37,25 +37,24 @@
 #include "oo_DESCRIPTION.h"
 #include "FormantModelerList_def.h"
 /*
-void structFormantModelerListDrawingSpecification :: v_writeBinary (FILE *_filePointer_) {}
-void structFormantModelerList :: v_writeBinary (FILE *_filePointer_) {}
-void structFormantModelerListDrawingSpecification :: v_readBinary (FILE *_filePointer_, int _formatVersion_) {}
-void structFormantModelerList :: v_readBinary (FILE *_filePointer_, int _formatVersion_) {}
+void structFormantModelerListDrawingSpecification :: v1_writeBinary (FILE *_filePointer_) {}
+void structFormantModelerList :: v1_writeBinary (FILE *_filePointer_) {}
+void structFormantModelerListDrawingSpecification :: v1_readBinary (FILE *_filePointer_, int _formatVersion_) {}
+void structFormantModelerList :: v1_readBinary (FILE *_filePointer_, int _formatVersion_) {}
 
 */
-void structFormantModelerList :: v_info () {
-	
+void structFormantModelerList :: v1_info () {
+	// do nothing
 };
 
 Thing_implement (FormantModelerList, Function, 0);
 Thing_implement (FormantModelerListDrawingSpecification, Daata, 0);
 
-autoFormantModelerList FormantPath_to_FormantModelerList (FormantPath me, double startTime, double endTime, conststring32 numberOfParametersPerTrack_string) {
+autoFormantModelerList FormantPath_to_FormantModelerList (FormantPath me, double startTime, double endTime, constINTVEC const& numberOfParametersPerTrack) {
 	try {
 		autoFormantModelerList thee = Thing_new (FormantModelerList);
 		thy xmin = startTime;
 		thy xmax = endTime;
-		autoINTVEC numberOfParametersPerTrack = newINTVECfromString (numberOfParametersPerTrack_string);
 		Melder_require (numberOfParametersPerTrack.size > 0,
 			U"The number of items in the parameter list should be larger than zero.");
 		thy numberOfTracksPerModel = numberOfParametersPerTrack.size;
@@ -67,11 +66,11 @@ autoFormantModelerList FormantPath_to_FormantModelerList (FormantPath me, double
 			if (value == 0)
 				numberOfZeros += 1;
 		}
-		thy numberOfParametersPerTrack = numberOfParametersPerTrack.move();
+		thy numberOfParametersPerTrack = copy_INTVEC (numberOfParametersPerTrack);
 		thy numberOfTracksPerModel = thy numberOfParametersPerTrack.size;
-		thy numberOfModelers = my formants . size;
+		thy numberOfModelers = my formantCandidates . size;
 		for (integer imodel = 1; imodel <= thy numberOfModelers; imodel ++) {
-			Formant formanti = (Formant) my formants . at [imodel];
+			Formant formanti = (Formant) my formantCandidates . at [imodel];
 			autoFormantModeler fm = Formant_to_FormantModeler (formanti, startTime, endTime,  thy numberOfParametersPerTrack.get());
 			Thing_setName (fm.get(), Melder_fixed (my ceilings [imodel], 0));
 			thy formantModelers. addItem_move (fm.move());
@@ -86,7 +85,7 @@ autoFormantModelerList FormantPath_to_FormantModelerList (FormantPath me, double
 void FormantModelerList_showBest3 (FormantModelerList me) {
 	autoINTVEC best3 = FormantModelerList_getBest3 (me);
 	INTVEC drawingOrder = my drawingSpecification -> drawingOrder.get();
-	drawingOrder.part (1, 3) <<= best3.all();
+	drawingOrder.part (1, 3)  <<=  best3.all();
 	my drawingSpecification -> numberOfModelersToDraw = 3;
 }
 
@@ -117,7 +116,7 @@ integer FormantModelerList_getBestModelIndex (FormantModelerList me, integer fro
 	integer best = 0;
 	for (integer imodel = 1; imodel <= my numberOfModelers; imodel ++) {
 		FormantModeler fm = my formantModelers.at [imodel];
-		double w = FormantModeler_getStress (fm, fromTrack, toTrack, 0, my varianceExponent);
+		const double w = FormantModeler_getStress (fm, fromTrack, toTrack, 0, my varianceExponent);
 		if (w < wmin) {
 			wmin = w;
 			best = imodel;
@@ -202,7 +201,7 @@ autoFormantModelerListDrawingSpecification FormantModelerList_to_FormantModelerL
 		autoSTRVEC midTopText (my numberOfModelers);
 		for (integer imodel = 1; imodel <= my numberOfModelers; imodel ++)
 			midTopText [imodel] = Melder_dup (U"");
-		thy midTopText = newSTRVECcopy (midTopText.get());
+		thy midTopText = copy_STRVEC (midTopText.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"No FormantModelerListDrawingSpecification created.");
@@ -220,18 +219,17 @@ void FormantModelerList_drawInMatrixGrid (FormantModelerList me, Graphics g, int
 		const double margin = 2.8 * fontSize * gg -> resolution / 72.0;
 		const double wDC = (gg -> d_x2DC - gg -> d_x1DC) / (gg -> d_x2wNDC - gg -> d_x1wNDC) * (gg -> d_x2NDC - gg -> d_x1NDC);
 		double dx = 1.5 * margin / wDC;
-		double xTick = 0.06 * dx;
-		if (dx > 0.4) dx = 0.4;
-		return xTick /= 1.0 - 2.0 * dx;
+		const double xTick = 0.06 * dx;
+		Melder_clipRight (& dx, 0.4);
+		return xTick / (1.0 - 2.0 * dx);
 	};
 	auto getYtick = [] (Graphics gg, double fontSize) {
-		double margin = 2.8 * fontSize * gg -> resolution / 72.0;
-		double hDC = integer_abs (gg->d_y2DC - gg->d_y1DC) / (gg->d_y2wNDC - gg->d_y1wNDC) * (gg->d_y2NDC - gg-> d_y1NDC);
+		const double margin = 2.8 * fontSize * gg -> resolution / 72.0;
+		const double hDC = integer_abs (gg->d_y2DC - gg->d_y1DC) / (gg->d_y2wNDC - gg->d_y1wNDC) * (gg->d_y2NDC - gg-> d_y1NDC);
 		double dy = margin / hDC;
-		double yTick = 0.09 * dy;
-		if (dy > 0.4) dy = 0.4;
-		yTick /= 1.0 - 2.0 * dy;
-		return yTick;
+		const double yTick = 0.09 * dy;
+		Melder_clipRight (& dy, 0.4);
+		return yTick / (1.0 - 2.0 * dy);
 	};
 	const bool fillUp = ( origin == kGraphicsMatrixOrigin::BOTTOM_LEFT || origin == kGraphicsMatrixOrigin::BOTTOM_RIGHT );
 	const bool rightToLeft = ( origin == kGraphicsMatrixOrigin::TOP_RIGHT || origin ==kGraphicsMatrixOrigin:: BOTTOM_RIGHT );
@@ -243,11 +241,11 @@ void FormantModelerList_drawInMatrixGrid (FormantModelerList me, Graphics g, int
 		const integer icol1 = 1 + (index - 1) % ncol;
 		const integer icol = ( rightToLeft ? ncol - icol1 + 1 : icol1 );
 		const integer irow = ( fillUp ? nrow - irow1 + 1 : irow1 );
-		double vpi_x1 = x1NDC + (icol - 1) * vpi_width * (1.0 + spaceBetweenFraction_x);
-		double vpi_x2 = vpi_x1 + vpi_width;
-		double vpi_y2 = y2NDC - (irow - 1) * vpi_height * (1.0 + spaceBetweenFraction_y);
-		double vpi_y1 = vpi_y2 - vpi_height;
-		integer imodel = my drawingSpecification -> drawingOrder [index];
+		const double vpi_x1 = x1NDC + (icol - 1) * vpi_width * (1.0 + spaceBetweenFraction_x);
+		const double vpi_x2 = vpi_x1 + vpi_width;
+		const double vpi_y2 = y2NDC - (irow - 1) * vpi_height * (1.0 + spaceBetweenFraction_y);
+		const double vpi_y1 = vpi_y2 - vpi_height;
+		const integer imodel = my drawingSpecification -> drawingOrder [index];
 		FormantModeler fm = my formantModelers.at [imodel];
 		Graphics_setViewport (g, vpi_x1, vpi_x2, vpi_y1, vpi_y2);
 		Graphics_setWindow (g, fm -> xmin, fm -> xmax, 0.0, fmax);
@@ -281,8 +279,8 @@ void FormantModelerList_drawInMatrixGrid (FormantModelerList me, Graphics g, int
 		}
 
 		if (garnish) {
-			double xTick = (double) getXtick (g, newFontSize) * (fm -> xmax - fm -> xmin);
-			double yTick = (double) getYtick (g, newFontSize) * (fmax - 0.0);
+			const double xTick = (double) getXtick (g, newFontSize) * (fm -> xmax - fm -> xmin);
+			const double yTick = (double) getYtick (g, newFontSize) * (fmax - 0.0);
 			if (icol == 1 && irow % 2 == 1) {
 				Graphics_setTextAlignment (g, kGraphics_horizontalAlignment::RIGHT, Graphics_HALF);
 				Graphics_line (g, fm -> xmin - xTick, fmax, fm -> xmin, fmax);

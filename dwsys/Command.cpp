@@ -20,22 +20,22 @@
 
 #pragma mark - class Command
 
+void structCommand :: v_do () { };
+void structCommand :: v_undo () { };
+
 Thing_implement (Command, Thing, 0);
 
-void Command_init (Command me, conststring32 name, Thing boss, Command_Callback execute, Command_Callback undo) {
-	Melder_assert (execute && undo);
+void Command_init (Command me, conststring32 name, Thing boss) {
 	Thing_setName (me, name);
 	my boss = boss;
-	my execute = execute;
-	my undo = undo;
 }
 
-int Command_do (Command me) {
-	return my execute (me);
+void Command_do (Command me) {
+	my v_do ();
 }
 
-int Command_undo (Command me) {
-	return my undo (me);
+void Command_undo (Command me) {
+	my v_undo ();
 }
 
 #pragma mark - class CommandHistory
@@ -77,7 +77,7 @@ bool CommandHistory_isOffright (CommandHistory me) {
 }
 
 conststring32 CommandHistory_commandName (CommandHistory me, integer offsetFromCurrent) {
-	integer pos = my current + offsetFromCurrent;
+	const integer pos = my current + offsetFromCurrent;
 	return pos >= 1 && pos <= my size ? Thing_getName (my at [pos]) : nullptr;
 }
 

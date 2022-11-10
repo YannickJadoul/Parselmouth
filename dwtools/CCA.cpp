@@ -55,8 +55,8 @@
 #include "oo_DESCRIPTION.h"
 #include "CCA_def.h"
 
-void structCCA :: v_info () {
-	structDaata :: v_info ();
+void structCCA :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of coefficients: ", numberOfCoefficients);
 	MelderInfo_writeLine (U"ny: ", y -> dimension);
 	MelderInfo_writeLine (U"nx: ", x -> dimension);
@@ -110,8 +110,8 @@ autoCCA TableOfReal_to_CCA (TableOfReal me, integer numberOfDependents) {
 
 		autoSVD svdy = SVD_create (numberOfObservations, numberOfDependents);   // numberOfObservations >= numberOfDependents, hence no transposition
 		autoSVD svdx = SVD_create (numberOfObservations, numberOfIndependents);	 // numberOfObservations >= numberOfIndependents, hence no transposition
-		svdy -> u.all() <<= my data.verticalBand (1, numberOfDependents);
-		svdx -> u.all() <<= my data.verticalBand (numberOfDependents + 1, my numberOfColumns);
+		svdy -> u.all()  <<=  my data.verticalBand (1, numberOfDependents);
+		svdx -> u.all()  <<=  my data.verticalBand (numberOfDependents + 1, my numberOfColumns);
 		const double fnormy = NUMnorm (svdy -> u.get(), 2.0);
 		const double fnormx = NUMnorm (svdx -> u.get(), 2.0);
 		
@@ -138,8 +138,8 @@ autoCCA TableOfReal_to_CCA (TableOfReal me, integer numberOfDependents) {
 		const integer numberOfCoefficients = numberOfDependents - numberOfZeroedc;
 
 		autoCCA thee = CCA_create (numberOfCoefficients, numberOfDependents, numberOfIndependents);
-		thy yLabels = Strings_createFromSTRVEC (my columnLabels.get(), 1, numberOfDependents);
-		thy xLabels = Strings_createFromSTRVEC (my columnLabels.get(), numberOfDependents + 1, my numberOfColumns);
+		thy yLabels = Strings_createFromSTRVEC (my columnLabels.part (1, numberOfDependents));
+		thy xLabels = Strings_createFromSTRVEC (my columnLabels.part (numberOfDependents + 1, my numberOfColumns));
 		thy numberOfObservations = numberOfObservations;
 
 		/*
@@ -148,8 +148,8 @@ autoCCA TableOfReal_to_CCA (TableOfReal me, integer numberOfDependents) {
 			For the eigenvectors we want a row representation:
 			colums(Y) = rows(Y') = rows(Vc' * inv(Dy) * Vy')
 			colums(X) = rows(X') = rows(Uc' * inv(Dx) * Vx')
-			rows(Y') = evecy[i][j] = Vc[k][i] * Vy[j][k] / Dy[k]
-			rows(X') = evecx[i][j] = Uc[k][i] * Vx[j][k] / Dx[k]
+			rows(Y') = evecy [i] [j] = Vc [k] [i] * Vy [j] [k] / Dy [k]
+			rows(X') = evecx [i] [j] = Uc [k] [i] * Vx [j] [k] / Dx [k]
 		*/
 		for (integer icoef = 1; icoef <= numberOfCoefficients; icoef ++) {
 			const double ccc = svdc -> d [icoef];
@@ -196,7 +196,7 @@ autoTableOfReal CCA_TableOfReal_scores (CCA me, TableOfReal thee, integer number
 			U"The number of factors should be in interval [1, ", my numberOfCoefficients, U"].");
 		
 		autoTableOfReal him = TableOfReal_create (n, 2 * numberOfFactors);
-		his rowLabels.all() <<= thy rowLabels.all();
+		his rowLabels.all()  <<=  thy rowLabels.all();
 		
 		mul_MAT_out (his data.verticalBand (1, numberOfFactors), thy data.verticalBand (1, nx), my y -> eigenvectors.horizontalBand(1, numberOfFactors).transpose ());
 		mul_MAT_out (his data.verticalBand (numberOfFactors + 1, 2 * numberOfFactors), thy data.verticalBand (nx + 1, nx + ny), my x -> eigenvectors.horizontalBand(1, numberOfFactors).transpose());
@@ -267,7 +267,7 @@ autoTableOfReal CCA_TableOfReal_factorLoadings (CCA me, TableOfReal thee) {
 double CCA_getCorrelationCoefficient (CCA me, integer index) {
 	if (index < 1 || index > my numberOfCoefficients)
 		return undefined;
-	return sqrt (my y -> eigenvalues[index]);
+	return sqrt (my y -> eigenvalues [index]);
 }
 
 void CCA_getZeroCorrelationProbability (CCA me, integer eigenvalueNumber, double *out_prob, double *out_chisq, double *out_df) {

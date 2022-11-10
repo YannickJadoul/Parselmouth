@@ -1,6 +1,6 @@
 /* praat_logo.cpp
  *
- * Copyright (C) 1996-2020 Paul Boersma
+ * Copyright (C) 1996-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ static void logo_defaultDraw (Graphics g) {
 	Graphics_text (g, 0.5, 0.6, praatP.title.get());
 	Graphics_setFontStyle (g, 0);
 	Graphics_setFontSize (g, 12);
-	Graphics_text (g, 0.5, 0.25, U"\\s{Built on the} %%Praat shell%\\s{,© Paul Boersma, 1992-2020");
+	Graphics_text (g, 0.5, 0.25, U"\\s{Built on the} %%Praat shell%\\s{,© Paul Boersma, 1992-2022");
 }
 
 static struct {
@@ -52,7 +52,7 @@ void praat_setLogo (double width_mm, double height_mm, void (*draw) (Graphics g)
 	theLogo.draw = draw;
 }
 
-static void gui_drawingarea_cb_expose (Thing /* me */, GuiDrawingArea_ExposeEvent event) {
+static void gui_drawingarea_cb_expose (Thing /* me */, GuiDrawingArea_ExposeEvent /* event */) {
 	theLogo.draw (theLogo.graphics.get());
 }
 
@@ -75,9 +75,15 @@ void praat_showLogo () {
 		theLogo.form = theLogo.dia;
 		theLogo.drawingArea = GuiDrawingArea_createShown (theLogo.form, 0, width, 0, height,
 				gui_drawingarea_cb_expose, gui_drawingarea_cb_mouse, nullptr, nullptr, nullptr, 0);
+		/*
+			Note about ordering the following three statements (2021-01-20).
+			On some platforms (e.g. on macOS 10.10, but not 10.15), showing entails immediate drawing.
+			So the Graphics has to exist before that.
+			(It is possible that the *native* graphics *context* is created later.)
+		*/
+		theLogo.graphics = Graphics_create_xmdrawingarea (theLogo.drawingArea);
 		GuiThing_show (theLogo.form);
 		GuiThing_show (theLogo.dia);
-		theLogo.graphics = Graphics_create_xmdrawingarea (theLogo.drawingArea);
 	} else {
 		GuiThing_show (theLogo.form);
 		GuiThing_show (theLogo.dia);

@@ -1,6 +1,6 @@
 /* melder_debug.cpp
  *
- * Copyright (C) 2000-2020 Paul Boersma
+ * Copyright (C) 2000-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 	#include <windows.h>
 #endif
 
-int Melder_debug = 0;
 /*
 Melder_debug will always be set to 0 when Praat starts up.
 If Melder_debug is temporarily set to the following values
@@ -105,7 +104,8 @@ the behaviour of Praat will temporarily change in the following ways:
  * also, we need no newline nativization, as Melder_32to8_inplace() does.
  */
 conststring8 MelderTrace::_peek32to8 (conststring32 string) {
-	if (! string) return "";
+	if (! string)
+		return "";
 	static char *buffer { nullptr };
 	static int64 bufferSize { 0 };
 	int64 n = str32len (string);
@@ -148,7 +148,8 @@ conststring8 MelderTrace::_peek32to8 (conststring32 string) {
 }
 #ifdef _WIN32
 conststring16 MelderTrace::_peek32to16 (conststring32 string) {
-	if (! string) return u"";
+	if (! string)
+		return u"";
 	static char16 *buffer { nullptr };
 	static int64 bufferSize { 0 };
 	int64 n = str32len (string);
@@ -189,9 +190,6 @@ conststring16 MelderTrace::_peek32to16 (conststring32 string) {
 #endif
 
 /********** TRACE **********/
-
-bool Melder_isTracing = false;
-structMelderFile MelderTrace::_file { };
 
 void Melder_tracingToFile (MelderFile file) {
 	MelderFile_copy (file, & MelderTrace::_file);
@@ -244,14 +242,12 @@ static void theGlibGobjectLogHandler (const gchar *log_domain, GLogLevelFlags lo
 
 void Melder_setTracing (bool tracing) {
 	time_t today = time (nullptr);
-	#define xstr(s) str(s)
-	#define str(s) #s
 	if (! tracing)
 		trace (U"switch tracing off"
-			U" in Praat version ", Melder_peek8to32 (xstr (PRAAT_VERSION_STR)),
+			U" in Praat version ", Melder_peek8to32 (stringize(PRAAT_VERSION_STR)),
 			U" at ", Melder_peek8to32 (ctime (& today))
 		);
-	Melder_isTracing = tracing;
+	Melder_isTracingGlobally = tracing;
 	#if defined (linux) && ! defined (NO_GUI)
 		static guint handler_id1, handler_id2, handler_id3;
 		if (tracing) {
@@ -267,7 +263,7 @@ void Melder_setTracing (bool tracing) {
 	#endif
 	if (tracing)
 		trace (U"switch tracing on"
-			U" in Praat version ", Melder_peek8to32 (xstr (PRAAT_VERSION_STR)),
+			U" in Praat version ", Melder_peek8to32 (stringize(PRAAT_VERSION_STR)),
 			U" at ", Melder_peek8to32 (ctime (& today))
 		);
 }

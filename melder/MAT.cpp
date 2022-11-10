@@ -1,6 +1,6 @@
 /* MAT.cpp
  *
- * Copyright (C) 2017-2020 Paul Boersma
+ * Copyright (C) 2017-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 
 #ifdef macintosh
 	#include <Accelerate/Accelerate.h>
+	#undef trace
 	#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
 	#include <OpenCL/opencl.h>
 #endif
@@ -824,6 +825,73 @@ autoMAT peaks_MAT (constVECVU const& x, bool includeEdges, int interpolate, bool
 void power_MAT_out (MATVU const& target, constMATVU const& mat, double power) {
 	for (integer irow = 1; irow <= target.nrow; irow ++)
 		power_VEC_out (target.row (irow), mat.row (irow), power);
+}
+
+autoMAT splitByLinesAndWhitespace_MAT (conststring32 string) {
+	if (! string)
+		return autoMAT();   // accept null pointer input
+
+	/*
+		The following algorithm has been based on Matrix_readFromRawTextFile().
+	*/
+	const char32 *p = & string [0];
+
+	/*
+		Count columns.
+	*/
+	integer numberOfColumns = 0;
+	for (;;) {
+		char32 kar = * (p ++);
+		if (kar == U'\0' || Melder_isVerticalSpace (kar))
+			break;
+		if (Melder_isHorizontalSpace (kar))
+			continue;
+		numberOfColumns ++;
+		do {
+			kar = * (p ++);
+		} while (kar != U'\0' && ! Melder_isHorizontalOrVerticalSpace (kar));
+		if (kar == U'\0' || Melder_isVerticalSpace (kar))
+			break;
+	}
+	if (numberOfColumns == 0)
+		return autoMAT();
+
+	/*
+		Count cells.
+	*/
+	const integer numberOfCells = NUMnumberOfTokens (string);
+
+	/*
+		Check if all columns are complete.
+	*/
+	if (numberOfCells == 0 || numberOfCells % numberOfColumns != 0)
+		Melder_throw (U"The number of cells (", numberOfCells, U") is not a multiple of the number of columns (", numberOfColumns, U").");
+
+	/*
+		Create matrix.
+	*/
+	const integer numberOfRows = numberOfCells / numberOfColumns;
+	autoMAT result (numberOfRows, numberOfColumns, MelderArray::kInitializationType::ZERO);
+
+	/*
+		Read cells.
+	*/
+	integer irow = 1, icol = 0;
+	p = & string [0];
+	for (;;) {
+		Melder_skipHorizontalOrVerticalSpace (& p);
+		if (*p == U'\0')
+			break;
+		const char32 *beginOfInk = p;
+		p ++;   // step over first nonspace
+		p = Melder_findEndOfInk (p);
+		if (++ icol > numberOfColumns) {
+			irow ++;
+			icol = 1;
+		}
+		result [irow] [icol] = Melder_atof (beginOfInk);
+	}
+	return result;
 }
 
 /* End of file MAT.cpp */

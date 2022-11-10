@@ -2,7 +2,7 @@
 #define _melder_tensor_h_
 /* melder_tensor.h
  *
- * Copyright (C) 1992-2020 Paul Boersma
+ * Copyright (C) 1992-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,11 @@
 
 	Initialization (tested in praat.cpp):
 		VEC x;               // initializes x.cells to nullptr and x.size to 0
-		double a [] = { undefined, 3.14, 2.718, ... };
-		VEC x3 { a, 100 };   // initializes x to 100 values from a base-1 array
+		double a [] = { 3.14, 2.718 };
+		VEC x3 (a, 2);   // initializes x3 to 100 values from a base-0 array
+		Melder_assert (x3 [2] == 2.718);
+		constVEC x4 = { 3.14, 2.718 };
+		Melder_assert (x4 [2] == 2.718);
 
 		autoVEC y;                     // initializes y.cells to nullptr and y.size to 0
 		autoVEC y2 = zero_VEC (100);   // initializes y to 100 zeroes, having ownership
@@ -58,51 +61,15 @@ template <typename T> class constmatrixview;
 template <typename T> class automatrix;
 
 template <typename T>
-class vector {
-public:
+struct vector {
 	T *cells = nullptr;
 	integer size = 0;
-public:
-	vector () = default;
+	vector ()
+		= default;
 	explicit vector (T *givenCells, integer givenSize)
 		: cells (givenCells), size (givenSize) { }
 	explicit vector (matrix<T> const& mat)
 		: vector (mat.cells, mat.nrow * mat.ncol) { }
-	/*
-		An initialization such as
-			VEC vec1 = vec2;
-		should be allowed.
-	 */
-	vector (vector const& other)
-		= default;
-	/*
-		Likewise, an assignment like
-			VEC vec1, vec2;
-			vec1 = vec2;
-		should be allowed.
-	*/
-	vector& operator= (vector const& other)
-		= default;
-	/*
-		Letting an autovector convert to a vector would lead to errors such as in
-			VEC vec = zero_VEC (10);
-		where zero_VEC produces a temporary that is deleted immediately
-		after the initialization of vec.
-		So we rule out this initialization.
-	*/
-	vector (autovector<T> const& other)
-		= delete;
-	/*
-		Likewise, an assignment like
-			autoVEC x = zero_VEC (10);
-			VEC y;
-			y = x;
-		should be ruled out. Instead, one should do
-			y = x.get();
-		explicitly.
-	*/
-	vector& operator= (const autovector<T>&)
-		= delete;
 	T& operator[] (integer i) const {
 		return our cells [i - 1];
 	}
@@ -134,46 +101,9 @@ public:
 };
 
 template <typename T>
-class vectorview {
-public:
-	T * firstCell = nullptr;
-	integer size = 0;
-	integer stride = 1;
-	vectorview ()
-		= default;
-	vectorview (const vector<T>& other)
-		: firstCell (other.cells), size (other.size), stride (1) { }
-	vectorview (const autovector<T>& other)
-		= delete;
-	explicit vectorview (T * const firstCell_, integer const size_, integer const stride_)
-		: firstCell (firstCell_), size (size_), stride (stride_) { }
-	T& operator[] (integer i) const {
-		return our firstCell [(i - 1) * our stride];
-	}
-	vectorview<T> part (integer first, integer last) const {
-		const integer newSize = last - (first - 1);
-		if (newSize <= 0)
-			return vectorview<T> ();
-		Melder_assert (first >= 1 && first <= our size);
-		Melder_assert (last >= 1 && last <= our size);
-		return vectorview<T> (& our operator[] (first), newSize, our stride);
-	}
-	matrixview<T> asmatrixview (integer nrow, integer ncol) {
-		Melder_assert (nrow * ncol <= our size);
-		return matrixview (our cells, nrow, ncol, ncol * our stride, our stride);
-	}
-	T *begin () const { return & our operator[] (1); }
-	T *end () const { return & our operator[] (our size + 1); }
-	T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] [1]; }
-	T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] [0]; }
-};
-
-template <typename T>
-class constvector {
-public:
+struct constvector {
 	const T *cells = nullptr;
 	integer size = 0;
-public:
 	constvector ()
 		= default;
 	explicit constvector (const T *givenCells, integer givenSize)
@@ -182,24 +112,13 @@ public:
 		: constvector (mat.cells, mat.nrow * mat.ncol) { }
 	constvector (vector<T> const& other)
 		: constvector (other.cells, other.size) { }
-	//constvector (constvector const& other) = default;
-	//constvector& operator= (constvector const& other) = default;
-	/*
-		Letting an autovector convert to a constvector would lead to errors such as in
-			constVEC vec = zero_VEC (10);
-		where zero_VEC produces a temporary that is deleted immediately
-		after the initialization of vec.
-		So we rule out this initialization.
-	*/
-	constvector (autovector<T> const& other)
-		= delete;
 	const T& operator[] (integer i) const {   // it's still a reference, because we need to be able to take its address
 		return our cells [i - 1];
 	}
 	constvector<T> part (integer first, integer last) const {
 		const integer newSize = last - (first - 1);
 		if (newSize <= 0)
-			return constvector<T> (nullptr, 0);
+			return constvector<T> ();
 		Melder_assert (first >= 1 && first <= our size);
 		Melder_assert (last >= 1 && last <= our size);
 		return constvector<T> (& our cells [first - 1], newSize);
@@ -215,22 +134,49 @@ public:
 };
 
 template <typename T>
-class constvectorview {
-public:
+struct vectorview {
+	T * firstCell = nullptr;
+	integer size = 0;
+	integer stride = 1;
+	vectorview ()
+		= default;
+	explicit vectorview (T * const firstCell_, integer const size_, integer const stride_)
+		: firstCell (firstCell_), size (size_), stride (stride_) { }
+	vectorview (vector<T> const& other)
+		: firstCell (other.cells), size (other.size), stride (1) { }
+	T& operator[] (integer i) const {
+		return our firstCell [(i - 1) * our stride];
+	}
+	vectorview<T> part (integer first, integer last) const {
+		const integer newSize = last - (first - 1);
+		if (newSize <= 0)
+			return vectorview<T> ();
+		Melder_assert (first >= 1 && first <= our size);
+		Melder_assert (last >= 1 && last <= our size);
+		return vectorview<T> (& our operator[] (first), newSize, our stride);
+	}
+	matrixview<T> asmatrixview (integer nrow, integer ncol) {
+		Melder_assert (nrow * ncol <= our size);
+		return matrixview (our cells, nrow, ncol, ncol * our stride, our stride);
+	}
+	T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] (1); }
+	T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] (0); }
+};
+
+template <typename T>
+struct constvectorview {
 	const T * firstCell = nullptr;
 	integer size = 0;
 	integer stride = 1;
 	constvectorview () = default;
 	explicit constvectorview (const T * const firstCell_, integer const size_, integer const stride_)
 		: firstCell (firstCell_), size (size_), stride (stride_) { }
-	constvectorview (vectorview<T> const& other)
-		: constvectorview (other.firstCell, other.size, other.stride) { }
 	constvectorview (constvector<T> const& other)
 		: constvectorview (other.cells, other.size, 1) { }
+	constvectorview (vectorview<T> const& other)
+		: constvectorview (other.firstCell, other.size, other.stride) { }
 	constvectorview (vector<T> const& other)
 		: constvectorview (other.cells, other.size, 1) { }
-	constvectorview (autovector<T> const& other)   // TODO: should be superfluous
-		= delete;
 	T const& operator[] (integer i) const {
 		return our firstCell [(i - 1) * our stride];
 	}
@@ -246,10 +192,8 @@ public:
 		Melder_assert (nrow * ncol <= our size);
 		return constmatrixview (our cells, nrow, ncol, ncol * our stride, our stride);
 	}
-	const T *begin () const { return & our operator[] (1); }
-	const T *end () const { return & our operator[] (our size + 1); }
-	const T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] [1]; }
-	const T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] [0]; }
+	const T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] (1); }
+	const T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] (0); }
 };
 
 /*
@@ -260,16 +204,24 @@ public:
 	would continue to use some of the computer's resources (namely, memory).
 */
 template <typename T>
-class autovector : public vector<T> {
+struct autovector {
+	T *cells = nullptr;
+	integer size = 0;
 	integer _capacity = 0;
-public:
 	autovector ()   // come into existence without a payload
-		: vector<T> (nullptr, 0) { }
+		= default;
 	explicit autovector (integer givenSize, MelderArray::kInitializationType initializationType) {   // come into existence and manufacture a payload
 		Melder_assert (givenSize >= 0);
 		our cells = MelderArray:: _alloc <T> (givenSize, initializationType);
 		our size = givenSize;
 		our _capacity = givenSize;
+	}
+	autovector (std::initializer_list <const T> list) {
+		our size = uinteger_to_integer (list.size());
+		our cells = MelderArray:: _alloc <T> (our size, MelderArray::kInitializationType::RAW);   // raw is possible because T is copyable data
+		T *p = our cells;
+		for (auto cell : list)
+			* (p ++) = cell;
 	}
 	void reset () noexcept {   // on behalf of ambiguous owners (otherwise this could be in autovector<>)
 		if (our cells) {
@@ -281,6 +233,9 @@ public:
 	}
 	~autovector () {   // destroy the payload (if any)
 		our reset ();
+	}
+	T& operator[] (integer i) const {
+		return our cells [i - 1];
 	}
 	vector<T> get () const { return vector<T> (our cells, our size); }   // let the public use the payload (they may change the values of the elements but not the at-pointer or the size)
 	vectorview<T> all () const { return vectorview<T> (our cells, our size, 1); }
@@ -298,6 +253,21 @@ public:
 		our _capacity = 0;
 		return vector<T> (oldCells, oldSize);
 	}
+	vector<T> part (integer first, integer last) const {
+		const integer newSize = last - (first - 1);
+		/*
+			for-loops don't crash if the number of elements is zero.
+		*/
+		if (newSize <= 0)
+			return vector<T> ();
+		Melder_assert (first >= 1 && first <= our size);
+		Melder_assert (last >= 1 && last <= our size);
+		return vector<T> (& our cells [first - 1], newSize);
+	}
+	T *begin () const { return our cells; }
+	T *end () const { return our cells + our size; }
+	T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return our cells; }
+	T *asArgumentToFunctionThatExpectsOneBasedArray () const { return our cells - 1; }
 	/*
 		Disable copying via construction or assignment (which would violate unique ownership of the payload).
 	*/
@@ -307,7 +277,7 @@ public:
 		Enable moving of r-values (temporaries, implicitly) or l-values (for variables, via an explicit move()).
 		This implements buying a payload from another autovector (which involves destroying our current payload).
 	*/
-	autovector (autovector&& other) noexcept : vector<T> { other.get() } {   // enable move construction
+	autovector (autovector&& other) noexcept : cells (other.cells), size (other.size), _capacity (other._capacity) {   // enable move construction
 		other.cells = nullptr;   // disown source
 		other.size = 0;   // to keep the source in a valid state
 		other._capacity = 0;
@@ -415,23 +385,17 @@ autovector<T> newvectorcopy (vectorview<T> source) {
 }
 
 template <typename T>
-class matrix {
-public:
+struct matrix {
 	T *cells = nullptr;
 	integer nrow = 0, ncol = 0;
-public:
 	matrix ()
 		= default;
 	explicit matrix (T *givenCells, integer givenNrow, integer givenNcol)
 		: cells (givenCells), nrow (givenNrow), ncol (givenNcol) { }
-	matrix (matrix const& other)
-		= default;
-	matrix& operator= (matrix const& other)
-		= default;
-	matrix (automatrix<T> const& other)
-		= delete;
-	matrix& operator= (automatrix<T> const& other)
-		= delete;
+	//matrix (matrix const& other)
+	//	= default;
+	//matrix& operator= (matrix const& other)
+	//	= default;
 	explicit matrix (vector<T> const& vec, integer givenNrow, integer givenNcol)
 		: matrix (vec.cells, givenNrow, givenNcol)
 	{
@@ -494,102 +458,11 @@ public:
 };
 
 template <typename T>
-class matrixview {
-public:
-	T * firstCell = nullptr;
-	integer nrow = 0, ncol = 0;
-	/*mutable*/ integer rowStride = 0, colStride = 1;   // mutable perhaps once an automatrix has strides
-	/*
-		Make sure that each of the following creates an appropriately initialized matrixview:
-			matrixview<double> matvu;   // OK
-			auto matvu = matrixview<double>();   // OK
-	*/
-	matrixview ()
-		= default;
-	/*
-		The following constructor is explicit, i.e.,
-		it cannot be used as an implicit conversion from an initializer list,
-		as in any of the following:
-			matrixview<double> mat = { p, 10, 100, 100, 1 };   // WRONG
-			myFunction ({ p, 10, 100, 100, 1 });   // WRONG
-		whereas any of the following is fine:
-			matrixview<double> mat { p, 10, 100, 100, 1 };   // OK
-			matrixview<double> mat (p, 10, 100, 100, 1);   // OK
-			auto mat = matrixview<double> { p, 10, 100, 100, 1 };   // OK
-			auto mat = matrixview<double> (p, 10, 100, 100, 1);   // OK
-			myFunction (matrixview<double> { p, 10, 100, 100, 1 });   // OK
-			myFunction (matrixview<double> (p, 10, 100, 100, 1));   // OK
-	*/
-	explicit matrixview (T * firstCell_, integer nrow_, integer ncol_, integer rowStride_, integer colStride_)
-		: firstCell (firstCell_), nrow (nrow_), ncol (ncol_), rowStride (rowStride_), colStride (colStride_) { }
-	/*
-		The following constructor is implicit, i.e.,
-		you can assign a matrix to a matrixview.
-	*/
-	matrixview (matrix<T> const& other)
-		: matrixview (other.cells, other.nrow, other.ncol, other.ncol, 1_integer) { }
-	/*
-		You cannot assign an automatrix to a matrixview:
-			auto mat = automatrix<double> (10, 100);
-			void myFunction (matrixview<double> const&);
-			myFunction (mat);   // WRONG
-		Instead, you will have to do
-			myFunction (mat.all());   // OK
-	*/
-	matrixview (automatrix<T> const& other)
-		= delete;
-	explicit matrixview (vectorview<T> const& vec, integer givenNrow, integer givenNcol) :
-			matrixview (vec.cells, givenNrow, givenNcol, givenNcol * vec.stride, vec.stride)
-	{
-		Melder_assert (givenNrow * givenNcol <= vec. size);
-	}
-	vectorview<T> operator[] (integer rowNumber) const {
-		return vectorview<T> (our firstCell + (rowNumber - 1) * our rowStride, our ncol, our colStride);
-	}
-	vectorview<T> row (integer rowNumber) const {
-		Melder_assert (rowNumber >= 1 && rowNumber <= our nrow);
-		return vectorview<T> (our firstCell + (rowNumber - 1) * our rowStride, our ncol, our colStride);
-	}
-	vectorview<T> column (integer columnNumber) const {
-		Melder_assert (columnNumber >= 1 && columnNumber <= our ncol);
-		return vectorview<T> (our firstCell + (columnNumber - 1) * our colStride, our nrow, our rowStride);
-	}
-	vectorview<T> diagonal () const {
-		return vectorview<T> (our firstCell, std::min (our nrow, our ncol), our rowStride + our colStride);
-	}
-	matrixview<T> verticalBand (integer firstColumn, integer lastColumn) const {
-		const integer newNcol = lastColumn - (firstColumn - 1);
-		if (newNcol <= 0)
-			return matrixview<T> ();
-		Melder_assert (firstColumn >= 1 && firstColumn <= our ncol);
-		Melder_assert (lastColumn >= 1 && lastColumn <= our ncol);
-		return matrixview<T> (our firstCell + (firstColumn - 1) * our colStride,
-				our nrow, newNcol, our rowStride, our colStride);
-	}
-	matrixview<T> part (integer firstRow, integer lastRow, integer firstColumn, integer lastColumn) const {
-		const integer newNrow = lastRow - (firstRow - 1), newNcol = lastColumn - (firstColumn - 1);
-		if (newNrow <= 0 || newNcol <= 0)
-			return matrixview<T> ();
-		Melder_assert (firstRow >= 1 && firstRow <= our nrow);
-		Melder_assert (lastRow >= 1 && lastRow <= our nrow);
-		Melder_assert (firstColumn >= 1 && firstColumn <= our ncol);
-		Melder_assert (lastColumn >= 1 && lastColumn <= our ncol);
-		return matrixview<T> (
-			our firstCell + (firstRow - 1) * our rowStride + (firstColumn - 1) * our colStride,
-			newNrow, newNcol, our rowStride, our colStride
-		);
-	}
-	matrixview<T> transpose () const {
-		return matrixview<T> (our firstCell, our ncol, our nrow, our colStride, our rowStride);
-	}
-};
-
-template <typename T>
-class constmatrix {
-public:
+struct constmatrix {
 	const T *cells = nullptr;
 	integer nrow = 0, ncol = 0;
-	constmatrix () = default;
+	constmatrix ()
+		= default;
 	explicit constmatrix (const T *givenCells, integer givenNrow, integer givenNcol)
 		: cells (givenCells), nrow (givenNrow), ncol (givenNcol) { }
 	constmatrix (matrix<T> const& other)
@@ -656,8 +529,87 @@ public:
 };
 
 template <typename T>
-class constmatrixview {
-public:
+struct matrixview {
+	T * firstCell = nullptr;
+	integer nrow = 0, ncol = 0;
+	/*mutable*/ integer rowStride = 0, colStride = 1;   // mutable perhaps once an automatrix has strides
+	/*
+		Make sure that each of the following creates an appropriately initialized matrixview:
+			matrixview<double> matvu;   // OK
+			auto matvu = matrixview<double>();   // OK
+	*/
+	matrixview ()
+		= default;
+	/*
+		The following constructor is explicit, i.e.,
+		it cannot be used as an implicit conversion from an initializer list,
+		as in any of the following:
+			matrixview<double> mat = { p, 10, 100, 100, 1 };   // WRONG
+			myFunction ({ p, 10, 100, 100, 1 });   // WRONG
+		whereas any of the following is fine:
+			matrixview<double> mat { p, 10, 100, 100, 1 };   // OK
+			matrixview<double> mat (p, 10, 100, 100, 1);   // OK
+			auto mat = matrixview<double> { p, 10, 100, 100, 1 };   // OK
+			auto mat = matrixview<double> (p, 10, 100, 100, 1);   // OK
+			myFunction (matrixview<double> { p, 10, 100, 100, 1 });   // OK
+			myFunction (matrixview<double> (p, 10, 100, 100, 1));   // OK
+	*/
+	explicit matrixview (T * firstCell_, integer nrow_, integer ncol_, integer rowStride_, integer colStride_)
+		: firstCell (firstCell_), nrow (nrow_), ncol (ncol_), rowStride (rowStride_), colStride (colStride_) { }
+	/*
+		The following constructor is implicit, i.e.,
+		you can assign a matrix to a matrixview.
+	*/
+	matrixview (matrix<T> const& other)
+		: matrixview (other.cells, other.nrow, other.ncol, other.ncol, 1_integer) { }
+	explicit matrixview (vectorview<T> const& vec, integer givenNrow, integer givenNcol) :
+			matrixview (vec.cells, givenNrow, givenNcol, givenNcol * vec.stride, vec.stride)
+	{
+		Melder_assert (givenNrow * givenNcol <= vec. size);
+	}
+	vectorview<T> operator[] (integer rowNumber) const {
+		return vectorview<T> (our firstCell + (rowNumber - 1) * our rowStride, our ncol, our colStride);
+	}
+	vectorview<T> row (integer rowNumber) const {
+		Melder_assert (rowNumber >= 1 && rowNumber <= our nrow);
+		return vectorview<T> (our firstCell + (rowNumber - 1) * our rowStride, our ncol, our colStride);
+	}
+	vectorview<T> column (integer columnNumber) const {
+		Melder_assert (columnNumber >= 1 && columnNumber <= our ncol);
+		return vectorview<T> (our firstCell + (columnNumber - 1) * our colStride, our nrow, our rowStride);
+	}
+	vectorview<T> diagonal () const {
+		return vectorview<T> (our firstCell, std::min (our nrow, our ncol), our rowStride + our colStride);
+	}
+	matrixview<T> verticalBand (integer firstColumn, integer lastColumn) const {
+		const integer newNcol = lastColumn - (firstColumn - 1);
+		if (newNcol <= 0)
+			return matrixview<T> ();
+		Melder_assert (firstColumn >= 1 && firstColumn <= our ncol);
+		Melder_assert (lastColumn >= 1 && lastColumn <= our ncol);
+		return matrixview<T> (our firstCell + (firstColumn - 1) * our colStride,
+				our nrow, newNcol, our rowStride, our colStride);
+	}
+	matrixview<T> part (integer firstRow, integer lastRow, integer firstColumn, integer lastColumn) const {
+		const integer newNrow = lastRow - (firstRow - 1), newNcol = lastColumn - (firstColumn - 1);
+		if (newNrow <= 0 || newNcol <= 0)
+			return matrixview<T> ();
+		Melder_assert (firstRow >= 1 && firstRow <= our nrow);
+		Melder_assert (lastRow >= 1 && lastRow <= our nrow);
+		Melder_assert (firstColumn >= 1 && firstColumn <= our ncol);
+		Melder_assert (lastColumn >= 1 && lastColumn <= our ncol);
+		return matrixview<T> (
+			our firstCell + (firstRow - 1) * our rowStride + (firstColumn - 1) * our colStride,
+			newNrow, newNcol, our rowStride, our colStride
+		);
+	}
+	matrixview<T> transpose () const {
+		return matrixview<T> (our firstCell, our ncol, our nrow, our colStride, our rowStride);
+	}
+};
+
+template <typename T>
+struct constmatrixview {
 	const T * firstCell = nullptr;
 	integer nrow = 0, ncol = 0;
 	integer rowStride = 0, colStride = 1;
@@ -669,8 +621,6 @@ public:
 		: constmatrixview (other.cells, other.nrow, other.ncol, other.ncol, 1_integer) { }
 	constmatrixview (const matrix<T>& other)   // shortcut the otherwise double conversion
 		: constmatrixview (other.cells, other.nrow, other.ncol, other.ncol, 1_integer) { }
-	constmatrixview (const automatrix<T>& other)
-		= delete;
 	constmatrixview (matrixview<T> const& other)
 		: constmatrixview (other.firstCell, other.nrow, other.ncol, other.rowStride, other.colStride) { }
 	explicit constmatrixview (constvectorview<T> const& vec, integer givenNrow, integer givenNcol) :
@@ -730,10 +680,11 @@ public:
 	would continue to use some of the computer's resources (namely, memory).
 */
 template <typename T>
-class automatrix : public matrix<T> {
-public:
+struct automatrix {
+	T *cells = nullptr;
+	integer nrow = 0, ncol = 0;
 	automatrix ()   // come into existence without a payload
-		: matrix<T> (nullptr, 0, 0) { }
+		= default;
 	explicit automatrix (integer givenNrow, integer givenNcol, MelderArray::kInitializationType initializationType) {   // come into existence and manufacture a payload
 		Melder_assert (givenNrow >= 0);
 		Melder_assert (givenNcol >= 0);
@@ -741,13 +692,25 @@ public:
 		our nrow = givenNrow;
 		our ncol = givenNcol;
 	}
+	automatrix (std::initializer_list <std::initializer_list <T>> list) {
+		our nrow = uinteger_to_integer (list.size());
+		Melder_assert (our nrow > 0);   // empty matrices should be created with automatrix<T>() or automatrix<T> (0, 10) or so
+		our ncol = uinteger_to_integer (list.begin()->size());
+		Melder_assert (our ncol > 0);   // empty matrices should be created with automatrix<T>() or automatrix<T> (10, 0) or so
+		our cells = MelderArray:: _alloc <T> (our nrow * our ncol, MelderArray::kInitializationType::RAW);
+		T *p = our cells;
+		for (auto row : list) {
+			const integer numberOfColumnsInThisRow = uinteger_to_integer (row.size());
+			Melder_assert (numberOfColumnsInThisRow == our ncol);   // unfortunately, no support for static_assert here in C++17
+			for (auto cell : row)
+				* (p ++) = cell;
+		}
+	}
 	~automatrix () {   // destroy the payload (if any)
 		if (our cells)
 			MelderArray:: _free (our cells, our nrow * our ncol);
 	}
-	//matrix<T> get () { return { our cells, our nrow, our ncol }; }   // let the public use the payload (they may change the values in the cells but not the cell pointer, nrow or ncol)
-	const matrix<T>& get () const   // let the public use the payload (they may change the values in the cells but not the cell pointer, nrow or ncol)
-		{ return *this; }
+	matrix<T> get() const { return matrix<T> (our cells, our nrow, our ncol); }   // let the public use the payload (they may change the values in the cells but not the cell pointer, nrow or ncol)
 	matrixview<T> all () const {
 		return matrixview<T> (our cells, our nrow, our ncol, our ncol, 1);
 	}
@@ -773,8 +736,7 @@ public:
 		Enable moving of r-values (temporaries, implicitly) or l-values (for variables, via an explicit move()).
 		This implements buying a payload from another automatrix (which involves destroying our current payload).
 	*/
-	automatrix (automatrix&& other) noexcept   // enable move constructor
-			: matrix<T> (other.get())
+	automatrix (automatrix&& other) noexcept : cells (other.cells), nrow (other.nrow), ncol (other.ncol)   // enable move constructor
 	{
 		other.cells = nullptr;   // disown source
 		other.nrow = 0;   // to keep the source in a valid state
@@ -790,8 +752,58 @@ public:
 			other.cells = nullptr;   // disown source
 			other.nrow = 0;   // to keep the source in a valid state
 			other.ncol = 0;   // to keep the source in a valid state
+		} else if (! our cells) {
+			our nrow = other.nrow;   // yes; if both cells are null, we still have to copy the shape, which could be { 0, 2 } or so
+			our ncol = other.ncol;
 		}
 		return *this;
+	}
+	vector<T> operator[] (integer rowNumber) const {
+		return vector<T> (our cells + (rowNumber - 1) * our ncol, our ncol);
+	}
+	vector<T> row (integer rowNumber) const {
+		Melder_assert (rowNumber >= 1 && rowNumber <= our nrow);
+		Melder_assert (our cells || our ncol == 0);
+		return vector<T> (our cells + (rowNumber - 1) * our ncol, our ncol);
+	}
+	vectorview<T> column (integer columnNumber) const {
+		Melder_assert (columnNumber >= 1 && columnNumber <= our ncol);
+		return vectorview<T> (our cells + (columnNumber - 1), our nrow, our ncol);
+	}
+	vectorview<T> diagonal () const {
+		return vectorview<T> (our cells, std::min (our nrow, our ncol), our ncol + 1);
+	}
+	matrixview<T> horizontalBand (integer firstRow, integer lastRow) const {
+		const integer newNrow = lastRow - (firstRow - 1);
+		if (newNrow <= 0)
+			return matrixview<T> ();
+		Melder_assert (firstRow >= 1 && firstRow <= our nrow);
+		Melder_assert (lastRow >= 1 && lastRow <= our nrow);
+		return matrixview<T> (our cells + (firstRow - 1) * our ncol, newNrow, our ncol, our ncol, 1);
+	}
+	matrixview<T> verticalBand (integer firstColumn, integer lastColumn) const {
+		const integer newNcol = lastColumn - (firstColumn - 1);
+		if (newNcol <= 0)
+			return matrixview<T> ();
+		Melder_assert (firstColumn >= 1 && firstColumn <= our ncol);
+		Melder_assert (lastColumn >= 1 && lastColumn <= our ncol);
+		return matrixview<T> (our cells + (firstColumn - 1), our nrow, newNcol, our ncol, 1);
+	}
+	matrixview<T> part (integer firstRow, integer lastRow, integer firstColumn, integer lastColumn) const {
+		const integer newNrow = lastRow - (firstRow - 1), newNcol = lastColumn - (firstColumn - 1);
+		if (newNrow <= 0 || newNcol <= 0)
+			return matrixview<T> ();
+		Melder_assert (firstRow >= 1 && firstRow <= our nrow);
+		Melder_assert (lastRow >= 1 && lastRow <= our nrow);
+		Melder_assert (firstColumn >= 1 && firstColumn <= our ncol);
+		Melder_assert (lastColumn >= 1 && lastColumn <= our ncol);
+		return matrixview<T> (
+			our cells + (firstRow - 1) * our ncol + (firstColumn - 1),
+			newNrow, newNcol, our ncol, 1
+		);
+	}
+	matrixview<T> transpose () const {
+		return matrixview<T> (our cells, our ncol, our nrow, 1, our ncol);
 	}
 	void resize (integer newNrow, integer newNcol, MelderArray::kInitializationType initializationType = MelderArray::kInitializationType::ZERO) {
 		if (newNrow > our nrow || newNcol > our ncol) {
@@ -896,11 +908,10 @@ automatrix<T> newmatrixpart (matrix<T> const& x, integer firstRow, integer lastR
 }
 
 template <typename T>
-class autotensor3;
+struct autotensor3;
 
 template <typename T>
-class tensor3 {
-public:
+struct tensor3 {
 	T * cells = nullptr;
 	integer ndim1 = 0, ndim2 = 0, ndim3 = 0;
 	integer stride1 = 0, stride2 = 0, stride3 = 1;
@@ -1007,8 +1018,7 @@ public:
 };
 
 template <typename T>
-class consttensor3 {
-public:
+struct consttensor3 {
 	const T * cells = nullptr;
 	integer ndim1 = 0, ndim2 = 0, ndim3 = 0;
 	integer stride1 = 0, stride2 = 0, stride3 = 1;
@@ -1120,8 +1130,7 @@ public:
 };
 
 template <typename T>
-class autotensor3 : public tensor3<T> {
-public:
+struct autotensor3 : public tensor3<T> {
 	autotensor3 () = default;   // come into existence without a payload
 	explicit autotensor3 (integer givenNdim1, integer givenNdim2, integer givenNdim3, MelderArray::kInitializationType initializationType) {   // come into existence and manufacture a payload
 		Melder_assert (givenNdim1 >= 0);
@@ -1183,6 +1192,10 @@ public:
 			other.ndim1 = 0;   // to keep the source in a valid state
 			other.ndim2 = 0;   // to keep the source in a valid state
 			other.ndim3 = 0;   // to keep the source in a valid state
+		} else if (! our cells) {
+			our ndim1 = other.ndim1;   // me and other may or may not be the same object
+			our ndim2 = other.ndim2;
+			our ndim3 = other.ndim3;
 		}
 		return *this;
 	}
@@ -1294,6 +1307,7 @@ inline autoVEC zero_VEC (integer size) {
 inline autoVEC copy_VEC (constVECVU const& source) {
 	return newvectorcopy (source);
 }
+#define ARRAY_TO_VEC(doubleArray)  constVEC (& doubleArray [0], sizeof (doubleArray) / sizeof (double))
 
 /*
 	And simply because we use vector<integer> so much as well,
@@ -1317,6 +1331,8 @@ inline autoINTVEC zero_INTVEC (integer size) {
 inline autoINTVEC copy_INTVEC (constINTVECVU const& source) {
 	return newvectorcopy (source);
 }
+#define ARRAY_TO_INTVEC(integerArray)  constINTVEC (& integerArray [0], sizeof (integerArray) / sizeof (integer))
+
 
 using BOOLVEC = vector <bool>;
 using BOOLVECVU = vectorview <bool>;
@@ -1332,6 +1348,7 @@ inline autoBOOLVEC zero_BOOLVEC (integer size) {
 inline autoBOOLVEC copy_BOOLVEC (constBOOLVECVU const& source) {
 	return newvectorcopy (source);
 }
+#define ARRAY_TO_BOOLVEC(boolArray)  constBOOLVEC (& boolArray [0], sizeof (boolArray) / sizeof (bool))
 
 using BYTEVEC = vector <byte>;
 using BYTEVECVU = vectorview <byte>;
@@ -1347,6 +1364,7 @@ inline autoBYTEVEC zero_BYTEVEC (integer size) {
 inline autoBYTEVEC copy_BYTEVEC (constBYTEVECVU const& source) {
 	return newvectorcopy (source);
 }
+#define ARRAY_TO_BYTEVEC(byteArray)  constBYTEVEC (& byteArray [0], sizeof (byteArray) / sizeof (byte))
 
 using COMPVEC = vector <dcomplex>;
 using COMPVECVU = vectorview <dcomplex>;
@@ -1362,6 +1380,7 @@ inline autoCOMPVEC zero_COMPVEC (integer size) {
 inline autoCOMPVEC copy_COMPVEC (constCOMPVECVU const& source) {
 	return newvectorcopy (source);
 }
+#define ARRAY_TO_COMPVEC(dcomplexArray)  constCOMPVEC (& dcomplexArray [0], sizeof (dcomplexArray) / sizeof (dcomplex))
 
 using MAT = matrix <double>;
 using MATVU = matrixview <double>;
@@ -1374,10 +1393,10 @@ inline autoMAT raw_MAT (integer nrow, integer ncol) {
 inline autoMAT zero_MAT (integer nrow, integer ncol) {
 	return newmatrixzero <double> (nrow, ncol);
 }
-inline autoMAT copy_MAT (constMATVU source) {
+inline autoMAT copy_MAT (constMATVU const& source) {
 	return newmatrixcopy (source);
 }
-inline autoMAT part_MAT (const constMAT& source,
+inline autoMAT part_MAT (constMAT const& source,
 	integer firstRow, integer lastRow,
 	integer firstColumn, integer lastColumn
 ) {
@@ -1453,6 +1472,11 @@ conststring32 Melder_VEC (constVECVU const& value);
 conststring32 Melder_MAT (constMATVU const& value);
 
 inline void operator<<= (INTVECVU const& target, constINTVECVU const& source) {
+	Melder_assert (target.size == source.size);
+	for (integer i = 1; i <= target.size; i ++)
+		target [i] = source [i];
+}
+inline void operator<<= (BOOLVECVU const& target, constBOOLVECVU const& source) {
 	Melder_assert (target.size == source.size);
 	for (integer i = 1; i <= target.size; i ++)
 		target [i] = source [i];

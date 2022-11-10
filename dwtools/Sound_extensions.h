@@ -2,7 +2,7 @@
 #define _Sound_extensions_h_
 /* Sound_extensions.h
  *
- * Copyright (C) 1993-2019 David Weenink
+ * Copyright (C) 1993-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,10 +65,10 @@ void Sound_overwritePart (Sound me, double t1, double t2, Sound thee, double t3)
 
 void Sound_preEmphasis (Sound me, double preEmphasisFrequency);
 /* deEmphasis = exp(- 2 * NUMpi * deEmphasisFrequency * my dx); */
-/* for (i=my nx; i >=2; i-- ) my z[1][i] -= preEmphasis * my z[1][i-1]; */
+/* for (i=my nx; i >=2; i-- ) my z [1] [i] -= preEmphasis * my z [1] [i-1]; */
 
 void Sound_deEmphasis (Sound me, double preEmphasisFrequency);
-/*	for (i=2; i <= my nx; i++ ) my z[1][i] += deEmphasis * my z[1][i-1]; */
+/*	for (i=2; i <= my nx; i++ ) my z [1] [i] += deEmphasis * my z [1] [i-1]; */
 
 autoSound Sound_createGaussian (double windowDuration, double samplingFrequency);
 
@@ -111,13 +111,10 @@ double Sound_correlateParts (Sound me, double t1, double t2, double duration);
 	Correlate part (t1, t1+duration) with (t2, t2+duration)
 */
 
-double Sound_localMean (Sound me, double fromTime, double toTime);
 double Sound_localPeak (Sound me, double fromTime, double toTime, double reference);
 
-double Sound_getNearestLevelCrossing (Sound me, integer channel, double position, double level, kSoundSearchDirection searchDirection);
-
 autoSound Sound_localAverage (Sound me, double averaginginterval, int windowType);
-/* y[n] = sum(i=-n, i=n, x[n+i])/(2*n+1) */
+/* y [n] = sum(i=-n, i=n, x [n+i]) / (2*n+1) */
 
 double Sound_power (Sound me);
 
@@ -181,10 +178,6 @@ autoSound Sound_Pitch_changeSpeaker (Sound me, Pitch him,
 autoSound Sound_changeGender_old (Sound me, double fmin, double fmax, double formantRatio,
 	double new_pitch, double pitchRangeFactor, double durationFactor);
 
-autoTextGrid Sound_to_TextGrid_detectSilences (Sound me, double minPitch, double timeStep,
-	double silenceThreshold, double minSilenceDuration, double minSoundingDuration,
-	conststring32 silentLabel, conststring32 soundingLabel);
-
 void Sound_getStartAndEndTimesOfSounding (Sound me, double minPitch, double timeStep,
 	double silenceThreshold, double minSilenceDuration, double minSoundingDuration, double *out_t1, double *out_t2);
 
@@ -199,8 +192,6 @@ double minSilenceDuration, double minSoundingDuration, double *startTimeOfSoundi
 
 autoSound Sound_trimSilences (Sound me, double trimDuration, bool onlyAtStartAndEnd, double minPitch, double timeStep,
     double silenceThreshold, double minSilenceDuration, double minSoundingDuration, autoTextGrid *tg, conststring32 trimLabel);
-
-autoSound Sound_copyChannelRanges (Sound me, conststring32 ranges);
 
 autoSound Sound_removeNoise (Sound me, double noiseStart, double noiseEnd, double windowLength, double minBandFilterFrequency, double maxBandFilterFrequency, double smoothing, kSoundNoiseReductionMethod method);
 

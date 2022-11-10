@@ -2,7 +2,7 @@
  *
  * Principal Component Analysis
  *
- * Copyright (C) 1993-2019 David Weenink
+ * Copyright (C) 1993-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,8 +61,8 @@
 
 Thing_implement (PCA, Eigen, 0);
 
-void structPCA :: v_info () {
-	structDaata :: v_info ();
+void structPCA :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of components: ", numberOfEigenvalues);
 	MelderInfo_writeLine (U"Number of dimensions: ", dimension);
 	MelderInfo_writeLine (U"Number of observations: ", numberOfObservations);
@@ -127,7 +127,7 @@ void PCA_getEqualityOfEigenvalues (PCA me, integer from, integer to, int conserv
 
 /* the low level routines 
  * 
- * The matrix M[numberOfRows, numberOfColumns] is interpreted as 'numberOfRows' vectors of dimension 'numberOfColumns'
+ * The matrix M [numberOfRows, numberOfColumns] is interpreted as 'numberOfRows' vectors of dimension 'numberOfColumns'
  * The eigenstructure of the M'M will be calculated
  * 
  */
@@ -135,8 +135,8 @@ void PCA_getEqualityOfEigenvalues (PCA me, integer from, integer to, int conserv
 autoEigen PCA_to_Eigen (PCA me) {
 	try {
 		autoEigen thee = Eigen_create (my numberOfEigenvalues, my dimension);
-		thy eigenvectors.all() <<= my eigenvectors.all();
-		thy eigenvalues.all() <<= my eigenvalues.all();
+		thy eigenvectors.all()  <<=  my eigenvectors.all();
+		thy eigenvalues.all()  <<=  my eigenvalues.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": no Eigen created.");
@@ -185,7 +185,7 @@ autoPCA TableOfReal_to_PCA_byRows (TableOfReal me) {
 	try {
 		autoPCA thee = MAT_to_PCA (my data.get(), false);
 		Melder_assert (thy labels.size == my numberOfColumns);
-		thy labels.all() <<= my columnLabels.all();
+		thy labels.all()  <<=  my columnLabels.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": PCA not created.");
@@ -214,6 +214,11 @@ autoTableOfReal PCA_TableOfReal_to_TableOfReal_zscores (PCA me, TableOfReal thee
 	try {
 		if (numberOfDimensions == 0 || numberOfDimensions > my numberOfEigenvalues)
 			numberOfDimensions = my numberOfEigenvalues;
+		Melder_require (thy numberOfColumns == my eigenvectors.ncol,
+			U"The number of columns in the TableOfReal (", thy numberOfColumns,
+			U") should match the length of the eigenvectors of the PCA (",
+			my eigenvectors.ncol, U").")
+		;
 		autoTableOfReal him = TableOfReal_create (thy numberOfRows, numberOfDimensions);
 		for (integer i = 1; i <= thy numberOfRows; i ++) { /* row */
 			for (integer j = 1; j <= numberOfDimensions; j ++) {
@@ -225,7 +230,7 @@ autoTableOfReal PCA_TableOfReal_to_TableOfReal_zscores (PCA me, TableOfReal thee
 				his data [i] [j] = (double) r;
 			}
 		}
-		his rowLabels.all() <<= thy rowLabels.all();
+		his rowLabels.all()  <<=  thy rowLabels.all();
 		TableOfReal_setSequentialColumnLabels (him.get(), 0, 0, U"pc", 1, 1);
 		return him;
 	} catch (MelderError) {
@@ -237,10 +242,14 @@ autoTableOfReal PCA_TableOfReal_to_TableOfReal_projectRows (PCA me, TableOfReal 
 	try {
 		if (numberOfDimensionsToKeep == 0 || numberOfDimensionsToKeep > my numberOfEigenvalues)
 			numberOfDimensionsToKeep = my numberOfEigenvalues;
-
+		Melder_require (thy numberOfColumns == my eigenvectors.ncol,
+			U"The number of columns in the TableOfReal (", thy numberOfColumns,
+			U") should match the length of the eigenvectors of the PCA (",
+			my eigenvectors.ncol, U").")
+		;
 		autoTableOfReal him = TableOfReal_create (thy numberOfRows, numberOfDimensionsToKeep);
 		mul_MAT_out (his data.get(), thy data.get(), my eigenvectors.horizontalBand (1, numberOfDimensionsToKeep).transpose());
-		his rowLabels.all() <<= thy rowLabels.all();
+		his rowLabels.all()  <<=  thy rowLabels.all();
 		TableOfReal_setSequentialColumnLabels (him.get(), 0, 0, U"pc", 1, 1);
 		return him;
 	} catch (MelderError) {
@@ -252,10 +261,14 @@ autoConfiguration PCA_TableOfReal_to_Configuration (PCA me, TableOfReal thee, in
 	try {
 		if (numberOfDimensionsToKeep == 0 || numberOfDimensionsToKeep > my numberOfEigenvalues)
 			numberOfDimensionsToKeep = my numberOfEigenvalues;
-
+		Melder_require (thy numberOfColumns == my eigenvectors.ncol,
+			U"The number of columns in the TableOfReal (", thy numberOfColumns,
+			U") should match the length of the eigenvectors of the PCA (",
+			my eigenvectors.ncol, U").")
+		;
 		autoConfiguration him = Configuration_create (thy numberOfRows, numberOfDimensionsToKeep);
 		mul_MAT_out (his data.get(), thy data.get(), my eigenvectors.horizontalBand(1, numberOfDimensionsToKeep).transpose());
-		his rowLabels.all() <<= thy rowLabels.all();
+		his rowLabels.all()  <<=  thy rowLabels.all();
 		TableOfReal_setSequentialColumnLabels (him.get(), 0, 0, U"pc", 1, 1);
 		return him;
 	} catch (MelderError) {
@@ -266,12 +279,12 @@ autoConfiguration PCA_TableOfReal_to_Configuration (PCA me, TableOfReal thee, in
 autoTableOfReal PCA_Configuration_to_TableOfReal_reconstruct (PCA me, Configuration thee) {
 	try {
 		Melder_require (thy numberOfColumns <= my numberOfEigenvalues,
-			U"The number of columns in the configuration should not exceed the number of eigenvectors (", my numberOfEigenvalues, U").");
+			U"The number of columns in the Configuration should not exceed the number of eigenvectors in the PCA.");
 		const integer numberOfEigenvectorsToUse = std::min (thy numberOfColumns, my numberOfEigenvalues);
 		autoTableOfReal him = TableOfReal_create (thy numberOfRows, my dimension);
 		Melder_assert (my labels.size == my dimension);
-		his columnLabels.all() <<= my labels.all();
-		his rowLabels.all() <<= thy rowLabels.all();
+		his columnLabels.all()  <<=  my labels.all();
+		his rowLabels.all()  <<=  thy rowLabels.all();
 
 		mul_MAT_out (his data.get(), thy data.get (), my eigenvectors.horizontalBand (1, numberOfEigenvectorsToUse));
 
@@ -294,14 +307,13 @@ double PCA_TableOfReal_getFractionVariance (PCA me, TableOfReal thee, integer fr
 	}
 }
 
-autoTableOfReal PCA_to_TableOfReal_reconstruct1 (PCA me, conststring32 coefficients) {
+autoTableOfReal PCA_to_TableOfReal_reconstruct1 (PCA me, constVECVU const& coefficients) {
 	try {
-		autoVEC pc = newVECfromString (coefficients);
-		Melder_require (pc.size == my numberOfEigenvalues,
+		Melder_require (coefficients.size == my numberOfEigenvalues,
 			U"The number of coefficients should equal the number of eigenvectors (", my numberOfEigenvalues, U").");
-		autoConfiguration c = Configuration_create (1, pc.size);
-		c -> data.row (1) <<= pc.all();
-		autoTableOfReal him = PCA_Configuration_to_TableOfReal_reconstruct (me, c.get());
+		autoConfiguration configuration = Configuration_create (1, coefficients.size);
+		configuration -> data.row (1)  <<=  coefficients;
+		autoTableOfReal him = PCA_Configuration_to_TableOfReal_reconstruct (me, configuration.get());
 		return him;
 	} catch (MelderError) {
 		Melder_throw (me, U" not reconstructed.");

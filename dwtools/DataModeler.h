@@ -2,7 +2,7 @@
 #define _DataModeler_h_
 /* DataModeler.h
  *
- * Copyright (C) 2014-2020 David Weenink
+ * Copyright (C) 2014-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,9 +58,9 @@ static inline void getAutoNaturalNumberWithinRange (integer *number, integer max
 void DataModeler_init (DataModeler me, double xmin, double xmax, integer numberOfDataPoints, integer numberOfParameters, kDataModelerFunction type);
 
 autoDataModeler DataModeler_create (double xmin, double xmax, integer numberOfDataPoints, integer numberOfParameters, kDataModelerFunction type);
-
+autoDataModeler DataModeler_createFromDataModeler (DataModeler thee, integer numberOfParameters, kDataModelerFunction type);
 autoDataModeler DataModeler_createSimple (double xmin, double xmax, integer numberOfDataPoints,
-	conststring32 parameters, double gaussianNoiseStd, kDataModelerFunction type);
+	constVECVU const& parameterValues, double gaussianNoiseStd, kDataModelerFunction type);
 
 void DataModeler_setBasisFunctions (DataModeler me, kDataModelerFunction type);
 
@@ -69,6 +69,7 @@ integer DataModeler_drawingSpecifiers_x (DataModeler me, double *xmin, double *x
 void DataModeler_drawBasisFunction_inside (DataModeler me, Graphics g, double xmin, double xmax, double ymin, double ymax,
 	integer iterm, bool scale, integer numberOfPoints);
 
+void DataModeler_drawModel (DataModeler me, Graphics g, double xmin, double xmax, double ymin, double ymax, integer numberOfPoints, bool garnish);
 void DataModeler_drawModel_inside (DataModeler me, Graphics g, double xmin, double xmax, double ymin, double ymax, integer numberOfPoints);
 
 void DataModeler_draw_inside (DataModeler me, Graphics g, double xmin, double xmax, double ymin, double ymax, bool estimated, integer numberOfParameters, bool errorbars, bool connectPoints, double barWidth_mm, bool drawDots);
@@ -100,15 +101,16 @@ void DataModeler_setDataWeighing (DataModeler me, kDataModelerWeights weighData)
 integer DataModeler_getNumberOfFixedParameters (DataModeler me);
 integer DataModeler_getNumberOfFreeParameters (DataModeler me);
 
-void DataModeler_setParameterValue (DataModeler me, integer index, double value, kDataModelerParameter status);
+void DataModeler_setParameterValue (DataModeler me, integer index, double value, kDataModelerParameterStatus status);
 
 void DataModeler_setParameterValueFixed (DataModeler me, integer index, double value);
 
 void DataModeler_setParametersFree (DataModeler me, integer fromIndex, integer toIndex);
 
 double DataModeler_getParameterValue (DataModeler me, integer index);
+autoVEC DataModeler_listParameterValues (DataModeler me);
 
-kDataModelerParameter DataModeler_getParameterStatus (DataModeler me, integer index);
+kDataModelerParameterStatus DataModeler_getParameterStatus (DataModeler me, integer index);
 
 double DataModeler_getParameterStandardDeviation (DataModeler me, integer index);
 
@@ -127,6 +129,7 @@ double DataModeler_getModelValueAtIndex (DataModeler me, integer index);
 double DataModeler_getWeightedMean (DataModeler me);
 
 integer DataModeler_getNumberOfInvalidDataPoints (DataModeler me);
+integer DataModeler_getNumberOfValidDataPoints (DataModeler me);
 
 double DataModeler_getDataPointXValue (DataModeler me, integer index);
 double DataModeler_getDataPointYValue (DataModeler me, integer index);

@@ -1,6 +1,6 @@
 /* ButtonEditor.cpp
  *
- * Copyright (C) 1996-2020 Paul Boersma
+ * Copyright (C) 1996-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,34 +37,29 @@ static void drawMenuCommand (ButtonEditor me, Praat_Command cmd, integer i) {
 	bool isAdded = cmd -> uniqueID != 0 || !! cmd -> script;
 	bool isHidden = cmd -> hidden;
 	bool isToggled = cmd -> toggled;
-	conststring32 clickText = isHidden ? (isToggled ? (isAdded ? U"REMOVED" : U"HIDDEN") : U"hidden") :
+	conststring32 clickText = isHidden ? (isToggled ? (isAdded ? (cmd -> uniqueID ? U"REMOVED" : U"HIDDEN") : U"HIDDEN") : U"hidden") :
 		(isToggled ? U"SHOWN" :  (isAdded ? (cmd -> uniqueID ? U"ADDED" : U"START-UP") : U"shown"));
 	MelderString_empty (& text);
-	if (cmd -> unhidable) {
+	if (cmd -> unhidable)
 		MelderString_append (& text, U"#unhidable ");
-	} else {
+	else
 		MelderString_append (& text, U"@@m", i, U"|", clickText, U"@ ");
-	}
 	MelderString_append (& text, cmd -> window.get(), U": ");
-	if (cmd -> menu) {
+	if (cmd -> menu)
 		MelderString_append (& text, cmd -> menu.get(), U": ");
-	}
 	if (cmd -> title) {
-		if (cmd -> executable) {
+		if (cmd -> executable)
 			MelderString_append (& text, U"@@p", i, U"|", cmd -> title.get(), U"@");
-		} else {
+		else
 			MelderString_append (& text, cmd -> title.get());
-		}
 	} else {
 		MelderString_append (& text, U"---------");
 	}
-	if (cmd -> after) {
+	if (cmd -> after)
 		MelderString_append (& text, U", %%%%after \"", cmd -> after.get(), U"\"%%");
-	}
-	if (cmd -> script) {
+	if (cmd -> script)
 		MelderString_append (& text, U", script \"", Melder_peekExpandBackslashes (cmd -> script.get()), U"\"");
-	}
-	HyperPage_any (me, text.string, my p_font, my p_fontSize, cmd -> callback ? 0 : Graphics_ITALIC, 0.0,
+	HyperPage_any (me, text.string, my instancePref_font(), my instancePref_fontSize(), cmd -> callback ? 0 : Graphics_ITALIC, 0.0,
 		cmd -> depth * 0.3, 0.4, 0.0, 0.0, 0);
 }
 
@@ -72,57 +67,49 @@ static void drawAction (ButtonEditor me, Praat_Command cmd, integer i) {
 	static MelderString text;
 	bool isAdded = cmd -> uniqueID != 0 || !! cmd -> script;
 	bool isHidden = cmd -> hidden, isToggled = cmd -> toggled;
-	conststring32 clickText = isHidden ? (isToggled ? (isAdded ? U"REMOVED" : U"HIDDEN") : U"hidden") :
+	conststring32 clickText = isHidden ? (isToggled ? (isAdded ? (cmd -> uniqueID ? U"REMOVED" : U"HIDDEN") : U"HIDDEN") : U"hidden") :
 		(isToggled ? U"SHOWN" :  (isAdded ? (cmd -> uniqueID ? U"ADDED" : U"START-UP") : U"shown"));
 	integer n1 = cmd -> n1;
 	MelderString_empty (& text);
-	if (cmd -> class4) {
+	if (cmd -> class4)
 		MelderString_append (& text, U"#unhidable ");
-	} else {
+	else
 		MelderString_append (& text, U"@@a", i, U"|", clickText, U"@ ");
-	}
 	MelderString_append (& text, cmd -> class1 -> className);
-	if (n1) {
+	if (n1)
 		MelderString_append (& text, U" (", n1, U")");
-	}
 	if (cmd -> class2) {
 		integer n2 = cmd -> n2;
 		MelderString_append (& text, U" & ", cmd -> class2 -> className);
-		if (n2) {
+		if (n2)
 			MelderString_append (& text, U" (", n2, U")");
-		}
 	}
 	if (cmd -> class3) {
 		integer n3 = cmd -> n3;
 		MelderString_append (& text, U" & ", cmd -> class3 -> className);
-		if (n3) {
+		if (n3)
 			MelderString_append (& text, U" (", n3, U")");
-		}
 	}
 	if (cmd -> class4) {
 		integer n4 = cmd -> n4;
 		MelderString_append (& text, U" & ", cmd -> class4 -> className);
-		if (n4) {
+		if (n4)
 			MelderString_append (& text, U" (", n4, U")");
-		}
 	}
 	MelderString_append (& text, U": ");
 	if (cmd -> title) {
-		if (cmd -> executable) {
+		if (cmd -> executable)
 			MelderString_append (& text, U"@@e", i, U"|", cmd -> title.get(), U"@");
-		} else {
+		else
 			MelderString_append (& text, cmd -> title.get());
-		}
 	} else {
 		MelderString_append (& text, U"---------");
 	}
-	if (cmd -> after) {
+	if (cmd -> after)
 		MelderString_append (& text, U", %%%%after \"", cmd -> after.get(), U"\"%%");
-	}
-	if (cmd -> script) {
+	if (cmd -> script)
 		MelderString_append (& text, U", script \"", Melder_peekExpandBackslashes (cmd -> script.get()), U"\"");
-	}
-	HyperPage_any (me, text.string, my p_font, my p_fontSize, cmd -> callback ? 0 : Graphics_ITALIC, 0.0,
+	HyperPage_any (me, text.string, my instancePref_font(), my instancePref_fontSize(), cmd -> callback ? 0 : Graphics_ITALIC, 0.0,
 		cmd -> depth * 0.3, 0.4, 0.0, 0.0, 0);
 }
 
@@ -209,7 +196,8 @@ int structButtonEditor :: v_goToPage (conststring32 title) {
 		case 'a': {   // toggle visibility of action
 			integer i = Melder_atoi (& title [1]);
 			Praat_Command action = praat_getAction (i);
-			if (! action) return 0;
+			if (! action)
+				return 0;
 			if (action -> hidden)
 				praat_showAction (action -> class1, action -> class2, action -> class3, action -> title.get());
 			else
@@ -236,13 +224,13 @@ int structButtonEditor :: v_goToPage (conststring32 title) {
 			}
 			if (action -> script) {
 				try {
-					DO_RunTheScriptFromAnyAddedMenuCommand (nullptr, 0, nullptr, action -> script.get(), nullptr, nullptr, false, nullptr);
+					DO_RunTheScriptFromAnyAddedMenuCommand (nullptr, 0, nullptr, action -> script.get(), nullptr, nullptr, false, nullptr, nullptr);
 				} catch (MelderError) {
 					Melder_flushError (U"Command not executed.");
 				}
 			} else {
 				try {
-					action -> callback (nullptr, 0, nullptr, nullptr, nullptr, nullptr, false, nullptr);
+					action -> callback (nullptr, 0, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr);
 				} catch (MelderError) {
 					Melder_flushError (U"Command not executed.");
 				}
@@ -260,13 +248,13 @@ int structButtonEditor :: v_goToPage (conststring32 title) {
 			}
 			if (menuCommand -> script) {
 				try {
-					DO_RunTheScriptFromAnyAddedMenuCommand (nullptr, 0, nullptr, menuCommand -> script.get(), nullptr, nullptr, false, nullptr);
+					DO_RunTheScriptFromAnyAddedMenuCommand (nullptr, 0, nullptr, menuCommand -> script.get(), nullptr, nullptr, false, nullptr, nullptr);
 				} catch (MelderError) {
 					Melder_flushError (U"Command not executed.");
 				}
 			} else {
 				try {
-					menuCommand -> callback (nullptr, 0, nullptr, nullptr, nullptr, nullptr, false, nullptr);
+					menuCommand -> callback (nullptr, 0, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr);
 				} catch (MelderError) {
 					Melder_flushError (U"Command not executed.");
 				}
@@ -299,7 +287,7 @@ static void gui_radiobutton_cb_actionsTZ (ButtonEditor me, GuiRadioButtonEvent /
 
 void structButtonEditor :: v_createChildren () {
 	ButtonEditor_Parent :: v_createChildren ();
-	int x = 3, y = Machine_getMenuBarHeight () + 4;
+	int x = 3, y = Machine_getMenuBarBottom () + 4;
 	GuiRadioGroup_begin ();
 	constexpr int LETTER_BUTTON_WIDTH = BUTTON_WIDTH * 2 / 3;
 	button1 = GuiRadioButton_createShown (our windowForm, x, x + BUTTON_WIDTH, y, y + Gui_RADIOBUTTON_HEIGHT,
@@ -333,8 +321,8 @@ void structButtonEditor :: v_createChildren () {
 
 static void menu_cb_ButtonEditorHelp (ButtonEditor /* me */, EDITOR_ARGS_DIRECT) { Melder_help (U"ButtonEditor"); }
 
-void structButtonEditor :: v_createHelpMenuItems (EditorMenu menu) {
-	ButtonEditor_Parent :: v_createHelpMenuItems (menu);
+void structButtonEditor :: v_createMenuItems_help (EditorMenu menu) {
+	ButtonEditor_Parent :: v_createMenuItems_help (menu);
 	EditorMenu_addCommand (menu, U"ButtonEditor help", '?', menu_cb_ButtonEditorHelp);
 }
 

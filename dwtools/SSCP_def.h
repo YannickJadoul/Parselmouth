@@ -30,7 +30,7 @@ oo_DEFINE_CLASS (SSCP, TableOfReal)
 	*/
 	#if oo_DECLARING || oo_DESTROYING
 		oo_INTEGER (expansionNumberOfRows)
-		oo_INT (dataChanged)
+		oo_BOOLEAN (dataChanged)
 		oo_MAT (expansion, expansionNumberOfRows, numberOfColumns)
 		oo_DOUBLE (lnd)
 		oo_MAT (lowerCholeskyInverse, numberOfColumns, numberOfColumns)
@@ -38,7 +38,7 @@ oo_DEFINE_CLASS (SSCP, TableOfReal)
 	#endif
 
 	#if oo_DECLARING
-		void v_info ()
+		void v1_info ()
 			override;
 	#endif
 

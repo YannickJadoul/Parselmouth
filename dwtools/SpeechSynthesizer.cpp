@@ -1,6 +1,6 @@
 /* SpeechSynthesizer.cpp
  *
-//  * Copyright (C) 2011-2019 David Weenink
+//  * Copyright (C) 2011-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,19 +16,14 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-
-#include "espeakdata_FileInMemory.h"
-	djmw 20111214
-*/
 #include "espeak_ng_version.h"
 #include "espeak_ng.h"
 #include "espeakdata_FileInMemory.h"
 
-
 #include "SpeechSynthesizer.h"
 #include "Strings_extensions.h"
 #include "speak_lib.h"
+#include "synthdata.h"
 #include "encoding.h"
 #include "string.h"
 #include "translate.h"
@@ -54,30 +49,28 @@
 
 #define espeak_SAMPLINGFREQUENCY 22050
 
-extern structMelderDir praatDir;
-extern int option_phoneme_events;
+extern int option_phoneme_events;   // BUG: external declaration outside header file (ppgb 20210307)
 
-Thing_implement (EspeakVoice, Daata, 0);
+Thing_implement (EspeakVoice, Daata, 1);
 
 autoEspeakVoice EspeakVoice_create () {
 	try {
 		autoEspeakVoice me = Thing_new (EspeakVoice);
-		my numberOfFormants = 9; // equals N_PEAKS 
+		my numberOfFormants = 9;   // equals N_PEAKS
 		my numberOfKlattParameters = 8;
 		my klattv = zero_INTVEC (my numberOfKlattParameters);
 		my freq = zero_INTVEC (my numberOfFormants);
-		my height = zero_INTVEC (my numberOfFormants);	// 100% = 256
-		my width = zero_INTVEC (my numberOfFormants);		// 100% = 256
-		my freqadd = zero_INTVEC (my numberOfFormants);	// Hz
+		my height = zero_INTVEC (my numberOfFormants);   // 100% = 256
+		my width = zero_INTVEC (my numberOfFormants);   // 100% = 256
+		my freqadd = zero_INTVEC (my numberOfFormants);   // Hz
 
 		// copies without temporary adjustments from embedded commands
-		my freq2 = zero_INTVEC (my numberOfFormants);		// 100% = 256
-		my height2 = zero_INTVEC (my numberOfFormants);	// 100% = 256
-		my width2 = zero_INTVEC (my numberOfFormants);	// 100% = 256
+		my freq2 = zero_INTVEC (my numberOfFormants);   // 100% = 256
+		my height2 = zero_INTVEC (my numberOfFormants);   // 100% = 256
 
-		my breath = zero_INTVEC (my numberOfFormants);	// amount of breath for each formant. breath[0] indicates whether any are set.
-		my breathw = zero_INTVEC (my numberOfFormants);	// width of each breath formant
-		my numberOfToneAdjusts = 1000; // equals N_TONE_ADJUST in voice.h
+		my breath = zero_INTVEC (my numberOfFormants);   // amount of breath for each formant. breath [0] indicates whether any are set.
+		my breathw = zero_INTVEC (my numberOfFormants);   // width of each breath formant
+		my numberOfToneAdjusts = 1000;   // equals N_TONE_ADJUST in voice.h
 		my tone_adjust = newvectorzero<unsigned char> (my numberOfToneAdjusts);
 		EspeakVoice_setDefaults (me.get());
 		return me;
@@ -123,7 +116,6 @@ void EspeakVoice_initFromEspeakVoice (EspeakVoice me, voice_t *voicet) {
 		my freqadd [i] = voicet -> freqadd [i - 1];
 		my freq2 [i] = voicet -> freq2 [i - 1];
 		my height2 [i] = voicet -> height2 [i - 1];
-		my width2 [i] = voicet -> width2 [i - 1];
 		my breath [i] = voicet -> breath [i - 1];
 		my breathw [i] = voicet -> breathw [i - 1];
 	}
@@ -132,7 +124,7 @@ void EspeakVoice_initFromEspeakVoice (EspeakVoice me, voice_t *voicet) {
 		my tone_adjust [i] = voicet -> tone_adjust [i - 1];
 }
 
-void EspeakVoice_into_voice (EspeakVoice me, voice_t *voicet) {
+void EspeakVoice_into_voice (EspeakVoice me, voice_t *voicet) {   // BUG unused (ppgb 20210307)
 
 	if (my v_name)
 		strncpy (voicet -> v_name, Melder_peek32to8 (my v_name.get()), 40);
@@ -167,7 +159,6 @@ void EspeakVoice_into_voice (EspeakVoice me, voice_t *voicet) {
 		voicet -> freqadd [i - 1] = my freqadd [i];
 		voicet -> freq2 [i - 1] = my freq2 [i];
 		voicet -> height2 [i - 1] = my height2 [i];
-		voicet -> width2 [i - 1] = my width2 [i];
 		voicet -> breath [i - 1] = my breath [i];
 		voicet -> breathw [i - 1] = my breathw [i];
 	}
@@ -177,8 +168,8 @@ void EspeakVoice_into_voice (EspeakVoice me, voice_t *voicet) {
 
 Thing_implement (SpeechSynthesizer, Daata, 1);
 
-void structSpeechSynthesizer :: v_info () {
-	our SpeechSynthesizer_Parent :: v_info ();
+void structSpeechSynthesizer :: v1_info () {
+	SpeechSynthesizer_Parent :: v1_info ();
 	MelderInfo_writeLine (U"Synthesizer version: espeak-ng ", our d_synthesizerVersion.get());
 	MelderInfo_writeLine (U"Language: ", our d_languageName.get());
 	MelderInfo_writeLine (U"Voice: ", our d_voiceName.get());
@@ -187,7 +178,7 @@ void structSpeechSynthesizer :: v_info () {
 		d_inputTextFormat == SpeechSynthesizer_INPUT_PHONEMESONLY ? U"phonemes only" : U"tagged text"));
 	MelderInfo_writeLine (U"Input phoneme coding: ", (our d_inputPhonemeCoding == SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM ? U"Kirshenbaum" : U"???"));
 	MelderInfo_writeLine (U"Sampling frequency: ", our d_samplingFrequency, U" Hz");
-	MelderInfo_writeLine (U"Word gap: ", our d_wordgap, U" s");
+	MelderInfo_writeLine (U"Word gap: ", our d_wordGap, U" s");
 	MelderInfo_writeLine (U"Pitch multiplier: ", our d_pitchAdjustment, U" (0.5-2.0)");
 	MelderInfo_writeLine (U"Pitch range multiplier: ", our d_pitchRange, U" (0.0-2.0)");
 	MelderInfo_writeLine (U"Speaking rate: ", our d_wordsPerMinute, U" words per minute",
@@ -200,7 +191,7 @@ void structSpeechSynthesizer :: v_info () {
 
 static int synthCallback (short *wav, int numsamples, espeak_EVENT *events)
 {
-	char phoneme_name[9];
+	char phoneme_name [9];
 	if (wav == 0) return 1;
 	
 	// It is essential that the SpeechSynthesizer is identified here by the user_data,
@@ -229,7 +220,7 @@ static int synthCallback (short *wav, int numsamples, espeak_EVENT *events)
 			} else {
 				// Ugly hack because id.string is not 0-terminated if 8 chars long!
 				memcpy (phoneme_name, events -> id.string, 8);
-				phoneme_name[8] = 0;
+				phoneme_name [8] = 0;
 				Table_setStringValue (my d_events.get(), irow, 8, Melder_peek8to32 (phoneme_name));
 			}
 			Table_setNumericValue (my d_events.get(), irow, 9, events -> unique_identifier);
@@ -245,7 +236,7 @@ static int synthCallback (short *wav, int numsamples, espeak_EVENT *events)
 	return 0;
 }
 
-conststring32 SpeechSynthesizer_getLanguageCode (SpeechSynthesizer me) {
+static conststring32 SpeechSynthesizer_getLanguageCode (SpeechSynthesizer me) {
 	try {
 		const integer irow = Table_searchColumn (espeakdata_languages_propertiesTable.get(), 2, my d_languageName.get());
 		Melder_require (irow != 0,
@@ -256,7 +247,7 @@ conststring32 SpeechSynthesizer_getLanguageCode (SpeechSynthesizer me) {
 	}
 }
 
-conststring32 SpeechSynthesizer_getPhonemeCode (SpeechSynthesizer me) {
+static conststring32 SpeechSynthesizer_getPhonemeCode (SpeechSynthesizer me) {
 	try {
 		const integer irow = Table_searchColumn (espeakdata_languages_propertiesTable.get(), 2, my d_phonemeSet.get());
 		Melder_require (irow != 0,
@@ -267,7 +258,7 @@ conststring32 SpeechSynthesizer_getPhonemeCode (SpeechSynthesizer me) {
 	}
 }
 
-conststring32 SpeechSynthesizer_getVoiceCode (SpeechSynthesizer me) {
+static conststring32 SpeechSynthesizer_getVoiceCode (SpeechSynthesizer me) {
 	try {
 		const integer irow = Table_searchColumn (espeakdata_voices_propertiesTable.get(), 2, my d_voiceName.get());
 		Melder_require (irow != 0,
@@ -288,14 +279,13 @@ autoSpeechSynthesizer SpeechSynthesizer_create (conststring32 languageName, cons
 		(void) SpeechSynthesizer_getVoiceCode (me.get());  // existence check
 		my d_phonemeSet = Melder_dup (languageName);
 		SpeechSynthesizer_setTextInputSettings (me.get(), SpeechSynthesizer_INPUT_TEXTONLY, SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM);
-		SpeechSynthesizer_setSpeechOutputSettings (me.get(), 44100.0, 0.01, 1.0, 1.0, 175, SpeechSynthesizer_PHONEMECODINGS_IPA);
+		SpeechSynthesizer_setSpeechOutputSettings (me.get(), 44100.0, 0.01, 1.0, 1.0, 175.0, SpeechSynthesizer_PHONEMECODINGS_IPA);
 		SpeechSynthesizer_setEstimateSpeechRateFromSpeech (me.get(), true);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"SpeechSynthesizer not created.");
 	}
 }
-
 
 void SpeechSynthesizer_setTextInputSettings (SpeechSynthesizer me, int inputTextFormat, int inputPhonemeCoding) {
 	my d_inputTextFormat = inputTextFormat;
@@ -306,21 +296,14 @@ void SpeechSynthesizer_setEstimateSpeechRateFromSpeech (SpeechSynthesizer me, bo
 	my d_estimateSpeechRate = estimate;
 }
 
-void SpeechSynthesizer_setSpeechOutputSettings (SpeechSynthesizer me, double samplingFrequency, double wordgap, double pitchAdjustment, double pitchRange, double wordsPerMinute, int outputPhonemeCoding) {
+void SpeechSynthesizer_setSpeechOutputSettings (SpeechSynthesizer me, double samplingFrequency, double wordGap, double pitchAdjustment, double pitchRange, double wordsPerMinute, int outputPhonemeCoding) {
 	my d_samplingFrequency = samplingFrequency;
-	my d_wordgap = wordgap;
-	pitchAdjustment = pitchAdjustment < 0.5 ? 0.5 : (pitchAdjustment > 2.0 ? 2.0 : pitchAdjustment);
-	my d_pitchAdjustment = pitchAdjustment;
-	pitchRange = pitchRange < 0.0 ? 0.0 : (pitchRange > 2.0 ? 2.0 : pitchRange);
-	my d_pitchRange = pitchRange;
-
+	my d_wordGap = wordGap;
+	my d_pitchAdjustment = Melder_clipped (0.5, pitchAdjustment, 2.0);
+	my d_pitchRange = Melder_clipped (0.0, pitchRange, 2.0);
 	if (wordsPerMinute <= 0.0)
-		wordsPerMinute = 175.0;
-	if (wordsPerMinute > 450.0)
-		wordsPerMinute = 450.0;
-	if (wordsPerMinute < 80.0)
-		wordsPerMinute = 80.0;
-	my d_wordsPerMinute = wordsPerMinute;
+		wordsPerMinute = 175.0;   // SMELL: looks like an arbitrary default
+	my d_wordsPerMinute = Melder_clipped (80.0, wordsPerMinute, 450.0);
 	my d_outputPhonemeCoding = outputPhonemeCoding;
 }
 
@@ -336,7 +319,7 @@ static autoSound buffer_to_Sound (constINTVEC const& wav, double samplingFrequen
 		const double xmax = wav.size * dx;
 		autoSound thee = Sound_create (1, 0.0, xmax, wav.size, dx, dx / 2.0);
 		for (integer i = 1; i <= wav.size; i++)
-			thy z[1][i] = wav [i] / 32768.0;
+			thy z [1] [i] = wav [i] / 32768.0;
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"Sound not created from synthesizer data.");
@@ -417,7 +400,7 @@ static void IntervalTier_mergeSpecialIntervals (IntervalTier me) {
 	}
 }
 
-#if 0
+#if 0   // BUG unused (ppgb 20210307)
 /* insert boundary at time t and merge/delete intervals after this time */
 static void IntervalTier_insertBoundaryAndMergeIntervalsAfter (IntervalTier me, double t) {
 	if (t <= my xmin || t >= my xmax)
@@ -601,7 +584,8 @@ static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin
 	}
 }
 
-#if 0
+#if 0   // BUG unused (ppgb 20210307)
+
 static void espeakdata_SetVoiceByName (conststring32 languageName, conststring32 voiceName) {
 	espeak_VOICE voice_selector;
 
@@ -622,7 +606,7 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, 
 		espeak_ng_ERROR_CONTEXT context = { 0 };
 		espeak_ng_STATUS status = espeak_ng_Initialize (& context);
 		Melder_require (status == ENS_OK,
-			U"Internal espeak error.", status);
+			U"Internal espeak error. ", status);
 		int synth_flags = espeakCHARS_WCHAR;
 		if (my d_inputTextFormat == SpeechSynthesizer_INPUT_TAGGEDTEXT)
 			synth_flags |= espeakSSML;
@@ -639,7 +623,7 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, 
 			pitchRange_0_99 = my d_pitchRange * 49.5,
 			where 0 <= my d_pitchRange <= 2
 		*/
-		const int pitchAdjustment_0_99 = (int) ((49.5 / log10(2.0)) * log10 (my d_pitchAdjustment) + 49.5);   // rounded towards zero
+		const int pitchAdjustment_0_99 = (int) ((49.5 / NUMlog10_2) * log10 (my d_pitchAdjustment) + 49.5);   // rounded towards zero
 		espeak_ng_SetParameter (espeakPITCH, pitchAdjustment_0_99, 0);
 		const int pitchRange_0_99 = (int) (my d_pitchRange * 49.5);   // rounded towards zero
 		espeak_ng_SetParameter (espeakRANGE, pitchRange_0_99, 0);
@@ -647,8 +631,8 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, 
 		const conststring32 voiceCode = SpeechSynthesizer_getVoiceCode (me);
 		
 		espeak_ng_SetVoiceByName (Melder_peek32to8 (Melder_cat (languageCode, U"+", voiceCode)));
-		const int wordgap_10ms = my d_wordgap * 100; // espeak wordgap is in units of 10 ms
-		espeak_ng_SetParameter (espeakWORDGAP, wordgap_10ms, 0);
+		const int wordGap_10ms = my d_wordGap * 100;   // espeak word gap is in units of 10 ms
+		espeak_ng_SetParameter (espeakWORDGAP, wordGap_10ms, 0);
 		espeak_ng_SetParameter (espeakCAPITALS, 0, 0);
 		espeak_ng_SetParameter (espeakPUNCTUATION, espeakPUNCT_NONE, 0);
 		
@@ -663,7 +647,9 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, 
 			}
 		}
 
-		my d_events = Table_createWithColumnNames (0, U"time type type-t t-pos length a-pos sample id uniq");
+		const conststring32 columnNames [] =
+				{ U"time", U"type", U"type-t", U"t-pos", U"length", U"a-pos", U"sample", U"id", U"uniq" };
+		my d_events = Table_createWithColumnNames (0, ARRAY_TO_STRVEC (columnNames));
 
 		#ifdef _WIN32
 			conststringW textW = Melder_peek32toW (text);

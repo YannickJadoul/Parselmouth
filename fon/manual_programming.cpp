@@ -1,6 +1,6 @@
 /* manual_programming.cpp
  *
- * Copyright (C) 1992-2010,2011,2013,2015-2020 Paul Boersma
+ * Copyright (C) 1992-2010,2011,2013,2015-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,10 +21,11 @@
 void manual_programming_init (ManPages me);
 void manual_programming_init (ManPages me) {
 
-MAN_BEGIN (U"Interoperability", U"ppgb", 20151107)
+MAN_BEGIN (U"Interoperability", U"ppgb", 20220115)
 INTRO (U"You can use Praat in workflows that involve other programs.")
 ENTRY (U"1. General ways to access Praat from other programs")
-NORMAL (U"• To send messages from another program to a running Praat, use @@sendpraat@. "
+NORMAL (U"• To send messages from another program to a running Praat, "
+	"use @@sendpraat@ or @@Scripting 6.9. Calling from the command line|praat --send@. "
 	"This method is used by the programs CHAT (Childes) and Phon to view a sound in a Sound window.")
 NORMAL (U"• To execute a Praat script as a subprocess of another program, see @@Scripting 6.9. Calling from the command line@.")
 ENTRY (U"2. General ways to access other programs from Praat")
@@ -387,7 +388,7 @@ NORMAL (U"Besides the TextGrid text file format described above, TextGrid object
 	"and save the resulting TextGrid object as a text file with @@Save as text file...@.")
 MAN_END
 
-MAN_BEGIN (U"Programming with Praat", U"ppgb", 20201230)
+MAN_BEGIN (U"Programming with Praat", U"ppgb", 20211015)
 INTRO (U"You can extend the functionality of the Praat program "
 	"by adding modules written in C or C++ to it. All of Praat's source code "
 	"is available under the General Public Licence.")
@@ -401,7 +402,7 @@ ENTRY (U"2. Getting the existing source code")
 NORMAL (U"You obtain the Praat source code from GitHub (https://github.com/praat), in a file with a name like "
 	"##praat6199_sources.zip# or ##praat6199_sources.tar.gz# (depending on the Praat version), and unpack this by double-clicking. "
 	"The result will be a set of directories "
-	"called #kar, #melder, #external (with #clapack, #gsl, #glpk, #flac, #mp3, #portaudio, #espeak and #vorbis in it), "
+	"called #kar, #melder, #external (with #clapack, #gsl, #glpk, #flac, #mp3, #portaudio, #espeak, #vorbis and #opusfile in it), "
 	"#sys, #dwsys, #stat, #fon, #dwtools, #LPC, #FFNet, #gram, #artsynth, #EEG, #main, #makefiles, #test, #dwtest, and #generate, "
 	"plus a makefile and Xcode project for macOS and a README.md file.")
 ENTRY (U"3. Building Praat")
@@ -410,7 +411,7 @@ ENTRY (U"4. Extending Praat")
 NORMAL (U"To start extending Praat’s functionality, you can edit ##main/main_Praat.cpp#. "
 	"This example shows you how to create a very simple program with all the functionality "
 	"of the Praat program, and a single bit more (namely an additional command in the New menu):")
-CODE (U"\\# include \"praat.h\"")
+CODE (U"\\# include \"praatM.h\"")
 CODE (U"")
 CODE (U"DIRECT (HelloFromJane) {")
 	CODE1 (U"Melder_information (U\"Hello, I am Jane.\");")

@@ -23,46 +23,49 @@
 // MARK: Query
 
 DIRECT (INTEGER_TimeTier_getNumberOfPoints) {
-	NUMBER_ONE (AnyTier)
-		integer result = my points.size;
-	NUMBER_ONE_END (U" points")
+	QUERY_ONE_FOR_REAL (AnyTier)
+		const integer result = my points.size;
+	QUERY_ONE_FOR_REAL_END (U" points")
 }
 
 FORM (INTEGER_TimeTier_getLowIndexFromTime, U"Get low index", U"AnyTier: Get low index from time...") {
 	REAL (time, U"Time (s)", U"0.5")
 	OK
 DO
-	FIND_ONE (AnyTier)
-		Melder_information (my points.size == 0 ? U"--undefined--" : Melder_integer (AnyTier_timeToLowIndex (me, time)));
-	END
+	QUERY_ONE_FOR_REAL (AnyTier)
+		const double result =
+			my points.size == 0 ? undefined : AnyTier_timeToLowIndex (me, time);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
 FORM (INTEGER_TimeTier_getHighIndexFromTime, U"Get high index", U"AnyTier: Get high index from time...") {
 	REAL (time, U"Time (s)", U"0.5")
 	OK
 DO
-	FIND_ONE (AnyTier)
-		Melder_information (my points.size == 0 ? U"--undefined--" : Melder_integer (AnyTier_timeToHighIndex (me, time)));
-	END
+	QUERY_ONE_FOR_REAL (AnyTier)
+		const double result =
+			my points.size == 0 ? undefined : AnyTier_timeToHighIndex (me, time);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
 FORM (INTEGER_TimeTier_getNearestIndexFromTime, U"Get nearest index", U"AnyTier: Get nearest index from time...") {
 	REAL (time, U"Time (s)", U"0.5")
 	OK
 DO
-	FIND_ONE (AnyTier)
-		Melder_information (my points.size == 0 ? U"--undefined--" : Melder_integer (AnyTier_timeToNearestIndex (me, time)));
-	END
+	QUERY_ONE_FOR_REAL (AnyTier)   // TODO: make it more general that we don't return an integer, because we should be able to return undefined, as here
+		const double result =
+			my points.size == 0 ? undefined : AnyTier_timeToNearestIndex (me, time);
+	QUERY_ONE_FOR_REAL_END (U"")
 }
 
 FORM (REAL_TimeTier_getTimeFromIndex, U"Get time", nullptr /*"AnyTier: Get time from index..."*/) {
 	NATURAL (pointNumber, U"Point number", U"10")
 	OK
 DO
-	FIND_ONE (AnyTier)
-		if (pointNumber > my points.size) Melder_information (U"--undefined--");
-		else Melder_informationReal (my points.at [pointNumber] -> number, U"seconds");
-	END
+	QUERY_ONE_FOR_REAL (AnyTier)
+		const double result =
+			pointNumber > my points.size ? undefined : my points.at [pointNumber] -> number;
+	QUERY_ONE_FOR_REAL_END (U" seconds")
 }
 
 // MARK: Modify

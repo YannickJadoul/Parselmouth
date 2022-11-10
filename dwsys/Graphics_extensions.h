@@ -2,7 +2,7 @@
 #define _Graphics_extensions_h_
 /* Graphics_extensions.h
  *
- * Copyright (C) 2012-2020 David Weenink
+ * Copyright (C) 2012-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,15 @@
 #include "Graphics.h"
 #include "Graphics_extensions_enums.h"
 
+/*
+	Get a font size to display at least 'maxNumberOfLines' of text that consistes of 
+	'maxNumberOfCharacters_line' characters per line.
+*/
+double Graphics_getFontSizeInsideBox (Graphics g, double widthWC, double heightWC, double maxNumberOfCharacters_line, double maxNumberOfLines);
+
+
 /**
-	Draw a box plot of data[1..ndata]. The vertical center line of the plot
+	Draw a box plot of data [1..ndata]. The vertical center line of the plot
 	is at position 'x'. The rectangle box is 2*w wide, the whisker 2*r.
 	All drawing outside [ymin, ymax] is clipped.
 */
@@ -32,5 +39,18 @@ void Graphics_quantileQuantilePlot (Graphics g, integer numberOfQuantiles, const
 	double xmin, double xmax, double ymin, double ymax, double labelSize, conststring32 plotLabel);
 
 void Graphics_lagPlot (Graphics g, constVEC x, double xmin, double xmax, integer lag, double labelSize, conststring32 plotLabel);
+
+void getGridLayout (integer numberOfItems, integer *out_numberOfRows, integer *out_numberOfColumns);
+/*
+	Get dimensions of a two-dimensional grid to layout n elements as nrow x ncol,
+	where nrow x ncol >= n and nrow >= ncol and nrow - ncol <= 1. 
+*/
+
+integer getGridCellIndex (double x, double y, integer numberOfRows, integer numberOfColumns);
+/*
+	Implicit:
+		Rectangular grid numberOfRows x numberOfColumns
+		Origin (0,0) is at left-bottom, top-right is at (1, 1)
+*/
 
 #endif /* _Graphics_extensions_h_ */

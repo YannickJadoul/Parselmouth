@@ -1,6 +1,6 @@
 /* ScriptEditor.cpp
  *
- * Copyright (C) 1997-2005,2007-2018,2020 Paul Boersma
+ * Copyright (C) 1997-2005,2007-2018,2020-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,10 +34,10 @@ bool ScriptEditors_dirty () {
 	return false;
 }
 
-void structScriptEditor :: v_destroy () noexcept {
+void structScriptEditor :: v9_destroy () noexcept {
 	our argsDialog.reset();   // don't delay till delete
 	theReferencesToAllOpenScriptEditors. undangleItem (this);
-	ScriptEditor_Parent :: v_destroy ();
+	ScriptEditor_Parent :: v9_destroy ();
 }
 
 void structScriptEditor :: v_nameChanged () {
@@ -62,7 +62,7 @@ void structScriptEditor :: v_goAway () {
 }
 
 static void args_ok (UiForm sendingForm, integer /* narg */, Stackel /* args */, conststring32 /* sendingString */,
-	Interpreter /* interpreter */, conststring32 /* invokingButtonTitle */, bool /* modified */, void *void_me)
+	Interpreter /* interpreter */, conststring32 /* invokingButtonTitle */, bool /* modified */, void *void_me, Editor optionalEditor)
 {
 	iam (ScriptEditor);
 	autostring32 text = GuiText_getString (my textWidget);
@@ -82,7 +82,7 @@ static void args_ok (UiForm sendingForm, integer /* narg */, Stackel /* args */,
 }
 
 static void args_ok_selectionOnly (UiForm sendingForm, integer /* narg */, Stackel /* args */, conststring32 /* sendingString */,
-	Interpreter /* interpreter */, conststring32 /* invokingButtonTitle */, bool /* modified */, void *void_me)
+	Interpreter /* interpreter */, conststring32 /* invokingButtonTitle */, bool /* modified */, void *void_me, Editor optionalEditor)
 {
 	iam (ScriptEditor);
 	autostring32 text = GuiText_getSelection (my textWidget);
@@ -98,7 +98,8 @@ static void args_ok_selectionOnly (UiForm sendingForm, integer /* narg */, Stack
 	Interpreter_getArgumentsFromDialog (my interpreter.get(), sendingForm);
 
 	autoPraatBackground background;
-	if (my name [0]) MelderFile_setDefaultDir (& file);
+	if (my name [0])
+		MelderFile_setDefaultDir (& file);
 	Interpreter_run (my interpreter.get(), text.get());
 }
 
@@ -143,7 +144,7 @@ static void menu_cb_run (ScriptEditor me, EDITOR_ARGS_DIRECT) {
 		/*
 			Pop up a dialog box for querying the arguments.
 		*/
-		my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, nullptr, args_ok, me, false);
+		my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, my optionalEditor, nullptr, args_ok, me, false);
 		UiForm_do (my argsDialog.get(), false);
 	} else {
 		autoPraatBackground background;
@@ -171,7 +172,7 @@ static void menu_cb_runSelection (ScriptEditor me, EDITOR_ARGS_DIRECT) {
 		/*
 			Pop up a dialog box for querying the arguments.
 		*/
-		my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, nullptr, args_ok_selectionOnly, me, true);
+		my argsDialog = Interpreter_createForm (my interpreter.get(), my windowForm, my optionalEditor, nullptr, args_ok_selectionOnly, me, true);
 		UiForm_do (my argsDialog.get(), false);
 	} else {
 		autoPraatBackground background;
@@ -188,7 +189,7 @@ static void menu_cb_addToMenu (ScriptEditor me, EDITOR_ARGS_FORM) {
 		SENTENCE (command, U"Command", U"Do it...")
 		SENTENCE (afterCommand, U"After command", U"")
 		INTEGER (depth, U"Depth", U"0")
-		TEXTFIELD (scriptFile, U"Script file:", U"")
+		INFILE (scriptFile, U"Script file", U"")
 	EDITOR_OK
 		if (my editorClass)
 			SET_STRING (window, my editorClass -> className)
@@ -211,7 +212,7 @@ static void menu_cb_addToFixedMenu (ScriptEditor me, EDITOR_ARGS_FORM) {
 		SENTENCE (command, U"Command", U"Do it...")
 		SENTENCE (afterCommand, U"After command", U"")
 		INTEGER (depth, U"Depth", U"0")
-		TEXTFIELD (scriptFile, U"Script file:", U"")
+		INFILE (scriptFile, U"Script file", U"")
 	EDITOR_OK
 		if (my name [0])
 			SET_STRING (scriptFile, my name.get())
@@ -234,7 +235,7 @@ static void menu_cb_addToDynamicMenu (ScriptEditor me, EDITOR_ARGS_FORM) {
 		SENTENCE (command, U"Command", U"Do it...")
 		SENTENCE (afterCommand, U"After command", U"")
 		INTEGER (depth, U"Depth", U"0")
-		TEXTFIELD (scriptFile, U"Script file:", U"")
+		INFILE (scriptFile, U"Script file", U"")
 	EDITOR_OK
 		if (my name [0])
 			SET_STRING (scriptFile, my name.get())
@@ -287,6 +288,7 @@ static void menu_cb_ScriptingTutorial (ScriptEditor, EDITOR_ARGS_DIRECT) { Melde
 static void menu_cb_ScriptingExamples (ScriptEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"Scripting examples"); }
 static void menu_cb_PraatScript (ScriptEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"Praat script"); }
 static void menu_cb_FormulasTutorial (ScriptEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"Formulas"); }
+static void menu_cb_Functions (ScriptEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"Functions"); }
 static void menu_cb_DemoWindow (ScriptEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"Demo window"); }
 static void menu_cb_TheHistoryMechanism (ScriptEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"History mechanism"); }
 static void menu_cb_InitializationScripts (ScriptEditor, EDITOR_ARGS_DIRECT) { Melder_help (U"Initialization script"); }
@@ -312,13 +314,14 @@ void structScriptEditor :: v_createMenus () {
 	Editor_addCommand (this, U"Run", U"Run selection", 'T', menu_cb_runSelection);
 }
 
-void structScriptEditor :: v_createHelpMenuItems (EditorMenu menu) {
-	ScriptEditor_Parent :: v_createHelpMenuItems (menu);
+void structScriptEditor :: v_createMenuItems_help (EditorMenu menu) {
+	ScriptEditor_Parent :: v_createMenuItems_help (menu);
 	EditorMenu_addCommand (menu, U"About ScriptEditor", '?', menu_cb_AboutScriptEditor);
 	EditorMenu_addCommand (menu, U"Scripting tutorial", 0, menu_cb_ScriptingTutorial);
 	EditorMenu_addCommand (menu, U"Scripting examples", 0, menu_cb_ScriptingExamples);
 	EditorMenu_addCommand (menu, U"Praat script", 0, menu_cb_PraatScript);
 	EditorMenu_addCommand (menu, U"Formulas tutorial", 0, menu_cb_FormulasTutorial);
+	EditorMenu_addCommand (menu, U"Functions", 0, menu_cb_Functions);
 	EditorMenu_addCommand (menu, U"Demo window", 0, menu_cb_DemoWindow);
 	EditorMenu_addCommand (menu, U"-- help history --", 0, nullptr);
 	EditorMenu_addCommand (menu, U"The History mechanism", 0, menu_cb_TheHistoryMechanism);
@@ -328,27 +331,28 @@ void structScriptEditor :: v_createHelpMenuItems (EditorMenu menu) {
 	EditorMenu_addCommand (menu, U"Adding to a dynamic menu", 0, menu_cb_AddingToADynamicMenu);
 }
 
-void ScriptEditor_init (ScriptEditor me, Editor environment, conststring32 initialText) {
-	if (environment) {
-		my environmentName = Melder_dup (environment -> name.get());
-		my editorClass = environment -> classInfo;
+void ScriptEditor_init (ScriptEditor me, Editor optionalEditor, conststring32 initialText) {
+	if (optionalEditor) {
+		my optionalEditor = optionalEditor;
+		my environmentName = Melder_dup (optionalEditor -> name.get());
+		my editorClass = optionalEditor -> classInfo;
 	}
 	TextEditor_init (me, initialText);
-	my interpreter = Interpreter_createFromEnvironment (environment);
+	my interpreter = Interpreter_createFromEnvironment (optionalEditor);
 	theReferencesToAllOpenScriptEditors. addItem_ref (me);
 }
 
-autoScriptEditor ScriptEditor_createFromText (Editor environment, conststring32 initialText) {
+autoScriptEditor ScriptEditor_createFromText (Editor optionalEditor, conststring32 initialText) {
 	try {
 		autoScriptEditor me = Thing_new (ScriptEditor);
-		ScriptEditor_init (me.get(), environment, initialText);
+		ScriptEditor_init (me.get(), optionalEditor, initialText);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Script window not created.");
 	}
 }
 
-autoScriptEditor ScriptEditor_createFromScript_canBeNull (Editor environment, Script script) {
+autoScriptEditor ScriptEditor_createFromScript_canBeNull (Editor optionalEditor, Script script) {
 	try {
 		for (integer ieditor = 1; ieditor <= theReferencesToAllOpenScriptEditors.size; ieditor ++) {
 			ScriptEditor editor = theReferencesToAllOpenScriptEditors.at [ieditor];
@@ -362,7 +366,7 @@ autoScriptEditor ScriptEditor_createFromScript_canBeNull (Editor environment, Sc
 			}
 		}
 		autostring32 text = MelderFile_readText (& script -> file);
-		autoScriptEditor me = ScriptEditor_createFromText (environment, text.get());
+		autoScriptEditor me = ScriptEditor_createFromText (optionalEditor, text.get());
 		MelderFile_copy (& script -> file, & my file);
 		Thing_setName (me.get(), Melder_fileToPath (& script -> file));
 		return me;

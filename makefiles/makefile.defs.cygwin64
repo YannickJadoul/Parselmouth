@@ -1,20 +1,19 @@
 # File: makefile.defs.cygwin64
 
 # System: Cygwin on Windows
-# Paul Boersma, 8 November 2019
+# Paul Boersma 2021-11-14
 
-CC = gcc
+CC ?= gcc
+CXX ?= g++
+LINK ?= $(CXX)
 
-CXX = g++
-
-COMMONFLAGS = -mwin32 -DUNICODE -D_FILE_OFFSET_BITS=64 -O1
+COMMONFLAGS = -mwin32 -DUNICODE -D_FILE_OFFSET_BITS=64 \
+	-O1
 # Probably implicit: -m64 -mwin32 -march=x86_64 -mtune=generic
 
 CFLAGS = -std=gnu99 $(COMMONFLAGS)
 
 CXXFLAGS = -std=gnu++17 $(COMMONFLAGS) -Wshadow
-
-LINK = g++
 
 EXECUTABLE = Praat.exe
 

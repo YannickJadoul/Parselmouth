@@ -1,6 +1,6 @@
 /* Sound_extensions.cpp
  *
- * Copyright (C) 1993-2019 David Weenink, 2017 Paul Boersma
+ * Copyright (C) 1993-2022 David Weenink, 2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,44 +16,14 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- djmw 20001109 Sound_scale->Vector_scale
- djmw 20020516 GPL header
- djmw 20020523 Removed Sound_read/writeWAVAudioFile
- djmw 20030926 Sound_changeGender
- djmw 20040405 Renamed: Sound_overrideSamplingFrequency
- djmw 20041124 Changed call to Sound_to_Spectrum & Spectrum_to_Sound.
- djmw 20050620 Changed Pitch_HERTZ to Pitch_UNIT_HERTZ
- djmw 20050628 New and extended Sound_createShepardToneComplex that corrects incorrect amplitudes of tones in complex.
- 		(amplitudes were on linear instead of log scale)
- djmw 20060921 Added Sound_to_IntervalTier_detectSilence
- djmw 20061010 Removed crashing bug in Sound_to_IntervalTier_detectSilence.
- djmw 20061201 Interface change: removed minimumPitch parameter from Sound_Pitch_changeGender.
- djmw 20061214 Sound_Pitch_changeSpeaker removed warning.
- djmw 20070103 Sound interface changes
- djmw 20070129 Warning added in changeGender_old.
- djmw 20071022 Possible (bug?) correction in Sound_createShepardToneComplex
- djmw 20071030 Sound_preEmphasis: no pre-emphasis above the Nyquist frequency.
- djmw 20071202 Melder_warning<n>
- djmw 20080122 float -> double
- djmw 20080320 +Sound_fade.
- djmw 20080530 +Sound_localAverage
- pb 20090926 Correction in Sound_Pitch_changeGender_old
- djmw 20091023 Added Sound_drawIntervals
- djmw 20091028 Sound_drawIntervals -> Sound_drawParts + Graphics_function
- djmw 20091126 Sound_drawParts -> Sound_drawWheres
- djmw 20091211 Sound_fade: removed erroneous warning
- djmw 20100318 Cross-correlation, convolution and autocorrelation
- djmw 20100325 -Cross-correlation, convolution and autocorrelation
- djmw 20111227 Sound_trimSilencesAtStartAndEnd and Sound_getStartAndEndTimesOfSounding
- djmw 20120616 Change 0.8 to 1.25 in Sound_Point_Pitch_Duration_to_Sound
-*/
-
 #include "Formula.h"
 #include "Intensity_extensions.h"
 #include "Sound_extensions.h"
 #include "Sound_and_Spectrum.h"
 #include "Spectrum_extensions.h"
+#include "Sound_and_Spectrogram.h"
+#include "Sound_and_TextGrid_extensions.h"
+#include "Spectrogram_extensions.h"
 #include "Sound_to_Intensity.h"
 #include "Sound_to_Pitch.h"
 #include "Vector.h"
@@ -497,7 +467,7 @@ autoSound Sound_readFromOggVorbisFile (MelderFile file) {
 		double xmin = 0.0; // the start time in the file can be > 0!!!
 		const double xmax = numberOfSamples * samplingTime;
 		autoSound me = Sound_create (numberOfChannels, xmin, xmax, numberOfSamples, samplingTime, 0.5 * samplingTime);
-		
+
 		ov_clear (& vorbisFile);
 		rewind (f);
 		
@@ -646,7 +616,7 @@ autoSound Sound_readFromOggVorbisFile (MelderFile file) {
 									integer numberOfSamplesDecoded;
 									/*
 										The output from vorbis_synthesis_pcmout is a multichannel float vector. In stereo, for
-										example, pcmOutFloats[0] is the left channel, and pcmOutFloats[1] is the right.
+										example, pcmOutFloats [0] is the left channel, and pcmOutFloats [1] is the right.
 										The numberOfSamplesDecoded is the size of each channel, where all
 										floats are in the interval [-1.0, 1.0].
 									*/
@@ -687,7 +657,7 @@ autoSound Sound_readFromOggVorbisFile (MelderFile file) {
 			} else {
 				Melder_throw (U"Corrupt header during playback initialization");
 			}
-			/* 
+			/*
 				Clean up this logical bitstream; before exit we see if we're
 				followed by another [chained]
 			*/
@@ -702,12 +672,11 @@ autoSound Sound_readFromOggVorbisFile (MelderFile file) {
 	}
 }
 
-#ifndef _WIN32   // HAVE_OPUS
 autoSound Sound_readFromOggOpusFile (MelderFile file) {
 	try {
 		conststring32 path = Melder_fileToPath (file);
 		int error;
-		OggOpusFile *opusFile = op_open_file (Melder_peek32to8 (path), & error);
+		OggOpusFile *opusFile = op_open_file (Melder_peek32to8_fileSystem (path), & error);
 		if (error != 0) {
 			if (error == OP_EREAD)
 				Melder_throw (U"Reading error.");
@@ -733,7 +702,7 @@ autoSound Sound_readFromOggOpusFile (MelderFile file) {
 		if (samplingFrequency_asLong == 0)
 			samplingFrequency_asLong = 44100;
 		const integer numberOfChannels = head -> channel_count;
-		const double samplingTime = 1.0 / 48000.0; // fixed decodoing rate
+		const double samplingTime = 1.0 / 48000.0; // fixed decoding rate
 		const integer numberOfSamples = op_pcm_total (opusFile, -1);
 		double xmin = 0.0; // the start time in the file can be > 0!!!
 		const double xmax = numberOfSamples * samplingTime;
@@ -748,9 +717,10 @@ autoSound Sound_readFromOggOpusFile (MelderFile file) {
 			
 			integer numberOfSamplesDecoded = op_read_float (opusFile, multiChannelFloats.asArgumentToFunctionThatExpectsZeroBasedArray(), maximumBufferSize, & linkIndex);
 			if (numberOfSamplesDecoded < 0) {
-				if (numberOfSamplesDecoded == OP_HOLE)
-					Melder_casual (U"Warning: Hole in data.");
-				else
+				if (numberOfSamplesDecoded == OP_HOLE) {
+					Melder_casual (U"Warning: Hole in data. Some samples may be skipped. "); // should we throw instead?
+					continue;
+				} else
 					Melder_throw (U"Decoding error.");
 			}
 			if (numberOfSamplesDecoded == 0)
@@ -784,7 +754,6 @@ autoSound Sound_readFromOggOpusFile (MelderFile file) {
 		Melder_throw (U"Sound not read from Ogg Opus file ", MelderFile_messageName (file), U".");
 	}
 }
-#endif		
 
 void Sound_preEmphasis (Sound me, double preEmphasisFrequency) {
 	if (preEmphasisFrequency >= 0.5 / my dx)
@@ -984,7 +953,7 @@ static void NUMgammatoneFilter4 (double *x, double *y, integer n, double centre_
 	double n2 = nr * nr + ni * ni;
 	double gr = tr * nr + ti * ni;
 	double gi = ti * nr - tr * ni;
-	double gain = sqrt (gr * gr + gi * gi) / n2;
+	double gain = hypot (gr, gi) / n2;
 
 	for (integer j = 0; j <= 4; j ++) {
 		a [j] /= gain;
@@ -1163,8 +1132,8 @@ autoSound Sound_createShepardToneComplex (double minimumTime, double maximumTime
 		autoSound me = Sound_create2 (minimumTime, maximumTime, samplingFrequency);
 
 		const double a = frequencyChange_st / 12.0;
-		for (integer i = 1; i <= numberOfComponents; i ++) {
-			double freqi = lowestFrequency * pow (2.0, i - 1 + octaveShiftFraction);
+		for (integer ifreq = 1; ifreq <= numberOfComponents; ifreq ++) {
+			double freqi = lowestFrequency * pow (2.0, ifreq - 1 + octaveShiftFraction);
 			double b1, b2, tswitch;
 			double phase1 = 0, phasejm1 = 0;
 			/*
@@ -1184,24 +1153,24 @@ autoSound Sound_createShepardToneComplex (double minimumTime, double maximumTime
 				endif
 			*/
 			if (frequencyChange_st >= 0) {
-				b1 = i - 1 + octaveShiftFraction;
+				b1 = ifreq - 1 + octaveShiftFraction;
 				b2 = 0.0;
 				tswitch = (numberOfComponents - b1) * octaveTime;
 			} else {
-				freqi *= 2;
-				b1 = i - octaveShiftFraction;
+				freqi *= 2.0;
+				b1 = ifreq - octaveShiftFraction;
 				b2 = numberOfComponents;
 				tswitch = b1 * octaveTime;
 			}
 			for (integer j = 1; j <= my nx; j ++) {
 				const double t = Sampled_indexToX (me.get(), j);
-				double tmod = fmod (t, sweeptime);
+				const double tmod = fmod (t, sweeptime);
 				const double tone = tmod <= tswitch ? b1 + a * tmod : b2 + a * (tmod - tswitch);
 				const double f = lowestFrequency * pow (2, tone);
 				/* double theta = 2 * NUMpi * log2 (f / lowestFrequency) / numberOfComponents; */
 				const double theta = 2 * NUMpi * tone / numberOfComponents;
-				const double level = pow (10, (lmin_db + (lmax_db - lmin_db) * (1 - cos (theta)) / 2) / 20);
-				const double phasej = phasejm1 + 2 * NUMpi * f * my dx; /* Integrate 2*pi*f(t) */
+				const double level = pow (10.0, (lmin_db + (lmax_db - lmin_db) * (1.0 - cos (theta)) / 2.0) / 20.0);
+				const double phasej = phasejm1 + 2.0 * NUMpi * f * my dx; /* Integrate 2*pi*f(t) */
 
 				if (j == 1)
 					phase1 = phasej;
@@ -1308,7 +1277,7 @@ autoSound Sound_createPlompTone (double minimumTime, double maximumTime, double 
 
 void Sounds_multiply (Sound me, Sound thee) {
 	const integer n = std::min (my nx, thy nx );
-	my z.row(1).part(1, n)  *=  thy z.row(1).part(1, n);
+	my z.row (1).part(1, n)  *=  thy z.row (1).part(1, n);
 }
 
 double Sound_power (Sound me) {
@@ -1345,82 +1314,8 @@ double Sound_correlateParts (Sound me, double tx, double ty, double duration) {
 		sxy += xt * yt;
 	}
 	const double denum = sxx * syy;
-	const double rxy = denum > 0.0 ? sxy / sqrt (denum) : 0.0;
+	const double rxy = ( denum > 0.0 ? sxy / sqrt (denum) : 0.0 );
 	return rxy;
-}
-
-double Sound_localMean (Sound me, double fromTime, double toTime) {
-	integer n1 = Sampled_xToNearestIndex (me, fromTime);
-	integer n2 = Sampled_xToNearestIndex (me, toTime);
-	double mean = undefined;
-	if (fromTime <= toTime) {
-		if (n1 < 1)
-			n1 = 1;
-		if (n2 > my nx)
-			n2 = my nx;
-		Melder_assert (n1 <= n2);
-		mean = NUMmean (my z [1]. part (n1, n2));
-	}
-	return mean;
-}
-
-static double interpolate (Sound me, integer i1, integer channel, double level)
-/* Precondition: my z [1] [i1] != my z [1] [i1 + 1]; */
-{
-	const integer i2 = i1 + 1;
-	const double x1 = Sampled_indexToX (me, i1), x2 = Sampled_indexToX (me, i2);
-	const double y1 = my z [channel] [i1], y2 = my z [channel] [i2];
-	return x1 + (x2 - x1) * (y1 - level) / (y1 - y2);   // linear
-}
-
-double Sound_getNearestLevelCrossing (Sound me, integer channel, double position, double level, kSoundSearchDirection searchDirection) {
-	const double *amplitude = & my z [channel] [0];
-	const integer leftSample = Sampled_xToLowIndex (me, position);
-	if (leftSample > my nx)
-		return undefined;
-	const integer rightSample = leftSample + 1;
-	/*
-		Are we already at a level crossing?
-	*/
-	if (leftSample >= 1 && rightSample <= my nx &&
-			(amplitude [leftSample] >= level) != (amplitude [rightSample] >= level)) 
-	{
-		const double crossing = interpolate (me, leftSample, channel, level);
-		return searchDirection == kSoundSearchDirection::LEFT ?
-			( crossing <= position ? crossing : undefined ) :
-			( crossing >= position ? crossing : undefined );
-	}
-	
-	double leftCrossing = undefined;
-	if (searchDirection == kSoundSearchDirection::LEFT || searchDirection == kSoundSearchDirection::NEAREST) {
-		for (integer ileft = leftSample - 1; ileft >= 1; ileft --)
-			if ((amplitude [ileft] >= level) != (amplitude [ileft + 1] >= level)) {
-				leftCrossing = interpolate (me, ileft, channel, level);
-				break;
-			}
-		if (searchDirection == kSoundSearchDirection::LEFT)
-			return leftCrossing;
-	}
-	
-	if (rightSample < 1)
-		return undefined;
-	double rightCrossing = undefined;
-	if (searchDirection == kSoundSearchDirection::RIGHT || searchDirection == kSoundSearchDirection::NEAREST) {
-		for (integer iright = rightSample + 1; iright <= my nx; iright ++)
-			if ((amplitude [iright] >= level) != (amplitude [iright - 1] >= level)) {
-				rightCrossing = interpolate (me, iright - 1, channel, level);
-				break;
-			}
-		if (searchDirection == kSoundSearchDirection::RIGHT)
-			return rightCrossing;
-	}
-
-	return
-		isdefined (leftCrossing) && isdefined (rightCrossing) ?
-				( position - leftCrossing < rightCrossing - position ? leftCrossing : rightCrossing )
-		: isdefined (leftCrossing) ? leftCrossing
-		: isdefined (rightCrossing) ? rightCrossing
-		: undefined;
 }
 
 double Sound_localPeak (Sound me, double fromTime, double toTime, double reference) {
@@ -1577,17 +1472,189 @@ autoSound Sound_changeSpeaker (Sound me, double pitchMin, double pitchMax, doubl
 	}
 }
 
-autoTextGrid Sound_to_TextGrid_detectSilences (Sound me, double minPitch, double timeStep,
-	double silenceThreshold, double minSilenceDuration, double minSoundingDuration,
-	conststring32 silentLabel, conststring32 soundingLabel) {
+static void IntervalTier_addBoundaryUnsorted (IntervalTier me, integer iinterval, double time, conststring32 leftLabel) {
+	Melder_require (time > my xmin && time <= my xmax,
+		U"Time is outside interval.");
+	/*
+		Find interval to split.
+	*/
+	if (iinterval <= 0)
+		iinterval = IntervalTier_timeToLowIndex (me, time);
+	/*
+		Modify end time of left label.
+	*/
+	const TextInterval ti = my intervals.at [iinterval];
+	ti -> xmax = time;
+	TextInterval_setText (ti, leftLabel);
+	if (time != my xmax) {
+		autoTextInterval ti_new = TextInterval_create (time, my xmax, U"");
+		my intervals. addItem_unsorted_move (ti_new.move());
+	}
+}
+
+static autoIntensity Spectrogram_to_Intensity_silenceDetection (Spectrogram me) {
 	try {
-		const bool subtractMeanPressure = true;
-		autoSound filtered = Sound_filter_passHannBand (me, 80.0, 8000.0, 80.0);
-		autoIntensity thee = Sound_to_Intensity (filtered.get(), minPitch, timeStep, subtractMeanPressure);
-		autoTextGrid him = Intensity_to_TextGrid_detectSilences (thee.get(), silenceThreshold, minSilenceDuration, minSoundingDuration, silentLabel, soundingLabel);
+		autoIntensity thee = Intensity_create (my xmin, my xmax, my nx, my dx, my x1);
+		VEC intensityBins = thy z.row (1);
+		/*
+			Add the values in the frequency bins, they are power (~amplitude squared)
+			Don't use frequencies below 80 Hz and above 8000 Hz.
+		*/
+		constexpr double fmin = 80.0, fmax = 8000.0;
+		const integer iFreqFrom = std::max (1_integer, Melder_iroundDown (fmin / my dy));
+		const integer iFreqTo = std::min (Melder_iroundUp (fmax / my dy), my ny);
+		for (integer ifreq = iFreqFrom; ifreq <= iFreqTo; ifreq ++) 			
+			intensityBins  +=  my z.row (ifreq);
+		/*
+			Scale intensity.
+		*/
+		intensityBins  /=  4.0e-10; // threshold of hearing
+		const double halfWindow = 3.2 * 0.01; // as if minimumPitch were 100 Hz
+		autoIntensity him = Intensity_create (my xmin, my xmax, my nx, my dx, my x1);
+		for (integer iframe = 1; iframe <= my nx; iframe ++) {
+			const double xmid = Sampled_indexToX (thee.get(), iframe);
+			const double intensity = Sampled_getMean (thee.get(), xmid - halfWindow, xmid + halfWindow, 1, 0, true);
+			his z [1] [iframe] = (intensity < 1.0e-30 ? -300.0 : 10.0 * log10 (intensity) );
+		}
 		return him;
 	} catch (MelderError) {
-		Melder_throw (me, U": no TextGrid with silences created.");
+		Melder_throw (me, U": could not determine Intensity.");
+	}
+}
+
+autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeStep, double longTermWindow, double shorttimeWindow, double fmin, double fmax, 
+	double lsfmThreshold, double silenceThreshold_dB, double minSilenceDuration, double minSoundingDuration, 
+	conststring32 novoiceActivityLabel, conststring32 voiceActivityLabel) {
+	try {
+		if (timeStep <= 0.0)
+			timeStep = 0.01;
+		Melder_require (fmin < fmax,
+			U"The minimum frequency of the range should be smaller than the maximum frequency.");
+		const double nyquistFrequency = 0.5 / my dx;
+		Melder_clipRight (& fmax, nyquistFrequency);
+		const double effectiveAnalysisWidth = std::max (0.02, 2.0 * timeStep);
+		const double minimumFreqStep = 20.0;
+		const double maximumTimeOversampling = 8.0, maximumFreqOversampling = 8.0;
+		autoSpectrogram spectrogram = Sound_to_Spectrogram (me, effectiveAnalysisWidth, fmax, timeStep, minimumFreqStep,
+			kSound_to_Spectrogram_windowShape::HANNING, maximumTimeOversampling, maximumFreqOversampling);
+		autoMatrix lsfmMatrix = Spectrogram_getLongtermSpectralFlatnessMeasure (spectrogram.get(), longTermWindow, shorttimeWindow, fmin, fmax);
+		autoTextGrid thee = TextGrid_create (my xmin, my xmax, U"VAD", U"");
+		const IntervalTier vadTier = (IntervalTier) thy tiers->at [1];
+		TextInterval_setText (vadTier -> intervals.at [1], voiceActivityLabel);
+		if (minSilenceDuration > my xmax - my xmin)
+			return thee;
+		/*
+			Step 1. Find activity intervals
+		*/
+		VEC lsfm = lsfmMatrix -> z.row (1);
+		conststring32 label;
+		integer iinterval = 1;
+		bool activityInterval = ( lsfm [1] < lsfmThreshold );
+		for (integer index = 2; index <= lsfm.size; index ++) {
+			bool addBoundary = false;
+			if (lsfm [index] < lsfmThreshold) {
+				if (! activityInterval) {   // start of activity
+					addBoundary = true;
+					activityInterval = true;
+					label = novoiceActivityLabel;
+				}
+			} else {
+				if (activityInterval) {   // end of activity
+					addBoundary = true;
+					activityInterval = false;
+					label = voiceActivityLabel;
+				}
+			}
+
+			if (addBoundary) {
+				const double time = Sampled_indexToX (lsfmMatrix.get(), index);
+				IntervalTier_addBoundaryUnsorted (vadTier, iinterval, time, label);
+				iinterval ++;
+			}
+		}
+		/*
+			Set the label of the last interval.
+		*/
+		label = activityInterval ? voiceActivityLabel : novoiceActivityLabel;
+		TextInterval_setText (vadTier -> intervals.at [iinterval], label);
+		vadTier -> intervals. sort ();
+		/*
+			Step 2: remove intervals that are too short.
+			First remove short activity intervals in-between noActivity intervals and
+			then remove the remaining short silence intervals.
+			This works much better than first removing short silence intervals and
+			then short non-silence intervals.
+		*/
+		if (minSoundingDuration > 0.0) {
+			IntervalTier_cutIntervals_minimumDuration (vadTier, voiceActivityLabel, minSoundingDuration);
+			IntervalTier_combineIntervalsOnLabelMatch (vadTier, novoiceActivityLabel);
+		}
+		if (minSilenceDuration > 0.0) {	
+			IntervalTier_cutIntervals_minimumDuration (vadTier, novoiceActivityLabel, minSilenceDuration);
+			IntervalTier_combineIntervalsOnLabelMatch (vadTier, voiceActivityLabel);
+		}
+		/*
+			Step 3: Find silences, because the VAD doesn't
+		*/
+		if (silenceThreshold_dB > -50.0) {
+			/*
+				Step 3: Find silences, because the VAD doesn't
+			*/
+			autoIntensity intensity = Spectrogram_to_Intensity_silenceDetection (spectrogram.get());
+			autoTextGrid silences = Intensity_to_TextGrid_detectSilences (intensity.get(), silenceThreshold_dB, minSilenceDuration, minSoundingDuration, novoiceActivityLabel, voiceActivityLabel);
+			/*
+				Step 4: Union of the two VAD and the silences intervals.
+			*/
+			autoTextGrid unionTextGrid = TextGrid_create (my xmin, my xmax, U"union", U"");
+			integer unionIndex = 1;
+			const double timeMargin = std::max (0.02, std::min (0.02, std::min (minSilenceDuration, minSoundingDuration))); 
+			const IntervalTier silenceTier = (IntervalTier) silences -> tiers -> at [1];
+			const IntervalTier unionTier = (IntervalTier) unionTextGrid -> tiers -> at [1];
+			const integer silenceNumberOfIntervals = silenceTier -> intervals.size;
+			const integer vadNumberOfIntervals = vadTier -> intervals.size;
+			for (integer silenceIndex = 1; silenceIndex <=  silenceNumberOfIntervals; silenceIndex ++) {
+				const TextInterval silenceTextInterval = silenceTier -> intervals.at [silenceIndex];
+				const double silenceStartTime = silenceTextInterval -> xmin;
+				const conststring32 silenceLabel = silenceTextInterval -> text.get();
+				const double silenceEndTime = silenceTextInterval -> xmax;
+				if (Melder_stringMatchesCriterion (silenceLabel, kMelder_string::EQUAL_TO, novoiceActivityLabel, false)) {
+					/*
+						Silent interval. Simply add it.
+					*/
+					IntervalTier_addBoundaryUnsorted (unionTier, unionIndex, silenceEndTime, novoiceActivityLabel);
+					unionIndex ++;
+				} else {
+					/*
+						Non silent interval. Do we have to split it into VAD intervals?
+					*/
+					integer vadIndex = IntervalTier_timeToIndex (vadTier, silenceStartTime);
+					bool unionContinues = true;
+					while (unionContinues && vadIndex <= vadNumberOfIntervals) {
+						const TextInterval vadTextInterval = vadTier -> intervals.at [vadIndex];
+						const conststring32 vadLabel = vadTextInterval -> text.get();
+						const double vadEndTime = vadTextInterval -> xmax;
+						if (vadEndTime > silenceEndTime - timeMargin) {
+							// extends beyound the end 
+							IntervalTier_addBoundaryUnsorted (unionTier, unionIndex, silenceEndTime, vadLabel);
+							unionIndex ++;
+							unionContinues = false;
+						} else {
+							IntervalTier_addBoundaryUnsorted (unionTier, unionIndex, vadEndTime, vadLabel);
+							unionIndex ++;
+						}
+						vadIndex ++;
+					}
+				}
+			}
+			unionTier -> intervals. sort ();
+			IntervalTier_combineIntervalsOnLabelMatch (unionTier, novoiceActivityLabel);
+			TextGrid_addTier_copy (unionTextGrid.get(), silenceTier);
+			TextGrid_addTier_copy (unionTextGrid.get(), vadTier);
+			return unionTextGrid;
+		}
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (me, U": could not detect voice activity.");
 	}
 }
 
@@ -1612,54 +1679,6 @@ void Sound_getStartAndEndTimesOfSounding (Sound me, double minPitch, double time
 	} catch (MelderError) {
 		Melder_throw (U"Sounding times not found.");
 	}
-}
-
-autoSound Sound_IntervalTier_cutPartsMatchingLabel (Sound me, IntervalTier thee, conststring32 match) {
-    try {
-		/*
-			Count samples of the trimmed sound
-		*/
-        integer ixmin, ixmax, numberOfSamples = 0, previous_ixmax = 0;
-		double xmin = my xmin; // start time of output sound is start time of input sound
-        for (integer iint = 1; iint <= thy intervals.size; iint ++) {
-            TextInterval interval = thy intervals.at [iint];
-            if (! Melder_equ (interval -> text.get(), match)) {
-                numberOfSamples += Sampled_getWindowSamples (me, interval -> xmin, interval -> xmax, & ixmin, & ixmax);
-				/*
-					If two contiguous intervals have to be copied then the last sample of previous interval
-					and first sample of current interval might sometimes be equal
-				*/
-				if (ixmin == previous_ixmax)
-					-- numberOfSamples;
-				previous_ixmax = ixmax;
-			} else { // matches label
-				if (iint == 1) // Start time of output sound is end time of first interval
-					xmin = interval -> xmax;
-            }
-        }
-        /*
-			Now copy the parts. The output sound starts at xmin
-		*/
-        autoSound him = Sound_create (my ny, xmin, xmin + numberOfSamples * my dx, numberOfSamples, my dx, xmin + 0.5 * my dx);
-        numberOfSamples = 0;
-		previous_ixmax = 0;
-        for (integer iint = 1; iint <= thy intervals.size; iint ++) {
-            const TextInterval interval = thy intervals.at [iint];
-            if (! Melder_equ (interval -> text.get(), match)) {
-                Sampled_getWindowSamples (me, interval -> xmin, interval -> xmax, & ixmin, & ixmax);
-				if (ixmin == previous_ixmax)
-					ixmin ++;
-				previous_ixmax = ixmax;
-				integer numberOfSamplesToCopy = ixmax - ixmin + 1;
-				his z.part (1, my ny, numberOfSamples + 1, numberOfSamples + numberOfSamplesToCopy) <<= my z.part (1, my ny, ixmin, ixmax);
-                numberOfSamples += numberOfSamplesToCopy;
-            }
-        }
-        Melder_assert (numberOfSamples == his nx);
-        return him;
-    } catch (MelderError) {
-        Melder_throw (me, U": intervals not trimmed.");
-    }
 }
 
 autoSound Sound_trimSilences (Sound me, double trimDuration, bool onlyAtStartAndEnd, double minPitch, double timeStep, double silenceThreshold, double minSilenceDuration, double minSoundingDuration, autoTextGrid *p_tg, conststring32 trimLabel) {
@@ -1742,11 +1761,17 @@ static void PitchTier_modifyRange_old (PitchTier me, double tmin, double tmax, d
 	for (integer i = 1; i <= my points.size; i ++) {
 		const RealPoint point = my points.at [i];
 		const double f = point -> value;
-		if (point -> number < tmin || point -> number > tmax) {
+		if (point -> number < tmin || point -> number > tmax)
 			continue;
-		}
-		const double newf = fmid + (f - fmid) * factor;
-		point -> value = newf < 0.0 ? 0.0 : newf;
+		point -> value = fmid + (f - fmid) * factor;
+		/*
+			This scaling could lead to a negative value.
+			Negative pitch values have no meaning,
+			and even a zero pitch value cannot be handled by Sound_Point_Pitch_Duration_to_Sound.
+			So in such a case we bail out.
+		*/
+		if (point -> value < 0.0)
+			Melder_throw (U"Change gender: your pitch manipulation would lead to negative pitch values.");
 	}
 }
 
@@ -1907,70 +1932,6 @@ void Sound_draw_btlr (Sound me, Graphics g, double tmin, double tmax, double ami
 	}
 }
 
-static void Sound_fadeIn_general (Sound me, int channel, double time, double fadeTime, bool fromStart) {	
-	Melder_require (channel >= 0 && channel <= my ny,
-		U"Invalid channel number: ", channel, U".");
-	const integer channelFrom = channel == 0 ? 1 : channel;
-	const integer channelTo = channel == 0 ? my ny : channel;
-	
-	double startTime = time > my xmax ? my xmax : ( time < my xmin ? my xmin : time );
-	double endTime = startTime + fadeTime;
-	if (startTime > endTime)
-		std::swap (startTime, endTime);
-	
-	Melder_require (startTime < my xmax,
-		U"The start time for fade-in should earlier than the end time of the sound.");
-	
-	const integer numberOfSamplesFade = Melder_ifloor (fabs (fadeTime) / my dx);
-	autoVEC fadeWindow = raw_VEC (numberOfSamplesFade);
-	
-	for (integer isamp = 1; isamp <= numberOfSamplesFade; isamp ++)
-		fadeWindow [isamp] = 0.5 * (1.0 + cos (NUMpi*(1.0 + (isamp - 1.0)/ (numberOfSamplesFade - 1))));
-	
-	const integer startSample = Sampled_xToNearestIndex (me, startTime);
-	integer endSample = startSample + numberOfSamplesFade - 1;
-	endSample = std::min (endSample, my nx);
-	
-	for (integer ichannel = channelFrom; ichannel <= channelTo; ichannel ++) {
-		my z [channel].part (startSample, endSample)  *=  fadeWindow.part (1, endSample - startSample + 1);
-		if (fromStart && startSample > 1)
-			my z [channel].part (1, startSample - 1) <<= 0.0;
-	}
-}
-
-static void Sound_fadeOut_general (Sound me, int channel, double time, double fadeTime, bool toEnd) {
-	Melder_require (channel >= 0 && channel <= my ny,
-		U"Invalid channel number: ", channel, U".");
-	const integer channelFrom = channel == 0 ? 1 : channel;
-	const integer channelTo = channel == 0 ? my ny : channel;
-	
-	double startTime = Melder_clipped (my xmin, time, my xmax);
-	double endTime = startTime + fadeTime;
-	if (startTime > endTime)
-		std::swap (startTime, endTime);
-	
-	Melder_require (endTime > my xmin,
-		U"The end time for fade-out should not be earlier than the start time of the sound."); 
-	
-	const integer numberOfSamplesFade = Melder_ifloor (fabs (fadeTime) / my dx);
-	autoVEC fadeWindow = raw_VEC (numberOfSamplesFade);
-	
-	for (integer isamp = 1; isamp <= numberOfSamplesFade; isamp ++)
-		fadeWindow [isamp] = 0.5 * (1.0 + cos (NUMpi*((isamp - 1.0)/ (numberOfSamplesFade - 1))));
-	
-	const integer startSample = Sampled_xToNearestIndex (me, startTime);
-	integer endSample = startSample + numberOfSamplesFade - 1;
-	endSample = std::min (endSample, my nx);
-	Melder_require (endSample > 0, 
-		U"The fade-out interval should not be located before the start time of the sound.");
-	
-	for (integer ichannel = channelFrom; ichannel <= channelTo; ichannel ++) {
-		my z [channel].part (startSample, endSample)  *=  fadeWindow.part (1, endSample - startSample + 1);
-		if (toEnd && endSample < my nx)
-			my z [channel].part (endSample + 1, my nx) <<= 0.0;
-	}
-}
-
 void Sound_fade (Sound me, int channel, double t, double fadeTime, bool fadeOut, bool fadeGlobal) {
 	integer numberOfSamples = Melder_ifloor (fabs (fadeTime) / my dx);
 	double t1 = t, t2 = t1 + fadeTime;
@@ -2046,10 +2007,10 @@ void Sound_fade (Sound me, int channel, double t, double fadeTime, bool fadeOut,
 		if (fadeGlobal) {
 			if (fadeIn) {
 				if (istart > 1)
-					my z [ichannel].part (1, istart - 1) <<= 0.0;
+					my z [ichannel].part (1, istart - 1)  <<=  0.0;
 			} else {
 				if (iend < my nx)
-					my z [ichannel].part (iend, my nx) <<= 0.0;
+					my z [ichannel].part (iend, my nx)  <<=  0.0;
 			}
 		}
 	}
@@ -2436,18 +2397,6 @@ void Sounds_paintEnclosed (Sound me, Sound thee, Graphics g, MelderColour colour
 	}
 }
 
-autoSound Sound_copyChannelRanges (Sound me, conststring32 ranges) {
-	try {
-		autoINTVEC channels = NUMstring_getElementsOfRanges (ranges, my ny, U"channel", true);
-		autoSound thee = Sound_create (channels.size, my xmin, my xmax, my nx, my dx, my x1);
-		for (integer ichan = 1; ichan <= channels.size; ichan ++)
-			thy z.row (ichan) <<= my z.row (channels [ichan]);
-		return thee;
-	} catch (MelderError) {
-		Melder_throw (me, U": could not extract channels.");
-	}
-}
-
 /* After a script by Ton Wempe */
 static autoSound Sound_reduceNoiseBySpectralSubtraction_mono (Sound me, Sound noise, double windowLength, double noiseReduction_dB) {
 	try {
@@ -2456,20 +2405,33 @@ static autoSound Sound_reduceNoiseBySpectralSubtraction_mono (Sound me, Sound no
 		Melder_require (noise -> ny == 1 && noise -> ny == 1,
 			U"The number of channels in the noise and the sound should equal 1.");
 
-		const double samplingFrequency = 1.0 / my dx;
+		const double samplingFrequency = 1.0 / my dx, nyquistFrequency = 0.5 / my dx;
 		autoSound denoised = Sound_create (1, my xmin, my xmax, my nx, my dx, my x1);
 		autoSound const analysisWindow = Sound_createSimple (1, windowLength, samplingFrequency);
 		const integer windowSamples = analysisWindow -> nx;
+		const integer wantedNumberOfFrequencyBins = windowSamples / 2 + 1;
 		autoSound const noise_copy = Data_copy (noise);
 		Sound_multiplyByWindow (noise_copy.get(), kSound_windowShape::HANNING);
-		const double bandwidth = samplingFrequency / windowSamples;
+		/*
+			The number of bands in the noise Ltas and the number of frequencies in the 
+			sound spectra preferably should to be equal.
+			numberOfBands = Melder_iceiling (nyquistFrequency / bandwidth)
+			wantedNumberOfFrequencyBins = windowSamples / 2 + 1;
+			We can calculate the bandwidth to make numberOfBands == wantedNumberOfFrequencyBins by applying 
+			the following two conditions
+			(1) nyquistFrequency / b > wantedNumberOfFrequencyBins - 1 && (2) nyquistFrequency / b < wantedNumberOfFrequencyBins
+			(1) gives b1 < nyquistFrequency / (wantedNumberOfFrequencyBins - 1)
+			(2) gives b2 > nyquistFrequency / wantedNumberOfFrequencyBins
+			Take b = (b1 + b2) / 2
+		*/
+		double bandwidth = nyquistFrequency * (wantedNumberOfFrequencyBins - 0.5) / (wantedNumberOfFrequencyBins * (wantedNumberOfFrequencyBins - 1));
 		autoLtas const noiseLtas = Sound_to_Ltas (noise_copy.get(), bandwidth);
+		Melder_assert (noiseLtas -> nx == wantedNumberOfFrequencyBins);
 		autoVEC const noiseAmplitudes = raw_VEC (noiseLtas -> nx);
 		for (integer iband = 1; iband <= noiseLtas -> nx; iband ++) {
 			const double powerDensity = 4e-10 * pow (10.0, noiseLtas -> z [1] [iband] / 10.0);
 			noiseAmplitudes [iband] = sqrt (0.5 * powerDensity);
 		}
-		
 		autoMelderProgress progress (U"Remove noise");
 		
 		const double noiseAmplitudeSubtractionScaleFactor = 1.0 - pow (10.0, noiseReduction_dB / 20.0);
@@ -2482,9 +2444,9 @@ static autoSound Sound_reduceNoiseBySpectralSubtraction_mono (Sound me, Sound no
 				break;   // finished
 			const integer nsamples = std::min (my nx - istart + 1, windowSamples);
 			
-			analysisWindow -> z.row (1).part (1, nsamples) <<= my z.row (1).part (istart, istart + nsamples - 1);
+			analysisWindow -> z.row (1).part (1, nsamples)  <<=  my z.row (1).part (istart, istart + nsamples - 1);
 			if (nsamples < windowSamples)
-				analysisWindow -> z.row (1).part (nsamples + 1, windowSamples) <<= 0.0;
+				analysisWindow -> z.row (1).part (nsamples + 1, windowSamples)  <<=  0.0;
 			
 	//		Sound_multiplyByWindow (analysisWindow.get(), kSound_windowShape::HANNING);
 			autoSpectrum const analysisSpectrum = Sound_to_Spectrum (analysisWindow.get(), false);
@@ -2493,7 +2455,7 @@ static autoSound Sound_reduceNoiseBySpectralSubtraction_mono (Sound me, Sound no
 			*/
 			VEC const re = analysisSpectrum -> z.row (1), im = analysisSpectrum -> z.row (2);
 			for (integer ifreq = 1; ifreq <= analysisSpectrum -> nx; ifreq ++) {
-				const double amp = sqrt (re [ifreq] * re [ifreq] + im [ifreq] * im [ifreq]);
+				const double amp = hypot (re [ifreq], im [ifreq]);
 				const double factor = std::max (1.0 - noiseAmplitudeSubtractionScaleFactor * noiseAmplitudes [ifreq] / amp, 1e-6);
 				re [ifreq] *= factor;
 				im [ifreq] *= factor;
@@ -2557,7 +2519,7 @@ autoSound Sound_reduceNoise (Sound me, double noiseStart, double noiseEnd, doubl
 			} else {
 				Melder_fatal (U"Unknown method in Sound_reduceNoise.");
 			}
-			denoised -> z.row (ichannel) <<= denoisedi -> z.row (1);
+			denoised -> z.row (ichannel)  <<=  denoisedi -> z.row (1);
 		}
 		return denoised;
 	} catch (MelderError) {

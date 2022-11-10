@@ -2,7 +2,7 @@
 #define _Table_h_
 /* Table.h
  *
- * Copyright (C) 2002-2011,2012,2014,2015,2017 Paul Boersma
+ * Copyright (C) 2002-2012,2014-2019,2021,2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,11 +24,13 @@ Thing_declare (Interpreter);
 
 #include "Table_def.h"
 
-void Table_initWithColumnNames (Table me, integer numberOfRows, conststring32 columnNames);
-autoTable Table_createWithColumnNames (integer numberOfRows, conststring32 columnNames);
+void Table_initWithColumnNames (Table me, integer numberOfRows, constSTRVEC columnNames);
+autoTable Table_createWithColumnNames (integer numberOfRows, constSTRVEC columnNames);
 void Table_initWithoutColumnNames (Table me, integer numberOfRows, integer numberOfColumns);
 autoTable Table_createWithoutColumnNames (integer numberOfRows, integer numberOfColumns);
 #define Table_create Table_createWithoutColumnNames
+
+void Table_checkSpecifiedColumnNumbersWithinRange (Table me, constINTVECVU const& columnNumbers);
 
 autoTable Tables_append (OrderedOf<structTable>* me);
 void Table_appendRow (Table me);
@@ -44,6 +46,7 @@ void Table_insertColumn (Table me, integer column, conststring32 label /* cattab
 void Table_setColumnLabel (Table me, integer column, conststring32 label /* cattable */);
 integer Table_findColumnIndexFromColumnLabel (Table me, conststring32 label) noexcept;
 integer Table_getColumnIndexFromColumnLabel (Table me, conststring32 columnLabel);
+autoINTVEC Table_columnNamesToNumbers (Table me, constSTRVEC const& columnNames);
 autoINTVEC Table_getColumnIndicesFromColumnLabelString (Table me, conststring32 string);
 integer Table_searchColumn (Table me, integer column, conststring32 value) noexcept;
 
@@ -65,6 +68,7 @@ void Table_setNumericValue (Table me, integer row, integer column, double value)
 void Table_numericize_Assert (Table me, integer columnNumber);
 
 double Table_getQuantile (Table me, integer column, double quantile);
+double Table_getSum (Table me, integer column);
 double Table_getMean (Table me, integer column);
 double Table_getMaximum (Table me, integer icol);
 double Table_getMinimum (Table me, integer icol);
@@ -92,8 +96,8 @@ bool Table_getExtrema (Table me, integer icol, double *minimum, double *maximum)
 void Table_formula (Table me, integer column, conststring32 formula, Interpreter interpreter);
 void Table_formula_columnRange (Table me, integer column1, integer column2, conststring32 expression, Interpreter interpreter);
 
-void Table_sortRows_Assert (Table me, constINTVEC columns);
-void Table_sortRows_string (Table me, conststring32 columns_string);
+void Table_sortRows_Assert (Table me, constINTVECVU const& columns);
+void Table_sortRows (Table me, constSTRVEC columns);
 void Table_randomizeRows (Table me) noexcept;
 void Table_reflectRows (Table me) noexcept;
 
@@ -113,10 +117,10 @@ autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 sepa
 
 autoTable Table_extractRowsWhereColumn_number (Table me, integer column, kMelder_number which, double criterion);
 autoTable Table_extractRowsWhereColumn_string (Table me, integer column, kMelder_string which, conststring32 criterion);
-autoTable Table_collapseRows (Table me, conststring32 factors_string, conststring32 columnsToSum_string,
-	conststring32 columnsToAverage_string, conststring32 columnsToMedianize_string,
-	conststring32 columnsToAverageLogarithmically_string, conststring32 columnsToMedianizeLogarithmically_string);
-autoTable Table_rowsToColumns (Table me, conststring32 factors_string, integer columnToTranspose, conststring32 columnsToExpand_string);
+autoTable Table_collapseRows (Table me, constSTRVEC factors, constSTRVEC columnsToSum,
+	constSTRVEC columnsToAverage, constSTRVEC columnsToMedianize,
+	constSTRVEC columnsToAverageLogarithmically, constSTRVEC columnsToMedianizeLogarithmically);
+autoTable Table_rowsToColumns (Table me, constSTRVEC const& factors_names, conststring32 columnToTranspose, constSTRVEC const& columnsToExpand_names);
 autoTable Table_transpose (Table me);
 
 void Table_checkSpecifiedRowNumberWithinRange (Table me, integer rowNumber);

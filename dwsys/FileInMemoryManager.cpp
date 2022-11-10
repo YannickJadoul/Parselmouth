@@ -47,8 +47,8 @@
 
 Thing_implement (FileInMemoryManager, Daata, 0);
 
-void structFileInMemoryManager :: v_info () {
-	FileInMemoryManager_Parent :: v_info ();
+void structFileInMemoryManager :: v1_info () {
+	FileInMemoryManager_Parent :: v1_info ();
 	MelderInfo_writeLine (U"Number of files: ", files -> size);
 	MelderInfo_writeLine (U"Total number of bytes: ", FileInMemorySet_getTotalNumberOfBytes (files.get()));
 }
@@ -473,7 +473,7 @@ char *FileInMemoryManager_fgets (FileInMemoryManager me, char *str, int num, FIL
 	If some other reading error happens, the function also returns EOF, but sets its error indicator (ferror) instead.
 */
 int FileInMemoryManager_fgetc (FileInMemoryManager me, FILE *stream) {
-	char str[4];
+	char str [4];
 	(void) FileInMemoryManager_fgets (me, str, 1, stream);
 	return FileInMemoryManager_feof (me, stream) ? EOF : static_cast<int> (*str);
 }
@@ -602,7 +602,7 @@ int FileInMemoryManager_ungetc (FileInMemoryManager me, int character, FILE * st
 
 		A format specifier follows this prototype:
 
-		%[flags][width][.precision][length]specifier
+		%[flags][width][.precision][length] specifier
 
 		Where the specifier character at the end is the most significant component, since it defines the type and the interpretation of its corresponding argument:
 		specifier	Output	Example
@@ -631,9 +631,9 @@ int FileInMemoryManager_ungetc (FileInMemoryManager me, int character, FILE * st
 
 		flags	description
 		-	Left-justify within the given field width; Right justification is the default (see width sub-specifier).
-		+	Forces to preceed the result with a plus or minus sign (+ or -) even for positive numbers. By default, only negative numbers are preceded with a - sign.
+		+	Forces to precede the result with a plus or minus sign (+ or -) even for positive numbers. By default, only negative numbers are preceded with a - sign.
 		(space)	If no sign is going to be written, a blank space is inserted before the value.
-		#	Used with o, x or X specifiers the value is preceeded with 0, 0x or 0X respectively for values different than zero.
+		#	Used with o, x or X specifiers the value is preceded with 0, 0x or 0X respectively for values different than zero.
 		Used with a, A, e, E, f, F, g or G it forces the written output to contain a decimal point even if no more digits follow. By default, if no digits follow, no decimal point is written.
 		0	Left-pads the number with zeroes (0) instead of spaces when padding is specified (see width sub-specifier).
 
@@ -705,13 +705,13 @@ void test_FileInMemoryManager_io (void) {
 	Melder_relativePathToFile (path2, file2);
 	autoFileInMemorySet fims = FileInMemorySet_create ();
 
-	FILE *f = fopen (Melder_peek32to8 (file1 -> path), "w");
+	FILE *f = fopen (Melder_peek32to8_fileSystem (file1 -> path), "w");
 	for (integer j = 0; j <= 2; j ++)
 		fputs (Melder_peek32to8 (lines1 [j]), f);
 	
 	fclose (f);
 
-	f = fopen (Melder_peek32to8 (file2 -> path), "w");
+	f = fopen (Melder_peek32to8_fileSystem (file2 -> path), "w");
 	for (integer j = 0; j <= 2; j ++)
 		fputs (Melder_peek32to8 (lines2 [j]), f);
 	
@@ -732,13 +732,13 @@ void test_FileInMemoryManager_io (void) {
 	
 	// fopen test
 	MelderInfo_writeLine (U"\tOpen file ", file1 -> path);
-	FILE * f1 = FileInMemoryManager_fopen (me.get(), Melder_peek32to8 (file1 -> path), "r");
+	FILE * f1 = FileInMemoryManager_fopen (me.get(), Melder_peek32to8_fileSystem (file1 -> path), "r");
 	const integer openFilesIndex1 = _FileInMemoryManager_getIndexInOpenFiles (me.get(), f1);
 	Melder_assert (openFilesIndex1 == 1);
 	MelderInfo_writeLine (U"\t\t ...opened");
 	
 	MelderInfo_writeLine (U"\tOpen file ", file2 -> path);
-	FILE * f2 = FileInMemoryManager_fopen (me.get(), Melder_peek32to8 (file2 -> path), "r");
+	FILE * f2 = FileInMemoryManager_fopen (me.get(), Melder_peek32to8_fileSystem (file2 -> path), "r");
 	const integer openFilesIndex2 = _FileInMemoryManager_getIndexInOpenFiles (me.get(), f2);
 	Melder_assert (openFilesIndex2 == 2);
 	MelderInfo_writeLine (U"\t\t ...opened");
@@ -754,7 +754,7 @@ void test_FileInMemoryManager_io (void) {
 	const long nbuf = 200;
 	
 	FileInMemory fim = (FileInMemory) my files -> at [openFilesIndex1];
-	FILE *file0 = fopen (Melder_peek32to8 (file1 -> path), "r");
+	FILE *file0 = fopen (Melder_peek32to8_fileSystem (file1 -> path), "r");
 	for (integer i = 0; i <= 2; i ++) {
 		char *p0 = fgets (buf0, nbuf, file0);
 		const integer pos0 = ftell (file0);

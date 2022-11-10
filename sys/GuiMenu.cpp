@@ -1,6 +1,6 @@
 /* GuiMenu.cpp
  *
- * Copyright (C) 1992-2005,2007-2020 Paul Boersma,
+ * Copyright (C) 1992-2005,2007-2022 Paul Boersma,
  *               2008 Stefan de Konink, 2010 Franz Brausse, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
@@ -19,12 +19,9 @@
 
 #include "GuiP.h"
 #include "praatP.h"   // BUG
+#include "../kar/UnicodeData.h"
 
 Thing_implement (GuiMenu, GuiThing, 0);
-
-void structGuiMenu :: v_destroy () noexcept {
-	our GuiMenu_Parent :: v_destroy ();   // if (d_widget) { _GuiObject_setUserData (d_widget, nullptr); GuiObject_destroy (d_widget); }
-}
 
 #if gtk
 	static void _guiGtkMenu_destroyCallback (GuiObject widget, gpointer void_me) {
@@ -87,9 +84,9 @@ void structGuiMenu :: v_destroy () noexcept {
 	static NSMenuItem *theMenuBarItems [30];
 	@implementation GuiCocoaApplication
 	/*
-	 * Override sendEvent() to capture navigation keys (Tab and Shift-Tab) as menu shortcuts
-	 * and to capture text-editing keys (Option-Backspace) as menu shortcuts.
-	 */
+		Override sendEvent() to capture navigation keys (Tab and Shift-Tab) as menu shortcuts
+		and to capture text-editing keys (Option-Backspace) as menu shortcuts.
+	*/
 	- (void) sendEvent: (NSEvent *) nsEvent {
 		if ([nsEvent type] == NSKeyDown) {
 			NSString *characters = [nsEvent characters];
@@ -98,7 +95,7 @@ void structGuiMenu :: v_destroy () noexcept {
 				return;
 			}
 			unichar character = [characters characterAtIndex: 0];   // there is now at least one character, so no range exception can be raised
-			if (Melder_isTracing) {
+			if (Melder_isTracingGlobally) {
 				for (NSUInteger i = 0; i < [characters length]; i ++) {
 					unichar kar = [characters characterAtIndex: 0];
 					trace (U"character [", i, U"]: ", (int) kar);
@@ -128,12 +125,12 @@ void structGuiMenu :: v_destroy () noexcept {
 				}
 			} else if (character == NSBackTabCharacter) {
 				/*
-				 * One can get here by pressing Shift-Tab.
-				 *
-				 * But that is not the only way to get here:
-				 * NSBackTabCharacter equals 25, which may be the reason why
-				 * one can get here as well by pressing Ctrl-Y (Y is the 25th letter in the alphabet).
-				 */
+					One can get here by pressing Shift-Tab.
+
+					But that is not the only way to get here:
+					NSBackTabCharacter equals 25, which may be the reason why
+					one can get here as well by pressing Ctrl-Y (Y is the 25th letter in the alphabet).
+				*/
 				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
 				if ([cocoaKeyWindow class] == [GuiCocoaShell class]) {
 					GuiShell shell = (GuiShell) [(GuiCocoaShell *) cocoaKeyWindow   getUserData];
@@ -148,18 +145,18 @@ void structGuiMenu :: v_destroy () noexcept {
 									structGuiMenuItemEvent event { nullptr, false, false, false };
 									window -> d_shiftTabCallback (window -> d_shiftTabBoss, & event);
 								} catch (MelderError) {
-									Melder_flushError (U"Tab key not completely handled.");
+									Melder_flushError (U"Shift-Tab not completely handled.");
 								}
 								return;
 							}
 						} else {
 							/*
-							 * We probably got in this branch by pressing Ctrl-Y.
-							 * People sometimes press that because it means "yank" (= Paste) in Emacs,
-							 * and indeed sending this key combination on, as we do here,
-							 * implements (together with Ctrl-K = "kil" = Cut)
-							 * a special cut & paste operation in text fields.
-							 */
+								We probably got in this branch by pressing Ctrl-Y.
+								People sometimes press that because it means "yank" (= Paste) in Emacs,
+								and indeed sending this key combination on, as we do here,
+								implements (together with Ctrl-K = "kil" = Cut)
+								a special cut & paste operation in text fields.
+							*/
 							// do nothing, i.e. send on
 						}
 					} else {
@@ -168,6 +165,22 @@ void structGuiMenu :: v_destroy () noexcept {
 						*/
 					}
 				}
+			} else if (character == NSEnterCharacter || character == NSNewlineCharacter || character == NSCarriageReturnCharacter) {
+				/*
+					WARNING: do not try to mess with the Mac's handling of the Enter key.
+					Suppose we want to make sure that:
+					1. pressing Enter in a dialog with a multiline text widget would invoke the OK button;
+					2. pressing Enter in a window with a multiline text widget (TextGrid window) would invoke the Enter menu shortcut.
+					Then we might indeed need to overwrite the behaviour of Enter,
+					but not on the present low level, because when the keyboard is e.g. Japanese (Romaji)
+					the Enter key should be used for selection the intended characters;
+					for instance, try typing: "seikou Space Space Space Enter Enter seikou Space Space Enter Enter Enter";
+					only the fifth of these Enters should invoke the menu command.
+					See GuiText_create() for where to capture Enter in an NSTextView,
+					namely in the doCommandBySelector method, where the command is `insertNewline`.
+
+					So do nothing, i.e. send on.
+				*/
 			} else if (character == NSDeleteCharacter) {
 				NSWindow *cocoaKeyWindow = [NSApp keyWindow];
 				if ([cocoaKeyWindow class] == [GuiCocoaShell class]) {
@@ -194,26 +207,49 @@ void structGuiMenu :: v_destroy () noexcept {
 		[super sendEvent: nsEvent];   // the default action: send on
 	}
 	/*
-	 * The delegate methods.
-	 */
+		The delegate methods.
+	*/
 	- (void) applicationWillFinishLaunching: (NSNotification *) note
 	{
+		trace (U"application will finish launching: ", Melder_pointer (self));
+		trace (U"application is running: ", [NSApp isRunning]);
 		(void) note;
 		for (int imenu = 1; imenu <= theNumberOfMenuBarItems; imenu ++) {
 			[[NSApp mainMenu] addItem: theMenuBarItems [imenu]];   // the menu will retain the item...
 			[theMenuBarItems [imenu] release];   // ... so we can release the item
 		}
 	}
+	- (void) applicationDidFinishLaunching: (NSNotification *) note
+	{
+		trace (U"application did finish launching: ", Melder_pointer (self));
+		trace (U"application is running: ", [NSApp isRunning]);
+		(void) note;
+		praatP.hasFinishedLaunching = true;
+	}
 	- (void) application: (NSApplication *) sender openFiles: (NSArray *) fileNames
 	{
+		/*
+			Something crazy:
+
+			The OS will be sending this opening message, even when the files were specified on the command line.
+			If the number of command line options besides --open or --send is odd, then all specified files will be sent here;
+			if the number is even, then all specified files minus the first will be sent here.
+
+			Fortunately, the automatic file-opening message is sent between
+			applicationWillFinishLaunching and applicationDidFinishLaunching.
+		*/
 		(void) sender;
-		if (praatP.userWantsToOpen)
-			return;
+		trace (U"application (", Melder_pointer (self), U", ", Melder_pointer (sender), U") open files: ", [fileNames count]);
+		trace (U"application is running: ", [NSApp isRunning]);
+		const bool filesArrivedHereFromTheCommandLine = ! praatP.hasFinishedLaunching && (praatP.foundTheOpenSwitch || praatP.foundTheSendSwitch);
+		if (filesArrivedHereFromTheCommandLine)
+			return;   // otherwise, those files will be opened twice
 		for (NSUInteger i = 1; i <= [fileNames count]; i ++) {
 			try {
 				NSString *cocoaFileName = [fileNames objectAtIndex: i - 1];
 				structMelderFile file { };
 				Melder_8bitFileRepresentationToStr32_inplace ([cocoaFileName UTF8String], file. path);
+				trace (U"Opening file ", file.path);
 				if (theOpenDocumentCallback)
 					theOpenDocumentCallback (& file);
 			} catch (MelderError) {
@@ -263,8 +299,8 @@ void GuiMenu_empty (GuiMenu me) {
 		trace (U"begin");
 		Melder_assert (my d_widget);
 		/*
-		 * Destroy my widget, but prevent forgetting me.
-		 */
+			Destroy my widget, but prevent forgetting me.
+		*/
 		_GuiObject_setUserData (my d_widget, nullptr);
 		gtk_widget_destroy (GTK_WIDGET (my d_widget));
 
@@ -507,8 +543,24 @@ GuiMenu GuiMenu_createInForm (GuiForm form, int left, int right, int top, int bo
 	my d_cascadeButton -> d_shell = my d_shell;
 	my d_cascadeButton -> d_parent = form;
 	my d_cascadeButton -> d_menu = me.get();
+	static MelderString neatTitle;
+	MelderString_copy (& neatTitle, title);
+	if (neatTitle. length >= 1 && neatTitle. string [neatTitle. length - 1] == U'-') {
+		constexpr conststring32 narrowSpacesForPreciseAlignment =
+				UNITEXT_NARROW_NO_BREAK_SPACE  UNITEXT_NARROW_NO_BREAK_SPACE  U"   ";
+		MelderString_copy (& neatTitle, narrowSpacesForPreciseAlignment, title);
+		neatTitle. string [neatTitle. length - 1] = U' ';
+		/*
+			bikeshed choices for the disclosure sign:
+				UNITEXT_GREATER_THAN_SIGN: the middle way
+				UNITEXT_SMALL_GREATER_THAN_SIGN: a bit thinner
+				UNICODE_HEAVY_RIGHT_POINTING_ANGLE_QUOTATION_MARK_ORNAMENT: a dingbat; really thick and therefore somewhat globally prominent
+				UNITEXT_BLACK_RIGHT_POINTING_TRIANGLE: very globally prominent
+		*/
+		MelderString_append (& neatTitle, UNITEXT_GREATER_THAN_SIGN);
+	}
 	#if gtk
-		my d_cascadeButton -> d_widget = gtk_button_new_with_label (Melder_peek32to8 (title));
+		my d_cascadeButton -> d_widget = gtk_button_new_with_label (Melder_peek32to8 (neatTitle. string));
 		my d_cascadeButton -> v_positionInForm (my d_cascadeButton -> d_widget, left, right, top, bottom, form);
 		gtk_widget_show (GTK_WIDGET (my d_cascadeButton -> d_widget));
 
@@ -526,9 +578,9 @@ GuiMenu GuiMenu_createInForm (GuiForm form, int left, int right, int top, int bo
 	#elif motif
 		my d_xmMenuBar = XmCreateMenuBar (form -> d_widget, "dynamicSubmenuBar", 0, 0);
 		form -> v_positionInForm (my d_xmMenuBar, left, right, top, bottom, form);
-		my d_cascadeButton -> d_widget = XmCreateCascadeButton (my d_xmMenuBar, Melder_peek32to8 (title), nullptr, 0);
+		my d_cascadeButton -> d_widget = XmCreateCascadeButton (my d_xmMenuBar, Melder_peek32to8 (neatTitle. string), nullptr, 0);
 		form -> v_positionInForm (my d_cascadeButton -> d_widget, 0, right - left - 4, 0, bottom - top, form);
-		my d_widget = XmCreatePulldownMenu (my d_xmMenuBar, Melder_peek32to8 (title), nullptr, 0);
+		my d_widget = XmCreatePulldownMenu (my d_xmMenuBar, Melder_peek32to8 (neatTitle. string), nullptr, 0);
 		if (flags & GuiMenu_INSENSITIVE)
 			XtSetSensitive (my d_cascadeButton -> d_widget, False);
 		XtVaSetValues (my d_cascadeButton -> d_widget, XmNsubMenuId, my d_widget, nullptr);
@@ -545,7 +597,7 @@ GuiMenu GuiMenu_createInForm (GuiForm form, int left, int right, int top, int bo
 		[my d_cocoaMenuButton   setImagePosition: NSImageAbove];   // this centers the text
 		[[my d_cocoaMenuButton cell]   setArrowPosition: NSPopUpNoArrow /*NSPopUpArrowAtBottom*/];
 
-        NSString *menuTitle = (NSString*) Melder_peek32toCfstring (title);
+        NSString *menuTitle = (NSString*) Melder_peek32toCfstring (neatTitle. string);
         my d_widget = my d_cocoaMenu = [[GuiCocoaMenu alloc] initWithTitle: menuTitle];
 		[my d_cocoaMenu   setAutoenablesItems: NO];
 		/*
@@ -559,7 +611,7 @@ GuiMenu GuiMenu_createInForm (GuiForm form, int left, int right, int top, int bo
 		*/
 		[my d_cocoaMenuButton   setMenu: my d_cocoaMenu];   // the button will retain the menu...
 		[my d_cocoaMenu   release];   // ... so we can release the menu already (before even returning it!)
-		[my d_cocoaMenuButton   setTitle: (NSString *) Melder_peek32toCfstring (title)];
+		[my d_cocoaMenuButton   setTitle: (NSString *) Melder_peek32toCfstring (neatTitle. string)];
 	#endif
 
 	#if gtk

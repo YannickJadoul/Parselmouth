@@ -1,6 +1,6 @@
 /* Graphics_extensions.cpp
  *
- * Copyright (C) 2012-2020 David Weenink
+ * Copyright (C) 2012-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,15 @@
 #include "enums_getValue.h"
 #include "Graphics_extensions_enums.h"
 
+double Graphics_getFontSizeInsideBox (Graphics g, double widthWC, double heightWCx, double maxNumberOfCharacters_line, double maxNumberOfLines) {
+	const double pointsPerMillimetre = 72.0 / (10.0 * 2.54);
+	const double boxWidth_points = Graphics_dxWCtoMM (g, widthWC) * pointsPerMillimetre;
+	const double boxHeight_points = Graphics_dyWCtoMM (g, heightWCx) * pointsPerMillimetre;
+	return std::min (boxHeight_points / maxNumberOfLines , 2.0 * boxWidth_points / maxNumberOfCharacters_line);
+}
+
 /*
-	Draw a box plot of x[1..x.size]. The vertical center line of the plot
+	Draw a box plot of x [1..x.size]. The vertical center line of the plot
 	is at position 'x'. The rectangle box is 2*w wide, the whisker 2*r.
 	All drawing outside [ymin, ymax] is clipped.
 */
@@ -42,7 +49,7 @@ void Graphics_boxAndWhiskerPlot (Graphics g, constVEC data, double x, double r, 
 	if (data.size < 3)
 		return;
 	/*
-		Sort the data (ascending: x[1] <= ... <= x[ndata]).
+		Sort the data (ascending: x [1] <= ... <= x [ndata]).
 		Get the median (q50) and the upper and lower quartile points
 		(q25 and q75).
 		Now q25 and q75 are the lower and upper hinges, respectively.
@@ -84,7 +91,7 @@ void Graphics_boxAndWhiskerPlot (Graphics g, constVEC data, double x, double r, 
 	while (i <= sorted.size && sorted [i] < lowerOuterFence)
 		Graphics_text (g, x, sorted [i ++], U"o");
 
-	while (i <= sorted.size && sorted[i] < lowerInnerFence)
+	while (i <= sorted.size && sorted [i] < lowerInnerFence)
 		Graphics_text (g, x, sorted [i ++], U"*");
 
 	const double lowerWhisker = sorted [i] < q25 ? sorted [i] : lowerInnerFence;
@@ -214,6 +221,32 @@ void Graphics_lagPlot (Graphics g, constVEC data, double xmin, double xmax, inte
 	}
 	Graphics_setLineType (g, Graphics_DRAWN);
 	Graphics_setFontSize (g, fontSize);
+}
+
+void getGridLayout (integer numberOfItems, integer *out_numberOfRows, integer *out_numberOfColumns) {
+	integer numberOfColumns =  sqrt (numberOfItems);
+	integer numberOfRows = 1 + Melder_roundDown  ((numberOfItems - 1) / numberOfColumns);
+	if (numberOfColumns > numberOfRows)
+		std::swap (numberOfRows, numberOfColumns);
+	if (out_numberOfRows)
+		*out_numberOfRows = numberOfRows;
+	if (out_numberOfColumns)
+		*out_numberOfColumns = numberOfColumns;
+}
+
+/*
+	Implicit:
+		Rectangular grid.
+		Origin (0,0) is at left-bottom, top-right is at (1, 1)
+*/
+integer getGridCellIndex (double x, double y, integer numberOfRows, integer numberOfColumns) {
+	const integer icol = 1 + (int) (x * numberOfColumns);
+	if (icol < 1 || icol > numberOfColumns)
+		return 0;
+	const integer irow = 1 + (int) ((1.0 - y) * numberOfRows);
+	if (irow < 1 || irow > numberOfRows)
+		return 0;
+	return (irow - 1) * numberOfColumns + icol; // left-to-right, top-to-bottom
 }
 
 /* End of file Graphics_extensions.cpp */

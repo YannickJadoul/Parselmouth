@@ -1,6 +1,6 @@
 /* Data.cpp
  *
- * Copyright (C) 1992-2006,2008-2018 Paul Boersma
+ * Copyright (C) 1992-2018,2021,2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,36 +20,12 @@
 
 Thing_implement (Daata, Thing, 0);
 
-structMelderDir Data_directoryBeingRead { };
-
-void structDaata :: v_copy (Daata /* thee */) {
-}
-
-bool structDaata :: v_equal (Daata /* thee */) {
-	return true;
-}   // names of "identical" objects are allowed to be different
-
-bool structDaata :: v_canWriteAsEncoding (int /* encoding */) {
-	return true;
-}
-
-void structDaata :: v_writeText (MelderFile /* openFile */) {
-}
-
-void structDaata :: v_readText (MelderReadText, int /* formatVersion */) {
-}
-
-void structDaata :: v_writeBinary (FILE *) {
-}
-
-void structDaata :: v_readBinary (FILE *, int /*formatVersion*/) {
-}
-
-autoDaata _Data_copy (Daata me) {
+autoDaata _Data_copy (constDaata me) {
 	try {
-		if (! me) return autoDaata();
+		if (! me)
+			return autoDaata();
 		autoDaata thee = Thing_newFromClass (my classInfo).static_cast_move <structDaata> ();
-		my v_copy (thee.get());
+		my v1_copy (thee.get());
 		Thing_setName (thee.get(), my name.get());
 		return thee;
 	} catch (MelderError) {
@@ -58,15 +34,16 @@ autoDaata _Data_copy (Daata me) {
 }
 
 bool Data_equal (Daata me, Daata thee) {
-	if (my classInfo != thy classInfo) return false;   // different class: not equal
+	if (my classInfo != thy classInfo)
+		return false;   // different class: not equal
 	int offset = sizeof (struct structDaata);   // we already compared the methods, and are going to skip the names
 	if (! memcmp ((char *) me + offset, (char *) thee + offset, my classInfo -> size - offset))   // BUG: not necessarily portable
 		return true;   // no shallow differences
-	return my v_equal (thee);
+	return my v1_equal (thee);
 }
 
 bool Data_canWriteAsEncoding (Daata me, int encoding) {
-	return my v_canWriteAsEncoding (encoding);
+	return my v1_canWriteAsEncoding (encoding);
 }
 
 bool Data_canWriteText (Daata me) {
@@ -74,7 +51,7 @@ bool Data_canWriteText (Daata me) {
 }
 
 void Data_writeText (Daata me, MelderFile openFile) {
-	my v_writeText (openFile);
+	my v1_writeText (openFile);
 	if (ferror (openFile -> filePointer))
 		Melder_throw (U"I/O error.");
 }
@@ -145,7 +122,7 @@ bool Data_canWriteBinary (Daata me) {
 }
 
 void Data_writeBinary (Daata me, FILE *f) {
-	my v_writeBinary (f);
+	my v1_writeBinary (f);
 	if (ferror (f))
 		Melder_throw (U"I/O error.");
 }
@@ -175,7 +152,7 @@ bool Data_canReadText (Daata me) {
 
 void Data_readText (Daata me, MelderReadText text, int formatVersion) {
 	try {
-		my v_readText (text, formatVersion);
+		my v1_readText (text, formatVersion);
 		my v_repair ();
 	} catch (MelderError) {
 		Melder_throw (Thing_className (me), U" not read.");
@@ -224,7 +201,7 @@ bool Data_canReadBinary (Daata me) {
 
 void Data_readBinary (Daata me, FILE *f, int formatVersion) {
 	try {
-		my v_readBinary (f, formatVersion);
+		my v1_readBinary (f, formatVersion);
 		if (feof (f))
 			Melder_throw (U"Early end of file.");
 		if (ferror (f))
@@ -308,7 +285,9 @@ autoDaata Data_readFromFile (MelderFile file) {
 	f.close (file);
 	header [nread] = 0;
 
-	/***** 1. Is this file a text file as defined in Data.cpp? *****/
+	/*
+		Possibility 1: is this file a text file as defined in Data.cpp?
+	*/
 
 	if (nread > 11) {
 		int numberOfBytesInFileType = 0;
@@ -327,13 +306,16 @@ autoDaata Data_readFromFile (MelderFile file) {
 		memcpy (headerCopy, header, 100);
 		headerCopy [100] = '\0';
 		for (int i = 0; i < 100; i ++)
-			if (headerCopy [i] == '\0') headerCopy [i] = '\001';
+			if (headerCopy [i] == '\0')
+				headerCopy [i] = '\001';
 		char *p = strstr (headerCopy, "T\001e\001x\001t\001F\001i\001l\001e");
 		if (p && p - headerCopy < nread - 15 && p - headerCopy < 80)
 			return Data_readFromTextFile (file);
 	}
 
-	/***** 2. Is this file a binary file as defined in Data.cpp? *****/
+	/*
+		Possibility 2: is this file a binary file as defined in Data.cpp?
+	*/
 
 	if (nread > 13) {
 		int numberOfBytesInFileType = 0;
@@ -348,25 +330,30 @@ autoDaata Data_readFromFile (MelderFile file) {
 			return Data_readFromBinaryFile (file);
 	}
 
-	/***** 3. Is this file of a type for which a recognizer has been installed? *****/
+	/*
+		Possibility 3: is this file of a type for which a recognizer has been installed?
+	*/
 
 	MelderFile_getParentDir (file, & Data_directoryBeingRead);
 	for (int i = 1; i <= numFileTypeRecognizers; i ++) {
 		autoDaata object = fileTypeRecognizers [i] (nread, header, file);
 		if (object) {
 			if (object -> classInfo == classDaata)   // dummy object? the recognizer could have had a side effect, such as drawing a picture
-				return autoDaata ();
+				return autoDaata ();   // a null return on recognized non-data!
 			return object;
 		}
 	}
 
-	/***** 4. Is this a common text file? *****/
+	/*
+		Possibility 4: is this a common text file?
+	*/
 
 	int i = 0;
 	for (; i < nread; i ++)
 		if (header [i] < 32 || header [i] > 126)   // not ASCII? (note: this expression happens to work correctly for both signed and unsigned char)
 			break;
-	if (i >= nread) return Data_readFromTextFile (file);
+	if (i >= nread)
+		return Data_readFromTextFile (file);
 
 	Melder_throw (U"File ", file, U" not recognized.");
 }

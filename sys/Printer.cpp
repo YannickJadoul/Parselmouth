@@ -1,6 +1,6 @@
 /* Printer.cpp
  *
- * Copyright (C) 1998-2011,2012,2013,2014,2015,2017 Paul Boersma
+ * Copyright (C) 1998-2017,2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,13 +35,15 @@
 #endif
 
 /*
- * Everything must look the same on every printer, including on PDF,
- * so the margins must be constant with respect to the paper, not to the writable page.
- */
-
-/* exported */ struct Printer thePrinter = {
-	kGraphicsPostscript_spots::DEFAULT, kGraphicsPostscript_paperSize::DEFAULT, kGraphicsPostscript_orientation::DEFAULT, false,
-	true, kGraphicsPostscript_fontChoiceStrategy::DEFAULT,
+	Everything must look the same on every printer, including on PDF,
+	so the margins must be constant with respect to the paper, not to the writable page.
+*/
+Printer thePrinter = {
+	kGraphicsPostscript_spots::DEFAULT,
+	kGraphicsPostscript_paperSize::DEFAULT,
+	kGraphicsPostscript_orientation::DEFAULT,
+	false, true,
+	kGraphicsPostscript_fontChoiceStrategy::DEFAULT,
 	600, 5100, 6600,
 	1.0
 };
@@ -69,7 +71,7 @@ void Printer_prefs () {
 		va_start (args, format);
 		(void) stream;
 		vsprintf (theLine.chars + 2, format, args);
-		length = strlen (theLine.chars + 2);
+		length = strlen (theLine.chars + 2);   // TODO: check overflow
 		theLine.shorts [0] = length;
 		if (length > 0 && theLine.chars [length + 1] == '\n') {
 			theLine.chars [length + 1] = '\r';
@@ -268,25 +270,66 @@ int Printer_print (void (*draw) (void *boss, Graphics g), void *boss) {
 			DOCINFO docInfo;
 			DEVMODE *devMode;
 			initPrinter ();
+			#if 1
 			if (! theWinPrint. hDevMode) {
 				memset (& theWinPrint, 0, sizeof (PRINTDLG));
 				theWinPrint. lStructSize = sizeof (PRINTDLG);
 				theWinPrint. Flags = PD_RETURNDEFAULT;
-				if (! PrintDlg (& theWinPrint)) Melder_throw (U"Cannot initialize printer.");
+				if (! PrintDlg (& theWinPrint))
+					Melder_throw (U"Cannot initialize printer.");
 			}
+			#endif
+			#if 0
+			constexpr DWORD PRINTER_NAME_BUFFER_SIZE = 100;
+			WCHAR printerName [PRINTER_NAME_BUFFER_SIZE];
+			DWORD printerNameLengthIncludingTrailingNull = PRINTER_NAME_BUFFER_SIZE;
+			GetDefaultPrinter (printerName, & printerNameLengthIncludingTrailingNull);
+			Melder_casual (U"Printer_print: name ", Melder_peekWto32 (printerName));
+			if (Melder_equ (Melder_peekWto32 (printerName), U"Microsoft Print to PDF")) {
+				HWND hwnd = (HWND) XtWindow (theCurrentPraatApplication -> topShell -> d_xmShell);
+				HANDLE printerHandle;
+				OpenPrinter (printerName, & printerHandle, nullptr);
+				WCHAR deviceName [] = L"device name";
+				LONG devModeSize = DocumentProperties (hwnd, printerHandle, deviceName, nullptr, nullptr, 0);
+				Melder_casual (U"Printer_print: devModeSize ", devModeSize);
+				static BYTE devMode2 [5420];
+				if (DocumentProperties (hwnd, printerHandle, deviceName, (PDEVMODEW) devMode2, nullptr, DM_OUT_BUFFER) < 0)
+					Melder_casual (U"Printer_print: second call to DocumentProperties fails.");
+				((DEVMODE *) devMode2) -> dmFields = DM_PAPERLENGTH | DM_PAPERWIDTH;
+				((DEVMODE *) devMode2) -> dmPaperWidth = 6.0 * thePrinter. resolution;   // attempt to change, but...
+				((DEVMODE *) devMode2) -> dmPaperLength = 4.0 * thePrinter. resolution;   // attempt to change, but...
+				//((DEVMODE *) devMode2) -> dmPaperSize = 0;
+				Melder_casual (U"Printer_print: paper width ", ((DEVMODE *) devMode2) -> dmPaperWidth);
+				Melder_casual (U"Printer_print: paper length ", ((DEVMODE *) devMode2) -> dmPaperLength);
+				if (DocumentProperties (hwnd, printerHandle, deviceName, (PDEVMODEW) devMode2, (PDEVMODEW) devMode2, DM_OUT_BUFFER | DM_IN_BUFFER) < 0)
+					Melder_casual (U"Printer_print: third call to DocumentProperties fails.");
+				Melder_casual (U"Printer_print: paper width ", ((DEVMODE *) devMode2) -> dmPaperWidth);   // ...as of 20210920, this has still been overridden
+				Melder_casual (U"Printer_print: paper length ", ((DEVMODE *) devMode2) -> dmPaperLength);   // ...as of 20210920, this has still been overridden
+				theWinPrint. hDC = CreateDCW (nullptr, L"Microsoft Print to PDF", nullptr, (PDEVMODEW) devMode2);
+				Melder_casual (U"Printer_print: hDC ", Melder_pointer (theWinPrint. hDC));
+				static DEVMODE * devMode3;
+				devMode3 = (PDEVMODEW) devMode2;
+				Melder_casual (U"Printer_print: devMode3 ", Melder_pointer (devMode3));
+				theWinPrint. hDevMode = & devMode3;
+				Melder_casual (U"Printer_print: theWinPrint. hDevMode ", Melder_pointer (theWinPrint. hDevMode));
+				ClosePrinter (printerHandle);
+			}
+			#else
 			if (Melder_backgrounding) {
 				theWinPrint. Flags = PD_RETURNDEFAULT | PD_RETURNDC;
-				if (! PrintDlg (& theWinPrint) || ! theWinPrint. hDC) {
+				if (! PrintDlg (& theWinPrint) || ! theWinPrint. hDC)
 					Melder_throw (U"Cannot print from a script on this computer.");
-				}
 			} else {
 				theWinPrint. Flags &= ~ PD_RETURNDEFAULT;
 				theWinPrint. Flags |= PD_RETURNDC;
-				if (! PrintDlg (& theWinPrint)) return 1;
+				if (! PrintDlg (& theWinPrint))
+					return 1;
 			}
+			#endif
 			theWinDC = theWinPrint. hDC;
 			thePrinter. postScript = thePrinter. allowDirectPostScript &&
 				Escape (theWinDC, QUERYESCSUPPORT, sizeof (int), (LPSTR) & postScriptCode, nullptr);
+			Melder_casual (U"Printer_print: PostScript ", thePrinter. postScript);
 			/*
 			 * The HP colour inkjet printer returns in dmFields:
 			 * 0, 1, 8, 9, 10, 11, 12, 13, 14, 15, 23, 24, 25, 26 = DM_ORIENTATION |
@@ -309,18 +352,18 @@ int Printer_print (void (*draw) (void *boss, Graphics g), void *boss) {
 					{ 215/25.4, 275/25.4 }, { 10, 14 }, { 11, 17 }, { 8.5, 11 }, { 3.875, 8.875 },
 					{ 4.125, 9.5 }, { 4.5, 10.375 } };
 				int paperSize = devMode -> dmPaperSize;
-				if (paperSize <= 0 || paperSize > 21) paperSize = 1;
+				if (paperSize <= 0 || paperSize > 21)
+					paperSize = 1;
 				thePrinter. paperWidth = sizes [paperSize]. width * thePrinter. resolution;
 				thePrinter. paperHeight = sizes [paperSize]. height * thePrinter. resolution;
-				if (devMode -> dmOrientation == DMORIENT_LANDSCAPE) {
-					long dummy = thePrinter. paperWidth;
-					thePrinter. paperWidth = thePrinter. paperHeight;
-					thePrinter. paperHeight = dummy;
-				}
+				if (devMode -> dmOrientation == DMORIENT_LANDSCAPE)
+					std::swap (thePrinter. paperWidth, thePrinter. paperHeight);
 			} else {
 				thePrinter. paperWidth = 1000;
 				thePrinter. paperHeight = 1000;
 			}
+			Melder_casual (U"Printer_print: paper width ", thePrinter. paperWidth);
+			Melder_casual (U"Printer_print: paper length ", thePrinter. paperHeight);
 			EnableWindow ((HWND) XtWindow (theCurrentPraatApplication -> topShell -> d_xmShell), false);
 			SetAbortProc (theWinDC, AbortFunc);
 			memset (& docInfo, 0, sizeof (DOCINFO));

@@ -2,7 +2,7 @@
 #define _Formant_extensions_h_
 /* Formant_extensions.h
  *
- * Copyright (C) 2012-2017 David Weenink
+ * Copyright (C) 2012-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,13 +22,19 @@
  djmw 20121214 Initial version
 */
 
-
 #include "Formant.h"
 #include "IntensityTier.h"
 #include "Spectrogram.h"
+#include "Formant_extensions_enums.h"
 
+autoFormant Formant_extractPart (Formant me, double tmin, double tmax);
+
+autoFormant Formant_readFromHTKParameterFile (MelderFile file);
 
 void Formant_formula (Formant me, double tmin, double tmax, integer formantmin, integer formantmax, Interpreter interpreter, conststring32 expression);
+
+autoVEC Formant_listFormantSlope (Formant me, integer iformant, double tmin, double tmax, kSlopeCurve slopeCurve);
+
 autoIntensityTier Formant_Spectrogram_to_IntensityTier (Formant me, Spectrogram thee, integer iformant);
 
 #endif /* _Formant_extensions_h_ */

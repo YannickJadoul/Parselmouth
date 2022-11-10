@@ -1,6 +1,6 @@
 /* espeakdata_FileInMemory.cpp
  *
- * Copyright (C) David Weenink 2012-2020
+ * Copyright (C) David Weenink 2012-2021
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,12 +30,6 @@
 #include "Table_and_Strings.h"
 
 #include "espeakdata_FileInMemory.h"
-
-autoFileInMemoryManager espeak_ng_FileInMemoryManager;
-autoTable espeakdata_languages_propertiesTable;
-autoTable espeakdata_voices_propertiesTable;
-autoStrings espeakdata_voices_names;
-autoStrings espeakdata_languages_names;
 
 #if 0
 static integer Table_getRownumberOfStringInColumn (Table me, conststring32 string, integer icol) {
@@ -82,7 +76,7 @@ const char * espeakdata_get_voicedata (const char *data, integer ndata, char *bu
 	(*index) ++;   // ppgb 20151020 fix
 	const integer idata = i + 1;
 	buf [i] = '\0';
-	while (-- i >= 0 && ESPEAK_ISSPACE (buf[i]))
+	while (-- i >= 0 && ESPEAK_ISSPACE (buf [i]))
 		buf [i] = 0;
 
 	char *p = strstr (buf, "//");
@@ -125,6 +119,7 @@ static conststring32 get_stringAfterPrecursor_u8 (constvector<unsigned char> con
 	*/
 	autoMelderString regex;
 	const conststring32 text = Melder_peek8to32 (reinterpret_cast<const char *> (text8.asArgumentToFunctionThatExpectsZeroBasedArray()));
+	//const conststring32 text = Melder_peek8to32 ((const char *) & (text8.cells[1]));
 	MelderString_append (& regex, U"^\\s*", precursor, U"\\s+");
 	char32 *p = nullptr;
 	const char32 *pmatch = strstr_regexp (text, regex.string);
@@ -151,7 +146,8 @@ autoTable Table_createAsEspeakVoicesProperties () {
 		constexpr conststring32 criterion = U"/voices/!v/";
 		FileInMemorySet me = espeak_ng_FileInMemoryManager -> files.get();
 		const integer numberOfMatches = FileInMemorySet_findNumberOfMatches_path (me, kMelder_string :: CONTAINS, criterion);
-		autoTable thee = Table_createWithColumnNames (numberOfMatches, U"id name index gender age variant");
+		const conststring32 columnNames [] = { U"id", U"name", U"index", U"gender", U"age", U"variant" };
+		autoTable thee = Table_createWithColumnNames (numberOfMatches, ARRAY_TO_STRVEC (columnNames));
 		integer irow = 0;
 		for (integer ifile = 1; ifile <= my size; ifile ++) {
 			const FileInMemory fim = (FileInMemory) my at [ifile];
@@ -179,7 +175,8 @@ autoTable Table_createAsEspeakVoicesProperties () {
 			}
 		}
 		Melder_assert (irow == numberOfMatches);
-		Table_sortRows_string (thee.get(), U"name");
+		Table_sortRows (thee.get(),
+				autoSTRVEC ({ U"name" }).get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"Table with espeak-ng voice properties not created.");
@@ -191,7 +188,8 @@ autoTable Table_createAsEspeakLanguagesProperties () {
 		constexpr conststring32 criterion = U"/lang/";
 		FileInMemorySet me = espeak_ng_FileInMemoryManager -> files.get();
 		const integer numberOfMatches = FileInMemorySet_findNumberOfMatches_path (me, kMelder_string :: CONTAINS, criterion);
-		autoTable thee = Table_createWithColumnNames (numberOfMatches, U"id name index"); // old: Default English
+		const conststring32 columnNames [] = { U"id", U"name", U"index" };
+		autoTable thee = Table_createWithColumnNames (numberOfMatches, ARRAY_TO_STRVEC (columnNames)); // old: Default English
 		integer irow = 0;
 		for (integer ifile = 1; ifile <= my size; ifile ++) {
 			const FileInMemory fim = (FileInMemory) my at [ifile];
@@ -204,7 +202,8 @@ autoTable Table_createAsEspeakLanguagesProperties () {
 			}
 		}
 		Melder_assert (irow == numberOfMatches);
-		Table_sortRows_string (thee.get(), U"name");
+		Table_sortRows (thee.get(),
+				autoSTRVEC ({ U"name" }).get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"Table with espeak-ng languages not created.");
