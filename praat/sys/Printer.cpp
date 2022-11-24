@@ -87,6 +87,18 @@ void Printer_prefs () {
 //		va_end (args);
 //		return 1;
 //	}
+
+int Printer_postScript_printf (FILE *stream, const char *format, fmt::printf_args args) {
+	auto s = fmt::vsprintf(format, args);
+	auto length = s.size();
+	if (length > 0 && s[length - 1] == '\n') {
+		s[length - 1] = '\r';
+		s += "\n";
+	}
+	s = fmt::sprintf("%c%c%s", ((short) length) >> 8, ((short) length) & 0xFF, s.c_str());
+	Escape (theWinDC, POSTSCRIPT_PASSTHROUGH, s.size(), s.c_str(), nullptr);
+	return 1;
+}
 #endif
 
 #if defined (_WIN32)
