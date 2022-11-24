@@ -1266,7 +1266,7 @@ static void gui_drawingarea_cb_expose (FunctionEditor me, GuiDrawingArea_ExposeE
 		return;   // could be the case in the very beginning
 	if (! my enableUpdates)
 		return;
-	#ifdef WIN32
+	#if motif
 		if (my duringPlay) {
 			GraphicsScreen graphics = (GraphicsScreen) my graphics.get();
 			HDC foregroundContext = graphics -> d_gdiGraphicsContext;
