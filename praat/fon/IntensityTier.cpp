@@ -1,6 +1,6 @@
 /* IntensityTier.cpp
  *
- * Copyright (C) 1992-2005,2007,2008,2010-2012,2015-2018,2020 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2008,2010-2012,2015-2018,2020-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,13 +84,10 @@ autoIntensityTier Intensity_PointProcess_to_IntensityTier (Intensity me, PointPr
 
 autoIntensityTier IntensityTier_PointProcess_to_IntensityTier (IntensityTier me, PointProcess pp) {
 	try {
-		if (my points.size == 0) Melder_throw (U"No intensity points.");
+		if (my points.size == 0)
+			Melder_throw (U"No intensity points.");
 		autoIntensityTier thee = IntensityTier_create (pp -> xmin, pp -> xmax);
-		for (integer i = 1; i <= pp -> nt; i ++) {
-			double time = pp -> t [i];
-			double value = RealTier_getValueAtTime (me, time);
-			RealTier_addPoint (thee.get(), time, value);
-		}
+		RealTier_PointProcess_into_RealTier (me, pp, thee.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U" & ", pp, U": not converted to IntensityTier.");
@@ -102,24 +99,35 @@ autoTableOfReal IntensityTier_downto_TableOfReal (IntensityTier me) {
 }
 
 void Sound_IntensityTier_multiply_inplace (Sound me, IntensityTier intensity) {
-	if (intensity -> points.size == 0) return;
+	if (intensity -> points.size == 0)
+		return;
 	for (integer isamp = 1; isamp <= my nx; isamp ++) {
-		double t = my x1 + (isamp - 1) * my dx;
-		double factor = pow (10, RealTier_getValueAtTime (intensity, t) / 20);
-		for (integer channel = 1; channel <= my ny; channel ++) {
+		const double t = my x1 + (isamp - 1) * my dx;
+		const double factor = pow (10.0, RealTier_getValueAtTime (intensity, t) / 20.0);
+		for (integer channel = 1; channel <= my ny; channel ++)
 			my z [channel] [isamp] *= factor;
-		}
 	}
 }
 
-autoSound Sound_IntensityTier_multiply (Sound me, IntensityTier intensity, int scale) {
+autoSound Sound_IntensityTier_multiply (Sound me, IntensityTier intensity, bool scaleTo09) {
 	try {
 		autoSound thee = Data_copy (me);
 		Sound_IntensityTier_multiply_inplace (thee.get(), intensity);
-		if (scale) Vector_scale (thee.get(), 0.9);
+		if (scaleTo09)
+			Vector_scale (thee.get(), 0.9);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not multiplied with ", intensity, U".");
+	}
+}
+
+autoIntensityTier RealTier_to_IntensityTier (RealTier me) {
+	try {
+		autoIntensityTier thee = Thing_new (IntensityTier);
+		my structRealTier :: v1_copy (thee.get());
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (me, U": not converted to IntensityTier.");
 	}
 }
 

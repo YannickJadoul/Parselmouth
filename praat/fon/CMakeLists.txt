@@ -15,16 +15,11 @@ target_sources(praat PRIVATE
 	Excitation.cpp Cochleagram.cpp Cochleagram_and_Excitation.cpp Excitation_to_Formant.cpp
 	Sound_to_Cochleagram.cpp Spectrum_to_Excitation.cpp
 	VocalTract.cpp VocalTract_to_Spectrum.cpp
-	SoundRecorder.cpp Sound_enhance.cpp VoiceAnalysis.cpp
-	FunctionArea.cpp FunctionEditor.cpp TimeSoundEditor.cpp TimeSoundAnalysisEditor.cpp
-	PitchEditor.cpp SoundEditor.cpp SpectrumEditor.cpp SpectrogramEditor.cpp PointEditor.cpp
-	RealTierArea.cpp RealTierEditor.cpp PitchTierArea.cpp PitchTierEditor.cpp IntensityTierEditor.cpp
-	DurationTierArea.cpp DurationTierEditor.cpp AmplitudeTierEditor.cpp
-	ManipulationEditor.cpp TextGridEditor.cpp FormantGridEditor.cpp
+	Sound_enhance.cpp VoiceAnalysis.cpp
 	WordList.cpp SpellingChecker.cpp
 	FujisakiPitch.cpp
-	ExperimentMFC.cpp RunnerMFC.cpp manual_ExperimentMFC.cpp praat_ExperimentMFC.cpp
-	Photo.cpp Movie.cpp MovieWindow.cpp
+	ExperimentMFC.cpp manual_ExperimentMFC.cpp praat_ExperimentMFC.cpp
+	Photo.cpp Movie.cpp
 	Corpus.cpp
 	manual_Picture.cpp manual_Manual.cpp manual_Script.cpp
 	manual_soundFiles.cpp manual_tutorials.cpp manual_references.cpp

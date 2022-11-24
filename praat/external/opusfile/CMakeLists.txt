@@ -1,7 +1,7 @@
 target_sources(praat PRIVATE
 	opusfile.cpp opusfile_info.cpp opusfile_internal.cpp opusfile_stream.cpp
 	opus/analysis.c opus/mlp.c opus/opus.c opus/opus_decoder.c opus/opus_multistream.c
-	opus/mapping_matrix.c opus/mlp_data.c opus/opus_compare.c opus/opus_multistream_decoder.c
+	opus/mapping_matrix.c opus/mlp_data.c opus/opus_multistream_decoder.c
 	opus/opus_projection_decoder.c opus/repacketizer.c
 	opus/celt/bands.c opus/celt/celt.c opus/celt/celt_encoder.c opus/celt/celt_decoder.c
 	opus/celt/cwrs.c opus/celt/entcode.c opus/celt/entdec.c opus/celt/entenc.c opus/celt/kiss_fft.c

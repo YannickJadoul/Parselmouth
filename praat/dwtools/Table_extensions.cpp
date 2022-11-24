@@ -3142,7 +3142,8 @@ autoTable Table_create_weenink1983 () {
 */
 autoTable Table_create_esposito2006 () {
 	try {
-		autoTable me = Table_createWithColumnNames (10, U"Language Modal Breathy");
+		const conststring32 columnNames [] = { U"Language", U"Modal", U"Breathy" };
+		autoTable me = Table_createWithColumnNames (10, ARRAY_TO_STRVEC (columnNames));
 		Table_setStringValue (me.get(), 1, 1, U"Chong");
 		Table_setNumericValue (me.get(), 1, 2, -1.5);
 		Table_setNumericValue (me.get(), 1, 3, 5);
@@ -3185,7 +3186,8 @@ autoTable Table_create_esposito2006 () {
 */
 autoTable Table_create_ganong1980 () {
 	try {
-		autoTable me = Table_createWithColumnNames (6, U"VOT dash-tash dask-task");
+		const conststring32 columnNames [] = { U"VOT", U"dash-tash", U"dask-task" };
+		autoTable me = Table_createWithColumnNames (6, ARRAY_TO_STRVEC (columnNames));
 		Table_setNumericValue (me.get(), 1, 1, -17.5);
 		Table_setNumericValue (me.get(), 1, 2, 0.98);
 		Table_setNumericValue (me.get(), 1, 3, 0.92);
@@ -3212,8 +3214,9 @@ autoTable Table_create_ganong1980 () {
 
 autoTable FileInMemoryManager_downto_Table (FileInMemoryManager me, bool openFilesOnly) {
 	try {
-		const integer numberOfRows = openFilesOnly ? my openFiles -> size : my files -> size;
-		autoTable thee = Table_createWithColumnNames (numberOfRows, U"path id size position");
+		const integer numberOfRows = ( openFilesOnly ? my openFiles -> size : my files -> size );
+		const conststring32 columnNames [] = { U"path", U"id", U"size", U"position" };
+		autoTable thee = Table_createWithColumnNames (numberOfRows, ARRAY_TO_STRVEC (columnNames));
 		for (integer irow = 1; irow <= numberOfRows; irow ++) {
 			const FileInMemory fim = static_cast <FileInMemory> (openFilesOnly ? my openFiles -> at [irow] : my files -> at [irow]);
 			Table_setStringValue (thee.get(), irow, 1, fim -> d_path.get());
@@ -3397,7 +3400,7 @@ double Table_getMedianAbsoluteDeviation (Table me, integer columnNumber) {
 		autoVEC data = Table_getColumnVector (me, columnNumber);
 		double mad, location;
 		autoVEC workSpace = raw_VEC (data.size);
-		NUMmad (data.get(), & location, true, & mad, workSpace);
+		NUMmad (data.get(), & location, true, & mad, workSpace.get());
 		return mad;
 	} catch (MelderError) {
 		Melder_throw (me, U": cannot compute median absolute deviation of column ", columnNumber, U".");
@@ -3428,7 +3431,7 @@ void Table_reportHuberMStatistics (Table me, integer columnNumber, double k_std,
 		autoVEC data = Table_getColumnVector (me, columnNumber);
 		double location, scale;
 		autoVEC workSpace = raw_VEC (data.size);
-		NUMstatistics_huber (data.get(), & location, true, & scale, true, k_std, tol, maximumNumberOfIterations, workSpace);
+		NUMstatistics_huber (data.get(), & location, true, & scale, true, k_std, tol, maximumNumberOfIterations, workSpace.get());
 		if (out_location)
 			*out_location = location;
 		if (out_scale)
@@ -3504,7 +3507,8 @@ autoTable Table_getOneWayKruskalWallis (Table me, integer column, integer factor
 		if (out_prob)
 			*out_prob = NUMchiSquareQ ((double) kruskalWallis, df);
 
-		autoTable him = Table_createWithColumnNames (numberOfLevels, U"Group(R) Sums(R) Cases");
+		const conststring32 columnNames [] = { U"Group(R)", U"Sums(R)", U"Cases" };
+		autoTable him = Table_createWithColumnNames (numberOfLevels, ARRAY_TO_STRVEC (columnNames));
 		for (integer irow = 1; irow <= numberOfLevels; irow ++) {
 			const SimpleString ss = (SimpleString) levels -> classes->at [irow];
 			Table_setStringValue  (him.get(), irow, 1, ss -> string.get());
@@ -3670,7 +3674,8 @@ autoTable Table_getOneWayAnalysisOfVarianceF (Table me, integer column, integer 
 		const double degreesOfFreedom_within = numberOfData - numberOfLevels;
 		const double degreesOfFreedom_between = numberOfLevels - 1;
 
-		autoTable anova = Table_createWithColumnNames (3, U"Source SS Df MS F P");
+		const conststring32 anovaColumnNames [] = { U"Source", U"SS", U"Df", U"MS", U"F", U"P" };
+		autoTable anova = Table_createWithColumnNames (3, ARRAY_TO_STRVEC (anovaColumnNames));
 		const integer col_s = 1, col_ss = 2, col_df = 3, col_ms = 4, col_f = 5, col_p = 6;
 		const integer row_b = 1, row_w = 2, row_t = 3;
 		Table_setStringValue (anova.get(), row_b, col_s, U"Between");
@@ -3695,15 +3700,16 @@ autoTable Table_getOneWayAnalysisOfVarianceF (Table me, integer column, integer 
 		Table_setNumericValue (anova.get(), row_t, col_ss, sumOfSquares_total);
 		Table_setNumericValue (anova.get(), row_t, col_df, degreesOfFreedom_within + degreesOfFreedom_between);
 
-		autoTable ameans = Table_createWithColumnNames (numberOfLevels, U"Group Mean Cases");
+		const conststring32 ameansColumnNames [] = { U"Group", U"Mean", U"Cases" };
+		autoTable ameans = Table_createWithColumnNames (numberOfLevels, ARRAY_TO_STRVEC (ameansColumnNames));
 		for (integer irow = 1; irow <= numberOfLevels; irow ++) {
 			const SimpleString name = (SimpleString) levels -> classes->at [irow];
 			Table_setStringValue (ameans.get(), irow, 1, name -> string.get());
 			Table_setNumericValue (ameans.get(), irow, 2, factorLevelMeans [irow]);
 			Table_setNumericValue (ameans.get(), irow, 3, factorLevelSizes [irow]);
 		}
-		const integer columns [1] { 2 };   // sort by column 2
-		Table_sortRows_Assert (ameans.get(), constINTVEC (columns, 1));
+		const integer sortingColumns [] = { 2 };   // sort by column 2
+		Table_sortRows_Assert (ameans.get(), ARRAY_TO_INTVEC (sortingColumns));
 		_Table_postHocTukeyHSD (ameans.get(), ms_within, degreesOfFreedom_within, meansDiff, meansDiffProbabilities);
 		if (means)
 			*means = ameans.move();
@@ -3886,7 +3892,8 @@ autoTable Table_getTwoWayAnalysisOfVarianceF (Table me, integer column, integer 
 			*out_levelSizes = asizes.move();
 		}
 
-		autoTable anova = Table_createWithColumnNames (replications ? 5 : 4, U"Source SS Df MS F P");
+		const conststring32 anovaColumnNames [] = { U"Source", U"SS", U"Df", U"MS", U"F", U"P" };
+		autoTable anova = Table_createWithColumnNames (replications ? 5 : 4, ARRAY_TO_STRVEC (anovaColumnNames));
 		const integer col_s = 1, col_ss = 2, col_df = 3, col_ms = 4, col_f = 5, col_p = 6;
 		const integer row_A = 1, row_B = 2, row_AB = 3, row_E = replications ? 4 : 3, row_t = replications ? 5 : 4;
 		Table_setStringValue (anova.get(), row_A, col_s, label_A);
@@ -4284,8 +4291,8 @@ integer Table_getNumberOfRowsWhere (Table me, conststring32 formula, Interpreter
 autoINTVEC Table_listRowNumbersWhere (Table me, conststring32 formula, Interpreter interpreter) {
 	try {
 		const integer numberOfMatches = Table_getNumberOfRowsWhere (me, formula, interpreter);
-		Melder_require (numberOfMatches > 0,
-			U"No rows selected.");
+		if (numberOfMatches == 0)
+			return autoINTVEC();
 		Formula_compile (interpreter, me, formula, kFormula_EXPRESSION_TYPE_NUMERIC, true);
 		Formula_Result result;
 		autoINTVEC selectedRows = zero_INTVEC (numberOfMatches);
@@ -4293,7 +4300,7 @@ autoINTVEC Table_listRowNumbersWhere (Table me, conststring32 formula, Interpret
 		for (integer irow = 1; irow <= my rows.size; irow ++) {
 			Formula_run (irow, 1, & result);
 			if (result. numericResult != 0.0)
-				selectedRows [ ++ n] = irow;
+				selectedRows [++ n] = irow;
 		}
 		Melder_assert (n == numberOfMatches);
 		return selectedRows;
@@ -4621,7 +4628,7 @@ static autoTable Table_SSCPList_extractMahalanobisWhere (Table me, SSCPList thee
 		OrderedOf<structCovariance> covs;
 		for (integer igroup = 1; igroup <= numberOfGroups; igroup ++) {
 			autoCovariance cov = SSCP_to_Covariance (thy at [igroup], 1);
-			SSCP_expandLowerCholeskyInverse (cov.get());
+			SSCP_expandWithLowerCholeskyInverse (cov.get());
 			covs. addItem_move (cov.move());
 		}
 		for (integer i = 1; i <= selectedRows.size; i ++) {
@@ -4675,8 +4682,18 @@ void Table_drawEllipsesWhere (Table me, Graphics g, integer xcolumn, integer yco
 		}
 		autoSSCPList him = TableOfReal_to_SSCPList_byLabel (thee.get());
 		constexpr bool confidence = false;
-		if (ymax == ymin)   // autoscaling
-			SSCPList_getEllipsesBoundingBoxCoordinates (him.get(), numberOfSigmas, confidence, & xmin, & xmax, & ymin, & ymax);
+		if (xmax == xmin || ymax == ymin) {  // autoscaling
+			double xmin_as, xmax_as, ymin_as, ymax_as;
+			SSCPList_getEllipsesBoundingBoxCoordinates (him.get(), numberOfSigmas, confidence, & xmin_as, & xmax_as, & ymin_as, & ymax_as);
+			if (xmax == xmin) {
+				xmax = xmax_as;
+				xmin = xmin_as;
+			}
+			if (ymax == ymin) {
+				ymax = ymax_as;
+				ymin = ymin_as;
+			}
+		}
 		Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 		Graphics_setInner (g);
 		for (integer i = 1; i <= his size; i ++) {
@@ -4701,16 +4718,16 @@ void Table_drawEllipsesWhere (Table me, Graphics g, integer xcolumn, integer yco
 	}
 }
 
-autoTable Table_extractColumnRanges (Table me, conststring32 ranges) {
+autoTable Table_extractColumnsByNumber (Table me, constINTVECVU const& columnNumbers) {
 	try {
+		Table_checkSpecifiedColumnNumbersWithinRange (me, columnNumbers);
 		const integer numberOfRows = my rows.size;
-		autoINTVEC columnRanges = NUMstring_getElementsOfRanges (ranges, my numberOfColumns, U"columnn number", true);
-		autoTable thee = Table_createWithoutColumnNames (numberOfRows, columnRanges.size); 
-		for (integer icol = 1; icol <= columnRanges.size; icol ++)
-			Table_setColumnLabel (thee.get(), icol, my v_getColStr (columnRanges [icol]));
+		autoTable thee = Table_createWithoutColumnNames (numberOfRows, columnNumbers.size);
+		for (integer icol = 1; icol <= columnNumbers.size; icol ++)
+			Table_setColumnLabel (thee.get(), icol, my v_getColStr (columnNumbers [icol]));
 		for (integer irow = 1; irow <= numberOfRows; irow ++) {
-			for (integer icol = 1; icol <= columnRanges.size; icol ++) {
-				const conststring32 value = Table_getStringValue_Assert (me, irow, columnRanges [icol]);
+			for (integer icol = 1; icol <= columnNumbers.size; icol ++) {
+				const conststring32 value = Table_getStringValue_Assert (me, irow, columnNumbers [icol]);
 				Table_setStringValue (thee.get(), irow, icol, value);
 			}
 		}

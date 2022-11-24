@@ -3,7 +3,7 @@ target_sources(praat PRIVATE
 	Cepstrogram.cpp
 	Formant_extensions.cpp
 	FormantModeler.cpp FormantModelerList.cpp
-	FormantPath.cpp FormantPath_to_IntervalTier.cpp FormantPathEditor.cpp
+	FormantPath.cpp FormantPath_to_IntervalTier.cpp FormantPathArea.cpp FormantPathEditor.cpp
 	LineSpectralFrequencies.cpp
 	LPC.cpp LPC_and_Cepstrumc.cpp LPC_and_Formant.cpp LPC_and_LFCC.cpp
 	LPC_and_LineSpectralFrequencies.cpp LPC_and_Polynomial.cpp

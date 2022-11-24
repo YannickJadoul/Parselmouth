@@ -35,7 +35,7 @@
 
 const struct TIMIT_key {
 	const char *timitLabel, *ipaLabel;
-} TIMIT_toIpaTable[] = {
+} TIMIT_toIpaTable [] = {
 	{"", ""},
 	/* Vowels */
 	{"iy", "i"},			/* beet: bcl b IY tcl t */
@@ -128,24 +128,24 @@ const struct TIMIT_key {
 	{"2", "\\'2"}		/* secondary stress marker */
 };
 
-#define TIMIT_NLABELS (sizeof TIMIT_toIpaTable / sizeof TIMIT_toIpaTable[1] - 1)
+#define TIMIT_NLABELS (sizeof TIMIT_toIpaTable / sizeof TIMIT_toIpaTable [1] - 1)
 static const char *TIMIT_DELIMITER = "h#";
 
-static const char *timitLabelToIpaLabel (const char timitLabel[]) {
+static const char *timitLabelToIpaLabel (const char timitLabel []) {
 	for (integer i = 1; i <= TIMIT_NLABELS; i++)
-		if (!strcmp (TIMIT_toIpaTable[i].timitLabel, timitLabel))
-			return TIMIT_toIpaTable[i].ipaLabel;
+		if (!strcmp (TIMIT_toIpaTable [i].timitLabel, timitLabel))
+			return TIMIT_toIpaTable [i].ipaLabel;
 	return timitLabel;
 }
 
-static bool isTimitPhoneticLabel (const char label[]) {
+static bool isTimitPhoneticLabel (const char label []) {
 	for (integer i = 1; i <= TIMIT_NLABELS; i++)
-		if (! strcmp (TIMIT_toIpaTable[i].timitLabel, label))
+		if (! strcmp (TIMIT_toIpaTable [i].timitLabel, label))
 			return true;
 	return false;
 }
 
-static bool isTimitWord (const char label[]) {
+static bool isTimitWord (const char label []) {
 	const char *p = label;
 	for (; *p; p++)
 		if (Melder_isUpperCaseLetter (*p))
@@ -154,12 +154,12 @@ static bool isTimitWord (const char label[]) {
 }
 
 autoDaata TextGrid_TIMITLabelFileRecognizer (integer nread, const char *header, MelderFile file) {
-	char hkruis[3] = "h#", label1[512], label2[512];
+	char hkruis [3] = "h#", label1 [512], label2 [512];
 	int length;
 	bool phnFile = false;
-	long_not_integer it [5]; // because of %ld in sscanf we need an explicit long
-	if (nread < 12 || sscanf (header, "%ld%ld%511s%n\n", & it [1], & it [2], label1, & length) != 3 ||
-		it [1] < 0 || it [2] <= it [1] || sscanf (& header[length], "%ld%ld%511s\n", & it [3], & it [4], label2) != 3 ||
+	integer it [5];
+	if (nread < 12 || sscanf (header, "%td%td%511s%n\n", & it [1], & it [2], label1, & length) != 3 ||
+		it [1] < 0 || it [2] <= it [1] || sscanf (& header [length], "%ld%ld%511s\n", & it [3], & it [4], label2) != 3 ||
 		it [4] <= it [3]) {
 		/*
 			20120512 djmw removed the extra "it [3] < it [2]" check, because otherwise train/dr7/mdlm0/si1864.wrd cannot be read
@@ -222,15 +222,31 @@ autoTextGrid TextGrid_readFromTIMITLabelFile (MelderFile file, bool phnFile) {
 		autoTextGrid me = TextGrid_create (0.0, 3600.0, U"wrd", 0);
 		const IntervalTier timit = (IntervalTier) my tiers->at [1];
 		integer linesRead = 0;
-		char line[200], label[200];
+		char line [200], label [200];
 		while (fgets (line, 199, f)) {
-			long_not_integer it1, it2; // because of %ld in sscanf we need an explicit long
-			linesRead++;
-			Melder_require (sscanf (line, "%ld%ld%199s", & it1, & it2, label) == 3,
+			integer it1, it2;
+			linesRead ++;
+			Melder_require (sscanf (line, "%td%td%199s", & it1, & it2, label) == 3,
 				U"Incorrect number of items.");
-			Melder_require (it1 >= 0 && it1 < it2,
-				U"Incorrect time at line ", linesRead);
-			
+			if (it1 == it2) {
+				Melder_warning (U"File \"", MelderFile_messageName (file), U"\": Label \"", Melder_peek8to32 (label),
+					U"\" on line ", linesRead, U" was skipped because the start time and the end time were equal.");
+				/*
+					For the following .wrd files this occurs once per file:
+					train/dr3/makr0/si1982
+					train/dr3/mhjb0/sa2
+					train/dr5/mmcc0/sx348
+					train/dr6/meal0/sa2
+					train/dr6/mesj0/si2039
+					train/dr7/fmkc0/sx352
+					train/dr7/mrem0/sx61
+					train/dr7/mvrw0/sx315
+					test/dr6/mjfc0/sx138
+				*/
+			} else {
+				Melder_require (it1 >= 0 && it1 < it2,
+					U"Incorrect time at line ", linesRead);
+			}
 			xmax = it2 * dt;
 			double xmin = it1 * dt;
 			integer ni = timit -> intervals.size - 1;
@@ -249,6 +265,9 @@ autoTextGrid TextGrid_readFromTIMITLabelFile (MelderFile file, bool phnFile) {
 				xmin = interval -> xmax;
 				Melder_warning (U"File \"", MelderFile_messageName (file),
 					U"\": Start time set to previous end time for label at line ", linesRead, U".");
+				/*
+					This warning occurs hundreds of time for the .wrd files
+				*/
 			}
 			/*
 				Standard: new TextInterval
@@ -574,7 +593,7 @@ void IntervalTier_cutIntervals_minimumDuration (IntervalTier me, conststring32 l
 	}
 }
 
-void IntervalTier_cutIntervalsOnLabelMatch (IntervalTier me, conststring32 label) {
+void IntervalTier_combineIntervalsOnLabelMatch (IntervalTier me, conststring32 label) {
 	integer iinterval = 1;
 	while (iinterval < my intervals.size) {
 		const TextInterval thisInterval = my intervals.at [iinterval];

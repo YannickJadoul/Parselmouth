@@ -59,7 +59,7 @@ autoCepstrum Spectrum_to_Cepstrum (Spectrum me) {
 		}
 		autoSound cepstrum = Spectrum_to_Sound (dBspectrum.get());
 		autoCepstrum thee = Cepstrum_create (0.5 / my dx, my nx);
-		thy z.row (1) <<= cepstrum -> z.row(1).part (1, thy nx);
+		thy z.row (1)  <<=  cepstrum -> z.row (1).part (1, thy nx);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to Sound.");
@@ -76,7 +76,7 @@ autoSpectrum Cepstrum_to_Spectrum (Cepstrum me) { //TODO power cepstrum
 
 		const VEC re = thy z.row (1), im = thy z.row (2);
 		for (integer i = 1; i <= thy nx; i ++) {
-			re [i] =  exp (0.5 * re [i]);   // i.e., sqrt (exp(re [i]))
+			re [i] = exp (0.5 * re [i]);   // i.e., sqrt (exp(re [i]))
 			im [i] = 0.0;
 		}
 		return thee;
@@ -100,7 +100,7 @@ autoCepstrum Spectrum_to_Cepstrum_hillenbrand (Spectrum me) {
 		NUMfft_forward (& fftTable, amp.get());
 		
 		for (integer i = 1; i <= my nx; i ++) {
-			double val = amp [i] / numberOfSamples;// scaling 1/n because ifft(fft(1))= n;
+			const double val = amp [i] / numberOfSamples;// scaling 1/n because ifft(fft(1))= n;
 			thy z [1] [i] = val * val; // power cepstrum
 		}
 		return thee;

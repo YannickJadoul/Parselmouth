@@ -1,6 +1,6 @@
 /* ERPTier.cpp
  *
- * Copyright (C) 2011-2012,2014-2018 Paul Boersma
+ * Copyright (C) 2011-2012,2014-2019,2021,2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ static autoERPTier EEG_PointProcess_to_ERPTier (EEG me, PointProcess events, dou
 		Function_init (thee.get(), fromTime, toTime);
 		thy numberOfChannels = my numberOfChannels - EEG_getNumberOfExtraSensors (me);
 		Melder_assert (thy numberOfChannels > 0);
-		thy channelNames = newSTRVECcopy (my channelNames.get());
+		thy channelNames = copy_STRVEC (my channelNames.part (1, thy numberOfChannels));
 		integer numberOfEvents = events -> nt;
 		double soundDuration = toTime - fromTime;
 		double samplingPeriod = my sound -> dx;
@@ -235,8 +235,8 @@ autoERP ERPTier_extractERP (ERPTier me, integer eventNumber) {
 		ERPPoint event = my points.at [eventNumber];
 		Melder_assert (event -> erp -> ny == my numberOfChannels);
 		autoERP thee = Thing_new (ERP);
-		event -> erp -> structSound :: v_copy (thee.get());
-		thy channelNames = newSTRVECcopy (my channelNames.get());
+		event -> erp -> structSound :: v1_copy (thee.get());
+		thy channelNames = copy_STRVEC (my channelNames.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": ERP not extracted.");
@@ -251,7 +251,7 @@ autoERP ERPTier_to_ERP_mean (ERPTier me) {
 		ERPPoint firstEvent = my points.at [1];
 		Melder_assert (firstEvent -> erp -> ny == my numberOfChannels);
 		autoERP mean = Thing_new (ERP);
-		firstEvent -> erp -> structSound :: v_copy (mean.get());
+		firstEvent -> erp -> structSound :: v1_copy (mean.get());
 		Melder_assert (mean -> ny == my numberOfChannels);
 		for (integer ievent = 2; ievent <= numberOfEvents; ievent ++) {
 			ERPPoint event = my points.at [ievent];
@@ -259,7 +259,7 @@ autoERP ERPTier_to_ERP_mean (ERPTier me) {
 			mean -> z.all()  +=  event -> erp -> z.all();
 		}
 		mean -> z.all()  *=  1.0 / numberOfEvents;
-		mean -> channelNames = newSTRVECcopy (my channelNames.get());
+		mean -> channelNames = copy_STRVEC (my channelNames.get());
 		return mean;
 	} catch (MelderError) {
 		Melder_throw (me, U": mean not computed.");
@@ -276,7 +276,7 @@ autoERPTier ERPTier_extractEventsWhereColumn_number (ERPTier me, Table table, in
 		autoERPTier thee = Thing_new (ERPTier);
 		Function_init (thee.get(), my xmin, my xmax);
 		thy numberOfChannels = my numberOfChannels;
-		thy channelNames = newSTRVECcopy (my channelNames.get());
+		thy channelNames = copy_STRVEC (my channelNames.get());
 		for (integer ievent = 1; ievent <= my points.size; ievent ++) {
 			ERPPoint oldEvent = my points.at [ievent];
 			TableRow row = table -> rows.at [ievent];
@@ -305,7 +305,7 @@ autoERPTier ERPTier_extractEventsWhereColumn_string (ERPTier me, Table table,
 		autoERPTier thee = Thing_new (ERPTier);
 		Function_init (thee.get(), my xmin, my xmax);
 		thy numberOfChannels = my numberOfChannels;
-		thy channelNames = newSTRVECcopy (my channelNames.get());
+		thy channelNames = copy_STRVEC (my channelNames.get());
 		for (integer ievent = 1; ievent <= my points.size; ievent ++) {
 			ERPPoint oldEvent = my points.at [ievent];
 			TableRow row = table -> rows.at [ievent];

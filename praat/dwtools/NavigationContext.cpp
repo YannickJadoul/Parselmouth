@@ -1,6 +1,6 @@
 /* NavigationContext.cpp
  *
- * Copyright (C) 2020 David Weenink
+ * Copyright (C) 2020-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Distributions_and_Strings.h"
 #include "NavigationContext.h"
 #include "NUM2.h"
 
@@ -48,189 +49,214 @@
 
 Thing_implement (NavigationContext, Daata, 0);
 
-/*
-	1. To determine if an item is in a set, we can simply start to test whether it is equal to the first element
-		if so we are done. If not check the second element etc until we get a match (or not).
-	2. To determine whether an item is not in the set, we need to reverse the test until it fails.
-*/
-static bool STRVEChasMatch (constSTRVEC const& labels, kMelder_string criterion, conststring32 label) {
-	if (criterion == kMelder_string :: EQUAL_TO                   || criterion == kMelder_string :: CONTAINS ||
-		criterion == kMelder_string :: STARTS_WITH                || criterion == kMelder_string :: ENDS_WITH ||
-		criterion == kMelder_string :: CONTAINS_WORD              || criterion == kMelder_string :: CONTAINS_WORD_STARTING_WITH || 
-		criterion == kMelder_string :: CONTAINS_WORD_ENDING_WITH  || criterion == kMelder_string :: CONTAINS_INK ||
-		criterion == kMelder_string :: CONTAINS_INK_STARTING_WITH || criterion == kMelder_string :: CONTAINS_INK_ENDING_WITH) {
+static bool STRVEChasMatch (constSTRVEC const& labels, conststring32 label, kMelder_string criterion, kMatchBoolean matchBoolean) {
+	bool match = true;
+	if (matchBoolean == kMatchBoolean::OR_) {
 		for (integer istring = 1; istring <= labels.size; istring ++)
 			if (Melder_stringMatchesCriterion (label, criterion, labels [istring], true))
 				return true;
-	} else {
+		match = false;
+	} else { // matchBoolean == kMatchBoolean::AND_
 		for (integer istring = 1; istring <= labels.size; istring ++)
-			if (! Melder_stringMatchesCriterion (label, criterion, labels [istring], true))
+			if (! (match = match && Melder_stringMatchesCriterion (label, criterion, labels [istring], true)))
 				return false;
-		return true;
+		match = true;
 	}
-	return false;
+	return match;
 }
 
-void structNavigationContext :: v_info () {
-	MelderInfo_writeLine (U"Navigation:");
-	if (navigationLabels) {
-		MelderInfo_writeLine (U"\tName: ", navigationLabels -> name.get());
-		MelderInfo_writeLine (U"\tNumber of labels: ", navigationLabels -> strings.size);
+void structNavigationContext :: v1_info () {
+	// skipping parent classes
+	if (topicLabels && topicLabels -> strings.size > 0) {
+		MelderInfo_writeLine (U"\tTopic criterion: ", kMelder_string_getText (topicCriterion));
+		MelderInfo_writeLine (U"\tTopic match boolean: ", kMatchBoolean_getText (topicMatchBoolean));
+		MelderInfo_writeLine (U"\tNumber of Topic labels: ", topicLabels -> strings.size);
 	} else {
-		MelderInfo_writeLine (U"\tNo navigation labels defined");
+		MelderInfo_writeLine (U"\tNo Topic labels defined");
 	}
-	if (leftContextLabels) {
-		MelderInfo_writeLine (U"\tLeft context name: ", leftContextLabels -> name.get());
-		MelderInfo_writeLine (U"\tLeft criterion: ", kMelder_string_getText (leftContextCriterion));
-		MelderInfo_writeLine (U"\tNumber of left context labels: ", leftContextLabels -> strings.size);
+	if (beforeLabels && beforeLabels -> strings.size > 0) {
+		MelderInfo_writeLine (U"\tBefore criterion: ", kMelder_string_getText (beforeCriterion));
+		MelderInfo_writeLine (U"\tBefore match boolean: ", kMatchBoolean_getText (beforeMatchBoolean));
+		MelderInfo_writeLine (U"\tNumber of Before labels: ", beforeLabels -> strings.size);
 	} else {
-		MelderInfo_writeLine (U"\tNo left context navigation labels defined");
+		MelderInfo_writeLine (U"\tNo Before labels defined");
 	}
-	if (rightContextLabels) {
-		MelderInfo_writeLine (U"\tRight context name: ", rightContextLabels -> name.get());
-		MelderInfo_writeLine (U"\tRight criterion: ", kMelder_string_getText (rightContextCriterion));
-		MelderInfo_writeLine (U"\tNumber of right context labels: ", rightContextLabels -> strings.size);
+	if (afterLabels && afterLabels -> strings.size > 0) {
+		MelderInfo_writeLine (U"\tAfter criterion: ", kMelder_string_getText (afterCriterion));
+		MelderInfo_writeLine (U"\tAfter match boolean: ", kMatchBoolean_getText (afterMatchBoolean));
+		MelderInfo_writeLine (U"\tNumber of After labels: ", afterLabels -> strings.size);
 	} else {
-		MelderInfo_writeLine (U"\tNo right context navigation labels defined");
+		MelderInfo_writeLine (U"\tNo After labels defined");
 	}
-	MelderInfo_writeLine (U"\tMatch context: ", kContext_combination_getText (combinationCriterion));
-	MelderInfo_writeLine (U"\tMatch context only: ", ( matchContextOnly ? U"yes" : U"no" ));
+	MelderInfo_writeLine (U"\tBefore and After use: ", kContext_combination_getText (combinationCriterion));
+	MelderInfo_writeLine (U"\tExclude topic match: ", ( excludeTopicMatch ? U"yes" : U"no" ));
 }
 
-void NavigationContext_init (NavigationContext me) {
-	my navigationLabels = Thing_new (Strings);
-	my leftContextLabels = Thing_new (Strings);
-	my rightContextLabels = Thing_new (Strings);
-}
-
-autoNavigationContext NavigationContext_createNonEmptyItemNavigation () {
+autoNavigationContext NavigationContext_createTopicOnly (
+	constSTRVEC const& topicLabels, kMelder_string topicCriterion, kMatchBoolean topicMatchBoolean)
+{
 	try {
-		autoNavigationContext me = Thing_new (NavigationContext);
-		NavigationContext_init (me.get());
-		Strings_insert (my navigationLabels.get(), 0, U"");
-		my navigationCriterion = kMelder_string::NOT_EQUAL_TO;
-		my combinationCriterion = kContext_combination::NO_LEFT_AND_NO_RIGHT;
+		autoNavigationContext me = NavigationContext_create (
+			topicLabels, topicCriterion, topicMatchBoolean,
+			{ }, kMelder_string::EQUAL_TO, kMatchBoolean::OR_,
+			{ }, kMelder_string::EQUAL_TO, kMatchBoolean::OR_,
+			kContext_combination::NO_BEFORE_AND_NO_AFTER, false
+		);
 		return me;
 	} catch (MelderError) {
-		Melder_throw (U"TextGridNavigationContext not created.");
+		Melder_throw (U"NavigationContext could not be created for Topic.");
 	}
 }
 
-autoNavigationContext Strings_to_NavigationContext (Strings me, kMelder_string navigationCriterion) {
+autoNavigationContext NavigationContext_createBeforeAndTopic (
+	constSTRVEC const& topicLabels, kMelder_string topicCriterion, kMatchBoolean topicMatchBoolean,
+	constSTRVEC const& beforeLabels, kMelder_string beforeCriterion, kMatchBoolean beforeMatchBoolean)
+{
 	try {
-		autoNavigationContext thee = Thing_new (NavigationContext);
-		NavigationContext_init (thee.get());
-		thy navigationLabels = Data_copy (me);
-		Thing_setName (thy navigationLabels.get(), my name.get());
-		thy navigationCriterion = navigationCriterion;
-		thy combinationCriterion = kContext_combination::NO_LEFT_AND_NO_RIGHT;
-		return thee;
+		autoNavigationContext me = NavigationContext_create (
+			topicLabels, topicCriterion, topicMatchBoolean,
+			beforeLabels, beforeCriterion, kMatchBoolean::OR_,
+			{ }, kMelder_string::EQUAL_TO, kMatchBoolean::OR_,
+			kContext_combination::BEFORE, false
+		);
+		return me;
 	} catch (MelderError) {
-		Melder_throw (me, U": could not convert to NavigationContext.");
+		Melder_throw (U"NavigationContext could not be created for Topic.");
 	}
 }
 
-autoNavigationContext NavigationContext_create (conststring32 name, conststring32 navigationName, conststring32 navigation_string, kMelder_string navigationCriterion, conststring32 leftContextName, conststring32 leftContext_string, kMelder_string leftContextCriterion, conststring32 rightContextName, conststring32 rightContext_string, kMelder_string rightContextCriterion, kContext_combination combinationCriterion, bool contextOnly) {
+static autoStrings Strings_createAsUniqueTokens (constSTRVEC strings, conststring32 where) {
+	autoStrings me = Strings_createFromSTRVEC (strings);
+	autoStrings thee = Data_copy (me.get());
+	Strings_sort (thee.get());
+	for (integer istring = 2; istring <= thy numberOfStrings; istring ++)
+		Melder_require (! Melder_equ (thy strings [istring].get(), thy strings [istring - 1].get()),
+			U"The ", where, U" labels should be unique, however \"", thy strings [istring].get(), U"\" occurs more than once.");
+	return me;
+}
+
+autoNavigationContext NavigationContext_create (
+	constSTRVEC const& topicLabels, kMelder_string topicCriterion, kMatchBoolean topicMatchBoolean,
+	constSTRVEC const& beforeLabels, kMelder_string beforeCriterion, kMatchBoolean beforeMatchBoolean,
+	constSTRVEC const& afterLabels, kMelder_string afterCriterion, kMatchBoolean afterMatchBoolean,
+	kContext_combination combinationCriterion, bool excludeTopicMatch)
+{
 	try {
+		Melder_require (! (excludeTopicMatch && combinationCriterion == kContext_combination::NO_BEFORE_AND_NO_AFTER), 
+			U"You should not exclude Before & After & Topic from matching. One of the three should be included.");
 		autoNavigationContext me = Thing_new (NavigationContext);
-		NavigationContext_init (me.get());
-		my navigationLabels = Strings_createAsTokens (navigation_string, U" ");
-		Thing_setName (my navigationLabels.get(), navigationName);
-		my navigationCriterion = navigationCriterion;
-		my leftContextLabels = Strings_createAsTokens (leftContext_string, U" ");
-		Thing_setName (my leftContextLabels.get(), leftContextName);
-		my leftContextCriterion = leftContextCriterion;
-		my rightContextLabels = Strings_createAsTokens (rightContext_string, U" ");
-		Thing_setName (my rightContextLabels.get(), rightContextName);
-		my rightContextCriterion = rightContextCriterion;
+		my topicLabels = Strings_createAsUniqueTokens (topicLabels, U"Topic");
+		my topicCriterion = topicCriterion;
+		my topicMatchBoolean = topicMatchBoolean;
+		my beforeLabels = Strings_createAsUniqueTokens (beforeLabels, U"Before");
+		my beforeCriterion = beforeCriterion;
+		my beforeMatchBoolean = beforeMatchBoolean;
+		my afterLabels = Strings_createAsUniqueTokens (afterLabels, U"After");
+		my afterCriterion = afterCriterion;
+		my afterMatchBoolean = afterMatchBoolean;
 		my combinationCriterion = combinationCriterion;
-		my matchContextOnly = contextOnly;
+		if (combinationCriterion == kContext_combination::BEFORE && beforeLabels.size == 0)
+			Strings_insert (my beforeLabels.get(), 1, U"");
+		else if (combinationCriterion == kContext_combination::AFTER && afterLabels.size == 0)
+			Strings_insert (my afterLabels.get(), 1, U"");
+		else if (combinationCriterion  == kContext_combination::BEFORE_AND_AFTER || combinationCriterion == kContext_combination::BEFORE_OR_AFTER_NOT_BOTH ||
+			combinationCriterion == kContext_combination::BEFORE_OR_AFTER_OR_BOTH) {
+			if (beforeLabels.size == 0)
+				Strings_insert (my beforeLabels.get(), 1, U"");
+			if (afterLabels.size == 0)
+				Strings_insert (my afterLabels.get(), 1, U"");
+		}
+		my excludeTopicMatch = excludeTopicMatch;
 		return me;
 	} catch (MelderError) {
-		Melder_throw (U"NavigationContext could not be created from vowels string.");
+		Melder_throw (U"NavigationContext could not be created.");
 	}
 }
 
-void NavigationContext_modifyNavigationLabels (NavigationContext me, Strings labels, kMelder_string criterion) {
+static void Strings_checkIfUniqueLabels (Strings me) {
+	autoDistributions distributions = Strings_to_Distributions (me);
+	Melder_require (distributions -> numberOfRows != my numberOfStrings,
+		U"There should be no duplicate labels.");
+}
+
+void NavigationContext_replaceTopicLabels (NavigationContext me, Strings labels) {
 	try {
-		my navigationLabels = Data_copy (labels);
-		Thing_setName (my navigationLabels.get(), labels -> name.get());
-		my navigationCriterion = criterion;
-		if (my leftContextLabels) {
-			if (my rightContextLabels)
-				my combinationCriterion = kContext_combination::LEFT_AND_RIGHT;
-			else
-				my combinationCriterion = kContext_combination::LEFT;
-		} else if (my rightContextLabels) {
-			my combinationCriterion = kContext_combination::RIGHT;
-		} else {
-			my combinationCriterion = kContext_combination::NO_LEFT_AND_NO_RIGHT;
-		}
+		Strings_checkIfUniqueLabels (labels);
+		my topicLabels = Data_copy (labels);
 	} catch (MelderError) {
-		Melder_throw (me, U": cannot set navigation labels from ", labels, U".");
+		Melder_throw (me, U": cannot replace Topic labels from ", labels, U".");
 	}
 }
 
-void NavigationContext_modifyLeftContextLabels (NavigationContext me, Strings labels, kMelder_string criterion) {
+void NavigationContext_replaceBeforeLabels (NavigationContext me, Strings labels) {
 	try {
-		my leftContextLabels = Data_copy (labels);
-		Thing_setName (my leftContextLabels.get(), labels -> name.get());
-		my leftContextCriterion = criterion;
-		my combinationCriterion = kContext_combination::LEFT;
-		if (! my navigationLabels)
-			my matchContextOnly = true;
-		if (my rightContextLabels)
-			my combinationCriterion = kContext_combination::LEFT_AND_RIGHT;
+		Strings_checkIfUniqueLabels (labels);
+		my beforeLabels = Data_copy (labels);
 	} catch (MelderError) {
-		Melder_throw (me, U": cannot set left context labels from ", labels, U".");
+		Melder_throw (me, U": cannot replace Before labels from ", labels, U".");
 	}
 }
 
-void NavigationContext_modifyRightContextLabels (NavigationContext me, Strings labels, kMelder_string criterion) {
+void NavigationContext_replaceAfterLabels (NavigationContext me, Strings labels) {
 	try {
-		my rightContextLabels = Data_copy (labels);
-		Thing_setName (my rightContextLabels.get(), labels -> name.get());
-		my rightContextCriterion = criterion;
-		my combinationCriterion = kContext_combination::LEFT;
-		if (! my navigationLabels)
-			my matchContextOnly = true;
-		if (my leftContextLabels)
-			my combinationCriterion = kContext_combination::LEFT_AND_RIGHT;
+		Strings_checkIfUniqueLabels (labels);
+		my afterLabels = Data_copy (labels);
 	} catch (MelderError) {
-		Melder_throw (me, U": cannot set right context labels from ", labels, U".");
+		Melder_throw (me, U": cannot replace After labels from ", labels, U".");
 	}
 }
 
-void NavigationContext_modifyContextCombination (NavigationContext me, kContext_combination combinationCriterion, bool matchContextOnly) {
-	bool hasLeftContext = ( my leftContextLabels && my leftContextLabels -> strings.size > 0 );
-	bool hasRightContext = ( my rightContextLabels && my rightContextLabels -> strings.size > 0 );
-	if (combinationCriterion == kContext_combination::LEFT)
-		Melder_require (hasLeftContext,
-			U"For this option the NavigationContext should have left context labels.");
-	if (combinationCriterion == kContext_combination::RIGHT)
-		Melder_require (hasRightContext,
-			U"For this option the NavigationContext should have right context labels.");
-	if (combinationCriterion == kContext_combination::LEFT_AND_RIGHT || combinationCriterion == kContext_combination::LEFT_OR_RIGHT_NOT_BOTH || 
-		combinationCriterion == kContext_combination::LEFT_OR_RIGHT_OR_BOTH)
-		Melder_require (hasLeftContext && hasRightContext,
-			U"For this option the NavigationContext should have left and right context labels.");
-	if (matchContextOnly)
-		Melder_require (hasLeftContext || hasRightContext,
-			U"For this option the NavigationContext should have left or right context labels.");
-	my matchContextOnly = matchContextOnly;
+void NavigationContext_modifyTopicCriterion (NavigationContext me, kMelder_string criterion, kMatchBoolean matchBoolean) {
+	Melder_require (my topicLabels && my topicLabels -> numberOfStrings > 0,
+		U"There are no Topic labels.");
+	my topicCriterion = criterion;
+	my topicMatchBoolean = matchBoolean;
+}
+
+void NavigationContext_modifyBeforeCriterion (NavigationContext me, kMelder_string criterion, kMatchBoolean matchBoolean) {
+	Melder_require (my beforeLabels && my beforeLabels -> numberOfStrings > 0,
+		U"There are no Before labels.");
+	my beforeCriterion = criterion;
+	my beforeMatchBoolean = matchBoolean;
+}
+
+void NavigationContext_modifyAfterCriterion (NavigationContext me, kMelder_string criterion, kMatchBoolean matchBoolean) {
+	Melder_require (my afterLabels && my afterLabels -> numberOfStrings > 0,
+		U"There are no After labels.");
+	my afterCriterion = criterion;
+	my afterMatchBoolean = matchBoolean;
+}
+
+void NavigationContext_modifyUseCriterion (NavigationContext me, kContext_combination combinationCriterion, bool excludeTopicMatch) {
+	const bool hasBefore = ( my beforeLabels && my beforeLabels -> strings.size > 0 );
+	const bool hasAfter = ( my afterLabels && my afterLabels -> strings.size > 0 );
+	if (combinationCriterion == kContext_combination::BEFORE)
+		Melder_require (hasBefore,
+			U"For the ", kContext_combination_getText (combinationCriterion), U" criterion the NavigationContext should have Before labels.");
+	if (combinationCriterion == kContext_combination::AFTER)
+		Melder_require (hasAfter,
+			U"For the ", kContext_combination_getText (combinationCriterion), U" criterion the NavigationContext should have After labels.");
+	if (combinationCriterion == kContext_combination::BEFORE_AND_AFTER || combinationCriterion == kContext_combination::BEFORE_OR_AFTER_NOT_BOTH || 
+		combinationCriterion == kContext_combination::BEFORE_OR_AFTER_OR_BOTH)
+		Melder_require (hasBefore && hasAfter,
+			U"For the ", kContext_combination_getText (combinationCriterion), U" criterion the NavigationContext should have Before and After labels.");
+	if (excludeTopicMatch)
+		Melder_require (hasBefore || hasAfter,
+			U"For the ", kContext_combination_getText (combinationCriterion), U" criterion the NavigationContext should have Before or After labels.");
+	my excludeTopicMatch = excludeTopicMatch;
 	my combinationCriterion = combinationCriterion;
 }
 
-bool NavigationContext_isNavigationLabel (NavigationContext me, conststring32 label) {
-	return ( my navigationLabels && STRVEChasMatch (my navigationLabels -> strings.get(), my navigationCriterion, label) );
+bool NavigationContext_isTopicLabel (NavigationContext me, conststring32 label) {
+	return ( my topicLabels && STRVEChasMatch (my topicLabels -> strings.get(), label, my topicCriterion, my topicMatchBoolean) );
 }
 
-bool NavigationContext_isLeftContextLabel (NavigationContext me, conststring32 label) {
-	return ( my leftContextLabels && STRVEChasMatch (my leftContextLabels -> strings.get(), my leftContextCriterion, label) );
+bool NavigationContext_isBeforeLabel (NavigationContext me, conststring32 label) {
+	return ( my beforeLabels && STRVEChasMatch (my beforeLabels -> strings.get(), label, my beforeCriterion, my beforeMatchBoolean) );
 }
 
-bool NavigationContext_isRightContextLabel (NavigationContext me, conststring32 label) {
-	return ( my rightContextLabels && STRVEChasMatch (my rightContextLabels -> strings.get(), my rightContextCriterion, label) );
+bool NavigationContext_isAfterLabel (NavigationContext me, conststring32 label) {
+	return ( my afterLabels && STRVEChasMatch (my afterLabels -> strings.get(), label, my afterCriterion, my afterMatchBoolean) );
 }
 
 /* End of file NavigationContext.cpp */

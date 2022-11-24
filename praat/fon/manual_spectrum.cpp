@@ -1,6 +1,6 @@
 /* manual_spectrum.cpp
  *
- * Copyright (C) 1992-2008,2010-2012,2014-2017,2019,2020 Paul Boersma
+ * Copyright (C) 1992-2008,2010-2012,2014-2017,2019-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -161,7 +161,7 @@ TAG (U"##Bin number")
 DEFINITION (U"the bin number whose frequency is sought.")
 ENTRY (U"Algorithm")
 NORMAL (U"the result is")
-FORMULA (U"%f__1_ + (%binNumber - 1) · Δ%f")
+EQUATION (U"%f__1_ + (%binNumber - 1) · Δ%f")
 NORMAL (U"where %f__1_ is the frequency associated with the centre of the first bin, "
 	"and Δ%f is the bin width.")
 MAN_END
@@ -238,10 +238,10 @@ DEFINITION (U"the frequency range. Values outside this range are ignored. "
 	"If ##To frequency# is not greater than ##From frequency#, the entire frequency domain of the Ltas is considered.")
 ENTRY (U"Algorithm")
 NORMAL (U"The mean value between the frequencies %f__1_ and %f__2_ is defined as")
-FORMULA (U"1/(%f__2_ - %f__1_)  ∫__%%f%1_^^%%f%2^ %df %x(%f)")
+EQUATION (U"1/(%f__2_ - %f__1_)  ∫__%%f%1_^^%%f%2^ %df %x(%f)")
 NORMAL (U"where %x(%f) is the LTAS as a function of frequency, expressed in dB. "
 	"For our discrete Ltas object, this mean is approximated by")
-FORMULA (U"1/%n ∑__%i=%m..%m+%n-1_ %x__%i_")
+EQUATION (U"1/%n ∑__%i=%m..%m+%n-1_ %x__%i_")
 NORMAL (U"where %n is the number of band centres between %f__1_ and %f__2_.")
 MAN_END
 
@@ -279,10 +279,10 @@ DEFINITION (U"the frequency window. Values outside this domain are ignored. "
 	"If ##To frequency# is not greater than ##From frequency#, the entire frequency domain of the Ltas is considered.")
 ENTRY (U"Algorithm")
 NORMAL (U"The standard deviation between the frequencies %f__1_ and %f__2_ is defined as")
-FORMULA (U"1/(%f__2_ – %f__1_)  ∫__%%f%1_^^%%f%2^ %df (%x(%f) – %μ)^2")
+EQUATION (U"1/(%f__2_ – %f__1_)  ∫__%%f%1_^^%%f%2^ %df (%x(%f) – %μ)^2")
 NORMAL (U"where %x(%f) is the LTAS as a function of frequency, and %μ its mean. "
 	"For our discrete Ltas object, the standard deviation is approximated by")
-FORMULA (U"1/(%n–1) ∑__%i=%m..%m+%n-1_ (%x__%i_ – %μ)^2")
+EQUATION (U"1/(%n–1) ∑__%i=%m..%m+%n-1_ (%x__%i_ – %μ)^2")
 NORMAL (U"where %n is the number of band centres between %f__1_ and %f__2_. Note the \"minus 1\".")
 MAN_END
 
@@ -310,7 +310,7 @@ TAG (U"##Bin number")
 DEFINITION (U"the bin whose value is to be looked up.")
 MAN_END
 
-MAN_BEGIN (U"Sound: To Spectrogram...", U"ppgb", 20170828)
+MAN_BEGIN (U"Sound: To Spectrogram...", U"ppgb", 20211015)
 INTRO (U"A command that creates a @Spectrogram from every selected @Sound object. "
 	"It performs a %%short-term spectral analysis%, which means that for a number of time points in the Sound, "
 	"Praat computes an approximation of the spectrum at that time. Each such spectrum is called an %%analysis frame%.")
@@ -352,7 +352,7 @@ DEFINITION (U"determines the shape of the analysis window. "
 NORMAL (U"For purposes of computation speed, Praat may decide to change the time step and the frequency step. "
 	"This is because the time step never needs to be smaller than 1/(8√%π) of the window length, "
 	"and the frequency step never needs to be smaller than (√%π)/8 of the inverse of the window length. "
-	"For instance, if the window length is 29 ms, the actual time step will be never be less than 29/(8√%π) = 2.045 ms. "
+	"For instance, if the window length is 29 ms, the actual time step will never be less than 29/(8√%π) = 2.045 ms. "
 	"And if the window length is 5 ms, the actual frequency step will never be less than (√%π)/8/0.005 = 44.31 Hz.")
 ENTRY (U"Tests of the bandwidth")
 NORMAL (U"You can check the bandwidth formula with the following procedure:")
@@ -367,7 +367,7 @@ CODE (U"! now you should see a peak at 1000 Hz with a 3 dB bandwidth of 7 Hz (20
 CODE (U"! more precise: compute the position and width of the peak, and write them to the console")
 CODE (U"Formula: ~ if x<980 or x>1020 then 0 else self fi")
 CODE (U"To Formant (peaks): 20")
-CODE (U"Write to console")
+CODE (U"List: \"no\", \"yes\", 6, \"no\", 3, \"yes\", 3, \"yes\"")
 CODE (U"! now you should be able to read that a peak was found at 999.99982 Hz")
 CODE (U"! with a bandwidth of 6.497 Hz; the theory above predicted 6.491 Hz")
 CODE (U"")
@@ -376,7 +376,7 @@ CODE (U"Create Sound from formula: \"Hamming\", 1, 0.0, 1.0, 44100, ~ if x<0.4 o
 CODE (U"To Spectrum: \"yes\"")
 CODE (U"Formula: ~ if x<970 or x>1030 then 0 else self fi")
 CODE (U"To Formant (peaks): 20")
-CODE (U"Write to console")
+CODE (U"List: \"no\", \"yes\", 6, \"no\", 3, \"yes\", 3, \"yes\"")
 CODE (U"! peak at 999.99817 Hz, 3 dB bw 6.518 Hz, 20 dB bw 15 Hz, zero bw 20 Hz, sidelobe -42 dB")
 CODE (U"")
 CODE (U"! The same, windowed by a 0.1-seconds rectangular window.")
@@ -384,7 +384,7 @@ CODE (U"Create Sound from formula: \"rectangular\", 1, 0.0, 1.0, 44100, ~ if x<0
 CODE (U"To Spectrum: \"yes\"")
 CODE (U"Formula: ~ if x<970 or x>1030 then 0 else self fi")
 CODE (U"To Formant (peaks): 20")
-CODE (U"Write to console")
+CODE (U"List: \"no\", \"yes\", 6, \"no\", 3, \"yes\", 3, \"yes\"")
 CODE (U"! peak at 999.99506 Hz, 3 dB bw 4.440 Hz, 20 dB bw 27 Hz, zero bw 10 Hz, sidelobe -14 dB")
 CODE (U"")
 CODE (U"! The same, windowed by a 0.1-seconds Hanning window.")
@@ -392,7 +392,7 @@ CODE (U"Create Sound from formula: \"Hanning\", 1, 0.0, 1.0, 44100, ~ if x<0.4 o
 CODE (U"To Spectrum: \"yes\"")
 CODE (U"Formula: ~ if x<970 or x>1030 then 0 else self fi")
 CODE (U"To Formant (peaks): 20")
-CODE (U"Write to console")
+CODE (U"List: \"no\", \"yes\", 6, \"no\", 3, \"yes\", 3, \"yes\"")
 CODE (U"! peak at 999.99945 Hz, 3 dB bw 7.212 Hz, 20 dB bw 16 Hz, zero bw 20 Hz, sidelobe -31 dB")
 CODE (U"")
 CODE (U"! The same, windowed by a 0.1-seconds triangular window.")
@@ -400,7 +400,7 @@ CODE (U"Create Sound from formula: \"triangular\", 1, 0.0, 1.0, 44100, ~ if x<0.
 CODE (U"To Spectrum: \"yes\"")
 CODE (U"Formula: ~ if x<970 or x>1030 then 0 else self fi")
 CODE (U"To Formant (peaks): 20")
-CODE (U"Write to console")
+CODE (U"List: \"no\", \"yes\", 6, \"no\", 3, \"yes\", 3, \"yes\"")
 CODE (U"! peak at 999.99933 Hz, 3 dB bw 6.384 Hz, 20 dB bw 15 Hz, zero bw 20 Hz, sidelobe -26 dB")
 CODE (U"")
 CODE (U"! The same, windowed by a 0.1-seconds parabolic window.")
@@ -408,7 +408,7 @@ CODE (U"Create Sound from formula: \"parabolic\", 1, 0.0, 1.0, 44100, ~ if x<0.4
 CODE (U"To Spectrum: \"yes\"")
 CODE (U"Formula: ~ if x<970 or x>1030 then 0 else self fi")
 CODE (U"To Formant (peaks): 20")
-CODE (U"Write to console")
+CODE (U"List: \"no\", \"yes\", 6, \"no\", 3, \"yes\", 3, \"yes\"")
 CODE (U"! peak at 999.99921 Hz, 3 dB bw 5.786 Hz, 20 dB bw 12 Hz, zero bw 15 Hz, sidelobe -21 dB")
 MAN_END
 
@@ -433,11 +433,11 @@ NORMAL (U"For the Fourier transform, the Praat-defined @@time domain@ of the @So
 	"Instead, its time domain is considered to run from %t=0 to %t=%T, "
 	"where %t=0 is supposed to be aligned with the first sample, "
 	"and %T is the total duration of the samples, i.e. %%N%Δ%t, "
-	"where %N is the number of samples and Δe%t is the @@sampling period@. "
+	"where %N is the number of samples and Δ%t is the @@sampling period@. "
 	"Thus, the last sample lies at %t=%T–Δ%t.")
 NORMAL (U"For a sound %x(%t), defined for all times %t in the domain (0, %T), "
 	"the complex spectrum %X(%f) for any frequency %f is the forward Fourier transform of %x(%t), with a negative exponent:")
-FORMULA (U"%X(%f) = ∫__0_^^%T^ %x(%t) %e^^-2%%πift%^ %dt")
+EQUATION (U"%X(%f) = ∫__0_^^%T^ %x(%t) %e^^-2%%πift%^ %dt")
 NORMAL (U"If the Sound is expressed in Pascal (Pa), the Spectrum is expressed in Pa·s, or Pa/Hz. "
 	"Since a @Spectrum object can only contain a finite number of frequency samples, "
 	"it is only computed for frequencies that are multiples of Δ%f = 1/%T. "
@@ -462,15 +462,15 @@ NORMAL (U"If %N is even, there will be %N+1 frequency samples. For instance, if 
 ENTRY (U"Storage")
 NORMAL (U"In a @Spectrum object, Praat stores the real and imaginary parts of the complex spectrum separately. "
 	"The real part is equal to the cosine transform:")
-FORMULA (U"re %X(%f) = ∫__0_^^%T^ %x(%t) cos (2%%πft%) %dt")
+EQUATION (U"re %X(%f) = ∫__0_^^%T^ %x(%t) cos (2%%πft%) %dt")
 NORMAL (U"The imaginary part is equal to the reverse of the sine transform:")
-FORMULA (U"im %X(%f) = – ∫__0_^^%T^ %x(%t) sin (2%%πft%) %dt")
+EQUATION (U"im %X(%f) = – ∫__0_^^%T^ %x(%t) sin (2%%πft%) %dt")
 NORMAL (U"The complex spectrum can be reconstructed from the real and imaginary part as follows:")
-FORMULA (U"%X(%f) = re %X(%f) + %i im %X(%f)")
+EQUATION (U"%X(%f) = re %X(%f) + %i im %X(%f)")
 NORMAL (U"Since the cosine is a symmetric function of %t and the sine is an antisymmetric function of %t, "
 	"the complex spectrum for a negative frequency is the complex conjugate of the complex spectrum for the corresponding "
 	"positive frequency:")
-FORMULA (U"%X(-%f) = re %X(-%f) + %i im %X(-%f) = re %X(%f) - %i im %X(%f) = %X^*(%f)")
+EQUATION (U"%X(-%f) = re %X(-%f) + %i im %X(-%f) = re %X(%f) - %i im %X(%f) = %X^*(%f)")
 NORMAL (U"For purposes of storage, therefore, the negative frequencies are superfluous. "
 	"For this reason, the Spectrum object stores re %X(%f) and im %X(%f) only for frequencies %f = 0, Δ%f, 2Δ%f... "
 	"In the case of a sound with 20,457 samples, the Spectrum object contains the real part of %X(0) "
@@ -487,7 +487,7 @@ NORMAL (U"If you perform @@Spectrum: To Sound@ on the resulting Spectrum object,
 	"a Sound is created that is equal to the original Sound (or to the original Sound with appended zeroes).")
 ENTRY (U"Properties")
 NORMAL (U"The frequency integral over the squared Spectrum equals the time integral over the squared Sound:")
-FORMULA (U"∫__-%F_^^+%F^ |%X(%f)|^2 %df = ∫__0_^%T |%x(%t)|^2 %dt")
+EQUATION (U"∫__-%F_^^+%F^ |%X(%f)|^2 %df = ∫__0_^%T |%x(%t)|^2 %dt")
 NORMAL (U"This is called %%Parceval's theorem%.")
 /*
 Copy... square
@@ -665,9 +665,9 @@ MAN_END
 MAN_BEGIN (U"Spectrum: Get central moment...", U"ppgb", 20020323)
 INTRO (U"A command to query the selected @Spectrum object.")
 NORMAL (U"If the complex spectrum is given by %S(%f), the %%n%th central spectral moment is given by")
-FORMULA (U"∫__0_^∞  (%f – %f__%c_)^%n |%S(%f)|^%p %df")
+EQUATION (U"∫__0_^∞  (%f – %f__%c_)^%n |%S(%f)|^%p %df")
 NORMAL (U"divided by the \"energy\"")
-FORMULA (U"∫__0_^∞  |%S(%f)|^%p %df")
+EQUATION (U"∫__0_^∞  |%S(%f)|^%p %df")
 NORMAL (U"In this formula, %f__%c_ is the spectral centre of gravity (see @@Spectrum: Get centre of gravity...@). "
 	"Thus, the %%n%th central moment is the average of (%f – %f__%c_)^%n over the entire frequency domain, "
 	"weighted by |%S(%f)|^%p. For %p = 2, the weighting is done by the power spectrum, and for %p = 1, "
@@ -695,9 +695,9 @@ MAN_BEGIN (U"Spectrum: Get centre of gravity...", U"ppgb", 20070225)
 INTRO (U"A command to query the selected @Spectrum object.")
 NORMAL (U"If the complex spectrum is given by %S(%f), where %f is the frequency, the %%centre of gravity% "
 	"is given by")
-FORMULA (U"∫__0_^∞  %f |%S(%f)|^%p %df")
+EQUATION (U"∫__0_^∞  %f |%S(%f)|^%p %df")
 NORMAL (U"divided by the \"energy\"")
-FORMULA (U"∫__0_^∞  |%S(%f)|^%p %df")
+EQUATION (U"∫__0_^∞  |%S(%f)|^%p %df")
 NORMAL (U"Thus, the centre of gravity is the average of %f over the entire frequency domain, "
 	"weighted by |%S(%f)|^%p. For %p = 2, the weighting is done by the power spectrum, and for %p = 1, "
 	"the weighting is done by the absolute spectrum. A value of %p = 2/3 has been seen as well.")
@@ -782,7 +782,7 @@ MAN_BEGIN (U"Spectrum: To Ltas (1-to-1)", U"ppgb", 20141001)
 INTRO (U"A command for converting each selected @Spectrum object into an @Ltas object without loss of frequency resolution.")
 ENTRY (U"Algorithm")
 NORMAL (U"Each band %b__%i_ in the Ltas is computed from a single frequency sample %s__%i_ in the Spectrum as follows:")
-FORMULA (U"%b__%i_ = 2 ((re (%s__%i_))^2 + (im (%s__%i_))^2) / 4.0·10^^-10^")
+EQUATION (U"%b__%i_ = 2 ((re (%s__%i_))^2 + (im (%s__%i_))^2) / 4.0·10^^-10^")
 NORMAL (U"If the original Spectrum is expressible in Pa / Hz (sound pressure in air), the Ltas values "
 	"are in \"dB/Hz\" relative to the auditory threshold at 1000 Hz (2·10^^-5^ Pa).")
 MAN_END

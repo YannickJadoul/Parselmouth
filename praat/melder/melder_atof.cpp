@@ -1,6 +1,6 @@
 /* melder_atof.cpp
  *
- * Copyright (C) 2003-2008,2011,2015-2019 Paul Boersma
+ * Copyright (C) 2003-2008,2011,2015-2019,2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ double strtod_c(const char *s, const char *r, char **e) {
 	Return null on error.
 */
 template <typename T>
-static const T *findEndOfNumericString (const T *string) noexcept {
+static const T *findEndOfNumericString (const T *string) {
 	const T *p = & string [0];
 	/*
 		Leading white space is OK.
@@ -126,7 +126,7 @@ static const T *findEndOfNumericString (const T *string) noexcept {
 	return p;
 }
 
-bool Melder_isStringNumeric (conststring32 string) noexcept {
+bool Melder_isStringNumeric (conststring32 string) {
 	if (! string)
 		return false;
 	const char32 *p = findEndOfNumericString (string);
@@ -140,13 +140,13 @@ bool Melder_isStringNumeric (conststring32 string) noexcept {
 	return true;
 }
 
-double Melder8_strtod(const char *str, char **end_str /*= nullptr*/) noexcept {
+double Melder8_strtod(const char *str, char **end_str /*= nullptr*/) {
 	// findEndOfNumericString(str) because https://bugs.llvm.org/show_bug.cgi?id=17782
 	// See https://github.com/tardate/LittleCodingKata/blob/master/cpp/DoubleTrouble/README.md
 	return strtod_c(str, findEndOfNumericString(str), end_str);
 }
 
-double Melder_a8tof (conststring8 string) noexcept {
+double Melder_a8tof (conststring8 string) {
 	if (! string)
 		return undefined;
 	const char *p = findEndOfNumericString (string);
@@ -157,11 +157,11 @@ double Melder_a8tof (conststring8 string) noexcept {
 	return p [-1] == '%' ? 0.01 * strtod_c (string, p, nullptr) : strtod_c (string, p, nullptr);
 }
 
-double Melder_atof (conststring32 string) noexcept {
+double Melder_atof (conststring32 string) {
 	return Melder_a8tof (Melder_peek32to8 (string));
 }
 
-int64 Melder_atoi (conststring32 string) noexcept {
+int64 Melder_atoi (conststring32 string) {
 	return strtoll (Melder_peek32to8 (string), nullptr, 10);
 }
 

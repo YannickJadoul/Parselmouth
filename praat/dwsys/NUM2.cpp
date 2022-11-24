@@ -1,6 +1,6 @@
 /* NUM2.cpp
  *
- * Copyright (C) 1993-2020 David Weenink, Paul Boersma 2017,2020
+ * Copyright (C) 1993-2022 David Weenink, Paul Boersma 2017,2020
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,20 +88,6 @@ struct pdf2_struct {
 	double df2;
 };
 
-void NUMgetGridDimensions (integer n, integer *out_nrow, integer *out_ncol) {
-	integer ncol = 1;
-	integer nrow = n;
-	if (n > 3) {
-		nrow = 1 + Melder_ifloor (sqrt (n - 0.5));
-		ncol = 1 + Melder_ifloor ((n - 1) / nrow);
-	}
-	if (out_nrow)
-		*out_nrow = nrow;
-	if (out_ncol)
-		*out_ncol = ncol;
-	
-}
-
 void MATprintMatlabForm (constMATVU const& m, conststring32 name) {
 	constexpr integer npc = 5;
 	const ldiv_t n = ldiv (m.ncol, npc);
@@ -176,9 +162,7 @@ void VECsmooth_gaussian_inplace (VECVU const& in_out, double sigma, NUMfft_Table
 }
 
 void VECsmooth_gaussian_inplace (VECVU const& in_out, double sigma) {
-	integer nfft = 1;
-	while (nfft < in_out.size)
-		nfft *= 2;
+	const integer nfft = Melder_iroundUpToPowerOfTwo (in_out.size);
 	autoNUMfft_Table fftTable;
 	NUMfft_Table_init (& fftTable, nfft);
 	VECsmooth_gaussian_inplace (in_out, sigma, & fftTable);
@@ -222,12 +206,12 @@ void MATmtm_weighRows (MATVU const& result, constMATVU const& data, constVECVU c
 inline void MATmultiplyRows_inplace (MATVU const& x, constVECVU const& v) {
 	Melder_assert (x.nrow == v.size);
 	for (integer irow = 1; irow <= x.nrow; irow ++)
-		x.row (irow)  *=  v [irow];  // x[i,j]*v[i]
+		x.row (irow)  *=  v [irow];  // x [i,j] * v [i]
 }
 inline void MATmultiplyColumns_inplace (MATVU const& x, constVECVU const& v) {
 	Melder_assert (x.ncol == v.size);
 	for (integer icol = 1; icol <= x.nrow; icol ++)
-		x.column (icol)  *=  v [icol];  // x[i,j]*v[j]
+		x.column (icol)  *=  v [icol];  // x [i,j] * v [j]
 }
 
 double NUMmultivariateKurtosis (constMATVU const& m, integer method) {
@@ -309,7 +293,7 @@ autoMAT newMATlowerCholesky (constMATVU const& a, double *out_lnd) {
 	MATlowerCholesky_inplace (result.get(), out_lnd);
 	for (integer irow = 1; irow <= a.nrow - 1; irow ++)
 		for (integer icol = irow + 1; icol <= a.nrow; icol ++)
-			result [irow][icol] = 0.0;
+			result [irow] [icol] = 0.0;
 	return result;
 }
 
@@ -450,17 +434,20 @@ autoMAT newMATsolve (constMATVU const& a, constMATVU const& b, double tolerance)
 
 	for (integer k = 1; k <= b.ncol; k ++) {
 		autoVEC xt = SVD_solve (me.get(), b.column (k));
-		x.column (k) <<= xt.all();
+		x.column (k)  <<=  xt.all();
 	}
 	return x;
 }
 
+/*
+	Non-negative least squares: Solve Ax = y, i.e
+	minimize || Ax - y ||^2 for vector x, where all x [i] >= 0.0
+*/
 void VECsolveNonnegativeLeastSquaresRegression (VECVU const& x, constMATVU const& a, constVECVU const& y, integer maximumNumberOfIterations, double tol, integer infoLevel) {
 	Melder_assert (a.nrow == y.size);
 	Melder_assert (a.ncol == x.size);
 	for (integer i = 1; i <= x.size; i ++)
-		if (x [i] < 0.0)
-			x [i] = 0.0;
+		Melder_clipLeft (0.0, & x [i]);
 	autoVEC r = raw_VEC (y.size);
 	const double normSquared_y = NUMsum2 (y);
 	integer iter = 1;
@@ -657,7 +644,7 @@ static double bolzanoFunction (double b, void *data) {
 	return (double) f;
 }
 
-double NUMbolzanoSearch (double (*func) (double x, void *closure), double xmin, double xmax, void *closure) {
+static double NUMbolzanoSearch (double (*func) (double x, void *closure), double xmin, double xmax, void *closure) {
 	Melder_assert (xmin < xmax);
 	double fleft = (*func)(xmin, closure);
 	double fright = (*func)(xmax, closure);
@@ -667,9 +654,8 @@ double NUMbolzanoSearch (double (*func) (double x, void *closure), double xmin, 
 		return fright;
 	Melder_require (fleft * fright < 0.0,
 		U"Invalid interval: the function values at the borders should have different signs.");
-	double xdifference = fabs (xmax - xmin);
-	double xdifference_old = 2.0 * xdifference; // just larger to make the first comparison 'true'.
-	while (xdifference < xdifference_old) {
+	double xdifference = fabs (xmax - xmin), xdifference_old;
+	do {
 		const double xmid = 0.5 * (xmax + xmin);
 		const double fmid = (*func)(xmid, closure);
 		if (fmid == 0.0)
@@ -680,7 +666,7 @@ double NUMbolzanoSearch (double (*func) (double x, void *closure), double xmin, 
 			xmin = xmid;
 		xdifference_old = xdifference;
 		xdifference = fabs (xmax - xmin);
-	}
+	} while (xdifference < xdifference_old);
 	return 0.5 * (xmax + xmin);
 }
 
@@ -716,7 +702,7 @@ autoVEC newVECsolveWeaklyConstrainedLinearRegression (constMAT const& a, constVE
 	}
 	/*
 		Evaluate q, the multiplicity of the smallest eigenvalue in C.
-		The c[i] are ordered, i.e. c[i] >= c[i+1] for all i.
+		The c [i] are ordered, i.e. c [i] >= c [i+1] for all i.
 	*/
 	integer q = 1;
 	const double tol = 1e-6;
@@ -742,7 +728,7 @@ autoVEC newVECsolveWeaklyConstrainedLinearRegression (constMAT const& a, constVE
 	if (xqsq < tol) { // Case3.b page 608
 		r = a.ncol - q;
 		me.numberOfTerms = r;
-		const double fm = bolzanoFunction (c[a.ncol], & me);
+		const double fm = bolzanoFunction (c [a.ncol], & me);
 		if (fm >= 0.0) { // step 3.b1
 			/*
 				Get w0 by overwriting vector x.
@@ -751,7 +737,7 @@ autoVEC newVECsolveWeaklyConstrainedLinearRegression (constMAT const& a, constVE
 			for (integer j = 1; j <= r; j ++)
 				x [j] /= c [j] - c [a.ncol]; // eq. 10
 			if (q > 1)
-				x.part (r + 2, a.ncol) <<= 0.0;
+				x.part (r + 2, a.ncol)  <<=  0.0;
 			autoVEC result = mul_VEC (u, x.all());
 			return result;
 		}
@@ -776,7 +762,7 @@ autoVEC newVECsolveWeaklyConstrainedLinearRegression (constMAT const& a, constVE
 	for (integer j = 1; j <= r; j ++)
 		x [j] /= c [j] - b0; // eq. 7
 	if (q > 1)
-		x.part (r + 1, a.ncol) <<= 0.0;
+		x.part (r + 1, a.ncol)  <<=  0.0;
 	autoVEC result = mul_VEC (u, x.all());
 	return result;
 }
@@ -1184,15 +1170,7 @@ double NUMfisherQ (double f, double df1, double df2) {
 }
 
 double NUMinvGaussQ (double p) {
-	double pc = p;
-	if (p <= 0.0 || p >= 1.0)
-		return undefined;
-	if (p > 0.5)
-		pc = 1.0 - p;
-	double t = sqrt (- 2.0 * log (pc));
-	t -= (2.515517 + (0.802853 + 0.010328 * t) * t) /
-		 (1.0 + (1.432788 + (0.189269 + 0.001308 * t) * t) * t);
-	return p > 0.5 ? -t : t;
+	return gsl_cdf_ugaussian_Qinv (p);
 }
 
 static double studentQ_func (double x, void *voidParams) {
@@ -1310,30 +1288,6 @@ double NUMlnBeta (double a, double b) {
 	return status == GSL_SUCCESS ? result.val : undefined;
 }
 
-void MATscaledResiduals (MAT const& residuals, constMAT const& data, constMAT const& covariance, constVEC const& means) {
-	try {
-		Melder_require (residuals.nrow == data.nrow && residuals.ncol == data.ncol,
-			U"The data and the residuals should have the same dimensions.");
-		Melder_require (covariance.ncol == means.size && data.ncol == means.size,
-			U"The dimensions of the means and the covariance have to conform with the data.");
-		autoVEC dif = raw_VEC (data.ncol);
-		autoMAT lowerInverse = copy_MAT (covariance);
-		MATlowerCholeskyInverse_inplace (lowerInverse.get(), nullptr);
-		for (integer irow = 1; irow <= data.nrow; irow ++) {
-			dif.all() <<= data.row (irow)  -  means;
-			residuals.row(irow) <<= 0.0;
-			if (lowerInverse.nrow == 1) { // diagonal matrix is one row matrix
-				residuals.row(irow) <<= lowerInverse.row(1)  *  dif.get();
-			} else {// square matrix
-				for (integer icol = 1; icol <= data.ncol; icol ++)
-					residuals [irow] [icol] = NUMinner (lowerInverse.row(icol).part (1, icol), dif.part (1, icol));
-			}
-		}
-	} catch (MelderError) {
-		Melder_throw (U"MATscaleResiduals: not performed.");
-	}
-}
-
 /*************** Hz <--> other freq reps *********************/
 
 double NUMmelToHertz3 (double mel) {
@@ -1372,34 +1326,11 @@ double NUMbarkToHertz_traunmueller (double bark) {
 	return 1960.0 * (bark + 0.53) / (26.28 - bark);
 }
 
-double NUMbarkToHertz_schroeder (double bark) {
-	return 650.0 * sinh (bark / 7.0);
-}
 
 double NUMbarkToHertz_zwickerterhardt (double hz) {
 	if (hz < 0.0)
 		return undefined;
 	return 13.0 * atan (0.00076 * hz) + 3.5 * atan (hz / 7500.0);
-}
-
-double NUMhertzToBark_schroeder (double hz) {
-	if (hz < 0.0)
-		return undefined;
-	const double h650 = hz / 650.0;
-	return 7.0 * log (h650 + sqrt (1.0 + h650 * h650));
-}
-
-double NUMbarkToHertz2 (double bark) {
-	if (bark < 0.0)
-		return undefined;
-	return 650.0 * sinh (bark / 7.0);
-}
-
-double NUMhertzToBark2 (double hz) {
-	if (hz < 0)
-		return undefined;
-	const double h650 = hz / 650.0;
-	return 7.0 * log (h650 + sqrt (1.0 + h650 * h650));
 }
 
 double NUMbladonlindblomfilter_amplitude (double zc, double z) {
@@ -1440,6 +1371,10 @@ double VECburg (VEC const& a, constVEC const& x) {
 	const integer n = x.size, m = a.size;
 	for (integer j = 1; j <= m; j ++)
 		a [j] = 0.0;
+	if (n <= 2) {
+		a [1] = -1.0;
+		return ( n == 2 ? 0.5 * (x [1] * x [1] + x [2] * x [2]) : x [1] * x [1] );
+	}
 
 	autoVEC b1 = zero_VEC (n), b2 = zero_VEC (n), aa = zero_VEC (m);
 
@@ -1456,6 +1391,8 @@ double VECburg (VEC const& a, constVEC const& x) {
 	// (9)
 
 	b1 [1] = x [1];
+	if (n < 2)
+		return (double) xms;
 	b2 [n - 1] = x [n];
 	for (integer j = 2; j <= n - 1; j ++)
 		b1 [j] = b2 [j - 1] = x [j];
@@ -2034,10 +1971,10 @@ integer NUMgetIndexFromProbability (constVEC probs, double p) {
 
 // straight line fitting
 
-void NUMlineFit_theil (constVEC const& x, constVEC const& y, double *out_m, double *out_intercept, bool completeMethod) {
+void NUMfitLine_theil (constVEC const& x, constVEC const& y, double *out_m, double *out_intercept, bool completeMethod) {
 	try {
 		Melder_require (x.size == y.size,
-			U"NUMlineFit_theil: the sizes of the two vectors should be equal.");
+			U"NUMfitLine_theil: the sizes of the two vectors should be equal.");
 		/*
 			Theil's incomplete method:
 			Split (x [i],y [i]) as
@@ -2046,13 +1983,39 @@ void NUMlineFit_theil (constVEC const& x, constVEC const& y, double *out_m, doub
 			m = median (m [i])
 			b = median(y [i]-m*x [i])
 		 */
-		double m, intercept;
+		autoVEC lineParameters = raw_VEC (6);
+		NUMfitLine_theil_preallocated (lineParameters.get(), x, y, out_intercept, 0.025, completeMethod);
+
+		if (out_m)
+			*out_m = lineParameters [1];
+		if (out_intercept)
+			*out_intercept = lineParameters [4];
+	} catch (MelderError) {
+		Melder_throw (U"No line fit (Theil's method).");
+	}
+}
+
+void NUMfitLine_theil_preallocated (VEC const& out_lineParameters, constVEC const& x, constVEC const& y, bool wantIntercept, double oneTailedUnconfidence, bool completeMethod) {
+	try {
+		Melder_require (x.size == y.size,
+			U"NUMfitLine_theil: the sizes of the two vectors should be equal.");
+		Melder_require (out_lineParameters.size == 6,
+			U"The line parameters vector should have size 6.");
+		/*
+			Theil's incomplete method:
+			Split (x [i],y [i]) as
+			(x [i],y [i]), (x [N+i],y [N+i], i=1..numberOfPoints/2
+			m [i] = (y [N+i]-y [i])/(x [N+i]-x [i])
+			m = median (m [i])
+			b = median(y [i]-m*x [i])
+		 */
+		out_lineParameters  <<=  undefined;
 		if (x.size == 1) {
-			intercept = y [1];
-			m = 0.0;
+			out_lineParameters [1] = 0.0; // m
+			out_lineParameters [4] =  y [1]; // intercept
 		} else if (x.size == 2) {
-			m = (y [2] - y [1]) / (x [2] - x [1]);
-			intercept = y [1] - m * x [1];
+			const double m = out_lineParameters [1] = (y [2] - y [1]) / (x [2] - x [1]);
+			out_lineParameters [4] = y [1] - m * x [1];
 		} else {
 			integer numberOfCombinations;
 			autoVEC mbs;
@@ -2071,25 +2034,35 @@ void NUMlineFit_theil (constVEC const& x, constVEC const& y, double *out_m, doub
 						mbs [++ index] = (y [j] - y [i]) / (x [j] - x [i]);
 				Melder_assert (index == numberOfCombinations);
 			}
-			sort_VEC_inout (mbs.part (1, numberOfCombinations));
-			m = NUMquantile (mbs.part (1, numberOfCombinations), 0.5);
-			for (integer i = 1; i <= x.size; i ++)
-				mbs [i] = y [i] - m * x [i];
-			sort_VEC_inout (mbs.part (1, x.size));
-			intercept = NUMquantile (mbs.part (1, x.size), 0.5);
+			/*
+				Get slope as the median of all slopes
+			*/
+			VEC mbsPart = mbs.part (1, numberOfCombinations);
+			sort_VEC_inout (mbsPart);
+			out_lineParameters [1] = NUMquantile (mbsPart, 0.5);
+			out_lineParameters [2] = NUMquantile (mbsPart, oneTailedUnconfidence);
+			out_lineParameters [3] = NUMquantile (mbsPart, 1.0 - oneTailedUnconfidence);
+			/*
+				Reuse array for intercept
+			*/
+			if (wantIntercept) {
+				for (integer i = 1; i <= x.size; i ++)
+					mbs [i] = y [i] - out_lineParameters [1] * x [i];
+				mbsPart = mbs.part (1, x.size);
+				sort_VEC_inout (mbsPart);
+				out_lineParameters [4] = NUMquantile (mbsPart, 0.5);
+				out_lineParameters [5] = NUMquantile (mbsPart, oneTailedUnconfidence);
+				out_lineParameters [6] = NUMquantile (mbsPart, 1.0 - oneTailedUnconfidence);
+			}
 		}
-		if (out_m)
-			*out_m = m;
-		if (out_intercept)
-			*out_intercept = intercept;
 	} catch (MelderError) {
 		Melder_throw (U"No line fit (Theil's method).");
 	}
 }
 
-void NUMlineFit_LS (constVEC const& x, constVEC const& y, double *out_m, double *out_intercept) {
+void NUMfitLine_LS (constVEC const& x, constVEC const& y, double *out_m, double *out_intercept) {
 	Melder_require (x.size == y.size,
-		U"NUMlineFit_LS: the sizes of the two vectors should be equal.");
+		U"NUMfitLine_LS: the sizes of the two vectors should be equal.");
 	const double sx = NUMsum (x);
 	const double xmean = sx / x.size;
 	longdouble st2 = 0.0, m = 0.0;
@@ -2110,11 +2083,11 @@ void NUMlineFit_LS (constVEC const& x, constVEC const& y, double *out_m, double 
 
 void NUMlineFit (constVEC x, constVEC y, double *out_m, double *out_intercept, integer method) {
 	if (method == 1)
-		NUMlineFit_LS (x, y, out_m, out_intercept);
+		NUMfitLine_LS (x, y, out_m, out_intercept);
 	else if (method == 3)
-		NUMlineFit_theil (x, y, out_m, out_intercept, true);
+		NUMfitLine_theil (x, y, out_m, out_intercept, true);
 	else
-		NUMlineFit_theil (x, y, out_m, out_intercept, false);
+		NUMfitLine_theil (x, y, out_m, out_intercept, false);
 }
 
 // IEEE: Programs for digital signal processing section 4.3 LPTRN
@@ -2129,13 +2102,13 @@ void VECrc_from_lpc (VEC rc, constVEC lpc) {
 		rc [m] = a [m];
 		Melder_require (fabs (rc [m]) <= 1.0,
 			U"Relection coefficient [", m, U"] larger than 1.");
-		b.part (1, m) <<= a.part (1, m);
+		b.part (1, m)  <<=  a.part (1, m);
 		for (integer i = 1; i < m; i ++)
 			a [i] = (b [i] - rc [m] * b [m - i]) / (1.0 - rc [m] * rc [m]);
 	}
 }
 
-void VEClpc_from_rc (VEC lpc, constVEC rc) {
+static void VEClpc_from_rc (VEC lpc, constVEC rc) {
 	Melder_assert (lpc.size == rc.size);
 	lpc  <<=  rc;
 	for (integer j = 2; j <= lpc.size; j ++) {
@@ -2185,7 +2158,7 @@ void VECarea_from_lpc (VEC area, constVEC lpc) {
 /*********** Begin deprecated LPC routines ***********************************/
 void NUMlpc_lpc_to_rc (double *lpc, integer p, double *rc) {
 	autoVEC b = zero_VEC (p);
-	autoVEC a  <<=  VEC(lpc, p);
+	autoVEC a  <<=  VEC (lpc, p);
 	for (integer m = p; m > 0; m--) {
 		rc [m] = a [m];
 		Melder_require (fabs (rc [m]) <= 1.0,
@@ -2234,7 +2207,7 @@ void NUMlpc_area_to_lpc2 (double *area, integer n, double *lpc) {
 
 void NUMlpc_lpc_to_rc2 (double *lpc, integer m, double *rc);
 void NUMlpc_lpc_to_rc2 (double *lpc, integer m, double *rc) { // klopt nog niet
-	rc.part(1,m) <<= lpc.part (1,m)
+	rc.part(1,m)  <<=  lpc.part (1,m)
 	for (integer j = 2; j <= m; j ++) {
 		integer jb = m + 1 - j;
 		integer mh = (jb + 1) / 2;
@@ -2264,7 +2237,7 @@ void NUMlpc_area_to_rc (double *area, integer m, double *rc) {
 
 void NUMlpc_rc_to_lpc (double *rc, integer m, double *lpc);
 void NUMlpc_rc_to_lpc (double *rc, integer m, double *lpc) {
-	lpc.part (1,m) <<= rc. part (1.m)
+	lpc.part (1,m)  <<=  rc.part (1.m)
 	for (integer j = 2; j <= m; j ++) {
 		for (integer k = 1; k <= j / 2; k ++) {
 			double at = lpc [k] + rc [j] * lpc [j - k];
@@ -2293,6 +2266,12 @@ void NUMlpc_lpc_to_area (double *lpc, integer m, double *area) {
 
 #undef SIGN
 
+/* Start of GSL based routines:
+	The following random number generating routines are based on the GSL library
+	Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 James Theiler, Brian Gough
+	
+*/
+
 #define SMALL_MEAN 14
 /* If n*p < SMALL_MEAN then use BINV algorithm. The ranlib implementation used cutoff=30;
  * but on my (Brian Gough) computer 14 works better
@@ -2315,8 +2294,10 @@ inline static double Stirling (double y1)
 	return s;
 }
 
-// djmw 20121211 replaced calls to gsl_rng_uniform with NUMrandomUniform (0,1)
-
+/*
+	This implementation of NUMrandomBinomial is by James Theiler, April 2003,
+	djmw 20121211 replaced calls to gsl_rng_uniform with NUMrandomUniform (0,1)
+*/
 integer NUMrandomBinomial (double p, integer n) {
 	if (p < 0.0 || p > 1.0 || n < 0) {
 		return -100000000;
@@ -2593,9 +2574,26 @@ double NUMrandomBinomial_real (double p, integer n) {
 		return (double) NUMrandomBinomial (p, n);
 }
 
+/*
+	From gsl_ran_weibull.c
+*/
+double NUMrandomWeibull (double scale_lambda, double shape_k) {
+	Melder_require (scale_lambda > 0.0 && shape_k > 0.0,
+		U"NUMrandomWeibull: both arguments should be positive.");
+	const double u = NUMrandomUniform (0, 1);
+	return scale_lambda * pow (- log (u), 1.0 / shape_k);	
+}
+
+/*
+	Notice in GSL gsl_randist_gamma:
+	Version based on Marsaglia and Tsang, "A Simple Method for generating gamma variables", 
+	ACM Transactions on Mathematical Software, Vol 26, No 3 (2000), p363-372.
+
+	Implemented by J.D.Lamb@btinternet.com, minor modifications for GSL by Brian Gough
+ */
 double NUMrandomGamma (const double alpha, const double beta) {
 	Melder_require (alpha > 0 && beta > 0,
-		U"Both arguments should be positive.");
+		U"NUMrandomGamma: both arguments should be positive.");
 	double result;
 	if (alpha >= 1.0) {
 		double x, v, d = alpha - 1.0 / 3.0;
@@ -2633,6 +2631,8 @@ void NUMlngamma_complex (double zr, double zi, double *out_lnr, double *out_arg)
 		*out_arg = ln_arg;
 }
 
+/* End of GSL based routines */
+
 autoVEC newVECbiharmonic2DSplineInterpolation_getWeights (constVECVU const& x, constVECVU const& y, constVECVU const& z) {
 	Melder_assert (x.size == y.size && x.size == z.size);
 	autoMAT g = raw_MAT (x.size, x.size);
@@ -2656,8 +2656,8 @@ double NUMbiharmonic2DSplineInterpolation (constVECVU const& x, constVECVU const
 	Melder_assert (x.size == y.size && x.size == w.size);
 	longdouble result = 0.0;
 	for (integer i = 1; i <= x.size; i ++) {
-		double dx = xp - x [i], dy = yp - y [i];
-		double d = dx * dx + dy * dy;
+		const double dx = xp - x [i], dy = yp - y [i];
+		const double d = dx * dx + dy * dy;
 		result += w [i] * d * (0.5 * log (d) - 1.0);
 	}
 	return (double) result;
@@ -2699,9 +2699,9 @@ void NUMgetEntropies (constMATVU const& m, double *out_h, double *out_hx, double
 	if (totalSum > 0.0) {
 		longdouble hy_t = 0.0;
 		for (integer i = 1; i <= m.nrow; i ++) {
-			double rowsum = NUMsum (m.row (i));
+			const double rowsum = NUMsum (m.row (i));
 			if (rowsum > 0.0) {
-				double p = rowsum / totalSum;
+				const double p = rowsum / double (totalSum);
 				hy_t -= p * NUMlog2 (p);
 			}
 		}
@@ -2709,9 +2709,9 @@ void NUMgetEntropies (constMATVU const& m, double *out_h, double *out_hx, double
 		
 		longdouble hx_t = 0.0;
 		for (integer j = 1; j <= m.ncol; j ++) {
-			double colsum = NUMsum (m.column (j));
+			const double colsum = NUMsum (m.column (j));
 			if (colsum > 0.0) {
-				double p = colsum / totalSum;
+				const double p = colsum / double (totalSum);
 				hx_t -= p * NUMlog2 (p);
 			}
 		}
@@ -2722,7 +2722,7 @@ void NUMgetEntropies (constMATVU const& m, double *out_h, double *out_hx, double
 		for (integer i = 1; i <= m.nrow; i ++) {
 			for (integer j = 1; j <= m.ncol; j ++) {
 				if (m [i] [j] > 0.0) {
-					double p = m [i] [j] / totalSum;
+					const double p = m [i] [j] / double (totalSum);
 					h_t -= p * NUMlog2 (p);
 				}
 			}
@@ -2754,7 +2754,7 @@ void NUMgetEntropies (constMATVU const& m, double *out_h, double *out_hx, double
 }
 #undef TINY
 
-double NUMtrace (const constMATVU& a) {
+double NUMtrace (constMATVU const& a) {
 	Melder_assert (a.nrow == a.ncol);
 	longdouble trace = 0.0;
 	for (integer i = 1; i <= a.nrow; i ++)
@@ -2762,7 +2762,7 @@ double NUMtrace (const constMATVU& a) {
 	return (double) trace;
 }
 
-double NUMtrace2 (const constMATVU& x, const constMATVU& y) {
+double NUMtrace2 (constMATVU const& x, constMATVU const& y) {
 	Melder_assert (x.ncol == y.nrow && x.nrow == y.ncol);
 	longdouble trace = 0.0;
 	for (integer irow = 1; irow <= x.nrow; irow ++)
@@ -2868,11 +2868,11 @@ void MATmul3_XYXt (MATVU const& target, constMATVU const& x, constMATVU const& y
 			longdouble sum = 0.0;
 			for (integer k = 1; k <= x.ncol; k ++)
 				sum += x [irow] [k] * NUMinner (y.row (k), x.row (icol));
-			target [irow] [icol] = sum;
+			target [irow] [icol] = double (sum);
 		}
 }
 
-void MATmul3_XYsXt (MATVU const& target, constMAT const& x, constMAT const& y) { // X.Y.X'
+void MATmul3_XYsXt (MATVU const& target, constMATVU const& x, constMATVU const& y) { // X.Y.X'
 	Melder_assert (x.ncol == y.nrow && y.ncol == x.ncol);
 	Melder_assert (target.nrow == target.ncol && target.nrow == x.nrow);
 	for (integer irow = 1; irow <= target.nrow; irow ++)
@@ -2880,7 +2880,7 @@ void MATmul3_XYsXt (MATVU const& target, constMAT const& x, constMAT const& y) {
 			longdouble sum = 0.0;
 			for (integer k = 1; k <= x.ncol; k ++)
 				sum += x [irow] [k] * NUMinner (y.row (k), x.row (icol));
-			target [irow] [icol] = sum;
+			target [irow] [icol] = double (sum);
 		}
 	for (integer irow = 1; irow <= target.nrow; irow ++)
 		for (integer icol = irow + 1; icol <= target.ncol; icol ++)
@@ -2912,14 +2912,14 @@ static double update (VEC const& x_new, VEC const& y_new, BOOLVECVU const& suppo
 	Melder_assert (y_new.size == yn.size);
 	Melder_assert (dictionary.nrow == yn.size && dictionary.ncol == xn.size);
 	
-	buffer <<=  stepSize * gradient;
+	buffer  <<=  stepSize * gradient;
 	x_new  <<=  xn  +  buffer; // x(n) + stepSize * gradient
 	VECupdateDataAndSupport_inplace (x_new, support_new, numberOfNonZeros);
 	buffer  <<=  x_new  -  xn; // x(n+1) - x (n)
 	const double xdifsq = NUMsum2 (buffer); // ||x(n+1) - x (n)||^2
 	
 	mul_VEC_out (y_new, dictionary, x_new); // y(n+1) = D. x(n+1)
-	buffer.part (1, yn.size) <<= y_new  -  yn; // y(n+1) - y(n) = D.(x(n+1) - x(n))
+	buffer.part (1, yn.size)  <<=  y_new  -  yn; // y(n+1) - y(n) = D.(x(n+1) - x(n))
 	const double ydifsq = NUMsum2 (buffer.part (1, yn.size)); // ||y(n+1) - y(n)||^2
 	return xdifsq / ydifsq;
 }
@@ -2934,13 +2934,6 @@ autoVEC newVECsolveSparse_IHT (constMATVU const& dictionary, constVECVU const& y
 	} catch (MelderError) {
 		Melder_throw (U"Solution of sparse problem not found.");
 	}
-}
-
-/* temporarily until present in melder_tensor.h */
-inline void operator<<= (BOOLVECVU const& target, constBOOLVECVU const& source) {
-	Melder_assert (target.size == source.size);
-	for (integer i = 1; i <= target.size; i ++)
-		target [i] = source [i];
 }
 
 void VECsolveSparse_IHT (VECVU const& x, constMATVU const& dictionary, constVECVU const& y, integer numberOfNonZeros, integer maximumNumberOfIterations, double tolerance, integer infoLevel) {
@@ -2970,15 +2963,15 @@ void VECsolveSparse_IHT (VECVU const& x, constMATVU const& dictionary, constVECV
 			*/
 			mul_VEC_out (buffer.get(), dictionary.transpose(), y);
 			VECupdateDataAndSupport_inplace (buffer.get(), support.get(), numberOfNonZeros);
-			yfromx.all() <<= 0.0;
-			ydif.all() <<= y; // ydif = y - D.x(1) = y - D.0 = y
+			yfromx.all()  <<=  0.0;
+			ydif.all()  <<=  y; // ydif = y - D.x(1) = y - D.0 = y
 		} else {
 			/*
 				We improve a current solution x
 			*/
 			VECupdateDataAndSupport_inplace (x, support.get(), numberOfNonZeros);
 			mul_VEC_out (yfromx.get(), dictionary, x); // D.x(n)
-			ydif.all() <<= y  -  yfromx.all(); // y - D.x(n)
+			ydif.all()  <<=  y  -  yfromx.all(); // y - D.x(n)
 			rms = NUMsum2 (ydif.get()) / y.size; // ||y - D.x(n)||^2
 		}
 		
@@ -3019,7 +3012,7 @@ void VECsolveSparse_IHT (VECVU const& x, constMATVU const& dictionary, constVECV
 				}
 			}
 
-			ydif.all() <<= y  -  yfromx_new.all();   // y - D.x(n+1)
+			ydif.all()  <<=  y  -  yfromx_new.all();   // y - D.x(n+1)
 
 			const double rms_new = NUMsum2 (ydif.get()) / y.size;
 			const double relativeError = fabs (rms - rms_new) / rms_y;
@@ -3028,8 +3021,8 @@ void VECsolveSparse_IHT (VECVU const& x, constMATVU const& dictionary, constVECV
 				MelderInfo_writeLine (U"Iteration: ", iter, U", error: ", rms_new, U" relative: ", relativeError, U" stepSize: ", stepSize);
 			
 			x  <<=  x_new.all();
-			support.all() <<= support_new.all();
-			yfromx.all() <<= yfromx_new.all();
+			support.all()  <<=  support_new.all();
+			yfromx.all()  <<=  yfromx_new.all();
 			rms = rms_new;
 			iter ++;
 		}

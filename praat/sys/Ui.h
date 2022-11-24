@@ -2,7 +2,7 @@
 #define _Ui_h_
 /* Ui.h
  *
- * Copyright (C) 1992-2005,2007-2020 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 #include "Interpreter.h"
 Thing_declare (EditorCommand);
 
+#include "Ui_enums.h"
+
 /* Forms for getting arguments from the user. */
 
 /* Example of usage:
@@ -32,6 +34,7 @@ Thing_declare (EditorCommand);
 		UiField radio;
 		dia = UiForm_create
 		  (topShell,   // the parent GuiWindow of the dialog window
+			nullptr,   // an optional editor
 			U"Create a new person",   // the window title
 			DO_Person_create,   // the function to call when the user clicks OK
 			nullptr,   // the last argument to the OK routine (also for the other buttons); could be a ScriptEditor, or an EditorCommand, or an Interpreter, or nullptr
@@ -92,12 +95,20 @@ enum class _kUiField_type {
 	CHANNEL_ = 9,
 	LABEL_ = 10,
 	TEXT_ = 11,
-	NUMVEC_ = 12,
-	NUMMAT_ = 13,
-	BOOLEAN_ = 14,
-	RADIO_ = 15,
-	OPTIONMENU_ = 16,
-	LIST_ = 17,
+	FORMULA_ = 12,
+	INFILE_ = 13,
+	OUTFILE_ = 14,
+	FOLDER_ = 15,
+	REALVECTOR_ = 16,
+	POSITIVEVECTOR_ = 17,
+	INTEGERVECTOR_ = 18,
+	NATURALVECTOR_ = 19,
+	REALMATRIX_ = 20,
+	STRINGARRAY_ = 21,
+	BOOLEAN_ = 22,
+	RADIO_ = 23,
+	OPTIONMENU_ = 24,
+	LIST_ = 25,
 	LABELLED_TEXT_MIN_ = 1,
 	LABELLED_TEXT_MAX_ = 9
 };
@@ -108,8 +119,13 @@ Thing_define (UiField, Thing) {
 	double realValue;
 	integer integerValue, integerDefaultValue;
 	autostring32 stringValue, stringDefaultValue;
-	autoVEC numericVectorValue;
-	autoMAT numericMatrixValue;
+	kUi_realVectorFormat realVectorDefaultFormat;   // for REALVECTOR_, POSITIVEVECTOR_
+	autoVEC realVectorValue, realVectorDefaultValue;   // for REALVECTOR_, POSITIVEVECTOR_
+	kUi_integerVectorFormat integerVectorDefaultFormat;   // for INTEGERVECTOR_, NATURALVECTOR_
+	autoINTVEC integerVectorValue, integerVectorDefaultValue;   // for INTEGERVECTOR_, NATURALVECTOR_
+	autoMAT numericMatrixValue, numericMatrixDefaultValue;   // for REALMATRIX_
+	kUi_stringArrayFormat stringArrayFormat;   // for STRINGARRAY_
+	autoSTRVEC stringArrayValue, stringArrayDefaultValue;   // for STRINGARRAY_
 	MelderColour colourValue;
 	OrderedOf<structUiOption> options;
 	constSTRVEC strings;
@@ -119,6 +135,7 @@ Thing_define (UiField, Thing) {
 	GuiRadioButton radioButton;
 	GuiList list;
 	GuiOptionMenu optionMenu;
+	GuiButton pushButton;   // like "Browse..." for INFILE_, OUTFILE_, FOLDER_ (2021-03-30)
 	int y;
 
 	conststring32 variableName;   // a reference to a name known at compile time, for use by the Praat library
@@ -128,19 +145,17 @@ Thing_define (UiField, Thing) {
 	bool *boolVariable;
 	conststring32 *stringVariable;
 	MelderColour *colourVariable;
-	constVEC *numericVectorVariable;
+	constVEC *realVectorVariable;
+	constINTVEC *integerVectorVariable;
 	constMAT *numericMatrixVariable;
+	constSTRVEC *stringArrayVariable;
 
 	int subtract;
 	integer numberOfLines;
-
-	void v_destroy () noexcept
-		override;
 };
 
-#define UiCallback_ARGS \
-	UiForm _sendingForm, integer _narg, Stackel _args, conststring32 _sendingString, Interpreter interpreter, conststring32 _invokingButtonTitle, bool _isModified, void *_closure
-typedef void (*UiCallback) (UiCallback_ARGS);
+using UiCallback = void (*) (UiForm _sendingForm, integer _narg, Stackel _args, conststring32 _sendingString,
+		Interpreter interpreter, conststring32 _invokingButtonTitle, bool _isModified, void *_closure, Editor optionalEditor);
 
 #define MAXIMUM_NUMBER_OF_FIELDS  50
 #define MAXIMUM_NUMBER_OF_CONTINUE_BUTTONS  10
@@ -148,7 +163,8 @@ typedef void (*UiCallback) (UiCallback_ARGS);
 Thing_define (UiForm, Thing) {
 	EditorCommand command;
 	GuiWindow d_dialogParent;
-	autostring32 invokingButtonTitle, helpTitle;
+	Editor optionalEditor;
+	autostring32 invokingButtonTitle, helpTitle, scriptFilePath;
 	UiCallback okCallback;
 	void *buttonClosure;
 
@@ -178,12 +194,12 @@ Thing_define (UiForm, Thing) {
 	int shiftKeyPressed;
 	bool allowMultipleFiles;   // for input
 
-	void v_destroy () noexcept
+	void v9_destroy () noexcept
 		override;
 };
 
 /* The following functions work on the screen and from batch. */
-autoUiForm UiForm_create (GuiWindow parent, conststring32 title,
+autoUiForm UiForm_create (GuiWindow parent, Editor optionalEditor, conststring32 title,
 	UiCallback okCallback, void *buttonClosure,
 	conststring32 invokingButtonTitle, conststring32 helpTitle);
 UiField UiForm_addReal (UiForm me, double *variable, conststring32 variableName, conststring32 label, conststring32 defaultValue);
@@ -196,8 +212,16 @@ UiField UiForm_addSentence (UiForm me, conststring32 *variable, conststring32 va
 UiField UiForm_addLabel (UiForm me, conststring32 *variable, conststring32 label);
 UiField UiForm_addBoolean (UiForm me, bool *variable, conststring32 variableName, conststring32 label, bool defaultValue);
 UiField UiForm_addText (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue, integer numberOfLines = 1);
-UiField UiForm_addNumvec (UiForm me, constVEC *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
-UiField UiForm_addNummat (UiForm me, constMAT *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
+UiField UiForm_addFormula (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
+UiField UiForm_addInfile (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
+UiField UiForm_addOutfile (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
+UiField UiForm_addFolder (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 name, conststring32 defaultValue);
+UiField UiForm_addRealVector (UiForm me, constVEC *variable, conststring32 variableName, conststring32 name, kUi_realVectorFormat defaultFormat, conststring32 defaultValue);
+UiField UiForm_addPositiveVector (UiForm me, constVEC *variable, conststring32 variableName, conststring32 name, kUi_realVectorFormat defaultFormat, conststring32 defaultValue);
+UiField UiForm_addIntegerVector (UiForm me, constINTVEC *variable, conststring32 variableName, conststring32 name, kUi_integerVectorFormat defaultFormat, conststring32 defaultValue);
+UiField UiForm_addNaturalVector (UiForm me, constINTVEC *variable, conststring32 variableName, conststring32 name, kUi_integerVectorFormat defaultFormat, conststring32 defaultValue);
+UiField UiForm_addRealMatrix (UiForm me, constMAT *variable, conststring32 variableName, conststring32 name, constMATVU defaultValue);
+UiField UiForm_addStringArray (UiForm me, constSTRVEC *variable, conststring32 variableName, conststring32 name, constSTRVEC defaultValue, integer numberOfLines = 7);
 UiField UiForm_addRadio (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName, conststring32 label, int defaultValue, int base);
 UiOption UiRadio_addButton (UiField me, conststring32 label);
 UiField UiForm_addOptionMenu (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName, conststring32 label, int defaultValue, int base);
@@ -244,9 +268,6 @@ void UiForm_do (UiForm me, bool modified);
 	Behaviour:
 		If the user clicks "OK",
 		the form will call the `okCallback` that was registered with UiForm_create ().
-		   If the `okCallback` then returns 1, the form will disappear from the screen;
-		if it returns 0, the form will stay on the screen; this can be used
-		for enabling the user to repair mistakes in the form.
 
 		If the user clicks "Apply",
 		the form will call the `okCallback` that was registered with UiForm_create (),
@@ -274,8 +295,10 @@ void UiForm_info (UiForm me, integer narg);
 	These functions work from the GUI as well as from a script.
 */
 integer UiForm_getInteger (UiForm me, conststring32 fieldName);   // Integer, Natural, Boolean, Radio, List
-char32 * UiForm_getString (UiForm me, conststring32 fieldName);   // Word, Sentence, Text, Numvec, Nummat, Radio, List
+char32 * UiForm_getString (UiForm me, conststring32 fieldName);   // Word, Sentence, Text, RealMatrix, Radio, List
 MelderFile UiForm_getFile (UiForm me, conststring32 fieldName);   // FileIn, FileOut
+VEC UiForm_getRealVector (UiForm me, conststring32 fieldName);   // RealVector
+INTVEC UiForm_getIntegerVector (UiForm me, conststring32 fieldName);   // IntegerVector
 
 double UiForm_getReal_check (UiForm me, conststring32 fieldName);
 integer UiForm_getInteger_check (UiForm me, conststring32 fieldName);
@@ -295,7 +318,7 @@ autoUiForm UiOutfile_create (GuiWindow parent, conststring32 title,
 
 void UiInfile_do (UiForm me);
 
-void UiOutfile_do (UiForm me, conststring32 defaultName);
+void UiOutfile_do (UiForm me, conststring32 defaultName, Editor optionalEditor);
 
 MelderFile UiFile_getFile (UiForm me);
 
@@ -320,6 +343,8 @@ void Ui_setAllowExecutionHook (bool (*allowExecutionHook) (void *closure), void 
 
 void UiForm_Interpreter_addVariables (UiForm me, Interpreter interpreter);
 int UiForm_getClickedContinueButton (UiForm me);
+
+void Ui_prefs ();
 
 /* End of file Ui.h */
 #endif

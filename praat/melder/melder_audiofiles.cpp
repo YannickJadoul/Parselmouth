@@ -1,6 +1,6 @@
 /* melder_audiofiles.cpp
  *
- * Copyright (C) 1992-2008,2010-2019 Paul Boersma & David Weenink, 2007 Erez Volk (for FLAC)
+ * Copyright (C) 1992-2008,2010-2019,2021 Paul Boersma & David Weenink, 2007 Erez Volk (for FLAC)
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  */
 
 #include "melder.h"
+#define FLAC__NO_DLL
 #include "../external/flac/flac_FLAC_metadata.h"
 #include "../external/flac/flac_FLAC_stream_decoder.h"
 #include "../external/flac/flac_FLAC_stream_encoder.h"
@@ -689,7 +690,7 @@ static void Melder_checkFlacFile (MelderFile file, integer *numberOfChannels, in
 {
 	FLAC__StreamMetadata metadata;
 	FLAC__StreamMetadata_StreamInfo *info;
-	if (! FLAC__metadata_get_streaminfo (Melder_peek32to8 (Melder_fileToPath (file)), & metadata))   // FIXME: not Unicode-compatible on Windows.
+	if (! FLAC__metadata_get_streaminfo (Melder_peek32to8_fileSystem (Melder_fileToPath (file)), & metadata))   // FIXME: not Unicode-compatible on Windows.
 		Melder_throw (U"Invalid FLAC file");
 	info = & metadata. data. stream_info;
 	*numberOfChannels = info -> channels;

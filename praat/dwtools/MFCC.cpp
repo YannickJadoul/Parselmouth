@@ -30,8 +30,8 @@
 
 Thing_implement (MFCC, CC, 1);
 
-void structMFCC :: v_info () {
-	structCC :: v_info ();
+void structMFCC :: v1_info () {
+	structCC :: v1_info ();
 	MelderInfo_writeLine (U"Minimum frequency: ", fmin, U" mel");
 	MelderInfo_writeLine (U"Maximum frequency: ", fmax, U" mel");
 }
@@ -88,7 +88,7 @@ autoSound MFCC_to_Sound (MFCC me) {
 		autoSound thee = Sound_create (my maximumNumberOfCoefficients, my xmin, my xmax, my nx, my dx, my x1);
 		for (integer iframe = 1; iframe <= my nx; iframe ++) {
 			const CC_Frame cf = & my frame [iframe];
-			thy z.column (iframe) <<= cf -> c.all();
+			thy z.column (iframe)  <<=  cf -> c.all();
 		}
 		return thee;
 	} catch (MelderError) {

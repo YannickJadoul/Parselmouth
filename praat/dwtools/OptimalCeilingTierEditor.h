@@ -2,7 +2,7 @@
 #define _OptimalCeilingTierEditor_h_
 /* OptimalCeilingTierEditor.h
  *
- * Copyright (C) 2015 David Weenink, 2017,2020 Paul Boersma
+ * Copyright (C) 2015 David Weenink, 2017,2020-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,41 +19,31 @@
  */
 
 #include "RealTierEditor.h"
-#include "OptimalCeilingTier.h"
+#include "OptimalCeilingTierArea.h"
 #include "Sound.h"
 
-Thing_define (OptimalCeilingTierArea, RealTierArea) {
-	conststring32 v_rightTickUnits ()
-		override { return U" Hz"; }
-	double v_defaultYmin ()
-		override { return 4000.0; }
-	double v_defaultYmax ()
-		override { return 6000.0; }
-};
-
 Thing_define (OptimalCeilingTierEditor, RealTierEditor) {
-	void v_createHelpMenuItems (EditorMenu menu)
+	void v_createMenuItems_help (EditorMenu menu)
 		override;
 	void v_play (double startTime, double endTime)
 		override;
-	conststring32 v_quantityText ()
-		override { return U"Frequency (Hz)"; }
-	conststring32 v_setRangeTitle ()
-		override { return U"Set frequency range..."; }
-	conststring32 v_defaultYminText ()
-		override { return U"4000.0"; }
-	conststring32 v_defaultYmaxText ()
-		override { return U"6000.0"; }
-	conststring32 v_yminText ()
-		override { return U"Minimum frequency (Hz)"; }
-	conststring32 v_ymaxText ()
-		override { return U"Maximum frequency (Hz)"; }
+	void v_drawLegends () override {
+		FunctionArea_drawLegend (our realTierArea().get(),
+			FunctionArea_legend_LINES_SPECKLES U" ##modifiable OptimalCeilingTier",
+			DataGui_defaultForegroundColour (our realTierArea().get(), false)
+		);
+		if (our soundArea())
+			FunctionArea_drawLegend (our soundArea().get(),
+				FunctionArea_legend_WAVEFORM U" %%non-modifiable copy of sound",
+				DataGui_defaultForegroundColour (our soundArea().get(), false)
+			);
+	}
 };
 
 autoOptimalCeilingTierEditor OptimalCeilingTierEditor_create (conststring32 title,
-	OptimalCeilingTier amplitude,
-	Sound sound,   // may be null
-	bool ownSound);
+	OptimalCeilingTier optimalCeilingTier,   // main data
+	Sound sound   // may be null
+);
 
 /* End of file OptimalCeilingTierEditor.h */
 #endif

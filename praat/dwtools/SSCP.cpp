@@ -92,8 +92,8 @@
 Thing_implement (SSCP, TableOfReal, 0);
 Thing_implement (SSCPList, TableOfRealList, 0);
 
-void structSSCP :: v_info () {
-	structTableOfReal :: v_info ();
+void structSSCP :: v1_info () {
+	structTableOfReal :: v1_info ();
 	const double zmin = NUMmin (our data.all());
 	const double zmax = NUMmax (our data.all());
 	MelderInfo_writeLine (U"Minimum value: ", zmin);
@@ -236,7 +236,7 @@ void SSCP_drawTwoDimensionalEllipse_inside (SSCP me, Graphics g, double scale, c
 		*/
 		for (integer i = 1; i <= nsteps + 1; i ++) {
 			double xp =  cosine * x [i] -   sine * y [i];			
-			y [i]     =    sine * x [i] + cosine * y[i];
+			y [i]     =    sine * x [i] + cosine * y [i];
 			x [i] = xp;
 		}
 		/*
@@ -309,8 +309,8 @@ autoSSCP SSCP_create (integer dimension) {
 }
 
 void SSCP_reset (SSCP me) {
-	my data.all() <<= 0.0;
-	my centroid.all() <<= 0.0;
+	my data.all()  <<=  0.0;
+	my centroid.all()  <<=  0.0;
 	my numberOfObservations = 0;
 }
 
@@ -552,16 +552,16 @@ autoPCA SSCP_to_PCA (SSCP me) {
 		autoMAT mat;
 		if (my numberOfRows == 1) {
 			mat = zero_MAT (my numberOfColumns, my numberOfColumns);
-			mat.diagonal() <<= my data.row (1); // 1xn matrix -> nxn
+			mat.diagonal()  <<=  my data.row (1); // 1xn matrix -> nxn
 		} else if (my data.nrow == my numberOfColumns && my data.ncol == my numberOfColumns)
 			mat = copy_MAT (my data.get());
 		else
 			Melder_throw (me, U": the SSCP has the wrong dimensions.");
 		autoPCA thee = PCA_create (my numberOfColumns, my numberOfColumns);
 		Eigen_initFromSymmetricMatrix (thee.get(), mat.get());
-		thy centroid.all() <<= my centroid.all();
+		thy centroid.all()  <<=  my centroid.all();
 		PCA_setNumberOfObservations (thee.get(), Melder_ifloor (my numberOfObservations));
-		thy labels.all() <<= my columnLabels.all();
+		thy labels.all()  <<=  my columnLabels.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": PCA not created.");
@@ -711,7 +711,7 @@ void SSCPList_drawConcentrationEllipses (SSCPList me, Graphics g, double scale, 
 autoTableOfReal SSCP_to_TableOfReal (SSCP me) {
 	try {
 		autoTableOfReal thee = Thing_new (TableOfReal);
-		my structTableOfReal :: v_copy (thee.get());
+		my structTableOfReal :: v1_copy (thee.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not copied.");
@@ -721,8 +721,8 @@ autoTableOfReal SSCP_to_TableOfReal (SSCP me) {
 autoTableOfReal SSCP_extractCentroid (SSCP me) {
 	try {
 		autoTableOfReal thee = TableOfReal_create (1, my numberOfColumns);
-		thy data.row (1) <<= my centroid.all();
-		thy columnLabels.all() <<= my columnLabels.all();
+		thy data.row (1)  <<=  my centroid.all();
+		thy columnLabels.all()  <<=  my columnLabels.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": centroid not extracted.");
@@ -732,7 +732,7 @@ autoTableOfReal SSCP_extractCentroid (SSCP me) {
 autoSSCP Covariance_to_SSCP (Covariance me) {
 	try {
 		autoSSCP thee = Thing_new (SSCP);
-		my structSSCP :: v_copy (thee.get());
+		my structSSCP :: v1_copy (thee.get());
 		for (integer irow = 1; irow <= my numberOfRows; irow ++)
 			for (integer icol = irow; icol <= my numberOfColumns; icol ++)
 				thy data [icol] [irow] = thy data [irow] [icol] *= my numberOfObservations - 1;
@@ -759,10 +759,10 @@ void SSCP_expand (SSCP me) {
 	/* A reduced matrix has my numberOfRows < my numberOfColumns.
 		After expansion:
 		my numberOfRows == my numberOfColumns
-		my storageNumberOfRows = my numberOfRows (before)
-		 my data (after) = my expansion;
-		my expansion = my data (before)
-		 No expansion for a standard matrix or if already expanded and data has not changed!
+		my storageNumberOfRows == my numberOfRows (before)
+		my data (after) == my expansion;
+		my expansion == my data (before)
+		No expansion for a standard matrix or if already expanded and data has not changed!
 	*/
 	if ((my expansionNumberOfRows == 0 && my numberOfRows == my numberOfColumns) ||
 	        (my expansionNumberOfRows > 0 && ! my dataChanged))
@@ -773,14 +773,14 @@ void SSCP_expand (SSCP me) {
 	for (integer ir = 1; ir <= my numberOfColumns; ir ++)
 		for (integer ic = ir; ic <= my numberOfColumns; ic ++) {
 			const integer dij = integer_abs (ir - ic);
-			my expansion [ir] [ic] = ( my expansion [ic] [ir] = dij < my numberOfRows ? my data [dij + 1] [ic] : 0.0 );
+			my expansion [ir] [ic] = my expansion [ic] [ir] = ( dij < my numberOfRows ? my data [dij + 1] [ic] : 0.0 );
 		}
 
-	// Now make 'my data' point to 'my expansion'
+	// Now make 'my data' point to 'my expansion' and vice versa
 	std::swap (my data, my expansion);
 	my expansionNumberOfRows = my numberOfRows;
 	my numberOfRows = my numberOfColumns;
-	my dataChanged = 0;
+	my dataChanged = false;
 }
 
 void SSCP_unExpand (SSCP me) {
@@ -789,10 +789,10 @@ void SSCP_unExpand (SSCP me) {
 	my data = my expansion.move();
 	my numberOfRows = my expansionNumberOfRows;
 	my expansionNumberOfRows = 0;
-	my dataChanged = 0;
+	my dataChanged = false;
 }
 
-void SSCP_expandLowerCholeskyInverse (SSCP me) {
+void SSCP_expandWithLowerCholeskyInverse (SSCP me) {
 	if (NUMisEmpty (my lowerCholeskyInverse.get()))
 		my lowerCholeskyInverse = raw_MAT (my numberOfColumns, my numberOfColumns);
 	if (my numberOfRows == 1) {   // diagonal
@@ -802,9 +802,9 @@ void SSCP_expandLowerCholeskyInverse (SSCP me) {
 			my lnd += log (my data [1] [j]);   // diagonal elmnt is variance
 		}
 	} else {
-		my lowerCholeskyInverse.all() <<= my data.all();
+		my lowerCholeskyInverse.all()  <<=  my data.all();
 		try {
-			MATlowerCholeskyInverse_inplace (my lowerCholeskyInverse.get(), & (my lnd));
+			MATlowerCholeskyInverse_inplace (my lowerCholeskyInverse.get(), & my lnd);
 		} catch (MelderError) {
 			// singular matrix: arrange a diagonal only inverse.
 			my lnd = 0.0;
@@ -823,9 +823,7 @@ void SSCP_unExpandLowerCholesky (SSCP me) {
 	my lnd = 0.0;
 }
 
-void SSCP_expandPCA (SSCP me) {
-	if (my pca)
-		my pca.reset();
+void SSCP_expandWithPCA (SSCP me) {
 	my pca = SSCP_to_PCA (me);
 }
 

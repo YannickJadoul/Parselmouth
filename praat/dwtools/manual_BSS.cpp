@@ -1,6 +1,6 @@
 /* manual_BSS.cpp
  *
- * Copyright (C) 2010-2019 David Weenink
+ * Copyright (C) 2010-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ TAG (U"2. The elements %%c__ij_% in a Covariance always satisfy |%%c__ij_%/\\Vr(
 	"generally not the case for cross-correlations.")
 MAN_END
 
-MAN_BEGIN (U"CrossCorrelationTableList", U"djmw", 20101227)
+MAN_BEGIN (U"CrossCorrelationTableList", U"djmw", 20220111)
 INTRO (U"One of the types of objects in Praat. A CrossCorrelationTableList represents a collection of @@CrossCorrelationTable@ objects.")
 MAN_END
 
@@ -68,11 +68,11 @@ DEFINITION (U"the standard deviation of the noise that is added to each transfor
 	"makes each transformation matrix a little different and the collection not jointly "
 	"diagonalizable anymore.")
 ENTRY (U"Algorithm")
-NORMAL (U"All the CrossCorrelationTable matrices are generated as #V\\'p\\.c#D__%k_\\.c #V, where #D__%k_ is a diagonal matrix "
-	"with entries randomly choosen from the [-1,1] interval. The matrix #V is a \"random\" orthogonal matrix "
-	"obtained from the singular value decomposition of a matrix #M = #U\\.c#D\\.c#V\\'p, where the cells of the "
-	"matrix #M are random Gaussian numbers with mean 0 and standard deviation 1.")
-NORMAL (U"If the first matrix has to be positive definite, the numbers on the diagonal of #D__1_ are randomly "
+NORMAL (U"All the CrossCorrelationTable matrices are generated as #%V\\'p #%D__%k_ #%V, where #%D__%k_ is a diagonal matrix "
+	"with entries randomly choosen from the [-1,1] interval. The matrix #%V is a \"random\" orthogonal matrix "
+	"obtained from the singular value decomposition of a matrix #%M = #%U #%D #%V\\'p, where the cells of the "
+	"matrix #%M are random Gaussian numbers with mean 0 and standard deviation 1.")
+NORMAL (U"If the first matrix has to be positive definite, the numbers on the diagonal of #%D__1_ are randomly "
 	"chosen from the [0.1,1] interval.")
 MAN_END
 
@@ -160,7 +160,7 @@ DEFINITION (U"determines the lag time.")
 ENTRY (U"Algorithm")
 NORMAL (U"The cross-correlation between channel %i and channel %j for lag time \\ta is defined as the "
 	"discretized #integral")
-FORMULA (U"cross-corr (%c__%i_, %c__%j_) [%\\ta] \\=3 \\su__%t_ %c__%i_[%t] %c__%j_[%t+%\\ta] %%\\Det%,")
+EQUATION (U"cross-corr (%c__%i_, %c__%j_) [%\\ta] \\=3 \\su__%t_ %c__%i_[%t] %c__%j_[%t+%\\ta] %%\\Det%,")
 NORMAL (U"where %t and %t+%\\ta are discrete times and %%\\Det% is the @@sampling period@. ")
 MAN_END
 
@@ -198,7 +198,7 @@ TAG (U"##Diagonalization method")
 DEFINITION (U"defines the method to determine the independent components.")
 ENTRY (U"Algorithm")
 NORMAL (U"This method tries to decompose the sound according to the %%instantaneous% mixing model")
-FORMULA (U"#Y=#A\\.c#X.")
+EQUATION (U"#Y=#A\\.c#X.")
 NORMAL (U"In this model #Y is a matrix with the selected multi-channel sound, #A is a so-called "
 	"%%mixing matrix% and #X is a matrix with the independent components. "
 	"Essentially the model says that each channel in the multi-channel sound is a linear combination of the "
@@ -218,7 +218,7 @@ NORMAL (U"The theory says that statistically independent signals are not correla
 	"for the multi-channel sound #Y this will result in a cross-correlation matrix #C. For the right side we "
 	"obtain #A\\.c#D\\.c#A\\'p, where #D is a diagonal matrix because all the cross-correlations between "
 	"different independent components are zero by definition. This results in the following identity: ")
-FORMULA (U"#C(\\ta)=#A\\.c#D(\\ta)\\.c#A\\'p, for all values of the lag time \\ta.")
+EQUATION (U"#C(\\ta)=#A\\.c#D(\\ta)\\.c#A\\'p, for all values of the lag time \\ta.")
 NORMAL (U"This equation says that, given the model, the cross-correlation matrix can be diagonalized for "
 	"all values of the lag time %%by the same transformation matrix% #A.")
 NORMAL (U"If we calculate the cross-correlation matrices for a number of different lag times, say 20, we "
@@ -345,7 +345,7 @@ DEFINITION (U"where the mixing is instantaneous, corresponds to the model #Y=#A\
 	"However, in general we don't know #A and #X and there are an infinite number of possible decompositions for #Y. The problem is however solvable by making some (mild) assumptions about #A and #X. ")
 TAG (U"%%Convolutive mixtures%")
 DEFINITION (U"are mixtures where the mixing is of convolutive nature, i.e. the model is ")
-FORMULA (U"%%y__i_ (n)% = \\Si__%j_^^%d^\\Si__%\\ta_^^M__%ij_-1^ %%h__ij_(\\ta)x__j_(n-\\ta) + N__i_(n)%, for %i=1..m.")
+EQUATION (U"%%y__i_ (n)% = \\Si__%j_^^%d^\\Si__%\\ta_^^M__%ij_-1^ %%h__ij_(\\ta)x__j_(n-\\ta) + N__i_(n)%, for %i=1..m.")
 DEFINITION (U"Here %%y__i_ (n) is the %n-th sample of the %i-th microphone signal, %m is the number of microphones, %%h__ij_(\\ta)% is the multi-input multi-output linear filter with the source-microphone impulse responses that characterize the propagation of the sound in the room and %%N__i_% is a noise source. This model is typically much harder to solve than the previous one because of the %%h__ij_(\\ta)% filter term that can have thousands of coefficients. For example, the typical @@reverberation time@ of a room is approximately 0.3 s which corresponds to 2400 samples, i.e. filter coefficients, for an 8 kHz sampled sound.")
 ENTRY (U"Solving the blind source separation for instantaneous mixtures")
 NORMAL (U"Various techniques exist for solving the blind source separation problem for %instantaneous mixtures. Very popular ones make make use of second order statistics (SOS) by trying to "

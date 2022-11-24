@@ -87,8 +87,8 @@ PRAAT_EXCEPTION_BINDING(PraatWarning, PyExc_UserWarning) {
 
 PRAAT_EXCEPTION_BINDING(PraatFatal, PyExc_BaseException) {
 	static auto fatal = *this;
-	Melder_setFatalProc([](const char32 *message) {
-		auto extraMessage = "Parselmouth intercepted a fatal error in Praat:\n\n"s +
+	Melder_setCrashProc([](const char32 *message) {
+		auto extraMessage = "Parselmouth intercepted a crash in Praat:\n\n"s +
 		                    Melder_peek32to8(message) + "\n"s +
 		                    "To ensure correctness of Praat's calculations, it is advisable to NOT ignore this error\n"s
 		                    "and to RESTART Python before using more of Praat's functionality through Parselmouth."s;
@@ -160,7 +160,7 @@ inline std::string attr_doc(const py::module_ &m, const char *name, const char *
 
 // Cannot be put into an anonymous namespace, because "INCLUDE_LIBRARY" will not work anymore.
 void initializePraat() {
-	Melder_setFatalProc([](const char32 *message) {
+	Melder_setCrashProc([](const char32 *message) {
 		auto extraMessage = "Praat failed to initialize and cannot be used by Parselmouth:\n\n"s +
 		                    Melder_peek32to8(message) + "\n"s +
 		                    "Since Parselmouth uses Praat's code, it can only be run on platforms that can run Praat.\n"s

@@ -2,7 +2,7 @@
 #define _EditorM_h_
 /* EditorM.h
  *
- * Copyright (C) 1992-2013,2015-2020 Paul Boersma
+ * Copyright (C) 1992-2013,2015-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,39 +18,16 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#undef REAL
-#undef REAL_OR_UNDEFINED
-#undef POSITIVE
-#undef INTEGER
-#undef NATURAL
-#undef WORD
-#undef SENTENCE
-#undef COLOUR
-#undef CHANNEL
-#undef BOOLEAN
-#undef LABEL
-#undef MUTABLE_LABEL
-#undef TEXTFIELD
-#undef RADIO
-#undef RADIOSTR
-#undef RADIOBUTTON
-#undef OPTIONMENU
-#undef OPTIONMENUSTR
-#undef OPTION
-#undef RADIO_ENUM
-#undef OPTIONMENU_ENUM
-#undef LIST
-#undef SET_REAL
-#undef SET_INTEGER
-#undef SET_BOOLEAN
-#undef SET_STRING
-#undef SET_ENUM
+#ifdef _praatM_h_
+	#error Include either praatM.h or EditorM.h, but not both.
+#endif
 
 #define EDITOR_ARGS_FORM  EditorCommand cmd, UiForm _sendingForm_, integer _narg_, Stackel _args_, conststring32 _sendingString_, Interpreter interpreter
 #define EDITOR_ARGS_FORM_FORWARD  cmd, _sendingForm_, _narg_, _args_, _sendingString_, interpreter
 #define EDITOR_ARGS_CMD  EditorCommand cmd, UiForm, integer, Stackel, conststring32, Interpreter
 #define EDITOR_ARGS_CMD_FORWARD  cmd, nullptr, 0, nullptr, nullptr, nullptr
 #define EDITOR_ARGS_DIRECT  EditorCommand, UiForm, integer, Stackel, conststring32, Interpreter
+#define EDITOR_ARGS_DIRECT_WITH_OUTPUT  EditorCommand, UiForm, integer, Stackel, conststring32, Interpreter interpreter
 #define EDITOR_ARGS_DIRECT_FORWARD  nullptr, nullptr, 0, nullptr, nullptr, nullptr
 
 #define EDITOR_FORM(title, helpTitle)  \
@@ -207,13 +184,78 @@ _form_inited_: \
 #define TEXTFIELD_VARIABLE(stringVariable) \
 	static conststring32 stringVariable;
 
-#define TEXTFIELD_FIELD(stringVariable, labelText, defaultValue) \
-	if (labelText != nullptr) UiForm_addLabel (cmd -> d_uiform.get(), nullptr, labelText); \
-	UiForm_addText (cmd -> d_uiform.get(), & stringVariable, nullptr, U"", defaultValue);
+#define TEXTFIELD_FIELD(stringVariable, labelText, defaultValue, numberOfLines) \
+	UiForm_addText (cmd -> d_uiform.get(), & stringVariable, nullptr, labelText, defaultValue, numberOfLines);
 
-#define TEXTFIELD(stringVariable, labelText, defaultValue) \
+#define TEXTFIELD(stringVariable, labelText, defaultValue, numberOfLines) \
 	TEXTFIELD_VARIABLE (stringVariable) \
-	TEXTFIELD_FIELD (stringVariable, labelText, defaultValue)
+	TEXTFIELD_FIELD (stringVariable, labelText, defaultValue, numberOfLines)
+
+
+#define FORMULA_VARIABLE(stringVariable) \
+	static conststring32 stringVariable;
+
+#define FORMULA_FIELD(stringVariable, labelText, defaultValue) \
+	UiForm_addFormula (cmd -> d_uiform.get(), & stringVariable, nullptr, labelText, defaultValue);
+
+#define FORMULA(stringVariable, labelText, defaultValue) \
+	FORMULA_VARIABLE (stringVariable) \
+	FORMULA_FIELD (stringVariable, labelText, defaultValue)
+
+
+#define INFILE_VARIABLE(stringVariable) \
+	static conststring32 stringVariable;
+
+#define INFILE_FIELD(stringVariable, labelText, defaultValue) \
+	UiForm_addInfile (cmd -> d_uiform.get(), & stringVariable, nullptr, labelText, defaultValue);
+
+#define INFILE(stringVariable, labelText, defaultValue) \
+	INFILE_VARIABLE (stringVariable) \
+	INFILE_FIELD (stringVariable, labelText, defaultValue)
+
+
+#define OUTFILE_VARIABLE(stringVariable) \
+	static conststring32 stringVariable;
+
+#define OUTFILE_FIELD(stringVariable, labelText, defaultValue) \
+	UiForm_addOutfile (cmd -> d_uiform.get(), & stringVariable, nullptr, labelText, defaultValue);
+
+#define OUTFILE(stringVariable, labelText, defaultValue) \
+	OUTFILE_VARIABLE (stringVariable) \
+	OUTFILE_FIELD (stringVariable, labelText, defaultValue)
+
+
+#define FOLDER_VARIABLE(stringVariable) \
+	static conststring32 stringVariable;
+
+#define FOLDER_FIELD(stringVariable, labelText, defaultValue) \
+	UiForm_addFolder (cmd -> d_uiform.get(), & stringVariable, nullptr, labelText, defaultValue);
+
+#define FOLDER(stringVariable, labelText, defaultValue) \
+	FOLDER_VARIABLE (stringVariable) \
+	FOLDER_FIELD (stringVariable, labelText, defaultValue)
+
+
+#define REALVECTOR_VARIABLE(realVectorVariable) \
+	static constVEC realVectorVariable;
+
+#define REALVECTOR_FIELD(realVectorVariable, labelText, defaultFormat, defaultStringValue) \
+	UiForm_addRealVector (cmd -> d_uiform.get(), & realVectorVariable, nullptr, labelText, kUi_realVectorFormat::defaultFormat, defaultStringValue);
+
+#define REALVECTOR(realVectorVariable, labelText, defaultFormat, defaultStringValue) \
+	REALVECTOR_VARIABLE (realVectorVariable) \
+	REALVECTOR_FIELD (realVectorVariable, labelText, defaultFormat, defaultStringValue)
+
+
+#define NATURALVECTOR_VARIABLE(integerVectorVariable) \
+	static constINTVEC integerVectorVariable;
+
+#define NATURALVECTOR_FIELD(integerVectorVariable, labelText, defaultFormat, defaultStringValue) \
+	UiForm_addNaturalVector (cmd -> d_uiform.get(), & integerVectorVariable, nullptr, labelText, kUi_integerVectorFormat::defaultFormat, defaultStringValue);
+
+#define NATURALVECTOR(integerVectorVariable, labelText, defaultFormat, defaultStringValue) \
+	NATURALVECTOR_VARIABLE (integerVectorVariable) \
+	NATURALVECTOR_FIELD (integerVectorVariable, labelText, defaultFormat, defaultStringValue)
 
 
 #define RADIO_VARIABLE(optionVariable) \
@@ -339,7 +381,7 @@ _form_inited_: \
 		} if (! _args_ && ! _sendingForm_ && ! _sendingString_) { char32 defaultName [300]; defaultName [0] = U'\0';
 #define EDITOR_DO_SAVE \
 	(void) interpreter; \
-	UiOutfile_do (cmd -> d_uiform.get(), defaultName); } else { MelderFile file; structMelderFile _file2 { }; \
+	UiOutfile_do (cmd -> d_uiform.get(), defaultName, my boss()); } else { MelderFile file; structMelderFile _file2 { }; \
 	if (_args_) { \
 		Melder_require (_narg_ == 1, \
 			U"Command requires exactly 1 argument, the name of the file to write, instead of the given ", _narg_, U" arguments."); \
@@ -374,6 +416,111 @@ _form_inited_: \
 	} else { \
 		file = UiFile_getFile (cmd -> d_uiform.get()); \
 	}
+
+#define VOID_EDITOR
+#define VOID_EDITOR_END
+
+#define DATA_BEGIN__  \
+	Melder_assert (my data());
+
+#define PLAY_DATA  \
+	DATA_BEGIN__
+#define PLAY_DATA_END
+
+#define INFO_EDITOR
+#define INFO_EDITOR_END  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::STRING_;
+
+#define INFO_DATA  \
+	DATA_BEGIN__
+#define INFO_DATA_END  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::STRING_;
+
+#define FOR_REAL__(...)  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::REAL_; \
+	Melder_information (result, __VA_ARGS__);
+
+#define FOR_INTEGER__(...)  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::INTEGER_; \
+	Melder_information (double (result), __VA_ARGS__);
+
+#define FOR_BOOLEAN__(...)  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::BOOLEAN_; \
+	Melder_information (double (result), __VA_ARGS__);
+
+#define FOR_COMPLEX__(...)  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::STRING_; /* TODO: make true complex types in script */ \
+	Melder_information (result, __VA_ARGS__);
+
+#define FOR_STRING__  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::STRING_; \
+	Melder_information (result);
+
+#define QUERY_EDITOR_FOR_REAL
+#define QUERY_EDITOR_FOR_REAL_END(...)  \
+	FOR_REAL__ (__VA_ARGS__)
+
+#define QUERY_EDITOR_FOR_INTEGER
+#define QUERY_EDITOR_FOR_INTEGER_END(...)  \
+	FOR_INTEGER__ (__VA_ARGS__)
+
+#define QUERY_EDITOR_FOR_BOOLEAN
+#define QUERY_EDITOR_FOR_BOOLEAN_END(...)  \
+	FOR_BOOLEAN__ (__VA_ARGS__)
+
+#define QUERY_EDITOR_FOR_STRING
+#define QUERY_EDITOR_FOR_STRING_END  \
+	FOR_STRING__
+
+#define QUERY_DATA_FOR_REAL  \
+	DATA_BEGIN__
+#define QUERY_DATA_FOR_REAL_END(...)  \
+	FOR_REAL__ (__VA_ARGS__)
+
+#define QUERY_DATA_FOR_INTEGER  \
+	DATA_BEGIN__
+#define QUERY_DATA_FOR_INTEGER_END(...)  \
+	FOR_INTEGER__ (__VA_ARGS__)
+
+#define QUERY_DATA_FOR_BOOLEAN  \
+	DATA_BEGIN__
+#define QUERY_DATA_FOR_BOOLEAN_END(...)  \
+	FOR_BOOLEAN__ (__VA_ARGS__)
+
+#define QUERY_DATA_FOR_STRING  \
+	DATA_BEGIN__
+#define QUERY_DATA_FOR_STRING_END  \
+	FOR_STRING__
+
+#define MODIFY_DATA(undoTitle)  \
+	Editor_save (my boss(), undoTitle);
+#define MODIFY_DATA_END  \
+	Editor_broadcastDataChanged (my boss());
+
+#define CONVERT_DATA_TO_ONE  \
+	DATA_BEGIN__
+#define CONVERT_DATA_TO_ONE_END(...)  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::OBJECT_; \
+	Thing_setName (result.get(), __VA_ARGS__); \
+	Editor_broadcastPublication (my boss(), result.move());
+
+#define CREATE_ONE
+#define CREATE_ONE_END(...)  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::OBJECT_; \
+	Thing_setName (result.get(), __VA_ARGS__); \
+	Editor_broadcastPublication (my boss(), result.move());
+
+#define HELP(title)  \
+	Melder_help (title);
 
 /* End of file EditorM.h */
 #endif

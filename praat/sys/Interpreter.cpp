@@ -1,6 +1,6 @@
 /* Interpreter.cpp
  *
- * Copyright (C) 1993-2020 Paul Boersma
+ * Copyright (C) 1993-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 
 #include "Interpreter.h"
 #include "praatP.h"
-extern structMelderDir praatDir;
 #include "praat_script.h"
 #include "Formula.h"
 #include "praat_version.h"
@@ -27,24 +26,35 @@ extern structMelderDir praatDir;
 #include "../fon/Vector.h"
 
 #define Interpreter_WORD 1
-#define Interpreter_REAL 2
-#define Interpreter_POSITIVE 3
-#define Interpreter_INTEGER 4
-#define Interpreter_NATURAL 5
-#define Interpreter_BOOLEAN 6
-#define Interpreter_SENTENCE 7
-#define Interpreter_TEXT 8
-#define Interpreter_VECTOR 9
-#define Interpreter_MATRIX 10
-#define Interpreter_CHOICE 11
-#define Interpreter_OPTIONMENU 12
-#define Interpreter_BUTTON 13
-#define Interpreter_OPTION 14
-#define Interpreter_COMMENT 15
+#define Interpreter_SENTENCE 2
+#define Interpreter_TEXT 3
+#define Interpreter_INFILE 4
+#define Interpreter_OUTFILE 5
+#define Interpreter_FOLDER 6
 
-autoVEC theInterpreterNumvec;
-autoMAT theInterpreterNummat;
-autoSTRVEC theInterpreterStrvec;
+#define Interpreter_REAL 7
+#define Interpreter_POSITIVE 8
+#define Interpreter_INTEGER 9
+#define Interpreter_NATURAL 10
+#define Interpreter_BOOLEAN 11
+#define Interpreter_MINIMUM_TYPE_FOR_NUMERIC_VARIABLE  Interpreter_REAL
+#define Interpreter_MAXIMUM_TYPE_FOR_NUMERIC_VARIABLE  Interpreter_BOOLEAN
+
+#define Interpreter_REALVECTOR 12
+#define Interpreter_POSITIVEVECTOR 13
+#define Interpreter_INTEGERVECTOR 14
+#define Interpreter_NATURALVECTOR 15
+#define Interpreter_MINIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE  Interpreter_REALVECTOR
+#define Interpreter_MAXIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE  Interpreter_NATURALVECTOR
+
+#define Interpreter_REALMATRIX 16
+#define Interpreter_CHOICE 17
+#define Interpreter_OPTIONMENU 18
+#define Interpreter_MAXIMUM_TYPE_WITH_VARIABLE_NAME  Interpreter_OPTIONMENU
+
+#define Interpreter_BUTTON 19
+#define Interpreter_OPTION 20
+#define Interpreter_COMMENT 21
 
 Thing_implement (InterpreterVariable, SimpleString, 0);
 
@@ -65,6 +75,29 @@ static autoInterpreterVariable InterpreterVariable_create (conststring32 key) {
 	}
 }
 
+conststring32 kInterpreter_ReturnType_errorMessage (kInterpreter_ReturnType returnType, conststring32 command) {
+	switch (returnType) {
+		case kInterpreter_ReturnType::VOID_:
+			return Melder_cat (U"The command \"", command, U"\" does not return anything");
+		case kInterpreter_ReturnType::OBJECT_:
+			return Melder_cat (U"The command \"", command, U"\" returns an object");
+		case kInterpreter_ReturnType::REAL_:
+		case kInterpreter_ReturnType::INTEGER_:
+			return Melder_cat (U"The command \"", command, U"\" returns a number or a string");
+		case kInterpreter_ReturnType::STRING_:
+			return Melder_cat (U"The command \"", command, U"\" returns a string");
+		case kInterpreter_ReturnType::REALVECTOR_:
+		case kInterpreter_ReturnType::INTEGERVECTOR_:
+			return Melder_cat (U"The command \"", command, U"\" returns a vector");
+		case kInterpreter_ReturnType::REALMATRIX_:
+			return Melder_cat (U"The command \"", command, U"\" returns a matrix");
+		case kInterpreter_ReturnType::STRINGARRAY_:
+			return Melder_cat (U"The command \"", command, U"\" returns a string array");
+		default:
+			return Melder_cat (U"The command \"", command, U"\" has an unknown return type");
+	}
+}
+
 Thing_implement (Interpreter, Thing, 0);
 
 autoInterpreter Interpreter_create (conststring32 environmentName, ClassInfo editorClass) {
@@ -79,9 +112,12 @@ autoInterpreter Interpreter_create (conststring32 environmentName, ClassInfo edi
 	}
 }
 
-autoInterpreter Interpreter_createFromEnvironment (Editor editor) {
-	if (! editor) return Interpreter_create (nullptr, nullptr);
-	return Interpreter_create (editor -> name.get(), editor -> classInfo);
+autoInterpreter Interpreter_createFromEnvironment (Editor optionalEditor) {
+	if (! optionalEditor)
+		return Interpreter_create (nullptr, nullptr);
+	autoInterpreter interpreter = Interpreter_create (optionalEditor -> name.get(), optionalEditor -> classInfo);
+	interpreter -> optionalEditor = optionalEditor;
+	return interpreter;   // BUG: collapse
 }
 
 void Melder_includeIncludeFiles (autostring32 *inout_text) {
@@ -200,10 +236,21 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 					Melder_throw (U"Unfinished form (missing \"endform\").");
 				startOfLine = Melder_findEndOfHorizontalSpace (endOfLine + 1);
 			}
-			if (str32nequ (startOfLine, U"endform", 7) && Melder_isEndOfInk (startOfLine [7])) break;
+			if (str32nequ (startOfLine, U"endform", 7) && Melder_isEndOfInk (startOfLine [7]))
+				break;
 			char32 *parameterLocation;
 			if (str32nequ (startOfLine, U"word", 4) && Melder_isEndOfInk (startOfLine [4]))
 				{ type = Interpreter_WORD; parameterLocation = startOfLine + 4; }
+			else if (str32nequ (startOfLine, U"sentence", 8) && Melder_isEndOfInk (startOfLine [8]))
+				{ type = Interpreter_SENTENCE; parameterLocation = startOfLine + 8; }
+			else if (str32nequ (startOfLine, U"infile", 6) && Melder_isEndOfInk (startOfLine [6]))
+				{ type = Interpreter_INFILE; parameterLocation = startOfLine + 6; }
+			else if (str32nequ (startOfLine, U"outfile", 7) && Melder_isEndOfInk (startOfLine [7]))
+				{ type = Interpreter_OUTFILE; parameterLocation = startOfLine + 7; }
+			else if (str32nequ (startOfLine, U"folder", 6) && Melder_isEndOfInk (startOfLine [6]))
+				{ type = Interpreter_FOLDER; parameterLocation = startOfLine + 6; }
+			else if (str32nequ (startOfLine, U"text", 4) && Melder_isEndOfInk (startOfLine [4]))
+				{ type = Interpreter_TEXT; parameterLocation = startOfLine + 4; }
 			else if (str32nequ (startOfLine, U"real", 4) && Melder_isEndOfInk (startOfLine [4]))
 				{ type = Interpreter_REAL; parameterLocation = startOfLine + 4; }
 			else if (str32nequ (startOfLine, U"positive", 8) && Melder_isEndOfInk (startOfLine [8]))
@@ -214,14 +261,16 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 				{ type = Interpreter_NATURAL; parameterLocation = startOfLine + 7; }
 			else if (str32nequ (startOfLine, U"boolean", 7) && Melder_isEndOfInk (startOfLine [7]))
 				{ type = Interpreter_BOOLEAN; parameterLocation = startOfLine + 7; }
-			else if (str32nequ (startOfLine, U"sentence", 8) && Melder_isEndOfInk (startOfLine [8]))
-				{ type = Interpreter_SENTENCE; parameterLocation = startOfLine + 8; }
-			else if (str32nequ (startOfLine, U"text", 4) && Melder_isEndOfInk (startOfLine [4]))
-				{ type = Interpreter_TEXT; parameterLocation = startOfLine + 4; }
-			else if (str32nequ (startOfLine, U"vector", 6) && Melder_isEndOfInk (startOfLine [6]))
-				{ type = Interpreter_VECTOR; parameterLocation = startOfLine + 6; }
-			else if (str32nequ (startOfLine, U"matrix", 6) && Melder_isEndOfInk (startOfLine [6]))
-				{ type = Interpreter_MATRIX; parameterLocation = startOfLine + 6; }
+			else if (str32nequ (startOfLine, U"realvector", 10) && Melder_isEndOfInk (startOfLine [10]))
+				{ type = Interpreter_REALVECTOR; parameterLocation = startOfLine + 10; }
+			else if (str32nequ (startOfLine, U"positivevector", 14) && Melder_isEndOfInk (startOfLine [14]))
+				{ type = Interpreter_POSITIVEVECTOR; parameterLocation = startOfLine + 14; }
+			else if (str32nequ (startOfLine, U"integervector", 13) && Melder_isEndOfInk (startOfLine [13]))
+				{ type = Interpreter_INTEGERVECTOR; parameterLocation = startOfLine + 13; }
+			else if (str32nequ (startOfLine, U"naturalvector", 13) && Melder_isEndOfInk (startOfLine [13]))
+				{ type = Interpreter_NATURALVECTOR; parameterLocation = startOfLine + 13; }
+			else if (str32nequ (startOfLine, U"realmatrix", 10) && Melder_isEndOfInk (startOfLine [10]))
+				{ type = Interpreter_REALMATRIX; parameterLocation = startOfLine + 10; }
 			else if (str32nequ (startOfLine, U"choice", 6) && Melder_isEndOfInk (startOfLine [6]))
 				{ type = Interpreter_CHOICE; parameterLocation = startOfLine + 6; }
 			else if (str32nequ (startOfLine, U"optionmenu", 10) && Melder_isEndOfInk (startOfLine [10]))
@@ -257,7 +306,7 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 				my arguments [4] := "Green"
 				my arguments [5] := "Blue"
 			*/
-			if (type <= Interpreter_OPTIONMENU) {
+			if (type <= Interpreter_MAXIMUM_TYPE_WITH_VARIABLE_NAME) {
 				Melder_skipHorizontalSpace (& parameterLocation);
 				if (Melder_isEndOfLine (*parameterLocation)) {
 					*parameterLocation = U'\0';   // destroy input in order to limit printing of line
@@ -271,7 +320,31 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 			} else {
 				my parameters [++ my numberOfParameters] [0] = U'\0';
 			}
-			char32 *argumentLocation = Melder_findEndOfHorizontalSpace (parameterLocation);
+			char32 *argumentLocation;
+			if (type >= Interpreter_MINIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE && type <= Interpreter_MAXIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE) {
+				char32 *formatLocation = Melder_findEndOfHorizontalSpace (parameterLocation);
+				if (Melder_isEndOfLine (*formatLocation)) {
+					*formatLocation = U'\0';   // destroy input in order to limit printing of line
+					Melder_throw (U"Missing format:\n\"", startOfLine, U"\".");
+				}
+				char32 *q = my formats [my numberOfParameters];
+				if (*formatLocation != U'(') {
+					*formatLocation = U'\0';   // destroy input in order to limit printing of line
+					Melder_throw (U"Missing format (should start with \"(\"):\n\"", startOfLine, U"\".");
+				}
+				while (*formatLocation != U')') {
+					if (Melder_isEndOfLine (*formatLocation)) {
+						*formatLocation = U'\0';   // destroy input in order to limit printing of line
+						Melder_throw (U"Incomplete format (should end in \")\"):\n\"", startOfLine, U"\".");
+					}
+					* (q ++) = * (formatLocation ++);
+				}
+				* (q ++) = * (formatLocation ++);   // copy the closing parenthesis
+				*q = U'\0';
+				argumentLocation = Melder_findEndOfHorizontalSpace (formatLocation);
+			} else {
+				argumentLocation = Melder_findEndOfHorizontalSpace (parameterLocation);
+			}
 			endOfLine = Melder_findEndOfLine (argumentLocation);
 			if (Melder_isEndOfText (*endOfLine))
 				Melder_throw (U"Unfinished form (missing \"endform\").");
@@ -286,16 +359,16 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 	return npar;
 }
 
-autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, conststring32 path,
-	void (*okCallback) (UiForm, integer, Stackel, conststring32, Interpreter, conststring32, bool, void *), void *okClosure,
+autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, Editor optionalEditor, conststring32 path,
+	void (*okCallback) (UiForm, integer, Stackel, conststring32, Interpreter, conststring32, bool, void *, Editor), void *okClosure,
 	bool selectionOnly)
 {
-	autoUiForm form = UiForm_create (parent,
+	autoUiForm form = UiForm_create (parent, optionalEditor,
 		Melder_cat (selectionOnly ? U"Run script (selection only): " : U"Run script: ", my dialogTitle),
 		okCallback, okClosure, nullptr, nullptr);
 	UiField radio = nullptr;
 	if (path)
-		UiForm_addText (form.get(), nullptr, nullptr, U"$file", path);
+		form -> scriptFilePath = Melder_dup (path);
 	for (int ipar = 1; ipar <= my numberOfParameters; ipar ++) {
 		/*
 			Convert underscores to spaces.
@@ -308,40 +381,68 @@ autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, conststring
 			p ++;
 		}
 		switch (my types [ipar]) {
-			case Interpreter_WORD:
-				UiForm_addWord (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
-			case Interpreter_REAL:
-				UiForm_addReal (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;   // TODO: an address of a real variable
-			case Interpreter_POSITIVE:
-				UiForm_addPositive (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
-			case Interpreter_INTEGER:
-				UiForm_addInteger (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
-			case Interpreter_NATURAL:
-				UiForm_addNatural (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
-			case Interpreter_BOOLEAN:
+			case Interpreter_WORD: {
+				UiForm_addWord (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_SENTENCE: {
+				UiForm_addSentence (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_TEXT: {
+				UiForm_addText (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_INFILE: {
+				UiForm_addInfile (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_OUTFILE: {
+				UiForm_addOutfile (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_FOLDER: {
+				UiForm_addFolder (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_REAL: {
+				UiForm_addReal (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());   // TODO: an address of a real variable
+			} break; case Interpreter_POSITIVE: {
+				UiForm_addPositive (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_INTEGER: {
+				UiForm_addInteger (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_NATURAL: {
+				UiForm_addNatural (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_BOOLEAN: {
 				UiForm_addBoolean (form.get(), nullptr, nullptr, parameter, my arguments [ipar] [0] == U'1' ||
 					my arguments [ipar] [0] == U'y' || my arguments [ipar] [0] == U'Y' ||
-					(my arguments [ipar] [0] == U'o' && my arguments [ipar] [1] == U'n')); break;
-			case Interpreter_SENTENCE:
-				UiForm_addSentence (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
-			case Interpreter_TEXT:
-				UiForm_addText (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
-			case Interpreter_VECTOR:
-				UiForm_addNumvec (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
-			case Interpreter_MATRIX:
-				UiForm_addNummat (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
-			case Interpreter_CHOICE:
-				radio = UiForm_addRadio (form.get(), nullptr, nullptr, nullptr, parameter, Melder_atoi (my arguments [ipar].get()), 1); break;
-			case Interpreter_OPTIONMENU:
-				radio = UiForm_addOptionMenu (form.get(), nullptr, nullptr, nullptr, parameter, Melder_atoi (my arguments [ipar].get()), 1); break;
-			case Interpreter_BUTTON:
-				if (radio) UiRadio_addButton (radio, my arguments [ipar].get()); break;
-			case Interpreter_OPTION:
-				if (radio) UiOptionMenu_addButton (radio, my arguments [ipar].get()); break;
-			case Interpreter_COMMENT:
-				UiForm_addLabel (form.get(), nullptr, my arguments [ipar].get()); break;
-			default:
-				UiForm_addWord (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get()); break;
+					(my arguments [ipar] [0] == U'o' && my arguments [ipar] [1] == U'n'));
+			} break; case Interpreter_REALVECTOR: {
+				kUi_realVectorFormat format = kUi_realVectorFormat_getValue (my formats [ipar]);
+				if (format == kUi_realVectorFormat::UNDEFINED)
+					Melder_throw (U"Undefined real vector format \"", my formats [ipar], U"\".");
+				UiForm_addRealVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+			} break; case Interpreter_POSITIVEVECTOR: {
+				kUi_realVectorFormat format = kUi_realVectorFormat_getValue (my formats [ipar]);
+				if (format == kUi_realVectorFormat::UNDEFINED)
+					Melder_throw (U"Undefined positive vector format \"", my formats [ipar], U"\".");
+				UiForm_addPositiveVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+			} break; case Interpreter_INTEGERVECTOR: {
+				kUi_integerVectorFormat format = kUi_integerVectorFormat_getValue (my formats [ipar]);
+				if (format == kUi_integerVectorFormat::UNDEFINED)
+					Melder_throw (U"Undefined integer vector format \"", my formats [ipar], U"\".");
+				UiForm_addIntegerVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+			} break; case Interpreter_NATURALVECTOR: {
+				kUi_integerVectorFormat format = kUi_integerVectorFormat_getValue (my formats [ipar]);
+				if (format == kUi_integerVectorFormat::UNDEFINED)
+					Melder_throw (U"Undefined natural vector format \"", my formats [ipar], U"\".");
+				UiForm_addNaturalVector (form.get(), nullptr, nullptr, parameter, kUi_integerVectorFormat_getValue (my formats [ipar]), my arguments [ipar].get());
+			} break; case Interpreter_REALMATRIX: {
+				Melder_throw (U"Cannot handle matrices in forms yet.");   // TODO
+			//	UiForm_addRealMatrix (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			} break; case Interpreter_CHOICE: {
+				radio = UiForm_addRadio (form.get(), nullptr, nullptr, nullptr, parameter, (int) Melder_atoi (my arguments [ipar].get()), 1);
+			} break; case Interpreter_OPTIONMENU: {
+				radio = UiForm_addOptionMenu (form.get(), nullptr, nullptr, nullptr, parameter, (int) Melder_atoi (my arguments [ipar].get()), 1);
+			} break; case Interpreter_BUTTON: {
+				if (radio)
+					UiRadio_addButton (radio, my arguments [ipar].get());
+			} break; case Interpreter_OPTION: {
+				if (radio)
+					UiOptionMenu_addButton (radio, my arguments [ipar].get());
+			} break; case Interpreter_COMMENT: {
+				UiForm_addLabel (form.get(), nullptr, my arguments [ipar].get());
+			} break; default: {
+				UiForm_addWord (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+			}
 		}
 		/*
 			Strip parentheses and colon off parameter name.
@@ -384,9 +485,25 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 			p ++;
 		}
 		switch (my types [ipar]) {
+			case Interpreter_WORD: {
+			case Interpreter_SENTENCE:
+			case Interpreter_TEXT:
+				const conststring32 value = UiForm_getString (dialog, parameter);
+				my arguments [ipar] = Melder_dup_f (value);
+				break;
+			}
+			case Interpreter_INFILE: {
+			case Interpreter_OUTFILE:
+			case Interpreter_FOLDER:
+				const conststring32 value = UiForm_getString (dialog, parameter);
+				structMelderFile file { };
+				Melder_relativePathToFile (value, & file);   // the working directory should have been set to the script file path
+				my arguments [ipar] = Melder_dup_f (Melder_fileToPath (& file));
+				break;
+			}
 			case Interpreter_REAL:
 			case Interpreter_POSITIVE: {
-				double value = UiForm_getReal_check (dialog, parameter);
+				const double value = UiForm_getReal_check (dialog, parameter);
 				my arguments [ipar] = autostring32 (40, true);
 				Melder_sprint (my arguments [ipar].get(),40+1, value);
 				break;
@@ -394,16 +511,45 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 			case Interpreter_INTEGER:
 			case Interpreter_NATURAL:
 			case Interpreter_BOOLEAN: {
-				integer value = UiForm_getInteger (dialog, parameter);
+				const integer value = UiForm_getInteger (dialog, parameter);
 				my arguments [ipar] = autostring32 (40, true);
 				Melder_sprint (my arguments [ipar].get(),40+1, value);
 				break;
 			}
+			case Interpreter_REALVECTOR:
+			case Interpreter_POSITIVEVECTOR:
+			{
+				const VEC realVectorValue = UiForm_getRealVector (dialog, parameter);
+				autoMelderString buffer;
+				for (integer i = 1; i <= realVectorValue.size; i ++) {
+					MelderString_append (& buffer, realVectorValue [i]);
+					if (i < realVectorValue.size)
+						MelderString_appendCharacter (& buffer, U' ');
+				}
+				my arguments [ipar] = Melder_dup (buffer.string);
+				break;
+			}
+			case Interpreter_INTEGERVECTOR:
+			case Interpreter_NATURALVECTOR:
+			{
+				const INTVEC integerVectorValue = UiForm_getIntegerVector (dialog, parameter);
+				autoMelderString buffer;
+				for (integer i = 1; i <= integerVectorValue.size; i ++) {
+					MelderString_append (& buffer, integerVectorValue [i]);
+					if (i < integerVectorValue.size)
+						MelderString_appendCharacter (& buffer, U' ');
+				}
+				my arguments [ipar] = Melder_dup (buffer.string);
+				break;
+			}
+			case Interpreter_REALMATRIX: {
+				Melder_throw (U"Cannot handle matrices in forms yet");
+				break;
+			}
 			case Interpreter_CHOICE:
 			case Interpreter_OPTIONMENU: {
-				integer integerValue = 0;
-				integerValue = UiForm_getInteger (dialog, parameter);
-				conststring32 stringValue = UiForm_getString (dialog, parameter);
+				const integer integerValue = UiForm_getInteger (dialog, parameter);
+				const conststring32 stringValue = UiForm_getString (dialog, parameter);
 				my arguments [ipar] = autostring32 (40, true);
 				Melder_sprint (my arguments [ipar].get(),40+1, integerValue);
 				Melder_sprint (my choiceArguments [ipar],100, stringValue);
@@ -413,11 +559,82 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 			case Interpreter_OPTION:
 			case Interpreter_COMMENT:
 				break;
-			default: {
-				conststring32 value = UiForm_getString (dialog, parameter);
-				my arguments [ipar] = Melder_dup_f (value);
-				break;
+			default:
+				Melder_fatal (U"Unhandled parameter type ", my types [ipar]);
+		}
+	}
+}
+
+static void tidyUpParameterNames (Interpreter me, integer size) {
+	for (integer ipar = 1; ipar <= size; ipar ++) {
+		mutablestring32 p = my parameters [ipar];
+		/*
+			Ignore buttons and comments again (after `size` was
+			made smaller than my numberOfParameters).
+		*/
+		if (! *p)
+			continue;
+		/*
+			Strip parentheses and colon off parameter name.
+		*/
+		if ((p = str32chr (p, U'(')) != nullptr) {
+			*p = U'\0';
+			if (p - my parameters [ipar] > 0 && p [-1] == U'_')
+				p [-1] = U'\0';
+		}
+		p = my parameters [ipar];
+		if (*p != U'\0' && p [str32len (p) - 1] == U':')
+			p [str32len (p) - 1] = U'\0';
+	}
+}
+
+static void convertBooleansAndChoicesToNumbersAndRelativeToAbsolutePaths (Interpreter me, integer size) {
+	for (integer ipar = 1; ipar <= size; ipar ++) {
+		if (my types [ipar] == Interpreter_INFILE || my types [ipar] == Interpreter_OUTFILE || my types [ipar] == Interpreter_FOLDER) {
+			structMelderFile file { };
+			Melder_relativePathToFile (my arguments [ipar].get(), & file);
+			my arguments [ipar] = Melder_dup_f (Melder_fileToPath (& file));
+		} else if (my types [ipar] == Interpreter_BOOLEAN) {
+			mutablestring32 arg = & my arguments [ipar] [0];
+			if (str32equ (arg, U"1") || str32equ (arg, U"yes") || str32equ (arg, U"on") ||
+			    str32equ (arg, U"Yes") || str32equ (arg, U"On") || str32equ (arg, U"YES") || str32equ (arg, U"ON"))
+			{
+				str32cpy (arg, U"1");
+			} else if (str32equ (arg, U"0") || str32equ (arg, U"no") || str32equ (arg, U"off") ||
+			    str32equ (arg, U"No") || str32equ (arg, U"Off") || str32equ (arg, U"NO") || str32equ (arg, U"OFF"))
+			{
+				str32cpy (arg, U"0");
+			} else {
+				Melder_throw (U"Unknown value \"", arg, U"\" for boolean \"", my parameters [ipar], U"\".");
 			}
+		} else if (my types [ipar] == Interpreter_CHOICE) {
+			integer jpar;
+			mutablestring32 arg = & my arguments [ipar] [0];
+			for (jpar = ipar + 1; jpar <= my numberOfParameters; jpar ++) {
+				if (my types [jpar] != Interpreter_BUTTON && my types [jpar] != Interpreter_OPTION)
+					Melder_throw (U"Unknown value \"", arg, U"\" for choice \"", my parameters [ipar], U"\".");
+				if (str32equ (my arguments [jpar].get(), arg)) {   // the button labels are in the arguments; see Interpreter_readParameters
+					str32cpy (arg, Melder_integer (jpar - ipar));
+					str32cpy (my choiceArguments [ipar], my arguments [jpar].get());
+					break;
+				}
+			}
+			if (jpar > my numberOfParameters)
+				Melder_throw (U"Unknown value \"", arg, U"\" for choice \"", my parameters [ipar], U"\".");
+		} else if (my types [ipar] == Interpreter_OPTIONMENU) {
+			integer jpar;
+			mutablestring32 arg = & my arguments [ipar] [0];
+			for (jpar = ipar + 1; jpar <= my numberOfParameters; jpar ++) {
+				if (my types [jpar] != Interpreter_OPTION && my types [jpar] != Interpreter_BUTTON)
+					Melder_throw (U"Unknown value \"", arg, U"\" for option menu \"", my parameters [ipar], U"\".");
+				if (str32equ (my arguments [jpar].get(), arg)) {
+					str32cpy (arg, Melder_integer (jpar - ipar));
+					str32cpy (my choiceArguments [ipar], my arguments [jpar].get());
+					break;
+				}
+			}
+			if (jpar > my numberOfParameters)
+				Melder_throw (U"Unknown value \"", arg, U"\" for option menu \"", my parameters [ipar], U"\".");
 		}
 	}
 }
@@ -427,28 +644,14 @@ void Interpreter_getArgumentsFromString (Interpreter me, conststring32 arguments
 	integer length = str32len (arguments);
 	while (size >= 1 && my parameters [size] [0] == U'\0')
 		size --;   /* Ignore fields without a variable name (button, comment). */
-	for (int ipar = 1; ipar <= size; ipar ++) {
-		char32 *p = my parameters [ipar];
-		/*
-		 * Ignore buttons and comments again.
-		 */
-		if (! *p) continue;
-		/*
-		 * Strip parentheses and colon off parameter name.
-		 */
-		if ((p = str32chr (p, U'(')) != nullptr) {
-			*p = U'\0';
-			if (p - my parameters [ipar] > 0 && p [-1] == U'_') p [-1] = U'\0';
-		}
-		p = my parameters [ipar];
-		if (*p != U'\0' && p [str32len (p) - 1] == U':') p [str32len (p) - 1] = U'\0';
-	}
+	tidyUpParameterNames (me, size);
 	for (int ipar = 1; ipar < size; ipar ++) {
 		int ichar = 0;
 		/*
-		 * Ignore buttons and comments again. The buttons will keep their labels as "arguments".
-		 */
-		if (my parameters [ipar] [0] == U'\0') continue;
+			Ignore buttons and comments again. The buttons will keep their labels as "arguments".
+		*/
+		if (my parameters [ipar] [0] == U'\0')
+			continue;
 		/*
 			Erase the current values, probably the default values,
 			and replace with the actual arguments.
@@ -456,8 +659,9 @@ void Interpreter_getArgumentsFromString (Interpreter me, conststring32 arguments
 		my arguments [ipar] = autostring32 (length);
 		/*
 			Skip spaces until next argument.
-		 */
-		while (Melder_isHorizontalSpace (*arguments)) arguments ++;
+		*/
+		while (Melder_isHorizontalSpace (*arguments))
+			arguments ++;
 		/*
 			The argument is everything up to the next space, or, if it starts with a double quote,
 			everything between this quote and the matching double quote;
@@ -472,7 +676,8 @@ void Interpreter_getArgumentsFromString (Interpreter me, conststring32 arguments
 			for (;;) {
 				if (*arguments == U'\0')
 					Melder_throw (U"Missing matching quote.");
-				if (*arguments == U'\"' && * ++ arguments != U'\"') break;   // remember second quote
+				if (*arguments == U'\"' && * ++ arguments != U'\"')
+					break;   // remember second quote
 				my arguments [ipar] [ichar ++] = *arguments ++;
 			}
 		} else {
@@ -486,85 +691,26 @@ void Interpreter_getArgumentsFromString (Interpreter me, conststring32 arguments
 		Leading spaces are skipped, but trailing spaces are included.
 	*/
 	if (size > 0) {
-		while (Melder_isHorizontalSpace (*arguments)) arguments ++;
+		while (Melder_isHorizontalSpace (*arguments))
+			arguments ++;
 		my arguments [size] = Melder_dup_f (arguments);
 	}
-	/*
-		Convert booleans and choices to numbers.
-	*/
-	for (int ipar = 1; ipar <= size; ipar ++) {
-		if (my types [ipar] == Interpreter_BOOLEAN) {
-			mutablestring32 arg = & my arguments [ipar] [0];
-			if (str32equ (arg, U"1") || str32equ (arg, U"yes") || str32equ (arg, U"on") ||
-			    str32equ (arg, U"Yes") || str32equ (arg, U"On") || str32equ (arg, U"YES") || str32equ (arg, U"ON"))
-			{
-				str32cpy (arg, U"1");
-			} else if (str32equ (arg, U"0") || str32equ (arg, U"no") || str32equ (arg, U"off") ||
-			    str32equ (arg, U"No") || str32equ (arg, U"Off") || str32equ (arg, U"NO") || str32equ (arg, U"OFF"))
-			{
-				str32cpy (arg, U"0");
-			} else {
-				Melder_throw (U"Unknown value \"", arg, U"\" for boolean \"", my parameters [ipar], U"\".");
-			}
-		} else if (my types [ipar] == Interpreter_CHOICE) {
-			int jpar;
-			mutablestring32 arg = & my arguments [ipar] [0];
-			for (jpar = ipar + 1; jpar <= my numberOfParameters; jpar ++) {
-				if (my types [jpar] != Interpreter_BUTTON && my types [jpar] != Interpreter_OPTION)
-					Melder_throw (U"Unknown value \"", arg, U"\" for choice \"", my parameters [ipar], U"\".");
-				if (str32equ (my arguments [jpar].get(), arg)) {   // the button labels are in the arguments; see Interpreter_readParameters
-					str32cpy (arg, Melder_integer (jpar - ipar));
-					str32cpy (my choiceArguments [ipar], my arguments [jpar].get());
-					break;
-				}
-			}
-			if (jpar > my numberOfParameters)
-				Melder_throw (U"Unknown value \"", arg, U"\" for choice \"", my parameters [ipar], U"\".");
-		} else if (my types [ipar] == Interpreter_OPTIONMENU) {
-			int jpar;
-			mutablestring32 arg = & my arguments [ipar] [0];
-			for (jpar = ipar + 1; jpar <= my numberOfParameters; jpar ++) {
-				if (my types [jpar] != Interpreter_OPTION && my types [jpar] != Interpreter_BUTTON)
-					Melder_throw (U"Unknown value \"", arg, U"\" for option menu \"", my parameters [ipar], U"\".");
-				if (str32equ (my arguments [jpar].get(), arg)) {
-					str32cpy (arg, Melder_integer (jpar - ipar));
-					str32cpy (my choiceArguments [ipar], my arguments [jpar].get());
-					break;
-				}
-			}
-			if (jpar > my numberOfParameters)
-				Melder_throw (U"Unknown value \"", arg, U"\" for option menu \"", my parameters [ipar], U"\".");
-		}
-	}
+	convertBooleansAndChoicesToNumbersAndRelativeToAbsolutePaths (me, size);
 }
 
-void Interpreter_getArgumentsFromArgs (Interpreter me, int narg, Stackel args) {
+void Interpreter_getArgumentsFromArgs (Interpreter me, integer narg, Stackel args) {
 	trace (narg, U" arguments");
-	int size = my numberOfParameters;
+	integer size = my numberOfParameters;
 	while (size >= 1 && my parameters [size] [0] == U'\0')
 		size --;   // ignore trailing fields without a variable name (button, comment)
-	for (int ipar = 1; ipar <= size; ipar ++) {
-		mutablestring32 p = my parameters [ipar];
+	tidyUpParameterNames (me, size);
+	integer iarg = 0;
+	for (integer ipar = 1; ipar <= size; ipar ++) {
 		/*
-		 * Ignore buttons and comments again.
-		 */
-		if (! *p) continue;
-		/*
-		 * Strip parentheses and colon off parameter name.
-		 */
-		if ((p = str32chr (p, U'(')) != nullptr) {
-			*p = U'\0';
-			if (p - my parameters [ipar] > 0 && p [-1] == U'_') p [-1] = U'\0';
-		}
-		p = my parameters [ipar];
-		if (*p != U'\0' && p [str32len (p) - 1] == U':') p [str32len (p) - 1] = U'\0';
-	}
-	int iarg = 0;
-	for (int ipar = 1; ipar <= size; ipar ++) {
-		/*
-		 * Ignore buttons and comments again. The buttons will keep their labels as "arguments".
-		 */
-		if (my parameters [ipar] [0] == U'\0') continue;
+			Ignore buttons and comments again. The buttons will keep their labels as "arguments".
+		*/
+		if (my parameters [ipar] [0] == U'\0')
+			continue;
 		/*
 			Erase the current values, probably the default values...
 		*/
@@ -577,58 +723,41 @@ void Interpreter_getArgumentsFromArgs (Interpreter me, int narg, Stackel args) {
 		*/
 		my arguments [ipar] =
 			arg -> which == Stackel_NUMBER ? Melder_dup (Melder_double (arg -> number)) :
-			arg -> which == Stackel_STRING ? Melder_dup (arg -> getString()) : autostring32();
+			arg -> which == Stackel_STRING ? Melder_dup (arg -> getString()) :
+			arg -> which == Stackel_NUMERIC_VECTOR ? Melder_dup (Melder_VEC (arg -> numericVector)) :
+			autostring32();
 		Melder_assert (my arguments [ipar]);
 	}
 	if (iarg < narg)
 		Melder_throw (U"Found ", narg, U" arguments but expected only ", iarg, U".");
-	/*
-	 * Convert booleans and choices to numbers.
-	 */
-	for (int ipar = 1; ipar <= size; ipar ++) {
-		if (my types [ipar] == Interpreter_BOOLEAN) {
-			mutablestring32 arg = & my arguments [ipar] [0];
-			if (str32equ (arg, U"1") || str32equ (arg, U"yes") || str32equ (arg, U"on") ||
-			    str32equ (arg, U"Yes") || str32equ (arg, U"On") || str32equ (arg, U"YES") || str32equ (arg, U"ON"))
-			{
-				str32cpy (arg, U"1");
-			} else if (str32equ (arg, U"0") || str32equ (arg, U"no") || str32equ (arg, U"off") ||
-			    str32equ (arg, U"No") || str32equ (arg, U"Off") || str32equ (arg, U"NO") || str32equ (arg, U"OFF"))
-			{
-				str32cpy (arg, U"0");
-			} else {
-				Melder_throw (U"Unknown value \"", arg, U"\" for boolean \"", my parameters [ipar], U"\".");
-			}
-		} else if (my types [ipar] == Interpreter_CHOICE) {
-			int jpar;
-			mutablestring32 arg = & my arguments [ipar] [0];
-			for (jpar = ipar + 1; jpar <= my numberOfParameters; jpar ++) {
-				if (my types [jpar] != Interpreter_BUTTON && my types [jpar] != Interpreter_OPTION)
-					Melder_throw (U"Unknown value \"", arg, U"\" for choice \"", my parameters [ipar], U"\".");
-				if (str32equ (my arguments [jpar].get(), arg)) {   // the button labels are in the arguments; see Interpreter_readParameters
-					str32cpy (arg, Melder_integer (jpar - ipar));
-					str32cpy (my choiceArguments [ipar], my arguments [jpar].get());
-					break;
-				}
-			}
-			if (jpar > my numberOfParameters)
-				Melder_throw (U"Unknown value \"", arg, U"\" for choice \"", my parameters [ipar], U"\".");
-		} else if (my types [ipar] == Interpreter_OPTIONMENU) {
-			int jpar;
-			mutablestring32 arg = & my arguments [ipar] [0];
-			for (jpar = ipar + 1; jpar <= my numberOfParameters; jpar ++) {
-				if (my types [jpar] != Interpreter_OPTION && my types [jpar] != Interpreter_BUTTON)
-					Melder_throw (U"Unknown value \"", arg, U"\" for option menu \"", my parameters [ipar], U"\".");
-				if (str32equ (my arguments [jpar].get(), arg)) {
-					str32cpy (arg, Melder_integer (jpar - ipar));
-					str32cpy (my choiceArguments [ipar], my arguments [jpar].get());
-					break;
-				}
-			}
-			if (jpar > my numberOfParameters)
-				Melder_throw (U"Unknown value \"", arg, U"\" for option menu \"", my parameters [ipar], U"\".");
-		}
+	convertBooleansAndChoicesToNumbersAndRelativeToAbsolutePaths (me, size);
+}
+
+void Interpreter_getArgumentsFromCommandLine (Interpreter me, integer argc, char **argv) {
+	trace (argc, U" arguments");
+	integer size = my numberOfParameters;
+	while (size >= 1 && my parameters [size] [0] == U'\0')
+		size --;   // ignore trailing fields without a variable name (button, comment)
+	tidyUpParameterNames (me, size);
+	integer iarg = 0;
+	for (integer ipar = 1; ipar <= size; ipar ++) {
+		/*
+			Ignore buttons and comments again. The buttons will keep their labels as "arguments".
+		*/
+		if (my parameters [ipar] [0] == U'\0')
+			continue;
+		/*
+			Erase the current values, probably the default values,
+			and replace with the actual arguments.
+		*/
+		if (iarg == argc)
+			Melder_throw (U"Found ", argc, U" arguments but expected more.");
+		my arguments [ipar] = Melder_8to32 (argv [iarg ++]);
+		Melder_assert (my arguments [ipar]);
 	}
+	if (iarg < argc)
+		Melder_throw (U"Found ", argc, U" arguments but expected only ", iarg, U".");
+	convertBooleansAndChoicesToNumbersAndRelativeToAbsolutePaths (me, size);
 }
 
 static void Interpreter_addNumericVariable (Interpreter me, conststring32 key, double value) {
@@ -645,14 +774,20 @@ static void Interpreter_addStringVariable (Interpreter me, conststring32 key, co
 	variable.releaseToAmbiguousOwner();
 }
 
+static void Interpreter_addNumericVectorVariable (Interpreter me, conststring32 key, conststring32 value) {
+	autoInterpreterVariable variable = InterpreterVariable_create (key);
+	variable -> numericVectorValue = splitByWhitespace_VEC (value);
+	my variablesMap [key] = variable.move();
+	variable.releaseToAmbiguousOwner();
+}
+
 InterpreterVariable Interpreter_hasVariable (Interpreter me, conststring32 key) {
 	Melder_assert (key);
 	auto it = my variablesMap. find (key [0] == U'.' ? Melder_cat (my procedureNames [my callDepth], key) : key);
-	if (it != my variablesMap. end()) {
+	if (it != my variablesMap.end())
 		return it -> second.get();
-	} else {
+	else
 		return nullptr;
-	}
 }
 
 InterpreterVariable Interpreter_lookUpVariable (Interpreter me, conststring32 key) {
@@ -660,12 +795,11 @@ InterpreterVariable Interpreter_lookUpVariable (Interpreter me, conststring32 ke
 	conststring32 variableNameIncludingProcedureName =
 		key [0] == U'.' ? Melder_cat (my procedureNames [my callDepth], key) : key;
 	auto it = my variablesMap. find (variableNameIncludingProcedureName);
-	if (it != my variablesMap. end()) {
+	if (it != my variablesMap.end())
 		return it -> second.get();
-	}
 	/*
-	 * The variable doesn't yet exist: create a new one.
-	 */
+		The variable doesn't yet exist: create a new one.
+	*/
 	autoInterpreterVariable variable = InterpreterVariable_create (variableNameIncludingProcedureName);
 	InterpreterVariable variable_ref = variable.get();
 	my variablesMap [variableNameIncludingProcedureName] = variable.move();
@@ -682,36 +816,43 @@ static integer lookupLabel (Interpreter me, conststring32 labelName) {
 static bool isCommand (conststring32 string) {
 	const char32 *p = & string [0];
 	/*
-	 * Things that start with "nowarn", "noprogress", or "nocheck" are commands.
-	 */
+		Things that start with "nowarn", "noprogress", or "nocheck" are commands.
+	*/
 	if (p [0] == U'n' && p [1] == U'o' &&
-		(str32nequ (p + 2, U"warn ", 5) || str32nequ (p + 2, U"progress ", 9) || str32nequ (p + 2, U"check ", 6))) return true;
-	if (str32nequ (p, U"demo ", 5)) return true;
+			(str32nequ (p + 2, U"warn ", 5) || str32nequ (p + 2, U"progress ", 9) || str32nequ (p + 2, U"check ", 6)))
+		return true;
+	if (str32nequ (p, U"demo ", 5))
+		return true;
 	/*
-	 * Otherwise, things that start with nonupper case are formulas.
-	 */
-	if (! Melder_isUpperCaseLetter (*p)) return false;
+		Otherwise, things that start with nonupper case are formulas.
+	*/
+	if (! Melder_isUpperCaseLetter (*p))
+		return false;
 	/*
-	 * The remaining possibility is things that start with upper case.
-	 * If they contain an underscore, they are object names, hence we must have a formula.
-	 * Otherwise, we have a command.
-	 */
-	while (Melder_isAlphanumeric (*p)) p ++;
-	return *p != '_';
+		The remaining possibility is things that start with upper case.
+		If they contain an underscore, they are object names, hence we must have a formula.
+		Otherwise, we have a command.
+	*/
+	while (Melder_isAlphanumeric (*p))
+		p ++;
+	return *p != U'_';
 }
 
 static void parameterToVariable (Interpreter me, int type, conststring32 in_parameter, int ipar) {
 	char32 parameter [200];
 	Melder_assert (type != 0);
 	str32cpy (parameter, in_parameter);
-	if (type >= Interpreter_REAL && type <= Interpreter_BOOLEAN) {
+	if (type >= Interpreter_MINIMUM_TYPE_FOR_NUMERIC_VARIABLE && type <= Interpreter_MAXIMUM_TYPE_FOR_NUMERIC_VARIABLE) {
 		Interpreter_addNumericVariable (me, parameter, Melder_atof (my arguments [ipar].get()));
 	} else if (type == Interpreter_CHOICE || type == Interpreter_OPTIONMENU) {
 		Interpreter_addNumericVariable (me, parameter, Melder_atof (my arguments [ipar].get()));
 		str32cat (parameter, U"$");
 		Interpreter_addStringVariable (me, parameter, my choiceArguments [ipar]);
 	} else if (type == Interpreter_BUTTON || type == Interpreter_OPTION || type == Interpreter_COMMENT) {
-		/* Do not add a variable. */
+		;   // do not add a variable
+	} else if (type >= Interpreter_MINIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE && type <= Interpreter_MAXIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE) {
+		str32cat (parameter, U"#");
+		Interpreter_addNumericVectorVariable (me, parameter, my arguments [ipar].get());
 	} else {
 		str32cat (parameter, U"$");
 		Interpreter_addStringVariable (me, parameter, my arguments [ipar].get());
@@ -766,7 +907,7 @@ inline static void StringArrayVariable_move (InterpreterVariable variable, STRVE
 		/*
 			Statement like: a$# = b$#   // with non-matching sizes
 		*/
-		variable -> stringArrayValue = newSTRVECcopy (movedVector);
+		variable -> stringArrayValue = copy_STRVEC (movedVector);
 	}
 }
 
@@ -800,7 +941,7 @@ inline static void NumericVectorVariable_add (InterpreterVariable variable, doub
 	variable -> numericVectorValue.all()  +=  scalar;
 }
 inline static void NumericVectorVariable_add (InterpreterVariable variable, constVEC vector) {
-	const VEC& variableVector = variable -> numericVectorValue.get();
+	VEC const& variableVector = variable -> numericVectorValue.get();
 	Melder_require (vector.size == variableVector.size,
 		U"You cannot add a vector with size ", vector.size,
 		U" to a vector with a different size (", variableVector.size, U")."
@@ -811,7 +952,7 @@ inline static void NumericVectorVariable_subtract (InterpreterVariable variable,
 	variable -> numericVectorValue.all()  -=  scalar;
 }
 inline static void NumericVectorVariable_subtract (InterpreterVariable variable, constVEC vector) {
-	const VEC& variableVector = variable -> numericVectorValue.get();
+	VEC const& variableVector = variable -> numericVectorValue.get();
 	Melder_require (vector.size == variable -> numericVectorValue.size,
 		U"You cannot subtract a vector with size ", vector.size,
 		U" from a vector with a different size (", variableVector.size, U")."
@@ -822,7 +963,7 @@ inline static void NumericVectorVariable_multiply (InterpreterVariable variable,
 	variable -> numericVectorValue.all()  *=  scalar;
 }
 inline static void NumericVectorVariable_multiply (InterpreterVariable variable, constVEC vector) {
-	const VEC& variableVector = variable -> numericVectorValue.get();
+	VEC const& variableVector = variable -> numericVectorValue.get();
 	Melder_require (vector.size != variableVector.size,
 		U"You cannot multiply a vector with size ", variableVector.size,
 		U" with a vector with a different size (", vector.size, U")."
@@ -833,7 +974,7 @@ inline static void NumericVectorVariable_divide (InterpreterVariable variable, d
 	variable -> numericVectorValue.all()  /=  scalar;
 }
 inline static void NumericVectorVariable_divide (InterpreterVariable variable, constVEC vector) {
-	const VEC& variableVector = variable -> numericVectorValue.get();
+	VEC const& variableVector = variable -> numericVectorValue.get();
 	Melder_require (vector.size != variableVector.size,
 		U"You cannot divide a vector with size ", variableVector.size,
 		U" by a vector with a different size (", vector.size, U")."
@@ -1224,9 +1365,23 @@ static void assignToNumericVectorElement (Interpreter me, char32 *& p, const cha
 	p ++;   // step over closing bracket
 	while (Melder_isHorizontalSpace (*p))
 		p ++;
-	if (*p != U'=')
-		Melder_throw (U"Missing '=' after vector element ", vectorName, U" [", index.string, U"].");
-	p ++;   // step over equals sign
+	int assignmentType = 0;
+	if (*p == U'=') {
+		p ++;   // step over equals sign
+	} else if (*p == U'+' && p [1] == U'=') {
+		assignmentType = 1;
+		p += 2;   // step over plus-gets sign
+	} else if (*p == U'-' && p [1] == U'=') {
+		assignmentType = 2;
+		p += 2;   // step over minus-gets sign
+	} else if (*p == U'*' && p [1] == U'=') {
+		assignmentType = 3;
+		p += 2;   // step over times-gets sign
+	} else if (*p == U'/' && p [1] == U'=') {
+		assignmentType = 4;
+		p += 2;   // step over div-gets sign
+	} else
+		Melder_throw (U"Missing '=', '+=', '-=', '*=' or '/=' after vector element ", vectorName, U" [", index.string, U"].");
 	while (Melder_isHorizontalSpace (*p))
 		p ++;   // go to first token after assignment
 	if (*p == U'\0')
@@ -1239,14 +1394,18 @@ static void assignToNumericVectorElement (Interpreter me, char32 *& p, const cha
 		MelderString_empty (& valueString);
 		autoMelderDivertInfo divert (& valueString);
 		MelderString_appendCharacter (& valueString, 1);   // will be overwritten by something totally different if any MelderInfo function is called...
-		int status = praat_executeCommand (me, p);
-		if (status == 0) {
+		bool status = praat_executeCommand (me, p);
+		if (! status) {
 			value = undefined;
-		} else if (valueString.string [0] == 1) {   // ...not overwritten by any MelderInfo function? then the return value will be the selected object
-			int IOBJECT, selectedObject = 0, numberOfSelectedObjects = 0;
-			WHERE (SELECTED) { selectedObject = IOBJECT; numberOfSelectedObjects += 1; }
+		} else if (my returnType == kInterpreter_ReturnType::OBJECT_) {
+			integer IOBJECT, selectedObject = 0, numberOfSelectedObjects = 0;
+			WHERE (SELECTED) {
+				selectedObject = IOBJECT;
+				numberOfSelectedObjects += 1;
+			}
 			if (numberOfSelectedObjects > 1)
-				Melder_throw (U"Multiple objects selected. Cannot assign object ID to vector element.");
+				Melder_throw (U"Multiple objects selected. Cannot assign object IDs to vector element. "
+						"Perhaps use a vector variable instead.");
 			if (numberOfSelectedObjects == 0)
 				Melder_throw (U"No objects selected. Cannot assign object ID to vector element.");
 			value = theCurrentPraatObjects -> list [selectedObject]. id;
@@ -1267,7 +1426,18 @@ static void assignToNumericVectorElement (Interpreter me, char32 *& p, const cha
 	if (indexValue > var -> numericVectorValue.size)
 		Melder_throw (U"A vector index cannot be greater than the number of elements (here ",
 			var -> numericVectorValue.size, U"). The index you supplied is ", indexValue, U".");
-	var -> numericVectorValue [indexValue] = value;
+	if (assignmentType == 0)
+		var -> numericVectorValue [indexValue] = value;
+	else if (assignmentType == 1)
+		var -> numericVectorValue [indexValue] += value;
+	else if (assignmentType == 2)
+		var -> numericVectorValue [indexValue] -= value;
+	else if (assignmentType == 3)
+		var -> numericVectorValue [indexValue] *= value;
+	else if (assignmentType == 4)
+		var -> numericVectorValue [indexValue] /= value;
+	else
+		Melder_assert (false);
 }
 
 static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const char32* matrixName, MelderString& valueString) {
@@ -1330,12 +1500,28 @@ static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const cha
 		Melder_throw (U"Column number should be numeric.");
 	}
 	p ++;   // step over closing bracket
-	while (Melder_isHorizontalSpace (*p)) p ++;
-	if (*p != U'=')
-		Melder_throw (U"Missing '=' after matrix element ", matrixName, U" [",
+	while (Melder_isHorizontalSpace (*p))
+		p ++;
+	int assignmentType = 0;
+	if (*p == U'=') {
+		p ++;   // step over equals sign
+	} else if (*p == U'+' && p [1] == U'=') {
+		assignmentType = 1;
+		p += 2;   // step over plus-gets sign
+	} else if (*p == U'-' && p [1] == U'=') {
+		assignmentType = 2;
+		p += 2;   // step over minus-gets sign
+	} else if (*p == U'*' && p [1] == U'=') {
+		assignmentType = 3;
+		p += 2;   // step over times-gets sign
+	} else if (*p == U'/' && p [1] == U'=') {
+		assignmentType = 4;
+		p += 2;   // step over div-gets sign
+	} else
+		Melder_throw (U"Missing '=', '+=', '-=', '*=' or '/=' after matrix element ", matrixName, U" [",
 			rowFormula.string, U",", columnFormula.string, U"].");
-	p ++;   // step over equals sign
-	while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment
+	while (Melder_isHorizontalSpace (*p))
+		p ++;   // go to first token after assignment
 	if (*p == U'\0')
 		Melder_throw (U"Missing expression after matrix element ", matrixName, U" [",
 				rowFormula.string, U",", columnFormula.string, U"].");
@@ -1347,23 +1533,28 @@ static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const cha
 		MelderString_empty (& valueString);
 		autoMelderDivertInfo divert (& valueString);
 		MelderString_appendCharacter (& valueString, 1);   // will be overwritten by something totally different if any MelderInfo function is called...
-		int status = praat_executeCommand (me, p);
-		if (status == 0) {
+		bool status = praat_executeCommand (me, p);
+		if (! status) {
 			value = undefined;
-		} else if (valueString.string [0] == 1) {   // ...not overwritten by any MelderInfo function? then the return value will be the selected object
-			int IOBJECT, selectedObject = 0, numberOfSelectedObjects = 0;
-			WHERE (SELECTED) { selectedObject = IOBJECT; numberOfSelectedObjects += 1; }
-			if (numberOfSelectedObjects > 1) {
-				Melder_throw (U"Multiple objects selected. Cannot assign object ID to matrix element.");
-			} else if (numberOfSelectedObjects == 0) {
-				Melder_throw (U"No objects selected. Cannot assign object ID to matrix element.");
-			} else {
-				value = theCurrentPraatObjects -> list [selectedObject]. id;
+		} else if (my returnType == kInterpreter_ReturnType::OBJECT_) {
+			integer IOBJECT, selectedObject = 0, numberOfSelectedObjects = 0;
+			WHERE (SELECTED) {
+				selectedObject = IOBJECT;
+				numberOfSelectedObjects += 1;
 			}
+			if (numberOfSelectedObjects > 1)
+				Melder_throw (U"Multiple objects selected. Cannot assign object IDs to matrix element. "
+						"Perhaps use a vector variable instead.");
+			if (numberOfSelectedObjects == 0)
+				Melder_throw (U"No objects selected. Cannot assign object ID to matrix element.");
+			value = theCurrentPraatObjects -> list [selectedObject]. id;
 		} else {
 			value = Melder_atof (valueString.string);   // including --undefined--
 		}
 	} else {
+		/*
+			Get the value of the formula.
+		*/
 		Interpreter_numericExpression (me, p, & value);
 	}
 	InterpreterVariable var = Interpreter_hasVariable (me, matrixName);
@@ -1379,7 +1570,18 @@ static void assignToNumericMatrixElement (Interpreter me, char32 *& p, const cha
 	if (columnNumber > var -> numericMatrixValue. ncol)
 		Melder_throw (U"A column number cannot be greater than the number of columns (here ",
 			var -> numericMatrixValue. ncol, U"). The column number you supplied is ", columnNumber, U".");
-	var -> numericMatrixValue [rowNumber] [columnNumber] = value;
+	if (assignmentType == 0)
+		var -> numericMatrixValue [rowNumber] [columnNumber] = value;
+	else if (assignmentType == 1)
+		var -> numericMatrixValue [rowNumber] [columnNumber] += value;
+	else if (assignmentType == 2)
+		var -> numericMatrixValue [rowNumber] [columnNumber] -= value;
+	else if (assignmentType == 3)
+		var -> numericMatrixValue [rowNumber] [columnNumber] *= value;
+	else if (assignmentType == 4)
+		var -> numericMatrixValue [rowNumber] [columnNumber] /= value;
+	else
+		Melder_assert (false);
 }
 
 static void assignToStringArrayElement (Interpreter me, char32 *& p, const char32* vectorName, MelderString& valueString) {
@@ -1426,8 +1628,11 @@ static void assignToStringArrayElement (Interpreter me, char32 *& p, const char3
 		*/
 		MelderString_empty (& valueString);
 		autoMelderDivertInfo divert (& valueString);
-		int status = praat_executeCommand (me, p);
-		value = ( status == 0 ? autostring32 () : Melder_dup (valueString.string) );
+		bool status = praat_executeCommand (me, p);
+		if (! status)
+			value = autostring32();
+		else
+			value = Melder_dup (valueString.string);
 	} else {
 		/*
 			Get the value of the formula.
@@ -1459,13 +1664,6 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		bool atLastLine = false, fromif = false, fromendfor = false;
 		int callDepth = 0, chopped = 0, ipar;
 		my callDepth = 0;
-		/*
-			The "environment" is null if we are in the Praat shell, or an editor otherwise.
-		*/
-		if (my editorClass)
-			praatP. editor = praat_findEditorFromString (my environmentName.get());
-		else
-			praatP. editor = nullptr;
 		/*
 			Start.
 		*/
@@ -1554,7 +1752,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		Interpreter_addStringVariable (me, U"shellDirectory$", Melder_getShellDirectory ());
 		structMelderDir dir { }; Melder_getDefaultDir (& dir);
 		Interpreter_addStringVariable (me, U"defaultDirectory$", Melder_dirToPath (& dir));
-		Interpreter_addStringVariable (me, U"preferencesDirectory$", Melder_dirToPath (& praatDir));
+		Interpreter_addStringVariable (me, U"preferencesDirectory$", Melder_dirToPath (& Melder_preferencesFolder));
 		Melder_getHomeDir (& dir);
 		Interpreter_addStringVariable (me, U"homeDirectory$", Melder_dirToPath (& dir));
 		Melder_getTempDir (& dir);
@@ -1582,9 +1780,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		Interpreter_addNumericVariable (me, U"stereo", 2);   // to accommodate scripts from before Praat 5.2.06
 		Interpreter_addNumericVariable (me, U"all", 0);   // to accommodate scripts from before Praat 5.2.06
 		Interpreter_addNumericVariable (me, U"average", 0);   // to accommodate scripts from before Praat 5.2.06
-		#define xstr(s) str(s)
-		#define str(s) #s
-		Interpreter_addStringVariable (me, U"praatVersion$", U"" xstr(PRAAT_VERSION_STR));
+		Interpreter_addStringVariable (me, U"praatVersion$", U"" stringize(PRAAT_VERSION_STR));
 		Interpreter_addNumericVariable (me, U"praatVersion", PRAAT_VERSION_NUM);
 		/*
 			Execute commands.
@@ -1659,8 +1855,9 @@ void Interpreter_run (Interpreter me, char32 *text) {
 				trace (U"resume");
 				c0 = command2.string [0];   // resume in order to allow things like 'c$' = 5
 				if ((! Melder_isLetter (c0) || Melder_isUpperCaseLetter (c0)) && c0 != U'@' &&
-						! (c0 == U'.' && Melder_isLetter (command2.string [1]) && ! Melder_isUpperCaseLetter (command2.string [1]))) {
-					praat_executeCommand (me, command2.string);
+						! (c0 == U'.' && Melder_isLetter (command2.string [1]) && ! Melder_isUpperCaseLetter (command2.string [1])))
+				{
+					(void) praat_executeCommand (me, command2.string);
 				/*
 				 * Interpret control flow and variables.
 				 */
@@ -1872,7 +2069,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							/*
 								Make sure that lines like "echo = 3" will not be regarded as assignments.
 							*/
-							praat_executeCommand (me, command2.string);
+							(void) praat_executeCommand (me, command2.string);
 						} else
 							fail = true;
 						break;
@@ -2029,6 +2226,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						break;
 					case U'l':
 						if (str32nequ (command2.string, U"label ", 6)) {
+							if (command2.string [6] == U'=')
+								Melder_throw (U"\"label\" cannot be used as a variable name.");
 							;   // ignore labels
 						} else
 							fail = true;
@@ -2064,7 +2263,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							 * Make sure that lines like "print = 3" will not be regarded as assignments.
 							 */
 							if (command2.string [5] == U' ' || (str32nequ (command2.string + 5, U"line", 4) && (command2.string [9] == U' ' || command2.string [9] == U'\0'))) {
-								praat_executeCommand (me, command2.string);
+								(void) praat_executeCommand (me, command2.string);
 							} else
 								fail = true;
 						} else
@@ -2184,42 +2383,51 @@ void Interpreter_run (Interpreter me, char32 *text) {
 					if (*p == U'$') {
 						if (p [1] == U'#') {
 							/*
-								Assign to a string vector variable or a string vector element.
+								Assign to a string array variable or a string array element.
 							*/
-							static MelderString vectorName;
+							static MelderString arrayName;
 							p ++;
 							*p = U'\0';   // erase the number sign temporarily
-							MelderString_copy (& vectorName, command2.string, U"#");
+							MelderString_copy (& arrayName, command2.string, U"#");
 							*p = U'#';   // put the number sign back
 							p ++;   // step over number sign
 							while (Melder_isHorizontalSpace (*p))
 								p ++;   // go to first token after array name
 							if (*p == U'=') {
 								/*
-									This must be an assignment to a string vector variable.
+									This must be an assignment to a string array variable.
 								*/
 								p ++;   // step over equals sign
 								while (Melder_isHorizontalSpace (*p))
 									p ++;   // go to first token after assignment
 								if (*p == U'\0')
-									Melder_throw (U"Missing right-hand expression in assignment to string vector ", vectorName.string, U".");
+									Melder_throw (U"Missing right-hand expression in assignment to string array ", arrayName.string, U".");
 								if (isCommand (p)) {
 									/*
 										Statement like: lines$# = Get all strings
 									*/
-									praat_executeCommand (me, p);
-									InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);
-									var -> stringArrayValue = std::move (theInterpreterStrvec);
+									bool status = praat_executeCommand (me, p);
+									InterpreterVariable var = Interpreter_lookUpVariable (me, arrayName.string);
+									if (! status)
+										var -> stringArrayValue = autoSTRVEC();   // anything can have happened, including an incorrect returnType
+									else if (my returnType == kInterpreter_ReturnType::STRINGARRAY_)
+										var -> stringArrayValue = my returnedStringArray.move();
+									else
+										Melder_throw (kInterpreter_ReturnType_errorMessage (my returnType, p),
+												U"; not assigned to the string array variable \"", arrayName.string, U"\".");
 								} else {
+									/*
+										Statement like: files$# = fileNames$# ("*.wav")
+									 */
 									STRVEC value;
 									bool owned;
 									Interpreter_stringArrayExpression (me, p, & value, & owned);
-									InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);
+									InterpreterVariable var = Interpreter_lookUpVariable (me, arrayName.string);
 									StringArrayVariable_move (var, value, owned);
 								}
 							} else if (*p == U'[') {
-								assignToStringArrayElement (me, ++ p, vectorName.string, valueString);
-							} else Melder_throw (U"Missing '=' or '[' after string vector variable ", vectorName.string, U".");
+								assignToStringArrayElement (me, ++ p, arrayName.string, valueString);
+							} else Melder_throw (U"Missing '=' or '[' after string array variable ", arrayName.string, U".");
 						} else {
 							/*
 								Assign to a string variable.
@@ -2313,12 +2521,14 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								} else if (typeOfAssignment == 3) {
 									if (theCurrentPraatObjects != & theForegroundPraatObjects) Melder_throw (U"Commands that write to a file are not available inside pictures.");
 									InterpreterVariable var = Interpreter_hasVariable (me, variableName);
-									if (! var) Melder_throw (U"Variable ", variableName, U" undefined.");
+									if (! var)
+										Melder_throw (U"Variable ", variableName, U" undefined.");
 									MelderFile_appendText (& file, var -> stringValue.get());
 								} else {
 									if (theCurrentPraatObjects != & theForegroundPraatObjects) Melder_throw (U"Commands that write to a file are not available inside pictures.");
 									InterpreterVariable var = Interpreter_hasVariable (me, variableName);
-									if (! var) Melder_throw (U"Variable ", variableName, U" undefined.");
+									if (! var)
+										Melder_throw (U"Variable ", variableName, U" undefined.");
 									MelderFile_writeText (& file, var -> stringValue.get(), Melder_getOutputEncoding ());
 								}
 							} else if (isCommand (p)) {
@@ -2327,9 +2537,18 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								*/
 								MelderString_empty (& valueString);   // empty because command may print nothing; also makes sure that valueString.string exists
 								autoMelderDivertInfo divert (& valueString);
-								int status = praat_executeCommand (me, p);
+								bool status = praat_executeCommand (me, p);
 								InterpreterVariable var = Interpreter_lookUpVariable (me, variableName);
-								var -> stringValue = Melder_dup (status ? valueString.string : U"");
+								if (! status)
+									var -> stringValue = Melder_dup (U"");   // anything can have happened, including an incorrect returnType
+								else if (my returnType == kInterpreter_ReturnType::STRING_ ||
+									my returnType == kInterpreter_ReturnType::REAL_ ||
+									my returnType == kInterpreter_ReturnType::INTEGER_
+								)
+									var -> stringValue = Melder_dup (valueString.string);
+								else
+									Melder_throw (kInterpreter_ReturnType_errorMessage (my returnType, p),
+											U"; not assigned to the string variable \"", variableName, U"\".");
 							} else {
 								/*
 									Evaluate a string expression and assign the result to the variable.
@@ -2375,16 +2594,23 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									This must be an assignment to a matrix variable.
 								*/
 								p ++;   // step over equals sign
-								while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment
+								while (Melder_isHorizontalSpace (*p))
+									p ++;   // go to first token after assignment
 								if (*p == U'\0')
 									Melder_throw (U"Missing right-hand expression in assignment to matrix ", matrixName.string, U".");
 								if (isCommand (p)) {
 									/*
 										Statement like: values## = Get all values
 									*/
-									praat_executeCommand (me, p);
+									bool status = praat_executeCommand (me, p);
 									InterpreterVariable var = Interpreter_lookUpVariable (me, matrixName.string);
-									var -> numericMatrixValue = theInterpreterNummat.move();
+									if (! status)
+										var -> numericMatrixValue = autoMAT();   // anything can have happened, including an incorrect returnType
+									else if (my returnType == kInterpreter_ReturnType::REALMATRIX_)
+										var -> numericMatrixValue = my returnedRealMatrix.move();
+									else
+										Melder_throw (kInterpreter_ReturnType_errorMessage (my returnType, p),
+												U"; not assigned to the matrix variable \"", matrixName.string, U"\".");
 								} else {
 									MAT value;
 									bool owned;
@@ -2489,6 +2715,14 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							if (*p == U'=') {
 								/*
 									This must be an assignment to a vector variable.
+									First compute the value of the expression,
+									*then* look up (perhaps create) the vector variable (the order is important)
+									then assign the value to that vector variable.
+									Reversing the order of the first and second step would fail the following test:
+								*/
+								/*@praat
+									asserterror Variable interpreter_assignToVector# does not exist.
+									interpreter_assignToVector# = interpreter_assignToVector# + 5
 								*/
 								p ++;   // step over equals sign
 								while (Melder_isHorizontalSpace (*p))
@@ -2499,14 +2733,24 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									/*
 										Statement like: times# = Get all times
 									*/
-									praat_executeCommand (me, p);
+									bool status = praat_executeCommand (me, p);
 									InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);
-									var -> numericVectorValue = theInterpreterNumvec.move();
+									if (! status)
+										var -> numericVectorValue = autoVEC();   // anything can have happened, including an incorrect returnType
+									else if (my returnType == kInterpreter_ReturnType::OBJECT_) {
+										var -> numericVectorValue = autoVEC();
+										integer IOBJECT;
+										WHERE (SELECTED)
+											*var -> numericVectorValue. append() = ID;
+									} else if (my returnType == kInterpreter_ReturnType::REALVECTOR_)
+										var -> numericVectorValue = my returnedRealVector.move();
+									else
+										Melder_throw (kInterpreter_ReturnType_errorMessage (my returnType, p), U"; not assigned to the vector variable \"", vectorName.string, U"\".");
 								} else {
 									VEC value;
 									bool owned;
 									Interpreter_numericVectorExpression (me, p, & value, & owned);
-									InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);
+									InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);   // not earlier, because it could have appeared in the expression
 									NumericVectorVariable_move (var, value, owned);
 								}
 							} else if (*p == U'[') {
@@ -2604,7 +2848,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							/*
 								Command ends here: it may be a PraatShell command.
 							*/
-							praat_executeCommand (me, command2.string);
+							(void) praat_executeCommand (me, command2.string);
 							continue;   // next line
 						}
 						char32 *endOfVariable = p;
@@ -2647,7 +2891,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								Melder_assert (! result. stringResult);
 								Interpreter_anyExpression (me, index.string, & result);
 								if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
-									double numericIndexValue = result. numericResult;
+									const double numericIndexValue = result. numericResult;
 									MelderString_append (& indexedVariableName, numericIndexValue);
 								} else if (result.expressionType == kFormula_EXPRESSION_TYPE_STRING) {
 									MelderString_append (& indexedVariableName, U"\"", result. stringResult.get(), U"\"");
@@ -2667,7 +2911,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							/*
 								Not an assignment: perhaps a PraatShell command (select, echo, execute, pause ...).
 							*/
-							praat_executeCommand (me, variableName);
+							(void) praat_executeCommand (me, variableName);
 							continue;   // next line
 						}
 						p += ( typeOfAssignment == 0 ? 1 : 2 );
@@ -2688,22 +2932,26 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							MelderString_empty (& valueString);
 							autoMelderDivertInfo divert (& valueString);
 							MelderString_appendCharacter (& valueString, 1);   // will be overwritten by something totally different if any MelderInfo function is called...
-							int status = praat_executeCommand (me, p);
-							if (status == 0) {
-								value = undefined;
-							} else if (valueString.string [0] == 1) {   // ...not overwritten by any MelderInfo function? then the return value will be the selected object
-								int IOBJECT, selectedObject = 0, numberOfSelectedObjects = 0;
-								WHERE (SELECTED) { selectedObject = IOBJECT; numberOfSelectedObjects += 1; }
-								if (numberOfSelectedObjects > 1) {
-									Melder_throw (U"Multiple objects selected. Cannot assign object ID to variable.");
-								} else if (numberOfSelectedObjects == 0) {
-									Melder_throw (U"No objects selected. Cannot assign object ID to variable.");
-								} else {
-									value = theCurrentPraatObjects -> list [selectedObject]. id;
+							bool status = praat_executeCommand (me, p);
+							if (! status) {
+								value = undefined;   // anything can have happened, including an incorrect return type
+							} else if (my returnType == kInterpreter_ReturnType::OBJECT_) {
+								integer IOBJECT, selectedObject = 0, numberOfSelectedObjects = 0;
+								WHERE (SELECTED) {
+									selectedObject = IOBJECT;
+									numberOfSelectedObjects += 1;
 								}
-							} else {
+								if (numberOfSelectedObjects > 1)
+									Melder_throw (U"Multiple objects selected. Cannot assign object IDs to numeric variable. "
+											"Perhaps use a vector variable instead.");
+								if (numberOfSelectedObjects == 0)
+									Melder_throw (U"No objects selected. Cannot assign object ID to variable.");
+								value = theCurrentPraatObjects -> list [selectedObject]. id;
+							} else if (my returnType == kInterpreter_ReturnType::REAL_ || my returnType == kInterpreter_ReturnType::INTEGER_) {
 								value = Melder_atof (valueString.string);   // including --undefined--
-							}
+							} else
+								Melder_throw (kInterpreter_ReturnType_errorMessage (my returnType, p),
+										U"; not assigned to the numeric variable \"", variableName, U"\".");
 						} else {
 							/*
 								Get the value of the formula.
@@ -2746,7 +2994,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 					}
 				} // endif fail
 				if (assertErrorLineNumber != 0 && assertErrorLineNumber != lineNumber) {
-					integer save_assertErrorLineNumber = assertErrorLineNumber;
+					const integer save_assertErrorLineNumber = assertErrorLineNumber;
 					assertErrorLineNumber = 0;
 					Melder_throw (U"Script assertion fails in line ", save_assertErrorLineNumber,
 							U": error « ", assertErrorString.string, U" » not raised. Instead: no error.");
@@ -2759,6 +3007,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 				//		U"\nAssert error string: << ", assertErrorString.string,
 				//		U" >>\n"
 				//	);
+				if (Melder_hasCrash ())
+					throw;
 				if (assertErrorLineNumber == 0) {
 					throw;
 				} else if (assertErrorLineNumber != lineNumber) {
@@ -2780,7 +3030,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		my stopped = false;
 	} catch (MelderError) {
 		if (lineNumber > 0) {
-			bool normalExplicitExit = str32nequ (lines [lineNumber], U"exit ", 5) || Melder_hasError (U"Script exited.");
+			const bool normalExplicitExit = str32nequ (lines [lineNumber], U"exit ", 5) || Melder_hasError (U"Script exited.");
 			if (! normalExplicitExit && ! assertionFailed) {   // don't show the message twice!
 				while (lines [lineNumber] [0] == U'\0') {   // did this use to be a continuation line?
 					lineNumber --;
@@ -2792,7 +3042,9 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		my numberOfLabels = 0;
 		my running = false;
 		my stopped = false;
-		if (str32equ (Melder_getError (), U"\nScript exited.\n")) {
+		if (Melder_hasCrash ()) {
+			throw;
+		} else if (str32equ (Melder_getError (), U"\nScript exited.\n")) {
 			Melder_clearError ();
 		} else {
 			throw;

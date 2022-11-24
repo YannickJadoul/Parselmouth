@@ -258,10 +258,10 @@ py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName,
 	}
 
 	if (startsWith(callbackName, U"NUMVEC_"))
-		return autoVECToArray(std::move(theInterpreterNumvec));
+		return autoVECToArray(std::move(m_interpreter->returnedRealVector));
 
 	if (startsWith(callbackName, U"NUMMAT_"))
-		return autoMATToArray(std::move(theInterpreterNummat));
+		return autoMATToArray(std::move(m_interpreter->returnedRealMatrix));
 
 	if (startsWith(callbackName, U"NEW_") ||
 	    startsWith(callbackName, U"NEW1_") ||
@@ -317,16 +317,11 @@ auto callPraatCommand(const std::vector<std::reference_wrapper<structData>> &obj
 
 	// Actually find the command and execute it
 	// We need to pass a non-nullptr Interpreter to praat_doAction and praat_doMenuCommand if we want 'theInterpreterNumvec' and 'theInterpreterNummat' to be used
-	Praat_Command executedCommand = nullptr;
-	if (auto i = praat_doAction(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), environment.interpreter())) {
-		executedCommand = praat_getAction(i);
-	}
-	else if (auto j = praat_doMenuCommand(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), environment.interpreter())) {
-		executedCommand = praat_getMenuCommand(j);
-	}
-	else {
+	Praat_Command executedCommand = praat_doAction(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), environment.interpreter());
+	if (!executedCommand)
+		executedCommand = praat_doMenuCommand(completedCommand.c_str(), static_cast<int>(praatArgs.size() - 1), praatArgs.data(), environment.interpreter());
+	if (!executedCommand)
 		Melder_throw(U"Command \"", command.c_str(), U"\" not available for given objects.");
-	}
 
 	// Based on the prefix of the command's callback, convert the result to a Python object
 	assert(executedCommand);

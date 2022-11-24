@@ -2,7 +2,7 @@
 #define _Permutation_h_
 /* Permutation.h
  *
- * Copyright (C) 2005-2018 David Weenink
+ * Copyright (C) 2005-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ void Permutation_init (Permutation me, integer numberOfElements);
 
 void Permutation_tableJump_inline (Permutation me, integer jumpSize, integer first);
 
-autoPermutation Permutation_create (integer numberOfElements);
+autoPermutation Permutation_create (integer numberOfElements, bool identity);
 /*
 	Create the Permutation data structure and fill
 		with the identical permutation (1,2,..n)
@@ -41,7 +41,7 @@ void Permutation_checkInvariant (Permutation me);
 
 
 void Permutation_sort (Permutation me);
-/* Set p[1..n]=1,..n */
+/* Set p [1..n] = 1,..n */
 
 void Permutation_permuteRandomly_inplace (Permutation me, integer from, integer to);
 
@@ -68,10 +68,10 @@ autoPermutation Permutation_permuteBlocksRandomly (Permutation me, integer from,
 	number in a block and the first number in the following block are 'equal modulo blocksize'. */
 
 integer Permutation_getValueAtIndex (Permutation me, integer i);
-/* return i > 0 && i < my n ? my p[i] : -1 */
+/* return i > 0 && i < my n ? my p [i] : -1 */
 
 integer Permutation_getIndexAtValue (Permutation me, integer value);
-/* Find i for which p[i] = value */
+/* Find i for which p [i] = value */
 
 autoPermutation Permutation_invert (Permutation me);
 /*  */

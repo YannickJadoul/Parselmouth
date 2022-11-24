@@ -1,6 +1,6 @@
 /* FormantModeler.cpp
  *
- * Copyright (C) 2014-2020 David Weenink
+ * Copyright (C) 2014-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include "DataModeler.h"
 #include "FormantModeler.h"
+#include "Formant_extensions.h"
 #include "NUM2.h"
 #include "NUMmachar.h"
 #include "SVD.h"
@@ -49,12 +50,10 @@
 #include "enums_getValue.h"
 #include "FormantModeler_enums.h"
 
-extern machar_Table NUMfpp;
-
 Thing_implement (FormantModeler, Function, 0);
 
-
-void structFormantModeler :: v_info () {
+void structFormantModeler :: v1_info () {
+	// skipping parent classes
 	MelderInfo_writeLine (U"Time domain:");
 	MelderInfo_writeLine (U"   Start time: ", xmin, U" seconds");
 	MelderInfo_writeLine (U"   End time: ", xmax, U" seconds");
@@ -62,7 +61,7 @@ void structFormantModeler :: v_info () {
 	for (integer iformant = 1; iformant <= trackmodelers.size; iformant ++) {
 		DataModeler ffi = trackmodelers.at [iformant];
 		MelderInfo_writeLine (U"Formant ", iformant);
-		ffi -> v_info();
+		ffi -> v1_info();
 	}
 }
 
@@ -373,7 +372,7 @@ void FormantModeler_drawOutliersMarked (FormantModeler me, Graphics g, double tm
 	Function_unidirectionalAutowindow (me, & tmin, & tmax);
 	checkTrackAutoRange (me, & fromTrack, & toTrack);
 	Graphics_setInner (g);
-	double currectFontSize = Graphics_inqFontSize (g);
+	const double currectFontSize = Graphics_inqFontSize (g);
 	for (integer itrack = fromTrack; itrack <= toTrack; itrack ++) {
 		const DataModeler ffi = my trackmodelers.at [itrack];
 		Graphics_setColour (g, itrack %2  == 1 ? oddTracks : evenTracks );
@@ -551,8 +550,8 @@ double FormantModeler_getParameterValue (FormantModeler me, integer itrack, inte
 	return value;
 }
 
-kDataModelerParameter FormantModeler_getParameterStatus (FormantModeler me, integer itrack, integer index) {
-	kDataModelerParameter status = kDataModelerParameter::NOT_DEFINED;
+kDataModelerParameterStatus FormantModeler_getParameterStatus (FormantModeler me, integer itrack, integer index) {
+	kDataModelerParameterStatus status = kDataModelerParameterStatus::NOT_DEFINED;
 	if (itrack > 0 && itrack <= my trackmodelers.size) {
 		const DataModeler ff = my trackmodelers.at [itrack];
 		status = DataModeler_getParameterStatus (ff, index);
@@ -772,7 +771,6 @@ double FormantModeler_getChiSquaredQ (FormantModeler me, integer fromTrack, inte
 }
 
 double FormantModeler_getCoefficientOfDetermination (FormantModeler me, integer fromTrack, integer toTrack) {
-	double rSquared = undefined;
 	checkTrackAutoRange (me, & fromTrack, & toTrack);
 	double ssreg = 0.0, sstot = 0.0;
 	for (integer itrack= fromTrack; itrack <= toTrack; itrack ++) {
@@ -782,7 +780,7 @@ double FormantModeler_getCoefficientOfDetermination (FormantModeler me, integer 
 		sstot += sstoti;
 		ssreg += ssregi;
 	}
-	rSquared = ( sstot > 0.0 ? ssreg / sstot : 1.0 );
+	const double rSquared = ( sstot > 0.0 ? ssreg / sstot : 1.0 );
 	return rSquared;
 }
 
@@ -825,7 +823,7 @@ autoFormantModeler FormantModeler_processOutliers (FormantModeler me, double num
 		for (integer itrack = 1; itrack <= numberOfFormants; itrack ++) {
 			const DataModeler ffi = my trackmodelers.at [itrack];
 			autoVEC zscores = DataModeler_getZScores (ffi);
-			z.row (itrack) <<= zscores.get();
+			z.row (itrack)  <<=  zscores.get();
 		}
 		// 2. Do the manipulation in a copy
 		autoFormantModeler thee = Data_copy (me);
@@ -902,7 +900,7 @@ double FormantModeler_getFormantsConstraintsFactor (FormantModeler me, double mi
 
 void FormantModeler_reportChiSquared (FormantModeler me) {
 	const integer numberOfTracks = my trackmodelers.size;
-	double ndf = 0, probability;
+	double ndf = 0.0, probability;
 	MelderInfo_writeLine (U"Chi squared tests for individual models of each of ", numberOfTracks, U" formant track:");
 	MelderInfo_writeLine (( my weighFormants == kFormantModelerWeights::EQUAL_WEIGHTS ? U"Standard deviation is estimated from the data." :
 		( my weighFormants == kFormantModelerWeights::ONE_OVER_BANDWIDTH ? U"\tBandwidths are used as estimate for local standard deviations." :
@@ -997,26 +995,6 @@ integer Formants_getSmoothestInInterval (CollectionOf<structFormant>* me, double
 	}
 }
 
-autoFormant Formant_extractPart (Formant me, double tmin, double tmax) {
-	try {
-		Function_unidirectionalAutowindow (me, & tmin, & tmax);
-		Melder_require (tmin < my xmax && tmax > my xmin,
-			U"Your start and end time should be between ", my xmin, U" and ", my xmax, U".");
-		integer ifmin, ifmax, thyindex = 1;
-		const integer numberOfFrames = Sampled_getWindowSamples (me, tmin, tmax, & ifmin, & ifmax);
-		const double t1 = Sampled_indexToX (me, ifmin);
-		autoFormant thee = Formant_create (tmin, tmax, numberOfFrames, my dx, t1, my maxnFormants);
-		for (integer iframe = ifmin; iframe <= ifmax; iframe ++, thyindex ++) {
-			const Formant_Frame myFrame = & my frames [iframe];
-			const Formant_Frame thyFrame = & thy frames [thyindex];
-			myFrame -> copy (thyFrame);
-		}
-		return thee;
-	} catch (MelderError) {
-		Melder_throw (U"Formant part could not be extracted.");
-	}
-}
-
 autoFormant Formants_extractSmoothestPart (CollectionOf<structFormant>* me, double tmin, double tmax,
 	integer numberOfFormantTracks, integer numberOfParametersPerTrack, kFormantModelerWeights weighFormants, double numberOfSigmas, double power) {
 	try {
@@ -1067,7 +1045,7 @@ autoFormant Sound_to_Formant_interval (Sound me, double startTime, double endTim
 		Melder_require (maxFreq <= nyquistFrequency,
 			U"The upper value of the maximum frequency range should not exceed the Nyquist frequency of the sound.");
 		autoINTVEC noPararametersPerTrack = newINTVECasNumbers (numberOfFormantTracks, numberOfParametersPerTrack);
-		double df = 0, mincriterium = 1e28;
+		double df = 0.0, mincriterium = 1e28;
 		if (minFreq >= maxFreq)
 			numberOfFrequencySteps = 1;
 		else
@@ -1127,7 +1105,7 @@ autoFormant Sound_to_Formant_interval_robust (Sound me, double startTime, double
 		const double nyquistFrequency = 0.5 / my dx;
 		Melder_require (maxFreq <= nyquistFrequency,
 			U"The upper value of the maximum frequency range should not exceed the Nyquist frequency of the sound.");
-		double df = 0, mincriterium = 1e28;
+		double df = 0.0, mincriterium = 1e28;
 		if (minFreq >= maxFreq)
 			numberOfFrequencySteps = 1;
 		else

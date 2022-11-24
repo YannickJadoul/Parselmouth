@@ -2,7 +2,7 @@
 #define _praat_FFNet_h_
 /* praat_FFNet.h
  *
- * Copyright (C) 2016 David Weenink & Paul Boersma
+ * Copyright (C) 2016,2021 David Weenink & Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,20 +18,10 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-	Interface functions for time-based subclasses of Function.
-*/
-
 #include "FFNet.h"
-#include "praat.h"
+#include "praatM.h"
 
 void praat_uvafon_FFNet_init ();
-
-/*
-	Special request from contrib/Ola, who wants to include these commands in the KNN menu.
-*/
-extern "C" void NEW1_PatternList_create (UiCallback_ARGS);
-extern "C" void NEW1_Categories_create (UiCallback_ARGS);
 
 /* End of file praat_FFNet.h */
 #endif

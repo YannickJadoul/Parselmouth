@@ -1,6 +1,6 @@
 /* praat_statistics.cpp
  *
- * Copyright (C) 1992-2012,2014-2020 Paul Boersma
+ * Copyright (C) 1992-2012,2014-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 static struct {
 	integer batchSessions, interactiveSessions;
 	double memory;
-	char32 dateOfFirstSession [Preferences_STRING_BUFFER_SIZE];
+	PrefsString dateOfFirstSession;
 } statistics;
 
 void praat_statistics_prefs () {
@@ -135,37 +135,38 @@ static NSString *getRealHomeDirectory () {
 #endif
 
 void praat_reportSystemProperties () {
-	#define xstr(s) str(s)
-	#define str(s) #s
 	MelderInfo_open ();
 	MelderInfo_writeLine (U"System properties of this edition of Praat on this computer:\n");
 	#ifdef _WIN32
-		MelderInfo_writeLine (U"_WIN32 is \"" xstr (_WIN32) "\".");
+		MelderInfo_writeLine (U"_WIN32 is \"" stringize(_WIN32) "\".");
 	#endif
 	#ifdef WINVER
-		MelderInfo_writeLine (U"WINVER is \"" xstr (WINVER) "\".");
+		MelderInfo_writeLine (U"WINVER is \"" stringize(WINVER) "\".");
 	#endif
 	#ifdef _WIN32_WINNT
-		MelderInfo_writeLine (U"_WIN32_WINNT is \"" xstr (_WIN32_WINNT) "\".");
+		MelderInfo_writeLine (U"_WIN32_WINNT is \"" stringize(_WIN32_WINNT) "\".");
 	#endif
 	#ifdef _WIN32_IE
-		MelderInfo_writeLine (U"_WIN32_IE is \"" xstr (_WIN32_IE) "\".");
+		MelderInfo_writeLine (U"_WIN32_IE is \"" stringize(_WIN32_IE) "\".");
 	#endif
 	#ifdef UNICODE
-		MelderInfo_writeLine (U"UNICODE is \"" xstr (UNICODE) "\".");
+		MelderInfo_writeLine (U"UNICODE is \"" stringize(UNICODE) "\".");
 	#endif
 	#ifdef _FILE_OFFSET_BITS
-		MelderInfo_writeLine (U"_FILE_OFFSET_BITS is \"" xstr (_FILE_OFFSET_BITS) "\".");
+		MelderInfo_writeLine (U"_FILE_OFFSET_BITS is \"" stringize(_FILE_OFFSET_BITS) "\".");
 	#endif
 	#ifdef macintosh
-		MelderInfo_writeLine (U"macintosh is \"" xstr (macintosh) "\".");
+		MelderInfo_writeLine (U"macintosh is \"" stringize(macintosh) "\".");
 	#endif
 	#ifdef linux
-		MelderInfo_writeLine (U"linux is \"" xstr (linux) "\".");
+		MelderInfo_writeLine (U"linux is \"" stringize(linux) "\".");
 	#endif
 	MelderInfo_writeLine (U"The number of processors is ", std::thread::hardware_concurrency(), U".");
 	#ifdef macintosh
 		MelderInfo_writeLine (U"system version is ", Melder_systemVersion, U".");
+	#endif
+	#ifdef linux
+		MelderInfo_writeLine (U"Display protocol: probably ", Melder_systemVersion == 'w' ? U"Wayland" : U"X11", U" (but use xeyes to make sure).");
 	#endif
 	structMelderDir dir {};
 	Melder_getHomeDir (& dir);
@@ -174,8 +175,14 @@ void praat_reportSystemProperties () {
 		MelderInfo_writeLine (U"Full Disk Access: ", Melder_kleenean (hasFullDiskAccess ()));
 		MelderInfo_writeLine (U"Sandboxed: ", Melder_boolean (isSandboxed ()));
 		if (isSandboxed ())
-			MelderInfo_writeLine (U"Sandbox (application home) folder: ", Melder_peek8to32 ([NSHomeDirectory () UTF8String]));
-		MelderInfo_writeLine (U"User home folder: ", Melder_peek8to32 ([ getRealHomeDirectory () UTF8String]));
+			MelderInfo_writeLine (U"Sandbox (application home) folder: ", Melder_peek8to32 ([NSHomeDirectory ()   UTF8String]));
+		MelderInfo_writeLine (U"User home folder: ", Melder_peek8to32 ([getRealHomeDirectory ()   UTF8String]));
+		NSRunningApplication *currentApplication = [NSRunningApplication currentApplication];
+		pid_t processID = [currentApplication processIdentifier];
+		Melder_assert (processID == getpid());
+		MelderInfo_writeLine (U"Process ID: ", processID);
+		MelderInfo_writeLine (U"Localized app name: ", Melder_peek8to32 ([[currentApplication localizedName] UTF8String]));
+		MelderInfo_writeLine (U"App bundle identifier: ", Melder_peek8to32 ([[currentApplication bundleIdentifier] UTF8String]));
 	#endif
 	MelderInfo_close ();
 }
@@ -190,14 +197,14 @@ void praat_reportGraphicalProperties () {
 	#if defined (macintosh)
 		CGDirectDisplayID screen = CGMainDisplayID ();
 		CGSize screenSize_mm = CGDisplayScreenSize (screen);
-		double diagonal_mm = sqrt (screenSize_mm. width * screenSize_mm. width + screenSize_mm. height * screenSize_mm. height);
-		double diagonal_inch = diagonal_mm / 25.4;
+		const double diagonal_mm = hypot (screenSize_mm. width, screenSize_mm. height);
+		const double diagonal_inch = diagonal_mm / 25.4;
 		MelderInfo_writeLine (U"\nScreen size: ", screenSize_mm. width, U" x ", screenSize_mm. height,
 			U" mm (diagonal ", Melder_fixed (diagonal_mm, 1), U" mm = ", Melder_fixed (diagonal_inch, 1), U" inch)");
-		size_t screenWidth_pixels = CGDisplayPixelsWide (screen);
-		size_t screenHeight_pixels = CGDisplayPixelsHigh (screen);
+		const size_t screenWidth_pixels = CGDisplayPixelsWide (screen);
+		const size_t screenHeight_pixels = CGDisplayPixelsHigh (screen);
 		MelderInfo_writeLine (U"Screen \"resolution\": ", screenWidth_pixels, U" x ", screenHeight_pixels, U" pixels");
-		double resolution = 25.4 * screenWidth_pixels / screenSize_mm. width;
+		const double resolution = 25.4 * screenWidth_pixels / screenSize_mm. width;
 		MelderInfo_writeLine (U"Screen resolution: ", Melder_fixed (resolution, 1), U" pixels/inch");
 	#elif defined (_WIN32)
 		/*for (int i = 0; i <= 88; i ++)
@@ -208,11 +215,11 @@ void praat_reportGraphicalProperties () {
 
 #if cairo
 static void testFont (PangoFontMap *pangoFontMap, PangoContext *pangoContext, conststring32 fontName) {
-		PangoFontDescription *pangoFontDescription = pango_font_description_from_string (Melder_peek32to8 (fontName));
-		PangoFont *pangoFont = pango_font_map_load_font (pangoFontMap, pangoContext, pangoFontDescription);
-		PangoFontDescription *pangoFontDescription2 = pango_font_describe (pangoFont);
-		const char *familyName = pango_font_description_get_family (pangoFontDescription2);
-		MelderInfo_writeLine (U"Asking for font ", fontName, U" gives ", Melder_peek8to32 (familyName), U".");
+	PangoFontDescription *pangoFontDescription = pango_font_description_from_string (Melder_peek32to8 (fontName));
+	PangoFont *pangoFont = pango_font_map_load_font (pangoFontMap, pangoContext, pangoFontDescription);
+	PangoFontDescription *pangoFontDescription2 = pango_font_describe (pangoFont);
+	const char *familyName = pango_font_description_get_family (pangoFontDescription2);
+	MelderInfo_writeLine (U"Asking for font ", fontName, U" gives ", Melder_peek8to32 (familyName), U".");
 }
 #endif
 void praat_reportFontProperties () {

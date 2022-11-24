@@ -1,6 +1,6 @@
 /* TableOfReal.cpp
  *
- * Copyright (C) 1992-2020 Paul Boersma
+ * Copyright (C) 1992-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ static void fprintquotedstring (MelderFile file, conststring32 s) {
 	MelderFile_writeCharacter (file, U'\"');
 }
 
-void structTableOfReal :: v_writeText (MelderFile file) {
+void structTableOfReal :: v1_writeText (MelderFile file) {
 	texputi32 (file, our numberOfColumns, U"numberOfColumns");
 	MelderFile_write (file, U"\ncolumnLabels []: ");
 	if (our numberOfColumns < 1) MelderFile_write (file, U"(empty)");
@@ -65,7 +65,7 @@ void structTableOfReal :: v_writeText (MelderFile file) {
 	}
 }
 
-void structTableOfReal :: v_readText (MelderReadText a_text, int /*formatVersion*/) {
+void structTableOfReal :: v1_readText (MelderReadText a_text, int /*formatVersion*/) {
 	our numberOfColumns = texgeti32 (a_text);
 	if (our numberOfColumns >= 1) {
 		our columnLabels = autoSTRVEC (our numberOfColumns);
@@ -86,8 +86,8 @@ void structTableOfReal :: v_readText (MelderReadText a_text, int /*formatVersion
 	}
 }
 
-void structTableOfReal :: v_info () {
-	structDaata :: v_info ();
+void structTableOfReal :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of rows: ", our numberOfRows);
 	MelderInfo_writeLine (U"Number of columns: ", our numberOfColumns);
 }
@@ -150,24 +150,17 @@ integer TableOfReal_columnLabelToIndex (TableOfReal me, conststring32 label) {
 }
 
 double TableOfReal_getColumnMean (TableOfReal me, integer columnNumber) {
-	if (columnNumber < 1 || columnNumber > my numberOfColumns) return undefined;
-	if (my numberOfRows < 1) return undefined;
-	longdouble sum = 0.0;
-	for (integer irow = 1; irow <= my numberOfRows; irow ++)
-		sum += my data [irow] [columnNumber];
-	return (double) sum / my numberOfRows;
+	if (columnNumber < 1 || columnNumber > my numberOfColumns)
+		return undefined;
+	return NUMmean (my data.column (columnNumber));
 }
 
 double TableOfReal_getColumnStdev (TableOfReal me, integer columnNumber) {
-	if (columnNumber < 1 || columnNumber > my numberOfColumns) return undefined;
-	if (my numberOfRows < 2) return undefined;
-	double mean = TableOfReal_getColumnMean (me, columnNumber);
-	longdouble sum = 0.0;
-	for (integer irow = 1; irow <= my numberOfRows; irow ++) {
-		double d = my data [irow] [columnNumber] - mean;
-		sum += d * d;
-	}
-	return sqrt ((double) sum / (my numberOfRows - 1));
+	if (columnNumber < 1 || columnNumber > my numberOfColumns)
+		return undefined;
+	if (my numberOfRows < 2)
+		return undefined;
+	return NUMstdev (my data.column (columnNumber));
 }
 
 /***** MODIFY *****/
@@ -379,7 +372,7 @@ autoTableOfReal TableOfReal_extractRowsWhereColumn (TableOfReal me, integer colu
 	}
 }
 
-autoTableOfReal TableOfReal_extractRowsWhereLabel (TableOfReal me, kMelder_string which, conststring32 criterion) {
+autoTableOfReal TableOfReal_extractRowsWhoseLabel (TableOfReal me, kMelder_string which, conststring32 criterion) {
 	try {
 		integer n = 0;
 		for (integer irow = 1; irow <= my numberOfRows; irow ++)
@@ -422,7 +415,7 @@ autoTableOfReal TableOfReal_extractColumnsWhereRow (TableOfReal me, integer row,
 	}
 }
 
-autoTableOfReal TableOfReal_extractColumnsWhereLabel (TableOfReal me, kMelder_string which, conststring32 criterion) {
+autoTableOfReal TableOfReal_extractColumnsWhoseLabel (TableOfReal me, kMelder_string which, conststring32 criterion) {
 	try {
 		integer n = 0;
 		for (integer icol = 1; icol <= my numberOfColumns; icol ++)
@@ -443,116 +436,40 @@ autoTableOfReal TableOfReal_extractColumnsWhereLabel (TableOfReal me, kMelder_st
 	}
 }
 
-/*
-	Acceptable ranges e.g. "1 4 2 3:7 4:3 3:5:2" -->
-	1, 4, 2, 3, 4, 5, 6, 7, 4, 3, 3, 4, 5, 4, 3, 2
-	Overlap is allowed. Ranges can go up and down.
-*/
-static autoINTVEC getElementsOfRanges (conststring32 ranges, integer maximumElement, conststring32 elementType) {
-	/*
-		Count the elements.
-	*/
-	integer previousElement = 0;
-	integer numberOfElements = 0;
-	const char32 *p = & ranges [0];
-	for (;;) {
-		while (*p == U' ' || *p == U'\t') p ++;
-		if (*p == U'\0') break;
-		if (Melder_isAsciiDecimalNumber (*p)) {
-			integer currentElement = Melder_atoi (p);
-			if (currentElement == 0)
-				Melder_throw (U"No such ", elementType, U": 0 (minimum is 1).");
-			if (currentElement > maximumElement)
-				Melder_throw (U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
-			numberOfElements += 1;
-			previousElement = currentElement;
-			do { p ++; } while (Melder_isAsciiDecimalNumber (*p));
-		} else if (*p == ':') {
-			if (previousElement == 0)
-				Melder_throw (U"Cannot start range with colon.");
-			do { p ++; } while (*p == U' ' || *p == U'\t');
-			if (*p == U'\0')
-				Melder_throw (U"Cannot end range with colon.");
-			Melder_require (Melder_isAsciiDecimalNumber (*p), U"End of range should be a positive whole number.");
-			integer currentElement = Melder_atoi (p);
-			if (currentElement == 0)
-				Melder_throw (U"No such ", elementType, U": 0 (minimum is 1).");
-			if (currentElement > maximumElement)
-				Melder_throw (U"No such ", elementType, U": ", currentElement, U" (maximum is ", maximumElement, U").");
-			if (currentElement > previousElement) {
-				numberOfElements += currentElement - previousElement;
-			} else {
-				numberOfElements += previousElement - currentElement;
-			}
-			previousElement = currentElement;
-			do { p ++; } while (Melder_isAsciiDecimalNumber (*p));
-		} else {
-			Melder_throw (U"Start of range should be a positive whole number.");
-		}
-	}
-	/*
-		Create room for the elements.
-	*/
-	autoINTVEC elements = zero_INTVEC (numberOfElements);
-	/*
-		Store the elements.
-	*/
-	previousElement = 0;
-	numberOfElements = 0;
-	p = & ranges [0];
-	for (;;) {
-		while (*p == U' ' || *p == U'\t')
-			p ++;
-		if (*p == U'\0')
-			break;
-		if (Melder_isAsciiDecimalNumber (*p)) {
-			integer currentElement = Melder_atoi (p);
-			elements [++ numberOfElements] = currentElement;
-			previousElement = currentElement;
-			do { p ++; } while (Melder_isAsciiDecimalNumber (*p));
-		} else if (*p == ':') {
-			do { p ++; } while (*p == U' ' || *p == U'\t');
-			integer currentElement = Melder_atoi (p);
-			if (currentElement > previousElement) {
-				for (integer ielement = previousElement + 1; ielement <= currentElement; ielement ++) {
-					elements [++ numberOfElements] = ielement;
-				}
-			} else {
-				for (integer ielement = previousElement - 1; ielement >= currentElement; ielement --) {
-					elements [++ numberOfElements] = ielement;
-				}
-			}
-			previousElement = currentElement;
-			do { p ++; } while (Melder_isAsciiDecimalNumber (*p));
-		}
-	}
-	Melder_assert (numberOfElements == elements.size);
-	return elements;
+void TableOfReal_checkRowNumberWithinRange (TableOfReal me, integer rowNumber) {
+	Melder_require (rowNumber >= 1 && rowNumber <= my data.nrow,
+		me, U": row number (", rowNumber, U") should be between 1 and my number of rows (", my data.nrow, U").");
+}
+void TableOfReal_checkColumnNumberWithinRange (TableOfReal me, integer columnNumber) {
+	Melder_require (columnNumber >= 1 && columnNumber <= my data.ncol,
+		me, U": column number (", columnNumber, U") should be between 1 and my number of rows (", my data.ncol, U").");
 }
 
-autoTableOfReal TableOfReal_extractRowRanges (TableOfReal me, conststring32 ranges) {
+autoTableOfReal TableOfReal_extractRowsByNumber (TableOfReal me, constINTVECVU const& rowNumbers) {
 	try {
-		autoINTVEC elements = getElementsOfRanges (ranges, my numberOfRows, U"row");
-		autoTableOfReal thee = TableOfReal_create (elements.size, my numberOfColumns);
-		copyColumnLabels (me, thee.get());
-		for (integer ielement = 1; ielement <= elements.size; ielement ++)
-			copyRow (me, elements [ielement], thee.get(), ielement);
-		return thee;
+		autoTableOfReal you = TableOfReal_create (rowNumbers.size, my numberOfColumns);
+		copyColumnLabels (me, you.get());
+		for (integer ielement = 1; ielement <= rowNumbers.size; ielement ++) {
+			TableOfReal_checkRowNumberWithinRange (me, rowNumbers [ielement]);
+			copyRow (me, rowNumbers [ielement], you.get(), ielement);
+		}
+		return you;
 	} catch (MelderError) {
-		Melder_throw (me, U": row ranges not extracted.");
+		Melder_throw (me, U": rows not extracted.");
 	}
 }
 
-autoTableOfReal TableOfReal_extractColumnRanges (TableOfReal me, conststring32 ranges) {
+autoTableOfReal TableOfReal_extractColumnsByNumber (TableOfReal me, constINTVECVU const& columnNumbers) {
 	try {
-		autoINTVEC elements = getElementsOfRanges (ranges, my numberOfColumns, U"column");
-		autoTableOfReal thee = TableOfReal_create (my numberOfRows, elements.size);
-		copyRowLabels (me, thee.get());
-		for (integer ielement = 1; ielement <= elements.size; ielement ++)
-			copyColumn (me, elements [ielement], thee.get(), ielement);
-		return thee;
+		autoTableOfReal you = TableOfReal_create (my numberOfRows, columnNumbers.size);
+		copyRowLabels (me, you.get());
+		for (integer ielement = 1; ielement <= columnNumbers.size; ielement ++) {
+			TableOfReal_checkColumnNumberWithinRange (me, columnNumbers [ielement]);
+			copyColumn (me, columnNumbers [ielement], you.get(), ielement);
+		}
+		return you;
 	} catch (MelderError) {
-		Melder_throw (me, U": column ranges not extracted.");
+		Melder_throw (me, U": columns not extracted.");
 	}
 }
 

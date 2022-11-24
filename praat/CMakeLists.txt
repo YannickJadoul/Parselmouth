@@ -31,6 +31,7 @@ set(PRAAT_SUBDIRECTORIES
 	dwsys
 	stat
 	fon
+	foned
 	dwtools
 	LPC
 	EEG

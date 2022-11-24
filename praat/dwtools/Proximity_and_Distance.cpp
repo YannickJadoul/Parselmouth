@@ -47,13 +47,12 @@ autoDissimilarity Distance_to_Dissimilarity (Distance me) {
 		autoDissimilarity thee = Dissimilarity_create (my numberOfRows);
 		TableOfReal_copyLabels (me, thee.get(), 1, 1);
 		Melder_assert (thy data.ncol == my numberOfColumns);
-		thy data.all() <<= my data.all();
+		thy data.all()  <<=  my data.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"Dissimilarity not created from Distance.");
 	}
 }
-
 
 autoDistanceList DissimilarityList_to_DistanceList (DissimilarityList me, kMDS_AnalysisScale scale) {
 	try {
@@ -69,3 +68,5 @@ autoDistanceList DissimilarityList_to_DistanceList (DissimilarityList me, kMDS_A
 		Melder_throw (me, U": no DistanceList created.");
 	}
 }
+
+/* End of file Proximity_and_Distance.cpp */

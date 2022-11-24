@@ -17,3 +17,6 @@ target_sources(praat PRIVATE
 	flac_stream_encoder_framing.c
 	flac_window.c
 )
+if (WIN32)
+	target_sources(praat PRIVATE flac_windows_unicode_filenames.c)
+endif ()

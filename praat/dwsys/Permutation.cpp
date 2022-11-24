@@ -1,6 +1,6 @@
 /* Permutation.cpp
  *
- * Copyright (C) 2005-2020 David Weenink
+ * Copyright (C) 2005-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,18 +60,18 @@ static integer Permutation_checkRange (Permutation me, integer *from, integer *t
 }
 
 void Permutation_checkInvariant (Permutation me) {
-	autoINTVEC p = sort_INTVEC (my p.all());
+	autoINTVEC p = sort_INTVEC (my p.get());
 	for (integer i = 1; i <= my numberOfElements; i ++)
 		Melder_require (p [i] == i,
 			me, U": is not a valid permutation.");
 }
 
-void structPermutation :: v_info () {
-	structDaata :: v_info ();
+void structPermutation :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of elements: ", numberOfElements);
 }
 
-void structPermutation :: v_readText (MelderReadText text, int /*formatVersion*/) {
+void structPermutation :: v1_readText (MelderReadText text, int /*formatVersion*/) {
 	numberOfElements = texgeti32 (text);
 	Melder_require (numberOfElements > 0,
 		U"Number of elements should be greater than zero.");
@@ -103,10 +103,12 @@ void Permutation_tableJump_inline (Permutation me, integer jumpSize, integer fir
 	}
 }
 
-autoPermutation Permutation_create (integer numberOfElements) {
+autoPermutation Permutation_create (integer numberOfElements, bool identity) {
 	try {
 		autoPermutation me = Thing_new (Permutation);
 		Permutation_init (me.get(), numberOfElements);
+		if (! identity)
+			Permutation_permuteRandomly_inplace (me.get(), 1, numberOfElements);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Permutation not created.");
@@ -123,7 +125,7 @@ void Permutation_swapPositions (Permutation me, integer i1, integer i2) {
 			U"Positions should be within the range [1, ",  my numberOfElements, U"].");
 		std::swap (my p [i1], my p [i2]);
 	} catch (MelderError) {
-		Melder_throw (me, U":positions not swapped.");
+		Melder_throw (me, U": positions not swapped.");
 	}
 }
 
@@ -155,9 +157,9 @@ void Permutation_swapNumbers (Permutation me, integer i1, integer i2) {
 void Permutation_swapBlocks (Permutation me, integer from, integer to, integer blockSize) {
 	try {
 		Melder_require (blockSize > 0 && blockSize <= my numberOfElements / 2,
-			U"The block size should be in the [1, %d] range.", my numberOfElements / 2);
+			U"The block size should be in the [1, ", my numberOfElements / 2, U"] range.");
 		Melder_require (from > 0 && to > 0 && from + blockSize <= my numberOfElements && to + blockSize <= my numberOfElements,
-			U"Start and finish positions of the two blocks should be in [1,", my numberOfElements, U"] range.");
+			U"Start and finish positions of the two blocks should be in the [1,", my numberOfElements, U"] range.");
 
 		if (from == to)
 			return;
@@ -204,7 +206,7 @@ autoPermutation Permutation_rotate (Permutation me, integer from, integer to, in
 				ifrom -= n;
 			if (ifrom < from)
 				ifrom += n;
-			thy p [ifrom] = my p[i];
+			thy p [ifrom] = my p [i];
 		}
 		return thee;
 	} catch (MelderError) {
@@ -245,9 +247,8 @@ autoPermutation Permutation_permuteBlocksRandomly (Permutation me, integer from,
 		Melder_require (nrest == 0,
 			U"There should fit an integer number of blocks in the range.\n(The last block is only of size ", nrest, U").");
 		
-		autoPermutation pblocks = Permutation_create (nblocks);
+		autoPermutation pblocks = Permutation_create (nblocks, true);
 
-		Permutation_permuteRandomly_inplace (pblocks.get(), 1, nblocks);
 		integer first = from;
 		for (integer iblock = 1; iblock <= nblocks; iblock ++, first += blockSize) {
 			/* (n1,n2,n3,...) means: move block n1 to position 1 etc... */

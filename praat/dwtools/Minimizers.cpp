@@ -68,9 +68,9 @@ void Minimizer_minimize (Minimizer me, integer maximumNumberOfIterations, double
 			Melder_casual (U"Minimizer_minimize:", U" minimum ", my minimum, U" reached \nafter ", my iteration,
 			U" iterations and ", my numberOfFunctionCalls, U" function calls.");
 	} catch (MelderError) {
+		Melder_clearError();   // memory error in history mechanism is not fatal
 		if (monitor)
 			monitor_off (me);   // temporarily until better monitor facilities
-		Melder_clearError();   // memory error in history mechanism is not fatal
 	}
 }
 
@@ -79,7 +79,7 @@ void Minimizer_minimizeManyTimes (Minimizer me, integer maxIterationsPerTime, in
 	int monitorSingle = numberOfTimes == 1;
 
 	autoVEC popt = raw_VEC (my numberOfParameters);
-	popt.get () <<= my p.get();
+	popt.all()  <<=  my p.all();
 
 	if (! monitorSingle)
 		Melder_progress (0.0, U"Minimize many times");
@@ -89,7 +89,7 @@ void Minimizer_minimizeManyTimes (Minimizer me, integer maxIterationsPerTime, in
 		Minimizer_minimize (me, maxIterationsPerTime, tolerance, monitorSingle);
 		Melder_casual (U"Current ", iter, U": minimum = ", my minimum);
 		if (my minimum < fopt) {
-			my p.get () <<= popt.get();
+			my p.all()  <<=  popt.all();
 			fopt = my minimum;
 		}
 		VEC p;

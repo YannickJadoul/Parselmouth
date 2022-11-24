@@ -43,7 +43,7 @@ void LPC_Frame_into_Spectrum (LPC_Frame me, Spectrum thee, double bandwidthReduc
 		When deEmphasisFrequency is effective we need 1 extra position in the fftbuffer.
 	*/
 	const integer nfft = 2 * (thy nx - 1);
-	double ndata = my nCoefficients + 1;
+	integer ndata = my nCoefficients + 1;
 	double scale = 1.0 / sqrt (2.0 * thy xmax * thy dx);
 	if (ndata >= nfft - 1 && (deEmphasisFrequency < thy xmax || ndata > nfft))
 		Melder_throw (U"Spectrum size not large enough.");
@@ -53,7 +53,7 @@ void LPC_Frame_into_Spectrum (LPC_Frame me, Spectrum thee, double bandwidthReduc
 		Copy 1.0, a [1], ... a [p] into fftbuffer
 	*/
 	fftbuffer [1] = 1.0;
-	fftbuffer.part (2, ndata) <<= my a.get();
+	fftbuffer.part (2, ndata)  <<=  my a.get();
 
 	if (deEmphasisFrequency < thy xmax) {
 		/*
@@ -96,13 +96,12 @@ void LPC_Frame_into_Spectrum (LPC_Frame me, Spectrum thee, double bandwidthReduc
 
 autoSpectrum LPC_to_Spectrum (LPC me, double t, double dfMin, double bandwidthReduction, double deEmphasisFrequency) {
 	try {
+		Melder_assert (my samplingPeriod > 0.0);
 		const double samplingFrequency = 1.0 / my samplingPeriod;
-		integer nfft = 2, index = Sampled_xToNearestIndex (me, t);
-		if (index < 1)
-			index = 1;
-		if (index > my nx)
-			index = my nx;
-		if (dfMin <= 0) {
+		Melder_assert (my nx >= 1);   // preparing for the assertion in Melder_clipped
+		const integer index = Melder_clipped (1_integer, Sampled_xToNearestIndex (me, t), my nx);
+		integer nfft = 2;
+		if (dfMin <= 0.0) {
 			nfft = 512;
 			dfMin = samplingFrequency / nfft;
 		}

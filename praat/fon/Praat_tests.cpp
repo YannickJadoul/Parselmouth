@@ -1,6 +1,6 @@
 /* Praat_tests.cpp
  *
- * Copyright (C) 2001-2007,2009,2011-2020 Paul Boersma
+ * Copyright (C) 2001-2007,2009,2011-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ static integer length (conststring32 s) {
 
 static autoMAT constantHH (integer nrow, integer ncol, double value) {
 	autoMAT result = raw_MAT (nrow, ncol);
-	result.all() <<= value;
+	result.all()  <<=  value;
 	return result;
 }
 
@@ -436,7 +436,7 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 			autoMAT result = randomGauss_MAT (size, size, 0.0, 1.0);
 			Melder_stopwatch ();
 			for (integer iteration = 1; iteration <= n; iteration ++)
-				result.all() <<= 5.0;
+				result.all()  <<=  5.0;
 			t = Melder_stopwatch () / size / size;   // 10^0..4: 2.7/0.16/0.24 / 0.38/0.98
 			double sum = NUMsum (result.get());
 			MelderInfo_writeLine (sum);
@@ -459,7 +459,7 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 			Melder_stopwatch ();
 			for (integer iteration = 1; iteration <= n; iteration ++)
 				//add_VEC_out (result.all(), x.all(), y.all());
-				result.all() <<= x.all() + y.all();
+				result.all()  <<=  x.all() + y.all();
 			t = Melder_stopwatch () / size;
 			double sum = NUMsum (result.get());
 			MelderInfo_writeLine (sum);
@@ -549,8 +549,7 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 				fprintf (stderr, "21\n");
 			}
 			integer numberOfThingsAfter = theTotalNumberOfThings;
-			fprintf (stderr, "Number of things: before %ld, after %ld\n",
-					(long_not_integer) numberOfThingsBefore, (long_not_integer) numberOfThingsAfter);
+			fprintf (stderr, "Number of things: before %td, after %td\n", numberOfThingsBefore, numberOfThingsAfter);
 			#if 0
 				MelderCallback<void,structDaata>::FunctionType f;
 				typedef void (*DataFunc) (Daata);
@@ -596,37 +595,50 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 				{
 					double x [3], *px = & x [0];
 					const double *cpx = px;
-					VEC vx { px, 2 };
-					constVEC cvx { px, 2 };
-					const VEC c_vx { px, 2 };
+					VEC vx (px, 2);
+					constVEC cvx (px, 2);
+					const VEC c_vx (px, 2);
 					double a = c_vx [1];
 					const double b = c_vx [2];
 					const double y = 0.0, *py = & y;
-					//VEC vy { py, 0 };   // should be refused by the compiler
+					//VEC vy (py, 0);   // ruled out: "No matching constructor for initialization of VEC" (2021-04-03)
 					constVEC cvy { py, 2 };
-					//const VEC c_vy = VEC (py, 2);
+					//const VEC c_vy = VEC (py, 2);   // ruled out: "No matching constructor for initialization of VEC" (2021-04-03)
 					const VEC c_vy = (const VEC) VEC (const_cast<double *> (py), 2);
 					double c = c_vy [1];
 					const double d = c_vy [2];
-					//VEC c_vy2 = VEC (py, 2);
+					//VEC c_vy2 = VEC (py, 2);   // ruled out: "No matching constructor for initialization of VEC" (2021-04-03)
+				}
+				{
+					structSampled sampled {};
+					structFunction function {};
+					structFunction *pFunction = & sampled;
+					structSampled *pSampled = & sampled;
+					//structFunction **ppFunction = MelderPointerToPointerCast<structSampled> (& pFunction);   // not allowed
+					structFunction **ppSampled = MelderPointerToPointerCast<structFunction> (& pSampled);   // allowed
+				}
+				{
+					const structSampled sampled {};
+					const structFunction function {};
+					const structFunction *const pFunction = & sampled;
+					const structSampled *const pSampled = & sampled;
+					const structFunction *const *const ppFunction = & pFunction;
+					//const structFunction *const *const ppSampled = & pSampled;   // forbidden
 				}
 
 				VEC h;
 				autoVEC j;
-				//VEC jh = j;
-				//VEC zero = zero_VEC (10);   // should be ruled out: "Call to deleted constructor of 'VEC' (aka 'vector<double>')"
-				//constVEC zero = zero_VEC (10);   // ruled out: "Conversion function from 'autoVEC' (aka 'autovector<double>')
-							// to 'constVEC' (aka 'constvector<double>') invokes a deleted function"
-				//j = h;   // up assignment standardly correctly ruled out: "No viable overloaded '='"
-				//h = j;   // down assignment was explicitly ruled out as well: "Overload resolution selected deleted operator '='"
-				//h = VEC (j);   // ruled out: "Functional-style cast from 'autoVEC' (aka 'autovector<double>')
-							// to 'VEC' (aka 'vector<double>') uses deleted function"
-				VEC & jref = j;   // (in)correctly? accepted
+				//VEC jh = j;   // ruled out: "No viable conversion from autoVEC to VEC" (2021-04-03)
+				//VEC zero = zero_VEC (10);   // ruled out: "No viable conversion from autoVEC to VEC" (2021-04-03)
+				//constVEC zero = zero_VEC (10);   // ruled out: "No viable conversion from autoVEC to constVEC" (2021-04-03)
+				//j = h;   // ruled out: "No viable overloaded '='" (2021-04-03)
+				//h = j;   // ruled out: "No viable overloaded '='" (2021-04-03)
+				//h = VEC (j);   // ruled out: "No matching conversion for functional-style cast from autoVEC to VEC" (2021-04-03)
+				//VEC & jref = j;   // ruled out: "Non-const lvalue reference to type VEC cannot bind to a value of unrelated type autoVEC" (2021-04-03)
 				VEC *ph = & h;
 				autoVEC *pj = & j;
-				ph = pj;   // (in)correctly? accepted
-				//pj = ph;   // correctly ruled out: "Assigning to 'autoVEC *' (aka 'autovector<double> *')
-							// from incompatible type 'VEC *' (aka 'vector<double> *')
+				//ph = pj;   // correctly ruled out: Assigning to 'VEC' from incompatible type 'autoVEC' (2021-04-03)
+				//pj = ph;   // correctly ruled out: "Assigning to 'autoVEC *' from incompatible type 'VEC *' (2021-04-03)
 				#endif
 				autoSound sound = Sound_create (1, 0.0, 1.0, 10000, 0.0001, 0.0);
 				sound = Sound_create (1, 0.0, 1.0, 10000, 0.0001, 0.00005);
@@ -743,10 +755,6 @@ public:
 	//Vec (const Vec& other) const = default;   // attempt to copy a const Vec to a const Vec, but constructors cannot be const
 	//const Vec (const Vec& other) = default;   // attempt to copy a const Vec to a const Vec, but constructors cannot have a return type
 };
-
-//static Vec copy (Vec x) {
-//	return x;
-//}
 
 /*static void tryVec () {
 	Vec x = Vec (nullptr, 0);

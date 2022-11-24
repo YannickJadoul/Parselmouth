@@ -88,7 +88,7 @@ void MAT_getEigenSystemFromGeneralSquareMatrix (constMAT const& data, autoCOMPVE
 		p_evec_right = & eigenvectors_right [1] [1];
 	}
 
-	double wtmp[3];
+	double wtmp [3];
 	integer lwork = -1, info;
 	const char *jobvr = ( out_eigenvectors ? "V" : "N" );
 	NUMlapack_dgeev_ ("N", jobvr, a.nrow, & a [1] [1], a.nrow, & eigenvalues_re [1], & eigenvalues_im [1],
@@ -127,9 +127,9 @@ void MAT_getEigenSystemFromGeneralSquareMatrix (constMAT const& data, autoCOMPVE
 			// imaginary part is zero by initialisation
 			if (evals [ivec].imag() != 0.0) {
 				for (integer icol = 1; icol <= a.nrow; icol ++) {
-					evecs [ivec    ] [icol] .imag ( eigenvectors_right [icol][ivec + 1]);
-					evecs [ivec + 1] [icol] .real ( eigenvectors_right [icol][ivec    ]);
-					evecs [ivec + 1] [icol] .imag (-eigenvectors_right [icol][ivec + 1]);
+					evecs [ivec    ] [icol] .imag ( eigenvectors_right [icol] [ivec + 1]);
+					evecs [ivec + 1] [icol] .real ( eigenvectors_right [icol] [ivec    ]);
+					evecs [ivec + 1] [icol] .imag (-eigenvectors_right [icol] [ivec + 1]);
 				}
 				ivec ++;
 			}

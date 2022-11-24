@@ -44,7 +44,7 @@ static double scaleFrequency (double f, int scale_from, int scale_to) {
 	if (scale_from == FilterBank_HERTZ)
 		fhz = f;
 	else if (scale_from == FilterBank_BARK)
-		fhz = BARKTOHZ (f);
+		fhz = NUMbarkToHertz (f);
 	else if (scale_from == FilterBank_MEL)
 		fhz = MELTOHZ (f);
 
@@ -54,7 +54,7 @@ static double scaleFrequency (double f, int scale_from, int scale_to) {
 
 
 	if (scale_to == FilterBank_BARK)
-		f = HZTOBARK (fhz);
+		f = NUMhertzToBark (fhz);
 	else if (scale_to == FilterBank_MEL)
 		f = HZTOMEL (fhz);
 	else
@@ -336,13 +336,11 @@ autoMelFilter MelFilter_create (double tmin, double tmax, integer nt, double dt,
 }
 
 /*
-void FilterBank_drawFilters (I, Graphics g, integer fromf, integer tof,
+void FilterBank_drawFilters (FilterBank me, Graphics g, integer fromf, integer tof,
 	double xmin, double xmax, int xlinear, double ymin, double ymax, int ydb,
 	double (*tolinf)(double f), double (*tononlin) (double f),
 	double (*filteramp)(double f0, double b, double f))
 {
-	iam (Matrix);
-
 
 }*/
 
@@ -416,7 +414,7 @@ void MelFilter_drawFilterFunctions (MelFilter me, Graphics g, int toFreqScale, i
 autoMatrix FilterBank_to_Matrix (FilterBank me) {
 	try {
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to Matrix.");
@@ -426,7 +424,7 @@ autoMatrix FilterBank_to_Matrix (FilterBank me) {
 autoBarkFilter Matrix_to_BarkFilter (Matrix me) {
 	try {
 		autoBarkFilter thee = BarkFilter_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to BarkFilter.");
@@ -436,7 +434,7 @@ autoBarkFilter Matrix_to_BarkFilter (Matrix me) {
 autoMelFilter Matrix_to_MelFilter (Matrix me) {
 	try {
 		autoMelFilter thee = MelFilter_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to MelFilter.");
@@ -511,7 +509,7 @@ autoFormantFilter Matrix_to_FormantFilter (Matrix me) {
 	try {
 		autoFormantFilter thee = FormantFilter_create (my xmin, my xmax, my nx, my dx, my x1,
 		                         my ymin, my ymax, my ny, my dy, my y1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to FormantFilter.");
@@ -648,7 +646,7 @@ autoMFCC MelFilter_to_MFCC (MelFilter me, integer numberOfCoefficients) {
 		autoMFCC thee = MFCC_create (my xmin, my xmax, my nx, my dx, my x1, my ny - 1, my ymin, my ymax);
 		for (integer iframe = 1; iframe <= my nx; iframe ++) {
 			const CC_Frame cf = & thy frame [iframe];
-			x.all() <<= my z.column (iframe);
+			x.all()  <<=  my z.column (iframe);
 			VECcosineTransform_preallocated (y.get(), x.get(), cosinesTable.get());
 			CC_Frame_init (cf, numberOfCoefficients);
 			for (integer icoef = 1; icoef <= numberOfCoefficients; icoef ++)
@@ -685,7 +683,7 @@ autoMelFilter MFCC_to_MelFilter (MFCC me, integer first, integer last) {
 			for (integer icoef = 1; icoef <= my maximumNumberOfCoefficients; icoef ++)
 				x [icoef + 1] = ( icoef < first || icoef > iend ? 0.0 : cf -> c [icoef] );   // zero extrapolation
 			VECinverseCosineTransform_preallocated (y.get(), x.get(), cosinesTable.get());
-			thy z.column (iframe) <<= y.get();
+			thy z.column (iframe)  <<=  y.get();
 		}
 		return thee;
 	} catch (MelderError) {
@@ -750,7 +748,7 @@ static int Sound_into_BarkFilter_frame (Sound me, BarkFilter thee, integer frame
 
 	autoVEC z = raw_VEC (nf);
 	for (integer j = 1; j <= nf; j ++)
-		z [j] = HZTOBARK (pv -> x1 + (j - 1) * pv -> dx);
+		z [j] = NUMhertzToBark (pv -> x1 + (j - 1) * pv -> dx);
 
 	for (integer i = 1; i <= thy ny; i ++) {
 		const double z0 = thy y1 + (i - 1) * thy dy;
@@ -775,7 +773,7 @@ autoBarkFilter Sound_to_BarkFilter (Sound me, double analysisWidth, double dt, d
 
 		const double nyquist = 0.5 / my dx, samplingFrequency = 2.0 * nyquist;
 		const double windowDuration = 2.0 * analysisWidth; /* gaussian window */
-		const double zmax = NUMhertzToBark2 (nyquist);
+		const double zmax = NUMhertzToBark (nyquist);
 		double fmin_bark = 0.0;
 
 		// Check defaults.
@@ -820,7 +818,7 @@ autoBarkFilter Sound_to_BarkFilter (Sound me, double analysisWidth, double dt, d
 			Melder_warning (U"Analysis results of ", frameErrorCount, U" frame(s) out of ",
 				numberOfFrames, U" will be suspect.");
 
-		double ref = FilterBank_DBREF * gaussian_window_squared_correction (window -> nx);
+		const double ref = FilterBank_DBREF * gaussian_window_squared_correction (window -> nx);
 
 		NUMdmatrix_to_dBs (thy z.get(), ref, FilterBank_DBFAC, FilterBank_DBFLOOR);
 		return thee;

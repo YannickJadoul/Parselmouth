@@ -1,6 +1,6 @@
 /* PairDistribution.cpp
  *
- * Copyright (C) 1997-2012,2013,2015,2016,2017 Paul Boersma
+ * Copyright (C) 1997-2013,2015-2019,2021,2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,8 +41,8 @@ Thing_implement (PairProbability, Daata, 0);
 
 Thing_implement (PairDistribution, Daata, 0);
 
-void structPairDistribution :: v_info () {
-	PairDistribution_Parent :: v_info ();
+void structPairDistribution :: v1_info () {
+	PairDistribution_Parent :: v1_info ();
 	MelderInfo_writeLine (U"Number of pairs: ", pairs.size);
 }
 
@@ -308,7 +308,8 @@ double PairDistribution_Distributions_getFractionCorrect (PairDistribution me, D
 
 autoTable PairDistribution_to_Table (PairDistribution me) {
 	try {
-		autoTable thee = Table_createWithColumnNames (my pairs.size, U"string1 string2 weight");
+		autoTable thee = Table_createWithColumnNames (my pairs.size,
+				autoSTRVEC ({ U"string1", U"string2", U"weight" }).get());
 		for (integer ipair = 1; ipair <= my pairs.size; ipair ++) {
 			PairProbability prob = my pairs.at [ipair];
 			Table_setStringValue (thee.get(), ipair, 1, prob -> string1.get());

@@ -93,24 +93,6 @@ autoStringsIndex HMM_HMMStateSequence_to_StringsIndex (HMM me, HMMStateSequence 
 
 autoHMMViterbi HMMViterbi_create (integer nstates, integer ntimes);
 
-// evaluate the numbers given to probabilities
-static autoVEC NUMwstring_to_probs (conststring32 s, integer nwanted) {
-	autoVEC numbers = newVECfromString (s);
-	if (numbers.size != nwanted)
-		Melder_throw (U"You supplied ", numbers.size, U", while ", nwanted, U" numbers needed.");
-	longdouble sum = 0.0;
-	for (integer i = 1; i <= numbers.size; i ++) {
-		if (numbers [i] < 0.0)
-			Melder_throw (U"Numbers have to be positive.");
-		sum += numbers [i];
-	}
-	Melder_require (sum > 0.0,
-		U"All probabilities cannot be zero.");
-	for (integer i = 1; i <= numbers.size; i ++)
-		numbers [i] /= sum;
-	return numbers;
-}
-
 #if 0
 static integer NUMget_line_intersection_with_circle (double xc, double yc, double r, double a, double b, double *out_x1, double *out_y1, double *out_x2, double *out_y2) {
 	const double ca = a * a + 1.0, bmyc = (b - yc);
@@ -262,7 +244,7 @@ autoHMMBaumWelch HMMBaumWelch_create (integer nstates, integer nsymbols, integer
 
 void HMMBaumWelch_getGamma (HMMBaumWelch me) {
 	for (integer it = 1; it <= my numberOfTimes; it ++) {
-		my gamma.column (it) <<= my alpha.column (it)  *  my beta.column (it);
+		my gamma.column (it)  <<=  my alpha.column (it)  *  my beta.column (it);
 		my gamma.column (it)  /=  NUMsum (my gamma.column (it));
 	}
 }
@@ -368,7 +350,7 @@ autoHMMStateSequence HMMStateSequence_create (integer numberOfItems) {
 autoStrings HMMStateSequence_to_Strings (HMMStateSequence me) {
 	try {
 		autoStrings thee = Thing_new (Strings);
-		my structStrings :: v_copy (thee.get());
+		my structStrings :: v1_copy (thee.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": no Strings created.");
@@ -378,8 +360,8 @@ autoStrings HMMStateSequence_to_Strings (HMMStateSequence me) {
 
 /**************** HMM ******************************/
 
-void structHMM :: v_info () {
-	structDaata :: v_info ();
+void structHMM :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of states: ", numberOfStates);
 	for (integer i = 1; i <= numberOfStates; i ++) {
 		const HMMState hmms = our states->at [i];
@@ -468,11 +450,11 @@ autoHMM HMM_createSimple (int leftToRight, conststring32 states_string, conststr
 			U"The states and symbols should not both be empty.");
 		
 		if (symbols.size == 0) {
-			symbols = newSTRVECcopy (states.get());
+			symbols = copy_STRVEC (states.get());
 			my notHidden = 1;
 		}
 		if (states.size == 0) {
-			states = newSTRVECcopy (symbols.get());
+			states = copy_STRVEC (symbols.get());
 			my notHidden = 1;
 		}
 
@@ -504,27 +486,27 @@ void HMM_setDefaultTransitionProbs (HMM me) {
 	if (my leftToRight) {
 		for (integer irow = 1; irow <= my numberOfStates; irow ++) {
 			const double p = 1.0 / (my numberOfStates - irow + 1.0);
-			my transitionProbs.row (irow).part (irow, my numberOfStates) <<= p;
+			my transitionProbs.row (irow).part (irow, my numberOfStates)  <<=  p;
 		}
 		// leftToRight must have end state!
 		my transitionProbs [my numberOfStates] [my numberOfStates] =
-			my transitionProbs [my numberOfStates] [my numberOfStates + 1] = 0.5;
+				my transitionProbs [my numberOfStates] [my numberOfStates + 1] = 0.5;
 	} else {
-		my transitionProbs.part (1, my numberOfStates, 1, my numberOfStates) <<= 1.0 / my numberOfStates;
-		my transitionProbs.column (my numberOfStates + 1) <<= 0.0;
+		my transitionProbs.part (1, my numberOfStates, 1, my numberOfStates)  <<=  1.0 / my numberOfStates;
+		my transitionProbs.column (my numberOfStates + 1)  <<=  0.0;
 	}
 }
 
 void HMM_setDefaultInitialStateProbs (HMM me) {
-	my initialStateProbs.get () <<= 1.0 / my numberOfStates;
+	my initialStateProbs.get ()  <<=  1.0 / my numberOfStates;
 }
 
 void HMM_setDefaultEmissionProbs (HMM me) {
 	if (my notHidden) {
-		my emissionProbs.get () <<= 0.0;
-		my emissionProbs.diagonal () <<= 1.0;
+		my emissionProbs.get()  <<=  0.0;
+		my emissionProbs.diagonal()  <<=  1.0;
 	} else 
-		my emissionProbs.part (1, my numberOfStates, 1, my numberOfObservationSymbols) <<= 1.0 / my numberOfObservationSymbols;
+		my emissionProbs.part (1, my numberOfStates, 1, my numberOfObservationSymbols)  <<=  1.0 / my numberOfObservationSymbols;
 }
 
 void HMM_setDefaultMixingProbabilities (HMM me) {
@@ -535,38 +517,52 @@ void HMM_setDefaultMixingProbabilities (HMM me) {
 	}
 }
 
-void HMM_setStartProbabilities (HMM me, conststring32 probs) {
+// evaluate the numbers given to probabilities
+static autoVEC normalizeProbabilities_VEC (constVECVU const& relativeProbabilities, integer nwanted) {
+	if (relativeProbabilities.size != nwanted)
+		Melder_throw (U"You supplied ", relativeProbabilities.size, U" numbers, whereas we need ", nwanted, U" numbers.");
+	for (integer i = 1; i <= relativeProbabilities.size; i ++)
+		Melder_require (relativeProbabilities [i] >= 0.0,
+			U"Relative probabilities have to be non-negative.");
+	const double sum = NUMsum (relativeProbabilities);
+	Melder_require (sum > 0.0,
+		U"All probabilities cannot be zero.");
+	autoVEC absoluteProbabilities = copy_VEC (relativeProbabilities);
+	absoluteProbabilities.all()  /=  sum;
+	return absoluteProbabilities;
+}
+
+void HMM_setStartProbabilities (HMM me, constVECVU const& relativeProbabilities) {
 	try {
-		autoVEC p = NUMwstring_to_probs (probs, my numberOfStates);
-		my initialStateProbs.get () <<= p.get();
+		autoVEC absoluteProbabilities = normalizeProbabilities_VEC (relativeProbabilities, my numberOfStates);
+		my initialStateProbs.all()  <<=  absoluteProbabilities.all();
 	} catch (MelderError) {
 		Melder_throw (me, U": no start probabilities set.");
 	}
 }
 
-void HMM_setTransitionProbabilities (HMM me, integer state_number, conststring32 state_probs) {
+void HMM_setTransitionProbabilities (HMM me, integer state_number, constVECVU const& relativeProbabilities) {
 	try {
 		Melder_require (state_number <= my states->size,
 			U"State number should not exceed ", my states->size, U".");
-		autoVEC p = NUMwstring_to_probs (state_probs, my numberOfStates);
-		my transitionProbs.row (state_number).part (1, my numberOfStates) <<= p.get ();
+		autoVEC absoluteProbabilities = normalizeProbabilities_VEC (relativeProbabilities, my numberOfStates);
+		my transitionProbs.row (state_number).part (1, my numberOfStates)  <<=  absoluteProbabilities.all();
 	} catch (MelderError) {
 		Melder_throw (me, U": no transition probabilities set.");
 	}
 }
 
-void HMM_setEmissionProbabilities (HMM me, integer state_number, conststring32 emission_probs) {
+void HMM_setEmissionProbabilities (HMM me, integer state_number, constVECVU const& relativeProbabilities) {
 	try {
 		Melder_require (state_number <= my states->size,
 			U"State number should not exceed ", my states->size, U".");
 		Melder_require (! my notHidden,
 			U"The emission probabilities of this model are fixed.");
-		autoVEC p = NUMwstring_to_probs (emission_probs, my numberOfObservationSymbols);
-		my emissionProbs.row (state_number).part (1, my numberOfObservationSymbols) <<= p.get ();
+		autoVEC absoluteProbabilities = normalizeProbabilities_VEC (relativeProbabilities, my numberOfObservationSymbols);
+		my emissionProbs.row (state_number).part (1, my numberOfObservationSymbols)  <<=  absoluteProbabilities.all();
 	} catch (MelderError) {
 		Melder_throw (me, U": no emission probabilities set.");
 	}
-
 }
 
 void HMM_addObservation_move (HMM me, autoHMMObservation thee) {
@@ -584,16 +580,16 @@ void HMM_addState_move (HMM me, autoHMMState thee) {
 autoTableOfReal HMM_extractTransitionProbabilities (HMM me) {
 	try {
 		autoTableOfReal thee = TableOfReal_create (my numberOfStates + 1, my numberOfStates + 1);
-		thy data.row (1).part (1, my numberOfStates) <<= my initialStateProbs.get();
+		thy data.row (1).part (1, my numberOfStates)  <<=  my initialStateProbs.get();
 		for (integer is = 1; is <= my numberOfStates; is ++) {
 			const HMMState hmms = my states->at [is];
 			TableOfReal_setRowLabel (thee.get(), is + 1, hmms -> label.get());
 			TableOfReal_setColumnLabel (thee.get(), is, hmms -> label.get());
-			thy data.row (is + 1).part (1, my numberOfStates) <<= my transitionProbs.row (is).part (1, my numberOfStates);
+			thy data.row (is + 1).part (1, my numberOfStates)  <<=  my transitionProbs.row (is).part (1, my numberOfStates);
 		}
 		TableOfReal_setRowLabel (thee.get(), 1, U"START");
 		TableOfReal_setColumnLabel (thee.get(), my numberOfStates + 1, U"END");
-		//thy data.column (my numberOfStates + 1).part (2, my numberOfStates) <<= my transitionProbs.column (my numberOfStates + 1 );
+		//thy data.column (my numberOfStates + 1).part (2, my numberOfStates)  <<=  my transitionProbs.column (my numberOfStates + 1 );
 		for (integer is = 1; is <= my numberOfStates; is ++) {
 			thy data [is + 1] [my numberOfStates + 1] = my transitionProbs [is] [my numberOfStates + 1];
 		}
@@ -1006,7 +1002,7 @@ void HMM_HMMStateSequence_drawTrellis (HMM me, HMMStateSequence thee, Graphics g
 
 	for (integer it = 1; it <= numberOfTimes; it ++) {
 		for (integer js = 1; js <= my numberOfStates; js ++) {
-			double xc = it, yc = js, x2 = it, y2 = js;
+			const double xc = it, yc = js, x2 = it, y2 = js;
 			Graphics_circle (g, xc, yc, r);
 			if (it > 1) {
 				for (integer is = 1; is <= my numberOfStates; is ++) {
@@ -1055,7 +1051,7 @@ void HMM_drawBackwardProbabilitiesIllustration (Graphics g, bool garnish) {
 		if (i < 4 or i == np) {
 			Graphics_circle (g, x, y, r);
 			const double xx = x0 - x, yy = y - y0;
-			const double c = sqrt (xx * xx + yy * yy);
+			const double c = hypot (xx, yy);
 			const double cosa = xx / c, sina = yy / c;
 			Graphics_line (g, x0 - r * cosa, y0 + r * sina, x + r * cosa, y - r * sina);
 		} else if (i == 4) {
@@ -1116,7 +1112,7 @@ void HMM_drawForwardProbabilitiesIllustration (Graphics g, bool garnish) {
 		if (i < 4 or i == np) {
 			Graphics_circle (g, x, y, r);
 			const double xx = x0 - x, yy = y - y0;
-			const double c = sqrt (xx * xx + yy * yy);
+			const double c = hypot (xx, yy);
 			const double cosa = xx / c, sina = yy / c;
 			Graphics_line (g, x0 - r * cosa, y0 + r * sina, x + r * cosa, y - r * sina);
 		} else if (i == 4) {
@@ -1440,7 +1436,7 @@ double HMM_getProbabilityAtTimeBeingInState (HMM me, integer itime, integer ista
 	autoVEC alpha_t = raw_VEC (my numberOfStates);
 	autoVEC alpha_tm1 = zero_VEC (my numberOfStates);
 
-	alpha_t.all() <<= my initialStateProbs.all();
+	alpha_t.all()  <<=  my initialStateProbs.all();
 	scale [1] = NUMsum (alpha_t.all());
 
 	alpha_t. all() /= scale [1];

@@ -392,8 +392,9 @@ typedef struct structKlattFrame {
 	integer Gain0;	/* Overall gain, 60 dB is unity,    0 to   60 */
 } *KlattFrame;
 
-static const conststring32 columnNames = U"f0 av f1 b1 f2 b2 f3 b3 f4 b4 f5 b5 f6 b6 fnz bnz fnp bnp ah kopen aturb tilt af skew a1 b1p a2 b2p a3 b3p a4 b4p a5 b5p a6 b6p anp ab avp gain";
-static const conststring32 columnNamesA [KlattTable_NPAR + 1] = {U"", U"f0", U"av", U"f1", U"b1", U"f2", U"b2", U"f3", U"b3", U"f4", U"b4", U"f5", U"b5", U"f6", U"b6", U"fnz", U"bnz", U"fnp", U"bnp", U"ah", U"kopen", U"aturb", U"tilt", U"af", U"skew", U"a1", U"b1p", U"a2", U"b2p", U"a3", U"b3p", U"a4", U"b4p", U"a5", U"b5p", U"a6", U"b6p", U"anp", U"ab", U"avp", U"gain"};
+static autoSTRVEC theColumnNames { U"f0", U"av", U"f1", U"b1", U"f2", U"b2", U"f3", U"b3", U"f4", U"b4", U"f5", U"b5", U"f6", U"b6",
+	U"fnz", U"bnz", U"fnp", U"bnp", U"ah", U"kopen", U"aturb", U"tilt", U"af", U"skew",
+	U"a1", U"b1p", U"a2", U"b2p", U"a3", U"b3p", U"a4", U"b4p", U"a5", U"b5p", U"a6", U"b6p", U"anp", U"ab", U"avp", U"gain" };
 
 static double DBtoLIN (integer dB) {
 	static const double amptable [88] = {
@@ -410,9 +411,6 @@ static double DBtoLIN (integer dB) {
 	};
 	return ( (dB < 0) || (dB > 87) ? 0 : amptable [dB] * .001 );
 }
-
-/* Structure for Klatt Globals */
-
 
 typedef struct structKlattGlobal {
 	int synthesis_model; /* cascade-parallel or all-parallel */
@@ -462,13 +460,13 @@ autoKlattTable KlattTable_readFromRawTextFile (MelderFile fs) {
 			U"A KlattTable needs ",  KlattTable_NPAR, U" columns.");
 
 		autoKlattTable me = Thing_new (KlattTable);
-		Table_initWithColumnNames (me.get(), thy ny, columnNames);
+		Table_initWithColumnNames (me.get(), thy ny, theColumnNames.get());
 		for (integer irow = 1; irow <= thy ny; irow ++) {
 			for (integer jcol = 1; jcol <= KlattTable_NPAR; jcol ++) {
 				double val = thy z [irow] [jcol];
 				if (jcol > 3 && jcol < 13 && (jcol % 2 == 0) && val <= 0) // bw == 0?
 					val = thy z [irow] [jcol - 1] / 10;
-				Table_setNumericValue ( (Table) me.get(), irow, jcol, val);
+				Table_setNumericValue (me.get(), irow, jcol, val);
 			}
 		}
 		return me;
@@ -556,7 +554,7 @@ autoKlattTable KlattTable_create (double frameDuration, double totalDuration) {
 	try {
 		autoKlattTable me = Thing_new (KlattTable);
 		const integer nrows = Melder_ifloor (totalDuration / frameDuration) + 1;
-		Table_initWithColumnNames (me.get(), nrows, columnNames);
+		Table_initWithColumnNames (me.get(), nrows, theColumnNames.get());
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"KlattTable not created.");
@@ -617,13 +615,13 @@ static void KlattGlobal_getFrame (KlattGlobal me, KlattFrame thee) {
 }
 
 /*
-This function adds F0 flutter, as specified in:
+	This function adds F0 flutter, as specified in:
 
-"Analysis, synthesis and perception of voice quality variations among
-female and male talkers" D.H. Klatt and L.C. Klatt JASA 87(2) February 1990.
+	"Analysis, synthesis and perception of voice quality variations among
+	female and male talkers", D.H. Klatt and L.C. Klatt, JASA 87(2), February 1990.
 
-Flutter is added by applying a quasi-random element constructed from three
-slowly varying sine waves.
+	Flutter is added by applying a quasi-random element constructed from three
+	slowly varying sine waves.
 */
 
 static void KlattFrame_flutter (KlattGlobal me) {
@@ -639,9 +637,9 @@ static void KlattFrame_flutter (KlattGlobal me) {
 }
 
 /*
-  Random number generator (return a number between -8191 and +8191)
-  Noise spectrum is tilted down by soft low-pass filter having a pole near
-    the origin in the z-plane, i.e. output = input + (0.75 * lastoutput)
+	Random number generator (return a number between -8191 and +8191)
+	Noise spectrum is tilted down by soft low-pass filter having a pole near
+	the origin in the Z-plane, i.e. output = input + (0.75 * lastoutput)
 */
 static double KlattGlobal_gen_noise (KlattGlobal me) {
 	static double nlast = 0.0;
@@ -1078,12 +1076,12 @@ static int KlattTable_checkLimits (KlattTable me) {
 		for (integer j = 1; j <= KlattTable_NPAR; j ++) {
 			if (nviolations_lower [j] > 0) {
 				if (nviolations_upper [j] > 0)
-					MelderInfo_writeLine (columnNamesA [j], U": ", nviolations_lower [j], U" frame(s) < min = ",
+					MelderInfo_writeLine (theColumnNames [j].get(), U": ", nviolations_lower [j], U" frame(s) < min = ",
 						nviolations_lower [j], U"; ", nviolations_upper [j], U" frame(s) > max = ", upper [j]);
 				else
-					MelderInfo_writeLine (columnNamesA [j], U": ", nviolations_lower [j], U" frame(s) < min = ", lower [j]);
+					MelderInfo_writeLine (theColumnNames [j].get(), U": ", nviolations_lower [j], U" frame(s) < min = ", lower [j]);
 			} else if (nviolations_upper [j] > 0) {
-				MelderInfo_writeLine (columnNamesA [j], U": ", nviolations_upper [j], U" frame(s) > max = ", upper [j]);
+				MelderInfo_writeLine (theColumnNames [j].get(), U": ", nviolations_upper [j], U" frame(s) > max = ", upper [j]);
 			}
 		}
 		MelderInfo_close ();
@@ -1113,54 +1111,54 @@ autoSound KlattTable_to_Sound (KlattTable me, double samplingFrequency, int synt
 			for (integer col = 1; col <= KlattTable_NPAR; col ++)
 				par [col] = Table_getNumericValue_Assert (me, irow, col);   // ppgb: truncatie?
 			integer jcol = 1;
-			frame ->  F0hz10 = par [jcol ++];
-			frame ->  AVdb = par [jcol ++];
-			frame ->  Fhz [1] = par [jcol ++];
-			frame ->  Bhz [1] = par [jcol ++];
-			frame ->  Fhz [2] = par [jcol ++];
-			frame ->  Bhz [2] = par [jcol ++];
-			frame ->  Fhz [3] = par [jcol ++];
-			frame ->  Bhz [3] = par [jcol ++];
-			frame ->  Fhz [4] = par [jcol ++];
-			frame ->  Bhz [4] = par [jcol ++];
-			frame ->  Fhz [5] = par [jcol ++];
-			frame ->  Bhz [5] = par [jcol ++];
-			frame ->  Fhz [6] = par [jcol ++];
-			frame ->  Bhz [6] = par [jcol ++];
-			frame ->  FNZhz = par [jcol ++];
-			frame ->  BNZhz = par [jcol ++];
-			frame ->  FNPhz = par [jcol ++];
-			frame ->  BNPhz = par [jcol ++];
-			frame ->  ah = par [jcol ++];
-			frame ->  Kopen = par [jcol ++];
-			frame ->  Aturb = par [jcol ++];
-			frame ->  TLTdb = par [jcol ++];
-			frame ->  AF = par [jcol ++];
-			frame ->  Kskew = par [jcol ++];
-			frame ->  A [1] = par [jcol ++];
-			frame ->  Bphz [1] = par [jcol ++];
-			frame ->  A [2] = par [jcol ++];
-			frame ->  Bphz [2] = par [jcol ++];
-			frame ->  A [3] = par [jcol ++];
-			frame ->  Bphz [3] = par [jcol ++];
-			frame ->  A [4] = par [jcol ++];
-			frame ->  Bphz [4] = par [jcol ++];
-			frame ->  A [5] = par [jcol ++];
-			frame ->  Bphz [5] = par [jcol ++];
-			frame ->  A [6] = par [jcol ++];
-			frame ->  Bphz [6] = par [jcol ++];
-			frame ->  ANP = par [jcol ++];
-			frame ->  AB = par [jcol ++];
-			frame ->  AVpdb = par [jcol ++];
-			frame ->  Gain0 = par [jcol ++];;
-			frame ->  Fhz [7] = 6500;
-			frame ->  Bhz [7] = 600;
-			frame ->  Fhz [8] = 7500;
-			frame ->  Bhz [8] = 600;
+			frame -> F0hz10 = par [jcol ++];
+			frame -> AVdb = par [jcol ++];
+			frame -> Fhz [1] = par [jcol ++];
+			frame -> Bhz [1] = par [jcol ++];
+			frame -> Fhz [2] = par [jcol ++];
+			frame -> Bhz [2] = par [jcol ++];
+			frame -> Fhz [3] = par [jcol ++];
+			frame -> Bhz [3] = par [jcol ++];
+			frame -> Fhz [4] = par [jcol ++];
+			frame -> Bhz [4] = par [jcol ++];
+			frame -> Fhz [5] = par [jcol ++];
+			frame -> Bhz [5] = par [jcol ++];
+			frame -> Fhz [6] = par [jcol ++];
+			frame -> Bhz [6] = par [jcol ++];
+			frame -> FNZhz = par [jcol ++];
+			frame -> BNZhz = par [jcol ++];
+			frame -> FNPhz = par [jcol ++];
+			frame -> BNPhz = par [jcol ++];
+			frame -> ah = par [jcol ++];
+			frame -> Kopen = par [jcol ++];
+			frame -> Aturb = par [jcol ++];
+			frame -> TLTdb = par [jcol ++];
+			frame -> AF = par [jcol ++];
+			frame -> Kskew = par [jcol ++];
+			frame -> A [1] = par [jcol ++];
+			frame -> Bphz [1] = par [jcol ++];
+			frame -> A [2] = par [jcol ++];
+			frame -> Bphz [2] = par [jcol ++];
+			frame -> A [3] = par [jcol ++];
+			frame -> Bphz [3] = par [jcol ++];
+			frame -> A [4] = par [jcol ++];
+			frame -> Bphz [4] = par [jcol ++];
+			frame -> A [5] = par [jcol ++];
+			frame -> Bphz [5] = par [jcol ++];
+			frame -> A [6] = par [jcol ++];
+			frame -> Bphz [6] = par [jcol ++];
+			frame -> ANP = par [jcol ++];
+			frame -> AB = par [jcol ++];
+			frame -> AVpdb = par [jcol ++];
+			frame -> Gain0 = par [jcol ++];;
+			frame -> Fhz [7] = 6500;
+			frame -> Bhz [7] = 600;
+			frame -> Fhz [8] = 7500;
+			frame -> Bhz [8] = 600;
 
 			KlattGlobal_getFrame (thee, frame);
 
-			KlattGlobal_synthesizeFrame (thee, iwave);
+			KlattGlobal_synthesizeFrame (thee, iwave.get());
 
 			for (integer isam = 1; isam <= thy nspfr; isam ++)
 				his z [1] [numberOfSamples ++] = iwave [isam] / 32768.0;
@@ -1174,7 +1172,6 @@ autoSound KlattTable_to_Sound (KlattTable me, double samplingFrequency, int synt
 		Melder_throw (me, U": no Sound created.");
 	}
 }
-
 
 autoKlattTable KlattTable_createExample () {
 	const integer nrows = 1376;
@@ -2560,7 +2557,8 @@ autoKlattTable KlattTable_createExample () {
 	};
 	try {
 		autoKlattTable me = Thing_new (KlattTable);
-		Table_initWithColumnNames (me.get(), nrows, columnNames);
+		Table_initWithColumnNames (me.get(), nrows, theColumnNames.get());
+		Melder_assert (theColumnNames.size == KlattTable_NPAR);
 		for (integer irow = 1; irow <= nrows; irow ++) {
 			for (integer jcol = 1; jcol <= KlattTable_NPAR; jcol ++) {
 				double val = klatt_data [irow - 1].p [jcol - 1];
@@ -2581,7 +2579,7 @@ autoKlattTable Table_to_KlattTable (Table me) {
 			U"A KlattTable needs ", KlattTable_NPAR, U" columns.");
 		
 		autoKlattTable thee = Thing_new (KlattTable);
-		my structTable :: v_copy (thee.get());
+		my structTable :: v1_copy (thee.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"KlattTable not created from Table.");
@@ -2591,7 +2589,7 @@ autoKlattTable Table_to_KlattTable (Table me) {
 autoTable KlattTable_to_Table (KlattTable me) {
 	try {
 		autoTable thee = Thing_new (Table);
-		my structTable :: v_copy (thee.get());
+		my structTable :: v1_copy (thee.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (U"Table not created from KlattTable.");

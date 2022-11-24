@@ -46,14 +46,14 @@ autoStrings Strings_append (OrderedOf<structStrings>* me);
 autoStrings Strings_change (Strings me, conststring32 search, conststring32 replace,
 	int maximumNumberOfReplaces, integer *nmatches, integer *nstringmatches, bool use_regexp);
 
-autoStrings Strings_createFromSTRVEC (constSTRVEC const& strings, integer from, integer to);
+autoStrings Strings_createFromSTRVEC (constSTRVEC const& strings);
 
 autoStrings Strings_extractPart (Strings me, integer start, integer end);
 
 autoStringsIndex Strings_to_StringsIndex (Strings me);
 
 autoStringsIndex Stringses_to_StringsIndex (Strings me, Strings classes);
-/* Construct the index with strings in classes, index[i]=0 when my strings[i] doesn't occur in classes */
+/* Construct the index with strings in classes, index [i] = 0 when my strings [i] doesn't occur in classes */
 
 autoStringsIndex Table_to_StringsIndex_column (Table me, integer column);
 

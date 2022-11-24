@@ -39,7 +39,7 @@ Thing_define (Minimizer, Thing) {
 	Thing afterBoss;
 	Graphics gmonitor;   /* graphics to monitor the minimization process */
 
-	void v_info ()
+	void v1_info ()
 		override { }
 
 	virtual void v_minimize () { }   /* does the work */
@@ -56,7 +56,7 @@ void Minimizer_reset (Minimizer me, constVEC const& guess);
 /* reset the start values for the minimizer
  * 
  * Post conditions:
- *    p[] = guess[];
+ *    p [] = guess [];
  *    my minimum = 1e308;
  *    success = maximumNumberOfIterations = iteration = numberOfFunctionCalls = 0;
  *    reset (me);
@@ -89,7 +89,7 @@ Thing_define (LineMinimizer, Minimizer) {
 	autoVEC direction;    // search direction vector
 	autoVEC ptry;         // point in search direction
 
-	//virtual void v_linmin (double p[], double fp, double direction[], double *fret);
+	//virtual void v_linmin (double p [], double fp, double direction [], double *fret);
 };
 
 void LineMinimizer_init (LineMinimizer me, integer numberOfParameters, Daata object, double (*func) (Daata object, VEC const& p));

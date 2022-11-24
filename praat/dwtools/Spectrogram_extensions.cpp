@@ -1,6 +1,6 @@
 /* Spectrogram_extensions.cpp
  *
- * Copyright (C) 2014-2018 David Weenink
+ * Copyright (C) 2014-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@
 
 Thing_implement (BandFilterSpectrogram, Matrix, 2);
 
-void structBandFilterSpectrogram :: v_info () {
-	structDaata :: v_info ();
+void structBandFilterSpectrogram :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Time domain:");
 	MelderInfo_writeLine (U"   Start time: ", xmin, U" seconds");
 	MelderInfo_writeLine (U"   End time: ", xmax, U" seconds");
@@ -39,8 +39,8 @@ void structBandFilterSpectrogram :: v_info () {
 	MelderInfo_writeLine (U"   First time slice (frame centre) at: ", x1, U" seconds");
 }
 
-void structBarkSpectrogram :: v_info () {
-	structBandFilterSpectrogram :: v_info ();
+void structBarkSpectrogram :: v1_info () {
+	structBandFilterSpectrogram :: v1_info ();
 	MelderInfo_writeLine (U"Frequency domain:");
 	MelderInfo_writeLine (U"   Lowest frequency: ", ymin, U" ", v_getFrequencyUnit ());
 	MelderInfo_writeLine (U"   Highest frequency: ", ymax, U" ", v_getFrequencyUnit ());
@@ -51,8 +51,8 @@ void structBarkSpectrogram :: v_info () {
 	MelderInfo_writeLine (U"   First frequency band around (bin centre at): ", y1, U" ", v_getFrequencyUnit ());
 }
 
-void structMelSpectrogram :: v_info () {
-	structBandFilterSpectrogram :: v_info ();
+void structMelSpectrogram :: v1_info () {
+	structBandFilterSpectrogram :: v1_info ();
 	MelderInfo_writeLine (U"Frequency domain:");
 	MelderInfo_writeLine (U"   Lowest frequency: ", ymin, U" ", v_getFrequencyUnit ());
 	MelderInfo_writeLine (U"   Highest frequency: ", ymax, U" ", v_getFrequencyUnit ());
@@ -165,11 +165,13 @@ autoMelSpectrogram MFCC_to_MelSpectrogram (MFCC me, integer first, integer last,
 
 autoMFCC MelSpectrogram_to_MFCC (MelSpectrogram me, integer numberOfCoefficients) {
 	try {
-		if (numberOfCoefficients <= 0)
+		if (numberOfCoefficients <= 0 || numberOfCoefficients > my ny - 1)
 			numberOfCoefficients = my ny - 1;
-		if (numberOfCoefficients > my ny - 1)
-			numberOfCoefficients = my ny - 1;
-		// 20130220 new interpretation of maximumNumberOfCoefficients necessary for inverse transform 
+		/*
+			20130220 new interpretation of maximumNumberOfCoefficients necessary for the inverse transform!
+			In the creation of the MFCC we need to set it at the maximum, ny - 1.
+			In the conversion to CC we fill it with possibly less numbers!
+		*/
 		autoMFCC thee = MFCC_create (my xmin, my xmax, my nx, my dx, my x1, my ny - 1, my ymin, my ymax);
 		BandFilterSpectrogram_into_CC (me, thee.get(), numberOfCoefficients);
 		return thee;
@@ -529,7 +531,7 @@ autoBarkSpectrogram Matrix_to_BarkSpectrogram (Matrix me) {
 	try {
 		autoBarkSpectrogram thee = BarkSpectrogram_create (my xmin, my xmax, my nx, my dx, my x1,
 			my ymin, my ymax, my ny, my dy, my y1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to BarkSpectrogram.");
@@ -539,7 +541,7 @@ autoBarkSpectrogram Matrix_to_BarkSpectrogram (Matrix me) {
 autoMelSpectrogram Matrix_to_MelSpectrogram (Matrix me) {
 	try {
 		autoMelSpectrogram thee = MelSpectrogram_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
-		thy z.all() <<= my z.all();
+		thy z.all()  <<=  my z.all();
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": not converted to MelSpectrogram.");
@@ -589,6 +591,66 @@ static void BandFilterSpectrogram_PCA_drawComponent (BandFilterSpectrogram me, P
 	Matrix_drawRows (him.get(), g, tmin, tmax, component - 0.5, component + 0.5, fmin, fmax);
 }
 #endif
+
+/*
+	Implementation of Yanna Ma & Akinori Nishihara (2013), Efficient voice activity detection algorithm
+		using long-term spectral flatness measure,  EURASIP Journal on Audio, Speech, and Music Processing.
+*/
+autoMatrix Spectrogram_getLongtermSpectralFlatnessMeasure (Spectrogram me, double longtermWindow, double shorttermWindow,
+	double fmin, double fmax) {
+	try {
+		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1,
+					0.5, 1.5, 1, 1.0, 1.0);
+		VEC longtermSpectralFlatness = thy z.row (1);
+		const integer numberOfShorttermFrames = Melder_ifloor (shorttermWindow / my dx);
+		/*
+			For the time being we just round the longtermWindow to the nearest number of frames to compute
+			the geometric mean and the arithmetic mean because this is not very critical.
+		*/
+		const integer numberOfLongtermFrames = Melder_round_tieUp (longtermWindow / my dx);
+		const double halfWindwow = 0.5 * shorttermWindow;
+		const integer ifreqFrom = std::max (1_integer, Melder_ifloor (fmin / my dy));
+		const integer ifreqTo = std::min (my ny, Melder_ifloor (fmax / my dy));
+		Melder_require (ifreqFrom < ifreqTo,
+			U"The low frequency threshold should be smaller than the high frequency threshold.");
+		for (integer ifreq = ifreqFrom; ifreq <= ifreqTo; ifreq ++) {
+			VEC frequencyBins = my z [1];
+			/*
+				Average across time Eq. (4)
+			*/
+			if (numberOfShorttermFrames > 1) { // for Eq. (4)
+				for (integer iframe = 1; iframe <= my nx; iframe ++) {
+					const double xmid = Sampled_indexToX (me, iframe);
+					frequencyBins [iframe] = Sampled_getMean (me, xmid - halfWindwow, xmid + halfWindwow, ifreq, 0, true);
+				}
+			} else 
+				frequencyBins  <<=  my z.row (ifreq);
+			/*
+				Get the geometric versus arithmetic mean of the power spectrum, Eqs. (2) and (3)
+			*/
+			for (integer iframe = 1; iframe <= my nx; iframe ++) {
+				const integer frameFrom = iframe - numberOfLongtermFrames + 1;
+				const integer iframeFrom = std::max (1_integer, frameFrom);
+				longdouble log10_geometricMean = 0.0, arithmeticMean = 0.0;
+				integer count = 0;
+				for (integer i = iframeFrom; i <= iframe; i ++) {
+					if (frequencyBins [i] > 0.0) {
+						log10_geometricMean += log10 (frequencyBins [i]); 
+						arithmeticMean += frequencyBins [i];
+						count ++;
+					}
+				}
+				log10_geometricMean /= count;
+				arithmeticMean /= count;
+				const double log_gm_div_am = ( arithmeticMean <= 0.0 ? 0.0 : double (log10_geometricMean - log10 (double (arithmeticMean))) );
+				longtermSpectralFlatness [iframe] += log_gm_div_am; // Eq. (1)
+			}
+		}
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (me, U": cannot determine long term spectral flatness.");
+	}
+}
 
 /*
  * MelSpectrograms_to_DTW (MelSpectrogram me, MelSpectrogram thee, dtw-params);

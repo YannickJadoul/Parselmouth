@@ -1,6 +1,6 @@
 /* GuiShell.cpp
  *
- * Copyright (C) 1993-2018,2020 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2018,2020-2022 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ Thing_implement (GuiShell, GuiForm, 0);
 		d_userData = static_cast <GuiShell> (userData);
 	}
 	- (void) keyDown: (NSEvent *) theEvent {
-		trace (U"key down");
+		trace (U"GuiCocoaShell: key down");
 		[super keyDown: theEvent];   // for automatic behaviour in dialog boxes; do GuiWindows have to override this to do nothing?
 	}
 	- (BOOL) windowShouldClose: (id) sender {
@@ -57,13 +57,37 @@ Thing_implement (GuiShell, GuiForm, 0);
 		}
 		return false;
 	}
+	- (void) cancelOperation: (id) sender {
+		trace (U"GuiCocoaShell: escape key pressed");
+		GuiCocoaShell *widget = (GuiCocoaShell *) sender;
+		GuiWindow me = (GuiWindow) [widget getUserData];
+		if (me && my classInfo == classGuiWindow && my d_escapeCallback) {
+			try {
+				structGuiMenuItemEvent event { nullptr, false, false, false };
+				my d_escapeCallback (my d_escapeBoss, & event);
+			} catch (MelderError) {
+				Melder_flushError (U"Cancelling in window not completely handled.");
+			}
+		} else {
+			trace (U"calling the global escape callback (1)");
+			if (theGuiEscapeMenuItemCallback) {
+				try {
+					trace (U"calling the global escape callback (2)");
+					structGuiMenuItemEvent event { nullptr, false, false, false };
+					theGuiEscapeMenuItemCallback (theGuiEscapeMenuItemBoss, & event);
+				} catch (MelderError) {
+					Melder_flushError (U"Cancelling not completely handled.");
+				}
+			}
+		}
+	}
 	@end
 #endif
 
-void structGuiShell :: v_destroy () noexcept {
+void structGuiShell :: v9_destroy () noexcept {
 	#if cocoa
 		if (Melder_debug == 55)
-			Melder_casual (U"\t", Thing_messageNameAndAddress (this), U" v_destroy: cocoaShell ", Melder_pointer (our d_cocoaShell));
+			Melder_casual (U"\t", Thing_messageNameAndAddress (this), U" v9_destroy: cocoaShell ", Melder_pointer (our d_cocoaShell));
 		if (our d_cocoaShell) {
 			[our d_cocoaShell setUserData: nullptr];   // undangle reference to this
 			Melder_fatal (U"ordering out?");   // TODO: how can this never be reached?
@@ -73,7 +97,7 @@ void structGuiShell :: v_destroy () noexcept {
 			our d_cocoaShell = nullptr;   // undangle
 		}
 	#endif
-	GuiShell_Parent :: v_destroy ();
+	GuiShell_Parent :: v9_destroy ();
 }
 
 int GuiShell_getShellWidth (GuiShell me) {
@@ -107,6 +131,13 @@ int GuiShell_getShellHeight (GuiShell me) {
 void GuiShell_setTitle (GuiShell me, conststring32 title /* cattable */) {
 	#if gtk
 		gtk_window_set_title (my d_gtkWindow, Melder_peek32to8 (title));
+		#if defined (chrome)
+			if (my chrome_surrogateShellTitleLabelWidget) {
+				char *markup = g_markup_printf_escaped ("<span weight=\"ultrabold\" underline=\"low\">%s</span>", Melder_peek32to8 (title));
+				gtk_label_set_markup (GTK_LABEL (my chrome_surrogateShellTitleLabelWidget), markup);
+				g_free (markup);
+			}
+		#endif
 	#elif motif
 		SetWindowTextW (my d_xmShell -> window, Melder_peek32toW (title));
 	#elif cocoa

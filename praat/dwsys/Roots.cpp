@@ -43,8 +43,8 @@
 
 Thing_implement (Roots, Daata, 1);
 
-void structRoots :: v_info () {
-	structDaata :: v_info ();
+void structRoots :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of roots: ", numberOfRoots);
 }
 
@@ -174,7 +174,7 @@ autoRoots Polynomial_to_Roots (Polynomial me) {
 		uh_CM [1] [n] = - (my coefficients [1] / my coefficients [np1]);
 		for (integer irow = 2; irow <= n; irow ++) {
 			uh_CM [irow] [n] = - (my coefficients [irow] / my coefficients [np1]);
-			uh_CM [irow][irow - 1] = 1.0;
+			uh_CM [irow] [irow - 1] = 1.0;
 		}
 		/*
 			Find out the working storage needed
@@ -239,18 +239,18 @@ void Polynomial_into_Roots (Polynomial me, Roots r, VEC const& workspace) {
 	uh_CM [1] [n] = - (my coefficients [1] / my coefficients [np1]);
 	for (integer irow = 2; irow <= n; irow ++) {
 		uh_CM [irow] [n] = - (my coefficients [irow] / my coefficients [np1]);
-		uh_CM [irow][irow - 1] = 1.0;
+		uh_CM [irow] [irow - 1] = 1.0;
 	}
 	/*
 		We don't need to find out size of the working storage needed because for the current version 3.1.1.1 
 		of NUMlapack_dhseqr (20200313) its size equals maximally 6*n.
 	*/
 	integer endIndex = n * n;
-	VEC wr = workspace. part (endIndex + 1, endIndex + n);
+	VEC wr = workspace.part (endIndex + 1, endIndex + n);
 	endIndex += n;
-	VEC wi = workspace. part (endIndex + 1, endIndex + n);
+	VEC wi = workspace.part (endIndex + 1, endIndex + n);
 	endIndex += n;
-	VEC work = workspace. part (endIndex + 1, workspace.size);
+	VEC work = workspace.part (endIndex + 1, workspace.size);
 	Melder_assert (work.size >= 6 * n);
 	integer lwork = work.size, info;
 	NUMlapack_dhseqr_ ("E", "N", n, 1, n, & uh_CM [1] [1], n, & wr [1], & wi [1], nullptr, n, & work [1], lwork, & info);

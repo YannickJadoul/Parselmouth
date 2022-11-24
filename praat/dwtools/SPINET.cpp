@@ -74,7 +74,7 @@ static integer SampledXY_getWindowExtrema (SampledXY me, constMAT z, integer ixm
 	MelderExtremaWithInit extrema;
 	for (integer iy = iymin; iy <= iymax; iy ++)
 		for (integer ix = ixmin; ix <= ixmax; ix ++)
-			extrema.update (z [iy][ix]);
+			extrema.update (z [iy] [ix]);
 	if (out_minimum)
 		*out_minimum = extrema.min;
 	if (out_maximum)
@@ -82,8 +82,8 @@ static integer SampledXY_getWindowExtrema (SampledXY me, constMAT z, integer ixm
 	return (ixmax - ixmin + 1) * (iymax - iymin + 1);
 }
 
-void structSPINET :: v_info () {
-	structDaata :: v_info ();
+void structSPINET :: v1_info () {
+	structDaata :: v1_info ();
 	double miny, maxy, mins, maxs;
 	if (! SampledXY_getWindowExtrema (this, y.get(), 1, nx, 1, ny, & miny, & maxy) ||
 		! SampledXY_getWindowExtrema (this, s.get(), 1, nx, 1, ny, & mins, & maxs))
@@ -116,7 +116,7 @@ autoSPINET SPINET_create (double tmin, double tmax, integer nt, double dt, doubl
 void SPINET_spectralRepresentation (SPINET me, Graphics g, double fromTime, double toTime, double fromErb, double toErb, double minimum, double maximum, bool enhanced, bool garnish) {
 
 	autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
-	thy z.all() <<= enhanced ? my s.all() : my y.all();
+	thy z.all()  <<=  enhanced ? my s.all() : my y.all();
 
 	Matrix_paintCells (thee.get(), g, fromTime, toTime, fromErb, toErb, minimum, maximum);
 	if (garnish) {

@@ -1,6 +1,6 @@
 /* Graphics.cpp
  *
- * Copyright (C) 1992-2008,2010-2020 Paul Boersma
+ * Copyright (C) 1992-2008,2010-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,9 +37,9 @@ void Graphics_prefs () {
 	Preferences_addEnum (U"Graphics.cjkFontStyle", & theGraphicsCjkFontStyle, kGraphics_cjkFontStyle, (int) kGraphics_cjkFontStyle::DEFAULT);
 }
 
-void structGraphics :: v_destroy () noexcept {
+void structGraphics :: v9_destroy () noexcept {
 	Melder_free (record);
-	Graphics_Parent :: v_destroy ();
+	Graphics_Parent :: v9_destroy ();
 }
 
 static void computeTrafo (Graphics me) {
@@ -83,12 +83,16 @@ void Graphics_init (Graphics me, int resolution) {
 		my resolutionNumber = kGraphics_resolution::DPI_180;
 	} else if (resolution == 200) {
 		my resolutionNumber = kGraphics_resolution::DPI_200;
+	} else if (resolution == 204) {
+		my resolutionNumber = kGraphics_resolution::DPI_204;
 	} else if (resolution == 300) {
 		my resolutionNumber = kGraphics_resolution::DPI_300;
 	} else if (resolution == 360) {
 		my resolutionNumber = kGraphics_resolution::DPI_360;
 	} else if (resolution == 600) {
 		my resolutionNumber = kGraphics_resolution::DPI_600;
+	} else if (resolution == 690) {
+		my resolutionNumber = kGraphics_resolution::DPI_690;
 	} else if (resolution == 720) {
 		my resolutionNumber = kGraphics_resolution::DPI_720;
 	} else if (resolution == 900) {
@@ -332,9 +336,9 @@ double Graphics_dyMMtoWC (Graphics me, double dy_mm) {
 }
 
 double Graphics_distanceWCtoMM (Graphics me, double x1WC, double y1WC, double x2WC, double y2WC) {
-	double dxDC = (x1WC - x2WC) * my scaleX;
-	double dyDC = (y1WC - y2WC) * my scaleY;
-	return sqrt (dxDC * dxDC + dyDC * dyDC) * 25.4 / my resolution;
+	const double dxDC = (x1WC - x2WC) * my scaleX;
+	const double dyDC = (y1WC - y2WC) * my scaleY;
+	return hypot (dxDC, dyDC) * 25.4 / my resolution;
 }
 
 double Graphics_dxWCtoMM (Graphics me, double dxWC) {

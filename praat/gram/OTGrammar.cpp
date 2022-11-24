@@ -1,6 +1,6 @@
 /* OTGrammar.cpp
  *
- * Copyright (C) 1997-2020 Paul Boersma
+ * Copyright (C) 1997-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,9 +94,8 @@
 #include "enums_getValue.h"
 #include "OTGrammar_enums.h"
 
-void structOTGrammar :: v_info ()
-{
-	structDaata :: v_info ();
+void structOTGrammar :: v1_info () {
+	structDaata :: v1_info ();
 	integer numberOfCandidates = 0, numberOfViolations = 0;
 	for (integer itab = 1; itab <= numberOfTableaus; itab ++) {
 		numberOfCandidates += our tableaus [itab]. numberOfCandidates;
@@ -111,7 +110,7 @@ void structOTGrammar :: v_info ()
 	MelderInfo_writeLine (U"Number of violation marks: ", numberOfViolations);
 }
 
-void structOTGrammar :: v_writeText (MelderFile file) {
+void structOTGrammar :: v1_writeText (MelderFile file) {
 	MelderFile_write (file, U"\n<", kOTGrammar_decisionStrategy_getText (decisionStrategy),
 		U">\n", leak, U" ! leak\n", our numberOfConstraints, U" constraints");
 	for (integer icons = 1; icons <= our numberOfConstraints; icons ++) {
@@ -172,8 +171,8 @@ void OTGrammar_checkIndex (OTGrammar me) {
 	OTGrammar_sort (me);
 }
 
-void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
-	OTGrammar_Parent :: v_readText (text, formatVersion);
+void structOTGrammar :: v1_readText (MelderReadText text, int formatVersion) {
+	OTGrammar_Parent :: v1_readText (text, formatVersion);
 	if (formatVersion >= 1) {
 		try {
 			our decisionStrategy = (kOTGrammar_decisionStrategy) texgete8 (text, (enum_generic_getValue) kOTGrammar_decisionStrategy_getValue);
@@ -306,28 +305,23 @@ Thing_implement (OTGrammar, Daata, 2);
 
 Thing_implement (OTHistory, TableOfReal, 0);
 
-static OTGrammar constraintCompare_grammar;
-
-static int constraintCompare (const void *first, const void *second) {
-	OTGrammar me = constraintCompare_grammar;
-	integer icons = * (integer *) first, jcons = * (integer *) second;
-	OTGrammarConstraint ci = & my constraints [icons], cj = & my constraints [jcons];
-	/*
-		Sort primarily by disharmony.
-	*/
-	if (ci -> disharmony > cj -> disharmony)
-		return -1;
-	if (ci -> disharmony < cj -> disharmony)
-		return +1;
-	/*
-		Tied constraints are sorted alphabetically.
-	*/
-	return str32cmp (my constraints [icons]. name.get(), my constraints [jcons]. name.get());
-}
-
 void OTGrammar_sort (OTGrammar me) {
-	constraintCompare_grammar = me;
-	qsort (& my index [1], my numberOfConstraints, sizeof (integer), constraintCompare);
+	std::sort (my index.begin(), my index.end(),
+		[me] (integer icons, integer jcons) {
+			OTGrammarConstraint ci = & my constraints [icons], cj = & my constraints [jcons];
+			/*
+				Sort primarily by disharmony.
+			*/
+			if (ci -> disharmony > cj -> disharmony)
+				return true;
+			if (ci -> disharmony < cj -> disharmony)
+				return false;
+			/*
+				Tied constraints are sorted alphabetically.
+			*/
+			return str32cmp (my constraints [icons]. name.get(), my constraints [jcons]. name.get()) < 0;
+		}
+	);
 	for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
 		OTGrammarConstraint constraint = & my constraints [my index [icons]];
 		constraint -> tiedToTheLeft = ( icons > 1 &&
@@ -353,7 +347,7 @@ integer OTGrammar_getTableau (OTGrammar me, conststring32 input) {
 	Melder_throw (U"Input \"", input, U"\" not in list of tableaus.");
 }
 
-static void _OTGrammar_fillInHarmonies (OTGrammar me, integer itab) noexcept {
+static void _OTGrammar_fillInHarmonies (OTGrammar me, integer itab) {
 	if (my decisionStrategy == kOTGrammar_decisionStrategy::OPTIMALITY_THEORY)
 		return;
 	OTGrammarTableau tableau = & my tableaus [itab];
@@ -387,7 +381,7 @@ static void _OTGrammar_fillInHarmonies (OTGrammar me, integer itab) noexcept {
 	}
 }
 
-int OTGrammar_compareCandidates (OTGrammar me, integer itab1, integer icand1, integer itab2, integer icand2) noexcept {
+int OTGrammar_compareCandidates (OTGrammar me, integer itab1, integer icand1, integer itab2, integer icand2) {
 	INTVEC marks1 = my tableaus [itab1]. candidates [icand1]. marks.get();
 	INTVEC marks2 = my tableaus [itab2]. candidates [icand2]. marks.get();
 	if (my decisionStrategy == kOTGrammar_decisionStrategy::OPTIMALITY_THEORY) {
@@ -464,7 +458,7 @@ int OTGrammar_compareCandidates (OTGrammar me, integer itab1, integer icand1, in
 	return 0;   // the two total disharmonies are equal
 }
 
-static void _OTGrammar_fillInProbabilities (OTGrammar me, integer itab) noexcept {
+static void _OTGrammar_fillInProbabilities (OTGrammar me, integer itab) {
 	OTGrammarTableau tableau = & my tableaus [itab];
 	double maximumHarmony = tableau -> candidates [1]. harmony;
 	for (integer icand = 2; icand <= tableau -> numberOfCandidates; icand ++) {
@@ -489,7 +483,7 @@ static void _OTGrammar_fillInProbabilities (OTGrammar me, integer itab) noexcept
 	}
 }
 
-integer OTGrammar_getWinner (OTGrammar me, integer itab) noexcept {
+integer OTGrammar_getWinner (OTGrammar me, integer itab) {
 	integer icand_best = 1;
 	if (my decisionStrategy == kOTGrammar_decisionStrategy::MAXIMUM_ENTROPY ||
 		my decisionStrategy == kOTGrammar_decisionStrategy::EXPONENTIAL_MAXIMUM_ENTROPY)
@@ -2181,9 +2175,8 @@ void OTGrammar_learnFromPartialOutputs (OTGrammar me, Strings partialOutputs,
 {
 	try {
 		autoOTHistory history;
-		if (storeHistoryEvery) {
+		if (storeHistoryEvery)
 			history = OTGrammar_createHistory (me, storeHistoryEvery, partialOutputs -> numberOfStrings);
-		}
 		try {
 			for (integer idatum = 1; idatum <= partialOutputs -> numberOfStrings; idatum ++) {
 				try {
@@ -2191,18 +2184,15 @@ void OTGrammar_learnFromPartialOutputs (OTGrammar me, Strings partialOutputs,
 						evaluationNoise, updateRule, honourLocalRankings,
 						plasticity, relativePlasticityNoise, numberOfChews, false);
 				} catch (MelderError) {
-					if (history) {
+					if (history)
 						OTGrammar_updateHistory (me, history.get(), storeHistoryEvery, idatum, partialOutputs -> strings [idatum].get());   // so that we can inspect
-					}
 					throw;
 				}
-				if (history) {
+				if (history)
 					OTGrammar_updateHistory (me, history.get(), storeHistoryEvery, idatum, partialOutputs -> strings [idatum].get());
-				}
 			}
-			if (history) {
+			if (history)
 				OTGrammar_finalizeHistory (me, history.get(), partialOutputs -> numberOfStrings);
-			}
 			*history_out = history.move();
 		} catch (MelderError) {
 			*history_out = history.move();   // so that we can inspect
@@ -2511,34 +2501,39 @@ static bool OTGrammarTableau_isHarmonicallyBounded (OTGrammarTableau me, integer
 
 static bool OTGrammarTableau_candidateIsPossibleWinner (OTGrammar me, integer itab, integer icand) {
 	OTGrammar_save (me);
-	OTGrammar_reset (me, 100.0);
-	for (;;) {
-		bool grammarHasChanged = false;
-		OTGrammar_learnOne (me, my tableaus [itab]. input.get(), my tableaus [itab]. candidates [icand]. output.get(),
-			1e-3, kOTGrammar_rerankingStrategy::EDCD, false, 1.0, 0.0, true, true, & grammarHasChanged);
-		if (! grammarHasChanged) {
-			OTGrammar_restore (me);
-			return true;
-		}
-		double previousStratum = 101.0;
-		OTGrammar_newDisharmonies (me, 0.0);
-		for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
-			const double stratum = my constraints [my index [icons]]. ranking;
-			#if 0
-			if (stratum < 50.0 - my numberOfConstraints) {
+	try {
+		OTGrammar_reset (me, 100.0);
+		for (;;) {
+			bool grammarHasChanged = false;
+			OTGrammar_learnOne (me, my tableaus [itab]. input.get(), my tableaus [itab]. candidates [icand]. output.get(),
+				1e-3, kOTGrammar_rerankingStrategy::EDCD, false, 1.0, 0.0, true, true, & grammarHasChanged);
+			if (! grammarHasChanged) {
 				OTGrammar_restore (me);
-				return false;   // we detected a tumble
+				return true;
 			}
-			#else
-			if (stratum < previousStratum) {
-				if (stratum < previousStratum - 1.0) {
+			double previousStratum = 101.0;
+			OTGrammar_newDisharmonies (me, 0.0);
+			for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
+				const double stratum = my constraints [my index [icons]]. ranking;
+				#if 0
+				if (stratum < 50.0 - my numberOfConstraints) {
 					OTGrammar_restore (me);
-					return false;   // we detected a vacated stratum
+					return false;   // we detected a tumble
 				}
-				previousStratum = stratum;
+				#else
+				if (stratum < previousStratum) {
+					if (stratum < previousStratum - 1.0) {
+						OTGrammar_restore (me);
+						return false;   // we detected a vacated stratum
+					}
+					previousStratum = stratum;
+				}
+				#endif
 			}
-			#endif
 		}
+	} catch (MelderError) {
+		OTGrammar_restore (me);   // strong exception guarantee
+		throw;
 	}
 	return false;   // cannot occur
 }

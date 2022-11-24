@@ -2,7 +2,7 @@
 #define _Spectrum_extensions_h_
 /* Spectrum_extensions.h
  *
- * Copyright (C) 1993-2019 David Weenink
+ * Copyright (C) 1993-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,6 +55,9 @@ void Spectrum_drawPhases (Spectrum me, Graphics g, double fmin, double fmax,
 autoSpectrum Spectra_multiply (Spectrum me, Spectrum thee);
 
 void Spectrum_conjugate (Spectrum me);
+
+void Spectrum_shiftPhaseBy90Degrees (Spectrum me);
+void Spectrum_unshiftPhaseBy90Degrees (Spectrum me);
 
 void Spectrum_getMaximumInInterval (Spectrum me, double fromFrequencyHz, double toFrequencyHz, double *frequency, double *amplitude_dB);
 

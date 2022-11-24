@@ -1,6 +1,6 @@
 /* Spectrum_extensions.cpp
  *
- * Copyright (C) 1993-2019 David Weenink
+ * Copyright (C) 1993-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include "Ltas.h"
 #include "Spectrum_extensions.h"
 #include "Sound_and_Spectrum.h"
+#include "Sound_and_Spectrum_dft.h"
 #include "NUM2.h"
 
 #define SIGN(x,s) ((s) < 0 ? -fabs (x) : fabs(x))
@@ -180,12 +181,7 @@ autoMatrix Spectrum_unwrap (Spectrum me) {
 		struct tribolet_struct tbs;
 		int remove_linear_part = 1;
 
-		integer nfft = 2;
-		while (nfft < my nx - 1) {
-			nfft *= 2;
-		}
-		nfft *= 2;
-
+		const integer nfft = 2 * Melder_clippedLeft (2_integer, Melder_iroundUpToPowerOfTwo (my nx - 1));   // TODO: explain edge case
 		Melder_require (nfft / 2 == my nx - 1,
 			U"Dimension of Spectrum should be a power of 2 - 1.");
 
@@ -285,6 +281,22 @@ autoSpectrum Spectra_multiply (Spectrum me, Spectrum thee) {
 	}
 }
 
+void Spectrum_shiftPhaseBy90Degrees (Spectrum me) {
+	// shifting +pi/2 by a multiplication with i
+	for (integer i = 2; i <= my nx - 1; i ++) {
+		std::swap (my z [1] [i], my z [2] [i]);
+		my z [1] [i] = - my z [1] [i];
+	}
+}
+
+void Spectrum_unshiftPhaseBy90Degrees (Spectrum me) {
+	// shifting -pi/2 by a multiplication with -i
+	for (integer i = 2; i <= my nx - 1; i ++) {
+		my z [1] [i] = - my z [1] [i];
+		std::swap (my z [1] [i], my z [2] [i]);
+	}
+}
+
 void Spectrum_conjugate (Spectrum me) {
 	for (integer i = 1; i <= my nx; i ++)
 		my z [2] [i] = - my z [2] [i];
@@ -296,13 +308,28 @@ autoSpectrum Spectrum_resample (Spectrum me, integer numberOfFrequencies) {
 		// resample real and imaginary part !
 		autoSound thee = Sound_resample ((Sound) me, newSamplingFrequency, 50);
 		autoSpectrum him = Spectrum_create (my xmax, numberOfFrequencies);
-		his z.all() <<= thy z.all();
+		his z.all()  <<=  thy z.all();
 		return him;
 	} catch (MelderError) {
 		Melder_throw (me, U": not resampled.");
 	}
 }
-
+/*
+autoSpectrum Spectrum_resample2 (Spectrum me, integer numberOfFrequencies) {
+	try {
+		autoSound sound = Spectrum_to_Sound (me);
+		const double newSamplingFrequency = (1.0 / my dx) * numberOfFrequencies / my nx;
+		const double resampleFactor = (my nx - 1.0) / numberOfFrequencies;
+		autoSound resampled = Sound_resample (sound.get(), resampleFactor / sound -> dx, 50);
+		autoSpectrum extendedSpectrum = Sound_to_Spectrum_resampled (resampled.get(), 50);
+		autoSpectrum him = Spectrum_create (my xmax, numberOfFrequencies);
+		his z.all()  <<=  extendedSpectrum -> z.all();
+		return him;
+	} catch (MelderError) {
+		Melder_throw (me, U": not resampled.");
+	}
+}
+*/
 #if 0
 static autoSpectrum Spectrum_shiftFrequencies2 (Spectrum me, double shiftBy, bool changeMaximumFrequency) {
 	try {
@@ -315,10 +342,10 @@ static autoSpectrum Spectrum_shiftFrequencies2 (Spectrum me, double shiftBy, boo
 		autoSpectrum thee = Spectrum_create (xmax, numberOfFrequencies);
 		// shiftBy >= 0
 		for (integer i = 1; i <= thy nx; i ++) {
-			double thyf = thy x1 + (i - 1) * thy dx;
-			double myf = thyf - shiftBy;
+			const double thyf = thy x1 + (i - 1) * thy dx;
+			const double myf = thyf - shiftBy;
 			if (myf >= my xmin && myf <= my xmax) {
-				double index = Sampled_xToIndex (me, myf);
+				const double index = Sampled_xToIndex (me, myf);
 				thy z [1] [i] = NUM_interpolate_sinc (my z.row (1), index, interpolationDepth);
 				thy z [2] [i] = NUM_interpolate_sinc (my z.row (2), index, interpolationDepth);
 			}
@@ -352,11 +379,9 @@ autoSpectrum Spectrum_shiftFrequencies (Spectrum me, double shiftBy, double newM
 			Make imaginary part of first and last sample zero
 			so Spectrum_to_Sound uses FFT if numberOfSamples was power of 2!
 		*/
-		double amp = sqrt (thy z [1] [1] * thy z [1] [1] + thy z [2] [1] * thy z [2] [1]);
-		thy z [1] [1] = amp;
+		thy z [1] [1] = hypot (thy z [1] [1], thy z [2] [1]);
 		thy z [2] [1] = 0.0;
-		amp = sqrt (thy z [1] [thy nx] * thy z [1] [thy nx] + thy z [2] [thy nx] * thy z [2] [thy nx]);
-		thy z [1] [thy nx] = amp;
+		thy z [1] [thy nx] = hypot (thy z [1] [thy nx], thy z [2] [thy nx]);
 		thy z [2] [thy nx] = 0.0;
 		return thee;
 	} catch (MelderError) {

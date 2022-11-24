@@ -2,7 +2,7 @@
 #define _Spectrogram_extensions_h_
 /* Spectrogram_extensions.h
  *
- * Copyright (C) 2014-2018 David Weenink
+ * Copyright (C) 2014-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,13 +30,8 @@
 #include "TableOfReal.h"
 #include "NUM2.h"
 
-#define HZTOBARK(x) NUMhertzToBark2(x)
 #define HZTOMEL(x)	NUMhertzToMel2(x)
-#define BARKTOHZ(x) NUMbarkToHertz2(x)
 #define MELTOHZ(x)	NUMmelToHertz2(x)
-
-#define BARKTOMEL(x) HZTOMEL(BARKTOHZ(x))
-#define MELTOBARK(x) HZTOBARK(MELTOHZ(x))
 
 #define BandFilterSpectrogram_DBREF 4e-10
 #define BandFilterSpectrogram_DBFAC 10
@@ -47,7 +42,7 @@
 #define BandFilterSpectrogram_MEL   3
 
 Thing_define (BandFilterSpectrogram, Matrix) {
-	void v_info ()
+	void v1_info ()
 		override;
 	double v_getValueAtSample (integer icol, integer irow, int units)
 		override;
@@ -58,18 +53,18 @@ Thing_define (BandFilterSpectrogram, Matrix) {
 };
 
 Thing_define (BarkSpectrogram, BandFilterSpectrogram) {
-	void v_info ()
+	void v1_info ()
 		override;
 	double v_frequencyToHertz (double f)
-		override { return NUMbarkToHertz2 (f); }
+		override { return NUMbarkToHertz (f); }
 	double v_hertzToFrequency (double hertz)
-		override { return NUMhertzToBark2 (hertz); }
+		override { return NUMhertzToBark (hertz); }
 	conststring32 v_getFrequencyUnit ()
 		override { return U"bark"; }
 };
 
 Thing_define (MelSpectrogram, BandFilterSpectrogram) {
-	void v_info ()
+	void v1_info ()
 		override;
 	double v_frequencyToHertz (double f)
 		override { return NUMmelToHertz2 (f); }
@@ -146,5 +141,11 @@ autoMatrix Spectrogram_to_Matrix_dB (Spectrogram me, double reference, double sc
 void BandFilterSpectrogram_into_CC (BandFilterSpectrogram me, CC thee, integer numberOfCoefficients);
 
 void CC_into_BandFilterSpectrogram (CC me, BandFilterSpectrogram thee, integer first, integer last, bool use_c0);
+
+/*
+	Implementation of Yanna Ma & Akinori Nishihara (2013), Efficient voice activity detection algorithm
+		using long-term spectral flatness measure,  EURASIP Journal on Audio, Speech, and Music Processing.
+*/
+autoMatrix Spectrogram_getLongtermSpectralFlatnessMeasure (Spectrogram me, double longtermWindow, double shorttermWindow, double fmin, double fmax);
 
 #endif /* _Spectrogram_extensions_h_ */

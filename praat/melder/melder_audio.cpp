@@ -1,6 +1,6 @@
 /* melder_audio.cpp
  *
- * Copyright (C) 1992-2020 Paul Boersma, David Weenink
+ * Copyright (C) 1992-2022 Paul Boersma, David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 	#include <fcntl.h>
 	#include <unistd.h>
 	#if defined HAVE_PULSEAUDIO
-		#include "melder_audio_pulse.h"
+		#include <pulse/pulseaudio.h>
 	#endif
 	#if ! defined (NO_AUDIO)
 		#if defined (__OpenBSD__) || defined (__NetBSD__)
@@ -49,6 +49,14 @@
 #include "../external/portaudio/portaudio.h"
 
 #ifdef HAVE_PULSEAUDIO
+	#define PA_GETTINGINFO 1
+	#define PA_GETTINGINFO_DONE 2
+	#define PA_WRITING 4
+	#define PA_WRITING_DONE 8
+	#define PA_RECORDING 16
+	#define PA_RECORDING_DONE 32
+	#define PA_QUERY_NUMBEROFCHANNELS 64
+	#define PA_QUERY_NUMBEROFCHANNELS_DONE 128
 	void pulseAudio_initialize ();
 	void pulseAudio_cleanup ();
 	void pulseAudio_serverReport ();
@@ -62,13 +70,10 @@
 	void pulseAudio_server_info_cb (pa_context *context, const pa_server_info *info, void *userdata);
 #endif
 
-bool Melder_asynchronous;
-
 static struct {
 	enum kMelder_asynchronicityLevel maximumAsynchronicity;
 	enum kMelder_inputSoundSystem inputSoundSystem;
 	enum kMelder_outputSoundSystem outputSoundSystem;
-	bool useInternalSpeaker;
 	double silenceBefore, silenceAfter;
 } preferences;
 
@@ -76,7 +81,6 @@ void Melder_audio_prefs () {
 	Preferences_addEnum (U"Audio.maximumAsynchronicity", & preferences. maximumAsynchronicity, kMelder_asynchronicityLevel, kMelder_asynchronicityLevel::DEFAULT);
 	Preferences_addEnum (U"Audio.inputSoundSystem", & preferences. inputSoundSystem, kMelder_inputSoundSystem, kMelder_inputSoundSystem::DEFAULT);
 	Preferences_addEnum (U"Audio.outputSoundSystem", & preferences. outputSoundSystem, kMelder_outputSoundSystem, kMelder_outputSoundSystem::DEFAULT);
-	Preferences_addBool (U"Audio.useInternalSpeaker", & preferences. useInternalSpeaker, true);
 	Preferences_addDouble (U"Audio.silenceBefore2", & preferences. silenceBefore, kMelderAudio_outputSilenceBefore_DEFAULT);
 	Preferences_addDouble (U"Audio.silenceAfter2", & preferences. silenceAfter, kMelderAudio_outputSilenceAfter_DEFAULT);
 }
@@ -104,12 +108,6 @@ enum kMelder_outputSoundSystem MelderAudio_getOutputSoundSystem () {
 	return preferences. outputSoundSystem;
 }
 
-void MelderAudio_setUseInternalSpeaker (bool useInternalSpeaker) {
-	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
-	preferences. useInternalSpeaker = useInternalSpeaker;
-}
-bool MelderAudio_getUseInternalSpeaker () { return preferences. useInternalSpeaker; }
-
 void MelderAudio_setOutputSilenceBefore (double silenceBefore) {
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
 	preferences. silenceBefore = silenceBefore;
@@ -124,7 +122,7 @@ double MelderAudio_getOutputSilenceAfter () { return preferences. silenceAfter; 
 
 integer MelderAudio_getOutputBestSampleRate (integer fsamp) {
 	#if defined (macintosh)
-		return fsamp == 44100 || fsamp == 96000 ? fsamp : 44100;
+		return fsamp == 44100 || fsamp == 48000 || fsamp == 96000 ? fsamp : 44100;
 	#elif defined (_WIN32)
 		return fsamp == 8000 || fsamp == 11025 || fsamp == 16000 || fsamp == 22050 ||
 			fsamp == 32000 || fsamp == 44100 || fsamp == 48000 || fsamp == 96000 ? fsamp : 44100;
@@ -136,9 +134,6 @@ integer MelderAudio_getOutputBestSampleRate (integer fsamp) {
 		return 44100;
 	#endif
 }
-
-bool MelderAudio_isPlaying;
-bool MelderAudio_hasBeenInitialized;
 
 static double theStartingTime = 0.0;
 
@@ -170,7 +165,27 @@ static struct MelderPlay {
 		MMRESULT status;
 	#endif
 	#ifdef HAVE_PULSEAUDIO
-		pulseAudioStruct pulseAudio;
+		struct {
+			pa_sample_spec sample_spec;
+			pa_threaded_mainloop *mainloop = nullptr;
+			pa_mainloop_api *mainloop_api = nullptr;
+			pa_context *context = nullptr;
+			pa_stream *stream = nullptr;
+			pa_operation *operation_drain = nullptr;
+			pa_operation *operation_info = nullptr;
+			pa_stream_flags_t stream_flags;
+			const pa_timing_info *timing_info = nullptr;
+			struct timeval startTime = {0, 0};
+			pa_usec_t timer_event_usec = 50000;   // 50 ms
+			pa_time_event *timer_event = nullptr;
+			const pa_channel_map *channel_map = nullptr;
+			pa_usec_t r_usec;
+			pa_buffer_attr buffer_attr;
+			uint32 latency = 0; // in bytes of buffer
+			int32 latency_msec = 20;
+			bool pulseAudioInitialized = false;
+			unsigned int occupation = PA_WRITING;
+		} pulseAudio;
 	#endif
 } thePlay;
 
@@ -376,8 +391,8 @@ static bool workProc (void *closure) {
 //Melder_casual (U"workProc ", n);
 	if (my usePortAudio) {
 		#if defined (linux)
-			double timeElapsed = Melder_clock () - theStartingTime - Pa_GetStreamInfo (my stream) -> outputLatency;
-			integer samplesPlayed = timeElapsed * my sampleRate;
+			const double timeElapsed = Melder_clock () - theStartingTime - Pa_GetStreamInfo (my stream) -> outputLatency;
+			const integer samplesPlayed = timeElapsed * my sampleRate;
 			if (my callback && ! my callback (my closure, samplesPlayed)) {
 				my volatile_interrupted = 1;
 				return flush ();
@@ -402,14 +417,14 @@ static bool workProc (void *closure) {
 				But then we also have to use paComplete in the stream callback.
 			*/
 		#else
-			double timeElapsed = Melder_clock () - theStartingTime - Pa_GetStreamInfo (my stream) -> outputLatency;
+			const double timeElapsed = Melder_clock () - theStartingTime - Pa_GetStreamInfo (my stream) -> outputLatency;
 			my samplesPlayed = (integer) floor (timeElapsed * my sampleRate);
 			if (my supports_paComplete && Pa_IsStreamActive (my stream)) {
 				if (my callback && ! my callback (my closure, my samplesPlayed)) {
 					Pa_AbortStream (my stream);
 					return flush ();
 				}
-			} else if (my samplesPlayed < my numberOfSamples + my sampleRate / 20) {   // allow the latency estimate to be 50 ms off.
+			} else if (my samplesPlayed < my numberOfSamples + my sampleRate / 2) {   // allow the latency estimate to be 500 ms off.
 				if (my callback && ! my callback (my closure, my samplesPlayed)) {
 					Pa_AbortStream (my stream);
 					return flush ();
@@ -429,7 +444,7 @@ static bool workProc (void *closure) {
 			pa_usec_t diff_usec = 0;
 			if (my pulseAudio.startTime.tv_usec != 0) {
 				diff_usec = pa_timeval_age (& my pulseAudio.startTime);
-				double timeElapsed = diff_usec / 1000000.0;
+				const double timeElapsed = diff_usec / 1000000.0;
 				samplesPlayed = timeElapsed * my sampleRate;
 			}
 			pa_threaded_mainloop_unlock (my pulseAudio.mainloop);
@@ -529,7 +544,7 @@ static int thePaStreamCallback (const void *input, void *output,
 		if (Melder_debug == 20) Melder_casual (U"output overflow");
 	}
 	if (my samplesLeft > 0) {
-		integer dsamples = my samplesLeft > (integer) frameCount ? (integer) frameCount : my samplesLeft;
+		const integer dsamples = Melder_clippedRight ((integer) frameCount, my samplesLeft);
 		if (Melder_debug == 20) Melder_casual (U"play ", dsamples, U" ", Pa_GetStreamCpuLoad (my stream));
 		memset (output, '\0', 2 * frameCount * my numberOfChannels);
 		Melder_assert (my playBuffer);
@@ -539,6 +554,7 @@ static int thePaStreamCallback (const void *input, void *output,
 		my samplesPlayed = my samplesSent;
 	} else /*if (my samplesPlayed >= my numberOfSamples)*/ {
 		memset (output, '\0', 2 * frameCount * my numberOfChannels);
+		//OSMemoryBarrier();
 		my samplesPlayed = my numberOfSamples;
 		trace (U"paComplete");
 		return my supports_paComplete ? paComplete : paContinue;
@@ -713,7 +729,7 @@ void stream_drain_complete_cb (pa_stream *stream, int success, void *userdata) {
 	}
 }
 
-static void free_cb(void * /* p */) { // to prevent copying of data
+static void free_cb (void * /* p */) { // to prevent copying of data
 }
 
 // asynchronous version
@@ -869,19 +885,14 @@ static void stream_underflow_callback (pa_stream *s, void *userdata) {
 	trace (U"yes");
 }
 
-static void stream_overflow_callback(pa_stream *s, void *userdata) {
+static void stream_overflow_callback (pa_stream *s, void *userdata) {
 	(void) s;
 	(void) userdata;
 	trace (U"yes");
 }
 
 void prepare_and_play (struct MelderPlay *me) {
-	
-	#if __BYTE_ORDER == __BIG_ENDIAN
-		my pulseAudio.sample_spec.format = PA_SAMPLE_S16BE;
-	#else
-		my pulseAudio.sample_spec.format = PA_SAMPLE_S16LE;
-	#endif
+	my pulseAudio.sample_spec.format = ( Melder_integersAreBigEndian () ? PA_SAMPLE_S16BE : PA_SAMPLE_S16LE );
 	my samplesPlayed = my samplesSent = 0;
 	my pulseAudio.sample_spec.rate = my sampleRate;
 	my pulseAudio.sample_spec.channels = my numberOfChannels;
@@ -972,6 +983,31 @@ static int theCoreaudioPropertyListener (unsigned int, unsigned int, const Audio
 }
 #endif
 
+static bool interruptedByEscapeKey () {
+	#if defined(_WIN32)
+		MSG event;
+		BOOL messageAvailable = PeekMessage (& event, nullptr, 0, 0, PM_REMOVE);
+		if (messageAvailable) {
+			trace (U"Windows message: ", event.message);
+			if (event. message == WM_KEYDOWN) {
+				trace (U"Windows key: ", event. wParam);
+				if (LOWORD (event. wParam) == VK_ESCAPE)
+					return true;
+			} else if (event. message == WM_LBUTTONDOWN
+				|| event.message == WM_NCLBUTTONDOWN)
+			{
+				// ignore all mouse events
+			} else {
+				// handle all other events, such as Chinese keyboard events
+				XtDispatchEvent (& event);
+				//TranslateMessage (& event);
+				//DispatchMessage (& event);
+			}
+		}
+	#endif
+	return false;
+}
+
 void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamples, integer numberOfChannels,
 	bool (*playCallback) (void *playClosure, integer numberOfSamplesPlayed), void *playClosure)
 {
@@ -982,7 +1018,8 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 			OSStatus err = noErr;
 			AudioObjectPropertyAddress audioDevicesAddress = { kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster };
 			err = AudioObjectAddPropertyListener ( kAudioObjectSystemObject, & audioDevicesAddress, theCoreaudioPropertyListener, NULL);
-			if (err) Melder_casual (U"error on AudioObjectAddPropertyListener");
+			if (err)
+				Melder_casual (U"error on AudioObjectAddPropertyListener");
 			inited = true;
 		}
 	}
@@ -992,13 +1029,15 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 	#ifdef _WIN32
 		bool wasPlaying = MelderAudio_isPlaying;
 	#endif
-	if (MelderAudio_isPlaying) MelderAudio_stopPlaying (MelderAudio_IMPLICIT);   // otherwise, keep "explicitStop" tag
+	if (MelderAudio_isPlaying)
+		MelderAudio_stopPlaying (MelderAudio_IMPLICIT);   // otherwise, keep "explicitStop" tag
 	#ifdef HAVE_PULSEAUDIO
 		if (my usePulseAudio && my pulseAudio.mainloop) {
 			pulseAudio_cleanup ();
 		}
 	#endif
 	my playBuffer = buffer;   // 0-based, as all buffers are
+	static int16 *playBuffer2 = nullptr;   // in case we have to redistribute up (not ideal)
 	my sampleRate = sampleRate;
 	my numberOfSamples = numberOfSamples;
 	my numberOfChannels = numberOfChannels;
@@ -1043,19 +1082,21 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 				Melder_fatal (U"PortAudio does not initialize: ", Melder_peek8to32 (Pa_GetErrorText (err)));
 			MelderAudio_hasBeenInitialized = true;
 		}
-		my supports_paComplete = Pa_GetHostApiInfo (Pa_GetDefaultHostApi ()) -> type != paDirectSound &&false;
+		my supports_paComplete = Pa_GetHostApiInfo (Pa_GetDefaultHostApi ()) -> type != paDirectSound &&0;
 		PaStreamParameters outputParameters = { 0 };
 		outputParameters. device = Pa_GetDefaultOutputDevice ();
+		if (outputParameters. device == paNoDevice)
+			Melder_throw (U"PortAudio sees no default output device.\nCannot play sound.");
 		const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo (outputParameters. device);
+		if (! deviceInfo)
+			Melder_throw (U"PortAudio finds no info for device ", outputParameters. device, U".\nCannot play sound.");
 		//Melder_casual (U"MelderAudio_play16: ", Melder_peek8to32 (deviceInfo -> name));
 		trace (U"the device can handle ", deviceInfo -> maxOutputChannels, U" channels");
-		if (my numberOfChannels > deviceInfo -> maxOutputChannels) {
-			my numberOfChannels = deviceInfo -> maxOutputChannels;
-		}
+		Melder_clipRight (& my numberOfChannels, integer (deviceInfo -> maxOutputChannels));
 		if (numberOfChannels > my numberOfChannels) {
 			/*
-			 * Redistribute the in channels over the out channels.
-			 */
+				Redistribute the in channels over the out channels.
+			*/
 			if (numberOfChannels == 4 && my numberOfChannels == 2) {   // a common case
 				int16 *in = & my playBuffer [0], *out = & my playBuffer [0];
 				for (integer isamp = 1; isamp <= numberOfSamples; isamp ++) {
@@ -1081,7 +1122,7 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 		}
 		outputParameters. channelCount = my numberOfChannels;
 		outputParameters. sampleFormat = paInt16;
-		if (deviceInfo) outputParameters. suggestedLatency = deviceInfo -> defaultLowOutputLatency;
+		outputParameters. suggestedLatency = deviceInfo -> defaultLowOutputLatency;
 		outputParameters. hostApiSpecificStreamInfo = nullptr;
 		err = Pa_OpenStream (& my stream, nullptr, & outputParameters, my sampleRate, paFramesPerBufferUnspecified,
 			paDitherOff, thePaStreamCallback, me);
@@ -1089,24 +1130,25 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 			Melder_throw (U"PortAudio cannot open sound output: ", Melder_peek8to32 (Pa_GetErrorText (err)), U".");
 		theStartingTime = Melder_clock ();
 		err = Pa_StartStream (my stream);
-		if (err) Melder_throw (U"PortAudio cannot start sound output: ", Melder_peek8to32 (Pa_GetErrorText (err)), U".");
+		if (err)
+			Melder_throw (U"PortAudio cannot start sound output: ", Melder_peek8to32 (Pa_GetErrorText (err)), U".");
 		my paStartingTime = Pa_GetStreamTime (my stream);
 		if (my asynchronicity <= kMelder_asynchronicityLevel::INTERRUPTABLE) {
 			for (;;) {
 				#if defined (linux)
 					/*
-					 * This is how PortAudio was designed to work.
-					 */
+						This is how PortAudio was designed to work.
+					*/
 					if (my samplesLeft == 0) {
 						my samplesPlayed = my numberOfSamples;
 						break;
 					}
 				#else
 					/*
-					 * A version that doesn't trust that the stream callback will complete.
-					 */
-					double timeElapsed = Melder_clock () - theStartingTime - Pa_GetStreamInfo (my stream) -> outputLatency;
-					integer samplesPlayed = (integer) floor (timeElapsed * my sampleRate);
+						A version that doesn't trust that the stream callback will complete.
+					*/
+					const double timeElapsed = Melder_clock () - theStartingTime - Pa_GetStreamInfo (my stream) -> outputLatency;
+					const integer samplesPlayed = (integer) floor (timeElapsed * my sampleRate);
 					if (samplesPlayed >= my numberOfSamples + my sampleRate / 20) {
 						my samplesPlayed = my numberOfSamples;
 						break;
@@ -1117,21 +1159,18 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 					! my callback (my closure, my samplesPlayed))
 					interrupted = true;
 				/*
-				 * Safe operation: only listen to key-down events.
-				 * Do this on the lowest level that will work.
-				 */
+					Safe operation: only listen to key-down events.
+					Do this on the lowest level that will work.
+				*/
 				if (my asynchronicity == kMelder_asynchronicityLevel::INTERRUPTABLE && ! interrupted) {
 					#if gtk
 						// TODO: implement a reaction to the Escape key
 					#elif cocoa
 						// TODO: implement a reaction to the Escape key
 					#elif defined (_WIN32)
-						MSG event;
-						if (PeekMessage (& event, 0, 0, 0, PM_REMOVE) && event. message == WM_KEYDOWN) {
-							if (LOWORD (event. wParam) == VK_ESCAPE) {
-								my explicitStop = MelderAudio_EXPLICIT;
-								interrupted = true;
-							}
+						if (interruptedByEscapeKey ()) {
+							my explicitStop = MelderAudio_EXPLICIT;
+							interrupted = true;
 						}
 					#endif
 				}
@@ -1141,13 +1180,12 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 				}
 				Pa_Sleep (10);
 			}
-			if (my samplesPlayed != my numberOfSamples) {
+			if (my samplesPlayed != my numberOfSamples)
 				Melder_fatal (U"Played ", my samplesPlayed, U" instead of ", my numberOfSamples, U" samples.");
-			}
 			#ifndef linux
 				Pa_AbortStream (my stream);
 			#endif
-		} else /* my asynchronicity == kMelder_asynchronicityLevel_ASYNCHRONOUS */ {
+		} else /* my asynchronicity == kMelder_asynchronicityLevel::ASYNCHRONOUS */ {
 			#if gtk
 				trace (U"g_idle_add");
 				my workProcId_gtk = g_idle_add (workProc_gtk, nullptr);
@@ -1156,7 +1194,7 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 			#elif cocoa
 				CFRunLoopTimerContext context = { 0, nullptr, nullptr, nullptr, nullptr };
 				my cocoaTimer = CFRunLoopTimerCreate (nullptr, CFAbsoluteTimeGetCurrent () + 0.02,
-					0.02, 0, 0, workProc_cocoa, & context);
+						0.02, 0, 0, workProc_cocoa, & context);
 				CFRunLoopAddTimer (CFRunLoopGetCurrent (), my cocoaTimer, kCFRunLoopCommonModes);
 			#endif
 			return;
@@ -1275,6 +1313,18 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 							if (err != MMSYSERR_NOERROR)
 								Melder_throw (U"Bad sound format even after reduction to 2 channels? Should not occur! Report bug to the author!");
 							MelderAudio_isPlaying = true;
+						} else if (my numberOfChannels == 1) {
+							/*
+							 * Retry with 2 channels.
+							 */
+							my numberOfChannels = 2;
+							waveFormat. nChannels = my numberOfChannels;
+							waveFormat. nBlockAlign = my numberOfChannels * waveFormat. wBitsPerSample / 8;
+							waveFormat. nAvgBytesPerSec = waveFormat. nBlockAlign * waveFormat. nSamplesPerSec;
+							err = waveOutOpen (& my hWaveOut, WAVE_MAPPER, & waveFormat, 0, 0, CALLBACK_NULL | WAVE_ALLOWSYNC);
+							if (err != MMSYSERR_NOERROR)
+								Melder_throw (U"Bad sound format even after expansion to 2 channels? Should not occur! Report bug to the author!");
+							MelderAudio_isPlaying = true;
 						} else {
 							Melder_throw (U"Bad sound format? Should not occur! Report bug to the author!");
 						}
@@ -1308,10 +1358,22 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 							}
 						}
 					}
+				} else if (numberOfChannels == 1 && my numberOfChannels == 2) {
+					if (playBuffer2)
+						Melder_free (playBuffer2);
+					playBuffer2 = Melder_malloc (int16, numberOfSamples * my numberOfChannels);
+					Melder_assert (playBuffer2);
+					int16 *in = & my playBuffer [0], *out = & playBuffer2 [0];
+					for (integer isamp = 1; isamp <= numberOfSamples; isamp ++) {
+						const int16 inValue = *in ++;
+						*out ++ = inValue;
+						*out ++ = inValue;
+					}
 				}
 
 				my waveHeader. dwFlags = 0;
-				my waveHeader. lpData = (char *) my playBuffer;
+				my waveHeader. lpData =
+						( numberOfChannels == 1 && my numberOfChannels == 2 ? (char *) playBuffer2 : (char *) my playBuffer );
 				my waveHeader. dwBufferLength = my numberOfSamples * 2 * my numberOfChannels;
 				my waveHeader. dwLoops = 1;
 				my waveHeader. lpNext = nullptr;
@@ -1348,15 +1410,12 @@ void MelderAudio_play16 (int16 *buffer, integer sampleRate, integer numberOfSamp
 					my samplesPlayed = my numberOfSamples;
 				} else if (my asynchronicity <= kMelder_asynchronicityLevel::INTERRUPTABLE) {
 					while (! (my waveHeader. dwFlags & WHDR_DONE)) {
-						MSG event;
 						Sleep (10);
 						my samplesPlayed = (Melder_clock () - theStartingTime) * my sampleRate;
 						if (my callback && ! my callback (my closure, my samplesPlayed))
 							break;
-						if (my asynchronicity == kMelder_asynchronicityLevel::INTERRUPTABLE &&
-							PeekMessage (& event, 0, 0, 0, PM_REMOVE) && event. message == WM_KEYDOWN)
-						{
-							if (LOWORD (event. wParam) == VK_ESCAPE) {
+						if (my asynchronicity == kMelder_asynchronicityLevel::INTERRUPTABLE) {
+							if (interruptedByEscapeKey ()) {
 								my explicitStop = MelderAudio_EXPLICIT;
 								break;
 							}

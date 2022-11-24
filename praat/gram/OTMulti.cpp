@@ -1,6 +1,6 @@
 /* OTMulti.cpp
  *
- * Copyright (C) 2005-2020 Paul Boersma
+ * Copyright (C) 2005-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,9 +51,8 @@
 #include "oo_DESCRIPTION.h"
 #include "OTMulti_def.h"
 
-void structOTMulti :: v_info ()
-{
-	structDaata :: v_info ();
+void structOTMulti :: v1_info () {
+	structDaata :: v1_info ();
 	integer numberOfViolations = 0;
 	for (integer icand = 1; icand <= our numberOfCandidates; icand ++)
 		for (integer icons = 1; icons <= our numberOfConstraints; icons ++)
@@ -64,7 +63,7 @@ void structOTMulti :: v_info ()
 	MelderInfo_writeLine (U"Number of violation marks: ", numberOfViolations);
 }
 
-void structOTMulti :: v_writeText (MelderFile file) {
+void structOTMulti :: v1_writeText (MelderFile file) {
 	MelderFile_write (file, U"\n<", kOTGrammar_decisionStrategy_getText (decisionStrategy),
 		U">\n", leak, U" ! leak\n", our numberOfConstraints, U" constraints");
 	for (integer icons = 1; icons <= our numberOfConstraints; icons ++) {
@@ -100,8 +99,8 @@ void OTMulti_checkIndex (OTMulti me) {
 	OTMulti_sort (me);
 }
 
-void structOTMulti :: v_readText (MelderReadText text, int formatVersion) {
-	OTMulti_Parent :: v_readText (text, formatVersion);
+void structOTMulti :: v1_readText (MelderReadText text, int formatVersion) {
+	OTMulti_Parent :: v1_readText (text, formatVersion);
 	if (formatVersion >= 1) {
 		try {
 			decisionStrategy = (kOTGrammar_decisionStrategy) texgete8 (text, (enum_generic_getValue) kOTGrammar_decisionStrategy_getValue);
@@ -157,28 +156,23 @@ integer OTMulti_getConstraintIndexFromName (OTMulti me, conststring32 name) {
 	return 0;
 }
 
-static OTMulti constraintCompare_grammar;
-
-static int constraintCompare (const void *first, const void *second) {
-	const OTMulti me = constraintCompare_grammar;
-	const integer icons = * (integer *) first, jcons = * (integer *) second;
-	const OTConstraint ci = & my constraints [icons], cj = & my constraints [jcons];
-	/*
-		Sort primarily by disharmony.
-	*/
-	if (ci -> disharmony > cj -> disharmony)
-		return -1;
-	if (ci -> disharmony < cj -> disharmony)
-		return +1;
-	/*
-		Tied constraints are sorted alphabetically.
-	*/
-	return str32cmp (my constraints [icons]. name.get(), my constraints [jcons]. name.get());
-}
-
 void OTMulti_sort (OTMulti me) {
-	constraintCompare_grammar = me;
-	qsort (& my index [1], my numberOfConstraints, sizeof (integer), constraintCompare);
+	std::sort (my index.begin(), my index.end(),
+		[me] (integer icons, integer jcons) {
+			OTConstraint ci = & my constraints [icons], cj = & my constraints [jcons];
+			/*
+				Sort primarily by disharmony.
+			*/
+			if (ci -> disharmony > cj -> disharmony)
+				return true;
+			if (ci -> disharmony < cj -> disharmony)
+				return false;
+			/*
+				Tied constraints are sorted alphabetically.
+			*/
+			return str32cmp (my constraints [icons]. name.get(), my constraints [jcons]. name.get()) < 0;
+		}
+	);
 	for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
 		const OTConstraint constraint = & my constraints [my index [icons]];
 		constraint -> tiedToTheLeft = ( icons > 1 &&
@@ -906,7 +900,7 @@ static autoTable OTMulti_createHistory (OTMulti me, integer storeHistoryEvery, i
 	}
 }
 
-static int OTMulti_updateHistory (OTMulti me, Table thee, integer storeHistoryEvery, integer idatum, conststring32 form1, conststring32 form2)
+static void OTMulti_updateHistory (OTMulti me, Table thee, integer storeHistoryEvery, integer idatum, conststring32 form1, conststring32 form2)
 {
 	try {
 		if (idatum % storeHistoryEvery == 0) {
@@ -917,7 +911,6 @@ static int OTMulti_updateHistory (OTMulti me, Table thee, integer storeHistoryEv
 			for (integer icons = 1; icons <= my numberOfConstraints; icons ++)
 				Table_setNumericValue (thee, irow, 3 + icons, my constraints [icons]. ranking);
 		}
-		return 1;
 	} catch (MelderError) {
 		Melder_throw (me, U": history not updated.");
 	}

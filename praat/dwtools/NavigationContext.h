@@ -2,7 +2,7 @@
 #define _NavigationContext_h_
 /* NavigationContext.h
  *
- * Copyright (C) 2020 David Weenink
+ * Copyright (C) 2020-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,23 +26,34 @@
 
 #include "NavigationContext_def.h"
 
-autoNavigationContext NavigationContext_create (conststring32 name, conststring32 navigationName, conststring32 navigation_string, kMelder_string navigationCriterion, conststring32 leftContextName, conststring32 leftContext_string, kMelder_string leftContextCriterion, conststring32 rightContextName, conststring32 rightContext_string, kMelder_string rightContextCriterion, kContext_combination combinationCriterion, bool contextOnly);
+autoNavigationContext NavigationContext_createTopicOnly (
+	constSTRVEC const& topicLabels, kMelder_string topicCriterion, kMatchBoolean topicMatchBoolean
+);
 
-autoNavigationContext Strings_to_NavigationContext (Strings me, kMelder_string criterion);
+autoNavigationContext NavigationContext_createBeforeAndTopic (
+	constSTRVEC const& topicLabels, kMelder_string topicCriterion, kMatchBoolean topicMatchBoolean,
+	constSTRVEC const& beforeLabels, kMelder_string beforeCriterion, kMatchBoolean beforeMatchBoolean
+);
 
-void NavigationContext_modifyNavigationLabels (NavigationContext me, Strings labels, kMelder_string criterion);
+autoNavigationContext NavigationContext_create (
+	constSTRVEC const& topicLabels, kMelder_string topicCriterion, kMatchBoolean topicMatchBoolean,
+	constSTRVEC const& beforeLabels, kMelder_string beforeCriterion, kMatchBoolean beforeMatchBoolean,
+	constSTRVEC const& afterLabels, kMelder_string afterCriterion, kMatchBoolean afterMatchBoolean,
+	kContext_combination combinationCriterion, bool contextOnly
+);
 
-void NavigationContext_modifyLeftContextLabels (NavigationContext me, Strings labels, kMelder_string criterion);
+void NavigationContext_replaceTopicLabels (NavigationContext me, Strings labels);
+void NavigationContext_replaceBeforeLabels (NavigationContext me, Strings labels);
+void NavigationContext_replaceAfterLabels (NavigationContext me, Strings labels);
 
-void NavigationContext_modifyRightContextLabels (NavigationContext me, Strings labels, kMelder_string criterion);
+void NavigationContext_modifyTopicCriterion (NavigationContext me, kMelder_string newCriterion, kMatchBoolean matchBoolean);
+void NavigationContext_modifyBeforeCriterion (NavigationContext me, kMelder_string newCriterion, kMatchBoolean matchBoolean);
+void NavigationContext_modifyAfterCriterion (NavigationContext me, kMelder_string newCriterion, kMatchBoolean matchBoolean);
 
-bool NavigationContext_isNavigationLabel (NavigationContext me, conststring32 label);
+bool NavigationContext_isTopicLabel (NavigationContext me, conststring32 label);
+bool NavigationContext_isBeforeLabel (NavigationContext me, conststring32 label);
+bool NavigationContext_isAfterLabel (NavigationContext me, conststring32 label);
 
-bool NavigationContext_isLeftContextLabel (NavigationContext me, conststring32 label);
-
-bool NavigationContext_isRightContextLabel (NavigationContext me, conststring32 label);
-
-void NavigationContext_modifyContextCombination (NavigationContext me, kContext_combination combinationCriterion, bool matchContextOnly);
-
+void NavigationContext_modifyUseCriterion (NavigationContext me, kContext_combination combinationCriterion, bool excludeTopicMatch);
 
 #endif /* _NavigationContext_h_ */

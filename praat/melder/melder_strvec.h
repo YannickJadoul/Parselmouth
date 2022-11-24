@@ -2,7 +2,7 @@
 #define _melder_strvec_h_
 /* melder_strvec.h
  *
- * Copyright (C) 1992-2020 Paul Boersma
+ * Copyright (C) 1992-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ public:
 	_conststringvector () { }
 	_conststringvector (const T* const * givenElements, integer givenSize): elements (givenElements), size (givenSize) { }
 	_conststringvector (_stringvector<T> other): elements (other.elements), size (other.size) { }
-	_conststringvector (_autostringvectorview<T> other): elements ((T**) other._ptr), size (other.size) { }
+	_conststringvector (_autostringvectorview<T> other): elements (reinterpret_cast <const T* const *> (other.elements)), size (other.size) { }
 	const T* const & operator[] (integer i) const {
 		return our elements [i - 1];
 	}
@@ -92,18 +92,28 @@ void operator<<= (_autostringvectorview <T> const& target, _autostringvectorview
 
 template <typename T>
 class _autostringautovector {
-	integer _capacity = 0;
 public:
-	_autostring <T> * elements;
-	integer size;
+	_autostring <T> * elements;   // Because of DataEditor, this has to be the first field...
+	integer size;   // ... and this the second...
+private:
+	integer _capacity = 0;   // ... and this the third.
+public:
 	_autostringautovector () {
 		our elements = nullptr;
 		our size = 0;
 	}
 	explicit _autostringautovector (integer givenSize) {
 		our elements = MelderArray:: _alloc <_autostring <T>> (givenSize, MelderArray::kInitializationType :: ZERO);
-		our size = givenSize;
 		our _capacity = givenSize;
+		our size = givenSize;
+	}
+	explicit _autostringautovector (std::initializer_list <const conststring32> list) {
+		our size = uinteger_to_integer (list.size());
+		our elements = MelderArray:: _alloc <autostring32> (our size, MelderArray::kInitializationType::ZERO);
+		our _capacity = our size;
+		autostring32 *p = our elements;
+		for (auto element : list)
+			* (p ++) = Melder_dup (element);
 	}
 	void reset () {
 		if (our elements) {
@@ -161,6 +171,9 @@ public:
 		return *this;
 	}
 	explicit operator bool () const noexcept { return !! our elements; }
+	_autostring <T> const & operator[] (integer i) const {
+		return our elements [i - 1];
+	}
 	_autostring <T> & operator[] (integer i) {
 		return our elements [i - 1];
 	}
@@ -243,8 +256,11 @@ using autostring8vector  = _autostringautovector <char>;
 using STRVEC = _stringvector <char32>;
 using constSTRVEC = _conststringvector <char32>;
 using autoSTRVEC = _autostringautovector <char32>;
+#define ARRAY_TO_STRVEC(conststring32Array)  constSTRVEC (& conststring32Array [0], sizeof (conststring32Array) / sizeof (conststring32))
 
-inline autoSTRVEC newSTRVECcopy (constSTRVEC strvec) {
+using autoSTRVECVU = _autostringvectorview <char32>;
+
+inline autoSTRVEC copy_STRVEC (constSTRVEC strvec) {
 	autoSTRVEC result (strvec.size);
 	for (integer i = 1; i <= result.size; i ++)
 		result [i] = Melder_dup (strvec [i]);

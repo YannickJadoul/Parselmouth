@@ -40,8 +40,8 @@
 
 Thing_implement (FileInMemorySet, SortedSet, 0);
 
-void structFileInMemorySet :: v_info () {
-	FileInMemorySet_Parent :: v_info ();
+void structFileInMemorySet :: v1_info () {
+	FileInMemorySet_Parent :: v1_info ();
 	MelderInfo_writeLine (U"Number of files: ", size);
 	MelderInfo_writeLine (U"Total number of bytes: ", FileInMemorySet_getTotalNumberOfBytes (this));
 }
@@ -66,7 +66,7 @@ autoFileInMemorySet FileInMemorySet_create () {
 
 autoFileInMemorySet FileInMemorySets_merge (OrderedOf<structFileInMemorySet>& list) {
 	try {
-		autoFileInMemorySet thee = Data_copy (list.at[1]);
+		autoFileInMemorySet thee = Data_copy (list.at [1]);
 		for (integer iset = 1; iset <= list.size; iset ++)
 			thy merge (list.at [iset]);
 		return thee;

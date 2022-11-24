@@ -2,7 +2,7 @@
 #define _melder_int_h_
 /* melder_int.h
  *
- * Copyright (C) 1992-2020 Paul Boersma
+ * Copyright (C) 1992-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,6 +62,11 @@ using uint64 = uint64_t;
 	#define INT54_MIN  -9007199254740991LL
 #endif
 
+inline bool Melder_integersAreBigEndian () {
+	int32_t dummy = 1;
+	return * (char *) & dummy == '\0';
+}
+
 inline integer operator"" _integer (unsigned long long value) { return integer (value); }
 
 /*
@@ -82,6 +87,22 @@ inline int32 integer_to_int32 (integer n) {
 	Melder_assert (n >= INT32_MIN && n <= INT32_MAX);
 	return (int32) n;
 }
+inline integer Melder_iroundUpToPowerOfTwo (integer n) {
+	if (n <= 0)
+		return 1;
+	if (n > INTEGER_MAX / 2 + 1)
+		return 0;   // 0 signals overflow; note that signed integer overflow is UB in C++, so this test cannot be removed by relying on n becoming negative
+	n -= 1;
+	n |= n >> 1;   // copy the highest 1-bit to its right
+	n |= n >> 2;   // copy the two highest 1-bits to their right
+	n |= n >> 4;   // copy the four highest 1-bits to their right
+	n |= n >> 8;   // copy the eight highest 1-bits to their right
+	n |= n >> 16;   // copy the 16 highest 1-bits to their right
+	if (sizeof (integer) > 4)
+		n |= (n >> 16) >> 16;   // copy the 32 highest 1-bits to their right ("n >> 32" would give a compiler warning on 32-bit platforms)
+	n += 1;
+	return n;
+}
 
 inline integer integer_abs (integer n) {
 	Melder_assert (sizeof (integer) == sizeof (long) || sizeof (integer) == sizeof (long long));
@@ -94,7 +115,7 @@ inline integer integer_abs (integer n) {
 
 struct MelderIntegerRange {
 	integer first, last;
-	bool isEmpty () { return ( last < first ); }
+	bool isEmpty () const { return ( last < first ); }
 	integer size () const {
 		integer result = last - first + 1;
 		return std::max (result, 0_integer);

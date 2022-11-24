@@ -33,13 +33,8 @@
 #include "Pitch.h"
 #include "Spectrogram_extensions.h"
 
-#define HZTOBARK(x) NUMhertzToBark2(x)
 #define HZTOMEL(x)	NUMhertzToMel2(x)
-#define BARKTOHZ(x) NUMbarkToHertz2(x)
 #define MELTOHZ(x)	NUMmelToHertz2(x)
-
-#define BARKTOMEL(x) HZTOMEL(BARKTOHZ(x))
-#define MELTOBARK(x) HZTOBARK(MELTOHZ(x))
 
 #define FilterBank_DBREF 4e-10
 #define FilterBank_DBFAC 1.0
@@ -149,9 +144,9 @@ autoMatrix FilterBank_to_Matrix (FilterBank me);
 autoSpectrum FormantFilter_to_Spectrum_slice (FormantFilter me, double t);
 /*
 	Calculate amplitude spectrum at time t.
-	power[i] = ref * 10 ^ (my z[i][t] / 10)
-	spec->z[1][i] = sqrt(power[i]) = sqrt(ref) * 10 ^ (my z[i][t] / (2*10))
-	spec->z[2][i] = 0
+	power [i] = ref * 10 ^ (my z [i] [t] / 10)
+	spec -> z [1] [i] = sqrt (power [i]) = sqrt (ref) * 10 ^ (my z [i] [t] / (2*10))
+	spec -> z [2] [i] = 0
 */
 
 autoIntensity FilterBank_to_Intensity (FilterBank me);

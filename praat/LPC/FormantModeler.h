@@ -2,7 +2,7 @@
 #define _FormantModeler_h_
 /* FormantModeler.h
  *
- * Copyright (C) 2014-2020 David Weenink
+ * Copyright (C) 2014-2021 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,8 +30,6 @@
 #include "FormantModeler_enums.h"
 
 #include "FormantModeler_def.h"
-
-autoFormant Formant_extractPart (Formant me, double tmin, double tmax);
 
 autoFormantModeler FormantModeler_create (double tmin, double tmax, integer numberOfDataPoints, integer numberOfTracks, integer numberOfParameters);
 
@@ -108,7 +106,7 @@ double FormantModeler_getParameterStandardDeviation ( FormantModeler me, integer
 */
 double FormantModeler_getVarianceOfParameters (FormantModeler me, integer fromTrack, integer toTrack, integer fromIndex, integer toIndex, integer *numberOfFreeParameters);
 
-kDataModelerParameter FormantModeler_getParameterStatus (FormantModeler me, integer itrack, integer index);
+kDataModelerParameterStatus FormantModeler_getParameterStatus (FormantModeler me, integer itrack, integer index);
 
 integer FormantModeler_getNumberOfDataPoints (FormantModeler me);
 

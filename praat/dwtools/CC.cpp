@@ -58,8 +58,8 @@ integer CC_getMaximumNumberOfCoefficientsUsed (CC me) {
 	return numberOfCoefficients;
 }
 
-void structCC :: v_info () {
-	structDaata :: v_info ();
+void structCC :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Time domain:", xmin, U" to ", xmax, U" seconds");
 	MelderInfo_writeLine (U"Number of frames: ", nx);
 	MelderInfo_writeLine (U"Time step: ", dx, U" seconds");
@@ -97,7 +97,7 @@ autoMatrix CC_to_Matrix (CC me) {
 		
 		for (integer i = 1; i <= my nx; i ++) {
 			const CC_Frame cf = & my frame [i];
-			thy z.column (i).part (1, cf -> numberOfCoefficients) <<= cf -> c.get().part (1, cf -> numberOfCoefficients);
+			thy z.column (i).part (1, cf -> numberOfCoefficients)  <<=  cf -> c.get().part (1, cf -> numberOfCoefficients);
 		}
 		return thee;
 	} catch (MelderError) {

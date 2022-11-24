@@ -90,12 +90,12 @@ static double sigmoid (FFNet /*me*/, double x, double *out_deriv) {
 		if target < activity ==> error < 0
 */
 
-static double minimumSquaredError (FFNet me, constVEC& target) {
+static double minimumSquaredError (FFNet me, constVEC const& target) {
 	Melder_assert (my numberOfOutputs == target.size);
 	integer k = my numberOfNodes - my numberOfOutputs + 1;
 	double cost = 0.0;
 	for (integer i = 1; i <= my numberOfOutputs; i ++, k ++) {
-		double e = my error [k] = target [i] - my activity [k];
+		const double e = my error [k] = target [i] - my activity [k];
 		cost += e * e;
 	}
 	return 0.5 * cost;
@@ -104,7 +104,7 @@ static double minimumSquaredError (FFNet me, constVEC& target) {
 /* E = - sum (i=1; i=numberOfPatterns; sum (k=1;k=numberOfOutputs; t [k]*ln (o [k]) + (1-t [k])ln (1-o [k]))) */
 /* dE/do [k] = -(1-t [k])/ (1-o [k]) + t [k]/o [k] */
 /* werkt niet bij (grote?) netten */
-static double minimumCrossEntropy (FFNet me, constVEC& target) {
+static double minimumCrossEntropy (FFNet me, constVEC const& target) {
 	Melder_assert (my numberOfOutputs == target.size);
 	integer k = my numberOfNodes - my numberOfOutputs + 1;
 	double cost = 0.0;
@@ -137,7 +137,7 @@ static void bookkeeping (FFNet me) {
 	/*
 		The following test is essential because when an FFNet is read from file the w array already exists
 	*/
-	if (NUMisEmpty (my w))
+	if (NUMisEmpty (my w.get()))
 		my w = zero_VEC (my numberOfWeights);
 
 	my activity = zero_VEC (my numberOfNodes);
@@ -177,8 +177,8 @@ static void bookkeeping (FFNet me) {
 	FFNet_selectAllWeights (me);
 }
 
-void structFFNet :: v_info () {
-	our structDaata :: v_info ();
+void structFFNet :: v1_info () {
+	our structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of layers: ", our numberOfLayers);
 	MelderInfo_writeLine (U"Total number of units: ", FFNet_getNumberOfUnits (this));
 	MelderInfo_writeLine (U"   Number of units in layer ", our numberOfLayers, U" (output): ",
@@ -341,7 +341,7 @@ void FFNet_propagate (FFNet me, constVEC input, autoVEC *output) {
 	/*
 		Clamp input pattern on the network
 	*/
-	my activity.part (1, my numberOfInputs) <<= input;
+	my activity.part (1, my numberOfInputs)  <<=  input;
 	/*
 		On hidden units use activation function
 	*/
@@ -593,8 +593,8 @@ void FFNet_drawTopology (FFNet me, Graphics g) {
 				double x1WC = x1;
 				for (integer k = 1; k <= numberOfUnitsInLayer_m1; k ++) {
 					const double xd = x2WC - x1WC;
-					const double cosa = xd / sqrt (xd * xd + dy * dy);
-					const double sina = dy / sqrt (xd * xd + dy * dy);
+					const double cosa = xd / hypot (xd, dy);
+					const double sina = dy / hypot (xd, dy);
 					Graphics_line (g, x1WC + radius * cosa, y1WC + radius * sina, x2WC - radius * cosa, y2WC - radius * sina);
 					x1WC += dx1;
 				}

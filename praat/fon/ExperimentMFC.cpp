@@ -1,6 +1,6 @@
 /* ExperimentMFC.cpp
  *
- * Copyright (C) 2001-2009,2011-2013,2015-2020 Paul Boersma
+ * Copyright (C) 2001-2009,2011-2013,2015-2021 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -186,6 +186,7 @@ void ExperimentMFC_start (ExperimentMFC me) {
 		my stimuli = zero_INTVEC (my numberOfTrials);
 		my responses = zero_INTVEC (my numberOfTrials);
 		my goodnesses = zero_VEC (my numberOfTrials);
+		my startingTime = undefined;   // not zero, in order that reaction times are never the duration that the computer has been running
 		my reactionTimes = zero_VEC (my numberOfTrials);
 		/*
 			Read all the sounds. They must all have the same sampling frequency and number of channels.
@@ -287,35 +288,35 @@ static void playSound (ExperimentMFC me, Sound sound, Sound carrierBefore, Sound
 	integer numberOfSamplesWritten = 0;
 
 	const integer initialSilenceSamples = Melder_iround (initialSilenceDuration / my samplePeriod);
-	my playBuffer -> z.verticalBand (1, initialSilenceSamples) <<= 0.0;
+	my playBuffer -> z.verticalBand (1, initialSilenceSamples)  <<=  0.0;
 	numberOfSamplesWritten += initialSilenceSamples;
 
 	if (carrierBefore) {
 		my playBuffer -> z.verticalBand (numberOfSamplesWritten + 1, numberOfSamplesWritten + carrierBefore -> nx)
-				<<= carrierBefore -> z.all();
+				<<=  carrierBefore -> z.all();
 		numberOfSamplesWritten += carrierBefore -> nx;
 	}
 
 	if (sound) {
 		my playBuffer -> z.verticalBand (numberOfSamplesWritten + 1, numberOfSamplesWritten + sound -> nx)
-				<<= sound -> z.all();
+				<<=  sound -> z.all();
 		numberOfSamplesWritten += sound -> nx;
 	}
 
 	if (carrierAfter) {
 		my playBuffer -> z.verticalBand (numberOfSamplesWritten + 1, numberOfSamplesWritten + carrierAfter -> nx)
-				<<= carrierAfter -> z.all();
+				<<=  carrierAfter -> z.all();
 		numberOfSamplesWritten += carrierAfter -> nx;
 	}
 
 	const integer finalSilenceSamples = Melder_iround (finalSilenceDuration / my samplePeriod);
-	my playBuffer -> z.verticalBand (numberOfSamplesWritten + 1, numberOfSamplesWritten + finalSilenceSamples) <<= 0.0;
+	my playBuffer -> z.verticalBand (numberOfSamplesWritten + 1, numberOfSamplesWritten + finalSilenceSamples)  <<=  0.0;
 	numberOfSamplesWritten += finalSilenceSamples;
 
-	if (! my blankWhilePlaying)
+	if (my stimuliAreSounds && ! my blankWhilePlaying)
 		my startingTime = Melder_clock ();
-	Sound_playPart (my playBuffer.get(), 0.0, numberOfSamplesWritten * my samplePeriod, 0, nullptr);
-	if (my blankWhilePlaying)
+	Sound_playPart (my playBuffer.get(), 0.0, numberOfSamplesWritten * my samplePeriod, nullptr, nullptr);
+	if (my stimuliAreSounds && my blankWhilePlaying)
 		my startingTime = Melder_clock ();
 }
 
