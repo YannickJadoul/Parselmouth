@@ -984,7 +984,7 @@ static int theCoreaudioPropertyListener (unsigned int, unsigned int, const Audio
 #endif
 
 static bool interruptedByEscapeKey () {
-	#if defined(_WIN32)
+	#if motif
 		MSG event;
 		BOOL messageAvailable = PeekMessage (& event, nullptr, 0, 0, PM_REMOVE);
 		if (messageAvailable) {

@@ -1150,12 +1150,14 @@ static bool tryToSwitchToRunningPraat (bool foundTheOpenOption, bool foundTheSen
 		If there are doubts anywhere, then we just return false,
 		because having zero instances of Praat is worse than having two.
 	*/
-	const integer pidOfCurrentPraat = getpid ();
-	if (pidOfCurrentPraat == 0) {
-		trace (U"We have no PID, so we will not be able to check that we are different from any running Praat.");
-		return false;
-	}
-	trace (U"Process ID of current Praat: ", pidOfCurrentPraat);
+	#if defined (UNIX)
+		const integer pidOfCurrentPraat = getpid ();
+		if (pidOfCurrentPraat == 0) {
+			trace (U"We have no PID, so we will not be able to check that we are different from any running Praat.");
+			return false;
+		}
+		trace (U"Process ID of current Praat: ", pidOfCurrentPraat);
+	#endif
 	/*
 		Figure out the Process ID of an already running instance of Praat.
 	*/
@@ -1761,7 +1763,7 @@ void praat_init (conststring32 title, int argc, char **argv)
 	*/
 	#if defined (macintosh)
 		NSApplication *theApp = [GuiCocoaApplication sharedApplication];   // initialize, so that our bundle identifier exists even if we started from outside Xcode
-	#elif defined (_WIN32)
+	#elif motif
 		theWinApplicationWindow = GuiWin_initialize1 (praatP.title.get());
 	#endif
 	if (praatP.userWantsExistingInstance)
