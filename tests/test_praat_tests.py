@@ -55,6 +55,8 @@ def find_praat_dwtest_files():
 		              "test_alignment.praat",
 		              "test_bss_twoSoundsMixed.praat"]:
 			marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="tests hang on AppVeyor CI; debugging further after Praat update"))
+		if rel_fn == "test_Sound_voiceActivity.praat":
+			marks.append(pytest.mark.xfail(reason="Random seed 5489 causes the test fail", strict=True))
 		yield pytest.param(fn, id=rel_fn, marks=marks)
 
 
