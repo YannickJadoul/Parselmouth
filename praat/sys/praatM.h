@@ -658,17 +658,20 @@
 #define GRAPHICS_TWO_AND_ONE_END  \
 	GRAPHICS_END__
 
-#define MOVIE_ONE(klas,title,width,height)  \
+#define MOVIE_ONE(klas,title,width,height) \
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot play a movie from batch."); \
 	Graphics graphics = Movie_create (title, width, height); \
 	FIND_ONE (klas)
 #define MOVIE_ONE_END  END_NO_NEW_DATA
 
-#define MOVIE_ONE_AND_ONE(klas1,klas2,title,width,height)  \
+#define MOVIE_ONE_AND_ONE(klas1,klas2,title,width,height) \
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot play a movie from batch."); \
 	Graphics graphics = Movie_create (title, width, height); \
 	FIND_ONE_AND_ONE (klas1, klas2)
 #define MOVIE_ONE_AND_ONE_END  END_NO_NEW_DATA
 
-#define MOVIE_ONE_AND_ONE_AND_ONE(klas1,klas2,klas3,title,width,height)  \
+#define MOVIE_ONE_AND_ONE_AND_ONE(klas1,klas2,klas3,title,width,height) \
+	if (theCurrentPraatApplication -> batch) Melder_throw (U"Cannot play a movie from batch."); \
 	Graphics graphics = Movie_create (title, width, height); \
 	FIND_ONE_AND_ONE_AND_ONE (klas1, klas2, klas3)
 #define MOVIE_ONE_AND_ONE_AND_ONE_END  END_NO_NEW_DATA

@@ -973,7 +973,7 @@ DO
 	QUERY_ONE_FOR_INTEGER_END (U" coefficients")
 }
 
-FORM (QUERY_ONE_FOR_REAL_VECTOR_LPC_listAllCoefficientsInFrame, U"", U"") {
+FORM (QUERY_ONE_FOR_REAL_VECTOR__LPC_listAllCoefficientsInFrame, U"", U"") {
 	NATURAL (frameNumber, U"Frame number", U"10")
 	OK
 DO
@@ -999,7 +999,7 @@ DO
 	QUERY_ONE_FOR_REAL_END (U" gain in frame ", frameNumber)
 }
 
-DIRECT (QUERY_ONE_FOR_REAL_VECTOR_LPC_listAllGains) {
+DIRECT (QUERY_ONE_FOR_REAL_VECTOR__LPC_listAllGains) {
 	QUERY_ONE_FOR_REAL_VECTOR (LPC)
 		autoVEC result = LPC_listAllGains (me);
 	QUERY_ONE_FOR_REAL_VECTOR_END
@@ -1550,7 +1550,7 @@ void praat_uvafon_LPC_init () {
 		praat_addAction1 (classLPC, 1, U"Get number of coefficients...", nullptr, 1, 
 				QUERY_ONE_FOR_INTEGER__LPC_getNumberOfCoefficients);
 		praat_addAction1 (classLPC, 1, U"Get coefficients in frame...", nullptr, 1, 
-				QUERY_ONE_FOR_REAL_VECTOR_LPC_listAllCoefficientsInFrame);
+				QUERY_ONE_FOR_REAL_VECTOR__LPC_listAllCoefficientsInFrame);
 		praat_addAction1 (classLPC, 1, U"List all coefficients", nullptr, 1, 
 				QUERY_ONE_FOR_MATRIX__LPC_listAllCoefficients);
 		praat_addAction1 (classLPC, 1, U"-- get gain --", nullptr, 1, 
@@ -1558,7 +1558,7 @@ void praat_uvafon_LPC_init () {
 		praat_addAction1 (classLPC, 1, U"Get gain in frame...", nullptr, 1, 
 				QUERY_ONE_FOR_REAL__LPC_getGainInFrame);
 		praat_addAction1 (classLPC, 1, U"List all gains", nullptr, 1, 
-				QUERY_ONE_FOR_REAL_VECTOR_LPC_listAllGains);
+				QUERY_ONE_FOR_REAL_VECTOR__LPC_listAllGains);
 	praat_addAction1 (classLPC, 0, MODIFY_BUTTON, nullptr, 0, nullptr);
 		praat_TimeFunction_modify_init (classLPC);
 	praat_addAction1 (classLPC, 0, U"Extract", nullptr, 0, nullptr);

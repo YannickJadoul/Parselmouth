@@ -2333,7 +2333,7 @@ DO
 	MODIFY_EACH_END
 }
 
-DIRECT (MODIFY_ALL_Eigens_alignEigenvectors) {
+DIRECT (MODIFY_ALL__Eigens_alignEigenvectors) {
 	MODIFY_ALL (Eigen)
 		Eigens_alignEigenvectors (& list);
 	MODIFY_ALL_END
@@ -3787,7 +3787,7 @@ DIRECT (CONVERT_EACH_TO_ONE__Matrix_to_SVD) {
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-DIRECT (CONVERT_EACH_TO_MULTIPLE_Matrix_eigen_complex) {
+DIRECT (CONVERT_EACH_TO_MULTIPLE__Matrix_eigen_complex) {
 	CONVERT_EACH_TO_MULTIPLE (Matrix)
 		autoMatrix vectors, values;
 		Matrix_Eigen_complex (me, & vectors, & values);
@@ -4417,7 +4417,7 @@ DIRECT (CONVERT_EACH_TO_ONE__NMF_to_Matrix) {
 
 /********************** PatternList *******************************************/
 
-DIRECT (CONVERT_ONE_AND_ONE__TO_ONE_PatternList_Categories_to_Discriminant) {
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__PatternList_Categories_to_Discriminant) {
 	CONVERT_ONE_AND_ONE_TO_ONE (PatternList, Categories)
 		autoDiscriminant result = PatternList_Categories_to_Discriminant (me, you);
 	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
@@ -9318,7 +9318,7 @@ void praat_David_init () {
 	praat_addAction1 (classDiscriminant, 1, U"Invert eigenvector...", nullptr, 1, 
 			MODIFY_Discriminant_invertEigenvector);
 	praat_addAction1 (classDiscriminant, 0, U"Align eigenvectors", nullptr, 1, 
-			MODIFY_ALL_Eigens_alignEigenvectors);
+			MODIFY_ALL__Eigens_alignEigenvectors);
 
 	praat_addAction1 (classDiscriminant, 0, U"Extract -", nullptr, 0, 0);
 		praat_addAction1 (classDiscriminant, 0, U"Extract pooled within-groups SSCP", nullptr, 1, 
@@ -9749,7 +9749,7 @@ void praat_David_init () {
 	praat_addAction1 (classMatrix, 0, U"To NMF (IS)...", U"To SVD", GuiMenu_HIDDEN,
 			CONVERT_EACH_TO_ONE__Matrix_to_NMF_is);
 	praat_addAction1 (classMatrix, 0, U"Eigen (complex)", U"Eigen", GuiMenu_HIDDEN,
-			CONVERT_EACH_TO_MULTIPLE_Matrix_eigen_complex);
+			CONVERT_EACH_TO_MULTIPLE__Matrix_eigen_complex);
 	praat_addAction1 (classMatrix, 2, U"To DTW...", U"To ParamCurve", 1, 
 			CONVERT_TWO_TO_ONE__Matrices_to_DTW);
 
@@ -9860,7 +9860,7 @@ void praat_David_init () {
 			MODIFY_PatternList_formula);
 	praat_addAction1 (classPatternList, 0, U"Set value...", nullptr, 1, 
 			MODIFY_PatternList_setValue);
-	praat_addAction1 (classPatternList, 0, U"Get all values", nullptr, 0, 
+	praat_addAction1 (classPatternList, 0, U"Get all values", nullptr, 0,
 			NUMMAT_PatternList_getAllValues);
 	praat_addAction1 (classPatternList, 0, U"To Matrix", nullptr, 0, 
 			CONVERT_EACH_TO_ONE__PatternList_to_Matrix);
@@ -9868,7 +9868,7 @@ void praat_David_init () {
 	praat_addAction2 (classPatternList, 1, classCategories, 1, U"To TableOfReal", nullptr, 0, 
 			CONVERT_ONE_AND_ONE_TO_ONE__Matrix_Categories_to_TableOfReal);
 	praat_addAction2 (classPatternList, 1, classCategories, 1, U"To Discriminant", nullptr, 0,
-			CONVERT_ONE_AND_ONE__TO_ONE_PatternList_Categories_to_Discriminant);
+			CONVERT_ONE_AND_ONE_TO_ONE__PatternList_Categories_to_Discriminant);
 
 	praat_addAction1 (classPCA, 0, U"PCA help", nullptr, 0, 
 			HELP__PCA_help);
@@ -9891,7 +9891,7 @@ void praat_David_init () {
 	praat_addAction1 (classPCA, 1, U"Invert eigenvector...", nullptr, 1, 
 			MODIFY_PCA_invertEigenvector);
 	praat_addAction1 (classPCA, 0, U"Align eigenvectors", nullptr, 1, 
-			MODIFY_ALL_Eigens_alignEigenvectors);
+			MODIFY_ALL__Eigens_alignEigenvectors);
 	praat_addAction1 (classPCA, 0, U"Extract -", nullptr, 0, 0);
 		praat_addAction1 (classPCA, 0, U"Extract eigenvector...", nullptr, 1, 
 				CONVERT_EACH_TO_ONE__PCA_extractEigenvector);

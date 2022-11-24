@@ -101,7 +101,7 @@ DIRECT (HELP_Artword_help) {
 	HELP (U"Artword")
 }
 
-FORM (MODIFY_EACH_Artword_setTarget, U"Set one Artword target", nullptr) {
+FORM (MODIFY_EACH__Artword_setTarget, U"Set one Artword target", nullptr) {
 	REAL (time, U"Time (seconds)", U"0.0")
 	REAL (targetValue, U"Target value (0-1)", U"0.0")
 	OPTIONMENU (muscle, U"Muscle", (int) kArt_muscle::LUNGS)
@@ -115,7 +115,7 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (CONVERT_EACH_Artword_to_Art, U"From Artword to Art", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Artword_to_Art, U"From Artword to Art", nullptr) {
 	REAL (time, U"Time (seconds)", U"0.0")
 	OK
 DO
@@ -144,7 +144,7 @@ DIRECT (GRAPHICS_Art_Speaker_drawMesh) {
 	GRAPHICS_ONE_AND_ONE_END
 }
 
-DIRECT (CONVERT_TWO_Art_Speaker_to_VocalTract) {
+DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__Art_Speaker_to_VocalTract) {
 	CONVERT_ONE_AND_ONE_TO_ONE (Art, Speaker)
 		autoVocalTract result = Art_Speaker_to_VocalTract (me, you);
 	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
@@ -361,11 +361,11 @@ praat_addAction1 (classArtword, 0, U"Draw", nullptr, 0, nullptr);
 			nullptr, 0, GRAPHICS_Artword_draw);
 praat_addAction1 (classArtword, 0, U"Modify", nullptr, 0, nullptr);
 	praat_addAction1 (classArtword, 1, U"Set target...",
-			nullptr, 0, MODIFY_EACH_Artword_setTarget);
+			nullptr, 0, MODIFY_EACH__Artword_setTarget);
 	praat_addAction1 (classArtword, 0, U"Analyse",
 			nullptr, 0, nullptr);
 	praat_addAction1 (classArtword, 0, U"To Art (slice)...",
-			nullptr, 0, CONVERT_EACH_Artword_to_Art);
+			nullptr, 0, CONVERT_EACH_TO_ONE__Artword_to_Art);
 
 	praat_addAction2 (classArt, 1, classSpeaker, 1, U"Draw",
 			nullptr, 0, nullptr);
@@ -378,7 +378,7 @@ praat_addAction1 (classArtword, 0, U"Modify", nullptr, 0, nullptr);
 	praat_addAction2 (classArt, 1, classSpeaker, 1, U"Synthesize",
 			nullptr, 0, nullptr);
 	praat_addAction2 (classArt, 1, classSpeaker, 1, U"To VocalTract",
-			nullptr, 0, CONVERT_TWO_Art_Speaker_to_VocalTract);
+			nullptr, 0, CONVERT_ONE_AND_ONE_TO_ONE__Art_Speaker_to_VocalTract);
 
 	praat_addAction2 (classArtword, 1, classSpeaker, 1, U"Play movie || Movie",
 			nullptr, 0, MOVIE_Artword_Speaker_playMovie);

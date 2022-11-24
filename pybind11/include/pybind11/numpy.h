@@ -1056,6 +1056,12 @@ public:
     }
 };
 
+template<> struct npy_format_descriptor<pybind11::object> {
+public:
+	static constexpr auto name = _("O"); \
+    static pybind11::dtype dtype() { return pybind11::dtype(std::string("O")); }
+};
+
 #define PYBIND11_DECL_CHAR_FMT \
     static constexpr auto name = _("S") + _<N>(); \
     static pybind11::dtype dtype() { return pybind11::dtype(std::string("S") + std::to_string(N)); }

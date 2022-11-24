@@ -73,6 +73,15 @@ py::object autoVECToArray(autoVEC &&vector) {
 	return py::array_t<double>(static_cast<size_t>(size), cells, capsule);
 }
 
+py::object autoINTVECToArray(autoINTVEC &&vector) {
+	if (!vector.cells)
+		return py::none();
+
+	auto [size, cells] = std::tuple(vector.size, vector.cells); // Because of undefined order of evaluation of arguments, we need to make sure to save size and at before moving
+	auto capsule = make_capsule(std::make_unique<autoINTVEC>(std::move(vector)));
+	return py::array_t<integer>(static_cast<size_t>(size), cells, capsule);
+}
+
 py::object autoMATToArray(autoMAT &&matrix) {
 	if (!matrix.cells)
 		return py::none();
@@ -80,6 +89,14 @@ py::object autoMATToArray(autoMAT &&matrix) {
 	auto [nrow, ncol, cells] = std::tuple(matrix.nrow, matrix.ncol, matrix.cells); // Because of undefined order of evaluation of arguments, we need to make sure to save nrow, ncol, and at before moving
 	auto capsule = make_capsule(std::make_unique<autoMAT>(std::move(matrix)));
 	return py::array_t<double, py::array::c_style>({static_cast<size_t>(nrow), static_cast<size_t>(ncol)}, cells, capsule);
+}
+
+py::object autoSTRVECToArray(autoSTRVEC &&vector) {
+	if (!vector.elements)
+		return py::none();
+
+	auto v = vector.get();
+	return py::array_t<py::object>(py::cast(std::vector<char32 *>(v.begin(), v.end())));
 }
 
 class PraatEnvironment {
@@ -237,63 +254,53 @@ void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg)
 }
 
 py::object PraatEnvironment::fromPraatResult(const std::u32string &callbackName, const std::u32string &interceptedInfo) {
-	if (startsWith(callbackName, U"REAL_"))
-		return py::cast(Melder_atof(interceptedInfo.c_str()));
-
-	if (startsWith(callbackName, U"INTEGER_"))
-		return py::cast(Melder_atoi(interceptedInfo.c_str()));
-
-	if (startsWith(callbackName, U"BOOLEAN_"))
-		return py::cast(Melder_atoi(interceptedInfo.c_str()) != 0);
-
-	if (startsWith(callbackName, U"COMPLEX_")) {
-		// This is ugly, but as a tradeoff between keeping things simple and making them nice, the best we can do
-		auto re = Melder_atof(interceptedInfo.c_str());
-		auto reDigit = interceptedInfo.find_first_of(U"0123456789");
-		auto imStart = reDigit != std::u32string::npos ? interceptedInfo.find_first_of(U"+-", reDigit) : std::u32string::npos;
-		auto im = Melder_atof(imStart != std::u32string::npos ? interceptedInfo.c_str() + imStart + (interceptedInfo[imStart] == U'+') : U"");
-		if (isundef(re) || isundef(im))
-			return py::cast(undefined);
-		return py::cast(std::complex<decltype(re)>(re, im));
-	}
-
-	if (startsWith(callbackName, U"NUMVEC_"))
-		return autoVECToArray(std::move(m_interpreter->returnedRealVector));
-
-	if (startsWith(callbackName, U"NUMMAT_"))
-		return autoMATToArray(std::move(m_interpreter->returnedRealMatrix));
-
-	if (startsWith(callbackName, U"NEW_") ||
-	    startsWith(callbackName, U"NEW1_") ||
-	    startsWith(callbackName, U"NEW2_") ||
-	    startsWith(callbackName, U"NEWMANY_") ||
-	    startsWith(callbackName, U"NEWTIMES2_") ||
-	    startsWith(callbackName, U"READ1_") ||
-	    startsWith(callbackName, U"READMANY_")) {
-
+	auto returnObjects = [this](const std::u32string &callbackName) {
 		auto selected = retrieveSelectedObjects(true);
-
-		if (selected.size() == 1 && !(startsWith(callbackName, U"NEWMANY_") || startsWith(callbackName, U"READMANY_")))
+		if (selected.size() == 1 && !(startsWith(callbackName, U"NEWMANY_") || startsWith(callbackName, U"READMANY_") ||
+		                              startsWith(callbackName, U"CREATE_MULTIPLE__") || startsWith(callbackName, U"READ_MULTIPLE__") ||
+		                              (startsWith(callbackName, U"CONVERT_") && callbackName.find(U"_TO_MULTIPLE__") != std::u32string::npos)))
 			return std::move(selected[0]);
 		else
 			return py::cast(std::move(selected));
+	};
+
+	auto returnComplex = [](const std::u32string &value) {
+		// This is ugly, but as a tradeoff between keeping things simple and making them nice, the best we can do
+		auto re = Melder_atof(value.c_str());
+		auto reDigit = value.find_first_of(U"0123456789");
+		auto imStart = reDigit != std::u32string::npos ? value.find_first_of(U"+-", reDigit) : std::u32string::npos;
+		auto im = Melder_atof(imStart != std::u32string::npos ? value.c_str() + imStart + (value[imStart] == U'+') : U"");
+		if (isundef(re) || isundef(im))
+			return py::cast(undefined);
+		return py::cast(std::complex<decltype(re)>(re, im));
+	};
+
+	switch (m_interpreter->returnType) {
+		case kInterpreter_ReturnType::VOID_:
+			return py::none();
+		case kInterpreter_ReturnType::OBJECT_:
+			return returnObjects(callbackName);  // TODO Improve, without relying on the callback name?
+		case kInterpreter_ReturnType::REAL_:
+			return py::cast(Melder_atof(interceptedInfo.c_str()));
+		case kInterpreter_ReturnType::INTEGER_:
+			return py::cast(Melder_atoi(interceptedInfo.c_str()));
+		case kInterpreter_ReturnType::BOOLEAN_:
+			return py::cast(Melder_atoi(interceptedInfo.c_str()) != 0);
+		case kInterpreter_ReturnType::STRING_:
+			// TODO Improve, without relying on the callback name?
+			if (startsWith(callbackName, U"COMPLEX_") || (startsWith(callbackName, U"QUERY_") && callbackName.find(U"_FOR_COMPLEX__") != std::u32string::npos))
+				return returnComplex(interceptedInfo);
+			return py::cast(interceptedInfo);
+		case kInterpreter_ReturnType::REALVECTOR_:
+			return autoVECToArray(std::move(m_interpreter->returnedRealVector));
+		case kInterpreter_ReturnType::INTEGERVECTOR_:
+			return autoINTVECToArray(std::move(m_interpreter->returnedIntegerVector));
+		case kInterpreter_ReturnType::REALMATRIX_:
+			return autoMATToArray(std::move(m_interpreter->returnedRealMatrix));
+		case kInterpreter_ReturnType::STRINGARRAY_:
+			return autoSTRVECToArray(std::move(m_interpreter->returnedStringArray));
 	}
-
-	if (startsWith(callbackName, U"STRING_") ||
-	    startsWith(callbackName, U"HINT_") ||
-	    startsWith(callbackName, U"INFO_") ||
-	    startsWith(callbackName, U"LIST_")) {
-
-		return py::cast(interceptedInfo);
-	}
-
-	// U"HELP_", U"MODIFY_", U"PRAAT_", U"PREFS_", U"SAVE_"
 	return py::none();
-
-	// Weird: U"DANGEROUS_"
-	// Impossible: U"PLAY_", U"RECORD1_", U"WINDOW_"
-	// Does nothing: U"GRAPHICS_"
-	// Throws exception: U"MOVIE_"
 }
 
 

@@ -22,6 +22,7 @@ import parselmouth
 import itertools
 import numpy as np
 import os
+import re
 import textwrap
 
 
@@ -78,6 +79,13 @@ def test_call_return_values(text_grid):
 	assert isinstance(parselmouth.praat.call(text_grid, "Get tier name", 1), str)
 	parselmouth.praat.call(text_grid, "Set tier name", 1, "")
 	assert parselmouth.praat.call(text_grid, "Get tier name", 1) == ""
+
+	polynomial = parselmouth.praat.call("Create Polynomial", "", -5, 5, "1 0 1")
+	roots = parselmouth.praat.call(polynomial, "To Roots")
+	assert parselmouth.praat.call(roots, "Get number of roots") == 2
+	assert {parselmouth.praat.call(roots, "Get root", i + 1) for i in range(2)} == {1j, -1j}
+
+	assert parselmouth.praat.call("Get incomplete gamma", 1, 0, 0, -1) == pytest.approx(np.exp(1j))
 
 
 def test_run(sound_path):
@@ -227,16 +235,46 @@ def test_unknown_argument_type(sound, text_grid, tmp_path):
 
 
 def test_praat_callback_prefixes():
-	separators = {'nullptr', '0'}
-	values = {'REAL', 'INTEGER', 'BOOLEAN', 'COMPLEX', 'STRING', 'NUMVEC', 'NUMMAT'}
-	objects = {'NEW', 'NEW1', 'NEW2', 'NEWMANY', 'NEWTIMES2', 'READ1', 'READMANY'}
-	info = {'HINT', 'INFO', 'LIST'}
-	nothing = {'HELP', 'MODIFY', 'PRAAT', 'PREFS', 'SAVE', 'GRAPHICS'}
-	exception = {'PLAY', 'RECORD1', 'WINDOW', 'MOVIE'}
-	weird = {'DANGEROUS'}
+	all_caps_classes_regex = "|".join({'EEG', 'ERP', 'DTW', 'PCA', 'SSCP'})
+	prefix_regex = rf'([A-Z0-9]+(?:_(?!{all_caps_classes_regex})[A-Z0-9]+)*_+)'
 
-	prefixes = {action[2].split('_')[0] for action in itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands())}
-	assert prefixes == separators | values | objects | info | nothing | exception | weird
+	separators = {'nullptr', '0'}
+	all_actions = itertools.chain(parselmouth.praat._get_actions(), parselmouth.praat._get_menu_commands())
+	prefixes = {re.match(prefix_regex, callback_name).group(1) for (_, _, callback_name) in all_actions if callback_name not in separators}
+
+	values = {'REAL', 'INTEGER', 'BOOLEAN', 'COMPLEX', 'STRING', 'NUMVEC', 'NUMMAT', 'STRVEC'}
+	objects = {'NEW', 'NEW1', 'NEWTIMES2', 'READ1', 'READMANY'}
+	info = {'HINT', 'INFO', 'LIST'}
+	nothing = {'HELP', 'MODIFY', 'PRAAT', 'SAVE', 'GRAPHICS'}
+	exception = {'PLAY', 'WINDOW', 'MOVIE'}
+	editor = {'EDITOR_ONE', 'EDITOR_ONE_WITH_ONE'}
+
+	old_prefixes = {prefix[:-1] for prefix in prefixes if not prefix.endswith('__')}
+	assert old_prefixes == values | objects | info | nothing | exception | editor
+
+	query = ({f'QUERY_NONE_FOR_{x}' for x in {'COMPLEX', 'REAL'}} |
+	         {f'QUERY_ONE_FOR_{x}' for x in {'BOOLEAN', 'INTEGER', 'MATRIX', 'REAL', 'REAL_VECTOR', 'STRING', 'STRING_ARRAY'}} |
+	         {f'QUERY_ONE_WEAK_{x}' for x in {'FOR_STRING', 'AND_ONE_FOR_INTEGER', 'AND_ONE_FOR_REAL'}} |
+			 {f'QUERY_ONE_AND_{x}' for x in {'ONE_FOR_BOOLEAN', 'ONE_FOR_REAL', 'ONE_AND_ALL_FOR_REAL', 'ONE_AND_ONE_FOR_REAL'}} |
+	         {'QUERY_TWO_AND_ONE_FOR_REAL', 'QUERY_TWO_FOR_REAL'})
+	convert = ({f'CONVERT_{x}' for x in {'ALL_TO_MULTIPLE', 'EACH_TO_ONE', 'EACH_TO_MULTIPLE', 'EACH_WEAK_TO_ONE'}} |
+	           {f'CONVERT_ONE_{x}' for x in {'TO_MULTIPLE', 'AND_ALL_LISTED_TO_ONE', 'AND_ALL_LISTED_TO_ONE', 'AND_ALL_TO_MULTIPLE', 'WEAK_AND_ONE_TO_ONE'}} |
+	           {f'CONVERT_ONE_AND_ONE_{x}' for x in {'TO_ONE', 'TO_MULTIPLE', 'AND_ALL_TO_MULTIPLE', 'GENERIC_TO_ONE'}} |
+			   {f'CONVERT_ONE_AND_ONE_AND_ONE_{x}' for x in {'TO_ONE'}} |
+			   {f'CONVERT_TWO_{x}' for x in {'TO_ONE', 'TO_MULTIPLE', 'AND_ONE_TO_ONE'}} |
+			   {'NEW', 'COMBINE_ALL_TO_ONE', 'COMBINE_ALL_LISTED_TO_ONE'})
+	modify = ({'MODIFY', 'MODIFY_ALL', 'MODIFY_EACH', 'MODIFY_EACH_WEAK'} |
+	          {f'MODIFY_FIRST_OF_ONE_{x}' for x in {'AND_ONE', 'AND_ALL', 'AND_ONE_AND_ONE', 'WEAK_AND_ONE', 'WEAK_AND_ONE_WITH_HISTORY', 'WEAK_AND_TWO'}})
+	create = {'CREATE_ONE', 'CREATE_MULTIPLE'}
+	info = {'INFO_NONE', 'INFO_ONE', 'INFO_ONE_AND_ONE', 'INFO_TWO', 'LIST'}
+	read_save = {'READ_ONE', 'READ_MULTIPLE', 'SAVE_ALL', 'SAVE_ONE', 'SAVE_TWO'}
+	graphics = {f'GRAPHICS_{x}' for x in {'EACH', 'NONE', 'ONE_AND_ONE', 'TWO', 'TWO_AND_ONE'}}
+	play_record = {'PLAY', 'PLAY_EACH', 'PLAY_ONE_AND_ONE', 'RECORD_ONE'}
+	editor_window = {'EDITOR_ONE', 'EDITOR_ONE_WITH_ONE', 'EDITOR_ONE_WITH_ONE_AND_ONE', 'CREATION_WINDOW', 'SINGLETON_CREATION_WINDOW'}
+	etc = {'HELP', 'PRAAT', 'APPEND_ALL', 'PRAAT', 'PREFS', 'HINT', 'WARNING'}
+
+	new_prefixes = {prefix[:-2] for prefix in prefixes if prefix.endswith('__')}
+	assert new_prefixes == query | convert | modify | create | info | read_save | graphics | play_record | editor_window | etc
 
 
 def test_collection_object(sound, text_grid, tmp_path):

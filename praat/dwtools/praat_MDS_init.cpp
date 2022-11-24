@@ -65,7 +65,7 @@ DO
 	CREATE_ONE_END (U"R")
 }
 
-FORM (CREATE_MULTIPLE_INDSCAL_createCarrollWishExample, U"Create INDSCAL Carroll & Wish example...", U"Create INDSCAL Carroll & Wish example...") {
+FORM (CREATE_MULTIPLE__INDSCAL_createCarrollWishExample, U"Create INDSCAL Carroll & Wish example...", U"Create INDSCAL Carroll & Wish example...") {
 	REAL (noiseStandardDeviation, U"Noise standard deviation", U"0.0")
 	OK
 DO
@@ -1402,7 +1402,7 @@ void praat_MDS_new_init () {
 	praat_addMenuCommand (U"Objects", U"New", U"Create letter R example...", nullptr, 2,
 			CREATE_ONE__Dissimilarity_createLetterRExample);
 	praat_addMenuCommand (U"Objects", U"New", U"Create INDSCAL Carroll Wish example...", nullptr, 2,
-			CREATE_MULTIPLE_INDSCAL_createCarrollWishExample);
+			CREATE_MULTIPLE__INDSCAL_createCarrollWishExample);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Configuration...", nullptr, 2,
 			CREATE_ONE__Configuration_create);
 	praat_addMenuCommand (U"Objects", U"New", U"Draw splines...", nullptr, 2,
