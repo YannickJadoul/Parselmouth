@@ -61,9 +61,9 @@ extern char path_home[N_PATH_HOME];    // this is the espeak-ng-data directory
 extern ESPEAK_NG_API int GetFileLength(const char *filename);
 
 
-// Parselmouth: See speech.cpp
-#include <wctype.h>
-#include "melder.h"
+// Parselmouth: See speech.cpp (and functions in <wctype.h>)
+// Don't #include "melder.h" here, as it causes issues with fgets
+// not being overwritten by espeak_io.h, when imported too late
 #define iswalnum(c) Melder_isAlphanumeric(c)
 #define iswalpha(c) Melder_isLetter(c)
 #define iswblank(c) Melder_isHorizontalSpace(c)
