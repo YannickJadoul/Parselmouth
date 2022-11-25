@@ -23,8 +23,8 @@
 #include "espeak_ng.h"
 
 #ifdef __cplusplus
-//extern "C"
-//{
+extern "C"
+{
 #endif
 
 #define N_PEAKS   9
@@ -96,8 +96,7 @@ void VoiceReset(int control);
 void FreeVoiceList(void);
 
 #ifdef __cplusplus
-//}
+}
 #endif
 
-//}
 #endif

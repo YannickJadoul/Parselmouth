@@ -33,7 +33,7 @@
 #include "encoding.h"
 
 #include "dictionary.h"
-//#include "mbrola.h"
+#include "mbrola.h"
 #include "readclause.h"
 #include "setlengths.h"
 #include "synthdata.h"
