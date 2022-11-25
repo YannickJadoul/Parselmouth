@@ -158,6 +158,12 @@ jobs:
     needs: [wheels]
 
     steps:
+      - name: Ensure RTD wheel is available
+        uses: actions/download-artifact@v3
+        with:
+          name: rtd-wheel
+          path: wheelhouse
+
       - name: Trigger ReadTheDocs webhook
         run: |
           curl -X POST -d "branches=${{ github.ref_name }}" -d "token=${{ secrets.READTHEDOCS_WEBHOOK_TOKEN }}" https://readthedocs.org/api/v2/webhook/parselmouth/15985/
