@@ -71,15 +71,15 @@ jobs:
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: macos-latest
-            python: '3.9'
+            python: '3.11'
+            arch: x64
+          - runs-on: macos-latest
+            python: '3.10'
             arch: x64
             release: true
             name-extra: ' (Release)'
           - runs-on: macos-latest
             python: 'pypy-3.8'
-            arch: x64
-          - runs-on: macos-10.15
-            python: '3.10'
             arch: x64
 
           - runs-on: windows-latest
@@ -90,6 +90,9 @@ jobs:
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
+          - runs-on: windows-latest
+            python: '3.11'
+            arch: x64
           - runs-on: windows-latest
             python: '3.7'
             arch: x86
