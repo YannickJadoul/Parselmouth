@@ -182,7 +182,7 @@ jobs:
           path: wheelhouse
 
       - name: Upload sdist and wheels to release
-        uses: ncipollo/release-action@v1.11.1
+        uses: ncipollo/release-action@v1
         with:
           name: ${{ github.ref_name }}
           draft: true
