@@ -30,6 +30,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import zipfile
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
@@ -82,7 +83,15 @@ if on_rtd:
     runs = g.get_repo('YannickJadoul/Parselmouth').get_workflow("wheels.yml").get_runs(branch=branch)
     artifacts_url = next(r for r in runs if r.head_sha == head_sha).artifacts_url
 
-    archive_download_url = next(artifact for artifact in requests.get(artifacts_url).json()['artifacts'] if artifact['name'] == 'rtd-wheel')['archive_download_url']
+    archive_download_url = None
+    for i in range(5):
+        try:
+            archive_download_url = next(artifact for artifact in requests.get(artifacts_url).json()['artifacts'] if artifact['name'] == 'rtd-wheel')['archive_download_url']
+            break
+        except StopIteration:
+            if i == 4:
+                raise
+            time.sleep(15)
     artifact_bin = io.BytesIO(requests.get(archive_download_url, headers={'Authorization': f'token {github_token}'}, stream=True).content)
 
     with zipfile.ZipFile(artifact_bin) as zf, tempfile.TemporaryDirectory() as tmpdir:
