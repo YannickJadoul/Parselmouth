@@ -26,14 +26,6 @@ import re
 import textwrap
 
 
-def test_call_return_many(sound):
-	stereo_sound = sound.convert_to_stereo()
-	channels = parselmouth.praat.call(stereo_sound, "Extract all channels")
-	assert len(channels) == 2
-	assert np.all(channels[0].values == sound.values)
-	assert np.all(channels[1].values == sound.values)
-
-
 def test_call_with_extra_objects(sound):
 	new = parselmouth.Sound(np.zeros((sound.n_channels, sound.n_samples)), sampling_frequency=sound.sampling_frequency, start_time=sound.start_time)
 	sound.name = "the sound"
@@ -74,18 +66,85 @@ def test_call_parameters(sound):
 
 	# If a Praat command with a NUMMAT argument gets added, a test should be added
 
+	table = parselmouth.praat.call("Create Table with column names", "test", 10, ["a", "b", "c"])
+	assert isinstance(table, parselmouth.Data)
+	assert table.class_name == "Table"
+	assert parselmouth.praat.call(table, "Get number of rows") == 10
+	assert parselmouth.praat.call(table, "Get number of columns") == 3
+	assert [parselmouth.praat.call(table, "Get column label", i + 1) for i in range(3)] == ["a", "b", "c"]
+	table = parselmouth.praat.call("Create Table with column names", "test", 10, np.array(["a", "b", "c"]))
+	assert [parselmouth.praat.call(table, "Get column label", i + 1) for i in range(3)] == ["a", "b", "c"]
+	table = parselmouth.praat.call("Create Table with column names", "test", 10, np.array(["a", "b", "c"], dtype=np.object_))
+	assert [parselmouth.praat.call(table, "Get column label", i + 1) for i in range(3)] == ["a", "b", "c"]
+	with pytest.raises(ValueError, match=r"Cannot convert argument \"\['a', 'b', 3\]\" to a known Praat argument type"):
+		parselmouth.praat.call("Create Table with column names", "test", 10, ['a', 'b', 3])
+	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a string array, not a number"):
+		parselmouth.praat.call("Create Table with column names", "test", 10, 42)
 
-def test_call_return_values(text_grid):
+
+def test_call_return_many(sound):
+	stereo_sound = sound.convert_to_stereo()
+	channels = parselmouth.praat.call(stereo_sound, "Extract all channels")
+	assert isinstance(channels, list)
+	assert len(channels) == 2
+	assert np.all(channels[0].values == sound.values)
+	assert np.all(channels[1].values == sound.values)
+
+	channels = parselmouth.praat.call(sound, "Extract all channels")
+	assert isinstance(channels, list)
+	assert len(channels) == 1
+	assert np.all(channels[0].values == sound.values)
+
+
+def test_call_return_string(text_grid):
 	assert isinstance(parselmouth.praat.call(text_grid, "Get tier name", 1), str)
-	parselmouth.praat.call(text_grid, "Set tier name", 1, "")
-	assert parselmouth.praat.call(text_grid, "Get tier name", 1) == ""
+	parselmouth.praat.call(text_grid, "Set tier name", 1, "abc")
+	assert parselmouth.praat.call(text_grid, "Get tier name", 1) == "abc"
 
+
+def test_call_return_complex():
 	polynomial = parselmouth.praat.call("Create Polynomial", "", -5, 5, "1 0 1")
 	roots = parselmouth.praat.call(polynomial, "To Roots")
 	assert parselmouth.praat.call(roots, "Get number of roots") == 2
 	assert {parselmouth.praat.call(roots, "Get root", i + 1) for i in range(2)} == {1j, -1j}
 
 	assert parselmouth.praat.call("Get incomplete gamma", 1, 0, 0, -1) == pytest.approx(np.exp(1j))
+
+
+def test_call_return_vector(spectrogram):
+	frame_times = parselmouth.praat.call(spectrogram, "List all frame times")
+	assert isinstance(frame_times, np.ndarray)
+	assert frame_times.shape == (spectrogram.n_frames,)
+	assert frame_times.dtype == np.float64
+	assert np.all(frame_times == spectrogram.xs())
+
+	# TODO Test integer vector once Praat has a command that returns one
+
+
+def test_call_return_matrix(spectrogram):
+	matrix = parselmouth.praat.call(spectrogram, "To Matrix")
+	assert isinstance(matrix, parselmouth.Matrix)
+
+	values = parselmouth.praat.call(matrix, "Get all values")
+	assert isinstance(values, np.ndarray)
+	assert values.shape == (spectrogram.ny, spectrogram.nx)
+	assert values.dtype == np.float64
+	assert np.all(values == matrix.values)
+
+
+def test_call_return_string_vector():
+	sentence = "Lorem ipsum dolor sit amet"
+	strings = parselmouth.praat.call("Create Strings from tokens", "test", sentence, " ")
+	assert isinstance(strings, parselmouth.Data)
+	assert strings.class_name == "Strings"
+	assert strings.name == "test"
+	assert parselmouth.praat.call(strings, "Get number of strings") == 5
+
+	strings_vector = parselmouth.praat.call(strings, "List all strings")
+	assert isinstance(strings_vector, np.ndarray)
+	assert strings_vector.shape == (5,)
+	assert strings_vector.dtype == np.object_
+	assert np.all(strings_vector == sentence.split(" "))
 
 
 def test_run(sound_path):

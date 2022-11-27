@@ -214,6 +214,7 @@ void fillStackel(structStackel &s, bool boolean) { s.which = Stackel_NUMBER; s.n
 void fillStackel(structStackel &s, const std::u32string &string) { s.which = Stackel_STRING; s._string = Melder_dup(string.c_str()); }
 void fillStackel(structStackel &s, const VEC &vector, bool owned) { s.which = Stackel_NUMERIC_VECTOR; s.owned = owned; s.numericVector = vector; }
 void fillStackel(structStackel &s, const MAT &matrix, bool owned) { s.which = Stackel_NUMERIC_MATRIX, s.owned = owned; s.numericMatrix = matrix; }
+void fillStackel(structStackel &s, const STRVEC &array, bool owned) { s.which = Stackel_STRING_ARRAY, s.owned = owned; s.stringArray = array; }
 
 void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg) {
 	if (py::isinstance<py::int_>(arg) || py::isinstance<py::float_>(arg))
@@ -246,6 +247,17 @@ void PraatEnvironment::toPraatArg(structStackel &stackel, const py::handle &arg)
 
 			throw py::value_error("Cannot convert " + std::to_string(array.ndim()) + "-dimensional NumPy array argument\"" + py::cast<std::string>(py::repr(arg)) + "\" to a Praat vector or matrix");
 		}
+	}
+	catch (py::cast_error &) {}
+	catch (py::error_already_set &) {}
+
+	try {
+		auto list = py::cast<py::list>(arg);
+		autoSTRVEC array(static_cast<integer>(list.size()));
+		for (integer i = 0; i < array.size; ++i) {
+			array[i + 1] = Melder_dup(py::cast<std::u32string>(list[i]).c_str());
+		}
+		return fillStackel(stackel, array.releaseToAmbiguousOwner(), true);
 	}
 	catch (py::cast_error &) {}
 	catch (py::error_already_set &) {}
