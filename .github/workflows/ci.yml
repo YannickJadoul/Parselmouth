@@ -13,58 +13,58 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 2.7
             arch: x64
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 3.5
             arch: x64
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 3.6
             arch: x64
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 3.7
             arch: x64
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 3.8
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 3.9
             arch: x64
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: '3.10'
             arch: x64
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: pypy-2.7
             arch: x64
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: pypy-3.6
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: pypy-3.7
             arch: x64
 
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 3.8
             arch: x64
             gcc: 10
             name-extra: ' (GCC 10)'
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 3.8
             arch: x64
             clang: 12
             name-extra: ' (Clang 12)'
 
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 2.7
             arch: x64
             release: true
             name-extra: ' (Release)'
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-20.04
             python: 3.8
             arch: x64
             release: true
