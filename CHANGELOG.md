@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 _Nothing yet_
 
+## [0.4.3] - 2022-12-24
+### Fixed
+- Fixed source distribution failing to build, due to `scikit-build` & `setuptools` version mismatch in `pyproject.toml`.
+
 ## [0.4.2] - 2022-11-06
 ### Added
 - Added support for Python 3.11 and PyPy 3.9.
@@ -115,7 +119,8 @@ _Nothing yet_
 - Main functionality of `Thing`, `Data`, `Matrix`, `Vector`, `Sound`, `Spectrum`, `Spectrogram`, and `Intensity` classes. Preliminary implementations of `Pitch`, `Harmonicity`, `Formant`, and `MFCC`.
 - Basic Travis CI configuration.
 
-[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/YannickJadoul/Parselmouth/compare/v0.3.3...v0.4.0
