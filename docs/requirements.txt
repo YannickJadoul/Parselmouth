@@ -8,6 +8,7 @@ requests
 -r ../requirements.txt
 
 ipykernel
+ipython!=8.7.0
 ipywidgets
 nbsphinx
 
