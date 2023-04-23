@@ -25,13 +25,13 @@ Python distributions
 --------------------
 
 Anaconda
-    If you use the Anaconda distribution of Python, you can use the same ``pip`` command in a terminal of the appropriate Anaconda environment, either activated through the `Anaconda Navigator <https://docs.continuum.io/anaconda/navigator/tutorials/manage-environments/#using-an-environment>`_ or `conda tool <https://conda.io/projects/continuumio-conda/en/latest/user-guide/tasks/manage-environments.html#activating-an-environment>`_.
+    If you use the Anaconda distribution of Python, you can use the same ``pip`` command in a terminal of the appropriate Anaconda environment, either activated through the `Anaconda Navigator <https://docs.anaconda.com/free/navigator/tutorials/manage-environments/#using-an-environment>`_ or `conda tool <https://conda.io/projects/continuumio-conda/en/latest/user-guide/tasks/manage-environments.html#activating-an-environment>`_.
 
 Homebrew & MacPorts
     We currently do not have Homebrew or MacPorts packages to install Parselmouth. As far as we know however, Parselmouth can just be installed with the accompanying ``pip`` of these distributions.
 
 PyPy
-    In priciple, recent versions of PyPy are supported by the `pybind11 project <https://github.com/pybind/pybind11>`_ and should thus also be supported by Parselmouth. However, we currently have not figured out how to provide precompiled packages, so you will have to still compile the wheel yourself (or contribute an automated way of doing this to the project!).
+    In principle, recent versions of PyPy are supported by the `pybind11 project <https://github.com/pybind/pybind11>`_ and should thus also be supported by Parselmouth. However, we currently have not figured out how to provide precompiled packages, so you will have to still compile the wheel yourself (or contribute an automated way of doing this to the project!).
 
 Other
     For other distributions of Python, we are expecting that our package is compatible with the Python versions that are out there and that ``pip`` can handle the installation. If you are using yet another Python distribution, we are definitely interested in hearing about it, so that we can add it to this list!
