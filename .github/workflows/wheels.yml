@@ -223,6 +223,7 @@ jobs:
 
       - name: Run cibuildwheel
         run: |
+          sed 's/wheel/wheel<0.40/' -i pyproject.toml
           cibuildwheel
 
       - name: Check built wheels
