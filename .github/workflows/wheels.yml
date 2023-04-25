@@ -223,7 +223,7 @@ jobs:
 
       - name: Run cibuildwheel
         run: |
-          sed 's/wheel/wheel<0.40/' -i pyproject.toml
+          python -c "import toml; p = toml.load(open('pyproject.toml')); r = p['build-system']['requires']; r[r.index('wheel')] = 'wheel<0.40'; toml.dump(p, open('pyproject.toml', 'w'))"
           cibuildwheel
 
       - name: Check built wheels
