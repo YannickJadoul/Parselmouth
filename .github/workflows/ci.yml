@@ -70,20 +70,20 @@ jobs:
             release: true
             name-extra: ' (Release)'
 
-          - runs-on: macos-10.15
+          - runs-on: macos-11
             python: 2.7
             arch: x64
-          - runs-on: macos-10.15
+          - runs-on: macos-11
             python: 3.8
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: macos-10.15
+          - runs-on: macos-11
             python: 3.8
             arch: x64
             release: true
             name-extra: ' (Release)'
-          - runs-on: macos-10.15
+          - runs-on: macos-11
             python: pypy-3.6
             arch: x64
 
