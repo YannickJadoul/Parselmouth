@@ -14,9 +14,6 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-latest
-            python: '3.7'
-            arch: x64
-          - runs-on: ubuntu-latest
             python: '3.8'
             arch: x64
           - runs-on: ubuntu-latest
@@ -33,48 +30,43 @@ jobs:
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: 'pypy-3.7'
+            python: 'pypy-3.9'
             arch: x64
-          - runs-on: ubuntu-latest
-            python: 'pypy-3.8'
-            arch: x64
+            run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: 'pypy-3.9'
+            python: 'pypy-3.10'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
 
           - runs-on: ubuntu-latest
-            python: '3.10'
+            python: '3.11'
             arch: x64
             gcc: 10
             name-extra: ' (GCC 10)'
           - runs-on: ubuntu-latest
-            python: '3.10'
+            python: '3.11'
             arch: x64
             clang: 12
             name-extra: ' (Clang 12)'
 
           - runs-on: ubuntu-latest
-            python: '3.10'
+            python: '3.11'
             arch: x64
             release: true
             name-extra: ' (Release)'
 
           - runs-on: macos-latest
-            python: '3.7'
+            python: '3.8'
             arch: x64
           - runs-on: macos-latest
-            python: '3.10'
+            python: '3.11'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: macos-latest
             python: '3.11'
-            arch: x64
-          - runs-on: macos-latest
-            python: '3.10'
             arch: x64
             release: true
             name-extra: ' (Release)'
@@ -83,7 +75,7 @@ jobs:
             arch: x64
 
           - runs-on: windows-latest
-            python: '3.7'
+            python: '3.8'
             arch: x64
           - runs-on: windows-latest
             python: '3.10'
@@ -94,20 +86,20 @@ jobs:
             python: '3.11'
             arch: x64
           - runs-on: windows-latest
-            python: '3.7'
+            python: '3.8'
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: '3.10'
+            python: '3.11'
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: '3.10'
+            python: '3.11'
             arch: x64
             release: true
             name-extra: ' (Release)'
           - runs-on: windows-latest
-            python: 'pypy-3.9'
+            python: 'pypy-3.10'
             arch: x64
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
@@ -198,7 +190,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.13
