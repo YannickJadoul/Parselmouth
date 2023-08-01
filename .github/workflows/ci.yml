@@ -6,6 +6,12 @@ on:
       - 'dependabot/**'
   pull_request:
   workflow_dispatch:
+    inputs:
+      tmate:
+        type: boolean
+        description: 'Start tmate session on failure'
+        required: false
+        default: false
 
 jobs:
   tests:
@@ -178,6 +184,10 @@ jobs:
         run: |
           cmake --build build --target tests
 
+      - name: Setup tmate session
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.tmate && failure() }}
+        uses: mxschmitt/action-tmate@v3
+
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -217,3 +227,7 @@ jobs:
       - name: Check links
         run: |
           cmake --build build --target docs_linkcheck
+
+      - name: Setup tmate session
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.tmate && failure() }}
+        uses: mxschmitt/action-tmate@v3
