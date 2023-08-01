@@ -132,8 +132,9 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --user --upgrade pip setuptools wheel
-          pip install --user --upgrade -r tests/requirements.txt
+          python -m pip install --upgrade pip
+          pip install --upgrade setuptools wheel
+          pip install --upgrade -r tests/requirements.txt
 
       - name: Select GCC
         if: matrix.gcc
@@ -151,7 +152,7 @@ jobs:
 
       - name: Setup pytest annotations
         run: |
-          python -m pip install pytest-github-actions-annotate-failures
+          pip install pytest-github-actions-annotate-failures
 
       - name: Setup GCC annotations
         uses: ammaraskar/gcc-problem-matcher@master
@@ -200,7 +201,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --user -r docs/requirements.txt
+          pip install -r docs/requirements.txt
           sudo apt install pandoc
 
       - name: Configure

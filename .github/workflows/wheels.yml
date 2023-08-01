@@ -33,7 +33,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --user check-manifest twine
+          pip install check-manifest twine
 
       - name: Run check-manifest
         run: |
@@ -45,7 +45,7 @@ jobs:
 
       - name: Install from sdist
         run: |
-          pip install --user wheelhouse/*.tar.gz
+          pip install wheelhouse/*.tar.gz
 
       - name: Check sdist
         run: |
@@ -98,7 +98,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          python -m pip install cibuildwheel twine
+          pip install cibuildwheel twine
 
       - name: Configure cibuildwheel
         shell: bash
