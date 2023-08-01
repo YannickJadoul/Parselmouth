@@ -127,6 +127,11 @@ jobs:
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.13
 
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-${{ matrix.runs-on }}-${{ matrix.arch }}-${{ matrix.release }}
+
       - name: Install OpenBLAS on macOS for NumPy
         if: runner.os == 'macOS' && startsWith(matrix.python, 'pypy')
         run: |
@@ -168,7 +173,8 @@ jobs:
         run: |
           CMAKE_ARCH="${{ (runner.os == 'Windows' && matrix.arch == 'x86') && '-A Win32' || '' }}"
           CMAKE_BUILD_TYPE="${{ matrix.release && 'Release' || 'Debug' }}"
-          cmake -S . -B build $CMAKE_ARCH -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DPython_EXECUTABLE="$(which python)"
+          CCACHE_BASEDIR="$GITHUB_WORKSPACE"
+          cmake -S . -B build $CMAKE_ARCH -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DPython_EXECUTABLE="$(which python)" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Compile
         run: |
