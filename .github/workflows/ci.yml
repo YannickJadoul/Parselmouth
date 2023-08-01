@@ -74,20 +74,17 @@ jobs:
             release: true
             name-extra: ' (Release)'
           - runs-on: macos-latest
-            python: 'pypy-3.10-nightly'
+            python: 'pypy-3.9'
             arch: x64
 
           - runs-on: windows-latest
             python: '3.8'
             arch: x64
           - runs-on: windows-latest
-            python: '3.10'
+            python: '3.11'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: windows-latest
-            python: '3.11'
-            arch: x64
           - runs-on: windows-latest
             python: '3.8'
             arch: x86
