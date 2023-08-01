@@ -7,6 +7,46 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "praat-parselmouth"
+# version = <see setup.py>
+description = "Praat in Python, the Pythonic way"
+license = {text = "GNU General Public License v3 or later (GPLv3+)"}
+authors = [
+    {name = "Yannick Jadoul", email="Yannick.Jadoul@ai.vub.ac.be"},
+]
+readme = "res/README_PyPI.md"
+requires-python = ">=3.8"
+keywords = ["praat", "speech", "signal processing", "phonetics"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+dependencies = [
+    "numpy>=1.7.0"
+]
+dynamic = ["version"]
+
+[project.urls]
+"Homepage" = "https://github.com/YannickJadoul/Parselmouth"
+"Bug Tracker" = "https://github.com/YannickJadoul/Parselmouth/issues"
+"Documentation" = "https://parselmouth.readthedocs.io/"
+"Source Code" = "https://github.com/YannickJadoul/Parselmouth"
+
 [tool.check-manifest]
 ignore = [
     ".clang-format",

@@ -41,6 +41,7 @@ setup(
 	version=find_version(),
 	packages=[''],
 	package_dir={'': "src"},
+	include_package_data=False,
 	cmake_args=shlex.split(os.environ.get('PARSELMOUTH_EXTRA_CMAKE_ARGS', '')),
 	cmake_install_dir="src",
 )
