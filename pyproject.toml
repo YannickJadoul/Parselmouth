@@ -6,3 +6,11 @@ requires = [
     "scikit-build>=0.13",
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.check-manifest]
+ignore = [
+    ".clang-format",
+    ".readthedocs.yml",
+    "binder",
+    "binder/*"
+]
