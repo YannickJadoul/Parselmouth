@@ -1,0 +1,39 @@
+exclude: '^(praat/|pybind11/|extern/)'
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-byte-order-marker
+      - id: check-builtin-literals
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-json
+      - id: pretty-format-json
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-xml
+      - id: check-yaml
+      - id: debug-statements
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: fix-encoding-pragma
+        args: ['--remove']
+      - id: mixed-line-ending
+        exclude: '^docs/make.bat'
+        args: ['--fix=lf']
+      - id: name-tests-test
+        exclude: '^tests/resource_fixtures.py'
+        args: ['--pytest-test-first']
+      - id: trailing-whitespace
+        exclude: '.TextGrid$'
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.10.1
+    hooks:
+      - id: pyupgrade
