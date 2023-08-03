@@ -17,7 +17,7 @@
 
 # git diff --color=always "$@" | grep -E --color=always -f "$(dirname "$(readlink -f "$0")")/locale_regexes" -B 5 -A 5 | less -R
 # git diff "$@" | grepdiff -f "$(dirname "$(readlink -f "$0")")/locale_regexes" -E --output=hunk | colordiff | grep --color=always -f locale_regexes -e '' | less -R
-# git diff "$@" | grepdiff -f "$(dirname "$(readlink -f "$0")")/locale_regexes" -E --output=hunk | grep --color=always -f locale_regexes -e '' | ydiff -s -w 0 --wrap 
+# git diff "$@" | grepdiff -f "$(dirname "$(readlink -f "$0")")/locale_regexes" -E --output=hunk | grep --color=always -f locale_regexes -e '' | ydiff -s -w 0 --wrap
 
 trap "exit" INT
 

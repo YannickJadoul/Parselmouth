@@ -135,4 +135,3 @@ The "Microsoft Visual C++ Redistributable for Visual Studio 2019" installer can 
 - For a 32-bit Python installation: https://aka.ms/vs/16/release/VC_redist.x86.exe
 
 To check which Python version you are using, you can look at the first line of output when starting a Python shell. The version information should contain ``[MSC v.xxxx 64 bit (AMD64)]`` in a 64-bit installation, or ``[MSC v.xxxx 32 bit (Intel)]`` in a 32-bit installation.
-

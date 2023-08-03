@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # Parselmouth documentation build configuration file, created by
 # sphinx-quickstart on Tue Sep 12 00:08:01 2017.
@@ -292,5 +291,3 @@ epub_copyright = copyright
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
-
-

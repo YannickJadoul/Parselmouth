@@ -9,4 +9,3 @@ Guide to update the Praat version of the git subtree in `praat/`:
 - Compile and run tests (with `--run-praat-tests`) and hope nothing broke.
 - Commit, push, and hope nothing breaks in CI.
 - Update the Praat version in the docs and README (Praat citations).
-

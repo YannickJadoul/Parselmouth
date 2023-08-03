@@ -40,7 +40,7 @@ def pytest_collection_modifyitems(config, items):
 class Resources:
 	def __init__(self, base_path):
 		self.base_path = base_path
-	
+
 	def __getitem__(self, file_name):
 		return os.path.join(self.base_path, "data", file_name)
 

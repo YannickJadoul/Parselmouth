@@ -168,7 +168,7 @@ def test_run_with_parameters(sound_path):
 		real timeStep 0.0
 		boolean subtractMean "yes"
 	endform
-	
+
 	Read from file: "{}"
 	To Intensity: minPitch, timeStep, subtractMean
 	selectObject: 1

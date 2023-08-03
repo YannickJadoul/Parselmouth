@@ -29,7 +29,7 @@ except ImportError:
 
 
 def find_version(*file_paths):
-	with io.open(os.path.join(os.path.dirname(__file__), "src", "version.h"), encoding='utf8') as f:
+	with open(os.path.join(os.path.dirname(__file__), "src", "version.h"), encoding='utf8') as f:
 		version_file = f.read()
 	version_match = re.search(r"^#define PARSELMOUTH_VERSION ([0-9a-z.]+)$", version_file, re.M)
 	if version_match:

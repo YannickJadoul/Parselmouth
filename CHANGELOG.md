@@ -30,7 +30,7 @@ _Nothing yet_
 ### Fixed
 - Fixed a memory leak in `PraatEnvironment::retrieveSelectedObjects` (see #33).
 - Changed default value of the `very_accurate` parameter of `Sound.to_pitch_ac` and `Sound.to_pitch_cc` to `False`, matching Praat's default.
-- Added a `Sound` copy constructor from another `Sound` object, making sure `sampling_frequency` also gets copied. 
+- Added a `Sound` copy constructor from another `Sound` object, making sure `sampling_frequency` also gets copied.
 ### Changed
 - Updated Praat to version 6.1.38.
 - Updated pybind11 to version v2.6.2.

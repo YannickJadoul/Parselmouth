@@ -77,4 +77,3 @@ psychopy.prefs.saveUserPrefs()
 
 
 print("Done! Restart PsychoPy to use Parselmouth.")
-

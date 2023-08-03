@@ -136,7 +136,7 @@ Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Ne
 * Parselmouth is released under the GNU General Public License, version 3 or later. See [the `LICENSE` file](LICENSE) for details.
 
   A [manuscript introducing Parselmouth](https://ai.vub.ac.be/~yajadoul/jadoul_introducing-parselmouth_a-python-interface-to-praat.pdf) (and [supplementary material](https://ai.vub.ac.be/~yajadoul/jadoul_introducing-parselmouth_a-python-interface-to-praat_supplementary-material.zip)) has been [published in the Journal of Phonetics](https://www.sciencedirect.com/science/article/abs/pii/S0095447017301389). Scientific research using Parselmouth's functionality can [*cite Parselmouth*](https://parselmouth.readthedocs.io/en/stable/#citing-parselmouth) as follows:
-  
+
   > Jadoul, Y., Thompson, B., & de Boer, B. (2018). Introducing Parselmouth: A Python interface to Praat. *Journal of Phonetics*, *71*, 1-15. https://doi.org/10.1016/j.wocn.2018.07.001
 
 * [Praat](https://github.com/praat/praat) is released under [the GNU General Public License, version 2 or later](praat/main/GNU_General_Public_License.txt). Small changes to this code base, made in the context of Parselmouth, can be found within the `git` history.
