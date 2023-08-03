@@ -50,6 +50,7 @@ dynamic = ["version"]
 [tool.check-manifest]
 ignore = [
     ".clang-format",
+    ".pre-commit-config.yaml",
     ".readthedocs.yml",
     "binder",
     "binder/*"
