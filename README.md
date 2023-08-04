@@ -4,6 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/praat-parselmouth.svg)](https://pypi.org/project/praat-parselmouth/)
 [![Gitter chat](https://img.shields.io/gitter/room/PraatParselmouth/Lobby.svg?logo=gitter&logoColor=fff&colorB=51bb9b)](https://gitter.im/PraatParselmouth/Lobby)
 [![GitHub Actions status](https://img.shields.io/github/actions/workflow/status/YannickJadoul/Parselmouth/ci.yml?branch=master&logo=github)](https://github.com/YannickJadoul/Parselmouth/actions?query=workflow:CI+branch:master)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/YannickJadoul/Parselmouth/master.svg)](https://results.pre-commit.ci/latest/github/YannickJadoul/Parselmouth/master)
 [![ReadTheDocs status](https://img.shields.io/readthedocs/parselmouth.svg?logo=read-the-docs&logoColor=fff)](https://parselmouth.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/pypi/l/praat-parselmouth.svg)](https://github.com/YannickJadoul/Parselmouth/blob/master/LICENSE)
 [![Launch Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=lab%2Ftree%2Fdocs%2Fexamples)
@@ -15,8 +16,6 @@ Though other attempts have been made at porting functionality from Praat to Pyth
 Drop by our [Gitter chat room](https://gitter.im/PraatParselmouth/Lobby) or post a message to our [Google discussion group](https://groups.google.com/d/forum/parselmouth) if you have any question, remarks, or requests!
 
 *Try out* Parselmouth online, in interactive Jupyter notebooks on [Binder](https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/master?urlpath=lab%2Ftree%2Fdocs%2Fexamples).
-
-**Warning**: Parselmouth 0.4.0 is the *last version* supporting Python 2. Python 2 has reached End Of Life on January 1, 2020, and is officially not supported anymore: see https://python3statement.org/. Please [move to Python 3](https://docs.python.org/3/howto/pyporting.html), to be able to keep using new Parselmouth functionality.
 
 ## Installation
 Parselmouth can be installed like any other Python library, using (a recent version of) the Python package manager `pip`, on Linux, macOS, and Windows:
