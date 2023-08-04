@@ -80,7 +80,7 @@ jobs:
             release: true
             name-extra: ' (Release)'
           - runs-on: macos-latest
-            python: 'pypy-3.9'
+            python: 'pypy-3.10-nightly'
             arch: x64
 
           - runs-on: windows-latest
