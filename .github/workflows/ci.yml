@@ -212,6 +212,11 @@ jobs:
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.13
 
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-ubuntu-latest-x64
+
       - name: Install requirements
         run: |
           pip install -r docs/requirements.txt
@@ -220,7 +225,7 @@ jobs:
       - name: Configure
         shell: bash
         run: |
-          cmake -S . -B build -DPython_EXECUTABLE="$(which python)"
+          cmake -S . -B build -DPython_EXECUTABLE="$(which python)" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build
         run: |
