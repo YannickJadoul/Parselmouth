@@ -1,5 +1,5 @@
 Sphinx>=3
-sphinx_rtd_theme
+sphinx_rtd_theme>=1
 
 GitPython
 PyGithub
