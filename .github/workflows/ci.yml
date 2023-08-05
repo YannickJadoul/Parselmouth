@@ -130,7 +130,7 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ github.job }}-${{ matrix.runs-on }}-${{ matrix.arch }}-${{ matrix.release }}
+          key: ${{ github.job }}-${{ matrix.runs-on }}-${{ matrix.arch }}-${{ matrix.release }}-${{ matrix.gcc }}-${{ matrix.clang }}
 
       - name: Install OpenBLAS on macOS for NumPy
         if: runner.os == 'macOS' && startsWith(matrix.python, 'pypy')
