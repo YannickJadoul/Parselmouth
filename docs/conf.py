@@ -43,7 +43,6 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-sys.path.insert(1, os.path.abspath(os.path.dirname(__file__)))
 extensions = ['sphinx.ext.napoleon',
               'sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
@@ -51,6 +50,7 @@ extensions = ['sphinx.ext.napoleon',
               'sphinx.ext.intersphinx',
               'sphinx.ext.todo',
               'sphinx.ext.coverage',
+              'sphinx_copybutton',
               'nbsphinx',
               'pybind11_docstrings',
               'praat_manual']
@@ -169,6 +169,8 @@ nbsphinx_prolog = """
 .. |binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/{{{{ docname }}}}
 """.format(branch_or_tag=branch_or_tag)
+
+copybutton_selector = "div:not(.output_area) > div.highlight > pre"
 
 
 def setup(app):
