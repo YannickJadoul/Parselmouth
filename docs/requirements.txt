@@ -1,6 +1,6 @@
 Sphinx>=3
-sphinx_copybutton
-sphinx_rtd_theme>=1
+sphinx-book-theme
+sphinx-copybutton
 
 GitPython
 PyGithub

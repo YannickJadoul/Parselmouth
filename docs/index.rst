@@ -1,4 +1,10 @@
-.. image:: images/logo-full.png
+.. only:: html
+
+    .. image:: images/logo-full.png
+        :class: only-light
+
+    .. image:: images/logo-full-dark.png
+        :class: only-dark
 
 Parselmouth -- Praat in Python, the Pythonic way
 ================================================
