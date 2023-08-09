@@ -125,7 +125,7 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.13
+        uses: jwlawson/actions-setup-cmake@v1.14
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -210,7 +210,7 @@ jobs:
           python-version: '3.11'
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.13
+        uses: jwlawson/actions-setup-cmake@v1.14
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
