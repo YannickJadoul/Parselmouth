@@ -17,6 +17,8 @@
  * along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
  */
 
+#include "Sound_docstrings.h"
+
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
 
@@ -177,7 +179,7 @@ PRAAT_ENUM_BINDING(ToHarmonicityMethod) {
 	make_implicitly_convertible_from_string(*this);
 }
 
-PRAAT_CLASS_BINDING(Sound) {
+PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 	addTimeFrameSampledMixin(*this);
 
 	NESTED_BINDINGS(ToPitchMethod,
@@ -213,7 +215,8 @@ PRAAT_CLASS_BINDING(Sound) {
 		    auto file = pathToMelderFile(filePath);
 		    return Sound_readFromSoundFile(&file);
 	    }),
-	    "file_path"_a);
+	    "file_path"_a,
+	    SOUND_INIT_DOCSTRING);
 
 	// TODO Constructor from few special file formats that are not detectable by header
 	// TODO Constructor from file or io.IOBase?
@@ -281,7 +284,8 @@ PRAAT_CLASS_BINDING(Sound) {
 				    break;
 		    }
 	    },
-	    "file_path"_a, "format"_a);
+	    "file_path"_a, "format"_a,
+	    SOUND_SAVE_DOCSTRING);
 	// TODO Determine file format based on extension, and make format optional
 	// TODO Coordinate this save function with the (future) save in Data
 
