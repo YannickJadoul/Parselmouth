@@ -25,13 +25,13 @@ Python distributions
 --------------------
 
 Anaconda
-    If you use the Anaconda distribution of Python, you can use the same ``pip`` command in a terminal of the appropriate Anaconda environment, either activated through the `Anaconda Navigator <https://docs.anaconda.com/free/navigator/tutorials/manage-environments/#using-an-environment>`_ or `conda tool <https://conda.io/projects/continuumio-conda/en/latest/user-guide/tasks/manage-environments.html#activating-an-environment>`_.
+    If you use the Anaconda distribution of Python, you can use the same ``pip`` command in a terminal of the appropriate Anaconda environment, either activated through the `Anaconda Navigator <https://docs.continuum.io/free/navigator/tutorials/manage-environments/#using-an-environment>`_ or `conda tool <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#activating-an-environment>`_.
 
 Homebrew & MacPorts
-    We currently do not have Homebrew or MacPorts packages to install Parselmouth. As far as we know however, Parselmouth can just be installed with the accompanying ``pip`` of these distributions.
+    We currently do not have Homebrew or MacPorts packages to install Parselmouth. Normally, Parselmouth can just be installed with the accompanying ``pip`` of these distributions.
 
 PyPy
-    In principle, recent versions of PyPy are supported by the `pybind11 project <https://github.com/pybind/pybind11>`_ and should thus also be supported by Parselmouth. However, we currently have not figured out how to provide precompiled packages, so you will have to still compile the wheel yourself (or contribute an automated way of doing this to the project!).
+    Binary wheels for recent versions of `PyPy <https://www.pypy.org/>` are available on the Python Package Index (PyPI), and can be installed with ``pip``.
 
 Other
     For other distributions of Python, we are expecting that our package is compatible with the Python versions that are out there and that ``pip`` can handle the installation. If you are using yet another Python distribution, we are definitely interested in hearing about it, so that we can add it to this list!
@@ -135,4 +135,3 @@ The "Microsoft Visual C++ Redistributable for Visual Studio 2019" installer can 
 - For a 32-bit Python installation: https://aka.ms/vs/16/release/VC_redist.x86.exe
 
 To check which Python version you are using, you can look at the first line of output when starting a Python shell. The version information should contain ``[MSC v.xxxx 64 bit (AMD64)]`` in a 64-bit installation, or ``[MSC v.xxxx 32 bit (Intel)]`` in a 32-bit installation.
-
