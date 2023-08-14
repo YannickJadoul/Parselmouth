@@ -61,7 +61,7 @@ following scenario in the Praat user interface or scripting language:
    this function is independent from the current call.
 
 The use of `call` is demonstrated in the `Pitch manipulation and Praat
-commands <examples/pitch_manipulation.ipynb>`_ example.
+commands <../examples/pitch_manipulation.ipynb>`_ example.
 
 Parameters
 ----------
