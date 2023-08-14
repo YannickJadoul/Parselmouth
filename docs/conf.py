@@ -146,16 +146,13 @@ nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
                   ('py:obj', 'List')]
 
 
-if on_rtd:
-    branch_or_tag = branch or 'v{}'.format(release)
-else:
-    rev_parse_name = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('ascii').strip()
-    branch_or_tag = rev_parse_name if rev_parse_name != 'HEAD' else 'v{}'.format(release)
+if not on_rtd:
+    branch = str(git.Repo(search_parent_directories=True).head.ref)
 
 rst_epilog = """
 .. |binder_badge_examples| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/docs/examples
-""".format(branch_or_tag=branch_or_tag)
+""".format(branch_or_tag=branch)
 
 nbsphinx_prolog = """
 {{% set docname = 'docs/' + env.doc2path(env.docname, base=False) %}}
@@ -168,7 +165,7 @@ nbsphinx_prolog = """
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/{{{{ docname }}}}
-""".format(branch_or_tag=branch_or_tag)
+""".format(branch_or_tag=branch)
 
 copybutton_selector = "div:not(.output_area) > div.highlight > pre"
 
@@ -195,7 +192,13 @@ html_theme_options = {
     "logo": {
         "image_light": "images/logo.png",
         "image_dark": "images/logo-dark.png",
-    }
+    },
+    "path_to_docs": "docs/",
+    "repository_url": "https://github.com/YannickJadoul/Parselmouth",
+    "repository_branch": branch,
+    "use_repository_button": True,
+    "use_source_button": True,
+    "show_toc_level": 2,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
