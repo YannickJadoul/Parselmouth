@@ -25,7 +25,7 @@ Drop by our `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_ or po
 
 .. toctree::
     :maxdepth: 2
-    :caption: Getting Started
+    :caption: Contents
 
     installation
     examples
