@@ -43,7 +43,6 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-sys.path.insert(1, os.path.abspath(os.path.dirname(__file__)))
 extensions = ['sphinx.ext.napoleon',
               'sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
@@ -51,6 +50,7 @@ extensions = ['sphinx.ext.napoleon',
               'sphinx.ext.intersphinx',
               'sphinx.ext.todo',
               'sphinx.ext.coverage',
+              'sphinx_copybutton',
               'nbsphinx',
               'pybind11_docstrings',
               'praat_manual']
@@ -146,16 +146,13 @@ nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
                   ('py:obj', 'List')]
 
 
-if on_rtd:
-    branch_or_tag = branch or 'v{}'.format(release)
-else:
-    rev_parse_name = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('ascii').strip()
-    branch_or_tag = rev_parse_name if rev_parse_name != 'HEAD' else 'v{}'.format(release)
+if not on_rtd:
+    branch = str(git.Repo(search_parent_directories=True).head.ref)
 
 rst_epilog = """
 .. |binder_badge_examples| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/docs/examples
-""".format(branch_or_tag=branch_or_tag)
+""".format(branch_or_tag=branch)
 
 nbsphinx_prolog = """
 {{% set docname = 'docs/' + env.doc2path(env.docname, base=False) %}}
@@ -168,7 +165,9 @@ nbsphinx_prolog = """
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/{{{{ docname }}}}
-""".format(branch_or_tag=branch_or_tag)
+""".format(branch_or_tag=branch)
+
+copybutton_selector = "div:not(.output_area) > div.highlight > pre"
 
 
 def setup(app):
@@ -180,7 +179,7 @@ def setup(app):
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'default' if on_rtd else 'sphinx_rtd_theme'
+html_theme = 'sphinx_book_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -189,6 +188,18 @@ html_theme = 'default' if on_rtd else 'sphinx_rtd_theme'
 # html_theme_options = {}
 
 html_logo = "images/logo.png"
+html_theme_options = {
+    "logo": {
+        "image_light": "images/logo.png",
+        "image_dark": "images/logo-dark.png",
+    },
+    "path_to_docs": "docs/",
+    "repository_url": "https://github.com/YannickJadoul/Parselmouth",
+    "repository_branch": branch,
+    "use_repository_button": True,
+    "use_source_button": True,
+    "show_toc_level": 2,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

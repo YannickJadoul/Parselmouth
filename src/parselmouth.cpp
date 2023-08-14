@@ -190,7 +190,8 @@ PYBIND11_MODULE(parselmouth, m) {
 	m.attr("PRAAT_VERSION") = py::str(XSTR(PRAAT_VERSION_STR));
 	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
 
-	m.doc() = attr_doc(m, "VERSION", "This version of Parselmouth.") +
+	m.doc() = "Main module with a Python interface to Praat.\n\n" +
+	          attr_doc(m, "VERSION", "This version of Parselmouth.") +
 	          attr_doc(m, "PRAAT_VERSION", "The Praat version on which this version of Parselmouth is based.") +
 	          attr_doc(m, "PRAAT_VERSION_DATE", "The release date of the Praat version on which this version of\n    Parselmouth is based.");
 

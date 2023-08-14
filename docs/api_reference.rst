@@ -1,17 +1,12 @@
 API Reference
 =============
 
-.. automodule:: parselmouth
-    :members:
-    :special-members:
-    :undoc-members:
-    :show-inheritance:
-    :exclude-members: __weakref__, __doc__, __module__, __dict__, __members__, __getstate__, __setstate__
+Parselmouth consists of two main modules, `parselmouth` and `parselmouth.praat`, though both modules will be imported on importing `parselmouth`.
 
+.. autosummary::
+    :toctree: api
+    :template: autosummary/module.rst
+    :recursive:
 
-.. automodule:: parselmouth.praat
-    :members:
-    :special-members:
-    :undoc-members:
-    :show-inheritance:
-    :exclude-members: __weakref__, __doc__, __module__, __dict__, __members__, __getstate__, __setstate__
+    parselmouth
+    parselmouth.praat
