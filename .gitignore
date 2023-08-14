@@ -4,6 +4,7 @@
 
 # Build folder of Sphinx
 /docs/_build
+/docs/api
 
 # Python and pytest caches
 *.pyc
