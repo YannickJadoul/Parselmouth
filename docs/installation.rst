@@ -31,7 +31,7 @@ Homebrew & MacPorts
     We currently do not have Homebrew or MacPorts packages to install Parselmouth. Normally, Parselmouth can just be installed with the accompanying ``pip`` of these distributions.
 
 PyPy
-    Binary wheels for recent versions of `PyPy <https://www.pypy.org/>` are available on the Python Package Index (PyPI), and can be installed with ``pip``.
+    Binary wheels for recent versions of `PyPy <https://www.pypy.org/>`_ are available on the Python Package Index (PyPI), and can be installed with ``pip``.
 
 Other
     For other distributions of Python, we are expecting that our package is compatible with the Python versions that are out there and that ``pip`` can handle the installation. If you are using yet another Python distribution, we are definitely interested in hearing about it, so that we can add it to this list!
