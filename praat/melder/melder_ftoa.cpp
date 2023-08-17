@@ -160,11 +160,11 @@ const char * Melder8_double (double value) {
 		ibuffer = 0;
 	if (isundef (value))
 		return "--undefined--";
-	snprintf (buffers8 [ibuffer],MAXIMUM_NUMERIC_STRING_LENGTH+1, "%.15g", value);
+	fmt_snprintf (buffers8 [ibuffer],MAXIMUM_NUMERIC_STRING_LENGTH+1, "%.15g", value);
 	if (strtod (buffers8 [ibuffer], nullptr) != value) {
-		snprintf (buffers8 [ibuffer],MAXIMUM_NUMERIC_STRING_LENGTH+1, "%.16g", value);
+		fmt_snprintf (buffers8 [ibuffer],MAXIMUM_NUMERIC_STRING_LENGTH+1, "%.16g", value);
 		if (strtod (buffers8 [ibuffer], nullptr) != value)
-			snprintf (buffers8 [ibuffer],MAXIMUM_NUMERIC_STRING_LENGTH+1, "%.17g", value);
+			fmt_snprintf (buffers8 [ibuffer],MAXIMUM_NUMERIC_STRING_LENGTH+1, "%.17g", value);
 	}
 	return buffers8 [ibuffer];
 }
