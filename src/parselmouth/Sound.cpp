@@ -48,11 +48,12 @@ namespace parselmouth {
 
 namespace {
 
-template <typename T, typename Container>
-OrderedOf<T> referencesToOrderedOf(const Container &container) { // TODO type_caster?
-	OrderedOf<T> orderedOf;
-	std::for_each(begin(container), end(container), [&orderedOf](T &item) { orderedOf.addItem_ref(&item); });
-	return orderedOf;
+template <typename PraatCollection, typename Container>
+PraatCollection referencesToPraatCollection(const Container &container) { // TODO type_caster?
+	PraatCollection collection;
+	collection._grow(size(container));
+	std::for_each(begin(container), end(container), [&collection](auto &item) { collection.addItem_ref(&item.get()); });
+	return collection;
 }
 
 } // namespace
@@ -565,15 +566,15 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 
 	def_static("combine_to_stereo",
 	           [](const std::vector<std::reference_wrapper<structSound>> &sounds) {
-		           auto ordered = referencesToOrderedOf<structSound>(sounds);
+		           auto ordered = referencesToPraatCollection<OrderedOf<structSound>>(sounds);
 		           return Sounds_combineToStereo(&ordered);
 	           },
 	           "sounds"_a);
 
 	def_static("concatenate",
 	           [](const std::vector<std::reference_wrapper<structSound>> &sounds, NonNegative<double> overlap) {
-		           auto ordered = referencesToOrderedOf<structSound>(sounds);
-		           return Sounds_concatenate(ordered, overlap);
+		           auto list = referencesToPraatCollection<structSoundList>(sounds);
+		           return Sounds_concatenate(&list, overlap);
 	           },
 	           "sounds"_a, "overlap"_a = 0.0);
 	// TODO concatenate recoverably (dependends on having TextGrid)

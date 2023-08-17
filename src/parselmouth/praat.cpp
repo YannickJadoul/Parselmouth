@@ -103,7 +103,7 @@ py::object autoSTRVECToArray(autoSTRVEC &&vector) {
 
 class PraatEnvironment {
 public:
-	PraatEnvironment() : m_objects(theCurrentPraatObjects), m_interpreter(Interpreter_create(nullptr, nullptr)), m_lastId(0) {
+	PraatEnvironment() : m_objects(theCurrentPraatObjects), m_interpreter(Interpreter_create()), m_lastId(0) {
 		assert(m_objects->n == 0);
 		m_objects->uniqueId = 0;
 	}
@@ -371,7 +371,7 @@ auto runPraatScript(const std::vector<std::reference_wrapper<structData>> &objec
 	try {
 		Interpreter_readParameters(environment.interpreter(), script);
 		Interpreter_getArgumentsFromArgs(environment.interpreter(), static_cast<int>(praatArgs.size() - 1), praatArgs.data());
-		Interpreter_run(environment.interpreter(), script);
+		Interpreter_run(environment.interpreter(), script, false);  // TODO: Is reuseVariables useful for us?
 	}
 	catch (MelderError) {
 		Melder_throw(U"Script not completed.");

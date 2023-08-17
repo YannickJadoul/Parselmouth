@@ -27,7 +27,7 @@
 Thing_implement (ManPage, Thing, 0);
 
 static autoMelderString *manualInfoProc_string;
-static void manualInfoProc (conststring32 infoText) {
+static void manualInfoProc (conststring32 infoText, size_t) {
 	MelderString_copy (manualInfoProc_string, infoText);
 			// FIXME: this overrides a growing info buffer, which is an O(N^2) algorithm if in a loop
 }
