@@ -1,6 +1,6 @@
 /* praat_David_init.cpp
  *
- * Copyright (C) 1993-2022 David Weenink, 2015 Paul Boersma
+ * Copyright (C) 1993-2023 David Weenink, 2015 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
  djmw 20040704 BarkFilter... in Thing_recognizeClassesByName.
  djmw 20041020 MelderFile -> structMelderFile.
  djmw 20041105 TableOfReal_createFromVanNieropData_25females.
- djmw 20041108 FormantFilter_drawSpectrum bug correted (wrong field name).
+ djmw 20041108 FormantFilter_drawSpectrum bug corrected (wrong field name).
  djmw 20050308 Find path (slopes), Find path (band)... and others.
  djmw 20050404 TableOfReal_appendColumns -> TableOfReal_appendColumnsMany
  djmw 20050406 Procrustus -> Prorustes
@@ -162,11 +162,11 @@ void praat_EditDistanceTable_as_TableOfReal_init (ClassInfo klas);
 	LABEL (U"Boundary conditions") \
 	BOOLEAN (matchStart, U"Match begin positions", false) \
 	BOOLEAN (matchEnd, U"Match end positions", false) \
-	RADIO (slopeConstraint, U"Slope constraint", 1) \
-		RADIOBUTTON (U"no restriction") \
-		RADIOBUTTON (U"1/3 < slope < 3") \
-		RADIOBUTTON (U"1/2 < slope < 2") \
-		RADIOBUTTON (U"2/3 < slope < 3/2")
+	CHOICE (slopeConstraint, U"Slope constraint", 1) \
+		OPTION (U"no restriction") \
+		OPTION (U"1/3 < slope < 3") \
+		OPTION (U"1/2 < slope < 2") \
+		OPTION (U"2/3 < slope < 3/2")
 
 #undef INCLUDE_DTW_SLOPES
 
@@ -255,10 +255,10 @@ DO
 FORM (GRAPHICS_EACH__BarkFilter_drawSekeyHansonFilterFunctions, U"BarkFilter: Draw filter functions", U"FilterBank: Draw filter functions...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
-	RADIO (frequencyScale, U"Frequency scale", 1)
-		RADIOBUTTON (U"Hertz")
-		RADIOBUTTON (U"Bark")
-		RADIOBUTTON (U"mel")
+	CHOICE (frequencyScale, U"Frequency scale", 1)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
+		OPTION (U"mel")
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
 	BOOLEAN (amplitudeScale_dB, U"Amplitude scale in dB", true)
@@ -277,9 +277,9 @@ DO
 FORM (GRAPHICS_EACH__BarkSpectrogram_drawSekeyHansonAuditoryFilters, U"BarkSpectrogram: Draw Sekey-Hanson auditory filters", U"BarkSpectrogram: Draw Sekey-Hanson auditory filters...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
-	RADIO (frequencyScale, U"Frequency scale", 2)
-		RADIOBUTTON (U"Hertz")
-		RADIOBUTTON (U"Bark")
+	CHOICE (frequencyScale, U"Frequency scale", 2)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
 	BOOLEAN (amplitudeScale_dB, U"Amplitude scale in dB", true)
@@ -785,9 +785,9 @@ FORM (CONVERT_EACH_TO_ONE__Confusion_condense, U"Confusion: Condense", U"Confusi
 	SENTENCE (search_string, U"Search", U"^(u|i)$")
 	SENTENCE (replace_string, U"Replace", U"high")
 	INTEGER (replaceLimit, U"Replace limit", U"0 (= unlimited)")
-	RADIOx (matchType, U"Search and replace are", 2, 0)
-		RADIOBUTTON (U"literals")
-		RADIOBUTTON (U"Regular Expressions")
+	CHOICEx (matchType, U"Search and replace are", 2, 0)
+		OPTION (U"literals")
+		OPTION (U"Regular Expressions")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Confusion)
@@ -830,11 +830,11 @@ DO
 
 FORM (GRAPHICS_EACH__Confusion_drawAsNumbers, U"Confusion: Draw as numbers", nullptr) {
 	BOOLEAN (drawMarginals, U"Draw marginals", true)
-	RADIO (format, U"Format", 3)
-		RADIOBUTTON (U"decimal")
-		RADIOBUTTON (U"exponential")
-		RADIOBUTTON (U"free")
-		RADIOBUTTON (U"rational")
+	CHOICE (format, U"Format", 3)
+		OPTION (U"decimal")
+		OPTION (U"exponential")
+		OPTION (U"free")
+		OPTION (U"rational")
 	NATURAL (precision, U"Precision", U"5")
 	OK
 DO
@@ -931,9 +931,9 @@ DIRECT (HELP__Correlation_help) {
 FORM (CONVERT_EACH_TO_ONE__Correlation_confidenceIntervals, U"Correlation: Confidence intervals...", U"Correlation: Confidence intervals...") {
 	POSITIVE (confidenceLevel, U"Confidence level (0-1)", U"0.95")
 	INTEGER (numberOfTests, U"Number of tests (Bonferroni correction)", U"0")
-	RADIO (approximation, U"Approximation", 1)
-		RADIOBUTTON (U"Ruben")
-		RADIOBUTTON (U"Fisher")
+	CHOICE (approximation, U"Approximation", 1)
+		OPTION (U"Ruben")
+		OPTION (U"Fisher")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Correlation)
@@ -1604,11 +1604,11 @@ DO
 /********************** DTW *******************************************/
 
 FORM (MODIFY_DTW_Polygon_findPathInside, U"DTW & Polygon: Find path inside", nullptr) {
-    RADIO (slopeConstraint, U"Slope constraint", 1)
-		RADIOBUTTON (U"no restriction")
-		RADIOBUTTON (U"1/3 < slope < 3")
-		RADIOBUTTON (U"1/2 < slope < 2")
-		RADIOBUTTON (U"2/3 < slope < 3/2")
+    CHOICE (slopeConstraint, U"Slope constraint", 1)
+		OPTION (U"no restriction")
+		OPTION (U"1/3 < slope < 3")
+		OPTION (U"1/2 < slope < 2")
+		OPTION (U"2/3 < slope < 3/2")
     OK
 DO
 	MODIFY_FIRST_OF_ONE_AND_ONE (DTW, Polygon)
@@ -1617,11 +1617,11 @@ DO
 }
 
 FORM (CONVERT_ONE_AND_ONE_TO_ONE__DTW_Polygon_to_Matrix_cumulativeDistances, U"DTW & Polygon: To Matrix (cum. distances)", nullptr) {
-    RADIO (slopeConstraint, U"Slope constraint", 1)
-		RADIOBUTTON (U"no restriction")
-		RADIOBUTTON (U"1/3 < slope < 3")
-		RADIOBUTTON (U"1/2 < slope < 2")
-		RADIOBUTTON (U"2/3 < slope < 3/2")
+    CHOICE (slopeConstraint, U"Slope constraint", 1)
+		OPTION (U"no restriction")
+		OPTION (U"1/3 < slope < 3")
+		OPTION (U"1/2 < slope < 2")
+		OPTION (U"2/3 < slope < 3/2")
     OK
 DO
     CONVERT_ONE_AND_ONE_TO_ONE (DTW, Polygon)
@@ -1952,11 +1952,11 @@ DO
 
 FORM (MODIFY_DTW_findPath_bandAndSlope, U"DTW: find path (band & slope)", nullptr) {
     REAL (sakoeChibaBand, U"Sakoe-Chiba band (s)", U"0.05")
-    RADIO (slopeConstraint, U"Slope constraint", 1)
-		RADIOBUTTON (U"no restriction")
-		RADIOBUTTON (U"1/3 < slope < 3")
-		RADIOBUTTON (U"1/2 < slope < 2")
-		RADIOBUTTON (U"2/3 < slope < 3/2")
+    CHOICE (slopeConstraint, U"Slope constraint", 1)
+		OPTION (U"no restriction")
+		OPTION (U"1/3 < slope < 3")
+		OPTION (U"1/2 < slope < 2")
+		OPTION (U"2/3 < slope < 3/2")
     OK
 DO
     MODIFY_EACH (DTW)
@@ -1966,11 +1966,11 @@ DO
 
 FORM (CONVERT_EACH_TO_ONE__DTW_to_Matrix_cumulativeDistances, U"DTW: To Matrix", nullptr) {
     REAL (sakoeChibaBand, U"Sakoe-Chiba band (s)", U"0.05")
-    RADIO (slopeConstraint, U"Slope constraint", 1)
-		RADIOBUTTON (U"no restriction")
-		RADIOBUTTON (U"1/3 < slope < 3")
-		RADIOBUTTON (U"1/2 < slope < 2")
-		RADIOBUTTON (U"2/3 < slope < 3/2")
+    CHOICE (slopeConstraint, U"Slope constraint", 1)
+		OPTION (U"no restriction")
+		OPTION (U"1/3 < slope < 3")
+		OPTION (U"1/2 < slope < 2")
+		OPTION (U"2/3 < slope < 3/2")
     OK
 DO
     CONVERT_EACH_TO_ONE (DTW)
@@ -1980,11 +1980,11 @@ DO
 
 FORM (CONVERT_EACH_TO_ONE__DTW_to_Polygon, U"DTW: To Polygon...", nullptr) {
     REAL (sakoeChibaBand, U"Sakoe-Chiba band (s)", U"0.1")
-    RADIO (slopeConstraint, U"Slope constraint", 1)
-		RADIOBUTTON (U"no restriction")
-		RADIOBUTTON (U"1/3 < slope < 3")
-		RADIOBUTTON (U"1/2 < slope < 2")
-		RADIOBUTTON (U"2/3 < slope < 3/2")
+    CHOICE (slopeConstraint, U"Slope constraint", 1)
+		OPTION (U"no restriction")
+		OPTION (U"1/3 < slope < 3")
+		OPTION (U"1/2 < slope < 2")
+		OPTION (U"2/3 < slope < 3/2")
     OK
 DO
     CONVERT_EACH_TO_ONE (DTW)
@@ -2053,11 +2053,11 @@ DO
 }
 
 FORM (GRAPHICS_EACH__EditDistanceTable_draw, U"EditDistanceTable_draw", nullptr) {
-	RADIO (format, U"Format", 3)
-		RADIOBUTTON (U"decimal")
-		RADIOBUTTON (U"exponential")
-		RADIOBUTTON (U"free")
-		RADIOBUTTON (U"rational")
+	CHOICE (format, U"Format", 3)
+		OPTION (U"decimal")
+		OPTION (U"exponential")
+		OPTION (U"free")
+		OPTION (U"rational")
 	NATURAL (precision, U"Precision", U"1")
 	REAL (angle, U"Rotate source labels by (degrees)", U"0.0")
 	OK
@@ -2124,11 +2124,11 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL__EditCostsTable_getCosts_others, U"EditCostsTable: Get cost (others)", nullptr) {
-	RADIO (costTypes, U"Others cost type", 1)
-		RADIOBUTTON (U"insertion")
-		RADIOBUTTON (U"deletion")
-		RADIOBUTTON (U"equality")
-		RADIOBUTTON (U"inequality")
+	CHOICE (costTypes, U"Others cost type", 1)
+		OPTION (U"insertion")
+		OPTION (U"deletion")
+		OPTION (U"equality")
+		OPTION (U"inequality")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (EditCostsTable)
@@ -2372,7 +2372,8 @@ DO
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_filtered")
 }
 
-FORM (CONVERT_EACH_TO_ONE__Electroglottogram_getClosedGlottisIntervals, U"Electroglottogram: To IntervalTier", U"") {
+FORM (CONVERT_EACH_TO_ONE__Electroglottogram_to_TextGrid_closedGlottis, U"Electroglottogram: To TextGrid (closed glottis)",
+	U"Electroglottogram: To TextGrid (closed glottis)...") {
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"500.0")
 	POSITIVE (closingThreshold, U"Closing threshold", U"0.30")
@@ -2382,7 +2383,7 @@ DO
 	Melder_require (closingThreshold < 1.0,
 		U"The closing threshold should be smaller than 1.");
 	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoIntervalTier result = Electroglottogram_getClosedGlottisIntervals (me, pitchFloor, pitchCeiling, 
+		autoTextGrid result = Electroglottogram_to_TextGrid_closedGlottis (me, pitchFloor, pitchCeiling, 
 			closingThreshold, peakThresholdFraction
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get())
@@ -2412,20 +2413,20 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Electroglottogram_derivative, U"Electroglottogram: Derivative", U"Electroglottogram: Derivative...") {
 	POSITIVE (lowPassFrequency, U"Low-pass frequency (Hz)", U"5000.0")
 	POSITIVE (smoothing, U"Smoothing (Hz)", U"100.0")
-	BOOLEAN (peak99, U"Scale absolute peak at 0.99", 1)
+	REAL (newAbsolutePeak, U"New absolute peak", U"0.0 (=do not scale)")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoSound result = Electroglottogram_derivative (me, lowPassFrequency, smoothing, peak99);
+		autoSound result = Sound_derivative (me, lowPassFrequency, smoothing, newAbsolutePeak);
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_derivative")
 }
 
 FORM (CONVERT_EACH_TO_ONE__Electroglottogram_firstCentralDifference, U"Electroglottogram: First central difference", U"Electroglottogram: First central difference...") {
-	BOOLEAN (peak99, U"Scale absolute peak at 0.99", 1)
+	REAL (scalePeak, U"New absolute peak", U"0.0 (=do not scale)")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoSound result = Electroglottogram_firstCentralDifference (me, peak99);
+		autoSound result = Electroglottogram_firstCentralDifference (me, scalePeak);
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_cdiff")
 }
 
@@ -2465,31 +2466,37 @@ DO
 	QUERY_ONE_FOR_STRING_END
 }
 
-FORM (QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndexFromItemIndex, U"StringsIndex: Get item index", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndexFromItemIndex, U"StringsIndex: Get class index from item index", nullptr) {
 	NATURAL (itemIndex, U"Item index", U"1")
 	OK
 DO
-	QUERY_ONE_FOR_INTEGER (Index)
+	QUERY_ONE_FOR_INTEGER (StringsIndex)
 		const integer result = Index_getClassIndexFromItemIndex (me, itemIndex);
 	QUERY_ONE_FOR_INTEGER_END (U" (class index)")
 }
 
-FORM (QUERY_ONE_FOR_INTEGER__Index_getIndex, U"Index: Get item index", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__Index_getIndex, U"StringsIndex: Get item index", nullptr) {
 	NATURAL (itemIndex, U"Item index", U"1")
 	OK
 DO
-	QUERY_ONE_FOR_INTEGER (Index)
+	QUERY_ONE_FOR_INTEGER (StringsIndex)
 		const integer result = Index_getClassIndexFromItemIndex (me, itemIndex);
 	QUERY_ONE_FOR_INTEGER_END (U" (class index)")
 }
 
-FORM (QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndex, U"StringsIndex: Get class index from calss label", nullptr) {
+FORM (QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndex, U"StringsIndex: Get class index from class label", nullptr) {
 	WORD (klasLabel, U"Class label", U"label")
 	OK
 DO
 	QUERY_ONE_FOR_INTEGER (StringsIndex)
 		const integer result = StringsIndex_getClassIndexFromClassLabel (me, klasLabel);
 	QUERY_ONE_FOR_INTEGER_END (U" (class index)")
+}
+
+DIRECT (QUERY_ONE_FOR_STRING_ARRAY__StringsIndex_listAllClasses) {
+	QUERY_ONE_FOR_STRING_ARRAY (StringsIndex)
+		autoSTRVEC result = StringsIndex_listAllClasses (me);
+	QUERY_ONE_FOR_STRING_ARRAY_END
 }
 
 FORM (CONVERT_EACH_TO_ONE__Index_extractPart, U"Index: Extract part", U"Index: Extract part...") {
@@ -2787,16 +2794,16 @@ DO
 }
 
 FORM (GRAPHICS_EACH__FilterBank_drawFrequencyScales, U"FilterBank: Draw frequency scales", U"FilterBank: Draw frequency scales...") {
-	RADIO (xFrequencyScale, U"Horizontal frequency scale", 1)
-		RADIOBUTTON (U"Hertz")
-		RADIOBUTTON (U"Bark")
-		RADIOBUTTON (U"mel")
+	CHOICE (xFrequencyScale, U"Horizontal frequency scale", 1)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
+		OPTION (U"mel")
 	REAL (xFromFrequency, U"left Horizontal frequency range", U"0.0")
 	REAL (xToFrequency, U"right Horizontal frequency range", U"0.0")
-	RADIO (yFrequencyScale, U"Vertical frequency scale", 1)
-		RADIOBUTTON (U"Hertz")
-		RADIOBUTTON (U"Bark")
-		RADIOBUTTON (U"mel")
+	CHOICE (yFrequencyScale, U"Vertical frequency scale", 1)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
+		OPTION (U"mel")
 	REAL (yFromFrequency, U"left Vertical frequency range", U"0.0")
 	REAL (yToFrequency, U"right Vertical frequency range", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true)
@@ -2896,10 +2903,10 @@ DO
 
 FORM (QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInHertz, U"FilterBank: Get frequency in Hertz", U"FilterBank: Get frequency in Hertz...") {
 	REAL (frequency, U"Frequency", U"10.0")
-	RADIO (frequencyUnit, U"Unit", 2)
-		RADIOBUTTON (U"Hertz")
-		RADIOBUTTON (U"Bark")
-		RADIOBUTTON (U"mel")
+	CHOICE (frequencyUnit, U"Unit", 2)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
+		OPTION (U"mel")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (FilterBank)
@@ -2909,10 +2916,10 @@ DO
 
 FORM (QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInBark, U"FilterBank: Get frequency in Bark", U"FilterBank: Get frequency in Bark...") {
 	REAL (frequency, U"Frequency", U"93.17")
-	RADIO (frequencyUnit, U"Unit", 1)
-		RADIOBUTTON (U"Hertz")
-		RADIOBUTTON (U"Bark")
-		RADIOBUTTON (U"mel")
+	CHOICE (frequencyUnit, U"Unit", 1)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
+		OPTION (U"mel")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (FilterBank)
@@ -2922,10 +2929,10 @@ DO
 
 FORM (QUERY_ONE_FOR_REAL__FilterBank_getFrequencyInMel, U"FilterBank: Get frequency in mel", U"FilterBank: Get frequency in mel...") {
 	REAL (frequency, U"Frequency", U"1000.0")
-	RADIO (frequencyUnit, U"Unit", 1)
-		RADIOBUTTON (U"Hertz")
-		RADIOBUTTON (U"Bark")
-		RADIOBUTTON (U"mel")
+	CHOICE (frequencyUnit, U"Unit", 1)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
+		OPTION (U"mel")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (FilterBank)
@@ -2967,9 +2974,9 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__FilterBanks_crossCorrelate, U"FilterBanks: Cross-correlate", nullptr) {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
@@ -2979,9 +2986,9 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__BandFilterSpectrograms_crossCorrelate, U"BandFilterSpectrograms: Cross-correlate", nullptr) {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
@@ -2991,9 +2998,9 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__FilterBanks_convolve, U"FilterBanks: Convolve", nullptr) {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
@@ -3003,9 +3010,9 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__BandFilterSpectrograms_convolve, U"BandFilterSpectrograms: Convolve", nullptr) {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
@@ -3036,10 +3043,10 @@ FORM (GRAPHICS_EACH__FormantFilter_drawFilterFunctions, U"FormantFilter: Draw fi
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
 	POSITIVE (bandwidth, U"Bandwidth (Hz)", U"100.0")
-	RADIO (frequencyScale, U"Frequency scale", 1)
-		RADIOBUTTON (U"Hertz")
-		RADIOBUTTON (U"Bark")
-		RADIOBUTTON (U"mel")
+	CHOICE (frequencyScale, U"Frequency scale", 1)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
+		OPTION (U"mel")
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
 	BOOLEAN (dBScale, U"Amplitude scale in dB", 1)
@@ -3327,9 +3334,9 @@ DIRECT (CREATE_ONE__KlattTable_createExample) {
 
 FORM (CONVERT_EACH_TO_ONE__KlattTable_to_Sound, U"KlattTable: To Sound", U"KlattTable: To Sound...") {
 	POSITIVE (samplingFrequency, U"Sampling frequency (Hz)", U"16000")
-	RADIO (synthesisModel, U"Synthesis model", 1)
-		RADIOBUTTON (U"cascade")
-		RADIOBUTTON (U"parallel")
+	CHOICE (synthesisModel, U"Synthesis model", 1)
+		OPTION (U"cascade")
+		OPTION (U"parallel")
 	NATURAL (numberOfFormants, U"Number of formants", U"5")
 	POSITIVE (frameDuration, U"Frame duration (s)", U"0.005")
 	REAL (flutter_percentage, U"Flutter percentage (%)", U"0.0")   // ppgb: foutgevoelig
@@ -3449,7 +3456,8 @@ DO
 		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factor_string);
 		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
 		autoTable means, meansDiff, meansDiffProbabilities;
-		autoTable anova = Table_getOneWayAnalysisOfVarianceF (me, dataColumn, factorColumn, &means, &meansDiff, & meansDiffProbabilities);
+		autoTable anova = Table_getOneWayAnalysisOfVarianceF (me, dataColumn, factorColumn, & means,
+			& meansDiff, & meansDiffProbabilities);
 		MelderInfo_open ();
 		MelderInfo_writeLine (U"One-way analysis of \"", dataColumn_string, U"\" by \"", factor_string, U"\".\n");
 		Table_printAsAnovaTable (anova.get());
@@ -3479,7 +3487,7 @@ DO
 		autoTable means, sizes;
 		autoTable anova = Table_getTwoWayAnalysisOfVarianceF (me, dataColumn, firstFactorColumn, secondFactorColumn, &means, &sizes);
 		MelderInfo_open ();
-			MelderInfo_writeLine (U"Two-way analysis of \"", dataColumn_string, U"\" by \"", firstFactor_string, U"\" and \"", secondFactor_string, U".\n");
+			MelderInfo_writeLine (U"Two-way analysis of \"", dataColumn_string, U"\" by \"", firstFactor_string, U"\" and \"", secondFactor_string, U"\".\n");
 			Table_printAsAnovaTable (anova.get());
 			MelderInfo_writeLine (U"\nMeans:\n");
 			Table_printAsMeansTable (means.get());
@@ -3518,7 +3526,7 @@ FORM (CONVERT_EACH_TO_ONE__Table_to_StringsIndex_column, U"Table: To StringsInde
 DO
 	CONVERT_EACH_TO_ONE (Table)
 		const integer icol = Table_getColumnIndexFromColumnLabel (me, columnLabel);
-		autoStringsIndex result = Table_to_StringsIndex_column (me, icol);
+		autoStringsIndex result = Table_to_StringsIndex_column (me, icol, kStrings_sorting::NUMBER_AWARE);
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_", columnLabel)
 }
 
@@ -3692,10 +3700,10 @@ DIRECT (COMPVEC_Matrix_listEigenvalues) {
 
 FORM (MODIFY_Matrix_scale, U"Matrix: Scale", nullptr) {
 	LABEL (U"self[row, col] := self[row, col] / `Scale factor'")
-	RADIO (scaleMethod, U"Scale factor", 1)
-		RADIOBUTTON (U"extremum in matrix")
-		RADIOBUTTON (U"extremum in each row")
-		RADIOBUTTON (U"extremum in each column")
+	CHOICE (scaleMethod, U"Scale factor", 1)
+		OPTION (U"extremum in matrix")
+		OPTION (U"extremum in each row")
+		OPTION (U"extremum in each column")
 	OK
 DO
 	MODIFY_EACH (Matrix)
@@ -4047,10 +4055,10 @@ DIRECT (HELP__MelSpectrogram_help) {
 FORM (GRAPHICS_EACH__MelFilter_drawFilterFunctions, U"MelFilter: Draw filter functions", U"FilterBank: Draw filter functions...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
-	RADIO (frequencyScale, U"Frequency scale", 1)
-	RADIOBUTTON (U"Hertz")
-	RADIOBUTTON (U"Bark")
-	RADIOBUTTON (U"mel")
+	CHOICE (frequencyScale, U"Frequency scale", 1)
+		OPTION (U"Hertz")
+		OPTION (U"Bark")
+		OPTION (U"mel")
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
 	BOOLEAN (dBScale, U"Amplitude scale in dB", false)
@@ -4069,9 +4077,9 @@ DO
 FORM (GRAPHICS_EACH__MelSpectrogram_drawTriangularFilterFunctions, U"MelSpectrogram: Draw triangulat filter functions", U"MelSpectrogram: Draw filter functions...") {
 	INTEGER (fromFilter, U"left Filter range", U"0")
 	INTEGER (toFilter, U"right Filter range", U"0")
-	RADIO (frequencyScale, U"Frequency scale", 1)
-	RADIOBUTTON (U"mel")
-	RADIOBUTTON (U"Hertz")
+	CHOICE (frequencyScale, U"Frequency scale", 1)
+		OPTION (U"mel")
+		OPTION (U"Hertz")
 	REAL (fromFrequency, U"left Frequency range", U"0.0")
 	REAL (toFrequency, U"right Frequency range", U"0.0")
 	BOOLEAN (dBScale, U"Amplitude scale in dB", false)
@@ -4241,9 +4249,9 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__MFCCs_crossCorrelate, U"MFCC & MFCC: Cross-correlate", nullptr) {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
@@ -4253,9 +4261,9 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__MFCCs_convolve, U"MFCC & MFCC: Convolve", nullptr) {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
@@ -4892,6 +4900,14 @@ DIRECT (COMBINE_ALL_TO_ONE__Permutations_multiply) {
 	COMBINE_ALL_TO_ONE_END (U"mul_", list.size);
 }
 
+FORM (CONVERT_TWO_TO_ONE__Permutation_permutePartByOther, U"Permutation: Permute part by other", U"Permutation: Permute part...") {
+	NATURAL (startPos, U"Start index", U"1")
+	OK
+DO
+	CONVERT_TWO_TO_ONE (Permutation)
+		autoPermutation result = Permutation_permutePartByOther (me, startPos, you);
+	CONVERT_TWO_TO_ONE_END (U"")
+}
 DIRECT (MODIFY_Permutations_next) {
 	MODIFY_EACH (Permutation)
 		Permutation_next_inplace (me);
@@ -5714,11 +5730,11 @@ FORM (CONVERT_TWO_TO_ONE__Sounds_to_DTW, U"Sounds: To DTW", nullptr) {
     POSITIVE (timeStep, U"Time step (s)", U"0.005")
     LABEL (U"")
     REAL (sakoeChibaBand, U"Sakoe-Chiba band (s)", U"0.1")
-    RADIO (slopeConstraint, U"Slope constraint", 1)
-		RADIOBUTTON (U"no restriction")
-		RADIOBUTTON (U"1/3 < slope < 3")
-		RADIOBUTTON (U"1/2 < slope < 2")
-		RADIOBUTTON (U"2/3 < slope < 3/2")
+    CHOICE (slopeConstraint, U"Slope constraint", 1)
+		OPTION (U"no restriction")
+		OPTION (U"1/3 < slope < 3")
+		OPTION (U"1/2 < slope < 2")
+		OPTION (U"2/3 < slope < 3/2")
     OK
 DO
     CONVERT_TWO_TO_ONE (Sound)
@@ -5745,24 +5761,24 @@ DO
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (CONVERT_EACH_TO_ONE__Sound_to_TextGrid_voiceActivity, U"Sound_to_TextGrid_voiceActivity", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Sound_to_TextGrid_speechActivity, U"Sound: To TextGrid (speech activity)", U"Sound: To TextGrid (speech activity)...") {
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
 	POSITIVE (longtermWindow, U"Long term window (s)", U"0.3")
 	POSITIVE (shorttermWindow, U"Short term window (s)", U"0.1")
 	POSITIVE (fmin, U"left Frequency range (Hz)", U"70.0")
 	POSITIVE (fmax,  U"right Frequency range (Hz)", U"6000.0")
 	REAL (flatnessThreshold, U"Flatness threshold", U"-10.0")
-	REAL (silenceThreshold_dB, U"Silence threshold (dB)", U"-35.0")
-	POSITIVE (minimumSilenceDuration, U"Minimum silent interval (s)", U"0.1")
-	POSITIVE (minimumSpeechDuration, U"Minimum speech interval (s)", U"0.1")
-	WORD (silenceLabel, U"Silent interval label", U"silent")
-	WORD (speechLabel, U"Sounding interval label", U"sounding")
+	REAL (nonspeechThreshold_dB, U"Non-speech threshold (dB)", U"-35.0")
+	POSITIVE (minimumNonspeechDuration, U"Min. non-speech interval (s)", U"0.1")
+	POSITIVE (minimumSpeechDuration, U"Min. speech interval (s)", U"0.1")
+	WORD (nonspeechLabel, U"Non-speech interval label", U"non-speech")
+	WORD (speechLabel, U"Speech interval label", U"speech")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
-		autoTextGrid result = Sound_to_TextGrid_detectVoiceActivity_lsfm (me, timeStep, longtermWindow, shorttermWindow,
-			fmin, fmax, flatnessThreshold, silenceThreshold_dB, minimumSilenceDuration, minimumSpeechDuration, 
-			silenceLabel, speechLabel
+		autoTextGrid result = Sound_to_TextGrid_speechActivity_lsfm (me, timeStep, longtermWindow, shorttermWindow,
+			fmin, fmax, flatnessThreshold, nonspeechThreshold_dB, minimumNonspeechDuration, minimumSpeechDuration, 
+			nonspeechLabel, speechLabel
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
@@ -6045,7 +6061,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Polygon, U"Sound: To Polygon", U"Sound: To P
 DO
 	CONVERT_EACH_TO_ONE (Sound)
 		Melder_require (channel > 0 && channel <= my ny,
-			U"The channel number should be bewteen 1 and ", my ny, U".");
+			U"The channel number should be between 1 and ", my ny, U".");
 		autoPolygon result = Sound_to_Polygon (me, channel, fromTime, toTime, ymin, ymax, connectionY);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
@@ -6089,6 +6105,17 @@ DO
 			smoothingBandwidth, noiseReduction_dB, noiseReductionMethod
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_denoised")
+}
+
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Sound_derivative, U"Sound: To Sound (derivative)", U"Sound: To Sound (derivative)...") {
+	POSITIVE (lowPassFrequency, U"Low-pass frequency (Hz)", U"5000.0")
+	POSITIVE (smoothing, U"Smoothing (Hz)", U"100.0")
+	REAL (newAbsolutePeak, U"New absolute peak", U"0 (=do not scale)")
+	OK
+DO
+	CONVERT_EACH_TO_ONE (Sound)
+		autoSound result = Sound_derivative (me, lowPassFrequency, smoothing, newAbsolutePeak);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_derivative")
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_removeNoise, U"Sound: Remove noise", U"Sound: Reduce noise...") {
@@ -6305,9 +6332,9 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Spectrum_compressFrequencyDomain, U"Spectrum: Compress frequency domain", nullptr) {
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"5000.0")
 	INTEGER (interpolationDepth, U"Interpolation depth", U"50")
-	RADIO (scale, U"Interpolation scale", 1)
-		RADIOBUTTON (U"linear")
-		RADIOBUTTON (U"logarithmic")
+	CHOICE (scale, U"Interpolation scale", 1)
+		OPTION (U"linear")
+		OPTION (U"logarithmic")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Spectrum)
@@ -6439,6 +6466,15 @@ DIRECT (QUERY_ONE_FOR_STRING__SpeechSynthesizer_getVoiceName) {
 DIRECT (QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemeSetName) {
 	QUERY_ONE_FOR_STRING (SpeechSynthesizer)
 		conststring32 result = my d_phonemeSet.get();
+	QUERY_ONE_FOR_STRING_END
+}
+
+FORM (QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemesFromText, U"SpeechSynthesizer: Get phonemes from text", nullptr) {
+	TEXTFIELD (text, U"Text", U"This is some text.", 10)
+	OK
+DO
+	QUERY_ONE_FOR_STRING (SpeechSynthesizer)
+		conststring32 result = SpeechSynthesizer_getPhonemesFromText (me, text);
 	QUERY_ONE_FOR_STRING_END
 }
 
@@ -6677,7 +6713,7 @@ FORM (QUERY_ONE_FOR_REAL__SSCP_getConcentrationEllipseArea, U"SSCP: Get sigma el
 DO
 	QUERY_ONE_FOR_REAL (SSCP)
 		const double result = SSCP_getConcentrationEllipseArea (me, numberOfSigmas, 0, xIndex, yIndex);
-	QUERY_ONE_FOR_REAL_END (U" (concentation ellipse area)")
+	QUERY_ONE_FOR_REAL_END (U" (concentration ellipse area)")
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__SSCP_getDegreesOfFreedom) {
@@ -6767,7 +6803,7 @@ DO
 	CREATE_ONE_END (U"tokens")
 }
 
-FORM (CREATE_ONE__Strings_createFromTokens, U"Strings: Create as tokens", U"Create Strings as tokens...") {
+FORM (CREATE_ONE__Strings_createFromTokens, U"Create Strings from tokens", U"Create Strings from tokens...") {
 	WORD (name, U"Name", U"tokens")
 	TEXTFIELD (text, U"Text", U"There are seven tokens in this text", 10)
 	SENTENCE (separators, U"Separators", U" ,")
@@ -6804,9 +6840,9 @@ FORM (CONVERT_EACH_TO_ONE__Strings_change, U"Strings: Change", U"Strings: Change
 	SENTENCE (search_string, U"Search", U"a")
 	SENTENCE (replace_string, U"Replace", U"a")
 	INTEGER (replaceLimit, U"Replace limit", U"0 (= unlimited)")
-	RADIO (stringType, U"Search and replace are:", 1)
-	RADIOBUTTON (U"literals")
-	RADIOBUTTON (U"Regular Expressions")
+	CHOICE (stringType, U"Search and replace are:", 1)
+		OPTION (U"literals")
+		OPTION (U"Regular Expressions")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Strings)
@@ -6833,12 +6869,30 @@ DIRECT (CONVERT_TWO_TO_ONE__Strings_to_EditDistanceTable) {
 	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (CONVERT_EACH_TO_ONE__Strings_to_Permutation, U"Strings: To Permutation", U"Strings: To Permutation...") {
+FORM (CONVERT_EACH_TO_ONE__Strings_to_StringsIndex, U"Strings: To StringsIndex", nullptr) {
+	OPTIONMENU_ENUM (kStrings_sorting, sorting, U"Sorting method", kStrings_sorting::DEFAULT)
+	OK
+DO
+	CONVERT_EACH_TO_ONE (Strings)
+		autoStringsIndex result = Strings_to_StringsIndex (me, sorting);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__Strings_to_Permutation_old, U"Strings: To Permutation", U"Strings: To Permutation...") {
 	BOOLEAN (sort, U"Sort", true)
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Strings)
-		autoPermutation result = Strings_to_Permutation (me, sort);
+		autoPermutation result = Strings_to_Permutation (me, (sort ? kStrings_sorting::ALPHABETICAL : kStrings_sorting::NONE));
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__Strings_to_Permutation, U"Strings: To Permutation", U"Strings: To Permutation...") {
+	OPTIONMENU_ENUM (kStrings_sorting, sortingMethod, U"Sorting", kStrings_sorting::DEFAULT)
+	OK
+DO_ALTERNATIVE (CONVERT_EACH_TO_ONE__Strings_to_Permutation_old)	
+	CONVERT_EACH_TO_ONE (Strings)
+		autoPermutation result = Strings_to_Permutation (me, sortingMethod);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
@@ -6984,6 +7038,12 @@ DIRECT (CREATE_ONE__Table_create_petersonBarney1952) {
 	CREATE_ONE_END (U"pb")
 }
 
+DIRECT (CREATE_ONE__Table_create_hillenbrandEtAl1995) {
+	CREATE_ONE
+		autoTable result = Table_create_hillenbrandEtAl1995 ();
+	CREATE_ONE_END (U"h95")
+}
+
 DIRECT (CREATE_ONE__Table_create_polsVanNierop1973) {
 	CREATE_ONE
 		autoTable result = Table_create_polsVanNierop1973 ();
@@ -7068,7 +7128,7 @@ FORM (GRAPHICS_EACH__Table_LineGraphWhere, U"Table: Line graph where", U"Table: 
 	SENTENCE (yColumn_string, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
-	SENTENCE (xColumn_string, U"Horizonal column", U"")
+	SENTENCE (xColumn_string, U"Horizontal column (optional)", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
 	WORD (text, U"Text", U"+")
@@ -7080,7 +7140,7 @@ FORM (GRAPHICS_EACH__Table_LineGraphWhere, U"Table: Line graph where", U"Table: 
 DO
 	GRAPHICS_EACH (Table)
 		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer xcolumn = Table_findColumnIndexFromColumnLabel (me, xColumn_string);
+		const integer xcolumn = str32equ (xColumn_string, U"") ? 0 : Table_getColumnIndexFromColumnLabel (me, xColumn_string);
 		Table_lineGraphWhere (me, GRAPHICS, xcolumn, xmin, xmax, ycolumn, ymin, ymax, text, angle, garnish, condition, interpreter);
 	GRAPHICS_EACH_END
 }
@@ -7450,7 +7510,7 @@ DO
 
 FORM (CONVERT_EACH_TO_ONE__Table_extractRowsMahalanobisWhere, U"Table: Extract rows where (mahalanobis)", nullptr) {
 	SENTENCE (dataColumns_string, U"Extract all rows where columns...", U"F1 F2 F3")
-	RADIO_ENUM (kMelder_number, haveAMahalanobisDistance,
+	CHOICE_ENUM (kMelder_number, haveAMahalanobisDistance,
 			U"...have a mahalanobis distance...", kMelder_number::GREATER_THAN)
 	REAL (numberOfSigmas, U"...the number", U"2.0")
 	SENTENCE (factorColumn_string, U"Factor column", U"")
@@ -7604,10 +7664,10 @@ DO
 	CREATE_ONE_END (U"pols1973")
 }
 
-DIRECT (CREATE_ONE__Table_create_esposito2006) {
+DIRECT (CREATE_ONE__Table_create_keatingEsposito2006) {
 	CREATE_ONE
-		autoTable result = Table_create_esposito2006 ();
-	CREATE_ONE_END (U"esposito2006")
+		autoTable result = Table_create_keatingEsposito2006 ();
+	CREATE_ONE_END (U"keatingEsposito2006")
 }
 
 DIRECT (CREATE_ONE__Table_create_ganong1980) {
@@ -7626,10 +7686,10 @@ DO
 }
 
 FORM (CREATE_ONE__TableOfReal_create_weenink1983, U"Create TableOfReal (Weenink 1985)...", U"Create TableOfReal (Weenink 1985)...") {
-	RADIO (speakerGroup, U"Speakers group", 1)
-		RADIOBUTTON (U"men")
-		RADIOBUTTON (U"women")
-		RADIOBUTTON (U"children")
+	CHOICE (speakerGroup, U"Speakers group", 1)
+		OPTION (U"men")
+		OPTION (U"women")
+		OPTION (U"children")
 	OK
 DO
 	CREATE_ONE
@@ -7725,10 +7785,10 @@ FORM (GRAPHICS_EACH__TableOfReal_drawVectors, U"Draw vectors", U"TableOfReal: Dr
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	RADIO (vectorType, U"Vector type", 1)
-		RADIOBUTTON (U"arrow")
-		RADIOBUTTON (U"double arrow")
-		RADIOBUTTON (U"line")
+	CHOICE (vectorType, U"Vector type", 1)
+		OPTION (U"arrow")
+		OPTION (U"double arrow")
+		OPTION (U"line")
 	INTEGER (labelSize, U"Label size", U"10")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
@@ -8040,9 +8100,9 @@ DO
 
 FORM (MODIFY_TextGrid_extendTime, U"TextGrid: Extend time", U"TextGrid: Extend time...") {
 	POSITIVE (extendDomainBy, U"Extend domain by (s)", U"1.0")
-	RADIO (position, U"At", 1)
-		RADIOBUTTON (U"end")
-		RADIOBUTTON (U"start")
+	CHOICE (position, U"At", 1)
+		OPTION (U"end")
+		OPTION (U"start")
 	OK
 DO
 	MODIFY_EACH (TextGrid)
@@ -8056,9 +8116,9 @@ FORM (MODIFY_TextGrid_replaceIntervalTexts, U"TextGrid: Replace interval texts",
 	INTEGER (toInterval, U"right Interval range", U"0 (= all)")
 	SENTENCE (search_string, U"Search", U"a")
 	SENTENCE (replace_string, U"Replace", U"b")
-	RADIO (searchType, U"Search and replace strings are", 1)
-		RADIOBUTTON (U"literals")
-		RADIOBUTTON (U"Regular Expressions")
+	CHOICE (searchType, U"Search and replace strings are", 1)
+		OPTION (U"literals")
+		OPTION (U"Regular Expressions")
 	OK
 DO
 	MODIFY_EACH (TextGrid)
@@ -8075,9 +8135,9 @@ FORM (MODIFY_TextGrid_replacePointTexts, U"TextGrid: Replace point texts", U"Tex
 	INTEGER (toInterval, U"right Interval range", U"0 (= all)")
 	SENTENCE (search_string, U"Search", U"a")
 	SENTENCE (replace_string, U"Replace", U"b")
-	RADIO (searchType, U"Search and replace strings are", 1)
-		RADIOBUTTON (U"literals")
-		RADIOBUTTON (U"Regular Expressions")
+	CHOICE (searchType, U"Search and replace strings are", 1)
+		OPTION (U"literals")
+		OPTION (U"Regular Expressions")
 	OK
 DO
 	MODIFY_EACH (TextGrid)
@@ -8179,6 +8239,20 @@ DO
 
 DIRECT (HELP__TextGridNavigator_help) {
 	HELP (U"TextGridNavigator")
+}
+
+FORM (CREATE_ONE__TextGridNavigator_createSimple, U"TextGridNavigator: Create simple", U"") {
+	WORD (name, U"Name", U"navigator")
+	LABEL (U"Domain")
+	REAL (xmin, U"Xmin", U"0.0")
+	REAL (xmax, U"Xmax", U"5.0")
+	NATURAL (tierNumber, U"Tier number", U"1")
+	STRINGARRAY_LINES (4, topicLabels, U"Topic labels", { U"i", U"u", U"e", U"o", U"\\as" })
+	OK
+DO
+	CREATE_ONE
+		autoTextGridNavigator result = TextGridNavigator_createSimple (xmin, xmax, tierNumber, topicLabels);
+	CREATE_ONE_END (name)
 }
 
 FORM (MODIFY_EACH__TextGridNavigator_findNextAfterTime, U"TextGridNavigator: Find next after time", nullptr) {
@@ -8532,7 +8606,7 @@ static void cb_publish (Editor /*editor*/, autoDaata publish) {
 }
 
 DIRECT (CREATION_WINDOW__VowelEditor_create) {
-	CREATION_WINDOW (a,Sound)
+	CREATION_WINDOW (a, VowelEditor)
 		autoVowelEditor creationWindow = VowelEditor_create (U"VowelEditor");
 		Editor_setPublicationCallback (creationWindow.get(), cb_publish);
 	CREATION_WINDOW_END
@@ -8623,15 +8697,6 @@ static void praat_Eigen_draw_init (ClassInfo klas) {
 			WARNING__Eigen_drawEigenvalues_scree);
 	praat_addAction1 (klas, 0, U"Draw eigenvector...", nullptr, 1,
 			GRAPHICS_EACH__Eigen_drawEigenvector);
-}
-
-static void praat_Index_init (ClassInfo klas) {
-	praat_addAction1 (klas, 1, U"Get number of classes", nullptr, 0,
-		QUERY_ONE_FOR_INTEGER__Index_getNumberOfClasses);
-	praat_addAction1 (klas, 1, U"To Permutation...", nullptr, 0, 
-			CONVERT_EACH_TO_ONE__Index_to_Permutation);
-	praat_addAction1 (klas, 1, U"Extract part...", nullptr, 0, 
-			CONVERT_EACH_TO_ONE__Index_extractPart);
 }
 
 static void praat_BandFilterSpectrogram_draw_init (ClassInfo klas);
@@ -8947,19 +9012,24 @@ void praat_David_init () {
 			CREATE_ONE__Sound_createAsShepardTone);
 	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from VowelEditor...", U"Create Sound as Shepard tone...", GuiMenu_DEPTH_1 | GuiMenu_NO_API,
 			CREATION_WINDOW__VowelEditor_create);
+	praat_addMenuCommand (U"Objects", U"New", U"Create TextGridNavigator...", U"Create Corpus...", GuiMenu_HIDDEN,
+			CREATE_ONE__TextGridNavigator_createSimple);
 	praat_addMenuCommand (U"Objects", U"New", U"Text-to-speech synthesis", U"Create Vocal Tract from phone...", 0, nullptr);
 	praat_addMenuCommand (U"Objects", U"New", U"Create SpeechSynthesizer...", U"Text-to-speech synthesis", 1,
 			CREATE_ONE__SpeechSynthesizer_create);
 	praat_addMenuCommand (U"Objects", U"New", U"Data sets from the literature", U"Create Table without column names...", 1, nullptr);
 	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Peterson & Barney 1952)", U"Data sets from the literature", 2,
 			CREATE_ONE__Table_create_petersonBarney1952);
+	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Hillenbrand et al. 1995)", U"Data sets from the literature", 
+		GuiMenu_HIDDEN + GuiMenu_DEPTH_2,
+			CREATE_ONE__Table_create_hillenbrandEtAl1995);
 	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Pols & Van Nierop 1973)", U"Create formant table (Peterson & Barney 1952)", 2,
 			CREATE_ONE__Table_create_polsVanNierop1973);
 	praat_addMenuCommand (U"Objects", U"New", U"Create formant table (Weenink 1985)", U"Create formant table (Pols & Van Nierop 1973)", 2,
 			CREATE_ONE__Table_create_weenink1983);
-	praat_addMenuCommand (U"Objects", U"New", U"Create H1H2 table (Esposito 2006)", U"Create formant table (Weenink 1985)", 2,
-			CREATE_ONE__Table_create_esposito2006);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Table (Ganong 1980)", U"Create H1H2 table (Esposito 2006)", 2, 
+	praat_addMenuCommand (U"Objects", U"New", U"Create H1H2 table (Keating & Esposito 2006)", U"Create formant table (Weenink 1985)", 2,
+			CREATE_ONE__Table_create_keatingEsposito2006);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Table (Ganong 1980)", U"Create H1H2 table (Keating & Esposito 2006)", 2,
 			CREATE_ONE__Table_create_ganong1980);
 	praat_addMenuCommand (U"Objects", U"New", U"-- new TableOfReal --", U"Create Table (Ganong 1980)", 2, nullptr);
 	praat_addMenuCommand (U"Objects", U"New", U"Create iris data set", U"-- new TableOfReal --" , 2,
@@ -9519,8 +9589,8 @@ void praat_David_init () {
 
 	praat_addAction1 (classElectroglottogram, 0, U"High-pass filter...", nullptr, 0, 
 			CONVERT_EACH_TO_ONE__Electroglottogram_highPassFilter);
-	praat_addAction1 (classElectroglottogram, 0, U"Get closed glottis intervals...", nullptr, 0,
-			CONVERT_EACH_TO_ONE__Electroglottogram_getClosedGlottisIntervals);
+	praat_addAction1 (classElectroglottogram, 0, U"To TextGrid (closed glottis)... || Get closed glottis intervals...", nullptr, 0,
+			CONVERT_EACH_TO_ONE__Electroglottogram_to_TextGrid_closedGlottis);
 	praat_addAction1 (classElectroglottogram, 0, U"To AmplitudeTier (levels)...", nullptr, 0, 
 			CONVERT_EACH_TO_ONE__Electroglottogram_to_AmplitudeTier_levels);
 	praat_addAction1 (classElectroglottogram, 0, U"Derivative...", nullptr, 0, 
@@ -9530,20 +9600,28 @@ void praat_David_init () {
 	praat_addAction1 (classElectroglottogram, 0, U"To Sound", nullptr, 0, 
 			CONVERT_EACH_TO_ONE__Electroglottogram_to_Sound);
 	
-	praat_Index_init (classStringsIndex);
 	praat_addAction1 (classIndex, 0, U"Index help", nullptr, 0, HELP__Index_help);
-	praat_addAction1 (classStringsIndex, 1, U"Get class label...", nullptr, 0, 
-			QUERY_ONE_FOR_STRING__StringsIndex_getClassLabelFromClassIndex);
-	praat_addAction1 (classStringsIndex, 1, U"Get class index...", nullptr, 0, 
-		QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndex);
-	praat_addAction1 (classStringsIndex, 1, U"Get label...", nullptr, 0, 
-			QUERY_ONE_FOR_STRING__StringsIndex_getItemLabelFromItemIndex);
-	praat_addAction1 (classStringsIndex, 1, U"Get class index from item index...", nullptr, 0,
-		QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndexFromItemIndex);
-	praat_addAction1 (classIndex, 1, U"Get index...", nullptr, 0, 
-		QUERY_ONE_FOR_INTEGER__Index_getIndex);
+	praat_addAction1 (classStringsIndex, 0, U"Query -", nullptr, 0, nullptr);
+		praat_addAction1 (classStringsIndex, 1, U"Get number of classes", nullptr, 1,
+				QUERY_ONE_FOR_INTEGER__Index_getNumberOfClasses);
+		praat_addAction1 (classStringsIndex, 1, U"Get class label...", nullptr, 1, 
+				QUERY_ONE_FOR_STRING__StringsIndex_getClassLabelFromClassIndex);
+		praat_addAction1 (classStringsIndex, 1, U"Get class index...", nullptr, 1, 
+				QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndex);
+		praat_addAction1 (classStringsIndex, 1, U"Get item label...", nullptr, 1, 
+				QUERY_ONE_FOR_STRING__StringsIndex_getItemLabelFromItemIndex);
+		praat_addAction1 (classStringsIndex, 1, U"Get class index from item index...", nullptr, 1,
+				QUERY_ONE_FOR_INTEGER__StringsIndex_getClassIndexFromItemIndex);
+		praat_addAction1 (classStringsIndex, 1, U"Get index...", nullptr, 1, 
+				QUERY_ONE_FOR_INTEGER__Index_getIndex);
+		praat_addAction1 (classStringsIndex, 1, U"List all classes", nullptr, 1,
+				QUERY_ONE_FOR_STRING_ARRAY__StringsIndex_listAllClasses);
 	praat_addAction1 (classStringsIndex, 1, U"To Strings", nullptr, 0,
 			CONVERT_EACH_TO_ONE__StringsIndex_to_Strings);
+	praat_addAction1 (classStringsIndex, 1, U"To Permutation...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Index_to_Permutation);
+	praat_addAction1 (classStringsIndex, 1, U"Extract part...", nullptr, 0, 
+			CONVERT_EACH_TO_ONE__Index_extractPart);
 
 	praat_addAction1 (classEigen, 0, U"Eigen help", nullptr, 0,
 			HELP__Eigen_help);
@@ -9984,6 +10062,8 @@ void praat_David_init () {
 			nullptr, 0, CONVERT_EACH_TO_ONE__Permutation_invert);
 	praat_addAction1 (classPermutation, 0, U"Multiply",
 			nullptr, 0, COMBINE_ALL_TO_ONE__Permutations_multiply);
+	praat_addAction1 (classPermutation, 2, U"Permute part...",
+			nullptr, 0, CONVERT_TWO_TO_ONE__Permutation_permutePartByOther);
 
 	praat_addAction1 (classPitch, 2, U"To DTW...", U"To PointProcess",
 			GuiMenu_HIDDEN, CONVERT_TWO_TO_ONE__Pitches_to_DTW);
@@ -10090,8 +10170,8 @@ void praat_David_init () {
 
 	praat_addAction1 (classSound, 0, U"To TextGrid (silences)...", U"To IntervalTier", 1, 
 			CONVERT_EACH_TO_ONE__Sound_to_TextGrid_detectSilences);
-	praat_addAction1 (classSound, 0, U"To TextGrid (voice activity)...", U"To IntervalTier", 1,
-			CONVERT_EACH_TO_ONE__Sound_to_TextGrid_voiceActivity);
+	praat_addAction1 (classSound, 0, U"To TextGrid (speech activity)... || To TextGrid (voice activity)...", U"To IntervalTier", 1,
+			CONVERT_EACH_TO_ONE__Sound_to_TextGrid_speechActivity);
 	praat_addAction1 (classSound, 0, U"To TextGrid (high, mid, low)...", U"To IntervalTier", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
 			CONVERT_EACH_TO_ONE__Sound_to_TextGrid_highMidLowIntervals);
     praat_addAction1 (classSound, 0, U"Play one channel...", U"Play", GuiMenu_HIDDEN,
@@ -10151,6 +10231,8 @@ void praat_David_init () {
 			CONVERT_EACH_TO_ONE__Sound_removeNoise);
 	praat_addAction1 (classSound, 0, U"Reduce noise...", U"Filter (formula)...", GuiMenu_DEPTH_1,
 			CONVERT_EACH_TO_ONE__Sound_reduceNoise);
+	praat_addAction1 (classSound, 0, U"To Sound (derivative)...", U"Filter (formula)...", GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Sound_to_Sound_derivative);
 
 	praat_addAction1 (classSound, 0, U"Change gender...", U"Deepen band modulation...", 1, 
 			CONVERT_EACH_TO_ONE__Sound_changeGender);
@@ -10218,8 +10300,11 @@ void praat_David_init () {
 				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getVoiceName);
 		praat_addAction1 (classSpeechSynthesizer, 1, U"Get phoneme set name", nullptr, 1,
 				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemeSetName);
+		praat_addAction1 (classSpeechSynthesizer, 1, U"Get phonemes from text...", nullptr, 1,
+				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemesFromText);
 		praat_addAction1 (classSpeechSynthesizer, 1, U"Get voice variant", nullptr, GuiMenu_DEPRECATED_2017,
 				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getVoiceName);
+		
 	praat_addAction1 (classSpeechSynthesizer, 0, U"Modify -", nullptr, 0, nullptr);
 		praat_addAction1 (classSpeechSynthesizer, 0, U"Modify phoneme set...", nullptr, GuiMenu_DEPTH_1,
 				MODIFY_EACH__SpeechSynthesizer_modifyPhonemeSet);
@@ -10278,7 +10363,8 @@ void praat_David_init () {
 			CONVERT_EACH_TO_ONE__Strings_to_Permutation);
 	praat_addAction1 (classStrings, 2, U"To EditDistanceTable", U"To Distributions", 0, 
 			CONVERT_TWO_TO_ONE__Strings_to_EditDistanceTable);
-
+	praat_addAction1 (classStrings, 0, U"To StringsIndex...", U"To Permutation...", GuiMenu_HIDDEN, 		
+			CONVERT_EACH_TO_ONE__Strings_to_StringsIndex);
 	praat_addAction1 (classSVD, 0, U"SVD help", nullptr, 0, 
 			HELP__SVD_help);
 	praat_addAction1 (classSVD, 0, U"Query -", nullptr, 0, nullptr);
@@ -10527,50 +10613,51 @@ void praat_David_init () {
 			MODIFY_EACH__TextGridNavigator_findPreviousBeforeTime);
 	
 	praat_addAction1 (classTextGridNavigator, 0, U"Query -", nullptr, 0, nullptr);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get start time...", nullptr, 1, 
+		praat_TimeFunction_query_init (classTextGridNavigator); 
+		praat_addAction1 (classTextGridNavigator, 1, U"Get start time...", nullptr, 1, 
 			QUERY_ONE_FOR_REAL__TextGridNavigator_getStartTime);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get label...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 1, U"Get label...", nullptr, 1, 
 			QUERY_ONE_FOR_STRING__TextGridNavigator_getLabel);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get end time...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 1, U"Get end time...", nullptr, 1, 
 			QUERY_ONE_FOR_REAL__TextGridNavigator_getEndTime);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get index...", nullptr, 1, 
-		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getIndex);
-	praat_addAction1 (classTextGridNavigator, 1, U"-- number of matches --", nullptr, 1, nullptr);
-	praat_addAction1 (classTextGridNavigator, 1, U"List indices...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 1, U"Get index...", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__TextGridNavigator_getIndex);
+		praat_addAction1 (classTextGridNavigator, 1, U"-- number of matches --", nullptr, 1, nullptr);
+		praat_addAction1 (classTextGridNavigator, 1, U"List indices...", nullptr, 1, 
 			QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listIndices);
-	praat_addAction1 (classTextGridNavigator, 1, U"List start times...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 1, U"List start times...", nullptr, 1, 
 			QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listStartTimes);
-	praat_addAction1 (classTextGridNavigator, 1, U"List labels...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 1, U"List labels...", nullptr, 1, 
 			QUERY_ONE_FOR_STRING_ARRAY__TextGridNavigator_listLabels);
-	praat_addAction1 (classTextGridNavigator, 1, U"List end times...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 1, U"List end times...", nullptr, 1, 
 			QUERY_ONE_FOR_REAL_VECTOR__TextGridNavigator_listEndTimes);
-	praat_addAction1 (classTextGridNavigator, 1, U"List domains...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 1, U"List domains...", nullptr, 1, 
 			QUERY_ONE_FOR_MATRIX__TextGridNavigator_listDomains);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get number of matches", nullptr, 1, 
-		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfMatches);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get number of Topic matches...", nullptr, 1, 
-		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfTopicMatches);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get number of Before matches...", nullptr, 1,
-		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfBeforeMatches);
-	praat_addAction1 (classTextGridNavigator, 1, U"Get number of After matches...", nullptr, 1,
-		QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfAfterMatches);
+		praat_addAction1 (classTextGridNavigator, 1, U"Get number of matches", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfMatches);
+		praat_addAction1 (classTextGridNavigator, 1, U"Get number of Topic matches...", nullptr, 1, 
+			QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfTopicMatches);
+		praat_addAction1 (classTextGridNavigator, 1, U"Get number of Before matches...", nullptr, 1,
+			QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfBeforeMatches);
+		praat_addAction1 (classTextGridNavigator, 1, U"Get number of After matches...", nullptr, 1,
+			QUERY_ONE_FOR_INTEGER__TextGridNavigator_getNumberOfAfterMatches);
 	praat_addAction1 (classTextGridNavigator, 0, U"Modify -", nullptr, 0, nullptr);
-	praat_addAction1 (classTextGridNavigator, 0, U"Modify Topic match criterion...", nullptr, 1,
+		praat_addAction1 (classTextGridNavigator, 0, U"Modify Topic match criterion...", nullptr, 1,
 			MODIFY_EACH__TextGridNavigator_modifyTopicCriterion);
-	praat_addAction1 (classTextGridNavigator, 0, U"Modify Before match criterion...", nullptr, 1,
+		praat_addAction1 (classTextGridNavigator, 0, U"Modify Before match criterion...", nullptr, 1,
 			MODIFY_EACH__TextGridNavigator_modifyBeforeCriterion);
-	praat_addAction1 (classTextGridNavigator, 0, U"Modify After match criterion...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 0, U"Modify After match criterion...", nullptr, 1, 
 			MODIFY_EACH__TextGridNavigator_modifyAfterCriterion);
-	praat_addAction1 (classTextGridNavigator, 0, U"Modify combination criterion...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 0, U"Modify combination criterion...", nullptr, 1, 
 			MODIFY_EACH__TextGridNavigator_modifyCombinationCriterion);
-	praat_addAction1 (classTextGridNavigator, 0, U"Modify match domain...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 0, U"Modify match domain...", nullptr, 1, 
 			MODIFY_EACH__TextGridNavigator_modifyMatchDomain);
-	praat_addAction1 (classTextGridNavigator, 0, U"Modify match domain alignment...", nullptr, 1,
+		praat_addAction1 (classTextGridNavigator, 0, U"Modify match domain alignment...", nullptr, 1,
 			MODIFY_EACH__TextGridNavigator_modifyMatchDomainAlignment);
-	praat_addAction1 (classTextGridNavigator, 0, U"-- search range extensions --", nullptr, 1, nullptr);
-	praat_addAction1 (classTextGridNavigator, 0, U"Modify Before range...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 0, U"-- search range extensions --", nullptr, 1, nullptr);
+		praat_addAction1 (classTextGridNavigator, 0, U"Modify Before range...", nullptr, 1, 
 			MODIFY_EACH__TextGridNavigator_modifyBeforeRange);
-	praat_addAction1 (classTextGridNavigator, 0, U"Modify After range...", nullptr, 1, 
+		praat_addAction1 (classTextGridNavigator, 0, U"Modify After range...", nullptr, 1, 
 			MODIFY_EACH__TextGridNavigator_modifyAfterRange);
 	
 	praat_addAction2 (classTextGridNavigator, 1, classNavigationContext, 1, U"Replace navigation context...", nullptr, 0,

@@ -1,6 +1,6 @@
 /* Excitation.cpp
  *
- * Copyright (C) 1992-2008,2011,2012,2015-2018,2022 Paul Boersma
+ * Copyright (C) 1992-2008,2011,2012,2015-2018,2022,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,44 +19,6 @@
 #include "Excitation.h"
 
 Thing_implement (Excitation, Vector, 2);
-
-double Excitation_hertzToBark (double hertz) {
-	double h650 = hertz / 650;
-	return 7.0 * log (h650 + sqrt (1.0 + h650 * h650));
-}
-
-double Excitation_barkToHertz (double bark) {
-	return 650.0 * sinh (bark / 7.0);
-}
-
-double Excitation_phonToDifferenceLimens (double phon) {
-	return 30.0 * (pow (61.0 / 60.0, phon) - 1);
-}
-
-double Excitation_differenceLimensToPhon (double ndli) {
-	return log (1 + ndli / 30.0) / log (61.0 / 60.0);
-}
-
-double Excitation_soundPressureToPhon (double soundPressure, double bark) {
-	double result, dum;
-
-	if (soundPressure <= 0.0) return 0.0;
-
-	/*  dB = 20 * log10 (soundPressure / threshold)  */
-	result = 20.0 * log10 (soundPressure / 2.0e-5);   /* First approximation: phon = dB */
-
-	/*  Phones from dB  */
-	if (result < 90.0 && bark < 8.0)
-	{
-		dum = (90.0 - result) * (8.0 - bark);
-		result -= dum * dum / 2500;
-	}
-	dum = bark / 3.6 - 5.0;
-	result += 5.0 * exp (- dum * dum);
-	if (bark > 20.0) { dum = bark - 20.0; result -= 0.5 * dum * dum; }
-	if (result < 0.0) result = 0.0;
-	return result;
-}
 
 void structExcitation :: v1_info () {
 	structDaata :: v1_info ();

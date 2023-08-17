@@ -1,6 +1,6 @@
 /* melder_alloc.cpp
  *
- * Copyright (C) 1992-2007,2009,2011,2012,2014-2020 Paul Boersma
+ * Copyright (C) 1992-2007,2009,2011,2012,2014-2020,2022,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -202,20 +202,39 @@ void * _Melder_calloc_f (int64 nelem, int64 elsize) {
 autostring32 Melder_dup (conststring32 string /* cattable */) {
 	if (! string)
 		return autostring32();
-	int64 size = (int64) str32len (string) + 1;   // guaranteed to be positive
-	if (sizeof (size_t) < 8 && size > SIZE_MAX / sizeof (char32))
-		Melder_throw (U"Can never allocate ", Melder_bigInteger (size), U" characters. Use a 64-bit edition of Praat instead?");
-	autostring32 result (size, false);   // guarded conversion
+	const integer numberOfCharactersToCopy = Melder_length (string);
+	const int64 requestedBufferSize = (int64) numberOfCharactersToCopy + 1;
+	if (sizeof (size_t) < 8 && requestedBufferSize > SIZE_MAX / sizeof (char32))
+		Melder_throw (U"Can never allocate ", Melder_bigInteger (requestedBufferSize),
+				U" characters. Use a 64-bit edition of Praat instead?");
+	autostring32 result (numberOfCharactersToCopy, false);   // guarded conversion
 	str32cpy (result.get(), string);
 	if (Melder_debug == 34)
-		Melder_casual (U"Melder_dup\t", Melder_pointer (result.get()), U"\t", Melder_bigInteger (size), U"\t", sizeof (char32));
+		Melder_casual (U"Melder_dup\t", Melder_pointer (result.get()), U"\t",
+				Melder_bigInteger (requestedBufferSize), U"\t", sizeof (char32));
+	return result;
+}
+
+autostring32 Melder_ndup (conststring32 string /* cattable */, const integer numberOfCharactersToCopy) {
+	if (! string)
+		return autostring32();
+	const int64 requestedBufferSize = (int64) numberOfCharactersToCopy + 1;
+	if (sizeof (size_t) < 8 && requestedBufferSize > SIZE_MAX / sizeof (char32))
+		Melder_throw (U"Can never allocate ", Melder_bigInteger (requestedBufferSize),
+				U" characters. Use a 64-bit edition of Praat instead?");
+	autostring32 result (numberOfCharactersToCopy, false);   // guarded conversion
+	str32ncpy (result.get(), string, numberOfCharactersToCopy);
+	result [numberOfCharactersToCopy] = U'\0';
+	if (Melder_debug == 34)
+		Melder_casual (U"Melder_ndup\t", Melder_pointer (result.get()), U"\t",
+				Melder_bigInteger (requestedBufferSize), U"\t", sizeof (char32));
 	return result;
 }
 
 autostring32 Melder_dup_f (conststring32 string /* cattable */) {
 	if (! string)
 		return autostring32();
-	int64 size = (int64) str32len (string) + 1;
+	const int64 size = (int64) Melder_length (string) + 1;
 	if (sizeof (size_t) < 8 && size > SIZE_MAX / sizeof (char32))
 		Melder_fatal (U"(Melder_dup_f:) Can never allocate ", Melder_bigInteger (size), U" characters.");
 	autostring32 result (size, true);
@@ -241,40 +260,6 @@ int64 Melder_reallocationsInSituCount () {
 
 int64 Melder_movingReallocationsCount () {
 	return totalNumberOfMovingReallocs;
-}
-
-int Melder_cmp (conststring32 string1, conststring32 string2) {
-	if (! string1) string1 = U"";
-	if (! string2) string2 = U"";
-	return str32cmp (string1, string2);
-}
-
-int Melder_cmp_caseInsensitive (conststring32 string1, conststring32 string2) {
-	if (! string1) string1 = U"";
-	if (! string2) string2 = U"";
-	return str32cmp_caseInsensitive (string1, string2);
-}
-
-int Melder_ncmp (conststring32 string1, conststring32 string2, integer n) {
-	if (! string1) string1 = U"";
-	if (! string2) string2 = U"";
-	return str32ncmp (string1, string2, n);
-}
-
-int Melder_ncmp_caseInsensitive (conststring32 string1, conststring32 string2, integer n) {
-	if (! string1) string1 = U"";
-	if (! string2) string2 = U"";
-	return str32ncmp_caseInsensitive (string1, string2, n);
-}
-
-bool Melder_equ_firstCharacterCaseInsensitive (conststring32 string1, conststring32 string2) {
-	if (! string1) string1 = U"";
-	if (! string2) string2 = U"";
-	if (string1 [0] == U'\0')
-		return string2 [0] == U'\0';
-	if (Melder_toLowerCase (string1 [0]) != Melder_toLowerCase (string2 [0]))
-		return false;
-	return str32equ (string1 + 1, string2 + 1);
 }
 
 #pragma mark - Generic memory functions for vectors and matrices

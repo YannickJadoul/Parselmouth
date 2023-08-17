@@ -1,6 +1,6 @@
 /* FilterBank.cpp
  *
- * Copyright (C) 1993-2017 David Weenink, Paul Boersma 2017
+ * Copyright (C) 1993-2017, 2023 David Weenink, Paul Boersma 2017
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 /*
  djmw 20010718
  djmw 20020813 GPL header
- djmw 20030901 Added fiter function drawing and frequency scale drawing.
+ djmw 20030901 Added filter function drawing and frequency scale drawing.
  djmw 20050731 +FilterBank_and_PCA_drawComponent
  djmw 20071017 Melder_error<n>
  djmw 20071201 Melder_warning<n>
@@ -244,10 +244,7 @@ void FilterBank_paint (FilterBank me, Graphics g, double xmin, double xmax,
 	double ymin, double ymax, double minimum, double maximum, bool garnish)
 {
 	Function_unidirectionalAutowindow (me, & xmin, & xmax);
-	if (ymax <= ymin) {
-		ymin = my ymin;
-		ymax = my ymax;
-	}
+	SampledXY_unidirectionalAutowindowY (me, & ymin, & ymax);
 	integer ixmin, ixmax, iymin, iymax;
 	(void) Matrix_getWindowSamplesX (me, xmin - 0.49999 * my dx, xmax + 0.49999 * my dx, & ixmin, & ixmax);
 	(void) Matrix_getWindowSamplesY (me, ymin - 0.49999 * my dy, ymax + 0.49999 * my dy, & iymin, & iymax);

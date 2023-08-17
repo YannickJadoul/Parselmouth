@@ -2,7 +2,7 @@
 #define _Electroglottogram_h_
 /* Electroglottogram.h
  *
- * Copyright (C) 2019 David Weenink
+ * Copyright (C) 2019-2023 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ Thing_define (Electroglottogram, Sound) {
 };
 
 /*
-	An Electroglottogram represets the degree of contact between the (vibrating) vocal folds during voice production.
+	An Electroglottogram represents the degree of contact between the (vibrating) vocal folds during voice production.
 	It is measured at the throat.
 	It will be represented as a one channel Sound.
 	There might be an accompanying sound. They are both sampled at the same sampling frequency.
@@ -49,12 +49,12 @@ autoTextTier Electroglottogram_to_TextTier_closedGlottis (Electroglottogram me, 
 
 autoAmplitudeTier Electroglottogram_to_AmplitudeTier_levels (Electroglottogram me, double pitchFloor, double pitchCeiling, double closingThreshold, autoAmplitudeTier *out_peaks, autoAmplitudeTier *out_valleys);
 
-autoIntervalTier Electroglottogram_getClosedGlottisIntervals (Electroglottogram me, double pitchFloor, double pitchCeiling, double closingThreshold, double peakThresholdFraction);
+autoTextGrid Electroglottogram_to_TextGrid_closedGlottis (Electroglottogram me, double pitchFloor, double pitchCeiling, double closingThreshold, double peakThresholdFraction);
 
-autoSound Electroglottogram_derivative (Electroglottogram me, double lowPassFrequency, double smoothing, bool peak99);
+autoSound Electroglottogram_derivative (Electroglottogram me, double lowPassFrequency, double smoothing, double peakAmplitude);
 /* The real derivative */
 
-autoSound Electroglottogram_firstCentralDifference (Electroglottogram me, bool peak99);
+autoSound Electroglottogram_firstCentralDifference (Electroglottogram me, double peakAmplitude);
 /* d(EEG)/dt [col] = z [col+1] - z [col-1] */
 
 autoElectroglottogram Electroglottogram_highPassFilter (Electroglottogram me, double fromFrequency, double smoothing);

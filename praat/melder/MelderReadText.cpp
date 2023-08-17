@@ -1,6 +1,6 @@
 /* melder_readtext.cpp
  *
- * Copyright (C) 2008,2010-2012,2014-2020 Paul Boersma
+ * Copyright (C) 2008,2010-2012,2014-2020,2022,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ mutablestring32 MelderReadText_readLine (MelderReadText me) {
 			*newline = U'\0';
 			my readPointer32 = newline + 1;
 		} else {
-			my readPointer32 += str32len (result);
+			my readPointer32 += Melder_length (result);
 		}
 		return result;
 	} else {
@@ -167,6 +167,13 @@ autoMelderReadText MelderReadText_createFromFile (MelderFile file) {
 			}
 		}
 	}
+	return me;
+}
+
+autoMelderReadText MelderReadText_createFromText (autostring32 text) {
+	autoMelderReadText me = std::make_unique <structMelderReadText> ();
+	my string32 = text.move();
+	my readPointer32 = & my string32 [0];
 	return me;
 }
 

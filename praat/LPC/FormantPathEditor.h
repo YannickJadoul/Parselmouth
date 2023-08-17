@@ -2,7 +2,7 @@
 #define _FormantPathEditor_h_
 /* FormantPathEditor.h
  *
- * Copyright (C) 2020-2022 David Weenink, 2022 Paul Boersma
+ * Copyright (C) 2020-2023 David Weenink, 2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,10 +28,9 @@ Thing_define (FormantPathEditor, FunctionEditor) {
 	DEFINE_FunctionArea (3, TextGridArea, textGridArea)
 
 	FormantPath formantPath() { return static_cast <FormantPath> (our data()); }
-
 	autoFormant previousFormant;
 	Graphics_Viewport selectionViewer_viewport;
-	integer selectedCandidate;
+	integer selectedCandidate = 0;
 	GuiMenuItem navigateSettingsButton, navigateNextButton, navigatePreviousButton;
 
 	void v1_info ()
@@ -84,6 +83,9 @@ Thing_define (FormantPathEditor, FunctionEditor) {
 	bool v_hasSelectionViewer () override { return true; }
 	void v_drawSelectionViewer ()
 		override;
+	void v_drawRealTimeSelectionViewer (double /* time */) override {
+		v_drawSelectionViewer (); // avoid discontinuity during play
+	}
 	void v_clickSelectionViewer (double xWC, double yWC)
 		override;
 	void v_play (double startTime, double endTime)
@@ -94,9 +96,19 @@ Thing_define (FormantPathEditor, FunctionEditor) {
 	conststring32 v_selectionViewerName ()
 		override { return U"Formant candidates"; }
 	void v_drawLegends () override {
-		FunctionArea_drawLegend (our formantPathArea().get(),
-			FunctionArea_legend_SPECKLES U" ##modifiable FormantPath", Melder_RED
-		);
+		FormantPathArea you = our formantPathArea().get();
+		const bool showAnalyses = ( your endWindow() - your startWindow() <= your instancePref_longestAnalysis() );
+		if (showAnalyses)
+			FunctionArea_drawLegend (our formantPathArea().get(),
+				your instancePref_spectrogram_show() ? FunctionArea_legend_GREYS U" %%derived spectrogram" : U"",
+				1.2 * Melder_BLACK,
+				your instancePref_intensity_show() ? FunctionArea_legend_LINES U" %%derived intensity" : U"",
+				1.2 * Melder_GREEN,
+				your instancePref_pitch_show() ? FunctionArea_legend_LINES_SPECKLES U" %%derived pitch" : U"",
+				1.2 * Melder_BLUE,
+				FunctionArea_legend_SPECKLES U" ##modifiable FormantPath",
+				1.2 * Melder_RED
+			);
 		if (our soundArea())
 			FunctionArea_drawLegend (our soundArea().get(),
 				FunctionArea_legend_WAVEFORM U" %%non-modifiable copy of sound",

@@ -1,6 +1,6 @@
 /* melder_strings.cpp
  *
- * Copyright (C) 2006-2012,2014-2021 Paul Boersma
+ * Copyright (C) 2006-2012,2014-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ inline static void MelderString_expand_ (STRING_TYPE *me, int64 sizeNeeded) {
 		totalNumberOfDeallocations += 1;
 		totalDeallocationSize += my bufferSize * (int64) sizeof (CHARACTER_TYPE);
 	}
-	int64 bytesNeeded = sizeNeeded * (int64) sizeof (CHARACTER_TYPE);
+	int64 bytesNeeded = sizeNeeded * (integer) sizeof (CHARACTER_TYPE);
 	Melder_assert (bytesNeeded > 0);
 	try {
 		if (Melder_debug == 34)
@@ -77,14 +77,14 @@ inline static void MelderString_expand_ (STRING_TYPE *me, int64 sizeNeeded) {
 	totalAllocationSize += bytesNeeded;
 }
 
-void MelderString_expand (MelderString *me, int64 sizeNeeded) {
+void _private_MelderString_expand (MelderString *me, int64 sizeNeeded) {
 	MelderString_expand_ <MelderString, char32> (me, sizeNeeded);
 }
 
 void MelderString16_empty (MelderString16 *me) {
 	if (my bufferSize * (int64) sizeof (char16) >= FREE_THRESHOLD_BYTES)
 		MelderString16_free (me);
-	int64 sizeNeeded = 1;
+	const int64 sizeNeeded = 1;
 	if (sizeNeeded > my bufferSize)
 		MelderString_expand_ <MelderString16, char16> (me, sizeNeeded);
 	my string [0] = u'\0';
@@ -94,52 +94,98 @@ void MelderString16_empty (MelderString16 *me) {
 void MelderString_empty (MelderString *me) {
 	if (my bufferSize * (int64) sizeof (char32) >= FREE_THRESHOLD_BYTES)
 		MelderString_free (me);
-	int64 sizeNeeded = 1;
+	const int64 sizeNeeded = 1;
 	if (sizeNeeded > my bufferSize)
 		MelderString_expand_ <MelderString, char32> (me, sizeNeeded);
 	my string [0] = U'\0';
 	my length = 0;
 }
 
-void MelderString_ncopy (MelderString *me, conststring32 source, int64 n) {
+void MelderString_ncopy (MelderString *me, conststring32 sourceOrNull, int64 n) {
 	if (my bufferSize * (int64) sizeof (char32) >= FREE_THRESHOLD_BYTES)
 		MelderString_free (me);
-	if (! source)
-		source = U"";
-	int64 length = str32len (source);
-	if (length > n)
-		length = n;
-	int64 sizeNeeded = length + 1;
+	const conststring32 source = ( sourceOrNull ? sourceOrNull : U"" );
+	const int64 numberOfCharactersToCopy = n; //Melder_clippedRight (n, (int64) Melder_length (source));
+	const int64 sizeNeeded = numberOfCharactersToCopy + 1;
 	Melder_assert (sizeNeeded > 0);
 	if (sizeNeeded > my bufferSize)
 		MelderString_expand_ <MelderString, char32> (me, sizeNeeded);
-	str32ncpy (my string, source, length);
-	my string [length] = U'\0';
-	my length = length;
+	str32ncpy (my string, source, numberOfCharactersToCopy);
+	my string [numberOfCharactersToCopy] = U'\0';
+	my length = numberOfCharactersToCopy;
 }
 
-void MelderString16_appendCharacter (MelderString16 *me, char32 kar) {
-	int64 sizeNeeded = my length + 3;   // make room for character, potential surrogate character, and null character
+void MelderString_nappend (MelderString *me, conststring32 sourceOrNull, integer n) {
+	const conststring32 source = ( sourceOrNull ? sourceOrNull : U"" );
+	const integer numberOfCharactersToAppend = n; //Melder_clippedRight (n, Melder_length (source));
+	const int64 sizeNeeded = my length + numberOfCharactersToAppend + 1;
+	Melder_assert (sizeNeeded > 0);
+	if (sizeNeeded > my bufferSize)
+		MelderString_expand_ <MelderString, char32> (me, sizeNeeded);
+	str32ncpy (my string + my length, source, numberOfCharactersToAppend);
+	my length += numberOfCharactersToAppend;
+	my string [my length] = U'\0';
+}
+
+void MelderString16_appendCharacter (MelderString16 *const me, const char32 kar) {
+	const int64 sizeNeeded = my length + 3;   // make room for character, potential surrogate character, and null character
 	if (sizeNeeded > my bufferSize)
 		MelderString_expand_ <MelderString16, char16> (me, sizeNeeded);
 	if (kar <= 0x00'FFFF) {
-		my string [my length] = (char16) kar;   // guarded cast
+		/*
+			A character between 0x0000 and 0xD7FF or between 0xE000 and 0xFFFF.
+
+			If the input contains a number between 0xD800 and 0xDFFF
+			(the range reserved for "surrogates", see below),
+			then we don't check this. In the best case, we will have
+			a valid surrogate pair (a "high surrogate between 0xD800 and 0xDBFF"
+			followed by a "low surrogate" between 0xDC00 and 0xDFFF),
+			perhaps caused by an earlier incorrect conversion from UTF-16 to UTF-32,
+			and in the worst case the output will turn up with an "unpaired surrogate",
+			perhaps caused by reading a Windows file path, which can legally consist of
+			a sequence of freely chosen WCHARs between 0x0000 and 0xFFFF.
+
+			Thus, not checking for surrogates, which strictly speaking constitute
+			illegal UTF-16, is probably correct, and even desired on Windows.
+			So please do not change this strategy, except for very good reasons,
+			which you should then please explain here.
+		*/
+		my string [my length] = (char16) kar;   // guarded cast (i.e. cannot overflow, because of prior check)
 		my length ++;
 	} else if (kar <= 0x10'FFFF) {
-		kar -= 0x01'0000;
-		my string [my length] = (char16) (0x00'D800 | (kar >> 10));
+		/*
+			We turn 21-bit numbers between 0x01'0000 and 0x10'FFFF
+			into 20-bit numbers between 0 and 0x0F'FFFF.
+		*/
+		const char32 distanceAboveBMP = kar - 0x01'0000;
+		/*
+			We put the high 10 bits of the 20-bit number
+			into a place between 0xD800 and 0xDBFF;
+			this result will always be recognizable as a "high surrogate".
+		*/
+		my string [my length] = (char16) (0x00'D800 | (distanceAboveBMP >> 10));
 		my length ++;
-		my string [my length] = (char16) (0x00'DC00 | (kar & 0x00'03FF));
+		/*
+			We put the low 10 bits of the 20-bit number
+			into a place between 0xDC00 and 0xDFFF;
+			this result will always be recognizable as a "low surrogate".
+		*/
+		my string [my length] = (char16) (0x00'DC00 | (distanceAboveBMP & 0x00'03FF));
 		my length ++;
 	} else {
+		/*
+			These illegal cases are outside the Unicode codespace,
+			and cannot be converted to UTF-16.
+			Gently hint at the problem in the output, by showing "�".
+		*/
 		my string [my length] = UNICODE_REPLACEMENT_CHARACTER;
 		my length ++;
 	}
 	my string [my length] = u'\0';
 }
 
-void MelderString_appendCharacter (MelderString *me, char32 character) {
-	int64 sizeNeeded = my length + 2;   // make room for character and null character
+void MelderString_appendCharacter (MelderString *me, const char32 character) {
+	const int64 sizeNeeded = my length + 2;   // make room for character and null character
 	if (sizeNeeded > my bufferSize)
 		MelderString_expand_ <MelderString, char32> (me, sizeNeeded);
 	my string [my length] = character;
@@ -147,11 +193,18 @@ void MelderString_appendCharacter (MelderString *me, char32 character) {
 	my string [my length] = U'\0';
 }
 
-void MelderString_get (MelderString *me, char32 *destination) {
+void MelderString_get (MelderString *me, char32 *const destination) {
 	if (my string)
 		str32cpy (destination, my string);
 	else
 		destination [0] = U'\0';
+}
+
+void MelderString_truncate (MelderString *const me, const integer maximumLength) {
+	if (maximumLength < my length) {
+		my length = maximumLength;
+		my string [my length] = U'\0';
+	}
 }
 
 int64 MelderString_allocationCount () {

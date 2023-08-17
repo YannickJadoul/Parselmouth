@@ -1,6 +1,6 @@
 /* RunnerMFC.cpp
  *
- * Copyright (C) 2001-2022 Paul Boersma
+ * Copyright (C) 2001-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ static void drawNow (RunnerMFC me) {
 			if (visibleText_q)
 				visibleText_p = visibleText_q + 1;
 			else
-				visibleText_p += str32len (visibleText_p);
+				visibleText_p += Melder_length (visibleText_p);
 		} else {
 			Graphics_text (my graphics.get(), 0.5, 1.0, my experiment -> runText.get());
 		}
@@ -118,7 +118,9 @@ static void drawNow (RunnerMFC me) {
 					*visibleText_q = U'\0';
 				textToDraw = visibleText_p;   // override
 				if (visibleText_q)
-					visibleText_p = visibleText_q + 1; else visibleText_p += str32len (visibleText_p);
+					visibleText_p = visibleText_q + 1;
+				else
+					visibleText_p += Melder_length (visibleText_p);
 			}
 			if (str32nequ (textToDraw, U"\\FI", 3)) {
 				structMelderFile file { };
@@ -487,7 +489,7 @@ static void gui_drawingarea_cb_key (RunnerMFC me, GuiDrawingArea_KeyEvent event)
 void structRunnerMFC :: v_createChildren () {
 	our d_drawingArea = GuiDrawingArea_createShown (our windowForm, 0, 0, Machine_getMenuBarBottom (), 0,
 		gui_drawingarea_cb_expose, gui_drawingarea_cb_mouse,
-		gui_drawingarea_cb_key, gui_drawingarea_cb_resize, this, 0
+		gui_drawingarea_cb_key, gui_drawingarea_cb_resize, nullptr, this, 0
 	);
 }
 

@@ -1,6 +1,6 @@
 /* TextGridNavigator.cpp
  *
- * Copyright (C) 2020-2021 David Weenink
+ * Copyright (C) 2020-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ static void TextGridNavigator_checkTierNumberNotInUse (TextGridNavigator me, int
 	for (integer inum = 1; inum <= my tierNavigators.size; inum ++) {
 		TextGridTierNavigator tn = my tierNavigators.at [inum];
 		Melder_require (tn -> tierNumber != tierNumber,
-			U"The tiernumber you want tor add is already in use.");
+			U"The tiernumber you want to add is already in use.");
 	}
 }
 
@@ -75,6 +75,20 @@ autoTextGridNavigator TextGrid_and_NavigationContext_to_TextGridNavigator (TextG
 	} catch (MelderError) {
 		Melder_throw (U"TextGridNavigator could not be created from ", textgrid, U" and ", navigationContext);
 	}
+}
+
+autoTextGridNavigator TextGridNavigator_createSimple (double xmin, double xmax, integer tierNumber,
+	constSTRVEC const& topicLabels)
+{
+	autoTextGridNavigator me = Thing_new (TextGridNavigator);
+	Function_init (me.get(), xmin, xmax);
+	autoNavigationContext navigationContext = NavigationContext_createTopicOnly (topicLabels, kMelder_string::EQUAL_TO,
+		kMatchBoolean::OR_);
+	autoIntervalTier tier = IntervalTier_create (xmin, xmax);
+	autoTextGridTierNavigator tgtn = TextGridTierNavigator_create (tier.get(), navigationContext.get(),kMatchDomain::TOPIC_START_TO_TOPIC_END);
+	tgtn -> tierNumber = tierNumber;
+	my tierNavigators.addItem_move (tgtn.move());
+	return me;
 }
 
 autoTextGridNavigator TextGridTierNavigator_to_TextGridNavigator (TextGridTierNavigator me) {
@@ -129,6 +143,9 @@ void TextGridNavigator_and_TextGrid_addSearchTier (TextGridNavigator me, TextGri
 	constSTRVEC const& afterLabels, kMelder_string afterCriterion, kMatchBoolean afterMatchBoolean,
 	kContext_combination combinationCriterion, bool excludeTopic, kMatchDomain matchDomain, kMatchDomainAlignment matchDomainAlignment) {
 	try {
+		/*
+			We can't require the domains of the navigator and the new tier to be equal because they might be slightly different.  
+		*/
 		TextGrid_checkSpecifiedTierNumberWithinRange (thee, tierNumber);
 		TextGridNavigator_checkTierNumberNotInUse (me, tierNumber);
 		autoNavigationContext navigationContext = NavigationContext_create (
@@ -231,6 +248,8 @@ void TextGridNavigator_replaceTiers (TextGridNavigator me, TextGrid thee) {
 			Melder_require (thy tiers -> at [tierNumber] -> classInfo == tn -> tier -> classInfo, 
 				U"The TextGrid should have the same kind of tiers at the same positions as one you want to replace.");
 		}
+		my xmin = thy xmin;
+		my xmax = thy xmax;
 		for (integer inum = 1; inum <= my tierNavigators.size; inum ++) {
 			const TextGridTierNavigator tn = my tierNavigators. at [inum];
 			const integer tierNumber = tn -> tierNumber;

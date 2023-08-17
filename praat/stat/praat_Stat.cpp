@@ -1,6 +1,6 @@
 /* praat_Stat.cpp
  *
- * Copyright (C) 1992-2019,2021,2022 Paul Boersma
+ * Copyright (C) 1992-2019,2021-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -387,6 +387,16 @@ DO
 		const integer columnNumber = Table_getColumnIndexFromColumnLabel (me, columnWithDistribution);
 		const integer result = Table_drawRowFromDistribution (me, columnNumber);
 	QUERY_ONE_FOR_INTEGER_END (U" (random row number)")
+}
+
+FORM (QUERY_ONE_FOR_REAL_VECTOR__Table_getAllNumbersInColumn, U"Table: Get all numbers in column", nullptr) {
+	SENTENCE (columnLabel, U"Column label", U"")
+	OK
+DO
+	QUERY_ONE_FOR_REAL_VECTOR (Table)
+		const integer columnNumber = Table_getColumnIndexFromColumnLabel (me, columnLabel);
+		autoVEC result = Table_getAllNumbersInColumn (me, columnNumber);
+	QUERY_ONE_FOR_REAL_VECTOR_END
 }
 
 FORM (QUERY_ONE_FOR_INTEGER__Table_getColumnIndex, U"Table: Get column index", nullptr) {
@@ -939,7 +949,7 @@ DIRECT (COMBINE_ALL_TO_ONE__Tables_append) {
 
 FORM (CONVERT_EACH_TO_ONE__Table_extractRowsWhereColumn_number, U"Table: Extract rows where column (number)", nullptr) {
 	SENTENCE (extractAllRowsWhereColumn___, U"Extract all rows where column...", U"")
-	RADIO_ENUM (kMelder_number, ___is___, U"...is...", kMelder_number::DEFAULT)
+	CHOICE_ENUM (kMelder_number, ___is___, U"...is...", kMelder_number::DEFAULT)
 	REAL (___theNumber, U"...the number", U"0.0")
 	OK
 DO
@@ -1204,6 +1214,8 @@ praat_addAction1 (classDistributions, 0, U"Generate", nullptr, 0, nullptr);
 				nullptr, 1, nullptr);
 		praat_addAction1 (classTable, 1, U"Get value...",
 				nullptr, 1, QUERY_ONE_FOR_REAL__Table_getValue);
+		praat_addAction1 (classTable, 1, U"Get all numbers in column...",
+				nullptr, 1, QUERY_ONE_FOR_REAL_VECTOR__Table_getAllNumbersInColumn);
 		praat_addAction1 (classTable, 1, U"Search column...",
 				nullptr, 1, QUERY_ONE_FOR_INTEGER__Table_searchColumn);
 		praat_addAction1 (classTable, 1, U"-- statistics --",

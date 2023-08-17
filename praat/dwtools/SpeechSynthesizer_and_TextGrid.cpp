@@ -1,6 +1,6 @@
 /* SpeechSynthesizer_and_TextGrid.cpp
  *
- * Copyright (C) 2011-2019 David Weenink
+ * Copyright (C) 2011-2019, 2023 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -504,7 +504,7 @@ autoTextGrid SpeechSynthesizer_Sound_TextInterval_align (SpeechSynthesizer me, S
 			/*
 				Compensation for long words: 5 characters / word
 			*/
-			const double wordsPerMinute_rawText = 60.0 * (str32len (his text.get()) / 5.0) / duration_soundTrimmed;
+			const double wordsPerMinute_rawText = 60.0 * (Melder_length (his text.get()) / 5.0) / duration_soundTrimmed;
 			my d_wordsPerMinute = Melder_ifloor (0.5 * (wordsPerMinute_rawTokens + wordsPerMinute_rawText));
 		}
 		
@@ -600,7 +600,7 @@ static autoTextGrid SpeechSynthesizer_Sound_TextInterval_align2 (SpeechSynthesiz
         autoDTW dtw = Sounds_to_DTW (thee_trimmed.get(), synth.get(), analysisWidth, dt, band, constraint);
 		/*
 			6. Warp the synthesis TextGrid
-			First make domains equal, otherwsise the warper protests
+			First make domains equal, otherwise the warper protests
 		*/
         autoTextGrid warp = DTW_TextGrid_to_TextGrid (dtw.get(), tg_syn.get(), precision);
 		/*

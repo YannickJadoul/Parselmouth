@@ -1,6 +1,6 @@
 /* praat_MultiSampledSpectrogram.cpp
  *
- * Copyright (C) 2021-2022 David Weenink
+ * Copyright (C) 2021-2023 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ FORM (MODIFY_EACH_WEAK__MultiSampledSpectrogram_formula_part, U"MultiSampledSpec
 	REAL (fromTime, U"From time", U"0.0")
 	REAL (toTime, U"To time", U"0.0 (= all)")
 	REAL (fromFrequency, U"From frequency (Hz)", U"100.0")
-	REAL (toFrequency, U"To Frequncy (Hz)", U"200.0")
+	REAL (toFrequency, U"To Frequency (Hz)", U"200.0")
 	FORMULA (formula, U"Formula", U"2 * self")
 	OK
 DO
@@ -111,7 +111,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_ConstantQLog2FSpectrogram, U"Sound: To Const
 	NATURAL (numberOfFrequencyBinsPerOctave, U"Number of frequency bins / octave", U"24")
 	POSITIVE (frequencyResolutionInBins, U"Frequency resolution (bins)", U"1.0")
 	POSITIVE (timeOversamplingFactor, U"Time oversampling factor", U"1.0")
-	RADIO_ENUM (kSound_windowShape, filterShape,
+	CHOICE_ENUM (kSound_windowShape, filterShape,
 			U"Filter shape", kSound_windowShape::DEFAULT)
 	OK
 DO
@@ -147,7 +147,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_GaborSpectrogram, U"Sound: To GaborSpectrogr
 	POSITIVE (filterBandwidth, U"Filter bandwidth (Hz)", U"40.0")
 	POSITIVE (frequencyStep, U"Frequency step (hz)", U"20.0")
 	POSITIVE (timeOversamplingFactor, U"Time oversampling factor", U"1.0")
-	RADIO_ENUM (kSound_windowShape, filterShape,
+	CHOICE_ENUM (kSound_windowShape, filterShape,
 			U"Filter shape", kSound_windowShape::DEFAULT)
 	OK
 DO

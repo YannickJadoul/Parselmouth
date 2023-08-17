@@ -18,7 +18,9 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "melder.h"
 #include "Collection.h"
+#include "NUMsorting.h"
 
 #include "Permutation_def.h"
 
@@ -33,8 +35,11 @@ void Permutation_tableJump_inline (Permutation me, integer jumpSize, integer fir
 autoPermutation Permutation_create (integer numberOfElements, bool identity);
 /*
 	Create the Permutation data structure and fill
-		with the identical permutation (1,2,..n)
+		with the identical permutation (1,2,..n) if identity is true
+		else create a random permutation
 */
+
+autoPermutation Permutation_createAsSortingIndex (constSTRVEC const& strvec, kStrings_sorting sorting);
 
 void Permutation_checkInvariant (Permutation me);
 /* Check that the elements, if sorted ascendingly, are exactly equal to the identity (1,2,...). */
@@ -87,5 +92,16 @@ void Permutation_previous_inplace (Permutation me);
 autoPermutation Permutations_multiply2 (Permutation me, Permutation thee);
 
 autoPermutation Permutations_multiply (OrderedOf<structPermutation>* me);
+
+autoPermutation Permutation_permutePartByOther (Permutation me, integer startPosition, Permutation other);
+
+void Permutation_permuteSubsetByOther_inout (Permutation me, constINTVEC const& subsetPositions, Permutation other);
+
+void Permutation_permuteVEC_inout (Permutation me, VEC vec);
+void Permutation_permuteINTVEC_inout (Permutation me, INTVEC vec);
+
+void Permutation_permuteSTRVEC_inout (Permutation me, autoSTRVEC & vec); // special
+
+autoPermutation Permutation_moveElementsToTheFront (Permutation me, constINTVEC const& subsetPositions);
 
 #endif /* _Permutation_h_ */

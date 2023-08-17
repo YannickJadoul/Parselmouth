@@ -2,7 +2,7 @@
 #define _HyperPage_h_
 /* HyperPage.h
  *
- * Copyright (C) 1992-2022 Paul Boersma
+ * Copyright (C) 1992-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,9 +18,12 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Editor.h"
+#include "ScriptEditor.h"
 #include "Collection.h"
 #include "Graphics.h"
+Thing_declare (PraatApplication);
+Thing_declare (PraatObjects);
+Thing_declare (PraatPicture);
 
 Thing_define (HyperLink, Daata) {
 	double x1DC, x2DC, y1DC, y2DC;
@@ -44,10 +47,11 @@ Thing_define (HyperPage, Editor) {
 	autostring32 entryHint; double entryPosition;
 	struct { autostring32 page; double top; } history [20];
 	int historyPointer;
-	autostring32 currentPageTitle;
+	autostring32 optionalCurrentPageTitle;
 	GuiMenuItem fontSizeButton_10, fontSizeButton_12, fontSizeButton_14, fontSizeButton_18, fontSizeButton_24;
-	void *praatApplication, *praatObjects, *praatPicture;
-	bool scriptErrorHasBeenNotified;
+	PraatApplication praatApplication;
+	PraatObjects praatObjects;
+	PraatPicture praatPicture;
 	structMelderDir rootDirectory;
 
 	void v9_destroy () noexcept
@@ -97,6 +101,7 @@ void HyperPage_definition (HyperPage me, conststring32 text);
 void HyperPage_definition1 (HyperPage me, conststring32 text);
 void HyperPage_definition2 (HyperPage me, conststring32 text);
 void HyperPage_definition3 (HyperPage me, conststring32 text);
+void HyperPage_code0 (HyperPage me, conststring32 text);
 void HyperPage_code (HyperPage me, conststring32 text);
 void HyperPage_code1 (HyperPage me, conststring32 text);
 void HyperPage_code2 (HyperPage me, conststring32 text);
@@ -106,12 +111,15 @@ void HyperPage_code5 (HyperPage me, conststring32 text);
 void HyperPage_prototype (HyperPage me, conststring32 text);
 void HyperPage_formula (HyperPage me, conststring32 formula);
 void HyperPage_picture (HyperPage me, double width_inches, double height_inches, void (*draw) (Graphics g));
-void HyperPage_script (HyperPage me, double width_inches, double height_inches, conststring32 script);
+void HyperPage_script (HyperPage me, double width_inches, double height_inches, conststring32 script,
+		Graphics cacheGraphics, conststring32 cacheInfo);
 
 int HyperPage_goToPage (HyperPage me, conststring32 title);
 void HyperPage_goToPage_number (HyperPage me, integer goToPageNumber);
 
 void HyperPage_init (HyperPage me, conststring32 title, Daata data);
+void HyperPage_init1 (HyperPage me, conststring32 title, Daata data, bool backquoteIsVerbatim);
+void HyperPage_init2 (HyperPage me, conststring32 title, Daata data);
 
 void HyperPage_setEntryHint (HyperPage me, conststring32 entry);
 void HyperPage_initSheetOfPaper (HyperPage me);

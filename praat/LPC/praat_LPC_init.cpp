@@ -189,6 +189,66 @@ DIRECT (QUERY_ONE_FOR_REAL_VECTOR__FormantPath_listCeilingFrequencies) {
 	QUERY_ONE_FOR_REAL_VECTOR_END
 }
 
+FORM (QUERY_ONE_FOR_REAL__FormantPath_getOptimalCeiling, U"FormantPath: Get optimal ceiling", U"") {
+	REAL (tmin, U"left Time range (s)", U"0.0")
+	REAL (tmax, U"right Time range (s)", U"0.0 (=all)")
+	NATURALVECTOR (parameters, U"Coefficients by track", WHITESPACE_SEPARATED_, U"3 3 3")
+	POSITIVE (powerf, U"Power", U"1.25")
+	OK
+DO
+	QUERY_ONE_FOR_REAL (FormantPath)
+		double result = FormantPath_getOptimalCeiling (me, tmin, tmax, parameters, powerf);
+	QUERY_ONE_FOR_REAL_END (U"")
+}
+
+FORM (QUERY_ONE_FOR_REAL__FormantPath_getStressOfCandidate, U"FormantPath: Get stress of candidate", U"") {
+	REAL (tmin, U"left Time range (s)", U"0.0")
+	REAL (tmax, U"right Time range (s)", U"0.0 (=all)")
+	NATURAL (candidate, U"Candidate number", U"5")
+	NATURALVECTOR (parameters, U"Coefficients by track", WHITESPACE_SEPARATED_, U"3 3 3")
+	POSITIVE (powerf, U"Power", U"1.25")
+	OK
+DO
+	QUERY_ONE_FOR_REAL (FormantPath)
+		double result = FormantPath_getStressOfCandidate (me, tmin, tmax, 0, 0, parameters, powerf, candidate);
+	QUERY_ONE_FOR_REAL_END (U"")
+}
+
+FORM (QUERY_ONE_FOR_REAL_VECTOR__FormantPath_listStressOfCandidates, U"FormantPath: List stress of candidates", U"") {
+	REAL (tmin, U"left Time range (s)", U"0.0")
+	REAL (tmax, U"right Time range (s)", U"0.0 (=all)")
+	NATURALVECTOR (parameters, U"Coefficients by track", WHITESPACE_SEPARATED_, U"3 3 3")
+	POSITIVE (powerf, U"Power", U"1.25")
+	OK
+DO
+	QUERY_ONE_FOR_REAL_VECTOR (FormantPath)
+		autoVEC result = FormantPath_getStressOfCandidates (me, tmin, tmax, 0, 0, parameters, powerf);
+	QUERY_ONE_FOR_REAL_VECTOR_END
+}
+
+FORM (MODIFY_EACH__FormantPath_setPath, U"FormantPath: Set path", U"") {
+	REAL (tmin, U"left Time range (s)", U"0.0")
+	REAL (tmax, U"right Time range (s)", U"0.0 (=all)")
+	NATURAL (candidate, U"Candidate number", U"5")
+	OK
+DO
+	MODIFY_EACH (FormantPath)
+		FormantPath_setPath	(me, tmin, tmax, candidate);
+	MODIFY_EACH_END	
+}
+
+FORM (MODIFY_EACH__FormantPath_setOptimalPath, U"", U"") {
+	REAL (tmin, U"left Time range (s)", U"0.0")
+	REAL (tmax, U"right Time range (s)", U"0.0 (=all)")
+	NATURALVECTOR (parameters, U"Coefficients by track", WHITESPACE_SEPARATED_, U"3 3 3")
+	POSITIVE (powerf, U"Power", U"1.25")
+	OK
+DO
+	MODIFY_EACH (FormantPath)
+		FormantPath_setOptimalPath (me, tmin, tmax, parameters, powerf);
+	MODIFY_EACH_END
+}
+
 FORM (CONVERT_EACH_TO_ONE__FormantPath_to_Matrix_stress, U"FormantPath: To Matrix (stress)", nullptr) {
 	POSITIVE (windowLength, U"Window length", U"0.025")
 	NATURALVECTOR (parameters, U"Coefficients by track", WHITESPACE_SEPARATED_, U"3 3 3 3")
@@ -362,7 +422,7 @@ DO
 FORM (QUERY_ONE_FOR_REAL__PowerCepstrum_getPeak, U"PowerCepstrum: Get peak", U"PowerCepstrum: Get peak...") {
 	REAL (fromPitch, U"left Search peak in pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Search peak in pitch range (Hz)", U"333.3")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	OK
 DO
@@ -375,7 +435,7 @@ DO
 FORM (QUERY_ONE_FOR_REAL__PowerCepstrum_getPeakInQuefrencyInterval, U"", nullptr) {
 	REAL (fromQuefrency, U"left Quefrency interval (s)", U"0.0033 (=300 Hz)")
 	REAL (toQuefrency, U"right Quefrency interval (s)", U"0.01667 (=60 Hz)")
-	RADIO_ENUM (kCepstrum_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kCepstrum_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kCepstrum_peakInterpolation :: PARABOLIC)
 	OK
 DO
@@ -388,7 +448,7 @@ DO
 FORM (QUERY_ONE_FOR_REAL__PowerCepstrum_getQuefrencyOfPeak, U"PowerCepstrum: Get quefrency of peak", U"PowerCepstrum: Get quefrency of peak...") {
 	REAL (fromPitch, U"left Search peak in pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Search peak in pitch range (Hz)", U"333.3")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	OK
 DO
@@ -501,7 +561,7 @@ DO
 FORM (QUERY_ONE_FOR_REAL__PowerCepstrum_getPeakProminence, U"PowerCepstrum: Get peak prominence", U"PowerCepstrum: Get peak prominence...") {
 	REAL (fromPitch, U"left Search peak in pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Search peak in pitch range (Hz)", U"333.3")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	REAL (fromQuefrency_trendLine, U"left Trend line quefrency range (s)", U"0.001")
 	REAL (toQuefrency_trendLine, U"right Trend line quefrency range (s)", U"0.05")
@@ -688,7 +748,7 @@ FORM (QUERY_ONE_FOR_REAL__PowerCepstrogram_getCPPS, U"PowerCepstrogram: Get CPPS
 	REAL (fromPitch, U"left Peak search pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Peak search pitch range (Hz)", U"330.0")
 	POSITIVE (tolerance, U"Tolerance (0-1)", U"0.05")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	LABEL (U"Trend line:")
 	REAL (fromQuefrency_trendLine, U"left Trend line quefrency range (s)", U"0.001")
@@ -734,7 +794,7 @@ FORM (LIST__PowerCepstrogram_listCPP, U"PowerCepstrogram: List cepstral peak pro
 	REAL (fromPitch, U"left Peak search pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Peak search pitch range (Hz)", U"330.0")
 	POSITIVE (tolerance, U"Tolerance (0-1)", U"0.05")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	REAL (fromQuefrency_trendLine, U"left Trend line quefrency range (s)", U"0.001")
 	REAL (toQuefrency_trendLine, U"right Trend line quefrency range (s)", U"0.05")
@@ -759,7 +819,7 @@ FORM (NEW__PowerCepstrogram_to_Table_CPP, U"PowerCepstrogram: To Table (cepstral
 	REAL (fromPitch, U"left Peak search pitch range (Hz)", U"60.0")
 	REAL (toPitch, U"right Peak search pitch range (Hz)", U"330.0")
 	POSITIVE (tolerance, U"Tolerance (0-1)", U"0.05")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation :: PARABOLIC)
 	REAL (fromQuefrency_trendLine, U"left Trend line quefrency range (s)", U"0.001")
 	REAL (toQuefrency_trendLine, U"right Trend line quefrency range (s)", U"0.05")
@@ -808,11 +868,11 @@ FORM (CONVERT_TWO_TO_ONE__Cepstrumc_to_DTW, U"Cepstrumc: To DTW", U"Cepstrumc: T
 	LABEL (U"Boundary conditions for time warp")
 	BOOLEAN (matchBeginPositions, U"Match begin positions", false)
 	BOOLEAN (matchEndPositions, U"Match end positions", false)
-	RADIO (slopeConstraintType, U"Slope constraints", 1)
-		RADIOBUTTON (U"no restriction")
-		RADIOBUTTON (U"1/3 < slope < 3")
-		RADIOBUTTON (U"1/2 < slope < 2")
-		RADIOBUTTON (U"2/3 < slope < 3/2")
+	CHOICE (slopeConstraintType, U"Slope constraints", 1)
+		OPTION (U"no restriction")
+		OPTION (U"1/3 < slope < 3")
+		OPTION (U"1/2 < slope < 2")
+		OPTION (U"2/3 < slope < 3/2")
 	OK
 DO
 	CONVERT_TWO_TO_ONE (Cepstrumc)
@@ -1165,10 +1225,10 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_FormantPath, U"Sound: To FormantPath", nullp
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
 	POSITIVE (preEmphasisFrequency, U"Pre-emphasis from (Hz)", U"50.0")
 	OPTIONMENU_ENUM (kLPC_Analysis, lpcModel, U"LPC model", kLPC_Analysis::DEFAULT)
-	LABEL (U"The maximum and minimum ceilings are determined as:")
-	LABEL (U" middleFormantCeiling * exp(+/- ceilingStepSize * numberOfStepsToACeiling).")
+	LABEL (U"The maximum and minimum ceiling frequencies are determined as:")
+	LABEL (U" middleFormantCeiling * exp(+/- ceilingStepSize * numberOfStepsUpDown).")
 	POSITIVE (ceilingStepSize, U"Ceiling step size", U"0.05")
-	NATURAL (numberOfStepsToACeiling, U"Number of steps up / down", U"4")
+	NATURAL (numberOfStepsUpDown, U"Number of steps up / down", U"4")
 	LABEL (U"For Marple analysis:")
 	POSITIVE (marple_tol1, U"Tolerance 1", U"1e-6")
 	POSITIVE (marple_tol2, U"Tolerance 2", U"1e-6")
@@ -1181,7 +1241,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_FormantPath, U"Sound: To FormantPath", nullp
 DO
 	CONVERT_EACH_TO_ONE (Sound)
 		autoSound multichannel;
-		autoFormantPath result = Sound_to_FormantPath_any (me, lpcModel, timeStep, maximumNumberOfFormants, middleFormantCeiling, windowLength, preEmphasisFrequency, ceilingStepSize, numberOfStepsToACeiling, marple_tol1, marple_tol2, huber_numberOfStdDev, huber_tolerance, huber_maximumNumberOfIterations,
+		autoFormantPath result = Sound_to_FormantPath_any (me, lpcModel, timeStep, maximumNumberOfFormants, middleFormantCeiling, windowLength, preEmphasisFrequency, ceilingStepSize, numberOfStepsUpDown, marple_tol1, marple_tol2, huber_numberOfStdDev, huber_tolerance, huber_maximumNumberOfIterations,
 			( sourcesAsMultichannel ? & multichannel : nullptr ));
 		if (sourcesAsMultichannel)
 			praat_new (multichannel.move(), my name.get(), U"_sources");
@@ -1194,14 +1254,34 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_FormantPath_burg, U"Sound: To FormantPath (B
 	REAL (middleFormantCeiling, U"Middle formant ceiling (Hz)", U"5500.0 (= adult female)")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
 	POSITIVE (preEmphasisFrequency, U"Pre-emphasis from (Hz)", U"50.0")
-	LABEL (U"The maximum and minimum ceilings are determined as:")
-	LABEL (U" middleCeiling * exp(+/- ceilingStepSize * numberOfStepsToACeiling).")
+	LABEL (U"The maximum and minimum ceiling frequencies are determined as:")
+	LABEL (U" middleCeiling * exp(+/- ceilingStepSize * numberOfStepsUpDown).")
 	POSITIVE (ceilingStepSize, U"Ceiling step size", U"0.05")
-	NATURAL (numberOfStepsToACeiling, U"Number of steps up / down", U"4")
+	NATURAL (numberOfStepsUpDown, U"Number of steps up / down", U"4")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
-		autoFormantPath result = Sound_to_FormantPath_burg (me, timeStep, maximumNumberOfFormants, middleFormantCeiling, windowLength, preEmphasisFrequency, ceilingStepSize, numberOfStepsToACeiling);
+		autoFormantPath result = Sound_to_FormantPath_burg (me, timeStep, maximumNumberOfFormants, middleFormantCeiling, windowLength, preEmphasisFrequency, ceilingStepSize, numberOfStepsUpDown);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__Sound_to_FormantPath_robust, U"Sound: To FormantPath (robust)", U"Sound: To FormantPath (burg)...") {
+	REAL (timeStep, U"Time step (s)", U"0.005")
+	POSITIVE (maximumNumberOfFormants, U"Max. number of formants", U"5.0")
+	REAL (middleFormantCeiling, U"Middle formant ceiling (Hz)", U"5500.0 (= adult female)")
+	POSITIVE (windowLength, U"Window length (s)", U"0.025")
+	POSITIVE (preEmphasisFrequency, U"Pre-emphasis from (Hz)", U"50.0")
+	POSITIVE (numberOfStandardDeviations, U"Number of std. dev.", U"1.5")
+	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"5")
+	REAL (tolerance, U"Tolerance", U"0.000001")
+	LABEL (U"The maximum and minimum ceiling frequencies are determined as:")
+	LABEL (U" middleCeiling * exp(+/- ceilingStepSize * numberOfStepsUpDown).")
+	POSITIVE (ceilingStepSize, U"Ceiling step size", U"0.05")
+	NATURAL (numberOfStepsUpDown, U"Number of steps up / down", U"4")
+	OK
+DO
+	CONVERT_EACH_TO_ONE (Sound)
+		autoFormantPath result = Sound_to_FormantPath_robust (me, timeStep, maximumNumberOfFormants, middleFormantCeiling, windowLength, preEmphasisFrequency, numberOfStandardDeviations, maximumNumberOfIterations, tolerance, ceilingStepSize, numberOfStepsUpDown);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
@@ -1442,7 +1522,7 @@ static autoDaata HTKParameterFileRecognizer (integer nread, const char *header, 
 			we have come here by chance alone are very small.
 		*/
 		conststring32 fileName = MelderFile_name (file);
-		if (Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".fb", false) && 
+		if (Melder_endsWith_caseAware (fileName, U".fb") && 
 			htkType == 9 && frameSize % 8 == 0) // test user type and if it stores (F + B) as r32
 		{
 			return Formant_readFromHTKParameterFile (file);
@@ -1500,6 +1580,17 @@ void praat_uvafon_LPC_init () {
 			QUERY_ONE_FOR_REAL__FormantPath_getNumberOfCandidates);
 		praat_addAction1 (classFormantPath, 0, U"List ceiling frequencies", nullptr, 1,
 			QUERY_ONE_FOR_REAL_VECTOR__FormantPath_listCeilingFrequencies);
+		praat_addAction1 (classFormantPath, 0, U"Get stress of candidate...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__FormantPath_getStressOfCandidate);
+		praat_addAction1 (classFormantPath, 0, U"List stress of candidates...", nullptr, 1,
+			QUERY_ONE_FOR_REAL_VECTOR__FormantPath_listStressOfCandidates);
+		praat_addAction1 (classFormantPath, 0, U"Get optimal ceiling...", nullptr, 1,
+			QUERY_ONE_FOR_REAL__FormantPath_getOptimalCeiling);
+	praat_addAction1 (classFormantPath, 0, U"Modify -", nullptr, 0, nullptr);
+		praat_addAction1 (classFormantPath, 0, U"Set path...", nullptr, 1,
+			MODIFY_EACH__FormantPath_setPath);
+		praat_addAction1 (classFormantPath, 0, U"Set optimal path...", nullptr, 1,
+			MODIFY_EACH__FormantPath_setOptimalPath);
 	praat_addAction1 (classFormantPath, 0, U"Extract Formant", nullptr,0, 
 			CONVERT_EACH_TO_ONE__FormantPath_extractFormant);
 	praat_addAction1 (classFormantPath, 0, U"To Matrix (stress)...", nullptr,0, 
@@ -1715,6 +1806,8 @@ void praat_uvafon_LPC_init () {
 			CONVERT_EACH_TO_ONE__Sound_to_FormantPath);
 	praat_addAction1 (classSound, 0, U"To FormantPath (burg)...", U"To FormantPath...", 1, 
 			CONVERT_EACH_TO_ONE__Sound_to_FormantPath_burg);
+	praat_addAction1 (classSound, 0, U"To FormantPath (robust)...", U"To FormantPath (burg)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN, 
+			CONVERT_EACH_TO_ONE__Sound_to_FormantPath_robust);
 	praat_addAction1 (classSound, 0, U"To LPC", U"To FormantPath...", 1, nullptr);
 	praat_addAction1 (classSound, 0, U"To LPC (autocorrelation)...", U"To LPC", 2,
 			CONVERT_EACH_TO_ONE__Sound_to_LPC_autocorrelation);

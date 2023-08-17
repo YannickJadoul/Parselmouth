@@ -117,7 +117,7 @@ struct MelderIntegerRange {
 	integer first, last;
 	bool isEmpty () const { return ( last < first ); }
 	integer size () const {
-		integer result = last - first + 1;
+		const integer result = last - first + 1;
 		return std::max (result, 0_integer);
 	}
 };

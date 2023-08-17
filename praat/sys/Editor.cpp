@@ -1,6 +1,6 @@
 /* Editor.cpp
  *
- * Copyright (C) 1992-2022 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
+ * Copyright (C) 1992-2023 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ static void commonCallback (EditorCommand me, GuiMenuItemEvent /* event */) {
 		my commandCallback (my sender, me, nullptr, 0, nullptr, nullptr, nullptr);
 	} catch (MelderError) {
 		if (! Melder_hasError (U"Script exited."))
-			Melder_appendError (U"Menu command \"", my itemTitle.get(), U"\" not completed.");
+			Melder_appendError (U"Menu command “", my itemTitle.get(), U"” not completed.");
 		Melder_flushError ();
 	}
 }
@@ -63,7 +63,7 @@ static GuiMenuItem DataGuiMenu_addCommand_ (EditorMenu me, conststring32 itemTit
 	thy d_editor = my d_editor;
 	thy sender = ( optionalSender ? optionalSender : thy d_editor );
 	thy menu = me;
-	const bool titleIsHeader = Melder_stringMatchesCriterion (itemTitle, kMelder_string::ENDS_WITH, U":", true);
+	const bool titleIsHeader = Melder_endsWith (itemTitle, U":");
 	if (titleIsHeader) {
 		flags |= GuiMenu_UNDERLINED;
 		if (itemTitle [0] == U'-' && itemTitle [1] == U' ') {
@@ -154,9 +154,9 @@ GuiMenuItem Editor_addCommand (Editor me, conststring32 menuTitle, conststring32
 			if (str32equ (menuTitle, menu -> menuTitle.get()))
 				return EditorMenu_addCommand (menu, itemTitle, flags, commandCallback);
 		}
-		Melder_throw (U"Menu \"", menuTitle, U"\" does not exist.");
+		Melder_throw (U"Menu “", menuTitle, U"” does not exist.");
 	} catch (MelderError) {
-		Melder_throw (U"Command \"", itemTitle, U"\" not inserted in menu \"", menuTitle, U".");
+		Melder_throw (U"Command “", itemTitle, U"” not inserted in menu “", menuTitle, U"”.");
 	}
 }
 
@@ -217,17 +217,20 @@ GuiMenuItem Editor_addCommandScript (Editor me, conststring32 menuTitle, constst
 			static bool warningGiven = false;
 			if (! warningGiven) {
 				warningGiven = true;
-				Melder_warning (U"The menu \"", menuTitle, U"\" no longer exists. The command \"", itemTitle,
-						U"\" has been installed in the menu \"", alternativeMenuTitle, U"\" instead. You could consider updating the script \"", script, U"\".");
+				Melder_warning (U"The menu “", menuTitle, U"” no longer exists. The command “", itemTitle,
+					U"” has been installed in the menu “", alternativeMenuTitle, U"” instead. "
+					U"You could consider updating the script that installed “", script, U"”, "
+					U"which is either the buttons file or a plug-in."
+				);
 			}
 			return menuItem;
 		} // else issue the original warning
 	}
 	Melder_warning (
-		U"Menu \"", menuTitle, U"\" does not exist.\n"
-		U"Command \"", itemTitle, U"\" not inserted in menu \"", menuTitle, U"\".\n"
+		U"Menu “", menuTitle, U"” does not exist.\n"
+		U"Command “", itemTitle, U"” not inserted in menu “", menuTitle, U"”.\n"
 		U"To fix this, go to Praat->Preferences->Buttons->Editors, and remove the script from this menu.\n"
-		U"You may want to install the script in a different menu."
+		U"You may then want to install the script in a different menu."
 	);
 	return nullptr;
 }
@@ -256,10 +259,11 @@ EditorCommand Editor_getMenuCommand (Editor me, conststring32 menuTitle, constst
 			}
 		}
 	}
-	Melder_throw (U"Command \"", itemTitle, U"\" not found in menu \"", menuTitle, U"\".");
+	Melder_throw (U"Command “", itemTitle, U"” not found in menu “", menuTitle, U"”.");
 }
 
 void Editor_doMenuCommand (Editor me, conststring32 commandTitle, integer narg, Stackel args, conststring32 arguments, Interpreter interpreter) {
+	Melder_assert (me);
 	integer numberOfMenus = my menus.size;
 	for (int imenu = 1; imenu <= numberOfMenus; imenu ++) {
 		EditorMenu menu = my menus.at [imenu];
@@ -272,19 +276,33 @@ void Editor_doMenuCommand (Editor me, conststring32 commandTitle, integer narg, 
 			}
 		}
 	}
+	Melder_assert (my classInfo);
 	Melder_throw (U"Command not available in ", my classInfo -> className, U".");
 }
 
 /********** class Editor **********/
 
 void structEditor :: v9_destroy () noexcept {
-	trace (U"enter");
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
 	/*
 		The following command must be performed before the shell is destroyed.
 		Otherwise, we would be forgetting dangling command dialogs here.
 	*/
 	our menus.removeAllItems();
+	for (integer i = theReferencesToAllOpenScriptEditors.size; i >= 1; i --) {
+		ScriptEditor scriptEditor = theReferencesToAllOpenScriptEditors.at [i];
+		if (scriptEditor -> optionalReferenceToOwningEditor != this)
+			continue;
+		if (scriptEditor -> dirty || scriptEditor -> interpreter && scriptEditor -> interpreter -> running) {
+			scriptEditor -> optionalReferenceToOwningEditor = nullptr;   // undangle
+			if (scriptEditor -> interpreter)
+				scriptEditor -> interpreter -> undangleEditorEnvironments();
+			Thing_setName (scriptEditor, nullptr);
+			Editor_setMenuSensitive (scriptEditor, U"Run", false);
+		} else
+			forget (scriptEditor);
+	}
+	Interpreters_undangleEnvironment (this);
 
 	Editor_broadcastDestruction (this);
 	if (our windowForm) {
@@ -326,8 +344,14 @@ void structEditor :: v1_info () {
 }
 
 void structEditor :: v_nameChanged () {
-	if (our name)
+	if (our name) {
 		GuiShell_setTitle (our windowForm, our name.get());
+		for (integer i = 1; i <= theReferencesToAllOpenScriptEditors.size; i ++) {
+			ScriptEditor scriptEditor = theReferencesToAllOpenScriptEditors.at [i];
+			if (scriptEditor -> optionalReferenceToOwningEditor == this)
+				Thing_setName (theReferencesToAllOpenScriptEditors.at [i], nullptr);
+		}
+	}
 }
 
 void structEditor :: v_saveData () {
@@ -341,7 +365,7 @@ void structEditor :: v_restoreData () {
 		Thing_swap (our data(), our previousData.get());
 }
 
-static void menu_cb_sendBackToCallingProgram (Editor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_sendBackToCallingProgram (Editor me, EDITOR_ARGS) {
 	if (my data()) {
 		structMelderFile file { };
 		MelderDir_getFile (& Melder_preferencesFolder, U"praat_backToCaller.Data", & file);
@@ -351,15 +375,22 @@ static void menu_cb_sendBackToCallingProgram (Editor me, EDITOR_ARGS_DIRECT) {
 	my v_goAway ();
 }
 
-static void menu_cb_close (Editor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_close (Editor me, EDITOR_ARGS) {
 	my v_goAway ();
+	if (optionalInterpreter && (optionalInterpreter -> optionalOwningEnvironmentEditor() == me || optionalInterpreter -> optionalDynamicEnvironmentEditor() == me))
+		optionalInterpreter -> undangleEditorEnvironments();
 }
 
-static void menu_cb_undo (Editor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_undo (Editor me, EDITOR_ARGS) {
 	my v_restoreData ();
-	if (str32nequ (my undoText, U"Undo", 4)) my undoText [0] = U'R', my undoText [1] = U'e';
-	else if (str32nequ (my undoText, U"Redo", 4)) my undoText [0] = U'U', my undoText [1] = U'n';
-	else str32cpy (my undoText, U"Undo?");
+	if (str32nequ (my undoText, U"Undo", 4)) {
+		my undoText [0] = U'R';
+		my undoText [1] = U'e';
+	} else if (str32nequ (my undoText, U"Redo", 4)) {
+		my undoText [0] = U'U';
+		my undoText [1] = U'n';
+	} else
+		str32cpy (my undoText, U"Undo?");
 	#if gtk
 		gtk_label_set_label (GTK_LABEL (gtk_bin_get_child (GTK_BIN (my undoButton -> d_widget))), Melder_peek32to8 (my undoText));
 	#elif motif
@@ -371,16 +402,16 @@ static void menu_cb_undo (Editor me, EDITOR_ARGS_DIRECT) {
 	Editor_broadcastDataChanged (me);
 }
 
-static void menu_cb_searchManual (Editor /* me */, EDITOR_ARGS_DIRECT) {
+static void menu_cb_searchManual (Editor /* me */, EDITOR_ARGS) {
 	Melder_search ();
 }
 
-static void menu_cb_newScript (Editor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_newScript (Editor me, EDITOR_ARGS) {
 	autoScriptEditor scriptEditor = ScriptEditor_createFromText (me, nullptr);
 	scriptEditor.releaseToUser();
 }
 
-static void menu_cb_openScript (Editor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_openScript (Editor me, EDITOR_ARGS) {
 	autoScriptEditor scriptEditor = ScriptEditor_createFromText (me, nullptr);
 	TextEditor_showOpen (scriptEditor.get());
 	scriptEditor.releaseToUser();
@@ -391,13 +422,13 @@ void structEditor :: v_createMenuItems_edit (EditorMenu menu) {
 		our undoButton = EditorMenu_addCommand (menu, U"Cannot undo", GuiMenu_INSENSITIVE + 'Z', menu_cb_undo);
 }
 
-static void INFO_EDITOR__settingsReport (Editor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
+static void INFO_EDITOR__settingsReport (Editor me, EDITOR_ARGS) {
 	INFO_EDITOR
 		Thing_info (me);
 	INFO_EDITOR_END
 }
 
-static void INFO_DATA__info (Editor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
+static void INFO_DATA__info (Editor me, EDITOR_ARGS) {
 	INFO_DATA
 		if (my data())
 			Thing_info (my data());

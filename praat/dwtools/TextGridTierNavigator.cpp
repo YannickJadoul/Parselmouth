@@ -1,6 +1,6 @@
 /* TextGridTierNavigator.cpp
  *
- * Copyright (C) 2021 David Weenink
+ * Copyright (C) 2021-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -266,6 +266,8 @@ void TextGridTierNavigator_replaceTier (TextGridTierNavigator me, TextGrid thee,
 		Melder_require (my tier -> classInfo == tier -> classInfo,
 			U"The tier should be of the same type as the one you want to replace.");
 		my tier = Data_copy (tier);
+		my xmin = thy xmin;
+		my xmax = thy xmax;
 		my currentTopicIndex = 0; // offLeft
 	} catch (MelderError) {
 		Melder_throw (me, U": cannot replace the tier.");
@@ -280,7 +282,7 @@ void TextGridTierNavigator_modifyBeforeRange (TextGridTierNavigator me, integer 
 }
 
 void TextGridTierNavigator_modifyAfterRange (TextGridTierNavigator me, integer from, integer to) {
-	Melder_require (from > 0 &&  to > 0,
+	Melder_require (from > 0 && to > 0,
 		U"Both numbers in the after range should be positive.");
 	my afterRange.first = std::min (from, to);
 	my afterRange.last = std::max (from, to);

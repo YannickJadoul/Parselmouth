@@ -58,9 +58,9 @@ oo_DEFINE_CLASS (EspeakVoice, Daata)
 	
 	#if oo_READING
 		oo_VERSION_UNTIL (1)
-			autoINTVEC width2 = copy_INTVEC (width.get()); // width2 is obsolete
-			oo_INTVEC (width, numberOfFormants)	// (short) 100% = 256
-			width = width2.move();
+			autoINTVEC saveWidth = copy_INTVEC (width.get());
+			oo_INTVEC (width, numberOfFormants)	// (short) 100% = 256   // this used to be width2, but this is now obsolete
+			width = saveWidth.move();
 		oo_VERSION_END
 	#endif
 	
@@ -121,7 +121,7 @@ oo_DEFINE_CLASS (SpeechSynthesizer, Daata)
 		oo_QUESTION (d_estimateSpeechRate)
 	#endif
 
-	#if ! oo_READING && ! oo_WRITING
+	#if ! oo_READING && ! oo_WRITING && ! oo_COMPARING
 		// Filled by the callback
 		oo_OBJECT (Table, 0, d_events)
 		oo_DOUBLE (d_internalSamplingFrequency)

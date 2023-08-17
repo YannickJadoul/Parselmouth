@@ -1,6 +1,6 @@
 /* praat_picture.cpp
  *
- * Copyright (C) 1992-2022 Paul Boersma
+ * Copyright (C) 1992-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -156,7 +156,7 @@ DO
 	y1NDC -= ymargin;
 	y2NDC += ymargin;
 	{
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_setFontSize (GRAPHICS, praat_size = fontSize);
 	}
 	Picture_setSelection (praat_picture, x1NDC, x2NDC, y1NDC, y2NDC);
@@ -178,7 +178,7 @@ DIRECT (GRAPHICS_MouseSelectsInnerViewport) {
 	if (theCurrentPraatPicture != & theForegroundPraatPicture)
 		Melder_throw (U"Mouse commands are not available inside pictures.");
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Picture_setMouseSelectsInnerViewport (praat_picture.get(), praat_mouseSelectsInnerViewport = true);
 	}
 	updateViewportMenu ();
@@ -189,7 +189,7 @@ DIRECT (GRAPHICS_MouseSelectsOuterViewport) {
 	if (theCurrentPraatPicture != & theForegroundPraatPicture)
 		Melder_throw (U"Mouse commands are not available inside pictures.");
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Picture_setMouseSelectsInnerViewport (praat_picture.get(), praat_mouseSelectsInnerViewport = false);
 	}
 	updateViewportMenu ();
@@ -214,7 +214,7 @@ OK
 	SET_REAL (top, 12.0 - theCurrentPraatPicture -> y2NDC + ymargin)
 	SET_REAL (bottom, 12.0 - theCurrentPraatPicture -> y1NDC - ymargin)
 DO
-	//if (theCurrentPraatObjects != & theForegroundPraatObjects) Melder_throw (U"Viewport commands are not available inside manuals.");
+	//Melder_require (praat_commandsWithExternalSideEffectsAreAllowed (), U"Viewport commands are not available inside manuals.");
 	double xmargin = theCurrentPraatPicture -> fontSize * 4.2 / 72.0, ymargin = theCurrentPraatPicture -> fontSize * 2.8 / 72.0;
 	trace (U"1: xmargin ", xmargin, U" ymargin ", ymargin);
 	if (theCurrentPraatPicture != & theForegroundPraatPicture) {
@@ -283,7 +283,7 @@ OK
 	SET_REAL (top, 12.0 - theCurrentPraatPicture -> y2NDC)
 	SET_REAL (bottom, 12.0 - theCurrentPraatPicture -> y1NDC)
 DO
-	//if (theCurrentPraatObjects != & theForegroundPraatObjects) Melder_throw (U"Viewport commands are not available inside manuals.");
+	//Melder_require (praat_commandsWithExternalSideEffectsAreAllowed (), U"Viewport commands are not available inside manuals.");
 	if (left == right)
 		Melder_throw (U"The left and right edges of the viewport cannot be equal.\nPlease change the horizontal range.");
 	Melder_sort (& left, & right);
@@ -317,20 +317,20 @@ DO
 }
 
 FORM (GRAPHICS_ViewportText, U"Praat picture: Viewport text", U"Viewport text...") {
-	RADIOx (horizontalAlignment, U"Horizontal alignment", 2, 0)
-		RADIOBUTTON (U"left")
-		RADIOBUTTON (U"centre")
-		RADIOBUTTON (U"right")
-	RADIOx (verticalAlignment, U"Vertical alignment", 2, 0)
-		RADIOBUTTON (U"bottom")
-		RADIOBUTTON (U"half")
-		RADIOBUTTON (U"top")
+	CHOICEx (horizontalAlignment, U"Horizontal alignment", 2, 0)
+		OPTION (U"left")
+		OPTION (U"centre")
+		OPTION (U"right")
+	CHOICEx (verticalAlignment, U"Vertical alignment", 2, 0)
+		OPTION (U"bottom")
+		OPTION (U"half")
+		OPTION (U"top")
 	REAL (rotation, U"Rotation (degrees)", U"0")
 	TEXTFIELD (text, U"Text", U"", 3)
 OK
 DO
 	double x1WC, x2WC, y1WC, y2WC;
-	autoPraatPicture picture;
+	autoPraatPictureOpen picture;
 	Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	Graphics_setWindow (GRAPHICS, 0, 1, 0, 1);
 	Graphics_setTextAlignment (GRAPHICS, (kGraphics_horizontalAlignment) horizontalAlignment, verticalAlignment);
@@ -436,7 +436,7 @@ DO
 
 static void setColour (MelderColour colour) {
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_setColour (GRAPHICS, colour);
 	}
 	theCurrentPraatPicture -> colour = colour;
@@ -499,7 +499,7 @@ FORM_SAVE (GRAPHICS_Picture_writeToPdfFile, U"Save as PDF file", nullptr, U"praa
 		Picture_writeToPdfFile (praat_picture.get(), file);
 	} else {
 		try {
-			//autoPraatPicture picture;
+			//autoPraatPictureOpen picture;
 			autoGraphics graphics = Graphics_create_pdffile (file, 300, undefined, 10.24, undefined, 7.68);
 			Graphics_play (GRAPHICS, graphics.get());
 		} catch (MelderError) {
@@ -554,12 +554,12 @@ FORM (GRAPHICS_PostScript_settings, U"PostScript settings", U"PostScript setting
 	#if defined (_WIN32)
 		BOOLEAN (allowDirectPostscript, U"Allow direct PostScript", true);
 	#endif
-	RADIO_ENUM (kGraphicsPostscript_spots, greyResolution,
+	CHOICE_ENUM (kGraphicsPostscript_spots, greyResolution,
 			U"Grey resolution", kGraphicsPostscript_spots::DEFAULT)
 	#if defined (UNIX)
-		RADIO_ENUM (kGraphicsPostscript_paperSize, paperSize,
+		CHOICE_ENUM (kGraphicsPostscript_paperSize, paperSize,
 				U"Paper size", kGraphicsPostscript_paperSize::DEFAULT)
-		RADIO_ENUM (kGraphicsPostscript_orientation, orientation,
+		CHOICE_ENUM (kGraphicsPostscript_orientation, orientation,
 				U"Orientation", kGraphicsPostscript_orientation::DEFAULT)
 		POSITIVE (magnification, U"Magnification", U"1.0");
 		#if defined (linux)
@@ -568,7 +568,7 @@ FORM (GRAPHICS_PostScript_settings, U"PostScript settings", U"PostScript setting
 			TEXTFIELD (printCommand, U"Print command", U"lp -c %s", 4)
 		#endif
 	#endif
-	RADIO_ENUM (kGraphicsPostscript_fontChoiceStrategy, fontChoiceStrategy,
+	CHOICE_ENUM (kGraphicsPostscript_fontChoiceStrategy, fontChoiceStrategy,
 			U"Font choice strategy", kGraphicsPostscript_fontChoiceStrategy::DEFAULT)
 OK
 	#if defined (_WIN32)
@@ -753,11 +753,11 @@ Thing_define (PraatPictureFunction, Daata) {
 		double xmin, xmax, dx, x1;
 		integer nx;
 	// overridden methods:
-		virtual bool v_hasGetXmin () { return true; }   virtual double v_getXmin ()           { return xmin; }
-		virtual bool v_hasGetXmax () { return true; }   virtual double v_getXmax ()           { return xmax; }
-		virtual bool v_hasGetNx   () { return true; }   virtual double v_getNx   ()           { return nx; }
-		virtual bool v_hasGetDx   () { return true; }   virtual double v_getDx   ()           { return dx; }
-		virtual bool v_hasGetX    () { return true; }   virtual double v_getX    (integer ix) { return x1 + (ix - 1) * dx; }
+		virtual bool v_hasGetXmin () const { return true; }   virtual double v_getXmin ()           const { return xmin; }
+		virtual bool v_hasGetXmax () const { return true; }   virtual double v_getXmax ()           const { return xmax; }
+		virtual bool v_hasGetNx   () const { return true; }   virtual double v_getNx   ()           const { return nx; }
+		virtual bool v_hasGetDx   () const { return true; }   virtual double v_getDx   ()           const { return dx; }
+		virtual bool v_hasGetX    () const { return true; }   virtual double v_getX    (integer ix) const { return x1 + (ix - 1) * dx; }
 };
 Thing_implement (PraatPictureFunction, Daata, 0);
 
@@ -1196,7 +1196,7 @@ FORM (GRAPHICS_OneMarkLeft, U"Praat picture: One mark left", U"One mark left/rig
 DO
 	double x1WC, x2WC, y1WC, y2WC;
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
 	sortBoundingBox (& x1WC, & x2WC, & y1WC, & y2WC);
@@ -1218,7 +1218,7 @@ FORM (GRAPHICS_OneMarkRight, U"Praat picture: One mark right", U"One mark left/r
 DO
 	double x1WC, x2WC, y1WC, y2WC;
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
 	sortBoundingBox (& x1WC, & x2WC, & y1WC, & y2WC);
@@ -1240,7 +1240,7 @@ FORM (GRAPHICS_OneMarkTop, U"Praat picture: One mark top", U"One mark left/right
 DO
 	double x1WC, x2WC, y1WC, y2WC;
 	{// scope
-		autoPraatPicture picture;   // WHY?
+		autoPraatPictureOpen picture;   // WHY?
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
 	sortBoundingBox (& x1WC, & x2WC, & y1WC, & y2WC);
@@ -1262,7 +1262,7 @@ FORM (GRAPHICS_OneMarkBottom, U"Praat picture: One mark bottom", U"One mark left
 DO
 	double x1WC, x2WC, y1WC, y2WC;
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
 	sortBoundingBox (& x1WC, & x2WC, & y1WC, & y2WC);
@@ -1284,7 +1284,7 @@ FORM (GRAPHICS_OneLogarithmicMarkLeft, U"Praat picture: One logarithmic mark lef
 DO
 	double x1WC, x2WC, y1WC, y2WC;
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
 	sortBoundingBox (& x1WC, & x2WC, & y1WC, & y2WC);
@@ -1306,7 +1306,7 @@ FORM (GRAPHICS_OneLogarithmicMarkRight, U"Praat picture: One logarithmic mark ri
 DO
 	double x1WC, x2WC, y1WC, y2WC;
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
 	sortBoundingBox (& x1WC, & x2WC, & y1WC, & y2WC);
@@ -1328,7 +1328,7 @@ FORM (GRAPHICS_OneLogarithmicMarkTop, U"Praat picture: One logarithmic mark top"
 DO
 	double x1WC, x2WC, y1WC, y2WC;
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
 	sortBoundingBox (& x1WC, & x2WC, & y1WC, & y2WC);
@@ -1350,7 +1350,7 @@ FORM (GRAPHICS_OneLogarithmicMarkBottom, U"Praat picture: One logarithmic mark b
 DO
 	double x1WC, x2WC, y1WC, y2WC;
 	{// scope
-		autoPraatPicture picture;
+		autoPraatPictureOpen picture;
 		Graphics_inqWindow (GRAPHICS, & x1WC, & x2WC, & y1WC, & y2WC);
 	}
 	sortBoundingBox (& x1WC, & x2WC, & y1WC, & y2WC);
@@ -1379,7 +1379,7 @@ FORM (GRAPHICS_HorizontalWorldCoordinatesToMm, U"Compute horizontal distance in 
 	REAL (distance, U"Distance (wc)", U"0.1")
 	OK
 DO
-	QUERY_GRAPHICS_FOR_REAL   // TODO: do we need autoPraatPicture for any of these?
+	QUERY_GRAPHICS_FOR_REAL   // TODO: do we need autoPraatPictureOpen for any of these?
 		Graphics_setFontSize (GRAPHICS, theCurrentPraatPicture -> fontSize);
 		Graphics_setViewport (GRAPHICS, theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);
 		Graphics_setInner (GRAPHICS);
@@ -1440,9 +1440,9 @@ DO
 }
 
 FORM (GRAPHICS_PostScriptTextWidth_worldCoordinates, U"PostScript text width in world coordinates", nullptr) {
-	RADIOx (phoneticFont, U"Phonetic font", 1, 0)
-		RADIOBUTTON (U"XIPA")
-		RADIOBUTTON (U"SILIPA")
+	CHOICEx (phoneticFont, U"Phonetic font", 1, 0)
+		OPTION (U"XIPA")
+		OPTION (U"SILIPA")
 	TEXTFIELD (text, U"Text", U"Hello world", 3)
 	OK
 DO
@@ -1458,9 +1458,9 @@ DO
 
 
 FORM (GRAPHICS_PostScriptTextWidth_mm, U"PostScript text width in millimetres", nullptr) {
-	RADIOx (phoneticFont, U"Phonetic font", 1, 0)
-		RADIOBUTTON (U"XIPA")
-		RADIOBUTTON (U"SILIPA")
+	CHOICEx (phoneticFont, U"Phonetic font", 1, 0)
+		OPTION (U"XIPA")
+		OPTION (U"SILIPA")
 	TEXTFIELD (text, U"Text", U"Hello world", 3)
 	OK
 DO
@@ -1613,12 +1613,15 @@ void praat_picture_open () {
 			GuiThing_show (thePictureWindow);
 		#endif
 	}
-	/* Foregoing drawing routines may have changed some of the output attributes */
-	/* that can be set by the user. */
-	/* Make sure that they have the right values before every drawing. */
-	/* This is especially necessary after an 'erase picture': */
-	/* the output attributes that were set by the user before the 'erase' */
-	/* must be recorded before copying to a PostScript file. */
+	/*
+		Obsolete comment (noticed 2023-04-05):
+		Foregoing drawing routines may have changed some of the output attributes
+		that can be set by the user.
+		Make sure that they have the right values before every drawing.
+		This is especially necessary after an 'erase picture':
+		the output attributes that were set by the user before the 'erase'
+		must be recorded before copying to a PostScript file.
+	*/
 	Graphics_setFont (GRAPHICS, theCurrentPraatPicture -> font);
 	Graphics_setFontSize (GRAPHICS, theCurrentPraatPicture -> fontSize);
 	Graphics_setLineType (GRAPHICS, theCurrentPraatPicture -> lineType);
@@ -1924,7 +1927,7 @@ void praat_picture_init (bool showPictureWindowAtStartUp) {
 		width = height = resolution * 12;
 		scrollWindow = GuiScrolledWindow_createShown (thePictureWindow, margin, 0, Machine_getMenuBarBottom () + margin, 0, 1, 1, 0);
 		drawingArea = GuiDrawingArea_createShown (scrollWindow, width, height,
-				nullptr, nullptr, nullptr, nullptr, nullptr, 0);
+				nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
 		GuiThing_show (thePictureWindow);
 	}
 

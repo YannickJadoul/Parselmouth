@@ -1,6 +1,6 @@
 /* OTGrammar.cpp
  *
- * Copyright (C) 1997-2021 Paul Boersma
+ * Copyright (C) 1997-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -745,7 +745,7 @@ static integer OTGrammar_crucialCell (OTGrammar me, integer itab, integer icand,
 
 static double OTGrammar_constraintWidth (Graphics g, conststring32 name) {
 	char32 text [100];
-	str32cpy (text, name);
+	Melder_sprint (text,100, name);
 	char32 *newLine = str32chr (text, U'\n');
 	if (newLine) {
 		double firstWidth, secondWidth;
@@ -848,8 +848,8 @@ void OTGrammar_drawTableau (OTGrammar me, Graphics g, bool vertical, conststring
 		if (vertical)
 			Graphics_setTextRotation (g, 90.0);
 		for (integer icons = 1; icons <= my numberOfConstraints; icons ++) {
-			OTGrammarConstraint constraint = & my constraints [my index [icons]];
-			double width = vertical ? rowHeight / worldAspectRatio : OTGrammar_constraintWidth (g, constraint -> name.get()) + margin * 2;
+			const OTGrammarConstraint constraint = & my constraints [my index [icons]];
+			const double width = vertical ? rowHeight / worldAspectRatio : OTGrammar_constraintWidth (g, constraint -> name.get()) + margin * 2;
 			if (str32chr (constraint -> name.get(), U'\n') && ! vertical) {
 				autoMelderString text;
 				MelderString_copy (& text, constraint -> name.get());
@@ -873,7 +873,8 @@ void OTGrammar_drawTableau (OTGrammar me, Graphics g, bool vertical, conststring
 			Graphics_line (g, x, y, x + width, y);
 			x += width;
 		}
-		if (vertical) Graphics_setTextRotation (g, 0.0);
+		if (vertical)
+			Graphics_setTextRotation (g, 0.0);
 		/*
 			Draw candidates.
 		*/
@@ -1727,7 +1728,8 @@ void OTGrammar_learnOne (OTGrammar me, conststring32 input, conststring32 adultO
 		/*
 			Error-driven: compare the adult winner (the correct candidate) and the learner's winner.
 		*/
-		if (str32equ (winner -> output.get(), adultOutput)) return;   // as far as we know, the grammar is already correct: don't update rankings
+		if (str32equ (winner -> output.get(), adultOutput))
+			return;   // as far as we know, the grammar is already correct: don't update rankings
 
 		/*
 			Find (perhaps the learner's interpretation of) the adult output in the learner's own tableau
@@ -1825,7 +1827,8 @@ static integer PairDistribution_getNumberOfAttestedOutputs (PairDistribution me,
 	for (integer ipair = 1; ipair <= my pairs.size; ipair ++) {
 		PairProbability pair = my pairs.at [ipair];
 		if (str32equ (pair -> string1.get(), input) && pair -> weight > 0.0) {
-			if (out_attestedOutput) *out_attestedOutput = pair -> string2.get();
+			if (out_attestedOutput)
+				*out_attestedOutput = pair -> string2.get();
 			result ++;
 		}
 	}

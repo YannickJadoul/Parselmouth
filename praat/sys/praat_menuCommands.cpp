@@ -1,6 +1,6 @@
 /* praat_menuCommands.cpp
  *
- * Copyright (C) 1992-2018,2020-2022 Paul Boersma
+ * Copyright (C) 1992-2018,2020-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -271,7 +271,7 @@ void praat_addMenuCommandScript (conststring32 window, conststring32 menu, const
 		 * Determine the position of the new command.
 		 */
 		integer position;
-		if (str32len (after) && after [0] != U'*') {   // search for existing command with same selection
+		if (Melder_length (after) && after [0] != U'*') {   // search for existing command with same selection
 			integer found = lookUpMatchingMenuCommand (window, menu, after);
 			if (found) {
 				position = found + 1;   // after 'after'
@@ -466,13 +466,12 @@ Praat_Command praat_doMenuCommand (conststring32 title, conststring32 arguments,
 	if (commandFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = commandFound -> script.get();
 		const conststring32 preferencesFolderPath = Melder_dirToPath (& Melder_preferencesFolder);
-		const bool scriptIsInPlugin =
-				Melder_stringMatchesCriterion (scriptPath, kMelder_string::STARTS_WITH, preferencesFolderPath, true);
+		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
 			scriptIsInPlugin ? U"preferencesDirectory$ + " : U"",
 			U"\"",
-			scriptIsInPlugin ? scriptPath + str32len (preferencesFolderPath) : scriptPath,
+			scriptIsInPlugin ? scriptPath + Melder_length (preferencesFolderPath) : scriptPath,
 			U"\"",
 			arguments && arguments [0] ? U", " : U"",
 			arguments && arguments [0] ? arguments : U"",
@@ -500,13 +499,12 @@ Praat_Command praat_doMenuCommand (conststring32 title, integer narg, Stackel ar
 	if (commandFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = commandFound -> script.get();
 		const conststring32 preferencesFolderPath = Melder_dirToPath (& Melder_preferencesFolder);
-		const bool scriptIsInPlugin =
-				Melder_stringMatchesCriterion (scriptPath, kMelder_string::STARTS_WITH, preferencesFolderPath, true);
+		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
 			scriptIsInPlugin ? U"preferencesDirectory$ + " : U"",
 			U"\"",
-			scriptIsInPlugin ? scriptPath + str32len (preferencesFolderPath) : scriptPath,
+			scriptIsInPlugin ? scriptPath + Melder_length (preferencesFolderPath) : scriptPath,
 			U"\"",
 			narg > 0 ? U", ..." : U"",
 			U"\n"
@@ -522,19 +520,18 @@ Praat_Command praat_getMenuCommand (integer i)
 	{ return i < 1 || i > theCommands.size ? nullptr : theCommands.at [i]; }
 
 void praat_addCommandsToEditor (Editor me) {
-	conststring32 windowName = my classInfo -> className;
+	conststring32 windowClassName = my classInfo -> className;
 	for (integer i = 1; i <= theCommands.size; i ++) {
 		Praat_Command command = theCommands.at [i];
-		if (str32equ (command -> window.get(), windowName)) {
+		if (str32equ (command -> window.get(), windowClassName))
 			Editor_addCommandScript (me, command -> menu.get(), command -> title.get(), 0, command -> script.get());
-		}
 	}
 }
 
 static bool commandIsToBeIncluded (Praat_Command command, bool deprecated, bool includeCreateAPI, bool includeReadAPI,
 	bool includeRecordAPI, bool includePlayAPI, bool includeDrawAPI, bool includeHelpAPI, bool includeWindowAPI)
 {
-	const bool obsolete = ( deprecated && (command -> deprecationYear < PRAAT_YEAR - 10 || command -> deprecationYear < 2017) );
+	const bool obsolete = ( deprecated && (command -> deprecationYear < PRAAT_YEAR - 10 || command -> deprecationYear < 2023) );
 	const bool hiddenByDefault = ( command -> hidden != command -> toggled );
 	const bool explicitlyHidden = hiddenByDefault && ! deprecated;
 	const bool hidden = explicitlyHidden || ! command -> callback || command -> noApi || obsolete ||

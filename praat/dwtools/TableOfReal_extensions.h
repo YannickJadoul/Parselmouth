@@ -55,8 +55,6 @@ autoTableOfReal TableOfReal_create_weenink1983 (int option); /* M W C */
 /* The data for Fig. 2 in Sandwell (1987) */
 autoTableOfReal TableOfReal_create_sandwell1987 ();
 
-void TableOfReal_getColumnExtrema (TableOfReal me, integer col, double *min, double *max);
-
 integer TableOfReal_getColumnIndexAtMaximumInRow (TableOfReal me, integer rowNumber);
 
 conststring32 TableOfReal_getColumnLabelAtMaximumInRow (TableOfReal me, integer rowNumber);
@@ -200,7 +198,7 @@ double TableOfReal_normalityTest_BHEP (TableOfReal me, double *h, double *out_tn
 double TableOfReal_testSphericityOfCovariance (TableOfReal me, integer numberOfPermutations, bool useCorrelation);
 /*
 	Sphericity test of covariance (correlation) matrix
-	This test is a combinaation of two tests:
+	This test is a combination of two tests:
 	1. H0: Sigma = sigma^2 I vs. H1: Sigma = diag (sigma[1]^2, sigma-2[^2, ... sigma[p]^2)
 	2. H0: Sigma = diag (sigma[1]^2, sigma-2[^2, ... sigma[p]^2) vs. H1: Sigma != diag (sigma[1]^2, sigma-2[^2, ... sigma[p]^2)
 	This is test 1 in:
@@ -220,7 +218,7 @@ double TableOfReal_testCovarianceEqualsIdentityMatrix (TableOfReal me, integer n
 double TableOfReal_testCovarianceCompoundSymmetry (TableOfReal me, integer numberOfPermutations, bool useCorrelation);
 /*
 	H0: Sigma = sigma^2 (1-rho) * I + rho * J,
-	where I is identity matrix and J is sqaure matrix of ones znd rho > 0 (intra-class correlation coefficient
+	where I is identity matrix and J is square matrix of ones znd rho > 0 (intra-class correlation coefficient
 	This is test3 in:
 		L. Wu, C. Weng, X. Wang, K. Wang & X. Liu (2018): Test of covariance and correlation matrices,
 		arXiv: 1812.01172v1 [start.ME] 4 Dec 2018.

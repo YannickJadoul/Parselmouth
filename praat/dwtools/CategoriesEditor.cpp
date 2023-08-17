@@ -42,7 +42,7 @@ Thing_implement (CategoriesEditor, Editor, 0);
 
 static const conststring32 CategoriesEditor_EMPTYLABEL = U"(empty)";
 
-static void menu_cb_help (CategoriesEditor /* me */, EDITOR_ARGS_DIRECT) {
+static void menu_cb_help (CategoriesEditor /* me */, EDITOR_ARGS) {
 	Melder_help (U"CategoriesEditor");
 }
 
@@ -54,7 +54,7 @@ static void menu_cb_help (CategoriesEditor /* me */, EDITOR_ARGS_DIRECT) {
 static void Ordered_moveItems (Ordered me, constINTVEC position, integer newpos) {
 	if (position.size < 1)
 		return;
-	const integer min = NUMmin (position), max = NUMmax (position);
+	const integer min = NUMmin_e (position), max = NUMmax_e (position);
 
 	Melder_assert (min >= 1 && max <= my size && (newpos <= min || newpos >= max));
 

@@ -1,6 +1,6 @@
 /* Gui_messages.cpp
  *
- * Copyright (C) 1992-2018,2020,2021 Paul Boersma,
+ * Copyright (C) 1992-2018,2020-2023 Paul Boersma,
  *               2008 Stefan de Konink, 2010 Franz Brausse, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
@@ -224,7 +224,7 @@ static void * gui_monitor (double progress, conststring32 message) {
 		if (! dia) {
 			_Melder_dia_init (& dia, & scale, & label1, & label2, & cancelButton, true);
 			drawingArea = GuiDrawingArea_createShown (dia, 0, 400, 230, 430,
-					gui_drawingarea_cb_expose, nullptr, nullptr, nullptr, nullptr, 0);
+					gui_drawingarea_cb_expose, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
 			GuiThing_show (dia);
 			graphics = Graphics_create_xmdrawingarea (drawingArea);
 		}
@@ -245,7 +245,7 @@ static void * gui_monitor (double progress, conststring32 message) {
 #if cocoa
 	static void mac_message (NSAlertStyle macAlertType, conststring32 message32) {
 		static char16 message16 [4000];
-		const integer messageLength = str32len (message32);
+		const integer messageLength = Melder_length (message32);
 		uinteger j = 0;
 		for (int i = 0; i < messageLength && j <= 4000 - 3; i ++) {
 			char32 kar = message32 [i];

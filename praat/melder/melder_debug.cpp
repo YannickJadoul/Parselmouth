@@ -1,6 +1,6 @@
 /* melder_debug.cpp
  *
- * Copyright (C) 2000-2022 Paul Boersma
+ * Copyright (C) 2000-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@ the behaviour of Praat will temporarily change in the following ways:
 53: trace running cursor
 54: ignore gdk_cairo_reset_clip
 55: trace Gui init, draw, destroy
+56: trace text styles
 181: read and write native-endian real64
 900: use DG Meta Serif Science instead of Palatino
 1264: Mac: Sound_record_fixedTime uses microphone "FW Solo (1264)"
@@ -108,7 +109,7 @@ conststring8 MelderTrace::_peek32to8 (conststring32 string) {
 		return "";
 	static char *buffer { nullptr };
 	static int64 bufferSize { 0 };
-	int64 n = str32len (string);
+	const int64 n = Melder_length (string);
 	int64 sizeNeeded = n * 4 + 1;
 	if ((bufferSize - sizeNeeded) * (int64) sizeof (char) >= 10'000) {
 		free (buffer);
@@ -152,7 +153,7 @@ conststring16 MelderTrace::_peek32to16 (conststring32 string) {
 		return u"";
 	static char16 *buffer { nullptr };
 	static int64 bufferSize { 0 };
-	int64 n = str32len (string);
+	const int64 n = Melder_length (string);
 	int64 sizeNeeded = n * 2 + 1;
 	if ((bufferSize - sizeNeeded) * (int64) sizeof (char16) >= 10'000) {
 		free (buffer);

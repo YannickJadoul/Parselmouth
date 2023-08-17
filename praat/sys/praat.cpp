@@ -1,6 +1,6 @@
 /* praat.cpp
  *
- * Copyright (C) 1992-2022 Paul Boersma
+ * Copyright (C) 1992-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 #include "machine.h"
 #include "Printer.h"
 #include "ScriptEditor.h"
+#include "NotebookEditor.h"
 #include "Strings_.h"
 #include "../kar/UnicodeData.h"
 #include "InfoEditor.h"
@@ -63,6 +64,14 @@ structPraatObjects theForegroundPraatObjects;
 PraatObjects theCurrentPraatObjects = & theForegroundPraatObjects;
 structPraatPicture theForegroundPraatPicture;
 PraatPicture theCurrentPraatPicture = & theForegroundPraatPicture;
+
+bool praat_commandsWithExternalSideEffectsAreAllowed () {
+	return
+		theCurrentPraatObjects == & theForegroundPraatObjects ||
+		! theCurrentPraatApplication -> manPages ||
+		theCurrentPraatApplication -> manPages -> commandsWithExternalSideEffectsAreAllowed
+	;
+};
 
 static char32 programName [64];
 static structMelderDir homeDir { };
@@ -278,7 +287,7 @@ void praat_write_do (UiForm dia, conststring32 extension) {
 			MelderString_copy (& defaultFileName, U"praat.", extension);
 		}
 	}
-	UiOutfile_do (dia, defaultFileName.string, nullptr);
+	UiOutfile_do (dia, defaultFileName.string);
 }
 
 static void removeAllReferencesToMoribundEditor (Editor editor) {
@@ -369,8 +378,8 @@ void praat_newWithFile (Daata me, bool owned, MelderFile file, conststring32 myN
 	if (myName && myName [0]) {
 		MelderString_copy (& givenName, myName);
 		/*
-		 * Remove extension.
-		 */
+			Remove extension.
+		*/
 		char32 *p = str32rchr (givenName.string, U'.');
 		if (p)
 			*p = U'\0';
@@ -840,7 +849,7 @@ static void helpProc (conststring32 query) {
 		return;
 	}
 	try {
-		autoManual manual = Manual_create (query, theCurrentPraatApplication -> manPages, false);
+		autoManual manual = Manual_create (query, nullptr, theCurrentPraatApplication -> manPages, false, true);
 		manual.releaseToUser();
 	} catch (MelderError) {
 		Melder_flushError (U"help: no help on \"", query, U"\".");
@@ -864,11 +873,11 @@ FORM (DO_Quit, U"Confirm Quit", U"Quit") {
 	OK
 {
 	char32 prompt [300];
-	if (ScriptEditors_dirty ()) {
+	if (ScriptEditors_dirty () || NotebookEditors_dirty ()) {
 		if (theCurrentPraatObjects -> n)
-			Melder_sprint (prompt,300, U"You have objects and unsaved scripts! Do you still want to quit ", praatP.title.get(), U"?");
+			Melder_sprint (prompt,300, U"You have objects and unsaved scripts or notebooks! Do you still want to quit ", praatP.title.get(), U"?");
 		else
-			Melder_sprint (prompt,300, U"You have unsaved scripts! Do you still want to quit ", praatP.title.get(), U"?");
+			Melder_sprint (prompt,300, U"You have unsaved scripts or notebooks! Do you still want to quit ", praatP.title.get(), U"?");
 		SET_STRING (label, prompt)
 	} else if (theCurrentPraatObjects -> n) {
 		Melder_sprint (prompt,300, U"You have objects in your list! Do you still want to quit ", praatP.title.get(), U"?");
@@ -1443,27 +1452,27 @@ void praat_init (conststring32 title, int argc, char **argv)
 		Also create names for message and tracing files.
 	*/
 	if (MelderDir_isNull (& Melder_preferencesFolder)) {   // not yet set by the --pref-dir option?
-		structMelderDir prefParentDir { };   // directory under which to store our preferences directory
-		Melder_getPrefDir (& prefParentDir);
+		structMelderDir parentPreferencesFolder { };   // folder under which to store our preferences folder
+		Melder_getParentPreferencesFolder (& parentPreferencesFolder);
 
 		/*
 			Make sure that the program's preferences folder exists.
 		*/
-		char32 name [256];
+		char32 subfolderName [256];
 		#if defined (UNIX)
-			Melder_sprint (name,256, U".", programName, U"-dir");   // for example .praat-dir
+			Melder_sprint (subfolderName,256, U".", programName, U"-dir");   // for example .praat-dir
 		#elif defined (macintosh)
-			Melder_sprint (name,256, praatP.title.get(), U" Prefs");   // for example Praat Prefs
+			Melder_sprint (subfolderName,256, praatP.title.get(), U" Prefs");   // for example Praat Prefs
 		#elif defined (_WIN32)
-			Melder_sprint (name,256, praatP.title.get());   // for example Praat
+			Melder_sprint (subfolderName,256, praatP.title.get());   // for example Praat
 		#endif
 		try {
 			#if defined (UNIX) || defined (macintosh)
-				Melder_createDirectory (& prefParentDir, name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+				Melder_createDirectory (& parentPreferencesFolder, subfolderName, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 			#else
-				Melder_createDirectory (& prefParentDir, name, 0);
+				Melder_createDirectory (& parentPreferencesFolder, subfolderName, 0);
 			#endif
-			MelderDir_getSubdir (& prefParentDir, name, & Melder_preferencesFolder);
+			MelderDir_getSubdir (& parentPreferencesFolder, subfolderName, & Melder_preferencesFolder);
 		} catch (MelderError) {
 			/*
 				If we arrive here, the directory could not be created,
@@ -2034,9 +2043,58 @@ void praat_run () {
 			}
 		} else {
 			try {
-				//Melder_casual (U"Script <<", theCurrentPraatApplication -> batchName.string, U">>");
+				#ifdef _WIN32
+					/*
+						Our WinMain app cannot be a true console app when run from the Console.
+
+						The following is what we expect from a console app:
+						1. After you enter `Praat.exe myScript.praat` into the Console,
+						   the Console should go to the next line, but show nothing else.
+						2. Any console output (i.e. output to stdout and stderr) should appear
+						   on this line and the next lines.
+						3. When Praat finishes, the Console should show the new prompt,
+						   like `C:\Users\Me\myFolder>`, on a new line.
+
+						Instead, if we do nothing special here, Praat will do the following in the Console:
+						1. After you enter `Praat.exe myScript.praat`, the Console will immediately
+						   present the `C:\Users\Me\myFolder>` prompt again. We know of no way
+						   to change this behaviour, short of compiling Praat as a console app.
+						2. Any console output (i.e. output to stdout and stderr) will appear
+						   immediately after the `C:\Users\Me\myFolder>` prompt.
+						3. When Praat finishes, the Console will show no new prompt, because
+						   it has already shown a prompt (too early). A new prompt will appear
+						   only once you type the Enter key.
+
+						The most important problem to repair is 3, because otherwise it will look
+						as if Praat has not finished. So in Chunk 2 we fake an Enter.
+
+						Problem 2 is repaired in Chunk 1 by sending a line to stderr (not stdout,
+						because the line break should not end up in a file if redirected).
+						The line that is sent should not be empty, because an empty line would suggest
+						that Praat has finished, so we send a visible comment with hashes ("##########").
+
+						Our output will still look different from a real console app because of the extra
+						prompt at the beginning (prepended to our comment) and perhaps the extra
+						empty line that will appear now at the end of the output.
+						(last checked 2022-10-12)
+
+						Chunk 1 (sending a comment to stderr):
+					*/
+					HWND optionalConsoleWindowHandle = GetConsoleWindow ();
+					if (optionalConsoleWindowHandle)
+						Melder_casual (U" ########## Running Praat script ", theCurrentPraatApplication -> batchName.string);
+				#endif
 				praat_executeScriptFromCommandLine (theCurrentPraatApplication -> batchName.string,
 						praatP.argc - praatP.argumentNumber, & praatP.argv [praatP.argumentNumber]);
+				#ifdef _WIN32
+					/*
+						Chunk 2 (faking an Enter):
+					*/
+					if (optionalConsoleWindowHandle)
+						PostMessage (optionalConsoleWindowHandle, WM_KEYDOWN, VK_RETURN, 0);
+
+					FreeConsole ();   // this may not do anything? (last checked 2022-10-12)
+				#endif
 				praat_exit (0);
 			} catch (MelderError) {
 				Melder_flushError (praatP.title.get(), U": script command <<",
@@ -2087,7 +2145,7 @@ void praat_run () {
 				praat --new-open [OPTION]... FILE-NAME...
 			*/
 			for (; praatP.argumentNumber < praatP.argc; praatP.argumentNumber ++) {
-				autostring32 text = Melder_dup (Melder_cat (U"Read from file... ",
+				autostring32 text = Melder_dup (Melder_cat (U"Read from file... ",   // TODO: ~
 															Melder_peek8to32 (praatP.argv [praatP.argumentNumber])));
 				trace (U"Argument ", praatP.argumentNumber, U": <<", text.get(), U">>");
 				try {
@@ -2261,7 +2319,7 @@ void praat_testPlatformAssumptions() {
 		Melder_assert ((uint32) dummy == 3000000000);
 	}
 	{
-		Melder_assert (str32len (U"hello") == 5);
+		Melder_assert (Melder_length (U"hello") == 5);
 		Melder_assert (str32ncmp (U"hellogoodbye", U"hellogee", 6) == 0);
 		Melder_assert (str32ncmp (U"hellogoodbye", U"hellogee", 7) > 0);
 		Melder_assert (str32str (U"hellogoodbye", U"ogo"));

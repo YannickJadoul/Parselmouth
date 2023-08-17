@@ -190,7 +190,7 @@ MAN_END
 
 MAN_BEGIN (U"objects", U"ppgb", 20030528)
 INTRO (U"The things that contain the data in the Praat program.")
-NORMAL (U"The objects are visible in the @@List of Objects@ in the @@Object window@.")
+NORMAL (U"The objects are visible in the @@List of Objects@ in the @@Objects window@.")
 NORMAL (U"Most objects are contained in memory: they are %not files! "
 	"Therefore, you may want to save them with one of the commands from the @@Save menu@ "
 	"before you @Quit. "
@@ -252,7 +252,7 @@ ENTRY (U"The logarithmic power spectral density")
 NORMAL (U"It is often useful to express the power spectral density in dB relative to %%P__ref_% = 2·10^^-5^ Pa:")
 EQUATION (U"PSD__dB_(%f) = 10 log__10_ { PSD(%f) / %%P__ref_%^2 }")
 NORMAL (U"Since the argument of the logarithm is in units of Hz^^-1^, this spectral measure can loosely be said "
-	"to be in units of `dB/Hz'. In Praat, this logarithmic power spectral density is the quantity stored in an @Ltas; "
+	"to be in units of “dB/Hz”. In Praat, this logarithmic power spectral density is the quantity stored in an @Ltas; "
 	"it is also the quantity shown in pictures of a @Spectrum and a @Spectrogram.")
 MAN_END
 
@@ -375,7 +375,7 @@ NORMAL (U"For example, suppose that you record some speech on a CD recorder or w
 NORMAL (U"In this example, you can make Praat's sound window show the true sound pressures in Pascal "
 	"and true sound pressure levels in dB, if you multiply the sound with a factor of 10^^(7.9/20)^, "
 	"which you can do by selecting the Sound and choosing ##Multiply...# from the #Modify menu, "
-	"then supplying $$10\\^ (7.9/20)$ as the multiplication factor.")
+	"then supplying `10^(7.9/20)` as the multiplication factor.")
 MAN_END
 
 MAN_BEGIN (U"sound pressure level", U"ppgb", 20041124)
@@ -409,7 +409,7 @@ MAN_BEGIN (U"start time", U"ppgb", 20060714)
 INTRO (U"- the beginning of the @@time domain@ (see there).")
 MAN_END
 
-MAN_BEGIN (U"stereo", U"ppgb", 20110131)
+MAN_BEGIN (U"stereo", U"ppgb", 20110131) // 2023
 INTRO (U"A stereo sound is a sound consisting of a left and a right channel. "
 	"Praat can read and write both mono and stereo sounds.")
 ENTRY (U"Reading a stereo sound from disk")
@@ -420,8 +420,8 @@ NORMAL (U"If you want to look at the left or right channel separately, "
 ENTRY (U"Saving a stereo sound to disk")
 NORMAL (U"If you choose @@Save as WAV file...@, and the sound is a stereo sound, "
 	"then the sound file will be a stereo file. "
-	"If you have two mono sounds and you want to combine them into one stereo sound, "
-	"you can use @@Combine to stereo@.")
+	"If you have two or more mono sounds and you want to combine them into one stereo sound, "
+	"you can use @@Sounds: Combine to stereo@.")
 MAN_END
 
 MAN_BEGIN (U"time", U"ppgb", 20110128)
@@ -451,7 +451,7 @@ NORMAL (U"On a clock, time runs around in circles. In Praat's editor windows, ti
 	"To see another part, you %scroll backward or forward.")
 MAN_END
 
-MAN_BEGIN (U"time domain", U"ppgb", 20140421)
+MAN_BEGIN (U"time domain", U"ppgb", 20221202)
 INTRO (U"This manual page assumes that you have read the @Intro.")
 NORMAL (U"Many objects in Praat are %%functions of time%. Examples are: "
 	"@Sound, @Pitch, @Spectrogram, @Formant, @Intensity, @TextGrid, "
@@ -477,7 +477,7 @@ NORMAL (U"If you select an object that is a function of time and click #Info, "
 	"the Info window will tell you the start time, the end time, and the total duration (among other properties of the object).")
 ENTRY (U"Time domain query commands")
 NORMAL (U"If you select an object that is a function of time, "
-	"the following three commands will become available in the #Query menu:")
+	"the following three commands will become available in the @@Query submenu@:")
 LIST_ITEM (U"##Get start time")
 LIST_ITEM (U"##Get end time")
 LIST_ITEM (U"##Get total duration")

@@ -7,7 +7,7 @@ target_sources(praat PRIVATE
 	LegendreSeries.cpp
 	MAT_numerics.cpp
 	NMF.cpp NUM2.cpp NUMhuber.cpp NUMmachar.cpp
-	NUMcomplex.cpp NUMfft_d.cpp NUMsort2.cpp
+	NUMcomplex.cpp NUMfft_d.cpp NUMsorting.cpp
 	NUMmathlib.cpp NUMstring.cpp
 	Permutation.cpp Permutation_and_Index.cpp
 	Polynomial.cpp

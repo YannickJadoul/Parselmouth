@@ -1,6 +1,6 @@
 /* Graphics_text.cpp
  *
- * Copyright (C) 1992-2022 Paul Boersma, 2013 Tom Naughton, 2017 David Weenink
+ * Copyright (C) 1992-2023 Paul Boersma, 2013 Tom Naughton, 2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,11 +24,11 @@
 extern const char * ipaSerifRegularPS [];
 
 /*
- * When computing the width of a text by adding the widths of the separate characters,
- * we will make a correction for systems that make slanted characters overlap the character box to their right.
- * The effect is especially strong on Mac (older versions).
- * The slant correction is taken relative to the font size.
- */
+	When computing the width of a text by adding the widths of the separate characters,
+	we will make a correction for systems that make slanted characters overlap the character box to their right.
+	The effect is especially strong on Mac (older versions).
+	The slant correction is taken relative to the font size.
+*/
 #define POSTSCRIPT_SLANT_CORRECTION  0.1
 #define SCREEN_SLANT_CORRECTION  0.05
 
@@ -255,6 +255,8 @@ inline static int chooseFont (Graphics me, _Graphics_widechar *lc) {
 			) :
 		alphabet == Longchar_DINGBATS ?
 			kGraphics_font_DINGBATS :
+		lc -> kar >= 0x13A0 && lc -> kar <= 0x13FF ?
+			kGraphics_font_CHEROKEE :
 		my font == kGraphics_font::TIMES ?
 			( hasDoulos ?
 				( lc -> style == 0 ?
@@ -369,12 +371,18 @@ static void charSize (Graphics anyGraphics, _Graphics_widechar *lc) {
 		GraphicsPostscript me = static_cast <GraphicsPostscript> (anyGraphics);
 		const int normalSize = (int) ((double) my fontSize * (double) my resolution / 72.0);
 		Longchar_Info info = lc -> karInfo;
-		const int font = info -> alphabet == Longchar_SYMBOL ? kGraphics_font_SYMBOL :
-				info -> alphabet == Longchar_PHONETIC ? kGraphics_font_IPATIMES :
-				info -> alphabet == Longchar_DINGBATS ? kGraphics_font_DINGBATS : lc -> font.integer_;
-		const int style = lc -> style == Graphics_ITALIC ? Graphics_ITALIC :
+		const int font =
+			info -> alphabet == Longchar_SYMBOL ? kGraphics_font_SYMBOL :
+			info -> alphabet == Longchar_PHONETIC ? kGraphics_font_IPATIMES :
+			info -> alphabet == Longchar_DINGBATS ? kGraphics_font_DINGBATS :
+			lc -> font.integer_
+		;
+		const int style =
+			lc -> style == Graphics_ITALIC ? Graphics_ITALIC :
 			lc -> style == Graphics_BOLD || lc -> link ? Graphics_BOLD :
-			lc -> style == Graphics_BOLD_ITALIC ? Graphics_BOLD_ITALIC : 0;
+			lc -> style == Graphics_BOLD_ITALIC ? Graphics_BOLD_ITALIC :
+			0
+		;
 		if (! my fontInfos [font] [style]) {
 			const char *fontInfo, *secondaryFontInfo = nullptr, *tertiaryFontInfo = nullptr;
 			if (font == (int) kGraphics_font::COURIER) {
@@ -432,11 +440,11 @@ static void charSize (Graphics anyGraphics, _Graphics_widechar *lc) {
 					style == Graphics_ITALIC ? "Arial-Italic" :
 					style == Graphics_BOLD_ITALIC ? "Arial-BoldItalic" : "Arial";
 			}
-			my fontInfos [font] [style] = Melder_malloc_f (char, 100);
+			my fontInfos [font] [style] = Melder_malloc_f (char, 200);
 			if (font == kGraphics_font_IPATIMES || font == kGraphics_font_SYMBOL || font == kGraphics_font_DINGBATS) {
 				strcpy (my fontInfos [font] [style], fontInfo);
 			} else {
-				sprintf (my fontInfos [font] [style], "%s-Praat", fontInfo);
+				snprintf (my fontInfos [font] [style],200, "%s-Praat", fontInfo);
 				if (thePrinter. fontChoiceStrategy == kGraphicsPostscript_fontChoiceStrategy::LINOTYPE) {
 					my d_printf (my d_file, "/%s /%s-Praat PraatEncode\n", fontInfo, fontInfo);
 				} else if (thePrinter. fontChoiceStrategy == kGraphicsPostscript_fontChoiceStrategy::MONOTYPE) {
@@ -596,6 +604,8 @@ static conststring32 quartz_getFontName (int font, int style) {
 				: style == Graphics_BOLD ? U"Charis SIL Bold"
 				: style == Graphics_ITALIC ? U"Charis SIL Italic"
 				: U"Charis SIL Bold Italic";
+		case kGraphics_font_CHEROKEE:
+			return U"Plantagenet Cherokee";
 		case kGraphics_font_DINGBATS:
 			return U"Zapf Dingbats";
 		default:
@@ -636,10 +646,11 @@ static CTFontRef quartz_getFontRef (int font, int size, int style) {
 										   else
 												[attributes   setObject: @"Palatino"              forKey: (id) kCTFontNameAttribute];
 										 } break;
-		case kGraphics_font_SYMBOL:      { [attributes   setObject: @"Symbol"          forKey: (id) kCTFontNameAttribute]; } break;
-		case kGraphics_font_IPATIMES:    { [attributes   setObject: @"Doulos SIL"      forKey: (id) kCTFontNameAttribute]; } break;
-		case kGraphics_font_IPAPALATINO: { [attributes   setObject: @"Charis SIL"      forKey: (id) kCTFontNameAttribute]; } break;
-		case kGraphics_font_DINGBATS:    { [attributes   setObject: @"Zapf Dingbats"   forKey: (id) kCTFontNameAttribute]; } break;
+		case kGraphics_font_SYMBOL:      { [attributes   setObject: @"Symbol"                 forKey: (id) kCTFontNameAttribute]; } break;
+		case kGraphics_font_IPATIMES:    { [attributes   setObject: @"Doulos SIL"             forKey: (id) kCTFontNameAttribute]; } break;
+		case kGraphics_font_IPAPALATINO: { [attributes   setObject: @"Charis SIL"             forKey: (id) kCTFontNameAttribute]; } break;
+		case kGraphics_font_CHEROKEE:    { [attributes   setObject: @"Plantagenet Cherokee"   forKey: (id) kCTFontNameAttribute]; } break;
+		case kGraphics_font_DINGBATS:    { [attributes   setObject: @"Zapf Dingbats"          forKey: (id) kCTFontNameAttribute]; } break;
 	}
 	CTFontDescriptorRef ctFontDescriptor = CTFontDescriptorCreateWithAttributes ((CFMutableDictionaryRef) attributes);
 	[styleDict release];
@@ -753,7 +764,7 @@ static void charDraw (Graphics anyGraphics, int xDC, int yDC, _Graphics_widechar
 				Rectangle (dc, 0, top, width, bottom);
 				SelectFont (dc, fonts [(int) my resolutionNumber] [font] [lc -> size] [lc -> style]);
 				SetTextColor (dc, my d_winForegroundColour);
-				TextOutW (dc, 0, baseline, codesW, str16len ((conststring16) codesW));
+				TextOutW (dc, 0, baseline, codesW, Melder16_length ((conststring16) codesW));
 				BitBlt (my d_gdiGraphicsContext, xDC, yDC - ascent, width, bottom - top, dc, 0, top, SRCINVERT);
 				return;
 			}
@@ -765,7 +776,7 @@ static void charDraw (Graphics anyGraphics, int xDC, int yDC, _Graphics_widechar
 				SetTextColor (my d_gdiGraphicsContext, my d_winForegroundColour);
 			SelectFont (my d_gdiGraphicsContext, fonts [(int) my resolutionNumber] [font] [lc -> size] [lc -> style]);
 			if (my textRotation == 0.0) {
-				TextOutW (my d_gdiGraphicsContext, xDC, yDC, codesW, str16len ((const char16 *) codesW));
+				TextOutW (my d_gdiGraphicsContext, xDC, yDC, codesW, Melder16_length ((const char16 *) codesW));
 			} else {
 				int restore = SaveDC (my d_gdiGraphicsContext);
 				SetGraphicsMode (my d_gdiGraphicsContext, GM_ADVANCED);
@@ -774,7 +785,7 @@ static void charDraw (Graphics anyGraphics, int xDC, int yDC, _Graphics_widechar
 				ModifyWorldTransform (my d_gdiGraphicsContext, & rotate, MWT_RIGHTMULTIPLY);
 				XFORM translate = { 1.0, 0.0, 0.0, 1.0, (float) xDC, (float) yDC };
 				ModifyWorldTransform (my d_gdiGraphicsContext, & translate, MWT_RIGHTMULTIPLY);
-				TextOutW (my d_gdiGraphicsContext, 0, 0, codesW, str16len ((const char16 *) codesW));
+				TextOutW (my d_gdiGraphicsContext, 0, 0, codesW, Melder16_length ((const char16 *) codesW));
 				RestoreDC (my d_gdiGraphicsContext, restore);
 			}
 			if (lc -> link)
@@ -803,11 +814,11 @@ static void charDraw (Graphics anyGraphics, int xDC, int yDC, _Graphics_widechar
 			const char16 *codes16 = Melder_peek32to16 (codes);
 			#if 1
 				CFStringRef s = CFStringCreateWithBytes (nullptr,
-					(const UInt8 *) codes16, str16len (codes16) * 2,
+					(const UInt8 *) codes16, Melder16_length (codes16) * 2,
 					kCFStringEncodingUTF16LE, false);
 				integer length = CFStringGetLength (s);
 			#else
-				NSString *s = [[NSString alloc]   initWithBytes: codes16   length: str16len (codes16) * 2   encoding: NSUTF16LittleEndianStringEncoding];
+				NSString *s = [[NSString alloc]   initWithBytes: codes16   length: Melder16_length (codes16) * 2   encoding: NSUTF16LittleEndianStringEncoding];
 				integer length = [s length];
 			#endif
 
@@ -871,7 +882,7 @@ static char32 *charCodes;
 static int initBuffer (conststring32 txt) {
 	try {
 		constexpr integer maximumNumberOfReplacementCharactersPerCharacter = 2;
-		integer sizeNeeded = maximumNumberOfReplacementCharactersPerCharacter * str32len (txt) + 1;
+		integer sizeNeeded = maximumNumberOfReplacementCharactersPerCharacter * Melder_length (txt) + 1;
 		if (sizeNeeded > bufferSize) {
 			sizeNeeded += sizeNeeded / 2 + 100;
 			Melder_free (theWidechar);
@@ -889,7 +900,8 @@ static int initBuffer (conststring32 txt) {
 }
 
 static int numberOfLinks = 0;
-static Graphics_Link links [100];    // a maximum of 100 links per string
+#define MAXIMUM_NUMBER_OF_LINKS_PER_STRING  1000
+static Graphics_Link links [MAXIMUM_NUMBER_OF_LINKS_PER_STRING];
 
 static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEachCharacterSeparately) {
 	/*
@@ -921,7 +933,7 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 			*/
 			Longchar_Info info = lc -> karInfo;
 			Melder_assert (info);
-			int font = chooseFont (me, lc);
+			const int font = chooseFont (me, lc);
 			lc -> font.string = nullptr;   // this erases font.integer_!
 
 			/*
@@ -930,9 +942,9 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 			int style = lc -> style;
 			Melder_assert (style >= 0 && style <= Graphics_BOLD_ITALIC);
 
-			int normalSize = my fontSize * my resolution / 72.0;
-			int smallSize = (3 * normalSize + 2) / 4;
-			int size = ( lc -> size < 100 ? smallSize : normalSize );
+			const int normalSize = my fontSize * my resolution / 72.0;
+			const int smallSize = (3 * normalSize + 2) / 4;
+			const int size = ( lc -> size < 100 ? smallSize : normalSize );
 			lc -> size = size;
 			lc -> baseline *= 0.01 * normalSize;
 			lc -> code = lc -> kar;
@@ -990,8 +1002,8 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 					Melder_assert (logicalRect.x == 0);
 					g_object_unref (layout);
 				#elif quartz
-					const char16 *codes16 = Melder_peek32to16 (charCodes);
-					int64 length = str16len (codes16);
+					const conststring16 codes16 = Melder_peek32to16 (charCodes);
+					const integer length = Melder16_length (codes16);
 
 					NSString *s = [[NSString alloc]
 						initWithBytes: codes16
@@ -1007,8 +1019,8 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 					CFAttributedStringSetAttribute (cfstring, textRange, kCTFontAttributeName, theScreenFonts [lc -> font.integer_] [lc -> size] [lc -> style]);
 
 					/*
-					 * Measure.
-					 */
+						Measure.
+					*/
 
 					// Create a path to render text in
 					CGMutablePathRef path = CGPathCreateMutable ();
@@ -1033,7 +1045,8 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 						 * we correct for this.
 						 */
 						if (codes16 [length - 1] == u' ')
-							lc -> width += 25.0 * lc -> size / 100.0;
+							lc -> width += ( lc->font.integer_ == (int) kGraphics_font::COURIER || lc->style == Graphics_CODE ? 60.0 :
+									next->font.integer_ == (int) kGraphics_font::COURIER || next->style == Graphics_CODE ? 37.5 : 25.0 ) * lc -> size / 100.0;
 					}
 				#endif
 				nchars = 0;
@@ -1045,12 +1058,12 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 	#endif
 	}
 	/*
-	 * Each character has been garnished with information about the character's width.
-	 * Make a correction for systems that make slanted characters overlap the character box to their right.
-	 * We must do this after the previous loop, because we query the size of the *next* character.
-	 *
-	 * Keep this in SYNC with psTextWidth.
-	 */
+		Each character has been garnished with information about the character's width.
+		Make a correction for systems that make slanted characters overlap the character box to their right.
+		We must do this after the previous loop, because we query the size of the *next* character.
+
+		Keep this in SYNC with psTextWidth.
+	*/
 	for (_Graphics_widechar *character = string; character -> kar > U'\t'; character ++) {
 		if ((character -> style & Graphics_ITALIC) != 0) {
 			_Graphics_widechar *nextCharacter = character + 1;
@@ -1069,8 +1082,8 @@ static void charSizes (Graphics me, _Graphics_widechar string [], bool measureEa
 }
 
 /*
- * The routine textWidth determines the fractional width of a text, in device coordinates.
- */
+	The function textWidth() determines the fractional width of a text, in device coordinates.
+*/
 static double textWidth (_Graphics_widechar string []) {
 	double width = 0.0;
 	for (_Graphics_widechar *character = string; character -> kar > U'\t'; character ++)
@@ -1082,8 +1095,8 @@ static void drawOneCell (Graphics me, int xDC, int yDC, _Graphics_widechar lc []
 	int nchars = 0;
 	const double width = textWidth (lc);
 	/*
-	 * We must continue even if width is zero (for adjusting textY).
-	 */
+		We must continue even if width is zero (for adjusting textY).
+	*/
 	_Graphics_widechar *plc, *lastlc;
 	bool inLink = false;
 	double dx, dy;
@@ -1118,12 +1131,12 @@ static void drawOneCell (Graphics me, int xDC, int yDC, _Graphics_widechar lc []
 			charCodes [nchars ++] = plc -> code;   // buffer...
 			x += plc -> width;
 			/*
-			 * We can draw stretches of characters:
-			 * they have different styles, baselines, sizes, or fonts,
-			 * or if there is a break between them,
-			 * or if we cannot rotate multiple characters,
-			 * which is the case on bitmap printers.
-			 */
+				We can draw stretches of characters:
+				they have different styles, baselines, sizes, or fonts,
+				or if there is a break between them,
+				or if we cannot rotate multiple characters,
+				which is the case on bitmap printers.
+			*/
 			if (next->kar < U' ' || next->style != plc->style ||
 				next->baseline != plc->baseline || next->size != plc->size ||
 				next->font.integer_ != plc->font.integer_ || next->font.string != plc->font.string ||
@@ -1145,9 +1158,9 @@ static void drawOneCell (Graphics me, int xDC, int yDC, _Graphics_widechar lc []
 		lastlc = lc;
 		if (my wrapWidth != 0.0) {
 			/*
-			 * Replace some spaces with new-line symbols.
-			 */
-			int xmax = xDC + my wrapWidth * my scaleX;
+				Replace some spaces with new-line symbols.
+			*/
+			const int xmax = xDC + my wrapWidth * my scaleX;
 			for (plc = lc; plc -> kar >= U' '; plc ++) {
 				x += plc -> width;
 				if (x > xmax) {   // wrap (if wrapWidth is too small, each word will be on a separate line)
@@ -1189,7 +1202,9 @@ static void drawOneCell (Graphics me, int xDC, int yDC, _Graphics_widechar lc []
 			if (plc -> link) {
 				if (! inLink) {
 					const double descent = ( my yIsZeroAtTheTop ? -(0.3/72) : (0.3/72) ) * my fontSize * my resolution;
-					links [++ numberOfLinks]. x1 = x;
+					++ numberOfLinks;
+					Melder_assert (numberOfLinks < MAXIMUM_NUMBER_OF_LINKS_PER_STRING);
+					links [numberOfLinks]. x1 = x;
 					links [numberOfLinks]. y1 = y - descent;
 					links [numberOfLinks]. y2 = y + 3 * descent;
 					inLink = true;
@@ -1226,16 +1241,14 @@ static void drawOneCell (Graphics me, int xDC, int yDC, _Graphics_widechar lc []
 	}
 }
 
-static struct { double width; kGraphics_horizontalAlignment alignment; } tabs [1 + 20] = { { 0, Graphics_CENTRE },
-	{ 1, Graphics_CENTRE }, { 1, Graphics_CENTRE }, { 1, Graphics_CENTRE }, { 1, Graphics_CENTRE },
-	{ 1, Graphics_CENTRE }, { 1, Graphics_CENTRE }, { 1, Graphics_CENTRE }, { 1, Graphics_CENTRE } };
-
 /*
- * The routine 'drawCells' handles table and layout.
- */
+	The function `drawCells` handles table and layout.
+*/
 static void drawCells (Graphics me, double xWC, double yWC, _Graphics_widechar lc []) {
 	_Graphics_widechar *plc;
-	int itab = 0, saveTextAlignment = my horizontalTextAlignment;
+	int tabWidth = 0;   // only for first tab
+	kGraphics_horizontalAlignment tabAlignment = Graphics_CENTRE;
+	int saveTextAlignment = my horizontalTextAlignment;
 	double saveWrapWidth = my wrapWidth;
 	numberOfLinks = 0;
 	for (plc = lc; /* No stop condition. */ ; plc ++) {
@@ -1245,13 +1258,14 @@ static void drawCells (Graphics me, double xWC, double yWC, _Graphics_widechar l
 		if (plc -> kar == U'\0')   // end of text?
 			break;
 		if (plc -> kar == U'\t') {   // go to next cell
-			xWC += ( tabs [itab]. alignment == Graphics_LEFT ? tabs [itab]. width :
-				tabs [itab]. alignment == Graphics_CENTRE ? 0.5 * tabs [itab]. width : 0 ) * my fontSize / 12.0;
-			itab ++;
-			xWC += ( tabs [itab]. alignment == Graphics_LEFT ? 0 :
-				tabs [itab]. alignment == Graphics_CENTRE ? 0.5 * tabs [itab]. width : tabs [itab]. width ) * my fontSize / 12.0;
-			my horizontalTextAlignment = (int) tabs [itab]. alignment;
-			my wrapWidth = tabs [itab]. width * my fontSize / 12.0;
+			xWC += ( tabAlignment == Graphics_LEFT ? tabWidth :
+				tabAlignment == Graphics_CENTRE ? 0.5 * tabWidth : 0.0 ) * my fontSize / 12.0;
+			tabWidth = 1;
+			tabAlignment = Graphics_CENTRE;
+			xWC += ( tabAlignment == Graphics_LEFT ? 0 :
+				tabAlignment == Graphics_CENTRE ? 0.5 * tabWidth : tabWidth ) * my fontSize / 12.0;
+			my horizontalTextAlignment = (int) tabAlignment;
+			my wrapWidth = tabWidth * my fontSize / 12.0;
 		}
 	}
 	my horizontalTextAlignment = saveTextAlignment;
@@ -1265,144 +1279,400 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 	_Graphics_widechar *out = & a_widechar [0];
 	bool charSuperscript = false, charSubscript = false, charItalic = false, charBold = false;
 	bool wordItalic = false, wordBold = false, wordCode = false, wordLink = false;
-	bool globalSuperscript = false, globalSubscript = false, globalItalic = false, globalBold = false, globalCode = false, globalLink = false;
+	bool globalSuperscript = false, globalSubscript = false, globalItalic = false, globalBold = false;
+	bool globalCode = false, globalLink = false, verbatimLink = false;
 	bool globalSmall = 0;
 	numberOfLinks = 0;
+	const bool weAreInManual = ( my dollarSignIsCode );
+	const bool weAreInNotebook = ( my backquoteIsVerbatim );
+	const bool topDownVerbatim = ( my font == kGraphics_font::COURIER && weAreInNotebook );
+	bool globalVerbatim = topDownVerbatim;
+	bool thinLink = false;
 	while ((kar = *in++) != U'\0') {
+		//TRACE
 		if (kar == U'^' && my circumflexIsSuperscript) {
-			if (globalSuperscript) globalSuperscript = 0;
-			else if (in [0] == U'^') { globalSuperscript = 1; in ++; }
-			else charSuperscript = 1;
-			wordItalic = wordBold = wordCode = false;
-			continue;
+			if (globalVerbatim || verbatimLink) {
+				/*
+					Output the caret verbatim, by falling through.
+				*/
+			} else if (globalSuperscript) {
+				globalSuperscript = false;
+				wordItalic = wordBold = wordCode = false;
+				continue;
+			} else if (in [0] == U'^') {
+				static integer countGlobalSuperscript;
+				trace (U"Global superscript: ", ++ countGlobalSuperscript, U" ", txt);
+				globalSuperscript = true;
+				in ++;
+				wordItalic = wordBold = wordCode = false;
+				continue;
+			} else {
+				static integer countCharacterSuperscript;
+				trace (U"Character superscript: ", ++ countCharacterSuperscript, U" ", txt);
+				charSuperscript = true;
+				wordItalic = wordBold = wordCode = false;
+				continue;
+			}
 		} else if (kar == U'_' && my underscoreIsSubscript) {
-			if (globalSubscript) { globalSubscript = false; wordItalic = wordBold = wordCode = false; continue; }
-			else if (in [0] == U'_') { globalSubscript = true; in ++; wordItalic = wordBold = wordCode = false; continue; }
-			else if (! my dollarSignIsCode) { charSubscript = true; wordItalic = wordBold = wordCode = false; continue; }   // not in manuals
-			else
-				;   // a normal underscore in manuals
+			if (globalVerbatim || verbatimLink) {
+				/*
+					Output the underscore verbatim, by falling through.
+				*/
+			} else if (globalSubscript) {
+				globalSubscript = false;
+				wordItalic = wordBold = wordCode = false;
+				continue;
+			} else if (in [0] == U'_') {
+				static integer countGlobalSubscript;
+				trace (U"Global subscript: ", ++ countGlobalSubscript, U" ", txt);
+				globalSubscript = true;
+				in ++;
+				wordItalic = wordBold = wordCode = false;
+				continue;
+			} else if (! weAreInManual) {
+				static integer countCharacterSubscript;
+				trace (U"Character subscript: ", ++ countCharacterSubscript, U" ", txt);
+				charSubscript = true;
+				wordItalic = wordBold = wordCode = false;
+				continue;
+			} else if (weAreInNotebook) {
+				charSubscript = true;
+				wordItalic = wordBold = wordCode = false;
+				continue;
+			} else {
+				// a normal underscore in manuals
+				static integer countVerbatimSubscript;
+				trace (U"Verbatim subscript: ", ++ countVerbatimSubscript, U" ", txt);
+			}
 		} else if (kar == U'%' && my percentSignIsItalic) {
-			if (globalItalic) globalItalic = false;
-			else if (in [0] == U'%') { globalItalic = true; in ++; }
-			else if (my dollarSignIsCode) wordItalic = true;   // in manuals
-			else charItalic = true;
-			continue;
+			if (globalVerbatim || verbatimLink) {
+				/*
+					Output the percent sign verbatim, by falling through.
+				*/
+			} else if (globalItalic) {
+				globalItalic = false;
+				continue;
+			} else if (in [0] == U'%') {
+				static integer countGlobalItalic;
+				trace (U"Global italic: ", ++ countGlobalItalic, U" ", txt);
+				globalItalic = true;
+				in ++;
+				continue;
+			} else if (weAreInManual) {
+				static integer countWordItalic, countCharacterItalic;
+				if (Melder_isWordCharacter (in [0]) && Melder_isWordCharacter (in [1]) && in [1] != U'_')
+					trace (U"Word-italic: ", ++ countWordItalic, U" ", txt);
+				else
+					trace (U"Character-italic: ", ++ countCharacterItalic, U" ", txt);
+				if (in [0] == U'`' && my backquoteIsVerbatim)
+					globalItalic = true;
+				else
+					wordItalic = true;
+				continue;
+			} else if (weAreInNotebook) {
+				charItalic = true;
+				continue;
+			} else {
+				charItalic = true;
+				continue;
+			}
 		} else if (kar == U'#' && my numberSignIsBold) {
-			if (globalBold) globalBold = false;
-			else if (in [0] == U'#') { globalBold = true; in ++; }
-			else if (my dollarSignIsCode) wordBold = true;   // in manuals
-			else charBold = true;
-			continue;
+			if (globalVerbatim || verbatimLink) {
+				/*
+					Output the hash sign verbatim, by falling through.
+				*/
+			} else if (globalBold) {
+				globalBold = false;
+				continue;
+			} else if (in [0] == U'#') {
+				static integer countGlobalBold;
+				trace (U"Global bold: ", ++ countGlobalBold, U" ", txt);
+				globalBold = true;
+				in ++;
+				continue;
+			} else if (weAreInManual) {
+				static integer countWordBold, countCharacterBold;
+				if (Melder_isWordCharacter (in [0]) && Melder_isWordCharacter (in [1]) && in [1] != U'_')
+					trace (U"Word-bold: ", ++ countWordBold, U" ", txt);
+				else
+					trace (U"Character-bold: ", ++ countCharacterBold, U" ", txt);
+				if (in [0] == U'`' && my backquoteIsVerbatim)
+					globalBold = true;
+				else
+					wordBold = true;
+				continue;
+			} else {
+				charBold = true;
+				continue;
+			}
+		} else if (kar == U'`' && my backquoteIsVerbatim && ! topDownVerbatim) {
+			if (verbatimLink) {
+				verbatimLink = false;
+				continue;
+			} else if (globalVerbatim) {
+				if (in [0] == U'`')   // a double backquote means a backquote
+					in ++;
+				else {
+					globalVerbatim = false;
+					globalItalic = false;
+					globalBold = false;
+					globalLink = false;
+					continue;
+				}
+			} else {
+				globalVerbatim = true;
+				continue;
+			}
 		} else if (kar == U'$' && my dollarSignIsCode) {
-			if (globalCode) globalCode = false;
-			else if (in [0] == U'$') { globalCode = true; in ++; }
-			else wordCode = true;
-			continue;
+			if (globalVerbatim || verbatimLink) {
+				/*
+					Output the dollar sign verbatim, by falling through.
+				*/
+			} else if (globalCode) {
+				globalCode = false;
+				continue;
+			} else if (in [0] == U'$') {
+				globalCode = true;
+				in ++;
+				continue;
+			} else {
+				wordCode = true;
+				continue;
+			}
 		} else if (kar == U'@' && my atSignIsLink   // recognize links
 		           && my textRotation == 0.0)   // no links allowed in rotated text, because links are identified by 2-point rectangles
 		{
-			char32 *to, *max;
 			/*
-			 * We will distinguish:
-			 * 1. The link text: the text shown to the user, drawn in blue.
-			 * 2. The link info: the information saved in the Graphics object when the user clicks the link;
-			 *    this may be a page title in a manual or any other information.
-			 * The link info is equal to the link text in the following cases:
-			 * 1. A single-word link: "this is a @Link that consists of one word".
-			 * 2. Longer links without '|' in them: "@@Link with spaces@".
-			 * The link info is unequal to the link text in the following case:
-			 * 3. Longer links with '|' in them: "@@Page linked to|Text shown in blue@"
-			 */
-			if (globalLink) {
+				We will distinguish:
+				1. The link text: the text shown to the user, drawn in blue.
+				2. The link info: the information saved in the Graphics object when the user clicks the link;
+				   this may be a page title in a manual or any other information.
+				The link info is equal to the link text in the following cases:
+				1. A single-word link: "this is a @Link that consists of one word".
+				2. Longer links without "|" in them: "@@Link with spaces@".
+				The link info is unequal to the link text in the following case:
+				3. Longer links with "|" in them: "@@Page linked to|Text shown in blue@"
+			*/
+			if (globalVerbatim) {
 				/*
-				 * Detected the third '@' in strings like "@@Link with spaces@".
-				 * This closes the link text (which will be shown in blue).
-				 */
-				globalLink = false;   // close the drawn link text (the normal colour will take over)
-				continue;   // the '@' must not be drawn
+					Output the at sign verbatim, by falling through.
+				*/
+			} else if (globalLink) {
+				if (topDownVerbatim) {
+					/*
+						Output the at sign verbatim, by falling through.
+					*/
+				} else {
+					/*
+						Detected the third "@" in strings like "@@Link with spaces@".
+						This closes the link text (which will be shown in blue).
+					*/
+					globalLink = false;   // close the drawn link text (the normal colour will take over)
+					continue;   // the "@" must not be drawn
+				}
 			} else if (in [0] == U'@') {
 				/*
-				 * Detected the second '@' in strings like "@@Link with spaces@".
-				 * A format like "@@Page linked to|Text shown in blue@" is permitted.
-				 * First step: collect the page text (the link information);
-				 * it is everything between "@@" and "|" or "@" or end of string.
-				 */
+					Detected the second "@" in strings like "@@Link with spaces@".
+					A format like "@@Page linked to|Text shown in blue@" is permitted,
+					as is @@PointProcess: ||Draw...@.
+					First step: collect the page text (the link information);
+					it is everything between "@@" and "|" or "@" or end of string.
+				*/
 				const char32 *from = in + 1;   // start with first character after "@@"
-				if (! links [++ numberOfLinks]. name)   // make room for saving link info
+				++ numberOfLinks;
+				Melder_assert (numberOfLinks < MAXIMUM_NUMBER_OF_LINKS_PER_STRING);
+				if (! links [numberOfLinks]. name)   // make room for saving link info
 					links [numberOfLinks]. name = Melder_calloc_f (char32, MAX_LINK_LENGTH + 1);
-				to = links [numberOfLinks]. name, max = to + MAX_LINK_LENGTH;
-				while (*from && *from != U'@' && *from != U'|' && to < max)   // until end-of-string or '@' or '|'...
-					* to ++ = * from ++;   // ... copy one character
+				char32 *to = links [numberOfLinks]. name;
+				char32 *max = to + MAX_LINK_LENGTH;
+				while (*from && *from != U'@') {   // until end-of-string or '@'...
+					if (*from == U'|') {
+						if (from [1] == U'|' && from [2] != U'\0' && from [2] != U'@') {
+							/*
+								Include the stuff after "||" into the link info.
+							*/
+							from += 2;
+							in += to - links [numberOfLinks]. name + 2;   // skip head of link info as well as "||"
+						} else {
+							/*
+								Second step: collect the link text that is to be drawn.
+								Its characters will be collected during the normal cycles of the loop.
+								If the link info is equal to the link text, no action is needed.
+								If, on the other hand, there is a separate link info, this will have to be skipped.
+							*/
+							in += to - links [numberOfLinks]. name + 1;   // skip link info as well as "|"
+							break;   //  ..or until single '|'...
+						}
+					}
+					if (to < max)
+						*to ++ = *from ++;   // ... copy one character
+				}
 				*to = U'\0';   // close saved link info
 				/*
-				 * Second step: collect the link text that is to be drawn.
-				 * Its characters will be collected during the normal cycles of the loop.
-				 * If the link info is equal to the link text, no action is needed.
-				 * If, on the other hand, there is a separate link info, this will have to be skipped.
-				 */
-				if (*from == U'|')
-					in += to - links [numberOfLinks]. name + 1;   // skip link info + '|'
-				/*
-				 * We are entering the link-text-collection mode.
-				 */
+					We are entering the link-text-collection mode.
+				*/
 				globalLink = true;
 				/*
-				 * Both '@' must be skipped and must not be drawn.
-				 */
+					Both "@" must be skipped and must not be drawn.
+				*/
 				in ++;   // skip second '@'
 				continue;   // do not draw
+			} else if (in [0] == U'`' && my backquoteIsVerbatim) {
+				const char32 *from = in;   // start with the opening backquote
+				++ numberOfLinks;
+				Melder_assert (numberOfLinks < MAXIMUM_NUMBER_OF_LINKS_PER_STRING);
+				if (! links [numberOfLinks]. name)   // make room for saving link info
+					links [numberOfLinks]. name = Melder_calloc_f (char32, MAX_LINK_LENGTH + 1);
+				char32 *to = links [numberOfLinks]. name;
+				char32 *max = to + MAX_LINK_LENGTH;
+				*to ++ = *from++;   // copy the backquote
+				while (*from && *from != U'`' && to < max)   // until end-of-verbatim...
+					*to ++ = *from++;   // ... copy one character
+				*to ++ = U'`';
+				*to = U'\0';   // close saved link info
+				trace (U"Verbatim link to: ", links [numberOfLinks]. name);
+				/*
+					Second step: collect the link text that is to be drawn.
+					Its characters will be collected during the normal cycles of the loop.
+					The link info is equal to the link text, so no skipping is needed.
+				*/
+				in ++;   // skip the opening backquote
+				verbatimLink = true;   // enter the link-text-collection mode
+				continue;
 			} else {
 				/*
-				 * Detected a single-word link, like in "this is a @Link that consists of one word".
-				 * First step: collect the page text: letters, digits, and underscores.
-				 */
+					Detected a single-word link, like in "this is a @Link that consists of one word".
+					First step: collect the page text: letters, digits, and underscores.
+				*/
 				const char32 *from = in;   // start with first character after "@"
-				if (! links [++ numberOfLinks]. name)   // make room for saving link info
+				++ numberOfLinks;
+				Melder_assert (numberOfLinks < MAXIMUM_NUMBER_OF_LINKS_PER_STRING);
+				if (! links [numberOfLinks]. name)   // make room for saving link info
 					links [numberOfLinks]. name = Melder_calloc_f (char32, MAX_LINK_LENGTH + 1);
-				to = links [numberOfLinks]. name;
-				max = to + MAX_LINK_LENGTH;
+				char32 *to = links [numberOfLinks]. name;
+				char32 *max = to + MAX_LINK_LENGTH;
 				while (*from && (Melder_isWordCharacter (*from) || *from == U'_') && to < max)   // until end-of-word...
 					*to ++ = *from++;   // ... copy one character
 				*to = U'\0';   // close saved link info
 				/*
-				 * Second step: collect the link text that is to be drawn.
-				 * Its characters will be collected during the normal cycles of the loop.
-				 * The link info is equal to the link text, so no skipping is needed.
-				 */
+					Second step: collect the link text that is to be drawn.
+					Its characters will be collected during the normal cycles of the loop.
+					The link info is equal to the link text, so no skipping is needed.
+				*/
 				wordLink = true;   // enter the single-word link-text-collection mode
+				continue;
 			}
-			continue;
 		} else if (kar == U'\\') {
 			/*
-			 * Detected backslash sequence: backslash + kar1 + kar2...
-			 */
+				Detected backslash sequence: backslash + kar1 + kar2...
+			*/
 			char32 kar1, kar2;
 			/*
-			 * ... except if kar1 or kar2 is null: in that case, draw the backslash.
-			 */
-			if (! (kar1 = in [0]) || ! (kar2 = in [1])) {
+				... except if kar1 or kar2 is null: in that case, draw the backslash.
+			*/
+			if ((kar1 = in [0]) == U'\0' || (kar2 = in [1]) == U'\0') {
 				;   // normal backslash symbol
-			/*
-			 * Catch "\s{", which means: small characters until corresponding '}'.
-			 */
-			} else if (kar2 == U'{') {
-				if (kar1 == U's')
-					globalSmall = true;
+			} else if (topDownVerbatim &&
+				(kar1 == U'@' && kar2 == U'{' ||
+				 kar1 == U'`' && kar2 == U'{' ||
+				 kar1 == U'#' && kar2 == U'@' && in [2] == U'{' ||
+				 kar1 == U'#' && kar2 == U'`' && in [2] == U'{')
+			) {
+				/*
+					Detected "\@{" or "\`{" or "\#@{" or "\#`{"
+					in strings like "\@{Link with spaces}" or "\`{writeInfoLine}".
+					A format like "\@{Page linked to|Text shown in blue}" is permitted,
+					as is \@{PointProcess: ||Draw}.
+				*/
+				const bool isVerbatimLink = ( kar1 == U'`' || kar2 == U'`' );
+				thinLink = ( kar1 != U'#' );
+				const char32 *from = in + 3 - thinLink;   // start with first character after "\@{"
+				++ numberOfLinks;
+				Melder_assert (numberOfLinks < MAXIMUM_NUMBER_OF_LINKS_PER_STRING);
+				if (! links [numberOfLinks]. name)   // make room for saving link info
+					links [numberOfLinks]. name = Melder_calloc_f (char32, MAX_LINK_LENGTH + 1);
+				char32 *to = links [numberOfLinks]. name;
+				char32 *max = to + MAX_LINK_LENGTH;
+				if (isVerbatimLink)
+					*to ++ = U'`';
+				while (*from && *from != U'}') {   // until end-of-string or '}' or...
+					if (*from == U'|') {
+						if (from [1] == U'|' && from [2] != U'\0' && from [2] != U'}') {
+							/*
+								Include the stuff after "||" into the link info.
+							*/
+							from += 2;
+							in += to - links [numberOfLinks]. name + 2;   // skip head of link info as well as "||"
+						} else {
+							/*
+								Second step: collect the link text that is to be drawn.
+								Its characters will be collected during the normal cycles of the loop.
+								If the link info is equal to the link text, no action is needed.
+								If, on the other hand, there is a separate link info, this will have to be skipped.
+							*/
+							in += to - links [numberOfLinks]. name + 1;   // skip link info as well as "|"
+							break;   // ...or until single '|'...
+						}
+					}
+					if (to < max)
+						* to ++ = * from ++;   // ... copy one character
+				}
+				*to = U'\0';   // close saved link info
+				/*
+					Replace final colon with three dots.
+					This has to be done *after* the above increments of `in`.
+				*/
+				if (to - links [numberOfLinks]. name > 0 && to [-1] == U':') {
+					to [-1] = U'.';
+					if (to < max)
+						*to ++ = U'.';
+					if (to < max)
+						*to ++ = U'.';
+					*to = U'\0';   // close saved link info again
+				}
+				if (isVerbatimLink && to < max) {
+					*to ++ = U'`';
+					*to = U'\0';   // close saved link info again
+				}
+				/*
+					We are entering the link-text-collection mode.
+				*/
+				globalLink = true;
+				/*
+					The closing "}" must be skipped and must not be drawn.
+				*/
+				in += 3 - thinLink;   // skip '}'
+				continue;   // do not draw
+			} else if (topDownVerbatim && kar1 == U'#' && kar2 == U'{') {
+				globalBold = true;
 				in += 2;
 				continue;
-			/*
-			 * Default action: translate the backslash sequence into the long character 'kar1,kar2'.
-			 */
+			} else if (topDownVerbatim && kar1 == U'%' && kar2 == U'{') {
+				globalItalic = true;
+				in += 2;
+				continue;
+			} else if (globalVerbatim) {
+				;   // normal backslash symbol
+			} else if (kar1 == U's' && kar2 == U'{') {
+				/*
+					Catch "\s{", which means: small characters until corresponding '}'.
+				*/
+				globalSmall = true;
+				in += 2;
+				continue;
 			} else {
+				/*
+					Default action: translate the backslash sequence into the long character 'kar1,kar2'.
+				*/
 				kar = Longchar_getInfo (kar1, kar2) -> unicode;
 				in += 2;
 			}
 		} else if (kar == U'\"') {
 			if (! (my font == kGraphics_font::COURIER || my fontStyle == Graphics_CODE || wordCode || globalCode))
 				kar = ++nquote & 1 ? UNICODE_LEFT_DOUBLE_QUOTATION_MARK : UNICODE_RIGHT_DOUBLE_QUOTATION_MARK;
-		} else if (kar == U'\'') {
+		} else if (kar == U'\'' && ! my backquoteIsVerbatim) {
 			kar = UNICODE_RIGHT_SINGLE_QUOTATION_MARK;
-		} else if (kar == U'`') {
+		} else if (kar == U'`' && ! my backquoteIsVerbatim) {
 			kar = UNICODE_LEFT_SINGLE_QUOTATION_MARK;
 		} else if (kar >= 32 && kar <= 126) {
 			if (kar == U'f') {
@@ -1414,13 +1684,25 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 					in ++;
 				}
 			} else if (kar == U'}') {
-				if (globalSmall) { globalSmall = 0; continue; }
+				if (globalSmall) {
+					globalSmall = false;
+					continue;
+				} else if (globalBold && topDownVerbatim) {
+					globalBold = false;
+					continue;
+				} else if (globalItalic && topDownVerbatim) {
+					globalItalic = false;
+					continue;
+				} else if (globalLink && topDownVerbatim) {
+					globalLink = false;
+					continue;
+				}
 			}
 		} else if (kar == U'\t') {
 			out -> kar = U'\t';
 			out -> rightToLeft = false;
 			wordItalic = wordBold = wordCode = wordLink = false;
-			globalSubscript = globalSuperscript = globalItalic = globalBold = globalCode = globalLink = globalSmall = false;
+			globalSubscript = globalSuperscript = globalItalic = globalBold = globalCode = globalLink = verbatimLink = globalSmall = false;
 			charItalic = charBold = charSuperscript = charSubscript = false;
 			out ++;
 			continue;   // do not draw
@@ -1432,13 +1714,13 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 				wordItalic = wordBold = wordCode = wordLink = false;
 		}
 		out -> style =
-			(wordLink | globalLink) && my fontStyle != Graphics_CODE ? Graphics_BOLD :
+			(wordLink | globalLink | verbatimLink) && my fontStyle != Graphics_CODE ? (thinLink ? 0 : Graphics_BOLD) :
 			((my fontStyle & Graphics_ITALIC) | charItalic | wordItalic | globalItalic ? Graphics_ITALIC : 0) +
 			((my fontStyle & Graphics_BOLD) | charBold | wordBold | globalBold ? Graphics_BOLD : 0);
 		out -> font.string = nullptr;
-		out -> font.integer_ = my fontStyle == Graphics_CODE || wordCode || globalCode ||
+		out -> font.integer_ = my fontStyle == Graphics_CODE || wordCode || globalCode || globalVerbatim || verbatimLink ||
 			(kar == U'/' || kar == U'|') && my font != kGraphics_font::PALATINO ? (int) kGraphics_font::COURIER : (int) my font;
-		out -> link = wordLink | globalLink;
+		out -> link = wordLink | globalLink | verbatimLink;
 		out -> baseline = charSuperscript | globalSuperscript ? 34 : charSubscript | globalSubscript ? -25 : 0;
 		out -> size = globalSmall || out -> baseline != 0 ? 80 : 100;
 		if (kar == U'/' && my font != kGraphics_font::PALATINO) {
@@ -1662,16 +1944,15 @@ void Graphics_textRect (Graphics me, double x1, double x2, double y1, double y2,
 void Graphics_text (Graphics me, double xWC, double yWC, conststring32 txt) {
 	if (my recording) {
 		const conststring8 txt_utf8 = Melder_peek32to8 (txt);
-		const int length = strlen (txt_utf8) / sizeof (double) + 1;   // TODO: integer overflow
+		const integer length = Melder8_length (txt_utf8) / (integer) sizeof (double) + 1;
 		op (TEXT, 3 + length); put (xWC); put (yWC); sput (txt_utf8, length)
 	} else {
 		if (my wrapWidth == 0.0 && str32chr (txt, U'\n') && my textRotation == 0.0) {
 			const double lineSpacingWC = (1.2/72.0) * my fontSize * my resolution / fabs (my scaleY);
 			integer numberOfLines = 1;
-			for (const char32 *p = & txt [0]; *p != U'\0'; p ++) {
+			for (const char32 *p = & txt [0]; *p != U'\0'; p ++)
 				if (*p == U'\n')
 					numberOfLines ++;
-			}
 			yWC += (
 				my verticalTextAlignment == Graphics_TOP ?
 					0.0
@@ -1985,6 +2266,11 @@ void Graphics_setUnderscoreIsSubscript (Graphics me, bool isSubscript) {
 void Graphics_setDollarSignIsCode (Graphics me, bool isCode) {
 	my dollarSignIsCode = isCode;
 	if (my recording) { op (SET_DOLLAR_SIGN_IS_CODE, 1); put (isCode); }
+}
+
+void Graphics_setBackquoteIsVerbatim (Graphics me, bool isVerbatim) {
+	my backquoteIsVerbatim = isVerbatim;
+	if (my recording) { op (SET_BACKQUOTE_IS_VERBATIM, 1); put (isVerbatim); }
 }
 
 void Graphics_setAtSignIsLink (Graphics me, bool isLink) {

@@ -1,6 +1,6 @@
 /* GaussianMixture.cpp
  *
- * Copyright (C) 2011-2020 David Weenink
+ * Copyright (C) 2011-2023 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ static double GaussianMixture_getLikelihoodValue (GaussianMixture me, constMAT c
 				lnsum += pp * log (pp); // scaling outside the loop
 			}
 			if (psum > 0)
-				lnpcd += lnsum / psum; // scaling: as reponsibilities
+				lnpcd += lnsum / psum; // scaling: as responsibilities
 		}
 		return lnpcd;
 	}
@@ -142,7 +142,7 @@ static void GaussianMixture_getResponsibilities (GaussianMixture me, constMATVU 
 	Melder_require (responsibilities.nrow == probabilities.nrow && responsibilities.ncol == probabilities.ncol,
 			U"The responsibilities and the probabilities should have the same dimensions.");
 	Melder_require (responsibilities.ncol == my numberOfComponents,
-			U"The number of columns of the responsbilities should equal the number of components.");
+			U"The number of columns of the responsibilities should equal the number of components.");
 	const integer fromComponent = componentToUpdate == 0 ? 1 : componentToUpdate;
 	const integer toComponent = componentToUpdate == 0 ? my numberOfComponents : componentToUpdate;
 	
@@ -472,7 +472,9 @@ void GaussianMixture_PCA_drawMarginalPdf (GaussianMixture me, PCA thee, Graphics
 		Melder_assert (thy eigenvectors.ncol == thy dimension);
 		p [i] = scalef * GaussianMixture_getMarginalProbabilityAtPosition (me, thy eigenvectors.row (d), x);
 	}
-	const double pmax = NUMmax (p.get());
+	const double pmax = NUMmax_u (p.get());
+	if (isundef (pmax))
+		return;
 	if (ymin >= ymax) {
 		ymin = 0.0;
 		ymax = pmax;
@@ -512,7 +514,9 @@ void GaussianMixture_drawMarginalPdf (GaussianMixture me, Graphics g, integer d,
 		const double x = xmin + (i - 1) * dx;
 		p [i] = scalef * GaussianMixture_getMarginalProbabilityAtPosition (me, pos.get(), x);
 	}
-	const double pmax = NUMmax (p.get());
+	const double pmax = NUMmax_u (p.get());
+	if (isundef (pmax))
+		return;
 	if (ymin >= ymax) {
 		ymin = 0;
 		ymax = pmax;
@@ -583,8 +587,8 @@ void GaussianMixture_initialGuess (GaussianMixture me, TableOfReal thee) {
 	try {
 		autoCovariance cov_t = TableOfReal_to_Covariance (thee);
 		for (integer icol = 1; icol <= thy numberOfColumns; icol ++) {
-			const double min = NUMmin (thy data.column (icol));
-			const double max = NUMmax (thy data.column (icol));
+			const double min = NUMmin_e (thy data.column (icol));
+			const double max = NUMmax_e (thy data.column (icol));
 			for (integer component = 1; component <= my numberOfComponents; component ++) {
 				const Covariance covi = my covariances->at [component];
 				covi -> centroid [icol] = NUMrandomUniform (min, max);

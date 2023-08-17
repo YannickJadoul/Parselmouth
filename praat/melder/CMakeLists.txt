@@ -1,5 +1,5 @@
 target_sources(praat PRIVATE
-	melder.cpp complex.cpp melder_alloc.cpp melder_colour.cpp
+	melder.cpp complex.cpp melder_alloc.cpp melder_str32.cpp melder_colour.cpp
 	melder_ftoa.cpp melder_console.cpp melder_textencoding.cpp melder_atof.cpp melder_files.cpp
 	melder_sort.cpp melder_debug.cpp MelderFile.cpp melder_strings.cpp
 	melder_search.cpp

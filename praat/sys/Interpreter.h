@@ -2,7 +2,7 @@
 #define _Interpreter_h_
 /* Interpreter.h
  *
- * Copyright (C) 1993-2018,2020,2021 Paul Boersma
+ * Copyright (C) 1993-2018,2020-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,11 +36,13 @@ Thing_define (InterpreterVariable, SimpleString) {
 #define Interpreter_MAXNUM_PARAMETERS  400
 #define Interpreter_MAXNUM_LABELS  1000
 #define Interpreter_MAX_CALL_DEPTH  50
-#define Interpreter_MAX_DIALOG_TITLE_LENGTH  100
 
 #define Interpreter_MAX_LABEL_LENGTH  99
+#define Interpreter_MAX_PARAMETER_LENGTH  99
+#define Interpreter_MAX_FORMAT_LENGTH  39
 
 Thing_declare (UiForm);
+Thing_declare (UiField);
 Thing_declare (Editor);
 
 enum class kInterpreter_ReturnType {
@@ -71,18 +73,91 @@ enum class kInterpreter_ReturnType {
 conststring32 kInterpreter_ReturnType_errorMessage (kInterpreter_ReturnType returnType, conststring32 command);
 
 Thing_define (Interpreter, Thing) {
-	Editor optionalEditor;
-	autostring32 environmentName;
-	ClassInfo editorClass;
+	struct EditorEnvironment {
+		ClassInfo _optionalClass;
+		Editor _optionalInstance;
+		void _setFromOptionalEditor (Editor optionalEditor) noexcept {
+			our _optionalClass = ( optionalEditor ? ((Thing) optionalEditor) -> classInfo : nullptr );
+					// class Editor hasn't been defined yet, but assuming it's a Thing seems to be safe...
+			our _optionalInstance = optionalEditor;
+		}
+		conststring32 _optionalClassName () noexcept {
+			return _optionalClass ? our _optionalClass -> className : nullptr;
+		}
+	} _owningEditorEnvironment, _dynamicEditorEnvironment;
+	/*
+		Each entire editor environment (but not its parts separately) can be set from an Editor;
+		in case of an owning editor, the editor is optional; in case of a dynamic editor, it's obligatory.
+		The parts of an editor environment (class name and instance) can be separately gotten.
+	*/
+	void setOwningEditorEnvironmentFromOptionalEditor (Editor optionalEditor) noexcept {
+		our _owningEditorEnvironment. _setFromOptionalEditor (optionalEditor);
+	}
+	conststring32 optionalOwningEditorEnvironmentClassName () noexcept {
+		return our _owningEditorEnvironment. _optionalClassName();
+	}
+	Editor optionalOwningEnvironmentEditor () noexcept {
+		return our _owningEditorEnvironment. _optionalInstance;
+	}
+	void setDynamicEditorEnvironmentFromEditor (Editor editor) noexcept {
+		Melder_assert (editor);
+		our _dynamicEditorEnvironment. _setFromOptionalEditor (editor);
+	}
+	conststring32 optionalDynamicEditorEnvironmentClassName () noexcept {
+		return our _dynamicEditorEnvironment. _optionalClassName();
+	}
+	Editor optionalDynamicEnvironmentEditor () noexcept {
+		return our _dynamicEditorEnvironment. _optionalInstance;
+	}
+	/*
+		An owning editor environment can be copied to a dynamic one, but not the other way round.
+	*/
+	void setDynamicFromOwningEditorEnvironment () noexcept {
+		our _dynamicEditorEnvironment = our _owningEditorEnvironment;   // TODO: what if the owner has been orphaned?
+	}
+	/*
+		Memory of the past.
+	*/
+	bool wasStartedFromEditorEnvironment () noexcept {
+		return !! our _owningEditorEnvironment. _optionalClass;
+	}
+	/*
+		Awareness of the present.
+	*/
+	bool hasDynamicEnvironmentEditor () noexcept {
+		return !! our _dynamicEditorEnvironment. _optionalInstance;
+	}
+	/*
+		Forgetting. The owning editor's class will always be remembered, though. That's our identity, so to say.
+
+		The dynamic editor's class will also be remembered,
+		on behalf of an error message by a continuing pause script. (last checked 5 March 2023)
+	*/
+	void undangleOwningEditor () noexcept {
+		our _owningEditorEnvironment. _optionalInstance = nullptr;
+	}
+	void undangleDynamicEditor () noexcept {
+		our _dynamicEditorEnvironment. _optionalInstance = nullptr;
+	}
+	void undangleEditorEnvironments () noexcept {
+		our _owningEditorEnvironment. _optionalInstance = nullptr;
+		our _dynamicEditorEnvironment. _optionalInstance = nullptr;
+	}
+	void nullifyDynamicEditorEnvironment () noexcept {
+		our _dynamicEditorEnvironment. _optionalClass = nullptr;
+		our _dynamicEditorEnvironment. _optionalInstance = nullptr;
+	}
+
 	int numberOfParameters, numberOfLabels, callDepth;
-	int types [1+Interpreter_MAXNUM_PARAMETERS];
-	char32 parameters [1+Interpreter_MAXNUM_PARAMETERS] [100];
-	char32 formats [1+Interpreter_MAXNUM_PARAMETERS] [40];
+	int types [1+Interpreter_MAXNUM_PARAMETERS], numbersOfLines [1+Interpreter_MAXNUM_PARAMETERS];
+	char32 parameters [1+Interpreter_MAXNUM_PARAMETERS] [1+Interpreter_MAX_PARAMETER_LENGTH];
+	char32 formats [1+Interpreter_MAXNUM_PARAMETERS] [1+Interpreter_MAX_FORMAT_LENGTH];
 	autostring32 arguments [1+Interpreter_MAXNUM_PARAMETERS];
 	char32 choiceArguments [1+Interpreter_MAXNUM_PARAMETERS] [100];
 	char32 labelNames [1+Interpreter_MAXNUM_LABELS] [1+Interpreter_MAX_LABEL_LENGTH];
 	integer labelLines [1+Interpreter_MAXNUM_LABELS];
-	char32 dialogTitle [1+Interpreter_MAX_DIALOG_TITLE_LENGTH], procedureNames [1+Interpreter_MAX_CALL_DEPTH] [100];
+	autostring32 dialogTitle;
+	char32 procedureNames [1+Interpreter_MAX_CALL_DEPTH] [100];
 	std::unordered_map <std::u32string, autoInterpreterVariable> variablesMap;
 	bool running, stopped;
 
@@ -93,12 +168,17 @@ Thing_define (Interpreter, Thing) {
 	autoINTVEC returnedIntegerVector;
 	autoMAT returnedRealMatrix;
 	autoSTRVEC returnedStringArray;
+
+	void v9_destroy () noexcept
+		override;
 };
 
-autoInterpreter Interpreter_create (conststring32 environmentName, ClassInfo editorClass);
-autoInterpreter Interpreter_createFromEnvironment (Editor optionalEditor);
+autoInterpreter Interpreter_create ();
+autoInterpreter Interpreter_createFromEnvironment (Editor optionalInterpreterOwningEditor);
 
-void Melder_includeIncludeFiles (autostring32 *text);
+void Interpreters_undangleEnvironment (Editor environment) noexcept;
+
+void Melder_includeIncludeFiles (autostring32 *text, bool onlyInCodeChunks = false);
 integer Interpreter_readParameters (Interpreter me, mutablestring32 text);
 Thing_declare (UiForm);
 autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, Editor optionalEditor, conststring32 fileName,
@@ -110,7 +190,7 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog);
 void Interpreter_getArgumentsFromString (Interpreter me, conststring32 arguments);
 void Interpreter_getArgumentsFromArgs (Interpreter me, integer nargs, Stackel args);
 void Interpreter_getArgumentsFromCommandLine (Interpreter me, integer argc, char **argv);
-void Interpreter_run (Interpreter me, char32 *text);   // destroys 'text'
+void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables);   // destroys 'text'
 void Interpreter_stop (Interpreter me);   // can be called from any procedure called deep-down by the interpreter; will stop before next line
 
 void Interpreter_voidExpression (Interpreter me, conststring32 expression);

@@ -1,6 +1,6 @@
 /* motifEmulator.cpp
  *
- * Copyright (C) 1993-2022 Paul Boersma
+ * Copyright (C) 1993-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,8 +91,9 @@ int HeightOfScreen (int screen) {
 /********** X Toolkit **********/
 
 void _Gui_callCallbacks (GuiObject w, XtCallbackList *callbacks, XtPointer call) {
-	int i; for (i = 0; i < MAXNUM_CALLBACKS; i ++)
-		if (callbacks -> pairs [i]. proc) callbacks -> pairs [i]. proc (w, callbacks -> pairs [i]. closure, call);
+	for (int i = 0; i < MAXNUM_CALLBACKS; i ++)
+		if (callbacks -> pairs [i]. proc)
+			callbacks -> pairs [i]. proc (w, callbacks -> pairs [i]. closure, call);
 }
 
 #define MAXIMUM_NUMBER_OF_MENUS  4000
@@ -160,7 +161,7 @@ static int Native_titleWidth (GuiObject me) {
 		ReleaseDC (my parent -> window, dc);
 		return size. cx;
 	} else {
-		return 7 * str32len (my name.get());
+		return 7 * Melder_length (my name.get());
 	}
 }
 
@@ -462,9 +463,14 @@ static void NativeMenuItem_check (GuiObject me, Boolean value) {
 }
 
 static void NativeMenuItem_setSensitive (GuiObject me) {
-	if (! my managed)
-		return;
-	EnableMenuItem (my nat.entry.handle, my nat.entry.id, MF_BYCOMMAND | ( my insensitive ? MF_GRAYED : MF_ENABLED ));
+	//if (! my managed)
+	//	return;
+	if (my widgetClass == xmPulldownMenuWidgetClass) {
+		Melder_assert (MEMBER (my parent, MenuBar));
+		EnableMenuItem (my parent -> nat.menu.handle, my nat.menu.id, MF_BYCOMMAND | ( my insensitive ? MF_GRAYED : MF_ENABLED ));
+	} else {
+		EnableMenuItem (my nat.entry.handle, my nat.entry.id, MF_BYCOMMAND | ( my insensitive ? MF_GRAYED : MF_ENABLED ));
+	}
 	//DrawMenuBar (my shell -> window);
 }
 
@@ -587,7 +593,9 @@ static void _GuiNativizeWidget (GuiObject me) {
 		} break;
 		case xmLabelWidgetClass: Melder_fatal (U"Should be implemented in GuiLabel."); break;
 		case xmCascadeButtonWidgetClass: {
-			if (! my motiff.cascadeButton.inBar) {
+			if (my motiff.cascadeButton.inBar) {
+				my nat.entry.handle = my parent -> nat.menu.handle;   // TODO: superfluous?
+			} else {
 				my window = CreateWindow (L"button", Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())),
 					WS_CHILD | BS_PUSHBUTTON | WS_CLIPSIBLINGS,
 					my x, my y, my width, my height, my parent -> window, (HMENU) 1, theGui.instance, NULL);
@@ -1308,10 +1316,6 @@ void XtAddCallback (GuiObject me, int kind, XtCallbackProc proc, XtPointer closu
 			Melder_assert (my widgetClass == xmScrollBarWidgetClass);
 			xt_addCallback (& my motiff.scrollBar.dragCallbacks, proc, closure);
 		break;
-		case XmNmoveCallback:
-			Melder_assert (my widgetClass == xmDrawingAreaWidgetClass);
-			xt_addCallback (& my motiff.drawingArea.moveCallbacks, proc, closure);
-		break;
 		case XmNvalueChangedCallback:
 			if (my widgetClass == xmScrollBarWidgetClass)
 				xt_addCallback (& my motiff.scrollBar.valueChangedCallbacks, proc, closure);
@@ -1642,6 +1646,7 @@ void XtManageChildren (GuiObjectList children, Cardinal num_children) {
 }
 
 void XtSetSensitive (GuiObject me, Boolean value) {
+	//TRACE
 	if (my insensitive != value)
 		return;
 	my insensitive = ! value;
@@ -1658,19 +1663,23 @@ void XtSetSensitive (GuiObject me, Boolean value) {
 		case xmScrollBarWidgetClass: _GuiNativeControl_setSensitive (me); break;
 		case xmLabelWidgetClass: _GuiNativeControl_setSensitive (me); break;
 		case xmCascadeButtonWidgetClass: {
+			trace (U"setting the sensitivity of a cascade button to ", value);
 			if (my inMenu || my motiff.cascadeButton.inBar) {
+				trace (U"in the menu bar");
 				if (my subMenuId) {
-					if (value)
-						NativeMenuItem_setSensitive (my subMenuId);
-					else
-						NativeMenuItem_setSensitive (my subMenuId);
+					trace (U"submenu ID ", Melder_pointer (my subMenuId));
+					my subMenuId -> insensitive = my insensitive;
+					NativeMenuItem_setSensitive (my subMenuId);
+					//NativeMenuItem_setSensitive (me);
 					DrawMenuBar (my shell -> window);
 				}
 			} else {
+				trace (U"outside the menu bar");
 				_GuiNativeControl_setSensitive (me);
 			}
 		} break;
 		case xmPulldownMenuWidgetClass: {
+			trace (U"setting the sensitivity of a menu title to ", value);
 			if (my popUpButton)
 				XtSetSensitive (my popUpButton, value);
 		} break;
@@ -2626,7 +2635,10 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me) {
 		if (my widgetClass == xmDrawingAreaWidgetClass) {
-			if (my parent -> widgetClass == xmScrolledWindowWidgetClass)
+			const bool controlKeyPressed = ( fwKeys & MK_CONTROL );
+			if (controlKeyPressed)
+				_GuiWinDrawingArea_handleZoom (me, double (zDelta) / 120.0);
+			else if (my parent -> widgetClass == xmScrolledWindowWidgetClass)
 				on_scroll (my parent -> motiff.scrolledWindow.verticalBar, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
 			else
 				for (GuiObject child = my parent -> firstChild; child; child = child -> nextSibling)
@@ -2638,9 +2650,9 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 static void on_size (HWND window, UINT state, int cx, int cy) {
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me && MEMBER (me, Shell) && (state == SIZE_RESTORED || state == SIZE_MAXIMIZED)) {
-		int oldWidth = my width, oldHeight = my height;
-		int newWidth = cx;
-		int newHeight = cy;
+		const int oldWidth = my width, oldHeight = my height;
+		const int newWidth = cx;
+		const int newHeight = cy;
 		my width = newWidth;
 		my height = newHeight;
 		FORWARD_WM_SIZE (window, state, cx, cy, DefWindowProc);
@@ -2673,8 +2685,7 @@ static void on_key (HWND window, UINT key, BOOL down, int repeat, UINT flags) {
 static void on_char (HWND window, TCHAR kar, int repeat) {
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me) {
-		//Melder_warning (U"Widget type ", my widgetClass);
-		if (MEMBER (me, Shell)) {
+		if (MEMBER (me, Shell) || my widgetClass == xmDrawingAreaWidgetClass) {
 			GuiObject drawingArea = _motif_findDrawingArea (me);
 			if (drawingArea) {
 				GuiObject textFocus = drawingArea -> shell -> textFocus;   // BUG: ignore?

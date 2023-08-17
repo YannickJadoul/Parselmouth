@@ -1,6 +1,6 @@
 /* DemoEditor.cpp
  *
- * Copyright (C) 2009-2022 Paul Boersma
+ * Copyright (C) 2009-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,7 +102,7 @@ static void gui_drawingarea_cb_resize (DemoEditor me, GuiDrawingArea_ResizeEvent
 void structDemoEditor :: v_createChildren () {
 	our drawingArea = GuiDrawingArea_createShown (our windowForm, 0, 0, 0, 0,
 		gui_drawingarea_cb_expose, gui_drawingarea_cb_mouse,
-		gui_drawingarea_cb_key, gui_drawingarea_cb_resize, this, 0
+		gui_drawingarea_cb_key, gui_drawingarea_cb_resize, nullptr, this, 0
 	);
 }
 
@@ -224,13 +224,13 @@ void Demo_waitForInput (Interpreter interpreter) {
 		Melder_throw (U"You cannot work with the Demo window while it is waiting for input. "
 			U"Please click or type into the Demo window or close it.");
 	}
-	//GuiObject_show (theReferenceToTheOnlyDemoEditor -> windowForm);
+	//GuiThing_show (theReferenceToTheOnlyDemoEditor -> windowForm);
 	theReferenceToTheOnlyDemoEditor -> clicked = false;
 	theReferenceToTheOnlyDemoEditor -> keyPressed = false;
 	theReferenceToTheOnlyDemoEditor -> waitingForInput = true;
 	{// scope
 		autoMelderSaveDefaultDir saveDir;
-		bool wasBackgrounding = Melder_backgrounding;
+		const bool wasBackgrounding = Melder_backgrounding;
 		if (wasBackgrounding)
 			praat_foreground ();
 		try {
@@ -260,6 +260,7 @@ void Demo_waitForInput (Interpreter interpreter) {
 						 ! theReferenceToTheOnlyDemoEditor -> userWantsToClose);
 			#elif motif
 				do {
+					//Graphics_updateWs (theReferenceToTheOnlyDemoEditor -> graphics.get());   // make sure that even texts will be drawn
 					XEvent event;
 					GuiNextEvent (& event);
 					XtDispatchEvent (& event);

@@ -1,6 +1,6 @@
 /* Index.cpp
  *
- * Copyright (C) 2005-2019 David Weenink
+ * Copyright (C) 2005-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <time.h>
 #include "Index.h"
 #include "NUM2.h"
+#include "Permutation.h"
 
 #include "oo_DESTROY.h"
 #include "Index_def.h"
@@ -95,6 +96,48 @@ autoStringsIndex StringsIndex_create (integer numberOfItems) {
 	}
 }
 
+static void StringsIndex_addClass (StringsIndex me, conststring32 classi) {
+	autoSimpleString ss = SimpleString_create (classi);
+	my classes -> addItem_move (ss.move());
+}
+
+autoStringsIndex StringsIndex_createFromSTRVEC (constSTRVEC const& strvec, kStrings_sorting sorting) {
+	try {
+		autoStringsIndex me = StringsIndex_create (strvec.size);
+		autoPermutation p = Permutation_create (strvec.size, true);
+		if (sorting == kStrings_sorting::ALPHABETICAL) 
+			INTVECindex_inout (p -> p.get(), strvec);
+		else if (sorting == kStrings_sorting::NUMBER_AWARE)
+			INTVECindex_numberAware_inout (p -> p.get(), strvec);
+		integer iclass = 1;
+		integer index = p -> p [1];
+		conststring32 classi = strvec [index];
+		StringsIndex_addClass (me.get(), strvec [index]);
+		my classIndex [index] = iclass;
+		for (integer i = 2; i <= strvec.size; i ++) {
+			index = p -> p [i];
+			if (Melder_cmp (classi, strvec [index]) != 0) {
+				StringsIndex_addClass (me.get(), strvec [index]);
+				classi = strvec [index];
+				iclass ++;
+			}
+			my classIndex [index] = iclass;
+		}
+		return me;
+	} catch (MelderError) {
+		Melder_throw (U"Could not create StringsIndex from STRVEC.");
+	}
+}
+
+autoStringsIndex Strings_to_StringsIndex (Strings me, kStrings_sorting sorting) {
+	try {
+		autoStringsIndex thee = StringsIndex_createFromSTRVEC (my strings.get(), sorting);
+		return thee;
+	} catch (MelderError) {
+		Melder_throw (me, U": no StringsIndex created.");
+	}
+}
+
 integer Index_getClassIndexFromItemIndex (Index me, integer itemIndex) {
 	integer result = 0;
 	if (itemIndex >= 0 && itemIndex <= my numberOfItems)
@@ -138,5 +181,42 @@ integer StringsIndex_countItems (StringsIndex me, integer iclass) {
 	}
 	return sum;
 }
+
+autoSTRVEC StringsIndex_listAllClasses ( StringsIndex me) {
+	try {
+		autoSTRVEC classes (my classes->size);
+		for (integer i = 1; i <= my classes->size; i ++) {
+			const SimpleString ss = (SimpleString) my classes->at [i];
+			classes [i] = Melder_dup (ss -> string.get());
+		}
+		return classes;
+	} catch (MelderError) {
+		Melder_throw (me, U": could not list all classes.");
+	}
+}
+void StringsIndex_sortNumerically (StringsIndex me) {
+	try {
+		const integer numberOfClasses = my classes -> size;
+		autoSTRVEC numberstrings (numberOfClasses);
+		autoVEC numbers = raw_VEC (numberOfClasses);
+		for (integer i = 1; i <= numberOfClasses; i ++) {
+			const SimpleString ss = (SimpleString) my classes->at [i];
+			numberstrings [i] = Melder_dup (ss -> string.get());
+			numbers [i] = Melder_atof (ss -> string.get());
+		}
+		autoPermutation p = Permutation_create (numberOfClasses, true);
+		NUMsortTogether (numbers.get(), p -> p.get());
+		for (integer i = 1; i <= numberOfClasses; i ++) {
+			autoSimpleString ss = SimpleString_create (numberstrings [i].get());
+			my classes-> replaceItem_move (ss.move(), p -> p [i]);
+		}
+		for (integer item = 1; item <= classIndex->size; item ++)
+			my classIndex [item] = p -> p [my classIndex [item]];
+	} catch (MelderError) {
+		Melder_throw (me, U": could not be sorted numerically.");
+	}
+}
+
+
 
 /* End of Index.cpp */

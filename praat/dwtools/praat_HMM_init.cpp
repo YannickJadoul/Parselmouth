@@ -1,6 +1,6 @@
 /* praat_HMM_init.cpp
  *
- * Copyright (C) 2010-2021 David Weenink
+ * Copyright (C) 2010-2023 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -248,7 +248,7 @@ FORM (CREATE_ONE__HMM_createContinuousModel, U"HMM: Create continuous model", nu
 	LABEL (U"For the Gaussian mixtures:")
 	NATURAL (numberOfComponents, U"Number of components", U"3")
 	NATURAL (componentDimension, U"Dimension of component", U"39")
-	RADIO_ENUM (kHMMstorage, storage,
+	CHOICE_ENUM (kHMMstorage, storage,
 			U"Covariance matrices are", kHMMstorage::DEFAULT)
 	OK
 DO
@@ -477,7 +477,7 @@ FORM (MODIFY_FIRST_OF_ONE_AND_ALL__HMM_HMMObservationSequence_learn, U"HMM & HMM
 	OK
 DO
 	Melder_require (minimumProbability >= 0.0 && minimumProbability < 1.0,
-		U"The minimum probabilty should be in [0, 1).");
+		U"The minimum probability should be in [0, 1).");
 	MODIFY_FIRST_OF_ONE_AND_ALL (HMM, HMMObservationSequence)
 		HMM_HMMObservationSequenceBag_learn (me, (HMMObservationSequenceBag) & list, relativePrecision_log, minimumProbability, showProgress);
 	MODIFY_FIRST_OF_ONE_AND_ALL_END
@@ -579,7 +579,7 @@ DIRECT (CONVERT_EACH_TO_ONE__HMMStateSequence_to_Strings) {
 }
 
 FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_GaussianMixture_rowlabels, U"TableOfReal: To GaussianMixture from row labels", U"TableOfReal: To GaussianMixture (row labels)...") {
-	RADIO_ENUM (kGaussianMixtureStorage, storage,
+	CHOICE_ENUM (kGaussianMixtureStorage, storage,
 		U"Covariance matrices are", kGaussianMixtureStorage::DEFAULT)
 	OK
 DO
@@ -593,7 +593,7 @@ FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_GaussianMixture, U"TableOfReal: To Gau
 	POSITIVE (tolerance, U"Tolerance of minimizer", U"0.001")
 	INTEGER (maximumNumberOfIterations, U"Maximum number of iterations", U"200")
 	REAL (lambda, U"Stability coefficient lambda", U"0.001")
-	RADIO_ENUM (kGaussianMixtureStorage, storage,
+	CHOICE_ENUM (kGaussianMixtureStorage, storage,
 			U"Covariance matrices are", kGaussianMixtureStorage::DEFAULT)
 	OPTIONMENU_ENUM (kGaussianMixtureCriterion, criterion, U"Criterion based on", kGaussianMixtureCriterion::DEFAULT)
 	OK
@@ -610,7 +610,7 @@ DO
 FORM (CONVERT_EACH_TO_ONE__TableOfReal_to_GaussianMixture_CEMM, U"TableOfReal: To GaussianMixture (CEMM)", U"TableOfReal: To GaussianMixture (CEMM)...") {
 	INTEGER (minimumNumberOfComponents, U"Minimum number of components", U"1")
 	INTEGER (maximumNumberOfComponents, U"Maximum number of components", U"10")
-	RADIO_ENUM (kGaussianMixtureStorage, storage,
+	CHOICE_ENUM (kGaussianMixtureStorage, storage,
 			U"Covariance matrices are", kGaussianMixtureStorage::DEFAULT)
 	INTEGER (maximumNumberOfIterations, U"Maximum number of iterations", U"200")
 	POSITIVE (tolerance, U"Tolerance of minimizer", U"0.00001")

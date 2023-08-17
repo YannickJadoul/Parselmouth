@@ -2,7 +2,7 @@
 #define _Sound_h_
 /* Sound.h
  *
- * Copyright (C) 1992-2005,2006-2008,2010-2019,2021,2022 Paul Boersma
+ * Copyright (C) 1992-2005,2006-2008,2010-2019,2021-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,15 +28,15 @@
 Thing_define (Sound, Vector) {
 	void v1_info ()
 		override;
-	bool v_hasGetMatrix ()
+	bool v_hasGetMatrix () const
 		override { return true; }
-	double v_getMatrix (integer irow, integer icol)
+	double v_getMatrix (integer irow, integer icol) const
 		override;
-	bool v_hasGetFunction2 ()
+	bool v_hasGetFunction2 () const
 		override { return true; }
-	double v_getFunction2 (double x, double y)
+	double v_getFunction2 (double x, double y) const
 		override;
-	int v_domainQuantity ()
+	int v_domainQuantity () const
 		override { return MelderQuantity_TIME_SECONDS; }
 };
 
@@ -174,7 +174,6 @@ autoSound Sound_createAsToneComplex (double startingTime, double endTime,
 #define Sound_TONE_COMPLEX_SINE  0
 #define Sound_TONE_COMPLEX_COSINE  1
 
-autoSound Sounds_concatenate (OrderedOf<structSound>& list, double overlapTime);
 void Sound_multiplyByWindow (Sound me, kSound_windowShape windowShape);
 void Sound_scaleIntensity (Sound me, double newAverageIntensity);
 void Sound_overrideSamplingFrequency (Sound me, double newSamplingFrequency);
@@ -306,7 +305,7 @@ void Sound_saveAsKayFile (Sound me, MelderFile file);   // 16-bit
 void Sound_saveAsSesamFile (Sound me, MelderFile file);   // 12-bit SESAM/LVS
 
 autoSound Sound_readFromSoundFile (MelderFile file);   // AIFF, WAV, NeXT/Sun, or NIST
-autoSound Sound_readFromKayFile (MelderFile file);   // 16-bit
+autoDaata Sound_readFromAnyKayFile (MelderFile file);   // 16-bit
 autoSound Sound_readFromSesamFile (MelderFile file);   // 12-bit SESAM/LVS
 autoSound Sound_readFromBellLabsFile (MelderFile file);   // 16-bit
 autoSound Sound_readFromRawAlawFile (MelderFile file);
@@ -345,6 +344,9 @@ autoSound Sound_deepenBandModulation (Sound me, double enhancement_dB,
 */
 Collection_define (SoundList, OrderedOf, Sound) {
 };
+
+autoSound Sounds_concatenate (SoundList list, double overlapTime);
+void SoundList_play (SoundList me, Sound_PlayCallback playCallback, Thing playClosure);
 
 /* End of file Sound.h */
 #endif

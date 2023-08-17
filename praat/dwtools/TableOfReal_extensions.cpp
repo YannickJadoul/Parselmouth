@@ -1,6 +1,6 @@
 /* TableOfReal_extensions.cpp
  *
- * Copyright (C) 1993-2022 David Weenink, 2017 Paul Boersma
+ * Copyright (C) 1993-2023 David Weenink, 2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
  djmw 20050221 TableOfReal_meansByRowLabels, extra reduce parameter.
  djmw 20050222 TableOfReal_drawVectors didn't draw rowlabels.
  djmw 20050512 TableOfReal TableOfReal_meansByRowLabels crashed if first label in sorted was NULL.
- djmw 20051116 TableOfReal_drawScatterPlot draw reverse permited by choosing xmin > xmax and/or ymin>ymax
+ djmw 20051116 TableOfReal_drawScatterPlot draw reverse permitted by choosing xmin > xmax and/or ymin>ymax
  djmw 20060301 TableOfReal_meansByRowLabels extra medianize
  djmw 20060626 Extra NULL argument for ExecRE.
  djmw 20070822 wchar
@@ -254,15 +254,6 @@ void TableOfReal_to_PatternList_and_Categories (TableOfReal me, integer fromrow,
 	}
 }
 
-void TableOfReal_getColumnExtrema (TableOfReal me, integer col, double *out_min, double *out_max) {
-	Melder_require (col > 0 && col <= my numberOfColumns,
-		U"Invalid column number.");
-	if (out_min)
-		*out_min = NUMmin (my data.column (col));
-	if (out_max)
-		*out_max = NUMmax (my data.column (col));
-}
-
 void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, constINTVECVU const& rowNumbers, integer colb, integer cole, double ymin,
 	double ymax, double xoffsetFraction, double interbarFraction, double interbarsFraction, constVECVU const& greys, bool garnish)
 {
@@ -280,7 +271,9 @@ void TableOfReal_drawRowsAsHistogram (TableOfReal me, Graphics g, constINTVECVU 
 			U"Invalid row (", rowNumber, U").");
 		if (ymin >= ymax) {
 			double min, max;
-			NUMextrema (my data.row (rowNumber).part (colb, cole), & min, & max);
+			NUMextrema_u (my data.row (rowNumber).part (colb, cole), & min, & max);
+			if (isundef (min) || isundef (max))
+				return;
 			if (i > 1) {
 				if (min < ymin)
 					ymin = min;
@@ -365,18 +358,19 @@ void TableOfReal_drawBiplot (TableOfReal me, Graphics g, double xmin, double xma
 	y.part (nr + 1, nPoints)  <<=  svd -> v.column (2)  *  lambda4;
 	
 	if (xmax <= xmin)
-		NUMextrema (x.get(), & xmin, & xmax);
-
+		NUMextrema_u (x.get(), & xmin, & xmax);
 	if (xmax <= xmin) {
 		xmax += 1.0;
 		xmin -= 1.0;
 	}
 	if (ymax <= ymin)
-		NUMextrema (y.get(), & ymin, & ymax);
+		NUMextrema_u (y.get(), & ymin, & ymax);
 	if (ymax <= ymin) {
 		ymax += 1.0;
 		ymin -= 1.0;
 	}
+	if (isundef (xmin) || isundef (xmax) || isundef (ymin) || isundef (ymax))
+		return;
 
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 	Graphics_setInner (g);
@@ -431,7 +425,9 @@ void TableOfReal_drawBoxPlots (TableOfReal me, Graphics g, integer rowmin, integ
 		colmax = my numberOfColumns;
 
 	if (ymax <= ymin) {
-		MelderRealRange yrange = NUMextrema (my data.part (rowmin, rowmax, colmin, colmax));
+		const MelderRealRange yrange = NUMextrema_u (my data.part (rowmin, rowmax, colmin, colmax));
+		if (isundef (yrange))
+			return;
 		ymin = yrange.min;
 		ymax = yrange.max;
 	}
@@ -636,8 +632,10 @@ void TableOfReal_drawScatterPlotMatrix (TableOfReal me, Graphics g, integer colb
 	autoVEC colmax = raw_VEC (numberOfColumns);
 
 	for (integer j = 1; j <= numberOfColumns; j ++) {
-		colmin [j] = NUMmin (my data.column (colb + j - 1));
-		colmax [j] = NUMmax (my data.column (colb + j - 1));
+		colmin [j] = NUMmin_u (my data.column (colb + j - 1));
+		colmax [j] = NUMmax_u (my data.column (colb + j - 1));
+		if (isundef (colmin [j]) || isundef (colmax [j]))
+			return;
 	}
 
 	for (integer j = 1; j <= numberOfColumns; j ++) {
@@ -718,13 +716,17 @@ void TableOfReal_drawScatterPlot (TableOfReal me, Graphics g, integer icx, integ
 		rowe = my numberOfRows;
 	}
 	if (xmax == xmin) {
-		MelderRealRange xrange = NUMextrema (my data.part (rowb, rowe, icx, icx));
+		const MelderRealRange xrange = NUMextrema_u (my data.part (rowb, rowe, icx, icx));
+		if (isundef (xrange))
+			return;
 		const double tmp = ( xrange.max == xrange.min ? 0.5 : 0.0 );
 		xmin = xrange.min - tmp;
 		xmax = xrange.max + tmp;
 	}
 	if (ymax == ymin) {
-		MelderRealRange yrange = NUMextrema (my data.part (rowb, rowe, icy, icy));
+		const MelderRealRange yrange = NUMextrema_u (my data.part (rowb, rowe, icy, icy));
+		if (isundef (yrange))
+			return;
 		const double tmp = ( yrange.max == yrange.min ? 0.5 : 0.0 );
 		ymin = yrange.min - tmp;
 		ymax = yrange.max + tmp;
@@ -1011,19 +1013,24 @@ void TableOfReal_drawVectors (TableOfReal me, Graphics g, integer colx1, integer
 		U"The index in the \"To\" column(s) should be in range [1, ", nx, U"].");
 
 	if (xmin >= xmax) {
-		MelderRealRange x1 = NUMextrema (my data.column (colx1));
-		MelderRealRange x2 = NUMextrema (my data.column (colx2));
+		const MelderRealRange x1 = NUMextrema_u (my data.column (colx1));
+		const MelderRealRange x2 = NUMextrema_u (my data.column (colx2));
+		if (isundef (x1) || isundef (x2))
+			return;
 		xmin = std::min (x1.min, x2.min);
 		xmax = std::max (x1.max, x2.max);
 	}
 	if (ymin >= ymax) {
-		MelderRealRange y1 = NUMextrema (my data.column (coly1));
-		MelderRealRange y2 = NUMextrema (my data.column (coly2));
+		const MelderRealRange y1 = NUMextrema_u (my data.column (coly1));
+		const MelderRealRange y2 = NUMextrema_u (my data.column (coly2));
+		if (isundef (y1) || isundef (y2))
+			return;
 		ymin = std::min (y1.min, y2.min);
 		ymax = std::max (y1.max, y2.max);
 	}
 	if (xmin == xmax) {
-		if (ymin == ymax) return;
+		if (ymin == ymax)
+			return;
 		xmin -= 0.5;
 		xmax += 0.5;
 	}
@@ -1079,7 +1086,7 @@ autoTableOfReal TableOfReal_sortRowsByIndex (TableOfReal me, constINTVEC index, 
 	try {
 		Melder_require (my rowLabels,
 			U"No labels to sort");
-		MelderIntegerRange range = NUMextrema (index);
+		const MelderIntegerRange range = NUMextrema_e (index);
 		Melder_require (range.first > 0 && range.first <= my numberOfRows && range.last > 0 && range.last <= my numberOfRows,
 			U"One or more indices out of range [1, ", my numberOfRows, U"].");
 		autoTableOfReal thee = TableOfReal_create (my numberOfRows, my numberOfColumns);

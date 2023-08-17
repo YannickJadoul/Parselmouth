@@ -21,11 +21,12 @@ target_sources(praat PRIVATE
 	ExperimentMFC.cpp manual_ExperimentMFC.cpp praat_ExperimentMFC.cpp
 	Photo.cpp Movie.cpp
 	Corpus.cpp
-	manual_Picture.cpp manual_Manual.cpp manual_Script.cpp
-	manual_soundFiles.cpp manual_tutorials.cpp manual_references.cpp
+	manual_Picture.cpp manual_Manual.cpp manual_scripting.cpp manual_functions.cpp manual_demoWindow.cpp
+	manual_whatsnew.cpp manual_soundFiles.cpp manual_tutorials.cpp manual_references.cpp
 	manual_programming.cpp manual_Fon.cpp manual_voice.cpp Praat_tests.cpp
 	manual_glossary.cpp manual_Sampling.cpp manual_exampleSound.cpp
-	manual_sound.cpp manual_pitch.cpp manual_spectrum.cpp manual_formant.cpp manual_annotation.cpp
+	manual_sound.cpp manual_pitch.cpp manual_spectrum.cpp manual_formant.cpp
+	manual_pointProcess.cpp manual_annotation.cpp
 	praat_TimeFunction.cpp praat_TimeTier.cpp praat_TimeFrameSampled.cpp
 	praat_Sound.cpp praat_Matrix.cpp praat_Tiers.cpp praat_TextGrid_init.cpp praat_Fon.cpp
 )

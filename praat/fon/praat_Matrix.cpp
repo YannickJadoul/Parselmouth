@@ -1,6 +1,6 @@
 /* praat_Matrix.cpp
  *
- * Copyright (C) 1992-2005,2007,2011-2021 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2011-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -127,7 +127,8 @@ DIRECT (HELP_Matrix_help) {
 static autoGraphics theMovieGraphics;
 
 static void gui_drawingarea_cb_expose (Thing /* boss */, GuiDrawingArea_ExposeEvent /* event */) {
-	if (! theMovieGraphics) return;
+	if (! theMovieGraphics)
+		return;
 	Graphics_play (theMovieGraphics.get(), theMovieGraphics.get());
 }
 
@@ -137,7 +138,7 @@ extern "C" Graphics Movie_create (conststring32 title, int width, int height) {
 	if (! theMovieGraphics) {
 		dialog = GuiDialog_create (theCurrentPraatApplication -> topShell, 100, 100, width + 2, height + 2, title, nullptr, nullptr, 0);
 		drawingArea = GuiDrawingArea_createShown (dialog, 0, width, 0, height,
-			 	gui_drawingarea_cb_expose, nullptr, nullptr, nullptr, nullptr, 0);
+			 	gui_drawingarea_cb_expose, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
 		GuiThing_show (dialog);
 		theMovieGraphics = Graphics_create_xmdrawingarea (drawingArea);
 	}
@@ -817,11 +818,11 @@ DIRECT (EDITOR_ONE_Movie_viewAndEdit) {
 
 static autoDaata imageFileRecognizer (integer /* nread */, const char * /* header */, MelderFile file) {
 	conststring32 fileName = MelderFile_name (file);
-	if (Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".jpg", false) ||
-	    Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".jpeg", false) ||
-	    Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".png", false) ||
-	    Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".tiff", false) ||
-		Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".tif", false))
+	if (Melder_endsWith_caseAware (fileName, U".jpg") ||
+	    Melder_endsWith_caseAware (fileName, U".jpeg") ||
+	    Melder_endsWith_caseAware (fileName, U".png") ||
+	    Melder_endsWith_caseAware (fileName, U".tiff") ||
+		Melder_endsWith_caseAware (fileName, U".tif"))
 	{
 		return Photo_readFromImageFile (file);
 	}

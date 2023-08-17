@@ -1,6 +1,6 @@
 /* VowelEditor.cpp
  *
- * Copyright (C) 2008-2020 David Weenink, 2015-2022 Paul Boersma
+ * Copyright (C) 2008-2023 David Weenink, 2015-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,11 +76,11 @@ Thing_implement (VowelEditor, Editor, 0);
 #include "Prefs_copyToInstance.h"
 #include "VowelEditor_prefs.h"
 
-#define STATUS_INFO (3*Gui_LABEL_HEIGHT/2)
+#define STATUS_INFO (3*Gui_LABEL_HEIGHT)
 #define MARGIN_RIGHT 10
 #define MARGIN_LEFT 50
 #define MARGIN_TOP 50
-#define MARGIN_BOTTOM (60+STATUS_INFO)
+#define MARGIN_BOTTOM (100+STATUS_INFO)
 
 #pragma mark - class TrajectoryPointTier
 
@@ -209,6 +209,30 @@ static void Trajectory_setColour (Trajectory me, double startTime, double endTim
 }
 
 #pragma mark - class Vowel
+
+static bool isValidVowelMarksTableFile (MelderFile file, autoTable *out_marks) {
+	if (! MelderFile_exists (file))
+		return false;
+	try {
+		autoDaata data = Data_readFromFile (file);
+		if (! Thing_isa (data.get(), classTable))
+			return false;
+		autoTable marks = data.static_cast_move <structTable> ();
+		/*
+			Require columns Vowel F1 and F2 to be present in the Table
+		*/
+		if (! (Table_getColumnIndexFromColumnLabel (marks.get(), U"Vowel") 
+			&& Table_getColumnIndexFromColumnLabel (marks.get(), U"F1")
+			&& Table_getColumnIndexFromColumnLabel (marks.get(), U"F2")))
+			return false;
+		if (out_marks)
+			*out_marks = marks.move();
+		return true;
+	} catch (MelderError) {
+		Melder_clearError ();
+		return false;
+	}
+}
 
 static void VowelEditor_create_twoFormantSchwa (VowelEditor me) {
 	try {
@@ -510,27 +534,13 @@ static void Table_addColumnIfNotExists_colour (Table me, conststring32 colour) {
 }
 
 static void VowelEditor_getVowelMarksFromFile (VowelEditor me) {
-	try {
-		Melder_require (str32len (my instancePref_marks_fileName()) > 0,
-			U"No file with vowel marks has been defined.");
-		structMelderFile file { };
-		Melder_pathToFile (my instancePref_marks_fileName(), & file);
-		autoDaata data = Data_readFromFile (& file);
-		Melder_require (Thing_isa (data.get(), classTable),
-			U"\"", MelderFile_name (& file), U"\" is not a Table file");
-
-		autoTable newMarks = data.static_cast_move <structTable> ();
-		/*
-			Require columns Vowel F1 and F2 to be present.
-		*/
-		Table_getColumnIndexFromColumnLabel (newMarks.get(), U"Vowel");
-		Table_getColumnIndexFromColumnLabel (newMarks.get(), U"F1");
-		Table_getColumnIndexFromColumnLabel (newMarks.get(), U"F2");
-		Table_addColumnIfNotExists_size (newMarks.get(), my instancePref_marks_fontSize());
-		my marks = newMarks.move();
-	} catch (MelderError) {
-		Melder_throw (U"Vowel marks from file cannot be shown.");
-	}
+	autoTable marks;
+	structMelderFile file = {};
+	Melder_pathToFile (my instancePref_marks_fileName(), & file);
+	if (! isValidVowelMarksTableFile (& file, & marks))
+		return;
+	Table_addColumnIfNotExists_size (marks.get(), my instancePref_marks_fontSize());
+	my marks = marks.move();
 }
 
 static void VowelEditor_getMarks (VowelEditor me) {
@@ -558,6 +568,7 @@ static void VowelEditor_getMarks (VowelEditor me) {
 		VowelEditor_getVowelMarksFromFile (me);
 		return;
 	}
+	
 	/* mutable move */ autoTable newMarks = Table_collapseRows (te.get(),
 		autoSTRVEC ({ U"IPA" }).get(),
 		autoSTRVEC ({}).get(),
@@ -699,11 +710,11 @@ static void updateInfoLabels (VowelEditor me) {
 	GuiLabel_setText (my endInfo, statusInfo.string);	
 }
 
-static void menu_cb_help (VowelEditor /* me */, EDITOR_ARGS_DIRECT) {
+static void menu_cb_help (VowelEditor /* me */, EDITOR_ARGS) {
 	HELP (U"VowelEditor")
 }
 
-static void menu_cb_trajectoryInfo (VowelEditor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
+static void menu_cb_trajectoryInfo (VowelEditor me, EDITOR_ARGS) {
 	INFO_EDITOR
 		MelderInfo_open ();
 		MelderInfo_writeLine (U"Trajectory info:");
@@ -720,8 +731,8 @@ static void menu_cb_trajectoryInfo (VowelEditor me, EDITOR_ARGS_DIRECT_WITH_OUTP
 	INFO_EDITOR_END
 }
 
-static void menu_cb_prefs (VowelEditor me, EDITOR_ARGS_FORM) {
-	EDITOR_FORM (U"Preferences", nullptr);
+static void menu_cb_settings (VowelEditor me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Settings", nullptr);
 		BOOLEAN (soundFollowsMouse, U"Sound follows mouse", my default_soundFollowsMouse())
 		LABEL (U"F1 and F2 frequencies are specified by the trajectory.")
 		LABEL (U"The bandwidths of a formant can be specified by its Q-value")
@@ -730,7 +741,7 @@ static void menu_cb_prefs (VowelEditor me, EDITOR_ARGS_FORM) {
 		POSITIVE (q2, U"F2 sharpness", my default_synthesis_q2 ())
 		LABEL (U"You can define extra fixed formants for the synthesis by supplying")
 		LABEL (U"formant frequency bandwidth pairs.")
-		TEXTFIELD (extraFrequencyBandwidthPairs_string, U"Frequency bandwidth pairs", my default_synthesis_extraFBPairs(), 3)
+		TEXTFIELD (extraFrequencyBandwidthPairs_string, U"Frequency–bandwidth pairs", my default_synthesis_extraFBPairs(), 3)
 		LABEL (U"The total number of formants used for synthesis")
 		NATURAL (numberOfFormants, U"Number of formants for synthesis", my default_synthesis_numberOfFormants ())
 	EDITOR_OK
@@ -746,14 +757,14 @@ static void menu_cb_prefs (VowelEditor me, EDITOR_ARGS_FORM) {
 		autoVEC extraFrequencyBandwidthPairs = splitByWhitespace_VEC (extraFrequencyBandwidthPairs_string);
 
 		Melder_require (extraFrequencyBandwidthPairs.size % 2 == 0,
-			U"There should be an even number of values in the \"Frequencies and bandwidths pairs\" list.");
+			U"There should be an even number of values in the “Frequencies and bandwidths pairs” list.");
 		/*
 			All items should be positive numbers and frequencies should be lower than the Nyquist.
 			Bandwidths should be greater than zero.
 		*/
 		for (integer item = 1; item <= extraFrequencyBandwidthPairs.size; item ++) {
-			Melder_require (extraFrequencyBandwidthPairs [item] > 0,
-				U"All values frequency bandwidth values should be positive.");
+			Melder_require (extraFrequencyBandwidthPairs [item] > 0.0,
+				U"All frequency values and bandwidth values should be positive.");
 			if (item % 2 == 1)
 				Melder_require (extraFrequencyBandwidthPairs [item] < 0.5 * my instancePref_synthesis_samplingFrequency(),
 					U"All formant frequencies should be below the Nyquist frequency (",
@@ -761,9 +772,9 @@ static void menu_cb_prefs (VowelEditor me, EDITOR_ARGS_FORM) {
 		}
 		const integer numberOfPairs = extraFrequencyBandwidthPairs.size / 2;
 		Melder_require (numberOfFormants <= numberOfPairs + 2,
-			U"The \"Number of formants for synthesis\" should not exceed the number of formants specified (",
-			numberOfPairs + 2, U"). Either lower the number of formants for synthesis or specify more "
-			"frequency bandwidth pairs.");
+			U"The “Number of formants for synthesis” should not exceed 2 plus the number of extra frequency–bandwidth pairs (i.e. 2+",
+			numberOfPairs, U"). Either lower the number of formants for synthesis or specify more "
+			"frequency–bandwidth pairs.");
 		/*
 			Formants and bandwidths are valid. It is safe to copy them.
 		*/
@@ -773,7 +784,7 @@ static void menu_cb_prefs (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_ranges_f1f2 (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_ranges_f1f2 (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"F1 (vert) and F2 (hor) view ranges", nullptr);
 		POSITIVE (f1min, U"left F1 range (Hz)", my default_window_f1min())
 		POSITIVE (f1max, U"right F1 range (Hz)", my default_window_f1max())
@@ -793,20 +804,20 @@ static void menu_cb_ranges_f1f2 (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void CREATE_ONE__publishSound (VowelEditor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
+static void CREATE_ONE__publishSound (VowelEditor me, EDITOR_ARGS) {
 	CREATE_ONE
 		autoSound result = VowelEditor_createTargetSound (me);
 	CREATE_ONE_END (U"untitled")
 }
 
-static void CREATE_ONE__Extract_FormantGrid (VowelEditor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
+static void CREATE_ONE__Extract_FormantGrid (VowelEditor me, EDITOR_ARGS) {
 	CREATE_ONE
 		VowelEditor_updateTrajectorySpecification (me);
 		autoFormantGrid result = VowelEditor_to_FormantGrid (me);
 	CREATE_ONE_END (U"untitled")
 }
 
-static void CREATE_ONE__Extract_KlattGrid (VowelEditor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
+static void CREATE_ONE__Extract_KlattGrid (VowelEditor me, EDITOR_ARGS) {
 	CREATE_ONE
 		VowelEditor_updateTrajectorySpecification (me);
 		autoFormantGrid fg = VowelEditor_to_FormantGrid (me);
@@ -818,14 +829,14 @@ static void CREATE_ONE__Extract_KlattGrid (VowelEditor me, EDITOR_ARGS_DIRECT_WI
 	CREATE_ONE_END (U"untitled")
 }
 
-static void CREATE_ONE__Extract_PitchTier (VowelEditor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
+static void CREATE_ONE__Extract_PitchTier (VowelEditor me, EDITOR_ARGS) {
 	CREATE_ONE
 		VowelEditor_updateTrajectorySpecification (me);
 		autoPitchTier result = VowelEditor_to_PitchTier (me);
 	CREATE_ONE_END (U"untitled")
 }
 
-static void CREATE_ONE__Extract_TrajectoryAsTable (VowelEditor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
+static void CREATE_ONE__Extract_TrajectoryAsTable (VowelEditor me, EDITOR_ARGS) {
 	CREATE_ONE
 		VowelEditor_updateTrajectorySpecification (me);
 		const conststring32 columnNames [] = { U"Time", U"F1", U"F2", U"Colour" };
@@ -840,7 +851,7 @@ static void CREATE_ONE__Extract_TrajectoryAsTable (VowelEditor me, EDITOR_ARGS_D
 	CREATE_ONE_END (U"untitled")
 }
 
-static void menu_cb_drawTrajectory (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_drawTrajectory (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Draw trajectory", nullptr)
 		my v_form_pictureWindow (cmd);
 		BOOLEAN (garnish, U"Garnish", true)
@@ -856,7 +867,7 @@ static void menu_cb_drawTrajectory (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_showOneVowelMark (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_showOneVowelMark (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Show one vowel mark", nullptr);
 		WORD (mark, U"Mark", U"u")
 		POSITIVE (f1, U"F1 (Hz)", U"300.0")
@@ -884,7 +895,7 @@ static void menu_cb_showOneVowelMark (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_vowelMarks (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_vowelMarks (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Show vowel marks", nullptr);
 		OPTIONMENU_ENUM (kVowelEditor_marksDataSet, dataSet, U"Data set", my default_marks_dataSet ())
 		OPTIONMENU_ENUM (kVowelEditor_speakerType, speaker, U"Speaker", my default_marks_speakerType ())
@@ -905,9 +916,11 @@ static void menu_cb_vowelMarks (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_vowelMarksFromTableFile (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_vowelMarksFromTableFile (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM_READ (U"VowelEditor: Show vowel marks from Table file", U"VowelEditor: Show vowel marks from Table file...");
 	EDITOR_DO_READ
+		Melder_require (isValidVowelMarksTableFile (file, nullptr), 
+			U"File '", Melder_fileToPath (file), U"' does not contain valid Table data.");
 		my setInstancePref_marks_fileName (Melder_fileToPath (file));
 		my setInstancePref_marks_speakerType (kVowelEditor_speakerType::UNKNOWN);
 		my setInstancePref_marks_dataSet (kVowelEditor_marksDataSet::OTHER);
@@ -916,7 +929,7 @@ static void menu_cb_vowelMarksFromTableFile (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_setF0 (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_setF0 (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Set f0", nullptr);
 		POSITIVE (f0Start, U"Start f0 (Hz)", my default_f0_start())
 		REAL (f0Slope, U"Slope (oct/s)", my default_f0_slope())
@@ -932,7 +945,7 @@ static void menu_cb_setF0 (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_setF3F4 (VowelEditor me, EDITOR_ARGS_FORM) { // deprecated 20200404
+static void menu_cb_setF3F4 (VowelEditor me, EDITOR_ARGS) { // deprecated 20200404
 	EDITOR_FORM (U"Set F3 & F4", nullptr);
 		POSITIVE (f3, U"F3 (Hz)", U"2500.0")
 		POSITIVE (b3, U"B3 (Hz)", U"250.0")
@@ -950,13 +963,13 @@ static void menu_cb_setF3F4 (VowelEditor me, EDITOR_ARGS_FORM) { // deprecated 2
 	EDITOR_END
 }
 
-static void menu_cb_reverseTrajectory (VowelEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_reverseTrajectory (VowelEditor me, EDITOR_ARGS) {
 	Trajectory_reverse (my trajectory.get());
 	updateInfoLabels (me);
 	Graphics_updateWs (my graphics.get());
 }
 
-static void menu_cb_newTrajectory (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_newTrajectory (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"New Trajectory", nullptr);
 		POSITIVE (startF1, U"Start F1 (Hz)", U"700.0")
 		POSITIVE (startF2, U"Start F2 (Hz)", U"1200.0")
@@ -982,7 +995,7 @@ static void menu_cb_newTrajectory (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_extendTrajectory (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_extendTrajectory (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Extend Trajectory", nullptr);
 		POSITIVE (toF1, U"To F1 (Hz)", U"500.0")
 		POSITIVE (toF2, U"To F2 (Hz)", U"1500.0")
@@ -1009,7 +1022,7 @@ static void menu_cb_extendTrajectory (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_modifyTrajectoryDuration (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_modifyTrajectoryDuration (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Modify duration", nullptr);
 		POSITIVE (newDuration, U"New duration (s)", my default_trajectory_duration())
 	EDITOR_OK
@@ -1023,7 +1036,7 @@ static void menu_cb_modifyTrajectoryDuration (VowelEditor me, EDITOR_ARGS_FORM) 
 	EDITOR_END
 }
 
-static void menu_cb_shiftTrajectory (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_shiftTrajectory (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Shift trajectory", nullptr);
 		REAL (f1_st, U"F1 (semitones)", U"0.5")
 		REAL (f2_st, U"F2 (semitones)", U"0.5")
@@ -1035,7 +1048,7 @@ static void menu_cb_shiftTrajectory (VowelEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_trajectoryTimeMarksEvery (VowelEditor me, EDITOR_ARGS_FORM) { // deprecated 20200404
+static void menu_cb_trajectoryTimeMarksEvery (VowelEditor me, EDITOR_ARGS) { // deprecated 20200404
 	EDITOR_FORM (U"Trajectory time marks every", nullptr);
 		POSITIVE (distance, U"Distance (s)", my default_trajectory_markEvery())
 	EDITOR_OK
@@ -1046,7 +1059,7 @@ static void menu_cb_trajectoryTimeMarksEvery (VowelEditor me, EDITOR_ARGS_FORM) 
 	EDITOR_END
 }
 
-static void menu_cb_trajectory_colour (VowelEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_trajectory_colour (VowelEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Trajectory colour settings", nullptr);
 		REAL (startTime, U"left Time range (s)", U"0.0")
 		REAL (endTime, U"right Time range (s)", my default_trajectory_duration())
@@ -1185,7 +1198,7 @@ static void updateWidgets (void *void_me) {
 void structVowelEditor :: v_createMenus () {
 	VowelEditor_Parent :: v_createMenus ();
 
-	Editor_addCommand (this, U"File", U"Preferences...", 0, menu_cb_prefs);
+	Editor_addCommand (this, U"File", U"Settings...", 0, menu_cb_settings);
 	Editor_addCommand (this, U"File", U"-- publish data --", 0, nullptr);
 	Editor_addCommand (this, U"File", U"Publish Sound", 0,
 			CREATE_ONE__publishSound);
@@ -1235,11 +1248,12 @@ void structVowelEditor :: v_createChildren ()
 {
 	const int button_width = 90, text_width = 110, status_info_width = 400;
 	int top, bottom, bottom_widgets_top, bottom_widgets_bottom, bottom_widgets_halfway;
-
-	// Three buttons on a row: Play, Reverse, Publish
+	/*
+		Three buttons on a row: Play, Reverse, Publish
+	*/
 	int left = 10, right = left + button_width;
 	bottom_widgets_top = top = -MARGIN_BOTTOM + 10;
-	bottom_widgets_bottom = bottom = -STATUS_INFO;
+	bottom_widgets_bottom = bottom = -STATUS_INFO - Gui_LABEL_HEIGHT;
 	playButton = GuiButton_createShown (our windowForm, left, right, top, bottom, U"Play", gui_button_cb_play, this, 0);
 	left = right + 10;
 	right = left + button_width;
@@ -1249,7 +1263,7 @@ void structVowelEditor :: v_createChildren ()
 	publishButton = GuiButton_createShown (our windowForm, left, right, top, bottom, U"Publish", gui_button_cb_publish, this, 0);
 	/*
 		Four Text widgets with the label on top: Duration, Extend, f0, Slope.
-		Make the f0 slope button 10 wider to accomodate the text
+		Make the f0 slope button 10 wider to accommodate the text
 		We wil not use a callback from a Text widget. It will get called multiple times during the editing
 		of the text. Better to have all editing done and then query the widget for its value!
 	*/
@@ -1307,7 +1321,7 @@ void structVowelEditor :: v_createChildren ()
 	*/
 	drawingArea = GuiDrawingArea_createShown (our windowForm, 0, 0, Machine_getMenuBarBottom (), -MARGIN_BOTTOM,
 		gui_drawingarea_cb_expose, gui_drawingarea_cb_mouse,   // TODO: mouse-dragged and mouse-up events
-		nullptr, gui_drawingarea_cb_resize, this, 0
+		nullptr, gui_drawingarea_cb_resize, nullptr, this, 0
 	);
 	our width  = GuiControl_getWidth  (drawingArea);
 	our height = GuiControl_getHeight (drawingArea);
@@ -1324,9 +1338,23 @@ void structVowelEditor :: v9_repairPreferences () {
 	}
 	if (! (our instancePref_marks_fontSize() > 0.0))   // NaN-safe test
 		our setInstancePref_marks_fontSize (Melder_atof (our default_marks_fontSize()));
-	if (Melder_equ (our instancePref_marks_fileName(), U"") && our instancePref_marks_dataSet() < kVowelEditor_marksDataSet::MIN) {
-		our setInstancePref_marks_dataSet (our default_marks_dataSet());
-		our setInstancePref_marks_speakerType (our default_marks_speakerType());
+	if (our instancePref_marks_dataSet() == kVowelEditor_marksDataSet::OTHER) {
+		if (Melder_equ (our instancePref_marks_fileName(), U"")) {
+			Melder_warning (U"Although your prederences indicate that you want to read marks from a file, no file was "
+				"specified. Default marks will be used instead.");
+			our setInstancePref_marks_dataSet (our default_marks_dataSet());
+			our setInstancePref_marks_speakerType (our default_marks_speakerType());
+		} else {
+			structMelderFile file = {};
+			Melder_pathToFile (our instancePref_marks_fileName(), & file);
+			if (! isValidVowelMarksTableFile (& file, nullptr)) {
+				Melder_warning (U"The file '", our instancePref_marks_fileName(), U"' which was specified in your preferences "
+					"is not a valid Table file. Default marks will be used instead.");
+				our setInstancePref_marks_dataSet (our default_marks_dataSet());
+				our setInstancePref_marks_speakerType (our default_marks_speakerType());
+				our setInstancePref_marks_fileName (U"");
+			}
+		}
 	}
 	if (! (our instancePref_synthesis_samplingFrequency() > 0.0))   // NaN-safe test
 		our setInstancePref_synthesis_samplingFrequency (Melder_atof (our default_synthesis_samplingFrequency()));
@@ -1362,7 +1390,7 @@ autoVowelEditor VowelEditor_create (conststring32 title) {
 #endif
 		my graphics = Graphics_create_xmdrawingarea (my drawingArea);
 		Melder_assert (my graphics);
-		Graphics_setFontSize (my graphics.get(), 12);
+		Graphics_setFontSize (my graphics.get(), 12.0);
 
 		VowelEditor_getMarks (me.get());
 		if (my instancePref_synthesis_numberOfFormants() <= 0)
@@ -1371,9 +1399,18 @@ autoVowelEditor VowelEditor_create (conststring32 title) {
 			my setInstancePref_synthesis_q1 (Melder_atof (my default_synthesis_q1()));
 			my setInstancePref_synthesis_q2 (Melder_atof (my default_synthesis_q2()));
 		}
-		if (str32len (my instancePref_synthesis_extraFBPairs()) == 0)
-			my setInstancePref_synthesis_extraFBPairs (my default_synthesis_extraFBPairs ());
 		my extraFrequencyBandwidthPairs = splitByWhitespace_VEC (my instancePref_synthesis_extraFBPairs());
+		if (my extraFrequencyBandwidthPairs.size < 2) {
+			my setInstancePref_synthesis_extraFBPairs (my default_synthesis_extraFBPairs ());
+			my extraFrequencyBandwidthPairs = splitByWhitespace_VEC (my instancePref_synthesis_extraFBPairs());
+		} else if (my extraFrequencyBandwidthPairs.size < 4) {
+			const double f3 = my extraFrequencyBandwidthPairs [1];
+			const double b3 = my extraFrequencyBandwidthPairs [2];
+			const double f4 = f3 + 1000.0;
+			const double b4 = b3 + 100.0;
+			my setInstancePref_synthesis_extraFBPairs (Melder_cat (f3, U" ", b3, U" ", f4, U" ", b4));
+			my extraFrequencyBandwidthPairs = splitByWhitespace_VEC (my instancePref_synthesis_extraFBPairs());
+		}
 		Melder_assert (my extraFrequencyBandwidthPairs.size >= 4);   // for deprecated Set F3 & F4
 		//my p_soundFollowsMouse = true;   // no real preference yet  // ppgb 20220504: what does this mean?
 		VowelEditor_create_twoFormantSchwa (me.get());

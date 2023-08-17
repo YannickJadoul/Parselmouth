@@ -1,6 +1,6 @@
 /* manual_Artsynth.cpp
  *
- * Copyright (C) 1992-2005,2007,2010,2011,2014-2017,2020,2021 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2010,2011,2014-2017,2020,2021,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,28 +67,28 @@ INTRO (U"A command to synthesize a @Sound object from the selected @Speaker and 
 NORMAL (U"This is the command that performs the actual articulatory synthesis. "
 	"See @@Articulatory synthesis@.")
 ENTRY (U"Settings")
-TAG (U"##Sampling frequency (Hz)")
+TERM (U"##Sampling frequency (Hz)")
 DEFINITION (U"the number of times per second that the equilibrium widths and lengths and the tensions of the muscles "
 	"are recomputed from the Artword. This will also be the sampling frequency of the resulting sound and "
 	"of the optional resulting tube widths, air pressures, and air velocities. The standard value is 22050 Hz.")
-TAG (U"##Oversampling")
+TERM (U"##Oversampling")
 DEFINITION (U"the number of times that the aerodynamic quantities and the state of the tube walls "
 	"will be recomputed during each sample period. The standard value is 25.")
-TAG (U"##Width 1#, ##Width 2#, ##Width 3#")
+TERM (U"##Width 1#, ##Width 2#, ##Width 3#")
 DEFINITION (U"the numbers (see below) of the tubes whose widths you want to monitor. "
-	"E.g., if ##Width 1# is 36, the synthesizer will create a Sound object named $$width36$, "
+	"E.g., if ##Width 1# is 36, the synthesizer will create a Sound object named `width36`, "
 	"which contains the width of tube 36 (the lower glottis) as a function of time, expressed in metres. "
-	"To prevent the creation of a $$width$ object, specify $$0$ (the standard value).")
-TAG (U"##Pressure 1#, ##Pressure 2#, ##Pressure 3#")
+	"To prevent the creation of a `width` object, specify `0` (the standard value).")
+TERM (U"##Pressure 1#, ##Pressure 2#, ##Pressure 3#")
 DEFINITION (U"the numbers (see below) of the tubes whose air pressures you want to monitor. "
-	"E.g., if ##Pressure 3# is 37, the synthesizer will create a Sound object named $$pressure37$, "
+	"E.g., if ##Pressure 3# is 37, the synthesizer will create a Sound object named `pressure37`, "
 	"which contains the air pressure of tube 37 (the upper glottis) as a function of time, expressed in Pascal. "
-	"To prevent the creation of a $$pressure$ object, specify $$0$ (the standard value).")
-TAG (U"##Velocity 1#, ##Velocity 2#, ##Velocity 3")
+	"To prevent the creation of a `pressure` object, specify `0` (the standard value).")
+TERM (U"##Velocity 1#, ##Velocity 2#, ##Velocity 3")
 DEFINITION (U"the numbers (see below) of the tubes whose air velocities you want to monitor. "
-	"E.g., if ##Velocity 1# is 60, the synthesizer will create a Sound object named $velocity60, "
+	"E.g., if ##Velocity 1# is 60, the synthesizer will create a Sound object named `velocity60`, "
 	"which contains the air velocity of tube 60 (in the mouth) as a function of time, expressed in metres per second. "
-	"To prevent the creation of a $velocity object, specify $0 (the standard value).")
+	"To prevent the creation of a `velocity` object, specify `0` (the standard value).")
 ENTRY (U"Stability")
 NORMAL (U"The internal sampling frequency for the aerodynamics is the specified ##Sampling frequency#, "
 	"multiplied by the specified #Oversampling. With the standard settings, this is 22050 times 25 = 550750 Hz.")
@@ -120,7 +120,7 @@ LIST_ITEM (U"• The nasopharyngeal branch is at tubes 50, 51, and 65. They are 
 LIST_ITEM (U"• For a one-mass model of the vocal cords, tube 36 is connected to 38.")
 LIST_ITEM (U"• For a 10-mass model, tubes 32..35 are replaced with 79..86, so that "
 	"tube 31 is connected to 79, and 86 is connected to 36.")
-LIST_ITEM (U"• A glottal shunt will be implemented if the speaker's $$shunt.Dx$ attribute is not zero. "
+LIST_ITEM (U"• A glottal shunt will be implemented if the speaker’s `shunt.Dx` attribute is not zero. "
 	"A branch is then made from tubes 34 and 35 (or 85 and 86) to 87, "
 	"and from tube 89 to 38 and 39.")
 MAN_END
@@ -129,11 +129,11 @@ MAN_BEGIN (U"Create Artword...", U"ppgb", 20101212)
 INTRO (U"A command to create an @Artword object with all muscle activities set to zero. "
 	"See @@Articulatory synthesis@.")
 ENTRY (U"Settings")
-TAG (U"##Name")
-DEFINITION (U"the name that you give to the created object. The standard name is $$hallo$, "
+TERM (U"##Name")
+DEFINITION (U"the name that you give to the created object. The standard name is `hallo`, "
 	"but you should give it a more sensible name, possibly something that represents the utterance "
 	"that it is supposed to generate.")
-TAG (U"##Duration (seconds)")
+TERM (U"##Duration (seconds)")
 DEFINITION (U"the duration of the resulting Artword. Should be as long as the utterance that "
 	"you want to generate with it. The standard value is 1 second.")
 MAN_END
@@ -141,12 +141,12 @@ MAN_END
 MAN_BEGIN (U"Create Speaker...", U"ppgb", 20101212)
 INTRO (U"A command to create a @Speaker object. See @@Articulatory synthesis@.")
 ENTRY (U"Settings")
-TAG (U"##Name")
-DEFINITION (U"the name that you give to the created object. The standard name is \"speaker\", "
+TERM (U"##Name")
+DEFINITION (U"the name that you give to the created object. The standard name is “speaker”, "
 	"but if you work with multiple Speaker objects, give them sensible names to reduce confusion.")
-TAG (U"##Kind of speaker")
+TERM (U"##Kind of speaker")
 DEFINITION (U"Choose from #Female, #Male, or #Child. The only difference is a relative size.")
-TAG (U"##Number of tubes in glottis")
+TERM (U"##Number of tubes in glottis")
 DEFINITION (U"Choose from #1, #2, or #10. See @@Artword & Speaker: To Sound...@ for details.")
 MAN_END
 
