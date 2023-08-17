@@ -2,7 +2,7 @@
 #define _melder_h_
 /* melder.h
  *
- * Copyright (C) 1992-2021 Paul Boersma
+ * Copyright (C) 1992-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,11 @@
 #define his  him ->
 #define her  she ->
 #define iam(klas)  klas me = (klas) void_me
+#define optional_my  optional_me ->
+#define optional_thy  optional_thee ->
+#define optional_your  optional_you ->
+#define optional_his  optional_him ->
+#define optional_her  optional_she ->
 
 #define stringize(s)  stringize_helper(s)
 #define stringize_helper(s)  #s
@@ -60,7 +65,7 @@
 #include "melder_alloc.h"   // Melder_malloc (requires int64), Melder_free, MelderArray
 #include "melder_string32.h"   // char32, conststring32, autostring32 (requires Melder_malloc, our), Melder_dup
 #include "melder_kar.h"   // Melder_hasInk (requires char32), Melder_toLowerCase
-#include "melder_str32.h"   // str32len, str32cpy, str32cmp_caseInsensitive (requires Melder_toLowerCase)
+#include "melder_str32.h"   // Melder_length, str32cpy, str32cmp_caseInsensitive (requires Melder_toLowerCase)
 
 #include "enums.h"
 #include "melder_enums.h"
@@ -69,7 +74,7 @@
 #include "melder_colour.h"   // MelderColour (requires VEC)
 #include "melder_ftoa.h"   // Melder_double, Melder_pad (require dcomplex, conststring32, MelderColour)
 #include "melder_console.h"   // MelderConsole (requires conststring32)
-#include "melder_textencoding.h"   // str32len_utf8, Melder_32to8
+#include "melder_textencoding.h"   // Melder_length_utf8, Melder_32to8
 #include "melder_atof.h"
 #include "melder_files.h"   // Melder_fopen, MelderFile, MelderDir
 #include "melder_strvec.h"   // STRVEC, autoSTRVEC (requires MelderArray)

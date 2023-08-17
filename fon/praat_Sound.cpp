@@ -1,6 +1,6 @@
 /* praat_Sound.cpp
  *
- * Copyright (C) 1992-2022 Paul Boersma
+ * Copyright (C) 1992-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,9 +117,9 @@ DO
 
 FORM (SAVE_ONE__LongSound_savePartAsAudioFile, U"LongSound: Save part as audio file", nullptr) {
 	OUTFILE (audioFile, U"Audio file", U"")
-	RADIO (type, U"Type", 3)
+	CHOICE (type, U"Type", 3)
 	{ int i; for (i = 1; i <= Melder_NUMBER_OF_AUDIO_FILE_TYPES; i ++) {
-		RADIOBUTTON (Melder_audioFileTypeString (i))
+		OPTION (Melder_audioFileTypeString (i))
 	}}
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"10.0")
@@ -256,7 +256,7 @@ FORM_SAVE (SAVE_ONE__LongSound_saveRightChannelAsWavFile, U"Save right channel a
 	SAVE_ONE_END
 }
 
-FORM (PREFS__LongSoundPrefs, U"LongSound preferences", U"LongSound") {
+FORM (SETTINGS__LongSoundSettings, U"LongSound settings", U"LongSound") {
 	LABEL (U"This setting determines the maximum number of seconds")
 	LABEL (U"for viewing the waveform and playing a sound in the LongSound window.")
 	LABEL (U"The LongSound window can become very slow if you set it too high.")
@@ -323,9 +323,9 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_autoCorrelate, U"Sound: autocorrelate", U"Sound: Autocorrelate...") {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
  	OK
 DO
@@ -358,18 +358,18 @@ DIRECT (COMBINE_ALL_TO_ONE__Sounds_combineIntoSoundSet) {
 }
 
 DIRECT (COMBINE_ALL_TO_ONE__Sounds_concatenate) {
-	COMBINE_ALL_TO_ONE (Sound)
-		autoSound result = Sounds_concatenate (list, 0.0);
-	COMBINE_ALL_TO_ONE_END (U"chain")
+	COMBINE_ALL_LISTED_TO_ONE (Sound, SoundList)
+		autoSound result = Sounds_concatenate (list.get(), 0.0);
+	COMBINE_ALL_LISTED_TO_ONE_END (U"chain")
 }
 
 FORM (COMBINE_ALL_TO_ONE__Sounds_concatenateWithOverlap, U"Sounds: Concatenate with overlap", U"Sounds: Concatenate with overlap...") {
 	POSITIVE (overlap, U"Overlap (s)", U"0.01")
 	OK
 DO
-	COMBINE_ALL_TO_ONE (Sound)
-		autoSound result = Sounds_concatenate (list, overlap);
-	COMBINE_ALL_TO_ONE_END (U"chain")
+	COMBINE_ALL_LISTED_TO_ONE (Sound, SoundList)
+		autoSound result = Sounds_concatenate (list.get(), overlap);
+	COMBINE_ALL_LISTED_TO_ONE_END (U"chain")
 }
 
 DIRECT (CONVERT_ALL_TO_MULTIPLE__Sounds_concatenateRecoverably) {
@@ -430,9 +430,9 @@ DIRECT (CONVERT_TWO_TO_ONE__Sounds_convolve_old) {
 }
 
 FORM (CONVERT_TWO_TO_ONE__Sounds_convolve, U"Sounds: Convolve", U"Sounds: Convolve...") {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO
@@ -547,9 +547,9 @@ FORM (CREATE_ONE__Sound_createAsToneComplex, U"Create Sound as tone complex", U"
 	REAL (startTime, U"Start time (s)", U"0.0")
 	REAL (endTime, U"End time (s)", U"1.0")
 	POSITIVE (samplingFrequency, U"Sampling frequency (Hz)", U"44100.0")
-	RADIOx (phase, U"Phase", 2, Sound_TONE_COMPLEX_SINE)
-		RADIOBUTTON (U"sine")
-		RADIOBUTTON (U"cosine")
+	CHOICEx (phase, U"Phase", 2, Sound_TONE_COMPLEX_SINE)
+		OPTION (U"sine")
+		OPTION (U"cosine")
 	POSITIVE (frequencyStep, U"Frequency step (Hz)", U"100.0")
 	REAL (firstFrequency, U"First frequency (Hz)", U"0.0 (= frequency step)")
 	REAL (ceiling, U"Ceiling (Hz)", U"0.0 (= Nyquist)")
@@ -574,9 +574,9 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__Sounds_crossCorrelate, U"Sounds: Cross-correlate", U"Sounds: Cross-correlate...") {
-	RADIO_ENUM (kSounds_convolve_scaling, amplitudeScaling,
+	CHOICE_ENUM (kSounds_convolve_scaling, amplitudeScaling,
 			U"Amplitude scaling", kSounds_convolve_scaling::DEFAULT)
-	RADIO_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
+	CHOICE_ENUM (kSounds_convolve_signalOutsideTimeDomain, signalOutsideTimeDomainIs,
 			U"Signal outside time domain is...", kSounds_convolve_signalOutsideTimeDomain::DEFAULT)
 	OK
 DO_ALTERNATIVE (CONVERT_TWO_TO_ONE__old_Sounds_crossCorrelate)
@@ -836,7 +836,7 @@ DO
 FORM (QUERY_ONE_FOR_REAL__Sound_getAbsoluteExtremum, U"Sound: Get absolute extremum", U"Sound: Get absolute extremum...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.0 (= all)")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation::SINC70)
 	OK
 DO
@@ -879,7 +879,7 @@ DIRECT (QUERY_ONE_FOR_REAL__Sound_getIntensity_dB) {
 FORM (QUERY_ONE_FOR_REAL__Sound_getMaximum, U"Sound: Get maximum", U"Sound: Get maximum...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.0 (= all)")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation::SINC70)
 	OK
 DO
@@ -913,7 +913,7 @@ DO_ALTERNATIVE (QUERY_ONE_FOR_REAL__old_Sound_getMean)
 FORM (QUERY_ONE_FOR_REAL__Sound_getMinimum, U"Sound: Get minimum", U"Sound: Get minimum...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.0 (= all)")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation::SINC70)
 	OK
 DO
@@ -1033,7 +1033,7 @@ DIRECT (NUMVEC_Sound_listAllSampleTimes) {
 FORM (QUERY_ONE_FOR_REAL__Sound_getTimeOfMaximum, U"Sound: Get time of maximum", U"Sound: Get time of maximum...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.0 (= all)")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation::SINC70)
 	OK
 DO
@@ -1045,7 +1045,7 @@ DO
 FORM (QUERY_ONE_FOR_REAL__Sound_getTimeOfMinimum, U"Sound: Get time of minimum", U"Sound: Get time of minimum...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.0 (= all)")
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 			U"Interpolation", kVector_peakInterpolation::SINC70)
 	OK
 DO
@@ -1078,7 +1078,7 @@ DO_ALTERNATIVE (QUERY_ONE_FOR_REAL__old_Sound_getValueAtIndex)
 
 FORM (QUERY_ONE_FOR_REAL__old_Sound_getValueAtTime, U"Sound: Get value at time", U"Sound: Get value at time...") {
 	REAL (time, U"Time (s)", U"0.5")
-	RADIO_ENUM (kVector_valueInterpolation, valueInterpolationType,
+	CHOICE_ENUM (kVector_valueInterpolation, valueInterpolationType,
 			U"Interpolation", kVector_valueInterpolation::SINC70)
 	OK
 DO
@@ -1090,7 +1090,7 @@ DO
 FORM (QUERY_ONE_FOR_REAL__Sound_getValueAtTime, U"Sound: Get value at time", U"Sound: Get value at time...") {
 	CHANNEL (channel, U"Channel", U"0 (= average)")
 	REAL (time, U"Time (s)", U"0.5")
-	RADIO_ENUM (kVector_valueInterpolation, valueInterpolationType,
+	CHOICE_ENUM (kVector_valueInterpolation, valueInterpolationType,
 			U"Interpolation", kVector_valueInterpolation::SINC70)
 	OK
 DO_ALTERNATIVE (QUERY_ONE_FOR_REAL__old_Sound_getValueAtTime)
@@ -1145,9 +1145,9 @@ DO
 }
 
 DIRECT (PLAY_EACH__Sound_play) {
-	PLAY_EACH (Sound)
-		Sound_play (me, nullptr, nullptr);   // BUG: exception-safe?
-	PLAY_EACH_END
+	FIND_ALL_LISTED (Sound, SoundList)
+		SoundList_play (list.get(), nullptr, nullptr);
+	END_NO_NEW_DATA
 }
 
 FORM (MODIFY_Sound_preemphasizeInplace, U"Sound: Pre-emphasize (in-place)", U"Sound: Pre-emphasize (in-place)...") {
@@ -1226,7 +1226,7 @@ FORM (RECORD_ONE__Sound_record_fixedTime, U"Record Sound", nullptr) {
 	LABEL (U"   to work on all computers.")
 	LABEL (U"The “Gain” and “Balance” settings tend to be obsolete")
 	LABEL (U"   and may not work at all on your computer.")
-	RADIO (inputSource, U"Input source", 1)
+	CHOICE (inputSource, U"Input source", 1)
 		OPTION (U"microphone")
 		OPTION (U"line")
 	REAL (gain, U"Gain (0-1)", U"1.0")
@@ -1364,7 +1364,7 @@ DO_ALTERNATIVE (MODIFY_old_Sound_setValueAtIndex)
 FORM (MODIFY_Sound_setPartToZero, U"Sound: Set part to zero", nullptr) {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.0 (= all)")
-	RADIOx (cut, U"Cut", 2, 0)
+	CHOICEx (cut, U"Cut", 2, 0)
 		OPTION (U"at exactly these times")
 		OPTION (U"at nearest zero crossing")
 	OK
@@ -1651,7 +1651,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_PointProcess_extrema, U"Sound: To PointProce
 	CHANNEL (channel, U"Channel (number, Left, or Right)", U"1")
 	BOOLEAN (includeMaxima, U"Include maxima", true)
 	BOOLEAN (includeMinima, U"Include minima", false)
-	RADIO_ENUM (kVector_peakInterpolation, peakInterpolationType,
+	CHOICE_ENUM (kVector_peakInterpolation, peakInterpolationType,
 		U"Interpolation", kVector_peakInterpolation::SINC70)
 	OK
 DO
@@ -1705,7 +1705,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Spectrogram, U"Sound: To Spectrogram", U"Sou
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"5000.0")
 	POSITIVE (timeStep, U"Time step (s)", U"0.002")
 	POSITIVE (frequencyStep, U"Frequency step (Hz)", U"20.0")
-	RADIO_ENUM (kSound_to_Spectrogram_windowShape, windowShape,
+	CHOICE_ENUM (kSound_to_Spectrogram_windowShape, windowShape,
 			U"Window shape", kSound_to_Spectrogram_windowShape::DEFAULT)
 	OK
 DO
@@ -1752,7 +1752,7 @@ DIRECT (CONVERT_EACH_TO_ONE__Sound_to_TextTier) {
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (PREFS__SoundInputPrefs, U"Sound recording preferences", U"SoundRecorder") {
+FORM (SETTINGS__SoundRecordingSettings, U"Sound recording settings", U"SoundRecorder") {
 	NATURAL (bufferSize, U"Buffer size (MB)", U"60")
 	OPTIONMENU_ENUM (kMelder_inputSoundSystem, inputSoundSystem,
 			U"Input sound system", kMelder_inputSoundSystem::DEFAULT)
@@ -1768,7 +1768,7 @@ DO
 	PREFS_END
 }
 
-FORM (PREFS__SoundOutputPrefs, U"Sound playing preferences", nullptr) {
+FORM (SETTINGS__SoundPlayingSettings, U"Sound playing settings", nullptr) {
 	LABEL (U"The following determines how sounds are played.")
 	LABEL (U"Between parentheses, you find what you can do simultaneously.")
 	LABEL (U"Decrease asynchronicity if sound plays with discontinuities.")
@@ -2015,7 +2015,7 @@ static autoDaata soundFileRecognizer (integer nread, const char *header, MelderF
 		return Sound_readFromSoundFile (file);
 	if (strnequ (header, "fLaC", 4))
 		return Sound_readFromSoundFile (file);   // Erez Volk, March 2007
-	if ((Melder_stringMatchesCriterion (MelderFile_name (file), kMelder_string::ENDS_WITH, U".mp3", false))
+	if ((Melder_endsWith_caseAware (MelderFile_name (file), U".mp3"))
 			&& mp3_recognize (nread, header))
 		return Sound_readFromSoundFile (file);   // Erez Volk, May 2007
 	return autoDaata ();
@@ -2023,8 +2023,8 @@ static autoDaata soundFileRecognizer (integer nread, const char *header, MelderF
 
 static autoDaata movieFileRecognizer (integer nread, const char * /* header */, MelderFile file) {
 	conststring32 fileName = MelderFile_name (file);
-	if (nread < 512 || (! Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".mov", false) &&
-	                    ! Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".avi", false)))
+	if (nread < 512 || (! Melder_endsWith_caseAware (fileName, U".mov") &&
+	                    ! Melder_endsWith_caseAware (fileName, U".avi")))
 		return autoDaata ();
 	Melder_throw (U"This Praat version cannot open movie files.");
 	return autoDaata ();
@@ -2032,7 +2032,7 @@ static autoDaata movieFileRecognizer (integer nread, const char * /* header */, 
 
 static autoDaata sesamFileRecognizer (integer nread, const char * /* header */, MelderFile file) {
 	conststring32 fileName = MelderFile_name (file);
-	if (nread < 512 || (! Melder_stringMatchesCriterion (fileName, kMelder_string::ENDS_WITH, U".sdf", false)))
+	if (nread < 512 || (! Melder_endsWith_caseAware (fileName, U".sdf")))
 		return autoDaata ();
 	return Sound_readFromSesamFile (file);
 }
@@ -2046,7 +2046,7 @@ static autoDaata bellLabsFileRecognizer (integer nread, const char *header, Meld
 static autoDaata kayFileRecognizer (integer nread, const char *header, MelderFile file) {
 	if (nread <= 12 || ! strnequ (& header [0], "FORMDS16", 8))
 		return autoDaata ();
-	return Sound_readFromKayFile (file);
+	return Sound_readFromAnyKayFile (file);
 }
 
 /***** override play and record buttons in manuals *****/
@@ -2151,13 +2151,13 @@ void praat_Sound_init () {
 	praat_addMenuCommand (U"Objects", U"Goodies", U"-- sound goodies --", nullptr, 0, nullptr);
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Stop playing sound", nullptr, GuiMenu_ESCAPE,
 			PLAY__stopPlayingSound);
-	praat_addMenuCommand (U"Objects", U"Preferences", U"-- sound prefs --", nullptr, 0, nullptr);
-	praat_addMenuCommand (U"Objects", U"Preferences", U"Sound recording preferences...", nullptr, 0,
-			PREFS__SoundInputPrefs);
-	praat_addMenuCommand (U"Objects", U"Preferences", U"Sound playing preferences...", nullptr, 0,
-			PREFS__SoundOutputPrefs);
-	praat_addMenuCommand (U"Objects", U"Preferences", U"LongSound preferences...", nullptr, 0,
-			PREFS__LongSoundPrefs);
+	praat_addMenuCommand (U"Objects", U"Settings", U"-- sound settings --", nullptr, 0, nullptr);
+	praat_addMenuCommand (U"Objects", U"Settings", U"Sound recording settings... || Sound recording preferences...", nullptr, 0,
+			SETTINGS__SoundRecordingSettings);   // alternative GuiMenu_DEPRECATED_2023
+	praat_addMenuCommand (U"Objects", U"Settings", U"Sound playing settings... || Sound playing preferences...", nullptr, 0,
+			SETTINGS__SoundPlayingSettings);   // alternative GuiMenu_DEPRECATED_2023
+	praat_addMenuCommand (U"Objects", U"Settings", U"LongSound settings... || LongSound preferences...", nullptr, 0,
+			SETTINGS__LongSoundSettings);   // alternative GuiMenu_DEPRECATED_2023
 #ifdef HAVE_PULSEAUDIO
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report sound server properties", U"Report system properties", 0,
 			INFO_NONE__Praat_reportSoundServerProperties);

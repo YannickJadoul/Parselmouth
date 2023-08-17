@@ -1,6 +1,6 @@
 /* Sound_extensions.cpp
  *
- * Copyright (C) 1993-2022 David Weenink, 2017 Paul Boersma
+ * Copyright (C) 1993-2023 David Weenink, 2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -506,13 +506,13 @@ autoSound Sound_readFromOggVorbisFile (MelderFile file) {
 			ogg_stream_state oggStream; // take physical pages, weld into a logical stream of packets
 			ogg_stream_init (& oggStream, ogg_page_serialno (& oggPage));
 			/* 
-				Eextract the initial header from the first page and verify that the
+				Extract the initial header from the first page and verify that the
 				Ogg bitstream is in fact Vorbis data
 
 				I handle the initial header first instead of just having the code
 				read all three Vorbis headers at once because reading the initial
 				header is an easy way to identify a Vorbis bitstream and it's
-				useful to see that functionality seperated out.
+				useful to see that functionality separated out.
 			*/
 			vorbis_info vorbisInfo; // struct that stores all the static vorbis bitstream settings
 			vorbis_info_init (& vorbisInfo);
@@ -755,6 +755,59 @@ autoSound Sound_readFromOggOpusFile (MelderFile file) {
 	}
 }
 
+/*
+	The time derivative of a Sound can most easily be calculated in the spectral domain
+	in which a sound s(t) can represented as
+		s(t) = integral (S(f) exp(2*pi*i*f*t) * df), where S(f) is the complex spectrum.
+	The time derivative is:
+		d(s(t)/dt = integral (S(f)*2*pi*i*f * d/dt(exp(2*pi*f*t)) * df)
+			= integral (S(f)*2*pi*i*f * exp(2*pi*f*t) * df)
+			= (2*pi*f) * integral (i*S(f) * exp (2*pi*f*t) * df)
+			= (2*pi*f) * integral (-Im(S), Re (s)) * exp (2*pi*f*t) * df)
+	Transforming back to the time domain gives the desired result.
+*/
+autoSound Sound_derivative (Sound me, double lowPassFrequency, double smoothing, double peakAmplitude) {
+	try {
+		autoSpectrum thee = Sound_to_Spectrum (me, false);
+		for (integer ifreq = 1; ifreq <= thy nx - 1; ifreq ++) {
+			const double frequency = Sampled_indexToX (thee.get(), ifreq);
+			const double im = thy z [2] [ifreq];
+			thy z [2] [ifreq] = NUM2pi * frequency * thy z [1] [ifreq]; // forget about scale factor 2*pi
+			thy z [1] [ifreq] = - NUM2pi * frequency * im;
+		}
+		thy z [2] [thy nx] = thy z [1] [thy nx] = 0.0;
+		Spectrum_passHannBand (thee.get(), 0.0, lowPassFrequency, smoothing);
+		autoSound him = Spectrum_to_Sound (thee.get());
+		if (peakAmplitude != 0.0)
+			Vector_scale (him.get(), peakAmplitude);
+		return him;
+	} catch (MelderError) {
+		Melder_throw (me, U": cannot create the derivative of the Sound.");
+	}
+}
+
+static autoSound Sound_derivative2 (Sound me, double lowPassFrequency, double smoothing, double peakAmplitude) {
+		try {
+			autoSpectrum thee = Sound_to_Spectrum (me, false);
+			for (integer ifreq = 1; ifreq <= thy nx; ifreq ++) {
+				const double frequency = Sampled_indexToX (thee.get(), ifreq);
+				const double im = thy z [2] [ifreq];
+				thy z [2] [ifreq] = NUM2pi * frequency * thy z [1] [ifreq]; // forget about scale factor 2*pi
+				thy z [1] [ifreq] = - NUM2pi * frequency * im;
+			}
+			const double nyquistFrequency = 0.5 / my dx;
+			if (lowPassFrequency < nyquistFrequency)
+				Spectrum_passHannBand (thee.get(), 0.0, lowPassFrequency, smoothing);
+			autoSound him = Spectrum_to_Sound (thee.get());
+			if (peakAmplitude != 0.0)
+				Vector_scale (him.get(), peakAmplitude);
+			return him;
+		} catch (MelderError) {
+			Melder_throw (me, U": cannot create the derivative of the Sound.");
+		}
+}
+
+
 void Sound_preEmphasis (Sound me, double preEmphasisFrequency) {
 	if (preEmphasisFrequency >= 0.5 / my dx)
 		return;    // above Nyquist?
@@ -812,7 +865,7 @@ static autoSound Sound_create2 (double minimumTime, double maximumTime, double s
 		sin(a+dx) = sin(a) - (alpha . sin(a) - beta . sin(a))
 	where alpha and beta are precomputed coefficients
 		alpha = 2 sin^2(dx/2) and beta = sin(dx)
-	In this way aplha and beta do not lose significance if the increment
+	In this way alpha and beta do not lose significance if the increment
 	dx is small.
 */
 
@@ -911,7 +964,7 @@ static void NUMgammatoneFilter4 (double *x, double *y, integer n, double centre_
 		Coefficients a & b according to:
 		Slaney (1993), An efficient implementation of the Patterson-Holdsworth
 		auditory filterbank, Apple Computer Technical Report 35, 41 pages.
-		For the a's we have left out an overal scale factor of dt^4.
+		For the a's we have left out an overall scale factor of dt^4.
 		This makes a [0] = 1.
 	*/
 
@@ -1522,9 +1575,9 @@ static autoIntensity Spectrogram_to_Intensity_silenceDetection (Spectrogram me) 
 	}
 }
 
-autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeStep, double longTermWindow, double shorttimeWindow, double fmin, double fmax, 
-	double lsfmThreshold, double silenceThreshold_dB, double minSilenceDuration, double minSoundingDuration, 
-	conststring32 novoiceActivityLabel, conststring32 voiceActivityLabel) {
+autoTextGrid Sound_to_TextGrid_speechActivity_lsfm (Sound me, double timeStep, double longTermWindow, double shorttimeWindow, double fmin, double fmax, 
+	double lsfmThreshold, double nonspeechThreshold_dB, double minNonspeechDuration, double minSpeechDuration, 
+	conststring32 nonspeechLabel, conststring32 speechLabel) {
 	try {
 		if (timeStep <= 0.0)
 			timeStep = 0.01;
@@ -1540,8 +1593,8 @@ autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeSt
 		autoMatrix lsfmMatrix = Spectrogram_getLongtermSpectralFlatnessMeasure (spectrogram.get(), longTermWindow, shorttimeWindow, fmin, fmax);
 		autoTextGrid thee = TextGrid_create (my xmin, my xmax, U"VAD", U"");
 		const IntervalTier vadTier = (IntervalTier) thy tiers->at [1];
-		TextInterval_setText (vadTier -> intervals.at [1], voiceActivityLabel);
-		if (minSilenceDuration > my xmax - my xmin)
+		TextInterval_setText (vadTier -> intervals.at [1], speechLabel);
+		if (minNonspeechDuration > my xmax - my xmin)
 			return thee;
 		/*
 			Step 1. Find activity intervals
@@ -1556,13 +1609,13 @@ autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeSt
 				if (! activityInterval) {   // start of activity
 					addBoundary = true;
 					activityInterval = true;
-					label = novoiceActivityLabel;
+					label = nonspeechLabel;
 				}
 			} else {
 				if (activityInterval) {   // end of activity
 					addBoundary = true;
 					activityInterval = false;
-					label = voiceActivityLabel;
+					label = speechLabel;
 				}
 			}
 
@@ -1575,7 +1628,7 @@ autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeSt
 		/*
 			Set the label of the last interval.
 		*/
-		label = activityInterval ? voiceActivityLabel : novoiceActivityLabel;
+		label = activityInterval ? speechLabel : nonspeechLabel;
 		TextInterval_setText (vadTier -> intervals.at [iinterval], label);
 		vadTier -> intervals. sort ();
 		/*
@@ -1585,29 +1638,27 @@ autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeSt
 			This works much better than first removing short silence intervals and
 			then short non-silence intervals.
 		*/
-		if (minSoundingDuration > 0.0) {
-			IntervalTier_cutIntervals_minimumDuration (vadTier, voiceActivityLabel, minSoundingDuration);
-			IntervalTier_combineIntervalsOnLabelMatch (vadTier, novoiceActivityLabel);
+		if (minSpeechDuration > 0.0) {
+			IntervalTier_cutIntervals_minimumDuration (vadTier, speechLabel, minSpeechDuration);
+			IntervalTier_combineIntervalsOnLabelMatch (vadTier, nonspeechLabel);
 		}
-		if (minSilenceDuration > 0.0) {	
-			IntervalTier_cutIntervals_minimumDuration (vadTier, novoiceActivityLabel, minSilenceDuration);
-			IntervalTier_combineIntervalsOnLabelMatch (vadTier, voiceActivityLabel);
+		if (minNonspeechDuration > 0.0) {	
+			IntervalTier_cutIntervals_minimumDuration (vadTier, nonspeechLabel, minNonspeechDuration);
+			IntervalTier_combineIntervalsOnLabelMatch (vadTier, speechLabel);
 		}
-		/*
-			Step 3: Find silences, because the VAD doesn't
-		*/
-		if (silenceThreshold_dB > -50.0) {
+		
+		if (nonspeechThreshold_dB > -50.0) {
 			/*
-				Step 3: Find silences, because the VAD doesn't
+				Step 3: Find silences
 			*/
 			autoIntensity intensity = Spectrogram_to_Intensity_silenceDetection (spectrogram.get());
-			autoTextGrid silences = Intensity_to_TextGrid_detectSilences (intensity.get(), silenceThreshold_dB, minSilenceDuration, minSoundingDuration, novoiceActivityLabel, voiceActivityLabel);
+			autoTextGrid silences = Intensity_to_TextGrid_detectSilences (intensity.get(), nonspeechThreshold_dB, minNonspeechDuration, minSpeechDuration, nonspeechLabel, speechLabel);
 			/*
 				Step 4: Union of the two VAD and the silences intervals.
 			*/
 			autoTextGrid unionTextGrid = TextGrid_create (my xmin, my xmax, U"union", U"");
 			integer unionIndex = 1;
-			const double timeMargin = std::max (0.02, std::min (0.02, std::min (minSilenceDuration, minSoundingDuration))); 
+			const double timeMargin = std::max (0.02, std::min (0.02, std::min (minNonspeechDuration, minSpeechDuration))); 
 			const IntervalTier silenceTier = (IntervalTier) silences -> tiers -> at [1];
 			const IntervalTier unionTier = (IntervalTier) unionTextGrid -> tiers -> at [1];
 			const integer silenceNumberOfIntervals = silenceTier -> intervals.size;
@@ -1617,11 +1668,11 @@ autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeSt
 				const double silenceStartTime = silenceTextInterval -> xmin;
 				const conststring32 silenceLabel = silenceTextInterval -> text.get();
 				const double silenceEndTime = silenceTextInterval -> xmax;
-				if (Melder_stringMatchesCriterion (silenceLabel, kMelder_string::EQUAL_TO, novoiceActivityLabel, false)) {
+				if (Melder_stringMatchesCriterion (silenceLabel, kMelder_string::EQUAL_TO, nonspeechLabel, false)) {
 					/*
 						Silent interval. Simply add it.
 					*/
-					IntervalTier_addBoundaryUnsorted (unionTier, unionIndex, silenceEndTime, novoiceActivityLabel);
+					IntervalTier_addBoundaryUnsorted (unionTier, unionIndex, silenceEndTime, nonspeechLabel);
 					unionIndex ++;
 				} else {
 					/*
@@ -1634,7 +1685,7 @@ autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeSt
 						const conststring32 vadLabel = vadTextInterval -> text.get();
 						const double vadEndTime = vadTextInterval -> xmax;
 						if (vadEndTime > silenceEndTime - timeMargin) {
-							// extends beyound the end 
+							// extends beyond the end 
 							IntervalTier_addBoundaryUnsorted (unionTier, unionIndex, silenceEndTime, vadLabel);
 							unionIndex ++;
 							unionContinues = false;
@@ -1647,14 +1698,14 @@ autoTextGrid Sound_to_TextGrid_detectVoiceActivity_lsfm (Sound me, double timeSt
 				}
 			}
 			unionTier -> intervals. sort ();
-			IntervalTier_combineIntervalsOnLabelMatch (unionTier, novoiceActivityLabel);
+			IntervalTier_combineIntervalsOnLabelMatch (unionTier, nonspeechLabel);
 			TextGrid_addTier_copy (unionTextGrid.get(), silenceTier);
 			TextGrid_addTier_copy (unionTextGrid.get(), vadTier);
 			return unionTextGrid;
 		}
 		return thee;
 	} catch (MelderError) {
-		Melder_throw (me, U": could not detect voice activity.");
+		Melder_throw (me, U": could not detect speech activity.");
 	}
 }
 

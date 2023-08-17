@@ -1,6 +1,6 @@
 /* Praat_tests.cpp
  *
- * Copyright (C) 2001-2007,2009,2011-2021 Paul Boersma
+ * Copyright (C) 2001-2007,2009,2011-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ static autoDaata newAutoData () {
 	return data;
 }
 static integer length (conststring32 s) {
-	integer result = str32len (s);
+	const integer result = Melder_length (s);
 	Melder_free (s);
 	return result;
 }
@@ -260,13 +260,13 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 			for (int64 i = 1; i <= n; i ++) {
 				str32cpy (buffer, word);
 				for (int j = 1; j <= 30; j ++)
-					str32cpy (buffer + str32len (buffer), word);
+					str32cpy (buffer + Melder_length (buffer), word);
 			}
 			t = Melder_stopwatch ();
 			MelderInfo_writeLine (buffer);
 		} break;
 		case kPraatTests::TIME_GRAPHICS_TEXT_TOP: {
-			autoPraatPicture picture;
+			autoPraatPictureOpen picture;
 			for (int64 i = 1; i <= n; i ++) {
 				Graphics_textTop (GRAPHICS, false, U"hello world");
 			}
@@ -654,6 +654,7 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 					//aa = aac;
 					aa = bb;
 					aac = bbc;
+					//aac = aa;
 					bbc.cells = bb.cells;
 				}
 			}

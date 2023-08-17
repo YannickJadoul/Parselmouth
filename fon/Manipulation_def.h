@@ -1,6 +1,6 @@
 /* Manipulation_def.h
  *
- * Copyright (C) 1992-2006,2008,2011,2015-2018 Paul Boersma
+ * Copyright (C) 1992-2006,2008,2011,2015-2018,2022,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,12 +75,12 @@ oo_DEFINE_CLASS (Manipulation, Function)
 		oo_DOUBLE (dummy9)
 	oo_ENDFROM
 
-	#if ! oo_READING && ! oo_WRITING
+	#if ! oo_READING && ! oo_WRITING && ! oo_COMPARING
 		oo_OBJECT (LPC, 0, lpc)
 	#endif
 
 	#if oo_DECLARING
-		int v_domainQuantity ()
+		int v_domainQuantity () const
 			override { return MelderQuantity_TIME_SECONDS; }
 		void v_shiftX (double xfrom, double xto)
 			override;

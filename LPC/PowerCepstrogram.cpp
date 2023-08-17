@@ -1,6 +1,6 @@
 /* PowerCepstrogram.cpp
  *
- * Copyright (C) 2013 - 2022 David Weenink
+ * Copyright (C) 2013-2022 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 
 Thing_implement (PowerCepstrogram, Matrix, 2); // derives from Matrix -> also version 2
 
-double structPowerCepstrogram :: v_getValueAtSample (integer sampleNumber, integer row, int unit) {
+double structPowerCepstrogram :: v_getValueAtSample (integer sampleNumber, integer row, int unit) const {
 	double result = undefined;
 	if (row >= 1 && row <= ny) {
 		if (unit == 0)
@@ -53,10 +53,7 @@ autoPowerCepstrogram PowerCepstrogram_create (double tmin, double tmax, integer 
 
 void PowerCepstrogram_paint (PowerCepstrogram me, Graphics g, double tmin, double tmax, double qmin, double qmax, double dBmaximum, int autoscaling, double dynamicRangedB, double dynamicCompression, bool garnish) {
 	Function_unidirectionalAutowindow (me, & tmin, & tmax);
-	if (qmax <= qmin) {
-		qmin = my ymin;
-		qmax = my ymax;
-	}
+	SampledXY_unidirectionalAutowindowY (me, & qmin, & qmax);
 	integer itmin, itmax, ifmin, ifmax;
 	if (Matrix_getWindowSamplesX (me, tmin - 0.49999 * my dx, tmax + 0.49999 * my dx, & itmin, & itmax) == 0 ||
 			Matrix_getWindowSamplesY (me, qmin - 0.49999 * my dy, qmax + 0.49999 * my dy, & ifmin, & ifmax) == 0)
@@ -77,7 +74,9 @@ void PowerCepstrogram_paint (PowerCepstrogram me, Graphics g, double tmin, doubl
 	}
 
 	for (integer icol = 1; icol <= my nx; icol ++) {
-		const double lmax = NUMmax (thy z.column (icol));
+		const double lmax = NUMmax_u (thy z.column (icol));
+		if (isundef (lmax))
+			return;
 		const double factor = dynamicCompression * (extrema.max - lmax);
 		thy z.column (icol) += factor;
 	}

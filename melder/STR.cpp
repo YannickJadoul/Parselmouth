@@ -1,6 +1,6 @@
 /* STR.cpp
  *
- * Copyright (C) 2012-2017 David Weenink, 2008,2018,2020,2021 Paul Boersma
+ * Copyright (C) 2012-2017 David Weenink, 2008,2018,2020-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ static uint64 hexSecret = UINT64_C (5'847'171'831'059'823'557);
 autostring8 hex_STR8 (conststring8 str, uint64 key) {
 	if (key != 0)
 		NUMrandom_initializeWithSeedUnsafelyButPredictably (key ^ hexSecret);
-	autostring8 result (str8len (str) * 2);
+	autostring8 result (Melder8_length (str) * 2);
 	char *to = & result [0];
 	for (const char8 *from = (char8 *) & str [0]; *from != '\0'; from ++) {
 		integer value = *from;
@@ -48,23 +48,21 @@ autostring32 hex_STR (conststring32 str, uint64 key) {
 }
 
 autostring32 left_STR (conststring32 str, integer newLength) {
-	integer length = str32len (str);
-	if (newLength < 0)
-		newLength = 0;
-	if (newLength > length)
-		newLength = length;
+	const integer length = Melder_length (str);
+	Melder_clip (0_integer, & newLength, length);
 	autostring32 result (newLength);
 	str32ncpy (result.get(), str, newLength);
 	return result;
 }
 
 autostring32 mid_STR (conststring32 str, integer startingPosition_1, integer numberOfCharacters) {
-	integer length = str32len (str), endPosition_1 = startingPosition_1 + numberOfCharacters - 1;
+	const integer length = Melder_length (str);
+	integer endPosition_1 = startingPosition_1 + numberOfCharacters - 1;
 	if (startingPosition_1 < 1)
 		startingPosition_1 = 1;
 	if (endPosition_1 > length)
 		endPosition_1 = length;
-	integer newLength = endPosition_1 - startingPosition_1 + 1;
+	const integer newLength = endPosition_1 - startingPosition_1 + 1;
 	if (newLength <= 0)
 		return Melder_dup (U"");
 	autostring32 result (newLength);
@@ -78,7 +76,7 @@ autostring32 quote_doubleSTR (conststring32 str) {
 	*/
 	constexpr integer maximumNumberOfOutputCharactersPerInputCharacter = 2;   // namely, the character " has to be converted to ""
 	constexpr integer numberOfOutputCharactersNeededForTheQuotes = 2;   // namely, the opening quote and the closing quote
-	autostring32 result (maximumNumberOfOutputCharactersPerInputCharacter * str32len (str) + numberOfOutputCharactersNeededForTheQuotes);
+	autostring32 result (maximumNumberOfOutputCharactersPerInputCharacter * Melder_length (str) + numberOfOutputCharactersNeededForTheQuotes);
 		// for instance, the string `"""` has to be converted to the string `""""""""`
 	const char32 *p = & str [0];
 	char32 *q = & result [0];
@@ -106,11 +104,11 @@ autostring32 replace_STR (conststring32 string,
 		search = U"";
 	if (! replace)
 		replace = U"";
-	integer len_string = str32len (string);
+	const integer len_string = Melder_length (string);
 	if (len_string == 0)
 		maximumNumberOfReplaces = 1;
 
-	integer len_search = str32len (search);
+	const integer len_search = Melder_length (search);
 	if (len_search == 0)
 		maximumNumberOfReplaces = 1;
 
@@ -136,8 +134,8 @@ autostring32 replace_STR (conststring32 string,
 		}
 	}
 
-	integer len_replace = str32len (replace);
-	integer len_result = len_string + numberOfMatches * (len_replace - len_search);
+	const integer len_replace = Melder_length (replace);
+	const integer len_result = len_string + numberOfMatches * (len_replace - len_search);
 	autostring32 result (len_result);
 
 	const char32 *posp = pos = & string [0];
@@ -206,8 +204,8 @@ autostring32 replace_regex_STR (conststring32 string,
 	if (out_numberOfMatches)
 		*out_numberOfMatches = 0;
 
-	integer string_length = str32len (string);
-	//int replace_length = str32len (replaceRE);
+	const integer string_length = Melder_length (string);
+	//int replace_length = Melder_length (replaceRE);
 	if (string_length == 0)
 		maximumNumberOfReplaces = 1;
 
@@ -229,7 +227,8 @@ autostring32 replace_regex_STR (conststring32 string,
 
 	pos = posp = string;
 	while (ExecRE (compiledSearchRE, nullptr, pos, nullptr, reverse, prev_char, U'\0', nullptr, nullptr) &&
-			i ++ < maximumNumberOfReplaces) {
+			i ++ < maximumNumberOfReplaces)
+	{
 		/*
 			Copy gap between the end of the previous match and the start
 			of the current match.
@@ -266,7 +265,7 @@ autostring32 replace_regex_STR (conststring32 string,
 		/*
 			Buffer is not full; get number of characters added.
 		*/
-		nchar = str32len (buf.get() + buf_nchar);
+		nchar = Melder_length (buf.get() + buf_nchar);
 		buf_nchar += nchar;
 
 		/*
@@ -298,18 +297,15 @@ autostring32 replace_regex_STR (conststring32 string,
 }
 
 autostring32 right_STR (conststring32 str, integer newLength) {
-	integer length = str32len (str);
-	if (newLength < 0)
-		newLength = 0;
-	if (newLength > length)
-		newLength = length;
+	const integer length = Melder_length (str);
+	Melder_clip (0_integer, & newLength, length);
 	return Melder_dup (str + length - newLength);
 }
 
 autostring8 unhex_STR8 (conststring8 str, uint64 key) {
 	if (key != 0)
 		NUMrandom_initializeWithSeedUnsafelyButPredictably (key ^ hexSecret);
-	autostring8 result (str8len (str) / 2);
+	autostring8 result (Melder8_length (str) / 2);
 	char *to = & result [0];
 	for (const char8 *from = (char8 *) & str [0];;) {
 		char8 code1 = *from ++;

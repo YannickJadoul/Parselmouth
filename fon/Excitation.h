@@ -2,7 +2,7 @@
 #define _Excitation_h_
 /* Excitation.h
  *
- * Copyright (C) 1992-2005,2007,2011,2015-2017,2022 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2011,2015-2017,2022,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,15 +24,9 @@
 Thing_define (Excitation, Vector) {
 	void v1_info ()
 		override;
-	int v_domainQuantity ()
+	int v_domainQuantity () const
 		override { return MelderQuantity_FREQUENCY_BARK; }
 };
-
-double Excitation_hertzToBark (double hertz);
-double Excitation_barkToHertz (double bark);
-double Excitation_phonToDifferenceLimens (double phon);
-double Excitation_differenceLimensToPhon (double ndli);
-double Excitation_soundPressureToPhon (double soundPressure, double bark);
 
 autoExcitation Excitation_create (double frequencyStep, integer numberOfFrequencies);
 double Excitation_getDistance (Excitation me, Excitation thee);

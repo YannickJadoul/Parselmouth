@@ -1,6 +1,6 @@
 /* manual_programming.cpp
  *
- * Copyright (C) 1992-2010,2011,2013,2015-2022 Paul Boersma
+ * Copyright (C) 1992-2010,2011,2013,2015-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -120,15 +120,15 @@ NORMAL (U"• The integer number 0, which is the number of points in the third t
 	"A newly created point tier contains no points yet.")
 NORMAL (U"You will have noticed that the file contains a lot of stuff that was not mentioned in this list. "
 	"All of that stuff are %comments that are present only to help the human reader understand the contents "
-	"of the file: labels for all tiers (such as $$item [2]$), labels for the starting times of the TextGrid or "
-	"a tier or an interval ($xmin), labels for end times ($xmax); labels for the number of tiers or "
-	"intervals or points ($size), and little numbers enclosed in square brackets to tell the reader where they are ($$[2]$).")
+	"of the file: labels for all tiers (such as `item [2]`), labels for the starting times of the TextGrid or "
+	"a tier or an interval ($xmin), labels for end times (`xmax`); labels for the number of tiers or "
+	"intervals or points ($size), and little numbers enclosed in square brackets to tell the reader where they are (`[2]`).")
 NORMAL (U"When reading a text file containing a TextGrid (or any other object), Praat totally ignores these comments, "
-	"so if you e.g. replace $$[2]$ with $$[4]$ somewhere, Praat will not notice. Praat will consider as data only the following "
+	"so if you e.g. replace `[2]` with `[4]` somewhere, Praat will not notice. Praat will consider as data only the following "
 	"types of information in the file:")
-LIST_ITEM (U"• free-standing numbers, such as $$0$ and $$2.3$ above, but not $$[1]$ or $$[3]$;")
-LIST_ITEM (U"• free-standing text enclosed within double quotes, such as $$\"TextGrid\"$ and $$\"\"$ above;")
-LIST_ITEM (U"• free-standing flags, such as $$<exists>$ above (this is the only flag that appears in TextGrid files; "
+LIST_ITEM (U"• free-standing numbers, such as `0` and `2.3` above, but not `[1]` or `[3]`;")
+LIST_ITEM (U"• free-standing text enclosed within double quotes, such as `\"TextGrid\"` and `\"\"` above;")
+LIST_ITEM (U"• free-standing flags, such as `<exists>` above (this is the only flag that appears in TextGrid files; "
 	"see @ExperimentMFC for a much broader use of flags).")
 NORMAL (U"In this list, \"free-standing\" means that the number, text or flag is preceded by the beginning of the file, "
 	"the beginning of a line, or a space, and that it is followed by the end of the file, the end of a line, or a space.")
@@ -304,7 +304,7 @@ NORMAL (U"Existing TextGrid text files come in various encodings. When creating 
 NORMAL (U"When writing a TextGrid text file, you can use UTF-8 encoding (without Byte Order Mark), or UTF-16 encoding "
 	"(either Big-Endian or Little-Endian, with Byte Order Mark). "
 	"Please never write a limited encoding such as Latin-1 or MacRoman, which do not support international characters "
-	"or phonetic characters as in $$\"ʔaɦɔj\"$.")
+	"or phonetic characters as in “`ʔaɦɔj`”.")
 NORMAL (U"The lines in the file are typically separated by a newline symbol (Linux or modern Mac), "
 	"or by a Return symbol (old Mac), or by a Return symbol followed by a newline symbol (Windows). "
 	"When reading a TextGrid text file, you should be prepared for each of these line separators. "
@@ -313,7 +313,7 @@ NORMAL (U"The lines in the file are typically separated by a newline symbol (Lin
 ENTRY (U"8. Interpreting trigraphs")
 NORMAL (U"The example above contains several phonetic symbols, and it is not always easy to type those into a text field. "
 	"For this reason, Praat provides %trigraphs for most phonetic characters, as well as for many non-ASCII characters "
-	"used in the languages of the world. For instance, the vowel \"ɔ\" (a \"turned c\") can be typed as \"\\bsct\" into "
+	"used in the languages of the world. For instance, the vowel “ɔ” (a “turned c”) can be typed as `\\ct` into "
 	"the TextGrid window as well as anywhere else in Praat where you want to draw graphical text "
 	"(see @@Special symbols@ for all trigraphs). Thus, the file above could have looked as follows:")
 CODE (U"File type = \"ooTextFile\"")
@@ -333,7 +333,7 @@ CODE (U"item []:")
 		CODE2 (U"intervals [1]:")
 			CODE3 (U"xmin = 0")
 			CODE3 (U"xmax = 2.3")
-			CODE3 (U"text = \"\\bsr<\\bsi'kej \"\"ahoj\"\" dvakr\\bsa't\"")
+			CODE3 (U"text = \"\\r<\\i'kej \"\"ahoj\"\" dvakr\\a't\"")
 	CODE1 (U"item [2]:")
 		CODE2 (U"class = \"IntervalTier\"")
 		CODE2 (U"name = \"phonemes\"")
@@ -343,15 +343,15 @@ CODE (U"item []:")
 		CODE2 (U"intervals [1]:")
 			CODE3 (U"xmin = 0")
 			CODE3 (U"xmax = 0.7")
-			CODE3 (U"text = \"r\\bsT\\^ i\\bs:fk\\bsefj\"")
+			CODE3 (U"text = \"r\\T^i\\:fk\\efj\"")
 		CODE2 (U"intervals [2]:")
 			CODE3 (U"xmin = 0.7")
 			CODE3 (U"xmax = 1.6")
-			CODE3 (U"text = \"\\bs?ga\\bsh\\^ \\bsctj\"")
+			CODE3 (U"text = \"\\?ga\\h^\\ctj\"")
 		CODE2 (U"intervals [3]:")
 			CODE3 (U"xmin = 1.6")
 			CODE3 (U"xmax = 2.3")
-			CODE3 (U"text = \"d\\bsvsakra\\bs:ft\"")
+			CODE3 (U"text = \"d\\vsakra\\:ft\"")
 	CODE1 (U"item [3]:")
 		CODE2 (U"class = \"TextTier\"")
 		CODE2 (U"name = \"bell\"")
@@ -388,7 +388,7 @@ NORMAL (U"Besides the TextGrid text file format described above, TextGrid object
 	"and save the resulting TextGrid object as a text file with @@Save as text file...@.")
 MAN_END
 
-MAN_BEGIN (U"Programming with Praat", U"ppgb", 20211015)
+MAN_BEGIN (U"Programming with Praat", U"ppgb", 20230409)
 INTRO (U"You can extend the functionality of the Praat program "
 	"by adding modules written in C or C++ to it. All of Praat's source code "
 	"is available under the General Public Licence.")
@@ -400,18 +400,18 @@ NORMAL (U"Before trying the task of learning how to write Praat extensions in C 
 	"If you have a set of scripts, you can distribute them as a @@plug-ins|plug-in@.")
 ENTRY (U"2. Getting the existing source code")
 NORMAL (U"You obtain the Praat source code from GitHub (https://github.com/praat), in a file with a name like "
-	"##praat6199_sources.zip# or ##praat6199_sources.tar.gz# (depending on the Praat version), and unpack this by double-clicking. "
+	"`praat6399_sources.zip` or `praat6399_sources.tar.gz` (depending on the Praat version), and unpack this by double-clicking. "
 	"The result will be a set of directories "
-	"called #kar, #melder, #external (with #clapack, #gsl, #glpk, #flac, #mp3, #portaudio, #espeak, #vorbis and #opusfile in it), "
-	"#sys, #dwsys, #stat, #fon, #dwtools, #LPC, #FFNet, #gram, #artsynth, #EEG, #main, #makefiles, #test, #dwtest, and #generate, "
+	"called `kar`, `melder`, `external` (with `clapack`, `gsl`, `glpk`, `flac`, `mp3`, `portaudio`, `espeak`, `vorbis` and `opusfile` in it), "
+	"`sys`, `dwsys`, `stat`, `fon`, `dwtools`, `LPC`, `FFNet`, `gram`, `artsynth`, `EEG`, `main`, `makefiles`, `test`, `dwtest`, and `generate`, "
 	"plus a makefile and Xcode project for macOS and a README.md file.")
 ENTRY (U"3. Building Praat")
 NORMAL (U"Consult the README file on GitHub for directions to compile and link Praat for your platform.")
 ENTRY (U"4. Extending Praat")
-NORMAL (U"To start extending Praat’s functionality, you can edit ##main/main_Praat.cpp#. "
+NORMAL (U"To start extending Praat’s functionality, you can edit `main/main_Praat.cpp`. "
 	"This example shows you how to create a very simple program with all the functionality "
 	"of the Praat program, and a single bit more (namely an additional command in the New menu):")
-CODE (U"\\# include \"praatM.h\"")
+CODE (U"#include \"praatM.h\"")
 CODE (U"")
 CODE (U"DIRECT (HelloFromJane) {")
 	CODE1 (U"Melder_information (U\"Hello, I am Jane.\");")
@@ -425,14 +425,14 @@ CODE (U"int main (int argc, char **argv) {")
 	CODE1 (U"return 0;")
 CODE (U"}")
 ENTRY (U"5. Learning how to program")
-NORMAL (U"To see how objects are defined, take a look at ##sys/Thing.h#, ##sys/Daata.h#, "
-	"##sys/oo.h#, the ##XXX_def.h# files in the #fon folder, and the corresponding "
-	"##XXX.cpp# files in the #fon folder. To see how commands show up on the buttons "
+NORMAL (U"To see how objects are defined, take a look at `sys/Thing.h`, `sys/Daata.h`, "
+	"`sys/oo.h`, the `XXX_def.h` files in the `fon` folder, and the corresponding "
+	"`XXX.cpp` files in the `fon` folder. To see how commands show up on the buttons "
 	"in the fixed and dynamic menus, take a look at the large interface description file "
-	"##fon/praat_Fon.cpp#.")
+	"`fon/praat_Fon.cpp`.")
 ENTRY (U"6. Using the Praat shell only")
 NORMAL (U"For building the Praat shell (the Objects and Picture windows) only, you need only the code in the nine directories "
-	"#kar, #melder, ##external/{clapack,gsl,flac,mp3,portaudio}#, #sys, and #dwsys. You delete the inclusion of praat_uvafon_init from #main. "
+	"`kar`, `melder`, `external/{clapack,gsl,flac,mp3,portaudio}`, `sys`, and `dwsys`. You delete the inclusion of `praat_uvafon_init` from `main`. "
 	"You will be able to build a Praat shell, i.e. an Objects and a Picture window, "
 	"which has no knowledge of the world, i.e., which does not know any objects "
 	"that can be included in the list of objects. You could use this Praat shell "

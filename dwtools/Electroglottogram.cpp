@@ -1,6 +1,6 @@
 /* Electroglottogram.cpp
  *
- * Copyright (C) 2019-2022 David Weenink
+ * Copyright (C) 2019-2023 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -217,15 +217,16 @@ autoAmplitudeTier Electroglottogram_and_AmplitudeTiers_getLevels (Electroglottog
 		}
 }
 
-autoIntervalTier Electroglottogram_getClosedGlottisIntervals (Electroglottogram me, double pitchFloor, double pitchCeiling, double closingThreshold, double peakThresholdFraction) {
+autoTextGrid Electroglottogram_to_TextGrid_closedGlottis (Electroglottogram me, double pitchFloor, double pitchCeiling, double closingThreshold, double peakThresholdFraction) {
 	try {
 		autoAmplitudeTier peaks, valleys;
 		autoAmplitudeTier levels = Electroglottogram_to_AmplitudeTier_levels (me, pitchFloor, pitchCeiling, closingThreshold, & peaks, & valleys);
 		
 		const double maximum = RealTier_getMaximumValue (peaks.get());
 		const double minimumPeakAmplitude = maximum * peakThresholdFraction;
-
-		autoIntervalTier intervalTier = IntervalTier_create (my xmin, my xmax);
+		
+		autoTextGrid  thee = TextGrid_create (my xmin, my xmax, U"closedGlottis", U"");
+		IntervalTier intervalTier = static_cast <IntervalTier> (thy tiers -> at [1]);
 		double previousOpeningTime = my xmin;
 		for (integer ipoint = 1; ipoint <= peaks -> points. size; ipoint ++) {
 			const RealPoint peak = peaks -> points.at [ipoint];
@@ -237,23 +238,23 @@ autoIntervalTier Electroglottogram_getClosedGlottisIntervals (Electroglottogram 
 				closingTime = Vector_getNearestLevelCrossing (me, 1, peakPosition, level, kVectorSearchDirection::LEFT);
 				openingTime = Vector_getNearestLevelCrossing (me, 1, peakPosition, level, kVectorSearchDirection::RIGHT);
 				if (isdefined (closingTime) && isdefined (openingTime) && closingTime != previousOpeningTime) {
-					IntervalTier_insertBoundary (intervalTier.get(), closingTime);
-					IntervalTier_insertBoundary (intervalTier.get(), openingTime);
+					IntervalTier_insertBoundary (intervalTier, closingTime);
+					IntervalTier_insertBoundary (intervalTier, openingTime);
 					const double midPoint = 0.5 * (closingTime + openingTime);
-					const integer intervalNumber = IntervalTier_timeToIndex (intervalTier.get(), midPoint);
-					IntervalTier_setIntervalText (intervalTier.get(), intervalNumber, U"c");
+					const integer intervalNumber = IntervalTier_timeToIndex (intervalTier, midPoint);
+					IntervalTier_setIntervalText (intervalTier, intervalNumber, U"c");
 					previousOpeningTime = openingTime;
 				}
 			}
 		}
-		return intervalTier;
+		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": TextTier not created.");
 	}
 	
 }
 
-autoSound Electroglottogram_firstCentralDifference (Electroglottogram me, bool peak99) {
+autoSound Electroglottogram_firstCentralDifference (Electroglottogram me, double peakAmplitude) {
 	try {	
 		autoSound thee = Sound_create (1, my xmin, my xmax, my nx, my dx, my x1);
 		thy z [1] [1] = 0.0;
@@ -261,8 +262,8 @@ autoSound Electroglottogram_firstCentralDifference (Electroglottogram me, bool p
 			thy z [1] [i] = (my z [1] [i + 1] - my z [1] [i - 1]) / (2.0 * my dx);
 			
 		thy z [1] [my nx] = 0.0;
-		if (peak99)
-			Vector_scale (thee.get(), 0.99);
+		if (peakAmplitude != 0.0)
+			Vector_scale (thee.get(), peakAmplitude);
 		return thee;
 	} catch (MelderError) {
 			Melder_throw (me, U": cannot create the simple derivative of the Electroglottogram.");
@@ -274,7 +275,7 @@ autoSound Electroglottogram_firstCentralDifference (Electroglottogram me, bool p
 	d(x(t)/dt = integral (X(f)*2*pi*i*exp(2*pi*f*t) * df)
 			  = integral ((-2*pi*f*Im(X(f)), 2*pi*f*Re(X(f))) * exp (2*pi*f*t) * df)
 */
-autoSound Electroglottogram_derivative (Electroglottogram me, double lowPassFrequency, double smoothing, bool peak99) {
+autoSound Electroglottogram_derivative (Electroglottogram me, double lowPassFrequency, double smoothing, double peakAmplitude) {
 		try {
 			autoSpectrum thee = Sound_to_Spectrum (me, false);
 			for (integer ifreq = 1; ifreq <= thy nx; ifreq ++) {
@@ -285,8 +286,8 @@ autoSound Electroglottogram_derivative (Electroglottogram me, double lowPassFreq
 			}
 			Spectrum_passHannBand (thee.get(), 0.0, lowPassFrequency, smoothing);
 			autoSound him = Spectrum_to_Sound (thee.get());
-			if (peak99)
-				Vector_scale (him.get(), 0.99);
+			if (peakAmplitude != 0.0)
+				Vector_scale (him.get(), peakAmplitude);
 			return him;
 		} catch (MelderError) {
 			Melder_throw (me, U": cannot create the derivative of the Electroglottogram.");

@@ -1,7 +1,7 @@
 #pragma once
 /* NUM.h
  *
- * Copyright (C) 1992-2021 Paul Boersma
+ * Copyright (C) 1992-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,47 +64,12 @@ inline bool NUMisEmpty (constSTRVEC const& x) noexcept {
 	return x.size == 0;
 }
 
-inline MelderRealRange NUMextrema (constVECVU const& vec) noexcept {
-	if (NUMisEmpty (vec))
-		return { undefined, undefined };
-	double minimum = vec [1], maximum = minimum;
-	for (integer i = 2; i <= vec.size; i ++) {
-		const double value = vec [i];
-		if (value < minimum)
-			minimum = value;
-		if (value > maximum)
-			maximum = value;
-	}
-	return { minimum, maximum };
-}
-inline MelderRealRange NUMextrema (constMATVU const& mat) noexcept {
-	if (NUMisEmpty (mat))
-		return { undefined, undefined };
-	double minimum = mat [1] [1], maximum = minimum;
-	for (integer irow = 1; irow <= mat.nrow; irow ++) {
-		for (integer icol = 1; icol <= mat.ncol; icol ++) {
-			const double value = mat [irow] [icol];
-			if (value < minimum)
-				minimum = value;
-			if (value > maximum)
-				maximum = value;
-		}
-	}
-	return { minimum, maximum };
-}
-inline MelderIntegerRange NUMextrema (constINTVECVU const& vec) noexcept {
-	if (NUMisEmpty (vec))
-		return { INTEGER_MIN, INTEGER_MAX };
-	integer minimum = vec [1], maximum = minimum;
-	for (integer i = 2; i <= vec.size; i ++) {
-		const integer value = vec [i];
-		if (value < minimum)
-			minimum = value;
-		if (value > maximum)
-			maximum = value;
-	}
-	return { minimum, maximum };
-}
+extern MelderRealRange NUMextrema_e (constVECVU const& vec);
+extern MelderRealRange NUMextrema_u (constVECVU const& vec) noexcept;
+extern MelderRealRange NUMextrema_e (constMATVU const& mat);
+extern MelderRealRange NUMextrema_u (constMATVU const& mat) noexcept;
+extern MelderIntegerRange NUMextrema_e (constINTVECVU const& vec);
+extern MelderIntegerRange NUMextrema_u (constINTVECVU const& vec) noexcept;
 
 /*
 	From here on, the functions appear in alphabetical order.
@@ -203,15 +168,40 @@ inline bool NUMequal (constSTRVEC x, constSTRVEC y) noexcept {
 	return true;
 }
 
-inline double NUMextremum (constVECVU const& vec) noexcept {
+inline double NUMextremum_e (constVECVU const& vec) {
+	if (NUMisEmpty (vec))
+		Melder_throw (U"Cannot determine the extremum of an empty vector.");
 	double extremum = 0.0;
-	for (integer i = 1; i <= vec.size; i ++)
-		if (fabs (vec [i]) > extremum)
-			extremum = fabs (vec [i]);
+	for (integer i = 1; i <= vec.size; i ++) {
+		const double value = fabs (vec [i]);
+		if (isundef (value))
+			Melder_throw (U"Cannot determine the extremum of a vector: element ", i, U" is undefined.");
+		if (value > extremum)
+			extremum = value;
+	}
 	return extremum;
 }
-inline double NUMextremum (constMATVU const& mat) {
-	MelderRealRange range = NUMextrema (mat);
+inline double NUMextremum_u (constVECVU const& vec) noexcept {
+	if (NUMisEmpty (vec))
+		return undefined;
+	double extremum = 0.0;
+	for (integer i = 1; i <= vec.size; i ++) {
+		const double value = fabs (vec [i]);
+		if (isundef (value))
+			return undefined;
+		if (value > extremum)
+			extremum = value;
+	}
+	return extremum;
+}
+inline double NUMextremum_e (constMATVU const& mat) {
+	const MelderRealRange range = NUMextrema_e (mat);
+	return std::max (fabs (range.min), fabs (range.max));
+}
+inline double NUMextremum_u (constMATVU const& mat) {
+	const MelderRealRange range = NUMextrema_u (mat);
+	if (isundef (range))
+		return undefined;
 	return std::max (fabs (range.min), fabs (range.max));
 }
 
@@ -245,90 +235,44 @@ inline bool NUMisSymmetric (constMATVU const& x) noexcept {
 	return true;
 }
 
-inline double NUMlength (conststring32 str) {
-	return str ? double (str32len (str)) : 0.0;
+inline double NUMlength (conststring32 str) noexcept {
+	return double (Melder_length (str));
 }
 
-inline double NUMlog2 (double x) {
+inline double NUMlog2 (double x) noexcept {
 	return log (x) * NUMlog2e;
 }
 
-inline double NUMmax (constVECVU const& vec) {
-	if (NUMisEmpty (vec))
-		return undefined;
-	double maximum = vec [1];
-	for (integer i = 2; i <= vec.size; i ++) {
-		const double value = vec [i];
-		if (value > maximum)
-			maximum = value;
-	}
-	return maximum;
-}
-inline integer NUMmax (const constINTVECVU& vec) {
-	if (NUMisEmpty (vec))
-		return INTEGER_MIN;
-	integer maximum = vec [1];
-	for (integer i = 2; i <= vec.size; i ++) {
-		const integer value = vec [i];
-		if (value > maximum)
-			maximum = value;
-	}
-	return maximum;
-}
-inline double NUMmax (constMATVU const& mat) {
-	if (NUMisEmpty (mat))
-		return undefined;
-	double maximum = NUMmax (mat [1]);
-	for (integer irow = 2; irow <= mat.nrow; irow ++) {
-		const double value = NUMmax (mat [irow]);
-		if (value > maximum)
-			maximum = value;
-	}
-	return maximum;
-}
+extern double  NUMmin_e                 (constVECVU    const& vec);            // throw  if empty or undefined element
+extern double  NUMmin_u                 (constVECVU    const& vec) noexcept;   // undef  if empty or undefined element
+extern double  NUMmin_removeUndefined_e (constVECVU    const& vec);            // throw  if no defined elements
+extern double  NUMmin_removeUndefined_u (constVECVU    const& vec) noexcept;   // undef  if no defined elements
+extern integer NUMmin_e                 (constINTVECVU const& vec);            // throw  if empty
+extern integer NUMmin_u                 (constINTVECVU const& vec) noexcept;   // intmax if empty
+extern double  NUMmin_e                 (constMATVU    const& mat);            // throw  if empty or undefined element
+extern double  NUMmin_u                 (constMATVU    const& mat) noexcept;   // undef  if empty or undefined element
+extern double  NUMmin_removeUndefined_e (constMATVU    const& mat);            // throw  if no defined elements
+extern double  NUMmin_removeUndefined_u (constMATVU    const& mat) noexcept;   // undef  if no defined elements
 
-extern double NUMminimumLength (constSTRVEC const& x);
-extern double NUMmaximumLength (constSTRVEC const& x);
+extern double  NUMmax_e                 (constVECVU    const& vec);            // throw  if empty or undefined element
+extern double  NUMmax_u                 (constVECVU    const& vec) noexcept;   // undef  if empty or undefined element
+extern double  NUMmax_removeUndefined_e (constVECVU    const& vec);            // throw  if no defined elements
+extern double  NUMmax_removeUndefined_u (constVECVU    const& vec) noexcept;   // undef  if no defined elements
+extern integer NUMmax_e                 (constINTVECVU const& vec);            // throw  if empty
+extern integer NUMmax_u                 (constINTVECVU const& vec) noexcept;   // intmin if empty
+extern double  NUMmax_e                 (constMATVU    const& mat);            // throw  if empty or undefined element
+extern double  NUMmax_u                 (constMATVU    const& mat) noexcept;   // undef  if empty or undefined element
+extern double  NUMmax_removeUndefined_e (constMATVU    const& mat);            // throw  if no defined elements
+extern double  NUMmax_removeUndefined_u (constMATVU    const& mat) noexcept;   // undef  if no defined elements
 
-extern double NUMmean (constVECVU const& vec);
+extern double NUMminimumLength (constSTRVEC const& x) noexcept;
+extern double NUMmaximumLength (constSTRVEC const& x) noexcept;
+
+extern double NUMmean (constVECVU const& vec) noexcept;
 extern double NUMmean (constMATVU const& mat) noexcept;
 
 extern MelderGaussianStats NUMmeanStdev (constVECVU const& vec) noexcept;
 extern MelderGaussianStats NUMmeanStdev (constMATVU const& mat) noexcept;
-
-inline double NUMmin (constVECVU const& vec) {
-	if (NUMisEmpty (vec))
-		return undefined;
-	double minimum = vec [1];
-	for (integer i = 2; i <= vec.size; i ++) {
-		const double value = vec [i];
-		if (value < minimum)
-			minimum = value;
-	}
-	return minimum;
-}
-inline integer NUMmin (const constINTVECVU& vec) {
-	if (NUMisEmpty (vec))
-		return INTEGER_MAX;
-	integer minimum = vec [1];
-	for (integer i = 2; i <= vec.size; i ++) {
-		const integer value = vec [i];
-		if (value < minimum)
-			minimum = value;
-	}
-	return minimum;
-}
-inline double NUMmin (constMATVU const& mat) {
-	if (NUMisEmpty (mat))
-		return undefined;
-	double minimum = NUMmin (mat [1]);
-	for (integer irow = 2; irow <= mat.nrow; irow ++) {
-		const double value = NUMmin (mat [irow]);
-		if (value < minimum)
-			minimum = value;
-	}
-	return minimum;
-}
 
 double NUMnorm (constVECVU const& x, double power) noexcept;
 double NUMnorm (constMATVU const& x, double power) noexcept;
@@ -359,6 +303,7 @@ extern double NUMsum2 (constVECVU const& vec);
 extern double NUMsum2 (constMATVU const& mat);
 
 extern double NUMsumOfSquaredDifferences (constVECVU const& vec, double mean);
+extern double NUMcorrelation (constVECVU const& vec1, constVECVU const& vec2);
 
 extern double NUMtotalLength (constSTRVEC const& x);
 

@@ -1,6 +1,6 @@
 /* praat_TextGrid_init.cpp
  *
- * Copyright (C) 1992-2022 Paul Boersma
+ * Copyright (C) 1992-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -456,10 +456,10 @@ DO
 // MARK: - PITCH & TEXTTIER
 
 FORM (NEW1_Pitch_TextTier_to_PitchTier, U"Pitch & TextTier to PitchTier", U"Pitch & TextTier: To PitchTier...") {
-	RADIOx (unvoicedStrategy, U"Unvoiced strategy", 3, 0)
-		RADIOBUTTON (U"zero")
-		RADIOBUTTON (U"error")
-		RADIOBUTTON (U"interpolate")
+	CHOICEx (unvoicedStrategy, U"Unvoiced strategy", 3, 0)
+		OPTION (U"zero")
+		OPTION (U"error")
+		OPTION (U"interpolate")
 	OK
 DO
 	CONVERT_ONE_AND_ONE_TO_ONE (Pitch, TextTier)
@@ -633,7 +633,7 @@ DO
 	QUERY_ONE_FOR_STRING (SpellingChecker)
 		if (startingCharacter < 0)
 			Melder_throw (U"Your starting character should be 0 or positive.");
-		if (startingCharacter > (int) str32len (sentence))
+		if (startingCharacter > Melder_length (sentence))
 			Melder_throw (U"Your starting character should not exceed the end of the sentence.");
 		conststring32 result = SpellingChecker_nextNotAllowedWord (me, sentence, & startingCharacter);
 	QUERY_ONE_FOR_STRING_END
@@ -727,7 +727,6 @@ DIRECT (WINDOW_TextGrid_LongSound_viewAndEdit) {
 		iam_LOOP (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, longSound, nullptr, nullptr);
 		Editor_setPublicationCallback (editor.get(), cb_TextGridEditor_publication);
-		//praat_installEditor2 (editor.get(), IOBJECT, ilongSound);   // from August 2022 on, the LongSound is supposed to be copied
 		praat_installEditor (editor.get(), IOBJECT);
 		editor.releaseToUser();
 	}
@@ -772,7 +771,6 @@ DIRECT (WINDOW_TextGrid_LongSound_SpellingChecker_viewAndEdit) {
 	LOOP if (CLASS == classTextGrid) {
 		iam_LOOP (TextGrid);
 		autoTextGridEditor editor = TextGridEditor_create (ID_AND_FULL_NAME, me, longSound, spellingChecker, nullptr);
-		//praat_installEditor3 (editor.get(), IOBJECT, ilongSound, ispellingChecker);
 		praat_installEditor2 (editor.get(), IOBJECT, ispellingChecker);
 		editor.releaseToUser();
 	}

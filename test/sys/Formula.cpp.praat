@@ -207,9 +207,62 @@ assert log10 (10.0) = 1.0
 assert log10 (11.0) > 1.0
 assert log10 (undefined) = undefined
 
+assert sigmoid (0.0) = 0.5
+assert sigmoid (-1000) = 0
+assert arctanh (1000) = undefined
+
+assert invSigmoid (0.5) = 0.0
+assert invSigmoid (-1.0) = undefined   ; not a number
+assert invSigmoid (0.0) = undefined   ; minus infinity
+assert invSigmoid (1.0) = undefined   ; plus infinity
+assert invSigmoid (2.0) = undefined   ; not a number
+
+assert min (5, 6, 1, 7) = 1
+assert min (undefined, 6, 1, 7) = undefined
+assert min (5, undefined, 1, 7) = undefined
+assert min (5, 6, undefined, 7) = undefined
+assert min (5, 6, 1, undefined) = undefined
+assert min (undefined, undefined) = undefined
+assert min (undefined) = undefined
+assert min (5) = 5
+
+assert min ({ 5, 6, 1, 7 }) = 1
+assert min ({ undefined, 6, 1, 7 }) = undefined
+assert min ({ 5, undefined, 1, 7 }) = undefined
+assert min ({ 5, 6, undefined, 7 }) = undefined
+assert min ({ 5, 6, 1, undefined }) = undefined
+assert min ({ undefined, undefined }) = undefined
+assert min ({ undefined }) = undefined
+assert min (zero# (0)) = undefined
+
+assert min_e ({ 5, 6, 1, 7 }) = 1
+asserterror min_e: cannot determine the minimum of a vector: element 1 is undefined.
+pos = min_e ({ undefined, 6, 1, 7 })
+asserterror min_e: cannot determine the minimum of a vector: element 2 is undefined.
+pos = min_e ({ 5, undefined, 1, 7 })
+asserterror min_e: cannot determine the minimum of a vector: element 3 is undefined.
+pos = min_e ({ 5, 6, undefined, 7 })
+asserterror min_e: cannot determine the minimum of a vector: element 4 is undefined.
+pos = min_e ({ 5, 6, 1, undefined })
+asserterror min_e: cannot determine the minimum of a vector: element 1 is undefined.
+pos = min_e ({ undefined, undefined })
+asserterror min_e: cannot determine the minimum of a vector: element 1 is undefined.
+pos = min_e ({ undefined })
+asserterror min_e: cannot determine the minimum of an empty vector.
+pos = min_e (zero# (0))
+
+assert min_removeUndefined ({ 5, 6, 1, 7 }) = 1
+assert min_removeUndefined ({ undefined, 6, 1, 7 }) = 1
+assert min_removeUndefined ({ 5, undefined, 1, 7 }) = 1
+assert min_removeUndefined ({ 5, 6, undefined, 7 }) = 5
+assert min_removeUndefined ({ 5, 6, 1, undefined }) = 1
+assert min_removeUndefined ({ undefined, undefined }) = undefined
+assert min_removeUndefined ({ undefined }) = undefined
+assert min_removeUndefined (zero# (0)) = undefined
+
 #
 # A published test: the 10,000th element of the default 64-bit Mersenne Twister random sequence
-# should be 9981545732273789042.
+# should be 9'981'545'732'273'789'042.
 #
 random_initializeWithSeedUnsafelyButPredictably (5489)
 for i to 10000
@@ -220,6 +273,11 @@ a *= 2 ^ 64
 roundingError = a - 9981545732273789042
 writeInfoLine: fixed$ (a, 0), " ", roundingError
 assert roundingError <= 2048   ; actually usually zero
+
+a# = zero# (0)   ; edge case
+a## = { a#, a# }
+assert numberOfRows (a##) = 2
+assert numberOfColumns (a##) = 0
 
 assert transpose## ({ { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } }) = { { 1, 4, 7 }, { 2, 5, 8 }, { 3, 6, 9 } }
 

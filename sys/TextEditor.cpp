@@ -1,6 +1,6 @@
 /* TextEditor.cpp
  *
- * Copyright (C) 1997-2022 Paul Boersma, 2010 Franz Brausse
+ * Copyright (C) 1997-2023 Paul Boersma, 2010 Franz Brausse
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "TextEditor.h"
+#include "ScriptEditor.h"
 #include "machine.h"
 #include "../kar/longchar.h"
 #include "EditorM.h"
@@ -44,24 +44,40 @@ void structTextEditor :: v9_destroy () noexcept {
 
 void structTextEditor :: v_nameChanged () {
 	if (v_fileBased ()) {
-		bool dirtinessAlreadyShown = GuiWindow_setDirty (our windowForm, our dirty);
+		/*
+			We totally ignore the name that our boss wants to give us.
+			Instead, we compose the window title from three ingredients:
+
+			(1) whether we are already associated with a file or not;
+			(2) if so, the full file path;
+			(3) whether our text has been modified (i.e. whether we are "dirty").
+
+			(last checked 2023-02-25)
+		*/
+		const bool dirtinessAlreadyShown = GuiWindow_setDirty (our windowForm, our dirty);
 		static MelderString windowTitle;
-		if (our name [0] == U'\0') {
+		if (MelderFile_isNull (& our file)) {
 			MelderString_copy (& windowTitle, U"(untitled");
-			if (dirty && ! dirtinessAlreadyShown)
+			if (our dirty && ! dirtinessAlreadyShown)
 				MelderString_append (& windowTitle, U", modified");
 			MelderString_append (& windowTitle, U")");
 		} else {
 			MelderString_copy (& windowTitle, U"File ", MelderFile_messageName (& our file));
-			if (dirty && ! dirtinessAlreadyShown)
+			if (our dirty && ! dirtinessAlreadyShown)
 				MelderString_append (& windowTitle, U" (modified)");
 		}
 		GuiShell_setTitle (our windowForm, windowTitle.string);
-		//MelderString_copy (& windowTitle, our dirty && ! dirtinessAlreadyShown ? U"*" : U"", our name [0] == U'\0' ? U"(untitled)" : MelderFile_name (& our file));
 	} else {
+		/*
+			We will set our window title to the name that our boss wants.
+			This occurs e.g. in the Info window.
+			(last checked 2023-02-25)
+		*/
 		TextEditor_Parent :: v_nameChanged ();
 	}
 }
+
+#pragma mark - File menu
 
 static void openDocument (TextEditor me, MelderFile file) {
 	for (integer ieditor = 1; ieditor <= theReferencesToAllOpenTextEditors.size; ieditor ++) {
@@ -85,28 +101,29 @@ static void openDocument (TextEditor me, MelderFile file) {
 	autostring32 text = MelderFile_readText (file);
 	GuiText_setString (my textWidget, text.get());
 	/*
-	 * GuiText_setString has invoked the changeCallback,
-	 * which has set `my dirty` to `true`. Fix this.
-	 */
+		GuiText_setString has invoked the changeCallback,
+		which has set `my dirty` to `true`. Fix this.
+	*/
 	my dirty = false;
-	MelderFile_copy (file, & my file);
-	Thing_setName (me, Melder_fileToPath (file));
+	MelderFile_copy (file, & my file);   // not until the file has been safely read
+	Thing_setName (me, nullptr);
 }
 
 static void newDocument (TextEditor me) {
 	GuiText_setString (my textWidget, U"");   // implicitly sets my dirty to `true`
 	my dirty = false;
+	MelderFile_setToNull (& my file);
 	if (my v_fileBased ())
-		Thing_setName (me, U"");
+		Thing_setName (me, nullptr);
 }
 
 static void saveDocument (TextEditor me, MelderFile file) {
 	autostring32 text = GuiText_getString (my textWidget);
 	MelderFile_writeText (file, text.get(), Melder_getOutputEncoding ());
 	my dirty = false;
-	MelderFile_copy (file, & my file);
+	MelderFile_copy (file, & my file);   // not until the file has been safely written
 	if (my v_fileBased ())
-		Thing_setName (me, Melder_fileToPath (file));
+		Thing_setName (me, nullptr);
 }
 
 static void closeDocument (TextEditor me) {
@@ -124,7 +141,7 @@ static void cb_open_ok (UiForm sendingForm, integer /* narg */, Stackel /* args 
 static void cb_showOpen (EditorCommand cmd) {
 	TextEditor me = (TextEditor) cmd -> d_editor;
 	if (! my openDialog)
-		my openDialog = UiInfile_create (my windowForm, U"Open", cb_open_ok, me, nullptr, nullptr, false);
+		my openDialog = UiInfile_create (my windowForm, nullptr, U"Open", cb_open_ok, me, nullptr, nullptr, false);
 	UiInfile_do (my openDialog.get());
 }
 
@@ -136,18 +153,28 @@ static void cb_saveAs_ok (UiForm sendingForm, integer /* narg */, Stackel /* arg
 	saveDocument (me, file);
 }
 
-static void menu_cb_saveAs (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_saveAs (TextEditor me, EDITOR_ARGS) {
 	if (! my saveDialog)
-		my saveDialog = UiOutfile_create (my windowForm, U"Save", cb_saveAs_ok, me, nullptr, nullptr);
+		my saveDialog = UiOutfile_create (my windowForm, nullptr, U"Save", cb_saveAs_ok, me, nullptr, nullptr);
 	char32 defaultName [300];
-	Melder_sprint (defaultName,300, ! my v_fileBased () ? U"info.txt" : my name [0] ? MelderFile_name (& my file) : U"");
-	UiOutfile_do (my saveDialog.get(), defaultName, nullptr);
+	Melder_sprint (defaultName,300,
+		my v_fileBased () ?
+			MelderFile_isNull (& my file) ?
+				Melder_cat (U"untitled", my v_extension ())
+			:
+				MelderFile_name (& my file)
+		:
+			U"info.txt"
+	);
+	UiOutfile_do (my saveDialog.get(), defaultName);
 }
 
 static void gui_button_cb_saveAndOpen (EditorCommand cmd, GuiButtonEvent /* event */) {
 	TextEditor me = (TextEditor) cmd -> d_editor;
 	GuiThing_hide (my dirtyOpenDialog);
-	if (my name [0]) {
+	if (MelderFile_isNull (& my file)) {
+		menu_cb_saveAs (me, cmd, nullptr, 0, nullptr, nullptr, nullptr);
+	} else {
 		try {
 			saveDocument (me, & my file);
 		} catch (MelderError) {
@@ -155,8 +182,6 @@ static void gui_button_cb_saveAndOpen (EditorCommand cmd, GuiButtonEvent /* even
 			return;
 		}
 		cb_showOpen (cmd);
-	} else {
-		menu_cb_saveAs (me, cmd, nullptr, 0, nullptr, nullptr, nullptr);
 	}
 }
 
@@ -171,7 +196,7 @@ static void gui_button_cb_discardAndOpen (EditorCommand cmd, GuiButtonEvent /* e
 	cb_showOpen (cmd);
 }
 
-static void menu_cb_open (TextEditor me, EDITOR_ARGS_CMD) {
+static void menu_cb_open (TextEditor me, EDITOR_ARGS) {
 	if (my dirty) {
 		if (! my dirtyOpenDialog) {
 			int buttonWidth = 120, buttonSpacing = 20;
@@ -206,7 +231,9 @@ static void menu_cb_open (TextEditor me, EDITOR_ARGS_CMD) {
 static void gui_button_cb_saveAndNew (EditorCommand cmd, GuiButtonEvent /* event */) {
 	TextEditor me = (TextEditor) cmd -> d_editor;
 	GuiThing_hide (my dirtyNewDialog);
-	if (my name [0]) {
+	if (MelderFile_isNull (& my file)) {
+		menu_cb_saveAs (me, cmd, nullptr, 0, nullptr, nullptr, nullptr);
+	} else {
 		try {
 			saveDocument (me, & my file);
 		} catch (MelderError) {
@@ -214,8 +241,6 @@ static void gui_button_cb_saveAndNew (EditorCommand cmd, GuiButtonEvent /* event
 			return;
 		}
 		newDocument (me);
-	} else {
-		menu_cb_saveAs (me, cmd, nullptr, 0, nullptr, nullptr, nullptr);
 	}
 }
 
@@ -230,7 +255,7 @@ static void gui_button_cb_discardAndNew (EditorCommand cmd, GuiButtonEvent /* ev
 	newDocument (me);
 }
 
-static void menu_cb_new (TextEditor me, EDITOR_ARGS_CMD) {
+static void menu_cb_new (TextEditor me, EDITOR_ARGS) {
 	if (my v_fileBased () && my dirty) {
 		if (! my dirtyNewDialog) {
 			int buttonWidth = 120, buttonSpacing = 20;
@@ -272,11 +297,10 @@ static void gui_button_cb_discardAndReopen (EditorCommand cmd, GuiButtonEvent /*
 	openDocument (me, & my file);
 }
 
-static void menu_cb_reopen (TextEditor me, EDITOR_ARGS_CMD) {
+static void menu_cb_reopen (TextEditor me, EDITOR_ARGS) {
 	Melder_assert (my v_fileBased());
-	if (my name [0] == U'\0') {
+	if (MelderFile_isNull (& my file))
 		Melder_throw (U"Cannot reopen from disk, because the text has never been saved yet.");
-	}
 	if (my dirty) {
 		if (! my dirtyReopenDialog) {
 			int buttonWidth = 250, buttonSpacing = 20;
@@ -308,26 +332,28 @@ static void menu_cb_reopen (TextEditor me, EDITOR_ARGS_CMD) {
 	}
 }
 
-static void menu_cb_clear (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_clear (TextEditor me, EDITOR_ARGS) {
 	my v_clear ();
 }
 
-static void menu_cb_save (TextEditor me, EDITOR_ARGS_CMD) {
-	if (my name [0]) {
+static void menu_cb_save (TextEditor me, EDITOR_ARGS) {
+	if (MelderFile_isNull (& my file)) {
+		menu_cb_saveAs (me, cmd, nullptr, 0, nullptr, nullptr, nullptr);
+	} else {
 		try {
 			saveDocument (me, & my file);
 		} catch (MelderError) {
 			Melder_flushError ();
 			return;
 		}
-	} else {
-		menu_cb_saveAs (me, cmd, nullptr, 0, nullptr, nullptr, nullptr);
 	}
 }
 
 static void gui_button_cb_saveAndClose (TextEditor me, GuiButtonEvent /* event */) {
 	GuiThing_hide (my dirtyCloseDialog);
-	if (my name [0]) {
+	if (MelderFile_isNull (& my file)) {
+		menu_cb_saveAs (me, Editor_getMenuCommand (me, U"File", U"Save as..."), nullptr, 0, nullptr, nullptr, nullptr);
+	} else {
 		try {
 			saveDocument (me, & my file);
 		} catch (MelderError) {
@@ -335,8 +361,6 @@ static void gui_button_cb_saveAndClose (TextEditor me, GuiButtonEvent /* event *
 			return;
 		}
 		closeDocument (me);
-	} else {
-		menu_cb_saveAs (me, Editor_getMenuCommand (me, U"File", U"Save as..."), nullptr, 0, nullptr, nullptr, nullptr);
 	}
 }
 
@@ -386,34 +410,36 @@ void structTextEditor :: v_goAway () {
 	}
 }
 
-static void menu_cb_undo (TextEditor me, EDITOR_ARGS_DIRECT) {
+#pragma mark - Edit menu
+
+static void menu_cb_undo (TextEditor me, EDITOR_ARGS) {
 	GuiText_undo (my textWidget);
 }
 
-static void menu_cb_redo (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_redo (TextEditor me, EDITOR_ARGS) {
 	GuiText_redo (my textWidget);
 }
 
-static void menu_cb_cut (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_cut (TextEditor me, EDITOR_ARGS) {
 	GuiText_cut (my textWidget);  // use ((XmAnyCallbackStruct *) call) -> event -> xbutton. time
 }
 
-static void menu_cb_copy (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_copy (TextEditor me, EDITOR_ARGS) {
 	GuiText_copy (my textWidget);
 }
 
-static void menu_cb_paste (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_paste (TextEditor me, EDITOR_ARGS) {
 	GuiText_paste (my textWidget);
 }
 
-static void menu_cb_erase (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_erase (TextEditor me, EDITOR_ARGS) {
 	GuiText_remove (my textWidget);
 }
 
 static bool getSelectedLines (TextEditor me, integer *firstLine, integer *lastLine) {
 	integer left, right;
 	autostring32 text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
-	integer textLength = str32len (text.get());
+	const integer textLength = Melder_length (text.get());
 	Melder_assert (left >= 0);
 	Melder_assert (left <= right);
 	if (right > textLength)
@@ -430,22 +456,145 @@ static bool getSelectedLines (TextEditor me, integer *firstLine, integer *lastLi
 	if (left == right)
 		return false;
 	*lastLine = *firstLine;
-	for (; i < right; i ++)
+	for (; i < right - 1; i ++)   // a newline at the end of a line is ignored (it belongs to the previous line)
 		if (text [i] == U'\n')
 			(*lastLine) ++;
 	return true;
 }
 
+static integer getPositionToInsertTabBeforeSelection (conststring32 text, const integer startingPosition) {
+	if (startingPosition == 0)
+		return 0;   // we will insert a tab at the start of the text
+	for (integer position = startingPosition - 1; position >= 0; position --)
+		if (text [position] == U'\n')
+			return position + 1;   // we will insert a tab after the last newline
+	return 0;   // we were on line 1 and will therefore insert a tab at the start of the text
+}
+static void menu_cb_shiftRight (TextEditor me, EDITOR_ARGS) {
+	/*
+		Get the old text from the GuiText.
+	*/
+	integer leftPosition, rightPosition;   // based between characters
+	autostring32 oldText = GuiText_getStringAndSelectionPosition (my textWidget, & leftPosition, & rightPosition);
+
+	/*
+		Convert the old text to the new text.
+	*/
+	autoMelderString newText;
+	const integer positionToInsertTabBeforeSelection = getPositionToInsertTabBeforeSelection (oldText.get(), leftPosition);
+	MelderString_ncopy (& newText, oldText.get(), positionToInsertTabBeforeSelection);
+	MelderString_appendCharacter (& newText, U'\t');
+	MelderString_nappend (& newText, & oldText [positionToInsertTabBeforeSelection],
+			leftPosition - positionToInsertTabBeforeSelection);
+	for (integer position = leftPosition; position < rightPosition; position ++) {
+		MelderString_appendCharacter (& newText, oldText [position]);
+		if (position < rightPosition - 1 && oldText [position] == U'\n')   // a newline at the end of the selection is ignored (it belongs to the previous line)
+			MelderString_appendCharacter (& newText, U'\t');
+	}
+	const integer newEndOfSelection = newText.length;
+	MelderString_append (& newText, & oldText [rightPosition]);
+
+	/*
+		Put the new text into the GuiText.
+	*/
+	GuiText_setString (my textWidget, newText.string);
+	GuiText_setSelection (my textWidget, leftPosition + 1, newEndOfSelection);
+	GuiText_scrollToSelection (my textWidget);
+	#ifdef _WIN32
+		GuiThing_show (my windowForm);
+	#endif
+}
+
+static integer getPositionToDeleteTabBeforeSelection (conststring32 text, const integer startingPosition) {
+	if (startingPosition == 0)
+		if (text [startingPosition] == U'\t')
+			return 0;   // we can delete a tab from the start of the text
+		else
+			return -1;   // we cannot delete a tab before the start of the text
+	for (integer position = startingPosition - 1; position >= 0; position --)
+		if (text [position] == U'\n')
+			if (text [position + 1] == U'\t')
+				return position + 1;   // we will delete a tab after the last newline
+			else
+				return -1;   // we will not look past the last newline
+	return text [0] == U'\t' ? 0 : -1;   // we were on line 1 and may therefore delete a tab at the start of the text
+}
+static void menu_cb_shiftLeft (TextEditor me, EDITOR_ARGS) {
+	/*
+		Get the old text from the GuiText.
+	*/
+	integer leftPosition, rightPosition;   // based between characters
+	autostring32 oldText = GuiText_getStringAndSelectionPosition (my textWidget, & leftPosition, & rightPosition);
+
+	/*
+		Convert the old text to the new text.
+		First the part before the selection.
+	*/
+	autoMelderString newText;
+	const integer positionToDeleteTabBeforeSelection = getPositionToDeleteTabBeforeSelection (oldText.get(), leftPosition);
+	const bool haveToDeleteTabBeforeSelection = ( positionToDeleteTabBeforeSelection >= 0 );
+	if (positionToDeleteTabBeforeSelection == leftPosition) {
+		MelderString_ncopy (& newText, oldText.get(), positionToDeleteTabBeforeSelection);
+		// skip the tab
+		constexpr integer numberOfDeletedTabsInThisPart = 0;
+		MelderString_nappend (& newText, & oldText [positionToDeleteTabBeforeSelection + numberOfDeletedTabsInThisPart],
+				leftPosition - (positionToDeleteTabBeforeSelection + numberOfDeletedTabsInThisPart));
+	} else if (haveToDeleteTabBeforeSelection) {
+		MelderString_ncopy (& newText, oldText.get(), positionToDeleteTabBeforeSelection);
+		// skip the tab
+		constexpr integer numberOfDeletedTabsInThisPart = 1;
+		MelderString_nappend (& newText, & oldText [positionToDeleteTabBeforeSelection + numberOfDeletedTabsInThisPart],
+				leftPosition - (positionToDeleteTabBeforeSelection + numberOfDeletedTabsInThisPart));
+	} else {
+		MelderString_ncopy (& newText, oldText.get(), leftPosition);
+	}
+	/*
+		Then the part inside the selection.
+	*/
+	if (positionToDeleteTabBeforeSelection == leftPosition) {
+		constexpr integer numberOfDeletedTabsInThisPart = 1;
+		for (integer position = leftPosition + numberOfDeletedTabsInThisPart; position < rightPosition; position ++)
+			if (oldText [position] != U'\t' || position > leftPosition && oldText [position - 1] != U'\n')
+				MelderString_appendCharacter (& newText, oldText [position]);
+	} else {
+		constexpr integer numberOfDeletedTabsInThisPart = 0;
+		for (integer position = leftPosition + numberOfDeletedTabsInThisPart; position < rightPosition; position ++)
+			if (oldText [position] != U'\t' || position > leftPosition && oldText [position - 1] != U'\n')
+				MelderString_appendCharacter (& newText, oldText [position]);
+	}
+	/*
+		And finally the part after the selection.
+	*/
+	const integer newEndOfSelection = newText.length;
+	if (positionToDeleteTabBeforeSelection == rightPosition)
+		MelderString_append (& newText, & oldText [rightPosition + 1]);
+	else
+		MelderString_append (& newText, & oldText [rightPosition]);
+
+	/*
+		Put the new text into the GuiText.
+	*/
+	GuiText_setString (my textWidget, newText.string);
+	GuiText_setSelection (my textWidget, leftPosition -
+			( haveToDeleteTabBeforeSelection && positionToDeleteTabBeforeSelection != leftPosition ? 1 : 0 ), newEndOfSelection);
+	GuiText_scrollToSelection (my textWidget);
+	#ifdef _WIN32
+		GuiThing_show (my windowForm);
+	#endif
+}
+
+#pragma mark - Search menu
+
 static autostring32 theFindString, theReplaceString;
 static void do_find (TextEditor me) {
-	if (! theFindString)
-		return;   // e.g. when the user does "Find again" before having done any "Find"
+	if (! theFindString)   // e.g. when the user does "Find again" before having done any "Find"
+		return;
 	integer left, right;
 	autostring32 text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
 	char32 *location = str32str (& text [right], theFindString.get());
 	if (location) {
-		integer index = location - text.get();
-		GuiText_setSelection (my textWidget, index, index + str32len (theFindString.get()));
+		const integer index = location - text.get();
+		GuiText_setSelection (my textWidget, index, index + Melder_length (theFindString.get()));
 		GuiText_scrollToSelection (my textWidget);
 		#ifdef _WIN32
 			GuiThing_show (my windowForm);
@@ -456,8 +605,8 @@ static void do_find (TextEditor me) {
 		*/
 		location = str32str (text.get(), theFindString.get());
 		if (location) {
-			integer index = location - text.get();
-			GuiText_setSelection (my textWidget, index, index + str32len (theFindString.get()));
+			const integer index = location - text.get();
+			GuiText_setSelection (my textWidget, index, index + Melder_length (theFindString.get()));
 			GuiText_scrollToSelection (my textWidget);
 			#ifdef _WIN32
 				GuiThing_show (my windowForm);
@@ -469,7 +618,8 @@ static void do_find (TextEditor me) {
 }
 
 static void do_replace (TextEditor me) {
-	if (! theReplaceString) return;   // e.g. when the user does "Replace again" before having done any "Replace"
+	if (! theReplaceString)   // e.g. when the user does "Replace again" before having done any "Replace"
+		return;
 	autostring32 selection = GuiText_getSelection (my textWidget);
 	if (! Melder_equ (selection.get(), theFindString.get())) {
 		do_find (me);
@@ -478,14 +628,14 @@ static void do_replace (TextEditor me) {
 	integer left, right;
 	autostring32 text = GuiText_getStringAndSelectionPosition (my textWidget, & left, & right);
 	GuiText_replace (my textWidget, left, right, theReplaceString.get());
-	GuiText_setSelection (my textWidget, left, left + str32len (theReplaceString.get()));
+	GuiText_setSelection (my textWidget, left, left + Melder_length (theReplaceString.get()));
 	GuiText_scrollToSelection (my textWidget);
 	#ifdef _WIN32
 		GuiThing_show (my windowForm);
 	#endif
 }
 
-static void menu_cb_find (TextEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_find (TextEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Find", nullptr)
 		TEXTFIELD (findString, U"Find", U"", 5)
 	EDITOR_OK
@@ -506,15 +656,15 @@ static void menu_cb_find (TextEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_findAgain (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_findAgain (TextEditor me, EDITOR_ARGS) {
 	do_find (me);
 }
 
-static void menu_cb_useSelectionForFind (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_useSelectionForFind (TextEditor me, EDITOR_ARGS) {
 	theFindString = GuiText_getSelection (my textWidget);
 }
 
-static void menu_cb_replace (TextEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_replace (TextEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Find", nullptr)
 		LABEL (U"This is a \"slow\" find-and-replace method;")
 		LABEL (U"if the selected text is identical to the Find string,")
@@ -524,8 +674,10 @@ static void menu_cb_replace (TextEditor me, EDITOR_ARGS_FORM) {
 		TEXTFIELD (findString, U"Find", U"", 5)
 		TEXTFIELD (replaceString, U"Replace with", U"", 5)
 	EDITOR_OK
-		if (theFindString) SET_STRING (findString, theFindString.get());
-		if (theReplaceString) SET_STRING (replaceString, theReplaceString.get());
+		if (theFindString)
+			SET_STRING (findString, theFindString.get());
+		if (theReplaceString)
+			SET_STRING (replaceString, theReplaceString.get());
 	EDITOR_DO
 		theFindString = Melder_dup (findString);
 		theReplaceString = Melder_dup (replaceString);
@@ -533,11 +685,11 @@ static void menu_cb_replace (TextEditor me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_replaceAgain (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_replaceAgain (TextEditor me, EDITOR_ARGS) {
 	do_replace (me);
 }
 
-static void menu_cb_whereAmI (TextEditor me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_whereAmI (TextEditor me, EDITOR_ARGS) {
 	integer numberOfLinesLeft, numberOfLinesRight;
 	if (! getSelectedLines (me, & numberOfLinesLeft, & numberOfLinesRight)) {
 		Melder_information (U"The cursor is on line ", numberOfLinesLeft, U".");
@@ -548,7 +700,7 @@ static void menu_cb_whereAmI (TextEditor me, EDITOR_ARGS_DIRECT) {
 	}
 }
 
-static void menu_cb_goToLine (TextEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_goToLine (TextEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Go to line", nullptr)
 		NATURAL (lineToGo, U"Line", U"1")
 	EDITOR_OK
@@ -573,17 +725,18 @@ static void menu_cb_goToLine (TextEditor me, EDITOR_ARGS_FORM) {
 				}
 			}
 		}
-		if (left == str32len (text.get())) {
+		if (left == Melder_length (text.get()))
 			right = left;
-		} else if (text [right] == U'\n') {
+		else if (text [right] == U'\n')
 			right ++;
-		}
 		GuiText_setSelection (my textWidget, left, right);
 		GuiText_scrollToSelection (my textWidget);
 	EDITOR_END
 }
 
-static void menu_cb_convertToCString (TextEditor me, EDITOR_ARGS_DIRECT) {
+#pragma mark - Convert menu
+
+static void menu_cb_convertToCString (TextEditor me, EDITOR_ARGS) {
 	autostring32 text = GuiText_getString (my textWidget);
 	char32 buffer [2] = U" ";
 	const conststring32 hex [16] = { U"0", U"1", U"2", U"3", U"4", U"5", U"6", U"7", U"8", U"9", U"A", U"B", U"C", U"D", U"E", U"F" };
@@ -600,12 +753,15 @@ static void menu_cb_convertToCString (TextEditor me, EDITOR_ARGS_DIRECT) {
 		} else if (kar == U'\\') {
 			MelderInfo_write (U"\\\\");
 		} else if (kar > 127) {
-			if (kar <= 0x00FFFF) {
+			if (kar <= 0x00FFFF)
 				MelderInfo_write (U"\\u", hex [kar >> 12], hex [(kar >> 8) & 0x00'000F], hex [(kar >> 4) & 0x00'000F], hex [kar & 0x00'000F]);
-			} else {
-				MelderInfo_write (U"\\U", hex [kar >> 28], hex [(kar >> 24) & 0x00'000F], hex [(kar >> 20) & 0x00'000F], hex [(kar >> 16) & 0x00'000F],
-					hex [(kar >> 12) & 0x00'000F], hex [(kar >> 8) & 0x00'000F], hex [(kar >> 4) & 0x00'000F], hex [kar & 0x00'000F]);
-			}
+			else
+				MelderInfo_write (U"\\U",
+					hex [kar >> 28], hex [(kar >> 24) & 0x00'000F],
+					hex [(kar >> 20) & 0x00'000F], hex [(kar >> 16) & 0x00'000F],
+					hex [(kar >> 12) & 0x00'000F], hex [(kar >> 8) & 0x00'000F],
+					hex [(kar >> 4) & 0x00'000F], hex [kar & 0x00'000F]
+				);
 		} else {
 			buffer [0] = *p;
 			MelderInfo_write (& buffer [0]);
@@ -615,14 +771,19 @@ static void menu_cb_convertToCString (TextEditor me, EDITOR_ARGS_DIRECT) {
 	MelderInfo_close ();
 }
 
-/***** 'Font' menu *****/
+#pragma mark - Font menu
 
 static void updateSizeMenu (TextEditor me) {
-	if (my fontSizeButton_10) GuiMenuItem_check (my fontSizeButton_10, my instancePref_fontSize() == 10.0);
-	if (my fontSizeButton_12) GuiMenuItem_check (my fontSizeButton_12, my instancePref_fontSize() == 12.0);
-	if (my fontSizeButton_14) GuiMenuItem_check (my fontSizeButton_14, my instancePref_fontSize() == 14.0);
-	if (my fontSizeButton_18) GuiMenuItem_check (my fontSizeButton_18, my instancePref_fontSize() == 18.0);
-	if (my fontSizeButton_24) GuiMenuItem_check (my fontSizeButton_24, my instancePref_fontSize() == 24.0);
+	if (my fontSizeButton_10)
+		GuiMenuItem_check (my fontSizeButton_10, my instancePref_fontSize() == 10.0);
+	if (my fontSizeButton_12)
+		GuiMenuItem_check (my fontSizeButton_12, my instancePref_fontSize() == 12.0);
+	if (my fontSizeButton_14)
+		GuiMenuItem_check (my fontSizeButton_14, my instancePref_fontSize() == 14.0);
+	if (my fontSizeButton_18)
+		GuiMenuItem_check (my fontSizeButton_18, my instancePref_fontSize() == 18.0);
+	if (my fontSizeButton_24)
+		GuiMenuItem_check (my fontSizeButton_24, my instancePref_fontSize() == 24.0);
 }
 static void setFontSize (TextEditor me, double fontSize) {
 	GuiText_setFontSize (my textWidget, fontSize);
@@ -630,12 +791,12 @@ static void setFontSize (TextEditor me, double fontSize) {
 	updateSizeMenu (me);
 }
 
-static void menu_cb_10 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 10.0); }
-static void menu_cb_12 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 12.0); }
-static void menu_cb_14 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 14.0); }
-static void menu_cb_18 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 18.0); }
-static void menu_cb_24 (TextEditor me, EDITOR_ARGS_DIRECT) { setFontSize (me, 24.0); }
-static void menu_cb_fontSize (TextEditor me, EDITOR_ARGS_FORM) {
+static void menu_cb_10 (TextEditor me, EDITOR_ARGS) { setFontSize (me, 10.0); }
+static void menu_cb_12 (TextEditor me, EDITOR_ARGS) { setFontSize (me, 12.0); }
+static void menu_cb_14 (TextEditor me, EDITOR_ARGS) { setFontSize (me, 14.0); }
+static void menu_cb_18 (TextEditor me, EDITOR_ARGS) { setFontSize (me, 18.0); }
+static void menu_cb_24 (TextEditor me, EDITOR_ARGS) { setFontSize (me, 24.0); }
+static void menu_cb_fontSize (TextEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Text window: Font size", nullptr)
 		POSITIVE (fontSize, U"Font size (points)", U"12")
 	EDITOR_OK
@@ -682,6 +843,9 @@ void structTextEditor :: v_createMenus () {
 	Editor_addCommand (this, U"Edit", U"Copy", 'C', menu_cb_copy);
 	Editor_addCommand (this, U"Edit", U"Paste", 'V', menu_cb_paste);
 	Editor_addCommand (this, U"Edit", U"Erase", 0, menu_cb_erase);
+	Editor_addCommand (this, U"Edit", U"-- layout --", 0, nullptr);
+	Editor_addCommand (this, U"Edit", U"Shift right", ']', menu_cb_shiftRight);
+	Editor_addCommand (this, U"Edit", U"Shift left", '[', menu_cb_shiftLeft);
 
 	Editor_addMenu (this, U"Search", 0);
 	Editor_addCommand (this, U"Search", U"Find...", 'F', menu_cb_find);
@@ -706,12 +870,41 @@ void structTextEditor :: v_createMenus () {
 }
 
 void TextEditor_init (TextEditor me, conststring32 initialText) {
-	Editor_init (me, 0, 0, 600, 400, U"", nullptr);
+	/*
+		The width of a text window should be at least one tab plus 84 single-width characters,
+		if the font size is 12.
+	*/
+	constexpr double characterWidth =
+		#if defined (macintosh)
+			0.625 * 12;   // TODO: make a bit bigger
+		#elif defined (_WIN32)
+			0.689 * 12;
+		#else
+			0.584 * 12;   // TODO: make much bigger (e.g. as size 14 is now, as in what Terminal calls size 12)
+		#endif
+	constexpr double tabWidth =
+		#if defined (_WIN32)
+			8.0 * characterWidth;
+		#elif defined (macintosh)
+			4.0 * characterWidth;
+		#else
+			4.0 * characterWidth;
+		#endif
+	constexpr double numberOfFittingCharacters = 84.0;
+	constexpr double overlapWithNextCharacter =
+		#ifdef macintosh
+			0.5 * characterWidth - 1;
+		#else
+			0.5 * characterWidth;
+		#endif
+	constexpr int width = int (tabWidth + numberOfFittingCharacters * characterWidth + overlapWithNextCharacter);
+	Editor_init (me, 0, 0, width, 400, U"", nullptr);
 	setFontSize (me, my instancePref_fontSize());
 	if (initialText) {
 		GuiText_setString (my textWidget, initialText);
 		my dirty = false;   // was set to true in valueChanged callback
-		Thing_setName (me, U"");
+		if (my v_fileBased ())
+			Thing_setName (me, nullptr);
 	}
 	theReferencesToAllOpenTextEditors. addItem_ref (me);
 }
@@ -725,6 +918,8 @@ autoTextEditor TextEditor_create (conststring32 initialText) {
 		Melder_throw (U"Text window not created.");
 	}
 }
+
+#pragma mark - Export
 
 void TextEditor_showOpen (TextEditor me) {
 	cb_showOpen (Editor_getMenuCommand (me, U"File", U"Open..."));

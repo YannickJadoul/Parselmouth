@@ -2,7 +2,7 @@
 #define _Editor_h_
 /* Editor.h
  *
- * Copyright (C) 1992-2020,2022 Paul Boersma
+ * Copyright (C) 1992-2020,2022,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "Graphics.h"
 
 Thing_declare (Editor);
+Thing_declare (ScriptEditor);
 
 Thing_define (EditorMenu, Thing) {
 	Editor d_editor;

@@ -2,7 +2,7 @@
 #define _oo_h_
 /* oo.h
  *
- * Copyright (C) 1994-2013,2015-2020,2022 Paul Boersma
+ * Copyright (C) 1994-2013,2015-2020,2022,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,8 +80,10 @@
 #define oo_BYTEVEC(x,size) oo_ANYVEC (byte, u8, x, size)
 
 #define oo_MAT(x,nrow,ncol)  oo_ANYMAT (double, r64, x, nrow, ncol)
-#define oo_INTMAT(x,nrow,ncol)  oo_ANYMAT (integer, integer32BE, x, nrow, ncol)
 #define oo_obsoleteMAT32(x,nrow,ncol)  oo_ANYMAT (double, r32, x, nrow, ncol)
+#define oo_INTMAT(x,nrow,ncol)  oo_ANYMAT (integer, integer32BE, x, nrow, ncol)
+#define oo_BOOLMAT(x,nrow,ncol)  oo_ANYMAT (bool, eb, x, nrow, ncol)
+#define oo_COMPMAT(x,nrow,ncol)  oo_ANYMAT (dcomplex, c128, x, nrow, ncol)
 #define oo_BYTEMAT(x,nrow,ncol)  oo_ANYMAT (byte, u8, x, nrow, ncol)
 
 #define oo_TEN3(x,ndi1,ndim2,ndim3)  oo_ANYTEN3 (double, r64, x, ndim1, ndim2, ndim3)
@@ -213,7 +215,7 @@
 	For fields that are not destroyed, copied, or compared, either (i.e., only declarations),
 		use:  #if oo_DECLARING
 	For fields that do not take part in I/O (e.g. redundant or temporary fields),
-		use:  #if ! oo_READING && ! oo_WRITING
+		use:  #if ! oo_READING && ! oo_WRITING && ! oo_COMPARING
 	For fields that should not be read (e.g., when expanding a database file),
 		use:  #if ! oo_READING
 	For fields that should not be written (e.g., when shrinking a database file),

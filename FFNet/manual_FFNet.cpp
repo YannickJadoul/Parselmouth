@@ -44,7 +44,7 @@ NORMAL (U"A @@Discriminant|discriminant classifier@ is also a learning machine. 
 MAN_END
 
 MAN_BEGIN (U"Feedforward neural networks", U"djmw", 20040511)
-INTRO (U"This tutorial describes the use of @FFNet feedforward neural networks in P\\s{RAAT}. ")
+INTRO (U"This tutorial describes the use of @FFNet feedforward neural networks in Praat. ")
 NORMAL (U"@@Feedforward neural networks 1. What is a feedforward neural network?|1. What is a feedforward neural network?@")
 LIST_ITEM (U"  @@Feedforward neural networks 1.1. The learning phase|1.1 The learning phase")
 LIST_ITEM (U"  @@Feedforward neural networks 1.2. The classification phase|1.2 The classification phase")
@@ -150,7 +150,7 @@ NORMAL (U"The first thing you probably might want to do is to let the #FFNet lea
 ENTRY (U"Classification")
 NORMAL (U"Now, if you are curious how well the FFNet has learned the iris data, you may select the "
 	"#FFNet and the #PatternList together and choose @@FFNet & PatternList: To Categories...|To Categories...@. "
-	"A new #Categories appears in the ##List of Objects# with the name %%4-3_iris% (if %%4-3% was the name of the FFNet and %iris% the name of the PatternList). "
+	"A new #Categories appears in the ##List of Objects# with the name `4-3_iris` (if `4-3` was the name of the FFNet and `iris` the name of the PatternList). "
 	"We have two different Categories in the list of objects, the topmost one has the original categories, the other "
 	"the categories as were assigned by the FFNet classifier. The obvious thing to do now is to compare the "
 	"original categories with the assigned categories by making a @@Confusion|confusion table@. "
@@ -211,7 +211,7 @@ LIST_ITEM (U"\\bu ##FFNet: Select all weights#")
 MAN_END
 
 MAN_BEGIN (U"FFNet", U"djmw", 19961015)
-INTRO (U"One of the @@types of objects@ in P\\s{RAAT}.")
+INTRO (U"One of the @@types of objects@ in Praat.")
 NORMAL (U"A #FFNet models a feedforward neural net. A feedforward "
 	"neural net can %learn associations between its %input and its %output. "
 	"The @@Feedforward neural networks@ tutorial gives you an introduction to feedforward neural nets.")
@@ -226,9 +226,9 @@ MAN_END
 MAN_BEGIN (U"FFNet: Draw weights...", U"djmw", 20040422)
 INTRO (U"Draws the weights in a layer of the selected @FFNet feedforward neural net.")
 ENTRY (U"Settings")
-TAG (U"##Layer number")
+TERM (U"##Layer number")
 DEFINITION (U"determines the layer.")
-TAG (U"##Garnish")
+TERM (U"##Garnish")
 DEFINITION (U"determines whether additional information is drawn.")
 ENTRY (U"Behaviour")
 NORMAL (U"The weights are arranged in a matrix. The columns of this matrix are indexed by the units in the layer, "
@@ -240,11 +240,11 @@ MAN_END
 MAN_BEGIN (U"FFNet: Draw cost history...", U"djmw", 19970218)
 INTRO (U"You can choose this command after selecting 1 or more @FFNet's.")
 ENTRY (U"Settings")
-TAG (U"##Iteration range")
+TERM (U"##Iteration range")
 DEFINITION (U"determines the horizontal range of the plot.")
-TAG (U"##Cost range")
+TERM (U"##Cost range")
 DEFINITION (U"determines the vertical range of the plot.")
-TAG (U"##Garnish")
+TERM (U"##Garnish")
 DEFINITION (U"determines whether a box and axis labels are drawn.")
 ENTRY (U"Behaviour")
 NORMAL (U"Draws the history of the cost versus iteration number during previous learning.")
@@ -254,7 +254,7 @@ MAN_BEGIN (U"FFNet: Extract weights...", U"djmw", 20040422)
 INTRO (U"Extract all the weights, from all the units in the specified layer of the selected "
 	"@FFNet, to a @TableOfReal.")
 ENTRY (U"Settings")
-TAG (U"##Layer number")
+TERM (U"##Layer number")
 DEFINITION (U"determines the layer.")
 ENTRY (U"Behaviour")
 NORMAL (U"The weights will be arranged in the TableOfReal as follows: ")
@@ -279,7 +279,7 @@ MAN_END
 MAN_BEGIN (U"FFNet: Get number of hidden units...", U"djmw", 20040420)
 INTRO (U"Queries the selected @FFNet for the number of units in a hidden layer.")
 ENTRY (U"Settings")
-TAG (U"##Hidden layer number")
+TERM (U"##Hidden layer number")
 DEFINITION (U"determines the layer that is queried.")
 ENTRY (U"Layer numbering")
 NORMAL (U"The number of hidden layers is always one less than the total number of layers in a FFNet. "
@@ -290,7 +290,7 @@ MAN_END
 MAN_BEGIN (U"FFNet: Get number of hidden weights...", U"djmw", 20040420)
 INTRO (U"Queries the selected @FFNet for the number of weights in a hidden layer.")
 ENTRY (U"Settings")
-TAG (U"##Hidden layer number")
+TERM (U"##Hidden layer number")
 DEFINITION (U"determines the layer that is queried.")
 MAN_END
 
@@ -299,7 +299,7 @@ INTRO (U"You can choose this command after selecting 1 or more @FFNet's.")
 ENTRY (U"WARNING")
 NORMAL (U"This command destroys all previous learning.")
 ENTRY (U"Settings")
-TAG (U"##Range")
+TERM (U"##Range")
 DEFINITION (U"determines the upper limit of  the [-%range, +%range] interval from "
 	"which new weights will be randomly selected.")
 ENTRY (U"Behaviour")
@@ -310,7 +310,7 @@ MAN_END
 MAN_BEGIN (U"FFNet: Select biases...", U"djmw", 20040422)
 INTRO (U"Selects only the biases in one particular layer as subject for modification during learning of the @FFNet.")
 ENTRY (U"Settings")
-TAG (U"##Layer number")
+TERM (U"##Layer number")
 DEFINITION (U"determines the layer whose biases will be modified.")
 ENTRY (U"Behaviour")
 NORMAL (U"This command induces very specific behaviour during a following learning phase. "
@@ -320,13 +320,13 @@ MAN_END
 
 #define FFNet_Create_COMMON_HELP_INOUT \
 ENTRY (U"Settings")\
-TAG (U"##Number of inputs")\
+TERM (U"##Number of inputs")\
 DEFINITION (U"the dimension of the input of the neural net.")\
-TAG (U"##Number of outputs (\\>_ 1)#")\
+TERM (U"##Number of outputs (\\>_ 1)#")\
 DEFINITION (U"the number of different categories that you want the net to learn.")
 
 #define FFNet_Create_COMMON_HELP_HIDDEN \
-TAG (U"##Number of units in hidden layer 1#, ##Number of units in hidden layer 2#") \
+TERM (U"##Number of units in hidden layer 1#, ##Number of units in hidden layer 2#") \
 DEFINITION (U"determine the number of units in the hidden layers. " \
 	"If you want a neural net with no hidden layers, both numbers have to be 0. "\
 	"If you want a neural net with only 1 hidden layer then one of these numbers should differ from 0. ")
@@ -404,9 +404,9 @@ MAN_END
 MAN_BEGIN (U"FFNet & PatternList & Categories: Learn...", U"djmw", 20040511)
 INTRO (U"You can choose this command after selecting one @PatternList, one @Categories and one @FFNet.")
 ENTRY (U"Settings")
-TAG (U"##Maximum number of epochs")
+TERM (U"##Maximum number of epochs")
 DEFINITION (U"the maximum number of times that the complete #PatternList dataset will be presented to the neural net.")
-TAG (U"##Tolerance of minimizer")
+TERM (U"##Tolerance of minimizer")
 DEFINITION (U"when the difference in costs between two successive learning cycles is "
 "smaller than this value, the minimization process will be stopped.")
 NORMAL (U"##Cost function")

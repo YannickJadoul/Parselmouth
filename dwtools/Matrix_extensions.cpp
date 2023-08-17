@@ -1,6 +1,6 @@
 /* Matrix_extensions.cpp
  *
- * Copyright (C) 1993-2022 David Weenink
+ * Copyright (C) 1993-2023 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -104,7 +104,9 @@ void Matrix_drawAsSquares_inside (Matrix me, Graphics g, double xmin, double xma
 		Permutation_tableJump_inline (p.get(), numberOfColumns, 1);
 	}
 	
-	const double extremum = fabs (NUMextremum (my z.get()));
+	const double extremum = NUMextremum_u (my z.get());
+	if (isundef (extremum))
+		return;
 	const MelderColour colour = Graphics_inqColour (g);
 	const double scaleFactor = sqrt (cellAreaScaleFactor);
 	for (integer i = 1; i <= numberOfCells; i++) {
@@ -145,10 +147,9 @@ void Matrix_drawAsSquares_inside (Matrix me, Graphics g, double xmin, double xma
 
 void Matrix_drawAsSquares (Matrix me, Graphics g, double xmin, double xmax, double ymin, double ymax, bool garnish) {
 	Function_unidirectionalAutowindow (me, & xmin, & xmax);
-	if (ymax <= ymin) {
-		ymin = my ymin;
-		ymax = my ymax;
-	}
+	SampledXY_unidirectionalAutowindowY (me, & ymin, & ymax);
+	if (xmin >= xmax || ymin >= ymax)
+		return;
 	Graphics_setInner (g);
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 	
@@ -218,10 +219,7 @@ void Matrix_drawDistribution (Matrix me, Graphics g, double xmin, double xmax, d
 	if (nBins <= 0)
 		return;
 	Function_unidirectionalAutowindow (me, & xmin, & xmax);
-	if (ymax <= ymin) {
-		ymin = my ymin;
-		ymax = my ymax;
-	}
+	SampledXY_unidirectionalAutowindowY (me, & ymin, & ymax);
 	integer ixmin, ixmax, iymin, iymax;
 	if ((Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax) == 0) || 
 		(Matrix_getWindowSamplesY (me, ymin, ymax, & iymin, & iymax) == 0))
@@ -255,7 +253,9 @@ void Matrix_drawDistribution (Matrix me, Graphics g, double xmin, double xmax, d
 			freqMin = 0.0;
 			freqMax = 1.0;
 		} else {
-			NUMextrema (freq.get(), & freqMin, & freqMax);
+			NUMextrema_u (freq.get(), & freqMin, & freqMax);
+			if (isundef (freqMin) || isundef (freqMax))
+				return;
 			if (freqMax <= freqMin) {
 				freqMin = ( freqMin > 1.0 ? freqMin - 1.0 : 0.0 );
 				freqMax += 1.0;
@@ -361,10 +361,7 @@ autoMatrix Matrix_solveEquation (Matrix me, Matrix thee, double tolerance) {
 
 double Matrix_getMean (Matrix me, double xmin, double xmax, double ymin, double ymax) {
 	Function_unidirectionalAutowindow (me, & xmin, & xmax);
-	if (ymax <= ymin) {
-		ymin = my ymin;
-		ymax = my ymax;
-	}
+	SampledXY_unidirectionalAutowindowY (me, & ymin, & ymax);
 	integer ixmin, ixmax, iymin, iymax;
 	if ((Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax) == 0) ||
 		(Matrix_getWindowSamplesY (me, ymin, ymax, & iymin, & iymax) == 0)) {
@@ -376,10 +373,7 @@ double Matrix_getMean (Matrix me, double xmin, double xmax, double ymin, double 
 
 double Matrix_getStandardDeviation (Matrix me, double xmin, double xmax, double ymin, double ymax) {
 	Function_unidirectionalAutowindow (me, & xmin, & xmax);
-	if (ymax <= ymin) {
-		ymin = my ymin;
-		ymax = my ymax;
-	}
+	SampledXY_unidirectionalAutowindowY (me, & ymin, & ymax);
 	integer ixmin, ixmax, iymin, iymax;
 	if ((Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax) == 0) ||
 		(Matrix_getWindowSamplesY (me, ymin, ymax, & iymin, & iymax) == 0))
@@ -397,7 +391,7 @@ double Matrix_getStandardDeviation (Matrix me, double xmin, double xmax, double 
 autoDaata IDXFormattedMatrixFileRecognizer (integer numberOfBytesRead, const char *header, MelderFile file) {
 	unsigned int numberOfDimensions, type, pos = 4;
 	/*
-		9: minumum size is 4 bytes (magic number) + 4 bytes for 1 dimension + 1 value of 1 byte
+		9: minimum size is 4 bytes (magic number) + 4 bytes for 1 dimension + 1 value of 1 byte
 	 */
 	if (numberOfBytesRead < 9 || header [0] != 0 ||  header [1] != 0 || (type = header [2]) < 8 ||
 		numberOfBytesRead < 4 + (numberOfDimensions = header [3]) * 4) // each dimension occupies 4 bytes

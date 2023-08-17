@@ -1,6 +1,6 @@
 /* TextGrid_extensions.cpp
  *
- * Copyright (C) 1993-2019 David Weenink, Paul Boersma 2019
+ * Copyright (C) 1993-2019, 2023 David Weenink, Paul Boersma 2019
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -128,18 +128,18 @@ const struct TIMIT_key {
 	{"2", "\\'2"}		/* secondary stress marker */
 };
 
-#define TIMIT_NLABELS (sizeof TIMIT_toIpaTable / sizeof TIMIT_toIpaTable [1] - 1)
+constexpr integer TIMIT_NLABELS = ((integer) sizeof TIMIT_toIpaTable / (integer) sizeof TIMIT_toIpaTable [1] - 1);
 static const char *TIMIT_DELIMITER = "h#";
 
 static const char *timitLabelToIpaLabel (const char timitLabel []) {
-	for (integer i = 1; i <= TIMIT_NLABELS; i++)
-		if (!strcmp (TIMIT_toIpaTable [i].timitLabel, timitLabel))
+	for (integer i = 1; i <= TIMIT_NLABELS; i ++)
+		if (! strcmp (TIMIT_toIpaTable [i].timitLabel, timitLabel))
 			return TIMIT_toIpaTable [i].ipaLabel;
 	return timitLabel;
 }
 
 static bool isTimitPhoneticLabel (const char label []) {
-	for (integer i = 1; i <= TIMIT_NLABELS; i++)
+	for (integer i = 1; i <= TIMIT_NLABELS; i ++)
 		if (! strcmp (TIMIT_toIpaTable [i].timitLabel, label))
 			return true;
 	return false;
@@ -667,6 +667,49 @@ void TextTier_changeLabels (TextTier me, integer from, integer to,
 	}
 }
 
+static void IntervalTier_addInterval_force (IntervalTier me, double tmin, double tmax, conststring32 newLabel) {
+	Melder_require (tmin >= my xmin && tmax <= my xmax,
+		U"The interval should not be outside the domain.");
+	Melder_require (tmin < tmax,
+		U"The start time of the interval should be smaller than the end time.");
+	const integer oldSize = my intervals.size;
+	integer ileft = IntervalTier_timeToIndex (me, tmin);
+	TextInterval leftInterval = my intervals .at [ileft];
+	conststring32 leftText = leftInterval -> text.get();
+	const double leftxmin = leftInterval -> xmin, leftxmax = leftInterval -> xmax;
+	if (Melder_cmp (leftText, newLabel) != 0) {
+		if (tmin > leftxmin) {
+			autoTextInterval newInterval = TextInterval_create (tmin, leftxmax, leftText);
+			leftInterval -> xmax = tmin;
+			my intervals.addItem_move (newInterval.move());
+			Melder_assert (my intervals.size == oldSize +1);
+			ileft ++;
+		} else if (tmax == leftxmax) { // tmin == xmin
+			TextInterval_setText (leftInterval, newLabel);
+			return;
+		}
+	}
+	const integer iright = IntervalTier_timeToHighIndex (me, tmax);
+	TextInterval rightInterval = my intervals .at [iright];
+	conststring32 rightText = rightInterval -> text.get();
+	const double rightxmin = rightInterval -> xmin, rightxmax = rightInterval -> xmax;
+	if (Melder_cmp (rightText , newLabel) != 0) {
+		if (tmax < rightxmax) {
+			autoTextInterval newInterval = TextInterval_create (rightxmin, tmax, rightText);
+			rightInterval -> xmin = tmax;
+			my intervals.addItem_move (newInterval.move());
+		}
+	}
+	for (integer ipos = ileft; ipos <= iright; ipos ++)
+		TextInterval_setText (my intervals .at [ipos], newLabel);
+	IntervalTier_removeBoundariesBetweenIdenticallyLabeledIntervals (me, newLabel);
+}
+
+void TextGrid_addInterval_force (TextGrid me, double tmin, double tmax, integer tierNumber, conststring32 newLabel) {
+	IntervalTier intervalTier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
+	IntervalTier_addInterval_force (intervalTier, tmin, tmax, newLabel);
+}
+
 void TextGrid_changeLabels (TextGrid me, integer tier, integer from, integer to,
 	conststring32 search, conststring32 replace, bool use_regexp, integer *nmatches, integer *nstringmatches)
 {
@@ -832,7 +875,7 @@ double TextGrid_getTotalDurationOfIntervalsWhere (TextGrid me, integer tierNumbe
 			if (Melder_stringMatchesCriterion (interval -> text.get(), which, criterion, true))
 				totalDuration += interval -> xmax - interval -> xmin;
 		}
-		return totalDuration;
+		return double (totalDuration);
 	} catch (MelderError) {
 		Melder_throw (me, U": interval durations not counted.");
 	}

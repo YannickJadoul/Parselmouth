@@ -1,6 +1,6 @@
 /* manual_Permutation.cpp
  *
- * Copyright (C) 2005-2019 David Weenink
+ * Copyright (C) 2005-2023 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,25 @@
 void manual_Permutation_init (ManPages me);
 void manual_Permutation_init (ManPages me)
 {
+MAN_BEGIN (U"natural sort order", U"djmw", 20221023)
+NORMAL (U"Natural sort order uses the following rules to sort strings: ")
+LIST_ITEM (U"1. The space character sorts before numbers; numbers sort before non-numbers. Example: \n"
+	"' 5' < '5' < 'a'")
+LIST_ITEM (U"2. Numbers sort in numerical order; leading zeroes and spaces on numbers are ignored, except as a tie-breaker "
+	"for numbers that have the same numerical value like ' 5' < ' 5 ' < '5' < '05' < '005'")
+LIST_ITEM (U"3. Non-numbers sort in the asciibetical order ('Z' before 'a'), like "
+			"'A' < 'B' ... < 'Z' < 'a' ... 'z'") 
+ENTRY (U"##Examples#")
+NORMAL (U" 1. The alphabetically sorted 'd1', 'd10', 'd11', 'd2' in natural sort order: 'd1', 'd2', 'd10', 'd11'.")
+NORMAL (U" 2. Example from https://github.com/sourcefrog/natsort/blob/master/example-out.txt. The alphabetically "
+	"sorted list of the following 29 strings '1-02', '1-2', '1-20', '10-20', 'fred', 'jane', 'pic   7', 'pic 4 else', "
+	"'pic 5', 'pic 5 ', 'pic 5 something', 'pic 6', 'pic01', 'pic02', 'pic02000', 'pic02a', 'pic05', 'pic100', "
+	"'pic100a', 'pic120', 'pic121', 'pic2', 'pic3', 'pic4', 'tom', 'x2-g8', 'x2-y08', 'x2-y7', 'x8-y8' "
+	"will appear in natural sort order as: ")
+NORMAL (U"'1-2', '1-02', '1-20', '10-20', 'fred', 'jane', 'pic01', 'pic2', 'pic02', 'pic02a', 'pic3', 'pic4', 'pic 4 else', "
+	"'pic 5', 'pic05', 'pic 5 ', 'pic 5 something', 'pic 6', 'pic   7', 'pic100', 'pic100a', 'pic120', 'pic121', 'pic02000', "
+	"'tom', 'x2-g8', 'x2-y7', 'x2-y08', 'x8-y8'.")
+MAN_END
 
 MAN_BEGIN (U"Permutation", U"djmw", 20050721)
 INTRO (U"One of the @@types of objects@ in Praat. A Permutation object with %n elements consists of some ordering of "
@@ -65,12 +84,12 @@ MAN_END
 MAN_BEGIN (U"Create Permutation...", U"djmw", 20050709)
 INTRO (U"A command to create a @Permutation of the numbers 1,2, ..., %numberOfElements.")
 ENTRY (U"Settings")
-TAG (U"##Name")
+TERM (U"##Name")
 DEFINITION (U"the name of the new permutation.")
-TAG (U"##Number of elements%")
+TERM (U"##Number of elements%")
 DEFINITION (U"the number of elements in the permutation.")
-TAG (U"##Identity permutation")
-DEFINITION (U"determines whether the permution will be a randomly chosen one, or the @@identity permutation@.")
+TERM (U"##Identity permutation")
+DEFINITION (U"determines whether the permutation will be a randomly chosen one, or the @@identity permutation@.")
 MAN_END
 
 MAN_BEGIN (U"identity permutation", U"djmw", 20050713)
@@ -94,9 +113,9 @@ MAN_BEGIN (U"Permutation: Table jump...", U"djmw", 20191211)
 INTRO (U"Reorder by jumping columnwise to next row over the permutation indices layed out like a table with "
 	"%%jumpSize% columns. ")
 ENTRY (U"Settings")
-TAG (U"##Jump size#")
+TERM (U"##Jump size#")
 DEFINITION (U"defines how many indices to jump over, i.e. the number of columns in the \"table\".")
-TAG (U"##First#")
+TERM (U"##First#")
 DEFINITION (U"The first new position.")
 ENTRY (U"Example 1")
 NORMAL (U"Consider the identity permutation of 14 elements layed out like a table with %%jumpSize% = 4 columns.")
@@ -118,7 +137,7 @@ MAN_END
 MAN_BEGIN (U"Permutation: Reverse...", U"djmw", 20110105)
 INTRO (U"Reverse the elements in the given range.")
 ENTRY (U"Setting")
-TAG (U"##Index range#")
+TERM (U"##Index range#")
 DEFINITION (U"defines the range of indices that will be reversed.")
 ENTRY (U"Examples")
 NORMAL (U"1. With ##Index range# = [0,0], the permutation (1,2,3,4,5) is turned into (5,4,3,2,1). ")
@@ -128,11 +147,11 @@ MAN_END
 MAN_BEGIN (U"Permutation: Swap one from range...", U"djmw", 20110105)
 INTRO (U"An element at an index, randomly chosen from a range, will be permuted with an element at a prescribed index position.")
 ENTRY (U"Settings")
-TAG (U"##Index range#")
+TERM (U"##Index range#")
 DEFINITION (U"defines the range of indices from which one will be randomly chosen.")
-TAG (U"##Index#")
+TERM (U"##Index#")
 DEFINITION (U"defines the special index position whose element will be interchanged with the one chosen from the range.")
-TAG (U"##Forbid same")
+TERM (U"##Forbid same")
 DEFINITION (U"when %on, forbids the randomly chosen position and the index position to be the same. "
 	"This switch is only of relevance when the chosen range happens to overlap the index position.")
 ENTRY (U"Examples")
@@ -144,7 +163,7 @@ MAN_END
 MAN_BEGIN (U"Permutation: Permute randomly...", U"djmw", 20111123)
 INTRO (U"Generates a new @@Permutation@ by randomly permuting a range of elements in the selected Permutation object.")
 ENTRY (U"Setting")
-TAG (U"##Index range#")
+TERM (U"##Index range#")
 DEFINITION (U"defines the range of elements that will be permuted. The elements outside this range will be kept intact.")
 ENTRY (U"Example")
 NORMAL (U"If we start with the permutation (4,6,3,1,5,2,7) and a chosen ##Index range# that runs from 3 to 6, a new permutation will be generated as follows:")
@@ -161,14 +180,14 @@ MAN_END
 MAN_BEGIN (U"Permutation: Permute randomly (blocks)...", U"djmw", 20110105)
 INTRO (U"Generates a new @Permutation by randomly permuting blocks of size %blocksize.")
 ENTRY (U"Settings")
-TAG (U"##Index range#")
+TERM (U"##Index range#")
 DEFINITION (U"the range of elements whose blocks will be permuted.")
-TAG (U"##Block size#")
+TERM (U"##Block size#")
 DEFINITION (U"the size of the blocks that will be permuted. There must fit an integer number of blocks "
 	"in the chosen range.")
-TAG (U"##Permute within blocks#")
+TERM (U"##Permute within blocks#")
 DEFINITION (U"when %on, the elements in each block are also randomly permuted.")
-TAG (U"##No doublets#")
+TERM (U"##No doublets#")
 DEFINITION (U"guarantees that the first element in each block does not equal the last element of the previous block modulo "
 	"the block size. E.g. the numbers 3, 6, 9 are all equal modulo 3. "
 	"This parameter only has effect when ##Permute within blocks# is %on.")
@@ -182,12 +201,27 @@ NORMAL (U"3. With the same options as 2 but ##No doublets# is %on, the previousl
 	"blocksize). A valid outcome might then be ((5,4,6),(8,9,7),(3,1,2)).")
 MAN_END
 
+MAN_BEGIN (U"Permutation: Permute part...", U"djmw", 20220929)
+INTRO (U"A command to create a new @Permutation which is a copy of the first selected Permutation but with a part "
+	"that has been permuted according to a specification given by the second one.")
+ENTRY (U"Settings")
+TERM (U"##Start index#")
+DEFINITION (U"the position in the first selected Permutation where the modification by the second one should start.")
+ENTRY (U"Examples")
+NORMAL (U"Suppose the first permutation p1 is (1,2,3,4,5,6,7,8,9,10,11) and the second one p2 is (2,3,5,1,4).")
+NORMAL (U"1. With ##Start index# set to 1, the newly generated permutation p3 will be ((2,3,5,1,4), 6,7,8,9,10,11). "
+	"The new p3 will have the same number of elements as p1. The permutation p2 which has 5 elements starts to operate at "
+	"the first element and will stop after the fifth element. The first five elements in p3 will therefore equal "
+	"the permuted first five elements of p1, while the last 6 elements of p3 will be a copy of those in p1.") 
+NORMAL (U"2. With ##Start index# set to 6, the newly generated permutation will be (1,2,3,4,5, (7,8,10,6,9), 11).") 
+MAN_END
+
 MAN_BEGIN (U"Permutation: Swap blocks...", U"djmw", 20110105)
 INTRO (U"A command to swap the contents of two index ranges in the selected @Permutation.")
 ENTRY (U"Settings")
-TAG (U"##From index#, ##To index#")
+TERM (U"##From index#, ##To index#")
 DEFINITION (U"the two starting positions from where elements are to be swapped. The blocks may overlap.")
-TAG (U"##Block size#")
+TERM (U"##Block size#")
 DEFINITION (U"determines the number of pairs to swap. ")
 ENTRY (U"Behaviour")
 NORMAL (U"If the ##Block size# equals one, only the elements at the ##From index# and ##To index# position are swapped. If blocksize is greater than one, the two elements at ##From index#+1 and ##To index#+1 will be swapped too. This goes on until the last two elements in each block have been swapped.")
@@ -201,7 +235,7 @@ MAN_END
 MAN_BEGIN (U"Permutation: Swap positions...", U"djmw", 20110105)
 INTRO (U"Swaps the contents at two indices in the selected @@Permutation@.")
 ENTRY (U"Settings")
-TAG (U"##First index#, ##Second index#")
+TERM (U"##First index#, ##Second index#")
 DEFINITION (U"the two indices from where elements have to be swapped. The order of these indices is not important.")
 ENTRY (U"Example")
 NORMAL (U"With ##First index# = 1 and ##Second index# = 3, the permutation (1,3,4,2,5) is turned into (4,3,1,2,5).")
@@ -210,7 +244,7 @@ MAN_END
 MAN_BEGIN (U"Permutation: Swap numbers...", U"djmw", 20110105)
 INTRO (U"Swaps two numbers in the selected @@Permutation@.")
 ENTRY (U"Settings")
-TAG (U"##First number#, ##Second number#")
+TERM (U"##First number#, ##Second number#")
 DEFINITION (U"the two numbers that have to be swapped. The order of these numbers is not important.")
 ENTRY (U"Example")
 NORMAL (U"With ##First number# = 1 and ##Second number# = 3, the permutation (1,3,4,2,5) is turned into (3,1,4,2,5).")
@@ -228,12 +262,12 @@ NORMAL (U"If the offset differs from zero and equals 1 for example, we start wit
 	"we start the same cycle again with the next lower element in the first block (which by the way need not be the second element, "
 	"see also example 4).")
 ENTRY (U"Settings")
-TAG (U"##Index range#")
+TERM (U"##Index range#")
 DEFINITION (U"the range of elements that will be permuted.")
-TAG (U"##Block size#")
+TERM (U"##Block size#")
 DEFINITION (U"the size of a block. An integer number of blocks must fit "
 	"in the chosen ##Index range#.")
-TAG (U"##Offset#")
+TERM (U"##Offset#")
 DEFINITION (U"determines the relative positions of selected elements in successive blocks.")
 ENTRY (U"Examples")
 NORMAL (U"1. With ##Index range# = [0,0], ##Block size# = 3, and ##Offset# = 0, the permutation ((1,2,3),(4,5,6),(7,8,9)) is turned into (1,4,7,2,5,8,3,6,9).")
@@ -270,9 +304,9 @@ MAN_END
 MAN_BEGIN (U"Permutation: Rotate...", U"djmw", 20110105)
 INTRO (U"A circular shift of all elements within the given range.")
 ENTRY (U"Settings")
-TAG (U"##Index range#")
+TERM (U"##Index range#")
 DEFINITION (U"the range of elements that will be circularly permuted.")   // ambiguous; are these the positions or the numbers?
-TAG (U"##Step size#")
+TERM (U"##Step size#")
 DEFINITION (U"define how many positions each element will be shifted.")
 ENTRY (U"Examples")
 NORMAL (U"1. With ##Step size# = 2 and ##Index range# = [1,5], the permutation (1,2,3,4,5) is turned into (4,5,1,2,3). ")
@@ -321,7 +355,7 @@ MAN_END
 MAN_BEGIN (U"Strings: To Permutation...", U"djmw", 20050721)
 INTRO (U"Generates a @Permutation with the same number of elements as the @Strings.")
 ENTRY (U"Setting")
-TAG (U"##Sort")
+TERM (U"##Sort")
 DEFINITION (U"determines whether the Permutation will have an element ordering that can be used to sort the Strings alphabetically.")
 ENTRY (U"Example")
 NORMAL (U"If \"Sort\" is %on, and the selected Strings contains 4 strings ordered as \"hud\", \"hid\", \"hood\", "
@@ -333,7 +367,7 @@ NORMAL (U"If \"Sort\" is %on, and the selected Strings contains 4 strings ordere
 MAN_END
 
 MAN_BEGIN (U"Index", U"djmw", 20050725)
-INTRO (U"One of the @@Types of objects|types of objects@ in the P\\s{RAAT} program.")
+INTRO (U"One of the @@Types of objects|types of objects@ in the Praat program.")
 MAN_END
 
 MAN_BEGIN (U"Strings: To Index", U"djmw", 20050721)
@@ -365,7 +399,7 @@ MAN_BEGIN (U"Index: To Permutation...", U"djmw", 20050725)
 INTRO (U"Generates a @Permutation from the selected @Index by randomly permuting blocks of equivalent elements.")
 NORMAL (U"Suppose your data consists of groups of equivalent elements and the number of elements in the groups are not equal. You want to make random ordering of your data such that the elements in a group stay together. The following example shows you how.")
 ENTRY (U"Setting")
-TAG (U"##Permute within classes")
+TERM (U"##Permute within classes")
 DEFINITION (U"determines whether the elements within a class will be randomly permuted.")
 ENTRY (U"Example")
 NORMAL (U"Suppose your data, for example a @Strings, consists of groups of equivalent elements and the number of elements in the groups are not equal. You want to make a random ordering of your data such that the elements in a group stay together. The following example shows you how.")
@@ -401,7 +435,7 @@ CODE (U"\"hallo\"")
 NORMAL (U"We see that the permutation always keeps identical strings together.")
 MAN_END
 
-MAN_BEGIN (U"Index: Extract part...", U"djmw", 20050725)
+MAN_BEGIN (U"Index: Extract part...", U"djmw", 20221015)
 INTRO (U"Creates a new @Index by copying a part of selected Index.")
 ENTRY (U"Example")
 NORMAL (U"Given the following Index:")
@@ -421,7 +455,7 @@ CODE (U"1 (number of columns) \"\" (no column name)")
 CODE (U"\"dag allemaal\"")
 CODE (U"\"hallo\"")
 CODE (U"\"tot morgen\"")
-CODE (U"6 (number of elements)")
+CODE (U"2 (number of elements)")
 CODE (U"2")
 CODE (U"1")
 NORMAL (U"Note that all classes stay intact and may have zero references like for example the \"tot morgen\" class. ")

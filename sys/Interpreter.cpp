@@ -1,6 +1,6 @@
 /* Interpreter.cpp
  *
- * Copyright (C) 1993-2022 Paul Boersma
+ * Copyright (C) 1993-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,27 +100,52 @@ conststring32 kInterpreter_ReturnType_errorMessage (kInterpreter_ReturnType retu
 
 Thing_implement (Interpreter, Thing, 0);
 
-autoInterpreter Interpreter_create (conststring32 environmentName, ClassInfo editorClass) {
+static CollectionOf <structInterpreter> theReferencesToAllLivingInterpreters;
+
+void structInterpreter :: v9_destroy () noexcept {
+	theReferencesToAllLivingInterpreters. undangleItem (this);
+	our Interpreter_Parent :: v9_destroy ();
+}
+
+autoInterpreter Interpreter_create () {
 	try {
 		autoInterpreter me = Thing_new (Interpreter);
 		my variablesMap. max_load_factor (0.65f);
-		my environmentName = Melder_dup (environmentName);
-		my editorClass = editorClass;
+		theReferencesToAllLivingInterpreters. addItem_ref (me.get());
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"Interpreter not created.");
 	}
 }
 
-autoInterpreter Interpreter_createFromEnvironment (Editor optionalEditor) {
-	if (! optionalEditor)
-		return Interpreter_create (nullptr, nullptr);
-	autoInterpreter interpreter = Interpreter_create (optionalEditor -> name.get(), optionalEditor -> classInfo);
-	interpreter -> optionalEditor = optionalEditor;
-	return interpreter;   // BUG: collapse
+autoInterpreter Interpreter_createFromEnvironment (Editor optionalInterpreterOwningEditor) {
+	autoInterpreter interpreter = Interpreter_create ();
+	interpreter -> setOwningEditorEnvironmentFromOptionalEditor (optionalInterpreterOwningEditor);
+	return interpreter;
 }
 
-void Melder_includeIncludeFiles (autostring32 *inout_text) {
+void Interpreters_undangleEnvironment (Editor environment) noexcept {
+	for (integer i = 1; i <= theReferencesToAllLivingInterpreters.size; i ++) {
+		const Interpreter interpreter = theReferencesToAllLivingInterpreters.at [i];
+		if (interpreter -> optionalOwningEnvironmentEditor() == environment)
+			interpreter -> undangleOwningEditor();
+		if (interpreter -> optionalDynamicEnvironmentEditor() == environment)
+			interpreter -> undangleDynamicEditor();
+	}
+}
+
+static bool Melder_scriptTextIsNotebookText (conststring32 text) {
+	/*
+		Notebooks start with a opening double quote.
+		Alternatively, notebooks tend to contain opening and closing braces
+		in the first position of some line,
+		but that cue is not reliable,
+		because some notebooks contain no code chunks at all.
+	*/
+	return text [0] == U'"';
+}
+
+void Melder_includeIncludeFiles (autostring32 *inout_text, bool onlyInCodeChunks) {
 	for (int depth = 0; ; depth ++) {
 		char32 *head = inout_text->get();
 		integer numberOfIncludes = 0;
@@ -128,34 +153,55 @@ void Melder_includeIncludeFiles (autostring32 *inout_text) {
 			Melder_throw (U"Include files nested too deep. Probably cyclic.");
 		for (;;) {
 			char32 *includeLocation, *includeFileName, *tail;
-			integer headLength, includeTextLength, newLength;
 			/*
 				Look for an include statement. If not found, we have finished.
-			 */
+			*/
 			includeLocation = ( str32nequ (head, U"include ", 8) ? head : str32str (head, U"\ninclude ") );
 			if (! includeLocation)
 				break;
 			if (includeLocation != head)
 				includeLocation += 1;
+			if (onlyInCodeChunks) {
+				if (includeLocation == head)
+					continue;   // if the text starts with "include", it cannot be within a code chunk
+				integer braceDepth = 0;
+				for (const char32 *p = head; p != includeLocation; p ++)
+					if (*p == U'\n')
+						if (p [1] == U'{') {
+							if (braceDepth > 0)
+								Melder_throw (U"Opening brace within a code chunk. Don't know whether or not to include an include file.");
+							braceDepth += 1;
+						} else if (p [1] == U'}') {
+							if (braceDepth <= 0)
+								Melder_throw (U"Closing brace outside a code chunk. Don't know whether or not to include an include file.");
+							braceDepth -= 1;
+						}
+				if (braceDepth == 0) {
+					head = includeLocation + 8;
+					continue;
+				}
+			}
 			numberOfIncludes += 1;
 			/*
 				Separate out the head.
-			 */
+			*/
 			*includeLocation = U'\0';
 			/*
 				Separate out the name of the include file.
-			 */
+			*/
 			includeFileName = includeLocation + 8;
-			while (Melder_isHorizontalSpace (*includeFileName)) includeFileName ++;
+			while (Melder_isHorizontalSpace (*includeFileName))
+				includeFileName ++;
 			tail = includeFileName;
-			while (Melder_staysWithinLine (*tail)) tail ++;
+			while (Melder_staysWithinLine (*tail))
+				tail ++;
 			if (*tail != U'\0') {
 				*tail = U'\0';
 				tail += 1;
 			}
 			/*
 				Get the contents of the include file.
-			 */
+			*/
 			structMelderFile includeFile { };
 			Melder_relativePathToFile (includeFileName, & includeFile);
 			autostring32 includeText;
@@ -166,10 +212,10 @@ void Melder_includeIncludeFiles (autostring32 *inout_text) {
 			}
 			/*
 				Construct the new text.
-			 */
-			headLength = (head - inout_text->get()) + str32len (head);
-			includeTextLength = str32len (includeText.get());
-			newLength = headLength + includeTextLength + 1 + str32len (tail);
+			*/
+			const integer headLength = (head - inout_text->get()) + Melder_length (head);
+			const integer includeTextLength = Melder_length (includeText.get());
+			const integer newLength = headLength + includeTextLength + 1 + Melder_length (tail);
 			autostring32 newText (newLength);
 			str32cpy (newText.get(), inout_text->get());
 			str32cpy (newText.get() + headLength, includeText.get());
@@ -177,34 +223,74 @@ void Melder_includeIncludeFiles (autostring32 *inout_text) {
 			str32cpy (newText.get() + headLength + includeTextLength + 1, tail);
 			/*
 				Replace the old text with the new. This will work even within an autostring.
-			 */
+			*/
 			*inout_text = newText.move();
 			/*
 				Cycle.
-			 */
+			*/
 			head = inout_text->get() + headLength + includeTextLength + 1;
 		}
-		if (numberOfIncludes == 0) break;
+		if (numberOfIncludes == 0)
+			break;
 	}
 }
 
+static bool parameterMatchesLabel (conststring32 parameter, conststring32 label) {
+	/*
+		A parameter matches a label if they are equal or if
+		the label has an additional opening parenthesis, optionally preceded by a space.
+		For example, the parameter "Pitch ceiling" matches the label "Pitch ceiling (Hz)".
+	*/
+	for (; *parameter != U'\0' && *label != U'\0'; parameter ++, label ++)
+		if (*parameter != *label)
+			return false;
+	if (*parameter == U'\0')
+		if (*label == U'\0' || *label == U'(' || *label == U' ' && label [1] == U'(')
+			return true;
+	return false;
+}
+
 integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
+	const bool scriptTextIsNotebookText = Melder_scriptTextIsNotebookText (text);
 	char32 *formLocation = nullptr;
 	integer npar = 0;
-	my dialogTitle [0] = U'\0';
+	my dialogTitle.reset();
+	autoMelderString string;
 	/*
 		Look for a "form" line.
 	*/
 	{// scope
+		integer braceDepth = 0;
 		char32 *p = & text [0];
 		for (;;) {
 			/*
-				Invariant here: we are at the beginning of a line.
+				Check invariant here: we are at the beginning of a line.
 			*/
-			Melder_skipHorizontalSpace (& p);
-			if (str32nequ (p, U"form", 4) && Melder_isEndOfInk (p [4])) {
-				formLocation = p;
-				break;
+			Melder_assert (p == text || p [-1] == '\n');
+
+			if (scriptTextIsNotebookText) {
+				if (*p == U'{') {
+					if (braceDepth > 0)
+						Melder_throw (U"Opening brace within a code chunk. Don't know how to look for a `form`.");
+					braceDepth += 1;
+				} else if (*p == U'}') {
+					if (braceDepth <= 0)
+						Melder_throw (U"Closing brace outside a code chunk. Don't know how to look for a `form`.");
+					braceDepth -= 1;
+				}
+				if (braceDepth > 0) {
+					Melder_skipHorizontalSpace (& p);
+					if (str32nequ (p, U"form", 4) && (p [4] == U':' || Melder_isEndOfInk (p [4]))) {
+						formLocation = p;
+						break;
+					}
+				}
+			} else {
+				Melder_skipHorizontalSpace (& p);
+				if (str32nequ (p, U"form", 4) && (p [4] == U':' || Melder_isEndOfInk (p [4]))) {
+					formLocation = p;
+					break;
+				}
 			}
 			Melder_skipToEndOfLine (& p);
 			if (*p == U'\0')
@@ -216,13 +302,35 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 		If there is no "form" line, there are no parameters.
 	*/
 	if (formLocation) {
-		char32 *dialogTitle = Melder_findEndOfHorizontalSpace (formLocation + 4);
+		char32 *dialogTitle = Melder_findEndOfHorizontalSpace
+				(formLocation [4] == U':' ? formLocation + 5 : formLocation + 4);
 		char32 *endOfLine = Melder_findEndOfLine (dialogTitle);
 		if (*endOfLine == U'\0')
-			Melder_throw (U"Unfinished form (only a \"form\" line).");
-		*endOfLine = U'\0';   // destroy input temporarily in order to limit copying of dialog title
-		str32ncpy (my dialogTitle, dialogTitle, Interpreter_MAX_DIALOG_TITLE_LENGTH);
-		*endOfLine = U'\n';   // restore input
+			Melder_throw (U"Unfinished form (only a “form” line).");
+		if (formLocation [4] == U':') {
+			MelderString_empty (& string);
+			if (dialogTitle [0] != U'"')
+				Melder_throw (U"The title of a form should start with a double quote character (\").");
+			char32* p = dialogTitle + 1;   // BUG: could be const (change Melder_skipHorizontalSpace())
+			for (; p < endOfLine; p ++) {
+				if (*p == U'"')
+					if (p [1] == U'"') {
+						p ++;
+						continue;
+					} else
+						break;
+				MelderString_appendCharacter (& string, *p);
+			}
+			if (*p != U'"')
+				Melder_throw (U"Missing closing quote character in the title of the form.");
+			p ++;   // skip closing quote
+			Melder_skipHorizontalSpace (& p);
+			if (! Melder_isEndOfLine (*p) && *p != U';')
+				Melder_throw (U"Stray characters after closing quote in form title.");
+			my dialogTitle = Melder_dup (string.string);
+		} else {
+			my dialogTitle = Melder_ndup (dialogTitle, endOfLine - dialogTitle);
+		}
 		my numberOfParameters = 0;
 		while (true) {
 			int type = 0;
@@ -233,69 +341,120 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 			while (*startOfLine == U'#' || *startOfLine == U';' || *startOfLine == U'!' || Melder_isEndOfLine (*startOfLine)) {
 				endOfLine = Melder_findEndOfLine (startOfLine);
 				if (Melder_isEndOfText (*endOfLine))
-					Melder_throw (U"Unfinished form (missing \"endform\").");
+					Melder_throw (U"Unfinished form (missing “endform”).");
 				startOfLine = Melder_findEndOfHorizontalSpace (endOfLine + 1);
 			}
+			endOfLine = Melder_findEndOfLine (startOfLine);
+			/*
+				Break on endform.
+			*/
 			if (str32nequ (startOfLine, U"endform", 7) && Melder_isEndOfInk (startOfLine [7]))
 				break;
-			char32 *parameterLocation;
-			if (str32nequ (startOfLine, U"word", 4) && Melder_isEndOfInk (startOfLine [4]))
-				{ type = Interpreter_WORD; parameterLocation = startOfLine + 4; }
-			else if (str32nequ (startOfLine, U"sentence", 8) && Melder_isEndOfInk (startOfLine [8]))
-				{ type = Interpreter_SENTENCE; parameterLocation = startOfLine + 8; }
-			else if (str32nequ (startOfLine, U"infile", 6) && Melder_isEndOfInk (startOfLine [6]))
-				{ type = Interpreter_INFILE; parameterLocation = startOfLine + 6; }
-			else if (str32nequ (startOfLine, U"outfile", 7) && Melder_isEndOfInk (startOfLine [7]))
-				{ type = Interpreter_OUTFILE; parameterLocation = startOfLine + 7; }
-			else if (str32nequ (startOfLine, U"folder", 6) && Melder_isEndOfInk (startOfLine [6]))
-				{ type = Interpreter_FOLDER; parameterLocation = startOfLine + 6; }
-			else if (str32nequ (startOfLine, U"text", 4) && Melder_isEndOfInk (startOfLine [4]))
-				{ type = Interpreter_TEXT; parameterLocation = startOfLine + 4; }
-			else if (str32nequ (startOfLine, U"real", 4) && Melder_isEndOfInk (startOfLine [4]))
-				{ type = Interpreter_REAL; parameterLocation = startOfLine + 4; }
-			else if (str32nequ (startOfLine, U"positive", 8) && Melder_isEndOfInk (startOfLine [8]))
-				{ type = Interpreter_POSITIVE; parameterLocation = startOfLine + 8; }
-			else if (str32nequ (startOfLine, U"integer", 7) && Melder_isEndOfInk (startOfLine [7]))
-				{ type = Interpreter_INTEGER; parameterLocation = startOfLine + 7; }
-			else if (str32nequ (startOfLine, U"natural", 7) && Melder_isEndOfInk (startOfLine [7]))
-				{ type = Interpreter_NATURAL; parameterLocation = startOfLine + 7; }
-			else if (str32nequ (startOfLine, U"boolean", 7) && Melder_isEndOfInk (startOfLine [7]))
-				{ type = Interpreter_BOOLEAN; parameterLocation = startOfLine + 7; }
-			else if (str32nequ (startOfLine, U"realvector", 10) && Melder_isEndOfInk (startOfLine [10]))
-				{ type = Interpreter_REALVECTOR; parameterLocation = startOfLine + 10; }
-			else if (str32nequ (startOfLine, U"positivevector", 14) && Melder_isEndOfInk (startOfLine [14]))
-				{ type = Interpreter_POSITIVEVECTOR; parameterLocation = startOfLine + 14; }
-			else if (str32nequ (startOfLine, U"integervector", 13) && Melder_isEndOfInk (startOfLine [13]))
-				{ type = Interpreter_INTEGERVECTOR; parameterLocation = startOfLine + 13; }
-			else if (str32nequ (startOfLine, U"naturalvector", 13) && Melder_isEndOfInk (startOfLine [13]))
-				{ type = Interpreter_NATURALVECTOR; parameterLocation = startOfLine + 13; }
-			else if (str32nequ (startOfLine, U"realmatrix", 10) && Melder_isEndOfInk (startOfLine [10]))
-				{ type = Interpreter_REALMATRIX; parameterLocation = startOfLine + 10; }
-			else if (str32nequ (startOfLine, U"choice", 6) && Melder_isEndOfInk (startOfLine [6]))
-				{ type = Interpreter_CHOICE; parameterLocation = startOfLine + 6; }
-			else if (str32nequ (startOfLine, U"optionmenu", 10) && Melder_isEndOfInk (startOfLine [10]))
-				{ type = Interpreter_OPTIONMENU; parameterLocation = startOfLine + 10; }
-			else if (str32nequ (startOfLine, U"button", 6) && Melder_isEndOfInk (startOfLine [6]))
-				{ type = Interpreter_BUTTON; parameterLocation = startOfLine + 6; }
-			else if (str32nequ (startOfLine, U"option", 6) && Melder_isEndOfInk (startOfLine [6]))
-				{ type = Interpreter_OPTION; parameterLocation = startOfLine + 6; }
-			else if (str32nequ (startOfLine, U"comment", 7) && Melder_isEndOfInk (startOfLine [7]))
-				{ type = Interpreter_COMMENT; parameterLocation = startOfLine + 7; }
-			else {
-				endOfLine = Melder_findEndOfLine (startOfLine);
+			/*
+				Recognize parameter name, argument value,
+				and perhaps format name and/or number of lines.
+			*/
+			char32 *p = nullptr;
+			bool hasColon = false;
+			auto isEndOfInkOrColon = [] (const char32 kar) { return kar == U':' || Melder_isEndOfInk (kar); };
+			if (str32nequ (startOfLine, U"word", 4) && isEndOfInkOrColon (startOfLine [4])) {
+				type = Interpreter_WORD;
+				hasColon = ( startOfLine [4] == U':' );
+				p = startOfLine + 4 + hasColon;
+			} else if (str32nequ (startOfLine, U"sentence", 8) && isEndOfInkOrColon (startOfLine [8])) {
+				type = Interpreter_SENTENCE;
+				hasColon = ( startOfLine [8] == U':' );
+				p = startOfLine + 8 + hasColon;
+			} else if (str32nequ (startOfLine, U"infile", 6) && isEndOfInkOrColon (startOfLine [6])) {
+				type = Interpreter_INFILE;
+				hasColon = ( startOfLine [6] == U':' );
+				p = startOfLine + 6 + hasColon;
+			} else if (str32nequ (startOfLine, U"outfile", 7) && isEndOfInkOrColon (startOfLine [7])) {
+				type = Interpreter_OUTFILE;
+				hasColon = ( startOfLine [7] == U':' );
+				p = startOfLine + 7 + hasColon;
+			} else if (str32nequ (startOfLine, U"folder", 6) && isEndOfInkOrColon (startOfLine [6])) {
+				type = Interpreter_FOLDER;
+				hasColon = ( startOfLine [6] == U':' );
+				p = startOfLine + 6 + hasColon;
+			}  else if (str32nequ (startOfLine, U"text", 4) && isEndOfInkOrColon (startOfLine [4])) {
+				type = Interpreter_TEXT;
+				hasColon = ( startOfLine [4] == U':' );
+				p = startOfLine + 4 + hasColon;
+			} else if (str32nequ (startOfLine, U"real", 4) && isEndOfInkOrColon (startOfLine [4])) {
+				type = Interpreter_REAL;
+				hasColon = ( startOfLine [4] == U':' );
+				p = startOfLine + 4 + hasColon;
+			} else if (str32nequ (startOfLine, U"positive", 8) && isEndOfInkOrColon (startOfLine [8])) {
+				type = Interpreter_POSITIVE;
+				hasColon = ( startOfLine [8] == U':' );
+				p = startOfLine + 8 + hasColon;
+			} else if (str32nequ (startOfLine, U"integer", 7) && isEndOfInkOrColon (startOfLine [7])) {
+				type = Interpreter_INTEGER;
+				hasColon = ( startOfLine [7] == U':' );
+				p = startOfLine + 7 + hasColon;
+			} else if (str32nequ (startOfLine, U"natural", 7) && isEndOfInkOrColon (startOfLine [7])) {
+				type = Interpreter_NATURAL;
+				hasColon = ( startOfLine [7] == U':' );
+				p = startOfLine + 7 + hasColon;
+			} else if (str32nequ (startOfLine, U"boolean", 7) && isEndOfInkOrColon (startOfLine [7])) {
+				type = Interpreter_BOOLEAN;
+				hasColon = ( startOfLine [7] == U':' );
+				p = startOfLine + 7 + hasColon;
+			} else if (str32nequ (startOfLine, U"realvector", 10) && isEndOfInkOrColon (startOfLine [10])) {
+				type = Interpreter_REALVECTOR;
+				hasColon = ( startOfLine [10] == U':' );
+				p = startOfLine + 10 + hasColon;
+			} else if (str32nequ (startOfLine, U"positivevector", 14) && isEndOfInkOrColon (startOfLine [14])) {
+				type = Interpreter_POSITIVEVECTOR;
+				hasColon = ( startOfLine [14] == U':' );
+				p = startOfLine + 14 + hasColon;
+			} else if (str32nequ (startOfLine, U"integervector", 13) && isEndOfInkOrColon (startOfLine [13])) {
+				type = Interpreter_INTEGERVECTOR;
+				hasColon = ( startOfLine [13] == U':' );
+				p = startOfLine + 13 + hasColon;
+			} else if (str32nequ (startOfLine, U"naturalvector", 14) && isEndOfInkOrColon (startOfLine [14])) {
+				type = Interpreter_NATURALVECTOR;
+				hasColon = ( startOfLine [13] == U':' );
+				p = startOfLine + 13 + hasColon;
+			} else if (str32nequ (startOfLine, U"realmatrix", 10) && isEndOfInkOrColon (startOfLine [10])) {
+				type = Interpreter_REALMATRIX;
+				hasColon = ( startOfLine [10] == U':' );
+				p = startOfLine + 10 + hasColon;
+			} else if (str32nequ (startOfLine, U"choice", 6) && isEndOfInkOrColon (startOfLine [6])) {
+				type = Interpreter_CHOICE;
+				hasColon = ( startOfLine [6] == U':' );
+				p = startOfLine + 6 + hasColon;
+			} else if (str32nequ (startOfLine, U"optionmenu", 10) && isEndOfInkOrColon (startOfLine [10])) {
+				type = Interpreter_OPTIONMENU;
+				hasColon = ( startOfLine [10] == U':' );
+				p = startOfLine + 10 + hasColon;
+			} else if (str32nequ (startOfLine, U"button", 6) && isEndOfInkOrColon (startOfLine [6])) {
+				type = Interpreter_BUTTON;
+				hasColon = ( startOfLine [6] == U':' );
+				p = startOfLine + 6 + hasColon;
+			} else if (str32nequ (startOfLine, U"option", 6) && isEndOfInkOrColon (startOfLine [6])) {
+				type = Interpreter_OPTION;
+				hasColon = ( startOfLine [6] == U':' );
+				p = startOfLine + 6 + hasColon;
+			} else if (str32nequ (startOfLine, U"comment", 7) && isEndOfInkOrColon (startOfLine [7])) {
+				type = Interpreter_COMMENT;
+				hasColon = ( startOfLine [7] == U':' );
+				p = startOfLine + 7 + hasColon;
+			} else {
 				*endOfLine = U'\0';   // destroy input in order to limit printing of parameter type
-				Melder_throw (U"Unknown parameter type:\n\"", startOfLine, U"\".");
+				Melder_throw (U"Unknown parameter type inside form:\n“", startOfLine, U"”.");
 			}
 			/*
 				Example:
-					form Something
-						real Time_(s) 3.14 (= pi)
-						choice Colour 2
-							button Red
-							button Green
-							button Blue
+					form: "Something"
+						real: "Time (s)", "3.14 (= pi)"
+						choice: "Colour", 2
+							button: "Red"
+							button: "Green"
+							button: "Blue"
 					endform
-				my parameters [1] := "Time_(s)"
+				my parameters [1] := "Time (s)"
 				my parameters [2] := "Colour"
 				my parameters [3] := ""
 				my parameters [4] := ""
@@ -305,53 +464,184 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 				my arguments [3] := "Red"   (funny, but needed in Interpreter_getArgumentsFromString)
 				my arguments [4] := "Green"
 				my arguments [5] := "Blue"
+				(last checked 2023-01-21)
 			*/
+			Melder_assert (p);
+			const mutablestring32 parameter = my parameters [++ my numberOfParameters];
 			if (type <= Interpreter_MAXIMUM_TYPE_WITH_VARIABLE_NAME) {
-				Melder_skipHorizontalSpace (& parameterLocation);
-				if (Melder_isEndOfLine (*parameterLocation)) {
-					*parameterLocation = U'\0';   // destroy input in order to limit printing of line
-					Melder_throw (U"Missing parameter:\n\"", startOfLine, U"\".");
+				Melder_skipHorizontalSpace (& p);
+				if (Melder_isEndOfLine (*p)) {
+					*p = U'\0';   // destroy input in order to limit printing of line
+					Melder_throw (U"Missing parameter:\n“", startOfLine, U"”.");
 				}
-				char32 *q = my parameters [++ my numberOfParameters];
-				while (Melder_staysWithinInk (*parameterLocation))
-					* (q ++) = * (parameterLocation ++);
-				*q = U'\0';
+				MelderString_empty (& string);
+				my numbersOfLines [my numberOfParameters] = 0;
+				if (hasColon) {
+					/*
+						Parse optional number-of-lines (including final comma).
+					*/
+					if (Melder_isAsciiDecimalNumber (*p)) {
+						if (!(
+							type == Interpreter_TEXT ||
+							type == Interpreter_INFILE || type == Interpreter_OUTFILE || type == Interpreter_FOLDER ||
+							type >= Interpreter_MINIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE &&
+									type <= Interpreter_MAXIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE
+						)) {
+							*(p + 1) = U'\0';
+							Melder_throw (U"Only “text”, “infile”, “outfile”, “folder” and vector and matrix types "
+									"support setting the number of lines in a form.");
+						}
+						my numbersOfLines [my numberOfParameters] = Melder_atoi (p);
+						p ++;
+						while (Melder_isAsciiDecimalNumber (*p))
+							p ++;
+						Melder_skipHorizontalSpace (& p);
+						if (*p != U',') {
+							*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+							Melder_throw (U"Missing comma after number of lines:\n", startOfLine);
+						}
+						p ++;   // skip comma
+						Melder_skipHorizontalSpace (& p);
+					}
+					/*
+						Parse obligatory variable name (including final comma).
+					*/
+					if (*p != U'"') {
+						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+						Melder_throw (U"Missing opening quote for parameter name in form field:\n", startOfLine);
+					}
+					p ++;   // skip opening quote
+					for (; p < endOfLine; p ++) {
+						if (*p == U'"')
+							if (p [1] == U'"') {   // look ahead
+								p ++;
+								continue;
+							} else
+								break;
+						MelderString_appendCharacter (& string, *p);
+					}
+					if (*p != U'"') {
+						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+						Melder_throw (U"Missing closing quote character in parameter name:\n", startOfLine);
+					}
+					p ++;   // skip closing quote
+					Melder_skipHorizontalSpace (& p);
+					if (*p != U',') {
+						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+						Melder_throw (U"Missing comma after parameter name:\n", startOfLine);
+					}
+					p ++;   // skip comma
+				} else {
+					while (Melder_staysWithinInk (*p))
+						MelderString_appendCharacter (& string, *(p ++));
+				}
+				MelderString_truncate (& string, Interpreter_MAX_PARAMETER_LENGTH);
+				str32cpy (parameter, string.string);
+				parameter [string.length] = U'\0';
 				npar ++;
 			} else {
-				my parameters [++ my numberOfParameters] [0] = U'\0';
+				parameter [0] = U'\0';
 			}
-			char32 *argumentLocation;
+			Melder_skipHorizontalSpace (& p);
+			/*
+				Parse format type.
+			*/
 			if (type >= Interpreter_MINIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE && type <= Interpreter_MAXIMUM_TYPE_FOR_NUMERIC_VECTOR_VARIABLE) {
-				char32 *formatLocation = Melder_findEndOfHorizontalSpace (parameterLocation);
-				if (Melder_isEndOfLine (*formatLocation)) {
-					*formatLocation = U'\0';   // destroy input in order to limit printing of line
-					Melder_throw (U"Missing format:\n\"", startOfLine, U"\".");
+				if (! hasColon) {
+					*p = U'\0';
+					Melder_throw (U"Vector fields in forms are available only if immediately followed by a colon:\n", startOfLine);
 				}
-				char32 *q = my formats [my numberOfParameters];
-				if (*formatLocation != U'(') {
-					*formatLocation = U'\0';   // destroy input in order to limit printing of line
-					Melder_throw (U"Missing format (should start with \"(\"):\n\"", startOfLine, U"\".");
+				MelderString_empty (& string);
+				if (Melder_isEndOfLine (*p)) {
+					*p = U'\0';   // destroy input in order to limit printing of line
+					Melder_throw (U"Missing format:\n“", startOfLine, U"”.");
 				}
-				while (*formatLocation != U')') {
-					if (Melder_isEndOfLine (*formatLocation)) {
-						*formatLocation = U'\0';   // destroy input in order to limit printing of line
-						Melder_throw (U"Incomplete format (should end in \")\"):\n\"", startOfLine, U"\".");
-					}
-					* (q ++) = * (formatLocation ++);
+				if (*p != U'"') {
+					*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+					Melder_throw (U"Missing opening quote for vector format:\n", startOfLine);
 				}
-				* (q ++) = * (formatLocation ++);   // copy the closing parenthesis
-				*q = U'\0';
-				argumentLocation = Melder_findEndOfHorizontalSpace (formatLocation);
-			} else {
-				argumentLocation = Melder_findEndOfHorizontalSpace (parameterLocation);
+				p ++;   // skip opening quote
+				for (; p < endOfLine; p ++) {
+					if (*p == U'"')
+						if (p [1] == U'"') {   // look ahead
+							p ++;
+							continue;
+						} else
+							break;
+					MelderString_appendCharacter (& string, *p);
+				}
+				if (*p != U'"') {
+					*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+					Melder_throw (U"Missing closing quote for vector format:\n", startOfLine);
+				}
+				p ++;   // skip closing quote
+				Melder_skipHorizontalSpace (& p);
+				if (*p != U',') {
+					*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+					Melder_throw (U"Missing comma after vector format:\n", startOfLine);
+				}
+				p ++;   // skip comma
+				Melder_skipHorizontalSpace (& p);
+				/*
+					Install format type.
+				*/
+				MelderString_truncate (& string, Interpreter_MAX_FORMAT_LENGTH);
+				str32cpy (my formats [my numberOfParameters], string.string);
+				my formats [my numberOfParameters] [string.length] = U'\0';
 			}
-			endOfLine = Melder_findEndOfLine (argumentLocation);
-			if (Melder_isEndOfText (*endOfLine))
-				Melder_throw (U"Unfinished form (missing \"endform\").");
-			*endOfLine = U'\0';   // destroy input temporarily in order to limit copying of argument
-			my arguments [my numberOfParameters] = Melder_dup_f (argumentLocation);
-			*endOfLine = U'\n';   // restore input
+			/*
+				Parse obligatory content of argument.
+			*/
+			if (hasColon) {
+				MelderString_empty (& string);
+				if (Melder_isAsciiDecimalNumber (*p)) {
+					if (type != Interpreter_CHOICE && type != Interpreter_OPTIONMENU && type != Interpreter_BOOLEAN) {
+						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+						Melder_throw (U"Only “choice”, “optionmenu” and “boolean” fields can take a number:\n", startOfLine);
+					}
+					const integer value = Melder_atoi (p);
+					if (type == Interpreter_CHOICE)
+						MelderString_append (& string, value);
+					else
+						MelderString_appendCharacter (& string, value != 0 ? U'1' : U'0');
+					p ++;   // skip first digit
+					while (Melder_isAsciiDecimalNumber (*p))
+						p ++;   // skip next digit
+				} else {
+					if (*p != U'"') {
+						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+						Melder_throw (U"Missing opening quote after comma in form field:\n", startOfLine);
+					}
+					if (type == Interpreter_CHOICE) {
+						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+						Melder_throw (U"A “choice” field can take only a number, not a string:\n", startOfLine);
+					}
+					p ++;   // skip opening quote
+					for (; p < endOfLine; p ++) {
+						if (*p == U'"')
+							if (p [1] == U'"') {
+								p ++;
+								continue;
+							} else
+								break;
+						MelderString_appendCharacter (& string, *p);
+					}
+					if (*p != U'"') {
+						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
+						Melder_throw (U"Missing closing quote character in default argument:\n", startOfLine);
+					}
+					p ++;   // skip closing quote
+				}
+				Melder_skipHorizontalSpace (& p);
+				if (! Melder_isEndOfLine (*p) && *p != U';')
+					Melder_throw (U"Stray characters after default argument in form title:\n", startOfLine);
+				my arguments [my numberOfParameters] = Melder_dup_f (string.string);
+			} else {
+				my arguments [my numberOfParameters] = Melder_ndup (p, endOfLine - p);
+			}
 			my types [my numberOfParameters] = type;
+			if (Melder_isEndOfText (*endOfLine))
+				Melder_throw (U"Unfinished form (missing “endform”).");
 		}
 	} else {
 		npar = my numberOfParameters = 0;
@@ -359,14 +649,47 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 	return npar;
 }
 
+static void tidyUpParameterNames (Interpreter me, integer size) {
+	for (integer ipar = 1; ipar <= size; ipar ++) {
+		mutablestring32 p = my parameters [ipar];
+		/*
+			Ignore buttons and comments again (after `size` was
+			made smaller than my numberOfParameters).
+		*/
+		if (! *p)
+			continue;
+		/*
+			Change spaces to underscores.
+			This has to come before stripping.
+		*/
+		for (p = my parameters [ipar]; *p != U'\0'; p ++)
+			if (Melder_isHorizontalSpace (*p))
+				*p = U'_';
+		/*
+			Strip parentheses off parameter name.
+		*/
+		p = my parameters [ipar];
+		if ((p = str32chr (p, U'(')) != nullptr) {
+			*p = U'\0';
+			if (p - my parameters [ipar] > 0 && p [-1] == U'_')
+				p [-1] = U'\0';
+		}
+		/*
+			Strip colon off parameter name.
+		*/
+		p = my parameters [ipar];
+		if (*p != U'\0' && p [Melder_length (p) - 1] == U':')
+			p [Melder_length (p) - 1] = U'\0';
+	}
+}
+
 autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, Editor optionalEditor, conststring32 path,
 	void (*okCallback) (UiForm, integer, Stackel, conststring32, Interpreter, conststring32, bool, void *, Editor), void *okClosure,
 	bool selectionOnly)
 {
 	autoUiForm form = UiForm_create (parent, optionalEditor,
-		Melder_cat (selectionOnly ? U"Run script (selection only): " : U"Run script: ", my dialogTitle),
+		Melder_cat (selectionOnly ? U"Run script (selection only): " : U"Run script: ", my dialogTitle.get()),
 		okCallback, okClosure, nullptr, nullptr);
-	UiField radio = nullptr;
 	if (path)
 		form -> scriptFilePath = Melder_dup (path);
 	for (int ipar = 1; ipar <= my numberOfParameters; ipar ++) {
@@ -386,13 +709,29 @@ autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, Editor opti
 			} break; case Interpreter_SENTENCE: {
 				UiForm_addSentence (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
 			} break; case Interpreter_TEXT: {
-				UiForm_addText (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+				if (my numbersOfLines [ipar] == 0)
+					UiForm_addText (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+				else
+					UiForm_addText (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get(),
+							my numbersOfLines [ipar]);
 			} break; case Interpreter_INFILE: {
-				UiForm_addInfile (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+				if (my numbersOfLines [ipar] == 0)
+					UiForm_addInfile (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+				else
+					UiForm_addInfile (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get(),
+							my numbersOfLines [ipar]);
 			} break; case Interpreter_OUTFILE: {
-				UiForm_addOutfile (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+				if (my numbersOfLines [ipar] == 0)
+					UiForm_addOutfile (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+				else
+					UiForm_addOutfile (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get(),
+							my numbersOfLines [ipar]);
 			} break; case Interpreter_FOLDER: {
-				UiForm_addFolder (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+				if (my numbersOfLines [ipar] == 0)
+					UiForm_addFolder (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
+				else
+					UiForm_addFolder (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get(),
+							my numbersOfLines [ipar]);
 			} break; case Interpreter_REAL: {
 				UiForm_addReal (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());   // TODO: an address of a real variable
 			} break; case Interpreter_POSITIVE: {
@@ -402,99 +741,115 @@ autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, Editor opti
 			} break; case Interpreter_NATURAL: {
 				UiForm_addNatural (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
 			} break; case Interpreter_BOOLEAN: {
-				UiForm_addBoolean (form.get(), nullptr, nullptr, parameter, my arguments [ipar] [0] == U'1' ||
-					my arguments [ipar] [0] == U'y' || my arguments [ipar] [0] == U'Y' ||
-					(my arguments [ipar] [0] == U'o' && my arguments [ipar] [1] == U'n'));
+				mutablestring32 arg = & my arguments [ipar] [0];
+				if (
+					str32equ (arg, U"1") ||
+					str32equ (arg, U"yes") || str32equ (arg, U"on") ||
+					str32equ (arg, U"Yes") || str32equ (arg, U"On") ||
+					str32equ (arg, U"YES") || str32equ (arg, U"ON")
+				) {
+					str32cpy (arg, U"1");
+				} else if (
+					str32equ (arg, U"0") ||
+					str32equ (arg, U"no") || str32equ (arg, U"off") ||
+					str32equ (arg, U"No") || str32equ (arg, U"Off") ||
+					str32equ (arg, U"NO") || str32equ (arg, U"OFF")
+				) {
+					str32cpy (arg, U"0");
+				} else {
+					Melder_throw (U"Unknown value “", arg, U"” for boolean “", my parameters [ipar], U"”.");
+				}
+				UiForm_addBoolean (form.get(), nullptr, nullptr, parameter, my arguments [ipar] [0] == U'1');
 			} break; case Interpreter_REALVECTOR: {
 				kUi_realVectorFormat format = kUi_realVectorFormat_getValue (my formats [ipar]);
 				if (format == kUi_realVectorFormat::UNDEFINED)
-					Melder_throw (U"Undefined real vector format \"", my formats [ipar], U"\".");
-				UiForm_addRealVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+					Melder_throw (U"Undefined real vector format “", my formats [ipar], U"”.");
+				if (my numbersOfLines [ipar] == 0)
+					UiForm_addRealVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+				else
+					UiForm_addRealVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get(),
+							my numbersOfLines [ipar]);
 			} break; case Interpreter_POSITIVEVECTOR: {
 				kUi_realVectorFormat format = kUi_realVectorFormat_getValue (my formats [ipar]);
 				if (format == kUi_realVectorFormat::UNDEFINED)
-					Melder_throw (U"Undefined positive vector format \"", my formats [ipar], U"\".");
-				UiForm_addPositiveVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+					Melder_throw (U"Undefined positive vector format “", my formats [ipar], U"”.");
+				if (my numbersOfLines [ipar] == 0)
+					UiForm_addPositiveVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+				else
+					UiForm_addPositiveVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get(),
+							my numbersOfLines [ipar]);
 			} break; case Interpreter_INTEGERVECTOR: {
 				kUi_integerVectorFormat format = kUi_integerVectorFormat_getValue (my formats [ipar]);
 				if (format == kUi_integerVectorFormat::UNDEFINED)
-					Melder_throw (U"Undefined integer vector format \"", my formats [ipar], U"\".");
-				UiForm_addIntegerVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+					Melder_throw (U"Undefined integer vector format “", my formats [ipar], U"”.");
+				if (my numbersOfLines [ipar] == 0)
+					UiForm_addIntegerVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get());
+				else
+					UiForm_addIntegerVector (form.get(), nullptr, nullptr, parameter, format, my arguments [ipar].get(),
+							my numbersOfLines [ipar]);
 			} break; case Interpreter_NATURALVECTOR: {
 				kUi_integerVectorFormat format = kUi_integerVectorFormat_getValue (my formats [ipar]);
 				if (format == kUi_integerVectorFormat::UNDEFINED)
-					Melder_throw (U"Undefined natural vector format \"", my formats [ipar], U"\".");
-				UiForm_addNaturalVector (form.get(), nullptr, nullptr, parameter, kUi_integerVectorFormat_getValue (my formats [ipar]), my arguments [ipar].get());
+					Melder_throw (U"Undefined natural vector format “", my formats [ipar], U"”.");
+				if (my numbersOfLines [ipar] == 0)
+					UiForm_addNaturalVector (form.get(), nullptr, nullptr, parameter,
+						kUi_integerVectorFormat_getValue (my formats [ipar]), my arguments [ipar].get()
+					);
+				else
+					UiForm_addNaturalVector (form.get(), nullptr, nullptr, parameter,
+						kUi_integerVectorFormat_getValue (my formats [ipar]), my arguments [ipar].get(),
+						my numbersOfLines [ipar]
+					);
 			} break; case Interpreter_REALMATRIX: {
 				Melder_throw (U"Cannot handle matrices in forms yet.");   // TODO
 			//	UiForm_addRealMatrix (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
 			} break; case Interpreter_CHOICE: {
-				radio = UiForm_addRadio (form.get(), nullptr, nullptr, nullptr, parameter, (int) Melder_atoi (my arguments [ipar].get()), 1);
+				UiForm_addChoice (form.get(), nullptr, nullptr, nullptr, parameter, (int) Melder_atoi (my arguments [ipar].get()), 1);
 			} break; case Interpreter_OPTIONMENU: {
-				radio = UiForm_addOptionMenu (form.get(), nullptr, nullptr, nullptr, parameter, (int) Melder_atoi (my arguments [ipar].get()), 1);
+				UiForm_addOptionMenu (form.get(), nullptr, nullptr, nullptr, parameter, (int) Melder_atoi (my arguments [ipar].get()), 1);
 			} break; case Interpreter_BUTTON: {
-				if (radio)
-					UiRadio_addButton (radio, my arguments [ipar].get());
+				UiForm_addOption (form.get(), my arguments [ipar].get());
 			} break; case Interpreter_OPTION: {
-				if (radio)
-					UiOptionMenu_addButton (radio, my arguments [ipar].get());
+				UiForm_addOption (form.get(), my arguments [ipar].get());
 			} break; case Interpreter_COMMENT: {
 				UiForm_addLabel (form.get(), nullptr, my arguments [ipar].get());
 			} break; default: {
 				UiForm_addWord (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
 			}
 		}
-		/*
-			Strip parentheses and colon off parameter name.
-		*/
-		if ((p = str32chr (my parameters [ipar], U'(')) != nullptr) {
-			*p = U'\0';
-			if (p - my parameters [ipar] > 0 && p [-1] == U'_')
-				p [-1] = U'\0';
-		}
-		p = my parameters [ipar];
-		if (*p != U'\0' && p [str32len (p) - 1] == U':')
-			p [str32len (p) - 1] = U'\0';
 	}
+	tidyUpParameterNames (me, my numberOfParameters);
 	UiForm_finish (form.get());
 	return form;
 }
 
 void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
+	tidyUpParameterNames (me, my numberOfParameters);
 	for (int ipar = 1; ipar <= my numberOfParameters; ipar ++) {
-		char32 parameter [100], *p;
-		/*
-			Strip parentheses and colon off parameter name.
-		*/
-		if ((p = str32chr (my parameters [ipar], U'(')) != nullptr) {
-			*p = U'\0';
-			if (p - my parameters [ipar] > 0 && p [-1] == U'_')
-				p [-1] = U'\0';
-		}
-		p = my parameters [ipar];
-		if (*p != U'\0' && p [str32len (p) - 1] == U':')
-			p [str32len (p) - 1] = U'\0';
+		char32 parameter [1+Interpreter_MAX_PARAMETER_LENGTH];
 		/*
 			Convert underscores to spaces.
 		*/
 		str32cpy (parameter, my parameters [ipar]);
-		p = & parameter [0];
+		char32 *p = & parameter [0];
 		while (*p) {
 			if (*p == U'_')
 				*p = U' ';
 			p ++;
 		}
 		switch (my types [ipar]) {
-			case Interpreter_WORD: {
+			case Interpreter_WORD:
 			case Interpreter_SENTENCE:
 			case Interpreter_TEXT:
+			{
 				const conststring32 value = UiForm_getString (dialog, parameter);
 				my arguments [ipar] = Melder_dup_f (value);
 				break;
 			}
-			case Interpreter_INFILE: {
+			case Interpreter_INFILE:
 			case Interpreter_OUTFILE:
 			case Interpreter_FOLDER:
+			{
 				const conststring32 value = UiForm_getString (dialog, parameter);
 				structMelderFile file { };
 				Melder_relativePathToFile (value, & file);   // the working directory should have been set to the script file path
@@ -502,7 +857,8 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 				break;
 			}
 			case Interpreter_REAL:
-			case Interpreter_POSITIVE: {
+			case Interpreter_POSITIVE:
+			{
 				const double value = UiForm_getReal_check (dialog, parameter);
 				my arguments [ipar] = autostring32 (40, true);
 				Melder_sprint (my arguments [ipar].get(),40+1, value);
@@ -510,7 +866,8 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 			}
 			case Interpreter_INTEGER:
 			case Interpreter_NATURAL:
-			case Interpreter_BOOLEAN: {
+			case Interpreter_BOOLEAN:
+			{
 				const integer value = UiForm_getInteger (dialog, parameter);
 				my arguments [ipar] = autostring32 (40, true);
 				Melder_sprint (my arguments [ipar].get(),40+1, value);
@@ -542,7 +899,8 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 				my arguments [ipar] = Melder_dup (buffer.string);
 				break;
 			}
-			case Interpreter_REALMATRIX: {
+			case Interpreter_REALMATRIX:
+			{
 				Melder_throw (U"Cannot handle matrices in forms yet");
 				break;
 			}
@@ -565,44 +923,31 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 	}
 }
 
-static void tidyUpParameterNames (Interpreter me, integer size) {
-	for (integer ipar = 1; ipar <= size; ipar ++) {
-		mutablestring32 p = my parameters [ipar];
-		/*
-			Ignore buttons and comments again (after `size` was
-			made smaller than my numberOfParameters).
-		*/
-		if (! *p)
-			continue;
-		/*
-			Strip parentheses and colon off parameter name.
-		*/
-		if ((p = str32chr (p, U'(')) != nullptr) {
-			*p = U'\0';
-			if (p - my parameters [ipar] > 0 && p [-1] == U'_')
-				p [-1] = U'\0';
-		}
-		p = my parameters [ipar];
-		if (*p != U'\0' && p [str32len (p) - 1] == U':')
-			p [str32len (p) - 1] = U'\0';
-	}
-}
-
 static void convertBooleansAndChoicesToNumbersAndRelativeToAbsolutePaths (Interpreter me, integer size) {
 	for (integer ipar = 1; ipar <= size; ipar ++) {
-		if (my types [ipar] == Interpreter_INFILE || my types [ipar] == Interpreter_OUTFILE || my types [ipar] == Interpreter_FOLDER) {
+		if (
+			my types [ipar] == Interpreter_INFILE ||
+			my types [ipar] == Interpreter_OUTFILE ||
+			my types [ipar] == Interpreter_FOLDER
+		) {
 			structMelderFile file { };
 			Melder_relativePathToFile (my arguments [ipar].get(), & file);
 			my arguments [ipar] = Melder_dup_f (Melder_fileToPath (& file));
 		} else if (my types [ipar] == Interpreter_BOOLEAN) {
 			mutablestring32 arg = & my arguments [ipar] [0];
-			if (str32equ (arg, U"1") || str32equ (arg, U"yes") || str32equ (arg, U"on") ||
-			    str32equ (arg, U"Yes") || str32equ (arg, U"On") || str32equ (arg, U"YES") || str32equ (arg, U"ON"))
-			{
+			if (
+				str32equ (arg, U"1") ||
+				str32equ (arg, U"yes") || str32equ (arg, U"on") ||
+				str32equ (arg, U"Yes") || str32equ (arg, U"On") ||
+				str32equ (arg, U"YES") || str32equ (arg, U"ON")
+			) {
 				str32cpy (arg, U"1");
-			} else if (str32equ (arg, U"0") || str32equ (arg, U"no") || str32equ (arg, U"off") ||
-			    str32equ (arg, U"No") || str32equ (arg, U"Off") || str32equ (arg, U"NO") || str32equ (arg, U"OFF"))
-			{
+			} else if (
+				str32equ (arg, U"0") ||
+				str32equ (arg, U"no") || str32equ (arg, U"off") ||
+				str32equ (arg, U"No") || str32equ (arg, U"Off") ||
+				str32equ (arg, U"NO") || str32equ (arg, U"OFF")
+			) {
 				str32cpy (arg, U"0");
 			} else {
 				Melder_throw (U"Unknown value \"", arg, U"\" for boolean \"", my parameters [ipar], U"\".");
@@ -641,7 +986,7 @@ static void convertBooleansAndChoicesToNumbersAndRelativeToAbsolutePaths (Interp
 
 void Interpreter_getArgumentsFromString (Interpreter me, conststring32 arguments) {
 	int size = my numberOfParameters;
-	integer length = str32len (arguments);
+	const integer length = Melder_length (arguments);
 	while (size >= 1 && my parameters [size] [0] == U'\0')
 		size --;   /* Ignore fields without a variable name (button, comment). */
 	tidyUpParameterNames (me, size);
@@ -719,12 +1064,12 @@ void Interpreter_getArgumentsFromArgs (Interpreter me, integer narg, Stackel arg
 			Melder_throw (U"Found ", narg, U" arguments but expected more.");
 		Stackel arg = & args [++ iarg];
 		/*
-			... and replace with the actual arguments.
+			... and replace with the actual arguments. BUG: this loses type information.
 		*/
 		my arguments [ipar] =
 			arg -> which == Stackel_NUMBER ? Melder_dup (Melder_double (arg -> number)) :
 			arg -> which == Stackel_STRING ? Melder_dup (arg -> getString()) :
-			arg -> which == Stackel_NUMERIC_VECTOR ? Melder_dup (Melder_VEC (arg -> numericVector)) :
+			arg -> which == Stackel_NUMERIC_VECTOR ? Melder_dup (Melder_VEC (arg -> numericVector, true)) :
 			autostring32();
 		Melder_assert (my arguments [ipar]);
 	}
@@ -1072,7 +1417,7 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 		}
 		p ++;   // step over parenthesis or colon
 	}
-	integer callLength = str32len (callName);
+	const integer callLength = Melder_length (callName);
 	integer iline = 1;
 	for (; iline <= lines.size; iline ++) {
 		if (! str32nequ (lines [iline], U"procedure ", 10))
@@ -1080,10 +1425,11 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 		char32 *q = lines [iline] + 10;
 		while (Melder_isHorizontalSpace (*q))
 			q ++;   // skip whitespace before procedure name
-		char32 *procName = q;
+		char32 * const procName = q;
 		while (Melder_staysWithinInk (*q) && *q != U'(' && *q != U':')
 			q ++;
-		if (q == procName) Melder_throw (U"Missing procedure name after 'procedure'.");
+		if (q == procName)
+			Melder_throw (U"Missing procedure name after 'procedure'.");
 		if (q - procName == callLength && str32nequ (procName, callName, callLength)) {
 			/*
 				We found the procedure definition.
@@ -1091,7 +1437,7 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 			if (++ my callDepth > Interpreter_MAX_CALL_DEPTH)
 				Melder_throw (U"Call depth greater than ", Interpreter_MAX_CALL_DEPTH, U".");
 			str32cpy (my procedureNames [my callDepth], callName);
-			bool parenthesisOrColonFound = ( *q == U'(' || *q == U':' );
+			const bool parenthesisOrColonFound = ( *q == U'(' || *q == U':' );
 			if (*q)
 				q ++;   // step over parenthesis or colon or first white space
 			if (! parenthesisOrColonFound) {
@@ -1159,7 +1505,7 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 					my callDepth --;
 					autostring32 value = Interpreter_stringExpression (me, argument.string);
 					my callDepth ++;
-					char32 save = *q;
+					const char32 save = *q;
 					*q = U'\0';
 					InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName);
 					*q = save;
@@ -1171,7 +1517,7 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 						my callDepth --;
 						Interpreter_numericMatrixExpression (me, argument.string, & value, & owned);
 						my callDepth ++;
-						char32 save = *q;
+						const char32 save = *q;
 						*q = U'\0';
 						InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName);
 						*q = save;
@@ -1182,7 +1528,7 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 						my callDepth --;
 						Interpreter_stringArrayExpression (me, argument.string, & value, & owned);
 						my callDepth ++;
-						char32 save = *q;
+						const char32 save = *q;
 						*q = U'\0';
 						InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName);
 						*q = save;
@@ -1193,7 +1539,7 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 						my callDepth --;
 						Interpreter_numericVectorExpression (me, argument.string, & value, & owned);
 						my callDepth ++;
-						char32 save = *q;
+						const char32 save = *q;
 						*q = U'\0';
 						InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName);
 						*q = save;
@@ -1204,7 +1550,7 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 					my callDepth --;
 					Interpreter_numericExpression (me, argument.string, & value);
 					my callDepth ++;
-					char32 save = *q;
+					const char32 save = *q;
 					*q = U'\0';
 					InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName);
 					*q = save;
@@ -1239,7 +1585,7 @@ static void Interpreter_do_oldProcedureCall (Interpreter me, char32 *command,
 		Melder_throw (U"Missing procedure name after 'call'.");
 	bool hasArguments = ( *p != U'\0' );
 	*p = U'\0';   // close procedure name
-	integer callLength = str32len (callName);
+	const integer callLength = Melder_length (callName);
 	integer iline = 1;
 	for (; iline <= lines.size; iline ++) {
 		if (! str32nequ (lines [iline], U"procedure ", 10))
@@ -1421,6 +1767,10 @@ static void assignToNumericVectorElement (Interpreter me, char32 *& p, const cha
 	InterpreterVariable var = Interpreter_hasVariable (me, vectorName);
 	if (! var)
 		Melder_throw (U"Vector ", vectorName, U" does not exist.");
+	/*@praat
+		asserterror Vector interpreter_assignToVector# does not exist.
+		interpreter_assignToVector# [5] = 3
+	@*/
 	if (indexValue < 1)
 		Melder_throw (U"A vector index cannot be less than 1 (the index you supplied is ", indexValue, U").");
 	if (indexValue > var -> numericVectorValue.size)
@@ -1650,7 +2000,7 @@ static void assignToStringArrayElement (Interpreter me, char32 *& p, const char3
 	var -> stringArrayValue [indexValue] = value. move();
 }
 
-void Interpreter_run (Interpreter me, char32 *text) {
+void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 	autovector <mutablestring32> lines;   // not autostringvector, because the elements are reference copies
 	integer lineNumber = 0;
 	bool assertionFailed = false;
@@ -1685,7 +2035,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 			Remember line starts and labels.
 		*/
 		lines. resize (numberOfLines);
-		for (lineNumber = 1, command = text; lineNumber <= numberOfLines; lineNumber ++, command += str32len (command) + 1 + chopped) {
+		for (lineNumber = 1, command = text; lineNumber <= numberOfLines; lineNumber ++, command += Melder_length (command) + 1 + chopped) {
 			while (Melder_isHorizontalSpace (*command))
 				command ++;   // nbsp can occur for scripts copied from the manual
 			/*
@@ -1693,7 +2043,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 			*/
 			#if 0
 				chopped = 0;
-				int length = str32len (command);
+				const integer length = Melder_length (command);
 				while (length > 0) {
 					char kar = command [-- length];
 					if (! Melder_isHorizontalSpace (kar))
@@ -1709,7 +2059,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						Melder_throw (U"Duplicate label \"", command + 6, U"\".");
 				if (my numberOfLabels >= Interpreter_MAXNUM_LABELS)
 					Melder_throw (U"Too many labels.");
-				str32ncpy (my labelNames [++ my numberOfLabels], command + 6, 1+Interpreter_MAX_LABEL_LENGTH);
+				str32ncpy (my labelNames [++ my numberOfLabels], command + 6, Interpreter_MAX_LABEL_LENGTH);
 				my labelNames [my numberOfLabels] [Interpreter_MAX_LABEL_LENGTH] = U'\0';
 				my labelLines [my numberOfLabels] = lineNumber;
 			}
@@ -1723,7 +2073,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 			if (line [0] == U'.' && line [1] == U'.' && line [2] == U'.') {
 				char32 *previous = lines [lineNumber - 1];
 				MelderString_copy (& command2, line + 3);
-				MelderString_get (& command2, previous + str32len (previous));
+				MelderString_get (& command2, previous + Melder_length (previous));
 				static char32 emptyLine [] = { U'\0' };
 				lines [lineNumber] = emptyLine;
 			}
@@ -1731,66 +2081,70 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		/*
 			Copy the parameter names and argument values into the array of variables.
 		*/
-		my variablesMap. clear ();
-		for (ipar = 1; ipar <= my numberOfParameters; ipar ++) {
-			char32 parameter [200];
-			/*
-				Create variable names as-are and variable names without capitals.
-			*/
-			str32cpy (parameter, my parameters [ipar]);
-			parameterToVariable (me, my types [ipar], parameter, ipar);
-			if (parameter [0] >= U'A' && parameter [0] <= U'Z') {
-				parameter [0] = Melder_toLowerCase (parameter [0]);
+		if (! reuseVariables) {
+			my variablesMap. clear ();
+			for (ipar = 1; ipar <= my numberOfParameters; ipar ++) {
+				char32 parameter [1+Interpreter_MAX_PARAMETER_LENGTH];
+				/*
+					Create variable names as-are and variable names without capitals.
+				*/
+				str32cpy (parameter, my parameters [ipar]);
 				parameterToVariable (me, my types [ipar], parameter, ipar);
+				if (parameter [0] >= U'A' && parameter [0] <= U'Z') {
+					parameter [0] = Melder_toLowerCase (parameter [0]);
+					parameterToVariable (me, my types [ipar], parameter, ipar);
+				}
 			}
+			/*
+				Initialize some variables.
+			*/
+			Interpreter_addStringVariable (me, U"newline$", U"\n");
+			Interpreter_addStringVariable (me, U"tab$", U"\t");
+			Interpreter_addStringVariable (me, U"shellDirectory$", Melder_getShellDirectory ());
+			structMelderDir dir { }; Melder_getDefaultDir (& dir);
+			Interpreter_addStringVariable (me, U"defaultDirectory$", Melder_dirToPath (& dir));
+			Interpreter_addStringVariable (me, U"preferencesDirectory$", Melder_dirToPath (& Melder_preferencesFolder));
+			Melder_getHomeDir (& dir);
+			Interpreter_addStringVariable (me, U"homeDirectory$", Melder_dirToPath (& dir));
+			Melder_getTempDir (& dir);
+			Interpreter_addStringVariable (me, U"temporaryDirectory$", Melder_dirToPath (& dir));
+			#if defined (macintosh)
+				Interpreter_addNumericVariable (me, U"macintosh", 1);
+				Interpreter_addNumericVariable (me, U"windows", 0);
+				Interpreter_addNumericVariable (me, U"unix", 0);
+			#elif defined (_WIN32)
+				Interpreter_addNumericVariable (me, U"macintosh", 0);
+				Interpreter_addNumericVariable (me, U"windows", 1);
+				Interpreter_addNumericVariable (me, U"unix", 0);
+			#elif defined (UNIX)
+				Interpreter_addNumericVariable (me, U"macintosh", 0);
+				Interpreter_addNumericVariable (me, U"windows", 0);
+				Interpreter_addNumericVariable (me, U"unix", 1);
+			#else
+				Interpreter_addNumericVariable (me, U"macintosh", 0);
+				Interpreter_addNumericVariable (me, U"windows", 0);
+				Interpreter_addNumericVariable (me, U"unix", 0);
+			#endif
+			Interpreter_addNumericVariable (me, U"left", 1);   // deprecated 2010 (Praat 5.2.06)
+			Interpreter_addNumericVariable (me, U"right", 2);   // deprecated 2010 (Praat 5.2.06)
+			Interpreter_addNumericVariable (me, U"mono", 1);   // deprecated 2010 (Praat 5.2.06)
+			Interpreter_addNumericVariable (me, U"stereo", 2);   // deprecated 2010 (Praat 5.2.06)
+			Interpreter_addNumericVariable (me, U"all", 0);   // deprecated 2010 (Praat 5.2.06)
+			Interpreter_addNumericVariable (me, U"average", 0);   // deprecated 2010 (Praat 5.2.06)
+			Interpreter_addStringVariable (me, U"praatVersion$", U"" stringize(PRAAT_VERSION_STR));
+			Interpreter_addNumericVariable (me, U"praatVersion", PRAAT_VERSION_NUM);
 		}
-		/*
-			Initialize some variables.
-		*/
-		Interpreter_addStringVariable (me, U"newline$", U"\n");
-		Interpreter_addStringVariable (me, U"tab$", U"\t");
-		Interpreter_addStringVariable (me, U"shellDirectory$", Melder_getShellDirectory ());
-		structMelderDir dir { }; Melder_getDefaultDir (& dir);
-		Interpreter_addStringVariable (me, U"defaultDirectory$", Melder_dirToPath (& dir));
-		Interpreter_addStringVariable (me, U"preferencesDirectory$", Melder_dirToPath (& Melder_preferencesFolder));
-		Melder_getHomeDir (& dir);
-		Interpreter_addStringVariable (me, U"homeDirectory$", Melder_dirToPath (& dir));
-		Melder_getTempDir (& dir);
-		Interpreter_addStringVariable (me, U"temporaryDirectory$", Melder_dirToPath (& dir));
-		#if defined (macintosh)
-			Interpreter_addNumericVariable (me, U"macintosh", 1);
-			Interpreter_addNumericVariable (me, U"windows", 0);
-			Interpreter_addNumericVariable (me, U"unix", 0);
-		#elif defined (_WIN32)
-			Interpreter_addNumericVariable (me, U"macintosh", 0);
-			Interpreter_addNumericVariable (me, U"windows", 1);
-			Interpreter_addNumericVariable (me, U"unix", 0);
-		#elif defined (UNIX)
-			Interpreter_addNumericVariable (me, U"macintosh", 0);
-			Interpreter_addNumericVariable (me, U"windows", 0);
-			Interpreter_addNumericVariable (me, U"unix", 1);
-		#else
-			Interpreter_addNumericVariable (me, U"macintosh", 0);
-			Interpreter_addNumericVariable (me, U"windows", 0);
-			Interpreter_addNumericVariable (me, U"unix", 0);
-		#endif
-		Interpreter_addNumericVariable (me, U"left", 1);   // to accommodate scripts from before Praat 5.2.06
-		Interpreter_addNumericVariable (me, U"right", 2);   // to accommodate scripts from before Praat 5.2.06
-		Interpreter_addNumericVariable (me, U"mono", 1);   // to accommodate scripts from before Praat 5.2.06
-		Interpreter_addNumericVariable (me, U"stereo", 2);   // to accommodate scripts from before Praat 5.2.06
-		Interpreter_addNumericVariable (me, U"all", 0);   // to accommodate scripts from before Praat 5.2.06
-		Interpreter_addNumericVariable (me, U"average", 0);   // to accommodate scripts from before Praat 5.2.06
-		Interpreter_addStringVariable (me, U"praatVersion$", U"" stringize(PRAAT_VERSION_STR));
-		Interpreter_addNumericVariable (me, U"praatVersion", PRAAT_VERSION_NUM);
 		/*
 			Execute commands.
 		*/
+		my setDynamicFromOwningEditorEnvironment ();
 		trace (U"going to handle ", numberOfLines, U" lines");
 		//for (lineNumber = 1; lineNumber <= numberOfLines; lineNumber ++) {
 			//trace (U"line ", lineNumber, U": ", lines [lineNumber]);
 		//}
 		for (lineNumber = 1; lineNumber <= numberOfLines; lineNumber ++) {
-			if (my stopped) break;
+			if (my stopped)
+				break;
 			//trace (U"now at line ", lineNumber, U": ", lines [lineNumber]);
 			//for (int lineNumber2 = 1; lineNumber2 <= numberOfLines; lineNumber2 ++) {
 				//trace (U"  line ", lineNumber2, U": ", lines [lineNumber2]);
@@ -1838,12 +2192,12 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						/*
 							Found a variable (p points to the left quote, q to the right quote). Substitute.
 						*/
-						integer headlen = p - command2.string;
+						const integer headlen = p - command2.string;
 						conststring32 string = ( var -> stringValue ? var -> stringValue.get() :
 								percent ? Melder_percent (var -> numericValue, precision) :
 								precision >= 0 ?  Melder_fixed (var -> numericValue, precision) :
 								Melder_double (var -> numericValue) );
-						integer arglen = str32len (string);
+						const integer arglen = Melder_length (string);
 						MelderString_ncopy (& buffer, command2.string, headlen);
 						MelderString_append (& buffer, string, q + 1);
 						MelderString_copy (& command2, buffer.string);   // This invalidates p!! (really bad bug 20070203)
@@ -2124,9 +2478,17 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									}
 								}
 								if (iline > numberOfLines)
-									Melder_throw (U"Unmatched 'for'.");
+									Melder_throw (U"Unmatched 'for' (matching 'endfor' not found).");
 							}
-						} else if (str32nequ (command2.string, U"form", 4) && Melder_isEndOfInk (command2.string [4])) {
+						} else if (str32nequ (command2.string, U"form", 4) &&
+								(command2.string [4] == U':' || Melder_isEndOfInk (command2.string [4])))
+						{
+							/*
+								We encountered a `form` statement.
+								The contents of everything between `form` and `endform`
+								is irrelevant at this point (the parameters have been read earlier),
+								so we will skip the whole contents of the form and jump past `endform`.
+							*/
 							integer iline;
 							for (iline = lineNumber + 1; iline <= numberOfLines; iline ++)
 								if (str32nequ (lines [iline], U"endform", 7) && Melder_isEndOfInk (lines [iline] [7])) {
@@ -2134,14 +2496,21 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									break;   // go after 'endform'
 								}
 							if (iline > numberOfLines)
-								Melder_throw (U"Unmatched 'form'.");
+								/*
+									We will probably never arrive here, because a missing `endform`
+									will probably have been detected by Interpreter_readParameters(),
+									either with "Unknown parameter type inside form:\nxxx"
+									or with "Unfinished form (missing “endform”)."
+									but we like to stay on the safe side. (last checked 2023-01-20)
+								*/
+								Melder_throw (U"Unmatched 'form' (matching 'endform' not found).");
 						} else
 							fail = true;
 						break;
 					case U'g':
 						if (str32nequ (command2.string, U"goto ", 5)) {
 							char32 labelName [1+Interpreter_MAX_LABEL_LENGTH];
-							str32ncpy (labelName, command2.string + 5, 1+Interpreter_MAX_LABEL_LENGTH);
+							str32ncpy (labelName, command2.string + 5, Interpreter_MAX_LABEL_LENGTH);
 							labelName [Interpreter_MAX_LABEL_LENGTH] = U'\0';
 							char32 *space = str32chr (labelName, U' ');
 							if (space == labelName)
@@ -2150,7 +2519,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							if (space) {
 								double value;
 								*space = '\0';
-								Interpreter_numericExpression (me, command2.string + 6 + str32len (labelName), & value);
+								Interpreter_numericExpression (me, command2.string + 6 + Melder_length (labelName), & value);
 								if (value == 0.0)
 									dojump = false;
 							}
@@ -2490,7 +2859,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									typeOfAssignment = 1;   // adding assignment
 									p ++;
 								} else {
-									Melder_throw (U"Missing \"=\", \"+=\", \"<\", or \">\" after variable ", variableName, U".");
+									Melder_throw (U"Missing “=” after string variable ", variableName, U" followed by “+”.");
 								}
 							} else if (*p == U'<') {
 								typeOfAssignment = 2;   // read from file
@@ -2501,7 +2870,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								} else {
 									typeOfAssignment = 4;   // save to file
 								}
-							} else Melder_throw (U"Missing \"=\", \"+=\", \"<\", or \">\" after variable ", variableName, U".");
+							} else Melder_throw (U"Missing “=”, “+=”, “<”, or “>” after string variable ", variableName, U".");
 							*endOfVariable = U'\0';
 							p ++;
 							while (Melder_isHorizontalSpace (*p)) p ++;   // go to first token after assignment or I/O symbol
@@ -2566,8 +2935,9 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									if (! var)
 										Melder_throw (U"The string ", variableName, U" does not exist.\n"
 													  U"You can increment (+=) only existing strings.");
-									integer oldLength = str32len (var -> stringValue.get()), extraLength = str32len (stringValue.get());
-									autostring32 newString = autostring32 (oldLength + extraLength, false);
+									const integer oldLength = Melder_length (var -> stringValue.get());
+									const integer extraLength = Melder_length (stringValue.get());
+									autostring32 newString (oldLength + extraLength, false);
 									str32cpy (newString.get(), var -> stringValue.get());
 									str32cpy (newString.get() + oldLength, stringValue.get());
 									var -> stringValue = newString.move();
@@ -2602,7 +2972,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									/*
 										Statement like: values## = Get all values
 									*/
-									bool status = praat_executeCommand (me, p);
+									const bool status = praat_executeCommand (me, p);
 									InterpreterVariable var = Interpreter_lookUpVariable (me, matrixName.string);
 									if (! status)
 										var -> numericMatrixValue = autoMAT();   // anything can have happened, including an incorrect returnType
@@ -2721,9 +3091,9 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									Reversing the order of the first and second step would fail the following test:
 								*/
 								/*@praat
-									asserterror Variable interpreter_assignToVector# does not exist.
+									asserterror Unknown variable:'newline$'« interpreter_assignToVector#
 									interpreter_assignToVector# = interpreter_assignToVector# + 5
-								*/
+								@*/
 								p ++;   // step over equals sign
 								while (Melder_isHorizontalSpace (*p))
 									p ++;   // go to first token after assignment
@@ -2760,6 +3130,10 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								if (! var)
 									Melder_throw (U"The vector ", vectorName.string, U" does not exist.\n"
 									              U"You can increment (+=) only existing vectors.");
+								/*@praat
+									asserterror The vector interpreter_assignToVector# does not exist.
+									interpreter_assignToVector# += 5
+								@*/
 								Formula_Result result;
 								Interpreter_anyExpression (me, p += 2, & result);
 								if (result. expressionType == kFormula_EXPRESSION_TYPE_NUMERIC_VECTOR) {
@@ -3065,15 +3439,10 @@ void Interpreter_voidExpression (Interpreter me, conststring32 expression) {
 }
 
 void Interpreter_numericExpression (Interpreter me, conststring32 expression, double *out_value) {
-	Melder_assert (out_value);
-	if (str32str (expression, U"(=")) {
-		*out_value = Melder_atof (expression);
-	} else {
-		Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_NUMERIC, false);
-		Formula_Result result;
-		Formula_run (0, 0, & result);
-		*out_value = result. numericResult;
-	}
+	Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_NUMERIC, false);
+	Formula_Result result;
+	Formula_run (0, 0, & result);
+	*out_value = result. numericResult;
 }
 
 void Interpreter_numericVectorExpression (Interpreter me, conststring32 expression, VEC *out_value, bool *out_owned) {

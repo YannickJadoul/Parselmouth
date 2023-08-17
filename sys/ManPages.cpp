@@ -1,6 +1,6 @@
 /* ManPages.cpp
  *
- * Copyright (C) 1996-2021 Paul Boersma
+ * Copyright (C) 1996-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,20 +17,10 @@
  */
 
 #include "ManPages.h"
-#include "../kar/longchar.h"
-#include "Interpreter.h"
-#include "praat.h"
 
 Thing_implement (ManPages, Daata, 0);
 
-#define LONGEST_FILE_NAME  55
-
-static bool isAllowedFileNameCharacter (char32 c) {
-	return Melder_isWordCharacter (c) || c == U'_' || c == U'-' || c == U'+';
-}
-static bool isSingleWordCharacter (char32 c) {
-	return Melder_isWordCharacter (c) || c == U'_';
-}
+#define MAXIMUM_LINK_LENGTH  500
 
 static integer lookUp_unsorted (ManPages me, conststring32 title);
 
@@ -47,49 +37,322 @@ void structManPages :: v9_destroy () noexcept {
 	ManPages_Parent :: v9_destroy ();
 }
 
-static conststring32 extractLink (conststring32 text, const char32 *p, char32 *link) {
-	char32 *to = link, *max = link + 300;
+static conststring32 ManPage_Paragraph_extractLink (ManPage_Paragraph par, const char32 *p, char32 *link, bool verbatimAware) {
+	const bool paragraphIsVerbatim = ( verbatimAware && par -> couldVerbatim () );
+	conststring32 text = par -> text;
+	Melder_assert (text);
+	char32 *to = & link [0];
 	if (! p)
 		p = text;
 	/*
-		Search for next '@' that is not in a backslash sequence.
+		Search for the next link.
 	*/
-	for (;;) {
-		p = str32chr (p, U'@');
-		if (! p)
-			return nullptr;   // no more '@'
-		if (p - text <= 0 || (p [-1] != U'\\' && (p - text <= 1 || p [-2] != U'\\')))
-			break;
-		p ++;
+	for (;; p ++) {
+		if (*p == U'\0')
+			return nullptr;   // no link found
+		if (*p == U'@' && ! paragraphIsVerbatim) {
+			/*
+				Found a "@" in running text.
+				Ignore it if it is inside a backslash trigraph.
+			*/
+			if (! (p - text <= 0 || (p [-1] != U'\\' && (p - text <= 1 || p [-2] != U'\\'))))
+				continue;
+			if (p [1] == U'@') {
+				/*
+					We found "@@", starting a link in running text.
+				*/
+				const char32 *from = p + 2;
+				while (*from != U'@' && *from != U'|' && *from != U'\0') {
+					if (to - link >= MAXIMUM_LINK_LENGTH)
+						Melder_throw (U"(ManPage_Paragraph_extractLink:) Link starting with “@@” is too long:\n", text);
+					*to ++ = *from ++;
+				}
+				/*
+					Ignore the "|...@" part, unless it is "||...@".
+				*/
+				if (*from == U'|') {
+					if (from [1] == U'|') {
+						/*
+							Found a "||xxx@" part. Append the xxx part.
+						*/
+						from += 2;   // skip "||"
+						while (*from != U'@' && *from != U'\0') {
+							if (*from == U'\0')
+								break;
+							if (to - link >= MAXIMUM_LINK_LENGTH)
+								Melder_throw (U"(ManPage_Paragraph_extractLink:) Link starting with “@@” and containing “||” is too long:\n", text);
+							*to ++ = *from ++;
+						}
+					} else {
+						/*
+							Found a "|xxx@" part. ignore all of it.
+						*/
+						from ++;
+						while (*from != U'@' && *from != U'\0')
+							from ++;
+					}
+				}
+				Melder_assert (to - link <= MAXIMUM_LINK_LENGTH);
+				*to = U'\0';
+				p = from + ( *from == U'@' );   // add bool to pointer: skip '@' but not '\0'
+				return p;
+			} else if (p [1] == U'`' /*&& verbatimAware*/) {   // TODO: remove once manuals have been converted to notebooks
+				/*
+					We found "@`", starting a verbatim link in running text.
+				*/
+				const char32 *from = p + 1;
+				*to ++ = *from ++;   // copy opening backquote
+				while (*from != U'`' && *from != U'\0') {
+					if (to - link >= MAXIMUM_LINK_LENGTH)
+						Melder_throw (U"(ManPage_Paragraph_extractLink:) Link starting with “@`” is too long:\n", text);
+					*to ++ = *from ++;
+				}
+				if (*from == U'`')
+					*to ++ = *from ++;   // copy closing backquote
+				Melder_assert (to - link <= MAXIMUM_LINK_LENGTH);
+				*to = U'\0';
+				p = from;
+				return p;
+			} else {
+				const char32 *from = p + 1;
+				while (isSingleWordCharacter (*from)) {
+					if (to - link >= MAXIMUM_LINK_LENGTH)
+						Melder_throw (U"(ManPage_Paragraph_extractLink:) Link starting with “@” is too long:\n", text);
+					*to ++ = *from ++;
+				}
+				Melder_assert (to - link <= MAXIMUM_LINK_LENGTH);
+				*to = U'\0';
+				p = from;
+				return p;
+			}
+		} else if (*p == U'`' && verbatimAware) {
+			/*
+				We found "`", starting a verbatim stretch in which '@' is to be ignored. BUG: but should "\@{" be honoured?
+			*/
+			if (p - text <= 0 || (p [-1] != U'\\' && (p - text <= 1 || p [-2] != U'\\'))) {
+				/*
+					Jump to the matching closing backquote.
+				*/
+				p ++;   // step over opening backquote
+				for (;;) {
+					if (*p == U'\0')
+						return nullptr;   // no more '@'
+					if (*p == U'`')
+						if (p [1] == U'`')
+							p ++;   // jump over the first member of a double backquote
+						else
+							break;   // found the closing backquote
+					p ++;
+				}
+			}
+		} else if (
+			*p == U'\\' && p [1] == U'@' && p [2] == U'{' ||
+			*p == U'\\' && p [1] == U'#' && p [2] == U'@' && p [3] == U'{' ||
+			*p == U'\\' && p [1] == U'`' && p [2] == U'{' ||
+			*p == U'\\' && p [1] == U'#' && p [2] == U'`' && p [3] == U'{'
+		) {
+			/*
+				We found "\@{" or "\#@{" or "\`{" or "\#`{",
+				starting a link in running text or in verbatim code.
+				TODO: should not occur in running text.
+			*/
+			const bool boldLink = ( p [1] == U'#' );
+			const char32 *from = p + 3 + boldLink;
+			const bool verbatimLink = ( from [-2] == U'`' );
+			const conststring32 startMessage =
+				boldLink ? verbatimLink ? U"\\#`{" : U"\\#@{" : verbatimLink ? U"\\`{" : U"\\@{";
+			if (verbatimLink) {
+				if (to - link >= MAXIMUM_LINK_LENGTH)
+					Melder_throw (U"(ManPage_Paragraph_extractLink:) Link starting with “", startMessage, U"” is too long:\n", text);
+				*to ++ = U'`';
+			}
+			while (*from != U'}' && *from != U'|' && *from != U'\0') {
+				if (to - link >= MAXIMUM_LINK_LENGTH)
+					Melder_throw (U"(ManPage_Paragraph_extractLink:) Link starting with “", startMessage, U"” is too long:\n", text);
+				*to ++ = *from ++;
+			}
+			/*
+				Ignore the "|...}" part, unless it is "||...}"
+			*/
+			if (*from == U'|') {
+				if (from [1] == U'|') {
+					/*
+						Found a "||xxx}" part. Append the xxx part.
+					*/
+					from += 2;   // skip "||"
+					while (*from != U'}' && *from != U'\0') {
+						if (*from == U'\0')
+							break;
+						if (to - link >= MAXIMUM_LINK_LENGTH)
+							Melder_throw (U"(ManPage_Paragraph_extractLink:) Link starting with “", startMessage, U"” and containing “||” is too long:\n", text);
+						*to ++ = *from ++;
+					}
+					Melder_assert (to - link <= MAXIMUM_LINK_LENGTH);
+					*to = U'\0';
+				} else {
+					/*
+						Found a "|xxx}" part. Ignore all of it.
+					*/
+					from ++;
+					while (*from != U'}' && *from != U'\0')
+						from ++;
+				}
+			}
+
+			/*
+				Replace final colon with three dots.
+				For example, the code
+					\@{Create Poisson process:}
+				should yield a link to
+					Create Poisson process...
+			*/
+			if (to - link > 0 && to [-1] == U':') {
+				to --;
+				for (integer idot = 1; idot <= 3; idot ++) {
+					if (to - link >= MAXIMUM_LINK_LENGTH)
+						Melder_throw (U"(ManPage_Paragraph_extractLink:) Link starting with “\\@{” is too long:\n", text);
+					*to ++ = U'.';
+				}
+			}
+			if (verbatimLink) {
+				Melder_assert (to - link <= MAXIMUM_LINK_LENGTH);
+				*to ++ = U'`';
+			}
+			Melder_assert (to - link <= MAXIMUM_LINK_LENGTH);
+			*to = U'\0';
+
+			p = from + ( *from == U'}' );   // add bool to pointer: skip '}' but not '\0'
+			return p;
+		}
 	}
-	Melder_assert (*p == U'@');
-	if (p [1] == U'@') {
-		const char32 *from = p + 2;
-		while (*from != U'@' && *from != U'|' && *from != U'\0') {
-			if (to >= max)
-				Melder_throw (U"(ManPages::grind:) Link starting with \"@@\" is too long:\n", text);
-			*to ++ = *from ++;
-		}
-		if (*from == U'|') {
-			from ++;
-			while (*from != U'@' && *from != U'\0')
-				from ++;
-		}
-		p = from + ( *from == U'@' );   // add bool to pointer: skip '@' but not '\0'
-	} else {
-		const char32 *from = p + 1;
-		while (isSingleWordCharacter (*from)) {
-			if (to >= max)
-				Melder_throw (U"(ManPages::grind:) Link starting with \"@@\" is too long:\n", text);
-			*to ++ = *from ++;
-		}
-		p = from;
-	}
-	*to = U'\0';
-	return p;
 }
 
-static void readOnePage (ManPages me, MelderReadText text) {
+static void readOnePage (ManPages me, MelderReadText text);   // forward
+
+static void resolveLinks (ManPages me, ManPage_Paragraph par, bool verbatimAware) {
+	//if (par -> type == kManPage_type::SCRIPT)
+	//	return;   // links would be invisible
+	char32 linkBuffer [MAXIMUM_LINK_LENGTH + 1], fileNameBuffer [ManPages_FILENAME_BUFFER_SIZE];
+	for (const char32 *plink = ManPage_Paragraph_extractLink (par, nullptr, linkBuffer, verbatimAware);
+		 plink != nullptr;
+		 plink = ManPage_Paragraph_extractLink (par, plink, linkBuffer, verbatimAware)
+	) {
+		/*
+			Now, `linkBuffer` contains the link text, with spaces and all.
+			Transform it into a file name.
+		*/
+		structMelderFile file2 { };
+		if (linkBuffer [0] == U'\\' && linkBuffer [1] == U'F' && linkBuffer [2] == U'I') {
+			/*
+				A link to a sound file: see if it exists.
+			*/
+			MelderDir_relativePathToFile (& my rootDirectory, linkBuffer + 3, & file2);
+			if (! MelderFile_exists (& file2))
+				Melder_warning (U"Cannot find sound file ", MelderFile_messageName (& file2), U".");
+		} else if (linkBuffer [0] == U'\\' && linkBuffer [1] == U'S' && linkBuffer [2] == U'C') {
+			/*
+				A link to a script: see if it exists.
+			s*/
+			char32 *p = linkBuffer + 3;
+			if (*p == U'"') {
+				char32 *q = fileNameBuffer;
+				p ++;
+				while (*p != U'"' && *p != U'\0')
+					* q ++ = * p ++;
+				*q = U'\0';
+			} else {
+				char32 *q = fileNameBuffer;
+				while (*p != U' ' && *p != U'\0')
+					* q ++ = * p ++;   // one word, up to the next space
+				*q = U'\0';
+			}
+			MelderDir_relativePathToFile (& my rootDirectory, fileNameBuffer, & file2);
+			if (! MelderFile_exists (& file2))
+				Melder_warning (U"Cannot find script ", MelderFile_messageName (& file2), U".");
+			my executable = true;
+		} else {
+			/*
+				A link to another page: follow it.
+			*/
+			try {
+				integer extensionSize = 4;   // .man
+				Melder_sprint (fileNameBuffer,ManPages_FILENAME_BUFFER_SIZE - extensionSize, linkBuffer);
+				/*
+					For the `.man` version, we replace every funny symbol with an underscore.
+				*/
+				for (char32 *q = fileNameBuffer; *q; q ++)
+					if (! isAllowedFileNameCharacter (*q))
+						*q = U'_';
+				str32cat (fileNameBuffer, U".man");
+				MelderDir_getFile (& my rootDirectory, fileNameBuffer, & file2);
+				if (MelderFile_exists (& file2)) {
+					autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
+					readOnePage (me, text2.get());
+				} else {
+					/*
+						Second try: with upper case.
+					*/
+					linkBuffer [0] = Melder_toUpperCase (linkBuffer [0]);
+					Melder_sprint (fileNameBuffer,ManPages_FILENAME_BUFFER_SIZE, linkBuffer, U".man");
+					MelderDir_getFile (& my rootDirectory, fileNameBuffer, & file2);
+					if (MelderFile_exists (& file2)) {
+						autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
+						readOnePage (me, text2.get());
+					} else {
+						/*
+							For the `.praatnb` version, we replace most funny symbols with underscores,
+							but `#` with `-H`, `$` with `-S`, and `@` with `-C`.
+						*/
+						extensionSize = 8;   // .praatnb
+						char32 *to = fileNameBuffer, *max = fileNameBuffer + ManPages_FILENAME_BUFFER_SIZE - (extensionSize + 1);
+						for (char32 *from = & linkBuffer [0]; *from != U'\0'; from ++) {
+							if (isAllowedFileNameCharacter (*from)) {
+								if (to < max)
+									*to ++ = *from;
+							} else if (*from == U'#') {
+								if (to < max)
+									*to ++ = U'-';
+								if (to < max)
+									*to ++ = U'H';
+							} else if (*from == U'$') {
+								if (to < max)
+									*to ++ = U'-';
+								if (to < max)
+									*to ++ = U'S';
+							} else if (*from == U'@') {
+								if (to < max)
+									*to ++ = U'-';
+								if (to < max)
+									*to ++ = U'C';
+							} else {
+								if (to < max)
+									*to ++ = U'_';
+							}
+						}
+						*to = U'\0';
+						str32cat (fileNameBuffer, U".praatnb");
+						MelderDir_getFile (& my rootDirectory, fileNameBuffer, & file2);
+						if (MelderFile_exists (& file2)) {
+							autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
+							readOnePage (me, text2.get());
+						} else {
+							fileNameBuffer [0] = Melder_toLowerCase (fileNameBuffer [0]);
+							MelderDir_getFile (& my rootDirectory, fileNameBuffer, & file2);
+							if (MelderFile_exists (& file2)) {
+								autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
+								readOnePage (me, text2.get());
+							}
+						}
+					}
+				}
+			} catch (MelderError) {
+				Melder_throw (U"File ", & file2, U".");
+			}
+		}
+	}
+}
+
+static void readOnePage_man (ManPages me, MelderReadText text) {
 	autostring32 title;
 	try {
 		title = texgetw16 (text);
@@ -110,17 +373,21 @@ static void readOnePage (ManPages me, MelderReadText text) {
 		Add the page early, so that lookUp can find it.
 	*/
 	ManPage page = my pages. addItem_move (autopage.move());
+	page -> verbatimAware = false;
 
+	autostring32 author;
 	try {
-		page -> author = texgetw16 (text);
+		author = texgetw16 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Cannot find author.");
 	}
+	uinteger date;
 	try {
-		page -> date = texgetu32 (text);
+		date = texgetu32 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Cannot find date.");
 	}
+	page -> signature = Melder_dup (Melder_cat (U"© ", author.get(), U" ", date));
 	try {
 		page -> recordingTime = texgetr64 (text);
 	} catch (MelderError) {
@@ -129,7 +396,6 @@ static void readOnePage (ManPages me, MelderReadText text) {
 
 	for (;;) {
 		enum kManPage_type type;
-		char32 link [501], fileName [256];
 		try {
 			type = (kManPage_type) texgete8 (text, (enum_generic_getValue) kManPage_type_getValue);
 		} catch (MelderError) {
@@ -148,77 +414,420 @@ static void readOnePage (ManPages me, MelderReadText text) {
 		}
 		try {
 			par -> text = texgetw16 (text).transfer();
+			//if (str32str (par -> text, U":|"))
+			//	par -> text = replace_STR (par -> text, U":|", U"...|", 0).transfer();
+			//if (str32str (par -> text, U":@"))
+			//	par -> text = replace_STR (par -> text, U":@", U"...@", 0).transfer();
 		} catch (MelderError) {
 			Melder_throw (U"Cannot find text.");
 		}
-		for (const char32 *plink = extractLink (par -> text, nullptr, link); plink != nullptr; plink = extractLink (par -> text, plink, link)) {
-			/*
-				Now, `link' contains the link text, with spaces and all.
-				Transform it into a file name.
-			*/
-			structMelderFile file2 { };
-			if (link [0] == U'\\' && link [1] == U'F' && link [2] == U'I') {
-				/*
-					A link to a sound file: see if it exists.
-				*/
-				MelderDir_relativePathToFile (& my rootDirectory, link + 3, & file2);
-				if (! MelderFile_exists (& file2))
-					Melder_warning (U"Cannot find sound file ", MelderFile_messageName (& file2), U".");
-			} else if (link [0] == U'\\' && link [1] == U'S' && link [2] == U'C') {
-				/*
-					A link to a script: see if it exists.
-				s*/
-				char32 *p = link + 3;
-				if (*p == U'\"') {
-					char32 *q = fileName;
-					p ++;
-					while (*p != U'\"' && *p != U'\0')
-						* q ++ = * p ++;
-					*q = U'\0';
+		resolveLinks (me, par, page -> verbatimAware);
+	}
+}
+static bool stringHasInk (conststring32 line) {
+	const char32 *endOfSpace = Melder_findEndOfHorizontalSpace (line);
+	return *endOfSpace != U'\0';
+}
+static bool isTerm (kManPage_type type) {
+	return type == kManPage_type::TERM || type >= kManPage_type::TERM1 && type <= kManPage_type::TERM3;
+}
+static bool stringStartsWithParenthesizedNumber (conststring32 string) {
+	const char32 *p = & string [0];
+	if (*p != U'(')
+		return false;
+	p ++;   // skip opening parenthesis
+	if (*p < U'0' || *p > U'9')
+		return false;
+	p ++;   // skip first digit
+	while (*p >= U'0' && *p <= U'9')
+		p ++;
+	if (*p != U')')
+		return false;
+	return true;
+}
+static bool stringStartsWithNumberAndDot (conststring32 string) {
+	const char32 *p = & string [0];
+	for (;;) {
+		if (*p < U'0' || *p > U'9')
+			return false;
+		p ++;   // skip first digit
+		while (*p >= U'0' && *p <= U'9')
+			p ++;
+		if (*p != U'.')
+			return false;
+		p ++;
+		if (Melder_isHorizontalSpace (*p))
+			return true;
+	}
+}
+
+static void readOnePage_notebook (ManPages me, MelderReadText text) {
+	/*
+		Handle the title line.
+	*/
+	mutablestring32 firstLine = MelderReadText_readLine (text);
+	Melder_require (!! firstLine,
+		U"Empty notebook.");
+	Melder_require (*firstLine == U'"',
+		U"There should be a page title (starting with an opening quote) on the first line, at or around “", firstLine, U"”.");
+	++ firstLine;   // jump over opening quote
+	char32 *p_closingQuote = str32rchr (firstLine, U'"');
+	Melder_require (p_closingQuote - firstLine > 0,
+		U"There should be a page title (starting with an closing quote) on the first line.");
+	*p_closingQuote = U'\0';
+
+	/*
+		Check whether a page with this title is already present.
+	*/
+	if (lookUp_unsorted (me, firstLine))
+		return;
+
+	autoManPage autopage = Thing_new (ManPage);
+	autopage -> title = Melder_dup (firstLine);
+
+	/*
+		Add the page early, so that lookUp can find it.
+	*/
+	ManPage page = my pages. addItem_move (autopage.move());
+	page -> verbatimAware = true;
+
+	/*
+		Handle the signature line.
+	*/
+	mutablestring32 line = MelderReadText_readLine (text);
+	Melder_require (!! line,
+		U"Missing signature line (typically author and date) in page “", firstLine, U"”.");
+	page -> signature = Melder_dup (line);
+
+	/*
+		Find all the notebook attributes.
+		All of them are optional.
+		The order is not fixed.
+		We allow for new attributes in the future.
+	*/
+	for (;;) {
+		line = MelderReadText_readLine (text);
+		if (! line)
+			break;   // end of file
+		char32 *colon = str32chr (line, U':');
+		if (! colon)
+			break;   // end of header
+		const integer lengthOfAttributeName = colon - line;
+		if (Melder_nequ (line, U"Recording time", lengthOfAttributeName)) {
+			Melder_skipHorizontalSpace (& (colon += 1));
+			page -> recordingTime = Melder_atof (colon);
+		}
+		/*
+			TODO: add:
+				Keywords:   ; lower case, separate by comma
+				Code chunk visibility: +   ; + (the default) or -
+				Text style language: praat   ; praat (the default), i.e. % # $ @ _ ^, or markdown, i.e. * ` ** [] <sub> <sup>
+		*/
+	}
+
+	line = nullptr;
+	do {
+		line = MelderReadText_readLine (text);
+	} while (line && ! stringHasInk (line));
+	ManPage_Paragraph previousParagraph = nullptr;
+	autoMelderString buffer_graphical, buffer_graphicalCode;
+	for (;;) {
+		if (! line)
+			return;
+		while (! stringHasInk (line)) {
+			line = MelderReadText_readLine (text);
+			if (! line)
+				return;
+		}
+		integer numberOfLeadingSpaces = 0;
+		while (Melder_isHorizontalSpace (*line))
+			numberOfLeadingSpaces += ( *(line ++) == U'\t' ? 4 - ( numberOfLeadingSpaces & 0b11_integer ) : 1 );
+		MelderString_empty (& buffer_graphical);
+		kManPage_type type;
+		double width = 0.0, height = 0.001;
+		if (numberOfLeadingSpaces == 0 && Melder_startsWith (line, U"===")) {
+			if (previousParagraph)
+				previousParagraph -> type = kManPage_type::ENTRY;
+			line = MelderReadText_readLine (text);
+			if (! line)
+				return;
+			continue;
+		} else if (line [0] == U'/' && line [1] == U'/') {
+			line = MelderReadText_readLine (text);
+			if (! line)
+				return;
+			continue;
+		/*
+			Now we try several kinds of list items.
+			To not prepend a character, use ",".
+			To prepend a bullet, use "-" or "*" or "•".
+		 */
+		} else if (
+			line [0] == U',' && (Melder_isHorizontalSpace (line [1]) || line [1] == U'\0') ||
+			line [0] == U'-' && Melder_isHorizontalSpace (line [1]) ||
+			line [0] == U'*' && Melder_isHorizontalSpace (line [1]) ||
+			line [0] == U'•' && Melder_isHorizontalSpace (line [1]) ||
+			stringStartsWithParenthesizedNumber (line) ||
+			stringStartsWithNumberAndDot (line) ||
+			line [0] == U'|' && Melder_isHorizontalSpace (line [1])
+		) {
+			type = (
+				numberOfLeadingSpaces <  3 ? kManPage_type::LIST_ITEM :
+				numberOfLeadingSpaces <  7 ? kManPage_type::LIST_ITEM1 :
+				numberOfLeadingSpaces < 11 ? kManPage_type::LIST_ITEM2 :
+				kManPage_type::LIST_ITEM3
+			);
+			if (line [0] == U',') {
+				if (line [1] == U'\0') {
+					MelderString_append (& buffer_graphical, U" ");   // a dummmy to make sure that the line is drawn at all
+					line += 1;
 				} else {
-					char32 *q = fileName;
-					while (*p != U' ' && *p != U'\0') * q ++ = * p ++;   // one word, up to the next space
-					*q = U'\0';
+					MelderString_append (& buffer_graphical, U" ");
+					line += 2;
+					//Melder_skipHorizontalSpace (& line);
 				}
-				MelderDir_relativePathToFile (& my rootDirectory, fileName, & file2);
-				if (! MelderFile_exists (& file2))
-					Melder_warning (U"Cannot find script ", MelderFile_messageName (& file2), U".");
-				my executable = true;
+				MelderString_append (& buffer_graphical, line);
+			} else if (line [0] == U'-' || line [0] == U'*' || line [0] == U'•') {
+				MelderString_append (& buffer_graphical, U"• ");
+				line += 2;
+				//Melder_skipHorizontalSpace (& line);
+				MelderString_append (& buffer_graphical, line);
+			} else if (line [0] == U'|') {
+				MelderString_append (& buffer_graphical, U"\t");
+				line += 2;
+				while (*line != U'\0') {
+					if (*line == U'|')
+						MelderString_appendCharacter (& buffer_graphical, U'\t');
+					else
+						MelderString_appendCharacter (& buffer_graphical, *line);
+					line ++;
+				}
 			} else {
-				char32 *q;
-				/*
-					A link to another page: follow it.
-				*/
-				for (q = link; *q; q ++)
-					if (! isAllowedFileNameCharacter (*q))
-						*q = U'_';
-				Melder_sprint (fileName,256, link, U".man");
-				MelderDir_getFile (& my rootDirectory, fileName, & file2);
-				try {
-					autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
-					try {
-						readOnePage (me, text2.get());
-					} catch (MelderError) {
-						Melder_throw (U"File ", & file2, U".");
-					}
-				} catch (MelderError) {
-					/*
-						Second try: with upper case.
-					*/
-					Melder_clearError ();
-					link [0] = Melder_toUpperCase (link [0]);
-					Melder_sprint (fileName,256, link, U".man");
-					MelderDir_getFile (& my rootDirectory, fileName, & file2);
-					autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
-					try {
-						readOnePage (me, text2.get());
-					} catch (MelderError) {
-						Melder_throw (U"File ", & file2, U".");
-					}
-				}
+				MelderString_append (& buffer_graphical, line);
 			}
+		} else if (line [0] == U':' && Melder_isHorizontalSpace (line [1])) {
+			type = (
+				numberOfLeadingSpaces <  3 ? kManPage_type::DEFINITION :
+				numberOfLeadingSpaces <  7 ? kManPage_type::DEFINITION1 :
+				numberOfLeadingSpaces < 11 ? kManPage_type::DEFINITION2 :
+				kManPage_type::DEFINITION3
+			);
+			if (previousParagraph)
+				if (type == kManPage_type::DEFINITION && previousParagraph -> type == kManPage_type::NORMAL)
+					previousParagraph -> type = kManPage_type::TERM;
+				else if (type == kManPage_type::DEFINITION1 && previousParagraph -> type == kManPage_type::CODE)
+					previousParagraph -> type = kManPage_type::TERM1;
+				else if (type == kManPage_type::DEFINITION2 && previousParagraph -> type == kManPage_type::CODE1)
+					previousParagraph -> type = kManPage_type::TERM2;
+				else if (type == kManPage_type::DEFINITION3 && previousParagraph -> type == kManPage_type::CODE2)
+					previousParagraph -> type = kManPage_type::TERM3;
+			line += 2;
+			Melder_skipHorizontalSpace (& line);
+			MelderString_append (& buffer_graphical, line);
+		} else if (numberOfLeadingSpaces == 0 && line [0] == U'~' && Melder_isHorizontalSpace (line [1])) {
+			type = kManPage_type::EQUATION;
+			line += 2;
+			Melder_skipHorizontalSpace (& line);
+			MelderString_append (& buffer_graphical, line);
+		} else if (numberOfLeadingSpaces == 0 && line [0] == U'{') {
+			const bool shouldShowCode = ! str32chr (line, U'-');
+			const char32 *sizeLocation = str32chr (line, U'x');
+			const bool shouldShowOutput = ! str32chr (line, U';');
+			if (sizeLocation) {
+				const char32 *widthLocation = sizeLocation - 1;
+				while (Melder_isDecimalNumber (*widthLocation) || *widthLocation == U'.')
+					widthLocation --;
+				width = Melder_atof (widthLocation);
+				height = Melder_atof (sizeLocation + 1);
+			} else
+				width = 6.0;
+			type = kManPage_type::SCRIPT;
+			do {
+				line = MelderReadText_readLine (text);
+				if (! line)
+					Melder_throw (U"Script chunk not closed.");
+				const char32 *firstNonspace = Melder_findEndOfHorizontalSpace (line);
+				if (line [0] == U'}') {
+					line = MelderReadText_readLine (text);
+					break;
+				}
+				if (shouldShowCode) {
+					/*
+						Convert to graphical code.
+					*/
+					MelderString_empty (& buffer_graphicalCode);
+					const char32 *p = & line [0];
+					while (*p) {
+						if (*p == U'\t') {
+							MelderString_append (& buffer_graphicalCode, p == line ? nullptr : U"    ");
+						} else
+							MelderString_appendCharacter (& buffer_graphicalCode, *p);
+						p ++;
+					}
+					ManPage_Paragraph par = page -> paragraphs. append ();
+					par -> type = kManPage_type::CODE;
+					par -> text = Melder_dup (buffer_graphicalCode. string).transfer();
+				}
+				if (shouldShowOutput) {
+					/*
+						Collect the code, for later execution when the output is drawn.
+					*/
+
+					/*
+						Look for drawing commmands. They could either stand on their own,
+						or be within "\@{xxx}" or within "\#{xxx}" (note: not within "\`{xxx}").
+
+						TODO: make less brittle.
+					*/
+					if (firstNonspace [0] == U'\\' &&
+						(firstNonspace [1] == U'@' && firstNonspace [2] == U'{' ||
+						 firstNonspace [1] == U'#' && firstNonspace [2] == U'{' ||
+						 firstNonspace [1] == U'#' && firstNonspace [2] == U'@' && firstNonspace [3] == U'{')
+					)
+						firstNonspace += 3 + ( firstNonspace [2] == U'@' );
+					if (
+						(Melder_startsWith (firstNonspace, U"Draw")  ||
+						 Melder_startsWith (firstNonspace, U"Paint")  ||
+						 Melder_startsWith (firstNonspace, U"Axes:")  ||
+						 Melder_startsWith (firstNonspace, U"Axes}:")  ||
+						 Melder_startsWith (firstNonspace, U"Text ")  ||
+						 Melder_startsWith (firstNonspace, U"Text:")  ||
+						 Melder_startsWith (firstNonspace, U"Text}:")  ||
+						 Melder_startsWith (firstNonspace, U"Marks "))
+						&& height == 0.001
+					)
+						height = 3.0;
+
+					const char32 *p = & line [0];
+					bool inBold = false, inItalic = false;
+					while (*p) {
+						if (*p == U'\\' &&
+							(p [1] == U'@' && p [2] == U'{' ||
+							 p [1] == U'`' && p [2] == U'{' ||
+							 p [1] == U'#' && p [2] == U'@' && p [3] == U'{' ||
+							 p [1] == U'#' && p [2] == U'`' && p [3] == U'{'))
+						{
+							const bool thinLink = ( p [1] != U'#' );
+							p += 4 - thinLink;   // "\@{" should not be included in the code
+							/*
+								We collect the link text separately,
+								because we cannot collect it into buffer_graphical directly,
+								because in case of a "|" the link buffer has to be cleared.
+							*/
+							static MelderString linkText;
+							MelderString_empty (& linkText);
+							while (*p != U'\0') {
+								if (*p == U'|') {
+									MelderString_empty (& linkText);   // ignore link target as well as "|" and "||"
+									if (p [1] == U'|')
+										p += 1;
+								} else if (*p == U'}') {
+									break;   // but a missing closing brace at the end of a line is also fine
+								} else {
+									MelderString_appendCharacter (& linkText, *p);
+								}
+								p ++;
+							}
+							MelderString_append (& buffer_graphical, linkText.string);
+						} else if (*p == U'\\' && p [1] == U'#' && p [2] == U'{') {
+							inBold = true;
+							p += 2;
+						} else if (*p == U'\\' && p [1] == U'%' && p [2] == U'{') {
+							inItalic = true;
+							p += 2;
+						} else if (*p == U'}') {
+							if (inBold)
+								inBold = false;
+							else if (inItalic)
+								inItalic = false;
+							else
+								MelderString_appendCharacter (& buffer_graphical, U'}');
+						} else
+							MelderString_appendCharacter (& buffer_graphical, *p);
+						p ++;
+					}
+					MelderString_appendCharacter (& buffer_graphical, U'\n');
+				}
+			} while (1);
+			if (! shouldShowOutput)
+				MelderString_empty (& buffer_graphical);
+		} else if (numberOfLeadingSpaces >= 3) {
+			type = (
+				numberOfLeadingSpaces <  7 ? kManPage_type::CODE  :
+				numberOfLeadingSpaces < 11 ? kManPage_type::CODE1 :
+				numberOfLeadingSpaces < 15 ? kManPage_type::CODE2 :
+				numberOfLeadingSpaces < 19 ? kManPage_type::CODE3 :
+				numberOfLeadingSpaces < 23 ? kManPage_type::CODE4 :
+				kManPage_type::CODE5
+			);
+			MelderString_append (& buffer_graphical, line);
+		} else {
+			type = kManPage_type::NORMAL;
+			MelderString_append (& buffer_graphical, line);
+		}
+		ManPage_Paragraph par = nullptr;
+		if (buffer_graphical. string [0] != U'\0') {
+			par = page -> paragraphs. append ();
+			par -> type = type;
+			par -> text = Melder_dup (buffer_graphical. string). transfer();
+			par -> width = width;
+			par -> height = height;
+		}
+
+		/*
+			Do continuation lines, except for code.
+		*/
+		const bool isCode = ( type == kManPage_type::CODE || type >= kManPage_type::CODE1 && type <= kManPage_type::CODE5 );
+		if (isCode) {
+			line = MelderReadText_readLine (text);
+		} else if (type == kManPage_type::SCRIPT) {
+		} else if (par) {
+			do {
+				mutablestring32 continuationLine = MelderReadText_readLine (text);
+				if (! continuationLine) {
+					line = nullptr;   // signals end of text
+					break;
+				}
+				char32 *firstNonSpace = Melder_findEndOfHorizontalSpace (continuationLine);
+				if (*firstNonSpace == U':' ||
+					*firstNonSpace == U',' && (Melder_isHorizontalSpace (firstNonSpace [1]) || firstNonSpace [1] == U'\0') ||
+					*firstNonSpace == U'-' && Melder_isHorizontalSpace (firstNonSpace [1]) ||
+					*firstNonSpace == U'*' && Melder_isHorizontalSpace (firstNonSpace [1]) ||
+					*firstNonSpace == U'•' && Melder_isHorizontalSpace (firstNonSpace [1]) ||
+					stringStartsWithParenthesizedNumber (firstNonSpace) ||
+					stringStartsWithNumberAndDot (firstNonSpace) ||
+					*firstNonSpace == U'|' && Melder_isHorizontalSpace (firstNonSpace [1]) ||
+					firstNonSpace == continuationLine && *firstNonSpace == U'{' ||
+					firstNonSpace == continuationLine && *firstNonSpace == U'~' ||
+					Melder_startsWith (firstNonSpace, U"===") ||
+					*firstNonSpace == U'/' && firstNonSpace [1] == U'/' ||
+					*firstNonSpace == U'\0'
+				) {
+					line = continuationLine;   // not really a continuation line, but a new paragraph
+					break;
+				}
+				conststring32 separator = ( par -> text [0] == U'\0' ? U"" : U" " );
+				Melder_skipHorizontalSpace (& continuationLine);
+				par -> text = Melder_dup (Melder_cat (par -> text, separator, continuationLine)).transfer();
+			} while (1);
+		}
+		if (par) {
+			resolveLinks (me, par, page -> verbatimAware);
+			previousParagraph = par;
 		}
 	}
+}
+static void readOnePage (ManPages me, MelderReadText text) {
+	const bool isNotebook = (
+		text -> string32 ?
+			text -> string32 [0] == U'"'
+		:
+			text -> string8 [0] == '"'
+	);
+	if (isNotebook)
+		readOnePage_notebook (me, text);
+	else
+		readOnePage_man (me, text);
 }
 void structManPages :: v1_readText (MelderReadText text, int /*formatVersion*/) {
 	our dynamic = true;
@@ -231,7 +840,25 @@ autoManPages ManPages_create () {
 	return me;
 }
 
-void ManPages_addPage (ManPages me, conststring32 title, conststring32 author, integer date,
+autoManPages ManPages_createFromText (MelderReadText text, MelderFile file) {
+	autoManPages me = Thing_new (ManPages);
+	my dynamic = true;
+	MelderFile_getParentDir (file, & my rootDirectory);
+	readOnePage (me.get(), text);
+	return me;
+}
+
+/*
+	Praat-internal version without references to external files.
+*/
+autoManPages ManPages_createFromText (MelderReadText text) {
+	autoManPages me = Thing_new (ManPages);
+	my dynamic = false;
+	readOnePage (me.get(), text);
+	return me;
+}
+
+void ManPages_addPage (ManPages me, conststring32 title, conststring32 signature,
 	structManPage_Paragraph paragraphs [])
 {
 	autoManPage page = Thing_new (ManPage);
@@ -244,25 +871,70 @@ void ManPages_addPage (ManPages me, conststring32 title, conststring32 author, i
 		targetParagraph -> height = par -> height;
 		targetParagraph -> draw = par -> draw;
 	}
-	page -> author = Melder_dup (author);
-	page -> date = date;
+	page -> signature = Melder_dup (signature);
 	my pages. addItem_move (page.move());
+}
+void ManPages_addPagesFromNotebook (ManPages me, conststring8 multiplePagesText) {
+	autoMelderReadText multiplePagesReader = MelderReadText_createFromText (Melder_8to32 (multiplePagesText));
+	autoMelderString pageText;
+	for (;;) {
+		mutablestring32 line = MelderReadText_readLine (multiplePagesReader.get());
+		const bool atEndOfPage = ( ! line || Melder_startsWith (line, U"####################") );
+		if (atEndOfPage) {
+			if (pageText.length > 0) {
+				autoMelderReadText pageReader = MelderReadText_createFromText (Melder_dup (pageText.string));
+				readOnePage_notebook (me, pageReader.get());
+			}
+			if (! line)
+				return;
+			MelderString_empty (& pageText);
+		} else
+			MelderString_append (& pageText, line, U"\n");
+	}
+}
+integer ManPages_addPagesFromNotebook (ManPages me, MelderReadText multiplePagesReader, integer startOfSelection, integer endOfSelection) {
+	bool foundFirstPage = false;
+	integer numberOfCharactersRead = 0;
+	integer startingPage = -1, numberOfPages = 0;
+	autoMelderString pageText;
+	for (;;) {
+		mutablestring32 line = MelderReadText_readLine (multiplePagesReader);
+		if (startingPage == -1) {
+			numberOfCharactersRead += Melder_length (line) + 1;
+			if (numberOfCharactersRead >= startOfSelection)
+				startingPage = numberOfPages;
+		}
+		const bool atEndOfPage = ( ! line || Melder_startsWith (line, U"####################") );
+		if (atEndOfPage) {
+			if (! foundFirstPage) {
+				if (! line)
+					Melder_throw (U"Empty notebook (no line starting with “####################”.");
+				/*
+					When we are here, the line starts with "####################".
+				*/
+				foundFirstPage = true;
+			}
+			if (pageText.length > 0) {
+				autoMelderReadText pageReader = MelderReadText_createFromText (Melder_dup (pageText.string));
+				readOnePage_notebook (me, pageReader.get());
+			}
+			if (! line)
+				break;
+			MelderString_empty (& pageText);
+			numberOfPages += 1;
+		} else if (Melder_startsWith (line, U")~~~\"")) {
+			break;
+		} else if (foundFirstPage) {
+			MelderString_append (& pageText, line, U"\n");
+		} else {
+			// ignore all the lines before the first line that starts with "####################".
+		}
+	}
+	return startingPage;
 }
 
 static bool pageCompare (ManPage me, ManPage thee) {
-	const char32 *p = & my title [0], *q = & thy title [0];
-	for (;;) {
-		const char32 plower = Melder_toLowerCase (*p), qlower = Melder_toLowerCase (*q);
-		if (plower < qlower)
-			return true;
-		if (plower > qlower)
-			return false;
-		if (plower == U'\0')
-			return str32cmp (my title.get(), thy title.get()) < 0;
-		p ++;
-		q ++;
-	}
-	return false;   // should not occur
+	return str32coll_numberAware (my title.get(), thy title.get(), true) < 0;
 }
 
 static integer lookUp_unsorted (ManPages me, conststring32 title) {
@@ -320,16 +992,20 @@ static void grind (ManPages me) {
 	integer ndangle = 0;
 	for (integer ipage = 1; ipage <= my pages.size; ipage ++) {
 		ManPage page = my pages.at [ipage];
+		const bool verbatimAware = page -> verbatimAware;
 		for (int ipar = 1; ipar <= page -> paragraphs.size; ipar ++) {
-			conststring32 text = page -> paragraphs [ipar]. text;
+			ManPage_Paragraph par = & page -> paragraphs [ipar];
 			const char32 *p;
-			char32 link [301];
-			if (text) for (p = extractLink (text, nullptr, link); p != nullptr; p = extractLink (text, p, link)) {
-				if (link [0] == U'\\' && ((link [1] == U'F' && link [2] == U'I') || (link [1] == U'S' && link [2] == U'C')))
-					continue;   // ignore "FILE" links
-				integer jpage = lookUp_sorted (me, link);
+			char32 linkBuffer [MAXIMUM_LINK_LENGTH + 1];
+			if (par -> text) for (p = ManPage_Paragraph_extractLink (par, nullptr, linkBuffer, verbatimAware);
+				 p != nullptr;
+				 p = ManPage_Paragraph_extractLink (par, p, linkBuffer, verbatimAware)
+			) {
+				if (linkBuffer [0] == U'\\' && ((linkBuffer [1] == U'F' && linkBuffer [2] == U'I') || (linkBuffer [1] == U'S' && linkBuffer [2] == U'C')))
+					continue;   // ignore "FILE" and "SCRIPT" links
+				const integer jpage = lookUp_sorted (me, linkBuffer);
 				if (jpage == 0) {
-					MelderInfo_writeLine (U"Page \"", page -> title.get(), U"\" contains a dangling link to \"", link, U"\".");
+					MelderInfo_writeLine (U"Page “", page -> title.get(), U"” contains a dangling link to “", linkBuffer, U"”.");
 					ndangle ++;
 				} else {
 					bool alreadyPresent = false;
@@ -379,7 +1055,7 @@ integer ManPages_lookUp (ManPages me, conststring32 title) {
 	return lookUp_sorted (me, title);
 }
 
-static integer ManPages_lookUp_caseSensitive (ManPages me, conststring32 title) {
+integer ManPages_lookUp_caseSensitive (ManPages me, conststring32 title) {
 	if (! my ground)
 		grind (me);
 	for (integer i = 1; i <= my pages.size; i ++) {
@@ -401,591 +1077,6 @@ constSTRVEC ManPages_getTitles (ManPages me) {
 		}
 	}
 	return my titles.get();
-}
-
-static const struct stylesInfo {
-	conststring32 htmlIn, htmlOut;
-} stylesInfo [] = {
-{ nullptr, nullptr },
-/* INTRO: */ { U"<p>", U"</p>" },
-/* ENTRY: */ { U"<h3>", U"</h3>" },
-/* NORMAL: */ { U"<p>", U"</p>" },
-/* LIST_ITEM: */ { U"<dd>", U"" },
-/* TAG: */ { U"<dt>", U"" },
-/* DEFINITION: */ { U"<dd>", U"" },
-/* CODE: */ { U"<code>", U"<br></code>" },
-/* PROTOTYPE: */ { U"<p>", U"</p>" },
-/* EQUATION: */ { U"<table width=\"100%\"><tr><td align=middle>", U"</table>" },
-/* PICTURE: */ { U"<p>", U"</p>" },
-/* SCRIPT: */ { U"<p>", U"</p>" },
-/* LIST_ITEM1: */ { U"<dd>&nbsp;&nbsp;&nbsp;", U"" },
-/* LIST_ITEM2: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* LIST_ITEM3: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* TAG1: */ { U"<dt>&nbsp;&nbsp;&nbsp;", U"" },
-/* TAG2: */ { U"<dt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* TAG3: */ { U"<dt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* DEFINITION1: */ { U"<dd>&nbsp;&nbsp;&nbsp;", U"" },
-/* DEFINITION2: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* DEFINITION3: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* CODE1: */ { U"<code>&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE2: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE3: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE4: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE5: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" }
-};
-
-static void writeParagraphsAsHtml (ManPages me, MelderFile file, constvector <structManPage_Paragraph> const& paragraphs, MelderString *buffer) {
-	integer numberOfPictures = 0;
-	bool inList = false, inItalic = false, inBold = false;
-	bool inSub = false, inCode = false, inSuper = false, ul = false, inSmall = false;
-	bool wordItalic = false, wordBold = false, wordCode = false, letterSuper = false;
-	for (integer ipar = 1; ipar <= paragraphs.size; ipar ++) {
-		const structManPage_Paragraph *paragraph = & paragraphs [ipar];
-		const char32 *p = & paragraph -> text [0];
-		const bool isListItem = paragraph -> type == kManPage_type::LIST_ITEM ||
-			(paragraph -> type >= kManPage_type::LIST_ITEM1 && paragraph -> type <= kManPage_type::LIST_ITEM3);
-		const bool isTag = paragraph -> type == kManPage_type::TAG ||
-			(paragraph -> type >= kManPage_type::TAG1 && paragraph -> type <= kManPage_type::TAG3);
-		const bool isDefinition = paragraph -> type == kManPage_type::DEFINITION ||
-			(paragraph -> type >= kManPage_type::DEFINITION1 && paragraph -> type <= kManPage_type::DEFINITION3);
-		/*const bool isCode = paragraph -> type == kManPage_type::CODE ||
-			(paragraph -> type >= kManPage_type::CODE1 && paragraph -> type <= kManPage_type::CODE5);*/
-
-		if (paragraph -> type == kManPage_type::PICTURE) {
-			numberOfPictures ++;
-			structMelderFile pngFile;
-			MelderFile_copy (file, & pngFile);
-			pngFile. path [str32len (pngFile. path) - 5] = U'\0';   // delete extension ".html"
-			str32cat (pngFile. path, Melder_cat (U"_", numberOfPictures, U".png"));
-			{// scope
-				autoGraphics graphics = Graphics_create_pngfile (& pngFile, 300, 0.0, paragraph -> width, 0.0, paragraph -> height);
-				Graphics_setFont (graphics.get(), kGraphics_font::TIMES);
-				Graphics_setFontStyle (graphics.get(), 0);
-				Graphics_setFontSize (graphics.get(), 12);
-				Graphics_setWrapWidth (graphics.get(), 0);
-				Graphics_setViewport (graphics.get(), 0.0, paragraph -> width, 0.0, paragraph -> height);
-				paragraph -> draw (graphics.get());
-				Graphics_setViewport (graphics.get(), 0, 1, 0, 1);
-				Graphics_setWindow (graphics.get(), 0, 1, 0, 1);
-				Graphics_setTextAlignment (graphics.get(), Graphics_LEFT, Graphics_BOTTOM);
-			}
-			MelderString_append (buffer, Melder_cat (U"<p align=middle><img height=", paragraph -> height * 100,
-				U" width=", paragraph -> width * 100, U" src=", MelderFile_name (& pngFile), U"></p>"));
-			continue;
-		}
-		if (paragraph -> type == kManPage_type::SCRIPT) {
-			autoInterpreter interpreter = Interpreter_createFromEnvironment (nullptr);
-			numberOfPictures ++;
-			structMelderFile pngFile;
-			MelderFile_copy (file, & pngFile);
-			pngFile. path [str32len (pngFile. path) - 5] = U'\0';   // delete extension ".html"
-			str32cat (pngFile. path, Melder_cat (U"_", numberOfPictures, U".png"));
-			{// scope
-				autoGraphics graphics = Graphics_create_pngfile (& pngFile, 300, 0.0, paragraph -> width, 0.0, paragraph -> height);
-				Graphics_setFont (graphics.get(), kGraphics_font::TIMES);
-				Graphics_setFontStyle (graphics.get(), 0);
-				Graphics_setFontSize (graphics.get(), 12.0);
-				Graphics_setWrapWidth (graphics.get(), 0);
-				static structPraatApplication praatApplication;
-				static structPraatObjects praatObjects;
-				static structPraatPicture praatPicture;
-				theCurrentPraatApplication = & praatApplication;
-				theCurrentPraatApplication -> batch = true;
-				theCurrentPraatApplication -> topShell = theForegroundPraatApplication. topShell;   // needed for UiForm_create () in dialogs
-				theCurrentPraatObjects = (PraatObjects) & praatObjects;
-				theCurrentPraatPicture = (PraatPicture) & praatPicture;
-				theCurrentPraatPicture -> graphics = graphics.get();   // FIXME: should be move()?
-				theCurrentPraatPicture -> font = kGraphics_font::TIMES;
-				theCurrentPraatPicture -> fontSize = 12.0;
-				theCurrentPraatPicture -> lineType = Graphics_DRAWN;
-				theCurrentPraatPicture -> colour = Melder_BLACK;
-				theCurrentPraatPicture -> lineWidth = 1.0;
-				theCurrentPraatPicture -> arrowSize = 1.0;
-				theCurrentPraatPicture -> speckleSize = 1.0;
-				theCurrentPraatPicture -> x1NDC = 0.0;
-				theCurrentPraatPicture -> x2NDC = paragraph -> width;
-				theCurrentPraatPicture -> y1NDC = 0.0;
-				theCurrentPraatPicture -> y2NDC = paragraph -> height;
-				Graphics_setViewport (graphics.get(), theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);
-				Graphics_setWindow (graphics.get(), 0.0, 1.0, 0.0, 1.0);
-				integer x1DC, y1DC, x2DC, y2DC;
-				Graphics_WCtoDC (graphics.get(), 0.0, 0.0, & x1DC, & y2DC);
-				Graphics_WCtoDC (graphics.get(), 1.0, 1.0, & x2DC, & y1DC);
-				Graphics_resetWsViewport (graphics.get(), x1DC, x2DC, y1DC, y2DC);
-				Graphics_setWsWindow (graphics.get(), 0.0, paragraph -> width, 0.0, paragraph -> height);
-				theCurrentPraatPicture -> x1NDC = 0.0;
-				theCurrentPraatPicture -> x2NDC = paragraph -> width;
-				theCurrentPraatPicture -> y1NDC = 0.0;
-				theCurrentPraatPicture -> y2NDC = paragraph -> height;
-				Graphics_setViewport (graphics.get(), theCurrentPraatPicture -> x1NDC, theCurrentPraatPicture -> x2NDC, theCurrentPraatPicture -> y1NDC, theCurrentPraatPicture -> y2NDC);
-				{// scope
-					autoMelderProgressOff progress;
-					autoMelderWarningOff warning;
-					autoMelderSaveDefaultDir saveDir;
-					if (! MelderDir_isNull (& my rootDirectory))
-						Melder_setDefaultDir (& my rootDirectory);
-					try {
-						autostring32 text = Melder_dup (p);
-						Interpreter_run (interpreter.get(), text.get());
-					} catch (MelderError) {
-						trace (U"interpreter fails on ", pngFile. path);
-						Melder_flushError ();
-					}
-				}
-				Graphics_setViewport (graphics.get(), 0.0, 1.0, 0.0, 1.0);
-				Graphics_setWindow (graphics.get(), 0.0, 1.0, 0.0, 1.0);
-				Graphics_setTextAlignment (graphics.get(), Graphics_LEFT, Graphics_BOTTOM);
-			}
-			MelderString_append (buffer, U"<p align=middle><img height=", paragraph -> height * 100,
-				U" width=", paragraph -> width * 100, U" src=", MelderFile_name (& pngFile), U"></p>");
-			theCurrentPraatApplication = & theForegroundPraatApplication;
-			theCurrentPraatObjects = & theForegroundPraatObjects;
-			theCurrentPraatPicture = & theForegroundPraatPicture;
-			continue;
-		}
-
-		if (isListItem || isTag || isDefinition) {
-			if (! inList) {
-				ul = ( isListItem && (p [0] == U'•' || (p [0] == U'\\' && p [1] == U'b' && p [2] == U'u')) );
-				MelderString_append (buffer, ul ? U"<ul>\n" : U"<dl>\n");
-				inList = true;
-			}
-			if (ul) {
-				if (p [0] == U'•'  && p [1] == U' ')
-					p += 1;
-				if (p [0] == U'\\' && p [1] == U'b' && p [2] == U'u' && p [3] == U' ')
-					p += 3;
-			}
-			MelderString_append (buffer, ul ? U"<li>" : stylesInfo [(int) paragraph -> type]. htmlIn, U"\n");
-		} else {
-			if (inList) {
-				MelderString_append (buffer, ul ? U"</ul>\n" : U"</dl>\n");
-				inList = ul = false;
-			}
-			MelderString_append (buffer, stylesInfo [(int) paragraph -> type]. htmlIn, U"\n");
-		}
-		bool inTable = !! str32chr (p, U'\t'), inPromptedTable = false;
-		if (inTable) {
-			if (*p == U'\t') {
-				MelderString_append (buffer, U"<table border=0 cellpadding=0 cellspacing=0><tr><td width=100 align=middle>");
-				p ++;
-			} else {
-				MelderString_append (buffer, U"<table border=0 cellpadding=0 cellspacing=0><tr><td width=100 align=left>");
-				inPromptedTable = true;
-			}
-		}
-		/*
-		 * Leading spaces should be visible (mainly used in code fragments).
-		 */
-		while (*p == U' ') {
-			MelderString_append (buffer, U"&nbsp;");
-			p ++;
-		}
-		while (*p) {
-				if (wordItalic && ! isSingleWordCharacter (*p)) {
-					MelderString_append (buffer, U"</i>");
-					wordItalic = false;
-				}
-				if (wordBold && ! isSingleWordCharacter (*p)) {
-					MelderString_append (buffer, U"</b>");
-					wordBold = false;
-				}
-				if (wordCode && ! isSingleWordCharacter (*p)) {
-					MelderString_append (buffer, U"</code>");
-					wordCode = false;
-				}
-			if (*p == U'@') {
-				static MelderString link, linkText;
-				MelderString_empty (& link);
-				MelderString_empty (& linkText);
-				if (p [1] == U'@') {
-					p += 2;
-					while (*p != U'@' && *p != U'|' && *p != U'\0')
-						MelderString_append (& link, * p ++);
-					if (*p == U'|') {
-						p ++;   // skip '|'
-						while (*p != U'@' && *p != U'\0') {
-							if (*p == U'^') {
-								if (inSuper) {
-									MelderString_append (& linkText, U"</sup>");
-									inSuper = false;
-									p ++;
-								} else if (p [1] == U'^') {
-									MelderString_append (& linkText, U"<sup>");
-									inSuper = true;
-									p += 2;
-								} else {
-									MelderString_append (& linkText, U"<sup>");
-									letterSuper = true;
-									p ++;
-								}
-							} else {
-								if (*p == U'\\') {
-									char32 kar1 = *++p, kar2 = *++p;
-									Longchar_Info info = Longchar_getInfo (kar1, kar2);
-									if (info -> unicode < 127) {
-										MelderString_appendCharacter (& linkText, info -> unicode ? info -> unicode : U'?');
-									} else {
-										MelderString_append (& linkText, U"&#", (int) info -> unicode, U";");
-									}
-									p ++;
-								} else {
-									if (*p < 127) {
-										MelderString_appendCharacter (& linkText, *p);
-									} else {
-										MelderString_append (& linkText, U"&#", (int) *p, U";");
-									}
-									p ++;
-								}
-								if (letterSuper) {
-									//if (wordItalic) { MelderString_append (buffer, U"</i>"); wordItalic = false; }
-									//if (wordBold) { MelderString_append (buffer, U"</b>"); wordBold = false; }
-									MelderString_append (& linkText, U"</sup>");
-									letterSuper = false;
-								}
-							}
-						}
-					} else {
-						MelderString_copy (& linkText, link.string);
-					}
-					if (*p)
-						p ++;
-				} else {
-					p ++;
-					while (isSingleWordCharacter (*p) && *p != U'\0') MelderString_append (& link, *p++);
-					MelderString_copy (& linkText, link.string);
-				}
-				/*
-					The first character of the link text can have the wrong case.
-				*/
-				integer linkPageNumber = ManPages_lookUp (me, link.string);
-				if (linkPageNumber == 0)
-					Melder_throw (U"No such manual page: ", link.string);
-				link.string [0] = my pages.at [linkPageNumber] -> title [0];
-				/*
-				 * We write the link in the following format:
-				 *     <a href="link.html">linkText</a>
-				 * If "link" (initial lower case) is not in the manual, we write "Link.html" instead.
-				 * All spaces and strange symbols in "link" are replaced by underscores,
-				 * because it will be a file name (see ManPages_writeAllToHtmlDir).
-				 * The file name will have no more than 30 or 60 characters, and no less than 1.
-				 */
-				MelderString_append (buffer, U"<a href=\"");
-				if (str32nequ (link.string, U"\\FI", 3)) {
-					MelderString_append (buffer, link.string + 3);   // file link
-				} else {
-					char32 *q = link.string;
-					if (! ManPages_lookUp_caseSensitive (me, link.string)) {
-						MelderString_appendCharacter (buffer, Melder_toUpperCase (link.string [0]));
-						if (*q)
-							q ++;   // first letter already written
-					}
-					while (*q && q - link.string < LONGEST_FILE_NAME) {
-						if (! isAllowedFileNameCharacter (*q))
-							MelderString_appendCharacter (buffer, U'_');
-						else
-							MelderString_appendCharacter (buffer, *q);
-						q ++;
-					}
-					if (link.string [0] == U'\0')
-						MelderString_appendCharacter (buffer, U'_');   // otherwise Mac problems or Unix invisibility
-					MelderString_append (buffer, U".html");
-				}
-				MelderString_append (buffer, U"\">", linkText.string, U"</a>");
-			} else if (*p == U'%') {
-				if (inItalic) {
-					MelderString_append (buffer, U"</i>");
-					inItalic = false;
-					p ++;
-				} else if (p [1] == U'%') {
-					MelderString_append (buffer, U"<i>");
-					inItalic = true;
-					p += 2;
-				} else if (p [1] == U'#') {
-					MelderString_append (buffer, U"<i><b>");
-					wordItalic = true;
-					wordBold = true;
-					p += 2;
-				} else {
-					MelderString_append (buffer, U"<i>");
-					wordItalic = true;
-					p ++;
-				}
-			} else if (*p == U'_') {
-				if (inSub) {
-					/*if (wordItalic) { MelderString_append (buffer, U"</i>"); wordItalic = false; }
-					if (wordBold) { MelderString_append (buffer, U"</b>"); wordBold = false; }*/
-					MelderString_append (buffer, U"</sub>");
-					inSub = false;
-					p ++;
-				} else if (p [1] == U'_') {
-					if (wordItalic) {
-						MelderString_append (buffer, U"</i>");
-						wordItalic = false;
-					}
-					if (wordBold) {
-						MelderString_append (buffer, U"</b>");
-						wordBold = false;
-					}
-					MelderString_append (buffer, U"<sub>");
-					inSub = true;
-					p += 2;
-				} else {
-					MelderString_append (buffer, U"_");
-					p ++;
-				}
-			} else if (*p == U'#') {
-				if (inBold) {
-					MelderString_append (buffer, U"</b>");
-					inBold = false;
-					p ++;
-				} else if (p [1] == U'#') {
-					MelderString_append (buffer, U"<b>");
-					inBold = true;
-					p += 2;
-				} else if (p [1] == U'%') {
-					MelderString_append (buffer, U"<b><i>");
-					wordBold = true;
-					wordItalic = true;
-					p += 2;
-				} else {
-					MelderString_append (buffer, U"<b>");
-					wordBold = true;
-					p ++;
-				}
-			} else if (*p == U'$') {
-				if (inCode) {
-					MelderString_append (buffer, U"</code>");
-					inCode = false;
-					p ++;
-				} else if (p [1] == U'$') {
-					MelderString_append (buffer, U"<code>");
-					inCode = true;
-					p += 2;
-				} else {
-					MelderString_append (buffer, U"<code>");
-					wordCode = true;
-					p ++;
-				}
-			} else if (*p == U'^') {
-				if (inSuper) {
-					/*if (wordItalic) { MelderString_append (buffer, U"</i>"); wordItalic = false; }
-					if (wordBold) { MelderString_append (buffer, U"</b>"); wordBold = false; }*/
-					MelderString_append (buffer, U"</sup>");
-					inSuper = false;
-					p ++;
-				} else if (p [1] == U'^') {
-					/*if (wordItalic) { MelderString_append (buffer, U"</i>"); wordItalic = false; }
-					if (wordBold) { MelderString_append (buffer, U"</b>"); wordBold = false; }*/
-					MelderString_append (buffer, U"<sup>");
-					inSuper = true;
-					p += 2;
-				} else {
-					/*if (wordItalic) { MelderString_append (buffer, U"</i>"); wordItalic = false; }
-					if (wordBold) { MelderString_append (buffer, U"</b>"); wordBold = false; }*/
-					MelderString_append (buffer, U"<sup>");
-					letterSuper = true;
-					p ++;
-				}
-			} else if (*p == U'}') {
-				if (inSmall) {
-					MelderString_append (buffer, U"</font>");
-					inSmall = false;
-					p ++;
-				} else {
-					MelderString_append (buffer, U"}");
-					p ++;
-				}
-			} else if (*p == U'\\' && p [1] == U's' && p [2] == U'{') {
-				MelderString_append (buffer, U"<font size=-1>");
-				inSmall = true;
-				p += 3;
-			} else if (*p == U'\t' && inTable) {
-				if (inPromptedTable) {
-					inPromptedTable = false;
-					p ++;   // skip one tab
-				} else {
-					MelderString_append (buffer, U"<td width=100 align=middle>");
-					p ++;
-				}
-			} else if (*p == U'<') {
-				MelderString_append (buffer, U"&lt;");
-				p ++;
-			} else if (*p == U'>') {
-				MelderString_append (buffer, U"&gt;");
-				p ++;
-			} else if (*p == U'&') {
-				MelderString_append (buffer, U"&amp;");
-				p ++;
-			} else {
-				/*if (wordItalic && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</i>"); wordItalic = false; }
-				if (wordBold && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</b>"); wordBold = false; }
-				if (wordCode && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</code>"); wordCode = false; }*/
-				if (*p == U'\\') {
-					char32 kar1 = *++p, kar2 = *++p;
-					Longchar_Info info = Longchar_getInfo (kar1, kar2);
-					if (info -> unicode < 127)
-						MelderString_appendCharacter (buffer, info -> unicode ? info -> unicode : U'?');
-					else
-						MelderString_append (buffer, U"&#", (int) info -> unicode, U";");
-					p ++;
-				} else {
-					if (*p < 127)
-						MelderString_appendCharacter (buffer, *p);
-					else
-						MelderString_append (buffer, U"&#", (int) *p, U";");
-					p ++;
-				}
-				if (letterSuper) {
-					if (wordItalic) {
-						MelderString_append (buffer, U"</i>");
-						wordItalic = false;
-					}
-					if (wordBold) {
-						MelderString_append (buffer, U"</b>");
-						wordBold = false;
-					}
-					MelderString_append (buffer, U"</sup>");
-					letterSuper = false;
-				}
-			}
-		}
-		if (inItalic || wordItalic) {
-			MelderString_append (buffer, U"</i>");
-			inItalic = wordItalic = false;
-		}
-		if (inBold || wordBold) {
-			MelderString_append (buffer, U"</b>");
-			inBold = wordBold = false;
-		}
-		if (inCode || wordCode) {
-			MelderString_append (buffer, U"</code>");
-			inCode = wordCode = false;
-		}
-		if (inSub) {
-			MelderString_append (buffer, U"</sub>");
-			inSub = false;
-		}
-		if (inSuper || letterSuper) {
-			MelderString_append (buffer, U"</sup>");
-			inSuper = letterSuper = false;
-		}
-		if (inTable) {
-			MelderString_append (buffer, U"</table>");
-			inTable = false;
-		}
-		MelderString_append (buffer, stylesInfo [(int) paragraph -> type]. htmlOut, U"\n");
-	}
-	if (inList) {
-		MelderString_append (buffer, ul ? U"</ul>\n" : U"</dl>\n");
-		inList = false;
-	}
-}
-
-static const conststring32 month [] =
-	{ U"", U"January", U"February", U"March", U"April", U"May", U"June",
-	  U"July", U"August", U"September", U"October", U"November", U"December" };
-
-static void writePageAsHtml (ManPages me, MelderFile file, integer ipage, MelderString *buffer) {
-	ManPage page = my pages.at [ipage];
-	MelderString_append (buffer, U"<html><head><meta name=\"robots\" content=\"index,follow\">"
-		U"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-		U"<title>", page -> title.get(), U"</title></head><body bgcolor=\"#FFFFFF\">\n\n");
-	MelderString_append (buffer, U"<table border=0 cellpadding=0 cellspacing=0><tr><td bgcolor=\"#CCCC00\">"
-		U"<table border=4 cellpadding=9><tr><td align=middle bgcolor=\"#000000\">"
-		U"<font face=\"Palatino,Times\" size=6 color=\"#999900\"><b>\n",
-		page -> title.get(), U"\n</b></font></table></table>\n");
-	writeParagraphsAsHtml (me, file, page -> paragraphs.get(), buffer);
-	if (ManPages_uniqueLinksHither (me, ipage)) {
-		integer ilink, jlink;
-		if (page -> paragraphs.size > 0) {
-			conststring32 text = page -> paragraphs [page -> paragraphs.size]. text;
-			if (text && text [0] != U'\0' && text [str32len (text) - 1] != U':')
-				MelderString_append (buffer, U"<h3>Links to this page</h3>\n");
-		}
-		MelderString_append (buffer, U"<ul>\n");
-		for (ilink = 1; ilink <= page -> linksHither.size; ilink ++) {
-			integer link = page -> linksHither [ilink];
-			bool alreadyShown = false;
-			for (jlink = 1; jlink <= page -> linksThither.size; jlink ++)
-				if (page -> linksThither [jlink] == link)
-					alreadyShown = true;
-			if (! alreadyShown) {
-				ManPage linkingPage = my pages.at [page -> linksHither [ilink]];
-				conststring32 title = linkingPage -> title.get();
-				const char32 *p;
-				MelderString_append (buffer, U"<li><a href=\"");
-				for (p = & title [0]; *p; p ++) {
-					if (p - title >= LONGEST_FILE_NAME)
-						break;
-					if (! isAllowedFileNameCharacter (*p))
-						MelderString_append (buffer, U"_");
-					else
-						MelderString_appendCharacter (buffer, *p);
-				}
-				if (title [0] == U'\0')
-					MelderString_append (buffer, U"_");
-				MelderString_append (buffer, U".html\">", title, U"</a>\n");
-			}
-		}
-		MelderString_append (buffer, U"</ul>\n");
-	}
-	MelderString_append (buffer, U"<hr>\n<address>\n\t<p>&copy; ", page -> author.get());
-	if (page -> date) {
-		integer date = page -> date;
-		int imonth = date % 10000 / 100;
-		if (imonth < 0 || imonth > 12)
-			imonth = 0;
-		MelderString_append (buffer, U", ", month [imonth], U" ", date % 100);
-		MelderString_append (buffer, U", ", date / 10000);
-	}
-	MelderString_append (buffer, U"</p>\n</address>\n</body>\n</html>\n");
-}
-
-void ManPages_writeOneToHtmlFile (ManPages me, integer ipage, MelderFile file) {
-	static MelderString buffer;
-	MelderString_empty (& buffer);
-	writePageAsHtml (me, file, ipage, & buffer);
-	MelderFile_writeText (file, buffer.string, kMelder_textOutputEncoding::UTF8);
-}
-
-void ManPages_writeAllToHtmlDir (ManPages me, conststring32 dirPath) {
-	structMelderDir dir { };
-	Melder_pathToDir (dirPath, & dir);
-	for (integer ipage = 1; ipage <= my pages.size; ipage ++) {
-		ManPage page = my pages.at [ipage];
-		char32 fileName [256];
-		Melder_assert (str32len (page -> title.get()) < 256 - 100);
-		trace (U"page ", ipage, U": ", page -> title.get());
-		Melder_sprint (fileName,256,  page -> title.get());
-		for (char32 *p = fileName; *p; p ++)
-			if (! isAllowedFileNameCharacter (*p))
-				*p = U'_';
-		if (fileName [0] == U'\0')
-			str32cpy (fileName, U"_");   // no empty file names please
-		fileName [LONGEST_FILE_NAME] = U'\0';
-		str32cat (fileName, U".html");
-		static MelderString buffer;
-		MelderString_empty (& buffer);
-		structMelderFile file { };
-		MelderDir_getFile (& dir, fileName, & file);
-		writePageAsHtml (me, & file, ipage, & buffer);
-		/*
-		 * An optimization because reading is much faster than writing:
-		 * we write the file only if the old file is different or doesn't exist.
-		 */
-		autostring32 oldText;
-		try {
-			oldText = MelderFile_readText (& file);
-		} catch (MelderError) {
-			Melder_clearError ();
-		}
-		if (! oldText   // doesn't the file exist yet?
-			|| str32cmp (buffer.string, oldText.get()))   // isn't the old file identical to the new text?
-		{
-			MelderFile_writeText (& file, buffer.string, kMelder_textOutputEncoding::UTF8);   // then write the new text
-		}
-	}
 }
 
 /* End of file ManPages.cpp */

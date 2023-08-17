@@ -1,6 +1,6 @@
 /* GuiText.cpp
  *
- * Copyright (C) 1993-2022 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2023 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -670,6 +670,61 @@ GuiText GuiText_create (GuiForm parent, int left, int right, int top, int bottom
 			GuiObject scrolled = gtk_scrolled_window_new (nullptr, nullptr);
 			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 			my d_widget = gtk_text_view_new ();
+			gtk_text_view_set_monospace (GTK_TEXT_VIEW (my d_widget), true);
+			constexpr int spacing = 28;
+			PangoTabArray *tabs = pango_tab_array_new_with_positions (50, true,
+				PANGO_TAB_LEFT, 1 * spacing,
+				PANGO_TAB_LEFT, 2 * spacing,
+				PANGO_TAB_LEFT, 3 * spacing,
+				PANGO_TAB_LEFT, 4 * spacing,
+				PANGO_TAB_LEFT, 5 * spacing,
+				PANGO_TAB_LEFT, 6 * spacing,
+				PANGO_TAB_LEFT, 7 * spacing,
+				PANGO_TAB_LEFT, 8 * spacing,
+				PANGO_TAB_LEFT, 9 * spacing,
+				PANGO_TAB_LEFT, 10 * spacing,
+				PANGO_TAB_LEFT, 11 * spacing,
+				PANGO_TAB_LEFT, 12 * spacing,
+				PANGO_TAB_LEFT, 13 * spacing,
+				PANGO_TAB_LEFT, 14 * spacing,
+				PANGO_TAB_LEFT, 15 * spacing,
+				PANGO_TAB_LEFT, 16 * spacing,
+				PANGO_TAB_LEFT, 17 * spacing,
+				PANGO_TAB_LEFT, 18 * spacing,
+				PANGO_TAB_LEFT, 19 * spacing,
+				PANGO_TAB_LEFT, 20 * spacing,
+				PANGO_TAB_LEFT, 21 * spacing,
+				PANGO_TAB_LEFT, 22 * spacing,
+				PANGO_TAB_LEFT, 23 * spacing,
+				PANGO_TAB_LEFT, 24 * spacing,
+				PANGO_TAB_LEFT, 25 * spacing,
+				PANGO_TAB_LEFT, 26 * spacing,
+				PANGO_TAB_LEFT, 27 * spacing,
+				PANGO_TAB_LEFT, 28 * spacing,
+				PANGO_TAB_LEFT, 29 * spacing,
+				PANGO_TAB_LEFT, 30 * spacing,
+				PANGO_TAB_LEFT, 31 * spacing,
+				PANGO_TAB_LEFT, 32 * spacing,
+				PANGO_TAB_LEFT, 33 * spacing,
+				PANGO_TAB_LEFT, 34 * spacing,
+				PANGO_TAB_LEFT, 35 * spacing,
+				PANGO_TAB_LEFT, 36 * spacing,
+				PANGO_TAB_LEFT, 37 * spacing,
+				PANGO_TAB_LEFT, 38 * spacing,
+				PANGO_TAB_LEFT, 39 * spacing,
+				PANGO_TAB_LEFT, 40 * spacing,
+				PANGO_TAB_LEFT, 41 * spacing,
+				PANGO_TAB_LEFT, 42 * spacing,
+				PANGO_TAB_LEFT, 43 * spacing,
+				PANGO_TAB_LEFT, 44 * spacing,
+				PANGO_TAB_LEFT, 45 * spacing,
+				PANGO_TAB_LEFT, 46 * spacing,
+				PANGO_TAB_LEFT, 47 * spacing,
+				PANGO_TAB_LEFT, 48 * spacing,
+				PANGO_TAB_LEFT, 49 * spacing,
+				PANGO_TAB_LEFT, 50 * spacing
+			);
+			gtk_text_view_set_tabs (GTK_TEXT_VIEW (my d_widget), tabs);
 			gtk_container_add (GTK_CONTAINER (scrolled), GTK_WIDGET (my d_widget));
 			gtk_widget_show (GTK_WIDGET (scrolled));
 			gtk_text_view_set_editable (GTK_TEXT_VIEW (my d_widget), ! (flags & GuiText_NONEDITABLE));
@@ -758,12 +813,14 @@ GuiText GuiText_create (GuiForm parent, int left, int right, int top, int bottom
 					(2) The default value of defaultTabInterval ("Tabs after the last specified in tabStops are
 						placed at integer multiples of this distance (if positive).") is 0.0,
 						probably meaning that the next tab stop has to be sought on the next line.
-					We therefore try to prevent the unwanted line break by setting defaultTabInterval to 28.0.
+					We therefore try to prevent the unwanted line break by setting defaultTabInterval to 29.2,
+					which seems to correspond to four 62.5%-wide fixed-width 12-point Menlo characters (but actually 60.8%-wide; last checked 2023-05-20).
 				*/
 				//NSMutableParagraphStyle *paragraphStyle = [[my d_cocoaTextView defaultParagraphStyle] mutableCopy];   // this one doesn't work (in 10.14.6)
 				NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
 				[paragraphStyle setParagraphStyle: [my d_cocoaTextView defaultParagraphStyle]];   // should be superfluous
-				[paragraphStyle setDefaultTabInterval: 28.0];
+				[paragraphStyle setDefaultTabInterval: 29.2];   // this already sets the number of tab stops to infinite...
+				[paragraphStyle setTabStops: [NSArray array]];   // ... and this empties the current tab stops, effectively setting all to 29.2 points from the leftmost on
 				if (!! (flags & GuiText_CHARWRAP))
 					[paragraphStyle setLineBreakMode: NSLineBreakByCharWrapping];
 				else if (!! (flags & GuiText_INKWRAP))
@@ -1126,7 +1183,7 @@ void GuiText_replace (GuiText me, integer from_pos, integer to_pos, conststring3
 		}
 	#elif motif
 		Melder_assert (MEMBER (my d_widget, Text));
-		autostring32 winText (2 * str32len (text), true);   // all newlines
+		autostring32 winText (2 * Melder_length (text), true);   // all newlines
 		char32 *to = & winText [0];
 		/*
 			Replace all LF with CR/LF.
@@ -1246,7 +1303,7 @@ void GuiText_setSelection (GuiText me, integer first, integer last) {
 		autostring32 text = GuiText_getString (me);
 		if (first < 0) first = 0;
 		if (last < 0) last = 0;
-		integer length = str32len (text.get());
+		const integer length = Melder_length (text.get());
 		if (first >= length) first = length;
 		if (last >= length) last = length;
 		/*
@@ -1315,13 +1372,18 @@ void GuiText_setString (GuiText me, conststring32 text, bool undoable) {
 			gtk_text_buffer_insert_interactive (textBuffer, & start, textUtf8, strlen (textUtf8), gtk_text_view_get_editable (GTK_TEXT_VIEW (my d_widget)));
 		}
 	#elif motif
-		autostring32 winText (2 * str32len (text), true);   // all new lines
+		autostring32 winText (2 * Melder_length (text), true);   // all new lines
 		char32 *to = & winText [0];
 		/*
 			Replace all LF with CR/LF.
 		*/
 		for (const char32 *from = & text [0]; *from != U'\0'; from ++, to ++)
-			if (*from == U'\n') { *to = 13; * ++ to = U'\n'; } else *to = *from;
+			if (*from == U'\n') {
+				*to = 13;
+				* ++ to = U'\n';
+			} else {
+				*to = *from;
+			}
 		*to = U'\0';
 		SetWindowTextW (my d_widget -> window, Melder_peek32toW (winText.get()));
 		UpdateWindow (my d_widget -> window);

@@ -1,5 +1,5 @@
 # Makefile of the library "fon"
-# Paul Boersma, 6 June 2022
+# Paul Boersma, 19 July 2023
 
 include ../makefile.defs
 
@@ -27,11 +27,12 @@ OBJECTS = Transition.o Distributions_and_Transition.o \
    ExperimentMFC.o manual_ExperimentMFC.o praat_ExperimentMFC.o \
    Photo.o Movie.o \
    Corpus.o \
-   manual_Picture.o manual_Manual.o manual_Script.o \
-   manual_soundFiles.o manual_tutorials.o manual_references.o \
+   manual_Picture.o manual_Manual.o manual_scripting.o manual_functions.o manual_demoWindow.o \
+   manual_whatsnew.o manual_soundFiles.o manual_tutorials.o manual_references.o \
    manual_programming.o manual_Fon.o manual_voice.o Praat_tests.o \
    manual_glossary.o manual_Sampling.o manual_exampleSound.o \
-   manual_sound.o manual_pitch.o manual_spectrum.o manual_formant.o manual_annotation.o \
+   manual_sound.o manual_pitch.o manual_spectrum.o manual_formant.o \
+   manual_pointProcess.o manual_annotation.o \
    praat_TimeFunction.o praat_TimeTier.o praat_TimeFrameSampled.o \
    praat_Sound.o praat_Matrix.o praat_Tiers.o praat_TextGrid_init.o praat_Fon.o
 

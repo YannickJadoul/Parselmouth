@@ -1,6 +1,6 @@
 /* HyperPage.cpp
  *
- * Copyright (C) 1996-2022 Paul Boersma
+ * Copyright (C) 1996-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ void HyperPage_any (HyperPage me, conststring32 text, kGraphics_font font, doubl
 {
 	if (my rightMargin == 0.0)
 		return;   // no infinite heights please
-	const double heightGuess = size * (1.2/72) * ((integer) size * str32len (text) / (int) (my rightMargin * 150));
+	const double heightGuess = size * (1.2/72) * ((integer) size * Melder_length (text) / (int) (my rightMargin * 150));
 
 	if (! my printing) {
 		Graphics_Link *paragraphLinks;
@@ -187,7 +187,7 @@ void HyperPage_any (HyperPage me, conststring32 text, kGraphics_font font, doubl
 		Graphics_setFontSize (my ps, size);
 		my d_y -= ( my d_y == PAPER_TOP - TOP_MARGIN ? 0 : ( my previousBottomSpacing > topSpacing ? my previousBottomSpacing : topSpacing ) * size / 12.0 );
 		my d_y -= size * (1.2/72);
-		if (my d_y < PAPER_BOTTOM + BOTTOM_MARGIN + minFooterDistance + size * (1.2/72) * (str32len (text) / (6.0 * 10))) {
+		if (my d_y < PAPER_BOTTOM + BOTTOM_MARGIN + minFooterDistance + size * (1.2/72) * (Melder_length (text) / (6.0 * 10))) {
 			Graphics_nextSheetOfPaper (my ps);
 			if (my d_printingPageNumber != 0)
 				my d_printingPageNumber ++;
@@ -260,6 +260,9 @@ void HyperPage_definition2 (HyperPage me, conststring32 text) {
 }
 void HyperPage_definition3 (HyperPage me, conststring32 text) {
 	HyperPage_any (me, text, my instancePref_font(), my instancePref_fontSize(), 0, 0.0, 1.93, 0.0, 0.03, 0.03, 0);
+}
+void HyperPage_code0 (HyperPage me, conststring32 text) {
+	HyperPage_any (me, text, kGraphics_font::COURIER, my instancePref_fontSize() * 0.86, 0, 0.0, 0.0, 0.5, 0.0, 0.0, 0);
 }
 void HyperPage_code (HyperPage me, conststring32 text) {
 	HyperPage_any (me, text, kGraphics_font::COURIER, my instancePref_fontSize() * 0.86, 0, 0.0, 0.3, 0.5, 0.0, 0.0, 0);
@@ -369,23 +372,47 @@ void HyperPage_picture (HyperPage me, double width_inches, double height_inches,
 	my previousBottomSpacing = bottomSpacing;
 }
 
-void HyperPage_script (HyperPage me, double width_inches, double height_inches, conststring32 script) {
+void HyperPage_script (HyperPage me, double width_inches, double height_inches, conststring32 script,
+	Graphics cacheGraphics, conststring32 cacheInfo)
+{
+	if (cacheInfo && cacheInfo [0] != U'\0') {
+		const double fontSize = my instancePref_fontSize() * 0.86;   // as in CODE
+		Graphics_setColour (my graphics.get(), Melder_MAGENTA);
+		HyperPage_code0 (me, U"\\#{=>}");
+		Graphics_setColour (my graphics.get(), Melder_BLACK);
+		//my d_y -= fontSize * (1.0/72);   // some empty space between the code and the output
+		static MelderString buffer;
+		MelderString_empty (& buffer);
+		for (const char32 *p = & cacheInfo [0]; *p != U'\0'; p ++) {
+			if (Melder_isEndOfLine (*p)) {
+				if (
+					str32str (buffer.string, U"**AN ERROR OCCURRED IN THIS CODE CHUNK:**") ||
+					str32str (buffer.string, U"**ERROR** This code chunk was not run,")
+				)
+					Graphics_setColour (my graphics.get(), Melder_RED);
+				HyperPage_code (me, buffer.string);
+				MelderString_empty (& buffer);
+			} else {
+				MelderString_appendCharacter (& buffer, *p);
+			}
+		}
+		Graphics_setColour (my graphics.get(), Melder_BLACK);
+	}
 	autostring32 text = Melder_dup (script);
-	autoInterpreter interpreter = Interpreter_createFromEnvironment (nullptr);
 	constexpr double topSpacing = 0.1, bottomSpacing = 0.1, minFooterDistance = 0.0;
 	const kGraphics_font font = my instancePref_font();
-	const double size = my instancePref_fontSize();
-	double true_width_inches = width_inches * ( width_inches < 0.0 ? -1.0 : size / 12.0 );
-	double true_height_inches = height_inches * ( height_inches < 0.0 ? -1.0 : size / 12.0 );
+	const double fontSize = my instancePref_fontSize();
+	const double true_width_inches = width_inches * ( width_inches < 0.0 ? -1.0 : fontSize / 12.0 );
+	const double true_height_inches = height_inches * ( height_inches < 0.0 ? -1.0 : fontSize / 12.0 );
 	if (! my printing) {
-		my d_y -= ( my previousBottomSpacing > topSpacing ? my previousBottomSpacing : topSpacing ) * size / 12.0;
+		my d_y -= ( my previousBottomSpacing > topSpacing ? my previousBottomSpacing : topSpacing ) * fontSize / 12.0;
 		if (my d_y > PAGE_HEIGHT + true_height_inches || my d_y < PAGE_HEIGHT - SCREEN_HEIGHT) {
 			my d_y -= true_height_inches;
 		} else {
 			my d_y -= true_height_inches;
 			Graphics_setFont (my graphics.get(), font);
 			Graphics_setFontStyle (my graphics.get(), 0);
-			Graphics_setFontSize (my graphics.get(), size);
+			Graphics_setFontSize (my graphics.get(), fontSize);
 			my d_x = ( true_width_inches > my rightMargin ? 0.0 : 0.5 * (my rightMargin - true_width_inches) );
 			Graphics_setWrapWidth (my graphics.get(), 0.0);
 			integer x1DCold, x2DCold, y1DCold, y2DCold;
@@ -399,14 +426,14 @@ void HyperPage_script (HyperPage me, double width_inches, double height_inches, 
 					my praatObjects = Melder_calloc_f (structPraatObjects, 1);
 				if (! my praatPicture)
 					my praatPicture = Melder_calloc_f (structPraatPicture, 1);
-				theCurrentPraatApplication = (PraatApplication) my praatApplication;
+				theCurrentPraatApplication = my praatApplication;
 				theCurrentPraatApplication -> batch = true;   // prevent creation of editor windows
 				theCurrentPraatApplication -> topShell = theForegroundPraatApplication. topShell;   // needed for UiForm_create () in dialogs
-				theCurrentPraatObjects = (PraatObjects) my praatObjects;
-				theCurrentPraatPicture = (PraatPicture) my praatPicture;
+				theCurrentPraatObjects = my praatObjects;
+				theCurrentPraatPicture = my praatPicture;
 				theCurrentPraatPicture -> graphics = my graphics.get();   // has to draw into HyperPage rather than Picture window
 				theCurrentPraatPicture -> font = font;
-				theCurrentPraatPicture -> fontSize = size;
+				theCurrentPraatPicture -> fontSize = fontSize;
 				theCurrentPraatPicture -> lineType = Graphics_DRAWN;
 				theCurrentPraatPicture -> colour = Melder_BLACK;
 				theCurrentPraatPicture -> lineWidth = 1.0;
@@ -436,30 +463,26 @@ void HyperPage_script (HyperPage me, double width_inches, double height_inches, 
 					autoMelderSaveDefaultDir saveDir;
 					if (! MelderDir_isNull (& my rootDirectory))
 						Melder_setDefaultDir (& my rootDirectory);
-					try {
-						Interpreter_run (interpreter.get(), text.get());
-					} catch (MelderError) {
-						if (my scriptErrorHasBeenNotified) {
-							Melder_clearError ();
-						} else {
-							Melder_flushError ();
-							my scriptErrorHasBeenNotified = true;
-						}
-					}
+					Melder_assert (cacheGraphics);
+					const bool dollarSignWasCode = my graphics -> dollarSignIsCode;
+					const bool backquoteWasVerbatim = my graphics -> backquoteIsVerbatim;
+					const bool atSignWasLink = my graphics -> atSignIsLink;
+					Graphics_setDollarSignIsCode (my graphics.get(), false);
+					Graphics_setBackquoteIsVerbatim (my graphics.get(), false);
+					Graphics_setAtSignIsLink (my graphics.get(), false);
+					Graphics_play (cacheGraphics, my graphics.get());
+					if (dollarSignWasCode)
+						Graphics_setDollarSignIsCode (my graphics.get(), true);
+					if (backquoteWasVerbatim)
+						Graphics_setBackquoteIsVerbatim (my graphics.get(), true);
+					if (atSignWasLink)
+						Graphics_setAtSignIsLink (my graphics.get(), true);
 				}
 				Graphics_setLineType (my graphics.get(), Graphics_DRAWN);
 				Graphics_setLineWidth (my graphics.get(), 1.0);
 				Graphics_setArrowSize (my graphics.get(), 1.0);
 				Graphics_setSpeckleSize (my graphics.get(), 1.0);
 				Graphics_setColour (my graphics.get(), Melder_BLACK);
-				/*Graphics_Link *paragraphLinks;
-				integer numberOfParagraphLinks = Graphics_getLinks (& paragraphLinks);
-				if (my links) for (integer ilink = 1; ilink <= numberOfParagraphLinks; ilink ++) {
-					autoHyperLink link = HyperLink_create (paragraphLinks [ilink]. name,
-						paragraphLinks [ilink]. x1, paragraphLinks [ilink]. x2,
-						paragraphLinks [ilink]. y1, paragraphLinks [ilink]. y2);
-					my links -> addItem_move (link.move());
-				}*/
 				theCurrentPraatApplication = & theForegroundPraatApplication;
 				theCurrentPraatObjects = & theForegroundPraatObjects;
 				theCurrentPraatPicture = & theForegroundPraatPicture;
@@ -473,15 +496,15 @@ void HyperPage_script (HyperPage me, double width_inches, double height_inches, 
 	} else {
 		Graphics_setFont (my ps, font);
 		Graphics_setFontStyle (my ps, 0);
-		Graphics_setFontSize (my ps, size);
-		my d_y -= ( my d_y == PAPER_TOP - TOP_MARGIN ? 0.0 : ( my previousBottomSpacing > topSpacing ? my previousBottomSpacing : topSpacing ) * size / 12.0 );
+		Graphics_setFontSize (my ps, fontSize);
+		my d_y -= ( my d_y == PAPER_TOP - TOP_MARGIN ? 0.0 : ( my previousBottomSpacing > topSpacing ? my previousBottomSpacing : topSpacing ) * fontSize / 12.0 );
 		my d_y -= true_height_inches;
 		if (my d_y < PAPER_BOTTOM + BOTTOM_MARGIN + minFooterDistance) {
 			Graphics_nextSheetOfPaper (my ps);
 			if (my d_printingPageNumber) my d_printingPageNumber ++;
 			HyperPage_initSheetOfPaper (me);
 			Graphics_setFont (my ps, font);
-			Graphics_setFontSize (my ps, size);
+			Graphics_setFontSize (my ps, fontSize);
 			my d_y -= true_height_inches;
 		}
 		my d_x = Melder_clippedLeft (0.0, 3.7 - 0.5 * true_width_inches);
@@ -497,14 +520,14 @@ void HyperPage_script (HyperPage me, double width_inches, double height_inches, 
 				my praatObjects = Melder_calloc_f (structPraatObjects, 1);
 			if (! my praatPicture)
 				my praatPicture = Melder_calloc_f (structPraatPicture, 1);
-			theCurrentPraatApplication = (PraatApplication) my praatApplication;
+			theCurrentPraatApplication = my praatApplication;
 			theCurrentPraatApplication -> batch = true;
 			theCurrentPraatApplication -> topShell = theForegroundPraatApplication. topShell;   // needed for UiForm_create () in dialogs
-			theCurrentPraatObjects = (PraatObjects) my praatObjects;
-			theCurrentPraatPicture = (PraatPicture) my praatPicture;
+			theCurrentPraatObjects = my praatObjects;
+			theCurrentPraatPicture = my praatPicture;
 			theCurrentPraatPicture -> graphics = my ps;
 			theCurrentPraatPicture -> font = font;
-			theCurrentPraatPicture -> fontSize = size;
+			theCurrentPraatPicture -> fontSize = fontSize;
 			theCurrentPraatPicture -> lineType = Graphics_DRAWN;
 			theCurrentPraatPicture -> colour = Melder_BLACK;
 			theCurrentPraatPicture -> lineWidth = 1.0;
@@ -539,7 +562,7 @@ void HyperPage_script (HyperPage me, double width_inches, double height_inches, 
 				if (! MelderDir_isNull (& my rootDirectory))
 					Melder_setDefaultDir (& my rootDirectory);
 				try {
-					Interpreter_run (interpreter.get(), text.get());
+					//Interpreter_run (interpreter, text.get(), false);   // BUG: implement
 				} catch (MelderError) {
 					Melder_clearError ();
 				}
@@ -565,7 +588,8 @@ void HyperPage_script (HyperPage me, double width_inches, double height_inches, 
 static void print (void *void_me, Graphics graphics) {
 	iam (HyperPage);
 	my ps = graphics;
-	Graphics_setDollarSignIsCode (graphics, true);
+	Graphics_setDollarSignIsCode (graphics, true);   // for manuals
+	Graphics_setBackquoteIsVerbatim (graphics, true);   // for notebooks
 	Graphics_setAtSignIsLink (graphics, true);
 	my printing = true;
 	HyperPage_initSheetOfPaper (me);
@@ -577,7 +601,7 @@ static void print (void *void_me, Graphics graphics) {
 
 void structHyperPage :: v9_destroy () noexcept {
 	if (our praatApplication) {
-		for (int iobject = ((PraatObjects) our praatObjects) -> n; iobject >= 1; iobject --) {
+		for (integer iobject = ((PraatObjects) our praatObjects) -> n; iobject >= 1; iobject --) {
 			((PraatObjects) our praatObjects) -> list [iobject]. name. reset();
 			forget (((PraatObjects) our praatObjects) -> list [iobject]. object);
 		}
@@ -616,7 +640,7 @@ static void gui_drawingarea_cb_mouse (HyperPage me, GuiDrawingArea_MouseEvent ev
 		if (! link)
 			Melder_fatal (U"gui_drawingarea_cb_click: empty link ", ilink, U"/", my links.size, U".");
 		if (event -> y > link -> y2DC && event -> y < link -> y1DC && event -> x > link -> x1DC && event -> x < link -> x2DC) {
-			saveHistory (me, my currentPageTitle.get());
+			saveHistory (me, my optionalCurrentPageTitle.get());
 			try {
 				HyperPage_goToPage (me, link -> name.get());
 			} catch (MelderError) {
@@ -629,20 +653,20 @@ static void gui_drawingarea_cb_mouse (HyperPage me, GuiDrawingArea_MouseEvent ev
 
 extern "C" void GRAPHICS_PostScript_settings (UiForm sendingForm, int narg, Stackel args, conststring32 sendingString, Interpreter interpreter, conststring32 invokingButtonTitle, bool modified, void *buttonClosure);
 
-static void menu_cb_postScriptSettings (HyperPage me, EDITOR_ARGS_FORM) {
+static void menu_cb_postScriptSettings (HyperPage me, EDITOR_ARGS) {
 	(void) me;
 	(void) cmd;
-	GRAPHICS_PostScript_settings (_sendingForm_, _narg_, _args_, _sendingString_, interpreter, nullptr, false, nullptr);
+	GRAPHICS_PostScript_settings (_sendingForm_, _narg_, _args_, _sendingString_, optionalInterpreter, nullptr, false, nullptr);
 }
 
 #ifdef macintosh
-static void menu_cb_pageSetup (HyperPage me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_pageSetup (HyperPage me, EDITOR_ARGS) {
 	(void) me;
 	Printer_pageSetup ();
 }
 #endif
 
-static void menu_cb_print (HyperPage me, EDITOR_ARGS_FORM) {
+static void menu_cb_print (HyperPage me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Print", nullptr)
 		SENTENCE_FIELD (my insideHeader, U"Left or inside header", U"")
 		SENTENCE_FIELD (my middleHeader, U"Middle header", U"")
@@ -661,16 +685,17 @@ static void menu_cb_print (HyperPage me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_font (HyperPage me, EDITOR_ARGS_FORM) {
+static void menu_cb_font (HyperPage me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Font", nullptr)
-		RADIO (font, U"Font", 1)
-			RADIOBUTTON (U"Times")
-			RADIOBUTTON (U"Helvetica")
+		CHOICE (font, U"Font", 1)
+			OPTION (U"Times")
+			OPTION (U"Helvetica")
 	EDITOR_OK
 		SET_OPTION (font, my instancePref_font() == kGraphics_font::TIMES ? 1 :
 				my instancePref_font() == kGraphics_font::HELVETICA ? 2 : my instancePref_font() == kGraphics_font::PALATINO ? 3 : 1);
 	EDITOR_DO
 		my setInstancePref_font ( font == 1 ? kGraphics_font::TIMES : kGraphics_font::HELVETICA );
+		Editor_dataChanged (me, me);
 		if (my graphics)
 			Graphics_updateWs (my graphics.get());
 	EDITOR_END
@@ -685,18 +710,19 @@ static void updateSizeMenu (HyperPage me) {
 }
 static void setFontSize (HyperPage me, double fontSize) {
 	my setInstancePref_fontSize (fontSize);
+	Editor_dataChanged (me, me);
 	updateSizeMenu (me);
 	if (my graphics)
 		Graphics_updateWs (my graphics.get());
 }
 
-static void menu_cb_10 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 10.0); }
-static void menu_cb_12 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 12.0); }
-static void menu_cb_14 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 14.0); }
-static void menu_cb_18 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 18.0); }
-static void menu_cb_24 (HyperPage me, EDITOR_ARGS_DIRECT) { setFontSize (me, 24.0); }
+static void menu_cb_10 (HyperPage me, EDITOR_ARGS) { setFontSize (me, 10.0); }
+static void menu_cb_12 (HyperPage me, EDITOR_ARGS) { setFontSize (me, 12.0); }
+static void menu_cb_14 (HyperPage me, EDITOR_ARGS) { setFontSize (me, 14.0); }
+static void menu_cb_18 (HyperPage me, EDITOR_ARGS) { setFontSize (me, 18.0); }
+static void menu_cb_24 (HyperPage me, EDITOR_ARGS) { setFontSize (me, 24.0); }
 
-static void menu_cb_fontSize (HyperPage me, EDITOR_ARGS_FORM) {
+static void menu_cb_fontSize (HyperPage me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Font size", nullptr)
 		POSITIVE (fontSize, U"Font size (points)", my default_fontSize ())
 	EDITOR_OK
@@ -706,7 +732,7 @@ static void menu_cb_fontSize (HyperPage me, EDITOR_ARGS_FORM) {
 	EDITOR_END
 }
 
-static void menu_cb_searchForPage (HyperPage me, EDITOR_ARGS_FORM) {
+static void menu_cb_searchForPage (HyperPage me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Search for page", nullptr)
 		TEXTFIELD (page, U"Page", U"a", 2)
 	EDITOR_OK
@@ -760,7 +786,7 @@ static void updateVerticalScrollBar (HyperPage me)
 	my history [my historyPointer]. top = 0/*my top*/;
 }
 
-static void menu_cb_pageUp (HyperPage me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_pageUp (HyperPage me, EDITOR_ARGS) {
 	if (! my verticalScrollBar)
 		return;
 	const double value = Melder_clippedLeft (0.0, GuiScrollBar_getValue (my verticalScrollBar) - 24.0);
@@ -771,7 +797,7 @@ static void menu_cb_pageUp (HyperPage me, EDITOR_ARGS_DIRECT) {
 	}
 }
 
-static void menu_cb_pageDown (HyperPage me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_pageDown (HyperPage me, EDITOR_ARGS) {
 	if (! my verticalScrollBar)
 		return;
 	const double value = Melder_clippedRight (GuiScrollBar_getValue (my verticalScrollBar) + 24.0, (PAGE_HEIGHT * 5.0) - 25.0);
@@ -787,16 +813,17 @@ static void menu_cb_pageDown (HyperPage me, EDITOR_ARGS_DIRECT) {
 static void do_back (HyperPage me) {
 	if (my historyPointer <= 0)
 		return;
-	autostring32 page = Melder_dup_f (my history [-- my historyPointer]. page.get());   // temporary, because pointer will be moved
+	autostring32 pageTitle = Melder_dup_f (my history [-- my historyPointer]. page.get());   // temporary, because pointer will be moved
+	Melder_assert (pageTitle);
 	const double top = my history [my historyPointer]. top;
-	if (my v_goToPage (page.get())) {
+	if (my v_goToPage (pageTitle.get())) {
 		my top = top;
 		updateVerticalScrollBar (me);
 		HyperPage_clear (me);
 	}
 }
 
-static void menu_cb_back (HyperPage me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_back (HyperPage me, EDITOR_ARGS) {
 	do_back (me);
 }
 
@@ -807,16 +834,17 @@ static void gui_button_cb_back (HyperPage me, GuiButtonEvent /* event */) {
 static void do_forth (HyperPage me) {
 	if (my historyPointer >= 19 || ! my history [my historyPointer + 1]. page)
 		return;
-	autostring32 page = Melder_dup_f (my history [++ my historyPointer]. page.get());
+	autostring32 pageTitle = Melder_dup_f (my history [++ my historyPointer]. page.get());
+	Melder_assert (pageTitle);
 	const double top = my history [my historyPointer]. top;
-	if (my v_goToPage (page.get())) {
+	if (my v_goToPage (pageTitle.get())) {
 		my top = top;
 		updateVerticalScrollBar (me);
 		HyperPage_clear (me);
 	}
 }
 
-static void menu_cb_forth (HyperPage me, EDITOR_ARGS_DIRECT) {
+static void menu_cb_forth (HyperPage me, EDITOR_ARGS) {
 	do_forth (me);
 }
 
@@ -827,21 +855,22 @@ static void gui_button_cb_forth (HyperPage me, GuiButtonEvent /* event */) {
 void structHyperPage :: v_createMenus () {
 	HyperPage_Parent :: v_createMenus ();
 
-	Editor_addCommand (this, U"File", U"PostScript settings...", 0, menu_cb_postScriptSettings);
+	Editor_addCommand (this, U"File", U"PostScript settings...", GuiMenu_HIDDEN, menu_cb_postScriptSettings);
 	#ifdef macintosh
-		Editor_addCommand (this, U"File", U"Page setup...", 0, menu_cb_pageSetup);
+		Editor_addCommand (this, U"File", U"Page setup...", GuiMenu_HIDDEN, menu_cb_pageSetup);
 	#endif
-	Editor_addCommand (this, U"File", U"Print page...", 'P', menu_cb_print);
-	Editor_addCommand (this, U"File", U"-- close --", 0, nullptr);
+	Editor_addCommand (this, U"File", U"Print page...", GuiMenu_HIDDEN, menu_cb_print);
+	Editor_addCommand (this, U"File", U"-- close --", GuiMenu_HIDDEN, nullptr);
 
 	if (our v_hasHistory ()) {
 		Editor_addMenu (this, U"Go to", 0);
-		Editor_addCommand (this, U"Go to", U"Search for page...", 0, menu_cb_searchForPage);
 		Editor_addCommand (this, U"Go to", U"Back", GuiMenu_OPTION | GuiMenu_LEFT_ARROW, menu_cb_back);
 		Editor_addCommand (this, U"Go to", U"Forward", GuiMenu_OPTION | GuiMenu_RIGHT_ARROW, menu_cb_forth);
 		Editor_addCommand (this, U"Go to", U"-- page --", 0, nullptr);
 		Editor_addCommand (this, U"Go to", U"Page up", GuiMenu_PAGE_UP, menu_cb_pageUp);
 		Editor_addCommand (this, U"Go to", U"Page down", GuiMenu_PAGE_DOWN, menu_cb_pageDown);
+		Editor_addCommand (this, U"Go to", U"-- page --", 0, nullptr);
+		Editor_addCommand (this, U"Go to", U"Search for page...", 0, menu_cb_searchForPage);
 	}
 
 	Editor_addMenu (this, U"Font", 0);
@@ -907,24 +936,33 @@ void structHyperPage :: v_createChildren () {
 		0, - Machine_getScrollBarWidth (),
 		y + ( our d_hasExtraRowOfTools ? 2 * height + 16 : height + 9 ), - Machine_getScrollBarWidth (),
 		gui_drawingarea_cb_expose, gui_drawingarea_cb_mouse,
-		nullptr, gui_drawingarea_cb_resize, this, GuiDrawingArea_BORDER
+		nullptr, gui_drawingarea_cb_resize, nullptr, this, GuiDrawingArea_BORDER
 	);
 	GuiDrawingArea_setSwipable (drawingArea, nullptr, our verticalScrollBar);
 }
 
-void HyperPage_init (HyperPage me, conststring32 title, Daata data) {
+void HyperPage_init1 (HyperPage me, conststring32 title, Daata data, bool backquoteIsVerbatim) {
 	resolution = Gui_getResolution (nullptr);
-	Editor_init (me, 0, 0, (int) floor (6 * resolution + 30), 800, title, data);
+	const int width = 760;   // used to be (int) floor (6 * resolution + 30)
+	Editor_init (me, 0, 0, width, 800, title, data);
 	#if motif
 		Melder_assert (XtWindow (my drawingArea -> d_widget));
 	#endif
 	my graphics = Graphics_create_xmdrawingarea (my drawingArea);
+	Graphics_setDollarSignIsCode (my graphics.get(), true);   // for manuals
+	if (backquoteIsVerbatim)
+		Graphics_setBackquoteIsVerbatim (my graphics.get(), true);   // for notebooks
 	Graphics_setAtSignIsLink (my graphics.get(), true);
-	Graphics_setDollarSignIsCode (my graphics.get(), true);
 	Graphics_setFont (my graphics.get(), kGraphics_font::TIMES);
 	if (my instancePref_font() != kGraphics_font::TIMES && my instancePref_font() != kGraphics_font::HELVETICA)
 		my setInstancePref_font (kGraphics_font::TIMES);   // ensure Unicode compatibility
-	setFontSize (me, my instancePref_fontSize());
+}
+void HyperPage_init2 (HyperPage me, conststring32 /* title */, Daata /* data */) {
+	/*
+		Relevant parts from the dataChanged message:
+	*/
+	updateSizeMenu (me);
+	Graphics_updateWs (my graphics.get());
 
 struct structGuiDrawingArea_ResizeEvent event { my drawingArea, 0, 0 };
 event. width  = GuiControl_getWidth  (my drawingArea);
@@ -932,6 +970,10 @@ event. height = GuiControl_getHeight (my drawingArea);
 gui_drawingarea_cb_resize (me, & event);
 
 	updateVerticalScrollBar (me);   // scroll to the top (my top == 0)
+}
+void HyperPage_init (HyperPage me, conststring32 title, Daata data) {
+	HyperPage_init1 (me, title, data, false);
+	HyperPage_init2 (me, title, data);
 }
 
 void HyperPage_clear (HyperPage me) {
@@ -941,28 +983,31 @@ void HyperPage_clear (HyperPage me) {
 
 void structHyperPage :: v1_dataChanged (Editor /* sender */) {
 	const bool oldError = Melder_hasError ();   // this method can be called during error time
-	(void) our v_goToPage (our currentPageTitle.get());
+	(void) our v_goToPage (our optionalCurrentPageTitle.get());
 	if (Melder_hasError () && ! oldError)
 		Melder_flushError ();
 	updateVerticalScrollBar (this);
 	HyperPage_clear (this);
 }
 
-int HyperPage_goToPage (HyperPage me, conststring32 title) {
-	switch (my v_goToPage (title)) {
+int HyperPage_goToPage (HyperPage me, conststring32 pageTitle) {
+	Melder_assert (pageTitle);
+	switch (my v_goToPage (pageTitle)) {
 		case -1: return 0;
 		case 0: HyperPage_clear (me); return 0;
 	}
-	saveHistory (me, title);   // last chance: HyperPage_clear will destroy "title" !!!
-	my currentPageTitle = Melder_dup_f (title);
+	saveHistory (me, pageTitle);   // last chance: HyperPage_clear will destroy "title" !!!
+	my optionalCurrentPageTitle = Melder_dup_f (pageTitle);
+	Melder_assert (my optionalCurrentPageTitle);
 	my top = 0.0;
 	updateVerticalScrollBar (me);   // scroll to the top (my top == 0)
 	HyperPage_clear (me);
 	return 1;
 }
 
-void HyperPage_goToPage_number (HyperPage me, integer i) {
-	my v_goToPage_number (i);   // catch -> HyperPage_clear (me); ?
+void HyperPage_goToPage_number (HyperPage me, integer optionalPageNumber) {
+	my v_goToPage_number (optionalPageNumber);   // catch -> HyperPage_clear (me); ?
+	Melder_assert (! optionalPageNumber || my optionalCurrentPageTitle);   // only page 0 has no title
 	my top = 0.0;
 	updateVerticalScrollBar (me);   // scroll to the top (my top == 0.0)
 	HyperPage_clear (me);

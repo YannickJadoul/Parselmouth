@@ -9,15 +9,15 @@ closingThreshold = 0.30
 silenceThreshold = 0.03
 sound = Read from file: "s_egg_test.wav"
 egg = Extract Electroglottogram: 1, "no"
-intervalTier = Get closed glottis intervals: pitchFloor, pitchCeiling, closingThreshold, silenceThreshold
+textgrid = To TextGrid (closed glottis): pitchFloor, pitchCeiling, closingThreshold, silenceThreshold
 selectObject: egg
-degg = Derivative: 5000, 50, "yes"
+degg = Derivative: 5000, 50, 0.99
 selectObject: egg
 To AmplitudeTier (levels): pitchFloor, pitchCeiling, closingThreshold, "yes", "yes"
 peaks = selected ("AmplitudeTier", 1)
 valleys = selected ("AmplitudeTier", 2)
 levels = selected ("AmplitudeTier", 3)
 
-removeObject: levels, valleys, peaks, degg, intervalTier, egg, sound
+removeObject: levels, valleys, peaks, degg, textgrid, egg, sound
 
 appendInfoLine : "test_Electroglottogram.praat OK"

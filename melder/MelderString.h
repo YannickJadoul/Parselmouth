@@ -2,7 +2,7 @@
 #define _melder_string_h_
 /* MelderString.h
  *
- * Copyright (C) 1992-2020 Paul Boersma
+ * Copyright (C) 1992-2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,11 @@
 		- automatically convert numbers, objects, file names, vectors, and matrices to strings
 */
 
+struct MelderString8 {
+	int64 length = 0;
+	int64 bufferSize = 0;
+	char8 *string = nullptr;   // a growing buffer, rarely shrunk (can only be freed by MelderString8_free)
+};
 struct MelderString16 {
 	int64 length = 0;
 	int64 bufferSize = 0;
@@ -38,12 +43,15 @@ struct MelderString {
 	char32 *string = nullptr;   // a growing buffer, rarely shrunk (can only be freed by MelderString_free)
 };
 
+void MelderString8_free (MelderString16 *me);   // frees the buffer (and sets other attributes to zero)
 void MelderString16_free (MelderString16 *me);   // frees the buffer (and sets other attributes to zero)
 void MelderString_free (MelderString *me);   // frees the buffer (and sets other attributes to zero)
+void MelderString8_empty (MelderString16 *me);   // sets to empty string (buffer shrunk if very large)
 void MelderString16_empty (MelderString16 *me);   // sets to empty string (buffer shrunk if very large)
 void MelderString_empty (MelderString *me);   // sets to empty string (buffer shrunk if very large)
-void MelderString_expand (MelderString *me, int64 sizeNeeded);   // increases the buffer size; there's normally no need to call this
-void MelderString_ncopy (MelderString *me, conststring32 source, int64 n);
+void _private_MelderString_expand (MelderString *me, int64 sizeNeeded);   // increases the buffer size; there's normally no need to call this
+void MelderString_ncopy (MelderString *me, conststring32 sourceOrNull, int64 n);
+void MelderString_nappend (MelderString *me, conststring32 sourceOrNull, integer n);
 
 inline void _recursiveTemplate_MelderString_append (MelderString *me, const MelderArg& arg) {
 	if (arg._arg) {
@@ -69,7 +77,7 @@ void MelderString_append (MelderString *me, const MelderArg& first, Args... rest
 	const integer sizeNeeded = my length + extraLength + 1;
 	Melder_assert (sizeNeeded > 0);   // this assertion was added to silence an analyzer complaint
 	if (sizeNeeded > my bufferSize)
-		MelderString_expand (me, sizeNeeded);
+		_private_MelderString_expand (me, sizeNeeded);
 	_recursiveTemplate_MelderString_append (me, first, rest...);
 }
 
@@ -82,7 +90,7 @@ void MelderString_copy (MelderString *me, const MelderArg& first, Args... rest) 
 	const integer sizeNeeded = length + 1;
 	Melder_assert (sizeNeeded > 0);   // this assertion was added to silence an analyzer complaint
 	if (sizeNeeded > my bufferSize)
-		MelderString_expand (me, sizeNeeded);
+		_private_MelderString_expand (me, sizeNeeded);
 	my length = 0;
 	my string [0] = U'\0';   // maintain invariant
 	_recursiveTemplate_MelderString_append (me, first, rest...);
@@ -91,6 +99,7 @@ void MelderString_copy (MelderString *me, const MelderArg& first, Args... rest) 
 void MelderString16_appendCharacter (MelderString16 *me, char32 character);
 void MelderString_appendCharacter (MelderString *me, char32 character);
 void MelderString_get (MelderString *me, char32 *destination);   // performs no boundary checking
+void MelderString_truncate (MelderString *me, integer maximumLength);
 int64 MelderString_allocationCount ();
 int64 MelderString_deallocationCount ();
 int64 MelderString_allocationSize ();

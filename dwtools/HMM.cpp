@@ -1,6 +1,6 @@
 /* HMM.cpp
  *
- * Copyright (C) 2010-2020 David Weenink, 2015,2017 Paul Boersma
+ * Copyright (C) 2010-2023 David Weenink, 2015,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -313,7 +313,7 @@ autoHMMObservationSequence Strings_to_HMMObservationSequence (Strings me) {
 autoStringsIndex HMMObservationSequence_to_StringsIndex (HMMObservationSequence me) {
 	try {
 		autoStrings s = HMMObservationSequence_to_Strings (me);
-		autoStringsIndex thee = Strings_to_StringsIndex (s.get());
+		autoStringsIndex thee = Strings_to_StringsIndex (s.get(), kStrings_sorting::NUMBER_AWARE);
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": no StringsIndex created.");
@@ -810,7 +810,7 @@ void HMMBaumWelch_reInit (HMMBaumWelch me) {
 	my lnProb = 0.0;
 
 	/*
-		The _num and _denum matrices are asigned as += in the iteration loop and therefore need to be zeroed
+		The _num and _denum matrices are assigned as += in the iteration loop and therefore need to be zeroed
 		at the start of each new iteration.
 		The elements of alpha, beta, scale, gamma & xi are always calculated directly and need not be
 		initialised.
@@ -1669,7 +1669,7 @@ autoTableOfReal StringsIndex_to_TableOfReal_transitions (StringsIndex me, int pr
 
 autoTableOfReal Strings_to_TableOfReal_transitions (Strings me, int probabilities) {
 	try {
-		autoStringsIndex him = Strings_to_StringsIndex (me);
+		autoStringsIndex him = Strings_to_StringsIndex (me, kStrings_sorting::ALPHABETICAL);
 		autoTableOfReal thee = StringsIndex_to_TableOfReal_transitions (him.get(), probabilities);
 		return thee;
 	} catch (MelderError) {
