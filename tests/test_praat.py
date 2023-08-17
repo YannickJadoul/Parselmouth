@@ -40,14 +40,14 @@ def test_call_parameters(sound):
 	assert parselmouth.praat.call(sound, "Add", 0.1) is None
 	assert parselmouth.praat.call(sound, "Add", -1) is None
 	assert parselmouth.praat.call(sound, "Override sampling frequency", 44100) is None
-	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" must be greater than 0"):
+	with pytest.raises(parselmouth.PraatError, match=r"Argument \“.*\” must be greater than 0"):
 		assert parselmouth.praat.call(sound, "Override sampling frequency", -10.0) is None
 
 	assert parselmouth.praat.call(sound, "Get time from sample number", 1) == sound.get_time_from_index(1)
-	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a whole number"):
+	with pytest.raises(parselmouth.PraatError, match=r"Argument \“.*\” should be a whole number"):
 		assert parselmouth.praat.call(sound, "Get time from sample number", 0.5) != sound.get_time_from_index(1)
 	assert parselmouth.praat.call(sound, "Set value at sample number", 1, 0.0) is None
-	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a positive whole number"):
+	with pytest.raises(parselmouth.PraatError, match=r"Argument \“.*\” should be a positive whole number"):
 		assert parselmouth.praat.call(sound, "Set value at sample number", 0, -1, 0.0) is None
 
 	assert parselmouth.praat.call(sound, "To Spectrum", True) == parselmouth.praat.call(sound, "To Spectrum", 1)
@@ -59,9 +59,9 @@ def test_call_parameters(sound):
 	many_channels = parselmouth.Sound(np.zeros((10, 1600)), 16000)
 	assert parselmouth.praat.call(many_channels, "Extract channels", np.array([2, 3, 5, 7])).n_channels == 4
 	assert parselmouth.praat.call(many_channels, "Extract channels", [2, 3, 5, 7]).n_channels == 4
-	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a numeric vector, not a number"):
+	with pytest.raises(parselmouth.PraatError, match=r"Argument \“.*\” should be a numeric vector, not a number"):
 		assert parselmouth.praat.call(many_channels, "Extract channels", 4) == 1
-	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a numeric vector, not a numeric matrix"):
+	with pytest.raises(parselmouth.PraatError, match=r"Argument \“.*\” should be a numeric vector, not a numeric matrix"):
 		assert parselmouth.praat.call(many_channels, "Extract channels", np.array([[2, 3, 5, 7]])) == 4
 
 	# If a Praat command with a NUMMAT argument gets added, a test should be added
@@ -78,7 +78,7 @@ def test_call_parameters(sound):
 	assert [parselmouth.praat.call(table, "Get column label", i + 1) for i in range(3)] == ["a", "b", "c"]
 	with pytest.raises(ValueError, match=r"Cannot convert argument \"\['a', 'b', 3\]\" to a known Praat argument type"):
 		parselmouth.praat.call("Create Table with column names", "test", 10, ['a', 'b', 3])
-	with pytest.raises(parselmouth.PraatError, match=r"Argument \".*\" should be a string array, not a number"):
+	with pytest.raises(parselmouth.PraatError, match=r"Argument \“.*\” should be a string array, not a number"):
 		parselmouth.praat.call("Create Table with column names", "test", 10, 42)
 
 
@@ -330,7 +330,7 @@ def test_praat_callback_prefixes():
 	graphics = {f'GRAPHICS_{x}' for x in {'EACH', 'NONE', 'ONE_AND_ONE', 'TWO', 'TWO_AND_ONE'}}
 	play_record = {'PLAY', 'PLAY_EACH', 'PLAY_ONE_AND_ONE', 'RECORD_ONE'}
 	editor_window = {'EDITOR_ONE', 'EDITOR_ONE_WITH_ONE', 'EDITOR_ONE_WITH_ONE_AND_ONE', 'CREATION_WINDOW', 'SINGLETON_CREATION_WINDOW'}
-	etc = {'HELP', 'PRAAT', 'APPEND_ALL', 'PRAAT', 'PREFS', 'HINT', 'WARNING'}
+	etc = {'HELP', 'PRAAT', 'APPEND_ALL', 'PRAAT', 'SETTINGS', 'HINT', 'WARNING'}
 
 	new_prefixes = {prefix[:-2] for prefix in prefixes if prefix.endswith('__')}
 	assert new_prefixes == query | convert | modify | create | info | read_save | graphics | play_record | editor_window | etc

@@ -25,7 +25,7 @@ def test_name(thing):
 	thing.name = "a thing (with disallowed characters!)"
 	assert thing.name == "a_thing__with_disallowed_characters__"
 	assert thing.class_name == thing.__class__.__name__
-	assert thing.full_name == thing.class_name + " \"" + thing.name + "\""
+	assert thing.full_name == thing.class_name + " “" + thing.name + "”"
 
 
 def test_no_name(thing):
