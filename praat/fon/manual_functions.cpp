@@ -242,7 +242,7 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`readLinesFromFile$#` (%`filePath$`) – read all lines from a text file
 , @`rectify` (%`x`) – set to zero if negative (no change if positive)
 , @`rectify#` (%`vector#`) – rectify each element of %`vector#`
-, @`rectify##` (%`matrix##`) – rectify each cell of %`matrix##`
+, @`rectify##` (%`matrix##`) – rectify each cell of %`matrix##`)~~~" R"~~~(
 , @`removeObject` (`...`) – remove objects from the list, by ID and/or name
 , @`repeat#` (%`v#`, %`n`) – repeat the whole sequence of elements of %`v#` %`n` times
 , @`replace$` (%`a$`, %`b$`, %`c$`, %`n`) – within %`a$`, replace the first %`n` occurrences of %`b$` with %`c$`, or all if %`n` = 0
@@ -745,7 +745,7 @@ Examples
 This is an assertion that is satisfied:
 {
 	a = 5*6
-	\#{assert} a = 30
+	\#{assert} a = 30)~~~" R"~~~(
 	writeInfoLine: a
 }
 This is an assertion that is violated:
@@ -1302,7 +1302,7 @@ Syntax and semantics
 : determine whether the user clicked in the Demo window.
 
 Usage
-=====
+=====)~~~" R"~~~(
 This function is usually called after a user event has been detected (with @`demoWaitForInput`),
 and is typically followed by determing the location of the click
 (with @`demoX`) and @`demoY`, or with @`demoClickedIn`).
@@ -1882,7 +1882,7 @@ Syntax and semantics
 ################################################################################
 "`from_to_count#`"
 © Paul Boersma 2023-06-30
-
+)~~~" R"~~~(
 A function that can be used in @@Formulas@.
 
 Syntax and semantics
@@ -2512,7 +2512,7 @@ Syntax and semantics
 : format a number as a string,
 with a trailing percent sign and %`precision` digits after the decimal point.
 
-################################################################################
+################################################################################)~~~" R"~~~(
 "`phonToDifferenceLimens`"
 © Paul Boersma 2002, 2023
 
@@ -3023,7 +3023,7 @@ Syntax and semantics
 ################################################################################
 "`replace$`"
 © Paul Boersma 2023
-
+)~~~" R"~~~(
 A function that can be used in @Formulas.
 
 Syntax and semantics
@@ -3618,7 +3618,7 @@ Syntax and semantics
 #`tan#` (%`v#`)
 : compute the tangent (@`tan`) of each element of the vector %`v#`.
 
-################################################################################
+################################################################################)~~~" R"~~~(
 "`tan##`"
 © Paul Boersma 2023
 

@@ -356,7 +356,7 @@ What used to be new?
 • TextGrid window: removed a bug that caused Praat to crash when option-clicking or command-clicking a boundary when another boundary was selected on a point tier.
 • @@Record Sound (fixed time)...@: removed a bug that caused Praat to crash with certain combinations of duration and sampling frequency on Windows.
 • PowerCepstrogram: more precise integration, so that the cepstral peak prominence is now a continuous function of time.
-• TextGrid: Get points (preceded): removed a bug that caused Praat to crash under some edge conditions.
+• TextGrid: Get points (preceded): removed a bug that caused Praat to crash under some edge conditions.)~~~" R"~~~(
 • Scripting: @`tryToWriteFile` () and @`tryToAppendFile` () should not be available in manuals.
 
 ##6.1.36# (6 December 2020)
@@ -724,7 +724,7 @@ then dragged the mouse out of that window, then released the mouse button, and t
 ##6.0.10# (8 January 2016)
 • Corrected a bug that would cause Praat to crash when starting an ExperimentMFC window.
 • Mac 64-bit: corrected a bug that would cause black selections in the Sound window.
-
+)~~~" R"~~~(
 ##6.0.09# (1 January 2016)
 • Windows 64-bit: corrected a bug that could cause Praat to crash when closing the Sound window after popping up dialog boxes.
 
@@ -1059,7 +1059,7 @@ the column index was larger than the number of rows.
 • Phonetic symbols \ts, \tS and \ap.
 • Network: ##Normalize weights...#, ##List weights...#, ##Weights down to Table...#.
 
-##5.3.42# (2 March 2013)
+##5.3.42# (2 March 2013))~~~" R"~~~(
 • Repaired some minor bugs regarding synchronization between multiple windows.
 
 ##5.3.41# (9 February 2013)
@@ -1441,7 +1441,7 @@ if the selection ran from the penultimate interval to the end of the TextGrid.
 ##5.1.39# (10 July 2010)
 • GTK beta version.
 • Linux: made @@Record Sound (fixed time)...|Sound: Record (fixed time)...@ work correctly (the sampling frequency was wrong).
-• GTK: list of objects: multiple selection, working Rename button.
+• GTK: list of objects: multiple selection, working Rename button.)~~~" R"~~~(
 • GTK: running a script no longer deselects all objects at the start.
 • GTK: working Buttons editor.
 • GTK: correctly laid out settings windows.
@@ -1819,7 +1819,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 © Paul Boersma 2007-12-10
 
 ##5.0# (10 December 2007)
-• Corrected many bugs.
+• Corrected many bugs.)~~~" R"~~~(
 • Display font sizes in points rather than pixels.
 
 ##4.6.41# (9 December 2007)
@@ -2178,7 +2178,7 @@ for a selected combination of independent variables.
 • @@Table: Report mean (Student t)...|Table: Report mean...@.
 • Formulas: @@Formulas 8. Attributes of objects|`row$` and `col$` attributes@.
 • Warning when trying to read data files whose format is newer than the Praat version.
-
+)~~~" R"~~~(
 ##4.4.16# (1 April 2006)
 • Spectrum window: dynamic range setting.
 • SoundRecorder: corrected a bug in the Intel Mac edition.
@@ -2577,7 +2577,7 @@ Phonology library:
 Graphics:
 • Improved spectrogram drawing.
 • @@Special symbols@: háček.
-• Macintosh: improved screen rendition of rotated text.
+• Macintosh: improved screen rendition of rotated text.)~~~" R"~~~(
 
 Audio:
 • Macintosh: support for multiple audio input devices (sound cards).

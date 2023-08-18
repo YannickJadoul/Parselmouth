@@ -6,6 +6,7 @@ Guide to update the Praat version of the git subtree in `praat/`:
 - Check for source files added or deleted, and adapt the `CMakeLists.txt` files: `res/etc/makefilelist.sh`.
 - Check for changes in Praat's `makefile.defs` files: `git difftool HEAD^ -- praat/makefiles`.
 - Check for changes related to global locale-sensitive functions: `res/etc/locale_regex_diff.sh HEAD^`.
+- Check for and fix string literals that are too long for MSVC: `res/etc/split_praat_manual_strings_msvc.py`.
 - Compile and run tests (with `--run-praat-tests`) and hope nothing broke.
 - Commit, push, and hope nothing breaks in CI.
 - Update the Praat version in the docs and README (Praat citations).
