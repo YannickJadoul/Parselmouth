@@ -41,12 +41,18 @@ appendInfoLine: "Colour: <<", foreground_colour$, ">>"
 appendInfoLine: "Texture: <<", texture, ">>"
 appendInfoLine: "Texture: <<", texture$, ">>"
 
+if windows
+	pathsep$ = "\"
+else
+	pathsep$ = "/"
+endif
+
 # if called from test/script/form1.praat:
 assert numbers1# = { 16, -17.6, 5 }
 assert numbers2# = { 6, 7, 8 }
-assert endsWith (input_file$, "test/script/2345")   ; should not be possible
-assert endsWith (output_file$, "test/script/../abc.txt")
-assert endsWith (folder$, "test/script/subfolder/wav2vec")
+assert endsWith (input_file$, "test" + pathsep$ + "script" + pathsep$ + "2345")   ; should not be possible
+assert endsWith (output_file$, "test" + pathsep$ + "script" + pathsep$ + ".." + pathsep$ + "abc.txt")
+assert endsWith (folder$, "test" + pathsep$ + "script" + pathsep$ + "subfolder" + pathsep$ + "wav2vec")
 assert texture$ = "With holes"
 assert any_word$ = "there you are"
 
