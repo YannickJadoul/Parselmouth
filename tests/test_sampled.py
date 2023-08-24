@@ -21,9 +21,10 @@ import numpy as np
 
 
 def test_xs(sampled):
-	assert np.all(sampled.xs() == sampled.x1 + sampled.dx * np.arange(sampled.nx))
-	assert np.all(sampled.x_grid() == sampled.x1 + sampled.dx * (np.arange(sampled.nx + 1) - 0.5))
-	assert np.all(sampled.x_bins() == np.vstack((sampled.x_grid()[:-1], sampled.x_grid()[1:])).T)
+	# Note: arm64's fmadd does not have intermediate rounding, so we don't always get the exact same values
+	assert sampled.xs() == pytest.approx(sampled.x1 + sampled.dx * np.arange(sampled.nx), abs=0, rel=1e-15)
+	assert sampled.x_grid() == pytest.approx(sampled.x1 + sampled.dx * (np.arange(sampled.nx + 1) - 0.5), abs=0, rel=1e-15)
+	assert sampled.x_bins() == pytest.approx(np.vstack((sampled.x_grid()[:-1], sampled.x_grid()[1:])).T, abs=0, rel=1e-15)
 
 
 def test_len(sampled):
