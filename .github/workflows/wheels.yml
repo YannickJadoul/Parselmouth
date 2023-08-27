@@ -6,7 +6,7 @@ on:
       - master
       - stable
       - docs
-      - actions*
+      #- actions*
     tags:
       - v*
   workflow_dispatch:
