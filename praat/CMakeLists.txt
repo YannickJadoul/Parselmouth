@@ -56,7 +56,7 @@ set(PRAAT_DEFINITIONS_PRIVATE _FILE_OFFSET_BITS=64)
 # Trying to convert the flags from the Praat makefiles...
 if (UNIX)
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} -pthread)
-	set(PRAAT_FLAGS ${PRAAT_FLAGS} -ffp-contract=off) # Necessary for aarch64: results can differ when assembly instructions like fmadd are used
+	set(PRAAT_FLAGS ${PRAAT_FLAGS} -ffp-contract=off) # Necessary for architectures with assembly instructions like fmadd (aarch64, or x64 with newer -march=): results can differ from Praat when these are used
 	set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} -Wno-trigraphs)
 	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 		set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} -Wno-logical-op-parentheses -Wno-shift-op-parentheses) # Clang complains a lot about '-Wlogical-op-parentheses' and '-Wshift-op-parentheses' warnings, but GCC doesn't know this option
@@ -75,7 +75,12 @@ elseif (WIN32)
 	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_WINDOWS) # eSpeak
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /wd4068) # "warning C4068: unknown pragma": #pragma mark
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /EHs) # Some 'extern "C"' functions throw exceptions: make sure they're caught
-	set(PRAAT_FLAGS ${PRAAT_FLAGS} /fp:precise) # /fp:precise is default and allows contractions in version before VS 2022, but /fp:strict does not allow for arithmetic expressions in constants
+	set(PRAAT_FLAGS ${PRAAT_FLAGS} /fp:precise) # /fp:precise is default does not allow contractions starting from VS 2022, and /fp:strict does not allow for arithmetic expressions in constants
+	if (MSVC_VERSION LESS 1930)
+		# Turn off floating point contractions if we're using VS 2019 or earlier
+		file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pragma_contract_off.h "#pragma fp_contract (off)\n")
+		set(PRAAT_FLAGS ${PRAAT_FLAGS} /FI${CMAKE_CURRENT_BINARY_DIR}/pragma_contract_off.h)
+	endif ()
 	set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} /wd4554) # "warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence"
 endif ()
 
