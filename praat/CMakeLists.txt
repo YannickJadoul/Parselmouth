@@ -76,11 +76,6 @@ elseif (WIN32)
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /wd4068) # "warning C4068: unknown pragma": #pragma mark
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /EHs) # Some 'extern "C"' functions throw exceptions: make sure they're caught
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /fp:precise) # /fp:precise is default does not allow contractions starting from VS 2022, and /fp:strict does not allow for arithmetic expressions in constants
-	if (MSVC_VERSION LESS 1930)
-		# Turn off floating point contractions if we're using VS 2019 or earlier
-		file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pragma_contract_off.h "#pragma fp_contract (off)\n")
-		set(PRAAT_FLAGS ${PRAAT_FLAGS} /FI${CMAKE_CURRENT_BINARY_DIR}/pragma_contract_off.h)
-	endif ()
 	set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} /wd4554) # "warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence"
 endif ()
 

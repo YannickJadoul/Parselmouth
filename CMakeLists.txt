@@ -25,6 +25,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 if (MSVC)
+	if (MSVC_VERSION VERSION_LESS 1930)
+		message(FATAL_ERROR "Visual Studio 2022 (or later) is required to build Parselmouth.")
+	endif ()
 	add_compile_options(/permissive- /Zc:inline) # Please follow the standard more closely, MSVC (e.g. adds ciso646 alternative tokens for logical operators)
 	add_compile_options(/utf-8) # Because Praat contains source files with unicode chars encoded as UTF-8, and because UTF-8 is not default enough for MSVC to read and compile these files correctly (also, because it's 2020 by now)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS UNICODE NOMINMAX) # Windows no "safe alternatives" warning, Windows unicode API by default, and no <windows.h> 'min' and 'max' macros
