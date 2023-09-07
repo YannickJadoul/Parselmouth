@@ -146,13 +146,19 @@ nitpick_ignore = [('py:class', 'pybind11_builtins.pybind11_object'),
                   ('py:obj', 'List')]
 
 
-if not on_rtd:
-    branch = str(git.Repo(search_parent_directories=True).head.ref)
+if on_rtd:
+    branch_or_commit = branch
+else:
+    git_head = git.Repo(search_parent_directories=True).head
+    try:
+        branch_or_commit = str(git_head.ref)
+    except TypeError:
+        branch_or_commit = str(git_head.commit)
 
 rst_epilog = """
 .. |binder_badge_examples| image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/docs/examples
-""".format(branch_or_tag=branch)
+    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{binder_ref}?urlpath=lab/tree/docs/examples
+""".format(binder_ref=branch_or_commit)
 
 nbsphinx_prolog = """
 {{% set docname = 'docs/' + env.doc2path(env.docname, base=False) %}}
@@ -164,8 +170,8 @@ nbsphinx_prolog = """
         An online, interactive version of this example is available at Binder: |binder|
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{branch_or_tag}?urlpath=lab/tree/{{{{ docname }}}}
-""".format(branch_or_tag=branch)
+    :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{binder_ref}?urlpath=lab/tree/{{{{ docname }}}}
+""".format(binder_ref=branch_or_commit)
 
 copybutton_selector = "div:not(.output_area) > div.highlight > pre"
 
@@ -195,7 +201,7 @@ html_theme_options = {
     },
     "path_to_docs": "docs/",
     "repository_url": "https://github.com/YannickJadoul/Parselmouth",
-    "repository_branch": branch,
+    "repository_branch": branch_or_commit,
     "use_repository_button": True,
     "use_source_button": True,
     "show_toc_level": 2,
