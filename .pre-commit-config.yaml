@@ -11,6 +11,7 @@ repos:
       - id: check-docstring-first
       - id: check-json
       - id: pretty-format-json
+        exclude_types: [jupyter]
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-toml
