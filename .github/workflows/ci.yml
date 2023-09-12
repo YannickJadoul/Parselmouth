@@ -28,10 +28,13 @@ jobs:
           - runs-on: ubuntu-latest
             python: '3.10'
             arch: x64
+          - runs-on: ubuntu-latest
+            python: '3.11'
+            arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: '3.11'
+            python: '3.12'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
@@ -75,6 +78,9 @@ jobs:
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: macos-latest
+            python: '3.12'
+            arch: x64
+          - runs-on: macos-latest
             python: '3.11'
             arch: x64
             release: true
@@ -91,6 +97,9 @@ jobs:
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
+          - runs-on: windows-latest
+            python: '3.12'
+            arch: x64
           - runs-on: windows-latest
             python: '3.8'
             arch: x86
@@ -123,6 +132,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           architecture: ${{ matrix.arch }}
+          allow-prereleases: true
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.14
