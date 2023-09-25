@@ -142,6 +142,10 @@ jobs:
         with:
           key: ${{ github.job }}-${{ matrix.runs-on }}-${{ matrix.arch }}-${{ matrix.release }}-${{ matrix.gcc }}-${{ matrix.clang }}
 
+      - name: Enable MSVC for meson when building NumPy
+        if : matrix.python == 'pypy-3.10-nightly' && matrix.runs-on == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Install NumPy without OpenBLAS for PyPy 3.10
         if: matrix.python == 'pypy-3.10-nightly'
         run: |
