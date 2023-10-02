@@ -47,7 +47,7 @@ jobs:
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: 'pypy-3.10'
+            python: 'pypy-3.10-v7.3.13'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
@@ -86,7 +86,7 @@ jobs:
             release: true
             name-extra: ' (Release)'
           - runs-on: macos-latest
-            python: 'pypy-3.10'
+            python: 'pypy-3.10-v7.3.13'
             arch: x64
 
           - runs-on: windows-latest
@@ -114,7 +114,7 @@ jobs:
             release: true
             name-extra: ' (Release)'
           - runs-on: windows-latest
-            python: 'pypy-3.10'
+            python: 'pypy-3.10-v7.3.13'
             arch: x64
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
@@ -143,11 +143,11 @@ jobs:
           key: ${{ github.job }}-${{ matrix.runs-on }}-${{ matrix.arch }}-${{ matrix.release }}-${{ matrix.gcc }}-${{ matrix.clang }}
 
       - name: Enable MSVC for meson when building NumPy
-        if : matrix.python == 'pypy-3.10' && matrix.runs-on == 'windows-latest'
+        if : startsWith(matrix.python, 'pypy-3.10') && matrix.runs-on == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install NumPy without OpenBLAS for PyPy 3.10
-        if: matrix.python == 'pypy-3.10'
+        if: startsWith(matrix.python, 'pypy-3.10')
         run: |
           pip install numpy --config-settings=setup-args="-Dallow-noblas=true"
 
