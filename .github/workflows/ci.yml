@@ -55,13 +55,13 @@ jobs:
           - runs-on: ubuntu-latest
             python: '3.11'
             arch: x64
-            gcc: 12
-            name-extra: ' (GCC 12)'
+            gcc: 13
+            name-extra: ' (GCC 13)'
           - runs-on: ubuntu-latest
             python: '3.11'
             arch: x64
-            clang: 14
-            name-extra: ' (Clang 14)'
+            clang: 15
+            name-extra: ' (Clang 15)'
 
           - runs-on: ubuntu-latest
             python: '3.11'
