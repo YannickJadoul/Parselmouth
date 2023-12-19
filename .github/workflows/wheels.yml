@@ -54,7 +54,7 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: sdist
           path: wheelhouse/*.tar.gz
 
   wheels:
@@ -142,7 +142,7 @@ jobs:
         if: startsWith(github.ref_name, 'docs') != true
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-${{ matrix.cibw-arch }}
           path: wheelhouse/praat_parselmouth-*.whl
           if-no-files-found: error
 
@@ -172,11 +172,17 @@ jobs:
     needs: [sdist, wheels]
 
     steps:
-      - name: Collect sdist and wheels
+      - name: Collect all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: wheels
-          path: wheelhouse
+          path: artifacts
+
+      - name: Move sdist and wheels to wheelhouse folder
+        run: |
+          mkdir wheelhouse
+          move all/sdist/* wheelhouse/
+          move all/wheels-*/* wheelhouse/
+          rm -r artifacts
 
       - name: Upload sdist and wheels to release
         uses: ncipollo/release-action@v1
