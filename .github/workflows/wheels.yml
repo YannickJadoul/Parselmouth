@@ -172,17 +172,11 @@ jobs:
     needs: [sdist, wheels]
 
     steps:
-      - name: Collect all artifacts
+      - name: Collect sdist and wheels
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
-
-      - name: Move sdist and wheels to wheelhouse folder
-        run: |
-          mkdir wheelhouse
-          move all/sdist/* wheelhouse/
-          move all/wheels-*/* wheelhouse/
-          rm -r artifacts
+          path: wheelhouse
+          merge-multiple: true
 
       - name: Upload sdist and wheels to release
         uses: ncipollo/release-action@v1
