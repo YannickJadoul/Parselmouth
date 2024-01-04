@@ -42,7 +42,7 @@ jobs:
             python: 'pypy-3.8'
             arch: x64
           - runs-on: ubuntu-latest
-            python: 'pypy-3.9'
+            python: 'pypy-3.9-v7.3.13'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
