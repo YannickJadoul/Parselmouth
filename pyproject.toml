@@ -1,7 +1,6 @@
 [build-system]
 requires = [
     "setuptools>=42",
-    "wheel",
     "cmake>=3.18",
     "scikit-build>=0.13",
 ]
@@ -47,6 +46,12 @@ dynamic = ["version"]
 "Bug Tracker" = "https://github.com/YannickJadoul/Parselmouth/issues"
 "Documentation" = "https://parselmouth.readthedocs.io/"
 "Source Code" = "https://github.com/YannickJadoul/Parselmouth"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "tests"
+]
 
 [tool.check-manifest]
 ignore = [
