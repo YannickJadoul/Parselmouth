@@ -122,7 +122,7 @@ Documentation is available at [ReadTheDocs](http://parselmouth.readthedocs.io/),
 
 ## Development
 Currently, the actual project and Parselmouth's code is not very well documented. Or well, hardly documented at all. That is planned to still change in order to allow for easier contribution to this open source project.
-Until that day in some undefined future, if you want to contribute to Parselmouth, do let me know [on Gitter](https://gitter.im/PraatParselmouth/Development) or [by email](mailto:Yannick.Jadoul@ai.vub.ac.be), and I will very gladly guide you through the project and help you get started.
+Until that day in some undefined future, if you want to contribute to Parselmouth, do let me know [on Gitter](https://gitter.im/PraatParselmouth/Development) or [by email](mailto:yannick.jadoul@gmail.com), and I will very gladly guide you through the project and help you get started.
 
 Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Next to that, to manually build Parselmouth, the only requirement is a modern C++ compiler supporting the C++17 standard.
 

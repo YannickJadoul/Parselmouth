@@ -10,9 +10,9 @@ build-backend = "setuptools.build_meta"
 name = "praat-parselmouth"
 # version = <see setup.py>
 description = "Praat in Python, the Pythonic way"
-license = {text = "GNU General Public License v3 or later (GPLv3+)"}
+license = { text = "GNU General Public License v3 or later (GPLv3+)" }
 authors = [
-    {name = "Yannick Jadoul", email="Yannick.Jadoul@ai.vub.ac.be"},
+    { name = "Yannick Jadoul", email = "yannick.jadoul@gmail.com" },
 ]
 readme = "res/README_PyPI.md"
 requires-python = ">=3.8"

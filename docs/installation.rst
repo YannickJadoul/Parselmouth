@@ -89,7 +89,7 @@ Troubleshooting
 
 It is possible that you run into more problems when trying to install or use Parselmouth. Supporting all of the different Python versions out there is not an easy job, as there are plenty of different platforms and setups.
 
-If you run into problems and these common solutions are not solving them, please drop by the `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_, write a message in the `Google discussion group <https://groups.google.com/d/forum/parselmouth>`_, create a `GitHub issue <https://github.com/YannickJadoul/Parselmouth/issues>`_, or write `me <mailto:Yannick.Jadoul@ai.vub.ac.be>`_ a quick email. We would be very happy to solve these problems, so that future users can avoid them!
+If you run into problems and these common solutions are not solving them, please drop by the `Gitter chat room <https://gitter.im/PraatParselmouth/Lobby>`_, write a message in the `Google discussion group <https://groups.google.com/d/forum/parselmouth>`_, create a `GitHub issue <https://github.com/YannickJadoul/Parselmouth/issues>`_, or write `me <mailto:yannick.jadoul@gmail.com>`_ a quick email. We would be very happy to solve these problems, so that future users can avoid them!
 
 
 Multiple Python versions
