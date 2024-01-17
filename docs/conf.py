@@ -175,9 +175,6 @@ nbsphinx_prolog = """
 
 copybutton_selector = "div:not(.output_area) > div.highlight > pre"
 
-linkcheck_ignore = [
-    "http://www.praat.org",  # Temporary (?) 403 Forbidden
-]
 
 def setup(app):
     app.add_css_file('css/custom.css')
