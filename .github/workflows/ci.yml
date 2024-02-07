@@ -136,7 +136,7 @@ jobs:
           check-latest: true
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.14
+        uses: jwlawson/actions-setup-cmake@v2.0
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -224,7 +224,7 @@ jobs:
           python-version: '3.11'
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v1.14
+        uses: jwlawson/actions-setup-cmake@v2.0
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
