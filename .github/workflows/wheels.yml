@@ -223,7 +223,7 @@ jobs:
 
       - name: Run cibuildwheel
         run: |
-          python -c "import toml; p = toml.load(open('pyproject.toml')); r = p['build-system']['requires']; r[r.index('wheel')] = 'wheel<0.40'; toml.dump(p, open('pyproject.toml', 'w'))"
+          python -c "import toml; p = toml.load(open('pyproject.toml')); r = p['build-system']['requires']; r[r.index('wheel')] += '<0.40'; r[r.index('cmake>=3.18')] += ',<3.27.9'; toml.dump(p, open('pyproject.toml', 'w'))"
           cibuildwheel
 
       - name: Check built wheels
