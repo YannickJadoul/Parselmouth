@@ -13,12 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runs-on: ubuntu-20.04
-            python: 2.7
-            arch: x64
-          - runs-on: ubuntu-20.04
-            python: 3.5
-            arch: x64
+          #- runs-on: ubuntu-20.04
+          #  python: 2.7
+          #  arch: x64
+          #- runs-on: ubuntu-20.04
+          #  python: 3.5
+          #  arch: x64
           - runs-on: ubuntu-20.04
             python: 3.6
             arch: x64
@@ -37,16 +37,27 @@ jobs:
             python: '3.10'
             arch: x64
           - runs-on: ubuntu-20.04
-            python: pypy-2.7
+            python: '3.11'
             arch: x64
           - runs-on: ubuntu-20.04
-            python: pypy-3.6
+            python: '3.12'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-20.04
+            python: pypy-2.7
+            arch: x64
+          - runs-on: ubuntu-20.04
             python: pypy-3.7
             arch: x64
+          - runs-on: ubuntu-20.04
+            python: pypy-3.8
+            arch: x64
+          - runs-on: ubuntu-20.04
+            python: pypy-3.9
+            arch: x64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
 
           - runs-on: ubuntu-20.04
             python: 3.8
@@ -59,22 +70,36 @@ jobs:
             clang: 12
             name-extra: ' (Clang 12)'
 
-          - runs-on: ubuntu-20.04
-            python: 2.7
-            arch: x64
-            release: true
-            name-extra: ' (Release)'
+          #- runs-on: ubuntu-20.04
+          #  python: 2.7
+          #  arch: x64
+          #  release: true
+          #  name-extra: ' (Release)'
           - runs-on: ubuntu-20.04
             python: 3.8
             arch: x64
             release: true
             name-extra: ' (Release)'
 
-          - runs-on: macos-11
-            python: 2.7
-            arch: x64
+          #- runs-on: macos-11
+          #  python: 2.7
+          #  arch: x64
           - runs-on: macos-11
             python: 3.8
+            arch: x64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          - runs-on: macos-11
+            python: 3.9
+            arch: x64
+          - runs-on: macos-11
+            python: '3.10'
+            arch: x64
+          - runs-on: macos-11
+            python: '3.11'
+            arch: x64
+          - runs-on: macos-11
+            python: '3.12'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
@@ -83,34 +108,66 @@ jobs:
             arch: x64
             release: true
             name-extra: ' (Release)'
+          #- runs-on: macos-11
+          #  python: pypy-3.6
+          #  arch: x64
           - runs-on: macos-11
-            python: pypy-3.6
+            python: pypy-3.7
+            arch: x64
+          - runs-on: macos-11
+            python: pypy-3.8
+            arch: x64
+          - runs-on: macos-11
+            python: pypy-3.9
             arch: x64
 
-          - runs-on: windows-2019
-            python: 2.7
-            arch: x64
+          #- runs-on: windows-2019
+          #  python: 2.7
+          #  arch: x64
           - runs-on: windows-2019
             python: 3.8
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: windows-2019
-            python: 2.7
+            python: 3.9
+            arch: x64
+          - runs-on: windows-2019
+            python: '3.10'
+            arch: x64
+          - runs-on: windows-2019
+            python: '3.11'
+            arch: x64
+          - runs-on: windows-2019
+            python: '3.12'
+            arch: x64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          #- runs-on: windows-2019
+          #  python: 2.7
+          #  arch: x86
+          #  name-extra: ' (32-bit)'
+          - runs-on: windows-2019
+            python: 3.12
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-2019
-            python: 3.8
-            arch: x86
-            name-extra: ' (32-bit)'
-          - runs-on: windows-2019
-            python: 3.8
+            python: 3.12
             arch: x64
             release: true
             name-extra: ' (Release)'
           - runs-on: windows-2019
             python: pypy-3.6
             arch: x86
+          - runs-on: windows-2019
+            python: pypy-3.7
+            arch: x64
+          - runs-on: windows-2019
+            python: pypy-3.8
+            arch: x64
+          - runs-on: windows-2019
+            python: pypy-3.9
+            arch: x64
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
