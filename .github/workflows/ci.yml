@@ -69,7 +69,7 @@ jobs:
             release: true
             name-extra: ' (Release)'
 
-          - runs-on: macos-latest
+          - runs-on: macos-13
             python: '3.8'
             arch: x64
           - runs-on: macos-latest
@@ -85,7 +85,7 @@ jobs:
             arch: x64
             release: true
             name-extra: ' (Release)'
-          - runs-on: macos-latest
+          - runs-on: macos-13
             python: 'pypy-3.10'
             arch: x64
 
