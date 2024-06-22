@@ -21,6 +21,45 @@ import re
 import shlex
 import sys
 
+if os.name == "nt":
+    # set environmental paths to build with the latest visual studio version
+    import vswhere, subprocess as sp, platform
+
+    vsinfo = vswhere.find_first(latest=True, products=["*"])
+    if vsinfo is not None:  # VSC++ found
+        vcvarsall = os.path.join(
+            vsinfo["installationPath"], "VC", "Auxiliary", "Build", "vcvarsall.bat"
+        )
+        arch = (
+            platform.machine().lower()
+        )  # x86 | amd64 | x86_amd64 | x86_arm | x86_arm64 | amd64_x86 | amd64_arm | amd64_arm64
+        ret = sp.run(
+            f"set && cls && \"{vcvarsall}\" {arch} && cls && set", shell=True, stdout=sp.PIPE,stderr=sp.PIPE
+        )
+        for string in ret.stdout.decode("utf8").splitlines():
+            # vsvars.bat likes to print some fluff at the beginning.
+            # Skip lines that don't look like environment variables.
+            if "=" not in string:
+                continue
+
+            name, new_value = string.split("=", 1)
+            old_value = os.getenv(name, None)
+
+            # For new variables "old_value === undefined".
+            if new_value != old_value:
+                # Special case for a bunch of PATH-like variables: vcvarsall.bat
+                # just prepends its stuff without checking if its already there.
+                # This makes repeated invocations of this action fail after some
+                # point, when the environment variable overflows. Avoid that.
+                if name.upper() in ["PATH", "INCLUDE", "LIB", "LIBPATH"]:
+                    # Remove duplicates by keeping the first occurance and preserving order.
+                    # This keeps path shadowing working as intended.
+                    paths = new_value.split(os.pathsep)
+                    paths = [p for i, p in enumerate(paths) if paths.index(p) == i]
+                    new_value = os.pathsep.join(paths)
+
+                os.environ[name] = new_value
+
 try:
 	from skbuild import setup
 except ImportError:

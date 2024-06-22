@@ -1,1 +1,2 @@
 numpy>=1.7
+vswhere; os_name=='nt'
