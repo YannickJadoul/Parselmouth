@@ -84,26 +84,26 @@ jobs:
           #- runs-on: macos-11
           #  python: 2.7
           #  arch: x64
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: 3.8
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: 3.9
             arch: x64
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: '3.10'
             arch: x64
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: '3.11'
             arch: x64
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: '3.12'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: 3.8
             arch: x64
             release: true
@@ -111,13 +111,13 @@ jobs:
           #- runs-on: macos-11
           #  python: pypy-3.6
           #  arch: x64
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: pypy-3.7
             arch: x64
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: pypy-3.8
             arch: x64
-          - runs-on: macos-11
+          - runs-on: macos-12
             python: pypy-3.9
             arch: x64
 
