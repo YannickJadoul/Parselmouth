@@ -29,6 +29,7 @@
 #include <praat/sys/praatP.h>
 
 #include <pybind11/numpy.h>
+#include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 
 #include <cassert>
@@ -97,8 +98,20 @@ py::object autoSTRVECToArray(autoSTRVEC &&vector) {
 	if (!vector.elements)
 		return py::none();
 
-	auto v = vector.get();
-	return py::array_t<py::object>(py::cast(std::vector<char32 *>(v.begin(), v.end())));
+
+	auto v = vector.get(); // _stringvector <char32>
+	// return py::array_t<py::object>(py::cast(std::vector<char32 *>(v.begin(), v.end()))); // fails with error: static assertion failed: Attempt to use a non-POD or unimplemented POD type as a numpy dtype
+
+	// candidate #1: still the same error if casted,
+	// std::vector<std::u32string_view> str_vec;
+	// std::transform(v.begin(), v.end(), std::back_inserter(str_vec), [](auto &s)
+	// 				{ return std::u32string_view(s,std::char_traits<char32>::length(s)); });
+	// return str_vec;
+
+	py::list str_list(v.size);
+	for (int i=0;i<v.size;++i)
+		str_list[i] = v[i+1];
+	return py::array(str_list);
 }
 
 class PraatEnvironment {
