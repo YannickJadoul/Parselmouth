@@ -1,5 +1,8 @@
-# -*- coding: utf-8 -*-
+# ruff: noqa: SIM201 SIM300 SIM202
+from __future__ import annotations
+
 import pytest
+
 from pybind11_tests import enums as m
 
 
@@ -58,9 +61,7 @@ Members:
 
   ETwo : Docstring for ETwo
 
-  EThree : Docstring for EThree""".split(
-        "\n"
-    ):
+  EThree : Docstring for EThree""".split("\n"):
         assert docstring_line in m.UnscopedEnum.__doc__
 
     # Unscoped enums will accept ==/!= int comparisons
@@ -94,13 +95,13 @@ Members:
         y >= object()  # noqa: B015
 
     with pytest.raises(TypeError):
-        y | object()  # noqa: B015
+        y | object()
 
     with pytest.raises(TypeError):
-        y & object()  # noqa: B015
+        y & object()
 
     with pytest.raises(TypeError):
-        y ^ object()  # noqa: B015
+        y ^ object()
 
     assert int(m.UnscopedEnum.ETwo) == 2
     assert str(m.UnscopedEnum(2)) == "UnscopedEnum.ETwo"
@@ -217,10 +218,16 @@ def test_binary_operators():
 def test_enum_to_int():
     m.test_enum_to_int(m.Flags.Read)
     m.test_enum_to_int(m.ClassWithUnscopedEnum.EMode.EFirstMode)
+    m.test_enum_to_int(m.ScopedCharEnum.Positive)
+    m.test_enum_to_int(m.ScopedBoolEnum.TRUE)
     m.test_enum_to_uint(m.Flags.Read)
     m.test_enum_to_uint(m.ClassWithUnscopedEnum.EMode.EFirstMode)
+    m.test_enum_to_uint(m.ScopedCharEnum.Positive)
+    m.test_enum_to_uint(m.ScopedBoolEnum.TRUE)
     m.test_enum_to_long_long(m.Flags.Read)
     m.test_enum_to_long_long(m.ClassWithUnscopedEnum.EMode.EFirstMode)
+    m.test_enum_to_long_long(m.ScopedCharEnum.Positive)
+    m.test_enum_to_long_long(m.ScopedBoolEnum.TRUE)
 
 
 def test_duplicate_enum_name():
@@ -229,8 +236,35 @@ def test_duplicate_enum_name():
     assert str(excinfo.value) == 'SimpleEnum: element "ONE" already exists!'
 
 
+def test_char_underlying_enum():  # Issue #1331/PR #1334:
+    assert type(m.ScopedCharEnum.Positive.__int__()) is int
+    assert int(m.ScopedChar16Enum.Zero) == 0
+    assert hash(m.ScopedChar32Enum.Positive) == 1
+    assert type(m.ScopedCharEnum.Positive.__getstate__()) is int
+    assert m.ScopedWCharEnum(1) == m.ScopedWCharEnum.Positive
+    with pytest.raises(TypeError):
+        # Even if the underlying type is char, only an int can be used to construct the enum:
+        m.ScopedCharEnum("0")
+
+
+def test_bool_underlying_enum():
+    assert type(m.ScopedBoolEnum.TRUE.__int__()) is int
+    assert int(m.ScopedBoolEnum.FALSE) == 0
+    assert hash(m.ScopedBoolEnum.TRUE) == 1
+    assert type(m.ScopedBoolEnum.TRUE.__getstate__()) is int
+    assert m.ScopedBoolEnum(1) == m.ScopedBoolEnum.TRUE
+    # Enum could construct with a bool
+    # (bool is a strict subclass of int, and False will be converted to 0)
+    assert m.ScopedBoolEnum(False) == m.ScopedBoolEnum.FALSE
+
+
 def test_docstring_signatures():
     for enum_type in [m.ScopedEnum, m.UnscopedEnum]:
         for attr in enum_type.__dict__.values():
             # Issue #2623/PR #2637: Add argument names to enum_ methods
             assert "arg0" not in (attr.__doc__ or "")
+
+
+def test_str_signature():
+    for enum_type in [m.ScopedEnum, m.UnscopedEnum]:
+        assert enum_type.__str__.__doc__.startswith("__str__")
