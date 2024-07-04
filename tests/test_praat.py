@@ -143,8 +143,8 @@ def test_call_return_string_vector():
 	strings_vector = parselmouth.praat.call(strings, "List all strings")
 	assert isinstance(strings_vector, np.ndarray)
 	assert strings_vector.shape == (5,)
-	# assert strings_vector.dtype == np.object_
-	assert strings_vector.dtype == np.dtype('<U5')
+	assert strings_vector.dtype == np.object_
+	# assert strings_vector.dtype == np.dtype('<U5') # <- for candidate 1
 	assert np.all(strings_vector == sentence.split(" "))
 
 
