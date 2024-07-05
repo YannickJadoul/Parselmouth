@@ -99,22 +99,7 @@ py::object autoSTRVECToArray(autoSTRVEC &&vector) {
 		return py::none();
 
 	auto v = vector.get();
-
-	// original - fails with error: static assertion failed: Attempt to use a non-POD or unimplemented POD type as a numpy dtype
-	// return py::array_t<py::object>(py::cast(std::vector<char32 *>(v.begin(), v.end())));
-
-	// candidate 1 - py::list->py::array - seems redundant
-	// py::list str_list(v.size);
-	// for (int i=0;i<v.size;++i)
-	// 	str_list[i] = v[i+1];
-	// return py::array(str_list);
-
-	// candidate 2 - most comparable to the original?
-	py::array str_array(py::dtype('O'), {v.size}, {});
-	auto view = static_cast<py::object *>(str_array.mutable_data());
-	for (int i = 0; i < v.size; ++i)
-		view[i] = py::cast(v[i + 1]);
-	return str_array;
+	return py::array_t<py::object>(py::cast(std::vector<char32 *>(v.begin(), v.end())));
 }
 
 class PraatEnvironment {
