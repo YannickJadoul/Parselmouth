@@ -222,15 +222,6 @@
 #if defined(_MSC_VER)
 PYBIND11_WARNING_PUSH
 PYBIND11_WARNING_DISABLE_MSVC(4505)
-PYBIND11_WARNING_DISABLE_MSVC(4510)
-PYBIND11_WARNING_DISABLE_MSVC(4610)
-PYBIND11_WARNING_DISABLE_MSVC(4512)
-#  pragma warning(disable: 4510 4610 4512 4005)
-
-#  if (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 4)
-#    define HAVE_ROUND 1
-#  endif
-
 // C4505: 'PySlice_GetIndicesEx': unreferenced local function has been removed (PyPy only)
 #    if defined(_DEBUG) && !defined(Py_DEBUG)
 // Workaround for a VS 2022 issue.

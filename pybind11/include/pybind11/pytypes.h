@@ -21,6 +21,7 @@
 #include <string>
 #include <type_traits>
 #include <typeinfo>
+#include <cstdint> // added by Yannick Jadoul for Parselmouth
 #include <utility>
 
 #if defined(PYBIND11_HAS_OPTIONAL)

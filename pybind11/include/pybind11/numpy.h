@@ -1425,12 +1425,10 @@ public:
 
 template <typename T>
 struct npy_format_descriptor<T, enable_if_t<is_same_ignoring_cvref<T, PyObject *>::value>> {
-	// static constexpr auto name = _("O");
     static constexpr auto name = const_name("object");
 
     static constexpr int value = npy_api::NPY_OBJECT_;
 
-    // static pybind11::dtype dtype() { return pybind11::dtype(std::string("O")); }
     static pybind11::dtype dtype() { return pybind11::dtype(/*typenum*/ value); }
 };
 
@@ -1448,6 +1446,15 @@ struct npy_format_descriptor<std::array<char, N>> {
     PYBIND11_DECL_CHAR_FMT
 };
 #undef PYBIND11_DECL_CHAR_FMT
+
+// <added by Yannick Jadoul for Parselmouth>
+template<> struct npy_format_descriptor<pybind11::object> {
+public:
+	static constexpr auto name = _("O"); \
+    static pybind11::dtype dtype() { return pybind11::dtype(std::string("O")); }
+};
+// </added by Yannick Jadoul for Parselmouth>
+
 
 template <typename T>
 struct npy_format_descriptor<T, enable_if_t<array_info<T>::is_array>> {
