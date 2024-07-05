@@ -155,10 +155,6 @@ else:
     except TypeError:
         branch_or_commit = str(git_head.commit)
 
-linkcheck_ignore = [
-    'https://www.sciencedirect.com/science/article/abs/pii/S0095447017301389',  # sciencedirect.com (Elsevier), 403 Client Error: Forbidden for url
-]
-
 rst_epilog = """
 .. |binder_badge_examples| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/YannickJadoul/Parselmouth/{binder_ref}?urlpath=lab/tree/docs/examples

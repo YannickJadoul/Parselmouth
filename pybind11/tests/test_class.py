@@ -1,14 +1,21 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
+from unittest import mock
+
 import pytest
 
-import env  # noqa: F401
-
+import env
+from pybind11_tests import PYBIND11_REFCNT_IMMORTAL, ConstructorStats, UserType
 from pybind11_tests import class_ as m
-from pybind11_tests import UserType, ConstructorStats
+
+
+def test_obj_class_name():
+    expected_name = "UserType" if env.PYPY else "pybind11_tests.UserType"
+    assert m.obj_class_name(UserType(1)) == expected_name
+    assert m.obj_class_name(UserType) == expected_name
 
 
 def test_repr():
-    # In Python 3.3+, repr() accesses __qualname__
     assert "pybind11_type" in repr(type(UserType))
     assert "UserType" in repr(UserType)
 
@@ -21,6 +28,14 @@ def test_instance(msg):
     instance = m.NoConstructor.new_instance()
 
     cstats = ConstructorStats.get(m.NoConstructor)
+    assert cstats.alive() == 1
+    del instance
+    assert cstats.alive() == 0
+
+
+def test_instance_new():
+    instance = m.NoConstructorNew()  # .__new__(m.NoConstructor.__class__)
+    cstats = ConstructorStats.get(m.NoConstructorNew)
     assert cstats.alive() == 1
     del instance
     assert cstats.alive() == 0
@@ -96,8 +111,8 @@ def test_docstrings(doc):
 
 
 def test_qualname(doc):
-    """Tests that a properly qualified name is set in __qualname__ (even in pre-3.3, where we
-    backport the attribute) and that generated docstrings properly use it and the module name"""
+    """Tests that a properly qualified name is set in __qualname__ and that
+    generated docstrings properly use it and the module name"""
     assert m.NestBase.__qualname__ == "NestBase"
     assert m.NestBase.Nested.__qualname__ == "NestBase.Nested"
 
@@ -123,13 +138,13 @@ def test_qualname(doc):
         doc(m.NestBase.Nested.fn)
         == """
         fn(self: m.class_.NestBase.Nested, arg0: int, arg1: m.class_.NestBase, arg2: m.class_.NestBase.Nested) -> None
-    """  # noqa: E501 line too long
+    """
     )
     assert (
         doc(m.NestBase.Nested.fa)
         == """
         fa(self: m.class_.NestBase.Nested, a: int, b: m.class_.NestBase, c: m.class_.NestBase.Nested) -> None
-    """  # noqa: E501 line too long
+    """
     )
     assert m.NestBase.__module__ == "pybind11_tests.class_"
     assert m.NestBase.Nested.__module__ == "pybind11_tests.class_"
@@ -171,7 +186,6 @@ def test_inheritance(msg):
 
 
 def test_inheritance_init(msg):
-
     # Single base
     class Python(m.Pet):
         def __init__(self):
@@ -193,6 +207,18 @@ def test_inheritance_init(msg):
     assert msg(exc_info.value) == expected
 
 
+@pytest.mark.parametrize(
+    "mock_return_value", [None, (1, 2, 3), m.Pet("Polly", "parrot"), m.Dog("Molly")]
+)
+def test_mock_new(mock_return_value):
+    with mock.patch.object(
+        m.Pet, "__new__", return_value=mock_return_value
+    ) as mock_new:
+        obj = m.Pet("Noname", "Nospecies")
+    assert obj is mock_return_value
+    mock_new.assert_called_once_with(m.Pet, "Noname", "Nospecies")
+
+
 def test_automatic_upcasting():
     assert type(m.return_class_1()).__name__ == "DerivedClass1"
     assert type(m.return_class_2()).__name__ == "DerivedClass2"
@@ -208,7 +234,7 @@ def test_automatic_upcasting():
 
 
 def test_isinstance():
-    objects = [tuple(), dict(), m.Pet("Polly", "parrot")] + [m.Dog("Molly")] * 4
+    objects = [(), {}, m.Pet("Polly", "parrot")] + [m.Dog("Molly")] * 4
     expected = (True, True, True, True, True, False, False)
     assert m.check_instances(objects) == expected
 
@@ -308,6 +334,8 @@ def test_bind_protected_functions():
 
     b = m.ProtectedB()
     assert b.foo() == 42
+    assert m.read_foo(b.void_foo()) == 42
+    assert m.pointers_equal(b.get_self(), b)
 
     class C(m.ProtectedB):
         def __init__(self):
@@ -321,7 +349,7 @@ def test_bind_protected_functions():
 
 
 def test_brace_initialization():
-    """ Tests that simple POD classes can be constructed using C++11 brace initialization """
+    """Tests that simple POD classes can be constructed using C++11 brace initialization"""
     a = m.BraceInitialization(123, "test")
     assert a.field1 == 123
     assert a.field2 == "test"
@@ -351,7 +379,9 @@ def test_class_refcount():
         refcount_3 = getrefcount(cls)
 
         assert refcount_1 == refcount_3
-        assert refcount_2 > refcount_1
+        assert (refcount_2 > refcount_1) or (
+            refcount_2 == refcount_1 == PYBIND11_REFCNT_IMMORTAL
+        )
 
 
 def test_reentrant_implicit_conversion_failure(msg):
@@ -412,7 +442,7 @@ def test_exception_rvalue_abort():
 
 
 # https://github.com/pybind/pybind11/issues/1568
-def test_multiple_instances_with_same_pointer(capture):
+def test_multiple_instances_with_same_pointer():
     n = 100
     instances = [m.SamePointer() for _ in range(n)]
     for i in range(n):
@@ -464,3 +494,10 @@ def test_register_duplicate_class():
         m.register_duplicate_nested_class_type(ClassScope)
     expected = 'generic_type: type "YetAnotherDuplicateNested" is already registered!'
     assert str(exc_info.value) == expected
+
+
+def test_pr4220_tripped_over_this():
+    assert (
+        m.Empty0().get_msg()
+        == "This is really only meant to exercise successful compilation."
+    )

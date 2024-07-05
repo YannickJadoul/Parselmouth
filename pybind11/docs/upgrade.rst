@@ -8,6 +8,88 @@ to a new version. But it goes into more detail. This includes things like
 deprecated APIs and their replacements, build system changes, general code
 modernization and other useful information.
 
+.. _upgrade-guide-2.12:
+
+v2.12
+=====
+
+NumPy support has been upgraded to support the 2.x series too. The two relevant
+changes are that:
+
+* ``dtype.flags()`` is now a ``uint64`` and ``dtype.alignment()`` an
+  ``ssize_t`` (and NumPy may return an larger than integer value for
+  ``itemsize()`` in NumPy 2.x).
+
+* The long deprecated NumPy function ``PyArray_GetArrayParamsFromObject``
+  function is not available anymore.
+
+Due to NumPy changes, you may experience difficulties updating to NumPy 2.
+Please see the [NumPy 2 migration guide](https://numpy.org/devdocs/numpy_2_0_migration_guide.html) for details.
+For example, a more direct change could be that the default integer ``"int_"``
+(and ``"uint"``) is now ``ssize_t`` and not ``long`` (affects 64bit windows).
+
+If you want to only support NumPy 1.x for now and are having problems due to
+the two internal changes listed above, you can define
+``PYBIND11_NUMPY_1_ONLY`` to disable the new support for now. Make sure you
+define this on all pybind11 compile units, since it could be a source of ODR
+violations if used inconsistently. This option will be removed in the future,
+so adapting your code is highly recommended.
+
+
+.. _upgrade-guide-2.11:
+
+v2.11
+=====
+
+* The minimum version of CMake is now 3.5. A future version will likely move to
+  requiring something like CMake 3.15. Note that CMake 3.27 is removing the
+  long-deprecated support for ``FindPythonInterp`` if you set 3.27 as the
+  minimum or maximum supported version. To prepare for that future, CMake 3.15+
+  using ``FindPython`` or setting ``PYBIND11_FINDPYTHON`` is highly recommended,
+  otherwise pybind11 will automatically switch to using ``FindPython`` if
+  ``FindPythonInterp`` is not available.
+
+
+.. _upgrade-guide-2.9:
+
+v2.9
+====
+
+* Any usage of the recently added ``py::make_simple_namespace`` should be
+  converted to using ``py::module_::import("types").attr("SimpleNamespace")``
+  instead.
+
+* The use of ``_`` in custom type casters can now be replaced with the more
+  readable ``const_name`` instead. The old ``_`` shortcut has been retained
+  unless it is being used as a macro (like for gettext).
+
+
+.. _upgrade-guide-2.7:
+
+v2.7
+====
+
+*Before* v2.7, ``py::str`` can hold ``PyUnicodeObject`` or ``PyBytesObject``,
+and ``py::isinstance<str>()`` is ``true`` for both ``py::str`` and
+``py::bytes``. Starting with v2.7, ``py::str`` exclusively holds
+``PyUnicodeObject`` (`#2409 <https://github.com/pybind/pybind11/pull/2409>`_),
+and ``py::isinstance<str>()`` is ``true`` only for ``py::str``. To help in
+the transition of user code, the ``PYBIND11_STR_LEGACY_PERMISSIVE`` macro
+is provided as an escape hatch to go back to the legacy behavior. This macro
+will be removed in future releases. Two types of required fixes are expected
+to be common:
+
+* Accidental use of ``py::str`` instead of ``py::bytes``, masked by the legacy
+  behavior. These are probably very easy to fix, by changing from
+  ``py::str`` to ``py::bytes``.
+
+* Reliance on py::isinstance<str>(obj) being ``true`` for
+  ``py::bytes``. This is likely to be easy to fix in most cases by adding
+  ``|| py::isinstance<bytes>(obj)``, but a fix may be more involved, e.g. if
+  ``py::isinstance<T>`` appears in a template. Such situations will require
+  careful review and custom fixes.
+
+
 .. _upgrade-guide-2.6:
 
 v2.6
@@ -256,7 +338,7 @@ Within pybind11's CMake build system, ``pybind11_add_module`` has always been
 setting the ``-fvisibility=hidden`` flag in release mode. From now on, it's
 being applied unconditionally, even in debug mode and it can no longer be opted
 out of with the ``NO_EXTRAS`` option. The ``pybind11::module`` target now also
-adds this flag to it's interface. The ``pybind11::embed`` target is unchanged.
+adds this flag to its interface. The ``pybind11::embed`` target is unchanged.
 
 The most significant change here is for the ``pybind11::module`` target. If you
 were previously relying on default visibility, i.e. if your Python module was
@@ -484,7 +566,7 @@ include a declaration of the form:
 
     PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
 
-Continuing to do so won’t cause an error or even a deprecation warning,
+Continuing to do so won't cause an error or even a deprecation warning,
 but it's completely redundant.
 
 
