@@ -1202,7 +1202,7 @@ public:
         if (!src) return false;
         else if (src.ptr() == Py_True) { value = true; return true; }
         else if (src.ptr() == Py_False) { value = false; return true; }
-        else if (convert || !strcmp("numpy.bool_", Py_TYPE(src.ptr())->tp_name)) {
+        else if (convert || is_numpy_bool(src)) {
             // (allow non-implicit conversion for numpy booleans)
 
             Py_ssize_t res = -1;
@@ -1236,6 +1236,15 @@ public:
         return handle(src ? Py_True : Py_False).inc_ref();
     }
     PYBIND11_TYPE_CASTER(bool, _("bool"));
+
+private:
+    // Test if an object is a NumPy boolean (without fetching the type).
+    static inline bool is_numpy_bool(handle object) {
+    const char *type_name = Py_TYPE(object.ptr())->tp_name;
+    // Name changed to `numpy.bool` in NumPy 2, `numpy.bool_` is needed for 1.x support
+    return std::strcmp("numpy.bool", type_name) == 0
+           || std::strcmp("numpy.bool_", type_name) == 0;
+    }
 };
 
 // Helper class for UTF-{8,16,32} C++ stl strings:

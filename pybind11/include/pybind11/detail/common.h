@@ -150,6 +150,10 @@
 #  undef copysign
 #endif
 
+#if defined(PYBIND11_NUMPY_1_ONLY)
+#    define PYBIND11_INTERNAL_NUMPY_1_ONLY_DETECTED
+#endif
+
 #if defined(_MSC_VER)
 #  if defined(PYBIND11_DEBUG_MARKER)
 #    define _DEBUG
