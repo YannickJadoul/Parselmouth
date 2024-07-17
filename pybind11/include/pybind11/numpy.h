@@ -29,6 +29,10 @@
 #    error PYBIND11_NUMPY_1_ONLY must be defined before any pybind11 header is included.
 #endif
 
+#if !defined(PYBIND11_NUMPY_1_ONLY) & PY_VERSION_HEX < 0x03090000
+#    define PYBIND11_NUMPY_1_ONLY
+#endif
+
 #if defined(_MSC_VER)
 #  pragma warning(push)
 #  pragma warning(disable: 4127) // warning C4127: Conditional expression is constant
@@ -85,6 +89,7 @@ struct PyArrayDescr_Proxy {
 using PyArrayDescr_Proxy = PyArrayDescr1_Proxy;
 #endif
 
+#ifndef PYBIND11_NUMPY_1_ONLY
 /* NumPy 2 proxy, including legacy fields */
 struct PyArrayDescr2_Proxy {
     PyObject_HEAD
@@ -105,6 +110,7 @@ struct PyArrayDescr2_Proxy {
     PyObject *fields;
     PyObject *names;
 };
+#endif
 
 struct PyArray_Proxy {
     PyObject_HEAD
@@ -359,9 +365,11 @@ inline const PyArrayDescr1_Proxy *array_descriptor1_proxy(const PyObject *ptr) {
     return reinterpret_cast<const PyArrayDescr1_Proxy *>(ptr);
 }
 
+#ifndef PYBIND11_NUMPY_1_ONLY
 inline const PyArrayDescr2_Proxy *array_descriptor2_proxy(const PyObject *ptr) {
     return reinterpret_cast<const PyArrayDescr2_Proxy *>(ptr);
 }
+#endif
 
 inline bool check_flags(const void* ptr, int flag) {
     return (flag == (array_proxy(ptr)->flags & flag));
