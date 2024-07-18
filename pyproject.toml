@@ -1,9 +1,8 @@
 [build-system]
 requires = [
-    "setuptools>=77",
-    "scikit-build>=0.13",
+    "scikit_build_core>=1",
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "praat-parselmouth"
@@ -52,6 +51,12 @@ dynamic = ["version"]
 "Bug Tracker" = "https://github.com/YannickJadoul/Parselmouth/issues"
 "Documentation" = "https://parselmouth.readthedocs.io/"
 "Source Code" = "https://github.com/YannickJadoul/Parselmouth"
+
+[[tool.dynamic-metadata]]
+provider = "scikit_build_core.metadata.regex"
+field = "version"
+input = "src/version.h"
+regex = "^#define PARSELMOUTH_VERSION (?P<value>[0-9a-z.]+)$"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
