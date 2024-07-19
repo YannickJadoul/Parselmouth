@@ -2,11 +2,9 @@
 requires = [
     "setuptools>=42",
     "cmake>=3.18",
-    "scikit-build>=0.12",
     "scikit_build_core",
 ]
-# build-backend = "scikit_build_core.build"
-build-backend = "scikit_build_core.setuptools.build_meta"
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "praat-parselmouth"
@@ -54,9 +52,10 @@ Bug_Tracker = "https://github.com/YannickJadoul/Parselmouth/issues"
 Source_Code = "https://github.com/YannickJadoul/Parselmouth"
 Documentation = "https://parselmouth.readthedocs.io/"
 
-[tool.scikit-build]
-experimental = true
-metadata.version.provider = "test_dual"
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "src/version.h"
+regex = "^#define PARSELMOUTH_VERSION (?P<value>[0-9a-z.]+)$"
 
 [tool.check-manifest]
 ignore = [
