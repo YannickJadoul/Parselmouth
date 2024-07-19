@@ -1,9 +1,5 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "cmake>=3.18",
-    "scikit_build_core",
-]
+requires = ["scikit_build_core"]
 build-backend = "scikit_build_core.build"
 
 [project]
