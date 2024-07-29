@@ -10,7 +10,11 @@
 #pragma once
 
 #include "pybind11.h"
+#include "detail/common.h"
 #include "complex.h"
+#include "gil_safe_call_once.h"
+#include "pytypes.h"
+
 #include <numeric>
 #include <algorithm>
 #include <array>
@@ -244,8 +248,8 @@ struct npy_api {
     } PyArray_Dims;
 
     static npy_api& get() {
-        static npy_api api = lookup();
-        return api;
+        PYBIND11_CONSTINIT static gil_safe_call_once_and_store<npy_api> storage;
+        return storage.call_once_and_store_result(lookup).get_stored();
     }
 
     bool PyArray_Check_(PyObject *obj) const {
@@ -628,10 +632,14 @@ public:
     }
 
 private:
-    static object _dtype_from_pep3118() {
-        module_ m = detail::import_numpy_core_submodule("_internal");
-        static PyObject *obj = m.attr("_dtype_from_pep3118").cast<object>().release().ptr();
-        return reinterpret_borrow<object>(obj);
+    static object &_dtype_from_pep3118() {
+        PYBIND11_CONSTINIT static gil_safe_call_once_and_store<object> storage;
+        return storage
+            .call_once_and_store_result([]() {
+                return detail::import_numpy_core_submodule("_internal")
+                    .attr("_dtype_from_pep3118");
+            })
+            .get_stored();
     }
 
     dtype strip_padding(ssize_t itemsize) {
