@@ -45,6 +45,14 @@
 #  endif
 #endif
 
+#if defined(PYBIND11_CPP20)
+#    define PYBIND11_CONSTINIT constinit
+#    define PYBIND11_DTOR_CONSTEXPR constexpr
+#else
+#    define PYBIND11_CONSTINIT
+#    define PYBIND11_DTOR_CONSTEXPR
+#endif
+
 // Compiler version assertions
 #if defined(__INTEL_COMPILER)
 #  if __INTEL_COMPILER < 1800
@@ -148,6 +156,10 @@
 
 #if defined(copysign)
 #  undef copysign
+#endif
+
+#if defined(PYBIND11_NUMPY_1_ONLY)
+#    define PYBIND11_INTERNAL_NUMPY_1_ONLY_DETECTED
 #endif
 
 #if defined(_MSC_VER)
