@@ -16,13 +16,13 @@
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
 import pytest
-import pytest_lazyfixture
+import pytest_lazy_fixtures
 
 import parselmouth
 
 
 def combined_fixture(*args, **kwargs):
-	return pytest.fixture(params=map(pytest_lazyfixture.lazy_fixture, args), ids=args, **kwargs)
+	return pytest.fixture(params=map(pytest_lazy_fixtures.lf, args), ids=args, **kwargs)
 
 
 @pytest.fixture

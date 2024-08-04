@@ -1,6 +1,6 @@
 -r ../requirements.txt
 
-pytest<8
-pytest-lazy-fixture
+pytest
+pytest-lazy-fixtures
 
 tgt
