@@ -19,6 +19,7 @@ set(PRAAT_SUBDIRECTORIES
 	external/clapack
 	external/gsl
 	external/glpk
+	external/lame
 	external/mp3
 	external/flac
 	external/portaudio
