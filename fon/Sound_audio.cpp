@@ -1,6 +1,6 @@
 /* Sound_audio.cpp
  *
- * Copyright (C) 1992-2020,2022,2023 Paul Boersma
+ * Copyright (C) 1992-2020,2022-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -477,7 +477,7 @@ static bool melderPlayCallback (void *closure, integer samplesPlayed) {
 			samplesPlayed >= my silenceBefore + my numberOfSamples ? my tmax :
 			my t1 + (my i1 - 1.5 + samplesPlayed - my silenceBefore) * my dt );
 	if (! MelderAudio_isPlaying) {
-		my outputBuffer.reset();   // get a bit of privacy
+		my outputBuffer. reset();   // get a bit of privacy
 		phase = 3;
 	}
 	if (my callback)
@@ -485,7 +485,7 @@ static bool melderPlayCallback (void *closure, integer samplesPlayed) {
 	return true;
 }
 
-void Sound_playPart (Sound me, double tmin, double tmax, Sound_PlayCallback callback, Thing boss)
+void Sound_playPart (constSound me, double tmin, double tmax, Sound_PlayCallback callback, Thing boss)
 {
 	try {
 		integer ifsamp = Melder_iround (1.0 / my dx), bestSampleRate = MelderAudio_getOutputBestSampleRate (ifsamp);
@@ -543,7 +543,7 @@ void Sound_playPart (Sound me, double tmin, double tmax, Sound_PlayCallback call
 	}
 }
 
-void Sound_play (Sound me, Sound_PlayCallback playCallback, Thing playClosure) {
+void Sound_play (constSound me, Sound_PlayCallback playCallback, Thing playClosure) {
 	Sound_playPart (me, my xmin, my xmax, playCallback, playClosure);
 }
 

@@ -152,12 +152,12 @@ autoTable PowerCepstrogram_to_Table_CPP (PowerCepstrogram me, bool includeFrameN
 		autoTable thee = Table_createWithoutColumnNames (my nx, includeFrameNumber + includeTime + includePeakQuefrency + 1);
 		integer icol = 0;
 		if (includeFrameNumber)
-			Table_setColumnLabel (thee.get(), ++ icol, U"frame");
+			Table_renameColumn_e (thee.get(), ++ icol, U"frame");
 		if (includeTime)
-			Table_setColumnLabel (thee.get(), ++ icol, U"time(s)");
+			Table_renameColumn_e (thee.get(), ++ icol, U"time(s)");
 		if (includePeakQuefrency)
-			Table_setColumnLabel (thee.get(), ++ icol, U"quefrency(s)");
-		Table_setColumnLabel (thee.get(), ++ icol, U"CPP(dB)");
+			Table_renameColumn_e (thee.get(), ++ icol, U"quefrency(s)");
+		Table_renameColumn_e (thee.get(), ++ icol, U"CPP(dB)");
 		autoPowerCepstrum him = PowerCepstrum_create (my ymax, my ny);
 		for (integer iframe = 1; iframe <= my nx; iframe ++) {
 			icol = 0;
@@ -198,7 +198,7 @@ static autoPowerCepstrogram PowerCepstrogram_smoothRectangular (PowerCepstrogram
 		/*
 			1. average across time
 		*/
-		integer numberOfFrames = Melder_ifloor (timeAveragingWindow / my dx);
+		const integer numberOfFrames = Melder_ifloor (timeAveragingWindow / my dx);
 		if (numberOfFrames > 1) {
 			const double halfWindow = 0.5 * timeAveragingWindow;
 			autoVEC qout = raw_VEC (my nx);
@@ -213,7 +213,7 @@ static autoPowerCepstrogram PowerCepstrogram_smoothRectangular (PowerCepstrogram
 		/*
 			2. average across quefrencies
 		*/
-		integer numberOfQuefrencyBins = Melder_ifloor (quefrencyAveragingWindow / my dy);
+		const integer numberOfQuefrencyBins = Melder_ifloor (quefrencyAveragingWindow / my dy);
 		if (numberOfQuefrencyBins > 1) {
 			autoPowerCepstrum smooth = PowerCepstrum_create (thy ymax, thy ny);
 			for (integer iframe = 1; iframe <= thy nx; iframe ++) {
@@ -234,14 +234,14 @@ static autoPowerCepstrogram PowerCepstrogram_smoothRectangular_old (PowerCepstro
 		/*
 			1. average across time
 		*/
-		integer numberOfFrames = Melder_ifloor (timeAveragingWindow / my dx);
+		const integer numberOfFrames = Melder_ifloor (timeAveragingWindow / my dx);
 		if (numberOfFrames > 1)
 			for (integer iq = 1; iq <= my ny; iq ++)
 				VECsmoothByMovingAverage_preallocated (thy z.row (iq), my z.row (iq), numberOfFrames);
 		/*
 			2. average across quefrencies
 		*/
-		integer numberOfQuefrencyBins = Melder_ifloor (quefrencyAveragingWindow / my dy);
+		const integer numberOfQuefrencyBins = Melder_ifloor (quefrencyAveragingWindow / my dy);
 		if (numberOfQuefrencyBins > 1) {
 			autoVEC qin = raw_VEC (thy ny);
 			for (integer iframe = 1; iframe <= my nx; iframe ++) {
@@ -269,8 +269,8 @@ static autoPowerCepstrogram PowerCepstrogram_smoothGaussian (PowerCepstrogram me
 			autoNUMfft_Table fourierTable;
 			NUMfft_Table_init (& fourierTable, nfft);
 			for (integer iq = 1; iq <= my ny; iq ++) {
-				VECsmooth_gaussian (thy z .row (iq), my z.row (iq), sigma, & fourierTable);
-				VECabs_inplace (thy z .row (iq));
+				VECsmooth_gaussian (thy z.row (iq), my z.row (iq), sigma, & fourierTable);
+				abs_VEC_inout (thy z.row (iq));
 			}
 		}
 		/*
@@ -284,7 +284,7 @@ static autoPowerCepstrogram PowerCepstrogram_smoothGaussian (PowerCepstrogram me
 			const double sigma = numberOfQuefrencyBins / numberOfSigmasInWindow;  // 2sigma -> 95.4%, 3sigma -> 99.7 % of the data
 			for (integer iframe = 1; iframe <= my nx; iframe ++) {
 				VECsmooth_gaussian_inplace (thy z.column (iframe), sigma, & fourierTable);
-				VECabs_inplace (thy z.column (iframe));
+				abs_VEC_inout (thy z.column (iframe));
 			}
 		}
 		return thee;
@@ -337,14 +337,16 @@ autoPowerCepstrogram Matrix_to_PowerCepstrogram (Matrix me) {
 autoPowerCepstrogram Sound_to_PowerCepstrogram (Sound me, double pitchFloor, double dt, double maximumFrequency, double preEmphasisFrequency) {
 	try {
 		const double analysisWidth = 3.0 / pitchFloor; // minimum analysis window has 3 periods of lowest pitch
-		double windowDuration = 2.0 * analysisWidth; // gaussian window
-
+		const double physicalAnalysisWidth = 2.0 * analysisWidth;
+		const double physicalDuration = my dx * my nx;
+		volatile const double windowDuration = Melder_clippedRight (2.0 * analysisWidth, my dx * my nx);   // gaussian window
+		Melder_require (physicalDuration >= physicalAnalysisWidth,
+			U"Your sound is too short:\n"
+			U"it should be longer than 6.0 / pitchFloor (", physicalAnalysisWidth, U" s).");
 		// Convenience: analyse the whole sound into one Cepstrogram_frame
-		if (windowDuration > my dx * my nx)
-			windowDuration = my dx * my nx;
 		const double samplingFrequency = 2.0 * maximumFrequency;
 		autoSound sound = Sound_resample (me, samplingFrequency, 50);
-		Sound_preEmphasis (sound.get(), preEmphasisFrequency);
+		Sound_preEmphasize_inplace (sound.get(), preEmphasisFrequency);
 		double t1;
 		integer nFrames;
 		Sampled_shortTermAnalysis (me, windowDuration, dt, & nFrames, & t1);
@@ -361,7 +363,7 @@ autoPowerCepstrogram Sound_to_PowerCepstrogram (Sound me, double pitchFloor, dou
 		autoMelderProgress progress (U"Cepstrogram analysis");
 
 		for (integer iframe = 1; iframe <= nFrames; iframe++) {
-			const double t = Sampled_indexToX (thee.get(), iframe);
+			const double t = Sampled_indexToX (thee.get(), iframe); // TODO express the following 3 lines more clearly
 			Sound_into_Sound (sound.get(), sframe.get(), t - windowDuration / 2);
 			Vector_subtractMean (sframe.get());
 			Sounds_multiply (sframe.get(), window.get());

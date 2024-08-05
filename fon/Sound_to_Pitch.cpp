@@ -1,6 +1,6 @@
 /* Sound_to_Pitch.cpp
  *
- * Copyright (C) 1992-2005,2007-2012,2014-2020 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2012,2014-2020,2023,2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include "Sound_to_Pitch.h"
 #include "NUM2.h"
 #include "MelderThread.h"
+#include "Sound_and_Spectrum.h"
 
 #define AC_HANNING  0
 #define AC_GAUSS  1
@@ -42,7 +43,7 @@
 #define FCC_ACCURATE  3
 
 static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
-	double minimumPitch, int maxnCandidates, int method, double voicingThreshold, double octaveCost,
+	double pitchFloor, int maxnCandidates, int method, double voicingThreshold, double octaveCost,
 	NUMfft_Table fftTable, double dt_window, integer nsamp_window, integer halfnsamp_window,
 	integer maximumLag, integer nsampFFT, integer nsamp_period, integer halfnsamp_period,
 	integer brent_ixmax, integer brent_depth, double globalPeak,
@@ -105,17 +106,17 @@ static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 		Compute the correlation into the array 'r'.
 	*/
 	if (method >= FCC_NORMAL) {
-		double startTime = t - 0.5 * (1.0 / minimumPitch + dt_window);
-		integer localSpan = maximumLag + nsamp_window, localMaximumLag, offset;
+		const double startTime = t - 0.5 * (1.0 / pitchFloor + dt_window);
+		integer localSpan = maximumLag + nsamp_window;
 		if ((startSample = Sampled_xToLowIndex (me, startTime)) < 1)
 			startSample = 1;
 		if (localSpan > my nx + 1 - startSample)
 			localSpan = my nx + 1 - startSample;
-		localMaximumLag = localSpan - nsamp_window;
-		offset = startSample - 1;
+		const integer localMaximumLag = localSpan - nsamp_window;
+		const integer offset = startSample - 1;
 		longdouble sumx2 = 0.0;   // sum of squares
 		for (integer channel = 1; channel <= my ny; channel ++) {
-			double *amp = & my z [channel] [0] + offset;
+			const double * const amp = & my z [channel] [0] + offset;
 			for (integer i = 1; i <= nsamp_window; i ++) {
 				const double x = amp [i] - localMean [channel];
 				sumx2 += x * x;
@@ -126,13 +127,13 @@ static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 		for (integer i = 1; i <= localMaximumLag; i ++) {
 			longdouble product = 0.0;
 			for (integer channel = 1; channel <= my ny; channel ++) {
-				double *amp = & my z [channel] [0] + offset;
-				double y0 = amp [i] - localMean [channel];
-				double yZ = amp [i + nsamp_window] - localMean [channel];
+				const double * const amp = & my z [channel] [0] + offset;
+				const double y0 = amp [i] - localMean [channel];
+				const double yZ = amp [i + nsamp_window] - localMean [channel];
 				sumy2 += yZ * yZ - y0 * y0;
 				for (integer j = 1; j <= nsamp_window; j ++) {
-					double x = amp [j] - localMean [channel];
-					double y = amp [i + j] - localMean [channel];
+					const double x = amp [j] - localMean [channel];
+					const double y = amp [i + j] - localMean [channel];
 					product += x * y;
 				}
 			}
@@ -220,8 +221,8 @@ static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 					High frequencies are to be favoured
 					if we want to analyze a perfectly periodic signal correctly.
 				*/
-				double localStrength = pitchFrame -> candidates [iweak]. strength - octaveCost *
-					NUMlog2 (minimumPitch / pitchFrame -> candidates [iweak]. frequency);
+				const double localStrength = pitchFrame -> candidates [iweak]. strength - octaveCost *
+					NUMlog2 (pitchFloor / pitchFrame -> candidates [iweak]. frequency);
 				if (localStrength < weakest) {
 					weakest = localStrength;
 					place = iweak;
@@ -230,7 +231,7 @@ static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 			/*
 				If this maximum is weaker than the weakest candidate so far, give it no place.
 			*/
-			if (strengthOfMaximum - octaveCost * NUMlog2 (minimumPitch / frequencyOfMaximum) <= weakest)
+			if (strengthOfMaximum - octaveCost * NUMlog2 (pitchFloor / frequencyOfMaximum) <= weakest)
 				place = 0;
 		}
 		if (place) {   // have we found a place for this candidate?
@@ -262,7 +263,7 @@ Thing_define (Sound_into_Pitch_Args, Thing) { public:
 	Sound sound;
 	Pitch pitch;
 	integer firstFrame, lastFrame;
-	double minimumPitch;
+	double pitchFloor;
 	int maxnCandidates, method;
 	double voicingThreshold, octaveCost, dt_window;
 	integer nsamp_window, halfnsamp_window, maximumLag, nsampFFT, nsamp_period, halfnsamp_period, brent_ixmax, brent_depth;
@@ -296,7 +297,7 @@ static void Sound_into_Pitch (Sound_into_Pitch_Args me)
 			return;
 		}
 		Sound_into_PitchFrame (my sound, pitchFrame, t,
-			my minimumPitch, my maxnCandidates, my method, my voicingThreshold, my octaveCost,
+			my pitchFloor, my maxnCandidates, my method, my voicingThreshold, my octaveCost,
 			& my fftTable, my dt_window, my nsamp_window, my halfnsamp_window,
 			my maximumLag, my nsampFFT, my nsamp_period, my halfnsamp_period,
 			my brent_ixmax, my brent_depth, my globalPeak,
@@ -307,10 +308,11 @@ static void Sound_into_Pitch (Sound_into_Pitch_Args me)
 }
 
 autoPitch Sound_to_Pitch_any (Sound me,
-	double dt, double minimumPitch, double periodsPerWindow, integer maxnCandidates,
-	int method,
+	int method, double periodsPerWindow,
+	double dt, double pitchFloor, double pitchCeiling,
+	integer maxnCandidates,
 	double silenceThreshold, double voicingThreshold,
-	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, double ceiling)
+	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost)
 {
 	try {
 		autoNUMfft_Table fftTable;
@@ -324,11 +326,11 @@ autoPitch Sound_to_Pitch_any (Sound me,
 		Melder_assert (maxnCandidates >= 2);
 		Melder_assert (method >= AC_HANNING && method <= FCC_ACCURATE);
 
-		if (maxnCandidates < ceiling / minimumPitch)
-			maxnCandidates = Melder_ifloor (ceiling / minimumPitch);
+		if (maxnCandidates < pitchCeiling / pitchFloor)
+			maxnCandidates = Melder_ifloor (pitchCeiling / pitchFloor);
 
 		if (dt <= 0.0)
-			dt = periodsPerWindow / minimumPitch / 4.0;   // e.g. 3 periods, 75 Hz: 10 milliseconds
+			dt = periodsPerWindow / pitchFloor / 4.0;   // e.g. 3 periods, 75 Hz: 10 milliseconds
 
 		switch (method) {
 			case AC_HANNING:
@@ -349,26 +351,26 @@ autoPitch Sound_to_Pitch_any (Sound me,
 				interpolation_depth = 1.0;
 				break;
 		}
-		double duration = my dx * my nx;
-		if (minimumPitch < periodsPerWindow / duration)
-			Melder_throw (U"To analyse this Sound, “minimum pitch” must not be less than ", periodsPerWindow / duration, U" Hz.");
+		volatile const double duration = my dx * my nx;   // volatile, because we need to truncate to 64 bits
+		if (pitchFloor < periodsPerWindow / duration)
+			Melder_throw (U"To analyse this Sound, “pitch floor” must not be less than ", periodsPerWindow / duration, U" Hz.");
 
 		/*
 			Determine the number of samples in the longest period.
 			We need this to compute the local mean of the sound (looking one period in both directions),
 			and to compute the local peak of the sound (looking half a period in both directions).
 		*/
-		integer nsamp_period = Melder_ifloor (1.0 / my dx / minimumPitch);
-		integer halfnsamp_period = nsamp_period / 2 + 1;
+		const integer nsamp_period = Melder_ifloor (1.0 / my dx / pitchFloor);
+		const integer halfnsamp_period = nsamp_period / 2 + 1;
 
-		Melder_clipRight (& ceiling, 0.5 / my dx);
+		Melder_clipRight (& pitchCeiling, 0.5 / my dx);
 
 		/*
 			Determine window duration in seconds and in samples.
 		*/
-		double dt_window = periodsPerWindow / minimumPitch;
+		const double dt_window = periodsPerWindow / pitchFloor;
 		integer nsamp_window = Melder_ifloor (dt_window / my dx);
-		integer halfnsamp_window = nsamp_window / 2 - 1;
+		const integer halfnsamp_window = nsamp_window / 2 - 1;
 		if (halfnsamp_window < 2)
 			Melder_throw (U"Analysis window too short.");
 		nsamp_window = halfnsamp_window * 2;
@@ -376,7 +378,7 @@ autoPitch Sound_to_Pitch_any (Sound me,
 		/*
 		 * Determine the minimum and maximum lags.
 		 */
-		const integer minimumLag = std::max (2_integer, Melder_ifloor (1.0 / my dx / ceiling));
+		const integer minimumLag = std::max (2_integer, Melder_ifloor (1.0 / my dx / pitchCeiling));
 		const integer maximumLag = std::min (Melder_ifloor (nsamp_window / periodsPerWindow) + 2, nsamp_window);
 
 		/*
@@ -386,7 +388,7 @@ autoPitch Sound_to_Pitch_any (Sound me,
 		 * because that allows us to compare the two methods.
 		 */
 		try {
-			Sampled_shortTermAnalysis (me, method >= FCC_NORMAL ? 1.0 / minimumPitch + dt_window : dt_window, dt, & numberOfFrames, & t1);
+			Sampled_shortTermAnalysis (me, method >= FCC_NORMAL ? 1.0 / pitchFloor + dt_window : dt_window, dt, & numberOfFrames, & t1);
 		} catch (MelderError) {
 			Melder_throw (U"The pitch analysis would give zero pitch frames.");
 		}
@@ -394,7 +396,7 @@ autoPitch Sound_to_Pitch_any (Sound me,
 		/*
 			Create the resulting pitch contour.
 		*/
-		autoPitch thee = Pitch_create (my xmin, my xmax, numberOfFrames, dt, t1, ceiling, maxnCandidates);
+		autoPitch thee = Pitch_create (my xmin, my xmax, numberOfFrames, dt, t1, pitchCeiling, maxnCandidates);
 
 		/*
 			Create (too much) space for candidates.
@@ -500,7 +502,7 @@ autoPitch Sound_to_Pitch_any (Sound me,
 			arg -> pitch = thee.get();
 			arg -> firstFrame = firstFrame;
 			arg -> lastFrame = lastFrame;
-			arg -> minimumPitch = minimumPitch;
+			arg -> pitchFloor = pitchFloor;
 			arg -> maxnCandidates = maxnCandidates;
 			arg -> method = method;
 			arg -> voicingThreshold = voicingThreshold;
@@ -538,7 +540,7 @@ autoPitch Sound_to_Pitch_any (Sound me,
 
 		Melder_progress (0.95, U"Sound to Pitch: path finder");
 		Pitch_pathFinder (thee.get(), silenceThreshold, voicingThreshold,
-			octaveCost, octaveJumpCost, voicedUnvoicedCost, ceiling, Melder_debug == 31 ? true : false);
+				octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling, Melder_debug == 31 ? true : false);
 
 		return thee;
 	} catch (MelderError) {
@@ -546,27 +548,123 @@ autoPitch Sound_to_Pitch_any (Sound me,
 	}
 }
 
-autoPitch Sound_to_Pitch (Sound me, double timeStep, double minimumPitch, double maximumPitch) {
-	return Sound_to_Pitch_ac (me, timeStep, minimumPitch,
-		3.0, 15, false, 0.03, 0.45, 0.01, 0.35, 0.14, maximumPitch);
+autoPitch Sound_to_Pitch (Sound me, double timeStep, double pitchFloor, double pitchCeiling) {
+	return Sound_to_Pitch_rawAc (me, timeStep, pitchFloor, pitchCeiling,
+			15, false, 0.03, 0.45, 0.01, 0.35, 0.14);
 }
 
-autoPitch Sound_to_Pitch_ac (Sound me,
-	double dt, double minimumPitch, double periodsPerWindow, integer maxnCandidates, int accurate,
+autoPitch Sound_to_Pitch_rawAc (Sound me,
+	double timeStep, double pitchFloor, double pitchCeiling,
+	integer maxnCandidates, bool veryAccurate,
 	double silenceThreshold, double voicingThreshold,
-	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, double ceiling)
+	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost)
 {
-	return Sound_to_Pitch_any (me, dt, minimumPitch, periodsPerWindow, maxnCandidates, accurate,
-		silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, ceiling);
+	return Sound_to_Pitch_any (me, (int) veryAccurate, 3.0,
+		timeStep, pitchFloor, pitchCeiling,
+		maxnCandidates,
+		silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
+	);
 }
 
-autoPitch Sound_to_Pitch_cc (Sound me,
-	double dt, double minimumPitch, double periodsPerWindow, integer maxnCandidates, int accurate,
+autoPitch Sound_to_Pitch_rawCc (Sound me,
+	double timeStep, double pitchFloor, double pitchCeiling,
+	integer maxnCandidates, bool veryAccurate,
 	double silenceThreshold, double voicingThreshold,
-	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, double ceiling)
+	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost)
 {
-	return Sound_to_Pitch_any (me, dt, minimumPitch, periodsPerWindow, maxnCandidates, 2 + accurate,
-		silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, ceiling);
+	return Sound_to_Pitch_any (me, 2 + (int) veryAccurate, 1.0,
+		timeStep, pitchFloor, pitchCeiling,
+		maxnCandidates,
+		silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
+	);
+}
+
+autoPitch Sound_to_Pitch_filteredAc (Sound me,
+	double timeStep, double pitchFloor, double pitchTop,
+	integer maxnCandidates, bool veryAccurate,
+	double attenuationAtTop,
+	double silenceThreshold, double voicingThreshold,
+	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost)
+{
+	try {
+		const double lowPassCutoffFrequency = pitchTop / NUMsqrt_e (-2.0 * log (attenuationAtTop));
+		autoSound thee = Data_copy (me);
+		if (my ny == 1) {
+			autoSpectrum spec = Sound_to_Spectrum (me, true);
+			for (integer ibin = 1; ibin <= spec -> nx; ibin ++) {
+				const double frequency = Sampled_indexToX (spec.get(), ibin);
+				const double factor = exp (-0.5 * sqr (frequency / lowPassCutoffFrequency));
+				spec -> z [1] [ibin] *= factor;
+				spec -> z [2] [ibin] *= factor;
+			}
+			autoSound him = Spectrum_to_Sound (spec.get());
+			thy z.row (1)  <<=  his z.row (1).part (1, thy nx);
+		} else {
+			for (integer ichan = 1; ichan <= my ny; ichan ++) {
+				autoSound channel = Sound_extractChannel (me, ichan);
+				autoSpectrum spec = Sound_to_Spectrum (channel.get(), true);
+				for (integer ibin = 1; ibin <= spec -> nx; ibin ++) {
+					const double frequency = Sampled_indexToX (spec.get(), ibin);
+					const double factor = exp (-0.5 * sqr (frequency / lowPassCutoffFrequency));
+					spec -> z [1] [ibin] *= factor;
+					spec -> z [2] [ibin] *= factor;
+				}
+				autoSound him = Spectrum_to_Sound (spec.get());
+				thy z.row (ichan)  <<=  his z.row (1).part (1, thy nx);
+			}
+		}
+		return Sound_to_Pitch_any (thee.get(), (int) veryAccurate, 3.0,
+			timeStep, pitchFloor, pitchTop,
+			maxnCandidates,
+			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
+		);
+	} catch (MelderError) {
+		Melder_throw (me, U": pitch analysis (filtered AC) not performed.");
+	}
+}
+
+autoPitch Sound_to_Pitch_filteredCc (Sound me,
+	double timeStep, double pitchFloor, double pitchTop,
+	integer maxnCandidates, bool veryAccurate,
+	double attenuationAtTop,
+	double silenceThreshold, double voicingThreshold,
+	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost)
+{
+	try {
+		const double lowPassCutoffFrequency = pitchTop / NUMsqrt_e (-2.0 * log (attenuationAtTop));
+		autoSound thee = Data_copy (me);
+		if (my ny == 1) {
+			autoSpectrum spec = Sound_to_Spectrum (me, true);
+			for (integer ibin = 1; ibin <= spec -> nx; ibin ++) {
+				const double frequency = Sampled_indexToX (spec.get(), ibin);
+				const double factor = exp (-0.5 * sqr (frequency / lowPassCutoffFrequency));
+				spec -> z [1] [ibin] *= factor;
+				spec -> z [2] [ibin] *= factor;
+			}
+			autoSound him = Spectrum_to_Sound (spec.get());
+			thy z.row (1)  <<=  his z.row (1).part (1, thy nx);
+		} else {
+			for (integer ichan = 1; ichan <= my ny; ichan ++) {
+				autoSound channel = Sound_extractChannel (me, ichan);
+				autoSpectrum spec = Sound_to_Spectrum (channel.get(), true);
+				for (integer ibin = 1; ibin <= spec -> nx; ibin ++) {
+					const double frequency = Sampled_indexToX (spec.get(), ibin);
+					const double factor = exp (-0.5 * sqr (frequency / lowPassCutoffFrequency));
+					spec -> z [1] [ibin] *= factor;
+					spec -> z [2] [ibin] *= factor;
+				}
+				autoSound him = Spectrum_to_Sound (spec.get());
+				thy z.row (ichan)  <<=  his z.row (1).part (1, thy nx);
+			}
+		}
+		return Sound_to_Pitch_any (thee.get(), 2 + (int) veryAccurate, 1.0,
+			timeStep, pitchFloor, pitchTop,
+			maxnCandidates,
+			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
+		);
+	} catch (MelderError) {
+		Melder_throw (me, U": pitch analysis (filtered CC) not performed.");
+	}
 }
 
 /* End of file Sound_to_Pitch.cpp */

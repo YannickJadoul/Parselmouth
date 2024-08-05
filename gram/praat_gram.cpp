@@ -1,6 +1,6 @@
 /* praat_gram.cpp
  *
- * Copyright (C) 1997-2023 Paul Boersma
+ * Copyright (C) 1997-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "OTMultiEditor.h"
 #include "Net.h"
 #include "NoulliGridEditor.h"
+#include "CubeGridEditor.h"
 
 #include "praat_TableOfReal.h"
 #include "praat_TimeFunction.h"
@@ -32,14 +33,14 @@
 // MARK: New
 
 #define UiForm_addNetworkFields  \
-	LABEL (U"Activity spreading settings:") \
+	COMMENT (U"Activity spreading settings:") \
 	REAL (spreadingRate, U"Spreading rate", U"0.01") \
 	OPTIONMENU_ENUM (kNetwork_activityClippingRule, activityClippingRule, \
 			U"Activity clipping rule", kNetwork_activityClippingRule::DEFAULT) \
 	REAL (minimumActivity, U"left Activity range", U"0.0") \
 	REAL (maximumActivity, U"right Activity range", U"1.0") \
 	REAL (activityLeak, U"Activity leak", U"1.0") \
-	LABEL (U"Weight update settings:") \
+	COMMENT (U"Weight update settings:") \
 	REAL (learningRate, U"Learning rate", U"0.1") \
 	REAL (minimumWeight, U"left Weight range", U"-1.0") \
 	REAL (maximumWeight, U"right Weight range", U"1.0") \
@@ -48,7 +49,7 @@
 FORM (CREATE_ONE__Create_empty_Network, U"Create empty Network", nullptr) {
 	WORD (name, U"Name", U"network")
 	UiForm_addNetworkFields
-	LABEL (U"World coordinates:")
+	COMMENT (U"World coordinates:")
 	REAL (fromX, U"left x range", U"0.0")
 	REAL (toX, U"right x range", U"10.0")
 	REAL (fromY, U"left y range", U"0.0")
@@ -65,11 +66,11 @@ DO
 
 FORM (CREATE_ONE__Create_rectangular_Network, U"Create rectangular Network", nullptr) {
 	UiForm_addNetworkFields
-	LABEL (U"Structure settings:")
+	COMMENT (U"Structure settings:")
 	NATURAL (numberOfRows, U"Number of rows", U"10")
 	NATURAL (numberOfColumns, U"Number of columns", U"10")
 	BOOLEAN (bottomRowClamped, U"Bottom row clamped", 1)
-	LABEL (U"Initial state settings:")
+	COMMENT (U"Initial state settings:")
 	REAL (minimumInitialWeight, U"left Initial weight range", U"-0.1")
 	REAL (maximumInitialWeight, U"right Initial weight range", U"0.1")
 	OK
@@ -84,11 +85,11 @@ DO
 
 FORM (CREATE_ONE__Create_rectangular_Network_vertical, U"Create rectangular Network (vertical)", nullptr) {
 	UiForm_addNetworkFields
-	LABEL (U"Structure settings:")
+	COMMENT (U"Structure settings:")
 	NATURAL (numberOfRows, U"Number of rows", U"10")
 	NATURAL (numberOfColumns, U"Number of columns", U"10")
 	BOOLEAN (bottomRowClamped, U"Bottom row clamped", 1)
-	LABEL (U"Initial state settings:")
+	COMMENT (U"Initial state settings:")
 	REAL (minimumInitialWeight, U"left Initial weight range", U"-0.1")
 	REAL (maximumInitialWeight, U"right Initial weight range", U"0.1")
 	OK
@@ -249,8 +250,8 @@ DO
 FORM (MODIFY_EACH_WEAK__Network_formula_activities, U"Network: Formula (activities)", nullptr) {
 	INTEGER (fromNode, U"From node", U"1")
 	INTEGER (toNode, U"To node", U"0 (= all)")
-	LABEL (U"`col` is the node number, `self` is the current activity")
-	LABEL (U"for col := 1 to ncol do { self [col] := `formula' }")
+	COMMENT (U"`col` is the node number, `self` is the current activity")
+	COMMENT (U"for col := 1 to ncol do { self [col] := `formula' }")
 	FORMULA (formula, U"Formula", U"0")
 	OK
 DO
@@ -778,7 +779,7 @@ DO
 }
 
 FORM (MODIFY_EACH_WEAK__OTGrammar_learnOneFromPartialOutput, U"OTGrammar: Learn one from partial adult output", nullptr) {
-	LABEL (U"Partial adult surface form (e.g. overt form):")
+	COMMENT (U"Partial adult surface form (e.g. overt form):")
 	SENTENCE (partialOutput, U"Partial output", U"")
 	REAL (evaluationNoise, U"Evaluation noise", U"2.0")
 	OPTIONMENU_ENUM (kOTGrammar_rerankingStrategy, updateRule,
@@ -1643,6 +1644,37 @@ DO
 	GRAPHICS_EACH_END
 }
 
+// MARK: - CUBEGRID
+
+// MARK: View & Edit
+
+DIRECT (EDITOR_ONE_WITH_ONE__CubeGrid_viewAndEdit) {
+	EDITOR_ONE_WITH_ONE (a,CubeGrid, Sound)   // Sound may be null
+		autoCubeGridEditor editor = CubeGridEditor_create (ID_AND_FULL_NAME, me, you);
+	EDITOR_ONE_WITH_ONE_END
+}
+
+FORM (QUERY_ONE_FOR_REAL_VECTOR__CubeGrid_getAverage, U"CubeGrid: Get average", nullptr) {
+	NATURAL (tierNumber, U"Tier number", U"1")
+	REAL (fromTime, U"From time (s)", U"0")
+	REAL (toTime, U"To time (s)", U"10.0")
+	OK
+DO
+	QUERY_ONE_FOR_REAL_VECTOR (CubeGrid)
+		autoVEC result = CubeGrid_getAverages (me, tierNumber, fromTime, toTime);
+	QUERY_ONE_FOR_REAL_VECTOR_END
+}
+
+FORM (GRAPHICS_CubeGrid_paint, U"CubeGrid: Paint", U"CubeGrid: Paint...") {
+	praat_TimeFunction_RANGE (fromTime, toTime)
+	BOOLEAN (garnish, U"Garnish", 1)
+	OK
+DO
+	GRAPHICS_EACH (CubeGrid)
+		CubeGrid_paint (me, GRAPHICS, fromTime, toTime, garnish);
+	GRAPHICS_EACH_END
+}
+
 // MARK: - buttons
 
 void praat_uvafon_gram_init ();
@@ -1650,12 +1682,13 @@ void praat_uvafon_gram_init () {
 	Thing_recognizeClassesByName (classNetwork,
 		classOTGrammar, classOTHistory, classOTMulti,
 		classRBMLayer, classFullyConnectedLayer, classNet,
-		classNoulliTier, classNoulliGrid,
+		classNoulliTier, classNoulliGrid, classCubeGrid,
 		nullptr
 	);
 	Thing_recognizeClassByOtherName (classOTGrammar, U"OTCase");
 
 	structNoulliGridEditor :: f_preferences ();
+	structCubeGridEditor :: f_preferences ();
 
 	praat_addMenuCommand (U"Objects", U"New", U"Constraint grammars", nullptr, 0, nullptr);
 		praat_addMenuCommand (U"Objects", U"New", U"OT learning tutorial", nullptr, GuiMenu_DEPTH_1 | GuiMenu_NO_API,
@@ -1673,10 +1706,8 @@ void praat_uvafon_gram_init () {
 				CREATE_ONE__Create_metrics_grammar);
 		praat_addMenuCommand (U"Objects", U"New", U"Create multi-level metrics grammar...", nullptr, 1,
 				CREATE_ONE__Create_multi_level_metrics_grammar);
-	praat_addAction1 (classOTGrammar, 1, U"Save as headerless spreadsheet file...", nullptr, 0,
-			SAVE_ONE__OTGrammar_writeToHeaderlessSpreadsheetFile);
-	praat_addAction1 (classOTGrammar, 1,   U"Write to headerless spreadsheet file...", U"*Save as headerless spreadsheet file...", GuiMenu_DEPRECATED_2011,
-			SAVE_ONE__OTGrammar_writeToHeaderlessSpreadsheetFile);
+	praat_addAction1 (classOTGrammar, 1, U"Save as headerless spreadsheet file... || Write to headerless spreadsheet file...", nullptr, 0,
+			SAVE_ONE__OTGrammar_writeToHeaderlessSpreadsheetFile);   // alternative COMPATIBILITY <= 2011
 
 	praat_addAction1 (classOTGrammar, 0, U"OTGrammar help", nullptr, 0,
 			HELP__OTGrammar_help);
@@ -1979,6 +2010,17 @@ void praat_uvafon_gram_init () {
 		praat_addAction1 (classNoulliGrid, 0, U"Paint...", nullptr, 1, GRAPHICS_NoulliGrid_paint);
 	praat_addAction2 (classNoulliGrid, 1, classSound, 1, U"View & Edit", nullptr, GuiMenu_ATTRACTIVE,
 			EDITOR_ONE_WITH_ONE__NoulliGrid_viewAndEdit);
+
+	praat_addAction1 (classCubeGrid, 1, U"View & Edit", nullptr, GuiMenu_ATTRACTIVE,
+			EDITOR_ONE_WITH_ONE__CubeGrid_viewAndEdit);
+	praat_addAction1 (classCubeGrid, 0, U"Query -", nullptr, 0, nullptr);
+		praat_TimeFunction_query_init (classCubeGrid);
+		praat_addAction1 (classCubeGrid, 1, U"Get average...", nullptr, 1,
+			QUERY_ONE_FOR_REAL_VECTOR__CubeGrid_getAverage);
+	praat_addAction1 (classCubeGrid, 0, U"Draw -", nullptr, 0, nullptr);
+		praat_addAction1 (classCubeGrid, 0, U"Paint...", nullptr, 1, GRAPHICS_CubeGrid_paint);
+	praat_addAction2 (classCubeGrid, 1, classSound, 1, U"View & Edit", nullptr, GuiMenu_ATTRACTIVE,
+			EDITOR_ONE_WITH_ONE__CubeGrid_viewAndEdit);
 }
 
 /* End of file praat_gram.cpp */

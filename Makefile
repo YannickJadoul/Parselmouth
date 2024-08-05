@@ -1,7 +1,7 @@
 # File: Makefile
 
 # Makefile for Praat
-# Paul Boersma & David Weenink, 6 June 2022
+# Paul Boersma & David Weenink, 12 December 2023
 
 # System-dependent definitions of CC, LIBS, ICON and MAIN_ICON should be in
 # makefile.defs, which has to be copied and renamed
@@ -16,12 +16,12 @@ all: all-external all-self
 	$(LINK) -o $(EXECUTABLE) main/main_Praat.o $(MAIN_ICON) fon/libfon.a \
 		artsynth/libartsynth.a FFNet/libFFNet.a \
 		gram/libgram.a EEG/libEEG.a \
-		LPC/libLPC.a dwtools/libdwtools.a \
+		LPC/libLPC.a dwtools/libdwtools.a sensors/libsensors.a \
 		foned/libfoned.a fon/libfon.a stat/libstat.a \
 		dwsys/libdwsys.a sys/libsys.a melder/libmelder.a kar/libkar.a \
 		external/espeak/libespeak.a \
 		external/portaudio/libportaudio.a \
-		external/flac/libflac.a external/mp3/libmp3.a \
+		external/flac/libflac.a external/lame/liblame.a external/mp3/libmp3.a \
 		external/glpk/libglpk.a \
 		external/clapack/libclapack.a \
 		external/gsl/libgsl.a \
@@ -33,6 +33,7 @@ all-external:
 	$(MAKE) -C external/clapack
 	$(MAKE) -C external/gsl
 	$(MAKE) -C external/glpk
+	$(MAKE) -C external/lame
 	$(MAKE) -C external/mp3
 	$(MAKE) -C external/flac
 	$(MAKE) -C external/portaudio
@@ -51,6 +52,7 @@ all-self:
 	$(MAKE) -C dwtools
 	$(MAKE) -C LPC
 	$(MAKE) -C EEG
+	$(MAKE) -C sensors
 	$(MAKE) -C gram
 	$(MAKE) -C FFNet
 	$(MAKE) -C artsynth
@@ -63,6 +65,7 @@ clean-external:
 	$(MAKE) -C external/clapack clean
 	$(MAKE) -C external/gsl clean
 	$(MAKE) -C external/glpk clean
+	$(MAKE) -C external/lame clean
 	$(MAKE) -C external/mp3 clean
 	$(MAKE) -C external/flac clean
 	$(MAKE) -C external/portaudio clean
@@ -81,6 +84,7 @@ clean-self:
 	$(MAKE) -C dwtools clean
 	$(MAKE) -C LPC clean
 	$(MAKE) -C EEG clean
+	$(MAKE) -C sensors clean
 	$(MAKE) -C gram clean
 	$(MAKE) -C FFNet clean
 	$(MAKE) -C artsynth clean

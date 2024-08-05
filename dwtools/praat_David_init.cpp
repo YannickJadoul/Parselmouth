@@ -1,6 +1,6 @@
 /* praat_David_init.cpp
  *
- * Copyright (C) 1993-2023 David Weenink, 2015 Paul Boersma
+ * Copyright (C) 1993-2023 David Weenink, 2015,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,7 +81,6 @@
 #include "EditDistanceTable.h"
 #include "Editor.h"
 #include "EditDistanceTable.h"
-#include "Electroglottogram.h"
 #include "Eigen_and_Matrix.h"
 #include "Eigen_and_Procrustes.h"
 #include "Eigen_and_SSCP.h"
@@ -149,7 +148,7 @@
 #include "praat_TimeFrameSampled.h"
 #include "praat_Matrix.h"
 #include "praat_TableOfReal.h"
-#include "praat_uvafon.h"
+#include "praat_uvafon_init.h"
 
 void praat_TableOfReal_init2 (ClassInfo klas);
 void praat_SSCP_as_TableOfReal_init (ClassInfo klas);
@@ -159,7 +158,7 @@ void praat_BandFilterSpectrogram_query_init (ClassInfo klas);
 void praat_EditDistanceTable_as_TableOfReal_init (ClassInfo klas);
 
 #define DTW_constraints_addCommonFields(matchStart,matchEnd,slopeConstraint) \
-	LABEL (U"Boundary conditions") \
+	COMMENT (U"Boundary conditions") \
 	BOOLEAN (matchStart, U"Match begin positions", false) \
 	BOOLEAN (matchEnd, U"Match end positions", false) \
 	CHOICE (slopeConstraint, U"Slope constraint", 1) \
@@ -173,7 +172,7 @@ void praat_EditDistanceTable_as_TableOfReal_init (ClassInfo klas);
 /********************** Activation *******************************************/
 
 FORM (MODIFY_ActivationList_formula, U"ActivationList: Formula", nullptr) {
-	LABEL (U"for col := 1 to ncol do { self [row, col] := `formula' ; x := x + dx } y := y + dy }}")
+	COMMENT (U"for col := 1 to ncol do { self [row, col] := `formula' ; x := x + dx } y := y + dy }}")
 	FORMULA (formula, U"Formula", U"self")
 	OK
 DO
@@ -468,7 +467,7 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__CCs_to_DTW, U"CC: To DTW", U"CC: To DTW...") {
-	LABEL (U"Distance  between cepstral coefficients")
+	COMMENT (U"Distance  between cepstral coefficients")
 	REAL (cepstralWeight, U"Cepstral weight", U"1.0")
 	REAL (logEnergyWeight, U"Log energy weight", U"0.0")
 	REAL (regressionWeight, U"Regression weight", U"0.0")
@@ -502,9 +501,9 @@ FORM (GRAPHICS_EACH__CCA_drawEigenvector, U"CCA: Draw eigenvector", U"Eigen: Dra
 		OPTION (U"y")
 		OPTION (U"x")
 	INTEGER (eigenVectorNumber, U"Eigenvector number", U"1")
-	LABEL (U"Multiply by eigenvalue?")
+	COMMENT (U"Multiply by eigenvalue?")
 	BOOLEAN (useComponentLoadings, U"Component loadings", false)
-	LABEL (U"Select part of the eigenvector:")
+	COMMENT (U"Select part of the eigenvector:")
 	INTEGER (fromElement, U"left Element range", U"0")
 	INTEGER (toElement, U"right Element range", U"0")
 	REAL (fromAmplitude, U"left Amplitude range", U"-1.0")
@@ -557,7 +556,7 @@ DO
 	QUERY_ONE_FOR_REAL (CCA)
 		double result, chisq, ndof;
 		CCA_getZeroCorrelationProbability (me, coefficientNumber, & result, & chisq, & ndof);
-	QUERY_ONE_FOR_REAL_END (U" (= probability for chisq = ", chisq, U" and ndf = ", ndof, U")");
+	QUERY_ONE_FOR_REAL_END (U" (probability for chisq = ", chisq, U" and ndf = ", ndof, U")");
 }
 
 DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__CCA_Correlation_to_TableOfReal_loadings) {
@@ -567,11 +566,11 @@ DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__CCA_Correlation_to_TableOfReal_loadings) {
 }
 
 FORM (QUERY_ONE_AND_ONE_FOR_REAL__CCA_Correlation_getVarianceFraction, U"CCA & Correlation: Get variance fraction", U"CCA & Correlation: Get variance fraction...") {
-	LABEL (U"Get the fraction of variance from the data in set...")
+	COMMENT (U"Get the fraction of variance from the data in set...")
 	OPTIONMENU (xOrY, U"X or Y", 1)
 		OPTION (U"y")
 		OPTION (U"x")
-	LABEL (U"extracted by...")
+	COMMENT (U"extracted by...")
 	NATURAL (fromCanonicalVariate, U"left Canonical variate range", U"1")
 	NATURAL (toCanonicalVariate, U"right Canonical variate range", U"1")
 	OK
@@ -583,14 +582,14 @@ DO
 }
 
 FORM (QUERY_ONE_AND_ONE_FOR_REAL__CCA_Correlation_getRedundancy_sl, U"CCA & Correlation: Get Stewart-Love redundancy", U"CCA & Correlation: Get redundancy (sl)...") {
-	LABEL (U"Get the redundancy of the data in set...")
+	COMMENT (U"Get the redundancy of the data in set...")
 	OPTIONMENU (xOrY, U"X or Y", 1)
 		OPTION (U"y")
 		OPTION (U"x")
-	LABEL (U"extracted by...")
+	COMMENT (U"extracted by...")
 	NATURAL (fromCanonicalVariate, U"left Canonical variate range", U"1")
 	NATURAL (toCanonicalVariate, U"right Canonical variate range", U"1")
-	LABEL (U"...given the availability of the data in the other set.")
+	COMMENT (U"...given the availability of the data in the other set.")
 	OK
 DO
 	QUERY_ONE_AND_ONE_FOR_REAL (CCA, Correlation)
@@ -615,7 +614,7 @@ DO
 }
 
 FORM (CONVERT_ONE_AND_ONE_TO_ONE__CCA_TableOfReal_predict, U"CCA & TableOfReal: Predict", U"CCA & TableOfReal: Predict...") {
-	LABEL (U"The data set from which to predict starts at...")
+	COMMENT (U"The data set from which to predict starts at...")
 	INTEGER (columnNumber, U"Column number", U"1")
 	OK
 DO
@@ -643,11 +642,11 @@ DIRECT (HELP__ChebyshevSeries_help) {
 
 FORM (CREATE_ONE__ChebyshevSeries_create, U"Create ChebyshevSeries", U"Create ChebyshevSeries...") {
 	WORD (name, U"Name", U"cs")
-	LABEL (U"Domain")
+	COMMENT (U"Domain")
 	REAL (xmin, U"Xmin", U"-1")
 	REAL (xmax, U"Xmax", U"1")
-	LABEL (U"ChebyshevSeries(x) = c[1] T[0](x) + c[2] T[1](x) + ... c[n+1] T[n](x)")
-	LABEL (U"T[k] is a Chebyshev polynomial of degree k")
+	COMMENT (U"ChebyshevSeries(x) = c[1] T[0](x) + c[2] T[1](x) + ... c[n+1] T[n](x)")
+	COMMENT (U"T[k] is a Chebyshev polynomial of degree k")
 	REALVECTOR (coefficients, U"Coefficients (c[k])", WHITESPACE_SEPARATED_, U"0 0 1.0")
 	OK
 DO
@@ -948,7 +947,7 @@ DO
 	QUERY_ONE_FOR_REAL (Correlation)
 		double chisq, result, ndof;
 		Correlation_testDiagonality_bartlett (me, numberOfConstraints, & chisq, & result, & ndof);
-	QUERY_ONE_FOR_REAL_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", ndof, U")")
+	QUERY_ONE_FOR_REAL_END (U" (probability, based on chisq = ", chisq, U" and ndf = ", ndof, U")")
 }
 
 DIRECT (CONVERT_EACH_TO_ONE__Correlation_to_PCA) {
@@ -981,68 +980,68 @@ FORM (QUERY_ONE_FOR_REAL__Covariance_getProbabilityAtPosition, U"Covariance: Get
 DO
 	QUERY_ONE_FOR_REAL (Covariance)
 		const double result = Covariance_getProbabilityAtPosition_string (me, position_string);
-	QUERY_ONE_FOR_REAL_END (U" (= probability at position ", position_string, U")")
+	QUERY_ONE_FOR_REAL_END (U" (probability at position ", position_string, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfOneMean, U"Covariance: Get significance of one mean", U"Covariance: Get significance of one mean...") {
-	LABEL (U"Get probability that the estimated mean for")
+	COMMENT (U"Get probability that the estimated mean for")
 	NATURAL (index, U"Index", U"1")
-	LABEL (U"(or an estimated mean even further away)")
-	LABEL (U"could arise if the true mean were")
+	COMMENT (U"(or an estimated mean even further away)")
+	COMMENT (U"could arise if the true mean were")
 	REAL (value, U"Value", U"0.0")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (Covariance)
 		double result, t, ndof;
 		Covariance_getSignificanceOfOneMean (me, index, value, & result, & t, & ndof);
-	QUERY_ONE_FOR_REAL_END (U" (= probability, based on t = ", t, U" and ndf = ", ndof)
+	QUERY_ONE_FOR_REAL_END (U" (probability, based on t = ", t, U" and ndf = ", ndof)
 }
 
 FORM (QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfMeansDifference, U"Covariance: Get significance of means difference", U"Covariance: Get significance of means difference...") {
-	LABEL (U"Get probability that the estimated difference between the means for")
+	COMMENT (U"Get probability that the estimated difference between the means for")
 	NATURAL (index1, U"Index1", U"1")
 	NATURAL (index2, U"Index2", U"2")
-	LABEL (U"could arise if the true mean were")
+	COMMENT (U"could arise if the true mean were")
 	REAL (value, U"Value", U"0.0")
-	LABEL (U"Assume the means are ")
+	COMMENT (U"Assume the means are ")
 	BOOLEAN (paired, U"Paired", true)
-	LABEL (U"and have")
+	COMMENT (U"and have")
 	BOOLEAN (equalVariances, U"Equal variances", true)
 	OK
 DO
 	QUERY_ONE_FOR_REAL (Covariance)
 		double result, t, ndof;
 		Covariance_getSignificanceOfMeansDifference (me, index1, index2, value, paired, equalVariances, & result, & t, & ndof);
-	QUERY_ONE_FOR_REAL_END (U" (= probability, based on t = ", t, U" and ndf = ", ndof, U")")
+	QUERY_ONE_FOR_REAL_END (U" (probability, based on t = ", t, U" and ndf = ", ndof, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfOneVariance, U"Covariance: Get significance of one variance", U"Covariance: Get significance of one variance...") {
-	LABEL (U"Get the probability that the estimated variance for")
+	COMMENT (U"Get the probability that the estimated variance for")
 	NATURAL (index, U"Index", U"1")
-	LABEL (U"(or an even larger estimated variance)")
-	LABEL (U"could arise if the true variance were")
+	COMMENT (U"(or an even larger estimated variance)")
+	COMMENT (U"could arise if the true variance were")
 	REAL (value, U"Value", U"0.0")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (Covariance)
 		double result, chisq, ndof;
 		Covariance_getSignificanceOfOneVariance (me, index, value, & result, & chisq, & ndof);
-	QUERY_ONE_FOR_REAL_END (U" (= probability, based on chisq = ", chisq, U" and ndf = ", ndof, U")")
+	QUERY_ONE_FOR_REAL_END (U" (probability, based on chisq = ", chisq, U" and ndf = ", ndof, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__Covariance_getSignificanceOfVariancesRatio, U"Covariance: Get significance of variances ratio", nullptr) {
-	LABEL (U"Get the probability that the estimated variance ratio observed for")
+	COMMENT (U"Get the probability that the estimated variance ratio observed for")
 	NATURAL (index1, U"Index1", U"1")
 	NATURAL (index2, U"Index2", U"2")
-	LABEL (U"(or an estimated ratio even further away)")
-	LABEL (U"could arise if the true ratio were")
+	COMMENT (U"(or an estimated ratio even further away)")
+	COMMENT (U"could arise if the true ratio were")
 	REAL (value, U"Value", U"1.0")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (Covariance)
 		double result, f, ndof;
 		Covariance_getSignificanceOfVariancesRatio (me, index1, index2, value, & result, & f , & ndof);
-	QUERY_ONE_FOR_REAL_END (U" (= probability, based on F = ", f, U" and ndf1 = ", ndof, U" and ndf2 = ", ndof, U")")
+	QUERY_ONE_FOR_REAL_END (U" (probability, based on F = ", f, U" and ndf1 = ", ndof, U" and ndf2 = ", ndof, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__Covariance_getFractionVariance, U"Covariance: Get fraction variance", U"Covariance: Get fraction variance...") {
@@ -1056,10 +1055,10 @@ DO
 }
 
 FORM (INFO_TWO__Covariances_reportMultivariateMeanDifference, U"Covariances: Report multivariate mean difference", U"Covariances: Report multivariate mean difference...") {
-	LABEL (U"Get probability that the estimated multivariate means difference could arise ")
-	LABEL (U"if the actual means were equal.")
-	LABEL (U"")
-	LABEL (U"Assume for both means we have")
+	COMMENT (U"Get probability that the estimated multivariate means difference could arise ")
+	COMMENT (U"if the actual means were equal.")
+	COMMENT (U"")
+	COMMENT (U"Assume for both means we have")
 	BOOLEAN (covariancesAreEqual, U"Equal covariances", true)
 	OK
 DO
@@ -1285,7 +1284,7 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL__Discriminant_getWilksLambda, U"Discriminant: Get Wilks' lambda", U"Discriminant: Get Wilks' lambda...") {
-	LABEL (U"Product (i=from..numberOfEigenvalues, 1 / (1 + eigenvalue[i]))")
+	COMMENT (U"Product (i=from..numberOfEigenvalues, 1 / (1 + eigenvalue[i]))")
 	NATURAL (from, U"From", U"1") //TODO better name
 	OK
 DO
@@ -1733,37 +1732,37 @@ DO
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getStartTime_x) {
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = my xmin;
-	QUERY_ONE_FOR_REAL_END (U" seconds (= start time along x)")
+	QUERY_ONE_FOR_REAL_END (U" seconds (start time along x)")
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getEndTime_x) {
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = my xmax;
-	QUERY_ONE_FOR_REAL_END (U" seconds (= end time along x)");
+	QUERY_ONE_FOR_REAL_END (U" seconds (end time along x)");
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getTotalDuration_x) {
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = my xmax - my xmin;
-	QUERY_ONE_FOR_REAL_END (U" seconds (= total duration along x)");
+	QUERY_ONE_FOR_REAL_END (U" seconds (total duration along x)");
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getStartTime_y) {
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = my ymin;
-	QUERY_ONE_FOR_REAL_END (U" seconds (= start time along y)");
+	QUERY_ONE_FOR_REAL_END (U" seconds (start time along y)");
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getEndTime_y) {
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = my ymax;
-	QUERY_ONE_FOR_REAL_END (U" seconds (= end time along y)");
+	QUERY_ONE_FOR_REAL_END (U" seconds (end time along y)");
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getTotalDuration_y) {
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = my ymax - my ymin;
-	QUERY_ONE_FOR_REAL_END (U" seconds (= total duration along y)")
+	QUERY_ONE_FOR_REAL_END (U" seconds (total duration along y)")
 }
 
 DIRECT (QUERY_ONE_FOR_INTEGER__DTW_getNumberOfFrames_x) {
@@ -1775,7 +1774,7 @@ DIRECT (QUERY_ONE_FOR_INTEGER__DTW_getNumberOfFrames_x) {
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getTimeStep_x) {
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = my dx;
-	QUERY_ONE_FOR_REAL_END (U" seconds (= time step along x)")
+	QUERY_ONE_FOR_REAL_END (U" seconds (time step along x)")
 }
 
 FORM (QUERY_ONE_FOR_REAL__DTW_getTimeFromFrameNumber_x, U"DTW: Get time from frame number (x)", nullptr) {
@@ -1784,7 +1783,7 @@ FORM (QUERY_ONE_FOR_REAL__DTW_getTimeFromFrameNumber_x, U"DTW: Get time from fra
 DO
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = Matrix_columnToX (me, frameNumber);
-	QUERY_ONE_FOR_REAL_END (U" seconds (= y time at x frame ", frameNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" seconds (y time at x frame ", frameNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_INTEGER__DTW_getFrameNumberFromTime_x, U"DTW: Get frame number from time (x)", nullptr) {
@@ -1795,19 +1794,19 @@ DO
 		Melder_require (xTime >= my xmin && xTime <= my xmax, 
 			U"Time outside x domain.");
 		const integer result = Melder_iround (Matrix_xToColumn (me, xTime));
-	QUERY_ONE_FOR_INTEGER_END (U" (= x frame at y time ", xTime, U")")
+	QUERY_ONE_FOR_INTEGER_END (U" (x frame at y time ", xTime, U")")
 }
 
 DIRECT (QUERY_ONE_FOR_INTEGER__DTW_getNumberOfFrames_y) {
 	QUERY_ONE_FOR_INTEGER (DTW)
 		const integer result = my ny;
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of frames along y)")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of frames along y)")
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getTimeStep_y) {
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = my dy;
-	QUERY_ONE_FOR_REAL_END (U" seconds (= time step along y)")
+	QUERY_ONE_FOR_REAL_END (U" seconds (time step along y)")
 }
 
 
@@ -1817,7 +1816,7 @@ FORM (QUERY_ONE_FOR_REAL__DTW_getTimeFromFrameNumber_y, U"DTW: Get time from fra
 DO
 	QUERY_ONE_FOR_REAL (DTW)
 		const double result = Matrix_rowToY (me, frameNumber);
-	QUERY_ONE_FOR_REAL_END (U" seconds (= x time at y frame ", frameNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" seconds (x time at y frame ", frameNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_INTEGER__DTW_getFrameNumberFromTime_y, U"DTW: Get frame number from time (y)", nullptr) {
@@ -1828,7 +1827,7 @@ DO
 		Melder_require (yTime >= my ymin && yTime <= my ymax, 
 			U"Time outside y domain.");
 		const integer result = Melder_iround (Matrix_yToRow (me, yTime));
-	QUERY_ONE_FOR_INTEGER_END (U" (= y frame at x time ", yTime, U")")
+	QUERY_ONE_FOR_INTEGER_END (U" (y frame at x time ", yTime, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__DTW_getPathY, U"DTW: Get time along path", U"DTW: Get time along path...") {
@@ -1869,7 +1868,7 @@ DO
 	conststring32 direction_string [] = { U"", U"x", U"y", U"diagonal" };
 	QUERY_ONE_FOR_INTEGER (DTW)
 		integer result = DTW_getMaximumConsecutiveSteps (me, direction_code [direction]);
-	QUERY_ONE_FOR_INTEGER_END (U" (= maximum number of consecutive steps in ", direction_string [direction], U" direction)")
+	QUERY_ONE_FOR_INTEGER_END (U" (maximum number of consecutive steps in ", direction_string [direction], U" direction)")
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getDistance_weighted) {
@@ -1890,7 +1889,7 @@ DO
 			integer icol = Matrix_xToNearestColumn (me, xTime);
 			result = my z [irow] [icol];
 		}
-	QUERY_ONE_FOR_REAL_END (U" (= distance at (", xTime, U", ", yTime, U"))")
+	QUERY_ONE_FOR_REAL_END (U" (distance at (", xTime, U", ", yTime, U"))")
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__DTW_getMinimumDistance) {
@@ -1908,7 +1907,7 @@ DIRECT (QUERY_ONE_FOR_REAL__DTW_getMaximumDistance) {
 }
 
 FORM (MODIFY_DTW_formula_distances, U"DTW: Formula (distances)", nullptr) {
-	LABEL (U"y := y1; for row := 1 to nrow do { x := x1; "
+	COMMENT (U"y := y1; for row := 1 to nrow do { x := x1; "
 		"for col := 1 to ncol do { self [row, col] := `formula' ; x := x + dx } y := y + dy }")
 	FORMULA (formula, U"Formula", U"self")
 	OK
@@ -2188,10 +2187,10 @@ DO
 }
 
 FORM (MODIFY_EditCostsTable_setCosts_others, U"EditCostsTable: Set costs (others)", nullptr) {
-	LABEL (U"Others costs")
+	COMMENT (U"Others costs")
 	REAL (insertionCosts, U"Insertion", U"1.0")
 	REAL (deletionCosts, U"Deletion", U"1.0")
-	LABEL (U"Substitution costs")
+	COMMENT (U"Substitution costs")
 	REAL (equalityCosts, U"Equality", U"0.0")
 	REAL (inequalityCosts, U"Inequality", U"2.0")
 	OK
@@ -2360,82 +2359,6 @@ DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__Eigen_Covariance_project) {
 	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-/******************** Electroglottogram ********************************************/
-
-FORM (CONVERT_EACH_TO_ONE__Electroglottogram_highPassFilter, U"Electroglottogram: High-pass filter", U"Electroglottogram: High-pass filter...") {
-	REAL (fromFrequency, U"From frequency (Hz)", U"100.0")
-	POSITIVE (smoothing, U"Smoothing (Hz)", U"100.0")
-	OK
-DO
-	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoElectroglottogram result = Electroglottogram_highPassFilter (me, fromFrequency, smoothing);
-	CONVERT_EACH_TO_ONE_END (my name.get(), U"_filtered")
-}
-
-FORM (CONVERT_EACH_TO_ONE__Electroglottogram_to_TextGrid_closedGlottis, U"Electroglottogram: To TextGrid (closed glottis)",
-	U"Electroglottogram: To TextGrid (closed glottis)...") {
-	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
-	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"500.0")
-	POSITIVE (closingThreshold, U"Closing threshold", U"0.30")
-	POSITIVE (peakThresholdFraction, U"Peak threshold (0-1)", U"0.05")
-	OK
-DO
-	Melder_require (closingThreshold < 1.0,
-		U"The closing threshold should be smaller than 1.");
-	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoTextGrid result = Electroglottogram_to_TextGrid_closedGlottis (me, pitchFloor, pitchCeiling, 
-			closingThreshold, peakThresholdFraction
-		);
-	CONVERT_EACH_TO_ONE_END (my name.get())
-}
-
-FORM (CONVERT_EACH_TO_ONE__Electroglottogram_to_AmplitudeTier_levels, U"Electroglottogram: To AmplitudeTier (levels)", U"") {
-	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
-	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"500.0")
-	POSITIVE (closingThreshold, U"Closing threshold", U"0.30")
-	BOOLEAN (wantPeaks, U"Peaks", 0)
-	BOOLEAN (wantValleys, U"Valleys", 0)
-	OK
-DO
-	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoAmplitudeTier peaks, valleys;
-		autoAmplitudeTier result = Electroglottogram_to_AmplitudeTier_levels (me, pitchFloor, pitchCeiling, 
-			closingThreshold, & peaks, & valleys
-		);
-		if (wantPeaks)
-			praat_new (peaks.move(), my name.get(), U"_peaks");
-		if (wantValleys)
-			praat_new (valleys.move(), my name.get(), U"_valleys");
-	CONVERT_EACH_TO_ONE_END (my name.get())
-
-}
-
-FORM (CONVERT_EACH_TO_ONE__Electroglottogram_derivative, U"Electroglottogram: Derivative", U"Electroglottogram: Derivative...") {
-	POSITIVE (lowPassFrequency, U"Low-pass frequency (Hz)", U"5000.0")
-	POSITIVE (smoothing, U"Smoothing (Hz)", U"100.0")
-	REAL (newAbsolutePeak, U"New absolute peak", U"0.0 (=do not scale)")
-	OK
-DO
-	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoSound result = Sound_derivative (me, lowPassFrequency, smoothing, newAbsolutePeak);
-	CONVERT_EACH_TO_ONE_END (my name.get(), U"_derivative")
-}
-
-FORM (CONVERT_EACH_TO_ONE__Electroglottogram_firstCentralDifference, U"Electroglottogram: First central difference", U"Electroglottogram: First central difference...") {
-	REAL (scalePeak, U"New absolute peak", U"0.0 (=do not scale)")
-	OK
-DO
-	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoSound result = Electroglottogram_firstCentralDifference (me, scalePeak);
-	CONVERT_EACH_TO_ONE_END (my name.get(), U"_cdiff")
-}
-
-DIRECT (CONVERT_EACH_TO_ONE__Electroglottogram_to_Sound) {
-	CONVERT_EACH_TO_ONE (Electroglottogram)
-		autoSound result = Electroglottogram_to_Sound (me);
-	CONVERT_EACH_TO_ONE_END (my name.get())
-}
-
 /******************** Index ********************************************/
 
 DIRECT (HELP__Index_help) {
@@ -2535,7 +2458,7 @@ DIRECT (COMBINE_ALL_TO_ONE__Excitations_to_ExcitationList) {
 /******************** ExcitationList ********************************************/
 
 FORM (MODIFY_ExcitationList_formula, U"ExcitationList: Formula", nullptr) {
-	LABEL (U"for all objects in ExcitationList do { for col := 1 to ncol do { self [col] := `formula' ; x := x + dx } }")
+	COMMENT (U"for all objects in ExcitationList do { for col := 1 to ncol do { self [col] := `formula' ; x := x + dx } }")
 	FORMULA (formula, U"Formula", U"self")
 	OK
 DO
@@ -2662,7 +2585,7 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__FileInMemoryManager_extractFiles, U"FileInMemoryManager: Extract files", nullptr) {
-	LABEL (U"Extract all files where the file name ")
+	COMMENT (U"Extract all files where the file name ")
 	OPTIONMENU_ENUM (kMelder_string, which, U"...", kMelder_string::CONTAINS)
 	SENTENCE (criterion, U"...the text", U"/voices/")
 	OK
@@ -2693,13 +2616,24 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__FileInMemorySet_extractFiles, U"FileInMemorySet: Extract files", nullptr) {
-	LABEL (U"Extract all files where the file name ")
+	COMMENT (U"Extract all files where the file name ")
 	OPTIONMENU_ENUM (kMelder_string, which, U"...", kMelder_string::CONTAINS)
 	SENTENCE (criterion, U"...the text", U"/voices/")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (FileInMemorySet)
 		autoFileInMemorySet result = FileInMemorySet_extractFiles (me, which, criterion);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__FileInMemorySet_removeFiles, U"FileInMemorySet: Remove files", nullptr) {
+	COMMENT (U"Remove all files where the file name ")
+	OPTIONMENU_ENUM (kMelder_string, which, U"...", kMelder_string::CONTAINS)
+	SENTENCE (criterion, U"...the text", U"/voices/")
+	OK
+DO
+	CONVERT_EACH_TO_ONE (FileInMemorySet)
+		autoFileInMemorySet result = FileInMemorySet_removeFiles (me, which, criterion);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
@@ -3097,7 +3031,7 @@ FORM (GRAPHICS_EACH__FormantGrid_draw, U"FormantGrid: Draw", nullptr) {
 	REAL (toFrequency, U"right Frequency range (Hz)", U"0.0 (= auto)")
 	BOOLEAN (bandwidths, U"Bandwidths", false)
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"")
+	COMMENT (U"")
 	OPTIONMENUSTR (drawingMethod, U"Drawing method", 1)
 		OPTION (U"lines")
 		OPTION (U"speckles")
@@ -3156,7 +3090,7 @@ DIRECT (QUERY_ONE_FOR_INTEGER__FunctionSeries_getNumberOfCoefficients) {
 }
 
 FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getCoefficient, U"FunctionSeries: Get coefficient", nullptr) {
-	LABEL (U"p(x) = c[1] + c[2] x + ... c[n+1] x^n")
+	COMMENT (U"p(x) = c[1] + c[2] x + ... c[n+1] x^n")
 	NATURAL (index, U"Index", U"1")
 	OK
 DO
@@ -3172,7 +3106,7 @@ DIRECT (QUERY_ONE_FOR_INTEGER__FunctionSeries_getDegree) {
 }
 
 FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getMaximum, U"FunctionSeries: Get maximum", U"Polynomial: Get maximum...") {
-	LABEL (U"Interval")
+	COMMENT (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
@@ -3183,7 +3117,7 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getMinimum, U"FunctionSeries: Get minimum", U"Polynomial: Get minimum...") {
-	LABEL (U"Interval")
+	COMMENT (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
@@ -3194,7 +3128,7 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getXOfMaximum, U"FunctionSeries: Get x of maximum", U"Polynomial: Get x of maximum...") {
-	LABEL (U"Interval")
+	COMMENT (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
@@ -3205,7 +3139,7 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL__FunctionSeries_getXOfMinimum, U"FunctionSeries: Get x of minimum", U"Polynomial: Get x of minimum...") {
-	LABEL (U"Interval")
+	COMMENT (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
@@ -3216,8 +3150,8 @@ DO
 }
 
 FORM (MODIFY_EACH__FunctionSeries_setCoefficient, U"FunctionSeries: Set coefficient", nullptr) {
-	LABEL (U"p(x) = c[1]F[0] + c[2]F[1] + ... c[n+1]F[n]")
-	LABEL (U"F[k] is of degree k")
+	COMMENT (U"p(x) = c[1]F[0] + c[2]F[1] + ... c[n+1]F[n]")
+	COMMENT (U"F[k] is of degree k")
 	NATURAL (index, U"Index", U"1")
 	REAL (value, U"Value", U"0.0")
 	OK
@@ -3302,12 +3236,12 @@ DIRECT (HELP__ISpline_help) {
 
 FORM (CREATE_ONE__ISpline_create, U"Create ISpline", U"Create ISpline...") {
 	WORD (name, U"Name", U"ispline")
-	LABEL (U"Domain")
+	COMMENT (U"Domain")
 	REAL (xmin, U"Xmin", U"0")
 	REAL (xmax, U"Xmax", U"1")
-	LABEL (U"ISpline(x) = c[1] I[1](x) + c[2] I[1](x) + ... c[n] I[n](x)")
-	LABEL (U"all I[k] are polynomials of degree \"Degree\"")
-	LABEL (U"Relation: numberOfCoefficients == numberOfInteriorKnots + degree")
+	COMMENT (U"ISpline(x) = c[1] I[1](x) + c[2] I[1](x) + ... c[n] I[n](x)")
+	COMMENT (U"all I[k] are polynomials of degree \"Degree\"")
+	COMMENT (U"Relation: numberOfCoefficients == numberOfInteriorKnots + degree")
 	INTEGER (degree, U"Degree", U"3")
 	REALVECTOR (coefficients, U"Coefficients (c[k])", WHITESPACE_SEPARATED_, U"1.2 2.0 1.2 1.2 3.0 0.0")
 	REALVECTOR (interiorKnots, U"Interior knots", WHITESPACE_SEPARATED_, U"0.3 0.5 0.6")
@@ -3389,7 +3323,7 @@ FORM (QUERY_ONE_FOR_REAL__Table_getMedianAbsoluteDeviation, U"Table: Get median 
 	OK
 DO
 	QUERY_ONE_FOR_REAL (Table)
-		const integer columnNumber = Table_getColumnIndexFromColumnLabel (me, columnLabel);
+		const integer columnNumber = Table_columnNameToNumber_e (me, columnLabel);
 		const double result = Table_getMedianAbsoluteDeviation (me, columnNumber);
 	QUERY_ONE_FOR_REAL_END (U"")
 }
@@ -3402,7 +3336,7 @@ FORM (INFO_ONE__Table_reportRobustStatistics, U"Table: Report robust statistics"
 	OK
 DO
 	INFO_ONE (Table)
-		const integer columnNumber = Table_getColumnIndexFromColumnLabel (me, columnLabel);
+		const integer columnNumber = Table_columnNameToNumber_e (me, columnLabel);
 		double location, scale;
 		Table_reportHuberMStatistics (me, columnNumber, k_stdev, tolerance, & location, & scale, maximumNumberOfiterations);
 		MelderInfo_open ();
@@ -3414,8 +3348,8 @@ DO
 
 static void print_means (Table me);
 static void print_means (Table me) {
-	Table_numericize_Assert (me, 2);
-	Table_numericize_Assert (me, 3);
+	Table_numericize_a (me, 2);
+	Table_numericize_a (me, 3);
 	if (my numberOfColumns < 3) {
 		MelderInfo_writeLine (U"Table does not have the right format.");
 		return;
@@ -3453,8 +3387,8 @@ FORM (INFO_ONE__Table_reportOneWayAnova, U"Table: Report one-way anova",  U"Tabl
 	OK
 DO
 	INFO_ONE (Table)
-		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factor_string);
-		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		const integer factorColumn = Table_columnNameToNumber_e (me, factor_string);
+		const integer dataColumn = Table_columnNameToNumber_e (me, dataColumn_string);
 		autoTable means, meansDiff, meansDiffProbabilities;
 		autoTable anova = Table_getOneWayAnalysisOfVarianceF (me, dataColumn, factorColumn, & means,
 			& meansDiff, & meansDiffProbabilities);
@@ -3481,9 +3415,9 @@ FORM (INFO_ONE__Table_reportTwoWayAnova, U"Table: Report two-way anova", U"Table
 	OK
 DO
 	INFO_ONE (Table)
-		const integer firstFactorColumn = Table_getColumnIndexFromColumnLabel (me, firstFactor_string);
-		const integer secondFactorColumn = Table_getColumnIndexFromColumnLabel (me, secondFactor_string);
-		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		const integer firstFactorColumn = Table_columnNameToNumber_e (me, firstFactor_string);
+		const integer secondFactorColumn = Table_columnNameToNumber_e (me, secondFactor_string);
+		const integer dataColumn = Table_columnNameToNumber_e (me, dataColumn_string);
 		autoTable means, sizes;
 		autoTable anova = Table_getTwoWayAnalysisOfVarianceF (me, dataColumn, firstFactorColumn, secondFactorColumn, &means, &sizes);
 		MelderInfo_open ();
@@ -3505,8 +3439,8 @@ FORM (INFO_ONE__Table_reportOneWayKruskalWallis, U"Table: Report one-way Kruskal
 	OK
 DO
 	INFO_ONE (Table)
-		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factor_string);
-		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
+		const integer factorColumn = Table_columnNameToNumber_e (me, factor_string);
+		const integer dataColumn = Table_columnNameToNumber_e (me, dataColumn_string);
 		double ndof, kruskalWallis, prob;
 		autoTable result = Table_getOneWayKruskalWallis (me, dataColumn, factorColumn, & prob, & kruskalWallis, & ndof);
 		MelderInfo_open ();
@@ -3525,7 +3459,7 @@ FORM (CONVERT_EACH_TO_ONE__Table_to_StringsIndex_column, U"Table: To StringsInde
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Table)
-		const integer icol = Table_getColumnIndexFromColumnLabel (me, columnLabel);
+		const integer icol = Table_columnNameToNumber_e (me, columnLabel);
 		autoStringsIndex result = Table_to_StringsIndex_column (me, icol, kStrings_sorting::NUMBER_AWARE);
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_", columnLabel)
 }
@@ -3534,11 +3468,11 @@ DO
 
 FORM (CREATE_ONE__LegendreSeries_create, U"Create LegendreSeries", U"Create LegendreSeries...") {
 	WORD (name, U"Name", U"ls")
-	LABEL (U"Domain")
+	COMMENT (U"Domain")
 	REAL (xmin, U"Xmin", U"-1")
 	REAL (xmax, U"Xmax", U"1")
-	LABEL (U"LegendreSeries(x) = c[1] P[0](x) + c[2] P[1](x) + ... c[n+1] P[n](x)")
-	LABEL (U"P[k] is a Legendre polynomial of degree k")
+	COMMENT (U"LegendreSeries(x) = c[1] P[0](x) + c[2] P[1](x) + ... c[n+1] P[n](x)")
+	COMMENT (U"P[k] is a Legendre polynomial of degree k")
 	REALVECTOR (coefficients, U"Coefficients", WHITESPACE_SEPARATED_, U"0 0 1.0")
 	OK
 DO
@@ -3613,15 +3547,15 @@ DO
 }
 
 FORM (GRAPHICS_EACH__Matrix_drawDistribution, U"Matrix: Draw distribution", U"Matrix: Draw distribution...") {
-	LABEL (U"Selection of (part of) Matrix")
+	COMMENT (U"Selection of (part of) Matrix")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	LABEL (U"Selection of Matrix values")
+	COMMENT (U"Selection of Matrix values")
 	REAL (minimumValue, U"Minimum value", U"0.0")
 	REAL (maximumValue, U"Maximum value", U"0.0")
-	LABEL (U"Display of the distribution")
+	COMMENT (U"Display of the distribution")
 	NATURAL (numberOfBins, U"Number of bins", U"10")
 	REAL (minimumFrequency, U"Minimum frequency", U"0.0")
 	REAL (maximumFrequency, U"Maximum frequency", U"0.0")
@@ -3636,15 +3570,15 @@ DO
 }
 
 FORM (GRAPHICS_EACH__Matrix_drawCumulativeDistribution, U"Matrix: Draw cumulative distribution", nullptr) {
-	LABEL (U"Selection of (part of) Matrix")
+	COMMENT (U"Selection of (part of) Matrix")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	LABEL (U"Selection of Matrix values")
+	COMMENT (U"Selection of Matrix values")
 	REAL (minimumValue, U"Minimum value", U"0.0")
 	REAL (maximumValue, U"Maximum value", U"0.0")
-	LABEL (U"Display of the distribution")
+	COMMENT (U"Display of the distribution")
 	NATURAL (numberOfBins, U"Number of bins", U"10")
 	REAL (minimum, U"Minimum", U"0.0")
 	REAL (maximum, U"Maximum", U"0.0")
@@ -3699,7 +3633,7 @@ DIRECT (COMPVEC_Matrix_listEigenvalues) {
 }*/
 
 FORM (MODIFY_Matrix_scale, U"Matrix: Scale", nullptr) {
-	LABEL (U"self[row, col] := self[row, col] / `Scale factor'")
+	COMMENT (U"self[row, col] := self[row, col] / `Scale factor'")
 	CHOICE (scaleMethod, U"Scale factor", 1)
 		OPTION (U"extremum in matrix")
 		OPTION (U"extremum in each row")
@@ -3901,7 +3835,7 @@ DO
 }
 
 FORM (CONVERT_TWO_TO_ONE__Matrices_to_DTW, U"Matrices: To DTW", U"Matrix: To DTW...") {
-	LABEL (U"Distance  between cepstral coefficients")
+	COMMENT (U"Distance  between cepstral coefficients")
 	REAL (distanceMetric, U"Distance metric", U"2.0")
 	DTW_constraints_addCommonFields (matchStart, matchEnd, slopeConstraint)
 	OK
@@ -4282,12 +4216,12 @@ DIRECT (CONVERT_EACH_TO_ONE__MFCC_to_Sound) {
 
 FORM (CREATE_ONE__MSpline_create, U"Create MSpline", U"Create MSpline...") {
 	WORD (name, U"Name", U"mspline")
-	LABEL (U"Domain")
+	COMMENT (U"Domain")
 	REAL (xmin, U"Xmin", U"0")
 	REAL (xmax, U"Xmax", U"1")
-	LABEL (U"MSpline(x) = c[1] M[1](x) + c[2] M[1](x) + ... c[n] M[n](x)")
-	LABEL (U"all M[k] are polynomials of degree \"Degree\"")
-	LABEL (U"Relation: numberOfCoefficients == numberOfInteriorKnots + degree + 1")
+	COMMENT (U"MSpline(x) = c[1] M[1](x) + c[2] M[1](x) + ... c[n] M[n](x)")
+	COMMENT (U"all M[k] are polynomials of degree \"Degree\"")
+	COMMENT (U"Relation: numberOfCoefficients == numberOfInteriorKnots + degree + 1")
 	INTEGER (degree, U"Degree", U"2")
 	REALVECTOR (coefficients, U"Coefficients (c[k])", WHITESPACE_SEPARATED_, U"1.2 2.0 1.2 1.2 3.0 0.0")
 	REALVECTOR (interiorKnots, U"Interior knots", WHITESPACE_SEPARATED_, U"0.3 0.5 0.6")
@@ -4389,9 +4323,9 @@ DIRECT (HELP__NMF_help) {
 
 FORM (GRAPHICS_EACH__NMF_paintFeatures, U"NMF: Paint features", U"") {
 	NATURAL (fromFeature, U"From feature", U"1")
-	INTEGER (toFeature, U"To feature", U"0 (=all)")
+	INTEGER (toFeature, U"To feature", U"0 (= all)")
 	NATURAL (fromRow, U"From row", U"1")
-	INTEGER (toRow, U"To row", U"0 (=all)")
+	INTEGER (toRow, U"To row", U"0 (= all)")
 	REAL (minimum, U"Minimum", U"0.0")
 	REAL (maximum, U"maximum", U"0.0")
 	BOOLEAN (garnish, U"Garnish", 1)
@@ -4404,9 +4338,9 @@ DO
 
 FORM (GRAPHICS_EACH__NMF_paintWeights, U"NMF: Paint weights", U"") {
 	NATURAL (fromWeight, U"From weight", U"1")
-	INTEGER (toWeight, U"To weight", U"0 (=all)")
+	INTEGER (toWeight, U"To weight", U"0 (= all)")
 	NATURAL (fromRow, U"From row", U"1")
-	INTEGER (toRow, U"To row", U"0 (=all)")
+	INTEGER (toRow, U"To row", U"0 (= all)")
 	REAL (minimum, U"Minimum", U"0.0")
 	REAL (maximum, U"maximum", U"0.0")	
 	BOOLEAN (garnish, U"Garnish", 1)
@@ -4474,13 +4408,13 @@ DIRECT (NUMMAT_PatternList_getAllValues) {
 }
 
 FORM (MODIFY_PatternList_formula, U"PatternList: Formula", nullptr) {
-	LABEL (U"# `col` is the node number, `row` is the pattern number")
-	LABEL (U"for row from 1 to nrow   ; for all patterns")
-	LABEL (U"   for col from 1 to ncol   ; for all nodes")
-	LABEL (U"      self [row, col] =")
+	COMMENT (U"# `col` is the node number, `row` is the pattern number")
+	COMMENT (U"for row from 1 to nrow   ; for all patterns")
+	COMMENT (U"   for col from 1 to ncol   ; for all nodes")
+	COMMENT (U"      self [row, col] =")
 	FORMULA (formula, U"Formula", U"5 * exp (-0.5 * ((col - 10 - row/100) / 1.5) ^ 2) - 0.5   ; sliding peak")
-	LABEL (U"   endfor")
-	LABEL (U"endfor")
+	COMMENT (U"   endfor")
+	COMMENT (U"endfor")
 	OK
 DO
 	MODIFY_EACH_WEAK (PatternList)
@@ -4628,7 +4562,7 @@ DO
 		PCA_getEqualityOfEigenvalues (me, fromEigenvalue, toEigenvalue,
 			conservativeTest, & result, & chisq, & df
 		);
-	QUERY_ONE_FOR_REAL_END (U" (= probability, based on chisq = ", chisq, U" and df = ", df)
+	QUERY_ONE_FOR_REAL_END (U" (probability, based on chisq = ", chisq, U" and df = ", df, U")")
 }
 
 FORM (QUERY_ONE_FOR_INTEGER__PCA_getNumberOfComponents_VAF, U"PCA: Get number of components (VAF)", U"PCA: Get number of components (VAF)...") {
@@ -4636,7 +4570,7 @@ FORM (QUERY_ONE_FOR_INTEGER__PCA_getNumberOfComponents_VAF, U"PCA: Get number of
 	OK
 DO
 	Melder_require (varianceFraction >= 0.0 && varianceFraction <= 1.0, 
-		U"The variance fraction should be in interval [0-1].");
+		U"The variance fraction should be in the interval [0, 1].");
 	QUERY_ONE_FOR_INTEGER (PCA)
 		const integer result = Eigen_getDimensionOfFraction (me, varianceFraction);
 	QUERY_ONE_FOR_INTEGER_END (U" (for variance fraction)")
@@ -4665,7 +4599,7 @@ DO
 
 FORM (CONVERT_EACH_TO_ONE__PCA_extractEigenvector, U"PCA: Extract eigenvector", U"Eigen: Extract eigenvector...") {
 	NATURAL (eigenvectorNumber, U"Eigenvector number", U"1")
-	LABEL (U"Reshape as")
+	COMMENT (U"Reshape as")
 	INTEGER (numberOfRows, U"Number of rows", U"0")
 	INTEGER (numberOfColumns, U"Number of columns", U"0")
 	OK
@@ -4711,7 +4645,7 @@ DIRECT (QUERY_TWO_FOR_REAL__PCAs_getAngleBetweenPc1Pc2Plane_degrees) {
 		Melder_require (your numberOfEigenvalues > 1, 
 			U"There must be at least two eigenvectors in the second PCA.");
 		const double result = Eigens_getAngleBetweenEigenplanes_degrees (me, you);
-	QUERY_TWO_FOR_REAL_END (U" degrees (= angle of intersection between the two pc1-pc2 eigenplanes)")
+	QUERY_TWO_FOR_REAL_END (U" degrees (angle of intersection between the two pc1-pc2 eigenplanes)")
 }
 
 DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__PCA_SSCP_project) {
@@ -4817,10 +4751,10 @@ DO
 }
 
 FORM (MODIFY_Permutation_swapOneFromRange, U"Permutation: Swap one from range", U"Permutation: Swap one from range...") {
-	LABEL (U"A randomly chosen element from ")
+	COMMENT (U"A randomly chosen element from ")
 	INTEGER (fromIndex, U"left Index range", U"0")
 	INTEGER (toIndex, U"right Index range", U"0")
-	LABEL (U"is swapped with the element at")
+	COMMENT (U"is swapped with the element at")
 	NATURAL (index, U"Index", U"1")
 	BOOLEAN (forbidSame, U"Forbid same", true)
 	OK
@@ -4955,14 +4889,14 @@ DO
 FORM (MODIFY_PitchTier_modifyInterval, U"PitchTier: Modify interval", U"PitchTier: Modify interval...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range", U"0.0 (= all)")
-	LABEL (U"")
+	COMMENT (U"")
 	REALVECTOR (relativeTimes, U"Relative times", WHITESPACE_SEPARATED_, U"0.0 0.5 1.0")
 	OPTIONMENU (timeOffset, U"...are...", 1)
 		OPTION (U"fractions")
 		OPTION (U"percentages")
 		OPTION (U"independent")
-	LABEL (U"...of the interval duration which will be added...")
-	LABEL (U"...to the start time of the interval.")
+	COMMENT (U"...of the interval duration which will be added...")
+	COMMENT (U"...to the start time of the interval.")
 	SENTENCE (pitches_string, U"The \"pitch\" values", U"100 200 100")
 	OPTIONMENU (pitch_as, U"...are...", 1)
 		OPTION (U"frequencies")
@@ -4972,7 +4906,7 @@ FORM (MODIFY_PitchTier_modifyInterval, U"PitchTier: Modify interval", U"PitchTie
 		OPTION (U"slopes and end")
 		OPTION (U"music notes")
 //		OPTION (U"semitones")
-	LABEL (U"...to be added to the anchor value (if used)...")
+	COMMENT (U"...to be added to the anchor value (if used)...")
 	OPTIONMENU (pitch_is, U"...which is the...", 1)
 		OPTION (U"not used")
 		OPTION (U"current")
@@ -4982,8 +4916,8 @@ FORM (MODIFY_PitchTier_modifyInterval, U"PitchTier: Modify interval", U"PitchTie
 		OPTION (U"mean of the points")
 		OPTION (U"maximum")
 		OPTION (U"minimum")
-	LABEL (U"...frequency value in the interval.")
-	LABEL (U"")
+	COMMENT (U"...frequency value in the interval.")
+	COMMENT (U"")
 	OPTIONMENU (pitch_unit, U"Pitch frequency unit", 1)
 		OPTION (U"Hertz")
 	OK
@@ -4999,14 +4933,14 @@ FORM (MODIFY_PitchTier_modifyInterval_toneLevels, U"PitchTier: Modify interval (
 	REAL (fmin, U"left Pitch range (Hz)", U"80.0")
 	REAL (fmax, U"right Pitch range", U"200.0")
 	NATURAL (numberOfToneLevels, U"Number of tone levels", U"5")
-	LABEL (U"")
+	COMMENT (U"")
 	REALVECTOR (relativeTimes, U"Relative times", WHITESPACE_SEPARATED_, U"0.0 0.5 1.0")
 	OPTIONMENU (time_offset, U"...are...", 1)
 		OPTION (U"fractions")
 		OPTION (U"percentages")
 		OPTION (U"independent")
-	LABEL (U"...of the interval duration which will be added...")
-	LABEL (U"...to the start time of the interval.")
+	COMMENT (U"...of the interval duration which will be added...")
+	COMMENT (U"...to the start time of the interval.")
 	REALVECTOR (pitchesAsToneLevels, U"Pitches as tone levels", WHITESPACE_SEPARATED_, U"2.1 2.1 5.0")
 	OK
 DO
@@ -5068,7 +5002,7 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_STRING__Polygon_getLocationOfPoint, U"Get location of point", U"Polygon: Get location of point...") {
-	LABEL (U"Point is (I)n, (O)ut, (E)dge or (V)ertex?")
+	COMMENT (U"Point is (I)n, (O)ut, (E)dge or (V)ertex?")
 	REAL (x, U"X", U"0.0")
 	REAL (y, U"Y", U"0.0")
 	REAL (eps, U"Precision", U"1.64e-15")
@@ -5122,9 +5056,9 @@ DO
 }
 
 FORM (MODIFY_EACH__Polygon_rotate, U"Polygon: Rotate", U"Polygon: Rotate...") {
-	LABEL (U"Rotate counterclockwise over the")
+	COMMENT (U"Rotate counterclockwise over the")
 	REAL (angle_degrees, U"Angle (degrees)", U"0.0")
-	LABEL (U"With respect to the point")
+	COMMENT (U"With respect to the point")
 	REAL (x, U"X", U"0.0")
 	REAL (y, U"Y", U"0.0")
 	OK
@@ -5177,10 +5111,10 @@ DIRECT (HELP__Polynomial_help) {
 
 FORM (CREATE_ONE__Polynomial_create, U"Create Polynomial from coefficients", U"Create Polynomial...") {
 	WORD (name, U"Name", U"p")
-	LABEL (U"Domain of polynomial")
+	COMMENT (U"Domain of polynomial")
 	REAL (xmin, U"Xmin", U"-3.0")
 	REAL (xmax, U"Xmax", U"4.0")
-	LABEL (U"p(x) = c[1] + c[2] x + ... c[n+1] x^n")
+	COMMENT (U"p(x) = c[1] + c[2] x + ... c[n+1] x^n")
 	REALVECTOR (coefficients, U"Coefficients", WHITESPACE_SEPARATED_, U"2.0 -1.0 -2.0 1.0")
 	OK
 DO
@@ -5192,10 +5126,10 @@ DO
 
 FORM (CREATE_ONE__Polynomial_createFromProductTerms, U"Create Polynomial from second order products", nullptr) {
 	WORD (name, U"Name", U"p")
-	LABEL (U"Domain of polynomial")
+	COMMENT (U"Domain of polynomial")
 	REAL (xmin, U"Xmin", U"-2.0")
 	REAL (xmax, U"Xmax", U"2.0")
-	LABEL (U"(1+a[1]*x+x^2)*(1+a[2]*x+x^2)*...*(1+a[n]*x+x^2)")
+	COMMENT (U"(1+a[1]*x+x^2)*(1+a[2]*x+x^2)*...*(1+a[n]*x+x^2)")
 	REALVECTOR (coefficients, U"The a's", WHITESPACE_SEPARATED_, U"1.0 2.0")
 	OK
 DO
@@ -5207,10 +5141,10 @@ DO
 
 FORM (CREATE_ONE__Polynomial_createFromRealZeros, U"Create Polynomial from first order products", nullptr) {
 	WORD (name, U"Name", U"p")
-	LABEL (U"Domain of polynomial")
+	COMMENT (U"Domain of polynomial")
 	REAL (xmin, U"Xmin", U"-3.0")
 	REAL (xmax, U"Xmax", U"3.0")
-	LABEL (U"(P(x) = (x-zero[1])*(1-zero[2])*...*(x-zero[n])")
+	COMMENT (U"(P(x) = (x-zero[1])*(1-zero[2])*...*(x-zero[n])")
 	REALVECTOR (zeroes, U"The zeroes", WHITESPACE_SEPARATED_, U"1.0 2.0")
 	OK
 DO
@@ -5221,7 +5155,7 @@ DO
 }
 
 FORM (MODIFY_EACH__Polynomial_divide_secondOrderFactor, U"Polynomial: Divide second order factor", nullptr) {
-	LABEL (U"P(x) / (x^2 - factor)")
+	COMMENT (U"P(x) / (x^2 - factor)")
 	REAL (factor, U"Factor", U"1.0")
 	OK
 DO
@@ -5231,7 +5165,7 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL__Polynomial_getArea, U"Polynomial: Get area", U"Polynomial: Get area...") {
-	LABEL (U"Interval")
+	COMMENT (U"Interval")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"0.0")
 	OK
@@ -5242,7 +5176,7 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL__Polynomial_getRemainderAfterDivision, U"Polynomial: Get remainder after division", nullptr) {
-	LABEL (U"P(x) / (x - factor)")
+	COMMENT (U"P(x) / (x - factor)")
 	REAL (factor, U"Monomial factor", U"1.0")
 	OK
 DO
@@ -5270,7 +5204,7 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL__Polynomial_getOneRealRoot, U"Polynomial: Get one real root", nullptr) {
-	LABEL (U"Interval: ")
+	COMMENT (U"Interval: ")
 	REAL (xmin, U"left X Range", U"-1.0")
 	REAL (xmax, U"right X Range", U"1.0")
 	OK
@@ -5296,7 +5230,7 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Polynomial_scaleX, U"Polynomial: Scale x", U"Polynomial: Scale x...") {
-	LABEL (U"New domain")
+	COMMENT (U"New domain")
 	REAL (xmin, U"Xmin", U"-1.0")
 	REAL (xmax, U"Xmax", U"1.0")
 	OK
@@ -5553,10 +5487,16 @@ static void Sound_create_checkCommonFields (double startTime, double endTime, do
 				U" samples; the maximum is ", Melder_bigInteger (INTEGER_MAX), U" samples.");
 }
 
+FORM_SAVE (SAVE__Sound_saveAsHighestQualityMP3File, U"Sound: Save as MP3 file", nullptr, U"mp3") {
+	SAVE_ONE (Sound)
+		Sound_saveAsMP3File_VBR (me, file, 0.0);
+	SAVE_ONE_END
+}
+
 FORM (CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_to_FormantFilter, U"Sound & Pitch: To FormantFilter", U"Sound & Pitch: To Spectrogram...") {
 	POSITIVE (windowLength, U"Analysis window duration (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Filter bank parameters")
+	COMMENT (U"Filter bank parameters")
 	POSITIVE (firstFrequency, U"Position of first filter (Hz)", U"100.0")
 	POSITIVE (deltaFrequency, U"Distance between filters (Hz)", U"50.0")
 	REAL (maximumFrequency, U"Maximum frequency", U"0");
@@ -5573,7 +5513,7 @@ DO
 FORM (CONVERT_ONE_AND_ONE_TO_ONE__Sound_Pitch_to_Spectrogram, U"Sound & Pitch: To Spectrogram", U"Sound & Pitch: To Spectrogram...") {
 	POSITIVE (windowLength, U"Analysis window duration (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Filter bank parameters")
+	COMMENT (U"Filter bank parameters")
 	POSITIVE (firstFrequency, U"Position of first filter (Hz)", U"100.0")
 	POSITIVE (deltaFrequency, U"Distance between filters (Hz)", U"50.0")
 	REAL (maximumFrequency, U"Maximum frequency", U"0");
@@ -5670,7 +5610,7 @@ FORM (GRAPHICS_EACH__Sound_drawWhere, U"Sound: Draw where", U"Sound: Draw where.
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"")
+	COMMENT (U"")
 	OPTIONMENUSTR (drawingMethod, U"Drawing method", 1)
 		OPTION (U"curve")
 		OPTION (U"bars")
@@ -5728,7 +5668,7 @@ DO
 FORM (CONVERT_TWO_TO_ONE__Sounds_to_DTW, U"Sounds: To DTW", nullptr) {
     POSITIVE (windowLength, U"Window length (s)", U"0.015")
     POSITIVE (timeStep, U"Time step (s)", U"0.005")
-    LABEL (U"")
+    COMMENT (U"")
     REAL (sakoeChibaBand, U"Sakoe-Chiba band (s)", U"0.1")
     CHOICE (slopeConstraint, U"Slope constraint", 1)
 		OPTION (U"no restriction")
@@ -5743,10 +5683,10 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_TextGrid_detectSilences, U"Sound: To TextGrid (silences)", U"Sound: To TextGrid (silences)...") {
-	LABEL (U"Parameters for the intensity analysis")
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"100")
+	COMMENT (U"Parameters for the intensity analysis")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"100")
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
-	LABEL (U"Silent intervals detection")
+	COMMENT (U"Silent intervals detection")
 	REAL (silenceThreshold, U"Silence threshold (dB)", U"-25.0")
 	POSITIVE (minimumSilenceDuration, U"Minimum silent interval (s)", U"0.1")
 	POSITIVE (minimumSoundingDuration, U"Minimum sounding interval (s)", U"0.1")
@@ -5755,7 +5695,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_TextGrid_detectSilences, U"Sound: To TextGri
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
-		autoTextGrid result = Sound_to_TextGrid_detectSilences (me, minimumPitch, timeStep, silenceThreshold, 
+		autoTextGrid result = Sound_to_TextGrid_detectSilences (me, pitchFloor, timeStep, silenceThreshold,
 			minimumSilenceDuration, minimumSoundingDuration, silenceLabel, soundingLabel
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get())
@@ -5803,28 +5743,28 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_trimSilences, U"Sound: Trim silences", U"Sound: Trim silences...") {
-    REAL (trimDuration, U"Trim duration (s)", U"0.08")
+	REAL (trimDuration, U"Trim duration (s)", U"0.08")
 	BOOLEAN (onlyAtStartAndEnd, U"Only at start and end", true);
-	LABEL (U"Parameters for the intensity analysis")
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"100")
+	COMMENT (U"Parameters for the intensity analysis")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"100")
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
-	LABEL (U"Silent intervals detection")
+	COMMENT (U"Silent intervals detection")
 	REAL (silenceThreshold, U"Silence threshold (dB)", U"-35.0")
 	POSITIVE (minimumSilenceDuration, U"Minimum silent interval duration (s)", U"0.1")
 	POSITIVE (minimumSoundingDuration, U"Minimum sounding interval duration (s)", U"0.05")
-    BOOLEAN (saveTextGrid, U"Save trimming info as TextGrid", false)
-    WORD (trim_string, U"Trim label", U"trimmed")
+	BOOLEAN (saveTextGrid, U"Save trimming info as TextGrid", false)
+	WORD (trim_string, U"Trim label", U"trimmed")
 	OK
 DO
-    trimDuration = ( trimDuration < 0.0 ? 0.0 : trimDuration );
+	Melder_clipLeft (0.0, & trimDuration);
 	CONVERT_EACH_TO_ONE (Sound)
-        autoTextGrid tg;
-		autoSound result = Sound_trimSilences (me, trimDuration, onlyAtStartAndEnd, minimumPitch, timeStep, 
+		autoTextGrid tg;
+		autoSound result = Sound_trimSilences (me, trimDuration, onlyAtStartAndEnd, pitchFloor, timeStep,
 			silenceThreshold, minimumSilenceDuration, minimumSoundingDuration, 
 			( saveTextGrid ? & tg : nullptr ), trim_string
 		);
 		if (saveTextGrid)
-            praat_new (tg.move(), my name.get(), U"_trimmed");
+			praat_new (tg.move(), my name.get(), U"_trimmed");
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_trimmed")
 }
 
@@ -5832,7 +5772,7 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Sound_to_BarkFilter, U"Sound: To BarkFilter", U"Sound: To BarkSpectrogram...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Filter bank parameters")
+	COMMENT (U"Filter bank parameters")
 	POSITIVE (firstFrequency, U"Position of first filter (bark)", U"1.0")
 	POSITIVE (deltaFrequency, U"Distance between filters (bark)", U"1.0")
 	REAL (maximumFrequency, U"Maximum frequency (bark)", U"0.0");
@@ -5846,7 +5786,7 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Sound_to_BarkSpectrogram, U"Sound: To BarkSpectrogram", U"Sound: To BarkSpectrogram...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Filter bank parameters")
+	COMMENT (U"Filter bank parameters")
 	POSITIVE (firstFrequency, U"Position of first filter (bark)", U"1.0")
 	POSITIVE (deltaFrequency, U"Distance between filters (bark)", U"1.0")
 	REAL (maximumFrequency, U"Maximum frequency (bark)", U"0.0");
@@ -5874,19 +5814,19 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Sound_to_FormantFilter, U"Sound: To FormantFilter", U"Sound: To FormantFilter...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Filter bank parameters")
+	COMMENT (U"Filter bank parameters")
 	POSITIVE (firstFrequency, U"Position of first filter (Hz)", U"100.0")
 	POSITIVE (deltaFrequency, U"Distance between filters (Hz)", U"50.0")
 	REAL (maximumFrequency, U"Maximum frequency", U"0.0");
 	POSITIVE (relativeBandwidth, U"Relative bandwidth", U"1.1")
-	LABEL (U"Pitch analysis")
-	REAL (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
-	REAL (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
+	COMMENT (U"Pitch analysis")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
 		autoFormantFilter result = Sound_to_FormantFilter (me, windowLength, timeStep, 
-			firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth, minimumPitch, maximumPitch
+			firstFrequency, maximumFrequency, deltaFrequency, relativeBandwidth, pitchFloor, pitchCeiling
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
@@ -5894,19 +5834,19 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Spectrogram_pitchDependent, U"Sound: To Spectrogram (pitch-dependent)", U"Sound: To Spectrogram (pitch-dependent)...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Filter bank parameters")
+	COMMENT (U"Filter bank parameters")
 	POSITIVE (firstFrequency, U"Position of first filter (Hz)", U"100.0")
 	POSITIVE (deltaFrequency, U"Distance between filters (Hz)", U"50.0")
 	REAL (maximumFrequency, U"Maximum frequency", U"0.0");
 	POSITIVE (relativeBandwidth, U"Relative bandwidth", U"1.1")
-	LABEL (U"Pitch analysis")
-	REAL (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
-	REAL (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
+	COMMENT (U"Pitch analysis")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
 		autoSpectrogram result = Sound_to_Spectrogram_pitchDependent (me, windowLength, timeStep, firstFrequency, 
-			maximumFrequency, deltaFrequency, relativeBandwidth, minimumPitch, maximumPitch
+			maximumFrequency, deltaFrequency, relativeBandwidth, pitchFloor, pitchCeiling
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
@@ -5915,7 +5855,7 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Sound_to_MelFilter, U"Sound: To MelFilter", U"Sound: To MelFilter...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Filter bank parameters")
+	COMMENT (U"Filter bank parameters")
 	POSITIVE (firstFrequency, U"Position of first filter (mel)", U"100.0")
 	POSITIVE (deltaFrequency, U"Distance between filters (mel)", U"100.0")
 	REAL (maximumFrequency, U"Maximum frequency (mel)", U"0.0");
@@ -5929,7 +5869,7 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Sound_to_MelSpectrogram, U"Sound: To MelSpectrogram", U"Sound: To MelSpectrogram...") {
 	POSITIVE (windowLength, U"Window length (s)", U"0.015")
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Filter bank parameters")
+	COMMENT (U"Filter bank parameters")
 	POSITIVE (firstFrequency, U"Position of first filter (mel)", U"100.0")
 	POSITIVE (deltaFrequency, U"Distance between filters (mel)", U"100.0")
 	REAL (maximumFrequency, U"Maximum frequency (mel)", U"0.0");
@@ -5954,20 +5894,20 @@ DO
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_shs, U"Sound: To Pitch (shs)", U"Sound: To Pitch (shs)...") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.01")
-	POSITIVE (pitchFloor, U"Minimum pitch (Hz)", U"50.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"50.0")
 	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates (Hz)", U"15")
-	LABEL (U"Algorithm parameters")
+	COMMENT (U"Algorithm parameters")
 	POSITIVE (maximumFrequency, U"Maximum frequency component (Hz)", U"1250.0")
 	NATURAL (maximumNumberOfSubharmonics, U"Max. number of subharmonics", U"15")
 	POSITIVE (compressionFactor, U"Compression factor (<=1)", U"0.84")
-	POSITIVE (pitchCeiling, U"Ceiling (Hz)", U"600.0")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	NATURAL (numberOfPointsPerOctave, U"Number of points per octave", U"48");
 	OK
 DO
 	Melder_require (pitchFloor < pitchCeiling,
-		U"The minimum pitch should be less than the ceiling.");
+		U"The pitch floor should be less than the pitch ceiling.");
 	Melder_require (pitchCeiling < maximumFrequency, 
-		U"The maximum frequency should be greater than or equal to the ceiling.");
+		U"The maximum frequency should be greater than or equal to the pitch ceiling.");
 	CONVERT_EACH_TO_ONE (Sound)
 		autoPitch result = Sound_to_Pitch_shs (me, timeStep, pitchFloor, maximumFrequency, pitchCeiling, 
 			maximumNumberOfSubharmonics, maximumNumberOfCandidates, compressionFactor, numberOfPointsPerOctave
@@ -6001,22 +5941,22 @@ DO
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_KlattGrid_simple, U"Sound: To KlattGrid (simple)", U"Sound: To KlattGrid (simple)...") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
-	LABEL (U"Formant determination")
+	COMMENT (U"Formant determination")
 	NATURAL (numberOfFormants, U"Max. number of formants", U"5")
 	POSITIVE (formantCeiling, U"Formant ceiling (Hz)", U"5500 (= adult female)")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
 	POSITIVE (preEmphasisFrequency, U"Pre-emphasis from (Hz)", U"50.0")
-	LABEL (U"Pitch determination")
+	COMMENT (U"Pitch determination")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"60.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
-	LABEL (U"Intensity determination")
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"100.0")
+	COMMENT (U"Intensity determination")
+	POSITIVE (pitchFloorForIntensity, U"Pitch floor for intensity (Hz)", U"100.0")
 	BOOLEAN (subtractMean, U"Subtract mean", true)
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
 		autoKlattGrid result = Sound_to_KlattGrid_simple (me, timeStep, numberOfFormants, formantCeiling, windowLength,
-			preEmphasisFrequency, pitchFloor, pitchCeiling, minimumPitch, subtractMean
+			preEmphasisFrequency, pitchFloor, pitchCeiling, pitchFloorForIntensity, subtractMean
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
@@ -6024,7 +5964,7 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_SPINET, U"Sound: To SPINET", U"Sound: To SPINET...") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.005")
 	POSITIVE (windowLength, U"Window length (s)", U"0.040")
-	LABEL (U"Gammatone filter bank")
+	COMMENT (U"Gammatone filter bank")
 	POSITIVE (minimumFrequency, U"Minimum filter frequency (Hz)", U"70.0")
 	POSITIVE (maximumFrequency, U"Maximum filter frequency (Hz)", U"5000.0")
 	NATURAL (numberOfFilters, U"Number of filters", U"250");
@@ -6038,16 +5978,6 @@ DO
 		autoPitch result = Sound_to_Pitch_SPINET (me, timeStep, windowLength, minimumFrequency, maximumFrequency,
 			numberOfFilters, pitchCeiling, maximumNumberOfCandidates
 		);
-	CONVERT_EACH_TO_ONE_END (my name.get())
-}
-
-FORM (CONVERT_EACH_TO_ONE__Sound_extractElectroglottogram, U"Sound: Extract Electroglottogram", U"Sound: Extract Electroglottogram...") {
-	NATURAL (channelNumber, U"Channel number", U"1")
-	BOOLEAN (invert, U"Invert", 0)
-	OK
-DO
-	CONVERT_EACH_TO_ONE (Sound)
-		autoElectroglottogram result = Sound_extractElectroglottogram (me, channelNumber, invert);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 	
@@ -6092,7 +6022,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_reduceNoise, U"Sound: Reduce noise", U"Sound: R
 	REAL (fromTime, U"left Noise time range (s)", U"0.0")
 	REAL (toTime, U"right Noise time range (s)", U"0.0")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
-	LABEL (U"Filter")
+	COMMENT (U"Filter")
 	REAL (fromFrequency, U"left Filter frequency range (Hz)", U"80.0")
 	REAL (toFrequency, U"right Filter frequency range (Hz)", U"10000.0")
 	POSITIVE (smoothingBandwidth, U"Smoothing bandwidth, (Hz)", U"40.0")
@@ -6110,7 +6040,7 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Sound_derivative, U"Sound: To Sound (derivative)", U"Sound: To Sound (derivative)...") {
 	POSITIVE (lowPassFrequency, U"Low-pass frequency (Hz)", U"5000.0")
 	POSITIVE (smoothing, U"Smoothing (Hz)", U"100.0")
-	REAL (newAbsolutePeak, U"New absolute peak", U"0 (=do not scale)")
+	REAL (newAbsolutePeak, U"New absolute peak", U"0 (= don't scale)")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
@@ -6122,7 +6052,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_removeNoise, U"Sound: Remove noise", U"Sound: R
 	REAL (fromTime, U"left Noise time range (s)", U"0.0")
 	REAL (toTime, U"right Noise time range (s)", U"0.0")
 	POSITIVE (windowLength, U"Window length (s)", U"0.025")
-	LABEL (U"Filter")
+	COMMENT (U"Filter")
 	REAL (fromFrequency, U"left Filter frequency range (Hz)", U"80.0")
 	REAL (toFrequency, U"right Filter frequency range (Hz)", U"10000.0")
 	POSITIVE (smoothingBandwidth, U"Smoothing bandwidth, (Hz)", U"40.0")
@@ -6137,10 +6067,10 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_changeSpeaker, U"Sound: Change speaker", U"Sound: Change speaker...") {
-	LABEL (U"Pitch measurement parameters")
+	COMMENT (U"Pitch measurement parameters")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
-	LABEL (U"Modification parameters")
+	COMMENT (U"Modification parameters")
 	POSITIVE (formantMultiplicationFactor, U"Multiply formants by", U"1.2")
 	POSITIVE (pitchMultiplicationFactor, U"Multiply pitch by", U"1.0")
 	REAL (pitchRangeMultiplicationFactor, U"Multiply pitch range by", U"1.0 (= no change)")
@@ -6157,10 +6087,10 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_changeGender, U"Sound: Change gender", U"Sound: Change gender...") {
-	LABEL (U"Pitch measurement parameters")
+	COMMENT (U"Pitch measurement parameters")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
-	LABEL (U"Modification parameters")
+	COMMENT (U"Modification parameters")
 	POSITIVE (formantShiftRatio, U"Formant shift ratio", U"1.2")
 	REAL (pitchMedian, U"New pitch median (Hz)", U"0.0 (= no change)")
 	REAL (pitchRangeMultiplicationFactor, U"Pitch range factor", U"1.0 (= no change)")
@@ -6237,15 +6167,34 @@ DO
 	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
-FORM (CONVERT_EACH_TO_ONE__Spectrogram_getLongtermSpectralFlatnessMeasure, U"Spectrogram_getLongtermSpectralFlatness", nullptr) {
-	POSITIVE (longtimeWindow, U"Long time window", U"0.2")
-	POSITIVE (shorttimeWindow, U"Short time window", U"0.04")
+FORM (GRAPHICS_EACH__Spectrogram_drawLongtermSpectralFlatness, U"Spectrogram: Draw long-term spectral flatness", U"") {
+//double tmin, double tmax, double minimumFlatness_db,
+//	double longtermWindow, double shorttermWindow, double fmin, double fmax, bool garnish
+	REAL (fromTime, U"left Time range (s)", U"0.0")
+	REAL (toTime, U"right Time range", U"0.0 (= all)")
+	REAL (minimumFlatness_db, U"Minimum flatness (dB)", U"-30.0")
+	POSITIVE (longtimeWindow, U"Long time window", U"0.3")
+	POSITIVE (shorttimeWindow, U"Short time window", U"0.1")
 	POSITIVE (fmin, U"left Frequency range_(Hz)", U"400.0")
 	POSITIVE (fmax, U"right Frequency range_(Hz)", U"4000.0")
+	BOOLEAN (garnish, U"Garnish", true)
+	OK
+DO
+	GRAPHICS_EACH (Spectrogram)
+		Spectrogram_drawLongTermFlatness (me, GRAPHICS, fromTime, toTime, minimumFlatness_db,
+			longtimeWindow, shorttimeWindow, fmin, fmax, garnish);
+	GRAPHICS_EACH_END
+}
+
+FORM (CONVERT_EACH_TO_ONE__Spectrogram_getLongtermSpectralFlatness, U"Spectrogram: Get long-term spectral flatness", nullptr) {
+	POSITIVE (longtimeWindow, U"Long time window", U"0.3")
+	POSITIVE (shorttimeWindow, U"Short time window", U"0.1")
+	POSITIVE (fmin, U"left Frequency range_(Hz)", U"400.0")
+	POSITIVE (fmax, U"right Frequency range_(Hz)", U"6000.0")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Spectrogram)
-		autoMatrix result = Spectrogram_getLongtermSpectralFlatnessMeasure (me, longtimeWindow, shorttimeWindow, fmin, fmax);
+		autoMatrix result = Spectrogram_getLongtermSpectralFlatness (me, longtimeWindow, shorttimeWindow, fmin, fmax);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 /**************** Spectrum *******************************************/
@@ -6469,17 +6418,26 @@ DIRECT (QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemeSetName) {
 	QUERY_ONE_FOR_STRING_END
 }
 
-FORM (QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemesFromText, U"SpeechSynthesizer: Get phonemes from text", nullptr) {
+FORM (QUERY_ONE_FOR_AUTOSTRING__SpeechSynthesizer_getPhonemesFromText, U"SpeechSynthesizer: Get phonemes from text", nullptr) {
 	TEXTFIELD (text, U"Text", U"This is some text.", 10)
 	OK
 DO
-	QUERY_ONE_FOR_STRING (SpeechSynthesizer)
-		conststring32 result = SpeechSynthesizer_getPhonemesFromText (me, text);
-	QUERY_ONE_FOR_STRING_END
+	QUERY_ONE_FOR_AUTOSTRING (SpeechSynthesizer)
+		autostring32 result = SpeechSynthesizer_getPhonemesFromText (me, text, false);
+	QUERY_ONE_FOR_AUTOSTRING_END
+}
+
+FORM (QUERY_ONE_FOR_AUTOSTRING__SpeechSynthesizer_getPhonemesFromTextSpaceSeparated, U"SpeechSynthesizer: Get phonemes from text", nullptr) {
+	TEXTFIELD (text, U"Text", U"This is some text.", 10)
+	OK
+DO
+	QUERY_ONE_FOR_AUTOSTRING (SpeechSynthesizer)
+		autostring32 result = SpeechSynthesizer_getPhonemesFromText (me, text, true);
+	QUERY_ONE_FOR_AUTOSTRING_END
 }
 
 FORM (MODIFY_EACH__SpeechSynthesizer_setTextInputSettings, U"SpeechSynthesizer: Set text input settings", U"SpeechSynthesizer: Set text input settings...") {
-	OPTIONMENU (inputTextFormat, U"Input text format is", 1)
+	OPTIONMENU (inputTextFormat, U"Input text format is", 3)
 		OPTION (U"text only")
 		OPTION (U"phoneme codes only")
 		OPTION (U"mixed with tags")
@@ -6505,22 +6463,22 @@ DO
 FORM (MODIFY_EACH__SpeechSynthesizer_speechOutputSettings, U"SpeechSynthesizer: Speech output settings", U"SpeechSynthesizer: Speech output settings...") {
 	POSITIVE (samplingFrequency, U"Sampling frequency (Hz)", U"44100.0")
 	REAL (wordGap, U"Gap between words (s)", U"0.01")
-	POSITIVE (pitchAdjustment, U"Pitch multiplier (0.5-2.0)", U"1.0")
-	REAL (pitchRange, U"Pitch range multiplier (0-2.0)", U"1.0");
+	POSITIVE (pitchMultiplier, U"Pitch multiplier (0.5-2.0)", U"1.0")
+	REAL (pitchRangeMultiplier, U"Pitch range multiplier (0-2.0)", U"1.0");
 	POSITIVE (wordsPerMinute, U"Words per minute (80-450)", U"175.0");
 	OPTIONMENU (outputPhonemeCodes, U"Output phoneme codes are", 2)
 		OPTION (U"Kirshenbaum_espeak")
 		OPTION (U"IPA")
 	OK
 DO
-	if (wordGap < 0.0) wordGap = 0.0;
-	Melder_require (pitchAdjustment >= 0.5 && pitchAdjustment <= 2.0,
-		U"The pitch adjustment should be between 0.5 and 2.0.");
-	Melder_require (pitchRange >= 0.0 && pitchRange <= 2.0,
+	Melder_clipLeft (0.0, & wordGap);
+	Melder_require (pitchMultiplier >= 0.5 && pitchMultiplier <= 2.0,
+		U"The pitch multiplier should be between 0.5 and 2.0.");
+	Melder_require (pitchRangeMultiplier >= 0.0 && pitchRangeMultiplier <= 2.0,
 		U"The pitch range multiplier should be between 0.0 and 2.0.");
 	MODIFY_EACH (SpeechSynthesizer)
 		SpeechSynthesizer_setSpeechOutputSettings (
-			me, samplingFrequency, wordGap, pitchAdjustment, pitchRange, wordsPerMinute, outputPhonemeCodes
+			me, samplingFrequency, wordGap, pitchMultiplier, pitchRangeMultiplier, wordsPerMinute, outputPhonemeCodes
 		);
 	MODIFY_EACH_END
 }
@@ -6627,7 +6585,7 @@ DIRECT (QUERY_ONE_FOR_INTEGER__Spline_getOrder) {
 }
 
 FORM (CONVERT_EACH_TO_ONE__Spline_scaleX, U"Spline: Scale x", U"Spline: Scale x...") {
-	LABEL (U"New domain")
+	COMMENT (U"New domain")
 	REAL (xmin, U"Xmin", U"-1.0")
 	REAL (xmax, U"Xmax", U"1.0")
 	OK
@@ -6759,7 +6717,7 @@ DO
 	QUERY_ONE_FOR_REAL (SSCP)
 		double chisq, result, ndof;
 		SSCP_getDiagonality_bartlett (me, numberOfConstraints, & chisq, & result, & ndof);
-	QUERY_ONE_FOR_REAL_END (U" (= probability for chisq = ", chisq, U" and ndf = ", ndof, U")")
+	QUERY_ONE_FOR_REAL_END (U" (probability for chisq = ", chisq, U" and ndf = ", ndof, U")")
 }
 
 DIRECT (CONVERT_EACH_TO_ONE__SSCP_to_Correlation) {
@@ -6917,19 +6875,19 @@ DIRECT (QUERY_ONE_FOR_INTEGER__SVD_getNumberOfRows) {
 DIRECT (QUERY_ONE_FOR_INTEGER__SVD_getNumberOfColumns) {
 	QUERY_ONE_FOR_INTEGER (SVD)
 		const integer result = ( my isTransposed ? my numberOfRows : my numberOfColumns );
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of columns)")	
+	QUERY_ONE_FOR_INTEGER_END (U" (number of columns)")
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__SVD_getRank) {
 	QUERY_ONE_FOR_REAL (SVD)
 		const double result = SVD_getRank (me);
-	QUERY_ONE_FOR_REAL_END (U" (= rank)")
+	QUERY_ONE_FOR_REAL_END (U" (rank)")
 }
 
 DIRECT (QUERY_ONE_FOR_REAL__SVD_getConditionNumber) {
 	QUERY_ONE_FOR_REAL (SVD)
 		const double result = SVD_getConditionNumber (me);
-	QUERY_ONE_FOR_REAL_END (U" (= condition number)")
+	QUERY_ONE_FOR_REAL_END (U" (condition number)")
 }
 
 FORM (QUERY_ONE_FOR_REAL__SVD_getSingularValue, U"SVD: Get singular values", nullptr) {
@@ -6940,12 +6898,12 @@ DO
 		Melder_require (index <= my numberOfColumns, 
 			U"Index must be in the range [1,", my numberOfColumns, U"].");
 		const double result = my d [index];
-	QUERY_ONE_FOR_REAL_END (U" (= singular value [", index, U"])")
+	QUERY_ONE_FOR_REAL_END (U" (singular value ", index, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__SVD_getSumOfSingularValues, U"SVD: Get sum of singular values", nullptr) {
 	NATURAL (from, U"From", U"1")
-	INTEGER (to, U"To", U"0 (=last)")
+	INTEGER (to, U"To", U"0 (= last)")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (SVD)
@@ -6955,12 +6913,12 @@ DO
 
 FORM (QUERY_ONE_FOR_REAL__SVD_getSumOfSingularValuesAsFractionOfTotal, U"SVD: Get sum of singular values as fraction of total", nullptr) {
 	NATURAL (from, U"From", U"1")
-	INTEGER (to, U"To", U"0 (=last)")
+	INTEGER (to, U"To", U"0 (= last)")
 	OK
 DO
 	QUERY_ONE_FOR_REAL (SVD)
 		const double result = SVD_getSumOfSingularValuesAsFractionOfTotal (me, from, to);
-	QUERY_ONE_FOR_REAL_END (U" (= fraction of total sum of singular values)")
+	QUERY_ONE_FOR_REAL_END (U" (fraction of total sum of singular values)")
 }
 
 FORM (QUERY_ONE_FOR_INTEGER__SVD_getMinimumNumberOfSingularValues, U"SVD: Get minimum number of singular values", U"SVD: Get minimum number of singular values...") {
@@ -6971,7 +6929,7 @@ DO
 		U"Fraction must be a number in (0,1).");
 	QUERY_ONE_FOR_INTEGER (SVD)
 		const integer result = SVD_getMinimumNumberOfSingularValues (me, fraction);
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of singular values needed)")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of singular values needed)")
 }
 
 FORM (QUERY_ONE_FOR_REAL__SVD_getShrinkageParameter, U"SVD: Get shrinkage parameter", nullptr) {
@@ -6980,7 +6938,7 @@ FORM (QUERY_ONE_FOR_REAL__SVD_getShrinkageParameter, U"SVD: Get shrinkage parame
 DO
 	QUERY_ONE_FOR_REAL (SVD)
 		const double result = SVD_getShrinkageParameter (me, edf);
-	QUERY_ONE_FOR_REAL_END (U" (= shrinkage parameter for ridge regression with ", edf, U" effective degrees of freedom)")
+	QUERY_ONE_FOR_REAL_END (U" (shrinkage parameter for ridge regression with ", edf, U" effective degrees of freedom)")
 }
 
 FORM (QUERY_ONE_FOR_REAL__SVD_getEffectiveDegreesOfFreedom, U"SVD: Get effective degrees of freedom", nullptr) {
@@ -6989,7 +6947,7 @@ FORM (QUERY_ONE_FOR_REAL__SVD_getEffectiveDegreesOfFreedom, U"SVD: Get effective
 DO
 	QUERY_ONE_FOR_REAL (SVD)
 		const double result = SVD_getEffectiveDegreesOfFreedom (me, lambda);
-	QUERY_ONE_FOR_REAL_END (U" (= effective degrees of freedom for ridge regression with ", lambda, U" shrinkage factor)")
+	QUERY_ONE_FOR_REAL_END (U" (effective degrees of freedom for ridge regression with ", lambda, U" shrinkage factor)")
 }
 
 FORM (CONVERT_EACH_TO_ONE__SVD_to_Matrix, U"SVD: To Matrix", U"SVD: To Matrix...") {
@@ -7056,196 +7014,272 @@ DIRECT (CREATE_ONE__Table_create_weenink1983) {
 	CREATE_ONE_END (U"m10w10c10")
 }
 
+// deprecated 2023
 FORM (GRAPHICS_EACH__Table_scatterPlotWhere, U"Table: Scatter plot where", nullptr) {
-	WORD (xColumn_string, U"Horizontal column", U"")
+	WORD (xColumnName, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
-	WORD (yColumn_string, U"Vertical column", U"")
+	WORD (yColumnName, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
-	WORD (markColumn_string, U"Column with marks", U"")
+	WORD (markColumnName, U"Column with marks", U"")
 	POSITIVE (fontSize, U"Font size", U"12")
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"Use data only from rows where the following condition holds.")
+	COMMENT (U"Use data only from rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer markColumn = Table_getColumnIndexFromColumnLabel (me, markColumn_string);
+		const integer xColumnNumber    = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber    = Table_columnNameToNumber_e (me, yColumnName);
+		const integer markColumnNumber = Table_columnNameToNumber_e (me, markColumnName);
 		autoTable part = Table_extractRowsWhere (me, condition, interpreter);
-		Table_scatterPlot (part.get(), GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, markColumn, fontSize, garnish);
+		Table_scatterPlot (part.get(), GRAPHICS, xColumnNumber, yColumnNumber,
+				xmin, xmax, ymin, ymax, markColumnNumber, fontSize, garnish);
 	GRAPHICS_EACH_END
 }
 
+// deprecated 2023
 FORM (GRAPHICS_EACH__Table_scatterPlotMarkWhere, U"Scatter plot where (marks)", nullptr) {
-	WORD (xColumn_string, U"Horizontal column", U"")
+	WORD (xColumnName, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
-	WORD (yColumn_string, U"Vertical column", U"")
+	WORD (yColumnName, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
 	POSITIVE (markSize_mm, U"Mark size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true)
 	SENTENCE (mark_string, U"Mark string (+xo.)", U"+")
-	LABEL (U"Use data only from rows where the following condition holds.")
+	COMMENT (U"Use data only from rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		autoTable part = Table_extractRowsWhere (me, condition, interpreter);
-		Table_scatterPlot_mark (part.get(), GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, markSize_mm, mark_string, garnish);
+		const integer xColumnNumber = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		autoTable part = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_scatterPlot_mark (part.get(), GRAPHICS, xColumnNumber, yColumnNumber,
+				xmin, xmax, ymin, ymax, markSize_mm, mark_string, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_EACH__Table_barPlotWhere, U"Table: Bar plot where", U"Table: Bar plot where...") {
-	SENTENCE (yColumns_string, U"Vertical column(s)", U"")
+FORM (GRAPHICS_EACH__Table_barPlotWhere, U"Table: Bar plot where", U"Table: Bar plot...") { // deprecated 2023
+	STRINGARRAY_LINES (2, columnNames, U"Vertical column(s)", { U"speaker", U"age" })
+	///SENTENCE (yColumns_string, U"Vertical column(s)", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
-	SENTENCE (markColumn_string, U"Column with labels", U"")
-	LABEL (U"Distances are in units of 'bar width'")
+	SENTENCE (labelColumnName, U"Column with labels", U"")
+	COMMENT (U"Distances are in units of 'bar width'")
 	REAL (distanceFromBorder, U"Distance of first bar from border", U"1.0")
 	REAL (distanceBetweenGroups, U"Distance between bar groups", U"1.0")
 	REAL (distanceWithinGroup, U"Distance between bars within group", U"0.0")
-	SENTENCE (colours, U"Colours", U"Grey")
+	STRINGARRAY_LINES (2, colours, U"Colours", { U"Grey", U"Black" })
 	REAL (angle, U"Label text angle (degrees)", U"0.0");
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"Use data only from rows where the following condition holds.")
+	COMMENT (U"Use data only from rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"row >= 1 and row <= 8")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		Table_barPlotWhere (me, GRAPHICS, yColumns_string, ymin, ymax, markColumn_string, distanceFromBorder, 
-			distanceWithinGroup, distanceBetweenGroups, colours, angle, garnish, condition, interpreter
-		);
+		autoINTVEC columnNumbers = Table_columnNamesToNumbers (me, columnNames);
+		const integer labelColumnNumber = Table_columnNameToNumber_0 (me, labelColumnName); // can be empty
+		autoTable part = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_barPlot (part.get(), GRAPHICS, columnNumbers.get(), ymin, ymax, labelColumnNumber, distanceFromBorder,
+				distanceWithinGroup, distanceBetweenGroups, colours, angle, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_EACH__Table_LineGraphWhere, U"Table: Line graph where", U"Table: Line graph where...") {
-	SENTENCE (yColumn_string, U"Vertical column", U"")
+FORM (GRAPHICS_EACH__Table_barPlot, U"Table: Bar plot", U"Table: Bar plot...") {
+	STRINGARRAY_LINES (2, columnNames, U"Vertical column(s)", { U"speaker", U"age" })
+	///SENTENCE (yColumns_string, U"Vertical column(s)", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
-	SENTENCE (xColumn_string, U"Horizontal column (optional)", U"")
+	SENTENCE (labelColumnName, U"Column with labels", U"")
+	COMMENT (U"Distances are in units of 'bar width'")
+	REAL (distanceFromBorder, U"Distance of first bar from border", U"1.0")
+	REAL (distanceBetweenGroups, U"Distance between bar groups", U"1.0")
+	REAL (distanceWithinGroup, U"Distance between bars within group", U"0.0")
+	STRINGARRAY_LINES (2, colours, U"Colours", { U"Grey", U"Black" })
+	REAL (angle, U"Label text angle (degrees)", U"0.0");
+	BOOLEAN (garnish, U"Garnish", true)
+	OK
+DO
+	GRAPHICS_EACH (Table)
+		autoINTVEC columnNumbers = Table_columnNamesToNumbers (me, columnNames);
+		const integer labelColumnNumber = Table_columnNameToNumber_0 (me, labelColumnName); // can be empty
+		Table_barPlot (me, GRAPHICS, columnNumbers.get(), ymin, ymax, labelColumnNumber, distanceFromBorder,
+				distanceWithinGroup, distanceBetweenGroups, colours, angle, garnish);
+	GRAPHICS_EACH_END
+}
+
+FORM (GRAPHICS_EACH__Table_LineGraphWhere, U"Table: Line graph where", U"Table: Line graph...") {
+	SENTENCE (yColumnName, U"Vertical column", U"")
+	REAL (ymin, U"left Vertical range", U"0.0")
+	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
+	SENTENCE (xColumnName, U"Horizontal column (optional)", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
 	WORD (text, U"Text", U"+")
 	REAL (angle, U"Label text angle (degrees)", U"0.0");
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"Use data only from rows where the following condition holds.")
+	COMMENT (U"Use data only from rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; (= everything)")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer xcolumn = str32equ (xColumn_string, U"") ? 0 : Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		Table_lineGraphWhere (me, GRAPHICS, xcolumn, xmin, xmax, ycolumn, ymin, ymax, text, angle, garnish, condition, interpreter);
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		const integer xColumnNumber = str32equ (xColumnName, U"") ? 0 : Table_columnNameToNumber_e (me, xColumnName);
+		autoTable part = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_lineGraph_old (part.get(), GRAPHICS, xColumnNumber, xmin, xmax, yColumnNumber, ymin, ymax, text,
+				angle, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_EACH__Table_boxPlots, U"Table: Box plots", nullptr) {
-	SENTENCE (dataColumns_string, U"Data columns", U"F1 F2")
-	WORD (factorColumn_string, U"Factor column", U"Sex")
+FORM (GRAPHICS_EACH__Table_LineGraph_old, U"Table: Line graph", U"Table: Line graph...") {
+	SENTENCE (yColumnName, U"Vertical column", U"")
+	REAL (ymin, U"left Vertical range", U"0.0")
+	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
+	SENTENCE (xColumnName, U"Horizontal column (optional)", U"")
+	REAL (xmin, U"left Horizontal range", U"0.0")
+	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
+	WORD (text, U"Text", U"+")
+	REAL (angle, U"Label text angle (degrees)", U"0.0");
+	BOOLEAN (garnish, U"Garnish", true)
+	OK
+DO
+	GRAPHICS_EACH (Table)
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		const integer xColumnNumber = str32equ (xColumnName, U"") ? 0 : Table_columnNameToNumber_e (me, xColumnName);
+		Table_lineGraph_old (me, GRAPHICS, xColumnNumber, xmin, xmax, yColumnNumber, ymin, ymax, text,
+				angle, garnish);
+	GRAPHICS_EACH_END
+}
+
+FORM (GRAPHICS_EACH__Table_LineGraph, U"Table: Line graph", U"Table: Line graph...") {
+	SENTENCE (yColumnName, U"Vertical column", U"")
+	REAL (ymin, U"left Vertical range", U"0.0")
+	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
+	SENTENCE (xColumnName, U"Horizontal column (optional)", U"")
+	REAL (xmin, U"left Horizontal range", U"0.0")
+	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
+	WORD (text, U"Text", U"+")
+	REAL (textFontSize, U"Text font size", U"12")
+	REAL (angle, U"Label text angle (degrees)", U"0.0");
+	BOOLEAN (garnish, U"Garnish", true)
+	OK
+DO_ALTERNATIVE (GRAPHICS_EACH__Table_LineGraph_old)
+	GRAPHICS_EACH (Table)
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		const integer xColumnNumber = str32equ (xColumnName, U"") ? 0 : Table_columnNameToNumber_e (me, xColumnName);
+		Table_lineGraph (me, GRAPHICS, xColumnNumber, xmin, xmax, yColumnNumber, ymin, ymax, text,
+				textFontSize, angle, garnish);
+	GRAPHICS_EACH_END
+}
+
+FORM (GRAPHICS_EACH__Table_boxPlots, U"Table: Box plots", U"Table: Box plots...") {
+	STRINGARRAY_LINES (2, dataColumnNames, U"Data columns", { U"F1", U"F2" })
+	WORD (factorColumnName, U"Factor column", U"Sex")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_boxPlotsWhere (me, GRAPHICS, dataColumns_string, factorColumn, ymin, ymax, garnish, U"1", interpreter);
+		const integer factorColumnNumber = Table_columnNameToNumber_e (me, factorColumnName);
+		autoINTVEC dataColumnNumbers = Table_columnNamesToNumbers (me, dataColumnNames);
+		Table_boxPlots (me, GRAPHICS, dataColumnNumbers.get(), factorColumnNumber, ymin, ymax, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_EACH__Table_boxPlotsWhere, U"Table: Box plots where", U"Table: Box plots where...") {
-	SENTENCE (dataColumns_string, U"Data columns", U"F1 F2")
-	WORD (factorColumn_string, U"Factor column", U"")
+FORM (GRAPHICS_EACH__Table_boxPlotsWhere, U"Table: Box plots where", U"Table: Box plots...") { // deprecated 2023
+	STRINGARRAY_LINES (2, dataColumnNames, U"Data columns", { U"F1", U"F2" })
+	WORD (factorColumnName, U"Factor column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true);
-	LABEL (U"Use data only in rows where the following condition holds.")
+	COMMENT (U"Use data only in rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_boxPlotsWhere (me, GRAPHICS, dataColumns_string, factorColumn, ymin, ymax, garnish, condition, interpreter);
+		const integer factorColumnNumber = Table_columnNameToNumber_e (me, factorColumnName);
+		autoINTVEC dataColumnNumbers = Table_columnNamesToNumbers (me, dataColumnNames);
+		autoTable part = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_boxPlots (part.get(), GRAPHICS, dataColumnNumbers.get(), factorColumnNumber, ymin, ymax, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_EACH__Table_drawEllipseWhere, U"Draw ellipse (standard deviation)", nullptr) {
-	SENTENCE (xColumn_string, U"Horizontal column", U"")
+FORM (GRAPHICS_EACH__Table_drawEllipseWhere, U"Draw ellipse (standard deviation)", nullptr) { // deprecated 2023
+	SENTENCE (xColumnName, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
-	SENTENCE (yColumn_string, U"Vertical column", U"")
+	SENTENCE (yColumnName, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"2.0")
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"Use data only in rows where the following condition holds.")
+	COMMENT (U"Use data only in rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		autoTable thee = Table_extractRowsWhere (me, condition, interpreter);
-		Table_drawEllipse_e (thee.get(), GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, numberOfSigmas, garnish);
+		const integer xColumnNumber = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		autoTable thee = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_drawEllipse_e (thee.get(), GRAPHICS, xColumnNumber, yColumnNumber,
+				xmin, xmax, ymin, ymax, numberOfSigmas, garnish);
 	GRAPHICS_EACH_END
 }
 
 FORM (GRAPHICS_EACH__Table_drawEllipses, U"Table: Draw ellipses", nullptr) {
-	SENTENCE (xColumn_string, U"Horizontal column", U"F2")
+	SENTENCE (xColumnName, U"Horizontal column", U"F2")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
-	SENTENCE (yColumn_string, U"Vertical column", U"F1")
+	SENTENCE (yColumnName, U"Vertical column", U"F1")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
-	SENTENCE (factorColumn_string, U"Factor column", U"Vowel")
+	SENTENCE (factorColumnName, U"Factor column", U"Vowel")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (fontSize, U"Label font size", U"12.0 ; (0 = no label)")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer factorcolumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_drawEllipsesWhere (me, GRAPHICS, xcolumn, ycolumn, factorcolumn, xmin, xmax, 
-			ymin, ymax, numberOfSigmas, fontSize, garnish, U"1", interpreter
-		);
+		const integer xColumnNumber      = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber      = Table_columnNameToNumber_e (me, yColumnName);
+		const integer factorColumnNumber = Table_columnNameToNumber_e (me, factorColumnName);
+		Table_drawEllipses (me, GRAPHICS, xColumnNumber, yColumnNumber, factorColumnNumber,
+				xmin, xmax, ymin, ymax, numberOfSigmas, fontSize, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_EACH__Table_drawEllipsesWhere, U"Table: Draw ellipses where", nullptr) {
-	SENTENCE (xColumn_string, U"Horizontal column", U"F2")
+FORM (GRAPHICS_EACH__Table_drawEllipsesWhere, U"Table: Draw ellipses where", nullptr) { // deprecated 2023
+	SENTENCE (xColumnName, U"Horizontal column", U"F2")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0 (= auto)")
-	SENTENCE (yColumn_string, U"Vertical column", U"F1")
+	SENTENCE (yColumnName, U"Vertical column", U"F1")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0 (= auto)")
-	SENTENCE (factorColumn_string, U"Factor column", U"Vowel")
+	SENTENCE (factorColumnName, U"Factor column", U"Vowel")
 	POSITIVE (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (fontSize, U"Label font size", U"12.0 ; (0 = no label)")
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"Use data only in rows where the following condition holds.")
+	COMMENT (U"Use data only in rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer factorcolumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_drawEllipsesWhere (me, GRAPHICS, xcolumn, ycolumn, factorcolumn, xmin,  xmax, 
-			ymin, ymax, numberOfSigmas, fontSize, garnish, condition, interpreter
-		);
+		const integer xColumnNumber      = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber      = Table_columnNameToNumber_e (me, yColumnName);
+		const integer factorColumnNumber = Table_columnNameToNumber_e (me, factorColumnName);
+		Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_drawEllipses (me, GRAPHICS, xColumnNumber, yColumnNumber, factorColumnNumber,
+			xmin, xmax, ymin, ymax, numberOfSigmas, fontSize, garnish);
 	GRAPHICS_EACH_END
 }
 
 FORM (GRAPHICS_EACH__Table_normalProbabilityPlot, U"Table: Normal probability plot", U"Table: Normal probability plot...") {
-	SENTENCE (column_string, U"Column", U"F1")
+	SENTENCE (columnName, U"Column", U"F1")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (numberOfSigmas, U"Number of sigmas", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
@@ -7254,32 +7288,33 @@ FORM (GRAPHICS_EACH__Table_normalProbabilityPlot, U"Table: Normal probability pl
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer column = Table_getColumnIndexFromColumnLabel (me, column_string);
-		Table_normalProbabilityPlot (me, GRAPHICS, column, numberOfQuantiles, numberOfSigmas, labelSize, label, garnish);
+		const integer columnNumber = Table_columnNameToNumber_e (me, columnName);
+		Table_normalProbabilityPlot (me, GRAPHICS, columnNumber, numberOfQuantiles, numberOfSigmas, labelSize, label, garnish);
 	GRAPHICS_EACH_END
 }
 
+// deprecated 2023
 FORM (GRAPHICS_EACH__Table_normalProbabilityPlotWhere, U"Table: Normal probability plot where", U"Table: Normal probability plot...") {
-	SENTENCE (column_string, U"Column", U"F0")
+	SENTENCE (columnName, U"Column", U"F0")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (numberOfSigmas, U"Number of sigmas", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
 	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
-	LABEL (U"Use data only in rows where the following condition holds.")
+	COMMENT (U"Use data only in rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer column = Table_getColumnIndexFromColumnLabel (me, column_string);
+		const integer columnNumber = Table_columnNameToNumber_e (me, columnName);
 		const autoTable thee = Table_extractRowsWhere (me, condition, interpreter);
-		Table_normalProbabilityPlot (thee.get(), GRAPHICS, column, numberOfQuantiles, numberOfSigmas, labelSize, label, garnish);
+		Table_normalProbabilityPlot (thee.get(), GRAPHICS, columnNumber, numberOfQuantiles, numberOfSigmas, labelSize, label, garnish);
 	GRAPHICS_EACH_END
 }
 
 FORM (GRAPHICS_EACH__Table_quantileQuantilePlot, U"Table: Quantile-quantile plot", U"Table: Quantile-quantile plot...") {
-	SENTENCE (xColumn_string, U"Horizontal axis column", U"")
-	SENTENCE (yColumn_string, U"Vertical axis column", U"")
+	SENTENCE (xColumnName, U"Horizontal axis column", U"")
+	SENTENCE (yColumnName, U"Vertical axis column", U"")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
@@ -7291,17 +7326,16 @@ FORM (GRAPHICS_EACH__Table_quantileQuantilePlot, U"Table: Quantile-quantile plot
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		Table_quantileQuantilePlot (me, GRAPHICS, xcolumn, ycolumn, numberOfQuantiles, xmin, xmax, 
-			ymin, ymax, labelSize, label, garnish
-		);
+		const integer xColumnNumber = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		Table_quantileQuantilePlot (me, GRAPHICS, xColumnNumber, yColumnNumber,
+				numberOfQuantiles, xmin, xmax, ymin, ymax, labelSize, label, garnish);
 	GRAPHICS_EACH_END
 }
 
 FORM (GRAPHICS_EACH__Table_quantileQuantilePlot_betweenLevels, U"Table: Quantile-quantile plot (between levels)", U"Table: Quantile-quantile plot...") {
-	SENTENCE (dataColumn_string, U"Data column", U"F0")
-	SENTENCE (factorColumn_string, U"Factor column", U"Sex")
+	SENTENCE (dataColumnName, U"Data column", U"F0")
+	SENTENCE (factorColumnName, U"Factor column", U"Sex")
 	SENTENCE (xLevel_string, U"Horizontal factor level", U"")
 	SENTENCE (yLevelString, U"Vertical factor level", U"")
 	NATURAL (numberOfQuantiles, U"Number of quantiles", U"100")
@@ -7315,16 +7349,15 @@ FORM (GRAPHICS_EACH__Table_quantileQuantilePlot_betweenLevels, U"Table: Quantile
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		const integer factorColumn = Table_getColumnIndexFromColumnLabel (me, factorColumn_string);
-		Table_quantileQuantilePlot_betweenLevels (me, GRAPHICS, dataColumn, factorColumn, xLevel_string, yLevelString,
-			numberOfQuantiles, xmin, xmax, ymin, ymax, labelSize, label, garnish
-		);
+		const integer dataColumnNumber = Table_columnNameToNumber_e (me, dataColumnName);
+		const integer factorColumnNumber = Table_columnNameToNumber_e (me, factorColumnName);
+		Table_quantileQuantilePlot_betweenLevels (me, GRAPHICS, dataColumnNumber, factorColumnNumber, xLevel_string, yLevelString,
+				numberOfQuantiles, xmin, xmax, ymin, ymax, labelSize, label, garnish);
 	GRAPHICS_EACH_END
 }
 
 FORM (GRAPHICS_EACH__Table_lagPlot, U"Table: lag plot", nullptr) {
-	SENTENCE (dataColumn_string, U"Data column", U"errors")
+	SENTENCE (dataColumnName, U"Data column", U"errors")
 	NATURAL (lag, U"Lag", U"1")
 	REAL (fromXY, U"left Horizontal and vertical range", U"0.0")
 	REAL (toXY, U"right Horizontal and vertical range", U"0.0")
@@ -7334,35 +7367,36 @@ FORM (GRAPHICS_EACH__Table_lagPlot, U"Table: lag plot", nullptr) {
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		Table_lagPlotWhere (me, GRAPHICS, dataColumn, lag, fromXY, toXY, label, labelSize, garnish, U"1", interpreter);
+		const integer dataColumnNumber = Table_columnNameToNumber_e (me, dataColumnName);
+		Table_lagPlot (me, GRAPHICS, dataColumnNumber, lag, fromXY, toXY, label, labelSize, garnish);
 	GRAPHICS_EACH_END
 }
 
-
+// deprecated 2023
 FORM (GRAPHICS_EACH__Table_lagPlotWhere, U"Table: lag plot where", nullptr) {
-	SENTENCE (dataColumn_string, U"Data column", U"errors")
+	SENTENCE (dataColumnName, U"Data column", U"errors")
 	NATURAL (lag, U"Lag", U"1")
 	REAL (fromXY, U"left Horizontal and vertical range", U"0.0")
 	REAL (toXY, U"right Horizontal and vertical range", U"0.0")
 	NATURAL (labelSize, U"Label size", U"12")
 	SENTENCE (label, U"Label", U"+")
 	BOOLEAN (garnish, U"Garnish", true);
-	LABEL (U"Use data only in rows where the following condition holds.")
+	COMMENT (U"Use data only in rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		Table_lagPlotWhere (me, GRAPHICS, dataColumn, lag, fromXY, toXY, label, labelSize, garnish, condition, interpreter);
+		const integer dataColumnNumber = Table_columnNameToNumber_e (me, dataColumnName);
+		autoTable thee = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_lagPlot (me, GRAPHICS, dataColumnNumber, lag, fromXY, toXY, label, labelSize, garnish);
 	GRAPHICS_EACH_END
 }
 
 FORM (GRAPHICS_EACH__Table_distributionPlot, U"Table: Distribution plot", nullptr) {
-	SENTENCE (dataColumn_string, U"Data column", U"data")
+	SENTENCE (dataColumnName, U"Data column", U"data")
 	REAL (minimumValue, U"Minimum value", U"0.0")
 	REAL (maximumValue, U"Maximum value", U"0.0")
-	LABEL (U"Display of the distribution")
+	COMMENT (U"Display of the distribution")
 	NATURAL (numberOfBins, U"Number of bins", U"10")
 	REAL (minimumFrequency, U"Minimum frequency", U"0.0")
 	REAL (maximumFrequency, U"Maximum frequency", U"0.0")
@@ -7370,136 +7404,138 @@ FORM (GRAPHICS_EACH__Table_distributionPlot, U"Table: Distribution plot", nullpt
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		Table_distributionPlotWhere (me, GRAPHICS, dataColumn, minimumValue, maximumValue, 
-			numberOfBins, minimumFrequency, maximumFrequency, garnish, U"1", interpreter
+		const integer dataColumnNumber = Table_columnNameToNumber_e (me, dataColumnName);
+		Table_distributionPlot (me, GRAPHICS, dataColumnNumber, minimumValue, maximumValue, 
+			numberOfBins, minimumFrequency, maximumFrequency, garnish
 		);
 	GRAPHICS_EACH_END
 }
 
+// deprecated 2023
 FORM (GRAPHICS_EACH__Table_distributionPlotWhere, U"Table: Distribution plot where", nullptr) {
-	SENTENCE (dataColumn_string, U"Data column", U"data")
+	SENTENCE (dataColumnName, U"Data column", U"data")
 	REAL (minimumValue, U"Minimum value", U"0.0")
 	REAL (maximumValue, U"Maximum value", U"0.0")
-	LABEL (U"Display of the distribution")
+	COMMENT (U"Display of the distribution")
 	NATURAL (numberOfBins, U"Number of bins", U"10")
 	REAL (minimumFrequency, U"Minimum frequency", U"0.0")
 	REAL (maximumFrequency, U"Maximum frequency", U"0.0")
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"Use data only in rows where the following condition holds.")
+	COMMENT (U"Use data only in rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer dataColumn = Table_getColumnIndexFromColumnLabel (me, dataColumn_string);
-		Table_distributionPlotWhere (me, GRAPHICS, dataColumn, minimumValue, maximumValue, numberOfBins, 
-			minimumFrequency, maximumFrequency, garnish, condition, interpreter
+		const integer dataColumnNumber = Table_columnNameToNumber_e (me, dataColumnName);
+		autoTable thee = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_distributionPlot (thee.get(), GRAPHICS, dataColumnNumber, minimumValue, maximumValue, numberOfBins, 
+			minimumFrequency, maximumFrequency, garnish
 		);
 	GRAPHICS_EACH_END
 }
 
 FORM (GRAPHICS_EACH__Table_horizontalErrorBarsPlot, U"Table: Horizontal error bars plot", U"Table: Horizontal error bars plot...") {
-	SENTENCE (xColumn_string, U"Horizontal column", U"x")
+	SENTENCE (xColumnName, U"Horizontal column", U"x")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
-	SENTENCE (yColumn_string, U"Vertical column", U"y")
+	SENTENCE (yColumnName, U"Vertical column", U"y")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	SENTENCE (lowerErrorColumn_string, U"Lower error value column", U"error1")
-	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
+	SENTENCE (lowerErrorColumnName, U"Lower error value column", U"error1")
+	SENTENCE (upperErrorColumnName, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer xl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
-		const integer xu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
-		Table_horizontalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax,
-			xl, xu, barSize_mm, garnish, U"1", interpreter
-		);
+		const integer xColumnNumber = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		const integer xlColumnNumber = Table_columnNameToNumber_0 (me, lowerErrorColumnName);
+		const integer xuColumnNumber = Table_columnNameToNumber_0 (me, upperErrorColumnName);
+		Table_horizontalErrorBarsPlot (me, GRAPHICS, xColumnNumber, yColumnNumber,
+				xmin, xmax, ymin, ymax, xlColumnNumber, xuColumnNumber, barSize_mm, garnish);
 	GRAPHICS_EACH_END
 }
 
+// deprecated 2023
 FORM (GRAPHICS_EACH__Table_horizontalErrorBarsPlotWhere, U"Table: Horizontal error bars plot where", U"Table: Horizontal error bars plot where...") {
-	SENTENCE (xColumn_string, U"Horizontal column", U"")
+	SENTENCE (xColumnName, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
-	SENTENCE (yColumn_string, U"Vertical column", U"")
+	SENTENCE (yColumnName, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	SENTENCE (lowerErrorColumn_string, U"Lower error value column", U"error1")
-	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
+	SENTENCE (lowerErrorColumnName, U"Lower error value column", U"error1")
+	SENTENCE (upperErrorColumnName, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
-	LABEL (U"Use data only in rows where the following condition holds.")
+	COMMENT (U"Use data only in rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer xl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
-		const integer xu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
-		Table_horizontalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax,
-			xl, xu, barSize_mm, garnish, condition, interpreter
-		);
+		const integer xColumnNumber = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		const integer xlColumnNumber = Table_columnNameToNumber_0 (me, lowerErrorColumnName);
+		const integer xuColumnNumber = Table_columnNameToNumber_0 (me, upperErrorColumnName);
+		autoTable thee = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_horizontalErrorBarsPlot (me, GRAPHICS, xColumnNumber, yColumnNumber,
+				xmin, xmax, ymin, ymax, xlColumnNumber, xuColumnNumber, barSize_mm, garnish);
 	GRAPHICS_EACH_END
 }
 
 FORM (GRAPHICS_EACH__Table_verticalErrorBarsPlot, U"Table: Vertical error bars plot", U"Table: Vertical error bars plot...") {
-	SENTENCE (xColumn_string, U"Horizontal column", U"")
+	SENTENCE (xColumnName, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
-	SENTENCE (yColumn_string, U"Vertical column", U"")
+	SENTENCE (yColumnName, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	SENTENCE (lowerErrorColumn_string, U"Lower error value column", U"error1")
-	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
+	SENTENCE (lowerErrorColumnName, U"Lower error value column", U"error1")
+	SENTENCE (upperErrorColumnName, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer yl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
-		const integer yu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
-		Table_verticalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, 
-			yl, yu, barSize_mm, garnish, U"1", interpreter
-		);
+		const integer xColumnNumber = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		const integer ylColumnNumber = Table_columnNameToNumber_0 (me, lowerErrorColumnName);
+		const integer yuColumnNumber = Table_columnNameToNumber_0 (me, upperErrorColumnName);
+		Table_verticalErrorBarsPlot (me, GRAPHICS, xColumnNumber, yColumnNumber,
+				xmin, xmax, ymin, ymax, ylColumnNumber, yuColumnNumber, barSize_mm, garnish);
 	GRAPHICS_EACH_END
 }
 
+// deprecated 2023
 FORM (GRAPHICS_EACH__Table_verticalErrorBarsPlotWhere, U"Table: Vertical error bars plot where", U"Table: Vertical error bars plot where...") {
-	SENTENCE (xColumn_string, U"Horizontal column", U"")
+	SENTENCE (xColumnName, U"Horizontal column", U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
-	SENTENCE (yColumn_string, U"Vertical column", U"")
+	SENTENCE (yColumnName, U"Vertical column", U"")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	SENTENCE (lowerErrorColumn_string, U"Lower error value column", U"error1")
-	SENTENCE (upperErrorColumn_string, U"Upper error value column", U"error2")
+	SENTENCE (lowerErrorColumnName, U"Lower error value column", U"error1")
+	SENTENCE (upperErrorColumnName, U"Upper error value column", U"error2")
 	REAL (barSize_mm, U"Bar size (mm)", U"1.0")
 	BOOLEAN (garnish, U"Garnish", true);
-	LABEL (U"Use data only in rows where the following condition holds.")
+	COMMENT (U"Use data only in rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	GRAPHICS_EACH (Table)
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, xColumn_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, yColumn_string);
-		const integer yl = Table_findColumnIndexFromColumnLabel (me, lowerErrorColumn_string);
-		const integer yu = Table_findColumnIndexFromColumnLabel (me, upperErrorColumn_string);
-		Table_verticalErrorBarsPlotWhere (me, GRAPHICS, xcolumn, ycolumn, xmin, xmax, ymin, ymax, 
-			yl, yu, barSize_mm, garnish, condition, interpreter
-		);
+		const integer xColumnNumber = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber = Table_columnNameToNumber_e (me, yColumnName);
+		const integer ylColumnNumber = Table_columnNameToNumber_0 (me, lowerErrorColumnName);
+		const integer yuColumnNumber = Table_columnNameToNumber_0 (me, upperErrorColumnName);
+		autoTable thee = Table_extractRowsWhere_e (me, condition, interpreter);
+		Table_verticalErrorBarsPlot (thee.get(), GRAPHICS, xColumnNumber, yColumnNumber,
+				xmin, xmax, ymin, ymax,	ylColumnNumber, yuColumnNumber, barSize_mm, garnish);
 	GRAPHICS_EACH_END
 }
 
 FORM (CONVERT_EACH_TO_ONE__Table_extractRowsWhere, U"Table: Extract rows where", nullptr) {
-	LABEL (U"Extract rows where the following condition holds.")
+	COMMENT (U"Extract rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
@@ -7508,25 +7544,42 @@ DO
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_formula")
 }
 
+// deprecated 2023
 FORM (CONVERT_EACH_TO_ONE__Table_extractRowsMahalanobisWhere, U"Table: Extract rows where (mahalanobis)", nullptr) {
-	SENTENCE (dataColumns_string, U"Extract all rows where columns...", U"F1 F2 F3")
-	CHOICE_ENUM (kMelder_number, haveAMahalanobisDistance,
+	STRINGARRAY_LINES (2, dataColumnNames, U"Extract all rows where columns...", { U"F1", U"F2", U"F3" })
+	CHOICE_ENUM (kMelder_number, which,
 			U"...have a mahalanobis distance...", kMelder_number::GREATER_THAN)
 	REAL (numberOfSigmas, U"...the number", U"2.0")
-	SENTENCE (factorColumn_string, U"Factor column", U"")
-	LABEL (U"Process only rows where the following condition holds.")
+	SENTENCE (factorColumnName, U"Factor column", U"")
+	COMMENT (U"Process only rows where the following condition holds.")
 	FORMULA (condition, U"Condition", U"1; self$[\"gender\"]=\"male\"")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Table)
-		autoTable result = Table_extractMahalanobisWhere (me, dataColumns_string, factorColumn_string, 
-			numberOfSigmas, haveAMahalanobisDistance, condition, interpreter
-		);
+		autoINTVEC columnNumbers = Table_columnNamesToNumbers (me, dataColumnNames);
+		const integer factorColumnNumber = Table_columnNameToNumber_0 (me, factorColumnName);
+		autoTable thee = Table_extractRowsWhere_e (me, condition, interpreter);
+		autoTable result = Table_extractMahalanobis (thee.get(), columnNumbers.get(), which, numberOfSigmas, factorColumnNumber);
+	CONVERT_EACH_TO_ONE_END (my name.get(), U"_mahalanobis")
+}
+
+FORM (CONVERT_EACH_TO_ONE__Table_extractRowsWhereMahalanobis, U"Table: Extract rows where (mahalanobis)", nullptr) {
+	STRINGARRAY_LINES (2, dataColumnNames, U"Extract all rows where columns...", { U"F1", U"F2", U"F3" })
+	CHOICE_ENUM (kMelder_number, which,
+			U"...have a mahalanobis distance...", kMelder_number::GREATER_THAN)
+	REAL (numberOfSigmas, U"...the number", U"2.0")
+	SENTENCE (factorColumnName, U"Factor column", U"")
+	OK
+DO_ALTERNATIVE (CONVERT_EACH_TO_ONE__Table_extractRowsMahalanobisWhere)
+	CONVERT_EACH_TO_ONE (Table)
+		autoINTVEC columnNumbers = Table_columnNamesToNumbers (me, dataColumnNames);
+		const integer factorColumnNumber = Table_columnNameToNumber_0 (me, factorColumnName);
+		autoTable result = Table_extractMahalanobis (me, columnNumbers.get(), which, numberOfSigmas, factorColumnNumber);
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_mahalanobis")
 }
 
 FORM (CONVERT_EACH_TO_ONE__Table_extractColumnsByNumber, U"Table: Extract columns by number", nullptr) {
-	LABEL (U"Create a new Table from the columns with the following numbers.")
+	COMMENT (U"Create a new Table from the columns with the following numbers.")
 	NATURALVECTOR (columnNumbers, U"Column numbers", RANGES_, U"1 2")
 	OK
 DO
@@ -7536,15 +7589,12 @@ DO
 }
 
 FORM (QUERY_ONE_FOR_REAL_VECTOR__Table_listRowNumbersWhere, U"Table: List rows where", U"") {
-	LABEL (U"List rows where the following condition holds true.")
-	FORMULA (condition, U"Condition", U"self [row,\"F1\"] > 800.0")
+	COMMENT (U"List rows where the following condition holds true.")
+	FORMULA (condition, U"Condition", U"self [row, \"F1\"] > 800.0")
 	OK
 DO
 	QUERY_ONE_FOR_REAL_VECTOR (Table)
-		autoINTVEC resulti = Table_listRowNumbersWhere (me, condition, interpreter);
-		autoVEC result = raw_VEC (resulti.size);
-		for (integer i = 1; i <= resulti.size; i ++)
-			result [i] = resulti [i];
+		autoVEC result = cast_VEC (Table_listRowNumbersWhere (me, condition, interpreter).get());
 	QUERY_ONE_FOR_REAL_VECTOR_END
 }
 
@@ -7587,7 +7637,7 @@ DO
 	INFO_ONE (TableOfReal)
 		const double p = TableOfReal_testSphericityOfCovariance (me, numberOfPermutations, useCorrelation);
 		MelderInfo_open ();
-		MelderInfo_writeLine (p, U" (=probability from ", numberOfPermutations, U" permutations.");
+		MelderInfo_writeLine (p, U" (probability from ", numberOfPermutations, U" permutations).");
 		MelderInfo_close ();
 	INFO_ONE_END
 }
@@ -7600,7 +7650,7 @@ DO
 	INFO_ONE (TableOfReal)
 		const double p = TableOfReal_testCovarianceCompoundSymmetry (me, numberOfPermutations, useCorrelation);
 		MelderInfo_open ();
-		MelderInfo_writeLine (p, U" (=probability from ", numberOfPermutations, U" permutations.");
+		MelderInfo_writeLine (p, U" (probability from ", numberOfPermutations, U" permutations).");
 		MelderInfo_close ();
 	INFO_ONE_END	
 }
@@ -7613,7 +7663,7 @@ DO
 	INFO_ONE (TableOfReal)
 		const double p = TableOfReal_testCovarianceEqualsIdentityMatrix (me, numberOfPermutations, useCorrelation);
 		MelderInfo_open ();
-		MelderInfo_writeLine (p, U" (=probability from ", numberOfPermutations, U" permutations.");
+		MelderInfo_writeLine (p, U" (probability from ", numberOfPermutations, U" permutations).");
 		MelderInfo_close ();
 	INFO_ONE_END	
 }
@@ -7626,7 +7676,7 @@ DO
 	INFO_TWO (TableOfReal)
 		const double p = TableOfReal_testEqualityOfCovariances (me, you, numberOfPermutations, useCorrelation);
 		MelderInfo_open ();
-		MelderInfo_writeLine (p, U" (=probability from ", numberOfPermutations, U" permutations.");
+		MelderInfo_writeLine (p, U" (probability from ", numberOfPermutations, U" permutations).");
 		MelderInfo_close ();
 	INFO_ONE_END	
 }
@@ -7705,9 +7755,9 @@ DIRECT (CREATE_ONE__Table_create_sandwell1987) {
 
 FORM (GRAPHICS_EACH__TableOfReal_drawAsScalableSquares, U"TableOfReal: Draw as scalable squares", U"TableOfReal: Draw as scalable squares...") {
 	NATURAL (rowmin, U"From row", U"1");
-	INTEGER (rowmax, U"To row", U"0 (=all)");
+	INTEGER (rowmax, U"To row", U"0 (= all)");
 	NATURAL (colmin, U"From column", U"1");
-	INTEGER (colmax, U"To column", U"0 (=all)");
+	INTEGER (colmax, U"To column", U"0 (= all)");
 	OPTIONMENU_ENUM (kGraphicsMatrixOrigin, origin,
 			U"Origin", kGraphicsMatrixOrigin::DEFAULT)
 	POSITIVE (scaleFactor, U"Cell area scale factor", U"0.95")
@@ -7724,12 +7774,12 @@ DO
 }
 
 FORM (GRAPHICS_EACH__TableOfReal_drawScatterPlot, U"TableOfReal: Draw scatter plot", U"TableOfReal: Draw scatter plot...") {
-	LABEL (U"Select the part of the table")
+	COMMENT (U"Select the part of the table")
 	NATURAL (xColumn, U"Horizontal axis column number", U"1")
 	NATURAL (yColumn, U"Vertical axis column number", U"2")
 	INTEGER (fromRow, U"left Row number range", U"0")
 	INTEGER (toRow, U"right Row number range", U"0")
-	LABEL (U"Select the drawing area limits")
+	COMMENT (U"Select the drawing area limits")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -7759,7 +7809,7 @@ DO
 }
 
 FORM (GRAPHICS_EACH__TableOfReal_drawBiplot, U"TableOfReal: Draw biplot", U"TableOfReal: Draw biplot...") {
-	LABEL (U"")
+	COMMENT (U"")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -7775,12 +7825,12 @@ DO
 }
 
 FORM (GRAPHICS_EACH__TableOfReal_drawVectors, U"Draw vectors", U"TableOfReal: Draw vectors...") {
-	LABEL (U"From (x1, y1) to (x2, y2)")
+	COMMENT (U"From (x1, y1) to (x2, y2)")
 	NATURAL (x1Column, U"X1 column", U"1")
 	NATURAL (y1Column, U"Y1 column", U"2")
 	NATURAL (x2Column, U"X2 column", U"3")
 	NATURAL (y2Column, U"Y2 column", U"4")
-	LABEL (U"Select the drawing area")
+	COMMENT (U"Select the drawing area")
 	REAL (xmin, U"left Horizontal range", U"0.0")
 	REAL (xmax, U"right Horizontal range", U"0.0")
 	REAL (ymin, U"left Vertical range", U"0.0")
@@ -7801,14 +7851,14 @@ DO
 }
 
 FORM (GRAPHICS_EACH__TableOfReal_drawRowAsHistogram, U"Draw row as histogram", U"TableOfReal: Draw rows as histogram...") {
-	LABEL (U"Select from the table")
+	COMMENT (U"Select from the table")
 	NATURAL (rowNumber, U"Row number", U"1")
 	INTEGER (fromColumn, U"left Column range", U"0")
 	INTEGER (toColumn, U"right Column range", U"0")
-	LABEL (U"Vertical drawing range")
+	COMMENT (U"Vertical drawing range")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	LABEL (U"Offset and distance in units of 'bar width'")
+	COMMENT (U"Offset and distance in units of 'bar width'")
 	REAL (xOffset, U"Horizontal offset", U"0.5")
 	REAL (distanceBetweenBars, U"Distance between bars", U"1.0")
 	REAL (greyValue, U"Grey value (1.0=white)", U"0.7")
@@ -7823,14 +7873,14 @@ DO
 }
 
 FORM (GRAPHICS_EACH__TableOfReal_drawRowsAsHistogram, U"Draw rows as histogram", U"TableOfReal: Draw rows as histogram...") {
-	LABEL (U"Select from the table")
+	COMMENT (U"Select from the table")
 	NATURALVECTOR (rowNumbers, U"Row numbers", WHITESPACE_SEPARATED_, U"1 2")
 	INTEGER (fromColumn, U"left Column range", U"0 (= all)")
 	INTEGER (toColumn, U"right Column range", U"0 (= all)")
-	LABEL (U"Vertical drawing range")
+	COMMENT (U"Vertical drawing range")
 	REAL (ymin, U"left Vertical range", U"0.0")
 	REAL (ymax, U"right Vertical range", U"0.0")
-	LABEL (U"Offset and distance in units of 'bar width'")
+	COMMENT (U"Offset and distance in units of 'bar width'")
 	REAL (xOffset, U"Horizontal offset", U"1.0")
 	REAL (distanceBetweenBarGroups, U"Distance between bar groups", U"1.0")
 	REAL (distanceBetweenBars, U"Distance between bars", U"0.0")
@@ -8195,18 +8245,18 @@ FORM (CONVERT_EACH_TO_ONE__TextGrid_to_TextGridNavigator, U"TextGrid: To TextGri
 	STRINGARRAY_LINES (4, topicLabels, U"Topic labels", { U"i", U"u", U"e", U"o", U"\\as" })
 	OPTIONMENU_ENUM (kMelder_string, topicCriterion, U"Topic match criterion", kMelder_string::EQUAL_TO)
 	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
-	LABEL (U"")
+	COMMENT (U"")
 	STRINGARRAY_LINES (4, beforeLabels, U"Before labels", { U"p", U"b", U"t", U"d", U"k", U"g" })
 	OPTIONMENU_ENUM (kMelder_string, beforeCriterion, U"Before match criterion", kMelder_string::EQUAL_TO)
 	OPTIONMENU_ENUM (kMatchBoolean, beforeMatchBoolean, U"Combine before matches with", kMatchBoolean::OR_)
-	LABEL (U"")
+	COMMENT (U"")
 	STRINGARRAY_LINES (4, afterLabels, U"After labels", { U"m", U"n" })
 	OPTIONMENU_ENUM (kMelder_string, afterCriterion, U"After match criterion", kMelder_string::EQUAL_TO)
 	OPTIONMENU_ENUM (kMatchBoolean, afterMatchBoolean, U"Combine after matches with", kMatchBoolean::OR_)
-	LABEL (U"")
+	COMMENT (U"")
 	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"Combination criterion", kContext_combination::BEFORE_AND_AFTER)
 	BOOLEAN (excludeTopic, U"Exclude topic labels", false)
-	LABEL (U"")
+	COMMENT (U"")
 	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
 	OK
 DO
@@ -8243,7 +8293,7 @@ DIRECT (HELP__TextGridNavigator_help) {
 
 FORM (CREATE_ONE__TextGridNavigator_createSimple, U"TextGridNavigator: Create simple", U"") {
 	WORD (name, U"Name", U"navigator")
-	LABEL (U"Domain")
+	COMMENT (U"Domain")
 	REAL (xmin, U"Xmin", U"0.0")
 	REAL (xmax, U"Xmax", U"5.0")
 	NATURAL (tierNumber, U"Tier number", U"1")
@@ -8535,7 +8585,7 @@ FORM (MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_addSearchTier_topicOnly,
 	STRINGARRAY_LINES (4, topicLabels, U"Topic labels", { U"i", U"u", U"e", U"o", U"\\as" })
 	OPTIONMENU_ENUM (kMelder_string, topicCriterion, U"Topic match criterion", kMelder_string::EQUAL_TO)
 	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
-	LABEL (U"")
+	COMMENT (U"")
 	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
 	OPTIONMENU_ENUM (kMatchDomainAlignment, matchDomainAlignment, U"Match domain alignment", kMatchDomainAlignment::DEFAULT)
 	OK
@@ -8554,18 +8604,18 @@ FORM (MODIFY_FIRST_OF_ONE_AND_ONE__TextGridNavigator_addSearchTier, U"TextGridNa
 	STRINGARRAY_LINES (4, topicLabels, U"Topic labels", { U"i", U"u", U"e", U"o", U"\\as" })
 	OPTIONMENU_ENUM (kMelder_string, topicCriterion, U"Topic match criterion", kMelder_string::EQUAL_TO)
 	OPTIONMENU_ENUM (kMatchBoolean, topicMatchBoolean, U"Combine topic matches with", kMatchBoolean::OR_)
-	LABEL (U"")
+	COMMENT (U"")
 	STRINGARRAY_LINES (4, beforeLabels, U"Before labels", { U"p", U"b", U"t", U"d", U"k", U"g" })
 	OPTIONMENU_ENUM (kMelder_string, beforeCriterion, U"Before match criterion", kMelder_string::EQUAL_TO)
 	OPTIONMENU_ENUM (kMatchBoolean, beforeMatchBoolean, U"Combine before matches with", kMatchBoolean::OR_)
-	LABEL (U"")
+	COMMENT (U"")
 	STRINGARRAY_LINES (4, afterLabels, U"After labels", { U"m", U"n" })
 	OPTIONMENU_ENUM (kMelder_string, afterCriterion, U"After match criterion", kMelder_string::EQUAL_TO)
 	OPTIONMENU_ENUM (kMatchBoolean, afterMatchBoolean, U"Combine after matches with", kMatchBoolean::OR_)
-	LABEL (U"")
+	COMMENT (U"")
 	OPTIONMENU_ENUM (kContext_combination, combinationCriterion, U"Combination criterion", kContext_combination::BEFORE_AND_AFTER)
 	BOOLEAN (excludeTopic, U"Exclude topic labels", false)
-	LABEL (U"")
+	COMMENT (U"")
 	OPTIONMENU_ENUM (kMatchDomain, matchDomain, U"Match domain", kMatchDomain::DEFAULT)
 	OPTIONMENU_ENUM (kMatchDomainAlignment, matchDomainAlignment, U"Match domain alignment", kMatchDomainAlignment::DEFAULT)
 	OK
@@ -8693,7 +8743,7 @@ static void praat_Eigen_query_init (ClassInfo klas) {
 static void praat_Eigen_draw_init (ClassInfo klas) {
 	praat_addAction1 (klas, 0, U"Draw eigenvalues...", nullptr, 1,
 			GRAPHICS_EACH__Eigen_drawEigenvalues);
-	praat_addAction1 (klas, 0, U"Draw eigenvalues (scree)...", U"*Draw eigenvalues...", GuiMenu_DEPRECATED_2010 | GuiMenu_DEPTH_1,
+	praat_addAction1 (klas, 0, U"Draw eigenvalues (scree)...", nullptr, GuiMenu_DEPRECATED_2010 | GuiMenu_DEPTH_1,
 			WARNING__Eigen_drawEigenvalues_scree);
 	praat_addAction1 (klas, 0, U"Draw eigenvector...", nullptr, 1,
 			GRAPHICS_EACH__Eigen_drawEigenvector);
@@ -8975,7 +9025,6 @@ void praat_David_init () {
 		classClassificationTable, classComplexSpectrogram, classConfusion,
 		classCorrelation, classCovariance, classDiscriminant, classDTW,
 		classEigen, classExcitationList, classEditCostsTable, classEditDistanceTable,
-		classElectroglottogram,
 		classFileInMemory, classFileInMemorySet, classFileInMemoryManager, 
 		classFormantFilter,
 		classIndex, classKlattTable, classNMF,
@@ -9002,14 +9051,10 @@ void praat_David_init () {
 	praat_addMenuCommand (U"Objects", U"Goodies", U"Get incomplete gamma...", 0, GuiMenu_HIDDEN,
 			QUERY_NONE_FOR_COMPLEX__Praat_getIncompleteGamma);
 
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound as gammatone...", U"Create Sound as tone complex...", 1,
-			CREATE_ONE__Sound_createAsGammaTone);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from gammatone...", U"*Create Sound as gammatone...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2016,
-			CREATE_ONE__Sound_createAsGammaTone);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound as Shepard tone...", U"Create Sound as gammatone...", GuiMenu_DEPTH_1,
-			CREATE_ONE__Sound_createAsShepardTone);
-	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from Shepard tone...", U"*Create Sound as Shepard tone...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2016,
-			CREATE_ONE__Sound_createAsShepardTone);
+	praat_addMenuCommand (U"Objects", U"New", U"Create Sound as gammatone... || Create Sound from gammatone...", U"Create Sound as tone complex...", 1,
+			CREATE_ONE__Sound_createAsGammaTone);   // alternative COMPATIBILITY <= 2016
+	praat_addMenuCommand (U"Objects", U"New", U"Create Sound as Shepard tone... || Create Sound from Shepard tone...", U"Create Sound as gammatone...", GuiMenu_DEPTH_1,
+			CREATE_ONE__Sound_createAsShepardTone);   // alternative COMPATIBILITY <= 2016
 	praat_addMenuCommand (U"Objects", U"New", U"Create Sound from VowelEditor...", U"Create Sound as Shepard tone...", GuiMenu_DEPTH_1 | GuiMenu_NO_API,
 			CREATION_WINDOW__VowelEditor_create);
 	praat_addMenuCommand (U"Objects", U"New", U"Create TextGridNavigator...", U"Create Corpus...", GuiMenu_HIDDEN,
@@ -9302,11 +9347,11 @@ void praat_David_init () {
 		QUERY_ONE_FOR_INTEGER__ClassificationTable_getClassIndexAtMaximumInRow);
 	praat_addAction1 (classClassificationTable, 0, U"Get class label at maximum in row...", U"Get class index at maximum in row...", 1,
 		QUERY_ONE_FOR_STRING__ClassificationTable_getClassLabelAtMaximumInRow);
-	praat_addAction1 (classClassificationTable, 0, U"To Confusion", U"*To Confusion...", GuiMenu_DEPRECATED_2014,
-			CONVERT_EACH_TO_ONE__ClassificationTable_to_Confusion_old); // deprecated 2014
-	praat_addAction1 (classClassificationTable, 0, U"To Confusion...", nullptr, 0, 
+	praat_addAction1 (classClassificationTable, 0, U"To Confusion...", nullptr, 0,
 			CONVERT_EACH_TO_ONE__ClassificationTable_to_Confusion);
-	praat_addAction1 (classClassificationTable, 0, U"To Correlation (columns)", nullptr, 0, 
+	praat_addAction1 (classClassificationTable, 0, U"To Confusion", nullptr, GuiMenu_DEPRECATED_2014,
+			CONVERT_EACH_TO_ONE__ClassificationTable_to_Confusion_old);   // replace with To Confusion: 0
+	praat_addAction1 (classClassificationTable, 0, U"To Correlation (columns)", nullptr, 0,
 			CONVERT_EACH_TO_ONE__ClassificationTable_to_Correlation_columns);
 	praat_addAction1 (classClassificationTable, 0, U"To Strings (max. prob.)", nullptr, 0,
 			CONVERT_EACH_TO_ONE__ClassificationTable_to_Strings_maximumProbability); // TODO name?
@@ -9586,19 +9631,6 @@ void praat_David_init () {
 			MODIFY_EditCostsTable_setCosts_others);
 	praat_addAction1 (classEditCostsTable, 1, U"To TableOfReal", nullptr, 0, 
 			CONVERT_EACH_TO_ONE__EditCostsTable_to_TableOfReal);
-
-	praat_addAction1 (classElectroglottogram, 0, U"High-pass filter...", nullptr, 0, 
-			CONVERT_EACH_TO_ONE__Electroglottogram_highPassFilter);
-	praat_addAction1 (classElectroglottogram, 0, U"To TextGrid (closed glottis)... || Get closed glottis intervals...", nullptr, 0,
-			CONVERT_EACH_TO_ONE__Electroglottogram_to_TextGrid_closedGlottis);
-	praat_addAction1 (classElectroglottogram, 0, U"To AmplitudeTier (levels)...", nullptr, 0, 
-			CONVERT_EACH_TO_ONE__Electroglottogram_to_AmplitudeTier_levels);
-	praat_addAction1 (classElectroglottogram, 0, U"Derivative...", nullptr, 0, 
-			CONVERT_EACH_TO_ONE__Electroglottogram_derivative);
-	praat_addAction1 (classElectroglottogram, 0, U"First central difference...", nullptr, 0, 
-			CONVERT_EACH_TO_ONE__Electroglottogram_firstCentralDifference);
-	praat_addAction1 (classElectroglottogram, 0, U"To Sound", nullptr, 0, 
-			CONVERT_EACH_TO_ONE__Electroglottogram_to_Sound);
 	
 	praat_addAction1 (classIndex, 0, U"Index help", nullptr, 0, HELP__Index_help);
 	praat_addAction1 (classStringsIndex, 0, U"Query -", nullptr, 0, nullptr);
@@ -9664,51 +9696,53 @@ void praat_David_init () {
 			CONVERT_EACH_TO_ONE__ExcitationList_to_PatternList);
 	praat_addAction1 (classExcitationList, 0, U"To Pattern...", nullptr, GuiMenu_HIDDEN,
 			CONVERT_EACH_TO_ONE__ExcitationList_to_PatternList);
-	praat_addAction1 (classExcitationList, 0, U"To TableOfReal", nullptr, 0, 
+	praat_addAction1 (classExcitationList, 0, U"To TableOfReal", nullptr, 0,
 			CONVERT_EACH_TO_ONE__ExcitationList_to_TableOfReal);
 
-	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to ExcitationList", nullptr, 0, 
+	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to ExcitationList", nullptr, 0,
 			MODIFY_ExcitationList_addItem);
 	praat_addAction2 (classExcitationList, 1, classExcitation, 0, U"Add to Excitations", nullptr, GuiMenu_HIDDEN,
 			MODIFY_ExcitationList_addItem);
 
-	praat_addAction1 (classFileInMemory, 1, U"Show as code...", nullptr, 0, 
+	praat_addAction1 (classFileInMemory, 1, U"Show as code...", nullptr, 0,
 			INFO_ONE__FileInMemory_showAsCode);
-	praat_addAction1 (classFileInMemory, 1, U"Set id...", nullptr, 0, 
+	praat_addAction1 (classFileInMemory, 1, U"Set id...", nullptr, 0,
 			MODIFY_EACH__FileInMemory_setId);
-	praat_addAction1 (classFileInMemory, 0, U"To FileInMemorySet", nullptr, 0, 
+	praat_addAction1 (classFileInMemory, 0, U"To FileInMemorySet", nullptr, 0,
 			COMBINE_ALL_TO_ONE__FilesInMemory_to_FileInMemorySet);
 	praat_addAction1 (classFileInMemory, 0, U"To FilesInMemory", nullptr, GuiMenu_DEPRECATED_2015,
 			COMBINE_ALL_TO_ONE__FilesInMemory_to_FileInMemorySet);
 
 	praat_addAction1 (classFileInMemorySet, 1, U"Query -", nullptr, 0, nullptr);
-	praat_addAction1 (classFileInMemorySet, 1, U"Get number of files", nullptr, 1, 
+	praat_addAction1 (classFileInMemorySet, 1, U"Get number of files", nullptr, 1,
 			QUERY_ONE_FOR_INTEGER__FileInMemorySet_getNumberOfFiles);
-	praat_addAction1 (classFileInMemorySet, 1, U"Has directory?", nullptr, 1, 
+	praat_addAction1 (classFileInMemorySet, 1, U"Has directory?", nullptr, 1,
 			QUERY_ONE_FOR_BOOLEAN__FileInMemorySet_hasDirectory);
 
-	praat_addAction1 (classFileInMemorySet, 1, U"Show as code...", nullptr, 0, 
+	praat_addAction1 (classFileInMemorySet, 1, U"Show as code...", nullptr, 0,
 			INFO_ONE__FileInMemorySet_showAsCode);
-	praat_addAction1 (classFileInMemorySet, 1, U"Show one file as code...", nullptr, 0, 
+	praat_addAction1 (classFileInMemorySet, 1, U"Show one file as code...", nullptr, 0,
 			INFO_ONE__FileInMemorySet_showOneFileAsCode);
-	praat_addAction1 (classFileInMemorySet, 0, U"Merge", nullptr, 0, 
+	praat_addAction1 (classFileInMemorySet, 0, U"Merge", nullptr, 0,
 			COMBINE_ALL_TO_ONE__FileInMemorySets_merge);
-	praat_addAction1 (classFileInMemorySet, 0, U"To Strings (id)", nullptr, 0, 
+	praat_addAction1 (classFileInMemorySet, 0, U"To Strings (id)", nullptr, 0,
 			CONVERT_EACH_TO_ONE__FileInMemorySet_to_Strings_id);
-	praat_addAction1 (classFileInMemorySet, 0, U"Extract files...", nullptr, 0, 
+	praat_addAction1 (classFileInMemorySet, 0, U"Extract files...", nullptr, 0,
 			CONVERT_EACH_TO_ONE__FileInMemorySet_extractFiles);
-	praat_addAction2 (classFileInMemorySet, 1, classFileInMemory, 0, U"Add items to set", nullptr, 0, 
+	praat_addAction1 (classFileInMemorySet, 0, U"Remove files...", nullptr, 0,
+			CONVERT_EACH_TO_ONE__FileInMemorySet_removeFiles);
+	praat_addAction2 (classFileInMemorySet, 1, classFileInMemory, 0, U"Add items to set", nullptr, 0,
 			MODIFY_FIRST_OF_ONE_AND_ONE__FileInMemorySet_addItemsToSet);
 
 	praat_addAction1 (classFileInMemoryManager, 1, U"Query -", nullptr, 0, nullptr);
-	praat_addAction1 (classFileInMemoryManager, 1, U"Get number of files", nullptr, 1, 
+	praat_addAction1 (classFileInMemoryManager, 1, U"Get number of files", nullptr, 1,
 			QUERY_ONE_FOR_INTEGER__FileInMemoryManager_getNumberOfFiles);
-	praat_addAction1 (classFileInMemoryManager, 1, U"Get number of open files", nullptr, 1, 
+	praat_addAction1 (classFileInMemoryManager, 1, U"Get number of open files", nullptr, 1,
 			QUERY_ONE_FOR_INTEGER__FileInMemoryManager_getNumberOfOpenFiles);
-	praat_addAction1 (classFileInMemoryManager, 1, U"Has directory?", nullptr, 1, 
+	praat_addAction1 (classFileInMemoryManager, 1, U"Has directory?", nullptr, 1,
 			QUERY_ONE_FOR_INTEGER__FileInMemoryManager_hasDirectory);
 	
-	praat_addAction1 (classFileInMemoryManager, 0, U"Extract files...", nullptr, 0, 
+	praat_addAction1 (classFileInMemoryManager, 0, U"Extract files...", nullptr, 0,
 			CONVERT_EACH_TO_ONE__FileInMemoryManager_extractFiles);
 	praat_addAction1 (classFileInMemoryManager, 0, U"Down to Table...", nullptr, 0, 
 			CONVERT_EACH_TO_ONE__FileInMemoryManager_downto_Table);
@@ -9798,8 +9832,8 @@ void praat_David_init () {
 			QUERY_ONE_FOR_REAL__Matrix_getMean);
 	praat_addAction1 (classMatrix, 0, U"Get standard deviation...", U"Get mean...", 1, 
 			QUERY_ONE_FOR_REAL__Matrix_getStandardDeviation);
-	praat_addAction1 (classMatrix, 0, U"Mathematical -", U"Get standard deviation...", 1, nullptr);
-	praat_addAction1 (classMatrix, 0, U"Get norm...", U"Mathematical -", 2,
+	praat_addAction1 (classMatrix, 0, U"Mathematical", U"Get standard deviation...", 1, nullptr);
+	praat_addAction1 (classMatrix, 0, U"Get norm...", U"Mathematical", 2,
 			QUERY_ONE_FOR_REAL__Matrix_getNorm);
 	
 	praat_addAction1 (classMatrix, 0, U"Transpose", U"Synthesize", 0, 
@@ -9834,7 +9868,7 @@ void praat_David_init () {
 	praat_addAction2 (classMatrix, 1, classCategories, 1, U"To TableOfReal", nullptr, 0, 
 			CONVERT_ONE_AND_ONE_TO_ONE__Matrix_Categories_to_TableOfReal);
 
-	praat_addAction1 (classMelSpectrogram, 0, U"MelSpectrogram help", nullptr, 0, 
+	praat_addAction1 (classMelSpectrogram, 0, U"MelSpectrogram help", nullptr, 0,
 			HELP__MelSpectrogram_help);
 	praat_BandFilterSpectrogram_draw_init (classMelSpectrogram);
 	praat_addAction1 (classMelSpectrogram, 0, U"Paint image...", nullptr, 1,
@@ -9859,8 +9893,8 @@ void praat_David_init () {
 	praat_addAction1 (classMelSpectrogram, 2, U"Convolve...", nullptr, 0, 
 			CONVERT_TWO_TO_ONE__BandFilterSpectrograms_convolve);
 
-	praat_addAction1 (classMelFilter, 0, U"MelFilter help", U"*MelSpectrogram help", 0, 
-			HELP__MelFilter_help);
+	praat_addAction1 (classMelFilter, 0, U"MelFilter help", nullptr, 0,
+			HELP__MelFilter_help);   //
 	praat_FilterBank_all_init (classMelFilter); // deprecated 2014
 	praat_addAction1 (classMelFilter, 0, U"Draw spectrum (slice)...", U"Draw filters...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2014,
 			GRAPHICS_EACH__MelFilter_drawSpectrum);
@@ -9962,7 +9996,7 @@ void praat_David_init () {
 	praat_addAction1 (classPCA, 1, U"Get fraction variance accounted for...", nullptr, 1,
 			QUERY_ONE_FOR_REAL__PCA_getFractionVAF);
 	praat_addAction1 (classPCA, 1, U"Get number of components (VAF)...", nullptr, 1, 
-		QUERY_ONE_FOR_INTEGER__PCA_getNumberOfComponents_VAF);
+			QUERY_ONE_FOR_INTEGER__PCA_getNumberOfComponents_VAF);
 	praat_addAction1 (classPCA, 2, U"Get angle between pc1-pc2 planes", nullptr, 1,
 			QUERY_TWO_FOR_REAL__PCAs_getAngleBetweenPc1Pc2Plane_degrees);
 	praat_addAction1 (classPCA, 0, U"Modify -", nullptr, 0, nullptr);
@@ -10113,10 +10147,8 @@ void praat_David_init () {
 	praat_addAction1 (classPolynomial, 0, U"-- area --", U"Get x of maximum...", 1, 0);
 	praat_addAction1 (classPolynomial, 1, U"Get area...", U"-- area --", 1,
 			QUERY_ONE_FOR_REAL__Polynomial_getArea);
-	praat_addAction1 (classPolynomial, 1, U"Get remainder after division...", U"Get area...", 1, 
-			QUERY_ONE_FOR_REAL__Polynomial_getRemainderAfterDivision);
-	praat_addAction1 (classPolynomial, 1, U"Get remainder...", U"*Get remainder after division...", GuiMenu_DEPRECATED_2016,
-			QUERY_ONE_FOR_REAL__Polynomial_getRemainderAfterDivision);
+	praat_addAction1 (classPolynomial, 1, U"Get remainder after division... || Get remainder...", U"Get area...", 1,
+			QUERY_ONE_FOR_REAL__Polynomial_getRemainderAfterDivision);   // alternative COMPATIBILITY <= 2016
 	praat_addAction1 (classPolynomial, 0, U"-- monic --", U"Set coefficient...", 1, 0);
 	praat_addAction1 (classPolynomial, 0, U"Scale coefficients (monic)", U"-- monic --", 1, 
 			MODIFY_Polynomial_scaleCoefficients_monic);
@@ -10188,15 +10220,17 @@ void praat_David_init () {
 	praat_addAction1 (classSound, 1, U"Get nearest level crossing...", U"Get nearest zero crossing...", 1, 
 			QUERY_ONE_FOR_REAL__Sound_getNearestLevelCrossing);
 
-	praat_addAction1 (classSound, 0, U"To Pitch (shs)...", U"To Pitch (cc)...", 1,
+	praat_addAction1 (classSound, 0, U"To Pitch (shs)...", U"To Pitch (filtered cc)...", 1,
 			CONVERT_EACH_TO_ONE__Sound_to_Pitch_shs);
 	praat_addAction1 (classSound, 0, U"Fade in...", U"Multiply by window...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
 			MODIFY_EACH__Sound_fadeIn);
 	praat_addAction1 (classSound, 0, U"Fade out...", U"Fade in...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
 			MODIFY_Sound_fadeOut);
-	praat_addAction1 (classSound, 0, U"To Pitch (SPINET)...", U"To Pitch (cc)...", 1,
+	praat_addAction1 (classSound, 0, U"To Pitch (SPINET)...", U"To Pitch (shs)...", 1,
 			CONVERT_EACH_TO_ONE__Sound_to_Pitch_SPINET);
 
+	praat_addAction1 (classSound, 1, U"Save as highest quality MP3 file...", U"Save as 32-bit WAV file...", 1,
+			SAVE__Sound_saveAsHighestQualityMP3File);
 	praat_addAction1 (classSound, 0, U"To Spectrum (resampled)...", U"To Spectrum...", GuiMenu_DEPTH_1,
 			CONVERT_EACH_TO_ONE__Sound_to_Spectrum_resampled);
 	praat_addAction1 (classSound, 0, U"To FormantFilter...", U"To Cochleagram (edb)...", GuiMenu_DEPRECATED_2014 | GuiMenu_DEPTH_1,
@@ -10215,8 +10249,6 @@ void praat_David_init () {
 			CONVERT_EACH_TO_ONE__Sound_to_MelSpectrogram);
 	praat_addAction1 (classSound, 0, U"To ComplexSpectrogram...", U"To MelSpectrogram...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
 			CONVERT_EACH_TO_ONE__Sound_to_ComplexSpectrogram);
-    praat_addAction1 (classSound, 0, U"Extract Electroglottogram...", U"Extract part for overlap...", 1,
-			CONVERT_EACH_TO_ONE__Sound_extractElectroglottogram);
 
 	praat_addAction1 (classSound, 0, U"To Polygon...", U"Down to Matrix", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
 			CONVERT_EACH_TO_ONE__Sound_to_Polygon);
@@ -10259,8 +10291,10 @@ void praat_David_init () {
 
 	praat_addAction1 (classSpectrogram, 2, U"To DTW...", U"To Spectrum (slice)...", 1, 
 			CONVERT_TWO_TO_ONE__Spectrograms_to_DTW);
-	praat_addAction1 (classSpectrogram, 0, U"Get longterm spectral flatness...", U"To DTW...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
-			CONVERT_EACH_TO_ONE__Spectrogram_getLongtermSpectralFlatnessMeasure);
+	praat_addAction1 (classSpectrogram, 0, U"Draw long-term spectral flatness...", U"Paint...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			GRAPHICS_EACH__Spectrogram_drawLongtermSpectralFlatness);
+	praat_addAction1 (classSpectrogram, 0, U"Get long-term spectral flatness...", U"To DTW...", GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Spectrogram_getLongtermSpectralFlatness);
 
 	praat_addAction1 (classSpectrum, 0, U"To Sound (resampled)...", U"To Sound", GuiMenu_DEPTH_1,
 			CONVERT_EACH_TO_ONE__Spectrum_to_Sound_resampled);
@@ -10301,7 +10335,9 @@ void praat_David_init () {
 		praat_addAction1 (classSpeechSynthesizer, 1, U"Get phoneme set name", nullptr, 1,
 				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemeSetName);
 		praat_addAction1 (classSpeechSynthesizer, 1, U"Get phonemes from text...", nullptr, 1,
-				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getPhonemesFromText);
+				QUERY_ONE_FOR_AUTOSTRING__SpeechSynthesizer_getPhonemesFromText);
+		praat_addAction1 (classSpeechSynthesizer, 1, U"Get phonemes from text (space-separated)...", nullptr, 1,
+				QUERY_ONE_FOR_AUTOSTRING__SpeechSynthesizer_getPhonemesFromTextSpaceSeparated);
 		praat_addAction1 (classSpeechSynthesizer, 1, U"Get voice variant", nullptr, GuiMenu_DEPRECATED_2017,
 				QUERY_ONE_FOR_STRING__SpeechSynthesizer_getVoiceName);
 		
@@ -10402,52 +10438,60 @@ void praat_David_init () {
 			CONVERT_EACH_TO_ONE__SVD_extractSingularValues);
 		praat_addAction1 (classTable, 0, U"Draw ellipses...", U"Draw ellipse (standard deviation)...", GuiMenu_DEPTH_1,
 				GRAPHICS_EACH__Table_drawEllipses);
-		praat_addAction1 (classTable, 0, U"Box plots...", U"Draw ellipses...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+		praat_addAction1 (classTable, 0, U"Box plots...", U"Draw ellipses...", GuiMenu_DEPTH_1,
 				GRAPHICS_EACH__Table_boxPlots);
-		praat_addAction1 (classTable, 0, U"Normal probability plot...", U"Box plots...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+		praat_addAction1 (classTable, 0, U"Normal probability plot...", U"Box plots...", GuiMenu_DEPTH_1,
 				GRAPHICS_EACH__Table_normalProbabilityPlot);
-		praat_addAction1 (classTable, 0, U"Quantile-quantile plot...", U"Normal probability plot...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+		praat_addAction1 (classTable, 0, U"Quantile-quantile plot...", U"Normal probability plot...", GuiMenu_DEPTH_1,
 				GRAPHICS_EACH__Table_quantileQuantilePlot);
-		praat_addAction1 (classTable, 0, U"Quantile-quantile plot (between levels)...", U"Quantile-quantile plot...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+		praat_addAction1 (classTable, 0, U"Quantile-quantile plot (between levels)...", U"Quantile-quantile plot...", GuiMenu_DEPTH_1,
 				GRAPHICS_EACH__Table_quantileQuantilePlot_betweenLevels);
-		praat_addAction1 (classTable, 0, U"Lag plot...", U"Quantile-quantile plot (between levels)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+		praat_addAction1 (classTable, 0, U"Lag plot...", U"Quantile-quantile plot (between levels)...", GuiMenu_DEPTH_1,
 				GRAPHICS_EACH__Table_lagPlot);
-		praat_addAction1 (classTable, 0, U"Horizontal error bars plot...", U"Scatter plot (mark)...", GuiMenu_DEPTH_1,
-				GRAPHICS_EACH__Table_horizontalErrorBarsPlot);
-		praat_addAction1 (classTable, 0, U"Vertical error bars plot...", U"Scatter plot (mark)...", GuiMenu_DEPTH_1,
-				GRAPHICS_EACH__Table_verticalErrorBarsPlot);
-		praat_addAction1 (classTable, 0, U"Distribution plot...", U"Quantile-quantile plot...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+		praat_addAction1 (classTable, 0, U"Bar plot...", U"Lag plot...", GuiMenu_DEPTH_1,
+					GRAPHICS_EACH__Table_barPlot);
+		praat_addAction1 (classTable, 0, U"Line graph...", U"Bar plot...", GuiMenu_DEPTH_1,
+					GRAPHICS_EACH__Table_LineGraph);
+		praat_addAction1 (classTable, 0, U"Distribution plot...", U"Line graph...", GuiMenu_DEPTH_1,
 				GRAPHICS_EACH__Table_distributionPlot);
-		praat_addAction1 (classTable, 1, U"Draw where",  U"Lag plot...", 1 , 0);
-			praat_addAction1 (classTable, 0, U"Scatter plot where...", U"Draw where", 2, 
+		praat_addAction1 (classTable, 0, U"Horizontal error bars plot...", U"Distribution plot...", GuiMenu_DEPTH_1,
+				GRAPHICS_EACH__Table_horizontalErrorBarsPlot);
+		praat_addAction1 (classTable, 0, U"Vertical error bars plot...", U"Horizontal error bars plot...", GuiMenu_DEPTH_1,
+				GRAPHICS_EACH__Table_verticalErrorBarsPlot);
+		
+		
+		// The Draw_where's are deprecated 2023
+			praat_addAction1 (classTable, 0, U"Draw where", U"Vertical error bars plot...", GuiMenu_DEPRECATED_2023, nullptr);
+			praat_addAction1 (classTable, 0, U"Scatter plot where...", U"Draw where", GuiMenu_DEPRECATED_2023,
 					GRAPHICS_EACH__Table_scatterPlotWhere);
-			praat_addAction1 (classTable, 0, U"Scatter plot where (mark)...", U"Scatter plot where...", 2, 
+			praat_addAction1 (classTable, 0, U"Scatter plot where (mark)...", U"Scatter plot where...", GuiMenu_DEPRECATED_2023,
 					GRAPHICS_EACH__Table_scatterPlotMarkWhere);
-			praat_addAction1 (classTable, 0, U"Horizontal error bars plot where...", U"Scatter plot where (mark)...", GuiMenu_DEPTH_2,
-					GRAPHICS_EACH__Table_horizontalErrorBarsPlotWhere);
-			praat_addAction1 (classTable, 0, U"Vertical error bars plot where...", U"Scatter plot where (mark)...", GuiMenu_DEPTH_2,
-					GRAPHICS_EACH__Table_verticalErrorBarsPlotWhere);
-			praat_addAction1 (classTable, 0, U"Distribution plot where...", U"Scatter plot where (mark)...", 2, 
-					GRAPHICS_EACH__Table_distributionPlotWhere);
-			praat_addAction1 (classTable, 0, U"Draw ellipse where (standard deviation)...", U"Distribution plot where...", 2,
-					GRAPHICS_EACH__Table_drawEllipseWhere);
-			praat_addAction1 (classTable, 0, U"Box plots where...", U"Draw ellipse where (standard deviation)...", 2, 
-					GRAPHICS_EACH__Table_boxPlotsWhere);
-			praat_addAction1 (classTable, 0, U"Normal probability plot where...", U"Box plots where...", 2,
-					GRAPHICS_EACH__Table_normalProbabilityPlotWhere);
-			praat_addAction1 (classTable, 0, U"Bar plot where...", U"Normal probability plot where...", 2, 
-					GRAPHICS_EACH__Table_barPlotWhere);
-			praat_addAction1 (classTable, 0, U"Line graph where...", U"Bar plot where...", 2, 
-					GRAPHICS_EACH__Table_LineGraphWhere);
-			praat_addAction1 (classTable, 0, U"Lag plot where...", U"Line graph where...", 2, 
-					GRAPHICS_EACH__Table_lagPlotWhere);
-			praat_addAction1 (classTable, 0, U"Draw ellipses where...", U"Lag plot where...", 2, 
+			praat_addAction1 (classTable, 0, U"Draw ellipses where...", U"Scatter plot where (mark)...", GuiMenu_DEPRECATED_2023,
 					GRAPHICS_EACH__Table_drawEllipsesWhere);
-
+			praat_addAction1 (classTable, 0, U"Box plots where...", U"Draw ellipses where...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_boxPlotsWhere);
+			praat_addAction1 (classTable, 0, U"Normal probability plot where...", U"Box plots where...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_normalProbabilityPlotWhere);
+			praat_addAction1 (classTable, 0, U"Distribution plot where...", U"Scatter plot where (mark)...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_distributionPlotWhere);
+			praat_addAction1 (classTable, 0, U"Draw ellipse where (standard deviation)...", U"Distribution plot where...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_drawEllipseWhere);
+			praat_addAction1 (classTable, 0, U"Bar plot where...", U"Draw ellipse where (standard deviation)...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_barPlotWhere);
+			praat_addAction1 (classTable, 0, U"Line graph where...", U"Bar plot where...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_LineGraphWhere);
+			praat_addAction1 (classTable, 0, U"Lag plot where...", U"Line graph where...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_lagPlotWhere);
+			praat_addAction1 (classTable, 0, U"Horizontal error bars plot where...", U"Lag plot where...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_horizontalErrorBarsPlotWhere);
+			praat_addAction1 (classTable, 0, U"Vertical error bars plot where...", U"Horizontal error bars plot where...", GuiMenu_DEPRECATED_2023,
+					GRAPHICS_EACH__Table_verticalErrorBarsPlotWhere);
+	// End of deprecated 2023
+			
 	praat_addAction1 (classTable, 1, U"List row numbers where...", U"Get number of rows", GuiMenu_DEPTH_1,
 			QUERY_ONE_FOR_REAL_VECTOR__Table_listRowNumbersWhere);
 	praat_addAction1 (classTable, 1, U"Get number of rows where...", U"Get number of rows", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
-		QUERY_ONE_FOR_INTEGER__Table_getNumberOfRowsWhere);
+			QUERY_ONE_FOR_INTEGER__Table_getNumberOfRowsWhere);
 	praat_addAction1 (classTable, 1, U"Report one-way anova...", U"Report group difference (Wilcoxon rank sum)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
 			INFO_ONE__Table_reportOneWayAnova);
 	praat_addAction1 (classTable, 1, U"Report one-way Kruskal-Wallis...", U"Report one-way anova...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
@@ -10458,12 +10502,10 @@ void praat_David_init () {
 			INFO_ONE__Table_reportRobustStatistics);
 	praat_addAction1 (classTable, 0, U"Extract rows where...", U"Extract rows where column (text)...", GuiMenu_DEPTH_1,
 			CONVERT_EACH_TO_ONE__Table_extractRowsWhere);
-	praat_addAction1 (classTable, 0, U"Extract rows where (mahalanobis)...", U"Extract rows where...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
-			CONVERT_EACH_TO_ONE__Table_extractRowsMahalanobisWhere);
+	praat_addAction1 (classTable, 0, U"Extract rows where (mahalanobis)...", U"Extract rows where...", GuiMenu_DEPTH_1,
+			CONVERT_EACH_TO_ONE__Table_extractRowsWhereMahalanobis);
 	praat_addAction1 (classTable, 0, U"-- Extract columns ----", U"Extract rows where (mahalanobis)...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN, 0);
-	praat_addAction1 (classTable, 0, U"Extract columns by number...", U"-- Extract columns ----", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
-			CONVERT_EACH_TO_ONE__Table_extractColumnsByNumber);
-	praat_addAction1 (classTable, 0, U"Extract column ranges...", U"*Extract columns by number...", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
+	praat_addAction1 (classTable, 0, U"Extract columns by number... || Extract column ranges...", U"-- Extract columns ----", GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
 			CONVERT_EACH_TO_ONE__Table_extractColumnsByNumber);
 
 	praat_addAction1 (classTable, 0, U"To KlattTable", nullptr, GuiMenu_HIDDEN,
@@ -10518,12 +10560,8 @@ void praat_David_init () {
 	praat_addAction1 (classTableOfReal, 2, U"To TableOfReal (cross-correlations)...", nullptr, GuiMenu_HIDDEN | GuiMenu_DEPTH_1,
 			CONVERT_TWO_TO_ONE__TableOfReal_TableOfReal_crossCorrelations);
 
-	praat_addAction1 (classTableOfReal, 1, U"To PatternList and Categories...", U"To Matrix", 1,
-			CONVERT_EACH_TO_ONE__TableOfReal_to_PatternList_and_Categories);
-	praat_addAction1 (classTableOfReal, 1, U"To Pattern and Categories...", U"*To PatternList and Categories...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2015,
-			CONVERT_EACH_TO_ONE__TableOfReal_to_PatternList_and_Categories);
-	praat_addAction1 (classTableOfReal, 1, U"Split into Pattern and Categories...", U"*To PatternList and Categories...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2015,
-			CONVERT_EACH_TO_ONE__TableOfReal_to_PatternList_and_Categories);
+	praat_addAction1 (classTableOfReal, 1, U"To PatternList and Categories... || To Pattern and Categories... || Split into Pattern and Categories...", U"To Matrix", 1,
+			CONVERT_EACH_TO_ONE__TableOfReal_to_PatternList_and_Categories);   // alternatives COMPATIBILITY <= 2015
 	praat_addAction1 (classTableOfReal, 0, U"To Permutation (sort row labels)", U"To Matrix", 1,
 			CONVERT_EACH_TO_ONE__TableOfReal_to_Permutation_sortRowlabels);
 
@@ -10571,15 +10609,11 @@ void praat_David_init () {
 			MODIFY_TextGrid_extendTime);
 	praat_addAction1 (classTextGrid, 1, U"Set tier name...", U"Remove tier...", 1,
 			MODIFY_EACH__TextGrid_setTierName);
-	praat_addAction1 (classTextGrid, 0, U"Replace interval texts...", U"Set interval text...", 2, 
-			MODIFY_TextGrid_replaceIntervalTexts);
-	praat_addAction1 (classTextGrid, 0, U"Replace interval text...", U"*Replace interval texts...", GuiMenu_DEPTH_2 | GuiMenu_DEPRECATED_2018,
-			MODIFY_TextGrid_replaceIntervalTexts);
-	praat_addAction1 (classTextGrid, 0, U"Replace point texts...", U"Set point text...", 2, 
-			MODIFY_TextGrid_replacePointTexts);
-	praat_addAction1 (classTextGrid, 0, U"Replace point text...", U"*Replace point texts...", GuiMenu_DEPTH_2 | GuiMenu_DEPRECATED_2018,
-			MODIFY_TextGrid_replacePointTexts);
-	praat_addAction1 (classTextGrid, 2, U"To Table (text alignment)...", U"Extract part...", 0, 
+	praat_addAction1 (classTextGrid, 0, U"Replace interval texts... || Replace interval text...", U"Set interval text...", 2,
+			MODIFY_TextGrid_replaceIntervalTexts);   // alternatives COMPATIBILITY <= 2018
+	praat_addAction1 (classTextGrid, 0, U"Replace point texts... || Replace point text...", U"Set point text...", 2,
+			MODIFY_TextGrid_replacePointTexts);   // alternatives COMPATIBILITY <= 2018
+	praat_addAction1 (classTextGrid, 2, U"To Table (text alignment)...", U"Extract part...", 0,
 			CONVERT_TWO_TO_ONE__TextGrids_to_Table_textAlignment);
 	praat_addAction1 (classTextGrid, 0, U"To DurationTier...", U"Concatenate", 0, 
 			CONVERT_EACH_TO_ONE__TextGrid_to_DurationTier);
@@ -10681,6 +10715,7 @@ void praat_David_init () {
 	INCLUDE_LIBRARY (praat_MDS_actions_init)
 	INCLUDE_LIBRARY (praat_HMM_init)
 	INCLUDE_LIBRARY (praat_BSS_init)
+	INCLUDE_LIBRARY (praat_sensors_init)
 }
 
 /* End of file praat_David.cpp */

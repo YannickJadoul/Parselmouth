@@ -1,6 +1,6 @@
 /* SpeechSynthesizer.cpp
  *
-//  * Copyright (C) 2011-2022 David Weenink
+ * Copyright (C) 2011-2023 David Weenink, 2012,2013,2015-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include "dictionary.h"
 #include "string.h"
 #include "translate.h"
+#include "voice.h"
 
 #include "oo_DESTROY.h"
 #include "SpeechSynthesizer_def.h"
@@ -48,11 +49,115 @@
 #include "oo_DESCRIPTION.h"
 #include "SpeechSynthesizer_def.h"
 
-#define espeak_SAMPLINGFREQUENCY 22050
+#define espeak_SAMPLINGFREQUENCY 22050.h""
+
+#include "UnicodeData.h"
 
 extern int option_phoneme_events;   // BUG: external declaration outside header file (ppgb 20210307)
 
 Thing_implement (EspeakVoice, Daata, 1);
+
+
+static autostring8 ipa_to_kirshenbaum (conststring32 text) {
+	const struct ipaksymbol {
+		char32 ipa; 
+		char32 kirshenbaum;
+	} ipaksymbols [] = {
+		{UNICODE_LATIN_SMALL_LETTER_A, U'a'},					// a
+		{UNICODE_LATIN_SMALL_LETTER_B, U'b'},					// b
+		{UNICODE_LATIN_SMALL_LETTER_C, U'c'},					// c
+		{UNICODE_LATIN_SMALL_LETTER_D, U'd'},					// d
+		{UNICODE_LATIN_SMALL_LETTER_E, U'e'},					// e
+		{UNICODE_LATIN_SMALL_LETTER_F, U'f'},					// f
+		{UNICODE_LATIN_SMALL_LETTER_G, U'g'},					// g
+		{UNICODE_LATIN_SMALL_LETTER_SCRIPT_G, U'g'},			// ɡ
+		{UNICODE_LATIN_SMALL_LETTER_H, U'h'},					// h
+		{UNICODE_LATIN_SMALL_LETTER_I, U'i'},					// i
+		{UNICODE_LATIN_SMALL_LETTER_J, U'j'},					// j
+		{UNICODE_LATIN_SMALL_LETTER_K, U'k'},					// k
+		{UNICODE_LATIN_SMALL_LETTER_L, U'l'},					// l
+		{UNICODE_LATIN_SMALL_LETTER_M, U'm'},					// m
+		{UNICODE_LATIN_SMALL_LETTER_N, U'n'},					// n
+		{UNICODE_LATIN_SMALL_LETTER_O, U'o'},					// o
+		{UNICODE_LATIN_SMALL_LETTER_P, U'p'},					// p
+		{UNICODE_LATIN_SMALL_LETTER_Q, U'q'},					// q
+		{UNICODE_LATIN_SMALL_LETTER_TURNED_R, U'r'},			// ɹ
+		{UNICODE_LATIN_SMALL_LETTER_S, U's'},					// s
+		{UNICODE_LATIN_SMALL_LETTER_T, U't'},					// t
+		{UNICODE_LATIN_SMALL_LETTER_U, U'u'},					// u
+		{UNICODE_LATIN_SMALL_LETTER_V, U'v'},					// v
+		{UNICODE_LATIN_SMALL_LETTER_W, U'w'},					// w
+		{UNICODE_LATIN_SMALL_LETTER_X, U'x'},					// x
+		{UNICODE_LATIN_SMALL_LETTER_Y, U'y'},					// y
+		{UNICODE_LATIN_SMALL_LETTER_Z, U'z'},					// z
+		{UNICODE_LATIN_SMALL_LETTER_ALPHA, U'A'},				// ɑ
+		{UNICODE_GREEK_SMALL_LETTER_BETA, U'B'},				// β
+		{UNICODE_LATIN_SMALL_LETTER_C_WITH_CEDILLA, U'C'},		// ç
+		{UNICODE_LATIN_SMALL_LETTER_ETH, U'D'},					// ð
+		{UNICODE_LATIN_SMALL_LETTER_OPEN_E, U'E'},				// ɛ
+		// F unused
+		{UNICODE_LATIN_LETTER_SMALL_CAPITAL_G, U'G'},			// ɢ
+		{UNICODE_LATIN_SMALL_LETTER_H_WITH_STROKE, U'H'},		// ħ
+		{UNICODE_LATIN_LETTER_SMALL_CAPITAL_I, U'I'},			// ɪ
+		{UNICODE_LATIN_SMALL_LETTER_IOTA, U'I'},				// ɩ
+		{UNICODE_LATIN_SMALL_LETTER_DOTLESS_J_WITH_STROKE, U'J'},// ɟ
+		// K unused
+		{UNICODE_LATIN_SMALL_LETTER_L_WITH_MIDDLE_TILDE, U'L'},	// ɫ
+		{UNICODE_LATIN_LETTER_SMALL_CAPITAL_L, U'L'},			// ʟ
+		{UNICODE_LATIN_SMALL_LETTER_L_WITH_BELT, U'L'},			// ɬ
+		{UNICODE_LATIN_SMALL_LETTER_M_WITH_HOOK, U'M'},			// ɱ
+		{UNICODE_LATIN_SMALL_LETTER_ENG, U'N'},					// ŋ
+		{UNICODE_LATIN_SMALL_LETTER_OPEN_O, U'O'},				// ɔ
+		{UNICODE_GREEK_CAPITAL_LETTER_PHI, U'P'},				// Φ
+		{UNICODE_LATIN_SMALL_LETTER_GAMMA, U'Q'},				// ɣ
+		{UNICODE_LATIN_SMALL_LETTER_SCHWA_WITH_HOOK, U'R'},		// ɚ
+		{UNICODE_LATIN_LETTER_SMALL_CAPITAL_R, U'R'},			// ʀ
+		{UNICODE_LATIN_SMALL_LETTER_ESH, U'S'},					// ʃ
+		{UNICODE_GREEK_SMALL_LETTER_THETA, U'T'},				// θ
+		{UNICODE_LATIN_SMALL_LETTER_UPSILON, U'U'},				// ʊ
+		{UNICODE_LATIN_SMALL_LETTER_CLOSED_OMEGA, U'U'},		// ɷ
+		{UNICODE_LATIN_SMALL_LETTER_TURNED_V, U'V'},			// ʌ
+		{UNICODE_LATIN_SMALL_LIGATURE_OE, U'W'},				// œ
+		{UNICODE_GREEK_SMALL_LETTER_CHI, U'X'},					// χ
+		{UNICODE_LATIN_SMALL_LETTER_O_WITH_STROKE, U'Y'},		// ø
+		{UNICODE_LATIN_SMALL_LETTER_EZH, U'Z'},					// ʒ
+		{UNICODE_LATIN_LETTER_GLOTTAL_STOP, U'?'},				// ʔ
+		{UNICODE_LATIN_SMALL_LETTER_SCHWA, U'@'},				// ə
+		{UNICODE_LATIN_SMALL_LETTER_AE, U'&'},					// æ
+		{UNICODE_LATIN_SMALL_LETTER_R_WITH_FISHHOOK, U'*'}		// ɾ	
+	};
+	const struct ipaksymbol2 {
+		char32 ipa; 
+		char32 kirshenbaum[3];
+	} ipaksymbols2 [] = {
+		// alveoalars
+		{UNICODE_LATIN_LETTER_SMALL_CAPITAL_B, U"b"},			// ʙ unsupported: b<trl>
+		{UNICODE_LATIN_SMALL_LETTER_B_WITH_HOOK, U"b"},			// ɓ unsupported: b`
+		{UNICODE_LATIN_SMALL_LETTER_D_WITH_HOOK, U"d"},			// ɗ unsupported: d`
+		{UNICODE_LATIN_SMALL_LETTER_TURNED_T, U"t"},			// ʇ unsupported: t!
+		{UNICODE_LATIN_SMALL_LETTER_L_WITH_BELT, U"s"},			// ɬ unsupported: s<lat>
+		{UNICODE_LATIN_SMALL_LETTER_LEZH, U"z"},				// ɮ unsupported: z<lat>
+		{UNICODE_LATIN_LETTER_SMALL_CAPITAL_R, U"r"},			// ʀ unsupported: r<trl>
+		{UNICODE_LATIN_SMALL_LETTER_R_WITH_FISHHOOK, U"*"},		// ɾ 
+		{UNICODE_LATIN_SMALL_LETTER_TURNED_R_WITH_LONG_LEG, U"*"},// ɺ unsupported: *<lat>
+		{UNICODE_LATIN_LETTER_STRETCHED_C, U"c"},		// ʗ unsupported: c!
+		{UNICODE_LATIN_LETTER_INVERTED_GLOTTAL_STOP, U"l"},		// ʖ unsupported: l!
+/*		{, U""},		//  
+		{, U""},		//  
+		{, U""},		//  
+		{, U""},		//  
+		{, U""},		//  
+		{, U""},		//  
+*/		
+	};
+	autostring8 result;
+	return result;
+	
+}
+
+
+
+
 
 autoEspeakVoice EspeakVoice_create () {
 	try {
@@ -224,7 +329,10 @@ static int synthCallback (short *wav, int numsamples, espeak_EVENT *events)
 			} else {
 				// Ugly hack because id.string is not 0-terminated if 8 chars long!
 				memcpy (phoneme_name, events -> id.string, 8);
-				phoneme_name [8] = 0;
+				//phoneme_name [8] = 0;
+				phoneme_name [4] = 0;   // ppgb UGLY HACK IN ORDER TO MAKE FEWER MISTAKES (20231022)
+				//TRACE
+				trace (U"phoneme name <<", Melder_peek8to32 (phoneme_name), U">>");
 				Table_setStringValue (my d_events.get(), irow, 8, Melder_peek8to32 (phoneme_name));
 			}
 			Table_setNumericValue (my d_events.get(), irow, 9, events -> unique_identifier);
@@ -245,7 +353,7 @@ static conststring32 SpeechSynthesizer_getLanguageCode (SpeechSynthesizer me) {
 		const integer irow = Table_searchColumn (espeakdata_languages_propertiesTable.get(), 2, my d_languageName.get());
 		Melder_require (irow != 0,
 			U"Cannot find language \"", my d_languageName.get(), U"\".");
-		return Table_getStringValue_Assert (espeakdata_languages_propertiesTable.get(), irow, 1);
+		return Table_getStringValue_a (espeakdata_languages_propertiesTable.get(), irow, 1);
 	} catch (MelderError) {
 		Melder_throw (me, U": Cannot find language code.");
 	}
@@ -256,7 +364,7 @@ static conststring32 SpeechSynthesizer_getPhonemeCode (SpeechSynthesizer me) {
 		const integer irow = Table_searchColumn (espeakdata_languages_propertiesTable.get(), 2, my d_phonemeSet.get());
 		Melder_require (irow != 0,
 			U"Cannot find phoneme set \"", my d_phonemeSet.get(), U"\".");
-		return Table_getStringValue_Assert (espeakdata_languages_propertiesTable.get(), irow, 1);
+		return Table_getStringValue_a (espeakdata_languages_propertiesTable.get(), irow, 1);
 	} catch (MelderError) {
 		Melder_throw (me, U": Cannot find phoneme code.");
 	}
@@ -267,7 +375,7 @@ static conststring32 SpeechSynthesizer_getVoiceCode (SpeechSynthesizer me) {
 		const integer irow = Table_searchColumn (espeakdata_voices_propertiesTable.get(), 2, my d_voiceName.get());
 		Melder_require (irow != 0,
 			U": Cannot find voice variant \"", my d_voiceName.get(), U"\".");
-		return Table_getStringValue_Assert (espeakdata_voices_propertiesTable.get(), irow, 1);
+		return Table_getStringValue_a (espeakdata_voices_propertiesTable.get(), irow, 1);
 	} catch (MelderError) {
 		Melder_throw (me, U": Cannot find voice code.");
 	}
@@ -282,7 +390,7 @@ autoSpeechSynthesizer SpeechSynthesizer_create (conststring32 languageName, cons
 		my d_voiceName = Melder_dup (voiceName);
 		(void) SpeechSynthesizer_getVoiceCode (me.get());  // existence check
 		my d_phonemeSet = Melder_dup (languageName);
-		SpeechSynthesizer_setTextInputSettings (me.get(), SpeechSynthesizer_INPUT_TEXTONLY, SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM);
+		SpeechSynthesizer_setTextInputSettings (me.get(), SpeechSynthesizer_INPUT_TAGGEDTEXT, SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM);
 		SpeechSynthesizer_setSpeechOutputSettings (me.get(), 44100.0, 0.01, 1.0, 1.0, 175.0, SpeechSynthesizer_PHONEMECODINGS_IPA);
 		SpeechSynthesizer_setEstimateSpeechRateFromSpeech (me.get(), true);
 		return me;
@@ -331,8 +439,16 @@ static autoSound buffer_to_Sound (constINTVEC const& wav, double samplingFrequen
 }
 
 static void IntervalTier_addBoundaryUnsorted (IntervalTier me, integer iinterval, double time, conststring32 newLabel, bool isNewleftLabel) {
+	//TRACE
+	trace (U"size before: ", my intervals.size);
+	for (integer i = 1; i <= my intervals.size; i ++)
+		trace (U"phoneme ", i, U" ", my intervals.at [i] -> xmin, U" ", my intervals.at [i] -> xmax,
+				U" ", Melder_length (my intervals.at [i] -> text.get()), U" ", my intervals.at [i] -> text.get());
+
+	trace (U"isNewLeftLabel: ", isNewleftLabel);
+	trace (U"iinterval: ", iinterval);
 	Melder_require (time > my xmin && time < my xmax,
-		U"Time is outside interval domains.");
+		U"The time (", time, U" seconds) is not inside the domain of the interval tier (", my xmin, U" .. ", my xmax, U" seconds).");
 	/*
 		Find interval to split
 	*/
@@ -342,17 +458,25 @@ static void IntervalTier_addBoundaryUnsorted (IntervalTier me, integer iinterval
 		Modify end time of left label
 	*/
 	const TextInterval ti = my intervals.at [iinterval];
+	trace (U"end time ", ti -> xmax, U" overridden by ", time);
 	ti -> xmax = time;
-	if (isNewleftLabel)
+	if (isNewleftLabel) {
+		trace (U"label <<", ti -> text.get(), U">> overridden by ", newLabel);
 		TextInterval_setText (ti, newLabel);
+	}
 	autoTextInterval ti_new = TextInterval_create (time, my xmax, (! isNewleftLabel ? newLabel : U"" ));
 	my intervals. addItem_unsorted_move (ti_new.move());
+
+	trace (U"size after: ", my intervals.size);
+	for (integer i = 1; i <= my intervals.size; i ++)
+		trace (U"phoneme ", i, U" ", my intervals.at [i] -> xmin, U" ", my intervals.at [i] -> xmax,
+				U" ", Melder_length (my intervals.at [i] -> text.get()), U" ", my intervals.at [i] -> text.get());
 }
 
 static void Table_setEventTypeString (Table me) {
 	try {
 		for (integer i = 1; i <= my rows.size; i ++) {
-			const int type = Table_getNumericValue_Assert (me, i, 2);
+			const int type = Table_getNumericValue_a (me, i, 2);
 			conststring32 label = U"0";
 			if (type == espeakEVENT_WORD)
 				label = U"word";
@@ -479,10 +603,10 @@ static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin
 	try {
 		const integer textLength = Melder_length (text);
 		const integer numberOfRows = my rows.size;
-		const integer timeColumnIndex = Table_getColumnIndexFromColumnLabel (me, U"time");
-		const integer typeColumnIndex = Table_getColumnIndexFromColumnLabel (me, U"type");
-		const integer tposColumnIndex = Table_getColumnIndexFromColumnLabel (me, U"t-pos");
-		const integer   idColumnIndex = Table_getColumnIndexFromColumnLabel (me, U"id");
+		const integer timeColumnIndex = Table_columnNameToNumber_e (me, U"time");
+		const integer typeColumnIndex = Table_columnNameToNumber_e (me, U"type");
+		const integer tposColumnIndex = Table_columnNameToNumber_e (me, U"t-pos");
+		const integer   idColumnIndex = Table_columnNameToNumber_e (me, U"id");
 		autoTextGrid thee = TextGrid_create (xmin, xmax, U"sentence clause word phoneme", U"");
 
 		TextGrid_setIntervalText (thee.get(), 1, 1, text);
@@ -495,22 +619,22 @@ static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin
 		const IntervalTier clauses = (IntervalTier) thy tiers->at [2];
 		const IntervalTier words = (IntervalTier) thy tiers->at [3];
 		const IntervalTier phonemes = (IntervalTier) thy tiers->at [4];
-		for (integer i = 1; i <= numberOfRows; i++) {
-			const double time = Table_getNumericValue_Assert (me, i, timeColumnIndex);
-			const int type = Table_getNumericValue_Assert (me, i, typeColumnIndex);
-			const integer pos = Table_getNumericValue_Assert (me, i, tposColumnIndex);
+		for (integer irow = 1; irow <= numberOfRows; irow ++) {
+			/*const*/ double time = Table_getNumericValue_a (me, irow, timeColumnIndex);
+			const int type = Table_getNumericValue_a (me, irow, typeColumnIndex);
+			const integer pos = Table_getNumericValue_a (me, irow, tposColumnIndex);
 			integer length;
 			if (type == espeakEVENT_SENTENCE) {
 				/*
-					Only insert a new boundary, no text
-					text will be inserted at end sentence event
+					Insert only a new boundary, no text
+					(text will be inserted at an "end sentence" event).
 				*/
 				if (time > xmin && time < xmax)
 					IntervalTier_addBoundaryUnsorted (clauses, clauses -> intervals.size, time, U"", true);
 				p1c = pos;
 			} else if (type == espeakEVENT_END) {
 				/*
-					End of clause: insert new boundary, and fill left interval with text
+					End of clause: insert new boundary, and fill left interval with text.
 				*/
 				length = pos - p1c + 1;
 				MelderString_ncopy (&mark, text + p1c - 1, length);
@@ -521,7 +645,7 @@ static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin
 					TextGrid_setIntervalText (thee.get(), 2, clauses -> intervals.size, mark.string);
 				p1c = pos;
 				/*
-					End of clause always signals "end of a word"
+					End of clause always signals "end of a word".
 				*/
 				if (pos <= textLength) {
 					length = pos - p1w + 1;
@@ -532,7 +656,7 @@ static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin
 					else
 						TextGrid_setIntervalText (thee.get(), 3, words -> intervals.size, mark.string);
 					/*
-						Now the next word event should not trigger setting the left interval text
+						Now the next word event should not trigger setting the left interval text.
 					*/
 					wordEnd = false;
 				}
@@ -550,20 +674,50 @@ static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin
 				wordEnd = true;
 				p1w = pos;
 			} else if (type == espeakEVENT_PHONEME) {
-				const conststring32 id = Table_getStringValue_Assert (me, i, idColumnIndex);
-				if (time > time_phon_p) {
-					/*
-						Insert new boudary and label interval with the id
-						TODO: Translate the id to the correct notation
-					*/
-					TextInterval ti = phonemes -> intervals.at [phonemes -> intervals.size];
-					if (time > ti -> xmin && time < ti -> xmax)
-						IntervalTier_addBoundaryUnsorted (phonemes, phonemes -> intervals.size, time, id, false);
+				const conststring32 phoneme = Table_getStringValue_a (me, irow, idColumnIndex);
+				//TRACE
+				trace (U"found in table the phoneme <<", phoneme, U">>, to be inserted at ", time, U" (usually after ", time_phon_p, U")");
+				const TextInterval lastPhonemeInterval = phonemes -> intervals.at [phonemes -> intervals.size];
+				if (false) {
+					if (time > time_phon_p) {
+						/*
+							Insert new boundary and label interval with the phoneme.
+							TODO: Translate the phoneme to the correct notation
+						*/
+						if (time > lastPhonemeInterval -> xmin && time < lastPhonemeInterval -> xmax) {
+							trace (U"add boundary (1) for phoneme <<", phoneme, U">> at ", time);
+							IntervalTier_addBoundaryUnsorted (phonemes, phonemes -> intervals.size, time, phoneme, false);
+						}
+					} else {
+						/*
+							Just in case the phoneme starts at xmin, we only need to set interval text.
+						*/
+						trace (U"overriding <<", lastPhonemeInterval -> text.get(), U">> with <<", phoneme, U">>");
+						TextGrid_setIntervalText (thee.get(), 4, phonemes -> intervals.size, phoneme);
+					}
 				} else {
-					/*
-						Just in case the phoneme starts at xmin we only need to set interval text
-					*/
-					TextGrid_setIntervalText (thee.get(), 4, phonemes -> intervals.size, id);
+					if (time > time_phon_p) {
+						/*
+							Insert new boundary and label interval with the phoneme.
+							TODO: Translate the phoneme to the correct notation
+						*/
+						if (time > lastPhonemeInterval -> xmin && time < lastPhonemeInterval -> xmax) {
+							trace (U"add boundary (1) for phoneme <<", phoneme, U">> at ", time);
+							IntervalTier_addBoundaryUnsorted (phonemes, phonemes -> intervals.size, time, phoneme, false);
+						}
+					} else if (! Melder_equ (phoneme, U"")) {
+						/*
+							Just in case the phoneme starts at xmin, we only need to set interval text.
+						*/
+						trace (U"overriding <<", lastPhonemeInterval -> text.get(), U">> with <<", phoneme, U">>");
+						TextGrid_setIntervalText (thee.get(), 4, phonemes -> intervals.size, phoneme);
+					} else {
+						//TRACE
+						trace (U"stupid repair, houtjes-touwtjes");
+						time = 0.001 * lastPhonemeInterval -> xmax + 0.999 * lastPhonemeInterval -> xmin;
+						trace (U"add boundary (2) for phoneme <<", phoneme, U">> at ", time);
+						IntervalTier_addBoundaryUnsorted (phonemes, phonemes -> intervals.size, time, phoneme, false);
+					}
 				}
 				time_phon_p = time;
 			}
@@ -577,7 +731,7 @@ static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin
 		IntervalTier_removeVeryShortIntervals (words);
 		IntervalTier_removeVeryShortIntervals (clauses);
 		/*
-			Use empty intervals in phoneme tier for more precision in the word tier
+			Use empty intervals in phoneme tier for more precision in the word tier.
 		*/
 		IntervalTier_insertEmptyIntervalsFromOtherTier (words, phonemes);
 		IntervalTier_mergeSpecialIntervals (words); // Merge neighbouring empty U"" and U"\001" intervals
@@ -590,12 +744,12 @@ static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin
 
 static void SpeechSynthesizer_generateSynthesisData (SpeechSynthesizer me, conststring32 text) {
 	try {
+		int synth_flags = 0;
 		espeak_ng_InitializePath (nullptr); // PATH_ESPEAK_DATA
 		espeak_ng_ERROR_CONTEXT context = { 0 };
 		espeak_ng_STATUS status = espeak_ng_Initialize (& context);
 		Melder_require (status == ENS_OK,
 			U"Internal espeak error. ", status);
-		int synth_flags = espeakCHARS_WCHAR;
 		if (my d_inputTextFormat == SpeechSynthesizer_INPUT_TAGGEDTEXT)
 			synth_flags |= espeakSSML;
 		if (my d_inputTextFormat != SpeechSynthesizer_INPUT_TEXTONLY)
@@ -623,7 +777,7 @@ static void SpeechSynthesizer_generateSynthesisData (SpeechSynthesizer me, const
 		espeak_ng_SetParameter (espeakWORDGAP, wordGap_10ms, 0);
 		espeak_ng_SetParameter (espeakCAPITALS, 0, 0);
 		espeak_ng_SetParameter (espeakPUNCTUATION, espeakPUNCT_NONE, 0);
-		
+
 		status = espeak_ng_InitializeOutput (ENOUTPUT_MODE_SYNCHRONOUS, 2048, nullptr);
 		espeak_SetSynthCallback (synthCallback);
 		if (! Melder_equ (my d_phonemeSet.get(), my d_languageName.get())) {
@@ -631,21 +785,24 @@ static void SpeechSynthesizer_generateSynthesisData (SpeechSynthesizer me, const
 			const int index_phon_table_list = LookupPhonemeTable (Melder_peek32to8 (phonemeCode));
 			if (index_phon_table_list > 0) {
 				voice -> phoneme_tab_ix = index_phon_table_list;
-				DoVoiceChange(voice);
+				(void) DoVoiceChange(voice);
 			}
 		}
 
 		const conststring32 columnNames [] =
 				{ U"time", U"type", U"type-t", U"t-pos", U"length", U"a-pos", U"sample", U"id", U"uniq" };
 		my d_events = Table_createWithColumnNames (0, ARRAY_TO_STRVEC (columnNames));
-
+		unsigned int unique_identifier = 0;
 		#ifdef _WIN32
 			conststringW textW = Melder_peek32toW (text);
-			espeak_ng_Synthesize (textW, wcslen (textW) + 1, 0, POS_CHARACTER, 0, synth_flags, nullptr, me);
+			synth_flags |= espeakCHARS_WCHAR;
+			espeak_ng_Synthesize (textW, wcslen (textW) + 1, 0, POS_CHARACTER, 0, synth_flags, & unique_identifier, me);
 		#else
-			espeak_ng_Synthesize (text, Melder_length (text) + 1, 0, POS_CHARACTER, 0, synth_flags, nullptr, me);
+			conststring8 textUTF8 = Melder_peek32to8 (text);
+			synth_flags |= espeakCHARS_UTF8;
+			espeak_ng_Synthesize (textUTF8, Melder_length_utf8 (text, false) + 1, 0, POS_CHARACTER, 0, synth_flags, & unique_identifier, me);
 		#endif
-				
+
 		espeak_ng_Terminate ();
 	} catch (MelderError) {
 		espeak_Terminate ();
@@ -653,14 +810,14 @@ static void SpeechSynthesizer_generateSynthesisData (SpeechSynthesizer me, const
 	}	
 }
 
-conststring32 SpeechSynthesizer_getPhonemesFromText (SpeechSynthesizer me, conststring32 text) {
+autostring32 SpeechSynthesizer_getPhonemesFromText (SpeechSynthesizer me, conststring32 text, bool separateBySpaces) {
 	try {
 		SpeechSynthesizer_generateSynthesisData (me, text);
 		const double dt = 1.0 / my d_internalSamplingFrequency;
 		const double tmin = 0.0, tmax = my d_wav.size * dt;
-		double xmin = Table_getNumericValue_Assert (my d_events.get(), 1, 1);
+		double xmin = Table_getNumericValue_a (my d_events.get(), 1, 1);
 		Melder_clipLeft (tmin, & xmin);
-		double xmax = Table_getNumericValue_Assert (my d_events.get(), my d_events -> rows.size, 1);
+		double xmax = Table_getNumericValue_a (my d_events.get(), my d_events -> rows.size, 1);
 		Melder_clipRight (& xmax, tmax);
 		autoTextGrid tg = Table_to_TextGrid (my d_events.get(), text, xmin, xmax);
 		/*
@@ -670,15 +827,21 @@ conststring32 SpeechSynthesizer_getPhonemesFromText (SpeechSynthesizer me, const
 		IntervalTier phonemeTier = static_cast<IntervalTier> (tg -> tiers -> at [4]);
 		const integer numberOfIntervals = phonemeTier -> intervals.size;
 		Melder_require (numberOfIntervals > 0,
-			U"Not enough phonemes.");
-		MelderString phonemes;
+			U"There are no phonemes in the tier.");
+		autoMelderString phonemes;
+		const conststring32 phonemeSeparator = ( separateBySpaces ? U" " : U"" );
+		const conststring32 wordSeparator = ( separateBySpaces ? U"  " : U" " );
 		for (integer iint = 1; iint <= numberOfIntervals; iint ++) {
-			TextInterval interval = phonemeTier -> intervals .at [iint];
-			conststring32 phonemeLabel = interval -> text.get();
-			conststring32 text = ( Melder_cmp (phonemeLabel, U"") == 0 ? (iint > 1 ? U" " : U"") : phonemeLabel );
-			MelderString_append (& phonemes, text);
+			TextInterval interval = phonemeTier -> intervals.at [iint];
+			const conststring32 phonemeLabel = interval -> text.get();
+			const bool isEmptyLabel = Melder_equ (phonemeLabel, U"");
+			if (isEmptyLabel) {
+				if (iint > 1 && iint < numberOfIntervals)
+					MelderString_append (& phonemes, wordSeparator);
+			} else
+				MelderString_append (& phonemes, phonemeLabel, (iint < numberOfIntervals ? phonemeSeparator : U"") );
 		}
-		return phonemes . string;
+		return Melder_dup (phonemes.string);   // TODO: implement MelderString_move()
 	} catch (MelderError) {
 		Melder_throw (U"Phonemes not generated.");
 	}
@@ -693,10 +856,10 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, 
 			thee = Sound_resample (thee.get(), my d_samplingFrequency, 50);
 		my d_numberOfSamples = 0; // re-use the wav-buffer
 		if (tg) {
-			double xmin = Table_getNumericValue_Assert (my d_events.get(), 1, 1);
+			double xmin = Table_getNumericValue_a (my d_events.get(), 1, 1);
 			if (xmin > thy xmin)
 				xmin = thy xmin;
-			double xmax = Table_getNumericValue_Assert (my d_events.get(), my d_events -> rows.size, 1);
+			double xmax = Table_getNumericValue_a (my d_events.get(), my d_events -> rows.size, 1);
 			if (xmax < thy xmax)
 				xmax = thy xmax;
 			autoTextGrid tg1 = Table_to_TextGrid (my d_events.get(), text, xmin, xmax);
@@ -706,7 +869,7 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, 
 			Table_setEventTypeString (my d_events.get());
 			*events = my d_events.move();
 		}
-		my d_events.reset();
+		my d_events. reset();
 		return thee;
 	} catch (MelderError) {
 		espeak_Terminate ();

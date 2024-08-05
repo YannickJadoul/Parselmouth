@@ -37,21 +37,25 @@ as well as several kinds of neural-network models.
 Praat allows you to perform several statistical techniques, among which
 multidimensional scaling, principal component analysis, and discriminant analysis.
 
-For more information, consult the website [praat.org](https://praat.org), which has Praat tutorials in several languages.
+For more information, consult the extensive manual in Praat (under Help),
+and the website [praat.org](http://praat.org), which has Praat tutorials in several languages.
 
 ## 1. Binary executables
 
-While the [Praat website](https://praat.org) contains the latest executable for all platforms that we support
+While the [Praat website](https://www.fon.hum.uva.nl/praat) contains the latest executable for all platforms that we support
 (or used to support), the [releases on GitHub](https://github.com/praat/praat/releases) contain many older executables as well.
 
 The meaning of the names of binary files available on GitHub is as follows (editions that currently receive updates are in bold):
 
 ### 1.1. Windows binaries
-- **`praatXXXX_win64.zip`: zipped executable for 64-bit Windows (** XP and higher, or **7 and higher)**
-- **`praatXXXX_win32.zip`: zipped executable for 32-bit Windows (** XP and higher, or **7 and higher)**
-- `praatconXXXX_win64.zip`: zipped executable for 64-bit Windows, console edition
-- `praatconXXXX_win32.zip`: zipped executable for 32-bit Windows, console edition
-- `praatconXXXX_win32sit.exe`: self-extracting StuffIt archive with executable for 32-bit Windows, console edition
+- **`praatXXXX_win-arm64.zip`: zipped executable for ARM64 Windows (11 and higher)**
+- **`praatXXXX_win-intel64.zip`: zipped executable for Intel64 Windows (7 and higher)**
+- **`praatXXXX_win-intel32.zip`: zipped executable for Intel32 Windows (7 and higher)**
+- `praatXXXX_win64.zip`: zipped executable for 64-bit Intel Windows (XP and higher, or 7 and higher)
+- `praatXXXX_win32.zip`: zipped executable for 32-bit Intel Windows (XP and higher, or 7 and higher)
+- `praatconXXXX_win64.zip`: zipped executable for 64-bit Intel Windows, console edition
+- `praatconXXXX_win32.zip`: zipped executable for 32-bit Intel Windows, console edition
+- `praatconXXXX_win32sit.exe`: self-extracting StuffIt archive with executable for 32-bit Intel Windows, console edition
 - `praatXXXX_win98.zip`: zipped executable for Windows 98
 - `praatXXXX_win98sit.exe`: self-extracting StuffIt archive with executable for Windows 98
 
@@ -70,15 +74,30 @@ The meaning of the names of binary files available on GitHub is as follows (edit
 - `praatXXXX_mac9.zip`: zipped executable for MacOS 9
 - `praatXXXX_mac7.sit`: StuffIt archive with executable for MacOS 7
 
-### 1.3. Unix binaries
-- **`praatXXXX_rpi_armv7.tar.gz`: gzipped tarred executable for 32-bit Linux on the Raspberry Pi 4B (GTK** 2 or **3)**
-- **`praatXXXX_chrome64.tar.gz`: gzipped tarred executable for 64-bit Linux on Chromebooks (GTK** 2 or **3)**
-- **`praatXXXX_linux64barren.tar.gz`: gzipped tarred executable for 64-bit Linux, without GUI or graphics**
-- **`praatXXXX_linux64nogui.tar.gz`: gzipped tarred executable for 64-bit Linux, without GUI but with graphics (Cairo and Pango)**
-- **`praatXXXX_linux64.tar.gz`: gzipped tarred executable for 64-bit Linux (GTK** 2 or **3)**
-- `praatXXXX_linux32.tar.gz`: gzipped tarred executable for 32-bit Linux (GTK 2)
-- `praatXXXX_linux_motif64.tar.gz`: gzipped tarred executable for 64-bit Linux (Motif)
-- `praatXXXX_linux_motif32.tar.gz`: gzipped tarred executable for 32-bit Linux (Motif)
+### 1.3. Linux binaries
+- **`praatXXXX_linux-arm64-barren.tar.gz`: gzipped tarred executable for ARM64 Linux, without GUI, sound and graphics**
+- **`praatXXXX_linux-arm64-nogui.tar.gz`: gzipped tarred executable for ARM64 Linux, without GUI and sound but with graphics (Cairo and Pango)**
+- **`praatXXXX_linux-arm64.tar.gz`: gzipped tarred executable for ARM64 Linux (GTK 3)**
+- **`praatXXXX_linux-intel64-barren.tar.gz`: gzipped tarred executable for Intel64 Linux, without GUI, sound and graphics**
+- **`praatXXXX_linux-intel64-nogui.tar.gz`: gzipped tarred executable for Intel64 Linux, without GUI and sound but with graphics (Cairo and Pango)**
+- **`praatXXXX_linux-intel64.tar.gz`: gzipped tarred executable for Intel64 Linux (GTK 3)**
+- `praatXXXX_linux64barren.tar.gz`: gzipped tarred executable for 64-bit Intel Linux, without GUI, sound and graphics
+- `praatXXXX_linux64nogui.tar.gz`: gzipped tarred executable for 64-bit Intel Linux, without GUI and sound but with graphics (Cairo and Pango)
+- `praatXXXX_linux64.tar.gz`: gzipped tarred executable for 64-bit Intel Linux (GTK 2 or 3)
+- `praatXXXX_linux32.tar.gz`: gzipped tarred executable for 32-bit Intel Linux (GTK 2)
+- `praatXXXX_linux_motif64.tar.gz`: gzipped tarred executable for 64-bit Intel Linux (Motif)
+- `praatXXXX_linux_motif32.tar.gz`: gzipped tarred executable for 32-bit Intel Linux (Motif)
+
+### 1.4. Chromebook binaries
+- **`praatXXXX_chrome-arm64.tar.gz`: gzipped tarred executable for Linux on ARM64 Chromebooks (GTK 3)**
+- **`praatXXXX_chrome-intel64.tar.gz`: gzipped tarred executable for Intel64 Linux on Intel64 Chromebooks (GTK 3)**
+- `praatXXXX_chrome64.tar.gz`: gzipped tarred executable for 64-bit Linux on Intel64 Chromebooks (GTK 2 or 3)
+
+### 1.5. Raspberry Pi binaries
+- **`praatXXXX_rpi-armv7.tar.gz`: gzipped tarred executable for (32-bit) ARMv7 Linux on the Raspberry Pi 4B (GTK 3)**
+- `praatXXXX_rpi_armv7.tar.gz`: gzipped tarred executable for (32-bit) ARMv7 Linux on the Raspberry Pi 4B (GTK 2 or 3)
+
+### 1.6. Other Unix binaries (all obsolete)
 - `praatXXXX_solaris.tar.gz`: gzipped tarred executable for Solaris
 
 ## 2. Compiling the source code
@@ -116,37 +135,91 @@ Consult the manual page on [Programming](http://www.fon.hum.uva.nl/praat/manual/
 Most of the source code is written in C++, but some parts are written in C.
 The code requires that your compiler supports C99 and C++17.
 
-## 3. Compiling the source code on one platform
+## 3. Developing Praat for one platform
 
-### 3.1. Compiling for Windows
+Developing Praat means two things: *building* the Praat executable from the Praat
+source code, and *testing* the correctness of the Praat executable.
 
-To compile Praat's Windows edition on a 64-bit Windows computer,
-install Cygwin on that computer,
-and under Cygwin install the Devel packages mingw64-x86_64-gcc-g++ (for 64-bit targets)
-and/or mingw64-i686-gcc-g++ (for 32-bit targets).
-Move the Praat sources directory somewhere in your `/home/yourname` tree,
-e.g. as `/home/yourname/praats` and/or `/home/yourname/praats32`;
-the folders `fon` and `sys` should be visible within these folders.
-If you want to build Praat's 64-bit edition, type
+**Building** is largely automated:
 
-    cd ~/praats
-    cp makefiles/makefile.defs.mingw64 ./makefile.defs
+- On the Mac, you use an existing Xcode project (these files are included in the releases).
+- On other platforms (Windows and Unixes), you use existing makefiles
+  (these files are included in the source tree).
 
-or if you want to build Praat's 32-bit edition, type
+**Testing** on a platform can be done by starting up Praat on that platform,
+and then go through to types of tests. Basic GUI functionality is tested as follows:
 
-    cd ~/praats32
-    cp makefiles/makefile.defs.mingw32 ./makefile.defs
+1. record a sound (New -> `Record mono Sound...`)
+2. open the sound (`View & Edit`)
+3. select a part of the sound (drag the mouse across the waveform)
+4. play the sound (click on the rectangle below or above the selection)
 
-Then type `make` to build `Praat.exe`
-(use `make -j12` to speed this up, i.e. to use 12 processors in parallel).
+The integrity of Praats’s algorithms (e.g. signal processing)
+and of the Praat scripting language is tested as follows:
+
+1. open the script `test/runAlltests.praat` (Praat -> `Open Praat script...`)
+2. run the script (Run -> `Run`)
+3. after 2 to 10 minutes, the Info window should contain a big “OK” graph
+4. go through steps 1 through 3 for `dwtest/runAllTests.praat`
+5. if you feel adventurous, try some tests in the folder `test/manually`
+
+### 3.1. Developing Praat for Windows
+
+On Windows, Praat is **built** through the makefiles provided in Praat’s source tree.
+
+One could use Cygwin or MSYS2. As we like to provide not only an Intel64 and Intel32 edition,
+but an ARM64 edition as well, and Cygwin has no toolchains for ARM64, we work with MSYS2 instead.
+
+After installing MSYS2, we see that a `mingw64` toolchain (for Praat’s Intel64 edition)
+and a `mingw32` toolchain (for Praat’s Intel32 edition) are already available.
+To also install a `clangarm64` toolchain (for Praat’s ARM64 edition),
+run `clangarm64.exe` to get a `clangarm64` shell. In that shell, run `pacman -Suy` to update and
+`pacman -S mingw-w64-clang-aarch64-clang` to install the build tools package.
+
+Move the Praat sources folders somewhere in your `/home/yourname` tree,
+perhaps even in three places, e.g. as `/home/yourname/praats-arm64`,
+`/home/yourname/praats-intel64` and `/home/yourname/praats-intel32`;
+the folders `fon` and `sys` should be visible within each of these folders.
+
+If you now want to build Praat’s ARM64 edition, start the shell `clangarm64` and type
+
+    cd ~/praats-arm64
+    cp makefiles/makefile.defs.msys-arm64 ./makefile.defs
+    make -j12
+
+If you want to build Praat’s Intel64 edition, start the shell `mingw64` and type
+
+    cd ~/praats-intel64
+    cp makefiles/makefile.defs.msys-mingw64 ./makefile.defs
+    make -j12
+
+If you want to build Praat’s Intel32 edition, start the shell `mingw32` and type
+
+    cd ~/praats-intel32
+    cp makefiles/makefile.defs.msys-mingw32 ./makefile.defs
+    make -j12
+
+(With Cygwin, you would install the Devel package mingw64-x86_64-gcc-g++
+for Praat’s Intel64 edition and mingw64-i686-gcc-g++ for Praat’s Intel32 edition.)
+
+**Testing** on multiple platform versions can be done with virtual machines
+for Windows 7 (64-bit), Windows 8.1 (64-bit), 64-bit Windows 10 (1507, 1803, 22H2) and Windows 11,
+for instance on an Intel64 Mac with Parallels Desktop.
+On an ARM64 Mac with Parallels Desktop, you can test only on Windows 11.
 
 ### 3.2. Compiling for Macintosh
 
-Extract the *praatXXXX_xcodeproj.zip* file from the [latest release](https://github.com/praat/praat/releases)
-into the directory that contains `sys`, `fon`, `dwtools` and so on.
-Then open the project `praat.xcodeproj` in Xcode 13.4 and choose Build or Run for the target `praat_mac`.
-You can compile with the 12.0 (i.e. the newest and standard) SDK, which will work as far back as macOS 10.9,
-which is our deployment target.
+To **build** Praat on the Mac, extract the *praatXXXX_xcodeproj.zip* file
+from [Praat’s latest release](https://github.com/praat/praat/releases)
+into the folder that contains `sys`, `fon`, `dwtools` and so on (e.g. `~/Dropbox/Praats/src`).
+Then open the project `praat.xcodeproj` in Xcode 15.1 (or perhaps later, but not in Xcode 15.0),
+and edit the Intermediate and Product build paths to something that suits you
+(Xcode -> Settings... -> Locations -> Derived Data -> Advanced... -> Custom -> Absolute,
+then type something after Products, e.g. `~/Dropbox/Praats/bin/macos`,
+as well as something after Intermediates, e.g. `~/builds/mac_intermediates`, then click Done).
+After this preliminary work, choose Build or Run for the target `praat_mac`.
+You can compile with the 14.2 SDK, which will work as far back as macOS 10.11 El Capitan,
+which is our deployment target, and will look good even on macOS 14 Sonoma.
 
 If you get an error message like “Code Signing Identity xxx does not match any valid, non-expired,
 code-signing certificate in your keychain”, then select the target `praat_mac`, go to Info → Build,
@@ -162,27 +235,39 @@ try the target `praat_mac_a` (static) or `praat_mac_so` (dynamic).
 
 **Notarization.** If you want others to be able to use your Mac app,
 you will probably have to not only *sign* the executable, but also *notarize* it. To this end,
-do Xcode (version 13) -> Product -> Archive -> Distribute App -> Developer ID -> Upload ->
+do Xcode (version 15) -> Product -> Archive -> Distribute App -> Developer ID -> Upload ->
 Automatically manage signing -> Upload -> ...wait... (“Package Approved”) ...wait...
 (“Ready to distribute”) -> Export Notarized App). If your Praat.app was built into
-`~/builds/mac_products/Configuration64`, then you can save the notarized
-`Praat.app` in `~/builds/mac_products`, then drag it in the Finder to
-`~/builds/mac_products/Configuration64`, overwriting the non-notarized
+`~/Dropbox/Praats/bin/macos/Configuration64`, then you can save the notarized
+`Praat.app` in `~/Dropbox/Praats/bin/macos`, then drag it in the Finder to
+`~/Dropbox/Praats/bin/macos/Configuration64`, overwriting the non-notarized
 Praat.app that was already there. If on the way you receive an error
 “App Store Connect Operation Error -- You must first sign the relevant contracts online”,
 or “Couldn’t communicate with a helper application“,
-you have to log in to `developer.apple.com` and do Review Agreement -> Agree;
-you may then also have to go (or log in) to App Store Connect, then Agreements, Tax, and Banking
--> Paid Apps -> View or Terms (even if you have no paid apps).
+or just a crash (happens with Xcode 15.0),
+you will have to log in to `developer.apple.com` and do Review Agreement -> Agree;
+you may then also have to go (or log in) to App Store Connect, then Business (or Agreements, Tax, and Banking)
+-> Paid Apps Agreement -> View and Agree to Terms (even if you have no paid apps).
+
+**Testing** on multiple Intel64 platform versions can be done on older Intel64 Macs,
+using virtual machines with Parallels Desktop. For instance, a 2013 Macbook Pro can handle
+OS X 10.11 El Capitan, 10.12 Sierra, 10.13 High Sierra, macOS 10.14 Mojave, 10.15 Catalina,
+and macOS 11 Big Sur, while a 2018 Macbook Pro can handle macOS 10.14 Mojave, 10.15 Catalina,
+macOS 11 Big Sur, macOS 12 Monterey, and macOS 13 Ventura (and macOS 14 Sonoma natively).
+Testing on multiple ARM64 platform versions can be done on an older ARM64 Mac,
+using virtual machines with Parallels Desktop. For instance, a 2020 Mac Mini could handle
+macOS 11 Big Sur, macOS 12 Monterey, and macOS 13 Ventura (and macOS 14 Sonoma natively).
 
 ### 3.3. Compiling on Linux and other Unixes
 
-To set up the required system libraries, install some graphics and sound packages:
+To set up the system libraries required for **building**,
+install the necessary build tools as well as some graphics and sound packages:
 
-    sudo apt-get install libgtk-3-dev
-    sudo apt-get install libasound2-dev
-    sudo apt-get install libpulse-dev
-    sudo apt-get install libjack-dev
+    sudo apt install make gcc g++ rsync pkg-config
+    sudo apt install libgtk-3-dev
+    sudo apt install libasound2-dev
+    sudo apt install libpulse-dev
+    sudo apt install libjack-dev
 
 To set up your source tree for Linux, go to Praat's sources directory (where the folders `fon` and `sys` are)
 and type one of the four following commands:
@@ -196,10 +281,10 @@ and type one of the four following commands:
     # on Raspberry Pi command line
     cp makefiles/makefile.defs.linux.rpi ./makefile.defs
     
-    # On FreeBSD command line
+    # on FreeBSD command line
     cp makefiles/makefile.defs.freebsd.alsa ./makefile.defs
 
-To build the Praat executable, type `make` or `make -j12`.
+To build the Praat executable, type `make -j12` or so.
 If your Unix isn’t Linux, you may have to edit the library names in the makefile
 (you may need pthread, gtk-3, gdk-3, atk-1.0, pangoft2-1.0, gdk_pixbuf-2.0, m, pangocairo-1.0,
 cairo-gobject, cairo, gio-2.0, pango-1.0, freetype, fontconfig, gobject-2.0, gmodule-2.0, 
@@ -210,7 +295,7 @@ If you do have `libgtk-3-dev` (and its dependencies), do
 
     cp makefiles/makefile.defs.linux.silent ./makefile.defs
 
-Then type `make` or `make -j12` to build the program. If your Unix isn’t Linux,
+Then type `make -j12` or so to build the program. If your Unix isn’t Linux,
 you may have to edit the library names in the makefile (you may need pthread, gtk-3, gdk-3, atk-1.0,
 pangoft2-1.0, gdk_pixbuf-2.0, m, pangocairo-1.0, cairo-gobject, cairo, gio-2.0, pango-1.0, 
 freetype, fontconfig, gobject-2.0, gmodule-2.0, gthread-2.0, rt, glib-2.0).
@@ -227,115 +312,145 @@ which creates the executable `praat_nogui`. If you don't need graphics (e.g. PNG
 which creates the executable `praat_barren`. Then type `make` or `make -j12` to build the program.
 If your Unix isn’t Linux, you may have to edit the library names in the makefile.
 
-## 4. Compiling the source code on all platforms simultaneously
+The above works exactly the same for Intel64 and ARM64 processors, with the same makefiles.
 
-The easiest way to develop your Praat clone on all platforms simultaneously,
-is to edit the source code on a Mac (with Xcode)
-and use Parallels Desktop for Windows and Linux building and testing.
-This is how Praat is currently developed.
-Editing takes place in Xcode,
-after which building Praat involves no more than typing Command-B into Xcode
-(or Command-R to build and run)
-or `praat-build` into a Windows or Linux terminal (or `praat-run` to build and run).
+**Testing** on multiple platform versions can be done with virtual machines
+for e.g. Ubuntu 20.04, Ubuntu 22.04, Fedora 35, Fedora 37, Mint 20.2,
+Debian GNU Linux 10.10, CentOS 8.4, and CentOS Stream 9, 
+for instance on an Intel64 with Parallels Desktop.
+On an ARM64 Mac, we test with virtual machines for Ubuntu 22.04, Fedora 38,
+and Debian GNU Linux 12 ARM64.
+
+## 4. Developing Praat on all platforms simultaneously
+
+At the time of writing (5 January 2024), we develop 12 of the 13 Praat editions on a single
+computer, which is a 2023 M3 Macbook Pro. The Mac edition is built natively with Xcode,
+the three Windows editions are built via Parallels Desktop 19,
+and the six Linux editions and the two Chromebook editions are built via OrbStack;
+only the Raspberry Pi edition is built separately (on a Raspberry Pi).
+We put all 13 editions into a `bin` folder on Dropbox, so that it is easy to test
+the Windows and Linux editions on other computers.
+
+In the following we assume that you want to create all of those editions as well.
+We hope that our example will be useful to you.
 
 ### 4.1. MacOS development set-up
 
-Your source code folders, such as `fon` and `sys`, will reside in a folder like `/Users/yourname/Praats/src`,
+Your source code folders, such as `fon` and `sys`,
+will reside in a folder like `~/Dropbox/Praats/src`,
 where you also put `praat.xcodeproj`, as described above in 3.2.
-On Paul’s 2018 MacBook Pro with Xcode 13.4, building Praat with Command-B or Command-R,
+On our 2023 Mac with Xcode 15.1, building Praat with Command-B or Command-R,
 after cleaning the build folder with Shift-Command-K,
-takes 380 seconds for the x86_64 part and ARM64 part together (optimization level O3).
+takes only 56 seconds for the ARM64 part and Intel64 part together (optimization level O3).
 
 ### 4.2. Windows development set-up
 
-Under Parallels Desktop 17.1 or later, install Windows 10 or Windows 11. In Windows, install Cygwin,
-and create a `praats` folder, as described above in 3.1.
+On a Windows 10 or Windows 11 computer, you can install MSYS2 or Cygwin,
+and create some `praats` folders, as described above in 3.1.
 
-There are two options for your source tree: either it resides on the MacOS disk
-(which you will mount from Windows anyway), or it resides on the Windows disk.
-Compiling Praat for Windows on the MacOS disk takes 13 minutes (optimization level O3),
-whereas compiling Praat on the Windows disk takes only 4 minutes and 20 seconds.
-So we go with installing the source tree under the Cygwin home folder, as follows.
-
-You need to get the source from the MacOS disk, so you have to mount the MacOS disk
-from Cygwin. This is easy: in Parallels Desktop, choose `Windows 10 or 11` -> `Configure`,
+If you work under Parallels Desktop on an ARM64 Mac,
+you will want MSYS2, because it has an edition for ARM64.
+Your source tree will reside on the Windows disk,
+which can be much faster than building directly on the MacOS disk.
+To move the source from the MacOS disk to the Windows disk,
+you “mount” the MacOS disk from MSYS2 or Cygwin; this is easy:
+in Parallels Desktop, choose `Windows 11 ARM` -> `Configure`,
 then `Options`, then `Sharing`, then `Share Mac`, and set `Share folders` to `Home folder only`
 (if this scares you, then use `Custom Folders` instead).
 Your MacOS home folder (i.e. `/Users/yourname`) is now visible anywhere on Windows
-as the `Z` drive (or so), and from the `Cygwin64 Terminal` you can access it as `/cygdrive/z`.
+as the `Z` drive (or so); from any of the three MSYS shells you can access it as `/z`,
+and from the Cygwin terminal you can access it as `/cygdrive/z`.
 
 When developing Praat for Windows, you just edit your files in Xcode;
 do not forget to save them (as you do e.g. by building in Xcode).
 Then, just as you use Command-B and Command-R in Xcode,
 you will be able to type `praat-build` (which only builds) or `praat-run` (which builds and runs)
-into your `Cygwin64 Terminal`. To accomplish this,
-add the following definitions into `/home/yourname/.profile` in your Cygwin home folder,
-so that the `bash` shell will automatically execute them whenever you start your `Cygwin64 Terminal`
-(you will need to have installed `rsync` and `make`):
+into your MSYS2 shell. To accomplish this,
+add the following definitions into `/home/yourname/.bashrc` (i.e. in your MSYS2 Shell home folder),
+so that `bash` will automatically execute them whenever you start your
+MSYS shell or Cygwin terminal (you will need to have installed `rsync` and `make`).
+On our 2023 Mac, the ARM64 edition will be the default,
+but the Intel64 and Intel32 versions will also be available;
+as the same `.bashrc` file is shared among all three editions,
+we use the environment variable `MSYSTEM` to differentiate between the three:
 
-    # in Cygwin:~/.profile
-    PRAAT_SOURCES="/cygdrive/z/Praats/src"
-    PRAAT_EXCLUDES='--exclude="*.xcodeproj" --exclude="Icon*" --exclude=".*" --exclude="*kanweg*"'
-    alias praat-build="( cd ~/praats &&\
-        rsync -rptvz $PRAAT_SOURCES/ $PRAAT_EXCLUDES . &&\
-        cp makefiles/makefile.defs.mingw64 makefile.defs &&\
+    # in MSYS2:~/.bashrc
+    if [[ "$MSYSTEM" == "CLANGARM64" ]]; then
+        BUILD_FOLDER="~/praats-arm64"
+        MAKEFILE_DEFS="makefiles/makefile.defs.msys-arm64"
+    elif [[ "$MSYSTEM" == "MINGW64" ]]; then
+        BUILD_FOLDER="~/praats-intel64"
+        MAKEFILE_DEFS="makefiles/makefile.defs.msys-mingw64"
+    elif [[ "$MSYSTEM" == "MINGW32" ]]; then
+        BUILD_FOLDER="~/praats-intel32"
+        MAKEFILE_DEFS="makefiles/makefile.defs.msys-mingw32"
+    fi
+    ORIGINAL_SOURCES="/z/Dropbox/Praats/src"
+    EXCLUDES='--exclude="*.xcodeproj" --exclude="Icon*" --exclude=".*" --exclude="*kanweg*"'
+    alias praat-build="( cd $BUILD_FOLDER &&\
+        rsync -rptvz $ORIGINAL_SOURCES/ $EXCLUDES . &&\
+        cp $MAKEFILE_DEFS ./makefile.defs &&\
         make -j12 )"
-    alias praat="~/praats/Praat.exe"
+    alias praat="$BUILD_FOLDER/Praat.exe"
     alias praat-run="praat-build && praat"
 
 This also defines `praat` for running Praat without first rebuilding it.
 The cycle from editing Praat on the Mac to running the new version on Windows therefore takes only two steps:
 
 1. edit and save the source code in Xcode on your Mac;
-2. type `praat-run` on your Windows 10 (under Parallels Desktop on your Mac).
+2. type `praat-run` on your Windows 11 (under Parallels Desktop on your Mac) in one of the three MSYS2 shells.
 
-If you also want to develop the 32-bit edition, you add to `.profile`:
-
-    # in Cygwin:~/.profile
-    alias praat32-build="( cd ~/praats32 &&\
-        rsync -rptvz $PRAAT_SOURCES/ $PRAAT_EXCLUDES . &&\
-        cp makefiles/makefile.defs.mingw32 makefile.defs &&\
-        make -j12 )"
-    alias praat32="~/praats32/Praat.exe"
-    alias praat32-run="praat32-build && praat32"
+On our 2023 Mac, the three builds cost 86 seconds for ARM64,
+212 seconds for Intel64 (under emulation), and 390 seconds for Intel32 (also under emulation).
 
 ### 4.3. Linux development set-up
 
-Under Parallels Desktop 17 or later, install Ubuntu 18.04 or 20.04 or 22.04, and create
-a folder `praats` in your home folder, as described above in 3.3.
+On an Ubuntu 20.04 or 22.04 computer, create a folder `praats` in your home folder,
+as described above in 3.3.
 
-In Parallels Desktop, choose `Ubuntu 18.04 or 20.04 or 22.04` -> `Configure`,
+If you work under Parallels Desktop (19 or later) on an Intel64 Mac,
+choose `Ubuntu 20.04 or 22.04` -> `Configure`,
 then `Options`, then `Sharing`, then `Share Mac`, and set `Share folders` to `Home folder only`
 (or use `Custom Folders` instead).
 Your MacOS home folder (i.e. `/Users/yourname`) is now visible on the Ubuntu desktop
 as `Home`, and from the `Terminal` you can access it as `/media/psf/Home`.
 
+However, on an ARM64 Mac this procedure with Parallels Desktop works only for the ARM64 edition.
+With OrbStack we can instead create the Intel64 edition as well
+(and building the ARM64 edition is also faster). Your Mac home folder is known
+simply as `/Users/yourname` or so.
+
 When developing Praat for Linux, you just edit and save your files in Xcode.
 You will be able to type `praat-build` (which only builds) or `praat-run` (which builds and runs)
 into your `Terminal` after you add the following definitions into
-`/home/parallels/.bash_aliases` in your Ubuntu home folder
+`/home/yourname/.bash_aliases` in your Ubuntu home folder
 (this will be run automatically by `.bashrc` whenever you start a `Terminal` window,
-assuming that it uses the `bash` shell):
+assuming that it uses the `bash` shell; please note the subtle but crucial difference
+between `/Users/yourname` and `/home/yourname`):
 
-    # in Ubuntu:~/.bash_aliases
-    PRAAT_SOURCES="/media/psf/Home/Praats/src"
-    PRAAT_EXCLUDES='--exclude="*.xcodeproj" --exclude="Icon*" --exclude=".*" --exclude="*kanweg*"'
+    # in Ubuntu:/home/yourname/.bash_aliases
+    ORIGINAL_SOURCES="/Users/yourname/Dropbox/Praats/src"
+    EXCLUDES='--exclude="*.xcodeproj" --exclude="Icon*" --exclude=".*" --exclude="*kanweg*"'
     alias praat-build="( cd ~/praats &&\
-        rsync -rptvz $PRAAT_SOURCES/ $PRAAT_EXCLUDES . &&\
+        rsync -rptvz $ORIGINAL_SOURCES/ $EXCLUDES . &&\
         cp makefiles/makefile.defs.linux.pulse makefile.defs &&\
-        make -j12 )"
+        make -j15 )"
     alias praat="~/praats/praat"
     alias praat-run="praat-build && praat"
 
-Building Praat this way takes 2 minutes and 10 seconds (optimization level O3).
+(In OrbStack, Praat will not have a GUI, so try `praat-run --version` instead,
+and test later on a Linux computer or Linux virtual machine.)
+
+On our 2023 Mac, building Praat this way takes 63 seconds for the ARM64 edition
+and 150 seconds (under emulation) for the Intel64 edition (optimization level O3).
 
 To build `praat_barren`, create a folder `praatsb`, and define
 
     # in Ubuntu:~/.bash_aliases
     alias praatb-build="( cd ~/praatsb &&\
-        rsync -rptvz $PRAAT_SOURCES/ $PRAAT_EXCLUDES . &&\
+        rsync -rptvz $ORIGINAL_SOURCES/ $EXCLUDES . &&\
         cp makefiles/makefile.defs.linux.barren makefile.defs &&\
-        make -j12 )"
+        make -j15 )"
     alias praatb="~/praatsb/praat_barren"
     alias praatb-run="praatb-build && praatb"
 
@@ -348,9 +463,9 @@ To build `praat_nogui`, create a folder `praatsn`, and define
 
     # in Ubuntu:~/.bash_aliases
     alias praatn-build="( cd ~/praatsn &&\
-        rsync -rptvz $PRAAT_SOURCES/ $PRAAT_EXCLUDES . &&\
+        rsync -rptvz $ORIGINAL_SOURCES/ $EXCLUDES . &&\
         cp makefiles/makefile.defs.linux.nogui makefile.defs &&\
-        make -j12 )"
+        make -j15 )"
     alias praatn="~/praatsn/praat_nogui"
     alias praatn-run="praatn-build && praatn"
 
@@ -364,9 +479,9 @@ create a folder `praatc`, and define
 
     # in Ubuntu:~/.bash_aliases
     alias praatc-build="( cd ~/praatsc &&\
-        rsync -rptvz $PRAAT_SOURCES/ $PRAAT_EXCLUDES . &&\
+        rsync -rptvz $ORIGINAL_SOURCES/ EXCLUDES . &&\
         cp makefiles/makefile.defs.chrome64 makefile.defs &&\
-        make -j12 )"
+        make -j15 )"
     alias praatc="~/praatsc/praat"
     alias praatc-run="praatc-build && praat"
 
@@ -375,15 +490,15 @@ or you transfer it to a Chromebook for the real test.
 
 ### 4.4. Chromebook development set-up
 
-Parallels Desktop 17 has no emulator for Chrome, so the choice is between
-building Praat on a Chromebook directly or building Praat on Ubuntu 18.04 or 20.04 or 22.04.
+Parallels Desktop 19 has no emulator for Chrome, so the choice is between
+building Praat on a Chromebook directly or building Praat on Ubuntu 20.04 or 22.04.
 On a 2019 HP Chromebook with Intel processor, building Praat takes
 a forbidding 27 minutes.
 
-So we choose to build Praat on Ubuntu (under Parallels Desktop on the Mac),
-because building the Intel Chrome64 edition on Ubuntu 18.04 takes only
-2 minutes and 10 seconds. If you have the Linux set-up described in 4.3,
-you can do this with the `bc` command.
+So we choose to build Praat on Ubuntu (under Parallels Desktop on an Intel64 Mac),
+because building the Intel Chrome64 edition on OrbStack Ubuntu 20.04 takes only
+63 seconds (ARM64) or 215 seconds (Intel64). If you have the Linux set-up described in 4.3,
+you can do this with the `praatc-build` command.
 
 Next, you need a way to get the executable `praat` from Mac/Ubuntu to your Chromebook.
 The distributors of Praat do this via an intermediary university computer;
@@ -438,7 +553,7 @@ For edits in a `cpp` file (no changes in header files), this whole cycle can be 
 
 ### 4.5. Raspberry Pi development set-up
 
-One could perhaps create the Raspberry Pi edition by cross-compiling on Ubuntu 18.04 or 20.04 or 22.04.
+One could perhaps create the Raspberry Pi edition by cross-compiling on Ubuntu 20.04 or 22.04.
 If any reader of these lines has precise instructions, we would like to know about it
 (the main problem is how to install the GTK etc libraries in the Raspberry Pi toolchain,
 or how to get `dpkg` under Ubuntu-buster to actually find `armhf` libraries).
@@ -457,10 +572,10 @@ On your Raspberry Pi, you create a folder `~/praats`,
 after which you can push the sources from your Mac to your Raspberry Pi with
 
     # in Mac:~/.bash_profile
-    PRAAT_SOURCES="~/Praats/src"
-    PRAAT_EXCLUDES='--exclude="*.xcodeproj" --exclude="Icon*" --exclude=".*" --exclude="*kanweg*"'
-    alias praats-putpi="rsync -rptvz -e ssh $PRAAT_EXCLUDES \
-        $PRAAT_SOURCES/ pi@192.168.1.2:~/praats"
+    ORIGINAL_SOURCES="~/Praats/src"
+    EXCLUDES='--exclude="*.xcodeproj" --exclude="Icon*" --exclude=".*" --exclude="*kanweg*"'
+    alias praats-putpi="rsync -rptvz -e ssh $EXCLUDES \
+        $ORIGINAL_SOURCES/ pi@192.168.1.2:~/praats"
 
 On the Raspberry Pi, you define
 
@@ -494,15 +609,15 @@ for all platforms for Praat version 9.9.99, although your version number will be
 The packages will be collected in the directory `~/Praats/www` on the Mac.
 
 If you follow the location mentioned in the `.xcodeproj` file, the Mac binary will reside
-in a place like `~/builds/mac_products/Configuration64`.
+in a place like `~/Dropbox/Praats/bin/Configuration64`.
 
 After notarizing the Mac binary (see above under 3.2),
 you include the executable in a `.dmg` disk image, with the following commands:
 
     # on Mac command line
-    PRAAT_WWW=~/Praats/www
+    PRAAT_WWW="~/Dropbox/Praats/www"
     PRAAT_VERSION=9999
-    cd ~/builds/mac_products/Configuration64
+    cd ~/Dropbox/Praats/bin/macos/Configuration64
     hdiutil create -fs HFS+ -ov -srcfolder Praat.app -volname Praat_${PRAAT_VERSION} praat_${PRAAT_VERSION}.dmg
     hdiutil convert -ov -format UDZO -o ${PRAAT_WWW}/praat${PRAAT_VERSION}_mac.dmg praat_${PRAAT_VERSION}.dmg
     rm praat_${PRAAT_VERSION}.dmg
@@ -510,37 +625,48 @@ you include the executable in a `.dmg` disk image, with the following commands:
 You also need to distribute the `.xcodeproj` file, which is actually a folder, so that you have to zip it:
 
     # on Mac command line
-    PRAAT_SOURCES="~/Praats/src
-    cd $PRAAT_SOURCES
-    zip -r $PRAAT_WWW/praat$(PRAAT_VERSION)_xcodeproj.zip praat.xcodeproj
+    ORIGINAL_SOURCES="~/Dropbox/Praats/src"
+    cd $ORIGINAL_SOURCES
+    zip -r $PRAAT_WWW/praat${PRAAT_VERSION}_xcodeproj.zip praat.xcodeproj
 
-The Windows executables have to be sent from your Cygwin terminal to your Mac.
+The Windows executables have to be sent from your Cygwin terminal or MSYS shell to your Mac.
 It is easiest to do this without a version number (so that you have to supply the number only once),
-so you send them to the intermediate Mac folders `~/builds/win64` and `~/builds/win32`.
-On Cygwin you can define:
+so you send them to the intermediate Mac folders `~/Dropbox/Praats/bin/win-intel64`
+and `~/Dropbox/Praats/bin/win-intel32` and `~/Dropbox/Praats/bin/win-arm64`.
+On MSYS you can define:
 
-    # in Cygwin:~/.profile
-    alias praat-dist="praat-build && rsync -t ~/praats/Praat.exe /cygdrive/z/builds/win64"
-    alias praat32-dist="praat32-build && rsync -t ~/praats32/Praat.exe /cygdrive/z/builds/win32"
+    # in MSYS:~/.bashrc
+    alias praat-dist="praat-build && rsync -t ~/praats/Praat.exe /z/Dropbox/Praats/bin/win-arm64"
+    alias praat64-dist="praat64-build && rsync -t ~/praats64/Praat.exe /z/Dropbox/Praats/bin/win-intel64"
+    alias praat32-dist="praat32-build && rsync -t ~/praats32/Praat.exe /z/Dropbox/Praats/bin/win-intel32"
 
 so that you can “upload” the two executables to the Mac with
 
-    # on Cygwin command line
+    # on MSYS command line
     praat-dist
+    praat64-dist
     praat32-dist
 
 The four Linux executables have to be sent from your Ubuntu terminal to your Mac,
-namely to the folders `~/builds/linux64` (which will contain `praat`, `praat_barren` and
-`praat_nogui`) and `~/builds/chrome64` (which will contain only `praat`).
+namely to the folder `~/Dropbox/Praats/bin/linux_intel64` or `~/Dropbox/Praats/bin/linux_arm64`
+(each of which will contain `praat`, `praat_barren` and `praat_nogui`), and to the folder
+`~/Dropbox/Praats/bin/chrome_intel64` or `~/Dropbox/Praats/bin/chrome_arm64`
+(which will contain only `praat`).
 On Ubuntu you can define
 
-    # in Ubuntu:~/.bash_aliases
-    alias praat-dist="praat-build && rsync -t ~/praats/praat /media/psf/Home/builds/linux64"
-    alias praatb-dist="praatb-build && rsync -t ~/praatsb/praat_barren /media/psf/Home/builds/linux64"
-    alias praatn-dist="praatn-build && rsync -t ~/praatsn/praat_nogui /media/psf/Home/builds/linux64"
-    alias praatc-dist="praatc-build && rsync -t ~/praatsc/praat /media/psf/Home/builds/chrome64"
+    # in MSYS2 Intel64 Ubuntu:~/.bash_aliases
+    alias praat-dist="praat-build && rsync -t ~/praats/praat /Users/yourname/Dropbox/Praats/bin/linux-intel64"
+    alias praatb-dist="praatb-build && rsync -t ~/praatsb/praat_barren /Users/yourname/Dropbox/Praats/bin/linux-intel64"
+    alias praatn-dist="praatn-build && rsync -t ~/praatsn/praat_nogui /Users/yourname/Dropbox/Praats/bin/linux-intel64"
+    alias praatc-dist="praatc-build && rsync -t ~/praatsc/praat /Users/yourname/Dropbox/Praats/bin/chrome-intel64"
 
-so that you can “upload” the five executables to the Mac with
+    # in MSYS2 ARM64 Ubuntu:~/.bash_aliases
+    alias praat-dist="praat-build && rsync -t ~/praats/praat /Users/yourname/Dropbox/Praats/bin/linux-arm64"
+    alias praatb-dist="praatb-build && rsync -t ~/praatsb/praat_barren /Users/yourname/Dropbox/Praats/bin/linux-arm64"
+    alias praatn-dist="praatn-build && rsync -t ~/praatsn/praat_nogui /Users/yourname/Dropbox/Praats/bin/linux-arm64"
+    alias praatc-dist="praatc-build && rsync -t ~/praatsc/praat /Users/yourname/Dropbox/Praats/bin/chrome-arm64"
+
+so that you can “upload” the four executables to the Mac with
 
     # on Ubuntu command line
     praat-dist
@@ -551,34 +677,52 @@ so that you can “upload” the five executables to the Mac with
 You can fetch the Raspberry Pi edition directly from your Raspberry Pi:
 
     # on Mac command line
-    rsync -tpvz pi@192.168.1.2:~/praats/praat ~/builds/rpi_armv7
+    rsync -tpvz pi@192.168.1.2:~/praats/praat ~/Dropbox/Praats/bin/rpi-armv7
 
-When the folders under `~/builds`, namely `win64`, `win32`, `linux64`, `chrome64` and `rpi_armv7`
-all contain enough new executables (there should be 1, 1, 3, 1 and 1, respectively),
-you can issue the following commands to create the packages and install them in `~/Praats/www`:
+When the folders under `~/Dropbox/Praats/bin`, namely `win-intel64`, `win-intel32`, `win-arm64`,
+`linux-intel64`, `linux-arm64`, `chrome-intel64`, `chrome-arm64` and `rpi-armv7`
+all contain enough new executables (there should be 1, 1, 1, 3, 3, 1, 1 and 1, respectively),
+you can issue the following commands to create the packages and install them in `~/Dropbox/Praats/www`:
 
     # on Mac command line
-    zip $PRAAT_WWW/praat$(PRAAT_VERSION)_win64.zip ~/builds/win64/Praat.exe
-    zip $PRAAT_WWW/praat$(PRAAT_VERSION)_win32.zip ~/builds/win32/Praat.exe
-    ( cd ~/builds/linux64 &&\
-      tar cvf praat$(PRAAT_VERSION)_linux64.tar praat &&\
-      gzip praat$(PRAAT_VERSION)_linux64.tar &&\
-      mv praat$(PRAAT_VERSION)_linux64.tar.gz $PRAAT_WWW )
-    ( cd ~/builds/linux64 &&\
-      tar cvf praat$(PRAAT_VERSION)_linux64barren.tar praat_barren &&\
-      gzip praat$(PRAAT_VERSION)_linux64barren.tar &&\
-      mv praat$(PRAAT_VERSION)_linux64barren.tar.gz $PRAAT_WWW )
-    ( cd ~/builds/linux64 &&\
-      tar cvf praat$(PRAAT_VERSION)_linux64nogui.tar praat_nogui &&\
-      gzip praat$(PRAAT_VERSION)_linux64nogui.tar &&\
-      mv praat$(PRAAT_VERSION)_linux64nogui.tar.gz $PRAAT_WWW )
-    ( cd ~/builds/chrome64 &&\
-      tar cvf praat$(PRAAT_VERSION)_chrome64.tar praat &&\
-      gzip praat$(PRAAT_VERSION)_chrome64.tar &&\
-      mv praat$(PRAAT_VERSION)_chrome64.tar.gz $PRAAT_WWW )
-    ( cd ~/builds/rpi_armv7 &&\
-      tar cvf praat$(PRAAT_VERSION)_rpi_armv7.tar praat &&\
-      gzip praat$(PRAAT_VERSION)_rpi_armv7.tar &&\
-      mv praat$(PRAAT_VERSION)_rpi_armv7.tar.gz $PRAAT_WWW )
+    zip $PRAAT_WWW/praat${PRAAT_VERSION}_win-intel64.zip ~/Dropbox/Praats/bin/win-intel64/Praat.exe
+    zip $PRAAT_WWW/praat${PRAAT_VERSION}_win-intel32.zip ~/Dropbox/Praats/bin/win-intel32/Praat.exe
+    zip $PRAAT_WWW/praat${PRAAT_VERSION}_win-arm64.zip ~/Dropbox/Praats/bin/win-arm64/Praat.exe
+    ( cd ~/Dropbox/Praats/bin/linux-intel64 &&\
+      tar cvf praat${PRAAT_VERSION}_linux-intel64.tar praat &&\
+      gzip praat${PRAAT_VERSION}_linux-intel64.tar &&\
+      mv praat${PRAAT_VERSION}_linux-intel64.tar.gz $PRAAT_WWW )
+    ( cd ~/Dropbox/Praats/bin/linux-intel64 &&\
+      tar cvf praat${PRAAT_VERSION}_linux-intel64-barren.tar praat_barren &&\
+      gzip praat${PRAAT_VERSION}_linux-intel64-barren.tar &&\
+      mv praat${PRAAT_VERSION}_linux-intel64-barren.tar.gz $PRAAT_WWW )
+    ( cd ~/Dropbox/Praats/bin/linux-intel64 &&\
+      tar cvf praat${PRAAT_VERSION}_linux-intel64-nogui.tar praat_nogui &&\
+      gzip praat${PRAAT_VERSION}_linux-intel64-nogui.tar &&\
+      mv praat${PRAAT_VERSION}_linux-intel64-nogui.tar.gz $PRAAT_WWW )
+    ( cd ~/Dropbox/Praats/bin/chrome-intel64 &&\
+      tar cvf praat${PRAAT_VERSION}_chrome-intel64.tar praat &&\
+      gzip praat${PRAAT_VERSION}_chrome-intel64.tar &&\
+      mv praat${PRAAT_VERSION}_chrome-intel64.tar.gz $PRAAT_WWW )
+    ( cd ~/Dropbox/Praats/bin/linux-arm64 &&\
+      tar cvf praat${PRAAT_VERSION}_linux-arm64.tar praat &&\
+      gzip praat${PRAAT_VERSION}_linux-arm64.tar &&\
+      mv praat${PRAAT_VERSION}_linux-arm64.tar.gz $PRAAT_WWW )
+    ( cd ~/Dropbox/Praats/bin/linux-arm64 &&\
+      tar cvf praat${PRAAT_VERSION}_linux-arm64-barren.tar praat_barren &&\
+      gzip praat${PRAAT_VERSION}_linux-arm64-barren.tar &&\
+      mv praat${PRAAT_VERSION}_linux-arm64-barren.tar.gz $PRAAT_WWW )
+    ( cd ~/Dropbox/Praats/bin/linux-arm64 &&\
+      tar cvf praat${PRAAT_VERSION}_linux-arm64-nogui.tar praat_nogui &&\
+      gzip praat${PRAAT_VERSION}_linux-arm64-nogui.tar &&\
+      mv praat${PRAAT_VERSION}_linux-arm64-nogui.tar.gz $PRAAT_WWW )
+    ( cd ~/Dropbox/Praats/bin/chrome-arm64 &&\
+      tar cvf praat${PRAAT_VERSION}_chrome-arm64.tar praat &&\
+      gzip praat${PRAAT_VERSION}_chrome-arm64.tar &&\
+      mv praat${PRAAT_VERSION}_chrome-arm64.tar.gz $PRAAT_WWW )
+    ( cd ~/Dropbox/Praats/bin/rpi-armv7 &&\
+      tar cvf praat${PRAAT_VERSION}_rpi-armv7.tar praat &&\
+      gzip praat${PRAAT_VERSION}_rpi-armv7.tar &&\
+      mv praat${PRAAT_VERSION}_rpi-armv7.tar.gz $PRAAT_WWW )
 
 Finally, you can update your website and/or create a new release on GitHub.

@@ -189,7 +189,7 @@ FILE *FileInMemoryManager_fopen (FileInMemoryManager me, const char *filename, c
 		}
 		return reinterpret_cast<FILE *> (index);
 	} catch (MelderError) {
-		Melder_throw (U"File ", Melder_peek8to32(filename), U" cannot be opended.");
+		Melder_throw (U"File ", Melder_peek8to32(filename), U" cannot be opened.");
 	}
 }
 
@@ -679,7 +679,7 @@ int FileInMemoryManager_ungetc (FileInMemoryManager me, int character, FILE * st
 int FileInMemoryManager_fprintf (FileInMemoryManager me, FILE * stream, const char *format, ... ) {
 	(void) me;
 	va_list args;
-	if (stream == stderr) {
+	if (stream == Melder_stderr) {
 		va_start (args, format);
 		int sizeNeeded = vsnprintf (nullptr, 0, format, args); // find size of needed buffer (without final null byte)
 		const size_t bufferSize = sizeNeeded + 1;

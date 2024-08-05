@@ -1,6 +1,6 @@
 # Makefile of the library "dwtools"
 # David Weenink and Paul Boersma
-# 25 october 2022
+# 18 July 2024
 
 include ../makefile.defs
 
@@ -17,7 +17,7 @@ OBJECTS = ActivationList.o AffineTransform.o AnalyticSound.o \
 	DataModeler.o Distance.o \
 	DTW.o DTW_and_TextGrid.o \
 	Discriminant.o  Discriminant_PatternList_Categories.o \
-	Electroglottogram.o EditDistanceTable.o EEG_extensions.o \
+	EditDistanceTable.o EEG_extensions.o \
 	Eigen_and_Matrix.o Eigen_and_Procrustes.o \
 	Eigen_and_TableOfReal.o\
 	Eigen_and_SSCP.o Excitations.o \
@@ -42,6 +42,7 @@ OBJECTS = ActivationList.o AffineTransform.o AnalyticSound.o \
 	Polygon_extensions.o Procrustes.o \
 	Proximity.o Proximity_and_Distance.o \
 	Resonator.o Roots_to_Spectrum.o \
+	SampledToSampledWorkspace.o SoundToSampledWorkspace.o \
 	Sound_and_MultiSampledSpectrogram.o Sound_and_MixingMatrix.o \
 	Sound_and_Spectrum_dft.o \
 	Sound_and_Spectrogram_extensions.o Sound_and_PCA.o \

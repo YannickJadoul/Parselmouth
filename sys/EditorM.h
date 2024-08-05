@@ -2,7 +2,7 @@
 #define _EditorM_h_
 /* EditorM.h
  *
- * Copyright (C) 1992-2013,2015-2023 Paul Boersma
+ * Copyright (C) 1992-2013,2015-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,6 +44,37 @@ _form_inited_: \
 		UiForm_do (cmd -> d_uiform.get(), false); \
 	} else if (! _sendingForm_) { \
 		UiForm_parseStringE (cmd, _narg_, _args_, _sendingString_, optionalInterpreter); \
+	} else {
+
+#define EDITOR_DO_ALTERNATIVE(alternative)  \
+		UiForm_do (cmd -> d_uiform.get(), false); \
+	} else if (! _sendingForm_) { \
+		try { \
+			UiForm_parseStringE (cmd, _narg_, _args_, _sendingString_, optionalInterpreter); \
+		} catch (MelderError) { \
+			if (Melder_hasCrash ()) \
+				throw; \
+			autostring32 _parkedError = Melder_dup_f (Melder_getError ()); \
+			Melder_clearError (); \
+			try { \
+				static autoEditorCommand _alternativeCmd; \
+				if (! _alternativeCmd) \
+					_alternativeCmd = Thing_new (EditorCommand); \
+				_alternativeCmd -> d_editor = cmd -> d_editor; \
+				_alternativeCmd -> sender = cmd -> sender; \
+				_alternativeCmd -> menu = cmd -> menu; \
+				_alternativeCmd -> itemTitle = Melder_dup (cmd -> itemTitle.get()); \
+				_alternativeCmd -> itemWidget = nullptr; \
+				_alternativeCmd -> commandCallback = cmd -> commandCallback; \
+				_alternativeCmd -> script = Melder_dup (cmd -> script.get()); \
+				_alternativeCmd -> d_uiform = autoUiForm (); \
+				alternative (me, _alternativeCmd.get(), _sendingForm_, _narg_, _args_, _sendingString_, optionalInterpreter); \
+			} catch (MelderError) { \
+				Melder_clearError (); \
+				Melder_appendError (_parkedError.get()); \
+				throw; \
+			} \
+		} \
 	} else {
 
 #define EDITOR_END  \
@@ -165,19 +196,38 @@ _form_inited_: \
 	BOOLEAN_FIELD (booleanVariable, labelText, defaultBooleanValue)
 
 
-#define LABEL(labelText)  \
-	UiForm_addLabel (cmd -> d_uiform.get(), nullptr, labelText);
+#define HEADING(labelText)  \
+	UiForm_addHeading (cmd -> d_uiform.get(), nullptr, labelText);
 
 
-#define MUTABLE_LABEL_VARIABLE(stringVariable)  \
+#define COMMENT(labelText)  \
+	UiForm_addComment (cmd -> d_uiform.get(), nullptr, labelText);
+
+
+#define MUTABLE_COMMENT_VARIABLE(stringVariable)  \
 	static conststring32 stringVariable;
 
-#define MUTABLE_LABEL_FIELD(stringVariable, labelText)  \
-	UiForm_addLabel (cmd -> d_uiform.get(), & stringVariable, labelText);
+#define MUTABLE_COMMENT_FIELD(stringVariable, labelText)  \
+	UiForm_addComment (cmd -> d_uiform.get(), & stringVariable, labelText);
 
-#define MUTABLE_LABEL(stringVariable, labelText)  \
-	MUTABLE_LABEL_VARIABLE (stringVariable) \
-	MUTABLE_LABEL_FIELD (stringVariable, labelText)
+#define MUTABLE_COMMENT(stringVariable, labelText)  \
+	MUTABLE_COMMENT_VARIABLE (stringVariable) \
+	MUTABLE_COMMENT_FIELD (stringVariable, labelText)
+
+
+#define CAPTION(labelText)  \
+	UiForm_addCaption (cmd -> d_uiform.get(), nullptr, labelText);
+
+
+#define MUTABLE_CAPTION_VARIABLE(stringVariable)  \
+	static conststring32 stringVariable;
+
+#define MUTABLE_CAPTION_FIELD(stringVariable, labelText)  \
+	UiForm_addCaption (cmd -> d_uiform.get(), & stringVariable, labelText);
+
+#define MUTABLE_CAPTION(stringVariable, labelText)  \
+	MUTABLE_CAPTION_VARIABLE (stringVariable) \
+	MUTABLE_CAPTION_FIELD (stringVariable, labelText)
 
 
 #define TEXTFIELD_VARIABLE(stringVariable)  \
@@ -301,8 +351,10 @@ _form_inited_: \
 		[[maybe_unused]] enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 		_compilerTypeCheckDummy = enumeratedVariable; \
 	} \
-	UiForm_addChoice (cmd -> d_uiform.get(), (int *) & enumeratedVariable, nullptr, nullptr, labelText, \
-			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
+	UiForm_addChoiceEnum (cmd -> d_uiform.get(), (int *) & enumeratedVariable, nullptr, nullptr, labelText, \
+		(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN, \
+		(enum_generic_getValue) EnumeratedType##_getValue \
+	); \
 	for (int _ienum = (int) EnumeratedType::MIN; _ienum <= (int) EnumeratedType::MAX; _ienum ++) \
 		UiForm_addOption (cmd -> d_uiform.get(), EnumeratedType##_getText ((enum EnumeratedType) _ienum)); \
 
@@ -319,8 +371,10 @@ _form_inited_: \
 		[[maybe_unused]] enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 		_compilerTypeCheckDummy = enumeratedVariable; \
 	} \
-	UiForm_addOptionMenu (cmd -> d_uiform.get(), (int *) & enumeratedVariable, nullptr, nullptr, labelText, \
-			(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
+	UiForm_addOptionMenuEnum (cmd -> d_uiform.get(), (int *) & enumeratedVariable, nullptr, nullptr, labelText, \
+		(int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN, \
+		(enum_generic_getValue) EnumeratedType##_getValue \
+	); \
 	for (int _ienum = (int) EnumeratedType::MIN; _ienum <= (int) EnumeratedType::MAX; _ienum ++) \
 		UiForm_addOption (cmd -> d_uiform.get(), EnumeratedType##_getText ((enum EnumeratedType) _ienum)); \
 

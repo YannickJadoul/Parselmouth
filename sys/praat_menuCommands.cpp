@@ -1,6 +1,6 @@
 /* praat_menuCommands.cpp
  *
- * Copyright (C) 1992-2018,2020-2023 Paul Boersma
+ * Copyright (C) 1992-2018,2020-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,18 +52,21 @@ void praat_sortMenuCommands () {
 	);
 }
 
-static integer lookUpMatchingMenuCommand (conststring32 window, conststring32 menu, conststring32 title) {
-/*
- * A menu command is fully specified by its environment (window + menu) and its title.
- */
+static integer lookUpMatchingMenuCommand_0 (conststring32 window, conststring32 menu, conststring32 title) {
+	/*
+		A menu command is fully specified by its environment (window + menu) and its title.
+	*/
 	for (integer i = 1; i <= theCommands.size; i ++) {
 		Praat_Command command = theCommands.at [i];
 		conststring32 tryWindow = command -> window.get();
 		conststring32 tryMenu = command -> menu.get();
 		conststring32 tryTitle = command -> title.get();
-		if ((window == tryWindow || (window && tryWindow && str32equ (window, tryWindow))) &&
-		    (menu == tryMenu || (menu && tryMenu && str32equ (menu, tryMenu))) &&
-		    (title == tryTitle || (title && tryTitle && str32equ (title, tryTitle)))) return i;
+		if (
+			(window == tryWindow || (window && tryWindow && str32equ (window, tryWindow))) &&
+			(menu == tryMenu || (menu && tryMenu && str32equ (menu, tryMenu))) &&
+			(title == tryTitle || (title && tryTitle && str32equ (title, tryTitle)))
+		)
+			return i;
 	}
 	return 0;   // not found
 }
@@ -110,7 +113,6 @@ static GuiMenu windowMenuToWidget (conststring32 window, conststring32 menu) {
 static GuiMenuItem praat_addMenuCommand__ (conststring32 window, conststring32 menu, conststring32 title /* cattable */,
 	conststring32 after, uint32 flags, UiCallback callback, conststring32 nameOfCallback)
 {
-	integer position;
 	uint32 depth = flags, key = 0;
 	bool unhidable = false, hidden = false, noApi = false, forceApi = false;
 	int deprecationYear = 0;
@@ -131,27 +133,26 @@ static GuiMenuItem praat_addMenuCommand__ (conststring32 window, conststring32 m
 	}
 
 	/*
-	 * Determine the position of the new command.
-	 */
-	if (after && after [0] != U'*') {   // search for existing command with same selection
-		integer found = lookUpMatchingMenuCommand (window, menu, after);
-		if (found) {
-			position = found + 1;   // after 'after'
-		} else {
+		Determine the position of the new command.
+	*/
+	integer position;
+	if (after) {   // search for existing command with same selection
+		const integer found = lookUpMatchingMenuCommand_0 (window, menu, after);
+		if (found == 0) {
 			Melder_flushError (U"praat_addMenuCommand: the command \"", title, U"\" cannot be put after \"", after, U"\",\n"
 				U"in the menu \"", menu, U"\" in the window \"", window, U"\"\n"
 				U"because the latter command does not exist.");
 			return nullptr;
 		}
+		position = found + 1;   // after 'after'
 	} else {
 		position = theCommands.size + 1;   // at end
 	}
 
 	/*
-	 * Make new command.
-	 */
+		Make new command.
+	*/
 	autoPraat_Command command = Thing_new (Praat_Command);
-
 	command -> window = Melder_dup_f (window);
 	command -> menu = Melder_dup_f (menu);
 	command -> title = Melder_dup_f (title);
@@ -170,27 +171,28 @@ static GuiMenuItem praat_addMenuCommand__ (conststring32 window, conststring32 m
 	if (! theCurrentPraatApplication -> batch) {
 		GuiMenu parentMenu = nullptr;
 
-		/* WHERE TO PUT IT?
-		 * Determine parent menu widget.
-		 * This is not going to fail:
-		 * if 'depth' is inappropriate, the alleged subitem will be put in the top menu.
-		 */
+		/*
+			WHERE TO PUT IT?
+			Determine parent menu widget.
+			This is not going to fail:
+			if 'depth' is inappropriate, the alleged subitem will be put in the top menu.
+		*/
 		if (depth == 0) {
 			/*
-			 * Put the new command in the window's top menu.
-			 */
+				Put the new command in the window's top menu.
+			*/
 			parentMenu = windowMenuToWidget (window, menu);
 		} else {
 			/*
-			 * Put the new command in a submenu.
-			 * The supermenu to put the new command in is the first menu that we find when going up.
-			 */
+				Put the new command in a submenu.
+				The supermenu to put the new command in is the first menu that we find when going up.
+			*/
 			for (integer parentPosition = position - 1; parentPosition > 0; parentPosition --) {
 				Praat_Command parentCommand = theCommands.at [parentPosition];
 				if (parentCommand -> depth == depth - 1 && str32equ (parentCommand -> menu.get(), command -> menu.get())) {
 					/*
-					 * We found the supermenu.
-					 */
+						We found the supermenu.
+					*/
 					if (! parentCommand -> callback && parentCommand -> title && parentCommand -> title [0] != U'-') {
 						if (! parentCommand -> button)
 							Melder_fatal (U"No button for ", window, U"/", menu, U"/", title, U".");
@@ -209,9 +211,8 @@ static GuiMenuItem praat_addMenuCommand__ (conststring32 window, conststring32 m
 		}
 
 		/*
-		 * WHAT TO PUT THERE?
-		 */
-
+			WHAT TO PUT THERE?
+		*/
 		if (! title || title [0] == U'-') {
 			trace (U"insert the command as a separator");
 			command -> button = GuiMenu_addSeparator (parentMenu);
@@ -225,7 +226,8 @@ static GuiMenuItem praat_addMenuCommand__ (conststring32 window, conststring32 m
 			command -> button = GuiMenu_addItem (parentMenu, title, guiFlags, gui_cb_menu, command.get());
 			Melder_assert (command -> button);
 		}
-		if (hidden) GuiThing_hide (command -> button);
+		if (hidden)
+			GuiThing_hide (command -> button);
 	}
 	Thing_cast (GuiMenuItem, button_as_GuiMenuItem, command -> button);
 	theCommands. addItemAtPosition_move (command.move(), position);
@@ -268,26 +270,25 @@ void praat_addMenuCommandScript (conststring32 window, conststring32 menu, const
 			Melder_throw (U"Command with script has no title. Window \"", window, U"\", menu \"", menu, U"\".");
 
 		/*
-		 * Determine the position of the new command.
-		 */
+			Determine the position of the new command.
+		*/
 		integer position;
-		if (Melder_length (after) && after [0] != U'*') {   // search for existing command with same selection
-			integer found = lookUpMatchingMenuCommand (window, menu, after);
-			if (found) {
-				position = found + 1;   // after 'after'
-			} else {
+		if (Melder_length (after)) {   // search for existing command with same selection
+			const integer found = lookUpMatchingMenuCommand_0 (window, menu, after);
+			if (found == 0) {
 				/*Melder_throw (U"The menu command \"", title, U"\" cannot be put after \"", after, U"\",\n"
 					U"in the menu \"", menu, "\" in the window \"", window, U"\"\n"
 					U"because the latter command does not exist.");*/
 				position = theCommands.size + 1;   // default: at end
-			}
+			} else
+				position = found + 1;   // after 'after'
 		} else {
 			position = theCommands.size + 1;   // at end
 		}
 
 		/*
-		 * Make new command.
-		 */
+			Make new command.
+		*/
 		autoPraat_Command command = Thing_new (Praat_Command);
 		command -> window = Melder_dup_f (window);
 		command -> menu = Melder_dup_f (menu);
@@ -312,11 +313,12 @@ void praat_addMenuCommandScript (conststring32 window, conststring32 menu, const
 		if (! theCurrentPraatApplication -> batch) {
 			GuiMenu parentMenu = nullptr;
 
-			/* WHERE TO PUT IT?
-			 * Determine parent menu widget.
-			 * This is not going to fail:
-			 * if 'depth' is inappropriate, the alleged subitem will be put in the top menu.
-			 */
+			/*
+				WHERE TO PUT IT?
+				Determine parent menu widget.
+				This is not going to fail:
+				if 'depth' is inappropriate, the alleged subitem will be put in the top menu.
+			*/
 			if (depth == 0) {
 				parentMenu = windowMenuToWidget (window, menu);   // not a subitem: in the top menu
 			} else {
@@ -336,46 +338,56 @@ void praat_addMenuCommandScript (conststring32 window, conststring32 menu, const
 					parentMenu = windowMenuToWidget (window, menu);   // fallback: a subitem without a menu title
 			}
 			if (parentMenu) {
-				/* WHAT TO PUT THERE?
-				 */
+				/*
+					WHAT TO PUT THERE?
+				*/
 				if (title [0] == U'\0' || title [0] == U'-') {
 					command -> button = GuiMenu_addSeparator (parentMenu);
-				} else if (script [0] == '\0') {
-					command -> button = GuiMenu_createInMenu (parentMenu, title, 0) -> d_menuItem.get();
+				} else if (script [0] == U'\0') {
+					command -> button = GuiMenu_createInMenu (parentMenu, Melder_cat (U"\u207A", title), 0) -> d_menuItem.get();
 				} else {
-					command -> button = GuiMenu_addItem (parentMenu, title, 0, gui_cb_menu, command.get());
+					command -> button = GuiMenu_addItem (parentMenu, Melder_cat (U"\u207A", title), 0, gui_cb_menu, command.get());
 				}
 			}
 		}
 		theCommands. addItemAtPosition_move (command.move(), position);
 
-		if (praatP.phase >= praat_HANDLING_EVENTS) praat_sortMenuCommands ();
+		if (praatP.phase >= praat_HANDLING_EVENTS)
+			praat_sortMenuCommands ();
 	} catch (MelderError) {
 		Melder_throw (U"Script menu command not added.");
 	}
 }
 
 void praat_hideMenuCommand (conststring32 window, conststring32 menu, conststring32 title) {
-	if (theCurrentPraatApplication -> batch || ! window || ! menu || ! title) return;
-	integer found = lookUpMatchingMenuCommand (window, menu, title);
-	if (! found) return;
+	if (theCurrentPraatApplication -> batch || ! window || ! menu || ! title)
+		return;
+	const integer found = lookUpMatchingMenuCommand_0 (window, menu, title);
+	if (found == 0)
+		return;
 	Praat_Command command = theCommands.at [found];
 	if (! command -> hidden && ! command -> unhidable) {
 		command -> hidden = true;
-		if (praatP.phase >= praat_READING_BUTTONS) command -> toggled = ! command -> toggled;
-		if (command -> button) GuiThing_hide (command -> button);
+		if (praatP.phase >= praat_READING_BUTTONS)
+			command -> toggled = ! command -> toggled;
+		if (command -> button)
+			GuiThing_hide (command -> button);
 	}
 }
 
 void praat_showMenuCommand (conststring32 window, conststring32 menu, conststring32 title) {
-	if (theCurrentPraatApplication -> batch || ! window || ! menu || ! title) return;
-	integer found = lookUpMatchingMenuCommand (window, menu, title);
-	if (! found) return;
+	if (theCurrentPraatApplication -> batch || ! window || ! menu || ! title)
+		return;
+	const integer found = lookUpMatchingMenuCommand_0 (window, menu, title);
+	if (found == 0)
+		return;
 	Praat_Command command = theCommands.at [found];
 	if (command -> hidden) {
 		command -> hidden = false;
-		if (praatP.phase >= praat_READING_BUTTONS) command -> toggled = ! command -> toggled;
-		if (command -> button) GuiThing_show (command -> button);
+		if (praatP.phase >= praat_READING_BUTTONS)
+			command -> toggled = ! command -> toggled;
+		if (command -> button)
+			GuiThing_show (command -> button);
 	}
 }
 
@@ -464,7 +476,7 @@ int praat_doMenuCommand (conststring32 title, conststring32 arguments, Interpret
 		return 0;
 	if (commandFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = commandFound -> script.get();
-		const conststring32 preferencesFolderPath = Melder_dirToPath (& Melder_preferencesFolder);
+		const conststring32 preferencesFolderPath = Melder_folderToPath (& Melder_preferencesFolder);
 		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
@@ -496,7 +508,7 @@ int praat_doMenuCommand (conststring32 title, integer narg, Stackel args, Interp
 		return 0;
 	if (commandFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = commandFound -> script.get();
-		const conststring32 preferencesFolderPath = Melder_dirToPath (& Melder_preferencesFolder);
+		const conststring32 preferencesFolderPath = Melder_folderToPath (& Melder_preferencesFolder);
 		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
@@ -522,7 +534,8 @@ void praat_addCommandsToEditor (Editor me) {
 	for (integer i = 1; i <= theCommands.size; i ++) {
 		Praat_Command command = theCommands.at [i];
 		if (str32equ (command -> window.get(), windowClassName))
-			Editor_addCommandScript (me, command -> menu.get(), command -> title.get(), 0, command -> script.get());
+			Editor_addCommandScript (me, command -> menu.get(), command -> title.get(),
+					((uint32) command -> depth) << 16, command -> script.get());
 	}
 }
 

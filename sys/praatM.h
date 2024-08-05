@@ -2,7 +2,7 @@
 #define _praatM_h_
 /* praatM.h
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 	CHANNEL (variable, labelText, defaultStringValue)
 	BOOLEAN (variable, labelText, defaultBooleanValue)
 		the value is 0 (off) or 1 (on).
-	LABEL (labelText)
+	COMMENT (labelText)
 	TEXTFIELD (variable, labelText, defaultStringValue, numberOfLines)
 	REALVECTOR (variable, labelText, WHITESPACE_SEPARATED_, defaultStringValue)
 	REALMATRIX (variable, labelText, ONE_ROW_PER_LINE_, defaultStringValue)
@@ -119,11 +119,15 @@
 		static bool booleanVariable; \
 		UiForm_addBoolean (_dia_.get(), & booleanVariable, U"" #booleanVariable, labelText, defaultBooleanValue);
 
-#define LABEL(labelText)  UiForm_addLabel (_dia_.get(), nullptr, labelText);
+#define HEADING(labelText)  UiForm_addHeading (_dia_.get(), nullptr, labelText);
 
-#define MUTABLE_LABEL(stringVariable, labelText)  \
+#define COMMENT(labelText)  UiForm_addComment (_dia_.get(), nullptr, labelText);
+
+#define CAPTION(labelText)  UiForm_addCaption (_dia_.get(), nullptr, labelText);
+
+#define MUTABLE_COMMENT(stringVariable, labelText)  \
 		static conststring32 stringVariable; \
-		UiForm_addLabel (_dia_.get(), & stringVariable, labelText);
+		UiForm_addComment (_dia_.get(), & stringVariable, labelText);
 
 #define TEXTFIELD(stringVariable, labelText, defaultStringValue, numberOfLines)  \
 		static conststring32 stringVariable; \
@@ -225,8 +229,10 @@
 			[[maybe_unused]] enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 			_compilerTypeCheckDummy = enumeratedVariable; \
 		} \
-		UiForm_addChoice (_dia_.get(), (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, \
-				labelText, (int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
+		UiForm_addChoiceEnum (_dia_.get(), (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, \
+			labelText, (int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN, \
+			(enum_generic_getValue) EnumeratedType##_getValue \
+		); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
 			UiForm_addOption (_dia_.get(), EnumeratedType##_getText ((enum EnumeratedType) ienum));
 
@@ -236,8 +242,10 @@
 			[[maybe_unused]] enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 			_compilerTypeCheckDummy = enumeratedVariable; \
 		} \
-		UiForm_addOptionMenu (_dia_.get(), (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, \
-				labelText, (int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
+		UiForm_addOptionMenuEnum (_dia_.get(), (int *) & enumeratedVariable, nullptr, U"" #enumeratedVariable, \
+			labelText, (int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN, \
+			(enum_generic_getValue) EnumeratedType##_getValue \
+		); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
 			UiForm_addOption (_dia_.get(), EnumeratedType##_getText ((enum EnumeratedType) ienum));
 
@@ -247,8 +255,10 @@
 			[[maybe_unused]] enum EnumeratedType _compilerTypeCheckDummy = defaultValue; \
 			_compilerTypeCheckDummy = enumeratedVariable; \
 		} \
-		UiForm_addOptionMenu (_dia_.get(), nullptr, & enumeratedVariableAsString, U"" #enumeratedVariableAsString, \
-				labelText, (int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN); \
+		UiForm_addOptionMenuEnum (_dia_.get(), nullptr, & enumeratedVariableAsString, U"" #enumeratedVariableAsString, \
+			labelText, (int) defaultValue - (int) EnumeratedType::MIN + 1, (int) EnumeratedType::MIN, \
+			(enum_generic_getValue) EnumeratedType##_getValue \
+		); \
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
 			UiForm_addOption (_dia_.get(), EnumeratedType##_getText ((enum EnumeratedType) ienum));
 
@@ -450,7 +460,8 @@
 #define FIND_ONE_AND_ONE_WITH_IOBJECT(klas1,klas2)  \
 	klas1 me = nullptr; klas2 you = nullptr; integer _klas1_position = 0; \
 	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT, _klas1_position = IOBJECT; \
-		else if (CLASS == class##klas2) you = (klas2) OBJECT; if (me && you) break; } \
+		else if (CLASS == class##klas2) you = (klas2) OBJECT; \
+		if (me && you) break; } \
 	IOBJECT = _klas1_position;
 
 #define FIND_TWO(klas)  \
@@ -476,12 +487,15 @@
 #define FIND_ONE_AND_ONE_AND_ONE(klas1,klas2,klas3)  \
 	klas1 me = nullptr; klas2 you = nullptr; klas3 him = nullptr; \
 	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT; else if (CLASS == class##klas2) you = (klas2) OBJECT; \
-	else if (CLASS == class##klas3) him = (klas3) OBJECT; if (me && you && him) break; }
+	else if (CLASS == class##klas3) him = (klas3) OBJECT; \
+	if (me && you && him) break; }
 	
 #define FIND_ONE_AND_ONE_AND_ONE_WITH_IOBJECT(klas1,klas2,klas3)  \
 	klas1 me = nullptr; klas2 you = nullptr; klas3 him = nullptr; integer _klas1_position = 0;\
-	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT, _klas1_position = IOBJECT; else if (CLASS == class##klas2) you = (klas2) OBJECT; \
-	else if (CLASS == class##klas3) him = (klas3) OBJECT; if (me && you && him) break; } \
+	LOOP { if (CLASS == class##klas1) me = (klas1) OBJECT, _klas1_position = IOBJECT; \
+		else if (CLASS == class##klas2) you = (klas2) OBJECT; \
+		else if (CLASS == class##klas3) him = (klas3) OBJECT; \
+		if (me && you && him) break; } \
 	IOBJECT = _klas1_position;
 
 #define FIND_1_1_1_1(klas1,klas2,klas3,klas4)  \
@@ -705,6 +719,11 @@
 		interpreter -> returnType = kInterpreter_ReturnType::STRING_; \
 	Melder_information (result);
 
+#define FOR_AUTOSTRING__  \
+	if (interpreter) \
+		interpreter -> returnType = kInterpreter_ReturnType::STRING_; \
+	Melder_information (result.get());
+
 #define QUERY_END__  \
 	END_NO_NEW_DATA
 
@@ -746,6 +765,10 @@
 
 #define QUERY_FOR_STRING_END__  \
 	FOR_STRING__ \
+	QUERY_END__
+
+#define QUERY_FOR_AUTOSTRING_END__  \
+	FOR_AUTOSTRING__ \
 	QUERY_END__
 
 #define QUERY_WEAK_FOR_STRING_END__  \
@@ -865,6 +888,11 @@
 	FIND_ONE (klas)
 #define QUERY_ONE_FOR_STRING_END  \
 	QUERY_FOR_STRING_END__
+
+#define QUERY_ONE_FOR_AUTOSTRING(klas)  \
+	FIND_ONE (klas)
+#define QUERY_ONE_FOR_AUTOSTRING_END  \
+	QUERY_FOR_AUTOSTRING_END__
 
 #define QUERY_ONE_WEAK_FOR_STRING(klas)  \
 	FIND_ONE (klas) \

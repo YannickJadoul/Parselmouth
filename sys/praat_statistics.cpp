@@ -1,6 +1,6 @@
 /* praat_statistics.cpp
  *
- * Copyright (C) 1992-2012,2014-2022 Paul Boersma
+ * Copyright (C) 1992-2012,2014-2022,2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,8 +84,15 @@ void praat_reportTextProperties () {
 	MelderInfo_writeLine (U"Text properties of this edition of Praat on this computer:\n");
 	MelderInfo_writeLine (U"Locale: ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 	MelderInfo_writeLine (U"A \"char\" is ",                                      8, U" bits.");
+	constexpr bool charIsSigned = ( (int) (char) 200 < 0 );
+	if (charIsSigned)
+		MelderInfo_writeLine (U"A \"char\" is ", charIsSigned ? U"signed." : U"unsigned.");
 	MelderInfo_writeLine (U"A \"char16_t\" is ",           sizeof (char16_t)    * 8, U" bits.");
 	MelderInfo_writeLine (U"A \"wchar_t\" is ",            sizeof (wchar_t)     * 8, U" bits.");
+	if constexpr ((wchar_t) -1 < 0)
+		MelderInfo_writeLine (U"A \"wchar_t\" is signed.");
+	else
+		MelderInfo_writeLine (U"A \"wchar_t\" is unsigned.");
 	MelderInfo_writeLine (U"A \"char32_t\" is ",           sizeof (char32_t)    * 8, U" bits.");
 	MelderInfo_close ();
 }
@@ -168,9 +175,14 @@ void praat_reportSystemProperties () {
 	#ifdef linux
 		MelderInfo_writeLine (U"Display protocol: probably ", Melder_systemVersion == 'w' ? U"Wayland" : U"X11", U" (but use xeyes to make sure).");
 	#endif
-	structMelderDir dir {};
-	Melder_getHomeDir (& dir);
-	MelderInfo_writeLine (U"Home folder: ", dir. path);
+	#if defined (__aarch64__) || defined (_M_ARM64_)
+		MelderInfo_writeLine (U"Built for processor type: ", U"arm64");
+	#else
+		MelderInfo_writeLine (U"Built for processor type: ", sizeof (void *) == 4 ? U"intel32" : U"intel64");
+	#endif
+	structMelderFolder homeFolder {};
+	Melder_getHomeDir (& homeFolder);
+	MelderInfo_writeLine (U"Home folder: ", homeFolder. path);
 	#ifdef macintosh
 		MelderInfo_writeLine (U"Full Disk Access: ", Melder_kleenean (hasFullDiskAccess ()));
 		MelderInfo_writeLine (U"Sandboxed: ", Melder_boolean (isSandboxed ()));
@@ -183,6 +195,14 @@ void praat_reportSystemProperties () {
 		MelderInfo_writeLine (U"Process ID: ", processID);
 		MelderInfo_writeLine (U"Localized app name: ", Melder_peek8to32 ([[currentApplication localizedName] UTF8String]));
 		MelderInfo_writeLine (U"App bundle identifier: ", Melder_peek8to32 ([[currentApplication bundleIdentifier] UTF8String]));
+	#endif
+	#ifdef _WIN32
+		MelderInfo_writeLine (U"SM_CXFIXEDFRAME: ", GetSystemMetrics (SM_CXFIXEDFRAME));
+		MelderInfo_writeLine (U"SM_CYFIXEDFRAME: ", GetSystemMetrics (SM_CYFIXEDFRAME));
+		MelderInfo_writeLine (U"SM_CXSIZEFRAME: ", GetSystemMetrics (SM_CXSIZEFRAME));
+		MelderInfo_writeLine (U"SM_CYSIZEFRAME: ", GetSystemMetrics (SM_CYSIZEFRAME));
+		MelderInfo_writeLine (U"SM_CYCAPTION: ", GetSystemMetrics (SM_CYCAPTION));
+		MelderInfo_writeLine (U"SM_CYMENU: ", GetSystemMetrics (SM_CYMENU));
 	#endif
 	MelderInfo_close ();
 }

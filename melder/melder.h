@@ -2,7 +2,7 @@
 #define _melder_h_
 /* melder.h
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <wchar.h>
-#include <wctype.h>
 #ifdef __MINGW32__
 	#include <sys/types.h>   // for off_t
 #endif
@@ -76,7 +75,7 @@
 #include "melder_console.h"   // MelderConsole (requires conststring32)
 #include "melder_textencoding.h"   // Melder_length_utf8, Melder_32to8
 #include "melder_atof.h"
-#include "melder_files.h"   // Melder_fopen, MelderFile, MelderDir
+#include "melder_files.h"   // Melder_fopen, MelderFile, MelderFolder
 #include "melder_strvec.h"   // STRVEC, autoSTRVEC (requires MelderArray)
 #include "melder_sort.h"   // sort_VEC_inout (requires VEC), sort_STRVEC_inout (requires STRVEC)
 

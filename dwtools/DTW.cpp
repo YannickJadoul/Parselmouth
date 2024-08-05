@@ -131,16 +131,33 @@ static void DTW_findPath_special (DTW me, bool matchStart, bool matchEnd, int sl
 /* DTW_getXTime (DTW me, (DTW_getYTime (DTW me, double tx)) == tx */
 double DTW_getYTimeFromXTime (DTW me, double tx) {
 	double time = tx; // Catch cases where tier would give constant extrapolation
-	if (tx > my xmin && tx < my xmax) {
+	/*
+		If `eps` were zero, then the condition would rely on floating-point equality,
+		which is a bad idea (e.g. the result would be platform-dependent).
+		(fix ppgb 20240420, after this crashed on Windows only)
+		(rewind 20240501, because of retries in SpeechSynthesizer & Sound & TextGrid alignment)
+	*/
+	const double eps = 0.0 * (my xmax - my xmin);
+	if (tx > my xmin + eps && tx < my xmax - eps) {
 		DTW_Path_Query thee = & my pathQuery;
 		time = RealTier_getValueAtTime (thy yfromx.get(), tx);
+	} else {
+		//TRACE
+		trace (U"Time set to ", tx, U" instead of between ", my xmin, U" and ", my xmax, U".");
 	}
 	return time;
 }
 
 double DTW_getXTimeFromYTime (DTW me, double ty) {
 	double time = ty; // Catch cases where tier would give constant extrapolation
-	if (ty > my ymin && ty < my ymax) {
+	/*
+		If `eps` were zero, then the condition would rely on floating-point equality,
+		which is a bad idea (e.g. the result would be platform-dependent).
+		(fix ppgb 20240420, after this crashed on Windows only)
+		(rewind 20240501, because of retries in SpeechSynthesizer & Sound & TextGrid alignment)
+	*/
+	const double eps = 0.0 * (my ymax - my ymin);
+	if (ty > my ymin + eps && ty < my ymax - eps) {
 		DTW_Path_Query thee = & my pathQuery;
 		time = RealTier_getValueAtTime (thy xfromy.get(), ty);
 	}

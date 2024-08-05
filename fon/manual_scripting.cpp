@@ -22,1256 +22,14 @@
 void manual_scripting_init (ManPages me);
 void manual_scripting_init (ManPages me) {
 
-MAN_BEGIN (U"Action commands", U"ppgb", 20230130)
-INTRO (U"The commands in the @@Dynamic menu@ of the @@Objects window@.")
-NORMAL (U"These commands are available only if the right kinds of objects are selected. "
-	"They are shown in a list in the right half of the Objects window, "
-	"or in the @@Save menu@ if they start with ##Save as# or ##Append to#.")
-MAN_END
-
-MAN_BEGIN (U"Add action command...", U"ppgb", 20230130)
-INTRO (U"One of the hidden commands in the Praat menu of the @@Objects window@. "
-	"With this command, you add a button to the dynamic menu in the right half of the Objects window.")
-ENTRY (U"Settings")
-NORMAL (U"See @@Add to dynamic menu...@.")
-ENTRY (U"Usage")
-NORMAL (U"You can use this command in your @@initialization script@ or in @@plug-ins@.")
-NORMAL (U"Normally, however, if you want to add a command to the dynamic menu, "
-	"you would use the command @@Add to dynamic menu...@ of the @ScriptEditor instead.")
-MAN_END
-
-MAN_BEGIN (U"Add menu command...", U"ppgb", 20230130)
-INTRO (U"One of the hidden commands in the Praat menu of the @@Objects window@. "
-	"With this command, you add a button to any of the fixed menus in the Objects or Picture window.")
-ENTRY (U"Settings")
-NORMAL (U"See @@Add to fixed menu...@.")
-ENTRY (U"Usage")
-NORMAL (U"You can use this command in your @@initialization script@ or in @@plug-ins@.")
-NORMAL (U"Normally, however, if you want to add a command to a fixed menu, "
-	"you would use the command @@Add to fixed menu...@ of the @ScriptEditor instead.")
-MAN_END
-
-MAN_BEGIN (U"Add to dynamic menu...", U"ppgb", 20140107)
-INTRO (U"A command in the File menu of the @ScriptEditor.")
-NORMAL (U"With this command, you add a button to the dynamic menu in the @@Objects window@. "
-	"This button will only be visible if the specified combination of objects is selected. "
-	"Clicking the button will invoke the specified @@Praat script@.")
-ENTRY (U"Settings")
-TERM (U"%%Class 1")
-DEFINITION (U"the name of the class of the object to be selected. "
-	"For instance, if a button should only appear if the user selects a Sound, this would be “Sound”.")
-TERM (U"%%Number 1")
-DEFINITION (U"the number of objects of %class1 that have to be selected. For most built-in commands, this number is unspecified (0); "
-	"e.g., the user can choose #Draw... or ##To Spectrum# regardless of whether she selected 1, 2, 3, or more Sound objects. "
-	"If the number of selected objects is different from %number1, the button will be visible but insensitive.")
-TERM (U"%%Class 2")
-DEFINITION (U"the name of the class of the second object to be selected, different from %class1. "
-	"Normally the empty string (“”).")
-TERM (U"%%Number 2")
-DEFINITION (U"the number of selected objects of %class2.")
-TERM (U"%%Class 3")
-DEFINITION (U"the name of the class of the third object to be selected, different from %class1 and %class2. "
-	"Normally the empty string (“”).")
-TERM (U"%%Number 3")
-DEFINITION (U"the number of selected objects of %class3.")
-TERM (U"%%Command")
-DEFINITION (U"the title of the new command button (or label, or submenu title). "
-	"To get a separator line instead of a command text (only in a submenu), "
-	"you specify a unique string that starts with a hyphen (“-”); the @ButtonEditor may contain some examples of this. "
-	"If the command starts with ##Save as# or ##Append to#, it will be placed in the @@Save menu@.")
-TERM (U"%%After command")
-DEFINITION (U"a button title in the dynamic menu or submenu where you want your new button. "
-	"If you specify the empty string (“”), your button will be put at the bottom. "
-	"You can specify a push button, a label (subheader), or a cascade button (submenu title) here.")
-TERM (U"%%Depth")
-DEFINITION (U"0 if you want your button in the main menu, 1 if you want it in a submenu.")
-TERM (U"%%Script")
-DEFINITION (U"the full path name of the script to invoke. If you saved the script you are editing, "
-	"its name will already have been filled in here. "
-	"If you do not specify a script, you will get a separating label or cascading menu title instead, "
-	"depending on the %depth of the following command.")
-ENTRY (U"Example")
-NORMAL (U"If one object of class Sound is selected, you want a new submenu called “Filters” "
-	"after the #Convolve button, containing your new commands “Autocorrelation” and “Band filter...”, "
-	"separated by a horizontal separator line:")
-CODE (U"Add to dynamic menu: \"Sound\", 0, \"\", 0, \"\", 0, \"Filters -\", \"Convolve\", 0, \"\"")
-CODE (U"Add to dynamic menu: \"Sound\", 1, \"\", 0, \"\", 0, \"Autocorrelation\", \"Filters -\", 1, \"/u/praats/demo/autocorrelation.praat\"")
-CODE (U"Add to dynamic menu: \"Sound\", 0, \"\", 0, \"\", 0, \"-- band filter --\", \"Autocorrelation\", 1, \"\"")
-CODE (U"Add to dynamic menu: \"Sound\", 1, \"\", 0, \"\", 0, \"Band filter...\", \"-- band filter --\", 1, \"/u/praats/demo/bandFilter.praat\"")
-NORMAL (U"Note that “Filters -” will be a submenu title, %because it is followed by subcommands (%depth 1). "
-	"Note that %number1 is 1 only for the executable buttons; for the cascade button and the separator line, "
-	"this number is ignored.")
-ENTRY (U"Usage convention")
-NORMAL (U"Please adhere to the convention that command that take arguments, such as “Band filter...” above, end in three dots.")
-ENTRY (U"Using this command in a script")
-NORMAL (U"To add a dynamic button from a script (perhaps your @@initialization script@ or a @@plug-ins|plug-in@), "
-	"use the hidden shell command @@Add action command...@ instead.")
-MAN_END
-
-MAN_BEGIN (U"Add to fixed menu...", U"ppgb", 20140107)
-INTRO (U"A command in the File menu of the @ScriptEditor.")
-NORMAL (U"With this command, you add a button to any fixed menu in the @@Objects window@ or in the @@Picture window@. "
-	"Clicking the added button will invoke the specified @@Praat script@.")
-ENTRY (U"Settings")
-TERM (U"#Window")
-DEFINITION (U"the name of the window (“Objects” or “Picture”) that contains the menu that you want to change.")
-TERM (U"#Menu")
-DEFINITION (U"the title of the menu that you want to change. If #Window is “Objects”, you can specify "
-	"the Praat, New, Open, Help, Goodies, Settings, or Technical menu (for the Save menu, "
-	"which depends on the objects selected, "
-	"you would use @@Add to dynamic menu...@ instead). If #Window is “Picture”, you can specify "
-	"the File, Edit, Margins, World, Select, Pen, Font, or Help menu.")
-TERM (U"#Command")
-DEFINITION (U"the title of the new menu button. To get a separator line instead of a command text, "
-	"you specify a unique string that starts with a hyphen (“-”); the @ButtonEditor contains many examples of this.")
-TERM (U"##After command")
-DEFINITION (U"a button title in the menu or submenu after which you want your new button to be inserted. "
-	"If you specify the empty string (“”), your button will be put in the main menu.")
-TERM (U"#Depth")
-DEFINITION (U"0 if you want your button in the main menu, 1 if you want it in a submenu.")
-TERM (U"%Script")
-DEFINITION (U"the full path name of the script to invoke. If you saved the script you are editing, "
-	"its name will already have been filled in here. If you do not specify a script, "
-	"you will get a cascading menu title instead.")
-ENTRY (U"Example 1")
-NORMAL (U"In the Matrix submenu of the @@New menu@, you want a separator line followed by the command #Peaks:")
-CODE (U"Add to fixed menu: \"Objects\", \"New\", \"-- peaks --\", \"Create simple Matrix...\", 1, \"\"")
-CODE (U"Add to fixed menu: \"Objects\", \"New\", \"Peaks\", \"-- peaks --\", 1, \"/u/praats/demo/peaks.praat\"")
-ENTRY (U"Example 2")
-NORMAL (U"In the @@New menu@, you want a submenu called “Demo”, with a subitem titled “Lorenz...”:")
-CODE (U"Add to fixed menu: \"Objects\", \"New\", \"Demo\", \"\", 0,, \"\"")
-CODE (U"Add to fixed menu: \"Objects\", \"New\", \"Lorenz...\", \"Demo\", 1, \"/u/praats/demo/lorenz.praat\"")
-ENTRY (U"Usage convention")
-NORMAL (U"Please adhere to the convention that commands that take arguments, such as “Lorenz...” above, end in three dots.")
-ENTRY (U"Using this command in a script")
-NORMAL (U"To add a fixed button from a script (perhaps your @@initialization script@ or a @@plug-ins|plug-in@), "
-	"use the hidden shell command @@Add menu command...@ instead.")
-MAN_END
-
-MAN_BEGIN (U"ButtonEditor", U"ppgb", 20060920)
-INTRO (U"An editor for viewing, hiding, showing, removing, and executing the commands "
-	"in the fixed and dynamic menus of the Praat program. To open it, choose ##Buttons...# "
-	"from the #Praat menu of the @@Objects window@.")
-ENTRY (U"What the button editor shows")
-NORMAL (U"The button editor gives a list of:")
-LIST_ITEM (U"1. The five fixed buttons.")
-LIST_ITEM (U"2. The built-in and added @@fixed menu commands@, lexicographically sorted by window and menu name.")
-LIST_ITEM (U"3. The built-in and added @@action commands@, sorted by the names of the selected objects.")
-ENTRY (U"Visibility of built-in commands")
-NORMAL (U"Most built-in commands are visible by default, but some are hidden by default (see @@Hidden commands@). "
-	"The button editor shows these commands as “shown” or “hidden”, respectively. "
-	"You can change the visibility of a command by clicking on the blue “shown” or “hidden” text; "
-	"this text will then be replaced with “HIDDEN” or “SHOWN”, with capitals to signal their non-standard settings. "
-	"These changes will be remembered in the @@buttons file@ across sessions of your program. "
-	"To return to the standard settings, click the blue “HIDDEN” or “SHOWN” texts again.")
-NORMAL (U"Some built-in commands cannot be hidden. They are marked as “unhidable”. "
-	"The most notable example is the ##Buttons...# button "
-	"(a failure to make the ##Commands...# command unhidable in Microsoft Word "
-	"causes some computer viruses to be very hard to remove...).")
-ENTRY (U"Added commands")
-NORMAL (U"Commands that you have added to the fixed or dynamic menus (probably with @@Add to fixed menu...@ or "
-	"@@Add to dynamic menu...@ in the @ScriptEditor), "
-	"are marked as “ADDED”. They are remembered in the @@buttons file@. "
-	"You can change the availability of these commands by clicking on the blue “ADDED” text, which will then "
-	"be replaced with “REMOVED”. After this, the added command will no longer be remembered in the @@buttons file@. "
-	"To make the command available again, click the blue “REMOVED” text again, before leaving the program.")
-ENTRY (U"Start-up commands")
-NORMAL (U"Commands that were added in an @@initialization script@ or @@plug-ins|plug-in@ (with @@Add menu command...@ or "
-	"@@Add action command...@) are marked as “START-UP”. "
-	"They are %not remembered in the @@buttons file@. "
-	"You can change the visibility of these commands by clicking on the blue “START-UP” text, which will then "
-	"be replaced with “HIDDEN”. This setting %will be remembered in the @@buttons file@. "
-	"To make the command visible again, click the blue “HIDDEN” text again.")
-ENTRY (U"Executing commands")
-NORMAL (U"The button editor allows you to choose hidden commands without first making them visible in the fixed or dynamic menus.")
-NORMAL (U"The editor shows all the executable commands in blue. These include:")
-LIST_ITEM (U"1. The fixed #Remove button, if one or more objects are selected in the @@List of Objects@.")
-LIST_ITEM (U"2. The other fixed buttons, if exactly one object is selected.")
-LIST_ITEM (U"3. All of the fixed menu commands, hidden or not, and “removed” or not.")
-LIST_ITEM (U"4. Those action commands that match the currently selected objects with respect to class and number.")
-NORMAL (U"To execute any of these blue commands, just click on it.")
-MAN_END
-
-MAN_BEGIN (U"buttons file", U"ppgb", 20201229)
-NORMAL (U"The file into which changes in the availability and visibility of commands in the fixed "
-	"and dynamic menus are recorded.")
-NORMAL (U"The buttons file is written to disk when you quit Praat, "
-	"and it is read again when you start Praat the next time. It is a simple @@Praat script@ that you can read "
-	"(but should not edit) with any text editor.")
-ENTRY (U"Adding buttons")
-NORMAL (U"To add a command to a fixed or dynamic menu, you typically use the @ScriptEditor.")
-ENTRY (U"Removing buttons")
-NORMAL (U"To remove an added command from a fixed or dynamic menu, you typically use the @ButtonEditor.")
-ENTRY (U"Hiding and showing buttons")
-NORMAL (U"To hide a built-in command from a fixed or dynamic menu, or to make a hidden command visible, "
-	"you typically use the @ButtonEditor.")
-ENTRY (U"Where is the buttons file?")
-NORMAL (U"The buttons file is in your Praat @@preferences folder@.")
-NORMAL (U"On Windows the file is called #`Buttons5.ini`, "
-	"for instance `C:\\Users\\Miep\\Praat\\Buttons5.ini`.")
-NORMAL (U"On MacOS it is called #`Buttons5`, "
-	"for instance `/Users/miep/Library/Preferences/Praat Prefs/Buttons5`.")
-NORMAL (U"On Linux it is called #`buttons5`, "
-	"for instance `/home/miep/.praat-dir/buttons5`.")
-MAN_END
-
-MAN_BEGIN (U"Calculator", U"ppgb", 20210228)
-INTRO (U"A window that allows you to calculate all kinds of simple or complicated mathematical and string expressions. "
-	"To show the calculator, type @@Keyboard shortcuts|Command-U@ or choose the @@Calculator...@ command. "
-	"The result will appear in the Info window.")
-NORMAL (U"See the @Formulas tutorial for all the things that you can calculate with this command.")
-MAN_END
-
-MAN_BEGIN (U"Calculator...", U"ppgb", 20050822)
-INTRO (U"A command in the @Goodies submenu of the @@Praat menu@ of the @@Objects window@. Shortcut: @@Keyboard shortcuts|Command-U@. "
-	"Choosing this command brings up Praat's @calculator.")
+MAN_BEGIN (U"Paste history", U"ppgb", 20050822)
+INTRO (U"A command in the #Edit menu of a @ScriptEditor, for inserting the history of commands. "
+	"See @@History mechanism@.")
 MAN_END
 
 MAN_BEGIN (U"Clear history", U"ppgb", 20000927)
 INTRO (U"A command in the Edit menu of the @ScriptEditor for clearing the remembered history. "
 	"See @@History mechanism@.")
-MAN_END
-
-MAN_BEGIN (U"Fixed menu commands", U"ppgb", 20120915)
-INTRO (U"The commands in the fixed menus of the @@Objects window@ (Praat, New, Open, Help, Goodies, "
-	"Preferences, and Technical) and the @@Picture window@ (File, Edit, Margins, World, Select, Pen, Font, Help).")
-NORMAL (U"These commands are always clickable (if not hidden) and scriptable (if not added).")
-MAN_END
-
-MAN_BEGIN (U"Formulas", U"ppgb", 20170916)
-INTRO (U"You can use numeric expressions and string (text) expressions in many places in Praat:")
-LIST_ITEM (U"\\bu in the @calculator in Praat’s @Goodies submenu;")
-LIST_ITEM (U"\\bu in the numeric fields of most settings windows;")
-LIST_ITEM (U"\\bu in a @@Praat script@.")
-NORMAL (U"For some types of objects (mainly Sound and Matrix), you can also apply formulas to all their contents at the same time:")
-LIST_ITEM (U"\\bu when you create a Sound or a Matrix from the @@New menu@;")
-LIST_ITEM (U"\\bu when you choose @@Formula...@ from the @Modify menu for a selected object.")
-NORMAL (U"You can read this tutorial sequentially with the help of the “##< 1#” and “##1 >#” buttons.")
-LIST_ITEM (U"1. @@Formulas 1. My first formulas|My first formulas@")
-LIST_ITEM1 (U"1.1. @@Formulas 1.1. Formulas in the calculator|Formulas in the calculator@")
-LIST_ITEM1 (U"1.2. @@Formulas 1.2. Numeric expressions|Numeric expressions@")
-LIST_ITEM1 (U"1.3. @@Formulas 1.3. String expressions|String expressions@")
-LIST_ITEM1 (U"1.4. @@Formulas 1.4. Array expressions|Array expressions@")
-LIST_ITEM1 (U"1.5. @@Formulas 1.5. Formulas in settings windows|Formulas in settings windows@")
-LIST_ITEM1 (U"1.6. @@Formulas 1.6. Formulas for creation|Formulas for creation@")
-LIST_ITEM1 (U"1.7. @@Formulas 1.7. Formulas for modification|Formulas for modification@")
-LIST_ITEM1 (U"1.8. @@Formulas 1.8. Formulas in scripts|Formulas in scripts@")
-LIST_ITEM (U"2. @@Formulas 2. Representations|Representations@")
-LIST_ITEM1 (U"2.1. @@Formulas 2.1. Representation of numbers|Representation of numbers@")
-LIST_ITEM1 (U"2.2. @@Formulas 2.2. Representation of strings|Representation of strings@")
-LIST_ITEM1 (U"2.3. @@Formulas 2.3. Representation of arrays|Representation of arrays@")
-LIST_ITEM (U"3. @@Formulas 3. Operators|Operators@ (`+`, `-`, `*`, `/`, `^`)")
-LIST_ITEM (U"4. @@Formulas 4. Constants|Constants@ (`pi`, `e`, `undefined`)")
-LIST_ITEM (U"5. @@Formulas 5. Mathematical functions|Mathematical functions@")
-LIST_ITEM (U"6. @@Formulas 6. String functions|String functions@")
-LIST_ITEM (U"7. @@Formulas 7. Control structures|Control structures@ (`if then else fi`, semicolon)")
-LIST_ITEM (U"8. @@Formulas 8. Attributes of objects|Attributes of objects@")
-LIST_ITEM (U"9. @@Formulas 9. Data in objects|Data in objects@")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1. My first formulas", U"ppgb", 20170916)
-LIST_ITEM (U"1.1. @@Formulas 1.1. Formulas in the calculator|Formulas in the calculator@")
-LIST_ITEM (U"1.2. @@Formulas 1.2. Numeric expressions|Numeric expressions@")
-LIST_ITEM (U"1.3. @@Formulas 1.3. String expressions|String expressions@")
-LIST_ITEM (U"1.4. @@Formulas 1.4. Array expressions|Array expressions@")
-LIST_ITEM (U"1.5. @@Formulas 1.5. Formulas in settings windows|Formulas in settings windows@")
-LIST_ITEM (U"1.6. @@Formulas 1.6. Formulas for creation|Formulas for creation@")
-LIST_ITEM (U"1.7. @@Formulas 1.7. Formulas for modification|Formulas for modification@")
-LIST_ITEM (U"1.8. @@Formulas 1.8. Formulas in scripts|Formulas in scripts@")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1.1. Formulas in the calculator", U"ppgb", 20170916)
-INTRO (U"To use the Praat @calculator, go to the @@Praat menu@ "
-	"and choose @@Calculator...@ from the @Goodies submenu. Or simply type @@Keyboard shortcuts|Command-U@ anywhere in Praat.")
-ENTRY (U"Calculating numbers")
-NORMAL (U"You can do arithmetic computations. Type the formula")
-CODE (U"8*17")
-NORMAL (U"and click OK. The Info window will pop up and show the result:")
-CODE (U"136")
-ENTRY (U"Calculating strings")
-NORMAL (U"You can also do text computations. Type the formula")
-CODE (U"\"see\" + \"king\"")
-NORMAL (U"and click OK. The Info window will show the result:")
-CODE (U"seeking")
-ENTRY (U"Calculating arrays")
-NORMAL (U"You can perform computations on vectors (arrays of numbers). Type the formula")
-CODE (U"{ 11, 13, 17 } + 0.5")
-NORMAL (U"and click OK. The Info window will show the result:")
-CODE (U"11.5")
-CODE (U"13.5")
-CODE (U"17.5")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1.2. Numeric expressions", U"ppgb", 20170916)
-INTRO (U"All the formulas whose outcome is a number are called numeric expressions. "
-	"For the following examples, all the outcomes can be checked with the @calculator.")
-ENTRY (U"Examples with numbers")
-NORMAL (U"Some numeric expressions involve numbers only:")
-TERM (U"##8*17")
-DEFINITION (U"computes a multiplication. Outcome: 136.")
-TERM (U"##2\\^ 10")
-DEFINITION (U"computes the tenth power of 2. Outcome: 1024.")
-TERM (U"##sqrt (2) / 2")
-DEFINITION (U"computes the square root of 2, and divides the result by 2. Outcome: 0.7071067811865476.")
-TERM (U"##sin (1/4 * pi)")
-DEFINITION (U"computes the sine of %\\pi/4. Outcome: 0.7071067811865476 (again).")
-ENTRY (U"Examples with strings")
-NORMAL (U"Some numeric expressions compute numeric properties of strings:")
-TERM (U"##length (\"internationalization\")")
-DEFINITION (U"computes the length of the string \"internationalization\". Outcome: 20.")
-TERM (U"##index (\"internationalization\", \"ation\")")
-DEFINITION (U"computes the location of the first occurrence of the string \"ation\" in the string \"internationalization\". Outcome: 7, "
-	"because the first letter of \"ation\" lines up with the seventh letter of \"internationalization\". "
-	"If the substring does not occur, the outcome is 0.")
-ENTRY (U"Examples with arrays")
-NORMAL (U"Some numeric expressions compute numeric properties of numeric vectors:")
-TERM (U"##size ({ 40, 70, 60, 50 })")
-DEFINITION (U"computes the length of the vector { 40, 70, 60, 50 }, i.e. the number of its elements. Outcome: 4.")
-TERM (U"##mean ({ 40, 70, 60, 50 })")
-DEFINITION (U"computes the mean of the four numbers 40, 70, 60 and 50. Outcome: 55.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1.3. String expressions", U"ppgb", 20170916)
-INTRO (U"All the formulas whose outcome is a text are called string expressions. "
-	"A %string is programming jargon for a text; think of a text as a “string” of characters (letters).")
-NORMAL (U"Again, the outcomes of the following examples can be checked with the @calculator.")
-TERM (U"##\"see\" + \"king\"")
-DEFINITION (U"concatenates two strings. Outcome: seeking.")
-TERM (U"##left\\$  (\"internationalization\", 6)")
-DEFINITION (U"computes the leftmost six letters of the string; the dollar sign is used for all functions whose result is a string. Outcome: intern.")
-TERM (U"##mid\\$  (\"internationalization\", 6, 8)")
-DEFINITION (U"computes the 8-letter substring that starts at the sixth letter of \"internationalization\". Outcome: national.")
-TERM (U"##date\\$  ( )")
-DEFINITION (U"computes the current date and time. Outcome at the time I am writing this: Mon Dec  2 02:23:45 2002.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1.4. Array expressions", U"ppgb", 20170916)
-INTRO (U"A numeric vector expression is an expression whose value is a numeric vector.")
-NORMAL (U"You can check the outcomes of the following examples with the @calculator.")
-TERM (U"##{ 11, 13, 17 } + 0.5")
-DEFINITION (U"adds 0.5 to each element of a vector with three elements, giving a new vector with three elements. "
-	"Praat writes the outcome to the Info window as three lines, containing the numbers 11.5, 13.5 and 17.5:")
-CODE (U"11.5")
-CODE (U"13.5")
-CODE (U"17.5")
-TERM (U"@`zero#` (5)")
-DEFINITION (U"creates a vector with 5 zeroes. Praat writes them on five lines:")
-CODE (U"0")
-CODE (U"0")
-CODE (U"0")
-CODE (U"0")
-CODE (U"0")
-TERM (U"@`repeat#` ({ 1, 5 }, 6)")
-DEFINITION (U"creates a vector with 12 elements, in which the sequence { 1, 5 } is repeated 6 times. Outcome:")
-CODE (U"1")
-CODE (U"5")
-CODE (U"1")
-CODE (U"5")
-CODE (U"1")
-CODE (U"5")
-CODE (U"1")
-CODE (U"5")
-CODE (U"1")
-CODE (U"5")
-CODE (U"1")
-CODE (U"5")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1.5. Formulas in settings windows", U"ppgb", 20170916)
-INTRO (U"Into numeric fields in settings windows you usually simply type a number. "
-	"However, you can use any numeric expression instead.")
-NORMAL (U"For instance, suppose you want to create a Sound that contains exactly 10000 samples. "
-	"If the sampling frequency is 44100 Hz, the duration will be 10000/44100 seconds. "
-	"You can create such a Sound by choosing @@Create Sound from formula...@ from the @@New menu@, "
-	"then typing")
-CODE (U"10000/44100")
-NORMAL (U"into the ##End time# field.")
-NORMAL (U"Into text fields in settings windows, you can only type text directly; there is no way "
-	"to use string expressions (except if you use scripts; see @@Formulas 1.8. Formulas in scripts@).")
-NORMAL (U"Into numeric vector fields in settings windows, you can type any numeric vector (array) expression.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1.6. Formulas for creation", U"ppgb", 20110128)
-INTRO (U"With some commands in the @@New menu@, you can supply a formula that Praat will apply to all elements of the new object.")
-ENTRY (U"Creating a Sound from a formula")
-NORMAL (U"Choose @@Create Sound from formula...@ and type the following into the #%Formula field:")
-CODE (U"1/2 * sin (2 * pi * 377 * x)")
-NORMAL (U"When you click #OK, a new @Sound object will appear in the list. "
-	"After you click ##View & Edit# and zoom in a couple of times, you will see that the sound is a sine wave "
-	"with a frequency of 377 hertz (cycles per second). This worked because the $x in the formula represents the time, "
-	"i.e. the formula was applied to every sample separately, with a different value of $x for each sample.")
-ENTRY (U"Creating a Matrix from a formula")
-NORMAL (U"Choose @@Create simple Matrix...@ and type the following into the #%Formula field:")
-CODE (U"8")
-NORMAL (U"When you click OK, a new @Matrix object will appear in the list. When you click #Info, "
-	"you will see that it is a matrix with 10 rows and 10 columns, and that all the 100 cells contain the value 8 "
-	"(you can see this because both the minimum and the maximum are reported as being 8).")
-NORMAL (U"A more interesting example is the formula")
-CODE (U"row * col")
-NORMAL (U"For the resulting Matrix, "
-	"choose @@Matrix: Paint cells...|Paint cells...@ and click #OK. The Picture window will show a 10\\xx10 "
-	"matrix whose elements are the product of the row and column numbers, i.e., they have values between "
-	"1 and 100. Beside $row and $col, you can use $x for the distance along the horizontal axis and $y for the "
-	"distance along the vertical axis; see the following page for examples.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1.7. Formulas for modification", U"ppgb", 20170916)
-INTRO (U"Analogously to the formulas that you can use for creating new objects (see the previous page), "
-	"you can use formulas for modifying existing objects. You do this with the command ##Formula...# that you "
-	"can find in the @Modify menu when you select an object.")
-ENTRY (U"Modifying a Sound with a formula")
-NORMAL (U"Record a sound with your microphone and talk very lowly. If you don't know how to record a sound in Praat, "
-	"consult the @Intro. Once the Sound object is in the list, click #Play. The result will sound very soft. "
-	"Then choose ##Formula...# from the Modify menu and type")
-CODE (U"self * 3")
-NORMAL (U"Click OK, then click #Play again. The sound is much louder now. You have multiplied the amplitude of every sample "
-	"in the sound with a factor of 3.")
-ENTRY (U"Replacing the contents of a Sound with a formula")
-NORMAL (U"If you don’t use `self` in your formula, the formula does not refer to the existing contents of the Sound. Hence, the formula ")
-CODE (U"1/2 * sin (2 * pi * 377 * x)")
-NORMAL (U"will simply replace your recorded speech with a 377-Hz sine wave.")
-ENTRY (U"Modifying a Matrix with a formula")
-NORMAL (U"Many objects can be thought of as matrices: "
-	"they consist of a number of rows and columns with data in every cell:")
-LIST_ITEM (U"@Sound: one row; columns represent samples.")
-LIST_ITEM (U"@Spectrum: two rows (first row is real part, second row is imaginary part); "
-	"columns represent frequencies.")
-LIST_ITEM (U"@Spectrogram, @Cochleagram: rows represent frequencies; columns represent times.")
-LIST_ITEM (U"@Excitation: one row; columns represent frequency bands.")
-LIST_ITEM (U"@Harmonicity: one row; columns represent time frames.")
-NORMAL (U"The formula is performed on every column of every row. The formula")
-CODE (U"self^2")
-NORMAL (U"will square all matrix elements.")
-NORMAL (U"The formula first works on the first row, and in that row from the first column on; "
-	"this can work recursively. The formula")
-CODE (U"self + self [row, col - 1]")
-NORMAL (U"integrates each row.")
-ENTRY (U"Referring to the current position in the object")
-NORMAL (U"You can refer to the current position in a Matrix (or Sound, etc.) by index or by %x and %y values:")
-TERM (U"#`row`")
-DEFINITION (U"the current row")
-TERM (U"#`col`")
-DEFINITION (U"the current column")
-TERM (U"#`x`")
-DEFINITION (U"the %x value associated with the current column:")
-	LIST_ITEM2 (U"for a Sound, Spectrogram, Cochleagram, or Harmonicity: time, as in the 377-Hz sine wave example above")
-	LIST_ITEM2 (U"for a Spectrum: frequency (Hz)")
-	LIST_ITEM2 (U"for an Excitation: frequency (Bark)")
-TERM (U"#`y`")
-DEFINITION (U"the %y value associated with the current row:")
-	LIST_ITEM2 (U"for a Spectrogram: frequency (Hz)")
-	LIST_ITEM2 (U"for a Cochleagram: frequency (Bark)")
-ENTRY (U"Referring to the contents of the object itself")
-NORMAL (U"You can refer to values in the current Matrix (or Sound, etc.) by index.")
-TERM (U"#`self`")
-DEFINITION (U"refers to the value in the current Matrix at the current row and column, or to the value in the current Sound at the current sample.")
-TERM (U"#`self` [%`column-expression`]")
-DEFINITION (U"refers to the value in the current Sound (or Intensity etc.) at the current sample (or frame). "
-	"The %`column-expression` is rounded to the nearest integer. "
-	"If the index is out of range (less than 1 or greater than %n__%x_), the expression evaluates as 0.")
-NORMAL (U"#Example. An integrator is")
-CODE (U"   self [col - 1] + self * dx")
-TERM (U"#`self` [%`row-expression`, %`column-expression`]")
-DEFINITION (U"refers to the value in the current Matrix (or Spectrogram etc.) at the specified row and column. "
-	"The expressions are rounded to the nearest integers.")
-NORMAL (U"You can refer to values in the current Matrix (or Spectrogram, etc.) by %x and %y position:")
-TERM (U"#`self` (%`x-expression`, %`y-expression`)")
-DEFINITION (U"the expressions are linearly interpolated between the four nearest matrix points.")
-NORMAL (U"You can refer to values in the current Sound (or Intensity etc.) by %x position:")
-TERM (U"#`self` (%`x-expression`)")
-DEFINITION (U"the expression is linearly interpolated between the two nearest samples (or frames).")
-MAN_END
-
-MAN_BEGIN (U"Formulas 1.8. Formulas in scripts", U"ppgb", 20170916)
-INTRO (U"In scripts, you can assign numeric expressions to numeric variables, "
-	"string expressions to string variables, and array expressions to array variables. "
-	"You can also use numeric, string and array variables in expressions.")
-ENTRY (U"Example: report a square")
-NORMAL (U"Choose @@New Praat script@ from the @@Praat menu@. A script editor window will become visible. "
-	"Type the following lines into that window:")
-CODE (U"x = 99")
-CODE (U"x2 = x * x")
-CODE (U"writeInfoLine: “The square of ”, x, “ is ”, x2, “.”")
-NORMAL (U"This is an example of a simple @@Praat script@; "
-	"it assigns the results of the numeric formulas `99` and `x * x` "
-	"to the numeric variables %`x` and %`x2`. Note that the formula `x * x` itself refers to the variable %`x`. "
-	"To run (execute) this script, type @@Keyboard shortcuts|Command-R@ or choose #Run from the Run menu. "
-	"Praat will then write the following text into the Info window:")
-CODE (U"The square of 99 is 9801.")
-NORMAL (U"For more information on scripts, see the @Scripting tutorial.")
-ENTRY (U"Example: rename the city of Washington")
-NORMAL (U"Type the following text into the script editor window:")
-CODE (U"current$ = “Bush”")
-CODE (U"previous$ = “Clinton”")
-CODE (U"famous$ = “Lincoln”")
-CODE (U"newCapital$ = current$ + mid$ (famous$, 2, 3) + right$ (previous$, 3)")
-CODE (U"writeInfoLine: “The new capital will be ”, newCapital$, “.”")
-NORMAL (U"This script assigns the results of four string expressions to the four string variables `current$`, "
-	"`previous$`, `famous$`, and `newCapital$`. The dollar sign is the notation for a string variable or "
-	"for a function whose result is a string (like `left$`). Note that the formula in the fourth line refers to three existing "
-	"variables.")
-NORMAL (U"To see what the new name of the capital will be, choose #Run.")
-ENTRY (U"Example: report five squares")
-NORMAL (U"Type the following script:")
-CODE (U"x# = { 1, 2, 3, 4, 5 }")
-CODE (U"x2# = x# * x#")
-CODE (U"writeInfoLine: “The squares of ”, x#, “ are ”, x2#, “.”")
-NORMAL (U"Praat will then write the following text into the Info window:")
-CODE (U"The squares of 1 2 3 4 5 are 1 4 9 16 25.")
-ENTRY (U"Example: numeric expressions in settings in scripts")
-NORMAL (U"As in real settings windows, you can use numeric expressions in all numeric fields. "
-	"The example of two pages back becomes:")
-CODE (U"Create Sound from formula: “sine”, 1, 0, 10000 / 44100, 44100, ~ 0.9 * sin (2*pi*377*x)")
-ENTRY (U"Example: string expressions in settings in scripts")
-NORMAL (U"As in real settings windows, you can use string expressions in all text fields:")
-CODE (U"soundName$ = “hello”")
-CODE (U"Read from file: soundName$ + “.wav”")
-ENTRY (U"Example: numeric expressions in creation in scripts")
-NORMAL (U"Suppose you want to generate a sine wave whose frequency is held in a variable. This is the way:")
-CODE (U"frequency = 377")
-CODE (U"Create Sound from formula: “sine”, 1, 0.0, 1.0, 44100, ~ 0.9 * sin (2*pi*frequency*x)")
-NORMAL (U"In this example, Praat will protest if `x` is a variable as well (%`x`), because that would be ambiguous "
-	"with the `x` that refers to the time in the sound (see @@Formulas 1.7. Formulas for modification@).")
-MAN_END
-
-MAN_BEGIN (U"Formulas 2. Representations", U"ppgb", 20170916)
-LIST_ITEM (U"2.1. @@Formulas 2.1. Representation of numbers|Representation of numbers@")
-LIST_ITEM (U"2.2. @@Formulas 2.2. Representation of strings|Representation of strings@")
-LIST_ITEM (U"2.3. @@Formulas 2.3. Representation of arrays|Representation of arrays@")
-MAN_END
-
-MAN_BEGIN (U"Formulas 2.1. Representation of numbers", U"ppgb", 20170916)
-INTRO (U"Formulas can work with integer numbers as well as with real numbers.")
-ENTRY (U"Real numbers")
-NORMAL (U"You can type many real numbers by using a decimal notation, for instance 3.14159, 299792.5, or -0.000123456789. "
-	"For very large or small numbers, you can use the %e-notation: 6.022\\.c10^^23^ is typed as `6.022e23` or `6.022e+23`, "
-	"and -1.6021917\\.c10^^-19^ is typed as `-1.6021917e-19`. You can use also use the percent notation: 0.157 "
-	"can be typed as `15.7%`.")
-NORMAL (U"There are some limitations as to the values that real numbers can have in Praat. "
-	"The numbers must lie between -10^^308^ and +10^^308^. If you type")
-CODE (U"1e200 * 1e100")
-NORMAL (U"the outcome will be")
-CODE (U"1e+300")
-NORMAL (U"but if you type")
-CODE (U"1e300 * 1e100")
-NORMAL (U"the outcome will be")
-CODE (U"--undefined--")
-NORMAL (U"Another limitation is that the smallest non-zero numbers lie near -10^^-308^ and +10^^-308^. If you type")
-CODE (U"1e-200 / 1e100")
-NORMAL (U"the outcome will be")
-CODE (U"1e-300")
-NORMAL (U"but if you type")
-CODE (U"1e-300 / 1e100")
-NORMAL (U"the outcome will be")
-CODE (U"0")
-NORMAL (U"Finally, the precision of real numbers is limited by the number of bits that every real number is stored with "
-	"in the computer, namely 64. For instance, if you type")
-CODE (U"pi")
-NORMAL (U"the outcome will be")
-CODE (U"3.141592653589793")
-NORMAL (U"because only 16 digits of precision are stored. This can lead to unexpected results caused by rounding. "
-	"For instance, the formula")
-CODE (U"0.34999999999999999 - 0.35")
-NORMAL (U"will result in")
-CODE (U"0")
-NORMAL (U"rather than the correct value of 1e-17. This is because the numbers 0.34999999999999999 and 0.35 cannot "
-	"be distinguished in the computer's memory. If you simply type")
-CODE (U"0.34999999999999999")
-NORMAL (U"the outcome will be")
-CODE (U"0.35")
-NORMAL (U"(as in this example, the calculator will always come up with the minimum number of digits needed to represent the number unambiguously).")
-NORMAL (U"Another example of inaccuracy is the formula")
-CODE (U"1 / 7 / 59 * 413")
-NORMAL (U"Because of rounding errors, the result will be")
-CODE (U"0.9999999999999999")
-ENTRY (U"Integer numbers")
-NORMAL (U"Formulas can work with integer (whole) numbers between -1,000,000,000,000,000 and +1,000,000,000,000,000. "
-	"You type them without commas and without the plus sign: 337, -848947328345289.")
-NORMAL (U"You %can work with larger numbers than that (up to 10^^308^), but there will again be rounding errors. "
-	"For instance, the formula")
-CODE (U"1000000000000000 + 1")
-NORMAL (U"correctly yields")
-CODE (U"1000000000000001")
-NORMAL (U"but the formula")
-CODE (U"10000000000000000 + 1")
-NORMAL (U"yields an incorrect outcome:")
-CODE (U"1e16")
-MAN_END
-
-MAN_BEGIN (U"Formulas 2.2. Representation of strings", U"ppgb", 20021203)
-INTRO (U"Formulas can work with strings that are put between two double quotes, "
-	"as in “goodbye” or “how are you doing?”.")
-NORMAL (U"If a string has to contain a double quote, "
-	"you have to type it twice. For instance, if you type")
-CODE (U"\"I asked: \"\"how are you doing?\"\"\"")
-NORMAL (U"into the calculator, the outcome will be")
-CODE (U"I asked: \"how are you doing?\"")
-MAN_END
-
-MAN_BEGIN (U"Formulas 2.3. Representation of arrays", U"ppgb", 20170916)
-INTRO (U"Formulas can work with vectors that are put between opening and closing braces, "
-	"as in { 11, 17, 13.5 }. If you type this into the calculator, the outcome will be")
-CODE (U"11")
-CODE (U"17")
-CODE (U"13.5")
-MAN_END
-
-MAN_BEGIN (U"Formulas 3. Operators", U"ppgb", 20230124)
-NORMAL (U"In formulas you can use the numerical and logical operators that are described on this page. "
-	"The order of evaluation of the operators is the order that is most usual in programming languages. "
-	"To force a different order, you use parentheses.")
-NORMAL (U"The operators with the highest precedence are #negation (-) and #exponentation (\\^ ):")
-CODE (U"--6 \\-> 6")
-CODE (U"2^6 \\-> 64")
-/*@praat
-	# Tests for the manual page "Operators".
-
-	assert --6 = 6
-	assert 2^6 = 64
-@*/
-NORMAL (U"Sequences of negation and exponentiation are evaluated from right to left:")
-CODE (U"2^-6 \\-> 0.015625")                       //@praat assert 2^-6 = 0.015625
-CODE (U"-(1+1)^6 \\-> -64")                        //@praat assert -(1+1)^6 = -64
-CODE (U"4^3^2 \\-> 4^9 \\-> 262144")               //@praat assert 4^3^2 = 262144
-NORMAL (U"Note that changing the spacing does not change the meaning:")
-CODE (U"4^3 ^ 2 \\-> 262144")                      //@praat assert 4^3 ^ 2 = 262144
-NORMAL (U"To change the order of evaluation, you have to use parentheses:")
-CODE (U"(4 ^ 3) ^ 2 \\-> 4096")                    //@praat assert (4 ^ 3) ^ 2 = 4096
-NORMAL (U"The following construction is not allowed because of an ambiguity between a negative number "
-	"and negation of a positive number:")
-CODE (U"-2^6 \\-> ?")
-NORMAL (U"Instead, you use any of the following:")
-CODE (U"(-2)^6 \\-> 64")                           //@praat assert (-2)^6 = 64
-CODE (U"-(2^6) \\-> -64")                          //@praat assert -(2^6) = -64
-CODE (U"-(2)^6 \\-> -64")                          //@praat assert -(2)^6 = -64
-NORMAL (U"The operators with the next highest precedence are #multiplication (*) and #division (/). They are evaluated "
-	"from left to right:")
-CODE (U"1/4*5 \\-> 1.25        (from left to right)")
-CODE (U"1 / 4*5 \\-> 1.25      (spacing does not help)")
-CODE (U"1 / (4*5) \\-> 0.05    (use parentheses to change the order)")
-/*@praat
-	assert 1/4*5 = 1.25
-	assert 1 / 4*5 = 1.25
-	assert 1 / (4*5) = 0.05
-@*/
-CODE (U"3 * 2 ^ 4 \\-> 48      (exponentiation before multiplication)")
-CODE (U"3*2 ^ 4 \\-> 48        (this spacing does not matter and is misleading)")
-CODE (U"(3 * 2) ^ 4 \\-> 1296  (use parentheses to change the order)")
-/*@praat
-	assert 3 * 2 ^ 4 = 48
-	assert 3*2 ^ 4 = 48
-	assert (3 * 2) ^ 4 = 1296
-@*/
-NORMAL (U"##Integer division# operators (#div and #mod) have the same precedence as * and /, "
-	"and are likewise evaluated from left to right:")
-CODE (U"54 div 5 \\-> 10       (division rounded down)")                             //@praat assert 54 div 5 = 10
-CODE (U"54 mod 5 \\-> 4        (the remainder)")                                     //@praat assert 54 mod 5 = 4
-CODE (U"54.3 div 5.1 \\-> 10   (works for real numbers as well)")                    //@praat assert 54.3 div 5.1 = 10
-CODE (U"54.3 mod 5.1 \\-> 3.3  (the remainder)")                                     //@praat assert abs ((54.3 mod 5.1) - 3.3) < 1e-14
-CODE (U"-54 div 5 \\-> -11     (division rounded down; negation before division)")   //@praat assert -54 div 5 = -11
-CODE (U"-54 mod 5 \\-> 1       (the remainder)")                                     //@praat assert -54 mod 5 = 1
-CODE (U"-(54 div 5) \\-> -10   (use parentheses to change the order)")               //@praat assert -(54 div 5) = -10
-CODE (U"-(54 mod 5) \\-> -4")                                                        //@praat assert -(54 mod 5) = -4
-CODE (U"3 * 18 div 5 \\-> 10   (from left to right)")                                //@praat assert 3 * 18 div 5 = 10
-CODE (U"3 * (18 div 5) \\-> 9")                                                      //@praat assert 3 * (18 div 5) = 9
-CODE (U"3 * 18 mod 5 \\-> 4")                                                        //@praat assert 3 * 18 mod 5 = 4
-CODE (U"3 * (18 mod 5) \\-> 9")                                                      //@praat assert 3 * (18 mod 5) = 9
-CODE (U"54 div 5 * 3 \\-> 30   (from left to right)")                                //@praat assert 54 div 5 * 3 = 30
-CODE (U"54 div (5 * 3) \\-> 3")                                                      //@praat assert 54 div (5 * 3) = 3
-CODE (U"54 mod 5 * 3 \\-> 12")                                                       //@praat assert 54 mod 5 * 3 = 12
-CODE (U"54 mod (5 * 3) \\-> 9")                                                      //@praat assert 54 mod (5 * 3) = 9
-NORMAL (U"The operators with the next highest precedence are #addition (+) and #subtraction (-), "
-	"evaluated from left to right:")
-CODE (U"3 - 8 + 7 \\-> 2       (from left to right)")                                //@praat assert 3 - 8 + 7 = 2
-CODE (U"3 - (8 + 7) \\-> -12   (use parentheses to change the order)")               //@praat assert 3 - (8 + 7) = -12
-CODE (U"3 + 8 * 7 \\-> 59      (multiplication before addition)")                    //@praat assert 3 + 8 * 7 = 59
-CODE (U"(3 + 8) * 7 \\-> 77    (use parentheses to change the order)")               //@praat assert (3 + 8) * 7 = 77
-CODE (U"3 + - (2 \\^  4) \\-> -13   (exponentiation, negation, addition)")           //@praat assert 3 + - (2 ^ 4) = -13
-CODE (U"3 + 5 / 2 + 3 \\-> 8.5")                                                     //@praat assert 3 + 5 / 2 + 3 = 8.5
-CODE (U"(3 + 5) / (2 + 3) \\-> 1.6")                                                 //@praat assert (3 + 5) / (2 + 3) = 1.6
-NORMAL (U"The operators with the next highest precedence are the #comparison operators "
-	"(`=, <>, <, >, <=, >=`). These operators always yield 0 (%false) or 1 (%true):")
-CODE (U"5 + 6 = 10 \\-> 0      (equal)")                                             //@praat assert ( 5 + 6 = 10 ) = 0
-CODE (U"5 + 6 = 11 \\-> 1")                                                          //@praat assert ( 5 + 6 = 11 ) = 1
-CODE (U"5 + 6 <> 10 \\-> 1     (unequal)")                                           //@praat assert ( 5 + 6 <> 10 ) = 1
-CODE (U"5 + 6 <> 11 \\-> 0")                                                         //@praat assert ( 5 + 6 <> 11 ) = 0
-CODE (U"5 + 6 < 10 \\-> 0      (less than)")                                         //@praat assert ( 5 + 6 < 10 ) = 0
-CODE (U"5 + 6 < 11 \\-> 0")                                                          //@praat assert ( 5 + 6 < 11 ) = 0
-CODE (U"5 + 6 > 10 \\-> 1      (greater than)")                                      //@praat assert ( 5 + 6 > 10 ) = 1
-CODE (U"5 + 6 > 11 \\-> 0")                                                          //@praat assert ( 5 + 6 > 11 ) = 0
-CODE (U"5 + 6 <= 10 \\-> 0     (less than or equal)")                                //@praat assert ( 5 + 6 <= 10 ) = 0
-CODE (U"5 + 6 <= 11 \\-> 1")                                                         //@praat assert ( 5 + 6 <= 11 ) = 1
-CODE (U"5 + 6 >= 10 \\-> 1     (greater or equal)")                                  //@praat assert ( 5 + 6 >= 10 ) = 1
-CODE (U"5 + 6 >= 11 \\-> 1")                                                         //@praat assert ( 5 + 6 >= 11 ) = 1
-NORMAL (U"The comparison operators are mainly used in #if, #while, and #until conditions.")
-NORMAL (U"The operators of lowest precedence are the #logical operators (#not, #and, and #or), of which #not has the "
-	"highest precedence and #or the lowest:")
-CODE (U"not 5 + 6 = 10 \\-> 1")                                                      //@praat assert ( not 5 + 6 = 10 ) = 1
-CODE (U"x > 5 and x < 10               (is x between 5 and 10?)")
-CODE (U"not x <= 5 and not x >= 10     (means the same as the previous line, except if x is undefined)")
-CODE (U"not (x <= 5 or x >= 10)        (again means the same, except if x is undefined)")
-/*@praat
-	x = 7
-	assert ( x > 5 and x < 10 ) = 1
-	assert ( not x <= 5 and not x >= 10 ) = 1
-	assert ( not (x <= 5 or x >= 10) ) = 1
-	x = 3
-	assert ( x > 5 and x < 10 ) = 0
-	assert ( not x <= 5 and not x >= 10 ) = 0
-	assert ( not (x <= 5 or x >= 10) ) = 0
-	x = 11
-	assert ( x > 5 and x < 10 ) = 0
-	assert ( not x <= 5 and not x >= 10 ) = 0
-	assert ( not (x <= 5 or x >= 10) ) = 0
-	x = undefined
-	assert ( x > 5 and x < 10 ) = 0
-	assert ( not x <= 5 and not x >= 10 ) = 1
-	assert ( not (x <= 5 or x >= 10) ) = 1
-@*/
-ENTRY (U"String comparison")
-TERM (U"#`a$ = b$`")
-DEFINITION (U"gives the value %true (= 1) if the strings are equal, and %false (= 0) otherwise.")
-TERM (U"#`a$ <> b$`")
-DEFINITION (U"gives the value %true if the strings are unequal, and %false otherwise.")
-TERM (U"#`a$ < b$`")
-DEFINITION (U"gives %true if the string %`a$` precedes the string %`b$` in Unicode sorting order. "
-	"Thus, \"ha\" < \"hal\" and \"ha\" < \"ja\" are true, but \"ha\" < \"JA\" is false, "
-	"because all capitals precede all lower-case characters in the Unicode sorting order.")
-TERM (U"#`a$ > b$`")
-DEFINITION (U"%true if %`a$` comes after %`b$` in Unicode sorting order. ")
-TERM (U"#`a$ <= b$`")
-DEFINITION (U"gives the value %true if the string %`a$` precedes the string %`b$` in Unicode sorting order, "
-	"or if the strings are equal.")
-TERM (U"#`a$ >= b$`")
-DEFINITION (U"%true if %`a$` comes after %`b$` or the two are equal.")
-ENTRY (U"String concatenation and truncation")
-TERM (U"#`a$ + b$`")
-DEFINITION (U"concatenates the two strings. After")
-	CODE1 (U"text$ = \"hallo\" + \"dag\"")
-DEFINITION (U"the variable %`text$` contains the string “hallodag”.")
-TERM (U"#`a$ - b$`")
-DEFINITION (U"subtracts the second string from the end of the first. After")
-CODE2 (U"soundFileName$ = \"hallo.aifc\"")
-CODE2 (U"textgridFileName$ = soundFileName$ - \".aifc\" + \".TextGrid\"")
-DEFINITION (U"the variable %`textgridFileName$` contains the string \"hallo.TextGrid\". "
-	"If the first string %`a$` does not end in the string %`b$`, the result of the subtraction is the string %`a$`.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 4. Constants", U"ppgb", 20080318)
-TERM (U"##pi")
-DEFINITION (U"%\\pi, 3.14159265358979323846264338328")
-TERM (U"##e")
-DEFINITION (U"%e, 2.71828182845904523536028747135")
-TERM (U"##undefined")
-DEFINITION (U"a special value, see @undefined")
-MAN_END
-
-MAN_BEGIN (U"Formulas 5. Mathematical functions", U"ppgb", 20200801)
-TERM (U"##abs (%x)")
-DEFINITION (U"absolute value")
-TERM (U"##round (%x)")
-DEFINITION (U"nearest integer; round (1.5) = 2")
-TERM (U"##floor (%x)")
-DEFINITION (U"round down: highest integer value not greater than %x")
-TERM (U"##ceiling (%x)")
-DEFINITION (U"round up: lowest integer value not less than %x")
-TERM (U"##sqrt (%x)")
-DEFINITION (U"square root: \\Vr%x, %x \\>_ 0")
-TERM (U"##min (%x, ...)")
-DEFINITION (U"the minimum of a series of numbers, e.g. min (7.2, -5, 3) = -5")
-TERM (U"##max (%x, ...)")
-DEFINITION (U"the maximum of a series of numbers, e.g. max (7.2, -5, 3) = 7.2")
-TERM (U"##imin (%x, ...)")
-DEFINITION (U"the location of the minimum, e.g. imin (7.2, -5, 3) = 2")
-TERM (U"##imax (%x, ...)")
-DEFINITION (U"the location of the maximum, e.g. imax (7.2, -5, 3) = 1")
-TERM (U"##sin (%x)")
-DEFINITION (U"sine")
-TERM (U"##cos (%x)")
-DEFINITION (U"cosine")
-TERM (U"##tan (%x)")
-DEFINITION (U"tangent")
-TERM (U"##arcsin (%x)")
-DEFINITION (U"arcsine, -1 \\<_ %x \\<_ 1")
-TERM (U"##arccos (%x)")
-DEFINITION (U"arccosine, -1 \\<_ %x \\<_ 1")
-TERM (U"##arctan (%x)")
-DEFINITION (U"arctangent")
-TERM (U"##arctan2 (%y, %x)")
-DEFINITION (U"argument angle")
-TERM (U"##sinc (%x)")
-DEFINITION (U"sinus cardinalis: sin (%x) / %x")
-TERM (U"##sincpi (%x)")
-DEFINITION (U"sinc__%\\pi_: sin (%\\pi%x) / (%\\pi%x)")
-TERM (U"##exp (%x)")
-DEFINITION (U"exponentiation: %e^%x; same as ##e\\^ %x")
-TERM (U"##ln (%x)")
-DEFINITION (U"natural logarithm, base %e")
-TERM (U"##log10 (%x)")
-DEFINITION (U"logarithm, base 10")
-TERM (U"##log2 (%x)")
-DEFINITION (U"logarithm, base 2")
-TERM (U"##sinh (%x)")
-DEFINITION (U"hyperbolic sine: (%e^%x - %e^^-%x^) / 2")
-TERM (U"##cosh (%x)")
-DEFINITION (U"hyperbolic cosine: (%e^%x + %e^^-%x^) / 2")
-TERM (U"##tanh (%x)")
-DEFINITION (U"hyperbolic tangent: sinh (%x) / cosh (%x)")
-TERM (U"##arcsinh (%x)")
-DEFINITION (U"inverse hyperbolic sine: ln (%x + \\Vr(1+%x^2))")
-TERM (U"##arccosh (%x)")
-DEFINITION (U"inverse hyperbolic cosine: ln (%x + \\Vr(%x^2−1))")
-TERM (U"##arctanh (%x)")
-DEFINITION (U"inverse hyperbolic tangent")
-TERM (U"##sigmoid (%x)")
-DEFINITION (U"#R \\-> (0,1): 1 / (1 + %e^^−%x^) or 1 − 1 / (1 + %e^%x)")
-TERM (U"##invSigmoid (%x)")
-DEFINITION (U"(0,1) \\-> #R: ln (%x / (1 − %x))")
-TERM (U"##erf (%x)")
-DEFINITION (U"the error function: 2/\\Vr%\\pi __0_\\in^%x exp(-%t^2) %dt")
-TERM (U"##erfc (%x)")
-DEFINITION (U"the complement of the error function: 1 - erf (%x)")
-TERM (U"##randomUniform (%min, %max)")
-DEFINITION (U"a uniform random real number between %min (inclusive) and %max (exclusive)")
-TERM (U"##randomInteger (%min, %max)")
-DEFINITION (U"a uniform random integer number between %min and %max (inclusive)")
-TERM (U"##randomGauss (%\\mu, %\\si)")
-DEFINITION (U"a Gaussian random real number with mean %\\mu and standard deviation %\\si")
-TERM (U"##randomPoisson (%mean)")
-DEFINITION (U"a Poisson random real number")
-TERM (U"##randomGamma (%%shape%, %%rate%)")
-DEFINITION (U"a random number drawn from a Gamma distribution with shape parameter %\\al "
-	"and rate parameter %\\be, which is defined as "
-	"%f(%x; %\\al, %\\be) = (1 / \\Ga (%\\al)) %\\be%^^%\\al^ %x^^%\\al−1^ %e^^−%\\be %x^, "
-	"for %x > 0, %\\al > 0 and %\\be > 0, following the method by @@Marsaglia & Tsang (2000)@")
-TERM (U"##random\\_ initializeWithSeedUnsafelyButPredictably (%seed)")
-DEFINITION (U"can be used in a script to create a reproducible sequence of random numbers "
-	"(warning: this exceptional situation will continue to exist throughout Praat until you call the following function)")
-TERM (U"##random\\_ initializeSafelyAndUnpredictably ()")
-DEFINITION (U"undoes the exceptional situation caused by the previous function")
-TERM (U"##lnGamma (%x)")
-DEFINITION (U"logarithm of the \\Ga function")
-TERM (U"##gaussP (%z)")
-DEFINITION (U"the area under the Gaussian distribution between −\\oo and %z")
-TERM (U"##gaussQ (%z)")
-DEFINITION (U"the area under the Gaussian distribution between %z and +\\oo: "
-	"the one-tailed \"statistical significance %p\" of a value that is %z standard deviations "
-	"away from the mean of a Gaussian distribution")
-TERM (U"##invGaussQ (%q)")
-DEFINITION (U"the value of %z for which $gaussQ (%z) = %q")
-TERM (U"##chiSquareP (%`chiSquare`, %`df`)")
-DEFINITION (U"the area under the %\\ci^2 distribution between 0 and %chiSquare, for %`df` degrees of freedom")
-TERM (U"##chiSquareQ (%`chiSquare`, %`df`)")
-DEFINITION (U"the area under the %\\ci^2 distribution between %`chiSquare` and +\\oo, "
-	"for %df degrees of freedom: the \"statistical significance %p\" "
-	"of the %\\ci^2 difference between two distributions in %df+1 dimensions")
-TERM (U"##invChiSquareQ (%q, %df)")
-DEFINITION (U"the value of %\\ci^2 for which $chiSquareQ (%\\ci^2, %df) = %q")
-TERM (U"##studentP (%t, %df)")
-DEFINITION (U"the area under the student T-distribution from -\\oo to %t")
-TERM (U"##studentQ (%t, %df)")
-DEFINITION (U"the area under the student T-distribution from %t to +\\oo")
-TERM (U"##invStudentQ (%q, %df)")
-DEFINITION (U"the value of %t for which $studentQ (%t, %df) = %q")
-TERM (U"##fisherP (%f, %df1, %df2)")
-DEFINITION (U"the area under Fisher's F-distribution from 0 to %f")
-TERM (U"##fisherQ (%f, %df1, %df2)")
-DEFINITION (U"the area under Fisher's F-distribution from %f to +\\oo")
-TERM (U"##invFisherQ (%q, %df1, %df2)")
-DEFINITION (U"the value of %f for which $fisherQ (%f, %df1, %df2) = %q")
-TERM (U"##binomialP (%p, %k, %n)")
-DEFINITION (U"the probability that in %n experiments, an event with probability %p will occur at most %k times")
-TERM (U"@`binomialQ` (%p, %k, %n)")
-DEFINITION (U"the probability that in %n experiments, an event with probability %p will occur at least %k times; equals 1 - $binomialP (%p, %k - 1, %n)")
-TERM (U"##invBinomialP (%P, %k, %n)")
-DEFINITION (U"the value of %p for which $binomialP (%p, %k, %n) = %P")
-TERM (U"@`invBinomialQ` (%Q, %k, %n)")
-DEFINITION (U"the value of %p for which $binomialQ (%p, %k, %n) = %Q")
-TERM (U"##hertzToBark (%x)")
-DEFINITION (U"from acoustic frequency to Bark-rate (perceptual spectral frequency; place on basilar membrane): "
-	"7 ln (%x/650 + \\Vr(1 + (%x/650)^2))")
-TERM (U"##barkToHertz (%x)")
-DEFINITION (U"650 sinh (%x / 7)")
-TERM (U"##hertzToMel (%x)")
-DEFINITION (U"from acoustic frequency to perceptual pitch: 550 ln (1 + %x / 550)")
-TERM (U"##melToHertz (%x)")
-DEFINITION (U"550 (exp (%x / 550) - 1)")
-TERM (U"##hertzToSemitones (%x)")
-DEFINITION (U"from acoustic frequency to a logarithmic musical scale, relative to 100 Hz: 12 ln (%x / 100) / ln 2")
-TERM (U"##semitonesToHertz (%x)")
-DEFINITION (U"100 exp (%x ln 2 / 12)")
-TERM (U"##erb (%f)")
-DEFINITION (U"the perceptual %%equivalent rectangular bandwidth% (ERB) in hertz, for a specified acoustic frequency (also in hertz): "
-	"6.23\\.c10^^-6^ %f^2 + 0.09339 %f + 28.52")
-TERM (U"##hertzToErb (%x)")
-DEFINITION (U"from acoustic frequency to ERB-rate: 11.17 ln ((%x + 312) / (%x + 14680)) + 43")
-TERM (U"##erbToHertz (%x)")
-DEFINITION (U"(14680 %d - 312) / (1 - %d) where %d = exp ((%x - 43) / 11.17)")
-TERM (U"@`phonToDifferenceLimens` (%x)")
-DEFINITION (U"from perceptual loudness (intensity sensation) level in phon, to the number of intensity "
-	"difference limens above threshold: 30 · ((61/60)^^ %x^ − 1).")
-TERM (U"@`differenceLimensToPhon` (%x)")
-DEFINITION (U"the inverse of the previous: ln (1 + %x / 30) / ln (61 / 60).")
-TERM (U"##beta (%x, %y)")
-TERM (U"##besselI (%n, %x)")
-TERM (U"##besselK (%n, %x)")
-NORMAL (U"For functions with arrays, see @@Scripting 5.7. Vectors and matrices@.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 6. String functions", U"ppgb", 20180825)
-INTRO (U"String functions are functions that either return a text string or have at least one text string as an argument. "
-	"Since string computations are not very useful in the @calculator, in settings windows, or in creation and "
-	"modification formulas, this page only gives examples of strings in scripts, so that the example may contain "
-	"string variables.")
-/*@praat
-	string$ = "hallo"
-	length = length (string$ + "dag")
-	assert length = 8
-@*/
-TERM (U"#`length (a$)")
-DEFINITION (U"gives the length of the string. After")
-		CODE2 (U"string$ = \"hallo\"")
-		CODE2 (U"length = length (string$ + \"dag\")")
-DEFINITION (U"the variable %`length` contains the number 8 (by the way, from this example "
-	"you see that variables can have the same names as functions, without any danger of confusing the interpreter).")
-/*@praat
-	head$ = left$ ("hallo", 3)
-	assert head$ = "hal"
-@*/
-TERM (U"#`left$ (a$, n)")
-DEFINITION (U"gives a string consisting of the first %n characters of %`a$`. After")
-		CODE2 (U"head$ = left$ (\"hallo\", 3)")
-DEFINITION (U"the variable %`head$` contains the string \"hal\".")
-/*@praat
-	english$ = "he" + right$ ("hallo", 3)
-	assert english$ = "hello"
-@*/
-TERM (U"#`right$ (a$, n)")
-DEFINITION (U"gives a string consisting of the last %n characters of %`a$`. After")
-		CODE2 (U"english$ = \"he\" + right$ (\"hallo\", 3)")
-DEFINITION (U"the variable %`english$` contains the string \"hello\".")
-/*@praat
-	assert mid$ ("hello", 3, 2) = "ll"
-@*/
-TERM (U"#`mid$ (\"hello\" , 3, 2)")
-DEFINITION (U"gives a string consisting of 2 characters from “hello”, starting at the third character. Outcome: ll.")
-/*@praat
-	where = index ("hallo allemaal", "al")
-	assert where = 2
-	assert index ("hallo allemaal", "fhjgfhj") = 0
-@*/
-TERM (U"#`index (a$, b$)")
-DEFINITION (U"gives the index of the first occurrence of the string %`b$` in the string %`a$`. After")
-		CODE2 (U"where = index (\"hallo allemaal\", \"al\")")
-DEFINITION (U"the variable %`where` contains the number 2, because the first “al” starts at the second character of the longer string. "
-	"If the first string does not contain the second string, %`index` returns 0.")
-/*@praat
-	where = rindex ("hallo allemaal", "al")
-	assert where = 13
-	assert rindex ("hallo allemaal", "fhjgfhj") = 0
-@*/
-TERM (U"#`rindex (a$, b$)")
-DEFINITION (U"gives the index of the last occurrence of the string %`b$` in the string %`a$`. After")
-		CODE2 (U"where = rindex (\"hallo allemaal\", \"al\")")
-DEFINITION (U"the variable %`where` contains the number 13, because the last “al” starts at the 13th character. "
-	"If the first string does not contain the second string, %`rindex` returns 0.")
-/*@praat
-	where = startsWith ("internationalization", "int")
-	assert where = 1
-@*/
-TERM (U"#`startsWith (a$, b$)")
-DEFINITION (U"determines whether the string %`a$` starts with the string %`b$`. After")
-		CODE2 (U"where = startsWith (\"internationalization\", \"int\")")
-DEFINITION (U"the variable %`where` contains the number 1 (true).")
-/*@praat
-	where = endsWith ("internationalization", "nation")
-	assert where = 0
-@*/
-TERM (U"#`endsWith (a$, b$)")
-DEFINITION (U"determines whether the string %`a$` ends with the string %`b$`. After")
-		CODE2 (U"where = endsWith (\"internationalization\", \"nation\")")
-DEFINITION (U"the variable %where contains the number 0 (false).")
-TERM (U"#`replace$ (a$, b$, c$, n)")
-DEFINITION (U"gives a string that is like %`a$`, but where (at most %n) occurrences of %`b$` are replaced with the string %`c$`. After")
-		CODE2 (U"s$ = replace$ (\"hello\", \"l\", \"m\", 0)")
-DEFINITION (U"the variable %`s$` contains the string \"hemmo\". After")
-		CODE2 (U"s$ = replace$ (\"hello\", \"l\", \"m\", 1)")
-DEFINITION (U"the variable %`s$` contains the string \"hemlo\". The number %n determines the maximum number of occurrences of %`b$` "
-	"that can be replaced. If %n is 0, all occurrences are replaced.")
-TERM (U"#`index_regex (a$, b$)")
-DEFINITION (U"determines where the string %`a$` first matches the @@regular expressions|regular expression@ %`b$`. After")
-		CODE2 (U"where = index_regex (\"internationalization\", \"a.*n\")")
-DEFINITION (U"the variable %`where` contains the number 7. If there is no match, the outcome is 0.")
-TERM (U"#`rindex_regex (a$, b$)")
-DEFINITION (U"determines where the string %`a$` last matches the @@regular expressions|regular expression@ %`b$`. After")
-		CODE2 (U"where = rindex_regex (\"internationalization\", \"a.*n\")")
-DEFINITION (U"the variable %`where` contains the number 16. If there is no match, the outcome is 0.")
-TERM (U"#`replace_regex$ (a$, b$, c$, n)")
-DEFINITION (U"gives a string that is like %`a$`, but where (at most %n) substrings that match the @@regular expressions|regular expression@ %`b$` "
-	"are replaced with the expression %`c$`. After")
-		CODE2 (U"s$ = replace_regex$ (\"hello\", \".\", \"&&\", 0)")
-DEFINITION (U"the variable %`s$` contains the string \"hheelllloo\". If there is no match, "
-	"the outcome is the original string %`a$`. After")
-		CODE2 (U"s$ = replace_regex$ (\"hello\", \".\", \"&&\", 1)")
-DEFINITION (U"the variable %`s$` contains the string \"hhello\". The number %n determines the maximum number of text pieces "
-	"that can be replaced. If %n is 0, all matching text pieces are replaced.")
-TERM (U"#`string$ (number)")
-DEFINITION (U"formats a number as a string. Thus, `string$ (5e6)` "
-	"becomes the string `5000000`, and `string$ (56%)` becomes the string `0.56`.")
-TERM (U"#`fixed$ (number, precision)")
-DEFINITION (U"formats a number as a string with %precision digits after the decimal point. Thus, `fixed$ (72.65687, 3)` "
-	"becomes the string `72.657`, and `fixed$ (72.65001, 3)` becomes the string `72.650`. "
-	"In these examples, we see that the result can be rounded up and that trailing zeroes are kept. "
-	"At least one digit of precision is always given, e.g. `fixed$ (0.0000157, 3)` becomes the string `0.00002`. "
-	"The number 0 always becomes the string `0`.")
-TERM (U"#`percent$ (number, precision)")
-DEFINITION (U"the same as `fixed$` (), but with a percent sign. For instance, `percent$ (0.157, 3)` becomes `15.700%`, "
-	"`percent$ (0.000157, 3)` becomes `0.016%`, and `percent$ (0.000000157, 3)` becomes `0.00002%`. "
-	"The number 0 always becomes the string `0`.")
-/*@praat
-	string$ = "5e6"
-	assert 3 + number (string$) = 5000003
-@*/
-TERM (U"#`number (a$)")
-DEFINITION (U"interprets a string as a number. After")
-		CODE2 (U"string$ = \"5e6\"")
-		CODE2 (U"writeInfoLine: 3 + number (string$)")
-DEFINITION (U"the Info window contains the number 5000003.")
-TERM (U"#`date$ ( )")
-DEFINITION (U"gives the date and time in the following format:")
-		CODE2 (U"Mon Jun 24 17:11:21 2002")
-DEFINITION (U"To write the day of the month into the Info window, you type:")
-		CODE2 (U"date$ = date$ ()")
-		CODE2 (U"day$ = mid$ (date$, 9, 2)")
-		CODE2 (U"writeInfoLine: \"The month day is \", day$, \".\"")
-TERM (U"#`unicode$ (228)")
-DEFINITION (U"gives the 228th Unicode codepoint, i.e. \"ä\".")
-TERM (U"#`unicode (\"ä\")")
-DEFINITION (U"gives the Unicode codepoint number of \"ä\", i.e. 228.")
-TERM (U"#`extractNumber (\"Type: Sound\" + newline$ + \"Name: hello there\" + newline$ + \"Size: 44007\", \"Size:\")")
-DEFINITION (U"looks for a number after the first occurrence of “Size:” in the long string. Outcome: 44007. "
-	"This is useful in scripts that try to get information from long reports, as the following script that "
-	"runs in the Sound editor window:")
-		CODE2 (U"report$ = Editor info")
-		CODE2 (U"maximumFrequency = extractNumber (report$, \"Spectrogram window length:\")")
-TERM (U"#`extractWord$ (\"Type: Sound\" + newline$ + \"Name: hello there\" + newline$ + \"Size: 44007\", \"Type:\")")
-DEFINITION (U"looks for a word without spaces after the first occurrence of \"Type:\" in the long string. Outcome: Sound.")
-TERM (U"#`extractLine$ (\"Type: Sound\" + newline$ + \"Name: hello there\" + newline$ + \"Size: 44007\", \"Name: \")")
-DEFINITION (U"looks for the rest of the line (including spaces) after the first occurrence of “Name: ” in the long string. "
-	"Outcome: hello there. Note how “Name: ” includes a space, so that the “rest of the line” starts with the %h.")
-TERM (U"#`backslashTrigraphsToUnicode$ (x$), unicodeToBackslashTrigraphs$ (x$)")
-DEFINITION (U"converts e.g. \\bsct to \\ct or the reverse. See @@Special symbols@.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 7. Control structures", U"ppgb", 20030519)
-ENTRY (U"if ... then ... else ... fi")
-NORMAL (U"You can use conditional expressions in all formulas. For example, ")
-CODE (U"3 * if 52% * 3809 > 2000 then 5 else 6 fi")
-NORMAL (U"evaluates to 15. Instead of #`fi`, you can also use #`endif`.")
-NORMAL (U"Another example: you can clip the absolute amplitude of a Sound to 0.5 by supplying the following formula:")
-CODE (U"if abs(self)>0.5 then if self>0 then 0.5 else -0.5 fi else self fi")
-ENTRY (U"The semicolon")
-NORMAL (U"The semicolon ends the evaluation of the formula. This can be convenient "
-	"if you do not want to overwrite a long formula in your text field: the formula")
-CODE (U"800;sqrt(2)*sin(2*pi*103*0.5)+10^(-40/20)*randomGauss(0,1)")
-NORMAL (U"evaluates to 800.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 8. Attributes of objects", U"ppgb", 20221202)
-NORMAL (U"You can refer to several attributes of objects that are visible in the @@List of Objects@. "
-	"To do so, use either the unique ID of the object, or the type and the name of the object. "
-	"Thus, `object[113]` refers to the object that has the number 113 in the list, "
-	"and `object[\"Sound hallo\"]` refers to an existing Sound object whose name is “hallo” "
-	"(if there is more than one such object, it refers to the one that was created last).")
-NORMAL (U"To refer to an attribute, you use the period (\".\"). "
-	"Thus, `object[\"Sound hallo\"].nx` is the number of samples of the Sound called `hallo`, and "
-	"`1/object[\"Sound hallo\"].dx` is its sampling frequency.")
-ENTRY (U"Attributes in the calculator")
-NORMAL (U"Record a Sound (read the @Intro if you do not know how to do that), "
-	"and name it `mysound` (or anything else). An object with a name like `3. Sound mysound` "
-	"will appear in the list. Then type into the @calculator the formula")
-CODE (U"object[3].nx")
-NORMAL (U"or")
-CODE (U"object[\"Sound mysound\"].nx")
-NORMAL (U"After you click OK, the Info window will show the number of samples. Since you could have got this result "
-	"by simply selecting the object and choosing ##Get number of samples# from the @@Query submenu@, "
-	"these attribute tricks are not very useful in the calculator. "
-	"We will see that they are much more useful in creation and modification formulas and in scripts.")
-ENTRY (U"List of possible attributes")
-NORMAL (U"The following attributes are available:")
-TERM (U"#`xmin`")
-DEFINITION (U"the start of the time domain (usually 0) for a @Sound, @Pitch, @Formant, "
-	"@Spectrogram, @Intensity, @Cochleagram, @PointProcess, or @Harmonicity object, in seconds; "
-	"the lowest frequency (always 0) for a @Spectrum object, in hertz; "
-	"the lowest frequency (usually 0) for an @Excitation object, in Bark; "
-	"the left edge of the %x domain for a @Matrix object.")
-TERM (U"#`xmax`")
-DEFINITION (U"the end of the time domain (usually the duration, if %xmin is zero) for a Sound, Pitch, Formant, "
-	"Spectrogram, Intensity, Cochleagram, PointProcess, or Harmonicity object, in seconds; "
-	"the highest frequency (@@Nyquist frequency@) for a Spectrum object, e.g. 11025 hertz; "
-	"the highest frequency for an Excitation object, often 25.6 Bark; "
-	"the right edge of the %x domain for a Matrix object.")
-TERM (U"#`ncol`")
-DEFINITION (U"the number of columns in a @Matrix, @TableOfReal, or @Table object.")
-TERM (U"#`nrow`")
-DEFINITION (U"the number of rows in a @Matrix, @TableOfReal, or @Table object.")
-TERM (U"#`col$` [%`i`]")
-DEFINITION (U"the name of column %`i` in a @TableOfReal or @Table object.")
-TERM (U"#`row$` [%`i`]")
-DEFINITION (U"the name of row %`i` in a @TableOfReal object.")
-TERM (U"#`nx`")
-DEFINITION (U"the number of samples in a Sound object; "
-	"the number of analysis frames in a Pitch, Formant, Spectrogram, Intensity, Cochleagram, or Harmonicity object; "
-	"the number of frequency bins in a Spectrum or Excitation object; "
-	"the number of divisions of the %x domain for a Matrix object (= %`ncol`).")
-TERM (U"#`dx`")
-DEFINITION (U"the sample period (time distance between consecutive samples) in a Sound object (the inverse of the sampling frequency), in seconds; "
-	"the time step between consecutive frames in a Pitch, Formant, Spectrogram, Intensity, Cochleagram, or Harmonicity object, in seconds; "
-	"the width of a frequency bin in a Spectrum object, in hertz; "
-	"the width of a frequency bin in an Excitation object, in Bark; "
-	"the horizontal distance between cells in a Matrix object.")
-TERM (U"#`ymin`")
-DEFINITION (U"the lowest frequency (usually 0) for a Spectrogram object, in hertz; "
-	"the lowest frequency (usually 0) for a Cochleagram object, in Bark; "
-	"the bottom of the %y domain for a Matrix object.")
-TERM (U"#`ymax`")
-DEFINITION (U"the highest frequency for a Spectrogram object, e.g. 5000 hertz; "
-	"the highest frequency for a Cochleagram object, often 25.6 Bark; "
-	"the top of the %y domain for a Matrix object.")
-TERM (U"#`ny`")
-DEFINITION (U"the number of frequency bands in a Spectrogram or Cochleagram object; "
-	"for a Spectrum object: always 2 (first row is real part, second row is imaginary part) "
-	"the number of divisions of the %y domain for a Matrix object (= %`nrow`).")
-TERM (U"#`dy`")
-DEFINITION (U"the distance between adjacent frequency bands in a Spectrogram object, in hertz; "
-	"the distance between adjacent frequency bands in a Cochleagram object, in Bark; "
-	"the vertical distance between cells in a Matrix object.")
-ENTRY (U"Attributes in a creation formula")
-NORMAL (U"In formulas for creating a new object, you can refer to the attributes of any object, "
-	"but you will often want to refer to the attributes of the object that is just being created. You can do that in two ways.")
-NORMAL (U"The first way is to use the name of the object, as above. Choose @@Create Sound from formula...@, supply %hello for its name, "
-	"supply arbitrary values for the starting and finishing time, and type the following formula:")
-CODE (U"(x - object[\"Sound hello\"].xmin) / (object[\"Sound hello\"].xmax - object[\"Sound hello\"].xmin)")
-NORMAL (U"When you edit this sound, you can see that it creates a straight line that rises from 0 to 1 within the time domain.")
-NORMAL (U"The formula above will also work if the Sound under creation is called %goodbye, and a Sound called %hello already exists; "
-	"of course, in such a case `object[\"Sound hello\"].xmax` refers to a property of the already existing sound.")
-NORMAL (U"If a formula refers to an object under creation, there is a shorter way: you do not have to supply the name of the object at all, "
-	"so you can simply write")
-CODE (U"(x - xmin) / (xmax - xmin)")
-NORMAL (U"The attributes that you can use in this implicit way are %xmin, %xmax, %ncol, %nrow, %nx, %dx, %ny, and %dy. "
-	"To disambiguate in case there exists a script variable %xmin as well "
-	"(Praat will complain if this is the case), you can write `Self.xmin`.")
-ENTRY (U"Attributes in a modification formula")
-NORMAL (U"In formulas for modifying an existing object, you refer to attributes in the same way as in creation formulas, "
-	"i.e., you do not have to specify the name of the object that is being modified. The formula")
-CODE (U"self * 20 ^ (- (x - xmin) / (xmax - xmin))")
-NORMAL (U"causes the sound to decay exponentially in such a way that it has only 5 percent of its initial amplitude at the end. "
-	"If you apply this formula to multiple Sound objects at the same time, $xmax will refer to the finishing time of each Sound separately "
-	"as that Sound is modified.")
-NORMAL (U"More examples of the use of attributes are on the next page.")
-MAN_END
-
-MAN_BEGIN (U"Formulas 9. Data in objects", U"ppgb", 20170614)
-NORMAL (U"With square brackets, you can get the values inside some objects.")
-ENTRY (U"Object contents in the calculator")
-NORMAL (U"The outcomes of the following examples can be checked with the @calculator.")
-TERM (U"##object [%%objectName\\$  or id%, %rowNumber, %columnNumber]")
-TERM (U"$$object [\"Matrix hello\", 10, 3]")
-DEFINITION (U"gives the value in the cell at the third column of the 10th row of the Matrix called %hello.")
-TERM (U"$$object [5, 10, 3]")
-DEFINITION (U"gives the value in the cell at the third column of the 10th row of the Matrix whose unique ID is 5 "
-	"(i.e. that is labelled with the number 5 in the list of objects).")
-TERM (U"$$object [\"Sound hello\", 0, 10000]")
-DEFINITION (U"gives the value (in Pa) of the 10000th sample of the Sound %hello, averaged over the channels.")
-TERM (U"$$object [23, 1, 10000]")
-DEFINITION (U"gives the value (in Pa) of the 10000th sample of the left channel of the Sound with ID 23.")
-TERM (U"$$object [23, 2, 10000]")
-DEFINITION (U"gives the value (in Pa) of the 10000th sample of the right channel of the Sound with ID 23.")
-TERM (U"$$object [\"TableOfReal tokens\", 5, 12]")
-DEFINITION (U"gives the value in the cell at the fifth row of the 12th column of the TableOfReal called %tokens.")
-TERM (U"$$object [\"TableOfReal tokens\", 5, \"F1\"]")
-DEFINITION (U"gives the value in the cell at the fifth row of the column labelled %F1 of the TableOfReal %tokens.")
-TERM (U"$$object [\"TableOfReal tokens\", \"\\bsct\", \"F1\"]")
-DEFINITION (U"gives the value in the cell at the row labelled %%\\bsct% of column %F1 of the TableOfReal %tokens.")
-TERM (U"$$object [\"Table listeners\", 3, \"m3ae\"]")
-DEFINITION (U"gives the numeric value in the cell at the third row of column %m3ae of the Table %listeners.")
-TERM (U"$$object [\"Table listeners\", 3, 12]")
-DEFINITION (U"gives the numeric value in the cell at the third row of the 12th column of the Table %listeners.")
-TERM (U"$$object\\$  [\"Table results\", 3, \"response\"]")
-DEFINITION (U"gives the string value in the cell at the third row of column %response of the Table %results.")
-TERM (U"$$object\\$  [\"Table results\", 3, 12]")
-DEFINITION (U"gives the string value in the cell at the third row of the 12th column of the Table %results.")
-TERM (U"$$object [\"PitchTier hello\", 8]")
-DEFINITION (U"gives the pitch (in Hertz) of the 8th point in the PitchTier %hello.")
-NORMAL (U"Cells (or samples, or points) outside the objects are considered to contain zeroes.")
-ENTRY (U"Interpolation")
-NORMAL (U"The values inside some objects can be interpolated.")
-TERM (U"$$object (\"Sound hello\", 0.7, 0)")
-DEFINITION (U"gives the value (in Pa) at a time of 0.7 seconds in the Sound %hello, by linear interpolation between "
-	"the two samples that are nearest to 0.7 seconds. The channels are averaged.")
-TERM (U"$$object (\"Sound hello\", 0.7, 1)")
-DEFINITION (U"gives the interpolated value (in Pa) at a time of 0.7 seconds in the left channel of the Sound %hello.")
-TERM (U"$$object (\"Sound hello\", 0.7, 2)")
-DEFINITION (U"gives the interpolated value (in Pa) at a time of 0.7 seconds in the right channel of the Sound %hello.")
-TERM (U"$$object (\"Spectrogram hallo\", 0.7, 2500)")
-DEFINITION (U"gives the value at a time of 0.7 seconds and at a frequency of 2500 Hz in the Spectrogram %hallo, "
-	"by linear interpolation between the four samples that are nearest to that point.")
-TERM (U"$$object (\"PitchTier hullo\", 0.7)")
-DEFINITION (U"gives the pitch (in Hertz) at a time of 0.7 seconds in the PitchTier %hullo.")
-NORMAL (U"In the interpolation, times outside the time domain of the objects are considered to contain zeroes (this does not apply to PitchTiers and the like, "
-	"which undergo @@constant extrapolation@).")
-ENTRY (U"Object contents in a modification formula")
-NORMAL (U"Suppose you want to do the difficult way of reversing the contents of a Sound called `hello` (the easy way is to choose #Reverse "
-	"from the @Modify menu). You select this sound, then choose @@Copy...@ to duplicate it to a new Sound, which you name `hello_reverse`. "
-	"You select this new Sound and choose ##Formula...# from the @Modify menu. The formula will be")
-CODE (U"object [\"Sound hello\", row, ncol + 1 - col]")
-NORMAL (U"From this example, you see that the indices between [ ] may be formulas themselves, and that you can use implicit attributes like %ncol "
-	"and position references like %col (also %row, which here means that the reversal is performed for each channel). "
-	"An alternative formula is")
-CODE (U"object (\"Sound hello\", xmax - x, y)")
-NORMAL (U"at least if %xmin is zero. The advantage of the second method is that it also works correctly if the two sounds have different sampling frequencies; "
-	"the disadvantage is that it may do some interpolation between the samples, which deteriorates the sound quality "
-	"(the use of %y here means that the reversal is done for all %y values, i.e. all channels).")
-ENTRY (U"Object contents in a script")
-NORMAL (U"In scripts, the indices between [ ] and the values between ( ) may be formulas themselves and contain variables. "
-	"The following script computes the sum of all the cells along the diagonal of a Matrix.")
-CODE (U"matrix = Create simple matrix: 10, 10, \"x*y\"")
-CODE (U"sumDiagonal = 0")
-CODE (U"for i to object[matrix].ncol")
-	CODE1 (U"sumDiagonal += object [matrix, i, i]")
-CODE (U"endfor")
-CODE (U"writeInfoLine: \"The sum of the cells along the diagonal is \", sumDiagonal, \".\"")
-NORMAL (U"This example could have been written completely with commands from the dynamic menu:")
-CODE (U"matrix = Create simple matrix: 10, 10, \"x*y\"")
-CODE (U"sumDiagonal = 0")
-CODE (U"ncol = Get number of columns")
-CODE (U"for i to ncol")
-	CODE1 (U"value = Get value in cell: i, i")
-	CODE1 (U"sumDiagonal += value")
-CODE (U"endfor")
-CODE (U"writeInfoLine: \"The sum of the cells along the diagonal is \", sumDiagonal, \".\"")
-NORMAL (U"The first version, which accesses the contents directly, is not only two lines shorter, but also three times faster.")
-MAN_END
-
-MAN_BEGIN (U"Hidden commands", U"ppgb", 20110129)
-NORMAL (U"Some commands in Praat's fixed and dynamic menus are hidden by default. "
-	"You can still call hidden commands from scripts, run them by clicking on them in a @ButtonEditor, "
-	"or make them visible with the help of the @ButtonEditor.")
-NORMAL (U"To hide commands that are visible by default, use the @ButtonEditor.")
-ENTRY (U"What commands are hidden by default?")
-NORMAL (U"Commands that are expected to be of very limited use, are hidden by default. Examples are:")
-LIST_ITEM (U"1. The commands @@Add menu command...@, ##Hide menu command...#, ##Show menu command...#, "
-	"@@Add action command...@, ##Hide action command...#, and ##Show action command...# in the #Praat menu "
-	"of the @@Objects window@. These are used in the @@buttons file@ and could be used by an @@initialization script@ or a @@plug-ins|plug-in@ "
-	"as well; in an interactive session, however, the functionality of these commands is part of the "
-	"@ScriptEditor and the @ButtonEditor.")
-LIST_ITEM (U"2. The command ##Read from old Praat picture file...# in the #File menu of the @@Picture window@. "
-	"For reading a file format that was in use before May, 1995.")
-LIST_ITEM (U"3. In the Praat program, the action ##Sound: Save as Sesam file...#. Writes a file format in common use "
-	"in the Netherlands on Vax machines. In the Dutch phonetics departments, the plugs were pulled from the Vaxes in 1994.")
-LIST_ITEM (U"4. In the Praat program, the action ##Sound: To Cochleagram (edb)...#. Needed by one person in 1994. "
-	"An interesting, but undocumented procedure (De Boer's gammatone filter bank plus Meddis & Hewitt's "
-	"synapse model), which does not create a normally interpretable Cochleagram object.")
 MAN_END
 
 MAN_BEGIN (U"History mechanism", U"ppgb", 20040414)
@@ -1308,33 +66,6 @@ NORMAL (U"This macro mechanism is much more flexible than the usual opaque macro
 	"See the @Scripting tutorial for all the things that you can do in scripts.")
 MAN_END
 
-MAN_BEGIN (U"initialization script", U"ppgb", 20201229)
-INTRO (U"Your initialization script is a normal @@Praat script@ that is run as soon as you start Praat.")
-NORMAL (U"On Unix or macOS, you create an initialization script by creating a file named \"praat-startUp\" "
-	"in the folder /usr/local, "
-	"or putting a file “.praat-user-startUp” or “praat-user-startUp” in your home folder "
-	"(if you rename the Praat executable, these names have to change as well).")
-NORMAL (U"If you have more than one of these files, they are run in the above order.")
-NORMAL (U"On Windows, you create an initialization script by creating a file named "
-	"“praat-user-startUp” in your home folder, "
-	"which could be C:\\bsUsers\\bsMiep if you are Miep.")
-NORMAL (U"If you have both of these files, they are run in the above order.")
-ENTRY (U"Example")
-NORMAL (U"If you like to be greeted by your husband when Praat starts up, "
-	"you could put the following lines in your initialization script:")
-CODE (U"Read from file: \"C:\\bsUsers\\bsMiep\\bshelloMiep.wav\"   ! Windows")
-CODE (U"Read from file: \"/Users/miep/helloMiep.wav\"   ! Mac")
-CODE (U"Read from file: \"/home/miep/helloMiep.wav\"   ! Linux")
-CODE (U"Play")
-CODE (U"Remove")
-ENTRY (U"What not to use an initialization script for")
-NORMAL (U"You could set preferences like the default font in your initialization script, "
-	"but these will be automatically remembered between invocations of Praat anyway (in your @@preferences file@), "
-	"so this would often be superfluous.")
-NORMAL (U"For installing sets of menu commands at start-up you will probably prefer to use @@plug-ins@ "
-	"rather than a single start-up file.")
-MAN_END
-
 MAN_BEGIN (U"New Praat script", U"ppgb", 20050822)
 INTRO (U"A command in the @@Praat menu@ for creating a new Praat script. "
 	"It creates a @ScriptEditor with an empty script that you can edit, run, and save.") 
@@ -1359,100 +90,6 @@ INTRO (U"A command in the @@Praat menu@ for editing an existing @@Praat notebook
 	"and you can run and edit it; if you click #%Cancel, you get an empty notebook, as with @@New Praat notebook@.")
 MAN_END
 
-MAN_BEGIN (U"Paste history", U"ppgb", 20050822)
-INTRO (U"A command in the #Edit menu of a @ScriptEditor, for inserting the history of commands. "
-	"See @@History mechanism@.")
-MAN_END
-
-MAN_PAGES_BEGIN
-R"~~~(
-################################################################################
-"plug-ins"
-© Paul Boersma 20201229, 2023
-
-Experienced Praat script writers can distribute their product as a plug-in to Praat.
-
-The Praat plug-in mechanism
-===========================
-When Praat starts up, it will execute all Praat scripts called #`setup.praat`
-that reside in folders whose name starts with #`plugin_` and that themselves reside in
-your Praat @@preferences folder@.
-
-How to write a Praat plug-in
-============================
-Suppose that you have a set of Praat scripts specialized in the analysis and synthesis of vocalizations of guinea pigs,
-and that these scripts are called `analyseQueak.praat` and `createQueak.praat` (“queak” is what guinea pigs tend to say).
-With the @ScriptEditor, you have put the script `analyseQueak.praat` in the dynamic menu that
-appears if the user selects a Sound object, and you have put the script `createQueak.praat` in the @@New menu@.
-Only the latter script requires the user to supply some settings in a form, so the two menu commands
-are ##Analyse queak# (without dots) and ##Create queak...# (with three dots), respectively.
-Suppose now that you want to distribute those two commands to other guinea pig vocalization researchers.
-
-What you do is that you create a Praat script called `setup.praat` (in the same folder as the two other scripts),
-that contains the following two lines:
-
-	\@{Add action command:} "Sound", 1, "", 0, "", 0, "Analyse queak", "", 0, "analyseQueak.praat"
-	\@{Add menu command:} "Objects", "New", "Create queak...", "", 0, "createQueak.praat"
-
-(If you ran this script, Praat would install those two commands in the correct menus, and remember them in the @@buttons file@;
-but you are now going to install them in a different way.)
-
-You now put the three scripts in a new folder called %`plugin_Queak`,
-and put this folder in your Praat preferences folder. If you are on Windows,
-you will now have a folder called something like `C:\Users\Your Name\Praat\plugin_Queak`.
-
-If you now start up Praat, Praat will automatically execute the script
-`C:\Users\Your Name\Praat\plugin_Queak\setup.praat`
-and thereby install the two buttons. The two buttons will %not be remembered in the buttons file,
-but they will be installed at every Praat start-up. De-installation involves removing (or renaming) the `plugin_Queak` folder.
-
-To distribute the Queak plug-in among your colleague guinea pig researchers, you can use any installer program to put
-the `plugin_Queak` folder into the user’s Praat preferences folder; or you could ask those colleagues to move
-the `plugin_Queak` folder there by hand.
-
-The structure of your plug-in folder
-====================================
-In the example `setup.praat` file above, the names of the scripts `analyseQueak.praat` and `createQueak.praat`
-occur without any folder information. This works because Praat regards these file names as being relative to the folder
-where `setup.praat` is located. If your plug-in is much larger than two scripts, you may want to put subdirectories into
-the folder `plugin_Queak`. For instance, if you put `analyseQueak.praat` into the subfolder `analysis`,
-your line in the `setup.praat` script would look as follows:
-
-	\@{Add action command:} "Sound", 1, "", 0, "", 0, "Analyse queak", "", 0, "analysis/analyseQueak.praat"
-
-The forward slash (“/”) in this example makes your plug-in platform-independent: it will work unchanged
-on Windows, Macintosh, and Unix.
-
-Nothing prevents you from adding data files to your plug-in. For instance, your `plugin_Queak` folder
-could contain a subfolder `sounds` full of guinea pig recordings, and you could make them available in the New or Open menu.
-
-Using a plug-in for site-wide customization
-===========================================
-If your local guinea pig research group shares a number of Praat scripts, these can be made available to everybody
-in the following way:
-1. Create a script that adds buttons to the fixed and dynamic menus, using the commands
-	@@Add menu command...@ and @@Add action command...@. This script could be a slightly edited copy of someone’s
-	@@buttons file@.
-2. Put this script where everybody can see it,
-	for instance in `U:\\MaldenGuineaPigResearchButtons.praat`, where `U` is your shared computer.
-3. Create a file `setup.praat` that contains only the following line:
-
-		runScript: "U:\MaldenGuineaPigResearchButtons.praat"
-
-4. Put the `setup.praat` file in a new folder called `plugin_MaldenGuineaPigResearch`,
-	and distribute this folder among your local colleagues.
-
-This procedure allows all members of the group to automatically enjoy all the later changes in your
-custom command set.
-
-################################################################################
-)~~~"
-MAN_PAGES_END
-
-MAN_BEGIN (U"plugins", U"ppgb", 20060920)
-INTRO (U"See @@plug-ins@.")
-MAN_END
-
 MAN_BEGIN (U"Praat script", U"ppgb", 20230325)
 INTRO (U"An executable program text in the Praat scripting language, which consists of menu commands, action commands, computations and control flow.")
 NORMAL (U"See the @Scripting tutorial.")
@@ -1463,40 +100,15 @@ INTRO (U" A text document with which you can create things that look like Praat�
 	"with capabilities of graphics and @scripting.")
 MAN_END
 
-MAN_BEGIN (U"preferences folder", U"ppgb", 20201229)
-INTRO (U"The Praat preferences folder is the folder where Praat saves the @@preferences file@ and the @@buttons file@, "
-	"and where you can install @@plug-ins@ and save the preferences of your scripts (in your subfolder of the #apps subfolder). "
-	"If the preferences folder does not exist, it will automatically be created when you start Praat.")
-ENTRY (U"Windows")
-NORMAL (U"If you are user #Miep, your Praat preferences folder will be `C:\\Users\\Miep\\Praat\\`.")
-ENTRY (U"Macintosh")
-NORMAL (U"If you are user #miep, your Praat preferences folder will be `/Users/miep/Library/Preferences/Praat Prefs/`.")
-ENTRY (U"Linux")
-NORMAL (U"If your home folder is #`/home/miep/`, your Praat preferences folder will be `/home/miep/.praat-dir/`.")
-MAN_END
-
-MAN_BEGIN (U"preferences file", U"ppgb", 20201229)
-NORMAL (U"The file into which some of your preferences are saved across your sessions with Praat. "
-	"For instance, if you change the font used by the Picture window to Palatino and quit Praat, "
-	"the Picture-window font will still be Palatino when you start Praat again.")
-NORMAL (U"The preferences file is written to disk when you quit Praat, "
-	"and it is read when you start Praat. It is a simple text file that you can read "
-	"(but should not edit) with any text editor.")
-ENTRY (U"Where is the preferences file?")
-NORMAL (U"The preferences file is in your Praat @@preferences folder@.")
-NORMAL (U"On Windows it is called #`Preferences5.ini`, "
-	"for instance `C:\\Users\\Miep\\Praat\\Preferences5.ini`.")
-NORMAL (U"On Macintosh it is called #`Prefs5`, "
-	"for instance `/Users/miep/Library/Preferences/Praat Prefs/Prefs5`.")
-NORMAL (U"On Linux the file is called #`prefs5`, "
-	"for instance `/home/miep/.praat-dir/prefs5`.")
+MAN_BEGIN (U"NotebookEditor", U"ppgb", 20230325)
+INTRO (U"An aid to documented @@scripting@ as well as to creating manual pages.")
 MAN_END
 
 MAN_PAGES_BEGIN
 R"~~~(
 ################################################################################
 "Scripting"
-© Paul Boersma 2020
+© Paul Boersma 2000,2002–2004,2008,2010,2011,2013,2014,2017,2020
 
 This is one of the tutorials of the Praat program. It assumes you are familiar with the @Intro.
 
@@ -1549,260 +161,385 @@ You can read this tutorial sequentially with the help of the “##< 1#” and �
 , @@Scripting 10. Old functions
 
 Also see the @@scripting examples@.
+
+################################################################################
+"Scripting 1. Your first scripts"
+© Paul Boersma 2000,2002,2004,2005,2008(“My first script”),2011,2013,2014,2020,2023
+
+This page tells you how to create, run and save a script.
+To get a feel for how it works, you are advised to try out all the steps.
+
+1. A minimal script
+===================
+Suppose that you want to create a script that allows you to play a selected Sound object twice.
+You first create an empty script, by choosing @@New Praat script@ from the Praat menu in the Objects window.
+A @ScriptEditor window will appear on your screen:
+{- 6x4
+	)~~~"
+		Manual_DRAW_WINDOW (4, "untitled script", "File   Edit   Search   Convert   Font   Run   Help")
+	R"~~~(
+	Draw rectangle: 0, 560, 0, 360
+	info$ = Picture info
+	fontSize = extractNumber (info$, "Font size: ")
+	;Text: 50, "centre", 50, "half", string$ (fontSize)
+}
+In this window, you type
+{;
+	Play
+	Play
+}
+Now select a Sound in the Objects window. As you expect from selecting a Sound, a #Play button will
+appear in the dynamic menu. If you now choose #Run from the Run menu in the ScriptEditor,
+Praat will play the sound twice.
+This works because #Play is a command that becomes available in the dynamic menu when you select a Sound.
+
+2. Some more commands
+=====================
+In the above example, you could use $Play in your script because the #Play command was available,
+i.e. because “Play” was the text on a button currently available in the dynamic menu.
+Apart from these selection-dependent (dynamic) commands,
+you can also use all fixed commands from the menus of the @@Objects window@
+and the @@Picture window@. For instance, try the following script:
+{;
+	Erase all
+	Draw inner box
+	Play
+	Play
+	Erase all
+}
+When you run this script, you’ll see a rectangle appear in the Picture window
+(that’s what the command ##Draw inner box# in the #Margins menu does),
+then you’ll hear the Sound play twice, then you’ll see the rectangle disappear from the Picture window
+(that’s what the command ##Erase all# from the Edit menu does).
+
+Here we see that the Praat scripting language is an example of a %%procedural programming language%,
+which means that the five %statements are executed in the order in which they appear in the script,
+i.e. first ##Erase all#, then ##Draw inner box#, then #Play twice, and finally ##Erase all#.
+
+3. Experimenting with your script
+=================================
+You don't have to be afraid of making mistakes. Here are a couple that you can try to make.
+
+First, try to run the script when a Sound is not selected
+(e.g. you create a Pitch object from it and keep that selected, or you throw away the Sound).
+You will notice that Praat gives you an error message saying
+“The command “Play” is not available for the current selection”.
+Indeed, if you select a Pitch or if you select nothing, then no command #Play appears in the dynamic menu,
+so the script cannot execute it. Note that the commands ##Erase all# and ##Draw inner box# are still available,
+because they continue to be present in the menus of the Picture window;
+therefore, the script will execute the first two lines (`Erase all` and `Draw inner box`)
+and stop running at the third line, i.e. at your first `Play`.
+The result is that the “box” will stay visible in the Picture window, because the fifth line of the script,
+which should erase the box, is never executed.
+
+Second, try to mistype a command (there’s a good chance you already did it by accident),
+e.g. write `PLay` instead of `Play`, or `Draw inner bocks` or whatever.
+Again, you are likely to get a message saying that that command is not available.
+Such messages are the most common messages that you’ll see when writing scripts;
+now you know that they mean either that you mistyped something or that you made the wrong selection.
+
+4. Saving your script
+=====================
+The File menu of the ScriptEditor has a command #Save,
+with which you can save your script as a file on disk, for instance under the name “test.praat”.
+
+Please try this with the five-line script you just typed.
+After saving the script, the name of the script file will appear in the window title:
+{- 6x4
+	)~~~"
+		Manual_DRAW_WINDOW (4, "Script “/Users/Rose/Desktop/test.praat”", "File   Edit   Search   Convert   Font   Run   Help")
+	R"~~~(
+	Courier
+	Text: 0, “left”,  75, “half”, “\s{Erase all}”
+	Text: 0, “left”,  90, “half”, “\s{Draw inner box}”
+	Text: 0, “left”, 105, “half”, “\s{Play}”
+	Text: 0, “left”, 120, “half”, “\s{Play}”
+	Text: 0, “left”, 135, “half”, “\s{Erase all}”
+	Draw rectangle: 0, 560, 0, 360
+}
+After you save your script, you can close the ScriptEditor window without losing the script:
+you can reopen the script file by using @@Open Praat script...@ from the Praat menu,
+or by choosing ##New Praat script# again, followed by ##Open...# from the ScriptEditor’s File menu.
+
+It advisable to use “.praat” as the extension for script file names.
+On the Mac, if you double-click a “.praat” file, Praat will automatically start up and show the script.
+On the Mac and on Windows, if you drag a “.praat” file on the Praat icon, Praat will also start up and show the script.
+
+################################################################################
+"Scripting 2. How to script settings windows"
+Paul Boersma 1999,2004,(“Arguments to commands”),2011,2013,2014,2017,2019,2020,2023
+
+Not all menu commands are as simple as those on the @@Scripting 1. Your first scripts|previous page@,
+which act immediately once you choose them from a menu (e.g. ##Play#, ##Erase all#).
+Most commands in Praat require the user to supply additional information;
+these are the commands whose title ends in “...”.
+
+For instance, when you select a Sound, the command ##Draw...# will appear in the #Draw menu,
+and when you click it, Praat will present you with a %%settings window%,
+which asks you to supply six pieces of additional information, i.e. six so-called %settings (or in programming jargon: %arguments):
+
+// 4 fields, of which 0 texts and 0 additional radio buttons,
+// hence lines = 4 + 0 * 0.6 - 0 * 0.3 = 4.0,
+// hence height = 1.4 + 4.0 * 0.4 = 3.0
+{- 5.4x3.0,
+	)~~~"
+		Manual_DRAW_SETTINGS_WINDOW ("Sound: Draw", 4.0)
+		Manual_DRAW_SETTINGS_WINDOW_RANGE ("Time range (s)", "0.0", "0.0 (= all)")
+		Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= auto)")
+		Manual_DRAW_SETTINGS_WINDOW_BOOLEAN ("Garnish", 1)
+		Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU ("Drawing method", "Curve")
+	R"~~~(
+}
+In this example, all the settings have their standard values: you want to draw the whole time domain of the Sound,
+you want to have autoscaling vertically, you want to see garnishings around the picture (a box, labelled axes, and numbers),
+and you want the waveform to be drawn as a curve. Pressing the OK button in the above window
+is equivalent to executing the following script line:
+{;
+	Draw: 0, 0, 0, 0, “yes”, “Curve”
+}
+You see that in a script, all of the arguments are supplied after the command, preceded by a colon and separated by commas,
+in the same order as in the settings window, counted from top to bottom (and, within a line, from left to right).
+The texts “(= all)” and “(= auto)” above are just Praat’s explanations of what it means to type a zero in those fields
+(namely “draw all times” and “use vertical autoscaling”, respectively); in a script they are superfluous and you shouldn’t write them.
+
+If you want to draw the sound with different settings, say from 1 to 3.2 seconds, scaled between -1 and +1 instead of automatically,
+with garnishings off, and with the waveform drawn as poles, you would have the following settings window:
+
+// 4 fields, of which 0 texts and 0 additional radio buttons,
+// hence lines = 4 + 0 * 0.6 - 0 * 0.3 = 4.0,
+// hence height = 1.4 + 4.0 * 0.4 = 3.0
+{- 5.4x3.0
+	)~~~"
+		Manual_DRAW_SETTINGS_WINDOW ("Sound: Draw", 4.0)
+		Manual_DRAW_SETTINGS_WINDOW_RANGE ("Time range (s)", "1.0", "3.2")
+		Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "-1", "1")
+		Manual_DRAW_SETTINGS_WINDOW_BOOLEAN ("Garnish", 0)
+		Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU ("Drawing method", "Poles")
+	R"~~~(
+}
+In a script this would look like
+{;
+	Draw: 1.0, 3.2, -1, 1, “no”, “Poles”
+}
+1. Numeric arguments
+====================
+The first four arguments in the above examples are %%numeric arguments%: they are (real or integer) numbers.
+You just write them in the script as you would write them into the settings window.
+
+2. Boolean (yes/no) arguments
+=============================
+The fifth argument in the above examples (#Garnish) is a %%boolean argument% (yes/no choice) and is represented by a %%check button%.
+In the script you write it as `"yes"` (including the quotes) or `"no"` (or as 1 or 0).
+
+3. Multiple-choice arguments
+============================
+The sixth argument in the above examples (##Drawing method#) is a %%multiple-choice argument% and is represented by an %%option menu%.
+In the script you write the text of the choice, i.e. `"Curve"` or `"Poles"` in the examples.
+
+A multiple-choice argument is sometimes represented by a %%choice box% instead of by an option menu.
+For instance, the last example above could equally well have looked like
+
+// 7 fields, of which 0 texts and 3 additional radio buttons,
+// hence lines = 7 + 0 * 0.6 - 3 * 0.3 = 6.1,
+// hence height = 1.4 + 6.1 * 0.4 = 3.84
+{- 5.4x3.84,
+	)~~~"
+		Manual_DRAW_SETTINGS_WINDOW ("Sound: Draw", 6.1)
+		Manual_DRAW_SETTINGS_WINDOW_RANGE ("Time range (s)", "1.0", "3.2")
+		Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "-1", "1")
+		Manual_DRAW_SETTINGS_WINDOW_BOOLEAN ("Garnish", 0)
+		Manual_DRAW_SETTINGS_WINDOW_CHOICE ("Drawing method", "Curve", 0)
+		"y -= 12\n"
+		Manual_DRAW_SETTINGS_WINDOW_CHOICE ("", "Bars", 0)
+		"y -= 12\n"
+		Manual_DRAW_SETTINGS_WINDOW_CHOICE ("", "Poles", 1)
+		"y -= 12\n"
+		Manual_DRAW_SETTINGS_WINDOW_CHOICE ("", "Speckles", 0)
+	R"~~~(
+}
+In supplying arguments to a command in a script, there is no difference between an option menu and a radio box.
+This last example will therefore again look like the following in a script:
+{;
+	Draw: 1.0, 3.2, -1, 1, “no”, “Poles”
+}
+4. Text arguments
+=================
+Consider another frequently used menu command, namely ##Create Sound from formula...# in the #New menu:
+
+// 6 fields, of which 1 text and 0 additional radio buttons,
+// hence lines = 6 + 1 * 0.6 - 0 * 0.3 = 6.6,
+// hence height = 1.4 + 6.6 * 0.4 = 4.04
+{- 5.4x4.04,
+	)~~~"
+		Manual_DRAW_SETTINGS_WINDOW ("Create Sound from formula", 6.6)
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("Name", "sine")
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("Number of channels", "1")
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("Start time (s)", "0.0")
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("End time (s)", "1.0")
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("Sampling frequency (Hz)", "44100")
+		Manual_DRAW_SETTINGS_WINDOW_TEXT ("Formula", "1/2 * sin(2*pi*377*x)")
+	R"~~~(
+}
+In a script this would look like:
+{;
+	Create Sound from formula: “sine”, 1, 0.0, 1.0, 44100, “1/2 * sin(2*pi*377*x)”
+}
+Both the first argument (#Name) and the sixth argument (#Formula) are %%text arguments%.
+In a script they are written within quotes.
+
+5. Formula arguments
+====================
+Sometimes it would be a bit awkward to write a formula that contains double quotes.
+Imagine you have a @Table object with a column “stimulus”, a column “response”, and a column “correct”,
+and you want to have a 1 in column “correct” if the texts in the columns “stimulus” and “response”
+are the same, and a 0 otherwise. You would do this by selecting the Table and choosing the ##Formula...# command:
+
+// 2 fields, of which 1 text and 0 additional radio buttons,
+// hence lines = 2 + 1 * 0.6 - 0 * 0.3 = 2.6,
+// hence height = 1.4 + 2.6 * 0.4 = 2.44
+{- 5.4x2.44
+	)~~~"
+		Manual_DRAW_SETTINGS_WINDOW ("Table: Formula", 2.6)   // 0.6 extra for the text
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("Column (label)", "correct")
+		Manual_DRAW_SETTINGS_WINDOW_TEXT ("Formula", "self\\$  [\\\" response\\\" ] = self\\$  [\\\" stimulus\\\" ]")
+	R"~~~(
+}
+According to section 4 above, and according to @@Formulas 2.2. Representation of strings@,
+you would have to write this in the following way in a script:
+{;
+	Formula: "correct", "self$ [""response""] = self$ [""stimulus""]"
+}
+The required doubling of string-internal double quotes is awkward.
+Therefore, there exists a special way for typing formula arguments, namely with the tilde ("~"):
+{;
+	Formula: "correct", ~ self$ ["response"] = self$ ["stimulus"]
+}
+This means that you can write the example of section 4 in an analogous way:
+{;
+	Create Sound from formula: “sine”, 1, 0.0, 1.0, 44100, ~ 1/2 * sin(2*pi*377*x)
+}
+The tilde is probably the preferred way to write formula arguments.
+You should remember, however, that the result is still a string (i.e. text),
+and you can treat it as a string with the string methods described later on in this tutorial.
+
+Another way is to use curly quotes, for instance:
+{;
+	Formula: "correct", “self$ ["response"] = self$ ["stimulus"]”
+}
+or
+{;
+	Formula: "correct", "self$ [“response”] = self$ [“stimulus”]"
+}
+6. File arguments
+=================
+The commands from the Open and Save menus, and several other commands whose names
+start with #Read, #Open, or #Save, present a %%file selector window% instead of a typical Praat
+settings window. File selector windows ask the user to supply a single argument: the file name.
+
+In a script you can either supply the %%complete path% to the file, or supply a %%relative path%.
+
+A complete path includes both the folder (directory) hierarchy and the name of the file.
+This goes slightly differently on the Windows platform on the one hand,
+and on the Mac and Linux platforms on the other. If your user name is Miep,
+and your home folder contains a folder `Sounds`,
+and this folder contains a folder `Animals`, and this contains the file `miauw.wav`,
+you can open that file as follows:
+{;
+	Read from file: “C:/Users/Miep/Sounds/Animals/miauw.wav”   ; Windows
+	Read from file: “/Users/Miep/Sounds/Animals/miauw.wav”   ; Mac
+	Read from file: “/home/miep/Sounds/Animals/miauw.wav”   ; Linux
+}
+(the part before your user name may be slightly different on your computer;
+use your command or terminal window to find out)
+
+In these examples, “C” is the Windows %%drive letter% and
+`/Users/Miep` or `/home/Miep` is your %%home folder%. Both the home folder and the drive letter
+can be abbreviated away by using the tilde (“~”) in the path
+(this tilde has nothing to do with the tilde used in formula arguments):
+{;
+	Read from file: “~/Sounds/Animals/miauw.wav”
+}
+If your `Sounds` folder is not in your home folder but on your desktop, you do
+{;
+	Read from file: “~/Desktop/Sounds/Animals/miauw.wav”
+}
+(this works because on all three platforms, the desktop folder is a subfolder of your home folder)
+
+If your Sounds folder is on a USB drive called PORCH, it would be something like:
+{;
+	Read from file: “G:/Sounds/Animals/miauw.wav”   ; Windows
+	Read from file: “/Volumes/PORCH/Sounds/Animals/miauw.wav”   ; Mac
+	Read from file: “/media/PORCH/Sounds/Animals/miauw.wav”   ; Linux
+}
+Instead of all these complete path names, you can use %relative path names.
+These are taken as relative to the folder in which your script resides,
+and help to make your script portable if you move the script along with your data.
+
+Thus, if your script (after you have saved it!) is in the `Animals` folder mentioned above,
+i.e. in the same folder as `miauw.wav`, you would simply open the file with
+{;
+	Read from file: “miauw.wav”
+}
+If your script is in the `Sounds` folder mentioned above,
+i.e. in the same folder as where the `Animals` folder is, you would open the file with
+{;
+	Read from file: “Animals/miauw.aifc”
+}
+If your script is in the folder `Scripts` that is inside the `Sounds` folder,
+i.e. if your script is a sister folder of the `Animals` folder, you would open the file with
+{;
+	Read from file: “../Animals/miauw.aifc”
+}
+where “..” is the general way on all platforms to go one folder up in the hierarchy.
+
+Note that on Windows you could use the backslash (“\”) instead of the forward slash (“/”),
+but with the forward slash your script will work on all three platforms.
+
+7. Colour arguments
+===================
+Several commands in the World and Pen menus of the Picture window,
+as well as many object drawing commands, ask for a colour in the following way:
+
+// 5 fields, of which 0 texts and 0 additional radio buttons,
+// hence lines = 5 + 0 * 0.6 - 0 * 0.3 = 5.0,
+// hence height = 1.4 + 5.0 * 0.4 = 3.4
+{- 5.4x3.4
+	)~~~"
+		Manual_DRAW_SETTINGS_WINDOW ("Praat picture: Paint rectangle", 5.0)
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("Colour (0-1, name, or {r,g,b})", "0.5")
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("From x", "0.0")
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("To x", "1.0")
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("From y", "0.0")
+		Manual_DRAW_SETTINGS_WINDOW_FIELD ("To y", "1.0")
+	R"~~~(
+}
+For the colour, you can supply, as text, one of the 16 explicit names that also appear in the Pen menu:
+{
+	Paint rectangle: “maroon”, 0.0, 1.0, 0.0, 1.0
+}
+Alternatively, you can supply a grey value, as a number between 0.0 (black) and 1.0 (white). The following produces a very light grey:
+{
+	Paint rectangle: 0.9, 0.0, 1.0, 0.0, 1.0
+}
+Finally, you can supply an explicit RGB (red–green–blue) value, as a “vector” of three numbers between 0.0 and 1.0.
+The following produces dark pink:
+{
+	Paint rectangle: {0.8,0.2,0.4}, 0.0, 1.0, 0.0, 1.0
+}
+8. How to supply arguments automatically
+========================================
+Now you know all the ways to write the arguments of commands in a script line.
+If you dislike manually copying arguments from settings windows into your script,
+or if you are not sure whether something is a numeric or a string argument,
+you can use the @@history mechanism@:
+choose @@Clear history@ from the Edit menu in your @ScriptEditor,
+click your command button, edit the arguments, and click #OK. The command will be executed.
+Then choose @@Paste history@, and the command line, including the arguments,
+will appear in the ScriptEditor at the position of the text cursor. You can build whole new scripts on the basis of this mechanism.
+
 ################################################################################
 )~~~"
 MAN_PAGES_END
-
-MAN_BEGIN (U"Scripting 1. Your first scripts", U"ppgb", 20230201)
-INTRO (U"This page tells you how to create, run and save a script. "
-	"To get a feel for how it works, you are advised to try out all the steps.")
-ENTRY (U"1. A minimal script")
-NORMAL (U"Suppose that you want to create a script that allows you to play a selected Sound object twice. "
-	"You first create an empty script, by choosing @@New Praat script@ from the Praat menu in the Objects window. "
-	"A @ScriptEditor window will appear on your screen:")
-SCRIPT (6, 4, U""
-	Manual_DRAW_WINDOW (4, "untitled script", "File   Edit   Search   Convert   Font   Run   Help")
-	"Draw rectangle: 0, 560, 0, 360\n"
-	"info$ = Picture info\n"
-	"fontSize = extractNumber (info$, \"Font size: \")\n"
-	";Text: 50, \"centre\", 50, \"half\", string$ (fontSize)\n"
-)
-NORMAL (U"In this window, you type")
-CODE (U"Play")
-CODE (U"Play")
-NORMAL (U"Now select a Sound in the Objects window. As you expect from selecting a Sound, a #Play button will "
-	"appear in the dynamic menu. If you now choose #Run from the Run menu in the ScriptEditor, "
-	"Praat will play the sound twice. "
-	"This works because #Play is a command that becomes available in the dynamic menu when you select a Sound.")
-ENTRY (U"2. Some more commands")
-NORMAL (U"In the above example, you could use $Play in your script because the #Play command was available, "
-	"i.e. because “Play” was the text on a button currently available in the dynamic menu. "
-	"Apart from these selection-dependent (dynamic) commands, "
-	"you can also use all fixed commands from the menus of the @@Objects window@ "
-	"and the @@Picture window@. For instance, try the following script:")
-CODE (U"Erase all")
-CODE (U"Draw inner box")
-CODE (U"Play")
-CODE (U"Play")
-CODE (U"Erase all")
-NORMAL (U"When you run this script, you’ll see a rectangle appear in the Picture window "
-	"(that’s what the command ##Draw inner box# in the #Margins menu does), "
-	"then you’ll hear the Sound play twice, then you’ll see the rectangle disappear from the Picture window "
-	"(that’s what the command ##Erase all# from the Edit menu does).")
-NORMAL (U"Here we see that the Praat scripting language is an example of a %%procedural programming language%, "
-	"which means that the five %statements are executed in the order in which they appear in the script, "
-	"i.e. first ##Erase all#, then ##Draw inner box#, then #Play twice, and finally ##Erase all#.")
-ENTRY (U"3. Experimenting with your script")
-NORMAL (U"You don't have to be afraid of making mistakes. Here are a couple that you can try to make.")
-NORMAL (U"First, try to run the script when a Sound is not selected "
-	"(e.g. you create a Pitch object from it and keep that selected, or you throw away the Sound). "
-	"You will notice that Praat gives you an error message saying "
-	"“The command “Play” is not available for the current selection”. "
-	"Indeed, if you select a Pitch or if you select nothing, then no command #Play appears in the dynamic menu, "
-	"so the script cannot execute it. Note that the commands ##Erase all# and ##Draw inner box# are still available, "
-	"because they continue to be present in the menus of the Picture window; "
-	"therefore, the script will execute the first two lines (`Erase all` and `Draw inner box`) "
-	"and stop running at the third line, i.e. at your first `Play`. "
-	"The result is that the “box” will stay visible in the Picture window, because the fifth line of the script, "
-	"which should erase the box, is never executed.")
-NORMAL (U"Second, try to mistype a command (there’s a good chance you already did it by accident), "
-	"e.g. write `PLay` instead of `Play`, or `Draw inner bocks` or whatever. "
-	"Again, you are likely to get a message saying that that command is not available. "
-	"Such messages are the most common messages that you’ll see when writing scripts; "
-	"now you know that they mean either that you mistyped something or that you made the wrong selection.")
-ENTRY (U"4. Saving your script")
-NORMAL (U"The File menu of the ScriptEditor has a command #Save, "
-	"with which you can save your script as a file on disk, for instance under the name “test.praat”.")
-NORMAL (U"Please try this with the five-line script you just typed. "
-	"After saving the script, the name of the script file will appear in the window title:")
-SCRIPT (6, 4, U""
-	Manual_DRAW_WINDOW (4, "Script “/Users/Rose/Desktop/test.praat”", "File   Edit   Search   Convert   Font   Run   Help")
-	"Courier\n"
-	"Text: 0, “left”,  75, “half”, “\\s{Erase all}”\n"
-	"Text: 0, “left”,  90, “half”, “\\s{Draw inner box}”\n"
-	"Text: 0, “left”, 105, “half”, “\\s{Play}”\n"
-	"Text: 0, “left”, 120, “half”, “\\s{Play}”\n"
-	"Text: 0, “left”, 135, “half”, “\\s{Erase all}”\n"
-	"Draw rectangle: 0, 560, 0, 360\n"
-)
-NORMAL (U"After you save your script, you can close the ScriptEditor window without losing the script: "
-	"you can reopen the script file by using @@Open Praat script...@ from the Praat menu, "
-	"or by choosing ##New Praat script# again, followed by ##Open...# from the ScriptEditor’s File menu.")
-NORMAL (U"It advisable to use “.praat” as the extension for script file names. "
-	"On the Mac, if you double-click a “.praat” file, Praat will automatically start up and show the script. "
-	"On the Mac and on Windows, if you drag a “.praat” file on the Praat icon, Praat will also start up and show the script.")
-MAN_END
-
-MAN_BEGIN (U"Scripting 2. How to script settings windows", U"ppgb", 20230130)
-INTRO (U"Not all menu commands are as simple as those on the @@Scripting 1. Your first scripts|previous page@, "
-	"which act immediately once you choose them from a menu (e.g. ##Play#, ##Erase all#). "
-	"Most commands in Praat require the user to supply additional information; "
-	"these are the commands whose title ends in “...”.")
-NORMAL (U"For instance, when you select a Sound, the command ##Draw...# will appear in the #Draw menu, "
-	"and when you click it, Praat will present you with a %%settings window%, "
-	"which asks you to supply six pieces of additional information, i.e. six so-called %settings (or in programming jargon: %arguments):")
-SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (4), U""
-	Manual_DRAW_SETTINGS_WINDOW ("Sound: Draw", 4)
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Time range (s)", "0.0", "0.0 (= all)")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= auto)")
-	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN ("Garnish", 1)
-	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU ("Drawing method", "Curve")
-)
-NORMAL (U"In this example, all the settings have their standard values: you want to draw the whole time domain of the Sound, "
-	"you want to have autoscaling vertically, you want to see garnishings around the picture (a box, labelled axes, and numbers), "
-	"and you want the waveform to be drawn as a curve. Pressing the OK button in the above window is equivalent to executing the following script line:")
-CODE (U"Draw: 0, 0, 0, 0, “yes”, “Curve”")
-NORMAL (U"You see that in a script, all of the arguments are supplied after the command, preceded by a colon and separated by commas, "
-	"in the same order as in the settings window, counted from top to bottom (and, within a line, from left to right). "
-	"The texts “(= all)” and “(= auto)” above are just Praat’s explanations of what it means to type a zero in those fields "
-	"(namely “draw all times” and “use vertical autoscaling”, respectively); in a script they are superfluous and you shouldn’t write them.")
-NORMAL (U"If you want to draw the sound with different settings, say from 1 to 3.2 seconds, scaled between -1 and +1 instead of automatically, "
-	"with garnishings off, and with the waveform drawn as poles, you would have the following settings window:")
-SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (4), U""
-	Manual_DRAW_SETTINGS_WINDOW ("Sound: Draw", 4)
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Time range (s)", "1.0", "3.2")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "-1", "1")
-	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN ("Garnish", 0)
-	Manual_DRAW_SETTINGS_WINDOW_OPTIONMENU ("Drawing method", "Poles")
-)
-NORMAL (U"In a script this would look like")
-CODE (U"Draw: 1.0, 3.2, -1, 1, “no”, “Poles”")
-ENTRY (U"1. Numeric arguments")
-NORMAL (U"The first four arguments in the above examples are %%numeric arguments%: they are (real or integer) numbers. "
-	"You just write them in the script as you would write them into the settings window.")
-ENTRY (U"2. Boolean (yes/no) arguments")
-NORMAL (U"The fifth argument in the above examples (#Garnish) is a %%boolean argument% (yes/no choice) and is represented by a %%check button%. "
-	"In the script you write it as `\"yes\"` (including the quotes) or `\"no\"` (or as 1 or 0).")
-ENTRY (U"3. Multiple-choice arguments")
-NORMAL (U"The sixth argument in the above examples (##Drawing method#) is a %%multiple-choice argument% and is represented by an %%option menu%. "
-	"In the script you write the text of the choice, i.e. `\"Curve\"` or `\"Poles\"` in the examples.")
-NORMAL (U"A multiple-choice argument is sometimes represented by a %%choice box% instead of by an option menu. "
-	"For instance, the last example above could equally well have looked like")
-SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (6.1), U""   // 7 - 3 * 0.3 (three is the number of additional radio buttons)
-	Manual_DRAW_SETTINGS_WINDOW ("Sound: Draw", 6.1)
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Time range (s)", "1.0", "3.2")
-	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "-1", "1")
-	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN ("Garnish", 0)
-	Manual_DRAW_SETTINGS_WINDOW_CHOICE ("Drawing method", "Curve", 0)
-	"y -= 12\n"
-	Manual_DRAW_SETTINGS_WINDOW_CHOICE ("", "Bars", 0)
-	"y -= 12\n"
-	Manual_DRAW_SETTINGS_WINDOW_CHOICE ("", "Poles", 1)
-	"y -= 12\n"
-	Manual_DRAW_SETTINGS_WINDOW_CHOICE ("", "Speckles", 0)
-)
-NORMAL (U"In supplying arguments to a command in a script, there is no difference between an option menu and a radio box. "
-	"This last example will therefore again look like the following in a script:")
-CODE (U"Draw: 1.0, 3.2, -1, 1, “no”, “Poles”")
-ENTRY (U"4. Text arguments")
-NORMAL (U"Consider another frequently used menu command, namely ##Create Sound from formula...# in the #New menu:")
-SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (6.6), U""
-	Manual_DRAW_SETTINGS_WINDOW ("Create Sound from formula", 6.6)   // 0.6 extra for the text
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Name", "sine")
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Number of channels", "1")
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Start time (s)", "0.0")
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("End time (s)", "1.0")
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Sampling frequency (Hz)", "44100")
-	Manual_DRAW_SETTINGS_WINDOW_TEXT ("Formula", "1/2 * sin(2*pi*377*x)")
-)
-NORMAL (U"In a script this would look like:")
-CODE (U"Create Sound from formula: “sine”, 1, 0.0, 1.0, 44100, “1/2 * sin(2*pi*377*x)”")
-NORMAL (U"Both the first argument (#Name) and the sixth argument (#Formula) are %%text arguments%. "
-	"In a script they are written within quotes.")
-ENTRY (U"5. Formula arguments")
-NORMAL (U"Sometimes it would be a bit awkward to write a formula that contains double quotes. "
-	"Imagine you have a @Table object with a column “stimulus”, a column “response”, and a column “correct”, "
-	"and you want to have a 1 in column “correct” if the texts in the columns “stimulus” and “response” "
-	"are the same, and a 0 otherwise. You would do this by selecting the Table and choosing the ##Formula...# command:")
-SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (2.6), U""
-	Manual_DRAW_SETTINGS_WINDOW ("Table: Formula", 2.6)   // 0.6 extra for the text
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Column (label)", "correct")
-	Manual_DRAW_SETTINGS_WINDOW_TEXT ("Formula", "self\\$  [\\\" response\\\" ] = self\\$  [\\\" stimulus\\\" ]")
-)
-NORMAL (U"According to section 4 above, and according to @@Formulas 2.2. Representation of strings@, "
-	"you would have to write this in the following way in a script:")
-CODE (UR"~~~(Formula: "correct", "self$ [""response""] = self$ [""stimulus""]")~~~")
-NORMAL (U"The required doubling of string-internal double quotes is awkward. "
-	"Therefore, there exists a special way for typing formula arguments, namely with the tilde (\"~\"):")
-CODE (1+UR"~~~(
-Formula: "correct", ~ self$ ["response"] = self$ ["stimulus"]
-)~~~")
-NORMAL (U"This means that you can write the example of section 4 in an analogous way:")
-CODE (U"Create Sound from formula: “sine”, 1, 0.0, 1.0, 44100, ~ 1/2 * sin(2*pi*377*x)")
-NORMAL (U"The tilde is probably the preferred way to write formula arguments. "
-	"You should remember, however, that the result is still a string (i.e. text), "
-	"and you can treat it as a string with the string methods described later on in this tutorial.")
-ENTRY (U"6. File arguments")
-NORMAL (U"The commands from the Open and Save menus, and several other commands whose names "
-	"start with #Read, #Open, or #Save, present a %%file selector window% instead of a typical Praat "
-	"settings window. File selector windows ask the user to supply a single argument: the file name.")
-NORMAL (U"In a script you can either supply the %%complete path% to the file, or supply a %%relative path%.")
-NORMAL (U"A complete path includes both the folder (directory) hierarchy and the name of the file. "
-	"This goes slightly differently on the Windows platform on the one hand, "
-	"and on the Mac and Linux platforms on the other. If your user name is Miep, "
-	"and your home folder contains a folder `Sounds`, "
-	"and this folder contains a folder `Animals`, and this contains the file `miauw.wav`, "
-	"you can open that file as follows:")
-CODE (U"Read from file: “C:/Users/Miep/Sounds/Animals/miauw.wav”   ; Windows")
-CODE (U"Read from file: “/Users/Miep/Sounds/Animals/miauw.wav”   ; Mac")
-CODE (U"Read from file: “/home/miep/Sounds/Animals/miauw.wav”   ; Linux")
-NORMAL (U"(the part before your user name may be slightly different on your computer; "
-	"use your command or terminal window to find out)")
-NORMAL (U"In these examples, “C” is the Windows %%drive letter% and "
-	"`/Users/Miep` or `/home/Miep` is your %%home folder%. Both the home folder and the drive letter "
-	"can be abbreviated away by using the tilde (“~”) in the path "
-	"(this tilde has nothing to do with the tilde used in formula arguments):")
-CODE (U"Read from file: “~/Sounds/Animals/miauw.wav”")
-NORMAL (U"If your `Sounds` folder is not in your home folder but on your desktop, you do")
-CODE (U"Read from file: “~/Desktop/Sounds/Animals/miauw.wav”")
-NORMAL (U"(this works because on all three platforms, the desktop folder is a subfolder of your home folder)")
-NORMAL (U"If your Sounds folder is on a USB drive called PORCH, it would be something like:")
-CODE (U"Read from file: “G:/Sounds/Animals/miauw.wav”   ; Windows")
-CODE (U"Read from file: “/Volumes/PORCH/Sounds/Animals/miauw.wav”   ; Mac")
-CODE (U"Read from file: “/media/PORCH/Sounds/Animals/miauw.wav”   ; Linux")
-NORMAL (U"Instead of all these complete path names, you can use %relative path names. "
-	"These are taken as relative to the folder in which your script resides, "
-	"and help to make your script portable if you move the script along with your data.")
-NORMAL (U"Thus, if your script (after you have saved it!) is in the `Animals` folder mentioned above, "
-	"i.e. in the same folder as `miauw.wav`, you would simply open the file with")
-CODE (U"Read from file: “miauw.wav”")
-NORMAL (U"If your script is in the `Sounds` folder mentioned above, "
-	"i.e. in the same folder as where the `Animals` folder is, you would open the file with")
-CODE (U"Read from file: “Animals/miauw.aifc”")
-NORMAL (U"If your script is in the folder `Scripts` that is inside the `Sounds` folder, "
-	"i.e. if your script is a sister folder of the `Animals` folder, you would open the file with")
-CODE (U"Read from file: “../Animals/miauw.aifc”")
-NORMAL (U"where “..” is the general way on all platforms to go one folder up in the hierarchy.")
-NORMAL (U"Note that on Windows you could use the backslash (“\\bs”) instead of the forward slash (“/”), "
-	"but with the forward slash your script will work on all three platforms.")
-ENTRY (U"7. Colour arguments")
-NORMAL (U"Several commands in the World and Pen menus of the Picture window, "
-	"as well as many object drawing commands, ask for a colour in the following way:")
-SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (5), U""
-	Manual_DRAW_SETTINGS_WINDOW ("Praat picture: Paint rectangle", 5)
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Colour (0-1, name, or {r,g,b})", "0.5")
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("From x", "0.0")
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("To x", "1.0")
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("From y", "0.0")
-	Manual_DRAW_SETTINGS_WINDOW_FIELD ("To y", "1.0")
-)
-NORMAL (U"For the colour, you can supply, as text, one of the 16 explicit names that also appear in the Pen menu:")
-CODE (U"Paint rectangle: “maroon”, 0.0, 1.0, 0.0, 1.0")
-NORMAL (U"Alternatively, you can supply a grey value, as a number between 0.0 (black) and 1.0 (white). The following produces a very light grey:")
-CODE (U"Paint rectangle: 0.9, 0.0, 1.0, 0.0, 1.0")
-NORMAL (U"Finally, you can supply an explicit RGB (red–green–blue) value, as a “vector” of three numbers between 0.0 and 1.0. "
-	"The following produces dark pink:")
-CODE (U"Paint rectangle: {0.8,0.2,0.4}, 0.0, 1.0, 0.0, 1.0")
-ENTRY (U"8. How to supply arguments automatically")
-NORMAL (U"Now you know all the ways to write the arguments of commands in a script line. "
-	"If you dislike manually copying arguments from settings windows into your script, "
-	"or if you are not sure whether something is a numeric or a string argument, "
-	"you can use the @@history mechanism@: "
-	"choose @@Clear history@ from the Edit menu in your @ScriptEditor, "
-	"click your command button, edit the arguments, and click #OK. The command will be executed. "
-	"Then choose @@Paste history@, and the command line, including the arguments, "
-	"will appear in the ScriptEditor at the position of the text cursor. You can build whole new scripts on the basis of this mechanism.")
-MAN_END
 
 MAN_BEGIN (U"Scripting 3. Simple language elements", U"ppgb", 20130421)
 INTRO (U"The Praat scripting language doesn't only call the menu commands "
@@ -1856,7 +593,7 @@ SCRIPT (6, 3, U""
 	"Text: 0, “left”, 75, “half”, “\\s{Hello world}”\n"
 	"Draw rectangle: 0, 560, 0, 260\n"
 )
-NORMAL (U"Now suppose that you to write two lines instead of just one, so you try a script with two lines:")
+NORMAL (U"Now suppose that you want to write two lines instead of just one, so you try a script with two lines:")
 CODE (U"writeInfoLine: “Hello world”")
 CODE (U"writeInfoLine: “How do you do?”")
 NORMAL (U"This turns out not to do what you want: it seems to write only the text “How do you do?”. "
@@ -1873,7 +610,7 @@ SCRIPT (6, 3, U""
 	"Text: 0, “left”, 90, “half”, “\\s{How do you do?}”\n"
 	"Draw rectangle: 0, 560, 0, 260\n"
 )
-NORMAL (U"This works because #appendInfoLine writes a line without erasing the Info window first.")
+NORMAL (U"This works because @`appendInfoLine` writes a line without erasing the Info window first.")
 NORMAL (U"Finally, try the following script:")
 CODE (U"appendInfoLine: “Another try”")
 CODE (U"appendInfoLine: “Goodbye”")
@@ -1887,8 +624,8 @@ SCRIPT (6, 3, U""
 	"Text: 0, “left”, 120, “half”, “\\s{Goodbye}”\n"
 	"Draw rectangle: 0, 560, 0, 260\n"
 )
-NORMAL (U"In other words, #appendInfoLine writes lines into the Info window without erasing it, even if you run a script anew. "
-	"This is why many Praat scripts that write into the Info window do a #writeInfoLine first, and follow it with a series of #appendInfoLine calls.")
+NORMAL (U"In other words, @`appendInfoLine` writes lines into the Info window without erasing it, even if you run a script anew. "
+	"This is why many Praat scripts that write into the Info window do a #writeInfoLine first, and follow it with a series of @`appendInfoLine` calls.")
 NORMAL (U"For more information on these commands, see @@Scripting 6.2. Writing to the Info window@.")
 ENTRY (U"2. “Hello world” in the Picture window.")
 NORMAL (U"You can also show text in the Picture window. If you are an experienced Praat user, you have probably used the comamnd ##Text top...# before. "
@@ -1934,28 +671,28 @@ MAN_BEGIN (U"Scripting 3.2. Numeric variables", U"ppgb", 20230201)
 INTRO (U"In any general procedural programming language you can work with %variables, "
 	"which are places in your computer's memory where you can store a number or anything else.")
 NORMAL (U"For instance, you could put the number 3.1 into the variable $%b in the following way:")
-CODE (U"%b = 3.1")
-NORMAL (U"This statement is called as %assignment, i.e., you %assign the %value 3.1 to the %variable $%b. "
-	"We read this statement aloud as “$%b becomes 3.1” (or “$%b gets 3.1”, but not “$%b is 3.1”). "
-	"What this means is that after this statement, the memory location $%b %contains the numeric value (number) 3.1.")
-NORMAL (U"You can regard a variable as a box: you put the value 3.1 into the box named $%b. "
-	"Or you can regard a variable as a house: the house is called $%b and now the family “3.1” is living there. "
+CODE (U"b = 3.1")
+NORMAL (U"This statement is called as %assignment, i.e., you %assign the %value 3.1 to the %variable %`b`. "
+	"We read this statement aloud as “%`b` becomes 3.1” (or “%`b` gets 3.1”, but not “%`b` is 3.1”). "
+	"What this means is that after this statement, the memory location %`b` %contains the numeric value (number) 3.1.")
+NORMAL (U"You can regard a variable as a box: you put the value 3.1 into the box named %`b`. "
+	"Or you can regard a variable as a house: the house is called %`b` and now the family “3.1” is living there. "
 	"Or you can regard it as any other storage location.")
 NORMAL (U"To see what value a variable contains (what’s in the box, or who lives in the house), "
-	"you can use the $#writeInfoLine function:")
-CODE (U"%b = 3.1")
-CODE (U"writeInfoLine: “The value is ”, %b, “.”")
+	"you can use the #`writeInfoLine` function:")
+CODE (U"b = 3.1")
+CODE (U"writeInfoLine: “The value is ”, b, “.”")
 NORMAL (U"This will put the text “`The value is 3.1.`” into the Info window, as you are invited to verify.")
 NORMAL (U"A variable is called a variable because it is %variable, i.e. its value can change. Try the script")
-CODE (U"%b = 3.1")
-CODE (U"%b = 5.8")
-CODE (U"writeInfoLine: “The value is ”, %b, “.”")
-NORMAL (U"You will see that `b` ends up having the value 5.8. The first line puts the value 3.1 there, but the second line "
+CODE (U"b = 3.1")
+CODE (U"b = 5.8")
+CODE (U"writeInfoLine: “The value is ”, b, “.”")
+NORMAL (U"You will see that %`b` ends up having the value 5.8. The first line puts the value 3.1 there, but the second line "
 	"replaces it with 5.8. It’s like taking the 3.1 out of the box and putting the 5.8 in its stead. "
 	"Or the family 3.1 moves from the house, and the family called 5.8 moves in.")
 NORMAL (U"In an assignment, the part to the right of the “becomes” sign (the “=” sign) doesn’t have to be a number; "
 	"it can be any %formula that %evaluates to a number. For instance, the script")
-CODE (U"%b = 3.1 * 2")
+CODE (U"b = 3.1 * 2")
 CODE (U"writeInfoLine: “The value is ”, b, “.”")
 NORMAL (U"puts the text “`The value is 6.2.`” into the Info window. This works because Praat handles the first line "
 	"in the following way:")
@@ -1964,22 +701,22 @@ LIST_ITEM (U"2. the value 6.2 is subsequently stored in the variable `b`.")
 NORMAL (U"After line 1 has been executed, the variable %`b` just contains the value 6.2, nothing more; "
 	"the variable %`b` doesn’t remember that that value has been computed by multiplying 3.1 with 2.")
 NORMAL (U"Formulas can contain more things than numbers: they can also contain other variables:")
-CODE (U"%b = 3.1")
-CODE (U"%c = %b * 2")
-CODE (U"writeInfoLine: “The value of b is ”, %b, “, and the value of c is ”, %c, “.”")
+CODE (U"b = 3.1")
+CODE (U"c = b * 2")
+CODE (U"writeInfoLine: “The value of b is ”, b, “, and the value of c is ”, c, “.”")
 NORMAL (U"In the first line, %`b` gets the value 3.1. In the second line, the formula `b * 2` first has to be evaluated. "
 	"Praat looks up the value of %`b` (which is 3.1), so that it knows that the formula actually means `3.1 * 2`. "
 	"Praat evaluates this formula and stores the result (namely the value 6.2) "
 	"into the variable %`c`, which will then contain nothing else than the value 6.2. "
 	"The Info window thus reports “`The value of b is 3.1, and the value of c is 6.2.`”.")
 NORMAL (U"After these explanations, consider the following script:")
-CODE (U"%b = 3.1")
-CODE (U"%c = %b * 2")
-CODE (U"%b = 5.8")
-CODE (U"writeInfoLine: “The value of c is ”, %c, “.”")
+CODE (U"b = 3.1")
+CODE (U"c = b * 2")
+CODE (U"b = 5.8")
+CODE (U"writeInfoLine: “The value of c is ”, c, “.”")
 NORMAL (U"Can you figure out what the Info will report? If you think it will report "
 	"“`The value of c is 6.2.`”, then you are correct: after the first line, %`b` contains the value 3.1; "
-	"after the second line, the value of $%c is therefore 6.2, and nothing more; "
+	"after the second line, the value of %`c` is therefore 6.2, and nothing more; "
 	"after line 3, the value of %`b` has changed to 5.8, but the value of %`c` hasn’t changed and is still 6.2.")
 NORMAL (U"If you thought that %`c` would end up having the value 11.6, then you’re thinking in terms "
 	"of a non-procedural language such as Prolog; you may have thought that the thing assigned to %`c` in the second line "
@@ -1994,7 +731,7 @@ INTRO (U"Now that you know how to script a menu command, and you know how variab
 	"you are ready to combine the two.")
 NORMAL (U"Suppose you have selected a Sound in the object list. One of the commands available in the @@Query submenu@ "
 	"is ##Get power...#. When you choose it, you will see the following settings window:")
-SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (1), U""   // 7 - 3 * 0.3 (three is the number of additional radio buttons)
+SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (1), U""
 	Manual_DRAW_SETTINGS_WINDOW ("Sound: Get power", 1)
 	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Time range (s)", "0.0", "0.0 (= all)")
 )
@@ -2009,10 +746,10 @@ NORMAL (U"This is the mean power of the whole Sound.")
 NORMAL (U"In a script, you want to use the value of this power in the script itself, not in the Info window, "
 	"perhaps because you want to do computations with it or because you want to report the value with a nice text around it. "
 	"This is how you do the latter:")
-CODE (U"%power = Get power: 0.0, 0.0")
-CODE (U"writeInfoLine: “The power of this sound is ”, %power, “ Pascal-squared.”")
+CODE (U"power = Get power: 0.0, 0.0")
+CODE (U"writeInfoLine: “The power of this sound is ”, power, “ Pascal-squared.”")
 NORMAL (U"The first line of this script executes the menu command ##Get power...#, "
-	"but puts the value 0.1350605005239421 into the variable $%power instead of into the Info window "
+	"but puts the value 0.1350605005239421 into the variable %`power` instead of into the Info window "
 	"(the variable can have any name you like, as long as it starts with a lower-case letter "
 	"and consists of letters and digits; see @@Scripting 5.1. Variables@).")
 NORMAL (U"The second line then reports the value in the Info window, this time with a nice text around it:")
@@ -2090,8 +827,8 @@ SCRIPT (6, 3, U""
 )
 NORMAL (U"A numeric query stores in a numeric variable only the first number that it can find in the text that would appear in the Info window. "
 	"For instance, the script")
-CODE (U"%power = Get power: 0.0, 0.0")
-CODE (U"writeInfoLine: %power")
+CODE (U"power = Get power: 0.0, 0.0")
+CODE (U"writeInfoLine: power")
 NORMAL (U"could give you the following result:")
 SCRIPT (6, 3, U""
 	Manual_DRAW_WINDOW (3, "Praat Info", "File   Edit   Search   Convert   Font   Help")
@@ -2258,38 +995,38 @@ MAN_END
 
 MAN_BEGIN (U"Scripting 4.1. Selecting objects", U"ppgb", 20180428)
 NORMAL (U"To simulate the mouse-clicked and dragged selection in the list of objects, "
-	"you have the functions #`selectObject`, #`plusObject` and #`minusObject`.")
+	"you have the functions @`selectObject`, @`plusObject` and @`minusObject`.")
 NORMAL (U"Suppose you start Praat and use ##Create Sound as tone...# to create a Sound called %tone. "
 	"In the object list it looks like “1. Sound tone”. "
 	"Suppose you then do ##To Spectrum...# from the ##Analyse Spectrum# menu. "
 	"A second object, called “2. Spectrum tone” appears in the list and is selected. "
 	"To select and play the Sound, you can do either")
-CODE (U"selectObject: 1")
+CODE (U"\\#`{selectObject}: 1")
 CODE (U"Play")
 NORMAL (U"or")
-CODE (U"selectObject: “Sound tone”")
+CODE (U"\\#`{selectObject}: “Sound tone”")
 CODE (U"Play")
 NORMAL (U"So you can select an object either by its unique ID (identifier: the unique number by which it appears in the list) "
 	"or by name.")
-NORMAL (U"The function #selectObject works by first deselecting all objects, and then selecting the one you mention. "
-	"If you don’t want to deselect the existing selection, you can use #plusObject or #minusObject. "
+NORMAL (U"The function @`selectObject` works by first deselecting all objects, and then selecting the one you mention. "
+	"If you don’t want to deselect the existing selection, you can use @`plusObject` or @`minusObject`. "
 	"When the Sound is selected, you can select the Spectrum as well by doing")
-CODE (U"plusObject: 2")
+CODE (U"\\#`{plusObject}: 2")
 NORMAL (U"or")
-CODE (U"plusObject: “Spectrum tone”")
+CODE (U"\\#`{plusObject}: “Spectrum tone”")
 NORMAL (U"If you then want to deselect the Sound, and keep the Spectrum selected, you can do")
 CODE (U"\\#`{minusObject}: 1")
 NORMAL (U"or")
-CODE (U"minusObject: “Sound tone”")
+CODE (U"\\#`{minusObject}: “Sound tone”")
 NORMAL (U"All these functions can take more than one argument. To select the Sound and the Spectrum together, you can do")
 CODE (U"\\#`{selectObject}: 1, 2")
 NORMAL (U"or")
-CODE (U"selectObject: “Sound tone”, “Spectrum tone”")
+CODE (U"\\#`{selectObject}: “Sound tone”, “Spectrum tone”")
 NORMAL (U"or even")
-CODE (U"selectObject: 1, “Spectrum tone”")
+CODE (U"\\#`{selectObject}: 1, “Spectrum tone”")
 NORMAL (U"or, using a numeric vector:")
 CODE (U"myObjects# = { 1, 2 }")
-CODE (U"selectObject: myObjects#")
+CODE (U"\\#`{selectObject}: myObjects#")
 ENTRY (U"How to refer to objects created in your script")
 NORMAL (U"In a script, you typically don't know whether the IDs of the objects are 1 and 2, or much higher numbers. "
 	"Fortunately, commands that create a new object give you the ID of the object that is created, "
@@ -2301,7 +1038,7 @@ CODE (U"Play   ; the Sound is selected, so it plays")
 CODE (U"To Spectrum: “yes”")
 CODE (U"Draw: 0, 5000, 20, 80, “yes”   ; the Spectrum is selected, so it is drawn")
 CODE (U"# Remove the created Spectrum and Sound:")
-CODE (U"plusObject: sound   ; the Spectrum was already selected")
+CODE (U"\\#`{plusObject}: sound   ; the Spectrum was already selected")
 CODE (U"Remove")
 NORMAL (U"You could also select the objects by name:")
 CODE (U"Create Sound as pure tone: “sine377”,")
@@ -2310,97 +1047,141 @@ CODE (U"Play   ; the Sound is selected, so it plays")
 CODE (U"To Spectrum: “yes”")
 CODE (U"Draw: 0, 5000, 20, 80, “yes”   ; the Spectrum is selected, so it is drawn")
 CODE (U"# Remove the created Spectrum and Sound:")
-CODE (U"plusObject: “Sound sine377”   ; the Spectrum was already selected")
+CODE (U"\\#`{plusObject}: “Sound sine377”   ; the Spectrum was already selected")
 CODE (U"Remove")
 NORMAL (U"This works even if there are multiple objects called “Sound sine377”, "
-	"because if there are more objects with the same name, #selectObject and #plusObject select the most recently created one, "
+	"because if there are more objects with the same name, @`selectObject` and @`plusObject` select the most recently created one, "
 	"i.e., the one nearest to the bottom of the list of objects.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 4.2. Removing objects", U"ppgb", 20140111)
-NORMAL (U"In @@Scripting 4.1. Selecting objects|\\SS4.1@ we saw that objects could be removed by selecting them first and then calling the #Remove command. "
-	"A faster way is the #removeObject function, which can also remove unselected objects:")
-CODE (U"sound = Create Sound as pure tone: “sine377”,")
-CODE (U"... 1, 0, 1, 44100, 377, 0.2, 0.01, 0.01   ; remember the ID of the Sound")
-CODE (U"Play   ; the Sound is selected, so it plays")
-CODE (U"spectrum = To Spectrum: “yes”   ; remember the ID of the Spectrum")
-CODE (U"Draw: 0, 5000, 20, 80, “yes”   ; the Spectrum is selected, so it is drawn")
-CODE (U"# Remove the created Spectrum and Sound:")
-CODE (U"\\#{removeObject}: sound, spectrum   ; remove one selected and one unselected object")
-NORMAL (U"The #removeObject function keeps the objects selected that were selected before "
-	"(except of course the ones it throws away). "
-	"This allows you to easily throw away objects as soon as you no longer need them:")
-CODE (U"sound = Create Sound as pure tone: “sine377”,")
-CODE (U"... 1, 0, 1, 44100, 377, 0.2, 0.01, 0.01   ; remember the ID of the Sound")
-CODE (U"Play   ; the Sound is selected, so it plays")
-CODE (U"spectrum = To Spectrum: “yes”")
-CODE (U"\\#{removeObject}: sound   ; we no longer need the Sound, so we remove it")
-CODE (U"Draw: 0, 5000, 20, 80, “yes”   ; the Spectrum is still selected, so it is drawn")
-CODE (U"\\#{removeObject}: spectrum   ; remove the last object created by the script")
-ENTRY (U"Selecting and removing all objects from the list (don't)")
-NORMAL (U"A very strange command, which you should not normally use, is `select all`:")
-	CODE1 (U"\\#{select all}")
-	CODE1 (U"Remove")
-NORMAL (U"This selects all objects in the list and then removes them. "
-	"Please try not to use this, because it will remove even the objects that your script did not create! "
-	"After all, you don’t want the users of your script to lose the objects they created! "
-	"So please try to remove in your script only the objects that your script created, "
-	"even if the script is for your own use (because if it is a nice script, others will want to use it).")
-MAN_END
 
-MAN_BEGIN (U"Scripting 4.3. Querying objects", U"ppgb", 20180427)
-NORMAL (U"You can get the name of a selected object into a string variable. "
-	"For instance, the following reads the name of the second selected Sound "
-	"(as counted from the top of the list of objects) into the variable %`name$`:")
-CODE (U"name$ = selected$ (“Sound”, 2)")
-NORMAL (U"If the Sound was called “Sound hallo”, the variable %`name$` will contain the string “hallo”. "
-	"To get the name of the topmost selected Sound object, you can leave out the number:")
-CODE (U"name$ = selected$ (“Sound”)")
-NORMAL (U"To get the full name (type + name) of the third selected object, you do:")
-CODE (U"fullName$ = selected$ (3)")
-NORMAL (U"To get the full name of the topmost selected object, you do:")
-CODE (U"fullName$ = selected$ ()")
-NORMAL (U"To get the type and name out of the full name, you do:")
-CODE (U"type$ = extractWord$ (fullName$, “”)")
-CODE (U"name$ = extractLine$ (fullName$, “ ”)")
-NORMAL (U"Negative numbers count from the bottom. Thus, to get the name of the bottom-most selected Sound "
-	"object, you say")
-CODE (U"name$ = selected$ (“Sound”, -1)")
-NORMAL (U"You would use `selected$` () for drawing the object name in a picture:")
-CODE (U"Draw: 0, 0, 0, 0, \"yes\"")
-CODE (U"name$ = selected$ (“Sound”)")
-CODE (U"Text top: “no”, “This is sound ” + name$")
-NORMAL (U"For identifying previously selected objects, this method is not very suitable, since "
-	"there may be multiple objects with the same name:")
-CODE (U"# The following two lines are OK:")
-CODE (U"soundName$ = selected$ (“Sound”, -1)")
-CODE (U"pitchName$ = selected$ (“Pitch”)")
-CODE (U"# But the following line is questionable, since it doesn't")
-CODE (U"# necessarily select the previously selected Pitch again:")
-CODE (U"selectObject: “Pitch ” + pitchName$")
-NORMAL (U"Instead of this error-prone approach, you should get the object’s unique ID. "
-	"The correct version of our example becomes:")
-CODE (U"sound = selected (“Sound”, -1)")
-CODE (U"pitch = selected (“Pitch”)")
-CODE (U"# Correct:")
-CODE (U"selectObject: pitch")
-NORMAL (U"To get the number of selected Sound objects into a variable, use")
-CODE (U"numberOfSelectedSounds = numberOfSelected (“Sound”)")
-NORMAL (U"To get the number of selected objects into a variable, use")
-CODE (U"numberOfSelectedObjects = numberOfSelected ()")
-ENTRY (U"Example: doing something to every selected Sound")
-CODE (U"sounds# = selected## (“Sound”)")
-CODE (U"# Median pitches of all selected sounds:")
-CODE (U"for i to size (sounds#)")
-	CODE1 (U"selectObject: sounds# [i]")
-	CODE1 (U"To Pitch: 0.0, 75, 600")
-	CODE1 (U"f0 = Get quantile: 0, 0, 0.50, “Hertz”")
-	CODE1 (U"appendInfoLine: f0")
-	CODE1 (U"Remove")
-CODE (U"endfor")
-CODE (U"# Restore selection:")
-CODE (U"selectObject (sounds#)")
-MAN_END
+MAN_PAGES_BEGIN
+R"~~~(
+################################################################################
+"Scripting 4.2. Removing objects"
+© Paul Boersma 1999,2004,2006–2008,2011,2013,2014
+
+In @@Scripting 4.1. Selecting objects|\SS4.1@ we saw that objects could be removed by
+selecting them first and then calling the #Remove command.
+A faster way is the #removeObject function, which can also remove unselected objects:
+{;
+	sound = Create Sound as pure tone: “sine377”,
+	... 1, 0, 1, 44100, 377, 0.2, 0.01, 0.01   ; remember the ID of the Sound
+	Play   ; the Sound is selected, so it plays
+	spectrum = To Spectrum: “yes”   ; remember the ID of the Spectrum
+	Draw: 0, 5000, 20, 80, “yes”   ; the Spectrum is selected, so it is drawn
+	# Remove the created Spectrum and Sound:
+	\#`{removeObject}: sound, spectrum   ; remove one selected and one unselected object
+}
+The #removeObject function keeps the objects selected that were selected before
+(except of course the ones it throws away).
+This allows you to easily throw away objects as soon as you no longer need them:
+{;
+	sound = Create Sound as pure tone: “sine377”,
+	... 1, 0, 1, 44100, 377, 0.2, 0.01, 0.01   ; remember the ID of the Sound
+	Play   ; the Sound is selected, so it plays
+	spectrum = To Spectrum: “yes”
+	\#`{removeObject}: sound   ; we no longer need the Sound, so we remove it
+	Draw: 0, 5000, 20, 80, “yes”   ; the Spectrum is still selected, so it is drawn
+	\#`{removeObject}: spectrum   ; remove the last object created by the script
+}
+Selecting and removing all objects from the list (don’t)
+========================================================
+A very strange command, which you should not normally use, is `select all`:
+{;
+	\#{select all}
+	Remove
+}
+This selects all objects in the list and then removes them.
+Please try not to use this, because it will remove even the objects that your script did not create!
+After all, you don’t want the users of your script to lose the objects they created!
+So please try to remove in your script only the objects that your script created,
+even if the script is for your own use (because if it is a nice script, others will want to use it).
+
+################################################################################
+"Scripting 4.3. Querying objects"
+© Paul Boersma 1999,2004,2006–2008,2011,2013,2014,2018,2023
+
+You can get the name of a selected object into a string variable.
+For instance, the following reads the name of the second selected Sound
+(as counted from the top of the list of objects) into the variable %`name$`:
+{;
+	name$ = \#`{selected$} (“Sound”, 2)
+}
+If the Sound was called “Sound hallo”, the variable %`name$` will contain the string “hallo”.
+To get the name of the topmost selected Sound object, you can leave out the number:
+{;
+	name$ = selected$ (“Sound”)
+}
+To get the full name (type + name) of the third selected object, you do:
+{;
+	fullName$ = selected$ (3)
+}
+To get the full name of the topmost selected object, you do:
+{;
+	fullName$ = selected$ ()
+}
+To get the type and name out of the full name, you do:
+{;
+	type$ = \`{extractWord$} (fullName$, “”)
+	name$ = \`{extractLine$} (fullName$, “ ”)
+}
+Negative numbers count from the bottom. Thus, to get the name of the bottom-most selected Sound
+object, you say
+{;
+	name$ = selected$ (“Sound”, -1)
+}
+You would use `selected$` () for drawing the object name in a picture:
+{;
+	Draw: 0, 0, 0, 0, “yes”
+	name$ = selected$ (“Sound”)
+	Text top: “no”, “This is sound ” + name$
+}
+For identifying previously selected objects, this method is not very suitable, since
+there may be multiple objects with the same name:
+{;
+	# The following two lines are OK:
+	soundName$ = selected$ (“Sound”, -1)
+	pitchName$ = selected$ (“Pitch”)
+	# But the following line is questionable, since it doesn’t
+	# necessarily select the previously selected Pitch again:
+	selectObject: “Pitch ” + pitchName$
+}
+Instead of this error-prone approach, you should get the object’s unique ID.
+The correct version of our example becomes:
+{;
+	sound = selected (“Sound”, -1)
+	pitch = selected (“Pitch”)
+	# Correct:
+	selectObject: pitch
+}
+To get the number of selected Sound objects into a variable, use
+{;
+	numberOfSelectedSounds = numberOfSelected (“Sound”)
+}
+To get the number of selected objects into a variable, use
+{;
+	numberOfSelectedObjects = numberOfSelected ()
+}
+Example: doing something to every selected Sound
+================================================
+{;
+	sounds# = \#`{selected#} (“Sound”)
+	# Median pitches of all selected sounds:
+	for i to size (sounds#)
+		selectObject: sounds# [i]
+		To Pitch (filtered ac): 0.0, 50, 800, 15, “no”, 0.03, 0.09, 0.50, 0.055, 0.35, 0.14
+		f0 = Get quantile: 0, 0, 0.50, “Hertz”
+		appendInfoLine: f0
+		Remove
+	endfor
+	# Restore selection:
+	selectObject (sounds#)
+}
+
+################################################################################
+)~~~"
+MAN_PAGES_END
 
 MAN_BEGIN (U"Scripting 5. Language elements reference", U"ppgb", 20170718)
 NORMAL (U"In a Praat script, you can use variables, expressions, and functions, of numeric as well as string type, "
@@ -2417,7 +1198,7 @@ LIST_ITEM (U"@@Scripting 5.8. Including other scripts@")
 LIST_ITEM (U"@@Scripting 5.9. Quitting@ (exit)")
 MAN_END
 
-MAN_BEGIN (U"Scripting 5.1. Variables", U"ppgb", 20201229;20230416)
+MAN_BEGIN (U"Scripting 5.1. Variables", U"ppgb", 20201229;20230416;20240103)
 INTRO (U"A %variable is a location in your computer’s memory that has a name and where you can store something, "
 	"as explained in @@Scripting 3.2. Numeric variables|\\SS3.2@ and @@Scripting 3.4. String variables|\\SS3.4@. "
 	"In a Praat script, you can store numbers and texts, i.e. you can use %%numeric variables% and %%string variables%.")
@@ -2492,9 +1273,14 @@ CODE (U"The jitter is 0.00002%.")
 ENTRY (U"Predefined variables")
 NORMAL (U"All of the variables you saw earlier in this tutorial were defined at the first moment a value was assigned to them. "
 	"Some variables, however, are already defined implicitly at the start of your script.")
-NORMAL (U"Some predefined ##numeric variables# are `macintosh`, `windows`, and `unix`, which are 1 if the script "
-	"is running on a Macintosh, Windows, or Unix platform (respectively), and which are otherwise zero. "
-	"Another one is `praatVersion`, which is e.g. " stringize(PRAAT_VERSION_NUM) " for the current version of Praat.")
+NORMAL (U"Some predefined ##numeric variables# are `macintosh`, `windows`, and `unix`, which are 1 if your edition of Praat "
+	"was built for the Macintosh, Windows, or Unix platform (respectively), and which are otherwise zero. "
+	"Likewise, we have `praat_32bit` and `praat_64bit`, of which one is 1 and the other 0, "
+	"depending on whether your edition of Praat was built for 32-bit or 64-bit computers. "
+	"More precisely, we have `praat_intel32`, `praat_intel64` and `praat_arm64`, one of which is 1 (and the others 0) "
+	"depending on whether the type of processor chip that your edition of Praat was made for is "
+	"32-bit Intel (= x86, i386, i686), or 64-bit Intel (= AMD64), or ARM64 (= Aarch64). "
+	"Another predefined numeric variable is `praatVersion`, which is e.g. " stringize(PRAAT_VERSION_NUM) " for the current version of Praat.")
 NORMAL (U"Some ##predefined string variables# are `newline$`, `tab$`, and `shellDirectory$`. "
 	"The last one specifies the folder that was the default folder when Praat started up; "
 	"you can use it in scripts that run from the Unix or Windows command line. "
@@ -2629,14 +1415,14 @@ In this section we will see how %procedures (also called %subroutines) can help 
 Imagine that you want to play a musical note with a frequency of 440 Hz (an “A”)
 followed by a note that is one octave higher, i.e. has a frequency of 880 Hz (an “a”).
 You could achieve this with the following script:
-
+{;
 	Create Sound as pure tone: “note”, 1, 0, 0.3, 44100, 440, 0.2, 0.01, 0.01
 	Play
 	Remove
 	Create Sound as pure tone: “note”, 1, 0, 0.3, 44100, 880, 0.2, 0.01, 0.01
 	Play
 	Remove
-
+}
 This script creates a sound with a sine wave with an amplitude of 0.4 and a frequency of 440 Hz,
 then plays this sound, then changes the sound into a sine wave with a frequency of 880 Hz,
 then plays this changed sound, and then removes the Sound object from the object list.
@@ -2644,7 +1430,7 @@ then plays this changed sound, and then removes the Sound object from the object
 This script is perfect if all you want to do is to play those two notes and nothing more.
 But now imagine that you want to play such an octave jump not only for a note of 440 Hz,
 but also for a note of 400 Hz and for a note of 500 Hz. You could use the following script:
-
+{;
 	Create Sound as pure tone: “note”, 1, 0, 0.3, 44100, 440, 0.2, 0.01, 0.01
 	Play
 	Remove
@@ -2663,13 +1449,13 @@ but also for a note of 400 Hz and for a note of 500 Hz. You could use the follow
 	Create Sound as pure tone: “note”, 1, 0, 0.3, 44100, 1000, 0.2, 0.01, 0.01
 	Play
 	Remove
-
+}
 This script works but is no longer perfect. It contains many similar lines, and is difficult to read.
 
 Here is where %procedures come in handy. With procedures, you can re-use similar pieces of code.
 To make the three parts of the above script more similar, I’ll rewrite it using two variables
 (%`frequency` and %`octaveHigher`):
-
+{;
 	frequency = 440
 	Create Sound as pure tone: “note”, 1, 0, 0.3, 44100, frequency, 0.2, 0.01, 0.01
 	Play
@@ -2694,10 +1480,10 @@ To make the three parts of the above script more similar, I’ll rewrite it usin
 	Create Sound as pure tone: “note”, 1, 0, 0.3, 44100, octaveHigher, 0.2, 0.01, 0.01
 	Play
 	Remove
-
+}
 You can now see that seven lines of the script appear identically three times.
 I'll put those seven lines into a %procedure that I name #`playOctave`:
-
+{;
 	\#{procedure} playOctave
 		Create Sound as pure tone: “note”, 1, 0, 0.3, 44100, frequency, 0.2, 0.01, 0.01
 		Play
@@ -2707,7 +1493,7 @@ I'll put those seven lines into a %procedure that I name #`playOctave`:
 		Play
 		Remove
 	\#{endproc}
-
+}
 As you see, a %%procedure definition% in Praat consists of three parts:
 
 1. a line with the word #`procedure`, followed by the name of the procedure, followed by a pair of parentheses;
@@ -2719,7 +1505,7 @@ the beginning or end of the script are common places.
 
 The bodies of procedures are executed only if you %call the procedure explicitly,
 which you can do anywhere in the rest of your script:
-
+{;
 	frequency = 440
 	@playOctave
 	frequency = 400
@@ -2735,7 +1521,7 @@ which you can do anywhere in the rest of your script:
 		Play
 		Remove
 	\#{endproc}
-
+}
 This script works as follows. First, the number 440 is assigned to the variable %`frequency` in line 1.
 Then, execution of the script arrives at the #`@` (“call”) statement of line 2.
 Praat then knows that it has to jump to the procedure called %`playOctave`,
@@ -2755,11 +1541,11 @@ Arguments
 
 The above example contains something awkward. The procedure %`playOctave` requires that the variable %`frequency`
 is set to an appropriate value, so before calling %`playOctave` you always have to insert a line like
-
+{;
 	frequency = 440
-
+}
 This can be improved upon. In the following version of the script, the procedure %`playOctave` requires an explicit %argument:
-
+{;
 	@playOctave: 440
 	@playOctave: 400
 	@playOctave: 500
@@ -2772,7 +1558,7 @@ This can be improved upon. In the following version of the script, the procedure
 		Play
 		Remove
 	\#{endproc}
-
+}
 This works as follows. The first line of the procedure now not only contains the name (%`playOctave`),
 but also a list of variables (here only one: %`frequency`). In the first line of the script,
 the procedure %`playOctave` is called with the %%argument% 440.
@@ -2784,7 +1570,7 @@ Encapsulation and local variables
 
 Although the size of the script has now been reduced to 12 lines, which cannot be further improved upon,
 there is still something wrong with it. Imagine the following script:
-
+{;
 	frequency = 300
 	@playOctave: 440
 	@playOctave: 400
@@ -2799,7 +1585,7 @@ there is still something wrong with it. Imagine the following script:
 		Play
 		Remove
 	\#{endproc
-
+}
 You might have thought that this script will write “300” to the Info window,
 because that is what you expect if you look at the first five lines.
 However, the procedure will assign the values 440, 400, and 500 to the variable %`frequency`,
@@ -2809,7 +1595,7 @@ is the last (fourth!) value that was assigned to the variable %`frequency`.
 What you would want is that variables that are used inside procedures, such as %`frequency` and %`octaveHigher` here,
 could somehow be made not to “clash” with variable names used outside the procedure.
 A trick that works would be to include the procedure name into the names of these variables:
-
+{;
 	frequency = 300
 	@playOctave: 440
 	@playOctave: 400
@@ -2824,13 +1610,13 @@ A trick that works would be to include the procedure name into the names of thes
 		Play
 		Remove
 	\#{endproc
-
+}
 This works. The six tones will be played, and \"300\" will be written to the Info window.
 But the formulation is a bit wordy, isn't it?
 
 Fortunately, Praat allows an abbreviated version of these long names:
 just leave “playOctave” off from the names of the variables, but keep the period (`.`):
-
+{;
 	frequency = 300
 	@playOctave: 440
 	@playOctave: 400
@@ -2845,7 +1631,7 @@ just leave “playOctave” off from the names of the variables, but keep the pe
 		Play
 		Remove
 	\#{endproc
-
+}
 This is the final version of the script. It works because Praat knows that
 you are using the variable names %`.frequency` and %`.octaveHigher` in the context of the procedure %`playOctave`,
 so that Praat knows that by these variable names you actually mean to refer to %`playOctave.frequency` and %`playOctave.octaveHigher`.
@@ -2860,15 +1646,15 @@ A list of numeric and string arguments
 ======================================
 
 You can use multiple arguments, separated by commas, and string arguments (with a dollar sign in the variable name):
-
+{;
 	@listSpeaker: “Bart”, 38
 	@listSpeaker: “Katja“, 24
 	\#{procedure} listSpeaker: .name$, .age
 		appendInfoLine: “Speaker ”, .name$, “ is ”, .age, “ years old.”
 	\#{endproc
-
+}
 or
-
+{;
 	@conjugateVerb: “be”, “I am”, “you are”, “she is”
 	\#{procedure} conjugateVerb: .verb$, .first$, .second$, .third$
 		writeInfoLine: “Conjugation of 'to ”, .verb$, “':”
@@ -2876,27 +1662,27 @@ or
 		appendInfoLine: “2sg ”, .second$
 		appendInfoLine: “3sg ”, .third$
 	\#{endproc}
-
+}
 For the arguments you can use expressions:
-
+{;
 	@playOctave: 400 + 100
-
+}
 As with all string literals, the double quotes in literal string arguments should be doubled:
-
+{;
 	\#{procedure} texts: .top$, .bottom$
 		Text top: “yes”, .top$
 		Text bottom: “yes”, .bottom$
 	\#{endproc")
 	@texts: """ hello"" at the top", """goodbye"" at the bottom"
-
+}
 unless you use curly quotes:
-
+{;
 	@texts: “" hello" at the top”, “"goodbye" at the bottom”
-
+}
 or even
-
+{;
 	@texts: ““ hello” at the top”, ““goodbye” at the bottom”
-
+}
 Functions
 =========
 
@@ -2905,22 +1691,23 @@ A function is a procedure that returns a number, a string, a vector, a matrix, o
 For instance, you can imagine the function `squareNumber` (),
 which takes a number (e.g. 5) as an argument and returns the square of that number (e.g. 25).
 Here is an example of how you can do that, using the global availability of local variables:
-
+{;
 	@squareNumber: 5
 	writeInfoLine: “The square of 5 is ”, squareNumber.result, “.”
 	\#{procedure} squareNumber: .number
 		.result = .number ^ 2
 	\#{endproc
-
+}
 Another way to emulate functions is to use a variable name as an argument:
-
+{;
 	@squareNumber: 5, “square5”
 	writeInfoLine: “The square of 5 is ”, square5, “.”
 	\#{procedure} squareNumber: .number, .squareVariableName$
 		'.squareVariableName$' = .number ^ 2
 	\#{endproc
-
+}
 However, this uses variable substitution, a trick better avoided.
+
 ################################################################################
 )~~~"
 MAN_PAGES_END
@@ -3185,7 +1972,8 @@ CODE (U"\\#{form}: \"Play a sine wave\"")
 	CODE1 (U"\\#{positive}: \"Sine frequency (Hz)\", \"377.0\"")
 	CODE1 (U"\\#{positive}: \"Gain (0..1)\", \"0.3 (= not too loud)\"")
 CODE (U"\\#{endform}")
-CODE (U"Create Sound as pure tone: \"sine\" + string$ (sine_frequency), 1, 0, 1, 44100, sine_frequency, gain, 0.01, 0.01")
+CODE (U"Create Sound as pure tone: \"sine\" + string$ (sine_frequency),")
+CODE (U"... 1, 0, 1, 44100, sine_frequency, gain, 0.01, 0.01")
 CODE (U"Play")
 CODE (U"Remove")
 NORMAL (U"When running this script, the interpreter puts a settings window (%form) on your screen, "
@@ -3277,7 +2065,7 @@ CODE (U"\\#{form}: \"Fill attributes\"")
 CODE (U"\\#{endform}")
 CODE (U"\\`{writeInfoLine}: \"You chose the colour \", colour$, \" and the texture \", texture$, \".\"")
 NORMAL (U"This shows two multiple-choice boxes. In the Colour box, the fifth button (Black) is the standard value here. "
-	"If you click “Navy blue” and then #%OK, the variable %colour will have the value 3, "
+	"If you click “Navy blue” and then #%OK, the variable %`colour` will have the value 3, "
 	"and the variable %`colour$` will have the value “Navy blue”. "
 	"So you can test the value of the Colour box in either of the following ways:")
 CODE (U"if colour = 4")
@@ -3361,30 +2149,30 @@ NORMAL (U"With the @Info button and several commands in the @@Query submenu@ (or
 	"the text goes to the console window or to %stdout instead; see @@Scripting 6.9. Calling from the command line|\\SS6.9).")
 NORMAL (U"The commands #`writeInfo`, #`writeInfoLine`, #`appendInfo` and #`appendInfoLine` "
 	"allow you to write to the Info window from a script. Those with #`write` in their name clear the Info window "
-	"before they write to it, those with #append in their name do not. Those with #Line in their name make sure "
+	"before they write to it, those with #`append` in their name do not. Those with #`Line` in their name make sure "
 	"that a following #`appendInfo` or #`appendInfoLine` will write on the next line.")
 NORMAL (U"These four functions take a variable number of numeric and/or string arguments, separated by commas. "
 	"The following script builds a table with statistics about a pitch contour:")
-CODE (U"#writeInfoLine: \"  Minimum   Maximum\"")
+CODE (U"\\`{writeInfoLine}: \"  Minimum   Maximum\"")
 CODE (U"Create Sound as pure tone: \"sine\", 1, 0, 0.1, 44100, 377, 0.2, 0.01, 0.01")
 CODE (U"To Pitch: 0.01, 75, 600")
 CODE (U"minimum = Get minimum: 0, 0, \"Hertz\", \"Parabolic\"")
-CODE (U"#appendInfo: minimum")
-CODE (U"#appendInfo: tab\\$ ")
+CODE (U"\\`{appendInfo}: minimum")
+CODE (U"\\`{appendInfo}: tab$")
 CODE (U"maximum = Get maximum: 0, 0, \"Hertz\", \"Parabolic\"")
-CODE (U"#appendInfo: maximum")
-CODE (U"#appendInfoLine: \"\"")
+CODE (U"\\`{appendInfo}: maximum")
+CODE (U"\\`{appendInfoLine}: \"\"")
 NORMAL (U"You could combine the last four print statements into:")
-CODE (U"#appendInfoLine: minimum, tab\\$ , maximum")
+CODE (U"\\`{appendInfoLine}: minimum, tab$, maximum")
 NORMAL (U"which is the same as:")
-CODE (U"#appendInfo: minimum, tab\\$ , maximum, newline\\$ ")
-NORMAL (U"The little string ##tab\\$ # is a %tab character; it allows you to create "
-	"table files that can be read by some spreadsheet programs. The little string `newline$` is a %newline character; "
+CODE (U"\\`{appendInfo}: minimum, tab$, maximum, newline$")
+NORMAL (U"The little string #`tab$` is a %tab character; it allows you to create "
+	"table files that can be read by some spreadsheet programs. The little string #`newline$` is a %newline character; "
 	"it moves the following text to the next line.")
 NORMAL (U"To clear the Info window, you can do")
-CODE (U"#writeInfo: \"\"")
+CODE (U"\\`{writeInfo}: \"\"")
 NORMAL (U"or")
-CODE (U"#clearinfo")
+CODE (U"\\`{clearinfo}")
 MAN_END
 
 MAN_BEGIN (U"Scripting 6.3. Query commands", U"ppgb", 20140107)
@@ -3489,38 +2277,68 @@ NORMAL (U"you can also write")
 CODE (U"\\#{deleteFile} (\\%{fileName$})")
 MAN_END
 
-MAN_BEGIN (U"Scripting 6.5. Calling system commands", U"ppgb", 20201229)
-INTRO (U"From a Praat script you can call system commands. "
-	"These are the same commands that you would normally type into a terminal window or into the Window command line prompt. "
-	"The syntax is the same as that of the #writeInfo command.")
-NORMAL (U"Most system commands are different on different platforms. "
-	"For instance, to throw away all WAV files in the folder whose path (relative to the script’s folder) is "
-	"in the variable folder\\$ , you would write")
-CODE (U"#runSystem: \"del \", folder\\$ , \"\\bs*.wav\"")
-NORMAL (U"on Windows, but")
-CODE (U"#runSystem: \"rm \", folder\\$ , \"/*.wav\"")
-NORMAL (U"on Macintosh and Linux.")
-NORMAL (U"The script will stop running if a system command returns an error. For instance,")
-CODE (U"#runSystem: \"rm \", folder\\$ , \"/*.wav\"")
-NORMAL (U"will stop the script if there are no WAV files in the folder. "
-	"In order to prevent this, you can tell Praat to ignore the return value of the runSystem command.")
-NORMAL (U"Thus, to make sure that the folder contains no WAV files, you would write")
-CODE (U"#runSystem_nocheck: \"rm \", folder\\$ , \"/*.wav\"")
-ENTRY (U"Getting the values of system variables")
-TERM (U"##environment\\$  (#%%symbol-string%#)")
-DEFINITION (U"returns the value of an environment variable, e.g.")
-CODE1 (U"homeFolder\\$  = ##environment\\$ # (\"HOME\")")
-ENTRY (U"Getting system duration")
-TERM (U"##stopwatch")
-DEFINITION (U"returns the time that has elapsed since the previous #stopwatch.")
-NORMAL (U"Here is a Praat script that measures how long it takes to do a million assignments:")
-CODE (U"stopwatch")
-CODE (U"for i to 1000000")
-	CODE1 (U"a = 1.23456789e123")
-CODE (U"endfor")
-CODE (U"time = stopwatch")
-CODE (U"writeInfoLine: a, \" \", fixed\\$  (time, 3)")
-MAN_END
+MAN_PAGES_BEGIN
+R"~~~(
+"Scripting 6.5. Calling system commands"
+© Paul Boersma 2020,2023
+
+From a Praat script you can call system commands.
+These are the same commands that you would normally type into a terminal window or into the Windows command line prompt.
+The syntax is the same as that of the @`writeInfo` command.
+
+Most system commands are different on different platforms.
+For instance, to throw away all WAV files in the folder whose path (relative to the script’s folder) is
+in the variable `folder$`, you would write
+{;
+	\`{runSystem}: "del ", folder$, "\*.wav"
+}
+on Windows, but
+{;
+	\`{runSystem}: "rm ", folder$, "/*.wav"
+}
+on Macintosh and Linux.
+
+The script will stop running if a system command returns an error. For instance,
+{;
+	\`{runSystem}: "rm ", folder$, "/*.wav"
+}
+will stop the script if there are no WAV files in the folder,
+with a message like “No such file or directory”.
+
+In order to prevent this, you can tell Praat to ignore the return value of \@{runSystem}.
+
+Thus, to make sure that the folder contains no WAV files, you would write
+{;
+	\#{runSystem_nocheck}: "rm ", folder$, "/*.wav"
+}
+Getting the values of system variables
+======================================
+#`environment$` (%`symbol-string`)
+: returns the value of an environment variable, e.g.
+{;
+		homeFolder$ = \`{environment$} ("HOME")
+}
+Getting system duration
+=======================
+#`stopwatch`
+: returns the time that has elapsed since the previous #stopwatch.
+
+Here is a Praat script that measures how long it takes to do a hundred thousand assignments on your computer
+(if you are reading this in Praat’s own Help, not on the web):
+{
+	stopwatch
+	for i to 100000
+		a = 1.23456789e123
+	endfor
+	time = stopwatch
+	writeInfoLine: a, " ", fixed$ (time, 3)
+}
+How many nanoseconds is that per assignment?
+{
+	writeInfoLine: round (time / 100000 * 1e9)
+}
+)~~~"
+MAN_PAGES_END
 
 MAN_BEGIN (U"Scripting 6.6. Controlling the user", U"ppgb", 20230130)
 INTRO (U"You can temporarily halt a Praat script:")
@@ -3730,7 +2548,7 @@ CODE (U"nocheck Remove")
 NORMAL (U"This would cause the script to continue even if there is nothing to remove.")
 MAN_END
 
-MAN_BEGIN (U"Scripting 6.9. Calling from the command line", U"ppgb", 20220122)
+MAN_BEGIN (U"Scripting 6.9. Calling from the command line", U"ppgb", 20220122)   // 2023
 INTRO (U"Previous sections of this tutorial have shown you how to run a Praat script from the Script window. "
 	"However, you can also call a Praat script from the command line (text console) instead. "
 	"Information that would normally show up in the Info window, then goes to %stdout, "
@@ -3886,6 +2704,23 @@ NORMAL (U"into a Console or Terminal window by hand, Praat will typically run th
 	"Also, the `--run` option can probably be left out from the Python call above. "
 	"However, if you redirect the output of Praat to a file or pipe, you cannot typically leave out the `--run` option; "
 	"if you do, Praat may start its GUI and %open the file rather than run it.")
+NORMAL (U"“Why this strange behaviour?”, you may ask. The reason is that several platforms (e.g. Windows) "
+	"use this same mechanismm when you double-click a file, or drop a file on an application icon. "
+	"For instance, when you double-click `hello.wav` or `doSomething.praat`, "
+	"or drop `hello.wav` or `doSomething.praat` on the Praat icon, "
+	"you expect Praat to %open that sound file or script, not to %run it. "
+	"However, when you double-click or drop `doSomething.praat`, "
+	"Windows will send Praat a message %%as if% you had typed `praat doSomething.praat` into a Console window. "
+	"This means that in this case Praat will have to interpret `praat doSomething.praat` "
+	"as an indication that you want to %open that file, not %run it. "
+	"Praat will try to be a bit smart, though: when receiving the message `praat doSomething.praat` from the operating system, "
+	"Praat will try to figure out whether you meant to %run or %open the file. "
+	"If Praat detects that you typed `praat doSomething.praat` into the Console "
+	"by hand, Praat will %run this script; if not, then Praat will %open this script; "
+	"this includes double-clicking and dropping (appropriately), but may also include some indirect invocations "
+	"such as through a shell script or redirection or pipe. "
+	"After all, if Praat is in doubt, wrongly assuming that you want to %open the script is safer than wrongly "
+	"assuming that you want to %run the script.")
 
 ENTRY (U"9. Running Praat interactively from the command line")
 NORMAL (U"On the Mac and Linux, you have the possibility of running the program interactively from the command line:")
@@ -3922,7 +2757,7 @@ TERM (U"##--no-pref-files#")
 DEFINITION (U"Ignore the preferences file and the buttons file at start-up, and don't write them when quitting (see above).")
 TERM (U"##--no-plugins#")
 DEFINITION (U"Don't activate the plugins at start-up.")
-TERM (U"##--pref-dir=#/var/www/praat_plugins")
+TERM (U"##--pref-dir=#`/var/www/praat_plugins`")
 DEFINITION (U"Set the preferences folder to `/var/www/praat_plugins` (for instance). "
 	"This can come in handy if you require access to preference files and/or plugins that are not in your home folder.")
 TERM (U"##-8#, ##--utf8#")
@@ -3972,7 +2807,7 @@ See @@Scripting examples@.
 © Paul Boersma 20140526
 
 From a Praat shell script, you can switch to an editor and back again:
-
+{;
 	sound$ = "hallo"
 	start = 0.3
 	finish = 0.7
@@ -3982,15 +2817,15 @@ From a Praat shell script, you can switch to an editor and back again:
 		Zoom: start, finish
 		\#`{endeditor}
 	Play
-
+}
 This script reads a sound file from disk, pops up an editor for the resulting object,
 makes this editor zoom in on the part between 0.3 and 0.7 seconds,
 and returns to the Praat shell to play the entire sound.
 
 After @`editor` you can either give the unique id of the object, as above, or its name:
-
+{;
 	\#`{editor}: "Sound " + sound$
-
+}
 ################################################################################
 "Scripting 7.2. Scripting an editor from within"
 © Paul Boersma 2023
@@ -4006,14 +2841,14 @@ follow these steps:
 3. Choose ##New editor script# from the @@File menu@ in the SoundEditor. The resulting @ScriptEditor
 	will have a name like “untitled script [Sound hallo]”.
 4. Type the following lines into the ScriptEditor:
-
+{;
 			cursor = Get cursor
 			Select: cursor - 0.02, cursor + 0.02
 			Extract selected sound (windowed): "slice", "Kaiser2", 2, "no"
 		\#`{endeditor}
 		To Spectrum: "yes"
 		\@{View & Edit}
-
+}
 If you choose #Run from the #Run menu in the ScriptEditor, a region of 40 milliseconds around the
 current cursor position in the SoundEditor will become selected. This piece will be copied to the list of objects,
 after applying a double Kaiser window (total length 80 ms). Thus, a Sound named “slice” will appear in the list.
@@ -4045,42 +2880,42 @@ we can run it with #Run from the #Run menu again; alternatively, we could save i
 ##Show spectrum at cursor# button (this button will always run the version on disk, never the one viewed in a ScriptEditor).
 
 To zoom in on the first 5000 Hz, we add the following code at the end of our script:
-
+{;
 	\#`{editor}: "Spectrum slice"
 		Zoom: 0, 5000
-
+}
 To get rid of the “Sound slice”, we can add:
-
+{;
 	\#`{endeditor}
 	\`{removeObject}: "Sound slice"
-
+}
 Note that @`endeditor` is needed to change from the environment of a SpectrumEditor to the environment of the object & picture windows.
 
 If you now choose the ##Show spectrum at cursor# button for several cursor positions, you will notice that all those editors have the same name.
 To remedy the ambiguity of the line `editor Spectrum slice`, we give each slice a better name. For example, if the cursor was at
 635 milliseconds, the slice could be named “635ms”. We can achieve this by changing the extraction in the following way:
-
+{;
 	milliseconds = round (cursor*1000)
 	Extract selection sound (windowed): string$ (milliseconds) + "ms", "Kaiser2", 2, "no"
-
+}
 The names of the Sound and Spectrum objects will now have more chance of being unique. Two lines will have to be edited trivially.
 
 Finally, we will reset the selection to the original. At the top of the script,
 we add two lines to remember the positions of the selection markers:
-
+{;
 	start = Get start of selection
 	end = Get end of selection
-
+}
 At the bottom, we reset the selection:
-
+{;
 	\#`{editor}
 		Select: start, end
-
+}
 Note that the #`editor` directive if not followed by the name of an editor,
 returns the script to the original environment.
 
 The complete script is:
-
+{;
 		start = Get start of selection
 		end = Get end of selection
 		cursor = Get cursor
@@ -4097,116 +2932,176 @@ The complete script is:
 	\`{removeObject}: "Sound " + string$ (milliseconds) + "ms"
 	\#`{editor}
 		Select: start, end
-
+}
 This script is useful as it stands. It is good enough for safe use. For instance, if the created Sound object has the same name
 as an already existing Sound object, it will be the newly created Sound object that will be removed by @`removeObject`,
 because in case of ambiguity @`removeObject` always removes the most recently created object of that name.
 
 ################################################################################
+"sendpraat"
+© Paul Boersma #1997,2000
+
+See @@Scripting 8. Controlling Praat from another program@.
+
+################################################################################
+"Scripting 8. Controlling Praat from another program"
+© Paul Boersma 2000,2002,2021,2022
+
+Sendpraat is a function for sending messages to a %running Praat.
+It is also a Windows, MacOS, or Linux console program with the same purpose.
+
+As sendpraat cannot start up a new instance of Praat, you may often want to use
+`praat --send` instead (see @@Scripting 6.9. Calling from the command line@).
+
+, @@Scripting 8.1. The sendpraat subroutine@
+, @@Scripting 8.2. The sendpraat program@
+
+################################################################################
+"Scripting 8.1. The sendpraat subroutine"
+© Paul Boersma 2002,2003,2005,2009,2014,2015,2021,2023
+
+Sendpraat can be a subroutine for sending messages to a %running Praat program.
+
+C syntax
+========
+{; C
+	\#{sendpraat} (void *\%{display}, const char *\%{program}, long \%{timeOut}, char *\%{text});
+}
+Arguments
+=========
+%`display`
+: this argument is ignored; you can supply NULL.
+
+%`program`
+: the name of a running program that uses the Praat shell, e.g. "Praat" or "ALS".
+  The first letter may be specified as lower or upper case; it will be converted
+  to upper case for Windows or MacOS and to lower case for Linux.
+
+%`timeOut` (MacOS and Linux only)
+: the number of seconds that `sendpraat` will wait for an answer
+  before writing an error message. A %`timeOut` of 0 means that
+  the message will be sent asynchronously, i.e., that sendpraat
+  will return immediately without issuing any error message.
+
+%`text`
+: the script text to be sent. Sendpraat may alter this text!
+
+Example 1: killing a program
+============================
+{; C
+	char message [100], *errorMessage;
+	strcpy (message, "Quit");
+	errorMessage = \#{sendpraat} (NULL, "praat", 0, message);
+	if (errorMessage) fprintf (stderr, "%s", errorMessage);
+}
+This causes the program #Praat to quit (gracefully), because #Quit is a fixed
+command in one of the menus of that program.
+On MacOS and Linux, sendpraat returns immediately; on Windows, the %timeOut argument is ignored.
+The return value %errorMessage is a statically allocated string internal to sendpraat,
+and is overwritten by the next call to sendpraat.
+
+Example 2: playing a sound file in reverse
+==========================================
+Suppose you have a sound file whose name is in the variable %`fileName`,
+and you want the program #Praat, which can play sounds,
+to play this sound backwards.
+{; C
+	char message [1000], *errorMessage;
+	snprintf (message,1000, "Read from file: ~%s\nPlay reverse\nRemove", fileName);
+	errorMessage = \#{sendpraat} (NULL, "praat", 3000, message);
+}
+This will work because ##Play reverse# is an action command
+that becomes available in the dynamic menu when a Sound is selected.
+On Linux, sendpraat will allow #Praat at most 3000 seconds to perform this.
+
+Example 3: executing a large script file
+========================================
+Sometimes, it may be unpractical to send a large script directly to #sendpraat.
+Fortunately, the receiving program knows #runScript:
+{; C
+	char message [100], *errorMessage;
+	strcpy (message, "runScript: \"doAll.praat\", 20");
+	errorMessage = \#{sendpraat} (NULL, "praat", 0, message);
+}
+This causes the program #Praat to run the script `doAll.praat` with an argument of "20".
+
+How to download
+===============
+You can download the source code of the sendpraat subroutine
+via ##www.praat.org# or from ##http://www.fon.hum.uva.nl/praat/sendpraat.html#.
+
+Instead
+=======
+Instead of using `sendpraat`, you can also just take the following simple steps in your program:
+1. on Linux, write the Praat script that you want to run, and save it as `~/.praat-dir/message`;
+2. get Praat's process id from `~/.praat-dir/pid`;
+3. if Praat's process id is e.g. 1178, send it a SIGUSR1 signal: `kill -USR1 1178`
+
+If the first line of your script is the comment “`# 999`”, where 999 stands for the process id of your program,
+Praat will send your program a SIGUSR2 signal back when it finishes handling the script.
+If you do not want to receive such a message (if your program has no handler for it, the SIGUSR2 signal will kill your program),
+then do not include such a line.
+
+See also
+========
+To start a program from the command line instead and sending it a message,
+you would not use #sendpraat, but instead run the program with a script file as an argument.
+See @@Scripting 6.9. Calling from the command line@.
+
+################################################################################
+"Scripting 8.2. The sendpraat program"
+© Paul Boersma #1997,2000,2003,2005,2014,2015,2021,2023
+
+Sendpraat can be a Windows console or Unix (MacOS, Linux) terminal program for sending messages to a %running Praat program.
+
+Command line syntax
+===================
+{; sh
+	\#{sendpraat} [\%{timeOut}] \%{program} \%{message} ...
+}
+For the meaning of the arguments, see @@Scripting 8.1. The sendpraat subroutine|the sendpraat subroutine@.
+
+Example 1: killing a program
+============================
+{; sh
+	\#{sendpraat} 0 praat Quit
+}
+Causes the program #Praat to quit (gracefully), because #Quit is a fixed command in one of its menus.
+On Unix, `sendpraat` returns immediately; on Windows, you leave out the %`timeOut` argument.
+
+Example 2: playing a sound file in reverse
+==========================================
+{; sh
+	\#{sendpraat} 1000 praat "Read from file... hello.wav" "Play reverse" "Remove"
+}
+This works because ##Play reverse# is an action command
+that becomes available in the dynamic menu of the #Praat program when a Sound is selected.
+On Unix, `sendpraat` will allow #Praat at most 1000 seconds to perform this.
+
+Each line is a separate argument. Lines that contain spaces should be put inside double quotes.
+
+Example 3: drawing
+==================
+{; sh
+	\#{sendpraat} als "for i from 1 to 5" "Draw circle: 0.5, 0.5, i" "endfor"
+}
+This causes the program #Als to draw five concentric circles into the Picture window.
+
+Example 4: running a large script
+{; sh
+	\#{sendpraat} praat "runScript: \"doAll.praat\", 20"
+}
+This causes the program #Praat to execute the script ##doAll.praat# with an argument of "20".
+
+How to download
+===============
+You can download the sendpraat program
+via `www.praat.org` or from `http://www.fon.hum.uva.nl/praat/sendpraat.html`.
+
+################################################################################
 )~~~"
 MAN_PAGES_END
 
-MAN_BEGIN (U"sendpraat", U"ppgb", 20000927)
-NORMAL (U"See @@Scripting 8. Controlling Praat from another program@.")
-MAN_END
-
-MAN_BEGIN (U"Scripting 8. Controlling Praat from another program", U"ppgb", 20220514)
-INTRO (U"Sendpraat is a function for sending messages to a %running Praat. "
-	"It is also a Windows, MacOS, or Linux console program with the same purpose.")
-NORMAL (U"As sendpraat cannot start up a new instance of Praat, you may often want to use "
-	"`praat --send` instead (see @@Scripting 6.9. Calling from the command line@).")
-LIST_ITEM (U"@@Scripting 8.1. The sendpraat subroutine")
-LIST_ITEM (U"@@Scripting 8.2. The sendpraat program")
-MAN_END
-
-MAN_BEGIN (U"Scripting 8.1. The sendpraat subroutine", U"ppgb", 20230204)
-INTRO (U"Sendpraat can be a subroutine for sending messages to a %running Praat program.")
-ENTRY (U"Syntax")
-LIST_ITEM (U"##sendpraat (void *#%display##, const char *#%program##, long #%timeOut##, char *#%text##);")
-ENTRY (U"Arguments")
-TERM (U"%display")
-DEFINITION (U"this argument is ignored; you can supply NULL.")
-TERM (U"%program")
-DEFINITION (U"the name of a running program that uses the Praat shell, e.g. \"Praat\" or \"ALS\". "
-	"The first letter may be specified as lower or upper case; it will be converted "
-	"to upper case for Windows or MacOS and to lower case for Linux.")
-TERM (U"%timeOut (MacOS and Linux only)")
-DEFINITION (U"the number of seconds that sendpraat will wait for an answer "
-	"before writing an error message. A %timeOut of 0 means that "
-	"the message will be sent asynchronously, i.e., that sendpraat "
-	"will return immediately without issuing any error message.")
-TERM (U"%text")
-DEFINITION (U"the script text to be sent. Sendpraat may alter this text!")
-ENTRY (U"Example 1: killing a program")
-CODE (U"char message [100], *errorMessage;")
-CODE (U"strcpy (message, \"Quit\");")
-CODE (U"errorMessage = \\#{sendpraat} (NULL, \"praat\", 0, message);")
-CODE (U"if (errorMessage) fprintf (stderr, \"%s\", errorMessage);")
-NORMAL (U"This causes the program #Praat to quit (gracefully), because #Quit is a fixed "
-	"command in one of the menus of that program. "
-	"On MacOS and Linux, sendpraat returns immediately; on Windows, the %timeOut argument is ignored. "
-	"The return value %errorMessage is a statically allocated string internal to sendpraat, "
-	"and is overwritten by the next call to sendpraat.")
-ENTRY (U"Example 2: playing a sound file in reverse")
-NORMAL (U"Suppose you have a sound file whose name is in the variable $fileName, "
-	"and you want the program #Praat, which can play sounds, "
-	"to play this sound backwards.")
-CODE (U"char message [1000], *errorMessage;")
-CODE (U"snprintf (message,1000, \"Read from file: ~%s\\nPlay reverse\\nRemove\", fileName);")
-CODE (U"errorMessage = \\#{sendpraat} (NULL, \"praat\", 3000, message);")
-NORMAL (U"This will work because ##Play reverse# is an action command "
-	"that becomes available in the dynamic menu when a Sound is selected. "
-	"On Linux, sendpraat will allow #Praat at most 3000 seconds to perform this.")
-ENTRY (U"Example 3: executing a large script file")
-NORMAL (U"Sometimes, it may be unpractical to send a large script directly to #sendpraat. "
-	"Fortunately, the receiving program knows #runScript:")
-CODE (U"char message [100], *errorMessage;")
-CODE (U"strcpy (message, \"runScript: \\bs\"doAll.praat\\bs\", 20\");")
-CODE (U"errorMessage = \\#{sendpraat} (NULL, \"praat\", 0, message);")
-NORMAL (U"This causes the program #Praat to run the script ##doAll.praat# with an argument of \"20\".")
-ENTRY (U"How to download")
-NORMAL (U"You can download the source code of the sendpraat subroutine "
-	"via ##www.praat.org# or from ##http://www.fon.hum.uva.nl/praat/sendpraat.html#.")
-ENTRY (U"Instead")
-NORMAL (U"Instead of using sendpraat, you can also just take the following simple steps in your program:")
-LIST_ITEM (U"1. on Linux, write the Praat script that you want to run, and save it as ##~/.praat-dir/message#;")
-LIST_ITEM (U"2. get Praat's process id from `~/.praat-dir/pid`;")
-LIST_ITEM (U"3. if Praat's process id is e.g. 1178, send it a SIGUSR1 signal: `kill -USR1 1178`")
-NORMAL (U"If the first line of your script is the comment “`# 999`”, where 999 stands for the process id of your program, "
-	"Praat will send your program a SIGUSR2 signal back when it finishes handling the script. "
-	"If you do not want to receive such a message (if your program has no handler for it, the SIGUSR2 signal will kill your program), "
-	"then do not include such a line.")
-ENTRY (U"See also")
-NORMAL (U"To start a program from the command line instead and sending it a message, "
-	"you would not use #sendpraat, but instead run the program with a script file as an argument. "
-	"See @@Scripting 6.9. Calling from the command line@.")
-MAN_END
-
-MAN_BEGIN (U"Scripting 8.2. The sendpraat program", U"ppgb", 20211207)
-INTRO (U"Sendpraat can be a Windows console or Unix (MacOS, Linux) terminal program for sending messages to a %running Praat program.")
-ENTRY (U"Syntax")
-CODE (U"#sendpraat [%timeOut] %program %message...")
-NORMAL (U"For the meaning of the arguments, see @@Scripting 8.1. The sendpraat subroutine|the sendpraat subroutine@.")
-ENTRY (U"Example 1: killing a program")
-CODE (U"sendpraat 0 praat Quit")
-NORMAL (U"Causes the program #Praat to quit (gracefully), because #Quit is a fixed command in one of its menus. "
-	"On Unix, #sendpraat returns immediately; on Windows, you leave out the %timeOut argument.")
-ENTRY (U"Example 2: playing a sound file in reverse")
-CODE (U"sendpraat 1000 praat \"Read from file... hello.wav\" \"Play reverse\" \"Remove\"")
-NORMAL (U"This works because ##Play reverse# is an action command "
-	"that becomes available in the dynamic menu of the #Praat program when a Sound is selected. "
-	"On Unix, sendpraat will allow #Praat at most 1000 seconds to perform this.")
-NORMAL (U"Each line is a separate argument. Lines that contain spaces should be put inside double quotes.")
-ENTRY (U"Example 3: drawing")
-CODE (U"sendpraat als \"for i from 1 to 5\" \"Draw circle: 0.5, 0.5, i\" \"endfor\"")
-NORMAL (U"This causes the program #Als to draw five concentric circles into the Picture window.")
-ENTRY (U"Example 4: running a large script")
-CODE (U"sendpraat praat \"runScript: \\bs\"doAll.praat\\bs\", 20\"")
-NORMAL (U"This causes the program #Praat to execute the script ##doAll.praat# with an argument of \"20\".")
-ENTRY (U"How to download")
-NORMAL (U"You can download the sendpraat program "
-	"via ##www.praat.org# or from ##http://www.fon.hum.uva.nl/praat/sendpraat.html#.")
-MAN_END
 
 /*
 ENTRY (U"How to run a script")
@@ -4343,36 +3238,6 @@ LIST_ITEM (U"3. Click #OK and ensure that the button is clickable if you select 
 	"to remove it from the dynamic menus, use the @ButtonEditor.")
 MAN_END
 
-MAN_BEGIN (U"NotebookEditor", U"ppgb", 20230325)
-INTRO (U"An aid to documented @@scripting@ as well as to creating manual pages.")
-MAN_END
-
-MAN_BEGIN (U"undefined", U"ppgb", 20170910)
-INTRO (U"When you give a query command for a numeric value, Praat sometimes writes the numeric value ##--undefined--# "
-	"into the @@Info window@ (two hyphens at both sides of the word). This happens if the value you ask for is not defined, "
-	"as in the following examples:")
-LIST_ITEM (U"\\bu You select a Sound with a finishing time of 1.0 seconds and ask for the minimum point in the wave form "
-	"between 1.5 and 2.0 seconds (with the query command ##Get minimum...#).")
-LIST_ITEM (U"\\bu You ask for a pitch value in a voiceless part of the sound (select a #Pitch, "
-	"then choose ##Get value at time...#).")
-LIST_ITEM (U"\\bu You type into the @Calculator the following formula: 10\\^ 400.")
-ENTRY (U"Usage in a script")
-NORMAL (U"In a Praat script, this value is simply represented as \"undefined\". You use it to test whether "
-	"a query command returned a valid number:")
-CODE (U"selectObject: \"Pitch hallo\"")
-CODE (U"meanPitch = Get mean: 0.1, 0.2, \"Hertz\", \"Parabolic\"")
-CODE (U"if meanPitch = undefined")
-	CODE1 (U"# Take some exceptional action.")
-CODE (U"else")
-	CODE1 (U"# Take the normal action.")
-CODE (U"endif")
-ENTRY (U"Details for hackers")
-NORMAL (U"In text files, this value is written as ##--undefined--#. "
-	"In binary files, it is written as a big-endian IEEE positive infinity. "
-	"In memory, it is usually a specific \"not-a-number\" (NaN), namely the result of dividing 0 by 0, "
-	"although other NaNs, and also infinities, will equally be reported as --undefined--.")
-MAN_END
-
 MAN_BEGIN (U"Scripting examples", U"ppgb", 20040222)
 INTRO (U"Here is a number of examples of how to use scripting in the Praat program. "
 	"Refer to the @scripting tutorial when necessary.")
@@ -4394,14 +3259,14 @@ CODE (U"for iframe to numberOfFrames")
 	CODE1 (U"time = Get time from frame: iframe")
 	CODE1 (U"pitch = Get value in frame: iframe, \"Hertz\"")
 	CODE1 (U"if pitch = undefined")
-		CODE2 (U"appendInfoLine: fixed\\$  (time, 6)")
+		CODE2 (U"appendInfoLine: fixed$ (time, 6)")
 	CODE1 (U"else")
-		CODE2 (U"appendInfoLine: fixed\\$  (time, 6), \" \", fixed\\$  (pitch, 3)")
+		CODE2 (U"appendInfoLine: fixed$ (time, 6), \" \", fixed$ (pitch, 3)")
 	CODE1 (U"endif")
 CODE (U"endfor")
 NORMAL (U"If you want to see this in a text file, you can copy and paste from the Info window, or save the Info window, "
 	"or add a line to the script like")
-CODE (U"appendFile: \"out.txt\", info\\$ ( )")
+CODE (U"appendFile: \"out.txt\", info$ ( )")
 MAN_END
 
 MAN_BEGIN (U"Script for listing time–F0–intensity", U"ppgb", 20200912)
@@ -4425,7 +3290,7 @@ CODE (U"for i to (tmax-tmin)/0.01")
 	CODE1 (U"pitch = Get value at time: time, \"Hertz\", \"linear\"")
 	CODE1 (U"selectObject: \"Intensity intensity\"")
 	CODE1 (U"intensity = Get value at time: time, \"cubic\"")
-	CODE1 (U"appendInfoLine: fixed\\$  (time, 2), \" \", fixed\\$  (pitch, 3), \" \", fixed\\$  (intensity, 3)")
+	CODE1 (U"appendInfoLine: fixed$ (time, 2), \" \", fixed$ (pitch, 3), \" \", fixed$ (intensity, 3)")
 CODE (U"endfor")
 MAN_END
 
@@ -4446,8 +3311,8 @@ CODE (U"for step to numberOfTimeSteps")
 	CODE1 (U"minimum = Get minimum: tmin, tmax, \"Hertz\", \"Parabolic\"")
 	CODE1 (U"maximum = Get maximum: tmin, tmax, \"Hertz\", \"Parabolic\"")
 	CODE1 (U"stdev = Get standard deviation: tmin, tmax, \"Hertz\"")
-	CODE1 (U"appendInfoLine: fixed\\$  (tmin, 6), \" \", fixed\\$  (tmax, 6), \" \", fixed\\$  (mean, 2),")
-	CODE1 (U"... \" \", fixed\\$  (minimum, 2), \" \", fixed\\$  (maximum, 2), \" \", fixed\\$  (stdev, 2)")
+	CODE1 (U"appendInfoLine: fixed$ (tmin, 6), \" \", fixed$ (tmax, 6), \" \", fixed$ (mean, 2),")
+	CODE1 (U"... \" \", fixed$ (minimum, 2), \" \", fixed$ (maximum, 2), \" \", fixed$ (stdev, 2)")
 CODE (U"endfor")
 ENTRY (U"Notes")
 NORMAL (U"One should not cut the sound up into pieces of 50 ms and then do ##To Pitch...# on each of them, "
@@ -4459,9 +3324,9 @@ NORMAL (U"The example writes lines to the #Info window. If you want to write to 
 	"you start with something like")
 	CODE1 (U"deleteFile: \"~/results/out.txt\"")
 NORMAL (U"and add lines in the following way:")
-	CODE1 (U"appendFileLine: \"~/results/out.txt \", fixed\\$  (tmin, 6), \" \", fixed\\$  (tmax, 6), \" \",")
-	CODE1 (U"... fixed\\$  (mean, 2), \" \", fixed\\$  (minimum, 2), \" \", fixed\\$  (maximum, 2), \" \",")
-	CODE1 (U"... fixed\\$  (stdev, 2)")
+	CODE1 (U"appendFileLine: \"~/results/out.txt \", fixed$ (tmin, 6), \" \", fixed$ (tmax, 6), \" \",")
+	CODE1 (U"... fixed$ (mean, 2), \" \", fixed$ (minimum, 2), \" \", fixed$ (maximum, 2), \" \",")
+	CODE1 (U"... fixed$ (stdev, 2)")
 MAN_END
 
 MAN_BEGIN (U"Script for creating a frequency sweep", U"ppgb", 20170904)
@@ -4485,7 +3350,7 @@ CODE (U"for i to n")
 	CODE1 (U"intensity = Get value in frame: i")
 	CODE1 (U"if intensity > 40")
 		CODE2 (U"time = Get time from frame: i")
-		CODE2 (U"writeInfoLine: \"Onset of sound at: \", fixed\\$  (time, 3), \" seconds.\"")
+		CODE2 (U"writeInfoLine: \"Onset of sound at: \", fixed$ (time, 3), \" seconds.\"")
 		CODE2 (U"exit")
 	CODE1 (U"endif")
 CODE (U"endfor")
@@ -4516,13 +3381,13 @@ CODE (U"pitch = To Pitch: 0.0, 75, 600")
 CODE (U"selectObject: textgrid")
 CODE (U"n = Get number of intervals: 5")
 CODE (U"for i to n")
-	CODE1 (U"tekst\\$  = Get label of interval: 5, i")
-	CODE1 (U"if tekst\\$  <> \"\"")
+	CODE1 (U"tekst$ = Get label of interval: 5, i")
+	CODE1 (U"if tekst$ <> \"\"")
 		CODE2 (U"t1 = Get starting point: 5, i")
 		CODE2 (U"t2 = Get end point: 5, i")
 		CODE2 (U"selectObject: pitch")
 		CODE2 (U"f0 = Get mean: t1, t2, \"Hertz\"")
-		CODE2 (U"appendInfoLine: fixed\\$  (t1, 3), \" \", fixed\\$  (t2, 3), \" \", round (f0), \" \", tekst\\$ ")
+		CODE2 (U"appendInfoLine: fixed$ (t1, 3), \" \", fixed$ (t2, 3), \" \", round (f0), \" \", tekst$")
 		CODE2 (U"selectObject: textgrid")
 	CODE1 (U"endif")
 CODE (U"endfor")

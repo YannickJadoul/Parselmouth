@@ -1,6 +1,6 @@
 /* oo_CAN_WRITE_AS_ENCODING.h
  *
- * Copyright (C) 2007,2009,2011-2020 Paul Boersma
+ * Copyright (C) 2007,2009,2011-2020,2022,2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,11 +78,17 @@
 #define oo_COLLECTION(Class, x, ItemClass, version)  \
 	if (our x && ! Data_canWriteAsEncoding (our x.get(), encoding)) return false;
 
-#define oo_FILE(x)  \
-	if (! Melder_isEncodable (our x. path, encoding)) return false;
+#define oo_TRANSIENT_FILE(x)  \
+	return true;   // because it won't actually be written
 
-#define oo_DIR(x)  \
-	if (! Melder_isEncodable (our x. path, encoding)) return false;
+#define oo_TRANSIENT_FOLDER(x)  \
+	return true;   // because it won't actually be written
+
+#define oo_UNSAFE_BORROWED_TRANSIENT_CONST_OBJECT_REFERENCE(Class, x)  \
+	return true;   // because it won't actually be written
+
+#define oo_UNSAFE_BORROWED_TRANSIENT_MUTABLE_OBJECT_REFERENCE(Class, x)  \
+	return true;   // because it won't actually be written
 
 #define oo_DEFINE_STRUCT(Type)  \
 	bool struct##Type :: canWriteAsEncoding (int encoding) { \

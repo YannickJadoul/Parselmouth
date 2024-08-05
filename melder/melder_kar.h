@@ -225,7 +225,7 @@ inline bool Melder_isAsciiDecimalNumber (char32 kar) {
 	We cannot really internationalize std::isxdigit ():
 */
 inline bool Melder_isHexadecimalDigit (char32 kar) {
-	return kar >= U'0' && kar <= U'9' || kar >= U'A' && kar <= U'Z' || kar >= U'a' && kar <= U'z';
+	return (kar >= U'0' && kar <= U'9') || (kar >= U'A' && kar <= U'Z') || (kar >= U'a' && kar <= U'z');
 }
 
 /*
@@ -312,6 +312,8 @@ inline const char32 * Melder_findHorizontalOrVerticalSpace (conststring32 str) n
 			return nullptr;   // not found
 	return p;
 }
+
+#include "../kar/wctype_portable.h"
 
 /* End of file melder_kar.h */
 #endif

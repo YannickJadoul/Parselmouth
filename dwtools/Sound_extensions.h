@@ -29,6 +29,12 @@ Thing_declare (Interpreter);
 
 int Sound_writeToNistAudioFile (Sound me, MelderFile file);
 
+void Sound_saveAsMP3File_VBR (Sound me, MelderFile file, double inverseQuality);
+/*
+	0 <= inverseQuality < 10
+	0 is highest quality, 9.99 is lowest quality
+*/
+
 autoSound Sound_readFromCmuAudioFile (MelderFile file);
 
 /* only 16 bit signed has been tested !! */
@@ -52,8 +58,6 @@ autoSound Sound_readFromDialogicADPCMFile (MelderFile file, double sampleRate);
 autoSound Sound_readFromOggVorbisFile (MelderFile file);
 autoSound Sound_readFromOggOpusFile (MelderFile file);
 
-void Sound_writeToRawFile (Sound me, MelderFile file, const char *format, bool littleEndian, int nBitsCoding, bool unSigned);
-
 void Sound_into_Sound (Sound me, Sound to, double startTime);
 /* precondition: my dx == to->dx (equal sampling times */
 
@@ -67,16 +71,6 @@ autoSound Sound_derivative (Sound me, double lowPassFrequency, double smoothing,
 /*
 	The real derivative
 */
-
-void Sound_preEmphasis (Sound me, double preEmphasisFrequency);
-/*
-	Approximation of derivative by first order difference.
-	deEmphasis = exp(- 2 * NUMpi * deEmphasisFrequency * my dx);
-	for (i=my nx; i >=2; i-- ) my z [1] [i] -= preEmphasis * my z [1] [i-1];
-*/
-
-void Sound_deEmphasis (Sound me, double preEmphasisFrequency);
-/*	for (i=2; i <= my nx; i++ ) my z [1] [i] += deEmphasis * my z [1] [i-1]; */
 
 autoSound Sound_createGaussian (double windowDuration, double samplingFrequency);
 
@@ -206,5 +200,11 @@ autoSound Sound_removeNoise (Sound me, double noiseStart, double noiseEnd, doubl
 autoSound Sound_reduceNoise (Sound me, double noiseStart, double noiseEnd, double windowLength, double minBandFilterFrequency, double maxBandFilterFrequency, double smoothing, double noiseReduction_dB, kSoundNoiseReductionMethod method);
 
 void Sound_playAsFrequencyShifted (Sound me, double shiftBy, double newSamplingFrequency, integer precision);
+
+/**** the following functions belongs to a numeric library. However there is an unwanted dependency on fon/Sound_enums.h */
+
+void windowShape_into_VEC (kSound_windowShape windowShape, VEC inout_window);
+
+autoSound Sound_resampleAndOrPreemphasize (constSound me, double maximumFrequency, integer depth, double preEmphasisFrequency);
 
 #endif /* _Sound_extensions_h_ */

@@ -1,6 +1,6 @@
 /* SoundAnalysisArea.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,6 +49,71 @@ void structSoundAnalysisArea :: v_reset_analysis () {
 	our d_pulses. reset();
 }
 
+#define DEFINE_dynamic_instancePref_pitch(type,setting) \
+type structSoundAnalysisArea :: dynamic_instancePref_pitch_##setting () { \
+	switch (our instancePref_pitch_method()) { \
+		case kSoundAnalysisArea_pitch_analysisMethod::FILTERED_AUTOCORRELATION: \
+			return our instancePref_pitch_filteredAC_##setting(); \
+		case kSoundAnalysisArea_pitch_analysisMethod::RAW_CROSS_CORRELATION: \
+			return our instancePref_pitch_rawCC_##setting(); \
+		case kSoundAnalysisArea_pitch_analysisMethod::RAW_AUTOCORRELATION: \
+			return our instancePref_pitch_rawAC_##setting(); \
+		case kSoundAnalysisArea_pitch_analysisMethod::FILTERED_CROSS_CORRELATION: \
+			return our instancePref_pitch_filteredCC_##setting(); \
+		default: \
+			Melder_fatal (U"Unknown pitch analysis method ", (int) our instancePref_pitch_method(), U"."); \
+	} \
+}
+DEFINE_dynamic_instancePref_pitch (double, floor)
+DEFINE_dynamic_instancePref_pitch (kPitch_unit, unit)
+DEFINE_dynamic_instancePref_pitch (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod)
+DEFINE_dynamic_instancePref_pitch (double, viewFrom)
+DEFINE_dynamic_instancePref_pitch (double, viewTo)
+DEFINE_dynamic_instancePref_pitch (bool, veryAccurate)
+DEFINE_dynamic_instancePref_pitch (integer, maximumNumberOfCandidates)
+DEFINE_dynamic_instancePref_pitch (double, silenceThreshold)
+DEFINE_dynamic_instancePref_pitch (double, voicingThreshold)
+
+double structSoundAnalysisArea :: dynamic_instancePref_pitch_ceilingOrTop () {
+	switch (our instancePref_pitch_method()) {
+		case kSoundAnalysisArea_pitch_analysisMethod::FILTERED_AUTOCORRELATION:
+			return our instancePref_pitch_filteredAC_top();
+		case kSoundAnalysisArea_pitch_analysisMethod::RAW_CROSS_CORRELATION:
+			return our instancePref_pitch_rawCC_ceiling();
+		case kSoundAnalysisArea_pitch_analysisMethod::RAW_AUTOCORRELATION:
+			return our instancePref_pitch_rawAC_ceiling();
+		case kSoundAnalysisArea_pitch_analysisMethod::FILTERED_CROSS_CORRELATION:
+			return our instancePref_pitch_filteredCC_top();
+		default:
+			Melder_fatal (U"Unknown pitch analysis method ", (int) our instancePref_pitch_method(), U".");
+	}
+}
+
+static double dynamic_instancePref_pitch_attenuationAtTop (SoundAnalysisArea me) {
+	switch (my instancePref_pitch_method()) {
+		case kSoundAnalysisArea_pitch_analysisMethod::FILTERED_AUTOCORRELATION:
+			return my instancePref_pitch_filteredAC_attenuationAtTop();
+		case kSoundAnalysisArea_pitch_analysisMethod::FILTERED_CROSS_CORRELATION:
+			return my instancePref_pitch_filteredCC_attenuationAtTop();
+		default:
+			Melder_fatal (U"Unknown pitch analysis method ", (int) my instancePref_pitch_method(), U".");
+	}
+}
+static double periodsPerAnalysisWindow (SoundAnalysisArea me) {
+	switch (my instancePref_pitch_method()) {
+		case kSoundAnalysisArea_pitch_analysisMethod::FILTERED_AUTOCORRELATION:
+			return 3.0;
+		case kSoundAnalysisArea_pitch_analysisMethod::RAW_CROSS_CORRELATION:
+			return 1.0;
+		case kSoundAnalysisArea_pitch_analysisMethod::RAW_AUTOCORRELATION:
+			return 3.0;
+		case kSoundAnalysisArea_pitch_analysisMethod::FILTERED_CROSS_CORRELATION:
+			return 1.0;
+		default:
+			Melder_fatal (U"Unknown pitch analysis method ", (int) my instancePref_pitch_method(), U".");
+	}
+}
+
 /*
 	Some tryToCompute<Analysis>() functions.
 	The "try" means that any exceptions that are generated, will be ignored;
@@ -95,7 +160,7 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 }
 static void tryToComputePitch (SoundAnalysisArea me) {
 	autoMelderProgressOff progress;
-	const double margin = ( my instancePref_pitch_veryAccurate() ? 3.0 / my instancePref_pitch_floor() : 1.5 / my instancePref_pitch_floor() );
+	const double margin = ( my dynamic_instancePref_pitch_veryAccurate() ? 3.0 : 1.5 ) / my dynamic_instancePref_pitch_floor();
 	try {
 		autoSound sound = extractSound (me, my startWindow() - margin, my endWindow() + margin);
 		const double pitchTimeStep = (
@@ -103,15 +168,42 @@ static void tryToComputePitch (SoundAnalysisArea me) {
 			my instancePref_timeStepStrategy() == kSoundAnalysisArea_timeStepStrategy::VIEW_DEPENDENT ? (my endWindow() - my startWindow()) / my instancePref_numberOfTimeStepsPerView() :
 			0.0   // the default: determined by pitch floor
 		);
-		my d_pitch = Sound_to_Pitch_any (sound.get(), pitchTimeStep,
-			my instancePref_pitch_floor(),
-			my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod::AUTOCORRELATION ? 3.0 : 1.0,
-			my instancePref_pitch_maximumNumberOfCandidates(),
-			((int) my instancePref_pitch_method() - 1) * 2 + my instancePref_pitch_veryAccurate(),
-			my instancePref_pitch_silenceThreshold(), my instancePref_pitch_voicingThreshold(),
-			my instancePref_pitch_octaveCost(), my instancePref_pitch_octaveJumpCost(),
-			my instancePref_pitch_voicedUnvoicedCost(), my instancePref_pitch_ceiling()
-		);
+		if (my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod::FILTERED_AUTOCORRELATION)
+			my d_pitch = Sound_to_Pitch_filteredAc (sound.get(),
+				pitchTimeStep, my instancePref_pitch_filteredAC_floor(), my instancePref_pitch_filteredAC_top(),
+				my instancePref_pitch_filteredAC_maximumNumberOfCandidates(), my instancePref_pitch_filteredAC_veryAccurate(),
+				my instancePref_pitch_filteredAC_attenuationAtTop(),
+				my instancePref_pitch_filteredAC_silenceThreshold(), my instancePref_pitch_filteredAC_voicingThreshold(),
+				my instancePref_pitch_filteredAC_octaveCost(), my instancePref_pitch_filteredAC_octaveJumpCost(),
+				my instancePref_pitch_filteredAC_voicedUnvoicedCost()
+			);
+		else if	(my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod::RAW_CROSS_CORRELATION)
+			my d_pitch = Sound_to_Pitch_rawCc (sound.get(),
+				pitchTimeStep, my instancePref_pitch_rawCC_floor(), my instancePref_pitch_rawCC_ceiling(),
+				my instancePref_pitch_rawCC_maximumNumberOfCandidates(), my instancePref_pitch_rawCC_veryAccurate(),
+				my instancePref_pitch_rawCC_silenceThreshold(), my instancePref_pitch_rawCC_voicingThreshold(),
+				my instancePref_pitch_rawCC_octaveCost(), my instancePref_pitch_rawCC_octaveJumpCost(),
+				my instancePref_pitch_rawCC_voicedUnvoicedCost()
+			);
+		else if (my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod::RAW_AUTOCORRELATION)
+			my d_pitch = Sound_to_Pitch_rawAc (sound.get(),
+				pitchTimeStep, my instancePref_pitch_rawAC_floor(), my instancePref_pitch_rawAC_ceiling(),
+				my instancePref_pitch_rawAC_maximumNumberOfCandidates(), my instancePref_pitch_rawAC_veryAccurate(),
+				my instancePref_pitch_rawAC_silenceThreshold(), my instancePref_pitch_rawAC_voicingThreshold(),
+				my instancePref_pitch_rawAC_octaveCost(), my instancePref_pitch_rawAC_octaveJumpCost(),
+				my instancePref_pitch_rawAC_voicedUnvoicedCost()
+			);
+		else if (my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod::FILTERED_CROSS_CORRELATION)
+			my d_pitch = Sound_to_Pitch_filteredCc (sound.get(), pitchTimeStep,
+				my instancePref_pitch_filteredCC_floor(), my instancePref_pitch_filteredCC_top(),
+				my instancePref_pitch_filteredCC_maximumNumberOfCandidates(), my instancePref_pitch_filteredCC_veryAccurate(),
+				my instancePref_pitch_filteredCC_attenuationAtTop(),
+				my instancePref_pitch_filteredCC_silenceThreshold(), my instancePref_pitch_filteredCC_voicingThreshold(),
+				my instancePref_pitch_filteredCC_octaveCost(), my instancePref_pitch_filteredCC_octaveJumpCost(),
+				my instancePref_pitch_filteredCC_voicedUnvoicedCost()
+			);
+		else
+			Melder_fatal (U"Unknown pitch method ", (int) my instancePref_pitch_method(), U".");
 		my d_pitch -> xmin = my startWindow();
 		my d_pitch -> xmax = my endWindow();
 	} catch (MelderError) {
@@ -121,10 +213,10 @@ static void tryToComputePitch (SoundAnalysisArea me) {
 }
 static void tryToComputeIntensity (SoundAnalysisArea me) {
 	autoMelderProgressOff progress;
-	const double margin = 3.2 / my instancePref_pitch_floor();
+	const double margin = 3.2 / my dynamic_instancePref_pitch_floor();
 	try {
 		autoSound sound = extractSound (me, my startWindow() - margin, my endWindow() + margin);
-		my d_intensity = Sound_to_Intensity (sound.get(), my instancePref_pitch_floor(),
+		my d_intensity = Sound_to_Intensity (sound.get(), my dynamic_instancePref_pitch_floor(),
 			my endWindow() - my startWindow() > my instancePref_longestAnalysis() ? (my endWindow() - my startWindow()) / 100 : 0.0,
 			my instancePref_intensity_subtractMeanPressure()
 		);
@@ -256,6 +348,8 @@ void SoundAnalysisArea_haveVisiblePulses (SoundAnalysisArea me) {
 #pragma mark - SoundAnalysisArea tracking
 
 bool structSoundAnalysisArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_world, double localY_fraction) {
+	#if 0
+	BUG: NYI
 	if (event -> isClick()) {
 		if (our instancePref_pitch_show()) {
 			if (x_world >= our endWindow() && localY_fraction > 0.96 && localY_fraction <= 1.00) {
@@ -274,6 +368,7 @@ bool structSoundAnalysisArea :: v_mouse (GuiDrawingArea_MouseEvent event, double
 			}
 		}
 	}
+	#endif
 	if (x_world > our startWindow() && x_world < our endWindow())
 		our d_spectrogram_cursor = localY_fraction * our instancePref_spectrogram_viewTo()
 				+ (1.0 - localY_fraction) * our instancePref_spectrogram_viewFrom();
@@ -308,27 +403,142 @@ void structSoundAnalysisArea :: v_spectrogramInfo () const {
 	MelderInfo_writeLine (U"Spectrogram cursor frequency: ", our d_spectrogram_cursor, U" Hz");
 }
 void structSoundAnalysisArea :: v_pitchInfo () const {
-	/* Pitch flag: */
+	/*
+		Pitch flag:
+	*/
 	MelderInfo_writeLine (U"Pitch show: ", our instancePref_pitch_show());
-	/* Pitch settings: */
-	MelderInfo_writeLine (U"Pitch floor: ", our instancePref_pitch_floor(), U" Hz");
-	MelderInfo_writeLine (U"Pitch ceiling: ", our instancePref_pitch_ceiling(), U" Hz");
-	MelderInfo_writeLine (U"Pitch unit: ",
-			Function_getUnitText (Thing_dummyObject (Pitch), Pitch_LEVEL_FREQUENCY, (int) instancePref_pitch_unit(), Function_UNIT_TEXT_MENU));
-	MelderInfo_writeLine (U"Pitch drawing method: ", kSoundAnalysisArea_pitch_drawingMethod_getText (instancePref_pitch_drawingMethod()));
-	/* Advanced pitch settings: */
-	MelderInfo_writeLine (U"Pitch view from: ", our instancePref_pitch_viewFrom(), U" ",
-			Function_getUnitText (Thing_dummyObject (Pitch), Pitch_LEVEL_FREQUENCY, (int) our instancePref_pitch_unit(), Function_UNIT_TEXT_MENU));
-	MelderInfo_writeLine (U"Pitch view to: ", our instancePref_pitch_viewTo(), U" ",
-			Function_getUnitText (Thing_dummyObject (Pitch), Pitch_LEVEL_FREQUENCY, (int) our instancePref_pitch_unit(), Function_UNIT_TEXT_MENU));
+	/*
+		General pitch settings:
+	*/
 	MelderInfo_writeLine (U"Pitch method: ", kSoundAnalysisArea_pitch_analysisMethod_getText (our instancePref_pitch_method()));
-	MelderInfo_writeLine (U"Pitch very accurate: ", our instancePref_pitch_veryAccurate());
-	MelderInfo_writeLine (U"Pitch max. number of candidates: ", our instancePref_pitch_maximumNumberOfCandidates());
-	MelderInfo_writeLine (U"Pitch silence threshold: ", our instancePref_pitch_silenceThreshold(), U" of global peak");
-	MelderInfo_writeLine (U"Pitch voicing threshold: ", our instancePref_pitch_voicingThreshold(), U" (periodic power / total power)");
-	MelderInfo_writeLine (U"Pitch octave cost: ", our instancePref_pitch_octaveCost(), U" per octave");
-	MelderInfo_writeLine (U"Pitch octave jump cost: ", our instancePref_pitch_octaveJumpCost(), U" per octave");
-	MelderInfo_writeLine (U"Pitch voiced/unvoiced cost: ", our instancePref_pitch_voicedUnvoicedCost());
+	/*
+		Pitch settings for filtered autocorrelation:
+	*/
+	conststring32 unitText = Function_getUnitText (Thing_dummyObject (Pitch),
+			Pitch_LEVEL_FREQUENCY, (int) our instancePref_pitch_filteredAC_unit(), Function_UNIT_TEXT_MENU);
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) floor: ",
+			our instancePref_pitch_filteredAC_floor(), U" Hz");
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) top: ",
+			our instancePref_pitch_filteredAC_top(), U" Hz");
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) unit: ",
+			unitText);
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) drawing method: ",
+			kSoundAnalysisArea_pitch_drawingMethod_getText (our instancePref_pitch_filteredAC_drawingMethod()));
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) view from: ",
+			our instancePref_pitch_filteredAC_viewFrom(), U" ", unitText);
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) view to: ",
+			our instancePref_pitch_filteredAC_viewTo(), U" ", unitText);
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) max. number of candidates: ",
+			our instancePref_pitch_filteredAC_maximumNumberOfCandidates());
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) very accurate: ",
+			our instancePref_pitch_filteredAC_veryAccurate());
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) attenuation at top: ",
+			our instancePref_pitch_filteredAC_attenuationAtTop());
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) silence threshold: ",
+			our instancePref_pitch_filteredAC_silenceThreshold(), U" of global peak");
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) voicing threshold: ",
+			our instancePref_pitch_filteredAC_voicingThreshold(), U" (periodic power / total power)");
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) octave cost: ",
+			our instancePref_pitch_filteredAC_octaveCost(), U" per octave");
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) octave jump cost: ",
+			our instancePref_pitch_filteredAC_octaveJumpCost(), U" per octave");
+	MelderInfo_writeLine (U"Pitch (filtered autocorrelation) voiced/unvoiced cost: ",
+			our instancePref_pitch_filteredAC_voicedUnvoicedCost());
+	/*
+		Pitch settings for raw cross-correlation:
+	*/
+	unitText = Function_getUnitText (Thing_dummyObject (Pitch),
+			Pitch_LEVEL_FREQUENCY, (int) our instancePref_pitch_rawCC_unit(), Function_UNIT_TEXT_MENU);
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) floor: ",
+			our instancePref_pitch_rawCC_floor(), U" Hz");
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) ceiling: ",
+			our instancePref_pitch_rawCC_ceiling(), U" Hz");
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) unit: ",
+			unitText);
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) drawing method: ",
+			kSoundAnalysisArea_pitch_drawingMethod_getText (our instancePref_pitch_rawCC_drawingMethod()));
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) view from: ",
+			our instancePref_pitch_rawCC_viewFrom(), U" ", unitText);
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) view to: ",
+			our instancePref_pitch_rawCC_viewTo(), U" ", unitText);
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) max. number of candidates: ",
+			our instancePref_pitch_rawCC_maximumNumberOfCandidates());
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) very accurate: ",
+			our instancePref_pitch_rawCC_veryAccurate());
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) silence threshold: ",
+			our instancePref_pitch_rawCC_silenceThreshold(), U" of global peak");
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) voicing threshold: ",
+			our instancePref_pitch_rawCC_voicingThreshold(), U" (periodic power / total power)");
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) octave cost: ",
+			our instancePref_pitch_rawCC_octaveCost(), U" per octave");
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) octave jump cost: ",
+			our instancePref_pitch_rawCC_octaveJumpCost(), U" per octave");
+	MelderInfo_writeLine (U"Pitch (raw cross-correlation) voiced/unvoiced cost: ",
+			our instancePref_pitch_rawCC_voicedUnvoicedCost());
+	/*
+		Pitch settings for raw autocorrelation:
+	*/
+	unitText = Function_getUnitText (Thing_dummyObject (Pitch),
+			Pitch_LEVEL_FREQUENCY, (int) our instancePref_pitch_rawAC_unit(), Function_UNIT_TEXT_MENU);
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) floor: ",
+			our instancePref_pitch_rawAC_floor(), U" Hz");
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) ceiling: ",
+			our instancePref_pitch_rawAC_ceiling(), U" Hz");
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) unit: ",
+			unitText);
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) drawing method: ",
+			kSoundAnalysisArea_pitch_drawingMethod_getText (our instancePref_pitch_rawAC_drawingMethod()));
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) view from: ",
+			our instancePref_pitch_rawAC_viewFrom(), U" ", unitText);
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) view to: ",
+			our instancePref_pitch_rawAC_viewTo(), U" ", unitText);
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) max. number of candidates: ",
+			our instancePref_pitch_rawAC_maximumNumberOfCandidates());
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) very accurate: ",
+			our instancePref_pitch_rawAC_veryAccurate());
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) silence threshold: ",
+			our instancePref_pitch_rawAC_silenceThreshold(), U" of global peak");
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) voicing threshold: ",
+			our instancePref_pitch_rawAC_voicingThreshold(), U" (periodic power / total power)");
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) octave cost: ",
+			our instancePref_pitch_rawAC_octaveCost(), U" per octave");
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) octave jump cost: ",
+			our instancePref_pitch_rawAC_octaveJumpCost(), U" per octave");
+	MelderInfo_writeLine (U"Pitch (raw autocorrelation) voiced/unvoiced cost: ",
+			our instancePref_pitch_rawAC_voicedUnvoicedCost());
+	/*
+		Pitch settings for filtered cross-correlation:
+	*/
+	unitText = Function_getUnitText (Thing_dummyObject (Pitch),
+			Pitch_LEVEL_FREQUENCY, (int) our instancePref_pitch_filteredCC_unit(), Function_UNIT_TEXT_MENU);
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) floor: ",
+			our instancePref_pitch_filteredCC_floor(), U" Hz");
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) top: ",
+			our instancePref_pitch_filteredCC_top(), U" Hz");
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) unit: ",
+			unitText);
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) drawing method: ",
+			kSoundAnalysisArea_pitch_drawingMethod_getText (our instancePref_pitch_filteredCC_drawingMethod()));
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) view from: ",
+			our instancePref_pitch_filteredCC_viewFrom(), U" ", unitText);
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) view to: ",
+			our instancePref_pitch_filteredCC_viewTo(), U" ", unitText);
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) max. number of candidates: ",
+			our instancePref_pitch_filteredCC_maximumNumberOfCandidates());
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) very accurate: ",
+			our instancePref_pitch_filteredCC_veryAccurate());
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) attenuation at top: ",
+			our instancePref_pitch_filteredCC_attenuationAtTop());
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) silence threshold: ",
+			our instancePref_pitch_filteredCC_silenceThreshold(), U" of global peak");
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) voicing threshold: ",
+			our instancePref_pitch_filteredCC_voicingThreshold(), U" (periodic power / total power)");
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) octave cost: ",
+			our instancePref_pitch_filteredCC_octaveCost(), U" per octave");
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) octave jump cost: ",
+			our instancePref_pitch_filteredCC_octaveJumpCost(), U" per octave");
+	MelderInfo_writeLine (U"Pitch (filtered cross-correlation) voiced/unvoiced cost: ",
+			our instancePref_pitch_filteredCC_voicedUnvoicedCost());
 }
 void structSoundAnalysisArea :: v_intensityInfo () const {
 	/* Intensity flag: */
@@ -381,6 +591,31 @@ void structSoundAnalysisArea :: v1_info () {
 	MelderInfo_writeLine (U"Log 2 format: ", our instancePref_log2_format());
 	MelderInfo_writeLine (U"Log 3 script: ", our instancePref_logScript3());
 	MelderInfo_writeLine (U"Log 4 script: ", our instancePref_logScript4());
+	/*
+		COMPATIBILITY < 6400
+	*/
+	if (v_hasPitch ()) {
+		kSoundAnalysisArea_pitch_analysisMethod pitchMethod = our instancePref_pitch_method();
+		if (pitchMethod == kSoundAnalysisArea_pitch_analysisMethod::RAW_AUTOCORRELATION) {
+			MelderInfo_writeLine (U"\nCOMPATIBILITY (obsolete settings for the benefit of old scripts):");
+			MelderInfo_writeLine (U"Pitch max. number of candidates: ", our instancePref_pitch_rawAC_maximumNumberOfCandidates());
+			MelderInfo_writeLine (U"Pitch very accurate: ", our instancePref_pitch_rawAC_veryAccurate());
+			MelderInfo_writeLine (U"Pitch silence threshold: ", our instancePref_pitch_rawAC_silenceThreshold(), U" of global peak");
+			MelderInfo_writeLine (U"Pitch voicing threshold: ", our instancePref_pitch_rawAC_voicingThreshold(), U" (periodic power / total power)");
+			MelderInfo_writeLine (U"Pitch octave cost: ", our instancePref_pitch_rawAC_octaveCost(), U" per octave");
+			MelderInfo_writeLine (U"Pitch octave jump cost: ", our instancePref_pitch_rawAC_octaveJumpCost(), U" per octave");
+			MelderInfo_writeLine (U"Pitch voiced/unvoiced cost: ", our instancePref_pitch_rawAC_voicedUnvoicedCost());
+		} else if (pitchMethod == kSoundAnalysisArea_pitch_analysisMethod::RAW_CROSS_CORRELATION) {
+			MelderInfo_writeLine (U"\nCOMPATIBILITY (obsolete settings for the benefit of old scripts):");
+			MelderInfo_writeLine (U"Pitch max. number of candidates: ", our instancePref_pitch_rawCC_maximumNumberOfCandidates());
+			MelderInfo_writeLine (U"Pitch very accurate: ", our instancePref_pitch_rawCC_veryAccurate());
+			MelderInfo_writeLine (U"Pitch silence threshold: ", our instancePref_pitch_rawCC_silenceThreshold(), U" of global peak");
+			MelderInfo_writeLine (U"Pitch voicing threshold: ", our instancePref_pitch_rawCC_voicingThreshold(), U" (periodic power / total power)");
+			MelderInfo_writeLine (U"Pitch octave cost: ", our instancePref_pitch_rawCC_octaveCost(), U" per octave");
+			MelderInfo_writeLine (U"Pitch octave jump cost: ", our instancePref_pitch_rawCC_octaveJumpCost(), U" per octave");
+			MelderInfo_writeLine (U"Pitch voiced/unvoiced cost: ", our instancePref_pitch_rawCC_voicedUnvoicedCost());
+		}
+	}
 }
 
 
@@ -421,11 +656,11 @@ static void menu_cb_timeStepSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Time step settings", U"Time step settings...")
 		OPTIONMENU_ENUM (kSoundAnalysisArea_timeStepStrategy, timeStepStrategy,
 				U"Time step strategy", my default_timeStepStrategy ())
-		LABEL (U"")
-		LABEL (U"If the time step strategy is \"fixed\":")
+		COMMENT (U"")
+		COMMENT (U"If the time step strategy is \"fixed\":")
 		POSITIVE (fixedTimeStep, U"Fixed time step (s)", my default_fixedTimeStep ())
-		LABEL (U"")
-		LABEL (U"If the time step strategy is \"view-dependent\":")
+		COMMENT (U"")
+		COMMENT (U"If the time step strategy is \"view-dependent\":")
 		NATURAL (numberOfTimeStepsPerView, U"Number of time steps per view", my default_numberOfTimeStepsPerView ())
 	EDITOR_OK
 		SET_ENUM (timeStepStrategy, kSoundAnalysisArea_timeStepStrategy, my instancePref_timeStepStrategy())
@@ -586,10 +821,12 @@ static void do_log (SoundAnalysisArea me, int which) {
 			stringValue = my boss() -> name.get();
 		} else if (str32equ (varName, U"f0")) {
 			SoundAnalysisArea_haveVisiblePitch (me);
+			const kPitch_unit unit = my dynamic_instancePref_pitch_unit();
 			if (part == SoundAnalysisArea_PART_CURSOR)
-				value = Pitch_getValueAtTime (my d_pitch.get(), tmin, my instancePref_pitch_unit(), 1);
+				value = Pitch_getValueAtTime (my d_pitch.get(), tmin, unit, 1);
 			else
-				value = Pitch_getMean (my d_pitch.get(), tmin, tmax, my instancePref_pitch_unit());
+				value = Pitch_getMean (my d_pitch.get(), tmin, tmax, unit);
+			value = Function_convertToNonlogarithmic (my d_pitch.get(), value, Pitch_LEVEL_FREQUENCY, (int) unit);
 		} else if (varName [0] == U'f' && varName [1] >= U'1' && varName [1] <= U'5' && varName [2] == U'\0') {
 			SoundAnalysisArea_haveVisibleFormants (me);
 			if (part == SoundAnalysisArea_PART_CURSOR)
@@ -685,8 +922,8 @@ static void menu_cb_spectrogramSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 		POSITIVE (viewTo,       U"right View range (Hz)", my default_spectrogram_viewTo())
 		POSITIVE (windowLength, U"Window length (s)",     my default_spectrogram_windowLength())
 		POSITIVE (dynamicRange, U"Dynamic range (dB)",    my default_spectrogram_dynamicRange())
-		MUTABLE_LABEL (note1, U"")
-		MUTABLE_LABEL (note2, U"")
+		MUTABLE_COMMENT (note1, U"")
+		MUTABLE_COMMENT (note2, U"")
 	EDITOR_OK
 		SET_REAL (viewFrom,     my instancePref_spectrogram_viewFrom())
 		SET_REAL (viewTo,       my instancePref_spectrogram_viewTo())
@@ -724,15 +961,15 @@ static void menu_cb_spectrogramSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 
 static void menu_cb_advancedSpectrogramSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Advanced spectrogram settings", U"Advanced spectrogram settings...")
-		LABEL (U"Time and frequency resolutions:")
+		COMMENT (U"Time and frequency resolutions:")
 		NATURAL (numberOfTimeSteps,      U"Number of time steps",      my default_spectrogram_timeSteps())
 		NATURAL (numberOfFrequencySteps, U"Number of frequency steps", my default_spectrogram_frequencySteps())
-		LABEL (U"Spectrogram analysis settings:")
+		COMMENT (U"Spectrogram analysis settings:")
 		OPTIONMENU_ENUM (kSound_to_Spectrogram_method, method,
 				U"Method", my default_spectrogram_method ())
 		OPTIONMENU_ENUM (kSound_to_Spectrogram_windowShape, windowShape,
 				U"Window shape", my default_spectrogram_windowShape ())
-		LABEL (U"Spectrogram view settings:")
+		COMMENT (U"Spectrogram view settings:")
 		BOOLEAN (autoscaling, U"Autoscaling", my default_spectrogram_autoscaling())
 		REAL (maximum, U"Maximum (dB/Hz)", my default_spectrogram_maximum())
 		REAL (preemphasis, U"Pre-emphasis (dB/oct)", my default_spectrogram_preemphasis())
@@ -861,55 +1098,36 @@ static void menu_cb_showPitch (SoundAnalysisArea me, EDITOR_ARGS) {
 	VOID_EDITOR_END
 }
 
-static void menu_cb_pitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
+static void menu_cb_pitchSettings_BEFORE_6400 (SoundAnalysisArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Pitch settings", U"Intro 4.2. Configuring the pitch contour")
-		POSITIVE (pitchFloor,   U"left Pitch range (Hz)",  my default_pitch_floor())
-		POSITIVE (pitchCeiling, U"right Pitch range (Hz)", my default_pitch_ceiling())
-		OPTIONMENU_ENUM (kPitch_unit, unit,
-				U"Unit", my default_pitch_unit ())
-		LABEL (U"The autocorrelation method optimizes for intonation research;")
-		LABEL (U"and the cross-correlation method optimizes for voice research:")
-		CHOICE_ENUM (kSoundAnalysisArea_pitch_analysisMethod, analysisMethod,
-				U"Analysis method", my default_pitch_method())
-		OPTIONMENU_ENUM (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod,
-				U"Drawing method", my default_pitch_drawingMethod())
-		MUTABLE_LABEL (note1, U"")
-		MUTABLE_LABEL (note2, U"")
+		COMMENT   (U"YOU SHOULD NEVER SEE THIS OBSOLETE SETTINGS WINDOW;")
+		COMMENT   (U"IT IS HERE ONLY FOR COMPATIBILITY WITH OLD SCRIPTS.")
+		POSITIVE (pitchFloor,   U"left Pitch range (Hz)",  my default_pitch_rawAC_floor())   // the default is ignored if not shown
+		POSITIVE (pitchCeiling, U"right Pitch range (Hz)", my default_pitch_rawAC_ceiling())
+		OPTIONMENU_ENUM (kPitch_unit, unit, U"Unit", my default_pitch_rawAC_unit ())
+		CHOICE_ENUM (kSoundAnalysisArea_pitch_analysisMethod, analysisMethod, U"Analysis method", my default_pitch_method())
+		OPTIONMENU_ENUM (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod, U"Drawing method", my default_pitch_rawAC_drawingMethod())
 	EDITOR_OK
-		SET_REAL (pitchFloor,   my instancePref_pitch_floor())
-		SET_REAL (pitchCeiling, my instancePref_pitch_ceiling())
-		SET_ENUM (unit, kPitch_unit, my instancePref_pitch_unit())
-		SET_ENUM (analysisMethod, kSoundAnalysisArea_pitch_analysisMethod, my instancePref_pitch_method())
-		SET_ENUM (drawingMethod, kSoundAnalysisArea_pitch_drawingMethod, my instancePref_pitch_drawingMethod())
-		if (my instancePref_pitch_viewFrom()                  != Melder_atof (my default_pitch_viewFrom()) ||
-			my instancePref_pitch_viewTo()                    != Melder_atof (my default_pitch_viewTo()) ||
-			my instancePref_pitch_veryAccurate()              != my default_pitch_veryAccurate() ||
-			my instancePref_pitch_maximumNumberOfCandidates() != Melder_atoi (my default_pitch_maximumNumberOfCandidates()) ||
-			my instancePref_pitch_silenceThreshold()          != Melder_atof (my default_pitch_silenceThreshold()) ||
-			my instancePref_pitch_voicingThreshold()          != Melder_atof (my default_pitch_voicingThreshold()) ||
-			my instancePref_pitch_octaveCost()                != Melder_atof (my default_pitch_octaveCost()) ||
-			my instancePref_pitch_octaveJumpCost()            != Melder_atof (my default_pitch_octaveJumpCost()) ||
-			my instancePref_pitch_voicedUnvoicedCost()        != Melder_atof (my default_pitch_voicedUnvoicedCost()))
-		{
-			SET_STRING (note1, U"Warning: you have some non-standard \"advanced settings\".")
-		} else {
-			SET_STRING (note1, U"(all of your \"advanced settings\" have their standard values)")
-		}
-		if (my instancePref_timeStepStrategy() != my default_timeStepStrategy ()) {
-			SET_STRING (note2, U"Warning: you have a non-standard \"time step strategy\".")
-		} else {
-			SET_STRING (note2, U"(your \"time step strategy\" has its standard value: automatic)")
-		}
 	EDITOR_DO
+		Melder_require (
+			analysisMethod == kSoundAnalysisArea_pitch_analysisMethod :: RAW_CROSS_CORRELATION ||
+			analysisMethod == kSoundAnalysisArea_pitch_analysisMethod :: RAW_AUTOCORRELATION,
+			U"Obsolete pitch settings command can handle only raw AC and CC methods."
+			U"Use one of the modern pitch setting commands instead."
+		);
 		Melder_require (pitchCeiling > pitchFloor,
 			U"The pitch ceiling has to be greater than the pitch floor, so they cannot be ",
 			pitchCeiling, U" and ", pitchFloor, U" ", kPitch_unit_getText (unit), U", respectively."
 		);
-		my setInstancePref_pitch_floor (pitchFloor);
-		my setInstancePref_pitch_ceiling (pitchCeiling);
-		my setInstancePref_pitch_unit (unit);
 		my setInstancePref_pitch_method (analysisMethod);
-		my setInstancePref_pitch_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_rawAC_floor (pitchFloor);
+		my setInstancePref_pitch_rawCC_floor (pitchFloor);
+		my setInstancePref_pitch_rawAC_ceiling (pitchCeiling);
+		my setInstancePref_pitch_rawCC_ceiling (pitchCeiling);
+		my setInstancePref_pitch_rawAC_unit (unit);
+		my setInstancePref_pitch_rawCC_unit (unit);
+		my setInstancePref_pitch_rawAC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_rawCC_drawingMethod (drawingMethod);
 		my d_pitch. reset();
 		my d_intensity. reset();
 		my d_pulses. reset();
@@ -917,46 +1135,524 @@ static void menu_cb_pitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	EDITOR_END
 }
 
-static void menu_cb_advancedPitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
-	EDITOR_FORM (U"Advanced pitch settings", U"Advanced pitch settings...")
-		LABEL   (U"Make view range different from analysis range:")
-		REAL    (viewFrom,                  U"left View range (units)",   my default_pitch_viewFrom                  ())
-		REAL    (viewTo,                    U"right View range (units)",  my default_pitch_viewTo                    ())
-		LABEL   (U"Analysis settings:")
-		BOOLEAN (veryAccurate,              U"Very accurate", false)
-		NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", my default_pitch_maximumNumberOfCandidates ())
-		REAL    (silenceThreshold,          U"Silence threshold",         my default_pitch_silenceThreshold          ())
-		REAL    (voicingThreshold,          U"Voicing threshold",         my default_pitch_voicingThreshold          ())
-		REAL    (octaveCost,                U"Octave cost",               my default_pitch_octaveCost                ())
-		REAL    (octaveJumpCost,            U"Octave-jump cost",          my default_pitch_octaveJumpCost            ())
-		REAL    (voicedUnvoicedCost,        U"Voiced / unvoiced cost",    my default_pitch_voicedUnvoicedCost        ())
+static void menu_cb_pitchSettings_BEFORE_6414 (SoundAnalysisArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Pitch settings", U"Intro 4.2. Configuring the pitch contour")
+		COMMENT   (U"YOU SHOULD NEVER SEE THIS OBSOLETE SETTINGS WINDOW;")
+		COMMENT   (U"IT IS HERE ONLY FOR COMPATIBILITY WITH OLD SCRIPTS.")
+		POSITIVE (pitchFloor, U"left Pitch range (Hz)",  my default_pitch_rawAC_floor())   // the default is ignored if not shown
+		POSITIVE (pitchCeiling, U"right Pitch range (Hz)", my default_pitch_rawAC_ceiling())
+		OPTIONMENU_ENUM (kPitch_unit, unit,
+				U"Unit", my default_pitch_rawAC_unit ())
+		CHOICE_ENUM (kSoundAnalysisArea_pitch_analysisMethod, analysisMethod,
+				U"Analysis method", my default_pitch_method())
+		OPTIONMENU_ENUM (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod,
+				U"Drawing method", my default_pitch_rawAC_drawingMethod())
+		REAL    (viewFrom,                  U"left View range (units)",   my default_pitch_rawAC_viewFrom                  ())
+		REAL    (viewTo,                    U"right View range (units)",  my default_pitch_rawAC_viewTo                    ())
 	EDITOR_OK
-		SET_REAL    (viewFrom,                  my instancePref_pitch_viewFrom())
-		SET_REAL    (viewTo,                    my instancePref_pitch_viewTo())
-		SET_BOOLEAN (veryAccurate,              my instancePref_pitch_veryAccurate())
-		SET_INTEGER (maximumNumberOfCandidates, my instancePref_pitch_maximumNumberOfCandidates())
-		SET_REAL    (silenceThreshold,          my instancePref_pitch_silenceThreshold())
-		SET_REAL    (voicingThreshold,          my instancePref_pitch_voicingThreshold())
-		SET_REAL    (octaveCost,                my instancePref_pitch_octaveCost())
-		SET_REAL    (octaveJumpCost,            my instancePref_pitch_octaveJumpCost())
-		SET_REAL    (voicedUnvoicedCost,        my instancePref_pitch_voicedUnvoicedCost())
+	EDITOR_DO_ALTERNATIVE (menu_cb_pitchSettings_BEFORE_6400)
+		Melder_require (
+			analysisMethod == kSoundAnalysisArea_pitch_analysisMethod :: FILTERED_AUTOCORRELATION ||
+			analysisMethod == kSoundAnalysisArea_pitch_analysisMethod :: RAW_CROSS_CORRELATION ||
+			analysisMethod == kSoundAnalysisArea_pitch_analysisMethod :: RAW_AUTOCORRELATION ||
+			analysisMethod == kSoundAnalysisArea_pitch_analysisMethod :: FILTERED_CROSS_CORRELATION,
+			U"Obsolete pitch settings command can handle only filtered or raw AC and CC methods."
+			U"Use one of the modern pitch setting commands instead."
+		);
+		Melder_require (pitchCeiling > pitchFloor,
+			U"The pitch ceiling has to be greater than the pitch floor, so they cannot be ",
+			pitchCeiling, U" and ", pitchFloor, U" ", kPitch_unit_getText (unit), U", respectively."
+		);
+		my setInstancePref_pitch_method (analysisMethod);
+		my setInstancePref_pitch_filteredAC_floor (pitchFloor);
+		my setInstancePref_pitch_filteredAC_top (pitchCeiling);
+		my setInstancePref_pitch_filteredAC_unit (unit);
+		my setInstancePref_pitch_filteredAC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_filteredAC_viewFrom (viewFrom);
+		my setInstancePref_pitch_filteredAC_viewTo (viewTo);
+		my setInstancePref_pitch_rawCC_floor (pitchFloor);
+		my setInstancePref_pitch_rawCC_ceiling (pitchCeiling);
+		my setInstancePref_pitch_rawCC_unit (unit);
+		my setInstancePref_pitch_rawCC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_rawCC_viewFrom (viewFrom);
+		my setInstancePref_pitch_rawCC_viewTo (viewTo);
+		my setInstancePref_pitch_rawAC_floor (pitchFloor);
+		my setInstancePref_pitch_rawAC_ceiling (pitchCeiling);
+		my setInstancePref_pitch_rawAC_unit (unit);
+		my setInstancePref_pitch_rawAC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_rawAC_viewFrom (viewFrom);
+		my setInstancePref_pitch_rawAC_viewTo (viewTo);
+		my setInstancePref_pitch_filteredCC_floor (pitchFloor);
+		my setInstancePref_pitch_filteredCC_top (pitchCeiling);
+		my setInstancePref_pitch_filteredCC_unit (unit);
+		my setInstancePref_pitch_filteredCC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_filteredCC_viewFrom (viewFrom);
+		my setInstancePref_pitch_filteredCC_viewTo (viewTo);
+		my d_pitch. reset();
+		my d_intensity. reset();
+		my d_pulses. reset();
+		FunctionEditor_redraw (my functionEditor());
+	EDITOR_END
+}
+
+static void menu_cb_advancedPitchSettings_BEFORE_6400 (SoundAnalysisArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Advanced pitch settings", U"Advanced pitch settings...")
+		COMMENT   (U"YOU SHOULD NEVER SEE THIS OBSOLETE SETTINGS WINDOW;")
+		COMMENT   (U"IT IS HERE ONLY FOR COMPATIBILITY WITH OLD SCRIPTS.")
+		REAL    (viewFrom,                  U"left View range (units)",   my default_pitch_rawAC_viewFrom                  ())   // the default is ignored if not shown
+		REAL    (viewTo,                    U"right View range (units)",  my default_pitch_rawAC_viewTo                    ())
+		BOOLEAN (veryAccurate,              U"Very accurate",             false)
+		NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", my default_pitch_rawAC_maximumNumberOfCandidates ())
+		REAL    (silenceThreshold,          U"Silence threshold",         my default_pitch_rawAC_silenceThreshold          ())
+		REAL    (voicingThreshold,          U"Voicing threshold",         my default_pitch_rawAC_voicingThreshold          ())
+		REAL    (octaveCost,                U"Octave cost",               my default_pitch_rawAC_octaveCost                ())
+		REAL    (octaveJumpCost,            U"Octave-jump cost",          my default_pitch_rawAC_octaveJumpCost            ())
+		REAL    (voicedUnvoicedCost,        U"Voiced / unvoiced cost",    my default_pitch_rawAC_voicedUnvoicedCost        ())
+	EDITOR_OK
 	EDITOR_DO
 		if (maximumNumberOfCandidates < 2)
 			Melder_throw (U"Your maximum number of candidates should be greater than 1.");
-		my setInstancePref_pitch_viewFrom (viewFrom);
-		my setInstancePref_pitch_viewTo (viewTo);
-		my setInstancePref_pitch_veryAccurate (veryAccurate);
-		my setInstancePref_pitch_maximumNumberOfCandidates (maximumNumberOfCandidates);
-		my setInstancePref_pitch_silenceThreshold (silenceThreshold);
-		my setInstancePref_pitch_voicingThreshold (voicingThreshold);
-		my setInstancePref_pitch_octaveCost (octaveCost);
-		my setInstancePref_pitch_octaveJumpCost (octaveJumpCost);
-		my setInstancePref_pitch_voicedUnvoicedCost (voicedUnvoicedCost);
+		kSoundAnalysisArea_pitch_analysisMethod analysisMethod = my instancePref_pitch_method();
+		Melder_require (
+			analysisMethod == kSoundAnalysisArea_pitch_analysisMethod :: RAW_AUTOCORRELATION ||
+			analysisMethod == kSoundAnalysisArea_pitch_analysisMethod :: RAW_CROSS_CORRELATION,
+			U"Obsolete advanced pitch settings command can handle only raw AC and CC methods."
+			U"Use one of the modern pitch setting commands instead."
+		);
+		my setInstancePref_pitch_rawAC_viewFrom (viewFrom);
+		my setInstancePref_pitch_rawCC_viewFrom (viewFrom);
+		my setInstancePref_pitch_rawAC_viewTo (viewTo);
+		my setInstancePref_pitch_rawCC_viewTo (viewTo);
+		my setInstancePref_pitch_rawAC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_rawCC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_rawAC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_rawCC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_rawAC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_rawCC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_rawAC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_rawCC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_rawAC_octaveCost (octaveCost);
+		my setInstancePref_pitch_rawCC_octaveCost (octaveCost);
+		my setInstancePref_pitch_rawAC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_rawCC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_rawAC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my setInstancePref_pitch_rawCC_voicedUnvoicedCost (voicedUnvoicedCost);
 		my d_pitch.     reset();
 		my d_intensity. reset();
 		my d_pulses.    reset();
 		FunctionEditor_redraw (my functionEditor());
 	EDITOR_END
+}
+
+static void menu_cb_advancedPitchSettings_rawAcCc_BEFORE_6414 (SoundAnalysisArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Advanced pitch settings (raw AC and CC)", U"Advanced pitch settings (raw AC and CC)...")
+		COMMENT   (U"YOU SHOULD NEVER SEE THIS OBSOLETE SETTINGS WINDOW;")
+		COMMENT   (U"IT IS HERE ONLY FOR COMPATIBILITY WITH OLD SCRIPTS.")
+		NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", my default_pitch_rawAC_maximumNumberOfCandidates ())   // the default is ignored if not shown
+		BOOLEAN (veryAccurate,              U"Very accurate", false)
+		REAL    (silenceThreshold,          U"Silence threshold",         my default_pitch_rawAC_silenceThreshold          ())
+		REAL    (voicingThreshold,          U"Voicing threshold",         my default_pitch_rawAC_voicingThreshold          ())
+		REAL    (octaveCost,                U"Octave cost",               my default_pitch_rawAC_octaveCost                ())
+		REAL    (octaveJumpCost,            U"Octave-jump cost",          my default_pitch_rawAC_octaveJumpCost            ())
+		REAL    (voicedUnvoicedCost,        U"Voiced / unvoiced cost",    my default_pitch_rawAC_voicedUnvoicedCost        ())
+	EDITOR_OK
+	EDITOR_DO
+		if (maximumNumberOfCandidates < 2)
+			Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		my setInstancePref_pitch_rawAC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_rawCC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_rawAC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_rawCC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_rawAC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_rawCC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_rawAC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_rawCC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_rawAC_octaveCost (octaveCost);
+		my setInstancePref_pitch_rawCC_octaveCost (octaveCost);
+		my setInstancePref_pitch_rawAC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_rawCC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_rawAC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my setInstancePref_pitch_rawCC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my d_pitch.     reset();
+		my d_intensity. reset();
+		my d_pulses.    reset();
+		FunctionEditor_redraw (my functionEditor());
+	EDITOR_END
+}
+
+static void menu_cb_advancedPitchSettings_filteredAcCc_BEFORE_6414 (SoundAnalysisArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Advanced pitch settings (filtered AC and CC)", U"Advanced pitch settings (filtered AC and CC)...")
+		COMMENT   (U"YOU SHOULD NEVER SEE THIS OBSOLETE SETTINGS WINDOW;")
+		COMMENT   (U"IT IS HERE ONLY FOR COMPATIBILITY WITH OLD SCRIPTS.")
+		NATURAL  (maximumNumberOfCandidates, U"Max. number of candidates", my default_pitch_filteredAC_maximumNumberOfCandidates ())   // the default is ignored if not shown
+		BOOLEAN  (veryAccurate,              U"Very accurate",             my default_pitch_filteredAC_veryAccurate              ())
+		POSITIVE (attenuationAtTop,          U"Attenuation at top",        my default_pitch_filteredAC_attenuationAtTop          ())
+		REAL     (silenceThreshold,          U"Silence threshold",         my default_pitch_filteredAC_silenceThreshold          ())
+		REAL     (voicingThreshold,          U"Voicing threshold",         my default_pitch_filteredAC_voicingThreshold          ())
+		REAL     (octaveCost,                U"Octave cost",               my default_pitch_filteredAC_octaveCost                ())
+		REAL     (octaveJumpCost,            U"Octave-jump cost",          my default_pitch_filteredAC_octaveJumpCost            ())
+		REAL     (voicedUnvoicedCost,        U"Voiced / unvoiced cost",    my default_pitch_filteredAC_voicedUnvoicedCost        ())
+	EDITOR_OK
+	EDITOR_DO
+		if (maximumNumberOfCandidates < 2)
+			Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		my setInstancePref_pitch_filteredAC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_filteredCC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_filteredAC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_filteredCC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_filteredAC_attenuationAtTop (attenuationAtTop);
+		my setInstancePref_pitch_filteredCC_attenuationAtTop (attenuationAtTop);
+		my setInstancePref_pitch_filteredAC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_filteredCC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_filteredAC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_filteredCC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_filteredAC_octaveCost (octaveCost);
+		my setInstancePref_pitch_filteredCC_octaveCost (octaveCost);
+		my setInstancePref_pitch_filteredAC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_filteredCC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_filteredAC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my setInstancePref_pitch_filteredCC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my d_pitch.     reset();
+		my d_intensity. reset();
+		my d_pulses.    reset();
+		FunctionEditor_redraw (my functionEditor());
+	EDITOR_END
+}
+
+static void menu_cb_pitchSettings_filteredAC (SoundAnalysisArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Pitch settings for the filtered autocorrelation method", U"Intro 4.2. Configuring the pitch contour")
+		MUTABLE_COMMENT (methodMatchWarning, U"")
+		HEADING (U"Where to search...")
+		MUTABLE_CAPTION (note, U"")
+		POSITIVE (pitchFloor, U"left Pitch floor and top (Hz)",            my default_pitch_filteredAC_floor())
+		POSITIVE (pitchTop,   U"right Pitch floor and top (Hz)",           my default_pitch_filteredAC_top())
+		HEADING (U"How to view...")
+		OPTIONMENU_ENUM (kPitch_unit, unit,
+				U"Unit",                                                   my default_pitch_filteredAC_unit ())
+		REAL    (viewFrom, U"left View range (units)",                     my default_pitch_filteredAC_viewFrom())
+		REAL    (viewTo,   U"right View range (units)",                    my default_pitch_filteredAC_viewTo())
+		CAPTION (U"(“auto” means ‘same as pitch floor and top’)")
+		OPTIONMENU_ENUM (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod,
+				U"Drawing method",                                         my default_pitch_filteredAC_drawingMethod())
+		HEADING (U"How to find the candidates...")
+		NATURAL  (maximumNumberOfCandidates, U"Max. number of candidates", my default_pitch_filteredAC_maximumNumberOfCandidates ())
+		BOOLEAN  (veryAccurate,              U"Very accurate",             my default_pitch_filteredAC_veryAccurate())
+		HEADING (U"How to preprocess the sound...")
+		POSITIVE (attenuationAtTop,          U"Attenuation at top",        my default_pitch_filteredAC_attenuationAtTop          ())
+		HEADING (U"How to find a path through the candidates...")
+		REAL     (silenceThreshold,          U"Silence threshold",         my default_pitch_filteredAC_silenceThreshold          ())
+		REAL     (voicingThreshold,          U"Voicing threshold",         my default_pitch_filteredAC_voicingThreshold          ())
+		REAL     (octaveCost,                U"Octave cost",               my default_pitch_filteredAC_octaveCost                ())
+		REAL     (octaveJumpCost,            U"Octave-jump cost",          my default_pitch_filteredAC_octaveJumpCost            ())
+		REAL     (voicedUnvoicedCost,        U"Voiced / unvoiced cost",    my default_pitch_filteredAC_voicedUnvoicedCost        ())
+	EDITOR_OK
+		const bool methodMatch = ( my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod :: FILTERED_AUTOCORRELATION );
+		const conststring32 currentMethodText = kSoundAnalysisArea_pitch_analysisMethod_getText (my instancePref_pitch_method());
+		SET_STRING (methodMatchWarning, methodMatch ?
+			Melder_cat (U"(your current pitch analysis method is indeed ", currentMethodText, U")") :
+			Melder_cat (U"WARNING: your current pitch analysis method is ", currentMethodText, U"!")
+		)
+		if (my instancePref_timeStepStrategy() != my default_timeStepStrategy ())
+			SET_STRING (note, U"(Warning: your time step settings are non-standard; see Analysis menu)")
+		else
+			SET_STRING (note, U"(you have standard time step settings; see Analysis menu)")
+		SET_REAL (pitchFloor,                   my instancePref_pitch_filteredAC_floor())
+		SET_REAL (pitchTop,                     my instancePref_pitch_filteredAC_top())
+		SET_ENUM (unit, kPitch_unit,            my instancePref_pitch_filteredAC_unit())
+		SET_REAL (viewFrom,                     my instancePref_pitch_filteredAC_viewFrom())
+		SET_REAL (viewTo,                       my instancePref_pitch_filteredAC_viewTo())
+		SET_ENUM (drawingMethod, kSoundAnalysisArea_pitch_drawingMethod,
+				                                my instancePref_pitch_filteredAC_drawingMethod())
+		SET_INTEGER (maximumNumberOfCandidates, my instancePref_pitch_filteredAC_maximumNumberOfCandidates())
+		SET_BOOLEAN (veryAccurate,              my instancePref_pitch_filteredAC_veryAccurate())
+		SET_REAL    (attenuationAtTop,          my instancePref_pitch_filteredAC_attenuationAtTop())
+		SET_REAL    (silenceThreshold,          my instancePref_pitch_filteredAC_silenceThreshold())
+		SET_REAL    (voicingThreshold,          my instancePref_pitch_filteredAC_voicingThreshold())
+		SET_REAL    (octaveCost,                my instancePref_pitch_filteredAC_octaveCost())
+		SET_REAL    (octaveJumpCost,            my instancePref_pitch_filteredAC_octaveJumpCost())
+		SET_REAL    (voicedUnvoicedCost,        my instancePref_pitch_filteredAC_voicedUnvoicedCost())
+	EDITOR_DO
+		Melder_require (pitchTop > pitchFloor,
+			U"The pitch top has to be greater than the pitch floor, so they cannot be ",
+			pitchTop, U" and ", pitchFloor, U" ", kPitch_unit_getText (unit), U", respectively."
+		);
+		if (maximumNumberOfCandidates < 2)
+			Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		my setInstancePref_pitch_filteredAC_floor (pitchFloor);
+		my setInstancePref_pitch_filteredAC_top (pitchTop);
+		my setInstancePref_pitch_filteredAC_unit (unit);
+		my setInstancePref_pitch_filteredAC_viewFrom (viewFrom);
+		my setInstancePref_pitch_filteredAC_viewTo (viewTo);
+		my setInstancePref_pitch_filteredAC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_filteredAC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_filteredAC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_filteredAC_attenuationAtTop (attenuationAtTop);
+		my setInstancePref_pitch_filteredAC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_filteredAC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_filteredAC_octaveCost (octaveCost);
+		my setInstancePref_pitch_filteredAC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_filteredAC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my d_pitch. reset();
+		my d_intensity. reset();
+		my d_pulses. reset();
+		FunctionEditor_redraw (my functionEditor());
+	EDITOR_END
+}
+
+static void menu_cb_pitchSettings_rawCC (SoundAnalysisArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Pitch settings for the raw cross-correlation method", U"Intro 4.2. Configuring the pitch contour")
+		MUTABLE_COMMENT (methodMatchWarning, U"")
+		HEADING (U"Where to search...")
+		MUTABLE_CAPTION (note, U"")
+		POSITIVE (pitchFloor,   U"left Pitch floor and ceiling (Hz)",      my default_pitch_rawCC_floor())
+		POSITIVE (pitchCeiling, U"right Pitch floor and ceiling (Hz)",     my default_pitch_rawCC_ceiling())
+		HEADING (U"How to view...")
+		OPTIONMENU_ENUM (kPitch_unit, unit,
+				U"Unit",                                                   my default_pitch_rawCC_unit ())
+		REAL    (viewFrom, U"left View range (units)",                     my default_pitch_rawCC_viewFrom())
+		REAL    (viewTo,   U"right View range (units)",                    my default_pitch_rawCC_viewTo())
+		CAPTION (U"(“auto” means ‘same as pitch floor and ceiling’)")
+		OPTIONMENU_ENUM (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod,
+				U"Drawing method",                                         my default_pitch_rawCC_drawingMethod())
+		HEADING (U"How to find the candidates...")
+		NATURAL  (maximumNumberOfCandidates, U"Max. number of candidates", my default_pitch_rawCC_maximumNumberOfCandidates ())
+		BOOLEAN  (veryAccurate,              U"Very accurate",             my default_pitch_rawCC_veryAccurate())
+		HEADING (U"How to find a path through the candidates...")
+		REAL     (silenceThreshold,          U"Silence threshold",         my default_pitch_rawCC_silenceThreshold          ())
+		REAL     (voicingThreshold,          U"Voicing threshold",         my default_pitch_rawCC_voicingThreshold          ())
+		REAL     (octaveCost,                U"Octave cost",               my default_pitch_rawCC_octaveCost                ())
+		REAL     (octaveJumpCost,            U"Octave-jump cost",          my default_pitch_rawCC_octaveJumpCost            ())
+		REAL     (voicedUnvoicedCost,        U"Voiced / unvoiced cost",    my default_pitch_rawCC_voicedUnvoicedCost        ())
+	EDITOR_OK
+		const bool methodMatch = ( my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod :: RAW_CROSS_CORRELATION );
+		const conststring32 currentMethodText = kSoundAnalysisArea_pitch_analysisMethod_getText (my instancePref_pitch_method());
+		SET_STRING (methodMatchWarning, methodMatch ?
+			Melder_cat (U"(your current pitch analysis method is indeed ", currentMethodText, U")") :
+			Melder_cat (U"WARNING: your current pitch analysis method is ", currentMethodText, U"!")
+		)
+		if (my instancePref_timeStepStrategy() != my default_timeStepStrategy ())
+			SET_STRING (note, U"(Warning: your time step settings are non-standard; see Analysis menu)")
+		else
+			SET_STRING (note, U"(you have standard time step settings; see Analysis menu)")
+		SET_REAL (pitchFloor,                   my instancePref_pitch_rawCC_floor())
+		SET_REAL (pitchCeiling,                 my instancePref_pitch_rawCC_ceiling())
+		SET_ENUM (unit, kPitch_unit,            my instancePref_pitch_rawCC_unit())
+		SET_REAL (viewFrom,                     my instancePref_pitch_rawCC_viewFrom())
+		SET_REAL (viewTo,                       my instancePref_pitch_rawCC_viewTo())
+		SET_ENUM (drawingMethod, kSoundAnalysisArea_pitch_drawingMethod,
+				                                my instancePref_pitch_rawCC_drawingMethod())
+		SET_INTEGER (maximumNumberOfCandidates, my instancePref_pitch_rawCC_maximumNumberOfCandidates())
+		SET_BOOLEAN (veryAccurate,              my instancePref_pitch_rawCC_veryAccurate())
+		SET_REAL    (silenceThreshold,          my instancePref_pitch_rawCC_silenceThreshold())
+		SET_REAL    (voicingThreshold,          my instancePref_pitch_rawCC_voicingThreshold())
+		SET_REAL    (octaveCost,                my instancePref_pitch_rawCC_octaveCost())
+		SET_REAL    (octaveJumpCost,            my instancePref_pitch_rawCC_octaveJumpCost())
+		SET_REAL    (voicedUnvoicedCost,        my instancePref_pitch_rawCC_voicedUnvoicedCost())
+	EDITOR_DO
+		Melder_require (pitchCeiling > pitchFloor,
+			U"The pitch ceiling has to be greater than the pitch floor, so they cannot be ",
+			pitchCeiling, U" and ", pitchFloor, U" ", kPitch_unit_getText (unit), U", respectively."
+		);
+		if (maximumNumberOfCandidates < 2)
+			Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		my setInstancePref_pitch_rawCC_floor (pitchFloor);
+		my setInstancePref_pitch_rawCC_ceiling (pitchCeiling);
+		my setInstancePref_pitch_rawCC_unit (unit);
+		my setInstancePref_pitch_rawCC_viewFrom (viewFrom);
+		my setInstancePref_pitch_rawCC_viewTo (viewTo);
+		my setInstancePref_pitch_rawCC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_rawCC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_rawCC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_rawCC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_rawCC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_rawCC_octaveCost (octaveCost);
+		my setInstancePref_pitch_rawCC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_rawCC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my d_pitch. reset();
+		my d_intensity. reset();
+		my d_pulses. reset();
+		FunctionEditor_redraw (my functionEditor());
+	EDITOR_END
+}
+
+static void menu_cb_pitchSettings_rawAC (SoundAnalysisArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Pitch settings for the raw autocorrelation method", U"Intro 4.2. Configuring the pitch contour")
+		MUTABLE_COMMENT (methodMatchWarning, U"")
+		HEADING (U"Where to search...")
+		MUTABLE_CAPTION (note, U"")
+		POSITIVE (pitchFloor,   U"left Pitch floor and ceiling (Hz)",      my default_pitch_rawAC_floor())
+		POSITIVE (pitchCeiling, U"right Pitch floor and ceiling (Hz)",     my default_pitch_rawAC_ceiling())
+		HEADING (U"How to view...")
+		OPTIONMENU_ENUM (kPitch_unit, unit,
+				U"Unit",                                                   my default_pitch_rawAC_unit ())
+		REAL    (viewFrom, U"left View range (units)",                     my default_pitch_rawAC_viewFrom())
+		REAL    (viewTo,   U"right View range (units)",                    my default_pitch_rawAC_viewTo())
+		CAPTION (U"(“auto” means ‘same as pitch floor and ceiling’)")
+		OPTIONMENU_ENUM (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod,
+				U"Drawing method",                                         my default_pitch_rawAC_drawingMethod())
+		HEADING (U"How to find the candidates...")
+		NATURAL  (maximumNumberOfCandidates, U"Max. number of candidates", my default_pitch_rawAC_maximumNumberOfCandidates ())
+		BOOLEAN  (veryAccurate,              U"Very accurate",             my default_pitch_rawAC_veryAccurate())
+		HEADING (U"How to find a path through the candidates...")
+		REAL     (silenceThreshold,          U"Silence threshold",         my default_pitch_rawAC_silenceThreshold          ())
+		REAL     (voicingThreshold,          U"Voicing threshold",         my default_pitch_rawAC_voicingThreshold          ())
+		REAL     (octaveCost,                U"Octave cost",               my default_pitch_rawAC_octaveCost                ())
+		REAL     (octaveJumpCost,            U"Octave-jump cost",          my default_pitch_rawAC_octaveJumpCost            ())
+		REAL     (voicedUnvoicedCost,        U"Voiced / unvoiced cost",    my default_pitch_rawAC_voicedUnvoicedCost        ())
+	EDITOR_OK
+		const bool methodMatch = ( my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod :: RAW_AUTOCORRELATION );
+		const conststring32 currentMethodText = kSoundAnalysisArea_pitch_analysisMethod_getText (my instancePref_pitch_method());
+		SET_STRING (methodMatchWarning, methodMatch ?
+			Melder_cat (U"(your current pitch analysis method is indeed ", currentMethodText, U")") :
+			Melder_cat (U"WARNING: your current pitch analysis method is ", currentMethodText, U"!")
+		)
+		if (my instancePref_timeStepStrategy() != my default_timeStepStrategy ())
+			SET_STRING (note, U"(Warning: your time step settings are non-standard; see Analysis menu)")
+		else
+			SET_STRING (note, U"(you have standard time step settings; see Analysis menu)")
+		SET_REAL (pitchFloor,                   my instancePref_pitch_rawAC_floor())
+		SET_REAL (pitchCeiling,                 my instancePref_pitch_rawAC_ceiling())
+		SET_ENUM (unit, kPitch_unit,            my instancePref_pitch_rawAC_unit())
+		SET_REAL (viewFrom,                     my instancePref_pitch_rawAC_viewFrom())
+		SET_REAL (viewTo,                       my instancePref_pitch_rawAC_viewTo())
+		SET_ENUM (drawingMethod, kSoundAnalysisArea_pitch_drawingMethod,
+				                                my instancePref_pitch_rawAC_drawingMethod())
+		SET_INTEGER (maximumNumberOfCandidates, my instancePref_pitch_rawAC_maximumNumberOfCandidates())
+		SET_BOOLEAN (veryAccurate,              my instancePref_pitch_rawAC_veryAccurate())
+		SET_REAL    (silenceThreshold,          my instancePref_pitch_rawAC_silenceThreshold())
+		SET_REAL    (voicingThreshold,          my instancePref_pitch_rawAC_voicingThreshold())
+		SET_REAL    (octaveCost,                my instancePref_pitch_rawAC_octaveCost())
+		SET_REAL    (octaveJumpCost,            my instancePref_pitch_rawAC_octaveJumpCost())
+		SET_REAL    (voicedUnvoicedCost,        my instancePref_pitch_rawAC_voicedUnvoicedCost())
+	EDITOR_DO
+		Melder_require (pitchCeiling > pitchFloor,
+			U"The pitch ceiling has to be greater than the pitch floor, so they cannot be ",
+			pitchCeiling, U" and ", pitchFloor, U" ", kPitch_unit_getText (unit), U", respectively."
+		);
+		if (maximumNumberOfCandidates < 2)
+			Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		my setInstancePref_pitch_rawAC_floor (pitchFloor);
+		my setInstancePref_pitch_rawAC_ceiling (pitchCeiling);
+		my setInstancePref_pitch_rawAC_unit (unit);
+		my setInstancePref_pitch_rawAC_viewFrom (viewFrom);
+		my setInstancePref_pitch_rawAC_viewTo (viewTo);
+		my setInstancePref_pitch_rawAC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_rawAC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_rawAC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_rawAC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_rawAC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_rawAC_octaveCost (octaveCost);
+		my setInstancePref_pitch_rawAC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_rawAC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my d_pitch. reset();
+		my d_intensity. reset();
+		my d_pulses. reset();
+		FunctionEditor_redraw (my functionEditor());
+	EDITOR_END
+}
+
+static void menu_cb_pitchSettings_filteredCC (SoundAnalysisArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Pitch settings for the filtered cross-correlation method", U"Intro 4.2. Configuring the pitch contour")
+		MUTABLE_COMMENT (methodMatchWarning, U"")
+		HEADING (U"Where to search...")
+		MUTABLE_CAPTION (note, U"")
+		POSITIVE (pitchFloor, U"left Pitch floor and top (Hz)",            my default_pitch_filteredCC_floor())
+		POSITIVE (pitchTop, U"right Pitch floor and top (Hz)",             my default_pitch_filteredCC_top())
+		HEADING (U"How to view...")
+		OPTIONMENU_ENUM (kPitch_unit, unit,
+				U"Unit",                                                   my default_pitch_filteredCC_unit ())
+		REAL    (viewFrom, U"left View range (units)",                     my default_pitch_filteredCC_viewFrom())
+		REAL    (viewTo,   U"right View range (units)",                    my default_pitch_filteredCC_viewTo())
+		CAPTION (U"(“auto” means ‘same as pitch floor and top’)")
+		OPTIONMENU_ENUM (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod,
+				U"Drawing method",                                         my default_pitch_filteredCC_drawingMethod())
+		HEADING (U"How to find the candidates...")
+		NATURAL  (maximumNumberOfCandidates, U"Max. number of candidates", my default_pitch_filteredCC_maximumNumberOfCandidates ())
+		BOOLEAN  (veryAccurate,              U"Very accurate",             my default_pitch_filteredCC_veryAccurate())
+		HEADING (U"How to preprocess the sound...")
+		POSITIVE (attenuationAtTop,          U"Attenuation at top",        my default_pitch_filteredCC_attenuationAtTop          ())
+		HEADING (U"How to find a path through the candidates...")
+		REAL     (silenceThreshold,          U"Silence threshold",         my default_pitch_filteredCC_silenceThreshold          ())
+		REAL     (voicingThreshold,          U"Voicing threshold",         my default_pitch_filteredCC_voicingThreshold          ())
+		REAL     (octaveCost,                U"Octave cost",               my default_pitch_filteredCC_octaveCost                ())
+		REAL     (octaveJumpCost,            U"Octave-jump cost",          my default_pitch_filteredCC_octaveJumpCost            ())
+		REAL     (voicedUnvoicedCost,        U"Voiced / unvoiced cost",    my default_pitch_filteredCC_voicedUnvoicedCost        ())
+	EDITOR_OK
+		const bool methodMatch = ( my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod :: FILTERED_CROSS_CORRELATION );
+		const conststring32 currentMethodText = kSoundAnalysisArea_pitch_analysisMethod_getText (my instancePref_pitch_method());
+		SET_STRING (methodMatchWarning, methodMatch ?
+			Melder_cat (U"(your current pitch analysis method is indeed ", currentMethodText, U")") :
+			Melder_cat (U"WARNING: your current pitch analysis method is ", currentMethodText, U"!")
+		)
+		if (my instancePref_timeStepStrategy() != my default_timeStepStrategy ())
+			SET_STRING (note, U"(Warning: your time step settings are non-standard; see Analysis menu)")
+		else
+			SET_STRING (note, U"(you have standard time step settings; see Analysis menu)")
+		SET_REAL (pitchFloor,                   my instancePref_pitch_filteredCC_floor())
+		SET_REAL (pitchTop,                     my instancePref_pitch_filteredCC_top())
+		SET_ENUM (unit, kPitch_unit,            my instancePref_pitch_filteredCC_unit())
+		SET_REAL (viewFrom,                     my instancePref_pitch_filteredCC_viewFrom())
+		SET_REAL (viewTo,                       my instancePref_pitch_filteredCC_viewTo())
+		SET_ENUM (drawingMethod, kSoundAnalysisArea_pitch_drawingMethod,
+				                                my instancePref_pitch_filteredCC_drawingMethod())
+		SET_INTEGER (maximumNumberOfCandidates, my instancePref_pitch_filteredCC_maximumNumberOfCandidates())
+		SET_BOOLEAN (veryAccurate,              my instancePref_pitch_filteredCC_veryAccurate())
+		SET_REAL    (attenuationAtTop,          my instancePref_pitch_filteredCC_attenuationAtTop())
+		SET_REAL    (silenceThreshold,          my instancePref_pitch_filteredCC_silenceThreshold())
+		SET_REAL    (voicingThreshold,          my instancePref_pitch_filteredCC_voicingThreshold())
+		SET_REAL    (octaveCost,                my instancePref_pitch_filteredCC_octaveCost())
+		SET_REAL    (octaveJumpCost,            my instancePref_pitch_filteredCC_octaveJumpCost())
+		SET_REAL    (voicedUnvoicedCost,        my instancePref_pitch_filteredCC_voicedUnvoicedCost())
+	EDITOR_DO
+		Melder_require (pitchTop > pitchFloor,
+			U"The pitch top has to be greater than the pitch floor, so they cannot be ",
+			pitchTop, U" and ", pitchFloor, U" ", kPitch_unit_getText (unit), U", respectively."
+		);
+		if (maximumNumberOfCandidates < 2)
+			Melder_throw (U"Your maximum number of candidates should be greater than 1.");
+		my setInstancePref_pitch_filteredCC_floor (pitchFloor);
+		my setInstancePref_pitch_filteredCC_top (pitchTop);
+		my setInstancePref_pitch_filteredCC_unit (unit);
+		my setInstancePref_pitch_filteredCC_viewFrom (viewFrom);
+		my setInstancePref_pitch_filteredCC_viewTo (viewTo);
+		my setInstancePref_pitch_filteredCC_drawingMethod (drawingMethod);
+		my setInstancePref_pitch_filteredCC_maximumNumberOfCandidates (maximumNumberOfCandidates);
+		my setInstancePref_pitch_filteredCC_veryAccurate (veryAccurate);
+		my setInstancePref_pitch_filteredCC_attenuationAtTop (attenuationAtTop);
+		my setInstancePref_pitch_filteredCC_silenceThreshold (silenceThreshold);
+		my setInstancePref_pitch_filteredCC_voicingThreshold (voicingThreshold);
+		my setInstancePref_pitch_filteredCC_octaveCost (octaveCost);
+		my setInstancePref_pitch_filteredCC_octaveJumpCost (octaveJumpCost);
+		my setInstancePref_pitch_filteredCC_voicedUnvoicedCost (voicedUnvoicedCost);
+		my d_pitch. reset();
+		my d_intensity. reset();
+		my d_pulses. reset();
+		FunctionEditor_redraw (my functionEditor());
+	EDITOR_END
+}
+
+static void menu_cb_howToChooseAPitchAnalysisMethod (SoundAnalysisArea /* me */, EDITOR_ARGS) {
+	Melder_help (U"how to choose a pitch analysis method");
+}
+
+static void shared_menu_cb_pitchMethodIsXXX (SoundAnalysisArea me, kSoundAnalysisArea_pitch_analysisMethod method) {
+	my setInstancePref_pitch_method (method);
+	my d_pitch.     reset();
+	my d_intensity. reset();
+	my d_pulses.    reset();
+	FunctionEditor_redraw (my functionEditor());   // this will call v_updateMenuItems (last checked 2024-07-18 for Mac, Win, Linux)
+}
+static void menu_cb_pitchMethodIsFilteredAutocorrelation (SoundAnalysisArea me, EDITOR_ARGS) {
+	shared_menu_cb_pitchMethodIsXXX (me, kSoundAnalysisArea_pitch_analysisMethod :: FILTERED_AUTOCORRELATION);
+}
+static void menu_cb_pitchMethodIsRawCrossCorrelation (SoundAnalysisArea me, EDITOR_ARGS) {
+	shared_menu_cb_pitchMethodIsXXX (me, kSoundAnalysisArea_pitch_analysisMethod :: RAW_CROSS_CORRELATION);
+}
+static void menu_cb_pitchMethodIsRawAutocorrelation (SoundAnalysisArea me, EDITOR_ARGS) {
+	shared_menu_cb_pitchMethodIsXXX (me, kSoundAnalysisArea_pitch_analysisMethod :: RAW_AUTOCORRELATION);
+}
+static void menu_cb_pitchMethodIsFilteredCrossCorrelation (SoundAnalysisArea me, EDITOR_ARGS) {
+	shared_menu_cb_pitchMethodIsXXX (me, kSoundAnalysisArea_pitch_analysisMethod :: FILTERED_CROSS_CORRELATION);
 }
 
 static void INFO_DATA__pitchListing (SoundAnalysisArea me, EDITOR_ARGS) {
@@ -965,19 +1661,20 @@ static void INFO_DATA__pitchListing (SoundAnalysisArea me, EDITOR_ARGS) {
 		const int part = makeQueriable (me, true, & tmin, & tmax);
 		SoundAnalysisArea_haveVisiblePitch (me);
 		MelderInfo_open ();
+		const kPitch_unit unit = my dynamic_instancePref_pitch_unit();
 		MelderInfo_writeLine (U"Time_s   F0_",
-				Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), Function_UNIT_TEXT_SHORT));
+				Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) unit, Function_UNIT_TEXT_SHORT));
 		if (part == SoundAnalysisArea_PART_CURSOR) {
-			double f0 = Pitch_getValueAtTime (my d_pitch.get(), tmin, my instancePref_pitch_unit(), true);
-			f0 = Function_convertToNonlogarithmic (my d_pitch.get(), f0, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+			double f0 = Pitch_getValueAtTime (my d_pitch.get(), tmin, unit, true);
+			f0 = Function_convertToNonlogarithmic (my d_pitch.get(), f0, Pitch_LEVEL_FREQUENCY, (int) unit);
 			MelderInfo_writeLine (Melder_fixed (tmin, 6), U"   ", Melder_fixed (f0, 6));
 		} else {
 			integer i, i1, i2;
 			Sampled_getWindowSamples (my d_pitch.get(), tmin, tmax, & i1, & i2);
 			for (i = i1; i <= i2; i ++) {
 				const double t = Sampled_indexToX (my d_pitch.get(), i);
-				double f0 = Sampled_getValueAtSample (my d_pitch.get(), i, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
-				f0 = Function_convertToNonlogarithmic (my d_pitch.get(), f0, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+				double f0 = Sampled_getValueAtSample (my d_pitch.get(), i, Pitch_LEVEL_FREQUENCY, (int) unit);
+				f0 = Function_convertToNonlogarithmic (my d_pitch.get(), f0, Pitch_LEVEL_FREQUENCY, (int) unit);
 				MelderInfo_writeLine (Melder_fixed (t, 6), U"   ", Melder_fixed (f0, 6));
 			}
 		}
@@ -990,14 +1687,15 @@ static void QUERY_DATA_FOR_REAL__getPitch (SoundAnalysisArea me, EDITOR_ARGS) {
 		double tmin, tmax;
 		const int part = makeQueriable (me, true, & tmin, & tmax);
 		SoundAnalysisArea_haveVisiblePitch (me);
+		const kPitch_unit unit = my dynamic_instancePref_pitch_unit();
 		double result =
 			part == SoundAnalysisArea_PART_CURSOR
-				? Pitch_getValueAtTime (my d_pitch.get(), tmin, my instancePref_pitch_unit(), true)
-				: Pitch_getMean (my d_pitch.get(), tmin, tmax, my instancePref_pitch_unit())
+				? Pitch_getValueAtTime (my d_pitch.get(), tmin, unit, true)
+				: Pitch_getMean (my d_pitch.get(), tmin, tmax, unit)
 		;
-		result = Function_convertToNonlogarithmic (my d_pitch.get(), result, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+		result = Function_convertToNonlogarithmic (my d_pitch.get(), result, Pitch_LEVEL_FREQUENCY, (int) unit);
 	QUERY_DATA_FOR_REAL_END (U" ",
-		Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), 0),
+		Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) unit, 0),
 		part == SoundAnalysisArea_PART_CURSOR
 			? U" (interpolated pitch at CURSOR)"
 			: Melder_cat (U" (mean pitch ", SoundAnalysisArea_partString_locative (part), U")")
@@ -1009,9 +1707,10 @@ static void QUERY_DATA_FOR_REAL__getMinimumPitch (SoundAnalysisArea me, EDITOR_A
 		double tmin, tmax;
 		const int part = makeQueriable (me, false, & tmin, & tmax);
 		SoundAnalysisArea_haveVisiblePitch (me);
-		double result = Pitch_getMinimum (my d_pitch.get(), tmin, tmax, my instancePref_pitch_unit(), true);
-		result = Function_convertToNonlogarithmic (my d_pitch.get(), result, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
-	QUERY_DATA_FOR_REAL_END (U" ", Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), 0),
+		const kPitch_unit unit = my dynamic_instancePref_pitch_unit();
+		double result = Pitch_getMinimum (my d_pitch.get(), tmin, tmax, unit, true);
+		result = Function_convertToNonlogarithmic (my d_pitch.get(), result, Pitch_LEVEL_FREQUENCY, (int) unit);
+	QUERY_DATA_FOR_REAL_END (U" ", Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) unit, 0),
 			U" (minimum pitch ", SoundAnalysisArea_partString_locative (part), U")");
 }
 
@@ -1020,9 +1719,10 @@ static void QUERY_DATA_FOR_REAL__getMaximumPitch (SoundAnalysisArea me, EDITOR_A
 		double tmin, tmax;
 		const int part = makeQueriable (me, false, & tmin, & tmax);
 		SoundAnalysisArea_haveVisiblePitch (me);   // BUG
-		double result = Pitch_getMaximum (my d_pitch.get(), tmin, tmax, my instancePref_pitch_unit(), true);
-		result = Function_convertToNonlogarithmic (my d_pitch.get(), result, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
-	QUERY_DATA_FOR_REAL_END (U" ", Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), 0),
+		const kPitch_unit unit = my dynamic_instancePref_pitch_unit();
+		double result = Pitch_getMaximum (my d_pitch.get(), tmin, tmax, unit, true);
+		result = Function_convertToNonlogarithmic (my d_pitch.get(), result, Pitch_LEVEL_FREQUENCY, (int) unit);
+	QUERY_DATA_FOR_REAL_END (U" ", Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) unit, 0),
 			U" (maximum pitch ", SoundAnalysisArea_partString_locative (part), U")");
 }
 
@@ -1034,7 +1734,7 @@ static void menu_cb_moveCursorToMinimumPitch (SoundAnalysisArea me, EDITOR_ARGS)
 		} else {
 			double time;
 			Pitch_getMinimumAndTime (my d_pitch.get(), my startSelection(), my endSelection(),
-				my instancePref_pitch_unit(), 1, nullptr, & time);
+					my dynamic_instancePref_pitch_unit(), 1, nullptr, & time);
 			if (isundef (time))
 				Melder_throw (U"Selection is voiceless.");
 			my setSelection (time, time);
@@ -1052,7 +1752,7 @@ static void menu_cb_moveCursorToMaximumPitch (SoundAnalysisArea me, EDITOR_ARGS)
 		} else {
 			double time;
 			Pitch_getMaximumAndTime (my d_pitch.get(), my startSelection(), my endSelection(),
-					my instancePref_pitch_unit(), 1, nullptr, & time);
+					my dynamic_instancePref_pitch_unit(), 1, nullptr, & time);
 			if (isundef (time))
 				Melder_throw (U"Selection is voiceless.");
 			my setSelection (time, time);
@@ -1072,7 +1772,7 @@ static void CONVERT_DATA_TO_ONE__ExtractVisiblePitchContour (SoundAnalysisArea m
 static void menu_cb_drawVisiblePitchContour (SoundAnalysisArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Draw visible pitch contour", nullptr)
 		my v_form_pictureWindow (cmd);
-		LABEL (U"Pitch:")
+		COMMENT (U"Pitch:")
 		BOOLEAN (speckle, U"Speckle", false)
 		my v_form_pictureMargins (cmd);
 		my v_form_pictureSelection (cmd);
@@ -1091,18 +1791,20 @@ static void menu_cb_drawVisiblePitchContour (SoundAnalysisArea me, EDITOR_ARGS) 
 		my setInstancePref_pitch_picture_garnish (garnish);
 		SoundAnalysisArea_haveVisiblePitch (me);
 		DataGui_openPraatPicture (me);
+		const kPitch_unit pitchUnit = my dynamic_instancePref_pitch_unit();
 		const double pitchFloor_hidden = Function_convertStandardToSpecialUnit (my d_pitch.get(),
-				my instancePref_pitch_floor(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+				my dynamic_instancePref_pitch_floor(), Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
 		const double pitchCeiling_hidden = Function_convertStandardToSpecialUnit (my d_pitch.get(),
-				my instancePref_pitch_ceiling(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+				my dynamic_instancePref_pitch_ceilingOrTop(), Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
 		const double pitchFloor_overt = Function_convertToNonlogarithmic (my d_pitch.get(),
-				pitchFloor_hidden, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+				pitchFloor_hidden, Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
 		const double pitchCeiling_overt = Function_convertToNonlogarithmic (my d_pitch.get(),
-				pitchCeiling_hidden, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
-		const double pitchViewFrom_overt = ( my instancePref_pitch_viewFrom() < my instancePref_pitch_viewTo() ? my instancePref_pitch_viewFrom() : pitchFloor_overt );
-		const double pitchViewTo_overt = ( my instancePref_pitch_viewFrom() < my instancePref_pitch_viewTo() ? my instancePref_pitch_viewTo() : pitchCeiling_overt );
+				pitchCeiling_hidden, Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
+		const double pitchViewFrom = my dynamic_instancePref_pitch_viewFrom(), pitchViewTo = my dynamic_instancePref_pitch_viewTo();
+		const double pitchViewFrom_overt = ( pitchViewFrom < pitchViewTo ? pitchViewFrom : pitchFloor_overt );
+		const double pitchViewTo_overt = ( pitchViewFrom < pitchViewTo ? pitchViewTo : pitchCeiling_overt );
 		Pitch_draw (my d_pitch.get(), my pictureGraphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt,
-				garnish, speckle, my instancePref_pitch_unit());
+				garnish, speckle, pitchUnit);
 		FunctionArea_garnishPicture (me);
 		DataGui_closePraatPicture (me);
 	EDITOR_END
@@ -1126,8 +1828,8 @@ static void menu_cb_intensitySettings (SoundAnalysisArea me, EDITOR_ARGS) {
 		CHOICE_ENUM (kSoundAnalysisArea_intensity_averagingMethod, averagingMethod,
 				U"Averaging method", my default_intensity_averagingMethod ())
 		BOOLEAN (subtractMeanPressure, U"Subtract mean pressure", my default_intensity_subtractMeanPressure ())
-		LABEL (U"Note: the pitch floor is taken from the pitch settings.")
-		MUTABLE_LABEL (note2, U"")
+		COMMENT (U"Note: the pitch floor is taken from the pitch settings.")
+		MUTABLE_COMMENT (note2, U"")
 	EDITOR_OK
 		SET_REAL (viewFrom,  my instancePref_intensity_viewFrom())
 		SET_REAL (viewTo,    my instancePref_intensity_viewTo())
@@ -1258,8 +1960,8 @@ static void menu_cb_formantSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 		POSITIVE (windowLength, U"Window length (s)",       my default_formant_windowLength     ())
 		REAL     (dynamicRange, U"Dynamic range (dB)",      my default_formant_dynamicRange     ())
 		POSITIVE (dotSize, U"Dot size (mm)",                my default_formant_dotSize          ())
-		MUTABLE_LABEL (note1, U"")
-		MUTABLE_LABEL (note2, U"")
+		MUTABLE_COMMENT (note1, U"")
+		MUTABLE_COMMENT (note2, U"")
 	EDITOR_OK
 		SET_REAL (formantCeiling,    my instancePref_formant_ceiling())
 		SET_REAL (numberOfFormants,  my instancePref_formant_numberOfFormants())
@@ -1503,15 +2205,24 @@ static void INFO_DATA__voiceReport (SoundAnalysisArea me, EDITOR_ARGS) {
 		autoSound sound = extractSound (me, tmin, tmax);
 		MelderInfo_open ();
 		MelderInfo_writeLine (U"-- Voice report for ", my name.get(), U" --\nDate: ", Melder_peek8to32 (ctime (& today)));
-		if (my instancePref_pitch_method() != kSoundAnalysisArea_pitch_analysisMethod::CROSS_CORRELATION)
-			MelderInfo_writeLine (U"WARNING: some of the following measurements may be imprecise.\n"
-				"For more precision, go to \"Pitch settings\" and choose\n"
-				"the cross-correlation analysis method to optimize for voice research.\n");
+		if (my instancePref_pitch_method() != kSoundAnalysisArea_pitch_analysisMethod::RAW_CROSS_CORRELATION) {
+			if (my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod::RAW_AUTOCORRELATION)
+				MelderInfo_writeLine (U"WARNING: some of the following measurements may be imprecise.\n"
+					"For more precision, go to “Pitch settings” and choose\n"
+					"the raw cross-correlation analysis method to optimize for voice research.\n"
+				);
+			else
+				MelderInfo_writeLine (U"WARNING: several of the following measurements will be incorrect,\n"
+					"because they are based on a sound from which higher frequencies have been filtered out.\n"
+					"For more correctness, go to “Pitch settings” and choose\n"
+					"the raw cross-correlation analysis method to optimize for voice research.\n"
+				);
+		}
 		MelderInfo_writeLine (U"Time range of ", SoundAnalysisArea_partString (part));
 		Sound_Pitch_PointProcess_voiceReport (sound.get(), my d_pitch.get(), my d_pulses.get(), tmin, tmax,
-			my instancePref_pitch_floor(), my instancePref_pitch_ceiling(),
+			my dynamic_instancePref_pitch_floor(), my dynamic_instancePref_pitch_ceilingOrTop(),
 			my instancePref_pulses_maximumPeriodFactor(), my instancePref_pulses_maximumAmplitudeFactor(),
-			my instancePref_pitch_silenceThreshold(), my instancePref_pitch_voicingThreshold()
+			my dynamic_instancePref_pitch_silenceThreshold(), my dynamic_instancePref_pitch_voicingThreshold()
 		);
 		MelderInfo_close ();
 	INFO_DATA_END
@@ -1615,20 +2326,22 @@ void structSoundAnalysisArea :: v_createMenuItems_formant (EditorMenu menu) {
 }
 
 void structSoundAnalysisArea :: v_createMenus () {
-	EditorMenu menu = Editor_addMenu (our functionEditor(), U"Analyses", 0);
-	FunctionAreaMenu_addCommand (menu, U"Show analyses...", 0, menu_cb_showAnalyses, this);
-	FunctionAreaMenu_addCommand (menu, U"Time step settings...", 0, menu_cb_timeStepSettings, this);
-	FunctionAreaMenu_addCommand (menu, U"-- query log --", 0, nullptr, this);
-	FunctionAreaMenu_addCommand (menu, U"Log settings...", 0, menu_cb_logSettings, this);
-	FunctionAreaMenu_addCommand (menu, U"Delete log file 1", 0, menu_cb_deleteLogFile1, this);
-	FunctionAreaMenu_addCommand (menu, U"Delete log file 2", 0, menu_cb_deleteLogFile2, this);
-	FunctionAreaMenu_addCommand (menu, U"Log 1", GuiMenu_F12, menu_cb_log1, this);
-	FunctionAreaMenu_addCommand (menu, U"Log 2", GuiMenu_F12 | GuiMenu_SHIFT, menu_cb_log2, this);
-	FunctionAreaMenu_addCommand (menu, U"Log script 3 (...)", GuiMenu_F12 | GuiMenu_OPTION, menu_cb_logScript3, this);
-	FunctionAreaMenu_addCommand (menu, U"Log script 4 (...)", GuiMenu_F12 | GuiMenu_COMMAND, menu_cb_logScript4, this);
+	if (our v_hasSpectrogram () && our v_hasPitch () && our v_hasIntensity () && our v_hasPulses ()) {
+		EditorMenu menu = Editor_addMenu (our functionEditor(), U"Analyses", 0);
+		FunctionAreaMenu_addCommand (menu, U"Show analyses...", 0, menu_cb_showAnalyses, this);
+		FunctionAreaMenu_addCommand (menu, U"Time step settings...", 0, menu_cb_timeStepSettings, this);
+		FunctionAreaMenu_addCommand (menu, U"-- query log --", 0, nullptr, this);
+		FunctionAreaMenu_addCommand (menu, U"Log settings...", 0, menu_cb_logSettings, this);
+		FunctionAreaMenu_addCommand (menu, U"Delete log file 1", 0, menu_cb_deleteLogFile1, this);
+		FunctionAreaMenu_addCommand (menu, U"Delete log file 2", 0, menu_cb_deleteLogFile2, this);
+		FunctionAreaMenu_addCommand (menu, U"Log 1", GuiMenu_F12, menu_cb_log1, this);
+		FunctionAreaMenu_addCommand (menu, U"Log 2", GuiMenu_F12 | GuiMenu_SHIFT, menu_cb_log2, this);
+		FunctionAreaMenu_addCommand (menu, U"Log script 3 (...)", GuiMenu_F12 | GuiMenu_OPTION, menu_cb_logScript3, this);
+		FunctionAreaMenu_addCommand (menu, U"Log script 4 (...)", GuiMenu_F12 | GuiMenu_COMMAND, menu_cb_logScript4, this);
+	}
 
 	if (our v_hasSpectrogram ()) {
-		menu = Editor_addMenu (our functionEditor(), U"Spectrogram", 0);
+		EditorMenu menu = Editor_addMenu (our functionEditor(), U"Spectrogram", 0);
 		our spectrogramToggle = FunctionAreaMenu_addCommand (menu, U"Show spectrogram",
 			GuiMenu_CHECKBUTTON | (instancePref_spectrogram_show() ? GuiMenu_TOGGLE_ON : 0),
 			menu_cb_showSpectrogram, this
@@ -1656,15 +2369,42 @@ void structSoundAnalysisArea :: v_createMenus () {
 	}
 
 	if (our v_hasPitch ()) {
-		menu = Editor_addMenu (our functionEditor(), U"Pitch", 0);
+		EditorMenu menu = Editor_addMenu (our functionEditor(), U"Pitch", 0);
 		our pitchToggle = FunctionAreaMenu_addCommand (menu, U"Show pitch",
-			GuiMenu_CHECKBUTTON | (instancePref_pitch_show() ? GuiMenu_TOGGLE_ON : 0),
+			GuiMenu_CHECKBUTTON | ( our instancePref_pitch_show() ? GuiMenu_TOGGLE_ON : 0 ),
 			menu_cb_showPitch, this
 		);
-		FunctionAreaMenu_addCommand (menu, U"Pitch settings...", 0,
-				menu_cb_pitchSettings, this);
-		FunctionAreaMenu_addCommand (menu, U"Advanced pitch settings...", 0,
-				menu_cb_advancedPitchSettings, this);
+		FunctionAreaMenu_addCommand (menu, U"- Pitch methods and settings:", 0, nullptr, this);
+		FunctionAreaMenu_addCommand (menu, U"How to choose a pitch analysis method", GuiMenu_DEPTH_1,
+				menu_cb_howToChooseAPitchAnalysisMethod, this);
+		FunctionAreaMenu_addCommand (menu, U"", 0, nullptr, this);
+		our pitchFilteredAutocorrelationToggle = FunctionAreaMenu_addCommand (menu, U"Pitch analysis method is filtered autocorrelation",
+				GuiMenu_CHECKBUTTON | GuiMenu_DEPTH_1, menu_cb_pitchMethodIsFilteredAutocorrelation, this);
+		FunctionAreaMenu_addCommand (menu, U"Pitch settings (filtered autocorrelation)...", GuiMenu_DEPTH_1,
+				menu_cb_pitchSettings_filteredAC, this);
+		FunctionAreaMenu_addCommand (menu, U"", 0, nullptr, this);
+		our pitchRawCrossCorrelationToggle = FunctionAreaMenu_addCommand (menu, U"Pitch analysis method is raw cross-correlation",
+				GuiMenu_CHECKBUTTON | GuiMenu_DEPTH_1, menu_cb_pitchMethodIsRawCrossCorrelation, this);
+		FunctionAreaMenu_addCommand (menu, U"Pitch settings (raw cross-correlation)...", GuiMenu_DEPTH_1,
+				menu_cb_pitchSettings_rawCC, this);
+		FunctionAreaMenu_addCommand (menu, U"", 0, nullptr, this);
+		our pitchRawAutocorrelationToggle = FunctionAreaMenu_addCommand (menu, U"Pitch analysis method is raw autocorrelation",
+				GuiMenu_CHECKBUTTON | GuiMenu_DEPTH_1, menu_cb_pitchMethodIsRawAutocorrelation, this);
+		FunctionAreaMenu_addCommand (menu, U"Pitch settings (raw autocorrelation)...", GuiMenu_DEPTH_1,
+				menu_cb_pitchSettings_rawAC, this);
+		FunctionAreaMenu_addCommand (menu, U"", 0, nullptr, this);
+		our pitchFilteredCrossCorrelationToggle = FunctionAreaMenu_addCommand (menu, U"Pitch analysis method is filtered cross-correlation",
+				GuiMenu_CHECKBUTTON | GuiMenu_DEPTH_1, menu_cb_pitchMethodIsFilteredCrossCorrelation, this);
+		FunctionAreaMenu_addCommand (menu, U"Pitch settings (filtered cross-correlation)...", GuiMenu_DEPTH_1,
+				menu_cb_pitchSettings_filteredCC, this);
+		FunctionAreaMenu_addCommand (menu, U"Pitch settings...", GuiMenu_HIDDEN,
+				menu_cb_pitchSettings_BEFORE_6414, this);
+		FunctionAreaMenu_addCommand (menu, U"Advanced pitch settings...", GuiMenu_HIDDEN,
+				menu_cb_advancedPitchSettings_BEFORE_6400, this);
+		FunctionAreaMenu_addCommand (menu, U"Advanced pitch settings (filtered AC and CC)...", GuiMenu_HIDDEN,
+				menu_cb_advancedPitchSettings_filteredAcCc_BEFORE_6414, this);
+		FunctionAreaMenu_addCommand (menu, U"Advanced pitch settings (raw AC and CC)...", GuiMenu_HIDDEN,
+				menu_cb_advancedPitchSettings_rawAcCc_BEFORE_6414, this);
 		FunctionAreaMenu_addCommand (menu, U"- Query pitch:", 0, nullptr, this);
 		FunctionAreaMenu_addCommand (menu, U"Pitch listing", 1,
 				INFO_DATA__pitchListing, this);
@@ -1688,7 +2428,7 @@ void structSoundAnalysisArea :: v_createMenus () {
 	}
 
 	if (our v_hasIntensity ()) {
-		menu = Editor_addMenu (our functionEditor(), U"Intensity", 0);
+		EditorMenu menu = Editor_addMenu (our functionEditor(), U"Intensity", 0);
 		our intensityToggle = FunctionAreaMenu_addCommand (menu, U"Show intensity",
 			GuiMenu_CHECKBUTTON | (instancePref_intensity_show() ? GuiMenu_TOGGLE_ON : 0),
 			menu_cb_showIntensity, this
@@ -1712,12 +2452,12 @@ void structSoundAnalysisArea :: v_createMenus () {
 				CONVERT_DATA_TO_ONE__ExtractVisibleIntensityContour, this);
 	}
 	if (our v_hasFormants ()) {
-		menu = Editor_addMenu (our functionEditor(), U"Formants", 0);
+		EditorMenu menu = Editor_addMenu (our functionEditor(), U"Formants", 0);
 		our v_createMenuItems_formant (menu);
 	}
 
 	if (our v_hasPulses ()) {
-		menu = Editor_addMenu (our functionEditor(), U"Pulses", 0);
+		EditorMenu menu = Editor_addMenu (our functionEditor(), U"Pulses", 0);
 		our pulsesToggle = FunctionAreaMenu_addCommand (menu, U"Show pulses",
 			GuiMenu_CHECKBUTTON | (instancePref_pulses_show() ? GuiMenu_TOGGLE_ON : 0),
 			menu_cb_showPulses, this
@@ -1751,6 +2491,17 @@ void structSoundAnalysisArea :: v_createMenus () {
 	}
 }
 
+void structSoundAnalysisArea :: v_updateMenuItems () {
+	GuiMenuItem_check (pitchFilteredAutocorrelationToggle,
+			our instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod :: FILTERED_AUTOCORRELATION);
+	GuiMenuItem_check (pitchRawCrossCorrelationToggle,
+			our instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod :: RAW_CROSS_CORRELATION);
+	GuiMenuItem_check (pitchRawAutocorrelationToggle,
+			our instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod :: RAW_AUTOCORRELATION);
+	GuiMenuItem_check (pitchFilteredCrossCorrelationToggle,
+			our instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod :: FILTERED_CROSS_CORRELATION);
+}
+
 #pragma mark - SoundAnalysisArea Drawing
 
 static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
@@ -1758,20 +2509,22 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		d_pitch may not exist yet (if shown at all, it may be going to be created in tryToHavePitch (),
 		and even if that fails the user should see what the pitch settings are). So we use a dummy object.
 	*/
+	const kPitch_unit pitchUnit = my dynamic_instancePref_pitch_unit();
 	const double pitchFloor_hidden = Function_convertStandardToSpecialUnit (Thing_dummyObject (Pitch),
-			my instancePref_pitch_floor(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+			my dynamic_instancePref_pitch_floor(), Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
 	const double pitchCeiling_hidden = Function_convertStandardToSpecialUnit (Thing_dummyObject (Pitch),
-			my instancePref_pitch_ceiling(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+			my dynamic_instancePref_pitch_ceilingOrTop(), Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
 	const double pitchFloor_overt = Function_convertToNonlogarithmic (Thing_dummyObject (Pitch),
-			pitchFloor_hidden, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+			pitchFloor_hidden, Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
 	const double pitchCeiling_overt = Function_convertToNonlogarithmic (Thing_dummyObject (Pitch),
-			pitchCeiling_hidden, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
-	const double pitchViewFrom_overt = ( my instancePref_pitch_viewFrom() < my instancePref_pitch_viewTo() ? my instancePref_pitch_viewFrom() : pitchFloor_overt );
-	const double pitchViewTo_overt = ( my instancePref_pitch_viewFrom() < my instancePref_pitch_viewTo() ? my instancePref_pitch_viewTo() : pitchCeiling_overt );
+			pitchCeiling_hidden, Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
+	const double pitchViewFrom = my dynamic_instancePref_pitch_viewFrom(), pitchViewTo = my dynamic_instancePref_pitch_viewTo();
+	const double pitchViewFrom_overt = ( pitchViewFrom < pitchViewTo ? pitchViewFrom : pitchFloor_overt );
+	const double pitchViewTo_overt = ( pitchViewFrom < pitchViewTo ? pitchViewTo : pitchCeiling_overt );
 	const double pitchViewFrom_hidden = Function_isUnitLogarithmic (Thing_dummyObject (Pitch),
-			Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit()) ? log10 (pitchViewFrom_overt) : pitchViewFrom_overt;
+			Pitch_LEVEL_FREQUENCY, (int) pitchUnit) ? log10 (pitchViewFrom_overt) : pitchViewFrom_overt;
 	const double pitchViewTo_hidden = Function_isUnitLogarithmic (Thing_dummyObject (Pitch),
-			Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit()) ? log10 (pitchViewTo_overt) : pitchViewTo_overt;
+			Pitch_LEVEL_FREQUENCY, (int) pitchUnit) ? log10 (pitchViewTo_overt) : pitchViewTo_overt;
 
 	if (my endWindow() - my startWindow() > my instancePref_longestAnalysis()) {
 		Graphics_setWindow (my graphics(), 0.0, 1.0, 0.0, 1.0);
@@ -1796,8 +2549,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 	if (my instancePref_pitch_show())
 		tryToHavePitch (me);
 	if (my instancePref_pitch_show() && my d_pitch) {
-		const double periodsPerAnalysisWindow = ( my instancePref_pitch_method() == kSoundAnalysisArea_pitch_analysisMethod::AUTOCORRELATION ? 3.0 : 1.0 );
-		const double greatestNonUndersamplingTimeStep = 0.5 * periodsPerAnalysisWindow / my instancePref_pitch_floor();
+		const double greatestNonUndersamplingTimeStep = 0.5 * periodsPerAnalysisWindow (me) / my dynamic_instancePref_pitch_floor();
 		const double defaultTimeStep = 0.5 * greatestNonUndersamplingTimeStep;
 		const double timeStep = (
 			my instancePref_timeStepStrategy() == kSoundAnalysisArea_timeStepStrategy::FIXED_ ? my instancePref_fixedTimeStep() :
@@ -1808,38 +2560,42 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		const integer numberOfVisiblePitchPoints = (integer) ((my endWindow() - my startWindow()) / timeStep);   // BUG: why round down?
 		Graphics_setColour (my graphics(), Melder_CYAN);
 		Graphics_setLineWidth (my graphics(), 3.0);
-		if ((my instancePref_pitch_drawingMethod() == kSoundAnalysisArea_pitch_drawingMethod::AUTOMATIC && (undersampled || numberOfVisiblePitchPoints < 101)) ||
-		    my instancePref_pitch_drawingMethod() == kSoundAnalysisArea_pitch_drawingMethod::SPECKLE)
+		const kSoundAnalysisArea_pitch_drawingMethod drawingMethod = my dynamic_instancePref_pitch_drawingMethod();
+		if ((drawingMethod == kSoundAnalysisArea_pitch_drawingMethod::AUTOMATIC && (undersampled || numberOfVisiblePitchPoints < 101)) ||
+		    drawingMethod == kSoundAnalysisArea_pitch_drawingMethod::SPECKLE)
 		{
-			Pitch_drawInside (my d_pitch.get(), my graphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt, 2, my instancePref_pitch_unit());
+			Pitch_drawInside (my d_pitch.get(), my graphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt, true, pitchUnit);
 		}
-		if ((my instancePref_pitch_drawingMethod() == kSoundAnalysisArea_pitch_drawingMethod::AUTOMATIC && ! undersampled) ||
-		    my instancePref_pitch_drawingMethod() == kSoundAnalysisArea_pitch_drawingMethod::CURVE)
+		if ((drawingMethod == kSoundAnalysisArea_pitch_drawingMethod::AUTOMATIC && ! undersampled) ||
+		    drawingMethod == kSoundAnalysisArea_pitch_drawingMethod::CURVE)
 		{
-			Pitch_drawInside (my d_pitch.get(), my graphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt, false, my instancePref_pitch_unit());
+			Pitch_drawInside (my d_pitch.get(), my graphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt, false, pitchUnit);
 		}
 		Graphics_setColour (my graphics(), Melder_BLUE);
 		Graphics_setLineWidth (my graphics(), 1.0);
-		if ((my instancePref_pitch_drawingMethod() == kSoundAnalysisArea_pitch_drawingMethod::AUTOMATIC && (undersampled || numberOfVisiblePitchPoints < 101)) ||
-		    my instancePref_pitch_drawingMethod() == kSoundAnalysisArea_pitch_drawingMethod::SPECKLE)
+		if ((drawingMethod == kSoundAnalysisArea_pitch_drawingMethod::AUTOMATIC && (undersampled || numberOfVisiblePitchPoints < 101)) ||
+		    drawingMethod == kSoundAnalysisArea_pitch_drawingMethod::SPECKLE)
 		{
-			Pitch_drawInside (my d_pitch.get(), my graphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt, 1, my instancePref_pitch_unit());
+			Pitch_drawInside (my d_pitch.get(), my graphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt, true, pitchUnit);
 		}
-		if ((my instancePref_pitch_drawingMethod() == kSoundAnalysisArea_pitch_drawingMethod::AUTOMATIC && ! undersampled) ||
-		    my instancePref_pitch_drawingMethod() == kSoundAnalysisArea_pitch_drawingMethod::CURVE)
+		if ((drawingMethod == kSoundAnalysisArea_pitch_drawingMethod::AUTOMATIC && ! undersampled) ||
+		    drawingMethod == kSoundAnalysisArea_pitch_drawingMethod::CURVE)
 		{
-			Pitch_drawInside (my d_pitch.get(), my graphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt, false, my instancePref_pitch_unit());
+			Pitch_drawInside (my d_pitch.get(), my graphics(), my startWindow(), my endWindow(), pitchViewFrom_overt, pitchViewTo_overt, false, pitchUnit);
 		}
 		Graphics_setColour (my graphics(), Melder_BLACK);
 	}
 	if (my instancePref_intensity_show())
 		tryToHaveIntensity (me);
 	if (my instancePref_intensity_show() && my d_intensity) {
-		Graphics_setColour (my graphics(), my instancePref_spectrogram_show() ? Melder_YELLOW : Melder_LIME);
-		Graphics_setLineWidth (my graphics(), my instancePref_spectrogram_show() ? 1.0 : 3.0);
+		Graphics_setColour (my graphics(), Melder_LIME);
+		Graphics_setLineWidth (my graphics(), 3.0);
 		Intensity_drawInside (my d_intensity.get(), my graphics(), my startWindow(), my endWindow(),
 				my instancePref_intensity_viewFrom(), my instancePref_intensity_viewTo());
+		Graphics_setColour (my graphics(), Melder_GREEN);
 		Graphics_setLineWidth (my graphics(), 1.0);
+		Intensity_drawInside (my d_intensity.get(), my graphics(), my startWindow(), my endWindow(),
+				my instancePref_intensity_viewFrom(), my instancePref_intensity_viewTo());
 		Graphics_setColour (my graphics(), Melder_BLACK);
 	}
 
@@ -1854,16 +2610,16 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setColour (my graphics(), 1.2 * Melder_BLUE);
 		if (my d_pitch) {
 			if (my startSelection() == my endSelection())
-				pitchCursor_hidden = Pitch_getValueAtTime (my d_pitch.get(), my startSelection(), my instancePref_pitch_unit(), 1);
+				pitchCursor_hidden = Pitch_getValueAtTime (my d_pitch.get(), my startSelection(), pitchUnit, 1);
 			else
-				pitchCursor_hidden = Pitch_getMean (my d_pitch.get(), my startSelection(), my endSelection(), my instancePref_pitch_unit());
-			pitchCursor_overt = Function_convertToNonlogarithmic (my d_pitch.get(), pitchCursor_hidden, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+				pitchCursor_hidden = Pitch_getMean (my d_pitch.get(), my startSelection(), my endSelection(), pitchUnit);
+			pitchCursor_overt = Function_convertToNonlogarithmic (my d_pitch.get(), pitchCursor_hidden, Pitch_LEVEL_FREQUENCY, (int) pitchUnit);
 			if (isdefined (pitchCursor_hidden)) {
 				Graphics_setColour (my graphics(), MelderColour (0.6, 0.0, 0.4));
 				Graphics_setTextAlignment (my graphics(), Graphics_LEFT, Graphics_HALF);
 				Graphics_text (my graphics(), my endWindow(), pitchCursor_hidden,
 					Melder_float (Melder_half (pitchCursor_overt)), U" ",
-					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
+					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) pitchUnit, Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
 				);
 				Graphics_setColour (my graphics(), 1.2 * Melder_BLUE);
 			}
@@ -1871,14 +2627,14 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 				Graphics_setTextAlignment (my graphics(), Graphics_LEFT, Graphics_HALF);
 				Graphics_text (my graphics(), my endWindow(), pitchViewFrom_hidden - Graphics_dyMMtoWC (my graphics(), 0.5),
 					Melder_float (Melder_half (pitchViewFrom_overt)), U" ",
-					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
+					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) pitchUnit, Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
 				);
 			}
 			if (isundef (pitchCursor_hidden) || Graphics_dyWCtoMM (my graphics(), pitchViewTo_hidden - pitchCursor_hidden) > 4.0) {
 				Graphics_setTextAlignment (my graphics(), Graphics_LEFT, Graphics_HALF);
 				Graphics_text (my graphics(), my endWindow(), pitchViewTo_hidden,
 					Melder_float (Melder_half (pitchViewTo_overt)), U" ",
-					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
+					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) pitchUnit, Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
 				);
 			}
 		} else {
@@ -2018,10 +2774,25 @@ void structSoundAnalysisArea :: v_draw_analysis_pulses () {
 }
 
 void structSoundAnalysisArea :: v9_repairPreferences () {
-	if (! (our instancePref_pitch_floor() < our instancePref_pitch_ceiling())) {   // NaN-safe test
-		our setInstancePref_pitch_floor (Melder_atof (our default_pitch_floor()));
-		our setInstancePref_pitch_ceiling (Melder_atof (our default_pitch_ceiling()));
-		our setInstancePref_pitch_unit (kPitch_unit::HERTZ);
+	if (! (our instancePref_pitch_filteredAC_floor() < our instancePref_pitch_filteredAC_top())) {   // NaN-safe test
+		our setInstancePref_pitch_filteredAC_floor (Melder_atof (our default_pitch_filteredAC_floor()));
+		our setInstancePref_pitch_filteredAC_top (Melder_atof (our default_pitch_filteredAC_top()));
+		our setInstancePref_pitch_filteredAC_unit (kPitch_unit::HERTZ);
+	}
+	if (! (our instancePref_pitch_rawCC_floor() < our instancePref_pitch_rawCC_ceiling())) {   // NaN-safe test
+		our setInstancePref_pitch_rawCC_floor (Melder_atof (our default_pitch_rawCC_floor()));
+		our setInstancePref_pitch_rawCC_ceiling (Melder_atof (our default_pitch_rawCC_ceiling()));
+		our setInstancePref_pitch_rawCC_unit (kPitch_unit::HERTZ);
+	}
+	if (! (our instancePref_pitch_rawAC_floor() < our instancePref_pitch_rawAC_ceiling())) {   // NaN-safe test
+		our setInstancePref_pitch_rawAC_floor (Melder_atof (our default_pitch_rawAC_floor()));
+		our setInstancePref_pitch_rawAC_ceiling (Melder_atof (our default_pitch_rawAC_ceiling()));
+		our setInstancePref_pitch_rawAC_unit (kPitch_unit::HERTZ);
+	}
+	if (! (our instancePref_pitch_filteredCC_floor() < our instancePref_pitch_filteredCC_top())) {   // NaN-safe test
+		our setInstancePref_pitch_filteredCC_floor (Melder_atof (our default_pitch_filteredCC_floor()));
+		our setInstancePref_pitch_filteredCC_top (Melder_atof (our default_pitch_filteredCC_top()));
+		our setInstancePref_pitch_filteredCC_unit (kPitch_unit::HERTZ);
 	}
 	if (! (our instancePref_spectrogram_viewFrom() < our instancePref_spectrogram_viewTo())) {   // NaN-safe test
 		our setInstancePref_spectrogram_viewFrom (Melder_atof (our default_spectrogram_viewFrom()));

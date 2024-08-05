@@ -1,6 +1,6 @@
 /* Graphics_text.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma, 2013 Tom Naughton, 2017 David Weenink
+ * Copyright (C) 1992-2024 Paul Boersma, 2013 Tom Naughton, 2017 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ extern const char * ipaSerifRegularPS [];
 			  font == kGraphics_font_CHINESE ? FF_DONTCARE :
 			  font == kGraphics_font_JAPANESE ? FF_DONTCARE :
 			  font >= kGraphics_font_IPATIMES ? FF_DONTCARE : FF_ROMAN );
-		if (font == kGraphics_font_IPATIMES && ! ipaInited && Melder_debug != 15) {
+		if (font == kGraphics_font_IPATIMES && ! ipaInited && ! (Melder_debug == 15)) {
 			LOGFONTW logFont;
 			logFont. lfCharSet = DEFAULT_CHARSET;
 			logFont. lfPitchAndFamily = 0;
@@ -244,9 +244,9 @@ inline static int chooseFont (Graphics me, _Graphics_widechar *lc) {
 			  my font == kGraphics_font::HELVETICA ?
 				(int) kGraphics_font::HELVETICA :   // sans serif, so fall back on Lucida Grande or so for phonetic characters
 			  /* my font must be kGraphics_font_PALATINO */
-			  hasCharis && Melder_debug != 900 ?
+			  hasCharis && ! (Melder_debug == 900) ?
 				kGraphics_font_IPAPALATINO :
-			  hasDoulos && Melder_debug != 900 ?
+			  hasDoulos && ! (Melder_debug == 900) ?
 				( lc -> style == 0 ?
 					kGraphics_font_IPATIMES :
 					(int) kGraphics_font::TIMES
@@ -273,7 +273,7 @@ inline static int chooseFont (Graphics me, _Graphics_widechar *lc) {
 		my font == kGraphics_font::HELVETICA ?
 			(int) kGraphics_font::HELVETICA :
 		my font == kGraphics_font::PALATINO ?
-			( hasCharis && Melder_debug != 900 ?
+			( hasCharis && ! (Melder_debug == 900) ?
 				kGraphics_font_IPAPALATINO :
 				(int) kGraphics_font::PALATINO
 			) :
@@ -1709,19 +1709,19 @@ static void parseTextIntoCellsLinesRuns (Graphics me, conststring32 txt /* catta
 		} else if (kar == U'\n') {
 			kar = U' ';
 		}
-		if (wordItalic | wordBold | wordCode | wordLink) {
+		if (wordItalic || wordBold || wordCode || wordLink) {
 			if (! Melder_isWordCharacter (kar) && kar != U'_')
 				wordItalic = wordBold = wordCode = wordLink = false;
 		}
 		out -> style =
-			(wordLink | globalLink | verbatimLink) && my fontStyle != Graphics_CODE ? (thinLink ? 0 : Graphics_BOLD) :
-			((my fontStyle & Graphics_ITALIC) | charItalic | wordItalic | globalItalic ? Graphics_ITALIC : 0) +
-			((my fontStyle & Graphics_BOLD) | charBold | wordBold | globalBold ? Graphics_BOLD : 0);
+			(wordLink || globalLink || verbatimLink) && my fontStyle != Graphics_CODE ? (thinLink ? 0 : Graphics_BOLD) :
+			((my fontStyle & Graphics_ITALIC) || charItalic || wordItalic || globalItalic ? Graphics_ITALIC : 0) +
+			((my fontStyle & Graphics_BOLD) || charBold || wordBold || globalBold ? Graphics_BOLD : 0);
 		out -> font.string = nullptr;
 		out -> font.integer_ = my fontStyle == Graphics_CODE || wordCode || globalCode || globalVerbatim || verbatimLink ||
 			(kar == U'/' || kar == U'|') && my font != kGraphics_font::PALATINO ? (int) kGraphics_font::COURIER : (int) my font;
-		out -> link = wordLink | globalLink | verbatimLink;
-		out -> baseline = charSuperscript | globalSuperscript ? 34 : charSubscript | globalSubscript ? -25 : 0;
+		out -> link = wordLink || globalLink || verbatimLink;
+		out -> baseline = charSuperscript || globalSuperscript ? 34 : charSubscript || globalSubscript ? -25 : 0;
 		out -> size = globalSmall || out -> baseline != 0 ? 80 : 100;
 		if (kar == U'/' && my font != kGraphics_font::PALATINO) {
 			out -> baseline -= out -> size / 12;
@@ -2143,7 +2143,7 @@ double Graphics_textWidth_ps (Graphics me, conststring32 txt, bool useSilipaPS) 
 			int numberOfFamilies;
 			pango_font_map_list_families (thePangoFontMap, & families, & numberOfFamilies);
 			for (int i = 0; i < numberOfFamilies; i ++)
-				fprintf (stderr, "%d %s\n", i, pango_font_family_get_name (families [i]));
+				fprintf (Melder_stderr, "%d %s\n", i, pango_font_family_get_name (families [i]));
 			g_free (families);
 		#endif
 		const char *trueName;
@@ -2163,8 +2163,8 @@ double Graphics_textWidth_ps (Graphics me, conststring32 txt, bool useSilipaPS) 
 		testFont ("Symbol");
 		testFont ("Dingbats");
 		#if 0   /* For debugging: list font availability. */
-			fprintf (stderr, "times %d helvetica %d courier %d palatino %d doulos %d charis %d\n",
-				hasTimes, hasHelvetica, hasCourier, hasPalatino, hasDoulos, hasCharis);
+			fprintf (Melder_stderr, "times %d helvetica %d courier %d palatino %d doulos %d charis %d\n",
+					hasTimes, hasHelvetica, hasCourier, hasPalatino, hasDoulos, hasCharis);
 		#endif
 		inited = true;
 		return true;

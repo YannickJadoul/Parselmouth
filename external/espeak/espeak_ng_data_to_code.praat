@@ -1,47 +1,51 @@
 # espeak_ng_data_to_code.praat
-# djmw 20120117, 20120124, 20151130, 20171004, 20211207
+# djmw 20120117, 20120124, 20151130, 20171004, 20211207, 20231009
 #
-# This script is specific for my situation (althought it can be adapted easily to any directory structure
-#	and non-Linux system).
-#	My espeak-work/ has subdirectories espeak-ng-work and espeak-ng-current.
-# 	Into espeak-ng-work are copied from the original espeak-ng project only those *.c and *.h files that are 
-# 	needed for the praat version of the synthesizer.
+# This script is specific for my situation (although it can be adapted easily to 
+# any directory structure and non-Linux system).
+# My espeak-work/ has subdirectories espeak-ng-work, espeak-ng-current and espeak-ng-previous.
+# Into espeak-ng-work are copied from the original espeak-ng project only those *.c and *.h files 
+# that are needed for the praat version of the synthesizer.
+# The needed files are specified below in the variables:
+# .espeakfiles_h$, .espeakfiles_c$, .espeakfiles_include_h$, 
+# .espeakfiles_ucd_h$ and .espeakfiles_ucd_c$
 #
 # If the upstream espeak-ng has been modified then I follow the following procedure:
 #
-# First something like: 
-#		cp espeak-work/espeak-previous/* espeak-work/espeak-old
-#		cp external/espeak/* espeak-work/espeak-previous (save the current sources that are used in Praat)
-#		cp espeak-work/espeak-ng-current/* espeak-work/espeak-ng-previous/*
-#		(with kdiff3 we can later see where the differences between the current espeak-ng version and the new version are
-#		after copying the new espeak sources to espeak-ng-current and renaming thenm as *.cpp. The current script does the
-#		copy)
-# Then;
-#	cd /external/espeak; rm *;
+# First something like (base dir is espeak-work/):
+#		cp ../external/espeak/* espeak-ng-previous/ 
+#		rm espeak-ng-work/* rm espeak-ng-current/*
+#		use this script to cp the necessary *.c and *.h into espeak-ng-work,
+#			while renaming the *.c to *.cpp files.
 	
 # Given the following directories:
 #	A: ~/projects/praat/espeak-work/espeak-ng-work 
 #	B: ~/projects/praat/espeak-work/espeak-ng-current
 #	C: ~/projects/praat/external/espeak 
 #
-#	0. I pull the sources from upstream:
+#	1. I pull the sources from upstream:
 #		cd ~/projects/espeak-ng
 #		- git pull https://github.com/espeak-ng/espeak-ng.git
 #		- make clean
 #		- make
 #		- Get the version of espeak-ng from the ~/projects/espeak-ng/config.h file
-#	1. I copy the necessary *.c and *.h files from ~/projects/espeak-ng/src/... to espeak-work 
+#	2. I copy the necessary *.c and *.h files from ~/projects/espeak-ng/src/... to espeak-work 
 #		by running this script with only the option "Copy_c_and_h_files" ON (the right version option).
 #		The *.c files are renamed as *.cpp files. Also a new file espeak-ng-version.h is created.
-#	2. I use a three-way diff program (kdiff3) to see which files in A are different from B and 
-#		merge the differences into C.
 #	3. Now my *.cpp and *.h are in synchrony with upstream and we copy all files from A to B.
 #	4. I generate the new dictionaries and language files in memory by running this script
 #		with only the option "Create_FileInMemorySet" set to ON.
 #	5. I copy the file create_espeak_ng_FileInMemorySet.cpp 
-#  		and espeak-ng-version.h from espeak-ng-work/ to external/espeak
-#	6. Now the praat synthesizer is up to date.
-# 
+#  		and espeak-ng-version.h from A to B
+#	6. In B:
+#		Change all includes eg <espeak-ng/something.h> to "something.h"
+#		Cast many return values and error values
+#		Adapt the file reading parts: surround the procedures
+#		#if ! DATA_FROM_SOURCECODE_FILES
+# 		 GetFileLength(...) & GetVoices(...) 
+#		#endif
+# 	7. in error.c do some Melder_throw's instead of stderr stuf
+
 # Function of this script:
 # Generates in espeak-ng-work
 # 	1. create_espeak_ng_FileInMemorySet.cpp
@@ -58,13 +62,14 @@ notify$ = "This file was created automatically on " + date$ + "."
 clearinfo
 
 form Espeakdata to code
-	word Espeak_version 1.51-dev
+	word Espeak_version 1.52-dev
 	boolean Copy_c_and_h_files 0
 	boolean Show_cp_command 1
+	boolean Create_espeak_ng_version.h 1
 	boolean Create_FileInMemorySet 0
 endform
 
-gpltext$ =  " * Copyright (C) David Weenink 2012-2021" + newline$ +
+gpltext$ =  " * Copyright (C) David Weenink 2012-2023" + newline$ +
 	... " *" + newline$ +
 	... " * This program is free software; you can redistribute it and/or modify " + newline$ +
  	... " * it under the terms of the GNU General Public License as published by" + newline$ +
@@ -106,12 +111,12 @@ if create_FileInMemorySet
 	... + " * This file was automatically created from files in directories in espeak-ng-data." + newline$
 	... + " * Espeak-ng version: " + espeak_version$ + "." + newline$
 	... + " * Date: " + date$() + "." + newline$
-	... + "*/" + newline$ +newline$
+	... + "*/" + newline$ + newline$
 	... + "#include ""espeakdata_FileInMemory.h""" + newline$
-	.cpp$ = Show as code: "espeak_ng_FileInMemorySet", 30
-	.cpp$ = .message$ + .cpp$ 
-	writeInfoLine: .cpp$
-	writeFile: todir$ + "/create_espeak_ng_FileInMemorySet.cpp", .cpp$
+	.cppCode$ = Show as code: "espeak_ng_FileInMemorySet", 30
+	.cppCode$ = .message$ + .cppCode$ 
+	writeInfoLine: .cppCode$
+	writeFile: todir$ + "/create_espeak_ng_FileInMemorySet.cpp", .cppCode$
 endif
 
 procedure create_phonFileInMemorySet
@@ -127,38 +132,36 @@ endproc
 
 procedure create_languageFileInMemorySet
 	language_fims = Create FileInMemorySet from directory contents: "l", espeakdata_lang_dir$, "*"
-	.ldirs =  Create Strings as directory list: "dirs",  espeakdata_lang_dir$+ "/*"
-	.ndirs = Get number of strings
-	for .idir to .ndirs
-		selectObject: .ldirs
-		.dir$ = Get string: .idir
+	.ldirs$# = folderNames$# (espeakdata_lang_dir$ + "/*")
+	for .idir to size (.ldirs$#)
+		.dir$ = .ldirs$# [.idir]
 		.langset = Create FileInMemorySet from directory contents: "l", espeakdata_lang_dir$ + "/" + .dir$ , "*"
 		plusObject: language_fims
 		.merged = Merge
 		removeObject: .langset, language_fims
 		language_fims = .merged
 	endfor
-	removeObject: .ldirs
 endproc
 
 # extract only the necesary files to espeak-ng-work.
-# changes to these files have to be made in espeak-ng-current
+# Subsequent changes to these files have to be made in espeak-ng-current
 
-if copy_c_and_h_files
+if copy_c_and_h_files || show_cp_command
 	@espeak_ng_copyfiles
 endif
 
 procedure espeak_ng_copyfiles
-	.espeakfiles_c$ = "compiledata.c compiledict.c compilembrola.c dictionary.c" +
-	... " encoding.c error.c espeak_api.c espeak_command.c" +
-	... " event.c fifo.c ieee80.c intonation.c klatt.c" +
-	... " mnemonics.c numbers.c phoneme.c phonemelist.c readclause.c setlengths.c" +
-	... " spect.c speech.c synthdata.c synthesize.c " +
-	... " ssml.c synth_mbrola.c translate.c tr_languages.c voices.c wavegen.c"
+	.espeakfiles_c$ = "common.c compiledata.c compiledict.c compilembrola.c dictionary.c"
+	... + " encoding.c error.c espeak_api.c espeak_command.c"
+	... + " event.c fifo.c ieee80.c intonation.c klatt.c langopts.c"
+	... + " mnemonics.c numbers.c phoneme.c phonemelist.c readclause.c setlengths.c"
+	... + " soundicon.c spect.c speech.c synthdata.c synthesize.c "
+	... + " ssml.c synth_mbrola.c translate.c translateword.c tr_languages.c voices.c wavegen.c"
 
-	.espeakfiles_h$ = "dictionary.h error.h espeak_command.h event.h fifo.h klatt.h phoneme.h phonemelist.h"
-	... " readclause.h setlengths.h sintab.h" +
-	... " spect.h speech.h ssml.h synthdata.h synthesize.h translate.h voice.h synthesize.h translate.h voice.h wavegen.h"
+	.espeakfiles_h$ = "common.h compiledict.h dictionary.h error.h espeak_command.h event.h fifo.h intonation.h"
+	... + " klatt.h langopts.h mbrola.h numbers.h phoneme.h phonemelist.h"
+	... + " readclause.h setlengths.h sintab.h spect.h speech.h"
+	... + " ssml.h synthdata.h synthesize.h translate.h translateword.h voice.h synthesize.h translate.h voice.h wavegen.h"
 	.espeakfiles_include_h$ = "speak_lib.h espeak_ng.h encoding.h"
 	.espeakfiles_ucd_h$ = "ucd.h"
 	.espeakfiles_ucd_c$ = "case.c categories.c proplist.c"
@@ -178,22 +181,25 @@ procedure espeak_ng_copyfiles
 	@copy_rename: fromdir$+"/src/ucd-tools/src", .espeakfiles_ucd_c$, ".c", ".cpp"
 	@copy_rename: fromdir$+"/src/ucd-tools/src/include/ucd", .espeakfiles_ucd_h$, ".h", ".h"
 	.version_define$ = "#define ESPEAK_NG_VERSION " + "U""" + espeak_version$ + """" + newline$
-		... + "#define ESPEAK_NG_VERSIONX " + espeak_version$
-	writeFile: todir$ + "/espeak_ng_version.h", .version_define$
+		... + "#define ESPEAK_NG_VERSIONX " + espeak_version$ + newline$
+	if create_espeak_ng_version.h
+		writeFile: todir$ + "/espeak_ng_version.h", .version_define$
+	endif
 endproc
 
 procedure copy_rename: .fromdir$, .files$, .ext$, .newext$
-	.list = Create Strings as tokens: .files$
-	.numberOfFiles = Get number of strings
-	for .ifile to .numberOfFiles
-		.name$ = Get string: .ifile
+	.filelist$# = splitByWhitespace$# (.files$)
+	for .ifile to size (.filelist$#)
+		.name$ = .filelist$# [.ifile]
 		.newname$ = .name$ - .ext$ + .newext$
 		.command$ =  "cp " + .fromdir$ + "/" + .name$ + " " + todir$ + "/" + .newname$
 		appendInfoLine: .command$
 		if show_cp_command
 			appendInfoLine: .command$
 		endif
-		runSystem: .command$
+		if copy_c_and_h_files
+			runSystem: .command$
+		endif
 	endfor
 endproc
 

@@ -1,6 +1,6 @@
 /* manual_dwtools.cpp
  *
- * Copyright (C) 1993-2023 David Weenink
+ * Copyright (C) 1993-2024 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 #include "Table_extensions.h"
 #include "Configuration.h"
 #include "Discriminant.h"
-#include "Electroglottogram.h"
+#include "../sensors/Electroglottogram.h"
 #include "Sound_and_Spectrum.h"
 #include "Sound_and_Spectrum_dft.h"
 
@@ -558,15 +558,15 @@ INTRO (U"This tutorial will show you how to perform canonical correlation "
 ENTRY (U"1. Objective of canonical correlation analysis")
 NORMAL (U"In canonical correlation analysis we try to find the correlations between "
 	"two data sets. One data set is called the %dependent set, the other the "
-	"%independent set. In Praat these two sets must reside into one "
+	"%independent set. In Praat these two sets must reside in one "
 	"@TableOfReal object. The lower numbered columns of this table will then be "
 	"interpreted as the dependent part, the rest of the columns as the "
 	"independent part. "
-	"The dimension of, i.e., the number of columns in, the dependent part may not "
+	"The dimension of (i.e. the number of columns in) the dependent part may not "
 	"exceed the dimension of the independent part.")
 NORMAL (U"As an example, we will use the dataset from @@Pols et al. (1973)@ "
 	"with the frequencies and levels of the first three formants from the 12 "
-	"Dutch monophthongal vowels as spoken in /h\\_ t/ context by 50 male speakers. "
+	"Dutch monophthongal vowels as spoken in a /h\\_ t/ context by 50 male speakers. "
 	"We will try to find the canonical correlation between formant frequencies "
 	"(the %dependent part) and levels (the %independent part). "
 	"The dimension of both groups of variates is 3. "
@@ -621,7 +621,7 @@ NORMAL (U"Select the TableOfReal and choose from the dynamic menu the option "
 CODE (U"selectObject: pols50m")
 CODE (U"cca = To CCA: 3")
 ENTRY (U"3. How to get the canonical correlation coefficients")
-NORMAL (U"You can get the canonical correlation coefficients by queries of the CCA "
+NORMAL (U"You can get the canonical correlation coefficients by querying the CCA "
 	"object. You will find that the three canonical correlation coefficients, "
 	"\\ro(%u__1_, %v__1_), \\ro(%u__2_, %v__2_) and \\ro(%u__3_, %v__3_) are "
 	" approximately 0.86, 0.53 and 0.07, respectively. "
@@ -641,17 +641,17 @@ NORMAL (U"You can get the canonical scores by selecting a CCA object together wi
 NORMAL (U"When we now calculate the ##Correlation# matrix of these canonical variates we "
 	"get the following table:")
 CODE (U"       u1     u2     u3     v1     v2     v3")
-CODE (U"u1     1      .      .     0.860   .      .")
-CODE (U"u2     .      1      .      .     0.531   .")
-CODE (U"u3     .      .      1      .      .     0.070")
-CODE (U"v1    0.860   .      .      1      .      .")
-CODE (U"v2     .     0.531     .      .      1      .")
-CODE (U"v3     .      .     0.070   .      .      1")
+CODE (U"u1     1      .      .    0.860    .      .")
+CODE (U"u2     .      1      .      .    0.531    .")
+CODE (U"u3     .      .      1      .      .    0.070")
+CODE (U"v1   0.860    .      .      1      .      .")
+CODE (U"v2     .    0.531    .      .      1      .")
+CODE (U"v3     .      .    0.070    .      .      1")
 NORMAL (U"The scores with a dot are zero to numerical precision. In this table the "
 	"only correlations that differ from zero are the canonical correlations. "
 	"The following script summarizes:")
 CODE (U"selectObject: cca, pols50m")
-CODE (U"To TableOfReal (scores): 3)")
+CODE (U"To TableOfReal (scores): 3")
 CODE (U"To Correlation")
 CODE (U"Draw as numbers if: 1, 0, \"decimal\", 2, ~ abs(self) > 1e-14")
 ENTRY (U"5. How to predict one dataset from the other")
@@ -1617,8 +1617,7 @@ NORMAL (U"As an example, we will use the dataset from @@Pols et al. (1973)@ "
 	"Dutch monophthongal vowels as spoken in /h\\_ t/ context by 50 male speakers. "
 	"This data set has been incorporated into "
 	"Praat and can be called into play with the @@Create TableOfReal "
-	"(Pols 1973)...@ command that can be found in the \"New / "
-	"TableOfReal\" menu.")
+	"(Pols 1973)...@ command that can be found under #New \\-> #Tables \\-> ##Data sets from the literature#.")
 NORMAL (U"In the list of objects a new TableOfReal object will appear with 6 "
 	"columns and 600 rows "
 	"(50 speakers \\xx 12 vowels). The first three columns contain "
@@ -1658,7 +1657,7 @@ NORMAL (U"Select the TableOfReal and choose from the dynamic menu the option "
 	"object will bear the same name as the TableOfReal object. The following "
 	"script summarizes:")
 CODE (U"selectObject: table")
-CODE (U"discrimimant = To Discriminant")
+CODE (U"discriminant = To Discriminant")
 ENTRY (U"2. How to project data on the discriminant space")
 NORMAL (U"You select a TableOfReal and a Discriminant object together and choose: "
 	"@@Discriminant & TableOfReal: To Configuration...|To Configuration...@. "
@@ -1726,7 +1725,7 @@ CODE (U"for irow to numberOfRows")
 CODE (U"endfor")
 CODE (U"selectObject: confusion")
 CODE (U"fractionCorrect = Get fraction correct")
-CODE (U"appendInfoLine: fractionCorrect, \" (= fraction correct, jackknifed \", numberOfRows, \" times).\"")
+CODE (U"appendInfoLine: fractionCorrect, \" (fraction correct, jackknifed \", numberOfRows, \" times).\"")
 CODE (U"removeObject: confusion")
 ENTRY (U"5.2 Bootstrap classification")
 NORMAL (U"The following script summarizes bootstrap classification.")
@@ -1743,7 +1742,7 @@ CODE (U"for i to numberOfBootstraps")
 	CODE1 (U"removeObject: resampled, discriminant, classification, confusion")
 CODE (U"endfor")
 CODE (U"fractionCorrect /= numberOfBootstraps")
-CODE (U"appendInfoLine: fractionCorrect, \" (= fraction correct, bootstrapped \", numberOfBootstraps, \" times).\"")
+CODE (U"appendInfoLine: fractionCorrect, \" (fraction correct, bootstrapped \", numberOfBootstraps, \" times).\"")
 MAN_END
 
 MAN_BEGIN (U"Discriminant: Draw sigma ellipses...", U"djmw", 20040407)
@@ -1903,9 +1902,9 @@ CODE (U"pols50m = Create TableOfReal (Pols 1973): \"no\"")
 CODE (U"Formula: ~ log10 (self)")
 CODE (U"discriminant = To Discriminant")
 CODE (U"selectObject: pols50m, discriminant")
-CODE (U"t1 = To TableOfReal (mahalanobis): \"\\bso/\", \"no\"")
+CODE (U"t1 = To TableOfReal (mahalanobis): \"\\o/\", \"no\"")
 CODE (U"selectObject: pols50m, discriminant")
-CODE (U"t2 = To TableOfReal (mahalanobis): \"\\bsyc\", \"no\"")
+CODE (U"t2 = To TableOfReal (mahalanobis): \"\\yc\", \"no\"")
 NORMAL (U"Now we count when both the t1 and t2 values are smaller than 1 (sigma):")
 CODE (U"Copy: \"tr\"")
 CODE (U"Formula: ~ object [t1] < 1 and object [t2] < 1")
@@ -2593,7 +2592,6 @@ EQUATION (U"\\Ga(\\al, %x) = \\in__%x_^^\\oo^ %t^^\\al−1^e^^-%t^dt, \\Ga(\\al)
 NORMAL (U"where \\al and %x are complex numbers and Re(\\al) > 0.")
 NORMAL (U"The complementary incomplete gamma function is defined as:")
 EQUATION (U"\\ga(\\al, %x) = \\in__%0_^^%x^ %t^^\\al−1^e^^-%t^dt = \\Ga(\\al)−\\Ga(\\al, %x).")
-
 MAN_END
 
 MAN_BEGIN (U"IDX file format", U"djmw", 20160220)
@@ -2614,7 +2612,7 @@ CODE (U"0x0B: short (2 bytes)")
 CODE (U"0x0C: int (4 bytes)")
 CODE (U"0x0D: float (4 bytes)")
 CODE (U"0x0E: double (8 bytes)")
-NORMAL (U"The fouth byte codes the number of dimensions of the vector/matrix: 1 for vectors, 2 for matrices....")
+NORMAL (U"The fourth byte codes the number of dimensions of the vector/matrix: 1 for vectors, 2 for matrices....")
 NORMAL (U"The sizes in each dimension are 4-byte integers (big endian, like in most non-Intel processors).")
 NORMAL (U"The data is stored like in a C array, i.e. the index in the last dimension changes the fastest.")
 ENTRY (U"Behaviour")
@@ -3446,7 +3444,7 @@ NORMAL (U"Some regular expressions match only one string, i.e., the set they des
 NORMAL (U"You can read the rest of this tutorial sequentially with the help of "
 	"the \"<1\" and \">1\" buttons.")
 LIST_ITEM (U"1. @@Regular expressions 1. Special characters|Special characters@ "
-	"(\\bs \\^  \\$ { } [ ] ( ) . + ? \\|  - &)")
+	"(\\bs \\^  \\$  { } [ ] ( ) . + ? \\|  - &)")
 LIST_ITEM (U"2. @@Regular expressions 2. Quantifiers|Quantifiers@ "
 	"(how often do we match).")
 LIST_ITEM (U"3. @@Regular expressions 3. Anchors|Anchors@ (where do we match)")
@@ -3975,15 +3973,15 @@ ENTRY (U"Settings")
 NORMAL (U"The settings are described in @@Sound: Change gender...@. ")
 MAN_END
 
-MAN_BEGIN (U"Sound: Change gender...", U"djmw", 20030205)
+MAN_BEGIN (U"Sound: Change gender...", U"djmw", 20030205)   // 2023
 /* INTRO (U"Deprecated: use @@Sound: Change speaker...@") */
 NORMAL (U"A command to create a new @Sound with manipulated characteristics.")
 ENTRY (U"Settings")
 NORMAL (U"The quality of the @@overlap-add|manipulation@ depends on the pitch measurement.")
 NORMAL (U"The arguments that control the pitch measurement are:")
-TERM (U"##Minimum pitch (Hz)# (standard value: 75 Hz)")
+TERM (U"##Pitch floor (Hz)# (standard value: 75 Hz)")
 DEFINITION (U"pitch candidates below this frequency will not be considered.")
-TERM (U"##Maximum pitch (Hz)# (standard value: 600 Hz)")
+TERM (U"##Pitch ceiling (Hz)# (standard value: 600 Hz)")
 DEFINITION (U"pitch candidates above this frequency will be ignored.")
 NORMAL (U"The arguments that control the manipulation are:")
 TERM (U"##Formant shift ratio")
@@ -4414,9 +4412,9 @@ NORMAL (U"First a copy of the sound is @@Sound: Filter (pass Hann band)...|bandp
 	"Finally the silent and sounding intervals are determined @@Intensity: To TextGrid (silences)...|from the intensity curve@.")
 MAN_END
 
-MAN_BEGIN (U"Sound: To TextGrid (speech activity)...", U"djmw", 20230323)
+MAN_BEGIN (U"Sound: To TextGrid (speech activity)...", U"djmw", 20231209)
 INTRO (U"A command that creates a @@TextGrid@ for the selected @@Sound@ in which the non-speech intervals and the "
-	"intervals with speech activity are marked. The discrimination between the two is based on a spectral flatnes measure.")
+	"intervals with speech activity are marked. The discrimination between the two is based on a spectral flatness measure.")
 NORMAL (U"Speech activity detection, in the technical literature often referred to as voice activity detection, "
 	"is a method to discriminate speech segments from input noisy speech. "
 	"According to the article of @@Ma & Nishihara (2013)@, spectral flatness is a measure of the width, uniformity, "
@@ -4448,8 +4446,8 @@ DEFINITION (U"determines the frequency range used in the calculation of the spec
 	"In this way we increase chances that sounds at start or end positions with mainly low frequency components, "
 	"like nasals, are detected.")
 TERM (U"##Flatness threshold#")
-DEFINITION (U"determines whether a frame is considered %%speech% or not based on a spectral flatness measure. Values of the flatness below the threshold are "
-	"considered speech.")
+DEFINITION (U"determines whether a frame is considered %%speech% or not, based on a spectral flatness measure. "
+	"Values of the flatness below the threshold are considered speech.")
 TERM (U"##Non-speech threshold (dB)#")
 DEFINITION (U"also determines whether a frame is considered %%speech% or not, but based on intensity. "
 	"Intervals with an intensity smaller than this value below the sound's maximum intensity value "
@@ -4464,9 +4462,24 @@ TERM (U"##Speech / Non-speech interval label#")
 DEFINITION (U"determine the labels for the corresponding intervals in the newly created TextGrid.")
 ENTRY (U"Algorithm")
 NORMAL (U"The speech activity algorithm is described in @@Ma & Nishihara (2013)@.")
+NORMAL (U"The logarithm of the speech flatness at frame %m is defined as:")
+EQUATION (U"L (m) = \\Si__k_ log (GM(%m, %f__%k_) / AM (%m, %f__%k_)), ")
+NORMAL (U" where GM(%m, %f__%k_) and AM (%m, %f__%k_) are the geometric and arithmetic means for spectrum "
+	"component %f__%k_, respectively. "
+	"The geometric mean GM (%m, %f__%k_) is defined as ")
+EQUATION (U"GM(%m, %f__%k_) = {\\Pi^^%m^__%n=%m-%R+1_ %S(%n, %f__%k_)}^^(1/%R)^")
+NORMAL (U" where the number of frames %R is determined by the setting of the %%long term window% parameter. "
+	"AM(%m, %f__%k_) is defined as ")
+EQUATION (U"AM(%m, %f__%k_) = {\\Si^^m^__n=%m-%R+1_ %S(%n, %f__%k_)} / %R")
+NORMAL (U"The %short term window comes into play in the definition of the %S(%n, %f__%k_), because this is "
+	"itself the average of %M local spectral frames")
+EQUATION (U"%S(%n, %f__%k_) = {\\Si^^M^__p=%m-%M+1_ |X(p, %f__%k_)|^^2^} / %M,")
+NORMAL (U"where the number of frames %M is determined by the setting of the %%short term window% length. ")
+NORMAL (U"The ratio between the geometric and arithmetic mean is always smaller than or equal to one. "
+	"Only when all numbers are equal, this means a flat spectrum, the ratio becomes equal to one. ")
 MAN_END
 
-MAN_BEGIN (U"Intensity: To TextGrid (silences)...", U"djmw", 20061201)
+MAN_BEGIN (U"Intensity: To TextGrid (silences)...", U"djmw", 20061201)   // 2023
 INTRO (U"A command that creates a @TextGrid in which the silent and sounding intervals of the selected @Intensity are marked.")
 ENTRY (U"Settings")
 xxx_to_TextGrid_detectSilences_COMMON_PARAMETERS_HELP
@@ -4481,7 +4494,7 @@ NORMAL (U"Experience showed that first removing short intensity bursts instead o
 ENTRY (U"Important")
 NORMAL (U"The effectiveness of the %%Minimum silent interval duration% and %%Minimum sounding interval duration% "
 	"depends on the effective analysis window duration that was used to determine the intensity contour. "
-	"For example, if you have chosen 100 Hz for the \"Minimum pitch\" parameter in the @@Sound: To Intensity...@ analysis, "
+	"For example, if you have chosen 100 Hz for the “Pitch floor” parameter in the @@Sound: To Intensity...@ analysis, "
 	"the effective analysis window duration was 32 ms. Don't expect to find sounding "
 	"or silent intervals with a duration smaller than this effective analysis window duration.")
 MAN_END
@@ -4623,7 +4636,7 @@ INTRO (U"A command that creates from the selected @Sound a new sound with silenc
 ENTRY (U"Settings")
 TERM (U"##Trim duration (s)#")
 DEFINITION (U"specifies the maximum allowed silence duration.")
-TERM (U"##Minimum pitch (Hz)#, and, ##Time step (s)#")
+TERM (U"##Pitch floor (Hz)#, and, ##Time step (s)#")
 DEFINITION (U"determine how we measure the intensities on which the determination of silent intervals is based. See @@Sound: To Intensity...@ for more info.")
 TERM (U"##Silence threshold (dB)#, ##Minimum silent interval duration (s)#, and ##Minimum sounding interval duration#")
 DEFINITION (U"determine how the silent intervals will be determined. See @@Intensity: To TextGrid (silences)...@ for more info.")
@@ -4666,7 +4679,7 @@ EQUATION (U"%#H(%f) = (%f__%h_ - %f) / (%f__%h_ - %f__%c_) for %f__%c_ \\<_ %f \
 NORMAL (U"In general the number of filter values stored in each frame of the MelSpectrogram is an order of magnitude smaller than the number of sound samples in the corresponding analysis frame.")
 MAN_END
 
-MAN_BEGIN (U"Sound: To Pitch (shs)...", U"djmw", 19970402)
+MAN_BEGIN (U"Sound: To Pitch (shs)...", U"djmw", 19970402)   // 2023
 INTRO (U"A command that creates a @Pitch object from every selected @Sound object.")
 ENTRY (U"Purpose")
 NORMAL (U"to perform a pitch analysis based on a spectral compression model. "
@@ -4687,7 +4700,7 @@ NORMAL (U"The spectral compression consists of the summation of a sequence of "
 ENTRY (U"Settings")
 TERM (U"##Time step (s)# (standard value: 0.01 s)")
 DEFINITION (U"the measurement interval (frame duration), in seconds.")
-TERM (U"##Minimum pitch (Hz)# (standard value: 50 Hz)")
+TERM (U"##Pitch floor (Hz)# (standard value: 50 Hz)")
 DEFINITION (U"candidates below this frequency will not be recruited. This parameter "
 	"determines the length of the analysis window.")
 TERM (U"##Max. number of candidates# (standard value: 15)")
@@ -4700,7 +4713,7 @@ TERM (U"##Compression factor# (standard value: 0.84)")
 DEFINITION (U"the factor by which successive compressed spectra are multiplied before the summation.")
 TERM (U"##Number of points per octave# (standard value: 48)")
 DEFINITION (U"determines the sampling of the logarithmic frequency scale.")
-TERM (U"##Ceiling (Hz)# (standard value: 500 Hz)")
+TERM (U"##Pitch ceiling (Hz)# (standard value: 500 Hz)")
 DEFINITION (U"candidates above this frequency will be ignored.")
 MAN_END
 
@@ -5099,11 +5112,11 @@ NORMAL (U"In a quantile-quantile plot the quantiles of the data in the first sel
 	"same distribution, the points should fall approximately along the reference line.")
 MAN_END
 
-MAN_BEGIN (U"Table: Bar plot where...", U"djmw", 20140509)  // ppgb 2023
+MAN_BEGIN (U"Table: Bar plot...", U"djmw", 20230901)  // ppgb 2023
 INTRO (U"Draws a bar plot from data in one or more columns of the selected @Table. In a bar plot the horizontal axis has nominal values (labels). ")
 ENTRY (U"Settings")
 SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (10.6), U""
-	Manual_DRAW_SETTINGS_WINDOW ("Table: Bar plot where", 10.6)   // 0.6 extra for the text
+	Manual_DRAW_SETTINGS_WINDOW ("Table: Bar plot", 10.6)   // 0.6 extra for the text
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Vertical column(s)", "")
 	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= auto)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Column with labels", "")
@@ -5113,7 +5126,6 @@ SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (10.6), U""
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Colours (0-1, name, {r,g,b})", "Grey")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Label text angle (degrees)", "0.0")
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN ("Garnish", 1)
-	Manual_DRAW_SETTINGS_WINDOW_TEXT ("Formula:", "row>1 and row < 10")
 )
 TERM (U"##Vertical column(s)")
 DEFINITION (U"you list the table columns that you want to represent in the bar plot. The number of selected columns is the group size.")
@@ -5131,8 +5143,6 @@ TERM (U"##Colours")
 DEFINITION (U"determines the colours of the bars in a group.")
 TERM (U"##Label text angle (degrees)")
 DEFINITION (U"determines the angle of the labels written below the plot. If you have very long label texts you can prevent the label texts from overlapping.")
-TERM (U"##Formula:")
-DEFINITION (U"can be used to supply an expression to select only those rows for plotting where the expression evaluates to %%true%. A 1 value always evaluates to %%true%.")
 ENTRY (U"Examples")
 NORMAL (U"@@Keating & Esposito (2006)@ present a bar plot in their fig. 3 from which we estimate the following data table")
 CODE (U"Language        Modal  Breathy")
@@ -5152,64 +5162,67 @@ NORMAL (U"As you can see the labels in the first column are very long texts and 
 	"plotted at the bottom of a plot. We therefore use a value of 15 degrees for the \"Label text angle\" " "parameter. This "
 	"will make the label texts nonoverlapping. We cannot make this angle much larger, because then the label texts would run out of "
 	"the viewport. ")
-NORMAL (U"Sometimes you need to plot only a part of the Table and for the selection of this part, the \"Formula\" field can be "
-	"used. Since we only have a small table we put a \"1\" in this field which always evaluates to true. "
-	"In effect, all the rows will be selected. The following script line will produce the picture below.")
-CODE (U"Bar plot where: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.0, \"0.9 0.5\", 15.0, \"yes\", \"1\"")
+NORMAL (U"The following script line will produce the picture below.")
+CODE (U"Bar plot: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.0, \"0.9 0.5\", 15.0, \"yes\"")
 SCRIPT (5, 3,  U"h1h2 = Create H1H2 table (Keating & Esposito 2006)\n"
 	"Font size: 10\n"
-	"Bar plot where: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.0, \"0.9 0.5\", 15.0, \"yes\", \"1\"\n"
+	"Bar plot: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.0, \"0.9 0.5\", 15.0, \"yes\"\n"
 	"removeObject: h1h2\n")
 NORMAL (U"The essentials of the bart plot in their paper are perfectly reproduced in the figure above. "
 	"If you want the bars within a group to be placed somewhat more apart, say 0.2 times the bar width, "
 	"you can set the \"Distance between bars in a group\" to a value of 0.2:")
-CODE (U"Bar plot where: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.2, \"0.9 0.5\", 15.0, \"yes\", \"1\"")
+CODE (U"Bar plot: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.2, \"0.9 0.5\", 15.0, \"yes\"")
 SCRIPT (5, 3,  U"h1h2 = Create H1H2 table (Keating & Esposito 2006)\n"
 	"Font size: 10\n"
-	"Bar plot where: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.2, \"0.9 0.5\", 15.0, \"yes\", \"1\"\n"
+	"Bar plot: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.2, \"0.9 0.5\", 15.0, \"yes\"\n"
 	"removeObject: h1h2\n")
 NORMAL (U"Of course we can also work with colours and we can add vertical marks as the following scriptlet shows")
-CODE (U"Bar plot where: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.0, \"Green Red\", 15.0, \"yes\", \"1\"")
+CODE (U"Bar plot: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.0, \"Green Red\", 15.0, \"yes\"")
 CODE (U"Marks left every: 1, 5, 1, 1, 1")
 CODE (U"Text left: 1, \"H__1_-H__2_ (dB)\"")
 SCRIPT (5, 3,  U"h1h2 = Create H1H2 table (Keating & Esposito 2006)\n"
 	"Font size: 10\n"
-	"Bar plot where: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.0, \"Green Red\", 15.0, \"yes\", \"1\"\n"
+	"Bar plot: \"Modal Breathy\", -10, 20, \"Language\", 1.0, 1.0, 0.0, \"Green Red\", 15.0, \"yes\"\n"
 	"Marks left every: 1, 5, 1, 1, 1\n"
 	"Text left: 1, \"H__1_-H__2_ (dB)\"\n"
 	"removeObject: h1h2\n")
 MAN_END
 
-MAN_BEGIN (U"Table: Box plots where...", U"djmw", 20140509)
+MAN_BEGIN (U"Table: Box plots...", U"djmw", 20230901)
 INTRO (U"A command to draw a @@box plot@s for each factor from the data in other column(s) of the selected @Table object, "
 	"where the factors will be sorted in @@natural sort order@.")
 ENTRY (U"Example")
 NORMAL (U"To draw separate box plots for the male, female and children F0 for the @@Peterson & Barney (1952)@ data: ")
 CODE (U"Create formant table (Peterson & Barney 1952)")
-CODE (U"Box plots where: \"F0\", \"Type\", 70, 400, \"1\"")
+CODE (U"Box plots: \"F0\", \"Type\", 70, 400")
 CODE (U"Text left: \"yes\", \"F0 (Hz)\"")
 SCRIPT (5,3, U"pb = Create formant table (Peterson & Barney 1952)\n"
-	"Box plots where: \"F0\", \"Type\", 70, 400, \"yes\", \"1\"\n"
+	"Box plots: \"F0\", \"Type\", 70, 400, \"yes\"\n"
 	"Text left: \"yes\", \"F0 (Hz)\"\n"
 	"removeObject: pb\n"
 )
 MAN_END
 
-MAN_BEGIN (U"Table: Line graph where...", U"djmw", 20200629)
+MAN_BEGIN (U"Table: Line graph where...", U"djmw", 20230901)
+INTRO (U"Draws a line graph from the data in a column of the selected @Table."
+	"More info @@Table: Line graph...@.")
+MAN_END
+
+MAN_BEGIN (U"Table: Line graph...", U"djmw", 20231207)
 INTRO (U"Draws a line graph from the data in a column of the selected @Table. "
 	"In a line plot, the horizontal axis can have a nominal scale or a numeric scale. "
 	"The data points are connected by line segments.")
 ENTRY (U"Settings")
 SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (8.6), U""
-	Manual_DRAW_SETTINGS_WINDOW ("Table: Line graph where", 8.6)   // 0.6 extra for the text
+	Manual_DRAW_SETTINGS_WINDOW ("Table: Line graph", 8.6)   // 0.6 extra for the text
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Vertical column", "")
 	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Vertical range", "0.0", "0.0 (= auto)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Horizontal column", "")
 	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Horizontal range", "0.0", "0.0 (= auto)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Text", "+")
+	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Text font size", "12")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Label text angle (degrees)", "0.0")
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN("Garnish", 1)
-	Manual_DRAW_SETTINGS_WINDOW_TEXT("Formula:", "1; (= everything)")
 )
 TERM (U"##Vertical column")
 DEFINITION (U"The column whose data points you want to plot.")
@@ -5225,13 +5238,12 @@ TERM (U"##Horizontal range")
 DEFINITION (U"determines the left and right limit of the plot.")
 TERM (U"##Text")
 DEFINITION (U"The text to put at the position of the data point in the plot.")
+TERM (U"##Text font size")
+DEFINITION (U"defines the size of the text.")
 TERM (U"##Label text angle (degrees)")
 DEFINITION (U"determines the angle of the labels written %%below% the plot. If you have very long label texts in the "
 	"\"Horizontal column\", you can prevent the label texts from overlapping. This only has effect for a horizontal "
 	"column with nominal values.")
-TERM (U"##Formula")
-DEFINITION (U"can be used to supply an expression to select only those rows for plotting where the expression "
-	"evaluates to %%true%. A 1 value always evaluates to %%true%.")
 ENTRY (U"Examples")
 NORMAL (U"The following table was estimated from fig. 3 in @@Ganong (1980)@ and represents the fraction /d/ responses as a function of a "
 	"voice onset time (VOT) continuum. The second column shows the responses in a word - nonword continuum, while the third column shows "
@@ -5244,10 +5256,11 @@ CODE (U"  2.5   0.29      0.10")
 CODE (U"  7.5   0.12      0.02")
 CODE (U" 17.5   0.10      0.02")
 NORMAL (U"We can reproduce fig. 3 from Ganong (1980) with the following script, where we labeled the word - nonword curve with \"wn\" and the nonword - word curve with \"nw\". We deselect \"Garnish\" because we want to put special marks at the bottom.")
+CODE (U"Font size: 10\n")
 CODE (U"Dotted line\n")
-CODE (U"Line graph where: \"dash-tash\", 0, 1, \"VOT\", -20, 20, \"wn\", 0, \"no\", \"1\"")
+CODE (U"Line graph: \"dash-tash\", 0, 1, \"VOT\", -20, 20, \"wn\", 12, 0, \"no\"")
 CODE (U"Dashed line\n")
-CODE (U"Line graph where: \"dask-task\", 0, 1, \"VOT\", -20, 20, \"nw\", 0, \"no\", \"1\"")
+CODE (U"Line graph: \"dask-task\", 0, 1, \"VOT\", -20, 20, \"nw\", 12, 0, \"no\"")
 CODE (U"Draw inner box")
 CODE (U"One mark bottom: 2.5, \"no\", \"yes\", \"no\", \"+2.5\"")
 CODE (U"One mark bottom: -2.5, \"yes\", \"yes\", \"no\", \"\"")
@@ -5260,11 +5273,12 @@ CODE (U"Text bottom: 1, \"VOT (ms)\"")
 CODE (U"Marks left every: 1, 0.2, \"yes\", \"yes\", \"no\"")
 CODE (U"Text left: 1, \"Prop. of voiced responses\"")
 
-SCRIPT (5,3, U"ganong = Create Table (Ganong 1980)\n"
+SCRIPT (5, 3, U"ganong = Create Table (Ganong 1980)\n"
 	"Dotted line\n"
-	"Line graph where: \"dash-tash\", 0, 1, \"VOT\", -20, 20, \"wn\", 0, \"no\", ~1\n"
+	"Font size: 10\n"
+	"Line graph: \"dash-tash\", 0, 1, \"VOT\", -20, 20, \"wn\", 12, 0, \"no\"\n"
 	"Dashed line\n"
-	"Line graph where: \"dask-task\", 0, 1, \"VOT\", -20, 20, \"nw\", 0, \"no\", ~1\n"
+	"Line graph: \"dask-task\", 0, 1, \"VOT\", -20, 20, \"nw\", 12, 0, \"no\"\n"
 	"Draw inner box\n"
 	"One mark bottom: 2.5, 0, \"yes\", \"no\", \"+2.5\"\n"
 	"One mark bottom: -2.5, \"yes\", \"yes\", \"no\", \"\"\n"
@@ -5282,36 +5296,27 @@ NORMAL (U"As an example of what happens if you don't supply an argument for the 
 	"the same table as for the previous plot. However the resulting plot may not be as meaningful (note that the "
 	"horizontal nominal scale makes all points equidistant in the horizontal direction.)")
 CODE (U"Dotted line\n")
-CODE (U"Line graph where: \"dash-tash\", 0, 1, \"\", 0, 0, \"wn\", 0, \"yes\", ~ 1")
+CODE (U"Line graph: \"dash-tash\", 0, 1, \"\", 0, 0, \"wn\", 12,  0, \"yes\"")
 CODE (U"One mark bottom: 1, \"no\", \"yes\", \"no\", \"Short VOT\"")
-SCRIPT (5,3, U"ganong = Create Table (Ganong 1980)\n"
+SCRIPT (5, 3, U"ganong = Create Table (Ganong 1980)\n"
 	"Dotted line\n"
-	"Line graph where: \"dash-tash\", 0, 1, \"\", 0, 0, \"wn\", 0, \"yes\", ~1\n"
+	"Font size: 10\n"
+	"Line graph: \"dash-tash\", 0, 1, \"\", 0, 0, \"wn\", 12, 0, \"yes\"\n"
 	"One mark bottom: 1, \"no\", \"yes\", \"no\", \"Short VOT\"\n"
 	"removeObject: ganong\n"
 )
 MAN_END
 
-MAN_BEGIN (U"Table: Horizontal error bars plot where...", U"djmw", 20131220)
+MAN_BEGIN (U"Table: Horizontal error bars plot...", U"djmw", 20230901)
 INTRO (U"Draws horizontal lines that represent the error intervals of a data column from the selected @@Table@.")
-NORMAL (U"This command behaves analogous to @@Table: Vertical error bars plot where...@.")
+NORMAL (U"This command behaves analogous to @@Table: Vertical error bars plot...@.")
 MAN_END
 
-MAN_BEGIN (U"Table: Horizontal error bars plot...", U"djmw", 20131220)
-INTRO (U"Draws horizontal lines that represent the error intervals of a data column from the selected @@Table@.")
-NORMAL (U"This command behaves analogous to @@Table: Vertical error bars plot where...@.")
-MAN_END
-
-MAN_BEGIN (U"Table: Vertical error bars plot...", U"djmw", 20131223)
-INTRO (U"Draws vertical lines that represent the error intervals of a data column from the selected @@Table@.")
-NORMAL (U"For more info see @@Table: Vertical error bars plot where...@")
-MAN_END
-
-MAN_BEGIN (U"Table: Vertical error bars plot where...", U"djmw", 20131223)
+MAN_BEGIN (U"Table: Vertical error bars plot...", U"djmw", 20230901)
 INTRO (U"Draws vertical lines that represent the error intervals of a data column from the selected @@Table@.")
 ENTRY (U"Settings")
 SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (9.6), U""
-	Manual_DRAW_SETTINGS_WINDOW ("Table: Vertical confidence intervals plot where", 9.6)   // 0.6 extra for the text
+	Manual_DRAW_SETTINGS_WINDOW ("Table: Vertical error bars plot", 9.6)   // 0.6 extra for the text
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Horizontal column", "")
 	Manual_DRAW_SETTINGS_WINDOW_RANGE ("Horizontal range", "0.0", "0.0 (= auto)")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Vertical column", "")
@@ -5320,7 +5325,6 @@ SCRIPT (5.4, Manual_SETTINGS_WINDOW_HEIGHT (9.6), U""
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Upper error value column", "")
 	Manual_DRAW_SETTINGS_WINDOW_FIELD ("Bar size (mm)", "1.0")
 	Manual_DRAW_SETTINGS_WINDOW_BOOLEAN("Garnish", 1)
-	Manual_DRAW_SETTINGS_WINDOW_TEXT("Formula", "1; (= everything)")
 )
 TERM (U"##Horizontal column#")
 DEFINITION (U"determines the data along the horizontal axis.")
@@ -5339,12 +5343,9 @@ DEFINITION (U"determine the size of the vertical lines that will be drawn. These
 	"one-sided and two-sided error bars. If your errors are symmetric around the y-position, your table only needs "
 	"one column and you can supply the name of this column in both fields.")
 TERM (U"##Bar size (mm)#")
-DEFINITION (U"determines the width of the horizontal bars or whishers at the lower an postion of the drawn line. ")
+DEFINITION (U"determines the width of the horizontal bars or whishers at the lower end position of the drawn line. ")
 TERM (U"##Garnish#")
 DEFINITION (U"determines whether or not some decoration is drawn.")
-TERM (U"##Formula")
-DEFINITION (U"can be used to supply an expression to select only those rows for plotting where the expression "
-	"evaluates to %%true%. A 1 value always evaluates to %%true%.")
 MAN_END
 
 MAN_BEGIN (U"Table: Get median absolute deviation...", U"djmw", 20120405)

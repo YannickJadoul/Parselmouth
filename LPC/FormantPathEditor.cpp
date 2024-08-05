@@ -1,6 +1,6 @@
 /* FormantPathEditor.cpp
  *
- * Copyright (C) 2020-2023 David Weenink, 2022 Paul Boersma
+ * Copyright (C) 2020-2023 David Weenink, 2022-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -195,21 +195,21 @@ static void menu_cb_candidate_modellingSettings (FormantPathEditor me, EDITOR_AR
 	EDITOR_OK
 		SET_STRING (parameters_string, my instancePref_modeler_numberOfParametersPerTrack())
 	EDITOR_DO
-	my setInstancePref_modeler_numberOfParametersPerTrack (parameters_string);
-	autoINTVEC parameters = splitByWhitespaceWithRanges_INTVEC (my instancePref_modeler_numberOfParametersPerTrack());
-	Melder_require (parameters.size > 0,
-		U"At least one coefficient should be given.");
-	const integer numberOfTracks = FormantPath_getNumberOfFormantTracks (my formantPath());
-	Melder_require (parameters.size <= numberOfTracks,
-		U"The number of coefficients (", parameters.size, U") should not exceed the number of tracks (", numberOfTracks, U").");
-	Melder_require (NUMmin_e (parameters.get()) > 0.0,
-		U"All coefficients should be larger than zero.");
-	my setInstancePref_modeler_varianceExponent (varianceExponent);
-	FunctionEditor_redraw (me);
+		my setInstancePref_modeler_numberOfParametersPerTrack (parameters_string);
+		autoINTVEC parameters = splitByWhitespaceWithRanges_INTVEC (my instancePref_modeler_numberOfParametersPerTrack());
+		Melder_require (parameters.size > 0,
+			U"At least one coefficient should be given.");
+		const integer numberOfTracks = FormantPath_getNumberOfFormantTracks (my formantPath());
+		Melder_require (parameters.size <= numberOfTracks,
+			U"The number of coefficients (", parameters.size, U") should not exceed the number of tracks (", numberOfTracks, U").");
+		Melder_require (NUMmin_e (parameters.get()) > 0.0,
+			U"All coefficients should be larger than zero.");
+		my setInstancePref_modeler_varianceExponent (varianceExponent);
+		FunctionEditor_redraw (me);
 	EDITOR_END
 }
 
-double FormantPath_getRoundedMaximumCeiling (FormantPath me) {
+static double FormantPath_getRoundedMaximumCeiling (FormantPath me) {
 	const integer ceiling = 100 * Melder_iroundDown ((my ceilings [my ceilings.size] + 100.1) / 100.0);
 	return (double) ceiling;
 }
@@ -218,11 +218,11 @@ static void menu_cb_AdvancedCandidateDrawingSettings (FormantPathEditor me, EDIT
 	EDITOR_FORM (U"Candidate drawing settings", nullptr)
 		BOOLEAN (drawEstimatedModels, U"Draw estimated models", my default_candidate_draw_estimatedModels())
 		POSITIVE (yGridLineEvery_Hz, U"Hor. grid lines every (Hz)", my default_candidate_draw_yGridLineEvery_Hz())
-		LABEL (U"Set the maximum frequency for the display of the candidates...")
+		COMMENT (U"Set the maximum frequency for the display of the candidates...")
 		POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", my default_candidate_draw_maximumFrequency())
-		LABEL (U"...or, overrule this setting by using the maximum ceiling instead...")
+		COMMENT (U"...or, overrule this setting by using the maximum ceiling instead...")
 		BOOLEAN (useMaximumCeiling, U"Use maximum ceiling", my default_candidate_draw_useMaximumCeiling())
-		LABEL (U"If you want the Spectrogram and the candidates to have the same maximum frequency.")
+		COMMENT (U"If you want the Spectrogram and the candidates to have the same maximum frequency.")
 		BOOLEAN  (adjustSpectrogramView, U"Adjust spectrogram view", my default_candidate_draw_adjustSpectrogramView());
 		BOOLEAN (drawErrorBars, U"Draw bandwidths", my default_candidate_draw_showBandwidths())
 	EDITOR_OK
@@ -249,14 +249,14 @@ static void menu_cb_AdvancedCandidateDrawingSettings (FormantPathEditor me, EDIT
 
 static void menu_cb_candidates_FindPath (FormantPathEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Find path", nullptr)
-		LABEL (U"Within frame:")
+		COMMENT (U"Within frame:")
 		REAL (qWeight, U"F/B weight (0-1)", U"1.0")
-		LABEL (U"Between frames:")
+		COMMENT (U"Between frames:")
 		REAL (frequencyChangeWeight, U"Frequency change weight (0-1)", U"1.0")
 		REAL (stressWeight, U"Stress weight (0-1)", U"1.0")
 		REAL (ceilingChangeWeight, U"Ceiling change weight (0-1)", U"1.0")
 		POSITIVE (intensityModulationStepSize, U"Intensity modulation step size (dB)", U"5.0")
-		LABEL (U"Global stress parameters:")
+		COMMENT (U"Global stress parameters:")
 		POSITIVE (windowLength, U"Window length", U"0.035")
 	EDITOR_OK
 	EDITOR_DO
@@ -485,7 +485,13 @@ autoFormantPathEditor FormantPathEditor_create (conststring32 title, FormantPath
 		autoFormantPathEditor me = Thing_new (FormantPathEditor);
 		if (soundToCopy)
 			my soundArea() = SoundArea_create (false, soundToCopy, me.get());
-		my formantPathArea() = FormantPathArea_create (true, soundToCopy, me.get());
+		my formantPathArea() =
+			soundToCopy
+				?
+			FormantPathArea_create (true, soundToCopy, me.get())
+				:
+			(autoFormantPathArea) FormantPathArea_without_Sound_create (true, nullptr, me.get())
+		;
 		my formantPathArea() -> _formantPath = formantPath;
 		if (textGridToCopy)
 			my textGridArea() = TextGridArea_create (false, textGridToCopy, me.get());

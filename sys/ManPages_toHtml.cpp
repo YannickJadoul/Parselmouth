@@ -1,6 +1,6 @@
 /* ManPages_toHtml.cpp
  *
- * Copyright (C) 1996-2023 Paul Boersma
+ * Copyright (C) 1996-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ static const struct stylesInfo {
 /* INTRO: */ { U"<p>", U"</p>" },
 /* ENTRY: */ { U"<h3>", U"</h3>" },
 /* NORMAL: */ { U"<p>", U"</p>" },
-/* LIST_ITEM: */ { U"<dd>", U"" },
+/* LIST_ITEM: */ { U"<dd style=\"position:relative;padding-left:1em;text-indent:-2em\">", U"" },
 /* TERM: */ { U"<dt>", U"" },
 /* DEFINITION: */ { U"<dd>", U"" },
 /* CODE: */ { U"<code>&nbsp;&nbsp;&nbsp;", U"<br></code>" },
@@ -50,7 +50,11 @@ static const struct stylesInfo {
 /* CODE2: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
 /* CODE3: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
 /* CODE4: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE5: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" }
+/* CODE5: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
+/* CAPTION: */ { U"<p style=\"position:relative;padding-left:4em;text-indent:-2em;font-size:86%\">", U"</font></p>" },
+/* QUOTE1: */ { U"<p style=\"position:relative;padding-left:4em;font-size:86%\">", U"</font></p>" },
+/* QUOTE2: */ { U"<p style=\"position:relative;padding-left:8em;font-size:86%\">", U"</font></p>" },
+/* QUOTE3: */ { U"<p style=\"position:relative;padding-left:12em;font-size:86%\">", U"</font></p>" },
 };
 
 static void writeLinkAsHtml (ManPages me, mutablestring32 link, conststring32 linkText, MelderString *buffer, conststring32 pageTitle) {
@@ -227,10 +231,10 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 				);
 				{// scope
 					autoMelderProgressOff progress;
-					autoMelderWarningOff warning;
-					autoMelderSaveDefaultDir saveDir;
-					if (! MelderDir_isNull (& my rootDirectory))
-						Melder_setDefaultDir (& my rootDirectory);
+					autoMelderWarningOff nowarn;
+					autoMelderSaveCurrentFolder saveFolder;
+					if (! MelderFolder_isNull (& my rootDirectory))
+						Melder_setCurrentFolder (& my rootDirectory);
 					const bool dollarSignWasCode = graphics -> dollarSignIsCode;
 					const bool backquoteWasVerbatim = graphics -> backquoteIsVerbatim;
 					const bool atSignWasLink = graphics -> atSignIsLink;
@@ -353,6 +357,15 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 					writeLinkAsHtml (me, link.string, linkText.string, buffer, page -> title.get());
 					if (isBold)
 						MelderString_append (buffer, U"</b>");
+				} else if (*p == U'<') {
+					MelderString_append (buffer, U"&lt;");
+					p ++;
+				} else if (*p == U'>') {
+					MelderString_append (buffer, U"&gt;");
+					p ++;
+				} else if (*p == U'&') {
+					MelderString_append (buffer, U"&amp;");
+					p ++;
 				} else
 					MelderString_append (buffer, *p ++);
 			}
@@ -688,7 +701,7 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 		MelderString_append (buffer, ul ? U"</ul>\n" : U"</dl>\n");
 		inList = false;
 	}
-	praatObjects.reset();
+	praatObjects. reset();
 }
 
 static void writeTitleAsHtml (conststring32 title, MelderString *buffer) {
@@ -776,8 +789,8 @@ void ManPages_writeOneToHtmlFile (ManPages me, Interpreter optionalInterpreterRe
 }
 
 void ManPages_writeAllToHtmlDir (ManPages me, Interpreter optionalInterpreterReference, conststring32 dirPath) {
-	structMelderDir dir { };
-	Melder_pathToDir (dirPath, & dir);
+	structMelderFolder dir { };
+	Melder_pathToFolder (dirPath, & dir);
 	for (integer ipage = 1; ipage <= my pages.size; ipage ++) {
 		ManPage page = my pages.at [ipage];
 		char32 fileName [ManPages_FILENAME_BUFFER_SIZE];
@@ -816,7 +829,7 @@ void ManPages_writeAllToHtmlDir (ManPages me, Interpreter optionalInterpreterRef
 		static MelderString buffer;
 		MelderString_empty (& buffer);
 		structMelderFile file { };
-		MelderDir_getFile (& dir, fileName, & file);
+		MelderFolder_getFile (& dir, fileName, & file);
 		writePageAsHtml (me, optionalInterpreterReference, & file, ipage, & buffer);
 		/*
 			An optimization because reading is much faster than writing:

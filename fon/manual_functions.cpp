@@ -1,6 +1,6 @@
 /* manual_functions.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
  */
 
 #include "ManPagesM.h"
-#include "praat_version.h"
 
 void manual_functions_init (ManPages me);
 void manual_functions_init (ManPages me) {
@@ -25,7 +24,7 @@ void manual_functions_init (ManPages me) {
 MAN_PAGES_BEGIN R"~~~(
 ################################################################################
 "Functions"
-© Paul Boersma 2022,2023
+© Paul Boersma 2022-2024
 
 A growing list of functions that you can use in @formulas and @scripting...
 
@@ -80,7 +79,10 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`chooseFolder$` (%`title$`) – pops up a folder selection window
 , @`chooseReadFile$` (%`title$`) – pops up a file selection window for opening (or appending to) an existing file
 , @`chooseWriteFile$` (%`title$`, %`defaultFilename$`) – pops up a file selection window for saving to a new file
+, @`clearinfo` – clear the Info window
+, @`col#` (%`matrix##`, %`columnNumber`) - extract one column from a matrix
 , @`columnSums#` (%`matrix##`)
+, @`combine#` (...) - combine numbers, vectors and matrices into a new vector
 , @`correlation` (%`u#`, %`v#`) – correlation (between \-m1 and +1) of two vectors
 , @`cos` (%`x`) – cosine
 , @`cos#` (%`vector#`) – cosine of each element of %`vector#`
@@ -117,6 +119,8 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`endeditor` – leave the environment of an editor
 , @`endproc` – end a procedure definition
 , @`endsWith` (%`string$`, %`part$`) – determine whether %`string$` ends in %`part$`
+, @`endsWith_caseInsensitive` (%`string$`, %`part$`) – determine whether %`string$` ends in %`part$`
+, @`environment$` (%`string$`) – look up a system environment string
 , @`erb` (%`f`) – equivalent rectangular bandwidth for frequency %`f`
 , @`erbToHertz` (%`x`) – from ERB-rate to acoustic frequency
 , @`erf` (%`x`) – error function, the integral of the Gaussian
@@ -131,6 +135,8 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`extractWord$` (%`string$`, %`part$`) – the first “word” after the first occurrence of %`part$% in %`string$`
 , @`fileNames$#` (%`folderNameOrPattern$`) – get the names (not the whole paths) of the files in a folder
 	or that match a pattern with an asterisk
+, @`fileNames_caseInsensitive$#` (%`folderNameOrPattern$`) – get the names (not the whole paths) of the files in a folder
+	or that match a pattern with an asterisk
 , @`fileReadable` (%`filePath$`) – 1 if the file exists and can be read, 0 otherwise
 , @`fisherP` (%`f`, %`df1`, %`df2`) – area under the Fisher %F curve up to %`f`
 , @`fisherQ` (%`f`, %`df1`, %`df2`) – area under the Fisher %F curve after %`f`
@@ -138,7 +144,10 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`floor` (%`x`) – round down to integer
 , @`floor#` (%`vector#`) – round down each element of %`vector#`
 , @`floor##` (%`matrix##`) – round down each cell of %`matrix##`
+, @`folderExists` (%`folderPath$`) – 1 if the folder exists and can be read, 0 otherwise
 , @`folderNames$#` (%`folderNameOrPattern$`) – get the names (not the whole paths) of the subfolders in a folder
+	or that match a pattern with an asterisk
+, @`folderNames_caseInsensitive$#` (%`folderNameOrPattern$`) – get the names (not the whole paths) of the subfolders in a folder
 	or that match a pattern with an asterisk
 , @`from_to#` (%`m`, %`n`) – the integers from %`m` through %`n`
 , @`from_to_by#` (%`m`, %`n`, %`step`) – numbers from %`m` through %`n`, in steps of %`step`
@@ -154,6 +163,8 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`imin` (%`x`, `...`) – location of the minimum
 , @`index` (%`string$`, %`part$`) – look up a substring, or 0 if not found
 , @`index` (%`strings$#`, %`s$`) – look up whether and where %`s$` first occurs in %`strings$`
+, @`index_caseInsensitive` (%`string$`, %`part$`) – look up a substring, or 0 if not found
+, @`index_caseInsensitive` (%`strings$#`, %`s$`) – look up whether and where %`s$` first occurs in %`strings$`
 , @`index_regex` (%`string$`, %`regex$`) – determine whether and where %`string$` first matches %`regex$`
 , @`inner` (%`a#`, %`b#`) – inner product
 , @`invBinomialP` (%`P`, %`k`, %`n`) – inverse of `binomialP`
@@ -251,13 +262,35 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`right$` (%`string$`, %`n`) – the %n last characters in %`string$`
 , @`rindex` (%`string$`, %`part$`) – look up a substring from the end, or 0 if not found
 , @`rindex` (%`strings$#`, %`s$`) – look up whether and where %`s$` last occurs in %`strings$#`
+, @`rindex_caseInsensitive` (%`string$`, %`part$`) – look up a substring from the end, or 0 if not found
+, @`rindex_caseInsensitive` (%`strings$#`, %`s$`) – look up whether and where %`s$` last occurs in %`strings$#`
 , @`rindex_regex` (%`string$`, %`regex$`) – determine whether and where %`string$` last matches %`regex$`
 , @`round` (%`x`) – nearest integer
 , @`round#` (%`vector#`) – nearest integer of each element of %`vector#`
 , @`round##` (%`matrix##`) – nearest integer of each cell of %`matrix##`
+, @`row#` (%`matrix##`, %`rowNumber`) - extract one row from a matrix
 , @`rowSums#` (%`matrix##`)
 , @`runScript` (%`filePath$`, `...`) – run a script with the given arguments
-, @`selectObject` (`...`) – select objects in the list by ID and/or name
+, @`runSubprocess` (%`executableFilePath$`, `...`) – run an external program with the given arguments
+, @`runSubprocess$` (%`executableFilePath$`, `...`) – run an external program with the given arguments, and return its output
+, @`runSystem` (`...`) – run a system command line with the given arguments concatenated
+, @`runSystem$` (`...`) – run a system command line with the given arguments concatenated, and return its output
+, @`selected` ( ) – the ID of the topmost selected object
+, @`selected` (%`i`) – the ID of the %%i%th selected object (as counted from the top, or from the bottom if negative)
+, @`selected` (%`type$`) – the ID of the topmost selected object of type %`type$`
+, @`selected` (%`type$`, %`i`) – the ID of the %%i%th selected object of type %`type$` (as counted from the top,
+  or from the bottom if negative)
+, @`selected$` ( ) – the full name (type + given name) of the topmost selected object
+, @`selected$` (%`i`) – the full name (type + given name) of the %%i%th selected object (as counted from the top,
+  or from the bottom if negative)
+, @`selected$` (%`type$`) – the given name of the topmost selected object of type %`type$`
+, @`selected$` (%`type$`, %`i`) – the given name of the %%i%th selected object of type %`type$` (as counted from the top,
+  or from the bottom if negative)
+, @`selected#` ( ) – the IDs of all selected objects
+, @`selected#` (%`type$`) – the IDs of all selected objects of type %`type$`
+, @`selected$#` ( ) – the full names of all selected objects
+, @`selected$#` (%`type$`) – the given names of all selected objects of type %`type$`
+, @`selectObject` (`...`) – select object(s) in the list by ID and/or full name
 , @`semitonesToHertz` (%`x`) – from logarithmic scale %re 100 Hz to acoustic frequency
 , @`sigmoid` (%`x`) – 1 / (1 + %e^^-%`x`^)
 , @`sigmoid#` (%`vector#`) – sigmoid of each element of %`vector#`
@@ -276,6 +309,11 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`sleep` (%`duration`) – pause script for %`duration` seconds
 , @`softmax#` (%`vector#`)
 , @`softmaxPerRow##` (%`matrix##`)
+, @`solve#` (%`a##`, %`y#`) – find #x for which #A · #x = #y
+, @`solve##` (%`a##`, %`y##`) – find #X for which #A · #X = #Y
+, @`solveNonnegative#` (%`a##`, %`y#` [, %`x`], %`maximumNumberOfIterations`, %`tolerance`, %`infoLevel`)
+, @`solveSparse#` (%`a##`, %`y#` [, %`x`], %`maximumNumberOfNonzeros`, %`maximumNumberOfIterations`, %`tolerance`, %`infoLevel`)
+, @`solveWeaklyConstrained#` (%`a##`, %`y#`, %`alpha`, %`delta`)
 , @`sort#` (%`vector#`) – reshuffle in increasing order
 , @`sort$#` (%`stringVector$#`) – reshuffle in Unicode-alphabetical order
 , @`sort_numberAware$#` (%`stringVector$#`) – reshuffle in Unicode-alphabetical order, with special attention to numbers
@@ -284,6 +322,7 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`sqrt#` (%`vector#`) – square root of each element of %`vector#`
 , @`sqrt##` (%`matrix##`) – square root of each cell of %`matrix##`
 , @`startsWith` (%`string$`, %`part$`) – determine whether %`string$` starts with %`part$`
+, @`startsWith_caseInsensitive` (%`string$`, %`part$`) – determine whether %`string$` starts with %`part$`
 , @`stdev` (%`v#`) – standard deviation of the elements of a vector
 , @`stopwatch` – give the current value of the timer, which is then immediately reset to zero (note: no parentheses)
 , @`string$` (%`number`) – format a number as a string
@@ -434,8 +473,8 @@ Tests
 =====
 {
 	\`{assert} \#{arccos} (-1.1) = undefined
-	\`{assert} abs (\#{arccos} (-1.0) - pi) < 1e-17
-	\`{assert} abs (\#{arccos} (0.0) - pi/2) < 1e-17
+	\`{assert} \`{abs} (\#{arccos} (-1.0) - pi) < 1e-17
+	\`{assert} \`{abs} (\#{arccos} (0.0) - pi/2) < 1e-17
 	\`{assert} \#{arccos} (1.0) = 0
 	\`{assert} \#{arccos} (1.1) = undefined
 	\`{assert} \#{arccos} (undefined) = undefined
@@ -535,9 +574,9 @@ Tests
 =====
 {
 	\`{assert} \#{arcsin} (-1.1) = undefined
-	\`{assert} abs (\#{arcsin} (-1.0) - -pi/2) < 1e-17
+	\`{assert} \`{abs} (\#{arcsin} (-1.0) - -pi/2) < 1e-17
 	\`{assert} \#{arcsin} (0.0) = 0
-	\`{assert} abs (\#{arcsin} (1.0) - pi/2) < 1e-17
+	\`{assert} \`{abs} (\#{arcsin} (1.0) - pi/2) < 1e-17
 	\`{assert} \#{arcsin} (1.1) = undefined
 	\`{assert} \#{arcsin} (undefined) = undefined
 }
@@ -668,13 +707,13 @@ Tests
 =====
 {
 	\`{assert} \#{arctan2} (0.0, 3.0) = 0
-	\`{assert} abs (\#{arctan2} (3.0, 3.0) - pi/4) < 1e-17
-	\`{assert} abs (\#{arctan2} (3.0, 0.0) - pi/2) < 1e-17
-	\`{assert} abs (\#{arctan2} (3.0, -3.0) - 3*pi/4) < 1e-17
-	\`{assert} abs (\#{arctan2} (0.0, -3.0) - pi) < 1e-17
-	\`{assert} abs (\#{arctan2} (-3.0, -3.0) + 3*pi/4) < 1e-17
-	\`{assert} abs (\#{arctan2} (-3.0, 0.0) + pi/2) < 1e-17
-	\`{assert} abs (\#{arctan2} (-3.0, 3.0) + pi/4) < 1e-17
+	\`{assert} \`{abs} (\#{arctan2} (3.0, 3.0) - pi/4) < 1e-17
+	\`{assert} \`{abs} (\#{arctan2} (3.0, 0.0) - pi/2) < 1e-17
+	\`{assert} \`{abs} (\#{arctan2} (3.0, -3.0) - 3*pi/4) < 1e-17
+	\`{assert} \`{abs} (\#{arctan2} (0.0, -3.0) - pi) < 1e-17
+	\`{assert} \`{abs} (\#{arctan2} (-3.0, -3.0) + 3*pi/4) < 1e-17
+	\`{assert} \`{abs} (\#{arctan2} (-3.0, 0.0) + pi/2) < 1e-17
+	\`{assert} \`{abs} (\#{arctan2} (-3.0, 3.0) + pi/4) < 1e-17
 	;\`{assert} \#{arctan2} (0.0, 0.0) = undefined
 }
 Edge cases
@@ -795,7 +834,7 @@ Syntax and semantics
 
 Definition
 ==========
-~ #`barkToHertz` (%x) = 650 sinh (%x / 7)
+~ #`barkToHertz` (%x) = 650 @`sinh` (%x / 7)
 
 ################################################################################
 "`besselI`"
@@ -913,11 +952,11 @@ would target the white keys at least 597 times. This is compared with a %\ci^2 t
 	appendInfoLine: “P (chi-square) = ”, fixed$ (px2, 6)
 }
 The result is:
-
+`
 	*** Binomial test 597, 403, p = 0.583333 ***
 	P (binomial) = 0.199330
 	P (chi-square) = 0.398365
-
+`
 The %\ci^2 test is two-sided (it signals a preference for the white or for the black keys),
 so it has twice the probability of the binomial test.
 
@@ -1027,6 +1066,35 @@ Syntax and semantics
 : pop up a file selection window for saving to a new file.
 
 ################################################################################
+"`clearinfo`"
+© Paul Boersma 2023
+
+A command that can be used in @Scripting.
+
+Syntax and semantics
+====================
+#`clearinfo`
+: clear the @@Info window@.
+
+################################################################################
+"`col#`"
+© Paul Boersma 2024
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`col#` (%`m##`, %`i`)
+: extract the %`i`th column from the matrix %`m##`.
+
+Examples
+========
+{
+	mat## = {{ 7, 4 }, { 99, 103 }}
+	\`{assert} col# (mat##, 2) = { 4, 103 }
+}
+
+################################################################################
 "`columnSums#`"
 © Paul Boersma 2023
 
@@ -1036,6 +1104,27 @@ Syntax and semantics
 ====================
 #`columnSums#` (%`m##`)
 : compute the sum of the elements of each row of the matrix %`m##`.
+
+################################################################################
+"`combine#`"
+© Paul Boersma 2023
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`combine#` (...)
+: combine numbers, vectors and matrices into a new vector.
+
+Examples
+========
+{
+	\`{assert} \#{combine#} (7, 4, 99) = { 7, 4, 99 }
+	\`{assert} \#{combine#} ({ 7, 4 }, 99) = { 7, 4, 99 }
+	\`{assert} \#{combine#} ({ 7, 4 }, { 99, 103, 1 }) = { 7, 4, 99, 103, 1 }
+	\`{assert} \#{combine#} ({{ 7, 4 }, { 99, 103 }}, 1, { 8, -1, 2 }) =
+	... { 7, 4, 99, 103, 1, 8, -1, 2 }
+}
 
 ################################################################################
 "`correlation`"
@@ -1583,6 +1672,40 @@ Syntax and semantics
 #`endsWith` (%`string$`, %`part$`)
 : determine whether %`string$` ends in %`part$`.
 
+See also
+========
+- @`startsWith` for determining whether %`string$` %starts with %`part$`.
+- @`endsWith_caseInsensitive` for %%case-insensitive% matching.
+
+################################################################################
+"`endsWith_caseInsensitive`"
+© Paul Boersma 2023
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`endsWith_caseInsensitive` (%`string$`, %`part$`)
+: determine whether %`string$` ends in %`part$`.
+
+See also
+========
+- @`startsWith_caseInsensitive` for determining whether %`string$` %starts with %`part$`.
+- @`endsWith` for %%case-sensitive% matching.
+
+################################################################################
+"`environment$`"
+© Paul Boersma 2023
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`environment$` (%`string$`)
+: look up a system environment string.
+
+For details and examples, see @@Scripting 6.5. Calling system commands@.
+
 ################################################################################
 "`erb`"
 © Paul Boersma 2023
@@ -1750,18 +1873,41 @@ Syntax and semantics
 ====================
 #`fileNames$#` (%`folderNameOrPattern$`)
 : return the names (not the whole paths) of the files in a folder
-	or that match a pattern with an asterisk.
+	or that match a file-name pattern with up to two asterisks.
+
+See also
+========
+- @`folderNames$#` for finding %folder names
+- @`fileNames_caseInsensitive$#` for %%case-insensitive% matching
 
 ################################################################################
-"`fileReadable`"
+"`fileNames_caseInsensitive$#`"
 © Paul Boersma 2023
 
 A function that can be used in @@Formulas@, especially in @Scripting.
 
 Syntax and semantics
 ====================
+#`fileNames_caseInsensitive$#` (%`folderNameOrPattern$`)
+: return the names (not the whole paths) of the files in a folder
+	or that match a file-name pattern with up to two asterisks.
+
+See also
+========
+- @`folderNames_caseInsensitive$#` for finding %folder names
+- @`fileNames$#` for %%case-sensitive% matching
+
+################################################################################
+"`fileReadable`"
+© Paul Boersma 2023,2024
+
+A function that can be used in @@Formulas@, especially in @Scripting.
+
+Syntax and semantics
+====================
 #`fileReadable` (%`filePath$`)
-: return 1 if the file exists and can be read, or 0 otherwise.
+: return 1 if the file exists and can be read, or 0 otherwise
+  (e.g. if %`filePath$` does not exist or refers to a folder).
 
 ################################################################################
 "`fisherP`"
@@ -1846,6 +1992,18 @@ Syntax and semantics
 : round down (@`floor`) each cell of the matrix %`m##`.
 
 ################################################################################
+"`folderExists`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@, especially in @Scripting.
+
+Syntax and semantics
+====================
+#`folderExists` (%`folderPath$`)
+: return 1 if the folder exists, or 0 otherwise
+  (e.g. if %`folderPath$` does not exist or refers to a file).
+
+################################################################################
 "`folderNames$#`"
 © Paul Boersma 2023
 
@@ -1855,7 +2013,29 @@ Syntax and semantics
 ====================
 #`folderNames$#` (%`folderNameOrPattern$`)
 : return the names (not the whole paths) of the subfolders in a folder
-	or that match a pattern with an asterisk.
+	or that match a subfolder-name pattern with up to two asterisks.
+
+See also
+========
+- @`fileNames$#` for finding %file names
+- @`folderNames_caseInsensitive$#` for %%case-insensitive% matching
+
+################################################################################
+"`folderNames_caseInsensitive$#`"
+© Paul Boersma 2023
+
+A function that can be used in @@Formulas@, especially in @Scripting.
+
+Syntax and semantics
+====================
+#`folderNames_caseInsensitive$#` (%`folderNameOrPattern$`)
+: return the names (not the whole paths) of the subfolders in a folder
+	or that match a subfolder-name pattern with up to two asterisks.
+
+See also
+========
+- @`fileNames_caseInsensitive$#` for finding %file names
+- @`folderNames$#` for %%case-sensitive% matching
 
 ################################################################################
 "`from_to#`"
@@ -2051,7 +2231,47 @@ Syntax and semantics
 : return the first location of the substring %`part$` inside %`string$`, or 0 if not found.
 
 #`index` (%`strings$#`, %`s$`)
-: look up whether and where %`s$` first occurs in %`strings$`.
+: look up whether and where %`s$` first occurs in %`strings$#`.
+
+See also
+========
+- @`rindex` for the %last occurrence
+- @`index_caseInsensitive` for %%case-insensitive% matching
+- @`index_regex` for %%regular-expression% matching
+
+################################################################################
+"`index_caseInsensitive`"
+© Paul Boersma 2023
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`index_caseInsensitive` (%`string$`, %`part$`)
+: return the first location of the substring %`part$` inside %`string$`, or 0 if not found.
+
+#`index_caseInsensitive` (%`strings$#`, %`s$`)
+: look up whether and where %`s$` first occurs in %`strings$#`.
+
+Case insensitivity
+==================
+For determining where the substring is located,
+it doesn’t matter whether %`string$` and/or %`part$` are in lower case or upper case.
+Here is a comparison with @`index`:
+{
+	assert \`{index} ("hello", "L") = 0
+	assert \#{index_caseInsensitive} ("hello", "L") = 3
+	assert \`{index} ("heLlo", "L") = 3
+	assert \#{index_caseInsensitive} ("heLlo", "L") = 3
+	assert \`{index} ("helLo", "L") = 4
+	assert \#{index_caseInsensitive} ("helLo", "L") = 3
+	assert \`{index} ("heLLo", "L") = 3
+	assert \#{index_caseInsensitive} ("heLLo", "L") = 3
+}
+See also
+========
+- @`rindex_caseInsensitive` for the %last occurrence
+- @`index` for %%case-sensitive% matching
 
 ################################################################################
 "`index_regex`"
@@ -2063,6 +2283,7 @@ Syntax and semantics
 ====================
 #`index_regex` (%`string$`, %`regex$`)
 : determine whether and where %`string$` first matches %`regex$`.
+  See @@Regular expressions@.
 
 ################################################################################
 "`inner`"
@@ -2349,7 +2570,7 @@ Syntax and semantics
 Tests
 =====
 {
-	assert max (7.2, -5, 3) = 7.2
+	\`{assert} \#{max} (7.2, -5, 3) = 7.2
 }
 
 ################################################################################
@@ -2415,7 +2636,7 @@ A function that can be used in @@Formulas@.
 Syntax and semantics
 ====================
 #`minusObject` (`...`)
-: deselect the objects given by IDs and/or names.
+: deselect the objects given by IDs and/or full names.
 
 ################################################################################
 "`mul##`"
@@ -2430,7 +2651,7 @@ Syntax and semantics
 
 ################################################################################
 "`number`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @@Formulas@.
 
@@ -2438,6 +2659,51 @@ Syntax and semantics
 ====================
 #`number` (%`a$`)
 : interpret a string as a number.
+
+{
+	\`{assert} \#{number} ("0.0") = 0
+	\`{assert} \#{number} ("0.00123") = 0.00123   ; decimal point
+	\`{assert} \#{number} ("12e34") = 1.2e+35   ; exponent introduced by "e" or "E"
+	\`{assert} \#{number} ("junk") = undefined   ; i.e. not zero as in C++ !
+	\`{assert} \#{number} ("  -0.0000000123junk") = -1.23e-08   ; maximize digits, then ignore
+	\`{assert} \#{number} ("1.0e+309") = undefined
+	\`{assert} \#{number} ("1.0e-309") <> 0   ; denormalized
+	\`{assert} \#{number} ("1.0e-319") <> 0   ; denormalized
+	\`{assert} \#{number} ("1.0e-329") = 0   ; underflow
+	\`{assert} \#{number} ("32278") = 32278
+	\`{assert} \#{number} ("-32278") = -32278
+	\`{assert} \#{number} ("32278.64785") = 32278.64785
+	\`{assert} \#{number} ("-32278.64785") = -32278.64785
+	\`{assert} \#{number} ("32278.647e85") = 32278.647e85
+	\`{assert} \#{number} ("-32278.647e85") = -32278.647e85
+	\`{assert} \#{number} ("32278.647e-85") = 32278.647e-85
+	\`{assert} \#{number} ("-32278.647e-85") = -32278.647e-85
+	\`{assert} \#{number} ("32278.647e-305") = 32278.647e-305
+	\`{assert} \#{number} ("-32278.647e-305") = -32278.647e-305
+	\`{assert} \#{number} ("32278.647e-315") = 32278.647e-315
+	\`{assert} \#{number} ("-32278.647e-315") = -32278.647e-315
+	\`{assert} \#{number} ("32278.647e-325") = 32278.647e-325
+	\`{assert} \#{number} ("-32278.647e-325") = -32278.647e-325
+	\`{assert} \#{number} ("32278.647e305") = 32278.647e305
+	\`{assert} \#{number} ("-32278.647e305") = -32278.647e305
+	\`{assert} \#{number} ("32278.647e315") = 32278.647e315
+	\`{assert} \#{number} ("-32278.647e315") = -32278.647e315
+	\`{assert} \#{number} ("32278.647e325") = 32278.647e325
+	\`{assert} \#{number} ("-32278.647e325") = -32278.647e325
+}
+Hexadecimal:
+{
+	\`{assert} \#{number} ("0x32278") = 0x32278
+	\`{assert} \#{number} ("0x123") = 291
+	\`{assert} \#{number} ("0x000001ABCDEFGH") = 0x00001abcdef   ; maximize digits, then ignore
+	\`{assert} \#{number} ("0x123.456") = 291.27099609375
+	\`{assert} \#{number} ("0x123.abc") = 291.6708984375   ; hexadecimal point
+	\`{assert} \#{number} ("0x123.abcp-1") = 145.83544921875   ; exponent introduced by "p" or "P"
+	\`{assert} \#{number} ("0x123.abcP-2") = 72.917724609375
+	\`{assert} \#{number} ("0x123.abcp-12") = 0.07120871543884277   ; the exponent is decimal !
+	\`{assert} \#{number} ("0x123.abcp-1A2") = 145.83544921875   ; the exponent is decimal !
+	\`{assert} \#{number} ("-0x1afp-2") = -107.75   ; from `cppreference.com`
+}
 
 ################################################################################
 "`number#`"
@@ -2486,6 +2752,247 @@ Syntax and semantics
 Definition
 ==========
 ~	%result__%i%j_ = %a_%i %b_%j
+
+################################################################################
+"`part#`"
+© Paul Boersma 2023
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`part#` (%`vector#`, %`from`, %`to`)
+: compute a subsequence of elements of a vector.
+
+Examples
+========
+{
+	\`{assert} part# ({ 7, 4, 99, 103, 1 }, 3, 4) = { 99, 103 }
+}
+
+Examples of error messages
+==========================
+Checks on the number of arguments (always has to be 3):
+{
+	asserterror The function “part#” requires exactly three arguments
+	... (namely a vector, a starting index, and an end index),
+	... not the 0 given.
+	a# = part# ()
+
+	asserterror The function “part#” requires exactly three arguments
+	... (namely a vector, a starting index, and an end index),
+	... not the 5 given.
+	a# = part# (7, 8, 9, "hello", "world")
+}
+Checks on the types of the arguments (always has to be vector, number, number):
+{
+	asserterror The first argument of the function “part#” should be
+	... a numeric vector, not a number.
+	a# = part# (2, 4, { 5, 6, 7, 9, 8 })
+
+	asserterror The first argument of the function “part#” should be
+	... a numeric vector, not a string.
+	a# = part# ("hello", 4, { 5, 6, 7, 9, 8 })
+
+	asserterror The second argument of the function “part#” should be
+	... a number (the starting index), not a string.
+	a# = part# ({ 5, 6, 7, 9, 8 }, "hello", 4)
+
+	asserterror The second argument of the function “part#” should be
+	... a number (the starting index), not a numeric vector.
+	a# = part# ({ 5, 6, 7, 9, 8 }, { 0 }, 4)
+
+	asserterror The third argument of the function “part#” should be
+	... a number (the end index), not a string.
+	a# = part# ({ 5, 6, 7, 9, 8 }, 4, "hello")
+
+	asserterror The third argument of the function “part#” should be
+	... a number (the end index), not a numeric vector.
+	a# = part# ({ 5, 6, 7, 9, 8 }, 4, { 0 })
+}
+Finally the checks on the preconditions of the arguments:
+both element numbers should be within bounds:
+{
+	asserterror The second argument of the function “part#” (the starting index)
+	... should (after rounding) be a positive whole number, not -3.
+	a# = part# ({ 5, 6, 7, 9, 8 }, -2.98, 0)
+
+	asserterror The second argument of the function “part#” (the starting index)
+	... should (after rounding) be a positive whole number, not 0.
+	a# = part# ({ 5, 6, 7, 9, 8 }, 0, 0)
+
+	asserterror The second argument of the function “part#” (the starting index)
+	... should (after rounding) be at most the number of elements (5), not 99.
+	a# = part# ({ 10, 6, 7, 9, 8 }, 99, 0)
+
+	asserterror The second argument of the function “part#” (the starting index)
+	... should (after rounding) be at most the number of elements (5), not 6.
+	a# = part# ({ 10, 6, 7, 9, 8 }, 5.5, 0)
+
+	asserterror The third argument of the function “part#” (the end index)
+	... should (after rounding) be a positive whole number, not -3.
+	a# = part# ({ 10, 6, 7, 9, 8 }, 3, -2.98)
+
+	asserterror The third argument of the function “part#” (the end index)
+	... should (after rounding) be a positive whole number, not 0.
+	a# = part# ({ 10, 6, 7, 9, 8 }, 3, 0)
+
+	asserterror The third argument of the function “part#” (the end index)
+	... should (after rounding) be at most the number of elements (5), not 99.
+	a# = part# ({ 10, 6, 7, 9, 8 }, 3, 99)
+
+	asserterror The third argument of the function “part#” (the end index)
+	... should (after rounding) be at most the number of elements (5), not 6.
+	a# = part# ({ 10, 6, 7, 9, 8 }, 3, 5.5)
+}
+
+################################################################################
+"`part##`"
+© Paul Boersma 2023
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`part##` (%`matrix#`, %`fromRow`, %`toRow`, %`fromColumn`, %`toColumn`)
+: compute a subwindow of cells of a matrix.
+
+Examples
+========
+{
+	\`{assert} part## ({{ 7, 4, 9, 3 }, { 1, 4, 3, 22 }, { 0, 8, 6, 5 }},
+	... 2, 3, 1, 3) = {{ 1, 4, 3 }, { 0, 8, 6 }}
+}
+
+Examples of error messages
+==========================
+Checks on the number of arguments (always has to be 5):
+{
+	asserterror The function “part##” requires exactly five arguments
+	... (namely a matrix, a starting row, an end row, a starting column, and an end column),
+	... not the 0 given.
+	a## = part## ()
+
+	asserterror The function “part##” requires exactly five arguments
+	... (namely a matrix, a starting row, an end row, a starting column, and an end column),
+	... not the 7 given.
+	a## = part## (7, 8, 9, 10, 11, "hello", "world")
+}
+Checks on the types of the arguments (always has to be matrix, number, number, number, number):
+{
+	asserterror The first argument of the function “part##” should be
+	... a numeric matrix, not a number.
+	a## = part## (2, 4, { 5, 6, 7, 9, 8 }, 66, 99)
+
+	asserterror The first argument of the function “part##” should be
+	... a numeric matrix, not a string.
+	a## = part## ("hello", 4, { 5, 6, 7, 9, 8 }, 66, 99)
+
+	asserterror The first argument of the function “part##” should be
+	... a numeric matrix, not a numeric vector.
+	a## = part## ({ 5, 6, 7, 9, 8 }, 4, { 5, 6, 7, 9, 8 }, 66, 99)
+
+	m## = {{ 7, 4, 9, 3 }, { 1, 4, 3, 22 }, { 0, 8, 6, 5 }}   ; three rows, four columns
+
+	asserterror The second argument of the function “part##” should be
+	... a number (the starting row), not a string.
+	a## = part## (m##, "hello", 4, 66, 99)
+
+	asserterror The second argument of the function “part##” should be
+	... a number (the starting row), not a numeric vector.
+	a## = part## (m##, { 0 }, 4, 66, 99)
+
+	asserterror The third argument of the function “part##” should be
+	... a number (the end row), not a string.
+	a## = part## (m##, 4, "hello", 66, 99)
+
+	asserterror The third argument of the function “part##” should be
+	... a number (the end row), not a numeric vector.
+	a## = part## (m##, 4, { 0 }, 66, 99)
+
+	asserterror The fourth argument of the function “part##” should be
+	... a number (the starting column), not a string.
+	a## = part## (m##, 66, 99, "hello", 4)
+
+	asserterror The fourth argument of the function “part##” should be
+	... a number (the starting column), not a numeric vector.
+	a## = part## (m##, 66, 99, { 0 }, 4)
+
+	asserterror The fifth argument of the function “part##” should be
+	... a number (the end column), not a string.
+	a## = part## (m##, 66, 99, 4, "hello")
+
+	asserterror The fifth argument of the function “part##” should be
+	... a number (the end column), not a numeric vector.
+	a## = part## (m##, 66, 99, 4, { 0 })
+}
+Finally the checks on the preconditions of the arguments:
+both row numbers and both column numbers should be within bounds:
+{
+	asserterror The second argument of the function “part##” (the starting row)
+	... should (after rounding) be a positive whole number, not -3.
+	a## = part## (m##, -2.98, 0, 66, 99)
+
+	asserterror The second argument of the function “part##” (the starting row)
+	... should (after rounding) be a positive whole number, not 0.
+	a## = part## (m##, 0, 0, 66, 99)
+
+	asserterror The second argument of the function “part##” (the starting row)
+	... should (after rounding) be at most the number of rows (3), not 99.
+	a## = part## (m##, 99, 0, 66, 99)
+
+	asserterror The second argument of the function “part##” (the starting row)
+	... should (after rounding) be at most the number of rows (3), not 4.
+	a## = part## (m##, 3.5, 0, 66, 99)
+
+	asserterror The third argument of the function “part##” (the end row)
+	... should (after rounding) be a positive whole number, not -3.
+	a## = part## (m##, 2, -2.98, 66, 99)
+
+	asserterror The third argument of the function “part##” (the end row)
+	... should (after rounding) be a positive whole number, not 0.
+	a## = part## (m##, 2, 0, 66, 99)
+
+	asserterror The third argument of the function “part##” (the end row)
+	... should (after rounding) be at most the number of rows (3), not 99.
+	a## = part## (m##, 2, 99, 66, 99)
+
+	asserterror The third argument of the function “part##” (the end row)
+	... should (after rounding) be at most the number of rows (3), not 4.
+	a## = part## (m##, 2, 3.5, 66, 99)
+
+	asserterror The fourth argument of the function “part##” (the starting column)
+	... should (after rounding) be a positive whole number, not -3.
+	a## = part## (m##, 2, 3, -2.98, 0)
+
+	asserterror The fourth argument of the function “part##” (the starting column)
+	... should (after rounding) be a positive whole number, not 0.
+	a## = part## (m##, 2, 3, 0, 0)
+
+	asserterror The fourth argument of the function “part##” (the starting column)
+	... should (after rounding) be at most the number of columns (4), not 99.
+	a## = part## (m##, 2, 3, 99, 0)
+
+	asserterror The fourth argument of the function “part##” (the starting column)
+	... should (after rounding) be at most the number of columns (4), not 5.
+	a## = part## (m##, 2, 3, 4.5, 0)
+
+	asserterror The fifth argument of the function “part##” (the end column)
+	... should (after rounding) be a positive whole number, not -3.
+	a## = part## (m##, 2, 3, 1, -2.98)
+
+	asserterror The fifth argument of the function “part##” (the end column)
+	... should (after rounding) be a positive whole number, not 0.
+	a## = part## (m##, 2, 3, 1, 0)
+
+	asserterror The fifth argument of the function “part##” (the end column)
+	... should (after rounding) be at most the number of columns (4), not 99.
+	a## = part## (m##, 2, 3, 1, 99)
+
+	asserterror The fifth argument of the function “part##” (the end column)
+	... should (after rounding) be at most the number of columns (4), not 5.
+	a## = part## (m##, 2, 3, 1, 4.5)
+}
 
 ################################################################################
 "`pauseScript`"
@@ -2569,7 +3076,7 @@ A function that can be used in @Formulas.
 Syntax and semantics
 ====================
 #`plusObject` (`...`)
-: select the objects given by IDs and/or names,
+: select the objects given by IDs and/or full names,
 without deselecting any objects that are currently selected.
 
 ################################################################################
@@ -2612,12 +3119,12 @@ Syntax and semantics
 : create a vector with the same number of elements as %`model#`,
 and fill all elements with independent Bernoulli-distributed zeroes and ones.
 This is shorthand for doing
-
-	\#{randomBernoulli#} (\`{size} (model#), \%{p})
-
+`
+	\#{randomBernoulli#} (\`{size} (\%{model#}), \%{p})
+`
 ################################################################################
 "`randomBernoulli##`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @Formulas.
 
@@ -2626,13 +3133,13 @@ Syntax and semantics
 #`randomBernoulli##` (%`nrow`, %`ncol`, %`p`)
 : generate %`nrow` \xx %`ncol` independent Bernoulli-distributed (@`randomBernoulli`) zeroes and ones.
 
-#`randomBernoulli##` (%`model#`, %`p`)
-: create a matrix with the same number of rows and columns as %`model#`,
+#`randomBernoulli##` (%`model##`, %`p`)
+: create a matrix with the same number of rows and columns as %`model##`,
 and fill all cells with independent Bernoulli-distributed zeroes and ones.
 This is shorthand for doing
-
-	\#{randomBernoulli##} (\`{numberOfRows} (model##), \`{numberOfColumns} (model##), \%{p})
-
+`
+	\#{randomBernoulli##} (\`{numberOfRows} (\%{model##}), \`{numberOfColumns} (\%{model##}), \%{p})
+`
 ################################################################################
 "`randomGamma`"
 © David Weenink 2019, Paul Boersma 2023
@@ -2651,7 +3158,7 @@ according to the method by @@Marsaglia & Tsang (2000)@.
 
 ################################################################################
 "`randomGamma#`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @Formulas.
 
@@ -2664,12 +3171,12 @@ Syntax and semantics
 : create a vector with the same number of elements as %`model#`,
 and fill all elements with independent \Ga-distributed numbers.
 This is shorthand for doing
-
-	\#{randomGamma#} (\`{size} (model#), %`shape`, %`rate`)
-
+{;
+	\#{randomGamma#} (\`{size} (model#), \%{shape}, \%{rate})
+}
 ################################################################################
 "`randomGamma##`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @Formulas.
 
@@ -2678,13 +3185,13 @@ Syntax and semantics
 #`randomGamma##` (%`nrow`, %`ncol`, %`shape`, %`rate`)
 : generate %`nrow` \xx %`ncol` independent \Ga-distributed (@`randomGamma`) numbers.
 
-#`randomGamma##` (%`model#`, %`shape`, %`rate`)
-: create a matrix with the same number of rows and columns as %`model#`,
+#`randomGamma##` (%`model##`, %`shape`, %`rate`)
+: create a matrix with the same number of rows and columns as %`model##`,
 and fill all cells with independent \Ga-distributed numbers.
 This is shorthand for doing
-
-	\#{randomGammma##} (\`{numberOfRows} (model##), \`{numberOfColumns} (model##), %`shape`, %`rate`)
-
+{;
+	\#{randomGammma##} (\`{numberOfRows} (\%{model##}), \`{numberOfColumns} (\%{model##}), \%{shape}, \%{rate})
+}
 ################################################################################
 "`randomGauss`"
 © Paul Boersma 2023
@@ -2699,7 +3206,7 @@ with true population mean %`mu` and true population standard deviation %`sigma`.
 
 ################################################################################
 "`randomGauss#`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @Formulas.
 
@@ -2712,12 +3219,12 @@ Syntax and semantics
 : create a vector with the same number of elements as %`model#`,
 and fill all elements with independent normally distributed numbers.
 This is shorthand for doing
-
-	\#{randomGauss#} (\`{size} (model#), %`mu`, %`sigma`)
-
+{;
+	\#{randomGauss#} (\`{size} (\%{model#}), \%{mu}, \%{sigma})
+}
 ################################################################################
 "`randomGauss##`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @Formulas.
 
@@ -2726,13 +3233,13 @@ Syntax and semantics
 #`randomGauss##` (%`nrow`, %`ncol`, %`mu`, %`sigma`)
 : generate %`nrow` \xx %`ncol` independent normally distributed (@`randomGauss`) numbers.
 
-#`randomGauss##` (%`model#`, %`mu`, %`sigma`)
-: create a matrix with the same number of rows and columns as %`model#`,
+#`randomGauss##` (%`model##`, %`mu`, %`sigma`)
+: create a matrix with the same number of rows and columns as %`model##`,
 and fill all cells with independent normally distributed numbers.
 This is shorthand for doing
-
-	\#{randomGauss##} (\`{numberOfRows} (model##), \`{numberOfColumns} (model##), %`mu`, %`sigma`)
-
+{;
+	\#{randomGauss##} (\`{numberOfRows} (\%{model##}), \`{numberOfColumns} (\%{model##}), \%{mu}, \%{sigma})
+}
 ################################################################################
 "`randomInteger`"
 © Paul Boersma 2023
@@ -2747,7 +3254,7 @@ with minimum %`min` and maximum %`max`.
 
 ################################################################################
 "`randomInteger#`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @@Formulas@.
 
@@ -2760,12 +3267,12 @@ Syntax and semantics
 : create a vector with the same number of elements as %`model#`,
 and fill all elements with independent uniformly distributed integer numbers.
 This is shorthand for doing
-
-	\#{randomInteger#} (\`{size} (model#), %`min`, %`max`)
-
+{;
+	\#{randomInteger#} (\`{size} (\%{model#}), \%{min}, \%{max})
+}
 ################################################################################
 "`randomInteger##`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @@Formulas@.
 
@@ -2774,13 +3281,13 @@ Syntax and semantics
 #`randomInteger##` (%`nrow`, %`ncol`, %`min`, %`max`)
 : generate %`nrow` \xx %`ncol` independent normally distributed (@`randomInteger`) numbers.
 
-#`randomInteger##` (%`model#`, %`min`, %`max`)
-: create a matrix with the same number of rows and columns as %`model#`,
+#`randomInteger##` (%`model##`, %`min`, %`max`)
+: create a matrix with the same number of rows and columns as %`model##`,
 and fill all cells with independent uniformly distributed integer numbers.
 This is shorthand for doing
-
-	\#{randomInteger##} (\`{numberOfRows} (model##), \`{numberOfColumns} (model##), %`min`, %`max`)
-
+{;
+	\#{randomInteger##} (\`{numberOfRows} (\%{model##}), \`{numberOfColumns} (\%{model##}), \%{min}, \%{max})
+}
 ################################################################################
 "`randomPoisson`"
 © Paul Boersma 2023
@@ -2794,7 +3301,7 @@ Syntax and semantics
 
 ################################################################################
 "`randomPoisson#`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @@Formulas@.
 
@@ -2807,12 +3314,12 @@ Syntax and semantics
 : create a vector with the same number of elements as %`model#`,
 and fill all elements with independent Poisson-distributed numbers.
 This is shorthand for doing
-
-	\#{randomPoisson#} (\`{size} (model#), %`mean`)
-
+{;
+	\#{randomPoisson#} (\`{size} (\%{model#}), \%{mean})
+}
 ################################################################################
 "`randomPoisson##`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @@Formulas@.
 
@@ -2821,13 +3328,13 @@ Syntax and semantics
 #`randomPoisson##` (%`nrow`, %`ncol`, %`mean`)
 : generate %`nrow` \xx %`ncol` independent Poisson-distributed (@`randomPoisson`) numbers.
 
-#`randomPoisson##` (%`model#`, %`mean`)
-: create a matrix with the same number of rows and columns as %`model#`,
+#`randomPoisson##` (%`model##`, %`mean`)
+: create a matrix with the same number of rows and columns as %`model##`,
 and fill all cells with independent Poisson-distributed numbers.
 This is shorthand for doing
-
-	\#{randomPoisson##} (\`{numberOfRows} (model##), \`{numberOfColumns} (model##), %`mean`)
-
+{;
+	\#{randomPoisson##} (\`{numberOfRows} (\%{model##}), \`{numberOfColumns} (\%{model##}), \%{mean})
+}
 ################################################################################
 "`randomUniform`"
 © Paul Boersma 2023
@@ -2842,7 +3349,7 @@ with true minimum %`min` (included) and true maximum %`max` (excluded).
 
 ################################################################################
 "`randomUniform#`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @@Formulas@.
 
@@ -2855,12 +3362,12 @@ Syntax and semantics
 : create a vector with the same number of elements as %`model#`,
 and fill all elements with independent uniformly distributed numbers.
 This is shorthand for doing
-
-	\#{randomUniform#} (\`{size} (model#), %`min`, %`max`)
-
+{;
+	\#{randomUniform#} (\`{size} (\%{model#}), \%{min}, \%{max})
+}
 ################################################################################
 "`randomUniform##`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2024
 
 A function that can be used in @@Formulas@.
 
@@ -2869,13 +3376,13 @@ Syntax and semantics
 #`randomUniform##` (%`nrow`, %`ncol`, %`min`, %`max`)
 : generate %`nrow` \xx %`ncol` independent uniformly distributed (@`randomUniform`) numbers.
 
-#`randomUniform##` (%`model#`, %`min`, %`max`)
-: create a matrix with the same number of rows and columns as %`model#`,
+#`randomUniform##` (%`model##`, %`min`, %`max`)
+: create a matrix with the same number of rows and columns as %`model##`,
 and fill all cells with independent uniformly distributed numbers.
 This is shorthand for doing
-
-	\#{randomUniform##} (\`{numberOfRows} (model##), \`{numberOfColumns} (model##), %`min`, %`max`)
-
+{;
+	\#{randomUniform##} (\`{numberOfRows} (\%{model##}), \`{numberOfColumns} (\%{model##}), \%{min}, \%{max})
+}
 ################################################################################
 "`random_initializeSafelyAndUnpredictably`"
 © Paul Boersma 2023
@@ -3006,7 +3513,7 @@ A function that can be used in @@Formulas@.
 Syntax and semantics
 ====================
 #`removeObject` (`...`)
-: remove the objects given by IDs and/or names,
+: remove the objects given by IDs and/or full names,
 without (further) changing the selection.
 
 ################################################################################
@@ -3043,6 +3550,7 @@ Syntax and semantics
 #`replace_regex$` (%`a$`, %`b$`, %`c$`, %`n`)
 : within %`a$`, replaces the first %`n` matches of regular expression %`b$`
 with the regular expression %`c$`, or all if %`n` = 0.
+  See @@Regular expressions@.
 
 ################################################################################
 "`right$`"
@@ -3069,6 +3577,46 @@ Syntax and semantics
 #`rindex` (%`strings$#`, %`s$`)
 : look up whether and where %`s$` last occurs in %`strings$`.
 
+See also
+========
+- @`index` for the %first occurrence
+- @`rindex_caseInsensitive` for %%case-insensitive% matching
+- @`rindex_regex` for %%regular-expression% matching
+
+################################################################################
+"`rindex_caseInsensitive`"
+© Paul Boersma 2023
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`rindex_caseInsensitive` (%`string$`, %`part$`)
+: return the last location of the substring %`part$` inside %`string$`, or 0 if not found.
+
+#`rindex_caseInsensitive` (%`strings$#`, %`s$`)
+: look up whether and where %`s$` last occurs in %`strings$#`.
+
+Case insensitivity
+==================
+For determining where the substring is located,
+it doesn’t matter whether %`string$` and/or %`part$` are in lower case or upper case.
+Here is a comparison with @`rindex`:
+{
+	assert \`{rindex} ("hello", "L") = 0
+	assert \#{rindex_caseInsensitive} ("hello", "L") = 4
+	assert \`{rindex} ("heLlo", "L") = 3
+	assert \#{rindex_caseInsensitive} ("heLlo", "L") = 4
+	assert \`{rindex} ("helLo", "L") = 4
+	assert \#{rindex_caseInsensitive} ("helLo", "L") = 4
+	assert \`{rindex} ("heLLo", "L") = 4
+	assert \#{rindex_caseInsensitive} ("heLLo", "L") = 4
+}
+See also
+========
+- @`index_caseInsensitive` for the %first occurrence
+- @`rindex` for %%case-sensitive% matching
+
 ################################################################################
 "`rindex_regex`"
 © Paul Boersma 2023
@@ -3079,6 +3627,7 @@ Syntax and semantics
 ====================
 #`rindex_regex` (%`string$`, %`regex$`)
 : return the last match of the regular expression %`regex$` inside %`string$`, or 0 if not found.
+  See @@Regular expressions@.
 
 ################################################################################
 "`round`"
@@ -3130,6 +3679,23 @@ Syntax and semantics
 : round (@`round`) each cell of the matrix %`m##`.
 
 ################################################################################
+"`row#`"
+© Paul Boersma 2024
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`row#` (%`m##`, %`i`)
+: extract the %`i`th row from the matrix %`m##`.
+
+Examples
+========
+{
+	\`{assert} row# ({{ 7, 4 }, { 99, 103 }}, 2) = { 99, 103 }
+}
+
+################################################################################
 "`rowSums#`"
 © Paul Boersma 2023
 
@@ -3156,6 +3722,249 @@ If there are any arguments, they will be consumed by the `form` in the script.
 For details and examples, see @@Scripting 6.1. Arguments to the script@.
 
 ################################################################################
+"`runSubprocess`"
+© Paul Boersma 2023
+
+A function that can be used in @Scripting.
+
+Syntax and semantics
+====================
+#`runSubprocess` (%`executableFilePath$`, `...`)
+: run the program given by the (relative or absolute) %`executableFilePath$`,
+with optional arguments given in “`...`”.
+
+For details and examples, see @@Scripting 6.5. Calling system commands@.
+
+################################################################################
+"`runSubprocess$`"
+© Paul Boersma 2023
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`runSubprocess$` (%`executableFilePath$`, `...`)
+: run the program given by the (relative or absolute) %`executableFilePath$`,
+with optional arguments given in “`...`”, and return the output of that program.
+
+For details and examples, see @@Scripting 6.5. Calling system commands@.
+
+################################################################################
+"`runSystem`"
+© Paul Boersma 2023
+
+A function that can be used in @Scripting.
+
+Syntax and semantics
+====================
+#`runSystem` (`...`)
+: run the command line given by the arguments in “`...`”,
+which are plainly concatenated (in the same way as in `writeInfo`).
+
+For details and examples, see @@Scripting 6.5. Calling system commands@.
+
+################################################################################
+"`runSystem$`"
+© Paul Boersma 2023
+
+A function that can be used in @Scripting.
+
+Syntax and semantics
+====================
+#`runSystem$` (`...`)
+: run the command line given by the arguments in “`...`”,
+which are plainly concatenated (in the same way as in `writeInfo`),
+and return the output of that command line.
+
+For details and examples, see @@Scripting 6.5. Calling system commands@.
+
+################################################################################
+"`selected`"
+© Paul Boersma 2023
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`selected` ( )
+: return the ID of the topmost selected object.
+
+#`selected` (%`i`)
+: return the ID of the %%i%th selected object (as counted from the top, or from the bottom if %`i` is negative).
+
+#`selected` (%`type$`)
+: return the ID of the topmost selected object of type %`type$`.
+
+#`selected` (%`type$`, %`i`)
+: return the ID of the %%i%th selected object of type %`type$` (as counted from the top, or from the bottom if %`i` is negative).
+
+Usage
+=====
+For examples, see @@Scripting 4.3. Querying objects@.
+
+################################################################################
+"`selected$`"
+© Paul Boersma 2023
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`selected$` ( )
+: return the full name (type + given name) of the topmost selected object.
+
+#`selected$` (%`i`)
+: return the full name (type + given name) of the %%i%th selected object (as counted from the top, or from the bottom if %`i` is negative).
+
+#`selected$` (%`type$`)
+: return the given name of the topmost selected object of type %`type$`.
+
+#`selected$` (%`type$`, %`i`)
+: return the given name of the %%i%th selected object of type %`type$` (as counted from the top, or from the bottom if %`i` is negative).
+
+Usage
+=====
+This function is useful if you want to write or draw the name of the object.
+For selecting an object, using @`selected` is safer,
+as explained in @@Scripting 4.3. Querying objects@.
+
+################################################################################
+"`selected#`"
+© Paul Boersma 2023
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`selected#` ( )
+: return a list of the IDs of all currently selected objects.
+
+#`selected#` (%`type$`)
+: return a list of the IDs of all currently selected objects of type %`type$`.
+
+Example
+=======
+Assume that at the start of the following script, the list of objects is empty:
+{
+	sound = Create Sound from formula: "sine377", 1, 0, 0.1, 44100,
+	... ~ sin (2*pi*377*x)
+	pitch = To Pitch: 0.01, 75, 600
+	plusObject: sound
+	pulses = To PointProcess (cc)
+	plusObject: sound
+}
+At this point, the list of objects will contain three objects,
+which will look as follows (ID, type name, given name),
+where the two that stand selected are given in bold:
+`
+	\#{1. Sound sine377}
+	2. Pitch sine377
+	\#{3. PointProcess sine377_sine377}
+`
+The IDs of the two selected objects are 1 and 3, respectively,
+and this is what `selected#` ( ) will show:
+{
+	writeInfoLine: \#{selected#} ()
+}
+We can also just list the selected Sound objects:
+{
+	writeInfoLine: \#{selected#} ("Sound")
+}
+or the selected Pitch objects (there should be none):
+{
+	writeInfoLine: \#{selected#} ("Pitch")
+}
+or the selected PointProcess objects:
+{
+	writeInfoLine: \#{selected#} ("PointProcess")
+}
+Test
+====
+An automated test:
+{
+	\`{assert} \#{selected#} () = { 1, 3 }
+	\`{assert} \#{selected#} ("Sound") = { 1 }
+	\`{assert} \#{selected#} ("Pitch") = zero# (0)
+	\`{assert} \#{selected#} ("PointProcess") = { 3 }
+}
+
+################################################################################
+"`selected$#`"
+© Paul Boersma 2023
+
+A function that can be used in @Formulas.
+
+Syntax and semantics
+====================
+#`selected$#` ( )
+: return a list of the full names of all currently selected objects.
+
+#`selected$#` (%`type$`)
+: return a list of the given names of all currently selected objects of type %`type$`.
+
+Pitfall
+=======
+You cannot normally use this function to cycle through all selected objects,
+because if two objects happen to have the same full name,
+you will select the same object twice. To cycle through all selected objects,
+use @`selected#` instead, because the IDs are guaranteed to be unique.
+
+Example
+=======
+Assume that at the start of the following script, the list of objects is empty:
+{
+	sound = Create Sound from formula: "sine377", 1, 0, 0.1, 44100,
+	... ~ sin (2*pi*377*x)
+	pitch = To Pitch: 0.01, 75, 600
+	plusObject: sound
+	pulses = To PointProcess (cc)
+	plusObject: sound
+}
+At this point, the list of objects will contain three objects,
+which will look as follows (ID, type name, given name),
+where the two that stand selected are given in bold:
+`
+	\#{1. Sound sine377}
+	2. Pitch sine377
+	\#{3. PointProcess sine377_sine377}
+`
+The full names of the two selected objects are `Sound sine377`
+and `PointProcess sine377_sine377`, respectively,
+and this is what `selected$#` ( ) will show:
+{
+	writeInfoLine: \#{selected$#} ()
+}
+or
+{
+	writeInfoLine: vertical$: \#{selected$#} ()
+}
+We can also just list the given names of the selected Sound objects:
+{
+	writeInfoLine: \#{selected$#} ("Sound")
+}
+or of the selected Pitch objects (there should be none):
+{
+	writeInfoLine: \#{selected$#} ("Pitch")
+}
+or of the selected PointProcess objects:
+{
+	writeInfoLine: \#{selected$#} ("PointProcess")
+}
+Note that here we see only the given names (not the full names),
+because the type names are already known.
+
+Test
+====
+An automated test:
+{
+	\`{assert} \#{selected$#} () = { “Sound sine377”,
+	... “PointProcess sine377_sine377” }
+	\`{assert} \#{selected$#} ("Sound") = { “sine377” }
+	\`{assert} \#{selected$#} ("Pitch") = empty$# (0)
+	\`{assert} \#{selected$#} ("PointProcess") = { “sine377_sine377” }
+}
+
+################################################################################
 "`selectObject`"
 © Paul Boersma 2023
 
@@ -3164,7 +3973,7 @@ A function that can be used in @Formulas.
 Syntax and semantics
 ====================
 #`selectObject` (`...`)
-: select the objects given by IDs and/or names,
+: select the object(s) given by IDs and/or full names (full name = type + given name),
 after deselecting any objects that are currently selected.
 
 ################################################################################
@@ -3419,6 +4228,36 @@ Syntax and semantics
 into their softmax (@`softmax#`) values (within that row).
 
 ################################################################################
+"`solve#`"
+© Paul Boersma 2023
+
+See @@solving matrix equations@.
+
+################################################################################
+"`solve##`"
+© Paul Boersma 2023
+
+See @@solving matrix equations@.
+
+################################################################################
+"`solveNonnegative#`"
+© Paul Boersma 2023
+
+See @@solving matrix equations@.
+
+################################################################################
+"`solveSparse#`"
+© Paul Boersma 2023
+
+See @@solving matrix equations@.
+
+################################################################################
+"`solveWeaklyConstrained#`"
+© Paul Boersma 2023
+
+See @@solving matrix equations@.
+
+################################################################################
 "`sort#`"
 © Paul Boersma 2023
 
@@ -3514,6 +4353,27 @@ Syntax and semantics
 ====================
 #`startsWith` (%`string$`, %`part$`)
 : determine whether %`string$` starts with %`part$`.
+
+See also
+========
+- @`endsWith` for determining whether %`string$` %ends in %`part$`.
+- @`startsWith_caseInsensitive` for %%case-insensitive% matching.
+
+################################################################################
+"`startsWith_caseInsensitive`"
+© Paul Boersma 2023
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`startsWith_caseInsensitive` (%`string$`, %`part$`)
+: determine whether %`string$` starts with %`part$`.
+
+See also
+========
+- @`endsWith_caseInsensitive` for determining whether %`string$` %ends in %`part$`.
+- @`startsWith` for %%case-sensitive% matching.
 
 ################################################################################
 "`stdev`"

@@ -2,7 +2,7 @@
 #define _NUM2_h_
 /* NUM2.h
  *
- * Copyright (C) 1997-2023 David Weenink
+ * Copyright (C) 1997-2024 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -179,23 +179,6 @@ inline void VECclip_inplace (double min, VECVU const& x, double max) {
 		Melder_clip (min, & x [i], max);
 }
 
-inline void VECabs (VECVU const& result, constVECVU const& v) {
-	Melder_assert (result.size == v.size);
-	for (integer i = 1; i <= result.size; i ++)
-		result [i] = fabs (v [i]);
-}
-
-inline autoVEC newVECabs (constVECVU const& v) {
-	autoVEC result = raw_VEC (v.size);
-	VECabs (result.get(), v);
-	return result;
-}
-
-inline void VECabs_inplace (VECVU const& v) {
-	for (integer i = 1; i <= v.size; i ++)
-		v [i] = fabs (v [i]);
-}
-
 inline bool NUMhasZeroElement (constMATVU const m) {
 	for (integer irow = 1; irow <= m.nrow; irow ++)
 		for (integer icol = 1; icol <= m.ncol; icol++)
@@ -308,6 +291,13 @@ autoVEC newVECmonotoneRegression (constVEC x);
 
 autoMAT newMATlowerCholeslyInverse_fromLowerCholesky (constMAT const& m);
 
+/* 
+	Pre: matrices must be square.
+*/
+autoMAT newMATsymmetricPositiveDefinte_inverse (constMAT m);
+autoMAT newMATsymmetric_inverse (constMAT m);
+autoMAT newMATinverse (constMAT m);
+
 void MATlowerCholesky_inplace (MAT a, double *out_lnd);
 
 autoMAT newMATlowerCholesky (constMATVU const& a, double *out_lnd);
@@ -338,7 +328,7 @@ double NUMdeterminant_fromSymmetricMatrix (constMAT m);
 double NUMmahalanobisDistanceSquared (constMAT lowerInverse, constVEC v, constVEC m);
 /*
 	Calculates squared Mahalanobis distance: (v-m)'S^-1(v-m).
-	Input matrix (li) is the inverse L^-1 of the Cholesky decomposition S = L.L'
+	Input matrix is the inverse L^-1 of the Cholesky decomposition S = L.L'
 	as calculated by NUMlowerCholeskyInverse or 1-row for a diagonal matrix (nr =1)
 	Mahalanobis distance calculation. S = L.L' -> S**-1 = L**-1' . L**-1
 		(x-m)'S**-1 (x-m) = (x-m)'L**-1' . L**-1. (x-m) =
@@ -386,14 +376,14 @@ integer NUMsolveQuadraticEquation (double a, double b, double c, double *x1, dou
 	If no roots found then x1 and x2 will not be changed.
 */
 
-autoVEC newVECsolve (constMATVU const& a, constVECVU const& b, double tol);
+autoVEC solve_VEC (constMATVU const& a, constVECVU const& b, double tol);
 /*
 	Solve the equation: A.x = b for x;
 	a [1..nr] [1..nc], b [1..nr] and the unknown x [1..nc]
 	Algorithm: s.v.d.
 */
 
-autoMAT newMATsolve (constMATVU const& a, constMATVU const& b, double tol);
+autoMAT solve_MAT (constMATVU const& a, constMATVU const& b, double tol);
 /*
 	Solve the equations: A.X = B;
 	a [1..nr] [1..nc], b [1..nr] [1..nc2] and the unknown x [1..nc] [1..nc2]
@@ -411,11 +401,11 @@ autoMAT newMATsolve (constMATVU const& a, constMATVU const& b, double tol);
 	x in/out: the start value (you typically would start the iteration with all zeros).
 */
 void VECsolveSparse_IHT (VECVU const& x, constMATVU const& d, constVECVU const& y, integer numberOfNonZeros, integer maximumNumberOfIterations, double tolerance, integer infoLevel);
-autoVEC newVECsolveSparse_IHT (constMATVU const& d, constVECVU const& y, integer numberOfNonZeros, integer maximumNumberOfIterations, double tolerance, integer infoLevel);
+autoVEC solveSparse_IHT_VEC (constMATVU const& d, constVECVU const& y, integer numberOfNonZeros, integer maximumNumberOfIterations, double tolerance, integer infoLevel);
 
 void VECsolveNonnegativeLeastSquaresRegression (VECVU const& result, constMATVU const& m, constVECVU const& y, integer itermax, double tol, integer infoLevel);
 
-inline autoVEC newVECsolveNonnegativeLeastSquaresRegression (constMATVU const& a, constVECVU const& y, integer itermax, double tol, integer infoLevel) {
+inline autoVEC solveNonnegativeLeastSquaresRegression_VEC (constMATVU const& a, constVECVU const& y, integer itermax, double tol, integer infoLevel) {
 	autoVEC result = zero_VEC (a.ncol);
 	VECsolveNonnegativeLeastSquaresRegression (result.get(), a, y, itermax, tol, infoLevel);
 	return result;
@@ -440,7 +430,7 @@ void NUMsolveConstrainedLSQuadraticRegression (constMAT const& x, constVEC const
 	Psychometrika 48, 631-638.
 */
 
-autoVEC newVECsolveWeaklyConstrainedLinearRegression (constMAT const& a, constVEC const& y, double alpha, double delta);
+autoVEC solveWeaklyConstrainedLinearRegression_VEC (constMAT const& a, constVEC const& y, double alpha, double delta);
 /*
 	Solve g(x) = ||A*x - y||^2 + alpha (x'*x - delta)^2 for x [1..m],
 	where A [1..n] [1..m] is a matrix, y [1..n] a given vector, and alpha
@@ -730,6 +720,9 @@ double VECburg (VEC const& a, constVEC const& x);
 
 autoVEC newVECburg (constVEC const& x, integer numberOfPredictionCoefficients, double *out_xms);
 
+/*
+	assertion: filtermemory.size >= filter.size
+*/
 void VECfilterInverse_inplace (VEC const& s, constVEC const& filter, VEC const& filterMemory);
 
 void NUMdmatrix_to_dBs (MAT const& m, double ref, double factor, double floor);

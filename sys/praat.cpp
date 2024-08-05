@@ -1,6 +1,6 @@
 /* praat.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 	#include <windows.h>
 	#include <fcntl.h>
 	#include <io.h>
+	#include <process.h>   // getpid
 #endif
 
 #include "praatP.h"
@@ -73,7 +74,7 @@ bool praat_commandsWithExternalSideEffectsAreAllowed () {
 };
 
 static char32 programName [64];
-static structMelderDir homeDir { };
+static structMelderFolder homeDir { };
 
 /*
  * Melder_preferencesFolder: a folder containing preferences file, buttons file, message files, tracing file, plugins.
@@ -82,7 +83,7 @@ static structMelderDir homeDir { };
  *                         or:   C:\Users\Miep\Praat
  *    MacOS:   /Users/Miep/Library/Preferences/Praat Prefs
  */
-// inline structMelderDir Melder_preferencesFolder { };   // already declared in Melder_files.h (checked 2021-03-07)
+// inline structMelderFolder Melder_preferencesFolder { };   // already declared in Melder_files.h (checked 2021-03-07)
 
 /*
  * prefsFile: preferences file.
@@ -151,6 +152,14 @@ autoVEC praat_idsOfAllSelected (ClassInfo klas) {
 	integer selectedObjectNumber = 0, IOBJECT;
 	WHERE (SELECTED && (! klas || CLASS == klas))
 		result [++ selectedObjectNumber] = ID;
+	return result;
+}
+
+autoSTRVEC praat_namesOfAllSelected (ClassInfo klas) {
+	autoSTRVEC result (praat_numberOfSelected (klas));
+	integer selectedObjectNumber = 0, IOBJECT;
+	WHERE (SELECTED && (! klas || CLASS == klas))
+		result [++ selectedObjectNumber] = Melder_dup (klas ? NAME : FULL_NAME);
 	return result;
 }
 
@@ -622,9 +631,9 @@ static void praat_exit (int exit_code) {
 				constexpr bool shouldFlushStdout = notFlushingStdoutCouldCauseIncorrectBehaviour;
 				constexpr bool shouldFlushStderr = notFlushingStderrCouldCauseIncorrectBehaviour;
 				if ((shouldFlushStdout))
-					fflush (stdout);
+					fflush (Melder_stdout);
 				if ((shouldFlushStderr))
-					fflush (stderr);
+					fflush (Melder_stderr);
 				constexpr bool thereAreOtherOpenFiles = (false);
 				constexpr bool thereAreOtherOpenFilesWhoseNonflushingCouldCauseIncorrectBehaviour =
 						thereAreOtherOpenFiles;
@@ -823,7 +832,7 @@ void praat_dataChanged (Daata object) {
 		/*
 			If we are during error time, then this error should be caught
 			either by `throw` (see praatM.h, two occurrences) or by Melder_flushError (also see praatM.h, one occurrence).
-			LAST CHECKED 2021-12-02
+			(last checked 2021-12-02)
 		*/
 	}
 }
@@ -854,7 +863,7 @@ static int publishProc (autoDaata me) {
 /***** QUIT *****/
 
 FORM (DO_Quit, U"Confirm Quit", U"Quit") {
-	MUTABLE_LABEL (label, U"You have objects in your list!")
+	MUTABLE_COMMENT (label, U"You have objects in your list!")
 	OK
 {
 	char32 prompt [300];
@@ -1027,14 +1036,20 @@ static bool tryToAttachToTheCommandLine ()
 }
 
 static void setThePraatLocale () {
-	#if defined (UNIX)
-		setlocale (LC_ALL, "C");
-		//setenv ("PULSE_LATENCY_MSEC", "1", 0);   // Rafael Laboissiere, August 2014
-	#elif defined (_WIN32)
-		setlocale (LC_ALL, "C");   // said to be superfluous
-	#elif defined (macintosh)
-		setlocale (LC_ALL, "en_US");   // required to make swprintf work correctly; the default "C" locale does not do that!
-	#endif
+	/*
+		We use only the "C" locale, because iswalpha works differently
+		on different platforms, even if UTF-8 is specified (e.g. try 0x0905),
+		which is an `alpha` on Windows but not on Mac and Linux.
+		We do have to replace everything from <wctype.h>:
+		- all iswalpha by iswalpha_portable
+		- all iswalnum by iswalnum_portable
+		- all iswpunct by iswpunct_portable
+		- all iswspace by iswspace_portable
+		- all iswdigit by iswdigit_portable
+		- all iswlower by iswlower_portable
+		- all iswupper by iswupper_portable
+	*/
+	setlocale (LC_ALL, "C");   // said to be superfluous on Windows, but cannot hurt
 }
 
 static void installPraatShellPreferences () {
@@ -1258,9 +1273,9 @@ static bool tryToSwitchToRunningPraat (bool foundTheOpenOption, bool foundTheSen
 			praat --send [OPTION]... SCRIPT-FILE-NAME [SCRIPT-ARGUMENT]...
 		*/
 		MelderString_append (& text32, U"setWorkingDirectory: ");
-		structMelderDir defaultFolder { };
-		Melder_getDefaultDir (& defaultFolder);
-		MelderString_append (& text32, quote_doubleSTR (Melder_dirToPath (& defaultFolder)).get());
+		structMelderFolder currentFolder { };
+		Melder_getCurrentFolder (& currentFolder);
+		MelderString_append (& text32, quote_doubleSTR (Melder_folderToPath (& currentFolder)).get());
 		MelderString_append (& text32, U"\nrunScript: ");
 		structMelderFile scriptFile { };
 		Melder_relativePathToFile (theCurrentPraatApplication -> batchName.string, & scriptFile);
@@ -1394,6 +1409,8 @@ void praat_init (conststring32 title, int argc, char **argv)
 {
 	setThePraatLocale ();
 	Melder_init ();
+	const bool weWereStartedFromTheCommandLine = tryToAttachToTheCommandLine ();
+	MelderConsole_init ();
 
 	/*
 		Construct a main-window title like "Praat".
@@ -1424,8 +1441,8 @@ void praat_init (conststring32 title, int argc, char **argv)
 			C:\Users\Miep\Praat\Buttons5.ini
 		Also create names for message and tracing files.
 	*/
-	if (MelderDir_isNull (& Melder_preferencesFolder)) {   // not yet set by the --pref-dir option?
-		structMelderDir parentPreferencesFolder { };   // folder under which to store our preferences folder
+	if (MelderFolder_isNull (& Melder_preferencesFolder)) {   // not yet set by the --pref-dir option?
+		structMelderFolder parentPreferencesFolder { };   // folder under which to store our preferences folder
 		Melder_getParentPreferencesFolder (& parentPreferencesFolder);
 
 		/*
@@ -1445,7 +1462,7 @@ void praat_init (conststring32 title, int argc, char **argv)
 			#else
 				Melder_createDirectory (& parentPreferencesFolder, subfolderName, 0);
 			#endif
-			MelderDir_getSubdir (& parentPreferencesFolder, subfolderName, & Melder_preferencesFolder);
+			MelderFolder_getSubfolder (& parentPreferencesFolder, subfolderName, & Melder_preferencesFolder);
 		} catch (MelderError) {
 			/*
 				If we arrive here, the directory could not be created,
@@ -1454,29 +1471,27 @@ void praat_init (conststring32 title, int argc, char **argv)
 			Melder_clearError ();
 		}
 	}
-	if (! MelderDir_isNull (& Melder_preferencesFolder)) {
+	if (! MelderFolder_isNull (& Melder_preferencesFolder)) {
 		#if defined (UNIX)
-			MelderDir_getFile (& Melder_preferencesFolder, U"prefs5", & prefsFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"buttons5", & buttonsFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"pid", & pidFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"message", & messageFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"tracing", & tracingFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"prefs5", & prefsFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"buttons5", & buttonsFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"pid", & pidFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"message", & messageFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"tracing", & tracingFile);
 		#elif defined (_WIN32)
-			MelderDir_getFile (& Melder_preferencesFolder, U"Preferences5.ini", & prefsFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"Buttons5.ini", & buttonsFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"Message.txt", & messageFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"Tracing.txt", & tracingFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"Preferences5.ini", & prefsFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"Buttons5.ini", & buttonsFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"Message.txt", & messageFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"Tracing.txt", & tracingFile);
 		#elif defined (macintosh)
-			MelderDir_getFile (& Melder_preferencesFolder, U"Prefs5", & prefsFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"Buttons5", & buttonsFile);
-			MelderDir_getFile (& Melder_preferencesFolder, U"Tracing.txt", & tracingFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"Prefs5", & prefsFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"Buttons5", & buttonsFile);
+			MelderFolder_getFile (& Melder_preferencesFolder, U"Tracing.txt", & tracingFile);
 		#endif
 		Melder_tracingToFile (& tracingFile);
 	}
 	for (int iarg = 0; iarg < argc; iarg ++)
 		trace (U"arg ", iarg, U": <<", Melder_peek8to32 (argv [iarg]), U">>");
-
-	const bool weWereStartedFromTheCommandLine = tryToAttachToTheCommandLine ();
 
 	/*
 		Remember the current directory. Useful only for scripts run from batch.
@@ -1520,7 +1535,7 @@ void praat_init (conststring32 title, int argc, char **argv)
 			praatP.ignorePlugins = true;
 			praatP.argumentNumber += 1;
 		} else if (strnequ (argv [praatP.argumentNumber], "--pref-dir=", 11)) {
-			Melder_pathToDir (Melder_peek8to32 (argv [praatP.argumentNumber] + 11), & Melder_preferencesFolder);
+			Melder_pathToFolder (Melder_peek8to32 (argv [praatP.argumentNumber] + 11), & Melder_preferencesFolder);
 			praatP.argumentNumber += 1;
 		} else if (strequ (argv [praatP.argumentNumber], "--version")) {
 			Melder_information (title, U" " stringize(PRAAT_VERSION_STR) " (" stringize(PRAAT_MONTH) " ", PRAAT_DAY, U" ", PRAAT_YEAR, U")");
@@ -1734,8 +1749,8 @@ void praat_init (conststring32 title, int argc, char **argv)
 
 	#if defined (NO_GUI)
 		if (! Melder_batch) {
-			fprintf (stderr, "A no-GUI edition of Praat cannot be used interactively. "
-				"Supply \"--run\" and a script file name on the command line.\n");
+			fprintf (Melder_stderr, "A no-GUI edition of Praat cannot be used interactively. "
+					"Supply \"--run\" and a script file name on the command line.\n");
 			exit (1);
 		}
 	#endif
@@ -1868,12 +1883,12 @@ void praat_init (conststring32 title, int argc, char **argv)
 	trace (U"after picture window shows: locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 }
 
-static void executeStartUpFile (MelderDir startUpDirectory, conststring32 fileNameHead, conststring32 fileNameTail) {
+static void executeStartUpFile (MelderFolder startUpDirectory, conststring32 fileNameHead, conststring32 fileNameTail) {
 	char32 name [256];
 	Melder_sprint (name,256, fileNameHead, programName, fileNameTail);
-	if (! MelderDir_isNull (startUpDirectory)) {   // should not occur on modern systems
+	if (! MelderFolder_isNull (startUpDirectory)) {   // should not occur on modern systems
 		structMelderFile startUp { };
-		MelderDir_getFile (startUpDirectory, name, & startUp);
+		MelderFolder_getFile (startUpDirectory, name, & startUp);
 		if (! MelderFile_readable (& startUp))
 			return;   // it's OK if the file doesn't exist
 		try {
@@ -1954,8 +1969,8 @@ void praat_run () {
 	 * On Unix and the Mac, we try no less than three start-up file names.
 	 */
 	#if defined (UNIX) || defined (macintosh)
-		structMelderDir usrLocal { };
-		Melder_pathToDir (U"/usr/local", & usrLocal);
+		structMelderFolder usrLocal { };
+		Melder_pathToFolder (U"/usr/local", & usrLocal);
 		executeStartUpFile (& usrLocal, U"", U"-startUp");
 	#endif
 	#if defined (UNIX) || defined (macintosh)
@@ -1965,21 +1980,21 @@ void praat_run () {
 		executeStartUpFile (& homeDir, U"", U"-user-startUp");
 	#endif
 
-	if (! MelderDir_isNull (& Melder_preferencesFolder) && ! praatP.ignorePlugins) {
+	if (! MelderFolder_isNull (& Melder_preferencesFolder) && ! praatP.ignorePlugins) {
 		trace (U"install plug-ins");
 		trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 		/* The Praat phase should remain praat_STARTING_UP,
 		 * because any added commands must not be included in the buttons file.
 		 */
 		structMelderFile searchPattern { };
-		MelderDir_getFile (& Melder_preferencesFolder, U"plugin_*", & searchPattern);
+		MelderFolder_getFile (& Melder_preferencesFolder, U"plugin_*", & searchPattern);
 		try {
 			autoSTRVEC folderNames = folderNames_STRVEC (Melder_fileToPath (& searchPattern));
 			for (integer i = 1; i <= folderNames.size; i ++) {
-				structMelderDir pluginDir { };
+				structMelderFolder pluginFolder { };
 				structMelderFile plugin { };
-				MelderDir_getSubdir (& Melder_preferencesFolder, folderNames [i].get(), & pluginDir);
-				MelderDir_getFile (& pluginDir, U"setup.praat", & plugin);
+				MelderFolder_getSubfolder (& Melder_preferencesFolder, folderNames [i].get(), & pluginFolder);
+				MelderFolder_getFile (& pluginFolder, U"setup.praat", & plugin);
 				if (MelderFile_readable (& plugin)) {
 					Melder_backgrounding = true;
 					try {
@@ -2049,8 +2064,6 @@ void praat_run () {
 	Melder_assert (! Melder_isHorizontalOrVerticalSpace (UNICODE_ZERO_WIDTH_NON_JOINER));
 	Melder_assert (! Melder_isHorizontalOrVerticalSpace (UNICODE_ZERO_WIDTH_JOINER));
 	Melder_assert (! Melder_isHorizontalOrVerticalSpace (UNICODE_ZERO_WIDTH_NO_BREAK_SPACE));   // this is the byte-order mark!
-	//Melder_assert (iswspace (UNICODE_LEFT_TO_RIGHT_MARK));
-	//Melder_assert (iswspace (UNICODE_RIGHT_TO_LEFT_MARK));
 	Melder_assert (Melder_isHorizontalOrVerticalSpace (UNICODE_LINE_SEPARATOR));   // ISO 30112
 	Melder_assert (Melder_isHorizontalOrVerticalSpace (UNICODE_PARAGRAPH_SEPARATOR));   // ISO 30112
 	Melder_assert (Melder_isHorizontalOrVerticalSpace (UNICODE_NARROW_NO_BREAK_SPACE));
@@ -2130,7 +2143,7 @@ void praat_run () {
 	{
 		double x = sqrt (-10.0);
 		//if (! isnan (x)) printf ("sqrt (-10.0) = %g\n", x);   // -10.0 on Windows
-		x = NUMsqrt (-10.0);
+		x = NUMsqrt_u (-10.0);
 		Melder_assert (isundef (x));
 	}
 	Melder_assert (isdefined (0.0));

@@ -80,7 +80,8 @@ Thing_define (Praat_Command, Thing) {
 		unhidable,
 		attractive,
 		noApi,   // do not include in a library API ("View & Edit", help commands...)
-		forceApi;   // include in a library API even if this button is hidden by default ("Record Sound (fixed time)...")
+		forceApi,   // include in a library API even if this button is hidden by default ("Record Sound (fixed time)...")
+		added;   // added by a script
 	integer deprecationYear;
 	GuiThing button;
 	autostring32 window, menu;
@@ -98,6 +99,7 @@ integer praat_numberOfSelected (ClassInfo klas);
 integer praat_idOfSelected (ClassInfo klas, integer inplace);
 autoVEC praat_idsOfAllSelected (ClassInfo klas);
 char32 * praat_nameOfSelected (ClassInfo klas, integer inplace);
+autoSTRVEC praat_namesOfAllSelected (ClassInfo klas);
 
 /* Used by praat.cpp; defined in praat_picture.cpp.
 */

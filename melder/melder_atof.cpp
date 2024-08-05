@@ -42,6 +42,25 @@ static const T *findEndOfNumericString (const T *string) {
 	*/
 	if (! Melder_isAsciiDecimalNumber (*p))
 		return nullptr;   // string is not numeric
+	/*
+		Special case: hexadecimal numbers.
+	*/
+	if (*p == '0' && (p [1] == 'x' || p [1] == 'X')) {
+		p += 2;
+		while (Melder_isHexadecimalDigit (*p))
+			p ++;
+		if (*p == '.')
+			p ++;
+		while (Melder_isHexadecimalDigit (*p))
+			p ++;
+		if (*p == 'p' || *p == 'P')
+			p ++;
+		if (*p == '+' || *p == '-')
+			p ++;
+		while (Melder_isAsciiDecimalNumber (*p))   // not hexadecimal!
+			p ++;
+		return p;
+	}
 	p ++;
 	/*
 		Then we accept any number of decimal digits.

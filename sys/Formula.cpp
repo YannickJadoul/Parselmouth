@@ -1,6 +1,6 @@
 /* Formula.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -146,14 +146,15 @@ enum { NO_SYMBOL_,
 		DO_, DOSTR_,
 		WRITE_INFO_, WRITE_INFO_LINE_, APPEND_INFO_, APPEND_INFO_LINE_,
 		WRITE_FILE_, WRITE_FILE_LINE_, APPEND_FILE_, APPEND_FILE_LINE_,
-		PAUSE_SCRIPT_, EXIT_SCRIPT_, RUN_SCRIPT_, RUN_SYSTEM_, RUN_SYSTEM_NOCHECK_, RUN_SUBPROCESS_,
+		PAUSE_SCRIPT_, EXIT_SCRIPT_, RUN_SCRIPT_,
+		RUN_SYSTEM_, RUN_SYSTEM_STR_, RUN_SYSTEM_NOCHECK_, RUN_SUBPROCESS_, RUN_SUBPROCESS_STR_,
 		MIN_, MIN_E_, MIN_IGNORE_UNDEFINED_,
 		MAX_, MAX_E_, MAX_IGNORE_UNDEFINED_,
 		IMIN_, IMIN_E_, IMIN_IGNORE_UNDEFINED_,
 		IMAX_, IMAX_E_, IMAX_IGNORE_UNDEFINED_,
 		NORM_,
 		LEFT_STR_, RIGHT_STR_, MID_STR_,
-		SELECTED_, SELECTED_STR_, NUMBER_OF_SELECTED_, SELECTED_VEC_,
+		SELECTED_, SELECTED_STR_, NUMBER_OF_SELECTED_, SELECTED_VEC_, SELECTED_STRVEC_,
 		SELECT_OBJECT_, PLUS_OBJECT_, MINUS_OBJECT_, REMOVE_OBJECT_,
 		BEGIN_PAUSE_,
 		REAL_, POSITIVE_, INTEGER_, NATURAL_,
@@ -161,7 +162,7 @@ enum { NO_SYMBOL_,
 		CHOICE_, OPTIONMENU_, OPTION_MENU_, OPTION_,
 		INFILE_, OUTFILE_, FOLDER_,
 		REALVECTOR_, POSITIVEVECTOR_, INTEGERVECTOR_, NATURALVECTOR_,
-		COMMENT_, END_PAUSE_,
+		HEADING_, COMMENT_, END_PAUSE_,
 		CHOOSE_READ_FILE_STR_, CHOOSE_WRITE_FILE_STR_, CHOOSE_FOLDER_STR_, CHOOSE_DIRECTORY_STR_,
 		DEMO_WINDOW_TITLE_, DEMO_SHOW_, DEMO_WAIT_FOR_INPUT_, DEMO_PEEK_INPUT_, DEMO_INPUT_, DEMO_CLICKED_IN_,
 		DEMO_CLICKED_, DEMO_X_, DEMO_Y_, DEMO_KEY_PRESSED_, DEMO_KEY_,
@@ -175,25 +176,32 @@ enum { NO_SYMBOL_,
 		RANDOM_GAMMA_VEC_, RANDOM_GAMMA_MAT_,
 		SOLVE_SPARSE_VEC_, SOLVE_NONNEGATIVE_VEC_,
 		PEAKS_MAT_,
-		SIZE_, NUMBER_OF_ROWS_, NUMBER_OF_COLUMNS_, COMBINE_VEC_, EDITOR_,
+		SIZE_, NUMBER_OF_ROWS_, NUMBER_OF_COLUMNS_, COMBINE_VEC_, PART_VEC_, PART_MAT_, EDITOR_,
 		RANDOM__INITIALIZE_WITH_SEED_UNSAFELY_BUT_PREDICTABLY_, RANDOM__INITIALIZE_SAFELY_AND_UNPREDICTABLY_,
 		HASH_, HEX_STR_, UNHEX_STR_,
-		EMPTY_STRVEC_, READ_LINES_FROM_FILE_STRVEC_, FILE_NAMES_STRVEC_, FOLDER_NAMES_STRVEC_,
+		EMPTY_STRVEC_, READ_LINES_FROM_FILE_STRVEC_,
+		FILE_NAMES_STRVEC_, FOLDER_NAMES_STRVEC_, FILE_NAMES_CASE_INSENSITIVE_STRVEC_, FOLDER_NAMES_CASE_INSENSITIVE_STRVEC_,
 		SPLIT_BY_WHITESPACE_STRVEC_, SPLIT_BY_STRVEC_,
 	#define HIGH_FUNCTION_N  SPLIT_BY_STRVEC_
 
 	/* String functions. */
 	#define LOW_STRING_FUNCTION  LOW_FUNCTION_STR1
-	#define LOW_FUNCTION_STR1  LENGTH_
-		LENGTH_, STRING_TO_NUMBER_, FILE_READABLE_, TRY_TO_WRITE_FILE_, TRY_TO_APPEND_FILE_, DELETE_FILE_,
-		CREATE_FOLDER_, CREATE_DIRECTORY_, SET_WORKING_DIRECTORY_, VARIABLE_EXISTS_,
-		READ_FILE_, READ_FILE_STR_, READ_FILE_VEC_, READ_FILE_MAT_,
-		UNICODE_TO_BACKSLASH_TRIGRAPHS_STR_, BACKSLASH_TRIGRAPHS_TO_UNICODE_STR_, ENVIRONMENT_STR_,
-	#define HIGH_FUNCTION_STR1  ENVIRONMENT_STR_
-		DATE_STR_, DATE_UTC_STR_, DATE_ISO_STR_, DATE_UTC_ISO_STR_, DATE_VEC_, DATE_UTC_VEC_, INFO_STR_,   // TODO: two of those aren't really string functions
-		INDEX_, RINDEX_,
-		STARTS_WITH_, ENDS_WITH_, REPLACE_STR_, INDEX_REGEX_, RINDEX_REGEX_, REPLACE_REGEX_STR_,
-		EXTRACT_NUMBER_, EXTRACT_WORD_STR_, EXTRACT_LINE_STR_,
+		#define LOW_FUNCTION_STR1  LENGTH_
+			LENGTH_, STRING_TO_NUMBER_, FILE_READABLE_, FOLDER_EXISTS_, TRY_TO_WRITE_FILE_, TRY_TO_APPEND_FILE_, DELETE_FILE_,
+			CREATE_FOLDER_, CREATE_DIRECTORY_, SET_WORKING_DIRECTORY_, VARIABLE_EXISTS_,
+			READ_FILE_, READ_FILE_STR_, READ_FILE_VEC_, READ_FILE_MAT_,
+			UNICODE_TO_BACKSLASH_TRIGRAPHS_STR_, BACKSLASH_TRIGRAPHS_TO_UNICODE_STR_, ENVIRONMENT_STR_,
+		#define HIGH_FUNCTION_STR1  ENVIRONMENT_STR_
+		#define LOW_FUNCTION_STR0  DATE_STR_
+			DATE_STR_, DATE_UTC_STR_, DATE_ISO_STR_, DATE_UTC_ISO_STR_, DATE_VEC_, DATE_UTC_VEC_, INFO_STR_,   // TODO: two of those aren't really string functions
+		#define HIGH_FUNCTION_STR0  INFO_STR_
+		#define LOW_FUNCTION_STR2  INDEX_
+			INDEX_, INDEX_CASE_INSENSITIVE_, RINDEX_, RINDEX_CASE_INSENSITIVE_,
+			STARTS_WITH_, STARTS_WITH_CASE_INSENSITIVE_, ENDS_WITH_, ENDS_WITH_CASE_INSENSITIVE_,
+			INDEX_REGEX_, RINDEX_REGEX_, EXTRACT_NUMBER_,
+		#define HIGH_FUNCTION_STR2  EXTRACT_NUMBER_
+		EXTRACT_WORD_STR_, EXTRACT_LINE_STR_,
+		REPLACE_STR_, REPLACE_REGEX_STR_,
 		FIXED_STR_, PERCENT_STR_, HEXADECIMAL_STR_,
 	#define HIGH_STRING_FUNCTION  HEXADECIMAL_STR_
 
@@ -292,21 +300,22 @@ static const conststring32 Formula_instructionNames [1 + highestSymbol] = { U"",
 	U"do", U"do$",
 	U"writeInfo", U"writeInfoLine", U"appendInfo", U"appendInfoLine",
 	U"writeFile", U"writeFileLine", U"appendFile", U"appendFileLine",
-	U"pauseScript", U"exitScript", U"runScript", U"runSystem", U"runSystem_nocheck", U"runSubprocess",
+	U"pauseScript", U"exitScript", U"runScript",
+	U"runSystem", U"runSystem$", U"runSystem_nocheck", U"runSubprocess", U"runSubprocess$",
 	U"min", U"min_e", U"min_removeUndefined",
 	U"max", U"max_e", U"max_removeUndefined",
 	U"imin", U"imin_e", U"imin_removeUndefined",
 	U"imax", U"imax_e", U"imax_removeUndefined",
 	U"norm",
 	U"left$", U"right$", U"mid$",
-	U"selected", U"selected$", U"numberOfSelected", U"selected#",
+	U"selected", U"selected$", U"numberOfSelected", U"selected#", U"selected$#",
 	U"selectObject", U"plusObject", U"minusObject", U"removeObject",
 	U"beginPause", U"real", U"positive", U"integer", U"natural",
 	U"word", U"sentence", U"text", U"boolean",
 	U"choice", U"optionmenu", U"optionMenu", U"option",
 	U"infile", U"outfile", U"folder",
 	U"realvector", U"positivevector", U"integervector", U"naturalvector",
-	U"comment", U"endPause",
+	U"heading", U"comment", U"endPause",
 	U"chooseReadFile$", U"chooseWriteFile$", U"chooseFolder$", U"chooseDirectory$",
 	U"demoWindowTitle", U"demoShow", U"demoWaitForInput", U"demoPeekInput", U"demoInput", U"demoClickedIn",
 	U"demoClicked", U"demoX", U"demoY", U"demoKeyPressed", U"demoKey$",
@@ -319,19 +328,27 @@ static const conststring32 Formula_instructionNames [1 + highestSymbol] = { U"",
 	U"randomGauss#", U"randomGauss##",
 	U"randomGamma#", U"randomGamma##", U"solveSparse#", U"solveNonnegative#",
 	U"peaks##",
-	U"size", U"numberOfRows", U"numberOfColumns", U"combine#", U"editor",
+	U"size", U"numberOfRows", U"numberOfColumns", U"combine#", U"part#", U"part##", U"editor",
 	U"random_initializeWithSeedUnsafelyButPredictably", U"random_initializeSafelyAndUnpredictably",
 	U"hash", U"hex$", U"unhex$",
-	U"empty$#", U"readLinesFromFile$#", U"fileNames$#", U"folderNames$#", U"splitByWhitespace$#", U"splitBy$#",
+	U"empty$#", U"readLinesFromFile$#",
+	U"fileNames$#", U"folderNames$#", U"fileNames_caseInsensitive$#", U"folderNames_caseInsensitive$#",
+	U"splitByWhitespace$#", U"splitBy$#",
 
-	U"length", U"number", U"fileReadable", U"tryToWriteFile", U"tryToAppendFile", U"deleteFile",
-	U"createFolder", U"createDirectory", U"setWorkingDirectory", U"variableExists",
-	U"readFile", U"readFile$", U"readFile#", U"readFile##",
-	U"unicodeToBackslashTrigraphs$", U"backslashTrigraphsToUnicode$", U"environment$",
+	// LOW_FUNCTION_STR1
+		U"length", U"number", U"fileReadable", U"folderExists", U"tryToWriteFile", U"tryToAppendFile", U"deleteFile",
+		U"createFolder", U"createDirectory", U"setWorkingDirectory", U"variableExists",
+		U"readFile", U"readFile$", U"readFile#", U"readFile##",
+		U"unicodeToBackslashTrigraphs$", U"backslashTrigraphsToUnicode$", U"environment$",
+	// HIGH_FUNCTION_STR1
 	U"date$", U"date_utc$", U"date_iso$", U"date_utc_iso$", U"date#", U"date_utc#", U"info$",
-	U"index", U"rindex",
-	U"startsWith", U"endsWith", U"replace$", U"index_regex", U"rindex_regex", U"replace_regex$",
-	U"extractNumber", U"extractWord$", U"extractLine$",
+	// LOW_FUNCTION_STR2
+		U"index", U"index_caseInsensitive", U"rindex", U"rindex_caseInsensitive",
+		U"startsWith", U"startsWith_caseInsensitive", U"endsWith", U"endsWith_caseInsensitive",
+		U"index_regex", U"rindex_regex", U"extractNumber",
+	// HIGH_FUNCTION_STR2
+	U"extractWord$", U"extractLine$",
+	U"replace$", U"replace_regex$",
 	U"fixed$", U"percent$", U"hexadecimal$",
 	U"sumOver",
 	U".",
@@ -1627,38 +1644,36 @@ static void parsePowerFactor () {
 
 	if (symbol >= LOW_STRING_FUNCTION && symbol <= HIGH_STRING_FUNCTION) {
 		if (symbol >= LOW_FUNCTION_STR1 && symbol <= HIGH_FUNCTION_STR1) {
-            bool isParenthesis = fitArguments ();
+			const bool isParenthesis = fitArguments ();
 			parseExpression ();
-			if (isParenthesis) fit (CLOSING_PARENTHESIS_);
-		} else if (symbol == INDEX_ || symbol == RINDEX_ ||
-			symbol == STARTS_WITH_ || symbol == ENDS_WITH_ ||
-			symbol == INDEX_REGEX_ || symbol == RINDEX_REGEX_ || symbol == EXTRACT_NUMBER_)
-		{
-            const bool isParenthesis = fitArguments ();
+			if (isParenthesis)
+				fit (CLOSING_PARENTHESIS_);
+		} else if (symbol >= LOW_FUNCTION_STR2 && symbol <= HIGH_FUNCTION_STR2) {
+			const bool isParenthesis = fitArguments ();
 			parseExpression ();
 			fit (COMMA_);
 			parseExpression ();
 			if (isParenthesis)
 				fit (CLOSING_PARENTHESIS_);
-		} else if (symbol >= DATE_STR_ && symbol <= INFO_STR_) {
+		} else if (symbol >= LOW_FUNCTION_STR0 && symbol <= HIGH_FUNCTION_STR0) {
 			fit (OPENING_PARENTHESIS_);
 			fit (CLOSING_PARENTHESIS_);
 		} else if (symbol == EXTRACT_WORD_STR_ || symbol == EXTRACT_LINE_STR_) {
-            const bool isParenthesis = fitArguments ();
+			const bool isParenthesis = fitArguments ();
 			parseExpression ();
 			fit (COMMA_);
 			parseExpression ();
 			if (isParenthesis)
 				fit (CLOSING_PARENTHESIS_);
 		} else if (symbol == FIXED_STR_ || symbol == PERCENT_STR_ || symbol == HEXADECIMAL_STR_) {
-            const bool isParenthesis = fitArguments ();
+			const bool isParenthesis = fitArguments ();
 			parseExpression ();
 			fit (COMMA_);
 			parseExpression ();
 			if (isParenthesis)
 				fit (CLOSING_PARENTHESIS_);
 		} else if (symbol == REPLACE_STR_ || symbol == REPLACE_REGEX_STR_) {
-            const bool isParenthesis = fitArguments ();
+			const bool isParenthesis = fitArguments ();
 			parseExpression ();
 			fit (COMMA_);
 			parseExpression ();
@@ -4238,12 +4253,36 @@ static void do_runSystem () {
 			MelderString_append (& text, arg->getString());
 	}
 	try {
-		Melder_system (text.string);
+		Melder_runSystem (text.string);
 	} catch (MelderError) {
-		Melder_throw (U"System command “", text.string, U"” returned error status;\n"
-			U"if you want to ignore this, use `runSystem_nocheck' instead of `runSystem'.");
+		Melder_throw (U"System command <<", text.string, U">> returned error status;\n"
+			U"if you want to ignore this, use `runSystem_nocheck` instead of `runSystem`.");
 	}
 	pushNumber (1);
+}
+static void do_runSystem_STR () {
+	Melder_require (praat_commandsWithExternalSideEffectsAreAllowed (),
+		U"The function “runSystem$” is not available inside manuals.");
+	const Stackel narg = pop;
+	Melder_assert (narg->which == Stackel_NUMBER);
+	const integer numberOfArguments = Melder_iround (narg->number);
+	stackPointer -= numberOfArguments;
+	autoMelderString text;
+	for (integer iarg = 1; iarg <= numberOfArguments; iarg ++) {
+		const Stackel arg = & theStack [stackPointer + iarg];
+		if (arg->which == Stackel_NUMBER)
+			MelderString_append (& text, arg->number);
+		else if (arg->which == Stackel_STRING)
+			MelderString_append (& text, arg->getString());
+	}
+	autostring32 result;
+	try {
+		result = runSystem_STR (text.string);
+	} catch (MelderError) {
+		Melder_throw (U"System command <<", text.string, U">> returned error status;\n"
+			U"if you want to ignore this, use `runSystem_nocheck$` instead of `runSystem$`.");
+	}
+	pushString (result.move());
 }
 static void do_runSystem_nocheck () {
 	Melder_require (praat_commandsWithExternalSideEffectsAreAllowed (),
@@ -4261,7 +4300,7 @@ static void do_runSystem_nocheck () {
 			MelderString_append (& text, arg->getString());
 	}
 	try {
-		Melder_system (text.string);
+		Melder_runSystem (text.string);
 	} catch (MelderError) {
 		Melder_clearError ();
 	}
@@ -4286,11 +4325,37 @@ static void do_runSubprocess () {
 			arguments [iarg] = Melder_dup (arg->getString());
 	}
 	try {
-		Melder_execv (commandFile->getString(), numberOfArguments - 1, arguments.peek2());
+		Melder_runSubprocess (commandFile->getString(), numberOfArguments - 1, arguments.peek2());
 	} catch (MelderError) {
 		Melder_throw (U"Command “", commandFile->getString(), U"” returned error status.");
 	}
 	pushNumber (1);
+}
+static void do_runSubprocess_STR () {
+	Melder_require (praat_commandsWithExternalSideEffectsAreAllowed (),
+		U"The function “runSubprocess$” is not available inside manuals.");
+	const Stackel narg = pop;
+	Melder_assert (narg->which == Stackel_NUMBER);
+	const integer numberOfArguments = Melder_iround (narg->number);
+	stackPointer -= numberOfArguments;
+	const Stackel commandFile = & theStack [stackPointer + 1];
+	Melder_require (commandFile->which == Stackel_STRING,
+		U"The first argument to “runSubprocess$” should be a command name.");
+	autoSTRVEC arguments (numberOfArguments - 1);
+	for (int iarg = 1; iarg < numberOfArguments; iarg ++) {
+		const Stackel arg = & theStack [stackPointer + 1 + iarg];
+		if (arg->which == Stackel_NUMBER)
+			arguments [iarg] = Melder_dup (Melder_double (arg->number));
+		else if (arg->which == Stackel_STRING)
+			arguments [iarg] = Melder_dup (arg->getString());
+	}
+	autostring32 result;
+	try {
+		result = runSubprocess_STR (commandFile->getString(), numberOfArguments - 1, arguments.peek2());
+	} catch (MelderError) {
+		Melder_throw (U"Command “", commandFile->getString(), U"” returned error status.");
+	}
+	pushString (result.move());
 }
 static void do_min () {
 	const Stackel n = pop;
@@ -5096,6 +5161,109 @@ static void do_combine_VEC () {
 	}
 	pushNumericVector (result.move());
 }
+static void do_part_VEC () {
+	/*
+		Check the number of arguments: always 3.
+	*/
+	const Stackel s_narg = pop;
+	Melder_assert (s_narg->which == Stackel_NUMBER);
+	const integer narg = s_narg->number;
+	Melder_require (narg == 3,
+		U"The function “part#” requires exactly three arguments (namely a vector, a starting index, and an end index), not the ", narg, U" given.");
+	/*
+		Check the types of the arguments: always vector, number, number.
+	*/
+	const Stackel s_last = pop, s_first = pop, s_vec = pop;
+	Melder_require (s_vec->which == Stackel_NUMERIC_VECTOR,
+		U"The first argument of the function “part#” should be a numeric vector, not ", s_vec->whichText(), U".");
+	Melder_require (s_first->which == Stackel_NUMBER,
+		U"The second argument of the function “part#” should be a number (the starting index), not ", s_first->whichText(), U".");
+	Melder_require (s_last->which == Stackel_NUMBER,
+		U"The third argument of the function “part#” should be a number (the end index), not ", s_last->whichText(), U".");
+	/*
+		Check the preconditions of the arguments.
+	*/
+	const constVEC vec = s_vec->numericVector;
+	const integer numberOfElements = vec.size;
+	const integer first = Melder_iround (s_first->number);
+	Melder_require (first > 0,
+		U"The second argument of the function “part#” (the starting index) should (after rounding) be a positive whole number, not ", first, U".");
+	Melder_require (first <= numberOfElements,
+		U"The second argument of the function “part#” (the starting index) should (after rounding) be at most the number of elements (",
+		numberOfElements, U"), not ", first, U"."
+	);
+	const integer last = Melder_iround (s_last->number);
+	Melder_require (last > 0,
+		U"The third argument of the function “part#” (the end index) should (after rounding) be a positive whole number, not ", last, U".");
+	Melder_require (last <= numberOfElements,
+		U"The third argument of the function “part#” (the end index) should (after rounding) be at most the number of elements (",
+		numberOfElements, U"), not ", last, U"."
+	);
+
+	const integer newSize = last - (first - 1);
+	if (newSize > 0)
+		pushNumericVector (copy_VEC (vec. part (first, last)));
+	else
+		pushNumericVector (autoVEC ());
+}
+static void do_part_MAT () {
+	/*
+		Check the number of arguments: always 5.
+	*/
+	const Stackel s_narg = pop;
+	Melder_assert (s_narg->which == Stackel_NUMBER);
+	const integer narg = s_narg->number;
+	Melder_require (narg == 5,
+		U"The function “part##” requires exactly five arguments (namely a matrix, a starting row, an end row, a starting column, and an end column), not the ", narg, U" given..");
+	/*
+		Check the types of the arguments: always matrix, number, number, number, number.
+	*/
+	const Stackel s_endColumn = pop, s_startingColumn = pop, s_endRow = pop, s_startingRow = pop, s_mat = pop;
+	Melder_require (s_mat->which == Stackel_NUMERIC_MATRIX,
+		U"The first argument of the function “part##” should be a numeric matrix, not ", s_mat->whichText(), U".");
+	Melder_require (s_startingRow->which == Stackel_NUMBER,
+		U"The second argument of the function “part##” should be a number (the starting row), not ", s_startingRow->whichText(), U".");
+	Melder_require (s_endRow->which == Stackel_NUMBER,
+		U"The third argument of the function “part##” should be a number (the end row), not ", s_endRow->whichText(), U".");
+	Melder_require (s_startingColumn->which == Stackel_NUMBER,
+		U"The fourth argument of the function “part##” should be a number (the starting column), not ", s_startingColumn->whichText(), U".");
+	Melder_require (s_endColumn->which == Stackel_NUMBER,
+		U"The fifth argument of the function “part##” should be a number (the end column), not ", s_endColumn->whichText(), U".");
+	/*
+		Check the preconditions of the arguments.
+	*/
+	const constMAT mat = s_mat->numericMatrix;
+	const integer numberOfRows = mat.nrow, numberOfColumns = mat.ncol;
+	const integer startingRow = Melder_iround (s_startingRow->number);
+	Melder_require (startingRow > 0,
+		U"The second argument of the function “part##” (the starting row) should (after rounding) be a positive whole number, not ", startingRow, U".");
+	Melder_require (startingRow <= numberOfRows,
+		U"The second argument of the function “part##” (the starting row) should (after rounding) be at most the number of rows (",
+		numberOfRows, U"), not ", startingRow, U"."
+	);
+	const integer endRow = Melder_iround (s_endRow->number);
+	Melder_require (endRow > 0,
+		U"The third argument of the function “part##” (the end row) should (after rounding) be a positive whole number, not ", endRow, U".");
+	Melder_require (endRow <= numberOfRows,
+		U"The third argument of the function “part##” (the end row) should (after rounding) be at most the number of rows (",
+		numberOfRows, U"), not ", endRow, U"."
+	);
+	const integer startingColumn = Melder_iround (s_startingColumn->number);
+	Melder_require (startingColumn > 0,
+		U"The fourth argument of the function “part##” (the starting column) should (after rounding) be a positive whole number, not ", startingColumn, U".");
+	Melder_require (startingColumn <= numberOfColumns,
+		U"The fourth argument of the function “part##” (the starting column) should (after rounding) be at most the number of columns (",
+		numberOfColumns, U"), not ", startingColumn, U"."
+	);
+	const integer endColumn = Melder_iround (s_endColumn->number);
+	Melder_require (endColumn > 0,
+		U"The fifth argument of the function “part##” (the end column) should (after rounding) be a positive whole number, not ", endColumn, U".");
+	Melder_require (endColumn <= numberOfColumns,
+		U"The fifth argument of the function “part##” (the end column) should (after rounding) be at most the number of columns (",
+		numberOfColumns, U"), not ", endColumn, U"."
+	);
+	pushNumericMatrix (copy_MAT (mat. part (startingRow, endRow, startingColumn, endColumn)));
+}
 static void do_editor () {
 	const Stackel narg = pop;
 	Melder_assert (narg->which == Stackel_NUMBER);
@@ -5268,6 +5436,28 @@ static void do_folderNames_STRVEC () {
 	autoSTRVEC result = folderNames_STRVEC (folderPattern->getString());
 	pushStringVector (result.move());
 }
+static void do_fileNames_caseInsensitive_STRVEC () {
+	const Stackel narg = pop;
+	Melder_assert (narg->which == Stackel_NUMBER);
+	Melder_require (narg->number == 1,
+		U"The function “fileNames_caseInsensitive$#” requires one argument, namely the file pattern.");
+	const Stackel filePattern = pop;
+	if (filePattern->which != Stackel_STRING)
+		Melder_throw (U"The argument of the function “fileNames_caseInsensitive$#” should be a string (namely the file path and pattern), not ", filePattern->whichText(), U".");
+	autoSTRVEC result = fileNames_caseInsensitive_STRVEC (filePattern->getString());
+	pushStringVector (result.move());
+}
+static void do_folderNames_caseInsensitive_STRVEC () {
+	const Stackel narg = pop;
+	Melder_assert (narg->which == Stackel_NUMBER);
+	Melder_require (narg->number == 1,
+		U"The function “folderNames_caseInsensitive$#” requires one argument, namely the file pattern.");
+	const Stackel folderPattern = pop;
+	Melder_require (folderPattern->which == Stackel_STRING,
+		U"The argument of the function “folderNames_caseInsensitive$#” should be a string (namely the folder path), not ", folderPattern->whichText(), U".");
+	autoSTRVEC result = folderNames_caseInsensitive_STRVEC (folderPattern->getString());
+	pushStringVector (result.move());
+}
 static void do_splitByWhitespace_STRVEC () {
 	const Stackel narg = pop;
 	Melder_assert (narg -> which == Stackel_NUMBER);
@@ -5423,6 +5613,16 @@ static void do_fileReadable () {
 		Melder_throw (U"The function “fileReadable” requires a string, not ", s->whichText(), U".");
 	}
 }
+static void do_folderExists () {
+	const Stackel s = pop;
+	if (s->which == Stackel_STRING) {
+		structMelderFolder folder { };
+		Melder_relativePathToFolder (s->getString(), & folder);
+		pushNumber (MelderFolder_exists (& folder));
+	} else {
+		Melder_throw (U"The function “folderExists” requires a string, not ", s->whichText(), U".");
+	}
+}
 static void do_tryToWriteFile () {
 	Melder_require (praat_commandsWithExternalSideEffectsAreAllowed (),
 		U"The function “tryToWriteFile” is not available inside manuals.");
@@ -5575,6 +5775,19 @@ static void do_index () {
 			s->whichText(), U" and ", t->whichText(), U".");
 	}
 }
+static void do_index_caseInsensitive () {
+	const Stackel t = pop, s = pop;
+	if (s->which == Stackel_STRING && t->which == Stackel_STRING) {
+		char32 *substring = str32str_caseInsensitive (s->getString(), t->getString());
+		const integer result = ( substring ? substring - s->getString() + 1 : 0 );   // 0 is the special case, meaning "not found"
+		pushNumber (result);
+	} else if (s->which == Stackel_STRING_ARRAY && t->which == Stackel_STRING) {
+		pushNumber (NUMfindFirst_caseInsensitive (s->stringArray, t->getString()));
+	} else {
+		Melder_throw (U"The function “index_caseInsensitive” requires two strings, not ",
+			s->whichText(), U" and ", t->whichText(), U".");
+	}
+}
 static void do_rindex () {
 	const Stackel part = pop, whole = pop;
 	if (whole->which == Stackel_STRING && part->which == Stackel_STRING) {
@@ -5593,19 +5806,36 @@ static void do_rindex () {
 		} else {
 			pushNumber (0);   // 0 is the special case, meaning "not found"
 		}
+	} else if (whole->which == Stackel_STRING_ARRAY && part->which == Stackel_STRING) {
+		pushNumber (NUMfindLast (whole->stringArray, part->getString()));
 	} else {
 		Melder_throw (U"The function “rindex” requires two strings, not ",
 			whole->whichText(), U" and ", part->whichText(), U".");
 	}
 }
-static void do_stringMatchesCriterion (kMelder_string criterion) {
-	const Stackel t = pop, s = pop;
-	if (s->which == Stackel_STRING && t->which == Stackel_STRING) {
-		const bool result = Melder_stringMatchesCriterion (s->getString(), criterion, t->getString(), true);
-		pushNumber (result);
+static void do_rindex_caseInsensitive () {
+	const Stackel part = pop, whole = pop;
+	if (whole->which == Stackel_STRING && part->which == Stackel_STRING) {
+		char32 *lastSubstring = str32str_caseInsensitive (whole->getString(), part->getString());
+		if (part->getString() [0] == U'\0') {
+			const integer result = Melder_length (whole->getString());
+			pushNumber (result);
+		} else if (lastSubstring) {
+			for (;;) {
+				char32 *substring = str32str_caseInsensitive (lastSubstring + 1, part->getString());
+				if (! substring)
+					break;
+				lastSubstring = substring;
+			}
+			pushNumber (lastSubstring - whole->getString() + 1);
+		} else {
+			pushNumber (0);   // 0 is the special case, meaning "not found"
+		}
+	} else if (whole->which == Stackel_STRING_ARRAY && part->which == Stackel_STRING) {
+		pushNumber (NUMfindLast_caseInsensitive (whole->stringArray, part->getString()));
 	} else {
-		Melder_throw (U"The function “", Formula_instructionNames [parse [programPointer]. symbol],
-			U"” requires two strings, not ", s->whichText(), U" and ", t->whichText(), U".");
+		Melder_throw (U"The function “rindex_caseInsensitive” requires two strings, not ",
+			whole->whichText(), U" and ", part->whichText(), U".");
 	}
 }
 static void do_index_regex (int backward) {
@@ -5629,28 +5859,14 @@ static void do_index_regex (int backward) {
 			U"” requires two strings, not ", s->whichText(), U" and ", t->whichText(), U".");
 	}
 }
-static void do_replace_STR () {
-	const Stackel x = pop, u = pop, t = pop, s = pop;
-	if (s->which == Stackel_STRING && t->which == Stackel_STRING && u->which == Stackel_STRING && x->which == Stackel_NUMBER) {
-		autostring32 result = replace_STR (s->getString(), t->getString(), u->getString(), Melder_iround (x->number));
-		pushString (result.move());
+static void do_stringMatchesCriterion (kMelder_string criterion, bool caseSensitive) {
+	const Stackel t = pop, s = pop;
+	if (s->which == Stackel_STRING && t->which == Stackel_STRING) {
+		const bool result = Melder_stringMatchesCriterion (s->getString(), criterion, t->getString(), caseSensitive);
+		pushNumber (result);
 	} else {
-		Melder_throw (U"The function “replace$” requires three strings and a number.");
-	}
-}
-static void do_replace_regex_STR () {
-	const Stackel x = pop, u = pop, t = pop, s = pop;
-	if (s->which == Stackel_STRING && t->which == Stackel_STRING && u->which == Stackel_STRING && x->which == Stackel_NUMBER) {
-		conststring32 errorMessage;
-		regexp *compiled_regexp = CompileRE (t->getString(), & errorMessage, 0);
-		if (! compiled_regexp) {
-			Melder_throw (U"replace_regex$(): ", errorMessage, U".");
-		} else {
-			autostring32 result = replace_regex_STR (s->getString(), compiled_regexp, u->getString(), Melder_iround (x->number));
-			pushString (result.move());
-		}
-	} else {
-		Melder_throw (U"The function “replace_regex$” requires three strings and a number.");
+		Melder_throw (U"The function “", Formula_instructionNames [parse [programPointer]. symbol],
+			U"” requires two strings, not ", s->whichText(), U" and ", t->whichText(), U".");
 	}
 }
 static void do_extractNumber () {
@@ -5727,6 +5943,30 @@ static void do_extractText_STR (bool singleWord) {
 	} else {
 		Melder_throw (U"The function “", Formula_instructionNames [parse [programPointer]. symbol],
 			U"” requires two strings, not ", s->whichText(), U" and ", t->whichText(), U".");
+	}
+}
+static void do_replace_STR () {
+	const Stackel x = pop, u = pop, t = pop, s = pop;
+	if (s->which == Stackel_STRING && t->which == Stackel_STRING && u->which == Stackel_STRING && x->which == Stackel_NUMBER) {
+		autostring32 result = replace_STR (s->getString(), t->getString(), u->getString(), Melder_iround (x->number));
+		pushString (result.move());
+	} else {
+		Melder_throw (U"The function “replace$” requires three strings and a number.");
+	}
+}
+static void do_replace_regex_STR () {
+	const Stackel x = pop, u = pop, t = pop, s = pop;
+	if (s->which == Stackel_STRING && t->which == Stackel_STRING && u->which == Stackel_STRING && x->which == Stackel_NUMBER) {
+		conststring32 errorMessage;
+		regexp *compiled_regexp = CompileRE (t->getString(), & errorMessage, 0);
+		if (! compiled_regexp) {
+			Melder_throw (U"replace_regex$(): ", errorMessage, U".");
+		} else {
+			autostring32 result = replace_regex_STR (s->getString(), compiled_regexp, u->getString(), Melder_iround (x->number));
+			pushString (result.move());
+		}
+	} else {
+		Melder_throw (U"The function “replace_regex$” requires three strings and a number.");
 	}
 }
 static void do_selected () {
@@ -5814,12 +6054,30 @@ static void do_selected_VEC () {
 			const ClassInfo klas = Thing_classFromClassName (s->getString(), nullptr);
 			result = praat_idsOfAllSelected (klas);
 		} else {
-			Melder_throw (U"The function “numberOfSelected” requires a string (an object type name), not ", s->whichText(), U".");
+			Melder_throw (U"The function “selected#” requires a string (an object type name), not ", s->whichText(), U".");
 		}
 	} else {
-		Melder_throw (U"The function “numberOfSelected” requires 0 or 1 arguments, not ", n->number, U".");
+		Melder_throw (U"The function “selected#” requires 0 or 1 arguments, not ", n->number, U".");
 	}
 	pushNumericVector (result.move());
+}
+static void do_selected_STRVEC () {
+	const Stackel n = pop;
+	autoSTRVEC result;
+	if (n->number == 0) {
+		result = praat_namesOfAllSelected (nullptr);
+	} else if (n->number == 1) {
+		const Stackel s = pop;
+		if (s->which == Stackel_STRING) {
+			const ClassInfo klas = Thing_classFromClassName (s->getString(), nullptr);
+			result = praat_namesOfAllSelected (klas);
+		} else {
+			Melder_throw (U"The function “selected$#” requires a string (an object type name), not ", s->whichText(), U".");
+		}
+	} else {
+		Melder_throw (U"The function “selected$#” requires 0 or 1 arguments, not ", n->number, U".");
+	}
+	pushStringVector (result.move());
 }
 static void do_selectObject () {
 	const Stackel n = pop;
@@ -6133,13 +6391,9 @@ static void do_createFolder () {
 		U"The function “createFolder” is not available inside manuals.");
 	const Stackel f = pop;
 	if (f->which == Stackel_STRING) {
-		structMelderDir currentDirectory { };
-		Melder_getDefaultDir (& currentDirectory);
-		#if defined (UNIX) || defined (macintosh)
-			Melder_createDirectory (& currentDirectory, f->getString(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-		#else
-			Melder_createDirectory (& currentDirectory, f->getString(), 0);
-		#endif
+		structMelderFolder folder { };
+		Melder_relativePathToFolder (f->getString(), & folder);
+		MelderFolder_create (& folder);
 		pushNumber (1);
 	} else {
 		Melder_throw (U"The function “createFolder” requires a string, not ", f->whichText(), U".");
@@ -6150,13 +6404,9 @@ static void do_createDirectory () {
 		U"The function “createDirectory” is not available inside manuals.");
 	const Stackel f = pop;
 	if (f->which == Stackel_STRING) {
-		structMelderDir currentDirectory { };
-		Melder_getDefaultDir (& currentDirectory);
-		#if defined (UNIX) || defined (macintosh)
-			Melder_createDirectory (& currentDirectory, f->getString(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-		#else
-			Melder_createDirectory (& currentDirectory, f->getString(), 0);
-		#endif
+		structMelderFolder folder { };
+		Melder_relativePathToFolder (f->getString(), & folder);
+		MelderFolder_create (& folder);
 		pushNumber (1);
 	} else {
 		Melder_throw (U"The function “createDirectory” requires a string, not ", f->whichText(), U".");
@@ -6165,9 +6415,9 @@ static void do_createDirectory () {
 static void do_setWorkingDirectory () {
 	const Stackel f = pop;
 	if (f->which == Stackel_STRING) {
-		structMelderDir folder { };
-		Melder_pathToDir (f->getString(), & folder);
-		Melder_setDefaultDir (& folder);
+		structMelderFolder folder { };
+		Melder_pathToFolder (f->getString(), & folder);
+		Melder_setCurrentFolder (& folder);
 		pushNumber (1);
 	} else {
 		Melder_throw (U"The function “setWorkingDirectory” requires a string, not ", f->whichText(), U".");
@@ -6620,10 +6870,10 @@ static void do_solve_VEC () {
 	const Stackel y = pop, x = pop;
 	if (x->which == Stackel_NUMERIC_MATRIX && y->which == Stackel_NUMERIC_VECTOR) {
 		Melder_require (x->numericMatrix.nrow == y->numericVector.size,
-			U"In the function solve#, the number of rows of the matrix and the dimension of the vector should be equal, not ",
+			U"In the function “solve#”, the number of rows of the matrix and the dimension of the vector should be equal, not ",
 			x->numericMatrix.nrow, U" and ", y->numericVector.size
 		);
-		pushNumericVector (newVECsolve (x->numericMatrix, y->numericVector, NUMeps * y->numericVector.size));
+		pushNumericVector (solve_VEC (x->numericMatrix, y->numericVector, NUMeps * y->numericVector.size));
 	} else {
 		Melder_throw (U"The function “solve#” requires a matrix and a vector, not ", x->whichText(), U" and ", y->whichText(), U".");
 	}
@@ -6633,14 +6883,14 @@ static void do_solveWeaklyConstrained_VEC () {
 	const Stackel delta = pop, alpha = pop, y = pop, x = pop;
 	if (x->which == Stackel_NUMERIC_MATRIX && y->which == Stackel_NUMERIC_VECTOR && alpha->which == Stackel_NUMBER && delta->which == Stackel_NUMBER) {
 		Melder_require (x->numericMatrix.nrow == y->numericVector.size,
-			U"In the function solveWeaklyConstrained#, the number of rows of the matrix and the dimension of the vector should be equal, not ",
+			U"In the function “solveWeaklyConstrained#”, the number of rows of the matrix and the dimension of the vector should be equal, not ",
 			x->numericMatrix.nrow, U" and ", y->numericVector.size
 		);
 		Melder_require (alpha->number >= 0.0,
 			U"Argument 3, the weight coefficient of the penalty function should not be negative.");
 		Melder_require (delta->number >= 0.0,
 			U"Argument 4, the squared length of the solution vector should not be negative.");
-		pushNumericVector (newVECsolveWeaklyConstrainedLinearRegression (x->numericMatrix, y->numericVector, alpha->number, delta->number));
+		pushNumericVector (solveWeaklyConstrainedLinearRegression_VEC (x->numericMatrix, y->numericVector, alpha->number, delta->number));
 	} else {
 		Melder_throw (U"The function “solveWeaklyConstrained#” requires a matrix, a vector, and two numbers not ", x->whichText(), U", ",
 			y->whichText(), U", ", alpha->whichText(), U" and ", delta->whichText(), U".");
@@ -6651,9 +6901,9 @@ static void do_solve_MAT () {
 	const Stackel y = pop, x = pop;
 	if (x->which == Stackel_NUMERIC_MATRIX && y->which == Stackel_NUMERIC_MATRIX) {
 		Melder_require (x->numericMatrix.nrow == y->numericMatrix.nrow,
-			U"In the function MATsolve##, the two matrices should have the same number of rows, not ",
+			U"In the function “solve##”, the two matrices should have the same number of rows, not ",
 			x->numericMatrix.nrow, U" and ", y->numericMatrix.nrow);
-		pushNumericMatrix (newMATsolve (x->numericMatrix, y->numericMatrix, NUMeps * x->numericMatrix.nrow * x->numericMatrix.ncol));
+		pushNumericMatrix (solve_MAT (x->numericMatrix, y->numericMatrix, NUMeps * x->numericMatrix.nrow * x->numericMatrix.ncol));
 	} else {
 		Melder_throw (U"The function “solve##” requires two matrices, not ", x->whichText(), U" and ", y->whichText(), U".");
 	}
@@ -6677,7 +6927,7 @@ static void do_solveSparse_VEC () {
 			const integer maximumNumberOfIterations = Melder_iround (niter ->number);
 			const integer infoLevel = Melder_iround (info->number);
 			const double tolerance = tol->number;
-			pushNumericVector (newVECsolveSparse_IHT (d, yy, numberOfNonzeros,  maximumNumberOfIterations, tolerance, infoLevel));
+			pushNumericVector (solveSparse_IHT_VEC (d, yy, numberOfNonzeros,  maximumNumberOfIterations, tolerance, infoLevel));
 		} else {
 			Melder_throw (U"The function “solveSparse#” requires a matrix, a vector, and four numbers, not ", dict->whichText(), U", ", y->whichText(), U", ", nonzeros->whichText(), U", ",
 			niter->whichText(), U", ", tol->whichText(), U" and ", info->whichText());
@@ -6751,7 +7001,7 @@ static void do_solveNonnegative_VEC () {
 			const VEC yy = y->numericVector;
 			Melder_require (a.nrow == yy.size,
 				U"The number of rows in the matrix should equal the size of the vector.");
-			pushNumericVector (newVECsolveNonnegativeLeastSquaresRegression (a, yy, maximumNumberOfIterations, tolerance, infoLevel));
+			pushNumericVector (solveNonnegativeLeastSquaresRegression_VEC (a, yy, maximumNumberOfIterations, tolerance, infoLevel));
 		} else {
 			Melder_throw (U"The function “solveNonnegative#” requires a matrix, a vector, and three numbers, not ", m->whichText(), U", ", y->whichText(), U", ", itermax->whichText(), U", ", tol->whichText(), U" and ", info->whichText());
 		}
@@ -7164,6 +7414,18 @@ static void do_option () {
 	Melder_require (text->which == Stackel_STRING,
 		U"The argument of “option” should be a string (the text), not ", text->whichText(), U".");
 	UiPause_option (text->getString());
+	pushNumber (1);
+}
+static void do_heading () {
+	Melder_require (praat_commandsWithExternalSideEffectsAreAllowed (),
+		U"The function “heading” is not available inside manuals.");
+	const Stackel n = pop;
+	Melder_require (n->number == 1,
+		U"The function “heading” requires 1 argument (a text), not ", n->number, U".");
+	const Stackel text = pop;
+	Melder_require (text->which == Stackel_STRING,
+		U"The argument of “heading” should be a string (the text), not ", text->whichText(), U".");
+	UiPause_heading (text->getString());
 	pushNumber (1);
 }
 static void do_comment () {
@@ -8103,8 +8365,10 @@ CASE_NUM_WITH_TENSORS (LOG10_, do_log10)
 } break; case EXIT_SCRIPT_: { do_exitScript ();
 } break; case RUN_SCRIPT_: { do_runScript ();
 } break; case RUN_SYSTEM_: { do_runSystem ();
+} break; case RUN_SYSTEM_STR_: { do_runSystem_STR ();
 } break; case RUN_SYSTEM_NOCHECK_: { do_runSystem_nocheck ();
 } break; case RUN_SUBPROCESS_: { do_runSubprocess ();
+} break; case RUN_SUBPROCESS_STR_: { do_runSubprocess_STR ();
 } break; case MIN_: { do_min ();
 } break; case MIN_E_: { do_min_e ();
 } break; case MIN_IGNORE_UNDEFINED_: { do_min_removeUndefined ();
@@ -8147,6 +8411,8 @@ CASE_NUM_WITH_TENSORS (LOG10_, do_log10)
 } break; case NUMBER_OF_ROWS_: { do_numberOfRows ();
 } break; case NUMBER_OF_COLUMNS_: { do_numberOfColumns ();
 } break; case COMBINE_VEC_: { do_combine_VEC ();
+} break; case PART_VEC_: { do_part_VEC ();
+} break; case PART_MAT_: { do_part_MAT ();
 } break; case EDITOR_: { do_editor ();
 } break; case RANDOM__INITIALIZE_WITH_SEED_UNSAFELY_BUT_PREDICTABLY_: { do_random_initializeWithSeedUnsafelyButPredictably ();
 } break; case RANDOM__INITIALIZE_SAFELY_AND_UNPREDICTABLY_: { do_random_initializeSafelyAndUnpredictably ();
@@ -8157,14 +8423,18 @@ CASE_NUM_WITH_TENSORS (LOG10_, do_log10)
 } break; case READ_LINES_FROM_FILE_STRVEC_: { do_readLinesFromFile_STRVEC ();
 } break; case FILE_NAMES_STRVEC_: { do_fileNames_STRVEC ();
 } break; case FOLDER_NAMES_STRVEC_: { do_folderNames_STRVEC ();
+} break; case FILE_NAMES_CASE_INSENSITIVE_STRVEC_: { do_fileNames_caseInsensitive_STRVEC ();
+} break; case FOLDER_NAMES_CASE_INSENSITIVE_STRVEC_: { do_folderNames_caseInsensitive_STRVEC ();
 } break; case SPLIT_BY_WHITESPACE_STRVEC_: { do_splitByWhitespace_STRVEC ();
 } break; case SPLIT_BY_STRVEC_: { do_splitBy_STRVEC ();
-/********** String functions: **********/
+/********** String functions of 1 variable: **********/
 } break; case LENGTH_: { do_length ();
 } break; case STRING_TO_NUMBER_: { do_number ();
 } break; case FILE_READABLE_: { do_fileReadable ();
+} break; case FOLDER_EXISTS_: { do_folderExists ();
 } break; case TRY_TO_WRITE_FILE_: { do_tryToWriteFile ();
 } break; case TRY_TO_APPEND_FILE_: { do_tryToAppendFile ();
+/********** String functions of 0 variables: **********/
 } break; case DATE_STR_: { do_date_STR ();
 } break; case DATE_UTC_STR_: { do_date_utc_STR ();
 } break; case DATE_ISO_STR_: { do_date_iso_STR ();
@@ -8172,6 +8442,7 @@ CASE_NUM_WITH_TENSORS (LOG10_, do_log10)
 } break; case DATE_VEC_: { do_date_VEC ();
 } break; case DATE_UTC_VEC_: { do_date_utc_VEC ();
 } break; case INFO_STR_: { do_info_STR ();
+/********** String functions of 2 variables: **********/
 } break; case LEFT_STR_: { do_left_STR ();
 } break; case RIGHT_STR_: { do_right_STR ();
 } break; case MID_STR_: { do_mid_STR ();
@@ -8179,20 +8450,26 @@ CASE_NUM_WITH_TENSORS (LOG10_, do_log10)
 } break; case BACKSLASH_TRIGRAPHS_TO_UNICODE_STR_: { do_backslashTrigraphsToUnicode_STR ();
 } break; case ENVIRONMENT_STR_: { do_environment_STR ();
 } break; case INDEX_: { do_index ();
+} break; case INDEX_CASE_INSENSITIVE_: { do_index_caseInsensitive ();
 } break; case RINDEX_: { do_rindex ();
-} break; case STARTS_WITH_: { do_stringMatchesCriterion (kMelder_string::STARTS_WITH);
-} break; case ENDS_WITH_: { do_stringMatchesCriterion (kMelder_string::ENDS_WITH);
-} break; case REPLACE_STR_: { do_replace_STR ();
+} break; case RINDEX_CASE_INSENSITIVE_: { do_rindex_caseInsensitive ();
+} break; case STARTS_WITH_: { do_stringMatchesCriterion (kMelder_string::STARTS_WITH, true);
+} break; case STARTS_WITH_CASE_INSENSITIVE_: { do_stringMatchesCriterion (kMelder_string::STARTS_WITH, false);
+} break; case ENDS_WITH_: { do_stringMatchesCriterion (kMelder_string::ENDS_WITH, true);
+} break; case ENDS_WITH_CASE_INSENSITIVE_: { do_stringMatchesCriterion (kMelder_string::ENDS_WITH, false);
 } break; case INDEX_REGEX_: { do_index_regex (false);
 } break; case RINDEX_REGEX_: { do_index_regex (true);
-} break; case REPLACE_REGEX_STR_: { do_replace_regex_STR ();
 } break; case EXTRACT_NUMBER_: { do_extractNumber ();
+/********** Other string functions: **********/
 } break; case EXTRACT_WORD_STR_: { do_extractText_STR (true);
 } break; case EXTRACT_LINE_STR_: { do_extractText_STR (false);
+} break; case REPLACE_STR_: { do_replace_STR ();
+} break; case REPLACE_REGEX_STR_: { do_replace_regex_STR ();
 } break; case SELECTED_: { do_selected ();
 } break; case SELECTED_STR_: { do_selected_STR ();
 } break; case NUMBER_OF_SELECTED_: { do_numberOfSelected ();
 } break; case SELECTED_VEC_: { do_selected_VEC ();
+} break; case SELECTED_STRVEC_: { do_selected_STRVEC ();
 } break; case SELECT_OBJECT_: { do_selectObject ();
 } break; case PLUS_OBJECT_  : { do_plusObject   ();
 } break; case MINUS_OBJECT_ : { do_minusObject  ();
@@ -8266,6 +8543,7 @@ CASE_NUM_WITH_TENSORS (LOG10_, do_log10)
 } break; case POSITIVEVECTOR_: { do_positivevector ();
 } break; case INTEGERVECTOR_: { do_integervector ();
 } break; case NATURALVECTOR_: { do_naturalvector ();
+} break; case HEADING_: { do_heading ();
 } break; case COMMENT_: { do_comment ();
 } break; case END_PAUSE_: { do_endPause ();
 } break; case CHOOSE_READ_FILE_STR_: { do_chooseReadFileStr ();

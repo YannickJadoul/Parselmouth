@@ -1,6 +1,6 @@
 /* praat_Sound.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ DIRECT (INFO_NONE__LongSound_concatenate) {
 	INFO_NONE_END
 }
 
-FORM (NEW_LongSound_extractPart, U"LongSound: Extract part", nullptr) {
+FORM (NEW_LongSound_extractPart, U"LongSound: Extract part", U"LongSound: Extract part...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"1.0")
 	BOOLEAN (preserveTimes, U"Preserve times", true)
@@ -257,12 +257,12 @@ FORM_SAVE (SAVE_ONE__LongSound_saveRightChannelAsWavFile, U"Save right channel a
 }
 
 FORM (SETTINGS__LongSoundSettings, U"LongSound settings", U"LongSound") {
-	LABEL (U"This setting determines the maximum number of seconds")
-	LABEL (U"for viewing the waveform and playing a sound in the LongSound window.")
-	LABEL (U"The LongSound window can become very slow if you set it too high.")
+	COMMENT (U"This setting determines the maximum number of seconds")
+	COMMENT (U"for viewing the waveform and playing a sound in the LongSound window.")
+	COMMENT (U"The LongSound window can become very slow if you set it too high.")
 	NATURAL (maximumViewablePart, U"Maximum viewable part (seconds)", U"60")
-	LABEL (U"Note: this setting works for the next long sound file that you open,")
-	LABEL (U"not for currently existing LongSound objects.")
+	COMMENT (U"Note: this setting works for the next long sound file that you open,")
+	COMMENT (U"not for currently existing LongSound objects.")
 OK
 	SET_INTEGER (maximumViewablePart, LongSound_getBufferSizePref_seconds ())
 DO
@@ -312,8 +312,8 @@ FORM_SAVE (SAVE_ALL__LongSound_Sound_saveAsWavFile, U"Save as WAV file", nullptr
 /********** SOUND **********/
 
 FORM (MODIFY_Sound_add, U"Sound: Add", nullptr) {
-	LABEL (U"The following number will be added to the amplitudes of ")
-	LABEL (U"all samples of the sound.")
+	COMMENT (U"The following number will be added to the amplitudes of ")
+	COMMENT (U"all samples of the sound.")
 	REAL (number, U"Number", U"0.1")
 	OK
 DO
@@ -589,8 +589,8 @@ FORM (MODIFY_Sound_deemphasizeInplace, U"Sound: De-emphasize (in-place)", U"Soun
 	REAL (fromFrequency, U"From frequency (Hz)", U"50.0")
 	OK
 DO
-	MODIFY_EACH (Sound)
-		Sound_deEmphasis (me, fromFrequency);
+	MODIFY_EACH (mutableSound)
+		Sound_deEmphasize_inplace (me, fromFrequency);
 		Vector_scale (me, 0.99);
 	MODIFY_EACH_END
 }
@@ -630,7 +630,7 @@ FORM (GRAPHICS_EACH__Sound_draw, U"Sound: Draw", nullptr) {
 	REAL (fromAmplitude, U"left Amplitude range", U"0.0")
 	REAL (toAmplitude, U"right Amplitude range", U"0.0 (= auto)")
 	BOOLEAN (garnish, U"Garnish", true)
-	LABEL (U"")
+	COMMENT (U"")
 	OPTIONMENUSTR (drawingMethod, U"Drawing method", 1)
 		OPTION (U"curve")
 		OPTION (U"bars")
@@ -703,7 +703,7 @@ DIRECT (CONVERT_EACH_TO_ONE__Sound_extractLeftChannel) {
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_left")
 }
 
-FORM (CONVERT_EACH_TO_ONE__Sound_extractPart, U"Sound: Extract part", nullptr) {
+FORM (CONVERT_EACH_TO_ONE__Sound_extractPart, U"Sound: Extract part", U"Sound: Extract part...") {
 	REAL (fromTime, U"left Time range (s)", U"0.0")
 	REAL (toTime, U"right Time range (s)", U"0.1")
 	OPTIONMENU_ENUM (kSound_windowShape, windowShape, U"Window shape", kSound_windowShape::DEFAULT)
@@ -744,7 +744,8 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_filter_formula, U"Sound: Filter (formula)...", U"Formula...") {
-	LABEL (U"Frequency-domain filtering with a formula (uses Sound-to-Spectrum and Spectrum-to-Sound): x is frequency in hertz")
+	COMMENT (U"Frequency-domain filtering with a formula")
+	COMMENT (U"(uses Sound-to-Spectrum and Spectrum-to-Sound): x is frequency in hertz")
 	FORMULA (formula, U"Formula", U"if x<500 or x>1000 then 0 else self fi; rectangular band filter")
 	OK
 DO
@@ -805,13 +806,13 @@ DO
 }
 
 FORM (MODIFY_Sound_formula, U"Sound: Formula", U"Sound: Formula...") {
-	LABEL (U"# `x` is the time in seconds, `col` is the sample number.")
-	LABEL (U"x = x1   ! time associated with first sample")
-	LABEL (U"for col from 1 to ncol")
-	LABEL (U"   self [col] = ...")
+	COMMENT (U"# `x` is the time in seconds, `col` is the sample number.")
+	COMMENT (U"x = x1   ! time associated with first sample")
+	COMMENT (U"for col from 1 to ncol")
+	COMMENT (U"   self [col] = ...")
 	FORMULA (formula, U"Formula", U"self")
-	LABEL (U"   x = x + dx")
-	LABEL (U"endfor")
+	COMMENT (U"   x = x + dx")
+	COMMENT (U"endfor")
 	OK
 DO
 	MODIFY_EACH_WEAK (Sound)
@@ -927,7 +928,8 @@ FORM (QUERY_ONE_FOR_REAL__old_Sound_getNearestZeroCrossing, U"Sound: Get nearest
 	OK
 DO
 	QUERY_ONE_FOR_REAL (Sound)
-		if (my ny > 1) Melder_throw (U"Cannot determine a zero crossing for a stereo sound.");
+		if (my ny > 1)
+			Melder_throw (U"Cannot determine a zero crossing for a stereo sound.");
 		const double result = Sound_getNearestZeroCrossing (me, time, 1);
 	QUERY_ONE_FOR_REAL_END (U" seconds")
 }
@@ -938,7 +940,10 @@ FORM (QUERY_ONE_FOR_REAL__Sound_getNearestZeroCrossing, U"Sound: Get nearest zer
 	OK
 DO_ALTERNATIVE (QUERY_ONE_FOR_REAL__old_Sound_getNearestZeroCrossing)
 	QUERY_ONE_FOR_REAL (Sound)
-		if (channel > my ny) channel = 1;
+		Melder_require (channel >= 1,
+			U"The channel number should be at least 1.");
+		Melder_require (channel <= my ny,
+			U"The channel number should be at most the number of channels (", my ny, U").");
 		const double result = Sound_getNearestZeroCrossing (me, time, channel);
 	QUERY_ONE_FOR_REAL_END (U" seconds")
 }
@@ -1105,15 +1110,15 @@ DIRECT (HELP__Sound_help) {
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_lengthen_overlapAdd, U"Sound: Lengthen (overlap-add)", U"Sound: Lengthen (overlap-add)...") {
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
-	POSITIVE (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	POSITIVE (factor, U"Factor", U"1.5")
 	OK
 DO
-	Melder_require (minimumPitch < maximumPitch,
-		U"Maximum pitch should be greater than minimum pitch.");
+	Melder_require (pitchFloor < pitchCeiling,
+		U"The pitch ceiling should be greater than the pitch floor.");
 	CONVERT_EACH_TO_ONE (Sound)
-		autoSound result = Sound_lengthen_overlapAdd (me, minimumPitch, maximumPitch, factor);
+		autoSound result = Sound_lengthen_overlapAdd (me, pitchFloor, pitchCeiling, factor);
 	CONVERT_EACH_TO_ONE_END (my name.get(), U"_", Melder_fixed (factor, 2));
 }
 
@@ -1126,11 +1131,11 @@ DO
 	MODIFY_EACH_END
 }
 
-FORM (MODIFY_Sound_multiplyByWindow, U"Sound: Multiply by window", nullptr) {
+FORM (MODIFY_Sound_multiplyByWindow, U"Sound: Multiply by window", U"Sound: Multiply by window...") {
 	OPTIONMENU_ENUM (kSound_windowShape, windowShape, U"Window shape", kSound_windowShape::HANNING)
 	OK
 DO
-	MODIFY_EACH (Sound)
+	MODIFY_EACH (mutableSound)
 		Sound_multiplyByWindow (me, windowShape);
 	MODIFY_EACH_END
 }
@@ -1139,7 +1144,7 @@ FORM (MODIFY_Sound_overrideSamplingFrequency, U"Sound: Override sampling frequen
 	POSITIVE (newSamplingFrequency, U"New sampling frequency (Hz)", U"16000.0")
 	OK
 DO
-	MODIFY_EACH (Sound)
+	MODIFY_EACH (mutableSound)
 		Sound_overrideSamplingFrequency (me, newSamplingFrequency);
 	MODIFY_EACH_END
 }
@@ -1155,7 +1160,7 @@ FORM (MODIFY_Sound_preemphasizeInplace, U"Sound: Pre-emphasize (in-place)", U"So
 	OK
 DO
 	MODIFY_EACH (Sound)
-		Sound_preEmphasis (me, fromFrequency);
+		Sound_preEmphasize_inplace (me, fromFrequency);
 		Vector_scale (me, 0.99);
 	MODIFY_EACH_END
 }
@@ -1220,12 +1225,12 @@ DIRECT (SINGLETON_CREATION_WINDOW__Sound_recordStereo) {
 }
 
 FORM (RECORD_ONE__Sound_record_fixedTime, U"Record Sound", nullptr) {
-	LABEL (U"This menu command is usually hidden,")
-	LABEL (U"   because its behaviour is platform-dependent.")
-	LABEL (U"The combination of “microphone” and “48000 Hz” is likely")
-	LABEL (U"   to work on all computers.")
-	LABEL (U"The “Gain” and “Balance” settings tend to be obsolete")
-	LABEL (U"   and may not work at all on your computer.")
+	COMMENT (U"This menu command is usually hidden,")
+	COMMENT (U"   because its behaviour is platform-dependent.")
+	COMMENT (U"The combination of “microphone” and “48000 Hz” is likely")
+	COMMENT (U"   to work on all computers.")
+	COMMENT (U"The “Gain” and “Balance” settings tend to be obsolete")
+	COMMENT (U"   and may not work at all on your computer.")
 	CHOICE (inputSource, U"Input source", 1)
 		OPTION (U"microphone")
 		OPTION (U"line")
@@ -1382,14 +1387,14 @@ DIRECT (MODIFY_Sound_subtractMean) {
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Manipulation, U"Sound: To Manipulation", U"Manipulation") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.01")
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
-	POSITIVE (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	OK
 DO
-	Melder_require (maximumPitch > minimumPitch,
-		U"The maximum pitch should be greater than the minimum pitch.");
+	Melder_require (pitchCeiling > pitchFloor,
+		U"The pitch ceiling should be greater than the pitch floor.");
 	CONVERT_EACH_TO_ONE (Sound)
-		autoManipulation result = Sound_to_Manipulation (me, timeStep, minimumPitch, maximumPitch);
+		autoManipulation result = Sound_to_Manipulation (me, timeStep, pitchFloor, pitchCeiling);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
@@ -1410,7 +1415,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Cochleagram_edb, U"Sound: To Cochleagram (De
 	POSITIVE (timeStep, U"Time step (s)", U"0.01")
 	POSITIVE (frequencyResolution, U"Frequency resolution (Bark)", U"0.1")
 	BOOLEAN (hasSynapse, U"Has synapse", true)
-	LABEL (U"Meddis synapse properties")
+	COMMENT (U"Meddis synapse properties")
 	POSITIVE (replenishmentRate, U"   replenishment rate (/sec)", U"5.05")
 	POSITIVE (lossRate, U"   loss rate (/sec)", U"2500.0")
 	POSITIVE (returnRate, U"   return rate (/sec)", U"6580.0")
@@ -1467,29 +1472,29 @@ DO
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Harmonicity_ac, U"Sound: To Harmonicity (ac)", U"Sound: To Harmonicity (ac)...") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.01")
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	REAL (silenceThreshold, U"Silence threshold", U"0.1")
 	POSITIVE (periodsPerWindow, U"Periods per window", U"4.5")
 	OK
 DO
 	Melder_require (periodsPerWindow >= 3.0,
-		U"Number of periods per window must be at least 3.0.");
+		U"The number of periods per window must be at least 3.0.");
 	CONVERT_EACH_TO_ONE (Sound)
 		autoHarmonicity result = Sound_to_Harmonicity_ac (me, timeStep,
-				minimumPitch, silenceThreshold, periodsPerWindow);
+				pitchFloor, silenceThreshold, periodsPerWindow);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Harmonicity_cc, U"Sound: To Harmonicity (cc)", U"Sound: To Harmonicity (cc)...") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.01")
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	REAL (silenceThreshold, U"Silence threshold", U"0.1")
 	POSITIVE (periodsPerWindow, U"Periods per window", U"1.0")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
 		autoHarmonicity result = Sound_to_Harmonicity_cc (me, timeStep,
-				minimumPitch, silenceThreshold, periodsPerWindow);
+				pitchFloor, silenceThreshold, periodsPerWindow);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
@@ -1507,37 +1512,37 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__old_Sound_to_Intensity, U"Sound: To Intensity", U"Sound: To Intensity...") {
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"100.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"100.0")
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
 		autoIntensity result = Sound_to_Intensity (me,
-				minimumPitch, timeStep, false);
+				pitchFloor, timeStep, false);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Intensity, U"Sound: To Intensity", U"Sound: To Intensity...") {
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"100.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"100.0")
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
 	BOOLEAN (subtractMean, U"Subtract mean", true)
 	OK
 DO_ALTERNATIVE (CONVERT_EACH_TO_ONE__old_Sound_to_Intensity)
 	CONVERT_EACH_TO_ONE (Sound)
 		autoIntensity result = Sound_to_Intensity (me,
-				minimumPitch, timeStep, subtractMean);
+				pitchFloor, timeStep, subtractMean);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_IntensityTier, U"Sound: To IntensityTier", nullptr) {
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"100.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"100.0")
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
 	BOOLEAN (subtractMean, U"Subtract mean", true)
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
 		autoIntensityTier result = Sound_to_IntensityTier (me,
-				minimumPitch, timeStep, subtractMean);
+				pitchFloor, timeStep, subtractMean);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
@@ -1557,8 +1562,8 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Ltas_pitchCorrected, U"Sound: To Ltas (pitch-corrected)", U"Sound: To Ltas (pitch-corrected)...") {
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
-	POSITIVE (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	POSITIVE (maximumFrequency, U"Maximum frequency (Hz)", U"5000.0")
 	POSITIVE (bandwidth, U"Bandwidth (Hz)", U"100.0")
 	REAL (shortestPeriod, U"Shortest period (s)", U"0.0001")
@@ -1566,10 +1571,10 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Ltas_pitchCorrected, U"Sound: To Ltas (pitch
 	POSITIVE (maximumPeriodFactor, U"Maximum period factor", U"1.3")
 	OK
 DO
-	Melder_require (maximumPitch > minimumPitch,
-		U"Your maximum pitch should be greater than your minimum pitch.");
+	Melder_require (pitchCeiling > pitchFloor,
+		U"Your pitch ceiling should be greater than your pitch floor.");
 	CONVERT_EACH_TO_ONE (Sound)
-		autoLtas result = Sound_to_Ltas_pitchCorrected (me, minimumPitch, maximumPitch,
+		autoLtas result = Sound_to_Ltas_pitchCorrected (me, pitchFloor, pitchCeiling,
 				maximumFrequency, bandwidth, shortestPeriod, longestPeriod, maximumPeriodFactor);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
@@ -1586,6 +1591,10 @@ DIRECT (CONVERT_TWO_TO_ONE__Sounds_to_ParamCurve) {
 	CONVERT_TWO_TO_ONE_END (my name.get(), U"_", your name.get())
 }
 
+DIRECT (HELP__How_to_choose_a_pitch_analysis_method) {
+	HELP (U"how to choose a pitch analysis method")
+}
+
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch, U"Sound: To Pitch", U"Sound: To Pitch...") {
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
@@ -1598,12 +1607,12 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_ac, U"Sound: To Pitch (ac)", U"Sound: To Pitch (ac)...") {
-	LABEL (U"Finding the candidates")
+	COMMENT (U"Finding the candidates...")
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
 	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", U"15")
 	BOOLEAN (veryAccurate, U"Very accurate", false)
-	LABEL (U"Finding a path")
+	COMMENT (U"Finding a path...")
 	REAL (silenceThreshold, U"Silence threshold", U"0.03")
 	REAL (voicingThreshold, U"Voicing threshold", U"0.45")
 	REAL (octaveCost, U"Octave cost", U"0.01")
@@ -1615,34 +1624,147 @@ DO
 	Melder_require (maximumNumberOfCandidates > 1,
 		U"Your maximum number of candidates should be greater than 1.");
 	CONVERT_EACH_TO_ONE (Sound)
-		autoPitch result = Sound_to_Pitch_ac (me, timeStep,
-			pitchFloor, 3.0, maximumNumberOfCandidates, veryAccurate,
-			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling
+		autoPitch result = Sound_to_Pitch_rawAc (me,
+			timeStep, pitchFloor, pitchCeiling,
+			maximumNumberOfCandidates, veryAccurate,
+			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_cc, U"Sound: To Pitch (cc)", U"Sound: To Pitch (cc)...") {
+	COMMENT (U"Finding the candidates...")
+	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", U"15")
+	BOOLEAN (veryAccurate, U"Very accurate", false)
+	COMMENT (U"Finding a path...")
+	REAL (silenceThreshold, U"Silence threshold", U"0.03")
+	REAL (voicingThreshold, U"Voicing threshold", U"0.45")
+	REAL (octaveCost, U"Octave cost", U"0.01")
+	REAL (octaveJumpCost, U"Octave-jump cost", U"0.35")
+	REAL (voicedUnvoicedCost, U"Voiced / unvoiced cost", U"0.14")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
+	OK
+DO
+	Melder_require (maximumNumberOfCandidates > 1,
+		U"Your maximum number of candidates should be greater than 1.");
+	CONVERT_EACH_TO_ONE (Sound)
+		autoPitch result = Sound_to_Pitch_rawCc (me,
+			timeStep, pitchFloor, pitchCeiling,
+			maximumNumberOfCandidates, veryAccurate,
+			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_cc, U"Sound: To Pitch (cc)", U"Sound: To Pitch (cc)...") {
-	LABEL (U"Finding the candidates")
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_rawAutocorrelation, U"Sound: To Pitch (raw autocorrelation)", U"Sound: To Pitch (raw autocorrelation)...") {
+	HEADING (U"Where to search...")
 	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
-	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	POSITIVE (pitchFloor, U"left Pitch floor and ceiling (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"right Pitch floor and ceiling (Hz)", U"600.0")
+	HEADING (U"How to find the candidates...")
 	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", U"15")
 	BOOLEAN (veryAccurate, U"Very accurate", false)
-	LABEL (U"Finding a path")
+	HEADING (U"How to find a path through the candidates...")
 	REAL (silenceThreshold, U"Silence threshold", U"0.03")
 	REAL (voicingThreshold, U"Voicing threshold", U"0.45")
 	REAL (octaveCost, U"Octave cost", U"0.01")
 	REAL (octaveJumpCost, U"Octave-jump cost", U"0.35")
 	REAL (voicedUnvoicedCost, U"Voiced / unvoiced cost", U"0.14")
-	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	OK
 DO
 	Melder_require (maximumNumberOfCandidates > 1,
 		U"Your maximum number of candidates should be greater than 1.");
 	CONVERT_EACH_TO_ONE (Sound)
-		autoPitch result = Sound_to_Pitch_cc (me, timeStep,
-			pitchFloor, 1.0, maximumNumberOfCandidates, veryAccurate,
-			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling
+		autoPitch result = Sound_to_Pitch_rawAc (me,
+			timeStep, pitchFloor, pitchCeiling,
+			maximumNumberOfCandidates, veryAccurate,
+			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_rawCrossCorrelation, U"Sound: To Pitch (raw cross-correlation)", U"Sound: To Pitch (raw cross-correlation)...") {
+	HEADING (U"Where to search...")
+	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
+	POSITIVE (pitchFloor, U"left Pitch floor and ceiling (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"right Pitch floor and ceiling (Hz)", U"600.0")
+	HEADING (U"How to find the candidates...")
+	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", U"15")
+	BOOLEAN (veryAccurate, U"Very accurate", false)
+	HEADING (U"How to find a path through the candidates...")
+	REAL (silenceThreshold, U"Silence threshold", U"0.03")
+	REAL (voicingThreshold, U"Voicing threshold", U"0.45")
+	REAL (octaveCost, U"Octave cost", U"0.01")
+	REAL (octaveJumpCost, U"Octave-jump cost", U"0.35")
+	REAL (voicedUnvoicedCost, U"Voiced / unvoiced cost", U"0.14")
+	OK
+DO
+	Melder_require (maximumNumberOfCandidates > 1,
+		U"Your maximum number of candidates should be greater than 1.");
+	CONVERT_EACH_TO_ONE (Sound)
+		autoPitch result = Sound_to_Pitch_rawCc (me,
+			timeStep, pitchFloor, pitchCeiling,
+			maximumNumberOfCandidates, veryAccurate,
+			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_filteredAutocorrelation, U"Sound: To Pitch (filtered autocorrelation)", U"Sound: To Pitch (filtered autocorrelation)...") {
+	HEADING (U"Where to search...")
+	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
+	POSITIVE (pitchFloor, U"left Pitch floor and top (Hz)", U"50.0")
+	POSITIVE (pitchTop, U"right Pitch floor and top (Hz)", U"800.0")
+	HEADING (U"How to find the candidates...")
+	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", U"15")
+	BOOLEAN (veryAccurate, U"Very accurate", false)
+	HEADING (U"How to preprocess the sound...")
+	POSITIVE (attenuationAtTop, U"Attenuation at top", U"0.03")
+	HEADING (U"How to find a path through the candidates...")
+	REAL (silenceThreshold, U"Silence threshold", U"0.09")
+	REAL (voicingThreshold, U"Voicing threshold", U"0.50")
+	REAL (octaveCost, U"Octave cost", U"0.055")
+	REAL (octaveJumpCost, U"Octave-jump cost", U"0.35")
+	REAL (voicedUnvoicedCost, U"Voiced / unvoiced cost", U"0.14")
+	OK
+DO
+	Melder_require (maximumNumberOfCandidates > 1,
+		U"Your maximum number of candidates should be greater than 1.");
+	CONVERT_EACH_TO_ONE (Sound)
+		autoPitch result = Sound_to_Pitch_filteredAc (me,
+			timeStep, pitchFloor, pitchTop,
+			maximumNumberOfCandidates, veryAccurate, attenuationAtTop,
+			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
+		);
+	CONVERT_EACH_TO_ONE_END (my name.get())
+}
+
+FORM (CONVERT_EACH_TO_ONE__Sound_to_Pitch_filteredCrossCorrelation, U"Sound: To Pitch (filtered cross-correlation)", U"Sound: To Pitch (filtered cross-correlation)...") {
+	HEADING (U"Where to search...")
+	REAL (timeStep, U"Time step (s)", U"0.0 (= auto)")
+	POSITIVE (pitchFloor, U"left Pitch floor and top (Hz)", U"50.0")
+	POSITIVE (pitchTop, U"right Pitch floor and top (Hz)", U"800.0")
+	HEADING (U"How to find the candidates...")
+	NATURAL (maximumNumberOfCandidates, U"Max. number of candidates", U"15")
+	BOOLEAN (veryAccurate, U"Very accurate", false)
+	HEADING (U"How to preprocess the sound...")
+	POSITIVE (attenuationAtTop, U"Attenuation at top", U"0.03")
+	HEADING (U"How to find a path through the candidates...")
+	REAL (silenceThreshold, U"Silence threshold", U"0.09")
+	REAL (voicingThreshold, U"Voicing threshold", U"0.50")
+	REAL (octaveCost, U"Octave cost", U"0.055")
+	REAL (octaveJumpCost, U"Octave-jump cost", U"0.35")
+	REAL (voicedUnvoicedCost, U"Voiced / unvoiced cost", U"0.14")
+	OK
+DO
+	Melder_require (maximumNumberOfCandidates > 1,
+		U"Your maximum number of candidates should be greater than 1.");
+	CONVERT_EACH_TO_ONE (Sound)
+		autoPitch result = Sound_to_Pitch_filteredCc (me,
+			timeStep, pitchFloor, pitchTop,
+			maximumNumberOfCandidates, veryAccurate, attenuationAtTop,
+			silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost
 		);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
@@ -1662,29 +1784,29 @@ DO
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_PointProcess_periodic_cc, U"Sound: To PointProcess (periodic, cc)", U"Sound: To PointProcess (periodic, cc)...") {
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
-	POSITIVE (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	OK
 DO
-	Melder_require (maximumPitch > minimumPitch,
-		U"Your maximum pitch should be greater than your minimum pitch.");
+	Melder_require (pitchCeiling > pitchFloor,
+		U"Your pitch ceiling should be greater than your pitch floor.");
 	CONVERT_EACH_TO_ONE (Sound)
-		autoPointProcess result = Sound_to_PointProcess_periodic_cc (me, minimumPitch, maximumPitch);
+		autoPointProcess result = Sound_to_PointProcess_periodic_cc (me, pitchFloor, pitchCeiling);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
 FORM (CONVERT_EACH_TO_ONE__Sound_to_PointProcess_periodic_peaks, U"Sound: To PointProcess (periodic, peaks)", U"Sound: To PointProcess (periodic, peaks)...") {
-	POSITIVE (minimumPitch, U"Minimum pitch (Hz)", U"75.0")
-	POSITIVE (maximumPitch, U"Maximum pitch (Hz)", U"600.0")
+	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
+	POSITIVE (pitchCeiling, U"Pitch ceiling (Hz)", U"600.0")
 	BOOLEAN (includeMaxima, U"Include maxima", true)
 	BOOLEAN (includeMinima, U"Include minima", false)
 	OK
 DO
-	Melder_require (maximumPitch > minimumPitch,
-		U"Your maximum pitch should be greater than your minimum pitch.");
+	Melder_require (pitchCeiling > pitchFloor,
+		U"Your pitch ceiling should be greater than your pitch floor.");
 	CONVERT_EACH_TO_ONE (Sound)
 		autoPointProcess result = Sound_to_PointProcess_periodic_peaks (me,
-				minimumPitch, maximumPitch, includeMaxima, includeMinima);
+				pitchFloor, pitchCeiling, includeMaxima, includeMinima);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
@@ -1769,9 +1891,9 @@ DO
 }
 
 FORM (SETTINGS__SoundPlayingSettings, U"Sound playing settings", nullptr) {
-	LABEL (U"The following determines how sounds are played.")
-	LABEL (U"Between parentheses, you find what you can do simultaneously.")
-	LABEL (U"Decrease asynchronicity if sound plays with discontinuities.")
+	COMMENT (U"The following determines how sounds are played.")
+	COMMENT (U"Between parentheses, you find what you can do simultaneously.")
+	COMMENT (U"Decrease asynchronicity if sound plays with discontinuities.")
 	OPTIONMENU_ENUM (kMelder_asynchronicityLevel, maximumAsynchronicity,
 			U"Maximum asynchronicity", kMelder_asynchronicityLevel::DEFAULT)
 	REAL (silenceBefore, U"Silence before (s)", U"" stringize(kMelderAudio_outputSilenceBefore_DEFAULT))
@@ -2072,7 +2194,7 @@ static int recordFromFileProc (MelderFile file) {
 	if (! melderSoundFromFile)
 		return 0;
 	if (! Thing_isa (melderSoundFromFile.get(), classSound)) {
-		melderSoundFromFile.reset();
+		melderSoundFromFile. reset();
 		return 0;
 	}
 	last = melderSoundFromFile.get();
@@ -2131,20 +2253,16 @@ void praat_Sound_init () {
 				CREATE_ONE__Sound_createAsPureTone);
 		praat_addMenuCommand (U"Objects", U"New", U"Create Sound from formula...", nullptr, 1,
 				CREATE_ONE__Sound_createFromFormula);
-		praat_addMenuCommand (U"Objects", U"New",   U"Create Sound...", U"*Create Sound from formula...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2007,
-				CREATE_ONE__Sound_create);
+		praat_addMenuCommand (U"Objects", U"New",   U"Create Sound...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2007,
+				CREATE_ONE__Sound_create);   // replace with Create Sound from formula: arg1, 1, arg2, arg3, arg4, arg5
 		praat_addMenuCommand (U"Objects", U"New", U"-- create sound advanced --", nullptr, 1, nullptr);
-		praat_addMenuCommand (U"Objects", U"New", U"Create Sound as tone complex...", nullptr, 1,
-				CREATE_ONE__Sound_createAsToneComplex);
-		praat_addMenuCommand (U"Objects", U"New",   U"Create Sound from tone complex...", U"*Create Sound as tone complex...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2013,
-				CREATE_ONE__Sound_createAsToneComplex);
+		praat_addMenuCommand (U"Objects", U"New", U"Create Sound as tone complex... || Create Sound from tone complex...", nullptr, 1,
+				CREATE_ONE__Sound_createAsToneComplex);   // alternative COMPATIBILITY <= 2013
 
 	praat_addMenuCommand (U"Objects", U"Open", U"-- read sound --", nullptr, 0, nullptr);
 	praat_addMenuCommand (U"Objects", U"Open", U"Open long sound file...", nullptr, 'L', READ1_LongSound_open);
-	praat_addMenuCommand (U"Objects", U"Open", U"Read separate channels from sound file...", nullptr, 0,
-			READ_MULTIPLE__Sound_readSeparateChannelsFromSoundFile);
-	praat_addMenuCommand (U"Objects", U"Open", U"Read two Sounds from stereo file...", nullptr, GuiMenu_DEPRECATED_2010,
-			READ_MULTIPLE__Sound_readSeparateChannelsFromSoundFile);
+	praat_addMenuCommand (U"Objects", U"Open", U"Read separate channels from sound file... || Read two Sounds from stereo file...", nullptr, 0,
+			READ_MULTIPLE__Sound_readSeparateChannelsFromSoundFile);   // alternative COMPATIBILITY <= 2010
 	praat_addMenuCommand (U"Objects", U"Open", U"Read from special sound file", nullptr, 0, nullptr);
 		praat_addMenuCommand (U"Objects", U"Open", U"Read Sound from raw Alaw file...", nullptr, GuiMenu_DEPTH_1, READ1_Sound_readFromRawAlawFile);
 
@@ -2165,24 +2283,22 @@ void praat_Sound_init () {
 
 	praat_addAction1 (classLongSound, 0, U"LongSound help", nullptr, 0,
 			HELP__LongSound_help);
-	praat_addAction1 (classLongSound, 1, U"View", nullptr, GuiMenu_ATTRACTIVE,
-			EDITOR_ONE__LongSound_view);
-	praat_addAction1 (classLongSound, 1,   U"Open", U"*View", GuiMenu_DEPRECATED_2011,
-			EDITOR_ONE__LongSound_view);
+	praat_addAction1 (classLongSound, 1, U"View || Open", nullptr, GuiMenu_ATTRACTIVE,
+			EDITOR_ONE__LongSound_view);   // alternative COMPATIBILITY <= 2011
 	praat_addAction1 (classLongSound, 0, U"Play part...", nullptr, 0, PLAY_LongSound_playPart);
 	praat_addAction1 (classLongSound, 1, U"Query -", nullptr, 0, nullptr);
 		praat_TimeFunction_query_init (classLongSound);
 		praat_addAction1 (classLongSound, 1, U"Sampling", nullptr, 1, nullptr);
 		praat_addAction1 (classLongSound, 1, U"Get number of samples", nullptr, 2, INTEGER_LongSound_getNumberOfSamples);
 		praat_addAction1 (classLongSound, 1, U"Get sampling period || Get sample duration || Get sample period",
-				nullptr, 2, REAL_LongSound_getSamplePeriod);   // alternatives GuiMenu_DEPRECATED_2004
+				nullptr, 2, REAL_LongSound_getSamplePeriod);   // alternatives COMPATIBILITY <= 2004
 		praat_addAction1 (classLongSound, 1, U"Get sampling frequency || Get sample rate",
-				nullptr, 2, REAL_LongSound_getSampleRate);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 2, REAL_LongSound_getSampleRate);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classLongSound, 1, U"-- get time discretization --", nullptr, 2, nullptr);
 		praat_addAction1 (classLongSound, 1, U"Get time from sample number... || Get time from index...",
-				nullptr, 2, REAL_LongSound_getTimeFromIndex);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 2, REAL_LongSound_getTimeFromIndex);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classLongSound, 1, U"Get sample number from time... || Get index from time...",
-				nullptr, 2, REAL_LongSound_getIndexFromTime);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 2, REAL_LongSound_getIndexFromTime);   // alternative COMPATIBILITY <= 2004
 	praat_addAction1 (classLongSound, 0, U"Annotate -", nullptr, 0, nullptr);
 		praat_addAction1 (classLongSound, 0, U"Annotation tutorial", nullptr, 1,
 				HELP__AnnotationTutorial);
@@ -2193,7 +2309,7 @@ void praat_Sound_init () {
 	praat_addAction1 (classLongSound, 0, U"Concatenate?", nullptr, 0,
 			INFO_NONE__LongSound_concatenate);
 	praat_addAction1 (classLongSound, 0, U"Save as WAV file... || Write to WAV file...",
-			nullptr, 0, SAVE_ALL__LongSound_saveAsWavFile);   // alternative GuiMenu_DEPRECATED_2011
+			nullptr, 0, SAVE_ALL__LongSound_saveAsWavFile);   // alternative COMPATIBILITY <= 2011
 	praat_addAction1 (classLongSound, 0, U"Save as AIFF file... || Write to AIFF file...",
 			nullptr, 0, SAVE_ALL__LongSound_saveAsAiffFile);
 	praat_addAction1 (classLongSound, 0, U"Save as AIFC file... || Write to AIFC file...",
@@ -2232,7 +2348,7 @@ void praat_Sound_init () {
 			nullptr, 0, SAVE_ONE__LongSound_savePartAsAudioFile);
 
 	praat_addAction1 (classSound, 0, U"Save as WAV file... || Write to WAV file...",
-			nullptr, 0, SAVE_ALL__Sound_saveAsWavFile);   // alternative GuiMenu_DEPRECATED_2011
+			nullptr, 0, SAVE_ALL__Sound_saveAsWavFile);   // alternative COMPATIBILITY <= 2011
 	praat_addAction1 (classSound, 0, U"Save as AIFF file... || Write to AIFF file...",
 			nullptr, 0, SAVE_ALL__Sound_saveAsAiffFile);
 	praat_addAction1 (classSound, 0, U"Save as AIFC file... || Write to AIFC file...",
@@ -2253,18 +2369,18 @@ void praat_Sound_init () {
 			SAVE_ALL__Sound_saveAs24BitWavFile);
 	praat_addAction1 (classSound, 0, U"Save as 32-bit WAV file...", nullptr, 0,
 			SAVE_ALL__Sound_saveAs32BitWavFile);
-	praat_addAction1 (classSound, 2,   U"Write to stereo WAV file...", U"* \"Combine to stereo\" and \"Save to WAV file...\"", GuiMenu_DEPRECATED_2007,
-			SAVE_ALL__Sound_saveAsStereoWavFile);
-	praat_addAction1 (classSound, 2,   U"Write to stereo AIFF file...", U"* \"Combine to stereo\" and \"Save to AIFF file...\"", GuiMenu_DEPRECATED_2007,
-			SAVE_ALL__Sound_saveAsStereoAiffFile);
-	praat_addAction1 (classSound, 2,   U"Write to stereo AIFC file...", U"* \"Combine to stereo\" and \"Save to AIFC file...\"", GuiMenu_DEPRECATED_2007,
-			SAVE_ALL__Sound_saveAsStereoAifcFile);
-	praat_addAction1 (classSound, 2,   U"Write to stereo NeXT/Sun file...", U"* \"Combine to stereo\" and \"Save to NeXT/Sun file...\"", GuiMenu_DEPRECATED_2007,
-			SAVE_ALL__Sound_saveAsStereoNextSunFile);
-	praat_addAction1 (classSound, 2,   U"Write to stereo NIST file...", U"* \"Combine to stereo\" and \"Save to NIST file...\"", GuiMenu_DEPRECATED_2007,
-			SAVE_ALL__Sound_saveAsStereoNistFile);
-	praat_addAction1 (classSound, 2,   U"Write to stereo FLAC file...", U"* \"Combine to stereo\" and \"Save to FLAC file...\"", GuiMenu_DEPRECATED_2007,
-			SAVE_ALL__Sound_saveAsStereoFlacFile);
+	praat_addAction1 (classSound, 2,   U"Write to stereo WAV file...", nullptr, GuiMenu_DEPRECATED_2007,
+			SAVE_ALL__Sound_saveAsStereoWavFile);   // replace with "Combine to stereo" and "Save to WAV file..."
+	praat_addAction1 (classSound, 2,   U"Write to stereo AIFF file...", nullptr, GuiMenu_DEPRECATED_2007,
+			SAVE_ALL__Sound_saveAsStereoAiffFile);   // replace with "Combine to stereo" and "Save to AIFF file..."
+	praat_addAction1 (classSound, 2,   U"Write to stereo AIFC file...", nullptr, GuiMenu_DEPRECATED_2007,
+			SAVE_ALL__Sound_saveAsStereoAifcFile);   // replace with "Combine to stereo" and "Save to AIFC file..."
+	praat_addAction1 (classSound, 2,   U"Write to stereo NeXT/Sun file...", nullptr, GuiMenu_DEPRECATED_2007,
+			SAVE_ALL__Sound_saveAsStereoNextSunFile);   // replace with "Combine to stereo" and "Save to NeXT/Sun file..."
+	praat_addAction1 (classSound, 2,   U"Write to stereo NIST file...", nullptr, GuiMenu_DEPRECATED_2007,
+			SAVE_ALL__Sound_saveAsStereoNistFile);   // replace with "Combine to stereo" and "Save to NIST file..."
+	praat_addAction1 (classSound, 2,   U"Write to stereo FLAC file...", nullptr, GuiMenu_DEPRECATED_2007,
+			SAVE_ALL__Sound_saveAsStereoFlacFile);   // replace with "Combine to stereo" and "Save to FLAC file..."
 	//praat_addAction1 (classSound, 1, U"Save as raw sound file", nullptr, 0, nullptr);
 	praat_addAction1 (classSound, 1, U"Save as raw 8-bit signed file... || Write to raw 8-bit signed file...",
 			nullptr, 0, SAVE_ONE__Sound_saveAsRaw8bitSignedFile);
@@ -2299,21 +2415,21 @@ void praat_Sound_init () {
 		praat_addAction1 (classSound, 1, U"Get number of samples", nullptr, 2,
 				QUERY_ONE_FOR_INTEGER__Sound_getNumberOfSamples);
 		praat_addAction1 (classSound, 1, U"Get sampling period || Get sample duration || Get sample period",
-				nullptr, 2, QUERY_ONE_FOR_REAL__Sound_getSamplePeriod);   // alternatives GuiMenu_DEPRECATED_2004
+				nullptr, 2, QUERY_ONE_FOR_REAL__Sound_getSamplePeriod);   // alternatives COMPATIBILITY <= 2004
 		praat_addAction1 (classSound, 1, U"Get sampling frequency || Get sample rate",
-				nullptr, 2, QUERY_ONE_FOR_REAL__Sound_getSampleRate);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 2, QUERY_ONE_FOR_REAL__Sound_getSampleRate);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classSound, 1, U"-- get time discretization --", nullptr, 2, nullptr);
 		praat_addAction1 (classSound, 1, U"Get time from sample number... || Get time from index...",
-				nullptr, 2, QUERY_ONE_FOR_REAL__Sound_getTimeFromIndex);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 2, QUERY_ONE_FOR_REAL__Sound_getTimeFromIndex);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classSound, 1, U"List all sample times || Get sample times",
 				nullptr, 2, NUMVEC_Sound_listAllSampleTimes);   // alternative GuiMenu_DEPRECATED_2004
 		praat_addAction1 (classSound, 1, U"Get sample number from time... || Get index from time...",
-				nullptr, 2, QUERY_ONE_FOR_REAL__Sound_getIndexFromTime);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 2, QUERY_ONE_FOR_REAL__Sound_getIndexFromTime);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classSound, 1, U"-- get content --", nullptr, 1, nullptr);
 		praat_addAction1 (classSound, 1, U"Get value at time...", nullptr, 1,
 				QUERY_ONE_FOR_REAL__Sound_getValueAtTime);
 		praat_addAction1 (classSound, 1, U"Get value at sample number... || Get value at index...",
-				nullptr, 1, QUERY_ONE_FOR_REAL__Sound_getValueAtIndex);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 1, QUERY_ONE_FOR_REAL__Sound_getValueAtIndex);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classSound, 1, U"-- get shape --", nullptr, 1, nullptr);
 		praat_addAction1 (classSound, 1, U"Get minimum...", nullptr, 1,
 				QUERY_ONE_FOR_REAL__Sound_getMinimum);
@@ -2358,19 +2474,19 @@ void praat_Sound_init () {
 		praat_addAction1 (classSound, 0, U"Multiply...", nullptr, 1, MODIFY_Sound_multiply);
 		praat_addAction1 (classSound, 0, U"Multiply by window...", nullptr, 1, MODIFY_Sound_multiplyByWindow);
 		praat_addAction1 (classSound, 0, U"Scale peak... || Scale...",
-				nullptr, 1, MODIFY_Sound_scalePeak);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 1, MODIFY_Sound_scalePeak);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classSound, 0, U"Scale intensity...", nullptr, 1, MODIFY_Sound_scaleIntensity);
 		praat_addAction1 (classSound, 0, U"-- set --", nullptr, 1, nullptr);
 		praat_addAction1 (classSound, 0, U"Set value at sample number... || Set value at index...",
-				nullptr, 1, MODIFY_Sound_setValueAtIndex);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 1, MODIFY_Sound_setValueAtIndex);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classSound, 0, U"Set part to zero...", nullptr, 1, MODIFY_Sound_setPartToZero);
 		praat_addAction1 (classSound, 0, U"-- modify hack --", nullptr, 1, nullptr);
 		praat_addAction1 (classSound, 0, U"Override sampling frequency... || Override sample rate...",
-				nullptr, 1, MODIFY_Sound_overrideSamplingFrequency);   // alternative GuiMenu_DEPRECATED_2004
+				nullptr, 1, MODIFY_Sound_overrideSamplingFrequency);   // alternative COMPATIBILITY <= 2004
 		praat_addAction1 (classSound, 0, U"-- in-place filters --", nullptr, 1, nullptr);
 		praat_addAction1 (classSound, 0, U"In-place filters", nullptr, 1, nullptr);
 		praat_addAction1 (classSound, 0, U"Filter with one formant (in-place)... || Filter with one formant (in-line)...",
-				nullptr, 2, MODIFY_Sound_filterWithOneFormantInplace);   // alternative GuiMenu_DEPRECATED_2017
+				nullptr, 2, MODIFY_Sound_filterWithOneFormantInplace);   // alternative COMPATIBILITY <= 2017
 		praat_addAction1 (classSound, 0, U"Pre-emphasize (in-place)... || Pre-emphasize (in-line)...",
 				nullptr, 2, MODIFY_Sound_preemphasizeInplace);
 		praat_addAction1 (classSound, 0, U"De-emphasize (in-place)... || De-emphasize (in-line)...",
@@ -2386,12 +2502,24 @@ void praat_Sound_init () {
 		praat_addAction1 (classSound, 0, U"To IntervalTier", nullptr, GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
 				CONVERT_EACH_TO_ONE__Sound_to_IntervalTier);
 	praat_addAction1 (classSound, 0, U"Analyse periodicity -", nullptr, 0, nullptr);
-		praat_addAction1 (classSound, 0, U"To Pitch...", nullptr, 1,
+		praat_addAction1 (classSound, 0, U"How to choose a pitch analysis method", nullptr, 1,
+				HELP__How_to_choose_a_pitch_analysis_method);
+		praat_addAction1 (classSound, 0, U"-- pitch --", nullptr, 1, nullptr);
+		praat_addAction1 (classSound, 0, U"To Pitch...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
 				CONVERT_EACH_TO_ONE__Sound_to_Pitch);
-		praat_addAction1 (classSound, 0, U"To Pitch (ac)...", nullptr, 1,
+		praat_addAction1 (classSound, 0, U"To Pitch (filtered autocorrelation)... || To Pitch (filtered ac)...", nullptr, 1,
+				CONVERT_EACH_TO_ONE__Sound_to_Pitch_filteredAutocorrelation);
+		praat_addAction1 (classSound, 0, U"To Pitch (raw cross-correlation)... || To Pitch (raw cc)...", nullptr, 1,
+				CONVERT_EACH_TO_ONE__Sound_to_Pitch_rawCrossCorrelation);
+		praat_addAction1 (classSound, 0, U"To Pitch (raw autocorrelation)... || To Pitch (raw ac)...", nullptr, 1,
+				CONVERT_EACH_TO_ONE__Sound_to_Pitch_rawAutocorrelation);
+		praat_addAction1 (classSound, 0, U"To Pitch (filtered cross-correlation)... || To Pitch (filtered cc)...", nullptr, 1,
+				CONVERT_EACH_TO_ONE__Sound_to_Pitch_filteredCrossCorrelation);
+		praat_addAction1 (classSound, 0, U"To Pitch (ac)...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
 				CONVERT_EACH_TO_ONE__Sound_to_Pitch_ac);
-		praat_addAction1 (classSound, 0, U"To Pitch (cc)...", nullptr, 1,
+		praat_addAction1 (classSound, 0, U"To Pitch (cc)...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_HIDDEN,
 				CONVERT_EACH_TO_ONE__Sound_to_Pitch_cc);
+
 		praat_addAction1 (classSound, 0, U"To PointProcess (periodic, cc)...", nullptr, 1,
 				CONVERT_EACH_TO_ONE__Sound_to_PointProcess_periodic_cc);
 		praat_addAction1 (classSound, 0, U"To PointProcess (periodic, peaks)...", nullptr, 1,
@@ -2414,12 +2542,12 @@ void praat_Sound_init () {
 	praat_addAction1 (classSound, 0, U"Analyse spectrum -", nullptr, 0, nullptr);
 		praat_addAction1 (classSound, 0, U"To Spectrum...", nullptr, 1,
 				CONVERT_EACH_TO_ONE__Sound_to_Spectrum);
-		praat_addAction1 (classSound, 0,   U"To Spectrum (fft)", U"*To Spectrum...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2004,
-				CONVERT_EACH_TO_ONE__Sound_to_Spectrum_fft);
-		praat_addAction1 (classSound, 0,   U"To Spectrum", U"*To Spectrum...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2004,
-				CONVERT_EACH_TO_ONE__Sound_to_Spectrum_fft);
-		praat_addAction1 (classSound, 0,   U"To Spectrum (dft)", U"*To Spectrum...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2004,
-				CONVERT_EACH_TO_ONE__Sound_to_Spectrum_dft);
+		praat_addAction1 (classSound, 0,   U"To Spectrum (fft)", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2004,
+				CONVERT_EACH_TO_ONE__Sound_to_Spectrum_fft);   // replace with To Spectrum: 1
+		praat_addAction1 (classSound, 0,   U"To Spectrum", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2004,
+				CONVERT_EACH_TO_ONE__Sound_to_Spectrum_fft);   // replace with To Spectrum: 1
+		praat_addAction1 (classSound, 0,   U"To Spectrum (dft)", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2004,
+				CONVERT_EACH_TO_ONE__Sound_to_Spectrum_dft);   // replace with To Spectrum: 0
 		praat_addAction1 (classSound, 0, U"To Ltas...", nullptr, 1,
 				CONVERT_EACH_TO_ONE__Sound_to_Ltas);
 		praat_addAction1 (classSound, 0, U"To Ltas (pitch-corrected)...", nullptr, 1,
@@ -2455,10 +2583,10 @@ void praat_Sound_init () {
 				CONVERT_ONE_TO_MULTIPLE__Sound_extractAllChannels);
 		praat_addAction1 (classSound, 0, U"Extract one channel...", nullptr, 1,
 				CONVERT_EACH_TO_ONE__Sound_extractChannel);
-		praat_addAction1 (classSound, 0,   U"Extract left channel", U"*Extract one channel...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2010,
-				CONVERT_EACH_TO_ONE__Sound_extractLeftChannel);
-		praat_addAction1 (classSound, 0,   U"Extract right channel", U"*Extract one channel...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2010,
-				CONVERT_EACH_TO_ONE__Sound_extractRightChannel);
+		praat_addAction1 (classSound, 0,   U"Extract left channel", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2010,
+				CONVERT_EACH_TO_ONE__Sound_extractLeftChannel);   // replace with Extract one channel: 1
+		praat_addAction1 (classSound, 0,   U"Extract right channel", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2010,
+				CONVERT_EACH_TO_ONE__Sound_extractRightChannel);   // replace with Extract one channel: 2
 		praat_addAction1 (classSound, 0, U"Extract channels...", nullptr, 1,
 				CONVERT_EACH_TO_ONE__Sound_extractChannels);
 		praat_addAction1 (classSound, 0, U"Extract part...", nullptr, 1,
@@ -2468,10 +2596,8 @@ void praat_Sound_init () {
 		praat_addAction1 (classSound, 0, U"Resample...", nullptr, 1,
 				CONVERT_EACH_TO_ONE__Sound_resample);
 		praat_addAction1 (classSound, 0, U"-- enhance --", nullptr, 1, nullptr);
-		praat_addAction1 (classSound, 0, U"Lengthen (overlap-add)...", nullptr, 1,
-				CONVERT_EACH_TO_ONE__Sound_lengthen_overlapAdd);
-		praat_addAction1 (classSound, 0,   U"Lengthen (PSOLA)...", U"*Lengthen (overlap-add)...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2007,
-				CONVERT_EACH_TO_ONE__Sound_lengthen_overlapAdd);
+		praat_addAction1 (classSound, 0, U"Lengthen (overlap-add)... || Lengthen (PSOLA)...", nullptr, 1,
+				CONVERT_EACH_TO_ONE__Sound_lengthen_overlapAdd);   // alternative COMPATIBILITY <= 2007
 		praat_addAction1 (classSound, 0, U"Deepen band modulation...", nullptr, 1,
 				CONVERT_EACH_TO_ONE__Sound_deepenBandModulation);
 		praat_addAction1 (classSound, 0, U"-- cast --", nullptr, 1, nullptr);
@@ -2509,15 +2635,15 @@ void praat_Sound_init () {
 				COMBINE_ALL_TO_ONE__Sounds_concatenateWithOverlap);
 		praat_addAction1 (classSound, 2, U"Convolve...", nullptr, 1,
 				CONVERT_TWO_TO_ONE__Sounds_convolve);
-		praat_addAction1 (classSound, 2,   U"Convolve", U"*Convolve...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2010,
-				CONVERT_TWO_TO_ONE__Sounds_convolve_old);
+		praat_addAction1 (classSound, 2,   U"Convolve", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2010,
+				CONVERT_TWO_TO_ONE__Sounds_convolve_old);   // replace with Convolve: "sum", "zero"
 		praat_addAction1 (classSound, 2, U"Cross-correlate...", nullptr, 1,
 				CONVERT_TWO_TO_ONE__Sounds_crossCorrelate);
 		praat_addAction1 (classSound, 2, U"To ParamCurve", nullptr, 1,
 				CONVERT_TWO_TO_ONE__Sounds_to_ParamCurve);
 
 	praat_addAction2 (classLongSound, 0, classSound, 0, U"Save as WAV file... || Write to WAV file...",
-			nullptr, 0, SAVE_ALL__LongSound_Sound_saveAsWavFile);   // alternative GuiMenu_DEPRECATED_2011
+			nullptr, 0, SAVE_ALL__LongSound_Sound_saveAsWavFile);   // alternative COMPATIBILITY <= 2011
 	praat_addAction2 (classLongSound, 0, classSound, 0, U"Save as AIFF file... || Write to AIFF file...",
 			nullptr, 0, SAVE_ALL__LongSound_Sound_saveAsAiffFile);
 	praat_addAction2 (classLongSound, 0, classSound, 0, U"Save as AIFC file... || Write to AIFC file...",

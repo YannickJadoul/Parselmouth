@@ -1,6 +1,6 @@
 /* manual_whatsnew.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
  */
 
 #include "ManPagesM.h"
-#include "praat_version.h"
 
 void manual_whatsnew_init (ManPages me);
 void manual_whatsnew_init (ManPages me) {
@@ -26,9 +25,156 @@ MAN_PAGES_BEGIN
 R"~~~(
 ################################################################################
 "What's new?"
-© Paul Boersma 2023
+© Paul Boersma 1995–2024
 
 Latest changes in Praat.
+
+##6.4.16# (29 July 2024)
+• Windows: make command-line output visible (new on ARM64, was lost in 6.4.14 for Intel64 and Intel32).
+
+##6.4.15# (26 July 2024)
+• Distinguish between %%pitch ceiling% (flat) and %%pitch top% (curved ceiling),
+  mainly because of their different meanings.
+
+##6.4.14# (22 July 2024)
+• Pitch menu (in e.g. Sound or TextGrid window): separate settings for four pitch analysis methods.
+• Formant analysis: faster on all systems.
+• ARM64 Windows: worked around a compiler bug that caused incorrect window sizes.
+• Pitch analysis: faster on Windows (Intel64 and Intel32).
+• Windows: better fonts and background colours (perhaps dependent on language settings).
+• ##TextGrids: Concatenate#: guard against some incorrect TexGrid files.
+
+##6.4.13# (10 June 2024)
+• More manual pages.
+• @@Sounds: Concatenate with overlap...@: guard against a crash that would occur
+  if the total overlap time was longer than the original sounds together.
+• @`number` recognizes hexadecimal numbers again (bug since February 2023).
+
+##6.4.12# (2 May 2024)
+• ##Align interval#: fewer error messages.
+
+##6.4.11# (26 April 2024)
+• Menu commands that call a script (e.g. those that were added from a plug-in)
+  are now visible as such by being marked with a little “+” sign.
+• Fixed a bug that could cause the SpeechSynthesizer to mishandle European
+  characters with accents on Linux.
+
+##6.4.10# (21 April 2024)
+• Function windows: fixed a problem that could cause Praat to crash when doing #all after #Group
+  when windows had a different duration.
+
+##6.4.09# (20 April 2024)
+• TextGrid window: fixed a rare problem with ##Align interval# that could lead to a zero-length interval.
+• Windows ARM64 edition: fixed a bug that would cause ##Align interval# to crash.
+• ##Sound & TextGrid: Align interval...# now also available in the Objects window.
+
+##6.4.08# (14 April 2024)
+• Windows: fixed a problem with the right and bottom edges of windows (half-visible scroll bars)
+	for the Intel editions (the ARM64 edition still has this problem).
+• Scripting: fixed a bug that could cause Praat to crash when an unknown choice was given to an option menu.
+• MelSpectrogram: fixed a bug that could cause Praat to crash if a mel value was negative.
+• DataModeler: improved confidence limits on estimated model parameters.
+
+##6.4.07# (17 March 2024)
+• The command @@Sound & Pitch: To PointProcess (cc)@, which is also used when computing the times of pulses
+  in the Sound window, could cause Praat to freeze when the pitch ceiling (and the measured pitch)
+  were very high; this problem existed since at least 2001.
+• eSpeak: new version, with e.g. Tigrinya.
+• Support for 119-dpi graphics on Windows.
+• Repaired a bug that could cause the Artword windows to crash if the Time field was left empty.
+
+##6.4.06# (25 February 2024)
+• Sound files on Windows: corrected a bug (existing since July 2021)
+  that prevented reading FLAC files with special characters in their names.
+• FormantPathEditor without Sound: corrected several bugs that caused Praat to crash (such as ##Formant listing#, using the Pitch menu...).
+• Spectrogram painting: improved painting of very quiet spectrograms at extreme dynamic ranges.
+• Scripting: @`folderExists`.
+• Scripting: home-relative paths (such as `~/sounds/*.wav`) in more locations,
+  such as @`fileNames$#`, @@Create Strings as file list...@, and @`createFolder`.
+
+##6.4.05# (27 January 2024)
+• Many typos in manual.
+• Made TIMIT label files readable on Windows.
+• Prevented 8000 files from being read at start-up.
+• Mac and Linux scripting: @`fileReadable` now returns 0 if the argument is a folder (as already on Windows).
+
+##6.4.04# (6 January 2024)
+• Typo in example script in manual.
+• ARM64 edition for Linux (Ubuntu 20.04 and up).
+• ARM64 edition for Chromebook (2020 and later).
+
+##6.4.03# (4 January 2024)
+• ARM64 edition for Windows.
+• ARM64 edition for Linux (Ubuntu 22.04 and up).
+• ARM64 edition for Chromebook (2022 and later).
+
+##6.4.02# (30 December 2023)
+• Saving sounds as MP3 files.
+
+##6.4.01# (30 November 2023)
+• Removed some visible percent signs before variable names from the scripting tutorial.
+• SoundEditor/TextGridEditor logging: when logging 'f0',
+  Praat now correctly reports values in Hz (rather than logarithms)
+  if Unit is set to “Hertz (logarithmic)”.
+  This bug had existed since Praat version 4.3.16 (June 2005).
+• SoundEditor/TextGridEditor scripting compatibility: made old versions of “Pitch settings...”
+  and “Advanced pitch settings...” available to scripts again, made the old denominations
+  “autocorrelation” and “cross-correlation” (as pitch analysis methods) available to scripts again,
+  and made obsolete versions of pitch analysis settings (such as “Pitch silence threshold”)
+  available again, now under the COMPATIBILITY section of the output of “Editor info”.
+  This will allow older editor scripts to continue to run without change.
+
+##6.4# (15 November 2023)
+• New pitch analysis methods: @@Sound: To Pitch (filtered ac)...@ and
+  @@Sound: To Pitch (filtered cc)...@.
+• @@Sound: To Pitch (filtered ac)...@ has become the preferred method for
+  measuring vocal-fold vibration and intonation (@@Sound: To Pitch (raw cc)...@
+  is still the preferred method for voice analysis).
+  See @@how to choose a pitch analysis method@.
+
+##6.3.20# (24 October 2023)
+• SpeechSynthesizer and automatic alignment in TextGridEditor: worked around a bug
+  introduced in 6.3.18 that caused incorrect rendering of phonemes consisting
+  of four UTF-8 bytes (such as /ɔː/).
+• SpeechSynthesizer and automatic alignment in TextGridEditor: worked around a very
+  old bug that deleted word-final /l/ in Dutch and English.
+
+##6.3.19# (20 October 2023)
+• MacOS: resolved a crash when Praat started up on macOS 12 or older
+  (worked around a bug in the Xcode linker that comes with macOS 14 Sonoma).
+
+##6.3.18# (8 October 2023)
+• @SpeechSynthesizer: included the new version of eSpeak (development 1.52), which has 133 languages.
+• @@Add to menu...@: you can now add separators, headers and indented submenus to menus in editor windows.
+• Scripting: new functions @`index_caseInsensitive`, @`rindex_caseInsensitive`,
+  @`startsWith_caseInsensitive`, @`endsWith_caseInsensitive`
+  @`fileNames_caseInsensitive$#`, @`folderNames_caseInsensitive$#`.
+
+##6.3.17# (10 September 2023)
+• SoundEditor: three Paste options, namely ##Paste before selection# (Shift-Command-V),
+  ##Paste over selection# (Option-Command-V), and the already existing ##Paste after selection#
+  (still Command-V).
+• All editor windows: extended the old single-level Undo and Redo
+  to a ten-level Undo and Redo.
+• Scripting: the new @`runSystem$` and @`runSubprocess$` return the output
+  of the system command or subprocess.
+• Scripting: @`runSystem`, @`runSystem$`, @`runSubprocess` and @`runSubprocess$`
+  report any error messages generated by the system command or subprocess.
+• PointEditor (pulses): settable ##Period floor#, ##Period ceiling#,
+  ##Maximum period factor# and ##Maximum amplitude factor#, for jitter and shimmer measurements.
+
+##6.3.16# (29 August 2023)
+• Sound analysis areas: better visible contrast in intensity curve (green on lime).
+• Windows: repaired a bug introduced in 6.3.10 (as a result of the repair mentioned there)
+  by which the Demo window would be insensitive to arrow keys.
+• SpeechSynthesizer: repaired a bug that caused ##Get phonemes from text...#
+  to return empty text.
+• Repaired a bug that caused Praat to crash when you supplied 0
+  for the channel number in @@Sound: Get nearest zero crossing...@.
+
+##6.3.15# (23 August 2023)
+• SpeechSynthesizer: improvements in ##Get phonemes from text...#
+• Scripting: @`part#`, @`part##`, @`selected$#`.
 
 ##6.3.14# (4 August 2023)
 • Repaired a bug that occurred when saving a @FormantPath to disk.
@@ -134,7 +280,7 @@ What used to be new?
 
 ################################################################################
 "What was new in 6.3?"
-© Paul Boersma 2022
+© Paul Boersma 2021,2022
 
 ##6.3# (15 November 2022)
 • Number-aware sorting for labels when drawing tables.
@@ -257,7 +403,7 @@ What used to be new?
 
 ################################################################################
 "What was new in 6.2?"
-© Paul Boersma 2021
+© Paul Boersma 2019–2021
 
 ##6.2# (15 November 2021)
 • TextGrid window: closing box and opening triangle for IPA chart.
@@ -515,7 +661,7 @@ then dragged the mouse out of that window, then released the mouse button, and t
 
 ################################################################################
 "What was new in 6.1?"
-© Paul Boersma 2019
+© Paul Boersma 2015–2019
 
 ##6.1# (13 July 2019)
 
@@ -606,7 +752,7 @@ then dragged the mouse out of that window, then released the mouse button, and t
 • Removed many small bugs.
 
 ##6.0.37# (3 February 2018)
-• Graphics: fixed crashing bug with \\bsun trigraph.
+• Graphics: fixed crashing bug with \bsun trigraph (\un).
 
 ##6.0.36# (11 November 2017)
 • Many more languages for SpeechSynthesizer and automatic alignment (new eSpeak).
@@ -762,7 +908,7 @@ then dragged the mouse out of that window, then released the mouse button, and t
 
 ################################################################################
 "What was new in 6.0?"
-© Paul Boersma 2015
+© Paul Boersma 2014,2015
 
 ##6.0# (28 October 2015)
 • Linux: use PulseAudio as the server for playing sound.
@@ -871,7 +1017,7 @@ the column index was larger than the number of rows.
 
 ################################################################################
 "What was new in 5.4?"
-© Paul Boersma 2014
+© Paul Boersma 2011–2014
 
 ##5.4# (4 October 2014)
 
@@ -1188,7 +1334,7 @@ the column index was larger than the number of rows.
 ##5.3.06# (28 February 2012)
 
 ##5.3.05# (19 February 2012)
-• SpeechSynthesizer (#New menu \\-> #Sound): text-to-speech.
+• SpeechSynthesizer (#New menu \-> #Sound): text-to-speech.
 • @EEG: better scalp distribution drawing for both 32-channel and 64-channel recordings.
 
 ##5.3.04# (12 January 2012)
@@ -1204,12 +1350,12 @@ the column index was larger than the number of rows.
 
 ##5.3.01# (1 November 2011)
 • Macintosh and Windows: better window positioning if the Dock or Task Bar is on the left or right.
-• IPA symbol: you can now use \\bs.f for the half-length sign (\\.f).
+• IPA symbol: you can now use \bs.f for the half-length sign (\.f).
 • EEG window.
 
 ################################################################################
 "What was new in 5.3?"
-© Paul Boersma 2011
+© Paul Boersma 2010,2011
 
 ##5.3# (15 October 2011)
 
@@ -1250,12 +1396,12 @@ the column index was larger than the number of rows.
 • Corrected several bugs that were introduced in 5.2.36 in the Inspect window.
 
 ##5.2.37# (2 September 2011)
-• Graphics: added the Chinese phonetic symbols \\id and \\ir. See @@Phonetic symbols: vowels@.
+• Graphics: added the Chinese phonetic symbols \id and \ir. See @@Phonetic symbols: vowels@.
 • Corrected a bug introduced in 5.2.36 that caused Praat to crash when querying formant quantiles.
 
 ##5.2.36# (30 August 2011)
-• Graphics: added superscript diacritics as single symbols: \\^h (\\bs\\^ h), \\^j (\\bs\\^ j),
-and many more; also \\_u (\\bs\\_ u). See @@Phonetic symbols: diacritics@.
+• Graphics: added superscript diacritics as single symbols: \^h (\bs\^ h), \^j (\bs\^ j),
+and many more; also \_u (\bs\_ u). See @@Phonetic symbols: diacritics@.
 • Praat fully converted to C++ (this may initially cause some bugs, but will be more reliable in the end).
 
 ##5.2.35# (5 August 2011)
@@ -1401,13 +1547,13 @@ if the selection ran from the penultimate interval to the end of the TextGrid.
 
 ################################################################################
 "What was new in 5.2?"
-© Paul Boersma 2010
+© Paul Boersma 2009,2010
 
 ##5.2# (29 October 2010)
 
 ##5.1.45# (26 October 2010)
 • Linux/GTK: allow Praat to run without an X display.
-• Sounds are played synchronously in scripts run from ManPages with \\bsSC.
+• Sounds are played synchronously in scripts run from ManPages with \bsSC.
 
 ##5.1.44# (4 October 2010)
 • Linux/GTK: visibility of ExperimentMFC window.
@@ -1533,7 +1679,7 @@ if the selection ran from the penultimate interval to the end of the TextGrid.
 
 ##5.1.24# (15 January 2010)
 • Formulas run 10 to 20 percent faster.
-• Macintosh: support for forward delete key and Command-\\` .
+• Macintosh: support for forward delete key and Command-\` .
 
 ##5.1.23# (1 January 2010)
 • Allowed multiple files to be selected with e.g. @@Read from file...@.
@@ -1634,7 +1780,7 @@ if the selection ran from the penultimate interval to the end of the TextGrid.
 
 ################################################################################
 "What was new in 5.1?"
-© Paul Boersma 2009-01-31
+© Paul Boersma 2007–2009
 
 ##5.1# (31 January 2009)
 • Editors for Klatt synthesis.
@@ -1708,7 +1854,7 @@ in a window without text fields.
 • Windows: audio output uses DirectX (next to Multi-Media Extensions).
 
 ##5.0.27# (28 June 2008)
-• @@Phonetic symbols@: breve (a\\N^).
+• @@Phonetic symbols@: breve (a\N^).
 • Annotation: improved some SpellingChecker commands.
 • Table: can now set string values that contain spaces.
 
@@ -1758,7 +1904,7 @@ in a window without text fields.
 • Windows: more reliable dropping of files on the Praat icon when Praat is already running.
 
 ##5.0.14# (20 March 2008)
-• David's vowel editor (New \\-> Sound).
+• David's vowel editor (New \-> Sound).
 • Formulas: corrected scaling of sinc function.
 
 ##5.0.13# (18 March 2008)
@@ -1769,13 +1915,13 @@ in a window without text fields.
 • Formulas: sinc function.
 
 ##5.0.12# (12 March 2008)
-• Bigger ligature symbol (k\\lip).
+• Bigger ligature symbol (k\lip).
 
 ##5.0.11# (7 March 2008)
 • Corrected saving of new binary Manipulation files (you can send any unreadable Manipulation files to Paul Boersma for correction).
 
 ##5.0.10# (27 February 2008)
-• Added the characters \\d- and \\D-.
+• Added the characters \d- and \D-.
 • Windows: made ##praatcon.exe# compatible with Unicode command lines.
 
 ##5.0.09# (16 February 2008)
@@ -1816,7 +1962,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 
 ################################################################################
 "What was new in 5.0?"
-© Paul Boersma 2007-12-10
+© Paul Boersma 2007
 
 ##5.0# (10 December 2007)
 • Corrected many bugs.
@@ -1891,7 +2037,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 • @ExperimentMFC: can set font size for response buttons.
 
 ##4.6.24# (24 September 2007)
-• Czech, Polish, Croatian, and Hungarian characters such as \c< \uo \t< \e; \s' \l/ \c\' \o: (see @@Special symbols@).
+• Czech, Polish, Croatian, and Hungarian characters such as \c< \uo \t< \e; \s' \l/ \c' \o: (see @@Special symbols@).
 • Some support for Hebrew characters such as \?+ \B+ \sU (see @@Special symbols@).
 
 ##4.6.23# (22 September 2007)
@@ -1899,7 +2045,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 • Info commands in editors.
 
 ##4.6.22# (17 September 2007)
-• Phonetic symbols: added the nonsyllabicity diacritic (a\\nv).
+• Phonetic symbols: added the nonsyllabicity diacritic (a\nv).
 • Macintosh: worked around a feature of a system library that could cause strange behaviour of forms in scripts with non-ASCII characters.
 
 ##4.6.21# (5 September 2007)
@@ -1987,7 +2133,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 
 ################################################################################
 "What was new in 4.6?"
-© Paul Boersma 2007
+© Paul Boersma 2006,2007
 
 ##4.6# (12 May 2007)
 
@@ -2063,7 +2209,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 ##4.5.11# (29 January 2007)
 • Sound objects can be stereo, for better playback quality
   (most analyses will work on the averaged mono signal).
-• Macintosh: recording a sound now uses CoreAudio instead of SoundManager, "
+• Macintosh: recording a sound now uses CoreAudio instead of SoundManager,
   for more compatibility with modern recording devices,
   and the possibility to record with a sampling frequency of 96 kHz.
 • @ManPages allow picture scripts with separate object lists.
@@ -2508,7 +2654,7 @@ Listening experiments:
 • @ExperimentMFC: multiple substimuli for discrimination tests.
 
 Statistics:
-• New @Table object for column @statistics: Pearson's %r, Kendall's %\\ta-%b, %t-test.
+• New @Table object for column @statistics: Pearson's %r, Kendall's %\ta-%b, %t-test.
 • Table: scatter plot.
 • Table: column names as variables.
 • @@T-test@.
@@ -2539,7 +2685,7 @@ Scripting:
 • Stopped support of things that had been undocumented for the last four years:
   #let, #getnumber, #getstring, #ARGS, #copy, #proc, variables with capitals, and strings in numeric variables;
   there are messages about how to modify your old scripts.
-• Disallowed ambiguous expressions like -3\\^ 2.
+• Disallowed ambiguous expressions like -3\^ 2.
 
 ################################################################################
 "What was new in 4.0?"
@@ -2656,9 +2802,9 @@ Audio:
 • Linux: solved problems with /dev/mixer (“Cannot read MIC gain.”) on many computers.
 • Added possibility of zero padding for sound playing,
   in order to reduce clicks on some Linux and Sun computers.
-• LongSound supports mono and stereo, 8-bit and 16-bit, %\\mu-law and A-law,
+• LongSound supports mono and stereo, 8-bit and 16-bit, %\mu-law and A-law,
   big-endian and little-endian, AIFC, WAV, NeXT/Sun, and NIST files.
-•v##Read two Sounds from stereo file...# supports 8-bit and 16-bit, %\\mu-law and A-law,
+•v##Read two Sounds from stereo file...# supports 8-bit and 16-bit, %\mu-law and A-law,
   big-endian and little-endian, AIFC, WAV, NeXT/Sun, and NIST files.
 • SoundRecorder writes to 16-bit AIFC, WAV, NeXT/Sun, and NIST mono and stereo files.
 • Sound & LongSound: write part or whole to mono or stereo audio file.
@@ -2666,7 +2812,7 @@ Audio:
 • Artword & Speaker (& Sound) movie: real time on all platforms.
 
 Scripting:
-• @@Formulas 5. Mathematical functions@: added statistical functions: %\\ci^2, Student T, Fisher F, binomial,
+• @@Formulas 5. Mathematical functions@: added statistical functions: %\ci^2, Student T, Fisher F, binomial,
   and their inverse functions.
 • Windows: program #`praatcon` for use as a Unix-style console application.
 • Windows and Unix: Praat can be run with a command-line interface without quitting on errors.

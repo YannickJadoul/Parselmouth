@@ -1,6 +1,6 @@
 /* Ui.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -212,7 +212,9 @@ UiOption UiForm_addOption (UiForm me, conststring32 optionText) {
 
 static void UiField_setDefault (UiField me) {
 	switch (my type) {
-		case _kUiField_type::LABEL_:
+		case _kUiField_type::HEADING_:
+		case _kUiField_type::COMMENT_:
+		case _kUiField_type::CAPTION_:
 		{
 			// do nothing
 		}
@@ -291,7 +293,9 @@ static void UiField_setDefault (UiField me) {
 static void UiField_widgetToValue (UiField me) {
 	switch (my type)
 	{
-		case _kUiField_type::LABEL_:
+		case _kUiField_type::HEADING_:
+		case _kUiField_type::COMMENT_:
+		case _kUiField_type::CAPTION_:
 		{
 			// do nothing
 		}
@@ -664,14 +668,16 @@ static void UiForm_okOrApply (UiForm me, GuiButton button, int hide) {
 			UiHistory_write (U"\n");
 			UiHistory_write_colonize (my invokingButtonTitle.get());
 			int size = my numberOfFields;
-			while (size >= 1 && my field [size] -> type == _kUiField_type::LABEL_)
+			while (size >= 1 && _kUiField_type_isComment (my field [size] -> type))
 				size --;   // ignore trailing fields without a value
 			int next = 0;
 			for (int ifield = 1; ifield <= size; ifield ++) {
 				UiField field = my field [ifield].get();
 				switch (field -> type)
 				{
-					case _kUiField_type::LABEL_:
+					case _kUiField_type::HEADING_:
+					case _kUiField_type::COMMENT_:
+					case _kUiField_type::CAPTION_:
 					{
 						// do nothing
 					}
@@ -914,7 +920,7 @@ void UiForm_setPauseForm (UiForm me,
 }
 
 static void commonOkCallback (UiForm /* dia */, integer /* narg */, Stackel /* args */, conststring32 /* sendingString */,
-	Interpreter interpreter, conststring32 /* invokingButtonTitle */, bool /* modified */, void *closure, Editor optionalEditor)
+	Interpreter interpreter, conststring32 /* invokingButtonTitle */, bool /* modified */, void *closure, Editor /* optionalEditor */)
 {
 	EditorCommand cmd = (EditorCommand) closure;
 	cmd -> commandCallback (cmd -> sender, cmd, cmd -> d_uiform.get(), 0, nullptr, nullptr, interpreter);
@@ -934,7 +940,9 @@ static UiField UiForm_addField (UiForm me, _kUiField_type type, conststring32 la
 	return my field [my numberOfFields].get();
 }
 
-UiField UiForm_addReal (UiForm me, double *variable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addReal (UiForm me, double *variable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::REAL_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -943,7 +951,9 @@ UiField UiForm_addReal (UiForm me, double *variable, conststring32 variableName,
 	return thee;
 }
 
-UiField UiForm_addRealOrUndefined (UiForm me, double *variable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addRealOrUndefined (UiForm me, double *variable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::REAL_OR_UNDEFINED_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -952,7 +962,9 @@ UiField UiForm_addRealOrUndefined (UiForm me, double *variable, conststring32 va
 	return thee;
 }
 
-UiField UiForm_addPositive (UiForm me, double *variable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addPositive (UiForm me, double *variable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::POSITIVE_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -961,7 +973,9 @@ UiField UiForm_addPositive (UiForm me, double *variable, conststring32 variableN
 	return thee;
 }
 
-UiField UiForm_addInteger (UiForm me, integer *variable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addInteger (UiForm me, integer *variable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::INTEGER_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -970,7 +984,9 @@ UiField UiForm_addInteger (UiForm me, integer *variable, conststring32 variableN
 	return thee;
 }
 
-UiField UiForm_addNatural (UiForm me, integer *variable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addNatural (UiForm me, integer *variable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::NATURAL_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -979,7 +995,9 @@ UiField UiForm_addNatural (UiForm me, integer *variable, conststring32 variableN
 	return thee;
 }
 
-UiField UiForm_addWord (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addWord (UiForm me, conststring32 *variable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::WORD_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -988,7 +1006,9 @@ UiField UiForm_addWord (UiForm me, conststring32 *variable, conststring32 variab
 	return thee;
 }
 
-UiField UiForm_addSentence (UiForm me, conststring32 *variable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addSentence (UiForm me, conststring32 *variable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::SENTENCE_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -997,15 +1017,33 @@ UiField UiForm_addSentence (UiForm me, conststring32 *variable, conststring32 va
 	return thee;
 }
 
-UiField UiForm_addLabel (UiForm me, conststring32 *variable, conststring32 labelText) {
-	UiField thee = UiForm_addField (me, _kUiField_type::LABEL_, U"");   // this field gets no name; so that the user can give it any title
+UiField UiForm_addHeading (UiForm me, conststring32 *variable, conststring32 labelText) {
+	UiField thee = UiForm_addField (me, _kUiField_type::HEADING_, U"");   // this field gets no name; so that the user can give it any title
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringVariable = variable;
 	thy stringValue = Melder_dup (labelText);
 	return thee;
 }
 
-UiField UiForm_addBoolean (UiForm me, bool *variable, conststring32 variableName, conststring32 labelText, bool defaultValue) {
+UiField UiForm_addComment (UiForm me, conststring32 *variable, conststring32 labelText) {
+	UiField thee = UiForm_addField (me, _kUiField_type::COMMENT_, U"");   // this field gets no name; so that the user can give it any title
+	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
+	thy stringVariable = variable;
+	thy stringValue = Melder_dup (labelText);
+	return thee;
+}
+
+UiField UiForm_addCaption (UiForm me, conststring32 *variable, conststring32 labelText) {
+	UiField thee = UiForm_addField (me, _kUiField_type::CAPTION_, U"");   // this field gets no name; so that the user can give it any title
+	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
+	thy stringVariable = variable;
+	thy stringValue = Melder_dup (labelText);
+	return thee;
+}
+
+UiField UiForm_addBoolean (UiForm me, bool *variable, conststring32 variableName,
+	conststring32 labelText, bool defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::BOOLEAN_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy integerDefaultValue = defaultValue;
@@ -1151,7 +1189,9 @@ UiField UiForm_addStringArray (UiForm me, constSTRVEC *variable, conststring32 v
 	return thee;
 }
 
-UiField UiForm_addChoice (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName, conststring32 labelText, int defaultValue, int base) {
+UiField UiForm_addChoice (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName,
+	conststring32 labelText, int defaultValue, int base)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::CHOICE_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = thee;
 	thy integerDefaultValue = defaultValue;
@@ -1162,7 +1202,23 @@ UiField UiForm_addChoice (UiForm me, int *intVariable, conststring32 *stringVari
 	return thee;
 }
 
-UiField UiForm_addOptionMenu (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName, conststring32 labelText, int defaultValue, int base) {
+UiField UiForm_addChoiceEnum (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName,
+	conststring32 labelText, int defaultValue, int base, enum_generic_getValue getValueFunction)
+{
+	UiField thee = UiForm_addField (me, _kUiField_type::CHOICE_, labelText);
+	my referenceToLatestUsedChoiceOrOptionMenu = thee;
+	thy integerDefaultValue = defaultValue;
+	thy intVariable = intVariable;
+	thy stringVariable = stringVariable;
+	thy variableName = variableName;
+	thy subtract = ( base == 1 ? 0 : 1 );
+	thy getValueFunction = getValueFunction;
+	return thee;
+}
+
+UiField UiForm_addOptionMenu (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName,
+	conststring32 labelText, int defaultValue, int base)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::OPTIONMENU_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = thee;
 	thy integerDefaultValue = defaultValue;
@@ -1173,7 +1229,23 @@ UiField UiForm_addOptionMenu (UiForm me, int *intVariable, conststring32 *string
 	return thee;
 }
 
-UiField UiForm_addList (UiForm me, integer *integerVariable, conststring32 *stringVariable, conststring32 variableName, conststring32 labelText, constSTRVEC strings, integer defaultValue) {
+UiField UiForm_addOptionMenuEnum (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName,
+	conststring32 labelText, int defaultValue, int base, enum_generic_getValue getValueFunction)
+{
+	UiField thee = UiForm_addField (me, _kUiField_type::OPTIONMENU_, labelText);
+	my referenceToLatestUsedChoiceOrOptionMenu = thee;
+	thy integerDefaultValue = defaultValue;
+	thy intVariable = intVariable;
+	thy stringVariable = stringVariable;
+	thy variableName = variableName;
+	thy subtract = ( base == 1 ? 0 : 1 );
+	thy getValueFunction = getValueFunction;
+	return thee;
+}
+
+UiField UiForm_addList (UiForm me, integer *integerVariable, conststring32 *stringVariable, conststring32 variableName,
+	conststring32 labelText, constSTRVEC strings, integer defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::LIST_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy strings = strings;
@@ -1184,7 +1256,9 @@ UiField UiForm_addList (UiForm me, integer *integerVariable, conststring32 *stri
 	return thee;
 }
 
-UiField UiForm_addColour (UiForm me, MelderColour *colourVariable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addColour (UiForm me, MelderColour *colourVariable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::COLOUR_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -1193,7 +1267,9 @@ UiField UiForm_addColour (UiForm me, MelderColour *colourVariable, conststring32
 	return thee;
 }
 
-UiField UiForm_addChannel (UiForm me, integer *variable, conststring32 variableName, conststring32 labelText, conststring32 defaultValue) {
+UiField UiForm_addChannel (UiForm me, integer *variable, conststring32 variableName,
+	conststring32 labelText, conststring32 defaultValue)
+{
 	UiField thee = UiForm_addField (me, _kUiField_type::CHANNEL_, labelText);
 	my referenceToLatestUsedChoiceOrOptionMenu = nullptr;
 	thy stringDefaultValue = Melder_dup (defaultValue);
@@ -1292,7 +1368,14 @@ void UiForm_finish (UiForm me) {
 				Gui_OPTIONMENU_HEIGHT
 			: thy type == _kUiField_type::LIST_ ?
 				LIST_HEIGHT
-			: thy type == _kUiField_type::LABEL_ && thy stringValue [0] != U'\0' && thy stringValue [Melder_length (thy stringValue.get()) - 1] != U'.' && ifield != my numberOfFields ?
+			: thy type == _kUiField_type::HEADING_ && thy stringValue [0] != U'\0' &&
+					thy stringValue [Melder_length (thy stringValue.get()) - 1] != U'.' && ifield != my numberOfFields ?
+				headerLabelHeight
+			: thy type == _kUiField_type::COMMENT_ && thy stringValue [0] != U'\0' &&
+					thy stringValue [Melder_length (thy stringValue.get()) - 1] != U'.' && ifield != my numberOfFields ?
+				headerLabelHeight
+			: thy type == _kUiField_type::CAPTION_ && thy stringValue [0] != U'\0' &&
+					thy stringValue [Melder_length (thy stringValue.get()) - 1] != U'.' && ifield != my numberOfFields ?
 				headerLabelHeight
 			: thouHastVerticallyAddedLabel ?
 				multiLineTextHeight (thy numberOfLines)
@@ -1508,13 +1591,45 @@ void UiForm_finish (UiForm me) {
 				);
 			}
 			break;
-			case _kUiField_type::LABEL_:
+			case _kUiField_type::HEADING_:
 			{
+				int ylabel = thy y;
+				#if defined (macintosh)
+					ylabel += 2;
+				#endif
 				MelderString_copy (& theFinishBuffer, thy stringValue.get());
 				thy label = GuiLabel_createShown (form,
 					Gui_LEFT_DIALOG_SPACING, dialogWidth /* allow to extend into the margin */,
-					thy y + 5, thy y + 5 + textFieldHeight,
+					ylabel + 5, ylabel + 5 + textFieldHeight,
+					theFinishBuffer.string, GuiLabel_BOLD
+				);
+			}
+			break;
+			case _kUiField_type::COMMENT_:
+			{
+				int ylabel = thy y;
+				#if defined (macintosh)
+					ylabel += 0;
+				#endif
+				MelderString_copy (& theFinishBuffer, thy stringValue.get());
+				thy label = GuiLabel_createShown (form,
+					Gui_LEFT_DIALOG_SPACING, dialogWidth /* allow to extend into the margin */,
+					ylabel + 5, ylabel + 5 + textFieldHeight,
 					theFinishBuffer.string, 0
+				);
+			}
+			break;
+			case _kUiField_type::CAPTION_:
+			{
+				int ylabel = thy y;
+				#if defined (macintosh)
+					ylabel += 0;
+				#endif
+				MelderString_copy (& theFinishBuffer, thy stringValue.get());
+				thy label = GuiLabel_createShown (form,
+					Gui_LEFT_DIALOG_SPACING, dialogWidth /* allow to extend into the margin */,
+					ylabel - 10, ylabel - 10 + textFieldHeight,
+					theFinishBuffer.string, GuiLabel_RIGHT
 				);
 			}
 			break;
@@ -1594,7 +1709,7 @@ void UiForm_finish (UiForm me) {
 	}
 	bool commentsOnly = true;
 	for (integer ifield = 1; ifield <= my numberOfFields; ifield ++) {
-		if (my field [ifield] -> type != _kUiField_type::LABEL_) {
+		if (! _kUiField_type_isComment (my field [ifield] -> type)) {
 			commentsOnly = false;
 			break;
 		}
@@ -1603,19 +1718,21 @@ void UiForm_finish (UiForm me) {
 		if (my isPauseForm) {
 			my revertButton = GuiButton_createShown (form,
 				HELP_BUTTON_X, HELP_BUTTON_X + REVERT_BUTTON_WIDTH,
-				y, y + Gui_PUSHBUTTON_HEIGHT, U"Undo", gui_button_cb_revert, me, 0);
+				y, y + Gui_PUSHBUTTON_HEIGHT, U"Undo", gui_button_cb_revert, me, 0
+			);
 		} else {
 			my revertButton = GuiButton_createShown (form,
 				HELP_BUTTON_X + HELP_BUTTON_WIDTH + Gui_HORIZONTAL_DIALOG_SPACING,
 				HELP_BUTTON_X + HELP_BUTTON_WIDTH + Gui_HORIZONTAL_DIALOG_SPACING + STANDARDS_BUTTON_WIDTH,
-				y, y + Gui_PUSHBUTTON_HEIGHT, U"Standards", gui_button_cb_revert, me, 0);
+				y, y + Gui_PUSHBUTTON_HEIGHT, U"Standards", gui_button_cb_revert, me, 0
+			);
 		}
 	}
 	if (my isPauseForm) {
 		int x = HELP_BUTTON_X + REVERT_BUTTON_WIDTH + Gui_HORIZONTAL_DIALOG_SPACING;
 		if (my cancelContinueButton == 0) {
 			my cancelButton = GuiButton_createShown (form, x, x + STOP_BUTTON_WIDTH, y, y + Gui_PUSHBUTTON_HEIGHT,
-				U"Stop", gui_button_cb_cancel, me, GuiButton_CANCEL);
+					U"Stop", gui_button_cb_cancel, me, GuiButton_CANCEL);
 			x += STOP_BUTTON_WIDTH + 7;
 		} else {
 			x += 30;
@@ -1638,17 +1755,16 @@ void UiForm_finish (UiForm me) {
 		}
 	} else {
 		int x = dialogWidth - Gui_RIGHT_DIALOG_SPACING - Gui_OK_BUTTON_WIDTH - 2 * Gui_HORIZONTAL_DIALOG_SPACING
-			 - Gui_APPLY_BUTTON_WIDTH - Gui_CANCEL_BUTTON_WIDTH;
+				- Gui_APPLY_BUTTON_WIDTH - Gui_CANCEL_BUTTON_WIDTH;
 		my cancelButton = GuiButton_createShown (form, x, x + Gui_CANCEL_BUTTON_WIDTH, y, y + Gui_PUSHBUTTON_HEIGHT,
-			U"Cancel", gui_button_cb_cancel, me, GuiButton_CANCEL);
+				U"Cancel", gui_button_cb_cancel, me, GuiButton_CANCEL);
 		x = dialogWidth - Gui_RIGHT_DIALOG_SPACING - Gui_OK_BUTTON_WIDTH - Gui_HORIZONTAL_DIALOG_SPACING - Gui_APPLY_BUTTON_WIDTH;
-		if (my numberOfFields > 1 || my field [1] -> type != _kUiField_type::LABEL_) {
+		if (my numberOfFields > 1 || ! _kUiField_type_isComment (my field [1] -> type))
 			my applyButton = GuiButton_createShown (form, x, x + Gui_APPLY_BUTTON_WIDTH, y, y + Gui_PUSHBUTTON_HEIGHT,
-				U"Apply", gui_button_cb_apply, me, 0);
-		}
+					U"Apply", gui_button_cb_apply, me, 0);
 		x = dialogWidth - Gui_RIGHT_DIALOG_SPACING - Gui_OK_BUTTON_WIDTH;
 		my okButton = GuiButton_createShown (form, x, x + Gui_OK_BUTTON_WIDTH, y, y + Gui_PUSHBUTTON_HEIGHT,
-			my isPauseForm ? U"Continue" : U"OK", gui_button_cb_ok, me, okButtonIsDefault ? GuiButton_DEFAULT : 0);
+				my isPauseForm ? U"Continue" : U"OK", gui_button_cb_ok, me, okButtonIsDefault ? GuiButton_DEFAULT : 0);
 	}
 	/*GuiObject_show (separator);*/
 }
@@ -1669,7 +1785,7 @@ void UiForm_do (UiForm me, bool modified) {
 static void UiField_api_header_C (UiField me, UiField next, bool isLastNonLabelField) {
 	if (my labelText && str32chr (my labelText.get(), U':'))
 		trace (U"Form label with colon: ", my labelText.get());
-	if (my type == _kUiField_type::LABEL_) {
+	if (_kUiField_type_isComment (my type)) {
 		const bool weAreFollowedByAWideField =
 			next && (next -> type == _kUiField_type::TEXT_ || next -> type == _kUiField_type::FORMULA_ ||
 			next -> type == _kUiField_type::INFILE_ || next -> type == _kUiField_type::OUTFILE_ ||
@@ -1859,7 +1975,7 @@ void UiForm_info (UiForm me, integer narg) {
 		*/
 		int lastNonLabelFieldNumber = 0;
 		for (int ifield = my numberOfFields; ifield > 0; ifield --) {
-			if (my field [ifield] -> type != _kUiField_type::LABEL_) {
+			if (! _kUiField_type_isComment (my field [ifield] -> type)) {
 				lastNonLabelFieldNumber = ifield;
 				break;
 			}
@@ -2034,20 +2150,28 @@ static void UiField_argToValue (UiField me, Stackel arg, Interpreter /* interpre
 		{
 			if (arg -> which != Stackel_STRING)
 				Melder_throw (U"Option argument “", my name.get(), U"” should be a string, not ", arg -> whichText(), U".");
-			my integerValue = 0;
-			for (int i = 1; i <= my options.size; i ++) {
-				UiOption b = my options.at [i];
-				if (str32equ (arg -> getString(), b -> name.get()))
-					my integerValue = i;
-			}
-			if (my integerValue == 0) {
-				/*
-					Retry with different case.
-				*/
+			if (my getValueFunction) {
+				int value = my getValueFunction (arg -> getString());
+				if (value == -1)
+					my integerValue = 0;   // zero
+				else
+					my integerValue = my getValueFunction (arg -> getString()) + my subtract;   // 1 or greater
+			} else {
+				my integerValue = 0;
 				for (int i = 1; i <= my options.size; i ++) {
 					UiOption b = my options.at [i];
-					if (Melder_equ_firstCharacterCaseInsensitive (arg -> getString(), b -> name.get()))
+					if (str32equ (arg -> getString(), b -> name.get()))
 						my integerValue = i;
+				}
+				if (my integerValue == 0) {
+					/*
+						Retry with different case.
+					*/
+					for (int i = 1; i <= my options.size; i ++) {
+						UiOption b = my options.at [i];
+						if (Melder_equ_firstCharacterCaseInsensitive (arg -> getString(), b -> name.get()))
+							my integerValue = i;
+					}
 				}
 			}
 			if (my integerValue == 0) {
@@ -2113,13 +2237,13 @@ void UiForm_call (UiForm me, integer narg, Stackel args, Interpreter interpreter
 	integer size = my numberOfFields, iarg = 0;
 	//while (size >= 1 && my field [size] -> type == _kUiField_type::LABEL_)
 	//	size --;   // ignore trailing fields without a value
-	for (integer i = 1; i <= size; i ++) {
-		if (my field [i] -> type == _kUiField_type::LABEL_)
+	for (integer ifield = 1; ifield <= size; ifield ++) {
+		if (_kUiField_type_isComment (my field [ifield] -> type))
 			continue;   // ignore non-trailing fields without a value
 		iarg ++;
 		if (iarg > narg)
-			Melder_throw (U"Command requires more than the given ", narg, U" arguments: argument “", my field [i] -> name.get(), U"” not given.");
-		UiField_argToValue (my field [i].get(), & args [iarg], interpreter);
+			Melder_throw (U"Command requires more than the given ", narg, U" arguments: argument “", my field [ifield] -> name.get(), U"” not given.");
+		UiField_argToValue (my field [ifield].get(), & args [iarg], interpreter);
 	}
 	if (iarg < narg)
 		Melder_throw (U"Command requires only ", iarg, U" arguments, not the ", narg, U" given.");
@@ -2229,20 +2353,28 @@ static void UiField_stringToValue (UiField me, conststring32 string, Interpreter
 		case _kUiField_type::CHOICE_:
 		case _kUiField_type::OPTIONMENU_:
 		{
-			my integerValue = 0;
-			for (int i = 1; i <= my options.size; i ++) {
-				UiOption b = my options.at [i];
-				if (str32equ (string, b -> name.get()))
-					my integerValue = i;
-			}
-			if (my integerValue == 0) {
-				/*
-					Retry with different case.
-				*/
+			if (my getValueFunction) {
+				int value = my getValueFunction (string);
+				if (value == -1)
+					my integerValue = 0;   // zero
+				else
+					my integerValue = my getValueFunction (string) + my subtract;   // 1 or greater
+			} else {
+				my integerValue = 0;
 				for (int i = 1; i <= my options.size; i ++) {
 					UiOption b = my options.at [i];
-					if (Melder_equ_firstCharacterCaseInsensitive (string, b -> name.get()))
+					if (str32equ (string, b -> name.get()))
 						my integerValue = i;
+				}
+				if (my integerValue == 0) {
+					/*
+						Retry with different case.
+					*/
+					for (int i = 1; i <= my options.size; i ++) {
+						UiOption b = my options.at [i];
+						if (Melder_equ_firstCharacterCaseInsensitive (string, b -> name.get()))
+							my integerValue = i;
+					}
 				}
 			}
 			if (my integerValue == 0)
@@ -2311,12 +2443,12 @@ void UiForm_parseString (UiForm me, conststring32 arguments, Interpreter optiona
 		to continue to support the dots-based scripting style until 2036.
 	*/
 	int size = my numberOfFields;
-	while (size >= 1 && my field [size] -> type == _kUiField_type::LABEL_)
+	while (size >= 1 && _kUiField_type_isComment (my field [size] -> type))
 		size --;   // ignore trailing fields without a value
-	for (int i = 1; i < size; i ++) {
+	for (int ifield = 1; ifield < size; ifield ++) {
 		static char32 stringValue [3000];
 		int ichar = 0;
-		if (my field [i] -> type == _kUiField_type::LABEL_)
+		if (_kUiField_type_isComment (my field [ifield] -> type))
 			continue;   // ignore non-trailing fields without a value
 		Melder_skipHorizontalOrVerticalSpace (& arguments);   // go to next argument
 		/*
@@ -2343,9 +2475,9 @@ void UiForm_parseString (UiForm me, conststring32 arguments, Interpreter optiona
 		}
 		stringValue [ichar] = U'\0';   // trailing null character
 		try {
-			UiField_stringToValue (my field [i].get(), stringValue, optionalInterpreter);
+			UiField_stringToValue (my field [ifield].get(), stringValue, optionalInterpreter);
 		} catch (MelderError) {
-			Melder_throw (U"Don't understand contents of field “", my field [i] -> name.get(), U"”.");
+			Melder_throw (U"Don't understand contents of field “", my field [ifield] -> name.get(), U"”.");
 		}
 	}
 	/*
@@ -2620,7 +2752,9 @@ void UiForm_setString (UiForm me, conststring32 *p_variable, conststring32 value
 					GuiText_setString (field -> text, value);
 				}
 				break;
-				case _kUiField_type::LABEL_:
+				case _kUiField_type::HEADING_:
+				case _kUiField_type::COMMENT_:
+				case _kUiField_type::CAPTION_:
 				{
 					GuiLabel_setText (field -> label, value);
 				}

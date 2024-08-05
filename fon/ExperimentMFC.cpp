@@ -1,6 +1,6 @@
 /* ExperimentMFC.cpp
  *
- * Copyright (C) 2001-2009,2011-2013,2015-2021 Paul Boersma
+ * Copyright (C) 2001-2009,2011-2013,2015-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * pb 2002/07/16 GPL
  * pb 2002/10/31 NUMlog2
  * pb 2003/03/08 inter-stimulus interval; version 2
- * pb 2003/09/14 MelderDir_relativePathToFile
+ * pb 2003/09/14 MelderFolder_relativePathToFile
  * pb 2004/06/22 added response keys; version 3
  * pb 2004/08/12 removed a bug (something said carrierBefore instead of carrierAfter)
  *     that caused Praat to crash if the carrier before was longer than the carrier after
@@ -87,7 +87,7 @@ static void readSound (ExperimentMFC me, conststring32 fileNameHead, conststring
 	#if defined (_WIN32)
 		for (;;) { char32 *slash = str32chr (fileNames, U'/'); if (! slash) break; *slash = U'\\'; }
 	#endif
-	sound->reset();
+	sound -> reset();
 	char32 pathName [kMelder_MAXPATH+1];
 	/*
 		`fileNames` can contain commas, which separate partial file names.
@@ -107,7 +107,7 @@ static void readSound (ExperimentMFC me, conststring32 fileNameHead, conststring
 		/*
 			Make sure we are in the correct folder.
 		*/
-		if (MelderDir_isNull (& my rootDirectory)) {
+		if (MelderFolder_isNull (& my rootDirectory)) {
 			/*
 				Absolute file name.
 			*/
@@ -116,7 +116,7 @@ static void readSound (ExperimentMFC me, conststring32 fileNameHead, conststring
 			/*
 				Relative or absolute file name.
 			*/
-			MelderDir_relativePathToFile (& my rootDirectory, pathName, & file);
+			MelderFolder_relativePathToFile (& my rootDirectory, pathName, & file);
 			if (Melder_debug == 32) {
 				MelderInfo_open ();
 				MelderInfo_writeLine (U"Path name <", pathName, U">");
@@ -180,7 +180,7 @@ void ExperimentMFC_start (ExperimentMFC me) {
 		integer responseCarrierBeforeSamples = 0, responseCarrierAfterSamples = 0, maximumResponseSamples = 0;
 		Melder_warningOff ();
 		my trial = 0;
-		my playBuffer.reset();   // is this needed?
+		my playBuffer. reset();   // is this needed?
 		my pausing = false;
 		my numberOfTrials = my numberOfDifferentStimuli * my numberOfReplicationsPerStimulus;
 		my stimuli = zero_INTVEC (my numberOfTrials);
@@ -414,13 +414,13 @@ autoTable ResultsMFCs_to_Table (OrderedOf<structResultsMFC>* me) {
 			}
 		}
 		autoTable thee = Table_create (irow, 3 + hasGoodnesses + hasReactionTimes);
-		Table_setColumnLabel (thee.get(), 1, U"subject");
-		Table_setColumnLabel (thee.get(), 2, U"stimulus");
-		Table_setColumnLabel (thee.get(), 3, U"response");
+		Table_renameColumn_e (thee.get(), 1, U"subject");
+		Table_renameColumn_e (thee.get(), 2, U"stimulus");
+		Table_renameColumn_e (thee.get(), 3, U"response");
 		if (hasGoodnesses)
-			Table_setColumnLabel (thee.get(), 4, U"goodness");
+			Table_renameColumn_e (thee.get(), 4, U"goodness");
 		if (hasReactionTimes)
-			Table_setColumnLabel (thee.get(), 4 + hasGoodnesses, U"reactionTime");
+			Table_renameColumn_e (thee.get(), 4 + hasGoodnesses, U"reactionTime");
 		irow = 0;
 		for (integer iresults = 1; iresults <= my size; iresults ++) {
 			ResultsMFC results = my at [iresults];

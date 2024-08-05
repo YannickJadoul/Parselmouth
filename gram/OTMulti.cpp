@@ -1,6 +1,6 @@
 /* OTMulti.cpp
  *
- * Copyright (C) 2005-2023 Paul Boersma
+ * Copyright (C) 2005-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -867,13 +867,13 @@ int OTMulti_learnOne (OTMulti me, conststring32 form1, conststring32 form2,
 	if (direction & OTMulti_LEARN_FORWARD) {
 		if (Melder_debug == 47) OTMulti_newDisharmonies (me, 2.0);
 		integer iwinner = OTMulti_getWinner (me, form1, U"");
-		if (Melder_debug != 47 || ! OTMulti_candidateMatches (me, iwinner, form2, U""))
+		if (! (Melder_debug == 47) || ! OTMulti_candidateMatches (me, iwinner, form2, U""))
 			OTMulti_modifyRankings (me, iwinner, iloser, updateRule, plasticity, relativePlasticityNoise);
 	}
 	if (direction & OTMulti_LEARN_BACKWARD) {
 		if (Melder_debug == 47) OTMulti_newDisharmonies (me, 2.0);
 		integer iwinner = OTMulti_getWinner (me, form2, U"");
-		if (Melder_debug != 47 || ! OTMulti_candidateMatches (me, iwinner, form1, U""))
+		if (! (Melder_debug == 47) || ! OTMulti_candidateMatches (me, iwinner, form1, U""))
 			OTMulti_modifyRankings (me, iwinner, iloser, updateRule, plasticity, relativePlasticityNoise);
 	}
 	return 1;
@@ -884,11 +884,11 @@ static autoTable OTMulti_createHistory (OTMulti me, integer storeHistoryEvery, i
 	try {
 		integer numberOfSamplingPoints = numberOfData / storeHistoryEvery;   // e.g. 0, 20, 40, ...
 		autoTable thee = Table_createWithoutColumnNames (1 + numberOfSamplingPoints, 3 + my numberOfConstraints);
-		Table_setColumnLabel (thee.get(), 1, U"Datum");
-		Table_setColumnLabel (thee.get(), 2, U"Form1");
-		Table_setColumnLabel (thee.get(), 3, U"Form2");
+		Table_renameColumn_e (thee.get(), 1, U"Datum");
+		Table_renameColumn_e (thee.get(), 2, U"Form1");
+		Table_renameColumn_e (thee.get(), 3, U"Form2");
 		for (integer icons = 1; icons <= my numberOfConstraints; icons ++)
-			Table_setColumnLabel (thee.get(), 3 + icons, my constraints [icons]. name.get());
+			Table_renameColumn_e (thee.get(), 3 + icons, my constraints [icons]. name.get());
 		Table_setNumericValue (thee.get(), 1, 1, 0);
 		Table_setStringValue (thee.get(), 1, 2, U"(initial)");
 		Table_setStringValue (thee.get(), 1, 3, U"(initial)");

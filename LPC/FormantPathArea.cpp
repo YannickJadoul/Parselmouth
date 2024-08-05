@@ -1,6 +1,6 @@
 /* FormantPathArea.cpp
  *
- * Copyright (C) 2020-2023 David Weenink, 2022 Paul Boersma
+ * Copyright (C) 2020-2023 David Weenink, 2022,2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include "EditorM.h"
 
 Thing_implement (FormantPathArea, SoundAnalysisArea, 0);
+Thing_implement (FormantPathArea_without_Sound, FormantPathArea, 0);
 
 #include "Prefs_define.h"
 #include "FormantPathArea_prefs.h"
@@ -148,8 +149,8 @@ static void menu_cb_FormantSettings (FormantPathArea me, EDITOR_ARGS) {
 		REAL (middleFormantCeiling, U"Middle formant ceiling (Hz)", my default_formant_path_middleFormantCeiling ())
 		POSITIVE (windowLength, U"Window length (s)", my default_formant_path_windowLength ())
 		POSITIVE (preEmphasisFrom, U"Pre-emphasis from (Hz)", my default_formant_path_preEmpasisFrom ())
-		LABEL (U"The maximum and minimum ceiling frequencies are determined as:")
-		LABEL (U" middleFormantCeiling * exp(+/- ceilingStepSize * numberOfStepsUpDown).")
+		COMMENT (U"The maximum and minimum ceiling frequencies are determined as:")
+		COMMENT (U" middleFormantCeiling * exp(+/- ceilingStepSize * numberOfStepsUpDown).")
 		POSITIVE (ceilingStepSize, U"Ceiling step size", my default_formant_path_ceilingStepSize ())
 		NATURAL (numberOfStepsUpDown, U"Number of steps up / down", my default_formant_path_numberOfStepsUpDown ())
 	EDITOR_OK
@@ -236,8 +237,8 @@ static void menu_cb_showFormants (FormantPathArea me, EDITOR_ARGS) {
 	FunctionEditor_redraw (my functionEditor());
 }
 
-static void INFO_DATA__formantListing (FormantPathArea me, EDITOR_ARGS) {
-	INFO_DATA
+static void INFO_EDITOR__formantListing (FormantPathArea me, EDITOR_ARGS) {
+	INFO_EDITOR
 		const double startTime = my startSelection(), endTime = my endSelection();
 		MelderInfo_open ();
 		MelderInfo_writeLine (U"Time_s   F1_Hz   F2_Hz   F3_Hz   F4_Hz");
@@ -260,7 +261,7 @@ static void INFO_DATA__formantListing (FormantPathArea me, EDITOR_ARGS) {
 			}
 		}
 		MelderInfo_close ();
-	INFO_DATA_END
+	INFO_EDITOR_END
 }
 void structFormantPathArea :: v_createMenuItems_formant (EditorMenu menu) {
 	our formantToggle = FunctionAreaMenu_addCommand (menu, U"Show formants",
@@ -276,7 +277,7 @@ void structFormantPathArea :: v_createMenuItems_formant (EditorMenu menu) {
 	FunctionAreaMenu_addCommand (menu, U"Draw visible formant contour...", 0,
 			menu_cb_DrawVisibleFormantContour, this);
 	FunctionAreaMenu_addCommand (menu, U"Formant listing", 0,
-			INFO_DATA__formantListing, this);
+			INFO_EDITOR__formantListing, this);
 }
 
 

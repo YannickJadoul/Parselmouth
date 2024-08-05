@@ -1,6 +1,6 @@
 /* Interpreter.cpp
  *
- * Copyright (C) 1993-2023 Paul Boersma
+ * Copyright (C) 1993-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,7 +54,9 @@
 
 #define Interpreter_BUTTON 19
 #define Interpreter_OPTION 20
-#define Interpreter_COMMENT 21
+#define Interpreter_HEADING 21
+#define Interpreter_COMMENT 22
+#define Interpreter_CAPTION 23
 
 Thing_implement (InterpreterVariable, SimpleString, 0);
 
@@ -166,7 +168,7 @@ void Melder_includeIncludeFiles (autostring32 *inout_text, bool onlyInCodeChunks
 					continue;   // if the text starts with "include", it cannot be within a code chunk
 				integer braceDepth = 0;
 				for (const char32 *p = head; p != includeLocation; p ++)
-					if (*p == U'\n')
+					if (*p == U'\n') {
 						if (p [1] == U'{') {
 							if (braceDepth > 0)
 								Melder_throw (U"Opening brace within a code chunk. Don't know whether or not to include an include file.");
@@ -176,6 +178,7 @@ void Melder_includeIncludeFiles (autostring32 *inout_text, bool onlyInCodeChunks
 								Melder_throw (U"Closing brace outside a code chunk. Don't know whether or not to include an include file.");
 							braceDepth -= 1;
 						}
+					}
 				if (braceDepth == 0) {
 					head = includeLocation + 8;
 					continue;
@@ -254,7 +257,7 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 	const bool scriptTextIsNotebookText = Melder_scriptTextIsNotebookText (text);
 	char32 *formLocation = nullptr;
 	integer npar = 0;
-	my dialogTitle.reset();
+	my dialogTitle. reset();
 	autoMelderString string;
 	/*
 		Look for a "form" line.
@@ -313,12 +316,13 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 				Melder_throw (U"The title of a form should start with a double quote character (\").");
 			char32* p = dialogTitle + 1;   // BUG: could be const (change Melder_skipHorizontalSpace())
 			for (; p < endOfLine; p ++) {
-				if (*p == U'"')
+				if (*p == U'"') {
 					if (p [1] == U'"') {
 						p ++;
 						continue;
 					} else
 						break;
+				}
 				MelderString_appendCharacter (& string, *p);
 			}
 			if (*p != U'"')
@@ -512,12 +516,13 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 					}
 					p ++;   // skip opening quote
 					for (; p < endOfLine; p ++) {
-						if (*p == U'"')
+						if (*p == U'"') {
 							if (p [1] == U'"') {   // look ahead
 								p ++;
 								continue;
 							} else
 								break;
+						}
 						MelderString_appendCharacter (& string, *p);
 					}
 					if (*p != U'"') {
@@ -562,12 +567,13 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 				}
 				p ++;   // skip opening quote
 				for (; p < endOfLine; p ++) {
-					if (*p == U'"')
+					if (*p == U'"') {
 						if (p [1] == U'"') {   // look ahead
 							p ++;
 							continue;
 						} else
 							break;
+					}
 					MelderString_appendCharacter (& string, *p);
 				}
 				if (*p != U'"') {
@@ -618,12 +624,13 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 					}
 					p ++;   // skip opening quote
 					for (; p < endOfLine; p ++) {
-						if (*p == U'"')
+						if (*p == U'"') {
 							if (p [1] == U'"') {
 								p ++;
 								continue;
 							} else
 								break;
+						}
 						MelderString_appendCharacter (& string, *p);
 					}
 					if (*p != U'"') {
@@ -811,8 +818,12 @@ autoUiForm Interpreter_createForm (Interpreter me, GuiWindow parent, Editor opti
 				UiForm_addOption (form.get(), my arguments [ipar].get());
 			} break; case Interpreter_OPTION: {
 				UiForm_addOption (form.get(), my arguments [ipar].get());
+			} break; case Interpreter_HEADING: {
+				UiForm_addHeading (form.get(), nullptr, my arguments [ipar].get());
 			} break; case Interpreter_COMMENT: {
-				UiForm_addLabel (form.get(), nullptr, my arguments [ipar].get());
+				UiForm_addComment (form.get(), nullptr, my arguments [ipar].get());
+			} break; case Interpreter_CAPTION: {
+				UiForm_addCaption (form.get(), nullptr, my arguments [ipar].get());
 			} break; default: {
 				UiForm_addWord (form.get(), nullptr, nullptr, parameter, my arguments [ipar].get());
 			}
@@ -1470,6 +1481,25 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 					} else if (*p == U'(' || *p == U'[' || *p == U'{') {
 						expressionDepth ++;
 						MelderString_appendCharacter (& argument, *p);
+					} else if (*p == U'“') {
+						/*
+							Enter a string literal.
+						*/
+						MelderString_appendCharacter (& argument, U'\"');
+						p ++;
+						for (;; p ++) {
+							if (*p == U'\0') {
+								Melder_throw (U"Incomplete curly string literal: the quotes don't match.");
+							} else if (*p == U'\"') {
+								MelderString_appendCharacter (& argument, U'\"');
+								MelderString_appendCharacter (& argument, U'\"');
+							} else if (*p == U'”') {
+								MelderString_appendCharacter (& argument, U'\"');
+								break;
+							} else {
+								MelderString_appendCharacter (& argument, *p);
+							}
+						}
 					} else if (*p == U'\"') {
 						/*
 							Enter a string literal.
@@ -2101,13 +2131,16 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 			Interpreter_addStringVariable (me, U"newline$", U"\n");
 			Interpreter_addStringVariable (me, U"tab$", U"\t");
 			Interpreter_addStringVariable (me, U"shellDirectory$", Melder_getShellDirectory ());
-			structMelderDir dir { }; Melder_getDefaultDir (& dir);
-			Interpreter_addStringVariable (me, U"defaultDirectory$", Melder_dirToPath (& dir));
-			Interpreter_addStringVariable (me, U"preferencesDirectory$", Melder_dirToPath (& Melder_preferencesFolder));
-			Melder_getHomeDir (& dir);
-			Interpreter_addStringVariable (me, U"homeDirectory$", Melder_dirToPath (& dir));
-			Melder_getTempDir (& dir);
-			Interpreter_addStringVariable (me, U"temporaryDirectory$", Melder_dirToPath (& dir));
+			{// scope
+				structMelderFolder folder { };
+				Melder_getCurrentFolder (& folder);
+				Interpreter_addStringVariable (me, U"defaultDirectory$", Melder_folderToPath (& folder));
+				Interpreter_addStringVariable (me, U"preferencesDirectory$", Melder_folderToPath (& Melder_preferencesFolder));
+				Melder_getHomeDir (& folder);
+				Interpreter_addStringVariable (me, U"homeDirectory$", Melder_folderToPath (& folder));
+				Melder_getTempDir (& folder);
+				Interpreter_addStringVariable (me, U"temporaryDirectory$", Melder_folderToPath (& folder));
+			}
 			#if defined (macintosh)
 				Interpreter_addNumericVariable (me, U"macintosh", 1);
 				Interpreter_addNumericVariable (me, U"windows", 0);
@@ -2125,6 +2158,17 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 				Interpreter_addNumericVariable (me, U"windows", 0);
 				Interpreter_addNumericVariable (me, U"unix", 0);
 			#endif
+			#if defined (__aarch64__) || defined (_M_ARM64_)
+				Interpreter_addNumericVariable (me, U"praat_intel32", 0);
+				Interpreter_addNumericVariable (me, U"praat_intel64", 0);
+				Interpreter_addNumericVariable (me, U"praat_arm64", 1);
+			#else
+				Interpreter_addNumericVariable (me, U"praat_intel32", sizeof (void *) == 4);
+				Interpreter_addNumericVariable (me, U"praat_intel64", sizeof (void *) == 8);
+				Interpreter_addNumericVariable (me, U"praat_arm64", 0);
+			#endif
+			Interpreter_addNumericVariable (me, U"praat_32bit", sizeof (void *) == 4);
+			Interpreter_addNumericVariable (me, U"praat_64bit", sizeof (void *) == 8);
 			Interpreter_addNumericVariable (me, U"left", 1);   // deprecated 2010 (Praat 5.2.06)
 			Interpreter_addNumericVariable (me, U"right", 2);   // deprecated 2010 (Praat 5.2.06)
 			Interpreter_addNumericVariable (me, U"mono", 1);   // deprecated 2010 (Praat 5.2.06)
@@ -2837,7 +2881,7 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 									Formula_Result result;
 									Interpreter_anyExpression (me, index.string, & result);
 									if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
-										double numericIndexValue = result. numericResult;
+										const double numericIndexValue = result. numericResult;
 										MelderString_append (& indexedVariableName, numericIndexValue);
 									} else if (result.expressionType == kFormula_EXPRESSION_TYPE_STRING) {
 										MelderString_append (& indexedVariableName, U"\"", result. stringResult.get(), U"\"");
