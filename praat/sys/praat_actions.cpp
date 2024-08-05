@@ -1,6 +1,6 @@
 /* praat_actions.cpp
  *
- * Copyright (C) 1992-2018,2020-2023 Paul Boersma
+ * Copyright (C) 1992-2018,2020-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -146,8 +146,8 @@ static void praat_addAction4__ (ClassInfo class1, integer n1, ClassInfo class2, 
 			Determine the position of the new command.
 		*/
 		integer position;
-		if (after && after [0] != U'*') {   // search for existing command with same selection
-			integer found = lookUpMatchingAction (class1, class2, class3, class4, after);
+		if (after) {   // search for existing command with same selection
+			const integer found = lookUpMatchingAction (class1, class2, class3, class4, after);
 			if (found == 0)
 				Melder_throw (U"The action command \"", title, U"\" cannot be put after \"", after, U"\",\n"
 					U"because the latter command does not exist.");
@@ -339,6 +339,7 @@ void praat_addActionScript (conststring32 className1, integer n1, conststring32 
 			static integer uniqueID = 0;
 			action -> uniqueID = ++ uniqueID;
 		}
+		action -> added = true;
 
 		/*
 			Insert new command.
@@ -692,14 +693,14 @@ void praat_actions_show () {
 					}
 				}
 				if (parentMenu) {
-					my button = GuiMenu_addItem (parentMenu, my title.get(),
+					my button = GuiMenu_addItem (parentMenu, my added ? Melder_cat (U"\u207A", my title.get()) : my title.get(),
 						( my executable ? 0 : GuiMenu_INSENSITIVE ),
 						cb_menu, me
 					);
 				} else {
 					my button = GuiButton_createShown (praat_form,
 						BUTTON_LEFT, BUTTON_RIGHT, y, y + Gui_PUSHBUTTON_HEIGHT,
-						my title.get(), gui_button_cb_menu,
+						my added ? Melder_cat (U"\u207A", my title.get()) : my title.get(), gui_button_cb_menu,
 						me, ( my executable ? 0 : GuiButton_INSENSITIVE ) | ( my attractive ? GuiButton_ATTRACTIVE : 0 )
 					);
 					y += Gui_PUSHBUTTON_HEIGHT + BUTTON_VSPACING;
@@ -708,7 +709,7 @@ void praat_actions_show () {
 				/*
 					Apparently a labelled separator.
 				*/
-				my button = GuiLabel_createShown (praat_form, BUTTON_LEFT, BUTTON_RIGHT, y, y + Gui_LABEL_HEIGHT, my title.get(), 0);
+				my button = GuiLabel_createShown (praat_form, BUTTON_LEFT, BUTTON_RIGHT, y, y + Gui_LABEL_HEIGHT, my added ? Melder_cat (U"\u207A", my title.get()) : my title.get(), 0);
 				y += Gui_LABEL_HEIGHT + BUTTON_VSPACING;
 			} else if (! my title || my title [0] == U'-') {
 				/*
@@ -725,12 +726,12 @@ void praat_actions_show () {
 				if (my depth == 0 || ! currentSubmenu1) {
 					currentSubmenu1 = GuiMenu_createInForm (praat_form,
 						BUTTON_LEFT, BUTTON_RIGHT, y, y + Gui_PUSHBUTTON_HEIGHT,
-						my title.get(), 0
+						my added ? Melder_cat (U"\u207A", my title.get()) : my title.get(), 0
 					);
 					y += Gui_PUSHBUTTON_HEIGHT + BUTTON_VSPACING;
 					my button = currentSubmenu1 -> d_cascadeButton.get();
 				} else {
-					currentSubmenu2 = GuiMenu_createInMenu (currentSubmenu1, my title.get(), 0);
+					currentSubmenu2 = GuiMenu_createInMenu (currentSubmenu1, my added ? Melder_cat (U"\u207A", my title.get()) : my title.get(), 0);
 					my button = currentSubmenu2 -> d_menuItem.get();
 				}
 				GuiThing_show (my button);
@@ -803,7 +804,7 @@ Praat_Command praat_doAction (conststring32 title, conststring32 arguments, Inte
 		return nullptr;
 	if (actionFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = actionFound -> script.get();
-		const conststring32 preferencesFolderPath = Melder_dirToPath (& Melder_preferencesFolder);
+		const conststring32 preferencesFolderPath = Melder_folderToPath (& Melder_preferencesFolder);
 		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
@@ -833,7 +834,7 @@ Praat_Command praat_doAction (conststring32 title, integer narg, Stackel args, I
 		return nullptr;
 	if (actionFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = actionFound -> script.get();
-		const conststring32 preferencesFolderPath = Melder_dirToPath (& Melder_preferencesFolder);
+		const conststring32 preferencesFolderPath = Melder_folderToPath (& Melder_preferencesFolder);
 		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",

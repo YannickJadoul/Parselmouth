@@ -1,6 +1,6 @@
 /* oo_DESTROY.h
  *
- * Copyright (C) 1994-2007,2009-2020,2022,2023 Paul Boersma
+ * Copyright (C) 1994-2007,2009-2020,2022-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,9 +85,13 @@
 
 #define oo_COLLECTION(Class, x, ItemClass, version)
 
-#define oo_FILE(x)
+#define oo_TRANSIENT_FILE(x)
 
-#define oo_DIR(x)
+#define oo_TRANSIENT_FOLDER(x)
+
+#define oo_UNSAFE_BORROWED_TRANSIENT_CONST_OBJECT_REFERENCE(Class, x)
+
+#define oo_UNSAFE_BORROWED_TRANSIENT_MUTABLE_OBJECT_REFERENCE(Class, x)
 
 #define oo_DEFINE_STRUCT(Struct)  \
 	void struct##Struct :: destroy () { \

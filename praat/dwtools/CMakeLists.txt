@@ -10,7 +10,7 @@ target_sources(praat PRIVATE
 	DataModeler.cpp Distance.cpp
 	DTW.cpp DTW_and_TextGrid.cpp
 	Discriminant.cpp Discriminant_PatternList_Categories.cpp
-	Electroglottogram.cpp EditDistanceTable.cpp EEG_extensions.cpp
+	EditDistanceTable.cpp EEG_extensions.cpp
 	Eigen_and_Matrix.cpp Eigen_and_Procrustes.cpp
 	Eigen_and_TableOfReal.cpp
 	Eigen_and_SSCP.cpp Excitations.cpp
@@ -35,6 +35,7 @@ target_sources(praat PRIVATE
 	Polygon_extensions.cpp Procrustes.cpp
 	Proximity.cpp Proximity_and_Distance.cpp
 	Resonator.cpp Roots_to_Spectrum.cpp
+	SampledToSampledWorkspace.cpp SoundToSampledWorkspace.cpp
 	Sound_and_MultiSampledSpectrogram.cpp Sound_and_MixingMatrix.cpp
 	Sound_and_Spectrum_dft.cpp
 	Sound_and_Spectrogram_extensions.cpp Sound_and_PCA.cpp

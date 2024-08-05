@@ -24,7 +24,7 @@
 #include "Matrix.h"
 #include "Sound_to_Formant.h"
 #include "Sound_and_LPC.h"
-#include "Sound.h"
+#include "Sound_extensions.h"
 #include "Sound_and_LPC_robust.h"
 #include "TextGrid_extensions.h"
 
@@ -102,7 +102,7 @@ conststring32 structFormantPath :: v_getUnitText (integer /*level*/, int /*unit*
 Thing_implement (FormantPath, Sampled, 1);   // version 0: INTVEC path; version 1: TextGrid path
 
 
-MelderIntegerRange FormantPath_getPathTierIndicesRange (FormantPath me, double tmin, double tmax) {
+static MelderIntegerRange FormantPath_getPathTierIndicesRange (FormantPath me, double tmin, double tmax) {
 	Melder_assert (tmin < tmax);
 	MelderIntegerRange range = {1, 1};
 	IntervalTier intervalTier = static_cast <IntervalTier> (my path -> tiers -> at [1]);
@@ -284,6 +284,17 @@ autoFormant FormantPath_extractFormant (FormantPath me) {
 	return thee;
 }
 
+static autoVEC getCeilings (double middleCeiling, double stepSize, integer numberOfStepsUpDown) {
+	const integer numberOfCeilings = 2 * numberOfStepsUpDown + 1, mid = numberOfStepsUpDown + 1;
+	autoVEC ceilings = raw_VEC (numberOfCeilings);
+	for (integer istep = 1; istep <= numberOfStepsUpDown; istep ++) {
+		ceilings [mid + istep] = middleCeiling * exp (  stepSize * istep);
+		ceilings [mid - istep] = middleCeiling * exp (- stepSize * istep);
+	}
+	ceilings [mid] = middleCeiling;
+	return ceilings;
+}
+
 autoFormantPath Sound_to_FormantPath_any (Sound me, kLPC_Analysis lpcType, double timeStep, double maximumNumberOfFormants,
 	double middleCeiling, double analysisWidth, double preemphasisFrequency, double ceilingStepSize, 
 	integer numberOfStepsUpDown, double marple_tol1, double marple_tol2, double huber_numberOfStdDev, double huber_tol,
@@ -294,52 +305,63 @@ autoFormantPath Sound_to_FormantPath_any (Sound me, kLPC_Analysis lpcType, doubl
 			U"The timeStep needs to greater than zero seconds.");
 		Melder_require (ceilingStepSize > 0.0,
 			U"The ceiling step size should larger than 0.0.");
+		autoVEC ceilings = getCeilings (middleCeiling, ceilingStepSize, numberOfStepsUpDown);
+		const integer numberOfCandidates = ceilings.size;
+		const double maximumCeiling = ceilings [numberOfCandidates];
 		const double nyquistFrequency = 0.5 / my dx;
-		const integer numberOfCandidates = 2 * numberOfStepsUpDown + 1;
-		const double maximumCeiling = middleCeiling *  exp (ceilingStepSize * numberOfStepsUpDown);
 		Melder_require (maximumCeiling <= nyquistFrequency,
-			U"The maximum ceiling should be smaller than ", nyquistFrequency, U" Hz. "
+			U"The calculated maximum ceiling is higher than the Nyquist frequency of the sound (", nyquistFrequency, U" Hz). "
 			"Decrease the 'ceiling step size' or the 'number of steps' or both.");
-		volatile double windowDuration = 2.0 * analysisWidth;
-		if (windowDuration > my dx * my nx)
-			windowDuration = my dx * my nx;
+		volatile const double physicalAnalysisWidth = Melder_clippedRight (2.0 * analysisWidth, my dx * my nx);
+		/*
+			If the resampled sound with the lowest sampling frequency passes the minimal duration tests then all will.
+		*/
+		const double samplingFrequencyLowest = 2.0 * ceilings [1], dxLowest = 1.0 / samplingFrequencyLowest;
+		const integer nxLowest = Melder_iroundDown (my dx * my nx / dxLowest);
+		const integer predictionOrder = Melder_iround (2.0 * maximumNumberOfFormants);
+		
+		checkLPCAnalysisParameters_e (dxLowest, nxLowest, physicalAnalysisWidth, predictionOrder);
+		
 		/*
 			Get the data for the LPC from the resampled sound with 'middleCeiling' as maximum frequency
 			to make the sampling exactly equal as if performed with a standard LPC analysis.
 		*/
 		integer numberOfFrames;
 		double t1;
-		autoSound midCeiling = Sound_resample (me, 2.0 * middleCeiling, 50);
-		Sampled_shortTermAnalysis (midCeiling.get(), windowDuration, timeStep, & numberOfFrames, & t1); // Gaussian window
-		const integer predictionOrder = Melder_iround (2.0 * maximumNumberOfFormants);
+		autoSound midCeiling = Sound_resampleAndOrPreemphasize (me, 2.0 * middleCeiling, 50, preemphasisFrequency);
+		Sampled_shortTermAnalysis (midCeiling.get(), physicalAnalysisWidth, timeStep, & numberOfFrames, & t1); // Gaussian window
 		autoFormantPath thee = FormantPath_create (my xmin, my xmax, numberOfFrames, timeStep, t1, numberOfCandidates);
 		autoSound multiChannelSound;
 		if (out_sourcesMultiChannel)
 			multiChannelSound = Sound_create (numberOfCandidates, midCeiling -> xmin, midCeiling -> xmax, midCeiling -> nx, midCeiling -> dx, midCeiling -> x1);
 		const double formantSafetyMargin = 50.0;
-		thy ceilings [numberOfStepsUpDown + 1] = middleCeiling;
+		thy ceilings = ceilings.move();
 		for (integer candidate  = 1; candidate <= numberOfCandidates; candidate ++) {
 			autoFormant formant;
-			if (candidate <= numberOfStepsUpDown)
-				thy ceilings [candidate] = middleCeiling * exp (-ceilingStepSize * (numberOfStepsUpDown - candidate + 1));
-			else if (candidate > numberOfStepsUpDown + 1)
-				thy ceilings [candidate] = middleCeiling * exp ( ceilingStepSize * (candidate - numberOfStepsUpDown - 1));
-			autoSound resampled;
+			autoSound resampledAndPreemphasized;
 			if (candidate != numberOfStepsUpDown + 1)
-				resampled = Sound_resample (me, 2.0 * thy ceilings [candidate], 50);
+				resampledAndPreemphasized = Sound_resampleAndOrPreemphasize (me, 2.0 * thy ceilings [candidate], 50, preemphasisFrequency);
 			else 
-				resampled = midCeiling.move();
-			autoLPC lpc = LPC_create (my xmin, my xmax, numberOfFrames, timeStep, t1, predictionOrder, resampled -> dx);
-			if (lpcType != kLPC_Analysis::ROBUST) {
-				Sound_into_LPC (resampled.get(), lpc.get(), analysisWidth, preemphasisFrequency, lpcType, marple_tol1, marple_tol2);
-			} else {
-				Sound_into_LPC (resampled.get(), lpc.get(), analysisWidth, preemphasisFrequency, kLPC_Analysis::AUTOCORRELATION, marple_tol1, marple_tol2);
-				lpc = LPC_Sound_to_LPC_robust (lpc.get(), resampled.get(), analysisWidth, preemphasisFrequency, huber_numberOfStdDev, huber_maximumNumberOfIterations, huber_tol, true);
+				resampledAndPreemphasized = midCeiling.move();
+			autoLPC lpc = LPC_create (my xmin, my xmax, numberOfFrames, timeStep, t1, predictionOrder, resampledAndPreemphasized -> dx);
+			if (lpcType == kLPC_Analysis::BURG) {
+				Sound_into_LPC_burg (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
+			} else if (lpcType == kLPC_Analysis::AUTOCORRELATION) {
+				Sound_into_LPC_autocorrelation (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
+			} else if (lpcType == kLPC_Analysis::COVARIANCE) {
+				Sound_into_LPC_covariance (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
+			} else if (lpcType == kLPC_Analysis::MARPLE) {
+				Sound_into_LPC_marple (resampledAndPreemphasized.get(), lpc.get(), analysisWidth, marple_tol1, marple_tol2);
+			} else if (lpcType == kLPC_Analysis::ROBUST) {
+				Sound_into_LPC_autocorrelation (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
+				lpc = LPC_and_Sound_to_LPC_robust (lpc.get(), resampledAndPreemphasized.get(), analysisWidth, preemphasisFrequency, 
+					huber_numberOfStdDev, huber_maximumNumberOfIterations, huber_tol, true);
 			}
 			formant = LPC_to_Formant (lpc.get(), formantSafetyMargin);
 			thy formantCandidates . addItem_move (formant.move());
 			if (out_sourcesMultiChannel) {
-				autoSound source = LPC_Sound_filterInverse (lpc.get(), resampled.get ());
+				// TODO 20240625 is this still correct because we have already pre-emphasized the sound??
+				autoSound source = LPC_Sound_filterInverse (lpc.get(), resampledAndPreemphasized.get ());
 				autoSound source_resampled = Sound_resample (source.get(), 2.0 * middleCeiling, 50);
 				const integer numberOfSamples = std::min (midCeiling -> nx, source_resampled -> nx);
 				multiChannelSound -> z.row (candidate).part (1, numberOfSamples)  <<=  source_resampled -> z.row (1).part (1, numberOfSamples);
@@ -503,7 +525,8 @@ void FormantPath_setOptimalPath (FormantPath me, double tmin, double tmax, const
 }
 
 autoTable FormantPath_downTo_Table_stresses (FormantPath me, double tmin, double tmax, constINTVEC const& parameters,
-	double powerf, integer numberOfStressDecimals, bool includeIntervalTimes, integer numberOfTimeDecimals) {
+	double powerf, integer numberOfStressDecimals, bool includeIntervalTimes, integer numberOfTimeDecimals)
+{
 	try {
 		autoVEC stresses = FormantPath_getStressOfCandidates (me, tmin, tmax, 0, 0, parameters, powerf);
 		const integer numberOfCandidates = my formantCandidates.size;
@@ -511,26 +534,26 @@ autoTable FormantPath_downTo_Table_stresses (FormantPath me, double tmin, double
 		autoTable thee = Table_createWithoutColumnNames (numberOfCandidates, includeIntervalTimes + 1 + includeIntervalTimes + numberOfFormantsInFit + numberOfFormantsInFit - 1);
 		integer icol = 0;
 		if (includeIntervalTimes) {
-			Table_setColumnLabel (thee.get(), 1, U"Start(s)");
-			Table_setColumnLabel (thee.get(), 2, U"End(s)");
+			Table_renameColumn_e (thee.get(), 1, U"Start(s)");
+			Table_renameColumn_e (thee.get(), 2, U"End(s)");
 			for (integer irow = 1; irow <= numberOfCandidates; irow ++) {
 				Table_setStringValue (thee.get(), irow, 1, Melder_fixed (tmin, numberOfTimeDecimals));	
 				Table_setStringValue (thee.get(), irow, 2, Melder_fixed (tmax, numberOfTimeDecimals));	
 			}
 			icol = 2;
 		}
-		Table_setColumnLabel (thee.get(), ++ icol, U"Ceiling(Hz)");
+		Table_renameColumn_e (thee.get(), ++ icol, U"Ceiling(Hz)");
 		for (integer irow = 1; irow <= numberOfCandidates; irow ++)
 				Table_setStringValue (thee.get(), irow, icol, Melder_fixed (my ceilings [irow], 1));
 		
 		for (integer iformant = 1; iformant <= numberOfFormantsInFit; iformant ++) {
-			Table_setColumnLabel (thee.get(), ++ icol, Melder_cat (U"Stress", iformant));
+			Table_renameColumn_e (thee.get(), ++ icol, Melder_cat (U"Stress", iformant));
 			autoVEC stresses_fi = FormantPath_getStressOfCandidates (me, tmin, tmax, iformant, iformant, parameters, powerf);
 			for (integer irow = 1; irow <= numberOfCandidates; irow ++)
 				Table_setStringValue (thee.get(), irow, icol, Melder_fixed (stresses_fi [irow], numberOfStressDecimals));
 		}
 		for (integer iformant = 2; iformant <= numberOfFormantsInFit; iformant ++) {
-			Table_setColumnLabel (thee.get(), ++ icol, Melder_cat (U"Stress", 1, iformant));
+			Table_renameColumn_e (thee.get(), ++ icol, Melder_cat (U"Stress", 1, iformant));
 			autoVEC stresses_fij = FormantPath_getStressOfCandidates (me, tmin, tmax, 1, iformant, parameters, powerf);
 			for (integer irow = 1; irow <= numberOfCandidates; irow ++)
 				Table_setStringValue (thee.get(), irow, icol, Melder_fixed (stresses_fij [irow], numberOfStressDecimals));

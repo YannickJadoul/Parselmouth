@@ -2,7 +2,7 @@
 #define _oo_h_
 /* oo.h
  *
- * Copyright (C) 1994-2013,2015-2020,2022,2023 Paul Boersma
+ * Copyright (C) 1994-2013,2015-2020,2022-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -148,8 +148,10 @@
 #define oo_OBJECT(Class,version,x)  auto##Class x;
 #define oo_COLLECTION_OF(Class,x,ItemClass,version)  Class<struct##ItemClass> x;
 #define oo_COLLECTION(Class,x,ItemClass,version)  auto##Class x;
-#define oo_FILE(x)  structMelderFile x;
-#define oo_DIR(x)  structMelderDir x;
+#define oo_TRANSIENT_FILE(x)  structMelderFile x;
+#define oo_TRANSIENT_FOLDER(x)  structMelderFolder x;
+#define oo_UNSAFE_BORROWED_TRANSIENT_CONST_OBJECT_REFERENCE(Class,x)  const##Class x;
+#define oo_UNSAFE_BORROWED_TRANSIENT_MUTABLE_OBJECT_REFERENCE(Class,x)  mutable##Class x;
 
 /* Struct and class definitions. */
 
@@ -172,6 +174,7 @@
 
 #define oo_DEFINE_CLASS(klas,parent) \
 	typedef struct struct##klas *klas; \
+	typedef struct struct##klas *mutable##klas; \
 	typedef const struct struct##klas *const##klas; \
 	typedef autoSomeThing <struct##klas> auto##klas; \
 	typedef struct##parent klas##_Parent; \

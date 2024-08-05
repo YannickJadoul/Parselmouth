@@ -1,6 +1,6 @@
 /* oo_WRITE_TEXT.h
  *
- * Copyright (C) 1994-2005,2007-2009,2011-2020 Paul Boersma
+ * Copyright (C) 1994-2005,2007-2009,2011-2020,2022,2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -132,9 +132,13 @@
 		} \
 	}
 
-#define oo_FILE(x)
+#define oo_TRANSIENT_FILE(x)
 
-#define oo_DIR(x)
+#define oo_TRANSIENT_FOLDER(x)
+
+#define oo_UNSAFE_BORROWED_TRANSIENT_CONST_OBJECT_REFERENCE(Class, x)
+
+#define oo_UNSAFE_BORROWED_TRANSIENT_MUTABLE_OBJECT_REFERENCE(Class, x)
 
 #define oo_DEFINE_STRUCT(Type)  \
 	void struct##Type :: writeText (MelderFile _file_) {

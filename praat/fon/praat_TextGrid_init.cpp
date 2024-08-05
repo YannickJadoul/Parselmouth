@@ -1,6 +1,6 @@
 /* praat_TextGrid_init.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,14 +18,16 @@
 
 #include "Pitch_AnyTier_to_PitchTier.h"
 #include "SpectrumEditor.h"
+#include "SpeechSynthesizer.h"
 #include "SpellingChecker.h"
+#include "Strings_extensions.h"
 #include "TextGridEditor.h"
 #include "TextGrid_extensions.h"
 #include "TextGrid_Sound.h"
 #include "WordList.h"
 
 #include "praat_TimeTier.h"
-#include "praat_uvafon.h"
+#include "praat_uvafon_init.h"
 
 static const conststring32 STRING_FROM_FREQUENCY_HZ = U"left Frequency range (Hz)";
 static const conststring32 STRING_TO_FREQUENCY_HZ = U"right Frequency range (Hz)";
@@ -205,7 +207,7 @@ DO
 FORM (GRAPHICS_TextGrid_Pitch_drawSemitones, U"TextGrid & Pitch: Draw semitones", nullptr) {
 	INTEGER (tierNumber, STRING_TIER_NUMBER, U"1")
 	praat_TimeFunction_RANGE (fromTime, toTime)
-	LABEL (U"Range in semitones re 100 hertz:")
+	COMMENT (U"Range in semitones re 100 hertz:")
 	REAL (fromFrequency, U"left Frequency range (st)", U"-12.0")
 	REAL (toFrequency, U"right Frequency range (st)", U"30.0")
 	POSITIVE (fontSize, U"Font size (points)", U"18")
@@ -282,7 +284,7 @@ DO
 
 FORM (GRAPHICS_TextGrid_Pitch_drawSeparatelySemitones, U"TextGrid & Pitch: Draw separately semitones", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
-	LABEL (U"Range in semitones re 100 hertz:")
+	COMMENT (U"Range in semitones re 100 hertz:")
 	REAL (fromFrequency, U"left Frequency range (st)", U"-12.0")
 	REAL (toFrequency, U"right Frequency range (st)", U"30.0")
 	BOOLEAN (showBoundaries, U"Show boundaries", true)
@@ -363,7 +365,7 @@ DO
 FORM (GRAPHICS_TextGrid_Pitch_speckleSemitones, U"TextGrid & Pitch: Speckle semitones", nullptr) {
 	INTEGER (tierNumber, STRING_TIER_NUMBER, U"1")
 	praat_TimeFunction_RANGE (fromTime, toTime)
-	LABEL (U"Range in semitones re 100 hertz:")
+	COMMENT (U"Range in semitones re 100 hertz:")
 	REAL (fromFrequency, U"left Frequency range (st)", U"-12.0")
 	REAL (toFrequency, U"right Frequency range (st)", U"30.0")
 	BOOLEAN (showBoundaries, U"Show boundaries", true)
@@ -439,7 +441,7 @@ DO
 
 FORM (GRAPHICS_TextGrid_Pitch_speckleSeparatelySemitones, U"TextGrid & Pitch: Speckle separately semitones", nullptr) {
 	praat_TimeFunction_RANGE (fromTime, toTime)
-	LABEL (U"Range in semitones re 100 hertz:")
+	COMMENT (U"Range in semitones re 100 hertz:")
 	REAL (fromFrequency, U"left Frequency range (st)", U"-12.0")
 	REAL (toFrequency, U"right Frequency range (st)", U"30.0")
 	BOOLEAN (showBoundaries, U"Show boundaries", true)
@@ -531,6 +533,21 @@ DO
 	CONVERT_ONE_AND_ONE_TO_ONE_END (U"dummy")
 }
 
+FORM (MODIFY_TextGrid_Sound_alignInterval, U"TextGrid & Sound: Align interval", nullptr) {
+	INTEGER (tierNumber, STRING_TIER_NUMBER, U"1")
+	NATURAL (intervalNumber, STRING_INTERVAL_NUMBER, U"1")
+	OPTIONMENUSTR (language, U"Language", (int) Strings_findString (espeakdata_languages_names.get(), U"English (Great Britain)"))
+	for (integer i = 1; i <= espeakdata_languages_names -> numberOfStrings; i ++)
+		OPTION ((conststring32) espeakdata_languages_names -> strings [i].get());
+	BOOLEAN (includeWords,    U"Include words",    true)
+	BOOLEAN (includePhonemes, U"Include phonemes", true)
+	OK
+DO
+	MODIFY_FIRST_OF_ONE_AND_ONE (TextGrid, Sound)
+		TextGrid_anySound_alignInterval (me, you, tierNumber, intervalNumber, language, includeWords, includePhonemes);
+	MODIFY_FIRST_OF_ONE_AND_ONE_END
+}
+
 DIRECT (MODIFY_TextGrid_Sound_scaleTimes) {
 	MODIFY_FIRST_OF_ONE_AND_ONE (TextGrid, Sound)
 		Function_scaleXTo (me, your xmin, your xmax);
@@ -557,19 +574,19 @@ DO
 }
 
 FORM (WINDOW_SpellingChecker_viewAndEdit, U"Edit spelling checker", U"SpellingChecker") {
-	LABEL (U"-- Syntax --")
+	COMMENT (U"-- Syntax --")
 	SENTENCE (forbiddenStrings, U"Forbidden strings", U"")
 	BOOLEAN (checkMatchingParentheses, U"Check matching parentheses", false)
 	SENTENCE (separatingCharacters, U"Separating characters", U"")
 	BOOLEAN (allowAllParenthesized, U"Allow all parenthesized", false)
-	LABEL (U"-- Capitals --")
+	COMMENT (U"-- Capitals --")
 	BOOLEAN (allowAllNames, U"Allow all names", false)
 	SENTENCE (namePrefixes, U"Name prefixes", U"")
 	BOOLEAN (allowAllAbbreviations, U"Allow all abbreviations", false)
-	LABEL (U"-- Capitalization --")
+	COMMENT (U"-- Capitalization --")
 	BOOLEAN (allowCapsSentenceInitially, U"Allow caps sentence-initially", false)
 	BOOLEAN (allowCapsAfterColon, U"Allow caps after colon", false)
-	LABEL (U"-- Word parts --")
+	COMMENT (U"-- Word parts --")
 	SENTENCE (allowAllWordsContaining, U"Allow all words containing", U"")
 	SENTENCE (allowAllWordsStartingWith, U"Allow all words starting with", U"")
 	SENTENCE (allowAllWordsEndingIn, U"Allow all words ending in", U"")
@@ -1562,8 +1579,8 @@ void praat_uvafon_TextGrid_init () {
 
 	structTextGridEditor :: f_preferences ();
 
-	praat_addAction1 (classIntervalTier, 1, U"Save as Xwaves label file...", nullptr, 0, SAVE_IntervalTier_writeToXwaves);
-	praat_addAction1 (classIntervalTier, 1,   U"Write to Xwaves label file...", nullptr, GuiMenu_DEPRECATED_2011, SAVE_IntervalTier_writeToXwaves);
+	praat_addAction1 (classIntervalTier, 1, U"Save as Xwaves label file... || Write to Xwaves label file...", nullptr, 0, SAVE_IntervalTier_writeToXwaves);
+			// alternative COMPATIBILITY <= 2011
 	praat_addAction1 (classIntervalTier, 0, U"IntervalTier help", nullptr, 0, HELP_IntervalTier_help);
 	praat_addAction1 (classIntervalTier, 0, U"Collect", nullptr, 0, nullptr);
 	praat_addAction1 (classIntervalTier, 0, U"Into TextGrid", nullptr, 0, NEW1_AnyTier_into_TextGrid);
@@ -1577,8 +1594,8 @@ void praat_uvafon_TextGrid_init () {
 
 	praat_addAction1 (classLabel, 0, U"& Sound: To TextGrid?", nullptr, 0, HINT_Label_Sound_to_TextGrid);
 
-	praat_addAction1 (classSpellingChecker, 1, U"View & Edit...", nullptr, GuiMenu_ATTRACTIVE, WINDOW_SpellingChecker_viewAndEdit);
-	praat_addAction1 (classSpellingChecker, 1,   U"Edit...", U"*View & Edit...", GuiMenu_DEPRECATED_2011, WINDOW_SpellingChecker_viewAndEdit);
+	praat_addAction1 (classSpellingChecker, 1, U"View & Edit... || Edit...", nullptr, GuiMenu_ATTRACTIVE, WINDOW_SpellingChecker_viewAndEdit);
+			// alternative COMPATIBILITY <= 2011
 	praat_addAction1 (classSpellingChecker, 0, U"Query", nullptr, 0, nullptr);
 	praat_addAction1 (classSpellingChecker, 1, U"Is word allowed...", nullptr, 0, BOOLEAN_SpellingChecker_isWordAllowed);
 	praat_addAction1 (classSpellingChecker, 1, U"Next not allowed word...", nullptr, 0, STRING_SpellingChecker_nextNotAllowedWord);
@@ -1591,9 +1608,8 @@ void praat_uvafon_TextGrid_init () {
 	praat_addAction1 (classTextGrid, 1, U"Save as chronological text file...", nullptr, 0, SAVE_TextGrid_writeToChronologicalTextFile);
 	praat_addAction1 (classTextGrid, 1,   U"Write to chronological text file...", nullptr, GuiMenu_HIDDEN, SAVE_TextGrid_writeToChronologicalTextFile);
 	praat_addAction1 (classTextGrid, 0, U"TextGrid help", nullptr, 0, HELP_TextGrid_help);
-	praat_addAction1 (classTextGrid, 1, U"View & Edit alone", nullptr, 0, EDITOR_ONE_WITH_ONE_TextGrid_viewAndEdit);
-	praat_addAction1 (classTextGrid, 1,   U"View & Edit", U"*View & Edit alone", GuiMenu_DEPRECATED_2011, EDITOR_ONE_WITH_ONE_TextGrid_viewAndEdit);
-	praat_addAction1 (classTextGrid, 1,   U"Edit", U"*View & Edit alone", GuiMenu_DEPRECATED_2011, EDITOR_ONE_WITH_ONE_TextGrid_viewAndEdit);
+	praat_addAction1 (classTextGrid, 1, U"View & Edit alone || View & Edit || Edit", nullptr, 0, EDITOR_ONE_WITH_ONE_TextGrid_viewAndEdit);
+			// alternative COMPATIBILITY <= 2011
 	praat_addAction1 (classTextGrid, 1, U"View & Edit with Sound?", nullptr, GuiMenu_ATTRACTIVE | GuiMenu_NO_API, HINT_TextGrid_Sound_viewAndEdit);
 	praat_addAction1 (classTextGrid, 0, U"Draw -", nullptr, 0, nullptr);
 	praat_addAction1 (classTextGrid, 0, U"Draw...", nullptr, 1, GRAPHICS_TextGrid_draw);
@@ -1612,11 +1628,10 @@ void praat_uvafon_TextGrid_init () {
 		praat_addAction1 (classTextGrid, 1, U"-- query tier --", nullptr, 1, nullptr);
 		praat_addAction1 (classTextGrid, 1, U"Query interval tier", nullptr, 1, nullptr);
 			praat_addAction1 (classTextGrid, 1, U"Get number of intervals...", nullptr, GuiMenu_DEPTH_2, INTEGER_TextGrid_getNumberOfIntervals);
-			praat_addAction1 (classTextGrid, 1, U"Get start time of interval...", nullptr, GuiMenu_DEPTH_2, REAL_TextGrid_getStartTimeOfInterval);
-			praat_addAction1 (classTextGrid, 1,   U"Get starting point...", U"*Get start time of interval...", GuiMenu_DEPTH_2 | GuiMenu_DEPRECATED_2016, REAL_TextGrid_getStartTimeOfInterval);
-			praat_addAction1 (classTextGrid, 1,   U"Get start point...", U"*Get start time of interval...", GuiMenu_DEPTH_2 | GuiMenu_DEPRECATED_2016, REAL_TextGrid_getStartTimeOfInterval);
-			praat_addAction1 (classTextGrid, 1, U"Get end time of interval...", nullptr, GuiMenu_DEPTH_2, REAL_TextGrid_getEndTimeOfInterval);
-			praat_addAction1 (classTextGrid, 1,   U"Get end point...", U"*Get end time of interval...", GuiMenu_DEPTH_2 | GuiMenu_DEPRECATED_2016, REAL_TextGrid_getEndTimeOfInterval);
+			praat_addAction1 (classTextGrid, 1, U"Get start time of interval... || Get starting point... || Get start point...", nullptr, GuiMenu_DEPTH_2,
+					REAL_TextGrid_getStartTimeOfInterval);   // alternatives COMPATIBLITY < 2016
+			praat_addAction1 (classTextGrid, 1, U"Get end time of interval... || Get end point...", nullptr, GuiMenu_DEPTH_2,
+					REAL_TextGrid_getEndTimeOfInterval);   // alternatives COMPATIBLITY < 2016
 			praat_addAction1 (classTextGrid, 1, U"Get label of interval...", nullptr, GuiMenu_DEPTH_2, STRING_TextGrid_getLabelOfInterval);
 			praat_addAction1 (classTextGrid, 1, U"-- query interval from time --", nullptr, GuiMenu_DEPTH_2, nullptr);
 			praat_addAction1 (classTextGrid, 1, U"Get interval at time...", nullptr, 2, INTEGER_TextGrid_getIntervalAtTime);
@@ -1638,6 +1653,7 @@ void praat_uvafon_TextGrid_init () {
 			praat_addAction1 (classTextGrid, 1, U"Count points where...", nullptr, 2, INTEGER_TextGrid_countPointsWhere);
 		praat_addAction1 (classTextGrid, 1, U"-- query labels --", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2015, nullptr);
 		praat_addAction1 (classTextGrid, 1, U"Count labels...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2015, INTEGER_TextGrid_countLabels);
+				// replace with Count intervals where... or Count points where...
 	praat_addAction1 (classTextGrid, 0, U"Modify -", nullptr, 0, nullptr);
 		praat_addAction1 (classTextGrid, 0, U"Convert to backslash trigraphs", nullptr, 1, MODIFY_TextGrid_convertToBackslashTrigraphs);
 		praat_addAction1 (classTextGrid, 0, U"Convert to Unicode", nullptr, 1, MODIFY_TextGrid_convertToUnicode);
@@ -1661,7 +1677,8 @@ void praat_uvafon_TextGrid_init () {
 			praat_addAction1 (classTextGrid, 0, U"Set point text...", nullptr, 2, MODIFY_TextGrid_setPointText);
 praat_addAction1 (classTextGrid, 0, U"Analyse", nullptr, 0, nullptr);
 	praat_addAction1 (classTextGrid, 0, U"Extract one tier...", nullptr, 0, NEW1_TextGrid_extractOneTier);
-	praat_addAction1 (classTextGrid, 0,   U"Extract tier...", U"*Extract one tier...", GuiMenu_DEPRECATED_2010, NEW1_TextGrid_extractTier);
+	praat_addAction1 (classTextGrid, 0,   U"Extract tier...", nullptr, GuiMenu_DEPRECATED_2010,
+			NEW1_TextGrid_extractTier);   // replace imprecisely with Extract one tier...
 	praat_addAction1 (classTextGrid, 0, U"Extract part...", nullptr, 0, NEW_TextGrid_extractPart);
 	praat_addAction1 (classTextGrid, 0, U"Analyse interval tier -", nullptr, 0, nullptr);
 		praat_addAction1 (classTextGrid, 0, U"Get starting points...", nullptr, 1, NEW_TextGrid_getStartingPoints);
@@ -1703,8 +1720,8 @@ praat_addAction1 (classTextGrid, 0, U"Synthesize", nullptr, 0, nullptr);
 	praat_addAction2 (classIntervalTier, 0, classTextTier, 0, U"Collect", nullptr, 0, nullptr);
 	praat_addAction2 (classIntervalTier, 0, classTextTier, 0, U"Into TextGrid", nullptr, 0, NEW1_AnyTier_into_TextGrid);
 	praat_addAction2 (classLabel, 1, classSound, 1, U"To TextGrid", nullptr, 0, NEW1_Label_Sound_to_TextGrid);
-	praat_addAction2 (classLongSound, 1, classTextGrid, 1, U"View & Edit", nullptr, GuiMenu_ATTRACTIVE, WINDOW_TextGrid_LongSound_viewAndEdit);
-	praat_addAction2 (classLongSound, 1, classTextGrid, 1,   U"Edit", U"*View & Edit", GuiMenu_DEPRECATED_2011, WINDOW_TextGrid_LongSound_viewAndEdit);
+	praat_addAction2 (classLongSound, 1, classTextGrid, 1, U"View & Edit || Edit", nullptr, GuiMenu_ATTRACTIVE,
+			WINDOW_TextGrid_LongSound_viewAndEdit);   // alternative COMPATIBILITY <= 2011
 	praat_addAction2 (classLongSound, 1, classTextGrid, 1, U"Scale times", nullptr, 0, MODIFY_TextGrid_LongSound_scaleTimes);
 	praat_addAction2 (classPitch, 1, classTextGrid, 1, U"Draw -", nullptr, 0, nullptr);
 	praat_addAction2 (classPitch, 1, classTextGrid, 1, U"Draw...", nullptr, 1, GRAPHICS_TextGrid_Pitch_draw);
@@ -1729,31 +1746,34 @@ praat_addAction1 (classTextGrid, 0, U"Synthesize", nullptr, 0, nullptr);
 	praat_addAction2 (classPitch, 1, classTextGrid, 1, U"Speckle separately (mel)...", nullptr, 1, GRAPHICS_TextGrid_Pitch_speckleSeparatelyMel);
 	praat_addAction2 (classPitch, 1, classTextGrid, 1, U"Speckle separately (erb)...", nullptr, 1, GRAPHICS_TextGrid_Pitch_speckleSeparatelyErb);
 	praat_addAction2 (classPitch, 1, classTextTier, 1, U"To PitchTier...", nullptr, 0, NEW1_Pitch_TextTier_to_PitchTier);
-	praat_addAction2 (classSound, 1, classTextGrid, 1, U"View & Edit", nullptr, GuiMenu_ATTRACTIVE, EDITOR_ONE_WITH_ONE_TextGrid_viewAndEdit);
-	praat_addAction2 (classSound, 1, classTextGrid, 1,   U"Edit", U"*View & Edit", GuiMenu_DEPRECATED_2011, EDITOR_ONE_WITH_ONE_TextGrid_viewAndEdit);
+	praat_addAction2 (classSound, 1, classTextGrid, 1, U"View & Edit || Edit", nullptr, GuiMenu_ATTRACTIVE,
+			EDITOR_ONE_WITH_ONE_TextGrid_viewAndEdit);   // alternative COMPATIBILITY <= 2011
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"View & Edit with callback...", nullptr, GuiMenu_HIDDEN, EDITOR_ONE_WITH_ONE_TextGrid_viewAndEditWithCallback);
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Draw...", nullptr, 0, GRAPHICS_TextGrid_Sound_draw);
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Extract -", nullptr, 0, nullptr);
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Extract all intervals...", nullptr, GuiMenu_DEPTH_1, NEW1_TextGrid_Sound_extractAllIntervals);
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Extract non-empty intervals...", nullptr, GuiMenu_DEPTH_1, NEW1_TextGrid_Sound_extractNonemptyIntervals);
-	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Extract intervals where...", nullptr, GuiMenu_DEPTH_1, NEW1_TextGrid_Sound_extractIntervalsWhere);
-	praat_addAction2 (classSound, 1, classTextGrid, 1,   U"Extract intervals...", U"*Extract intervals where...", GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2005, NEW1_TextGrid_Sound_extractIntervals);
+	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Extract intervals where...", nullptr, GuiMenu_DEPTH_1,
+			NEW1_TextGrid_Sound_extractIntervalsWhere);
+	praat_addAction2 (classSound, 1, classTextGrid, 1,   U"Extract intervals...", nullptr, GuiMenu_DEPTH_1 | GuiMenu_DEPRECATED_2005,
+			NEW1_TextGrid_Sound_extractIntervals);   // replace with Extract intervals where: arg1, arg2, "is equal to", arg3
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Modify TextGrid", nullptr, 0, nullptr);
+	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Align interval...", nullptr, 0, MODIFY_TextGrid_Sound_alignInterval);
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Scale times", nullptr, 0, MODIFY_TextGrid_Sound_scaleTimes);
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Modify Sound", nullptr, 0, nullptr);
 	praat_addAction2 (classSound, 1, classTextGrid, 1, U"Clone time domain", nullptr, 0, MODIFY_TextGrid_Sound_cloneTimeDomain);
 	praat_addAction2 (classSpellingChecker, 1, classWordList, 1, U"Replace WordList", nullptr, 0, MODIFY_SpellingChecker_replaceWordList);
 	praat_addAction2 (classSpellingChecker, 1, classStringSet, 1, U"Replace user dictionary", nullptr, 0, MODIFY_SpellingChecker_replaceUserDictionary);
 	praat_addAction2 (classSpellingChecker, 1, classStrings, 1, U"Replace word list?", nullptr, 0, HINT_SpellingChecker_replaceWordList_help);
-	praat_addAction2 (classSpellingChecker, 1, classTextGrid, 1, U"View & Edit", nullptr, GuiMenu_ATTRACTIVE, WINDOW_TextGrid_SpellingChecker_viewAndEdit);
-	praat_addAction2 (classSpellingChecker, 1, classTextGrid, 1,   U"Edit", U"*View & Edit", GuiMenu_DEPRECATED_2011, WINDOW_TextGrid_SpellingChecker_viewAndEdit);
+	praat_addAction2 (classSpellingChecker, 1, classTextGrid, 1, U"View & Edit || Edit", nullptr, GuiMenu_ATTRACTIVE,
+			WINDOW_TextGrid_SpellingChecker_viewAndEdit);   // alternative COMPATIBILITY <= 2011
 	praat_addAction2 (classTextGrid, 1, classIntervalTier, 1, U"Append", nullptr, 0, NEW1_TextGrid_IntervalTier_append);
 	praat_addAction2 (classTextGrid, 1, classTextTier, 1, U"Append", nullptr, 0, NEW1_TextGrid_TextTier_append);
 
-	praat_addAction3 (classLongSound, 1, classSpellingChecker, 1, classTextGrid, 1, U"View & Edit", nullptr, GuiMenu_ATTRACTIVE, WINDOW_TextGrid_LongSound_SpellingChecker_viewAndEdit);
-	praat_addAction3 (classLongSound, 1, classSpellingChecker, 1, classTextGrid, 1,   U"Edit", U"*View & Edit", GuiMenu_DEPRECATED_2011, WINDOW_TextGrid_LongSound_SpellingChecker_viewAndEdit);
-	praat_addAction3 (classSound, 1, classSpellingChecker, 1, classTextGrid, 1, U"View & Edit", nullptr, GuiMenu_ATTRACTIVE, WINDOW_TextGrid_SpellingChecker_viewAndEdit);
-	praat_addAction3 (classSound, 1, classSpellingChecker, 1, classTextGrid, 1,   U"Edit", U"*View & Edit", GuiMenu_DEPRECATED_2011, WINDOW_TextGrid_SpellingChecker_viewAndEdit);
+	praat_addAction3 (classLongSound, 1, classSpellingChecker, 1, classTextGrid, 1, U"View & Edit || Edit", nullptr, GuiMenu_ATTRACTIVE,
+			WINDOW_TextGrid_LongSound_SpellingChecker_viewAndEdit);   // alternative COMPATIBILITY <= 2011
+	praat_addAction3 (classSound, 1, classSpellingChecker, 1, classTextGrid, 1, U"View & Edit || Edit", nullptr, GuiMenu_ATTRACTIVE,
+			WINDOW_TextGrid_SpellingChecker_viewAndEdit);   // alternative COMPATIBILITY <= 2011
 }
 
 /* End of file praat_TextGrid_init.cpp */

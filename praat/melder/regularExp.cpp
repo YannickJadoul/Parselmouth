@@ -90,6 +90,7 @@
 
 #include <limits.h>
 #include "melder.h"
+#include "../kar/wctype_portable.h"
 
 /* The first byte of the regexp internal `program' is a magic number to help
    guard against corrupted data; the compiled regex code really begins in the

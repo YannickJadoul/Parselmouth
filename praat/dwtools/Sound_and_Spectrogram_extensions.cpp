@@ -1,6 +1,6 @@
 /* Sound_and_Spectrogram_extensions.cpp
  *
- * Copyright (C) 1993-2023 David Weenink
+ * Copyright (C) 1993-2024 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -167,8 +167,8 @@ static void Sound_into_MelSpectrogram_frame (Sound me, MelSpectrogram thee, inte
 		longdouble power = 0.0;
 		const double fc_mel = thy y1 + (ifilter - 1) * thy dy;
 		const double fc_hz = thy v_frequencyToHertz (fc_mel);
-		const double fl_hz = thy v_frequencyToHertz (fc_mel - thy dy);
-		const double fh_hz =  thy v_frequencyToHertz (fc_mel + thy dy);
+		const double fl_hz = thy v_frequencyToHertz (std::max (fc_mel - thy dy, 0.0));
+		const double fh_hz =  thy v_frequencyToHertz (std::min (fc_mel + thy dy, his xmax));
 		integer ifrom, ito;
 		Sampled_getWindowSamples (him.get(), fl_hz, fh_hz, & ifrom, & ito);
 		for (integer i = ifrom; i <= ito; i ++) {
@@ -206,7 +206,7 @@ autoMelSpectrogram Sound_to_MelSpectrogram (Sound me, double analysisWidth, doub
 		// Determine the number of filters.
 
 		const integer numberOfFilters = Melder_iround ((fmax_mel - f1_mel) / df_mel);
-		fmax_mel = f1_mel + numberOfFilters * df_mel;
+
 
 		integer numberOfFrames;
 		double t1;
@@ -215,7 +215,7 @@ autoMelSpectrogram Sound_to_MelSpectrogram (Sound me, double analysisWidth, doub
 		autoSound window = Sound_createGaussian (windowDuration, samplingFrequency);
 		autoMelSpectrogram thee = MelSpectrogram_create (my xmin, my xmax, numberOfFrames, dt, t1, fmin_mel, fmax_mel, numberOfFilters, df_mel, f1_mel);
 
-		autoMelderProgress progress (U"MelSpectrograms analysis");
+		autoMelderProgress progress (U"MelSpectrogram analysis");
 
 		for (integer iframe = 1; iframe <= numberOfFrames; iframe ++) {
 			const double t = Sampled_indexToX (thee.get(), iframe);
@@ -231,7 +231,7 @@ autoMelSpectrogram Sound_to_MelSpectrogram (Sound me, double analysisWidth, doub
 
 		return thee;
 	} catch (MelderError) {
-		Melder_throw (me, U": no MelSpectrogram created.");
+		Melder_throw (me, U": No MelSpectrogram created.");
 	}
 }
 
@@ -263,21 +263,12 @@ static int Sound_into_Spectrogram_frame (Sound me, Spectrogram thee, integer fra
 	return 1;
 }
 
-autoSpectrogram Sound_to_Spectrogram_pitchDependent (Sound me, double analysisWidth, double dt, double f1_hz, double fmax_hz, double df_hz, double relative_bw, double minimumPitch, double maximumPitch) {
+autoSpectrogram Sound_to_Spectrogram_pitchDependent (Sound me, double analysisWidth, double dt, double f1_hz, double fmax_hz, double df_hz, double relative_bw,
+	double pitchFloor, double pitchCeiling)
+{
 	try {
-		constexpr double floor = 80.0, ceiling = 600.0;
-		if (minimumPitch >= maximumPitch) {
-			minimumPitch = floor;
-			maximumPitch = ceiling;
-		}
-		if (minimumPitch <= 0.0)
-			minimumPitch = floor;
-		if (maximumPitch <= 0.0)
-			maximumPitch = ceiling;
-
-		autoPitch thee = Sound_to_Pitch (me, dt, minimumPitch, maximumPitch);
-		autoSpectrogram ff = Sound_Pitch_to_Spectrogram (me, thee.get(), analysisWidth, dt, f1_hz, fmax_hz, df_hz, relative_bw);
-		return ff;
+		autoPitch thee = Sound_to_Pitch (me, dt, pitchFloor, pitchCeiling);
+		return Sound_Pitch_to_Spectrogram (me, thee.get(), analysisWidth, dt, f1_hz, fmax_hz, df_hz, relative_bw);
 	} catch (MelderError) {
 		Melder_throw (me, U": no Spectrogram created.");
 	}

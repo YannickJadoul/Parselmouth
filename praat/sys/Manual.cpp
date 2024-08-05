@@ -1,6 +1,6 @@
 /* Manual.cpp
  *
- * Copyright (C) 1996-2023 Paul Boersma
+ * Copyright (C) 1996-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ static void menu_cb_writeAllToHtmlFolder (Manual me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Save all pages as HTML files", nullptr)
 		FOLDER (folder, U"Folder", U"")
 	EDITOR_OK
-		SET_STRING (folder, Melder_dirToPath (& my rootDirectory))
+		SET_STRING (folder, Melder_folderToPath (& my rootDirectory))
 	EDITOR_DO
 		ManPages_writeAllToHtmlDir (my manPages(), nullptr, folder);
 	EDITOR_END
@@ -139,6 +139,11 @@ void structManual :: v_draw () {
 			case kManPage_type::CODE3: HyperPage_code3 (this, paragraph -> text); break;
 			case kManPage_type::CODE4: HyperPage_code4 (this, paragraph -> text); break;
 			case kManPage_type::CODE5: HyperPage_code5 (this, paragraph -> text); break;
+			case kManPage_type::CAPTION: HyperPage_caption (this, paragraph -> text); break;
+			case kManPage_type::QUOTE: HyperPage_quote (this, paragraph -> text); break;
+			case kManPage_type::QUOTE1: HyperPage_quote1 (this, paragraph -> text); break;
+			case kManPage_type::QUOTE2: HyperPage_quote2 (this, paragraph -> text); break;
+			case kManPage_type::QUOTE3: HyperPage_quote3 (this, paragraph -> text); break;
 			default: break;
 		}
 	}
@@ -459,11 +464,11 @@ int structManual :: v_goToPage (conststring32 title) {
 	Melder_assert (title);
 	if (title [0] == U'\\' && title [1] == U'F' && title [2] == U'I') {
 		structMelderFile file { };
-		MelderDir_relativePathToFile (& our manPages() -> rootDirectory, title + 3, & file);
+		MelderFolder_relativePathToFile (& our manPages() -> rootDirectory, title + 3, & file);
 		Melder_recordFromFile (& file);
 		return -1;
 	} else if (title [0] == U'\\' && title [1] == U'S' && title [2] == U'C') {
-		autoMelderSetDefaultDir saveDir (& our manPages() -> rootDirectory);
+		autoMelderSetCurrentFolder saveFolder (& our manPages() -> rootDirectory);
 		autoPraatBackground background;
 		try {
 			autostring32 fileNameWithArguments = Melder_dup (title + 3);
@@ -474,11 +479,12 @@ int structManual :: v_goToPage (conststring32 title) {
 		return 0;
 	} else {
 		const integer i = ManPages_lookUp (our manPages(), title);
-		if (i == 0)
+		if (i == 0) {
 			if (title [0] == U'`')
 				Melder_throw (U"Page ", title, U" not found.");
 			else
 				Melder_throw (U"Page “", title, U"” not found.");
+		}
 		our v_goToPage_number (i);
 		return 1;
 	}
@@ -511,7 +517,7 @@ autoManual Manual_create (conststring32 openingPageTitle, Interpreter optionalIn
 		}
 		my ownManPages = ownManPages;
 		HyperPage_init1 (me.get(), windowTitle, manPages, backquoteIsVerbatim);
-		MelderDir_copy (& manPages -> rootDirectory, & my rootDirectory);
+		MelderFolder_copy (& manPages -> rootDirectory, & my rootDirectory);
 		my history [0]. page = Melder_dup_f (openingPageTitle);   // BAD
 		/*
 			Cache the output of the opening page.

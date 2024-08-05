@@ -1,6 +1,6 @@
 /* Sound_to_Harmonicity.cpp
  *
- * Copyright (C) 1992-2011,2015,2016,2017,2019 Paul Boersma
+ * Copyright (C) 1992-2011,2015,2016,2017,2019,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@
 #include "Sound_to_Pitch.h"
 #include "Sound_to_Harmonicity.h"
 
-autoHarmonicity Sound_to_Harmonicity_ac (Sound me, double dt, double minimumPitch,
+autoHarmonicity Sound_to_Harmonicity_ac (Sound me, double dt, double pitchFloor,
 	double silenceThreshold, double periodsPerWindow)
 {
 	try {
-		autoPitch pitch = Sound_to_Pitch_any (me, dt, minimumPitch, periodsPerWindow, 15, 1,
-				silenceThreshold, 0.0, 0.0, 0.0, 0.0, 0.5 / my dx);
+		autoPitch pitch = Sound_to_Pitch_any (me, 1, periodsPerWindow, dt, pitchFloor, 0.5 / my dx, 15,
+				silenceThreshold, 0.0, 0.0, 0.0, 0.0);
 		autoHarmonicity thee = Harmonicity_create (my xmin, my xmax, pitch -> nx,
 				pitch -> dx, pitch -> x1);
 		for (integer i = 1; i <= thy nx; i ++) {
@@ -41,19 +41,19 @@ autoHarmonicity Sound_to_Harmonicity_ac (Sound me, double dt, double minimumPitc
 	}
 }
 
-autoHarmonicity Sound_to_Harmonicity_cc (Sound me, double dt, double minimumPitch,
+autoHarmonicity Sound_to_Harmonicity_cc (Sound me, double dt, double pitchFloor,
 	double silenceThreshold, double periodsPerWindow)
 {
 	try {
-		autoPitch pitch = Sound_to_Pitch_any (me, dt, minimumPitch, periodsPerWindow, 15, 3,
-				silenceThreshold, 0.0, 0.0, 0.0, 0.0, 0.5 / my dx);
+		autoPitch pitch = Sound_to_Pitch_any (me, 3, periodsPerWindow, dt, pitchFloor, 0.5 / my dx, 15,
+				silenceThreshold, 0.0, 0.0, 0.0, 0.0);
 		autoHarmonicity thee = Harmonicity_create (my xmin, my xmax, pitch -> nx,
 				pitch -> dx, pitch -> x1);
 		for (integer i = 1; i <= thy nx; i ++) {
 			if (pitch -> frames [i]. candidates [1]. frequency == 0.0) {
 				thy z [1] [i] = -200.0;
 			} else {
-				double r = pitch -> frames [i]. candidates [1]. strength;
+				const double r = pitch -> frames [i]. candidates [1]. strength;
 				thy z [1] [i] = ( r <= 1e-15 ? -150.0 : r > 1.0 - 1e-15 ? 150.0 : 10.0 * log10 (r / (1.0 - r)) );
 			}
 		}

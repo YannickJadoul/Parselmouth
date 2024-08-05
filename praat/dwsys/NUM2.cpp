@@ -1,6 +1,6 @@
 /* NUM2.cpp
  *
- * Copyright (C) 1993-2022 David Weenink, Paul Boersma 2017,2020
+ * Copyright (C) 1993-2024 David Weenink, Paul Boersma 2017,2020
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -353,6 +353,60 @@ autoMAT newMATinverse_fromLowerCholeskyInverse (constMAT m) {
 	return result;
 }
 
+autoMAT newMATsymmetricPositiveDefinte_inverse (constMAT m) {
+	autoMAT inverse;
+	try {
+		if (m.nrow == 1) {
+			inverse = copy_MAT (m);
+			inverse [1] [1] = ( m [1] [1] != 0.0 ? 1.0 / m [1] [1] : undefined );
+		} else {
+			autoMAT mc = newMATlowerCholesky (m, nullptr);
+			inverse = newMATinverse_fromLowerCholeskyInverse (mc.get());
+		}
+	} catch  (MelderError) {
+		inverse = copy_MAT (m);
+		inverse.get() <<= undefined;
+	}
+	return inverse;
+}
+
+autoMAT newMATsymmetric_inverse2 (constMAT m) {
+	Melder_assert (m.nrow == m.ncol);
+	autoINTVEC ipiv = zero_INTVEC (m.nrow);
+	autoMAT result = copy_MAT (m);
+	const integer lda = m.nrow, lwork = m.nrow * m.ncol;
+	/*
+		We don't query for the size of the work array, just make it big enough
+	*/
+	autoVEC work = raw_VEC (lwork);
+	integer info;
+	(void) NUMlapack_dsytrf_("L", m.nrow, & result [1] [1], lda, ipiv.asArgumentToFunctionThatExpectsZeroBasedArray(),
+		work.asArgumentToFunctionThatExpectsZeroBasedArray(), lwork, & info);
+	Melder_require (info == 0,
+		U"dsytrf_ fails with code ", info, U".");
+		
+	(void) NUMlapack_dsytri_ ("L", m.nrow, & result [1] [1], lda, ipiv.asArgumentToFunctionThatExpectsZeroBasedArray(), 
+		work.asArgumentToFunctionThatExpectsZeroBasedArray(), & info);
+	Melder_require (info == 0,
+		U"dsytri_ fails with code ", info, U".");
+	
+	return result;
+}
+
+autoMAT newMATinverse (constMAT m) {
+	Melder_assert (m.nrow == m.ncol);
+	try {
+		autoSVD svd = SVD_createFromGeneralMatrix (m);
+		autoMAT vp = raw_MAT (m.nrow, m.ncol);
+		for (integer irow = 1; irow <= m.nrow; irow ++)
+			for (integer icol = 1; icol <= m.ncol; icol ++)
+				vp [irow] [icol] = svd -> v [irow][icol] / svd -> d [icol];
+		autoMAT inverse = mul_MAT (vp.get(), svd -> u.get());
+		return inverse;
+	} catch (MelderError) {
+		Melder_throw (U"newMATinverse: cannot get inverse.");
+	}
+}
 double NUMmahalanobisDistanceSquared (constMAT lowerInverse, constVEC v, constVEC m) {
 	Melder_assert (lowerInverse.ncol == v.size && v.size == m.size);
 	longdouble chisq = 0.0;
@@ -415,7 +469,7 @@ integer NUMsolveQuadraticEquation (double a, double b, double c, double *out_x1,
 	return result;
 }
 
-autoVEC newVECsolve (constMATVU const& a, constVECVU const& b, double tolerance) {
+autoVEC solve_VEC (constMATVU const& a, constVECVU const& b, double tolerance) {
 	Melder_assert (a.nrow == b.size);
 	autoSVD me = SVD_createFromGeneralMatrix (a);
 	SVD_zeroSmallSingularValues (me.get(), tolerance);
@@ -423,7 +477,7 @@ autoVEC newVECsolve (constMATVU const& a, constVECVU const& b, double tolerance)
 	return x;
 }
 
-autoMAT newMATsolve (constMATVU const& a, constMATVU const& b, double tolerance) {
+autoMAT solve_MAT (constMATVU const& a, constMATVU const& b, double tolerance) {
 	Melder_assert (a.nrow == b.nrow);
 	const double tol = ( tolerance > 0.0 ? tolerance : NUMfpp -> eps * a.nrow );
 	
@@ -474,13 +528,13 @@ void VECsolveNonnegativeLeastSquaresRegression (VECVU const& x, constMATVU const
 		difsq = NUMsum2 (r.all());
 		farFromConvergence = ( fabs (difsq - difsq_previous) > std::max (tol * normSquared_y, NUMeps) );
 		if (infoLevel > 1)
-			MelderInfo_writeLine (U"Iteration: ", iter, U", error: ", difsq);
+			MelderInfo_writeLine (U"\t\tIteration: ", iter, U", error: ", difsq);
 		difsq_previous = difsq;
 		iter ++;
 	}
 	iter --;
 	if (infoLevel >= 1)
-		MelderInfo_writeLine (U"Number of iterations: ", iter, U"; Minimum: ", difsq);
+		MelderInfo_writeLine (U"\t\tNumber of iterations: ", iter, U"; Minimum: ", difsq);
 	if (infoLevel > 0)
 			MelderInfo_drain();
 }
@@ -670,7 +724,7 @@ static double NUMbolzanoSearch (double (*func) (double x, void *closure), double
 	return 0.5 * (xmax + xmin);
 }
 
-autoVEC newVECsolveWeaklyConstrainedLinearRegression (constMAT const& a, constVEC const& y, double alpha, double delta) {
+autoVEC solveWeaklyConstrainedLinearRegression_VEC (constMAT const& a, constVEC const& y, double alpha, double delta) {
 	Melder_assert (a.nrow == y.size);
 	Melder_require (a.nrow >= a.ncol,
 		U"The number of rows should not be less than the number of columns.");
@@ -1445,7 +1499,7 @@ autoVEC newVECburg (constVEC const& x, integer numberOfPredictionCoefficients, d
 
 void VECfilterInverse_inplace (VEC const& s, constVEC const& filter, VEC const& filterMemory) {
 	Melder_assert (filterMemory.size >= filter.size);
-	filterMemory  <<=  0.0;
+	filterMemory.part (1, filter.size)  <<=  0.0;
 	for (integer i = 1; i <= s.size; i ++) {
 		const double y0 = s [i];
 		for (integer j = 1; j <= filter.size; j ++)
@@ -2063,19 +2117,19 @@ void NUMfitLine_theil_preallocated (VEC const& out_lineParameters, constVEC cons
 void NUMfitLine_LS (constVEC const& x, constVEC const& y, double *out_m, double *out_intercept) {
 	Melder_require (x.size == y.size,
 		U"NUMfitLine_LS: the sizes of the two vectors should be equal.");
-	const double sx = NUMsum (x);
-	const double xmean = sx / x.size;
-	longdouble st2 = 0.0, m = 0.0;
+	const double xsum = NUMsum (x);
+	const double xmean = xsum / x.size;
+	longdouble variance = 0.0, m = 0.0;
 	for (integer i = 1; i <= x.size; i ++) {
 		const double t = x [i] - xmean;
-		st2 += t * t;
+		variance += t * t;
 		m += t * y [i];
 	}
 	// y = m*x + b
-	m /= st2;
+	m /= variance;
 	if (out_intercept) {
-		const double sy = NUMsum (y);
-		*out_intercept = (sy - m * sx) / x.size;
+		const double ysum = NUMsum (y);
+		*out_intercept = (ysum - m * xsum) / x.size;
 	}
 	if (out_m)
 		*out_m = m;
@@ -2648,7 +2702,7 @@ autoVEC newVECbiharmonic2DSplineInterpolation_getWeights (constVECVU const& x, c
 		}
 		g [i] [i] = 0.0;
 	}
-	autoVEC w = newVECsolve (g.get(), z, 0.0);
+	autoVEC w = solve_VEC (g.get(), z, 0.0);
 	return w;
 }
 
@@ -2895,7 +2949,7 @@ void MATmul3_XYsXt (MATVU const& target, constMATVU const& x, constMATVU const& 
 */
 static void VECupdateDataAndSupport_inplace (VECVU const& v, BOOLVECVU const& support, integer numberOfNonZeros) {
 	Melder_assert (v.size == support.size);
-	autoVEC abs = newVECabs (v);
+	autoVEC abs = abs_VEC (v);
 	autoINTVEC index = to_INTVEC (v.size);
 	NUMsortTogether <double, integer> (abs.get(), index.get()); // sort is always increasing
 	for (integer i = 1; i <= v.size - numberOfNonZeros; i ++) {
@@ -2924,7 +2978,7 @@ static double update (VEC const& x_new, VEC const& y_new, BOOLVECVU const& suppo
 	return xdifsq / ydifsq;
 }
 
-autoVEC newVECsolveSparse_IHT (constMATVU const& dictionary, constVECVU const& y, integer numberOfNonZeros, integer maximumNumberOfIterations, double tolerance, integer infoLevel) {
+autoVEC solveSparse_IHT_VEC (constMATVU const& dictionary, constVECVU const& y, integer numberOfNonZeros, integer maximumNumberOfIterations, double tolerance, integer infoLevel) {
 	try {
 		Melder_assert (dictionary.ncol > dictionary.nrow); // must be underdetermined system
 		Melder_assert (dictionary.nrow == y.size); // y = D.x + e
@@ -3018,7 +3072,7 @@ void VECsolveSparse_IHT (VECVU const& x, constMATVU const& dictionary, constVECV
 			const double relativeError = fabs (rms - rms_new) / rms_y;
 			convergence = relativeError < tolerance;
 			if (infoLevel > 1)
-				MelderInfo_writeLine (U"Iteration: ", iter, U", error: ", rms_new, U" relative: ", relativeError, U" stepSize: ", stepSize);
+				MelderInfo_writeLine (U"\t\tIteration: ", iter, U", error: ", rms_new, U" relative: ", relativeError, U" stepSize: ", stepSize);
 			
 			x  <<=  x_new.all();
 			support.all()  <<=  support_new.all();
@@ -3028,7 +3082,7 @@ void VECsolveSparse_IHT (VECVU const& x, constMATVU const& dictionary, constVECV
 		}
 		iter = std::min (iter, maximumNumberOfIterations);
 		if (infoLevel >= 1)
-			MelderInfo_writeLine (U"Number of iterations: ", iter, U" Difference squared: ", rms);
+			MelderInfo_writeLine (U"\t\tNumber of iterations: ", iter, U" Difference squared: ", rms);
 		if (infoLevel > 0)
 			MelderInfo_drain();
 	} catch (MelderError) {

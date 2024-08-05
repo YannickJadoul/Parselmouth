@@ -20,6 +20,7 @@
 	djmw 20171024
 */
 
+#include "espeak_io.h"   //ppgb
 #include "espeakdata_FileInMemory.h"
 #include "espeak_ng.h"
 #include "speech.h"
@@ -78,19 +79,6 @@ int espeak_io_fprintf (FILE * stream, ... ) {
 
 int espeak_io_ungetc (int character, FILE * stream) {
 	return FileInMemoryManager_ungetc (ESPEAK_FILEINMEMORYMANAGER, character,stream);
-}
-/* This mimics GetFileLength of espeak-ng */
-int FileInMemoryManager_GetFileLength (FileInMemoryManager me, const char *filename) {
-		integer index = FileInMemorySet_lookUp (my files.get(), Melder_peek8to32(filename));
-		if (index > 0) {
-			FileInMemory fim = static_cast<FileInMemory> (my files -> at [index]);
-			return fim -> d_numberOfBytes;
-		}
-		// Directory ??
-		if (FileInMemorySet_hasDirectory (my files.get(), Melder_peek8to32(filename))) {
-			return -EISDIR;
-		}
-		return -1;
 }
 
 /* 
@@ -201,7 +189,7 @@ static autoFileInMemory phondata_to_bigendian (FileInMemory me, FileInMemory man
 			sscanf(& line [2], "%x", & index);
 			fseek (phondataf, index, SEEK_SET);
 			integer i1 = index;
-			if (line [0] == 'S') { // 
+			if (line [0] == 'S') { //
 				/*
 					typedef struct {
 						short length;
@@ -213,11 +201,11 @@ static autoFileInMemory phondata_to_bigendian (FileInMemory me, FileInMemory man
 
 				SWAP_2 (i1)
 				index += 2; // skip the short length
-				integer numberOfFrames = my d_data [index]; // unsigned char n_frames
+				integer numberOfFrames = (unsigned char) my d_data [index]; // unsigned char n_frames
 				index += 2; // skip the 2 unsigned char's n_frames & sqflags
 				
 				for (integer n = 1; n <= numberOfFrames; n ++) {
-					/* 
+					/*
 						typedef struct { //64 bytes
 							short frflags;
 							short ffreq[7];
@@ -252,27 +240,23 @@ static autoFileInMemory phondata_to_bigendian (FileInMemory me, FileInMemory man
 						SWAP_2 (i1)
 						i1 += 2;
 					}
-					// 
+					/*
+						frflags signals whether the frame is a Klatt frame or not
+						20231105 changed thy d_data [i1] to thy d_data [index + 1];
+					*/
 					#define FRFLAG_KLATT 0x01
-					index += (thy d_data [i1] & FRFLAG_KLATT) ? sizeof (frame_t) : sizeof (frame_t2); // thy is essential!
+					index += (thy d_data [index + 1] & FRFLAG_KLATT) ? sizeof (frame_t) : sizeof (frame_t2); // thy is essential!
 				}				
 			} else if (line [0] == 'W') { // Wave data
-				int length = my d_data [i1 + 1] * 256 + my d_data [i1];
+				int length = my d_data [i1 + 1] * 256 + my d_data [i1]; //?
 				index += 4;
-				
 				index += length; // char wavedata[length]
-				
 				index += index % 3;
-				
 			} else if (line [0] == 'E') {
-				
 				index += 128; // Envelope: skip 128 bytes
-				
-				
 			} else if (line [0] == 'Q') {
-				unsigned int length = my d_data [index + 2] << 8 + my d_data [index + 3];
+				unsigned int length = (my d_data [index + 2] << 8) + my d_data [index + 3];
 				length *= 4;
-				
 				index += length;
 			}
 			Melder_require (index <= my d_numberOfBytes, U"Position ", index, U"is larger than file length (", my d_numberOfBytes, U")."); 

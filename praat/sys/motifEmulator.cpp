@@ -1,6 +1,6 @@
 /* motifEmulator.cpp
  *
- * Copyright (C) 1993-2023 Paul Boersma
+ * Copyright (C) 1993-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -155,7 +155,7 @@ static int Native_titleWidth (GuiObject me) {
 	if (my parent -> window) {
 		HDC dc = GetDC (my parent -> window);
 		SIZE size;
-		SelectFont (dc, GetStockFont (ANSI_VAR_FONT));   // possible BUG
+		SelectFont (dc, theWinGuiNormalLabelFont ());   // possible BUG
 		conststringW nameW = Melder_peek32toW (my name.get());
 		GetTextExtentPoint32 (dc, nameW, wcslen (nameW), & size);
 		ReleaseDC (my parent -> window, dc);
@@ -390,7 +390,7 @@ char32 * _GuiWin_expandAmpersands (conststring32 title) {
 void _GuiNativeControl_setTitle (GuiObject me) {
 	HDC dc = GetDC (my window);
 	SelectPen (dc, GetStockPen (NULL_PEN));
-	SelectBrush (dc, GetStockBrush (LTGRAY_BRUSH));
+	SelectBrush (dc, theWinGuiBackgroundBrush ());
 	Rectangle (dc, 0, 0, my width, my height);
 	ReleaseDC (my window, dc);
 	SetWindowTextW (my window, Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())));
@@ -600,7 +600,7 @@ static void _GuiNativizeWidget (GuiObject me) {
 					WS_CHILD | BS_PUSHBUTTON | WS_CLIPSIBLINGS,
 					my x, my y, my width, my height, my parent -> window, (HMENU) 1, theGui.instance, NULL);
 				SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
-				SetWindowFont (my window, GetStockFont (ANSI_VAR_FONT), false);
+				SetWindowFont (my window, theWinGuiNormalLabelFont (), false);
 			}
 		} break;
 		case xmPushButtonWidgetClass: Melder_fatal (U"Should be implemented in GuiButton."); break;
@@ -666,7 +666,7 @@ static void _GuiNativizeWidget (GuiObject me) {
 			my window = CreateWindowEx (theDialogHint ? WS_EX_DLGMODALFRAME /* | WS_EX_TOPMOST */ : 0,
 				Melder_peek32toW (className), Melder_peek32toW (className),
 				theDialogHint ? WS_CAPTION | WS_SYSMENU : WS_OVERLAPPEDWINDOW,
-				CW_USEDEFAULT, 0, CW_USEDEFAULT, 0,  my parent ? my parent -> window : NULL, NULL, theGui.instance, NULL);
+				CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, my parent ? my parent -> window : NULL, NULL, theGui.instance, NULL);
 			className = theWindowClassName;   // all later windows
 			SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
 			my motiff.shell.isDialog = theDialogHint;   // so we can maintain a single Shell class instead of two different
@@ -710,19 +710,52 @@ static void Native_move (GuiObject me, int dx, int dy) {
 		return;   // ignore menu items
 	if (MEMBER (me, Shell)) {
 		my nat.shell.duringMoveWindow = True;
-		if (my motiff.shell.isDialog)
+		if (my motiff.shell.isDialog) {
+			#ifndef __clang__
+				/*
+					In a Windows app, both following system frame measurements should be 8:
+				*/
+				const int cxFixedFrame = GetSystemMetrics (SM_CXFIXEDFRAME);
+				const int cyFixedFrame = GetSystemMetrics (SM_CYFIXEDFRAME);
+			#else
+				/*
+					However, CLANG under MSYS2 thinks it's in a console app,
+					so that these two values are 4 instead of 8,
+					which causes text fields and caption to run off the right edge of the window.
+					Repair.
+				*/
+				const int cxFixedFrame = 8;
+				const int cyFixedFrame = 8;
+			#endif
 			MoveWindow (my window, my x, my y,
-				my width + 2 * GetSystemMetrics (SM_CXFIXEDFRAME),
-				my height + 2 * GetSystemMetrics (SM_CYFIXEDFRAME) + GetSystemMetrics (SM_CYCAPTION),
+				my width + 2 * cxFixedFrame,
+				my height + 2 * cyFixedFrame + GetSystemMetrics (SM_CYCAPTION),
 				true
 			);
-		else
+		} else {
+			#ifndef __clang__
+				/*
+					In a Windows app, both following system frame measurements should be 8:
+				*/
+				const int cxSizeFrame = GetSystemMetrics (SM_CXSIZEFRAME);
+				const int cySizeFrame = GetSystemMetrics (SM_CYSIZEFRAME);
+			#else
+				/*
+					However, CLANG under MSYS2 thinks it's in a console app,
+					so that these two values are 4 instead of 8,
+					which causes the scroll bars to be cut off.
+					Repair.
+				*/
+				const int cxSizeFrame = 8;
+				const int cySizeFrame = 8;
+			#endif
 			MoveWindow (my window, my x, my y,
-				my width + 2 * GetSystemMetrics (SM_CXSIZEFRAME),
-				my height + 2 * GetSystemMetrics (SM_CYSIZEFRAME) + GetSystemMetrics (SM_CYCAPTION) +
+				my width + 2 * cxSizeFrame,
+				my height + 2 * cySizeFrame + GetSystemMetrics (SM_CYCAPTION) +
 						( my nat.shell.menuBar ? GetSystemMetrics (SM_CYMENU) : 0 ),
 				true
 			);
+		}
 	} else
 		MoveWindow (my window, my x, my y, my width, my height, True);
 }
@@ -1769,12 +1802,12 @@ void GuiWin_initialize2 (unsigned int argc, char **argv)
 	windowClass. hInstance = theGui.instance;
 	windowClass. hIcon = NULL;
 	windowClass. hCursor = LoadCursor (NULL, IDC_ARROW);
-	windowClass. hbrBackground = /*(HBRUSH) (COLOR_WINDOW + 1)*/ GetStockBrush (LTGRAY_BRUSH);
+	windowClass. hbrBackground = theWinGuiBackgroundBrush ();
 	windowClass. lpszMenuName = NULL;
 	windowClass. lpszClassName = Melder_32toW (theWindowClassName).transfer();
 	windowClass. hIconSm = NULL;
 	RegisterClassEx (& windowClass);
-	windowClass. hbrBackground = GetStockBrush (WHITE_BRUSH);
+	windowClass. hbrBackground = theWinGuiBackgroundBrush ();
 	windowClass. lpszClassName = Melder_32toW (theDrawingAreaClassName).transfer();
 	RegisterClassEx (& windowClass);
 	windowClass. lpszClassName = Melder_32toW (theApplicationClassName).transfer();
@@ -2669,7 +2702,7 @@ static void on_key (HWND window, UINT key, BOOL down, int repeat, UINT flags) {
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me && key >= VK_LEFT && key <= VK_DOWN) {
 		//Melder_warning (U"Widget type ", my widgetClass);
-		if (MEMBER (me, Shell)) {
+		if (MEMBER (me, Shell) || my widgetClass == xmDrawingAreaWidgetClass) {   // any change in this condition should be mirrored in `on_char`
 			GuiObject drawingArea = _motif_findDrawingArea (me);
 			if (drawingArea) {
 				GuiObject textFocus = drawingArea -> shell -> textFocus;   // BUG: ignore?
@@ -2685,7 +2718,7 @@ static void on_key (HWND window, UINT key, BOOL down, int repeat, UINT flags) {
 static void on_char (HWND window, TCHAR kar, int repeat) {
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me) {
-		if (MEMBER (me, Shell) || my widgetClass == xmDrawingAreaWidgetClass) {
+		if (MEMBER (me, Shell) || my widgetClass == xmDrawingAreaWidgetClass) {   // any change in this condition should be mirrored in `on_key`
 			GuiObject drawingArea = _motif_findDrawingArea (me);
 			if (drawingArea) {
 				GuiObject textFocus = drawingArea -> shell -> textFocus;   // BUG: ignore?
@@ -2714,7 +2747,7 @@ static HBRUSH on_ctlColorStatic (HWND window, HDC hdc, HWND controlWindow, int t
 		GuiObject control = (GuiObject) GetWindowLongPtr (controlWindow, GWLP_USERDATA);
 		if (control) {
 			SetBkMode (hdc, TRANSPARENT);
-			return GetStockBrush (LTGRAY_BRUSH);
+			return theWinGuiBackgroundBrush ();
 		}
 	}
 	return FORWARD_WM_CTLCOLORSTATIC (window, hdc, controlWindow, DefWindowProc);
@@ -2726,7 +2759,7 @@ static HBRUSH on_ctlColorBtn (HWND window, HDC hdc, HWND controlWindow, int type
 		GuiObject control = (GuiObject) GetWindowLongPtr (controlWindow, GWLP_USERDATA);
 		if (control) {
 			SetBkMode (hdc, TRANSPARENT);
-			return GetStockBrush (LTGRAY_BRUSH);
+			return theWinGuiBackgroundBrush ();
 		}
 	}
 	return FORWARD_WM_CTLCOLORBTN (window, hdc, controlWindow, DefWindowProc);

@@ -1,6 +1,6 @@
 /* ManPages.cpp
  *
- * Copyright (C) 1996-2023 Paul Boersma
+ * Copyright (C) 1996-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -125,9 +125,10 @@ static conststring32 ManPage_Paragraph_extractLink (ManPage_Paragraph par, const
 				p = from;
 				return p;
 			}
-		} else if (*p == U'`' && verbatimAware) {
+		} else if (*p == U'`' && verbatimAware && ! paragraphIsVerbatim) {
 			/*
-				We found "`", starting a verbatim stretch in which '@' is to be ignored. BUG: but should "\@{" be honoured?
+				We found "`", starting a verbatim stretch in which '@' is to be ignored.
+				Doesn't count if part of a backslash trigraph.
 			*/
 			if (p - text <= 0 || (p [-1] != U'\\' && (p - text <= 1 || p [-2] != U'\\'))) {
 				/*
@@ -145,16 +146,15 @@ static conststring32 ManPage_Paragraph_extractLink (ManPage_Paragraph par, const
 					p ++;
 				}
 			}
-		} else if (
-			*p == U'\\' && p [1] == U'@' && p [2] == U'{' ||
-			*p == U'\\' && p [1] == U'#' && p [2] == U'@' && p [3] == U'{' ||
-			*p == U'\\' && p [1] == U'`' && p [2] == U'{' ||
-			*p == U'\\' && p [1] == U'#' && p [2] == U'`' && p [3] == U'{'
+		} else if (paragraphIsVerbatim &&
+			(*p == U'\\' && p [1] == U'@' && p [2] == U'{' ||
+			 *p == U'\\' && p [1] == U'#' && p [2] == U'@' && p [3] == U'{' ||
+			 *p == U'\\' && p [1] == U'`' && p [2] == U'{' ||
+			 *p == U'\\' && p [1] == U'#' && p [2] == U'`' && p [3] == U'{')
 		) {
 			/*
 				We found "\@{" or "\#@{" or "\`{" or "\#`{",
-				starting a link in running text or in verbatim code.
-				TODO: should not occur in running text.
+				starting a link in verbatim text or in code.
 			*/
 			const bool boldLink = ( p [1] == U'#' );
 			const char32 *from = p + 3 + boldLink;
@@ -246,13 +246,13 @@ static void resolveLinks (ManPages me, ManPage_Paragraph par, bool verbatimAware
 			/*
 				A link to a sound file: see if it exists.
 			*/
-			MelderDir_relativePathToFile (& my rootDirectory, linkBuffer + 3, & file2);
+			MelderFolder_relativePathToFile (& my rootDirectory, linkBuffer + 3, & file2);
 			if (! MelderFile_exists (& file2))
 				Melder_warning (U"Cannot find sound file ", MelderFile_messageName (& file2), U".");
 		} else if (linkBuffer [0] == U'\\' && linkBuffer [1] == U'S' && linkBuffer [2] == U'C') {
 			/*
 				A link to a script: see if it exists.
-			s*/
+			*/
 			char32 *p = linkBuffer + 3;
 			if (*p == U'"') {
 				char32 *q = fileNameBuffer;
@@ -266,7 +266,7 @@ static void resolveLinks (ManPages me, ManPage_Paragraph par, bool verbatimAware
 					* q ++ = * p ++;   // one word, up to the next space
 				*q = U'\0';
 			}
-			MelderDir_relativePathToFile (& my rootDirectory, fileNameBuffer, & file2);
+			MelderFolder_relativePathToFile (& my rootDirectory, fileNameBuffer, & file2);
 			if (! MelderFile_exists (& file2))
 				Melder_warning (U"Cannot find script ", MelderFile_messageName (& file2), U".");
 			my executable = true;
@@ -284,7 +284,7 @@ static void resolveLinks (ManPages me, ManPage_Paragraph par, bool verbatimAware
 					if (! isAllowedFileNameCharacter (*q))
 						*q = U'_';
 				str32cat (fileNameBuffer, U".man");
-				MelderDir_getFile (& my rootDirectory, fileNameBuffer, & file2);
+				MelderFolder_getFile (& my rootDirectory, fileNameBuffer, & file2);
 				if (MelderFile_exists (& file2)) {
 					autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
 					readOnePage (me, text2.get());
@@ -294,7 +294,7 @@ static void resolveLinks (ManPages me, ManPage_Paragraph par, bool verbatimAware
 					*/
 					linkBuffer [0] = Melder_toUpperCase (linkBuffer [0]);
 					Melder_sprint (fileNameBuffer,ManPages_FILENAME_BUFFER_SIZE, linkBuffer, U".man");
-					MelderDir_getFile (& my rootDirectory, fileNameBuffer, & file2);
+					MelderFolder_getFile (& my rootDirectory, fileNameBuffer, & file2);
 					if (MelderFile_exists (& file2)) {
 						autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
 						readOnePage (me, text2.get());
@@ -331,13 +331,13 @@ static void resolveLinks (ManPages me, ManPage_Paragraph par, bool verbatimAware
 						}
 						*to = U'\0';
 						str32cat (fileNameBuffer, U".praatnb");
-						MelderDir_getFile (& my rootDirectory, fileNameBuffer, & file2);
+						MelderFolder_getFile (& my rootDirectory, fileNameBuffer, & file2);
 						if (MelderFile_exists (& file2)) {
 							autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
 							readOnePage (me, text2.get());
 						} else {
 							fileNameBuffer [0] = Melder_toLowerCase (fileNameBuffer [0]);
-							MelderDir_getFile (& my rootDirectory, fileNameBuffer, & file2);
+							MelderFolder_getFile (& my rootDirectory, fileNameBuffer, & file2);
 							if (MelderFile_exists (& file2)) {
 								autoMelderReadText text2 = MelderReadText_createFromFile (& file2);
 								readOnePage (me, text2.get());
@@ -534,7 +534,9 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 	for (;;) {
 		if (! line)
 			return;
+		integer numberOfLeadingEmptyLines = 0;
 		while (! stringHasInk (line)) {
+			numberOfLeadingEmptyLines += 1;
 			line = MelderReadText_readLine (text);
 			if (! line)
 				return;
@@ -561,7 +563,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 			Now we try several kinds of list items.
 			To not prepend a character, use ",".
 			To prepend a bullet, use "-" or "*" or "•".
-		 */
+		*/
 		} else if (
 			line [0] == U',' && (Melder_isHorizontalSpace (line [1]) || line [1] == U'\0') ||
 			line [0] == U'-' && Melder_isHorizontalSpace (line [1]) ||
@@ -612,15 +614,25 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 				numberOfLeadingSpaces < 11 ? kManPage_type::DEFINITION2 :
 				kManPage_type::DEFINITION3
 			);
-			if (previousParagraph)
-				if (type == kManPage_type::DEFINITION && previousParagraph -> type == kManPage_type::NORMAL)
+			if (previousParagraph && (previousParagraph -> type == kManPage_type::NORMAL || previousParagraph -> type == kManPage_type::CAPTION))
+				if (type == kManPage_type::DEFINITION)
 					previousParagraph -> type = kManPage_type::TERM;
-				else if (type == kManPage_type::DEFINITION1 && previousParagraph -> type == kManPage_type::CODE)
+				else if (type == kManPage_type::DEFINITION1)
 					previousParagraph -> type = kManPage_type::TERM1;
-				else if (type == kManPage_type::DEFINITION2 && previousParagraph -> type == kManPage_type::CODE1)
+				else if (type == kManPage_type::DEFINITION2)
 					previousParagraph -> type = kManPage_type::TERM2;
-				else if (type == kManPage_type::DEFINITION3 && previousParagraph -> type == kManPage_type::CODE2)
+				else if (type == kManPage_type::DEFINITION3)
 					previousParagraph -> type = kManPage_type::TERM3;
+			line += 2;
+			Melder_skipHorizontalSpace (& line);
+			MelderString_append (& buffer_graphical, line);
+		} else if (line [0] == U'>' && Melder_isHorizontalSpace (line [1])) {
+			type = (
+				numberOfLeadingSpaces <  3 ? kManPage_type::QUOTE :
+				numberOfLeadingSpaces <  7 ? kManPage_type::QUOTE1 :
+				numberOfLeadingSpaces < 11 ? kManPage_type::QUOTE2 :
+				kManPage_type::QUOTE3
+			);
 			line += 2;
 			Melder_skipHorizontalSpace (& line);
 			MelderString_append (& buffer_graphical, line);
@@ -629,6 +641,32 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 			line += 2;
 			Melder_skipHorizontalSpace (& line);
 			MelderString_append (& buffer_graphical, line);
+		} else if (numberOfLeadingSpaces == 0 && line [0] == U'`' && ! stringHasInk (line + 1)) {
+			//TRACE
+			trace (U"Verbatim: <<", page -> title.get(), U">>");
+			type = kManPage_type::SCRIPT;   // TODO: make different type, such as kManPage_type::VERBATIM
+			do {
+				line = MelderReadText_readLine (text);
+				if (! line)
+					break;
+				if (line [0] == U'`' && ! stringHasInk (line + 1)) {
+					line = MelderReadText_readLine (text);
+					break;
+				}
+				MelderString_empty (& buffer_graphicalCode);
+				const char32 *p = & line [0];
+				while (*p) {
+					if (*p == U'\t') {
+						MelderString_append (& buffer_graphicalCode, p == line ? nullptr : U"    ");
+					} else
+						MelderString_appendCharacter (& buffer_graphicalCode, *p);
+					p ++;
+				}
+				ManPage_Paragraph par = page -> paragraphs. append ();
+				par -> type = kManPage_type::CODE;
+				par -> text = Melder_dup (buffer_graphicalCode. string).transfer();
+			} while (1);
+			MelderString_empty (& buffer_graphical);   // this makes sure that no actual SCRIPT (or VERBATIM) paragraph will be added
 		} else if (numberOfLeadingSpaces == 0 && line [0] == U'{') {
 			const bool shouldShowCode = ! str32chr (line, U'-');
 			const char32 *sizeLocation = str32chr (line, U'x');
@@ -642,6 +680,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 			} else
 				width = 6.0;
 			type = kManPage_type::SCRIPT;
+			integer procedureDepth = 0;
 			do {
 				line = MelderReadText_readLine (text);
 				if (! line)
@@ -651,6 +690,10 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 					line = MelderReadText_readLine (text);
 					break;
 				}
+				if (Melder_startsWith (firstNonspace, U"procedure "))
+					procedureDepth += 1;
+				else if (Melder_startsWith (firstNonspace, U"endproc"))
+					procedureDepth -= 1;
 				if (shouldShowCode) {
 					/*
 						Convert to graphical code.
@@ -686,6 +729,8 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 					)
 						firstNonspace += 3 + ( firstNonspace [2] == U'@' );
 					if (
+						procedureDepth == 0 &&
+						height == 0.001 &&
 						(Melder_startsWith (firstNonspace, U"Draw")  ||
 						 Melder_startsWith (firstNonspace, U"Paint")  ||
 						 Melder_startsWith (firstNonspace, U"Axes:")  ||
@@ -694,7 +739,6 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 						 Melder_startsWith (firstNonspace, U"Text:")  ||
 						 Melder_startsWith (firstNonspace, U"Text}:")  ||
 						 Melder_startsWith (firstNonspace, U"Marks "))
-						&& height == 0.001
 					)
 						height = 3.0;
 
@@ -729,6 +773,8 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 								p ++;
 							}
 							MelderString_append (& buffer_graphical, linkText.string);
+							if (*p == U'\0')
+								break;   // double break
 						} else if (*p == U'\\' && p [1] == U'#' && p [2] == U'{') {
 							inBold = true;
 							p += 2;
@@ -750,16 +796,9 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 				}
 			} while (1);
 			if (! shouldShowOutput)
-				MelderString_empty (& buffer_graphical);
+				MelderString_empty (& buffer_graphical);   // add no SCRIPT paragraph
 		} else if (numberOfLeadingSpaces >= 3) {
-			type = (
-				numberOfLeadingSpaces <  7 ? kManPage_type::CODE  :
-				numberOfLeadingSpaces < 11 ? kManPage_type::CODE1 :
-				numberOfLeadingSpaces < 15 ? kManPage_type::CODE2 :
-				numberOfLeadingSpaces < 19 ? kManPage_type::CODE3 :
-				numberOfLeadingSpaces < 23 ? kManPage_type::CODE4 :
-				kManPage_type::CODE5
-			);
+			type = kManPage_type::CAPTION;
 			MelderString_append (& buffer_graphical, line);
 		} else {
 			type = kManPage_type::NORMAL;
@@ -788,8 +827,14 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 					line = nullptr;   // signals end of text
 					break;
 				}
-				char32 *firstNonSpace = Melder_findEndOfHorizontalSpace (continuationLine);
+				integer nextNumberOfLeadingSpaces = 0, ikar = 0;
+				while (Melder_isHorizontalSpace (continuationLine [ikar])) {
+					nextNumberOfLeadingSpaces += ( continuationLine [ikar] == U'\t' ? 4 - ( nextNumberOfLeadingSpaces & 0b11_integer ) : 1 );
+					ikar ++;
+				}
+				char32 *firstNonSpace = continuationLine + ikar;
 				if (*firstNonSpace == U':' ||
+					*firstNonSpace == U'>' ||
 					*firstNonSpace == U',' && (Melder_isHorizontalSpace (firstNonSpace [1]) || firstNonSpace [1] == U'\0') ||
 					*firstNonSpace == U'-' && Melder_isHorizontalSpace (firstNonSpace [1]) ||
 					*firstNonSpace == U'*' && Melder_isHorizontalSpace (firstNonSpace [1]) ||
@@ -798,6 +843,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 					stringStartsWithNumberAndDot (firstNonSpace) ||
 					*firstNonSpace == U'|' && Melder_isHorizontalSpace (firstNonSpace [1]) ||
 					firstNonSpace == continuationLine && *firstNonSpace == U'{' ||
+					firstNonSpace == continuationLine && *firstNonSpace == U'`' && ! stringHasInk (firstNonSpace + 1) ||
 					firstNonSpace == continuationLine && *firstNonSpace == U'~' ||
 					Melder_startsWith (firstNonSpace, U"===") ||
 					*firstNonSpace == U'/' && firstNonSpace [1] == U'/' ||
@@ -812,10 +858,12 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 			} while (1);
 		}
 		if (par) {
-			resolveLinks (me, par, page -> verbatimAware);
+			if (my dynamic)
+				resolveLinks (me, par, page -> verbatimAware);
 			previousParagraph = par;
 		}
 	}
+	trace (U"end");
 }
 static void readOnePage (ManPages me, MelderReadText text) {
 	const bool isNotebook = (
@@ -831,7 +879,7 @@ static void readOnePage (ManPages me, MelderReadText text) {
 }
 void structManPages :: v1_readText (MelderReadText text, int /*formatVersion*/) {
 	our dynamic = true;
-	MelderDir_copy (& Data_directoryBeingRead, & our rootDirectory);
+	MelderFolder_copy (& Data_directoryBeingRead, & our rootDirectory);
 	readOnePage (this, text);
 }
 
@@ -843,7 +891,7 @@ autoManPages ManPages_create () {
 autoManPages ManPages_createFromText (MelderReadText text, MelderFile file) {
 	autoManPages me = Thing_new (ManPages);
 	my dynamic = true;
-	MelderFile_getParentDir (file, & my rootDirectory);
+	MelderFile_getParentFolder (file, & my rootDirectory);
 	readOnePage (me.get(), text);
 	return me;
 }
@@ -874,7 +922,7 @@ void ManPages_addPage (ManPages me, conststring32 title, conststring32 signature
 	page -> signature = Melder_dup (signature);
 	my pages. addItem_move (page.move());
 }
-void ManPages_addPagesFromNotebook (ManPages me, conststring8 multiplePagesText) {
+void ManPages_addPagesFromNotebookText (ManPages me, conststring8 multiplePagesText) {
 	autoMelderReadText multiplePagesReader = MelderReadText_createFromText (Melder_8to32 (multiplePagesText));
 	autoMelderString pageText;
 	for (;;) {
@@ -892,7 +940,7 @@ void ManPages_addPagesFromNotebook (ManPages me, conststring8 multiplePagesText)
 			MelderString_append (& pageText, line, U"\n");
 	}
 }
-integer ManPages_addPagesFromNotebook (ManPages me, MelderReadText multiplePagesReader, integer startOfSelection, integer endOfSelection) {
+integer ManPages_addPagesFromNotebookReader (ManPages me, MelderReadText multiplePagesReader, integer startOfSelection, integer endOfSelection) {
 	bool foundFirstPage = false;
 	integer numberOfCharactersRead = 0;
 	integer startingPage = -1, numberOfPages = 0;

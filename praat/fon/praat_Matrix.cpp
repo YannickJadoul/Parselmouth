@@ -1,6 +1,6 @@
 /* praat_Matrix.cpp
  *
- * Copyright (C) 1992-2005,2007,2011-2023 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2011-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -397,7 +397,7 @@ DO
 // MARK: Modify
 
 FORM (MODIFY_Matrix_formula, U"Matrix Formula", U"Formula...") {
-	LABEL (U"y := y1; for row := 1 to nrow do { x := x1; "
+	COMMENT (U"y := y1; for row := 1 to nrow do { x := x1; "
 		"for col := 1 to ncol do { self [row, col] := `formula` ; x := x + dx } y := y + dy }")
 	FORMULA (formula, U"Formula", U"self")
 	OK
@@ -510,7 +510,7 @@ DIRECT (NEW_Matrix_to_Sound) {
 
 FORM (NEW_Matrix_to_Sound_mono, U"Matrix: To Sound (mono)", 0) {
 	INTEGER (rowNumber, U"Row number", U"1")
-	LABEL (U"(negative values count from last row)")
+	COMMENT (U"(negative values count from last row)")
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Matrix)
@@ -644,7 +644,7 @@ DIRECT (NEW_Photo_extractTransparency) {
 }
 
 FORM (MODIFY_Photo_formula_red, U"Photo Formula (red)", U"Formula (red)...") {
-	LABEL (U"y := y1; for row := 1 to nrow do { x := x1; "
+	COMMENT (U"y := y1; for row := 1 to nrow do { x := x1; "
 		"for col := 1 to ncol do { self [row, col] := `formula` ; x := x + dx } y := y + dy }")
 	FORMULA (formula, U"Formula", U"self")
 	OK
@@ -655,7 +655,7 @@ DO
 }
 
 FORM (MODIFY_Photo_formula_green, U"Photo Formula (green)", U"Formula (green)...") {
-	LABEL (U"y := y1; for row := 1 to nrow do { x := x1; "
+	COMMENT (U"y := y1; for row := 1 to nrow do { x := x1; "
 		"for col := 1 to ncol do { self [row, col] := `formula` ; x := x + dx } y := y + dy }")
 	FORMULA (formula, U"Formula", U"self")
 	OK
@@ -666,7 +666,7 @@ DO
 }
 
 FORM (MODIFY_Photo_formula_blue, U"Photo Formula (blue)", U"Formula (blue)...") {
-	LABEL (U"y := y1; for row := 1 to nrow do { x := x1; "
+	COMMENT (U"y := y1; for row := 1 to nrow do { x := x1; "
 		"for col := 1 to ncol do { self [row, col] := `formula` ; x := x + dx } y := y + dy }")
 	FORMULA (formula, U"Formula", U"self")
 	OK
@@ -677,7 +677,7 @@ DO
 }
 
 FORM (MODIFY_Photo_formula_transparency, U"Photo Formula (transparency)", U"Formula (transparency)...") {
-	LABEL (U"y := y1; for row := 1 to nrow do { x := x1; "
+	COMMENT (U"y := y1; for row := 1 to nrow do { x := x1; "
 		"for col := 1 to ncol do { self [row, col] := `formula` ; x := x + dx } y := y + dy }")
 	FORMULA (formula, U"Formula", U"self")
 	OK
@@ -851,10 +851,10 @@ void praat_Matrix_init () {
 	praat_addMenuCommand (U"Objects", U"Open", U"Read Matrix from LVS AP file...", nullptr, GuiMenu_HIDDEN, READ1_Matrix_readAP);
 
 	praat_addAction1 (classMatrix, 0, U"Matrix help", nullptr, 0, HELP_Matrix_help);
-	praat_addAction1 (classMatrix, 1, U"Save as matrix text file...", nullptr, 0, SAVE_Matrix_writeToMatrixTextFile);
-	praat_addAction1 (classMatrix, 1,   U"Write to matrix text file...", U"*Save as matrix text file...", GuiMenu_DEPRECATED_2011, SAVE_Matrix_writeToMatrixTextFile);
-	praat_addAction1 (classMatrix, 1, U"Save as headerless spreadsheet file...", nullptr, 0, SAVE_Matrix_writeToHeaderlessSpreadsheetFile);
-	praat_addAction1 (classMatrix, 1,   U"Write to headerless spreadsheet file...", nullptr, GuiMenu_DEPRECATED_2011, SAVE_Matrix_writeToHeaderlessSpreadsheetFile);
+	praat_addAction1 (classMatrix, 1, U"Save as matrix text file... || Write to matrix text file...", nullptr, 0,
+			SAVE_Matrix_writeToMatrixTextFile);   // alternative COMPATIBILITY <= 2011
+	praat_addAction1 (classMatrix, 1, U"Save as headerless spreadsheet file... || Write to headerless spreadsheet file...", nullptr, 0,
+			SAVE_Matrix_writeToHeaderlessSpreadsheetFile);   // alternative COMPATIBILITY <= 2011
 	praat_addAction1 (classMatrix, 1, U"Play movie", nullptr, 0, MOVIE_Matrix_playMovie);
 	praat_addAction1 (classMatrix, 0, U"Draw -", nullptr, 0, nullptr);
 		praat_addAction1 (classMatrix, 0, U"Draw rows...", nullptr, 1, GRAPHICS_Matrix_drawRows);

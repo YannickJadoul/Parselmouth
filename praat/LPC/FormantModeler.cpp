@@ -1,6 +1,6 @@
 /* FormantModeler.cpp
  *
- * Copyright (C) 2014-2021 David Weenink
+ * Copyright (C) 2014-2024 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "SVD.h"
 #include "Strings_extensions.h"
 #include "Sound_and_LPC_robust.h"
+#include "Sound_to_Formant_mt.h"
 #include "Table_extensions.h"
 
 #include "oo_DESTROY.h"
@@ -215,7 +216,7 @@ void FormantModeler_drawBasisFunction (FormantModeler me, Graphics g, double tmi
 static integer FormantModeler_drawingSpecifiers_x (FormantModeler me, double *xmin, double *xmax, integer *ixmin, integer *ixmax) {
 	Melder_assert (my trackmodelers.size > 0);
 	const DataModeler fm = my trackmodelers.at [1];
-	return DataModeler_drawingSpecifiers_x (fm, xmin, xmax, ixmin, ixmax);
+	return DataModeler_getDrawingSpecifiers_x (fm, xmin, xmax, ixmin, ixmax);
 }
 
 static void FormantModeler_getCumulativeChiScores (FormantModeler me, VEC chisq) {
@@ -416,7 +417,7 @@ void FormantModeler_drawTracks_inside (FormantModeler me, Graphics g, double xmi
 	for (integer itrack = fromTrack; itrack <= toTrack; itrack ++) {
 		DataModeler ffi = my trackmodelers.at [itrack];
 		Graphics_setColour (g, itrack % 2 == 1 ? oddTracks : evenTracks );
-		DataModeler_drawTrack_inside (ffi, g, xmin, xmax, 0.0, fmax, useEstimatedTrack, numberOfParameters);
+		DataModeler_drawTrack_inside (ffi, g, xmin, xmax, 0.0, fmax, useEstimatedTrack);
 	}
 }
 
@@ -438,12 +439,12 @@ void FormantModeler_drawTracks (FormantModeler me, Graphics g, double tmin, doub
 }
 
 void FormantModeler_speckle_inside (FormantModeler me, Graphics g, double xmin, double xmax, double fmax,
-	integer fromTrack, integer toTrack, bool useEstimatedTrack, integer numberOfParameters, bool errorBars, MelderColour oddTracks, MelderColour evenTracks) {
+	integer fromTrack, integer toTrack, bool useEstimatedTrack, bool errorBars, MelderColour oddTracks, MelderColour evenTracks) {
 	checkTrackAutoRange (me, & fromTrack, & toTrack);
 	for (integer itrack = fromTrack; itrack <= toTrack; itrack ++) {
 		const DataModeler ffi = my trackmodelers.at [itrack];
 		Graphics_setColour (g, itrack % 2 == 1 ? oddTracks : evenTracks);
-		DataModeler_speckle_inside (ffi, g, xmin, xmax, 0, fmax, useEstimatedTrack, numberOfParameters, errorBars, 0.0);
+		DataModeler_speckle_inside (ffi, g, xmin, xmax, 0, fmax, useEstimatedTrack, errorBars, 0.0);
 	}
 }
 
@@ -454,7 +455,7 @@ void FormantModeler_speckle (FormantModeler me, Graphics g, double tmin, double 
 	Function_unidirectionalAutowindow (me, & tmin, & tmax);
 	checkTrackAutoRange (me, & fromTrack, & toTrack);
 	Graphics_setInner (g);
-	FormantModeler_speckle_inside (me, g, tmin, tmax, fmax, fromTrack, toTrack, useEstimatedTrack, numberOfParameters, errorBars, oddTracks, evenTracks);
+	FormantModeler_speckle_inside (me, g, tmin, tmax, fmax, fromTrack, toTrack, useEstimatedTrack, errorBars, oddTracks, evenTracks);
 	Graphics_unsetInner (g);
 	if (garnish) {
 		Graphics_drawInnerBox (g);
@@ -609,10 +610,10 @@ autoTable FormantModeler_to_Table_zscores (FormantModeler me) {
 		const integer icolt = 1, numberOfFormants = my trackmodelers.size;
 		const integer numberOfDataPoints = FormantModeler_getNumberOfDataPoints (me);
 		autoTable ztable = Table_createWithoutColumnNames (numberOfDataPoints, numberOfFormants + 1);
-		Table_setColumnLabel (ztable.get(), icolt, U"time");
+		Table_renameColumn_e (ztable.get(), icolt, U"time");
 		for (integer itrack = 1; itrack <= numberOfFormants; itrack ++) {
 			const integer icolz = itrack + 1;
-			Table_setColumnLabel (ztable.get(), icolz, Melder_cat (U"z", itrack));
+			Table_renameColumn_e (ztable.get(), icolz, Melder_cat (U"z", itrack));
 			DataModeler ffi = my trackmodelers.at [itrack];
 			if (itrack == 1) {
 				for (integer i = 1; i <= numberOfDataPoints; i ++)   // only once all tracks have same x-values
@@ -674,18 +675,19 @@ autoFormantModeler Formant_to_FormantModeler (Formant me, double tmin, double tm
 
 autoFormantModeler Formant_to_FormantModeler (Formant me, double tmin, double tmax, constINTVEC const& numberOfParametersPerTrack) {
 	try {
-		integer ifmin, ifmax, posInCollection = 0;
+		integer ifmin, ifmax;
 		Function_unidirectionalAutowindow (me, & tmin, & tmax);
 		const integer numberOfDataPoints = Sampled_getWindowSamples (me, tmin, tmax, & ifmin, & ifmax);
+		Melder_require (numberOfDataPoints > 0,
+			U"There are no formant frames in the selection.");
 		autoFormantModeler thee = FormantModeler_create (tmin, tmax, numberOfDataPoints, numberOfParametersPerTrack);
 		Thing_setName (thee.get(), my name.get());
 		for (integer iformant = 1; iformant <= numberOfParametersPerTrack.size; iformant ++) {
-			posInCollection ++;
-			const DataModeler ffi = thy trackmodelers.at [posInCollection];
-			integer idata = 0, validData = 0;
-			for (integer iframe = ifmin; iframe <= ifmax; iframe ++) {
+			const DataModeler ffi = thy trackmodelers.at [iformant];
+			integer validData = 0;
+			for (integer iframe = ifmin, idata = 1; iframe <= ifmax; iframe ++, idata ++) {
 				const Formant_Frame curFrame = & my frames [iframe];
-				ffi -> data [++ idata] .x = Sampled_indexToX (me, iframe);
+				ffi -> data [idata] .x = Sampled_indexToX (me, iframe);
 				ffi -> data [idata] .status = kDataModelerData::INVALID;
 				if (iformant <= curFrame -> numberOfFormants) {
 					const double frequency = curFrame -> formant [iformant]. frequency;
@@ -1069,7 +1071,7 @@ autoFormant Sound_to_Formant_interval (Sound me, double startTime, double endTim
 		Melder_progressOff ();
 		for (integer istep = 1; istep <= numberOfFrequencySteps; istep ++) {
 			const double currentCeiling = minFreq + (istep - 1) * df;
-			autoFormant formant = Sound_to_Formant_burg (resampled.get(), timeStep, 5.0, currentCeiling, windowLength, preemphasisFrequency);
+			autoFormant formant = Sound_to_Formant_burg_mt (resampled.get(), timeStep, 5.0, currentCeiling, windowLength, preemphasisFrequency, 50.0);
 			autoFormantModeler fm = Formant_to_FormantModeler (formant.get(), startTime, endTime, noPararametersPerTrack.get());
 			//TODO FormantModeler_setFormantWeighting (me, weighFormants);
 			FormantModeler_setParameterValuesToZero (fm.get(), 1, numberOfFormantTracks, numberOfSigmas);
@@ -1133,9 +1135,9 @@ autoFormant Sound_to_Formant_interval_robust (Sound me, double startTime, double
 		OrderedOf<structFormant> formants;
 		Melder_progressOff ();
 		for (integer istep = 1; istep <= numberOfFrequencySteps; istep ++) {
-			const double currentCeiling = minFreq + (istep - 1) * df;
-			autoFormant formant = Sound_to_Formant_robust (resampled.get(), timeStep, 5.0,
-					currentCeiling, windowLength, preemphasisFrequency, 50.0, 1.5, 3, 0.0000001, true);
+			const double currentCeiling = minFreq + (istep - 1) * df;			
+			autoFormant formant = Sound_to_Formant_robust_mt (resampled.get(), timeStep, 5.0,
+					currentCeiling, windowLength, preemphasisFrequency, 50.0, 1.5, 3, 0.0000001, 0.0, true);
 			autoFormantModeler fm = Formant_to_FormantModeler (formant.get(), startTime, endTime, noPararametersPerTrack.get());
 			// TODO set weighing
 			FormantModeler_setParameterValuesToZero (fm.get(), 1, numberOfFormantTracks, numberOfSigmas);
@@ -1181,7 +1183,7 @@ autoOptimalCeilingTier Sound_to_OptimalCeilingTier (Sound me,
 		const double frequencyStep = ( numberOfFrequencySteps > 1 ? (maxCeiling - minCeiling) / (numberOfFrequencySteps - 1) : 0.0 );
 		for (integer i = 1; i <= numberOfFrequencySteps; i ++) {
 			const double ceiling = minCeiling + (i - 1) * frequencyStep;
-			autoFormant formant = Sound_to_Formant_burg (me, timeStep, 5, ceiling, windowLength, preemphasisFrequency);
+			autoFormant formant = Sound_to_Formant_burg_mt (me, timeStep, 5.0, ceiling, windowLength, preemphasisFrequency, 50.0);
 			formants. addItem_move (formant.move());
 		}
 		integer numberOfFrames;

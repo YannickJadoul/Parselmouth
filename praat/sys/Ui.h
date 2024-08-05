@@ -2,7 +2,7 @@
 #define _Ui_h_
 /* Ui.h
  *
- * Copyright (C) 1992-2005,2007-2023 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ Thing_declare (EditorCommand);
 			UiForm_addOption (dia.get(), U"Female");
 			UiForm_addOption (dia.get(), U"Male");
 		UiForm_addWord (dia.get(), colour, U"colour", U"Colour", U"black");
-		UiForm_addLabel (dia.get(), U"features", U"Some less conspicuous features:");
+		UiForm_addComment (dia.get(), U"features", U"Some less conspicuous features:");
 		static integer numberOfBirthMarks;
 		UiForm_addNatural (dia.get(), & numberOfBirthMarks, U"numberOfBirthMarks", U"Number of birth marks", U"28");
 		static char *favouriteGreeting;
@@ -64,7 +64,7 @@ Thing_declare (EditorCommand);
 	Real, Positive, Integer, Natural, Channel, Word, and Sentence show a label and an editable text field.
 	Choice shows a label and has Option children stacked below it.
 	OptionMenu shows a label and has Option children in a menu.
-	Label only shows its value.
+	Heading and Comment show only their value.
 	Text, RealVector and RealVector show an editable text field over the whole width of the form.
 	Boolean shows a labeled toggle button which is on (true) or off (false).
 	Option does the same inside a choice box or option menu.
@@ -84,6 +84,7 @@ Thing_define (UiOption, Thing) {
 
 enum class _kUiField_type {
 	REAL_ = 1,
+		LABELLED_TEXT_MIN_ = REAL_,
 	REAL_OR_UNDEFINED_ = 2,
 	POSITIVE_ = 3,
 	INTEGER_ = 4,
@@ -92,25 +93,36 @@ enum class _kUiField_type {
 	SENTENCE_ = 7,
 	COLOUR_ = 8,
 	CHANNEL_ = 9,
-	LABEL_ = 10,
-	TEXT_ = 11,
-	FORMULA_ = 12,
-	INFILE_ = 13,
-	OUTFILE_ = 14,
-	FOLDER_ = 15,
-	REALVECTOR_ = 16,
-	POSITIVEVECTOR_ = 17,
-	INTEGERVECTOR_ = 18,
-	NATURALVECTOR_ = 19,
-	REALMATRIX_ = 20,
-	STRINGARRAY_ = 21,
-	BOOLEAN_ = 22,
-	CHOICE_ = 23,
-	OPTIONMENU_ = 24,
-	LIST_ = 25,
-	LABELLED_TEXT_MIN_ = 1,
-	LABELLED_TEXT_MAX_ = 9
+		LABELLED_TEXT_MAX_ = CHANNEL_,
+
+	HEADING_ = 10,
+		COMMENT_MIN_ = HEADING_,
+	COMMENT_ = 11,
+	CAPTION_ = 12,
+		COMMENT_MAX_ = CAPTION_,
+
+	TEXT_ = 13,
+	FORMULA_ = 14,
+	INFILE_ = 15,
+	OUTFILE_ = 16,
+	FOLDER_ = 17,
+	REALVECTOR_ = 18,
+	POSITIVEVECTOR_ = 19,
+	INTEGERVECTOR_ = 20,
+	NATURALVECTOR_ = 21,
+	REALMATRIX_ = 22,
+	STRINGARRAY_ = 23,
+	BOOLEAN_ = 24,
+	CHOICE_ = 25,
+	OPTIONMENU_ = 26,
+	LIST_ = 27,
 };
+inline bool _kUiField_type_isLabelledText (_kUiField_type type) {
+	return type >= _kUiField_type :: LABELLED_TEXT_MIN_ && type <= _kUiField_type :: LABELLED_TEXT_MAX_;
+}
+inline bool _kUiField_type_isComment (_kUiField_type type) {
+	return type >= _kUiField_type :: COMMENT_MIN_ && type <= _kUiField_type :: COMMENT_MAX_;
+}
 
 Thing_define (UiField, Thing) {
 	_kUiField_type type;
@@ -134,6 +146,7 @@ Thing_define (UiField, Thing) {
 	GuiRadioButton radioButton;   // for CHOICE_
 	GuiList list;
 	GuiOptionMenu optionMenu;
+	enum_generic_getValue getValueFunction;
 	GuiButton pushButton;   // like "Browse..." for INFILE_, OUTFILE_, FOLDER_ (2021-03-30)
 	int y;
 
@@ -217,7 +230,9 @@ UiField UiForm_addWord (UiForm me, conststring32 *variable, conststring32 variab
 		conststring32 labelText, conststring32 defaultValue);
 UiField UiForm_addSentence (UiForm me, conststring32 *variable, conststring32 variableName,
 		conststring32 labelText, conststring32 defaultValue);
-UiField UiForm_addLabel (UiForm me, conststring32 *variable, conststring32 labelText);
+UiField UiForm_addHeading (UiForm me, conststring32 *variable, conststring32 labelText);
+UiField UiForm_addComment (UiForm me, conststring32 *variable, conststring32 labelText);
+UiField UiForm_addCaption (UiForm me, conststring32 *variable, conststring32 labelText);
 UiField UiForm_addBoolean (UiForm me, bool *variable, conststring32 variableName,
 		conststring32 labelText, bool defaultValue);
 UiField UiForm_addText (UiForm me, conststring32 *variable, conststring32 variableName,
@@ -244,8 +259,12 @@ UiField UiForm_addStringArray (UiForm me, constSTRVEC *variable, conststring32 v
 		conststring32 labelText, constSTRVEC defaultValue, integer numberOfLines = 7);
 UiField UiForm_addChoice (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName,
 		conststring32 labelText, int defaultValue, int base);
+UiField UiForm_addChoiceEnum (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName,
+		conststring32 labelText, int defaultValue, int base, enum_generic_getValue getValueFunction);
 UiField UiForm_addOptionMenu (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName,
 		conststring32 labelText, int defaultValue, int base);
+UiField UiForm_addOptionMenuEnum (UiForm me, int *intVariable, conststring32 *stringVariable, conststring32 variableName,
+		conststring32 labelText, int defaultValue, int base, enum_generic_getValue getValueFunction);
 UiOption UiForm_addOption (UiForm me, conststring32 optionText);
 UiField UiForm_addList (UiForm me, integer *integerVariable, conststring32 *stringVariable, conststring32 variableName,
 		conststring32 labelText, constSTRVEC strings, integer defaultValue);
@@ -275,7 +294,7 @@ void UiForm_setPauseForm (UiForm me,
 /* Integer, Natural, Channel, and List fields: */
 	void UiForm_setInteger (UiForm me, integer *p_variable, integer value);
 	void UiForm_setIntegerAsString (UiForm me, integer *p_variable, conststring32 stringValue /* cattable */);
-/* Word, Sentence, Text, and Label fields: */
+/* Word, Sentence, Text, Heading and Comment fields: */
 	void UiForm_setString (UiForm me, conststring32 *p_variable, conststring32 text /* cattable */);
 /* Boolean fields: */
 	void UiForm_setBoolean (UiForm me, bool *p_variable, bool value);

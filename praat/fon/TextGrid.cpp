@@ -1,6 +1,6 @@
 /* TextGrid.cpp
  *
- * Copyright (C) 1992-2022 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1197,6 +1197,49 @@ void TextGrid_removeBoundaryAtTime (TextGrid me, integer tierNumber, double t) {
 	}
 }
 
+void IntervalTier_moveLeftBoundary (const IntervalTier me, const integer intervalNumber, const double newTime) {
+	try {
+		Melder_require (intervalNumber >= 1 && intervalNumber <= my intervals.size,
+			U"The interval number (", intervalNumber, U" is out of the valid range (1 ..", my intervals.size, U").");
+		TextInterval currentInterval = my intervals.at [intervalNumber];
+		Melder_require (newTime < currentInterval -> xmax,
+			U"Cannot move boundary forward from ", currentInterval -> xmin, U" to ", newTime, U" seconds, ",
+			U"because that would be past the end of the current interval (", currentInterval -> xmax, U" seconds).");
+		Melder_require (intervalNumber > 1,
+			U"Trying to change the end of the previous interval (", intervalNumber - 1, U"), but there is no previous interval.");
+		Melder_assert (my intervals.size >= 2);   // otherwise we would have thrown
+		const TextInterval previousInterval = my intervals.at [intervalNumber - 1];
+		Melder_require (newTime > previousInterval -> xmin,
+			U"Cannot move boundary back from ", currentInterval -> xmin, U" to ", newTime, U" seconds, ",
+			U"because that would be past the start of the previous interval (", previousInterval -> xmin, U" seconds).");
+		previousInterval -> xmax = currentInterval -> xmin = newTime;
+	} catch (MelderError) {
+		Melder_throw (me, U": left boundary not moved.");
+	}
+}
+
+void IntervalTier_moveRightBoundary (const IntervalTier me, const integer intervalNumber, const double newTime) {
+	try {
+		Melder_require (intervalNumber >= 1 && intervalNumber <= my intervals.size,
+			U"The interval number (", intervalNumber, U" is out of the valid range (1 ..", my intervals.size, U").");
+		TextInterval currentInterval = my intervals.at [intervalNumber];
+		Melder_require (newTime > currentInterval -> xmin,
+			U"Cannot move boundary back from ", currentInterval -> xmax, U" to ", newTime, U" seconds, ",
+			U"because that would be past the start of the current interval (", currentInterval -> xmin, U" seconds).");
+		Melder_require (intervalNumber < my intervals.size,
+			U"Trying to change the start of the next interval (", intervalNumber + 1, U"), but there is no next interval.");
+		Melder_assert (my intervals.size >= 2);   // otherwise we would have thrown
+		const TextInterval nextInterval = my intervals.at [intervalNumber + 1];
+		Melder_require (newTime < nextInterval -> xmax,
+			U"Cannot move boundary forward from ", currentInterval -> xmax, U" to ", newTime, U" seconds, ",
+			U"because that would be past the end of the next interval (", nextInterval -> xmax, U" seconds)."
+		);
+		nextInterval -> xmin = currentInterval -> xmax = newTime;
+	} catch (MelderError) {
+		Melder_throw (me, U": right boundary not moved.");
+	}
+}
+
 void TextGrid_setIntervalText (TextGrid me, integer tierNumber, integer intervalNumber, conststring32 text) {
 	try {
 		IntervalTier intervalTier = TextGrid_checkSpecifiedTierIsIntervalTier (me, tierNumber);
@@ -1679,13 +1722,13 @@ autoTable TextGrid_downto_Table (TextGrid me, bool includeLineNumbers, integer t
 	autoTable thee = Table_createWithoutColumnNames (numberOfRows, 3 + includeLineNumbers + includeTierNames);
 	integer icol = 0;
 	if (includeLineNumbers)
-		Table_setColumnLabel (thee.get(), ++ icol, U"line");
-	Table_setColumnLabel (thee.get(), ++ icol, U"tmin");
+		Table_renameColumn_e (thee.get(), ++ icol, U"line");
+	Table_renameColumn_e (thee.get(), ++ icol, U"tmin");
 	const integer tmin_columnNumber = icol;
 	if (includeTierNames)
-		Table_setColumnLabel (thee.get(), ++ icol, U"tier");
-	Table_setColumnLabel (thee.get(), ++ icol, U"text");
-	Table_setColumnLabel (thee.get(), ++ icol, U"tmax");
+		Table_renameColumn_e (thee.get(), ++ icol, U"tier");
+	Table_renameColumn_e (thee.get(), ++ icol, U"text");
+	Table_renameColumn_e (thee.get(), ++ icol, U"tmax");
 	const integer tmax_columnNumber = icol;
 	integer irow = 0;
 	for (integer itier = 1; itier <= my tiers->size; itier ++) {
@@ -1722,7 +1765,7 @@ autoTable TextGrid_downto_Table (TextGrid me, bool includeLineNumbers, integer t
 			}
 		}
 	}
-	Table_sortRows_Assert (thee.get(), autoINTVEC ({ tmin_columnNumber, tmax_columnNumber }).get());   // sort by tmin and tmax
+	Table_sortRows_a (thee.get(), autoINTVEC ({ tmin_columnNumber, tmax_columnNumber }).get());   // sort by tmin and tmax
 	return thee;
 }
 
@@ -1786,7 +1829,7 @@ autoTable TextGrid_tabulateOccurrences (TextGrid me, constVEC searchTiers, kMeld
 			}
 		}
 	}
-	Table_sortRows_Assert (thee.get(), autoINTVEC ({ time_columnNumber }).get());   // sort by time
+	Table_sortRows_a (thee.get(), autoINTVEC ({ time_columnNumber }).get());   // sort by time
 	return thee;
 }
 
@@ -1807,13 +1850,19 @@ void TextGrid_correctRoundingErrors (TextGrid me) {
 			Melder_assert (tier -> intervals.size > 0);
 			TextInterval first = tier -> intervals.at [1];
 			first -> xmin = my xmin;
-			Melder_assert (first -> xmin < first -> xmax);
+			Melder_require (first -> xmin < first -> xmax,
+				U"Interval 1 of tier ", itier,
+				U" has an empty time domain, running from ", first -> xmin, U" to ", first -> xmax, U" seconds."
+			);
 			for (integer iinterval = 1; iinterval < tier -> intervals.size; iinterval ++) {
 				TextInterval left = tier -> intervals.at [iinterval];
 				TextInterval right = tier -> intervals.at [iinterval + 1];
 				right -> xmin = left -> xmax;
 				trace (U"tier ", itier, U", interval ", iinterval, U", ", right -> xmin, U" ", right -> xmax);
-				Melder_assert (right -> xmin < right -> xmax);
+				Melder_require (right -> xmin < right -> xmax,
+					U"Interval ", iinterval + 1, U" of tier ", itier,
+					U" has an empty time domain, running from ", first -> xmin, U" to ", first -> xmax, U" seconds."
+				);
 			}
 			TextInterval last = tier -> intervals.at [tier -> intervals.size];
 			trace (tier -> intervals.size, U" ", last -> xmax, U" ", my xmax);

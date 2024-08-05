@@ -1,6 +1,6 @@
 /* melder_audiofiles.cpp
  *
- * Copyright (C) 1992-2008,2010-2019,2021,2023 Paul Boersma & David Weenink, 2007 Erez Volk (for FLAC)
+ * Copyright (C) 1992-2008,2010-2019,2021,2023,2024 Paul Boersma & David Weenink, 2007 Erez Volk (for FLAC)
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,9 @@
 #include "../external/flac/flac_FLAC_metadata.h"
 #include "../external/flac/flac_FLAC_stream_decoder.h"
 #include "../external/flac/flac_FLAC_stream_encoder.h"
+#ifdef _WIN32
+	#include "../external/flac/flac_share_windows_unicode_filenames.h"
+#endif
 #include "../external/mp3/mp3.h"
 
 /***** WRITING *****/
@@ -579,7 +582,7 @@ static void Melder_checkWavFile (FILE *f, integer *numberOfChannels, int *encodi
 						U"File too small: expected ", chunkSize, U" bytes of data, but found ", i, U".");
 			} else {
 				if (formatChunkPresent)
-					break;   // OPTIMIZATION: do not read the whole data chunk if we have already read the format chunk
+					break;   // OPTIMIZE: do not read the whole data chunk if we have already read the format chunk
 			}
 		} else {   // ignore other chunks
 			if (chunkSize & 1)
@@ -879,6 +882,41 @@ static void Melder_readMp3File (FILE *f, MAT buffer) {
 	mp3f_delete (mp3f);
 	if (result == 0)
 		Melder_throw (U"Error decoding MP3 file.");
+}
+
+static uint32 readBits_u32 (FILE *f, const integer numberOfBits) {
+	Melder_assert (numberOfBits >= 0 && numberOfBits <= 32);
+	uint32 result = 0;
+	for (integer i = 1; i <= numberOfBits; i ++) {
+		uint32 bit = bingetb1 (f);
+		result = (result << 1) + bit;
+	}
+	return result;
+}
+
+static void Melder_readPolyphoneFile (FILE *f, MAT buffer) {
+	//TRACE
+	Melder_require (buffer.nrow == 1,
+		U"Can read Polyphone files only if they are mono. Write to paul.boersma@uva.nl for more information.");
+	trace (U"expecting ", buffer.ncol, U" samples");
+	const integer startOfData = ftell (f);
+	fseek (f, 0, SEEK_END);
+	const integer endOfData = ftell (f);
+	const integer numberOfDataBytesInFile = endOfData - startOfData;
+	trace (numberOfDataBytesInFile, U" data bytes in file");
+	fseek (f, startOfData, SEEK_SET);
+	for (integer ibyte = 1; ibyte <= numberOfDataBytesInFile; ibyte ++) {
+		uint32 byte = readBits_u32 (f, 8);
+		trace (U"byte ", ibyte, U" is ", byte);
+		// 97 106 107 103 1   255 114 224 19 50   214 203 0 73 2
+		// 97 106 107 103 1   255 114 224 19 50   214 200 3 73 36
+		// 97 106 107 103 1   255 114 224 19 50   214 221 136 63 4
+		// 255 = 0b11111111
+		// 114 = 0b01110010 = 0111~ carry 0010 = 7 = mulaw, but Alaw in the case of Polyphone
+		// 224 = 0b11100000 = 00101110~ 00~ 0~ carry 0 = 46~0~0
+		// 19 = 0b00010011
+	}
+	Melder_throw (U"Polyphone sound files cannot yet be opened. Write to paul.boersma@uva.nl for more information.");
 }
 
 void Melder_readAudioToFloat (FILE *f, int encoding, MAT buffer) {
@@ -1264,6 +1302,9 @@ void Melder_readAudioToFloat (FILE *f, int encoding, MAT buffer) {
 			case Melder_MPEG_COMPRESSION_32:
 				Melder_readMp3File (f, buffer);
 				break;
+			case Melder_POLYPHONE:
+				Melder_readPolyphoneFile (f, buffer);
+				break;
 			default:
 				Melder_throw (U"Unknown encoding ", encoding, U".");
 		}
@@ -1584,6 +1625,12 @@ void MelderFile_writeFloatToAudio (MelderFile file, constMATVU const& buffer, in
 	} catch (MelderError) {
 		Melder_throw (U"Samples not written to audio file.");
 	}
+}
+
+void Melder_audiofiles_init () {
+	#ifdef _WIN32
+		flac_set_utf8_filenames (true);
+	#endif
 }
 
 /* End of file melder_audiofiles.cpp */

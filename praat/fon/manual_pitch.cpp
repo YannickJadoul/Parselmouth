@@ -170,7 +170,7 @@ TERM (U"##Frame number")
 DEFINITION (U"the frame whose value is to be looked up.")
 MAN_END
 
-MAN_BEGIN (U"Pitch", U"ppgb", 20101230)
+MAN_BEGIN (U"Pitch", U"ppgb", 20240722)  // 20101230, 20231115
 INTRO (U"One of the @@types of objects@ in Praat. For tutorial information, see @@Intro 4. Pitch analysis@.")
 NORMAL (U"A Pitch object represents periodicity candidates as a function of time. "
 	"It does not mind whether this periodicity refers to acoustics, "
@@ -178,9 +178,10 @@ NORMAL (U"A Pitch object represents periodicity candidates as a function of time
 	"It is sampled into a number of %frames centred around equally spaced times.")
 ENTRY (U"Pitch commands")
 NORMAL (U"Creation:")
-LIST_ITEM (U"\\bu @@Sound: To Pitch...@: preferred method (autocorrelation).")
-LIST_ITEM (U"\\bu @@Sound: To Pitch (ac)...@: autocorrelation method (all parameters).")
-LIST_ITEM (U"\\bu @@Sound: To Pitch (cc)...@: cross-correlation method.")
+LIST_ITEM (U"\\bu @@Sound: To Pitch (filtered autocorrelation)...@: for intonation and vocal-fold vibration")
+LIST_ITEM (U"\\bu @@Sound: To Pitch (raw cross-correlation)...@: for voice analysis")
+LIST_ITEM (U"\\bu @@Sound: To Pitch (raw autocorrelation)...@: for raw periodicity")
+LIST_ITEM (U"\\bu @@Sound: To Pitch (filtered cross-correlation)...@")
 NORMAL (U"Drawing:")
 LIST_ITEM (U"\\bu @@Pitch: Draw...@")
 NORMAL (U"Viewing and editing:")
@@ -359,7 +360,7 @@ NORMAL (U"The time domain of the resulting PitchTier is a union of the domains o
 	"and PointProcess functions.")
 MAN_END
 
-MAN_BEGIN (U"PitchEditor", U"ppgb", /*20110808 20220814*/ 20230608)
+MAN_BEGIN (U"PitchEditor", U"ppgb", /*20110808 20220814 20231115*/ 20240722)
 INTRO (U"One of the @Editors in Praat, for viewing and modifying a @Pitch object.")
 ENTRY (U"What the Pitch editor shows")
 NORMAL (U"In the window of the PitchEditor, you will see the following features:")
@@ -389,7 +390,8 @@ NORMAL (U"To change the path through the candidates manually, click on the candi
 	"The changes will immediately affect the Pitch object that you are editing. To make a voiced frame "
 	"voiceless, click in the voicelessness bar.")
 NORMAL (U"To change the path automatically, choose ##Path finder...# from the #Edit menu; "
-	"this will have the same effect as filling in different values in the @@Sound: To Pitch (ac)...@ command window, "
+	"this will have the same effect as filling in different values in "
+	"the @@Sound: To Pitch (filtered autocorrelation)...@ or @@Sound: To Pitch (raw autocorrelation)...@ command window, "
 	"but is much faster because the candidates do not have to be determined again.")
 ENTRY (U"Resynthesis")
 NORMAL (U"To hum any part of the pitch contour, click one of the buttons "
@@ -610,7 +612,7 @@ NORMAL (U"The algorithm performs an acoustic periodicity detection on the basis 
 ENTRY (U"Settings")
 TERM (U"%%Time step% (standard value: 0.01 s)")
 DEFINITION (U"the measurement interval (frame duration), in seconds.")
-TERM (U"%%Minimum pitch% (standard value: 75 Hz)")
+TERM (U"%%Pitch floor% (standard value: 75 Hz)")
 DEFINITION (U"determines the length of the analysis window.")
 TERM (U"%%Silence threshold% (standard value: 0.1)")
 DEFINITION (U"frames that do not contain amplitudes above this threshold (relative to the global maximum amplitude), "
@@ -622,7 +624,7 @@ DEFINITION (U"4.5 is best for speech: "
 	"but the algorithm becomes more sensitive to dynamic changes in the signal.")
 ENTRY (U"Usage")
 NORMAL (U"You will normally use @@Sound: To Harmonicity (cc)...@ instead of this command, "
-	"because that has a much better time resolution (though its sensitivity is 60, not 80 dB).")
+	"because that has a much better time resolution (though its sensitivity is 60, not 80 dB).")   // TODO: check these values, because we say 60 dB above
 MAN_END
 
 MAN_BEGIN (U"Sound: To Harmonicity (cc)...", U"ppgb", 19961003)
@@ -635,130 +637,855 @@ NORMAL (U"The algorithm performs an acoustic periodicity detection on the basis 
 	"For information on the settings, see @@Sound: To Harmonicity (ac)...@.")
 MAN_END
 
-MAN_BEGIN (U"Sound: To Pitch...", U"ppgb", 20030916)
-INTRO (U"A command that creates a @Pitch object from every selected @Sound object.")
-ENTRY (U"Purpose")
-NORMAL (U"to perform a pitch analysis, optimized for speech.")
-ENTRY (U"Settings")
-NORMAL (U"The settings that control the recruitment of the candidates are:")
-TERM (U"##Time step (s)# (standard value: 0.0)")
-DEFINITION (U"the measurement interval (frame duration), in seconds. If you supply 0, "
-	"Praat will use a time step of 0.75 / (%%pitch floor%), e.g. 0.01 seconds if the pitch floor is 75 Hz; "
-	"in this example, Praat computes 100 pitch values per second.")
-TERM (U"##Pitch floor (Hz)# (standard value: 75 Hz)")
-DEFINITION (U"candidates below this frequency will not be recruited. "
-	"This parameter determines the length of the analysis window: it will be 3 longest periods long, "
-	"i.e., if the pitch floor is 75 Hz, the window will be 3/75 = 0.04 seconds long.")
-NORMAL (U"Note that if you set the time step to zero, the analysis windows for consecutive measurements "
-	"will overlap appreciably: Praat will always compute 4 pitch values "
-	"within one window length, i.e., the degree of %oversampling is 4.")
-NORMAL (U"A post-processing algorithm seeks the cheapest path through the candidates. "
-	"The argument that determines the cheapest path is:")
-TERM (U"##Pitch ceiling (Hz)# (standard value: 600 Hz)")
-DEFINITION (U"candidates above this frequency will be ignored.")
-ENTRY (U"Algorithm")
-NORMAL (U"This is the algorithm described at @@Sound: To Pitch (ac)...@, "
-	"with all the parameters not mentioned above set to their standard values.")
-MAN_END
+MAN_PAGES_BEGIN
+R"~~~(
+################################################################################
+"how to choose a pitch analysis method"
+© Paul Boersma 2023,2024
 
-MAN_BEGIN (U"Sound: To Pitch (ac)...", U"ppgb", 20220924)
-INTRO (U"A command that creates a @Pitch object from every selected @Sound object.")
-ENTRY (U"Purpose")
-NORMAL (U"to perform a pitch analysis based on an autocorrelation method.")
-ENTRY (U"Usage")
-NORMAL (U"Normally, you will instead use @@Sound: To Pitch...@, which uses the same method. "
-	"The command described here is mainly for experimenting with the parameters, "
-	"or for the analysis of non-speech signals, which may require different "
-	"standard settings of the parameters.")
-ENTRY (U"Algorithm")
-NORMAL (U"The algorithm performs an acoustic periodicity detection on the basis of an "
-	"accurate autocorrelation method, as described in @@Boersma (1993)@. "
-	"This method is more accurate, noise-resistant, and robust, than methods based on cepstrum or combs, "
-	"or the original autocorrelation methods. The reason why other methods were invented, "
-	"was the failure to recognize the fact that if you want to estimate a signal's short-term autocorrelation "
-	"function on the basis of a windowed signal, you should divide the autocorrelation function of the "
-	"windowed signal by the autocorrelation function of the window:")
-NORMAL (U"%r__%x_ (%\\ta) \\~~ %r__%xw_ (%\\ta) / %r__%w_ (%\\ta)")
-ENTRY (U"Settings")
-NORMAL (U"The settings that control the recruitment of the candidates are:")
-TERM (U"##Time step (s)# (standard value: 0.0)")
-DEFINITION (U"the measurement interval (frame duration), in seconds. If you supply 0, "
-	"Praat will use a time step of 0.75 / (%%pitch floor%), e.g. 0.01 seconds if the pitch floor is 75 Hz; "
-	"in this example, Praat computes 100 pitch values per second.")
-TERM (U"##Pitch floor (Hz)# (standard value: 75 Hz)")
-DEFINITION (U"candidates below this frequency will not be recruited. "
-	"This parameter determines the effective length of the analysis window: it will be 3 longest periods long, "
-	"i.e., if the pitch floor is 75 Hz, the window will be effectively 3/75 = 0.04 seconds long.")
-NORMAL (U"Note that if you set the time step to zero, the analysis windows for consecutive measurements "
-	"will overlap appreciably: Praat will always compute 4 pitch values "
-	"within one window length, i.e., the degree of %oversampling is 4.")
-TERM (U"##Very accurate# (standard value: %off)")
-DEFINITION (U"if %off, the window is a Hanning window with a physical length of  3 / (%%pitch floor%). "
-	"If %on, the window is a Gaussian window with a physical length of  6 / (%%pitch floor%), "
-	"i.e. twice the effective length.")
-NORMAL (U"A post-processing algorithm seeks the cheapest path through the candidates. "
-	"The settings that determine the cheapest path are:")
-TERM (U"##Pitch ceiling (Hz)# (standard value: 600 Hz)")
-DEFINITION (U"candidates above this frequency will be ignored.")
-TERM (U"##Silence threshold# (standard value: 0.03)")
-DEFINITION (U"frames that do not contain amplitudes above this threshold (relative to the global maximum amplitude), "
-	"are probably silent.")
-TERM (U"##Voicing threshold# (standard value: 0.45)")
-DEFINITION (U"the strength of the unvoiced candidate, relative to the maximum possible autocorrelation. "
-	"If the amount of periodic energy in a frame is more than this fraction of the total energy (the remainder being noise), "
-	"then Praat will prefer to regard this frame as voiced; otherwise as unvoiced. "
-	"To increase the number of unvoiced decisions, increase the voicing threshold.")
-TERM (U"##Octave cost# (standard value: 0.01 per octave)")
-DEFINITION (U"degree of favouring of high-frequency candidates, relative to the maximum possible autocorrelation. "
-	"This is necessary because even (or: especially) in the case of a perfectly periodic signal, "
-	"all undertones of %F__0_ are equally strong candidates as %F__0_ itself. "
-	"To more strongly favour recruitment of high-frequency candidates, increase this value.")
-TERM (U"##Octave-jump cost# (standard value: 0.35)")
-DEFINITION (U"degree of disfavouring of pitch changes, relative to the maximum possible autocorrelation. "
-	"To decrease the number of large frequency jumps, increase this value. In contrast with what is described "
-	"in the article, this value will be corrected for the time step: multiply by 0.01 s / %TimeStep to get "
-	"the value in the way it is used in the formulas in the article.")
-TERM (U"##Voiced / unvoiced cost# (standard value: 0.14)")
-DEFINITION (U"degree of disfavouring of voiced/unvoiced transitions, relative to the maximum possible autocorrelation. "
-	"To decrease the number of voiced/unvoiced transitions, increase this value. In contrast with what is described "
-	"in the article, this value will be corrected for the time step: multiply by 0.01 s / %TimeStep to get "
-	"the value in the way it is used in the formulas in the article.")
-MAN_END
+Pitch analysis is the determination of a pitch curve from a given sound.
 
-MAN_BEGIN (U"Sound: To Pitch (cc)...", U"ppgb", 20030916)
-INTRO (U"A command that creates a @Pitch object from every selected @Sound object.")
-ENTRY (U"Purpose")
-NORMAL (U"to perform a pitch analysis based on a cross-correlation method.")
-ENTRY (U"Algorithm")
-NORMAL (U"The algorithm performs an acoustic periodicity detection on the basis of a "
-	"forward cross-correlation analysis.")
-ENTRY (U"Settings")
-TERM (U"##Time step (s)# (standard value: 0.0)")
-DEFINITION (U"the measurement interval (frame duration), in seconds. If you supply 0, "
-	"Praat will use a time step of 0.25 / (%%pitch floor%), e.g. 0.00333333 seconds if the pitch floor is 75 Hz; "
-	"in this example, Praat computes 300 pitch values per second.")
-TERM (U"##Pitch floor (Hz)# (standard value: 75 Hz)")
-DEFINITION (U"candidates below this frequency will not be recruited. "
-	"This parameter determines the length of the analysis window: it will be 1 longest period long, "
-	"i.e., if the pitch floor is 75 Hz, the window will be 1/75 = 0.01333333 seconds long.")
-NORMAL (U"Note that if you set the time step to zero, the analysis windows for consecutive measurements "
-	"will overlap appreciably: Praat will always compute 4 pitch values "
-	"within one window length, i.e., the degree of %oversampling is 4.")
-NORMAL (U"The other settings are the same as for @@Sound: To Pitch (ac)...@.")
-ENTRY (U"Usage")
-NORMAL (U"The preferred method for speech is @@Sound: To Pitch...@. "
-	"The command described here is mainly for experimenting, "
-	"or for applications where you need short time windows.")
-MAN_END
+In Praat you can choose from at least four methods for pitch analysis:
+- @@pitch analysis by filtered autocorrelation
+- @@pitch analysis by raw cross-correlation
+- @@pitch analysis by raw autocorrelation
+- @@pitch analysis by filtered cross-correlation
 
-MAN_BEGIN (U"Sound: To PointProcess (periodic, cc)...", U"ppgb", 20030309)
+These method have been listed here in order of usefulness for the %average speech researcher:
+for measuring vocal-fold vibration frequency or intonation,
+you are advised to use @@pitch analysis by ||filtered autocorrelation@;
+for voice analysis (such as is used in the area of voice pathology),
+you are advised to use @@pitch analysis by ||raw cross-correlation@;
+and for measuring pure periodicity,
+you are advised to use @@pitch analysis by ||raw autocorrelation@.
+
+Measuring intonation
+====================
+
+From 1993 to 2023, Praat’s preferred method for measuring intonation
+(and for most use cases involving vocal-fold vibration) was
+@@pitch analysis by ||raw autocorrelation@, and this is still available if you
+want to measure raw periodicity (see below). From 2023 on,
+Praat’s preferred method for measuring intonation
+(and for most use cases involving vocal-fold vibration) has been
+@@pitch analysis by ||filtered autocorrelation@.
+
+All these methods measure pitch in terms of the self-similarity of the waveform.
+If the waveform is almost identical if you shift it by 10 milliseconds in time,
+then 100 Hz will be a good candidate for being the F0. This idea has been used in Praat from 1993 on,
+using the "autocorrelation" and "cross-correlation" methods,
+which are nowadays called "raw autocorrelation" and "raw cross-correlation".
+Both methods measure self-similarity as a number between -1.0 and +1.0.
+From 2023 on, we also have "filtered autocorrelation" and "filtered cross-correlation",
+which use low-pass filtering of the waveform (by a Gaussian filter)
+prior to doing autocorrelation or cross-correlation.
+
+The filtering comes with several benefits:
+
+- ##Filtering leads to fewer unwanted octave drops.# An unwanted octave drop can occur,
+for instance, if you set the pitch floor to 75 Hz (the standard value for raw AC)
+but the F0 is 200 Hz and there is background noise.
+The waveshape will be self-similar over time shifts of 5 ms,
+but then necessarily also over time shifts of 10 ms and 15 ms, and so on.
+Background noise can sometimes randomly make the degree of self-similarity higher
+over 10 ms than over 5 ms, leading to an octave drop in the measured pitch, from 200 to 100 Hz.
+In raw AC and raw CC, this problem is alleviated a bit by applying an "octave cost",
+whose standard setting is 0.01 per octave (on a self-similarity scale from 0.0 to 1.0).
+However, low-pass filtering reduces the problem more strongly,
+by taking away the higher-frequency parts of the background noise.
+- ##Filtering leads to fewer unwanted octave rises.# If you set the pitch ceiling to 600 Hz
+(the standard value), and the F0 is 150 Hz, and the F1 is 450 Hz,
+then the harmonic relation between F0 and F1 (F1 is exactly three times F0)
+will lead to a very strong F1 in the waveform, sometimes causing the pitch to be analysed
+as 450 instead of 150 Hz. This problem is exacerbated by the existence of the “octave cost”,
+which favours higher pitch candidates. Low-pass filtering reduces this problem,
+because the 450-Hz component of the waveform is weakened with respect to the 150-Hz component
+by a factor of 0.373 (if the pitch top is 800 Hz, and the “attenuation at top” is set to 0.03).
+This effect is so strong that the standard “octave cost” can be much higher for filtered pitch analysis
+(the standard value is 0.055 per octave) than for raw pitch analysis (where the standard value is 0.01 per octave):
+this still reduces the formant problem heavily, and it reduces the unwanted octave drops
+by making the analysis more resistent to %lower-frequency parts of the background noise.
+- ##Filtering leads to better tracking of formant transitions.# Fast formant movements
+in transitions between consonants and vowels cause waveforms to change their shape strongly in time.
+This reduces the self-similarity of the waveform, leading to the “raw AC” method judging
+some of these transitions as “unvoiced”. With low-pass filtering, the transitions become
+more sine-like, which leads “filtered AC” being more likely to judge these transitions as “voiced”.
+
+On a database containing EGG recordings as a gold standard (AtakeDB),
+the incidence of unwanted big frequency drops falls from 0.54% (of voiced frames) for raw AC to 0.15% for filtered AC,
+and the number of unwanted big frequency rises falls from 0.25% to 0.10% (of voiced frames);
+together, these numbers indicate that the incidence of gross frequency errors is better
+for filtered AC than for raw AC by a factor of more than 3.
+
+On the other hand, low-pass filtering also produces potentially unwanted side effects:
+
+- The reduction of higher frequency components causes voicing decisions to be based on smoother curves.
+As this influences especially the loud parts (the vowels),
+this reduction may have to lead to a higher optimal “silence threshold” setting.
+Indeed, in testing the algorithm on AtakeDB,
+the best silence threshold for filtered AC seems to be 0.18,
+whereas for raw AC it seems to be 0.06. Accounting for recordings with a larger dynamic range than AtakeDB,
+the current standard silence threshold is half that: 0.03 for raw AC, and 0.09 for filtered AC.
+This can lead to more difficulty measuring plosive voicing (during prevoiced [b] or [d]);
+if you want to measure those, then you are advised to lower the silence threshold
+from the standard of 0.09 to e.g. 0.01 (this is also somewhat true for raw AC,
+where the standard value is 0.03 but one should probably use 0.01 for prevoicing).
+- Generalizingly, voicing decisions seem to be less predictable for filtered AC than for raw AC,
+i.e. it is possible that the incidence of unvoiced-to-voiced errors and voiced-to-unvoiced errors is greater.
+This may have to be shown in practice. In the future, voicing decisions may have to be relegated
+to a trained neural network, rather than to the current simple “costs” and “thresholds”.
+
+All in all, it seems likely that filtered AC works better in practice than raw AC
+(your feedback is invited, though), which is why filtered AC is the preferred pitch analysis method
+for vocal-fold vibration and intonation, as is shown in the Periodicity menu in the Objects window,
+in the Pitch menu of the Sound window, and in many places in this manual.
+While the standard pitch range for raw AC runs from 75 to 600 Hz,
+filtered AC has less trouble discarding very low or very high pitch candidates,
+so the standard pitch range for filtered AC is wider, running from 50 Hz to 800 Hz,
+and may not have to be adapted to the speaker’s gender.
+
+Voice analysis
+==============
+
+For voice analysis, we probably shouldn’t filter away noise, so @@pitch analysis by ||raw cross-correlation@ is the preferred method.
+
+Measuring prevoicing
+====================
+
+The high standard “silence threshold” of 0.09 for filtered AC (or, to a lesser extent, 0.03 for raw AC)
+probably leads to trouble measuring voicing during the closure phase of prevoiced plosives such as [b] or [d].
+You are still advised to use filtered AC, but to lower the silence threshold to 0.01 or so.
+
+Raw periodicity
+===============
+
+Mathematically generated periodic signals aren’t necessarily speechlike. For instance:
+{
+	sine = Create Sound from formula: "sine", 1, 0, 0.1, 44100, "0.4*sin(2*pi*200*x)"
+	tricky = Create Sound from formula: "tricky", 1, 0, 0.1, 44100, "0.001*sin(2*pi*400*x)
+	... + 0.001*sin(2*pi*600*x) - 0.2*cos(2*pi*800*x+1.5) - 0.2*cos(2*pi*1000*x+1.5)"
+	selectObject: sine, tricky
+	Concatenate
+	Erase all
+	Draw: 0.08, 0.12, 0, 0, "yes", "curve"
+}
+Both the left part of this sound and the right part have a period of 5 ms,
+and therefore an F0 of 200 Hz. The @@pitch analysis by ||raw autocorrelation@ method measures an equally
+strong pitch of 200 Hz throughout this signal, while @@pitch analysis by ||filtered autocorrelation@
+considers the right part voiceless. This is because the right part contains
+only components at 800 and 1000 Hz, which will be filtered out by the low-pass filter,
+and only very small components at 200, 400 or 600 Hz.
+This problem of the %%missing fundamental% was the reason why low-pass filtering
+was not included in @@pitch analysis by ||raw autocorrelation@ in 1993. However,
+this situation is %very rare in speech, so for speech we do nowadays recommend @@pitch analysis by ||filtered autocorrelation@,
+while we recommend @@pitch analysis by ||raw autocorrelation@ only if you want to measure %raw periodicity.
+
+################################################################################
+"Sound: To Pitch..."
+© Paul Boersma 1996,2003,2023,2024
+
+A @@hidden commands|hidden command@ that creates a @Pitch object from every selected @Sound object.
+
+Purpose
+=======
+
+to perform a pitch analysis, optimized for speech.
+
+Settings
+========
+
+The settings that control the recruitment of the candidates are:
+
+##Time step (s)# (standard value: 0.0)
+:	the measurement interval (frame duration), in seconds. If you supply 0.0,
+Praat will use a time step of 0.75 / (%%pitch floor%), e.g. 0.01 seconds if the pitch floor is 75 Hz;
+in this example, Praat computes 100 pitch values per second.
+
+##Pitch floor (Hz)# (standard value: 75 Hz)
+:	candidates below this frequency will not be recruited.
+This parameter determines the length of the analysis window: it will be 3 longest periods long,
+i.e., if the pitch floor is 75 Hz, the window will be 3/75 = 0.04 seconds long.
+
+Note that if you set the time step to zero, the analysis windows for consecutive measurements
+will overlap appreciably: Praat will always compute 4 pitch values
+within one window length, i.e., the degree of %oversampling is 4.
+
+##Pitch ceiling (Hz)# (standard value: 600 Hz)
+:	candidates above this frequency will be ignored.
+
+Algorithm
+=========
+
+This is the algorithm described at @@Sound: To Pitch (raw autocorrelation)...@,
+with all the parameters not mentioned above set to their standard values.
+
+################################################################################
+"Sound: To Pitch (ac)..."
+© Paul Boersma 1996,2001–2003,2022–2024
+
+A @@hidden commands|hidden command@ that creates a @Pitch object from every selected @Sound object.
+
+The parameters are in the following order:
+- ##Time step (s)# (standard value: 0.0)
+- ##Pitch floor (Hz)# (standard value: 75 Hz)
+- ##Max. number of candidates# (standard value: 15)
+- ##Very accurate# (standard value: %off)
+- ##Silence threshold# (standard value: 0.03)
+- ##Voicing threshold# (standard value: 0.45)
+- ##Octave cost# (standard value: 0.01 per octave)
+- ##Octave-jump cost# (standard value: 0.35)
+- ##Voiced / unvoiced cost# (standard value: 0.14)
+- ##Pitch ceiling (Hz)# (standard value: 600 Hz)
+
+With the advent of @@Sound: To Pitch (filtered autocorrelation)...@ in 2023,
+this command was replaced with @@Sound: To Pitch (raw autocorrelation)...@.
+
+Transitioning
+=============
+
+While ##Sound: To Pitch (ac)...# will still work in scripts,
+you make like to transition to @@Sound: To Pitch (raw autocorrelation)...@.
+Please note that the %%Pitch ceiling% parameter was moved immediately after %%Pitch floor%,
+where it fits more logically.
+For example, you can replace the line
+{;
+	\#{To Pitch (ac):} 0.0, 75, 15, “off”, 0.03, 0.45, 0.01, 0.35, 0.14, 600
+}
+with the entirely equivalent line
+{;
+	\#@{Sound: ||To Pitch (raw autocorrelation):} 0.0, 75, 600, 15, “off”, 0.03, 0.45, 0.01, 0.35, 0.14
+}
+
+################################################################################
+"Sound: To Pitch (cc)..."
+© Paul Boersma 1996,2003,2023,2024
+
+A @@hidden commands|hidden command@ that creates a @Pitch object from every selected @Sound object.
+
+The parameters are in the following order:
+- ##Time step (s)# (standard value: 0.0)
+- ##Pitch floor (Hz)# (standard value: 75 Hz)
+- ##Max. number of candidates# (standard value: 15)
+- ##Very accurate# (standard value: %off)
+- ##Silence threshold# (standard value: 0.03)
+- ##Voicing threshold# (standard value: 0.45)
+- ##Octave cost# (standard value: 0.01 per octave)
+- ##Octave-jump cost# (standard value: 0.35)
+- ##Voiced / unvoiced cost# (standard value: 0.14)
+- ##Pitch ceiling (Hz)# (standard value: 600 Hz)
+
+With the advent of @@Sound: To Pitch (filtered cross-correlation)...@ in 2023,
+this command was replaced with @@Sound: To Pitch (raw cross-correlation)...@.
+
+Transitioning
+=============
+
+While ##Sound: To Pitch (cc)...# will still work in scripts,
+you may like to transition to @@Sound: To Pitch (raw cross-correlation)...@.
+Please note that the %%Pitch ceiling% parameter was moved immediately after %%Pitch floor%,
+where it fits more logically.
+For example, you can replace the line
+{;
+	\#{To Pitch (cc):} 0.0, 75, 15, “off”, 0.03, 0.45, 0.01, 0.35, 0.14, 600
+}
+with the entirely equivalent line
+{;
+	\#@{Sound: ||To Pitch (raw cross-correlation):} 0.0, 75, 600, 15, “off”, 0.03, 0.45, 0.01, 0.35, 0.14
+}
+
+################################################################################
+"Sound: To Pitch (raw ac)..."
+© Paul Boersma 1996,2001–2003,2022-2024
+
+A @@hidden commands|hidden command@ that creates a @Pitch object from every selected @Sound object.
+
+This command is a precise synonym of @@Sound: To Pitch (raw autocorrelation)...@.
+
+################################################################################
+"Sound: To Pitch (raw autocorrelation)..."
+© Paul Boersma 1996,2001–2003,2022-2024
+
+A command that creates a @Pitch object from every selected @Sound object.
+
+For purpose, algorithm and settings, see @@pitch analysis by raw autocorrelation@.
+
+For usage, see @@how to choose a pitch analysis method@.
+
+Synonyms
+========
+
+In older scripts you may find:
+- @@Sound: To Pitch (raw ac)...@, a precise synonym with an identical list of parameters.
+- @@Sound: To Pitch (ac)...@, a command with the same meaning, with parameters in a different order.
+
+################################################################################
+"Pitch settings..."
+© Paul Boersma 2003,2024
+
+Four commands in the Pitch menu of the @SoundEditor and @TextGridEditor windows:
+
+- ##Pitch settings (filtered autocorrelation)...#: see @@pitch analysis by filtered autocorrelation@
+- ##Pitch settings (raw cross-correlation)...#: see @@pitch analysis by raw cross-correlation@
+- ##Pitch settings (raw autocorrelation)...#: see @@pitch analysis by raw autocorrelation@
+- ##Pitch settings (filtered cross-correlation)...#: see @@pitch analysis by filtered cross-correlation@
+
+Also see @@Intro 4.2. Configuring the pitch contour@ and @@how to choose a pitch analysis method@.
+
+################################################################################
+"pitch analysis by raw autocorrelation"
+© Paul Boersma 1996,2001–2003,2022-2024
+
+Purpose
+=======
+
+to perform a pitch analysis based on an autocorrelation method.
+
+Usage
+=====
+
+Raw autocorrelation is the pitch analysis method of choice if you want measure the raw periodicity of a signal.
+
+Note that the preferred method for speech (intonation, vocal fold vibration) is @@pitch analysis by filtered autocorrelation@.
+See @@how to choose a pitch analysis method@ for details.
+
+Algorithm
+=========
+
+The algorithm performs an acoustic periodicity detection on the basis of an
+accurate autocorrelation method, as described in @@Boersma (1993)@.
+This method is more accurate, noise-resistant, and robust, than methods based on cepstrum or combs,
+or the original autocorrelation methods. The reason why other methods were invented,
+was the failure to recognize the fact that if you want to estimate a signal's short-term autocorrelation
+function on the basis of a windowed signal, you should divide the autocorrelation function of the
+windowed signal by the autocorrelation function of the window:
+
+~	%r_%x (%\ta) \~~ %r__%xw_ (%\ta) / %r_%w (%\ta)
+
+The pitch is basically determined as the inverse of the time (%lag) where the autocorrelation function %r
+has its maximum. However, there are likely to be multiple peaks in %r,
+and all of these can be %%pitch candidates%. For each moment in time (e.g. every 10 ms),
+the algorithm determines the (typically) 15 highest peaks in %r,
+regards these as %candidates, and then tracks an optimal path through the candidates over time.
+
+Settings
+========
+
+Several settings are already described in @@Intro 4.2. Configuring the pitch contour@.
+The explanations below assume that you have gone through that part of the Intro.
+
+The settings that control the recruitment of the candidates are:
+
+##Time step (s)# (standard value: 0.0)
+:	the measurement interval (frame duration), in seconds. If you supply 0,
+Praat will use a time step of 0.75 / (%%pitch floor%), e.g. 0.01 seconds if the pitch floor is 75 Hz;
+in this example, Praat computes 100 pitch values per second.
+
+##Pitch floor (Hz)# (standard value: 75 Hz)
+:	candidates below this frequency will not be recruited.
+This parameter determines the effective length of the analysis window: it will be 3 longest periods long,
+i.e., if the pitch floor is 75 Hz, the window will be effectively 3/75 = 0.04 seconds long.
+
+Note that if you set the time step to zero, the analysis windows for consecutive measurements
+will overlap appreciably: Praat will always compute 4 pitch values
+within one window length, i.e., the degree of %oversampling is 4.
+
+##Pitch ceiling (Hz)# (standard value: 600 Hz)
+:	candidates above this frequency will be ignored.
+
+##Max. number of candidates# (standard value: 15)
+:	each frame will contain at least this many pitch candidates.
+One of them is the “unvoiced candidate”; the others correspond to
+time lags over which the signal is more or less similar to itself.
+
+##Very accurate# (standard value: %off)
+:	if %off, the window is a Hanning window with a physical length of  3 / (%%pitch floor%).
+If %on, the window is a Gaussian window with a physical length of  6 / (%%pitch floor%),
+i.e. twice the effective length.
+
+A post-processing algorithm seeks the cheapest path through the candidates.
+The settings that determine the cheapest path are:
+
+##Silence threshold# (standard value: 0.03)
+:	frames that do not contain amplitudes above this threshold (relative to the global maximum amplitude),
+are probably silent.
+
+##Voicing threshold# (standard value: 0.45)
+:	the strength of the unvoiced candidate, relative to the maximum possible autocorrelation.
+If the amount of periodic energy in a frame is more than this fraction of the total energy (the remainder being noise),
+then Praat will prefer to regard this frame as voiced; otherwise as unvoiced.
+To increase the number of unvoiced decisions, increase the voicing threshold.
+
+##Octave cost# (standard value: 0.01 per octave)
+:	degree of favouring of high-frequency candidates, relative to the maximum possible autocorrelation.
+This is necessary because even (or: especially) in the case of a perfectly periodic signal,
+all undertones of %F_0 are equally strong candidates as %F_0 itself.
+To more strongly favour recruitment of high-frequency candidates, increase this value.
+
+##Octave-jump cost# (standard value: 0.35)
+:	degree of disfavouring of pitch changes, relative to the maximum possible autocorrelation.
+To decrease the number of large frequency jumps, increase this value. In contrast with what is described
+in the article, this value will be corrected for the time step: multiply by 0.01 s / %TimeStep to get
+the value in the way it is used in the formulas in the article.
+
+##Voiced / unvoiced cost# (standard value: 0.14)
+:	degree of disfavouring of voiced/unvoiced transitions, relative to the maximum possible autocorrelation.
+To decrease the number of voiced/unvoiced transitions, increase this value. In contrast with what is described
+in the article, this value will be corrected for the time step: multiply by 0.01 s / %TimeStep to get
+the value in the way it is used in the formulas in the article.
+
+The standard settings are best in most cases.
+For some pathological voices, you will want to set the voicing threshold to much less than the standard of 0.45,
+in order to get pitch values even in irregular parts of the signal.
+For prevoiced plosives, you may want to lower the silence threshold from 0.03 to 0.01 or so.
+
+Availability in Praat
+=====================
+
+Pitch analysis by raw autocorrelation is available in two ways in Praat:
+
+- via @@Sound: To Pitch (raw autocorrelation)...@
+  from the ##Analyse periodicity# menu in the Objects window when you select a Sound object;
+- via ##Show Pitch# and ##Pitch analysis method is raw autocorrelation#
+  from the #Pitch menu when you are viewing a Sound or TextGrid object (@SoundEditor, @TextGridEditor).
+
+################################################################################
+"Sound: To Pitch (raw cc)..."
+© Paul Boersma 1996,2003,2023,2024
+
+A @@hidden commands|hidden command@ that creates a @Pitch object from every selected @Sound object.
+
+This command is a precise synonym of @@Sound: To Pitch (raw cross-correlation)...@.
+
+################################################################################
+"Sound: To Pitch (raw cross-correlation)..."
+© Paul Boersma 1996,2003,2023,2024
+
+A command that creates a @Pitch object from every selected @Sound object.
+
+For purpose, algorithm and settings, see @@pitch analysis by raw cross-correlation@.
+
+For usage, see @@how to choose a pitch analysis method@.
+
+Synonyms
+========
+
+In older scripts you may find:
+- @@Sound: To Pitch (raw cc)...@, a precise synonym with an identical list of parameters.
+- @@Sound: To Pitch (cc)...@, a command with the same meaning, with parameters in a different order.
+
+################################################################################
+"pitch analysis by raw cross-correlation"
+© Paul Boersma 1996,2003,2023,2024
+
+Purpose
+=======
+
+to perform a pitch analysis based on a cross-correlation method.
+
+Usage
+=====
+
+Raw cross-correlation is the pitch analysis method of choice if you want to do voice analysis (e.g. jitter, shimmer).
+
+Note that the preferred method for speech (intonation, vocal fold vibration) is @@pitch analysis by filtered autocorrelation@.
+Raw cross-correlation is mainly for experimenting,
+or for applications where you need short time windows;
+for this latter reason, it is also the standard method for voice analysis.
+
+See @@how to choose a pitch analysis method@ for details.
+
+Algorithm
+=========
+
+The algorithm performs an acoustic periodicity detection on the basis of a
+forward cross-correlation analysis.
+
+Settings
+========
+
+Several settings are already described in @@Intro 4.2. Configuring the pitch contour@.
+The explanations below assume that you have gone through that part of the Intro.
+
+##Time step (s)# (standard value: 0.0)
+:	the measurement interval (frame duration), in seconds. If you supply 0,
+Praat will use a time step of 0.25 / (%%pitch floor%), e.g. 0.00333333 seconds if the pitch floor is 75 Hz;
+in this example, Praat computes 300 pitch values per second.
+
+##Pitch floor (Hz)# (standard value: 75 Hz)
+:	candidates below this frequency will not be recruited.
+This parameter determines the length of the analysis window: it will be 1 longest period long,
+i.e., if the pitch floor is 75 Hz, the window will be 1/75 = 0.01333333 seconds long.
+
+Note that if you set the time step to zero, the analysis windows for consecutive measurements
+will overlap appreciably: Praat will always compute 4 pitch values
+within one window length, i.e., the degree of %oversampling is 4.
+
+The other settings are the same as for @@pitch analysis by raw autocorrelation@.
+
+Availability in Praat
+=====================
+
+Pitch analysis by raw cross-correlation is available in two ways in Praat:
+
+- via @@Sound: To Pitch (raw cross-correlation)...@
+  from the ##Analyse periodicity# menu in the Objects window when you select a Sound object;
+- via ##Show Pitch# and ##Pitch analysis method is raw cross-correlation#
+  from the #Pitch menu when you are viewing a Sound or TextGrid object (@SoundEditor, @TextGridEditor).
+
+################################################################################
+"Sound: To Pitch (filtered ac)..."
+© Paul Boersma 2023,2024
+
+A @@hidden commands|hidden command@ that creates a @Pitch object from every selected @Sound object.
+
+This command is a precise synonym of @@Sound: To Pitch (filtered autocorrelation)...@.
+
+################################################################################
+"Sound: To Pitch (filtered autocorrelation)..."
+© Paul Boersma 2023,2024
+
+A command that creates a @Pitch object from every selected @Sound object.
+
+For purpose, algorithm and settings, see @@pitch analysis by filtered autocorrelation@.
+
+For usage, see @@how to choose a pitch analysis method@.
+
+Synonyms
+========
+
+In older scripts you may find:
+- @@Sound: To Pitch (filtered ac)...@, a precise synonym with an identical list of parameters.
+
+################################################################################
+"pitch analysis by filtered autocorrelation"
+© Paul Boersma 2023,2024
+
+A command that creates a @Pitch object from every selected @Sound object.
+
+Purpose
+=======
+
+to perform a pitch analysis based on the autocorrelation of the low-pass filtered signal.
+
+Usage
+=====
+
+Filtered autocorrelation is the pitch analysis method of choice if you want to measure intonation or vocal-fold vibration frequency.
+See @@how to choose a pitch analysis method@ for details.
+
+Algorithm
+=========
+
+This command will first low-pass filter the signal, then apply @@pitch analysis by raw autocorrelation@
+on the filtered signal.
+
+The low-pass filter is Gaussian in the frequency domain. If, for instance,
+you set the %%pitch top% to 800 Hz, and the %%attenuation at top% to 0.03,
+then the attenuation at 400 Hz is the fourth root of 0.03, i.e. about 42\% .
+As a function of frequency %f, the attenuation is 0.03^^(%f/800)²^.
+Here’s a table of attenuation factors, also in dB (in this logarithmic domain, the shape is parabolic):
+
+| frequency | attenuation | logarithmic
+|   100 Hz  |     0.95    |   -0.5 dB
+|   200 Hz  |     0.80    |   -1.9 dB
+|   300 Hz  |     0.61    |   -4.3 dB
+|   400 Hz  |     0.42    |   -7.6 dB
+|   500 Hz  |     0.25    |  -11.9 dB
+|   600 Hz  |     0.14    |  -17.1 dB
+|   700 Hz  |     0.07    |  -23.3 dB
+|   800 Hz  |     0.03    |  -30.5 dB
+
+Note: the attenuation curve will be identical to the curve shown here if you use a pitch top of 500 Hz
+and an %%attenuation at top% of 0.25; however, this is not advised, because the example table
+provides a more gradual suppression of higher pitches, almost as if there were no pitch top at all.
+
+Settings
+========
+
+Several settings are already described in @@Intro 4.2. Configuring the pitch contour@.
+The explanations below assume that you have gone through that part of the Intro.
+
+The settings that control the recruitment of the candidates are:
+
+##Time step (s)# (standard value: 0.0)
+:	the measurement interval (frame duration), in seconds. If you supply 0,
+Praat will use a time step of 0.75 / (%%pitch floor%), e.g. 0.015 seconds if the pitch floor is 50 Hz;
+in this example, Praat computes 66.7 pitch values per second.
+
+##Pitch floor (Hz)# (standard value: 50 Hz)
+:	candidates below this frequency will not be recruited.
+This parameter determines the effective length of the analysis window: it will be 3 longest periods long,
+i.e., if the pitch floor is 50 Hz, the window will be effectively 3/50 = 0.06 seconds long.
+
+Note that if you set the time step to zero, the analysis windows for consecutive measurements
+will overlap appreciably: Praat will always compute 4 pitch values
+within one window length, i.e., the degree of %oversampling is 4.
+
+##Pitch top (Hz)# (standard value: 800 Hz)
+:	candidates above this frequency will be ignored. Note, however, that candidates around one half of this (i.e. 400 Hz)
+will already be reduced by 7.6 dB, i.e. they are already moderately disfavoured,
+and that candidates around three-quarters of this (i.e. 600 Hz) will already be reduced by 17.1 dB,
+i.e. they are strongly disfavoured. Hence, the %%pitch top%
+needs to be be set much higher than the %%pitch ceiling% of @@pitch analysis by ||raw autocorrelation@,
+which is why the standard is 800 Hz whereas the standard for raw autocorrelation can be 500 or 600 Hz.
+To illustrate this, consider the search space for raw autocorrelation on the right (with a ceiling of 600 Hz)
+and the search space for filtered autocorrelation on the right (with a top of 800 Hz):
+{- 6x3
+	colour# = { 1.0, 0.5, 0.5 }
+	attenuationAtFloor = 0.03 ^ (50/800)^2
+	info$ = Picture info
+	fontSize = extractNumber: info$, "Font size:"
+
+	Axes: 0, 1, 0, 1000
+	Select outer viewport: 0, 3, 0, 3
+	Draw inner box
+	Marks bottom every: 1.0, 1.0, "yes", "yes", "no"
+	One mark left: 50, "yes", "yes", "yes", ""
+	One mark right: 50, "no", "yes", "no", "floor"
+	One mark left: 600, "yes", "yes", "yes", ""
+	One mark right: 600, "no", "yes", "no", "ceiling"
+	Text bottom: "no", "attenuation"
+	Text left: "yes", "Pitch (Hz)"
+	Colour: colour#
+	Line width: 3
+	Draw line: 0, 1000, 0, 600
+	Draw line: 0, 600, 1, 600
+	Draw line: 1, 600, 1, 50
+	Draw line: 1, 50, 0, 50
+	Draw line: 0, 50, 0, 0
+	Red
+	Text: 0.5, "centre", 50, "bottom", "%%floor"
+	Text: 0.5, "centre", 600, "bottom", "%%ceiling"
+	Line width: 1
+	Black
+
+	Select outer viewport: 3, 6, 0, 3
+	Draw inner box
+	Marks bottom every: 1.0, 1.0, "yes", "yes", "no"
+	One mark left: 50, "yes", "yes", "yes", ""
+	One mark right: 50, "no", "yes", "no", "floor"
+	One mark left: 100, "yes", "yes", "yes", ""
+	One mark left: 200, "yes", "yes", "yes", ""
+	One mark left: 400, "yes", "yes", "yes", ""
+	One mark left: 800, "yes", "yes", "yes", ""
+	One mark right: 800, "no", "yes", "no", "top"
+	Text bottom: "no", "attenuation"
+	Text left: "yes", "Pitch (Hz)"
+	Colour: colour#
+	Line width: 3
+	Draw function: 0, attenuationAtFloor, 300, ~ min (800, 800 * sqrt (ln (x) / ln (0.03)))
+	Draw line: 0, 800, 0, 1000
+	Draw line: attenuationAtFloor, 50, 0, 50
+	Draw line: 0, 50, 0, 0
+	Red
+	Text: 0.5, "centre", 50, "bottom", "%%floor"
+	Text special: 0.5, "centre", 360, "bottom", "Times", fontSize, "-35", "%%ceiling"
+	Line width: 1
+	Black
+}
+: Because of the reduction in strength of high pitch candidates, it may be preferable
+to view pitch on a logarithmic pitch scale, so that the suppressed top octave (from 400 to 800 Hz)
+occupies less space:
+{- 3x3
+	Axes: 0, 1, log10 (40), log10(1000)
+	Draw inner box
+	Marks bottom every: 1.0, 1.0, "yes", "yes", "no"
+	One logarithmic mark left: 50, "yes", "yes", "yes", ""
+	One logarithmic mark right: 50, "no", "yes", "no", "floor"
+	One logarithmic mark left: 100, "yes", "yes", "yes", ""
+	One logarithmic mark left: 200, "yes", "yes", "yes", ""
+	One logarithmic mark left: 400, "yes", "yes", "yes", ""
+	One logarithmic mark left: 800, "yes", "yes", "yes", ""
+	One logarithmic mark right: 800, "no", "yes", "no", "top"
+	Text bottom: "no", "attenuation"
+	Text left: "yes", "pitch (Hz)"
+	Colour: colour#
+	Line width: 3
+	Draw function: 0, attenuationAtFloor, 300, ~ log10 (min (800, 800 * sqrt (ln (x) / ln (0.03))))
+	Draw line: 0, log10(800), 0, log10(1000)
+	Draw line: attenuationAtFloor, log10(50), 0, log10(50)
+	Draw line: 0, log10(50), 0, log10(40)
+	Red
+	Text: 0.5, "centre", log10(50), "bottom", "%%floor"
+	Text special: 0.5, "centre", log10(360), "bottom", "Times", fontSize, "-30", "%%ceiling"
+	Line width: 1
+	Black
+}
+We could say that the whole range from 300 to 800 Hz can be regarded as a skewed “ceiling”.
+This is why we distinguish between the terms “ceiling” and “top”. If you have a speaker
+with an especially high F0, then you can raise the top to e.g. 1200 Hz;
+the attenuation of higher candidates will then have the exact same shape:
+{- 3x3
+	Axes: 0, 1, log10 (40), log10(1500)
+	Draw inner box
+	Marks bottom every: 1.0, 1.0, "yes", "yes", "no"
+	One logarithmic mark left: 50, "yes", "yes", "yes", ""
+	One logarithmic mark right: 50, "no", "yes", "no", "floor"
+	One logarithmic mark left: 75, "yes", "yes", "yes", ""
+	One logarithmic mark left: 150, "yes", "yes", "yes", ""
+	One logarithmic mark left: 300, "yes", "yes", "yes", ""
+	One logarithmic mark left: 600, "yes", "yes", "yes", ""
+	One logarithmic mark left: 1200, "yes", "yes", "yes", ""
+	One logarithmic mark right: 1200, "no", "yes", "no", "top"
+	Text bottom: "no", "attenuation"
+	Text left: "yes", "pitch (Hz)"
+	Colour: colour#
+	Line width: 3
+	attenuationAtFloor = 0.03 ^ (50/1200)^2
+	Draw function: 0, attenuationAtFloor, 300, ~ log10 (min (1200, 1200 * sqrt (ln (x) / ln (0.03))))
+	Draw line: 0, log10(1200), 0, log10(1500)
+	Draw line: attenuationAtFloor, log10(50), 0, log10(50)
+	Draw line: 0, log10(50), 0, log10(40)
+	Red
+	Text: 0.5, "centre", log10(50), "bottom", "%%floor"
+	Text special: 0.5, "centre", log10(540), "bottom", "Times", fontSize, "-30", "%%ceiling"
+	Line width: 1
+	Black
+}
+
+##Max. number of candidates# (standard value: 15)
+:	each frame will contain at least this many pitch candidates.
+One of them is the “unvoiced candidate”; the others correspond to
+time lags over which the signal is more or less similar to itself.
+
+##Very accurate# (standard value: %off)
+:	if %off, the window is a Hanning window with a physical length of  3 / (%%pitch floor%).
+If %on, the window is a Gaussian window with a physical length of  6 / (%%pitch floor%),
+i.e. twice the effective length.
+
+A pre-processing algorithm filters the sound before the @@pitch analysis by raw autocorrelation@ begins.
+The shape of the attenutation curve is determined not only by the height of the %pitch top% (in hertz),
+but also by how wide it is (in the pictures above, it’s the tiny horizontal linepiece at the top):
+
+##Attenuation at top# (standard value: 0.03)
+:	this is how much the frequency components of the original sound have been attenuated at the top.
+In the example table above, you can see that at the top (800 Hz) the sounds was attenuated by a factor of 0.03.
+We known of no reasons to change this value, except for experimenting.
+
+A post-processing algorithm seeks the cheapest path through the candidates.
+The settings that determine the cheapest path are:
+
+##Silence threshold# (standard value: 0.09)
+:	frames that do not contain amplitudes above this threshold (relative to the global maximum amplitude),
+are probably silent.
+
+##Voicing threshold# (standard value: 0.50)
+:	the strength of the unvoiced candidate, relative to the maximum possible autocorrelation.
+If the amount of periodic energy in a frame is more than this fraction of the total energy (the remainder being noise),
+then Praat will prefer to regard this frame as voiced; otherwise as unvoiced.
+To increase the number of unvoiced decisions, increase the voicing threshold.
+
+##Octave cost# (standard value: 0.055 per octave)
+:	degree of favouring of high-frequency candidates, relative to the maximum possible autocorrelation.
+This is necessary because even (or: especially) in the case of a perfectly periodic signal,
+all undertones of %F_0 are equally strong candidates as %F_0 itself.
+To more strongly favour recruitment of high-frequency candidates, increase this value.
+
+##Octave-jump cost# (standard value: 0.35)
+:	degree of disfavouring of pitch changes, relative to the maximum possible autocorrelation.
+To decrease the number of large frequency jumps, increase this value. In contrast with what is described
+in the article (@@Boersma (1993)@), this value will be corrected for the time step: multiply by 0.01 s / %TimeStep to get
+the value in the way it is used in the formulas in the article.
+
+##Voiced / unvoiced cost# (standard value: 0.14)
+:	degree of disfavouring of voiced/unvoiced transitions, relative to the maximum possible autocorrelation.
+To decrease the number of voiced/unvoiced transitions, increase this value. In contrast with what is described
+in the article, this value will be corrected for the time step: multiply by 0.01 s / %TimeStep to get
+the value in the way it is used in the formulas in the article.
+
+The standard settings are best in most cases.
+For some pathological voices, you will want to set the voicing threshold to much less than the standard of 0.50,
+in order to get pitch values even in irregular parts of the signal.
+For prevoiced plosives, you may want to lower the silence threshold from 0.09 to 0.01 or so.
+
+Availability in Praat
+=====================
+
+Pitch analysis by filtered autocorrelation is available in two ways in Praat:
+
+- via @@Sound: To Pitch (filtered autocorrelation)...@
+  from the ##Analyse periodicity# menu in the Objects window when you select a Sound object;
+- via ##Show Pitch# and ##Pitch analysis method is filtered autocorrelation#
+  from the #Pitch menu when you are viewing a Sound or TextGrid object (@SoundEditor, @TextGridEditor).
+
+################################################################################
+"Sound: To Pitch (filtered cc)..."
+© Paul Boersma 2023,2024
+
+A @@hidden commands|hidden command@ that creates a @Pitch object from every selected @Sound object.
+
+This command is a precise synonym of @@Sound: To Pitch (filtered cross-correlation)...@.
+
+################################################################################
+"Sound: To Pitch (filtered cross-correlation)..."
+© Paul Boersma 2023,2024
+
+A command that creates a @Pitch object from every selected @Sound object.
+
+For purpose, algorithm and settings, see @@pitch analysis by filtered cross-correlation@.
+
+For usage, see @@how to choose a pitch analysis method@.
+
+Synonyms
+========
+
+In older scripts you may find:
+- @@Sound: To Pitch (filtered cc)...@, a precise synonym with an identical list of parameters.
+
+################################################################################
+"pitch analysis by filtered cross-correlation"
+© Paul Boersma 2023,2024
+
+A command that creates a @Pitch object from every selected @Sound object.
+
+Purpose
+=======
+
+to perform a pitch analysis based on the forward cross-correlation of the low-pass filtered signal.
+
+Usage
+=====
+
+We know of no situation yet in which this method is preferred over @@pitch analysis by filtered autocorrelation@
+(which seems better for measuring intonation and vocal-fold vibration frequency),
+@@pitch analysis by raw cross-correlation@ (which is definitely better for voice analysis, such as jitter and shimmer),
+or @@pitch analysis by raw autocorrelation@ (which is better for determining raw periodicity).
+It is possible that filtered cross-correlation can play a role in voice analysis in the future,
+in combination with one of the other methods; this is yet to be determined.
+
+Algorithm
+=========
+
+This command will first low-pass filter the signal, then apply @@pitch analysis by raw cross-correlation@
+on the filtered signal. For the filter function, see @@pitch analysis by filtered autocorrelation@.
+
+Settings
+========
+
+The settings are the same as for @@pitch analysis by filtered autocorrelation@.
+
+Availability in Praat
+=====================
+
+Pitch analysis by raw cross-correlation is available in two ways in Praat:
+
+- via @@Sound: To Pitch (raw cross-correlation)...@
+  from the ##Analyse periodicity# menu in the Objects window when you select a Sound object;
+- via ##Show Pitch# and ##Pitch analysis method is raw cross-correlation#
+  from the #Pitch menu when you are viewing a Sound or TextGrid object (@SoundEditor, @TextGridEditor).
+
+################################################################################
+)~~~"
+MAN_PAGES_END
+
+MAN_BEGIN (U"Sound: To PointProcess (periodic, cc)...", U"ppgb", 20231115)   // 20030309
 INTRO (U"A command that analyses the selected @Sound objects, and creates @PointProcess objects.")
-NORMAL (U"This command combines the actions of @@Sound: To Pitch (ac)...@ and @@Sound & Pitch: To PointProcess (cc)@.")
+NORMAL (U"This command combines the actions of @@Sound: To Pitch (raw autocorrelation)...@ and @@Sound & Pitch: To PointProcess (cc)@.")
 MAN_END
 
-MAN_BEGIN (U"Sound: To PointProcess (periodic, peaks)...", U"ppgb", 20030309)
+MAN_BEGIN (U"Sound: To PointProcess (periodic, peaks)...", U"ppgb", 20231115)   // 20030309
 INTRO (U"A command that analyses the selected @Sound objects, and creates @PointProcess objects.")
-NORMAL (U"This command combines the actions of @@Sound: To Pitch (ac)...@ and @@Sound & Pitch: To PointProcess (peaks)...@.")
+NORMAL (U"This command combines the actions of @@Sound: To Pitch (raw autocorrelation)...@ and @@Sound & Pitch: To PointProcess (peaks)...@.")
 MAN_END
 
 MAN_BEGIN (U"Sound & Pitch: To PointProcess (cc)", U"ppgb", 19980322)

@@ -12,6 +12,6 @@ target_sources(praat PRIVATE
 	Permutation.cpp Permutation_and_Index.cpp
 	Polynomial.cpp
 	Roots.cpp
-	Spline.cpp SVD.cpp
+	Spline.cpp SVD.cpp WorkvectorPool.cpp
 	NUMmachar.cpp
 )

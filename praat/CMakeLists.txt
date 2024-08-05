@@ -35,6 +35,7 @@ set(PRAAT_SUBDIRECTORIES
 	dwtools
 	LPC
 	EEG
+	sensors
 	gram
 	FFNet
 	artsynth

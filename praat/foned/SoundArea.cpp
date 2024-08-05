@@ -1,6 +1,6 @@
 /* SoundArea.cpp
  *
- * Copyright (C) 2022,2023 Paul Boersma, 2007 Erez Volk (FLAC support)
+ * Copyright (C) 2022-2024 Paul Boersma, 2007 Erez Volk (FLAC support)
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -585,10 +585,8 @@ static void menu_cb_Cut (SoundArea me, EDITOR_ARGS) {
 		Melder_throw (U"Sound selection not cut to clipboard.");
 	}
 }
-static void menu_cb_Paste (SoundArea me, EDITOR_ARGS) {
+static void paste (SoundArea me, int where) {
 	Melder_assert (my sound());
-	integer leftSample = Sampled_xToLowIndex (my sound(), my endSelection());
-	const integer oldNumberOfSamples = my sound() -> nx;
 	if (! Sound_clipboard) {
 		Melder_warning (U"Clipboard is empty; nothing pasted.");
 		return;
@@ -603,8 +601,19 @@ static void menu_cb_Paste (SoundArea me, EDITOR_ARGS) {
 		U"the sampling frequency of the clipboard is not equal to\n"
 		U"the sampling frequency of the edited sound."
 	);
-	Melder_clip (0_integer, & leftSample, oldNumberOfSamples);
-	const integer newNumberOfSamples = oldNumberOfSamples + Sound_clipboard -> nx;
+	const integer oldNumberOfSamples = my sound() -> nx;
+	const integer leftSample = Melder_clipped (
+		0_integer,
+		Sampled_xToLowIndex (my sound(), where == 3 ? my endSelection() : my startSelection()),
+		oldNumberOfSamples
+	);
+	const integer rightSample = Melder_clipped (
+		0_integer,
+		Sampled_xToLowIndex (my sound(), where == 1 ? my startSelection() : my endSelection()),
+		oldNumberOfSamples
+	);
+	const integer newNumberOfSamples =
+			oldNumberOfSamples + Sound_clipboard -> nx - (rightSample - leftSample);
 	/*
 		Check without change.
 	*/
@@ -615,11 +624,11 @@ static void menu_cb_Paste (SoundArea me, EDITOR_ARGS) {
 			newData [channel] [++ j] = my sound() -> z [channel] [i];
 		for (integer i = 1; i <= Sound_clipboard -> nx; i ++)
 			newData [channel] [++ j] = Sound_clipboard -> z [channel] [i];
-		for (integer i = leftSample + 1; i <= oldNumberOfSamples; i ++)
+		for (integer i = rightSample + 1; i <= oldNumberOfSamples; i ++)
 			newData [channel] [++ j] = my sound() -> z [channel] [i];
 		Melder_assert (j == newData.ncol);
 	}
-	FunctionArea_save (me, U"Paste");
+	FunctionArea_save (me, where == 1 ? U"Paste before" : where == 2 ? U"Paste over" : U"Paste after");
 	/*
 		Change without error.
 	*/
@@ -645,6 +654,15 @@ static void menu_cb_Paste (SoundArea me, EDITOR_ARGS) {
 	FunctionEditor_windowMarksChanged (my functionEditor(), true);
 	FunctionArea_broadcastDataChanged (me);
 }
+static void menu_cb_PasteBefore (SoundArea me, EDITOR_ARGS) {
+	paste (me, 1);
+}
+static void menu_cb_PasteOver (SoundArea me, EDITOR_ARGS) {
+	paste (me, 2);
+}
+static void menu_cb_PasteAfter (SoundArea me, EDITOR_ARGS) {
+	paste (me, 3);
+}
 void structSoundArea :: v_createMenuItems_edit (EditorMenu menu) {
 	FunctionAreaMenu_addCommand (menu, U"-- cut copy paste --", 0, nullptr, this);
 	const bool weMayUseShortcuts = ! our functionEditor() -> textArea;
@@ -653,9 +671,14 @@ void structSoundArea :: v_createMenuItems_edit (EditorMenu menu) {
 				menu_cb_Cut, this);
 	our copyButton = FunctionAreaMenu_addCommand (menu, U"Copy selection to Sound clipboard", 'C' * weMayUseShortcuts,
 			menu_cb_Copy, this);
-	if (our editable())
-		our pasteButton = FunctionAreaMenu_addCommand (menu, U"Paste after selection", 'V' * weMayUseShortcuts,
-				menu_cb_Paste, this);
+	if (our editable()) {
+		our pasteBeforeButton = FunctionAreaMenu_addCommand (menu, U"Paste before selection", (GuiMenu_SHIFT | 'V') * weMayUseShortcuts,
+				menu_cb_PasteBefore, this);
+		our pasteOverButton = FunctionAreaMenu_addCommand (menu, U"Paste over selection", (GuiMenu_OPTION | 'V') * weMayUseShortcuts,
+				menu_cb_PasteOver, this);
+		our pasteAfterButton = FunctionAreaMenu_addCommand (menu, U"Paste after selection", 'V' * weMayUseShortcuts,
+				menu_cb_PasteAfter, this);
+	}
 }
 
 
@@ -764,9 +787,9 @@ static void menu_cb_soundScaling (SoundArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Sound scaling", nullptr)
 		OPTIONMENU_ENUM (kSoundArea_scalingStrategy, scalingStrategy,
 				U"Scaling strategy", my default_scalingStrategy())
-		LABEL (U"For \"fixed height\":")
+		COMMENT (U"For \"fixed height\":")
 		POSITIVE (height, U"Height", my default_scaling_height())
-		LABEL (U"For \"fixed range\":")
+		COMMENT (U"For \"fixed range\":")
 		REAL (minimum, U"Minimum", my default_scaling_minimum())
 		REAL (maximum, U"Maximum", my default_scaling_maximum())
 	EDITOR_OK
@@ -817,7 +840,7 @@ static void menu_cb_MoveEndOfSelectionToNearestZeroCrossing (SoundArea me, EDITO
 static void menu_cb_DrawVisibleSound (SoundArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Draw visible sound", nullptr)
 		my v_form_pictureWindow (cmd);
-		LABEL (U"Sound:")
+		COMMENT (U"Sound:")
 		BOOLEAN (preserveTimes, U"Preserve times", my default_picture_preserveTimes());
 		REAL (bottom, U"left Vertical range", my default_picture_bottom())
 		REAL (top, U"right Vertical range", my default_picture_top())
@@ -855,7 +878,7 @@ static void menu_cb_DrawVisibleSound (SoundArea me, EDITOR_ARGS) {
 static void menu_cb_DrawSelectedSound (SoundArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Draw selected sound", nullptr)
 		my v_form_pictureWindow (cmd);
-		LABEL (U"Sound:")
+		COMMENT (U"Sound:")
 		BOOLEAN (preserveTimes, U"Preserve times",       my default_picture_preserveTimes());
 		REAL    (bottom,        U"left Vertical range",  my default_picture_bottom());
 		REAL    (top,           U"right Vertical range", my default_picture_top());
@@ -913,7 +936,7 @@ static void CONVERT_DATA_TO_ONE__ExtractSelectedSound_preserveTimes (SoundArea m
 	CONVERT_DATA_TO_ONE_END (U"untitled")
 }
 static void CONVERT_DATA_TO_ONE__ExtractSelectedSound_windowed (SoundArea me, EDITOR_ARGS) {
-	EDITOR_FORM (U"Extract selected sound (windowed)", nullptr)
+	EDITOR_FORM (U"Extract selected sound (windowed)", U"Extract selected sound (windowed)...")
 		WORD (name, U"Name", U"slice")
 		OPTIONMENU_ENUM (kSound_windowShape, windowShape, U"Window shape", my default_extract_windowShape())
 		POSITIVE (relativeWidth, U"Relative width", my default_extract_relativeWidth())

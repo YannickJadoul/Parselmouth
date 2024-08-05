@@ -1,6 +1,6 @@
 /* melder_debug.cpp
  *
- * Copyright (C) 2000-2023 Paul Boersma
+ * Copyright (C) 2000-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,6 +85,7 @@ the behaviour of Praat will temporarily change in the following ways:
 54: ignore gdk_cairo_reset_clip
 55: trace Gui init, draw, destroy
 56: trace text styles
+57: no parabolic interpolation in Sound_Pitch_to_PointProcess_cc (March 2024)
 181: read and write native-endian real64
 900: use DG Meta Serif Science instead of Palatino
 1264: Mac: Sound_record_fixedTime uses microphone "FW Solo (1264)"
@@ -207,7 +208,7 @@ FILE * MelderTrace::_open (conststring8 sourceCodeFileName, int lineNumber, cons
 		f = fopen ((char *) utf8path, "a");
 	#endif
 	if (! f)
-		f = stderr;   // if the file cannot be opened, we can still trace to stderr!
+		f = Melder_stderr;   // if the file cannot be opened, we can still trace to stderr!
 	if (sourceCodeFileName) {
 		const char *slashLocation = strrchr (sourceCodeFileName, Melder_DIRECTORY_SEPARATOR);
 		fprintf (f, "%s (%s:%d): ", functionName, slashLocation ? slashLocation + 1 : sourceCodeFileName, lineNumber);
@@ -219,7 +220,7 @@ FILE * MelderTrace::_open (conststring8 sourceCodeFileName, int lineNumber, cons
 
 void MelderTrace::_close (FILE *f) {
 	fprintf (f, "\n");
-	if (f != stderr)
+	if (f != Melder_stderr)
 		fclose (f);
 }
 

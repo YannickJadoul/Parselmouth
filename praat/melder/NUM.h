@@ -1,7 +1,7 @@
 #pragma once
 /* NUM.h
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -211,7 +211,19 @@ inline integer NUMfindFirst (constSTRVEC const& strvec, conststring32 str) {
 			return i;
 	return 0;
 }
+inline integer NUMfindFirst_caseInsensitive (constSTRVEC const& strvec, conststring32 str) {
+	for (integer i = 1; i <= strvec.size; i ++)
+		if (Melder_equ_caseInsensitive (strvec [i], str))
+			return i;
+	return 0;
+}
 inline integer NUMfindLast (constSTRVEC const& strvec, conststring32 str) {
+	for (integer i = strvec.size; i >= 1; i --)
+		if (Melder_equ (strvec [i], str))
+			return i;
+	return 0;
+}
+inline integer NUMfindLast_caseInsensitive (constSTRVEC const& strvec, conststring32 str) {
 	for (integer i = strvec.size; i >= 1; i --)
 		if (Melder_equ (strvec [i], str))
 			return i;
@@ -286,10 +298,28 @@ inline double NUMpow (double base, double exponent) {
 	return base <= 0.0 ? 0.0 : pow (base, exponent);
 }
 
-inline double NUMsqrt (double x) {
+inline double NUMsqrt_u (const double x) {
 	#if defined (_WIN32)
-		if (x < 0.0) return undefined;
+		if (x < 0.0)
+			return undefined;
 	#endif
+	return sqrt (x);
+}
+
+inline double NUMsqrt_0 (const double x) {
+	if (x < 0.0)
+		return 0.0;
+	return sqrt (x);
+}
+
+inline double NUMsqrt_e (const double x) {
+	Melder_require (x >= 0.0,
+		U"You cannot take the square root of a negative number (", x, U").");
+	return sqrt (x);
+}
+
+inline double NUMsqrt_a (const double x) {
+	Melder_assert (x >= 0.0);
 	return sqrt (x);
 }
 

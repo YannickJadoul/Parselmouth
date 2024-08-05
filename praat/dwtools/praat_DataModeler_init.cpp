@@ -1,6 +1,6 @@
 /* praat_DataModeler_init.cpp
  *
- * Copyright (C) 2014-2022 David Weenink
+ * Copyright (C) 2014-2024 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ DO
 	CREATE_ONE_END (name)
 }
 
-FORM (GRAPHICS_EACH__DataModeler_speckle, U"DataModeler: Speckle", nullptr) {
+FORM (GRAPHICS_EACH__DataModeler_speckle, U"DataModeler: Speckle", U"DataModeler: Speckle...") {
 	REAL (xmin, U"left X range", U"0.0")
 	REAL (xmax, U"right X range", U"0.0")
 	REAL (ymin, U"left Y range", U"0.0")
@@ -53,11 +53,11 @@ FORM (GRAPHICS_EACH__DataModeler_speckle, U"DataModeler: Speckle", nullptr) {
 	OK
 DO
 	GRAPHICS_EACH (DataModeler)
-		DataModeler_speckle (me, GRAPHICS, xmin, xmax, ymin, ymax, false, 0, errorBars, barWidth_wc, garnish);
+		DataModeler_speckle (me, GRAPHICS, xmin, xmax, ymin, ymax, false, errorBars, barWidth_wc, garnish);
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_EACH__DataModeler_drawModel, U"DataModeler: Draw model", nullptr) {
+FORM (GRAPHICS_EACH__DataModeler_drawModel, U"DataModeler: Draw model", U"DataModeler: Draw model...") {
 	REAL (xmin, U"left X range", U"0.0")
 	REAL (xmax, U"right X range", U"0.0")
 	REAL (ymin, U"left Y range", U"0.0")
@@ -71,30 +71,42 @@ DO
 	GRAPHICS_EACH_END
 }
 
-FORM (GRAPHICS_EACH__DataModeler_drawEstimatedTrack, U"DataModeler: Draw estimated track", nullptr) {
+FORM (GRAPHICS_EACH__DataModeler_drawEstimatedTrack, U"DataModeler: Draw estimated track", U"DataModeler: Draw estimated track...") {
 	REAL (xmin, U"left X range", U"0.0")
 	REAL (xmax, U"right X range", U"0.0")
 	REAL (ymin, U"left Y range", U"0.0")
 	REAL (ymax, U"right Y range", U"0.0")
-	INTEGER (numberOfParameters, U"Number of parameters", U"0 (=all)")
 	BOOLEAN (garnish, U"Garnish", true)
 	OK
 DO
 	GRAPHICS_EACH (DataModeler)
-		DataModeler_drawTrack (me, GRAPHICS, xmin, xmax, ymin, ymax, 1,numberOfParameters, garnish);
+		DataModeler_drawTrack (me, GRAPHICS, xmin, xmax, ymin, ymax, true, garnish);
+	GRAPHICS_EACH_END
+}
+
+FORM (GRAPHICS_EACH__DataModeler_drawResiduals, U"DataModeler: Draw residuals", U"DataModeler: Draw residuals...") {
+	REAL (xmin, U"left X range", U"0.0")
+	REAL (xmax, U"right X range", U"0.0")
+	REAL (ymin, U"left Y range", U"0.0")
+	REAL (ymax, U"right Y range", U"0.0")
+	BOOLEAN (garnish, U"Garnish", true)
+	OK
+DO
+	GRAPHICS_EACH (DataModeler)
+		DataModeler_drawResiduals (me, GRAPHICS, xmin, xmax, ymin, ymax, garnish);
 	GRAPHICS_EACH_END
 }
 
 DIRECT (QUERY_ONE_FOR_INTEGER__DataModeler_getNumberOfParameters) {
 	QUERY_ONE_FOR_INTEGER (DataModeler)
 		const integer result = my numberOfParameters;
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of parameters)")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of parameters)")
 }
 
 DIRECT (QUERY_ONE_FOR_INTEGER__DataModeler_getNumberOfFixedParameters) {
 	QUERY_ONE_FOR_INTEGER (DataModeler)
 		const integer result = DataModeler_getNumberOfFixedParameters (me);
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of fixed parameters)")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of fixed parameters)")
 }
 
 FORM (QUERY_ONE_FOR_REAL__DataModeler_getParameterValue, U"DataModeler: Get parameter value", nullptr) {
@@ -103,7 +115,7 @@ FORM (QUERY_ONE_FOR_REAL__DataModeler_getParameterValue, U"DataModeler: Get para
 DO
 	QUERY_ONE_FOR_REAL (DataModeler)
 		const double result = DataModeler_getParameterValue (me, parameterNumber);
-	QUERY_ONE_FOR_REAL_END (U" (= parameter[", parameterNumber, U"])")
+	QUERY_ONE_FOR_REAL_END (U" (parameter ", parameterNumber, U")")
 }
 
 DIRECT (QUERY_ONE_FOR_REAL_VECTOR__DataModeler_listParameterValues) {
@@ -129,12 +141,12 @@ FORM (QUERY_ONE_FOR_REAL__DataModeler_getParameterStandardDeviation, U"DataModel
 DO
 	QUERY_ONE_FOR_REAL (DataModeler)
 		const double result = DataModeler_getParameterStandardDeviation (me, parameterNumber);
-	QUERY_ONE_FOR_REAL_END (U" (= parameter[", parameterNumber, U"])")
+	QUERY_ONE_FOR_REAL_END (U" (parameter ", parameterNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__DataModeler_getVarianceOfParameters, U"DataModeler: Get variance of parameters", nullptr) {
 	NATURAL (fromParameter, U"left Parameter range", U"1")
-	INTEGER (toParameter, U"right Parameter range", U"0 (=all)")
+	INTEGER (toParameter, U"right Parameter range", U"0 (= all)")
 	OK
 DO
 	integer nofp;
@@ -146,13 +158,13 @@ DO
 DIRECT (QUERY_ONE_FOR_INTEGER__DataModeler_getNumberOfDataPoints) {
 	QUERY_ONE_FOR_INTEGER (DataModeler)
 		const integer result = my numberOfDataPoints;
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of data points)")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of data points)")
 }
 
 DIRECT (QUERY_ONE_FOR_INTEGER__DataModeler_getNumberOfInvalidDataPoints) {
 	QUERY_ONE_FOR_INTEGER (DataModeler)
 		const integer result = DataModeler_getNumberOfInvalidDataPoints (me);
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of invalid data points)")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of invalid data points)")
 }
 
 FORM (QUERY_ONE_FOR_REAL__DataModeler_getModelValueAtX, U"DataModeler: Get model value at x", nullptr) {
@@ -171,6 +183,12 @@ DIRECT (QUERY_ONE_FOR_REAL__DataModeler_getResidualSumOfSquares) {
 	QUERY_ONE_FOR_REAL_END (U"  (for ", n, U" datapoints)")
 }
 
+DIRECT (QUERY_ONE_FOR_REAL__DataModeler_getResidualStandardDeviation) {
+	QUERY_ONE_FOR_REAL (DataModeler)
+		const double result = DataModeler_getResidualStandardDeviation (me);
+	QUERY_ONE_FOR_REAL_END (U"  (residual standard deviation)")
+}
+
 DIRECT (QUERY_ONE_FOR_REAL__DataModeler_getDataStandardDeviation) {
 	QUERY_ONE_FOR_REAL (DataModeler)
 		const double result = DataModeler_getDataStandardDeviation (me);
@@ -183,7 +201,7 @@ FORM (QUERY_ONE_FOR_REAL__DataModeler_getDataPointXValue, U"DataModeler: Get dat
 DO
 	QUERY_ONE_FOR_REAL (DataModeler)
 		const double result = DataModeler_getDataPointXValue (me, index);
-	QUERY_ONE_FOR_REAL_END (U" (= value at point ", index, U")")
+	QUERY_ONE_FOR_REAL_END (U" (value at point ", index, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__DataModeler_getDataPointYValue, U"DataModeler: Get data point y value", nullptr) {
@@ -192,7 +210,7 @@ FORM (QUERY_ONE_FOR_REAL__DataModeler_getDataPointYValue, U"DataModeler: Get dat
 DO
 	QUERY_ONE_FOR_REAL (DataModeler)
 		const double result = DataModeler_getDataPointYValue (me, index);
-	QUERY_ONE_FOR_REAL_END (U" (= value at point ", index, U")")
+	QUERY_ONE_FOR_REAL_END (U" (value at point ", index, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__DataModeler_getDataPointYSigma, U"DataModeler: Get data point y sigma", nullptr) {
@@ -201,7 +219,7 @@ FORM (QUERY_ONE_FOR_REAL__DataModeler_getDataPointYSigma, U"DataModeler: Get dat
 DO
 	QUERY_ONE_FOR_REAL (DataModeler)
 		const double result = DataModeler_getDataPointYSigma (me, index);
-	QUERY_ONE_FOR_REAL_END (U" (= sigma at point ", index, U")")
+	QUERY_ONE_FOR_REAL_END (U" (sigma at point ", index, U")")
 }
 
 FORM (QUERY_ONE_FOR_STRING__DataModeler_getDataPointStatus, U"DataModeler: Get data point status", nullptr) {
@@ -228,10 +246,16 @@ DIRECT (INFO_ONE__DataModeler_reportChiSquared) {
 	INFO_ONE_END
 }
 
+DIRECT (QUERY_ONE_FOR_MATRIX__DataModeler_getHessian) {
+	QUERY_ONE_FOR_MATRIX (DataModeler)
+		autoMAT result = DataModeler_getHessian (me);
+	QUERY_ONE_FOR_MATRIX_END
+}
+
 DIRECT (QUERY_ONE_FOR_REAL__DataModeler_getDegreesOfFreedom) {
 	QUERY_ONE_FOR_REAL (DataModeler)
 		const double result = DataModeler_getDegreesOfFreedom (me);
-	QUERY_ONE_FOR_REAL_END (U" (= degrees of freedom)")
+	QUERY_ONE_FOR_REAL_END (U" degrees of freedom")
 }
 
 FORM (MODIFY_EACH__DataModeler_setDataWeighing, U"DataModeler: Set data weighing", nullptr) {
@@ -249,6 +273,16 @@ FORM (MODIFY_EACH__DataModeler_setTolerance, U"DataModeler: Set tolerance", null
 DO
 	MODIFY_EACH (DataModeler)
 		DataModeler_setTolerance (me, tolerance);
+	MODIFY_EACH_END
+}
+
+FORM (MODIFY_EACH__DataModeler_setParameterName, U"DataModeler: Set parameter name", nullptr) {
+	NATURAL (index, U"Index", U"1")
+	SENTENCE (parameterName, U"Name", U"p [1]")
+	OK
+DO
+	MODIFY_EACH (DataModeler)
+		DataModeler_setParameterName (me, index, parameterName);
 	MODIFY_EACH_END
 }
 
@@ -272,6 +306,7 @@ DO
 		DataModeler_setParametersFree (me, fromParameter, toParameter);
 	MODIFY_EACH_END
 }
+
 
 FORM (MODIFY_EACH__DataModeler_setParameterValuesToZero, U"DataModeler: Set parameter values to zero", nullptr) {
 	REAL (numberOfSigmas, U"Number of sigmas", U"1.0")
@@ -373,9 +408,9 @@ FORM (COMBINE_ALL_TO_ONE__Formants_extractSmoothestPart, U"Formants: Extract smo
 	REAL (toTime, U"right Time range (s)", U"0.0")
 	NATURAL (numberOfFormantTracks, U"Number of formant tracks", U"4")
 	INTEGER (order, U"Order of polynomials", U"3")
-	LABEL (U"Use bandwidths to model the formant tracks:")
+	COMMENT (U"Use bandwidths to model the formant tracks:")
 	OPTIONMENU_ENUM (kFormantModelerWeights, weighFormants, U"Weigh formants", kFormantModelerWeights::DEFAULT)
-	LABEL (U"Zero parameter values whose range include zero:")
+	COMMENT (U"Zero parameter values whose range include zero:")
 	REAL (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (power, U"Parameter variance power", U"1.5")
 	OK
@@ -394,12 +429,12 @@ FORM (COMBINE_ALL_TO_ONE__Formants_extractSmoothestPart_constrained, U"Formants:
 	REAL (toTime, U"right Time range (s)", U"0.0")
 	NATURAL (numberOfFormantTracks, U"Number of formant tracks", U"4")
 	INTEGER (order, U"Order of polynomials", U"3")
-	LABEL (U"Use bandwidths to model the formant tracks:")
+	COMMENT (U"Use bandwidths to model the formant tracks:")
 	OPTIONMENU_ENUM (kFormantModelerWeights, weighFormants, U"Weigh formants", kFormantModelerWeights::DEFAULT)
-	LABEL (U"Zero parameter values whose range include zero:")
+	COMMENT (U"Zero parameter values whose range include zero:")
 	REAL (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (power, U"Parameter variance power", U"1.5")
-	LABEL (U"The constraints on the formants:")
+	COMMENT (U"The constraints on the formants:")
 	REAL (minimumF1, U"Minimum F1 (Hz)", U"100.0")
 	REAL (maximumF1, U"Maximum F1 (Hz)", U"1200.0")
 	REAL (minimumF2, U"Minimum F2 (Hz)", U"0.0")
@@ -577,7 +612,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getDataPointValue, U"FormantModeler: Ge
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getDataPointValue (me, formantNumber, index);
-	QUERY_ONE_FOR_REAL_END (U" (= value of point ", index, U" in track F", formantNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" (value of point ", index, U" in track F", formantNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__FormantModeler_getDataPointSigma, U"FormantModeler: Get data point sigma", nullptr) {
@@ -587,7 +622,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getDataPointSigma, U"FormantModeler: Ge
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getDataPointSigma (me, formantNumber, index);
-	QUERY_ONE_FOR_REAL_END (U" (= sigma of point ", index, U" in track F", formantNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" (sigma of point ", index, U" in track F", formantNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_STRING__FormantModeler_getDataPointStatus, U"FormantModeler: Get data point status", nullptr) {
@@ -604,7 +639,7 @@ DO
 DIRECT (QUERY_ONE_FOR_INTEGER__FormantModeler_getNumberOfTracks) {
 	QUERY_ONE_FOR_INTEGER (FormantModeler)
 		const integer result = FormantModeler_getNumberOfTracks (me);
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of formants)")
+	QUERY_ONE_FOR_INTEGER_END (U" formants")
 }
 
 FORM (QUERY_ONE_FOR_INTEGER__FormantModeler_getNumberOfParameters, U"FormantModeler: Get number of parameters", nullptr) {
@@ -613,7 +648,7 @@ FORM (QUERY_ONE_FOR_INTEGER__FormantModeler_getNumberOfParameters, U"FormantMode
 DO
 	QUERY_ONE_FOR_INTEGER (FormantModeler)
 		const integer result = FormantModeler_getNumberOfParameters (me, formantNumber);
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of parameters for F", formantNumber, U")")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of parameters for F", formantNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_INTEGER__FormantModeler_getNumberOfFixedParameters, U"FormantModeler: Get number of fixed parameters", nullptr) {
@@ -622,7 +657,7 @@ FORM (QUERY_ONE_FOR_INTEGER__FormantModeler_getNumberOfFixedParameters, U"Forman
 DO
 	QUERY_ONE_FOR_INTEGER (FormantModeler)
 		const integer result = FormantModeler_getNumberOfFixedParameters (me, formantNumber);
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of fixed parameters for F", formantNumber, U")")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of fixed parameters for F", formantNumber, U")")
 }
 
 DIRECT (QUERY_ONE_FOR_INTEGER__FormantModeler_getNumberOfDataPoints) {
@@ -637,7 +672,7 @@ FORM (QUERY_ONE_FOR_INTEGER__FormantModeler_getNumberOfInvalidDataPoints, U"Form
 DO
 	QUERY_ONE_FOR_INTEGER (FormantModeler)
 		const integer result = FormantModeler_getNumberOfInvalidDataPoints (me, formantNumber);
-	QUERY_ONE_FOR_INTEGER_END (U" (= number of invalid data points for F", formantNumber, U")")
+	QUERY_ONE_FOR_INTEGER_END (U" (number of invalid data points for F", formantNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__FormantModeler_getParameterValue, U"FormantModeler: Get parameter value", nullptr) {
@@ -647,7 +682,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getParameterValue, U"FormantModeler: Ge
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getParameterValue (me, formantNumber, parameterNumber);
-	QUERY_ONE_FOR_REAL_END (U" (= parameter ", parameterNumber, U" for F", formantNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" (parameter ", parameterNumber, U" for F", formantNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_STRING__FormantModeler_getParameterStatus, U"FormantModeler: Get parameter status", nullptr) {
@@ -659,7 +694,7 @@ DO
 		const kDataModelerParameterStatus status = FormantModeler_getParameterStatus (me, formantNumber, parameterNumber);
 		conststring32 result = Melder_cat (status == kDataModelerParameterStatus::FREE ? U"Free" : 
 			status == kDataModelerParameterStatus::FIXED_ ? U"Fixed" : U"Undefined",
-			U" (= status of parameter ", parameterNumber, U" for F", formantNumber, U")"
+			U" (status of parameter ", parameterNumber, U" for F", formantNumber, U")"
 		);
 	QUERY_ONE_FOR_STRING_END
 }
@@ -671,7 +706,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getParameterStandardDeviation, U"Forman
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getParameterStandardDeviation (me, formantNumber, parameterNumber);
-	QUERY_ONE_FOR_REAL_END (U" (= standard deviation of parameter ", parameterNumber, U" for F", formantNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" (standard deviation of parameter ", parameterNumber, U" for F", formantNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__FormantModeler_getVarianceOfParameters, U"FormantModeler: Get variance of parameters", nullptr) {
@@ -705,7 +740,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getResidualSumOfSquares, U"FormantModel
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getResidualSumOfSquares (me, formantNumber, nullptr);
-	QUERY_ONE_FOR_REAL_END (U" Hz^2,  (= residual sum of squares of F", formantNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" Hz^2 (residual sum of squares of F", formantNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__FormantModeler_getFormantStandardDeviation, U"FormantModeler: Get formant standard deviation", nullptr) {
@@ -714,7 +749,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getFormantStandardDeviation, U"FormantM
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getStandardDeviation (me, formantNumber);
-	QUERY_ONE_FOR_REAL_END (U" Hz (= standard deviation of F", formantNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" Hz (standard deviation of F", formantNumber, U")")
 }
 
 DIRECT (INFO_ONE__FormantModeler_reportChiSquared) {
@@ -731,7 +766,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getDegreesOfFreedom, U"FormantModeler: 
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getDegreesOfFreedom (me, formantNumber);
-	QUERY_ONE_FOR_REAL_END (U" (= degrees of freedom of F", formantNumber, U")")
+	QUERY_ONE_FOR_REAL_END (U" (degrees of freedom of F", formantNumber, U")")
 }
 
 FORM (QUERY_ONE_FOR_REAL__FormantModeler_getStress, U"FormantModeler: Get stress", nullptr) {
@@ -743,7 +778,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getStress, U"FormantModeler: Get stress
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getStress (me, fromFormant, toFormant, order, power);
-	QUERY_ONE_FOR_REAL_END (U" (= roughness)")
+	QUERY_ONE_FOR_REAL_END (U" (roughness)")
 }
 
 FORM (QUERY_ONE_FOR_REAL__FormantModeler_getAverageDistanceBetweenTracks, U"FormantModeler: Get average distance between tracks", nullptr) {
@@ -756,7 +791,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getAverageDistanceBetweenTracks, U"Form
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getAverageDistanceBetweenTracks (me, track1, track2, typeOfData - 1);
-	QUERY_ONE_FOR_REAL_END (U" (= average |F", track1, U" - F", track2, U"|)")
+	QUERY_ONE_FOR_REAL_END (U" (average |F", track1, U" - F", track2, U"|)")
 }
 
 FORM (QUERY_ONE_FOR_REAL__FormantModeler_getFormantsConstraintsFactor, U"FormantModeler: Get formants constraints factor", nullptr) {
@@ -769,7 +804,7 @@ FORM (QUERY_ONE_FOR_REAL__FormantModeler_getFormantsConstraintsFactor, U"Formant
 DO
 	QUERY_ONE_FOR_REAL (FormantModeler)
 		const double result = FormantModeler_getFormantsConstraintsFactor (me, minimumF1, maximumF1, minimumF2, maximumF2, minimumF3);
-	QUERY_ONE_FOR_REAL_END (U" (= formants constraints factor)");
+	QUERY_ONE_FOR_REAL_END (U" (formants constraints factor)");
 }
 
 FORM (MODIFY_EACH__FormantModeler_setFormantWeighing, U"FormantModeler: Set data weighing", nullptr) {
@@ -945,7 +980,7 @@ FORM (QUERY_ONE_FOR_REAL__Sound_getOptimalFormantCeiling, U"Sound: Get optimal f
 	NATURAL (numberOfFormantTracks, U"Number of formant tracks in model", U"4")
 	INTEGER (order, U"Order of polynomials", U"3")
 	OPTIONMENU_ENUM (kFormantModelerWeights, weighFormants, U"Weigh formants", kFormantModelerWeights::DEFAULT)
-	LABEL (U"Make parameters that include zero in their confidence region zero")
+	COMMENT (U"Make parameters that include zero in their confidence region zero")
 	REAL (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (power, U"Parameter variance power", U"1.5")
 	OK
@@ -970,7 +1005,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Formant_interval, U"Sound: To Formant (inter
 	NATURAL (numberOfFormantTracks, U"Number of formant tracks in model", U"4")
 	INTEGER (order, U"Order of polynomials", U"3")
 	OPTIONMENU_ENUM (kFormantModelerWeights, weighFormants, U"Weigh formants", kFormantModelerWeights::DEFAULT)
-	LABEL (U"Make parameters that include zero in their confidence region zero")
+	COMMENT (U"Make parameters that include zero in their confidence region zero")
 	REAL (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (power, U"Parameter variance power", U"1.5")
 	OK
@@ -997,10 +1032,10 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Formant_interval_constrained, U"Sound: To Fo
 	NATURAL (numberOfFormantTracks, U"Number of formant tracks in model", U"4")
 	INTEGER (order, U"Order of polynomials", U"3")
 	OPTIONMENU_ENUM (kFormantModelerWeights, weighFormants, U"Weigh formants", kFormantModelerWeights::DEFAULT)
-	LABEL (U"Make parameters that include zero in their confidence region zero")
+	COMMENT (U"Make parameters that include zero in their confidence region zero")
 	REAL (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (power, U"Parameter variance power", U"1.5")
-	LABEL (U"Formant frequency constraints")
+	COMMENT (U"Formant frequency constraints")
 	REAL (minimumF1, U"Minimum F1 (Hz)", U"100.0")
 	REAL (maximumF1, U"Maximum F1 (Hz)", U"1200.0")
 	REAL (minimumF2, U"Minimum F2 (Hz)", U"0.0")
@@ -1030,10 +1065,10 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Formant_interval_constrained_robust, U"Sound
 	NATURAL (numberOfFormantTracks, U"Number of formant tracks in model", U"4")
 	INTEGER (order, U"Order of polynomials", U"3")
 	OPTIONMENU_ENUM (kFormantModelerWeights, weighFormants, U"Weigh formants", kFormantModelerWeights::DEFAULT)
-	LABEL (U"Make parameters that include zero in their confidence region zero")
+	COMMENT (U"Make parameters that include zero in their confidence region zero")
 	REAL (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (power, U"Parameter variance power", U"1.5")
-	LABEL (U"Formant frequency constraints")
+	COMMENT (U"Formant frequency constraints")
 	REAL (minimumF1, U"Minimum F1 (Hz)", U"100.0")
 	REAL (maximumF1, U"Maximum F1 (Hz)", U"1200.0")
 	REAL (minimumF2, U"Minimum F2 (Hz)", U"0.0")
@@ -1062,7 +1097,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_OptimalCeilingTier, U"", nullptr) {
 	NATURAL (numberOfFormantTracks, U"Number of formant tracks in model", U"4")
 	INTEGER (order, U"Order of polynomials", U"2")
 	OPTIONMENU_ENUM (kFormantModelerWeights, weighFormants, U"Weigh formants", kFormantModelerWeights::DEFAULT)
-	LABEL (U"Make parameters that include zero in their confidence region zero")
+	COMMENT (U"Make parameters that include zero in their confidence region zero")
 	REAL (numberOfSigmas, U"Number of sigmas", U"1.0")
 	REAL (power, U"Parameter variance power", U"1.5")
 	OK
@@ -1079,9 +1114,9 @@ DO
 FORM (CONVERT_EACH_TO_ONE__Table_to_DataModeler, U"", nullptr) {
 	REAL (xmin, U"left X range", U"0.0")
 	REAL (xmax, U"right X range", U"0.0 (= auto)")
-	WORD (columnWithX_string, U"Column with X data", U"")
-	WORD (columnWithY_string, U"Column with Y data", U"")
-	WORD (columnEithSigma_string, U"Column with sigmas", U"")
+	WORD (xColumnName, U"Column with X data", U"")
+	WORD (yColumnName, U"Column with Y data", U"")
+	WORD (sigmaColumnName, U"Column with sigmas", U"")
 	OPTIONMENU_ENUM (kDataModelerFunction, type, U"Basis functions", kDataModelerFunction::DEFAULT)		
 	INTEGER (maximumOrder, U"Maximum order", U"3")
 	OK
@@ -1089,10 +1124,11 @@ DO
 	CONVERT_EACH_TO_ONE (Table)
 		Melder_require (type != kDataModelerFunction::LINEAR,
 			U"No linear functions implemented. Choose another model.");
-		const integer xcolumn = Table_getColumnIndexFromColumnLabel (me, columnWithX_string);
-		const integer ycolumn = Table_getColumnIndexFromColumnLabel (me, columnWithY_string);
-		const integer scolumn = Table_findColumnIndexFromColumnLabel (me, columnEithSigma_string);
-		autoDataModeler result = Table_to_DataModeler (me, xmin, xmax, xcolumn, ycolumn, scolumn, maximumOrder + 1, type);
+		const integer xColumnNumber     = Table_columnNameToNumber_e (me, xColumnName);
+		const integer yColumnNumber     = Table_columnNameToNumber_e (me, yColumnName);
+		const integer sigmaColumnNumber = Table_columnNameToNumber_0 (me, sigmaColumnName);
+		autoDataModeler result = Table_to_DataModeler (me, xmin, xmax,
+				xColumnNumber, yColumnNumber, sigmaColumnNumber, maximumOrder + 1, type);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
@@ -1111,6 +1147,8 @@ void praat_DataModeler_init () {
 			GRAPHICS_EACH__DataModeler_drawModel);
 	praat_addAction1 (classDataModeler, 0, U"Draw estimated track...", 0, 0, 
 			GRAPHICS_EACH__DataModeler_drawEstimatedTrack);
+	praat_addAction1 (classDataModeler, 0, U"Draw residuals...", 0, 0, 
+			GRAPHICS_EACH__DataModeler_drawResiduals);
 
 	praat_addAction1 (classDataModeler, 1, U"Query -", 0, 0, 0);
 		praat_addAction1 (classDataModeler, 0, U"Get number of parameters", 0, 1,
@@ -1146,6 +1184,8 @@ void praat_DataModeler_init () {
 		
 		praat_addAction1 (classDataModeler, 0, U"Get residual sum of squares", 0, 1, 
 				QUERY_ONE_FOR_REAL__DataModeler_getResidualSumOfSquares);
+		praat_addAction1 (classDataModeler, 0, U"Get residual standard deviation", 0, 1, 
+				QUERY_ONE_FOR_REAL__DataModeler_getResidualStandardDeviation);
 		praat_addAction1 (classDataModeler, 0, U"Get data standard deviation", 0, 1,
 				QUERY_ONE_FOR_REAL__DataModeler_getDataStandardDeviation);
 		praat_addAction1 (classDataModeler, 0, U"Get coefficient of determination", 0, 1,
@@ -1154,6 +1194,8 @@ void praat_DataModeler_init () {
 				INFO_ONE__DataModeler_reportChiSquared);
 		praat_addAction1 (classDataModeler, 0, U"Get degrees of freedom", 0, 1,
 				QUERY_ONE_FOR_REAL__DataModeler_getDegreesOfFreedom);
+		praat_addAction1 (classDataModeler, 0, U"Get hessian matrix", 0, 1,
+				QUERY_ONE_FOR_MATRIX__DataModeler_getHessian);
 
 		praat_addAction1 (classDataModeler, 1, U"Modify -", 0, 0, 0);
 		praat_addAction1 (classDataModeler, 0, U"Set data weighing...", 0, 1, 
@@ -1161,6 +1203,8 @@ void praat_DataModeler_init () {
 		praat_addAction1 (classDataModeler, 0, U"Set tolerance...", 0, 1, 
 				MODIFY_EACH__DataModeler_setTolerance);
 		praat_addAction1 (classDataModeler, 1, U"-- set parameter values --", 0, 1, 0);
+		praat_addAction1 (classDataModeler, 0, U"Set parameter name...", 0, 1, 
+				MODIFY_EACH__DataModeler_setParameterName);
 		praat_addAction1 (classDataModeler, 0, U"Set parameter value...", 0, 1, 
 				MODIFY_EACH__DataModeler_setParameterValue);
 		praat_addAction1 (classDataModeler, 0, U"Set parameter free...", 0, 1,
@@ -1199,7 +1243,7 @@ void praat_DataModeler_init () {
 			GRAPHICS_EACH__FormantModeler_drawTracks);
 	praat_addAction1 (classFormantModeler, 0, U"Draw estimated tracks...", 0, 1, 
 			GRAPHICS_EACH__FormantModeler_drawEstimatedTracks);
-	praat_addAction1 (classFormantModeler, 0, U"Draw variances of shifted tracks...", 0, 1,
+	praat_addAction1 (classFormantModeler, 0, U"Draw variances of shifted tracks...", 0, GuiMenu_HIDDEN + GuiMenu_DEPTH_1,
 			GRAPHICS_EACH__FormantModeler_drawVariancesOfShiftedTracks);
 	praat_addAction1 (classFormantModeler, 0, U"Draw outliers marked...", 0, 1, 
 			GRAPHICS_EACH__FormantModeler_drawOutliersMarked);

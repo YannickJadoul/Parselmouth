@@ -1,6 +1,6 @@
 /* praat_objectMenus.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -314,9 +314,9 @@ DO
 
 FORM (INFO_NONE__praat_calculator, U"Calculator", U"Calculator") {
 	TEXTFIELD (expression, U"Type any numeric formula or string formula", U"5*5", 5)
-	LABEL (U"Note that you can include many special functions in your formula,")
-	LABEL (U"including statistical functions and acoustics-auditory conversions.")
-	LABEL (U"For details, click Help.")
+	COMMENT (U"Note that you can include many special functions in your formula,")
+	COMMENT (U"including statistical functions and acoustics-auditory conversions.")
+	COMMENT (U"For details, click Help.")
 	OK
 DO
 	INFO_NONE
@@ -398,19 +398,19 @@ FORM_SAVE (GRAPHICS_saveDemoWindowAsPdfFile, U"Save Demo window as PDF file", nu
 /********** Callbacks of the Technical menu. **********/
 
 FORM (SETTINGS__debug, U"Set debugging options", nullptr) {
-	LABEL (U"If you switch Tracing on, Praat will write lots of detailed ")
-	LABEL (U"information about what goes on in Praat")
+	COMMENT (U"If you switch Tracing on, Praat will write lots of detailed ")
+	COMMENT (U"information about what goes on in Praat")
 	structMelderFile file;
 	#ifdef UNIX
-		MelderDir_getFile (& Melder_preferencesFolder, U"tracing", & file);
+		MelderFolder_getFile (& Melder_preferencesFolder, U"tracing", & file);
 	#else
-		MelderDir_getFile (& Melder_preferencesFolder, U"Tracing.txt", & file);
+		MelderFolder_getFile (& Melder_preferencesFolder, U"Tracing.txt", & file);
 	#endif
-	LABEL (Melder_cat (U"to ", Melder_fileToPath (& file), U"."))
+	COMMENT (Melder_cat (U"to ", Melder_fileToPath (& file), U"."))
 	BOOLEAN (tracing, U"Tracing", false)
-	LABEL (U"Setting the following to anything other than zero")
-	LABEL (U"will alter the behaviour of Praat")
-	LABEL (U"in unpredictable ways.")
+	COMMENT (U"Setting the following to anything other than zero")
+	COMMENT (U"will alter the behaviour of Praat")
+	COMMENT (U"in unpredictable ways.")
 	INTEGER (debugOption, U"Debug option", U"0")
 OK
 	SET_BOOLEAN (tracing, Melder_isTracingGlobally)
@@ -583,7 +583,7 @@ FORM (PRAAT_ManPages_saveToHtmlFolder, U"Save all pages as HTML files", nullptr)
 OK
 	LOOP {
 		iam_LOOP (ManPages);
-		SET_STRING (folder, Melder_dirToPath (& my rootDirectory))
+		SET_STRING (folder, Melder_folderToPath (& my rootDirectory))
 	}
 DO
 	LOOP {
@@ -640,9 +640,9 @@ DO
 FORM (HELP_SaveManualToHtmlFolder, U"Save all pages as HTML files", nullptr) {
 	FOLDER (folder, U"Folder", U"")
 OK
-	structMelderDir currentDirectory { };
-	Melder_getDefaultDir (& currentDirectory);
-	SET_STRING (folder, Melder_dirToPath (& currentDirectory))
+	structMelderFolder currentFolder { };
+	Melder_getCurrentFolder (& currentFolder);
+	SET_STRING (folder, Melder_folderToPath (& currentFolder))
 DO
 	ManPages_writeAllToHtmlDir (theCurrentPraatApplication -> manPages, nullptr, folder);
 	END_NO_NEW_DATA

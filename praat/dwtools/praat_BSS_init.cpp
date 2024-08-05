@@ -68,12 +68,12 @@ FORM (CONVERT_EACH_TO_MULTIPLE__EEG_to_EEG_bss, U"EEG: To EEG (bss)", U"EEG: To 
 	NATURAL (numberOfCrossCorrelations, U"Number of cross-correlations", U"40")
 	POSITIVE (lagStep, U"Lag step (s)", U"0.002")
 	NATURALVECTOR (channels, U"Channels", RANGES_, U"1:64")
-	LABEL (U"Pre-whitening parameters")
+	COMMENT (U"Pre-whitening parameters")
 	OPTIONMENUx (whiteningMethod, U"Whitening method", 1, 0)
 		OPTION (U"no whitening")
 		OPTION (U"covariance")
 		OPTION (U"correlation")
-	LABEL (U"Iteration parameters")
+	COMMENT (U"Iteration parameters")
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"100")
 	POSITIVE (tolerance, U"Tolerance", U"0.001")
 	OPTIONMENU (diagonalizationMethod, U"Diagonalization method", 2)
@@ -263,7 +263,7 @@ FORM (QUERY_ONE_FOR_REAL__CrossCorrelationTableList_getDiagonalityMeasure, U"Cro
 DO
 	QUERY_ONE_FOR_REAL (CrossCorrelationTableList)
 		const double result = CrossCorrelationTableList_getDiagonalityMeasure (me, 0, fromTable, toTable);
-	QUERY_ONE_FOR_REAL_END (U" (= average sum of squared off-diagonal elements)")
+	QUERY_ONE_FOR_REAL_END (U" (average sum of squared off-diagonal elements)")
 }
 
 FORM (CONVERT_EACH_TO_ONE__CrossCorrelationTableList_extractCrossCorrelationTable, U"CrossCorrelationTableList: Extract one CrossCorrelationTable", nullptr) {
@@ -314,7 +314,7 @@ FORM (QUERY_ONE_AND_ONE_FOR_REAL__CrossCorrelationTableList_Diagonalizer_getDiag
 DO
 	QUERY_ONE_AND_ONE_FOR_REAL (CrossCorrelationTableList, Diagonalizer)
 		const double result = CrossCorrelationTableList_Diagonalizer_getDiagonalityMeasure (me, you, nullptr, fromTable, toTable);
-	QUERY_ONE_AND_ONE_FOR_REAL_END (U" (= average sum of squared off-diagonal elements)")
+	QUERY_ONE_AND_ONE_FOR_REAL_END (U" (average sum of squared off-diagonal elements)")
 }
 
 DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__CrossCorrelationTable_Diagonalizer_diagonalize) {
@@ -330,7 +330,7 @@ DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__CrossCorrelationTableList_Diagonalizer_diago
 }
 
 FORM (MODIFY_FIRST_OF_ONE_AND_ONE__CrossCorrelationTableList_MixingMatrix_improveUnmixing, U"", nullptr) {
-	LABEL (U"Iteration parameters")
+	COMMENT (U"Iteration parameters")
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"100")
 	POSITIVE (tolerance, U"Tolerance", U"0.001")
 	OPTIONMENU (diagonalizationMethod, U"Diagonalization method", 2)
@@ -378,7 +378,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_MixingMatrix, U"Sound: To MixingMatrix", nul
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	NATURAL (numberOfCrossCorrelations, U"Number of cross-correlations", U"40")
 	POSITIVE (lagStep, U"Lag step (s)", U"0.002")
-	LABEL (U"Iteration parameters")
+	COMMENT (U"Iteration parameters")
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"100")
 	POSITIVE (tolerance, U"Tolerance", U"0.001")
 	OPTIONMENU (diagonalizationMethod, U"Diagonalization method", 2)
@@ -398,7 +398,7 @@ FORM (MODIFY_FIRST_OF_ONE_AND_ONE__Sound_MixingMatrix_improveUnmixing, U"Sound &
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	NATURAL (numberOfCrossCorrelations, U"Number of cross-correlations", U"40")
 	POSITIVE (lagStep, U"Lag step (s)", U"0.002")
-	LABEL (U"Iteration parameters")
+	COMMENT (U"Iteration parameters")
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"100")
 	POSITIVE (tolerance, U"Tolerance", U"0.001")
 	OPTIONMENU (diagonalizationMethod, U"Diagonalization method", 2)
@@ -431,7 +431,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Sound_bss, U"Sound: To Sound (blind source s
 	praat_TimeFunction_RANGE (fromTime, toTime)
 	NATURAL (numberOfCrossCorrelations, U"Number of cross-correlations", U"40")
 	POSITIVE (lagStep, U"Lag step (s)", U"0.002")
-	LABEL (U"Iteration parameters")
+	COMMENT (U"Iteration parameters")
 	NATURAL (maximumNumberOfIterations, U"Maximum number of iterations", U"100")
 	POSITIVE (tolerance, U"Tolerance", U"0.001")
 	OPTIONMENU (diagonalizationMethod, U"Diagonalization method", 2)
@@ -472,7 +472,7 @@ DIRECT (CONVERT_ONE_AND_ONE_TO_ONE__Sound_MixingMatrix_mix) {
 
 FORM (CONVERT_ONE_AND_ONE_TO_ONE__Sound_MixingMatrix_mixPart, U"Sound & MixingMatrix: Mix part", U"MixingMatrix") {
 	REAL (fromTime, U"left Time_range (s)", U"0.0")
-	REAL (toTime, U"right Time_range (s)", U"0.0 (=all)")
+	REAL (toTime, U"right Time_range (s)", U"0.0 (= all)")
 	OK
 DO
 	Melder_require (toTime >= fromTime,
@@ -510,10 +510,8 @@ void praat_BSS_init () {
 			HELP__CrossCorrelationTable_help);
 	praat_SSCP_as_TableOfReal_init (classCrossCorrelationTable);
 
-	praat_addAction1 (classCrossCorrelationTable, 0, U"To CrossCorrelationTableList", nullptr, 0,
-			COMBINE_ALL_TO_ONE__CrossCorrelationTables_to_CrossCorrelationTableList);
-	praat_addAction1 (classCrossCorrelationTable, 0, U"To CrossCorrelationTables", U"*To CrossCorrelationTableList", GuiMenu_DEPRECATED_2015,
-			COMBINE_ALL_TO_ONE__CrossCorrelationTables_to_CrossCorrelationTableList);
+	praat_addAction1 (classCrossCorrelationTable, 0, U"To CrossCorrelationTableList || To CrossCorrelationTables", nullptr, 0,
+			COMBINE_ALL_TO_ONE__CrossCorrelationTables_to_CrossCorrelationTableList);   // alternative COMPATIBILITY <= 2015
 
 	praat_addAction1 (classCrossCorrelationTableList, 0, U"CrossCorrelationTableList help", 0, 0,
 			HELP__CrossCorrelationTableList_help);

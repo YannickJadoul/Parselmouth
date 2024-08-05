@@ -1,6 +1,6 @@
 /* TextEditor.cpp
  *
- * Copyright (C) 1997-2023 Paul Boersma, 2010 Franz Brausse
+ * Copyright (C) 1997-2024 Paul Boersma, 2010 Franz Brausse
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,8 +36,8 @@ static CollectionOf <structTextEditor> theReferencesToAllOpenTextEditors;
 /***** TextEditor methods *****/
 
 void structTextEditor :: v9_destroy () noexcept {
-	our openDialog.reset();   // don't delay till delete
-	our saveDialog.reset();   // don't delay till delete
+	our openDialog. reset();   // don't delay till delete
+	our saveDialog. reset();   // don't delay till delete
 	theReferencesToAllOpenTextEditors. undangleItem (this);
 	TextEditor_Parent :: v9_destroy ();
 }
@@ -506,17 +506,19 @@ static void menu_cb_shiftRight (TextEditor me, EDITOR_ARGS) {
 }
 
 static integer getPositionToDeleteTabBeforeSelection (conststring32 text, const integer startingPosition) {
-	if (startingPosition == 0)
+	if (startingPosition == 0) {
 		if (text [startingPosition] == U'\t')
 			return 0;   // we can delete a tab from the start of the text
 		else
 			return -1;   // we cannot delete a tab before the start of the text
+	}
 	for (integer position = startingPosition - 1; position >= 0; position --)
-		if (text [position] == U'\n')
+		if (text [position] == U'\n') {
 			if (text [position + 1] == U'\t')
 				return position + 1;   // we will delete a tab after the last newline
 			else
 				return -1;   // we will not look past the last newline
+		}
 	return text [0] == U'\t' ? 0 : -1;   // we were on line 1 and may therefore delete a tab at the start of the text
 }
 static void menu_cb_shiftLeft (TextEditor me, EDITOR_ARGS) {
@@ -666,11 +668,11 @@ static void menu_cb_useSelectionForFind (TextEditor me, EDITOR_ARGS) {
 
 static void menu_cb_replace (TextEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Find", nullptr)
-		LABEL (U"This is a \"slow\" find-and-replace method;")
-		LABEL (U"if the selected text is identical to the Find string,")
-		LABEL (U"the selected text will be replaced by the Replace string;")
-		LABEL (U"otherwise, the next occurrence of the Find string will be selected.")
-		LABEL (U"So you typically need two clicks on Apply to get a text replaced.")
+		COMMENT (U"This is a \"slow\" find-and-replace method;")
+		COMMENT (U"if the selected text is identical to the Find string,")
+		COMMENT (U"the selected text will be replaced by the Replace string;")
+		COMMENT (U"otherwise, the next occurrence of the Find string will be selected.")
+		COMMENT (U"So you typically need two clicks on Apply to get a text replaced.")
 		TEXTFIELD (findString, U"Find", U"", 5)
 		TEXTFIELD (replaceString, U"Replace with", U"", 5)
 	EDITOR_OK

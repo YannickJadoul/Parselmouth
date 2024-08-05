@@ -2,7 +2,7 @@
 #define _PointArea_h_
 /* PointArea.h
  *
- * Copyright (C) 1992-2011,2012,2015,2016,2018,2022 Paul Boersma
+ * Copyright (C) 1992-2011,2012,2015,2016,2018,2022,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,10 @@ Thing_define (PointArea, FunctionArea) {
 		override;
 	void v_drawInside ()
 		override;
+
+	#include "PointArea_prefs.h"
 };
+
 DEFINE_FunctionArea_create (PointArea, PointProcess)
 
 /* End of file PointArea.h */

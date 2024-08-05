@@ -2,7 +2,7 @@
 #define _Spectrogram_h_
 /* Spectrogram.h
  *
- * Copyright (C) 1992-2007,2011,2012,2015-2019,2022,2023 David Weenink & Paul Boersma
+ * Copyright (C) 1992-2007,2011,2012,2015-2019,2022,2023,2024 David Weenink & Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,11 +60,11 @@ autoSpectrogram Spectrogram_create (double tmin, double tmax, integer nt, double
 		result -> z [1..nf] [1..nt] == 0.0;
 */
 
-void Spectrogram_paintInside (Spectrogram me, Graphics g,
-	double tmin, double tmax, double fmin, double fmax, double maximum, int autoscaling,
+void Spectrogram_paintInside (constSpectrogram me, Graphics g,
+	double tmin, double tmax, double fmin, double fmax, double maximum, bool autoscaling,
 	double dynamicRange, double preemphasis, double dynamicCompression);
-void Spectrogram_paint (Spectrogram me, Graphics g,
-	double tmin, double tmax, double fmin, double fmax, double maximum, int autoscaling,
+void Spectrogram_paint (constSpectrogram me, Graphics g,
+	double tmin, double tmax, double fmin, double fmax, double maximum, bool autoscaling,
 	double dynamicRange, double preemphasis, double dynamicCompression,
 	bool garnish);
 /*
@@ -82,13 +82,13 @@ void Spectrogram_paint (Spectrogram me, Graphics g,
 			a boolean that determines if a box, ticks, numbers, and text are written in the margins.
 */
 
-autoSpectrogram Matrix_to_Spectrogram (Matrix me);
+autoSpectrogram Matrix_to_Spectrogram (constMatrix me);
 /*
 	Create a Spectrogram from a Matrix,
 	with deep copy of all its attributes, except class information and methods.
 */
 
-autoMatrix Spectrogram_to_Matrix (Spectrogram me);
+autoMatrix Spectrogram_to_Matrix (constSpectrogram me);
 /*
 	Create a Matrix from a Spectrogram,
 	with deep copy of all its attributes, except class information and methods.

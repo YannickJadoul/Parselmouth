@@ -2,7 +2,7 @@
 #define _melder_sysenv_h_
 /* melder_sysenv.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2018,2023 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,18 @@
  */
 
 conststring32 Melder_getenv (conststring32 variableName);
-void Melder_system (conststring32 command);   // spawn a system command
-void Melder_execv (conststring32 executableFileName, integer narg, char32 **args);   // spawn a subprocess
+
+autostring32 runSystem_STR (conststring32 command);
+	// spawn a system command, capturing the stdout output
+
+void Melder_runSystem (conststring32 command);
+	// spawn a system command
+
+autostring32 runSubprocess_STR (conststring32 executableFileName, integer narg, char32 ** args);
+	// spawn a subprocess, capturing the stdout output
+
+void Melder_runSubprocess (conststring32 executableFileName, integer narg, char32 **args);
+	// spawn a subprocess
 
 /* End of file melder_sysenv.h */
 #endif
