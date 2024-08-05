@@ -384,9 +384,10 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 
 	// TODO Filter with one formant (in-line)...
 
+	// TODO 0.5: inplace vs. filter
 	def("pre_emphasize",
 	    [](Sound self, double fromFrequency, bool normalize) {
-		    Sound_preEmphasis(self, fromFrequency);
+		    Sound_preEmphasize_inplace(self, fromFrequency);
 		    if (normalize) {
 			    Vector_scale(self, 0.99);
 		    }
@@ -395,7 +396,7 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 
 	def("de_emphasize",
 	    [](Sound self, double fromFrequency, bool normalize) {
-		    Sound_deEmphasis(self, fromFrequency);
+		    Sound_deEmphasize_inplace(self, fromFrequency);
 		    if (normalize) {
 			    Vector_scale(self, 0.99);
 		    }
@@ -484,17 +485,19 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 	    },
 	    "method"_a);
 
+	// TODO 0.5: New Praat filtered vs. raw
 	def("to_pitch_ac",
 	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw(U"Your maximum number of candidates should be greater than 1.");
-		    return Sound_to_Pitch_ac(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 3.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
+			return Sound_to_Pitch_rawAc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost);
 	    },
 	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = false, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
+	// TODO 0.5: New Praat filtered vs. raw
 	def("to_pitch_cc",
 	    [](Sound self, std::optional<Positive<double>> timeStep, Positive<double> pitchFloor, Positive<int> maxNumberOfCandidates, bool veryAccurate, double silenceThreshold, double voicingThreshold, double octaveCost, double octaveJumpCost, double voicedUnvoicedCost, Positive<double> pitchCeiling) {
 		    if (maxNumberOfCandidates <= 1) Melder_throw(U"Your maximum number of candidates should be greater than 1.");
-		    return Sound_to_Pitch_cc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, 1.0, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost, pitchCeiling);
+		    return Sound_to_Pitch_rawCc(self, timeStep ? static_cast<double>(*timeStep) : 0.0, pitchFloor, pitchCeiling, maxNumberOfCandidates, veryAccurate, silenceThreshold, voicingThreshold, octaveCost, octaveJumpCost, voicedUnvoicedCost);
 	    },
 	    "time_step"_a = std::nullopt, "pitch_floor"_a = 75.0, "max_number_of_candidates"_a = 15, "very_accurate"_a = false, "silence_threshold"_a = 0.03, "voicing_threshold"_a = 0.45, "octave_cost"_a = 0.01, "octave_jump_cost"_a = 0.35, "voiced_unvoiced_cost"_a = 0.14, "pitch_ceiling"_a = 600.0);
 
