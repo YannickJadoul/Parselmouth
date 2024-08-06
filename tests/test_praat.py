@@ -220,6 +220,8 @@ def test_run_with_capture_output():
 
 
 def test_run_with_return_variables():
+	praat_builtin_variables = {'newline$', 'tab$', 'shellDirectory$', 'defaultDirectory$', 'preferencesDirectory$', 'homeDirectory$', 'temporaryDirectory$', 'macintosh', 'windows', 'unix', 'praat_intel32', 'praat_intel64', 'praat_arm64', 'praat_32bit', 'praat_64bit', 'left', 'right', 'mono', 'stereo', 'all', 'average', 'praatVersion$', 'praatVersion'}
+
 	script = textwrap.dedent("""\
 	a = 42
 	b$ = "abc"
@@ -233,7 +235,7 @@ def test_run_with_return_variables():
 	assert 'b$' in variables and 'b' not in variables and variables['b$'] == "abc"
 	assert 'c#' in variables and 'c' not in variables and isinstance(variables['c#'], np.ndarray) and variables['c#'].dtype == np.dtype(float) and variables['c#'].shape == (9,) and np.all(variables['c#'] == [1, 1, 2, 3, 5, 8, 13, 21, 34])
 	assert 'd##' in variables and 'd#' not in variables and isinstance(variables['d##'], np.ndarray) and variables['d##'].dtype == np.dtype(float) and variables['d##'].shape == (2, 9) and np.all(variables['d##'] == np.outer([1, (1 + np.sqrt(5)) / 2], [1, 1, 2, 3, 5, 8, 13, 21, 34]))
-	assert set(variables.keys()) == {'a', 'b$', 'c#', 'd##', 'newline$', 'tab$', 'shellDirectory$', 'defaultDirectory$', 'preferencesDirectory$', 'homeDirectory$', 'temporaryDirectory$', 'macintosh', 'windows', 'unix', 'left', 'right', 'mono', 'stereo', 'all', 'average', 'praatVersion$', 'praatVersion'}
+	assert set(variables.keys()) == {'a', 'b$', 'c#', 'd##'} | praat_builtin_variables
 
 
 def test_run_with_capture_output_and_return_variables():
@@ -312,7 +314,7 @@ def test_praat_callback_prefixes():
 	assert old_prefixes == values | objects | info | nothing | exception | editor
 
 	query = ({f'QUERY_NONE_FOR_{x}' for x in {'COMPLEX', 'REAL'}} |
-	         {f'QUERY_ONE_FOR_{x}' for x in {'BOOLEAN', 'INTEGER', 'MATRIX', 'REAL', 'REAL_VECTOR', 'STRING', 'STRING_ARRAY'}} |
+	         {f'QUERY_ONE_FOR_{x}' for x in {'BOOLEAN', 'INTEGER', 'MATRIX', 'REAL', 'REAL_VECTOR', 'STRING', 'AUTOSTRING', 'STRING_ARRAY'}} |
 	         {f'QUERY_ONE_WEAK_{x}' for x in {'FOR_STRING', 'AND_ONE_FOR_INTEGER', 'AND_ONE_FOR_REAL'}} |
 			 {f'QUERY_ONE_AND_{x}' for x in {'ONE_FOR_BOOLEAN', 'ONE_FOR_REAL', 'ONE_AND_ALL_FOR_REAL', 'ONE_AND_ONE_FOR_REAL'}} |
 	         {'QUERY_TWO_AND_ONE_FOR_REAL', 'QUERY_TWO_FOR_REAL'})
@@ -326,7 +328,7 @@ def test_praat_callback_prefixes():
 	          {f'MODIFY_FIRST_OF_ONE_{x}' for x in {'AND_ONE', 'AND_ALL', 'AND_ONE_AND_ONE', 'WEAK_AND_ONE', 'WEAK_AND_ONE_WITH_HISTORY', 'WEAK_AND_TWO'}})
 	create = {'CREATE_ONE', 'CREATE_MULTIPLE'}
 	info = {'INFO_NONE', 'INFO_ONE', 'INFO_ONE_AND_ONE', 'INFO_TWO', 'LIST'}
-	read_save = {'READ_ONE', 'READ_MULTIPLE', 'SAVE_ALL', 'SAVE_ONE', 'SAVE_TWO'}
+	read_save = {'READ_ONE', 'READ_MULTIPLE', 'SAVE', 'SAVE_ALL', 'SAVE_ONE', 'SAVE_TWO'}
 	graphics = {f'GRAPHICS_{x}' for x in {'EACH', 'NONE', 'ONE_AND_ONE', 'TWO', 'TWO_AND_ONE'}}
 	play_record = {'PLAY', 'PLAY_EACH', 'PLAY_ONE_AND_ONE', 'RECORD_ONE'}
 	editor_window = {'EDITOR_ONE', 'EDITOR_ONE_WITH_ONE', 'EDITOR_ONE_WITH_ONE_AND_ONE', 'CREATION_WINDOW', 'SINGLETON_CREATION_WINDOW'}
