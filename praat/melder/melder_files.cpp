@@ -636,8 +636,7 @@ FILE * Melder_fopen (MelderFile file, const char *type) {
 			f = _wfopen (Melder_peek32toW_fileSystem (file -> path), Melder_peek32toW (Melder_peek8to32 (type)));
 		#else
 			struct stat statbuf;
-			stat ((char *) utf8path, & statbuf);
-			if (S_ISDIR (statbuf. st_mode)) {
+			if ((stat ((char *) utf8path, & statbuf) != -1) && S_ISDIR (statbuf. st_mode)) {
 				isFolder = true;
 				trace (U"A folder is not a file!");
 				f = nullptr;
