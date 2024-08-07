@@ -240,7 +240,7 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`randomUniform` (%`min`, %`max`) – uniformly distributed random deviate
 , @`randomUniform#` (%`n`, %`min`, %`max`) – %n independent uniformly distributed random numbers
 , @`randomUniform#` (%`vector#`, %min, %max) – duplicate %`vector#`,
-	and replace all elements with independent uniformly distributed random numbers
+	and replace all elements with independent uniformly distributed random numbers)~~~" R"~~~(
 , @`randomUniform##` (%`nrow`, %`ncol`, %`min`, %`max`) – %`nrow` \xx %`ncol` independent uniformly distributed random numbers
 , @`randomUniform##` (%`matrix##`, %`min`, %`max`) – duplicate %`matrix##`,
 	and replace all cells with independent uniformly distributed random numbers
@@ -253,7 +253,7 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`readLinesFromFile$#` (%`filePath$`) – read all lines from a text file
 , @`rectify` (%`x`) – set to zero if negative (no change if positive)
 , @`rectify#` (%`vector#`) – rectify each element of %`vector#`
-, @`rectify##` (%`matrix##`) – rectify each cell of %`matrix##`)~~~" R"~~~(
+, @`rectify##` (%`matrix##`) – rectify each cell of %`matrix##`
 , @`removeObject` (`...`) – remove objects from the list, by ID and/or name
 , @`repeat#` (%`v#`, %`n`) – repeat the whole sequence of elements of %`v#` %`n` times
 , @`replace$` (%`a$`, %`b$`, %`c$`, %`n`) – within %`a$`, replace the first %`n` occurrences of %`b$` with %`c$`, or all if %`n` = 0
@@ -670,7 +670,7 @@ Tests
 "`arctan#`"
 © Paul Boersma 2023
 
-A function that can be used in @@Formulas@.
+A function that can be used in @@Formulas@.)~~~" R"~~~(
 
 Syntax and semantics
 ====================
@@ -784,7 +784,7 @@ Examples
 This is an assertion that is satisfied:
 {
 	a = 5*6
-	\#{assert} a = 30)~~~" R"~~~(
+	\#{assert} a = 30
 	writeInfoLine: a
 }
 This is an assertion that is violated:
@@ -1201,7 +1201,7 @@ A function that can be used in @@Formulas@.
 
 Syntax and semantics
 ====================
-#`cos#` (%`v#`)
+#`cos#` (%`v#`))~~~" R"~~~(
 : compute the cosine (@`cos`) of each element of the vector %`v#`.
 
 ################################################################################
@@ -1391,7 +1391,7 @@ Syntax and semantics
 : determine whether the user clicked in the Demo window.
 
 Usage
-=====)~~~" R"~~~(
+=====
 This function is usually called after a user event has been detected (with @`demoWaitForInput`),
 and is typically followed by determing the location of the click
 (with @`demoX`) and @`demoY`, or with @`demoClickedIn`).
@@ -1807,7 +1807,7 @@ Syntax and semantics
 Related function
 ================
 The inverse of #`exp` is @`ln`.
-
+)~~~" R"~~~(
 ################################################################################
 "`exp#`"
 © Paul Boersma 2023
@@ -2062,7 +2062,7 @@ Syntax and semantics
 ################################################################################
 "`from_to_count#`"
 © Paul Boersma 2023-06-30
-)~~~" R"~~~(
+
 A function that can be used in @@Formulas@.
 
 Syntax and semantics
@@ -2383,7 +2383,7 @@ The possible results are all real numbers.
 A function that can be used in @@Formulas@.
 
 Syntax and semantics
-====================
+====================)~~~" R"~~~(
 #`invSigmoid#` (%`v#`)
 : compute the inverse sigmoid (@`invSigmoid`) of each element of the vector %`v#`.
 
@@ -2905,7 +2905,7 @@ Checks on the types of the arguments (always has to be matrix, number, number, n
 	asserterror The third argument of the function “part##” should be
 	... a number (the end row), not a string.
 	a## = part## (m##, 4, "hello", 66, 99)
-
+)~~~" R"~~~(
 	asserterror The third argument of the function “part##” should be
 	... a number (the end row), not a numeric vector.
 	a## = part## (m##, 4, { 0 }, 66, 99)
@@ -3019,7 +3019,7 @@ Syntax and semantics
 : format a number as a string,
 with a trailing percent sign and %`precision` digits after the decimal point.
 
-################################################################################)~~~" R"~~~(
+################################################################################
 "`phonToDifferenceLimens`"
 © Paul Boersma 2002, 2023
 
@@ -3359,7 +3359,7 @@ Syntax and semantics
 : generate %`n` independent uniformly distributed (@`randomUniform`) numbers.
 
 #`randomUniform#` (%`model#`, %`min`, %`max`)
-: create a vector with the same number of elements as %`model#`,
+: create a vector with the same number of elements as %`model#`,)~~~" R"~~~(
 and fill all elements with independent uniformly distributed numbers.
 This is shorthand for doing
 {;
@@ -3530,7 +3530,7 @@ Syntax and semantics
 ################################################################################
 "`replace$`"
 © Paul Boersma 2023
-)~~~" R"~~~(
+
 A function that can be used in @Formulas.
 
 Syntax and semantics
@@ -3920,7 +3920,7 @@ Assume that at the start of the following script, the list of objects is empty:
 	pulses = To PointProcess (cc)
 	plusObject: sound
 }
-At this point, the list of objects will contain three objects,
+At this point, the list of objects will contain three objects,)~~~" R"~~~(
 which will look as follows (ID, type name, given name),
 where the two that stand selected are given in bold:
 `
@@ -4478,7 +4478,7 @@ Syntax and semantics
 #`tan#` (%`v#`)
 : compute the tangent (@`tan`) of each element of the vector %`v#`.
 
-################################################################################)~~~" R"~~~(
+################################################################################
 "`tan##`"
 © Paul Boersma 2023
 
@@ -4516,7 +4516,7 @@ Syntax and semantics
 : compute the hyperbolic tangent (@`tanh`) of each element of the vector %`v#`.
 
 ################################################################################
-"`tanh##`"
+"`tanh##`")~~~" R"~~~(
 © Paul Boersma 2023
 
 A function that can be used in @@Formulas@.

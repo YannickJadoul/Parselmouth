@@ -339,7 +339,7 @@ Here is the Unicode Inc. license text:
 
 This is the license under which Praat as a whole is distributed.
 `
-						GNU GENERAL PUBLIC LICENSE
+						GNU GENERAL PUBLIC LICENSE)~~~" R"~~~(
 						   Version 3, 29 June 2007
 
 	 Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
@@ -655,7 +655,7 @@ This is the license under which Praat as a whole is distributed.
 	suffice to ensure that the continued functioning of the modified object
 	code is in no case prevented or interfered with solely because
 	modification has been made.
-
+)~~~" R"~~~(
 	  If you convey an object code work under this section in, or with, or
 	specifically for use in, a User Product, and the conveying occurs as
 	part of a transaction in which the right of possession and use of the
@@ -962,7 +962,7 @@ This is the license under which Praat as a whole is distributed.
 						 END OF TERMS AND CONDITIONS
 
 				How to Apply These Terms to Your New Programs
-
+)~~~" R"~~~(
 	  If you develop a new program, and you want it to be of the greatest
 	possible use to the public, the best way to achieve this is to make it
 	free software which everyone can redistribute and change under these terms.

@@ -348,7 +348,7 @@ What used to be new?
 • TextGrid window: repaired a bug introduced in 6.2.10 by which a click in the boundary insertion circle
   would copy the contents of a new interval from another tier (if that other tier stood selected).
 
-##6.2.13# (18 May 2022)
+##6.2.13# (18 May 2022))~~~" R"~~~(
 • Playing a sound on the Mac: prevented an audible click at the end of audio output (appending a silence at the end is no longer needed).
 • FormantPath window: more flexible visualization.
 • New versions of PortAudio and Unicode.
@@ -502,7 +502,7 @@ What used to be new?
 • TextGrid window: removed a bug that caused Praat to crash when option-clicking or command-clicking a boundary when another boundary was selected on a point tier.
 • @@Record Sound (fixed time)...@: removed a bug that caused Praat to crash with certain combinations of duration and sampling frequency on Windows.
 • PowerCepstrogram: more precise integration, so that the cepstral peak prominence is now a continuous function of time.
-• TextGrid: Get points (preceded): removed a bug that caused Praat to crash under some edge conditions.)~~~" R"~~~(
+• TextGrid: Get points (preceded): removed a bug that caused Praat to crash under some edge conditions.
 • Scripting: @`tryToWriteFile` () and @`tryToAppendFile` () should not be available in manuals.
 
 ##6.1.36# (6 December 2020)
@@ -703,7 +703,7 @@ then dragged the mouse out of that window, then released the mouse button, and t
 • Removed a bug introduced in 6.0.44 whereby an MFCC's maximum frequency could be ignored.
 • Pitch: Tabulate candidates.
 • SoundSet.
-
+)~~~" R"~~~(
 ##6.0.48# (17 February 2019)
 • Removed a bug introduced in 6.0.44 whereby Praat could crash when drawing a function without any points.
 • Removed a bug whereby Praat would not start up on macOS 10.10 (because of required GPU libraries).
@@ -870,7 +870,7 @@ then dragged the mouse out of that window, then released the mouse button, and t
 ##6.0.10# (8 January 2016)
 • Corrected a bug that would cause Praat to crash when starting an ExperimentMFC window.
 • Mac 64-bit: corrected a bug that would cause black selections in the Sound window.
-)~~~" R"~~~(
+
 ##6.0.09# (1 January 2016)
 • Windows 64-bit: corrected a bug that could cause Praat to crash when closing the Sound window after popping up dialog boxes.
 
@@ -1036,7 +1036,7 @@ the column index was larger than the number of rows.
 • Manipulation: repaired a bug that could cause Praat to crash when playing a manipulation of a Sound created by the @SpeechSynthesizer.
 
 ##5.3.83# (16 August 2014)
-• TextGrid window: repaired a bug with automatic alignment that could cause an analysis tier to go out of order.
+• TextGrid window: repaired a bug with automatic alignment that could cause an analysis tier to go out of order.)~~~" R"~~~(
 • Linux audio: created a second workaround that reduces even more the chances of a freeze that is due to a potential deadlock
   in the collaboration between Alsa and PulseAudio that can occur when the playback of a sound is cancelled.
 • Smoother communication with Phon.
@@ -1205,7 +1205,7 @@ the column index was larger than the number of rows.
 • Phonetic symbols \ts, \tS and \ap.
 • Network: ##Normalize weights...#, ##List weights...#, ##Weights down to Table...#.
 
-##5.3.42# (2 March 2013))~~~" R"~~~(
+##5.3.42# (2 March 2013)
 • Repaired some minor bugs regarding synchronization between multiple windows.
 
 ##5.3.41# (9 February 2013)
@@ -1407,7 +1407,7 @@ and many more; also \_u (\bs\_ u). See @@Phonetic symbols: diacritics@.
 ##5.2.35# (5 August 2011)
 • Corrected the menus of the Sound and TextGrid windows.
 
-##5.2.34# (3 August 2011)
+##5.2.34# (3 August 2011))~~~" R"~~~(
 • @@Insert picture from file...@ now works on Windows (as well as on the Mac).
 • Corrected a bug that could cause Praat to crash when playing a LongSound.
 
@@ -1587,7 +1587,7 @@ if the selection ran from the penultimate interval to the end of the TextGrid.
 ##5.1.39# (10 July 2010)
 • GTK beta version.
 • Linux: made @@Record Sound (fixed time)...|Sound: Record (fixed time)...@ work correctly (the sampling frequency was wrong).
-• GTK: list of objects: multiple selection, working Rename button.)~~~" R"~~~(
+• GTK: list of objects: multiple selection, working Rename button.
 • GTK: running a script no longer deselects all objects at the start.
 • GTK: working Buttons editor.
 • GTK: correctly laid out settings windows.
@@ -1768,7 +1768,7 @@ if the selection ran from the penultimate interval to the end of the TextGrid.
 • Articulatory synthesis: corrected a bug that could cause Praat to crash when copying Artwords.
 • Macintosh: corrected a bug that could cause poor text alignment in picture.
 
-##5.1.02# (9 March 2009)
+##5.1.02# (9 March 2009))~~~" R"~~~(
 • Allow pause forms without fields.
 • The value “undefined” is disallowed from all fields in command windows
   except ##Table: Set numeric value...# and @@TableOfReal: Set value...@.
@@ -1965,7 +1965,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 © Paul Boersma 2007
 
 ##5.0# (10 December 2007)
-• Corrected many bugs.)~~~" R"~~~(
+• Corrected many bugs.
 • Display font sizes in points rather than pixels.
 
 ##4.6.41# (9 December 2007)
@@ -2146,7 +2146,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 • @@Table: Formula (column range)...@
 • OT learning: OTGrammar window shows harmonies.
 
-##4.5.24# (27 April 2007)
+##4.5.24# (27 April 2007))~~~" R"~~~(
 • OT learning: added decision strategy MaximumEntropy;
   this has the same harmony determination method as Harmonic Grammar (include the additive constraint noise),
   but there is some more variability, in that every candidate gets a relative probability of exp(harmony).
@@ -2324,7 +2324,7 @@ for a selected combination of independent variables.
 • @@Table: Report mean (Student t)...|Table: Report mean...@.
 • Formulas: @@Formulas 8. Attributes of objects|`row$` and `col$` attributes@.
 • Warning when trying to read data files whose format is newer than the Praat version.
-)~~~" R"~~~(
+
 ##4.4.16# (1 April 2006)
 • Spectrum window: dynamic range setting.
 • SoundRecorder: corrected a bug in the Intel Mac edition.
@@ -2542,7 +2542,7 @@ Phonetics:
 • PitchTier: To Sound (sine).
 • Better warnings against use of the LPC object.
 
-Voice:
+Voice:)~~~" R"~~~(
 • July 9, 2004 (4.2.08): Shimmer measurements: more accurate and less sensitive to additive noise.
 • More extensive voice report: pitch statistics; harmonicity.
 
@@ -2723,7 +2723,7 @@ Phonology library:
 Graphics:
 • Improved spectrogram drawing.
 • @@Special symbols@: háček.
-• Macintosh: improved screen rendition of rotated text.)~~~" R"~~~(
+• Macintosh: improved screen rendition of rotated text.
 
 Audio:
 • Macintosh: support for multiple audio input devices (sound cards).
@@ -2908,7 +2908,7 @@ Labelling
 • ##TextTier: To TableOfReal...#.
 
 Numerics and statistics library
-• @@Multidimensional scaling@ (Kruskal, INDSCAL, etc).
+• @@Multidimensional scaling@ (Kruskal, INDSCAL, etc).)~~~" R"~~~(
 • @TableOfReal: @@TableOfReal: ||Set value...@, @@Formula...@,
   ##Remove column...#, ##Insert column...#,
   ##Draw as squares...#, ##To Matrix#.

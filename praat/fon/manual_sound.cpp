@@ -486,7 +486,7 @@ The spectral values at frequencies between 400 and 7900 Hz are set to zero.
 Between 200 and 400 Hz and between 7900 and 8100 Hz, the values are multiplied by a raised sine,
 so as to give a smooth transition without ringing in the time domain (the raised sine also allows us to view
 the spectrum as a sum of spectral bands). Finally, a backward Fourier transform gives us the filtered sound.
-
+)~~~" R"~~~(
 The remaining part of the spectrum is divided into %%critical bands%, i.e. frequency bands one Bark wide.
 For instance, the first critical band run from 300 to 406 Hz, the second from 406 to 520 Hz, and so on.
 Each critical band is converted to a pass-band filtered sound by means of the backward Fourier transform.
@@ -935,7 +935,7 @@ This filter has an in-place version: @@Sound: Filter with one formant (in-place)
 ################################################################################
 "Sound: Filter with one formant (in-place)..."
 © Paul Boersma 2017-11-14
-
+)~~~" R"~~~(
 A command to filter every selected @Sound object in-place, with a single formant of a specified frequency and bandwidth.
 
 This is the in-place version of @@Sound: Filter (one formant)...@,
@@ -1359,7 +1359,7 @@ Settings
 If %t_1 is not less than %t_2, the entire time domain of the sound is considered.
 
 ##Interpolation
-:	the interpolation method (#none, #parabolic, #cubic, #sinc70, #sinc700) of the @@vector peak interpolation@.
+:	the interpolation method (#none, #parabolic, #cubic, #sinc70, #sinc700) of the @@vector peak interpolation@.)~~~" R"~~~(
 The standard is “sinc70” because a Sound object is normally a sampled band-limited signal,
 which can be seen as a sum of sinc functions.
 
@@ -1830,7 +1830,7 @@ Sound pressure calibration
 Your computer's sound-recording software returns integer values between -32768 and 32767.
 Praat divides them by 32768 before putting them into a Sound object,
 so that the values in the Sound objects are always between -1 and +1.
-
+)~~~" R"~~~(
 The Praat program considers these numbers to be air pressures in units of Pascal,
 but they are probably not the actual true air pressures that went into the microphone.
 For how to obtain the true air pressures, perform a @@sound pressure calibration@.
@@ -2208,7 +2208,7 @@ If you consider the sounds outside their time domains as #similar to what they a
 the discretized formula in 1 should be based on the average over the jointly defined values of %f[%\ta] and %g[%t−%\ta],
 without counting any multiplications of values outside the time domains.
 Suppose that %f is defined on the time domain [0, 1.2] with the value of 1 everywhere,
-and %g is defined on the time domain [0, 3] with the value 1 everywhere.
+and %g is defined on the time domain [0, 3] with the value 1 everywhere.)~~~" R"~~~(
 Their cross-correlation under the assumption that they are #zero elsewhere is then
 { 5x3
 	short = Create Sound from formula: "short", 1, 0.0, 1.2, 1000, ~ 1

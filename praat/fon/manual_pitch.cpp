@@ -961,7 +961,7 @@ windowed signal by the autocorrelation function of the window:
 
 ~	%r_%x (%\ta) \~~ %r__%xw_ (%\ta) / %r_%w (%\ta)
 
-The pitch is basically determined as the inverse of the time (%lag) where the autocorrelation function %r
+The pitch is basically determined as the inverse of the time (%lag) where the autocorrelation function %r)~~~" R"~~~(
 has its maximum. However, there are likely to be multiple peaks in %r,
 and all of these can be %%pitch candidates%. For each moment in time (e.g. every 10 ms),
 the algorithm determines the (typically) 15 highest peaks in %r,
@@ -1328,7 +1328,7 @@ the attenuation of higher candidates will then have the exact same shape:
 	One logarithmic mark left: 1200, "yes", "yes", "yes", ""
 	One logarithmic mark right: 1200, "no", "yes", "no", "top"
 	Text bottom: "no", "attenuation"
-	Text left: "yes", "pitch (Hz)"
+	Text left: "yes", "pitch (Hz)")~~~" R"~~~(
 	Colour: colour#
 	Line width: 3
 	attenuationAtFloor = 0.03 ^ (50/1200)^2

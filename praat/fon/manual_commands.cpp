@@ -388,7 +388,7 @@ Macintosh
 If you are user #miep, your Praat preferences folder will be `/Users/miep/Library/Preferences/Praat Prefs/`.
 
 Linux
-=====
+=====)~~~" R"~~~(
 If your home folder is #`/home/miep/`, your Praat preferences folder will be `/home/miep/.praat-dir/`.
 
 ################################################################################

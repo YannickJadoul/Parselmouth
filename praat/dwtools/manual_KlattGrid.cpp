@@ -408,7 +408,7 @@ Settings
 ################################################################################
 "KlattGrid: Extract oral formant grid (open phases)..."
 © David Weenink 2009-04-21
-
+)~~~" R"~~~(
 Extracts the oral formant grid as used in the synthesis, i.e. the resulting grid contains
 the informantion from the oral formant grid and the delta formant grid combined during the open phase of the glottis.
 

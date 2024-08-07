@@ -399,7 +399,7 @@ on all platforms can meanwhile open and view all these versions correctly.
 8. Interpreting trigraphs
 =========================
 
-The example above contains several phonetic symbols, and it is not always easy to type those into a text field.
+The example above contains several phonetic symbols, and it is not always easy to type those into a text field.)~~~" R"~~~(
 For this reason, Praat provides %trigraphs for most phonetic characters, as well as for many non-ASCII characters
 used in the languages of the world. For instance, the vowel “ɔ” (a “turned c”) can be typed as `\\ct` into
 the TextGrid window as well as anywhere else in Praat where you want to draw graphical text
