@@ -34,6 +34,7 @@ if (MSVC)
 	if (MSVC_VERSION GREATER_EQUAL 1920)
 		add_compile_options(/d2FH4-) # Because we don't want to link against VCRUNTIME140_1.dll (see https://cibuildwheel.readthedocs.io/en/stable/faq/#importerror-dll-load-failed-the-specific-module-could-not-be-found-error-on-windows)
 	endif ()
+	add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING) # TODO 0.5: Update libfmt, so we don't need to silence this anymore? And what about C++20?
 endif ()
 
 if (PREBUILT_DEPENDENCIES)
