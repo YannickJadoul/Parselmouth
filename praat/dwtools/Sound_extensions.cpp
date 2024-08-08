@@ -2456,20 +2456,33 @@ static autoSound Sound_reduceNoiseBySpectralSubtraction_mono (Sound me, Sound no
 		Melder_require (noise -> ny == 1 && noise -> ny == 1,
 			U"The number of channels in the noise and the sound should equal 1.");
 
-		const double samplingFrequency = 1.0 / my dx;
+		const double samplingFrequency = 1.0 / my dx, nyquistFrequency = 0.5 / my dx;
 		autoSound denoised = Sound_create (1, my xmin, my xmax, my nx, my dx, my x1);
 		autoSound const analysisWindow = Sound_createSimple (1, windowLength, samplingFrequency);
 		const integer windowSamples = analysisWindow -> nx;
+		const integer wantedNumberOfFrequencyBins = windowSamples / 2 + 1;
 		autoSound const noise_copy = Data_copy (noise);
 		Sound_multiplyByWindow (noise_copy.get(), kSound_windowShape::HANNING);
-		const double bandwidth = samplingFrequency / windowSamples;
+		/*
+			The number of bands in the noise Ltas and the number of frequencies in the
+			sound spectra preferably should to be equal.
+			numberOfBands = Melder_iceiling (nyquistFrequency / bandwidth)
+			wantedNumberOfFrequencyBins = windowSamples / 2 + 1;
+			We can calculate the bandwidth to make numberOfBands == wantedNumberOfFrequencyBins by applying
+			the following two conditions
+			(1) nyquistFrequency / b > wantedNumberOfFrequencyBins - 1 && (2) nyquistFrequency / b < wantedNumberOfFrequencyBins
+			(1) gives b1 < nyquistFrequency / (wantedNumberOfFrequencyBins - 1)
+			(2) gives b2 > nyquistFrequency / wantedNumberOfFrequencyBins
+			Take b = (b1 + b2) / 2
+		*/
+		double bandwidth = nyquistFrequency * (wantedNumberOfFrequencyBins - 0.5) / (wantedNumberOfFrequencyBins * (wantedNumberOfFrequencyBins - 1));
 		autoLtas const noiseLtas = Sound_to_Ltas (noise_copy.get(), bandwidth);
+		Melder_assert (noiseLtas -> nx == wantedNumberOfFrequencyBins);
 		autoVEC const noiseAmplitudes = raw_VEC (noiseLtas -> nx);
 		for (integer iband = 1; iband <= noiseLtas -> nx; iband ++) {
 			const double powerDensity = 4e-10 * pow (10.0, noiseLtas -> z [1] [iband] / 10.0);
 			noiseAmplitudes [iband] = sqrt (0.5 * powerDensity);
 		}
-		
 		autoMelderProgress progress (U"Remove noise");
 		
 		const double noiseAmplitudeSubtractionScaleFactor = 1.0 - pow (10.0, noiseReduction_dB / 20.0);
