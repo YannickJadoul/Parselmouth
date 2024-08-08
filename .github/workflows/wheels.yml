@@ -65,11 +65,11 @@ jobs:
           - runs-on: ubuntu-latest
             cibw-arch: manylinux_x86_64
             manylinux: manylinux2010
-            cibw-skip: pp39-manylinux_* pp310-manylinux_* cp311-* cp312-*
+            cibw-skip: pp39-manylinux_* pp310-manylinux_* cp311-* cp312-* cp313-*
           - runs-on: ubuntu-latest
             cibw-arch: manylinux_i686
             manylinux: manylinux2010
-            cibw-skip: pp39-manylinux_* pp310-manylinux_* cp311-* cp312-*
+            cibw-skip: pp39-manylinux_* pp310-manylinux_* cp311-* cp312-* cp313-*
           - runs-on: ubuntu-latest
             cibw-arch: manylinux_x86_64
             manylinux: manylinux2014
