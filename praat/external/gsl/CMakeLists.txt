@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	gsl_blas__blas.c gsl_block__block.c gsl_block__file.c
 	gsl_block__init.c gsl_bspline__bspline.c gsl_cblas__caxpy.c
 	gsl_cblas__ccopy.c gsl_cblas__cdotc_sub.c gsl_cblas__cdotu_sub.c

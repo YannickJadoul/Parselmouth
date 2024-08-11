@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	amd_1.c amd_2.c amd_aat.c amd_control.c amd_defaults.c amd_info.c
 	amd_order.c amd_post_tree.c amd_postorder.c amd_preprocess.c amd_valid.c
 	colamd.c

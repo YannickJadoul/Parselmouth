@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	Transition.cpp Distributions_and_Transition.cpp
 	Function.cpp Sampled.cpp SampledXY.cpp Matrix.cpp Vector.cpp Polygon.cpp PointProcess.cpp
 	Matrix_and_PointProcess.cpp Matrix_and_Polygon.cpp AnyTier.cpp RealTier.cpp
@@ -30,4 +30,6 @@ target_sources(praat PRIVATE
 	manual_pointProcess.cpp manual_annotation.cpp
 	praat_TimeFunction.cpp praat_TimeTier.cpp praat_TimeFrameSampled.cpp
 	praat_Sound.cpp praat_Matrix.cpp praat_Tiers.cpp praat_TextGrid_init.cpp praat_uvafon_init.cpp
+INCLUDE_DIRS
+	kar melder sys dwsys stat dwtools LPC foned fon external/portaudio external/flac external/mp3 external/espeak
 )

@@ -15,6 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
 
+function(add_praat_subdir)
+	cmake_parse_arguments(ARG "" "" "SOURCES;INCLUDE_DIRS" ${ARGN})
+
+	target_sources(praat PRIVATE ${ARG_SOURCES})
+	get_target_property(PRAAT_SOURCE_DIR praat SOURCE_DIR)
+	list(TRANSFORM ARG_INCLUDE_DIRS PREPEND "${PRAAT_SOURCE_DIR}/" OUTPUT_VARIABLE ABSOLUTE_INCLUDE_DIRS)
+	set_source_files_properties(${ARG_SOURCES} DIRECTORY "${PRAAT_SOURCE_DIR}" PROPERTIES INCLUDE_DIRECTORIES "${ABSOLUTE_INCLUDE_DIRS}")
+endfunction()
+
 set(PRAAT_SUBDIRECTORIES
 	external/clapack
 	external/gsl
@@ -42,13 +51,8 @@ set(PRAAT_SUBDIRECTORIES
 	artsynth
 )
 
-set(PRAAT_INCLUDE_DIRS
-	${PRAAT_SUBDIRECTORIES}
-	external/opusfile/opus
-	external/opusfile/opus/celt
-	external/opusfile/opus/silk
-	external/opusfile/opus/silk/float
-)
+set(PRAAT_INCLUDE_DIRS ${PRAAT_SUBDIRECTORIES})
+list(FILTER PRAAT_INCLUDES EXCLUDE REGEX "^external/")
 
 set(PRAAT_FLAGS)
 set(PRAAT_FLAGS_PRIVATE)
@@ -86,7 +90,7 @@ foreach(SUBDIR ${PRAAT_SUBDIRECTORIES})
 	add_subdirectory(${SUBDIR})
 endforeach()
 
-target_include_directories(praat PUBLIC ${PRAAT_INCLUDE_DIRS})
+target_include_directories(praat INTERFACE ${PRAAT_INCLUDE_DIRS})
 target_compile_definitions(praat PUBLIC ${PRAAT_DEFINITIONS} PRIVATE ${PRAAT_DEFINITIONS_PRIVATE})
 target_compile_options(praat PUBLIC ${PRAAT_FLAGS} PRIVATE ${PRAAT_FLAGS_PRIVATE})
 target_link_libraries(praat PUBLIC fmt::fmt)

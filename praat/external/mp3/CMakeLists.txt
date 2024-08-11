@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	mp3.cpp
 	mad_bit.c
 	mad_decoder.c
@@ -11,4 +11,6 @@ target_sources(praat PRIVATE
 	mad_synth.c
 	mad_timer.c
 	mad_version.c
+INCLUDE_DIRS
+	melder
 )

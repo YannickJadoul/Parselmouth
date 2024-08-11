@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	Cepstrum.cpp Cepstrumc.cpp Cepstrum_and_Spectrum.cpp
 	Cepstrogram.cpp
 	Formant_extensions.cpp
@@ -16,4 +16,6 @@ target_sources(praat PRIVATE
 	Sound_and_Cepstrum.cpp Tube.cpp
 	VocalTractTier.cpp
 	praat_LPC_init.cpp manual_LPC.cpp
+INCLUDE_DIRS
+	LPC kar melder fon foned dwtools sys dwsys stat
 )

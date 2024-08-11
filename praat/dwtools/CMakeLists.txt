@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	ActivationList.cpp AffineTransform.cpp AnalyticSound.cpp
 	Categories.cpp CategoriesEditor.cpp
 	Categories_and_Strings.cpp CCA.cpp CCA_and_Correlation.cpp
@@ -53,4 +53,6 @@ target_sources(praat PRIVATE
 	TextGridTierNavigator.cpp TextGridNavigator.cpp Vector_extensions.cpp VowelEditor.cpp
 	praat_MDS_init.cpp praat_BSS_init.cpp praat_HMM_init.cpp
 	praat_KlattGrid_init.cpp praat_MultiSampledSpectrogram.cpp praat_DataModeler_init.cpp praat_David_init.cpp
+INCLUDE_DIRS
+	dwtools kar melder LPC fon foned sys stat dwsys external/portaudio external/espeak external/clapack EEG external/vorbis external/opusfile
 )

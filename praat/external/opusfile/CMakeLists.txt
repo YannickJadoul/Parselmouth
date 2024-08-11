@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	opusfile.cpp opusfile_info.cpp opusfile_internal.cpp opusfile_stream.cpp
 	opus/analysis.c opus/mlp.c opus/opus.c opus/opus_decoder.c opus/opus_multistream.c
 	opus/mapping_matrix.c opus/mlp_data.c opus/opus_multistream_decoder.c
@@ -33,4 +33,6 @@ target_sources(praat PRIVATE
 	opus/silk/float/process_gains_FLP.c opus/silk/float/regularize_correlations_FLP.c opus/silk/float/residual_energy_FLP.c
 	opus/silk/float/scale_copy_vector_FLP.c opus/silk/float/scale_vector_FLP.c opus/silk/float/schur_FLP.c opus/silk/float/sort_FLP.c
 	opus/silk/float/warped_autocorrelation_FLP.c opus/silk/float/wrappers_FLP.c
+INCLUDE_DIRS
+	melder external/vorbis external/opusfile/opus external/opusfile/opus/celt external/opusfile/opus/silk external/opusfile/opus/silk/float
 )

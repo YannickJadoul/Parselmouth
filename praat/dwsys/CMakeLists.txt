@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	ChebyshevSeries.cpp Collection_extensions.cpp Command.cpp
 	DoublyLinkedList.cpp Eigen.cpp
 	FileInMemory.cpp FileInMemorySet.cpp FileInMemoryManager.cpp
@@ -13,5 +13,6 @@ target_sources(praat PRIVATE
 	Polynomial.cpp
 	Roots.cpp
 	Spline.cpp SVD.cpp WorkvectorPool.cpp
-	NUMmachar.cpp
+INCLUDE_DIRS
+	melder stat sys fon external/gsl external/clapack kar dwtools
 )

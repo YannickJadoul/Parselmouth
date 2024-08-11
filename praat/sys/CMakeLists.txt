@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	Thing.cpp Data.cpp Simple.cpp Collection.cpp Strings.cpp
 	Graphics.cpp Graphics_linesAndAreas.cpp Graphics_text.cpp Graphics_colour.cpp
 	Graphics_image.cpp Graphics_record.cpp
@@ -17,4 +17,6 @@ target_sources(praat PRIVATE
 	GuiMenu.cpp GuiMenuItem.cpp GuiButton.cpp GuiLabel.cpp GuiCheckButton.cpp GuiRadioButton.cpp
 	GuiDialog.cpp GuiList.cpp GuiFileSelect.cpp GuiScale.cpp GuiScrollBar.cpp GuiScrolledWindow.cpp
 	GuiControl.cpp GuiForm.cpp GuiOptionMenu.cpp GuiProgressBar.cpp GuiShell.cpp GuiThing.cpp Gui_messages.cpp
+INCLUDE_DIRS
+	kar melder sys dwsys
 )

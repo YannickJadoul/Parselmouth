@@ -1,4 +1,4 @@
-target_sources(praat PRIVATE
+add_praat_subdir(SOURCES
 	flac_bitmath.c
 	flac_bitreader.c
 	flac_bitwriter.c
@@ -16,7 +16,9 @@ target_sources(praat PRIVATE
 	flac_stream_encoder.c
 	flac_stream_encoder_framing.c
 	flac_window.c
+INCLUDE_DIRS
+	melder
 )
 if (WIN32)
-	target_sources(praat PRIVATE flac_windows_unicode_filenames.c)
+	add_praat_subdir(SOURCES flac_windows_unicode_filenames.c INCLUDE_DIRS melder)
 endif ()
