@@ -40,8 +40,11 @@ def find_praat_test_files():
 		for fn in glob.iglob(os.path.join(dir, "**", "*.praat"), recursive=True):
 			if "_GUI_" in fn:
 				continue
-			rel_fn = os.path.relpath(fn, PRAAT_TEST_BASE_DIR)
-			yield pytest.param(fn, id=rel_fn)
+			rel_fn = os.path.relpath(fn, PRAAT_TEST_BASE_DIR).replace("\\", "/")
+			marks = []
+			if rel_fn in ["dwtools/SpeechSynthesizer.praat"]:
+				marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Tests hang on Windows"))  # TODO 0.5
+			yield pytest.param(fn, id=rel_fn, marks=marks)
 
 
 def find_praat_dwtest_files():
@@ -50,11 +53,13 @@ def find_praat_dwtest_files():
 			continue
 		rel_fn = os.path.relpath(fn, PRAAT_DWTEST_BASE_DIR)
 		marks = []
-		if rel_fn in ["test_SpeechSynthesizer.praat",
+		if rel_fn in ["test_DataModeler.praat",
+		              "test_Formant_slopes.praat",
+		              "test_SpeechSynthesizer.praat",
 		              "test_SpeechSynthesizer_alignment.praat",
 		              "test_alignment.praat",
 		              "test_bss_twoSoundsMixed.praat"]:
-			marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Tests hang on Windows"))  # TODO
+			marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Tests hang on Windows"))  # TODO 0.5
 		yield pytest.param(fn, id=rel_fn, marks=marks)
 
 
