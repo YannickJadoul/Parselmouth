@@ -19,39 +19,38 @@ import pytest
 
 import parselmouth
 
-import glob
-import os
+import pathlib
 import sys
 
 
 pytestmark = pytest.mark.praat_test
 
-PRAAT_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..",  "praat"))
-PRAAT_TEST_BASE_DIR = os.path.join(PRAAT_BASE_DIR, "test")
-PRAAT_DWTEST_BASE_DIR = os.path.join(PRAAT_BASE_DIR, "dwtest")
+PRAAT_BASE_DIR = pathlib.Path(__file__).resolve().parent.parent / "praat"
+PRAAT_TEST_BASE_DIR = PRAAT_BASE_DIR / "test"
+PRAAT_DWTEST_BASE_DIR = PRAAT_BASE_DIR / "dwtest"
 
 PRAAT_TEST_IGNORE_SUBDIRS = ["manually", "speed"]
 
 
 def find_praat_test_files():
-	for dir in glob.iglob(os.path.join(PRAAT_TEST_BASE_DIR, "*", "")):
-		if os.path.basename(os.path.dirname(dir)) in PRAAT_TEST_IGNORE_SUBDIRS:
+	for dir in PRAAT_TEST_BASE_DIR.glob("*/"):
+		if dir.name in PRAAT_TEST_IGNORE_SUBDIRS:
 			continue
-		for fn in glob.iglob(os.path.join(dir, "**", "*.praat"), recursive=True):
-			if "_GUI_" in fn:
+		for fn in dir.glob("**/*.praat"):
+			if "_GUI_" in fn.name:
 				continue
-			rel_fn = os.path.relpath(fn, PRAAT_TEST_BASE_DIR).replace("\\", "/")
+			rel_fn = fn.relative_to(PRAAT_TEST_BASE_DIR).as_posix()
 			marks = []
 			if rel_fn in ["dwtools/SpeechSynthesizer.praat"]:
 				marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Tests hang on Windows"))  # TODO 0.5
-			yield pytest.param(fn, id=rel_fn, marks=marks)
+			yield pytest.param(str(fn), id=rel_fn, marks=marks)
 
 
 def find_praat_dwtest_files():
-	for fn in glob.iglob(os.path.join(PRAAT_DWTEST_BASE_DIR, "test_*.praat")):
-		if "_GUI_" in fn:
+	for fn in PRAAT_DWTEST_BASE_DIR.glob("test_*.praat"):
+		if "_GUI_" in fn.name:
 			continue
-		rel_fn = os.path.relpath(fn, PRAAT_DWTEST_BASE_DIR)
+		rel_fn = fn.relative_to(PRAAT_DWTEST_BASE_DIR).as_posix()
 		marks = []
 		if rel_fn in ["test_DataModeler.praat",
 		              "test_Formant_slopes.praat",
@@ -60,7 +59,7 @@ def find_praat_dwtest_files():
 		              "test_alignment.praat",
 		              "test_bss_twoSoundsMixed.praat"]:
 			marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Tests hang on Windows"))  # TODO 0.5
-		yield pytest.param(fn, id=rel_fn, marks=marks)
+		yield pytest.param(str(fn), id=rel_fn, marks=marks)
 
 
 PRAAT_TEST_FILES = sorted(find_praat_test_files())
