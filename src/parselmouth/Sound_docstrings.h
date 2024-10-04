@@ -83,7 +83,7 @@ See Also
 :praat:`Sound files 4. Files that Praat can write`
 )";
 
-constexpr auto TO_POINT_PROCESS_EXTREMA_DOCSTRING = 
+constexpr auto TO_POINT_PROCESS_EXTREMA_DOCSTRING =
 R"(Create PointProcess by peak picking.
 
 Returns a new `PointProcess` instance by peak-picking the acoustic sample
