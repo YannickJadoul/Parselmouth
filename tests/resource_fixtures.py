@@ -77,4 +77,4 @@ def script_path(resources):
 @pytest.fixture
 def harmonicity(sound):
 	return sound.to_harmonicity("CC")  # "AC", "GNE"
-	
+

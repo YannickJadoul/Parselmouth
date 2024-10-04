@@ -11,7 +11,7 @@ type : {'ac', 'nhr', 'hnr_db'}, default="hnr_db"
     Type of strength measure to compute
 
 from_time : double, default=0.0
-    The start time of the compuation. Use 0.0 to start with the first 
+    The start time of the compuation. Use 0.0 to start with the first
     available frame
 
 end_time : double, default=0.0
@@ -31,7 +31,7 @@ Returns the mean of periodicity frequency in the specified unit.
 Parameters
 ----------
 from_time : double, default=0.0
-    The start time of the compuation. Use 0.0 to start with the first 
+    The start time of the compuation. Use 0.0 to start with the first
     available frame
 
 end_time : double, default=0.0
@@ -60,7 +60,7 @@ from_time : double=0.0
 to_time : double=0.0
     The ending time of the analysis time domain. Values outside this domain
     are ignored. If `to_time` is not greater than `from_time`, the entire
-    time domain of the Pitch object is considered. 
+    time domain of the Pitch object is considered.
 
 unit : {'HERTZ','HERTZ_LOGARITHMIC','MEL','LOG_HERTZ','SEMITONES_1',
         'SEMITONES_100','SEMITONES_200','SEMITONES_440','ERB'},
@@ -68,7 +68,7 @@ unit : {'HERTZ','HERTZ_LOGARITHMIC','MEL','LOG_HERTZ','SEMITONES_1',
     Frequency unit
 
 interpolate : bool, default=True
-    True to evalaute parabolically interpolated pitch peaks; False to 
+    True to evalaute parabolically interpolated pitch peaks; False to
     select the raw frequency samples.
 
 See Also
@@ -88,7 +88,7 @@ from_time : double=0.0
 to_time : double=0.0
     The ending time of the analysis time domain. Values outside this domain
     are ignored. If `to_time` is not greater than `from_time`, the entire
-    time domain of the Pitch object is considered. 
+    time domain of the Pitch object is considered.
 
 unit : {'HERTZ','HERTZ_LOGARITHMIC','MEL','LOG_HERTZ','SEMITONES_1',
         'SEMITONES_100','SEMITONES_200','SEMITONES_440','ERB'},
@@ -96,7 +96,7 @@ unit : {'HERTZ','HERTZ_LOGARITHMIC','MEL','LOG_HERTZ','SEMITONES_1',
     Frequency unit
 
 interpolate : bool, default=True
-    True to evalaute parabolically interpolated pitch peaks; False to 
+    True to evalaute parabolically interpolated pitch peaks; False to
     select the raw frequency samples.
 
 See Also
@@ -116,7 +116,7 @@ from_time : double=0.0
 to_time : double=0.0
     The ending time of the analysis time domain. Values outside this domain
     are ignored. If `to_time` is not greater than `from_time`, the entire
-    time domain of the Pitch object is considered. 
+    time domain of the Pitch object is considered.
 
 unit : {'HERTZ','HERTZ_LOGARITHMIC','MEL','LOG_HERTZ','SEMITONES_1',
         'SEMITONES_100','SEMITONES_200','SEMITONES_440','ERB'},
@@ -144,7 +144,7 @@ from_time : double=0.0
 to_time : double=0.0
     The ending time of the analysis time domain. Values outside this domain
     are ignored. If `to_time` is not greater than `from_time`, the entire
-    time domain of the Pitch object is considered. 
+    time domain of the Pitch object is considered.
 
 unit : {'HERTZ','HERTZ_LOGARITHMIC','MEL','LOG_HERTZ','SEMITONES_1',
         'SEMITONES_100','SEMITONES_200','SEMITONES_440','ERB'},
@@ -168,7 +168,7 @@ from_time : double=0.0
 to_time : double=0.0
     The ending time of the analysis time domain. Values outside this domain
     are ignored. If `to_time` is not greater than `from_time`, the entire
-    time domain of the Pitch object is considered. 
+    time domain of the Pitch object is considered.
 
 to_pitch : double=600.0
     The maximum voice frequency

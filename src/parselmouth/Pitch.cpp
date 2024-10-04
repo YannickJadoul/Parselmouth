@@ -381,8 +381,8 @@ PRAAT_CLASS_BINDING(Pitch) {
 	def(
 	        "get_mean_strength", [](Pitch self, std::string type, double tmin, double tmax) {
 		        const int strengthUnit =
-					(type == "ac") ? Pitch_STRENGTH_UNIT_AUTOCORRELATION : 
-					(type == "nhr")	? Pitch_STRENGTH_UNIT_NOISE_HARMONICS_RATIO : 
+					(type == "ac") ? Pitch_STRENGTH_UNIT_AUTOCORRELATION :
+					(type == "nhr")	? Pitch_STRENGTH_UNIT_NOISE_HARMONICS_RATIO :
 					(type == "hnr_db") ? Pitch_STRENGTH_UNIT_HARMONICS_NOISE_DB : -1;
 
 		        if (strengthUnit < 0)
@@ -390,7 +390,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 
 		        return Pitch_getMeanStrength(self, tmin, tmax, strengthUnit);
 	        },
-			"type"_a = "hnr_db", "from_time"_a = 0.0, "to_time"_a = 0.0, 
+			"type"_a = "hnr_db", "from_time"_a = 0.0, "to_time"_a = 0.0,
 			GET_MEAN_STRENGTH_DOCSTRING);
 
 	def(
@@ -415,7 +415,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 	        "get_fraction_of_locally_unvoiced_frames",
 	        [](Pitch self, double tmin, double tmax, double ceiling,
 	           double silenceThreshold, double voicingThreshold) {
-		        MelderFraction out = Pitch_getFractionOfLocallyUnvoicedFrames(self, tmin, tmax, ceiling, 
+		        MelderFraction out = Pitch_getFractionOfLocallyUnvoicedFrames(self, tmin, tmax, ceiling,
 		                                                                      silenceThreshold, voicingThreshold);
 
 		        return std::make_tuple(out.numerator / out.denominator, out.numerator, out.denominator);
