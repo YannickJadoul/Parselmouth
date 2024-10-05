@@ -1,6 +1,5 @@
 # Build and binary folder of CMake and Python distutils
 /build*/
-/installed/
 /dist/
 
 # Build folder of Sphinx
@@ -18,12 +17,3 @@ __pycache__/
 # OS X temporary and cache files
 *~
 .DS_Store
-
-# Eclipse
-/.cproject
-/.project
-.settings/
-.csettings/
-
-# CLion
-.idea/
