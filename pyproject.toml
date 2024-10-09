@@ -1,22 +1,15 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "cmake>=3.18",
-    "scikit-build>=0.13",
-]
-build-backend = "setuptools.build_meta"
+requires = ["scikit_build_core"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "praat-parselmouth"
-# version = <see setup.py>
 description = "Praat in Python, the Pythonic way"
-license = { text = "GNU General Public License v3 or later (GPLv3+)" }
-authors = [
-    { name = "Yannick Jadoul", email = "yannick.jadoul@gmail.com" },
-]
-readme = "res/README_PyPI.md"
-requires-python = ">=3.8"
+# long_description = file: res/README_PyPI.md
+# long_description_content_type = text/markdown
+authors = [{ name = "Yannick Jadoul", email = "Yannick.Jadoul@ai.vub.ac.be" }]
 keywords = ["praat", "speech", "signal processing", "phonetics"]
+license = { text = "GPL-3.0 License" }
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -27,37 +20,44 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: Unix",
     "Programming Language :: C++",
+    # Programming Language :: Python :: 2
+    # Programming Language :: Python :: 2.7
     "Programming Language :: Python :: 3",
+    # Programming Language :: Python :: 3.5
+    # Programming Language :: Python :: 3.6
+    # Programming Language :: Python :: 3.7
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = [
-    "numpy>=1.7.0"
-]
+
+requires-python = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
+dependencies = ["numpy>=1.7.0,<2"]
+# zip_safe = False - deprecated https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+
+# version = <see setup.py>
 dynamic = ["version"]
 
 [project.urls]
-"Homepage" = "https://github.com/YannickJadoul/Parselmouth"
-"Bug Tracker" = "https://github.com/YannickJadoul/Parselmouth/issues"
-"Documentation" = "https://parselmouth.readthedocs.io/"
-"Source Code" = "https://github.com/YannickJadoul/Parselmouth"
+Home = "https://github.com/YannickJadoul/Parselmouth"
+Bug_Tracker = "https://github.com/YannickJadoul/Parselmouth/issues"
+Source_Code = "https://github.com/YannickJadoul/Parselmouth"
+Documentation = "https://parselmouth.readthedocs.io/"
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-testpaths = [
-    "tests"
-]
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "src/version.h"
+regex = "^#define PARSELMOUTH_VERSION (?P<value>[0-9a-z.]+)$"
 
 [tool.check-manifest]
 ignore = [
-    ".clang-format",
-    ".pre-commit-config.yaml",
+    ".appveyor.yml",
     ".readthedocs.yml",
+    ".travis.yml",
     "binder",
-    "binder/*"
+    "binder/*",
 ]
