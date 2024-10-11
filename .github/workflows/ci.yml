@@ -31,10 +31,13 @@ jobs:
           - runs-on: ubuntu-latest
             python: '3.11'
             arch: x64
+          - runs-on: ubuntu-latest
+            python: '3.12'
+            arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: '3.12'
+            python: '3.13'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
@@ -53,18 +56,18 @@ jobs:
             name-extra: ' (with Praat tests)'
 
           - runs-on: ubuntu-24.04
-            python: '3.11'
+            python: '3.12'
             arch: x64
             gcc: 13
             name-extra: ' (GCC 13)'
           - runs-on: ubuntu-24.04
-            python: '3.11'
+            python: '3.12'
             arch: x64
             clang: 18
             name-extra: ' (Clang 18)'
 
           - runs-on: ubuntu-latest
-            python: '3.11'
+            python: '3.12'
             arch: x64
             release: true
             name-extra: ' (Release)'
@@ -73,15 +76,17 @@ jobs:
             python: '3.8'
             arch: x64
           - runs-on: macos-latest
-            python: '3.11'
+            python: '3.12'
+            arch: x64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          - runs-on: macos-latest
+            python: '3.13'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: macos-latest
             python: '3.12'
-            arch: x64
-          - runs-on: macos-latest
-            python: '3.11'
             arch: x64
             release: true
             name-extra: ' (Release)'
@@ -93,23 +98,25 @@ jobs:
             python: '3.8'
             arch: x64
           - runs-on: windows-latest
-            python: '3.11'
+            python: '3.12'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: windows-latest
-            python: '3.12'
+            python: '3.13'
             arch: x64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
           - runs-on: windows-latest
             python: '3.8'
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: '3.11'
+            python: '3.12'
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: '3.11'
+            python: '3.12'
             arch: x64
             release: true
             name-extra: ' (Release)'
@@ -221,7 +228,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2.0
