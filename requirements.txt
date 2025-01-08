@@ -1,1 +1,2 @@
+scikit-build-core
 numpy>=1.7
