@@ -1,7 +1,6 @@
 [build-system]
 requires = [
     "setuptools>=42",
-    "cmake>=3.18",
     "scikit-build>=0.13",
 ]
 build-backend = "setuptools.build_meta"
