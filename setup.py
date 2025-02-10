@@ -19,6 +19,7 @@ import io
 import os
 import re
 import shlex
+import shutil
 import sys
 
 try:
@@ -37,11 +38,17 @@ def find_version(*file_paths):
 	raise RuntimeError("Unable to find version string.")
 
 
+setup_requires = []
+if shutil.which("cmake") is None:
+	setup_requires += ["cmake>=3.18"]
+
+
 setup(
 	version=find_version(),
 	packages=[''],
 	package_dir={'': "src"},
 	include_package_data=False,
+	setup_requires=setup_requires,
 	cmake_args=shlex.split(os.environ.get('PARSELMOUTH_EXTRA_CMAKE_ARGS', '')),
 	cmake_install_dir="src",
 )
