@@ -46,16 +46,21 @@ def pitch(sound):
 
 
 @pytest.fixture
+def point_process(pitch):
+	yield pitch.to_point_process()
+
+
+@pytest.fixture
 def spectrogram(sound):
 	yield sound.to_spectrogram()
 
 
-@combined_fixture('intensity', 'pitch', 'spectrogram', 'sound')
+@combined_fixture('sound', 'intensity', 'pitch', 'spectrogram')
 def sampled(request):
 	yield request.param
 
 
-@combined_fixture('sampled')
+@combined_fixture('sampled', 'point_process')
 def thing(request):
 	yield request.param
 
