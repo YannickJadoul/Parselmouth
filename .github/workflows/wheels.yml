@@ -70,9 +70,9 @@ jobs:
             cibw-arch: musllinux_x86_64
           - runs-on: ubuntu-latest
             cibw-arch: musllinux_i686
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-24.04-arm
             cibw-arch: manylinux_aarch64
-          - runs-on: ubuntu-latest
+          - runs-on: ubuntu-24.04-arm
             cibw-arch: musllinux_aarch64
           - runs-on: macos-latest
             cibw-arch: macosx_x86_64
