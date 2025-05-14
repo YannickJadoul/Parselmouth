@@ -68,6 +68,7 @@ jobs:
 
           - runs-on: ubuntu-24.04-arm
             python: '3.12'
+            arch: arm64
 
           - runs-on: ubuntu-latest
             python: '3.12'
