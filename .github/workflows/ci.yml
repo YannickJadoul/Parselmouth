@@ -147,7 +147,14 @@ jobs:
           check-latest: true
 
       - name: Setup CMake
+        if: ${{ !(matrix.arch == 'arm64') }}
         uses: jwlawson/actions-setup-cmake@v2.0
+
+      - name: Setup CMake on arm64 (apt)
+        if: matrix.arch == 'arm64'
+        run: |
+          sudo apt update
+          sudo apt install -y cmake
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
