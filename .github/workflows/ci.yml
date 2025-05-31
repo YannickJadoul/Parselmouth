@@ -66,6 +66,10 @@ jobs:
             clang: 18
             name-extra: ' (Clang 18)'
 
+          - runs-on: ubuntu-24.04-arm
+            python: '3.12'
+            arch: arm64
+
           - runs-on: ubuntu-latest
             python: '3.12'
             arch: x64
@@ -142,8 +146,15 @@ jobs:
           allow-prereleases: true
           check-latest: true
 
-      - name: Setup CMake
+      - name: Setup CMake (non arm)
+        if: ${{ !(matrix.arch == 'arm64') }}
         uses: jwlawson/actions-setup-cmake@v2.0
+
+      - name: Setup CMake (native for ARM)
+        if: matrix.arch == 'arm64'
+        run: |
+          sudo apt update
+          sudo apt install -y cmake
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
