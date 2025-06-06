@@ -103,7 +103,7 @@ jobs:
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: windows-latest
-            python: '3.13'
+            python: '3.13.3'  # Temporary fix, avoiding 3.13.4: https://github.com/python/cpython/issues/135151
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
