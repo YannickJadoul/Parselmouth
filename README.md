@@ -1,4 +1,8 @@
-![Parselmouth](docs/images/logo-full.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/images/logo-full-dark.png">
+  <img alt="Parselmouth" src="./docs/images/logo-full.png">
+</picture>
+
 # Parselmouth - Praat in Python, the Pythonic way
 
 [![PyPI](https://img.shields.io/pypi/v/praat-parselmouth.svg)](https://pypi.org/project/praat-parselmouth/)
