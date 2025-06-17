@@ -142,9 +142,9 @@ Briefly summarized, Parselmouth is built using [`cmake`](https://cmake.org/). Ne
 
   > Jadoul, Y., Thompson, B., & de Boer, B. (2018). Introducing Parselmouth: A Python interface to Praat. *Journal of Phonetics*, *71*, 1-15. https://doi.org/10.1016/j.wocn.2018.07.001
 
-* [Praat](https://github.com/praat/praat), together with [its dependencies](https://www.fon.hum.uva.nl/praat/manual/Acknowledgments.html), is released under [the GNU General Public License, version 3 or later](https://www.fon.hum.uva.nl/praat/manual/General_Public_License__version_3.html). Praat's own source code (excluding dependencies) is released under [the GNU General Public License, version 2 or later](praat/main/GNU_General_Public_License.txt). Small changes to this code base, made in the context of Parselmouth, can be found within the `git` history.
+* [Praat](https://github.com/praat/praat), together with [its dependencies](https://praat.org/manual/Acknowledgments.html), is released under [the GNU General Public License, version 3 or later](https://praat.org/manual/General_Public_License__version_3.html). Praat's own source code (excluding dependencies) is released under [the GNU General Public License, version 2 or later](praat/main/GNU_General_Public_License.txt). Small changes to this code base, made in the context of Parselmouth, can be found within the `git` history.
 
-  Parselmouth only exposes Praat's existing functionality and implementation of algorithms. If you use Parselmouth in your research and plan to cite it in a scientific publication, please do not forget to [*cite Praat*](https://www.fon.hum.uva.nl/praat/manual/FAQ__How_to_cite_Praat.html).
+  Parselmouth only exposes Praat's existing functionality and implementation of algorithms. If you use Parselmouth in your research and plan to cite it in a scientific publication, please do not forget to [*cite Praat*](https://praat.org/manual/FAQ__How_to_cite_Praat.html).
 
   > Boersma, P., & Weenink, D. (2021). Praat: doing phonetics by computer [Computer program]. Version 6.1.38, retrieved 2 January 2021 from [http://www.praat.org/](http://www.praat.org/)
 
