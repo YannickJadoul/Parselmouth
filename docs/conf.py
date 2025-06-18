@@ -166,7 +166,7 @@ rst_epilog = """
 """.format(binder_ref=branch_or_commit)
 
 nbsphinx_prolog = """
-{{% set docname = 'docs/' + env.doc2path(env.docname, base=False) %}}
+{{% set docname = 'docs/' ~ env.doc2path(env.docname, base=False) %}}
 
 .. only:: html
 

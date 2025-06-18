@@ -1,4 +1,4 @@
-Sphinx>=3,<8
+Sphinx>=3
 sphinx-book-theme
 sphinx-copybutton
 
