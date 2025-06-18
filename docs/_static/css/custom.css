@@ -5,3 +5,7 @@ dl.field-list dd li p {
 dl.field-list dd p:empty {
    display: none;
 }
+
+#rtd-footer-container {
+    margin-top: 0px !important;
+}
