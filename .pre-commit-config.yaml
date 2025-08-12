@@ -5,7 +5,6 @@ repos:
     hooks:
       - id: check-added-large-files
       - id: check-ast
-      - id: check-byte-order-marker
       - id: check-builtin-literals
       - id: check-case-conflict
       - id: check-docstring-first
@@ -23,8 +22,6 @@ repos:
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
-      - id: fix-encoding-pragma
-        args: ['--remove']
       - id: mixed-line-ending
         exclude: '^docs/make.bat'
         args: ['--fix=lf']
