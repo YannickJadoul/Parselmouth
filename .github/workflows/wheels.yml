@@ -26,7 +26,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2.0
@@ -98,7 +98,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
           architecture: ${{ matrix.python-arch }}
 
       - name: Setup CMake
@@ -112,6 +112,7 @@ jobs:
         shell: bash
         run: |
           CMAKE_ARCH="${{ matrix.cibw-arch == 'win32' && '-A Win32' || '' }}"
+          MACOSX_DEPLOYMENT_TARGET=${{ matrix.cibw-arch == 'macosx_arm64' && '11.0' || '10.9' }}
           CMAKE_OSX_ARCHITECTURES=${{ matrix.cibw-arch == 'macosx_x86_64' && 'x86_64' || matrix.cibw-arch == 'macosx_arm64' && 'arm64' || matrix.cibw-arch == 'macosx_universal2' && '"arm64;x86_64"' || '' }}
           echo "CIBW_ARCHS_MACOS=x86_64 arm64 universal2" >> $GITHUB_ENV
           echo "CIBW_BUILD=*-${{ matrix.cibw-arch }}" >> $GITHUB_ENV
@@ -120,7 +121,7 @@ jobs:
           CIBW_ENVIRONMENT_COMMON="PARSELMOUTH_EXTRA_CMAKE_ARGS=\"-DPREBUILT_DEPENDENCIES=\$(python -c 'import os; print(os.getcwd().replace(os.path.sep, '/'))')/build_dependencies\" CMAKE_BUILD_PARALLEL_LEVEL=2"
           echo "CIBW_ENVIRONMENT=$CIBW_ENVIRONMENT_COMMON" >> $GITHUB_ENV
           echo "CIBW_ENVIRONMENT_LINUX=$CIBW_ENVIRONMENT_COMMON PIP_ONLY_BINARY='numpy'" >> $GITHUB_ENV
-          echo "CIBW_ENVIRONMENT_MACOS=$CIBW_ENVIRONMENT_COMMON MACOSX_DEPLOYMENT_TARGET=10.9 CMAKE_OSX_ARCHITECTURES=\"$CMAKE_OSX_ARCHITECTURES\"" >> $GITHUB_ENV
+          echo "CIBW_ENVIRONMENT_MACOS=$CIBW_ENVIRONMENT_COMMON MACOSX_DEPLOYMENT_TARGET=\"$MACOSX_DEPLOYMENT_TARGET\" CMAKE_OSX_ARCHITECTURES=\"$CMAKE_OSX_ARCHITECTURES\"" >> $GITHUB_ENV
           CIBW_BEFORE_ALL_COMMON="cmake -S . -B build_dependencies $CMAKE_ARCH && cmake --build build_dependencies --target praat -j 2"
           echo "CIBW_BEFORE_ALL=$CIBW_BEFORE_ALL_COMMON" >> $GITHUB_ENV
           echo "CIBW_BEFORE_ALL_WINDOWS=$CIBW_BEFORE_ALL_COMMON --config Release" >> $GITHUB_ENV
@@ -155,7 +156,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rtd-wheel
-          path: wheelhouse/praat_parselmouth-*-cp312-cp312-*manylinux2014_x86_64*.whl
+          path: wheelhouse/praat_parselmouth-*-cp313-cp313-*manylinux2014_x86_64*.whl
           if-no-files-found: error
 
   trigger_rtd:
