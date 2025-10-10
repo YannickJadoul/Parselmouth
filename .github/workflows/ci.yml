@@ -20,9 +20,6 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-latest
-            python: '3.8'
-            arch: x64
-          - runs-on: ubuntu-latest
             python: '3.9'
             arch: x64
           - runs-on: ubuntu-latest
@@ -34,100 +31,103 @@ jobs:
           - runs-on: ubuntu-latest
             python: '3.12'
             arch: x64
-            run-praat-tests: true
-            name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
             python: '3.13'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: 'pypy-3.8'
-            arch: x64
-          - runs-on: ubuntu-latest
-            python: 'pypy-3.9'
+            python: '3.14'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: ubuntu-latest
-            python: 'pypy-3.10'
+            python: 'pypy-3.11'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
 
           - runs-on: ubuntu-24.04
-            python: '3.12'
+            python: '3.13'
             arch: x64
             gcc: 13
             name-extra: ' (GCC 13)'
           - runs-on: ubuntu-24.04
-            python: '3.12'
+            python: '3.13'
             arch: x64
             clang: 18
             name-extra: ' (Clang 18)'
 
           - runs-on: ubuntu-24.04-arm
-            python: '3.12'
+            python: '3.13'
             arch: arm64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
 
           - runs-on: ubuntu-latest
-            python: '3.12'
+            python: '3.13'
             arch: x64
             release: true
             name-extra: ' (Release)'
 
-          - runs-on: macos-13
-            python: '3.8'
-            arch: x64
           - runs-on: macos-latest
-            python: '3.12'
+            python: '3.9'
+            arch: arm64
+          - runs-on: macos-latest
+            python: '3.13'
+            arch: arm64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          - runs-on: macos-latest
+            python: '3.14'
+            arch: arm64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          - runs-on: macos-15-intel
+            python: '3.13'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: macos-latest
             python: '3.13'
             arch: x64
-            run-praat-tests: true
-            name-extra: ' (with Praat tests)'
-          - runs-on: macos-latest
-            python: '3.12'
-            arch: x64
             release: true
             name-extra: ' (Release)'
-          - runs-on: macos-13
-            python: 'pypy-3.10'
+          - runs-on: macos-latest
+            python: 'pypy-3.11'
+            arch: arm64
+          - runs-on: macos-15-intel
+            python: 'pypy-3.11'
             arch: x64
 
           - runs-on: windows-latest
-            python: '3.8'
+            python: '3.9'
             arch: x64
-          - runs-on: windows-latest
-            python: '3.12'
-            arch: x64
-            run-praat-tests: true
-            name-extra: ' (with Praat tests)'
           - runs-on: windows-latest
             python: '3.13'
             arch: x64
             run-praat-tests: true
             name-extra: ' (with Praat tests)'
           - runs-on: windows-latest
-            python: '3.8'
+            python: '3.14'
+            arch: x64
+            run-praat-tests: true
+            name-extra: ' (with Praat tests)'
+          - runs-on: windows-latest
+            python: '3.9'
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: '3.12'
+            python: '3.13'
             arch: x86
             name-extra: ' (32-bit)'
           - runs-on: windows-latest
-            python: '3.12'
+            python: '3.13'
             arch: x64
             release: true
             name-extra: ' (Release)'
           - runs-on: windows-latest
-            python: 'pypy-3.10'
+            python: 'pypy-3.11'
             arch: x64
 
     name: Python ${{ matrix.python }}${{ matrix.name-extra }} • ${{ matrix.runs-on }}
@@ -149,11 +149,11 @@ jobs:
           check-latest: true
 
       - name: Setup CMake
-        if: ${{ !(matrix.arch == 'arm64') }}
+        if: ${{ !(runner.os == 'Linux' && matrix.arch == 'arm64') }}
         uses: jwlawson/actions-setup-cmake@v2.0
 
       - name: Setup CMake on arm64 (apt)
-        if: matrix.arch == 'arm64'
+        if: runner.os == 'Linux' && matrix.arch == 'arm64'
         run: |
           sudo apt update
           sudo apt install -y cmake
