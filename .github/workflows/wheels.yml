@@ -178,7 +178,7 @@ jobs:
 
     steps:
       - name: Collect sdist and wheels
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: wheelhouse
           merge-multiple: true
