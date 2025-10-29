@@ -597,7 +597,7 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 		    // if (numberOfCoefficients >= 25) Melder_throw(U"The number of coefficients should be less than 25."); // Might be wrong, but I see no reason to enforce this, in the actual code
 		    return Sound_to_MFCC(self, numberOfCoefficients, windowLength, timeStep, firstFilterFrequency, maximumFrequency ? static_cast<double>(*maximumFrequency) : 0.0, distanceBetweenFilters);
 	    },
-	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFreqency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
+	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFrequency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
 
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 	// TODO Still a bunch of Sound in praat_LPC_init.cpp
