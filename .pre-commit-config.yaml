@@ -32,6 +32,6 @@ repos:
         exclude: '.TextGrid$'
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.20.0
+    rev: v3.21.1
     hooks:
       - id: pyupgrade
