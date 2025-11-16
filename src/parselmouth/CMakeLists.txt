@@ -25,6 +25,7 @@ target_sources(parselmouth PRIVATE
     Matrix.cpp
     MFCC.cpp
     Pitch.cpp
+    PointProcess.cpp
     Sampled.cpp
     SampledXY.cpp
     Sound.cpp
