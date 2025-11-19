@@ -110,7 +110,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          python -m pip install cibuildwheel twine
+          python -m pip install cibuildwheel twine toml
 
       - name: Configure cibuildwheel
         shell: bash
@@ -140,6 +140,7 @@ jobs:
       - name: Run cibuildwheel
         if: startsWith(github.ref_name, 'docs') != true || matrix.cibw-arch == 'manylinux_x86_64'
         run: |
+          python -c "import toml; p = toml.load(open('pyproject.toml')); r = p['build-system']['requires']; r[r.index('cmake>=3.18')] += ',<4'; toml.dump(p, open('pyproject.toml', 'w'))"
           cibuildwheel
 
       - name: Check built wheels
@@ -216,7 +217,7 @@ jobs:
           echo "CIBW_ENVIRONMENT=$CIBW_ENVIRONMENT_COMMON" >> $GITHUB_ENV
           echo "CIBW_ENVIRONMENT_LINUX=$CIBW_ENVIRONMENT_COMMON PIP_ONLY_BINARY='numpy'" >> $GITHUB_ENV
           echo "CIBW_ENVIRONMENT_MACOS=$CIBW_ENVIRONMENT_COMMON MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
-          CIBW_BEFORE_ALL_COMMON="pip install cmake && cmake -S . -B build_dependencies $CMAKE_ARCH && cmake --build build_dependencies --target praat -j 2"
+          CIBW_BEFORE_ALL_COMMON="pip install \"cmake<4\" && cmake -S . -B build_dependencies $CMAKE_ARCH && cmake --build build_dependencies --target praat -j 2"
           echo "CIBW_BEFORE_ALL=$CIBW_BEFORE_ALL_COMMON" >> $GITHUB_ENV
           echo "CIBW_BEFORE_ALL_WINDOWS=$CIBW_BEFORE_ALL_COMMON --config Release" >> $GITHUB_ENV
           echo "CIBW_BEFORE_BUILD=python -m pip install -U pip && rm -rf _skbuild" >> $GITHUB_ENV
