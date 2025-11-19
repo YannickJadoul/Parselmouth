@@ -164,8 +164,8 @@ public:
 	}
 	T *begin () const { return & our operator[] (1); }
 	T *end () const { return & our operator[] (our size + 1); }
-	T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] [1]; }
-	T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] [0]; }
+	T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] (1); }
+	T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] (0); }
 };
 
 template <typename T>
@@ -248,8 +248,8 @@ public:
 	}
 	const T *begin () const { return & our operator[] (1); }
 	const T *end () const { return & our operator[] (our size + 1); }
-	const T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] [1]; }
-	const T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] [0]; }
+	const T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] (1); }
+	const T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] (0); }
 };
 
 /*
