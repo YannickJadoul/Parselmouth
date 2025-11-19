@@ -202,12 +202,12 @@ jobs:
             arch: x64
             release: true
             name-extra: ' (Release)'
-          - runs-on: windows-2022
-            python: pypy-3.6
-            arch: x86
-          - runs-on: windows-2022
-            python: pypy-3.7
-            arch: x64
+          #- runs-on: windows-2022
+          #  python: pypy-3.6
+          #  arch: x86
+          #- runs-on: windows-2022
+          #  python: pypy-3.7
+          #  arch: x64
           - runs-on: windows-2022
             python: pypy-3.8
             arch: x64
