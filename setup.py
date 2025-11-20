@@ -29,30 +29,49 @@ except ImportError:
 	print("Please update pip to pip 10 or greater, or a manually install the PEP 518 requirements in pyproject.toml", file=sys.stderr)
 	raise
 
+if sys.version_info < (3, 6):
+	VS_YEAR_TO_MSC_VER = {
+		"2017":"1910",  # VS 2017 - can be +9
+		"2019":"1920",  # VS 2019 - can be +9
+		"2022":"1930",  # VS 2022 - can be +9
+	}
 
-def patched_WindowsPlatform_init(self):
-	import textwrap
-	from skbuild.platform_specifics.windows import WindowsPlatform, CMakeVisualStudioCommandLineGenerator, CMakeVisualStudioIDEGenerator
+	def patched_WindowsPlatform_init(self):
+		import textwrap
+		from skbuild.platform_specifics.windows import WindowsPlatform, CMakeVisualStudioCommandLineGenerator, CMakeVisualStudioIDEGenerator
 
-	super(WindowsPlatform, self).__init__()
+		super(WindowsPlatform, self).__init__()
 
-	self._vs_help = textwrap.dedent("""
-		Building Windows wheels for requires Microsoft Visual Studio 2017 or 2019:
+		supported_vs_years = [("2022", "v143"), ("2019", "v142"), ("2017", "v141")]
+		self._vs_help = textwrap.dedent("""
+			Building Windows wheels requires Microsoft Visual Studio 2017, 2019, or 2022:
+	
+			  https://visualstudio.microsoft.com/vs/
+			""").strip()
 
-		  https://visualstudio.microsoft.com/vs/
-		""").strip()
+		try:
+			import ninja  # pylint: disable=import-outside-toplevel
 
-	supported_vs_years = [("2019", "v141"), ("2017", "v141")]
-	for vs_year, vs_toolset in supported_vs_years:
-		self.default_generators.extend([
-			CMakeVisualStudioCommandLineGenerator("Ninja", vs_year, vs_toolset),
-			CMakeVisualStudioIDEGenerator(vs_year, vs_toolset),
-			CMakeVisualStudioCommandLineGenerator("NMake Makefiles", vs_year, vs_toolset),
-			CMakeVisualStudioCommandLineGenerator("NMake Makefiles JOM", vs_year, vs_toolset)
-		])
+			ninja_executable_path = os.path.join(ninja.BIN_DIR, "ninja")
+			ninja_args = ["-DCMAKE_MAKE_PROGRAM:FILEPATH=" + ninja_executable_path]
+		except ImportError:
+			ninja_args = []
 
-import skbuild.platform_specifics.windows
-skbuild.platform_specifics.windows.WindowsPlatform.__init__ = patched_WindowsPlatform_init
+		extra = []
+		for vs_year, vs_toolset in supported_vs_years:
+			vs_version = VS_YEAR_TO_MSC_VER[vs_year]
+			args = ["-D_SKBUILD_FORCE_MSVC={}".format(vs_version)]
+			self.default_generators.extend(
+				[
+					CMakeVisualStudioCommandLineGenerator("Ninja", vs_year, vs_toolset, args=ninja_args + args),
+					CMakeVisualStudioIDEGenerator(vs_year, vs_toolset),
+				]
+			)
+			extra.append(CMakeVisualStudioCommandLineGenerator("NMake Makefiles", vs_year, vs_toolset, args=args))
+		self.default_generators.extend(extra)
+
+	import skbuild.platform_specifics.windows
+	skbuild.platform_specifics.windows.WindowsPlatform.__init__ = patched_WindowsPlatform_init
 
 
 def find_version(*file_paths):
