@@ -136,16 +136,16 @@ jobs:
           #- runs-on: macos-11
           #  python: pypy-3.6
           #  arch: x64
-          - runs-on: macos-13
+          - runs-on: macos-15-intel
             python: pypy-3.7
             arch: x64
-          - runs-on: macos-13
+          - runs-on: macos-15-intel
             python: pypy-3.8
             arch: x64
-          - runs-on: macos-13
+          - runs-on: macos-15-intel
             python: pypy-3.9
             arch: x64
-          - runs-on: macos-13
+          - runs-on: macos-15-intel
             python: pypy-3.10
             arch: x64
 
