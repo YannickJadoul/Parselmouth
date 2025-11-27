@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 ## [Unreleased]
 _Nothing yet_
 
+## [0.4.7] - 2025-11-27
+### Fixed
+- Fixed compilation issues in Praat when compiling with Clang 17.
+- Fixed build of source distributions on Windows with VS 2022, and updated documentation links to VC++ Redistributable downloads.
+
 ## [0.4.6] - 2025-06-08
 ### Fixed
 - Fixed potential vulnerability in Praat's opusfile external dependency (#141).
@@ -131,7 +136,8 @@ _Nothing yet_
 - Main functionality of `Thing`, `Data`, `Matrix`, `Vector`, `Sound`, `Spectrum`, `Spectrogram`, and `Intensity` classes. Preliminary implementations of `Pitch`, `Harmonicity`, `Formant`, and `MFCC`.
 - Basic Travis CI configuration.
 
-[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.6...HEAD
+[Unreleased]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.7...HEAD
+[0.4.7]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/YannickJadoul/Parselmouth/compare/v0.4.3...v0.4.4
