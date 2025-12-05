@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=77",
     "scikit-build>=0.13",
 ]
 build-backend = "setuptools.build_meta"
@@ -10,6 +10,13 @@ name = "praat-parselmouth"
 # version = <see setup.py>
 description = "Praat in Python, the Pythonic way"
 license = "GPL-3.0-or-later"
+license-files = [
+    "LICENSE",
+    "praat/main/GNU_General_Public_License.txt",
+    "praat/main/gpl-3.0.txt",
+    "pybind11/LICENSE",
+    "extern/fmt/LICENSE.rst"
+]
 authors = [
     { name = "Yannick Jadoul", email = "yannick.jadoul@gmail.com" },
 ]
