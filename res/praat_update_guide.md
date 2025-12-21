@@ -1,7 +1,13 @@
 Guide to update the Praat version of the git subtree in `praat/`:
-- Look up the latest Praat release, and that commit's hash: https://github.com/praat/praat/releases.
-- Fetch the latest commits from the Praat remote: `git fetch praat`.
-- Merge and squash the new commits into the git subtree: `git subtree merge --prefix praat/ --squash the_praat_release_commit`.
+- Look up the latest Praat release tag: https://github.com/praat/praat/releases.
+- Run `res/update_praat_subtree.sh <praat-version>` (in a Unix terminal or git bash on Windows).
+  In short, this will `git subtree merge` the new version without the `docs/` subfolder.
+  In more detail, this script will:
+  - Fetch the corresponding commit, and subtree squash-and-merge: `git subtree pull --prefix praat/ --squash git@github.com:praat/praat.git <praat-version>`.
+  - If the merge did not succeed, record the hash of the squashed commit with Praat changes and abort the pending merge.
+  - If the merge succeeded, record the hash of the squashed-and-merged commit with Praat changes and reset to before the merge.
+  - Amend the squashed commit, removing the full `doc/` subfolder.
+  - Merge that amended commit: `git merge -Xsubtree='praat/' -m "Update Praat subtree to <praat-version>" <new-squash-commit>`.
 - Resolve (possibly a lot of) merge conflicts.
 - Check for source files added or deleted, and adapt the `CMakeLists.txt` files: `res/etc/makefilelist.sh`.
 - Check for changes in Praat's `makefile.defs` files: `git difftool HEAD^ -- praat/makefiles`.
