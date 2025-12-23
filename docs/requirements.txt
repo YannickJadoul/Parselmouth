@@ -11,6 +11,7 @@ requests
 ipykernel
 ipython!=8.7.0
 ipywidgets
+nbclient!=0.10.3
 nbsphinx
 
 -r examples/requirements.txt
