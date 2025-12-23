@@ -1,2 +1,0 @@
-#define ESPEAK_NG_VERSION U"1.52-dev"
-#define ESPEAK_NG_VERSIONX 1.52-dev

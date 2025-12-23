@@ -171,6 +171,16 @@ DO
 
 // MARK: Modify
 
+FORM (MODIFY_EACH__PairDistribution_setWeight, U"Set weight", nullptr) {
+	NATURAL (pairNumber, U"Pair number", U"1")
+	REAL (newWeight, U"New weight", U"10.0")
+	OK
+DO
+	MODIFY_EACH (PairDistribution)
+		PairDistribution_setWeight (me, pairNumber, newWeight);
+	MODIFY_EACH_END
+}
+
 DIRECT (MODIFY_EACH__PairDistribution_removeZeroWeights) {
 	MODIFY_EACH (PairDistribution)
 		PairDistribution_removeZeroWeights (me);
@@ -397,6 +407,16 @@ DO
 		const integer columnNumber = Table_columnNameToNumber_e (me, columnLabel);
 		autoVEC result = Table_getAllNumbersInColumn (me, columnNumber);
 	QUERY_ONE_FOR_REAL_VECTOR_END
+}
+
+FORM (QUERY_ONE_FOR_STRING_ARRAY__Table_getAllTextsInColumn, U"Table: Get all texts in column", nullptr) {
+	SENTENCE (columnLabel, U"Column label", U"")
+	OK
+DO
+	QUERY_ONE_FOR_STRING_ARRAY (Table)
+		const integer columnNumber = Table_columnNameToNumber_e (me, columnLabel);
+		autoSTRVEC result = Table_getAllTextsInColumn (me, columnNumber);
+	QUERY_ONE_FOR_STRING_ARRAY_END
 }
 
 FORM (QUERY_ONE_FOR_INTEGER__Table_getColumnIndex, U"Table: Get column index", nullptr) {
@@ -1054,59 +1074,11 @@ FORM_READ (READ1_TableOfReal_readFromHeaderlessSpreadsheetFile, U"Read TableOfRe
 	READ_ONE_END
 }
 
-static bool isTabSeparated_8bit (integer nread, const char *header) {
-	for (integer i = 0; i < nread; i ++) {
-		if (header [i] == '\t')
-			return true;
-		if (header [i] == '\n' || header [i] == '\r')
-			return false;
-	}
-	return false;
-}
-
-static bool isTabSeparated_utf16be (integer nread, const char *header) {
-	for (integer i = 2; i < nread; i += 2) {
-		if (header [i] == '\0' && header [i + 1] == '\t')
-			return true;
-		if (header [i] == '\0' && (header [i + 1] == '\n' || header [i + 1] == '\r'))
-			return false;
-	}
-	return false;
-}
-
-static bool isTabSeparated_utf16le (integer nread, const char *header) {
-	for (integer i = 2; i < nread; i += 2) {
-		if (header [i + 1] == '\0' && header [i] == '\t')
-			return true;
-		if (header [i + 1] == '\0' && (header [i] == '\n' || header [i] == '\r'))
-			return false;
-	}
-	return false;
-}
-
-static autoDaata tabSeparatedFileRecognizer (integer nread, const char *header, MelderFile file) {
-	/*
-	 * A table is recognized if it has at least one tab symbol,
-	 * which must be before the first newline symbol (if any).
-	 */
-	unsigned char *uheader = (unsigned char *) header;
-	const bool isTabSeparated =
-		uheader [0] == 0xef && uheader [1] == 0xff ? isTabSeparated_utf16be (nread, header) :
-		uheader [0] == 0xff && uheader [1] == 0xef ? isTabSeparated_utf16le (nread, header) :
-		isTabSeparated_8bit (nread, header)
-	;
-	if (! isTabSeparated)
-		return autoDaata ();
-	return Table_readFromCharacterSeparatedTextFile (file, U'\t', false);
-}
-
 void praat_uvafon_stat_init ();
 void praat_uvafon_stat_init () {
 
 	Thing_recognizeClassesByName (classTableOfReal, classDistributions, classPairDistribution,
 			classTable, classLinearRegression, classLogisticRegression, nullptr);
-
-	Data_recognizeFileType (tabSeparatedFileRecognizer);
 
 	structTableEditor :: f_preferences ();
 
@@ -1175,6 +1147,8 @@ praat_addAction1 (classDistributions, 0, U"Generate", nullptr, 0, nullptr);
 		praat_addAction1 (classPairDistribution, 1, U"Get fraction correct (probability matching)",
 				nullptr, 1, QUERY_ONE_FOR_REAL__PairDistribution_getFractionCorrect_probabilityMatching);
 	praat_addAction1 (classPairDistribution, 0, U"Modify -", nullptr, 0, nullptr);
+		praat_addAction1 (classPairDistribution, 1, U"Set weight...",
+				nullptr, 1, MODIFY_EACH__PairDistribution_setWeight);
 		praat_addAction1 (classPairDistribution, 0, U"Remove zero weights",
 				nullptr, 1, MODIFY_EACH__PairDistribution_removeZeroWeights);
 		praat_addAction1 (classPairDistribution, 0, U"Swap inputs and outputs",
@@ -1216,6 +1190,8 @@ praat_addAction1 (classDistributions, 0, U"Generate", nullptr, 0, nullptr);
 				nullptr, 1, QUERY_ONE_FOR_REAL__Table_getValue);
 		praat_addAction1 (classTable, 1, U"Get all numbers in column...",
 				nullptr, 1, QUERY_ONE_FOR_REAL_VECTOR__Table_getAllNumbersInColumn);
+		praat_addAction1 (classTable, 1, U"Get all texts in column...",
+				nullptr, 1, QUERY_ONE_FOR_STRING_ARRAY__Table_getAllTextsInColumn);
 		praat_addAction1 (classTable, 1, U"Search column...",
 				nullptr, 1, QUERY_ONE_FOR_INTEGER__Table_searchColumn);
 		praat_addAction1 (classTable, 1, U"-- statistics --",

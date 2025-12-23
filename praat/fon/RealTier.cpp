@@ -1,6 +1,6 @@
 /* RealTier.cpp
  *
- * Copyright (C) 1992-2012,2014-2023 Paul Boersma
+ * Copyright (C) 1992-2012,2014-2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ autoRealTier RealTier_create (double tmin, double tmax) {
 
 autoRealTier RealTier_createWithClass (double tmin, double tmax, ClassInfo klas) {
 	try {
-		autoRealTier me = Thing_newFromClass (klas).static_cast_move <structRealTier> ();
+		autoRealTier me = Thing_newFromClass (klas).static_cast_move <structRealTier>();
 		RealTier_init (me.get(), tmin, tmax);
 		return me;
 	} catch (MelderError) {
@@ -99,11 +99,11 @@ template <typename T> autoSomeThing <T> Thing_create () {
 
 template <>
 autoSomeThing <structRealTier> Thing_create <structRealTier> () {
-	return Thing_newFromClass (classRealTier). static_cast_move<structRealTier>();
+	return Thing_newFromClass (classRealTier).static_cast_move <structRealTier>();
 }
 
 template <typename structSomeRealTier>
-autoSomeThing <structSomeRealTier> SomeRealTier_create (double tmin, double tmax) {
+autoSomeThing <structSomeRealTier> SomeRealTier_create (const double tmin, const double tmax) {
 	try {
 		autoSomeThing <structSomeRealTier> me = Thing_create <structSomeRealTier> ();
 		RealTier_init (me.get(), tmin, tmax);
@@ -113,7 +113,7 @@ autoSomeThing <structSomeRealTier> SomeRealTier_create (double tmin, double tmax
 	}
 }
 
-void RealTier_addPoint (RealTier me, const double t, const double value) {
+void RealTier_addPoint (const mutableRealTier me, const double t, const double value) {
 	try {
 		autoRealPoint point = RealPoint_create (t, value);
 		my points. addItem_move (point.move());
@@ -132,17 +132,17 @@ double RealTier_getValueAtTime (const constRealTier me, const double t) {
 	const integer n = my points.size;
 	if (n == 0)
 		return undefined;
-	const RealPoint firstPoint = my points.at [1];
+	const constRealPoint firstPoint = my points.at [1];
 	if (t <= firstPoint -> number)
 		return firstPoint -> value;   // constant extrapolation
-	const RealPoint lastPoint = my points.at [n];
+	const constRealPoint lastPoint = my points.at [n];
 	if (t >= lastPoint -> number)
 		return lastPoint -> value;   // constant extrapolation
 	Melder_assert (n >= 2);
 	const integer ileft = AnyTier_timeToLowIndex (me->asConstAnyTier(), t), iright = ileft + 1;
 	Melder_assert (ileft >= 1 && iright <= n);
-	const RealPoint pointLeft = my points.at [ileft];
-	const RealPoint pointRight = my points.at [iright];
+	const constRealPoint pointLeft = my points.at [ileft];
+	const constRealPoint pointRight = my points.at [iright];
 	const double tleft = pointLeft -> number, fleft = pointLeft -> value;
 	const double tright = pointRight -> number, fright = pointRight -> value;
 	return t == tright ? fright   // be very accurate
@@ -154,7 +154,7 @@ double RealTier_getMaximumValue (const constRealTier me) {
 	/* mutable */ double result = undefined;
 	const integer n = my points.size;
 	for (integer i = 1; i <= n; i ++) {
-		RealPoint point = my points.at [i];
+		const constRealPoint point = my points.at [i];
 		if (isundef (result) || point -> value > result)
 			result = point -> value;
 	}
@@ -195,7 +195,7 @@ double RealTier_getArea (const constRealTier me, const double tmin, const double
 	*/
 	/* mutable loop */ longdouble area = 0.0;
 	for (integer i = imin; i < imax; i ++) {
-		double tleft, fleft, tright, fright;
+		/* mutable conditional init */ double tleft, fleft, tright, fright;
 		if (i == imin) {
 			tleft = tmin;
 			fleft = RealTier_getValueAtTime (me, tmin);

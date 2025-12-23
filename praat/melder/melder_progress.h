@@ -2,11 +2,11 @@
 #define _melder_progress_h_
 /* melder_progress.h
  *
- * Copyright (C) 1992-2018,2020 Paul Boersma
+ * Copyright (C) 1992-2018,2020,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -116,9 +116,9 @@ void Melder_progressOn ();
 inline void Melder_progress (double progress) {
 	MelderProgress::_doProgress (progress, U"");
 }
-template <typename... Args>
-void Melder_progress (double progress, const MelderArg& first, Args... rest) {
-	MelderString_copy (& MelderProgress::_buffer, first, rest...);
+template <typename... Arg>
+void Melder_progress (double progress, const Arg... arg) {
+	MelderString_copy (& MelderProgress::_buffer, arg...);
 	MelderProgress::_doProgress (progress, MelderProgress::_buffer.string);
 }
 class autoMelderProgress {
@@ -134,9 +134,9 @@ public:
 inline void * Melder_monitor (double progress) {
 	return MelderProgress::_doMonitor (progress, U"");
 }
-template <typename... Args>
-void * Melder_monitor (double progress, const MelderArg& first, Args... rest) {
-	MelderString_copy (& MelderProgress::_buffer, first, rest...);
+template <typename... Arg>
+void * Melder_monitor (double progress, const Arg... arg) {
+	MelderString_copy (& MelderProgress::_buffer, arg...);
 	return MelderProgress::_doMonitor (progress, MelderProgress::_buffer.string);
 }
 

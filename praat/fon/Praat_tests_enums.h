@@ -1,10 +1,10 @@
 /* Praat_tests_enums.h
  *
- * Copyright (C) 2001-2005,2009,2013-2018,2020,2021 Paul Boersma
+ * Copyright (C) 2001-2005,2009,2013-2018,2020,2021,2024,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -61,7 +61,13 @@ enums_begin (kPraatTests, 0)
 	enums_add (kPraatTests, 41, TIME_VECADD, U"TimeVecAdd")
 	enums_add (kPraatTests, 42, TIME_MATMUL, U"TimeMatMul")
 	enums_add (kPraatTests, 43, THING_AUTO, U"ThingAuto")
-	enums_add (kPraatTests, 44, FILEINMEMORYMANAGER_IO, U"FileInMemoryManager_io")
-enums_end (kPraatTests, 44, CHECK_RANDOM_1009_2009)
+	enums_add (kPraatTests, 44, FILEINMEMORY_IO, U"FileInMemory_io")
+	enums_add (kPraatTests, 45, TIME_MULTI_THREADING, U"TimeMultiThreading")
+	enums_add (kPraatTests, 46, TIME_MEDIAN, U"TimeMedian")
+	enums_add (kPraatTests, 47, TIME_SLOPE_SELECTION, U"TimeSlopeSelection")
+	enums_add (kPraatTests, 48, TIME_NS_DATE, U"TimeNsDate")
+	enums_add (kPraatTests, 49, TIME_MELDER_CLOCK, U"TimeMelderClock")
+	enums_add (kPraatTests, 50, TIME_STOPWATCH, U"TimeStopwatch")
+enums_end (kPraatTests, 50, CHECK_RANDOM_1009_2009)
 
 /* End of file Praat_tests_enums.h */

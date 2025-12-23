@@ -22,6 +22,7 @@
 */
 
 #include "Distance.h"
+#include "NUMselect.h"
 #include "TableOfReal_extensions.h"
 
 Thing_implement (Distance, Proximity, 0);

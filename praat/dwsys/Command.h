@@ -2,7 +2,7 @@
 #define _Command_h_
 /* Command.h
  *
- * Copyright (C) 1994-2018, 2021 David Weenink, 2015 Paul Boersma
+ * Copyright (C) 1994-2018,2021 David Weenink, 2015 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -1,10 +1,10 @@
 /* SpeechSynthesizer.cpp
  *
- * Copyright (C) 2011-2023 David Weenink, 2012,2013,2015-2024 Paul Boersma
+ * Copyright (C) 2011-2023 David Weenink, 2012,2013,2015-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -16,9 +16,8 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "espeak_ng_version.h"
 #include "espeak_ng.h"
-#include "espeakdata_FileInMemory.h"
+#include "espeak_praat.h"    // for theEspeakPraatFileInMemorySet
 
 #include "SpeechSynthesizer.h"
 #include "Strings_extensions.h"
@@ -26,7 +25,6 @@
 #include "synthdata.h"
 #include "encoding.h"
 #include "dictionary.h"
-#include "string.h"
 #include "translate.h"
 #include "voice.h"
 
@@ -49,14 +47,9 @@
 #include "oo_DESCRIPTION.h"
 #include "SpeechSynthesizer_def.h"
 
-#define espeak_SAMPLINGFREQUENCY 22050.h""
-
 #include "UnicodeData.h"
 
 extern int option_phoneme_events;   // BUG: external declaration outside header file (ppgb 20210307)
-
-Thing_implement (EspeakVoice, Daata, 1);
-
 
 static autostring8 ipa_to_kirshenbaum (conststring32 text) {
 	const struct ipaksymbol {
@@ -155,131 +148,13 @@ static autostring8 ipa_to_kirshenbaum (conststring32 text) {
 	
 }
 
-
-
-
-
-autoEspeakVoice EspeakVoice_create () {
-	try {
-		autoEspeakVoice me = Thing_new (EspeakVoice);
-		my numberOfFormants = 9;   // equals N_PEAKS
-		my numberOfKlattParameters = 8;
-		my klattv = zero_INTVEC (my numberOfKlattParameters);
-		my freq = zero_INTVEC (my numberOfFormants);
-		my height = zero_INTVEC (my numberOfFormants);   // 100% = 256
-		my width = zero_INTVEC (my numberOfFormants);   // 100% = 256
-		my freqadd = zero_INTVEC (my numberOfFormants);   // Hz
-
-		// copies without temporary adjustments from embedded commands
-		my freq2 = zero_INTVEC (my numberOfFormants);   // 100% = 256
-		my height2 = zero_INTVEC (my numberOfFormants);   // 100% = 256
-
-		my breath = zero_INTVEC (my numberOfFormants);   // amount of breath for each formant. breath [0] indicates whether any are set.
-		my breathw = zero_INTVEC (my numberOfFormants);   // width of each breath formant
-		my numberOfToneAdjusts = 1000;   // equals N_TONE_ADJUST in voice.h
-		my tone_adjust = newvectorzero<unsigned char> (my numberOfToneAdjusts);
-		EspeakVoice_setDefaults (me.get());
-		return me;
-	} catch (MelderError) {
-		Melder_throw (U"EspeakVoice not created.");
-	}
-}
-
-void EspeakVoice_setDefaults (EspeakVoice me) {
-	(void) me;
-}
-
-void EspeakVoice_initFromEspeakVoice (EspeakVoice me, voice_t *voicet) {
-	my v_name = Melder_dup (Melder_peek8to32 (voicet -> v_name));
-
-	my phoneme_tab_ix = voicet -> phoneme_tab_ix;
-	my pitch_base = voicet -> pitch_base;
-	my pitch_range = voicet -> pitch_range;
-
-	my speedf1 = voicet -> speedf1;
-	my speedf2 = voicet -> speedf2;
-	my speedf3 = voicet -> speedf3;
-
-	my speed_percent = voicet -> speed_percent;
-	my flutter = voicet -> flutter;
-	my roughness = voicet -> roughness;
-	my echo_delay = voicet -> echo_delay;
-	my echo_amp = voicet -> echo_amp;
-	my n_harmonic_peaks = voicet -> n_harmonic_peaks;
-	my peak_shape = voicet -> peak_shape;
-	my voicing = voicet -> voicing;
-	my formant_factor = voicet -> formant_factor;
-	my consonant_amp = voicet -> consonant_amp;
-	my consonant_ampv = voicet -> consonant_ampv;
-	my samplerate = voicet -> samplerate;
-	my numberOfKlattParameters = 8;
-	for (integer i = 1; i <= my numberOfKlattParameters; i ++)
-		my klattv [i] = voicet -> klattv [i - 1];
-	for (integer i = 1; i <= my numberOfFormants; i ++) {
-		my freq [i] = voicet -> freq [i - 1];
-		my height [i] = voicet -> height [i - 1];
-		my width [i] = voicet -> width [i - 1];
-		my freqadd [i] = voicet -> freqadd [i - 1];
-		my freq2 [i] = voicet -> freq2 [i - 1];
-		my height2 [i] = voicet -> height2 [i - 1];
-		my breath [i] = voicet -> breath [i - 1];
-		my breathw [i] = voicet -> breathw [i - 1];
-	}
-	my numberOfToneAdjusts = 1000;
-	for (integer i = 1; i <= my numberOfToneAdjusts; i ++)
-		my tone_adjust [i] = voicet -> tone_adjust [i - 1];
-}
-
-void EspeakVoice_into_voice (EspeakVoice me, voice_t *voicet) {   // BUG unused (ppgb 20210307)
-
-	if (my v_name)
-		strncpy (voicet -> v_name, Melder_peek32to8 (my v_name.get()), 40);
-	if (my language_name)
-		strncpy (voicet -> language_name, Melder_peek32to8 (my language_name.get()), 20);
-	voicet -> phoneme_tab_ix = my phoneme_tab_ix;
-	voicet -> pitch_base = my pitch_base;
-	voicet -> pitch_range = my pitch_range;
-
-	voicet -> speedf1 = my speedf1;
-	voicet -> speedf2 = my speedf2;
-	voicet -> speedf3 = my speedf3;
-
-	voicet -> speed_percent = my speed_percent;
-	voicet -> flutter = my flutter;
-	voicet -> roughness = my roughness;
-	voicet -> echo_delay = my echo_delay;
-	voicet -> echo_amp = my echo_amp;
-	voicet -> n_harmonic_peaks = my n_harmonic_peaks;
-	voicet -> peak_shape = my peak_shape;
-	voicet -> voicing = my voicing;
-	voicet -> formant_factor = my formant_factor;
-	voicet -> consonant_amp = my consonant_amp;
-	voicet -> consonant_ampv = my consonant_ampv;
-	voicet -> samplerate = my samplerate;
-	for (integer i = 1; i <= my numberOfKlattParameters; i ++)
-		voicet -> klattv [i - 1] = my klattv [i];
-	for (integer i = 1; i <= my numberOfFormants; i ++) {
-		voicet -> freq [i - 1] = my freq [i];
-		voicet -> height [i - 1] = my height [i];
-		voicet -> width [i - 1] = my width [i];
-		voicet -> freqadd [i - 1] = my freqadd [i];
-		voicet -> freq2 [i - 1] = my freq2 [i];
-		voicet -> height2 [i - 1] = my height2 [i];
-		voicet -> breath [i - 1] = my breath [i];
-		voicet -> breathw [i - 1] = my breathw [i];
-	}
-	for (integer i = 1; i <= my numberOfToneAdjusts; i ++)
-		voicet -> tone_adjust [i - 1] = voicet -> tone_adjust [i];
-}
-
 Thing_implement (SpeechSynthesizer, Daata, 1);
 
 void structSpeechSynthesizer :: v1_info () {
 	SpeechSynthesizer_Parent :: v1_info ();
-	MelderInfo_writeLine (U"Synthesizer version: espeak-ng ", our d_synthesizerVersion.get());
 	MelderInfo_writeLine (U"Language: ", our d_languageName.get());
 	MelderInfo_writeLine (U"Voice: ", our d_voiceName.get());
-	MelderInfo_writeLine (U"Phoneme set: ", our d_phonemeSet.get());
+	MelderInfo_writeLine (U"Phoneme set: ", our d_phonemeSetName.get());
 	MelderInfo_writeLine (U"Input text format: ", (our d_inputTextFormat == SpeechSynthesizer_INPUT_TEXTONLY ? U"text only" :
 		d_inputTextFormat == SpeechSynthesizer_INPUT_PHONEMESONLY ? U"phonemes only" : U"tagged text"));
 	MelderInfo_writeLine (U"Input phoneme coding: ", (our d_inputPhonemeCoding == SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM ? U"Kirshenbaum" : U"???"));
@@ -326,56 +201,54 @@ static int synthCallback (short *wav, int numsamples, espeak_EVENT *events)
 			Table_setNumericValue (my d_events.get(), irow, 7, events -> sample);
 			if (events -> type == espeakEVENT_MARK || events -> type == espeakEVENT_PLAY) {
 				Table_setStringValue (my d_events.get(), irow, 8, Melder_peek8to32 (events -> id.name));
-			} else {
-				// Ugly hack because id.string is not 0-terminated if 8 chars long!
+			} else if (events -> type == espeakEVENT_PHONEME) {
 				memcpy (phoneme_name, events -> id.string, 8);
-				//phoneme_name [8] = 0;
-				phoneme_name [4] = 0;   // ppgb UGLY HACK IN ORDER TO MAKE FEWER MISTAKES (20231022)
-				//TRACE
-				trace (U"phoneme name <<", Melder_peek8to32 (phoneme_name), U">>");
+				phoneme_name [8] = 0;   // because id.string is not 0-terminated if 8 chars long
 				Table_setStringValue (my d_events.get(), irow, 8, Melder_peek8to32 (phoneme_name));
+			} else if (events -> type == espeakEVENT_SAMPLERATE ||1) {
+				Table_setNumericValue (my d_events.get(), irow, 8, events -> id.number);
 			}
 			Table_setNumericValue (my d_events.get(), irow, 9, events -> unique_identifier);
 		}
 		events++;
 	}
 	if (me) {
-		my d_wav.resize (my d_numberOfSamples + numsamples);
+		my d_wav. resize (my d_numberOfSamples + numsamples);
 		for (integer i = 1; i <= numsamples; i++)
 			my d_wav [my d_numberOfSamples + i] = wav [i - 1];
-		my d_numberOfSamples += numsamples;
+		my d_numberOfSamples = my d_wav.size;   // maintain invariant, *after* copy of content
 	}
 	return 0;
 }
 
 static conststring32 SpeechSynthesizer_getLanguageCode (SpeechSynthesizer me) {
 	try {
-		const integer irow = Table_searchColumn (espeakdata_languages_propertiesTable.get(), 2, my d_languageName.get());
+		const integer irow = Table_searchColumn (theSpeechSynthesizerLanguagePropertiesTable, 1, my d_languageName.get());
 		Melder_require (irow != 0,
 			U"Cannot find language \"", my d_languageName.get(), U"\".");
-		return Table_getStringValue_a (espeakdata_languages_propertiesTable.get(), irow, 1);
+		return Table_getStringValue_a (theSpeechSynthesizerLanguagePropertiesTable, irow, 2);
 	} catch (MelderError) {
 		Melder_throw (me, U": Cannot find language code.");
 	}
 }
 
-static conststring32 SpeechSynthesizer_getPhonemeCode (SpeechSynthesizer me) {
+static conststring32 SpeechSynthesizer_getPhonemeSetCode (SpeechSynthesizer me) {
 	try {
-		const integer irow = Table_searchColumn (espeakdata_languages_propertiesTable.get(), 2, my d_phonemeSet.get());
+		const integer irow = Table_searchColumn (theSpeechSynthesizerLanguagePropertiesTable, 1, my d_phonemeSetName.get());
 		Melder_require (irow != 0,
-			U"Cannot find phoneme set \"", my d_phonemeSet.get(), U"\".");
-		return Table_getStringValue_a (espeakdata_languages_propertiesTable.get(), irow, 1);
+			U"Cannot find phoneme set \"", my d_phonemeSetName.get(), U"\".");
+		return Table_getStringValue_a (theSpeechSynthesizerLanguagePropertiesTable, irow, 2);
 	} catch (MelderError) {
-		Melder_throw (me, U": Cannot find phoneme code.");
+		Melder_throw (me, U": Cannot find phoneme set code.");
 	}
 }
 
 static conststring32 SpeechSynthesizer_getVoiceCode (SpeechSynthesizer me) {
 	try {
-		const integer irow = Table_searchColumn (espeakdata_voices_propertiesTable.get(), 2, my d_voiceName.get());
+		const integer irow = Table_searchColumn (theSpeechSynthesizerVoicePropertiesTable, 1, my d_voiceName.get());
 		Melder_require (irow != 0,
-			U": Cannot find voice variant \"", my d_voiceName.get(), U"\".");
-		return Table_getStringValue_a (espeakdata_voices_propertiesTable.get(), irow, 1);
+			U": Cannot find voice \"", my d_voiceName.get(), U"\".");
+		return Table_getStringValue_a (theSpeechSynthesizerVoicePropertiesTable, irow, 5);
 	} catch (MelderError) {
 		Melder_throw (me, U": Cannot find voice code.");
 	}
@@ -384,12 +257,12 @@ static conststring32 SpeechSynthesizer_getVoiceCode (SpeechSynthesizer me) {
 autoSpeechSynthesizer SpeechSynthesizer_create (conststring32 languageName, conststring32 voiceName) {
 	try {
 		autoSpeechSynthesizer me = Thing_new (SpeechSynthesizer);
-		my d_synthesizerVersion = Melder_dup (ESPEAK_NG_VERSION);
+
 		my d_languageName = Melder_dup (languageName);
-		(void) SpeechSynthesizer_getLanguageCode (me.get());  // existence check
 		my d_voiceName = Melder_dup (voiceName);
-		(void) SpeechSynthesizer_getVoiceCode (me.get());  // existence check
-		my d_phonemeSet = Melder_dup (languageName);
+		my d_phonemeSetName = Melder_dup (languageName);
+		SpeechSynthesizer_checkAndRepairLanguageAndVoiceNames (me.get());
+
 		SpeechSynthesizer_setTextInputSettings (me.get(), SpeechSynthesizer_INPUT_TAGGEDTEXT, SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM);
 		SpeechSynthesizer_setSpeechOutputSettings (me.get(), 44100.0, 0.01, 1.0, 1.0, 175.0, SpeechSynthesizer_PHONEMECODINGS_IPA);
 		SpeechSynthesizer_setEstimateSpeechRateFromSpeech (me.get(), true);
@@ -592,7 +465,7 @@ static void IntervalTier_removeVeryShortIntervals (IntervalTier me) {
 	while (iint <= my intervals.size) {
 		const TextInterval ti = my intervals.at [iint];
 		if (almost_equal (ti -> xmin, ti -> xmax))
-			my intervals.removeItem (iint);
+			my intervals. removeItem (iint);
 		else
 			iint ++;
 	}
@@ -600,6 +473,9 @@ static void IntervalTier_removeVeryShortIntervals (IntervalTier me) {
 
 static autoTextGrid Table_to_TextGrid (Table me, conststring32 text, double xmin, double xmax) {
 	//Table_createWithColumnNames (0, L"time type type-t t-pos length a-pos sample id uniq");
+	//TRACE
+	if (Melder_isTracingLocally)
+		Table_list (me, false);
 	try {
 		const integer textLength = Melder_length (text);
 		const integer numberOfRows = my rows.size;
@@ -749,7 +625,7 @@ static void SpeechSynthesizer_generateSynthesisData (SpeechSynthesizer me, const
 		espeak_ng_ERROR_CONTEXT context = { 0 };
 		espeak_ng_STATUS status = espeak_ng_Initialize (& context);
 		Melder_require (status == ENS_OK,
-			U"Internal espeak error. ", status);
+			U"Internal eSpeak error. ", status);
 		if (my d_inputTextFormat == SpeechSynthesizer_INPUT_TAGGEDTEXT)
 			synth_flags |= espeakSSML;
 		if (my d_inputTextFormat != SpeechSynthesizer_INPUT_TEXTONLY)
@@ -773,16 +649,16 @@ static void SpeechSynthesizer_generateSynthesisData (SpeechSynthesizer me, const
 		const conststring32 voiceCode = SpeechSynthesizer_getVoiceCode (me);
 		
 		espeak_ng_SetVoiceByName (Melder_peek32to8 (Melder_cat (languageCode, U"+", voiceCode)));
-		const int wordGap_10ms = my d_wordGap * 100;   // espeak word gap is in units of 10 ms
+		const int wordGap_10ms = my d_wordGap * 100;   // eSpeak word gap is in units of 10 ms
 		espeak_ng_SetParameter (espeakWORDGAP, wordGap_10ms, 0);
 		espeak_ng_SetParameter (espeakCAPITALS, 0, 0);
 		espeak_ng_SetParameter (espeakPUNCTUATION, espeakPUNCT_NONE, 0);
 
 		status = espeak_ng_InitializeOutput (ENOUTPUT_MODE_SYNCHRONOUS, 2048, nullptr);
 		espeak_SetSynthCallback (synthCallback);
-		if (! Melder_equ (my d_phonemeSet.get(), my d_languageName.get())) {
-			const conststring32 phonemeCode = SpeechSynthesizer_getPhonemeCode (me);
-			const int index_phon_table_list = LookupPhonemeTable (Melder_peek32to8 (phonemeCode));
+		if (! Melder_equ (my d_phonemeSetName.get(), my d_languageName.get())) {
+			const conststring32 phonemeSetCode = SpeechSynthesizer_getPhonemeSetCode (me);
+			const int index_phon_table_list = LookupPhonemeTable (Melder_peek32to8 (phonemeSetCode));
 			if (index_phon_table_list > 0) {
 				voice -> phoneme_tab_ix = index_phon_table_list;
 				(void) DoVoiceChange(voice);
@@ -812,6 +688,12 @@ static void SpeechSynthesizer_generateSynthesisData (SpeechSynthesizer me, const
 
 autostring32 SpeechSynthesizer_getPhonemesFromText (SpeechSynthesizer me, conststring32 text, bool separateBySpaces) {
 	try {
+		/*
+			Clear the wave buffer.
+		*/
+		my d_wav. resize (0);
+		my d_numberOfSamples = my d_wav.size;   // maintain invariant
+
 		SpeechSynthesizer_generateSynthesisData (me, text);
 		const double dt = 1.0 / my d_internalSamplingFrequency;
 		const double tmin = 0.0, tmax = my d_wav.size * dt;
@@ -841,6 +723,7 @@ autostring32 SpeechSynthesizer_getPhonemesFromText (SpeechSynthesizer me, consts
 			} else
 				MelderString_append (& phonemes, phonemeLabel, (iint < numberOfIntervals ? phonemeSeparator : U"") );
 		}
+		//my d_events. reset();   // ppgb: this was not in the code, but is this in fact superflous?
 		return Melder_dup (phonemes.string);   // TODO: implement MelderString_move()
 	} catch (MelderError) {
 		Melder_throw (U"Phonemes not generated.");
@@ -849,19 +732,20 @@ autostring32 SpeechSynthesizer_getPhonemesFromText (SpeechSynthesizer me, consts
 
 autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, autoTextGrid *tg, autoTable *events) {
 	try {
+		/*
+			Clear the wave buffer.
+		*/
+		my d_wav. resize (0);
+		my d_numberOfSamples = my d_wav.size;   // maintain invariant
+
 		SpeechSynthesizer_generateSynthesisData (me, text);
 		autoSound thee = buffer_to_Sound (my d_wav.get(), my d_internalSamplingFrequency);
 
 		if (my d_samplingFrequency != my d_internalSamplingFrequency)
 			thee = Sound_resample (thee.get(), my d_samplingFrequency, 50);
-		my d_numberOfSamples = 0; // re-use the wav-buffer
 		if (tg) {
-			double xmin = Table_getNumericValue_a (my d_events.get(), 1, 1);
-			if (xmin > thy xmin)
-				xmin = thy xmin;
-			double xmax = Table_getNumericValue_a (my d_events.get(), my d_events -> rows.size, 1);
-			if (xmax < thy xmax)
-				xmax = thy xmax;
+			const double xmin = Melder_clippedRight (Table_getNumericValue_a (my d_events.get(), 1, 1), thy xmin);   // !
+			const double xmax = Melder_clippedLeft (thy xmax, Table_getNumericValue_a (my d_events.get(), my d_events -> rows.size, 1));   // !
 			autoTextGrid tg1 = Table_to_TextGrid (my d_events.get(), text, xmin, xmax);
 			*tg = TextGrid_extractPart (tg1.get(), thy xmin, thy xmax, 0);
 		}
@@ -874,6 +758,318 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, 
 	} catch (MelderError) {
 		espeak_Terminate ();
 		Melder_throw (U"SpeechSynthesizer: text not converted to Sound.");
+	}
+}
+
+static conststring32 get_wordAfterPrecursor_u8 (constvector<unsigned char> const& text8, conststring32 precursor) {
+	static char32 word [100];
+	/*
+		1. Find (first occurrence of) 'precursor' at the start of a line (with optional leading whitespace).
+		2. Get the words after 'precursor' (skip leading and trailing whitespace).
+	*/
+	autoMelderString regex;
+	const conststring32 text = Melder_peek8to32 (reinterpret_cast <const char *> (text8.asArgumentToFunctionThatExpectsZeroBasedArray()));
+	MelderString_append (& regex, U"^\\s*", precursor, U"\\s+");
+	char32 *p = nullptr;
+	const char32 *pmatch = strstr_regexp (text, regex.string);
+	if (pmatch) {
+		pmatch += Melder_length (precursor); // skip 'precursor'
+		while (*pmatch == U' ' || *pmatch == U'\t')
+			pmatch ++; // skip whitespace after 'precursor'
+		p = word;
+		char32 *p_end = p + 99;
+		while ((*p = *pmatch ++) && *p != U' ' && *p != U'\t' && *p != U'\n' && *p != U'\r' && p < p_end)
+			p ++;
+		*p = U'\0';
+		p = word;
+	}
+	return p;
+}
+
+static conststring32 get_stringAfterPrecursor_u8 (constvector<unsigned char> const& text8, conststring32 precursor) {
+	static char32 word [100];
+	/*
+		1. Find (first occurrence of) 'precursor' at the start of a line (with optional leading whitespace).
+		2. Get the words after 'precursor' (skip leading and trailing whitespace).
+	*/
+	autoMelderString regex;
+	const conststring32 text = Melder_peek8to32 (reinterpret_cast <const char *> (text8.asArgumentToFunctionThatExpectsZeroBasedArray()));
+	//const conststring32 text = Melder_peek8to32 ((const char *) & (text8.cells[1]));
+	MelderString_append (& regex, U"^\\s*", precursor, U"\\s+");
+	char32 *p = nullptr;
+	const char32 *pmatch = strstr_regexp (text, regex.string);
+	if (pmatch) {
+		pmatch += Melder_length (precursor); // skip 'precursor'
+		while (*pmatch == U' ' || *pmatch == U'\t')
+			pmatch ++; // skip whitespace after 'precursor'
+		//pmatch --;
+		p = word;
+		char32 *p_end = p + 99;
+		// also discard text after comment '//'
+		while ((*p = *pmatch ++) && *p != U'\n' && *p != U'\r' && *p != U'/' && *(p+1) != U'/' && p < p_end)
+			p ++; // copy to end of line
+		while (*p == U' ' || *p == U'\t' || *p == U'\n' || *p == U'\r')
+			p --; // remove trailing white space
+		*(++ p) = U'\0';
+		p = word;
+	}
+	return p;
+}
+
+/*
+	Four global singleton-references.
+	The four singletons that they refer to contain data,
+	are to be initialized once during start-up (i.e. during some `praat_xxx_init()`),
+	and are kept throughout program execution.
+*/
+Table theSpeechSynthesizerVoicePropertiesTable;
+Table theSpeechSynthesizerLanguagePropertiesTable;
+STRVEC theSpeechSynthesizerLanguageNames;
+STRVEC theSpeechSynthesizerVoiceNames;
+
+void classSpeechSynthesizer_initClass () {
+	try {
+		/*
+			Initialization is to take place only once.
+		*/
+		Melder_assert (! theSpeechSynthesizerVoicePropertiesTable);
+		Melder_assert (! theSpeechSynthesizerLanguagePropertiesTable);
+		Melder_assert (! theSpeechSynthesizerLanguageNames);
+		Melder_assert (! theSpeechSynthesizerVoiceNames);
+
+		(void) theEspeakPraatFileInMemorySet();   // create the singleton now (not strictly necessary)
+		{// scope
+			static autoTable me;   // singleton
+			constexpr conststring32 criterion = U"./data/lang/";   // 12 characters
+			constexpr integer criterionLength = Melder_length (criterion);
+			FileInMemorySet they = theEspeakPraatFileInMemorySet();
+			Melder_assert (they);
+			const integer numberOfMatches = FileInMemorySet_findNumberOfMatches_path (they, kMelder_string :: CONTAINS, criterion);
+			Melder_assert (numberOfMatches > 0);
+			const conststring32 columnNames [] = { U"language name", U"ISO 639 family/language code", U"(internal index)" };
+			me = Table_createWithColumnNames (numberOfMatches, ARRAY_TO_STRVEC (columnNames)); // old: Default English
+			integer irow = 0;
+			for (integer ifile = 1; ifile <= their size; ifile ++) {
+				const FileInMemory fim = their at [ifile];
+				if (Melder_stringMatchesCriterion (fim -> string.get(), kMelder_string :: CONTAINS, criterion, true)) {
+					irow ++;
+					const char32 *word = get_stringAfterPrecursor_u8 (fim -> d_data.get(), U"name");
+					Table_setStringValue (me.get(), irow, 1, ( word ? word : & fim -> string [criterionLength] ));
+					Table_setStringValue (me.get(), irow, 2, & fim -> string [criterionLength]);
+					Table_setNumericValue (me.get(), irow, 3, ifile);
+				}
+			}
+			Melder_assert (irow == numberOfMatches);
+			const conststring32 sorters [] = { U"language name" };
+			Table_sortRows (me.get(), ARRAY_TO_STRVEC (sorters));
+			theSpeechSynthesizerLanguagePropertiesTable = me.get();
+		}
+		{// scope
+			static autoTable me;   // singleton
+			constexpr conststring32 criterion = U"/voices/!v/";
+			FileInMemorySet they = theEspeakPraatFileInMemorySet();
+			const integer numberOfMatches = FileInMemorySet_findNumberOfMatches_path (they, kMelder_string :: CONTAINS, criterion);
+			const conststring32 columnNames [] = { U"voice name", U"gender", U"age", U"variant", U"(internal name)", U"(internal index)" };
+			me = Table_createWithColumnNames (numberOfMatches, ARRAY_TO_STRVEC (columnNames));
+			integer irow = 0;
+			for (integer ifile = 1; ifile <= their size; ifile ++) {
+				const FileInMemory fim = their at [ifile];
+				if (Melder_stringMatchesCriterion (fim -> string.get(), kMelder_string :: CONTAINS, criterion, true)) {
+					irow ++;
+					const char32 *name = get_stringAfterPrecursor_u8 (fim -> d_data.get(), U"name");
+					// The first character of name must be upper case
+					if (name) {
+						autoMelderString capitalFirst;
+						MelderString_copy (& capitalFirst, name); // we cannot modify original
+						capitalFirst.string [0] = Melder_toUpperCase (name [0]);
+						Table_setStringValue (me.get(), irow, 1, capitalFirst.string);
+					} else {
+						Table_setStringValue (me.get(), irow, 1, str32rchr (fim -> string.get(), U'/') + 1);
+					}
+					conststring32 word = get_wordAfterPrecursor_u8 (fim -> d_data.get(), U"gender");
+					Table_setStringValue (me.get(), irow, 2, (word ? word : U"0"));
+					word = get_wordAfterPrecursor_u8 (fim -> d_data.get(), U"age");
+					Table_setStringValue (me.get(), irow, 3, (word ? word : U"0"));
+					word = get_stringAfterPrecursor_u8 (fim -> d_data.get(), U"variant");
+					Table_setStringValue (me.get(), irow, 4, (word ? word : U"0"));
+					Table_setStringValue (me.get(), irow, 5, str32rchr (fim -> string.get(), U'/') + 1);
+					Table_setNumericValue (me.get(), irow, 6, ifile);
+				}
+			}
+			Melder_assert (irow == numberOfMatches);
+			const conststring32 sorters [] = { U"voice name" };
+			Table_sortRows (me.get(), ARRAY_TO_STRVEC (sorters));
+			theSpeechSynthesizerVoicePropertiesTable = me.get();
+		}
+		{// scope
+			static autoSTRVEC list;   // singleton
+			list = Table_getAllTextsInColumn (theSpeechSynthesizerLanguagePropertiesTable, 1);
+			theSpeechSynthesizerLanguageNames = list.get();
+		}
+		{// scope
+			static autoSTRVEC list;   // singleton
+			list = Table_getAllTextsInColumn (theSpeechSynthesizerVoicePropertiesTable, 1);
+			theSpeechSynthesizerVoiceNames = list.get();
+		}
+	} catch (MelderError) {
+		Melder_crash (U"eSpeak-Praat initialization not performed.");
+	}
+}
+
+void SpeechSynthesizer_checkAndRepairLanguageAndVoiceNames (SpeechSynthesizer me) {
+	const bool languageAndPhonemeSetAreIdentical = Melder_equ (my d_languageName.get(), my d_phonemeSetName.get());
+
+	/*
+		Changes to the language name.
+	*/
+	{// scope
+		bool languageNameHasBeenRepaired = false;
+		integer languageIndex = NUMfindFirst (theSpeechSynthesizerLanguageNames, my d_languageName.get());
+		if (languageIndex == 0) {   // not found
+			if (my d_languageName [0] >= U'a' && my d_languageName [0] <= U'z') {   // lower case?
+				my d_languageName [0] -= 32;   // try upper case instead
+				languageIndex = NUMfindFirst (theSpeechSynthesizerLanguageNames, my d_languageName.get());
+				if (languageIndex > 0) {   // FOUND
+					languageNameHasBeenRepaired = true;
+					if (languageAndPhonemeSetAreIdentical)
+						my d_phonemeSetName [0] -= 32;   // make the same change to the phoneme set name as to the language name
+				} else
+					my d_languageName [0] += 32;   // revert to lower case
+			} else if (my d_languageName [0] >= U'A' && my d_languageName [0] <= U'Z') {   // upper case?
+				my d_languageName [0] += 32;   // try lower case instead
+				languageIndex = NUMfindFirst (theSpeechSynthesizerLanguageNames, my d_languageName.get());
+				if (languageIndex > 0) {   // FOUND
+					languageNameHasBeenRepaired = true;
+					if (languageAndPhonemeSetAreIdentical)
+						my d_phonemeSetName [0] += 32;   // make the same change to the phoneme set name as to the language name
+				} else
+					my d_languageName [0] -= 32;   // revert to upper case
+			}
+			if (! languageNameHasBeenRepaired) {   // the case change didn't help
+				/*
+					The user could have tried an eSpeak-internal family/language code, or just a language code without family.
+				*/
+				Table table = theSpeechSynthesizerLanguagePropertiesTable;
+				for (integer irow = 1; irow <= table -> rows.size; irow ++) {
+					conststring32 familyLanguageCode = Table_getStringValue_a (table, irow, 2);
+					const char32 *slashPosition = str32rchr (familyLanguageCode, U'/');
+					conststring32 languageCode = ( slashPosition ? slashPosition + 1 : familyLanguageCode );
+					if (Melder_equ (my d_languageName.get(), familyLanguageCode) || Melder_equ (my d_languageName.get(), languageCode)) {   // FOUND
+						my d_languageName = Melder_dup (Table_getStringValue_a (table, irow, 1));
+						languageNameHasBeenRepaired = true;
+						if (languageAndPhonemeSetAreIdentical)
+							my d_phonemeSetName = Melder_dup (my d_languageName.get());
+						break;
+					}
+				}
+			}
+			if (! languageNameHasBeenRepaired) {   // neither the case change nor the (family/)language code helped
+				if (Melder_equ (my d_languageName.get(), U"Default") || Melder_equ (my d_languageName.get(), U"English")) {
+					my d_languageName = Melder_dup (U"English (Great Britain)");
+					languageNameHasBeenRepaired = true;
+					if (languageAndPhonemeSetAreIdentical)
+						my d_phonemeSetName = Melder_dup (my d_languageName.get());
+				}
+			}
+			if (! languageNameHasBeenRepaired)   // nothing helped
+				Melder_throw (U"Unknown language “", my d_languageName.get(), U"”.\n"
+						"If you think that Praat should know this language, write to the authors (paul.boersma@uva.nl).");
+		}
+	}
+
+	/*
+		Changes to the voice name.
+	*/
+	{// scope
+		bool voiceNameHasBeenRepaired = false;
+		integer voiceIndex = NUMfindFirst (theSpeechSynthesizerVoiceNames, my d_voiceName.get());
+		if (voiceIndex == 0) {   // not found
+			if (my d_voiceName [0] >= U'a' && my d_voiceName [0] <= U'z') {   // lower case?
+				my d_voiceName [0] -= 32;   // try upper case instead
+				voiceIndex = NUMfindFirst (theSpeechSynthesizerVoiceNames, my d_voiceName.get());
+				if (voiceIndex > 0) {   // FOUND
+					voiceNameHasBeenRepaired = true;
+				} else
+					my d_voiceName [0] += 32;   // revert to lower case
+			} else if (my d_voiceName [0] >= U'A' && my d_voiceName [0] <= U'Z') {   // upper case?
+				my d_voiceName [0] += 32;   // try lower case instead
+				voiceIndex = NUMfindFirst (theSpeechSynthesizerVoiceNames, my d_voiceName.get());
+				if (voiceIndex > 0) {   // FOUND
+					voiceNameHasBeenRepaired = true;
+				} else
+					my d_voiceName [0] -= 32;   // revert to upper case
+			}
+			if (! voiceNameHasBeenRepaired) {   // the case change didn't help
+				if (Melder_equ (my d_voiceName.get(), U"default")) {
+					my d_voiceName = Melder_dup (U"Male1");   // as in a very early version of eSpeak
+					voiceNameHasBeenRepaired = true;
+				} else if (my d_voiceName [0] == U'f' && my d_voiceName [1] >= U'1' && my d_voiceName [1] <= '5' && my d_voiceName [2] == U'\0') {
+					my d_voiceName = Melder_dup (Melder_cat (U"Female", my d_voiceName [1]));   // e.g. change "f4" to "Female4"
+					voiceNameHasBeenRepaired = true;
+				}
+			}
+			if (! voiceNameHasBeenRepaired)   // nothing helped
+				Melder_throw (U"Unknown voice “", my d_voiceName.get(), U"”.\n"
+						"If you think that Praat should know this voice, write to the authors (paul.boersma@uva.nl).");
+		}
+	}
+
+	/*
+		If language name and phoneme set name were identical to start with,
+		then any change in the language name have already been applied to the phoneme set name.
+		So we have to change the phoneme set name only if it is independent from the language name.
+	*/
+	if (languageAndPhonemeSetAreIdentical)
+		return;
+
+	/*
+		Changes to the phoneme set name.
+	*/
+	{// scope
+		bool phonemeSetNameHasBeenRepaired = false;
+		integer languageIndex = NUMfindFirst (theSpeechSynthesizerLanguageNames, my d_phonemeSetName.get());
+		if (languageIndex == 0) {   // not found
+			if (my d_phonemeSetName [0] >= U'a' && my d_phonemeSetName [0] <= U'z') {   // lower case?
+				my d_phonemeSetName [0] -= 32;   // try upper case instead
+				languageIndex = NUMfindFirst (theSpeechSynthesizerLanguageNames, my d_phonemeSetName.get());
+				if (languageIndex > 0) {   // FOUND
+					phonemeSetNameHasBeenRepaired = true;
+				} else
+					my d_phonemeSetName [0] += 32;   // revert to lower case
+			} else if (my d_phonemeSetName [0] >= U'A' && my d_phonemeSetName [0] <= U'Z') {   // upper case?
+				my d_phonemeSetName [0] += 32;   // try lower case instead
+				languageIndex = NUMfindFirst (theSpeechSynthesizerLanguageNames, my d_phonemeSetName.get());
+				if (languageIndex > 0) {   // FOUND
+					phonemeSetNameHasBeenRepaired = true;
+				} else
+					my d_phonemeSetName [0] -= 32;   // revert to upper case
+			}
+			if (! phonemeSetNameHasBeenRepaired) {   // the case change didn't help
+				/*
+					The user could have tried an eSpeak-internal family/language code.
+				*/
+				Table table = theSpeechSynthesizerLanguagePropertiesTable;
+				for (integer irow = 1; irow <= table -> rows.size; irow ++) {
+					conststring32 familyLanguageCode = Table_getStringValue_a (table, irow, 2);
+					const char32 *slashPosition = str32rchr (familyLanguageCode, U'/');
+					conststring32 languageCode = ( slashPosition ? slashPosition + 1 : familyLanguageCode );
+					if (Melder_equ (my d_phonemeSetName.get(), familyLanguageCode) || Melder_equ (my d_phonemeSetName.get(), languageCode)) {   // FOUND
+						my d_phonemeSetName = Melder_dup (Table_getStringValue_a (table, irow, 1));
+						phonemeSetNameHasBeenRepaired = true;
+						break;
+					}
+				}
+			}
+			if (! phonemeSetNameHasBeenRepaired) {   // neither the case change nor the (family/)language code helped
+				if (Melder_equ (my d_phonemeSetName.get(), U"Default") || Melder_equ (my d_phonemeSetName.get(), U"English")) {
+					my d_phonemeSetName = Melder_dup (U"English (Great Britain)");
+					phonemeSetNameHasBeenRepaired = true;
+				}
+			}
+			if (! phonemeSetNameHasBeenRepaired)   // nothing helped
+				Melder_throw (U"Unknown language “", my d_phonemeSetName.get(), U"”.\n"
+						"If you think that Praat should know this language, write to the authors (paul.boersma@uva.nl).");
+		}
 	}
 }
 

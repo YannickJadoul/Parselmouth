@@ -45,12 +45,12 @@
 Thing_implement (TextGridTierNavigator, Function, 0);
 
 static integer IntervalTier_getSize (Function tier) {
-	IntervalTier me = reinterpret_cast<IntervalTier> (tier);
+	IntervalTier me = static_cast <IntervalTier> (tier);
 	return my intervals.size;
 }
 
 static double IntervalTier_getStartTime (Function tier, integer index) {
-	IntervalTier me = reinterpret_cast<IntervalTier> (tier);
+	IntervalTier me = static_cast <IntervalTier> (tier);
 	if (index < 1 || index > my intervals.size)
 		return undefined;
 	TextInterval interval = my intervals.at [index];
@@ -58,7 +58,7 @@ static double IntervalTier_getStartTime (Function tier, integer index) {
 }
 	
 static double IntervalTier_getEndTime (Function tier, integer index) {
-	IntervalTier me = reinterpret_cast<IntervalTier> (tier);
+	IntervalTier me = static_cast <IntervalTier> (tier);
 	if (index < 1 || index > my intervals.size)
 		return undefined;
 	TextInterval interval = my intervals.at [index];
@@ -66,7 +66,7 @@ static double IntervalTier_getEndTime (Function tier, integer index) {
 }
 	
 static conststring32 IntervalTier_getLabel (Function tier, integer index) {
-	IntervalTier me = reinterpret_cast<IntervalTier> (tier);
+	IntervalTier me = static_cast <IntervalTier> (tier);
 	if (index < 1 || index > my intervals.size)
 		return U"-- undefined --";
 	TextInterval interval = my intervals.at [index];
@@ -74,12 +74,12 @@ static conststring32 IntervalTier_getLabel (Function tier, integer index) {
 }
 
 static integer TextTier_getSize (Function tier) {
-	TextTier me = reinterpret_cast<TextTier> (tier);
+	TextTier me = static_cast <TextTier> (tier);
 	return my points.size;
 }
 
 static double TextTier_getStartTime (Function tier, integer index) {
-	TextTier me = reinterpret_cast<TextTier> (tier);
+	TextTier me = static_cast <TextTier> (tier);
 	if (index < 1 || index > my points.size)
 		return undefined;
 	TextPoint point = my points.at [index];
@@ -87,7 +87,7 @@ static double TextTier_getStartTime (Function tier, integer index) {
 }
 
 static double TextTier_getEndTime (Function tier, integer index) {
-	TextTier me = reinterpret_cast<TextTier> (tier);
+	TextTier me = static_cast <TextTier> (tier);
 	if (index < 1 || index > my points.size)
 		return undefined;
 	TextPoint point = my points.at [index];
@@ -95,7 +95,7 @@ static double TextTier_getEndTime (Function tier, integer index) {
 }
 
 static conststring32 TextTier_getLabel (Function tier, integer index) {
-	TextTier me = reinterpret_cast<TextTier> (tier);
+	TextTier me = static_cast <TextTier> (tier);
 	if (index < 1 || index > my points.size)
 		return U"-- undefined --";
 	TextPoint point = my points.at [index];
@@ -479,7 +479,7 @@ void TextGridTierNavigator_getMatchDomain (TextGridTierNavigator me, kMatchDomai
 		startTime = my v_getStartTime (afterIndex);
 		endTime = my v_getEndTime (afterIndex);
 	} else
-		Melder_fatal (U"Unknown domain ", (integer) matchDomain);
+		Melder_crash (U"Unknown domain ", (integer) matchDomain);
 	if (out_startTime)
 		*out_startTime = startTime;
 	if (out_endTime)

@@ -2,11 +2,11 @@
 #define _praatM_h_
 /* praatM.h
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -262,14 +262,29 @@
 		for (int ienum = (int) EnumeratedType::MIN; ienum <= (int) EnumeratedType::MAX; ienum ++) \
 			UiForm_addOption (_dia_.get(), EnumeratedType##_getText ((enum EnumeratedType) ienum));
 
+/*
+	LIST will throw if the supplied string is not in the list.
+*/
 #define LIST(integerVariable, labelText, strings, defaultOptionNumber)  \
 		static integer integerVariable; \
 		UiForm_addList (_dia_.get(), & integerVariable, nullptr, U"" #integerVariable, \
 				labelText, strings, defaultOptionNumber);
 
-#define LISTSTR(stringVariable, labelText, numberOfStrings, strings, defaultOptionNumber)  \
-		static char32 *stringVariable; \
+/*
+	LISTSTR will throw if the supplied string is not in the list.
+*/
+#define LISTSTR(stringVariable, labelText, strings, defaultOptionNumber)  \
+		static conststring32 stringVariable; \
 		UiForm_addList (_dia_.get(), nullptr, & stringVariable, U"" #stringVariable, \
+				labelText, strings, defaultOptionNumber);
+
+/*
+	If the supplied string is not in the list, LISTNUMSTR will return 0 as well as the supplied string, for later handling.
+*/
+#define LISTNUMSTR(integerVariable, stringVariable, labelText, strings, defaultOptionNumber)  \
+		static integer integerVariable; \
+		static conststring32 stringVariable; \
+		UiForm_addList (_dia_.get(), & integerVariable, & stringVariable, U"" #stringVariable, \
 				labelText, strings, defaultOptionNumber);
 
 #define FILE_IN(labelText)  \
@@ -299,6 +314,9 @@
 
 #define SET_BOOLEAN(booleanVariable, booleanValue)  \
 			UiForm_setBoolean (_dia_.get(), & booleanVariable, booleanValue);
+
+#define SET_OPTION(optionVariable, optionValue)  \
+			UiForm_setOption (_dia_.get(), & optionVariable, optionValue);
 
 #define SET_STRING(stringVariable, stringValue)  \
 			UiForm_setString (_dia_.get(), & stringVariable, stringValue);
@@ -404,9 +422,9 @@
 
 #define FORM_SAVE(proc,title,help,ext)  \
 	extern "C" void proc (UiForm sendingForm, integer, structStackel args [], conststring32 sendingString, \
-			Interpreter, conststring32 invokingButtonTitle, bool, void *okClosure, Editor optionalEditor); \
+			Interpreter interpreter, conststring32 invokingButtonTitle, bool, void *okClosure, Editor optionalEditor); \
 	void proc (UiForm _sendingForm_, integer _narg_, Stackel _args_, conststring32 _sendingString_, \
-			Interpreter, conststring32 _invokingButtonTitle_, bool, void *_okClosure_, Editor _optionalEditor_) \
+			[[maybe_unused]] Interpreter _interpreter_, conststring32 _invokingButtonTitle_, bool, void *_okClosure_, Editor _optionalEditor_) \
 	{ \
 		{ static autoUiForm _dia_; \
 		if (! _dia_) \
@@ -1016,6 +1034,7 @@
 	} \
 	if (history) \
 		praat_new (history.move(), my name.get()); \
+	praat_dataChanged (me);   /* No exception: data fully changed. */ \
 	MODIFY_END__
 
 #define MODIFY_FIRST_OF_ONE_AND_ONE_AND_ONE(klas1,klas2,klas3)  \
@@ -1149,6 +1168,12 @@
 #define CONVERT_TWO_AND_ONE_TO_ONE(klas1,klas2)  \
 	FIND_TWO_AND_ONE (klas1,klas2)
 #define CONVERT_TWO_AND_ONE_TO_ONE_END(...)  \
+	TO_ONE__ (__VA_ARGS__) \
+	CONVERT_END__
+
+#define CONVERT_ONE_AND_TWO_TO_ONE(klas1,klas2)  \
+	FIND_ONE_AND_TWO (klas1,klas2)
+#define CONVERT_ONE_AND_TWO_TO_ONE_END(...)  \
 	TO_ONE__ (__VA_ARGS__) \
 	CONVERT_END__
 

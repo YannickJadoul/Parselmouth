@@ -458,7 +458,7 @@ autoMatrix Matrix_readFromIDXFormatFile (MelderFile file) {
 		The 4-th byte encodes the number of dimensions (indices) of the array: 1 for vectors, 2 for matrices....
 
 		The numbers of elements in each dimension (for a matrix: number of rows and number of columns)
-		are 4-byte integers (MSB first, big endian, as in most non-Intel processors).
+		are 4-byte integers (MSB first, big-endian, as in most non-Intel processors).
 
 		The data is stored like in a C array, i.e. the index in the last dimension changes the fastest.
 

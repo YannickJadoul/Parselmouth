@@ -1,6 +1,6 @@
 /* LPC_and_Polynomial.cpp
  *
- * Copyright (C) 1994-2020 David Weenink
+ * Copyright (C) 1994-2020, 2025 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +23,28 @@
 #include "LPC_and_Polynomial.h"
 
 autoPolynomial LPC_Frame_to_Polynomial (constLPC_Frame me) {
-	Melder_assert (my nCoefficients == my a.size); // check invariant
 	const integer numberOfPolynomialCoefficients = my nCoefficients + 1;
 	autoPolynomial thee = Polynomial_create (-1, 1, my nCoefficients);
+	LPC_Frame_into_Polynomial (me, thee.get());
 	for (integer icof = 1; icof <= my nCoefficients; icof ++)
 		thy coefficients [icof] = my a [numberOfPolynomialCoefficients - icof];
 	thy coefficients [numberOfPolynomialCoefficients] = 1.0;
 	return thee;
+}
+
+void LPC_Frame_into_Polynomial (constLPC_Frame me, mutablePolynomial p) {
+	/*
+		The lpc coefficients are a [1..nCoefficients]. a[0] == 1 is not stored.
+		For the polynomial we therefore need one extra coefficient. 
+		Since the a's are stored in reverse order in the polynomial and a[0]
+		represents the highest power (==degree) it is stored into the last position
+		of the polynomial.
+	*/
+	const integer numberOfPolynomialCoefficientsNeeded = my nCoefficients + 1;
+	p -> resize (numberOfPolynomialCoefficientsNeeded);
+	for (integer icof = 1; icof <= my nCoefficients; icof ++)
+		p -> coefficients [icof] = my a [numberOfPolynomialCoefficientsNeeded - icof];
+	p -> coefficients [numberOfPolynomialCoefficientsNeeded] = 1.0;
 }
 
 autoPolynomial LPC_to_Polynomial (constLPC me, double time) {

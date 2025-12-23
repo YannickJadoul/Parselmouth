@@ -1,10 +1,10 @@
 /* Graphics.cpp
  *
- * Copyright (C) 1992-2008,2010-2024 Paul Boersma
+ * Copyright (C) 1992-2008,2010-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -102,12 +102,12 @@ void Graphics_init (Graphics me, int resolution) {
 	} else if (resolution == 1200) {
 		my resolutionNumber = kGraphics_resolution::DPI_1200;
 	} else {
-		Melder_fatal (U"Unsupported resolution ", resolution, U" dpi.");
+		Melder_crash (U"Unsupported resolution ", resolution, U" dpi.");
 	}
 	my d_x1DC = my d_x1DCmin = 0;
-	my d_x2DC = my d_x2DCmax = 32767;
+	my d_x2DC = my d_x2DCmax = 324000;   // enough for 60-inch wide canvases at 5400 dpi
 	my d_y1DC = my d_y1DCmin = 0;
-	my d_y2DC = my d_y2DCmax = 32767;
+	my d_y2DC = my d_y2DCmax = 324000;   // enough for 60-inch high canvases at 5400 dpi
 	my d_x1WC = my d_x1NDC = my d_x1wNDC = 0.0;
 	my d_x2WC = my d_x2NDC = my d_x2wNDC = 1.0;
 	my d_y1WC = my d_y1NDC = my d_y1wNDC = 0.0;

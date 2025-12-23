@@ -2,11 +2,11 @@
 #define _melder_int_h_
 /* melder_int.h
  *
- * Copyright (C) 1992-2021,2023,2024 Paul Boersma
+ * Copyright (C) 1992-2021,2023-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -61,13 +61,29 @@ using uint64 = uint64_t;
 	#define INT54_MAX   9007199254740991LL
 	#define INT54_MIN  -9007199254740991LL
 #endif
+/*
+	The maximum number of bytes that can be allocated in one stroke.
+	The number is conveniently smaller than INTEGER_MAX,
+	which saves us a lot of hassle with the `uinteger` type.
+	On 32-bit machines, this is 2 GB (a bit less than 2^31),
+	and on 64-bit machines it's 8 PB (a bit less than 2^53);
+	in both cases, an allocation of this size is very likely to fail anyway.
+	Both numbers are conveniently smaller than INT54_MAX,
+	so that they can be represented easily in a "double".
+	A final desirable property of the 64-bit version is that 64-bit
+	random sequences of zeroes and ones have a probability of less than 0.1 percent
+	to pass the "less than MAXIMUM_ALLOCATION_SIZE" test.
+*/
+#define MAXIMUM_ALLOCATION_SIZE_32  2'000'000'000
+#define MAXIMUM_ALLOCATION_SIZE_64  8'000'000'000'000'000LL
+#define MAXIMUM_ALLOCATION_SIZE  ( sizeof (integer) == 4 ? MAXIMUM_ALLOCATION_SIZE_32 : MAXIMUM_ALLOCATION_SIZE_64 )
 
 inline bool Melder_integersAreBigEndian () {
 	int32_t dummy = 1;
 	return * (char *) & dummy == '\0';
 }
 
-inline integer operator"" _integer (unsigned long long value) { return integer (value); }
+inline integer operator""_integer (unsigned long long value) { return integer (value); }
 
 /*
 	We assume that the types "integer" and "uinteger" are both large enough to contain
@@ -75,15 +91,15 @@ inline integer operator"" _integer (unsigned long long value) { return integer (
 	This entails that we assume that these types can be converted to each other without bounds checking.
 	We therefore crash Praat if this second assumption is not met.
 */
-inline uinteger integer_to_uinteger (integer n) {
+inline uinteger integer_to_uinteger_a (integer n) {
 	Melder_assert (n >= 0);
 	return (uinteger) n;
 }
-inline integer uinteger_to_integer (uinteger n) {
+inline integer uinteger_to_integer_a (uinteger n) {
 	Melder_assert (n <= INTEGER_MAX);
 	return (integer) n;
 }
-inline int32 integer_to_int32 (integer n) {
+inline int32 integer_to_int32_a (integer n) {
 	Melder_assert (n >= INT32_MIN && n <= INT32_MAX);
 	return (int32) n;
 }
@@ -98,20 +114,20 @@ inline integer Melder_iroundUpToPowerOfTwo (integer n) {
 	n |= n >> 4;   // copy the four highest 1-bits to their right
 	n |= n >> 8;   // copy the eight highest 1-bits to their right
 	n |= n >> 16;   // copy the 16 highest 1-bits to their right
-	if (sizeof (integer) > 4)
+	if constexpr (sizeof (integer) > 4)
 		n |= (n >> 16) >> 16;   // copy the 32 highest 1-bits to their right ("n >> 32" would give a compiler warning on 32-bit platforms)
 	n += 1;
 	return n;
 }
 
 inline integer integer_abs (integer n) {
-	// TODO AFTER PRAAT UPDATE
-	Melder_assert (sizeof (integer) == sizeof (long) || sizeof (integer) == sizeof (long long));
-	return std::abs(n);
-	/* if (sizeof (integer) == sizeof (long))
+	static_assert (sizeof (integer) == sizeof (long) || sizeof (integer) == sizeof (long long));
+	if constexpr (sizeof (integer) == sizeof (long))
 		return labs ((long_not_integer) n);
-	else // sizeof (integer) == sizeof (long long)
-		return llabs (n); */
+	else {
+		Melder_assert (sizeof (integer) == sizeof (long long));
+		return llabs (n);
+	}
 }
 
 struct MelderIntegerRange {
@@ -222,6 +238,18 @@ public:
 constexpr kleenean kleenean_UNKNOWN = kleenean (-1);
 constexpr kleenean kleenean_NO = kleenean (0);
 constexpr kleenean kleenean_YES = kleenean (1);
+
+constexpr integer factorial_int53_MAXIMUM_ARGUMENT = 18;
+constexpr int64 factorial_int53 [1+factorial_int53_MAXIMUM_ARGUMENT] = {
+	1, 1, 2, 6, 24, 120, 720, 5'040, 40'320, 362'880, 3'628'800, 39'916'800, 479'001'600,
+	6'227'020'800, 87'178'291'200, 1'307'674'368'000, 20'922'789'888'000, 355'687'428'096'000, 6'402'373'705'728'000
+};
+constexpr integer factorial_int64_MAXIMUM_ARGUMENT = 20;
+constexpr int64 factorial_int64 [1+factorial_int64_MAXIMUM_ARGUMENT] = {
+	1, 1, 2, 6, 24, 120, 720, 5'040, 40'320, 362'880, 3'628'800, 39'916'800, 479'001'600,
+	6'227'020'800, 87'178'291'200, 1'307'674'368'000, 20'922'789'888'000, 355'687'428'096'000, 6'402'373'705'728'000,
+	121'645'100'408'832'000, 2'432'902'008'176'640'000
+};
 
 /* End of file melder_int.h */
 #endif

@@ -1,6 +1,6 @@
 /* LineSpectralFrequencies_def.h
  *
- * Copyright (C) 2016-2020 David Weenink
+ * Copyright (C) 2016,2018,2020 David Weenink, 2019,2022,2025 Paul Boersma
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #define ooSTRUCT LineSpectralFrequencies_Frame
 oo_DEFINE_STRUCT (LineSpectralFrequencies_Frame)
 
-	oo_INT (numberOfFrequencies)
+	oo_INTEGER16 (numberOfFrequencies)
 	oo_VEC (frequencies, numberOfFrequencies)
 	
 oo_END_STRUCT (LineSpectralFrequencies_Frame)
@@ -32,7 +32,7 @@ oo_END_STRUCT (LineSpectralFrequencies_Frame)
 oo_DEFINE_CLASS (LineSpectralFrequencies, Sampled)
 
 	oo_DOUBLE (maximumFrequency)
-	oo_INT (maximumNumberOfFrequencies)
+	oo_INTEGER16 (maximumNumberOfFrequencies)
 	oo_STRUCTVEC (LineSpectralFrequencies_Frame, d_frames, nx)
 
 	#if oo_DECLARING
@@ -42,7 +42,7 @@ oo_DEFINE_CLASS (LineSpectralFrequencies, Sampled)
 			override { return U"frame number"; }
 		conststring32 v_getNxText () const
 			override { return U"the number of frames"; }
-	#endif
+	#endif // oo_DECLARING
 
 oo_END_CLASS (LineSpectralFrequencies)
 #undef ooSTRUCT

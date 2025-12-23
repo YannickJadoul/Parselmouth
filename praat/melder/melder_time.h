@@ -2,11 +2,11 @@
 #define _melder_time_h_
 /* melder_time.h
  *
- * Copyright (C) 1992-2016,2018,2020,2021 Paul Boersma
+ * Copyright (C) 1992-2016,2018,2020,2021,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -23,6 +23,20 @@ double Melder_stopwatch ();
 void Melder_sleep (double duration);
 
 double Melder_clock ();   // typically the number of seconds since system start-up, with microsecond precision
+
+class MelderStopwatch {
+	double _lastTime { 0.0 };
+public:
+	MelderStopwatch () {
+		our _lastTime = Melder_clock ();
+	}
+	double operator() () {
+		const double now = Melder_clock ();
+		const double timeElapsed = now - our _lastTime;
+		our _lastTime = now;
+		return timeElapsed;
+	}
+};
 
 autostring32 date_STR ();
 autostring32 date_utc_STR ();

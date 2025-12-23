@@ -105,13 +105,20 @@ void structGuiControl :: v_positionInForm (GuiObject widget, int left, int right
 		if ([widgetView isKindOfClass: [NSButton class]]) {
 			if (! [widgetView isKindOfClass: [NSPopUpButton class]]) {
 				/*
-				 * On Cocoa, NSButton views show up 12 pixels less wide and 5 pixels less high than their frame.
-				 * Compensate for this (undocumented?) Cocoa phenomenon.
-				 */
-				left -= 6;
-				width += 12;
-				bottom -= 5;
-				height += 5;
+					On Cocoa, NSButton views show up 12 pixels less wide and 5 pixels less high than their frame.
+					Compensate for this (undocumented?) Cocoa phenomenon.
+				*/
+				if (Melder_systemVersion < 260000) {
+					left -= 6;
+					width += 12;
+					bottom -= 5;
+					height += 5;
+				} else {
+					left -= 2;
+					width += 4;
+					bottom -= 2;
+					height += 4;
+				}
 			}
 		}
 		NSRect rect = NSMakeRect (left, bottom, width, height);

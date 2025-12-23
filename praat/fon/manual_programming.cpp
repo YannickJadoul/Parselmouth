@@ -1,10 +1,10 @@
 /* manual_programming.cpp
  *
- * Copyright (C) 1992-2010,2011,2013,2015-2023 Paul Boersma
+ * Copyright (C) 1992-2010,2011,2013,2015-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -483,7 +483,7 @@ and save the resulting TextGrid object as a text file with @@Save as text file..
 
 ################################################################################
 "Programming with Praat"
-© Paul Boersma 2023-04-09, 2024
+© Paul Boersma 2023-04-09, 2024, 2025
 
 You can extend the functionality of the Praat program
 by adding modules written in C or C++ to it. All of Praat's source code
@@ -520,18 +520,36 @@ To start extending Praat’s functionality, you can edit `main/main_Praat.cpp`.
 This example shows you how to create a very simple program with all the functionality
 of the Praat program, and a single bit more (namely an additional command in the New menu):
 `
-	#include "praatM.h"
+	#include "praatM.h"   // for macros such as DIRECT and INCLUDE_LIBRARY
 
-	DIRECT (HelloFromJane) {
+	DIRECT (INFO_HelloFromJane) {   // a macro to include commands without parameters
 		Melder_information (U"Hello, I am Jane.");
 	}
 
 	int main (int argc, char **argv) {
-		praat_init (U"Praat_Jane", argc, argv);
-		INCLUDE_LIBRARY (praat_uvafon_init)
-		praat_addMenuCommand (U"Objects", U"New", U"Hello from Jane...", nullptr, 0, DO_HelloFromJane);
+		praat_init (
+			U"Praat_Jane",   // the name of your app
+			U"1.2.01",   // the version of your app, as a string
+			1201,   // the version of your app, as a number
+			2025,   // the year of your app's version
+			9,   // the month of your app's version (here: September)
+			18,   // the day of your app's version (between 1 and 31)
+			U"jane.doe",   // the first part of your contact email address
+			U"univ.edu",   // the second part of your contact email address
+			argc,   // the number of command line arguments (0 if started from GUI)
+			argv   // the command line arguments (empty if started from GUI)
+		);
+		INCLUDE_LIBRARY (praat_uvafon_init)   // include all Praat functionality 
+		praat_addMenuCommand (
+			U"Objects",   // the window in which this command will appear
+			U"New",   // the menu under which this command will appear
+			U"Hello from Jane...",   // the title of the menu command
+			nullptr,   // to insert after another command (unused here)
+			0,   // the depth at which this command will appear (0 for top level)
+			INFO_HelloFromJane   // the command defined above
+		);
 		praat_run ();
-		return 0;
+		return 0;   // obligatory
 	}
 `
 5. Learning how to program

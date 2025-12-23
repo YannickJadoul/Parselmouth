@@ -1,6 +1,6 @@
 /* ManPages.cpp
  *
- * Copyright (C) 1996-2024 Paul Boersma
+ * Copyright (C) 1996-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -138,11 +138,12 @@ static conststring32 ManPage_Paragraph_extractLink (ManPage_Paragraph par, const
 				for (;;) {
 					if (*p == U'\0')
 						return nullptr;   // no more '@'
-					if (*p == U'`')
+					if (*p == U'`') {
 						if (p [1] == U'`')
 							p ++;   // jump over the first member of a double backquote
 						else
 							break;   // found the closing backquote
+					}
 					p ++;
 				}
 			}
@@ -519,6 +520,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 		}
 		/*
 			TODO: add:
+				Use Praat windows: Objects, Picture(?), Info, Demo(?)
 				Keywords:   ; lower case, separate by comma
 				Code chunk visibility: +   ; + (the default) or -
 				Text style language: praat   ; praat (the default), i.e. % # $ @ _ ^, or markdown, i.e. * ` ** [] <sub> <sup>
@@ -550,6 +552,13 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 		if (numberOfLeadingSpaces == 0 && Melder_startsWith (line, U"===")) {
 			if (previousParagraph)
 				previousParagraph -> type = kManPage_type::ENTRY;
+			line = MelderReadText_readLine (text);
+			if (! line)
+				return;
+			continue;
+		} else if (numberOfLeadingSpaces == 0 && Melder_startsWith (line, U"---")) {
+			if (previousParagraph)
+				previousParagraph -> type = kManPage_type::SUBHEADER;
 			line = MelderReadText_readLine (text);
 			if (! line)
 				return;
@@ -598,7 +607,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 				MelderString_append (& buffer_graphical, U"\t");
 				line += 2;
 				while (*line != U'\0') {
-					if (*line == U'|')
+					if (line [0] == U'|' && Melder_isHorizontalSpace (line [-1]) && (Melder_isHorizontalSpace (line [1]) || line [1] == U'\0'))
 						MelderString_appendCharacter (& buffer_graphical, U'\t');
 					else
 						MelderString_appendCharacter (& buffer_graphical, *line);
@@ -614,7 +623,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 				numberOfLeadingSpaces < 11 ? kManPage_type::DEFINITION2 :
 				kManPage_type::DEFINITION3
 			);
-			if (previousParagraph && (previousParagraph -> type == kManPage_type::NORMAL || previousParagraph -> type == kManPage_type::CAPTION))
+			if (previousParagraph && (previousParagraph -> type == kManPage_type::NORMAL || previousParagraph -> type == kManPage_type::CAPTION)) {
 				if (type == kManPage_type::DEFINITION)
 					previousParagraph -> type = kManPage_type::TERM;
 				else if (type == kManPage_type::DEFINITION1)
@@ -623,6 +632,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 					previousParagraph -> type = kManPage_type::TERM2;
 				else if (type == kManPage_type::DEFINITION3)
 					previousParagraph -> type = kManPage_type::TERM3;
+			}
 			line += 2;
 			Melder_skipHorizontalSpace (& line);
 			MelderString_append (& buffer_graphical, line);
@@ -664,7 +674,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 				}
 				ManPage_Paragraph par = page -> paragraphs. append ();
 				par -> type = kManPage_type::CODE;
-				par -> text = Melder_dup (buffer_graphicalCode. string).transfer();
+				par -> text = Melder_dup (buffer_graphicalCode.string).transfer();
 			} while (1);
 			MelderString_empty (& buffer_graphical);   // this makes sure that no actual SCRIPT (or VERBATIM) paragraph will be added
 		} else if (numberOfLeadingSpaces == 0 && line [0] == U'{') {
@@ -709,7 +719,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 					}
 					ManPage_Paragraph par = page -> paragraphs. append ();
 					par -> type = kManPage_type::CODE;
-					par -> text = Melder_dup (buffer_graphicalCode. string).transfer();
+					par -> text = Melder_dup (buffer_graphicalCode.string).transfer();
 				}
 				if (shouldShowOutput) {
 					/*
@@ -805,10 +815,10 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 			MelderString_append (& buffer_graphical, line);
 		}
 		ManPage_Paragraph par = nullptr;
-		if (buffer_graphical. string [0] != U'\0') {
+		if (buffer_graphical.string [0] != U'\0') {
 			par = page -> paragraphs. append ();
 			par -> type = type;
-			par -> text = Melder_dup (buffer_graphical. string). transfer();
+			par -> text = Melder_dup (buffer_graphical.string). transfer();
 			par -> width = width;
 			par -> height = height;
 		}
@@ -846,6 +856,7 @@ static void readOnePage_notebook (ManPages me, MelderReadText text) {
 					firstNonSpace == continuationLine && *firstNonSpace == U'`' && ! stringHasInk (firstNonSpace + 1) ||
 					firstNonSpace == continuationLine && *firstNonSpace == U'~' ||
 					Melder_startsWith (firstNonSpace, U"===") ||
+					Melder_startsWith (firstNonSpace, U"---") ||
 					*firstNonSpace == U'/' && firstNonSpace [1] == U'/' ||
 					*firstNonSpace == U'\0'
 				) {

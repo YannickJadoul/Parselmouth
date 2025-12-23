@@ -1,10 +1,10 @@
 /* praat_Sound.cpp
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -928,8 +928,19 @@ FORM (QUERY_ONE_FOR_REAL__old_Sound_getNearestZeroCrossing, U"Sound: Get nearest
 	OK
 DO
 	QUERY_ONE_FOR_REAL (Sound)
-		if (my ny > 1)
-			Melder_throw (U"Cannot determine a zero crossing for a stereo sound.");
+		/*
+			We are in an "old" version of this function,
+			so any error that we would want to post will not surface.
+			So we just post a warning instead.
+		*/
+		if (my ny > 1) {
+			static bool warningHasBeenPosted = false;
+			if (! warningHasBeenPosted) {
+				Melder_warning (U"(Sound: Get nearest zero crossing:) ", me, U" is a stereo sound. We’ll look for a zero crossing only in the first channel.\n"
+						"This message will not be repeated during this ", Melder_upperCaseAppName(), U" session.");
+				warningHasBeenPosted = true;
+			}
+		}
 		const double result = Sound_getNearestZeroCrossing (me, time, 1);
 	QUERY_ONE_FOR_REAL_END (U" seconds")
 }
@@ -1385,6 +1396,12 @@ DIRECT (MODIFY_Sound_subtractMean) {
 	MODIFY_EACH_END
 }
 
+DIRECT (MODIFY_Sound_shiftTimesToBetweenZeroAndPhysicalDuration) {
+	MODIFY_EACH (Sound)
+		Sound_shiftTimesToBetweenZeroAndPhysicalDuration (me);
+	MODIFY_EACH_END
+}
+
 FORM (CONVERT_EACH_TO_ONE__Sound_to_Manipulation, U"Sound: To Manipulation", U"Manipulation") {
 	POSITIVE (timeStep, U"Time step (s)", U"0.01")
 	POSITIVE (pitchFloor, U"Pitch floor (Hz)", U"75.0")
@@ -1832,7 +1849,7 @@ FORM (CONVERT_EACH_TO_ONE__Sound_to_Spectrogram, U"Sound: To Spectrogram", U"Sou
 	OK
 DO
 	CONVERT_EACH_TO_ONE (Sound)
-		autoSpectrogram result = Sound_to_Spectrogram (me, windowLength,
+		autoSpectrogram result = Sound_to_Spectrogram_e (me, windowLength,
 				maximumFrequency, timeStep, frequencyStep, windowShape, 8.0, 8.0);
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
@@ -2064,6 +2081,7 @@ FORM_SAVE (SAVE_ALL__Sound_saveAsSunAudioFile, U"Save as NeXT/Sun file", nullptr
 
 FORM_SAVE (SAVE_ALL__Sound_saveAsWavFile, U"Save as WAV file", nullptr, U"wav") {
 	SAVE_ALL_LISTED (Sound, SoundAndLongSoundList)
+		//Melder_checkTrust (_interpreter_, U"save the selected Sound object(s) to the WAV file\n", file);
 		LongSound_concatenate (list.get(), file, Melder_WAV, 16);
 	SAVE_ALL_LISTED_END
 }
@@ -2189,7 +2207,7 @@ static int recordFromFileProc (MelderFile file) {
 	if (last == melderSoundFromFile.get())
 		last = nullptr;
 	Melder_warningOff ();   // like "missing samples"
-	melderSoundFromFile = Data_readFromFile (file). static_cast_move<structSound>();
+	melderSoundFromFile = Data_readFromFile (file).static_cast_move <structSound>();
 	Melder_warningOn ();
 	if (! melderSoundFromFile)
 		return 0;
@@ -2470,6 +2488,7 @@ void praat_Sound_init () {
 		praat_addAction1 (classSound, 0, U"Formula (part)...", nullptr, 1, MODIFY_Sound_formula_part);
 		praat_addAction1 (classSound, 0, U"-- add & mul --", nullptr, 1, nullptr);
 		praat_addAction1 (classSound, 0, U"Add...", nullptr, 1, MODIFY_Sound_add);
+		praat_addAction1 (classSound, 0, U"Shift times to between zero and physical duration", U"Shift times to...", 3, MODIFY_Sound_shiftTimesToBetweenZeroAndPhysicalDuration);
 		praat_addAction1 (classSound, 0, U"Subtract mean", nullptr, 1, MODIFY_Sound_subtractMean);
 		praat_addAction1 (classSound, 0, U"Multiply...", nullptr, 1, MODIFY_Sound_multiply);
 		praat_addAction1 (classSound, 0, U"Multiply by window...", nullptr, 1, MODIFY_Sound_multiplyByWindow);

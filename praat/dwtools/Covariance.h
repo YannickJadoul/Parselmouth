@@ -28,7 +28,7 @@ Thing_define (Covariance, SSCP) {
 
 Collection_define (CovarianceList, OrderedOf, Covariance) {
 	SSCPList asSSCPList () {
-		return reinterpret_cast<SSCPList> (this);
+		return reinterpret_cast <SSCPList> (this);
 	}
 };
 

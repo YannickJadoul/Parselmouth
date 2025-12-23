@@ -25,6 +25,8 @@
 #include "mnemonics.h"
 #include "translate.h"
 
+#include "FileInMemory.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -205,7 +207,7 @@ void FreeVoiceList(void);
 extern int n_voices_list;
 #define N_VOICES_LIST  350
 extern espeak_VOICE *voices_list [N_VOICES_LIST];
-espeak_VOICE *ReadVoiceFile (FILE *f_in, const char *fname, int is_language_file);
+espeak_VOICE *ReadVoiceFile (FileInMemory f_in, const char *fname, int is_language_file);
 
 #ifdef __cplusplus
 }

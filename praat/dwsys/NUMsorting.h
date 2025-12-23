@@ -2,7 +2,7 @@
 #define _NUMsorting_h_
 /* NUMsorting.h
  *
- * Copyright (C) 2022 David Weenink
+ * Copyright (C) 2022,2025 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
  */
 
 #include "melder.h"
-#include "STRVEC.h"
 
 #include "strings_sorting_enums.h"
 
@@ -28,10 +27,10 @@
 
 	Algorithm follows p. 145 and 642 in:
 	Donald E. Knuth (1998): The art of computer programming. Third edition. Vol. 3: sorting and searching.
-		Boston: Addison-Wesley, printed may 2002.
-	Modification: there is no distinction between record and key and
+		Boston: Addison-Wesley, printed May 2002.
+	Modification: there is no distinction between record and key, and
 		Floyd's optimization (page 642) is used.
-	Sorts (inplace) an array a [1..n] into ascending order using the Heapsort algorithm,
+	Sorts (in place) an array a [1..n] into ascending order using the Heapsort algorithm,
 	while making the corresponding rearrangement of the companion
 	array b [1..n]. A characteristic of heapsort is that it does not conserve
 	the order of equals: e.g., the array 3,1,1,2 will be sorted as 1,1,2,3 and
@@ -126,38 +125,43 @@ void VECsort3_inplace (VEC const& a, INTVEC const& iv1, INTVEC const& iv2, bool 
 	the order is: v[2] <= v[4] <= v[20] <= ...
 */
 inline void INTVECindex_inout (INTVEC index, constINTVEC const& v) {
-	std::stable_sort (index.begin(), index.end(), [& v] (integer ix, integer iy)
-	 {
-		return v [ix] < v [iy];
-	 });
+	std::stable_sort (index.begin(), index.end(),
+		[& v] (integer ix, integer iy) {
+			return v [ix] < v [iy];
+		}
+	);
 }
 
 inline void INTVECindex_inout (INTVEC index, constVEC const& v) {
-	std::stable_sort (index.begin(), index.end(), [& v] (integer ix, integer iy)
-	{
-		return v [ix] < v [iy];
-	});
+	std::stable_sort (index.begin(), index.end(),
+		[& v] (integer ix, integer iy) {
+			return v [ix] < v [iy];
+		}
+	);
 }
 
 inline void INTVECindex_inout (INTVEC index, STRVEC const& v) {
-	std::stable_sort (index.begin(), index.end(), [& v] (integer ix, integer iy)
-	{
-		return Melder_cmp (v [ix], v [iy]) < 0;
-	});
+	std::stable_sort (index.begin(), index.end(),
+		[& v] (integer ix, integer iy) {
+			return Melder_cmp (v [ix], v [iy]) < 0;
+		}
+	);
 }
 
 inline void INTVECindex_inout (INTVEC index, constSTRVEC const& v) {
-	std::stable_sort (index.begin(), index.end(), [& v] (integer ix, integer iy)
-	{
-		return Melder_cmp (v [ix], v [iy]) < 0;
-	});
+	std::stable_sort (index.begin(), index.end(),
+		[& v] (integer ix, integer iy) {
+			return Melder_cmp (v [ix], v [iy]) < 0;
+		}
+	);
 }
 
 inline void INTVECindex_numberAware_inout (INTVEC const& index, constSTRVEC const& v) {
-	std::stable_sort (index.begin(), index.end(), [& v] (integer ix, integer iy)
-	{
-		return str32coll_numberAware (v [ix], v [iy]) < 0;
-	});
+	std::stable_sort (index.begin(), index.end(),
+		[& v] (integer ix, integer iy) {
+			return str32coll_numberAware (v [ix], v [iy]) < 0;
+		}
+	);
 }
 
 inline autoINTVEC newINTVECindex (constVEC const& a) {
@@ -180,17 +184,17 @@ inline autoINTVEC newINTVECindex (constSTRVEC const& a) {
 
 void MATrankColumns (MAT m, integer cb, integer ce);
 
-/* rank:
- *  Replace content of sorted array by rank number, including midranking of ties.
- *  E.g. The elements {10, 20.1, 20.1, 20.1, 20.1, 30} in array a will be replaced
- *  by {1, 3.5, 3.5, 3.5, 3.5, 4}, respectively. *
- */
-
+/*
+	Replace content of sorted array by rank number, including midranking of ties.
+	E.g. The elements {10, 20.1, 20.1, 20.1, 20.1, 30} in array a will be replaced
+	by {1, 3.5, 3.5, 3.5, 3.5, 4}, respectively.
+*/
 inline void VECrankSorted (VECVU const& a) {
 	integer jt, j = 1;
 	while (j < a.size) {
-		for (jt = j + 1; jt <= a.size && a [jt] == a [j]; jt ++) {}
-		double rank = (j + jt - 1) * 0.5;
+		for (jt = j + 1; jt <= a.size && a [jt] == a [j]; jt ++) {
+		}
+		const double rank = (j + jt - 1) * 0.5;
 		for (integer i = j; i <= jt - 1; i ++)
 			a [i] = rank;
 		j = jt;
@@ -199,5 +203,33 @@ inline void VECrankSorted (VECVU const& a) {
 		a [a.size] = a.size;
 }
 
- #endif /* _NUMsorting_h_ */
- 
+template <typename T>
+automatrix<T> matrix_sortRows (constmatrix<T> const& m, constINTVECVU const& columnNumbers) {
+	automatrix<T> result = newmatrixraw<T> (m.nrow, m.ncol);
+	autoINTVEC rows = to_INTVEC (m.nrow);
+	std::sort (rows.begin(), rows.end(),
+		[&] (integer rowi, integer rowj) -> bool {
+			for (integer icol = 1; icol <= columnNumbers.size; icol ++) {
+				const integer col = columnNumbers [icol];
+				if (m [rowi] [col] < m [rowj] [col])
+					return true;
+				if (m [rowi] [col] > m [rowj] [col])
+					return false;
+			}
+			return false;
+		}
+	);
+	for (integer irow = 1; irow <= m.nrow; irow ++)
+		result.row (irow)  <<=  m.row (rows [irow]);
+	return result;
+}
+
+inline autoINTMAT sortRows_INTMAT (constINTMAT const& m, constINTVECVU const& columnNumbers) {
+	return matrix_sortRows<integer> (m, columnNumbers);
+}
+
+inline autoMAT sortRows_MAT (constMAT const& m, constINTVECVU const& columnNumbers) {
+	return matrix_sortRows<double> (m, columnNumbers);
+}
+
+#endif /* _NUMsorting_h_ */

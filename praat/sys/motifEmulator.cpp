@@ -1,10 +1,10 @@
 /* motifEmulator.cpp
  *
- * Copyright (C) 1993-2024 Paul Boersma
+ * Copyright (C) 1993-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -37,6 +37,7 @@ void Gui_setQuitApplicationCallback (int (*quitApplicationCallback) (void)) {
 #endif // defined (macintosh)
 
 #if motif
+#define TRY_BARLESS  0
 
 /* The Motif emulator for Windows. */
 
@@ -120,8 +121,8 @@ static XtPointer theWorkProcClosures [10];
 static int theNumberOfTimeOuts;
 static XtTimerCallbackProc theTimeOutProcs [10];
 static XtPointer theTimeOutClosures [10];
-static clock_t theTimeOutStarts [10];
-static uinteger theTimeOutIntervals [10];
+static double theTimeOutStarts [10];
+static double theTimeOutIntervals [10];
 
 static void Native_move (GuiObject w, int dx, int dy);   // forward
 
@@ -525,7 +526,7 @@ static void _GuiNativizeWidget (GuiObject me) {
 				my x, my y, my width, my height, my parent -> window, NULL, theGui.instance, NULL);
 			SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
 		} break;
-		case xmDrawingAreaWidgetClass: Melder_fatal (U"Should be implemented in GuiDrawingArea."); break;
+		case xmDrawingAreaWidgetClass: Melder_crash (U"Should be implemented in GuiDrawingArea."); break;
 		case xmFormWidgetClass: {
 			my window = CreateWindowEx (0, Melder_peek32toW (theWindowClassName), L"form", WS_CHILD | WS_CLIPSIBLINGS,
 				my x, my y, my width, my height, my parent -> window, NULL, theGui.instance, NULL);
@@ -535,8 +536,10 @@ static void _GuiNativizeWidget (GuiObject me) {
 			my window = CreateWindowEx (0, Melder_peek32toW (theWindowClassName), L"rowColumn", WS_CHILD | WS_CLIPSIBLINGS,
 				my x, my y, my width, my height, my parent -> window, NULL, theGui.instance, NULL);
 			SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
+			//TRACE
+			trace (U"Created window ", Melder_pointer (my window), U" for original RowColumn ", Melder_pointer (me));
 		} break;
-		case xmListWidgetClass: Melder_fatal (U"Should be implemented in GuiList."); break;
+		case xmListWidgetClass: Melder_crash (U"Should be implemented in GuiList."); break;
 		case xmMenuBarWidgetClass: {
 			if (! my shell -> motiff.shell.isDialog && my shell -> nat.shell.menuBar == NULL && my parent -> widgetClass != xmRowColumnWidgetClass) {
 				HMENU bar = CreateMenu ();
@@ -547,9 +550,15 @@ static void _GuiNativizeWidget (GuiObject me) {
 				my widgetClass = xmRowColumnWidgetClass;   // !!!!!!!!!!!!!
 				my orientation = XmHORIZONTAL;
 				my rowColumnType = XmMENU_BAR;
-				my window = CreateWindowEx (0, Melder_peek32toW (theWindowClassName), L"rowColumn", WS_CHILD,
-					my x, my y, my width, my height, my parent -> window, NULL, theGui.instance, NULL);
-				SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
+				#if TRY_BARLESS
+					my window = my parent -> window;
+				#else
+					my window = CreateWindowEx (0, Melder_peek32toW (theWindowClassName), L"rowColumn", WS_CHILD,
+						my x, my y, my width, my height, my parent -> window, NULL, theGui.instance, NULL);
+					SetWindowLongPtr (my window, GWLP_USERDATA, (LONG_PTR) me);
+				#endif
+				//TRACE
+				trace (U"Created window ", Melder_pointer (my window), U" for MenuBar-derived RowColumn ", Melder_pointer (me));
 			}
 		} break;
 		case xmPulldownMenuWidgetClass: {
@@ -591,7 +600,7 @@ static void _GuiNativizeWidget (GuiObject me) {
 				my nat.menu.handle = CreatePopupMenu ();
 			}
 		} break;
-		case xmLabelWidgetClass: Melder_fatal (U"Should be implemented in GuiLabel."); break;
+		case xmLabelWidgetClass: Melder_crash (U"Should be implemented in GuiLabel."); break;
 		case xmCascadeButtonWidgetClass: {
 			if (my motiff.cascadeButton.inBar) {
 				my nat.entry.handle = my parent -> nat.menu.handle;   // TODO: superfluous?
@@ -603,9 +612,9 @@ static void _GuiNativizeWidget (GuiObject me) {
 				SetWindowFont (my window, theWinGuiNormalLabelFont (), false);
 			}
 		} break;
-		case xmPushButtonWidgetClass: Melder_fatal (U"Should be implemented in GuiButton."); break;
-		case xmTextWidgetClass: Melder_fatal (U"Should be implemented in GuiText."); break;
-		case xmToggleButtonWidgetClass: Melder_fatal (U"Should be implemented in GuiCheckButton and GuiRadioButton."); break;
+		case xmPushButtonWidgetClass: Melder_crash (U"Should be implemented in GuiButton."); break;
+		case xmTextWidgetClass: Melder_crash (U"Should be implemented in GuiText."); break;
+		case xmToggleButtonWidgetClass: Melder_crash (U"Should be implemented in GuiCheckButton and GuiRadioButton."); break;
 		case xmScaleWidgetClass: {
 			my window = CreateWindow (PROGRESS_CLASS, Melder_peek32toW (_GuiWin_expandAmpersands (my name.get())), WS_CHILD | WS_CLIPSIBLINGS,
 				my x, my y, my width, my height, my parent -> window, (HMENU) 1, theGui.instance, NULL);
@@ -679,6 +688,8 @@ static void _GuiNativizeWidget (GuiObject me) {
 static GuiObject createWidget (int widgetClass, GuiObject parent, const char *name) {
 	GuiObject me = _Gui_initializeWidget (widgetClass, parent, Melder_peek8to32 (name));
 	_GuiNativizeWidget (me);
+	//TRACE
+	trace (U"Created widget ", Melder_pointer (me));
 	return me;
 }
 
@@ -1381,14 +1392,14 @@ void XtRemoveWorkProc (XtWorkProcId id) {
 	theNumberOfWorkProcs --;
 }
 
-XtIntervalId GuiAddTimeOut (uinteger interval, XtTimerCallbackProc proc, XtPointer closure) {
+XtIntervalId GuiAddTimeOut (double interval, XtTimerCallbackProc proc, XtPointer closure) {
 	integer i = 1;
 	while (i < 10 && theTimeOutProcs [i])
 		i ++;
 	Melder_assert (i < 10);
 	theTimeOutProcs [i] = proc;
-	theTimeOutStarts [i] = clock ();
-	theTimeOutIntervals [i] = (interval * (double) CLOCKS_PER_SEC) / 1000;
+	theTimeOutStarts [i] = Melder_clock ();
+	theTimeOutIntervals [i] = interval;
 	theTimeOutClosures [i] = closure;
 	theNumberOfTimeOuts ++;
 	return i;
@@ -1400,6 +1411,8 @@ void XtRemoveTimeOut (XtIntervalId id) {
 }
 
 void XtDestroyWidget (GuiObject me) {
+	//TRACE
+	trace (U"Destroying widget ", Melder_pointer (me));
 	GuiObject subview = my firstChild;
 	/*
 	 * Prevent subsequent messages.
@@ -1431,7 +1444,8 @@ void XtDestroyWidget (GuiObject me) {
 			_GuiWinLabel_destroy (me);
 		} break;
 		case xmCascadeButtonWidgetClass: {
-			if (! my inMenu && ! MEMBER (my parent, MenuBar)) _GuiNativeControl_destroy (me);
+			if (! my inMenu && ! MEMBER (my parent, MenuBar))
+				_GuiNativeControl_destroy (me);
 		} break;
 		case xmScaleWidgetClass: {
 			_GuiWinScale_destroy (me);
@@ -1445,7 +1459,18 @@ void XtDestroyWidget (GuiObject me) {
 		case xmDrawingAreaWidgetClass: {
 			_GuiWinDrawingArea_destroy (me);
 		} break;
-		case xmRowColumnWidgetClass:
+		case xmRowColumnWidgetClass: {
+			//TRACE
+			trace (U"Destroying window ", Melder_pointer (my window), U" for RowColumn ", Melder_pointer (me));
+			#if TRY_BARLESS
+				if (my rowColumnType == XmMENU_BAR)
+					; // my window is my parent's window
+				else
+					DestroyWindow (my window);
+			#else
+				DestroyWindow (my window);
+			#endif
+		} break;
 		case xmFormWidgetClass:
 		case xmBulletinBoardWidgetClass: {
 			DestroyWindow (my window);
@@ -1569,9 +1594,12 @@ static void mapWidget (GuiObject me) {
 		case xmBulletinBoardWidgetClass:
 		case xmDrawingAreaWidgetClass:
 		case xmScrolledWindowWidgetClass:
-		case xmFormWidgetClass:
-		case xmRowColumnWidgetClass:
-			ShowWindow (my window, SW_SHOW); break;
+		case xmFormWidgetClass: {
+			ShowWindow (my window, SW_SHOW);
+		} break;
+		case xmRowColumnWidgetClass: {
+			ShowWindow (my window, SW_SHOW);
+		} break;
 		case xmShellWidgetClass: {
 			ShowWindow (my window, theGui.commandShow);
 			if (my dialogStyle == XmDIALOG_FULL_APPLICATION_MODAL)
@@ -2235,9 +2263,9 @@ static void processWorkProcsAndTimeOuts () {
 				if (theWorkProcs [i] (theWorkProcClosures [i]))
 					XtRemoveWorkProc (i);
 	if (theNumberOfTimeOuts != 0) {
-		clock_t now = clock ();
+		const double now = Melder_clock ();
 		for (integer i = 1; i < 10; i ++) if (theTimeOutProcs [i]) {
-			static volatile clock_t timeElapsed;   // careful: use 32-bit integers circularly; prevent optimization
+			static volatile double timeElapsed;
 			timeElapsed = now - theTimeOutStarts [i];
 			if (timeElapsed > theTimeOutIntervals [i]) {
 				theTimeOutProcs [i] (theTimeOutClosures [i], & i);
@@ -2258,7 +2286,20 @@ void GuiNextEvent (XEvent *xevent) {
 	} else GetMessage (xevent, NULL, 0, 0);   // be neighbour-friendly: do not hand null events
 }
 
+static GuiObject _motif_findDrawingArea (GuiObject me) {
+	if (my widgetClass == xmDrawingAreaWidgetClass)
+		return me;
+	for (GuiObject sub = my firstChild; sub != NULL; sub = sub -> nextSibling)
+		if (! MEMBER (sub, Shell)) {   // only in same top window
+			GuiObject drawingArea = _motif_findDrawingArea (sub);
+			if (drawingArea)
+				return drawingArea;
+		}
+	return NULL;   // no DrawingArea found
+}
+
 static int win_shell_processKeyboardEquivalent (GuiObject me, int kar, int modifiers) {
+	//TRACE
 	for (int imenu = 1; imenu <= MAXIMUM_NUMBER_OF_MENUS; imenu ++) if (theMenus [imenu] && theMenus [imenu] -> shell == me) {
 		for (GuiObject child = theMenus [imenu] -> firstChild; child != NULL; child = child -> nextSibling) {
 			if ((child -> widgetClass == xmPushButtonWidgetClass || child -> widgetClass == xmToggleButtonWidgetClass) &&
@@ -2273,6 +2314,22 @@ static int win_shell_processKeyboardEquivalent (GuiObject me, int kar, int modif
 					return 1;
 				}
 			}
+		}
+	}
+	if (me && my shell) {
+		GuiObject drawingArea = _motif_findDrawingArea (my shell);
+		if (drawingArea) {
+			trace (U"kar5 ", kar);
+			if ((modifiers & _motif_COMMAND_MASK) && kar >= 'A' && kar <= 'Z' && ! (modifiers & _motif_SHIFT_MASK))
+				kar += 'a' - 'A';
+			if (kar == VK_RETURN) kar = 10;
+			if (kar == VK_LEFT)   kar = 0x2190;
+			if (kar == VK_RIGHT)  kar = 0x2192;
+			if (kar == VK_UP)     kar = 0x2191;
+			if (kar == VK_DOWN)   kar = 0x2193;
+			if (kar == VK_OEM_7)  kar = '\'';
+			_GuiWinDrawingArea_handleKey (drawingArea, kar);   // TODO: event -> key?
+			return 1;
 		}
 	}
 	return 0;
@@ -2290,19 +2347,8 @@ static int win_processKeyboardEquivalent (GuiObject me, int kar, int modifiers) 
 	return 0;
 }
 
-static GuiObject _motif_findDrawingArea (GuiObject me) {
-	if (my widgetClass == xmDrawingAreaWidgetClass)
-		return me;
-	for (GuiObject sub = my firstChild; sub != NULL; sub = sub -> nextSibling)
-		if (! MEMBER (sub, Shell)) {   // only in same top window
-			GuiObject drawingArea = _motif_findDrawingArea (sub);
-			if (drawingArea)
-				return drawingArea;
-		}
-	return NULL;   // no DrawingArea found
-}
-
 void XtDispatchEvent (XEvent *xevent) {
+	//TRACE
 	MSG *message = (MSG *) xevent;
 	if (message -> message == 0)
 		return;   // null message from PeekMessage during work proc or time out.
@@ -2332,6 +2378,7 @@ modifiers & _motif_SHIFT_MASK ? " shift" : "", message -> message == WM_KEYDOWN 
 		message -> message == WM_SYSKEYDOWN && GetKeyState (VK_CONTROL) < 0)
 	{
 		int kar = LOWORD (message -> wParam);
+		trace (U"kar1 ", kar);
 		GuiObject me = (GuiObject) GetWindowLongPtr (message -> hwnd, GWLP_USERDATA);
 		int modifiers = 0;
 		if (GetKeyState (VK_CONTROL) < 0)
@@ -2358,12 +2405,12 @@ modifiers & _motif_SHIFT_MASK ? " shift" : "", message -> message == WM_KEYDOWN 
 					else {
 						if (my shell -> defaultButton && _GuiWinButton_tryToHandleShortcutKey (my shell -> defaultButton)) return;
 					}
-				} else if (kar == VK_ESCAPE) {   // shortcut or cancel button
+				} else if (kar == VK_ESCAPE) {   // shortcut or cancel button (and from 2024-04-06:) or text
 					if (acc & 1 << GuiMenu_ESCAPE) { win_processKeyboardEquivalent (my shell, GuiMenu_ESCAPE, modifiers); return; }
 					else {
 						if (my shell -> cancelButton && _GuiWinButton_tryToHandleShortcutKey (my shell -> cancelButton)) return;
 					}
-					return;
+					//return;   // this return has been here from before 2002; don't know why an Escape cannot be text (Demo wants it)
 				} else if (kar == VK_PRIOR) {   // shortcut or text
 					if (acc & 1 << GuiMenu_PAGE_UP) { win_processKeyboardEquivalent (my shell, GuiMenu_PAGE_UP, modifiers); return; }
 				} else if (kar == VK_NEXT) {   // shortcut or text
@@ -2398,11 +2445,11 @@ modifiers & _motif_SHIFT_MASK ? " shift" : "", message -> message == WM_KEYDOWN 
 			/*
 			 * If the Command key is pressed with a printable character, this is often a menu shortcut.
 			 */
-			} else if (modifiers & _motif_COMMAND_MASK) {
+			} else if ((modifiers & _motif_COMMAND_MASK) && ! (modifiers & _motif_OPTION_MASK)) {
 				if (MEMBER (me, Text) && (kar == 'X' || kar == 'C' || kar == 'V' || kar == 'Z')) {
 					;   // let window proc handle text editing
 				} else if (kar >= 186) {
-					int shift = modifiers & _motif_SHIFT_MASK;
+					const int shift = modifiers & _motif_SHIFT_MASK;
 					/*
 					 * BUG: The following is not internationally correct.
 					 */
@@ -2421,7 +2468,8 @@ modifiers & _motif_SHIFT_MASK ? " shift" : "", message -> message == WM_KEYDOWN 
 						return;
 					}
 				} else {
-					if (win_processKeyboardEquivalent (my shell, kar, modifiers)) return;   // handle shortcuts like Ctrl-T and Ctrl-Alt-T
+					if (win_processKeyboardEquivalent (my shell, kar, modifiers))
+						return;   // handle shortcuts like Ctrl-T (but not Ctrl-Alt-T, because of Alt_GR on some keyboards)
 					/* Let window proc handle international Alt-GR (= Ctrl-Alt) sequences, which are plain characters. */
 				}
 			}
@@ -2438,6 +2486,13 @@ modifiers & _motif_SHIFT_MASK ? " shift" : "", message -> message == WM_KEYDOWN 
 		if (me && MEMBER2 (me, PushButton, ToggleButton)) {
 			GuiObject drawingArea = _motif_findDrawingArea (my shell);
 			if (drawingArea) {
+				trace (U"kar2 ", kar);
+				if (kar == VK_RETURN) kar = 10;
+				if (kar == VK_LEFT)   kar = 0x2190;
+				if (kar == VK_RIGHT)  kar = 0x2192;
+				if (kar == VK_UP)     kar = 0x2191;
+				if (kar == VK_DOWN)   kar = 0x2193;
+				if (kar == VK_OEM_7)  kar = '\'';
 				_GuiWinDrawingArea_handleKey (drawingArea, kar);   // TODO: event -> key?
 				return;
 			}
@@ -2670,7 +2725,7 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 		if (my widgetClass == xmDrawingAreaWidgetClass) {
 			const bool controlKeyPressed = ( fwKeys & MK_CONTROL );
 			if (controlKeyPressed)
-				_GuiWinDrawingArea_handleZoom (me, double (zDelta) / 120.0);
+				_GuiWinDrawingArea_handleZoom (me, double (zDelta) / 10.0);
 			else if (my parent -> widgetClass == xmScrolledWindowWidgetClass)
 				on_scroll (my parent -> motiff.scrolledWindow.verticalBar, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
 			else
@@ -2698,6 +2753,8 @@ static void on_size (HWND window, UINT state, int cx, int cy) {
 	} else FORWARD_WM_SIZE (window, state, cx, cy, DefWindowProc);
 }
 static void on_key (HWND window, UINT key, BOOL down, int repeat, UINT flags) {
+	//TRACE
+	trace (U"KEY ", key);
 	Melder_assert (down == true);
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me && key >= VK_LEFT && key <= VK_DOWN) {
@@ -2706,6 +2763,13 @@ static void on_key (HWND window, UINT key, BOOL down, int repeat, UINT flags) {
 			GuiObject drawingArea = _motif_findDrawingArea (me);
 			if (drawingArea) {
 				GuiObject textFocus = drawingArea -> shell -> textFocus;   // BUG: ignore?
+				trace (U"kar3 ", key);
+				if (key == VK_RETURN) key = 10;
+				if (key == VK_LEFT)   key = 0x2190;
+				if (key == VK_RIGHT)  key = 0x2192;
+				if (key == VK_UP)     key = 0x2191;
+				if (key == VK_DOWN)   key = 0x2193;
+				if (key == VK_OEM_7)  key = '\'';
 				_GuiWinDrawingArea_handleKey (drawingArea, key);
 			} else {
 				FORWARD_WM_KEYDOWN (window, key, repeat, flags, DefWindowProc);
@@ -2716,12 +2780,14 @@ static void on_key (HWND window, UINT key, BOOL down, int repeat, UINT flags) {
 	}
 }
 static void on_char (HWND window, TCHAR kar, int repeat) {
+	//TRACE
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me) {
 		if (MEMBER (me, Shell) || my widgetClass == xmDrawingAreaWidgetClass) {   // any change in this condition should be mirrored in `on_key`
 			GuiObject drawingArea = _motif_findDrawingArea (me);
 			if (drawingArea) {
 				GuiObject textFocus = drawingArea -> shell -> textFocus;   // BUG: ignore?
+				trace (U"kar4 ", kar);
 				_GuiWinDrawingArea_handleKey (drawingArea, kar);
 			} else {
 				FORWARD_WM_CHAR (window, kar, repeat, DefWindowProc);
@@ -2796,9 +2862,13 @@ static LRESULT CALLBACK windowProc (HWND window, UINT message, WPARAM wParam, LP
 		HANDLE_MSG (window, WM_CTLCOLORBTN, on_ctlColorBtn);
 		HANDLE_MSG (window, WM_CTLCOLORSTATIC, on_ctlColorStatic);
 		HANDLE_MSG (window, WM_ACTIVATE, on_activate);
-		case WM_USER: {
+		case WM_USER:   // TODO: remove once Elan's sendpraat is updated to using WM_APP instead of WM_USER
+		case WM_APP:
+		{
 			/*if (IsIconic (window)) ShowWindow (window, SW_RESTORE);
 			SetForegroundWindow (window);*/
+			//TRACE
+			trace (U"app message ", message);
 			return theUserMessageCallback ? theUserMessageCallback () : 1;
 		}
 		default: return DefWindowProc (window, message, wParam, lParam);

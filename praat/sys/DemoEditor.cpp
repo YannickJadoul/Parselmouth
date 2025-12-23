@@ -1,10 +1,10 @@
 /* DemoEditor.cpp
  *
- * Copyright (C) 2009-2024 Paul Boersma
+ * Copyright (C) 2009-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -189,10 +189,10 @@ int Demo_show () {
 	autoDemoOpen demo;
 	GuiThing_show (theReferenceToTheOnlyDemoEditor -> windowForm);
 	Graphics_updateWs (theReferenceToTheOnlyDemoEditor -> graphics.get());
-	#if defined (macintosh)
+	#if defined (UNIX)
 		Melder_sleep (0.02);   // because GuiShell_drain is not guaranteed to drain if called within 16 ms from previous
 	#endif
-	GuiShell_drain (theReferenceToTheOnlyDemoEditor -> windowForm);
+	GuiShell_drain (theReferenceToTheOnlyDemoEditor -> windowForm, true, false);
 	return 1;
 }
 
@@ -207,18 +207,20 @@ int Demo_show () {
 	}
 	@end
 	DemoWindowTimer *theDemoWindowTimer;
-#endif
+#endif // cocoa
 
 void Demo_timer (double duration) {
 	#if cocoa
 		if (! theDemoWindowTimer)
 			theDemoWindowTimer = [[DemoWindowTimer alloc] init];
-		[NSTimer scheduledTimerWithTimeInterval: duration
+		[NSTimer
+			scheduledTimerWithTimeInterval: duration
 			target: theDemoWindowTimer
 			selector: @selector (timerCallback)
 			userInfo: nil
-			repeats: false];
-	#endif
+			repeats: false
+		];
+	#endif // cocoa
 }
 
 void Demo_waitForInput (Interpreter interpreter) {
@@ -238,30 +240,35 @@ void Demo_waitForInput (Interpreter interpreter) {
 		if (wasBackgrounding)
 			praat_foreground ();
 		try {
+			/*
+				TODO: make asynchronous, with Interpreter_resume()
+			*/
 			#if gtk
 				do {
 					gtk_main_iteration ();
 				} while (! theReferenceToTheOnlyDemoEditor -> clicked &&
 				         ! theReferenceToTheOnlyDemoEditor -> keyPressed &&
-						 ! theReferenceToTheOnlyDemoEditor -> userWantsToClose);
+				         ! theReferenceToTheOnlyDemoEditor -> userWantsToClose);
 			#elif cocoa
 				do {
 					NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-					[theReferenceToTheOnlyDemoEditor -> windowForm -> d_cocoaShell   flushWindow];
+					[theReferenceToTheOnlyDemoEditor -> windowForm -> d_cocoaShell   displayIfNeeded];
 					Graphics_updateWs (theReferenceToTheOnlyDemoEditor -> graphics.get());   // make sure that even texts will be drawn
 					NSEvent *nsEvent = [NSApp
-						nextEventMatchingMask: NSAnyEventMask
-						untilDate: [NSDate distantFuture]   // wait
+						nextEventMatchingMask: NSEventMaskAny
+						untilDate: [NSDate distantPast]
 						inMode: NSDefaultRunLoopMode
 						dequeue: YES
 					];
-					Melder_assert (nsEvent);
-					[NSApp  sendEvent: nsEvent];
-					[NSApp  updateWindows];   // called automatically?
+					if (nsEvent)
+						[NSApp  sendEvent: nsEvent];
+					constexpr double moderatePollingFrequency = 300.0;   // hertz
+					constexpr double moderatePollingPeriod = 1.0 / moderatePollingFrequency;   // e.g. 3.333 ms
+					[NSThread   sleepForTimeInterval: moderatePollingPeriod];
 					[pool release];
 				} while (! theReferenceToTheOnlyDemoEditor -> clicked &&
 				         ! theReferenceToTheOnlyDemoEditor -> keyPressed &&
-						 ! theReferenceToTheOnlyDemoEditor -> userWantsToClose);
+				         ! theReferenceToTheOnlyDemoEditor -> userWantsToClose);
 			#elif motif
 				do {
 					//Graphics_updateWs (theReferenceToTheOnlyDemoEditor -> graphics.get());   // make sure that even texts will be drawn
@@ -270,7 +277,7 @@ void Demo_waitForInput (Interpreter interpreter) {
 					XtDispatchEvent (& event);
 				} while (! theReferenceToTheOnlyDemoEditor -> clicked &&
 				         ! theReferenceToTheOnlyDemoEditor -> keyPressed &&
-						 ! theReferenceToTheOnlyDemoEditor -> userWantsToClose);
+				         ! theReferenceToTheOnlyDemoEditor -> userWantsToClose);
 			#endif
 		} catch (MelderError) {
 			Melder_flushError (U"An error made it to the outer level in the Demo window; should not occur! Please write to paul.boersma@uva.nl");
@@ -314,7 +321,7 @@ void Demo_peekInput (Interpreter interpreter) {
 				}
 			#elif cocoa
 				NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-				[theReferenceToTheOnlyDemoEditor -> windowForm -> d_cocoaShell   flushWindow];
+				[theReferenceToTheOnlyDemoEditor -> windowForm -> d_cocoaShell   flushWindow];   // TODO: needed?
 				Graphics_updateWs (theReferenceToTheOnlyDemoEditor -> graphics.get());   // make sure that even texts will be drawn
 				while (NSEvent *nsEvent = [NSApp
 					nextEventMatchingMask: NSAnyEventMask
@@ -324,7 +331,7 @@ void Demo_peekInput (Interpreter interpreter) {
 				{
 					[NSApp  sendEvent: nsEvent];
 				}
-				[NSApp  updateWindows];   // called automatically?
+				[NSApp  updateWindows];   // called automatically? TODO: remove
 				[pool release];
 			#elif motif
 				XEvent event;

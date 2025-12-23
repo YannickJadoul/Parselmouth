@@ -44,6 +44,8 @@ Thing_define (InterpreterVariable, SimpleString) {
 Thing_declare (UiForm);
 Thing_declare (UiField);
 Thing_declare (Editor);
+Thing_declare (Script);
+Thing_declare (Notebook);
 
 enum class kInterpreter_ReturnType {
 	VOID_ = 0,   // don't change; this is how it is automatically zero-initialized in structInterpreter
@@ -73,6 +75,9 @@ enum class kInterpreter_ReturnType {
 conststring32 kInterpreter_ReturnType_errorMessage (kInterpreter_ReturnType returnType, conststring32 command);
 
 Thing_define (Interpreter, Thing) {
+	Script scriptReference;
+	Notebook notebookReference;
+
 	struct EditorEnvironment {
 		ClassInfo _optionalClass;
 		Editor _optionalInstance;
@@ -161,6 +166,9 @@ Thing_define (Interpreter, Thing) {
 	char32 procedureNames [1+Interpreter_MAX_CALL_DEPTH] [100];
 	std::unordered_map <std::u32string, autoInterpreterVariable> variablesMap;
 	bool running, stopped;
+
+	autovector <mutablestring32> lines;   // not autostringvector, because the elements are reference copies
+	integer lineNumber = 0;
 
 	kInterpreter_ReturnType returnType;   // automatically initialized as kInterpreter_ReturnType::VOID_
 	bool returnedBoolean;

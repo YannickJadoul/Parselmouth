@@ -39,13 +39,13 @@ void NUMmad (constVEC x, double *inout_location, bool wantlocation, double *out_
 	work  <<=  x;
 	
 	if (wantlocation) {
-		sort_VEC_inout (work);
+		sort_e_VEC_inout (work);
 		*inout_location = NUMquantile (work, 0.5);
 	}
 	if (out_mad) {
 		for (integer i = 1; i <= x.size; i ++)
 			work [i] = fabs (work [i] - *inout_location);
-		sort_VEC_inout (work);
+		sort_e_VEC_inout (work);
 		*out_mad = 1.4826 * NUMquantile (work, 0.5);
 	}
 }
@@ -54,7 +54,9 @@ static double NUMgauss (double x) {
 	return NUM1_sqrt2pi * exp (- 0.5 * x * x);
 }
 
-void NUMstatistics_huber (constVEC x, double *inout_location, bool wantlocation, double *inout_scale, bool wantscale, double k_stdev, double tol, integer maximumNumberOfiterations, VEC const& workSpace) {
+void NUMstatistics_huber (constVEC x, double *inout_location, bool wantlocation, double *inout_scale, 
+	bool wantscale, double k_stdev, double tol, integer maximumNumberOfiterations, VEC const& workSpace)
+{
 	Melder_assert (inout_location && inout_scale);
 	Melder_assert (workSpace.size >= x.size);
 	

@@ -87,7 +87,7 @@ void GuiOptionMenu_init (GuiOptionMenu me, GuiForm parent, int left, int right, 
 	#elif cocoa
 		GuiCocoaOptionMenu *optionMenu = [[GuiCocoaOptionMenu alloc] init];
 		my d_widget = (GuiObject) optionMenu;
-		my v_positionInForm (my d_widget, left, right, top + 1, bottom + 6, parent);
+		my v_positionInForm (my d_widget, left, right, top - 2, bottom + 3, parent);
 		[optionMenu   setUserData: me];
 //		[optionMenu setBezelStyle: NSRoundedBezelStyle];
 //		[optionMenu setBordered: NO];

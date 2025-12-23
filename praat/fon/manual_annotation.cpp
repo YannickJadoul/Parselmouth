@@ -1,10 +1,10 @@
 /* manual_annotation.cpp
  *
- * Copyright (C) 1992-2011,2014-2017,2019,2021-2023 Paul Boersma
+ * Copyright (C) 1992-2011,2014-2017,2019,2021-2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -21,7 +21,7 @@
 void manual_annotation_init (ManPages me);
 void manual_annotation_init (ManPages me) {
 
-MAN_BEGIN (U"Create TextGrid...", U"ppgb", 20101228)
+MAN_BEGIN (U"Create TextGrid...", U"ppgb", 20101228) // 2025
 INTRO (U"A command to create a @TextGrid from scratch.")
 ENTRY (U"Settings")
 TERM (U"##Start time (s)")
@@ -32,10 +32,11 @@ TERM (U"##Tier names")
 DEFINITION (U"a list of the names of the tiers that you want to create, separated by spaces.")
 TERM (U"##Point tiers")
 DEFINITION (U"a list of the names of the tiers that you want to be %%point tiers%; "
-	"the rest of the tiers will be %%interval tiers%.")
+	"the rest of the tiers will be %%interval tiers%. "
+	"If you want to create no point tiers, you can leave this setting empty.")
 MAN_END
 
-MAN_BEGIN (U"PointProcess: To TextGrid...", U"ppgb", 19980113)
+MAN_BEGIN (U"PointProcess: To TextGrid...", U"ppgb", 19980113) // 2025
 INTRO (U"A command to create an empty @TextGrid from every selected @PointProcess.")
 NORMAL (U"The only information in the PointProcess that is used, is its starting and finishing times.")
 ENTRY (U"Settings")
@@ -43,7 +44,8 @@ TERM (U"##Tier names")
 DEFINITION (U"a list of the names of the tiers that you want to create, separated by spaces.")
 TERM (U"##Point tiers")
 DEFINITION (U"a list of the names of the tiers that you want to be %%point tiers%; "
-	"the rest of the tiers will be %%interval tiers%.")
+	"the rest of the tiers will be %%interval tiers%. "
+	"If you want to create no point tiers, you can leave this setting empty.")
 ENTRY (U"Example")
 NORMAL (U"If ##Tier names# is \"a b c\", and ##Point tiers# is \"b\", "
 	"the resulting TextGrid object will contain an interval tier named \"a\", "
@@ -78,14 +80,15 @@ NORMAL (U"The times of all the points are trivially copied, and so is the time d
 	"The text information will be the same for every point.")
 MAN_END
 
-MAN_BEGIN (U"Sound: To TextGrid...", U"ppgb", 19980730)
+MAN_BEGIN (U"Sound: To TextGrid...", U"ppgb", 19980730)  // 2025
 INTRO (U"A command to create a @TextGrid without any labels, copying the time domain from the selected @Sound.")
 ENTRY (U"Settings")
 TERM (U"%%Tier names")
 DEFINITION (U"a list of the names of the tiers that you want to create, separated by spaces.")
 TERM (U"%%Point tiers")
 DEFINITION (U"a list of the names of the tiers that you want to be %%point tiers%; "
-	"the rest of the tiers will be %%interval tiers%.")
+	"the rest of the tiers will be %%interval tiers%. "
+	"If you want to create no point tiers, you can leave this setting empty.")
 ENTRY (U"Example")
 NORMAL (U"If ##Tier names# is \"a b c\", and ##Point tiers# is \"b\", "
 	"the resulting TextGrid object will contain an interval tier named \"a\", "
@@ -140,7 +143,7 @@ DEFINITION (U"a space-separated list of suffixes that make a word correct even i
 	"For the CGN, this is \"-\", since the first word in %%verzekerings- en bankwezen% should be ignored by the spelling checker.")
 MAN_END
 
-MAN_BEGIN (U"TextGrid", U"ppgb", 20110128)
+MAN_BEGIN (U"TextGrid", U"ppgb", 20110128 2025)
 INTRO (U"One of the @@types of objects@ in Praat, used for %annotation (segmentation and labelling). "
 	"For tutorial information, see @@Intro 7. Annotation@.")
 ENTRY (U"Description")
@@ -155,7 +158,7 @@ LIST_ITEM (U"@@PointProcess: To TextGrid...@ (takes the time domain from the Poi
 LIST_ITEM (U"@@PointProcess: To TextGrid (vuv)...@ (labels voiced and unvoiced intervals)")
 LIST_ITEM (U"@@Create TextGrid...@")
 TERM (U"From merging existing TextGrids with each other:")
-LIST_ITEM (U"@@TextGrids: Merge@")
+LIST_ITEM (U"@@TextGrids: Merge...@")
 ENTRY (U"How to edit a TextGrid")
 NORMAL (U"You select a TextGrid alone or together with a @Sound or @LongSound, and click ##View & Edit#. "
 	"A @TextGridEditor will appear on your screen, containing the TextGrid "
@@ -187,7 +190,19 @@ NORMAL (U"In this case, the value will not be written into the Info window.")
 MAN_END
  
 MAN_BEGIN (U"TextGrids: Merge", U"ppgb", 20101230)
+INTRO (U"An obsolete command to merge all selected @TextGrid objects into a new @TextGrid.")
+NORMAL (U"The same as @@TextGrids: Merge...@ with “Equalize domains” set to false.")
+MAN_END
+
+MAN_BEGIN (U"TextGrids: Merge...", U"ppgb", 2025)
 INTRO (U"A command to merge all selected @TextGrid objects into a new @TextGrid.")
+NORMAL (U"The time domain of the resulting TextGrid will be the union of the time domains "
+	"of the constituent TextGrids.")
+TERM (U"##Equalize time domains# (default: on)")
+DEFINITION (U"If on, then the time domain of each tier will be made equal to the time domain of the resulting TextGrid. "
+	"If this leads to a change in the end time of an interval tier, a new empty interval will be added "
+	"between the original end time of the tier and its new end time (an analogous insertion could happen at the start of the tier, "
+	"though that is quite rare in practice, because usually all tiers start at 0 seconds).")
 MAN_END
 
 MAN_BEGIN (U"TextGridEditor", U"ppgb", 20210228)

@@ -64,7 +64,7 @@ autoConfiguration ContingencyTable_to_Configuration_ca (ContingencyTable me, int
 
 Collection_define (ConfusionList, OrderedOf, Confusion) {
 	TableOfRealList asTableOfRealList () {
-		return reinterpret_cast<TableOfRealList> (this);
+		return reinterpret_cast <TableOfRealList> (this);
 	}
 };
 
@@ -81,7 +81,7 @@ autoScalarProduct ScalarProduct_create (integer numberOfPoints);
 
 Collection_define (ScalarProductList, OrderedOf, ScalarProduct) {
 	TableOfRealList asTableOfRealList () {
-		return reinterpret_cast<TableOfRealList> (this);
+		return reinterpret_cast <TableOfRealList> (this);
 	}
 };
 

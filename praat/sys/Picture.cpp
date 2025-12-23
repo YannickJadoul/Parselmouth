@@ -1,10 +1,10 @@
 /* Picture.cpp
  *
- * Copyright (C) 1992-2022 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brauße
+ * Copyright (C) 1992-2022,2024,2025 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brauße
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -27,61 +27,59 @@
 
 Thing_implement (Picture, Thing, 0);
 
-static void drawMarkers (Picture me)
-/*
-	The drawing area is a square measuring 12x12 inches.
-*/
-#define SIDE 12
 /*
 	The selection grid has a resolution of 1/2 inch.
 */
-#define SQUARES 24_integer
-/*
-	Vertical and horizontal lines every 3 inches.
-*/
-#define YELLOW_GRID 3
+constexpr integer NUMBER_OF_HORIZONTAL_SQUARES = integer (2.0 * Picture_WIDTH);
+constexpr integer NUMBER_OF_VERTICAL_SQUARES = integer (2.0 * Picture_HEIGHT);
+
+static void drawMarkers (Picture me)
 {
+	/*
+		Vertical and horizontal lines every 3 inches.
+	*/
+	#define YELLOW_GRID 3
 	/*
 		Fill the entire canvas with GC's background.
 	*/
 	Graphics_setColour (my selectionGraphics.get(), Melder_WHITE);
-	Graphics_fillRectangle (my selectionGraphics.get(), 0, SIDE, 0, SIDE);
+	Graphics_fillRectangle (my selectionGraphics.get(), 0, Picture_WIDTH, 0, Picture_HEIGHT);
 
 	/*
 		Draw yellow grid lines for coarse navigation.
 	*/
 	Graphics_setColour (my selectionGraphics.get(), Melder_YELLOW);
-	for (int i = YELLOW_GRID; i < SIDE; i += YELLOW_GRID) {
-		Graphics_line (my selectionGraphics.get(), 0, i, SIDE, i);
-		Graphics_line (my selectionGraphics.get(), i, 0, i, SIDE);
-	}
+	for (int i = YELLOW_GRID; i < Picture_HEIGHT; i += YELLOW_GRID)
+		Graphics_line (my selectionGraphics.get(), 0, i, Picture_WIDTH, i);   // horizontal line
+	for (int i = YELLOW_GRID; i < Picture_WIDTH; i += YELLOW_GRID)
+		Graphics_line (my selectionGraphics.get(), i, 0, i, Picture_HEIGHT);   // vertical line
 
 	/*
 		Draw red ticks and numbers for feedback on viewport measurement.
 	*/
 	Graphics_setColour (my selectionGraphics.get(), Melder_RED);
-	for (int i = 1; i < SIDE; i ++) {
+	for (int i = 1; i < Picture_WIDTH; i ++) {
 		const double x = i;
 		Graphics_setTextAlignment (my selectionGraphics.get(), Graphics_CENTRE, Graphics_TOP);
-		Graphics_text (my selectionGraphics.get(), x, SIDE, i);
+		Graphics_text (my selectionGraphics.get(), x, Picture_HEIGHT, i);
 		Graphics_setTextAlignment (my selectionGraphics.get(), Graphics_CENTRE, Graphics_BOTTOM);
 		Graphics_text (my selectionGraphics.get(), x, 0, i);
 	}
-	for (int i = 1; i < SQUARES ; i ++) {   // vertical ticks
+	for (int i = 1; i < NUMBER_OF_HORIZONTAL_SQUARES; i ++) {   // vertical ticks
 		const double x = 0.5 * i;
-		Graphics_line (my selectionGraphics.get(), x, SIDE - 0.04, x, SIDE);
+		Graphics_line (my selectionGraphics.get(), x, Picture_HEIGHT - 0.04, x, Picture_HEIGHT);
 		Graphics_line (my selectionGraphics.get(), x, 0, x, 0.04);
 	}
-	for (int i = 1; i < SIDE; i ++) {
-		const double y = SIDE - i;
+	for (int i = 1; i < Picture_HEIGHT; i ++) {
+		const double y = Picture_HEIGHT - i;
 		Graphics_setTextAlignment (my selectionGraphics.get(), Graphics_LEFT, Graphics_HALF);
 		Graphics_text (my selectionGraphics.get(), 0.04, y, i);
 		Graphics_setTextAlignment (my selectionGraphics.get(), Graphics_RIGHT, Graphics_HALF);
-		Graphics_text (my selectionGraphics.get(), SIDE - 0.03, y, i);
+		Graphics_text (my selectionGraphics.get(), Picture_WIDTH - 0.03, y, i);
 	}
-	for (int i = 1; i < SQUARES; i ++) {   // horizontal ticks
-		const double y = SIDE - 0.5 * i;
-		Graphics_line (my selectionGraphics.get(), SIDE - 0.04, y, SIDE, y);
+	for (int i = 1; i < NUMBER_OF_VERTICAL_SQUARES; i ++) {   // horizontal ticks
+		const double y = Picture_HEIGHT - 0.5 * i;
+		Graphics_line (my selectionGraphics.get(), Picture_WIDTH - 0.04, y, Picture_WIDTH, y);
 		Graphics_line (my selectionGraphics.get(), 0, y, 0.04, y);
 	}
 	Graphics_setColour (my selectionGraphics.get(), Melder_BLACK);
@@ -116,18 +114,18 @@ static void gui_drawingarea_cb_mouse (Picture me, GuiDrawingArea_MouseEvent even
 	double xWC, yWC;
 	Graphics_DCtoWC (my selectionGraphics.get(), event -> x, event -> y, & xWC, & yWC);
 	const Block currentBlock {
-		Melder_clipped (1_integer, 1 + (integer) floor (xWC * SQUARES / SIDE), SQUARES),
-		Melder_clipped (1_integer, SQUARES - (integer) floor (yWC * SQUARES / SIDE), SQUARES)
+		Melder_clipped (1_integer, 1 + (integer) floor (xWC * NUMBER_OF_HORIZONTAL_SQUARES / Picture_WIDTH), NUMBER_OF_HORIZONTAL_SQUARES),
+		Melder_clipped (1_integer, NUMBER_OF_VERTICAL_SQUARES - (integer) floor (yWC * NUMBER_OF_VERTICAL_SQUARES / Picture_HEIGHT), NUMBER_OF_VERTICAL_SQUARES)
 	};
 	bool didBlockChange = false;   // optimization: don't redraw if we stay in the same block
 	if (event -> isClick()) {
 		constexpr int INVALID_BLOCK_NUMBER = 0;
 		previousBlock = { INVALID_BLOCK_NUMBER, INVALID_BLOCK_NUMBER };
 		if (event -> shiftKeyPressed) {
-			const integer ix1 = Melder_clipped (1_integer, 1 + (integer) floor (my selx1 * SQUARES / SIDE), SQUARES);   // BUG not compatible with mouseSelectsInnerViewport
-			const integer ix2 = Melder_clipped (1_integer, (integer) floor (my selx2 * SQUARES / SIDE), SQUARES);
-			const integer iy1 = Melder_clipped (1_integer, SQUARES + 1 - (integer) floor (my sely2 * SQUARES / SIDE), SQUARES);
-			const integer iy2 = Melder_clipped (1_integer, SQUARES - (integer) floor (my sely1 * SQUARES / SIDE), SQUARES);
+			const integer ix1 = Melder_clipped (1_integer, 1 + (integer) floor (my selx1 * NUMBER_OF_HORIZONTAL_SQUARES / Picture_WIDTH), NUMBER_OF_HORIZONTAL_SQUARES);   // BUG not compatible with mouseSelectsInnerViewport
+			const integer ix2 = Melder_clipped (1_integer, (integer) floor (my selx2 * NUMBER_OF_HORIZONTAL_SQUARES / Picture_WIDTH), NUMBER_OF_HORIZONTAL_SQUARES);
+			const integer iy1 = Melder_clipped (1_integer, NUMBER_OF_VERTICAL_SQUARES + 1 - (integer) floor (my sely2 * NUMBER_OF_VERTICAL_SQUARES / Picture_HEIGHT), NUMBER_OF_VERTICAL_SQUARES);
+			const integer iy2 = Melder_clipped (1_integer, NUMBER_OF_VERTICAL_SQUARES - (integer) floor (my sely1 * NUMBER_OF_VERTICAL_SQUARES / Picture_HEIGHT), NUMBER_OF_VERTICAL_SQUARES);
 			anchorBlock = { currentBlock. ix < (ix1 + ix2) / 2 ? ix2 : ix1, currentBlock. iy < (iy1 + iy2) / 2 ? iy2 : iy1 };
 		} else {
 			anchorBlock = currentBlock;
@@ -150,7 +148,7 @@ static void gui_drawingarea_cb_mouse (Picture me, GuiDrawingArea_MouseEvent even
 		}
 		Picture_setSelection (me,
 			0.5 * (ix1 - 1) - xmargin, 0.5 * ix2 + xmargin,
-			0.5 * (SQUARES - iy2) - ymargin, 0.5 * (SQUARES + 1 - iy1) + ymargin
+			0.5 * (NUMBER_OF_VERTICAL_SQUARES - iy2) - ymargin, 0.5 * (NUMBER_OF_VERTICAL_SQUARES + 1 - iy1) + ymargin
 		);
 		Graphics_updateWs (my selectionGraphics.get());
 	}
@@ -168,8 +166,8 @@ autoPicture Picture_create (GuiDrawingArea drawingArea, bool sensitive) {
 		*/
 		my selx1 = 0.0;
 		my selx2 = 6.0;
-		my sely1 = 8.0;
-		my sely2 = 12.0;
+		my sely1 = Picture_HEIGHT - 4.0;
+		my sely2 = Picture_HEIGHT;
 		my sensitive = sensitive && drawingArea;
 		/*
 			Create a Graphics to directly draw in.
@@ -185,13 +183,13 @@ autoPicture Picture_create (GuiDrawingArea drawingArea, bool sensitive) {
 			*/
 			const integer dummyResolution = 600;
 			my graphics = Graphics_create_screen (nullptr, nullptr, dummyResolution);
-			Graphics_setWsViewport (my graphics.get(), 0.0, 12 * dummyResolution, 0.0, 12 * dummyResolution);
+			Graphics_setWsViewport (my graphics.get(), 0.0, Picture_WIDTH * dummyResolution, 0.0, Picture_WIDTH * dummyResolution);
 		}
-		Graphics_setWsWindow (my graphics.get(), 0.0, 12.0, 0.0, 12.0);
+		Graphics_setWsWindow (my graphics.get(), 0.0, Picture_WIDTH, 0.0, Picture_HEIGHT);
 		Graphics_setViewport (my graphics.get(), my selx1, my selx2, my sely1, my sely2);
 		if (my sensitive) {
 			my selectionGraphics = Graphics_create_xmdrawingarea (my drawingArea);
-			Graphics_setWindow (my selectionGraphics.get(), 0.0, 12.0, 0.0, 12.0);
+			Graphics_setWindow (my selectionGraphics.get(), 0.0, Picture_WIDTH, 0.0, Picture_HEIGHT);
 			GuiDrawingArea_setMouseCallback (my drawingArea, gui_drawingarea_cb_mouse, me.get());
 		}
 		Graphics_startRecording (my graphics.get());
@@ -223,7 +221,7 @@ void Picture_erase (Picture me) {
 void Picture_writeToPraatPictureFile (Picture me, MelderFile file) {
 	try {
 		autofile f = Melder_fopen (file, "wb");
-		if (fprintf (f, "PraatPictureFile") < 0)
+		if (fprintf (f, "PraatPicture%04d", int (Picture_HEIGHT)) < 0)
 			Melder_throw (U"Write error.");
 		Graphics_writeRecordings (my graphics.get(), f);
 		f.close (file);
@@ -235,17 +233,33 @@ void Picture_writeToPraatPictureFile (Picture me, MelderFile file) {
 void Picture_readFromPraatPictureFile (Picture me, MelderFile file) {
 	try {
 		autofile f = Melder_fopen (file, "rb");
-		char line [200];
-		integer n = uinteger_to_integer (fread (line, 1, 199, f));
-		line [n] = '\0';
-		const char *tag = "PraatPictureFile";
-		char *end = strstr (line, tag);
-		if (! end)
+		char buffer [1 + 16];
+		integer n = uinteger_to_integer_a (fread (buffer, 1, 16, f));
+		buffer [16] = '\0';
+		if (n != 16)
+			Melder_throw (U"File too short.");
+		if (! strnequ (buffer, "PraatPicture", 12))
 			Melder_throw (U"This is not a Praat picture file.");
-		*end = '\0';
-		rewind (f);
-		fread (line, 1, integer_to_uinteger (end - line + Melder8_length (tag)), f);
-		Graphics_readRecordings (my graphics.get(), f);
+		double filePictureHeight = undefined;
+		if (buffer [12] == 'F' && buffer [13] == 'i' && buffer [14] == 'l' && buffer [15] == 'e') {
+			filePictureHeight = 12.0;
+		} else {
+			Melder_require (
+				buffer [12] >= '0' && buffer [12] <= '9' &&
+				buffer [13] >= '0' && buffer [13] <= '9' &&
+				buffer [14] >= '0' && buffer [14] <= '9' &&
+				buffer [15] >= '0' && buffer [16] <= '9',
+				U"Incorrect header in Praat picture file."
+			);
+			filePictureHeight =
+				(buffer [12] - '0') * 1000 +
+				(buffer [13] - '0') * 100 +
+				(buffer [14] - '0') * 10 +
+				(buffer [15] - '0')
+			;
+		}
+		fseek (f, 16, SEEK_SET);
+		Graphics_readRecordings (my graphics.get(), f, Picture_HEIGHT - filePictureHeight);
 		Graphics_updateWs (my graphics.get());
 		f.close (file);
 	} catch (MelderError) {
@@ -255,8 +269,8 @@ void Picture_readFromPraatPictureFile (Picture me, MelderFile file) {
 
 #ifdef macintosh
 static size_t appendBytes (void *info, const void *buffer, size_t count) {
-    CFDataAppendBytes ((CFMutableDataRef) info, (const UInt8 *) buffer, uinteger_to_integer (count));
-    return count;
+	CFDataAppendBytes ((CFMutableDataRef) info, (const UInt8 *) buffer, uinteger_to_integer_a (count));
+	return count;
 }
 void Picture_copyToClipboard (Picture me) {
 	/*
@@ -274,7 +288,7 @@ void Picture_copyToClipboard (Picture me) {
 	int resolution = 600;
 	CGRect rect = CGRectMake (0, 0, (my selx2 - my selx1) * resolution, (my sely1 - my sely2) * resolution);
 	CGContextRef context = CGPDFContextCreate (consumer, & rect, nullptr);
-	//my selx1 * RES, (12 - my sely2) * RES, my selx2 * RES, (12 - my sely1) * RES)
+	//my selx1 * RES, (Picture_HEIGHT - my sely2) * RES, my selx2 * RES, (Picture_HEIGHT - my sely1) * RES)
 	{// scope
 		autoGraphics pdfGraphics = Graphics_create_pdf (context, resolution, my selx1, my selx2, my sely1, my sely2);
 		Graphics_play (my graphics.get(), pdfGraphics.get());
@@ -300,12 +314,12 @@ static HENHMETAFILE copyToMetafile (Picture me) {
 	defaultPrinter. Flags = PD_RETURNDEFAULT | PD_RETURNDC;
 	PrintDlg (& defaultPrinter);
 	RECT rect;
-	SetRect (& rect, my selx1 * 2540, (12 - my sely2) * 2540, my selx2 * 2540, (12 - my sely1) * 2540);
+	SetRect (& rect, my selx1 * 2540, (Picture_HEIGHT - my sely2) * 2540, my selx2 * 2540, (Picture_HEIGHT - my sely1) * 2540);
 	const HDC dc = CreateEnhMetaFile (defaultPrinter. hDC, nullptr, & rect, L"Praat\0");
 	if (! dc)
 		Melder_throw (U"Cannot create Windows metafile.");
 	const int resolution = GetDeviceCaps (dc, LOGPIXELSX);   // Virtual PC: 360; Parallels Desktop: 600
-	//Melder_fatal (U"resolution ", resolution);
+	//Melder_crash (U"resolution ", resolution);
 	if (Melder_debug == 6) {
 		DEVMODE *devMode = * (DEVMODE **) defaultPrinter. hDevMode;
 		MelderInfo_open ();
@@ -338,7 +352,7 @@ static HENHMETAFILE copyToMetafile (Picture me) {
 	}
 	autoGraphics pictGraphics = Graphics_create_screen ((void *) dc, nullptr, resolution);
 	Graphics_setWsViewport (pictGraphics.get(), 0, WIN_WIDTH * resolution, 0, WIN_HEIGHT * resolution);
-	Graphics_setWsWindow (pictGraphics.get(), 0.0, WIN_WIDTH, 12.0 - WIN_HEIGHT, 12.0);
+	Graphics_setWsWindow (pictGraphics.get(), 0.0, WIN_WIDTH, Picture_HEIGHT - WIN_HEIGHT, Picture_HEIGHT);
 	Graphics_play (my graphics.get(), pictGraphics.get());
 	HENHMETAFILE metafile = CloseEnhMetaFile (dc);
 	return metafile;
@@ -366,7 +380,7 @@ void Picture_writeToWindowsMetafile (Picture me, MelderFile file) {
 	try {
 		HENHMETAFILE metafile = copyToMetafile (me);
 		MelderFile_delete (file);   // overwrite any existing file with the same name
-		DeleteEnhMetaFile (CopyEnhMetaFile (metafile, Melder_peek32toW_fileSystem (file -> path)));
+		DeleteEnhMetaFile (CopyEnhMetaFile (metafile, MelderFile_peekPathW (file)));
 		DeleteEnhMetaFile (metafile);
 	} catch (MelderError) {
 		Melder_throw (U"Picture not written to Windows metafile ", file);

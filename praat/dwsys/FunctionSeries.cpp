@@ -89,7 +89,6 @@ void structFunctionSeries :: v_getExtrema (double x1, double x2, double *out_xmi
 void FunctionSeries_init (FunctionSeries me, double xmin, double xmax, integer numberOfCoefficients) {
 	my coefficients = zero_VEC (numberOfCoefficients);
 	my numberOfCoefficients = numberOfCoefficients;
-	my _capacity = numberOfCoefficients;
 	my xmin = xmin;
 	my xmax = xmax;
 }

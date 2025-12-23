@@ -1,17 +1,173 @@
 # File: makefile.defs.msys-clang
 
 # System: clang on Windows under MSYS2
-# Paul Boersma 2024-01-18
+# Paul Boersma 2025-11-05
 
-PREFIX ?=
+# This is the makefile for building all three Windows edition of Praat:
+# for ARM64 (aarch64), x86_64 ("Intel64") and i686 ("Intel32") processors.
+# We therefore assume that you have installed three MSYS2 shells: CLANGARM64, CLANG64 and CLANG32.
+#
+# For reasons of speed, all object files are compiled with a compiler for the native physical processor,
+# i.e. with /clangarm64/bin/clang or /clang64/bin/clang, depending on whether your hardware is ARM64 or x86_64.
+# This means we have to do cross-compilation, with explicit specification
+# of the target architecture (aarch64-w64-windows-gnu, x86_64-w64-windows-gnu, or i686-w64-windows-gnu)
+# as well as of sysroot (/clangarm64, /clang64, or /clang32), which is the folder where
+# the include, lib and bin directories reside.
+#
+# Linking, on the other hand, takes place with a target-native compiler,
+# so that the file `libclang_rt.builtins.a` can be found.
+# On an ARM64 processor, this will work correctly, because such a system can emulate Intel64 and Intel32 binaries.
+# On an x86_64 processor, we don't precisely know how an ARM64 target can be linked, because only Intel32 binaries
+# can be emulated. Please tell us when you figure out how to link an ARM64 target on an x86_64 processor;
+# perhaps it doesn't exist, in which case we must advise you to work on an ARM64 computer if
+# you want to produce all three Windows editions of Praat.
+#
+# For the ARM64 target, the tools ar, ranlib and windres can be in irregular places and have irregular names.
 
-CC = $(PREFIX)clang
-CXX = $(PREFIX)clang
-LINK = $(CXX)
+#
+# This makefile relies on the environment variables MSYSTEM (the target you want to build for)
+# and PROCESSOR_IDENTIFIER (a string describing the actual physical hardware processor on your computer).
+# If either variable is not set on your computer, hard-code it, as explained in the next two paragraphs.
+#
+
+# If MSYSTEM is not set on your computer, then that is probably a mistake in the set-up of your MSYS2 shell;
+# in case of emergency, however, you can hard-code MSYSTEM by uncommenting one of the following three lines:
+#MSYSTEM := CLANGARM64
+#MSYSTEM := CLANG64
+#MSYSTEM := CLANG32
+$(info Making: the MSYSTEM is $(MSYSTEM))
+
+# If PROCESSOR_IDENTIFIER is not set on your computer, then hard-code it by uncommenting one of the following two lines:
+#PROCESSOR_IDENTIFIER := ARM64
+#PROCESSOR_IDENTIFIER := x86_64
+$(info Making: the processor identifier is: $(PROCESSOR_IDENTIFIER))
+
+#
+# What the fastest compiler is, depends on the host computer, i.e. on PROCESSOR_IDENTIFIER.
+#
+ifeq ($(findstring ARM,$(PROCESSOR_IDENTIFIER)),ARM)
+	PHYSICAL_PROCESSOR := ARM64
+else ifeq ($(findstring arm,$(PROCESSOR_IDENTIFIER)),arm)
+	PHYSICAL_PROCESSOR := ARM64
+else
+	PHYSICAL_PROCESSOR := x86_64
+endif
+$(info Making: the physical processor is $(PHYSICAL_PROCESSOR))
+ifeq ($(PHYSICAL_PROCESSOR),ARM64)
+	FASTEST_COMPILER := /clangarm64/bin/clang
+else
+	FASTEST_COMPILER := /clang64/bin/clang
+endif
+$(info Making: the fastest compiler is $(FASTEST_COMPILER))
+
+#
+# What the compilation target is, depends on the target computer architecture, i.e. on MSYSTEM.
+#
+ifeq ($(MSYSTEM),CLANGARM64)
+	TARGET = aarch64-w64-windows-gnu
+	SYSROOT = /clangarm64
+else ifeq ($(MSYSTEM),CLANG64)
+	TARGET = x86_64-w64-windows-gnu
+	SYSROOT = /clang64
+else ifeq ($(MSYSTEM),CLANG32)
+	#
+	# Building Praat for 32-bit Windows with clang requires having the folder C:/msys2/clang32.
+	# Around 2025 MSYS stopped supporting 32-bit Windows,
+	# so we work with version 18, from 2024, which we happened to have installed in time.
+	# Fortunately, version 21 of clang on ARM64 and Intel64 does still support cross-compilation for the 32-bit target.
+	#
+	TARGET = i686-w64-windows-gnu
+	SYSROOT = /clang32
+endif
+$(info Making: the target is $(TARGET))
+$(info Making: sysroot is $(SYSROOT))
+CC = $(FASTEST_COMPILER) --target=$(TARGET) --sysroot=$(SYSROOT)
+CXX = $(FASTEST_COMPILER) --target=$(TARGET) --sysroot=$(SYSROOT)
+$(info Making: the compiler set-up is $(CXX))
+
+#
+# What the best tools are (ar, ranlib, windres) depends crucially on the target computer architecture, because
+# the tools are specific to the target computer architecture. If we have a choice,
+# we prefer cross-tooling, because that will be slightly faster, so we then also depend on the host computer.
+#
+ifeq ($(MSYSTEM),CLANGARM64)
+	ifeq ($(PHYSICAL_PROCESSOR),ARM64)
+		# If you're on a physical ARM64 host, you'll like to install ar/ranlib/windres for ARM64 this way:
+		#    pacman -S mingw-w64-clang-aarch64-llvm-tools
+		# The tools will be ARM64 executables that create ARM64 object code;
+		# ranlib will be at /clangarm64/bin/llvm-ranlib.exe.
+		TOOLS_PREFIX = /clangarm64/bin/llvm-
+	else
+		# If you're on a physical x86_64 host, you'll like to install ar/ranlib/windres for ARM64 this way:
+		#    pacman -S mingw-w64-cross-mingwarm64-binutils
+		# or even
+		#    pacman -S mingw-w64-cross-toolchain
+		# The tools will be x64_64 executables that create ARM64 object code;
+		# ranlib will be at /opt/bin/aarch64-w64-mingw32-ranlib.exe.
+		TOOLS_PREFIX = /opt/bin/aarch64-w64-mingw32-
+	endif
+else ifeq ($(MSYSTEM),CLANG64)
+	# ar/ranlib/windres are in /usr/bin, even if you are on an ARM64 host.
+	# ar/ranlib/windres are also in /clang64/bin/, so either of the following may be correct.
+	TOOLS_PREFIX =
+	#TOOLS_PREFIX = /clang64/bin/
+else ifeq ($(MSYSTEM),CLANG32)
+	TOOLS_PREFIX = /clang32/bin/
+endif
+$(info Making: ar/ranlib/windres are in $(TOOLS_PREFIX))
+
+# The linker should usually be native, so as to be able to find the native runtime library, which is at:
+#    /clangarm64/lib/clang/21/lib/windows/libclang_rt.builtins-aarch64.a
+#    /clang64/lib/clang/21/lib/windows/libclang_rt.builtins-x86_64.a
+#    /clang32/lib/clang/18/lib/windows/libclang_rt.builtins-i386.a
+
+ifeq ($(MSYSTEM),CLANGARM64)
+	# Cross-linking on an x86_64 host apparently tries to find the runtime library at
+	#    /clang<64|arm64>/lib/clang/21/lib/aarch64-windows-gnu/libclang_rt.builtins.a
+	# but we don't know how to install one there, so we use native ARM64 clang for linking,
+	# making it (for the moment) impossible to build Praat for ARM64 on an x86_64 computer.
+	LINK = /clangarm64/bin/clang --target=$(TARGET) --sysroot=$(SYSROOT)
+	# Once we do know how to cross-link, we'll be able to do something like
+	#LINK = $(FASTEST_COMPILER) --target=$(TARGET) --sysroot=$(SYSROOT)
+else ifeq ($(MSYSTEM),CLANG64)
+	# Cross-linking on an ARM64 host apparently tries to find the runtime library at
+	#    /clang<64|arm64>/lib/clang/21/lib/x86_64-windows-gnu/libclang_rt.builtins.a
+	# but we don't know how to install one there, so we use native x86_64 clang for linking;
+	# fortunately, we can still build Praat for x86_64 on an ARM64 computer,
+	# because ARM64 computers can run x86_64-native code.
+	LINK = /clang64/bin/clang --target=$(TARGET) --sysroot=$(SYSROOT)
+	# Once we do know how to cross-link, we'll be able to do something like
+	#LINK = $(FASTEST_COMPILER) --target=$(TARGET) --sysroot=$(SYSROOT)
+	# We tried without avail:
+	#    pacman -S mingw-w64-cross-clang
+else ifeq ($(MSYSTEM),CLANG32)
+	# Cross-linking on an ARM64 or x86_64 host apparently tries to find the runtime library at
+	#    /clang<32|64|arm64>/lib/clang/21/lib/i686-windows-gnu/libclang_rt.builtins.a
+	# but we don't know how to install one there, so we use native i686 clang for linking;
+	# fortunately, we can still build Praat for i686 on an ARM64 or x86_64 computer,
+	# because ARM64 and x86_64 computers can run i686-native code.
+	LINK = /clang32/bin/clang --target=$(TARGET) --sysroot=$(SYSROOT)
+	# Once we do know how to cross-link, we'll be able to do something like
+	#LINK = $(FASTEST_COMPILER) --target=$(TARGET) --sysroot=$(SYSROOT)
+else
+	$(warning Unknown MSYS environment: $(MSYSTEM))
+endif
+$(info Making: the linker set-up is $(LINK))
+
+#
+# Now starts the minimally needed part of the makefile.
+# If you just want to do native compilation for an x86_64 target on an x86_64 host,
+# you can erase all of the code above.
+#
+
+CC ?= clang
+CXX ?= clang
+TOOLS_PREFIX ?=
+LINK ?= $(CXX)
 
 COMMONFLAGS = -municode -D_FILE_OFFSET_BITS=64 \
 	-O3
-# Probably implicit: -m64 -mwin32 -march=x86_64 -mtune=generic
+# Probably implicit: -m64 -mwin32 -march=... -mtune=generic
 
 CFLAGS = -std=gnu99 $(COMMONFLAGS)
 
@@ -22,8 +178,8 @@ EXECUTABLE = Praat.exe
 
 LIBS = -lwinmm -lwsock32 -lcomctl32 -lole32 -lgdi32 -lgdiplus -lcomdlg32 -lwinspool -static-libgcc -lc++ -lc++abi -mwindows -static
 
-AR = $(PREFIX)ar
-RANLIB = $(PREFIX)ranlib
-WINDRES = $(PREFIX)windres
+AR = $(TOOLS_PREFIX)ar
+RANLIB = $(TOOLS_PREFIX)ranlib
+WINDRES = $(TOOLS_PREFIX)windres
 ICON = praat_win.o
 MAIN_ICON = main/praat_win.o

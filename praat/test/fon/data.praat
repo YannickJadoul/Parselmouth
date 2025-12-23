@@ -1,5 +1,5 @@
 # data.praat
-# Paul Boersma, 15 November 2022
+# Paul Boersma, 7 November 2025
 # Checks Copy, Equal, Read, Save.
 
 tracing$ = "no"
@@ -21,6 +21,26 @@ appendInfoLine: "Formant"
 selectObject: sound
 formant = To Formant (burg): 0, 5, 5000, 0.025, 50
 @test (formant)
+
+appendInfoLine: "Spectrogram"
+selectObject: sound
+spectrogram = To Spectrogram: 0.005, 5000.0, 0.002, 20.0, "gaussian"
+@test (spectrogram)
+
+appendInfoLine: "Cochleagram"
+selectObject: sound
+cochleagram = To Cochleagram: 0.01, 0.1, 0.03, 0.03
+@test (cochleagram)
+
+appendInfoLine: "MelSpectrogram"
+selectObject: sound
+melSpectrogram = To MelSpectrogram: 0.015, 0.005, 100.0, 100.0, 0.0
+@test (melSpectrogram)
+
+appendInfoLine: "BarkSpectrogram"
+selectObject: sound
+barkSpectrogram = To BarkSpectrogram: 0.015, 0.005, 1.0, 1.0, 0.0
+@test (barkSpectrogram)
 
 appendInfoLine: "PointProcess"
 selectObject: sound, pitch
@@ -155,7 +175,8 @@ Set shunting... shunting
 @test (network)
 
 procedure selectAll ( )
-	selectObject: sound, pitch, formant, pulses, pitchTier, manipulation, matrix, speaker, grammar, table, tableOfReal,
+	selectObject: sound, pitch, formant, spectrogram, cochleagram, melSpectrogram, barkSpectrogram,
+	... pulses, pitchTier, manipulation, matrix, speaker, grammar, table, tableOfReal,
 	... ffnet, pattern, categories, discriminant, dtw, textgrid, network
 endproc
 procedure readCheckCollectionFile ( )
@@ -166,6 +187,14 @@ procedure readCheckCollectionFile ( )
 	assert objectsAreIdentical: pitch, pitch2
 	formant2 = selected: "Formant"
 	assert objectsAreIdentical: formant, formant2
+	spectrogram2 = selected: "Spectrogram"
+	assert objectsAreIdentical: spectrogram, spectrogram2
+	cochleagram2 = selected: "Cochleagram"
+	assert objectsAreIdentical: cochleagram, cochleagram2
+	melSpectrogram2 = selected: "MelSpectrogram"
+	assert objectsAreIdentical: melSpectrogram, melSpectrogram2
+	barkSpectrogram2 = selected: "BarkSpectrogram"
+	assert objectsAreIdentical: barkSpectrogram, barkSpectrogram2
 	pulses2 = selected: "PointProcess"
 	assert objectsAreIdentical: pulses, pulses2
 	pitchTier2 = selected: "PitchTier"
@@ -196,7 +225,10 @@ procedure readCheckCollectionFile ( )
 	assert objectsAreIdentical: textgrid, textgrid2
 	network2 = selected: "Network"
 	assert objectsAreIdentical: network, network2
-	removeObject: sound2, pitch2, formant2, pulses2, pitchTier2, manipulation2, matrix2, speaker2, grammar2, table2, tableOfReal2,
+	removeObject: sound2, pitch2, formant2,
+	... spectrogram2, cochleagram2, melSpectrogram2, barkSpectrogram2,
+	... pulses2, pitchTier2,
+	... manipulation2, matrix2, speaker2, grammar2, table2, tableOfReal2,
 	... ffnet2, pattern2, categories2, discriminant2, dtw2, textgrid2, network2
 endproc
 
@@ -215,7 +247,10 @@ appendInfoLine: "binary Collection"
 Save as binary file: "kanweg.Collection"
 @readCheckCollectionFile ( )
 
-removeObject: sound, pitch, formant, pulses, pitchTier, manipulation, matrix, speaker, grammar, table, tableOfReal,
+removeObject: sound, pitch, formant,
+... spectrogram, cochleagram, melSpectrogram, barkSpectrogram,
+... pulses, pitchTier,
+... manipulation, matrix, speaker, grammar, table, tableOfReal,
 ... ffnet, pattern, categories, discriminant, dtw, textgrid, network
 deleteFile: "kanweg.Object"
 deleteFile: "kanweg.Collection"
@@ -248,7 +283,7 @@ procedure test (.object1)
 	selectObject: .object1
 	Save as binary file: "kanweg.Object"
 	.object2 = Read from file: "kanweg.Object"
-	assert objectsAreIdentical: .object1, .object2   ; binary write and read
+	assert objectsAreIdentical: .object1, .object2   ; binary write and read (1)
 	Remove
 	# Test binary writing.
 	selectObject: .object1
@@ -256,7 +291,7 @@ procedure test (.object1)
 	Debug: tracing$, 18
 	.object2 = Read from file: "kanweg.Object"
 	Debug: tracing$, 0
-	assert objectsAreIdentical: .object1, .object2   ; binary write and read
+	assert objectsAreIdentical: .object1, .object2   ; binary write and read (2)
 	Remove
 	# Test binary writing.
 	selectObject: .object1
@@ -264,7 +299,7 @@ procedure test (.object1)
 	Save as binary file: "kanweg.Object"
 	Debug: tracing$, 0
 	.object2 = Read from file: "kanweg.Object"
-	assert objectsAreIdentical: .object1, .object2   ; binary write and read
+	assert objectsAreIdentical: .object1, .object2   ; binary write and read (3)
 	Remove
 	# Good neighbour.
 	selectObject: .object1

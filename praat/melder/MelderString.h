@@ -2,11 +2,11 @@
 #define _melder_string_h_
 /* MelderString.h
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -53,9 +53,9 @@ void _private_MelderString_expand (MelderString *me, int64 sizeNeeded);   // inc
 void MelderString_ncopy (MelderString *me, conststring32 sourceOrNull, int64 n);
 void MelderString_nappend (MelderString *me, conststring32 sourceOrNull, integer n);
 
-inline void _recursiveTemplate_MelderString_append (MelderString *me, const MelderArg& arg) {
-	if (arg._arg) {
-		const char32 *newEndOfStringLocation = stp32cpy (& my string [my length], arg._arg);   // this will append a null character
+inline void _private_MelderString__appendOneStringElement (MelderString *me, conststring32 string) {
+	if (string) {
+		const char32 *newEndOfStringLocation = stp32cpy (& my string [my length], string);   // this will append a null character
 		my length = newEndOfStringLocation - & my string [0];
 	} else {
 		/*
@@ -65,36 +65,37 @@ inline void _recursiveTemplate_MelderString_append (MelderString *me, const Meld
 		*/
 	}
 }
-template <typename... Args>
-void _recursiveTemplate_MelderString_append (MelderString *me, const MelderArg& first, Args... rest) {
-	_recursiveTemplate_MelderString_append (me, first);
-	_recursiveTemplate_MelderString_append (me, rest...);
-}
 
-template <typename... Args>
-void MelderString_append (MelderString *me, const MelderArg& first, Args... rest) {
-	const integer extraLength = MelderArg__length (first, rest...);
+template <typename... Arg>
+void MelderString_append (MelderString *me, const Arg... arg) {
+	const integer extraLength = MelderArg__length (arg...);
 	const integer sizeNeeded = my length + extraLength + 1;
 	Melder_assert (sizeNeeded > 0);   // this assertion was added to silence an analyzer complaint
 	if (sizeNeeded > my bufferSize)
 		_private_MelderString_expand (me, sizeNeeded);
-	_recursiveTemplate_MelderString_append (me, first, rest...);
+	(// fold
+		_private_MelderString__appendOneStringElement (me, MelderArg { arg }. _arg)
+				, ...
+	);
 }
 
 constexpr int64 MelderString_FREE_THRESHOLD_BYTES = 10'000LL;
 
-template <typename... Args>
-void MelderString_copy (MelderString *me, const MelderArg& first, Args... rest) {
+template <typename... Arg>
+void MelderString_copy (MelderString *me, const Arg... arg) {
 	if (my bufferSize * (int64) sizeof (char32) >= MelderString_FREE_THRESHOLD_BYTES)
 		MelderString_free (me);
-	const integer length = MelderArg__length (first, rest...);
+	const integer length = MelderArg__length (arg...);
 	const integer sizeNeeded = length + 1;
 	Melder_assert (sizeNeeded > 0);   // this assertion was added to silence an analyzer complaint
 	if (sizeNeeded > my bufferSize)
 		_private_MelderString_expand (me, sizeNeeded);
 	my length = 0;
 	my string [0] = U'\0';   // maintain invariant
-	_recursiveTemplate_MelderString_append (me, first, rest...);
+	(// fold
+		_private_MelderString__appendOneStringElement (me, MelderArg { arg }. _arg)
+				, ...
+	);
 }
 
 void MelderString16_appendCharacter (MelderString16 *me, char32 character);

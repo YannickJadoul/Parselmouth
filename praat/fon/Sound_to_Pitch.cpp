@@ -1,10 +1,10 @@
 /* Sound_to_Pitch.cpp
  *
- * Copyright (C) 1992-2005,2007-2012,2014-2020,2023,2024 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2012,2014-2020,2023-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -34,7 +34,6 @@
 
 #include "Sound_to_Pitch.h"
 #include "NUM2.h"
-#include "MelderThread.h"
 #include "Sound_and_Spectrum.h"
 
 #define AC_HANNING  0
@@ -44,7 +43,7 @@
 
 static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 	double pitchFloor, int maxnCandidates, int method, double voicingThreshold, double octaveCost,
-	NUMfft_Table fftTable, double dt_window, integer nsamp_window, integer halfnsamp_window,
+	NUMFourierTable fftTable, double dt_window, integer nsamp_window, integer halfnsamp_window,
 	integer maximumLag, integer nsampFFT, integer nsamp_period, integer halfnsamp_period,
 	integer brent_ixmax, integer brent_depth, double globalPeak,
 	MAT const& frame, VEC const& ac, VEC const& window, VEC const& windowR,
@@ -116,7 +115,7 @@ static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 		const integer offset = startSample - 1;
 		longdouble sumx2 = 0.0;   // sum of squares
 		for (integer channel = 1; channel <= my ny; channel ++) {
-			const double * const amp = & my z [channel] [0] + offset;
+			const double *const amp = & my z [channel] [0] + offset;
 			for (integer i = 1; i <= nsamp_window; i ++) {
 				const double x = amp [i] - localMean [channel];
 				sumx2 += x * x;
@@ -127,7 +126,7 @@ static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 		for (integer i = 1; i <= localMaximumLag; i ++) {
 			longdouble product = 0.0;
 			for (integer channel = 1; channel <= my ny; channel ++) {
-				const double * const amp = & my z [channel] [0] + offset;
+				const double *const amp = & my z [channel] [0] + offset;
 				const double y0 = amp [i] - localMean [channel];
 				const double yZ = amp [i + nsamp_window] - localMean [channel];
 				sumy2 += yZ * yZ - y0 * y0;
@@ -193,7 +192,10 @@ static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 			Use parabolic interpolation for first estimate of frequency,
 			and sin(x)/x interpolation to compute the strength of this frequency.
 		*/
-		const double dr = 0.5 * (r [i+1] - r [i-1]), d2r = 2.0 * r [i] - r [i-1] - r [i+1];
+		const double dr = 0.5 * (r [i+1] - r [i-1]);
+		const double d2r = (r [i] - r [i-1]) + (r [i] - r [i+1]);
+				// not 2.0 * r [i] - r [i-1] - r [i+1] because of rounhding errors! (bug removed 2025-04-18)
+		Melder_assert (d2r > 0);
 		const double frequencyOfMaximum = 1.0 / my dx / (i + dr / d2r);
 		const integer offset = - brent_ixmax - 1;
 		double strengthOfMaximum = /* method & 1 ? */
@@ -259,54 +261,6 @@ static void Sound_into_PitchFrame (Sound me, Pitch_Frame pitchFrame, double t,
 	}
 }
 
-Thing_define (Sound_into_Pitch_Args, Thing) { public:
-	Sound sound;
-	Pitch pitch;
-	integer firstFrame, lastFrame;
-	double pitchFloor;
-	int maxnCandidates, method;
-	double voicingThreshold, octaveCost, dt_window;
-	integer nsamp_window, halfnsamp_window, maximumLag, nsampFFT, nsamp_period, halfnsamp_period, brent_ixmax, brent_depth;
-	double globalPeak;
-	VEC window, windowR;
-	bool isMainThread;
-	volatile int *cancelled;
-	autoNUMfft_Table fftTable;
-	autoMAT frame;
-	autoVEC ac, rbuffer, localMean;
-	double *r;
-	autoINTVEC imax;
-};
-
-Thing_implement (Sound_into_Pitch_Args, Thing, 0);
-
-static void Sound_into_Pitch (Sound_into_Pitch_Args me)
-{
-	for (integer iframe = my firstFrame; iframe <= my lastFrame; iframe ++) {
-		const Pitch_Frame pitchFrame = & my pitch -> frames [iframe];
-		const double t = Sampled_indexToX (my pitch, iframe);
-		if (my isMainThread) {
-			try {
-				Melder_progress (0.1 + 0.8 * (iframe - my firstFrame) / (my lastFrame - my firstFrame),
-					U"Sound to Pitch: analysing ", my lastFrame, U" frames");
-			} catch (MelderError) {
-				*my cancelled = 1;
-				throw;
-			}
-		} else if (*my cancelled) {
-			return;
-		}
-		Sound_into_PitchFrame (my sound, pitchFrame, t,
-			my pitchFloor, my maxnCandidates, my method, my voicingThreshold, my octaveCost,
-			& my fftTable, my dt_window, my nsamp_window, my halfnsamp_window,
-			my maximumLag, my nsampFFT, my nsamp_period, my halfnsamp_period,
-			my brent_ixmax, my brent_depth, my globalPeak,
-			my frame.get(), my ac.get(), my window, my windowR,
-			my r, my imax.get(), my localMean.get()
-		);
-	}
-}
-
 autoPitch Sound_to_Pitch_any (Sound me,
 	int method, double periodsPerWindow,
 	double dt, double pitchFloor, double pitchCeiling,
@@ -315,7 +269,6 @@ autoPitch Sound_to_Pitch_any (Sound me,
 	double octaveCost, double octaveJumpCost, double voicedUnvoicedCost)
 {
 	try {
-		autoNUMfft_Table fftTable;
 		double t1;
 		integer numberOfFrames;
 		integer nsampFFT;
@@ -376,17 +329,17 @@ autoPitch Sound_to_Pitch_any (Sound me,
 		nsamp_window = halfnsamp_window * 2;
 
 		/*
-		 * Determine the minimum and maximum lags.
-		 */
+			Determine the minimum and maximum lags.
+		*/
 		const integer minimumLag = std::max (2_integer, Melder_ifloor (1.0 / my dx / pitchCeiling));
 		const integer maximumLag = std::min (Melder_ifloor (nsamp_window / periodsPerWindow) + 2, nsamp_window);
 
 		/*
-		 * Determine the number of frames.
-		 * Fit as many frames as possible symmetrically in the total duration.
-		 * We do this even for the forward cross-correlation method,
-		 * because that allows us to compare the two methods.
-		 */
+			Determine the number of frames.
+			Fit as many frames as possible symmetrically in the total duration.
+			We do this even for the forward cross-correlation method,
+			because that allows us to compare the two methods.
+		*/
 		try {
 			Sampled_shortTermAnalysis (me, method >= FCC_NORMAL ? 1.0 / pitchFloor + dt_window : dt_window, dt, & numberOfFrames, & t1);
 		} catch (MelderError) {
@@ -444,7 +397,7 @@ autoPitch Sound_to_Pitch_any (Sound me,
 			*/
 			windowR. resize (nsampFFT);
 			window. resize (nsamp_window);
-			NUMfft_Table_init (& fftTable, nsampFFT);
+			autoNUMFourierTable fftTable = NUMFourierTable_create (nsampFFT);
 
 			/*
 				A Gaussian or Hanning window is applied against phase effects.
@@ -458,7 +411,7 @@ autoPitch Sound_to_Pitch_any (Sound me,
 							(nsamp_window + 1) / (nsamp_window + 1)) - edge) / (1.0 - edge);
 			} else {   // Hanning window
 				for (integer i = 1; i <= nsamp_window; i ++)
-					window [i] = 0.5 - 0.5 * cos (i * 2 * NUMpi / (nsamp_window + 1));
+					window [i] = 0.5 - 0.5 * cos (NUM2pi * i / (nsamp_window + 1));
 			}
 
 			/*
@@ -466,14 +419,14 @@ autoPitch Sound_to_Pitch_any (Sound me,
 			*/
 			for (integer i = 1; i <= nsamp_window; i ++)
 				windowR [i] = window [i];
-			NUMfft_forward (& fftTable, windowR.get());
+			NUMfft_forward (fftTable.get(), windowR.get());
 			windowR [1] *= windowR [1];   // DC component
 			for (integer i = 2; i < nsampFFT; i += 2) {
 				windowR [i] = windowR [i] * windowR [i] + windowR [i + 1] * windowR [i + 1];
 				windowR [i + 1] = 0.0;   // power spectrum: square and zero
 			}
 			windowR [nsampFFT] *= windowR [nsampFFT];   // Nyquist frequency
-			NUMfft_backward (& fftTable, windowR.get());   // autocorrelation
+			NUMfft_backward (fftTable.get(), windowR.get());   // autocorrelation
 			for (integer i = 2; i <= nsamp_window; i ++)
 				windowR [i] /= windowR [1];   // normalize
 			windowR [1] = 1.0;   // normalize
@@ -482,61 +435,45 @@ autoPitch Sound_to_Pitch_any (Sound me,
 		}
 
 		autoMelderProgress progress (U"Sound to Pitch...");
+		if (MelderThread_TRACING)
+			Melder_casual (U"channel frame time pitch");
 
-		integer numberOfFramesPerThread = 20;
-		integer numberOfThreads = (numberOfFrames - 1) / numberOfFramesPerThread + 1;
-		const integer numberOfProcessors = MelderThread_getNumberOfProcessors ();
-		trace (numberOfProcessors, U" processors");
-		Melder_clipRight (& numberOfThreads, numberOfProcessors);
-		Melder_clip (1_integer, & numberOfThreads, 16_integer);
-		numberOfFramesPerThread = (numberOfFrames - 1) / numberOfThreads + 1;
-
-		autoSound_into_Pitch_Args args [16];
-		integer firstFrame = 1, lastFrame = numberOfFramesPerThread;
-		volatile int cancelled = 0;
-		for (int ithread = 1; ithread <= numberOfThreads; ithread ++) {
-			if (ithread == numberOfThreads)
-				lastFrame = numberOfFrames;
-			autoSound_into_Pitch_Args arg = Thing_new (Sound_into_Pitch_Args);
-			arg -> sound = me;
-			arg -> pitch = thee.get();
-			arg -> firstFrame = firstFrame;
-			arg -> lastFrame = lastFrame;
-			arg -> pitchFloor = pitchFloor;
-			arg -> maxnCandidates = maxnCandidates;
-			arg -> method = method;
-			arg -> voicingThreshold = voicingThreshold;
-			arg -> octaveCost = octaveCost;
-			arg -> dt_window = dt_window;
-			arg -> nsamp_window = nsamp_window;
-			arg -> halfnsamp_window = halfnsamp_window;
-			arg -> maximumLag = maximumLag;
-			arg -> nsampFFT = nsampFFT;
-			arg -> nsamp_period = nsamp_period;
-			arg -> halfnsamp_period = halfnsamp_period;
-			arg -> brent_ixmax = brent_ixmax;
-			arg -> brent_depth = brent_depth;
-			arg -> globalPeak = globalPeak;
-			arg -> window = window.get();
-			arg -> windowR = windowR.get();
-			arg -> isMainThread = ( ithread == numberOfThreads );
-			arg -> cancelled = & cancelled;
+		MelderThread_PARALLELIZE (numberOfFrames, 5)
+			autoMAT frame;
+			autoNUMFourierTable fftTable;
+			autoVEC ac;
 			if (method >= FCC_NORMAL) {   // cross-correlation
-				arg -> frame = zero_MAT (my ny, nsamp_window);
+				frame = zero_MAT (my ny, nsamp_window);
 			} else {   // autocorrelation
-				NUMfft_Table_init (& arg -> fftTable, nsampFFT);
-				arg -> frame = zero_MAT (my ny, nsampFFT);
-				arg -> ac = zero_VEC (nsampFFT);
+				fftTable = NUMFourierTable_create (nsampFFT);
+				frame = zero_MAT (my ny, nsampFFT);
+				ac = zero_VEC (nsampFFT);
 			}
-			arg -> rbuffer = zero_VEC (2 * nsamp_window + 1);
-			arg -> r = & arg -> rbuffer [1 + nsamp_window];
-			arg -> imax = zero_INTVEC (maxnCandidates);
-			arg -> localMean = zero_VEC (my ny);
-			args [ithread - 1] = std::move (arg);
-			firstFrame = lastFrame + 1;
-			lastFrame += numberOfFramesPerThread;
-		}
-		MelderThread_run (Sound_into_Pitch, args, numberOfThreads);
+			autoVEC rbuffer = zero_VEC (2 * nsamp_window + 1);
+			double *r = & rbuffer [1 + nsamp_window];
+			autoINTVEC imax = zero_INTVEC (maxnCandidates);
+			autoVEC localMean = zero_VEC (my ny);
+		MelderThread_FOR (iframe) {
+			Pitch_Frame pitchFrame = & thy frames [iframe];
+			const double time = Sampled_indexToX (thee.get(), iframe);
+			if (MelderThread_IS_MASTER) {   // then we can interact with the GUI
+				const double estimatedProgress = MelderThread_ESTIMATED_PROGRESS;
+				Melder_progress (0.1 + 0.8 * estimatedProgress,
+					U"Sound to Pitch: analysed approximately ", Melder_iround (numberOfFrames * estimatedProgress),
+					U" out of ", numberOfFrames, U" frames"
+				);
+			}
+			Sound_into_PitchFrame (me, pitchFrame, time,
+				pitchFloor, maxnCandidates, method, voicingThreshold, octaveCost,
+				fftTable.get(), dt_window, nsamp_window, halfnsamp_window,
+				maximumLag, nsampFFT, nsamp_period, halfnsamp_period,
+				brent_ixmax, brent_depth, globalPeak,
+				frame.get(), ac.get(), window.get(), windowR.get(),
+				r, imax.get(), localMean.get()
+			);
+			if (MelderThread_TRACING)
+				Melder_casual (MelderThread_CHANNEL, U" ", iframe, U" ", time, U" ", pitchFrame -> candidates [1]. frequency);
+		} MelderThread_ENDFOR
 
 		Melder_progress (0.95, U"Sound to Pitch: path finder");
 		Pitch_pathFinder (thee.get(), silenceThreshold, voicingThreshold,

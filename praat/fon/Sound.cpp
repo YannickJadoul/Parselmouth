@@ -1,10 +1,10 @@
 /* Sound.cpp
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -272,58 +272,52 @@ autoSound Sound_extractChannels (constSound me, constINTVECVU const& channels) {
 	}
 }
 
-static double getSumOfSquares (constSound me, double xmin, double xmax, integer *n) {
-	Melder_assert (me);
-	Function_unidirectionalAutowindow (me, & xmin, & xmax);
-	integer imin, imax;
-	*n = Sampled_getWindowSamples (me, xmin, xmax, & imin, & imax);
-	if (*n <= 0)
-		return undefined;
-	longdouble sumOfSquares = 0.0;
-	for (integer ichan = 1; ichan <= my ny; ichan ++) {
-		constVECVU const& channel = my z.row (ichan);
-		for (integer i = imin; i <= imax; i ++) {
-			const longdouble value = channel [i];
-			sumOfSquares += value * value;
-		}
-	}
-	return double (sumOfSquares);
+void Sound_shiftTimesToBetweenZeroAndPhysicalDuration (mutableSound me) {
+	my xmin = 0.0;
+	my x1 = 0.5 * my dx;
+	my xmax = my nx * my dx;
 }
 
-double Sound_getRootMeanSquare (constSound me, double xmin, double xmax) {
-	integer n;
-	const double sumOfSquares = getSumOfSquares (me, xmin, xmax, & n);
-	return isdefined (sumOfSquares) ? sqrt (sumOfSquares / (n * my ny)) : undefined;
+double Sound_getRootMeanSquare (constSound me, double tmin, double tmax) {
+	/* mutable accumulate */ double meanOfSquared = 0.0;
+	for (integer ichan = 1; ichan <= my ny; ichan ++)
+		meanOfSquared += Sampled_getMeanOfSquared (me, tmin, tmax, ichan, 0, false);
+	return isdefined (meanOfSquared) ? sqrt (meanOfSquared / my ny) : undefined;
 }
 
-double Sound_getEnergy (constSound me, double xmin, double xmax) {
-	integer n;
-	const double sumOfSquares = getSumOfSquares (me, xmin, xmax, & n);
-	return isdefined (sumOfSquares) ? sumOfSquares * my dx / my ny : undefined;
+double Sound_getEnergy (constSound me, double tmin, double tmax) {
+	/* mutable accumulate */ double integralOfSquared = 0.0;
+	for (integer ichan = 1; ichan <= my ny; ichan ++)
+		integralOfSquared += Sampled_getIntegralOfSquared (me, tmin, tmax, ichan, 0, false);
+	return isdefined (integralOfSquared) ? integralOfSquared / my ny : undefined;
 }
 
-double Sound_getPower (constSound me, double xmin, double xmax) {
-	integer n;
-	const double sumOfSquares = getSumOfSquares (me, xmin, xmax, & n);
-	return isdefined (sumOfSquares) ? sumOfSquares / (n * my ny) : undefined;
+double Sound_getPower (constSound me, double tmin, double tmax) {
+	/* mutable accumulate */ double meanOfSquared = 0.0;
+	for (integer ichan = 1; ichan <= my ny; ichan ++)
+		meanOfSquared += Sampled_getMeanOfSquared (me, tmin, tmax, ichan, 0, false);
+	return isdefined (meanOfSquared) ? meanOfSquared / my ny : undefined;
 }
 
 double Sound_getEnergyInAir (constSound me) {
-	integer n;
-	const double sumOfSquares = getSumOfSquares (me, 0.0, 0.0, & n);
-	return isdefined (sumOfSquares) ? sumOfSquares * my dx / (400.0 * my ny) : undefined;
+	/* mutable accumulate */ double integralOfSquared = 0.0;
+	for (integer ichan = 1; ichan <= my ny; ichan ++)
+		integralOfSquared += Sampled_getIntegralOfSquared (me, 0.0, 0.0, ichan, 0, false);
+	return isdefined (integralOfSquared) ? integralOfSquared / (400.0 * my ny) : undefined;
 }
 
 double Sound_getIntensity_dB (constSound me) {
-	integer n;
-	const double sumOfSquares = getSumOfSquares (me, 0.0, 0.0, & n);
-	return isdefined (sumOfSquares) && sumOfSquares != 0.0 ? 10.0 * log10 (sumOfSquares / (n * my ny) / 4.0e-10) : undefined;
+	/* mutable accumulate */ double meanOfSquared = 0.0;
+	for (integer ichan = 1; ichan <= my ny; ichan ++)
+		meanOfSquared += Sampled_getMeanOfSquared (me, 0.0, 0.0, ichan, 0, false);
+	return isdefined (meanOfSquared) && meanOfSquared != 0.0 ? 10.0 * log10 (meanOfSquared / (4.0e-10 * my ny)) : undefined;
 }
 
 double Sound_getPowerInAir (constSound me) {
-	integer n;
-	const double sumOfSquares = getSumOfSquares (me, 0, 0, & n);
-	return ( isdefined (sumOfSquares) ? sumOfSquares / (n * my ny) / 400.0 : undefined );
+	/* mutable accumulate */ double meanOfSquared = 0.0;
+	for (integer ichan = 1; ichan <= my ny; ichan ++)
+		meanOfSquared += Sampled_getMeanOfSquared (me, 0.0, 0.0, ichan, 0, false);
+	return ( isdefined (meanOfSquared) ? meanOfSquared / (400.0 * my ny) : undefined );
 }
 
 autoSound Matrix_to_Sound_mono (constMatrix me, integer rowNumber) {
@@ -598,7 +592,7 @@ autoSound Sounds_convolve (constSound me, constSound thee, kSounds_convolve_scal
 			//case kSounds_convolve_signalOutsideTimeDomain_PERIODIC: {
 				// do nothing
 			//} break;
-			default: Melder_fatal (U"Sounds_convolve: unimplemented outside-time-domain strategy ", (int) signalOutsideTimeDomain);
+			default: Melder_crash (U"Sounds_convolve: unimplemented outside-time-domain strategy ", (int) signalOutsideTimeDomain);
 		}
 		switch (scaling) {
 			case kSounds_convolve_scaling::INTEGRAL: {
@@ -615,7 +609,7 @@ autoSound Sounds_convolve (constSound me, constSound thee, kSounds_convolve_scal
 			case kSounds_convolve_scaling::PEAK_099: {
 				Vector_scale (him.get(), 0.99);
 			} break;
-			default: Melder_fatal (U"Sounds_convolve: unimplemented scaling ", (int) scaling);
+			default: Melder_crash (U"Sounds_convolve: unimplemented scaling ", (int) scaling);
 		}
 		return him;
 	} catch (MelderError) {
@@ -669,7 +663,7 @@ autoSound Sounds_crossCorrelate (constSound me, constSound thee, kSounds_convolv
 			} break;
 			case kSounds_convolve_signalOutsideTimeDomain::SIMILAR: {
 				for (integer channel = 1; channel <= numberOfChannels; channel ++) {
-					double * const a = & his z [channel] [0];
+					double *const a = & his z [channel] [0];
 					double const edge = std::min (n1, n2);
 					for (integer i = 1; i < edge; i ++) {
 						const double factor = edge / i;
@@ -681,7 +675,7 @@ autoSound Sounds_crossCorrelate (constSound me, constSound thee, kSounds_convolv
 			//case kSounds_convolve_signalOutsideTimeDomain_PERIODIC: {
 				// do nothing
 			//} break;
-			default: Melder_fatal (U"Sounds_crossCorrelate: unimplemented outside-time-domain strategy ", (int) signalOutsideTimeDomain);
+			default: Melder_crash (U"Sounds_crossCorrelate: unimplemented outside-time-domain strategy ", (int) signalOutsideTimeDomain);
 		}
 		switch (scaling) {
 			case kSounds_convolve_scaling::INTEGRAL: {
@@ -698,7 +692,7 @@ autoSound Sounds_crossCorrelate (constSound me, constSound thee, kSounds_convolv
 			case kSounds_convolve_scaling::PEAK_099: {
 				Vector_scale (him.get(), 0.99);
 			} break;
-			default: Melder_fatal (U"Sounds_crossCorrelate: unimplemented scaling ", (int) scaling);
+			default: Melder_crash (U"Sounds_crossCorrelate: unimplemented scaling ", (int) scaling);
 		}
 		return him;
 	} catch (MelderError) {
@@ -751,7 +745,7 @@ autoSound Sound_autoCorrelate (constSound me, kSounds_convolve_scaling scaling, 
 			//case kSounds_convolve_signalOutsideTimeDomain_PERIODIC: {
 				// do nothing
 			//} break;
-			default: Melder_fatal (U"Sounds_autoCorrelate: unimplemented outside-time-domain strategy ", (int) signalOutsideTimeDomain);
+			default: Melder_crash (U"Sounds_autoCorrelate: unimplemented outside-time-domain strategy ", (int) signalOutsideTimeDomain);
 		}
 		switch (scaling) {
 			case kSounds_convolve_scaling::INTEGRAL: {
@@ -768,7 +762,7 @@ autoSound Sound_autoCorrelate (constSound me, kSounds_convolve_scaling scaling, 
 			case kSounds_convolve_scaling::PEAK_099: {
 				Vector_scale (thee.get(), 0.99);
 			} break;
-			default: Melder_fatal (U"Sounds_autoCorrelate: unimplemented scaling ", (int) scaling);
+			default: Melder_crash (U"Sounds_autoCorrelate: unimplemented scaling ", (int) scaling);
 		}
 		return thee;
 	} catch (MelderError) {
@@ -1102,8 +1096,8 @@ void Sound_scaleIntensity (mutableSound me, double newAverageIntensity) {
 	my z.all()  *=  factor;
 }
 
-void Sound_overrideSamplingFrequency (mutableSound me, double rate) {
-	my dx = 1.0 / rate;
+void Sound_overrideSamplingFrequency (mutableSound me, double newSamplingFrequency) {
+	my dx = 1.0 / newSamplingFrequency;
 	my x1 = my xmin + 0.5 * my dx;
 	my xmax = my xmin + my nx * my dx;
 }
@@ -1234,7 +1228,7 @@ autoSound Sound_filter_oneFormant (constSound me, double frequency, double bandw
 
 void Sound_filterWithOneFormantInplace (mutableSound me, double frequency, double bandwidth) {
 	for (integer ichan = 1; ichan <= my ny; ichan ++) {
-		VEC channel = my z.row (ichan);
+		const VEC channel = my z.row (ichan);
 		VECfilterSecondOrderSection_fb_inplace (channel, my dx, frequency, bandwidth);
 	}
 	Matrix_scaleAbsoluteExtremum (me, 0.99);
@@ -1248,7 +1242,7 @@ void Sound_preEmphasize_inplace (mutableSound me, double cutoffFrequency) {
 	const double emphasisFactor = Sound_computeEmphasisFactor (me, cutoffFrequency);
 	if (emphasisFactor != 0.0)   // OPTIMIZE; will happen for cut-off frequencies above 119 times the sampling frequency
 		for (integer channel = 1; channel <= my ny; channel ++) {
-			VEC s = my z.row (channel);
+			const VEC s = my z.row (channel);
 			for (integer i = my nx; i >= 2; i --)
 				s [i] -= emphasisFactor * s [i - 1];
 		}
@@ -1258,7 +1252,7 @@ void Sound_deEmphasize_inplace (Sound me, double cutoffFrequency) {
 	const double emphasisFactor = Sound_computeEmphasisFactor (me, cutoffFrequency);
 	if (emphasisFactor != 0.0)   // OPTIMIZE; will happen for cut-off frequencies above 119 times the sampling frequency
 		for (integer channel = 1; channel <= my ny; channel ++) {
-			VEC s = my z.row (channel);
+			const VEC s = my z.row (channel);
 			for (integer i = 2; i <= my nx; i ++)
 				s [i] += emphasisFactor * s [i - 1];
 		}
@@ -1291,7 +1285,7 @@ void Sound_reverse (mutableSound me, double tmin, double tmax) {
 	integer itmin, itmax;
 	const integer n = Sampled_getWindowSamples (me, tmin, tmax, & itmin, & itmax) / 2;
 	for (integer channel = 1; channel <= my ny; channel ++) {
-		double *amp = & my z [channel] [0];
+		double * const amp = & my z [channel] [0];
 		for (integer i = 0; i < n; i ++)
 			std::swap (amp [itmin + i], amp [itmax - i]);
 	}
@@ -1337,7 +1331,7 @@ autoSound Sounds_crossCorrelate_short (constSound me, constSound thee, double tm
 				}
 			}
 			if (mypower != 0.0 && thypower != 0.0) {
-				double factor = 1.0 / (sqrt (double (mypower)) * sqrt (double (thypower)));
+				const double factor = 1.0 / (sqrt (double (mypower)) * sqrt (double (thypower)));
 				for (integer i = 1; i <= nt; i ++) {
 					his z [1] [i] *= factor;
 				}

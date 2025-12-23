@@ -875,9 +875,8 @@ autoDTW Pitches_to_DTW_sgc (Pitch me, Pitch thee, double vuv_costs, double time_
 			U"Time costs weight should not be negative.");
 
 		integer myfirst, mylast, thyfirst, thylast;
-		Melder_require (Pitch_findFirstAndLastVoicedFrame (me, & myfirst, & mylast) &&
-			Pitch_findFirstAndLastVoicedFrame (thee, & thyfirst, & thylast),
-				U"No voiced frames.");
+		Melder_require (Pitch_findFirstAndLastVoicedFrame (me, & myfirst, & mylast) && Pitch_findFirstAndLastVoicedFrame (thee, & thyfirst, & thylast),
+			U"No voiced frames.");
 		
 		/*
 			We do not want the silences before the first voiced frame and after the last voiced frame

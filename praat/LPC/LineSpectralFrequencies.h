@@ -56,7 +56,7 @@ static inline autoMAT LineSpectralFrequencies_listAllFrequencies (LineSpectralFr
 	autoMAT result = zero_MAT (my maximumNumberOfFrequencies, my nx);
 	for (integer iframe = 1; iframe <= my nx; iframe ++) {
 		LineSpectralFrequencies_Frame lsf = & my d_frames [iframe];
-		result.column (iframe).part (1, lsf ->numberOfFrequencies)  <<=  lsf -> frequencies.get();
+		result.column (iframe).part (1, lsf -> numberOfFrequencies)  <<=  lsf -> frequencies.get();
 	}
 	return result;
 }

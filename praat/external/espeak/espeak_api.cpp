@@ -18,7 +18,7 @@
  * along with this program; if not, see: <http://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
+#include "espeak__config.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -48,6 +48,7 @@ static espeak_ERROR status_to_espeak_error(espeak_ng_STATUS status)
 
 #pragma GCC visibility push(default)
 
+#if 0   /* not called in Praat */
 ESPEAK_API int espeak_Initialize(espeak_AUDIO_OUTPUT output_type, int buf_length, const char *path, int options)
 {
 	espeak_ng_InitializePath(path);
@@ -80,6 +81,7 @@ ESPEAK_API int espeak_Initialize(espeak_AUDIO_OUTPUT output_type, int buf_length
 
 	return espeak_ng_GetSampleRate();
 }
+#endif
 
 ESPEAK_API espeak_ERROR espeak_Synth(const void *text, size_t size,
                                      unsigned int position,
@@ -125,10 +127,12 @@ ESPEAK_API espeak_ERROR espeak_SetVoiceByName(const char *name)
 	return status_to_espeak_error(espeak_ng_SetVoiceByName(name));
 }
 
+#if ! DATA_FROM_SOURCECODE_FILES
 ESPEAK_API espeak_ERROR espeak_SetVoiceByFile(const char *filename)
 {
 	return status_to_espeak_error(espeak_ng_SetVoiceByFile(filename));
 }
+#endif // ! DATA_FROM_SOURCECODE_FILES
 
 ESPEAK_API espeak_ERROR espeak_SetVoiceByProperties(espeak_VOICE *voice_selector)
 {
@@ -150,6 +154,7 @@ ESPEAK_API espeak_ERROR espeak_Terminate(void)
 	return status_to_espeak_error(espeak_ng_Terminate());
 }
 
+#if ! DATA_FROM_SOURCECODE_FILES
 ESPEAK_API void espeak_CompileDictionary(const char *path, FILE *log, int flags)
 {
 	espeak_ng_ERROR_CONTEXT context = NULL;
@@ -159,5 +164,6 @@ ESPEAK_API void espeak_CompileDictionary(const char *path, FILE *log, int flags)
 		espeak_ng_ClearErrorContext(&context);
 	}
 }
+#endif // ! DATA_FROM_SOURCECODE_FILES
 
 #pragma GCC visibility pop

@@ -1,7 +1,7 @@
 # File: makefile.defs.linux.rpi
 
 # System: Raspberry Pi
-# Paul Boersma 2023-01-27
+# Paul Boersma 2025-08-28
 
 CC ?= gcc
 CXX ?= g++
@@ -18,7 +18,7 @@ CXXFLAGS = -std=c++2a $(COMMONFLAGS) -Wshadow
 
 EXECUTABLE = praat
 
-LIBS = `$(PKG_CONFIG) --libs gtk+-3.0` -no-pie -lm -ljack -static-libgcc -static-libstdc++ -lpthread -L /usr/lib/x86_64-linux-gnu
+LIBS = `$(PKG_CONFIG) --libs gtk+-3.0` -no-pie -lm -ljack -static-libgcc -static-libstdc++ -lpthread -latomic -L /usr/lib/x86_64-linux-gnu
 
 AR = ar
 RANLIB = ls

@@ -51,16 +51,16 @@ autoSimilarity Similarity_create (integer numberOfPoints);
 
 Collection_define (ProximityList, OrderedOf, Proximity) {
 	TableOfRealList asTableOfRealList () {
-		return reinterpret_cast<TableOfRealList> (this);
+		return reinterpret_cast <TableOfRealList> (this);
 	}
 };
 
 Collection_define (DissimilarityList, OrderedOf, Dissimilarity) {
 	ProximityList asProximityList () {
-		return reinterpret_cast<ProximityList> (this);
+		return reinterpret_cast <ProximityList> (this);
 	}
 	TableOfRealList asTableOfRealList () {
-		return reinterpret_cast<TableOfRealList> (this);
+		return reinterpret_cast <TableOfRealList> (this);
 	}
 };
 

@@ -113,7 +113,8 @@ autoConfusion Confusion_createSimple (conststring32 labels_string) {
 
 autoConfusion Categories_to_Confusion (Categories me, Categories thee) {
 	try {
-		Melder_require (my size == thy size, U"Both Categories should have the same number of items.");
+		Melder_require (my size == thy size,
+			U"Both Categories should have the same number of items.");
 
 		autoCategories ul1 = Categories_selectUniqueItems (me);
 		autoCategories ul2 = Categories_selectUniqueItems (thee);
@@ -502,7 +503,7 @@ autoTableOfReal Confusion_to_TableOfReal_marginals (Confusion me) {
 	try {
 		autoTableOfReal thee = TableOfReal_create (my numberOfRows + 1, my numberOfColumns + 1);
 
-		thy data.part(1, my numberOfRows, 1, my numberOfColumns)  <<=  my data.get();
+		thy data.part (1, my numberOfRows, 1, my numberOfColumns)  <<=  my data.get();
 		autoVEC columnSums = columnSums_VEC (my data.get());
 		thy data.row (my numberOfRows + 1).part (1, my numberOfColumns)  <<=  columnSums.get();
 		autoVEC rowSums = rowSums_VEC (my data.get());

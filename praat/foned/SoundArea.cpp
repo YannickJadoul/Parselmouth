@@ -1,10 +1,10 @@
 /* SoundArea.cpp
  *
- * Copyright (C) 2022-2024 Paul Boersma, 2007 Erez Volk (FLAC support)
+ * Copyright (C) 2022-2025 Paul Boersma, 2007 Erez Volk (FLAC support)
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -725,12 +725,12 @@ static void INFO_DATA__SoundInfo (SoundArea me, EDITOR_ARGS) {
 	INFO_DATA
 		Melder_assert (me);
 		if (! Thing_isa (me, classSoundArea))
-			Melder_fatal (U"Expected a SoundArea but found a ", Thing_className (me));
+			Melder_crash (U"Expected a SoundArea but found a ", Thing_className (me));
 		Melder_assert (my data());
 		Melder_assert (my function());
 		Melder_assert (my soundOrLongSound());
 		if (! Thing_isa (my soundOrLongSound(), classSampledXY))
-			Melder_fatal (U"Expected a SoundArea but found a ", Thing_className (my soundOrLongSound()));
+			Melder_crash (U"Expected a SoundArea but found a ", Thing_className (my soundOrLongSound()));
 		Melder_assert (my sound());
 		Thing_info (my sound());
 	INFO_DATA_END
@@ -922,7 +922,7 @@ static autoSound do_ExtractSelectedSound (SoundArea me, bool preserveTimes) {
 	else if (my sound())
 		return Sound_extractPart (my sound(), my startSelection(), my endSelection(),
 				kSound_windowShape::RECTANGULAR, 1.0, preserveTimes);
-	Melder_fatal (U"No Sound or LongSound available.");
+	Melder_crash (U"No Sound or LongSound available.");
 	return autoSound();   // never reached
 }
 static void CONVERT_DATA_TO_ONE__ExtractSelectedSound_timeFromZero (SoundArea me, EDITOR_ARGS) {

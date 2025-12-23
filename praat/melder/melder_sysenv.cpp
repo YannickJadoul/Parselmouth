@@ -1,10 +1,10 @@
 /* melder_sysenv.cpp
  *
- * Copyright (C) 1992-2007,2011,2012,2015-2019,2023 Paul Boersma
+ * Copyright (C) 1992-2007,2011,2012,2015-2019,2023-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -40,17 +40,32 @@ conststring32 Melder_getenv (conststring32 variableName) {
 		if (++ ibuffer == 11)
 			ibuffer = 0;
 		DWORD n = GetEnvironmentVariableW (Melder_peek32toW(variableName), buffer [ibuffer], 255);
-		if (n == ERROR_ENVVAR_NOT_FOUND) return nullptr;
+		if (n == ERROR_ENVVAR_NOT_FOUND)
+			return nullptr;
 		return Melder_peekWto32(& buffer [ibuffer] [0]);
 	#else
 		return nullptr;
 	#endif
 }
 
+/*
+	Command lines on Windows (mostly from https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments?view=msvc-170)
+
+Command-line input		argv[1]		argv[2]		argv[3]		remarks
+	"a b c" d e			a b c		d			e			normal
+	"ab\"c" "\\" d		ab"c		\			d			escaped "; escaped second \ as it's before "
+	a\\\b d"e f"g h		a\\\b		de fg		h			literal backslashes as not followed by "
+	a\\\"b c d			a\"b		c			d			escaped second \ as the backslashes are followed by "
+	a\\\\"b c" d e		a\\b c		d			e			escaped second and fourth \ as they're followed by ", which is a delimiter
+	a"b"" c d			ab" c d								unfinished sequence as closing " is missing
+	"back\slash\\"		back\slash\
+*/
+
 static autostring32 runAny_STR (
 	conststring32 procedureMessageName,
 	conststring32 command,   // it's either this one...
-	conststring32 executableFileName, integer narg, char32 ** args   // ... or these three
+	conststring32 executableFileName, integer narg, char32 ** args,   // ... or these three
+	bool collectStdout
 ) {
 	if (! command)
 		command = U"";
@@ -59,7 +74,9 @@ static autostring32 runAny_STR (
 	*/
 	#if defined (macintosh) || defined (UNIX)
 		int stdoutPipe [2], stderrPipe [2];
-		if (pipe (stdoutPipe) == -1 || pipe (stderrPipe) == -1)
+		if (collectStdout && pipe (stdoutPipe) == -1)
+			Melder_throw (procedureMessageName, U": cannot start system command <<", command, U">> (“pipe error”).");
+		if (pipe (stderrPipe) == -1)
 			Melder_throw (procedureMessageName, U": cannot start system command <<", command, U">> (“pipe error”).");
 	#elif defined (_WIN32)
 		HANDLE stdoutReadPipe = NULL, stdoutWritePipe = NULL, stderrReadPipe = NULL, stderrWritePipe = NULL;
@@ -67,10 +84,9 @@ static autostring32 runAny_STR (
 		securityAttributes. nLength = sizeof (SECURITY_ATTRIBUTES);
 		securityAttributes. bInheritHandle = TRUE;
 		securityAttributes. lpSecurityDescriptor = NULL;
-		if (
-			! CreatePipe (& stdoutReadPipe, & stdoutWritePipe, & securityAttributes, 0) ||
-			! CreatePipe (& stderrReadPipe, & stderrWritePipe, & securityAttributes, 0)
-		)
+		if (collectStdout && ! CreatePipe (& stdoutReadPipe, & stdoutWritePipe, & securityAttributes, 0))
+			Melder_throw (procedureMessageName, U": cannot start system command <<", command, U">> (“pipe error”).");
+		if (! CreatePipe (& stderrReadPipe, & stderrWritePipe, & securityAttributes, 0))
 			Melder_throw (procedureMessageName, U": cannot start system command <<", command, U">> (“pipe error”).");
 	#endif
 	/*
@@ -88,13 +104,15 @@ static autostring32 runAny_STR (
 			/*
 				We are in the child process.
 			*/
-			while ((dup2 (stdoutPipe [1], STDOUT_FILENO) == -1) && (errno == EINTR)) {   // attach stdout write pipe to child process
+			while (collectStdout && (dup2 (stdoutPipe [1], STDOUT_FILENO) == -1) && (errno == EINTR)) {   // attach stdout write pipe to child process
 			}
 			while ((dup2 (stderrPipe [1], STDERR_FILENO) == -1) && (errno == EINTR)) {   // attach stderr write pipe to child process
 			}
-			close (stdoutPipe [1]);
+			if (collectStdout) {
+				close (stdoutPipe [1]);
+				close (stdoutPipe [0]);
+			}
 			close (stderrPipe [1]);
-			close (stdoutPipe [0]);
 			close (stderrPipe [0]);
 			if (executableFileName) {
 				autostring8vector args8 (narg + 2);
@@ -125,7 +143,7 @@ static autostring32 runAny_STR (
 					"-c",   // (from the bash man page: "If the -c option is present, then commands are read from `string`."; this is argv[1])
 					command8.get(),   // (the `string`, combining the complete space-separated command that sh should execute)
 					nullptr   // "The list of arguments *must* be terminated by a NULL pointer."
-				);   // if all goes right, this implicity closes the child process
+				);   // if all goes right, this implicitly closes the child process
 			}
 			/*
 				If we arrive here, then execl or execvp must have returned,
@@ -141,56 +159,53 @@ static autostring32 runAny_STR (
 		memset (& siStartInfo, 0, sizeof (siStartInfo));
 		siStartInfo. cb = sizeof (siStartInfo);
 		siStartInfo. dwFlags = STARTF_USESTDHANDLES;
-		siStartInfo. hStdOutput = stdoutWritePipe;   // attach stdout write pipe to child process
+		if (collectStdout)
+			siStartInfo. hStdOutput = stdoutWritePipe;   // attach stdout write pipe to child process
+		else
+			siStartInfo. hStdOutput = GetStdHandle (STD_OUTPUT_HANDLE);   // TODO: make this work in the Windows console, not just in Cygwin and MSYS
 		siStartInfo. hStdError = stderrWritePipe;   // attach stderr write pipe to child process
 		PROCESS_INFORMATION piProcInfo;
 		memset (& piProcInfo, 0, sizeof (piProcInfo));
-		conststring32 comspec = Melder_getenv (U"COMSPEC");   // e.g. "C:\WINDOWS\COMMAND.COM" or "C:\WINNT\windows32\cmd.exe" or "C:\WINDOWS\system32\cmd.exe"
-		if (! comspec)
-			comspec = Melder_getenv (U"ComSpec");
-		if (! comspec)
-			comspec = U"cmd.exe";
 		autoMelderString buffer;
-		MelderString_copy (& buffer, comspec);
-		Melder_assert (! str32chr (buffer.string, ' '));
-		MelderString_append (& buffer, U" /c");
 		if (executableFileName) {
-			const bool needSurroundingQuotes = str32chr (executableFileName, U' ') ;
-			if (needSurroundingQuotes)
-				MelderString_append (& buffer, U"\"\"", executableFileName, U"\"");
-			else
-				MelderString_append (& buffer, executableFileName);
-			for (integer i = 1; i <= narg; i ++) {
-				//TRACE
-				trace (U"Argument ", i, U": <<", args [i], U">>");
+			MelderString_empty (& buffer);
+			MelderString_append (& buffer, U"\"", executableFileName, U"\"");
+			for (integer iarg = 1; iarg <= narg; iarg ++) {
 				MelderString_append (& buffer, U" \"");
-				for (const char32 *p = & args [i] [0]; *p != U'\0'; p ++) {
-					if (*p == U'"')
-						MelderString_append (& buffer, U"\"\"");
-					MelderString_appendCharacter (& buffer, *p);
+				for (const char32 *p = & args [iarg] [0]; *p != U'\0'; p ++) {
+					if (*p == U'"') {
+						MelderString_append (& buffer, U"\\\"");
+					} else if (*p == U'\\') {
+						/*
+							Count the backslashes.
+						*/
+						const char32 *q = p + 1;
+						while (*q == '\\')
+							q ++;
+						const integer numberOfBackslashesInInput = q - p;
+						const bool backslashSequenceFollowedByDoubleQuote = ( *q == U'"' );
+						const bool backslashSequenceAtEnd = ( *q == U'\0' );
+						if (backslashSequenceFollowedByDoubleQuote || backslashSequenceAtEnd)
+							MelderString_append (& buffer, U"\\\\");   // double pre-quote and final backslashes
+						else
+							MelderString_append (& buffer, U"\\");
+					} else
+						MelderString_appendCharacter (& buffer, *p);
 				}
 				MelderString_appendCharacter (& buffer, U'"');
 			}
-			if (needSurroundingQuotes)
-				MelderString_append (& buffer, U"\"");
 			autostringW bufferW = Melder_32toW_fileSystem (buffer.string);
 			if (! CreateProcess (nullptr, bufferW.get(), nullptr, nullptr, true, CREATE_NO_WINDOW, nullptr, nullptr, & siStartInfo, & piProcInfo))
 				Melder_throw (procedureMessageName, U": cannot start subprocess <<", executableFileName, U">>.");
-			#if 0
-			autostringW executableFileNameW = Melder_32toW_fileSystem (executableFileName);
-			for (integer i = 1; i <= narg; i ++) {
-				TRACE
-				trace (U"Argument ", i, U": <<", args [i], U">>");
-				if (i > 1)
-					MelderString_append (& buffer, U" ");
-				MelderString_append (& buffer, U"\"", args [i], U"\"");
-			}
-			autostringW bufferW = Melder_32toW_fileSystem (buffer.string);
-			if (! CreateProcess (executableFileNameW.get(), bufferW.get(), nullptr, nullptr, true, CREATE_NO_WINDOW, nullptr, nullptr, & siStartInfo, & piProcInfo))
-				Melder_throw (procedureMessageName, U": cannot start subprocess <<", executableFileName, U">>.");
-			#endif
 		} else {
-			MelderString_append (& buffer, U" ", command);
+			conststring32 comspec = Melder_getenv (U"COMSPEC");   // e.g. "C:\WINDOWS\COMMAND.COM" or "C:\WINNT\windows32\cmd.exe" or "C:\WINDOWS\system32\cmd.exe"
+			if (! comspec)
+				comspec = Melder_getenv (U"ComSpec");
+			if (! comspec)
+				comspec = U"cmd.exe";
+			MelderString_copy (& buffer, comspec);
+			Melder_assert (! str32chr (buffer.string, ' '));
+			MelderString_append (& buffer, U" /c ", command);
 			autostringW bufferW = Melder_32toW_fileSystem (buffer.string);
 			if (! CreateProcess (nullptr, bufferW.get(), nullptr, nullptr, true, CREATE_NO_WINDOW, nullptr, nullptr, & siStartInfo, & piProcInfo))
 				Melder_throw (procedureMessageName, U": cannot start system command <<", command, U">>.");
@@ -200,10 +215,12 @@ static autostring32 runAny_STR (
 		Close the write pipes; no longer should anything be written to them.
 	*/
 	#if defined (macintosh) || defined (UNIX)
-		close (stdoutPipe [1]);
+		if (collectStdout)
+			close (stdoutPipe [1]);
 		close (stderrPipe [1]);
 	#elif defined (_WIN32)
-		CloseHandle (stdoutWritePipe);
+		if (collectStdout)
+			CloseHandle (stdoutWritePipe);
 		CloseHandle (stderrWritePipe);
 	#endif
 	/*
@@ -211,28 +228,30 @@ static autostring32 runAny_STR (
 	*/
 	autoMelderString stdout_string, stderr_string;
 	char buffer8 [1+4096];
-	for (;;) {
-		#if defined (macintosh) || defined (UNIX)
-			ssize_t count = read (stdoutPipe [0], buffer8, 4096);
-		#elif defined (_WIN32)
-			DWORD count;
-			BOOL success = ReadFile (stdoutReadPipe, buffer8, 4096, & count, NULL);
-		#endif
-		if (count == 0)   // on Windows, this has to go before the success test
-			break;
-		#if defined (macintosh) || defined (UNIX)
-			if (count == -1) {
-				if (errno == EINTR)
-					continue;
-				Melder_throw (procedureMessageName, U": error while handling child process output.");
-			}
-		#elif defined (_WIN32)
-			if (! success)
-				Melder_throw (procedureMessageName, U": error while handling child process output.");
-		#endif
-		buffer8 [count] = '\0';
-		MelderString_append (& stdout_string, Melder_peek8to32 (buffer8));
-	}
+	if (collectStdout)
+		for (;;) {
+			#if defined (macintosh) || defined (UNIX)
+				ssize_t count = read (stdoutPipe [0], buffer8, 4096);
+			#elif defined (_WIN32)
+				DWORD count;
+				BOOL success = ReadFile (stdoutReadPipe, buffer8, 4096, & count, NULL);
+				Melder_killReturns_inplace (buffer8);
+			#endif
+			if (count == 0)   // on Windows, this has to go before the success test
+				break;
+			#if defined (macintosh) || defined (UNIX)
+				if (count == -1) {
+					if (errno == EINTR)
+						continue;
+					Melder_throw (procedureMessageName, U": error while handling child process output.");
+				}
+			#elif defined (_WIN32)
+				if (! success)
+					Melder_throw (procedureMessageName, U": error while handling child process output.");
+			#endif
+			buffer8 [count] = '\0';
+			MelderString_append (& stdout_string, Melder_peek8to32 (buffer8));
+		}
 	for (;;) {
 		#if defined (macintosh) || defined (UNIX)
 			ssize_t count = read (stderrPipe [0], buffer8, 4096);
@@ -260,10 +279,12 @@ static autostring32 runAny_STR (
 		Close the read pipes, which are no longer needed.
 	*/
 	#if defined (macintosh) || defined (UNIX)
-		close (stdoutPipe [0]);
+		if (collectStdout)
+			close (stdoutPipe [0]);
 		close (stderrPipe [0]);
 	#elif defined (_WIN32)
-		CloseHandle (stdoutReadPipe);
+		if (collectStdout)
+			CloseHandle (stdoutReadPipe);
 		CloseHandle (stderrReadPipe);
 	#endif
 	/*
@@ -289,20 +310,20 @@ static autostring32 runAny_STR (
 		CloseHandle (piProcInfo. hProcess);
 		CloseHandle (piProcInfo. hThread);
 	#endif
-	return Melder_dup (stdout_string. string);
+	return collectStdout ? Melder_dup (stdout_string.string) : autostring32 ();
 }
 
 autostring32 runSystem_STR (conststring32 command) {
-	return runAny_STR (U"runSystem$", command, nullptr, 0, nullptr);
+	return runAny_STR (U"runSystem$", command, nullptr, 0, nullptr, true);
 }
 void Melder_runSystem (conststring32 command) {
-	(void) runAny_STR (U"runSystem", command, nullptr, 0, nullptr);
+	(void) runAny_STR (U"runSystem", command, nullptr, 0, nullptr, false);
 }
 autostring32 runSubprocess_STR (conststring32 executableFileName, integer narg, char32 ** args) {
-	return runAny_STR (U"runSubprocess$", nullptr, executableFileName, narg, args);
+	return runAny_STR (U"runSubprocess$", nullptr, executableFileName, narg, args, true);
 }
 void Melder_runSubprocess (conststring32 executableFileName, integer narg, char32 ** args) {
-	(void) runAny_STR (U"runSubprocess", nullptr, executableFileName, narg, args);
+	(void) runAny_STR (U"runSubprocess", nullptr, executableFileName, narg, args, false);
 }
 
 /* End of file melder_sysenv.cpp */

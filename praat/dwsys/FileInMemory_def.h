@@ -1,6 +1,6 @@
 /* FileInMemory_def.h
  *
- * Copyright (C) 2017-2020 David Weenink
+ * Copyright (C) 2017-2020 David Weenink, 2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,29 +17,33 @@
  */
 
 #define ooSTRUCT FileInMemory
-oo_DEFINE_CLASS (FileInMemory, Daata)
+oo_DEFINE_CLASS (FileInMemory, SimpleString)
 
-	oo_LSTRING (d_path)
-	oo_LSTRING (d_id)
-	oo_INTEGER (d_numberOfBytes)  // last byte is \0 byte
+	oo_INTEGER (d_numberOfBytes)   // not including any final null byte
 	oo_INTEGER (d_position)
-	oo_INTEGER (d_errno)
+	oo_INT16 (d_errno)
+	oo_INT16 (d_eof)
 	oo_INT32 (ungetChar)
+
+	/*
+		The order of the following two statements doesn't matter!
+		This is because d_data autodestroys with the FileInMemory *after* this code block.
+	*/
 	#if oo_DESTROYING
-		if (! _dontOwnData) {
-			oo_BYTEVEC (d_data, d_numberOfBytes + 1)
-		}
-	#else
-		oo_BYTEVEC (d_data, d_numberOfBytes + 1) // final null byte possible
+		if (_dontOwnData)
+			our d_data.cells = nullptr;   // prevent autodestruction
 	#endif
-	oo_UBYTE (writable)
+	oo_BYTEVEC (d_data, d_numberOfBytes + 1)   // final null byte possible
+
+	oo_UBYTE (isOpen)
 
 	#if oo_DECLARING || oo_DESCRIBING
 		oo_UBYTE (_dontOwnData)
 	#endif
 
 	#if oo_DECLARING
-		void v1_info () override; 
+		void v1_info ()
+			override;
 	#endif
 	
 oo_END_CLASS (FileInMemory)

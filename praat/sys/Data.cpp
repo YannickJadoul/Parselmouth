@@ -24,7 +24,7 @@ autoDaata _Data_copy (constDaata me) {
 	try {
 		if (! me)
 			return autoDaata();
-		autoDaata thee = Thing_newFromClass (my classInfo).static_cast_move <structDaata> ();
+		autoDaata thee = Thing_newFromClass (my classInfo).static_cast_move <structDaata>();
 		my v1_copy (thee.get());
 		Thing_setName (thee.get(), my name.get());
 		return thee;
@@ -65,13 +65,12 @@ MelderFile Data_createTextFile (Daata me, MelderFile file, bool verbose) {
 	file -> outputEncoding = (int) Melder_getOutputEncoding ();
 	if (file -> outputEncoding == (int) kMelder_textOutputEncoding::ASCII_THEN_UTF16)
 		file -> outputEncoding = Data_canWriteAsEncoding (me, kMelder_textOutputEncoding_ASCII) ?
-			kMelder_textOutputEncoding_ASCII : (int) kMelder_textOutputEncoding::UTF16;
+				kMelder_textOutputEncoding_ASCII : (int) kMelder_textOutputEncoding::UTF16;
 	else if (file -> outputEncoding == (int) kMelder_textOutputEncoding::ISO_LATIN1_THEN_UTF16)
 		file -> outputEncoding = Data_canWriteAsEncoding (me, kMelder_textOutputEncoding_ISO_LATIN1) ?
-			kMelder_textOutputEncoding_ISO_LATIN1 : (int) kMelder_textOutputEncoding::UTF16;
-	if (file -> outputEncoding == (int) kMelder_textOutputEncoding::UTF16) {
+				kMelder_textOutputEncoding_ISO_LATIN1 : (int) kMelder_textOutputEncoding::UTF16;
+	if (file -> outputEncoding == (int) kMelder_textOutputEncoding::UTF16)
 		binputu16 (0xfeff, file -> filePointer);
-	}
 	return mfile.transfer();
 }
 
@@ -90,12 +89,14 @@ static void _Data_writeToTextFile (Daata me, MelderFile file, bool verbose) {
 		Data_writeText (me, file);
 		MelderFile_writeCharacter (file, U'\n');
 		#ifndef _WIN32
-			if (file -> filePointer) funlockfile (file -> filePointer);
+			if (file -> filePointer)
+				funlockfile (file -> filePointer);
 		#endif
 		mfile.close ();
 	} catch (MelderError) {
 		#ifndef _WIN32
-			if (file -> filePointer) funlockfile (file -> filePointer);   // the file pointer is null before Data_createTextFile() and after mfile.close()
+			if (file -> filePointer)
+				funlockfile (file -> filePointer);   // the file pointer is null before Data_createTextFile() and after mfile.close()
 		#endif
 		throw;
 	}
@@ -177,13 +178,13 @@ autoDaata Data_readFromTextFile (MelderFile file) {
 		int formatVersion;
 		if (end) {
 			autostring32 klas = texgetw16 (text.get());
-			me = Thing_newFromClassName (klas.get(), & formatVersion).static_cast_move <structDaata> ();
+			me = Thing_newFromClassName (klas.get(), & formatVersion).static_cast_move <structDaata>();
 		} else {
 			end = str32str (line, U"TextFile");
 			if (! end)
 				Melder_throw (U"Not an old-type text file; should not occur.");
 			*end = U'\0';
-			me = Thing_newFromClassName (line, nullptr).static_cast_move <structDaata> ();
+			me = Thing_newFromClassName (line, nullptr).static_cast_move <structDaata>();
 			formatVersion = -1;   // old version
 		}
 		MelderFile_getParentFolder (file, & Data_directoryBeingRead);
@@ -232,14 +233,14 @@ autoDaata Data_readFromBinaryFile (MelderFile file) {
 		if (end) {
 			fseek (f, strlen ("ooBinaryFile"), 0);
 			autostring8 klas = bingets8 (f);
-			me = Thing_newFromClassName (Melder_peek8to32 (klas.get()), & formatVersion).static_cast_move <structDaata> ();
+			me = Thing_newFromClassName (Melder_peek8to32 (klas.get()), & formatVersion).static_cast_move <structDaata>();
 		} else {
 			end = strstr (line, "BinaryFile");
 			if (! end) {
 				Melder_throw (U"File ", file, U" is not a Data binary file.");
 			}
 			*end = '\0';
-			me = Thing_newFromClassName (Melder_peek8to32 (line), nullptr).static_cast_move <structDaata> ();
+			me = Thing_newFromClassName (Melder_peek8to32 (line), nullptr).static_cast_move <structDaata>();
 			formatVersion = -1;   // old version: override version number, which was set to 0 by newFromClassName
 			rewind (f);
 			fread (line, 1, (size_t) (end - line) + strlen ("BinaryFile"), f);

@@ -28,7 +28,7 @@ static autoDaata CarstensEMA50xV3PosFileRecognizer (integer nread, const char *h
 	if (nread > 69 && strnequ (header, "AG50xDATA_V00", 13) &&
 		(strstr (header, "NumberOfChannels=") != nullptr) &&
 		(strstr (header, "SamplingFrequencyHz=") != nullptr) &&
-		(strstr (header , "Calf_Channel_0") == nullptr))
+		(strstr (header, "Calf_Channel_0") == nullptr))
 		return EMA_readFromCarstensEMA50xPosFile (file);
 	else
 		return autoDaata ();
@@ -129,9 +129,7 @@ DO
 	CONVERT_EACH_TO_ONE_END (my name.get())
 }
 
-void praat_sensors_init ();
-
-void praat_sensors_init () {
+void praat_uvafon_sensors_init () {
 	Thing_recognizeClassesByName (classElectroglottogram, classEMA, classEMArawData, nullptr);
 
 	Data_recognizeFileType (CarstensEMA50xV3PosFileRecognizer);

@@ -1,10 +1,10 @@
 /* manual_Artsynth.cpp
  *
- * Copyright (C) 1992-2005,2007,2010,2011,2014-2017,2020,2021,2023 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2010,2011,2014-2017,2020,2021,2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -25,7 +25,7 @@ MAN_BEGIN (U"Articulatory synthesis", U"ppgb", 20211016)
 INTRO (U"This is a description of the articulatory synthesis package in Praat. "
 	"For a detailed description of the physics and mathematics behind the model, "
 	"see @@Boersma (1998)@, chapters 2 and 3. "
-	"For examples of how to synthesize utterances, consult http://www.fon.hum.uva.nl/paul/diss/ch5/.")
+	"For examples of how to synthesize utterances, consult https://www.fon.hum.uva.nl/paul/diss/ch5/.")
 ENTRY (U"How to start (after reading the @Intro)")
 NORMAL (U"We are going to have the synthesizer say [əpə]. We need a @Speaker and an @Artword object.")
 NORMAL (U"1. Create a speaker with @@Create Speaker...@ from the @@New menu@.")

@@ -1,10 +1,10 @@
 /* manual_LPC.cpp
  *
- * Copyright (C) 1994-2022 David Weenink
+ * Copyright (C) 1994-2025 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -132,7 +132,7 @@ MAN_END
 MAN_BEGIN (U"HTK parameter file format", U"djmw", 20210311)
 INTRO (U"HTK parameter format files consist of a contiguous sequence of frames preceded by a header. "
 	"Each frame is a vector of either 2-byte integers or 4-byte floats. 2-byte integers are used for "
-	"compressed forms and for vector quantised data. All multi-byte numbers are written as Big-endian numbers.")
+	"compressed forms and for vector quantised data. All multi-byte numbers are written as big-endian numbers.")
 NORMAL (U"The HTK file format header is 12 bytes long and contains the following data:")
 TERM (U"numberOfFrames (4-byte integer)")
 DEFINITION (U"The number of analysis frames in a file")
@@ -992,7 +992,7 @@ MAN_BEGIN (U"Sound: To Formant (robust)...", U"djmw", 20111027)
 INTRO (U"A command that creates a @@Formant@ object from every selected @@Sound@. ")
 ENTRY (U"Settings")
 NORMAL (U"The settings for ##Time step (s)#, ##Maximum number of formants#, ##Formant ceiling (Hz), "
-	"##Window length (s)# and ##Pre emphasis from (Hz)# are as in @@Sound: To Formant (burg)...@. "
+	"##Window length (s)# and ##Pre-emphasis from (Hz)# are as in @@Sound: To Formant (burg)...@. "
 	" The following settings determine aspects of the iterative formant frequency refinement.")
 TERM (U"%%Number of std. dev.%,")
 DEFINITION (U"determines the number of standard deviations from where selective weighing of samples starts. ")
@@ -1163,11 +1163,11 @@ NORMAL (U"J. Jacquelin (2009): \"Régressions et équations intégrales\", https
 MAN_END
 
 MAN_BEGIN (U"Lee (1988)", U"djmw", 20111027)
-NORMAL (U"C.-H. Lee (1988): \"On Robust Linear Prediction of Speech.\", %%IEEE Trans. on ASSP% #36: 642\\--649.")
+NORMAL (U"C.-H. Lee (1988): \"On robust linear prediction of speech.\", %%IEEE Trans. on ASSP% #36: 642\\--649.")
 MAN_END
 
 MAN_BEGIN (U"Markel & Gray (1976)", U"djmw", 19980114)
-NORMAL (U"J.D. Markel & A.H. Gray, Jr. (1976): %%Linear Prediction of Speech.% "
+NORMAL (U"J.D. Markel & A.H. Gray, Jr. (1976): %%Linear prediction of speech.% "
 	"Springer Verlag, Berlin.")
 MAN_END
 
@@ -1177,7 +1177,7 @@ NORMAL (U"L. Marple (1980): \"A new autoregressive spectrum analysis algorithm.\
 MAN_END
 
 MAN_BEGIN (U"Rothweiler (1999)", U"djmw", 20160507)
-NORMAL (U"J. Rothweiler (1999): \"On Polynomial Reduction in the Computation of LSP Frequencies.\" "
+NORMAL (U"J. Rothweiler (1999): \"On polynomial reduction in the computation of LSP frequencies.\" "
 	"%%IEEE Trans. on ASSP% #7, 592\\--594.")
 MAN_END
 

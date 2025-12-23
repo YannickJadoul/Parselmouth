@@ -91,6 +91,19 @@ autoLPC LPC_create (double tmin, double tmax, integer nt, double dt, double t1, 
 	}
 }
 
+autoLPC LPC_createCompletelyInitialized (double tmin, double tmax, integer nt, double dt, double t1, integer predictionOrder, double samplingPeriod) {
+	try {
+		autoLPC me = LPC_create (tmin, tmax, nt, dt, t1, predictionOrder, samplingPeriod);
+		for (integer iframe = 1; iframe <= my nx; iframe ++) {
+			LPC_Frame lpcFrame = & my d_frames [iframe];
+			LPC_Frame_init (lpcFrame, my maxnCoefficients);
+		}
+		return me;
+	} catch (MelderError) {
+		Melder_throw (U"LPC (completely initialized) not created.");
+	}
+}
+
 void LPC_drawGain (LPC me, Graphics g, double tmin, double tmax, double gmin, double gmax, bool garnish) {
 	Function_unidirectionalAutowindow (me, & tmin, & tmax);
 	integer itmin, itmax;

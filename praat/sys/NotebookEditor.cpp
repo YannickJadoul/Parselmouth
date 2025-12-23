@@ -1,6 +1,6 @@
 /* NotebookEditor.cpp
  *
- * Copyright (C) 2023 Paul Boersma
+ * Copyright (C) 2023,2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,8 @@ void structNotebookEditor :: v_nameChanged () {
 
 void structNotebookEditor :: v_goAway () {
 	if (our interpreter -> running)
-		Melder_flushError (U"Cannot close the NotebookEditor while the notebook is running or paused. Please close or continue the pause or demo window.");
+		Melder_flushError (U"Cannot close the NotebookEditor while the notebook is running or paused.\n"
+				"Please close or continue the pause, trust or demo window.");
 	else
 		NotebookEditor_Parent :: v_goAway ();
 }
@@ -92,7 +93,7 @@ static void args_ok (UiForm sendingForm, integer /* narg */, Stackel /* args */,
 
 static void menu_cb_run (NotebookEditor me, EDITOR_ARGS) {
 	if (my interpreter -> running)
-		Melder_throw (U"The notebook is already running (paused). Please close or continue the pause or demo window.");
+		Melder_throw (U"The notebook is already running (paused). Please close or continue the pause, trust or demo window.");
 	integer startOfSelection, endOfSelection;
 	autostring32 text = GuiText_getStringAndSelectionPosition (my textWidget, & startOfSelection, & endOfSelection);
 	if (Melder_startsWith (text.get(), U"\"")) {
@@ -133,7 +134,7 @@ static void menu_cb_run (NotebookEditor me, EDITOR_ARGS) {
 
 static void menu_cb_runChunk (NotebookEditor me, EDITOR_ARGS) {
 	if (my interpreter -> running)
-		Melder_throw (U"The notebook is already running (paused). Please close or continue the pause or demo window.");
+		Melder_throw (U"The notebook is already running (paused). Please close or continue the pause, trust or demo window.");
 	autostring32 text = GuiText_getSelection (my textWidget);   // TODO: replace with chunk
 	if (! text)
 		Melder_throw (U"No text selected.");
@@ -199,20 +200,23 @@ autoNotebookEditor NotebookEditor_createFromText (conststring32 initialText) {
 
 autoNotebookEditor NotebookEditor_createFromNotebook_canBeNull (Notebook notebook) {
 	try {
+		structMelderFile notebookFile { };
 		for (integer ieditor = 1; ieditor <= theReferencesToAllOpenNotebookEditors.size; ieditor ++) {
 			NotebookEditor editor = theReferencesToAllOpenNotebookEditors.at [ieditor];
-			if (MelderFile_equal (& notebook -> file, & editor -> file)) {
+			if (Melder_equ (notebook -> string.get(), MelderFile_peekPath (& editor -> file))) {
 				Editor_raise (editor);
-				Melder_appendError (U"The notebook ", & notebook -> file, U" is already open and has been moved to the front.");
+				Melder_pathToFile (notebook -> string.get(), & notebookFile);
+				Melder_appendError (U"The notebook ", & notebookFile, U" is already open and has been moved to the front.");
 				if (editor -> dirty)
 					Melder_appendError (U"Choose “Reopen from disk” if you want to revert to the old version.");
 				Melder_flushError ();
 				return autoNotebookEditor();   // safe null
 			}
 		}
-		autostring32 text = MelderFile_readText (& notebook -> file);
+		Melder_pathToFile (notebook -> string.get(), & notebookFile);
+		autostring32 text = MelderFile_readText (& notebookFile);
 		autoNotebookEditor me = NotebookEditor_createFromText (text.get());
-		MelderFile_copy (& notebook -> file, & my file);
+		MelderFile_copy (& notebookFile, & my file);
 		Thing_setName (me.get(), nullptr);
 		return me;
 	} catch (MelderError) {

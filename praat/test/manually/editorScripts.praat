@@ -67,7 +67,7 @@ editor: textGrid
 #
 # Try to run the following twice.
 #
-# This tests whether a script without “endeditor” returns to the Objects window correctly.
+# This tests whether a script without “Close” returns to the Objects window correctly.
 
 sound = Create Sound from formula: "sineWithNoise", 1, 0, 1, 44100, "1/2 * sin(2*pi*377*x) + randomGauss(0,0.1)"
 textGrid = To TextGrid: "Mary John Bell", "bell"
@@ -83,7 +83,7 @@ Draw: 0.0, 0.0, "yes", "yes", "yes"
 #
 # Try to run the following twice.
 #
-# This tests whether a script without “Close” returns to the Objects window correctly.
+# This tests whether a script without “endeditor” returns to the Objects window correctly.
 
 sound = Create Sound from formula: "sineWithNoise", 1, 0, 1, 44100, "1/2 * sin(2*pi*377*x) + randomGauss(0,0.1)"
 textGrid = To TextGrid: "Mary John Bell", "bell"

@@ -52,7 +52,8 @@ autoCorrelation Correlation_createSimple (constVECVU const& correlations, constV
 		Melder_require (correlations.size == numberOfCorrelations_wanted,
 			U"The number of correlation matrix elements and the number of centroid elements should agree. "
 			"If there are d centroid values, there should be d(d+1)/2 correlation values, "
-			"so if there are ", centroid.size, U" centroid values, there should be ", numberOfCorrelations_wanted, U" correlation values.");
+			"so if there are ", centroid.size, U" centroid values, there should be ", numberOfCorrelations_wanted, U" correlation values."
+		);
 
 		autoCorrelation me = Correlation_create (centroid.size);
 		/*

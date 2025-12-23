@@ -33,7 +33,6 @@ Thing_define (Polynomial, FunctionSeries) {
 		virtual dcomplex v_evaluate_z (dcomplex z);
 		virtual void v_evaluateTerms (double x, VEC terms);
 		virtual void v_getExtrema (double x1, double x2, double *xmin, double *ymin, double *xmax, double *ymax);
-		//virtual integer v_getDegree ();   David, is het OK dat deze niet overschreven wordt? Ja
 };
 
 autoPolynomial Polynomial_create (double xmin, double xmax, integer degree);

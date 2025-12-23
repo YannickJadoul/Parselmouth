@@ -1,6 +1,6 @@
 /* Sound_to_Formant.cpp
  *
- * Copyright (C) 1992-2008,2010-2012,2014-2021 Paul Boersma
+ * Copyright (C) 1992-2008,2010-2012,2014-2021,2024,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -293,19 +293,19 @@ static autoFormant Sound_to_Formant_any_inplace (Sound me, double dt_in, integer
 	const double dt = ( dt_in > 0.0 ? dt_in : halfdt_window / 4.0 );
 	const double physicalDuration = my nx * my dx;
 	double dt_window = 2.0 * halfdt_window;
-	integer nFrames = 1 + Melder_ifloor ((physicalDuration - dt_window) / dt);
+	integer numberOfFrames = 1 + Melder_ifloor ((physicalDuration - dt_window) / dt);
 	integer nsamp_window = Melder_ifloor (dt_window / my dx), halfnsamp_window = nsamp_window / 2;
 
 	if (nsamp_window < numberOfPoles + 1)
 		Melder_throw (U"Window too short.");
-	double t1 = my x1 + 0.5 * (physicalDuration - my dx - (nFrames - 1) * dt);   // centre of first frame
-	if (nFrames < 1) {
-		nFrames = 1;
+	double t1 = my x1 + 0.5 * (physicalDuration - my dx - (numberOfFrames - 1) * dt);   // centre of first frame
+	if (numberOfFrames < 1) {
+		numberOfFrames = 1;
 		t1 = my x1 + 0.5 * physicalDuration;
 		dt_window = physicalDuration;
 		nsamp_window = my nx;
 	}
-	autoFormant thee = Formant_create (my xmin, my xmax, nFrames, dt, t1, (numberOfPoles + 1) / 2);   // e.g. 11 poles -> maximally 6 formants
+	autoFormant thee = Formant_create (my xmin, my xmax, numberOfFrames, dt, t1, (numberOfPoles + 1) / 2);   // e.g. 11 poles -> maximally 6 formants
 
 	autoMelderProgress progress (U"Formant analysis...");
 
@@ -320,9 +320,11 @@ static autoFormant Sound_to_Formant_any_inplace (Sound me, double dt_in, integer
 	}
 
 	integer maximumFrameLength = nsamp_window;
-	auto frameBuffer = raw_VEC (maximumFrameLength);
-	auto coefficients = raw_VEC (numberOfPoles);   // superfluous if which==2, but nobody uses that anyway
-	for (integer iframe = 1; iframe <= nFrames; iframe ++) {
+
+	MelderThread_PARALLELIZE (numberOfFrames, 3)
+		auto frameBuffer = raw_VEC (maximumFrameLength);
+		auto coefficients = raw_VEC (numberOfPoles);   // superfluous if which==2, but nobody uses that anyway
+	MelderThread_FOR (iframe) {
 		const double t = Sampled_indexToX (thee.get(), iframe);
 		const integer leftSample = Sampled_xToLowIndex (me, t);
 		const integer rightSample = leftSample + 1;
@@ -358,8 +360,15 @@ static autoFormant Sound_to_Formant_any_inplace (Sound me, double dt_in, integer
 				);
 			}
 		}
-		Melder_progress ((double) iframe / (double) nFrames, U"Formant analysis: frame ", iframe);
-	}
+		if (MelderThread_IS_MASTER) {   // then we can interact with the GUI
+			const double estimatedProgress = MelderThread_ESTIMATED_PROGRESS;
+			Melder_progress (0.1 + 0.8 * estimatedProgress,
+				U"Sound to Formant: analysed approximately ", Melder_iround (numberOfFrames * estimatedProgress),
+				U" out of ", numberOfFrames, U" frames"
+			);
+		}
+	} MelderThread_ENDFOR
+
 	Formant_sort (thee.get());
 	return thee;
 }
@@ -397,7 +406,7 @@ autoFormant Sound_to_Formant_willems (Sound me, double dt, double nFormants, dou
 	try {
 		return Sound_to_Formant_any (me, dt, Melder_iround (2.0 * nFormants), maximumFrequency, halfdt_window, 2, preemphasisFrequency, 50.0);
 	} catch (MelderError) {
-		Melder_throw (me, U": formant analysis (Burg) not performed.");
+		Melder_throw (me, U": formant analysis (Willems) not performed.");
 	}
 }
 

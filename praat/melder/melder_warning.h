@@ -2,11 +2,11 @@
 #define _melder_warning_h_
 /* melder_warning.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2018,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -35,14 +35,11 @@ namespace MelderWarning {
 	extern Proc _p_currentProc;
 }
 
-template <typename... Args>
-void Melder_warning (const MelderArg& first, Args... rest);
-
-template <typename... Args>
-void Melder_warning (const MelderArg& first, Args... rest) {
+template <typename... Arg>
+void Melder_warning (const Arg... arg) {
 	if (MelderWarning::_depth < 0)
 		return;
-	MelderString_copy (& MelderWarning::_buffer, first, rest...);
+	MelderString_copy (& MelderWarning::_buffer, arg...);
 	(*MelderWarning::_p_currentProc) (MelderWarning::_buffer.string);
 }
 

@@ -2,11 +2,11 @@
 #define _Picture_h_
 /* Picture.h
  *
- * Copyright (C) 1992-2005,2007-2016,2018,2020 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2016,2018,2020,2022,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -48,6 +48,12 @@ Thing_define (Picture, Thing) {
 	void *selectionChangedClosure;
 	bool mouseSelectsInnerViewport;
 };
+
+/*
+	The drawing area is a rectangle measuring 60x60 inches.
+*/
+constexpr double Picture_WIDTH = 60.0;
+constexpr double Picture_HEIGHT = 60.0;
 
 autoPicture Picture_create (GuiDrawingArea drawingArea, bool sensitive);
 /*
@@ -106,4 +112,4 @@ void Picture_setSelection
 */
 
 /* End of file Picture.h */
-#endif
+#endif // !_Picture_h_

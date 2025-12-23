@@ -18,7 +18,6 @@
 
 #include "praatP.h"
 #include "praat_script.h"
-#include "praat_version.h"
 #include "../kar/longchar.h"
 #include "machine.h"
 #include "GuiP.h"
@@ -198,7 +197,7 @@ void praat_addAction4_ (ClassInfo class1, integer n1, ClassInfo class2, integer 
 	integer positionOfSeparator = pSeparator - title;
 	static MelderString string;
 	MelderString_copy (& string, title);
-	char32 *pTitle = & string. string [0];
+	char32 *pTitle = & string.string [0];
 	do {
 		pTitle [positionOfSeparator] = U'\0';
 		praat_addAction4__ (class1, n1, class2, n2, class3, n3, class4, n4,
@@ -220,10 +219,27 @@ static void deleteDynamicMenu () {
 		return;
 	static integer numberOfDeletions;
 	trace (U"deletion #", ++ numberOfDeletions);
+	#if motif
+		/*
+			Undangle the menu items. They can be destroyed by the removal of their pull-down menu.
+		*/
+		for (integer i = 1; i <= theActions.size; i ++) {
+			Praat_Command action = theActions.at [i];
+			Melder_assert (action);
+			Melder_assert (Thing_isa (action, classPraat_Command));
+			if (action -> button) {
+				Melder_assert (action -> button -> classInfo != classGuiMenu);
+				if (action -> button -> classInfo == classGuiMenuItem)
+					action -> button = nullptr;   // prevent destruction; the menu will take care of that
+			}
+		}
+	#endif
 	for (integer i = 1; i <= theActions.size; i ++) {
 		Praat_Command action = theActions.at [i];
+		Melder_assert (action);
+		Melder_assert (Thing_isa (action, classPraat_Command));
 		if (action -> button) {
-			trace (U"trying to destroy action ", i, U" of ", theActions.size, U": ", action -> title.get());
+			trace (U"trying to destroy action ", i, U" of ", theActions.size, U", button ", Melder_pointer (action -> button), U": ", action -> title.get());
 			#if gtk || cocoa
 				if (action -> button -> d_parent == praat_form) {
 					trace (U"destroy a label or a push button or a cascade button");
@@ -233,12 +249,48 @@ static void deleteDynamicMenu () {
 					GuiObject_destroy (action -> button -> d_widget);
 				}
 			#elif motif
+				//trace ((int) * (char *) action -> button);   // try to access the memory
+				Melder_assert (action -> button -> classInfo);
+				//trace (2);
+				if (action -> button -> classInfo == classGuiButton)
+					Melder_assert (action -> button -> d_widget);
+				//trace (3);
 				if (action -> button -> classInfo == classGuiButton && action -> button -> d_widget -> subMenuId) {   // a cascade button (not a direct child of the form)?
-					trace (U"destroy the xm menu bar; this also destroys the xm button and the xm menu");
-					GuiObject_destroy (action -> button -> d_widget -> parent);   // the Motif parent, i.e. not d_parent -> d_widget !
-				} else if (action -> button -> d_parent == praat_form) {
-					trace (U"destroy a label or a push button");
+					#define TRY_BARLESS  0
+					#if TRY_BARLESS
 					GuiObject_destroy (action -> button -> d_widget);
+					GuiObject_destroy (action -> button -> d_widget -> subMenuId);
+					#else
+					/*
+						We check that the parent is a RowColumn with exactly two children: a cascade button and a pulldown menu
+					*/
+					GuiObject xmMenuBarRowColumn = action -> button -> d_widget -> parent;
+					Melder_assert (xmMenuBarRowColumn);
+					trace (U"destroy the xm menu bar (widget class ", xmMenuBarRowColumn -> widgetClass, U"); this also destroys the xm button and the xm menu");
+					Melder_assert (xmMenuBarRowColumn -> widgetClass == xmRowColumnWidgetClass);
+					GuiObject xmCascadeButton = xmMenuBarRowColumn -> firstChild;
+					Melder_assert (xmCascadeButton);
+					Melder_assert (xmCascadeButton -> widgetClass == xmCascadeButtonWidgetClass);
+					Melder_assert (xmCascadeButton == action -> button -> d_widget);
+					GuiObject xmPulldownMenu = xmCascadeButton -> nextSibling;
+					Melder_assert (xmPulldownMenu);
+					Melder_assert (xmPulldownMenu -> widgetClass == xmPulldownMenuWidgetClass);
+					Melder_assert (! xmPulldownMenu -> nextSibling);
+					Melder_assert (xmCascadeButton -> subMenuId == xmPulldownMenu);
+					/*
+						Let's do some controlled destruction.
+					*/
+					//GuiObject_destroy (xmCascadeButton);   Melder_assert (xmMenuBarRowColumn -> firstChild == xmPulldownMenu);
+					//GuiObject_destroy (xmPulldownMenu);    Melder_assert (xmMenuBarRowColumn -> firstChild == nullptr);
+					GuiObject_destroy (xmMenuBarRowColumn);
+					//GuiObject_destroy (action -> button -> d_widget);   // that would be only the cascade button
+					#endif
+				} else if (action -> button -> d_parent == praat_form) {
+					GuiObject xmLabelOrButton = action -> button -> d_widget;
+					Melder_assert (xmLabelOrButton);
+					Melder_assert (xmLabelOrButton -> widgetClass == xmLabelWidgetClass || xmLabelOrButton -> widgetClass == xmPushButtonWidgetClass);
+					trace (U"destroy a label or a push button");
+					GuiObject_destroy (xmLabelOrButton);
 				}
 			#endif
 			action -> button = nullptr;   // undangle
@@ -331,7 +383,7 @@ void praat_addActionScript (conststring32 className1, integer n1, conststring32 
 		} else {
 			structMelderFile file { };
 			Melder_relativePathToFile (script, & file);
-			action -> script = Melder_dup_f (Melder_fileToPath (& file));
+			action -> script = Melder_dup_f (MelderFile_peekPath (& file));
 		}
 		action -> after = ( after [0] != U'\0' ? Melder_dup_f (after) : autostring32() );
 		action -> phase = praatP.phase;
@@ -804,7 +856,7 @@ Praat_Command praat_doAction (conststring32 title, conststring32 arguments, Inte
 		return nullptr;
 	if (actionFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = actionFound -> script.get();
-		const conststring32 preferencesFolderPath = Melder_folderToPath (& Melder_preferencesFolder);
+		const conststring32 preferencesFolderPath = MelderFolder_peekPath (Melder_preferencesFolder());
 		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
@@ -834,7 +886,7 @@ Praat_Command praat_doAction (conststring32 title, integer narg, Stackel args, I
 		return nullptr;
 	if (actionFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = actionFound -> script.get();
-		const conststring32 preferencesFolderPath = Melder_folderToPath (& Melder_preferencesFolder);
+		const conststring32 preferencesFolderPath = MelderFolder_peekPath (Melder_preferencesFolder());
 		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
@@ -879,7 +931,7 @@ static bool actionIsToBeIncluded (Praat_Command command, bool deprecated, bool i
 	bool includeQueryAPI, bool includeModifyAPI, bool includeToAPI,
 	bool includePlayAPI, bool includeDrawAPI, bool includeHelpAPI, bool includeWindowAPI)
 {
-	const bool obsolete = ( deprecated && (command -> deprecationYear < PRAAT_YEAR - 10 || command -> deprecationYear < 2017) );
+	const bool obsolete = ( deprecated && (command -> deprecationYear < Melder_appYear() - 10 || command -> deprecationYear < 2017) );
 	const bool hiddenByDefault = ( command -> hidden != command -> toggled );
 	const bool explicitlyHidden = hiddenByDefault && ! deprecated;
 	const bool hidden = explicitlyHidden || ! command -> callback || command -> noApi || obsolete ||

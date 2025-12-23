@@ -1,10 +1,10 @@
 /* melder_files.cpp
  *
- * Copyright (C) 1992-2008,2010-2024 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2008,2010-2025 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -25,7 +25,7 @@
  * pb 2004/09/25 use /tmp as temporary directory
  * pb 2004/10/16 C++ compatible structs
  * pb 2005/11/07 Windows: use %USERPROFILE% rather than %HOMESHARE%%HOMEPATH%
- * rvs&pb 2005/11/18 url support
+ * rvs&pb 2005/11/18 curl support
  * pb 2006/01/21 MelderFile_writeText does not create temporary file
  * pb 2006/08/03 openForWriting
  * rvs 2006/08/12 curl: do not fail on error
@@ -39,14 +39,12 @@
  * pb 2008/11/01 warn after finding final tabs (not just spaces) in file names
  * pb 2010/12/14 more high Unicode compatibility
  * pb 2011/04/05 C++
+ * pb 2024/11/16 rid curl support
  */
 
 #if defined (UNIX)
 	#include <unistd.h>
 	#include <sys/stat.h>
-#endif
-#if defined (CURLPRESENT)
-	#include <curl/curl.h>
 #endif
 #ifdef _WIN32
 	#include <windows.h>
@@ -74,7 +72,7 @@ static char32 theShellDirectory [kMelder_MAXPATH+1];
 void Melder_rememberShellDirectory () {
 	structMelderFolder shellFolder { };
 	Melder_getCurrentFolder (& shellFolder);
-	str32cpy (theShellDirectory, Melder_folderToPath (& shellFolder));
+	str32cpy (theShellDirectory, MelderFolder_peekPath (& shellFolder));
 }
 conststring32 Melder_getShellDirectory () {
 	return & theShellDirectory [0];
@@ -146,6 +144,9 @@ conststring32 MelderFolder_name (MelderFolder folder) {
 }
 
 void Melder_pathToFolder (conststring32 path, MelderFolder folder) {
+	/*
+		FIXME: document that this function can be used to keep folder names relative and generic
+	*/
 	Melder_sprint (folder -> path,kMelder_MAXPATH+1, path);
 }
 
@@ -155,6 +156,8 @@ void Melder_pathToFile (conststring32 path, MelderFile file) {
 
 		Used if we know for sure that we have a complete path name,
 		i.e. if the program determined the name (fileselector, printing, prefs).
+
+		FIXME: document that this function can also be used to keep file names relative and generic
 	*/
 	Melder_sprint (file -> path,kMelder_MAXPATH+1, path);
 }
@@ -304,13 +307,37 @@ void Melder_relativePathToFolder (conststring32 path, MelderFolder folder) {
 	#endif
 }
 
-conststring32 Melder_fileToPath (MelderFile file) {
+conststring32 MelderFile_peekPath (MelderFile file) {
 	return & file -> path [0];
 }
-
-conststring32 Melder_folderToPath (MelderFolder folder) {
+conststring32 MelderFolder_peekPath (MelderFolder folder) {
 	return & folder -> path [0];
 }
+
+conststring8 MelderFile_peekPath8 (MelderFile file) {
+	return Melder_peek32to8_fileSystem (MelderFile_peekPath (file));
+}
+conststring8 MelderFolder_peekPath8 (MelderFolder folder) {
+	return Melder_peek32to8_fileSystem (MelderFolder_peekPath (folder));
+}
+
+#ifdef _WIN32
+	conststringW MelderFile_peekPathW (MelderFile file) {
+		return Melder_peek32toW_fileSystem (MelderFile_peekPath (file));
+	}
+	conststringW MelderFolder_peekPathW (MelderFolder folder) {
+		return Melder_peek32toW_fileSystem (MelderFolder_peekPath (folder));
+	}
+#endif
+
+#ifdef macintosh
+	const void * MelderFile_peekPathCfstring (MelderFile file) {
+		return Melder_peek32toCfstring_fileSystem (MelderFile_peekPath (file));
+	}
+	const void * MelderFolder_peekPathCfstring (MelderFolder folder) {
+		return Melder_peek32toCfstring_fileSystem (MelderFolder_peekPath (folder));
+	}
+#endif
 
 void MelderFile_copy (constMelderFile file, MelderFile copy) {
 	str32cpy (copy -> path, file -> path);
@@ -533,24 +560,48 @@ void Melder_getHomeDir (MelderFolder homeDir) {
 	#endif
 }
 
-void Melder_getParentPreferencesFolder (MelderFolder preferencesFolder) {
-	#if defined (macintosh)
+static structMelderFolder thePreferencesFolder;
+void Melder_setPreferencesFolder (conststring32 path) {
+	Melder_pathToFolder (path, & thePreferencesFolder);
+}
+MelderFolder Melder_preferencesFolder() {
+	return & thePreferencesFolder;
+}
+MelderFolder Melder_preferencesFolder5() {
+	static structMelderFolder thePreferencesFolder5;
+	if (MelderFolder_isNull (& thePreferencesFolder5)) {
 		structMelderFolder homeFolder { };
 		Melder_getHomeDir (& homeFolder);
-		Melder_sprint (preferencesFolder -> path,kMelder_MAXPATH+1, homeFolder. path, U"/Library/Preferences");
-	#elif defined (UNIX)
-		/*
-			Preferences files go into the home folder.
-		*/
-		Melder_getHomeDir (preferencesFolder);
-	#elif defined (_WIN32)
-		/*
-			On Windows 95, preferences files went into the Windows folder.
-			On shared systems (NT, 2000, XP), preferences files go into the home folder.
-			TODO: at some point, these files should be moved to HOME\AppData\Roaming\Praat.
-		*/
-		Melder_getHomeDir (preferencesFolder);
-	#endif
+		#if defined (macintosh)
+			Melder_sprint (thePreferencesFolder5. path,kMelder_MAXPATH+1, homeFolder. path,
+					U"/Library/Preferences/", Melder_upperCaseAppName(), U" Prefs");
+		#elif defined (UNIX)
+			Melder_sprint (thePreferencesFolder5. path,kMelder_MAXPATH+1, homeFolder. path,
+					U"/.", Melder_lowerCaseAppName(), U"-dir");
+		#elif defined (_WIN32)
+			Melder_sprint (thePreferencesFolder5. path,kMelder_MAXPATH+1, homeFolder. path,
+					U"\\", Melder_upperCaseAppName());
+		#endif
+	}
+	return & thePreferencesFolder5;
+}
+MelderFolder Melder_preferencesFolder7() {
+	static structMelderFolder thePreferencesFolder7;
+	if (MelderFolder_isNull (& thePreferencesFolder7)) {
+		structMelderFolder homeFolder { };
+		Melder_getHomeDir (& homeFolder);
+		#if defined (macintosh)
+			Melder_sprint (thePreferencesFolder7. path,kMelder_MAXPATH+1, homeFolder. path,
+					U"/Library/Application Support/", Melder_upperCaseAppName());
+		#elif defined (UNIX)
+			Melder_sprint (thePreferencesFolder7. path,kMelder_MAXPATH+1, homeFolder. path,
+					U"/.config/", Melder_lowerCaseAppName());
+		#elif defined (_WIN32)
+			Melder_sprint (thePreferencesFolder7. path,kMelder_MAXPATH+1, homeFolder. path,
+					U"\\AppData\\Roaming\\", Melder_upperCaseAppName());
+		#endif
+	}
+	return & thePreferencesFolder7;
 }
 
 void Melder_getTempDir (MelderFolder temporaryFolder) {
@@ -561,16 +612,6 @@ void Melder_getTempDir (MelderFolder temporaryFolder) {
 		(void) temporaryFolder;
 	#endif
 }
-
-#ifdef CURLPRESENT
-static int curl_initialized = 0;
-static size_t write_URL_data_to_file (void *buffer, size_t size, size_t nmemb, void *userp) {
-	return fwrite (buffer, size, nmemb, userp);
-}
-static size_t read_URL_data_from_file (void *buffer, size_t size, size_t nmemb, void *userp) {
-	return fread (buffer, size, nmemb, userp);
-}
-#endif
 
 FILE * Melder_fopen (MelderFile file, const char *type) {
 	if (MelderFile_isNull (file))
@@ -589,54 +630,19 @@ FILE * Melder_fopen (MelderFile file, const char *type) {
 	file -> openForWriting = ( type [0] == 'w' || type [0] == 'a' || strchr (type, '+') );
 	if (str32equ (file -> path, U"<stdout>") && file -> openForWriting) {
 		f = Melder_stdout;
-	#ifdef CURLPRESENT
-	} else if (strstr (utf8path, "://") && file -> openForWriting) {
-		Melder_assert (type [0] == 'w');   // reject "append" and "random" access
-		f = tmpfile ();   // open a temporary file for writing
-	} else if (strstr (utf8path, "://") && ! file -> openForWriting) {
-		CURLcode CURLreturn;
-		CURL *CURLhandle;
-		char errorbuffer [CURL_ERROR_SIZE] = "";
-		f = tmpfile ();   // open a temporary file for writing
-		if (! curl_initialized) {
-			CURLreturn = curl_global_init (CURL_GLOBAL_ALL);
-			curl_initialized = 1;
-		};
-		CURLhandle = curl_easy_init ();   // initialize session
-		/* 
-		 * Set up the connection parameters.
-		 */
-		/* Debugging: Verbose messages */
-		/* CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_VERBOSE, 1); */
-		/* Do not fail on error. */
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_FAILONERROR, 0);	
-		/* Store error messages in a buffer. */
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_ERRORBUFFER, errorbuffer);
-		/* The file stream to store the URL. */
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_FILE, f);
-		/* The function to write to the file, necessary for Win32.	*/
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_WRITEFUNCTION, write_URL_data_to_file);
-		/* The actual URL to handle.	*/
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_URL, utf8path);
-		/* Get the URL and write it to the given file. */
-		CURLreturn = curl_easy_perform (CURLhandle);
-		/* Handle errors. */
-		if (CURLreturn) {
-			Melder_appendError (Melder_peek8to32 (errorbuffer));
-			f = nullptr;
-		};
-		/* Clean up session. */
-		curl_easy_cleanup (CURLhandle);
-		/* Do something with the file. Why? */
-		if (f) rewind (f);
-	#endif
 	} else {
 		//TRACE
 		#if defined (_WIN32) && ! defined (__CYGWIN__)
-			f = _wfopen (Melder_peek32toW_fileSystem (file -> path), Melder_peek32toW (Melder_peek8to32 (type)));
+			f = _wfopen (MelderFile_peekPathW (file), Melder_peek32toW (Melder_peek8to32 (type)));
 		#else
 			struct stat statbuf;
-			if ((stat ((char *) utf8path, & statbuf) != -1) && S_ISDIR (statbuf. st_mode)) {
+			int status = stat ((char *) utf8path, & statbuf);
+			if (status == -1) {
+				if (type [0] == 'r')
+					f = nullptr;   // and wait for errno to tell us why
+				else
+					f = fopen ((char *) utf8path, type);
+			} else if (S_ISDIR (statbuf. st_mode)) {
 				isFolder = true;
 				trace (U"A folder is not a file!");
 				f = nullptr;
@@ -652,6 +658,23 @@ FILE * Melder_fopen (MelderFile file, const char *type) {
 			( type [0] == 'r' ? U"open" : type [0] == 'a' ? U"append to" : U"create" ),
 			U" file ", file, U"."
 		);
+		if (errno == EIO)
+			Melder_appendError (U"Not-so-useful hint: an error occurred while reading from the file system.");
+		else if (errno == ELOOP)
+			Melder_appendError (U"Hint: the file path contains a loop of symbolic links.");
+		else if (errno == ENAMETOOLONG)
+			Melder_appendError (U"Not-so-useful hint: the file path may be too long. This should not occur.");
+		else if (errno == ENOENT)
+			if (file -> openForWriting)
+				Melder_appendError (U"Hint: one of the folders in this file path does not exist.");
+			else
+				Melder_appendError (U"Hint: one of the folders or files in this file path does not exist.");
+		else if (errno == ENOTDIR)
+			Melder_appendError (U"Hint: a component of the file path is not a folder.");
+		else if (errno == EOVERFLOW)
+			Melder_appendError (U"Not-so-useful hint: the file size is too big.");
+		else if (errno != 0)
+			Melder_appendError (U"Not-so-useful hint: unexpected error ", errno, U".");
 		if (isFolder)
 			Melder_appendError (U"Hint: this is a folder, not a file.");
 		else if (path [0] == U'\0')
@@ -671,77 +694,19 @@ FILE * Melder_fopen (MelderFile file, const char *type) {
 void Melder_fclose (MelderFile file, FILE *f) {
 	if (! f)
 		return;
-	#if defined (CURLPRESENT)
- 	if (str32str (file -> wpath, U"://") && file -> openForWriting) {
-		unsigned char utf8path [kMelder_MAXPATH+1];
-		Melder_32to8_fileSystem_inplace (file -> path, utf8path);
-		/* Rewind the file. */
-		if (f) rewind (f);
-		CURLcode CURLreturn;
-		CURL *CURLhandle;
-		char errorbuffer [CURL_ERROR_SIZE] = "";
-		/* Start global init (necessary only ONCE). */
-		if (! curl_initialized) {
-			CURLreturn = curl_global_init (CURL_GLOBAL_ALL);
-			curl_initialized = 1;
-		};
-		CURLhandle = curl_easy_init ();   /* Initialize session. */
-		/* 
-		 * Set up the connection parameters.
-		 */
-		/* Debugging: Verbose messages */
-		/* CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_VERBOSE, 1); */
-        /* Catch FILE: protocol errors. No solution yet */
-		if (str32str (file -> path, U"file://") || str32str (file -> path, U"FILE://")) {
-			CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_VERBOSE, 1);
-		}
-		/* Do not return Error pages, just fail. */
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_FAILONERROR, 1);	
-		/* Store error messages in a buffer. */
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_ERRORBUFFER, errorbuffer);
-		/* Send header. */
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_HEADER, 1);
-		/* Upload. */
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_UPLOAD, 1);
-		/* The actual URL to handle. */
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_URL, utf8path);
-		/* The function to write to the peer, necessary for Win32. */
-	    CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_READFUNCTION, read_URL_data_from_file);
-		CURLreturn = curl_easy_setopt (CURLhandle, CURLOPT_READDATA, f);
-		/* Get the URL and write the file to it. */
-		CURLreturn = curl_easy_perform (CURLhandle);
-		/* Handle errors. */
-		if (CURLreturn) {
-			curl_easy_cleanup (CURLhandle);
-			f = nullptr;
-			Melder_throw (Melder_peek8to32 (errorbuffer), U"\n");
-	    };
-		/* Clean up session */
-		curl_easy_cleanup (CURLhandle);
-    }
-	#endif
 	if (f != Melder_stdout && fclose (f) == EOF)
 		Melder_throw (U"Error closing file ", file, U".");
-}
-
-void Melder_files_cleanUp () {
-	#if defined (CURLPRESENT)
-		if (curl_initialized) {
-			curl_global_cleanup ();
-			curl_initialized = 0;
-		};
-	#endif
 }
 
 bool MelderFile_exists (MelderFile file) {
 	#if defined (UNIX)
 		struct stat fileOrFolderStatus;
-		const bool exists = ( stat (Melder_peek32to8_fileSystem (file -> path), & fileOrFolderStatus) == 0 );
+		const bool exists = ( stat (MelderFile_peekPath8 (file), & fileOrFolderStatus) == 0 );
 		if (! exists)
 			return false;
 		return ! S_ISDIR (fileOrFolderStatus. st_mode);
 	#else
-		DWORD fileOrFolderAttributes = GetFileAttributesW (Melder_peek32toW_fileSystem (file -> path));
+		DWORD fileOrFolderAttributes = GetFileAttributesW (MelderFile_peekPathW (file));
 		if (fileOrFolderAttributes == INVALID_FILE_ATTRIBUTES)
 			return false;
 		return (fileOrFolderAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
@@ -751,12 +716,12 @@ bool MelderFile_exists (MelderFile file) {
 bool MelderFolder_exists (MelderFolder folder) {
 	#if defined (UNIX)
 		struct stat fileOrFolderStatus;
-		const bool exists = ( stat (Melder_peek32to8_fileSystem (folder -> path), & fileOrFolderStatus) == 0 );
+		const bool exists = ( stat (MelderFolder_peekPath8 (folder), & fileOrFolderStatus) == 0 );
 		if (! exists)
 			return false;
 		return S_ISDIR (fileOrFolderStatus. st_mode);
 	#else
-		DWORD fileOrFolderAttributes = GetFileAttributesW (Melder_peek32toW_fileSystem (folder -> path));
+		DWORD fileOrFolderAttributes = GetFileAttributesW (MelderFolder_peekPathW (folder));
 		if (fileOrFolderAttributes == INVALID_FILE_ATTRIBUTES)
 			return false;
 		return (fileOrFolderAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
@@ -799,7 +764,7 @@ bool Melder_tryToAppendFile (MelderFile file) {
 integer MelderFile_length (MelderFile file) {
 	#if defined (UNIX)
 		struct stat statistics;
-		if (stat (Melder_peek32to8_fileSystem (file -> path), & statistics) != 0)
+		if (stat (MelderFile_peekPath8 (file), & statistics) != 0)
 			return -1;
 		return statistics. st_size;
 	#else
@@ -817,18 +782,77 @@ integer MelderFile_length (MelderFile file) {
 }
 
 void MelderFile_delete (MelderFile file) {
-	if (! file) return;
+	if (! file)
+		return;
 	#if defined (UNIX)
-		remove (Melder_peek32to8_fileSystem (file -> path));
+		remove (MelderFile_peekPath8 (file));
 	#elif defined (_WIN32)
-		DeleteFile (Melder_peek32toW_fileSystem (file -> path));
+		DeleteFile (MelderFile_peekPathW (file));
 	#endif
+}
+
+void MelderFile_moveAndOrRename (MelderFile fromFile, MelderFile toFile) {
+	if (! fromFile || ! toFile)
+		return;
+	try {
+		#if defined (UNIX)
+			static char fromPath8 [1 + kMelder_MAXPATH], toPath8 [1 + kMelder_MAXPATH];
+			Melder_32to8_fileSystem_inplace (MelderFile_peekPath (fromFile), fromPath8);   // not MelderFile_peekPath8, because of static
+			Melder_32to8_fileSystem_inplace (MelderFile_peekPath (toFile), toPath8);
+			const int result = rename (fromPath8, toPath8);
+		#elif defined (_WIN32)
+			autostringW fromPathW = Melder_32toW_fileSystem (MelderFile_peekPath (fromFile));
+			autostringW toPathW = Melder_32toW_fileSystem (MelderFile_peekPath (toFile));
+			const int result = _wrename (fromPathW.get(), toPathW.get());
+		#endif
+		if (result == 0)
+			return;   // success
+		switch (errno) {
+			case EACCES:
+				Melder_throw (U"A folder in one of the paths doesn’t allow reading and/or writing access.");
+			case EBUSY:
+				Melder_throw (U"A folder in one of the paths is busy.");
+			case EINVAL:
+				Melder_throw (U"Invalid path (recursive? dots?).");
+			case EIO:
+				Melder_throw (U"Physical I/O error.");
+			case EISDIR:
+				Melder_throw (U"Cannot move an/or rename a file to a folder name.");
+			#if ! defined (UNIX) && ! defined (_WIN32)
+				case EMLOOP:
+					Melder_throw (U"Loop in symbolic links.");
+			#endif
+			case EMLINK:
+				Melder_throw (U"Too many links.");
+			case ENAMETOOLONG:
+				Melder_throw (U"Name too long.");
+			case ENOENT:
+				Melder_throw (U"A folder or file in the path does not exist.");
+			case ENOSPC:
+				Melder_throw (U"Folder cannot be extended.");
+			case ENOTDIR:
+				Melder_throw (U"A part of the path is not a folder (hint: look at the slahes).");
+			case EPERM:
+				Melder_throw (U"No permission to read and/or write in one of the paths.");
+			case EROFS:
+				Melder_throw (U"Cannot do links between file systems.");
+			#if ! defined (UNIX) && ! defined (_WIN32)
+				case ETXTBUSY:
+					Melder_throw (U"Busy pure procedure file.");
+			#endif
+			default:
+				Melder_throw (U"Unknown error ", errno, U".");
+		}
+	} catch (MelderError) {
+		Melder_throw (U"Could not rename ", fromFile, U" to ", toFile, U".");
+	}
 }
 
 char32 * Melder_peekExpandBackslashes (conststring32 message) {
 	static char32 names [11] [kMelder_MAXPATH+1];
 	static int index = 0;
-	if (++ index == 11) index = 0;
+	if (++ index == 11)
+		index = 0;
 	char32 *to = & names [index] [0];
 	for (const char32 *from = & message [0]; *from != '\0'; from ++, to ++) {
 		*to = *from;
@@ -877,10 +901,10 @@ void Melder_getCurrentFolder (MelderFolder folder) {
 
 void Melder_setCurrentFolder (MelderFolder folder) {
 	#if defined (UNIX)
-		chdir (Melder_peek32to8_fileSystem (folder -> path));
+		chdir (MelderFolder_peekPath8 (folder));
 		str32cpy (theDefaultDir. path, folder -> path);
 	#elif defined (_WIN32)
-		SetCurrentDirectory (Melder_peek32toW_fileSystem (folder -> path));
+		SetCurrentDirectory (MelderFolder_peekPathW (folder));
 	#endif
 }
 
@@ -900,7 +924,7 @@ void Melder_createDirectory (MelderFolder parent, conststring32 folderName, int 
 	} else {
 		Melder_sprint (file. path,kMelder_MAXPATH+1, parent -> path, U"/", folderName);   // relative path
 	}
-	if (mkdir (Melder_peek32to8_fileSystem (file. path), mode) == -1 && errno != EEXIST)   // ignore if folder already exists
+	if (mkdir (MelderFile_peekPath8 (& file), mode) == -1 && errno != EEXIST)   // ignore if folder already exists
 		Melder_throw (U"Cannot create directory ", & file, U".");
 #elif defined (_WIN32)
 	structMelderFile file { };
@@ -914,7 +938,7 @@ void Melder_createDirectory (MelderFolder parent, conststring32 folderName, int 
 	} else {
 		Melder_sprint (file. path,kMelder_MAXPATH+1, parent -> path, U"/", folderName);   // relative path
 	}
-	if (! CreateDirectoryW (Melder_peek32toW_fileSystem (file. path), & sa) && GetLastError () != ERROR_ALREADY_EXISTS)   // ignore if folder already exists
+	if (! CreateDirectoryW (MelderFile_peekPathW (& file), & sa) && GetLastError () != ERROR_ALREADY_EXISTS)   // ignore if folder already exists
 		Melder_throw (U"Cannot create directory ", & file, U".");
 #else
 	//#error Unsupported operating system.
@@ -923,7 +947,7 @@ void Melder_createDirectory (MelderFolder parent, conststring32 folderName, int 
 
 void MelderFolder_create (MelderFolder folder) {
 	#if defined (UNIX)
-		const int status = mkdir (Melder_peek32to8_fileSystem (folder -> path), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		const int status = mkdir (MelderFolder_peekPath8 (folder), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 		if (status == 0)
 			return;   // successfully created a new folder
 		if (errno == EEXIST)
@@ -934,7 +958,7 @@ void MelderFolder_create (MelderFolder folder) {
 		securityAttributes. nLength = sizeof (SECURITY_ATTRIBUTES);
 		securityAttributes. lpSecurityDescriptor = nullptr;
 		securityAttributes. bInheritHandle = false;
-		const int status = CreateDirectoryW (Melder_peek32toW_fileSystem (folder -> path), & securityAttributes);
+		const int status = CreateDirectoryW (MelderFolder_peekPathW (folder), & securityAttributes);
 		if (status != 0)
 			return;   // successfully created a new folder
 		if (GetLastError () == ERROR_ALREADY_EXISTS)
@@ -943,6 +967,11 @@ void MelderFolder_create (MelderFolder folder) {
 	#else
 		#error Unsupported operating system.
 	#endif
+}
+void Melder_createFolder (conststring32 path) {
+	structMelderFolder folder { };
+	Melder_relativePathToFolder (path, & folder);
+	MelderFolder_create (& folder);
 }
 
 static size_t fread_multi (char *buffer, size_t numberOfBytes, FILE *f) {
@@ -989,7 +1018,7 @@ autostring32 MelderFile_readText (MelderFile file, autostring8 *string8) {
 				length -= 3;
 				fseeko (f, 3, SEEK_SET);
 			} else {
-				rewind (f);   // length and type already set correctly.
+				rewind (f);   // length and type already set correctly
 			}
 			autostring8 text8bit (length);
 			Melder_assert (text8bit);
@@ -1066,7 +1095,7 @@ autostring32 MelderFile_readText (MelderFile file, autostring8 *string8) {
 					} else if (kar1 <= 0xFFFF) {
 						text [i] = (const char32) kar1;   // convert up without sign extension
 					} else {
-						Melder_fatal (U"MelderFile_readText: unsigned short greater than 0xFFFF: should not occur.");
+						Melder_crash (U"MelderFile_readText: unsigned short greater than 0xFFFF: should not occur.");
 					}
 				}
 			}
@@ -1235,7 +1264,7 @@ void MelderFile_appendText (MelderFile file, conststring32 text) {
 					if (kar == U'\n')
 						binputu16 (13, f2);
 				#endif
-				if (kar <= 0x00FFFF) {
+				if (kar <= 0x00'FFFF) {
 					binputu16 ((uint16) kar, f2);   // guarded conversion down
 				} else if (kar <= 0x10'FFFF) {
 					kar -= 0x01'0000;

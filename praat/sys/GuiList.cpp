@@ -1,10 +1,10 @@
 /* GuiList.cpp
  *
- * Copyright (C) 1993-2020,2022,2024 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2020,2022,2024,2025 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -151,12 +151,12 @@ Thing_implement (GuiList, GuiControl, 0);
 	*/
 	- (NSInteger) numberOfRowsInTableView: (NSTableView *) aTableView {
 		(void) aTableView;
-		return uinteger_to_integer ([self -> contents   count]);
+		return uinteger_to_integer_a ([self -> contents   count]);
 	}
 	- (id) tableView: (NSTableView *) aTableView   objectValueForTableColumn: (NSTableColumn *) aTableColumn   row: (NSInteger) row {
 		(void) aTableColumn;
 		(void) aTableView;
-		return [self -> contents   objectAtIndex: integer_to_uinteger (row)];
+		return [self -> contents   objectAtIndex: integer_to_uinteger_a (row)];
 	}
 
 	/*
@@ -363,11 +363,11 @@ autoINTVEC GuiList_getSelectedPositions (GuiList me) {
 	#elif cocoa
 		GuiCocoaList *list = (GuiCocoaList *) my d_widget;
 		NSIndexSet *indexSet = [list -> tableView   selectedRowIndexes];
-		selectedPositions = zero_INTVEC (uinteger_to_integer ([indexSet count]));
+		selectedPositions = zero_INTVEC (uinteger_to_integer_a ([indexSet count]));
 		NSUInteger currentIndex = [indexSet firstIndex];
 		integer ipos = 0;
 		while (currentIndex != NSNotFound) {
-			selectedPositions [++ ipos] = uinteger_to_integer (currentIndex + 1);
+			selectedPositions [++ ipos] = uinteger_to_integer_a (currentIndex + 1);
 			currentIndex = [indexSet   indexGreaterThanIndex: currentIndex];
 		}
 		Melder_assert (ipos == selectedPositions.size);
@@ -409,7 +409,7 @@ integer GuiList_getNumberOfItems (GuiList me) {
 		numberOfItems = ListBox_GetCount (my d_widget -> window);
 	#elif cocoa
 		GuiCocoaList *list = (GuiCocoaList *) my d_widget;
-		numberOfItems = uinteger_to_integer ([list -> contents   count]);
+		numberOfItems = uinteger_to_integer_a ([list -> contents   count]);
 	#endif
 	return numberOfItems;
 }
@@ -482,7 +482,7 @@ void GuiList_replaceItem (GuiList me, conststring32 itemText, integer position) 
 	#elif cocoa
 		GuiCocoaList *list = (GuiCocoaList *) my d_widget;
 		NSString *nsString = [[NSString alloc] initWithUTF8String: Melder_peek32to8 (itemText)];
-		[list -> contents   replaceObjectAtIndex: integer_to_uinteger (position - 1)   withObject: nsString];
+		[list -> contents   replaceObjectAtIndex: integer_to_uinteger_a (position - 1)   withObject: nsString];
 		[nsString release];
 		[list -> tableView   reloadData];
 	#endif

@@ -26,7 +26,10 @@
 #include "Strings_.h"
 #include "TableOfReal.h"
 
-void TableOfReal_to_PatternList_and_Categories(TableOfReal me, integer fromrow, integer torow, integer fromcol, integer tocol, autoPatternList *out_p, autoCategories *out_c);
+void TableOfReal_to_PatternList_and_Categories (TableOfReal me,
+	integer fromrow, integer torow, integer fromcol, integer tocol,
+	autoPatternList *out_patternList, autoCategories *out_categories
+);
 
 autoTableOfReal TableOfReal_transpose (TableOfReal me);
 

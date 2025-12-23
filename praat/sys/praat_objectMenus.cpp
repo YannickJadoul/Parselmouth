@@ -400,13 +400,15 @@ FORM_SAVE (GRAPHICS_saveDemoWindowAsPdfFile, U"Save Demo window as PDF file", nu
 FORM (SETTINGS__debug, U"Set debugging options", nullptr) {
 	COMMENT (U"If you switch Tracing on, Praat will write lots of detailed ")
 	COMMENT (U"information about what goes on in Praat")
-	structMelderFile file;
-	#ifdef UNIX
-		MelderFolder_getFile (& Melder_preferencesFolder, U"tracing", & file);
-	#else
-		MelderFolder_getFile (& Melder_preferencesFolder, U"Tracing.txt", & file);
-	#endif
-	COMMENT (Melder_cat (U"to ", Melder_fileToPath (& file), U"."))
+	{// scope
+		structMelderFile file { };
+		#ifdef UNIX
+			MelderFolder_getFile (Melder_preferencesFolder(), U"tracing", & file);
+		#else
+			MelderFolder_getFile (Melder_preferencesFolder(), U"Tracing.txt", & file);
+		#endif
+		COMMENT (Melder_cat (U"to ", MelderFile_peekPath (& file), U"."))
+	}
 	BOOLEAN (tracing, U"Tracing", false)
 	COMMENT (U"Setting the following to anything other than zero")
 	COMMENT (U"will alter the behaviour of Praat")
@@ -419,6 +421,21 @@ DO
 	PREFS
 		Melder_setTracing (tracing);
 		Melder_debug = debugOption;
+	PREFS_END
+}
+
+FORM (SETTINGS__DebugMultithreading, U"Debug multi-threading", U"Debug multi-threading...") {
+	COMMENT (U"These settings determine how fast parallelized")
+	COMMENT (U"procedures are performed on your computer.")
+	BOOLEAN (useMultithreading, U"Use multi-threading", true)
+	INTEGER (maximumNumberOfConcurrentThreads, U"Maximum number of threads", U"0 (= automatic)")
+	INTEGER (minimumNumberOfElementsPerThread, U"Minimum number of frames per thread", U"0 (= automatic)")
+	BOOLEAN (traceThreads, U"Trace threads", false)
+	OK
+DO
+	PREFS
+		MelderThread_debugMultithreading (useMultithreading, maximumNumberOfConcurrentThreads,
+				minimumNumberOfElementsPerThread, traceThreads);
 	PREFS_END
 }
 
@@ -456,6 +473,12 @@ DIRECT (INFO_NONE__reportSystemProperties) {
 	INFO_NONE_END
 }
 
+DIRECT (INFO_NONE__reportAppProperties) {
+	INFO_NONE
+		praat_reportAppProperties ();
+	INFO_NONE_END
+}
+
 DIRECT (INFO_NONE__reportGraphicalProperties) {
 	INFO_NONE
 		praat_reportGraphicalProperties ();
@@ -465,6 +488,12 @@ DIRECT (INFO_NONE__reportGraphicalProperties) {
 DIRECT (INFO_NONE__reportIntegerProperties) {
 	INFO_NONE
 		praat_reportIntegerProperties ();
+	INFO_NONE_END
+}
+
+DIRECT (INFO_NONE__reportFloatingPointProperties) {
+	INFO_NONE
+		praat_reportFloatingPointProperties ();
 	INFO_NONE_END
 }
 
@@ -510,7 +539,7 @@ static void readFromFile (MelderFile file) {
 		return;
 	}
 	if (Thing_isa (object.get(), classScript) && ! Melder_batch) {
-		autoScriptEditor editor = ScriptEditor_createFromScript_canBeNull (nullptr, (Script) object.get());
+		autoScriptEditor editor = ScriptEditor_createFromScript_canBeNull (nullptr, object.static_cast_move <structScript>());
 		if (! editor) {
 			(void) 0;   // the script was already open, and the user has been notified of that
 		} else {
@@ -583,7 +612,7 @@ FORM (PRAAT_ManPages_saveToHtmlFolder, U"Save all pages as HTML files", nullptr)
 OK
 	LOOP {
 		iam_LOOP (ManPages);
-		SET_STRING (folder, Melder_folderToPath (& my rootDirectory))
+		SET_STRING (folder, MelderFolder_peekPath (& my rootDirectory))
 	}
 DO
 	LOOP {
@@ -623,9 +652,7 @@ DO
 }
 
 FORM (PRAAT__GoToManualPage, U"Go to manual page", nullptr) {
-	static constSTRVEC pages;
-	pages = ManPages_getTitles (theCurrentPraatApplication -> manPages);
-	LIST (goToPageNumber, U"Page", pages, 1)
+	LIST (goToPageNumber, U"Page", ManPages_getTitles (theCurrentPraatApplication -> manPages), 1)
 	OK
 DO
 	PRAAT
@@ -642,7 +669,7 @@ FORM (HELP_SaveManualToHtmlFolder, U"Save all pages as HTML files", nullptr) {
 OK
 	structMelderFolder currentFolder { };
 	Melder_getCurrentFolder (& currentFolder);
-	SET_STRING (folder, Melder_folderToPath (& currentFolder))
+	SET_STRING (folder, MelderFolder_peekPath (& currentFolder))
 DO
 	ManPages_writeAllToHtmlDir (theCurrentPraatApplication -> manPages, nullptr, folder);
 	END_NO_NEW_DATA
@@ -789,7 +816,7 @@ void praat_addMenus (GuiWindow window) {
 		helpMenu = GuiMenu_createInWindow (window, U"Help", 0);
 	}
 	
-	MelderString_append (& itemTitle_about, U"About ", praatP.title.get());
+	MelderString_append (& itemTitle_about, U"About ", Melder_upperCaseAppName());
 	praat_addMenuCommand (U"Objects", U"Praat", itemTitle_about.string, nullptr, GuiMenu_UNHIDABLE,
 			PRAAT__About);
 	#ifdef macintosh
@@ -863,8 +890,12 @@ void praat_addMenus (GuiWindow window) {
 			nullptr, 0, INFO_NONE__reportMemoryUse);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report integer properties",
 			nullptr, 0, INFO_NONE__reportIntegerProperties);
+	praat_addMenuCommand (U"Objects", U"Technical", U"Report floating point properties",
+			nullptr, 0, INFO_NONE__reportFloatingPointProperties);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report system properties",
 			nullptr, 0, INFO_NONE__reportSystemProperties);
+	praat_addMenuCommand (U"Objects", U"Technical", U"Report app properties",
+			nullptr, 0, INFO_NONE__reportAppProperties);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report graphical properties",
 			nullptr, 0, INFO_NONE__reportGraphicalProperties);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Report text properties",
@@ -873,6 +904,9 @@ void praat_addMenus (GuiWindow window) {
 			nullptr, 0, INFO_NONE__reportFontProperties);
 	praat_addMenuCommand (U"Objects", U"Technical", U"Debug...",
 			nullptr, 0, SETTINGS__debug);
+	praat_addMenuCommand (U"Objects", U"Technical", U"Debug multi-threading...",
+			nullptr, 0, SETTINGS__DebugMultithreading);
+
 	praat_addMenuCommand (U"Objects", U"Technical", U"-- api --", nullptr, 0, nullptr);
 	praat_addMenuCommand (U"Objects", U"Technical", U"List readable types of objects",
 			nullptr, 0, INFO_NONE__listReadableTypesOfObjects);
@@ -900,7 +934,7 @@ void praat_addMenus2 () {
 			nullptr, 0, PRAAT__GoToManualPage);
 	praat_addMenuCommand (U"Objects", U"ApplicationHelp", U"Save manual to HTML folder...",
 			nullptr, GuiMenu_HIDDEN, HELP_SaveManualToHtmlFolder);
-	praat_addMenuCommand (U"Objects", U"ApplicationHelp", Melder_cat (U"Search ", praatP.title.get(), U" manual..."),
+	praat_addMenuCommand (U"Objects", U"ApplicationHelp", Melder_cat (U"Search ", Melder_upperCaseAppName(), U" manual..."),
 			nullptr, 'M' | GuiMenu_NO_API, PRAAT__SearchManual);
 	praat_addMenuCommand (U"Objects", U"ApplicationHelp", itemTitle_about.string,
 			nullptr, GuiMenu_UNHIDABLE, PRAAT__About);

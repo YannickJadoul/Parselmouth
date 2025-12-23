@@ -1,10 +1,10 @@
 /* Praat_tests.cpp
  *
- * Copyright (C) 2001-2007,2009,2011-2023 Paul Boersma
+ * Copyright (C) 2001-2007,2009,2011-2025 Paul Boersma, David Weenink 2025
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -22,7 +22,10 @@
 /* 24 May 2011: C++ */
 /* 5 June 2015: char32 */
 
-#include "FileInMemoryManager.h"
+#include "FileInMemory.h"
+#include "SampledIntoSampled.h"
+#include "NUMselect.h"
+#include "SlopeSelector.h"
 #include "Praat_tests.h"
 
 #include "Graphics.h"
@@ -35,6 +38,8 @@
 #include "enums_getValue.h"
 #include "Praat_tests_enums.h"
 #include <string>
+
+#include "Gui.h"
 
 static void testAutoData (autoDaata data) {
 	fprintf (stderr, "testAutoData: %p %p\n", data.get(), data -> name.get());
@@ -92,7 +97,7 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 			for (int64 iteration = 1; iteration <= n; iteration ++) {
 				for (int64 i = 1; i <= size; i ++)
 					array [i] = NUMrandomFraction ();
-				sort_VEC_inout (array.get());
+				sort_e_VEC_inout (array.get());
 			}
 			t = Melder_stopwatch () / (size * log2 (size));
 		} break;
@@ -659,11 +664,47 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 				}
 			}
 		} break;
-		case kPraatTests::FILEINMEMORYMANAGER_IO: {
-			test_FileInMemoryManager_io ();
+		case kPraatTests::FILEINMEMORY_IO: {
+			//Melder_throw (U"Cannot test FileInMemoryManager directly from Praat.");
+			test_FileInMemory_io ();
+		} break;
+		case kPraatTests::TIME_MULTI_THREADING: {
+			const double durationOfSound = ( n < 0 ? 100.0 : 1000.0 );
+			SampledIntoSampled_timeMultiThreading (durationOfSound);
+			//  Gflops is --undefined--
+		} break;
+		case kPraatTests::TIME_MEDIAN: {
+			timeMedian ();
+			//  Gflops is --undefined--
+		} break;
+		case kPraatTests::TIME_SLOPE_SELECTION: {
+			timeSlopeSelection ();
+			//  Gflops is --undefined--
+		} break;
+		case kPraatTests::TIME_NS_DATE: {
+			#ifdef macintosh
+				NSDate *till = [NSDate   dateWithTimeIntervalSinceNow: 1.0];
+				integer count = 0;
+				while ([[NSDate date]   compare: till] == NSOrderedAscending)
+					++ count;
+				MelderInfo_writeLine (count, U" per second");
+			#endif
+		} break;
+		case kPraatTests::TIME_MELDER_CLOCK: {
+			const double till = Melder_clock() + 1.0;
+			integer count = 0;
+			while (Melder_clock() < till)
+				++ count;
+			MelderInfo_writeLine (count, U" per second");
+		} break;
+		case kPraatTests::TIME_STOPWATCH: {
+			MelderStopwatch stopwatch;
+			for (int64 i = 1; i <= n; i ++)
+				Melder_stopwatch();
+			t = stopwatch ();
 		} break;
 	}
-	MelderInfo_writeLine (Melder_single (n / t * 1e-9), U" Gflop/s");
+	MelderInfo_writeLine (Melder_single (t * 1e9 / n), U" nanoseconds per iteration");
 	MelderInfo_close ();
 	return 1;
 }

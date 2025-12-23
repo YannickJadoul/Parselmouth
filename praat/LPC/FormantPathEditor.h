@@ -90,9 +90,10 @@ Thing_define (FormantPathEditor, FunctionEditor) {
 		override;
 	void v_play (double startTime, double endTime)
 		override;
-	bool v_hasText () override { return false; }
+	bool v_hasText ()
+		override { return false; }
 	void v_updateText ()
-		override {};
+		override { };
 	conststring32 v_selectionViewerName ()
 		override { return U"Formant candidates"; }
 	void v_drawLegends () override {

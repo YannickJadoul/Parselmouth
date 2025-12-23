@@ -1,10 +1,10 @@
 /* manual_gram.cpp
  *
- * Copyright (C) 1997-2011,2013-2017,2019-2023 Paul Boersma
+ * Copyright (C) 1997-2011,2013-2017,2019-2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -1161,10 +1161,10 @@ NORMAL (U"#%Example. @@Hayes & MacEachern (1998)@ identify 11 output-oriented co
 	"for the forms of quatrains in English folk verse.")
 LIST_ITEM (U"1. Create a folk-verse grammar with equal constraint rankings (all 100). "
 	"You may find it in the file ##folkVerse.OTGrammar# in the #demo folder of your #Praat distribution, "
-	"or get it from ##http://www.fon.hum.uva.nl/praat/folkVerse.OTGrammar#.")
+	"or get it from ##https://www.fon.hum.uva.nl/praat/folkVerse.OTGrammar#.")
 LIST_ITEM (U"2. Generate 1000 input strings. They will all be empty strings.")
 LIST_ITEM (U"3. Read the file that contains the surface distribution of the possible outputs. "
-	"It is in the #demo folder or at ##http://www.fon.hum.uva.nl/praat/folkVerse.Distributions#. "
+	"It is in the #demo folder or at ##https://www.fon.hum.uva.nl/praat/folkVerse.Distributions#. "
 	"A @Distributions object will appear in the list. "
 	"Column \"Actual\" is the last column of table (10) in Hayes & MacEachern (1998).")
 LIST_ITEM (U"4. From this surface distribution, create a list of 1000 output strings, "
@@ -1190,7 +1190,7 @@ LIST_ITEM (U"4. You can now compare the two distributions.")
 NORMAL (U"Instead of generating the data from a @Distributions, you could have generated them from "
 	"the target grammar in table (9) of Hayes & MacEachern (1998). "
 	"Such a grammar is in your #demo folder (##folkVerse59.OTGrammar#) "
-	"or at ##http://www.fon.hum.uva.nl/praat/folkVerse59.OTGrammar#. "
+	"or at ##https://www.fon.hum.uva.nl/praat/folkVerse59.OTGrammar#. "
 	"Because of the loosening of the tie between two of the constraints (see H & McE, fn. 43), "
 	"this grammar will give different distributions from the \"actual\" values, "
 	"but our algorithm will learn them correctly, provided you choose ##Symmetric all# "

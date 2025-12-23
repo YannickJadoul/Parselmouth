@@ -1,10 +1,10 @@
 /* Interpreter.cpp
  *
- * Copyright (C) 1993-2024 Paul Boersma
+ * Copyright (C) 1993-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -20,7 +20,6 @@
 #include "praatP.h"
 #include "praat_script.h"
 #include "Formula.h"
-#include "praat_version.h"
 #include "../kar/UnicodeData.h"
 
 #include "../fon/Vector.h"
@@ -63,12 +62,15 @@ Thing_implement (InterpreterVariable, SimpleString, 0);
 static autoInterpreterVariable InterpreterVariable_create (conststring32 key) {
 	try {
 		if (key [0] == U'e' && key [1] == U'\0')
-			Melder_throw (U"You cannot use 'e' as the name of a variable (e is the constant 2.71...).");
+			Melder_throw (U"You cannot use “e” as the name of a variable (e is the constant 2.71...).");
 		if (key [0] == U'p' && key [1] == U'i' && key [2] == U'\0')
-			Melder_throw (U"You cannot use 'pi' as the name of a variable (pi is the constant 3.14...).");
+			Melder_throw (U"You cannot use “pi” as the name of a variable (pi is the constant 3.14...).");
 		if (key [0] == U'u' && key [1] == U'n' && key [2] == U'd' && key [3] == U'e' && key [4] == U'f' && key [5] == U'i' &&
 			key [6] == U'n' && key [7] == U'e' && key [8] == U'd' && key [9] == U'\0')
-			Melder_throw (U"You cannot use 'undefined' as the name of a variable.");
+			Melder_throw (U"You cannot use “undefined” as the name of a variable.");
+		if (key [0] == U's' && key [1] == U't' && key [2] == U'o' && key [3] == U'p' && key [4] == U'w' && key [5] == U'a' &&
+			key [6] == U't' && key [7] == U'c' && key [8] == U'h' && key [9] == U'\0')
+			Melder_throw (U"You cannot use “stopwatch” as the name of a variable.");
 		autoInterpreterVariable me = Thing_new (InterpreterVariable);
 		my string = Melder_dup (key);
 		return me;
@@ -168,7 +170,7 @@ void Melder_includeIncludeFiles (autostring32 *inout_text, bool onlyInCodeChunks
 					continue;   // if the text starts with "include", it cannot be within a code chunk
 				integer braceDepth = 0;
 				for (const char32 *p = head; p != includeLocation; p ++)
-					if (*p == U'\n') {
+					if (Melder_isEndOfLine (*p)) {
 						if (p [1] == U'{') {
 							if (braceDepth > 0)
 								Melder_throw (U"Opening brace within a code chunk. Don't know whether or not to include an include file.");
@@ -269,7 +271,7 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 			/*
 				Check invariant here: we are at the beginning of a line.
 			*/
-			Melder_assert (p == text || p [-1] == '\n');
+			Melder_assert (p == text || Melder_isEndOfLine (p [-1]));
 
 			if (scriptTextIsNotebookText) {
 				if (*p == U'{') {
@@ -606,7 +608,7 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 						Melder_throw (U"Only “choice”, “optionmenu” and “boolean” fields can take a number:\n", startOfLine);
 					}
 					const integer value = Melder_atoi (p);
-					if (type == Interpreter_CHOICE)
+					if (type == Interpreter_CHOICE || type == Interpreter_OPTIONMENU)
 						MelderString_append (& string, value);
 					else
 						MelderString_appendCharacter (& string, value != 0 ? U'1' : U'0');
@@ -618,7 +620,7 @@ integer Interpreter_readParameters (Interpreter me, mutablestring32 text) {
 						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
 						Melder_throw (U"Missing opening quote after comma in form field:\n", startOfLine);
 					}
-					if (type == Interpreter_CHOICE) {
+					if (type == Interpreter_CHOICE || type == Interpreter_OPTIONMENU) {
 						*(p + 1) = U'\0';   // destroy input in order to limit printing of line
 						Melder_throw (U"A “choice” field can take only a number, not a string:\n", startOfLine);
 					}
@@ -864,7 +866,7 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 				const conststring32 value = UiForm_getString (dialog, parameter);
 				structMelderFile file { };
 				Melder_relativePathToFile (value, & file);   // the working directory should have been set to the script file path
-				my arguments [ipar] = Melder_dup_f (Melder_fileToPath (& file));
+				my arguments [ipar] = Melder_dup_f (MelderFile_peekPath (& file));
 				break;
 			}
 			case Interpreter_REAL:
@@ -929,7 +931,7 @@ void Interpreter_getArgumentsFromDialog (Interpreter me, UiForm dialog) {
 			case Interpreter_COMMENT:
 				break;
 			default:
-				Melder_fatal (U"Unhandled parameter type ", my types [ipar]);
+				Melder_crash (U"Unhandled parameter type ", my types [ipar]);
 		}
 	}
 }
@@ -943,7 +945,7 @@ static void convertBooleansAndChoicesToNumbersAndRelativeToAbsolutePaths (Interp
 		) {
 			structMelderFile file { };
 			Melder_relativePathToFile (my arguments [ipar].get(), & file);
-			my arguments [ipar] = Melder_dup_f (Melder_fileToPath (& file));
+			my arguments [ipar] = Melder_dup_f (MelderFile_peekPath (& file));
 		} else if (my types [ipar] == Interpreter_BOOLEAN) {
 			mutablestring32 arg = & my arguments [ipar] [0];
 			if (
@@ -1436,7 +1438,7 @@ static void Interpreter_do_procedureCall (Interpreter me, char32 *command,
 		char32 *q = lines [iline] + 10;
 		while (Melder_isHorizontalSpace (*q))
 			q ++;   // skip whitespace before procedure name
-		char32 * const procName = q;
+		char32 *const procName = q;
 		while (Melder_staysWithinInk (*q) && *q != U'(' && *q != U':')
 			q ++;
 		if (q == procName)
@@ -2030,181 +2032,206 @@ static void assignToStringArrayElement (Interpreter me, char32 *& p, const char3
 	var -> stringArrayValue [indexValue] = value. move();
 }
 
+static void private_Interpreter_initialize (Interpreter me, char32 *text, const bool reuseVariables) {
+	char32 *command = text;
+	autoMelderString command2;
+	integer numberOfLines = 0;
+	bool atLastLine = false;
+	int chopped = 0;
+	/*
+		Start.
+	*/
+	my running = true;
+	/*
+		Count lines and set the newlines to zero.
+	*/
+	while (! atLastLine) {
+		char32 *endOfLine = command;
+		while (Melder_staysWithinLine (*endOfLine))
+			endOfLine ++;
+		if (*endOfLine == U'\0')
+			atLastLine = true;
+		*endOfLine = U'\0';
+		numberOfLines ++;
+		command = endOfLine + 1;
+	}
+	/*
+		Remember line starts and labels.
+	*/
+	my lines. resize (numberOfLines);
+	command = text;   // reset
+	for (integer lineNumber = 1; lineNumber <= numberOfLines; lineNumber ++, command += Melder_length (command) + 1 + chopped) {
+		while (Melder_isHorizontalSpace (*command))
+			command ++;   // nbsp can occur for scripts copied from the manual
+		/*
+			Chop trailing spaces?
+		*/
+		#if 0
+			chopped = 0;
+			const integer length = Melder_length (command);
+			while (length > 0) {
+				char kar = command [-- length];
+				if (! Melder_isHorizontalSpace (kar))
+					break;
+				command [length] = U'\0';
+				chopped ++;
+			}
+		#endif
+		my lines [lineNumber] = command;
+		if (str32nequ (command, U"label ", 6)) {
+			for (integer ilabel = 1; ilabel <= my numberOfLabels; ilabel ++)
+				if (str32equ (command + 6, my labelNames [ilabel]))
+					Melder_throw (U"Duplicate label \"", command + 6, U"\".");
+			if (my numberOfLabels >= Interpreter_MAXNUM_LABELS)
+				Melder_throw (U"Too many labels.");
+			str32ncpy (my labelNames [++ my numberOfLabels], command + 6, Interpreter_MAX_LABEL_LENGTH);
+			my labelNames [my numberOfLabels] [Interpreter_MAX_LABEL_LENGTH] = U'\0';
+			my labelLines [my numberOfLabels] = lineNumber;
+		}
+	}
+	/*
+		Connect continuation lines.
+	*/
+	trace (U"connect continuation lines");
+	for (integer lineNumber = numberOfLines; lineNumber >= 2; lineNumber --) {
+		char32 *line = my lines [lineNumber];
+		if (line [0] == U'.' && line [1] == U'.' && line [2] == U'.') {
+			char32 *previous = my lines [lineNumber - 1];
+			MelderString_copy (& command2, line + 3);
+			MelderString_get (& command2, previous + Melder_length (previous));
+			static char32 emptyLine [] = { U'\0' };
+			my lines [lineNumber] = emptyLine;
+		}
+	}
+	/*
+		Copy the parameter names and argument values into the array of variables.
+	*/
+	if (! reuseVariables) {
+		my variablesMap. clear ();
+		for (int ipar = 1; ipar <= my numberOfParameters; ipar ++) {
+			char32 parameter [1+Interpreter_MAX_PARAMETER_LENGTH];
+			/*
+				Create variable names as-are and variable names without capitals.
+			*/
+			str32cpy (parameter, my parameters [ipar]);
+			parameterToVariable (me, my types [ipar], parameter, ipar);
+			if (parameter [0] >= U'A' && parameter [0] <= U'Z') {
+				parameter [0] = Melder_toLowerCase (parameter [0]);
+				parameterToVariable (me, my types [ipar], parameter, ipar);
+			}
+		}
+		/*
+			Initialize some variables.
+		*/
+		Interpreter_addStringVariable (me, U"newline$", U"\n");
+		Interpreter_addStringVariable (me, U"tab$", U"\t");
+		Interpreter_addStringVariable (me, U"shellDirectory$", Melder_getShellDirectory ());
+		{// scope
+			structMelderFolder folder { };
+			Melder_getCurrentFolder (& folder);
+			Interpreter_addStringVariable (me, U"defaultDirectory$", MelderFolder_peekPath (& folder));
+			Interpreter_addStringVariable (me, U"preferencesDirectory$", MelderFolder_peekPath (Melder_preferencesFolder()));
+			Melder_getHomeDir (& folder);
+			Interpreter_addStringVariable (me, U"homeDirectory$", MelderFolder_peekPath (& folder));
+			Melder_getTempDir (& folder);
+			Interpreter_addStringVariable (me, U"temporaryDirectory$", MelderFolder_peekPath (& folder));
+		}
+		#if defined (macintosh)
+			Interpreter_addNumericVariable (me, U"macintosh", 1);
+			Interpreter_addNumericVariable (me, U"windows", 0);
+			Interpreter_addNumericVariable (me, U"unix", 0);
+		#elif defined (_WIN32)
+			Interpreter_addNumericVariable (me, U"macintosh", 0);
+			Interpreter_addNumericVariable (me, U"windows", 1);
+			Interpreter_addNumericVariable (me, U"unix", 0);
+		#elif defined (UNIX)
+			Interpreter_addNumericVariable (me, U"macintosh", 0);
+			Interpreter_addNumericVariable (me, U"windows", 0);
+			Interpreter_addNumericVariable (me, U"unix", 1);
+		#else
+			Interpreter_addNumericVariable (me, U"macintosh", 0);
+			Interpreter_addNumericVariable (me, U"windows", 0);
+			Interpreter_addNumericVariable (me, U"unix", 0);
+		#endif
+		#if defined (__aarch64__) || defined (_M_ARM64_)
+			Interpreter_addNumericVariable (me, U"praat_intel32", 0);
+			Interpreter_addNumericVariable (me, U"praat_intel64", 0);
+			Interpreter_addNumericVariable (me, U"praat_arm64", 1);
+			Interpreter_addNumericVariable (me, U"praat_s390x", 0);
+			Interpreter_addNumericVariable (me, U"praat_armv7", 0);
+		#elif defined (__s390x__)
+			Interpreter_addNumericVariable (me, U"praat_intel32", 0);
+			Interpreter_addNumericVariable (me, U"praat_intel64", 0);
+			Interpreter_addNumericVariable (me, U"praat_arm64", 0);
+			Interpreter_addNumericVariable (me, U"praat_s390x", 1);
+			Interpreter_addNumericVariable (me, U"praat_armv7", 0);
+		#elif defined (raspberrypi)
+			Interpreter_addNumericVariable (me, U"praat_intel32", 0);
+			Interpreter_addNumericVariable (me, U"praat_intel64", 0);
+			Interpreter_addNumericVariable (me, U"praat_arm64", 0);
+			Interpreter_addNumericVariable (me, U"praat_s390x", 0);
+			Interpreter_addNumericVariable (me, U"praat_armv7", 1);
+		#else
+			Interpreter_addNumericVariable (me, U"praat_intel32", sizeof (void *) == 4);
+			Interpreter_addNumericVariable (me, U"praat_intel64", sizeof (void *) == 8);
+			Interpreter_addNumericVariable (me, U"praat_arm64", 0);
+			Interpreter_addNumericVariable (me, U"praat_s390x", 0);
+			Interpreter_addNumericVariable (me, U"praat_armv7", 0);
+		#endif
+		Interpreter_addNumericVariable (me, U"praat_32bit", sizeof (void *) == 4);
+		Interpreter_addNumericVariable (me, U"praat_64bit", sizeof (void *) == 8);
+		Interpreter_addNumericVariable (me, U"left", 1);   // deprecated 2010 (Praat 5.2.06)
+		Interpreter_addNumericVariable (me, U"right", 2);   // deprecated 2010 (Praat 5.2.06)
+		Interpreter_addNumericVariable (me, U"mono", 1);   // deprecated 2010 (Praat 5.2.06)
+		Interpreter_addNumericVariable (me, U"stereo", 2);   // deprecated 2010 (Praat 5.2.06)
+		Interpreter_addNumericVariable (me, U"all", 0);   // deprecated 2010 (Praat 5.2.06)
+		Interpreter_addNumericVariable (me, U"average", 0);   // deprecated 2010 (Praat 5.2.06)
+		Interpreter_addStringVariable (me, U"praatVersion$", Melder_appVersionSTR());
+		Interpreter_addNumericVariable (me, U"praatVersion", Melder_appVersion());
+	}
+}
+
 void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
-	autovector <mutablestring32> lines;   // not autostringvector, because the elements are reference copies
-	integer lineNumber = 0;
 	bool assertionFailed = false;
 	try {
 		static MelderString valueString;   // to divert the info
 		static MelderString assertErrorString;
-		char32 *command = text;
 		autoMelderString command2;
 		autoMelderString buffer;
-		integer numberOfLines = 0, assertErrorLineNumber = 0, callStack [1 + Interpreter_MAX_CALL_DEPTH];
-		bool atLastLine = false, fromif = false, fromendfor = false;
-		int callDepth = 0, chopped = 0, ipar;
+		integer assertErrorLineNumber = 0, callStack [1 + Interpreter_MAX_CALL_DEPTH];
+		bool fromif = false, fromendfor = false;
+		int callDepth = 0;
 		my callDepth = 0;
-		/*
-			Start.
-		*/
-		my running = true;
-		/*
-			Count lines and set the newlines to zero.
-		*/
-		while (! atLastLine) {
-			char32 *endOfLine = command;
-			while (Melder_staysWithinLine (*endOfLine))
-				endOfLine ++;
-			if (*endOfLine == U'\0')
-				atLastLine = true;
-			*endOfLine = U'\0';
-			numberOfLines ++;
-			command = endOfLine + 1;
-		}
-		/*
-			Remember line starts and labels.
-		*/
-		lines. resize (numberOfLines);
-		for (lineNumber = 1, command = text; lineNumber <= numberOfLines; lineNumber ++, command += Melder_length (command) + 1 + chopped) {
-			while (Melder_isHorizontalSpace (*command))
-				command ++;   // nbsp can occur for scripts copied from the manual
-			/*
-				Chop trailing spaces?
-			*/
-			#if 0
-				chopped = 0;
-				const integer length = Melder_length (command);
-				while (length > 0) {
-					char kar = command [-- length];
-					if (! Melder_isHorizontalSpace (kar))
-						break;
-					command [length] = U'\0';
-					chopped ++;
-				}
-			#endif
-			lines [lineNumber] = command;
-			if (str32nequ (command, U"label ", 6)) {
-				for (integer ilabel = 1; ilabel <= my numberOfLabels; ilabel ++)
-					if (str32equ (command + 6, my labelNames [ilabel]))
-						Melder_throw (U"Duplicate label \"", command + 6, U"\".");
-				if (my numberOfLabels >= Interpreter_MAXNUM_LABELS)
-					Melder_throw (U"Too many labels.");
-				str32ncpy (my labelNames [++ my numberOfLabels], command + 6, Interpreter_MAX_LABEL_LENGTH);
-				my labelNames [my numberOfLabels] [Interpreter_MAX_LABEL_LENGTH] = U'\0';
-				my labelLines [my numberOfLabels] = lineNumber;
-			}
-		}
-		/*
-			Connect continuation lines.
-		*/
-		trace (U"connect continuation lines");
-		for (lineNumber = numberOfLines; lineNumber >= 2; lineNumber --) {
-			char32 *line = lines [lineNumber];
-			if (line [0] == U'.' && line [1] == U'.' && line [2] == U'.') {
-				char32 *previous = lines [lineNumber - 1];
-				MelderString_copy (& command2, line + 3);
-				MelderString_get (& command2, previous + Melder_length (previous));
-				static char32 emptyLine [] = { U'\0' };
-				lines [lineNumber] = emptyLine;
-			}
-		}
-		/*
-			Copy the parameter names and argument values into the array of variables.
-		*/
-		if (! reuseVariables) {
-			my variablesMap. clear ();
-			for (ipar = 1; ipar <= my numberOfParameters; ipar ++) {
-				char32 parameter [1+Interpreter_MAX_PARAMETER_LENGTH];
-				/*
-					Create variable names as-are and variable names without capitals.
-				*/
-				str32cpy (parameter, my parameters [ipar]);
-				parameterToVariable (me, my types [ipar], parameter, ipar);
-				if (parameter [0] >= U'A' && parameter [0] <= U'Z') {
-					parameter [0] = Melder_toLowerCase (parameter [0]);
-					parameterToVariable (me, my types [ipar], parameter, ipar);
-				}
-			}
-			/*
-				Initialize some variables.
-			*/
-			Interpreter_addStringVariable (me, U"newline$", U"\n");
-			Interpreter_addStringVariable (me, U"tab$", U"\t");
-			Interpreter_addStringVariable (me, U"shellDirectory$", Melder_getShellDirectory ());
-			{// scope
-				structMelderFolder folder { };
-				Melder_getCurrentFolder (& folder);
-				Interpreter_addStringVariable (me, U"defaultDirectory$", Melder_folderToPath (& folder));
-				Interpreter_addStringVariable (me, U"preferencesDirectory$", Melder_folderToPath (& Melder_preferencesFolder));
-				Melder_getHomeDir (& folder);
-				Interpreter_addStringVariable (me, U"homeDirectory$", Melder_folderToPath (& folder));
-				Melder_getTempDir (& folder);
-				Interpreter_addStringVariable (me, U"temporaryDirectory$", Melder_folderToPath (& folder));
-			}
-			#if defined (macintosh)
-				Interpreter_addNumericVariable (me, U"macintosh", 1);
-				Interpreter_addNumericVariable (me, U"windows", 0);
-				Interpreter_addNumericVariable (me, U"unix", 0);
-			#elif defined (_WIN32)
-				Interpreter_addNumericVariable (me, U"macintosh", 0);
-				Interpreter_addNumericVariable (me, U"windows", 1);
-				Interpreter_addNumericVariable (me, U"unix", 0);
-			#elif defined (UNIX)
-				Interpreter_addNumericVariable (me, U"macintosh", 0);
-				Interpreter_addNumericVariable (me, U"windows", 0);
-				Interpreter_addNumericVariable (me, U"unix", 1);
-			#else
-				Interpreter_addNumericVariable (me, U"macintosh", 0);
-				Interpreter_addNumericVariable (me, U"windows", 0);
-				Interpreter_addNumericVariable (me, U"unix", 0);
-			#endif
-			#if defined (__aarch64__) || defined (_M_ARM64_)
-				Interpreter_addNumericVariable (me, U"praat_intel32", 0);
-				Interpreter_addNumericVariable (me, U"praat_intel64", 0);
-				Interpreter_addNumericVariable (me, U"praat_arm64", 1);
-			#else
-				Interpreter_addNumericVariable (me, U"praat_intel32", sizeof (void *) == 4);
-				Interpreter_addNumericVariable (me, U"praat_intel64", sizeof (void *) == 8);
-				Interpreter_addNumericVariable (me, U"praat_arm64", 0);
-			#endif
-			Interpreter_addNumericVariable (me, U"praat_32bit", sizeof (void *) == 4);
-			Interpreter_addNumericVariable (me, U"praat_64bit", sizeof (void *) == 8);
-			Interpreter_addNumericVariable (me, U"left", 1);   // deprecated 2010 (Praat 5.2.06)
-			Interpreter_addNumericVariable (me, U"right", 2);   // deprecated 2010 (Praat 5.2.06)
-			Interpreter_addNumericVariable (me, U"mono", 1);   // deprecated 2010 (Praat 5.2.06)
-			Interpreter_addNumericVariable (me, U"stereo", 2);   // deprecated 2010 (Praat 5.2.06)
-			Interpreter_addNumericVariable (me, U"all", 0);   // deprecated 2010 (Praat 5.2.06)
-			Interpreter_addNumericVariable (me, U"average", 0);   // deprecated 2010 (Praat 5.2.06)
-			Interpreter_addStringVariable (me, U"praatVersion$", U"" stringize(PRAAT_VERSION_STR));
-			Interpreter_addNumericVariable (me, U"praatVersion", PRAAT_VERSION_NUM);
-		}
+		private_Interpreter_initialize (me, text, reuseVariables);
+		const integer numberOfLines = my lines.size;
 		/*
 			Execute commands.
 		*/
 		my setDynamicFromOwningEditorEnvironment ();
 		trace (U"going to handle ", numberOfLines, U" lines");
-		//for (lineNumber = 1; lineNumber <= numberOfLines; lineNumber ++) {
+		//for (integer lineNumber = 1; lineNumber <= numberOfLines; lineNumber ++) {
 			//trace (U"line ", lineNumber, U": ", lines [lineNumber]);
 		//}
-		for (lineNumber = 1; lineNumber <= numberOfLines; lineNumber ++) {
+		for (my lineNumber = 1; my lineNumber <= numberOfLines; my lineNumber ++) {
 			if (my stopped)
 				break;
 			//trace (U"now at line ", lineNumber, U": ", lines [lineNumber]);
 			//for (int lineNumber2 = 1; lineNumber2 <= numberOfLines; lineNumber2 ++) {
 				//trace (U"  line ", lineNumber2, U": ", lines [lineNumber2]);
 			//}
+			constvector <mutablestring32> lines = my lines.get();
 			try {
 				char32 c0;
 				bool fail = false;
-				MelderString_copy (& command2, lines [lineNumber]);
-				c0 = command2. string [0];
+				MelderString_copy (& command2, lines [my lineNumber]);
+				c0 = command2.string [0];
 				if (c0 == U'\0')
 					continue;
 				/*
 					Substitute variables.
 				*/
 				trace (U"substituting variables");
-				for (char32 *p = & command2. string [0]; *p != U'\0'; p ++) if (*p == U'\'') {
+				for (char32 *p = & command2.string [0]; *p != U'\0'; p ++) if (*p == U'\'') {
 					/*
 						Found a left quote. Search for a matching right quote.
 					*/
@@ -2264,7 +2291,7 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 						fail = true;
 						break;
 					case U'@':
-						Interpreter_do_procedureCall (me, command2.string + 1, lines.get(), lineNumber, callStack, callDepth);
+						Interpreter_do_procedureCall (me, command2.string + 1, lines, my lineNumber, callStack, callDepth);
 						break;
 					case U'a':
 						if (str32nequ (command2.string, U"assert ", 7)) {
@@ -2272,12 +2299,12 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 							Interpreter_numericExpression (me, command2.string + 7, & value);
 							if (value == 0.0 || isundef (value)) {
 								assertionFailed = true;
-								Melder_throw (U"Script assertion fails in line ", lineNumber,
+								Melder_throw (U"Script assertion fails in line ", my lineNumber,
 									U" (", value == 0.0 ? U"false" : U"undefined", U"):\n   ", command2.string + 7);
 							}
 						} else if (str32nequ (command2.string, U"asserterror ", 12)) {
 							MelderString_copy (& assertErrorString, command2.string + 12);
-							assertErrorLineNumber = lineNumber;
+							assertErrorLineNumber = my lineNumber;
 						} else
 							fail = true;
 						break;
@@ -2286,7 +2313,7 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 						break;
 					case U'c':
 						if (str32nequ (command2.string, U"call ", 5)) {
-							Interpreter_do_oldProcedureCall (me, command2.string + 5, lines.get(), lineNumber, callStack, callDepth);
+							Interpreter_do_oldProcedureCall (me, command2.string + 5, lines, my lineNumber, callStack, callDepth);
 						} else
 							fail = true;
 						break;
@@ -2314,10 +2341,10 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 									Melder_throw (U"Stray text after 'endfor'.");
 								int depth = 0;
 								integer iline;
-								for (iline = lineNumber - 1; iline > 0; iline --) {
+								for (iline = my lineNumber - 1; iline > 0; iline --) {
 									char32 *line = lines [iline];
 									if (line [0] == U'f' && line [1] == U'o' && line [2] == U'r' && line [3] == U' ') {
-										if (depth == 0) { lineNumber = iline - 1; fromendfor = true; break; }   // go before 'for'
+										if (depth == 0) { my lineNumber = iline - 1; fromendfor = true; break; }   // go before 'for'
 										else depth --;
 									} else if (str32nequ (lines [iline], U"endfor", 6) &&
 											(! Melder_staysWithinInk (lines [iline] [6]) || lines [iline] [6] == U';'))
@@ -2334,10 +2361,10 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 									Melder_throw (U"Stray text after 'endwhile'.");
 								int depth = 0;
 								integer iline;
-								for (iline = lineNumber - 1; iline > 0; iline --) {
+								for (iline = my lineNumber - 1; iline > 0; iline --) {
 									if (str32nequ (lines [iline], U"while ", 6)) {
 										if (depth == 0) {
-											lineNumber = iline - 1;
+											my lineNumber = iline - 1;
 											break;   // go before 'while'
 										} else
 											depth --;
@@ -2356,7 +2383,7 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 									Melder_throw (U"Stray text after 'endproc'.");
 								if (callDepth == 0)
 									Melder_throw (U"Unmatched 'endproc'.");
-								lineNumber = callStack [callDepth --];
+								my lineNumber = callStack [callDepth --];
 								-- my callDepth;
 							} else fail = true;
 						} else if (str32nequ (command2.string, U"else", 4) &&
@@ -2367,16 +2394,16 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 								Melder_throw (U"Stray text after 'else'.");
 							int depth = 0;
 							integer iline;
-							for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
+							for (iline = my lineNumber + 1; iline <= numberOfLines; iline ++) {
 								if (str32nequ (lines [iline], U"endif", 5) &&
 										(! Melder_staysWithinInk (lines [iline] [5]) || lines [iline] [5] == U';'))
 								{
 									startOfInk = Melder_findInk (lines [iline] + 5);
 									if (startOfInk && *startOfInk != U';') {
-										lineNumber = iline;   // on behalf of the error message
+										my lineNumber = iline;   // on behalf of the error message
 										Melder_throw (U"Stray text after 'endif'.");
 									}
-									if (depth == 0) { lineNumber = iline; break; }   // go after `endif`
+									if (depth == 0) { my lineNumber = iline; break; }   // go after `endif`
 									else depth --;
 								} else if (str32nequ (lines [iline], U"if ", 3)) {
 									depth ++;
@@ -2392,17 +2419,17 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 								if (value == 0.0) {
 									int depth = 0;
 									integer iline;
-									for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
+									for (iline = my lineNumber + 1; iline <= numberOfLines; iline ++) {
 										if (str32nequ (lines [iline], U"endif", 5) &&
 												(! Melder_staysWithinInk (lines [iline] [5]) || lines [iline] [5] == U';'))
 										{
 											const char32 *startOfInk = Melder_findInk (lines [iline] + 5);
 											if (startOfInk && *startOfInk != U';') {
-												lineNumber = iline;   // on behalf of error message
+												my lineNumber = iline;   // on behalf of error message
 												Melder_throw (U"Stray text after 'endif'.");
 											}
 											if (depth == 0) {
-												lineNumber = iline;
+												my lineNumber = iline;
 												break;   // go after `endif`
 											} else
 												depth --;
@@ -2411,17 +2438,17 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 										{
 											const char32 *startOfInk = Melder_findInk (lines [iline] + 4);
 											if (startOfInk && *startOfInk != U';') {
-												lineNumber = iline;   // on behalf of error message
+												my lineNumber = iline;   // on behalf of error message
 												Melder_throw (U"Stray text after 'else'.");
 											}
 											if (depth == 0) {
-												lineNumber = iline;
+												my lineNumber = iline;
 												break;   // go after `else`
 											}
 										} else if ((str32nequ (lines [iline], U"elsif", 5) && ! Melder_staysWithinInk (lines [iline] [5]))
 											|| (str32nequ (lines [iline], U"elif", 4) && ! Melder_staysWithinInk (lines [iline] [4]))) {
 											if (depth == 0) {
-												lineNumber = iline - 1;
+												my lineNumber = iline - 1;
 												fromif = true;
 												break;   // go at next 'elsif' or 'elif'
 											}
@@ -2435,17 +2462,17 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 							} else {
 								int depth = 0;
 								integer iline;
-								for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
+								for (iline = my lineNumber + 1; iline <= numberOfLines; iline ++) {
 									if (str32nequ (lines [iline], U"endif", 5) &&
 											(! Melder_staysWithinInk (lines [iline] [5]) || lines [iline] [5] == U';'))
 									{
 										const char32 *startOfInk = Melder_findInk (lines [iline] + 5);
 										if (startOfInk && *startOfInk != U';') {
-											lineNumber = iline;   // on behalf of error message
+											my lineNumber = iline;   // on behalf of error message
 											Melder_throw (U"Stray text after 'endif'.");
 										}
 										if (depth == 0) {
-											lineNumber = iline;
+											my lineNumber = iline;
 											break;   // go after `endif`
 										} else
 											depth --;
@@ -2458,7 +2485,7 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 							}
 						} else if (str32nequ (command2.string, U"exit", 4)) {
 							if (command2.string [4] == U'\0') {
-								lineNumber = numberOfLines;   // go after end
+								my lineNumber = numberOfLines;   // go after end
 							} else if (command2.string [4] == U' ') {
 								Melder_throw (command2.string + 5);
 							} else
@@ -2503,17 +2530,17 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 							if (loopVariable > toValue) {
 								int depth = 0;
 								integer iline;
-								for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
+								for (iline = my lineNumber + 1; iline <= numberOfLines; iline ++) {
 									if (str32nequ (lines [iline], U"endfor", 6) &&
 											(! Melder_staysWithinInk (lines [iline] [6]) || lines [iline] [6] == U';'))
 									{
 										const char32 *startOfInk = Melder_findInk (lines [iline] + 6);
 										if (startOfInk && *startOfInk != U';') {
-											lineNumber = iline;   // on behalf of error message
+											my lineNumber = iline;   // on behalf of error message
 											Melder_throw (U"Stray text after 'endfor'.");
 										}
 										if (depth == 0) {
-											lineNumber = iline;
+											my lineNumber = iline;
 											break;   // go after 'endfor'
 										} else
 											depth --;
@@ -2534,9 +2561,9 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 								so we will skip the whole contents of the form and jump past `endform`.
 							*/
 							integer iline;
-							for (iline = lineNumber + 1; iline <= numberOfLines; iline ++)
+							for (iline = my lineNumber + 1; iline <= numberOfLines; iline ++)
 								if (str32nequ (lines [iline], U"endform", 7) && Melder_isEndOfInk (lines [iline] [7])) {
-									lineNumber = iline;
+									my lineNumber = iline;
 									break;   // go after 'endform'
 								}
 							if (iline > numberOfLines)
@@ -2569,7 +2596,7 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 							}
 							if (dojump) {
 								integer ilabel = lookupLabel (me, labelName);
-								lineNumber = my labelLines [ilabel];   // loop will add 1
+								my lineNumber = my labelLines [ilabel];   // loop will add 1
 							}
 						} else
 							fail = true;
@@ -2584,17 +2611,17 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 							if (value == 0.0) {
 								int depth = 0;
 								integer iline;
-								for (iline = lineNumber + 1; iline <= numberOfLines; iline ++) {
+								for (iline = my lineNumber + 1; iline <= numberOfLines; iline ++) {
 									if (str32nequ (lines [iline], U"endif", 5) &&
 											(! Melder_staysWithinInk (lines [iline] [5]) || lines [iline] [5] == U';'))
 									{
 										const char32 *startOfInk = Melder_findInk (lines [iline] + 5);
 										if (startOfInk && *startOfInk != U';') {
-											lineNumber = iline;   // on behalf of error message
+											my lineNumber = iline;   // on behalf of error message
 											Melder_throw (U"Stray text after 'endif'.");
 										}
 										if (depth == 0) {
-											lineNumber = iline;
+											my lineNumber = iline;
 											break;   // go after 'endif'
 										} else
 											depth --;
@@ -2603,16 +2630,16 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 									{
 										const char32 *startOfInk = Melder_findInk (lines [iline] + 4);
 										if (startOfInk && *startOfInk != U';') {
-											lineNumber = iline;   // on behalf of error message
+											my lineNumber = iline;   // on behalf of error message
 											Melder_throw (U"Stray text after 'else'.");
 										}
 										if (depth == 0) {
-											lineNumber = iline;
+											my lineNumber = iline;
 											break;   // go after 'else'
 										}
 									} else if (str32nequ (lines [iline], U"elsif ", 6) || str32nequ (lines [iline], U"elif ", 5)) {
 										if (depth == 0) {
-											lineNumber = iline - 1;
+											my lineNumber = iline - 1;
 											fromif = true;
 											break;   // go at 'elsif'
 										}
@@ -2656,17 +2683,17 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 						break;
 					case U'p':
 						if (str32nequ (command2.string, U"procedure ", 10)) {
-							integer iline = lineNumber + 1;
+							integer iline = my lineNumber + 1;
 							for (; iline <= numberOfLines; iline ++) {
 								if (str32nequ (lines [iline], U"endproc", 7) &&
 										(! Melder_staysWithinInk (lines [iline] [7]) || lines [iline] [7] == U';'))
 								{
 									const char32 *startOfInk = Melder_findInk (lines [iline] + 7);
 									if (startOfInk && *startOfInk != U';') {
-										lineNumber = iline;   // on behalf of error message
+										my lineNumber = iline;   // on behalf of error message
 										Melder_throw (U"Stray text after 'endproc'.");
 									}
-									lineNumber = iline;
+									my lineNumber = iline;
 									break;
 								}   // go after `endproc`
 							}
@@ -2711,13 +2738,13 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 							Interpreter_numericExpression (me, command2.string + 6, & value);
 							if (value == 0.0) {
 								int depth = 0;
-								integer iline = lineNumber - 1;
+								integer iline = my lineNumber - 1;
 								for (; iline > 0; iline --) {
 									if (str32nequ (lines [iline], U"repeat", 6) &&
 											(! Melder_staysWithinInk (lines [iline] [6]) || lines [iline] [6] == U';'))
 									{
 										if (depth == 0) {
-											lineNumber = iline;
+											my lineNumber = iline;
 											break;   // go after `repeat`
 										} else
 											depth --;
@@ -2740,18 +2767,18 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 							Interpreter_numericExpression (me, command2.string + 6, & value);
 							if (value == 0.0) {
 								int depth = 0;
-								integer iline = lineNumber + 1;
+								integer iline = my lineNumber + 1;
 								for (; iline <= numberOfLines; iline ++) {
 									if (str32nequ (lines [iline], U"endwhile", 8) &&
 											(! Melder_staysWithinInk (lines [iline] [8]) || lines [iline] [8] == U';'))
 									{
 										const char32 *startOfInk = Melder_findInk (lines [iline] + 8);
 										if (startOfInk && *startOfInk != U';') {
-											lineNumber = iline;
+											my lineNumber = iline;
 											Melder_throw (U"Stray text after 'endwhile'.");
 										}
 										if (depth == 0) {
-											lineNumber = iline;
+											my lineNumber = iline;
 											break;   // go after `endwhile`
 										} else
 											depth --;
@@ -3411,7 +3438,7 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 						}
 					}
 				} // endif fail
-				if (assertErrorLineNumber != 0 && assertErrorLineNumber != lineNumber) {
+				if (assertErrorLineNumber != 0 && assertErrorLineNumber != my lineNumber) {
 					const integer save_assertErrorLineNumber = assertErrorLineNumber;
 					assertErrorLineNumber = 0;
 					Melder_throw (U"Script assertion fails in line ", save_assertErrorLineNumber,
@@ -3429,7 +3456,7 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 					throw;
 				if (assertErrorLineNumber == 0) {
 					throw;
-				} else if (assertErrorLineNumber != lineNumber) {
+				} else if (assertErrorLineNumber != my lineNumber) {
 					if (str32str (Melder_getError (), assertErrorString.string)) {
 						Melder_clearError ();
 						assertErrorLineNumber = 0;
@@ -3447,14 +3474,14 @@ void Interpreter_run (Interpreter me, char32 *text, const bool reuseVariables) {
 		my running = false;
 		my stopped = false;
 	} catch (MelderError) {
-		if (lineNumber > 0) {
-			const bool normalExplicitExit = str32nequ (lines [lineNumber], U"exit ", 5) || Melder_hasError (U"Script exited.");
+		if (my lineNumber > 0) {
+			const bool normalExplicitExit = str32nequ (my lines [my lineNumber], U"exit ", 5) || Melder_hasError (U"Script exited.");
 			if (! normalExplicitExit && ! assertionFailed) {   // don't show the message twice!
-				while (lines [lineNumber] [0] == U'\0') {   // did this use to be a continuation line?
-					lineNumber --;
-					Melder_assert (lineNumber > 0);   // originally empty lines that stayed empty should not generate errors
+				while (my lines [my lineNumber] [0] == U'\0') {   // did this use to be a continuation line?
+					my lineNumber --;
+					Melder_assert (my lineNumber > 0);   // originally empty lines that stayed empty should not generate errors
 				}
-				Melder_appendError (U"Script line ", lineNumber, U" not performed or completed:\n« ", lines [lineNumber], U" »");
+				Melder_appendError (U"Script line ", my lineNumber, U" not performed or completed:\n« ", my lines [my lineNumber], U" »");
 			}
 		}
 		my numberOfLabels = 0;

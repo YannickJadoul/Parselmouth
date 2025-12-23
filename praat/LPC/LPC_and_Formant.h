@@ -2,7 +2,7 @@
 #define  _LPC_and_Formant_h_
 /* LPC_and_Formant.h
  *
- * Copyright (C) 1994-2024 David Weenink
+ * Copyright (C) 1994-2025 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,46 @@
 #include "LPC.h"
 #include "Roots.h"
 #include "Formant.h"
+#include "SampledFrameIntoSampledFrame.h"
+
+Thing_define (LPCFrameIntoFormantFrame, SampledFrameIntoSampledFrame) {
+
+	constLPC inputLPC;
+	mutableFormant outputFormant;
+	double margin;
+	integer order;			// convenience
+	integer bufferSize;
+	autoVEC buffer;
+	autoPolynomial p;		// for the coefficients
+	autoRoots roots;		// the roots of the polynomial
+
+	void initBasicLPCFrameIntoFormantFrame (constLPC inputLPC, mutableFormant outputFormant, double margin);
+
+	void copyBasic (constSampledFrameIntoSampledFrame other)
+		override;
+	
+	bool inputFrameIntoOutputFrame (integer iframe)
+		override;
+
+	void initHeap ()
+		override;
+
+};
+
+autoLPCFrameIntoFormantFrame LPCFrameIntoFormantFrame_create (constLPC inputLPC, mutableFormant outputFormant, double margin);
+
+
+inline integer numberOfFormantsFromNumberOfCoefficients2 (integer maxnCoefficients, double margin) {
+	return ( margin == 0.0 ? maxnCoefficients : (maxnCoefficients + 1) / 2 );
+}
+
+inline integer numberOfPolesFromNumberOfFormants2 (double numberOfFormants) {
+	return 2.0 * numberOfFormants;
+}
+
+void Formant_Frame_init (Formant_Frame me, integer numberOfFormants);
+
+void LPC_into_Formant (constLPC me, mutableFormant thee, double margin);
 
 autoFormant LPC_to_Formant (constLPC me, double margin);
 
@@ -34,6 +74,8 @@ void LPC_Frame_into_Formant_Frame (constLPC_Frame me, Formant_Frame thee, double
 */
 void LPC_Frame_into_Formant_Frame_mt (constLPC_Frame me, Formant_Frame thee, double samplingPeriod, double margin, Polynomial p, Roots r, VEC const& workspace);
 
+void LPC_Frame_into_Formant_Frame (constLPC_Frame me, Formant_Frame thee, double samplingPeriod, 
+	double margin, Polynomial p, Roots roots, VEC polynomialIntoRootsWorkspace);
 
 void Formant_Frame_into_LPC_Frame (constFormant_Frame me, LPC_Frame thee, double samplingPeriod);
 

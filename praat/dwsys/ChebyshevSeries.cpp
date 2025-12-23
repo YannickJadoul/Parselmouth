@@ -1,4 +1,4 @@
-/*ChebyshevSeries.cpp
+/* ChebyshevSeries.cpp
  *
  * Copyright (C) 2020 David Weenink
  *

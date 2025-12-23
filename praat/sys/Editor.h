@@ -2,11 +2,11 @@
 #define _Editor_h_
 /* Editor.h
  *
- * Copyright (C) 1992-2020,2022,2023 Paul Boersma
+ * Copyright (C) 1992-2020,2022,2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -121,10 +121,10 @@ void Editor_setMenuSensitive (Editor me, conststring32 menu, bool sensitive);
 
 inline void Editor_raise (Editor me)
 	/*
-	 * Message: "move your window to the front", i.e.
-	 *    if you are invisible, then make your window visible at the front;
-	 *    if you are iconized, then deiconize yourself at the front;
-	 *    if you are already visible, just move your window to the front."
+		Message: "move your window to the front", i.e.
+			if you are invisible, then make your window visible at the front;
+			if you are iconized, then deiconize yourself at the front;
+			if you are already visible, just move your window to the front."
 	 */
 	{
 		GuiThing_show (my windowForm);

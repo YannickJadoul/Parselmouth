@@ -221,18 +221,19 @@ autoRoots Polynomial_to_Roots (constPolynomial me) {
 		+ 2 * n 	; for real and imaginary parts
 		+ 11 * n	; the maximum for dhseqr_
 */
-void Polynomial_into_Roots (constPolynomial me, mutableRoots r, mutableWorkvectorPool workplace) {
-	Melder_assert (my numberOfCoefficients == my coefficients.size); // check invariant
-	r -> roots.resize (0);
-	r -> numberOfRoots = r -> roots.size;	
+void Polynomial_into_Roots (constPolynomial me, mutableRoots roots, VEC workspace) {
 	integer np1 = my numberOfCoefficients, n = np1 - 1;
+	Melder_assert (workspace.size >= n * n + 2 * n + 11 * n);
+	
 	if (n == 0)
 		return;
 	/*
 		Use the workspace reserve storage for Hessenberg matrix (n * n)
 	*/
-	
-	MAT upperHessenberg = workplace -> getZeroMAT (1, n, n);
+	integer size = n * n;
+	VEC uh = workspace.part (1, size);
+	MAT upperHessenberg = uh.asmatrix (n, n);
+	upperHessenberg  <<= 0.0;
 	MATVU uh_CM (upperHessenberg);
 	uh_CM.rowStride = 1; uh_CM.colStride = n;
 	uh_CM [1] [n] = - (my coefficients [1] / my coefficients [np1]);
@@ -244,16 +245,19 @@ void Polynomial_into_Roots (constPolynomial me, mutableRoots r, mutableWorkvecto
 		We don't need to find out size of the working storage needed because for the current version 
 		of NUMlapack_dhseqr (20240608) its size equals maximally 11*n.
 	*/
-	VEC wr = workplace -> getRawVEC (2, n);
-	VEC wi = workplace -> getRawVEC (3, n);
-	VEC work = workplace -> getRawVEC (4, 11 * n);
+	VEC wr = workspace.part (size + 1, size + n);
+	size += n;
+	VEC wi = workspace.part (size + 1, size + n);
+	size += n;
+	VEC work = workspace.part (size + 1, size + 11 * n);
+
 	integer lwork = work.size, info;
 	NUMlapack_dhseqr_ ("E", "N", n, 1, n, & uh_CM [1] [1], n, & wr [1], & wi [1], nullptr, n, & work [1], lwork, & info);
 	integer numberOfEigenvaluesFound = n, ioffset = 0;
 	if (info > 0) {
 		/*
-			if INFO = i, NUMlapack_dhseqr failed to compute all of the eigenvalues. Elements i+1:n of
-		WR and WI contain those eigenvalues which have been successfully computed
+			if INFO = i, NUMlapack_dhseqr failed to compute all of the eigenvalues. 
+			Elements i+1:n of WR and WI contain those eigenvalues which have been successfully computed
 		*/
 		numberOfEigenvaluesFound -= info;
 		Melder_require (numberOfEigenvaluesFound > 0,
@@ -263,69 +267,12 @@ void Polynomial_into_Roots (constPolynomial me, mutableRoots r, mutableWorkvecto
 		Melder_throw (U"NUMlapack_dhseqr_ returns error ", info, U".");
 	}
 
+	roots -> resize (numberOfEigenvaluesFound);
 	for (integer i = 1; i <= numberOfEigenvaluesFound; i ++) {
-		dcomplex *root = r -> roots . append();
-		(*root) . real (wr [ioffset + i]);
-		(*root) . imag (wi [ioffset + i]);
+		roots -> roots [i].real (wr [ioffset + i]) ;
+		roots -> roots [i].imag (wi [ioffset + i]);
 	}
-	r -> numberOfRoots = r -> roots . size; // maintain invariant
-	Roots_Polynomial_polish (r, me);
-}
-
-void Polynomial_into_Roots_old (constPolynomial me, mutableRoots r, VEC const& workspace) {
-	Melder_assert (my numberOfCoefficients == my coefficients.size); // check invariant
-	r -> roots.resize (0);
-	r -> numberOfRoots = r -> roots.size; 	
-	integer np1 = my numberOfCoefficients, n = np1 - 1;
-	if (n == 0)
-		return;
-	/*
-		Use the workspace reserve storage for Hessenberg matrix (n * n)
-	*/
-	
-	MAT upperHessenberg = MAT (& workspace [1], n, n);
-	upperHessenberg  <<=  0.0;
-	MATVU uh_CM (upperHessenberg);
-	uh_CM.rowStride = 1; uh_CM.colStride = n;
-	uh_CM [1] [n] = - (my coefficients [1] / my coefficients [np1]);
-	for (integer irow = 2; irow <= n; irow ++) {
-		uh_CM [irow] [n] = - (my coefficients [irow] / my coefficients [np1]);
-		uh_CM [irow] [irow - 1] = 1.0;
-	}
-	/*
-		We don't need to find out size of the working storage needed because for the current version 3.1.1.1 
-		of NUMlapack_dhseqr (20200313) its size equals maximally 6*n.
-	*/
-	integer endIndex = n * n;
-	VEC wr = workspace.part (endIndex + 1, endIndex + n);
-	endIndex += n;
-	VEC wi = workspace.part (endIndex + 1, endIndex + n);
-	endIndex += n;
-	VEC work = workspace.part (endIndex + 1, workspace.size);
-	Melder_assert (work.size >= 6 * n);
-	integer lwork = work.size, info;
-	NUMlapack_dhseqr_ ("E", "N", n, 1, n, & uh_CM [1] [1], n, & wr [1], & wi [1], nullptr, n, & work [1], lwork, & info);
-	integer numberOfEigenvaluesFound = n, ioffset = 0;
-	if (info > 0) {
-		/*
-			if INFO = i, NUMlapack_dhseqr failed to compute all of the eigenvalues. Elements i+1:n of
-		WR and WI contain those eigenvalues which have been successfully computed
-		*/
-		numberOfEigenvaluesFound -= info;
-		Melder_require (numberOfEigenvaluesFound > 0,
-			U"No eigenvalues found.");
-		ioffset = info;
-	} else if (info < 0) {
-		Melder_throw (U"NUMlapack_dhseqr_ returns error ", info, U".");
-	}
-
-	for (integer i = 1; i <= numberOfEigenvaluesFound; i ++) {
-		dcomplex *root = r -> roots . append();
-		(*root) . real (wr [ioffset + i]);
-		(*root) . imag (wi [ioffset + i]);
-	}
-	r -> numberOfRoots = r -> roots . size; // maintain invariant
-	Roots_Polynomial_polish (r, me);
+	Roots_Polynomial_polish (roots, me);
 }
 
 void Roots_sort (Roots me) {

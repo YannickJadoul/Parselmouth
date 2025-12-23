@@ -1,10 +1,10 @@
 /* STR.cpp
  *
- * Copyright (C) 2012-2017 David Weenink, 2008,2018,2020-2022 Paul Boersma
+ * Copyright (C) 2012-2017 David Weenink, 2008,2018,2020-2022,2024,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -22,12 +22,12 @@ static char hexSymbols [] = "0123456789ABCDEF";
 
 static uint64 hexSecret = UINT64_C (5'847'171'831'059'823'557);
 
-autostring8 hex_STR8 (conststring8 str, uint64 key) {
+autostring8 hex_STR8 (conststring8 string, uint64 key) {
 	if (key != 0)
 		NUMrandom_initializeWithSeedUnsafelyButPredictably (key ^ hexSecret);
-	autostring8 result (Melder8_length (str) * 2);
+	autostring8 result (Melder8_length (string) * 2);
 	char *to = & result [0];
-	for (const char8 *from = (char8 *) & str [0]; *from != '\0'; from ++) {
+	for (const char8 *from = (char8 *) & string [0]; *from != '\0'; from ++) {
 		integer value = *from;
 		Melder_assert (value > 0 && value < 256);
 		if (key != 0)
@@ -41,22 +41,68 @@ autostring8 hex_STR8 (conststring8 str, uint64 key) {
 	return result;
 }
 
-autostring32 hex_STR (conststring32 str, uint64 key) {
-	autostring8 str8 = Melder_32to8 (str);
-	str8 = hex_STR8 (str8.get(), key);
-	return Melder_8to32 (str8.get());
+autostring32 hex_STR (conststring32 string, uint64 key) {
+	autostring8 string8 = Melder_32to8 (string);
+	string8 = hex_STR8 (string8.get(), key);
+	return Melder_8to32 (string8.get());
 }
 
-autostring32 left_STR (conststring32 str, integer newLength) {
-	const integer length = Melder_length (str);
+autostring32 left_STR (conststring32 string, integer newLength) {
+	const integer length = Melder_length (string);
 	Melder_clip (0_integer, & newLength, length);
 	autostring32 result (newLength);
-	str32ncpy (result.get(), str, newLength);
+	str32ncpy (result.get(), string, newLength);
 	return result;
 }
 
-autostring32 mid_STR (conststring32 str, integer startingPosition_1, integer numberOfCharacters) {
-	const integer length = Melder_length (str);
+autostring32 lowerCase_STR (conststring32 string) {
+	const integer length = Melder_length (string);
+	autostring32 result (length);
+	for (integer i = 0; i < length; i ++)
+		result [i] = Melder_toLowerCase (string [i]);
+	return result;
+}
+autostring32 lowerCamelCase_STR (conststring32 string) {
+	autostring32 result (Melder_length (string) + 1);
+	char32 *q = & result [0];
+	bool nextLetterShouldBeUpperCase = false;
+	bool nextLetterShouldBeLowerCase = true;
+	for (const char32 *p = & string [0]; *p != U'\0'; p ++) {
+		if (nextLetterShouldBeUpperCase) {
+			*q ++ = Melder_toUpperCase (*p);
+			nextLetterShouldBeUpperCase = false;
+		} else if (nextLetterShouldBeLowerCase) {
+			*q ++ = Melder_toLowerCase (*p);
+			nextLetterShouldBeLowerCase = false;
+		} else if (*p == U'_') {
+			nextLetterShouldBeUpperCase = true;
+		} else
+			*q ++ = *p;
+	}
+	*q = U'\0';   // closing null byte
+	return result;
+}
+autostring32 lowerSnakeCase_STR (conststring32 string) {
+	autostring32 result (2 * Melder_length (string) + 1);   // make room for extra underscores
+	char32 *q = & result [0];
+	bool nextLetterShouldBeLowerCase = true;
+	for (const char32 *p = & string [0]; *p != U'\0'; p ++) {
+		if (nextLetterShouldBeLowerCase) {
+			*q ++ = Melder_toLowerCase (*p);
+			nextLetterShouldBeLowerCase = false;
+		} else if (Melder_isUpperCaseLetter (*p)) {
+			*q ++ = U'_';
+			*q ++ = Melder_toLowerCase (*p);
+			nextLetterShouldBeLowerCase = true;
+		} else
+			*q ++ = *p;
+	}
+	*q = U'\0';   // closing null byte
+	return result;
+}
+
+autostring32 mid_STR (conststring32 string, integer startingPosition_1, integer numberOfCharacters) {
+	const integer length = Melder_length (string);
 	integer endPosition_1 = startingPosition_1 + numberOfCharacters - 1;
 	if (startingPosition_1 < 1)
 		startingPosition_1 = 1;
@@ -66,19 +112,35 @@ autostring32 mid_STR (conststring32 str, integer startingPosition_1, integer num
 	if (newLength <= 0)
 		return Melder_dup (U"");
 	autostring32 result (newLength);
-	str32ncpy (result.get(), & str [startingPosition_1-1], newLength);
+	str32ncpy (result.get(), & string [startingPosition_1-1], newLength);
 	return result;
 }
 
-autostring32 quote_doubleSTR (conststring32 str) {
+autostring32 padLeft_STR (const conststring32 string, const integer width, const conststring32 pad) {
+	return Melder_dup (Melder_padLeft (string, width, pad));
+}
+
+autostring32 padOrTruncateLeft_STR (const conststring32 string, const integer width, const conststring32 pad) {
+	return Melder_dup (Melder_padOrTruncateLeft (string, width, pad));
+}
+
+autostring32 padOrTruncateRight_STR (const conststring32 string, const integer width, const conststring32 pad) {
+	return Melder_dup (Melder_padOrTruncateRight (string, width, pad));
+}
+
+autostring32 padRight_STR (const conststring32 string, const integer width, const conststring32 pad) {
+	return Melder_dup (Melder_padRight (string, width, pad));
+}
+
+autostring32 quote_doubleSTR (conststring32 string) {
 	/*
 		Put the string `str` between quotes, doubling each quote inside `str`.
 	*/
 	constexpr integer maximumNumberOfOutputCharactersPerInputCharacter = 2;   // namely, the character " has to be converted to ""
 	constexpr integer numberOfOutputCharactersNeededForTheQuotes = 2;   // namely, the opening quote and the closing quote
-	autostring32 result (maximumNumberOfOutputCharactersPerInputCharacter * Melder_length (str) + numberOfOutputCharactersNeededForTheQuotes);
+	autostring32 result (maximumNumberOfOutputCharactersPerInputCharacter * Melder_length (string) + numberOfOutputCharactersNeededForTheQuotes);
 		// for instance, the string `"""` has to be converted to the string `""""""""`
-	const char32 *p = & str [0];
+	const char32 *p = & string [0];
 	char32 *q = & result [0];
 	* q ++ = U'"';
 	while (*p != U'\0') {
@@ -296,18 +358,25 @@ autostring32 replace_regex_STR (conststring32 string,
 	return buf;
 }
 
-autostring32 right_STR (conststring32 str, integer newLength) {
-	const integer length = Melder_length (str);
+autostring32 right_STR (conststring32 string, integer newLength) {
+	const integer length = Melder_length (string);
 	Melder_clip (0_integer, & newLength, length);
-	return Melder_dup (str + length - newLength);
+	return Melder_dup (string + length - newLength);
 }
 
-autostring8 unhex_STR8 (conststring8 str, uint64 key) {
+autostring32 truncateLeft_STR (const conststring32 string, const integer width) {
+	return Melder_dup (Melder_truncateLeft (string, width));
+}
+autostring32 truncateRight_STR (const conststring32 string, const integer width) {
+	return Melder_dup (Melder_truncateRight (string, width));
+}
+
+autostring8 unhex_STR8 (conststring8 string, uint64 key) {
 	if (key != 0)
 		NUMrandom_initializeWithSeedUnsafelyButPredictably (key ^ hexSecret);
-	autostring8 result (Melder8_length (str) / 2);
+	autostring8 result (Melder8_length (string) / 2);
 	char *to = & result [0];
-	for (const char8 *from = (char8 *) & str [0];;) {
+	for (const char8 *from = (char8 *) & string [0];;) {
 		char8 code1 = *from ++;
 		while (Melder_isHorizontalOrVerticalSpace (code1))
 			code1 = *from ++;
@@ -320,7 +389,7 @@ autostring8 unhex_STR8 (conststring8 str, uint64 key) {
 			Melder_throw (U"(unhex$:) incomplete hexadecimal string.");
 		const char *index1 = strchr (hexSymbols, code1), *index2 = strchr (hexSymbols, code2);
 		if (! index1 || ! index2)
-			Melder_throw (U"(unhex$:) not a hexadecimal string: ", Melder_peek8to32 (str));
+			Melder_throw (U"(unhex$:) not a hexadecimal string: ", Melder_peek8to32 (string));
 		integer value = (index1 - hexSymbols) * 16 + (index2 - hexSymbols);
 		if (key != 0)
 			value = (value + 256 - NUMrandomInteger (0, 255)) % 256;
@@ -332,10 +401,47 @@ autostring8 unhex_STR8 (conststring8 str, uint64 key) {
 	return result;
 }
 
-autostring32 unhex_STR (conststring32 str, uint64 key) {
-	autostring8 str8 = Melder_32to8 (str);
-	str8 = unhex_STR8 (str8.get(), key);
-	return Melder_8to32 (str8.get());
+autostring32 unhex_STR (conststring32 string, uint64 key) {
+	autostring8 string8 = Melder_32to8 (string);
+	string8 = unhex_STR8 (string8.get(), key);
+	return Melder_8to32 (string8.get());
+}
+
+autostring32 upperCase_STR (conststring32 string) {
+	const integer length = Melder_length (string);
+	autostring32 result (length);
+	for (integer i = 0; i < length; i ++)
+		result [i] = Melder_toUpperCase (string [i]);
+	return result;
+}
+autostring32 upperCamelCase_STR (conststring32 string) {
+	autostring32 result (Melder_length (string) + 1);
+	char32 *q = & result [0];
+	bool nextLetterShouldBeUpperCase = true;
+	for (const char32 *p = & string [0]; *p != U'\0'; p ++) {
+		if (nextLetterShouldBeUpperCase) {
+			*q ++ = Melder_toUpperCase (*p);
+			nextLetterShouldBeUpperCase = false;
+		} else if (*p == U'_') {
+			nextLetterShouldBeUpperCase = true;
+		} else
+			*q ++ = *p;
+	}
+	*q = U'\0';   // closing null byte
+	return result;
+}
+autostring32 upperSnakeCase_STR (conststring32 string) {
+	autostring32 result = lowerSnakeCase_STR (string);
+	bool nextLetterShouldBeUpperCase = true;
+	for (char32 *p = & result [0]; *p != U'\0'; p ++) {
+		if (nextLetterShouldBeUpperCase) {
+			*p = Melder_toUpperCase (*p);
+			nextLetterShouldBeUpperCase = false;
+		} else if (*p == U'_') {
+			nextLetterShouldBeUpperCase = true;
+		}
+	}
+	return result;
 }
 
 /* End of file STR.cpp */

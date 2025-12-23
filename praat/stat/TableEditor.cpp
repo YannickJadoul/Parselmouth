@@ -1,10 +1,10 @@
 /* TableEditor.cpp
  *
- * Copyright (C) 2006-2013,2015-2023 Paul Boersma
+ * Copyright (C) 2006-2013,2015-2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -29,7 +29,7 @@ Thing_implement (TableEditor, Editor, 0);
 #include "Prefs_copyToInstance.h"
 #include "TableEditor_prefs.h"
 
-#define SIZE_INCHES  40
+#define SIZE_INCHES  80
 
 /********** EDITOR METHODS **********/
 
@@ -101,60 +101,64 @@ static void menu_cb_TableEditorHelp (TableEditor, EDITOR_ARGS) {
 /********** DRAWING AREA **********/
 
 void structTableEditor :: v_draw () {
-	double spacing = 2.0;   // millimetres at both edges
-	double columnWidth, cellWidth;
+	constexpr double spacing = 2.0;   // millimetres at both edges
 	/*
-		We fit 200 rows in 40 inches, which is 14.4 points per row.
+		We fit 400 rows in 80 inches, which is 14.4 points per row.
 	*/
-	integer rowmin = topRow, rowmax = rowmin + 197;
-	integer colmin = leftColumn, colmax = colmin + (kTableEditor_MAXNUM_VISIBLE_COLUMNS - 1);
+	integer rowmin = our topRow, rowmax = rowmin + 397;
+	integer colmin = our leftColumn, colmax = colmin + (kTableEditor_MAXNUM_VISIBLE_COLUMNS - 1);
+	Melder_clipLeft (1_integer, & rowmin);
 	Melder_clipRight (& rowmax, our table() -> rows.size);
 	Melder_clipRight (& colmax, our table() -> numberOfColumns);
 	Graphics_clearWs (graphics.get());
 	Graphics_setTextAlignment (graphics.get(), Graphics_CENTRE, Graphics_HALF);
-	Graphics_setWindow (graphics.get(), 0.0, 1.0, rowmin + 197.5, rowmin - 2.5);
+	Graphics_setWindow (graphics.get(), 0.0, 1.0, rowmin + 397.5, rowmin - 2.5);
 	Graphics_setColour (graphics.get(), Melder_SILVER);
 	Graphics_fillRectangle (graphics.get(), 0.0, 1.0, rowmin - 2.5, rowmin - 0.5);
 	Graphics_setColour (graphics.get(), Melder_BLACK);
 	Graphics_line (graphics.get(), 0.0, rowmin - 0.5, 1.0, rowmin - 0.5);
-	Graphics_setWindow (graphics.get(), 0.0, Graphics_dxWCtoMM (graphics.get(), 1.0), rowmin + 197.5, rowmin - 2.5);
+	Graphics_setWindow (graphics.get(), 0.0, Graphics_dxWCtoMM (graphics.get(), 1.0), rowmin + 397.5, rowmin - 2.5);
 	/*
 		Determine the width of the column with the row numbers.
 	*/
-	columnWidth = Graphics_textWidth (graphics.get(), U"row");
-	for (integer irow = rowmin; irow <= rowmax; irow ++) {
-		cellWidth = Graphics_textWidth (graphics.get(), Melder_integer (irow));
-		if (cellWidth > columnWidth)
-			columnWidth = cellWidth;
+	{// scope
+		double columnWidth = Graphics_textWidth (graphics.get(), U"row");
+		for (integer irow = rowmin; irow <= rowmax; irow ++) {
+			const double cellWidth = Graphics_textWidth (graphics.get(), Melder_integer (irow));
+			if (cellWidth > columnWidth)
+				columnWidth = cellWidth;
+		}
+		columnLeft [0] = columnWidth + 2 * spacing;
 	}
-	columnLeft [0] = columnWidth + 2 * spacing;
 	Graphics_setColour (graphics.get(), Melder_SILVER);
-	Graphics_fillRectangle (graphics.get(), 0.0, columnLeft [0], rowmin - 0.5, rowmin + 197.5);
+	Graphics_fillRectangle (graphics.get(), 0.0, columnLeft [0], rowmin - 0.5, rowmin + 397.5);
 	Graphics_setColour (graphics.get(), Melder_BLACK);
-	Graphics_line (graphics.get(), columnLeft [0], rowmin - 0.5, columnLeft [0], rowmin + 197.5);
+	Graphics_line (graphics.get(), columnLeft [0], rowmin - 0.5, columnLeft [0], rowmin + 397.5);
 	/*
 		Determine the widths of the columns.
 	*/
 	for (integer icol = colmin; icol <= colmax; icol ++) {
 		conststring32 columnLabel = our table() -> columnHeaders [icol]. label.get();
-		columnWidth = Graphics_textWidth (graphics.get(), Melder_integer (icol));
-		if (! columnLabel)
-			columnLabel = U"";
-		cellWidth = Graphics_textWidth (graphics.get(), columnLabel);
-		if (cellWidth > columnWidth)
-			columnWidth = cellWidth;
+		double columnWidth = Graphics_textWidth (graphics.get(), Melder_integer (icol));
+		{// scope
+			if (! columnLabel)
+				columnLabel = U"";
+			const double cellWidth = Graphics_textWidth (graphics.get(), columnLabel);
+			if (cellWidth > columnWidth)
+				columnWidth = cellWidth;
+		}
 		for (integer irow = rowmin; irow <= rowmax; irow ++) {
 			conststring32 cell = Table_getStringValue_a (our table(), irow, icol);
 			Melder_assert (cell);
 			if (cell [0] == U'\0')
 				cell = U"?";
-			cellWidth = Graphics_textWidth (graphics.get(), cell);
+			const double cellWidth = Graphics_textWidth (graphics.get(), cell);
 			if (cellWidth > columnWidth)
 				columnWidth = cellWidth;
 		}
-		columnRight [icol - colmin] = columnLeft [icol - colmin] + columnWidth + 2 * spacing;
+		our columnRight [icol - colmin] = columnLeft [icol - colmin] + columnWidth + 2 * spacing;
 		if (icol < colmax)
-			columnLeft [icol - colmin + 1] = columnRight [icol - colmin];
+			our columnLeft [icol - colmin + 1] = our columnRight [icol - colmin];
 	}
 	/*
 		Text can be "graphic" or not.
@@ -166,14 +170,14 @@ void structTableEditor :: v_draw () {
 	/*
 		Show the row numbers.
 	*/
-	Graphics_text (graphics.get(), columnLeft [0] / 2, rowmin - 1, U"row");
+	Graphics_text (graphics.get(), our columnLeft [0] / 2, rowmin - 1, U"row");
 	for (integer irow = rowmin; irow <= rowmax; irow ++)
-		Graphics_text (graphics.get(), columnLeft [0] / 2, irow, irow);
+		Graphics_text (graphics.get(), our columnLeft [0] / 2, irow, irow);
 	/*
 		Show the column labels.
 	*/
 	for (integer icol = colmin; icol <= colmax; icol ++) {
-		const double mid = (columnLeft [icol - colmin] + columnRight [icol - colmin]) / 2;
+		const double mid = (our columnLeft [icol - colmin] + our columnRight [icol - colmin]) / 2;
 		conststring32 columnLabel = our table() -> columnHeaders [icol]. label.get();
 		if (! columnLabel || columnLabel [0] == U'\0')
 			columnLabel = U"?";
@@ -189,10 +193,10 @@ void structTableEditor :: v_draw () {
 				Graphics_setColour (graphics.get(), Melder_YELLOW);
 				const double dx = Graphics_dxMMtoWC (graphics.get(), 0.3);
 				Graphics_fillRectangle (graphics.get(),
-					columnLeft [icol - colmin] + dx, columnRight [icol - colmin] - dx, irow - 0.45, irow + 0.55);
+						our columnLeft [icol - colmin] + dx, columnRight [icol - colmin] - dx, irow - 0.45, irow + 0.55);
 				Graphics_setColour (graphics.get(), Melder_BLACK);
 			}
-			const double mid = (columnLeft [icol - colmin] + columnRight [icol - colmin]) / 2.0;
+			const double mid = (our columnLeft [icol - colmin] + our columnRight [icol - colmin]) / 2.0;
 			conststring32 cell = Table_getStringValue_a (our table(), irow, icol);
 			Melder_assert (cell);
 			if (cell [0] == U'\0')
@@ -223,8 +227,9 @@ static void gui_drawingarea_cb_mouse (TableEditor me, GuiDrawingArea_MouseEvent 
 		return;   // could be the case in the very beginning
 	if (! event -> isClick())
 		return;
-	integer rowmin = my topRow, rowmax = rowmin + 197;
+	integer rowmin = my topRow, rowmax = rowmin + 397;
 	integer colmin = my leftColumn, colmax = colmin + (kTableEditor_MAXNUM_VISIBLE_COLUMNS - 1);
+	Melder_clipLeft (1_integer, & rowmin);
 	Melder_clipRight (& rowmax, my table() -> rows.size);
 	Melder_clipRight (& colmax, my table() -> numberOfColumns);
 	double xWC, yWC;
@@ -233,8 +238,8 @@ static void gui_drawingarea_cb_mouse (TableEditor me, GuiDrawingArea_MouseEvent 
 		return;
 	for (integer icol = colmin; icol <= colmax; icol ++) {
 		if (xWC > my columnLeft [icol - colmin] && xWC < my columnRight [icol - colmin]) {
-			integer selectedRow = Melder_iround (yWC);
-			integer selectedColumn = icol;
+			const integer selectedRow = Melder_iround (yWC);
+			const integer selectedColumn = icol;
 			if (my v_clickCell (selectedRow, selectedColumn, event -> shiftKeyPressed))
 				Graphics_updateWs (my graphics.get());
 			return;
@@ -317,7 +322,7 @@ autoTableEditor TableEditor_create (conststring32 title, Table table) {
 		my selectedColumn = 1;
 		my selectedRow = 1;
 		my graphics = Graphics_create_xmdrawingarea (my drawingArea);
-		double size_pixels = SIZE_INCHES * Graphics_getResolution (my graphics.get());
+		const double size_pixels = SIZE_INCHES * Graphics_getResolution (my graphics.get());
 		Graphics_setWsViewport (my graphics.get(), 0.0, size_pixels, 0.0, size_pixels);
 		Graphics_setWsWindow (my graphics.get(), 0.0, size_pixels, 0.0, size_pixels);
 		Graphics_setViewport (my graphics.get(), 0.0, size_pixels, 0.0, size_pixels);

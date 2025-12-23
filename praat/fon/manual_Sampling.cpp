@@ -1,6 +1,6 @@
 /* manual_Sampling.cpp
  *
- * Copyright (C) 1992-2005,2007,2011,2014-2017,2021-2023 Paul Boersma
+ * Copyright (C) 1992-2005,2007,2011,2014-2017,2021-2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,7 +122,7 @@ NORMAL (U"If you select one of the above objects and click @Inspect, "
 	"%t__1_ is the #x1 attribute, and \\De%t is the #dx attribute.")
 MAN_END
 
-MAN_BEGIN (U"Get frame number from time...", U"ppgb", 20221202)
+MAN_BEGIN (U"Get frame number from time...", U"ppgb", 20221202)   // 2025
 INTRO (U"A command that becomes available in the @@Query submenu@ if you select a sound-analysis object that is a function of time "
 	"and that is evenly sampled in time (@Pitch, @Formant, @Intensity, @Harmonicity).")
 NORMAL (U"The Info window will tell you the frame number belonging to the time that you specify. "
@@ -136,7 +136,7 @@ NORMAL (U"If the Pitch object has a time step of 10 ms, and the first frame is c
 ENTRY (U"Scripting")
 NORMAL (U"You can use this command to put the nearest frame centre into a script variable:")
 CODE (U"selectObject: \"Pitch hallo\"")
-CODE (U"frame = Get frame from time... 0.1")
+CODE (U"frame = Get frame number from time... 0.1")
 CODE (U"nearestFrame = round (frame)")
 NORMAL (U"In this case, the value will not be written into the Info window. To round down or up, use")
 CODE (U"leftFrame = floor (frame)")

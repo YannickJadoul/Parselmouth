@@ -1,5 +1,5 @@
 # Makefile of the library "sys"
-# Paul Boersma 2024-04-26
+# Paul Boersma, 5 December 2024
 
 include ../makefile.defs
 
@@ -15,14 +15,14 @@ OBJECTS = Thing.o Data.o Simple.o Collection.o Strings.o \
    GraphicsScreen.o Printer.o \
    Preferences.o site.o \
    Picture.o Ui.o UiFile.o UiPause.o DataGui.o Editor.o DataEditor.o HyperPage.o Manual.o TextEditor.o \
-   praat.o praat_actions.o praat_menuCommands.o praat_picture.o sendsocket.o \
+   praat.o praat_actions.o praat_menuCommands.o praat_picture.o \
    praat_script.o praat_statistics.o praat_logo.o praat_library.o \
    praat_objectMenus.o InfoEditor.o ScriptEditor.o NotebookEditor.o ButtonEditor.o \
    Interpreter.o Formula.o \
    StringsEditor.o DemoEditor.o \
    motifEmulator.o GuiText.o GuiWindow.o Gui.o GuiObject.o GuiDrawingArea.o \
    GuiMenu.o GuiMenuItem.o GuiButton.o GuiLabel.o GuiCheckButton.o GuiRadioButton.o \
-   GuiDialog.o GuiList.o GuiFileSelect.o GuiScale.o GuiScrollBar.o GuiScrolledWindow.o \
+   GuiDialog.o GuiList.o GuiTrust.o GuiFileSelect.o GuiScale.o GuiScrollBar.o GuiScrolledWindow.o \
    GuiControl.o GuiForm.o GuiOptionMenu.o GuiProgressBar.o GuiShell.o GuiThing.o Gui_messages.o
 
 .PHONY: all clean
