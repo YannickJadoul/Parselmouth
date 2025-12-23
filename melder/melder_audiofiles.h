@@ -65,10 +65,10 @@ int MelderFile_checkSoundFile (MelderFile file, integer *numberOfChannels, int *
  * The data start at 'startOfData' bytes from the start of the file.
  */
 int Melder_bytesPerSamplePoint (int encoding);
-void Melder_readAudioToFloat (FILE *f, int encoding, MAT buffer);
+void Melder_readAudioToFloat (MelderFile file, int encoding, MAT buffer);
 /* Reads channels into buffer [ichannel], which are base-1.
  */
-void Melder_readAudioToShort (FILE *f, integer numberOfChannels, int encoding, short *buffer, integer numberOfSamples);
+void Melder_readAudioToShort (MelderFile file, integer numberOfChannels, int encoding, short *buffer, integer numberOfSamples);
 /* If stereo, buffer will contain alternating left and right values.
  * Buffer is base-0.
  */

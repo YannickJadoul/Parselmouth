@@ -17,7 +17,7 @@
  * along with this program; if not, see: <http://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
+#include "espeak__config.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -45,18 +45,18 @@
 #endif
 
 #include "espeak_ng.h"
-#include "espeak_io.h"
 #include "speak_lib.h"
 #include "encoding.h"
 
-#include "melder.h"
+#include "espeak_praat.h"
 
 #include "speech.h"
 #include "common.h"               // for GetFileLength
 #include "dictionary.h"           // for GetTranslatedPhonemeString, strncpy0
-#include "espeak_command.h"       // for delete_espeak_command, SetParameter
+//ppgb #include "espeak_command.h"       // for delete_espeak_command, SetParameter, (ppgb:) sync_espeak_Char
+#include "setlengths.h"           //ppgb: for SetParameter (instead of espeak_command.h)
 #include "event.h"                // for event_declare, event_clear_all, eve...
-#include "fifo.h"                 // for fifo_add_command, fifo_add_commands
+//ppgb #include "fifo.h"                 // for fifo_add_command, fifo_add_commands
 #include "langopts.h"             // for LoadConfig
 #include "mbrola.h"               // for mbrola_delay
 #include "readclause.h"           // for PARAM_STACK, param_stack
@@ -247,6 +247,7 @@ int sync_espeak_terminated_msg(uint32_t unique_identifier, void *user_data)
 
 #endif
 
+#if 0   /* ppgb: not used in Praat */
 static int check_data_path(const char *path, int allow_directory)
 {
 	if (!path) return 0;
@@ -261,6 +262,7 @@ static int check_data_path(const char *path, int allow_directory)
 	snprintf(path_home, sizeof(path_home), "%s", path);
 	return GetFileLength(path_home) == -EISDIR;
 }
+#endif
 
 #pragma GCC visibility push(default)
 
@@ -305,9 +307,13 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_InitializeOutput(espeak_ng_OUTPUT_MODE 
 	return ENS_OK;
 }
 
-
+/* ppgb: in Praat always called with path == nullptr */
 ESPEAK_NG_API void espeak_ng_InitializePath(const char *path)
 {
+#if 1   /* ppgb: in Praat we should ignore everything that eSpeak is trying to do here: registries, environment variables... */
+	Melder_assert (! path);
+	strcpy(path_home, PATH_ESPEAK_DATA);
+#else
 	if (check_data_path(path, 1))
 		return;
 
@@ -339,6 +345,7 @@ ESPEAK_NG_API void espeak_ng_InitializePath(const char *path)
 #endif
 
 	strcpy(path_home, PATH_ESPEAK_DATA);
+#endif   /* ppgb */
 }
 
 const int param_defaults[N_SPEECH_PARAM] = {
@@ -365,10 +372,6 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_Initialize(espeak_ng_ERROR_CONTEXT *con
 	int param;
 	int srate = 22050; // default sample rate 22050 Hz
 
-	// It seems that the wctype functions don't work until the locale has been set
-	// to something other than the default "C".  Then, not only Latin1 but also the
-	// other characters give the correct results with iswalpha() etc.
-
 	/*
 		(Paul Boersma 20240426:)
 		When using this library in an app, e.g. Praat,
@@ -380,8 +383,8 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_Initialize(espeak_ng_ERROR_CONTEXT *con
 		(The space is needed to be able to automatically determine that the name
 		 of the function does not appear in the present source file `speech.cpp`.)
 	*/
-	#define SET_LOCALE  setlocale   /* should normally contain a space between "set" and "locale" */
-	#define USE_SET_LOCALE_IN_THIS_LIBRARY  1   /* should normally be 0 */
+	#define SET_LOCALE  set locale   /* should normally contain a space between "set" and "locale" */
+	#define USE_SET_LOCALE_IN_THIS_LIBRARY  0   /* should normally be 0 */
 	#if USE_SET_LOCALE_IN_THIS_LIBRARY
 		if (SET_LOCALE(LC_CTYPE, "C.UTF-8") == NULL) {
 			if (SET_LOCALE(LC_CTYPE, "UTF-8") == NULL) {
@@ -525,6 +528,18 @@ static espeak_ng_STATUS Synthesize(unsigned int unique_identifier, const void *t
 
 void MarkerEvent(int type, unsigned int char_position, int value, int value2, unsigned char *outptr)
 {
+	/*
+		ppgb:
+		This function can be called only from:
+		- WavegenSetVoice(), with `type` == espeakEVENT_SAMPLERATE
+		- WavegenFill2(), with `type` is one of:
+			- espeakEVENT_SENTENCE
+			- espeakEVENT_WORD
+			- espeakEVENT_PHONEME
+			- espeakEVENT_END
+	 */
+	//TRACE
+	trace (type, U" ", char_position, U" ", value, U" ", value2);
 	// type: 1=word, 2=sentence, 3=named mark, 4=play audio, 5=end, 7=phoneme
 	espeak_EVENT *ep;
 	double time;
@@ -552,11 +567,8 @@ void MarkerEvent(int type, unsigned int char_position, int value, int value2, un
 	else if (type == espeakEVENT_PHONEME) {
 		int *p;
 		p = (int *)(ep->id.string);
-		//TRACE
-		trace (U"values ", ((char*)&value)[0], U" ", ((char*)&value)[1], U" ", ((char*)&value)[2], U" ", ((char*)&value)[3], U" ",
-			((char*)&value2)[0], U" ", ((char*)&value2)[1], U" ", ((char*)&value2)[2], U" ", ((char*)&value2)[3]);
 		p[0] = value;
-		p[1] = value2;   // ppgb SETTING THIS TO 0 HAS BEEN AN UGLY HACK IN ORDER TO MAKE FEWER MISTAKES (20231022)
+		p[1] = value2;   // ppgb-espeak
 	} else
 		ep->id.number = value;
 }
@@ -623,6 +635,19 @@ espeak_ng_STATUS sync_espeak_Synth_Mark(unsigned int unique_identifier, const vo
 	return Synthesize(unique_identifier, text, flags | espeakSSML);
 }
 
+/*ppgb:*/ static   //ppgb: and put this function before sync_espeak_Key()
+espeak_ng_STATUS sync_espeak_Char(wchar_t character)
+{
+	// is there a system resource of character names per language?
+	char buf[80];
+	my_unique_identifier = 0;
+	my_user_data = NULL;
+
+	sprintf(buf, "<say-as interpret-as=\"tts:char\">&#%d;</say-as>", character);
+	return Synthesize(0, buf, espeakSSML);
+}
+
+/*ppgb:*/ static
 espeak_ng_STATUS sync_espeak_Key(const char *key)
 {
 	// symbolic name, symbolicname_character  - is there a system resource of symbolic names per language?
@@ -638,17 +663,7 @@ espeak_ng_STATUS sync_espeak_Key(const char *key)
 	return Synthesize(0, key, 0); // speak key as a text string
 }
 
-espeak_ng_STATUS sync_espeak_Char(wchar_t character)
-{
-	// is there a system resource of character names per language?
-	char buf[80];
-	my_unique_identifier = 0;
-	my_user_data = NULL;
-
-	sprintf(buf, "<say-as interpret-as=\"tts:char\">&#%d;</say-as>", character);
-	return Synthesize(0, buf, espeakSSML);
-}
-
+/*ppgb:*/ static
 void sync_espeak_SetPunctuationList(const wchar_t *punctlist)
 {
 	// Set the list of punctuation which are spoken for "some".

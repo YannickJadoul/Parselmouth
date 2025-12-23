@@ -1,10 +1,10 @@
 /* manual_functions.cpp
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -31,6 +31,7 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`abs` (%`x`) – absolute value
 , @`abs#` (%`vector#`) – absolute value of each element of %`vector#`
 , @`abs##` (%`matrix##`) – absolute value of each cell of %`matrix##`
+, @`appDay` ( ) – the month day at which the present version of Praat was built
 , @`appendFile` (%`filePath$`, `...`) – write texts, numbers, vectors and so on
 	at the end of an existing file (create such a file if it does not exist yet)
 , @`appendFileLine` (%`filePath$`, `...`) – write texts, numbers, vectors and so on,
@@ -40,6 +41,11 @@ A growing list of functions that you can use in @formulas and @scripting...
 	to the Info window
 , @`appendInfoLine` (`...`) – write texts, numbers, vectors and so on,
 	followed by a newline, to the Info window
+, @`appMonth` ( ) – the month in which the present version of Praat was built (between 1 and 12)
+, @`appMonth$` ( ) – the name of the month (in English) in which the present version of Praat was built
+, @`appVersion` ( ) – the number of the present version of Praat
+, @`appVersion$` ( ) – the present version of Praat, as text
+, @`appYear` ( ) – the year in which the present version of Praat was built
 , @`arccos` (%`x`) – inverse cosine
 , @`arccos#` (%`vector#`) – inverse cosine of each element of %`vector#`
 , @`arccos##` (%`matrix##`) – inverse cosine of each cell of %`matrix##`
@@ -60,6 +66,7 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`arctanh#` (%`vector#`) – inverse hyperbolic tangent of each element of %`vector#`
 , @`arctanh##` (%`matrix##`) – inverse hyperbolic tangent of each cell of %`matrix##`
 , @`assert` %`condition` – condition checking
+, @`asserterror` %`message$` – testing that a certain error occurs
 , @`asynchronous` – let the script continue while the sound is playing
 , @`backslashTrigraphsToUnicode$` (%`string$`) – convert e.g. \bsct to \ct
 , @`barkToHertz` (%`x`) – from Bark-rate to acoustic frequency
@@ -80,6 +87,9 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`chooseReadFile$` (%`title$`) – pops up a file selection window for opening (or appending to) an existing file
 , @`chooseWriteFile$` (%`title$`, %`defaultFilename$`) – pops up a file selection window for saving to a new file
 , @`clearinfo` – clear the Info window
+, @`clock` ( ) – typically the number of seconds since system start-up
+, @`col` – the columns number (of the current cell) in a Formula command
+, @`col$` [%`i`] – the name of column %i of an object
 , @`col#` (%`matrix##`, %`columnNumber`) - extract one column from a matrix
 , @`columnSums#` (%`matrix##`)
 , @`combine#` (...) - combine numbers, vectors and matrices into a new vector
@@ -114,6 +124,8 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`demoX` ( ) – the horizontal position of a mouse click in the Demo window
 , @`demoY` ( ) – the vertical position of a mouse click in the Demo window
 , @`differenceLimensToPhon` (%`x`) – from jnd-scale to perceptual loudness
+, @`dx` – the horizontal distance between cells (i.e. the distance between columns) of an object
+, @`dy` – the vertical distance between cells (i.e. the distance between rows) of an object
 , @`editor` (%`editor($)`) – enter the environment of an editor (by number or by name)
 , @`empty$#` (%`numberOfStrings`) – create an array of empty strings
 , @`endeditor` – leave the environment of an editor
@@ -141,6 +153,8 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`fisherP` (%`f`, %`df1`, %`df2`) – area under the Fisher %F curve up to %`f`
 , @`fisherQ` (%`f`, %`df1`, %`df2`) – area under the Fisher %F curve after %`f`
 , @`fixed$` (%`number`, %`precision`) – format a number as a string, with %`precision` digits after the decimal point
+, @`fixed$` (%`vector#`, %`precision`) – format a vector as a string, with all elements expressed in %`precision` digits after the decimal point
+, @`fixed$` (%`matrix##`, %`precision`) – format a matrix as a string, with all cells expressed in %`precision` digits after the decimal point
 , @`floor` (%`x`) – round down to integer
 , @`floor#` (%`vector#`) – round down each element of %`vector#`
 , @`floor##` (%`matrix##`) – round down each cell of %`matrix##`
@@ -189,18 +203,29 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`log10` (%x) – logarithm, base 10
 , @`log10#` (%`vector#`) – base-10 logarithm of each element of %`vector#`
 , @`log10##` (%`matrix##`) – base-10 logarithm of each cell of %`matrix##`
+, @`lowerCase$` (%`string$`) – turns all capitals into lower case
+, @`lowerCaseAppName$` ( ) – the name of the app in lower snake case, e.g. `praat` or `praat_for_hospitals`
 , @`max` (%`x`, `...`) – maximum
 , @`mean` (%`v#`) – average of the elements of a vector
 , @`melToHertz` (%`x`) – from mel to acoustic frequency
 , @`mid$` (%`string$`, %`from`, %`n`) – the %`n` characters in %`string$` starting at position %`from`
 , @`min` (%`x`, `...`) – minimum
 , @`minusObject` (`...`) – shrink the selection of objects in the list
+, @`moveAndOrRenameFile` (%`fromFilePath$`, %`toFilePath$`) – move and/or rename a file (note: supply two paths)
 , @`mul##` (%`a##`, %`b##`) – matrix multiplication
+, @`ncol` – the number of columns of an object
+, @`nrow` – the number of rows of an object
 , @`number` (%`a$`) – interpret a string as a number
 , @`number#` (%`a$#`) – interpret strings as numbers
 , @`numberOfColumns` (%`matrix##`)
 , @`numberOfRows` (%`matrix##`)
+, @`nx` – the number of cells horizontally (i.e. the number of columns) of an object
+, @`ny` – the number of cells vertically (i.e. the number of rows) of an object
 , @`outer##` (%`a#`, %`b#`) – outer product, i.e. %%result__ij_% = %%a__i_%%%b__j_%
+, @`padLeft$` (%`string$`, %`minimumNewWidth` [, %`pad$`]) – left padding
+, @`padOrTruncateLeft$` (%`string$`, %`newWidth` [, %`pad$`]) – left padding or truncation
+, @`padOrTruncateRight$` (%`string$`, %`newWidth` [, %`pad$`]) – right padding or truncation
+, @`padRight$` (%`string$`, %`minimumNewWidth` [, %`pad$`]) – right padding
 , @`pauseScript` (`...`) – show a message in a simple @@pause window@
 , @`percent$` (%`number`, %`precision`) – format a number as a string,
 	with a trailing percent sign and %`precision` digits after the decimal point
@@ -268,6 +293,8 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`round` (%`x`) – nearest integer
 , @`round#` (%`vector#`) – nearest integer of each element of %`vector#`
 , @`round##` (%`matrix##`) – nearest integer of each cell of %`matrix##`
+, @`row` – the row number (of the current cell) in a Formula command
+, @`row$` [%`i`] – the name of row %i of an object
 , @`row#` (%`matrix##`, %`rowNumber`) - extract one row from a matrix
 , @`rowSums#` (%`matrix##`)
 , @`runScript` (%`filePath$`, `...`) – run a script with the given arguments
@@ -338,17 +365,27 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`tanh##` (%`matrix##`) – hyperbolic tangent of each cell of %`matrix##`
 , @`to#` (%`n`) – the integers 1 through %`n`
 , @`transpose##` (%`matrix##`) – flip matrix along its diagonal
+, @`truncateLeft$` (%`string$`, %`newMaximumWidth` [, %`pad$`]) – left truncation of %`string$`
+, @`truncateRight$` (%`string$`, %`newMaximumWidth` [, %`pad$`]) – right truncation of %`string$`
 , @`tryToAppendFile` (%`filePath$`) – check whether a file can be appended to
 , @`tryToWriteFile` (%`filePath$`) – check whether a file can be written (destructive!)
 , @`unicode` (%`c$`) – the Unicode codepoint number that corresponds to character %`c$`
 , @`unicode$` (%`n`) – the character that corresponds to Unicode codepoint %`n`
 , @`unicodeToBackslashTrigraphs$` (%`string$`) – convert e.g. \ct to \bsct
+, @`upperCase$` (%`string$`) – turns all lower-case characters into capitals
+, @`upperCaseAppName$` ( ) – the name of the app in upper camel case, e.g. `Praat` or `PraatForHospitals`
 , @`variableExists` (%`variableName$`) – does the variable %`variableName$` exist?
 , @`vertical$` (%`stringArray$#`) – format a string array vertically
 , @`writeFile` (%`filePath$`, `...`) – create a new text file, and write texts, numbers, vectors and so on into it
 , @`writeFileLine` (%`filePath$`, `...`) – create a new text file, write texts, numbers, vectors and so on into it, followed by a newline
 , @`writeInfo` (`...`) – write texts, numbers, vectors and so on, to a clear Info window
 , @`writeInfoLine` (`...`) – write texts, numbers, vectors and so on, followed by a newline, to a clear Info window
+, @`x` – the horizontal place (in world coordinates) of the current cell in a Formula command
+, @`xmax` – the top of the horizontal domain of an object
+, @`xmin` – the bottom of the horizontal domain of an object
+, @`y` – the vertical place (in world coordinates) of the current cell in a Formula command
+, @`ymax` – the top of the vertical domain of an object
+, @`ymin` – the bottom of the vertical domain of an object
 , @`zero#` (%`n`) – vector with %`n` elements that are all 0
 , @`zero##` (%`nrow`, %`ncol`) – matrix with %`nrow` \xx %`ncol` elements that are all 0
 
@@ -407,6 +444,24 @@ Examples
 }
 
 ################################################################################
+"`appDay`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@. The month day on which the present version of Praat was built
+(a number between 1 and 31).
+
+Syntax and semantics
+====================
+#`appDay` ( )
+: give the month day of the creation of the present version of Praat.
+
+Examples
+========
+{
+	writeInfoLine: \#{appDay} ( )
+}
+
+################################################################################
 "`appendFile`"
 © Paul Boersma 2023
 
@@ -453,6 +508,92 @@ Syntax and semantics
 #`appendInfoLine` (%`filePath$`, `...`)
 : write texts, numbers, vectors and so on, followed by a newline,
 	to the end of the Info window
+
+################################################################################
+"`appMonth`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@. The number of the month in which the present version of Praat was built
+(a number between 1 and 12).
+
+Syntax and semantics
+====================
+#`appMonth` ( )
+: give the month of the creation of the present version of Praat, as a number.
+
+Examples
+========
+{
+	writeInfoLine: \#{appMonth} ( )
+}
+
+################################################################################
+"`appMonth$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@. The name of the month in which the present version of Praat was built.
+
+Syntax and semantics
+====================
+#`appMonth$` ( )
+: give the month of the creation of the present version of Praat, as text.
+
+Examples
+========
+{
+	writeInfoLine: \#{appMonth$} ( )
+}
+
+################################################################################
+"`appVersion`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@. The present version of Praat, as a number.
+
+Syntax and semantics
+====================
+#`appVersion` ( )
+: give the present version of Praat, as a number.
+
+Examples
+========
+{
+	writeInfoLine: \#{appVersion} ( )
+}
+
+################################################################################
+"`appVersion$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@. The present version of Praat, as text.
+
+Syntax and semantics
+====================
+#`appVersion$` ( )
+: give the present version of Praat, as text.
+
+Examples
+========
+{
+	writeInfoLine: \#{appVersion$} ( )
+}
+
+################################################################################
+"`appYear`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@. The year in which the present version of Praat was built.
+
+Syntax and semantics
+====================
+#`appYear` ( )
+: give the year of the creation of the present version of Praat.
+
+Examples
+========
+{
+	writeInfoLine: \#{appYear} ( )
+}
 
 ################################################################################
 "`arccos`"
@@ -801,6 +942,61 @@ the assertion is false, and the script stops, mentioning the line number
 as well as the text of the assertion (i.e. “`a < 10`”).
 
 ################################################################################
+"`asserterror`"
+© Paul Boersma 2023
+
+A keyword that can be used in @Scripting, to test whether an expected erroe message is indeed generated.
+
+Examples
+========
+
+{
+	\#{asserterror} Unknown variable
+	a = 2 * b + 3
+}
+The line `a = 2 * b + 3` contains the unknown variable `b`. Therefore, the script would normally issue an error message like
+`
+	Unknown variable:
+	« a = 2 * b
+
+	Script line 2 not performed or completed:
+		« a = 2 * b + 3 »
+	Menu command “Run” not completed.
+`
+The line with #`asserterror` prevents the error message from being popped up, and instead checks
+that the error message contains the string “Unknown variable”, which it does.
+
+This one works differently:
+{;
+	b = 4
+	\#{asserterror} Unknown variable
+	a = 2 * b + 3
+}
+In this case the expected error message does not occur, and the script exits with the following error message:
+`
+	Script assertion fails in line 2: error « Unknown variable » not raised.
+	Instead: no error.
+
+	Script line 3 not performed or completed:
+		« a = 2 * b + 3 »
+	Menu command “Run” not completed.
+`
+Another case:
+{;
+	\#{asserterror} What is blabla
+	a = Create Sound from blabla: 1, 2, 3
+}
+In this case a different error message than the expected error message occurs, and the script exits with the following error message:
+`
+	Script assertion fails in line 1: error « What is blabla » not raised.
+	Instead: Command “Create Sound from blabla:” not available for current selection.
+
+	Script line 2 not performed or completed:
+		« a = Create Sound from blabla: 1, 2, 3 »
+	Menu command “Run” not completed.
+`
+
+################################################################################
 "`asynchronous`"
 © Paul Boersma 2023
 
@@ -1028,7 +1224,7 @@ A function that can be used in @@Formulas@.
 Syntax and semantics
 ====================
 #`chiSquareQ` (%`chiSquare`, %`df`)
-: compute the area under the %\ci^2 curve between %`chiSquare` and +\\oo,
+: compute the area under the %\ci^2 curve between %`chiSquare` and +\oo,
 for %`df` degrees of freedom, i.e. the “statistical significance %p”
 of the %\ci^2 difference between two distributions in %`df`+1 dimensions.
 
@@ -1075,6 +1271,54 @@ Syntax and semantics
 ====================
 #`clearinfo`
 : clear the @@Info window@.
+
+################################################################################
+"`clock`"
+© Paul Boersma 2025
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`clock` ( )
+: the number of seconds since system start-up, with microsecond precision.
+
+Examples
+========
+{
+	t = \#{clock}()
+	for i to 1000
+	endfor
+	\`{appendInfoLine}: "Time elapsed: ", \#{clock}() - t, " seconds"
+}
+{
+	t = \#{clock}()
+	for i to 1000
+	endfor
+	timeElapsed = \#{clock}() - t
+	\`{appendInfoLine}: "Time elapsed: ", \`{fixed$} (1000 * timeElapsed, 3), " ms"
+}
+
+################################################################################
+"`col`"
+© Paul Boersma 2024
+
+The column number (of the current cell) in a Formula command.
+
+See @@Formulas 1.7. Formulas for modification@.
+
+################################################################################
+"`col$`"
+© Paul Boersma 2024
+
+The name of a column of an object.
+
+Syntax and semantics
+====================
+#`col$` [%`i`]
+: the name of the %%i%th column of an object.
+
+See @@Formulas 8. Attributes of objects@.
 
 ################################################################################
 "`col#`"
@@ -1609,6 +1853,24 @@ Related function
 #`differenceLimensToPhon` is the inverse of @`phonToDifferenceLimens`.
 
 ################################################################################
+"`dx`"
+© Paul Boersma 2024
+
+The horizontal distance between cells (i.e. the distance between columns) of an object,
+in world coordinates.
+
+See @@Formulas 8. Attributes of objects@.
+
+################################################################################
+"`dy`"
+© Paul Boersma 2024
+
+The vertical distance between cells (i.e. the distance between rows) of an object,
+in world coordinates.
+
+See @@Formulas 8. Attributes of objects@.
+
+################################################################################
 "`editor`"
 © Paul Boersma 2023
 
@@ -1865,7 +2127,7 @@ Syntax and semantics
 
 ################################################################################
 "`fileNames$#`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2025
 
 A function that can be used in @@Formulas@, especially in @Scripting.
 
@@ -1874,6 +2136,65 @@ Syntax and semantics
 #`fileNames$#` (%`folderNameOrPattern$`)
 : return the names (not the whole paths) of the files in a folder
 	or that match a file-name pattern with up to two asterisks.
+
+Behaviour
+=========
+The resulting string array will contain an alphabetical list of file names (by naïve Unicode-sorting),
+without the preceding path through the folder structures. If there are no files that match the file path,
+the string array will contain 0 strings.
+
+Usage
+=====
+There are two ways to specify the file path.
+
+One way is to specify a folder name only. On Unix, the file path could be
+`/usr/people/miep/sounds` or `/usr/people/miep/sounds/`, for instance. On Windows,
+`C:\Users\Miep\Sounds` or `C:\Users\Miep\Sounds\`.
+On Macintosh, `/Users/miep/Sounds` or `/Users/miep/Sounds/`. Any of these produce
+a list of all the files in the specified folder.
+
+The other way is to specify a wildcard (a single asterisk) for the file names.
+To get a list of all the files whose names start with “`hal`” and end in “`.wav`”,
+use `/usr/people/miep/sounds/hal*.wav`, `C:\Users\Miep\Sounds\hal*.wav`,
+or `/Users/miep/Sounds/hal*.wav`.
+
+You can even use %two wildcards: #`fileNames$#` (“/usr/people/miep/sounds/*al*.wav”)
+gives you a list of all files whose names contain “al” and end in “wav`.
+
+Usage
+=====
+In a script, you can use this command to cycle through the files in a folder.
+For instance, to read in all the sound files in a specified folder,
+you could use the following script:
+{;
+	folder$ = “/usr/people/miep/sounds”
+	list$# = \#`{fileNames$#}: folder$ + “/*.wav”
+	for ifile to \`{size} (list$#)
+		\@{Read from file:} folder$ + “/” + list$# [ifile]
+	endfor
+}
+If the script has been saved to a script file, you can use file paths that are relative to the folder
+where you saved the script. Thus, with
+{;
+	list$# = \#`{fileNames$#}: “*.wav”
+}
+you get a list of all the `.wav` files that are in the same folder as the script that contains this line.
+And to get a list of all the `.wav` files in the folder `Sounds` that resides in the same folder as your script,
+you can do
+{;
+	list$# = \#`{fileNames$#}: “Sounds/*.wav”
+}
+As is usual in Praat scripting, the forward slash (“/”) in this example can be used on all platforms, including Windows.
+This makes your script portable across platforms.
+
+Note that the above functionality can also be written four lines shorter, using built-in functions:
+{;
+	folder$ = “/usr/people/miep/sounds”
+	list$# = \#`{fileNames$#}: folder$ + “/*.wav”
+	for ifile to \`{size} (list$#)
+		\@{Read from file:} folder$ + “/” + list$# [ifile]
+	endfor
+}
 
 See also
 ========
@@ -1949,7 +2270,7 @@ Related functions
 
 ################################################################################
 "`fixed$`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2025
 
 A function that can be used in @@Formulas@.
 
@@ -1957,6 +2278,28 @@ Syntax and semantics
 ====================
 #`fixed$` (%`number`, %`precision`)
 : format a number as a string, with %`precision` digits after the decimal point.
+
+#`fixed$` (%`vector#`, %`precision`)
+: format a vector as a string, with all elements expressed in %`precision` digits after the decimal point.
+
+#`fixed$` (%`matrix##`, %`precision`)
+: format a matrix as a string, with all cells expressed in %`precision` digits after the decimal point.
+
+Examples
+========
+
+{
+	assert fixed$ (pi, 3) = "3.142"
+	assert fixed$ (-1, 3) = "-1.000"
+	assert fixed$ (1e6, 3) = "1000000.000"
+	assert fixed$ (0.01, 3) = "0.010"
+	assert fixed$ (0.001, 3) = "0.001"
+	assert fixed$ (0.0001, 3) = "0.0001"   ; never less than 1 significant digit!
+	
+	assert fixed$ ({ pi, -1, 1e6, 0.0001 }, 3) =
+	... "3.142" + newline$ + "-1.000" + newline$ +
+	... "1000000.000" + newline$ + "0.0001" + newline$
+}
 
 ################################################################################
 "`floor`"
@@ -2557,6 +2900,47 @@ Syntax and semantics
 : compute the base-10 logarithm (@`log10`) of each cell of the matrix %`m##`.
 
 ################################################################################
+"`lowerCase$`"
+© Paul Boersma 2025
+
+A function that can be used in @@Formulas@. It turns all capitals
+into lower-case characters.
+
+Syntax and semantics
+====================
+#`lowerCase$` (%`string$`)
+: give the lower-case version of %`string$`, whereby all upper-case letters
+  have been replaced with lower-case letters.
+
+Tests
+=====
+{
+	\`{assert} \#{lowerCase$} ("HOwAREYou") = "howareyou"
+	\`{assert} \#{lowerCase$} ("Maria Ressa") = "maria ressa"
+	\`{assert} \#{lowerCase$} ("GSL") = "gsl"
+	\`{assert} \#{lowerCase$} ("ÖAV") = "öav"
+	\`{assert} \#{lowerCase$} ("TOUCHÉ") = "touché"
+}
+
+################################################################################
+"`lowerCaseAppName$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@. The name of the present app,
+in lower snake case, such as `praat` or `praat_for_hospitals`.
+
+Syntax and semantics
+====================
+#`lowerCaseAppName$` ( )
+: give the name of the present app, in lower snake case.
+
+Examples
+========
+{
+	writeInfoLine: \#{lowerCaseAppName$} ( )
+}
+
+################################################################################
 "`max`"
 © Paul Boersma 2023
 
@@ -2639,6 +3023,38 @@ Syntax and semantics
 : deselect the objects given by IDs and/or full names.
 
 ################################################################################
+"`moveAndOrRenameFile`"
+© Paul Boersma 2025
+
+A function that can be used in @Scripting.
+
+Syntax and semantics
+====================
+#`moveAndOrRenameFile` (%`fromFilePath$`, %`toFilePath$`)
+: move and/or rename an existing file to a new location and/or name.
+
+Example: rename
+===============
+{;
+	\#{moveAndOrRenameFile} (“/Users/me/Desktop/hello.wav”,
+	... “/Users/me/Desktop/goodbye.wav”)
+}
+
+Example: move
+===============
+{;
+	\#{moveAndOrRenameFile} (“/Users/me/Desktop/hello.wav”,
+	... “/Users/me/sound files/hello.wav”)
+}
+
+Example: move and rename
+========================
+{;
+	\#{moveAndOrRenameFile} (“/Users/me/Desktop/hello.wav”,
+	... “/Users/me/sound files/goodbye.wav”)
+}
+
+################################################################################
 "`mul##`"
 © Paul Boersma 2023
 
@@ -2648,6 +3064,22 @@ Syntax and semantics
 ====================
 #`mul##` (%`a##`, %`b##`)
 : perform a matrix multiplication of the matrices %`a##` and %`b##`.
+
+################################################################################
+"`ncol`"
+© Paul Boersma 2024
+
+The number of columns of an object.
+
+See @@Formulas 8. Attributes of objects@.
+
+################################################################################
+"`nrow`"
+© Paul Boersma 2024
+
+The number of rows of an object.
+
+See @@Formulas 8. Attributes of objects@.
 
 ################################################################################
 "`number`"
@@ -2739,6 +3171,24 @@ Syntax and semantics
 : return the number of rows of the matrix %`m##`.
 
 ################################################################################
+"`nx`"
+© Paul Boersma 2024
+
+The number of cells horizontally (i.e. the number of columns) of an object.
+This is the same as @`ncol`.
+
+See @@Formulas 8. Attributes of objects@.
+
+################################################################################
+"`ny`"
+© Paul Boersma 2024
+
+The number of cells vertically (i.e. the number of rows) of an object.
+This is the same as @`nrow`.
+
+See @@Formulas 8. Attributes of objects@.
+
+################################################################################
 "`outer##`"
 © Paul Boersma 2023
 
@@ -2752,6 +3202,154 @@ Syntax and semantics
 Definition
 ==========
 ~	%result__%i%j_ = %a_%i %b_%j
+
+################################################################################
+"`padLeft$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`padLeft$` (%`string$`, %`minimumNewWidth` [, %`pad$`])
+: add characters (selected from %`pad$`) to the left of %`string$` until the result is at least as long as %`minimumNewWidth`:
+{
+	\`{assert} \#{padLeft$} ("hello", 12, ".") = ".......hello"
+	\`{assert} \#{padLeft$} ("hello", 5, ".") = "hello"
+}
+If %`pad$` is not given, the padding will be done with spaces:
+{
+	\`{assert} \#{padLeft$} ("hello", 12) = "       hello"
+}
+No truncation takes place, so the resulting string may be longer than %`minimumNewWidth`:
+{
+	\`{assert} \#{padLeft$} ("hello", 3) = "hello"
+	\`{assert} \#{padLeft$} ("hello", -100) = "hello"
+}
+If %`pad$` contains more than one character, the left edge of %`pad$` is left-aligned to the resulting string,
+so that the result will look good if padding is used for visualizing columns:
+{
+	\`{assert} \#{padLeft$} ("hello", 12, ".-;)")   = ".-;).-;hello"
+	\`{assert} \#{padLeft$} ("goodbye", 12, ".-;)") = ".-;).goodbye"
+}
+There will be an error message if padding is required but no characters are to be found in %`pad$`:
+{
+	\`{asserterror} Empty pad string.
+	a$ = \#{padLeft$} ("hello", 12, "")
+}
+
+################################################################################
+"`padOrTruncateLeft$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`padOrTruncateLeft$` (%`string$`, %`newWidth` [, %`pad$`])
+: add characters (selected from %`pad$`) to the left of %`string$`, or remove characters from the left of %`string$`,
+  until the result is precisely %`newWidth` characters long:
+{
+	\`{assert} \#{padOrTruncateLeft$} ("hello", 12, ".") = ".......hello"
+	\`{assert} \#{padOrTruncateLeft$} ("hello", 3, ".") = "llo"
+	\`{assert} \#{padOrTruncateLeft$} ("hello", 0) = ""
+}
+If %`pad$` is not given, the padding will be done with spaces:
+{
+	\`{assert} \#{padOrTruncateLeft$} ("hello", 12) = "       hello"
+	\`{assert} \#{padOrTruncateLeft$} ("hello", 3) = "llo"
+}
+If characters have to be added, and %`pad$` contains more than one character,
+the left edge of %`pad$` is left-aligned to the resulting string,
+so that the result will look good if padding is used for visualizing columns:
+{
+	\`{assert} \#{padOrTruncateLeft$} ("hello", 12, ".-;)")   = ".-;).-;hello"
+	\`{assert} \#{padOrTruncateLeft$} ("goodbye", 12, ".-;)") = ".-;).goodbye"
+}
+Note that %`newWidth` cannot be negative:
+{
+	\`{asserterror} Can never truncate a string down to -3 characters.
+	a$ = \#{padOrTruncateLeft$} ("hello", -3)
+}
+There will be an error message if padding is required but no characters are to be found in %`pad$`:
+{
+	\`{asserterror} Empty pad string.
+	a$ = \#{padOrTruncateLeft$} ("hello", 12, "")
+}
+
+################################################################################
+"`padOrTruncateRight$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`padOrTruncateRight$` (%`string$`, %`newWidth` [, %`pad$`])
+: add characters (selected from %`pad$`) to the right of %`string$`, or remove characters from the right of %`string$`,
+  until the result is precisely %`newWidth` characters long:
+{
+	\`{assert} \#{padOrTruncateRight$} ("hello", 12, ".") = "hello......."
+	\`{assert} \#{padOrTruncateRight$} ("hello", 3, ".") = "hel"
+	\`{assert} \#{padOrTruncateRight$} ("hello", 0) = ""
+}
+If %`pad$` is not given, the padding will be done with spaces:
+{
+	\`{assert} \#{padOrTruncateRight$} ("hello", 12) = "hello       "
+	\`{assert} \#{padOrTruncateRight$} ("hello", 3) = "hel"
+}
+If characters have to be added, and %`pad$` contains more than one character,
+the right edge of %`pad$` is right-aligned to the resulting string,
+so that the result will look good if padding is used for visualizing columns:
+{
+	\`{assert} \#{padOrTruncateRight$} ("hello", 12, ".-;)")   = "hello-;).-;)"
+	\`{assert} \#{padOrTruncateRight$} ("goodbye", 12, ".-;)") = "goodbye).-;)"
+}
+Note that %`newWidth` cannot be negative:
+{
+	\`{asserterror} Can never truncate a string down to -3 characters.
+	a$ = \#{padOrTruncateRight$} ("hello", -3)
+}
+There will be an error message if padding is required but no characters are to be found in %`pad$`:
+{
+	\`{asserterror} Empty pad string.
+	a$ = \#{padOrTruncateRight$} ("hello", 12, "")
+}
+
+################################################################################
+"`padRight$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`padRight$` (%`string$`, %`minimumNewWidth` [, %`pad$`])
+: add characters (selected from %`pad$`) to the right of %`string$` until the result is at least as long as %`minimumNewWidth`:
+{
+	\`{assert} \#{padRight$} ("hello", 12, ".") = "hello......."
+	\`{assert} \#{padRight$} ("hello", 5, ".") = "hello"
+}
+If %`pad$` is not given, the padding will be done with spaces:
+{
+	\`{assert} \#{padRight$} ("hello", 12) = "hello       "
+}
+No truncation takes place, so the resulting string may be longer than %`minimumNewWidth`:
+{
+	\`{assert} \#{padRight$} ("hello", 3) = "hello"
+	\`{assert} \#{padRight$} ("hello", -100) = "hello"
+}
+If %`pad$` contains more than one character, the right edge of %`pad$` is right-aligned to the resulting string,
+so that the result will look good if padding is used for visualizing columns:
+{
+	\`{assert} \#{padRight$} ("hello", 12, ".-;)")   = "hello-;).-;)"
+	\`{assert} \#{padRight$} ("goodbye", 12, ".-;)") = "goodbye).-;)"
+}
+There will be an error message if padding is required but no characters are to be found in %`pad$`:
+{
+	\`{asserterror} Empty pad string.
+	a$ = \#{padRight$} ("hello", 12, "")
+}
 
 ################################################################################
 "`part#`"
@@ -3396,7 +3994,7 @@ Syntax and semantics
 
 ################################################################################
 "`random_initializeWithSeedUnsafelyButPredictably`"
-© Paul Boersma 2023
+© Paul Boersma 2023,2025
 
 A function that can be used in @@Formulas@.
 
@@ -3404,6 +4002,8 @@ Syntax and semantics
 ====================
 #`random_initializeWithSeedUnsafelyButPredictably` (%`seed`)
 : produce (from now on) a reproducible sequence of random numbers.
+
+The effects of this function can be undone by @`random_initializeSafelyAndUnpredictably`.
 
 ################################################################################
 "`readFile`"
@@ -3677,6 +4277,27 @@ Syntax and semantics
 ====================
 #`round##` (%`m##`)
 : round (@`round`) each cell of the matrix %`m##`.
+
+################################################################################
+"`row`"
+© Paul Boersma 2024
+
+The row number (of the current cell) in a Formula command.
+
+See @@Formulas 1.7. Formulas for modification@.
+
+################################################################################
+"`row$`"
+© Paul Boersma 2024
+
+The name of a row of an object.
+
+Syntax and semantics
+====================
+#`row$` [%`i`]
+: the name of the %%i%th row of an object.
+
+See @@Formulas 8. Attributes of objects@.
 
 ################################################################################
 "`row#`"
@@ -4549,6 +5170,54 @@ Syntax and semantics
 : flip the matrix %`m##` along its diagonal.
 
 ################################################################################
+"`truncateLeft$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`truncateLeft$` (%`string$`, %`maximumNewWidth`)
+: remove characters from the left of %`string$` until the result is at least as short as %`maximumNewWidth`:
+{
+	\`{assert} \#{truncateLeft$} ("hello", 3) = "llo"
+	\`{assert} \#{truncateLeft$} ("hello", 5) = "hello"
+}
+No padding takes place, so the resulting string may be shorter than %`maximumNewWidth`:
+{
+	\`{assert} \#{truncateLeft$} ("hello", 12) = "hello"
+}
+Note that %`maximumNewWidth` cannot be negative:
+{
+	\`{asserterror} Can never truncate a string down to -3 characters.
+	a$ = \#{truncateLeft$} ("hello", -3)
+}
+
+################################################################################
+"`truncateRight$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@.
+
+Syntax and semantics
+====================
+#`truncateRight$` (%`string$`, %`maximumNewWidth`)
+: remove characters from the left of %`string$` until the result is at least as short as %`maximumNewWidth`:
+{
+	\`{assert} \#{truncateRight$} ("hello", 3) = "hel"
+	\`{assert} \#{truncateRight$} ("hello", 5) = "hello"
+}
+No padding takes place, so the resulting string may be shorter than %`maximumNewWidth`:
+{
+	\`{assert} \#{truncateRight$} ("hello", 12) = "hello"
+}
+Note that %`maximumNewWidth` cannot be negative:
+{
+	\`{asserterror} Can never truncate a string down to -3 characters.
+	a$ = \#{truncateRight$} ("hello", -3)
+}
+
+################################################################################
 "`tryToAppendFile`"
 © Paul Boersma 2023
 
@@ -4649,6 +5318,47 @@ Syntax and semantics
 e.g. from “\ct” to “\bsct”.
 
 ################################################################################
+"`upperCase$`"
+© Paul Boersma 2025
+
+A function that can be used in @@Formulas@. It turns all lower-case characters
+into capitals.
+
+Syntax and semantics
+====================
+#`upperCase$` (%`string$`)
+: give the upper-case version of %`string$`, whereby all lower-case letters
+  have been replaced with upper-case letters.
+
+Tests
+=====
+{
+	\`{assert} \#{upperCase$} ("HOwAREYou") = "HOWAREYOU"
+	\`{assert} \#{upperCase$} ("Maria Ressa") = "MARIA RESSA"
+	\`{assert} \#{upperCase$} ("e.g.") = "E.G."
+	\`{assert} \#{upperCase$} ("öav") = "ÖAV"
+	\`{assert} \#{upperCase$} ("touché") = "TOUCHÉ"
+}
+
+################################################################################
+"`upperCaseAppName$`"
+© Paul Boersma 2024
+
+A function that can be used in @@Formulas@. The name of the present app,
+in upper camel case, such as `Praat` or `PraatForHospitals`.
+
+Syntax and semantics
+====================
+#`upperCaseAppName$` ( )
+: give the name of the present app, in upper camel case.
+
+Examples
+========
+{
+	writeInfoLine: \#{upperCaseAppName$} ( )
+}
+
+################################################################################
 "`variableExists`"
 © Paul Boersma 2023
 
@@ -4711,6 +5421,54 @@ and moving the output cursor to the next line.
 
 Examples of use:
 ================
+
+################################################################################
+"`x`"
+© Paul Boersma 2024
+
+The horizontal place (in world coordinates) of the current cell in a Formula command.
+
+See @@Formulas 1.7. Formulas for modification@.
+
+################################################################################
+"`xmax`"
+© Paul Boersma 2024
+
+The top of the horizontal domain of an object, in world coordinates.
+
+See @@Formulas 8. Attributes of objects@.
+
+################################################################################
+"`xmin`"
+© Paul Boersma 2024
+
+The bottom of the horizontal domain of an object, in world coordinates.
+
+See @@Formulas 8. Attributes of objects@.
+
+################################################################################
+"`y`"
+© Paul Boersma 2024
+
+The vertical place (in world coordinates) of the current cell in a Formula command.
+
+See @@Formulas 1.7. Formulas for modification@.
+
+################################################################################
+"`ymax`"
+© Paul Boersma 2024
+
+The top of the vertical domain of an object, in world coordinates.
+
+See @@Formulas 8. Attributes of objects@.
+
+################################################################################
+"`ymin`"
+© Paul Boersma 2024
+
+The bottom of the vertical domain of an object, in world coordinates.
+
+See @@Formulas 8. Attributes of objects@.
 
 ################################################################################
 "`zero#`"

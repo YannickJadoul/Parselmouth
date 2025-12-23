@@ -1,10 +1,10 @@
 /* melder_debug.cpp
  *
- * Copyright (C) 2000-2024 Paul Boersma
+ * Copyright (C) 2000-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -21,11 +21,12 @@
 	#include "../sys/GuiP.h"
 #endif
 #include <time.h>
-#include "../sys/praat_version.h"
 #ifdef _WIN32
 	#include "../kar/UnicodeData.h"
 	#include <windows.h>
 #endif
+
+/* global */ std::mutex theMelder_trace_mutex;
 
 /*
 Melder_debug will always be set to 0 when Praat starts up.
@@ -76,16 +77,17 @@ the behaviour of Praat will temporarily change in the following ways:
 46: trace GTK parent sizes in _GuiObject_position ()
 47: force resampling in OTGrammar RIP
 48: compute sum, mean, stdev with naive implementation in double (64 bits)
-49: compute sum, mean, stdev with naive implementation in longdouble (80 bits)
-50: compute sum, mean, stdev with first-element offset (80 bits)
-51: compute sum, mean, stdev with two cycles, as in R (80 bits)
-(other numbers than 48-51: compute sum, mean, stdev with simple pairwise algorithm, base case 64 [80 bits])
+49: compute sum, mean, stdev with naive implementation in longdouble (80 bits on Intel64)
+50: compute sum, mean, stdev with first-element offset (80 bits on Intel64)
+51: compute sum, mean, stdev with two cycles, as in R (80 bits on Intel64)
+(other numbers than 48-51: compute sum, mean, stdev with simple pairwise algorithm, base case 64 [80 bits on Intel64])
 52: debug Discriminant_TableOfReal_to_ClassificationTable
 53: trace running cursor
 54: ignore gdk_cairo_reset_clip
 55: trace Gui init, draw, destroy
 56: trace text styles
 57: no parabolic interpolation in Sound_Pitch_to_PointProcess_cc (March 2024)
+58: list font replacements at start-up (December 2025)
 181: read and write native-endian real64
 900: use DG Meta Serif Science instead of Palatino
 1264: Mac: Sound_record_fixedTime uses microphone "FW Solo (1264)"
@@ -95,16 +97,16 @@ the behaviour of Praat will temporarily change in the following ways:
 */
 
 /*
- * In order to make sure that Melder_casual() and trace() can be called from anywhere,
- * including e.g. from Melder_realloc() or Melder_free(),
- * they cannot use any Melder_xxx() functions.
- */
+	In order to make sure that Melder_casual() and trace() can be called from anywhere,
+	including e.g. from Melder_realloc() or Melder_free(),
+	they cannot use any Melder_xxx() functions.
+*/
 
 /*
- * peek32to8 substitutes for Melder_peek32to8(),
- * which can call Melder_realloc() and Melder_free();
- * also, we need no newline nativization, as Melder_32to8_inplace() does.
- */
+	peek32to8 substitutes for Melder_peek32to8(),
+	which can call Melder_realloc() and Melder_free();
+	also, we need no newline nativization, as Melder_32to8_inplace() does.
+*/
 conststring8 MelderTrace::_peek32to8 (conststring32 string) {
 	if (! string)
 		return "";
@@ -191,6 +193,15 @@ conststring16 MelderTrace::_peek32to16 (conststring32 string) {
 }
 #endif
 
+conststring32 MelderTrace::_peek8to32 (conststring8 string8) {
+	static MelderString buffers [19];
+	static int ibuffer = 0;
+	if (++ ibuffer == 19)
+		ibuffer = 0;
+	MelderString_8to32 (& buffers [ibuffer], string8);
+	return buffers [ibuffer].string;
+}
+
 /********** TRACE **********/
 
 void Melder_tracingToFile (MelderFile file) {
@@ -246,7 +257,7 @@ void Melder_setTracing (bool tracing) {
 	time_t today = time (nullptr);
 	if (! tracing)
 		trace (U"switch tracing off"
-			U" in Praat version ", Melder_peek8to32 (stringize(PRAAT_VERSION_STR)),
+			U" in Praat version ", Melder_appVersionSTR(),
 			U" at ", Melder_peek8to32 (ctime (& today))
 		);
 	Melder_isTracingGlobally = tracing;
@@ -265,7 +276,7 @@ void Melder_setTracing (bool tracing) {
 	#endif
 	if (tracing)
 		trace (U"switch tracing on"
-			U" in Praat version ", Melder_peek8to32 (stringize(PRAAT_VERSION_STR)),
+			U" in Praat version ", Melder_appVersionSTR(),
 			U" at ", Melder_peek8to32 (ctime (& today))
 		);
 }

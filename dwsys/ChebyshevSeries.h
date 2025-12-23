@@ -1,6 +1,6 @@
 #ifndef _ChebyshevSeries_h_
 #define _ChebyshevSeries_h_
-/*ChebyshevSeries.h
+/* ChebyshevSeries.h
  *
  * Copyright (C) 2020 David Weenink
  *

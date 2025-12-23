@@ -1,10 +1,10 @@
 /* GuiText.cpp
  *
- * Copyright (C) 1993-2024 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2025 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -1005,7 +1005,7 @@ autostring32 GuiText_getSelection (GuiText me) {
 		integer length = end - start;
 		if (length > 0) {
 			autostring32 result (length, true);
-			memcpy (result.get(), & selection [start], integer_to_uinteger (length) * sizeof (char32));
+			memcpy (result.get(), & selection [start], integer_to_uinteger_a (length) * sizeof (char32));
 			result [length] = U'\0';
 			(void) Melder_killReturns_inplace (result.get());
 			return result;
@@ -1078,8 +1078,8 @@ autostring32 GuiText_getStringAndSelectionPosition (GuiText me, integer *first, 
 				my d_cocoaTextView :
 				[[(NSTextField *) my d_widget   window]   fieldEditor: NO   forObject: nil] );
 		NSRange nsRange = [nsText   selectedRange];
-		*first = uinteger_to_integer (nsRange. location);
-		*last = *first + uinteger_to_integer (nsRange. length);
+		*first = uinteger_to_integer_a (nsRange. location);
+		*last = *first + uinteger_to_integer_a (nsRange. length);
 		/*
 			The UTF-16 string may contain sequences of carriage return and newline,
 			for instance whenever a text has been copy-pasted from Microsoft Word,
@@ -1208,7 +1208,7 @@ void GuiText_replace (GuiText me, integer from_pos, integer to_pos, conststring3
 			}
 			from_pos += numberOfLeadingHighUnicodeValues;
 			to_pos += numberOfLeadingHighUnicodeValues + numberOfSelectedHighUnicodeValues;
-			NSRange nsRange = NSMakeRange (integer_to_uinteger (from_pos), integer_to_uinteger (to_pos - from_pos));
+			NSRange nsRange = NSMakeRange (integer_to_uinteger_a (from_pos), integer_to_uinteger_a (to_pos - from_pos));
 			NSString *nsString = (NSString *) Melder_peek32toCfstring (text);
 			[my d_cocoaTextView   shouldChangeTextInRange: nsRange   replacementString: nsString];   // ignore the returned BOOL: only interested in the side effect of having undo support
 			[[my d_cocoaTextView   textStorage] replaceCharactersInRange: nsRange   withString: nsString];   // this messes up the widget...
@@ -1351,7 +1351,7 @@ void GuiText_setSelection (GuiText me, integer first, integer last) {
 		last += numberOfLeadingHighUnicodeValues + numberOfSelectedHighUnicodeValues;
 
 		if (my d_cocoaTextView) {
-			[my d_cocoaTextView   setSelectedRange: NSMakeRange (integer_to_uinteger (first), integer_to_uinteger (last - first))];
+			[my d_cocoaTextView   setSelectedRange: NSMakeRange (integer_to_uinteger_a (first), integer_to_uinteger_a (last - first))];
 		}
 	#endif
 	}

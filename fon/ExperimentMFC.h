@@ -43,7 +43,7 @@ double Categories_getEntropy (Categories me);
 
 Collection_define (ExperimentMFCList, OrderedOf, ExperimentMFC) {
 	DaataList asDaataList () {
-		return reinterpret_cast<DaataList> (this);
+		return reinterpret_cast <DaataList> (this);
 	}
 };
 

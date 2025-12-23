@@ -1,11 +1,11 @@
 /* Gui_messages.cpp
  *
- * Copyright (C) 1992-2018,2020-2023 Paul Boersma,
+ * Copyright (C) 1992-2018,2020-2025 Paul Boersma,
  *               2008 Stefan de Konink, 2010 Franz Brausse, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -27,6 +27,12 @@
 #include "melder.h"
 #include "Graphics.h"
 #include "Gui.h"
+#include "Interpreter.h"
+#include "Script.h"
+#include "Notebook.h"
+#include "GuiTrust.h"
+
+//#include <QuartzCore/CoreAnimation.h>
 
 /********** Exported variable. **********/
 
@@ -78,18 +84,6 @@ static bool waitWhileProgress (double progress, conststring32 message, GuiDialog
 		}
 	#elif cocoa
 		(void) cancelButton;   // the Interrupt button has its own callback
-		while (NSEvent *nsEvent = [NSApp
-			nextEventMatchingMask: NSAnyEventMask
-			untilDate: [NSDate distantPast]
-			inMode: NSDefaultRunLoopMode
-			dequeue: YES
-			])
-		{
-			NSUInteger nsEventType = [nsEvent type];
-			if (nsEventType == NSKeyDown)
-				NSBeep ();
-			[[nsEvent window]  sendEvent: nsEvent];
-		}
 	#endif
 	if (progress >= 1.0) {
 		GuiThing_hide (dia);
@@ -127,6 +121,8 @@ static bool waitWhileProgress (double progress, conststring32 message, GuiDialog
 		#elif cocoa
 			GuiProgressBar_setValue (scale, progress);
 			//[scale -> d_cocoaProgressBar   displayIfNeeded];
+			//[CATransaction flush];
+			GuiShell_drain (scale -> d_shell, true, true);
 			if (theProgressCancelled) {
 				theProgressCancelled = false;
 				return false;
@@ -156,23 +152,23 @@ static GuiButton theProgressCancelButton = nullptr;
 
 static void _Melder_dia_init (GuiDialog *dia, GuiProgressBar *scale, GuiLabel *label1, GuiLabel *label2, GuiButton *cancelButton, bool hasMonitor) {
 	trace (U"creating the dialog");
-	*dia = GuiDialog_create (Melder_topShell, 200, 100, 400, hasMonitor ? 430 : 200, U"Work in progress",
+	*dia = GuiDialog_create (Melder_topShell, 200, 100, 500, hasMonitor ? 530 : 200, U"Work in progress",
 		#if gtk || cocoa
 			progress_dia_close, nullptr,
 		#else
 			nullptr, nullptr,
 		#endif
-		0);
+		GuiDialog_Modality::MODELESS);
 
 	trace (U"creating the labels");
-	*label1 = GuiLabel_createShown (*dia, 3, 403, 0, Gui_LABEL_HEIGHT, U"label1", 0);
-	*label2 = GuiLabel_createShown (*dia, 3, 403, 30, 30 + Gui_LABEL_HEIGHT, U"label2", 0);
+	*label1 = GuiLabel_createShown (*dia, 3, 503, 0, Gui_LABEL_HEIGHT, U"label1", 0);
+	*label2 = GuiLabel_createShown (*dia, 3, 503, 30, 30 + Gui_LABEL_HEIGHT, U"label2", 0);
 
 	trace (U"creating the scale");
 	*scale = GuiProgressBar_createShown (*dia, 3, -3, 70, 110, 0);
 
 	trace (U"creating the cancel button");
-	*cancelButton = GuiButton_createShown (*dia, 0, 400, 170, 170 + Gui_PUSHBUTTON_HEIGHT,
+	*cancelButton = GuiButton_createShown (*dia, 0, 500, 170, 170 + Gui_PUSHBUTTON_HEIGHT,
 		U"Interrupt",
 		#if gtk
 			progress_cancel_btn_press, nullptr,
@@ -186,13 +182,13 @@ static void _Melder_dia_init (GuiDialog *dia, GuiProgressBar *scale, GuiLabel *l
 }
 
 static void gui_progress (double progress, conststring32 message) {
-	static clock_t lastTime;
+	static double lastTime;
 	static GuiDialog dia = nullptr;
 	static GuiProgressBar scale = nullptr;
 	static GuiLabel label1 = nullptr, label2 = nullptr;
-	clock_t now = clock ();
+	const double now = Melder_clock ();
 	if (progress <= 0.0 || progress >= 1.0 ||
-		now - lastTime > CLOCKS_PER_SEC / 4)   // this time step must be much longer than the null-event waiting time
+		now - lastTime > 0.25)   // this time step must be much longer than the null-event waiting time
 	{
 		if (! dia)
 			_Melder_dia_init (& dia, & scale, & label1, & label2, & theProgressCancelButton, false);
@@ -211,19 +207,19 @@ static void gui_drawingarea_cb_expose (Thing /* boss */, GuiDrawingArea_ExposeEv
 }
 
 static void * gui_monitor (double progress, conststring32 message) {
-	static clock_t lastTime;
+	static double lastTime;
 	static GuiDialog dia = nullptr;
 	static GuiProgressBar scale = nullptr;
 	static GuiDrawingArea drawingArea = nullptr;
 	static GuiButton cancelButton = nullptr;
 	static GuiLabel label1 = nullptr, label2 = nullptr;
-	clock_t now = clock ();
+	const double now = Melder_clock ();
 	if (progress <= 0.0 || progress >= 1.0 ||
-		now - lastTime > CLOCKS_PER_SEC / 4)   // this time step must be much longer than the null-event waiting time
+		now - lastTime > 0.25)   // this time step must be much longer than the null-event waiting time
 	{
 		if (! dia) {
 			_Melder_dia_init (& dia, & scale, & label1, & label2, & cancelButton, true);
-			drawingArea = GuiDrawingArea_createShown (dia, 0, 400, 230, 430,
+			drawingArea = GuiDrawingArea_createShown (dia, 0, 500, 230, 530,
 					gui_drawingarea_cb_expose, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
 			GuiThing_show (dia);
 			graphics = Graphics_create_xmdrawingarea (drawingArea);
@@ -309,7 +305,7 @@ static void * gui_monitor (double progress, conststring32 message) {
 #define theMessageFund_SIZE  100'000
 static char * theMessageFund = nullptr;
 
-static void gui_fatal (conststring32 message) {
+static void gui_crash (conststring32 message) {
 	free (theMessageFund);
 	Melder_casual (U"PRAAT CRASH MESSAGE:\n", message, U"\n(END OF PRAAT CRASH MESSAGE)");
 	#if gtk
@@ -380,15 +376,71 @@ static void gui_warning (conststring32 message) {
 	#endif
 }
 
+static void gui_trust (void *void_interpreter, conststring32 action) {
+	Interpreter interpreter = (Interpreter) void_interpreter;
+	if (interpreter) {
+		Script script = interpreter -> scriptReference;
+		Notebook notebook = interpreter -> notebookReference;
+		if (! script && ! notebook)
+			Melder_throw (U"We expected a script or a notebook.");
+		if (script && script -> trusted || notebook && notebook -> trusted)
+			return;   // the request should be granted
+		conststring32 paragraphs [1+5] = { };
+		if (script) {
+			paragraphs [1] = U"The script";
+			paragraphs [2] = Melder_cat (U"“", script -> string.get(), U"”");
+		} else if (notebook) {
+			paragraphs [1] = U"The notebook";
+			paragraphs [2] = Melder_cat (U"“", notebook -> string.get(), U"”");
+		} else
+			paragraphs [1] =  U"Your untitled script or notebook";
+		paragraphs [3] = U"requests permission to:";
+		paragraphs [4] = action;
+		conststring32 option1 = U"CANCEL\n(because I don’t want the requested action to happen)";
+		conststring32 option2 =
+			script ?
+				U"Yes, I allow this script to perform the action that it requests\n(and ask me again next time)"
+			: notebook ?
+				U"Yes, I allow this notebook to perform the action that it requests\n(and ask me again next time)"
+			:
+				U"Yes, I allow this script or notebook to perform the action that it requests\n(and ask me again next time)";
+		conststring32 option3 =
+			script ?
+				U"Yes, and I even allow this script to CONTROL MY COMPUTER from now on\n"
+				"(i.e. to perform any action, including saving, deleting, calling system commands, and internetting,\n"
+				"because I fully trust the script authors’ skills and intentions)"
+			: notebook ?
+				U"Yes, and I even allow this notebook to CONTROL MY COMPUTER from now on\n"
+				"(i.e. to perform any action, including saving, deleting, calling system commands, and internetting,\n"
+				"because I fully trust the notebook authors’ skills and intentions)"
+			:
+				U"Yes, and I even allow this script or notebook to CONTROL MY COMPUTER from now on\n"
+				"(i.e. to perform any action, including saving, deleting, calling system commands, and internetting,\n"
+				"because I fully trust the notebook authors’ skills and intentions)";
+		integer buttonClicked = GuiTrust_get (nullptr, nullptr,
+			paragraphs [1], paragraphs [2], paragraphs [3], paragraphs [4], paragraphs [5],
+			option1, option2, option3, nullptr, nullptr, interpreter
+		);
+		if (buttonClicked == 2)
+			return;   // allow this one action
+		Melder_assert (buttonClicked == 3);
+		if (script)
+			script -> trusted = true;
+		else if (notebook)
+			notebook -> trusted = true;
+	}
+}
+
 void Gui_injectMessageProcs (GuiWindow parent) {
 	theMessageFund = (char *) malloc (theMessageFund_SIZE);
 	assert (theMessageFund);
 	Melder_topShell = parent;
-	Melder_setCrashProc (gui_fatal);
+	Melder_setCrashProc (gui_crash);
 	Melder_setErrorProc (gui_error);
 	Melder_setWarningProc (gui_warning);
 	Melder_setProgressProc (gui_progress);
 	Melder_setMonitorProc (gui_monitor);
+	Melder_setTrustProc (gui_trust);
 }
 
 /* End of file Gui_messages.cpp */

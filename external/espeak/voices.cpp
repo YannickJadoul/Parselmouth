@@ -18,7 +18,7 @@
  * along with this program; if not, see: <http://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
+#include "espeak__config.h"
 
 #include <ctype.h>
 #include "wctype_portable.h"
@@ -36,15 +36,14 @@
 #endif
 
 #include "espeak_ng.h"
-#include "espeak_io.h"
 #include "speak_lib.h"
 #include "encoding.h"
 
 #include "voice.h"                    // for voice_t, DoVoiceChange, N_PEAKS
-#include "common.h"                    // for GetFileLength, strncpy0
+#include "common.h"                   // for GetFileLength, strncpy0
 #include "dictionary.h"               // for LoadDictionary
 #include "langopts.h"                 // for LoadLanguageOptions
-#include "mnemonics.h"               // for LookupMnemName, MNEM_TAB
+#include "mnemonics.h"                // for LookupMnemName, MNEM_TAB
 #include "phoneme.h"                  // for REPLACE_PHONEMES, n_replace_pho...
 #include "speech.h"                   // for PATHSEP
 #include "mbrola.h"                   // for LoadMbrolaTable
@@ -52,6 +51,8 @@
 #include "synthesize.h"               // for SetSpeed, SPEED_FACTORS, speed
 #include "translate.h"                // for LANGUAGE_OPTIONS, DeleteTranslator
 #include "wavegen.h"                  // for InitBreath
+
+#include "espeak_praat.h"             // for theEspeakPraatFileInMemorySet
 
 static int AddToVoicesList(const char *fname, int len_path_voices, int is_language_file);
 
@@ -84,13 +85,13 @@ static const char *const variant_lists[3] = { variants_either, variants_male, va
 static voice_t voicedata;
 voice_t *voice = &voicedata;
 
-static char *fgets_strip(char *buf, int size, FILE *f_in)
+static char *fgets_strip(char *buf, int size, FileInMemory f_in)
 {
 	// strip trailing spaces, and truncate lines at // comment
 	int len;
 	char *p;
 
-	if (fgets(buf, size, f_in) == NULL)
+	if (FileInMemory_fgets(buf, size, f_in) == NULL)
 		return NULL;
 
 	if (buf[0] == '#') {
@@ -154,7 +155,7 @@ void ReadTonePoints(char *string, int *tone_pts)
 	       &tone_pts[8], &tone_pts[9]);
 }
 
-espeak_VOICE *ReadVoiceFile(FILE *f_in, const char *fname, int is_language_file)
+espeak_VOICE *ReadVoiceFile(FileInMemory f_in, const char *fname, int is_language_file)
 {
 	// Read a Voice file, allocate a VOICE_DATA and set data from the
 	// file's  language, gender, name  lines
@@ -408,7 +409,9 @@ voice_t *LoadVoice(const char *vname, int control)
         //                     load the phoneme table
         //          bit 16 1 = UNDOCUMENTED
 
-	FILE *f_voice = NULL;
+	//TRACE
+	trace (U"enter");
+	FileInMemory f_voice = NULL;
 	char *p;
 	int key;
 	int ix;
@@ -447,6 +450,7 @@ voice_t *LoadVoice(const char *vname, int control)
 		return NULL;
 	}
 
+	trace (U"strncpy0... ", control, U" ", Melder_peek8to32 (vname), U".");
 	strncpy0(voicename, vname, sizeof(voicename));
 	if (control & 0x10) {
 		strcpy(buf, vname);
@@ -465,23 +469,27 @@ voice_t *LoadVoice(const char *vname, int control)
 			sprintf(buf, "%s%s", path_voices, voicename); // look in the main languages directory
 		}
 	}
+	trace (U"opening... ", Melder_peek8to32 (buf), U".");
 
-	f_voice = fopen(buf, "r");
+	f_voice = FileInMemorySet_fopen(theEspeakPraatFileInMemorySet(), buf, "r");
+	trace (U"opened");
 
-        if (!(control & 8)/*compiling phonemes*/)
-            language_type = ESPEAKNG_DEFAULT_VOICE; // default
-        else
-            language_type = "";
+	if (!(control & 8)/*compiling phonemes*/)
+		language_type = ESPEAKNG_DEFAULT_VOICE; // default
+	else
+		language_type = "";
 
 	if (f_voice == NULL) {
 		if (control & 3)
 			return NULL; // can't open file
 
+		trace (U"selecting phoneme table... ", Melder_peek8to32 (voicename), U".");
 		if (SelectPhonemeTableName(voicename) >= 0)
 			language_type = voicename;
 	}
 
 	if (!tone_only && (translator != NULL)) {
+		trace (U"deleting translator... ");
 		DeleteTranslator(translator);
 		translator = NULL;
 	}
@@ -491,6 +499,7 @@ voice_t *LoadVoice(const char *vname, int control)
 
 	if (!tone_only) {
 		voice = &voicedata;
+		trace (U"strncpy0... ", Melder_peek8to32 (vname), U".");
 		strncpy0(voice_identifier, vname, sizeof(voice_identifier));
 		voice_name[0] = 0;
 		voice_languages[0] = 0;
@@ -515,6 +524,7 @@ voice_t *LoadVoice(const char *vname, int control)
 		if (buf[0] == 0) continue;
 
 		key = LookupMnem(langopts_tab, buf);
+		trace (U"key ", key);
 
         if (key != 0) {
             LoadLanguageOptions(translator, key, p);
@@ -668,7 +678,7 @@ voice_t *LoadVoice(const char *vname, int control)
                 espeak_ng_STATUS status = LoadMbrolaTable(name1, name2, &srate);
                 if (status != ENS_OK) {
                     espeak_ng_PrintStatusCodeMessage(status, stderr, NULL);
-                    fclose(f_voice);
+                    FileInMemory_fclose(f_voice);
                     return NULL;
                 }
                 else
@@ -697,9 +707,11 @@ voice_t *LoadVoice(const char *vname, int control)
             }
         }
 	}
+	trace (U"closing...");
 	if (f_voice != NULL)
-		fclose(f_voice);
+		FileInMemory_fclose(f_voice);
 
+	trace (U"selecting translator... ", Melder_pointer (translator), U" ", tone_only, U" ", sizeof (Translator));
 	if ((translator == NULL) && (!tone_only)) {
 		// not set by language attribute
 		translator = SelectTranslator(translator_name);
@@ -723,8 +735,10 @@ voice_t *LoadVoice(const char *vname, int control)
 		translator->phoneme_tab_ix = ix;
 
 		if (!(control & 8/*compiling phonemes*/)) {
+			trace (U"Loading dictionary...");
 			LoadDictionary(translator, new_dictionary, control & 4);
 			if (dictionary_name[0] == 0) {
+				trace (U"Deleting translator...");
 				DeleteTranslator(translator);
 				return NULL; // no dictionary loaded
 			}
@@ -733,6 +747,7 @@ voice_t *LoadVoice(const char *vname, int control)
 		/* Terminate languages list with a zero-priority entry */
 		voice_languages[langix] = 0;
 	}
+	trace (U"return");
 
 	return voice;
 }
@@ -1185,64 +1200,51 @@ char const *SelectVoice(espeak_VOICE *voice_select, int *found)
 	return vp->identifier;
 }
 
-#if ! DATA_FROM_SOURCECODE_FILES
-void GetVoices(const char *path, int len_path_voices, int is_language_file)
+static void GetVoices(const char *path, int len_path_voices, int is_language_file)
 {
+	/* ppgb: deleted the Windows-specific file handling from this function */
+#if DATA_FROM_SOURCECODE_FILES   /* ppgb: whole function adapted to Praat */
+	FileInMemorySet me = theEspeakPraatFileInMemorySet();
+	static MelderString criterion;
+	MelderString_copy (& criterion, Melder_peek8to32 (path));
+	MelderString_appendCharacter (& criterion, PATHSEP);
+	Melder_assert (criterion.length == len_path_voices);   // sanity check
+	for (long ifile = 1; ifile <= my size; ifile ++) {
+		FileInMemory fim = my at [ifile];
+		if (Melder_stringMatchesCriterion (fim -> string.get(), kMelder_string :: STARTS_WITH, criterion.string, true)) {
+			FileInMemory f_voice = FileInMemory_fopen (fim, "r");
+			conststring8 fname = Melder_peek32to8_fileSystem (fim -> string.get());
+			espeak_VOICE *voice_data = ReadVoiceFile (f_voice, fname + len_path_voices, is_language_file);
+			FileInMemory_fclose (f_voice);
+			if (voice_data)
+				voices_list [n_voices_list ++] = voice_data;
+		}
+	}
+#else   /* ppgb: the original code, which uses opendir: */
 	char fname[sizeof(path_home)+100];
-
-#if PLATFORM_WINDOWS
-	WIN32_FIND_DATAA FindFileData;
-	HANDLE hFind = INVALID_HANDLE_VALUE;
-
-	#undef UNICODE // we need FindFirstFileA() which takes an 8-bit c-string
-	sprintf(fname, "%s\\*", path);
-	hFind = FindFirstFileA(fname, &FindFileData);
-	if (hFind == INVALID_HANDLE_VALUE)
-		return;
-
-	do {
-		if (n_voices_list >= (N_VOICES_LIST-2)) {
-			fprintf(stderr, "Warning: maximum number %d of (N_VOICES_LIST = %d - 1) reached\n", n_voices_list + 1, N_VOICES_LIST);
-			break; // voices list is full
-		}
-
-		if (FindFileData.cFileName[0] != '.') {
-			sprintf(fname, "%s%c%s", path, PATHSEP, FindFileData.cFileName);
-			if (AddToVoicesList(fname, len_path_voices, is_language_file) != 0) {
-				continue;
-			}
-		}
-	} while (FindNextFileA(hFind, &FindFileData) != 0);
-	FindClose(hFind);
-#else
 	DIR *dir;
 	struct dirent *ent;
-
 	if ((dir = opendir((char *)path)) == NULL) // note: (char *) is needed for WINCE
 		return;
-
 	while ((ent = readdir(dir)) != NULL) {
 		if (n_voices_list >= (N_VOICES_LIST-2)) {
 			fprintf(stderr, "Warning: maximum number %d of (N_VOICES_LIST = %d - 1) reached\n", n_voices_list + 1, N_VOICES_LIST);
 			break; // voices list is full
 		}
-
 		if (ent->d_name[0] == '.')
 			continue;
-
-			 sprintf(fname, "%s%c%s", path, PATHSEP, ent->d_name);
-			if (AddToVoicesList(fname, len_path_voices, is_language_file) != 0) {
-				continue;
-			}
-
+		sprintf(fname, "%s%c%s", path, PATHSEP, ent->d_name);
+		if (AddToVoicesList(fname, len_path_voices, is_language_file) != 0) {
+			// ppgb: there should probably be a warning here
+			continue;
+		}
 	}
 	closedir(dir);
-#endif
+#endif   /* DATA_FROM_SOURCECODE_FILES */
 }
-#endif // ! DATA_FROM_SOURCECODE_FILES
 
 #pragma GCC visibility push(default)
-
+#if ! DATA_FROM_SOURCECODE_FILES
 ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByFile(const char *filename)
 {
 	int ix;
@@ -1278,6 +1280,7 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByFile(const char *filename)
 
 	return ENS_VOICE_NOT_FOUND;
 }
+#endif // ! DATA_FROM_SOURCECODE_FILES
 
 ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByName(const char *name)
 {
@@ -1418,17 +1421,17 @@ static int AddToVoicesList(const char *fname, int len_path_voices, int is_langua
 
 	if (ftype == -EISDIR) {
 		// a sub-directory
-		GetVoices(fname, len_path_voices, is_language_file);
+		GetVoices(fname, len_path_voices, is_language_file);   // ppgb comment: recurse
 	} else if (ftype > 0) {
 		// a regular file, add it to the voices list
-		FILE *f_voice;
-		if ((f_voice = fopen(fname, "r")) == NULL)
+		FileInMemory f_voice;
+		if ((f_voice = FileInMemorySet_fopen(theEspeakPraatFileInMemorySet(), fname, "r")) == NULL)
 			return 1;
 
 		// pass voice file name within the voices directory
 		espeak_VOICE *voice_data;
 		voice_data = ReadVoiceFile(f_voice, fname+len_path_voices, is_language_file);
-		fclose(f_voice);
+		FileInMemory_fclose(f_voice);
 
 		if (voice_data != NULL)
 			voices_list[n_voices_list++] = voice_data;

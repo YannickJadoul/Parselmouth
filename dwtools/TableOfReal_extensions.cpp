@@ -1,10 +1,10 @@
 /* TableOfReal_extensions.cpp
  *
- * Copyright (C) 1993-2023 David Weenink, 2017 Paul Boersma
+ * Copyright (C) 1993-2023 David Weenink, 2011-2012,2023-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -217,7 +217,7 @@ autoTableOfReal TableOfReal_transpose (TableOfReal me) {
 }
 
 void TableOfReal_to_PatternList_and_Categories (TableOfReal me, integer fromrow, integer torow, integer fromcol, integer tocol,
-	autoPatternList *out_p, autoCategories *out_c)
+	autoPatternList *out_patternList, autoCategories *out_categories)
 {
 	try {
 		integer ncols = my numberOfColumns, nrows = my numberOfRows;
@@ -245,10 +245,10 @@ void TableOfReal_to_PatternList_and_Categories (TableOfReal me, integer fromrow,
 			for (integer j = fromcol; j <= tocol; j ++, col ++)
 				ap -> z [row] [col] = my data [i] [j];
 		}
-		if (out_p)
-			*out_p = ap.move();
-		if (out_c)
-			*out_c = ac.move();
+		if (out_patternList)
+			*out_patternList = ap.move();
+		if (out_categories)
+			*out_categories = ac.move();
 	} catch (MelderError) {
 		Melder_throw (U"PatternList and Categories not created from TableOfReal.");
 	}
@@ -813,7 +813,7 @@ double TableOfReal_getColumnQuantile (TableOfReal me, integer columnNumber, doub
 		if (columnNumber < 1 || columnNumber > my numberOfColumns)
 			return undefined;
 		autoVEC values = column_VEC (my data.get(), columnNumber);
-		sort_VEC_inout (values.get());
+		sort_e_VEC_inout (values.get());
 		return NUMquantile (values.get(), quantile);
 	} catch (MelderError) {
 		return undefined;
@@ -1136,7 +1136,7 @@ static void NUMaverageBlock_byColumns_inplace (MAT a, integer rb, integer re, in
 			tmp [k] = a [i] [j];
 		double average;
 		if (medians) {
-			sort_VEC_inout (tmp.get());
+			sort_e_VEC_inout (tmp.get());
 			average = NUMquantile (tmp.get(), 0.5);
 		} else {
 			average = NUMmean (tmp.get());

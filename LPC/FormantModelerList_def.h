@@ -1,4 +1,4 @@
-/*FormantModelerList_def.h
+/* FormantModelerList_def.h
  *
  * Copyright (C) 2020 David Weenink
  *
@@ -34,7 +34,8 @@ oo_DEFINE_CLASS (FormantModelerListDrawingSpecification, Daata)
 	#endif
 
 	#if oo_DECLARING
-		void v1_info () override { }
+		void v1_info ()
+			override { }
 	#endif
 	
 oo_END_CLASS (FormantModelerListDrawingSpecification)

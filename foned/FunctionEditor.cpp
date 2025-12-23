@@ -1,10 +1,10 @@
 /* FunctionEditor.cpp
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -58,7 +58,7 @@ static bool group_equalDomain (double tmin, double tmax) {
 static void updateScrollBar (FunctionEditor me) {
 /* We cannot call this immediately after creation. */
 	if (my endWindow - my startWindow > my tmax - my tmin)
-		Melder_fatal (U"updateScrollBar: the window runs from ", my startWindow, U" to ", my endWindow, U" ", my v_format_units_long (),
+		Melder_crash (U"updateScrollBar: the window runs from ", my startWindow, U" to ", my endWindow, U" ", my v_format_units_long (),
 			 	U", but the whole domain runs only from ", my tmin, U" to ", my tmax, U" ", my v_format_units_long (), U".");
 	const double slider_size = Melder_clippedLeft (1.0, (my endWindow - my startWindow) / (my tmax - my tmin) * maximumScrollBarValue - 1.0);
 	Melder_assert (maximumScrollBarValue - slider_size >= 1.0);
@@ -114,7 +114,7 @@ static void drawBackgroundAndData (FunctionEditor me) {
 	if (endIsVisible && my endSelection != my startSelection)
 		my marker [++ my numberOfMarkers] = my endSelection;
 	my marker [++ my numberOfMarkers] = my endWindow;
-	sort_VEC_inout (VEC (& my marker [1], my numberOfMarkers));
+	sort_e_VEC_inout (VEC (& my marker [1], my numberOfMarkers));
 
 	/*
 		Update rectangles.
@@ -1434,6 +1434,8 @@ static void gui_drawingarea_cb_mouse (FunctionEditor me, GuiDrawingArea_MouseEve
 			}
 		}
 		my clickWasModifiedByShiftKey = event -> shiftKeyPressed;
+		my clickWasModifiedByOptionKey = event -> optionKeyPressed;
+		my clickWasModifiedByCommandKey = event -> commandKeyPressed;
 		my anchorIsInSelectionViewer = my isInSelectionViewer (x_pxlt);
 		my anchorIsInWideDataView = ( y_pxlt > my dataBottom_pxlt() && y_pxlt < my dataTop_pxlt() );
 	}
@@ -1602,7 +1604,7 @@ int structFunctionEditor :: v_playCallback (int phase, double /* startTime */, d
 	if (Melder_debug == 53)
 		Melder_casual (U"draining");
 	Graphics_updateWs (our graphics.get());   // note: without setting my backgroundIsUpToDate to false
-	GuiShell_drain (our windowForm);   // this may not be needed on all platforms (but on Windows it is, at least on 2020-09-21)
+	GuiShell_drain (our windowForm, false, true);   // this may not be needed on all platforms (but on Windows it is, at least on 2020-09-21)
 	return 1;
 }
 

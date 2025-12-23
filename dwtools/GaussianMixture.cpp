@@ -346,7 +346,7 @@ autoGaussianMixture TableOfReal_to_GaussianMixture_fromRowLabels (TableOfReal me
 			Covariance_into_Covariance (cov.get(), thy covariances->at [component]);
 			Thing_setName (thy covariances->at [component], dist -> rowLabels [component].get());
 		}
-		thy mixingProbabilities.all()  <<=  dist -> data.column (1).part(1, dist -> numberOfRows);
+		thy mixingProbabilities.all()  <<=  dist -> data.column (1).part (1, dist -> numberOfRows);
 		thy mixingProbabilities.all()  /=  my numberOfRows;
 		return thee;
 	} catch (MelderError) {

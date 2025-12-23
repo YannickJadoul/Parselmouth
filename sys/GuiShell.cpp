@@ -1,10 +1,10 @@
 /* GuiShell.cpp
  *
- * Copyright (C) 1993-2018,2020-2022 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1993-2018,2020-2022,2024,2025 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -29,9 +29,10 @@ Thing_implement (GuiShell, GuiForm, 0);
 		if (Melder_debug == 55)
 			Melder_casual (U"\t\tGuiCocoaShell-", Melder_pointer (self), U" dealloc");
 		GuiShell me = d_userData;
-		my d_cocoaShell = nullptr;   // this is already under destruction, so undangle
-		forget (me);
-		trace (U"deleting a window or dialog");
+		if (me) {
+			my d_cocoaShell = nullptr;   // this is already under destruction, so undangle
+			forget (me);
+		}
 		[super dealloc];
 	}
 	- (GuiThing) getUserData {
@@ -48,6 +49,7 @@ Thing_implement (GuiShell, GuiForm, 0);
 	- (BOOL) windowShouldClose: (id) sender {
 		GuiCocoaShell *widget = (GuiCocoaShell *) sender;
 		GuiShell me = (GuiShell) [widget getUserData];
+		Melder_assert (me);
 		if (my d_goAwayCallback) {
 			trace (U"calling goAwayCallback)");
 			my d_goAwayCallback (my d_goAwayBoss);
@@ -81,6 +83,38 @@ Thing_implement (GuiShell, GuiForm, 0);
 			}
 		}
 	}
+	- (void) setDistinctiveBackGround {
+		if (@available (macOS 10.15, *))
+			[self   setBackgroundColor: [NSColor
+				colorWithName: @"dynamicWindowBackgroundColour"
+				dynamicProvider: ^ NSColor*_Nonnull (NSAppearance*_Nonnull appearance) {
+					if ([appearance   bestMatchFromAppearancesWithNames: @[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]] == NSAppearanceNameDarkAqua)
+						return [NSColor   colorWithCalibratedWhite: 0.15   alpha: 1.0];   // dark mode, changing on the fly
+					else
+						return [NSColor   colorWithCalibratedWhite: 0.85   alpha: 1.0];   // light mode, changing on the fly
+				}
+			]];
+		else
+			[self   setBackgroundColor: [NSColor   colorWithCalibratedWhite: 0.85   alpha: 1.0]];   // not dynamic
+	}
+	@end
+	@implementation GuiCocoaShellDelegate
+	- (void) windowWillEnterFullScreen: (NSNotification *) notification {
+		//TRACE
+		trace (1);
+	}
+	- (void) windowDidEnterFullScreen: (NSNotification *) notification {
+		//TRACE
+		trace (1);
+	}
+	- (void) windowWillExitFullScreen: (NSNotification *) notification {
+		//TRACE
+		trace (1);
+	}
+	- (void) windowDidExitFullScreen: (NSNotification *) notification {
+		//TRACE
+		trace (1);
+	}
 	@end
 #endif
 
@@ -90,7 +124,6 @@ void structGuiShell :: v9_destroy () noexcept {
 			Melder_casual (U"\t", Thing_messageNameAndAddress (this), U" v9_destroy: cocoaShell ", Melder_pointer (our d_cocoaShell));
 		if (our d_cocoaShell) {
 			[our d_cocoaShell setUserData: nullptr];   // undangle reference to this
-			Melder_fatal (U"ordering out?");   // TODO: how can this never be reached?
 			[our d_cocoaShell orderOut: nil];
 			[our d_cocoaShell close];
 			[our d_cocoaShell release];
@@ -109,7 +142,7 @@ int GuiShell_getShellWidth (GuiShell me) {
 	#elif motif
 		width = my d_xmShell -> width;
 	#elif cocoa
-        width = [my d_cocoaShell   frame].size.width;
+		width = [my d_cocoaShell   frame].size.width;
 	#endif
 	return width;
 }
@@ -123,7 +156,7 @@ int GuiShell_getShellHeight (GuiShell me) {
 	#elif motif
 		height = my d_xmShell -> height;
 	#elif cocoa
-        height = [my d_cocoaShell   frame].size.height;
+		height = [my d_cocoaShell   frame].size.height;
 	#endif
 	return height;
 }
@@ -145,22 +178,72 @@ void GuiShell_setTitle (GuiShell me, conststring32 title /* cattable */) {
 	#endif
 }
 
-void GuiShell_drain (GuiShell me) {
+void GuiShell_drain (GuiShell me, bool waitUntilItHasHappened, bool allowOtherEvents) {
 	#if gtk
-		gdk_window_process_all_updates ();
+		//gdk_window_process_all_updates ();
+		while (gtk_events_pending ())
+			gtk_main_iteration ();
 	#elif motif
 		UpdateWindow (my d_xmShell -> window);
 	#elif cocoa
 		Melder_assert (my d_cocoaShell);
-        [my d_cocoaShell   display];   // not just flushWindow
+		Melder_assert ([NSThread isMainThread]);
 		NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-		NSEvent *nsEvent = [NSApp
-			nextEventMatchingMask: NSAppKitDefinedMask // NSAnyEventMask
-			untilDate: [NSDate distantPast]
-			inMode: NSDefaultRunLoopMode
-			dequeue: YES
-			];
-		[NSApp  sendEvent: nsEvent];
+		[my d_cocoaShell   makeKeyAndOrderFront: nil];
+		[my d_cocoaShell   layoutIfNeeded];
+		[my d_cocoaShell   displayIfNeeded];
+		//[CATransaction flush];   // in case we ever implement layers
+		if (waitUntilItHasHappened) {
+			constexpr double smallestExpectedScreenRefreshFrequency = 50.0;   // hertz
+			constexpr double greatestExpectedScreenRefreshPeriod =
+					1.0 / smallestExpectedScreenRefreshFrequency;   // e.g. 0.02 seconds
+			constexpr double safeWaitingDurationForAtLeastOneScreenRefresh =
+					1.5 * greatestExpectedScreenRefreshPeriod;   // e.g. 0.03 seconds
+			const double timeByWhichAtLeastOneScreenRefreshHasOccurred =
+					Melder_clock() + safeWaitingDurationForAtLeastOneScreenRefresh;
+			while (Melder_clock() < timeByWhichAtLeastOneScreenRefreshHasOccurred) {
+				NSEvent *nsEvent;
+				while ((nsEvent = [NSApp
+					nextEventMatchingMask: NSEventMaskAny
+					untilDate: [NSDate distantPast]
+					inMode: NSDefaultRunLoopMode
+					dequeue: YES]) != nullptr)
+				{
+					if (allowOtherEvents) {
+						[NSApp   sendEvent: nsEvent];
+					} else {
+						NSUInteger nsEventType = [nsEvent type];
+						if (nsEventType == NSEventTypeKeyDown)
+							NSBeep();
+						/*
+							Ignore all other events.
+						*/
+					}
+				}
+				constexpr double moderatePollingFrequency = 1000.0;   // hertz
+				constexpr double moderatePollingPeriod = 1.0 / moderatePollingFrequency;   // e.g. 1 ms
+				[NSThread   sleepForTimeInterval: moderatePollingPeriod];
+			}
+		} else {
+			NSEvent *nsEvent;
+			while ((nsEvent = [NSApp
+				nextEventMatchingMask: NSEventMaskAny
+				untilDate: [NSDate distantPast]
+				inMode: NSDefaultRunLoopMode
+				dequeue: YES]) != nullptr)
+			{
+				if (allowOtherEvents) {
+					[NSApp   sendEvent: nsEvent];
+				} else {
+					NSUInteger nsEventType = [nsEvent type];
+					if (nsEventType == NSEventTypeKeyDown)
+						NSBeep();
+					/*
+						Ignore all other events.
+					*/
+				}
+			}
+		}
 		[pool release];
 	#endif
 }

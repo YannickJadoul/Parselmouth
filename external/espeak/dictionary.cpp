@@ -17,7 +17,7 @@
  * along with this program; if not, see: <http://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
+#include "espeak__config.h"
 
 #include <ctype.h>
 #include <stdint.h>
@@ -29,7 +29,6 @@
 #include <assert.h>
 
 #include "espeak_ng.h"
-#include "espeak_io.h"
 #include "speak_lib.h"
 #include "encoding.h"
 
@@ -43,6 +42,8 @@
 #include "synthdata.h"                     // for PhonemeCode, InterpretPhoneme
 #include "synthesize.h"                    // for STRESS_IS_PRIMARY, phoneme...
 #include "translate.h"                     // for Translator, utf8_in, LANGU...
+
+#include "espeak_praat.h"             // for theEspeakPraatFileInMemorySet
 
 static int LookupFlags(Translator *tr, const char *word, unsigned int flags_out[2]);
 static void DollarRule(char *word[], char *word_start, int consumed, int group_length, char *word_buf, Translator *tr, int command, int *failed, int *add_points);
@@ -200,10 +201,11 @@ int LoadDictionary(Translator *tr, const char *name, int no_error)
 	char *p;
 	int *pw;
 	int length;
-	FILE *f;
+	FileInMemory f;
 	int size;
 	char fname[sizeof(path_home)+20];
 
+	Melder_assert (strlen(name) < 40);   //ppgb: otherwise no null byte might be appended
 	if (dictionary_name != name)
 		strncpy(dictionary_name, name, 40); // currently loaded dictionary name
 	if (tr->dictionary_name != name)
@@ -220,21 +222,21 @@ int LoadDictionary(Translator *tr, const char *name, int no_error)
 		tr->data_dictlist = NULL;
 	}
 
-	f = fopen(fname, "rb");
+	f = FileInMemorySet_fopen(theEspeakPraatFileInMemorySet(), fname, "rb");
 	if ((f == NULL) || (size <= 0)) {
 		if (no_error == 0)
 			fprintf(stderr, "Can't read dictionary file: '%s'\n", fname);
 		if (f != NULL)
-			fclose(f);
+			FileInMemory_fclose(f);
 		return 1;
 	}
 
 	if ((tr->data_dictlist = (char *) malloc(size)) == NULL) {
-		fclose(f);
+		FileInMemory_fclose(f);
 		return 3;
 	}
-	size = fread(tr->data_dictlist, 1, size, f);
-	fclose(f);
+	size = FileInMemory_fread(tr->data_dictlist, 1, size, f);
+	FileInMemory_fclose(f);
 
 	pw = (int *)(tr->data_dictlist);
 	length = Reverse4Bytes(pw[1]);

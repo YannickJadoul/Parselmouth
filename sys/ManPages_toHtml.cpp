@@ -1,6 +1,6 @@
 /* ManPages_toHtml.cpp
  *
- * Copyright (C) 1996-2024 Paul Boersma
+ * Copyright (C) 1996-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,56 +27,59 @@ static const struct stylesInfo {
 } stylesInfo [] = {
 { nullptr, nullptr },
 /* INTRO: */ { U"<p>", U"</p>" },
-/* ENTRY: */ { U"<h3>", U"</h3>" },
+/* ENTRY: */ { U"<h2>", U"</h2>" },
 /* NORMAL: */ { U"<p>", U"</p>" },
-/* LIST_ITEM: */ { U"<dd style=\"position:relative;padding-left:1em;text-indent:-2em\">", U"" },
+/* LIST_ITEM: */ { U"<dd style=\"position:relative;padding-left:1em;text-indent:-2em\">", U"</dd>" },
 /* TERM: */ { U"<dt>", U"" },
-/* DEFINITION: */ { U"<dd>", U"" },
-/* CODE: */ { U"<code>&nbsp;&nbsp;&nbsp;", U"<br></code>" },
+/* DEFINITION: */ { U"<dd>", U"</dd>" },
+/* CODE: */ { U"<code>   ", U"<br></code>" },
 /* PROTOTYPE: */ { U"<p>", U"</p>" },
-/* EQUATION: */ { U"<table width=\"100%\"><tr><td align=middle>", U"</table>" },
+/* EQUATION: */ { U"<table width=\"100%\" style=\"white-space:pre-wrap\"><tr><td align=middle>", U"</table>" },
 /* PICTURE: */ { U"<p>", U"</p>" },
 /* SCRIPT: */ { U"<p>", U"</p>" },
-/* LIST_ITEM1: */ { U"<dd>&nbsp;&nbsp;&nbsp;", U"" },
-/* LIST_ITEM2: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* LIST_ITEM3: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
+/* LIST_ITEM1: */ { U"<dd>&nbsp;&nbsp;&nbsp;", U"</dd>" },
+/* LIST_ITEM2: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"</dd>" },
+/* LIST_ITEM3: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"</dd>" },
 /* TERM1: */ { U"<dt>&nbsp;&nbsp;&nbsp;", U"" },
 /* TERM2: */ { U"<dt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
 /* TERM3: */ { U"<dt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* DEFINITION1: */ { U"<dd>&nbsp;&nbsp;&nbsp;", U"" },
-/* DEFINITION2: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* DEFINITION3: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"" },
-/* CODE1: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE2: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE3: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE4: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
-/* CODE5: */ { U"<code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"<br></code>" },
+/* DEFINITION1: */ { U"<dd>&nbsp;&nbsp;&nbsp;", U"</dd>" },
+/* DEFINITION2: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"</dd>" },
+/* DEFINITION3: */ { U"<dd>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", U"</dd>" },
+/* CODE1: */ { U"<code>      ", U"<br></code>" },
+/* CODE2: */ { U"<code>         ", U"<br></code>" },
+/* CODE3: */ { U"<code>            ", U"<br></code>" },
+/* CODE4: */ { U"<code>               ", U"<br></code>" },
+/* CODE5: */ { U"<code>                  ", U"<br></code>" },
 /* CAPTION: */ { U"<p style=\"position:relative;padding-left:4em;text-indent:-2em;font-size:86%\">", U"</font></p>" },
-/* QUOTE1: */ { U"<p style=\"position:relative;padding-left:4em;font-size:86%\">", U"</font></p>" },
-/* QUOTE2: */ { U"<p style=\"position:relative;padding-left:8em;font-size:86%\">", U"</font></p>" },
-/* QUOTE3: */ { U"<p style=\"position:relative;padding-left:12em;font-size:86%\">", U"</font></p>" },
+/* QUOTE: */ { U"<p style=\"position:relative;padding-left:4em;font-size:86%\">", U"</font></p>" },
+/* QUOTE1: */ { U"<p style=\"position:relative;padding-left:8em;font-size:86%\">", U"</font></p>" },
+/* QUOTE2: */ { U"<p style=\"position:relative;padding-left:12em;font-size:86%\">", U"</font></p>" },
+/* QUOTE3: */ { U"<p style=\"position:relative;padding-left:16em;font-size:86%\">", U"</font></p>" },
+/* SUBHEADER: */ { U"<h3>", U"</h3>" },
 };
 
 static void writeLinkAsHtml (ManPages me, mutablestring32 link, conststring32 linkText, MelderString *buffer, conststring32 pageTitle) {
 	/*
-		The first character of the link text can have the wrong case.
-	*/
-	integer linkPageNumber = ManPages_lookUp (me, link);
-	if (linkPageNumber == 0)
-		Melder_throw (U"No such manual page: ", link, U" (from page “", pageTitle, U"”).");
-	link [0] = my pages.at [linkPageNumber] -> title [0];
-	/*
 		We write the link in the following format:
 			<a href="link.html">linkText</a>
-		If "link" (initial lower case) is not in the manual, we write "Link.html" instead.
-		All spaces and strange symbols in "link" are replaced by underscores,
-		because it will be a file name (see ManPages_writeAllToHtmlDir).
-		The file name will have no more than 30 or 60 characters, and no less than 1.
 	*/
 	MelderString_append (buffer, U"<a href=\"");
 	if (str32nequ (link, U"\\FI", 3)) {
 		MelderString_append (buffer, link + 3);   // file link
 	} else {
+		/*
+			If "link" (initial lower case) is not in the manual, we write "Link.html" instead.
+			All spaces and strange symbols in "link" are replaced by underscores,
+			because it will be a file name (see ManPages_writeAllToHtmlDir).
+			The file name will have no more than 30 or 60 characters, and no less than 1.
+
+			The first character of the link text can have the wrong case.
+		*/
+		integer linkPageNumber = ManPages_lookUp (me, link);
+		if (linkPageNumber == 0)
+			Melder_throw (U"No such manual page: ", link, U" (from page “", pageTitle, U"”).");
+		link [0] = my pages.at [linkPageNumber] -> title [0];
 		char32 *q = link;
 		if (! ManPages_lookUp_caseSensitive (me, link)) {
 			MelderString_appendCharacter (buffer, Melder_toUpperCase (link [0]));
@@ -134,7 +137,7 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 
 		if (paragraph -> type == kManPage_type::PICTURE) {
 			numberOfPictures ++;
-			structMelderFile pngFile;
+			structMelderFile pngFile { };
 			MelderFile_copy (file, & pngFile);
 			pngFile. path [Melder_length (pngFile. path) - 5] = U'\0';   // delete extension ".html"
 			str32cat (pngFile. path, Melder_cat (U"_", numberOfPictures, U".png"));
@@ -160,31 +163,113 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 			chunkNumber += 1;
 			if (paragraph -> cacheInfo.string && paragraph -> cacheInfo.string [0] != U'\0') {
 				trace (U"text output");
-				MelderString_append (buffer, U"<code style=\"color:red\">=&gt;</code><br>\n");
+				MelderString_append (buffer, U"<code style=\"color:red\">=&gt;</code><br>\n");   // show a red arrow "=>"
 				static MelderString lineBuffer;
 				MelderString_empty (& lineBuffer);
+				bool inOutputTable = false;
+				integer outputTableRowNumber = 0;
 				bool hasError = false;
 				for (const char32 *paragraphPointer = & paragraph -> cacheInfo.string [0]; *paragraphPointer != U'\0'; paragraphPointer ++) {
 					if (Melder_isEndOfLine (*paragraphPointer)) {
 						hasError |=
 							str32str (lineBuffer.string, U"**AN ERROR OCCURRED IN THIS CODE CHUNK:**") ||
 							str32str (lineBuffer.string, U"**ERROR** This code chunk was not run,");
+						const bool isTableRow = str32chr (lineBuffer.string, U'\t');
 						if (hasError)
-							MelderString_append (buffer, U"<code style=\"color:red\">&nbsp;&nbsp;&nbsp;\n");
+							MelderString_append (buffer, U"<code style=\"color:red\">   ");
+						else if (isTableRow) {
+							if (! inOutputTable) {
+								/*
+									A new table in the chunk output.
+								*/
+								MelderString_append (buffer, U"<code><table cellpadding=0 style='text-align:center;border-spacing:0'>\n"
+										"<tr><th>");
+								inOutputTable = true;
+								outputTableRowNumber = 1;
+							} else {
+								/*
+									A new row in an existing table in the chunk output.
+								*/
+								MelderString_append (buffer, U"<tr>"
+										"<td>");
+								outputTableRowNumber += 1;
+							}
+						} else {
+							if (inOutputTable) {
+								MelderString_append (buffer, U"</table></code>\n");
+								inOutputTable = false;
+								outputTableRowNumber = 0;
+							}
+							MelderString_append (buffer, U"<code>   ");
+						}
+						for (const char32 *plineBuffer = & lineBuffer.string [0]; *plineBuffer != U'\0'; plineBuffer ++) {
+							/*if (plineBuffer [0] == U' ' && plineBuffer [1] == U' ') {
+								MelderString_append (buffer, U" &nbsp;");
+								plineBuffer += 1;
+							} else*/
+							if (plineBuffer [0] == U' ') {
+								MelderString_append (buffer, U" ");
+							} else if (plineBuffer [0] == U'\t') {
+								if (inBold) {
+									inBold = false;
+									MelderString_append (buffer, U"</b>");
+								} else if (inItalic) {
+									inItalic = false;
+									MelderString_append (buffer, U"</i>");
+								}
+								if (outputTableRowNumber == 1)
+									MelderString_append (buffer, U"<th>");
+								else
+									MelderString_append (buffer, U"<td>");
+							} else if (plineBuffer [0] == U'\\' && plineBuffer [1] == U'#' && plineBuffer [2] == U'{') {
+								inBold = true;
+								MelderString_append (buffer, U"<b>");
+								plineBuffer += 2;
+							} else if (plineBuffer [0] == U'\\' && plineBuffer [1] == U'%' && plineBuffer [2] == U'{') {
+								inItalic = true;
+								MelderString_append (buffer, U"<i>");
+								plineBuffer += 2;
+							} else if (plineBuffer [0] == U'}') {
+								if (inBold) {
+									inBold = false;
+									MelderString_append (buffer, U"</b>");
+								} else if (inItalic) {
+									inItalic = false;
+									MelderString_append (buffer, U"</i>");
+								} else
+									MelderString_appendCharacter (buffer, plineBuffer [0]);
+							} else
+								MelderString_appendCharacter (buffer, plineBuffer [0]);
+						}
+						if (inBold) {
+							inBold = false;
+							MelderString_append (buffer, U"</b>");
+						}
+						if (inItalic) {
+							inItalic = false;
+							MelderString_append (buffer, U"</i>");
+						}
+						if (isTableRow)
+							MelderString_append (buffer, U"</tr>\n");
 						else
-							MelderString_append (buffer, U"<code>&nbsp;&nbsp;&nbsp;\n");
-						MelderString_append (buffer, lineBuffer.string, U"<br></code>\n");
+							MelderString_append (buffer, U"<br></code>\n");
 						MelderString_empty (& lineBuffer);
 					} else {
 						MelderString_appendCharacter (& lineBuffer, *paragraphPointer);
 					}
 				}
-				continue;
+				if (hasError)
+					continue;   // no longer show any graphics
+				if (inOutputTable) {
+					MelderString_append (buffer, U"</table></code>\n");
+					inOutputTable = false;
+					outputTableRowNumber = 0;
+				}
 			}
 			if (paragraph -> height == 0.001)
 				continue;
 			numberOfPictures ++;
-			structMelderFile pngFile;
+			structMelderFile pngFile { };
 			MelderFile_copy (file, & pngFile);
 			pngFile. path [Melder_length (pngFile. path) - 5] = U'\0';   // delete extension ".html"
 			str32cat (pngFile. path, Melder_cat (U"_", numberOfPictures, U".png"));
@@ -276,13 +361,14 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 				if (p [0] == U'\\' && p [1] == U'b' && p [2] == U'u' && p [3] == U' ')
 					p += 3;
 			}
-			MelderString_append (buffer, ul ? U"<li>" : stylesInfo [(int) paragraph -> type]. htmlIn, U"\n");
+			MelderString_append (buffer, ul ? U"<li>" : stylesInfo [(int) paragraph -> type]. htmlIn/*, U"\n"*/);
 		} else {
 			if (inList) {
 				MelderString_append (buffer, ul ? U"</ul>\n" : U"</dl>\n");
 				inList = ul = false;
 			}
-			MelderString_append (buffer, stylesInfo [(int) paragraph -> type]. htmlIn, U"\n");
+			MelderString_append (buffer, stylesInfo [(int) paragraph -> type]. htmlIn,
+					paragraphIsVerbatim ? U"" : U"");   // in a verbatim paragraph we would actually get a newline
 		}
 		/* mutable */ bool inTable = !! str32chr (p, U'\t');
 		/* mutable */ bool inPromptedTable = false;
@@ -296,12 +382,14 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 			}
 		}
 		/*
-			Leading spaces should be visible (mainly used in code fragments).
+			Leading spaces should be visible, so we convert them to a non-breaking space ("&nbsp;").
+			This is not needed in code fragments, because we have already have a "whitespace:pre-wrap" style there.
 		*/
-		while (*p == U' ') {
-			MelderString_append (buffer, U"&nbsp;");
-			p ++;
-		}
+		if (! paragraphIsVerbatim)
+			while (*p == U' ') {
+				MelderString_append (buffer, U"&nbsp;");
+				p ++;
+			}
 		if (paragraphIsVerbatim) {
 			while (*p != U'\0') {
 				if (*p == U'\\' && p [1] == U'#' && p [2] == U'{') {
@@ -330,7 +418,7 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 					p += 3 + isBold;
 					if (isBold)
 						MelderString_append (buffer, U"<b>");
-					const bool isVerbatim = ( p [-2] == U'`');
+					const bool isVerbatim = ( p [-2] == U'`' );
 					static MelderString link, linkText;
 					MelderString_empty (& link);
 					if (isVerbatim)
@@ -374,16 +462,40 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 		}
 		while (*p) {
 			if (wordItalic && ! isSingleWordCharacter (*p)) {
-				MelderString_append (buffer, U"</i>");
-				wordItalic = false;
+				if (*p == U'\\' && p [1] != U'\0' && p [2] != U'\0') {
+					Longchar_Info info = Longchar_getInfo (p [1], p [2]);
+					if (! isSingleWordCharacter (info -> unicode)) {
+						MelderString_append (buffer, U"</i>");
+						wordItalic = false;
+					}
+				} else {
+					MelderString_append (buffer, U"</i>");
+					wordItalic = false;
+				}
 			}
 			if (wordBold && ! isSingleWordCharacter (*p)) {
-				MelderString_append (buffer, U"</b>");
-				wordBold = false;
+				if (*p == U'\\' && p [1] != U'\0' && p [2] != U'\0') {
+					Longchar_Info info = Longchar_getInfo (p [1], p [2]);
+					if (! isSingleWordCharacter (info -> unicode)) {
+						MelderString_append (buffer, U"</b>");
+						wordBold = false;
+					}
+				} else {
+					MelderString_append (buffer, U"</b>");
+					wordBold = false;
+				}
 			}
-			if (wordCode && ! isSingleWordCharacter (*p)) {
-				MelderString_append (buffer, U"</font></code>");
-				wordCode = false;
+			if (wordCode && ! isSingleWordCharacter (*p)) {   // TODO: remove, because wordCode should no longer exist
+				if (*p == U'\\' && p [1] != U'\0' && p [2] != U'\0') {
+					Longchar_Info info = Longchar_getInfo (p [1], p [2]);
+					if (! isSingleWordCharacter (info -> unicode)) {
+						MelderString_append (buffer, U"</font></code>");
+						wordCode = false;
+					}
+				} else {
+					MelderString_append (buffer, U"</font></code>");
+					wordCode = false;
+				}
 			}
 			if (*p == U'@') {
 				static MelderString link, linkText;
@@ -627,10 +739,10 @@ static void writeParagraphsAsHtml (ManPages me, Interpreter optionalInterpreterR
 				MelderString_append (buffer, U"&amp;");
 				p ++;
 			} else {
-				/*if (wordItalic && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</i>"); wordItalic = false; }
-				if (wordBold && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</b>"); wordBold = false; }
-				if (wordCode && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</code>"); wordCode = false; }*/
-				if (*p == U'\\') {
+				//if (wordItalic && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</i>"); wordItalic = false; }
+				//if (wordBold && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</b>"); wordBold = false; }
+				//if (wordCode && ! isSingleWordCharacter (*p)) { MelderString_append (buffer, U"</code>"); wordCode = false; }
+				if (*p == U'\\' && p [1] != U'\0' && p [2] != U'\0') {
 					char32 kar1 = *++p, kar2 = *++p;
 					Longchar_Info info = Longchar_getInfo (kar1, kar2);
 					if (info -> unicode < 127)
@@ -714,7 +826,14 @@ static void writeTitleAsHtml (conststring32 title, MelderString *buffer) {
 	MelderString_append (buffer,
 		U"<html><head><meta name=\"robots\" content=\"index,follow\">"
 		U"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-		U"<title>", titleBuffer.string, U"</title></head><body bgcolor=\"#FFFFFF\">\n\n"
+		U"<title>", titleBuffer.string, U"</title>\n"
+		U"<style>\n"
+		U"   td { padding-left: 5pt; padding-right: 5pt; }\n"
+		U"   th { padding-left: 5pt; padding-right: 5pt; }\n"
+		U"   code { white-space: pre-wrap; }\n"
+		U"   dd { white-space: pre-wrap; }\n"
+		U"</style>\n"
+		U"</head><body bgcolor=\"#FFFFFF\">\n\n"
 	);
 	MelderString_append (buffer,
 		U"<table border=0 cellpadding=0 cellspacing=0><tr><td bgcolor=\"#CCCC00\">"
@@ -770,7 +889,8 @@ static void writePageAsHtml (ManPages me, Interpreter optionalInterpreterReferen
 					MelderString_copy (& visibleTitle, title);
 					if (visibleTitle.string [visibleTitle.length - 1] == U'`')
 						visibleTitle.string [visibleTitle.length - 1] = U'\0';
-					MelderString_append (buffer, U".html\"><code><font size=+1>", & visibleTitle.string [1], U"</font></code></a>\n");
+					MelderString_append (buffer, U".html\"><code><font size=+1>",
+							& visibleTitle.string [1], U"</font></code></a>\n");
 				} else
 					MelderString_append (buffer, U".html\">", title, U"</a>\n");
 			}

@@ -45,7 +45,7 @@ Thing_implement (TextGridNavigator, Function, 0);
 void structTextGridNavigator :: v1_info () {
 	// skipping parent classes
 	const integer topicTierNumber = tierNavigators.at [1] -> tierNumber;
-	integer topicTierSize = tierNavigators. at [1] -> v_getSize ();
+	integer topicTierSize = tierNavigators.at [1] -> v_getSize ();
 	MelderInfo_writeLine (U"Number of complete matches: ", TextGridNavigator_getNumberOfMatches (this),  U" (from ", topicTierSize, U")");
 	for (integer item = 1; item <= tierNavigators.size; item ++) {
 		const TextGridTierNavigator tn = tierNavigators.at [item];
@@ -70,7 +70,7 @@ autoTextGridNavigator TextGrid_and_NavigationContext_to_TextGridNavigator (TextG
 		autoTextGridTierNavigator thee = TextGrid_and_NavigationContext_to_TextGridTierNavigator (textgrid, navigationContext, tierNumber, matchDomain);
 		autoTextGridNavigator me = Thing_new (TextGridNavigator);
 		Function_init (me.get(), textgrid -> xmin, textgrid -> xmax);
-		my tierNavigators.addItem_move (thee.move());
+		my tierNavigators. addItem_move (thee.move());
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"TextGridNavigator could not be created from ", textgrid, U" and ", navigationContext);
@@ -87,7 +87,7 @@ autoTextGridNavigator TextGridNavigator_createSimple (double xmin, double xmax, 
 	autoIntervalTier tier = IntervalTier_create (xmin, xmax);
 	autoTextGridTierNavigator tgtn = TextGridTierNavigator_create (tier.get(), navigationContext.get(),kMatchDomain::TOPIC_START_TO_TOPIC_END);
 	tgtn -> tierNumber = tierNumber;
-	my tierNavigators.addItem_move (tgtn.move());
+	my tierNavigators. addItem_move (tgtn.move());
 	return me;
 }
 
@@ -97,7 +97,7 @@ autoTextGridNavigator TextGridTierNavigator_to_TextGridNavigator (TextGridTierNa
 		Function_init (thee.get(), my xmin, my xmax);
 		autoTextGridTierNavigator tn = Data_copy (me);
 		tn -> matchDomainAlignment = kMatchDomainAlignment::IS_ANYWHERE;
-		thy tierNavigators.addItem_move (tn.move());
+		thy tierNavigators. addItem_move (tn.move());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": could not create TextGridNavigator.");
@@ -200,7 +200,7 @@ void TextGridNavigator_addTextGridTierNavigator (TextGridNavigator me, TextGridT
 		}
 		autoTextGridTierNavigator tn = Data_copy (thee);
 		tn -> matchDomainAlignment = matchDomainAlignment;
-		my tierNavigators.addItem_move (tn.move());
+		my tierNavigators. addItem_move (tn.move());
 	} catch (MelderError) {
 		Melder_throw (me, U": could not add TextGridTierNavigator.");
 	}
@@ -221,7 +221,7 @@ static integer TextGridNavigator_checkNavigatorNumberFromTierNumber (TextGridNav
 void TextGridNavigator_replaceNavigationContext (TextGridNavigator me, NavigationContext thee, integer tierNumber) {
 	try {
 		const integer navigatorNumber = TextGridNavigator_checkNavigatorNumberFromTierNumber (me, tierNumber);
-		const TextGridTierNavigator tn = my tierNavigators. at [navigatorNumber];
+		const TextGridTierNavigator tn = my tierNavigators.at [navigatorNumber];
 		TextGridTierNavigator_replaceNavigationContext (tn, thee);
 	} catch (MelderError) {
 		Melder_throw (me, U": could not replace navigation context.");
@@ -231,7 +231,7 @@ void TextGridNavigator_replaceNavigationContext (TextGridNavigator me, Navigatio
 autoNavigationContext TextGridNavigator_extractNavigationContext (TextGridNavigator me, integer tierNumber) {
 	try {
 		const integer navigatorNumber = TextGridNavigator_checkNavigatorNumberFromTierNumber (me, tierNumber);
-		TextGridTierNavigator tn = my tierNavigators. at [navigatorNumber];;
+		TextGridTierNavigator tn = my tierNavigators.at [navigatorNumber];;
 		return TextGridTierNavigator_extractNavigationContext (tn);
 	} catch (MelderError) {
 		Melder_throw (me, U": could not extract navigation context.");
@@ -241,7 +241,7 @@ autoNavigationContext TextGridNavigator_extractNavigationContext (TextGridNaviga
 void TextGridNavigator_replaceTiers (TextGridNavigator me, TextGrid thee) {
 	try {
 		for (integer inum = 1; inum <= my tierNavigators.size; inum ++) {
-			const TextGridTierNavigator tn = my tierNavigators. at [inum];
+			const TextGridTierNavigator tn = my tierNavigators.at [inum];
 			const integer tierNumber = tn -> tierNumber;
 			Melder_require (tierNumber <= thy tiers -> size,
 				U"The number of tiers in the TextGrid is too small.");
@@ -251,7 +251,7 @@ void TextGridNavigator_replaceTiers (TextGridNavigator me, TextGrid thee) {
 		my xmin = thy xmin;
 		my xmax = thy xmax;
 		for (integer inum = 1; inum <= my tierNavigators.size; inum ++) {
-			const TextGridTierNavigator tn = my tierNavigators. at [inum];
+			const TextGridTierNavigator tn = my tierNavigators.at [inum];
 			const integer tierNumber = tn -> tierNumber;
 			TextGridTierNavigator_replaceTier (tn, thee, tierNumber);
 		}
@@ -543,25 +543,25 @@ bool TextGridNavigator_isMatch (TextGridNavigator me, integer topicIndex, intege
 }
 
 static integer TextGridNavigator_timeToLowIndex (TextGridNavigator me, double time) {
-	const TextGridTierNavigator tn = my tierNavigators. at [1];
+	const TextGridTierNavigator tn = my tierNavigators.at [1];
 	tn -> currentTopicIndex = tn -> v_timeToLowIndex (time);
 	return tn -> currentTopicIndex;
 }
 
 static integer TextGridNavigator_timeToIndex (TextGridNavigator me, double time) {
-	const TextGridTierNavigator tn = my tierNavigators. at [1];
+	const TextGridTierNavigator tn = my tierNavigators.at [1];
 	tn -> currentTopicIndex = tn -> v_timeToIndex (time);
 	return tn -> currentTopicIndex;
 }
 
 static integer TextGridNavigator_timeToHighIndex (TextGridNavigator me, double time) {
-	const TextGridTierNavigator tn = my tierNavigators. at [1];
+	const TextGridTierNavigator tn = my tierNavigators.at [1];
 	tn -> currentTopicIndex = tn -> v_timeToHighIndex (time);
 	return tn -> currentTopicIndex;
 }
 
 integer TextGridNavigator_findNext (TextGridNavigator me) {
-	const TextGridTierNavigator tn = my tierNavigators. at [1];
+	const TextGridTierNavigator tn = my tierNavigators.at [1];
 	const integer currentTopicIndex = tn -> currentTopicIndex, size = tn -> v_getSize ();
 	for (integer index = currentTopicIndex + 1; index <= size; index ++) {
 		if (TextGridNavigator_isMatch (me, index, nullptr, nullptr)) {
@@ -579,7 +579,7 @@ integer TextGridNavigator_findNextAfterTime (TextGridNavigator me, double time) 
 }
 
 integer TextGridNavigator_findPrevious (TextGridNavigator me) {
-	const TextGridTierNavigator tn = my tierNavigators. at [1];
+	const TextGridTierNavigator tn = my tierNavigators.at [1];
 	const integer currentTopicIndex = tn -> currentTopicIndex;
 	for (integer index = currentTopicIndex - 1; index > 0; index --) {
 		if (TextGridNavigator_isMatch (me, index, nullptr, nullptr)) {
@@ -598,28 +598,28 @@ integer TextGridNavigator_findPreviousBeforeTime (TextGridNavigator me, double t
 
 double TextGridNavigator_getStartTime (TextGridNavigator me, integer tierNumber, kContext_where where) {
 	const integer navigatorNumber = TextGridNavigator_checkNavigatorNumberFromTierNumber (me, tierNumber);
-	const TextGridTierNavigator tn = my tierNavigators. at [navigatorNumber];
+	const TextGridTierNavigator tn = my tierNavigators.at [navigatorNumber];
 	const integer index = TextGridTierNavigator_getIndex (tn, where); 
 	return tn -> v_getStartTime (index);
 }
 
 conststring32 TextGridNavigator_getLabel (TextGridNavigator me, integer tierNumber, kContext_where where) {
 	const integer navigatorNumber = TextGridNavigator_checkNavigatorNumberFromTierNumber (me, tierNumber);
-	const TextGridTierNavigator tn = my tierNavigators. at [navigatorNumber];
+	const TextGridTierNavigator tn = my tierNavigators.at [navigatorNumber];
 	const integer index = TextGridTierNavigator_getIndex (tn, where); 
 	return tn -> v_getLabel (index);
 }
 
 double TextGridNavigator_getEndTime (TextGridNavigator me, integer tierNumber, kContext_where where) {
 	const integer navigatorNumber = TextGridNavigator_checkNavigatorNumberFromTierNumber (me, tierNumber);
-	const TextGridTierNavigator tn = my tierNavigators. at [navigatorNumber];
+	const TextGridTierNavigator tn = my tierNavigators.at [navigatorNumber];
 	const integer index = TextGridTierNavigator_getIndex (tn, where); 
 	return tn -> v_getEndTime (index);
 }
 
 integer TextGridNavigator_getIndex (TextGridNavigator me, integer tierNumber, kContext_where where) {
 	const integer navigatorNumber = TextGridNavigator_checkNavigatorNumberFromTierNumber (me, tierNumber);
-	const TextGridTierNavigator tn = my tierNavigators. at [navigatorNumber];
+	const TextGridTierNavigator tn = my tierNavigators.at [navigatorNumber];
 	const integer index = TextGridTierNavigator_getIndex (tn, where); 
 	return index;
 }

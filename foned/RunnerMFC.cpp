@@ -1,10 +1,10 @@
 /* RunnerMFC.cpp
  *
- * Copyright (C) 2001-2024 Paul Boersma
+ * Copyright (C) 2001-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -125,7 +125,7 @@ static void drawNow (RunnerMFC me) {
 			if (str32nequ (textToDraw, U"\\FI", 3)) {
 				structMelderFile file { };
 				MelderFolder_relativePathToFile (& my experiment -> rootDirectory, textToDraw + 3, & file);
-				Graphics_imageFromFile (my graphics.get(), Melder_fileToPath (& file), response -> left, response -> right, response -> bottom, response -> top);
+				Graphics_imageFromFile (my graphics.get(), MelderFile_peekPath (& file), response -> left, response -> right, response -> bottom, response -> top);
 			} else {
 				Graphics_setColour (my graphics.get(),
 					response -> name [0] == U'\0' ? Melder_SILVER :
@@ -228,7 +228,7 @@ static void do_ok (RunnerMFC me) {
 		if (my experiment -> blankWhilePlaying) {
 			my blanked = true;
 			Graphics_updateWs (my graphics.get());
-			GuiShell_drain (my windowForm);
+			GuiShell_drain (my windowForm, true, true);
 		}
 		if (my experiment -> stimuliAreSounds) {
 			autoMelderAudioSaveMaximumAsynchronicity saveMaximumAsynchronicity;
@@ -256,7 +256,7 @@ static void do_oops (RunnerMFC me) {
 	if (my experiment -> blankWhilePlaying) {
 		my blanked = true;
 		Graphics_updateWs (my graphics.get());
-		GuiShell_drain (my windowForm);
+		GuiShell_drain (my windowForm, true, true);
 	}
 	if (my experiment -> stimuliAreSounds) {
 		autoMelderAudioSaveMaximumAsynchronicity saveMaximumAsynchronicity;
@@ -275,7 +275,7 @@ static void do_replay (RunnerMFC me) {
 	if (my experiment -> blankWhilePlaying) {
 		my blanked = true;
 		Graphics_updateWs (my graphics.get());
-		GuiShell_drain (my windowForm);
+		GuiShell_drain (my windowForm, true, true);
 	}
 	if (my experiment -> stimuliAreSounds) {
 		autoMelderAudioSaveMaximumAsynchronicity saveMaximumAsynchronicity;
@@ -302,7 +302,7 @@ static void gui_drawingarea_cb_mouse (RunnerMFC me, GuiDrawingArea_MouseEvent ev
 		if (my experiment -> blankWhilePlaying) {
 			my blanked = true;
 			Graphics_updateWs (my graphics.get());
-			GuiShell_drain (my windowForm);
+			GuiShell_drain (my windowForm, true, true);
 		}
 		if (my experiment -> stimuliAreSounds) {
 			if (my experiment -> numberOfTrials < 1) {
@@ -331,7 +331,7 @@ static void gui_drawingarea_cb_mouse (RunnerMFC me, GuiDrawingArea_MouseEvent ev
 			if (my experiment -> blankWhilePlaying) {
 				my blanked = true;
 				Graphics_updateWs (my graphics.get());
-				GuiShell_drain (my windowForm);
+				GuiShell_drain (my windowForm, true, true);
 			}
 			if (my experiment -> stimuliAreSounds) {
 				autoMelderAudioSaveMaximumAsynchronicity saveMaximumAsynchronicity;

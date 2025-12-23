@@ -1,10 +1,10 @@
 /* manual_whatsnew.cpp
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -25,9 +25,185 @@ MAN_PAGES_BEGIN
 R"~~~(
 ################################################################################
 "What's new?"
-© Paul Boersma 1995–2024
+© Paul Boersma 1995–2025
 
 Latest changes in Praat.
+
+##6.4.48# (9 December 2025)
+• Linux audio: recognize JACK devices (next to the already recongized ALSA devices).
+• Linux fonts: support for the Charis 7 font, as on macOS and Windows.
+• OTGrammar: non-negative maximum entropy learning.
+• Debug option at start-up from command line, e.g. `--debug=58`.
+
+##6.4.47# (7 November 2025)
+• ##Sound: To LPC...#: channel averaging by default.
+• @`runSystem` and @`runSubprocess` should not divert a terminal window’s standard output.
+• Repaired a bug from November 2014 by which writing a BarkSpectrogram to a binary file used an incorrect format.
+
+##6.4.46# (20 October 2025)
+• ScriptEditor: made ##Run selection# work again on Windows and Linux (bug since 6.4.44).
+• Made pause windows (and perhaps Demo window) compatible with macOS 26 (Tahoe).
+
+##6.4.45# (12 October 2025)
+• Made @@Picture window@ 60\xx60 inches (instead of 12\xx12).
+• Windows: repaired a crashing bug in @`runSystem` introduced in 6.4.44.
+• Made progress bar writing compatible with macOS 26 (Tahoe).
+• Repaired an old bug that could crash Praat when viewing a Table with 0 rows.
+
+##6.4.44# (25 September 2025)
+• Made @`runSubprocess` compatible with the Microsoft runtime (instead of MinGW).
+• Made Info window writing compatible with macOS 26 (Tahoe).
+• Made @`demoShow` compatible with macOS 26.
+• Made @ScriptEditor menus reachable on macOS 26 when the script is paused.
+
+##6.4.43# (14 September 2025)
+• Calling Praat from the command line: the new switch `--send-or-form` sends a script
+  to a different already running GUI instance of Praat, like `--send` does,
+  but takes no arguments (except for the name of the script file)
+  and presents a form on the screen if the script has a `form` in it.
+• More detailed manual page for @`fileNames$#` ().
+
+##6.4.42# (28 August 2025)
+• Recognize more OGG sound files.
+• Recognize the pre-2025 `sendpraat` message on Windows again (compatibility with Elan 7.0).
+
+##6.4.41# (21 August 2025)
+• Faster computation of some formants (because of multithreading).
+• Removed a bug that caused Praat to crash on @@Sound: To Formant (robust)...@.
+
+##6.4.40# (16 August 2025)
+• Faster computation of spectrograms and some formants (because of multithreading).
+• Full awareness of processors with up to 400 physical threads (i.e. 200 or 400 cores).
+
+##6.4.39# (13 July 2025)
+• Calibrated cepstral peak prominence (@@PowerCepstrogram: Get CPPS...@).
+• Windows: restored “\@ ”, “~” and “\bs” on Latin-American Spanish keyboards.
+
+##6.4.38# (1 July 2025)
+• Macintosh and Windows: put back Charis SIL 6.200 for downloading with older Praat versions.
+• PairDistribution: ##Set weight...#.
+• OTGrammarEditor: removed a bug by which the window wouldn’t update automatically after learning.
+
+##6.4.37# (28 June 2025)
+• Macintosh and Windows: support for the Charis 7 font.
+
+##6.4.36# (25 June 2025)
+• Sound window: restore loudspeaker icon (for multi-channel sounds; bug since 6.4.31).
+• Scripting: function @`moveAndOrRenameFile` ().
+• FLAC 1.5.0.
+• Scripting on Windows: more Command-key combinations with @`demoKey$` in Demo window.
+
+##6.4.35# (15 June 2025)
+• Pitch analysis: guard against zero pitch floor if logarithmic.
+• Scripting: @`fixed$` () for vectors and matrices.
+• Linux: removed hard-coded background colour.
+• Full website `https://praat.org` now mirrors `https://www.fon.hum.uva.nl/praat` (to prevent down time).
+
+##6.4.34# (20 May 2025)
+• Linux: made @`demoShow` () work again on GTK 3.
+• Scripting: @`clock` ().
+
+##6.4.33# (18 May 2025)
+• H1-minus-H2 in the voice report.
+• Repaired an old bug that made spectrogram computation in the Sound window crash under some uncommon combinations of settings.
+
+##6.4.32# (14 May 2025)
+• Better continuity of integration of energy (finally corresponds to manual).
+• Scripting: more reliable @`random_initializeWithSeedUnsafelyButPredictably` (works even after an odd number of @`randomGauss`).
+
+##6.4.31# (3 May 2025)
+• TextGrid window: rubber banding within the selection,
+  by dragging a boundary while keeping the Option and Command keys pressed (plus the Shift key, if you want to drag in all tiers).
+• Backslash trigraphs: s\vv (`s\vv`), m\LIb (`m\LIb`), \V^ (`\V^`), d\// (`d\//`), d\-/ (`d\-/`), \l.\~/ (`\l.\~/`).
+• Unicode 16.0.
+
+##6.4.30# (29 April 2025)
+• Made the whole of the Buckeye corpus readable.
+• Backslash trigraphs for tone symbols: a\-' (`a\-'`), a\'- (`a\'-`), a\`- (`a\``-`), a\-` (`a\-```), a\rf (`a\rf`), a\fr (`a\fr`).
+• Other backslash trigraphs: d\mv (`d\mv`), d\wv (`d\wv`).
+
+##6.4.29# (27 April 2025)
+• ##Read Sound and adjacent annotation files (TIMIT)...#: if you open any sound file from the TIMIT corpus,
+  the annotation files with the same name in the same folder are interpreted as a TextGrid and opened as well.
+• ##Read Sound and adjacent annotation files (Buckeye)...#: if you open any sound file from the Buckeye corpus,
+  the annotation files with the same name in the same folder are interpreted as a TextGrid and opened as well.
+• Backslash trigraphs for tone symbols: a\'' (`a\''`), a\`` (`a\`````),
+  \-5 (`\-5`), \-4 (`\-4`), \-3 (`\-3`), \-2 (`\-2`), \-1 (`\-1`), \|u (`\|u`), \|d (`\|d`).
+• Backslash trigraphs for diagonal arrows: \NE (`\NE`), \SE (`\SE`), \SW (`\SW`), \NW (`\NW`);
+  the first two of these double as tone symbols.
+
+##6.4.28# (22 April 2025)
+• TextGrid window: removed a bug that caused slow scrolling (i.e. computation of whole-sound Pitch and Formant objects)
+  if the TextGrid was much longer than the Sound and the Sound was scrolled out of sight.
+• EEG window: repaired a bug that caused Praat to crash when clicking ##View & Edit#.
+• Windows Demo window: made Escape key available to `demoKey$()`
+  (this had been a bug since the beginning of the Demo window, i.e. since May 2009).
+• ##Read TextGrid from ESPS label file...#
+• Repaired a bug that could cause Praat to crash on pitch analysis when a part of the sound was constant.
+• ##Insert picture from file...#: the picture is now embedded into Praat picture files;
+  this also solves a problem with file paths that surfaced when a script called another script that inserted a picture.
+• ##Photo: Save as PNG file...#: repaired a bug that caused a crash on the Mac.
+
+##6.4.27# (27 January 2025)
+• Graphics text: better pipes and slashes.
+• Windows for ARM64 processors: removed a bug whereby dynamic menu deletion could crash after a sound was played in the Demo window.
+
+##6.4.26# (8 January 2025)
+• ##Rectangle text (maximal fit)...# is perhaps useful in general,
+  but will especially facilitate text and button drawing in Demo window.
+• Linux for ARM64 processors: sped up some slow computations by a factor of over 100.
+• ##OTGrammar & Strings & Strings: Tabulate all correct rankings# lists all full rankings
+  that map the given list of inputs to the given list of partial outputs,
+  using brute-force permutation of up to 18 constraints.
+• ##OTGrammar: Tabulate equivalent pairs# checks to what extent different candidates
+  have different sets of constraint violations.
+
+##6.4.25# (8 December 2024)
+• Command-line interface: solved a crash that occurred when a menu command was not available.
+• Windows: open-source code signing.
+
+##6.4.24# (1 December 2024)
+• FormantPath: fixed bug with sampling frequency.
+• Formant measurements: fixed bugs in “autocorrelation” and “robust” methods.
+• Manual: better support for screens taller than 15 inches.
+• Scripting: support for subtraction and unary minus for tensors.
+• Scripting: removed `sendsocket`.
+
+##6.4.23# (27 October 2024)
+• Audio output: higher-quality playback of sounds with unusual sampling frequencies.
+• Scripting: better error messages on #Save commands.
+• Better HTML output from manuals (e.g. italicized or bolded backslash sequences).
+
+##6.4.22# (5 October 2024)
+• More robustness against trying to run a binary file as a script.
+• Windows Sound window: faster zooming with Ctrl-scrollwheel.
+• Windows: guarantee Explorer-type file selection windows.
+
+##6.4.21# (21 September 2024)
+• SpeechSynthesizer: repaired an old bug whereby ##Get phonemes from text...# could increase the duration
+  of a subsequent ##Play# (or ##To Sound...#).
+• SpeechSynthesizer and TextGrid alignment: repaired a bug (existing since 6.4.18) whereby #clause and #word tiers would be empty.
+• TextGrid window: disambiguated Command-F5 (now Option-F5 for ##Get minimum pitch#; likewise, Option-F8 for ##Get minimum intensity#).
+• Calling Praat from command line: reenabled `--pref-dir=` option.
+
+##6.4.20# (18 September 2024)
+• Linux: repaired a major bug whereby Praat could crash when trying to draw to a hidden Picture window.
+• Scripting: just like normal forms, pause forms now also accept “yes” and “off” (and the like) instead of just 1 and 0.
+• Scripting: repaired a minor bug whereby `optionmenu` in forms would show an incorrect default value.
+
+##6.4.19# (4 September 2024)
+• Repaired many bugs in the eSpeak part of Praat.
+
+##6.4.18# (21 August 2024)
+• SpeechSynthesizer and TextGrid alignment: solved an eSpeak-internal bug that caused some
+  rare long phoneme codes to be handled incorrectly.
+• Scripting: `padLeft$`(), `truncateLeft$`() and `padOrTruncateLeft$`(), and their `Right` counterparts.
+• s390x edition for Linux.
+
+##6.4.17# (8 August 2024)
+• Spectrogram: #Paint: solved a bug that could cause Praat to crash if the time domain was smaller than that of the Spectrogram.
+• ScriptEditor: ##Run selection# can call procedures outside the selected text.
+• Audio files: can open Polyphone (Shorten) files.
 
 ##6.4.16# (29 July 2024)
 • Windows: make command-line output visible (new on ARM64, was lost in 6.4.14 for Intel64 and Intel32).
@@ -42,7 +218,7 @@ Latest changes in Praat.
 • ARM64 Windows: worked around a compiler bug that caused incorrect window sizes.
 • Pitch analysis: faster on Windows (Intel64 and Intel32).
 • Windows: better fonts and background colours (perhaps dependent on language settings).
-• ##TextGrids: Concatenate#: guard against some incorrect TexGrid files.
+• ##TextGrids: Concatenate#: guard against some incorrect TextGrid files.
 
 ##6.4.13# (10 June 2024)
 • More manual pages.
@@ -123,6 +299,38 @@ Latest changes in Praat.
   and made obsolete versions of pitch analysis settings (such as “Pitch silence threshold”)
   available again, now under the COMPATIBILITY section of the output of “Editor info”.
   This will allow older editor scripts to continue to run without change.
+
+What used to be new?
+====================
+• @@What was new in 6.4?
+• @@What was new in 6.3?
+• @@What was new in 6.2?
+• @@What was new in 6.1?
+• @@What was new in 6.0?
+• @@What was new in 5.4?
+• @@What was new in 5.3?
+• @@What was new in 5.2?
+• @@What was new in 5.1?
+• @@What was new in 5.0?
+• @@What was new in 4.6?
+• @@What was new in 4.5?
+• @@What was new in 4.4?
+• @@What was new in 4.3?
+• @@What was new in 4.2?
+• @@What was new in 4.1?
+• @@What was new in 4.0?
+• @@What was new in 3.9?
+• @@What was new in 3.8?
+• @@What was new in 3.7?
+• @@What was new in 3.6?
+• @@What was new in 3.5?
+• @@What was new in 3.3?
+• @@What was new in 3.2?
+• @@What was new in 3.1?
+
+################################################################################
+"What was new in 6.4?"
+© Paul Boersma 2022,2023
 
 ##6.4# (15 November 2023)
 • New pitch analysis methods: @@Sound: To Pitch (filtered ac)...@ and
@@ -250,33 +458,6 @@ and is interruptable by the Escape key.
 
 ##6.3.01# (21 November 2022)
 • Fixed a crash introduced in 6.3 when closing an editor window by choosing #Close (or by typing Command-W).
-
-What used to be new?
-====================
-• @@What was new in 6.3?
-• @@What was new in 6.2?
-• @@What was new in 6.1?
-• @@What was new in 6.0?
-• @@What was new in 5.4?
-• @@What was new in 5.3?
-• @@What was new in 5.2?
-• @@What was new in 5.1?
-• @@What was new in 5.0?
-• @@What was new in 4.6?
-• @@What was new in 4.5?
-• @@What was new in 4.4?
-• @@What was new in 4.3?
-• @@What was new in 4.2?
-• @@What was new in 4.1?
-• @@What was new in 4.0?
-• @@What was new in 3.9?
-• @@What was new in 3.8?
-• @@What was new in 3.7?
-• @@What was new in 3.6?
-• @@What was new in 3.5?
-• @@What was new in 3.3?
-• @@What was new in 3.2?
-• @@What was new in 3.1?
 
 ################################################################################
 "What was new in 6.3?"
@@ -1179,7 +1360,7 @@ the column index was larger than the number of rows.
 • Sound window: ##Extract selected sound for overlap...#.
 
 ##5.3.49# (13 May 2013)
-• TextGrid window: alignment of the sound and the annotation in an interval, via Espeak.
+• TextGrid window: alignment of the sound and the annotation in an interval, via eSpeak.
 • Scripting: repaired a bug introduced in 5.3.32 that could cause very slow running of scripts.
 
 ##5.3.48# (1 May 2013)

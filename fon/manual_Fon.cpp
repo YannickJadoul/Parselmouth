@@ -1,10 +1,10 @@
 /* manual_Fon.cpp
  *
- * Copyright (C) 1992-2008,2010,2011,2014-2017,2019-2024 Paul Boersma
+ * Copyright (C) 1992-2008,2010,2011,2014-2017,2019-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -303,7 +303,7 @@ This command is kept for reasons of compatibility.
 
 ################################################################################
 "Create Strings as file list..."
-© Paul Boersma 1998,2006,2013-2015,2020,2024
+© Paul Boersma 1998,2006,2013-2015,2020,2024,2025
 
 A command in the @@New menu@ to create a @Strings object containing a list of files in a given folder.
 
@@ -321,7 +321,7 @@ R"~~~(
 : the name of the resulting Strings object.
 
 ##File path
-: the folder name, with an optional %wildcard (see below) for selecting files.
+: the folder name, with optional %wildcards (see below) for selecting files.
 
 Behaviour
 =========
@@ -339,10 +339,13 @@ One way is to specify a folder name only. On Unix, the file path could be
 On Macintosh, `/Users/miep/Sounds` or `/Users/miep/Sounds/`. Any of these produce
 a list of all the files in the specified folder.
 
-The other way is to specify a wildcard (a single asterisk) for the file names.
+The other way is to specify a %wildcard (an asterisk) for the file names.
 To get a list of all the files whose names start with “`hal`” and end in “`.wav`”,
 type `/usr/people/miep/sounds/hal*.wav`, `C:\Users\Miep\Sounds\hal*.wav`,
 or `/Users/miep/Sounds/hal*.wav`.
+
+You can even use %two wildcards: `/usr/people/miep/sounds/*al*.wav` gives you a list
+of all files whose names contain `al` and end in `wav`.
 
 Script usage
 ============
@@ -358,6 +361,7 @@ you could use the following script:
 		fileName$ = Get string: ifile
 		\@{Read from file:} folder$ + “/” + fileName$
 	endfor
+	removeObject: strings
 }
 If the script has been saved to a script file, you can use file paths that are relative to the folder
 where you saved the script. Thus, with
@@ -373,7 +377,7 @@ you can do
 As is usual in Praat scripting, the forward slash (“/”) in this example can be used on all platforms, including Windows.
 This makes your script portable across platforms.
 
-Note that the above functionality can also be written three lines shorter, using built-in functions:
+Note that the above functionality can also be written four lines shorter, using built-in functions:
 {;
 	folder$ = “/usr/people/miep/sounds”
 	list$# = \#`{fileNames$#}: folder$ + “/*.wav”
@@ -868,15 +872,17 @@ LIST_ITEM (U"F2: Get second formant")
 LIST_ITEM (U"F3: Get third formant")
 LIST_ITEM (U"F4: Get fourth formant")
 LIST_ITEM (U"F5: Get pitch")
-LIST_ITEM (U"Command-F5: Get minimum pitch")
+LIST_ITEM (U"Option-F5: Get minimum pitch")
 LIST_ITEM (U"Shift-F5: Get maximum pitch")
 LIST_ITEM (U"F6: Get cursor")
 LIST_ITEM (U"F7: Get spectral power at cursor cross")
 LIST_ITEM (U"F8: Get intensity")
+LIST_ITEM (U"Option-F8: Get minimum intensity")
+LIST_ITEM (U"Shift-F8: Get maximum intensity")
 LIST_ITEM (U"F12: Log 1")
 LIST_ITEM (U"Shift-F12: Log 2")
 LIST_ITEM (U"Option-F12: Log script 3")
-LIST_ITEM (U"Command-F12: Log script 4")
+LIST_ITEM (U"Command-F12: Log script 4   [note: Command-Fxx combinations are not available to apps on all computers]")
 LIST_ITEM (U"Tab (in sound windows): Play selection")
 LIST_ITEM (U"Shift-Tab (in sound windows): Play window")
 LIST_ITEM (U"Arrow-up (in sound windows): Select earlier")

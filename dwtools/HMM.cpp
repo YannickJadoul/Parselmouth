@@ -750,7 +750,7 @@ autoHMMObservationSequence HMM_to_HMMObservationSequence (HMM me, integer startS
 
 				// get next state
 
-				istate = NUMgetIndexFromProbability (my transitionProbs.row (istate).part(1, my numberOfStates), NUMrandomUniform (0.0, 1.0));
+				istate = NUMgetIndexFromProbability (my transitionProbs.row (istate).part (1, my numberOfStates), NUMrandomUniform (0.0, 1.0));
 				if (istate == my numberOfStates + 1) { // final state
 					for (integer j = numberOfItems; j > i; j --)
 						HMMObservationSequence_removeObservation (thee.get(), j);
@@ -1439,7 +1439,7 @@ double HMM_getProbabilityAtTimeBeingInState (HMM me, integer itime, integer ista
 	alpha_t.all()  <<=  my initialStateProbs.all();
 	scale [1] = NUMsum (alpha_t.all());
 
-	alpha_t. all() /= scale [1];
+	alpha_t.all() /= scale [1];
 	
 	// recursion
 	for (integer it = 2; it <= itime; it ++) {
@@ -1452,7 +1452,7 @@ double HMM_getProbabilityAtTimeBeingInState (HMM me, integer itime, integer ista
 			alpha_t [js] = double (sum);
 			scale [it] += alpha_t [js];
 		}
-		alpha_t. all() /= scale [it];
+		alpha_t.all() /= scale [it];
 	}
 
 	longdouble lnp = 0.0;

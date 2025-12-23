@@ -1,10 +1,10 @@
 /* Sound_audio.cpp
  *
- * Copyright (C) 1992-2020,2022-2024 Paul Boersma
+ * Copyright (C) 1992-2020,2022-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -71,8 +71,8 @@ static int portaudioStreamCallback (
 	struct Sound_recordFixedTime_Info *info = (struct Sound_recordFixedTime_Info *) void_info;
 	integer samplesLeft = info -> numberOfSamples - info -> numberOfSamplesRead;
 	if (samplesLeft > 0) {
-		integer dsamples = std::min (samplesLeft, uinteger_to_integer (frameCount));
-		memcpy (info -> buffer + info -> numberOfSamplesRead, input, integer_to_uinteger (2 * dsamples));
+		integer dsamples = std::min (samplesLeft, uinteger_to_integer_a (frameCount));
+		memcpy (info -> buffer + info -> numberOfSamplesRead, input, integer_to_uinteger_a (2 * dsamples));
 		info -> numberOfSamplesRead += dsamples;
 		const short *input2 = (const short *) input;
 		//Melder_casual (U"read ", dsamples, U" samples: ", input2 [0], U", ", input2 [1], U", ", input2 [3], U"...");
@@ -94,7 +94,7 @@ autoSound Sound_record_fixedTime (int inputSource, double gain, double balance, 
 		#elif defined (raspberrypi)
 			MelderAudio_getInputSoundSystem () == kMelder_inputSoundSystem::JACK_VIA_PORTAUDIO;
 		#else
-			MelderAudio_getInputSoundSystem () == kMelder_inputSoundSystem::ALSA_VIA_PORTAUDIO;
+			MelderAudio_getInputSoundSystem () == kMelder_inputSoundSystem::ALSA_OR_JACK_VIA_PORTAUDIO;
 		#endif
 	PaStream *portaudioStream = nullptr;
 	#if defined (macintosh)
@@ -535,7 +535,7 @@ void Sound_playPart (constSound me, double tmin, double tmax, Sound_PlayCallback
 				thy silenceBefore + thy numberOfSamples + thy silenceAfter, numberOfChannels, melderPlayCallback, thee);
 		} else {
 			autoSound part = Sound_extractPart (me, tmin, tmax, kSound_windowShape::RECTANGULAR, 1.0, true);
-			autoSound resampled = Sound_resample (part.get(), bestSampleRate, 1);
+			autoSound resampled = Sound_resample (part.get(), bestSampleRate, 20);
 			Sound_playPart (resampled.get(), tmin, tmax, callback, boss);   // recursively
 		}
 	} catch (MelderError) {

@@ -1,0 +1,27 @@
+# File: makefile.defs.linux.pulse-gcc
+# System: Linux
+# David Weenink and Paul Boersma 2025-01-01
+
+CC = gcc
+CXX = g++
+LINK = $(CXX)
+
+PKG_CONFIG ?= pkg-config
+
+COMMONFLAGS = -DUNIX -Dlinux -DALSA -DHAVE_PULSEAUDIO -D_FILE_OFFSET_BITS=64 `$(PKG_CONFIG) --cflags gtk+-3.0` \
+	-Wreturn-type -Wunused -Wunused-parameter -Wuninitialized -O3 -g1 -pthread
+
+CFLAGS = -std=gnu99 $(COMMONFLAGS) -Werror=missing-prototypes -Werror=implicit
+
+CXXFLAGS = -std=c++17 $(COMMONFLAGS) -Wshadow
+
+EXECUTABLE = praat
+
+LIBS = `$(PKG_CONFIG) --libs gtk+-3.0` -no-pie -lm -lpulse -lasound -lpthread
+
+AR = ar
+RANLIB = ls
+ICON =
+MAIN_ICON =
+
+INSTALL = install -p praat /usr/local/bin

@@ -2,11 +2,11 @@
 #define _Thing_h_
 /* Thing.h
  *
- * Copyright (C) 1992-2009,2011-2020,2022,2024 Paul Boersma
+ * Copyright (C) 1992-2009,2011-2020,2022,2024,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -75,6 +75,7 @@ struct structClassInfo {
 	we write out the stuff that does exist.
 */
 typedef struct structThing *Thing;   // we need an explicit "struct" here, because this is a forward declaration
+typedef struct structThing *mutableThing;
 typedef const struct structThing *constThing;
 extern ClassInfo classThing;
 extern struct structClassInfo theClassInfo_Thing;
@@ -85,8 +86,8 @@ struct structThing {
 	void operator delete (void *ptr, size_t /* size */) { Melder_free (ptr); }
 
 	/*
-		If a Thing has members of type autoThing,
-		then we want the destructors of autoThing to be called automatically whenever a Thing is `delete`d.
+		If a Thing has members of type autoThing and/or autovector and/or automatrix and/or autostring,
+		then we want the destructors of those objects to be called automatically whenever a Thing is `delete`d.
 		For this to happen, it is necessary that every Thing itself has a destructor.
 		We therefore define a destructor here,
 		and we make it virtual to ensure that every subclass has its own automatic version.
@@ -96,7 +97,8 @@ struct structThing {
 	virtual void v9_destroy () noexcept { }
 		/*
 			This method should destroy all members that are not destroyed automatically
-			(any autoThing is destroyed automatically), and to remove dangling links to self.
+			(any autoThing or autovector or automatrix or autostring is destroyed automatically),
+			and to remove dangling links to self.
 			Destroying *all* members means that we have to destroy all members that the
 			derived class has added, as well as all members of the base class,
 			and so on recursively; v9_destroy therefore has to call the inherited v9_destroy.
@@ -259,7 +261,7 @@ void _Thing_forget_nozero (Thing me);
 
 /* For debugging. */
 
-extern integer theTotalNumberOfThings;
+extern std::atomic <integer> theTotalNumberOfThings;
 /* This number is 0 initially, increments at every successful `new', and decrements at every `forget'. */
 
 template <class T>
@@ -486,9 +488,9 @@ public:
 		or anything like that.
 
 		So we create a method that casts and moves at the same time:
-			autoPitch pitch = sampled. static_cast_move <structPitch> ();
+			autoPitch pitch = sampled.static_cast_move <structPitch>();
 	*/
-	template <class Y> autoSomeThing<Y> static_cast_move () noexcept {
+	template <class Y> autoSomeThing<Y> static_cast_move() noexcept {
 		T* nakedPointer_oldType = our releaseToAmbiguousOwner();   // throw the object in the air...
 		Y* nakedPointer_newType = static_cast<Y*> (nakedPointer_oldType);
 		autoSomeThing<Y> newObject;
@@ -499,7 +501,7 @@ public:
 
 typedef autoSomeThing<structThing> autoThing;
 
-#define Thing_new(Klas)  Thing_newFromClass (class##Klas).static_cast_move<struct##Klas>()
+#define Thing_new(Klas)  Thing_newFromClass (class##Klas).static_cast_move <struct##Klas>()
 /*
 	Function:
 		return a new object of class 'klas'.

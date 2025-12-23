@@ -41,17 +41,16 @@
 #include "Covariance.h"
 #include "Table_extensions.h"
 
-autoTable FileInMemoryManager_downto_Table (FileInMemoryManager me, bool openFilesOnly) {
+autoTable FileInMemorySet_downto_Table (FileInMemorySet me, bool openFilesOnly) {
 	try {
-		const integer numberOfRows = ( openFilesOnly ? my openFiles -> size : my files -> size );
-		const conststring32 columnNames [] = { U"path", U"id", U"size", U"position" };
+		const integer numberOfRows = my size;   // FIXME: try open files only
+		const conststring32 columnNames [] = { U"path", U"size", U"position" };
 		autoTable thee = Table_createWithColumnNames (numberOfRows, ARRAY_TO_STRVEC (columnNames));
 		for (integer irow = 1; irow <= numberOfRows; irow ++) {
-			const FileInMemory fim = static_cast <FileInMemory> (openFilesOnly ? my openFiles -> at [irow] : my files -> at [irow]);
-			Table_setStringValue (thee.get(), irow, 1, fim -> d_path.get());
-			Table_setStringValue (thee.get(), irow, 2, fim -> d_id.get());
-			Table_setNumericValue (thee.get(), irow, 3, fim -> d_numberOfBytes);
-			Table_setNumericValue (thee.get(), irow, 4, fim -> d_position);
+			const FileInMemory fim = my at [irow];   // FIXME: try open files only
+			Table_setStringValue (thee.get(), irow, 1, fim -> string.get());
+			Table_setNumericValue (thee.get(), irow, 2, fim -> d_numberOfBytes);
+			Table_setNumericValue (thee.get(), irow, 3, fim -> d_position);
 		}
 		return thee;
 	} catch (MelderError) {
@@ -402,25 +401,25 @@ void Table_printAsAnovaTable (Table me) {
 	if (my numberOfColumns < 6)
 		return;
 	MelderInfo_writeLine (
-		Melder_pad (width [1], U"Source"), U"\t",
-		Melder_pad (width [2], U"SS"), U"\t",
-		Melder_pad (width [3], U"Df"), U"\t",
-		Melder_pad (width [4], U"MS"), U"\t",
-		Melder_pad (width [5], U"F"), U"\t",
-		Melder_pad (width [6], U"P")
+		Melder_padLeft (U"Source", width [1]), U"\t",
+		Melder_padLeft (U"SS", width [2]), U"\t",
+		Melder_padLeft (U"Df", width [3]), U"\t",
+		Melder_padLeft (U"MS", width [4]), U"\t",
+		Melder_padLeft (U"F", width [5]), U"\t",
+		Melder_padLeft (U"P", width [6])
 	);
 	for (integer icol = 2; icol <= 6; icol ++)
 		Table_numericize_a (me, icol);
 
 	for (integer i = 1; i <= my rows.size; i ++) {
 		const TableRow row = my rows.at [i];
-		MelderString_copy (& s, Melder_padOrTruncate (width [1], row -> cells [1]. string.get()), U"\t");
+		MelderString_copy (& s, Melder_padOrTruncateLeft (row -> cells [1]. string.get(), width [1]), U"\t");
 		for (integer j = 2; j <= 6; j ++) {
 			const double value = row -> cells [j]. number;
 			if (isdefined (value))
-				MelderString_append (& s, Melder_pad (width [j], Melder_single (value)), j == 6 ? U"" : U"\t");
+				MelderString_append (& s, Melder_padLeft (Melder_single (value), width [j]), j == 6 ? U"" : U"\t");
 			else
-				MelderString_append (& s, Melder_pad (width [j], U""), j == 6 ? U"" : U"\t");
+				MelderString_append (& s, Melder_padLeft (U"", width [j]), j == 6 ? U"" : U"\t");
 		}
 		MelderInfo_writeLine (s.string);
 	}
@@ -433,20 +432,20 @@ void Table_printAsMeansTable (Table me) {
 
 	for (integer j = 1; j <= my numberOfColumns; j ++)
 		MelderString_append (& s,
-			Melder_padOrTruncate (10, ( my columnHeaders [j]. label ? my columnHeaders [j]. label.get() : U"" )),
+			Melder_padOrTruncateLeft (( my columnHeaders [j]. label ? my columnHeaders [j]. label.get() : U"" ), 10),
 			( j == my numberOfColumns ? U"" : U"\t" ));
 
 	MelderInfo_writeLine (s.string);
 	for (integer i = 1; i <= my rows.size; i ++) {
 		const TableRow row = my rows.at [i];
-		MelderString_copy (& s, Melder_padOrTruncate (10, row -> cells [1]. string.get()), U"\t");
+		MelderString_copy (& s, Melder_padOrTruncateLeft (row -> cells [1]. string.get(), 10), U"\t");
 		for (integer j = 2; j <= my numberOfColumns; j ++) {
 			const double value = row -> cells [j].number;
 			if (isdefined (value))
-				MelderString_append (& s, Melder_pad (10, Melder_half (value)),
+				MelderString_append (& s, Melder_padLeft (Melder_half (value), 10),
 					( j == my numberOfColumns ? U"" : U"\t" ));
 			else
-				MelderString_append (& s, Melder_pad (10, U""), ( j == my numberOfColumns ? U"" : U"\t" ));
+				MelderString_append (& s, Melder_padLeft (U"", 10), ( j == my numberOfColumns ? U"" : U"\t" ));
 		}
 		MelderInfo_writeLine (s.string);
 	}
@@ -804,7 +803,7 @@ void Table_normalProbabilityPlot (Table me, Graphics g, integer column, integer 
 			ymin = stats.mean - numberOfSigmas * stats.stdev;
 			ymax = stats.mean + numberOfSigmas * stats.stdev;
 		}
-		sort_VEC_inout (data.get());
+		sort_e_VEC_inout (data.get());
 		numberOfQuantiles = numberOfData < numberOfQuantiles ? numberOfData : numberOfQuantiles;
 		autoTableOfReal thee = TableOfReal_create (numberOfQuantiles, 2);
 		TableOfReal_setColumnLabel (thee.get(), 1, U"Normal distribution quantiles");

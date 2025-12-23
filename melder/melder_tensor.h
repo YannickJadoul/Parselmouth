@@ -2,11 +2,11 @@
 #define _melder_tensor_h_
 /* melder_tensor.h
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -70,7 +70,7 @@ struct vector {
 		: cells (givenCells), size (givenSize) { }
 	explicit vector (matrix<T> const& mat)
 		: vector (mat.cells, mat.nrow * mat.ncol) { }
-	T& operator[] (integer i) const {
+	inline T& operator[] (integer i) const {
 		return our cells [i - 1];
 	}
 	/*
@@ -140,7 +140,7 @@ struct vectorview {
 	integer stride = 1;
 	vectorview ()
 		= default;
-	explicit vectorview (T * const firstCell_, integer const size_, integer const stride_)
+	explicit vectorview (T *const firstCell_, integer const size_, integer const stride_)
 		: firstCell (firstCell_), size (size_), stride (stride_) { }
 	vectorview (vector<T> const& other)
 		: firstCell (other.cells), size (other.size), stride (1) { }
@@ -157,7 +157,7 @@ struct vectorview {
 	}
 	matrixview<T> asmatrixview (integer nrow, integer ncol) {
 		Melder_assert (nrow * ncol <= our size);
-		return matrixview (our cells, nrow, ncol, ncol * our stride, our stride);
+		return matrixview (our firstCell, nrow, ncol, ncol * our stride, our stride);
 	}
 	T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] (1); }
 	T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] (0); }
@@ -169,7 +169,7 @@ struct constvectorview {
 	integer size = 0;
 	integer stride = 1;
 	constvectorview () = default;
-	explicit constvectorview (const T * const firstCell_, integer const size_, integer const stride_)
+	explicit constvectorview (const T *const firstCell_, integer const size_, integer const stride_)
 		: firstCell (firstCell_), size (size_), stride (stride_) { }
 	constvectorview (constvector<T> const& other)
 		: constvectorview (other.cells, other.size, 1) { }
@@ -190,7 +190,7 @@ struct constvectorview {
 	}
 	constmatrixview<T> asmatrixview (integer nrow, integer ncol) {
 		Melder_assert (nrow * ncol <= our size);
-		return constmatrixview (our cells, nrow, ncol, ncol * our stride, our stride);
+		return constmatrixview (our firstCell, nrow, ncol, ncol * our stride, our stride);
 	}
 	const T *asArgumentToFunctionThatExpectsZeroBasedArray () const { return & our operator[] (1); }
 	const T *asArgumentToFunctionThatExpectsOneBasedArray () const { return & our operator[] (0); }
@@ -217,7 +217,7 @@ struct autovector {
 		our _capacity = givenSize;
 	}
 	autovector (std::initializer_list <const T> list) {
-		our size = uinteger_to_integer (list.size());
+		our size = uinteger_to_integer_a (list.size());
 		our cells = MelderArray:: _alloc <T> (our size, MelderArray::kInitializationType::RAW);   // raw is possible because T is copyable data
 		T *p = our cells;
 		for (auto cell : list)
@@ -399,7 +399,7 @@ struct matrix {
 	explicit matrix (vector<T> const& vec, integer givenNrow, integer givenNcol)
 		: matrix (vec.cells, givenNrow, givenNcol)
 	{
-		Melder_assert (givenNrow * givenNcol <= vec. size);
+		Melder_assert (givenNrow * givenNcol <= vec.size);
 	}
 	vector<T> operator[] (integer rowNumber) const {
 		return vector<T> (our cells + (rowNumber - 1) * our ncol, our ncol);
@@ -470,7 +470,7 @@ struct constmatrix {
 	explicit constmatrix (vector<T> const& vec, integer givenNrow, integer givenNcol)
 		: constmatrix (vec.cells, givenNrow, givenNcol)
 	{
-		Melder_assert (givenNrow * givenNcol <= vec. size);
+		Melder_assert (givenNrow * givenNcol <= vec.size);
 	}
 	constvector<T> operator[] (integer rowNumber) const {
 		return constvector<T> (our cells + (rowNumber - 1) * our ncol, our ncol);
@@ -565,7 +565,7 @@ struct matrixview {
 	explicit matrixview (vectorview<T> const& vec, integer givenNrow, integer givenNcol) :
 			matrixview (vec.cells, givenNrow, givenNcol, givenNcol * vec.stride, vec.stride)
 	{
-		Melder_assert (givenNrow * givenNcol <= vec. size);
+		Melder_assert (givenNrow * givenNcol <= vec.size);
 	}
 	vectorview<T> operator[] (integer rowNumber) const {
 		return vectorview<T> (our firstCell + (rowNumber - 1) * our rowStride, our ncol, our colStride);
@@ -615,7 +615,7 @@ struct constmatrixview {
 	integer rowStride = 0, colStride = 1;
 	constmatrixview ()
 		= default;
-	explicit constmatrixview (const T * const firstCell_, integer const nrow_, integer const ncol_, integer const rowStride_, integer const colStride_)
+	explicit constmatrixview (const T *const firstCell_, integer const nrow_, integer const ncol_, integer const rowStride_, integer const colStride_)
 		: firstCell (firstCell_), nrow (nrow_), ncol (ncol_), rowStride (rowStride_), colStride (colStride_) { }
 	constmatrixview (const constmatrix<T>& other)
 		: constmatrixview (other.cells, other.nrow, other.ncol, other.ncol, 1_integer) { }
@@ -626,7 +626,7 @@ struct constmatrixview {
 	explicit constmatrixview (constvectorview<T> const& vec, integer givenNrow, integer givenNcol) :
 			constmatrixview (vec.cells, givenNrow, givenNcol, givenNcol * vec.stride, vec.stride)
 	{
-		Melder_assert (givenNrow * givenNcol <= vec. size);
+		Melder_assert (givenNrow * givenNcol <= vec.size);
 	}
 	constvectorview<T> operator[] (integer i) const {
 		return constvectorview<T> (our firstCell + (i - 1) * our rowStride, our ncol, our colStride);
@@ -693,14 +693,14 @@ struct automatrix {
 		our ncol = givenNcol;
 	}
 	automatrix (std::initializer_list <std::initializer_list <T>> list) {
-		our nrow = uinteger_to_integer (list.size());
+		our nrow = uinteger_to_integer_a (list.size());
 		Melder_assert (our nrow > 0);   // empty matrices should be created with automatrix<T>() or automatrix<T> (0, 10) or so
-		our ncol = uinteger_to_integer (list.begin()->size());
+		our ncol = uinteger_to_integer_a (list.begin()->size());
 		Melder_assert (our ncol > 0);   // empty matrices should be created with automatrix<T>() or automatrix<T> (10, 0) or so
 		our cells = MelderArray:: _alloc <T> (our nrow * our ncol, MelderArray::kInitializationType::RAW);
 		T *p = our cells;
 		for (auto row : list) {
-			const integer numberOfColumnsInThisRow = uinteger_to_integer (row.size());
+			const integer numberOfColumnsInThisRow = uinteger_to_integer_a (row.size());
 			Melder_assert (numberOfColumnsInThisRow == our ncol);   // unfortunately, no support for static_assert here in C++17
 			for (auto cell : row)
 				* (p ++) = cell;
@@ -1049,7 +1049,7 @@ struct consttensor3 {
 			our cells
 			+ (dim2 - 1) * our stride2
 			+ (dim3 - 1) * our stride3,
-			our nidm1,
+			our ndim1,
 			our stride1
 		);
 	}
@@ -1336,7 +1336,6 @@ inline autoINTVEC copy_INTVEC (constINTVECVU const& source) {
 }
 #define ARRAY_TO_INTVEC(integerArray)  constINTVEC (& integerArray [0], sizeof (integerArray) / sizeof (integer))
 
-
 using BOOLVEC = vector <bool>;
 using BOOLVECVU = vectorview <bool>;
 using constBOOLVEC = constvector <bool>;
@@ -1472,7 +1471,9 @@ inline autoBYTEMAT copy_BYTEMAT (constBYTEMATVU source) {
 }
 
 conststring32 Melder_VEC (constVECVU const& value, bool horizontal = false);
+conststring32 Melder_fixed (constVECVU const& value, integer precision, bool horizontal = false);
 conststring32 Melder_MAT (constMATVU const& value);
+conststring32 Melder_fixed (constMATVU const& value, integer precision);
 
 inline void operator<<= (INTVECVU const& target, constINTVECVU const& source) {
 	Melder_assert (target.size == source.size);

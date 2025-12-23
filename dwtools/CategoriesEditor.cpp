@@ -282,9 +282,9 @@ Thing_define (CategoriesEditorCommand, Command) {
 	integer nSelected, newPos;
 	
 	void v_do ()
-		override {};
+		override { };
 	void v_undo ()
-		override {};
+		override { };
 };
 
 

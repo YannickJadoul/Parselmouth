@@ -99,24 +99,6 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>aif</string>
-			</array>
-			<key>CFBundleTypeIconSystemGenerated</key>
-			<integer>1</integer>
-			<key>CFBundleTypeName</key>
-			<string>AIF audio file</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Default</string>
-			<key>LSTypeIsPackage</key>
-			<false/>
-			<key>NSPersistentStoreTypeKey</key>
-			<string>Binary</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
 				<string>mp3</string>
 			</array>
 			<key>CFBundleTypeIconSystemGenerated</key>
@@ -688,9 +670,9 @@
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>Praat</string>
+	<string>PRAAT_NAME</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Praat PRAAT_VERSION_STR, © 1992-PRAAT_YEAR by Paul Boersma &amp; David Weenink</string>
+	<string>PRAAT_NAME PRAAT_VERSION_STR, © 1992-PRAAT_YEAR by Paul Boersma &amp; David Weenink</string>
 	<key>CFBundleIconFile</key>
 	<string>Praat</string>
 	<key>CFBundleIdentifier</key>
@@ -698,7 +680,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Praat</string>
+	<string>PRAAT_NAME</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

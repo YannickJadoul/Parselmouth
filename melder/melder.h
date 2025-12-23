@@ -2,11 +2,11 @@
 #define _melder_h_
 /* melder.h
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -33,6 +33,8 @@
 #include <new>   // placement new
 #include <algorithm>   // std::min
 #include <limits>   // std::numeric_limits<double>::max(), std::numeric_limits<double>::lowest()
+#include <mutex>
+#include <atomic>   // std::atomic<integer>
 
 /*
 	Law of Demeter for class functions defined outside class definition.
@@ -44,18 +46,20 @@
 #define your  you ->
 #define his  him ->
 #define her  she ->
+#define their  they ->
 #define iam(klas)  klas me = (klas) void_me
 #define optional_my  optional_me ->
 #define optional_thy  optional_thee ->
 #define optional_your  optional_you ->
 #define optional_his  optional_him ->
 #define optional_her  optional_she ->
+#define optional_their  optional_they ->
 
 #define stringize(s)  stringize_helper(s)
 #define stringize_helper(s)  #s
 
 #include "melder_assert.h"   // Melder_assert
-#include "melder_int.h"   // <stdint.h>, int64, integer_to_uinteger (requires Melder_assert)
+#include "melder_int.h"   // <stdint.h>, int64, integer_to_uinteger_a (requires Melder_assert)
 #include "melder_pointer.h"   // NULL
 #include "melder_real.h"   // longdouble, MelderPoint, MelderRealRange
 #include "NUMmath.h"   // <math.h>, NUMpi, undefined
@@ -71,19 +75,20 @@
 
 #include "melder_tensor.h"   // VEC, autoMAT, Melder_VEC
 #include "melder_colour.h"   // MelderColour (requires VEC)
-#include "melder_ftoa.h"   // Melder_double, Melder_pad (require dcomplex, conststring32, MelderColour)
+#include "melder_ftoa.h"   // Melder_double, Melder_padLeft (require dcomplex, conststring32, MelderColour)
 #include "melder_console.h"   // MelderConsole (requires conststring32)
-#include "melder_textencoding.h"   // Melder_length_utf8, Melder_32to8
 #include "melder_atof.h"
 #include "melder_files.h"   // Melder_fopen, MelderFile, MelderFolder
 #include "melder_strvec.h"   // STRVEC, autoSTRVEC (requires MelderArray)
 #include "melder_sort.h"   // sort_VEC_inout (requires VEC), sort_STRVEC_inout (requires STRVEC)
 
 #include "MelderArg.h"   // MelderArg (requires Melder_double, MelderFile, Melder_VEC)
-#include "melder_debug.h"   // trace (requires MelderFile, MelderArg), Melder_debug
-#include "MelderFile.h"   // MelderFile_open (requires MelderFile), MelderFile_write (requires MelderArg)
 #include "MelderString.h"   // MelderString_append (requires MelderArg)
-#include "melder_cat.h"   // Melder_cat (requires MelderArg)
+#include "MelderThread.h"   // Melder_thisThread_getUniqueID
+#include "melder_textencoding.h"   // Melder_length_utf8, Melder_32to8 (requires MelderString)
+#include "melder_debug.h"   // trace (requires MelderFile, MelderArg, MelderString), Melder_debug
+#include "MelderFile.h"   // MelderFile_open (requires MelderFile), MelderFile_write (requires MelderArg)
+#include "MelderCat.h"   // Melder_cat (requires MelderArg)
 #include "melder_sprint.h"   // Melder_sprint (requires MelderArg)
 #include "melder_search.h"
 #include "melder_casual.h"
@@ -131,6 +136,8 @@ void Melder_init ();   // inits NUmrandom, alloc, message, Melder_systemVersion
 #include "MelderReadText.h"
 #include "melder_tensorio.h"   // requires MelderReadText
 #include "melder_sysenv.h"
+#include "melder_app.h"
+#include "melder_trust.h"
 #include "abcio_enums.h"
 #include "abcio.h"   // requires MelderReadText
 

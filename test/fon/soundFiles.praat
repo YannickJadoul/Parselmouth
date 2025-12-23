@@ -4,6 +4,7 @@ procedure test .type$ .extension$ .duration
 	for numberOfChannels from 1 to 8
 		print 'numberOfChannels' channels:
 		sound = Create Sound from formula... sound numberOfChannels 0 .duration/numberOfChannels 44100 1/4 * sin(2*pi*377*x) + randomGauss(0,0.05)
+		Shift times to between zero and physical duration
 		Formula: ~ round (self * 32768) / 32768
 		energy1 = Get energy in air
 		Save as '.type$' file... kanweg.'.extension$'
@@ -23,6 +24,7 @@ procedure test24 .type$ .extension$ .duration
 	for numberOfChannels from 1 to 8
 		print 'numberOfChannels' channels:
 		sound = Create Sound from formula... sound numberOfChannels 0 .duration/numberOfChannels 44100 1/4 * sin(2*pi*377*x) + randomGauss(0,0.05)
+		Shift times to between zero and physical duration
 		Formula: ~ round (self * 32768*256) / (32768*256)
 		energy1 = Get energy in air
 		Save as 24-bit '.type$' file... kanweg.'.extension$'
@@ -42,6 +44,7 @@ procedure test32 .type$ .extension$ .duration
 	for numberOfChannels from 1 to 8
 		print 'numberOfChannels' channels:
 		sound = Create Sound from formula... sound numberOfChannels 0 .duration/numberOfChannels 44100 1/4 * sin(2*pi*377*x) + randomGauss(0,0.05)
+		Shift times to between zero and physical duration
 		Formula: ~ round (self * 32768*65536) / (32768*65536)
 		energy1 = Get energy in air
 		Save as 32-bit '.type$' file... kanweg.'.extension$'
@@ -97,6 +100,9 @@ call do
 Debug... no 0
 
 Read from file: "examples/あ　あ.wav"
+Remove
+
+Read from file: "examples/にほん.flac"   ; earlier version of FLAC did not support Unicode on Windows
 Remove
 
 printline OK

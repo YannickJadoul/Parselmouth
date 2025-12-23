@@ -1,10 +1,10 @@
 /* KlattGrid.cpp
  *
- * Copyright (C) 2008-2023 David Weenink, 2015,2017,2023 Paul Boersma
+ * Copyright (C) 2008-2023 David Weenink, 2015,2017,2022-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -2256,13 +2256,13 @@ void KlattGrid_draw (KlattGrid me, Graphics g, kKlattGridFilterModel filterModel
 		xc2 = xc1 + relativeWidths [3]; // same width as vocaltract
 		yc2 = yout_phonation + dy / 2.0;
 		yc1 = yc2 - dy;
-		double yin_vocalTract_c;
-		VocalTractGrid_CouplingGrid_drawCascade_inplace (my vocalTract.get(), my coupling.get(), g, xc1, xc2, yc1, yc2, & yin_vocalTract_c, & yout_vocalTract);
+		double yin_vocalTract_cascade;
+		VocalTractGrid_CouplingGrid_drawCascade_inplace (my vocalTract.get(), my coupling.get(), g, xc1, xc2, yc1, yc2, & yin_vocalTract_cascade, & yout_vocalTract);
 
 		tf -> x [1] = xc2;
 		tf -> y [1] = yout_vocalTract;
 
-		Graphics_line (g, xs2, yout_phonation, xc1, yin_vocalTract_c);
+		Graphics_line (g, xs2, yout_phonation, xc1, yin_vocalTract_cascade);
 
 		xf1 = xmin + accumulatedWidths [2];
 		xf2 = xf1 + relativeWidths [3];
@@ -2277,7 +2277,7 @@ void KlattGrid_draw (KlattGrid me, Graphics g, kKlattGridFilterModel filterModel
 			connector line from source to parallel has to be horizontal
 			determine y's of source and parallel section
 		*/
-		double yf_parallel, yh_parallel, yh_overlap = 0.3, yin_vocalTract_p;
+		double yf_parallel, yh_parallel, yh_overlap = 0.3, yin_vocalTract_parallel;
 		_KlattGrid_queryParallelSplit (me, dy_vocalTract_p, &yh_parallel, & yf_parallel);
 		if (yh_parallel == 0.0) {
 			yh_parallel = yh_phonation;
@@ -2307,12 +2307,12 @@ void KlattGrid_draw (KlattGrid me, Graphics g, kKlattGridFilterModel filterModel
 
 		xp1 = xmin + accumulatedWidths [2];
 		xp2 = xp1 + relativeWidths [3];
-		VocalTractGrid_CouplingGrid_drawParallel_inplace (my vocalTract.get(), my coupling.get(), g, xp1, xp2, yp1, yp2, dy_vocalTract_p, & yin_vocalTract_p, & yout_vocalTract);
+		VocalTractGrid_CouplingGrid_drawParallel_inplace (my vocalTract.get(), my coupling.get(), g, xp1, xp2, yp1, yp2, dy_vocalTract_p, & yin_vocalTract_parallel, & yout_vocalTract);
 
 		tf -> x [1] = xp2;
 		tf -> y [1] = yout_vocalTract;
 
-		Graphics_line (g, xs2, yout_phonation, xp1, yin_vocalTract_p);
+		Graphics_line (g, xs2, yout_phonation, xp1, yin_vocalTract_parallel);
 
 		xf1 = xmin /* + 0.5 * accumulatedWidths [1] */;
 		xf2 = xf1 + 0.55 * (relativeWidths [2] + accumulatedWidths [3]);
@@ -2488,7 +2488,7 @@ void KlattGrid_replaceAmplitudeTier (KlattGrid me, kKlattGridFormantType formant
 autoFormantGrid KlattGrid_extractFormantGrid (KlattGrid me, kKlattGridFormantType formantType) {
 	try {
 		autoFormantGrid* fg = KlattGrid_getAddressOfFormantGrid (me, formantType);
-		Melder_require ((*fg) -> formants . size > 0,
+		Melder_require ((*fg) -> formants.size > 0,
 			KlattGrid_getFormantName (formantType), U"s are not defined.");
 		autoFormantGrid thee = Data_copy (fg->get());
 		return thee;
@@ -2979,18 +2979,18 @@ autoKlattGrid Sound_to_KlattGrid_simple (Sound me, double timeStep, integer maxi
 		const integer numberOfDeltaFormants = 1;
 		autoSound sound = Data_copy (me);
 		Vector_subtractMean (sound.get());
-		autoFormant f = Sound_to_Formant_burg (sound.get(), timeStep, maximumNumberOfFormants,
-		                                       maximumFormantFrequency, windowLength, preEmphasisFrequency);
-		autoFormantGrid fgrid = Formant_downto_FormantGrid (f.get());
-		autoPitch p = Sound_to_Pitch (sound.get(), timeStep, pitchFloor, pitchCeiling);
-		autoPitchTier ptier = Pitch_to_PitchTier (p.get());
-		autoIntensity i = Sound_to_Intensity (sound.get(), pitchFloorForIntensity, timeStep, subtractMean);
-		autoIntensityTier itier = Intensity_downto_IntensityTier (i.get());
+		autoFormant formant = Sound_to_Formant_burg (sound.get(), timeStep, maximumNumberOfFormants,
+				maximumFormantFrequency, windowLength, preEmphasisFrequency);
+		autoFormantGrid formantGrid = Formant_downto_FormantGrid (formant.get());
+		autoPitch pitch = Sound_to_Pitch (sound.get(), timeStep, pitchFloor, pitchCeiling);
+		autoPitchTier pitchTier = Pitch_to_PitchTier (pitch.get());
+		autoIntensity intensity = Sound_to_Intensity (sound.get(), pitchFloorForIntensity, timeStep, subtractMean);
+		autoIntensityTier intensityTier = Intensity_downto_IntensityTier (intensity.get());
 		autoKlattGrid thee = KlattGrid_create (my xmin, my xmax, numberOfFormants, numberOfNasalFormants, numberOfNasalAntiFormants,
 				numberOfTrachealFormants, numberOfTrachealAntiFormants, numberOfFricationFormants, numberOfDeltaFormants);
-		KlattGrid_replacePitchTier (thee.get(), ptier.get());
-		KlattGrid_replaceFormantGrid (thee.get(), kKlattGridFormantType::ORAL, fgrid.get());
-		KlattGrid_replaceVoicingAmplitudeTier (thee.get(), itier.get());
+		KlattGrid_replacePitchTier (thee.get(), pitchTier.get());
+		KlattGrid_replaceFormantGrid (thee.get(), kKlattGridFormantType::ORAL, formantGrid.get());
+		KlattGrid_replaceVoicingAmplitudeTier (thee.get(), intensityTier.get());
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": no simple KlattGrid created.");

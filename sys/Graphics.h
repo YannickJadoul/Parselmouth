@@ -2,11 +2,11 @@
 #define _Graphics_h_
 /* Graphics.h
  *
- * Copyright (C) 1992-2005,2007-2023 Paul Boersma
+ * Copyright (C) 1992-2005,2007-2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -175,12 +175,24 @@ void Graphics_polyline (Graphics me, integer numberOfPoints, const double *x, co
 void Graphics_polyline_closed (Graphics me, integer numberOfPoints, const double *x, const double *y);
 
 void Graphics_text (Graphics me, double xWC, double yWC, conststring32 txt);
-template <typename... Args>
-void Graphics_text (Graphics me, double xWC, double yWC, const MelderArg& first, Args... rest) {
-	Graphics_text (me, xWC, yWC, Melder_cat (first, rest...));
+template <typename... Arg>
+void Graphics_text (Graphics me, double xWC, double yWC, const Arg... arg) {
+	Graphics_text (me, xWC, yWC, Melder_cat (arg...));
 }
 
-void Graphics_textRect (Graphics me, double x1, double x2, double y1, double y2, conststring32 text /* cattable */);
+void Graphics_rectangleText_maximalFit (
+	Graphics me,
+	const double x1, const double x2,
+	const double minimumHorizontalMargin_in_textHeights,   // typically 0.10, i.e. 10 percent of the resulting text height
+	const double minimumHorizontalMargin_mm,   // typically 0.5 mm (both this constraint and the previous will be honoured)
+	const double y1, const double y2,
+	const double minimumVerticalMargin_in_textHeights,   // e.g. 0.18, which would mean a relative line spacing of 1.36 if rectangles touch
+			// a value of 0.19 happens to make the actual font size 12 points
+			// for a rectangle with a height of "3" (with the initial 1344x756 size of the Demo window and axes of [0, 100] x [0, 100]).
+	const double minimumVerticalMargin_mm,   // typically 0.25 mm (both this constraint and the previous will be honoured)
+	conststring32 text /* cattable */
+);
+void Graphics_rectangleText_wrapAndTruncate (Graphics me, double x1, double x2, double y1, double y2, conststring32 text /* cattable */);
 double Graphics_textWidth       (Graphics me, conststring32 text /* cattable */);
 double Graphics_textWidth_ps    (Graphics me, conststring32 text /* cattable */, bool useSilipaPS);
 double Graphics_textWidth_ps_mm (Graphics me, conststring32 text /* cattable */, bool useSilipaPS);
@@ -198,6 +210,7 @@ void Graphics_image_colour (Graphics me, constmatrixview <MelderColour> const& z
 void Graphics_image8 (Graphics me, constmatrixview <unsigned char> const& z,
 	double x1, double x2, double y1, double y2, uint8 minimum, uint8 maximum);
 void Graphics_imageFromFile (Graphics me, conststring32 relativeFileName, double x1, double x2, double y1, double y2);
+void Graphics_imageFromFile_embedded (Graphics me, conststring32 relativeFileName, double x1, double x2, double y1, double y2);
 void Graphics_line (Graphics me, double x1, double y1, double x2, double y2);
 void Graphics_rectangle (Graphics me, double x1, double x2, double y1, double y2);
 void Graphics_fillRectangle (Graphics me, double x1, double x2, double y1, double y2);
@@ -340,7 +353,7 @@ bool Graphics_stopRecording (Graphics me);
 void Graphics_clearRecording (Graphics me);
 void Graphics_play (Graphics from, Graphics to);
 void Graphics_writeRecordings (Graphics me, FILE *f);
-void Graphics_readRecordings (Graphics me, FILE *f);
+void Graphics_readRecordings (Graphics me, FILE *f, double heightCorrection);
 void Graphics_markGroup (Graphics me);
 void Graphics_undoGroup (Graphics me);
 

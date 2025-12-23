@@ -1,6 +1,6 @@
 /* Collection_extensions.cpp
  *
- * Copyright (C) 1994-2019, 2022 David Weenink, 2018 Paul Boersma
+ * Copyright (C) 1994-2019,2022 David Weenink, 2018 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ double OrderedOfString_getFractionDifferent (StringList me, StringList thee) {
 	return my size == 0 ? 0.0 : (double) numberOfDifferences / my size;
 }
 
-integer OrderedOfString_indexOfItem_c (StringList me, conststring32 str) {
+integer OrderedOfString_indexOfItem (StringList me, conststring32 str) {
 	integer index = 0;
 	for (integer i = 1; i <= my size; i ++) {
 		SimpleString mystring = my at [i];

@@ -1,10 +1,10 @@
 /* GraphicsScreen.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2025 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -55,7 +55,7 @@ void structGraphicsScreen :: v9_destroy () noexcept {
 			cairo_surface_flush (d_cairoSurface);
 			if (d_isPng) {
 				#if 1
-					cairo_surface_write_to_png (d_cairoSurface, Melder_peek32to8_fileSystem (d_file. path));
+					cairo_surface_write_to_png (d_cairoSurface, MelderFile_peekPath8 (& d_file));
 				#else
 					unsigned char *bitmap = cairo_image_surface_get_data (my d_cairoSurface);   // peeking into the internal bits
 					// copy bitmap to PNG structure created with the PNG library
@@ -138,7 +138,7 @@ void structGraphicsScreen :: v9_destroy () noexcept {
 			Gdiplus::GetImageEncoders (numberOfImageEncoders, sizeOfImageEncoderArray, imageEncoderInfos);
 			for (int iencoder = 0; iencoder < numberOfImageEncoders; iencoder ++) {
 				if (! wcscmp (imageEncoderInfos [iencoder]. MimeType, L"image/png")) {
-					gdiplusBitmap. Save (Melder_peek32toW_fileSystem (our d_file. path),
+					gdiplusBitmap. Save (MelderFile_peekPathW (& our d_file),
 							& imageEncoderInfos [iencoder]. Clsid, nullptr);
 				}
 			}
@@ -185,7 +185,7 @@ void structGraphicsScreen :: v9_destroy () noexcept {
 			Melder_assert (properties);
 
 			CFURLRef url = CFURLCreateWithFileSystemPath (nullptr,
-				(CFStringRef) Melder_peek32toCfstring (d_file. path), kCFURLPOSIXPathStyle, false);
+					(CFStringRef) MelderFile_peekPathCfstring (& d_file), kCFURLPOSIXPathStyle, false);
 			CGImageDestinationRef imageDestination = CGImageDestinationCreateWithURL (url, kUTTypePNG, 1, nullptr);
 			if (imageDestination) {
 				CGImageDestinationAddImage (imageDestination, image, properties);
@@ -345,7 +345,7 @@ void Graphics_endMovieFrame (Graphics any, double frameDuration) {
 		Graphics_stopRecording (me);
 		my v_updateWs ();
 		Melder_sleep (frameDuration);
-		GuiShell_drain (my d_drawingArea -> d_shell);
+		GuiShell_drain (my d_drawingArea -> d_shell, false, true);
 	}
 }
 
@@ -439,8 +439,8 @@ autoGraphics Graphics_create_screenPrinter (void *display, void *window) {
 		my d_x2DC -= GetDeviceCaps ((HDC) window, PHYSICALOFFSETX);
 		my d_y1DC -= GetDeviceCaps ((HDC) window, PHYSICALOFFSETY);
 		my d_y2DC -= GetDeviceCaps ((HDC) window, PHYSICALOFFSETY);
-	#endif
-	Graphics_setWsWindow (me.get(), 0, my paperWidth - 1.0, 13.0 - my paperHeight, 12.0);
+	#endif // gdi
+	Graphics_setWsWindow (me.get(), 0, my paperWidth - 1.0, 12.000 - (my paperHeight - 1.0), 12.000);
 	GraphicsScreen_init (me.get(), display, window);
 	return me.move();
 }
@@ -490,10 +490,10 @@ autoGraphics Graphics_create_xmdrawingarea (GuiDrawingArea w) {
 	#elif gdi
 		XtVaGetValues (my d_drawingArea -> d_widget, XmNwidth, & width, XmNheight, & height, nullptr);
 		Graphics_setWsViewport (me.get(), 0.0, width, 0.0, height);
-    #elif quartz
-        NSView *view = (NSView *) my d_drawingArea -> d_widget;
-        NSRect bounds = [view bounds];
-        Graphics_setWsViewport (me.get(), 0.0, bounds.size.width, 0.0, bounds.size.height);
+	#elif quartz
+		NSView *view = (NSView *) my d_drawingArea -> d_widget;
+		NSRect bounds = [view bounds];
+		Graphics_setWsViewport (me.get(), 0.0, bounds.size.width, 0.0, bounds.size.height);
 	#endif
 	return me.move();
 }
@@ -572,7 +572,7 @@ autoGraphics Graphics_create_pngfile (MelderFile file, int resolution,
 			stride,
 			colourSpace,
 			kCGImageAlphaPremultipliedLast);
-    	if (! my d_macGraphicsContext)
+		if (! my d_macGraphicsContext)
 			Melder_throw (U"Could not create PNG file ", file, U".");
 		CGRect rect = CGRectMake (0, 0, width, height);
 		CGContextSetAlpha (my d_macGraphicsContext, 1.0);
@@ -598,7 +598,7 @@ autoGraphics Graphics_create_pdffile (MelderFile file, int resolution,
 	#endif
 	Graphics_init (me.get(), resolution);
 	#if cairo
-		my d_cairoSurface = cairo_pdf_surface_create (Melder_peek32to8_fileSystem (file -> path),
+		my d_cairoSurface = cairo_pdf_surface_create (MelderFile_peekPath8 (file),
 			( isdefined (x1inches) ? x2inches - x1inches : x2inches ) * 72.0,
 			( isdefined (y1inches) ? y2inches - y1inches : y2inches ) * 72.0);
 		my d_cairoGraphicsContext = cairo_create (my d_cairoSurface);
@@ -615,7 +615,7 @@ autoGraphics Graphics_create_pdffile (MelderFile file, int resolution,
 			( isdefined (x1inches) ? - x1inches : 0.0 ) * resolution,
 			( isdefined (y1inches) ? (y2inches - 12.0) : 0.0 ) * resolution);
 	#elif quartz
-		CFURLRef url = CFURLCreateWithFileSystemPath (nullptr, (CFStringRef) Melder_peek32toCfstring (file -> path), kCFURLPOSIXPathStyle, false);
+		CFURLRef url = CFURLCreateWithFileSystemPath (nullptr, (CFStringRef) MelderFile_peekPathCfstring (file), kCFURLPOSIXPathStyle, false);
 		CGRect rect = CGRectMake (0, 0,
 			( isdefined (x1inches) ? x2inches - x1inches : x2inches ) * 72.0,
 			( isdefined (y1inches) ? y2inches - y1inches : y2inches ) * 72.0);   // don't tire PDF viewers with funny origins
@@ -627,7 +627,7 @@ autoGraphics Graphics_create_pdffile (MelderFile file, int resolution,
 		my d_macGraphicsContext = CGPDFContextCreateWithURL (url, & rect, dictionary);
 		CFRelease (url);
 		CFRelease (dictionary);
-    	if (! my d_macGraphicsContext)
+		if (! my d_macGraphicsContext)
 			Melder_throw (U"Could not create PDF file ", file, U".");
 		my d_x1DC = my d_x1DCmin = 0;
 		my d_x2DC = my d_x2DCmax = ( isdefined (x1inches) ?  7.5 : x2inches ) * resolution;
@@ -663,12 +663,12 @@ autoGraphics Graphics_create_pdf (void *context, int resolution,
 		my d_y1DC = my d_y1DCmin = 0;
 		my d_y2DC = my d_y2DCmax = 11.0 * resolution;
 		Graphics_setWsWindow (me.get(), 0, 7.5, 1.0, 12.0);
-    	Melder_assert (my d_macGraphicsContext);
+		Melder_assert (my d_macGraphicsContext);
 		CGContextBeginPage (my d_macGraphicsContext, & rect);
 		CGContextScaleCTM (my d_macGraphicsContext, 72.0 / resolution, 72.0 / resolution);
 		CGContextTranslateCTM (my d_macGraphicsContext, - x1inches * resolution, (12.0 - y1inches) * resolution);
 		CGContextScaleCTM (my d_macGraphicsContext, 1.0, -1.0);
-	#endif
+	#endif // quartz
 	return me.move();
 }
 
@@ -679,6 +679,6 @@ autoGraphics Graphics_create_pdf (void *context, int resolution,
 	void Graphics_x_setCR (Graphics me, void *cairoGraphicsContext) {
 		((GraphicsScreen) me) -> d_cairoGraphicsContext = (cairo_t *) cairoGraphicsContext;
 	}
-#endif
+#endif // cairo
 
 /* End of file GraphicsScreen.cpp */

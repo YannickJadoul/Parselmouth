@@ -2,7 +2,7 @@
 #define _SpeechSynthesizer_h_
 /* SpeechSynthesizer.h
  *
- * Copyright (C) 2011-2013, 2015-2023 David Weenink, 2015,2023 Paul Boersma
+ * Copyright (C) 2011-2013,2015-2023 David Weenink, 2015,2023,2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,18 +18,8 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-	djmw 20111214
-*/
-
 #include "Sound.h"
-#include "TextGrid.h"
-#include "espeak_ng.h"
-#include "FileInMemoryManager.h"
-#include "speech.h"
-#include "synthesize.h"
-#include "voice.h"
-#include "espeakdata_FileInMemory.h"
+#include "TextGrid.h"   // also for Table
 
 #define SpeechSynthesizer_PHONEMECODINGS_IPA 2
 #define SpeechSynthesizer_PHONEMECODINGS_KIRSHENBAUM 1
@@ -39,17 +29,7 @@
 
 #include "SpeechSynthesizer_def.h"
 
-autoEspeakVoice EspeakVoice_create ();
-
-void EspeakVoice_setDefaults (EspeakVoice me);
-
-void EspeakVoice_initFromEspeakVoice (EspeakVoice me, voice_t *voice);
-
-void SpeechSynthesizer_initEspeak ();
-
 autoSpeechSynthesizer SpeechSynthesizer_create (conststring32 languageName, conststring32 voiceName);
-
-void SpeechSynthesizer_changeLanguageNameToCurrent (SpeechSynthesizer me);
 
 void SpeechSynthesizer_setTextInputSettings (SpeechSynthesizer me, int inputTextFormat, int inputPhonemeCoding);
 
@@ -62,6 +42,40 @@ autoSound SpeechSynthesizer_to_Sound (SpeechSynthesizer me, conststring32 text, 
 void SpeechSynthesizer_playText (SpeechSynthesizer me, conststring32 text);
 
 autostring32 SpeechSynthesizer_getPhonemesFromText (SpeechSynthesizer me, conststring32 text, bool separateBySpaces);
+
+/*
+	For general use.
+*/
+extern STRVEC theSpeechSynthesizerLanguageNames;
+extern STRVEC theSpeechSynthesizerVoiceNames;
+
+/*
+	For developers mainly.
+*/
+extern Table theSpeechSynthesizerLanguagePropertiesTable;
+extern Table theSpeechSynthesizerVoicePropertiesTable;
+
+/*
+	Create the eSpeak-Praat-FileInMemorySet and the four other objects mentioned above.
+*/
+void classSpeechSynthesizer_initClass ();
+
+/*
+	Try to change the language name, the voice name and/or the phoneme set name if any of these are not in the list.
+	This also translates ISO 639 language codes (or family/language combinations),
+	and fixes capitalization of the first letter.
+	Examples of language names:
+		en -> English (Great Britain)         // obsolete
+		gmw/nl -> Dutch                       // ISO 639 family/language code (if identical to the eSpeak-internal code)
+		nl -> Dutch                           // ISO 639 language code
+	Examples of voice names:
+		f1 -> Female1                         // obsolete
+		female1 -> Female1                    // capitalization
+	The following "centric" ones are obsolete nowadays in eSpeak, but will still map in case any ancient Praat scripts use them:
+		Default -> English (Great Britain)    // obsolete
+		default -> Male1                      // obsolete
+*/
+void SpeechSynthesizer_checkAndRepairLanguageAndVoiceNames (SpeechSynthesizer me);
 
 /* End of file SpeechSynthesizer.h */
 #endif

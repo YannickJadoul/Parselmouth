@@ -1,10 +1,10 @@
 /* Graphics_linesAndAreas.cpp
  *
- * Copyright (C) 1992-2005,2007-2021 Paul Boersma, 2013 Tom Naughton
+ * Copyright (C) 1992-2005,2007-2022,2024,2025 Paul Boersma, 2013 Tom Naughton
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -922,7 +922,7 @@ void Graphics_function (Graphics me, const double yWC [], integer ix1, integer i
 
 void Graphics_function16 (Graphics me, const int16 yWC [], integer stride, integer ix1, integer ix2, double x1WC, double x2WC) {
 	if (my recording) {
-		Melder_fatal (U"Graphics_function16: cannot be used during graphics recording.");
+		Melder_crash (U"Graphics_function16: cannot be used during graphics recording.");
 	} else
 		Graphics_function_ <int16> (me, yWC, stride, ix1, ix2, x1WC, x2WC);
 }

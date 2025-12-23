@@ -1,5 +1,7 @@
 # Praat script runAllTests_batch.praat
 # Paul Boersma 2020-12-28
+# 2024-12-01 writing settings to UTF-8 for Praat 7
+# 2025-08-16 make more reproducible
 #
 # This script runs all Praat scripts in its subdirectories.
 # This script is to be called from the command line:
@@ -13,7 +15,7 @@
 # Some tests require standard settings for the text input encoding:
 # files in UTF-8 format should always be readable.
 #
-Text writing preferences: "try ASCII, then UTF-16"
+Text writing preferences: "UTF-8"
 if macintosh
 	Text reading preferences: "try UTF-8, then MacRoman"
 elif windows
@@ -48,11 +50,25 @@ procedure runFilesInFolder: .folderPath$
 		if not index (.fileName$, "_GUI_")
 			.filePath$ = .folderPath$ + "/" + .fileName$
 			appendInfoLine: "### executing ", .filePath$, ":"
+			#
+			# The following two lines aim at making the test reproducible.
+			# That is, the test should give the same result on different
+			# computers and different platforms and at different times.
+			# The random seed is allowed to change with the Praat release;
+			# just run all the tests if you change the random seed,
+			# even if there was no change in the Praat source code.
+			# This is because the success of some precision tests
+			# has been reported (by maintainers) to depend on the random state.
+			# Also make sure that the random seed is the same
+			# for the other two "runAlltests" scripts.
+			#
 			random_initializeWithSeedUnsafelyButPredictably (5489)
+			Debug multi-threading: "yes", 8, 0, "no"   ; eight threads for everybody
 			runScript: .filePath$
-			random_initializeSafelyAndUnpredictably()
 		endif
 	endfor
+	random_initializeSafelyAndUnpredictably()
+	Debug multi-threading: "yes", 0, 0, "no"
 endproc
 
 writeInfoLine: "                 ALL PRAAT TESTS WENT OK"

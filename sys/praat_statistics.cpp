@@ -1,10 +1,10 @@
 /* praat_statistics.cpp
  *
- * Copyright (C) 1992-2012,2014-2022,2024 Paul Boersma
+ * Copyright (C) 1992-2012,2014-2022,2024,2025 Paul Boersma & David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -24,6 +24,7 @@
 #endif
 #include "praatP.h"
 #include "GraphicsP.h"
+#include "NUMmachar.h"
 
 static struct {
 	integer batchSessions, interactiveSessions;
@@ -76,6 +77,27 @@ void praat_reportIntegerProperties () {
 	MelderInfo_writeLine (U"A pointer is ",                sizeof (void *)      * 8, U" bits.");
 	MelderInfo_writeLine (U"A memory object size is ",     sizeof (size_t)      * 8, U" bits.");
 	MelderInfo_writeLine (U"A file offset is ",            sizeof (off_t)       * 8, U" bits.");
+	MelderInfo_close ();
+}
+
+void praat_reportFloatingPointProperties () {
+	if (! NUMfpp)
+		NUMmachar ();
+	MelderInfo_open ();
+	MelderInfo_writeLine (U"Double precision floating point properties of this machine,");
+	MelderInfo_writeLine (U"as calculated by algorithms from the Binary Linear Algebra System (BLAS)");
+	MelderInfo_writeLine (U"\nRadix: ", NUMfpp -> base);
+	MelderInfo_writeLine (U"Number of digits in mantissa: ", NUMfpp -> t);
+	MelderInfo_writeLine (U"Smallest exponent before (gradual) underflow (expmin): ", NUMfpp -> emin);
+	MelderInfo_writeLine (U"Largest exponent before overflow (expmax): ", NUMfpp -> emax);
+	MelderInfo_writeLine (U"Does rounding occur in addition: ", (NUMfpp -> rnd == 1 ? U"yes" : U"no"));
+	MelderInfo_writeLine (U"Quantization step (d): ", NUMfpp -> prec);
+	MelderInfo_writeLine (U"Quantization error (eps = d/2): ", NUMfpp -> eps);
+	MelderInfo_writeLine (U"Underflow threshold (= radix ^ (expmin - 1)): ", NUMfpp -> rmin);
+	MelderInfo_writeLine (U"Safe minimum (such that its inverse does not overflow): ", NUMfpp -> sfmin);
+	MelderInfo_writeLine (U"Overflow threshold (= (1 - eps) * radix ^ expmax): ", NUMfpp -> rmax);
+	MelderInfo_writeLine (U"\nA long double is ", sizeof (long double), U" bytes");
+	MelderInfo_writeLine (U"A longdouble is ", sizeof (longdouble), U" bytes");
 	MelderInfo_close ();
 }
 
@@ -139,7 +161,7 @@ static NSString *getRealHomeDirectory () {
 	}
 	return nsUserHomeFolderPath;
 }
-#endif
+#endif // defined (macintosh)
 
 void praat_reportSystemProperties () {
 	MelderInfo_open ();
@@ -168,7 +190,7 @@ void praat_reportSystemProperties () {
 	#ifdef linux
 		MelderInfo_writeLine (U"linux is \"" stringize(linux) "\".");
 	#endif
-	MelderInfo_writeLine (U"The number of processors is ", std::thread::hardware_concurrency(), U".");
+	MelderInfo_writeLine (U"Maximum number of concurrent threads: ", std::thread::hardware_concurrency(), U".");
 	#ifdef macintosh
 		MelderInfo_writeLine (U"system version is ", Melder_systemVersion, U".");
 	#endif
@@ -177,12 +199,16 @@ void praat_reportSystemProperties () {
 	#endif
 	#if defined (__aarch64__) || defined (_M_ARM64_)
 		MelderInfo_writeLine (U"Built for processor type: ", U"arm64");
+	#elif defined (__s390x__)
+		MelderInfo_writeLine (U"Built for processor type: ", U"s390x");
+	#elif defined (raspberrypi)
+		MelderInfo_writeLine (U"Built for processor type: ", U"armv7");
 	#else
 		MelderInfo_writeLine (U"Built for processor type: ", sizeof (void *) == 4 ? U"intel32" : U"intel64");
 	#endif
 	structMelderFolder homeFolder {};
 	Melder_getHomeDir (& homeFolder);
-	MelderInfo_writeLine (U"Home folder: ", homeFolder. path);
+	MelderInfo_writeLine (U"Home folder: ", MelderFolder_peekPath (& homeFolder));
 	#ifdef macintosh
 		MelderInfo_writeLine (U"Full Disk Access: ", Melder_kleenean (hasFullDiskAccess ()));
 		MelderInfo_writeLine (U"Sandboxed: ", Melder_boolean (isSandboxed ()));
@@ -195,7 +221,7 @@ void praat_reportSystemProperties () {
 		MelderInfo_writeLine (U"Process ID: ", processID);
 		MelderInfo_writeLine (U"Localized app name: ", Melder_peek8to32 ([[currentApplication localizedName] UTF8String]));
 		MelderInfo_writeLine (U"App bundle identifier: ", Melder_peek8to32 ([[currentApplication bundleIdentifier] UTF8String]));
-	#endif
+	#endif // macintosh
 	#ifdef _WIN32
 		MelderInfo_writeLine (U"SM_CXFIXEDFRAME: ", GetSystemMetrics (SM_CXFIXEDFRAME));
 		MelderInfo_writeLine (U"SM_CYFIXEDFRAME: ", GetSystemMetrics (SM_CYFIXEDFRAME));
@@ -203,7 +229,21 @@ void praat_reportSystemProperties () {
 		MelderInfo_writeLine (U"SM_CYSIZEFRAME: ", GetSystemMetrics (SM_CYSIZEFRAME));
 		MelderInfo_writeLine (U"SM_CYCAPTION: ", GetSystemMetrics (SM_CYCAPTION));
 		MelderInfo_writeLine (U"SM_CYMENU: ", GetSystemMetrics (SM_CYMENU));
-	#endif
+	#endif // _WIN32
+	MelderInfo_close ();
+}
+
+void praat_reportAppProperties () {
+	MelderInfo_open ();
+	MelderInfo_writeLine (U"Upper-case app name: ", Melder_upperCaseAppName());
+	MelderInfo_writeLine (U"Lower-case app name: ", Melder_lowerCaseAppName());
+	MelderInfo_writeLine (U"App version (as a number): ", Melder_appVersion());
+	MelderInfo_writeLine (U"App version (as text): ", Melder_appVersionSTR());
+	MelderInfo_writeLine (U"App year: ", Melder_appYear());
+	MelderInfo_writeLine (U"App month (as a number): ", Melder_appMonth());
+	MelderInfo_writeLine (U"App month (as text): ", Melder_appMonthSTR());
+	MelderInfo_writeLine (U"App day: ", Melder_appDay());
+	MelderInfo_writeLine (U"App contact address: ", Melder_appContactAddress());
 	MelderInfo_close ();
 }
 
@@ -241,7 +281,7 @@ static void testFont (PangoFontMap *pangoFontMap, PangoContext *pangoContext, co
 	const char *familyName = pango_font_description_get_family (pangoFontDescription2);
 	MelderInfo_writeLine (U"Asking for font ", fontName, U" gives ", Melder_peek8to32 (familyName), U".");
 }
-#endif
+#endif // cairo
 void praat_reportFontProperties () {
 	MelderInfo_open ();
 	MelderInfo_writeLine (U"Font replacement on this computer:\n");
@@ -267,7 +307,7 @@ void praat_reportFontProperties () {
 		for (int i = 0; i < numberOfFamilies; i ++)
 			MelderInfo_writeLine (i, U" ", Melder_peek8to32 (pango_font_family_get_name (families [i])));
 		g_free (families);
-	#endif
+	#endif // cairo
 	MelderInfo_close ();
 }
 
@@ -280,7 +320,7 @@ void praat_reportMemoryUse () {
 	MelderInfo_writeLine (
 			U"   Arrays: ", MelderArray_allocationCount () - MelderArray_deallocationCount (),
 			U" (", Melder_bigInteger (MelderArray_cellAllocationCount () - MelderArray_cellDeallocationCount ()), U" cells)");
-	MelderInfo_writeLine (U"   Things: ", theTotalNumberOfThings,
+	MelderInfo_writeLine (U"   Things: ", theTotalNumberOfThings + 0,
 		U" (objects in list: ", Melder_bigInteger (theCurrentPraatObjects -> n), U")");
 	integer numberOfMotifWidgets =
 	#if motif

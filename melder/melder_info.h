@@ -2,11 +2,11 @@
 #define _melder_info_h_
 /* melder_info.h
  *
- * Copyright (C) 1992-2018,2020,2023 Paul Boersma
+ * Copyright (C) 1992-2018,2020,2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -33,37 +33,28 @@ void MelderInfo_open ();   // clear the Info window in the background
 void MelderInfo_close ();   // drain the background info to the Info window, making sure there is a line break
 void MelderInfo_drain ();   // drain the background info to the Info window, without adding any extra line break
 
-inline void _recursiveTemplate_MelderInfo_write (const MelderArg& arg) {
-	MelderConsole::write (arg._arg, false);
-}
 template <typename... Args>
-void _recursiveTemplate_MelderInfo_write (const MelderArg& first, Args... rest) {
-	_recursiveTemplate_MelderInfo_write (first);
-	_recursiveTemplate_MelderInfo_write (rest...);
-}
-
-template <typename... Args>
-void MelderInfo_write (const MelderArg& first, Args... rest) {
-	MelderString_append (MelderInfo::_p_currentBuffer, first, rest...);
+void MelderInfo_write (const Args&... args) {
+	MelderString_append (MelderInfo::_p_currentBuffer, args...);
 	if (MelderInfo::_p_currentProc == & MelderInfo::_defaultProc && MelderInfo::_p_currentBuffer == & MelderInfo::_foregroundBuffer)
-		_recursiveTemplate_MelderInfo_write (first, rest...);
+		(  MelderConsole::write (MelderArg {args}._arg, false), ...  );
 }
 
 template <typename... Args>
-void MelderInfo_writeLine (const MelderArg& first, Args... rest) {
-	MelderString_append (MelderInfo::_p_currentBuffer, first, rest...);
+void MelderInfo_writeLine (const Args&... args) {
+	MelderString_append (MelderInfo::_p_currentBuffer, args...);
 	MelderString_appendCharacter (MelderInfo::_p_currentBuffer, U'\n');
 	if (MelderInfo::_p_currentProc == & MelderInfo::_defaultProc && MelderInfo::_p_currentBuffer == & MelderInfo::_foregroundBuffer) {
-		_recursiveTemplate_MelderInfo_write (first, rest...);
+		(  MelderConsole::write (MelderArg {args}._arg, false), ...  );
 		MelderConsole::write (U"\n", false);
 	}
 }
 
 template <typename... Args>
-void Melder_information (const MelderArg& first, Args... rest) {
-	MelderString_copy (MelderInfo::_p_currentBuffer, first, rest...);
+void Melder_information (const Args&... args) {
+	MelderString_copy (MelderInfo::_p_currentBuffer, args...);
 	if (MelderInfo::_p_currentProc == & MelderInfo::_defaultProc && MelderInfo::_p_currentBuffer == & MelderInfo::_foregroundBuffer)
-		_recursiveTemplate_MelderInfo_write (first, rest...);
+		(  MelderConsole::write (MelderArg {args}._arg, false), ...  );
 	MelderInfo_close ();
 }
 

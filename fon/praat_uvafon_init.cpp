@@ -1,10 +1,10 @@
 /* praat_uvafon_init.cpp
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -53,7 +53,7 @@
 #include "Strings_extensions.h"
 #include "StringsEditor.h"
 #include "TableEditor.h"
-#include "TextGrid.h"
+#include "TextGrid_Sound.h"
 #include "VocalTract.h"
 #include "VoiceAnalysis.h"
 #include "WordList.h"
@@ -346,9 +346,10 @@ FORM (LIST_Formant_list, U"Formant: List", nullptr) {
 	OK
 DO
 	INFO_ONE (Formant)
-		Formant_list (me, includeFrameNumber, includeTime, numberOfTimeDecimals,
-			includeIntensity, numberOfIntensityDecimals, includeNumberOfFormants, numberOfFrequencyDecimals,
-			includeBandwidths
+		Formant_list (me, includeFrameNumber,
+			includeTime, numberOfTimeDecimals,
+			includeIntensity, numberOfIntensityDecimals,
+			includeNumberOfFormants, numberOfFrequencyDecimals, includeBandwidths
 		);
 	INFO_ONE_END
 }
@@ -933,14 +934,6 @@ DIRECT (NEW1_Intensity_PointProcess_to_IntensityTier) {
 	CONVERT_ONE_AND_ONE_TO_ONE (Intensity, PointProcess)
 		autoIntensityTier result = Intensity_PointProcess_to_IntensityTier (me, you);
 	CONVERT_ONE_AND_ONE_TO_ONE_END (my name.get())
-}
-
-// MARK: - INTERVALTIER, the remainder is in praat_TextGrid_init.cpp
-
-FORM_READ (READ1_IntervalTier_readFromXwaves, U"Read IntervalTier from Xwaves", 0, true) {
-	READ_ONE
-		autoIntervalTier result = IntervalTier_readFromXwaves (file);
-	READ_ONE_END
 }
 
 // MARK: - LTAS
@@ -2612,24 +2605,34 @@ DIRECT (NEW_Spectrum_to_SpectrumTier_peaks) {
 
 // MARK: New
 
+FORM (NEW1_Strings_createFromTexts, U"Create Strings from texts", nullptr) {
+	WORD (name, U"Name", U"texts")
+	STRINGARRAY_LINES (10, texts, U"Texts", { U"one line", U"another line", U"yet another line" })
+	OK
+DO
+	CREATE_ONE
+		autoStrings result = Strings_createFromTexts (texts);
+	CREATE_ONE_END (name);
+}
+
 FORM (NEW1_Strings_createAsFileList, U"Create Strings as file list", U"Create Strings as file list...") {
 	SENTENCE (name, U"Name", U"fileList")
-	static structMelderFolder defaultFolder { };
-	Melder_getHomeDir (& defaultFolder);
-	static conststring32 homeDirectory = Melder_folderToPath (& defaultFolder);
-	static char32 defaultPath [kMelder_MAXPATH+1];
+	static structMelderFolder homeFolder { };
+	Melder_getHomeDir (& homeFolder);
+	static conststring32 homeFolderPath = MelderFolder_peekPath (& homeFolder);
+	static char32 defaultGlob [kMelder_MAXPATH+1];
 	#if defined (UNIX)
-		Melder_sprint (defaultPath,kMelder_MAXPATH+1, homeDirectory, U"/*.wav");
+		Melder_sprint (defaultGlob,kMelder_MAXPATH+1, homeFolderPath, U"/*.wav");
 	#elif defined (_WIN32)
 	{
-		static integer len = Melder_length (homeDirectory);
-		Melder_sprint (defaultPath,kMelder_MAXPATH+1, homeDirectory,
-				len == 0 || homeDirectory [len - 1] != U'\\' ? U"\\" : U"", U"*.wav");
+		static integer len = Melder_length (homeFolderPath);
+		Melder_sprint (defaultGlob,kMelder_MAXPATH+1, homeFolderPath,
+				len == 0 || homeFolderPath [len - 1] != U'\\' ? U"\\" : U"", U"*.wav");
 	}
 	#else
-		Melder_sprint (defaultPath,kMelder_MAXPATH+1, homeDirectory, U"/*.wav");
+		Melder_sprint (defaultGlob,kMelder_MAXPATH+1, homeFolderPath, U"/*.wav");
 	#endif
-	FOLDER (path, U"File path", defaultPath)
+	FOLDER (path, U"File path", defaultGlob)
 	OK
 DO
 	CREATE_ONE
@@ -2639,21 +2642,22 @@ DO
 
 FORM (NEW1_Strings_createAsFolderList, U"Create Strings as folder list", U"Create Strings as folder list...") {
 	SENTENCE (name, U"Name", U"folderList")
-	static structMelderFolder defaultFolder { };
-	Melder_getHomeDir (& defaultFolder);
-	static conststring32 homeDirectory = Melder_folderToPath (& defaultFolder);
-	static char32 defaultPath [kMelder_MAXPATH+1];
+	static structMelderFolder homeFolder { };
+	Melder_getHomeDir (& homeFolder);
+	static conststring32 homeFolderPath = MelderFolder_peekPath (& homeFolder);
+	static char32 defaultGlob [kMelder_MAXPATH+1];
 	#if defined (UNIX)
-		Melder_sprint (defaultPath,kMelder_MAXPATH+1, homeDirectory, U"/*");
+		Melder_sprint (defaultGlob,kMelder_MAXPATH+1, homeFolderPath, U"/*");
 	#elif defined (_WIN32)
 	{
-		const integer len = Melder_length (homeDirectory);
-		Melder_sprint (defaultPath,kMelder_MAXPATH+1, homeDirectory, len == 0 || homeDirectory [len - 1] != U'\\' ? U"\\" : U"");
+		const integer len = Melder_length (homeFolderPath);
+		Melder_sprint (defaultGlob,kMelder_MAXPATH+1, homeFolderPath,
+				len == 0 || homeFolderPath [len - 1] != U'\\' ? U"\\" : U"");
 	}
 	#else
-		Melder_sprint (defaultPath,kMelder_MAXPATH+1, homeDirectory, U"/*");
+		Melder_sprint (defaultGlob,kMelder_MAXPATH+1, homeFolderPath, U"/*");
 	#endif
-	FOLDER (path, U"Path", defaultPath)
+	FOLDER (path, U"Path", defaultGlob)
 	OK
 DO
 	CREATE_ONE
@@ -2823,12 +2827,41 @@ DO
 	CREATE_ONE_END (allTierNames)
 }
 
-// MARK: - TEXTTIER; the remainder is in praat_TextGrid_init.cpp *****/
+FORM (READ1_TextGrid_readFromEspsLabelFile, U"Read TextGrid from ESPS label file", U"Read TextGrid from ESPS label file...") {
+	INFILE (soundFilePath, U"Sound file path", U"")
+	BOOLEAN (tiersArePointTiers, U"Tiers are point tiers", false)
+	INTEGER (overrideNumberOfTiers, U"Override number of tiers", U"0 (= don't override)")
+	OK
+DO
+	CREATE_ONE
+		structMelderFile file { };
+		Melder_relativePathToFile (soundFilePath, & file);
+		autoTextGrid result = TextGrid_readFromEspsLabelFile (& file, tiersArePointTiers, overrideNumberOfTiers);
+	CREATE_ONE_END (U"")
+}
 
-FORM_READ (READ1_TextTier_readFromXwaves, U"Read TextTier from Xwaves", nullptr, true) {
-	READ_ONE
-		autoTextTier result = TextTier_readFromXwaves (file);
-	READ_ONE_END
+FORM (NEW_Sound_readWithAdjacentAnnotationFiles_buckeye, U"Read with adjacent annotations (Buckeye)", U"Read with adjacent annotation files (Buckeye)...") {
+	INFILE (soundFileName, U"Sound file name", U"/Volumes/Buckeye/s01/s0101a/s0101a.wav")
+	OK
+DO
+	CREATE_MULTIPLE
+		autoTextGrid textgrid;
+		autoSound sound = Sound_readWithAdjacentAnnotationFiles_buckeye (soundFileName, & textgrid);
+		praat_new (sound.move());
+		praat_new (textgrid.move());
+	CREATE_MULTIPLE_END
+}
+
+FORM (NEW_Sound_readWithAdjacentAnnotationFiles_timit, U"Read with adjacent annotations (TIMIT)", U"Read with adjacent annotation files (TIMIT)...") {
+	INFILE (soundFileName, U"Sound file name", U"/Volumes/TIMIT/train/dr1/fcjf0/sa1.wav")
+	OK
+DO
+	CREATE_MULTIPLE
+		autoTextGrid textgrid;
+		autoSound sound = Sound_readWithAdjacentAnnotationFiles_timit (soundFileName, & textgrid);
+		praat_new (sound.move());
+		praat_new (textgrid.move());
+	CREATE_MULTIPLE_END
 }
 
 // MARK: - TRANSITION
@@ -2920,17 +2953,19 @@ DIRECT (HELP_SearchManual_Fon) { Melder_search (); END_NO_NEW_DATA }
 // MARK: - file recognizers
 
 static autoDaata cgnSyntaxFileRecognizer (integer nread, const char *header, MelderFile file) {
-	if (nread < 57) return autoDaata ();
+	if (nread < 57)
+		return autoDaata ();
 	if (! strnequ (& header [0], "<?xml version=\"1.0\"?>", 21) ||
 	    (! strnequ (& header [22], "<!DOCTYPE ttext SYSTEM \"ttext.dtd\">", 35) &&
 	     ! strnequ (& header [23], "<!DOCTYPE ttext SYSTEM \"ttext.dtd\">", 35))
 	)
-	     return autoDaata ();
+		return autoDaata ();
 	return TextGrid_readFromCgnSyntaxFile (file);
 }
 
 static autoDaata chronologicalTextGridTextFileRecognizer (integer nread, const char *header, MelderFile file) {
-	if (nread < 100) return autoDaata ();
+	if (nread < 100)
+		return autoDaata ();
 	if (strnequ (& header [0], "\"Praat chronological TextGrid text file\"", 40))
 		return TextGrid_readFromChronologicalTextFile (file);
 	char headerCopy [101];
@@ -2949,13 +2984,62 @@ static autoDaata chronologicalTextGridTextFileRecognizer (integer nread, const c
 	return autoDaata ();
 }
 
+// MARK: - extension to praat_stat_init
+
+static bool isTabSeparated_8bit (integer nread, const char *header) {
+	for (integer i = 0; i < nread; i ++) {
+		if (header [i] == '\t')
+			return true;
+		if (header [i] == '\n' || header [i] == '\r')
+			return false;
+	}
+	return false;
+}
+
+static bool isTabSeparated_utf16be (integer nread, const char *header) {
+	for (integer i = 2; i < nread; i += 2) {
+		if (header [i] == '\0' && header [i + 1] == '\t')
+			return true;
+		if (header [i] == '\0' && (header [i + 1] == '\n' || header [i + 1] == '\r'))
+			return false;
+	}
+	return false;
+}
+
+static bool isTabSeparated_utf16le (integer nread, const char *header) {
+	for (integer i = 2; i < nread; i += 2) {
+		if (header [i + 1] == '\0' && header [i] == '\t')
+			return true;
+		if (header [i + 1] == '\0' && (header [i] == '\n' || header [i] == '\r'))
+			return false;
+	}
+	return false;
+}
+
+static autoDaata tabSeparatedFileRecognizer (integer nread, const char *header, MelderFile file) {
+	/*
+		A table is recognized if it has at least one tab symbol,
+		which must be before the first newline symbol (if any).
+	*/
+	unsigned char *uheader = (unsigned char *) header;
+	const bool isTabSeparated =
+		uheader [0] == 0xef && uheader [1] == 0xff ? isTabSeparated_utf16be (nread, header) :
+		uheader [0] == 0xff && uheader [1] == 0xef ? isTabSeparated_utf16le (nread, header) :
+		isTabSeparated_8bit (nread, header)
+	;
+	if (! isTabSeparated)
+		return autoDaata ();
+	return Table_readFromCharacterSeparatedTextFile (file, U'\t', false);
+}
+
+
 // MARK: - buttons
 
 void praat_uvafon_init () {
 	Thing_recognizeClassesByName (classPolygon, classParamCurve,
 		classSpectrum, classLtas, classSpectrogram, classFormant,
 		classExcitation, classCochleagram, classVocalTract,
-		classLabel, classTier, classAutosegment,   // three obsolete classes
+		classLabel, classTier, classAutosegment,   // three obsolete classes (pre-1997)
 		classIntensity, classPitch, classHarmonicity,
 		classTransition,
 		classManipulation, classTextPoint, classTextInterval, classTextTier,
@@ -2963,9 +3047,9 @@ void praat_uvafon_init () {
 		classCorpus,
 		nullptr
 	);
-	Thing_recognizeClassByOtherName (classManipulation, U"Psola");
-	Thing_recognizeClassByOtherName (classManipulation, U"Analysis");
-	Thing_recognizeClassByOtherName (classPitchTier, U"StylPitch");
+	Thing_recognizeClassByOtherName (classManipulation, U"Psola");      // obsolete name (pre-1997)
+	Thing_recognizeClassByOtherName (classManipulation, U"Analysis");   // obsolete name (pre-2001)
+	Thing_recognizeClassByOtherName (classPitchTier, U"StylPitch");     // obsolete name (pre-1996)
 
 	Data_recognizeFileType (cgnSyntaxFileRecognizer);
 	Data_recognizeFileType (chronologicalTextGridTextFileRecognizer);
@@ -3015,6 +3099,8 @@ void praat_uvafon_init () {
 		praat_addMenuCommand (U"Objects", U"New", U"-- new strings --",
 				nullptr, 1, nullptr);
 		praat_addMenuCommand (U"Objects", U"New", U"Strings", nullptr, 1, nullptr);
+			praat_addMenuCommand (U"Objects", U"New", U"Create Strings from texts...",
+					nullptr, 2, NEW1_Strings_createFromTexts);
 			praat_addMenuCommand (U"Objects", U"New", U"Create Strings as file list...",
 					nullptr, 2, NEW1_Strings_createAsFileList);
 			praat_addMenuCommand (U"Objects", U"New", U"Create Strings as folder list... || Create Strings as directory list...",
@@ -3027,11 +3113,14 @@ void praat_uvafon_init () {
 			nullptr, 0, READ1_Strings_readFromRawTextFile);
 
 	praat_addMenuCommand (U"Objects", U"Open", U"-- read tier --", nullptr, 0, nullptr);
-	praat_addMenuCommand (U"Objects", U"Open", U"Read from special tier file...", nullptr, 0, nullptr);
-		praat_addMenuCommand (U"Objects", U"Open", U"Read TextTier from Xwaves...",
-				nullptr, 1, READ1_TextTier_readFromXwaves);
-		praat_addMenuCommand (U"Objects", U"Open", U"Read IntervalTier from Xwaves...",
-				nullptr, 1, READ1_IntervalTier_readFromXwaves);
+	praat_addMenuCommand (U"Objects", U"Open", U"Read from special annotation file...", nullptr, 0, nullptr);
+		praat_addMenuCommand (U"Objects", U"Open", U"Read TextGrid from Xwaves... || Read TextGrid from ESPS label file...",
+				nullptr, 1, READ1_TextGrid_readFromEspsLabelFile);
+	praat_addMenuCommand (U"Objects", U"Open", U"Read Sound with adjacent annotation files...", nullptr, 0, nullptr);
+		praat_addMenuCommand (U"Objects", U"Open", U"Read Sound with adjacent annotation files (Buckeye)...",
+				nullptr, 1, NEW_Sound_readWithAdjacentAnnotationFiles_buckeye);
+		praat_addMenuCommand (U"Objects", U"Open", U"Read Sound with adjacent annotation files (TIMIT)...",
+				nullptr, 1, NEW_Sound_readWithAdjacentAnnotationFiles_timit);
 
 	praat_addMenuCommand (U"Objects", U"ApplicationHelp", U"Praat Intro", nullptr, '?', HELP_PraatIntro);
 	#ifndef macintosh
@@ -3804,12 +3893,15 @@ praat_addAction2 (classIntensity, 1, classPitch, 1, U"Query", nullptr, 0, nullpt
 	praat_addMenuCommand (U"Objects", U"New", U"-- new synthesis --", nullptr, 0, nullptr);
 	INCLUDE_LIBRARY (praat_KlattGrid_init)   // from dwtools
 	INCLUDE_LIBRARY (praat_uvafon_Artsynth_init)
-	INCLUDE_LIBRARY (praat_David_init)
+	INCLUDE_LIBRARY (praat_David_init)   // starting with SpeechSynthesizer (last checked 2024-09-07)
+	INCLUDE_LIBRARY (praat_uvafon_sensors_init)
 	praat_addMenuCommand (U"Objects", U"New", U"-- new grammars --", nullptr, 0, nullptr);
 	INCLUDE_LIBRARY (praat_uvafon_gram_init)
 	INCLUDE_LIBRARY (praat_uvafon_FFNet_init)
 	INCLUDE_LIBRARY (praat_uvafon_LPC_init)
 	praat_ExperimentMFC_init ();
+
+	Data_recognizeFileType (tabSeparatedFileRecognizer);   // at end, as a sort of last resort
 }
 
 /* End of file praat_uvafon_init.cpp */

@@ -1,10 +1,10 @@
 /* SoundRecorder.cpp
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -348,9 +348,9 @@ static void showMeter (SoundRecorder me, const short *buffertje, integer nsamp) 
 			for (integer ichan = 1; ichan <= my numberOfChannels; ichan ++)
 				sound -> z [ichan] [isamp] = * (p ++) / 32768.0;
 		Sound_multiplyByWindow (sound.get(), kSound_windowShape::KAISER_2);
-		double intensity = Sound_getIntensity_dB (sound.get());
+		const double intensity = Sound_getIntensity_dB (sound.get());
 		autoSpectrum spectrum = Sound_to_Spectrum (sound.get(), true);
-		double centreOfGravity = Spectrum_getCentreOfGravity (spectrum.get(), 1.0);
+		const double centreOfGravity = Spectrum_getCentreOfGravity (spectrum.get(), 1.0);
 		trace (nsamp, U" samples, intensity ", intensity, U" dB, centre of gravity ", centreOfGravity, U" Hz");
 		Graphics_setWindow (my graphics.get(),
 			my instancePref_meter_centreOfGravity_minimum(), my instancePref_meter_centreOfGravity_maximum(),
@@ -842,6 +842,7 @@ void structSoundRecorder :: v_createChildren ()
 	/*
 		Channels.
 	*/
+	#if 0
 	integer y = Machine_getMenuBarBottom () + 20;
 	GuiLabel_createShown (our windowForm, 10, 160, y, y + Gui_LABEL_HEIGHT, U"Channels:", 0);
 
@@ -853,23 +854,25 @@ void structSoundRecorder :: v_createChildren ()
 	our stereoButton = GuiRadioButton_createShown (our windowForm, 20, 170, y, y + Gui_RADIOBUTTON_HEIGHT,
 			U"Stereo", nullptr, nullptr, 0);
 	GuiRadioGroup_end ();
+	#endif
 
 	/*
 		Input source.
 	*/
-	y = Machine_getMenuBarBottom () + 140;
+	//y = Machine_getMenuBarBottom () + 140;
+	integer y = Machine_getMenuBarBottom () + 20;
 	#if defined (_WIN32)
-		GuiLabel_createShown (our windowForm, 10, 170, y, y + Gui_LABEL_HEIGHT, U"(use Windows mixer", 0);
+		GuiLabel_createShown (our windowForm, 10, 320, y, y + Gui_LABEL_HEIGHT, U"(use Windows mixer", 0);
 		y += Gui_LABEL_HEIGHT + 10;
-		GuiLabel_createShown (our windowForm, 10, 170, y, y + Gui_LABEL_HEIGHT, U"   without meters)", 0);
+		GuiLabel_createShown (our windowForm, 10, 320, y, y + Gui_LABEL_HEIGHT, U"   without meters)", 0);
 	#else
-		GuiLabel_createShown (our windowForm, 10, 170, y, y + Gui_LABEL_HEIGHT, U"Input source:", 0);
+		GuiLabel_createShown (our windowForm, 10, 320, y, y + Gui_LABEL_HEIGHT, U"Input source:", 0);
 		GuiRadioGroup_begin ();
 		for (integer i = 1; i <= SoundRecorder_IDEVICE_MAX; i ++) {
 			if (our devices [i]. canDo) {
 				y += Gui_RADIOBUTTON_HEIGHT + Gui_RADIOBUTTON_SPACING;
-				our devices [i]. button = GuiRadioButton_createShown (our windowForm, 20, 170, y, y + Gui_RADIOBUTTON_HEIGHT,
-						our devices [i]. name, gui_radiobutton_cb_input, this, 0);
+				our devices [i]. button = GuiRadioButton_createShown (our windowForm, 20, 320, y, y + Gui_RADIOBUTTON_HEIGHT,
+						our devices [i]. fullName, gui_radiobutton_cb_input, this, 0);
 			}
 		}
 		GuiRadioGroup_end ();
@@ -879,9 +882,9 @@ void structSoundRecorder :: v_createChildren ()
 		Meter box.
 	*/
 	y = Machine_getMenuBarBottom () + 20;
-	GuiLabel_createShown (our windowForm, 170, -170, y, y + Gui_LABEL_HEIGHT, U"Meter", GuiLabel_CENTRE);
+	GuiLabel_createShown (our windowForm, 320, -170, y, y + Gui_LABEL_HEIGHT, U"Meter", GuiLabel_CENTRE);
 	y += Gui_LABEL_HEIGHT;
-	our meter = GuiDrawingArea_createShown (our windowForm, 170, -170, y, -150,
+	our meter = GuiDrawingArea_createShown (our windowForm, 320, -170, y, -150,
 		gui_drawingarea_cb_expose, nullptr,
 		nullptr, gui_drawingarea_cb_resize, nullptr, this, GuiDrawingArea_BORDER
 	);
@@ -906,7 +909,7 @@ void structSoundRecorder :: v_createChildren ()
 	GuiRadioGroup_end ();
 
 	our progressScale = GuiScale_createShown (our windowForm,
-			10, 350, -130, -90,
+			10, -10, -130, -90,
 			0, 1000, 0, 0);
 
 	y = 60;
@@ -1030,7 +1033,7 @@ autoSoundRecorder SoundRecorder_create (int numberOfChannels) {
 			#elif defined (raspberrypi)
 				MelderAudio_getInputSoundSystem () == kMelder_inputSoundSystem::JACK_VIA_PORTAUDIO;
 			#else
-				MelderAudio_getInputSoundSystem () == kMelder_inputSoundSystem::ALSA_VIA_PORTAUDIO;
+				MelderAudio_getInputSoundSystem () == kMelder_inputSoundSystem::ALSA_OR_JACK_VIA_PORTAUDIO;
 			#endif
 
 		if (my inputUsesPortAudio) {
@@ -1136,8 +1139,19 @@ autoSoundRecorder SoundRecorder_create (int numberOfChannels) {
 					);
 				if (deviceInfo -> maxInputChannels > 0 && my numberOfInputDevices < SoundRecorder_IDEVICE_MAX) {
 					my devices [++ my numberOfInputDevices]. canDo = true;
-					str32ncpy (my devices [my numberOfInputDevices]. name, Melder_peek8to32 (deviceInfo -> name), 40);
-					my devices [my numberOfInputDevices]. name [40] = U'\0';
+					#if defined (macintosh) || defined (_WIN32)   // only one host API
+						str32ncpy (my devices [my numberOfInputDevices]. fullName, Melder_peek8to32 (deviceInfo -> name), SoundRecorder_Device :: maximumLengthOfFullName);
+					#else
+						const PaHostApiIndex hostApiIndex = deviceInfo -> hostApi;
+						const PaHostApiInfo * const hostApiInfo = Pa_GetHostApiInfo (hostApiIndex);
+						Melder_assert (hostApiInfo);
+						const conststring8 shortHostApiName8 = ( strstr (hostApiInfo -> name, "JACK") == hostApiInfo -> name ? "JACK" : hostApiInfo -> name );
+						str32ncpy (my devices [my numberOfInputDevices]. fullName,
+							Melder_cat (U"(", Melder_peek8to32 (shortHostApiName8), U":) ", Melder_peek8to32 (deviceInfo -> name)),
+							SoundRecorder_Device :: maximumLengthOfFullName
+						);
+					#endif
+					my devices [my numberOfInputDevices]. fullName [SoundRecorder_Device :: maximumLengthOfFullName] = U'\0';
 					my deviceInfos [my numberOfInputDevices] = deviceInfo;
 					my deviceIndices [my numberOfInputDevices] = idevice;
 				}
@@ -1150,9 +1164,9 @@ autoSoundRecorder SoundRecorder_create (int numberOfChannels) {
 				// No device info: use Windows mixer.
 			#else
 				my devices [1]. canDo = true;
-				str32cpy (my devices [1]. name, U"Microphone");
+				str32cpy (my devices [1]. fullName, U"Microphone");
 				my devices [2]. canDo = true;
-				str32cpy (my devices [2]. name, U"Line");
+				str32cpy (my devices [2]. fullName, U"Line");
 			#endif
 		}
 
@@ -1190,7 +1204,9 @@ autoSoundRecorder SoundRecorder_create (int numberOfChannels) {
 		*/
 		initialize (me.get());
 
-		Editor_init (me.get(), 100, 100, 600, 500, U"SoundRecorder", nullptr);
+		autoMelderString title;
+		MelderString_copy (& title, U"SoundRecorder (", ( numberOfChannels == 1 ? U"mono" : U"stereo" ), U")");
+		Editor_init (me.get(), 100, 100, 800, 600, title.string, nullptr);
 		my graphics = Graphics_create_xmdrawingarea (my meter);
 		Melder_assert (my graphics);
 

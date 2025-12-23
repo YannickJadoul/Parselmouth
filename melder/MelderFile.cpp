@@ -81,7 +81,7 @@ MelderFile MelderFile_create (MelderFile me) {
 	return me;
 }
 
-void MelderFile_write (MelderFile file, conststring32 string) {
+void MelderFile__writeOneStringPart (MelderFile file, conststring32 string) {
 	if (! file -> filePointer)
 		return;
 	if (! string)

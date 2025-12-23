@@ -1,10 +1,10 @@
 /* Sound_and_Spectrogram.cpp
  *
- * Copyright (C) 1992-2011,2014-2020 Paul Boersma
+ * Copyright (C) 1992-2011,2014-2020,2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -24,10 +24,16 @@
 #include "enums_getValue.h"
 #include "Sound_and_Spectrogram_enums.h"
 
-autoSpectrogram Sound_to_Spectrogram (Sound me, double effectiveAnalysisWidth, double fmax,
-	double minimumTimeStep1, double minimumFreqStep1, kSound_to_Spectrogram_windowShape windowType,
-	double maximumTimeOversampling, double maximumFreqOversampling)
-{
+autoSpectrogram Sound_to_Spectrogram_e (
+	const constSound me,
+	const double effectiveAnalysisWidth,
+	/* mutable clip */ double fmax,
+	const double minimumTimeStep1,
+	const double minimumFreqStep1,
+	const kSound_to_Spectrogram_windowShape windowType,
+	const double maximumTimeOversampling,
+	const double maximumFreqOversampling
+) {
 	try {
 		const double nyquist = 0.5 / my dx;
 		const double physicalAnalysisWidth =
@@ -62,7 +68,8 @@ autoSpectrogram Sound_to_Spectrogram (Sound me, double effectiveAnalysisWidth, d
 			fmax = nyquist;
 		integer numberOfFreqs = Melder_ifloor (fmax / freqStep);
 		if (numberOfFreqs < 1)
-			return autoSpectrogram ();
+			Melder_throw (U"No frequency bins in spectrogram analysis. "
+					U"Raise the maximum frequency, or raise the window length. (Or lower the frequency step, if you have that.)");
 		integer nsampFFT = 1;
 		while (nsampFFT < nsamp_window || nsampFFT < 2 * numberOfFreqs * (nyquist / fmax))
 			nsampFFT *= 2;
@@ -75,8 +82,10 @@ autoSpectrogram Sound_to_Spectrogram (Sound me, double effectiveAnalysisWidth, d
 		double binWidth_hertz = 1.0 / (my dx * nsampFFT);
 		freqStep = binWidth_samples * binWidth_hertz;
 		numberOfFreqs = Melder_ifloor (fmax / freqStep);
+		//Melder_assert (numberOfFreqs >= 1);
 		if (numberOfFreqs < 1)
-			return autoSpectrogram ();
+			Melder_throw (U"No frequency bins in spectrogram analysis. "
+					U"Raise the maximum frequency, or raise the window length. (Or lower the frequency step, if you have that.)");
 
 		autoSpectrogram thee = Spectrogram_create (my xmin, my xmax, numberOfTimes, timeStep, t1,
 				0.0, fmax, numberOfFreqs, freqStep, 0.5 * (freqStep - binWidth_hertz));
@@ -118,14 +127,13 @@ autoSpectrogram Sound_to_Spectrogram (Sound me, double effectiveAnalysisWidth, d
 		}
 		const double oneByBinWidth = 1.0 / double (windowssq) / binWidth_samples;
 
-		autoVEC data = zero_VEC (nsampFFT);
-		autoVEC spectrum = zero_VEC (half_nsampFFT + 1);
-		autoNUMfft_Table fftTable;
-		NUMfft_Table_init (& fftTable, nsampFFT);
-
 		autoMelderProgress progress (U"Sound to Spectrogram...");
 
-		for (integer iframe = 1; iframe <= numberOfTimes; iframe ++) {
+		MelderThread_PARALLELIZE (numberOfTimes, 15)
+			autoVEC data = zero_VEC (nsampFFT);
+			autoVEC spectrum = zero_VEC (half_nsampFFT + 1);
+			autoNUMFourierTable fftTable = NUMFourierTable_create (nsampFFT);
+		MelderThread_FOR (iframe) {
 			const double t = Sampled_indexToX (thee.get(), iframe);
 			const integer leftSample = Sampled_xToLowIndex (me, t), rightSample = leftSample + 1;
 			const integer startSample = rightSample - halfnsamp_window;
@@ -146,15 +154,20 @@ autoSpectrogram Sound_to_Spectrogram (Sound me, double effectiveAnalysisWidth, d
 				for (integer j = 1, i = startSample; j <= nsamp_window; j ++)
 					data [j] = my z [channel] [i ++] * window [j];
 				for (integer j = nsamp_window + 1; j <= nsampFFT; j ++)
-					data [j] = 0.0f;
+					data [j] = 0.0;
 
-				Melder_progress (iframe / (numberOfTimes + 1.0),
-					U"Sound to Spectrogram: analysis of frame ", iframe, U" out of ", numberOfTimes);
+				if (MelderThread_IS_MASTER) {   // then we can interact with the GUI
+					const double estimatedProgress = MelderThread_ESTIMATED_PROGRESS;
+					Melder_progress (estimatedProgress,
+						U"Sound to Spectrogram: analysed approximately ", Melder_iround (numberOfTimes * estimatedProgress),
+						U" out of ", numberOfTimes, U" frames"
+					);
+				}
 
 				/*
 					Compute the Fast Fourier Transform of the frame.
 				*/
-				NUMfft_forward (& fftTable, data.get());   // data := complex spectrum
+				NUMfft_forward (fftTable.get(), data.get());   // data := complex spectrum
 
 				/*
 					Convert from complex to power spectrum,
@@ -180,7 +193,7 @@ autoSpectrogram Sound_to_Spectrogram (Sound me, double effectiveAnalysisWidth, d
 				const double power = NUMsum (spectrum.part (lowerSample, higherSample - 1));
 				thy z [iband] [iframe] = power * oneByBinWidth;
 			}
-		}
+		} MelderThread_ENDFOR
 		return thee;
 	} catch (MelderError) {
 		Melder_throw (me, U": spectrogram analysis not performed.");

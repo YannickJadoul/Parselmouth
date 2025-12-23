@@ -1,7 +1,7 @@
 #pragma once
 /* VEC.h
  *
- * Copyright (C) 2017-2021 Paul Boersma
+ * Copyright (C) 2017-2021,2023,2024 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -249,6 +249,21 @@ extern void mul_VEC_out (VECVU const& target, constMATVU const& mat, constVECVU 
 extern autoVEC mul_VEC (constVECVU const& vec, constMATVU const& mat);
 extern autoVEC mul_VEC (constMATVU const& mat, constVECVU const& vec);
 
+inline void neg_VEC_out (VECVU const& target, constVECVU const& v) {
+	Melder_assert (target.size == v.size);
+	for (integer i = 1; i <= target.size; i ++)
+		target [i] = - v [i];
+}
+inline void neg_VEC_inout (VECVU const& vec) noexcept {
+	for (integer i = 1; i <= vec.size; i ++)
+		vec [i] = - vec [i];
+}
+inline autoVEC neg_VEC (constVECVU const& vec) {
+	autoVEC result = raw_VEC (vec.size);
+	neg_VEC_out (result.all(), vec);
+	return result;
+}
+
 extern void power_VEC_out (VECVU const& target, constVECVU const& vec, double power);
 extern void power_VEC_inout (VECVU const& vec, double power);
 inline autoVEC power_VEC (constVECVU const& vec, double power) {
@@ -320,12 +335,14 @@ inline autoINTVEC shuffle_INTVEC (constINTVECVU const& x) {
 	return result;
 }
 
-extern void sort_VEC_inout (VEC const& x) noexcept;   // cannot be a VECVU
+extern void sort_e_VEC_inout (VEC const& x);   // cannot be a VECVU
+extern void sort_VEC_inout (VEC const& x);   // cannot be a VECVU
 extern void sort_INTVEC_inout (INTVEC const& x) noexcept;   // cannot be an INTVECVU
 
-inline autoVEC sort_VEC (constVECVU const& x) {
+
+inline autoVEC sort_e_VEC (constVECVU const& x) {
 	autoVEC result = copy_VEC (x);
-	sort_VEC_inout (result.get());
+	sort_e_VEC_inout (result.get());
 	return result;
 }
 
@@ -334,6 +351,8 @@ inline autoINTVEC sort_INTVEC (constINTVECVU const& x) {
 	sort_INTVEC_inout (result.get());
 	return result;
 }
+
+autoVEC sort_removeUndefined_VEC (constVECVU const& vec);
 
 inline autoINTVEC sortedSet_INTVEC (constINTVECVU const& x) {
 	if (x.size <= 0)

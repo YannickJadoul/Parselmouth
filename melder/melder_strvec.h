@@ -2,11 +2,11 @@
 #define _melder_strvec_h_
 /* melder_strvec.h
  *
- * Copyright (C) 1992-2022 Paul Boersma
+ * Copyright (C) 1992-2022,2024,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -21,10 +21,10 @@
 template <typename T>
 class _stringvector {
 public:
-	T** elements = nullptr;
+	T **elements = nullptr;
 	integer size = 0;
 	_stringvector () { }
-	_stringvector (T** givenElements, integer givenSize): elements (givenElements), size (givenSize) { }
+	_stringvector (T **givenElements, integer givenSize): elements (givenElements), size (givenSize) { }
 	T* & operator[] (integer i) const {
 		return our elements [i - 1];
 	}
@@ -36,6 +36,7 @@ public:
 			return _stringvector<T> ();
 		return _stringvector (our elements + (firstPosition - 1), newSize);
 	}
+	explicit operator bool () const noexcept { return !! our elements; }
 	T* *begin () const { return & our operator[] (1); }
 	T* *end () const { return & our operator[] (our size + 1); }
 };
@@ -48,13 +49,13 @@ class _autostringvectorview;
 template <typename T>
 class _conststringvector {
 public:
-	const T* const * elements = nullptr;
+	const T *const *elements = nullptr;
 	integer size = 0;
 	_conststringvector () { }
-	_conststringvector (const T* const * givenElements, integer givenSize): elements (givenElements), size (givenSize) { }
+	_conststringvector (const T *const *givenElements, integer givenSize): elements (givenElements), size (givenSize) { }
 	_conststringvector (_stringvector<T> other): elements (other.elements), size (other.size) { }
-	_conststringvector (_autostringvectorview<T> other): elements (reinterpret_cast <const T* const *> (other.elements)), size (other.size) { }
-	const T* const & operator[] (integer i) const {
+	_conststringvector (_autostringvectorview<T> other): elements (reinterpret_cast <const T *const *> (other.elements)), size (other.size) { }
+	const T *const & operator[] (integer i) const {
 		return our elements [i - 1];
 	}
 	_conststringvector<T> part (integer firstPosition, integer lastPosition) {
@@ -65,6 +66,7 @@ public:
 			return _conststringvector<T> ();
 		return _conststringvector (our elements + (firstPosition - 1), newSize);
 	}
+	explicit operator bool () const noexcept { return !! our elements; }
 	T* *begin () const { return & our operator[] (1); }
 	T* *end () const { return & our operator[] (our size + 1); }
 };
@@ -74,13 +76,14 @@ using conststring8vector  = _conststringvector <char>;
 template <typename T>
 class _autostringvectorview {
 public:
-	_autostring <T> * elements = nullptr;
+	_autostring <T> *elements = nullptr;
 	integer size = 0;
 	_autostringvectorview<T> () = default;
 	_autostringvectorview<T> (_autostring <T> * givenElements, integer givenSize): elements (givenElements), size (givenSize) { }
 	_autostring <T> & operator[] (integer i) const {
 		return our elements [i - 1];
 	}
+	explicit operator bool () const noexcept { return !! our elements; }
 };
 
 template <typename T>
@@ -93,7 +96,7 @@ void operator<<= (_autostringvectorview <T> const& target, _autostringvectorview
 template <typename T>
 class _autostringautovector {
 public:
-	_autostring <T> * elements;   // Because of DataEditor, this has to be the first field...
+	_autostring <T> *elements;   // Because of DataEditor, this has to be the first field...
 	integer size;   // ... and this the second...
 private:
 	integer _capacity = 0;   // ... and this the third.
@@ -108,7 +111,7 @@ public:
 		our size = givenSize;
 	}
 	explicit _autostringautovector (std::initializer_list <const conststring32> list) {
-		our size = uinteger_to_integer (list.size());
+		our size = uinteger_to_integer_a (list.size());
 		our elements = MelderArray:: _alloc <autostring32> (our size, MelderArray::kInitializationType::ZERO);
 		our _capacity = our size;
 		autostring32 *p = our elements;
@@ -191,7 +194,7 @@ public:
 	_autostringautovector&& move () noexcept { return static_cast <_autostringautovector&&> (*this); }   // enable construction and assignment for l-values (variables) via explicit move()
 	void initWithCapacity (integer capacity) {
 		if (capacity > 0)
-			our cells = MelderArray:: _alloc <_autostring <T>> (capacity, MelderArray::kInitializationType::ZERO);
+			our elements = MelderArray:: _alloc <_autostring <T>> (capacity, MelderArray::kInitializationType::ZERO);
 		our size = 0;
 		our _capacity = capacity;
 	}

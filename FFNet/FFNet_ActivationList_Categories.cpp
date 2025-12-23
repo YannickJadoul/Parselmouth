@@ -80,7 +80,7 @@ autoActivationList FFNet_Categories_to_ActivationList (FFNet me, Categories thee
 		autoActivationList him = ActivationList_create (thy size, my numberOfOutputs);
 		for (integer i = 1; i <= thy size; i ++) {
 			const SimpleString category = thy at [i];
-			const integer pos = OrderedOfString_indexOfItem_c (my outputCategories.get(), category -> string.get());
+			const integer pos = OrderedOfString_indexOfItem (my outputCategories.get(), category -> string.get());
 			Melder_require (pos > 0,
 				U"The FFNet doesn't know the category ", category -> string.get(), U".");
 			his z [i] [pos] = 1.0;

@@ -1,10 +1,10 @@
 /* praat_menuCommands.cpp
  *
- * Copyright (C) 1992-2018,2020-2024 Paul Boersma
+ * Copyright (C) 1992-2018,2020-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -18,7 +18,6 @@
 
 #include "praatP.h"
 #include "praat_script.h"
-#include "praat_version.h"
 #include "GuiP.h"
 
 static OrderedOf <structPraat_Command> theCommands;
@@ -195,7 +194,7 @@ static GuiMenuItem praat_addMenuCommand__ (conststring32 window, conststring32 m
 					*/
 					if (! parentCommand -> callback && parentCommand -> title && parentCommand -> title [0] != U'-') {
 						if (! parentCommand -> button)
-							Melder_fatal (U"No button for ", window, U"/", menu, U"/", title, U".");
+							Melder_crash (U"No button for ", window, U"/", menu, U"/", title, U".");
 						Thing_cast (GuiMenuItem, parentButton_as_GuiMenuItem, parentCommand -> button);
 						parentMenu = parentButton_as_GuiMenuItem -> d_menu;
 					}
@@ -244,7 +243,7 @@ GuiMenuItem praat_addMenuCommand_ (conststring32 window, conststring32 menu, con
 	integer positionOfSeparator = pSeparator - title;
 	static MelderString string;
 	MelderString_copy (& string, title);
-	char32 *pTitle = & string. string [0];
+	char32 *pTitle = & string.string [0];
 	GuiMenuItem result = nullptr;
 	do {
 		pTitle [positionOfSeparator] = U'\0';
@@ -302,7 +301,7 @@ void praat_addMenuCommandScript (conststring32 window, conststring32 menu, const
 		} else {
 			structMelderFile file { };
 			Melder_relativePathToFile (script, & file);
-			command -> script = Melder_dup_f (Melder_fileToPath (& file));
+			command -> script = Melder_dup_f (MelderFile_peekPath (& file));
 		}
 		command -> after = ( after [0] != U'\0' ? Melder_dup_f (after) : autostring32() );
 		if (praatP.phase >= praat_READING_BUTTONS) {
@@ -327,7 +326,7 @@ void praat_addMenuCommandScript (conststring32 window, conststring32 menu, const
 					if (parentCommand -> depth == depth - 1) {
 						if (! parentCommand -> callback && parentCommand -> title && parentCommand -> title [0] != U'-') {
 							if (! parentCommand -> button)
-								Melder_fatal (U"No button for ", window, U"/", menu, U"/", title, U".");
+								Melder_crash (U"No button for ", window, U"/", menu, U"/", title, U".");
 							Melder_assert (parentCommand -> button -> classInfo == classGuiMenuItem);
 							parentMenu = (static_cast <GuiMenuItem> (parentCommand -> button)) -> d_menu;
 						}
@@ -455,7 +454,7 @@ void praat_sensitivizeFixedButtonCommand (conststring32 title, bool sensitive) {
 		}
 	}
 	if (! commandFound)
-		Melder_fatal (U"Unkown fixed button <<", title, U">>");
+		Melder_crash (U"Unkown fixed button <<", title, U">>");
 	commandFound -> executable = sensitive;
 	if (! theCurrentPraatApplication -> batch && ! Melder_backgrounding)
 		GuiThing_setSensitive (commandFound -> button, sensitive);
@@ -476,7 +475,7 @@ int praat_doMenuCommand (conststring32 title, conststring32 arguments, Interpret
 		return 0;
 	if (commandFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = commandFound -> script.get();
-		const conststring32 preferencesFolderPath = Melder_folderToPath (& Melder_preferencesFolder);
+		const conststring32 preferencesFolderPath = MelderFolder_peekPath (Melder_preferencesFolder());
 		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
@@ -508,7 +507,7 @@ int praat_doMenuCommand (conststring32 title, integer narg, Stackel args, Interp
 		return 0;
 	if (commandFound -> callback == DO_RunTheScriptFromAnyAddedMenuCommand) {
 		const conststring32 scriptPath = commandFound -> script.get();
-		const conststring32 preferencesFolderPath = Melder_folderToPath (& Melder_preferencesFolder);
+		const conststring32 preferencesFolderPath = MelderFolder_peekPath (Melder_preferencesFolder());
 		const bool scriptIsInPlugin = Melder_startsWith (scriptPath, preferencesFolderPath);
 		Melder_throw (
 			U"From a script you cannot directly call a menu command that calls another script. Use instead: \nrunScript: ",
@@ -542,7 +541,7 @@ void praat_addCommandsToEditor (Editor me) {
 static bool commandIsToBeIncluded (Praat_Command command, bool deprecated, bool includeCreateAPI, bool includeReadAPI,
 	bool includeRecordAPI, bool includePlayAPI, bool includeDrawAPI, bool includeHelpAPI, bool includeWindowAPI)
 {
-	const bool obsolete = ( deprecated && (command -> deprecationYear < PRAAT_YEAR - 10 || command -> deprecationYear < 2023) );
+	const bool obsolete = ( deprecated && (command -> deprecationYear < Melder_appYear() - 10 || command -> deprecationYear < 2023) );
 	const bool hiddenByDefault = ( command -> hidden != command -> toggled );
 	const bool explicitlyHidden = hiddenByDefault && ! deprecated;
 	const bool hidden = explicitlyHidden || ! command -> callback || command -> noApi || obsolete ||

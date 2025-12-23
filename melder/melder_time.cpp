@@ -1,10 +1,10 @@
 /* melder_time.cpp
  *
- * Copyright (C) 1992-2008,2011,2014-2018,2020 Paul Boersma
+ * Copyright (C) 1992-2008,2011,2014-2018,2020,2021,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -26,60 +26,6 @@
 	#include <windows.h>
 #endif
 
-/*
-#include <assert.h>
-#include <CoreServices/CoreServices.h>
-#include <mach/mach.h>
-#include <mach/mach_time.h>
-#include <unistd.h>
-
-uint64 GetPIDTimeInNanoseconds(void)
-{
-    uint64        start;
-    uint64        end;
-    uint64        elapsed;
-    uint64        elapsedNano;
-    static mach_timebase_info_data_t    sTimebaseInfo;
-
-    // Start the clock.
-
-    start = mach_absolute_time();
-
-    // Call getpid. This will produce inaccurate results because 
-    // we're only making a single system call. For more accurate 
-    // results you should call getpid multiple times and average 
-    // the results.
-
-    (void) getpid();
-
-    // Stop the clock.
-
-    end = mach_absolute_time();
-
-    // Calculate the duration.
-
-    elapsed = end - start;
-
-    // Convert to nanoseconds.
-
-    // If this is the first time we've run, get the timebase.
-    // We can use denom == 0 to indicate that sTimebaseInfo is 
-    // uninitialised because it makes no sense to have a zero 
-    // denominator is a fraction.
-
-    if ( sTimebaseInfo.denom == 0 ) {
-        (void) mach_timebase_info(&sTimebaseInfo);
-    }
-
-    // Do the maths. We hope that the multiplication doesn't 
-    // overflow; the price you pay for working in fixed point.
-
-    elapsedNano = elapsed * sTimebaseInfo.numer / sTimebaseInfo.denom;
-
-    return elapsedNano;
-}
-*/
-
 #include <chrono>
 
 double Melder_clock () {
@@ -90,12 +36,12 @@ double Melder_clock () {
 }
 
 double Melder_stopwatch () {
-	static double lastTime;
-	double now = Melder_clock ();
-	double timeElapsed = ( lastTime == 0 ? -1.0 : now - lastTime );
-	//Melder_casual ("%ld %ld %ld %lf %lf", now, lastTime, now - lastTime, (now - lastTime) / (double) CLOCKS_PER_SEC, timeElapsed);
-	lastTime = now;
-	return timeElapsed;
+	static thread_local double lastTimeInThisThread = 0.0;
+	const double now = Melder_clock ();
+	const double timeElapsedInThisThread = ( lastTimeInThisThread == 0.0 ? -1.0 : now - lastTimeInThisThread );
+	//Melder_casual ("%lf %lf %lf", now, lastTimeInThisThread, now - lastTimeInThisThread, timeElapsedInThisThread);
+	lastTimeInThisThread = now;
+	return timeElapsedInThisThread;
 }
 
 void Melder_sleep (double duration) {

@@ -1,10 +1,10 @@
 /* praatP.h
  *
- * Copyright (C) 1992-2007,2009-2022 Paul Boersma
+ * Copyright (C) 1992-2007,2009-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -155,8 +155,10 @@ void praat_statistics_prefsChanged ();   // after reading prefs file
 void praat_statistics_exit ();   // at exit time
 void praat_reportMemoryUse ();
 void praat_reportSystemProperties ();
+void praat_reportAppProperties ();
 void praat_reportGraphicalProperties ();
 void praat_reportIntegerProperties ();
+void praat_reportFloatingPointProperties ();
 void praat_reportTextProperties ();
 void praat_reportFontProperties ();
 
@@ -188,12 +190,11 @@ inline struct PraatP {
 	struct {
 		bool hidePicture;   // hide the Picture window at start-up
 	} commandLineOptions;
-	bool fileNamesCameInByDropping, foundTheOpenSwitch, foundTheRunSwitch, foundTheSendSwitch, foundTheNewSwitch;
-	bool userWantsToOpen, userWantsToSend, userWantsExistingInstance, hasFinishedLaunching;
+	bool fileNamesCameInByDropping, foundTheOpenSwitch, foundTheRunSwitch, foundTheSendSwitch, foundTheSendOrFormSwitch, foundTheNewSwitch;
+	bool userWantsToOpen, userWantsToSend, userWantsToSendOrForm, userWantsExistingInstance, hasFinishedLaunching;
 	bool dontUsePictureWindow;   // see praat_dontUsePictureWindow ()
 	bool ignorePreferenceFiles, ignorePlugins;
 	bool hasCommandLineInput;
-	autostring32 title;
 	GuiWindow menuBar;
 	int phase;
 } praatP;

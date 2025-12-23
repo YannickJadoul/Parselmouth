@@ -301,7 +301,7 @@ autoPolynomial Polynomial_getPrimitive (Polynomial me, double constant) {
 /* P(x)= (x-roots [1])*(x-roots [2])*..*(x-roots [numberOfRoots]) */
 void Polynomial_initFromRealRoots (Polynomial me, constVECVU const& roots) {
 	try {
-		my extendCapacity (roots.size + 1);
+		my resize (roots.size + 1);
 		integer n = 1;
 		my coefficients [1] = - roots [1];
 		my coefficients [2] = 1.0;
@@ -312,7 +312,6 @@ void Polynomial_initFromRealRoots (Polynomial me, constVECVU const& roots) {
 			my coefficients [1] *= -roots [iroot];
 			n ++;
 		}
-		my numberOfCoefficients = n + 1;
 	} catch (MelderError) {
 		Melder_throw (me, U": not initalized from real roots.");
 	}
@@ -334,7 +333,7 @@ autoPolynomial Polynomial_createFromRealRoots (double xmin, double xmax, constVE
  * Postcondition : my numberOfCoeffcients = 2 * a.size + 1
  */
 void Polynomial_initFromProductOfSecondOrderTerms (Polynomial me, constVECVU const& a) {
-	my extendCapacity (2 * a.size + 1);
+	my resize (2 * a.size + 1);
 	my coefficients [1] = my coefficients [3] = 1.0;
 	my coefficients [2] = a [1];
 	integer ncoef = 3;
@@ -346,7 +345,7 @@ void Polynomial_initFromProductOfSecondOrderTerms (Polynomial me, constVECVU con
 		my coefficients [2] += a [i];   // a [i] * my coefficients [1]
 		ncoef += 2;
 	}
-	my numberOfCoefficients = ncoef;
+	Melder_assert (my numberOfCoefficients == ncoef);
 }
 
 autoPolynomial Polynomial_createFromProductOfSecondOrderTerms (double xmin, double xmax, constVECVU const& a) {
@@ -373,15 +372,14 @@ double Polynomial_getArea (Polynomial me, double xmin, double xmax) {
 /* P(x) * (x-a)
  * Postcondition: my numberOfCoefficients = old_numberOfCoefficients + 1 
  */
-void Polynomial_multiply_firstOrderFactor (Polynomial me, double factor) { 
+void Polynomial_multiply_firstOrderFactor (Polynomial me, double factor) {
 	const integer n = my numberOfCoefficients;
-	my extendCapacity (n + 1);
+	my resize (n + 1);
 	
 	my coefficients [n + 1] = my coefficients [n];
 	for (integer j = n; j >= 2; j --)
 		my coefficients [j] = my coefficients [j - 1] - my coefficients [j] * factor;
 	my coefficients [1] *= -factor;
-	my numberOfCoefficients += 1;
 }
 
 /*
@@ -390,14 +388,13 @@ void Polynomial_multiply_firstOrderFactor (Polynomial me, double factor) {
  */
 void Polynomial_multiply_secondOrderFactor (Polynomial me, double factor) {
 	const integer n = my numberOfCoefficients;
-	my extendCapacity (n + 2);
+	my resize (n + 2);
 	my coefficients [n + 2] = my coefficients [n];
 	my coefficients [n + 1] = my coefficients [n - 1];
 	for (integer j = n; j >= 3; j --)
 		my coefficients [j] = my coefficients [j - 2] - factor * my coefficients [j];
 	my coefficients [2] *= - factor;
-	my coefficients [1] *= - factor;
-	my numberOfCoefficients += 2;	
+	my coefficients [1] *= - factor;	
 }
 
 autoPolynomial Polynomials_multiply (Polynomial me, Polynomial thee) {

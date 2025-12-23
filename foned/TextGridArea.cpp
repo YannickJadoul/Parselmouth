@@ -1,10 +1,10 @@
 /* TextGridArea.cpp
  *
- * Copyright (C) 1992-2024 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -162,7 +162,7 @@ static void insertBoundaryOrPoint (TextGridArea me, integer itier, double t1, do
 				Merge mid with left interval.
 			*/
 			if (interval -> xmin != t1)
-				Melder_fatal (U"Boundary unequal: ", interval -> xmin, U" versus ", t1, U".");
+				Melder_crash (U"Boundary unequal: ", interval -> xmin, U" versus ", t1, U".");
 			interval -> xmax = t2;
 			TextInterval_setText (interval, Melder_cat (interval -> text.get(), midNewInterval -> text.get()));
 		} else if (t2IsABoundary) {
@@ -170,7 +170,7 @@ static void insertBoundaryOrPoint (TextGridArea me, integer itier, double t1, do
 				Merge mid and right interval.
 			*/
 			if (interval -> xmax != t2)
-				Melder_fatal (U"Boundary unequal: ", interval -> xmax, U" versus ", t2, U".");
+				Melder_crash (U"Boundary unequal: ", interval -> xmax, U" versus ", t2, U".");
 			interval -> xmax = t1;
 			Melder_assert (rightNewInterval -> xmin == t2);
 			Melder_assert (rightNewInterval -> xmax == t2);
@@ -179,9 +179,9 @@ static void insertBoundaryOrPoint (TextGridArea me, integer itier, double t1, do
 		} else {
 			interval -> xmax = t1;
 			if (t1 != t2)
-				intervalTier -> intervals.addItem_move (midNewInterval.move());
+				intervalTier -> intervals. addItem_move (midNewInterval.move());
 		}
-		intervalTier -> intervals.addItem_move (rightNewInterval.move());
+		intervalTier -> intervals. addItem_move (rightNewInterval.move());
 		if (insertSecond && numberOfTiers >= 2 && t1 == t2) {
 			/*
 				Find the last time before t on another tier.
@@ -198,7 +198,7 @@ static void insertBoundaryOrPoint (TextGridArea me, integer itier, double t1, do
 			if (tlast > interval -> xmin && tlast < t1) {
 				autoTextInterval newInterval = TextInterval_create (tlast, t1, U"");
 				interval -> xmax = tlast;
-				intervalTier -> intervals.addItem_move (newInterval.move());
+				intervalTier -> intervals. addItem_move (newInterval.move());
 			}
 		}
 	} else {
@@ -346,7 +346,7 @@ static void do_drawIntervalTier (TextGridArea me, IntervalTier tier, integer iti
 			const double t1 = std::max (my startWindow(), startInterval);
 			const double t2 = std::min (my endWindow(), endInterval);
 			Graphics_setColour (my graphics(), DataGui_defaultForegroundColour (me, intervalIsSelected));
-			Graphics_textRect (my graphics(), t1, t2, 0.0, 1.0, interval -> text.get());
+			Graphics_rectangleText_wrapAndTruncate (my graphics(), t1, t2, 0.0, 1.0, interval -> text.get());
 			Graphics_setColour (my graphics(), Melder_BLACK);
 		}
 
@@ -565,14 +565,18 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 		double startInterval, endInterval;
 		timeToInterval (this, x_world, our selectedTier, & startInterval, & endInterval);
 
-		if (event -> isLeftBottomFunctionKeyPressed()) {
-			our setSelection (x_world - startInterval < endInterval - x_world ? startInterval : endInterval, our endSelection());   // to nearest boundary
-			return FunctionEditor_UPDATE_NEEDED;
+		if (event -> optionKeyPressed != event -> commandKeyPressed) {
+			if (event -> isLeftBottomFunctionKeyPressed()) {
+				our setSelection (x_world - startInterval < endInterval - x_world ? startInterval : endInterval, our endSelection());   // to nearest boundary
+				return FunctionEditor_UPDATE_NEEDED;
+			}
+			if (event -> isRightBottomFunctionKeyPressed()) {
+				our setSelection (our startSelection(), x_world - startInterval < endInterval - x_world ? startInterval : endInterval);
+				return FunctionEditor_UPDATE_NEEDED;
+			}
 		}
-		if (event -> isRightBottomFunctionKeyPressed()) {
-			our setSelection (our startSelection(), x_world - startInterval < endInterval - x_world ? startInterval : endInterval);
-			return FunctionEditor_UPDATE_NEEDED;
-		}
+		Melder_assert (! our functionEditor() -> clickWasModifiedByOptionKey && ! our functionEditor() -> clickWasModifiedByCommandKey ||
+		                 our functionEditor() -> clickWasModifiedByOptionKey &&   our functionEditor() -> clickWasModifiedByCommandKey);   // either neither or both
 
 		IntervalTier selectedIntervalTier;
 		TextTier selectedTextTier;
@@ -632,7 +636,9 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 			/*
 				If the user clicked on an unselected boundary or point, we extend or shrink the selection to it.
 			*/
-			if (event -> shiftKeyPressed) {
+			const bool rubberBanding = our functionEditor() -> clickWasModifiedByOptionKey &&
+			                           our functionEditor() -> clickWasModifiedByCommandKey;
+			if (event -> shiftKeyPressed && ! rubberBanding) {
 				if (our anchorTime > 0.5 * (our startSelection() + our endSelection()))
 					our setSelection (our startSelection(), our anchorTime);
 				else
@@ -649,12 +655,17 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 				Determine the set of selected boundaries and points, and the dragging range.
 			*/
 			our draggingTiers = zero_BOOLVEC (numberOfTiers);
-			our leftDraggingBoundary = our tmin();
-			our rightDraggingBoundary = our tmax();
+			if (rubberBanding) {
+				our leftDraggingBoundary = our startSelection();
+				our rightDraggingBoundary = our endSelection();
+			} else {
+				our leftDraggingBoundary = our tmin();
+				our rightDraggingBoundary = our tmax();
+			}
 			for (int itier = 1; itier <= numberOfTiers; itier ++) {
 				/*
 					If the user has pressed the shift key, let her drag all the boundaries and points at this time.
-					Otherwise, let her only drag the boundary or point on the clicked tier.
+					Otherwise, let her drag only the boundary or point on the clicked tier.
 				*/
 				if (itier == mouseTier || our functionEditor() -> clickWasModifiedByShiftKey == our instancePref_shiftDragMultiple()) {
 					IntervalTier intervalTier;
@@ -666,11 +677,13 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 							TextInterval leftInterval = intervalTier -> intervals.at [ibound - 1];
 							TextInterval rightInterval = intervalTier -> intervals.at [ibound];
 							our draggingTiers [itier] = true;
-							/*
-								Prevent the user from dragging the boundary past its left or right neighbours on the same tier.
-							*/
-							Melder_clipLeft (leftInterval -> xmin, & our leftDraggingBoundary);
-							Melder_clipRight (& our rightDraggingBoundary, rightInterval -> xmax);
+							if (! rubberBanding) {
+								/*
+									Prevent the user from dragging the boundary past its left or right neighbours on the same tier.
+								*/
+								Melder_clipLeft (leftInterval -> xmin, & our leftDraggingBoundary);
+								Melder_clipRight (& our rightDraggingBoundary, rightInterval -> xmax);
+							}
 						}
 					} else {
 						Melder_assert (isdefined (our anchorTime));
@@ -801,13 +814,45 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 			return FunctionEditor_UPDATE_NEEDED;
 		}
 
-		FunctionArea_save (this, U"Drag");
+		const bool rubberBanding = our functionEditor() -> clickWasModifiedByOptionKey &&
+		                           our functionEditor() -> clickWasModifiedByCommandKey;
+		FunctionArea_save (this, rubberBanding ? U"Rubber banding" : U"Drag");
 
 		for (integer itier = 1; itier <= numberOfTiers; itier ++) {
-			if (our draggingTiers [itier]) {
-				IntervalTier intervalTier;
-				TextTier textTier;
-				AnyTextGridTier_identifyClass (our textGrid() -> tiers->at [itier], & intervalTier, & textTier);
+			if (! our draggingTiers [itier])
+				continue;
+			IntervalTier intervalTier;
+			TextTier textTier;
+			AnyTextGridTier_identifyClass (our textGrid() -> tiers->at [itier], & intervalTier, & textTier);
+			if (rubberBanding) {
+				if (intervalTier) {
+					for (integer iinterval = 1; iinterval <= intervalTier -> intervals.size; iinterval ++) {
+						const mutableTextInterval interval = intervalTier -> intervals.at [iinterval];
+						if (interval -> xmin > leftDraggingBoundary && interval -> xmin < rightDraggingBoundary) {
+							if (interval -> xmin < our anchorTime)
+								NUMscale (& interval -> xmin, our leftDraggingBoundary, our anchorTime, our leftDraggingBoundary, x_world);
+							else
+								NUMscale (& interval -> xmin, our anchorTime, our rightDraggingBoundary, x_world, our rightDraggingBoundary);
+						}
+						if (interval -> xmax > leftDraggingBoundary && interval -> xmax < rightDraggingBoundary) {
+							if (interval -> xmax < our anchorTime)
+								NUMscale (& interval -> xmax, our leftDraggingBoundary, our anchorTime, our leftDraggingBoundary, x_world);
+							else
+								NUMscale (& interval -> xmax, our anchorTime, our rightDraggingBoundary, x_world, our rightDraggingBoundary);
+						}
+					}
+				} else {
+					for (integer ipoint = 1; ipoint <= textTier -> points.size; ipoint ++) {
+						const mutableTextPoint point = textTier -> points.at [ipoint];
+						if (point -> number > leftDraggingBoundary && point -> number < rightDraggingBoundary) {
+							if (point -> number < our anchorTime)
+								NUMscale (& point -> number, our leftDraggingBoundary, our anchorTime, our leftDraggingBoundary, x_world);
+							else
+								NUMscale (& point -> number, our anchorTime, our rightDraggingBoundary, x_world, our rightDraggingBoundary);
+						}
+					}
+				}
+			} else {
 				if (intervalTier) {
 					const integer numberOfIntervals = intervalTier -> intervals.size;
 					for (integer ibound = 2; ibound <= numberOfIntervals; ibound ++) {
@@ -933,7 +978,7 @@ static void findInTier (TextGridArea me) {
 			const TextPoint point = tier->points.at [ipoint];
 			conststring32 text = point -> mark.get();
 			if (text) {
-				const char32 * const position = str32str (text, my findString.get());
+				const char32 *const position = str32str (text, my findString.get());
 				if (position) {
 					my setSelection (point -> number, point -> number);
 					Melder_assert (isdefined (my startSelection()));   // precondition of FunctionEditor_scrollToNewSelection()
@@ -955,7 +1000,7 @@ static void do_find (TextGridArea me) {
 		if (my editable ()) {
 			integer left, right;
 			autostring32 label = GuiText_getStringAndSelectionPosition (my functionEditor() -> textArea, & left, & right);
-			const char32 * const position = str32str (& label [right], my findString.get());   // CRLF BUG?
+			const char32 *const position = str32str (& label [right], my findString.get());   // CRLF BUG?
 			if (position)
 				GuiText_setSelection (my functionEditor() -> textArea,
 						position - label.get(), position - label.get() + Melder_length (my findString.get()));
@@ -1364,23 +1409,23 @@ static void menu_cb_AlignInterval (TextGridArea me, EDITOR_ARGS) {
 }
 static void menu_cb_AlignmentSettings (TextGridArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Alignment settings", nullptr)
-		OPTIONMENU (language, U"Language", (int) Strings_findString (espeakdata_languages_names.get(), U"English (Great Britain)"))
-		for (integer i = 1; i <= espeakdata_languages_names -> numberOfStrings; i ++) {
-			OPTION ((conststring32) espeakdata_languages_names -> strings [i].get());
+		OPTIONMENU (language, U"Language", (int) NUMfindFirst (theSpeechSynthesizerLanguageNames, U"English (Great Britain)"))
+		for (integer i = 1; i <= theSpeechSynthesizerLanguageNames.size; i ++) {
+			OPTION (theSpeechSynthesizerLanguageNames [i]);
 		}
 		BOOLEAN (includeWords,    U"Include words",    my default_align_includeWords ())
 		BOOLEAN (includePhonemes, U"Include phonemes", my default_align_includePhonemes ())
 		BOOLEAN (allowSilences,   U"Allow silences",   my default_align_allowSilences ())
 	EDITOR_OK
-		int prefVoice = (int) Strings_findString (espeakdata_languages_names.get(), my instancePref_align_language());
+		int prefVoice = (int) NUMfindFirst (theSpeechSynthesizerLanguageNames, my instancePref_align_language());
 		if (prefVoice == 0)
-			prefVoice = (int) Strings_findString (espeakdata_languages_names.get(), U"English (Great Britain)");
+			prefVoice = (int) NUMfindFirst (theSpeechSynthesizerLanguageNames, U"English (Great Britain)");
 		SET_OPTION (language, prefVoice)
 		SET_BOOLEAN (includeWords, my instancePref_align_includeWords())
 		SET_BOOLEAN (includePhonemes, my instancePref_align_includePhonemes())
 		SET_BOOLEAN (allowSilences, my instancePref_align_allowSilences())
 	EDITOR_DO
-		my setInstancePref_align_language (espeakdata_languages_names -> strings [language].get());
+		my setInstancePref_align_language (theSpeechSynthesizerLanguageNames [language]);
 		my setInstancePref_align_includeWords (includeWords);
 		my setInstancePref_align_includePhonemes (includePhonemes);
 		my setInstancePref_align_allowSilences (allowSilences);
@@ -1541,7 +1586,7 @@ static void CONVERT_DATA_TO_ONE__PublishTier (TextGridArea me, EDITOR_ARGS) {
 	CONVERT_DATA_TO_ONE
 		checkTierSelection (me, U"publish a tier");
 		const Function tier = my textGrid() -> tiers->at [my selectedTier];
-		autoTextGrid result = TextGrid_createWithoutTiers (1e30, -1e30);
+		autoTextGrid result = TextGrid_createWithoutTiers (1e308, -1e308);
 		TextGrid_addTier_copy (result.get(), tier);
 	CONVERT_DATA_TO_ONE_END (tier -> name.get())
 }

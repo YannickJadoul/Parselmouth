@@ -1,11 +1,11 @@
 #pragma once
 /* STR.h
  *
- * Copyright (C) 1992-2018 Paul Boersma
+ * Copyright (C) 1992-2018,2020,2021,2024,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -22,7 +22,17 @@ autostring32 hex_STR (conststring32 str, uint64 key = 0);
 
 autostring32 left_STR (conststring32 str, integer newLength = 1);
 
+autostring32 lowerCase_STR (conststring32 str);
+autostring32 lowerCamelCase_STR (conststring32 str);
+autostring32 lowerSnakeCase_STR (conststring32 str);
+
 autostring32 mid_STR (conststring32 str, integer startingPosition_1, integer numberOfCharacters = 1);
+
+autostring32 padLeft_STR (conststring32 str, integer width, conststring32 pad = U" ");
+autostring32 padRight_STR (conststring32 str, integer width, conststring32 pad = U" ");
+
+autostring32 padOrTruncateLeft_STR (conststring32 str, integer width, conststring32 pad = U" ");
+autostring32 padOrTruncateRight_STR (conststring32 str, integer width, conststring32 pad = U" ");
 
 autostring32 quote_doubleSTR (conststring32 str);
 
@@ -47,7 +57,14 @@ autostring32 replace_regex_STR (conststring32 string, regexp *search_compiled,
 
 autostring32 right_STR (conststring32 str, integer newLength = 1);
 
+autostring32 truncateLeft_STR (conststring32 str, integer width);
+autostring32 truncateRight_STR (conststring32 str, integer width);
+
 autostring8 unhex_STR8 (conststring8 str, uint64 key = 0);
 autostring32 unhex_STR (conststring32 str, uint64 key = 0);
+
+autostring32 upperCase_STR (conststring32 str);
+autostring32 upperCamelCase_STR (conststring32 str);
+autostring32 upperSnakeCase_STR (conststring32 str);
 
 /* End of file STR.h */

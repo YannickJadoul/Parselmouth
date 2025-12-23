@@ -1,10 +1,10 @@
 /* melder_textencoding.cpp
  *
- * Copyright (C) 2007-2022 Paul Boersma
+ * Copyright (C) 2007-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -48,6 +48,14 @@ void Melder_textEncoding_prefs () {
 bool Melder_isValidAscii (conststring32 text) {
 	for (; *text != U'\0'; text ++) {
 		if (*text > 127)
+			return false;
+	}
+	return true;
+}
+
+bool Melder_str8IsValidAscii (conststring8 text) {
+	for (; *text != U'\0'; text ++) {
+		if (* (unsigned char *) text > 127)
 			return false;
 	}
 	return true;
@@ -160,7 +168,8 @@ int64 Melder_length_utf8 (conststring32 string, bool nativizeNewlines) {
 		char32 kar = *p;
 		if (kar <= 0x00'007F) {
 			#ifdef _WIN32
-				if (nativizeNewlines && kar == U'\n') length ++;
+				if (nativizeNewlines && kar == U'\n')
+					length ++;
 			#else
 				(void) nativizeNewlines;
 			#endif
@@ -183,7 +192,8 @@ int64 Melder_length_utf16 (conststring32 string, bool nativizeNewlines) {
 		char32 kar = *p;
 		if (kar <= 0x00'007F) {
 			#ifdef _WIN32
-				if (nativizeNewlines && kar == U'\n') length ++;
+				if (nativizeNewlines && kar == U'\n')
+					length ++;
 			#else
 				(void) nativizeNewlines;
 			#endif
@@ -197,61 +207,68 @@ int64 Melder_length_utf16 (conststring32 string, bool nativizeNewlines) {
 	return length;
 }
 
-conststring32 Melder_peek8to32 (conststring8 textA) {
+void MelderString_8to32 (MelderString *me, conststring8 textA) {
 	if (! textA)
-		return nullptr;
-	static MelderString buffers [19];
-	static int ibuffer = 0;
-	if (++ ibuffer == 11)
-		ibuffer = 0;
-	MelderString_empty (& buffers [ibuffer]);
-	uinteger n = strlen (textA), i, j;
-	for (i = 0, j = 0; i <= n; i ++) {
+		textA = "";
+	MelderString_empty (me);
+	uinteger n = strlen (textA);
+	for (uinteger i = 0; i <= n; i ++) {
 		char8 kar1 = (char8) textA [i];   // convert sign
 		if (kar1 <= 0x7F) {
-			MelderString_appendCharacter (& buffers [ibuffer],
-				(char32) kar1);
+			MelderString_appendCharacter (me,
+				(char32) kar1
+			);
 		} else if (kar1 <= 0xC1) {
-			MelderString_appendCharacter (& buffers [ibuffer], UNICODE_REPLACEMENT_CHARACTER);
+			MelderString_appendCharacter (me, UNICODE_REPLACEMENT_CHARACTER);
 		} else if (kar1 <= 0xDF) {
 			char8 kar2 = textA [++ i];
 			if ((kar2 & 0xC0) != 0x80)
-				MelderString_appendCharacter (& buffers [ibuffer], UNICODE_REPLACEMENT_CHARACTER);
-			MelderString_appendCharacter (& buffers [ibuffer],
+				MelderString_appendCharacter (me, UNICODE_REPLACEMENT_CHARACTER);
+			MelderString_appendCharacter (me,
 				(char32) ((char32) ((char32) kar1 & 0x00'001F) << 6) |
-						  (char32) ((char32) kar2 & 0x00'003F));
+						  (char32) ((char32) kar2 & 0x00'003F)
+			);
 		} else if (kar1 <= 0xEF) {
 			char8 kar2 = textA [++ i];
 			if ((kar2 & 0xC0) != 0x80)
-				MelderString_appendCharacter (& buffers [ibuffer], UNICODE_REPLACEMENT_CHARACTER);
+				MelderString_appendCharacter (me, UNICODE_REPLACEMENT_CHARACTER);
 			char8 kar3 = textA [++ i];
 			if ((kar3 & 0xC0) != 0x80)
-				MelderString_appendCharacter (& buffers [ibuffer], UNICODE_REPLACEMENT_CHARACTER);
-			MelderString_appendCharacter (& buffers [ibuffer],
+				MelderString_appendCharacter (me, UNICODE_REPLACEMENT_CHARACTER);
+			MelderString_appendCharacter (me,
 				(char32) ((char32) ((char32) kar1 & 0x00'000F) << 12) |
 				(char32) ((char32) ((char32) kar2 & 0x00'003F) << 6) |
-						  (char32) ((char32) kar3 & 0x00'003F));
+						  (char32) ((char32) kar3 & 0x00'003F)
+			);
 		} else if (kar1 <= 0xF4) {
 			char8 kar2 = (char8) textA [++ i];
 			if ((kar2 & 0xC0) != 0x80)
-				MelderString_appendCharacter (& buffers [ibuffer], UNICODE_REPLACEMENT_CHARACTER);
+				MelderString_appendCharacter (me, UNICODE_REPLACEMENT_CHARACTER);
 			char8 kar3 = (char8) textA [++ i];
 			if ((kar3 & 0xC0) != 0x80)
-				MelderString_appendCharacter (& buffers [ibuffer], UNICODE_REPLACEMENT_CHARACTER);
+				MelderString_appendCharacter (me, UNICODE_REPLACEMENT_CHARACTER);
 			char8 kar4 = (char8) textA [++ i];
 			if ((kar4 & 0xC0) != 0x80)
-				MelderString_appendCharacter (& buffers [ibuffer], UNICODE_REPLACEMENT_CHARACTER);
+				MelderString_appendCharacter (me, UNICODE_REPLACEMENT_CHARACTER);
 			char32 character =
 				(char32) ((char32) ((char32) kar1 & 0x00'0007) << 18) |
 				(char32) ((char32) ((char32) kar2 & 0x00'003F) << 12) |
 				(char32) ((char32) ((char32) kar3 & 0x00'003F) << 6) |
 						  (char32) ((char32) kar4 & 0x00'003F);
-			MelderString_appendCharacter (& buffers [ibuffer], character);
+			MelderString_appendCharacter (me, character);
 		} else {
-			MelderString_appendCharacter (& buffers [ibuffer], UNICODE_REPLACEMENT_CHARACTER);
+			MelderString_appendCharacter (me, UNICODE_REPLACEMENT_CHARACTER);
 		}
 	}
-	return buffers [ibuffer]. string;
+}
+
+conststring32 Melder_peek8to32 (conststring8 textA) {
+	static MelderString buffers [19];
+	static int ibuffer = 0;
+	if (++ ibuffer == 19)
+		ibuffer = 0;
+	MelderString_8to32 (& buffers [ibuffer], textA);
+	return buffers [ibuffer].string;
 }
 
 char32 Melder_decodeMacRoman [256] = {
@@ -347,6 +364,7 @@ char32 Melder_decodeWindowsLatin1 [256] = {
 	240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 };
 
 void Melder_8to32_inplace (conststring8 string8, mutablestring32 string32, kMelder_textInputEncoding inputEncoding) {
+	const char8 *p = (const char8 *) & string8 [0];
 	char32 *q = & string32 [0];
 	if (inputEncoding == kMelder_textInputEncoding::UNDEFINED) {
 		inputEncoding = preferences. inputEncoding;
@@ -381,17 +399,16 @@ void Melder_8to32_inplace (conststring8 string8, mutablestring32 string32, kMeld
 			Melder_throw (U"Text is not valid UTF-8; please try a different text input encoding.");
 		}
 	}
-	const char8 *p = (const char8 *) & string8 [0];
 	if (inputEncoding == kMelder_textInputEncoding::UTF8) {
 		while (*p != '\0') {
-			char32 kar1 = * p ++;   // convert up without sign extension
+			char32 kar1 = *p ++;   // convert up without sign extension
 			if (kar1 <= 0x00'007F) {
 				*q ++ = kar1;
 			} else if (kar1 <= 0x00'00DF) {
-				char32 kar2 = * p ++;   // convert up without sign extension
+				char32 kar2 = *p ++;   // convert up without sign extension
 				*q ++ = ((kar1 & 0x00'001F) << 6) | (kar2 & 0x00'003F);
 			} else if (kar1 <= 0x00'00EF) {
-				char32 kar2 = * p ++, kar3 = * p ++;   // convert up without sign extension
+				char32 kar2 = *p ++, kar3 = *p ++;   // convert up without sign extension
 				*q ++ = ((kar1 & 0x00'000F) << 12) | ((kar2 & 0x00'003F) << 6) | (kar3 & 0x00'003F);
 			} else if (kar1 <= 0x00'00F4) {
 				char32 kar2 = *p ++, kar3 = *p ++, kar4 = *p ++;   // convert up without sign extension
@@ -409,7 +426,7 @@ void Melder_8to32_inplace (conststring8 string8, mutablestring32 string32, kMeld
 		while (*p != '\0')
 			*q ++ = Melder_decodeMacRoman [*p ++];
 	} else if (inputEncoding != kMelder_textInputEncoding::UTF8) {
-		Melder_fatal (U"Unknown text input encoding ", (int) inputEncoding, U".");
+		Melder_crash (U"Unknown text input encoding ", (int) inputEncoding, U".");
 	}
 	*q = U'\0';   // closing null character
 	(void) Melder_killReturns_inplaceCHAR <char32> (string32);
@@ -442,7 +459,7 @@ conststring32 Melder_peek16to32 (conststring16 text) {
 	for (;;) {
 		char16 kar1 = *text ++;
 		if (kar1 == u'\0')
-			return buffers [bufferNumber]. string;
+			return buffers [bufferNumber].string;
 		if (kar1 < 0xD800) {
 			MelderString_appendCharacter (& buffers [bufferNumber], (char32) kar1);   // convert up without sign extension
 		} else if (kar1 < 0xDC00) {
@@ -506,7 +523,7 @@ conststring8 Melder_peek32to8 (conststring32 text) {
 	static int bufferNumber = 0;
 	if (++ bufferNumber == 19)
 		bufferNumber = 0;
-	constexpr int64 maximumNumberOfUTF8bytesPerUTF32point = 4;   // becausse we use only the lower 21 bits
+	constexpr int64 maximumNumberOfUTF8bytesPerUTF32point = 4;   // because we use only the lower 21 bits
 	const int64 numberOfUTF32points = Melder_length (text);
 	const int64 maximumNumberOfBytesNeeded = numberOfUTF32points * maximumNumberOfUTF8bytesPerUTF32point + 1;
 	if ((bufferSizes [bufferNumber] - maximumNumberOfBytesNeeded) * (integer) sizeof (char) >= 10'000) {
@@ -551,7 +568,7 @@ conststring16 Melder_peek32to16 (conststring32 text, bool nativizeNewlines) {
 		for (int64 i = 0; i <= n; i ++)
 			MelderString16_appendCharacter (& buffers [bufferNumber], text [i]);
 	}
-	return buffers [bufferNumber]. string;
+	return buffers [bufferNumber].string;
 }
 conststring16 Melder_peek32to16 (conststring32 text) {
 	return Melder_peek32to16 (text, false);
@@ -619,7 +636,8 @@ void Melder_32to8_fileSystem_inplace (conststring32 string, char *utf8) {
 		CFStringGetCString (cfpath2, (char *) utf8, kMelder_MAXPATH+1, kCFStringEncodingUTF8);   // Mac POSIX requires UTF-8
 		CFRelease (cfpath2);
 	#else
-		Melder_32to8_inplace (string, utf8);   // fallback; should work even on Windows if converted to W later (as in e.g. op_open_file 2021-12-16)
+		Melder_32to8_inplace (string, utf8);
+				// fallback; should work even on Windows if converted to W later (as in op_open_file 2021-12-16 and flac_fopen 2024-08-11)
 	#endif
 }
 conststring8 Melder_peek32to8_fileSystem (conststring32 string) {
@@ -639,6 +657,18 @@ const void * Melder_peek32toCfstring (conststring32 text) {
 	if (cfString [icfString])
 		CFRelease (cfString [icfString]);
 	cfString [icfString] = CFStringCreateWithCString (nullptr, (const char *) Melder_peek32to8 (text), kCFStringEncodingUTF8);
+	return cfString [icfString];
+}
+const void * Melder_peek32toCfstring_fileSystem (conststring32 text) {
+	if (! text)
+		return nullptr;
+	static CFStringRef cfString [11];
+	static int icfString = 0;
+	if (++ icfString == 11)
+		icfString = 0;
+	if (cfString [icfString])
+		CFRelease (cfString [icfString]);
+	cfString [icfString] = CFStringCreateWithCString (nullptr, (const char *) Melder_peek32to8_fileSystem (text), kCFStringEncodingUTF8);
 	return cfString [icfString];
 }
 #endif

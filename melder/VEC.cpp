@@ -1,10 +1,10 @@
 /* VEC.cpp
  *
- * Copyright (C) 2017-2021 Paul Boersma
+ * Copyright (C) 2017-2021,2023,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -28,7 +28,7 @@
 #if defined (macintosh)
 void _add_macfast_VEC_out (VECVU const& target, constVECVU const& x, constVECVU const& y) noexcept {
 	integer n = target.size;
-	vDSP_vaddD (& x [1], x.stride, & y [1], y.stride, & target [1], target.stride, integer_to_uinteger (n));
+	vDSP_vaddD (& x [1], x.stride, & y [1], y.stride, & target [1], target.stride, integer_to_uinteger_a (n));
 	/*
 		Speed if always vDSP_vaddD:
 			//9.3,1.26,0.21, 0.10,0.42,0.70, 1.17,1.97,5.32

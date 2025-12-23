@@ -1,10 +1,10 @@
 /* LongSound.cpp
  *
- * Copyright (C) 1992-2008,2010-2019,2021-2023 Paul Boersma, 2007 Erez Volk (for FLAC and MP3)
+ * Copyright (C) 1992-2008,2010-2019,2021-2025 Paul Boersma, 2007 Erez Volk (for FLAC and MP3)
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -100,7 +100,7 @@ void structLongSound :: v1_info () {
 		U"IEEE float 64 bit big-endian", U"IEEE float 64 bit little-endian",
 		U"FLAC", U"FLAC", U"FLAC", U"MP3", U"MP3", U"MP3" };
 	MelderInfo_writeLine (U"Duration: ", xmax - xmin, U" seconds");
-	MelderInfo_writeLine (U"File name: ", Melder_fileToPath (& file));
+	MelderInfo_writeLine (U"File name: ", MelderFile_peekPath (& file));
 	MelderInfo_writeLine (U"File type: ", audioFileType > Melder_NUMBER_OF_AUDIO_FILE_TYPES ? U"unknown" : Melder_audioFileTypeString (audioFileType));
 	MelderInfo_writeLine (U"Number of channels: ", numberOfChannels);
 	MelderInfo_writeLine (U"Encoding: ", encoding > 20 ? U"unknown" : encodingStrings [encoding]);
@@ -109,7 +109,7 @@ void structLongSound :: v1_info () {
 	MelderInfo_writeLine (U"Start of sample data: ", startOfData, U" bytes from the start of the file");
 }
 
-static void _LongSound_FLAC_convertFloats (LongSound me, const int32 * const samples[], const integer bitsPerSample, const integer numberOfSamples) {
+static void _LongSound_FLAC_convertFloats (LongSound me, const int32 *const samples[], const integer bitsPerSample, const integer numberOfSamples) {
 	double multiplier;
 	switch (bitsPerSample) {
 		case 8: multiplier = (1.0 / 128.0); break;
@@ -128,7 +128,7 @@ static void _LongSound_FLAC_convertFloats (LongSound me, const int32 * const sam
 	}
 }
 
-static void _LongSound_FLAC_convertShorts (LongSound me, const int32 * const samples[], const integer bitsPerSample, const integer numberOfSamples) {
+static void _LongSound_FLAC_convertShorts (LongSound me, const int32 *const samples[], const integer bitsPerSample, const integer numberOfSamples) {
 	for (integer channel = 0; channel < my numberOfChannels; ++ channel) {
 		int16 *output = my compressedShorts + channel;
 		const int32 *input = samples [channel];
@@ -147,7 +147,7 @@ static void _LongSound_FLAC_convertShorts (LongSound me, const int32 * const sam
 	my compressedShorts += numberOfSamples * my numberOfChannels;
 }
 
-static FLAC__StreamDecoderWriteStatus _LongSound_FLAC_write (const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame, const FLAC__int32 * const buffer[], void *void_me) {
+static FLAC__StreamDecoderWriteStatus _LongSound_FLAC_write (const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame, const FLAC__int32 *const buffer[], void *void_me) {
 	iam (LongSound);
 	const FLAC__FrameHeader *header = & frame -> header;
 	integer numberOfSamples = header -> blocksize;
@@ -328,7 +328,7 @@ void LongSound_readAudioToFloat (LongSound me, const MAT buffer, const integer f
 		_LongSound_MP3_process (me, firstSample, buffer.ncol);
 	} else {
 		_LongSound_FILE_seekSample (me, firstSample);
-		Melder_readAudioToFloat (my f, my encoding, buffer);
+		Melder_readAudioToFloat (& my file, my encoding, buffer);
 	}
 }
 
@@ -339,7 +339,7 @@ void LongSound_readAudioToShort (LongSound me, int16 *buffer, const integer firs
 		_LongSound_MP3_readAudioToShort (me, buffer, firstSample, numberOfSamples);
 	} else {
 		_LongSound_FILE_seekSample (me, firstSample);
-		Melder_readAudioToShort (my f, my numberOfChannels, my encoding, buffer, numberOfSamples);
+		Melder_readAudioToShort (& my file, my numberOfChannels, my encoding, buffer, numberOfSamples);
 	}
 }
 
@@ -423,6 +423,8 @@ void LongSound_saveChannelAsAudioFile (LongSound me, int audioFileType, integer 
 }
 
 static void _LongSound_haveSamples (LongSound me, integer imin, integer imax) {
+	TRACE
+	trace (0);
 	integer n = imax - imin + 1;
 	Melder_assert (n <= my nmax);
 	/*
@@ -452,6 +454,7 @@ static void _LongSound_haveSamples (LongSound me, integer imin, integer imax) {
 	if (imin < 1)
 		imin = 1;
 	Melder_assert (imax - imin + 1 <= my nmax);
+	trace (1);
 	/*
 		Overlap?
 	*/
@@ -505,6 +508,7 @@ static void _LongSound_haveSamples (LongSound me, integer imin, integer imax) {
 	}
 	my imin = imin;
 	my imax = imax;
+	trace (2);
 }
 
 bool LongSound_haveWindow (LongSound me, double tmin, double tmax) {

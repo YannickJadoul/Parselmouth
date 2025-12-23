@@ -1,0 +1,1 @@
+runScriptWithForm: "p l a y.praat", "e x a m p l e.wav"

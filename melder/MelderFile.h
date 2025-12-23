@@ -2,11 +2,11 @@
 #define _melder_file_h_
 /* MelderFile.h
  *
- * Copyright (C) 1992-2018,2020 Paul Boersma
+ * Copyright (C) 1992-2018,2020,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -23,21 +23,13 @@ MelderFile MelderFile_open (MelderFile file);
 char * MelderFile_readLine8 (MelderFile file);
 
 MelderFile MelderFile_create (MelderFile file);
-void MelderFile_write (MelderFile file, conststring32 string);
 void MelderFile_writeCharacter (MelderFile file, char32 kar);
 
-inline void _recursiveTemplate_MelderFile_write (MelderFile file, const MelderArg& arg) {
-	MelderFile_write (file, arg. _arg);
-}
-template <typename... Args>
-void _recursiveTemplate_MelderFile_write (MelderFile file, const MelderArg& first, Args... rest) {
-	_recursiveTemplate_MelderFile_write (file, first);
-	_recursiveTemplate_MelderFile_write (file, rest...);
-}
+void MelderFile__writeOneStringPart (MelderFile file, conststring32 string);
 
-template <typename... Args>
-void MelderFile_write (MelderFile file, const MelderArg& first, Args... rest) {
-	_recursiveTemplate_MelderFile_write (file, first, rest...);
+template <typename... Arg>
+void MelderFile_write (MelderFile file, const Arg... arg) {
+	(  MelderFile__writeOneStringPart (file, MelderArg { arg }. _arg), ...  );
 }
 
 void MelderFile_rewind (MelderFile file);

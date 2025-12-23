@@ -1,10 +1,10 @@
 /* GuiThing.cpp
  *
- * Copyright (C) 1993-2012,2013,2015,2017 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
+ * Copyright (C) 1993-2012,2013,2015,2017,2022,2025 Paul Boersma, 2008 Stefan de Konink, 2010 Franz Brausse
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -94,10 +94,12 @@ void structGuiThing :: v_show () {
 		if ([(NSObject *) d_widget isKindOfClass: [NSWindow class]]) {
 			trace (U"trying to show a window");
 			[(NSWindow *) d_widget makeKeyAndOrderFront: nil];
+			[(NSWindow *) d_widget layoutIfNeeded];
 		} else if ([(NSObject *) d_widget isKindOfClass: [NSView class]]) {
 			if ((NSView *) d_widget == [[(NSView *) d_widget window] contentView]) {
 				trace (U"trying to show a window through its content view");
 				[[(NSView *) d_widget window] makeKeyAndOrderFront: nil];
+				[[(NSView *) d_widget window] layoutIfNeeded];
 			} else {
 				[(NSView *) d_widget setHidden: NO];
 			}

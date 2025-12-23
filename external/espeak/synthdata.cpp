@@ -17,7 +17,7 @@
  * along with this program; if not, see: <http://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
+#include "espeak__config.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -28,20 +28,21 @@
 #include <string.h>
 
 #include "espeak_ng.h"
-#include "espeak_io.h"
 #include "speak_lib.h"
 #include "encoding.h"
 
 #include "synthdata.h"
-#include "common.h"                    // for GetFileLength
+#include "common.h"                   // for GetFileLength
 #include "error.h"                    // for create_file_error_context, crea...
 #include "phoneme.h"                  // for PHONEME_TAB, PHONEME_TAB_LIST
 #include "speech.h"                   // for path_home, PATHSEP
 #include "mbrola.h"                   // for mbrola_name
-#include "soundicon.h"               // for soundicon_tab
+#include "soundicon.h"                // for soundicon_tab
 #include "synthesize.h"               // for PHONEME_LIST, frameref_t, PHONE...
 #include "translate.h"                // for Translator, LANGUAGE_OPTIONS
 #include "voice.h"                    // for ReadTonePoints, tone_points, voice
+
+#include "espeak_praat.h"             // for theEspeakPraatFileInMemorySet
 
 int n_tunes = 0;
 TUNE *tunes = NULL;
@@ -68,7 +69,7 @@ static espeak_ng_STATUS ReadPhFile(void **ptr, const char *fname, int *size, esp
 {
 	if (!ptr) return static_cast<espeak_ng_STATUS> (EINVAL);
 
-	FILE *f_in;
+	FileInMemory f_in;
 	int length;
 	char buf[sizeof(path_home)+40];
 
@@ -77,7 +78,7 @@ static espeak_ng_STATUS ReadPhFile(void **ptr, const char *fname, int *size, esp
 	if (length < 0) // length == -errno
 		return create_file_error_context(context, static_cast<espeak_ng_STATUS> (-length), buf);
 
-	if ((f_in = fopen(buf, "rb")) == NULL)
+	if ((f_in = FileInMemorySet_fopen(theEspeakPraatFileInMemorySet(), buf, "rb")) == NULL)
 		return create_file_error_context(context, static_cast<espeak_ng_STATUS> (errno), buf);
 
 	if (*ptr != NULL) {
@@ -91,18 +92,18 @@ static espeak_ng_STATUS ReadPhFile(void **ptr, const char *fname, int *size, esp
 	}
 
 	if ((*ptr = malloc(length)) == NULL) {
-		fclose(f_in);
+		FileInMemory_fclose(f_in);
 		return static_cast<espeak_ng_STATUS> (ENOMEM);
 	}
-	if (fread(*ptr, 1, length, f_in) != length) {
+	if (FileInMemory_fread(*ptr, 1, length, f_in) != length) {
 		int error = errno;
-		fclose(f_in);
+		FileInMemory_fclose(f_in);
 		free(*ptr);
 		*ptr = NULL;
 		return create_file_error_context(context, static_cast<espeak_ng_STATUS> (error), buf);
 	}
 
-	fclose(f_in);
+	FileInMemory_fclose(f_in);
 	if (size != NULL)
 		*size = length;
 	return ENS_OK;

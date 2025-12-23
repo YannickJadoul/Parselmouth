@@ -23,6 +23,7 @@
 #include "Formant_extensions.h"
 #include "LPC_and_Formant.h"
 #include "NUM2.h"
+#include "NUMselect.h"
 #include "PitchTier.h"
 #include "PitchTier_to_PointProcess.h"
 #include "Sound_and_LPC.h"
@@ -156,7 +157,7 @@ static void Formant_replaceFrames (Formant target, integer beginFrame, integer e
 	}
 	Melder_require (beginFrame <= endFrame,
 		U"The start frame should not be after the end frame.");
-	Melder_require (beginFrame > 0, 
+	Melder_require (beginFrame > 0,
 		U"The begin frame should be larger than zero.");
 	Melder_require (endFrame <= target->nx,
 		U"The end frame sould not be larger than ", target->nx);
@@ -202,7 +203,7 @@ static void menu_cb_candidate_modellingSettings (FormantPathEditor me, EDITOR_AR
 		const integer numberOfTracks = FormantPath_getNumberOfFormantTracks (my formantPath());
 		Melder_require (parameters.size <= numberOfTracks,
 			U"The number of coefficients (", parameters.size, U") should not exceed the number of tracks (", numberOfTracks, U").");
-		Melder_require (NUMmin_e (parameters.get()) > 0.0,
+		Melder_require (num::NUMmin_e (parameters.get()) > 0.0,
 			U"All coefficients should be larger than zero.");
 		my setInstancePref_modeler_varianceExponent (varianceExponent);
 		FunctionEditor_redraw (me);

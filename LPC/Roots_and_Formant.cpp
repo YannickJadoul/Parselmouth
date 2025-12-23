@@ -16,15 +16,29 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Formant.h"
-#include "Roots.h"
+#include "Roots_and_Formant.h"
+
+static void Formant_Frame_sort (Formant_Frame me) {
+	const integer n = my numberOfFormants;
+	for (integer i = 1; i < n; i ++) {
+		double min = my formant [i]. frequency;
+		integer imin = i;
+		for (integer j = i + 1; j <= n; j ++)
+			if (my formant [j]. frequency < min) {
+				min = my formant [j]. frequency;
+				imin = j;
+			}
+		if (imin != i)
+			std::swap (my formant [imin], my formant [i]);
+	}	
+}
 
 void Roots_into_Formant_Frame (constRoots me, Formant_Frame thee, double samplingFrequency, double margin) {
 	/*
 		Determine the formants and bandwidths
 	*/
 	Melder_assert (my numberOfRoots == my roots.size); // check invariant
-	thy formant.resize (0);
+	thy formant. resize (0);
 	const double nyquistFrequency = 0.5 * samplingFrequency;
 	const double fLow = margin, fHigh = nyquistFrequency - margin;
 	for (integer iroot = 1; iroot <= my numberOfRoots; iroot ++) {
@@ -33,12 +47,13 @@ void Roots_into_Formant_Frame (constRoots me, Formant_Frame thee, double samplin
 		const double frequency = fabs (atan2 (my roots [iroot].imag(), my roots [iroot].real())) * nyquistFrequency / NUMpi;
 		if (frequency >= fLow && frequency <= fHigh) {
 			const double bandwidth = - log (norm (my roots [iroot])) * nyquistFrequency / NUMpi;
-			Formant_Formant newff = thy formant . append ();
+			Formant_Formant newff = thy formant. append ();
 			newff -> frequency = frequency;
 			newff -> bandwidth = bandwidth;
 		}
 	}
 	thy numberOfFormants = thy formant.size; // maintain invariant
+	Formant_Frame_sort (thee);
 }
 
 /* End  of file Roots_and_Formant.h */

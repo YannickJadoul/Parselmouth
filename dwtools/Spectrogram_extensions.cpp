@@ -76,7 +76,7 @@ double structBandFilterSpectrogram :: v_getValueAtSample (integer iframe, intege
 	return val;
 }
 
-Thing_implement (BarkSpectrogram, BandFilterSpectrogram, 1);
+Thing_implement (BarkSpectrogram, BandFilterSpectrogram, 2);
 
 // dbs = scaleFactor * log10 (value/reference);
 // if (dbs < floor_db) { dbs = floor_dB }

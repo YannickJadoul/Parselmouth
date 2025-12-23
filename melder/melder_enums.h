@@ -119,13 +119,17 @@ enums_end (kMelder_asynchronicityLevel, 3, ASYNCHRONOUS)
 #else
 
 	enums_begin (kMelder_inputSoundSystem, 1)
-		enums_add (kMelder_inputSoundSystem, 1, ALSA_VIA_PORTAUDIO, U"ALSA via PortAudio")
-	enums_end (kMelder_inputSoundSystem, 1, ALSA_VIA_PORTAUDIO)
+		enums_add (kMelder_inputSoundSystem, 1, ALSA_OR_JACK_VIA_PORTAUDIO, U"ALSA or JACK via PortAudio")
+		enums_alt (kMelder_inputSoundSystem,    ALSA_OR_JACK_VIA_PORTAUDIO, U"ALSA via PortAudio")
 			// in order to use ALSA and therefore be compatible with Ubuntu 10.10 and later
+			// JACK compatible with PipeWire
+	enums_end (kMelder_inputSoundSystem, 1, ALSA_OR_JACK_VIA_PORTAUDIO)
 
 	enums_begin (kMelder_outputSoundSystem, 1)
-		enums_add (kMelder_outputSoundSystem, 1, PULSEAUDIO, U"PulseAudio")
-		enums_add (kMelder_outputSoundSystem, 2, ALSA_VIA_PORTAUDIO, U"ALSA via PortAudio")
+		enums_add (kMelder_outputSoundSystem, 1, PULSEAUDIO, U"PulseAudio")   // compatible with PipeWire
+		enums_add (kMelder_outputSoundSystem, 2, ALSA_OR_JACK_VIA_PORTAUDIO, U"ALSA or JACK via PortAudio")
+		enums_alt (kMelder_outputSoundSystem,    ALSA_OR_JACK_VIA_PORTAUDIO, U"ALSA via PortAudio")
+			// JACK compatible with PipeWire
 	enums_end (kMelder_outputSoundSystem, 2, PULSEAUDIO)
 			// because we prefer to try PulseAudio directly
 

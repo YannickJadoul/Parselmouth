@@ -17,7 +17,7 @@
  * along with this program; if not, see: <http://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
+#include "espeak__config.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -38,22 +38,19 @@
 #include "common.h"
 #include "translate.h"
 
+#include "espeak_praat.h"   // for FileInMemory
+
 #pragma GCC visibility push(default)
 
-#if ! DATA_FROM_SOURCECODE_FILES
 int GetFileLength(const char *filename)
 {
 	struct stat statbuf;
-
-	if (stat(filename, &statbuf) != 0)
+	if (FileInMemorySet_stat(theEspeakPraatFileInMemorySet(), filename, &statbuf) != 0)
 		return -errno;
-
 	if (S_ISDIR(statbuf.st_mode))
 		return -EISDIR;
-
 	return statbuf.st_size;
 }
-#endif // ! DATA_FROM_SOURCECODE_FILES
 
 void strncpy0(char *to, const char *from, int size)
 {
@@ -88,7 +85,6 @@ int utf8_in(int *c, const char *buf)
 	 */
 	return utf8_in2(c, buf, 0);
 }
-#pragma GCC visibility pop
 
 int utf8_out(unsigned int c, char *buf)
 {
@@ -286,7 +282,7 @@ int is_str_totally_null(const char* str, int size) {
 	return (*str == 0 && memcmp(str, str+1, size-1) == 0);
 }
 
-int Read4Bytes(FILE *f)
+int Read4Bytes(FileInMemory f)
 {
 	// Read 4 bytes (least significant first) into a word
 	int ix;
@@ -294,7 +290,7 @@ int Read4Bytes(FILE *f)
 
 	for (ix = 0; ix < 4; ix++) {
 		unsigned char c;
-		c = fgetc(f) & 0xff;
+		c = FileInMemory_fgetc(f) & 0xff;
 		acc += (c << (ix*8));
 	}
 	return acc;

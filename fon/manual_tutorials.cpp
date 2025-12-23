@@ -1,10 +1,10 @@
 /* manual_tutorials.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -17,335 +17,485 @@
  */
 
 #include "ManPagesM.h"
-#include "praat_version.h"
 
 void manual_tutorials_init (ManPages me);
 void manual_tutorials_init (ManPages me) {
 
-MAN_BEGIN (U"Praat menu", U"ppgb", 20161227)
-INTRO (U"The first menu in the @@Objects window@. "
-	"In macOS, this menu is in the main menu bar along the top of the screen.")
-MAN_END
+MAN_PAGES_BEGIN R"~~~(
+################################################################################
+"Praat menu"
+© Paul Boersma 2016-12-27
 
-MAN_BEGIN (U"Analyses menu", U"ppgb", 20221202)
-INTRO (U"A menu in the @SoundEditor or @TextGridEditor.")
-MAN_END
+The first menu in the @@Objects window@.
+In macOS, this menu is in the main menu bar along the top of the screen.
 
-MAN_BEGIN (U"Copy...", U"ppgb", 20111018)
-INTRO (U"One of the fixed buttons in the @@Objects window@.")
-ENTRY (U"Availability")
-NORMAL (U"You can choose this command after selecting one object of any type.")
-ENTRY (U"Behaviour")
-NORMAL (U"The Objects window copies the selected object, and all the data it contains, "
-	"to a new object, which will appear at the bottom of the List of Objects.")
-ENTRY (U"Example")
-NORMAL (U"If you select “Sound hallo” and click ##Copy...#, "
-	"a command window will appear, which prompts you for a name; "
-	"after you click #OK, a new object will appear in the list, bearing that name.")
-MAN_END
+################################################################################
+"Analyses menu"
+© Paul Boersma 2022-12-02
 
-MAN_BEGIN (U"Draw menu", U"ppgb", 20010417)
-INTRO (U"A menu that occurs in the @@Dynamic menu@ for many objects.")
-NORMAL (U"This menu contains commands for drawing the object to the @@Picture window@, "
-	"which will allow you to print the drawing or to copy it to your word processor.")
-MAN_END
+A menu in the @SoundEditor or @TextGridEditor.
 
-MAN_BEGIN (U"Dynamic menu", U"ppgb", 20110131)  // 2023-06-08
-INTRO (U"A column of buttons in the right-hand part of the @@Objects window@, "
-	"plus the @@Save menu@ in the Objects window.")
-NORMAL (U"If you select one or more @objects in the list, "
-	"the possible actions that you can perform with the selected objects "
-	"will appear in the dynamic menu. "
-	"These actions can include viewing & editing, saving, drawing, "
-	"conversions to other types (including analysis and synthesis), and more.")
-ENTRY (U"Example of analysis:")
-NORMAL (U"Record a Sound, select it, and click ##To Pitch...#. "
-	"This will create a new Pitch object and put it in the list of objects. "
-	"You can then edit, write, and draw this Pitch object.")
-ENTRY (U"Example of synthesis:")
-NORMAL (U"Create a Speaker, create and edit an Artword, and click ##To Sound...#.")
-MAN_END
+################################################################################
+"Copy..."
+© Paul Boersma 2011-10-18
 
-MAN_BEGIN (U"View & Edit", U"ppgb", 20110128)
-INTRO (U"A command in the @@Dynamic menu@ of several types of @objects.")
-NORMAL (U"This command puts an @@Editors|editor@ window on the screen, which shows the contents of the selected object. "
-	"This window will allow your to view and modify the contents of this object.")
-MAN_END
+One of the fixed buttons in the @@Objects window@.
 
-MAN_BEGIN (U"Extract visible formant contour", U"ppgb", 20030316)
-INTRO (U"One of the commands in the Formant menu of the @SoundEditor and the @TextGridEditor.")
-NORMAL (U"See @@Intro 5. Formant analysis@")
-MAN_END
+Availability
+============
 
-MAN_BEGIN (U"Extract visible intensity contour", U"ppgb", 20030316)
-INTRO (U"One of the commands in the Intensity menu of the @SoundEditor and the @TextGridEditor.")
-NORMAL (U"See @@Intro 6. Intensity analysis@")
-MAN_END
+You can choose this command after selecting one object of any type.
 
-MAN_BEGIN (U"Extract visible pitch contour", U"ppgb", 20030316)
-INTRO (U"One of the commands in the Pitch menu of the @SoundEditor and the @TextGridEditor.")
-NORMAL (U"See @@Intro 4. Pitch analysis@")
-MAN_END
+Behaviour
+=========
 
-MAN_BEGIN (U"Extract visible spectrogram", U"ppgb", 20030316)
-INTRO (U"One of the commands in the Spectrogram menu of the @SoundEditor and the @TextGridEditor.")
-NORMAL (U"See @@Intro 3. Spectral analysis@")
-MAN_END
+The Objects window copies the selected object, and all the data it contains,
+to a new object, which will appear at the bottom of the List of Objects.
 
-MAN_BEGIN (U"FAQ (Frequently Asked Questions)", U"ppgb", 20071210)
-LIST_ITEM (U"@@FAQ: How to cite Praat")
-LIST_ITEM (U"@Unicode")
-LIST_ITEM (U"@@FAQ: Formant analysis")
-LIST_ITEM (U"@@FAQ: Pitch analysis")
-LIST_ITEM (U"@@FAQ: Spectrograms")
-LIST_ITEM (U"@@FAQ: Scripts")
-/* Hardware */
-/* Pitch: octave errors */
-MAN_END
+Example
+=======
 
-MAN_BEGIN (U"FAQ: Formant analysis", U"ppgb", 20030916)
-NORMAL (U"#Problem: I get different formant values if I choose to analyse 3 formants "
-	"than if I choose to analyse 4 formants.")
-NORMAL (U"Solution: the “number of formants” in formant analysis determines the "
-	"number of peaks with which the %entire spectrum is modelled. For an average "
-	"female voice, you should choose to analyse 5 formants in the region up to 5500 Hz, "
-	"even if you are interested only in the first three formants.")
-NORMAL (U"")
-NORMAL (U"#Problem: I often get only 1 formant in a region where I see clearly 2 formants "
-	"in the spectrogram.")
-NORMAL (U"This occurs mainly in back vowels (F1 and F2 close together) for male voices, "
-	"if the “maximum formant” is set to the standard of 5500 Hz, which is appropriate "
-	"for female voices. Set the “maximum formant” down to 5000 Hz. "
-	"No, Praat comes without a guarantee: the formant analysis is based on LPC, "
-	"and this comes with several assumptions as to what a speech spectrum is like.")
-NORMAL (U"")
-NORMAL (U"#Question: what algorithm is used for formant analysis?")
-NORMAL (U"Answer: see @@Sound: To Formant (burg)...@.")
-MAN_END
+If you select “Sound hallo” and click ##Copy...#,
+a command window will appear, which prompts you for a name;
+after you click #OK, a new object will appear in the list, bearing that name.
 
-MAN_BEGIN (U"FAQ: How to cite Praat", U"ppgb", 20140826)
-NORMAL (U"#Question: how do I cite Praat in my articles?")
-NORMAL (U"Answer: nowadays most journals allow you to cite computer programs and web sites. "
-	"The style approved by the American Psychological Association, "
-	"and therefore by many journals, is like the following "
-	"(change the dates and version number as needed):")
-NORMAL (U"Boersma, Paul & Weenink, David (" stringize(PRAAT_YEAR) "). "
-	"Praat: doing phonetics by computer [Computer program]. "
-	"Version " stringize(PRAAT_VERSION_STR) ", retrieved " stringize(PRAAT_DAY) " " stringize(PRAAT_MONTH) " " stringize(PRAAT_YEAR) " from http://www.praat.org/")
-NORMAL (U"If the journal does not allow you to cite a web site, then try:")
-NORMAL (U"Boersma, Paul (2001). Praat, a system for doing phonetics by computer. "
-	"%%Glot International% ##5:9/10#, 341-345.")
-NORMAL (U"This paper can be downloaded from Boersma's website.")
-MAN_END
+################################################################################
+"Draw menu"
+© Paul Boersma 2001-04-17
 
-MAN_BEGIN (U"FAQ: Pitch analysis", U"ppgb", 20231115)   // 20221202 2024
-NORMAL (U"Please also consult @@how to choose a pitch analysis method@.")
-NORMAL (U"#Question: what algorithm is used for pitch analysis?")
-NORMAL (U"Answer: for how the raw pitch analysis method works, "
-	"see @@Sound: To Pitch (ac)...@. The 1993 article is downloadable from "
-	"https://www.fon.hum.uva.nl/paul/")
-NORMAL (U"#Question: why does Praat consider my sound voiceless while I hear it as voiced?")
-NORMAL (U"There are at least five possibilities. Most of them can be checked by zooming in on the @waveform.")
-NORMAL (U"The first possibility is that the pitch has fallen below the @@pitch floor@. For instance, "
-	"your pitch floor could be 50 Hz but the English speaker produces creak at the end of the utterance. "
-	"Or your pitch floor could be 50 Hz but the Chinese speaker is in the middle of a third tone. "
-	"If this happens, it may help to lower the pitch floor to e.g. 30 Hz (@@Pitch settings...@), "
-	"although that may also smooth the pitch curve too much in other places.")
-NORMAL (U"The second possibility is that the pitch has moved too fast. This could happen at the end of a Chinese fourth tone, "
-	"which drops very fast. If this happens, it may help to use @@pitch analysis by raw cross-correlation@, "
-	"although Praat may then hallucinate pitches in other places that you would prefer to consider voiceless.")
-NORMAL (U"The third possibility is that the periods are very irregular, as in some pathological voices. "
-	"If you want to see a pitch in those cases, it may help to use @@pitch analysis by raw cross-correlation@. "
-	"Or it may help to lower the ##voicing threshold# setting "
-	"to 0.25 (instead of the standard 0.50) or so (@@Pitch settings...@).")
-NORMAL (U"The fourth possibility is that there is a lot of background noise, as in a recording on a busy street. "
-	"In such a case, it may help to lower the ##voicing threshold# setting "
-	"to 0.25 (instead of the standard 0.50) or so. The disadvantage of lowering this setting is that for non-noisy "
-	"recordings, Praat will become too eager to find voicing in some places that you would prefer to consider voiceless; "
-	"so make sure to set it back to 0.50 once you have finished analysing the noisy recordings.")
-NORMAL (U"The fifth possibility is that the part analysed as voiceless is much less loud than the rest of the sound, "
-	"or that the sound contains a loud noise elsewhere. This can be checked by zooming in on the part analysed as voiceless: "
-	"if Praat suddenly considers it as voiced, this is a sign that this part is much quieter than the rest. "
-	"To make Praat analyse this part as voiced, you can lower the ##silence threshold# setting to 0.01 "
-	"(instead of the standard 0.09) or so. The disadvantage of lowering this setting is that Praat may start to consider "
-	"some distant background sounds (and quiet echos, for instance) as voiced.")
-NORMAL (U"#Question: why do I get different results for the maximum pitch if...?")
-NORMAL (U"If you select a Sound and choose @@Sound: To Pitch (filtered ac)...@, the time step will usually "
-	"be 0.015 seconds. The resulting @Pitch object will have values for times that are "
-	"0.015 seconds apart. If you then click Info or choose ##Get maximum pitch# from the @@Query submenu@, "
-	"the result is based on those time points. By contrast, if you choose ##Get maximum pitch# "
-	"from the @@Pitch menu@ in the SoundEditor window, the result will be based on the visible points, "
-	"of which there tend to be a hundred in the visible window. These different time spacings will "
-	"lead to slightly different pitch contours.")
-NORMAL (U"If you choose ##Move cursor to maximum pitch#, then choose ##Get pitch# from the "
-	"@@Pitch menu@, the result will be different again. This is because ##Get maximum pitch# "
-	"can do a parabolic interpolation around the maximum, whereas ##Get pitch#, not realizing "
-	"that the cursor is at a maximum, does a stupid linear interpolation, which tends to lead to "
-	"lower values.")
-MAN_END
+A menu that occurs in the @@Dynamic menu@ for many objects.
 
-MAN_BEGIN (U"FAQ: Scripts", U"ppgb", 20230201)
-NORMAL (U"#Question: how do I do something to all the files in a directory?")
-NORMAL (U"Answer: look at `fileNames$#` () or @@Create Strings as file list...@.")
-NORMAL (U"")
-NORMAL (U"#Question: why doesn't the editor window react to my commands?")
-NORMAL (U"Your commands are probably something like:")
-CODE (U"Read from file: “hello.wav”")
-CODE (U"View & Edit")
-CODE (U"Zoom: 0.3, 0.5")
-NORMAL (U"Answer: Praat doesn’t know it has to send the #Zoom command to the editor "
-	"window called ##14. Sound hello#. There could be several Sound editor windows on your "
-	"screen. According to @@Scripting 7.1. Scripting an editor from a shell script@, "
-	"you will have to say this explicitly:")
-CODE (U"Read from file: “hello.wav”")
-CODE (U"View & Edit")
-CODE (U"editor: “Sound hello”")
-CODE (U"Zoom: 0.3, 0.5")
-NORMAL (U"")
-NORMAL (U"#Problem: a line like “%`Number = 1`” does not work.")
-NORMAL (U"Solution: names of variables should start with a lower-case letter.")
-NORMAL (U"")
-NORMAL (U"#Question: why do names of variables have to start with a lower-case letter? "
-	"I would like to do things like “`F0 = Get mean pitch`”.")
-NORMAL (U"Answer: Praat scripts combine button commands with things that only occur "
-	"in scripts. Button commands always start with a capital letter, e.g. `Play` (there is a button #Play). "
-	"Script commands always start with lower case, e.g. `writeInfoLine: “Hello”` "
-	"($writeInfoLine is a built-in function). "
-	"A minimal pair is “$select”, which simulates a mouse click in the object list, "
-	"versus “`Select...`”, which sets the selection in editor windows. If we allowed initial capitals, "
-	"variable names would become rather ambiguous in assignments, "
-	"as in “`x = Get`”, where “%`Get`” would be a variable, versus “`x = Get mean`”, "
-	"where ##Get mean# is a button command. To prevent this confusion, Praat enforces "
-	"a rigorous lower-case/upper-case distinction.")
-NORMAL (U"")
-NORMAL (U"#Question: how do I convert a number into a string?")
-NORMAL (U"Answer: `a$ = string$ (a)`")
-NORMAL (U"#Question: how do I convert a string into a number?")
-NORMAL (U"Answer: `a = number (a$)`")
-MAN_END
+This menu contains commands for drawing the object to the @@Picture window@,
+which will allow you to print the drawing or to copy it to your word processor.
 
-MAN_BEGIN (U"FAQ: Spectrograms", U"ppgb", 20030916)
-NORMAL (U"#Problem: the background is grey instead of white (too little contrast)")
-NORMAL (U"Solution: reduce the ##Dynamic range# in the spectrogram settings. The standard value is 50 dB, "
-	"which is fine for detecting small things like plosive voicing in well recorded speech. "
-	"For gross features like vowel formants, or for noisy speech, you may want to change the dynamic range "
-	"to 40 or even 30 dB.")
-MAN_END
+################################################################################
+"Dynamic menu"
+© Paul Boersma 20110131  // 2023-06-08
 
-MAN_BEGIN (U"File menu", U"ppgb", 20021204)
-INTRO (U"One of the menus in all @editors, in the @manual, and in the @@Picture window@.")
-MAN_END
+A column of buttons in the right-hand part of the @@Objects window@,
+plus the @@Save menu@ in the Objects window.
 
-MAN_BEGIN (U"Filtering", U"ppgb", 20100324)
-INTRO (U"This tutorial describes the use of filtering techniques in Praat. "
-	"It assumes you are familiar with the @Intro.")
-ENTRY (U"Frequency-domain filtering")
-NORMAL (U"Modern computer techniques make possible an especially simple batch filtering method: "
-	"multiplying the complex spectrum in the frequency domain by any real-valued filter function. "
-	"This leads to a zero phase shift for each frequency component. The impulse response is symmetric "
-	"in the time domain, which also means that the filter is %acausal: the filtered signal will show components "
-	"before they start in the original.")
-LIST_ITEM (U"• @@Spectrum: Filter (pass Hann band)...@")
-LIST_ITEM (U"• @@Spectrum: Filter (stop Hann band)...@")
-LIST_ITEM (U"• @@Sound: Filter (pass Hann band)...@")
-LIST_ITEM (U"• @@Sound: Filter (stop Hann band)...@")
-LIST_ITEM (U"• @@Sound: Filter (formula)...@")
-NORMAL (U"Spectro-temporal:")
-LIST_ITEM (U"• @@band filtering in the frequency domain@")
-ENTRY (U"Fast time-domain filtering")
-NORMAL (U"Some very fast Infinite Impulse Response (IIR) filters can be defined in the time domain. "
-	"These include recursive all-pole filters and pre-emphasis. These filters are causal but have non-zero phase shifts. "
-	"There are versions that create new Sound objects:")
-LIST_ITEM (U"• @@Sound: Filter (one formant)...@")
-LIST_ITEM (U"• @@Sound: Filter (pre-emphasis)...@")
-LIST_ITEM (U"• @@Sound: Filter (de-emphasis)...@")
-NORMAL (U"And there are in-place versions, which modify the existing Sound objects:")
-LIST_ITEM (U"• @@Sound: Filter with one formant (in-place)...@")
-LIST_ITEM (U"• @@Sound: Pre-emphasize (in-place)...@")
-LIST_ITEM (U"• @@Sound: De-emphasize (in-place)...@")
-ENTRY (U"Convolution")
-NORMAL (U"A Finite Impulse Response (FIR) filter can be described as a sampled sound. "
-	"Filtering with such a filter amounts to a %#convolution of the original sound and the filter:")
-LIST_ITEM (U"• @@Sounds: Convolve...@")
-ENTRY (U"Described elsewhere")
-NORMAL (U"Described in the @@Source-filter synthesis@ tutorial:")
-LIST_ITEM (U"• @@Sound & Formant: Filter@")
-LIST_ITEM (U"• @@Sound & FormantGrid: Filter@")
-LIST_ITEM (U"• @@LPC & Sound: Filter...@")
-LIST_ITEM (U"• @@LPC & Sound: Filter (inverse)@")
-MAN_END
+If you select one or more @objects in the list,
+the possible actions that you can perform with the selected objects
+will appear in the dynamic menu.
+These actions can include viewing & editing, saving, drawing,
+conversions to other types (including analysis and synthesis), and more.
 
-MAN_BEGIN (U"Formants menu", U"ppgb", 20221202)
-INTRO (U"A menu in the @SoundEditor or @TextGridEditor.")
-MAN_END
+Example of analysis:
+====================
 
-MAN_BEGIN (U"Formants & LPC menu", U"ppgb", 20011107)
-INTRO (U"A menu that occurs in the @@Dynamic menu@ for a @Sound.")
-NORMAL (U"This menu contains commands for analysing the formant contours of the selected Sound:")
-LIST_ITEM (U"@@Sound: To Formant (burg)...")
-LIST_ITEM (U"@@Sound: To Formant (keep all)...")
-LIST_ITEM (U"@@Sound: To Formant (sl)...")
-LIST_ITEM (U"@@Sound: To LPC (autocorrelation)...")
-LIST_ITEM (U"@@Sound: To LPC (covariance)...")
-LIST_ITEM (U"@@Sound: To LPC (burg)...")
-LIST_ITEM (U"@@Sound: To LPC (marple)...")
-LIST_ITEM (U"@@Sound: To MFCC...")
-MAN_END
+Record a Sound, select it, and click ##To Pitch...#.
+This will create a new Pitch object and put it in the list of objects.
+You can then edit, write, and draw this Pitch object.
 
-MAN_BEGIN (U"Get first formant", U"ppgb", 20221202)
-INTRO (U"One of the query commands in the @@Formants menu@ of the @SoundEditor and the @TextGridEditor.")
-MAN_END
+Example of synthesis:
+=====================
 
-MAN_BEGIN (U"Get pitch", U"ppgb", 20221202)
-INTRO (U"One of the query commands in the @@Pitch menu@ of the @SoundEditor and the @TextGridEditor.")
-MAN_END
+Create a Speaker, create and edit an Artword, and click ##To Sound...#.
 
-MAN_BEGIN (U"Get second formant", U"ppgb", 20221202)
-INTRO (U"One of the query commands in the @@Formants menu@ of the @SoundEditor and the @TextGridEditor.")
-MAN_END
+################################################################################
+"View & Edit"
+© Paul Boersma 2011-01-28
 
-MAN_BEGIN (U"Goodies", U"ppgb", 20050822)
-INTRO (U"The title of a submenu of the @@Praat menu@.")
-MAN_END
+A command in the @@Dynamic menu@ of several types of @objects.
 
-MAN_BEGIN (U"Info", U"ppgb", 19980101)
-INTRO (U"One of the fixed buttons in the @@Objects window@.")
-ENTRY (U"Availability")
-NORMAL (U"You can choose this command after choosing one object.")
-ENTRY (U"Purpose")
-NORMAL (U"To get some information about the selected object.")
-ENTRY (U"Behaviour")
-NORMAL (U"The information will appear in the @@Info window@.")
-MAN_END
+This command puts an @@Editors|editor@ window on the screen, which shows the contents of the selected object.
+This window will allow your to view and modify the contents of this object.
 
-MAN_BEGIN (U"Info window", U"ppgb", 20030528)   // 2023
-INTRO (U"A text window into which many query commands write their answers.")
-NORMAL (U"You can select text from this window and copy it to other places.")
-NORMAL (U"In a @@Praat script@, you can bypass the Info window by having a query command "
-	"writing directly into a script variable.")
-NORMAL (U"Apart from the @Info command, which writes general information about the selected object, "
-	"most commands in any @@Query submenu@ also write into the Info window.")
-MAN_END
+################################################################################
+"Extract visible formant contour"
+© Paul Boersma 2003-03-16
 
-MAN_BEGIN (U"Inspect", U"ppgb", 19960904)
-INTRO (U"One of the fixed buttons in the @@Objects window@.")
-NORMAL (U"You can use this command after selecting one object in the list.")
-NORMAL (U"The contents of the selected object will become visible in a Data Editor. "
-	"You can then view and change the data in the object, "
-	"but beware: changing the data directly in this way may render them inconsistent.")
-NORMAL (U"Changes that you make to the data with another Editor (e.g., a SoundEditor), "
-	"or with the commands under #%Modify, "
-	"are immediately reflected in the top-level Data Editor; "
-	"any subeditors are destroyed, however, because they may now refer to invalid data.")
-NORMAL (U"Changes that you make to the data with a Data Editor, "
-	"are immediately reflected in any open type-specific Editors (e.g., a SoundEditor).")
-MAN_END
+One of the commands in the Formant menu of the @SoundEditor and the @TextGridEditor.
 
-MAN_PAGES_BEGIN
-R"~~~(
+See @@Intro 5. Formant analysis@
+
+################################################################################
+"Extract visible intensity contour"
+© Paul Boersma 2003-03-16
+
+One of the commands in the Intensity menu of the @SoundEditor and the @TextGridEditor.
+
+See @@Intro 6. Intensity analysis@
+
+################################################################################
+"Extract visible pitch contour"
+© Paul Boersma 2003-03-16
+
+One of the commands in the Pitch menu of the @SoundEditor and the @TextGridEditor.
+
+See @@Intro 4. Pitch analysis@
+
+################################################################################
+"Extract visible spectrogram"
+© Paul Boersma 2003-03-16
+
+One of the commands in the Spectrogram menu of the @SoundEditor and the @TextGridEditor.
+
+See @@Intro 3. Spectral analysis@
+
+################################################################################
+"FAQ (Frequently Asked Questions)"
+© Paul Boersma 2007-12-10
+
+,	@@FAQ: How to cite Praat
+,	@Unicode
+,	@@FAQ: Formant analysis
+,	@@FAQ: Pitch analysis
+,	@@FAQ: Spectrograms
+,	@@FAQ: Scripts
+
+// Hardware
+// Pitch: octave errors
+
+################################################################################
+"FAQ: Formant analysis"
+© Paul Boersma 2003-09-16
+
+#Problem: I get different formant values if I choose to analyse 3 formants
+than if I choose to analyse 4 formants.
+
+Solution: the “number of formants” in formant analysis determines the
+number of peaks with which the %entire spectrum is modelled. For an average
+female voice, you should choose to analyse 5 formants in the region up to 5500 Hz,
+even if you are interested only in the first three formants.
+
+#Problem: I often get only 1 formant in a region where I see clearly 2 formants
+in the spectrogram.
+
+This occurs mainly in back vowels (F1 and F2 close together) for male voices,
+if the “maximum formant” is set to the standard of 5500 Hz, which is appropriate
+for female voices. Set the “maximum formant” down to 5000 Hz.
+No, Praat comes without a guarantee: the formant analysis is based on LPC,
+and this comes with several assumptions as to what a speech spectrum is like.
+
+#Question: what algorithm is used for formant analysis?
+
+Answer: see @@Sound: To Formant (burg)...@.
+
+################################################################################
+"FAQ: How to cite Praat"
+© Paul Boersma 2005,2010,2014,2025
+
+#Question: how do I cite Praat in my articles?
+
+Answer: nowadays most journals allow you to cite computer programs and web sites.
+The style approved by the American Psychological Association,
+and therefore by many journals, is like the following
+(change the dates and version number as needed):
+{-
+	writeInfoLine: “Boersma, Paul & Weenink, David (”, appYear(),
+	... “). Praat: doing phonetics by computer [Computer program]. Version ”, appVersion$(),
+	... “, retrieved ”, appDay(), “ ”, appMonth$(), “ ”, appYear(), “ from https://praat.org”
+}
+If the journal does not allow you to cite a web site, then try:
+
+Boersma, Paul (2001). Praat, a system for doing phonetics by computer.
+%%Glot International% ##5:9/10#, 341-345.
+
+This paper can be downloaded from Boersma’s website.
+
+################################################################################
+"FAQ: Pitch analysis"
+© Paul Boersma, 2002,2006,2022-2024
+
+Please also consult @@how to choose a pitch analysis method@.
+
+#Question: what algorithm is used for pitch analysis?
+
+Answer: for how the raw pitch analysis method works,
+see @@Sound: To Pitch (ac)...@. The 1993 article is downloadable from
+https://www.fon.hum.uva.nl/paul/
+
+#Question: why does Praat consider my sound voiceless while I hear it as voiced?
+
+There are at least five possibilities. Most of them can be checked by zooming in on the @waveform.
+
+The first possibility is that the pitch has fallen below the @@pitch floor@. For instance,
+your pitch floor could be 50 Hz but the English speaker produces creak at the end of the utterance.
+Or your pitch floor could be 50 Hz but the Chinese speaker is in the middle of a third tone.
+If this happens, it may help to lower the pitch floor to e.g. 30 Hz (@@Pitch settings...@),
+although that may also smooth the pitch curve too much in other places.
+
+The second possibility is that the pitch has moved too fast. This could happen at the end of a Chinese fourth tone,
+which drops very fast. If this happens, it may help to use @@pitch analysis by raw cross-correlation@,
+although Praat may then hallucinate pitches in other places that you would prefer to consider voiceless.
+
+The third possibility is that the periods are very irregular, as in some pathological voices.
+If you want to see a pitch in those cases, it may help to use @@pitch analysis by raw cross-correlation@.
+Or it may help to lower the ##voicing threshold# setting
+to 0.25 (instead of the standard 0.50) or so (@@Pitch settings...@).
+
+The fourth possibility is that there is a lot of background noise, as in a recording on a busy street.
+In such a case, it may help to lower the ##voicing threshold# setting
+to 0.25 (instead of the standard 0.50) or so. The disadvantage of lowering this setting is that for non-noisy
+recordings, Praat will become too eager to find voicing in some places that you would prefer to consider voiceless;
+so make sure to set it back to 0.50 once you have finished analysing the noisy recordings.
+
+The fifth possibility is that the part analysed as voiceless is much less loud than the rest of the sound,
+or that the sound contains a loud noise elsewhere. This can be checked by zooming in on the part analysed as voiceless:
+if Praat suddenly considers it as voiced, this is a sign that this part is much quieter than the rest.
+To make Praat analyse this part as voiced, you can lower the ##silence threshold# setting to 0.01
+(instead of the standard 0.09) or so. The disadvantage of lowering this setting is that Praat may start to consider
+some distant background sounds (and quiet echos, for instance) as voiced.
+
+#Question: why do I get different results for the maximum pitch if...?
+
+If you select a Sound and choose @@Sound: To Pitch (filtered ac)...@, the time step will usually
+be 0.015 seconds. The resulting @Pitch object will have values for times that are
+0.015 seconds apart. If you then click Info or choose ##Get maximum pitch# from the @@Query submenu@,
+the result is based on those time points. By contrast, if you choose ##Get maximum pitch#
+from the @@Pitch menu@ in the SoundEditor window, the result will be based on the visible points,
+of which there tend to be a hundred in the visible window. These different time spacings will
+lead to slightly different pitch contours.
+
+If you choose ##Move cursor to maximum pitch#, then choose ##Get pitch# from the
+@@Pitch menu@, the result will be different again. This is because ##Get maximum pitch#
+can do a parabolic interpolation around the maximum, whereas ##Get pitch#, not realizing
+that the cursor is at a maximum, does a stupid linear interpolation, which tends to lead to
+lower values.
+
+################################################################################
+"FAQ: Scripts"
+© Paul Boersma 2001,2004,2011,2013,2014,2023
+
+#Question: how do I do something to all the files in a directory?
+
+Answer: look at @`fileNames$#` () or @@Create Strings as file list...@.
+,
+
+#Question: why doesn't the editor window react to my commands?
+
+Your commands are probably something like:
+{;
+	Read from file: “hello.wav”
+	View & Edit
+	Zoom: 0.3, 0.5
+}
+
+Answer: Praat doesn’t know it has to send the #Zoom command to the editor
+window called ##14. Sound hello#. There could be several Sound editor windows on your
+screen. According to @@Scripting 7.1. Scripting an editor from a shell script@,
+you will have to say this explicitly:
+{;
+	Read from file: “hello.wav”
+	View & Edit
+	editor: “Sound hello”
+	Zoom: 0.3, 0.5
+}
+,
+
+#Problem: a line like “%`Number = 1`” does not work.
+
+Solution: names of variables should start with a lower-case letter.
+,
+
+#Question: why do names of variables have to start with a lower-case letter?
+I would like to do things like “`F0 = Get mean pitch`”.
+
+Answer: Praat scripts combine button commands with things that only occur
+in scripts. Button commands always start with a capital letter, e.g. `Play` (there is a button #Play).
+Script commands always start with lower case, e.g. `writeInfoLine: “Hello”`
+($writeInfoLine is a built-in function).
+A minimal pair is “$select”, which simulates a mouse click in the object list,
+versus “`Select...`”, which sets the selection in editor windows. If we allowed initial capitals,
+variable names would become rather ambiguous in assignments,
+as in “`x = Get`”, where “%`Get`” would be a variable, versus “`x = Get mean`”,
+where ##Get mean# is a button command. To prevent this confusion, Praat enforces
+a rigorous lower-case/upper-case distinction.
+,
+
+#Question: how do I convert a number into a string?
+
+Answer: `a$ = string$ (a)`
+
+#Question: how do I convert a string into a number?
+
+Answer: `a = number (a$)`
+
+################################################################################
+"FAQ: Spectrograms"
+© Paul Boersma 2002,2003
+
+#Problem: the background is grey instead of white (too little contrast)
+
+Solution: reduce the ##Dynamic range# in the spectrogram settings. The standard value is 50 dB,
+which is fine for detecting small things like plosive voicing in well recorded speech.
+For gross features like vowel formants, or for noisy speech, you may want to change the dynamic range
+to 40 or even 30 dB.
+
+################################################################################
+"File menu"
+© Paul Boersma 2002
+
+One of the menus in all @editors, in the @manual, and in the @@Picture window@.
+
+################################################################################
+"Filtering"
+© Paul Boersma 2001,2003,2008,2010
+
+This tutorial describes the use of filtering techniques in Praat.
+It assumes you are familiar with the @Intro.
+
+Frequency-domain filtering
+==========================
+
+Modern computer techniques make possible an especially simple batch filtering method:
+multiplying the complex spectrum in the frequency domain by any real-valued filter function.
+This leads to a zero phase shift for each frequency component. The impulse response is symmetric
+in the time domain, which also means that the filter is %acausal: the filtered signal will show components
+before they start in the original.
+
+- @@Spectrum: Filter (pass Hann band)...@
+- @@Spectrum: Filter (stop Hann band)...@
+- @@Sound: Filter (pass Hann band)...@
+- @@Sound: Filter (stop Hann band)...@
+- @@Sound: Filter (formula)...@
+
+Spectro-temporal:
+
+- @@band filtering in the frequency domain@
+
+Fast time-domain filtering
+==========================
+
+Some very fast Infinite Impulse Response (IIR) filters can be defined in the time domain.
+These include recursive all-pole filters and pre-emphasis. These filters are causal but have non-zero phase shifts.
+There are versions that create new Sound objects:
+
+- @@Sound: Filter (one formant)...@
+- @@Sound: Filter (pre-emphasis)...@
+- @@Sound: Filter (de-emphasis)...@
+
+And there are in-place versions, which modify the existing Sound objects:
+
+- @@Sound: Filter with one formant (in-place)...@
+- @@Sound: Pre-emphasize (in-place)...@
+- @@Sound: De-emphasize (in-place)...@
+
+Convolution
+===========
+
+A Finite Impulse Response (FIR) filter can be described as a sampled sound.
+Filtering with such a filter amounts to a %#convolution of the original sound and the filter:
+
+- @@Sounds: Convolve...@
+
+Described elsewhere
+===================
+
+Described in the @@Source-filter synthesis@ tutorial:
+
+- @@Sound & Formant: Filter@
+- @@Sound & FormantGrid: Filter@
+- @@LPC & Sound: Filter...@
+- @@LPC & Sound: Filter (inverse)@
+
+################################################################################
+"Formants menu"
+© Paul Boersma 2022
+
+A menu in the @SoundEditor or @TextGridEditor.
+
+################################################################################
+"Formants & LPC menu"
+© Paul Boersma 2001
+
+A menu that occurs in the @@Dynamic menu@ for a @Sound.
+
+This menu contains commands for analysing the formant contours of the selected Sound:
+
+,	@@Sound: To Formant (burg)...
+,	@@Sound: To Formant (keep all)...
+,	@@Sound: To Formant (sl)...
+,	@@Sound: To LPC (autocorrelation)...
+,	@@Sound: To LPC (covariance)...
+,	@@Sound: To LPC (burg)...
+,	@@Sound: To LPC (marple)...
+,	@@Sound: To MFCC...
+
+################################################################################
+"Get first formant"
+© Paul Boersma 2001,2022
+
+One of the query commands in the @@Formants menu@ of the @SoundEditor and the @TextGridEditor.
+
+################################################################################
+"Get pitch"
+© Paul Boersma 2001,2022
+
+One of the query commands in the @@Pitch menu@ of the @SoundEditor and the @TextGridEditor.
+
+################################################################################
+"Get second formant"
+© Paul Boersma 2001,2022
+
+One of the query commands in the @@Formants menu@ of the @SoundEditor and the @TextGridEditor.
+
+################################################################################
+"Goodies"
+© Paul Boersma 2002,2005
+
+The title of a submenu of the @@Praat menu@.
+
+################################################################################
+"Info"
+© Paul Boersma 1996,1998
+
+One of the fixed buttons in the @@Objects window@.
+
+Availability
+============
+
+You can choose this command after choosing one object.
+
+Purpose
+=======
+
+To get some information about the selected object.
+
+Behaviour
+=========
+
+The information will appear in the @@Info window@.
+
+################################################################################
+"Info window"
+© Paul Boersma 1997,1998,2003,2023
+
+A text window into which many query commands write their answers.
+
+You can select text from this window and copy it to other places.
+
+In a @@Praat script@, you can bypass the Info window by having a query command
+writing directly into a script variable.
+
+Apart from the @Info command, which writes general information about the selected object,
+most commands in any @@Query submenu@ also write into the Info window.
+
+################################################################################
+"Inspect"
+© Paul Boersma 1996
+
+One of the fixed buttons in the @@Objects window@.
+
+You can use this command after selecting one object in the list.
+
+The contents of the selected object will become visible in a Data Editor.
+You can then view and change the data in the object,
+but beware: changing the data directly in this way may render them inconsistent.
+
+Changes that you make to the data with another Editor (e.g., a SoundEditor),
+or with the commands under #Modify,
+are immediately reflected in the top-level Data Editor;
+any subeditors are destroyed, however, because they may now refer to invalid data.
+
+Changes that you make to the data with a Data Editor,
+are immediately reflected in any open type-specific Editors (e.g., a SoundEditor).
+
 ################################################################################
 "Intro"
-© Paul Boersma, 2011
+© Paul Boersma 2003,2004,2007,2009,2011,2025
 
 This is an introductory tutorial to Praat, a computer program
 with which you can analyse, synthesize, and manipulate speech,
@@ -419,7 +569,7 @@ The authors
 
 The Praat program was created by Paul Boersma and David Weenink of
 the Institute of Phonetics Sciences of the University of Amsterdam.
-Home page: #`http://www.praat.org` or #`https://www.fon.hum.uva.nl/praat/`.
+Home page: #`https://praat.org` or #`https://www.fon.hum.uva.nl/praat`.
 
 For questions and suggestions, mail to the Praat discussion list,
 which is reachable from the Praat home page, or directly to #`paul.boersma@uva.nl`.
@@ -1089,10 +1239,11 @@ NORMAL (U"You will normally write the TextGrid to disk with @@Save as text file.
 NORMAL (U"However you saved it, you can read the TextGrid into Praat later with @@Read from file...@.")
 MAN_END
 
-MAN_BEGIN (U"Intro 8. Manipulation", U"ppgb", 20021212)
+MAN_BEGIN (U"Intro 8. Manipulation", U"ppgb", 20021212) //2025
 LIST_ITEM (U"@@Intro 8.1. Manipulation of pitch")
 LIST_ITEM (U"@@Intro 8.2. Manipulation of duration")
 LIST_ITEM (U"@@Intro 8.3. Manipulation of intensity")
+LIST_ITEM (U"@@Intro 8.4. Manipulation of formants")
 MAN_END
 
 MAN_BEGIN (U"Intro 8.1. Manipulation of pitch", U"ppgb", 20220814)
@@ -1218,6 +1369,7 @@ MAN_END
 
 MAN_PAGES_BEGIN
 R"~~~(
+################################################################################
 "New menu"
 © Paul Boersmma 2016,2023
 
@@ -1331,6 +1483,7 @@ You use this menu to create new objects from scratch. It contains the following 
 
 To create new objects from files on disk, use the @@Open menu@ instead.
 Objects can also often be created from other objects, with commands that start with ##To#.
+################################################################################
 )~~~"
 MAN_PAGES_END
 
@@ -1606,315 +1759,434 @@ INTRO (U"One of the commands in the Spectrogram menu of the @SoundEditor and the
 NORMAL (U"See @@Intro 3. Spectral analysis@.")
 MAN_END
 
-MAN_BEGIN (U"Source-filter synthesis", U"ppgb", 20050713)
-INTRO (U"This tutorial describes how you can do acoustic synthesis with Praat. "
-	"It assumes that you are familiar with the @Intro.")
-ENTRY (U"1. The source-filter theory of speech production")
-NORMAL (U"The source-filter theory (@@Fant (1960)|Fant 1960@) hypothesizes that an acoustic speech signal can be seen "
-	"as a %source signal (the glottal source, or noise generated at a constriction in the vocal tract), "
-	"%filtered with the resonances in the cavities of the vocal tract downstream from the glottis "
-	"or the constriction. The %%Klatt synthesizer% (@@Klatt & Klatt (1990)|Klatt & Klatt 1990@), for instance, "
-	"is based on this idea.")
-NORMAL (U"In the Praat program, you can create a %source signal from scratch of from an existing "
-	"speech signal, and you can create a %filter from scratch or extract it from an existing speech signal. "
-	"You can manipulate (change, adapt) both the source and the filter before doing "
-	"the actual synthesis, which combines the two.")
-LIST_ITEM (U"@@Source-filter synthesis 1. Creating a source from pitch targets")
-LIST_ITEM (U"@@Source-filter synthesis 2. Filtering a source")
-LIST_ITEM (U"@@Source-filter synthesis 3. The ba-da continuum")
-LIST_ITEM (U"@@Source-filter synthesis 4. Using existing sounds")
-MAN_END
+MAN_PAGES_BEGIN
+R"~~~(
+################################################################################
+"Source-filter synthesis"
+© Paul Boersma 2005-07-13
 
-MAN_BEGIN (U"Source-filter synthesis 1. Creating a source from pitch targets", U"ppgb", 20140421)
-INTRO (U"Creating a glottal source signal for speech synthesis involves creating a @PointProcess, "
-	"which is a series of time points that should represent the exact moments of glottal closure.")
-NORMAL (U"You may want to start with creating a well-defined pitch contour. "
-	"Suppose you want to create a sound with a duration of half a second with a pitch that falls from 300 to 200 Hz "
-	"during that time. You first create an empty @PitchTier by choosing @@Create PitchTier...@ from the #New menu "
-	"(I call this PitchTier “empty” because it does not contain any pitch information yet); "
-	"you may want to name the PitchTier “source” and have it start at 0 seconds and end at 0.5 seconds. "
-	"Once the PitchTier exists and is selected, you can ##View & Edit# it to add pitch points (pitch targets) to it at certain times "
-	"(or you choose @@PitchTier: Add point...@ from the #Modify menu repeatedly). "
-	"You could add a pitch point of 150 Hz at time 0.0 and a pitch point of 100 Hz at time 0.5. "
-	"In the PitchTier window, you can see that the pitch curve falls linearly "
-	"from 150 to 100 Hz during its time domain:")
-SCRIPT (4.5, 2.5,
-	U"Create PitchTier: “source”, 0, 0.5\n"
-	"Add point: 0.0, 150\n"
-	"Add point: 0.5, 100\n"
-	"Draw: 0, 0, 0, 200, “yes”, “lines and speckles”\n"
-	"Text top: “no”, ~%%An F0 linearly falling between two points\n"
-	"One mark left: 100, “yes”, “yes”, “no”, “”\n"
-	"Remove\n"
-)
-NORMAL (U"You can hear the falling pitch by clicking on the rectangles in the PitchTier window "
-	"(or by clicking ##Play pulses#, #Hum, or ##Play sine# in the Objects window).")
-NORMAL (U"From this PitchTier, you can create a @PointProcess with @@PitchTier: To PointProcess@. "
-	"The resulting PointProcess now represents a series of glottal pulses. To make some parts of this "
-	"point process voiceless, you can use @@PointProcess: Remove points between...@. "
-	"It is advisable to make the very beginning and end of this point process voiceless, so that the filtered sound "
-	"will not start or end abruptly. In the following example, the first and last 20 ms are devoiced, "
-	"and a stretch of 70 ms in the middle "
-	"is made voiceless as well, perhaps because you want to simulate a voiceless plosive there:")
-SCRIPT (4.5, 2.5,
-	U"pitchTier = Create PitchTier: “source”, 0, 0.5\n"
-	"Add point: 0.0, 150\n"
-	"Add point: 0.5, 100\n"
-	"pulses = To PointProcess\n"
-	"Remove points between: 0, 0.02\n"
-	"Remove points between: 0.24, 0.31\n"
-	"Remove points between: 0.48, 0.5\n"
-	"Draw: 0, 0, “yes”\n"
-	"Text top: “no”, ~%%The times of the glottal pulses\n"
-	"One mark bottom: 0.24, “yes”, “yes”, “no”, “”\n"
-	"One mark bottom: 0.31, “yes”, “yes”, “no”, “”\n"
-	"removeObject: pitchTier, pulses\n"
-)
-NORMAL (U"Now that we have a glottal point process (a glottal pulse train), the only thing left "
-	"is to turn it into a sound by choosing @@PointProcess: To Sound (phonation)...@. "
-	"If you use the standard settings of this command (but with ##Adaptation factor# set to 0.6), the result will be a @Sound with "
-	"reasonable glottal flow derivatives centred around each of the original pulses in the point process. "
-	"You can check this by selecting the Sound and choosing ##View & Edit#:")
-SCRIPT (4.5, 2.5,
-	U"pitchTier = Create PitchTier: “source”, 0, 0.5\n"
-	"Add point: 0.0, 150\n"
-	"Add point: 0.5, 100\n"
-	"pulses = To PointProcess\n"
-	"Remove points between: 0, 0.02\n"
-	"Remove points between: 0.24, 0.31\n"
-	"Remove points between: 0.48, 0.5\n"
-	"source = To Sound (phonation): 44100, 0.6, 0.05, 0.7, 0.03, 3.0, 4.0\n"
-	"Draw: 0, 0, 0, 0, “yes”, “curve”\n"
-	"Text top: “no”, ~%%The source waveform\n"
-	"One mark bottom: 0.24, “yes”, “yes”, “no”, “”\n"
-	"One mark bottom: 0.31, “yes”, “yes”, “no”, “”\n"
-	"removeObject: pitchTier, pulses, source\n"
-)
-NORMAL (U"You will also see that the amplitude of the first two glottal wave shapes of every voiced stretch "
-	"is (realistically) somewhat smaller than the amplitudes of the following wave shapes; "
-	"This is the result of setting ##Adaptation factor# to 0.6.")
-NORMAL (U"What you have now is what we call a %%glottal source signal%. It does two things: it contains information on the glottal flow, "
-	"and it already takes into account one aspect of the %filter, namely the radiation at the lips. "
-	"This combination is standard procedure in acoustic synthesis.")
-NORMAL (U"The glottal source signal sounds as a voice without a vocal tract. "
-	"The following section describes how you add vocal-tract resonances, i.e. the %filter.")
-ENTRY (U"Automation")
-NORMAL (U"In a clean Praat script, the procedure described above will look as follows:")
-CODE (U"pitchTier = Create PitchTier: “source”, 0, 0.5")
-CODE (U"Add point: 0.0, 150")
-CODE (U"Add point: 0.5, 100")
-CODE (U"pulses = To PointProcess")
-CODE (U"Remove points between: 0, 0.02")
-CODE (U"Remove points between: 0.24, 0.31")
-CODE (U"Remove points between: 0.48, 0.5")
-CODE (U"source = To Sound (phonation): 44100, 0.6, 0.05, 0.7, 0.03, 3.0, 4.0")
-CODE (U"removeObject: pitchTier, pulses")
-CODE (U"selectObject: source")
-MAN_END
+This tutorial describes how you can do acoustic synthesis with Praat.
+It assumes that you are familiar with the @Intro.
 
-MAN_BEGIN (U"Source-filter synthesis 2. Filtering a source", U"ppgb", 20140421)
-INTRO (U"Once you have a glottal source signal, you are ready to create a filter that represents "
-	"the resonances of the vocal tract, as a function of time. In other words, you create a @FormantGrid object.")
-NORMAL (U"For a vowel spoken by an average (i.e. adult female) human voice, tradition assumes five formants in the range "
-	"between 0 and 5500 hertz. This number comes from a computation of the formants of a "
-	"straight tube, which has resonances at wavelengths of four tube lengths, four thirds of a tube length, "
-	"four fifths, and so on. For a straight tube 16 centimetres long, the shortest wavelength is 64 cm, "
-	"which, with a sound velocity of 352 m/s, means a resonance frequency of 352/0.64 = 550 hertz. "
-	"The other resonances will be at 1650, 2750, 3850, and 4950 hertz.")
-NORMAL (U"You can create a @FormantGrid object with @@Create FormantGrid...@ from the #New menu (submenu #Tiers):")
-CODE (U"Create FormantGrid: “filter”, 0, 0.5, 10, 550, 1100, 60, 50")
-NORMAL (U"This creates a FormantGrid with 10 formants and a single frequency value for each formant: %F__1_ is 550 Hz "
-	"and the higher formants are spaced 1100 Hz apart, i.e., they are "
-	"1650, 2750, 3850, 4950, 6050, 7150, 8250, 9350, and 10450 hertz; "
-	"the ten bandwidths start at 60 Hz and have a spacing of 50 Hz, "
-	"i.e., they are 60, 110, 160, 210, 260, 310, 360, 410, 460, and 510 hertz.")
-NORMAL (U"You can then create formant contours with @@FormantGrid: Add formant point...@:")
-CODE (U"Remove formant points between: 1, 0, 0.5")
-CODE (U"Add formant point: 1, 0.00, 100")
-CODE (U"Add formant point: 1, 0.05, 700")
-CODE (U"Remove formant points between: 2, 0, 0.5")
-CODE (U"Add formant point: 2, 0.00, 500")
-CODE (U"Add formant point: 2, 0.05, 1100")
-NORMAL (U"This example creates a spectral specification whose %F__1_ rises from 100 to 700 hertz during the "
-	"first 50 milliseconds (as for any obstruent), and whose %F__2_ rises from 500 to 1100 hertz. "
-	"The other eight formants keep their original values, as do the ten bandwidths. "
-	"The resulting sound may be a [ba]-like formant transition.")
-NORMAL (U"To get the final acoustic result (the sound), you select the glottal source signal "
-	"together with the FormantGrid and choose @@Sound & FormantGrid: Filter@.")
-NORMAL (U"The resulting sound will have a fairly straight intensity contour. You can change this with "
-	"the #Formula command (@@Sound: Formula...@), or by multiplying the source signal or the "
-	"acoustic result with an @Intensity or @IntensityTier object.")
-MAN_END
+1. The source-filter theory of speech production
+======================================
 
-MAN_BEGIN (U"Source-filter synthesis 3. The ba-da continuum", U"ppgb", 20140421)
-INTRO (U"As an example, we are going to create a male [ba]-[da] continuum in six steps. The acoustic difference "
-	"between [ba] and [da] is the initial %F__2_, which is 500 Hz for [ba], and 2500 Hz for [da].")
-NORMAL (U"We use the same @PitchTier throughout, to model a falling intonation contour:")
-CODE (U"Create PitchTier: “f0”, 0.00, 0.50")
-CODE (U"Add point: 0.00, 150")
-CODE (U"Add point: 0.50, 100")
-NORMAL (U"The first and last 50 milliseconds are voiceless:")
-CODE (U"To PointProcess")
-CODE (U"Remove points between: 0.00, 0.05")
-CODE (U"Remove points between: 0.45, 0.50")
-NORMAL (U"Generate the glottal source signal:")
-CODE (U"To Sound (phonation): 44100, 0.6, 0.05, 0.7, 0.03, 3.0, 4.0")
-NORMAL (U"During the labial or coronal closure, the sound is almost silent, so we use an @IntensityTier "
-	"that models this:")
-CODE (U"Create IntensityTier: “intens”, 0.00, 0.50")
-CODE (U"Add point: 0.05, 60")
-CODE (U"Add point: 0.10, 80")
-NORMAL (U"Generate the source signal:")
-CODE (U"plusObject: “Sound f0”")
-CODE (U"Multiply")
-CODE (U"Rename: “source”")
-NORMAL (U"The ten sounds are generated in a loop:")
-CODE (U"for i from 1 to 10")
-	CODE1 (U"f2_locus = 500 + (2500/9) * (i - 1) ; variable names start with lower case!")
-	CODE1 (U"Create FormantGrid: “filter”, 0.0, 0.5, 9, 800, 1000, 60, 80")
-	CODE1 (U"Remove formant points between: 1, 0.0, 0.5")
-	CODE1 (U"Add formant point: 1, 0.05, 100")
-	CODE1 (U"Add bandwidth point: 1, 0.05, 50")
-	CODE1 (U"Add formant point: 2, 0.05, f2_locus")
-	CODE1 (U"Add bandwidth point: 2, 0.05, 100")
-	CODE1 (U"plusObject: “Sound source”")
-	CODE1 (U"Filter (no scale)")
-	CODE1 (U"Rename: “bada” + string$ (i)")
-	CODE1 (U"removeObject: “FormantGrid filter”")
-CODE (U"endfor")
-NORMAL (U"Clean up:")
-CODE (U"removeObject: “Sound source”, “Sound f0”, “IntensityTier intens”,")
-CODE (U"... “PointProcess f0”, “PitchTier f0”")
-NORMAL (U"In this example, filtering was done without automatic scaling, so that "
-	"the resulting signals have equal intensities in the areas where they have "
-	"equal formants. You will probably want to multiply all these signals with "
-	"the same value in order to bring their amplitudes in a suitable range "
-	"between -1 and +1 Pascal.")
-MAN_END
+The source-filter theory (@@Fant (1960)|Fant 1960@) hypothesizes that an acoustic speech signal can be seen
+as a %source signal (the glottal source, or noise generated at a constriction in the vocal tract),
+%filtered with the resonances in the cavities of the vocal tract downstream from the glottis
+or the constriction. The %%Klatt synthesizer% (@@Klatt & Klatt (1990)|Klatt & Klatt 1990@), for instance,
+is based on this idea.
 
-MAN_BEGIN (U"Source-filter synthesis 4. Using existing sounds", U"ppgb", 20170828)
-ENTRY (U"1. How to extract the %filter from an existing speech sound")
-NORMAL (U"You can separate source and filter with the help of the technique of %%linear prediction% "
-	"(see @@Sound: LPC analysis@). This technique tries to approximate a given frequency spectrum with "
-	"a small number of peaks, for which it finds the mid frequencies and the bandwidths. "
-	"If we do this for an overlapping sequence of windowed parts of a sound signal "
-	"(i.e. a %%short-term analysis%), we get a quasi-stationary approximation of the signal's "
-	"spectral characteristics as a function of time, i.e. a smoothed version of the @Spectrogram.")
-NORMAL (U"For a speech signal, the peaks are identified with the resonances (%formants) of the vocal tract. "
-	"Since the spectrum of a vowel spoken by an average human being falls off with approximately "
-	"6 dB per octave, %%pre-emphasis% is applied to the signal before the linear-prediction analysis, "
-	"so that the algorithm will not try to match only the lower parts of the spectrum.")
-NORMAL (U"For an adult female human voice, tradition assumes five formants in the range "
-	"between 0 and 5500 hertz, say at 550, 1650, 2750, 3850, and 4950 hertz. For the linear prediction in "
-	"Praat, you will have to implement this 5500-Hz band-limiting by resampling the original "
-	"speech signal to 11 kHz. For a male voice, you would use 10 kHz; for a young child, 20 kHz.")
-NORMAL (U"To perform the resampling, you use @@Sound: Resample...@: "
-	"you select a @Sound object, and click ##Resample...#. "
-	"In the rest of this tutorial, I will use the syntax that you would use in a script, "
-	"though you will usually do these things by clicking on objects and buttons. Thus:")
-CODE (U"selectObject: “Sound hallo”")
-CODE (U"Resample: 11000, 50")
-NORMAL (U"You can then perform a linear-prediction analysis on the resampled sound "
-	"with @@Sound: To LPC (burg)...@:")
-CODE (U"selectObject: “Sound hallo_11000”")
-CODE (U"To LPC (burg): 10, 0.025, 0.005, 50")
-NORMAL (U"This says that your analysis is done with 10 linear-prediction parameters "
-	"(which will yield at most five formant-bandwidth pairs), with an analysis window "
-	"effectively 25 milliseconds long, with time steps of 5 milliseconds (so that the windows "
-	"will appreciably overlap), and with a pre-emphasis frequency of 50 Hz (which is the point "
-	"above which the sound will be amplified by 6 dB/octave prior to the analysis proper).")
-NORMAL (U"As a result, an object called “LPC hallo” will appear in the list of objects. "
-	"This @LPC object is a time function with 10 %%linear-prediction coefficients% in each %%time frame%. "
-	"These coefficients are rather opaque even to the expert (try to view them with @Inspect), "
-	"but they are the raw material from which formant and bandwidth values can be computed. "
-	"To see the smoothed @Spectrogram associated with the LPC object, choose @@LPC: To Spectrogram...@:")
-CODE (U"selectObject: “LPC hallo_11000”")
-CODE (U"To Spectrogram: 20, 0, 50")
-CODE (U"Paint: 0, 0, 0, 0, 50, 0, 0, “yes”")
-NORMAL (U"Note that when drawing this Spectrogram, you will want to set the pre-emphasis to zero "
-	"(the fifth 0 in the last line), because pre-emphasis has already been applied in the analysis.")
-NORMAL (U"You can get and draw the formant-bandwidth pairs from the LPC object, "
-	"with @@LPC: To Formant@ and @@Formant: Speckle...@:")
-CODE (U"selectObject: “LPC hallo_11000”")
-CODE (U"To Formant")
-CODE (U"Speckle: 0, 0, 5500, 30, “yes”")
-NORMAL (U"Note that in converting the @LPC into a @Formant object, you may have lost some "
-	"information about spectral peaks at very low frequencies (below 50 Hz) or at very high "
-	"frequencies (near the @@Nyquist frequency@ of 5500 Hz. Such peaks usually try to fit "
-	"an overall spectral slope (if the 6 dB/octave model is inappropriate), and are not seen "
-	"as related with resonances in the vocal tract, so they are ignored in a formant analysis. "
-	"For resynthesis purposes, they might still be important.")
-NORMAL (U"Instead of using the intermediate LPC object, you could have done a formant analysis "
-	"directly on the original Sound, with @@Sound: To Formant (burg)...@:")
-CODE (U"selectObject: “Sound hallo”")
-CODE (U"To Formant (burg): 0.005, 5, 5500, 0.025, 50")
-NORMAL (U"A @Formant object has a fixed sampling (time step, frame length), and for every "
-	"%%formant frame%, it contains a number of formant-bandwidth pairs.")
-NORMAL (U"From a Formant object, you can create a @FormantGrid with @@Formant: Down to FormantGrid@. "
-	"A FormantGrid object contains a number of tiers with time-stamped %%formant points% and %%bandwidth points%.")
-NORMAL (U"Any of these three types (@LPC, @Formant, and @FormantGrid) can represent the %filter "
-	"in source-filter synthesis.")
-ENTRY (U"2. How to extract the %source from an existing speech sound")
-NORMAL (U"If you are only interested in the %filter characteristics, you can get by with @Formant objects. "
-	"To get at the %source signal, however, you need the raw @LPC object: "
-	"you select it together with the resampled @Sound, and apply %%inverse filtering%:")
-CODE (U"selectObject: “Sound hallo_11000”, “LPC hallo_11000”")
-CODE (U"Filter (inverse)")
-NORMAL (U"A new Sound named `hallo_11000` will appear in the list of objects "
-	"(you could rename it to `source`). "
-	"This is the estimated source signal. Since the LPC analysis was designed to yield a spectrally "
-	"flat filter (through the use of pre-emphasis), this source signal represents everything in the "
-	"speech signal that cannot be attributed to the resonating cavities. Thus, the “source signal” "
-	"will consist of the glottal volume-velocity source (with an expected spectral slope of "
-	"-12 dB/octave for vowels) and the radiation characteristics at the lips, which cause a "
-	"6 dB/octave spectral rise, so that the resulting spectrum of the “source signal” "
-	"is actually the %derivative of the glottal flow, with an expected spectral slope of -6 dB/octave.")
-NORMAL (U"Note that with inverse filtering you cannot measure the actual spectral slope of the source signal. "
-	"Even if the actual slope is very different from -6 dB/octave, formant extraction will try to "
-	"match the pre-emphasized spectrum. Thus, by choosing a pre-emhasis of -6 dB/octave, "
-	"you %impose a slope of -6 dB/octave on the source signal.")
-ENTRY (U"3. How to do the synthesis")
-NORMAL (U"You can create a new Sound from a source Sound and a filter, in at least four ways.")
-NORMAL (U"If your filter is an @LPC object, you select it and the source, and choose @@LPC & Sound: Filter...@:")
-CODE (U"selectObject: “Sound source”, “LPC filter”")
-CODE (U"Filter: “no”")
-NORMAL (U"If you had computed the source and filter from an LPC analysis, this procedure should give "
-	"you back the original Sound, except that windowing has caused 25 milliseconds at the beginning "
-	"and end of the signal to be set to zero.")
-NORMAL (U"If your filter is a @Formant object, you select it and the source, and choose @@Sound & Formant: Filter@:")
-CODE (U"selectObject: “Sound source”, “Formant filter”")
-CODE (U"Filter")
-NORMAL (U"If you had computed the source and filter from an LPC analysis, this procedure will not generally give "
-	"you back the original Sound, because some linear-prediction coefficients will have been ignored "
-	"in the conversion to formant-bandwidth pairs.")
-NORMAL (U"If your filter is a @FormantGrid object, you select it and the source, and choose @@Sound & FormantGrid: Filter@:")
-CODE (U"selectObject: “Sound source”, “FormantGrid filter”")
-CODE (U"Filter")
-NORMAL (U"Finally, you could just know the %%impulse response% of your filter (in a @Sound object). "
-	"You then select both Sound objects, and choose @@Sounds: Convolve...@:")
-CODE (U"selectObject: “Sound source”, “Sound filter”")
-CODE (U"Convolve: “integral”, “zero”")
-NORMAL (U"As a last step, you may want to bring the resulting sound within the [-1; +1] range:")
-CODE (U"Scale peak: 0.99")
-ENTRY (U"4. How to manipulate the filter")
-NORMAL (U"You can hardly change the values in an @LPC object in a meaningful way: "
-	"you would have to manually change its rather opaque data with the help of @Inspect.")
-NORMAL (U"A @Formant object can be changed in a friendlier way, with @@Formant: Formula (frequencies)...@ "
-	"and @@Formant: Formula (bandwidths)...@. For instance, to multiply all formant frequencies by 0.9, "
-	"you do")
-CODE (U"selectObject: “Formant filter”")
-CODE (U"Formula (frequencies): “self * 0.9”")
-NORMAL (U"To add 200 hertz to all values of %F__2_, you do")
-CODE (U"Formula (frequencies): ~ if row = 2 then self + 200 else self fi")
-NORMAL (U"A @FormantGrid object can be changed by adding or removing points:")
-LIST_ITEM (U"@@FormantGrid: Add formant point...@")
-LIST_ITEM (U"@@FormantGrid: Add bandwidth point...@")
-LIST_ITEM (U"@@FormantGrid: Remove formant points between...@")
-LIST_ITEM (U"@@FormantGrid: Remove bandwidth points between...@")
-ENTRY (U"5. How to manipulate the source signal")
-NORMAL (U"You can manipulate the source signal in the same way you that would manipulate any sound, "
-	"for instance with the @ManipulationEditor.")
-MAN_END
+In the Praat program, you can create a %source signal from scratch of from an existing
+speech signal, and you can create a %filter from scratch or extract it from an existing speech signal.
+You can manipulate (change, adapt) both the source and the filter before doing
+the actual synthesis, which combines the two.
+
+,	@@Source-filter synthesis 1. Creating a source from pitch targets
+,	@@Source-filter synthesis 2. Filtering a source
+,	@@Source-filter synthesis 3. The ba-da continuum
+,	@@Source-filter synthesis 4. Using existing sounds
+
+################################################################################
+"Source-filter synthesis 1. Creating a source from pitch targets"
+© Paul Boersma 2014-04-21
+
+Creating a glottal source signal for speech synthesis involves creating a @PointProcess,
+which is a series of time points that should represent the exact moments of glottal closure.
+
+You may want to start with creating a well-defined pitch contour.
+Suppose you want to create a sound with a duration of half a second with a pitch that falls from 300 to 200 Hz
+during that time. You first create an empty @PitchTier by choosing @@Create PitchTier...@ from the #New menu
+(I call this PitchTier “empty” because it does not contain any pitch information yet);
+you may want to name the PitchTier “source” and have it start at 0 seconds and end at 0.5 seconds.
+Once the PitchTier exists and is selected, you can ##View & Edit# it to add pitch points (pitch targets) to it at certain times
+(or you choose @@PitchTier: Add point...@ from the #Modify menu repeatedly).
+You could add a pitch point of 150 Hz at time 0.0 and a pitch point of 100 Hz at time 0.5.
+In the PitchTier window, you can see that the pitch curve falls linearly
+from 150 to 100 Hz during its time domain:
+{- 4.5x2.5
+	Create PitchTier: “source”, 0, 0.5
+	Add point: 0.0, 150
+	Add point: 0.5, 100
+	Draw: 0, 0, 0, 200, “yes”, “lines and speckles”
+	Text top: “no”, ~%%An F0 linearly falling between two points
+	One mark left: 100, “yes”, “yes”, “no”, “”
+	Remove
+}
+
+You can hear the falling pitch by clicking on the rectangles in the PitchTier window
+(or by clicking ##Play pulses#, #Hum, or ##Play sine# in the Objects window).
+
+From this PitchTier, you can create a @PointProcess with @@PitchTier: To PointProcess@.
+The resulting PointProcess now represents a series of glottal pulses. To make some parts of this
+point process voiceless, you can use @@PointProcess: Remove points between...@.
+It is advisable to make the very beginning and end of this point process voiceless, so that the filtered sound
+will not start or end abruptly. In the following example, the first and last 20 ms are devoiced,
+and a stretch of 70 ms in the middle
+is made voiceless as well, perhaps because you want to simulate a voiceless plosive there:
+{- 4.5x2.5
+	pitchTier = Create PitchTier: “source”, 0, 0.5
+	Add point: 0.0, 150
+	Add point: 0.5, 100
+	pulses = To PointProcess
+	Remove points between: 0, 0.02
+	Remove points between: 0.24, 0.31
+	Remove points between: 0.48, 0.5
+	Draw: 0, 0, “yes”
+	Text top: “no”, ~%%The times of the glottal pulses
+	One mark bottom: 0.24, “yes”, “yes”, “no”, “”
+	One mark bottom: 0.31, “yes”, “yes”, “no”, “”
+	removeObject: pitchTier, pulses
+}
+
+Now that we have a glottal point process (a glottal pulse train), the only thing left
+is to turn it into a sound by choosing @@PointProcess: To Sound (phonation)...@.
+If you use the standard settings of this command (but with ##Adaptation factor# set to 0.6), the result will be a @Sound with
+reasonable glottal flow derivatives centred around each of the original pulses in the point process.
+You can check this by selecting the Sound and choosing ##View & Edit#:
+{- 4.5x2.5
+	pitchTier = Create PitchTier: “source”, 0, 0.5
+	Add point: 0.0, 150
+	Add point: 0.5, 100
+	pulses = To PointProcess
+	Remove points between: 0, 0.02
+	Remove points between: 0.24, 0.31
+	Remove points between: 0.48, 0.5
+	source = To Sound (phonation): 44100, 0.6, 0.05, 0.7, 0.03, 3.0, 4.0
+	Draw: 0, 0, 0, 0, “yes”, “curve”
+	Text top: “no”, ~%%The source waveform
+	One mark bottom: 0.24, “yes”, “yes”, “no”, “”
+	One mark bottom: 0.31, “yes”, “yes”, “no”, “”
+	removeObject: pitchTier, pulses, source
+}
+
+You will also see that the amplitude of the first two glottal wave shapes of every voiced stretch
+is (realistically) somewhat smaller than the amplitudes of the following wave shapes;
+This is the result of setting ##Adaptation factor# to 0.6.
+
+What you have now is what we call a %%glottal source signal%. It does two things: it contains information on the glottal flow,
+and it already takes into account one aspect of the %filter, namely the radiation at the lips.
+This combination is standard procedure in acoustic synthesis.
+
+The glottal source signal sounds as a voice without a vocal tract.
+The following section describes how you add vocal-tract resonances, i.e. the %filter.
+
+Automation
+==========
+
+In a clean Praat script, the procedure described above will look as follows:
+{
+	pitchTier = Create PitchTier: “source”, 0, 0.5
+	Add point: 0.0, 150
+	Add point: 0.5, 100
+	pulses = To PointProcess
+	Remove points between: 0, 0.02
+	Remove points between: 0.24, 0.31
+	Remove points between: 0.48, 0.5
+	source = To Sound (phonation): 44100, 0.6, 0.05, 0.7, 0.03, 3.0, 4.0
+	removeObject: pitchTier, pulses
+	selectObject: source
+}
+
+################################################################################
+"Source-filter synthesis 2. Filtering a source"
+© Paul Boersma 2014-04-21
+
+Once you have a glottal source signal, you are ready to create a filter that represents
+the resonances of the vocal tract, as a function of time. In other words, you create a @FormantGrid object.
+
+For a vowel spoken by an average (i.e. adult female) human voice, tradition assumes five formants in the range
+between 0 and 5500 hertz. This number comes from a computation of the formants of a
+straight tube, which has resonances at wavelengths of four tube lengths, four thirds of a tube length,
+four fifths, and so on. For a straight tube 16 centimetres long, the shortest wavelength is 64 cm,
+which, with a sound velocity of 352 m/s, means a resonance frequency of 352/0.64 = 550 hertz.
+The other resonances will be at 1650, 2750, 3850, and 4950 hertz.
+
+You can create a @FormantGrid object with @@Create FormantGrid...@ from the #New menu (submenu #Tiers):
+{
+	Create FormantGrid: “filter”, 0, 0.5, 10, 550, 1100, 60, 50
+}
+This creates a FormantGrid with 10 formants and a single frequency value for each formant: %F_1 is 550 Hz
+and the higher formants are spaced 1100 Hz apart, i.e., they are
+1650, 2750, 3850, 4950, 6050, 7150, 8250, 9350, and 10450 hertz;
+the ten bandwidths start at 60 Hz and have a spacing of 50 Hz,
+i.e., they are 60, 110, 160, 210, 260, 310, 360, 410, 460, and 510 hertz.
+
+You can then create formant contours with @@FormantGrid: Add formant point...@:
+{
+	Remove formant points between: 1, 0, 0.5
+	Add formant point: 1, 0.00, 100
+	Add formant point: 1, 0.05, 700
+	Remove formant points between: 2, 0, 0.5
+	Add formant point: 2, 0.00, 500
+	Add formant point: 2, 0.05, 1100
+}
+This example creates a spectral specification whose %F_1 rises from 100 to 700 hertz during the
+first 50 milliseconds (as for any obstruent), and whose %F_2 rises from 500 to 1100 hertz.
+The other eight formants keep their original values, as do the ten bandwidths.
+The resulting sound may be a [ba]-like formant transition.
+
+To get the final acoustic result (the sound), you select the glottal source signal
+together with the FormantGrid and choose @@Sound & FormantGrid: Filter@.
+
+The resulting sound will have a fairly straight intensity contour. You can change this with
+the #Formula command (@@Sound: Formula...@), or by multiplying the source signal or the
+acoustic result with an @Intensity or @IntensityTier object.
+
+################################################################################
+"Source-filter synthesis 3. The ba-da continuum"
+© Paul Boersma 2014-04-21,2025
+
+As an example, we are going to create a male [ba]-[da] continuum in six steps. The acoustic difference
+between [ba] and [da] is the initial %F_2, which is 500 Hz for [ba], and 2500 Hz for [da].
+
+We use the same @PitchTier throughout, to model a falling intonation contour:
+{
+	Create PitchTier: “f0”, 0.00, 0.50
+	Add point: 0.00, 150
+	Add point: 0.50, 100
+}
+
+The first and last 50 milliseconds are voiceless:
+{
+	To PointProcess
+	Remove points between: 0.00, 0.05
+	Remove points between: 0.45, 0.50
+}
+
+Generate the glottal source signal:
+{
+	To Sound (phonation): 44100, 0.6, 0.05, 0.7, 0.03, 3.0, 4.0
+}
+
+During the labial or coronal closure, the sound is almost silent, so we use an @IntensityTier
+that models this:
+{
+	Create IntensityTier: “intens”, 0.00, 0.50
+	Add point: 0.05, 60
+	Add point: 0.10, 80
+}
+
+Generate the source signal:
+{
+	plusObject: “Sound f0”
+	Multiply
+	Rename: “source”
+}
+
+The ten sounds are generated in a loop:
+{
+	for i from 1 to 10
+		f2_locus = 500 + (2500/9) * (i - 1) ; variable names start with lower case!
+		Create FormantGrid: “filter”, 0.0, 0.5, 9, 800, 1000, 60, 80
+		Add formant point: 1, 0.05, 100
+		Add bandwidth point: 1, 0.05, 50
+		Add formant point: 1, 0.10, 800
+		Add bandwidth point: 1, 0.10, 60
+		Add formant point: 2, 0.05, f2_locus
+		Add bandwidth point: 2, 0.05, 100
+		Add formant point: 2, 0.05, 1800
+		Add bandwidth point: 2, 0.05, 140
+		plusObject: “Sound source”
+		Filter (no scale)
+		Rename: “bada” + string$ (i)
+		removeObject: “FormantGrid filter”
+	endfor
+}
+
+Clean up:
+{
+	removeObject: “Sound source”, “Sound f0”, “IntensityTier intens”,
+	... “PointProcess f0”, “PitchTier f0”
+}
+
+In this example, filtering was done without automatic scaling, so that
+the resulting signals have equal intensities in the areas where they have
+equal formants. You will probably want to multiply all these signals with
+the same value in order to bring their amplitudes in a suitable range
+between -1 and +1 Pascal.
+
+################################################################################
+"Source-filter synthesis 4. Using existing sounds"
+© Paul Boersma 2017-08-28
+
+1. How to extract the %filter from an existing speech sound
+======================================
+
+You can separate source and filter with the help of the technique of %%linear prediction%
+(see @@Sound: LPC analysis@). This technique tries to approximate a given frequency spectrum with
+a small number of peaks, for which it finds the mid frequencies and the bandwidths.
+If we do this for an overlapping sequence of windowed parts of a sound signal
+(i.e. a %%short-term analysis%), we get a quasi-stationary approximation of the signal's
+spectral characteristics as a function of time, i.e. a smoothed version of the @Spectrogram.
+
+For a speech signal, the peaks are identified with the resonances (%formants) of the vocal tract.
+Since the spectrum of a vowel spoken by an average human being falls off with approximately
+6 dB per octave, %%pre-emphasis% is applied to the signal before the linear-prediction analysis,
+so that the algorithm will not try to match only the lower parts of the spectrum.
+
+For an adult female human voice, tradition assumes five formants in the range
+between 0 and 5500 hertz, say at 550, 1650, 2750, 3850, and 4950 hertz. For the linear prediction in
+Praat, you will have to implement this 5500-Hz band-limiting by resampling the original
+speech signal to 11 kHz. For a male voice, you would use 10 kHz; for a young child, 20 kHz.
+
+To perform the resampling, you use @@Sound: Resample...@:
+you select a @Sound object, and click ##Resample...#.
+In the rest of this tutorial, I will use the syntax that you would use in a script,
+though you will usually do these things by clicking on objects and buttons. Thus:
+{;
+	selectObject: “Sound hallo”
+	Resample: 11000, 50
+}
+You can then perform a linear-prediction analysis on the resampled sound
+with @@Sound: To LPC (burg)...@:
+{;
+	selectObject: “Sound hallo_11000”
+	To LPC (burg): 10, 0.025, 0.005, 50
+}
+This says that your analysis is done with 10 linear-prediction parameters
+(which will yield at most five formant-bandwidth pairs), with an analysis window
+effectively 25 milliseconds long, with time steps of 5 milliseconds (so that the windows
+will appreciably overlap), and with a pre-emphasis frequency of 50 Hz (which is the point
+above which the sound will be amplified by 6 dB/octave prior to the analysis proper).
+
+As a result, an object called “LPC hallo” will appear in the list of objects.
+This @LPC object is a time function with 10 %%linear-prediction coefficients% in each %%time frame%.
+These coefficients are rather opaque even to the expert (try to view them with @Inspect),
+but they are the raw material from which formant and bandwidth values can be computed.
+To see the smoothed @Spectrogram associated with the LPC object, choose @@LPC: To Spectrogram...@:
+{;
+	selectObject: “LPC hallo_11000”
+	To Spectrogram: 20, 0, 50
+	Paint: 0, 0, 0, 0, 50, 0, 0, “yes”
+}
+Note that when drawing this Spectrogram, you will want to set the pre-emphasis to zero
+(the fifth 0 in the last line), because pre-emphasis has already been applied in the analysis.
+
+You can get and draw the formant-bandwidth pairs from the LPC object,
+with @@LPC: To Formant@ and @@Formant: Speckle...@:
+{;
+	selectObject: “LPC hallo_11000”
+	To Formant
+	Speckle: 0, 0, 5500, 30, “yes”
+}
+Note that in converting the @LPC into a @Formant object, you may have lost some
+information about spectral peaks at very low frequencies (below 50 Hz) or at very high
+frequencies (near the @@Nyquist frequency@ of 5500 Hz. Such peaks usually try to fit
+an overall spectral slope (if the 6 dB/octave model is inappropriate), and are not seen
+as related with resonances in the vocal tract, so they are ignored in a formant analysis.
+For resynthesis purposes, they might still be important.
+
+Instead of using the intermediate LPC object, you could have done a formant analysis
+directly on the original Sound, with @@Sound: To Formant (burg)...@:
+{;
+	selectObject: “Sound hallo”
+	To Formant (burg): 0.005, 5, 5500, 0.025, 50
+}
+A @Formant object has a fixed sampling (time step, frame length), and for every
+%%formant frame%, it contains a number of formant-bandwidth pairs.
+
+From a Formant object, you can create a @FormantGrid with @@Formant: Down to FormantGrid@.
+A FormantGrid object contains a number of tiers with time-stamped %%formant points% and %%bandwidth points%.
+
+Any of these three types (@LPC, @Formant, and @FormantGrid) can represent the %filter
+in source-filter synthesis.
+
+2. How to extract the %source from an existing speech sound
+======================================
+
+If you are only interested in the %filter characteristics, you can get by with @Formant objects.
+To get at the %source signal, however, you need the raw @LPC object:
+you select it together with the resampled @Sound, and apply %%inverse filtering%:
+{;
+	selectObject: “Sound hallo_11000”, “LPC hallo_11000”
+	Filter (inverse)
+}
+A new Sound named `hallo_11000` will appear in the list of objects
+(you could rename it to `source`).
+This is the estimated source signal. Since the LPC analysis was designed to yield a spectrally
+flat filter (through the use of pre-emphasis), this source signal represents everything in the
+speech signal that cannot be attributed to the resonating cavities. Thus, the “source signal”
+will consist of the glottal volume-velocity source (with an expected spectral slope of
+-12 dB/octave for vowels) and the radiation characteristics at the lips, which cause a
+6 dB/octave spectral rise, so that the resulting spectrum of the “source signal”
+is actually the %derivative of the glottal flow, with an expected spectral slope of -6 dB/octave.
+
+Note that with inverse filtering you cannot measure the actual spectral slope of the source signal.
+Even if the actual slope is very different from -6 dB/octave, formant extraction will try to
+match the pre-emphasized spectrum. Thus, by choosing a pre-emhasis of -6 dB/octave,
+you %impose a slope of -6 dB/octave on the source signal.
+
+3. How to do the synthesis
+==========================
+
+You can create a new Sound from a source Sound and a filter, in at least four ways.
+
+If your filter is an @LPC object, you select it and the source, and choose @@LPC & Sound: Filter...@:
+{;
+	selectObject: “Sound source”, “LPC filter”
+	Filter: “no”
+}
+If you had computed the source and filter from an LPC analysis, this procedure should give
+you back the original Sound, except that windowing has caused 25 milliseconds at the beginning
+and end of the signal to be set to zero.
+
+If your filter is a @Formant object, you select it and the source, and choose @@Sound & Formant: Filter@:
+{;
+	selectObject: “Sound source”, “Formant filter”
+	Filter
+}
+If you had computed the source and filter from an LPC analysis, this procedure will not generally give
+you back the original Sound, because some linear-prediction coefficients will have been ignored
+in the conversion to formant-bandwidth pairs.
+
+If your filter is a @FormantGrid object, you select it and the source, and choose @@Sound & FormantGrid: Filter@:
+{;
+	selectObject: “Sound source”, “FormantGrid filter”
+	Filter
+}
+Finally, you could just know the %%impulse response% of your filter (in a @Sound object).
+You then select both Sound objects, and choose @@Sounds: Convolve...@:
+{;
+	selectObject: “Sound source”, “Sound filter”
+	Convolve: “integral”, “zero”
+}
+As a last step, you may want to bring the resulting sound within the [-1; +1] range:
+{;
+	Scale peak: 0.99
+}
+
+4. How to manipulate the filter
+===============================
+
+You can hardly change the values in an @LPC object in a meaningful way:
+you would have to manually change its rather opaque data with the help of @Inspect.
+
+A @Formant object can be changed in a friendlier way, with @@Formant: Formula (frequencies)...@
+and @@Formant: Formula (bandwidths)...@. For instance, to multiply all formant frequencies by 0.9,
+you do
+{;
+	selectObject: “Formant filter”
+	Formula (frequencies): “self * 0.9”
+}
+To add 200 hertz to all values of %F_2, you do
+{;
+	Formula (frequencies): ~ if row = 2 then self + 200 else self fi
+}
+A @FormantGrid object can be changed by adding or removing points:
+,	@@FormantGrid: Add formant point...@
+,	@@FormantGrid: Add bandwidth point...@
+,	@@FormantGrid: Remove formant points between...@
+,	@@FormantGrid: Remove bandwidth points between...@
+
+5. How to manipulate the source signal
+======================================
+
+You can manipulate the source signal in the same way you that would manipulate any sound,
+for instance with the @ManipulationEditor.
+
+)~~~"
+MAN_PAGES_END
 
 MAN_BEGIN (U"Spectrogram menu", U"ppgb", 20221202)
 INTRO (U"A menu in the @SoundEditor or @TextGridEditor.")

@@ -21,20 +21,18 @@
 /*
 	SYNOPSIS
 
-	/// Call Melder_fatal with a message based on the following template:
-	/// "Assertion failed in file <fileName> on line <lineNumber>: <condition>"
 	Melder_assert (condition);
+
+	Crash with a message based on the following template:
+		"Assertion failed in file <fileName> on line <lineNumber>: <condition>"
 */
 
-/*
-	Private function implemented in Melder_fatal.cpp
-*/
-void Melder_assert_ (const char *fileName, int lineNumber, const char *condition);
+void _private_Melder_assert (const char *fileName, int lineNumber, const char *condition);
 
 #ifdef NDEBUG
 	#define Melder_assert(x)   ((void) 0)
 #else
-	#define Melder_assert(x)   ((x) ? (void) (0) : (Melder_assert_ (__FILE__, __LINE__, #x), abort ()))
+	#define Melder_assert(x)   ((x) ? (void) (0) : (_private_Melder_assert (__FILE__, __LINE__, #x), abort ()))
 #endif
 
 /* End of file melder_assert.h */

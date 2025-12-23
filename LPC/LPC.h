@@ -2,7 +2,7 @@
 #define _LPC_h_
 /* LPC.h
  *
- * Copyright (C) 1994-2020 David Weenink
+ * Copyright (C) 1994-2020,2025 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@
 void LPC_init (LPC me, double tmin, double tmax, integer nt, double dt, double t1, integer predictionOrder, double samplingPeriod);
 
 autoLPC LPC_create (double tmin, double tmax, integer nt, double dt, double t1, integer predictionOrder, double samplingPeriod);
+/* Basic structure */
+
+autoLPC LPC_createCompletelyInitialized (double tmin, double tmax, integer nt, double dt, double t1, integer predictionOrder, double samplingPeriod);
+/* With all frames initialised */
 
 void LPC_drawGain (LPC me, Graphics g, double t1, double t2, double gmin, double gmax, bool garnish);
 

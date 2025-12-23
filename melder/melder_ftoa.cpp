@@ -1,10 +1,10 @@
 /* melder_ftoa.cpp
  *
- * Copyright (C) 1992-2008,2010-2012,2014-2023 Paul Boersma
+ * Copyright (C) 1992-2008,2010-2012,2014-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -59,14 +59,14 @@ const char * Melder8_integer (int64 value) {
 				formatString = "%I64d";
 				snprintf (tryBuffer,MAXIMUM_NUMERIC_STRING_LENGTH+1, formatString, 1000000000000LL);
 				if (! strequ (tryBuffer, "1000000000000"))
-					Melder_fatal (U"Found no way to print 64-bit integers on this machine.");
+					Melder_crash (U"Found no way to print 64-bit integers on this machine.");
 			}
 		}
 		const int n = snprintf (buffers8 [ibuffer],MAXIMUM_NUMERIC_STRING_LENGTH+1, formatString, value);
 		Melder_assert (n > 0);
 		Melder_assert (n <= MAXIMUM_NUMERIC_STRING_LENGTH);
 	} else {
-		Melder_fatal (U"Neither long nor long long is 8 bytes on this machine.");
+		Melder_crash (U"Neither long nor long long is 8 bytes on this machine.");
 	}
 	return buffers8 [ibuffer];
 }
@@ -493,6 +493,17 @@ conststring32 Melder_VEC (constVECVU const& value, const bool horizontal) {
 			MelderString_append (string, value [i], horizontal ? U' ' : U'\n');
 	return string -> string;
 }
+conststring32 Melder_fixed (constVECVU const& value, integer precision, const bool horizontal) {
+	if (++ iTensorBuffer == NUMBER_OF_TENSOR_BUFFERS)
+		iTensorBuffer = 0;
+	MelderString *string = & theTensorBuffers [iTensorBuffer];
+	MelderString_empty (string);
+	if (! NUMisEmpty (value))
+		for (integer i = 1; i <= value.size; i ++)
+			MelderString_append (string, Melder_fixed (value [i], precision), horizontal ? U' ' : U'\n');
+	return string -> string;
+}
+
 conststring32 Melder_MAT (constMATVU const& value) {
 	if (++ iTensorBuffer == NUMBER_OF_TENSOR_BUFFERS)
 		iTensorBuffer = 0;
@@ -511,6 +522,25 @@ conststring32 Melder_MAT (constMATVU const& value) {
 	}
 	return string -> string;
 }
+conststring32 Melder_fixed (constMATVU const& value, integer precision) {
+	if (++ iTensorBuffer == NUMBER_OF_TENSOR_BUFFERS)
+		iTensorBuffer = 0;
+	MelderString *string = & theTensorBuffers [iTensorBuffer];
+	MelderString_empty (string);
+	if (! NUMisEmpty (value)) {
+		for (integer irow = 1; irow <= value.nrow; irow ++) {
+			for (integer icol = 1; icol <= value.ncol; icol ++) {
+				MelderString_append (string, Melder_fixed (value [irow] [icol], precision));
+				if (icol < value.ncol)
+					MelderString_appendCharacter (string, U' ');
+			}
+			if (irow < value.nrow)
+				MelderString_appendCharacter (string, U'\n');
+		}
+	}
+	return string -> string;
+}
+
 conststring32 Melder_STRVEC (constSTRVEC const& value) {
 	if (++ iTensorBuffer == NUMBER_OF_TENSOR_BUFFERS)
 		iTensorBuffer = 0;
@@ -527,90 +557,158 @@ conststring32 Melder_STRVEC (constSTRVEC const& value) {
 static MelderString thePadBuffers [NUMBER_OF_BUFFERS];
 static int iPadBuffer { 0 };
 
-conststring32 Melder_pad (int64 width, conststring32 string) {
+conststring32 Melder_padLeft (const conststring32 string, const integer width, const conststring32 pad) {
 	if (++ iPadBuffer == NUMBER_OF_BUFFERS)
 		iPadBuffer = 0;
-	const int64 length = Melder_length (string);
-	const int64 tooShort = width - length;
-	if (tooShort <= 0)
+	const integer length = Melder_length (string);
+	Melder_assert (length >= 0);
+	if (width <= length)
 		return string;
+	Melder_assert (width > 0);
+	const integer tooShort = width - length;
+			// guarded subtraction (length cannot be negative, so no overflow, and width is positive, so no underflow)
+	Melder_assert (tooShort > 0);
+	const integer padLength = Melder_length (pad);
+	Melder_require (padLength > 0,
+		U"Empty pad string.");
 	MelderString_empty (& thePadBuffers [iPadBuffer]);
-	for (int64 i = 0; i < tooShort; i ++)
-		MelderString_appendCharacter (& thePadBuffers [iPadBuffer], U' ');
+	/* mutable cycle */ integer ipad = 0;
+	for (integer i = 0; i < tooShort; i ++) {
+		Melder_assert (ipad >= 0);
+		Melder_assert (ipad < padLength);
+		MelderString_appendCharacter (& thePadBuffers [iPadBuffer], pad [ipad]);
+		if (++ ipad >= padLength)
+			ipad = 0;
+	}
 	MelderString_append (& thePadBuffers [iPadBuffer], string);
-	return thePadBuffers [iPadBuffer]. string;
+	return thePadBuffers [iPadBuffer].string;
 }
 
-conststring32 Melder_pad (conststring32 string, int64 width) {
+conststring32 Melder_padRight (const conststring32 string, const integer width, const conststring32 pad) {
 	if (++ iPadBuffer == NUMBER_OF_BUFFERS)
 		iPadBuffer = 0;
-	const int64 length = Melder_length (string);
-	const int64 tooShort = width - length;
-	if (tooShort <= 0)
+	const integer length = Melder_length (string);
+	Melder_assert (length >= 0);
+	if (width <= length)
 		return string;
+	Melder_assert (width > 0);
+	const integer tooShort = width - length;
+			// guarded subtraction (length cannot be negative, so no overflow, and width is positive, so no underflow)
+	Melder_assert (tooShort > 0);
+	const integer padLength = Melder_length (pad);
+	Melder_require (padLength > 0,
+		U"Empty pad string.");
 	MelderString_copy (& thePadBuffers [iPadBuffer], string);
-	for (int64 i = 0; i < tooShort; i ++)
-		MelderString_appendCharacter (& thePadBuffers [iPadBuffer], U' ');
-	return thePadBuffers [iPadBuffer]. string;
+	/* mutable cycle */ integer ipad = padLength - 1 - ((tooShort - 1) % padLength);
+	for (integer i = 0; i < tooShort; i ++) {
+		Melder_assert (ipad >= 0);
+		Melder_assert (ipad < padLength);
+		MelderString_appendCharacter (& thePadBuffers [iPadBuffer], pad [ipad]);
+		if (++ ipad >= padLength)
+			ipad = 0;
+	}
+	return thePadBuffers [iPadBuffer].string;
 }
 
-conststring32 Melder_truncate (int64 width, conststring32 string) {
+conststring32 Melder_truncateLeft (const conststring32 string, const integer width) {
 	if (++ iPadBuffer == NUMBER_OF_BUFFERS)
 		iPadBuffer = 0;
-	const int64 length = Melder_length (string);   // BUG: this can be slow, e.g. if 10'000'000 -> 1000
-	const int64 tooLong = length - width;
-	if (tooLong <= 0)
+	Melder_require (width >= 0,
+		U"Can never truncate a string down to ", width, U" characters.");
+	const integer length = Melder_length (string);   // BUG: this can be slow if used in a loop, e.g. if 10'000'000 -> 1000
+	Melder_assert (length >= 0);
+	if (length <= width)
 		return string;
+	const integer tooLong = length - width;
+			// guarded subtraction (length cannot be negative, so no underflow, and width cannot be negative, so no overflow)
+	Melder_assert (tooLong > 0);
 	MelderString_ncopy (& thePadBuffers [iPadBuffer], string + tooLong, width);
-	return thePadBuffers [iPadBuffer]. string;
+	return thePadBuffers [iPadBuffer].string;
 }
 
-conststring32 Melder_truncate (conststring32 string, int64 width) {
+conststring32 Melder_truncateRight (const conststring32 string, const integer width) {
 	if (++ iPadBuffer == NUMBER_OF_BUFFERS)
 		iPadBuffer = 0;
-	const int64 length = Melder_length (string);
-	const int64 tooLong = length - width;
-	if (tooLong <= 0)
+	Melder_require (width >= 0,
+		U"Can never truncate a string down to ", width, U" characters.");
+	const integer length = Melder_length (string);   // BUG: this can be slow if used in a loop, e.g. if 10'000'000 -> 1000
+	Melder_assert (length >= 0);
+	if (length <= width)
 		return string;
+	const integer tooLong = length - width;
+			// guarded subtraction (length cannot be negative, so no underflow, and width is nonnegative, so no overflow)
+	Melder_assert (tooLong > 0);
 	MelderString_ncopy (& thePadBuffers [iPadBuffer], string, width);
-	return thePadBuffers [iPadBuffer]. string;
+	return thePadBuffers [iPadBuffer].string;
 }
 
-conststring32 Melder_padOrTruncate (int64 width, conststring32 string) {
+conststring32 Melder_padOrTruncateLeft (const conststring32 string, const integer width, const conststring32 pad) {
 	if (++ iPadBuffer == NUMBER_OF_BUFFERS)
 		iPadBuffer = 0;
-	const int64 length = Melder_length (string);
-	const int64 tooLong = length - width;
+	Melder_require (width >= 0,
+		U"Can never truncate a string down to ", width, U" characters.");
+	const integer length = Melder_length (string);
+	Melder_assert (length >= 0);
+	const integer tooLong = length - width;
+			// guarded subtraction (length cannot be negative, so no underflow or INTEGER_MIN, and width cannot be negative, so no overflow)
 	if (tooLong == 0)
 		return string;
 	if (tooLong < 0) {
-		const int64 tooShort = - tooLong;
+		Melder_assert (tooLong > INTEGER_MIN);
+		const integer tooShort = - tooLong;   // guarded integer sign flip
+		Melder_assert (tooShort > 0);
+		const integer padLength = Melder_length (pad);
+		Melder_require (padLength > 0,
+			U"Empty pad string.");
 		MelderString_empty (& thePadBuffers [iPadBuffer]);
-		for (int64 i = 0; i < tooShort; i ++)
-			MelderString_appendCharacter (& thePadBuffers [iPadBuffer], U' ');
+		/* mutable cycle */ integer ipad = 0;
+		for (integer i = 0; i < tooShort; i ++) {
+			Melder_assert (ipad >= 0);
+			Melder_assert (ipad < padLength);
+			MelderString_appendCharacter (& thePadBuffers [iPadBuffer], pad [ipad]);
+			if (++ ipad >= padLength)
+				ipad = 0;
+		}
 		MelderString_append (& thePadBuffers [iPadBuffer], string);
 	} else {
+		Melder_assert (tooLong <= length);
 		MelderString_ncopy (& thePadBuffers [iPadBuffer], string + tooLong, width);
 	}
-	return thePadBuffers [iPadBuffer]. string;
+	return thePadBuffers [iPadBuffer].string;
 }
 
-conststring32 Melder_padOrTruncate (conststring32 string, int64 width) {
+conststring32 Melder_padOrTruncateRight (conststring32 string, integer width, const conststring32 pad) {
 	if (++ iPadBuffer == NUMBER_OF_BUFFERS)
 		iPadBuffer = 0;
-	const int64 length = Melder_length (string);
-	const int64 tooLong = length - width;
+	Melder_require (width >= 0,
+		U"Can never truncate a string down to ", width, U" characters.");
+	const integer length = Melder_length (string);
+	Melder_assert (length >= 0);
+	const integer tooLong = length - width;
+			// guarded subtraction (length cannot be negative, so no underflow or INTEGER_MIN, and width cannot be negative, so no overflow)
 	if (tooLong == 0)
 		return string;
 	if (tooLong < 0) {
-		const int64 tooShort = - tooLong;
+		Melder_assert (tooLong > INTEGER_MIN);
+		const integer tooShort = - tooLong;   // guarded integer sign flip
+		Melder_assert (tooShort > 0);
+		const integer padLength = Melder_length (pad);
+		Melder_require (padLength > 0,
+			U"Empty pad string.");
 		MelderString_copy (& thePadBuffers [iPadBuffer], string);
-		for (int64 i = 0; i < tooShort; i ++)
-			MelderString_appendCharacter (& thePadBuffers [iPadBuffer], U' ');
+		/* mutable cycle */ integer ipad = padLength - 1 - ((tooShort - 1) % padLength);
+		for (integer i = 0; i < tooShort; i ++) {
+			Melder_assert (ipad >= 0);
+			Melder_assert (ipad < padLength);
+			MelderString_appendCharacter (& thePadBuffers [iPadBuffer], pad [ipad]);
+			if (++ ipad >= padLength)
+				ipad = 0;
+		}
 	} else {
+		Melder_assert (tooLong <= length);
 		MelderString_ncopy (& thePadBuffers [iPadBuffer], string, width);
 	}
-	return thePadBuffers [iPadBuffer]. string;
+	return thePadBuffers [iPadBuffer].string;
 }
 
 /* End of file melder_ftoa.cpp */

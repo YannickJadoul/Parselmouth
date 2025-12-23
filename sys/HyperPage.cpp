@@ -1,10 +1,10 @@
 /* HyperPage.cpp
  *
- * Copyright (C) 1996-2024 Paul Boersma
+ * Copyright (C) 1996-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -34,7 +34,7 @@ Thing_implement (HyperPage, Editor, 0);
 #include "HyperPage_prefs.h"
 
 #define PAGE_HEIGHT  320.0
-#define SCREEN_HEIGHT  15.0
+#define SCREEN_HEIGHT  18.0
 #define PAPER_TOP  12.0
 #define TOP_MARGIN  0.8
 #define PAPER_BOTTOM  (13.0 - (double) thePrinter. paperHeight / thePrinter. resolution)
@@ -226,6 +226,9 @@ void HyperPage_intro (HyperPage me, conststring32 text) {
 void HyperPage_entry (HyperPage me, conststring32 title) {
 	HyperPage_any (me, title, my instancePref_font(), my instancePref_fontSize() * 1.4, Graphics_BOLD, 0.5, 0.0, 0.0, 0.25/1.4, 0.1/1.4, HyperPage_USE_ENTRY_HINT);
 }
+void HyperPage_subheader (HyperPage me, conststring32 title) {
+	HyperPage_any (me, title, my instancePref_font(), my instancePref_fontSize() * 1.2, Graphics_BOLD, 0.4, 0.0, 0.0, 0.25/1.2, 0.1/1.2, HyperPage_USE_ENTRY_HINT);
+}
 void HyperPage_paragraph (HyperPage me, conststring32 text) {
 	HyperPage_any (me, text, my instancePref_font(), my instancePref_fontSize(), 0, 0.0, 0.03, 0.0, 0.1, 0.1, 0);
 }
@@ -409,7 +412,10 @@ void HyperPage_script (HyperPage me, double width_inches, double height_inches, 
 					str32str (buffer.string, U"**ERROR** This code chunk was not run,")
 				)
 					Graphics_setColour (my graphics.get(), Melder_RED);
-				HyperPage_code (me, buffer.string);
+				if (str32chr (buffer.string, U'\t'))   // is there a tab *anywhere* in the line?
+					HyperPage_code (me, Melder_cat (U"\t", buffer.string));   // ... then make sure that the first column is also tabbed
+				else
+					HyperPage_code (me, buffer.string);
 				MelderString_empty (& buffer);
 			} else {
 				MelderString_appendCharacter (& buffer, *p);
@@ -657,7 +663,7 @@ static void gui_drawingarea_cb_mouse (HyperPage me, GuiDrawingArea_MouseEvent ev
 	for (integer ilink = 1; ilink <= my links.size; ilink ++) {
 		HyperLink link = my links.at [ilink];
 		if (! link)
-			Melder_fatal (U"gui_drawingarea_cb_click: empty link ", ilink, U"/", my links.size, U".");
+			Melder_crash (U"gui_drawingarea_cb_click: empty link ", ilink, U"/", my links.size, U".");
 		if (event -> y > link -> y2DC && event -> y < link -> y1DC && event -> x > link -> x1DC && event -> x < link -> x2DC) {
 			saveHistory (me, my optionalCurrentPageTitle.get());
 			try {

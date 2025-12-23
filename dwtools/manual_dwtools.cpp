@@ -1,10 +1,10 @@
 /* manual_dwtools.cpp
  *
- * Copyright (C) 1993-2024 David Weenink
+ * Copyright (C) 1993-2024 David Weenink, 2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -16,12 +16,6 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- djmw 20020313 GPL
- djmw 20130620 Latest modification
-*/
-
-#include "espeak_ng_version.h"
 #include "ManPagesM.h"
 #include "Sound_extensions.h"
 #include "TableOfReal_extensions.h"
@@ -2613,7 +2607,7 @@ CODE (U"0x0C: int (4 bytes)")
 CODE (U"0x0D: float (4 bytes)")
 CODE (U"0x0E: double (8 bytes)")
 NORMAL (U"The fourth byte codes the number of dimensions of the vector/matrix: 1 for vectors, 2 for matrices....")
-NORMAL (U"The sizes in each dimension are 4-byte integers (big endian, like in most non-Intel processors).")
+NORMAL (U"The sizes in each dimension are 4-byte integers (big-endian, like in most non-Intel processors).")
 NORMAL (U"The data is stored like in a C array, i.e. the index in the last dimension changes the fastest.")
 ENTRY (U"Behaviour")
 NORMAL (U"If the storage format indicates that there are more than 2 dimensions, the resulting Matrix accumulates dimensions 2 and higher in the columns. For example, with three dimensions of size n1, n2 and n3, respectively, the resulting Matrix object will have n1 rows and %%n2\\xxn3% columns.")
@@ -2650,7 +2644,7 @@ NORMAL (U"Suppose we have a sample #%x = (%x__1_, %x__2_,...%x__n_) and wish to 
 MAN_END
 
 MAN_BEGIN (U"Kirshenbaum phonetic encoding", U"djmw", 20120413)
-INTRO (U"The Kirshenbaum phonetic encoding represents International Phonetic Alphabet symbols using ascii characters. See: http://www.kirshenbaum.net/IPA/ascii-ipa.pdf. The @@espeak@ speech synthesizer on which our synthesizer is based accepts this encoding as text input. ")
+INTRO (U"The Kirshenbaum phonetic encoding represents International Phonetic Alphabet symbols using ascii characters. See: http://www.kirshenbaum.net/IPA/ascii-ipa.pdf. The @@eSpeak@ speech synthesizer on which our synthesizer is based accepts this encoding as text input. ")
 MAN_END
 
 MAN_BEGIN (U"LAPACK", U"djmw", 20200131)
@@ -3709,6 +3703,40 @@ LIST_ITEM (U"\\bu ##Get real part of root...#")
 LIST_ITEM (U"\\bu ##Get imaginary part of root...#")
 MAN_END
 
+MAN_BEGIN (U"Debug multi-threading...", U"David Weenink & Paul Boersma", 20250721) // 20250813
+INTRO (U"These settings determine how fast parallelized procedures, such as analyses of sound, will be performed on your computer. "
+	"You can use these settings for tuning e.g. a specific analysis procedure. "
+	"These settings are \"debug settings\" that are not remembered across Praat sessions.")
+ENTRY (U"Settings")
+TERM (U"##Use multi-threading#")
+DEFINITION (U"Only if you choose %on, the computing load will be equally divided among a number of different processors "
+	"on your computer. If it’s off, you will get single-threading.")
+TERM (U"##Maximum number of threads#")
+DEFINITION (U"determines the number of threads that you would like to use. Most modern computers have multiple "
+	"processors. One some computers (e.g. AMD64/Intel64) each processor can process two threads; "
+	"on some other computers (e.g. ARM64) each processor can process one thread. "
+    "If you supply 0 for this setting, then Praat will use all physical threads once.")
+TERM (U"##Minimum number of frames per thread#")
+DEFINITION (U"as starting up a new thread costs time, it is rarely worthwhile to distribute "
+	"small numbers of frames over lots of threads. To achieve an optimal speed gain, "
+	"this number should be tuned via a script, for each type of analysis separately, "
+	"and perhaps for different sets of analysis settings separately.")
+TERM (U"##Trace multi-threading#")
+DEFINITION (U"returns extra information for each analysed frame in the Info window.")
+ENTRY (U"Example")
+NORMAL (U"Suppose the \"maximum number of threads\" is 10, and you want to analyse 500 frames. "
+	"If the \"minimum number of frames per thread\" is 20, "
+    "Praat will divide up those 500 frames over 10 threads of 50 frames each. "
+    "The first thread will analyse frames 1 to 50, the second thread will analyse "
+    "frames 51 till 100, the third thread will analyse frames 101 till 150, etc. The tenth thread will analyse "
+    "frames 451 till 500. All these threads will be executed, in parallel, almost at the same time, which guarantees "
+    "a significant decrease in analysis time as compared to single-threading.")
+NORMAL (U"If the \"minimum number of frames per thread\" is 100 instead, "
+    "Praat will divide up the 500 frames over 5 threads of 100 frames each.")
+NORMAL (U"The amount of speed-up depends on a number of factors: starting up a thread costs time, "
+	"and allocating per-thread analysis buffers costs time.")
+MAN_END
+
 MAN_BEGIN (U"Scree plot", U"djmw", 20040331)
 NORMAL (U"A scree plot shows the sorted eigenvalues, from large to "
 	"small, as a function of the eigenvalue index.")
@@ -4493,10 +4521,10 @@ NORMAL (U"First the intensity contour is evaluated and the intervals above and b
 NORMAL (U"Experience showed that first removing short intensity bursts instead of short silences gave better results than doing it the other way around.")
 ENTRY (U"Important")
 NORMAL (U"The effectiveness of the %%Minimum silent interval duration% and %%Minimum sounding interval duration% "
-	"depends on the effective analysis window duration that was used to determine the intensity contour. "
+	"depends on the effective window length that was used to determine the intensity contour. "
 	"For example, if you have chosen 100 Hz for the “Pitch floor” parameter in the @@Sound: To Intensity...@ analysis, "
-	"the effective analysis window duration was 32 ms. Don't expect to find sounding "
-	"or silent intervals with a duration smaller than this effective analysis window duration.")
+	"the effective window length was 32 ms. Don't expect to find sounding "
+	"or silent intervals with a duration smaller than this effective window length.")
 MAN_END
 
 MAN_BEGIN (U"ConstantQLogFSpectrogram", U"djmw", 20211111)
@@ -4741,7 +4769,7 @@ DEFINITION (U"the number of neighbouring frequency points that are used in the c
 MAN_END
 
 MAN_BEGIN (U"SpeechSynthesizer", U"djmw", 20190811)
-INTRO (U"The SpeechSynthesizer is one of the @@types of objects@ in Praat. It creates a speech sound from text. The actual text-to-speech synthesis is performed by the @@Espeak|eSpeak NG@ speech synthsizer and therefore our SpeechSynthsizer is merely an interface to Espeak.")
+INTRO (U"The SpeechSynthesizer is one of the @@types of objects@ in Praat. It creates a speech sound from text. The actual text-to-speech synthesis is performed by the @@eSpeak|eSpeak NG@ speech synthsizer and therefore our SpeechSynthsizer is merely an interface to Espeak.")
 ENTRY (U"Commands")
 NORMAL (U"Creation:")
 LIST_ITEM (U"\\bu @@Create SpeechSynthesizer...@")
@@ -4754,7 +4782,7 @@ LIST_ITEM (U"\\bu @@SpeechSynthesizer: Speech output settings...|Speech output s
 MAN_END
 
 MAN_BEGIN (U"Create SpeechSynthesizer...", U"djmw", 20171101)
-INTRO (U"Creates the @@Espeak|eSpeak NG@ speech synthesizer.")
+INTRO (U"Creates the @@eSpeak|eSpeak NG@ speech synthesizer.")
 ENTRY (U"Settings")
 TERM (U"##Language#")
 DEFINITION (U"determines the language of the synthesizer.")
@@ -5978,7 +6006,7 @@ ENTRY (U"Example 1: Single-tier topic search: ")
 NORMAL (U"We create a TextGridNavigator that searches for the occurrence in tier 1 of one of the labels "
 	"in a %topic set that consists of the labels { \"a\", \"e\", \"i\", \"o\", \"u\" }. If a label in tier 1 equals one of the labels in this topic set we have a match. "
 	"The command to create the TextGridNavigator for the selected TextGrid is:")
-CODE (U"To TextGridNavigator (topic search): 1,")
+CODE (U"To TextGridNavigator (topic only): 1,")
 CODE (U"... { \"a\", \"e\", \"i\", \"o\", \"u\" }, \"is equal to\", \"OR\",")
 CODE (U"... \"Match start to Match end\"")
 NORMAL (U"In this case the tier's ##NavigationContext# is very simple as the searching / matching only involves "
@@ -6005,7 +6033,7 @@ NORMAL (U"Instead of finding the indices one at a time in a %while loop until we
 	"and query for a list of all indices or times where the labels match. We then know beforehand how many matches we have "
 	"and therefore we can use a %for loop.")
 CODE (U"tierNumber = 1")
-CODE (U"navigator = To TextGridNavigator (topic search): tierNumber,")
+CODE (U"navigator = To TextGridNavigator (topic only): tierNumber,")
 CODE (U"... { \"a\", \"e\", \"i\", \"u\", \"o\" }, \"is equal to\", \"OR\",")
 CODE (U"... \"Match start to Match end\"")
 CODE (U"startTimes# = List start times: \"topic\"")
@@ -6154,7 +6182,7 @@ NORMAL (U"The text corpus design was done by the Massachusetts Institute of "
 	"Technology (MIT), Stanford Research Institute and Texas Instruments (TI). "
 	"The speech was recorded at TI, transcribed at MIT, and has been maintained, "
 	"verified and prepared for CDROM production by the American National Institute "
-	"of Standards and Technology (NIST) (@@Lamel et al. (1986)@).")
+	"of Standards and Technology (NIST) (@@Lamel, Kassel & Seneff (1986)@).")
 MAN_END
 
 MAN_BEGIN (U"VowelEditor", U"djmw", 20200403)
@@ -6204,9 +6232,11 @@ DEFINITION (U"Show the vowel marks in the editor from a fixed set of vowel inven
 TERM (U"##Show vowel marks from Table file...#")
 DEFINITION (U"Put your own marks in the editor. The Table needs to have at least three mandatory columns "
 	"labeled \"Vowel\", \"F1\" and  \"F2\" and "
-	" two optional column labeled \"Size\" and \"Colour\". The Vowel column contains the vowel marker labels, the F1 and "
+	"two optional column labeled \"Size\" and \"Colour\". The Vowel column contains the vowel marker labels, the F1 and "
 	"F2 columns have the first and second formant frequencies in Hertz. The optional Size column contains "
-	"the font size of the vowel markers, while the Colour column contains the @@Colour|colour@ specification of each vowel.")
+	"the font size of the vowel markers, while the Colour column contains the @@Colour|colour@ specification of each vowel. "
+	"The Table has to be in tab-separated format (or saved in Praat as a binary or text Table file)."
+)
 TERM (U"##Show trajectory time markers every...")
 DEFINITION (U"Shows time markers as small bars orthogonal to the trajectory. ")
 ENTRY (U"File menu")
@@ -6221,13 +6251,14 @@ TERM (U"##Draw trajectory...")
 DEFINITION (U"Draws the trajectory in the picture window.")
 MAN_END
 
-MAN_BEGIN (U"VowelEditor: Show vowel marks from Table file...", U"djmw", 20200403)
+MAN_BEGIN (U"VowelEditor: Show vowel marks from Table file...", U"djmw", 20200403)  // ppgb 2024
 INTRO (U"A command in the @@VowelEditor@ that lets you set your own vowel marks. ")
 ENTRY (U"Layout of the Table")
 NORMAL (U"The Table needs at least three mandatory columns labeled \"Vowel\", \"F1\" and  \"F2\" and "
 	"two optional column labeled \"Size\" and \"Colour\". The Vowel column contains the vowel marker labels, the F1 and "
 	"F2 columns have the first and second formant frequencies in Hertz. The optional Size column contains "
 	"the font size of the vowel markers, while the Colour column contains the @@Colour|colour@ specification of each vowel.")
+NORMAL (U"The Table has to be in tab-separated format (or saved in Praat as a binary or text Table file).")
 MAN_END
 
 /********************** GSL ********************************************/
@@ -6254,6 +6285,10 @@ DEFINITION (U"Computes the logarithm of the #beta function, subject to %a and %b
 MAN_END
 
 /********************* References **************************************/
+
+MAN_BEGIN (U"Alexandrescu (2017)", U"djmw", 20250120)
+NORMAL (U"A. Alexandrescu (2017): \"Fast deterministic selection.\" %%Symposium on experimental algorithms (SEA 2017):% 1\\--18.")
+MAN_END
 
 MAN_BEGIN (U"Anderson et al. (1999)", U"djmw", 20200131)
 NORMAL (U"E. Anderson, Z. Bai, C. Bischof, S. Blackford, J. Demmel, J. Dongarra, J. Du Croz, A. Greenbaum, "
@@ -6322,11 +6357,11 @@ NORMAL (U"B. Efron & R.J. Tibshirani (1993): %%An introduction "
 	"to the bootstrap%. Chapman & Hall.")
 MAN_END
 
-MAN_BEGIN (U"Espeak", U"djmw", 20211217)
-NORMAL (U"Espeak is a free text to speech synthesizer. It was developed by Jonathan Duddington and its development has stopped in 2015. "
-	"In 2015 Reece Dunn has taken a copy of espeak and together with a group of developers they maintain and actualize their version of espeak which they call \"eSpeak NG\". eSpeak NG uses formant synthesis. "
-	"Currently it supports 130 languages with varying quality of the voices. The current version of eSpeakNG incorporated in Praat is " stringize(ESPEAK_NG_VERSIONX) ".")
-NORMAL (U"The wikipedia page https://en.wikipedia.org/wiki/ESpeakNG gives more details.")
+MAN_BEGIN (U"eSpeak", U"David Weenink & Paul Boersma", 20211217) // 2024
+NORMAL (U"eSpeak is a free text-to-speech synthesizer. It was developed by Jonathan Duddington until 2015. "
+	"In 2015, Reece Dunn cloned it, and together with a group of developers they maintain and actualize it under the name “eSpeak NG”. "
+	"eSpeak NG uses formant synthesis. "
+	"On 2024-08-24, version 1.52-dev supports 137 languages with 104 voices, and is available in Praat (see @Acknowledgments).")
 MAN_END
 
 MAN_BEGIN (U"Févotte, Bertin & Durrieu (2009)", U"djmw", 20190618)
@@ -6348,106 +6383,169 @@ MAN_BEGIN (U"Ganong (1980)", U"djmw", 20130622)
 NORMAL (U"W.F. Ganong III (1980): \"Phonetic categorization in auditory word perception.\" %%Journal of Experimental Psychology: Human Perception and Performance% #6: 110\\--125.") 
 MAN_END
 
-MAN_BEGIN (U"Greiner & Hormann (1998)", U"djmw", 20110617)
-NORMAL (U"G. Greiner & K. Hormann (1998): \"Efficient clipping of arbitrary polygons.\" %%ACM Transactions on Graphics% #17: 71\\--83.")
-MAN_END
 
-MAN_BEGIN (U"Heath et al. (1986)", U"djmw", 19981007)
-NORMAL (U"M.T. Heath, J.A. Laub, C.C. Paige & R.C. Ward (1986): \"Computing the "
-	"singular value decomposition of a product of two matrices.\" "
-	"%%SIAM J. Sci. Statist. Comput.% #7: 1147\\--1159.")
-MAN_END
+MAN_PAGES_BEGIN
+R"~~~(
+################################################################################
+"Garofolo, Lamel, Fisher, Fiscus, Pallett & Dahlgren (1993)"
+© Paul Boersma 2025-04-26
 
-MAN_BEGIN (U"Hastie, Tibshirani & Friedman (2001)", U"djmw", 20220111)
-NORMAL (U"T. Hastie, R. Tibshirani & J. Friedman (2001): %%The elements of statistical learning%. Springer series in statistics.")
-MAN_END
+John S. Garofolo, Lori F. Lamel, William M. Fisher, Jonathan G. Fiscus, David S. Pallett & Nancy L. Dahlgren (1993):
+“DARPA TIMIT: acoustic-phonetic continuous speech corpus CD-ROM, NIST Speech Disc CD1-1.1”,
+%NISTIR (%%National Institute of Standards and Technology Interagency or Internal Report%) 4930, Gaithersburg MD.
+[https://doi.org/10.6028/NIST.IR.4930]
 
-MAN_BEGIN (U"Henrich et al. (2004)", U"djmw", 20190903)
-NORMAL (U"N. Henrich, C. d'Alessandro, B. Doval & M. Castellengo (2004): \"On the use of the derivative of electroglottographic signals for characterization of nonpathological phonation.\" %%Journal of the Acoustical Society of America% #115: 1321\\--1332.")
-MAN_END
+################################################################################
+"Greiner & Hormann (1998)"
+© David Weenink 2011-06-17
 
-MAN_BEGIN (U"Hermes (1988)", U"djmw", 19980123)
-NORMAL (U"D.J. Hermes (1988): \"Measurement of pitch by subharmonic "
-	"summation.\" %%Journal of the Acoustical Society of America% #83: 257\\--264.")
-MAN_END
+G. Greiner & K. Hormann (1998): “Efficient clipping of arbitrary polygons”, %%ACM Transactions on Graphics% #17: 71\--83.
 
-MAN_BEGIN (U"Henze & Wagner (1997)", U"djmw", 20210803)
-NORMAL (U"N. Henze & T. Wagner (1997): \"A new approach to the BHEP Tests for Multivariate Normality.\" "
-	"%%Journal of Multivariate Analysis% #62: 1\\--23.")
-MAN_END
+################################################################################
+"Heath et al. (1986)"
+© David Weenink 1998-10-07
 
-MAN_BEGIN (U"Herbst et al. (2014)", U"djmw", 20190829)
-NORMAL (U"C. Herbst, J. Lohscheller, J. \\S<vec, N. Henrich, G. Weissengruber & W. Tecumseh Fitch (2014): \"Glottal opening and closing events investigated by electroglottography and super-high-speed video recordings.\", %%The Journal of Experimental Biology% #217: 955\\--963.")
-MAN_END
+M.T. Heath, J.A. Laub, C.C. Paige & R.C. Ward (1986): “Computing the
+singular value decomposition of a product of two matrices”,
+%%SIAM Journal on Scientific and Statistical Computing% #7: 1147\--1159.
 
-MAN_BEGIN (U"Herbst (2019)", U"djmw", 20190826)
-NORMAL (U"C. Herbst (2019): \"Electroglottography - An update.\", %%Journal of Voice%: In press.")
-MAN_END
+################################################################################
+"Hastie, Tibshirani & Friedman (2001)"
+© David Weenink 2022-01-11
 
-MAN_BEGIN (U"Holighaus et al. (2013)", U"djmw", 20210426)
-NORMAL (U"N. Holighaus, M. Dörfler, G. A. Velasco & T. Grill (2013): \"A framework for invertible, real-time constant-Q transforms.\" "
-	"%%IEEE Transactions on Audio, Speech, and Language Processing% ##21#: 775\\--785.")
-MAN_END
+T. Hastie, R. Tibshirani & J. Friedman (2001): %%The elements of statistical learning%. Springer Series in Statistics.
 
-MAN_BEGIN (U"Hormann & Agathos (2001)", U"djmw", 20110617)
-NORMAL (U"K. Hormann & A. Agathos (2001): \"The point in polygon problem for arbitrary polygons.\" "
-	"%%Computational Geometry% #20: 131\\--144.")
-MAN_END
+################################################################################
+"Henrich et al. (2004)"
+© David Weenink 2019-09-03
 
-MAN_BEGIN (U"Irino & Patterson (1997)", U"djmw", 20100517)
-NORMAL (U"T. Irino & R.D. Patterson (1997): \"A time-domain, level-dependent "
-	"auditory filter: The gammachirp.\" %%Journal of the Acoustical Society of America% #101: 412\\--419.")
-MAN_END
+N. Henrich, C. d'Alessandro, B. Doval & M. Castellengo (2004):
+“On the use of the derivative of electroglottographic signals for characterization of nonpathological phonation”,
+%%Journal of the Acoustical Society of America% #115: 1321\--1332.
 
-MAN_BEGIN (U"Itakura & Saito (1968)", U"djmw", 20190617)
-NORMAL (U"F. Itakura & S. Saito (1968): \"Analysis synthesis telephony based on the maximum likelihood method.\""
-	"In %%Proc. 6th International Congress on Acoustics%, Los Alamitos, CA: IEEE: C-17\\--20.")
-MAN_END
+################################################################################
+"Hermes (1988)"
+© David Weenink 1998-01-23
 
-MAN_BEGIN (U"Janecek et al. (2011)", U"djmw", 20190312)
-NORMAL (U"A. Janecek, S. Schulze Grotthoff & W.N. Gangsterer (2011): "
-		"\"LIBNMF \\-- A library for nonnegative matrix factorization.\""
-		"%%Computing and informatics% #30: 205\\--224")
-MAN_END
+Dik J. Hermes (1988): “Measurement of pitch by subharmonic summation”,
+%%Journal of the Acoustical Society of America% #83: 257\--264.
 
-MAN_BEGIN (U"Johannesma (1972)", U"djmw", 19980123)
-NORMAL (U"P.I.M. Johannesma (1972): \"The pre-response stimulus ensemble of "
-	"neurons in the cochlear nucleus.\" In %%Symposium on Hearing Theory% "
-	"(IPO, Eindhoven, Holland), 58\\--69.")
-MAN_END
+################################################################################
+"Henze & Wagner (1997)"
+© David Weenink 2021-08-03
 
-MAN_BEGIN (U"Johnson (1998)", U"djmw", 20000525)
-NORMAL (U"D.E. Johnson (1998): %%Applied multivariate methods%.")
-MAN_END
+N. Henze & T. Wagner (1997): “A new approach to the BHEP tests for multivariate normality”,
+%%Journal of Multivariate Analysis% #62: 1\--23.
 
-MAN_BEGIN (U"Keating & Esposito (2006)", U"djmw", 20130620)
-NORMAL (U"P.A. Keating & C. Esposito (2006): \"Linguistic voice quality.\" %%UCLA Working Papers in Phonetics% #105: 85\\--91.")
-MAN_END
+################################################################################
+"Herbst et al. (2014)"
+© David Weenink 2019-08-29
 
-MAN_BEGIN (U"Khuri (1998)", U"djmw", 20120702)
-NORMAL (U"A. Khuri (1998): \"Unweighted sums of squares in unbalanced analysis of variance.\", %%Journal of Statistical Planning "
-	"and Inference% #74: 135\\--147.")
-MAN_END
+C. Herbst, J. Lohscheller, J. \S<vec, N. Henrich, G. Weissengruber & W. Tecumseh Fitch (2014):
+“Glottal opening and closing events investigated by electroglottography and super-high-speed video recordings”,
+%%The Journal of Experimental Biology% #217: 955\--963.
 
-MAN_BEGIN (U"Kim & Kim (2006)", U"djmw", 20110617)
-NORMAL (U"D.H. Kim & M.-J. Kim (2006): \"An extension of polygon clipping to resolve degenerate cases.\" %%Computer-Aided Design & Applications% #3: 447\\--456.")
-MAN_END
+################################################################################
+"Herbst (2019)"
+© David Weenink 2019-08-26
 
-MAN_BEGIN (U"Kostlan & Gokhman (1987)", U"djmw", 20170530)
-NORMAL (U"E. Kostlan & D. Gokhman (1987): \"A program for calculating the incomplete gamma function.\" %%Technical report, Dept. of Mathematics, Univ. of California, Berkeley, 1987.")
-MAN_END
+C. Herbst (2019): “Electroglottography \-- an update”, %%Journal of Voice%: In press.
 
-MAN_BEGIN (U"Krishnamoorthy & Yu (2004)", U"djmw", 20090813)
-NORMAL (U"K. Krishnamoorthy & J. Yu (2004): \"Modified Nel and Van der Merwe test for multivariate "
-	"Behrens-Fisher problem.\" %%Statistics & Probability Letters% #66: 161\\--169.")
-MAN_END
+################################################################################
+"Holighaus et al. (2013)"
+© David Weenink 2021-04-26
 
-MAN_BEGIN (U"Lamel et al. (1986)", U"djmw", 19980123)
-NORMAL (U"L.F. Lamel, R.H. Kassel & S. Sennef (1986): \"Speech Database "
-	"Development: Design and Analysis of the Acoustic-Phonetic Corpus.\" "
-	"%%Proc. DARPA Speech Recognition Workshop%, Report No. SAIC-86/1546, "
-	"100\\--119.")
-MAN_END
+N. Holighaus, M. Dörfler, G. A. Velasco & T. Grill (2013): “A framework for invertible, real-time constant-Q transforms”,
+%%IEEE Transactions on Audio, Speech, and Language Processing% #21: 775\--785.
+
+################################################################################
+"Hormann & Agathos (2001)"
+© David Weenink 2011-06-17
+
+K. Hormann & A. Agathos (2001): “The point in polygon problem for arbitrary polygons”,
+%%Computational Geometry% #20: 131\--144.
+
+################################################################################
+"Irino & Patterson (1997)"
+© David Weenink 2010-05-17
+
+T. Irino & R.D. Patterson (1997): “A time-domain, level-dependent auditory filter: The gammachirp”,
+%%Journal of the Acoustical Society of America% #101: 412\--419.
+
+################################################################################
+"Itakura & Saito (1968)"
+© David Weenink 2019-06-17
+
+F. Itakura & S. Saito (1968): “Analysis synthesis telephony based on the maximum likelihood method”,
+In %%Proc. 6th International Congress on Acoustics%, Los Alamitos, CA: IEEE: C-17\--20.
+
+################################################################################
+"Janecek et al. (2011)"
+© David Weenink 2019-03-12
+
+A. Janecek, S. Schulze Grotthoff & W.N. Gangsterer (2011):
+“LIBNMF \-- a library for nonnegative matrix factorization”, %%Computing and Informatics% #30: 205\--224.
+
+################################################################################
+"Johannesma (1972)"
+© David Weenink 1998-01-23
+
+Peter I.M. Johannesma (1972): “The pre-response stimulus ensemble of neurons in the cochlear nucleus.”
+In %%Symposium on Hearing Theory% (IPO, Eindhoven, Netherlands), 58\--69.
+
+################################################################################
+"Johnson (1998)"
+© David Weenink 2000-05-25
+
+D.E. Johnson (1998): %%Applied multivariate methods%.
+
+################################################################################
+"Keating & Esposito (2006)"
+© David Weenink 2013-06-20
+
+P.A. Keating & C. Esposito (2006): “Linguistic voice quality”, %%UCLA Working Papers in Phonetics% #105: 85\--91.
+
+################################################################################
+"Khuri (1998)"
+© David Weenink 2012-07-02
+
+A. Khuri (1998): “Unweighted sums of squares in unbalanced analysis of variance”,
+%%Journal of Statistical Planning and Inference% #74: 135\--147.
+
+################################################################################
+"Kim & Kim (2006)"
+© David Weenink 2011-06-17
+
+D.H. Kim & M.-J. Kim (2006): “An extension of polygon clipping to resolve degenerate cases”,
+%%Computer-Aided Design & Applications% #3: 447\--456.
+
+################################################################################
+"Kostlan & Gokhman (1987)"
+© David Weenink 2017-05-30
+
+E. Kostlan & D. Gokhman (1987): “A program for calculating the incomplete gamma function”,
+%%Technical Report, Dept. of Mathematics, Univ. of California%, Berkeley.
+
+################################################################################
+"Krishnamoorthy & Yu (2004)"
+© David Weenink 2009-08-13
+
+K. Krishnamoorthy & J. Yu (2004): “Modified Nel and Van der Merwe test for multivariate
+Behrens-Fisher problem”, %%Statistics & Probability Letters% #66: 161\--169.
+
+################################################################################
+"Lamel, Kassel & Seneff (1986)"
+© David Weenink 1998-01-23, Paul Boersma 2025
+
+Lori F. Lamel, Robert H. Kassel & Stephanie Seneff (1986):
+“Speech database development: Design and analysis of the acoustic-phonetic corpus.”
+%%Proc. DARPA Speech Recognition Workshop%, Report No. SAIC-86/1546, 100\--119.
+
+Reprinted in @@Garofolo, Lamel, Fisher, Fiscus, Pallett & Dahlgren (1993)@.
+
+################################################################################
+)~~~"
+MAN_PAGES_END
 
 MAN_BEGIN (U"Lee & Seung (2001)", U"djmw", 20190312)
 NORMAL (U"D.D. Lee & S.H. Seung (2001): \"Algorithms for non-negative matrix factorization.\" "
@@ -6467,6 +6565,11 @@ MAN_END
 MAN_BEGIN (U"Marsaglia & Tsang (2000)", U"djmw", 20190620)
 NORMAL (U"G. Marsaglia & W.W. Tsang (2000): \"A simple method for generating gamma variables.\""
 	" %%ACM Transactions on Mathematical Software% #26: 363\\--372.")
+MAN_END
+
+MAN_BEGIN (U"Matou\\s<ek (1991)", U"djmw", 20250119)
+NORMAL (U"J. Matou\\s<ek (1991): \"Randomized optimal algorithm for slope selection.\""
+" %%Information Processing Letters #39: 183\\--187.")
 MAN_END
 
 MAN_BEGIN (U"Morrison (1990)", U"djmw", 19980123)

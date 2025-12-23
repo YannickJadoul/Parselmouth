@@ -33,10 +33,10 @@ void Distance_drawDendrogram (Distance me, Graphics g, int method);
 
 Collection_define (DistanceList, OrderedOf, Distance) {
 	ProximityList asProximityList () {
-		return reinterpret_cast<ProximityList> (this);
+		return reinterpret_cast <ProximityList> (this);
 	}
 	TableOfRealList asTableOfRealList () {
-		return reinterpret_cast<TableOfRealList> (this);
+		return reinterpret_cast <TableOfRealList> (this);
 	}
 };
 

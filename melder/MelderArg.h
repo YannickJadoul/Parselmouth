@@ -62,14 +62,13 @@ struct MelderArg {
 	*/
 };
 
-inline integer MelderArg__length (const MelderArg& arg) {
-	return Melder_length (arg._arg);
-}
-template <typename... Args>
-integer MelderArg__length (const MelderArg& first, Args... rest) {
-	integer length = MelderArg__length (first);
-	length += MelderArg__length (rest...);
-	return length;
+template <typename... Arg>
+integer MelderArg__length (const Arg... arg) {
+	return
+		(// fold
+			Melder_length (MelderArg { arg }. _arg)
+					+ ... + 0
+		);
 }
 
 /* End of file MelderArg.h */

@@ -1,6 +1,6 @@
 /* Sound_and_Spectrum.cpp
  *
- * Copyright (C) 1992-2005,2011,2012,2015-2021 Paul Boersma
+ * Copyright (C) 1992-2005,2011,2012,2015-2021,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,22 +25,12 @@ autoSpectrum Sound_to_Spectrum (Sound me, bool fast) {
 		const integer numberOfChannels = my ny;
 		const integer numberOfFrequencies = numberOfFourierSamples / 2 + 1;   // 4 samples -> cos0 cos1 sin1 cos2; 5 samples -> cos0 cos1 sin1 cos2 sin2
 
-		autoVEC data = zero_VEC (numberOfFourierSamples);
-		if (numberOfChannels == 1) {
-			data.part (1, my nx)  <<=  my z.row (1);
-			//data.part (my nx + 1, numberOfFourierSamples)  <<=  0.0;   // superfluous, because they are already zero
-		} else {
-			/*
-				Multiple channels: take the average.
-			*/
-			for (integer ichan = 1; ichan <= numberOfChannels; ichan ++)
-				data.part (1, my nx)  +=  my z.row (ichan);
-			data.part (1, my nx)  *=  1.0 / numberOfChannels;
-		}
+		autoVEC data = raw_VEC (numberOfFourierSamples);   // raw, so make sure to fill each sample
+		columnMeans_VEC_out (data.part (1, my nx), my z.all());
+		data.part (my nx + 1, numberOfFourierSamples)  <<=  0.0;
 
-		autoNUMfft_Table fourierTable;
-		NUMfft_Table_init (& fourierTable, numberOfFourierSamples);
-		NUMfft_forward (& fourierTable, data.get());
+		autoNUMFourierTable fourierTable = NUMFourierTable_create (numberOfFourierSamples);
+		NUMfft_forward (fourierTable.get(), data.get());
 
 		autoSpectrum thee = Spectrum_create (0.5 / my dx, numberOfFrequencies);
 		thy dx = 1.0 / (my dx * numberOfFourierSamples);   // override, just in case numberOfFourierSamples is odd

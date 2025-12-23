@@ -61,7 +61,8 @@ PaUtilHostApiInitializer *paHostApiInitializers[] =
 		#if defined (linux)   // ppgb
 			#if defined (ALSA)   // ppgb
 				PaAlsa_Initialize,   // ppgb
-			#elif defined (JACK)   // ppgb
+			#endif
+			#if defined (JACK)   // ppgb
 				PaJack_Initialize,   // ppgb
 			#endif   // ppgb
 		#endif   // ppgb

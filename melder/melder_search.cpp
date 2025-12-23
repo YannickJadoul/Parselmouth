@@ -1,10 +1,10 @@
 /* melder_search.cpp
  *
- * Copyright (C) 1992-2018,2020-2022 Paul Boersma
+ * Copyright (C) 1992-2018,2020-2022,2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -72,7 +72,7 @@ bool Melder_stringMatchesCriterion (conststring32 value, kMelder_string which, c
 	{
 		case kMelder_string::UNDEFINED:
 		{
-			Melder_fatal (U"Melder_stringMatchesCriterion: unknown criterion.");
+			Melder_crash (U"Melder_stringMatchesCriterion: unknown criterion.");
 		}
 		case kMelder_string::EQUAL_TO:
 		case kMelder_string::NOT_EQUAL_TO:

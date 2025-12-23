@@ -1,10 +1,10 @@
 /* manual_demoWindow.cpp
  *
- * Copyright (C) 1992-2023 Paul Boersma
+ * Copyright (C) 1992-2025 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -42,7 +42,7 @@ and stand-alone programs (for the latter, see @@Scripting 9. Turning a script in
 
 ################################################################################
 "Demo window 1. My first Demo window script"
-© Paul Boersma 2009–2023
+© Paul Boersma 2009–2023,2025
 
 The Demo window is Praat’s least visible window: you can create it only through a script.
 Try the following script after selecting a Sound object:
@@ -69,7 +69,7 @@ which sets the world coordinates to something else than before (before, the worl
 Now suppose you want the Sound to appear in the top half of the window,
 and some texts in the bottom left and bottom right corners of the window.
 You can use @@Select outer viewport...@ and @@Select inner viewport...@,
-if you know that the size of the Demo window is “100” horizontally and “100” vertically (rather than 12\xx12, as the @@Picture window@),
+if you know that the size of the Demo window is “100” horizontally and “100” vertically (rather than 60\xx60 inch, as the @@Picture window@),
 and that the point (0, 0) lies in the bottom left (rather than the top left, as in the Picture window):
 {;
 	\#`{demo} \@{Erase all}
@@ -301,7 +301,7 @@ If you do not want to see this message, you should make sure that the user can r
 pressing the \-> key on the last page. To make sure the user sees that the script has ended, you could end it with #`demo Erase all`.
 
 Your demo can save its preferences in a folder of your choice,
-e.g. in #`'preferencesDirectory$'/../GuineaPigAnalyzer` if your demo is called GuineaPigAnalyzer.
+e.g. in #`preferencesDirectory$ + “/../GuineaPigAnalyzer”` if your demo is called GuineaPigAnalyzer.
 If you want to be less conspicuous and like to use the Praat preferences folder instead,
 please use the #`apps` subfolder, in this way:
 {;

@@ -1,10 +1,10 @@
 /* FormantPath.cpp
  *
- * Copyright (C) 2020-2023 David Weenink
+ * Copyright (C) 2020-2025 David Weenink
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This code is distributed in the hope that it will be useful, but
@@ -24,8 +24,8 @@
 #include "Matrix.h"
 #include "Sound_to_Formant.h"
 #include "Sound_and_LPC.h"
+//#include "Sound_and_LPC.h"
 #include "Sound_extensions.h"
-#include "Sound_and_LPC_robust.h"
 #include "TextGrid_extensions.h"
 
 #include "oo_DESTROY.h"
@@ -82,7 +82,7 @@ integer FormantPath_getUniqueCandidateInInterval (FormantPath me, double tmin, d
 
 void structFormantPath :: v1_info () {
 	structDaata :: v1_info ();
-	MelderInfo_writeLine (U"Number of Formant candidates: ", formantCandidates . size);
+	MelderInfo_writeLine (U"Number of Formant candidates: ", formantCandidates.size);
 	for (integer ic = 1; ic <= ceilings.size; ic ++)
 		MelderInfo_writeLine (U"Ceiling ", ic, U": ", ceilings [ic], U" Hz");
 }
@@ -91,7 +91,7 @@ double structFormantPath :: v_getValueAtSample (integer iframe, integer which, i
 	const double time = x1 + (iframe - 1) * dx;
 	IntervalTier intervalTier = static_cast <IntervalTier> (path -> tiers -> at [1]);
 	const integer index = IntervalTier_timeToIndex (intervalTier, time);
-	const Formant formant = reinterpret_cast<Formant> (our formantCandidates.at [index]);
+	const Formant formant = static_cast <Formant> (our formantCandidates.at [index]);
 	return formant -> v_getValueAtSample (iframe, which, units);
 }
 
@@ -121,10 +121,10 @@ autoTextGrid FormantPath_to_TextGrid_version0 (FormantPath me, INTVEC const& pat
 		if (path [ip] != previousPathIndex) {
 			const double t = Sampled_indexToX (me, ip) - 0.5 * my dx;
 			const integer currentIndex = IntervalTier_timeToLowIndex (tier, t);
-			TextInterval currentInterval = tier -> intervals . at [currentIndex];
+			TextInterval currentInterval = tier -> intervals.at [currentIndex];
 			autoTextInterval newInterval = TextInterval_create (t, my xmax, Melder_integer (path [ip]));
 			currentInterval -> xmax = t;
-			tier -> intervals.addItem_move (newInterval.move());
+			tier -> intervals. addItem_move (newInterval.move());
 			previousPathIndex = path [ip];
 		}
 	}
@@ -272,11 +272,12 @@ autoINTVEC FormantPath_getOptimumPath (FormantPath me, double qWeight, double fr
 }
 
 autoFormant FormantPath_extractFormant (FormantPath me) {
-	Formant formant = my formantCandidates. at [1];
+	Melder_assert (my formantCandidates.size > 0);
+	Formant formant = my formantCandidates.at [1];
 	autoFormant thee = Formant_create (my xmin, my xmax, my nx, my dx, my x1, formant -> maxnFormants);
 	for (integer iframe = 1; iframe <= my nx; iframe ++) {
 		const integer candidate = FormantPath_getCandidateInFrame (me, iframe);
-		Formant source = reinterpret_cast <Formant> (my formantCandidates. at [candidate]);
+		Formant source = static_cast <Formant> (my formantCandidates.at [candidate]);
 		Formant_Frame targetFrame = & thy frames [iframe];
 		Formant_Frame sourceFrame = & source -> frames [iframe];
 		sourceFrame -> copy (targetFrame);
@@ -302,9 +303,9 @@ autoFormantPath Sound_to_FormantPath_any (Sound me, kLPC_Analysis lpcType, doubl
 {
 	try {
 		Melder_require (timeStep > 0.0,
-			U"The timeStep needs to greater than zero seconds.");
+			U"The timeStep needs to be larger than zero seconds.");
 		Melder_require (ceilingStepSize > 0.0,
-			U"The ceiling step size should larger than 0.0.");
+			U"The ceiling step size should be larger than 0.0.");
 		autoVEC ceilings = getCeilings (middleCeiling, ceilingStepSize, numberOfStepsUpDown);
 		const integer numberOfCandidates = ceilings.size;
 		const double maximumCeiling = ceilings [numberOfCandidates];
@@ -328,7 +329,7 @@ autoFormantPath Sound_to_FormantPath_any (Sound me, kLPC_Analysis lpcType, doubl
 		*/
 		integer numberOfFrames;
 		double t1;
-		autoSound midCeiling = Sound_resampleAndOrPreemphasize (me, 2.0 * middleCeiling, 50, preemphasisFrequency);
+		autoSound midCeiling = Sound_resampleAndOrPreemphasize (me, middleCeiling, 50, preemphasisFrequency);
 		Sampled_shortTermAnalysis (midCeiling.get(), physicalAnalysisWidth, timeStep, & numberOfFrames, & t1); // Gaussian window
 		autoFormantPath thee = FormantPath_create (my xmin, my xmax, numberOfFrames, timeStep, t1, numberOfCandidates);
 		autoSound multiChannelSound;
@@ -340,25 +341,26 @@ autoFormantPath Sound_to_FormantPath_any (Sound me, kLPC_Analysis lpcType, doubl
 			autoFormant formant;
 			autoSound resampledAndPreemphasized;
 			if (candidate != numberOfStepsUpDown + 1)
-				resampledAndPreemphasized = Sound_resampleAndOrPreemphasize (me, 2.0 * thy ceilings [candidate], 50, preemphasisFrequency);
+				resampledAndPreemphasized = Sound_resampleAndOrPreemphasize (me, thy ceilings [candidate], 50, preemphasisFrequency);
 			else 
 				resampledAndPreemphasized = midCeiling.move();
-			autoLPC lpc = LPC_create (my xmin, my xmax, numberOfFrames, timeStep, t1, predictionOrder, resampledAndPreemphasized -> dx);
+			autoLPC lpc = LPC_createCompletelyInitialized (my xmin, my xmax, numberOfFrames, timeStep, t1, predictionOrder,
+				resampledAndPreemphasized -> dx);
 			if (lpcType == kLPC_Analysis::BURG) {
 				Sound_into_LPC_burg (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
 			} else if (lpcType == kLPC_Analysis::AUTOCORRELATION) {
-				Sound_into_LPC_autocorrelation (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
+				Sound_into_LPC_auto (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
 			} else if (lpcType == kLPC_Analysis::COVARIANCE) {
-				Sound_into_LPC_covariance (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
+				Sound_into_LPC_covar (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
 			} else if (lpcType == kLPC_Analysis::MARPLE) {
 				Sound_into_LPC_marple (resampledAndPreemphasized.get(), lpc.get(), analysisWidth, marple_tol1, marple_tol2);
 			} else if (lpcType == kLPC_Analysis::ROBUST) {
-				Sound_into_LPC_autocorrelation (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
+				Sound_into_LPC_auto (resampledAndPreemphasized.get(), lpc.get(), analysisWidth);
 				lpc = LPC_and_Sound_to_LPC_robust (lpc.get(), resampledAndPreemphasized.get(), analysisWidth, preemphasisFrequency, 
 					huber_numberOfStdDev, huber_maximumNumberOfIterations, huber_tol, true);
 			}
 			formant = LPC_to_Formant (lpc.get(), formantSafetyMargin);
-			thy formantCandidates . addItem_move (formant.move());
+			thy formantCandidates. addItem_move (formant.move());
 			if (out_sourcesMultiChannel) {
 				// TODO 20240625 is this still correct because we have already pre-emphasized the sound??
 				autoSound source = LPC_Sound_filterInverse (lpc.get(), resampledAndPreemphasized.get ());
@@ -381,7 +383,7 @@ autoFormantPath Sound_to_FormantPath_any (Sound me, kLPC_Analysis lpcType, doubl
 }
 
 integer FormantPath_getNumberOfFormantTracks (FormantPath me) {
-	Melder_assert (my formantCandidates. size > 0);
+	Melder_assert (my formantCandidates.size > 0);
 	return my formantCandidates.at [1] -> maxnFormants;
 }
 
@@ -468,7 +470,7 @@ autoMatrix FormantPath_to_Matrix_stress (FormantPath me, double windowLength, co
 			U"Not all parameter values should equal zero.");
 		autoMatrix thee = Matrix_create (my xmin, my xmax, my nx, my dx, my x1, 0.5, numberOfCandidates + 0.5, numberOfCandidates, 1.0, 1.0);
 		for (integer candidate = 1; candidate <= numberOfCandidates; candidate ++) {
-			const Formant formanti = (Formant) my formantCandidates . at [candidate];
+			const Formant formanti = (Formant) my formantCandidates.at [candidate];
 			for (integer iframe = 1; iframe <= my nx; iframe ++) {
 				const double time = my x1 + (iframe - 1) * my dx;
 				const double startTime = time - 0.5 * windowLength;
@@ -487,8 +489,8 @@ autoMatrix FormantPath_to_Matrix_stress (FormantPath me, double windowLength, co
 double FormantPath_getStressOfCandidate (FormantPath me, double tmin, double tmax, integer fromFormant, integer toFormant,
 	constINTVEC const& parameters, double powerf, integer candidate)
 {
-	Melder_require (candidate > 0 && candidate <= my formantCandidates. size,
-		U"The candidate number should be between 1 and ", my formantCandidates. size, U".");
+	Melder_require (candidate > 0 && candidate <= my formantCandidates.size,
+		U"The candidate number should be between 1 and ", my formantCandidates.size, U".");
 	const Formant formant = (Formant) my formantCandidates.at [candidate];
 	autoFormantModeler fm = Formant_to_FormantModeler (formant, tmin, tmax,  parameters);
 	return FormantModeler_getStress (fm.get(), fromFormant, toFormant, 0, powerf);
@@ -511,7 +513,7 @@ double FormantPath_getOptimalCeiling (FormantPath me, double tmin, double tmax, 
 
 void FormantPath_setPath (FormantPath me, double tmin, double tmax, integer selectedCandidate) {
 	Melder_require (selectedCandidate > 0 && selectedCandidate <= my formantCandidates.size,
-		U"The candidate number should be between 1 and ", my formantCandidates. size, U".");
+		U"The candidate number should be between 1 and ", my formantCandidates.size, U".");
 	Function_unidirectionalAutowindow (me, & tmin, & tmax);
 	Function_intersectRangeWithDomain (me, & tmin, & tmax);
 	const double ceilingFrequency = my ceilings [selectedCandidate];

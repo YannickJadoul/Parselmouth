@@ -50,7 +50,7 @@ static void gui_information (conststring32 message) {
 				2019-10-31
 			As we may be called in long sequences outside of the event loop,
 			we may need to clean up. Without the autorelease pool,
-			the retainCount of the cocaTextView will quickly rise,
+			the retainCount of the cocoaTextView will quickly rise,
 			as shown by running the following script:
 				for i to 1e6
 					writeInfoLine: i
@@ -74,43 +74,40 @@ static void gui_information (conststring32 message) {
 		for i to 100
 			appendInfoLine: i
 		endfor
-		
+
 		The Info window should scroll continuously while the lines are added,
 		not just show the end result.
 	*/
 	#if cocoa
-		#if 1
-			NSEvent *nsEvent = [NSApp
-				nextEventMatchingMask: NSAnyEventMask
-				untilDate: [NSDate distantPast]
-				inMode: NSDefaultRunLoopMode
-				dequeue: NO
-				];
-			if (nsEvent) {
-				NSUInteger nsEventType = [nsEvent type];
-				if (nsEventType == NSKeyDown) NSBeep ();
-				//[[nsEvent window]  sendEvent: nsEvent];
-			}
-		#else
+		/*
+			TODO: This code is very similar to that of GuiShell_drain (editor -> windowForm, false, false);
+			perhaps it can be merged at some point.
+		*/
+		[editor -> windowForm -> d_cocoaShell   displayIfNeeded];
+		/*
+			Just calling `displayIfNeeded` doesn't suffice for redrawing.
+			We have to poke the run loop a little, which can be achieved
+			by calling `nextEventMatchingMask` with `dequeue: YES`,
+			a combination that potentially progresses the run loop by one iteration.
+			This effect, even if not realized, forces pending redraws to be executed to the screen.
+
+			Let's use the opportunity to throw away any mouse clicks and key strokes.
+		*/
+		NSEvent *nsEvent;
+		while ((nsEvent = [NSApp
+			nextEventMatchingMask: NSEventMaskAny
+			untilDate: [NSDate distantPast]
+			inMode: NSDefaultRunLoopMode
+			dequeue: YES]) != nullptr)
+		{
+			NSUInteger nsEventType = [nsEvent type];
+			if (nsEventType == NSEventTypeKeyDown)
+				NSBeep();
 			/*
-				The following is an attempt to explicitly perform the actions that event waiting is supposed to perform.
-				It would be nice not to actually have to wait for events (with nextEventMatchingMask),
-				because we are not interested in the events; we're interested only in the graphics update.
+				Ignore all other events.
 			*/
-			//[editor -> windowForm -> d_cocoaShell   displayIfNeeded];   // apparently, this does not suffice
-			//[editor -> textWidget -> d_cocoaTextView   lockFocus];   // this displays the menu as well as the text
-			[editor -> windowForm -> d_cocoaShell   display];   // this displays the menu as well as the text
-			//[editor -> textWidget -> d_cocoaTextView   displayIfNeeded];   // this displays only the text
-			//[editor -> textWidget -> d_cocoaTextView   display];
-			//[editor -> textWidget -> d_cocoaTextView   unlockFocus];   // this displays the menu as well as the text
-			[editor -> windowForm -> d_cocoaShell   flushWindow];
-			[NSApp  updateWindows];   // called automatically?
-		#endif
-		//Melder_casual (U"cocoaTextView retain count after: ", [editor -> textWidget -> d_cocoaTextView  retainCount]);
+		}
 		[pool release];
-	#elif defined (macintosh)
-		// TODO: call [view invalidate] here?
-		GuiShell_drain (editor -> windowForm);
 	#endif
 }
 
