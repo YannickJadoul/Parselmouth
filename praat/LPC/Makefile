@@ -4,7 +4,7 @@
 include ../makefile.defs
 
 CPPFLAGS = -I . -I ../kar -I ../melder -I ../fon -I ../foned -I ../dwtools -I ../sys -I ../dwsys -I ../stat \
-	-I ..external/num
+	-I ../external/num
 
 OBJECTS = Cepstrum.o Cepstrumc.o Cepstrum_and_Spectrum.o \
 	Cepstrogram.o \

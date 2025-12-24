@@ -14,7 +14,6 @@ add_praat_subdir(SOURCES
 	Eigen_and_Matrix.cpp Eigen_and_Procrustes.cpp
 	Eigen_and_TableOfReal.cpp
 	Eigen_and_SSCP.cpp Excitations.cpp
-	espeakdata_FileInMemory.cpp
 	FilterBank.cpp FormantGrid_extensions.cpp
 	GaussianMixture.cpp
 	HMM.cpp
@@ -35,7 +34,8 @@ add_praat_subdir(SOURCES
 	Polygon_extensions.cpp Procrustes.cpp
 	Proximity.cpp Proximity_and_Distance.cpp
 	Resonator.cpp Roots_to_Spectrum.cpp
-	SampledToSampledWorkspace.cpp SoundToSampledWorkspace.cpp
+	SampledIntoSampled.cpp SampledFrameIntoSampledFrame.cpp
+	SoundFrames.cpp
 	Sound_and_MultiSampledSpectrogram.cpp Sound_and_MixingMatrix.cpp
 	Sound_and_Spectrum_dft.cpp
 	Sound_and_Spectrogram_extensions.cpp Sound_and_PCA.cpp
@@ -46,7 +46,7 @@ add_praat_subdir(SOURCES
 	Spectrum_and_AnalyticSound.cpp Spectrum_and_MultiSampledSpectrogram.cpp
 	SSCP.cpp Strings_extensions.cpp
 	SpeechSynthesizer.cpp SpeechSynthesizer_and_TextGrid.cpp
-	Table_and_Strings.cpp Table_extensions.cpp Table_dataSets.cpp TableOfReal_and_SVD.cpp
+	Table_extensions.cpp Table_dataSets.cpp TableOfReal_and_SVD.cpp
 	TableOfReal_extensions.cpp
 	TableOfReal_and_Discriminant.cpp TableOfReal_and_Permutation.cpp
 	TextGrid_and_DurationTier.cpp TextGrid_and_PitchTier.cpp TextGrid_extensions.cpp
@@ -54,5 +54,5 @@ add_praat_subdir(SOURCES
 	praat_MDS_init.cpp praat_BSS_init.cpp praat_HMM_init.cpp
 	praat_KlattGrid_init.cpp praat_MultiSampledSpectrogram.cpp praat_DataModeler_init.cpp praat_David_init.cpp
 INCLUDE_DIRS
-	dwtools kar melder LPC fon foned sys stat dwsys external/portaudio external/espeak external/clapack EEG external/vorbis external/opusfile
+	dwtools kar melder sys dwsys stat fon LPC foned EEG external/clapack external/vorbis external/opusfile external/portaudio external/espeak dwtools/..external/num
 )

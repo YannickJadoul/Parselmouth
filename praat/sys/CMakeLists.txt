@@ -8,14 +8,14 @@ add_praat_subdir(SOURCES
 	GraphicsScreen.cpp Printer.cpp
 	Preferences.cpp site.cpp
 	Picture.cpp Ui.cpp UiFile.cpp UiPause.cpp DataGui.cpp Editor.cpp DataEditor.cpp HyperPage.cpp Manual.cpp TextEditor.cpp
-	praat.cpp praat_actions.cpp praat_menuCommands.cpp praat_picture.cpp sendsocket.c
+	praat.cpp praat_actions.cpp praat_menuCommands.cpp praat_picture.cpp
 	praat_script.cpp praat_statistics.cpp praat_logo.cpp praat_library.cpp
 	praat_objectMenus.cpp InfoEditor.cpp ScriptEditor.cpp NotebookEditor.cpp ButtonEditor.cpp
 	Interpreter.cpp Formula.cpp
 	StringsEditor.cpp DemoEditor.cpp
 	motifEmulator.cpp GuiText.cpp GuiWindow.cpp Gui.cpp GuiObject.cpp GuiDrawingArea.cpp
 	GuiMenu.cpp GuiMenuItem.cpp GuiButton.cpp GuiLabel.cpp GuiCheckButton.cpp GuiRadioButton.cpp
-	GuiDialog.cpp GuiList.cpp GuiFileSelect.cpp GuiScale.cpp GuiScrollBar.cpp GuiScrolledWindow.cpp
+	GuiDialog.cpp GuiList.cpp GuiTrust.cpp GuiFileSelect.cpp GuiScale.cpp GuiScrollBar.cpp GuiScrolledWindow.cpp
 	GuiControl.cpp GuiForm.cpp GuiOptionMenu.cpp GuiProgressBar.cpp GuiShell.cpp GuiThing.cpp Gui_messages.cpp
 INCLUDE_DIRS
 	kar melder sys dwsys
