@@ -73,8 +73,8 @@ if (UNIX)
 	
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} linux)
-	# elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	# 	set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} macintosh)
+	elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} macintosh)
 	endif ()
 elseif (WIN32)
 	# set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} FLAC__NO_DLL) # flac_config.h should already have this set
