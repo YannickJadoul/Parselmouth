@@ -377,7 +377,7 @@ void praat_newWithFile (Daata me, bool owned, MelderFile file, conststring32 myN
 		Melder_throw (U"No object was put into the list.");
 
 	if (my classInfo == classCollection) {
-		praat_new_unpackCollection (me.static_cast_move <structCollection>(), owned, myName);
+		praat_new_unpackCollection (static_cast<Collection>(me), owned, myName);
 		return;
 	}
 
@@ -2340,7 +2340,7 @@ void praat_run () {
 
 // Enabling asserts for praat_testPlatformAssumptions
 #undef Melder_assert
-#define Melder_assert(x) ((x) ? void (0) : Melder_assert_ (__FILE__, __LINE__, #x))
+#define Melder_assert(x) ((x) ? void (0) : _private_Melder_assert (__FILE__, __LINE__, #x))
 
 void praat_testPlatformAssumptions() {
 	/*

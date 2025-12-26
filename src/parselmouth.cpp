@@ -20,8 +20,8 @@
 #include "parselmouth/Parselmouth.h"
 #include "version.h"
 
+#include <praat/main/main_Praat.h>
 #include <praat/sys/praat.h>
-#include <praat/sys/praat_version.h>
 
 #define XSTR(s) STR(s)
 #define STR(s) #s
