@@ -27,7 +27,7 @@ def test_warning(sound, tmp_path):
 	with pytest.warns(parselmouth.PraatWarning, match="No non-empty intervals were found"):
 		parselmouth.praat.call([text_grid, sound], "Extract non-empty intervals", 1, True)
 
-	with pytest.warns(parselmouth.PraatWarning, match=r"Writing samples to audio file: [0-9]+ out of [0-9]+ samples have been clipped"):
+	with pytest.warns(parselmouth.PraatWarning, match=r"Writing samples to audio file “.*clipped.wav”: [0-9]+ out of [0-9]+ samples have been clipped"):
 		sound.scale(2)
 		sound.save(str(tmp_path / "clipped.wav"), "WAV")
 
