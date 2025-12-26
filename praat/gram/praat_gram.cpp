@@ -560,7 +560,7 @@ DIRECT (QUERY_ONE_FOR_BOOLEAN__OTGrammar_areAllOutputsDistinguishable) {
 	QUERY_ONE_FOR_BOOLEAN_END (result ? U" (all pairs are distinguishable)" : U" (at least one equivalent pair)")
 }
 
-DIRECT (CONVERT_EACH_TO_ONE_OTGrammar_tabulateEquivalentPairs) {
+DIRECT (CONVERT_EACH_TO_ONE__OTGrammar_tabulateEquivalentPairs) {
 	CONVERT_EACH_TO_ONE (OTGrammar)
 		autoTable result = OTGrammar_tabulateEquivalentPairs (me);
 	CONVERT_EACH_TO_ONE_END (my name.get())
@@ -1758,7 +1758,7 @@ void praat_uvafon_gram_init () {
 		praat_addAction1 (classOTGrammar, 1, U"Are all outputs distinguishable?", nullptr, 1,
 				QUERY_ONE_FOR_BOOLEAN__OTGrammar_areAllOutputsDistinguishable);
 		praat_addAction1 (classOTGrammar, 1, U"Tabulate equivalent pairs", nullptr, 1,
-				CONVERT_EACH_TO_ONE_OTGrammar_tabulateEquivalentPairs);
+				CONVERT_EACH_TO_ONE__OTGrammar_tabulateEquivalentPairs);
 		praat_addAction1 (classOTGrammar, 1, U"-- parse --", nullptr, 1, nullptr);
 		praat_addAction1 (classOTGrammar, 1, U"Get winner...", nullptr, 1,
 				QUERY_ONE_FOR_INTEGER__OTGrammar_getWinner);

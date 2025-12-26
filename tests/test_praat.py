@@ -220,7 +220,7 @@ def test_run_with_capture_output():
 
 
 def test_run_with_return_variables():
-	praat_builtin_variables = {'newline$', 'tab$', 'shellDirectory$', 'defaultDirectory$', 'preferencesDirectory$', 'homeDirectory$', 'temporaryDirectory$', 'macintosh', 'windows', 'unix', 'praat_intel32', 'praat_intel64', 'praat_arm64', 'praat_32bit', 'praat_64bit', 'left', 'right', 'mono', 'stereo', 'all', 'average', 'praatVersion$', 'praatVersion'}
+	praat_builtin_variables = {'newline$', 'tab$', 'shellDirectory$', 'defaultDirectory$', 'preferencesDirectory$', 'homeDirectory$', 'temporaryDirectory$', 'macintosh', 'windows', 'unix', 'praat_intel32', 'praat_intel64', 'praat_arm64', 'praat_s390x', 'praat_armv7', 'praat_32bit', 'praat_64bit', 'left', 'right', 'mono', 'stereo', 'all', 'average', 'praatVersion$', 'praatVersion'}
 
 	script = textwrap.dedent("""\
 	a = 42
@@ -319,7 +319,7 @@ def test_praat_callback_prefixes():
 			 {f'QUERY_ONE_AND_{x}' for x in {'ONE_FOR_BOOLEAN', 'ONE_FOR_REAL', 'ONE_AND_ALL_FOR_REAL', 'ONE_AND_ONE_FOR_REAL'}} |
 	         {'QUERY_TWO_AND_ONE_FOR_REAL', 'QUERY_TWO_FOR_REAL'})
 	convert = ({f'CONVERT_{x}' for x in {'ALL_TO_MULTIPLE', 'EACH_TO_ONE', 'EACH_TO_MULTIPLE', 'EACH_WEAK_TO_ONE'}} |
-	           {f'CONVERT_ONE_{x}' for x in {'TO_MULTIPLE', 'AND_ALL_LISTED_TO_ONE', 'AND_ALL_LISTED_TO_ONE', 'AND_ALL_TO_MULTIPLE', 'WEAK_AND_ONE_TO_ONE'}} |
+	           {f'CONVERT_ONE_{x}' for x in {'TO_MULTIPLE', 'AND_TWO_TO_ONE', 'AND_ALL_LISTED_TO_ONE', 'AND_ALL_LISTED_TO_ONE', 'AND_ALL_TO_MULTIPLE', 'WEAK_AND_ONE_TO_ONE'}} |
 	           {f'CONVERT_ONE_AND_ONE_{x}' for x in {'TO_ONE', 'TO_MULTIPLE', 'AND_ALL_TO_MULTIPLE', 'GENERIC_TO_ONE'}} |
 			   {f'CONVERT_ONE_AND_ONE_AND_ONE_{x}' for x in {'TO_ONE'}} |
 			   {f'CONVERT_TWO_{x}' for x in {'TO_ONE', 'TO_MULTIPLE', 'AND_ONE_TO_ONE'}} |
