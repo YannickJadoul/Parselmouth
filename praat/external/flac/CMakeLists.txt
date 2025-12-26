@@ -20,5 +20,5 @@ INCLUDE_DIRS
 	melder
 )
 if (WIN32)
-	add_praat_subdir(SOURCES flac_share_win_utf8_io.c flac_windows_unicode_filenames.c INCLUDE_DIRS melder)
+	add_praat_subdir(SOURCES flac_share_win_utf8_io.c INCLUDE_DIRS melder)
 endif ()
