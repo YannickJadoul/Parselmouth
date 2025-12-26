@@ -105,7 +105,7 @@ class PraatEnvironment {
 public:
 	PraatEnvironment() : m_objects(theCurrentPraatObjects), m_interpreter(Interpreter_create()), m_lastId(0) {
 		assert(m_objects->n == 0);
-		m_objects->uniqueId = 0;
+		m_objects->sequentialUniqueIdOfLatestObjectInList = 0;
 	}
 
 	~PraatEnvironment() {
@@ -134,7 +134,7 @@ public:
 		// praat_updateSelection will change which objects are selected, and we don't want that
 		m_objects->totalBeingCreated = 0;
 		praat_show();
-		m_lastId = m_objects->uniqueId;
+		m_lastId = m_objects->sequentialUniqueIdOfLatestObjectInList;
 	}
 
 	auto retrieveSelectedObjects(bool onlyNew = false) {
