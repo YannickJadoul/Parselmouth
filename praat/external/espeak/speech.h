@@ -93,8 +93,7 @@ extern char path_home[N_PATH_HOME];    // this is the espeak-ng-data directory
 #endif
 
 // Parselmouth: See speech.cpp (and functions in <wctype.h>)
-// Don't #include "melder.h" here, as it causes issues with fgets
-// not being overwritten by espeak_io.h, when imported too late
+#include "melder.h"  // Include before defining macros below, so that we don't change anything in stdlib headers
 #define iswalnum(c) Melder_isAlphanumeric(c)
 #define iswalpha(c) Melder_isLetter(c)
 #define iswblank(c) Melder_isHorizontalSpace(c)
