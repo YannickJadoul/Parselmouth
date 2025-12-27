@@ -376,3 +376,17 @@ def test_praat_builtin_variables():
 
 	assert variables['praatVersion$'] == parselmouth.PRAAT_VERSION
 	assert variables['praatVersion'] == int(parselmouth.PRAAT_VERSION.replace('.', ''))
+
+def test_report_app_properties():
+	app_properties = parselmouth.praat.call("Report app properties")
+	assert app_properties == textwrap.dedent("""\
+		Upper-case app name: PraatInsideParselmouth
+		Lower-case app name: praat_inside_parselmouth
+		App version (as a number): 6448
+		App version (as text): 6.4.48
+		App year: 2025
+		App month (as a number): 12
+		App month (as text): December
+		App day: 9
+		App contact address: yannick.jadoul@gmail.com
+	""")

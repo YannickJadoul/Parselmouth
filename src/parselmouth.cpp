@@ -174,7 +174,7 @@ void initializePraat() {
 	if (!initialized) {
 		praatlib_init();
 
-		Melder_setAppName(U"Praat (inside Parselmouth " XSTR(PARSELMOUTH_VERSION) ")");
+		Melder_setAppName(U"PraatInsideParselmouth");
 		Melder_setAppVersion(U"" XSTR(PRAAT_VERSION_STR), PRAAT_VERSION_NUM);
 		Melder_setAppDate(PRAAT_YEAR, PRAAT_MONTH, PRAAT_DAY);
 		Melder_setAppContactAddress (U"yannick.jadoul", U"gmail.com");
