@@ -973,6 +973,8 @@ void Graphics_imageFromFile_embedded (Graphics me, conststring32 relativeFileNam
 	Melder_relativePathToFile (relativeFileName, & file);
 	try {
 		autoPhoto photo = Photo_readFromImageFile (& file);
+		if (!photo)
+			return;
 		automatrix <MelderColour> z = newmatrixraw <MelderColour> (photo -> ny, photo -> nx);
 		for (integer iy = 1; iy <= photo -> ny; iy ++) {
 			for (integer ix = 1; ix <= photo -> nx; ix ++) {
