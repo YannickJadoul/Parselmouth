@@ -22,7 +22,9 @@ import parselmouth
 import itertools
 import numpy as np
 import os
+import platform
 import re
+import sys
 import textwrap
 
 
@@ -344,3 +346,33 @@ def test_collection_object(sound, text_grid, tmp_path):
 	[reread_sound, reread_text_grid] = parselmouth.praat.call("Read from file", str(collection_path))
 	assert reread_sound == sound
 	assert reread_text_grid == text_grid
+
+def test_praat_builtin_variables():
+	_, variables = parselmouth.praat.run("", return_variables=True)
+	assert variables['newline$'] == "\n"
+	assert variables['tab$'] == "\t"
+
+	assert variables['preferencesDirectory$'] == ""
+	assert all(os.path.exists(variables[dir]) for dir in ['shellDirectory$', 'defaultDirectory$', 'homeDirectory$', 'temporaryDirectory$'])
+
+	# Actually, all these seemingly boolean indicators below are floats, but Python allows `1.0 == True`
+	assert variables['macintosh'] == (platform.system() == 'Darwin')
+	assert variables['windows'] == (platform.system() == 'Windows')
+	assert variables['unix'] == (platform.system() == 'Linux')
+	assert variables['praat_intel32'] == (platform.machine() in {'i386', 'i686'})
+	assert variables['praat_intel64'] == (platform.machine() == 'x86_64')
+	assert variables['praat_arm64'] == (platform.machine() in {'aarch64', 'arm64'})
+	assert variables['praat_s390x'] == (platform.machine() == 's390x')
+	assert variables['praat_armv7'] == (platform.machine() == 'armv7l')
+	assert variables['praat_32bit'] == (sys.maxsize <= 2**32)
+	assert variables['praat_64bit'] == (sys.maxsize > 2**32)
+
+	assert variables['left'] == 1
+	assert variables['right'] == 2
+	assert variables['mono'] == 1
+	assert variables['stereo'] == 2
+	assert variables['all'] == 0
+	assert variables['average'] == 0
+
+	assert variables['praatVersion$'] == parselmouth.PRAAT_VERSION
+	assert variables['praatVersion'] == int(parselmouth.PRAAT_VERSION.replace('.', ''))

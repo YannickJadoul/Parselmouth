@@ -173,11 +173,29 @@ void initializePraat() {
 	static bool initialized = false;
 	if (!initialized) {
 		praatlib_init();
+
+		Melder_setAppName(U"Praat (inside Parselmouth " XSTR(PARSELMOUTH_VERSION) ")");
+		Melder_setAppVersion(U"" XSTR(PRAAT_VERSION_STR), PRAAT_VERSION_NUM);
+		Melder_setAppDate(PRAAT_YEAR, PRAAT_MONTH, PRAAT_DAY);
+		Melder_setAppContactAddress (U"yannick.jadoul", U"gmail.com");
+
 		INCLUDE_LIBRARY(praat_uvafon_init)
 		initialized = true;
 	}
 
 	praat_testPlatformAssumptions();
+}
+
+namespace {
+	// C++20: Use std::format and <chrono>
+	constexpr const char32 *monthNames[] = {U"January", U"February", U"March", U"April", U"May", U"June", U"July", U"August", U"September", U"October", U"November", U"December"};
+	const char *getPraatVersionDateStr() {
+		autoMelderString praatVersionDate;
+		MelderString_append(&praatVersionDate, U"" XSTR(PRAAT_DAY) " ");
+		MelderString_append(&praatVersionDate, monthNames[PRAAT_MONTH - 1]);
+		MelderString_append(&praatVersionDate, U" " XSTR(PRAAT_YEAR));
+		return Melder_peek32to8(praatVersionDate.string);
+	}
 }
 
 PYBIND11_MODULE(parselmouth, m) {
@@ -188,7 +206,7 @@ PYBIND11_MODULE(parselmouth, m) {
 	m.attr("__version__") = py::str(XSTR(PARSELMOUTH_VERSION));
 	m.attr("VERSION") = py::str(XSTR(PARSELMOUTH_VERSION));
 	m.attr("PRAAT_VERSION") = py::str(XSTR(PRAAT_VERSION_STR));
-	m.attr("PRAAT_VERSION_DATE") = py::str(XSTR(PRAAT_DAY) " " XSTR(PRAAT_MONTH) " " XSTR(PRAAT_YEAR));
+	m.attr("PRAAT_VERSION_DATE") = py::str(getPraatVersionDateStr());
 
 	m.doc() = "Main module with a Python interface to Praat.\n\n" +
 	          attr_doc(m, "VERSION", "This version of Parselmouth.") +
