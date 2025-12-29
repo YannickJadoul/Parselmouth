@@ -240,7 +240,7 @@ A growing list of functions that you can use in @formulas and @scripting...
 	and replace all elements with independent gamma-distributed random numbers
 , @`randomGamma##` (%`nrow`, %`ncol`, %`shape`, %`rate`) – %nrow \xx %ncol independent gamma-distributed random numbers
 , @`randomGamma##` (%`matrix##`, %`shape`, %`rate`) – duplicate %`matrix##`,
-	and replace all cells with independent gamma-distributed random numbers
+	and replace all cells with independent gamma-distributed random numbers)~~~" R"~~~(
 , @`randomGauss` (%`mu`, %`sigma`) – normally distributed random deviate
 , @`randomGauss#` (%`n`, %`mu`, %`sigma`) – %n independent normally distributed random numbers
 , @`randomGauss#` (%`vector#`, %`mu`, %`sigma`) – duplicate %`vector#`,
@@ -265,7 +265,7 @@ A growing list of functions that you can use in @formulas and @scripting...
 , @`randomUniform` (%`min`, %`max`) – uniformly distributed random deviate
 , @`randomUniform#` (%`n`, %`min`, %`max`) – %n independent uniformly distributed random numbers
 , @`randomUniform#` (%`vector#`, %min, %max) – duplicate %`vector#`,
-	and replace all elements with independent uniformly distributed random numbers)~~~" R"~~~(
+	and replace all elements with independent uniformly distributed random numbers
 , @`randomUniform##` (%`nrow`, %`ncol`, %`min`, %`max`) – %`nrow` \xx %`ncol` independent uniformly distributed random numbers
 , @`randomUniform##` (%`matrix##`, %`min`, %`max`) – duplicate %`matrix##`,
 	and replace all cells with independent uniformly distributed random numbers
@@ -581,7 +581,7 @@ Examples
 ################################################################################
 "`appYear`"
 © Paul Boersma 2024
-
+)~~~" R"~~~(
 A function that can be used in @@Formulas@. The year in which the present version of Praat was built.
 
 Syntax and semantics
@@ -811,7 +811,7 @@ Tests
 "`arctan#`"
 © Paul Boersma 2023
 
-A function that can be used in @@Formulas@.)~~~" R"~~~(
+A function that can be used in @@Formulas@.
 
 Syntax and semantics
 ====================
@@ -1156,7 +1156,7 @@ The result is:
 The %\ci^2 test is two-sided (it signals a preference for the white or for the black keys),
 so it has twice the probability of the binomial test.
 
-We cannot conclude from this test that people have a preference for the white keys.
+We cannot conclude from this test that people have a preference for the white keys.)~~~" R"~~~(
 Of course, we cannot conclude either that people %%don’t% have such a preference.
 
 ################################################################################
@@ -1445,7 +1445,7 @@ A function that can be used in @@Formulas@.
 
 Syntax and semantics
 ====================
-#`cos#` (%`v#`))~~~" R"~~~(
+#`cos#` (%`v#`)
 : compute the cosine (@`cos`) of each element of the vector %`v#`.
 
 ################################################################################
@@ -1740,7 +1740,7 @@ Syntax and semantics
 : determine whether the user pressed the Option key when they typed into the Demo window.
 
 Usage
-=====
+=====)~~~" R"~~~(
 This function is usually called after it has been determined that the user pressed a key,
 i.e. after @`demoKeyPressed` has returned 1.
 
@@ -2069,7 +2069,7 @@ Syntax and semantics
 Related function
 ================
 The inverse of #`exp` is @`ln`.
-)~~~" R"~~~(
+
 ################################################################################
 "`exp#`"
 © Paul Boersma 2023
@@ -2291,7 +2291,7 @@ Examples
 {
 	assert fixed$ (pi, 3) = "3.142"
 	assert fixed$ (-1, 3) = "-1.000"
-	assert fixed$ (1e6, 3) = "1000000.000"
+	assert fixed$ (1e6, 3) = "1000000.000")~~~" R"~~~(
 	assert fixed$ (0.01, 3) = "0.010"
 	assert fixed$ (0.001, 3) = "0.001"
 	assert fixed$ (0.0001, 3) = "0.0001"   ; never less than 1 significant digit!
@@ -2726,7 +2726,7 @@ The possible results are all real numbers.
 A function that can be used in @@Formulas@.
 
 Syntax and semantics
-====================)~~~" R"~~~(
+====================
 #`invSigmoid#` (%`v#`)
 : compute the inverse sigmoid (@`invSigmoid`) of each element of the vector %`v#`.
 
@@ -2885,7 +2885,7 @@ A function that can be used in @@Formulas@.
 
 Syntax and semantics
 ====================
-#`log10#` (%`v#`)
+#`log10#` (%`v#`))~~~" R"~~~(
 : compute the base-10 logarithm (@`log10`) of each element of the vector %`v#`.
 
 ################################################################################
@@ -3395,7 +3395,7 @@ Checks on the types of the arguments (always has to be vector, number, number):
 	asserterror The second argument of the function “part#” should be
 	... a number (the starting index), not a string.
 	a# = part# ({ 5, 6, 7, 9, 8 }, "hello", 4)
-
+)~~~" R"~~~(
 	asserterror The second argument of the function “part#” should be
 	... a number (the starting index), not a numeric vector.
 	a# = part# ({ 5, 6, 7, 9, 8 }, { 0 }, 4)
@@ -3503,7 +3503,7 @@ Checks on the types of the arguments (always has to be matrix, number, number, n
 	asserterror The third argument of the function “part##” should be
 	... a number (the end row), not a string.
 	a## = part## (m##, 4, "hello", 66, 99)
-)~~~" R"~~~(
+
 	asserterror The third argument of the function “part##” should be
 	... a number (the end row), not a numeric vector.
 	a## = part## (m##, 4, { 0 }, 66, 99)
@@ -3832,7 +3832,7 @@ Syntax and semantics
 : generate %`nrow` \xx %`ncol` independent normally distributed (@`randomGauss`) numbers.
 
 #`randomGauss##` (%`model##`, %`mu`, %`sigma`)
-: create a matrix with the same number of rows and columns as %`model##`,
+: create a matrix with the same number of rows and columns as %`model##`,)~~~" R"~~~(
 and fill all cells with independent normally distributed numbers.
 This is shorthand for doing
 {;
@@ -3957,7 +3957,7 @@ Syntax and semantics
 : generate %`n` independent uniformly distributed (@`randomUniform`) numbers.
 
 #`randomUniform#` (%`model#`, %`min`, %`max`)
-: create a vector with the same number of elements as %`model#`,)~~~" R"~~~(
+: create a vector with the same number of elements as %`model#`,
 and fill all elements with independent uniformly distributed numbers.
 This is shorthand for doing
 {;
@@ -4381,7 +4381,7 @@ Syntax and semantics
 #`runSystem` (`...`)
 : run the command line given by the arguments in “`...`”,
 which are plainly concatenated (in the same way as in `writeInfo`).
-
+)~~~" R"~~~(
 For details and examples, see @@Scripting 6.5. Calling system commands@.
 
 ################################################################################
@@ -4541,7 +4541,7 @@ Assume that at the start of the following script, the list of objects is empty:
 	pulses = To PointProcess (cc)
 	plusObject: sound
 }
-At this point, the list of objects will contain three objects,)~~~" R"~~~(
+At this point, the list of objects will contain three objects,
 which will look as follows (ID, type name, given name),
 where the two that stand selected are given in bold:
 `
@@ -4954,7 +4954,7 @@ Syntax and semantics
 : take the square root (@`sqrt`) of each element of the vector %`v#`.
 
 ################################################################################
-"`sqrt##`"
+"`sqrt##`")~~~" R"~~~(
 © Paul Boersma 2023
 
 A function that can be used in @@Formulas@.
@@ -5137,7 +5137,7 @@ Syntax and semantics
 : compute the hyperbolic tangent (@`tanh`) of each element of the vector %`v#`.
 
 ################################################################################
-"`tanh##`")~~~" R"~~~(
+"`tanh##`"
 © Paul Boersma 2023
 
 A function that can be used in @@Formulas@.

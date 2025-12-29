@@ -1363,7 +1363,7 @@ For how stereo sounds are handled, see @@Sound: Get energy...@.
 "Sound: Get standard deviation..."
 © Paul Boersma 2022-12-02
 
-A command available in the @@Query submenu@ if you select a @Sound object.
+A command available in the @@Query submenu@ if you select a @Sound object.)~~~" R"~~~(
 The Info window will show the standard deviation (in Pascal) of the sound pressure within a specified window.
 If the sound contains less than 2 samples, the value is @undefined.
 
@@ -1420,7 +1420,7 @@ Settings
 If %t_1 is not less than %t_2, the entire time domain of the sound is considered.
 
 ##Interpolation
-:	the interpolation method (#none, #parabolic, #cubic, #sinc70, #sinc700) of the @@vector peak interpolation@.)~~~" R"~~~(
+:	the interpolation method (#none, #parabolic, #cubic, #sinc70, #sinc700) of the @@vector peak interpolation@.
 The standard is “sinc70” because a Sound object is normally a sampled band-limited signal,
 which can be seen as a sum of sinc functions.
 
@@ -1847,7 +1847,7 @@ Size of the recording buffer
 
 The size of the recording buffer determines how many seconds of sound you can record.
 For instance, if the recording buffer is 20 megabytes (the standard value), you can record 220 seconds in stereo
-(440 seconds in mono) at a sampling frequency of 22050 Hz,
+(440 seconds in mono) at a sampling frequency of 22050 Hz,)~~~" R"~~~(
 or 110 seconds in stereo (220 seconds in mono) at a sampling frequency of 44100 Hz.
 You can change the size of the recording buffer
 with #Praat \-> #Settings \-> ##Sound recording settings...#.
@@ -1891,7 +1891,7 @@ Sound pressure calibration
 Your computer's sound-recording software returns integer values between -32768 and 32767.
 Praat divides them by 32768 before putting them into a Sound object,
 so that the values in the Sound objects are always between -1 and +1.
-)~~~" R"~~~(
+
 The Praat program considers these numbers to be air pressures in units of Pascal,
 but they are probably not the actual true air pressures that went into the microphone.
 For how to obtain the true air pressures, perform a @@sound pressure calibration@.

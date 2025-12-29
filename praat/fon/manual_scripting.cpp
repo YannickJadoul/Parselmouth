@@ -1854,7 +1854,7 @@ i.e. a series of numbers (or numeric formulas) between braces:
 }
 
 The second way we saw was to create a series of #zeroes. To create a vector consisting of 10,000 zeroes, you do
-{
+{)~~~" R"~~~(
 	longEmptyArray# = \#`{zero#} (10000)
 }
 
@@ -2289,7 +2289,7 @@ the initial value should then probably be something like `“10 -9 80”` or `�
 :	use either of these if you want to check that all initial elements are whole numbers.
 
 #`naturalvector`: %`variable$`, %`format$`, %`initialValue$`
-
+)~~~" R"~~~(
 #`naturalvector`: %`numberOfLines`, %`variable$`, %`format$`, %`initialValue$`
 :	use either of these if you want to check that all initial elements are positive whole numbers.
 
@@ -2719,7 +2719,7 @@ This will hand to `theOtherApp`: the contents of the string `folder$`
 (without fear of executing any commands that are inside the foldername),
 and the string `*.wav`. What is done with the asterisk (“*”) depends on your platform:
 on macOS and Linux, the string is handed verbatim as “*.wav” to `theOtherApp`,
-whereas on Windows the string is handed verbatim if there are no WAV files (in the folder of the script)
+whereas on Windows the string is handed verbatim if there are no WAV files (in the folder of the script))~~~" R"~~~(
 but as e.g. “hello.wav goodbye.wav” if the script folder contains those two files.
 
 In general, then, @`runSubprocess` is quite predictable on macOS and Linux, but less so on Windows.

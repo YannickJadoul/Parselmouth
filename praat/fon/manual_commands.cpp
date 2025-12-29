@@ -384,7 +384,7 @@ Windows
 If you are user #Miep, your Praat preferences folder will be `C:\Users\Miep\Praat` in Praat 6.xx,
 and `C:\Users\Miep\AppData\Roaming\Praat` in Praat 7.xx.
 
-To see what’s in there, open a File Explorer window, switch on `View` \-> `Show` \-> `Hidden items`,
+To see what’s in there, open a File Explorer window, switch on `View` \-> `Show` \-> `Hidden items`,)~~~" R"~~~(
 and navigate to `Local Disk` \-> `Users` \-> %`your name` \-> `AppData` \-> `Roaming` \-> `Praat`.
 
 Macintosh
@@ -395,7 +395,7 @@ and `/Users/miep/Library/Application Support/Praat` in Praat 7.xx.
 To see what’s in there, go to the Finder, choose Go \-> Library, and navigate to `Application Support` \-> `Praat`.
 
 Linux
-=====)~~~" R"~~~(
+=====
 If your home folder is #`/home/miep/`, your Praat preferences folder will be `/home/miep/.praat-dir` in Praat 6.xx,
 and `/home/miep/.config/praat` in Praat 7.xx.
 

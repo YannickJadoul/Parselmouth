@@ -320,7 +320,7 @@ This page tells you how to do that for voice analysis.
 The pulses you see as blue lines are a @PointProcess object. You can see this if
 you choose ##Extract visible pulses# from the #Pulses menu in the Sound window:
 a PointProcess object will appear in the list.
-
+)~~~" R"~~~(
 You can also create a PointProcess in the Objects window directly. To do this,
 select a Sound and choose @@Sound: To PointProcess (periodic, cc)...@ from the #Periodicity menu.
 

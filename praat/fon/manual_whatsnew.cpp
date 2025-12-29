@@ -342,7 +342,7 @@ What used to be new?
 
 ##6.3.20# (24 October 2023)
 • SpeechSynthesizer and automatic alignment in TextGridEditor: worked around a bug
-  introduced in 6.3.18 that caused incorrect rendering of phonemes consisting
+  introduced in 6.3.18 that caused incorrect rendering of phonemes consisting)~~~" R"~~~(
   of four UTF-8 bytes (such as /ɔː/).
 • SpeechSynthesizer and automatic alignment in TextGridEditor: worked around a very
   old bug that deleted word-final /l/ in Dutch and English.
@@ -529,7 +529,7 @@ and is interruptable by the Escape key.
 • TextGrid window: repaired a bug introduced in 6.2.10 by which a click in the boundary insertion circle
   would copy the contents of a new interval from another tier (if that other tier stood selected).
 
-##6.2.13# (18 May 2022))~~~" R"~~~(
+##6.2.13# (18 May 2022)
 • Playing a sound on the Mac: prevented an audible click at the end of audio output (appending a silence at the end is no longer needed).
 • FormantPath window: more flexible visualization.
 • New versions of PortAudio and Unicode.
@@ -663,7 +663,7 @@ and is interruptable by the Escape key.
 • TextGrid window: unselected boundaries can again be drawn to the cursor.
 • Windows: faster running cursor.
 • Multi-line formula fields.
-• Scripting: guard against too deep recursive calls to runScript (depth 20).
+• Scripting: guard against too deep recursive calls to runScript (depth 20).)~~~" R"~~~(
 • EEG: repaired a bug that could cause Praat to crash when computing an ERPTier.
 
 ##6.1.40# (27 February 2021)
@@ -884,7 +884,7 @@ then dragged the mouse out of that window, then released the mouse button, and t
 • Removed a bug introduced in 6.0.44 whereby an MFCC's maximum frequency could be ignored.
 • Pitch: Tabulate candidates.
 • SoundSet.
-)~~~" R"~~~(
+
 ##6.0.48# (17 February 2019)
 • Removed a bug introduced in 6.0.44 whereby Praat could crash when drawing a function without any points.
 • Removed a bug whereby Praat would not start up on macOS 10.10 (because of required GPU libraries).
@@ -1025,7 +1025,7 @@ then dragged the mouse out of that window, then released the mouse button, and t
 • Scripting: “hashes”: variables can now be indexed with strings rather than only with numbers.
 • TextGrid window: fewer out-of-order messages in automatic alignment.
 
-##6.0.15# (21 March 2016)
+##6.0.15# (21 March 2016))~~~" R"~~~(
 • TextGrid window: removed a bug whereby Praat could do automatic alignment only on sounds sampled at 44.1 kHz.
 • TextGrid window: improved the location of the final boundary in automatic alignment.
 • Table window: added a preference for the interpretation of graphical style symbols (`%#^_@`).
@@ -1217,7 +1217,7 @@ the column index was larger than the number of rows.
 • Manipulation: repaired a bug that could cause Praat to crash when playing a manipulation of a Sound created by the @SpeechSynthesizer.
 
 ##5.3.83# (16 August 2014)
-• TextGrid window: repaired a bug with automatic alignment that could cause an analysis tier to go out of order.)~~~" R"~~~(
+• TextGrid window: repaired a bug with automatic alignment that could cause an analysis tier to go out of order.
 • Linux audio: created a second workaround that reduces even more the chances of a freeze that is due to a potential deadlock
   in the collaboration between Alsa and PulseAudio that can occur when the playback of a sound is cancelled.
 • Smoother communication with Phon.
@@ -1347,7 +1347,7 @@ the column index was larger than the number of rows.
 
 ##5.3.54# (1 September 2013)
 • Sound window: removed a bug introduced in 5.3.42 by which you couldn't ask for an odd number of poles in Formant Settings
-  (by e.g. specifying “5.5” for the number of formants).
+  (by e.g. specifying “5.5” for the number of formants).)~~~" R"~~~(
 • Linux: improved dragging of selections in the Picture window and the Sound window.
 
 ##5.3.53# (9 July 2013)
@@ -1588,7 +1588,7 @@ and many more; also \_u (\bs\_ u). See @@Phonetic symbols: diacritics@.
 ##5.2.35# (5 August 2011)
 • Corrected the menus of the Sound and TextGrid windows.
 
-##5.2.34# (3 August 2011))~~~" R"~~~(
+##5.2.34# (3 August 2011)
 • @@Insert picture from file...@ now works on Windows (as well as on the Mac).
 • Corrected a bug that could cause Praat to crash when playing a LongSound.
 
@@ -1733,7 +1733,7 @@ if the selection ran from the penultimate interval to the end of the TextGrid.
 ##5.2# (29 October 2010)
 
 ##5.1.45# (26 October 2010)
-• Linux/GTK: allow Praat to run without an X display.
+• Linux/GTK: allow Praat to run without an X display.)~~~" R"~~~(
 • Sounds are played synchronously in scripts run from ManPages with \bsSC.
 
 ##5.1.44# (4 October 2010)
@@ -1949,7 +1949,7 @@ if the selection ran from the penultimate interval to the end of the TextGrid.
 • Articulatory synthesis: corrected a bug that could cause Praat to crash when copying Artwords.
 • Macintosh: corrected a bug that could cause poor text alignment in picture.
 
-##5.1.02# (9 March 2009))~~~" R"~~~(
+##5.1.02# (9 March 2009)
 • Allow pause forms without fields.
 • The value “undefined” is disallowed from all fields in command windows
   except ##Table: Set numeric value...# and @@TableOfReal: Set value...@.
@@ -2116,7 +2116,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 ##5.0.07# (8 February 2008)
 • Object IDs are visible in editor windows.
 
-##5.0.06# (31 January 2008)
+##5.0.06# (31 January 2008))~~~" R"~~~(
 • Corrected a bug that caused ##Find again# in the TextGrid window not to work.
 • Macintosh: made Praat work correctly on 10.3 computers with missing fonts.
 
@@ -2327,7 +2327,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 • @@Table: Formula (column range)...@
 • OT learning: OTGrammar window shows harmonies.
 
-##4.5.24# (27 April 2007))~~~" R"~~~(
+##4.5.24# (27 April 2007)
 • OT learning: added decision strategy MaximumEntropy;
   this has the same harmony determination method as Harmonic Grammar (include the additive constraint noise),
   but there is some more variability, in that every candidate gets a relative probability of exp(harmony).
@@ -2467,7 +2467,7 @@ if the names of these files or their directory paths contained non-ASCII charact
 • Logging: added `'power'` (and documented the `'freq'` command).
 • Removed a bug that caused ##Read two Sounds from stereo file...# not to work in scripts.
 
-##4.4.26# (24 July 2006)
+##4.4.26# (24 July 2006))~~~" R"~~~(
 • ##Sound & FormantTier: Filter#: much more accurate.
 
 ##4.4.25# (16 July 2006)
@@ -2723,7 +2723,7 @@ Phonetics:
 • PitchTier: To Sound (sine).
 • Better warnings against use of the LPC object.
 
-Voice:)~~~" R"~~~(
+Voice:
 • July 9, 2004 (4.2.08): Shimmer measurements: more accurate and less sensitive to additive noise.
 • More extensive voice report: pitch statistics; harmonicity.
 
@@ -2867,7 +2867,7 @@ Scripting:
   #let, #getnumber, #getstring, #ARGS, #copy, #proc, variables with capitals, and strings in numeric variables;
   there are messages about how to modify your old scripts.
 • Disallowed ambiguous expressions like -3\^ 2.
-
+)~~~" R"~~~(
 ################################################################################
 "What was new in 4.0?"
 © Paul Boersma 2001
@@ -3089,7 +3089,7 @@ Labelling
 • ##TextTier: To TableOfReal...#.
 
 Numerics and statistics library
-• @@Multidimensional scaling@ (Kruskal, INDSCAL, etc).)~~~" R"~~~(
+• @@Multidimensional scaling@ (Kruskal, INDSCAL, etc).
 • @TableOfReal: @@TableOfReal: ||Set value...@, @@Formula...@,
   ##Remove column...#, ##Insert column...#,
   ##Draw as squares...#, ##To Matrix#.
@@ -3243,7 +3243,7 @@ Praat 3.3, 6 October 1996
 • File formats: Sun/NexT mu-law files, raw matrix text files, Xwaves mark files.
 • Accelerations: keyboard shortcuts, faster dynamic menu, Shift-OK keeps file selector on screen.
 • Object type changes: #StylPitch and #MarkTier are now called @PitchTier and #TextTier, respectively.
-  Old files can still be read.
+  Old files can still be read.)~~~" R"~~~(
 • Script warning: all times in dialogs are in seconds now: milliseconds have gone.
 
 ################################################################################

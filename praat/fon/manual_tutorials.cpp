@@ -441,7 +441,7 @@ The title of a submenu of the @@Praat menu@.
 ################################################################################
 "Info"
 © Paul Boersma 1996,1998
-
+)~~~" R"~~~(
 One of the fixed buttons in the @@Objects window@.
 
 Availability
@@ -2106,7 +2106,7 @@ A new Sound named `hallo_11000` will appear in the list of objects
 (you could rename it to `source`).
 This is the estimated source signal. Since the LPC analysis was designed to yield a spectrally
 flat filter (through the use of pre-emphasis), this source signal represents everything in the
-speech signal that cannot be attributed to the resonating cavities. Thus, the “source signal”
+speech signal that cannot be attributed to the resonating cavities. Thus, the “source signal”)~~~" R"~~~(
 will consist of the glottal volume-velocity source (with an expected spectral slope of
 -12 dB/octave for vowels) and the radiation characteristics at the lips, which cause a
 6 dB/octave spectral rise, so that the resulting spectrum of the “source signal”

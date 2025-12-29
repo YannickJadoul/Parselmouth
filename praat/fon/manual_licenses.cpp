@@ -322,7 +322,7 @@ Here is the Unicode Inc. license text:
 
 	THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF
 	ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND)~~~" R"~~~(
 	NONINFRINGEMENT OF THIRD PARTY RIGHTS.
 	IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS
 	NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL
@@ -560,7 +560,7 @@ This is the license under which a diminishing fraction of the source code of Pra
 	version number of this License, you may choose any version ever published by the Free Software Foundation. 
 
 	10. If you wish to incorporate parts of the Program into other free programs whose distribution conditions are
-	different, write to the author to ask for permission. For software which is copyrighted by the Free Software
+	different, write to the author to ask for permission. For software which is copyrighted by the Free Software)~~~" R"~~~(
 	Foundation, write to the Free Software Foundation; we sometimes make exceptions for this. Our decision will be
 	guided by the two goals of preserving the free status of all derivatives of our free software and of promoting the
 	sharing and reuse of software generally. 
@@ -648,7 +648,7 @@ This is the license under which a diminishing fraction of the source code of Pra
 
 This is the license under which Praat as a whole is distributed (see @Acknowledgments).
 `
-						GNU GENERAL PUBLIC LICENSE)~~~" R"~~~(
+						GNU GENERAL PUBLIC LICENSE
 						   Version 3, 29 June 2007
 
 	 Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
@@ -878,7 +878,7 @@ This is the license under which Praat as a whole is distributed (see @Acknowledg
 		invalidate such permission if you have separately received it.
 
 		d) If the work has interactive user interfaces, each must display
-		Appropriate Legal Notices; however, if the Program has interactive
+		Appropriate Legal Notices; however, if the Program has interactive)~~~" R"~~~(
 		interfaces that do not display Appropriate Legal Notices, your
 		work need not make them do so.
 
@@ -964,7 +964,7 @@ This is the license under which Praat as a whole is distributed (see @Acknowledg
 	suffice to ensure that the continued functioning of the modified object
 	code is in no case prevented or interfered with solely because
 	modification has been made.
-)~~~" R"~~~(
+
 	  If you convey an object code work under this section in, or with, or
 	specifically for use in, a User Product, and the conveying occurs as
 	part of a transaction in which the right of possession and use of the
@@ -1178,7 +1178,7 @@ This is the license under which Praat as a whole is distributed (see @Acknowledg
 	the work, and under which the third party grants, to any of the
 	parties who would receive the covered work from you, a discriminatory
 	patent license (a) in connection with copies of the covered work
-	conveyed by you (or copies made from those copies), or (b) primarily
+	conveyed by you (or copies made from those copies), or (b) primarily)~~~" R"~~~(
 	for and in connection with specific products or compilations that
 	contain the covered work, unless you entered into that arrangement,
 	or that patent license was granted, prior to 28 March 2007.
@@ -1271,7 +1271,7 @@ This is the license under which Praat as a whole is distributed (see @Acknowledg
 						 END OF TERMS AND CONDITIONS
 
 				How to Apply These Terms to Your New Programs
-)~~~" R"~~~(
+
 	  If you develop a new program, and you want it to be of the greatest
 	possible use to the public, the best way to achieve this is to make it
 	free software which everyone can redistribute and change under these terms.
@@ -1399,7 +1399,7 @@ Activities other than copying, distribution and modification are not covered by 
 You may charge a fee for the physical act of transferring a copy, and you may at your option offer warranty protection in exchange for a fee.
 
 ##2.# You may modify your copy or copies of the Library or any portion of it, thus forming a work based on the Library, and copy and distribute such modifications or work under the terms of Section 1 above, provided that you also meet all of these conditions:
-
+)~~~" R"~~~(
 - ##a)# The modified work must itself be a software library.
 - ##b)# You must cause the files modified to carry prominent notices stating that you changed the files and the date of any change.
 - ##c)# You must cause the whole of the work to be licensed at no charge to all third parties under the terms of this License.
@@ -1493,7 +1493,7 @@ If you develop a new library, and you want it to be of the greatest possible use
 To apply these terms, attach the following notices to the library. It is safest to attach them to the start of each source file to most effectively convey the exclusion of warranty; and each file should have at least the "copyright" line and a pointer to where the full notice is found.
 
 {;
-	\%{one line to give the library's name and an idea of what it does.}
+	\%{one line to give the library's name and an idea of what it does.})~~~" R"~~~(
 	Copyright (C) \%{year}  \%{name of author}
 
 	This library is free software; you can redistribute it and/or
