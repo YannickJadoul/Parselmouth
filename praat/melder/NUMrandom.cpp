@@ -77,8 +77,8 @@
 #ifndef _MSC_VER
 	#include <unistd.h>
 #else
-	#include <windows.h>
-	#define getpid GetCurrentProcessId
+	#include <process.h>
+	#define getpid _getpid
 #endif
 #include "melder.h"
 #include <chrono>

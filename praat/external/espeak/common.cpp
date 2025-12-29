@@ -40,6 +40,11 @@
 
 #include "espeak_praat.h"   // for FileInMemory
 
+#ifdef _MSC_VER
+	// Cause MSVC doesn't have this in its <sys/stat.h>, apparently
+	#define S_ISDIR(m)  (((m) & S_IFMT) == S_IFDIR)
+#endif
+
 #pragma GCC visibility push(default)
 
 int GetFileLength(const char *filename)
