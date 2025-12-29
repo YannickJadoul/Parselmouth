@@ -24,7 +24,7 @@ import numpy as np
 import os
 import platform
 import re
-import sys
+import struct
 import textwrap
 
 
@@ -364,8 +364,8 @@ def test_praat_builtin_variables():
 	assert variables['praat_arm64'] == (platform.machine() in {'aarch64', 'arm64'})
 	assert variables['praat_s390x'] == (platform.machine() == 's390x')
 	assert variables['praat_armv7'] == (platform.machine() == 'armv7l')
-	assert variables['praat_32bit'] == (sys.maxsize <= 2**32)
-	assert variables['praat_64bit'] == (sys.maxsize > 2**32)
+	assert variables['praat_32bit'] == (struct.calcsize('P') == 4)
+	assert variables['praat_64bit'] == (struct.calcsize('P') == 8)
 
 	assert variables['left'] == 1
 	assert variables['right'] == 2
