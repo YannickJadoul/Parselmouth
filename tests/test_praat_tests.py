@@ -43,6 +43,9 @@ def find_praat_test_files():
 			marks = []
 			if rel_fn in ["dwtools/SpeechSynthesizer.praat"]:
 				marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Tests hang on Windows"))  # TODO 0.5
+			assert tuple(map(int, parselmouth.PRAAT_VERSION.split('.'))) <= (6, 4, 48), "Remove on Praat update"
+			if rel_fn in ["sys/large PDF/large PDF.praat"]:
+				marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Not available on Windows, and test removed in Praat 6.4.49"))
 			yield pytest.param(str(fn), id=rel_fn, marks=marks)
 
 
