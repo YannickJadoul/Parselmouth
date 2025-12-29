@@ -41,8 +41,6 @@ def find_praat_test_files():
 				continue
 			rel_fn = fn.relative_to(PRAAT_TEST_BASE_DIR).as_posix()
 			marks = []
-			if rel_fn in ["dwtools/SpeechSynthesizer.praat"]:
-				marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Tests hang on Windows"))  # TODO 0.5
 			assert tuple(map(int, parselmouth.PRAAT_VERSION.split('.'))) <= (6, 4, 48), "Remove on Praat update"
 			if rel_fn in ["sys/large PDF/large PDF.praat"]:
 				marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Not available on Windows, and test removed in Praat 6.4.49"))
@@ -54,15 +52,7 @@ def find_praat_dwtest_files():
 		if "_GUI_" in fn.name:
 			continue
 		rel_fn = fn.relative_to(PRAAT_DWTEST_BASE_DIR).as_posix()
-		marks = []
-		if rel_fn in ["test_DataModeler.praat",
-		              "test_Formant_slopes.praat",
-		              "test_SpeechSynthesizer.praat",
-		              "test_SpeechSynthesizer_alignment.praat",
-		              "test_alignment.praat",
-		              "test_bss_twoSoundsMixed.praat"]:
-			marks.append(pytest.mark.skipif(sys.platform == 'win32', reason="Tests hang on Windows"))  # TODO 0.5
-		yield pytest.param(str(fn), id=rel_fn, marks=marks)
+		yield pytest.param(str(fn), id=rel_fn, marks=[])
 
 
 PRAAT_TEST_FILES = sorted(find_praat_test_files())
