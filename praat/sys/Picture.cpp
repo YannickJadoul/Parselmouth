@@ -268,6 +268,9 @@ void Picture_readFromPraatPictureFile (Picture me, MelderFile file) {
 }
 
 #ifdef macintosh
+// Parselmouth: Mac needs "Application Services" framework (and Objective C++) to copy to clipboard,
+// but I don't see why we'd need to copy anything to the clipboard in Parselmouth.
+#ifndef NO_GRAPHICS
 static size_t appendBytes (void *info, const void *buffer, size_t count) {
 	CFDataAppendBytes ((CFMutableDataRef) info, (const UInt8 *) buffer, uinteger_to_integer_a (count));
 	return count;
@@ -300,6 +303,7 @@ void Picture_copyToClipboard (Picture me) {
 	*/
 	CFRelease (clipboard);
 }
+#endif
 #endif
 
 #ifdef _WIN32
@@ -357,6 +361,8 @@ static HENHMETAFILE copyToMetafile (Picture me) {
 	HENHMETAFILE metafile = CloseEnhMetaFile (dc);
 	return metafile;
 }
+
+#ifndef NO_GRAPHICS  // Parselmouth: See above
 void Picture_copyToClipboard (Picture me) {
 	try {
 		HENHMETAFILE metafile = copyToMetafile (me);
@@ -376,6 +382,8 @@ void Picture_copyToClipboard (Picture me) {
 		Melder_throw (U"Picture not copied to clipboard.");
 	}
 }
+#endif
+
 void Picture_writeToWindowsMetafile (Picture me, MelderFile file) {
 	try {
 		HENHMETAFILE metafile = copyToMetafile (me);

@@ -193,9 +193,9 @@ class GuiControlBlockValueChangedCallbacks {
 
 /********** FONTS, BRUSHES **********/
 
-#if defined (macintosh)
+#if cocoa
 	extern NSFont *theMacGuiNormalLabelFont (), *theMacGuiBoldLabelFont ();
-#elif defined (_WIN32)
+#elif motif
 	extern HFONT theWinGuiNormalLabelFont (), theWinGuiBoldLabelFont ();
 	extern HBRUSH theWinGuiBackgroundBrush ();
 #endif

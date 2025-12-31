@@ -96,10 +96,14 @@ void Picture_writeToPngFile_600 (Picture me, MelderFile file);
 void Picture_print (Picture me);
 void Picture_printToPostScriptPrinter (Picture me, int spots, int paperSize, int rotation, double magnification);
 #ifdef macintosh
+#ifndef NO_GRAPHICS  // Parselmouth: See Picture.cpp
 	void Picture_copyToClipboard (Picture me);
 #endif
+#endif
 #ifdef _WIN32
+#ifndef NO_GRAPHICS  // Parselmouth: See Picture.cpp
 	void Picture_copyToClipboard (Picture me);
+#endif
 	void Picture_writeToWindowsMetafile (Picture me, MelderFile file);
 #endif
 

@@ -20,11 +20,15 @@
 #include "../dwsys/NUM2.h"
 //#include "../external/gsl/gsl_blas.h"
 
+// Parselmouth: Myeah, we could accelerate some operations on macOS,
+// but is it worth the Objective-C to compile and macOS frameworks to link against?
+#ifndef PRAAT_INSIDE_PARSELMOUTH
 #ifdef macintosh
 	#include <Accelerate/Accelerate.h>
 	#undef trace
 	#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
 	#include <OpenCL/opencl.h>
+#endif
 #endif
 
 void centreEachColumn_MAT_inout (MATVU const& x) noexcept {
@@ -468,7 +472,7 @@ void _mul_fast_MAT_out (MATVU const& target, constMATVU const& x, constMATVU con
 }
 
 void MATmul_forceMetal_ (MATVU const& target, constMATVU const& x, constMATVU const& y) {
-#ifdef macintosh
+#if defined(macintosh) && !defined(PRAAT_INSIDE_PARSELMOUTH)  // Parselmouth: See above
 	if (@available (macOS 10.13, *)) {
 		/*
 			The speed is 0.000'005, 0.004, 1.86, 17.1, 13.8,  58, 41.4,  76, 42.5,  88,  63,  120,  255,  337,  525,  577,   620,   734,   769,   798,   894,   857,   868,   900,   872,   875,   956,   914                      Gflop/s AMD Radeon Pro Vega 20 (4 GB)
@@ -681,7 +685,7 @@ void MATmul_forceMetal_ (MATVU const& target, constMATVU const& x, constMATVU co
 }
 
 void MATmul_forceOpenCL_ (MATVU const& target, constMATVU const& x, constMATVU const& y) {
-#ifdef macintosh
+#if defined(macintosh) && !defined(PRAAT_INSIDE_PARSELMOUTH)  // Parselmouth: See above
 	static bool gpuInited = false;
 	static cl_context openclContext = nullptr;
 	static cl_command_queue commandQueue = nullptr;

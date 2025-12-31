@@ -1170,6 +1170,8 @@ static void printHelp () {
 	static void *theWinApplicationWindow;
 #endif
 
+// Parselmouth: I see zero use for this in Parselmouth, and it gives a bunch of issues with macOS Objective-C and frameworks, etc.
+#ifndef PRAAT_INSIDE_PARSELMOUTH
 static bool tryToSwitchToRunningPraat (bool foundTheOpenOption, bool foundTheSendOption, bool foundTheSendOrFormOption) {
 	/*
 		This function returns true only if we can be certain that we have sent
@@ -1454,6 +1456,7 @@ static bool tryToSwitchToRunningPraat (bool foundTheOpenOption, bool foundTheSen
 	#endif
 	return false;   // the default
 }
+#endif
 
 /*
 	This function translates the command-line arguments to fields in `praatP`.
@@ -1853,6 +1856,8 @@ static void setPreferencesFolder () {
 	}
 }
 
+// Parselmouth: Don't need and shouldn't call.
+#ifndef PRAAT_INSIDE_PARSELMOUTH
 void praat_init (conststring32 title,
 	conststring32 versionText, integer versionNumber,
 	integer year, integer month, integer day,
@@ -2026,6 +2031,7 @@ void praat_init (conststring32 title,
 		praat_picture_init (! praatP.commandLineOptions.hidePicture);
 	trace (U"after picture window shows: locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
 }
+#endif
 
 static void executeStartUpFile (MelderFolder startUpDirectory, conststring32 fileNameHead, conststring32 fileNameTail) {
 	char32 name [256];

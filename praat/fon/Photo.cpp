@@ -21,7 +21,7 @@
 #include "Formula.h"
 #if defined (_WIN32)
 	#include <GraphicsP.h>
-#elif defined (macintosh)
+#elif defined (macintosh) && ! defined (NO_GRAPHICS)
 	#include "macport_on.h"
 	#include <Cocoa/Cocoa.h>
 	#include "macport_off.h"

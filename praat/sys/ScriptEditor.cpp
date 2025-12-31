@@ -186,7 +186,8 @@ static void menu_cb_run_async (ScriptEditor me) {
 static void menu_cb_run (ScriptEditor me, EDITOR_ARGS) {
 	if (my interpreter -> running)
 		Melder_throw (U"The script is already running (paused). Please close or continue the pause, trust or demo window.");
-	#ifdef macintosh
+	// Parselmouth: No need for queues, as far as I know.
+	#if defined(macintosh) && !defined(PRAAT_INSIDE_PARSELMOUTH)
 		dispatch_async (dispatch_get_main_queue (), ^{ menu_cb_run_async (me); });
 	#else
 		menu_cb_run_async (me);
@@ -258,7 +259,8 @@ static void menu_cb_runSelection_async (ScriptEditor me) {
 static void menu_cb_runSelection (ScriptEditor me, EDITOR_ARGS) {
 	if (my interpreter -> running)
 		Melder_throw (U"The script is already running (paused). Please close or continue the pause, trust or demo window.");
-	#ifdef macintosh
+	// Parselmouth: No need for queues, as far as I know.
+	#if defined(macintosh) && !defined(PRAAT_INSIDE_PARSELMOUTH)
 		dispatch_async (dispatch_get_main_queue (), ^{ menu_cb_runSelection_async (me); });
 	#else
 		menu_cb_runSelection_async (me);

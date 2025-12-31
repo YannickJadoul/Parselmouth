@@ -113,7 +113,7 @@ Thing_define (SoundRecorder, Editor) {
 		short buffertje1 [1000*2], buffertje2 [1000*2];
 	#elif defined (macintosh)
 		short macSource [1+8];
-		Str255 hybridDeviceNames [1+8];
+		// Str255 hybridDeviceNames [1+8];
 		int32 refNum;
 	#elif defined (linux)
 		int fd;

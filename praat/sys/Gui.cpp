@@ -114,7 +114,7 @@ void Gui_getWindowPositioningBounds (double *x, double *y, double *width, double
 	Fonts, brushes.
 */
 
-#if defined (macintosh)
+#if cocoa
 	NSFont *theMacGuiNormalLabelFont () {
 		static NSFont *font;
 		if (! font)
@@ -127,7 +127,7 @@ void Gui_getWindowPositioningBounds (double *x, double *y, double *width, double
 			font = [NSFont boldSystemFontOfSize: 13.0];
 		return font;
 	}
-#elif defined (_WIN32)
+#elif motif
 	HFONT theWinGuiNormalLabelFont () {
 		static HFONT font;
 		if (! font)

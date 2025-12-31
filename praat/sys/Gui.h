@@ -1027,9 +1027,6 @@ Thing_define (GuiText, GuiControl) {
 		GuiCocoaScrolledWindow *d_cocoaScrollView;
 		GuiCocoaTextView *d_cocoaTextView;
 		double d_macFontSize;
-	#elif defined (macintosh)
-		TXNObject d_macMlteObject;
-		TXNFrameID d_macMlteFrameId;
 	#else
 		history_entry *d_prev, *d_next;
 		GuiMenuItem d_undo_item, d_redo_item;

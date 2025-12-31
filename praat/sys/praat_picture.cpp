@@ -624,11 +624,13 @@ FORM_SAVE (GRAPHICS_Picture_writeToWindowsMetafile, U"Save as Windows metafile",
 
 #endif
 
+#ifndef NO_GRAPHICS  // Parselmouth: See Picture.cpp
 #if defined (_WIN32) || defined (macintosh)
 	DIRECT (GRAPHICS_Copy_picture_to_clipboard) {
 		Picture_copyToClipboard (praat_picture.get());
 	END_NO_NEW_DATA
 }
+#endif
 #endif
 
 /***** "Edit" MENU *****/
@@ -1833,9 +1835,11 @@ void praat_picture_init (bool showPictureWindowAtStartUp) {
 	praat_addMenuCommand (U"Picture", U"File", U"Print...", nullptr, 'P' | GuiMenu_NO_API, GRAPHICS_Print);
 
 	praat_addMenuCommand (U"Picture", U"Edit", U"Undo", nullptr, 'Z' | GuiMenu_NO_API, GRAPHICS_Undo);
+	#ifndef NO_GRAPHICS  // Parselmouth: See Picture.cpp
 	#if defined (macintosh) || defined (_WIN32)
 		praat_addMenuCommand (U"Picture", U"Edit", U"-- clipboard --", nullptr, 0, nullptr);
 		praat_addMenuCommand (U"Picture", U"Edit", U"Copy to clipboard", nullptr, 'C' | GuiMenu_NO_API, GRAPHICS_Copy_picture_to_clipboard);
+	#endif
 	#endif
 	praat_addMenuCommand (U"Picture", U"Edit", U"-- erase --", nullptr, 0, nullptr);
 	praat_addMenuCommand (U"Picture", U"Edit", U"Erase all", nullptr, 'E', GRAPHICS_Erase_all);

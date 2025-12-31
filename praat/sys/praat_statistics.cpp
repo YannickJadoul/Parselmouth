@@ -119,6 +119,8 @@ void praat_reportTextProperties () {
 	MelderInfo_close ();
 }
 
+// Parselmouth: Not that useful for a Python lib, I reckon.
+#ifndef PRAAT_INSIDE_PARSELMOUTH
 #if defined (macintosh)
 static bool isSandboxed () {
 	//return !! NSProcessInfo.processInfo.environment [@"APP_SANDBOX_CONTAINER_ID"];
@@ -162,6 +164,7 @@ static NSString *getRealHomeDirectory () {
 	return nsUserHomeFolderPath;
 }
 #endif // defined (macintosh)
+#endif
 
 void praat_reportSystemProperties () {
 	MelderInfo_open ();
@@ -209,6 +212,7 @@ void praat_reportSystemProperties () {
 	structMelderFolder homeFolder {};
 	Melder_getHomeDir (& homeFolder);
 	MelderInfo_writeLine (U"Home folder: ", MelderFolder_peekPath (& homeFolder));
+	#ifndef PRAAT_INSIDE_PARSELMOUTH  // Parselmouth: See above
 	#ifdef macintosh
 		MelderInfo_writeLine (U"Full Disk Access: ", Melder_kleenean (hasFullDiskAccess ()));
 		MelderInfo_writeLine (U"Sandboxed: ", Melder_boolean (isSandboxed ()));
@@ -230,6 +234,7 @@ void praat_reportSystemProperties () {
 		MelderInfo_writeLine (U"SM_CYCAPTION: ", GetSystemMetrics (SM_CYCAPTION));
 		MelderInfo_writeLine (U"SM_CYMENU: ", GetSystemMetrics (SM_CYMENU));
 	#endif // _WIN32
+	#endif
 	MelderInfo_close ();
 }
 
@@ -254,6 +259,8 @@ void praat_reportGraphicalProperties () {
 	Gui_getWindowPositioningBounds (& x, & y, & width, & height);
 	MelderInfo_writeLine (U"Window positioning area: x = ", x, U", y = ", y,
 		U", width = ", width, U", height = ", height);
+	// Parselmouth: We can probably do without this
+	#ifndef NO_GRAPHICS
 	#if defined (macintosh)
 		CGDirectDisplayID screen = CGMainDisplayID ();
 		CGSize screenSize_mm = CGDisplayScreenSize (screen);
@@ -269,6 +276,7 @@ void praat_reportGraphicalProperties () {
 	#elif defined (_WIN32)
 		/*for (int i = 0; i <= 88; i ++)
 			MelderInfo_writeLine (U"System metric ", i, U": ", GetSystemMetrics (i));*/
+	#endif
 	#endif
 	MelderInfo_close ();
 }

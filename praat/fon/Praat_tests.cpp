@@ -682,12 +682,15 @@ int Praat_tests (kPraatTests itest, conststring32 arg1, conststring32 arg2, cons
 			//  Gflops is --undefined--
 		} break;
 		case kPraatTests::TIME_NS_DATE: {
+			// Parselmouth: If Linux and Windows can do without this test, so can macOS?
+			#ifndef PRAAT_INSIDE_PARSELMOUTH
 			#ifdef macintosh
 				NSDate *till = [NSDate   dateWithTimeIntervalSinceNow: 1.0];
 				integer count = 0;
 				while ([[NSDate date]   compare: till] == NSOrderedAscending)
 					++ count;
 				MelderInfo_writeLine (count, U" per second");
+			#endif
 			#endif
 		} break;
 		case kPraatTests::TIME_MELDER_CLOCK: {

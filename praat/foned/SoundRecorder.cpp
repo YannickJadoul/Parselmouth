@@ -1052,6 +1052,8 @@ autoSoundRecorder SoundRecorder_create (int numberOfChannels) {
 					/*Melder_casual (U"Name of device ", i, U": ", Melder_peek16to32 (aps. szPname));*/
 				}
 			#elif defined (macintosh)
+			// Parselmouth: Huh, but we don't support audio anyway, so fine for now.
+			#ifndef NO_AUDIO
 				SInt32 soundFeatures;
 				if (Gestalt (gestaltSoundAttr, & soundFeatures) ||
 						! (soundFeatures & (1 << gestaltSoundIOMgrPresent)) ||
@@ -1062,6 +1064,7 @@ autoSoundRecorder SoundRecorder_create (int numberOfChannels) {
 					! (soundFeatures & (1 << gestaltStereoInput)) ||   // hardware
 					! (soundFeatures & (1 << gestalt16BitAudioSupport)))   // software
 					Melder_throw (U"Your computer does not support stereo sound input.");
+			#endif
 			#endif
 		}
 		my numberOfChannels = numberOfChannels;
