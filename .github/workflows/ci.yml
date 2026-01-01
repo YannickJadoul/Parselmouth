@@ -93,12 +93,12 @@ jobs:
             arch: x64
             release: true
             name-extra: ' (Release)'
-          - runs-on: macos-latest
-            python: 'pypy-3.11'
-            arch: arm64
-          - runs-on: macos-15-intel
-            python: 'pypy-3.11'
-            arch: x64
+#          - runs-on: macos-latest
+#            python: 'pypy-3.11'
+#            arch: arm64
+#          - runs-on: macos-15-intel
+#            python: 'pypy-3.11'
+#            arch: x64
 
           - runs-on: windows-latest
             python: '3.9'
