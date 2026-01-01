@@ -60,10 +60,12 @@ PRAAT_DWTEST_FILES = sorted(find_praat_dwtest_files())
 
 
 @pytest.fixture(scope='function', autouse=True)
-def praat_random_seed():
+def praat_random_seed_and_threading():
 	parselmouth.praat.run("random_initializeWithSeedUnsafelyButPredictably(5489)")
+	parselmouth.praat.call("Debug multi-threading", True, 8, 0, False)
 	yield
 	parselmouth.praat.run("random_initializeSafelyAndUnpredictably()")
+	parselmouth.praat.call("Debug multi-threading", True, 0, 0, False)
 
 
 @pytest.mark.parametrize('test_file', PRAAT_TEST_FILES)
