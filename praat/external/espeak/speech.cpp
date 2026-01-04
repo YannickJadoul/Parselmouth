@@ -30,7 +30,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#ifndef _MSC_VER
+#ifndef _MSC_VER  // Parselmouth
 	#include <unistd.h>
 #endif
 #include <wchar.h>
@@ -374,15 +374,6 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_Initialize(espeak_ng_ERROR_CONTEXT *con
 	int param;
 	int srate = 22050; // default sample rate 22050 Hz
 
-	// TODO AFTER PRAAT UPDATE
-	// Parselmouth: Disabled by using Melder_is... functions to replace isw... standard function; see speech.h
-	// if (setlocale(LC_CTYPE, "C.UTF-8") == NULL) {
-	// 	if (setlocale(LC_CTYPE, "UTF-8") == NULL) {
-	// 		if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL)
-	// 			setlocale(LC_CTYPE, "");
-	// 	}
-	// }
-	// fprintf (stderr, "Locale: %s\n", setlocale (LC_ALL, nullptr));
 	/*
 		(Paul Boersma 20240426:)
 		When using this library in an app, e.g. Praat,

@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
+#ifndef _MSC_VER  // Parselmouth
 	#include <unistd.h>
 #endif
 

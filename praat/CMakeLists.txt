@@ -69,16 +69,13 @@ if (UNIX)
 	endif()
 	
 	set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} UNIX)
-	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_POSIX) # eSpeak
-	
+
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} linux)
 	elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} macintosh)
 	endif ()
 elseif (WIN32)
-	# set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} FLAC__NO_DLL) # flac_config.h should already have this set
-	set(PRAAT_DEFINITIONS_PRIVATE ${PRAAT_DEFINITIONS_PRIVATE} PLATFORM_WINDOWS) # eSpeak
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /wd4068) # "warning C4068: unknown pragma": #pragma mark
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /EHs) # Some 'extern "C"' functions throw exceptions: make sure they're caught
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /fp:precise) # /fp:precise is default does not allow contractions starting from VS 2022, and /fp:strict does not allow for arithmetic expressions in constants

@@ -27,11 +27,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
-#include <strings.h>
+#ifndef _MSC_VER  // Parselmouth
+	#include <strings.h>
 #else
-#define strncasecmp _strnicmp
-#define strcasecmp _stricmp
+	#define strcasecmp stricmp
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)

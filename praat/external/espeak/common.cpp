@@ -40,8 +40,7 @@
 
 #include "espeak_praat.h"   // for FileInMemory
 
-#ifdef _MSC_VER
-	// Cause MSVC doesn't have this in its <sys/stat.h>, apparently
+#ifdef _MSC_VER  // Parselmouth
 	#define S_ISDIR(m)  (((m) & S_IFMT) == S_IFDIR)
 #endif
 
