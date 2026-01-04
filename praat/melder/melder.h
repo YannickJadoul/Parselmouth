@@ -36,6 +36,7 @@
 #include <mutex>
 #include <atomic>   // std::atomic<integer>
 
+// Parselmouth: _FILE_OFFSET_BITS=64 for MSVC
 #ifdef _MSC_VER
 	#define off_t __int64
 	#define ftello _ftelli64

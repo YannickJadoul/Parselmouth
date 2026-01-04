@@ -67,10 +67,9 @@ if (UNIX)
 	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 		set(PRAAT_FLAGS_PRIVATE ${PRAAT_FLAGS_PRIVATE} -Wno-logical-op-parentheses -Wno-shift-op-parentheses) # Clang complains a lot about '-Wlogical-op-parentheses' and '-Wshift-op-parentheses' warnings, but GCC doesn't know this option
 	endif()
-	
-	set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} UNIX)
 
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} UNIX)  # Seems Praat doesn't consider macOS to be Unix?
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} linux)
 	elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} macintosh)
