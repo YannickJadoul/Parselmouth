@@ -36,6 +36,7 @@ template <typename Type>
 class Binding {
 public:
 	explicit Binding(pybind11::handle &scope);
+	Binding(Binding &&);
 	~Binding();
 
 	void init();
@@ -53,45 +54,31 @@ public:
 	explicit ModuleWrapper(pybind11::handle &scope, Args &&... args) : pybind11::module(scope.cast<pybind11::module>().def_submodule(std::forward<Args>(args)...)) {}
 };
 
+template <typename...>
+struct AllUnique { static constexpr bool value = true; };
+
+template <typename T, typename... Types>
+struct AllUnique<T, Types...> { static constexpr bool value = !(std::is_same_v<T, Types> || ...) && AllUnique<Types...>::value; };
+
 template <typename... Types>
-class Bindings;
-
-template <>
-class Bindings<> {
+class Bindings {
 public:
-	template <typename... Args>
-	explicit Bindings(Args &&...) {}
-
-	void init() {}
-};
-
-template <typename First, typename... Rest>
-class Bindings<First, Rest...> {
-public:
-#ifndef _MSC_VER
-	static_assert(!(std::is_same_v<First, Rest> || ...), "Multiple identical template parameter types are specified");
-#endif
+	static_assert(AllUnique<Types...>::value, "Multiple identical template parameter types are specified");
 
 	template <typename... Args>
-	explicit Bindings(Args &&...args) : m_first{args...}, m_rest{std::forward<Args>(args)...} {}
+	explicit Bindings(Args &&...args) : m_bindings{Binding<Types>(args...)...} {}
 
 	void init() {
-		m_first.init();
-		m_rest.init();
+		(std::get<Binding<Types>>(m_bindings).init(), ...);
 	}
 
 	template <typename T>
 	Binding<T> &get() {
-		static_assert(std::is_same_v<T, First> || (std::is_same_v<T, Rest> || ...), "The specified type is not a member of these bindings");
-		if constexpr (std::is_same_v<T, First>)
-			return m_first;
-		else
-			return m_rest.template get<T>();
+		return std::get<Binding<T>>(m_bindings);
 	}
 
 private:
-	Binding<First> m_first;
-	Bindings<Rest...> m_rest;
+	std::tuple<Binding<Types>...> m_bindings;
 };
 
 #define BINDING(Type, Kind, ...)                                                                               \
@@ -104,6 +91,7 @@ private:
 		void init();                                                                                           \
 	};                                                                                                         \
 	template <> Binding<Type>::Binding(pybind11::handle &scope) : m_binding(std::make_unique<BindingType<Type>>(scope)) {} \
+	template <> Binding<Type>::Binding(Binding &&other) : m_binding(std::move(other.m_binding)) {}                         \
 	template <> Binding<Type>::~Binding() {}                                                                               \
 	template <> void Binding<Type>::init() { m_binding->init(); }                                                          \
 	template <> pybind11::handle Binding<Type>::get() { return *m_binding; }
