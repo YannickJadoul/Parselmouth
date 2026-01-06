@@ -493,6 +493,21 @@ PRAAT_MODULE_BINDING(praat, PraatModule, PRAAT_MODULE_DOCSTRING) {
 			    menuCommands.emplace_back(castPraatCommand(*praat_getMenuCommand(i)));
 		    return menuCommands;
 	    });
+
+	def("_warn",
+		[](const std::u32string &message) {
+			Melder_warning(message.c_str());
+	});
+
+	def("_throw_error",
+		[](const std::u32string &message) {
+			Melder_throw(message.c_str());
+	});
+
+	def("_crash",
+		[](const std::u32string &message) {
+			Melder_crash(message.c_str());
+		});
 }
 
 } // namespace parselmouth

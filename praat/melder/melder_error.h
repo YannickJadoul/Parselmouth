@@ -31,6 +31,9 @@ bool Melder_hasCrash ();
 	/* Returns true if there is an error message in store, and that error message is a crash message. */
 
 void Melder_clearError ();
+#ifdef PRAAT_INSIDE_PARSELMOUTH  // Parselmouth: See melder_error.cpp
+void Melder_clearCrash ();
+#endif
 	/* Cancel all stored error messages. */
 
 conststring32 Melder_getError ();

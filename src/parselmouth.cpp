@@ -56,26 +56,9 @@ struct TimeFunction;
 struct TimeFrameSampled;
 
 class PraatModule;
-using PraatError = MelderError;
 class PraatWarning {};
-class PraatFatal {};
-
-PRAAT_EXCEPTION_BINDING(PraatError, PyExc_RuntimeError) {
-	// Exception translators need to be convertible to void (*) (std::exception_ptr), so we cannot capture and store *this in the lambda.
-	static auto exception = *this;
-	py::register_exception_translator([](std::exception_ptr p) {
-		try {
-			if (p) std::rethrow_exception(p);
-		}
-		catch (const MelderError &) {
-			// PyErr_SetString (in py::exception<type>::operator()) decodes from UTF-8
-			std::string message(Melder_peek32to8(Melder_getError()));
-			message.erase(message.length() - 1); // Remove closing newline
-			Melder_clearError();
-			exception(message.c_str());
-		}
-	});
-}
+class PraatError {};
+class PraatCrash {};
 
 PRAAT_EXCEPTION_BINDING(PraatWarning, PyExc_UserWarning) {
 	static auto warning = *this;
@@ -85,15 +68,51 @@ PRAAT_EXCEPTION_BINDING(PraatWarning, PyExc_UserWarning) {
 	});
 }
 
-PRAAT_EXCEPTION_BINDING(PraatFatal, PyExc_BaseException) {
-	static auto fatal = *this;
-	Melder_setCrashProc([](const char32 *message) {
-		auto extraMessage = "Parselmouth intercepted a crash in Praat:\n\n"s +
-		                    Melder_peek32to8(message) + "\n"s +
-		                    "To ensure correctness of Praat's calculations, it is advisable to NOT ignore this error\n"s
-		                    "and to RESTART Python before using more of Praat's functionality through Parselmouth."s;
-		fatal(extraMessage.c_str());
-		throw py::error_already_set();
+PRAAT_EXCEPTION_BINDING(PraatError, PyExc_RuntimeError) {
+	// Exception translators need to be convertible to void (*) (std::exception_ptr), so we cannot capture and store *this in the lambda.
+	static auto exception = *this;
+	py::register_exception_translator([](std::exception_ptr p) {
+		try {
+			if (p) std::rethrow_exception(p);
+		}
+		catch (const MelderError &) {
+			if (Melder_hasCrash())
+				throw;
+			std::u32string message(Melder_getError());
+			message.erase(message.length() - 1); // Remove closing newline
+			Melder_clearError();
+			// PyErr_SetString (in py::exception<type>::operator()) decodes from UTF-8
+			exception(Melder_peek32to8(message.c_str()));
+		}
+	});
+}
+
+PRAAT_EXCEPTION_BINDING(PraatCrash, PyExc_BaseException) {
+	static auto crash = *this;
+	py::register_exception_translator([](std::exception_ptr p) {
+		try {
+			if (p) std::rethrow_exception(p);
+		}
+		catch (const MelderError &) {
+			if (!Melder_hasCrash())
+				throw;
+			auto message = U"Parselmouth intercepted a crash in Praat:\n\n"s +
+			               Melder_getError() + U"\n"s +
+			               U"To ensure correctness of Praat's calculations, it is advisable to NOT ignore this error\n"s +
+			               U"and to RESTART Python before using more of Praat's functionality through Parselmouth."s;
+			Melder_clearCrash();
+			crash(Melder_peek32to8(message.c_str()));
+		}
+	});
+
+	// If for some reason, Praat internally catches a MelderError that's actually a crash,
+	// continue to bubble up the exception! We don't want to end up in the `abort()` call
+	// in `Melder_flushError`, so we need to continue going up the stack until we reach
+	// pybind and the exception translators.
+	// This seems to mostly happen in interactive contexts, and so shouldn't be too relevant
+	// to Parselmouth, but just in case, let's bubble up.
+	Melder_setCrashProc([](const char32 *) {
+		throw MelderError();
 	});
 }
 
@@ -107,6 +126,9 @@ void redirectMelderInfo() {
 }
 
 void redirectMelderError() {
+	// This is the case where Praat intercepts the error, but still decides to write it out.
+	// This seems to mostly happen in interactive contexts, and so shouldn't be too relevant
+	// to Parselmouth, but just in case, let's redirect to sys.stderr.
 	Melder_setErrorProc([](const char32 *message) {
 		auto sys = py::module_::import("sys");
 		auto sys_stderr = sys.attr("stderr");
@@ -115,9 +137,9 @@ void redirectMelderError() {
 	});
 }
 
-using PraatBindings = Bindings<PraatError,
-                               PraatWarning,
-                               PraatFatal,
+using PraatBindings = Bindings<PraatWarning,
+                               PraatError,
+                               PraatCrash,
                                ValueInterpolation,
                                WindowShape,
                                AmplitudeScaling,
@@ -177,12 +199,12 @@ void initializePraat() {
 		praat_testPlatformAssumptions();
 	}
 	catch (const MelderError &e) {
-		auto extraMessage = "Praat failed to initialize and cannot be used by Parselmouth.\n\n"s +
-							Melder_peek32to8(Melder_getError()) + "\n"s +
-							"Since Parselmouth uses Praat's code, it can only be run on platforms that can run Praat.\n"s
-							"If you can run Praat as standalone program or if you think you should be able to, please\n"s
-							"report the error to the maintainers, at https://github.com/YannickJadoul/Parselmouth."s;
-		throw std::runtime_error(extraMessage);
+		auto extraMessage = U"Praat failed to initialize and cannot be used by Parselmouth.\n\n"s +
+		                    Melder_getError() + U"\n"s
+		                    U"Since Parselmouth uses Praat's code, it can only be run on platforms that can run Praat.\n"s
+		                    U"If you can run Praat as standalone program or if you think you should be able to, please\n"s
+		                    U"report the error to the maintainers, at https://github.com/YannickJadoul/Parselmouth."s;
+		throw std::runtime_error(Melder_peek32to8(extraMessage.c_str()));
 	}
 }
 
@@ -222,4 +244,5 @@ PYBIND11_MODULE(parselmouth, m) {
 
 	// TODO Remove/deprecate?
 	m.attr("Interpolation") = bindings.get<parselmouth::ValueInterpolation>().get();
+	m.attr("PraatFatal") = bindings.get<parselmouth::PraatCrash>().get();  // TODO Deprecate?
 }

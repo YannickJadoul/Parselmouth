@@ -61,6 +61,12 @@ bool Melder_hasError (conststring32 partialError) {
 	return !! str32str (theErrorBuffer, partialError);
 }
 
+// Parselmouth: We don't want to add a bunch of boilerplate Praat text
+// with the weird PraatInsideParselmouth and my email address.
+// Instead, we will distinguish errors and crashes based on a global bool
+// (sue me, as if theErrorBuffer isn't already global), which we set
+// whenever crashMessage() gets requested. Should work well enough, for now.
+#ifndef PRAAT_INSIDE_PARSELMOUTH
 #define CRASH_SEMAPHORE  U" will crash. Please notify the authors ("
 
 static conststring32 crashMessage () {
@@ -81,12 +87,37 @@ bool Melder_hasCrash () {
 		return false;
 	return Melder_startsWith (firstSpace, CRASH_SEMAPHORE);
 }
+#else
+static bool praatHasCrashed = false;
+
+static conststring32 crashMessage () {
+	praatHasCrashed = true;
+	return U"";
+}
+
+bool Melder_hasCrash () {
+	return praatHasCrashed;
+}
+#endif
 
 void Melder_clearError () {
 	if (Melder_hasCrash ())
 		throw MelderError ();
 	theErrorBuffer [0] = U'\0';
 }
+
+// Parselmouth: When we catch a crash, we want to be able to clear it, since we
+// don't just want to abort the whole interpreter. Rather, we throw an exception
+// subclassing BaseException, and warn loudly to not trust future results from
+// Praat if some user *does* decide to catch and ignore the exception.
+#ifdef PRAAT_INSIDE_PARSELMOUTH
+void Melder_clearCrash () {
+	if (!Melder_hasCrash ())
+		throw MelderError();
+	praatHasCrashed = false;
+	Melder_clearError();
+}
+#endif
 
 conststring32 Melder_getError () {
 	return & theErrorBuffer [0];

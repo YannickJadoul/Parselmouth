@@ -14,14 +14,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Parselmouth.  If not, see <http://www.gnu.org/licenses/>
+import textwrap
 
 import pytest
 
 import parselmouth
+import re
+import sys
 import warnings
 
 
 def test_warning(sound, tmp_path):
+	message = "Watch out!"
+	with pytest.warns(parselmouth.PraatWarning, match=f"^{message}$"):
+		parselmouth.praat._warn(message)
+
 	text_grid = parselmouth.praat.call(sound, "To TextGrid", "tier", "")
 
 	with pytest.warns(parselmouth.PraatWarning, match="No non-empty intervals were found"):
@@ -34,6 +41,10 @@ def test_warning(sound, tmp_path):
 
 def test_warning_as_error(sound):
 	warnings.simplefilter('error', parselmouth.PraatWarning)
+
+	message = "Watch out! Seriously!"
+	with pytest.raises(parselmouth.PraatWarning, match=f"^{message}$"):
+		parselmouth.praat._warn(message)
 
 	text_grid = parselmouth.praat.call(sound, "To TextGrid", "tier", "")
 
@@ -54,3 +65,27 @@ def test_warnings_default(sound):
 		for w in recorded_warnings:
 			assert str(w.message) == "No non-empty intervals were found."
 			assert isinstance(w.message, parselmouth.PraatWarning)
+
+
+def test_error():
+	message = "This is not a drill! OK, maybe it actually is."
+	with pytest.raises(parselmouth.PraatError, match=f"^{message}$"):
+		parselmouth.praat._throw_error(message)
+
+
+def test_crash():
+	expected_message = textwrap.dedent("""\
+		Parselmouth intercepted a crash in Praat:
+
+		BOOM!
+
+		To ensure correctness of Praat's calculations, it is advisable to NOT ignore this error
+		and to RESTART Python before using more of Praat's functionality through Parselmouth.""")
+	if sys.platform == 'win32':
+		expected_message = expected_message.replace('\n', '\r\n')
+	with pytest.raises(parselmouth.PraatCrash, match=f"^{re.escape(expected_message)}$"):
+		parselmouth.praat._crash("BOOM!")
+
+	message = "Errors still work, though"
+	with pytest.raises(parselmouth.PraatError, match=f"^{message}$"):
+		parselmouth.praat._throw_error(message)
