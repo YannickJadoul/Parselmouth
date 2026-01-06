@@ -2093,6 +2093,12 @@ static void executeStartUpFile (MelderFolder startUpDirectory, conststring32 fil
 	}
 #endif
 
+
+// Parselmouth: We do not want to call praat_run() and actually starting Praat itself, but we
+// do want to be able to test all these platform assumptions in the middle. So let's fix that
+// with some more preprocessor stuff, I guess. It is probably better/more robust for Praat updates
+// and git merge/diff than extracting the middle part into a separate function.
+#ifndef PRAAT_INSIDE_PARSELMOUTH
 void praat_run () {
 	trace (U"adding menus, second round");
 	praat_addMenus2 ();
@@ -2162,195 +2168,14 @@ void praat_run () {
 		}
 	}
 
-	praat_testPlatformAssumptions();
-
-	if (Melder_batch) {
-		if (thePraatStandAloneScriptText) {
-			try {
-				praat_executeScriptFromText (thePraatStandAloneScriptText);
-				praat_exit (0);
-			} catch (MelderError) {
-				Melder_flushError (Melder_upperCaseAppName(), U": stand-alone script session interrupted.");
-				praat_exit (-1);
-			}
-		} else if (praatP.hasCommandLineInput) {
-			try {
-				praat_executeCommandFromStandardInput (Melder_upperCaseAppName());
-				praat_exit (0);
-			} catch (MelderError) {
-				Melder_flushError (Melder_upperCaseAppName(), U": command line session interrupted.");
-				praat_exit (-1);
-			}
-		} else {
-			try {
-				#ifdef _WIN32
-					/*
-						Our WinMain app cannot be a true console app when run from the Console.
-
-						The following is what we expect from a console app:
-						1. After you enter `Praat.exe myScript.praat` into the Console,
-						   the Console should go to the next line, but show nothing else.
-						2. Any console output (i.e. output to stdout and stderr) should appear
-						   on this line and the next lines.
-						3. When Praat finishes, the Console should show the new prompt,
-						   like `C:\Users\Me\myFolder>`, on a new line.
-
-						Instead, if we do nothing special here, Praat will do the following in the Console:
-						1. After you enter `Praat.exe myScript.praat`, the Console will immediately
-						   present the `C:\Users\Me\myFolder>` prompt again. We know of no way
-						   to change this behaviour, short of compiling Praat as a console app.
-						2. Any console output (i.e. output to stdout and stderr) will appear
-						   immediately after the `C:\Users\Me\myFolder>` prompt.
-						3. When Praat finishes, the Console will show no new prompt, because
-						   it has already shown a prompt (too early). A new prompt will appear
-						   only once you type the Enter key.
-
-						The most important problem to repair is 3, because otherwise it will look
-						as if Praat has not finished. So in Chunk 2 we fake an Enter.
-
-						Problem 2 is repaired in Chunk 1 by sending a line to stderr (not stdout,
-						because the line break should not end up in a file if redirected).
-						The line that is sent should not be empty, because an empty line would suggest
-						that Praat has finished, so we send a visible comment with hashes ("##########").
-
-						Our output will still look different from a real console app because of the extra
-						prompt at the beginning (prepended to our comment) and perhaps the extra
-						empty line that will appear now at the end of the output.
-						(last checked 2022-10-12)
-
-						Chunk 1 (sending a comment to stderr):
-					*/
-					HWND optionalConsoleWindowHandle = GetConsoleWindow ();
-					if (optionalConsoleWindowHandle)
-						Melder_casual (U" ########## Running Praat script ", theCurrentPraatApplication -> batchName.string);
-				#endif
-				praat_executeScriptFromCommandLine (theCurrentPraatApplication -> batchName.string,
-						praatP.argc - praatP.argumentNumber, & praatP.argv [praatP.argumentNumber]);
-				#ifdef _WIN32
-					/*
-						Chunk 2 (faking an Enter):
-					*/
-					if (optionalConsoleWindowHandle)
-						PostMessage (optionalConsoleWindowHandle, WM_KEYDOWN, VK_RETURN, 0);
-
-					FreeConsole ();   // this may not do anything? (last checked 2022-10-12)
-				#endif
-				praat_exit (0);
-			} catch (MelderError) {
-				Melder_flushError (Melder_upperCaseAppName(), U": script command <<",
-					theCurrentPraatApplication -> batchName.string, U">> not completed.");
-				praat_exit (-1);
-			}
-		}
-	} else /* GUI */ {
-		if (! praatP.ignorePreferenceFiles) {
-			trace (U"reading the added script buttons");
-			/* Each line separately: every error should be ignored.
-			 */
-			praatP.phase = praat_READING_BUTTONS;
-			{// scope
-				autostring32 buttons;
-				try {
-					buttons = MelderFile_readText (& buttonsFile);
-				} catch (MelderError) {
-					Melder_clearError ();
-				}
-				if (buttons) {
-					char32 *line = buttons.get();
-					for (;;) {
-						char32 *newline = str32chr (line, U'\n');
-						if (newline) *newline = U'\0';
-						try {
-							(void) praat_executeCommand (nullptr, line);   // should contain no cases of "nocheck"
-						} catch (MelderError) {
-							Melder_clearError ();   // ignore this line, but not necessarily the next
-						}
-						if (! newline)
-							break;
-						line = newline + 1;
-					}
-				}
-			}
-		}
-
-		trace (U"sorting the commands");
-		trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-		praat_sortMenuCommands ();
-		praat_sortActions ();
-
-		praatP.phase = praat_HANDLING_EVENTS;
-
-		if (praatP.userWantsToOpen) {
-			/*
-				praat --new-open [OPTION]... FILE-NAME...
-				praat --open [OPTION]... FILE-NAME...   (if not yet running)
-			*/
-			for (; praatP.argumentNumber < praatP.argc; praatP.argumentNumber ++) {
-				autostring32 text = Melder_dup (Melder_cat (U"Read from file... ",   // TODO: ~
-															Melder_peek8to32 (praatP.argv [praatP.argumentNumber])));
-				trace (U"Argument ", praatP.argumentNumber, U": <<", text.get(), U">>");
-				try {
-					praat_executeScriptFromText (text.get());
-				} catch (MelderError) {
-					Melder_flushError ();
-				}
-			}
-		} else if (praatP.userWantsToSend) {
-			/*
-				praat --new-send [OPTION]... SCRIPT-FILE-NAME [SCRIPT-ARGUMENT]...
-				praat --send [OPTION]... SCRIPT-FILE-NAME [SCRIPT-ARGUMENT]...   (if not yet running)
-			*/
-			autoPraatBackground background;   // to e.g. make audio synchronous
-			try {
-				praat_executeScriptFromCommandLine (theCurrentPraatApplication -> batchName.string,
-						praatP.argc - praatP.argumentNumber, & praatP.argv [praatP.argumentNumber]);
-			} catch (MelderError) {
-				Melder_flushError ();
-			}
-		} else if (praatP.userWantsToSendOrForm) {
-			/*
-				praat --new-send-or-form [OPTION]... SCRIPT-FILE-NAME
-				praat --send-or-form [OPTION]... SCRIPT-FILE-NAME   (if not yet running)
-			*/
-			autoPraatBackground background;   // to e.g. make audio synchronous
-			try {
-				praat_runScriptWithForm (theCurrentPraatApplication -> batchName.string);
-			} catch (MelderError) {
-				Melder_flushError ();
-			}
-		}
-		//TRACE
-		trace (U"Before main event loop: ", Melder_stopwatch ());
-
-		#if gtk
-			//gtk_widget_add_events (G_OBJECT (theCurrentPraatApplication -> topShell), GDK_ALL_EVENTS_MASK);
-			trace (U"install GTK key snooper");
-			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-			//g_signal_newv ("SENDPRAAT", G_TYPE_FROM_CLASS (gobject_class), G_SIGNAL_RUN_LAST, NULL, NULL, NULL, NULL, G_TYPE_NONE, 0, NULL);
-			g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "property-notify-event",
-					G_CALLBACK (cb_userMessage), nullptr);
-			signal (SIGUSR1, cb_sigusr1);
-			gtk_key_snooper_install (theKeySnooper, 0);
-			trace (U"start the GTK event loop");
-			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
-			gtk_main ();
-		#elif motif
-			for (;;) {
-				XEvent event;
-				GuiNextEvent (& event);
-				XtDispatchEvent (& event);
-			}
-		#elif cocoa
-			[NSApp run];
-		#endif
-	}
-}
-
-// Enabling asserts for praat_testPlatformAssumptions
+#else // defined(PRAAT_INSIDE_PARSELMOUTH)
+// Enabling asserts (only) for praat_testPlatformAssumptions, independent of NDEBUG
 #undef Melder_assert
 #define Melder_assert(x) ((x) ? void (0) : _private_Melder_assert (__FILE__, __LINE__, #x))
 
 void praat_testPlatformAssumptions() {
+#endif
+
 	/*
 		Check the locale, to ensure identical behaviour on all computers.
 	*/
@@ -2698,6 +2523,192 @@ void praat_testPlatformAssumptions() {
 			in any function call, even for the recursive templates of our own devising.
 		 */
 	}
+
+#ifdef PRAAT_INSIDE_PARSELMOUTH  // Parselmouth: See above
 }
+#else  // !defined(PRAAT_INSIDE_PARSELMOUTH)
+
+	if (Melder_batch) {
+		if (thePraatStandAloneScriptText) {
+			try {
+				praat_executeScriptFromText (thePraatStandAloneScriptText);
+				praat_exit (0);
+			} catch (MelderError) {
+				Melder_flushError (Melder_upperCaseAppName(), U": stand-alone script session interrupted.");
+				praat_exit (-1);
+			}
+		} else if (praatP.hasCommandLineInput) {
+			try {
+				praat_executeCommandFromStandardInput (Melder_upperCaseAppName());
+				praat_exit (0);
+			} catch (MelderError) {
+				Melder_flushError (Melder_upperCaseAppName(), U": command line session interrupted.");
+				praat_exit (-1);
+			}
+		} else {
+			try {
+				#ifdef _WIN32
+					/*
+						Our WinMain app cannot be a true console app when run from the Console.
+
+						The following is what we expect from a console app:
+						1. After you enter `Praat.exe myScript.praat` into the Console,
+						   the Console should go to the next line, but show nothing else.
+						2. Any console output (i.e. output to stdout and stderr) should appear
+						   on this line and the next lines.
+						3. When Praat finishes, the Console should show the new prompt,
+						   like `C:\Users\Me\myFolder>`, on a new line.
+
+						Instead, if we do nothing special here, Praat will do the following in the Console:
+						1. After you enter `Praat.exe myScript.praat`, the Console will immediately
+						   present the `C:\Users\Me\myFolder>` prompt again. We know of no way
+						   to change this behaviour, short of compiling Praat as a console app.
+						2. Any console output (i.e. output to stdout and stderr) will appear
+						   immediately after the `C:\Users\Me\myFolder>` prompt.
+						3. When Praat finishes, the Console will show no new prompt, because
+						   it has already shown a prompt (too early). A new prompt will appear
+						   only once you type the Enter key.
+
+						The most important problem to repair is 3, because otherwise it will look
+						as if Praat has not finished. So in Chunk 2 we fake an Enter.
+
+						Problem 2 is repaired in Chunk 1 by sending a line to stderr (not stdout,
+						because the line break should not end up in a file if redirected).
+						The line that is sent should not be empty, because an empty line would suggest
+						that Praat has finished, so we send a visible comment with hashes ("##########").
+
+						Our output will still look different from a real console app because of the extra
+						prompt at the beginning (prepended to our comment) and perhaps the extra
+						empty line that will appear now at the end of the output.
+						(last checked 2022-10-12)
+
+						Chunk 1 (sending a comment to stderr):
+					*/
+					HWND optionalConsoleWindowHandle = GetConsoleWindow ();
+					if (optionalConsoleWindowHandle)
+						Melder_casual (U" ########## Running Praat script ", theCurrentPraatApplication -> batchName.string);
+				#endif
+				praat_executeScriptFromCommandLine (theCurrentPraatApplication -> batchName.string,
+						praatP.argc - praatP.argumentNumber, & praatP.argv [praatP.argumentNumber]);
+				#ifdef _WIN32
+					/*
+						Chunk 2 (faking an Enter):
+					*/
+					if (optionalConsoleWindowHandle)
+						PostMessage (optionalConsoleWindowHandle, WM_KEYDOWN, VK_RETURN, 0);
+
+					FreeConsole ();   // this may not do anything? (last checked 2022-10-12)
+				#endif
+				praat_exit (0);
+			} catch (MelderError) {
+				Melder_flushError (Melder_upperCaseAppName(), U": script command <<",
+					theCurrentPraatApplication -> batchName.string, U">> not completed.");
+				praat_exit (-1);
+			}
+		}
+	} else /* GUI */ {
+		if (! praatP.ignorePreferenceFiles) {
+			trace (U"reading the added script buttons");
+			/* Each line separately: every error should be ignored.
+			 */
+			praatP.phase = praat_READING_BUTTONS;
+			{// scope
+				autostring32 buttons;
+				try {
+					buttons = MelderFile_readText (& buttonsFile);
+				} catch (MelderError) {
+					Melder_clearError ();
+				}
+				if (buttons) {
+					char32 *line = buttons.get();
+					for (;;) {
+						char32 *newline = str32chr (line, U'\n');
+						if (newline) *newline = U'\0';
+						try {
+							(void) praat_executeCommand (nullptr, line);   // should contain no cases of "nocheck"
+						} catch (MelderError) {
+							Melder_clearError ();   // ignore this line, but not necessarily the next
+						}
+						if (! newline)
+							break;
+						line = newline + 1;
+					}
+				}
+			}
+		}
+
+		trace (U"sorting the commands");
+		trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
+		praat_sortMenuCommands ();
+		praat_sortActions ();
+
+		praatP.phase = praat_HANDLING_EVENTS;
+
+		if (praatP.userWantsToOpen) {
+			/*
+				praat --new-open [OPTION]... FILE-NAME...
+				praat --open [OPTION]... FILE-NAME...   (if not yet running)
+			*/
+			for (; praatP.argumentNumber < praatP.argc; praatP.argumentNumber ++) {
+				autostring32 text = Melder_dup (Melder_cat (U"Read from file... ",   // TODO: ~
+															Melder_peek8to32 (praatP.argv [praatP.argumentNumber])));
+				trace (U"Argument ", praatP.argumentNumber, U": <<", text.get(), U">>");
+				try {
+					praat_executeScriptFromText (text.get());
+				} catch (MelderError) {
+					Melder_flushError ();
+				}
+			}
+		} else if (praatP.userWantsToSend) {
+			/*
+				praat --new-send [OPTION]... SCRIPT-FILE-NAME [SCRIPT-ARGUMENT]...
+				praat --send [OPTION]... SCRIPT-FILE-NAME [SCRIPT-ARGUMENT]...   (if not yet running)
+			*/
+			autoPraatBackground background;   // to e.g. make audio synchronous
+			try {
+				praat_executeScriptFromCommandLine (theCurrentPraatApplication -> batchName.string,
+						praatP.argc - praatP.argumentNumber, & praatP.argv [praatP.argumentNumber]);
+			} catch (MelderError) {
+				Melder_flushError ();
+			}
+		} else if (praatP.userWantsToSendOrForm) {
+			/*
+				praat --new-send-or-form [OPTION]... SCRIPT-FILE-NAME
+				praat --send-or-form [OPTION]... SCRIPT-FILE-NAME   (if not yet running)
+			*/
+			autoPraatBackground background;   // to e.g. make audio synchronous
+			try {
+				praat_runScriptWithForm (theCurrentPraatApplication -> batchName.string);
+			} catch (MelderError) {
+				Melder_flushError ();
+			}
+		}
+		//TRACE
+		trace (U"Before main event loop: ", Melder_stopwatch ());
+
+		#if gtk
+			//gtk_widget_add_events (G_OBJECT (theCurrentPraatApplication -> topShell), GDK_ALL_EVENTS_MASK);
+			trace (U"install GTK key snooper");
+			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
+			//g_signal_newv ("SENDPRAAT", G_TYPE_FROM_CLASS (gobject_class), G_SIGNAL_RUN_LAST, NULL, NULL, NULL, NULL, G_TYPE_NONE, 0, NULL);
+			g_signal_connect (G_OBJECT (theCurrentPraatApplication -> topShell -> d_gtkWindow), "property-notify-event",
+					G_CALLBACK (cb_userMessage), nullptr);
+			signal (SIGUSR1, cb_sigusr1);
+			gtk_key_snooper_install (theKeySnooper, 0);
+			trace (U"start the GTK event loop");
+			trace (U"locale is ", Melder_peek8to32 (setlocale (LC_ALL, nullptr)));
+			gtk_main ();
+		#elif motif
+			for (;;) {
+				XEvent event;
+				GuiNextEvent (& event);
+				XtDispatchEvent (& event);
+			}
+		#elif cocoa
+			[NSApp run];
+		#endif
+	}
+}
+#endif
 
 /* End of file praat.cpp */

@@ -65,8 +65,11 @@ void praat_init (conststring32 title,
 	conststring32 firstPartOfEmailAddress, conststring32 secondPartOfEmailAddress, // skip '@' to not include the full address in our binary
 	int argc, char **argv
 );
+#ifndef PRAAT_INSIDE_PARSELMOUTH  // Parselmouth: See praat.cpp
 void praat_run ();
+#else
 void praat_testPlatformAssumptions();
+#endif
 void praat_setStandAloneScriptText (conststring32 text);   // call before praat_init if you want to create a stand-alone application without Objects and Picture window
 extern "C" void praatlib_init ();   // for use in an application that uses Praatlib
 
