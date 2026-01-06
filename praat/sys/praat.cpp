@@ -25,7 +25,7 @@
 	#include <signal.h>
 #endif
 #include <locale.h>
-#if defined (UNIX)
+#if defined (UNIX) || defined (macintosh)  // Parselmouth: Also mac, for isatty()
 	#include <unistd.h>
 #endif
 #if defined (_WIN32)
@@ -928,6 +928,7 @@ void praat_dontUsePictureWindow () { praatP.dontUsePictureWindow = true; }
 	}
 #endif
 
+#ifndef NO_GUI  // Parselmouth
 #if defined (UNIX)
 	#if ! defined (NO_GUI)
 		static gboolean cb_userMessage (GtkWidget /* widget */, GdkEventProperty * /* event */, gpointer /* userData */) {
@@ -1017,6 +1018,7 @@ void praat_dontUsePictureWindow () { praatP.dontUsePictureWindow = true; }
 		DO_Quit (nullptr, 0, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr);
 		return 0;
 	}
+#endif
 #endif
 
 static conststring32 thePraatStandAloneScriptText = nullptr;
