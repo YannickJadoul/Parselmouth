@@ -160,30 +160,30 @@ inline std::string attr_doc(const py::module_ &m, const char *name, const char *
 
 // Cannot be put into an anonymous namespace, because "INCLUDE_LIBRARY" will not work anymore.
 void initializePraat() {
-	Melder_setCrashProc([](const char32 *message) {
-		auto extraMessage = "Praat failed to initialize and cannot be used by Parselmouth:\n\n"s +
-		                    Melder_peek32to8(message) + "\n"s +
-		                    "Since Parselmouth uses Praat's code, it can only be run on platforms that can run Praat.\n"s
-		                    "If you can run Praat as standalone program or if you think it should be able to, please\n"s
-		                    "report the error to the maintainers, at https://github.com/YannickJadoul/Parselmouth."s;
-		PyErr_SetString(PyExc_Exception, extraMessage.c_str());
-		throw py::error_already_set();
-	});
+	try {
+		static bool initialized = false;
+		if (!initialized) {
+			praatlib_init();
 
-	static bool initialized = false;
-	if (!initialized) {
-		praatlib_init();
+			Melder_setAppName(U"PraatInsideParselmouth");
+			Melder_setAppVersion(U"" XSTR(PRAAT_VERSION_STR), PRAAT_VERSION_NUM);
+			Melder_setAppDate(PRAAT_YEAR, PRAAT_MONTH, PRAAT_DAY);
+			Melder_setAppContactAddress (U"yannick.jadoul", U"gmail.com");
 
-		Melder_setAppName(U"PraatInsideParselmouth");
-		Melder_setAppVersion(U"" XSTR(PRAAT_VERSION_STR), PRAAT_VERSION_NUM);
-		Melder_setAppDate(PRAAT_YEAR, PRAAT_MONTH, PRAAT_DAY);
-		Melder_setAppContactAddress (U"yannick.jadoul", U"gmail.com");
+			INCLUDE_LIBRARY(praat_uvafon_init)
+			initialized = true;
+		}
 
-		INCLUDE_LIBRARY(praat_uvafon_init)
-		initialized = true;
+		praat_testPlatformAssumptions();
 	}
-
-	praat_testPlatformAssumptions();
+	catch (const MelderError &e) {
+		auto extraMessage = "Praat failed to initialize and cannot be used by Parselmouth.\n\n"s +
+							Melder_peek32to8(Melder_getError()) + "\n"s +
+							"Since Parselmouth uses Praat's code, it can only be run on platforms that can run Praat.\n"s
+							"If you can run Praat as standalone program or if you think you should be able to, please\n"s
+							"report the error to the maintainers, at https://github.com/YannickJadoul/Parselmouth."s;
+		throw std::runtime_error(extraMessage);
+	}
 }
 
 namespace {
