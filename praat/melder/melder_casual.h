@@ -29,6 +29,10 @@ extern std::mutex theMelder_casual_mutex;
 
 template <typename... Arg>
 void Melder_casual (const Arg... /*arg*/) {
+	// Parselmouth: Disabled Melder_casual, as it seems to be used for debug output, etc., and there's
+	// no easy way to redirect to Python's sys.stdout like e.g. Melder_setInformationProc for Melder_information.
+	// This influences the use of Melder_debug, but that's also probably not necessary for Parselmouth.
+
 	// std::lock_guard lock (theMelder_casual_mutex);
 	// (  MelderConsole::write (MelderArg { arg }. _arg, true), ...  );   // fold the comma over the parameter pack
 	// MelderConsole::write (U"\n", true);
