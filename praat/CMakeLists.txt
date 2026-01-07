@@ -30,6 +30,7 @@ set(PRAAT_SUBDIRECTORIES
 	external/glpk
 	external/lame
 	external/mp3
+	external/num
 	external/flac
 	external/portaudio
 	external/espeak
