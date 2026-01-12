@@ -75,6 +75,10 @@ if (UNIX)
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} linux)
 	elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} macintosh)
+	elseif (${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+		# Temp hack, but let's consider Emscripten to be Linux?
+		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} UNIX)
+		set(PRAAT_DEFINITIONS ${PRAAT_DEFINITIONS} linux)
 	endif ()
 elseif (WIN32)
 	set(PRAAT_FLAGS ${PRAAT_FLAGS} /wd4068) # "warning C4068: unknown pragma": #pragma mark

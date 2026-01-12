@@ -676,12 +676,12 @@ static void gui_drawingarea_cb_mouse (HyperPage me, GuiDrawingArea_MouseEvent ev
 	}
 }
 
-extern "C" void GRAPHICS_PostScript_settings (UiForm sendingForm, int narg, Stackel args, conststring32 sendingString, Interpreter interpreter, conststring32 invokingButtonTitle, bool modified, void *buttonClosure);
+extern "C" void GRAPHICS_PostScript_settings (UiForm sendingForm, int narg, Stackel args, conststring32 sendingString, Interpreter interpreter, conststring32 invokingButtonTitle, bool modified, void *buttonClosure, Editor optionalEditor);
 
 static void menu_cb_postScriptSettings (HyperPage me, EDITOR_ARGS) {
 	(void) me;
 	(void) cmd;
-	GRAPHICS_PostScript_settings (_sendingForm_, _narg_, _args_, _sendingString_, optionalInterpreter, nullptr, false, nullptr);
+	GRAPHICS_PostScript_settings (_sendingForm_, _narg_, _args_, _sendingString_, optionalInterpreter, nullptr, false, nullptr, nullptr);
 }
 
 #ifdef macintosh
