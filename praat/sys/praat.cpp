@@ -340,7 +340,7 @@ static void praat_remove (integer iobject, bool removeVisibly) {
 	MelderFile_setToNull (& theCurrentPraatObjects -> list [iobject]. file);
 	trace (U"free name");
 	theCurrentPraatObjects -> list [iobject]. name. reset();
-	if (theCurrentPraatObjects -> list [iobject]. owned) {
+	if (theCurrentPraatObjects -> list [iobject]. owned) {  // Parselmouth: Don't delete borrowed objects
 		trace (U"forget object");
 		forget (theCurrentPraatObjects -> list[iobject]. object);   // note: this might save a file-based object to file
 		trace (U"forgotten object");
@@ -358,8 +358,17 @@ void praat_cleanUpName (char32 *name) {
 
 /***** objects + commands *****/
 
+// Parselmouth: `Collection` instead of `autoCollection`, and added `owned` parameter to fill structPraat_Object::owned.
 static void praat_new_unpackCollection (Collection me, bool owned, const char32* myName) {
+	// Parselmouth: Mimic previous `autoCollection` parameter, and clean up when leaving the scope.
+	autoCollection cleanup;
+	if (owned)
+		cleanup.adoptFromAmbiguousOwner(me);
+
 	for (integer idata = 1; idata <= my size; idata ++) {
+		// Parselmouth: Praat was already assuming that the Collection object owns all the data; we're just making it explicit.
+		// Reason: Collection object can never exist in the Praat object list (I think), but only created programmatically.
+		// This means that the only way we can end up here is by reading a saved `Collection` from disk, which means we do own it!
 		Melder_assert (my _ownItems);
 		Daata object = (Daata) my at [idata];
 		if (owned)
@@ -368,15 +377,21 @@ static void praat_new_unpackCollection (Collection me, bool owned, const char32*
 		Melder_assert (name);
 		praat_newWithFile (object, owned, nullptr, name);   // recurse
 	}
-	if (owned)
-		forget (me);
 }
 
+// Parselmouth: `Daata` instead of `autoDaata`, and added `owned` parameter to fill structPraat_Object::owned.
 void praat_newWithFile (Daata me, bool owned, MelderFile file, conststring32 myName) {
+	// Parselmouth: Mimic previous `autoCollection` parameter, and clean up when leaving the scope.
+	autoDaata cleanup;
+	if (owned)
+		cleanup.adoptFromAmbiguousOwner(me);
+
 	if (! me)
 		Melder_throw (U"No object was put into the list.");
 
 	if (my classInfo == classCollection) {
+		// Parselmouth: If owned, pass ownership to `praat_new_unpackCollection`.
+		cleanup.releaseToAmbiguousOwner();
 		praat_new_unpackCollection (static_cast<Collection>(me), owned, myName);
 		return;
 	}
@@ -413,6 +428,7 @@ void praat_newWithFile (Daata me, bool owned, MelderFile file, conststring32 myN
 			theCurrentPraatObjects -> n
 		);
 	CLASS = my classInfo;
+	cleanup.releaseToAmbiguousOwner();
 	OBJECT = me;
 	theCurrentPraatObjects -> list [IOBJECT]. owned = owned;
 	SELECTED = false;

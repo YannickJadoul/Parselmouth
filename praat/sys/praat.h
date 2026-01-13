@@ -127,7 +127,7 @@ GuiMenuItem praat_addMenuCommand_ (conststring32 window, conststring32 menu, con
 typedef struct structPraat_Object {
 	ClassInfo klas;   // the class
 	Daata object;   // the instance
-	bool owned;
+	bool owned;  // Parselmouth: Should be false if the object is wrapped in/owned by a Python object!
 	autostring32 name;   // the name of the object as it appears in the List
 	structMelderFile file;   // is this Object associated with a file?
 	integer id;   // the unique number of the object
@@ -154,7 +154,8 @@ typedef struct structPraatObjects {   // read-only (for interface files)
 	void reset () {
 		for (integer iobject = our n; iobject >= 1; iobject --) {
 			our list [iobject]. name. reset();
-			forget (our list [iobject]. object);
+			if (our list[iobject].owned)  // Parselmouth: Don't delete borrowed objects
+				forget (our list [iobject]. object);
 		}
 		#if 0
 		memset (this, 0, sizeof (structPraatObjects));
