@@ -150,7 +150,7 @@ jobs:
 
       - name: Setup CMake
         if: ${{ !(runner.os == 'Linux' && matrix.arch == 'arm64') }}
-        uses: jwlawson/actions-setup-cmake@v2.0
+        uses: jwlawson/actions-setup-cmake@v2.1
 
       - name: Setup CMake on arm64 (apt)
         if: runner.os == 'Linux' && matrix.arch == 'arm64'
@@ -244,7 +244,7 @@ jobs:
           python-version: '3.12'
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v2.0
+        uses: jwlawson/actions-setup-cmake@v2.1
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2

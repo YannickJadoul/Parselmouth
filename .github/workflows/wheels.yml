@@ -29,7 +29,7 @@ jobs:
           python-version: '3.13'
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v2.0
+        uses: jwlawson/actions-setup-cmake@v2.1
 
       - name: Install requirements
         run: |
@@ -102,7 +102,7 @@ jobs:
           architecture: ${{ matrix.python-arch }}
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v2.0
+        uses: jwlawson/actions-setup-cmake@v2.1
 
       - name: Install requirements
         run: |
