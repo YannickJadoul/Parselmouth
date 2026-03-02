@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2023  Yannick Jadoul
+ * Copyright (C) 2018-2026  Yannick Jadoul
  *
  * This file is part of Parselmouth.
  *
