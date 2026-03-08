@@ -19,6 +19,8 @@
 
 #include "Parselmouth.h"
 
+#include "Pitch_docstrings.h"
+
 #include "TimeClassAspects.h"
 
 #include "utils/praat/MelderUtils.h"
@@ -27,6 +29,7 @@
 
 #include <praat/fon/Matrix_and_Pitch.h>
 #include <praat/fon/Pitch.h>
+#include <praat/fon/Pitch_to_PointProcess.h>
 #include <praat/fon/Pitch_to_Sound.h>
 
 #include <pybind11/numpy.h>
@@ -148,7 +151,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "sampling_frequency"_a = 44100.0, "round_to_nearest_zero_crossing"_a = true);
 
 	def("count_voiced_frames",
-	    &Pitch_countVoicedFrames);
+		&Pitch_countVoicedFrames);
 
 	def("get_value_at_time",
 	    [](Pitch self, double time, kPitch_unit unit, kVector_valueInterpolation interpolation) {
@@ -228,17 +231,46 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    &Pitch_interpolate);
 
 	def("smooth",
-	    args_cast<_, Positive<_>>(Pitch_smooth),
-	    "bandwidth"_a = 10.0);
+		args_cast<_, Positive<_>>(Pitch_smooth),
+		"bandwidth"_a = 10.0);
 
 	def("subtract_linear_fit",
 	    &Pitch_subtractLinearFit,
-	    "unit"_a = kPitch_unit::HERTZ);
+		"unit"_a = kPitch_unit::HERTZ);
 
 	def("kill_octave_jumps",
-	    &Pitch_killOctaveJumps);
+		&Pitch_killOctaveJumps);
 
 	// TODO To PitchTier: depends on PitchTier
+
+	// TODO Not sure what to do with this, yet
+	def("to_point_process",
+	    [](Pitch self, Sound sound, std::string method, bool include_maxima, bool include_minima) {
+		    if (sound) {
+			    if (method == "cc")
+				    return Sound_Pitch_to_PointProcess_cc(sound, self);
+			    else if (method == "peaks")
+				    return Sound_Pitch_to_PointProcess_peaks(sound, self, include_maxima, include_minima);
+			    else
+				    throw std::invalid_argument("Unknown method specified.");
+		    } else {
+			    return Pitch_to_PointProcess(self);
+		    }
+	    },
+	    "sound"_a = nullptr, "method"_a = "cc", "include_maxima"_a = true, "include_minima"_a = false,
+	    TO_POINT_PROCESS_DOCSTRING);
+
+	// NEW1_Sound_Pitch_to_PointProcess_cc
+	def("to_point_process_cc",
+	    [](Pitch self, Sound sound) { return Sound_Pitch_to_PointProcess_cc(sound, self); },
+	    "sound"_a.none(false),
+	    TO_POINT_PROCESS_CC_DOCSTRING);
+
+	// NEW1_Sound_Pitch_to_PointProcess_peaks
+	def("to_point_process_peaks",
+	    [](Pitch self, Sound sound, bool include_maxima, bool include_minima) { return Sound_Pitch_to_PointProcess_peaks(sound, self, include_maxima, include_minima); },
+	    "sound"_a.none(false), "include_maxima"_a = true, "include_minima"_a = false,
+	    TO_POINT_PROCESS_PEAKS_DOCSTRING);
 
 	def("to_matrix",
 	    &Pitch_to_Matrix);
