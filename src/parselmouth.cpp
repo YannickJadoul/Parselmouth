@@ -35,7 +35,6 @@ Thing_declare(Daata);
 Thing_declare(Formant);
 Thing_declare(Function);
 Thing_declare(Harmonicity);
-Thing_declare(Harmonicity);
 Thing_declare(Intensity);
 Thing_declare(Matrix);
 Thing_declare(MFCC);
@@ -119,6 +118,7 @@ using PraatBindings = Bindings<PraatError,
                                PraatWarning,
                                PraatFatal,
                                ValueInterpolation,
+							   PeakInterpolation,
                                WindowShape,
                                AmplitudeScaling,
                                SignalOutsideTimeDomain,
