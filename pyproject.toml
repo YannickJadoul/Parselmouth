@@ -56,6 +56,9 @@ Bug_Tracker = "https://github.com/YannickJadoul/Parselmouth/issues"
 Source_Code = "https://github.com/YannickJadoul/Parselmouth"
 Documentation = "https://parselmouth.readthedocs.io/"
 
+[tool.scikit-build]
+build-dir="_skbuild"
+
 [tool.scikit-build.metadata.version]
 provider = "scikit_build_core.metadata.regex"
 input = "src/version.h"
