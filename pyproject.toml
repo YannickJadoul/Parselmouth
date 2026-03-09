@@ -1,13 +1,12 @@
 [build-system]
 requires = [
-    "setuptools>=77",
-    "scikit-build>=0.13",
+    "cmake>=3.18",
+    "scikit_build_core",
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "praat-parselmouth"
-# version = <see setup.py>
 description = "Praat in Python, the Pythonic way"
 license = "GPL-3.0-or-later"
 license-files = [
@@ -32,6 +31,8 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: Unix",
     "Programming Language :: C++",
+    # Programming Language :: Python :: 2
+    # Programming Language :: Python :: 2.7
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -40,30 +41,34 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = [
-    "numpy>=1.7.0"
-]
+
+dependencies = ["numpy>=1.7.0,<2"]
+# zip_safe = False - deprecated https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+
+# version = <see setup.py>
 dynamic = ["version"]
 
 [project.urls]
-"Homepage" = "https://github.com/YannickJadoul/Parselmouth"
-"Bug Tracker" = "https://github.com/YannickJadoul/Parselmouth/issues"
-"Documentation" = "https://parselmouth.readthedocs.io/"
-"Source Code" = "https://github.com/YannickJadoul/Parselmouth"
+Home = "https://github.com/YannickJadoul/Parselmouth"
+Bug_Tracker = "https://github.com/YannickJadoul/Parselmouth/issues"
+Source_Code = "https://github.com/YannickJadoul/Parselmouth"
+Documentation = "https://parselmouth.readthedocs.io/"
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-testpaths = [
-    "tests"
-]
+[tool.scikit-build]
+build-dir="_skbuild"
+
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "src/version.h"
+regex = "^#define PARSELMOUTH_VERSION (?P<value>[0-9a-z.]+)$"
 
 [tool.check-manifest]
 ignore = [
-    ".clang-format",
-    ".pre-commit-config.yaml",
+    ".appveyor.yml",
     ".readthedocs.yml",
+    ".travis.yml",
     "binder",
-    "binder/*"
+    "binder/*",
 ]
