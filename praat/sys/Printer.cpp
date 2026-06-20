@@ -89,7 +89,7 @@ void Printer_prefs () {
 //	}
 
 int Printer_postScript_printf (FILE *stream, const char *format, fmt::printf_args args) {
-	auto s = fmt::vsprintf(format, args);
+	auto s = fmt::vsprintf(fmt::string_view(format), args);
 	auto length = s.size();
 	if (length > 0 && s[length - 1] == '\n') {
 		s[length - 1] = '\r';
