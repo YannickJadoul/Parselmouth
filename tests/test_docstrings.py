@@ -51,6 +51,8 @@ def test_docstring_formatting():
 	for _, docstring in all_docstrings(parselmouth):
 		assert '\t' not in docstring
 		assert not docstring.startswith("\n")
+		for line in docstring.splitlines():
+			assert not line.endswith(" ")
 
 
 def test_docstring_line_lengths():

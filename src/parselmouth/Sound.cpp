@@ -21,6 +21,7 @@
 
 #include "Parselmouth.h"
 #include "TimeClassAspects.h"
+#include "Sound_docstrings.h"
 
 #include "utils/SignatureCast.h"
 #include "utils/praat/MelderUtils.h"
@@ -37,6 +38,7 @@
 #include <praat/fon/Sound_to_Harmonicity.h>
 #include <praat/fon/Sound_to_Intensity.h>
 #include <praat/fon/Sound_to_Pitch.h>
+#include <praat/fon/Sound_to_PointProcess.h>
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
@@ -55,6 +57,20 @@ PraatCollection referencesToPraatCollection(const Container &container) { // TOD
 	std::for_each(begin(container), end(container), [&collection](auto &item) { collection.addItem_ref(&item.get()); });
 	return collection;
 }
+
+struct Channel {
+	integer getValue(integer nChannels) {
+		if (value > nChannels)
+			throw py::value_error(fmt::format("Channel number ({}) is larger than number of available channels ({}).", value, nChannels));
+		return value;
+	}
+	integer value;
+	static const Channel LEFT;
+	static const Channel RIGHT;
+};
+
+constexpr Channel Channel::LEFT = Channel{1};
+constexpr Channel Channel::RIGHT = Channel{2};
 
 } // namespace
 
@@ -180,11 +196,43 @@ PRAAT_ENUM_BINDING(ToHarmonicityMethod) {
 	make_implicitly_convertible_from_string(*this);
 }
 
-PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
+CLASS_BINDING(Channel, Channel)
+BINDING_CONSTRUCTOR(Channel, "Channel")
+BINDING_INIT(Channel) {
+	def(py::init([](integer value) {
+		if (value < 0)
+			throw py::value_error("Channel number should be positive or zero.");
+		return Channel{value};
+	}));
+
+	def(py::init([](std::string value) {
+		for (auto &c : value)
+			c = std::toupper(c);
+		if (value == "LEFT")
+			return Channel{Channel::LEFT};
+		else if (value == "RIGHT")
+			return Channel{Channel::RIGHT};
+		else
+			throw py::value_error("Channel string can only be 'left' or 'right'.");
+	}));
+
+	def("__repr__", [](const Channel &self) { return fmt::format("Channel({})", self.value); });
+
+	def_readonly("value", &Channel::value);
+
+	attr("LEFT") = Channel::LEFT;
+	attr("RIGHT") = Channel::RIGHT;
+
+	py::implicitly_convertible<py::int_, Channel>();
+	py::implicitly_convertible<py::str, Channel>();
+}
+
+PRAAT_CLASS_BINDING(Sound) {
 	addTimeFrameSampledMixin(*this);
 
 	NESTED_BINDINGS(ToPitchMethod,
-	                ToHarmonicityMethod)
+	                ToHarmonicityMethod,
+					Channel)
 
 	using signature_cast_placeholder::_;
 
@@ -202,7 +250,7 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 		    auto nx = values.shape(ndim - 1);
 		    auto ny = ndim == 2 ? values.shape(0) : 1;
 		    if (ndim == 2 && ny > nx)
-			    PyErr_WarnEx(PyExc_RuntimeWarning, ("Number of channels (" + std::to_string(ny) + ") is greater than number of samples (" + std::to_string(nx) + "); note that the shape of the `values` array is interpreted as (n_channels, n_samples).").c_str(), 1);
+				PyErr_WarnEx(PyExc_RuntimeWarning, fmt::format("Number of channels ({}) is greater than number of samples ({}); note that the shape of the `values` array is interpreted as (n_channels, n_samples).", ny, nx).c_str(), 1);
 
 		    auto result = Sound_create(ny, startTime, startTime + nx / samplingFrequency, nx, 1.0 / samplingFrequency, startTime + 0.5 / samplingFrequency);
 
@@ -322,12 +370,11 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 
 	// TODO Minimum & maximum (Vector?)
 
-	def("get_nearest_zero_crossing", // TODO Channel is CHANNEL
-	    [](Sound self, double time, long channel) {
-		    if (channel > self->ny) channel = 1;
-		    return Sound_getNearestZeroCrossing(self, time, channel);
+	def("get_nearest_zero_crossing",
+	    [](Sound self, double time, Channel channel) {
+		    return Sound_getNearestZeroCrossing (self, time, channel.getValue(self->ny));
 	    },
-	    "time"_a, "channel"_a = 1);
+	    "time"_a, "channel"_a = Channel::LEFT);
 
 	// TODO Get mean (Vector?)
 
@@ -409,6 +456,7 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 	def("convert_to_stereo",
 	    &Sound_convertToStereo);
 
+	// NEWMANY_Sound_extractAllChannels
 	def("extract_all_channels",
 	    [](Sound self) {
 		    std::vector<autoSound> result;
@@ -419,25 +467,16 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 		    return result;
 	    });
 
-	def("extract_channel", // TODO Channel POSITIVE? (Actually CHANNEL; >= 1, but does not always have intended result (e.g., Set value at sample...))
-	    &Sound_extractChannel,
-	    "channel"_a);
-
-	def("extract_channel", // TODO Channel enum type?
-	    [](Sound self, std::string channel) {
-		    std::transform(channel.begin(), channel.end(), channel.begin(), tolower);
-		    if (channel == "left")
-			    return Sound_extractChannel(self, 1);
-		    if (channel == "right")
-			    return Sound_extractChannel(self, 2);
-		    Melder_throw(U"'channel' can only be 'left' or 'right'"); // TODO Melder_throw or throw PraatError ?
+	def("extract_channel",
+	    [](Sound self, Channel channel) {
+			return Sound_extractChannel(self, channel.value);  // Will check the range of the channel itself.
 	    });
 
 	def("extract_left_channel",
-	    [](Sound self) { return Sound_extractChannel(self, 1); });
+	    [](Sound self) { return Sound_extractChannel(self, Channel::LEFT.value); });
 
 	def("extract_right_channel",
-	    [](Sound self) { return Sound_extractChannel(self, 2); });
+	    [](Sound self) { return Sound_extractChannel(self, Channel::RIGHT.value); });
 
 	def("extract_part", // TODO Something for std::optional<double> for from and to in Sounds?
 	    [](Sound self, std::optional<double> fromTime, std::optional<double> toTime, kSound_windowShape windowShape, Positive<double> relativeWidth, bool preserveTimes) { return Sound_extractPart(self, fromTime.value_or(self->xmin), toTime.value_or(self->xmax), windowShape, relativeWidth, preserveTimes); },
@@ -481,7 +520,7 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 			    case ToPitchMethod::SHS:
 				    return callMethod("to_pitch_shs");
 		    }
-		    return py::none(); // Unreachable
+		    throw py::value_error("Invalid ToPitchMethod value");
 	    },
 	    "method"_a);
 
@@ -527,7 +566,7 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 			    case ToHarmonicityMethod::GNE:
 				    return callMethod("to_harmonicity_gne");
 		    }
-		    return py::none(); // Unreachable
+		    throw py::value_error("Invalid ToPitchMethod value");
 	    },
 	    "method"_a = ToHarmonicityMethod::CC);
 
@@ -598,6 +637,44 @@ PRAAT_CLASS_BINDING(Sound, SOUND_DOCSTRING) {
 		    return Sound_to_MFCC(self, numberOfCoefficients, windowLength, timeStep, firstFilterFrequency, maximumFrequency ? static_cast<double>(*maximumFrequency) : 0.0, distanceBetweenFilters);
 	    },
 	    "number_of_coefficients"_a = 12, "window_length"_a = 0.015, "time_step"_a = 0.005, "firstFilterFrequency"_a = 100.0, "distance_between_filters"_a = 100.0, "maximum_frequency"_a = std::nullopt);
+
+	// NEW_Sound_to_PointProcess_extrema
+	def("to_point_process_extrema",
+		[](Sound self, Channel channel, bool includeMaxima, bool includeMinima, kVector_peakInterpolation peakInterpolationType) {
+			return Sound_to_PointProcess_extrema(self, channel.getValue(self->ny), peakInterpolationType, includeMaxima, includeMinima);
+		},
+		"channel"_a = Channel::LEFT, "include_maxima"_a = true, "include_minima"_a = false,
+		"interpolation"_a = kVector_peakInterpolation::SINC70,
+		TO_POINT_PROCESS_EXTREMA_DOCSTRING);
+
+	// NEW_Sound_to_PointProcess_periodic_cc
+	def("to_point_process_periodic",
+		[](Sound self, float minimumPitch, float maximumPitch) {
+			if (maximumPitch <= minimumPitch)
+				Melder_throw(U"Your maximum pitch should be greater than your minimum pitch.");
+			return Sound_to_PointProcess_periodic_cc(self, minimumPitch, maximumPitch);
+		},
+		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0,
+		TO_POINT_PROCESS_PERIODIC_DOCSTRING);
+
+	// NEW_Sound_to_PointProcess_periodic_peaks
+	def("to_point_process_periodic_peaks",
+		[](Sound self, float minimumPitch, float maximumPitch, bool includeMaxima, bool includeMinima) {
+			if (maximumPitch <= minimumPitch)
+				Melder_throw(U"Your maximum pitch should be greater than your minimum pitch.");
+			return Sound_to_PointProcess_periodic_peaks(self, minimumPitch, maximumPitch, includeMaxima, includeMinima);
+		},
+		"minimum_pitch"_a = 75.0, "maximum_pitch"_a = 600.0,
+		"include_maxima"_a = true, "include_minima"_a = false,
+		TO_POINT_PROCESS_PERIODIC_PEAKS_DOCSTRING);
+
+	// NEW_Sound_to_PointProcess_zeroes
+	def("to_point_process_zeros",
+		[](Sound self, Channel channel, bool includeRaisers, bool includeFallers) {
+			return Sound_to_PointProcess_zeroes(self, channel.getValue(self->ny), includeRaisers, includeFallers);
+		},
+		"channel"_a = Channel::LEFT, "include_raisers"_a = true,
+		"include_fallers"_a = false, TO_POINT_PROCESS_ZEROS_DOCSTRING);
 
 	// TODO For some reason praat_David_init.cpp also still contains Sound functionality
 	// TODO Still a bunch of Sound in praat_LPC_init.cpp
