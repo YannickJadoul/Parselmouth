@@ -21,6 +21,10 @@
 
 #include "TimeClassAspects.h"
 
+// Added by @hokiedsp on 2/17/21
+#include "Pitch_docstrings.h"
+// End added by @hokiedsp on 2/17/21
+
 #include "utils/praat/MelderUtils.h"
 #include "utils/pybind11/ImplicitStringToEnumConversion.h"
 #include "utils/pybind11/NumericPredicates.h"
@@ -148,7 +152,7 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt, "sampling_frequency"_a = 44100.0, "round_to_nearest_zero_crossing"_a = true);
 
 	def("count_voiced_frames",
-	    &Pitch_countVoicedFrames);
+		&Pitch_countVoicedFrames);
 
 	def("get_value_at_time",
 	    [](Pitch self, double time, kPitch_unit unit, kVector_valueInterpolation interpolation) {
@@ -228,15 +232,15 @@ PRAAT_CLASS_BINDING(Pitch) {
 	    &Pitch_interpolate);
 
 	def("smooth",
-	    args_cast<_, Positive<_>>(Pitch_smooth),
-	    "bandwidth"_a = 10.0);
+		args_cast<_, Positive<_>>(Pitch_smooth),
+		"bandwidth"_a = 10.0);
 
 	def("subtract_linear_fit",
 	    &Pitch_subtractLinearFit,
-	    "unit"_a = kPitch_unit::HERTZ);
+		"unit"_a = kPitch_unit::HERTZ);
 
 	def("kill_octave_jumps",
-	    &Pitch_killOctaveJumps);
+		&Pitch_killOctaveJumps);
 
 	// TODO To PitchTier: depends on PitchTier
 
@@ -367,6 +371,59 @@ PRAAT_CLASS_BINDING(Pitch) {
 		    }
 	    },
 	    "from_time"_a = std::nullopt, "to_time"_a = std::nullopt);
+
+	// Added by @hokiedsp on 2/17/21
+	def(
+	        "get_mean", &Pitch_getMean,
+	        "from_time"_a = 0.0, "to_time"_a = 0.0, "unit"_a = "HERTZ",
+	        GET_MEAN_DOCSTRING);
+
+	def(
+	        "get_mean_strength", [](Pitch self, std::string type, double tmin, double tmax) {
+		        const int strengthUnit =
+					(type == "ac") ? Pitch_STRENGTH_UNIT_AUTOCORRELATION :
+					(type == "nhr")	? Pitch_STRENGTH_UNIT_NOISE_HARMONICS_RATIO :
+					(type == "hnr_db") ? Pitch_STRENGTH_UNIT_HARMONICS_NOISE_DB : -1;
+
+		        if (strengthUnit < 0)
+			        throw py::value_error("Invalid mean strength measure type specified.");
+
+		        return Pitch_getMeanStrength(self, tmin, tmax, strengthUnit);
+	        },
+			"type"_a = "hnr_db", "from_time"_a = 0.0, "to_time"_a = 0.0,
+			GET_MEAN_STRENGTH_DOCSTRING);
+
+	def(
+	        "get_quantile", [](Pitch self, double quantile, double tmin, double tmax, kPitch_unit unit) {
+		        return Pitch_getQuantile(self, tmin, tmax, quantile, unit);
+	        },
+	        "quantile"_a, "from_time"_a = 0.0, "to_time"_a = 0.0, "unit"_a = "HERTZ", GET_QUANTILE_DOCSTRING);
+
+	def(
+	        "get_standard_deviation", &Pitch_getStandardDeviation, "from_time"_a = 0.0, "to_time"_a = 0.0, "unit"_a = "HERTZ",
+	        GET_STANDARD_DEVIATION_DOCSTRING);
+
+	def(
+	        "get_minimum", &Pitch_getMinimum, "from_time"_a = 0.0, "to_time"_a = 0.0, "unit"_a = "HERTZ", "interpolate"_a = true,
+			 GET_MINIMUM_DOCSTRING);
+
+	def(
+	        "get_maximum", &Pitch_getMaximum, "from_time"_a = 0.0, "to_time"_a = 0.0, "unit"_a = "HERTZ", "interpolate"_a = true,
+	        GET_MAXIMUM_DOCSTRING);
+
+	def(
+	        "get_fraction_of_locally_unvoiced_frames",
+	        [](Pitch self, double tmin, double tmax, double ceiling,
+	           double silenceThreshold, double voicingThreshold) {
+		        MelderFraction out = Pitch_getFractionOfLocallyUnvoicedFrames(self, tmin, tmax, ceiling,
+		                                                                      silenceThreshold, voicingThreshold);
+
+		        return std::make_tuple(out.numerator / out.denominator, out.numerator, out.denominator);
+	        },
+	        "from_time"_a = 0.0, "to_time"_a = 0.0, "to_pitch"_a = 600.0, "silence_threshold"_a = 0.03,
+	        "voicing_threshold"_a = 0.45, GET_FRACTION_OF_LOCALLY_UNVOICED_FRAMES_DOCSTRING);
+
+	// End added by @hokiedsp on 2/17/21
 
 	// TODO Pitch_Intensity_getMean & Pitch_Intensity_getMeanAbsoluteSlope ? (cfr. Intensity)
 }
