@@ -20,7 +20,7 @@ authors = [
     { name = "Yannick Jadoul", email = "yannick.jadoul@gmail.com" },
 ]
 readme = "res/README_PyPI.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["praat", "speech", "signal processing", "phonetics"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -32,7 +32,6 @@ classifiers = [
     "Operating System :: Unix",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
