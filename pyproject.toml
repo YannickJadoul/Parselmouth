@@ -43,6 +43,7 @@ classifiers = [
 dependencies = [
     "numpy>=1.7.0"
 ]
+import-names = ["parselmouth"]
 dynamic = ["version"]
 
 [project.urls]
