@@ -52,6 +52,37 @@ dynamic = ["version"]
 "Documentation" = "https://parselmouth.readthedocs.io/"
 "Source Code" = "https://github.com/YannickJadoul/Parselmouth"
 
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = "CMakeLists.txt"
+sdist.inclusion-mode = "explicit"
+sdist.include = [
+    "/*.md",
+    "/CITATION.cff",
+    "/LICENSE",
+    "/pyproject.toml",
+    "/CMakeLists.txt",
+    "/requirements.txt",
+    "/docs/",
+    "/extern/",
+    "/praat/",
+    "/pybind11/",
+    "/res/",
+    "/src/",
+    "/tests/"
+]
+sdist.exclude = [
+    "*.py[co]",
+    ".git",
+    ".gitattributes",
+    ".github",
+    ".gitignore",
+    "/docs/_build",
+    "/praat/generate/Unicode/*.pdf"
+]
+sdist.reproducible = false
+wheel.packages = []
+
 [[tool.dynamic-metadata]]
 provider = "scikit_build_core.metadata.regex"
 field = "version"
@@ -67,8 +98,11 @@ testpaths = [
 [tool.check-manifest]
 ignore = [
     ".clang-format",
+    ".github/**",
+    ".gitmodules",
     ".pre-commit-config.yaml",
     ".readthedocs.yml",
     "binder",
-    "binder/*"
+    "binder/*",
+    "praat/generate/Unicode/*.pdf"
 ]
