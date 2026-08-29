@@ -29,8 +29,9 @@ template <typename Type>
 void make_implicitly_convertible_from_string(pybind11::enum_<Type> &enumType) {
 	enumType.def(pybind11::init([enumType](pybind11::str value) {
 		                            auto values = pybind11::dict(enumType.attr("__members__"));
-		                            if (values.contains(value)) {
-			                            return pybind11::cast<Type>(values[value]);
+									auto key = value.attr("upper")();
+		                            if (values.contains(key)) {
+			                            return pybind11::cast<Type>(values[key]);
 		                            }
 
 		                            throw pybind11::value_error("\"" + pybind11::cast<std::string>(value) + "\" is not a valid value for enum type " + pybind11::cast<std::string>(enumType.attr("__name__")));
