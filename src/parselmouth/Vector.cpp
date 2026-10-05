@@ -42,6 +42,17 @@ PRAAT_ENUM_BINDING(ValueInterpolation) {
 	make_implicitly_convertible_from_string(*this);
 }
 
+PRAAT_ENUM_BINDING(PeakInterpolation)
+{
+	value("NONE", kVector_peakInterpolation::NONE);
+	value("PARABOLIC", kVector_peakInterpolation::PARABOLIC);
+	value("CUBIC", kVector_peakInterpolation::CUBIC);
+	value("SINC70", kVector_peakInterpolation::SINC70);
+	value("SINC700", kVector_peakInterpolation::SINC700);
+
+	make_implicitly_convertible_from_string(*this);
+}
+
 PRAAT_CLASS_BINDING(Vector) {
 	using signature_cast_placeholder::_;
 
