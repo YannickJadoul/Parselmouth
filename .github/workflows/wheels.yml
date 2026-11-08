@@ -117,7 +117,11 @@ jobs:
           echo "CIBW_ARCHS_MACOS=x86_64 arm64 universal2" >> $GITHUB_ENV
           echo "CIBW_ARCHS_LINUX=auto64 auto32" >> $GITHUB_ENV
           echo "CIBW_BUILD=*-${{ matrix.cibw-arch }}" >> $GITHUB_ENV
-          echo "CIBW_SKIP=cp314t-*" >> $GITHUB_ENV
+          # cibuildwheel requests PyPy 3.11/3.12 as ABI pp80. manylinux2014 only
+          # ships PyPy through pp311-pp73, so those interpreters abort every
+          # manylinux job, including Linux aarch64, before any wheel is built.
+          # NumPy has no pp80 wheels either. PyPy 3.10 (pp73) still builds.
+          echo "CIBW_SKIP=cp314t-* pp311-manylinux_* pp312-manylinux_*" >> $GITHUB_ENV
           echo "CIBW_ENABLE=pypy pypy-eol" >> $GITHUB_ENV
           echo "CIBW_MANYLINUX_X86_64_IMAGE=manylinux2014" >> $GITHUB_ENV
           echo "CIBW_MANYLINUX_I686_IMAGE=manylinux2014" >> $GITHUB_ENV
