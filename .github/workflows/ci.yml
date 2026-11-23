@@ -7,9 +7,9 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
-      tmate:
+      upterm:
         type: boolean
-        description: 'Start tmate session on failure'
+        description: 'Start upterm session on failure'
         required: false
         default: false
 
@@ -221,9 +221,11 @@ jobs:
         run: |
           cmake --build build --target tests
 
-      - name: Setup tmate session
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.tmate && failure() }}
-        uses: mxschmitt/action-tmate@v3
+      - name: Setup upterm session
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.upterm && failure() }}
+        uses: owenthereal/action-upterm@v2
+        with:
+          limit-access-to-actor: true
 
   docs:
     name: Documentation
@@ -270,6 +272,8 @@ jobs:
         run: |
           cmake --build build --target docs_linkcheck
 
-      - name: Setup tmate session
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.tmate && failure() }}
-        uses: mxschmitt/action-tmate@v3
+      - name: Setup upterm session
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.upterm && failure() }}
+        uses: owenthereal/action-upterm@v2
+        with:
+          limit-access-to-actor: true
