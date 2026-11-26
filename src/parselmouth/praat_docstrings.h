@@ -218,8 +218,8 @@ One thing to note is that relative filenames in the Praat script
 (including those in potential 'include' statements in the script; see
 :praat:`Scripting 5.8. Including other scripts`) will be resolved relative
 to the path of the script file, just like in Praat. Also note that Praat
-accomplishes this by temporarily changing the current working during the
-execution of the script.
+accomplishes this by temporarily changing the current working directory
+during the execution of the script.
 
 Arguments
 ---------
